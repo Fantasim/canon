@@ -36,7 +36,7 @@ record Loop {
   /// Recs.
   recs: [Rec(like)] = []
   /// M.
-  m: {x in loops: LP(x)}? = none
+  m: {x in loops: LP(x)}?
 }
 
 /// LP.

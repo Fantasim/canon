@@ -65,6 +65,7 @@ type Evaluator struct {
 	written    map[value.Value]bool                           // literals given to dependent fields, kept as written (stageb.go)
 	deps       map[types.Type]bool                            // whether a type holds a dependent type (stageb.go)
 	verified   map[*value.Record]any                          // what stage B made of each instance; a vector reads its parent's, finished first (stageb.go)
+	cuts       map[*diag.Frame]diag.Frame                     // a cut provenance stack's outermost frame, by its first (outermost.go)
 
 	parent    *Evaluator                // a vector's evaluator reads its parent's settled values (vector.go)
 	vec       *vectorState              // set on a vector's evaluator only

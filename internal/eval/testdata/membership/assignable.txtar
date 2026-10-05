@@ -1,4 +1,4 @@
-STDLIB.md §5, DECISIONS 314: an element is an operand whose static type is assignable to T, a
+STDLIB.md §5, DECISIONS 317: an element is an operand whose static type is assignable to T, a
 type-function application computing T included; it is found by equality. (A `match`-bodied
 application is a `DepUnion`, which the checker refuses as an operand: E3002.)
 -- a/a.canon --

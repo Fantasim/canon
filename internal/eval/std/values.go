@@ -85,15 +85,6 @@ func (c *Call) arg(i int) value.Value {
 	return c.Args[i]
 }
 
-// argType is the static type of argument i (runStd fills ArgTypes for every call); the error
-// type when absent, which MemberKey takes as an element, Assignable(Error, T) being true.
-func (c *Call) argType(i int) types.Type {
-	if i < len(c.ArgTypes) && c.ArgTypes[i] != nil {
-		return c.ArgTypes[i]
-	}
-	return types.ErrorType
-}
-
 // holds invokes a predicate on args: its Bool result.
 func holds(h Host, fn value.Value, args ...value.Value) (bool, bool) {
 	v, ok := h.Invoke(fn, args...)

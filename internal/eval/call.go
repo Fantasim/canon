@@ -297,7 +297,6 @@ func (r *run) callBuiltin(x *syntax.CallExpr, callee *check.Callee) value.Value 
 // runs it at the call's site.
 func (r *run) runStd(fn func(std.Host, *std.Call) (value.Value, bool), x *syntax.CallExpr, callee *check.Callee, recv value.Value) value.Value {
 	var args []value.Value
-	var argTypes []types.Type
 	for i, a := range x.Args {
 		j := i
 		if a.Name != nil {
@@ -309,13 +308,13 @@ func (r *run) runStd(fn func(std.Host, *std.Call) (value.Value, bool), x *syntax
 			return nil
 		}
 		for len(args) <= j {
-			args, argTypes = append(args, nil), append(argTypes, nil)
+			args = append(args, nil)
 		}
-		args[j], argTypes[j] = v, r.typeOf(a.Value)
+		args[j] = v
 	}
 	r.site = r.span(x)
 	c := &std.Call{
-		Name: callee.Builtin, Overload: callee.Overload, Recv: recv, Args: args, ArgTypes: argTypes,
+		Name: callee.Builtin, Overload: callee.Overload, Recv: recv, Args: args,
 		Result: r.typeOf(x), Prov: r.prov(x, value.ProvComputed),
 	}
 	return r.std(fn(r.host(), c))

@@ -9,7 +9,7 @@ import (
 	"golang.org/x/tools/txtar"
 )
 
-// STDLIB.md §5, TYPES.md §10.3, DECISIONS 314, 315: every expect of testdata/membership passes.
+// STDLIB.md §5, TYPES.md §10.3, DECISIONS 315, 317: every expect of testdata/membership passes.
 func TestKeyedMembership(t *testing.T) {
 	expectAllPass(t, "testdata/membership/*.txtar")
 }
@@ -68,7 +68,7 @@ func TestTypeReflectionCost(t *testing.T) {
 	}
 }
 
-// costSrc is five entries in a field reached by a let path and in a keyed-list let; k in COLL is the probe.
+// costSrc is five entries in a field reached by a let path and in a keyed-list let; PROBE reads k in COLL.
 const costSrc = `/// A.
 package a
 
@@ -105,22 +105,39 @@ let ss: [S] keyed by m = [{ m: a, n: 1 }, { m: b, n: 1 }, { m: c, n: 1 }, { m: d
 let k: ref COLL = KEY
 
 /// P.
-let p: Bool = k in COLL
+let p: Bool = PROBE
 `
 
 // EVALUATION.md §12, DECISIONS 197, 315: `in` costs one step per pair, keys equal or not, through a let path as on a let.
 func TestMembershipCost(t *testing.T) {
-	steps := func(coll, key string) int64 {
-		src := strings.NewReplacer("COLL", coll, "KEY", key).Replace(costSrc)
-		b := buildFiles(t, eval.Options{}, "a/a.canon", src)
-		assertBuilt(t, b)
-		return b.ev.StepsSpent()
-	}
+	steps := costProbe(t, "k in COLL")
 	const pairs = 4 // the last of five entries is four pairs past the first
 	pathFirst, pathLast := steps("z.spawns", "a"), steps("z.spawns", "e")
 	letFirst, letLast := steps("ss", "a"), steps("ss", "e")
 	if pathLast-pathFirst != pairs || letLast-letFirst != pairs || pathLast-letLast != pathFirst-letFirst {
 		t.Errorf("let path %d, %d; let %d, %d: want %d more steps at the last entry, alike", pathFirst, pathLast, letFirst, letLast, pairs)
+	}
+}
+
+// STDLIB.md §5, DECISIONS 317: hasKey costs one step like get, wherever the key is, through a let path as on a let.
+func TestHasKeyCost(t *testing.T) {
+	has, get := costProbe(t, "COLL.hasKey(k)"), costProbe(t, "COLL.get(k) != none")
+	for _, coll := range []string{"z.spawns", "ss"} {
+		first, last := has(coll, "a"), has(coll, "e")
+		if first != last || get(coll, "a") != get(coll, "e") {
+			t.Errorf("%s: hasKey %d at the first entry, %d at the last; get %d, %d: want alike", coll, first, last, get(coll, "a"), get(coll, "e"))
+		}
+	}
+}
+
+// costProbe is the steps costSrc spends with PROBE as probe, k a ref of key into coll.
+func costProbe(t *testing.T, probe string) func(coll, key string) int64 {
+	t.Helper()
+	return func(coll, key string) int64 {
+		src := strings.NewReplacer("COLL", coll, "KEY", key).Replace(strings.Replace(costSrc, "PROBE", probe, 1))
+		b := buildFiles(t, eval.Options{}, "a/a.canon", src)
+		assertBuilt(t, b)
+		return b.ev.StepsSpent()
 	}
 }
 

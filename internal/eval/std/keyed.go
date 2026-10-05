@@ -9,7 +9,7 @@ import (
 // keyedMethods are STDLIB.md §5 over Seq(T).
 func keyedMethods() map[string]builtin {
 	m := seqMethods()
-	m[bGet], m[bFind], m[bAt] = keyedGet, keyedGet, keyedAt
+	m[bGet], m[bFind], m[bHasKey], m[bAt] = keyedGet, keyedGet, keyedHasKey, keyedAt
 	m[bKeys], m[bValues], m[bActive] = keyedKeys, keyedValues, keyedActive
 	return m
 }
@@ -36,59 +36,51 @@ func listGet(h Host, c *Call) (value.Value, bool) {
 
 // keyedGet is get(k) and find(k): the entry of key k (a ref of the collection too), or none.
 func keyedGet(h Host, c *Call) (value.Value, bool) {
-	k, _ := KeyOf(c.arg(0))
-	e, ok := h.Entry(c.Recv, k)
-	return c.orNone(e, ok), h.Charge(1)
+	e, found, ok := keyedEntry(h, c)
+	if !ok {
+		return nil, false
+	}
+	return c.orNone(e, found), h.Charge(1)
 }
 
-// Operand is how a table or keyed list takes a membership operand (STDLIB.md §5).
-type Operand uint8
-
-// MemberKey is x, typed xt, as recv's element or key; false ok: the root aborted (DECISIONS 314, 315).
-func MemberKey(h Host, recv, x value.Value, xt types.Type) (k value.Key, how Operand, ok bool) {
-	elem, kt := keyedTypes(recv)
-	if elem == nil {
-		return value.Key{}, operandElement, true
+// keyedHasKey is hasKey(k): an entry of key k exists, as get(k) != none, at get's cost (STDLIB.md §5, DECISIONS 317).
+func keyedHasKey(h Host, c *Call) (value.Value, bool) {
+	_, found, ok := keyedEntry(h, c)
+	if !ok {
+		return nil, false
 	}
-	t := xt.Base()
-	if o, isOpt := t.(*types.OptionalType); isOpt {
-		t = o.Elem.Base()
-	}
-	if types.Identical(t, kt) {
-		return keyOrMissing(KeyOf(x))
-	}
-	if r, isRef := t.(*types.RefType); isRef && r.Target != nil {
-		t = r.Target.Elem
-	}
-	if types.Assignable(t, elem) {
-		return value.Key{}, operandElement, true
-	}
-	return convertedKey(h, x, kt)
+	return c.boolv(found), h.Charge(1)
 }
 
-// keyOrMissing is a key, or OperandMissing when there is none.
-func keyOrMissing(k value.Key, has bool) (value.Key, Operand, bool) {
-	if !has {
-		return value.Key{}, OperandMissing, true
+// keyedEntry is the entry of argument 0's key, found false when there is none; false ok: the root aborted.
+func keyedEntry(h Host, c *Call) (e *value.Record, found, ok bool) {
+	k, has, ok := argKey(h, c.Recv, c.arg(0))
+	if !has || !ok {
+		return nil, false, ok
 	}
-	return k, OperandKey, true
+	e, found = h.Entry(c.Recv, k)
+	return e, found, true
 }
 
-// convertedKey is the key of x converted to kt: a record must be an entry of kt's target (DECISIONS 315).
-func convertedKey(h Host, x value.Value, kt types.Type) (value.Key, Operand, bool) {
+// argKey is the key x names in recv: a value of the key type or a ref keeps its own; an entry
+// converted to a `ref C` key has one only as an entry of C, a let path's instance included
+// (DECISIONS 315); false ok: the root aborted.
+func argKey(h Host, recv, x value.Value) (k value.Key, has, ok bool) {
 	rec, isRec := x.(*value.Record)
 	if !isRec {
-		return keyOrMissing(KeyOf(x))
+		k, has = KeyOf(x)
+		return k, has, true
+	}
+	_, kt := keyedTypes(recv)
+	if kt == nil || rec.Ident == nil {
+		return value.Key{}, false, true
 	}
 	r, isRef := kt.Base().(*types.RefType)
-	if !isRef || rec.Ident == nil {
-		return value.Key{}, OperandMissing, true
+	if !isRef {
+		return value.Key{}, false, true
 	}
 	yes, ok := h.Belongs(rec, r.Target)
-	if !ok {
-		return value.Key{}, OperandMissing, false
-	}
-	return keyOrMissing(rec.Ident.Key, yes)
+	return rec.Ident.Key, yes, ok
 }
 
 // keyedTypes are the element and key types of a table or keyed list, nil for another value.

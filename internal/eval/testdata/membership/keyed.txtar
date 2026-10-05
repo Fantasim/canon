@@ -1,8 +1,9 @@
-STDLIB.md §5 "Membership", DECISIONS 314: on a table or keyed list, `x in xs`, `xs.contains(x)`
-and `xs.indexOf(x)` decide by the static type of `x`, an exact type first: `KT` is a key; else
-`T` (by equality) or `ref T` (by identity) is an element; else a type converting to `KT` (an
-entry of `KT`'s target) is a key, and a value that is not such an entry is not found (`false`,
-no finding). Every expect below passes.
+STDLIB.md §5 "Membership", DECISIONS 317 (amending 314): on a table or keyed list, `x in xs`,
+`xs.contains(x)` and `xs.indexOf(x)` take an element only: a `T` (by equality) or a `ref T` (by
+identity). A key is tested with `xs.hasKey(k)`, the same answer as `xs.get(k) != none`: a value
+or ref of the key type, a bare key, or an entry converting to the key type (an entry of `KT`'s
+target); a value that is not such an entry has no key (`false`, no finding). Every expect below
+passes.
 -- a/a.canon --
 package a
 
@@ -51,52 +52,51 @@ let pool: table P = {
 
 let ks: [P] keyed by m = [{ m: a, n: 3 }]
 
-test "a ref of the key type is a key" {
+test "hasKey takes a ref of the key type" {
   let r: ref ms = ms.wolf
   let b: ref ms = ms.bear
-  expect r in z.spawns
-  expect not (b in z.spawns)
-  expect z.spawns.contains(r)
-  expect not z.spawns.contains(b)
-  expect z.spawns.indexOf(r) == 0
-  expect z.spawns.indexOf(b) == none
-  expect r in ss
+  expect z.spawns.hasKey(r)
+  expect not z.spawns.hasKey(b)
+  expect ss.hasKey(r)
   expect z.spawns.get(r) != none
+  expect z.spawns.get(b) == none
+  expect z.spawns.hasKey(r) == (z.spawns.get(r) != none)
+  expect z.spawns.hasKey(b) == (z.spawns.get(b) != none)
 }
 
-test "a bare key is a key" {
-  expect wolf in z.spawns
-  expect not (bear in z.spawns)
-  expect z.spawns.contains(wolf)
+test "hasKey takes a bare key" {
+  expect z.spawns.hasKey(wolf)
+  expect not z.spawns.hasKey(bear)
 }
 
 test "an entry converting to the key type is a key" {
-  expect ms.wolf in z.spawns
-  expect not (ms.bear in z.spawns)
-  expect z.spawns.contains(ms.wolf)
-  expect z.spawns.indexOf(ms.wolf) == 0
+  expect z.spawns.hasKey(ms.wolf)
+  expect not z.spawns.hasKey(ms.bear)
+  expect z.spawns.get(ms.wolf) != none
 }
 
-test "a value of T's type that is not an entry of the key's target is not found" {
+test "a value of the target's type that is not an entry of it has no key" {
   let m: M = { hp: 1 }
-  expect not (m in z.spawns)
-  expect not z.spawns.contains(m)
-  expect z.spawns.indexOf(m) == none
-  expect not (others.wolf in z.spawns)
-  expect not z.spawns.contains(others.wolf)
+  expect not z.spawns.hasKey(m)
+  expect z.spawns.get(m) == none
+  expect not z.spawns.hasKey(others.wolf)
+  expect z.spawns.get(others.wolf) == none
 }
 
-test "the key type first: a ref of the key type, into a collection of T, is a key" {
+test "a ref of the key type into a collection of T is an element, its key a hasKey" {
   let r: ref pool = pool.a
   let q: ref pool = pool.b
-  expect r in ks
-  expect not (q in ks)
-  expect ks.contains(r)
-  expect ks.indexOf(r) == 0
+  expect ks.hasKey(r)
+  expect not ks.hasKey(q)
+  expect ks.hasKey(pool.a)
+  expect not (r in ks)
+  expect not ks.contains(r)
+  expect ks.indexOf(r) == none
   expect not (pool.a in ks)
+  expect ks.at(0) in ks
 }
 
-test "the key type first: a T is still an element, by equality" {
+test "a T is an element, by equality" {
   let same: P = { m: pool.a, n: 3 }
   let other: P = { m: pool.a, n: 1 }
   expect same in ks
@@ -112,29 +112,36 @@ test "an element is found by equality" {
   expect not (t in z.spawns)
   expect z.spawns.at(0) in z.spawns
   expect z.spawns.contains(s)
+  expect z.spawns.indexOf(s) == 0
+  expect z.spawns.indexOf(t) == none
 }
 
 test "a ref to the element type is an element, by identity" {
   let f: ref ss = ss.at(0)
   expect f in ss
+  expect ss.contains(f)
+  expect ss.indexOf(f) == 0
   expect not (f in z.spawns)
   expect not z.spawns.contains(f)
 }
 
-test "a table takes an entry, a ref into it, or a String key" {
+test "a table takes an entry or a ref into it as an element, a String key in hasKey" {
   let w: ref ms = ms.wolf
   let o: ref others = others.wolf
   expect w in ms
   expect ms.wolf in ms
-  expect "wolf" in ms
-  expect not ("fox" in ms)
   expect not (o in ms)
   expect ms.contains(w)
+  expect ms.indexOf(ms.bear) == 1
+  expect ms.hasKey("wolf")
+  expect not ms.hasKey("fox")
+  expect ms.hasKey(w)
+  expect ms.hasKey(k: "bear")
 }
 
 test "a String key of a keyed list" {
-  expect "a" in qs
-  expect not ("b" in qs)
-  expect qs.contains("a")
-  expect qs.indexOf("a") == 0
+  expect qs.hasKey("a")
+  expect not qs.hasKey("b")
+  expect qs.get("a") != none
+  expect qs.find("b") == none
 }

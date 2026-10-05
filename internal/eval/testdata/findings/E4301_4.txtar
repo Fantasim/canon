@@ -1,6 +1,6 @@
-EVALUATION.md §4.2, DECISIONS 315: `contains` on a list keyed by a `ref z.spawns` field, given an
-entry, decides whether it belongs to z's instance: inside z's own evaluation that read is a cycle,
-reported at the call.
+EVALUATION.md §4.2, DECISIONS 315, STDLIB.md §5 (DECISIONS 317): `hasKey` on a list keyed by a
+`ref z.spawns` field, given an entry, decides whether it belongs to z's instance: inside z's own
+evaluation that read is a cycle, reported at the call.
 -- a/a.canon --
 /// A.
 package a
@@ -45,7 +45,7 @@ let ts: [T2] keyed by r = [{ r: wolf, n: 1 }]
 let y: Z = { spawns: [{ m: wolf, n: 2 }], has: false }
 
 /// Z.
-let z: Z = { spawns: [{ m: wolf, n: 2 }], has: ts.contains(y.spawns.at(0)) }
+let z: Z = { spawns: [{ m: wolf, n: 2 }], has: ts.hasKey(y.spawns.at(0)) }
 -- findings.txt --
 error[E4301]  a/a.canon:44:48
   z.has: cycle between values: z -> z

@@ -3,6 +3,7 @@ package eval
 import (
 	"context"
 
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -28,6 +29,16 @@ func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Val
 	if r == nil {
 		return CheckRun{Aborted: true}
 	}
+	return r.check(c)
+}
+
+// RunUnder is Run on an instance of a precomputed result: no value path, its findings under f (EVALUATION.md §2.3).
+func (e *Evaluator) RunUnder(ctx context.Context, c *syntax.CheckDecl, self value.Value, f diag.Frame) CheckRun {
+	r := e.checkRun(ctx, c, self, "")
+	if r == nil {
+		return CheckRun{Aborted: true}
+	}
+	r.outer = &f
 	return r.check(c)
 }
 

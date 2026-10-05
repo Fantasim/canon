@@ -11,13 +11,6 @@ const (
 	famCount
 )
 
-// How a membership operand meets a table or keyed list: each element, its key, or no key (STDLIB.md §5).
-const (
-	operandElement Operand = iota
-	OperandKey
-	OperandMissing
-)
-
 // The arithmetic operators of TYPES.md §7.1.
 const (
 	OpAdd Op = iota
@@ -62,6 +55,7 @@ const (
 	bMaxBy      = "maxBy"
 	bGet        = "get"
 	bFind       = "find"
+	bHasKey     = "hasKey"
 	bAt         = "at"
 	bKeys       = "keys"
 	bValues     = "values"

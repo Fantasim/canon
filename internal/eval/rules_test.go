@@ -135,7 +135,9 @@ func TestOperators(t *testing.T) {
 		{"TYPES.md §7.5 strings by bytes", "Bool", `words[0] < words[1]`, "false"},
 		{"TYPES.md §7.1 in a list", "Bool", "seven in xs", "false"},
 		{"TYPES.md §7.1 in a range", "Bool", "two in 0..3", "true"},
-		{"STDLIB.md §5 a key in a table", "Bool", `"rex" in pets`, "true"},
+		{"STDLIB.md §5 an entry in a table", "Bool", "pets.rex in pets", "true"},
+		{"STDLIB.md §5 a ref in a table", "Bool", "r in pets", "true"},
+		{"STDLIB.md §5, DECISIONS 317 a key is not an element", "Bool", `"rex" in pets`, codeOf(diag.E3026)},
 		{"TYPES.md §7.1 in a map", "Bool", `"b" in nums`, "true"},
 		{"TYPES.md §6.5 ?? on none", "Int", "xs.get(9) ?? seven", "7"},
 		{"TYPES.md §6.5 x! on none", "Int", "xs.get(9)!", codeOf(diag.E4001)},
@@ -263,6 +265,9 @@ func TestSequences(t *testing.T) {
 func TestKeyedAndMaps(t *testing.T) {
 	runCases(t, []evalCase{
 		{"STDLIB.md §5 get", "Int?", `pets.get("tom")?.age`, "1"},
+		{"STDLIB.md §5, DECISIONS 317 hasKey", "Bool", `pets.hasKey("tom")`, "true"},
+		{"STDLIB.md §5, DECISIONS 317 hasKey missing", "Bool", `pets.hasKey("zz")`, "false"},
+		{"STDLIB.md §5, DECISIONS 317 hasKey takes a ref", "Bool", "pets.hasKey(r)", "true"},
 		{"STDLIB.md §5 at", "String", "pets.at(-1).name", "Old"},
 		{"STDLIB.md §5 at out of range", "String", "pets.at(3).name", codeOf(diag.E4002)},
 		{"STDLIB.md §5 keys", "String", `"{pets.keys()}"`, "[rex, tom, old]"},

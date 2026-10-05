@@ -27,6 +27,24 @@ func (e *Evaluator) Verifying(ctx context.Context, root Root, bag *diag.Bag) *St
 	return s
 }
 
+// Under makes the findings of this verification carry f, a precomputation's frame (EVALUATION.md §2.3).
+func (s *StageB) Under(f diag.Frame) {
+	s.r.outer = &f
+}
+
+// Where is Evaluator.Where with no value path, under the stage's frame.
+func (s *StageB) Where(ctx context.Context, p *types.Predicate, it value.Value) (bool, bool) {
+	return s.e.predicate(ctx, p, it, "", s.r.outer)
+}
+
+// Unbound reports E3505 for ref with no value path, under the stage's frame, and marks it invalid (EVALUATION.md §3.4).
+func (s *StageB) Unbound(ref *value.Ref) {
+	if b := s.e.unbound(s.root, ref, "", s.r.outer); b != nil {
+		s.r.emit(b)
+		s.e.MarkInvalid(ref)
+	}
+}
+
 // Emitted is every finding the evaluator reported for this verification, in order.
 func (s *StageB) Emitted() []*diag.Builder {
 	return s.emitted

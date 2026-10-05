@@ -14,7 +14,7 @@ local record C { name: String }
 
 local record O {
   cols: [C] keyed by name
-  pick: ref C? = none
+  pick: ref C?
   same: ref C
 }
 
@@ -49,7 +49,7 @@ local record C { name: String }
 
 local record O {
   cols: [C] keyed by name
-  pick: ref C? = none
+  pick: ref C?
   same: ref C
   check same == pick else "same != pick"
   check pick == same else "pick != same"

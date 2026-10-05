@@ -18,7 +18,7 @@ record Node {
   /// Kids.
   kids: table Node = {}
   /// Pick, one of its kids.
-  pick: ref Node? = none
+  pick: ref Node?
   /// Tier (Config's).
   tier: ref Tier = low
   /// N.

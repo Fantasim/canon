@@ -2,7 +2,8 @@ TYPES.md §10.2, §10.3, EVALUATION.md §4.2, DECISIONS 315: `ref z.spawns` name
 field `spawns` holds in z's instance. An entry of it converts to the ref (no E3503) and equals a
 ref with its key, built by conversion, by key, by keys() or loaded (`==`, `in`, `contains`,
 `indexOf`, hashing in `unique`, `union` and map keys); another instance's entry does not. Nested
-paths, an alias let, a key field typed a let path and level-1 refs work alike.
+paths, an alias let, a key field typed a let path (its keys tested with `hasKey`, STDLIB.md §5,
+DECISIONS 317) and level-1 refs work alike.
 -- a/a.canon --
 package a
 
@@ -121,10 +122,12 @@ test "an alias names the same instance" {
 }
 
 test "a key field typed a let path" {
-  expect z.spawns.at(0) in ts
-  expect first in ts
-  expect not (y.spawns.at(0) in ts)
-  expect ts.contains(z.spawns.at(0))
+  expect ts.hasKey(z.spawns.at(0))
+  expect ts.hasKey(first)
+  expect not ts.hasKey(y.spawns.at(0))
+  expect ts.get(z.spawns.at(0)) != none
+  expect ts.get(y.spawns.at(0)) == none
+  expect ts.at(0) in ts
 }
 
 test "a loaded ref" {

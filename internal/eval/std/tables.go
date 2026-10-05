@@ -16,7 +16,7 @@ var paramNames = [famCount]map[string][]string{
 		bPow: {pX, pY}, bReachable: {pFrom, pNext}, bCycles: {pXs, pNext}, bTopoSort: {pXs, pNext},
 	},
 	famList:   seqParams(map[string][]string{bGet: {pI}}),
-	famKeyed:  seqParams(map[string][]string{bGet: {pK}, bFind: {pK}, bAt: {pI}}),
+	famKeyed:  seqParams(map[string][]string{bGet: {pK}, bFind: {pK}, bHasKey: {pK}, bAt: {pI}}),
 	famMap:    {bGet: {pK}, bContains: {pK}, bMap: {pF}, bFilter: {pPred}, bAny: {pPred}, bAll: {pPred}, bCount: {pPred}},
 	famString: {bContains: {pS}, bStartsWith: {pS}, bEndsWith: {pS}, bFind: {pS}, bSplit: {pSep}, bReplace: {pA, pB}, bMatches: {pRe}},
 	famRange:  {bContains: {pX}},

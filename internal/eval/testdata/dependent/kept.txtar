@@ -68,7 +68,7 @@ record R {
   /// P.
   p: P(ev)?
   /// SK.
-  sk: SK(ev)? = none
+  sk: SK(ev)?
   /// Keys.
   ks: {SK(ev): Int} = {}
   /// Ps.

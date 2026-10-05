@@ -39,6 +39,8 @@ type run struct {
 	dep        *depCtx          // what a type argument names in the value being built (params.go)
 	emitted    *[]*diag.Builder // a stage-B run's findings, kept for replay (stageb.go)
 	magic      *Magic           // a view run's magic names (viewexpr.go)
+	outer      *diag.Frame      // a precomputation's frame its findings carry (EVALUATION.md §2.3)
+	notesCuts  bool             // a precomputation: its cut stacks keep their outermost frame (outermost.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).
@@ -53,6 +55,7 @@ type frame struct {
 	call   source.Span
 	caller *frame
 	named  *frame // the innermost frame at or above this one that has a fn
+	top    *frame // the outermost frame at or above this one that has a fn
 	count  int    // the frames with a fn at or above this one
 	ret    value.Value
 	stack  []diag.Frame
@@ -67,10 +70,13 @@ type frame struct {
 func (f *frame) under(caller *frame) *frame {
 	f.caller = caller
 	if caller != nil {
-		f.named, f.count = caller.named, caller.count
+		f.named, f.count, f.top = caller.named, caller.count, caller.top
 	}
 	if f.fn != "" {
 		f.named, f.count = f, f.count+1
+		if f.top == nil {
+			f.top = f
+		}
 	}
 	return f
 }
@@ -244,10 +250,14 @@ func (r *run) emit(b *diag.Builder) {
 
 // soft reports a soft finding about v and marks it invalid (EVALUATION.md §4.3, §7.1).
 func (r *run) soft(b *diag.Builder, v value.Value, at *vpath) {
+	var stack []diag.Frame
+	more := 0
 	if p := origin(v.Prov()); p != nil {
-		b.Pointer(p.Pointer).Layer(p.Layer).Stack(p.Stack).MoreFrames(p.MoreFrames)
+		b.Pointer(p.Pointer).Layer(p.Layer)
+		stack, more = p.Stack, p.MoreFrames
 	}
-	r.emit(b.Path(at.String()))
+	stack, more = Outermost(stack, more, r.outer, r.ev.Hides(stack, r.outer))
+	r.emit(b.Stack(stack).MoreFrames(more).Path(at.String()))
 	r.ev.MarkInvalid(v)
 }
 
@@ -300,6 +310,7 @@ func (r *run) frames() ([]diag.Frame, int) {
 // withStack is b with the current call stack.
 func (r *run) withStack(b *diag.Builder) *diag.Builder {
 	stack, more := r.frames()
+	stack, more = Outermost(stack, more, r.outer, false) // a run under outer never holds its frame
 	return b.Stack(stack).MoreFrames(more)
 }
 
@@ -310,6 +321,7 @@ func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
 		if !f.cached {
 			f.stack, f.more = r.frames()
 			f.cached = true
+			r.noteCut(f)
 		}
 		p.Stack, p.MoreFrames = f.stack, f.more
 		if kind == value.ProvLiteral {

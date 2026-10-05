@@ -35,13 +35,12 @@ type Host interface {
 
 // Call is one call of a built-in: its name, the row of its signature table that matched
 // (check.Callee.Overload), its receiver (nil for a free function), its arguments in parameter
-// order with their static types, its static result type and the provenance of what it computes.
+// order, its static result type and the provenance of what it computes.
 type Call struct {
 	Name     string
 	Overload int
 	Recv     value.Value
 	Args     []value.Value
-	ArgTypes []types.Type
 	Result   types.Type
 	Prov     *value.Prov
 }

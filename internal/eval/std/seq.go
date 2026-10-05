@@ -70,32 +70,19 @@ func seqLast(h Host, c *Call) (value.Value, bool) {
 	return xs[len(xs)-1], h.Charge(1)
 }
 
-// seqContains tests an element, or a key of a keyed collection (STDLIB.md §5).
+// seqContains tests an element; a table or keyed list takes one too, never a key (STDLIB.md §5, DECISIONS 317).
 func seqContains(h Host, c *Call) (value.Value, bool) {
 	i, ok := position(h, c)
 	return c.boolv(i >= 0), ok
 }
 
-// position is the index of the first element equal to argument 0, or of the entry of that
-// key, as its static type decides (MemberKey); each element visited costs one step.
+// position is the index of the first element equal to argument 0, entries by identity; each
+// element visited costs one step.
 func position(h Host, c *Call) (int, bool) {
-	recv, x := c.Recv, c.arg(0)
-	k, how, ok := MemberKey(h, recv, x, c.argType(0))
-	switch {
-	case !ok:
-		return 0, false
-	case how == OperandMissing:
-		return -1, true
-	}
-	for i, e := range Elems(recv) {
+	x := c.arg(0)
+	for i, e := range Elems(c.Recv) {
 		if !h.Charge(1) {
 			return 0, false
-		}
-		if how == OperandKey {
-			if ek, _ := KeyOf(e); ek == k {
-				return i, true
-			}
-			continue
 		}
 		eq, ok := h.Equal(e, x)
 		if !ok {

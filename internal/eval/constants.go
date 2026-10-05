@@ -61,6 +61,11 @@ const (
 	outcomeWarns  = "warns"
 )
 
+// NamesCheck reports `fails name` or `warns name` whose name is a check, not a code (EVALUATION.md §10.3).
+func NamesCheck(outcome, name string) bool {
+	return (outcome == outcomeFails || outcome == outcomeWarns) && !codeShape.MatchString(name)
+}
+
 // float32Max is the smallest magnitude that overflows binary32 when stored (TYPES.md §7.3).
 const float32Max = 3.4028235677973366e+38
 

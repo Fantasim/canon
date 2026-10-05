@@ -66,10 +66,10 @@ func evalBinary(r *run, e syntax.Expr, _ *vpath) value.Value {
 	return r.binop(x.Op, a, b, e, r.typeOf(e))
 }
 
-// inOp is `x in xs`, an element or a key as the static type of x decides (STDLIB.md §5).
+// inOp is `x in xs`; a table or keyed list takes an element, never a key (STDLIB.md §5, DECISIONS 317).
 func (r *run) inOp(x *syntax.BinaryExpr, a, b value.Value) value.Value {
 	r.site = r.span(x)
-	in, ok := r.memberOf(a, b, r.typeOf(x.X))
+	in, ok := r.memberOf(a, b)
 	return r.boolOr(in, ok, r.prov(x, value.ProvComputed))
 }
 
@@ -183,8 +183,8 @@ func concat(a, b value.Value, t types.Type, p *value.Prov) value.Value {
 	return nil
 }
 
-// memberOf is `x in xs`, x typed xt, equalities charged at r.site (TYPES.md §6.5, DECISIONS 197).
-func (r *run) memberOf(x, coll value.Value, xt types.Type) (bool, bool) {
+// memberOf is `x in xs`, equalities charged at r.site, entries by identity (TYPES.md §6.5, DECISIONS 197, 317).
+func (r *run) memberOf(x, coll value.Value) (bool, bool) {
 	if isNone(x) {
 		return false, true
 	}
@@ -197,15 +197,6 @@ func (r *run) memberOf(x, coll value.Value, xt types.Type) (bool, bool) {
 		return i >= 0, ok
 	case *value.List:
 		x = r.valueAs(x, elemOf(c.T))
-	}
-	switch k, how, ok := std.MemberKey(r.host(), coll, x, xt); {
-	case !ok:
-		return false, false
-	case how == std.OperandMissing:
-		return false, true
-	case how == std.OperandKey:
-		_, found := r.ev.entry(coll, k)
-		return found, true
 	}
 	for _, e := range std.Elems(coll) {
 		if eq, ok := r.host().Equal(e, x); !ok || eq {

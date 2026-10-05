@@ -23,7 +23,7 @@ record Box {
   /// Xs.
   xs: [Int] = [1]
   /// Inner.
-  inner: Inner? = none
+  inner: Inner?
   /// Shape.
   shape: Shape = circle
 }
