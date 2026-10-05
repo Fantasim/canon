@@ -159,12 +159,6 @@ func dependentRefusals() map[string]dependentRefusal {
 			d.Disc = &intT
 			thing(p).Fields[1].Type = intT
 		}, gogen.ErrDependentNoDisc, "demo.P"},
-		"another package's dependent type": {func(p *ir.Package) {
-			d, _ := dependentField(p)
-			d.Pkg = "other"
-			p.Types = p.Types[:len(p.Types)-1]
-			p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{{Target: ir.TargetGo, GoImport: "example.com/other", GoPackage: "other"}}}}
-		}, gogen.ErrDependentForeign, "demo.Thing"},
 		"a define branch whose table the IR does not hold (DECISIONS 298)": {func(p *ir.Package) {
 			d, _ := dependentField(p)
 			d.Branches[0].Type = ir.TypeRef{Kind: types.Ref, Key: &strT, Ref: &ir.RefTarget{Coll: types.CollDefines, Pkg: "demo", Value: "defs"}}

@@ -12,7 +12,7 @@ import (
 type loadView struct {
 	Func, Type, Schema, Decode, RT, JSON, FMT  string
 	Elem, Key, KeyStore, IDStore, RetiredStore string
-	Resolve                                    string
+	Resolve, Target                            string
 	DupKey, DupToken                           string
 	Record, Table                              bool
 	Indexes                                    []index
@@ -36,7 +36,6 @@ func (g *gen) load(v *ir.Value) {
 		g.failf(ErrMalformed, "value %s without its record", v.Name)
 		return
 	}
-	g.ownClass(ir.TypeRef{Kind: types.Record, Named: rec})
 	view := loadView{
 		Func: g.names.LoadFunc(v), Type: g.valueType(v), Schema: g.names.SchemaName(v), Decode: g.decodeFunc(rec),
 		RT: g.rt(), L: g.lc, M: containerMembers, Record: !isContainer(v),
@@ -50,7 +49,11 @@ func (g *gen) load(v *ir.Value) {
 // rows fills a container's loader: its rows, keys, FindBy indexes and its own refs' resolver (CODEGEN.md §5.8).
 func (g *gen) rows(view *loadView, v *ir.Value, rec *ir.Record) {
 	view.JSON, view.FMT = g.use(jsonPath, jsonPkg), g.use(fmtPkg, fmtPkg)
-	view.Elem, view.Table = g.goName(rec), v.Type.Kind == types.Table
+	view.Table = v.Type.Kind == types.Table
+	view.Elem = g.rowElem(rec, view.Table)
+	if view.Table && rec.Pkg != g.p.Name {
+		view.Target = dot + rowRecordStore // this package's row holds the record (CODEGEN.md §5.9)
+	}
 	keyExpr := view.L.Keys + lbracket + view.L.At + rbracket
 	if view.Table {
 		view.Key, view.KeyStore = g.idType(rec), ir.GoIDStore

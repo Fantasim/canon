@@ -112,8 +112,8 @@ func TestRefusedEmits(t *testing.T) {
 		want error
 	}{
 		{"ts emit", func(e *ir.Emit) { e.Target = ir.TargetTS }, gogen.ErrTarget},
-		{"types mode", func(e *ir.Emit) { e.Mode = ir.ModeTypes }, gogen.ErrUnsupported},
-		{"embedded mode", func(e *ir.Emit) { e.Mode = ir.ModeEmbedded }, gogen.ErrUnsupported},
+		{"types mode, unbuilt (DECISIONS 320)", func(e *ir.Emit) { e.Mode = ir.ModeTypes }, gogen.ErrMalformed},
+		{"embedded mode, unbuilt (DECISIONS 320)", func(e *ir.Emit) { e.Mode = ir.ModeEmbedded }, gogen.ErrMalformed},
 		{"no package", func(e *ir.Emit) { e.GoPackage = "" }, gogen.ErrMalformed},
 		{"no import path", func(e *ir.Emit) { e.GoImport = "" }, gogen.ErrMalformed},
 	}
@@ -285,7 +285,7 @@ func TestTypesWithoutGo(t *testing.T) {
 	}{
 		// stage E refuses the first and the last (E8019 CaseField, RecordConstant): ErrMalformed.
 		{"a field of a case without fields", pkg(shape, caseField), "p.Shape.none", gogen.ErrMalformed},
-		{"a Never field", pkg(never), "p.N.n", gogen.ErrUnsupported},
+		{"a Never field, refused by check first", pkg(never), "p.N.n", gogen.ErrMalformed},
 		{"a record constant", constant, "origin", gogen.ErrMalformed},
 	}
 	for _, c := range cases {

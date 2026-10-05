@@ -19,12 +19,21 @@ type body struct {
 	slots      []*slot
 	finite     []*finiteMethod
 	translated []*ir.ExportFn
-	idType     string // "" unless a table holds the record
+	idType     string     // "" unless a table holds the record
+	pkg        string     // the Canon package of the class
+	foreign    bool       // another package's class, its slots as its make hook takes them (CODEGEN.md §5.14)
+	hook       []hookItem // a foreign class's hook parameters, in order
+}
+
+// hookItem is one parameter group of a make hook: a stored field's or precomputed fn's slot, or a lookup's cells.
+type hookItem struct {
+	s *slot
+	f *finiteMethod
 }
 
 // recordBody gathers the fields and export fns of a record or case (CODEGEN.md §5.4).
 func (g *gen) recordBody(key any, owner, goName string, fields []*ir.Field, fns []*ir.ExportFn) *body {
-	b := &body{key: key, owner: owner, goName: goName, fields: fields, methods: fns}
+	b := &body{key: key, owner: owner, goName: goName, fields: fields, methods: fns, pkg: g.p.Name}
 	for _, f := range fields {
 		if f.Optional && f.Type.Kind == types.Never {
 			continue // CODEGEN.md §4.4: a Never? field is not emitted at all
@@ -136,6 +145,9 @@ func (g *gen) bodyOf(r *ir.Record) *body {
 	if b := g.bodies[r]; b != nil {
 		return b
 	}
+	if r.Pkg != g.p.Name {
+		return g.foreignRecordBody(r)
+	}
 	b := g.recordBody(r, r.QName(), g.goName(r), r.Fields, r.Methods)
 	b.canon = r.Name
 	if g.tableOf[r] != nil || g.names.NestedRow(r) {
@@ -149,6 +161,9 @@ func (g *gen) bodyOf(r *ir.Record) *body {
 func (g *gen) caseBody(v *ir.Variant, c *ir.Case) *body {
 	if b := g.bodies[c]; b != nil {
 		return b
+	}
+	if v.Pkg != g.p.Name {
+		return g.foreignCaseBody(v, c)
 	}
 	b := g.recordBody(c, v.QName()+dot+c.Name, g.names.CaseName(v, c), c.Fields, c.Methods)
 	b.canon = v.Name + dot + c.Name
@@ -167,14 +182,16 @@ func (g *gen) recordExpr(t ir.TypeRef, r *value.Record) string {
 		g.failf(ErrMalformed, "a record value of type %s", qname(t.Named))
 		return nilLit
 	}
+	if rec.Pkg != g.p.Name {
+		return addressOf(g.typeName(rec), g.recordLit(rec, r))
+	}
 	return ampersand + g.recordLit(rec, r)
 }
 
-// recordLit is R{…}: the id of a table entry, then every slot and finite method.
+// recordLit is R{…}: the id of a table entry, then every slot and finite method; another package's record is a call of its make hook (CODEGEN.md §2.8).
 func (g *gen) recordLit(rec *ir.Record, r *value.Record) string {
 	if rec.Pkg != g.p.Name {
-		// E8019 CrossPackageBakedValue already refuses this at stage E: unreachable.
-		g.failf(ErrMalformed, "a baked value of %s, a record of another package", rec.QName())
+		return g.hookCall(rec.Pkg, g.names.RecordHook(rec).Name, g.bodyOf(rec), r)
 	}
 	var parts []pair
 	if tv := g.tableOf[rec]; tv != nil && r.Ident != nil {

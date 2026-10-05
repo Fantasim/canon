@@ -4,7 +4,6 @@ package gogen
 var (
 	ErrDependentNoDisc   = errDependentNoDisc
 	ErrDependentDisc     = errDependentDisc
-	ErrDependentForeign  = errDependentForeign
 	ErrDependentNested   = errDependentNested
 	ErrDependentValue    = errDependentValue
 	ErrDependentNoBranch = errDependentNoBranch

@@ -37,6 +37,9 @@ func (g *gen) decoders() {
 			g.decodeDependent(x)
 		}
 	}
+	if g.readers() {
+		wrote = true
+	}
 	decoders := g.body
 	g.body = outer
 	if !wrote {
@@ -49,7 +52,28 @@ func (g *gen) decoders() {
 // decodeFunc and resolveFunc are the plan's names for a class, refusing one the plan never named.
 func (g *gen) decodeFunc(key any) string {
 	g.checkClass(key)
+	if g.classPkg(key) != g.p.Name { // this package's reader of another package's class (CODEGEN.md §2.8)
+		name := g.names.ReaderName(key)
+		if name == "" {
+			g.failf(ErrMalformed, "no reader of %T at %s", key, g.at)
+		}
+		return name
+	}
 	return g.names.DecodeFunc(key)
+}
+
+// classPkg is the Canon package of a class: a case's variant's.
+func (g *gen) classPkg(key any) string {
+	if c, ok := key.(*ir.Case); ok {
+		if v := g.variantOf[c]; v != nil {
+			return v.Pkg
+		}
+		return g.p.Name
+	}
+	if t, ok := key.(ir.Type); ok {
+		return typePkg(t)
+	}
+	return g.p.Name
 }
 
 func (g *gen) resolveFunc(key any) string {
@@ -62,7 +86,7 @@ func (g *gen) resolveFunc(key any) string {
 func (g *gen) checkClass(key any) {
 	if c, ok := key.(*ir.Case); ok {
 		if g.variantOf[c] == nil {
-			g.failf(ErrMalformed, "a case %s without its variant", c.Name)
+			g.failf(ErrMalformed, caseNoVariantFormat, c.Name)
 		}
 		return
 	}
@@ -89,6 +113,12 @@ func (g *gen) decodeBody(b *body) {
 	lc := g.lc
 	g.printf(funcOpenFormat, g.decodeFunc(b.key), lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, b.goName)
 	g.openObject(g.expectedKeys(b))
+	g.readFields(b)
+	g.printf(returnNil)
+}
+
+// readFields reads b's fields into out, then each stored fn's `$` key.
+func (g *gen) readFields(b *body) {
 	for _, s := range b.slots {
 		if s.fn == nil && !s.isInput() {
 			g.readField(b, s)
@@ -98,7 +128,6 @@ func (g *gen) decodeBody(b *body) {
 	for _, fn := range b.methods {
 		g.readMethod(b, fn)
 	}
-	g.printf(returnNil)
 }
 
 // readField reads one field where its wire form puts it (WIRE.md §5.5, §5.6, §5.14).
@@ -145,7 +174,7 @@ func (g *gen) objectExtras(b *body) []string {
 
 // slotLeaf is what a slot reads: its type after the optional, its field's unit, encoding, none marker and a dependent type's discriminant (CODEGEN.md §5.6).
 func (g *gen) slotLeaf(owner *body, s *slot) (leaf, []byte) {
-	l := leaf{t: s.T}
+	l := leaf{t: s.T, owned: s.owned}
 	if f := s.src; s.fn == nil && f != nil {
 		l.unit, l.enc = f.Unit, f.Enc
 		if app := ir.HeldApp(s.T); app != nil { // its elements share the field's discriminant
@@ -259,7 +288,7 @@ func (g *gen) readInline(s *slot) {
 	}
 	var b strings.Builder
 	v := g.temp(tempValue)
-	fmt.Fprintf(&b, decodeIntoFormat, v, g.goName(s.T.Named), g.lc.Err, g.decodeFunc(s.T.Named), g.lc.Name, g.lc.Path, g.lc.Raw)
+	fmt.Fprintf(&b, decodeIntoFormat, v, g.typeName(s.T.Named), g.lc.Err, g.decodeFunc(s.T.Named), g.lc.Name, g.lc.Path, g.lc.Raw)
 	g.store(&b, s, g.lc.Out, v)
 	g.body.WriteString(b.String())
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // readPath reads a field down its key path; an absent object leaves the field missing (WIRE.md §5.5.3).
@@ -63,16 +64,45 @@ func (g *gen) readPairs(s *slot) {
 	slotKeys := [pairFields]string{g.temp(tempKey), g.temp(tempKey)}
 	raws := [pairFields]string{g.temp(tempRaw), g.temp(tempRaw)}
 	elem := g.temp(tempElem)
-	g.printf(pairsOpenFormat, list, g.goName(rec), empty, i, slotKeys[0], keys[0], slotKeys[1], keys[1])
-	g.printf(slotFormat, raws[0], raws[1], lc.Err, g.helper(helperSlot), lc.Name, lc.Path, lc.Obj, slotKeys[0], slotKeys[1], empty, elem, g.goName(rec))
+	local, built := g.pairsElem(rec, elem)
+	g.printf(pairsOpenFormat, list, g.typeName(rec), empty, i, slotKeys[0], keys[0], slotKeys[1], keys[1])
+	g.printf(slotFormat, raws[0], raws[1], lc.Err, g.helper(helperSlot), lc.Name, lc.Path, lc.Obj, slotKeys[0], slotKeys[1], empty, elem, local)
 	for k, es := range g.bodyOf(rec).slots[:pairFields] {
-		g.storeInto(es, elem, leaf{t: es.T, unit: es.src.Unit, enc: es.src.Enc}, raws[k], g.root().arg(slotKeys[k]))
+		g.storeInto(es, elem, leaf{t: es.T, unit: es.src.Unit, enc: es.src.Enc, owned: es.owned}, raws[k], g.root().arg(slotKeys[k]))
 		g.readDefine(es, elem, g.root().arg(slotKeys[k]))
 	}
-	g.printf(pairsCloseFormat, list, elem)
+	if rec.Pkg != g.p.Name && ownerChecked(g.bodyOf(rec)) { // the element carries the owner checks like any field (log-2026-10-06 "gen/go re-verify FAIL")
+		y := g.temp(tempElem)
+		g.printf(defineFormat, y, built)
+		for k, es := range g.bodyOf(rec).slots[:pairFields] {
+			if es.owned && es.Ref.Keyed {
+				g.ownerCheck(es, y, elem, g.root().arg(slotKeys[k]))
+			}
+		}
+		built = y
+	}
+	g.printf(pairsCloseFormat, list, built)
 	var b strings.Builder
 	g.store(&b, s, lc.Out, g.rt()+makeList+list+rparen)
 	g.body.WriteString(b.String())
+}
+
+// pairsElem is the type a pairs element is read into and the element the list holds: the record itself, or for another package's record a struct of its hook's parameters and the hook's value (CODEGEN.md §2.8).
+func (g *gen) pairsElem(rec *ir.Record, elem string) (local, built string) {
+	if rec.Pkg == g.p.Name {
+		return g.typeName(rec), elem
+	}
+	b := g.bodyOf(rec)
+	params := g.hookParams(b)
+	fields, args := make([]string, len(params)), make([]string, len(params))
+	for i, p := range params {
+		fields[i], args[i] = p.name+space+p.typ, elem+dot+p.name
+	}
+	if len(b.hook) != pairFields { // check's E3316 leaves a pair record two scalar fields and no stored fn (WIRE.md §4.1)
+		g.failf(ErrMalformed, "%s: a pairs record of another package with stored fns", g.at)
+	}
+	local = fmt.Sprintf(anonStructFormat, strings.Join(fields, newline))
+	return local, addressOf(g.typeName(rec), g.qualify(rec.Pkg, g.names.RecordHook(rec).Name)+callArgs(args))
 }
 
 // storeInto reads raw into the slot's members on recv.
@@ -124,14 +154,17 @@ func (g *gen) readTable(f *finiteMethod) {
 	g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, lc.Path, lc.Obj, strconv.Quote(key))
 	g.printf(prefixFormat, prefix, g.locExpr(g.root().key(key).dot()))
 	g.printf(openObjectFormat, obj, lc.Err, g.helper(helperObject), lc.Name, prefix, r)
-	cell, last := lc.Out+dot+store, len(f.fn.Params)-1
-	for n, p := range f.fn.Params {
-		g.keysCheck(obj, prefixLoc(prefix), g.domainWires(p.Type))
+	dst, last := cellDst{cell: lc.Out + dot + store, pair: pair}, len(f.fn.Params)-1
+	if f.split { // a reader's local struct holds a hook's values and presence arrays (CODEGEN.md §5.14)
+		dst = cellDst{cell: dst.cell, ok: lc.Out + dot + f.res.OKStore}
+	}
+	for n := range f.fn.Params {
+		g.keysCheck(obj, prefixLoc(prefix), g.domainWires(f.fn, n))
 		i, k := g.temp(tempIndex), g.temp(tempKey)
-		g.printf(domainLoopFormat, i, k, strings.Join(g.domainKeys(p.Type), listSep))
-		cell += lbracket + i + rbracket
+		g.printf(domainLoopFormat, i, k, strings.Join(g.domainKeys(f.fn, n), listSep))
+		dst = dst.at(i)
 		if n == last {
-			g.readCell(f, obj, prefixLoc(prefix).arg(k), cell, pair)
+			g.readCell(f, obj, prefixLoc(prefix).arg(k), dst)
 			break
 		}
 		r, next, o := g.temp(tempRaw), g.temp(tempPrefix), g.temp(tempObject)
@@ -146,8 +179,24 @@ func (g *gen) readTable(f *finiteMethod) {
 // prefixLoc is the location of what the local prefix, a path with its dot, holds.
 func prefixLoc(prefix string) location { return location{format: verbString, args: []string{prefix}} }
 
+// cellDst is where readCell stores a cell: a cell of a table, {v, ok} when pair, or a value with its presence flag at ok.
+type cellDst struct {
+	cell, ok string
+	pair     bool
+}
+
+// at is the cell one level down, at index i.
+func (c cellDst) at(i string) cellDst {
+	c.cell += lbracket + i + rbracket
+	if c.ok != "" {
+		c.ok += lbracket + i + rbracket
+	}
+	return c
+}
+
 // readCell reads one cell of the level obj; null is none for an optional result (WIRE.md §5.11).
-func (g *gen) readCell(f *finiteMethod, obj string, loc location, cell string, pair bool) {
+func (g *gen) readCell(f *finiteMethod, obj string, loc location, dst cellDst) {
+	cell := dst.cell
 	lc := g.lc
 	prefix, key := g.splitLoc(loc)
 	r := g.temp(tempRaw)
@@ -157,10 +206,13 @@ func (g *gen) readCell(f *finiteMethod, obj string, loc location, cell string, p
 	} else {
 		g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, prefix, obj, key)
 	}
-	x := g.readValue(&b, leaf{t: f.res.T}, r, loc)
-	if pair {
+	x := g.readValue(&b, leaf{t: f.res.T, owned: f.res.owned}, r, loc)
+	switch {
+	case dst.pair:
 		fmt.Fprintf(&b, cellPairFormat, cell, pairValue, pairOK, x)
-	} else {
+	case dst.ok != "":
+		fmt.Fprintf(&b, assignPairFormat, cell, dst.ok, x, trueLit)
+	default:
 		fmt.Fprintf(&b, cellStoreFormat, cell, x)
 	}
 	if f.res.Optional {
@@ -170,18 +222,22 @@ func (g *gen) readCell(f *finiteMethod, obj string, loc location, cell string, p
 }
 
 // domainKeys are a finite parameter's wire keys in domain order (CODEGEN.md §5.10, WIRE.md §5.8).
-func (g *gen) domainKeys(t ir.TypeRef) []string {
-	keys := g.domainWires(t)
+func (g *gen) domainKeys(fn *ir.ExportFn, n int) []string {
+	keys := g.domainWires(fn, n)
 	for i, k := range keys {
 		keys[i] = strconv.Quote(k)
 	}
 	return keys
 }
 
-// domainWires are a finite parameter's wire keys in domain order, unquoted.
-func (g *gen) domainWires(t ir.TypeRef) []string {
+// domainWires are parameter n's wire keys in domain order, unquoted: a ref's are the ids of its table's id enum, in entry order (log-2026-10-06 "U2 fixes done").
+func (g *gen) domainWires(fn *ir.ExportFn, n int) []string {
+	t := fn.Params[n].Type
 	if t.Kind == types.Bool {
 		return []string{strconv.FormatBool(false), strconv.FormatBool(true)}
+	}
+	if t.Kind == types.Ref {
+		return g.refDomain(fn, n)
 	}
 	e, ok := t.Named.(*ir.Enum)
 	if !ok {
@@ -193,6 +249,21 @@ func (g *gen) domainWires(t ir.TypeRef) []string {
 		if e.JSONCodes {
 			keys[i] = strconv.FormatInt(m.Code, decimal)
 		}
+	}
+	return keys
+}
+
+// refDomain are the ids of a ref parameter's table, whose owner gives it an id enum; another table is E8013 or E8019 ForeignTableLookupParam at stage E.
+func (g *gen) refDomain(fn *ir.ExportFn, n int) []string {
+	t := fn.Params[n].Type
+	d, ok := tableDomain(fn, n)
+	if !isTableRef(t.Ref) || !g.enumIDs(t.Ref.Pkg) || !ok {
+		g.failf(ErrMalformed, "%s: a lookup parameter %s into a table without an id enum, read from data", g.at, fn.Params[n].Name)
+		return nil
+	}
+	keys := make([]string, len(d))
+	for i, v := range d {
+		keys[i] = as[value.Ref](g, v).Key.S
 	}
 	return keys
 }

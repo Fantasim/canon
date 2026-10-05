@@ -39,6 +39,8 @@ type gen struct {
 	walkSnap  bool            // that resolver finds entries in the snapshot, else its holder
 	pures     []*pure         // the translated fns written, which the conformance file tests
 	pkgNames  map[string]bool // package-level names a translated fn's locals avoid, built once
+	rtPkg     string          // the Canon package whose rt types the code being written holds: "" for this one (CODEGEN.md §2.8)
+	called    map[string]bool // the loader helpers the decoders written so far call
 }
 
 // Generate is the Go generator (ir.Generator): <gopkg>.gen.go, rt/rt.go verbatim, and <gopkg>_conformance_test.go when the package has a translated fn (§2.3, §6.3); p is narrowed by ir.CopyOf.
@@ -47,7 +49,8 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)
 	}
 	if e.Mode != ir.ModeBaked && e.Mode != ir.ModeData {
-		return nil, fmt.Errorf("%w: mode %s of %s", ErrUnsupported, modeText(e.Mode), e.Out)
+		// stage E refuses the other modes first: embedded and types are E8019 `unbuilt` (DECISIONS 320), none is check's E8009.
+		return nil, fmt.Errorf("%w: mode %s of %s", ErrMalformed, modeText(e.Mode), e.Out)
 	}
 	if !token.IsIdentifier(e.GoPackage) || e.GoImport == "" {
 		return nil, fmt.Errorf("%w: go emit %s without a package or an import path", ErrMalformed, e.Out)
@@ -71,7 +74,7 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 func newGen(p *ir.Package, e *ir.Emit) *gen {
 	g := &gen{
 		p: p, e: e, names: ir.PlanGoNames(p, e), imports: map[string]string{}, importOf: map[string]string{}, at: p.Name,
-		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{}, bodies: map[any]*body{},
+		byValue: map[string]*valueInfo{}, tableOf: map[*ir.Record]*ir.Value{}, bodies: map[any]*body{}, called: map[string]bool{},
 	}
 	g.data = g.names.Data().Local
 	g.taken = importedNames(p)
@@ -112,7 +115,7 @@ func (g *gen) printf(format string, args ...any) {
 
 // source is the formatted main file: every section in CODEGEN.md §2.7's order.
 func (g *gen) source() []byte {
-	sections := []func(){g.constants, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.defineTables, g.containers, g.values, g.fns, g.runtimeInputs}
+	sections := []func(){g.constants, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.rowTypes, g.hooks, g.defineTables, g.containers, g.values, g.fns, g.runtimeInputs}
 	if g.isData() {
 		sections = g.dataSections()
 	}
@@ -148,8 +151,30 @@ func (g *gen) use(importPath, name string) string {
 	return name
 }
 
+// rt is the rt package of the code being written: this package's, or under withRT another package's, imported as <gopkg>rt when the plan imports it (CODEGEN.md §2.8, §5.14).
 func (g *gen) rt() string {
+	if g.rtPkg == "" || g.rtPkg == g.p.Name {
+		return g.ownRT()
+	}
+	for _, imp := range g.names.RTImports() {
+		if imp.Pkg == g.rtPkg {
+			return g.use(imp.Path, imp.Name)
+		}
+	}
+	g.failf(ErrMalformed, "%s holds an rt type of %s, which the plan does not import", g.at, g.rtPkg)
+	return g.ownRT()
+}
+
+// ownRT is this package's rt: the helpers a loader calls, whatever class it reads.
+func (g *gen) ownRT() string {
 	return g.use(g.e.GoImport+rtDir, rtName)
+}
+
+// withRT makes pkg's rt the current one until the returned func restores the previous one.
+func (g *gen) withRT(pkg string) (restore func()) {
+	prev := g.rtPkg
+	g.rtPkg = pkg
+	return func() { g.rtPkg = prev }
 }
 
 // writeImports groups the standard library, then the others, each sorted (CODEGEN.md §2.8).

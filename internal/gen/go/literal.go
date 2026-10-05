@@ -43,7 +43,7 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 		g.fail(newDetail(errDependentNested, g.at, dependentNestedFormat, g.at))
 		return zeroLit
 	default:
-		g.refuseKind(t.Kind, typeRefused)
+		g.failKind(t.Kind)
 		return ""
 	}
 }
@@ -95,11 +95,11 @@ func (g *gen) kindLit(named ir.Type, index int) string {
 
 // keyLit is a ref's key: a table id constant, or a literal of the key's type (§5.8).
 func (g *gen) keyLit(t ir.TypeRef, k value.Key) string {
-	if isTableRef(t.Ref) {
+	if isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg) {
 		return g.qualify(t.Ref.Pkg, g.idMember(t.Ref.Elem, k.S))
 	}
 	switch {
-	case isFieldRef(t.Ref):
+	case isFieldRef(t.Ref), isTableRef(t.Ref): // a string id: a table field's, a data emit's (CODEGEN.md §5.3)
 		return strconv.Quote(k.S)
 	case t.Key == nil:
 		g.failf(ErrMalformed, noKeyType)

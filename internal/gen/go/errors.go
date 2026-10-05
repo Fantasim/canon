@@ -11,8 +11,6 @@ import (
 var (
 	// ErrTarget is an emit whose target is not go.
 	ErrTarget = errors.New("gogen: not a go emit")
-	// ErrUnsupported is a mode or construct this generator does not emit yet.
-	ErrUnsupported = errors.New("gogen: not supported")
 	// ErrMalformed is an IR that stage E should not have produced.
 	ErrMalformed = errors.New("gogen: malformed IR")
 	// errNameCollision is two generated names equal in one Go scope: stage E reports it first (malformed IR).
@@ -37,26 +35,25 @@ func (e *DetailError) Error() string { return e.err.Error() + ": " + e.message }
 
 func (e *DetailError) Unwrap() error { return e.err }
 
-// What data mode refuses (ErrUnsupported, decision 124), finds malformed (ErrMalformed: stage E refuses it first) and the collision its name check finds.
+// What data mode finds malformed (ErrMalformed: stage E refuses it first, DECISIONS 320) and the collision its name check finds.
 const (
 	packageFnFormat      = "package-level export fn %s in data mode (CODEGEN.md §5.10)"
 	lookupParamFormat    = "%s: a finite parameter that is not an enum or a Bool, in data mode (CODEGEN.md §5.10)"
 	lookupRefFormat      = "%s: a finite-parameter method whose result holds a ref resolved at load, in data mode"
 	dataValueFormat      = "data value %s that is not a table, a keyed list or a record (CODEGEN.md §2.2)"
-	foreignClassFormat   = "a record or variant of another package, %s, read by a loader at %s (its decoder is unexported there)"
 	unionFormat          = "%s: a literal union over a ref"
 	unionMalformedFormat = "%s: a literal union whose other arm is not string-wired"
 	inlineFormat         = "%s: an optional or non-variant @json(inline) field, in data mode"
 	foldFormat           = "%s: an inline variant key equal to another key of its parent but for letter case, in data mode"
 	noneMarkerFormat     = "%s: the none marker %s, a non-empty object or array, in data mode"
 	dataCollisionFormat  = "%s declares %s twice in data mode"
+	caseNoVariantFormat  = "a case %s without its variant"
 )
 
 // The causes of the dependent-type refusals, each ErrMalformed: a caller tells them apart with errors.Is (go.md §3).
 var (
 	errDependentNoDisc   = fmt.Errorf("%w", ErrMalformed)
 	errDependentDisc     = fmt.Errorf("%w", ErrMalformed)
-	errDependentForeign  = fmt.Errorf("%w", ErrMalformed)
 	errDependentNested   = fmt.Errorf("%w", ErrMalformed)
 	errDependentValue    = fmt.Errorf("%w", ErrMalformed)
 	errDependentNoBranch = fmt.Errorf("%w", ErrMalformed)
@@ -78,19 +75,11 @@ const (
 const (
 	dependentNoDiscFormat   = "%s: a dependent type without its Bool or enum discriminant"
 	dependentDiscFormat     = "%s: a dependent value whose discriminant is not read from earlier required fields of its record (ir.DiscFields)"
-	dependentForeignFormat  = "%s: a dependent value of another package's type, whose decoder and fields are unexported there"
 	dependentNestedFormat   = "%s: a dependent value outside a field of its record and that field's list elements"
 	dependentValueFormat    = "%s: a define branch of a dependent type whose define table or key the IR does not hold"
 	dependentNoBranchFormat = "%s: a dependent type every arm of which is Never"
 	dependentNeverFormat    = "%s: a dependent value whose discriminant selects a Never arm"
 	dependentUnionFormat    = "%s: a literal union over a dependent type, in data mode"
-)
-
-// The kinds stage E refuses (E8019) where gen/go writes a type, a value literal, a value it reads or a constant: meeting one there is ErrMalformed (CODEGEN.md §5.6).
-var (
-	typeRefused  = map[types.Kind]bool{types.Optional: true}
-	readRefused  = map[types.Kind]bool{types.Optional: true, types.Map: true, types.DepMap: true, types.Case: true}
-	constRefused = map[types.Kind]bool{types.Record: true, types.Variant: true, types.Case: true}
 )
 
 // Messages of the generator's errors.

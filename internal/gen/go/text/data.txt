@@ -65,7 +65,7 @@ func (self *{{$.Name}}) {{.Method}}(key {{.Type}}) (*{{$.Elem}}, bool) {
 			return {{.L.Err}}
 		}
 {{- end}}
-		if {{.L.Err}} := {{.Decode}}({{.L.Path}}, {{.FMT}}.Sprintf("rows[%d].", {{.L.I}}), {{.L.Raw}}, &{{.L.Values}}[{{.L.I}}]); {{.L.Err}} != nil {
+		if {{.L.Err}} := {{.Decode}}({{.L.Path}}, {{.FMT}}.Sprintf("rows[%d].", {{.L.I}}), {{.L.Raw}}, &{{.L.Values}}[{{.L.I}}]{{.Target}}); {{.L.Err}} != nil {
 			return {{.L.Err}}
 		}
 {{- if .Table}}

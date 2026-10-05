@@ -54,6 +54,20 @@ func (self *Gate) Q() q.Q { return self.q }
 
 func (self *Gate) D() d.D { return self.d }
 
+// Make_Gate is for generated code.
+func Make_Gate(q q.Q, d d.D) Gate {
+	return Gate{
+		q: q,
+		d: d,
+	}
+}
+
+// MakeEntry_Gate is for generated code.
+func MakeEntry_Gate(record Gate, id GateID, retired bool) Gate {
+	record.id, record.retired = id, retired
+	return record
+}
+
 type Gates struct {
 	rows []Gate
 }

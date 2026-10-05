@@ -1,0 +1,4 @@
+{"$schema": "game.core.LevelRange@00000002", "rows": [
+  {"$id": "low", "min": 1, "max": 5, "labels": ["a"], "tone": "soft", "status": "open", "$width": 4, "$scaled": {"false": 4, "true": 8}, "$labelFor": {"false": null, "true": "L"}, "$rankFor": {"false": null, "true": "r1"}, "$statusFor": {"false": "open", "true": "closed"}, "$bonusFor": {"open": 1, "closed": 2}, "$ranksFor": {"open": null, "closed": ["r1", "r2"]}},
+  {"$id": "high", "$retired": true, "min": 6, "max": 9, "labels": [], "tone": "loud", "status": "closed", "$width": 3, "$scaled": {"false": 3, "true": 6}, "$labelFor": {"false": null, "true": "L"}, "$rankFor": {"false": null, "true": "r1"}, "$statusFor": {"false": "open", "true": "closed"}, "$bonusFor": {"open": 1, "closed": 2}, "$ranksFor": {"open": null, "closed": ["r1", "r2"]}}
+]}

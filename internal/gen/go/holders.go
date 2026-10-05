@@ -18,6 +18,12 @@ func (g *gen) indexVariants() {
 			}
 		}
 	}
+	u := g.names.Foreign()
+	for _, class := range u.Built() {
+		if c, ok := class.(*ir.Case); ok && u.VariantOf(c) != nil {
+			g.variantOf[c] = u.VariantOf(c)
+		}
+	}
 }
 
 // slotTarget is the value a resolved slot's ref points into, by the ref's own value name (CODEGEN.md §5.8).

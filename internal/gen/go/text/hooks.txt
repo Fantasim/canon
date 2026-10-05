@@ -1,0 +1,34 @@
+{{define "hook"}}// {{.Name}} is for generated code.
+func {{.Name}}({{.Params}}) {{.Type}} {
+{{.Pre}}return {{.Ret}}
+}
+
+{{end}}
+
+{{define "row"}}// {{.Name}} is a row holding a {{.RecordType}}.
+type {{.Name}} struct {
+	{{.Record}} {{.RecordType}}
+	{{.ID}} {{.IDType}}
+	{{.Retired}} bool
+}
+
+// {{.IDGetter}} is the row's key.
+func (self *{{.Name}}) {{.IDGetter}}() {{.IDType}} { return self.{{.ID}} }
+
+// {{.RetiredGetter}} reports whether the row is retired.
+func (self *{{.Name}}) {{.RetiredGetter}}() bool { return self.{{.Retired}} }
+
+// {{.RecordGetter}} is the row's {{.RecordType}}.
+func (self *{{.Name}}) {{.RecordGetter}}() *{{.RecordType}} { return &self.{{.Record}} }
+
+{{end}}
+
+{{define "reader"}}func {{.Func}}({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.Raw}}, {{.Extra}}{{.L.Dst}} *{{.Type}}) error {
+{{end}}
+
+{{define "readerOut"}}{{.L.Out}} := &struct {
+{{- range .Members}}
+	{{.Name}} {{.Type}}
+{{- end}}
+}{}
+{{end}}

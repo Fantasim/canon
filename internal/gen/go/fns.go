@@ -22,18 +22,24 @@ type finiteMethod struct {
 	res     *slot    // how a cell is read, like a getter of the result type
 	pair    bool     // cells are {v, ok}: an optional result nil cannot mark
 	dims    []int
-	method  bool // a record's or case's method, whose ref result also gets its key getter
+	method  bool   // a record's or case's method, whose ref result also gets its key getter
+	split   bool   // a make hook takes the pair cells as a values array and a presence array (CODEGEN.md §5.14)
+	entry   string // the owner's entry getter of a ref result it resolves, which a reader checks (§2.8)
 }
 
 func (g *gen) newFinite(origin string, fn *ir.ExportFn) *finiteMethod {
-	names := g.names.Finite(fn)
+	return g.newFiniteFrom(origin, fn, g.names.Finite(fn))
+}
+
+// newFiniteFrom is a finite method laid out as names says: this package's plan, or the owner's layout of another package's method (CODEGEN.md §5.14).
+func (g *gen) newFiniteFrom(origin string, fn *ir.ExportFn, names ir.GoFinite) *finiteMethod {
 	f := &finiteMethod{
 		fn: fn, origin: origin, name: names.Name, store: names.Store, read: selfDot + names.Store,
 		params: names.Params, indexes: names.Indexes, res: g.newSlot(origin, names.Result),
 	}
 	g.setPair(f)
-	for _, p := range fn.Params {
-		f.dims = append(f.dims, g.domainSize(origin, p.Type))
+	for i, p := range fn.Params {
+		f.dims = append(f.dims, g.domainSize(origin, fn, i, p.Type))
 	}
 	return f
 }
@@ -43,8 +49,8 @@ func (g *gen) setPair(f *finiteMethod) {
 	f.pair = f.res.Optional && !strings.HasPrefix(g.cellType(f), pointer)
 }
 
-// domainSize is how many values a finite parameter has (CODEGEN.md §5.10, domain order).
-func (g *gen) domainSize(origin string, t ir.TypeRef) int {
+// domainSize is how many values finite parameter i of fn has (CODEGEN.md §5.10, domain order): a table of another package's baked emit counts the domain its precomputed tables hold.
+func (g *gen) domainSize(origin string, fn *ir.ExportFn, i int, t ir.TypeRef) int {
 	switch {
 	case t.Kind == types.Bool:
 		return boolDomain
@@ -52,16 +58,28 @@ func (g *gen) domainSize(origin string, t ir.TypeRef) int {
 		if e, ok := t.Named.(*ir.Enum); ok {
 			return len(e.Members)
 		}
-	case t.Kind == types.Ref && isTableRef(t.Ref):
+	case t.Kind == types.Ref && isTableRef(t.Ref) && t.Ref.Pkg == g.p.Name:
 		for _, v := range g.p.Values {
-			if v.Name == t.Ref.Value && t.Ref.Pkg == g.p.Name {
+			if v.Name == t.Ref.Value {
 				return len(v.IDs)
 			}
 		}
+	case t.Kind == types.Ref && isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg):
+		if d, ok := tableDomain(fn, i); ok {
+			return len(d)
+		}
 	}
-	// a lookup's parameters are finite (a Bool, an enum, a table ref), and a foreign table's is E8019 ForeignTableLookupParam.
-	g.failf(ErrMalformed, "a parameter of %s that is not a Bool, an enum or a table of this package", origin)
+	// a lookup's parameters are finite (a Bool, an enum, a table ref), and a foreign table's without an id enum is E8019 ForeignTableLookupParam.
+	g.failf(ErrMalformed, "a parameter of %s that is not a Bool, an enum or a table with an id enum", origin)
 	return 0
+}
+
+// tableDomain is domain i of fn, stage E's whatever receivers exist; for a ref into a table with an id enum, its entries in entry order (CODEGEN.md §5.10; log-2026-10-06 "U5 review FAIL" 2).
+func tableDomain(fn *ir.ExportFn, i int) ([]value.Value, bool) {
+	if i >= len(fn.Domains) {
+		return nil, false
+	}
+	return fn.Domains[i], true
 }
 
 // cellType is what one cell holds: the result as a getter returns it, entries resolved.
@@ -100,36 +118,75 @@ func (g *gen) storageType(f *finiteMethod) string {
 // parameter; a precomputed fn's single result is the cell itself. typed reports whether the
 // expression already carries its own type (so a caller need not repeat it).
 func (g *gen) cellArray(f *finiteMethod, t *ir.LookupTable) (lit string, typed bool) {
+	if !g.checkTable(f, t) {
+		return nilLit, false
+	}
+	cell := func(v value.Value) string { return g.cell(f, v) }
+	if len(f.dims) == 0 && !f.pair {
+		return g.nest(f, t.Cells, 0, cell), false
+	}
+	return g.storageType(f) + g.nest(f, t.Cells, 0, cell), true
+}
+
+// splitCells are a hook's arguments of a lookup's pair cells: the values, zero for none, then the presence flags (CODEGEN.md §5.14).
+func (g *gen) splitCells(f *finiteMethod, t *ir.LookupTable) []string {
+	if !g.checkTable(f, t) {
+		return []string{nilLit, nilLit}
+	}
+	values := func(v value.Value) string {
+		if _, none := v.(*value.None); none {
+			return g.cellZero(f)
+		}
+		return g.cell(&finiteMethod{res: f.res}, v)
+	}
+	oks := func(v value.Value) string {
+		_, none := v.(*value.None)
+		return strconv.FormatBool(!none)
+	}
+	return []string{g.dims(f) + g.cellType(f) + g.nest(f, t.Cells, 0, values), g.dims(f) + goBool + g.nest(f, t.Cells, 0, oks)}
+}
+
+// cellZero is the zero a values array holds for none: an empty list, a zero key, a zero scalar.
+func (g *gen) cellZero(f *finiteMethod) string {
+	s := f.res
+	switch {
+	case s.List:
+		return g.cellType(f) + emptyBraces
+	case s.Ref != nil:
+		return g.zeroKeyOf(s.refType())
+	}
+	return g.hookZero(s, member{s.Store, g.cellType(f)})
+}
+
+// checkTable refuses a lookup table whose cells or domains do not match f's dimensions.
+func (g *gen) checkTable(f *finiteMethod, t *ir.LookupTable) bool {
 	want := 1
 	for _, n := range f.dims {
 		want *= n
 	}
 	if t == nil || len(t.Cells) != want || len(t.Domains) != len(f.dims) {
 		g.failf(ErrMalformed, "the lookup table of %s does not have %d cells", f.origin, want)
-		return nilLit, false
+		return false
 	}
 	for i, d := range t.Domains {
 		if len(d) != f.dims[i] {
 			g.failf(ErrMalformed, "domain %d of %s has %d values, not %d", i, f.origin, len(d), f.dims[i])
 		}
 	}
-	if len(f.dims) == 0 && !f.pair {
-		return g.nest(f, t.Cells, 0), false
-	}
-	return g.storageType(f) + g.nest(f, t.Cells, 0), true
+	return true
 }
 
-func (g *gen) nest(f *finiteMethod, cells []value.Value, dim int) string {
+func (g *gen) nest(f *finiteMethod, cells []value.Value, dim int, cell func(value.Value) string) string {
 	switch {
 	case dim == len(f.dims):
-		return g.cell(f, cells[0])
+		return cell(cells[0])
 	case f.dims[dim] == 0:
 		return emptyBraces
 	}
 	stride := len(cells) / f.dims[dim]
 	items := make([]string, f.dims[dim])
 	for i := range items {
-		items[i] = g.nest(f, cells[i*stride:(i+1)*stride], dim+1)
+		items[i] = g.nest(f, cells[i*stride:(i+1)*stride], dim+1, cell)
 	}
 	if dim+1 < len(f.dims) {
 		return lbrace + newline + strings.Join(items, listEnd) + listEnd + rbrace

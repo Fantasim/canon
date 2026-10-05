@@ -17,6 +17,7 @@ type slot struct {
 	doc    string
 	fn     *ir.ExportFn // the export fn of a precomputed result
 	rec    *ir.Record   // the owning record of an input field's slot (CODEGEN.md §5.12); nil otherwise
+	owned  bool         // another package's ref its make hook resolves: a reader refuses a key naming no entry (CODEGEN.md §2.8)
 }
 
 // member is one storage field: a struct field or a member of the baked data.
@@ -66,9 +67,9 @@ func (g *gen) mainType(s *slot) string {
 	case s.Ref == nil:
 		return g.goType(s.T)
 	case s.List:
-		return g.rt() + listType + lbracket + pointer + g.typeName(s.Ref.Elem) + rbracket
+		return g.rt() + listType + lbracket + pointer + g.entryType(s.Ref) + rbracket
 	}
-	return pointer + g.typeName(s.Ref.Elem)
+	return pointer + g.entryType(s.Ref)
 }
 
 func (g *gen) slotKeyType(s *slot) string {
@@ -207,7 +208,7 @@ func (g *gen) mainExpr(s *slot, v value.Value) string {
 		return g.resolvedExpr(s.Ref, as[value.Ref](g, v).Key)
 	}
 	elems := as[value.List](g, v).Elems
-	elem := pointer + g.typeName(s.Ref.Elem)
+	elem := pointer + g.entryType(s.Ref)
 	if len(elems) == 0 {
 		return g.rt() + listType + lbracket + elem + rbracket + emptyBraces
 	}

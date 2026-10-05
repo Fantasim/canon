@@ -22,6 +22,7 @@ type mapWalk struct {
 // readMap reads an object as an rt.Map, its members in file order, each key as the wire key WIRE.md §5.8 gives its type (CODEGEN.md §5.9, DECISIONS 312).
 func (g *gen) readMap(b *strings.Builder, l leaf, raw string, loc location) string {
 	key, elem := g.sub(l.t.Key), g.sub(l.t.Elem)
+	g.called[helperMap] = true
 	m := mapRead{
 		Keys: g.temp(tempKey), KRaws: g.temp(tempRaw), Vals: g.temp(tempValue), Err: g.lc.Err, Name: g.lc.Name,
 		Loc: g.locExpr(loc.dot()), Raw: raw, KS: g.temp(tempKey), VS: g.temp(tempValue), KT: g.goType(key), VT: g.goType(elem),

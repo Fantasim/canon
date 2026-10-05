@@ -95,6 +95,19 @@ func (self *Rank) Retired() bool { return self.retired }
 
 func (self *Rank) Label() string { return self.label }
 
+// Make_Rank is for generated code.
+func Make_Rank(label string) Rank {
+	return Rank{
+		label: label,
+	}
+}
+
+// MakeEntry_Rank is for generated code.
+func MakeEntry_Rank(record Rank, id RankID, retired bool) Rank {
+	record.id, record.retired = id, retired
+	return record
+}
+
 type Ranks struct {
 	rows []Rank
 }

@@ -27,7 +27,7 @@ func (g *gen) constant(c *ir.Const) {
 	case types.Bool, types.String, types.LitUnion, types.Duration, types.Enum:
 		g.printf(constDeclFormat, name, g.constExpr(c))
 	default:
-		g.refuseKind(c.Type.Kind, constRefused)
+		g.failKind(c.Type.Kind)
 	}
 }
 

@@ -41,24 +41,32 @@ func (g *gen) tableContainer(v *ir.Value) {
 		g.dataTable(v, rec)
 		return
 	}
-	name, elem := g.names.ContainerName(v), g.goName(rec)
+	name, elem := g.names.ContainerName(v), g.rowElem(rec, true)
 	g.body.WriteString(docFor(name, v.Doc))
 	g.printf(tableContainerFormat, name, elem, g.use(iterPkg, iterPkg), g.idType(rec),
 		ir.GoRows, ir.GoLen, ir.GoAt, ir.GoAll, ir.GoFind, ir.GoGet)
 	for _, f := range rec.Fields {
 		if f.Stable {
-			g.findBy(v, elem, f)
+			g.findBy(v, rec, elem, f)
 		}
 	}
 }
 
 // findBy is FindBy<F> for a @stable field: a map index built once by the builder replaces a scan.
-func (g *gen) findBy(v *ir.Value, elem string, f *ir.Field) {
+func (g *gen) findBy(v *ir.Value, rec *ir.Record, elem string, f *ir.Field) {
 	defer g.enter(v.Name + dot + f.Name)()
 	container, ft := g.names.ContainerName(v), g.goType(f.Type)
 	index := g.names.FindByIndex(v, f)
-	g.printf(findByIndexFormat, index, g.use(syncPkg, syncPkg), ft, g.names.AccessorName(v), g.names.Slot(f).Store, ir.GoRows)
+	g.printf(findByIndexFormat, index, g.use(syncPkg, syncPkg), ft, g.names.AccessorName(v), g.fieldRead(rec, f), ir.GoRows)
 	g.printf(findByFormat, container, g.names.FindByName(f), ft, elem, index, ir.GoRows)
+}
+
+// fieldRead reads field f of an entry of rec: its storage, or another package's record's getter, which a row forwards (CODEGEN.md §5.9).
+func (g *gen) fieldRead(rec *ir.Record, f *ir.Field) string {
+	if rec.Pkg != g.p.Name {
+		return g.names.Slot(f).Getter + callSuffix
+	}
+	return g.names.Slot(f).Store
 }
 
 func (g *gen) keyedContainer(v *ir.Value) {
@@ -121,7 +129,9 @@ func (g *gen) allocate(v *ir.Value) {
 	n := strconv.Itoa(len(g.entries(v)))
 	switch {
 	case v.Type.Kind == types.Table:
-		g.printf("%s = make([]%s, %s)\n", store, g.typeName(g.sub(v.Type.Elem).Named), n)
+		if rec, ok := g.sub(v.Type.Elem).Named.(*ir.Record); ok {
+			g.printf("%s = make([]%s, %s)\n", store, g.rowElem(rec, true), n)
+		}
 	case isContainer(v):
 		key := g.keyField(v.Type)
 		keys := make([]string, 0, len(g.entries(v)))
@@ -148,10 +158,14 @@ func (g *gen) fill(v *ir.Value) {
 	}
 	for i, r := range g.entries(v) {
 		row := store + dot + ir.GoRows + lbracket + strconv.Itoa(i) + rbracket
-		if v.Type.Kind != types.Table {
-			row = pointer + store + atCall + strconv.Itoa(i) + rparen
+		switch {
+		case v.Type.Kind != types.Table:
+			g.printf("%s = %s\n", pointer+store+atCall+strconv.Itoa(i)+rparen, g.recordLit(rec, r))
+		case rec.Pkg != g.p.Name: // this package's row of another package's record (CODEGEN.md §5.9)
+			g.printf("%s = %s\n", row, g.foreignRowLit(rec, r, g.idMember(rec, r.Ident.Key.S)))
+		default:
+			g.printf("%s = %s\n", row, g.recordLit(rec, r))
 		}
-		g.printf("%s = %s\n", row, g.recordLit(rec, r))
 	}
 }
 

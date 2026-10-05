@@ -134,6 +134,11 @@ func (self *Gen) Required() int64 {
 	return input_Gen_required
 }
 
+// Make_Gen is for generated code.
+func Make_Gen() Gen {
+	return Gen{}
+}
+
 var (
 	input_Gen_flag         bool
 	input_Gen_flag_OK      bool

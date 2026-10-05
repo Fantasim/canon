@@ -136,6 +136,48 @@ func (self *Other) Retired() bool { return self.retired }
 
 func (self *Other) Label() string { return self.label }
 
+// Make_Status is for generated code.
+func Make_Status(label string, next [2]StatusID, next_ok [2]bool, peers [2]rt.List[StatusID], other [2]OtherID) Status {
+	self := Status{
+		label: label,
+		other: other,
+	}
+	for c0 := range self.next {
+		if next_ok[c0] {
+			self.next[c0] = GetStatuses().Get(next[c0])
+		}
+	}
+	for c0 := range self.peers {
+		{
+			entries := make([]*Status, peers[c0].Len())
+			for i := range entries {
+				entries[i] = GetStatuses().Get(peers[c0].At(i))
+			}
+			self.peers[c0] = rt.MakeList(entries)
+		}
+	}
+	return self
+}
+
+// Make_Other is for generated code.
+func Make_Other(label string) Other {
+	return Other{
+		label: label,
+	}
+}
+
+// MakeEntry_Status is for generated code.
+func MakeEntry_Status(record Status, id StatusID, retired bool) Status {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Other is for generated code.
+func MakeEntry_Other(record Other, id OtherID, retired bool) Other {
+	record.id, record.retired = id, retired
+	return record
+}
+
 type Statuses struct {
 	rows []Status
 }

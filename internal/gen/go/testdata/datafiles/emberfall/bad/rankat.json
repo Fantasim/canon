@@ -1,0 +1,12 @@
+{"$schema": "game.world.Zone@00000001", "rows": [
+  {"$id": "forest",
+   "levels": {"min": 1, "max": 5, "labels": ["a"], "tone": "soft", "status": "open", "$width": 4, "$scaled": {"false": 4, "true": 8}, "$labelFor": {"false": null, "true": "L"}, "$rankFor": {"false": null, "true": "r1"}, "$statusFor": {"false": "open", "true": "closed"}, "$bonusFor": {"open": 1, "closed": 2}, "$ranksFor": {"open": null, "closed": ["r1", "r2"]}},
+   "bands": [{"min": 2, "max": 3, "labels": [], "tone": "loud", "status": "closed", "hint": "low", "$width": 1, "$scaled": {"false": 1, "true": 2}, "$labelFor": {"false": null, "true": "L"}, "$rankFor": {"false": null, "true": "r1"}, "$statusFor": {"false": "open", "true": "closed"}, "$bonusFor": {"open": 1, "closed": 2}, "$ranksFor": {"open": null, "closed": ["r1", "r2"]}}],
+   "named": {"north": {"min": 4, "max": 6, "labels": ["n"], "tone": "soft", "status": "open", "$width": 2, "$scaled": {"false": 2, "true": 4}, "$labelFor": {"false": null, "true": "L"}, "$rankFor": {"false": null, "true": "r1"}, "$statusFor": {"false": "open", "true": "closed"}, "$bonusFor": {"open": 1, "closed": 2}, "$ranksFor": {"open": null, "closed": ["r1", "r2"]}}},
+   "reward": {"type": "coins", "amount": 3, "rank": "r1", "$rankAt": {"false": null, "true": "zz"}},
+   "kind": "word",
+   "param": "wind",
+   "markers": {"gate": {"code": "g", "heal": 5}, "door": {"$retired": true, "code": "d", "heal": 1}},
+   "region": {"name": "r", "spots": {"a": {"x": 1}, "b": {"$retired": true, "x": 2}}},
+   "$best": {"min": 9, "max": 12, "labels": [], "tone": "loud", "status": "closed", "$width": 3, "$scaled": {"false": 3, "true": 6}, "$labelFor": {"false": null, "true": "L"}, "$rankFor": {"false": null, "true": "r1"}, "$statusFor": {"false": "open", "true": "closed"}, "$bonusFor": {"open": 1, "closed": 2}, "$ranksFor": {"open": null, "closed": ["r1", "r2"]}}}
+]}

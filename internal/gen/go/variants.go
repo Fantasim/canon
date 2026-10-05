@@ -1,9 +1,25 @@
 package gogen
 
 import (
+	_ "embed"
+
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+)
+
+// The fmt formats of enums' Members and @codes pair (CODEGEN.md §5.2), variants and dependent types (§5.5, §5.6), whose names are ir's.
+var (
+	//go:embed text/members.txt
+	membersFormat string
+	//go:embed text/codes.txt
+	codesFormat string
+	//go:embed text/variant.txt
+	variantFormat string
+	//go:embed text/as_case.txt
+	asCaseFormat string
+	//go:embed text/define_variant.txt
+	defineVariantFormat string
 )
 
 // types writes records and variants in declaration order (CODEGEN.md §2.7).
@@ -59,8 +75,7 @@ func (g *gen) variantExpr(t ir.TypeRef, r *value.Record) string {
 		return nilLit
 	}
 	if v.Pkg != g.p.Name {
-		// E8019 CrossPackageBakedValue already refuses this at stage E: unreachable.
-		g.failf(ErrMalformed, "a baked value of %s, a variant of another package", v.QName())
+		return g.foreignVariantExpr(t, v, v.Cases[ct.Index], r)
 	}
 	c := v.Cases[ct.Index]
 	name := g.goName(v)

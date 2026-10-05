@@ -57,6 +57,32 @@ func (self *Shelf) FavID() SlotID { return self.fav_id }
 // NextID: The next slot, if any.
 func (self *Shelf) NextID() (SlotID, bool) { return self.next_id, self.next_ok }
 
+// Make_Slot is for generated code.
+func Make_Slot(n int64) Slot {
+	return Slot{
+		n: n,
+	}
+}
+
+// Make_Shelf is for generated code.
+func Make_Shelf(title string, slots rt.KeyedList[SlotID, Slot], spare rt.KeyedList[SlotID, Slot], spare_ok bool, fav_id SlotID, next_id SlotID, next_ok bool) Shelf {
+	return Shelf{
+		title:    title,
+		slots:    slots,
+		spare:    spare,
+		spare_ok: spare_ok,
+		fav_id:   fav_id,
+		next_id:  next_id,
+		next_ok:  next_ok,
+	}
+}
+
+// MakeEntry_Slot is for generated code.
+func MakeEntry_Slot(record Slot, id SlotID, retired bool) Slot {
+	record.id, record.retired = id, retired
+	return record
+}
+
 func LoadShelf(path string) (*Shelf, error) {
 	out := &Shelf{}
 	if err := loadShelf(path, out); err != nil {

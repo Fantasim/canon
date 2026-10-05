@@ -38,7 +38,7 @@ func (g *gen) goType(t ir.TypeRef) string {
 	case types.Ref:
 		return g.keyType(t)
 	default:
-		g.refuseKind(t.Kind, typeRefused)
+		g.failKind(t.Kind)
 		return ""
 	}
 }
@@ -51,18 +51,9 @@ func kindText(k types.Kind) string {
 	return unknownKind
 }
 
-// failKind refuses an untranslatable kind of the item being written, the Subject (go.md §3).
+// failKind refuses a kind of the item being written, the Subject (go.md §3), that gen/go has no form for there: stage E refuses every one first (E8019 for an optional element, a map or a case it does not read, a record constant; E8012 for Never, a Range, a function, a pair, a define record; E3801 a Never field; check's input and portable-subset rules, E19xx and E9xxx), so meeting one is malformed IR (DECISIONS 320).
 func (g *gen) failKind(k types.Kind) {
-	g.fail(newDetail(ErrUnsupported, g.at, kindFormat, g.at, kindText(k)))
-}
-
-// refuseKind is failKind, but ErrMalformed for a kind stage E already refuses at this position (E8019).
-func (g *gen) refuseKind(k types.Kind, refused map[types.Kind]bool) {
-	if refused[k] {
-		g.fail(newDetail(ErrMalformed, g.at, kindFormat, g.at, kindText(k)))
-		return
-	}
-	g.failKind(k)
+	g.fail(newDetail(ErrMalformed, g.at, kindFormat, g.at, kindText(k)))
 }
 
 // modeText names an emit mode in a message: an out-of-range mode never indexes modeNames (CODEGEN.md §2.1).

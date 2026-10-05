@@ -63,17 +63,6 @@ func dataRefusals() map[string]func(*ir.Package) {
 		"a list of optionals": func(p *ir.Package) {
 			addField(p, wired("o", "o", "", listT(optT(intT))))
 		},
-		"a record of another package": func(p *ir.Package) {
-			other := &ir.Record{Pkg: "other", Name: "O"}
-			p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{goData("other", "other")}}}
-			addField(p, wired("o", "o", "", typed(other, types.Record)))
-		},
-		"a map of another package's records": func(p *ir.Package) {
-			other := &ir.Record{Pkg: "other", Name: "O"}
-			p.Imports = []*ir.PackageRef{{Name: "other", Emits: []*ir.Emit{goData("other", "other")}}}
-			elem := typed(other, types.Record)
-			addField(p, wired("o", "o", "", ir.TypeRef{Kind: types.Map, Key: &strT, Elem: &elem})) // E8019 ForeignDataRecord (E8019_97)
-		},
 		"a non-string literal union": func(p *ir.Package) {
 			addField(p, wired("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &intT, Literals: []string{"none"}}))
 		},
@@ -94,30 +83,17 @@ func dataRefusals() map[string]func(*ir.Package) {
 	}
 }
 
-// Each refusal names its cause through ErrUnsupported (decision 124); one stage E refuses first (E8013, E8015, E8019, check's E3316) is ErrMalformed (decision 37).
+// Each refusal is one stage E (E8013, E8015, E8019) or check (E3316) refuses first, so it is ErrMalformed (decision 37, DECISIONS 320).
 func TestDataRefusals(t *testing.T) {
 	refusals := dataRefusals()
 	for _, name := range slices.Sorted(maps.Keys(refusals)) {
 		p := dataThing()
 		refusals[name](p)
 		_, err := gogen.Generate(p, p.Emits[0])
-		want := gogen.ErrUnsupported
-		if dataUnreachable[name] {
-			want = gogen.ErrMalformed
-		}
-		if !errors.Is(err, want) {
-			t.Errorf("%s: got %v, want %v", name, err, want)
+		if !errors.Is(err, gogen.ErrMalformed) {
+			t.Errorf("%s: got %v, want ErrMalformed", name, err)
 		}
 	}
-}
-
-// dataUnreachable are the refusals stage E already reports: E8013 package and refParam, E8015, E3316, and E8019.
-var dataUnreachable = map[string]bool{
-	"a package-level stored fn": true, "a lookup over a table's ref": true, "a data value that is a plain list": true,
-	"an optional inline variant": true, "an inline variant key equal to a parent key but for letter case": true,
-	"a list of optionals": true, "a lookup whose record result holds a resolved ref": true, "a dependent map field": true,
-	"a record of another package": true, "a map of another package's records": true, "a table-typed field": true, "a non-string literal union": true,
-	"a union over a string-keyed ref": true,
 }
 
 // CODEGEN.md §3.5, decision 203: `const STORE` is Store, the store variable, a plan Problem, ErrMalformed.

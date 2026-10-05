@@ -440,6 +440,103 @@ func (self *ShapeSquare) Side() int64 { return self.side }
 
 func (self *ShapeSquare) Label() (string, bool) { return self.label, self.label_ok }
 
+// Make_Potion is for generated code.
+func Make_Potion(id string, heal int64, cooldown time.Duration, ratio float64, weight float32, element Element, tags rt.List[string], bonus rt.Map[string, int64], note string, note_ok bool, level int16, level_ok bool, parent_id string, parent_ok bool, shape *Shape, extra *Shape, default_ bool, apiKey string, hitPoints uint64, runes_ids rt.List[RuneID], grades rt.List[rt.List[Grade]], isStrong bool, canUse [3][2]bool, costIn [3]int64, costIn_ok [3]bool) Potion {
+	self := Potion{
+		id:        id,
+		heal:      heal,
+		cooldown:  cooldown,
+		ratio:     ratio,
+		weight:    weight,
+		element:   element,
+		tags:      tags,
+		bonus:     bonus,
+		note:      note,
+		note_ok:   note_ok,
+		level:     level,
+		level_ok:  level_ok,
+		shape:     shape,
+		extra:     extra,
+		default_:  default_,
+		apiKey:    apiKey,
+		hitPoints: hitPoints,
+		runes_ids: runes_ids,
+		grades:    grades,
+		isStrong:  isStrong,
+		canUse:    canUse,
+	}
+	if parent_ok {
+		self.parent, _ = GetPotions().Find(parent_id)
+	}
+	{
+		entries := make([]*Rune, runes_ids.Len())
+		for i := range entries {
+			entries[i] = GetRunes().Get(runes_ids.At(i))
+		}
+		self.runes = rt.MakeList(entries)
+	}
+	for c0 := range self.costIn {
+		self.costIn[c0].v, self.costIn[c0].ok = costIn[c0], costIn_ok[c0]
+	}
+	return self
+}
+
+// Make_Rune is for generated code.
+func Make_Rune(code uint16, label string, mood Feeling) Rune {
+	return Rune{
+		code:  code,
+		label: label,
+		mood:  mood,
+	}
+}
+
+// Make_Shape_Circle is for generated code.
+func Make_Shape_Circle(radius float64) Shape {
+	self := MakeCase_Shape_Circle(radius)
+	return Shape{
+		kind:  ShapeKindCircle,
+		value: &self,
+	}
+}
+
+// MakeCase_Shape_Circle is for generated code.
+func MakeCase_Shape_Circle(radius float64) ShapeCircle {
+	return ShapeCircle{
+		radius: radius,
+	}
+}
+
+// Make_Shape_Square is for generated code.
+func Make_Shape_Square(side int64, label string, label_ok bool) Shape {
+	self := MakeCase_Shape_Square(side, label, label_ok)
+	return Shape{
+		kind:  ShapeKindSquare,
+		value: &self,
+	}
+}
+
+// MakeCase_Shape_Square is for generated code.
+func MakeCase_Shape_Square(side int64, label string, label_ok bool) ShapeSquare {
+	return ShapeSquare{
+		side:     side,
+		label:    label,
+		label_ok: label_ok,
+	}
+}
+
+// Make_Shape_None is for generated code.
+func Make_Shape_None() Shape {
+	return Shape{
+		kind: ShapeKindNone,
+	}
+}
+
+// MakeEntry_Rune is for generated code.
+func MakeEntry_Rune(record Rune, id RuneID, retired bool) Rune {
+	record.id, record.retired = id, retired
+	return record
+}
+
 // Runes: Every rune.
 type Runes struct {
 	rows []Rune

@@ -1,0 +1,4 @@
+func (self %[1]s) %[4]s() %[2]s { return %[2]s(self) }
+
+func %[3]s(code %[2]s) (%[1]s, bool) {
+switch v := %[1]s(code); v {

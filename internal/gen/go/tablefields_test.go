@@ -74,16 +74,14 @@ func TestTableFieldDataRuns(t *testing.T) {
 	runData(t, files, "gentabledata/out/go", "testdata/smoke/tablefield_data_test.go", readData(t, "testdata/datafiles/tablefields"))
 }
 
-// CODEGEN.md §4.2, §5.3: what stage E refuses as E8019 `TableField` is ErrMalformed here: a table field of another package's record, and in baked mode of the record of a table value, whose id is an enum.
+// CODEGEN.md §4.2, §5.3: what stage E refuses as E8019 `TableField` is ErrMalformed here: in baked mode a table field of the record of a table value, whose id is an enum (another package's record is this package's row since DECISIONS 323: TestEmberfallGoldens).
 func TestTableFieldRefusals(t *testing.T) {
-	foreign := &ir.Record{Pkg: "other", Name: "Far", Fields: []*ir.Field{wired("n", "n", "", intT)}}
 	cases := []struct {
 		name  string
 		mode  ir.Mode
 		elem  func(*ir.Package) *ir.Record
 		value func(*ir.Package, *ir.Record)
 	}{
-		{"foreign record", ir.ModeData, func(*ir.Package) *ir.Record { return foreign }, nil},
 		{"baked table value's record", ir.ModeBaked, func(p *ir.Package) *ir.Record { return p.Types[0].(*ir.Record) }, func(p *ir.Package, rec *ir.Record) {
 			elem := ir.TypeRef{Kind: types.Record, Named: rec}
 			p.Values = []*ir.Value{{Name: "slots", Type: ir.TypeRef{Kind: types.Table, Elem: &elem}, V: &value.Table{}}}

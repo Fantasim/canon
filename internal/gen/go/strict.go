@@ -23,14 +23,14 @@ func (g *gen) helpers() {
 	for _, name := range helperOrder {
 		g.exec(name, view)
 	}
-	if g.names.HasMaps() {
+	if g.names.HasMaps() || g.called[helperMap] {
 		g.exec(helperKeyPath, view)
 		g.exec(helperMap, view)
 	}
-	if len(ir.OwnDefines(g.p)) > 0 {
+	if len(ir.EmitDefines(g.p, g.e)) > 0 {
 		g.exec(helperDefine, view)
 	}
-	if g.names.HasNestedTables() {
+	if g.names.HasNestedTables() || g.called[helperTable] { // a reader of another package's class may read one (CODEGEN.md §2.8)
 		g.exec(helperTable, view)
 	}
 	for _, v := range g.emitted {
@@ -84,7 +84,7 @@ func (g *gen) expectedKeys(b *body) []string {
 
 // missing is rt.Missing of the key expression key under the path prefix.
 func (g *gen) missing(prefix location, key string) string {
-	return fmt.Sprintf(missingFormat, g.rt(), g.lc.Name, g.locExpr(prefix), key)
+	return fmt.Sprintf(missingFormat, g.ownRT(), g.lc.Name, g.locExpr(prefix), key)
 }
 
 // bitsMask is the OR of an enum's codes, which a bits value's members are (WIRE.md §5.3); a negative code has no bit.

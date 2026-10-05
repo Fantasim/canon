@@ -14,10 +14,11 @@ import (
 
 // leaf is one wire value: its type after the optional, its field's unit, encoding and a dependent type's discriminant expression (CODEGEN.md §5.6).
 type leaf struct {
-	t    ir.TypeRef
-	unit types.Unit
-	enc  types.Enc
-	disc string
+	t     ir.TypeRef
+	unit  types.Unit
+	enc   types.Enc
+	disc  string
+	owned bool // another package's ref its hook resolves: an unknown key is `no entry` (CODEGEN.md §2.8)
 }
 
 func (g *gen) rawType() string { return g.use(jsonPath, jsonPkg) + rawMessage }
@@ -45,9 +46,8 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 	case types.Enum:
 		return g.readEnum(b, l.t, raw, loc)
 	case types.Ref:
-		return g.readRef(b, l.t, raw, loc)
+		return g.readRef(b, l, raw, loc)
 	case types.Record, types.Variant:
-		g.ownClass(l.t)
 		return g.decodeInto(b, l.t, raw, loc)
 	case types.List:
 		return g.readList(b, l, raw, loc)
@@ -58,7 +58,7 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 	case types.TypeApp:
 		return g.readDependentValue(b, l, raw, loc)
 	default:
-		g.refuseKind(l.t.Kind, readRefused)
+		g.failKind(l.t.Kind)
 		return raw
 	}
 }
@@ -123,7 +123,7 @@ func (g *gen) durationFrom(src string, unit types.Unit) string {
 	if ms := unit.Millis(); ms != 1 {
 		src += timesMillisecond + strconv.FormatInt(ms, decimal)
 	}
-	return g.rt() + durationFromMs + src + rparen
+	return g.ownRT() + durationFromMs + src + rparen
 }
 
 // readEnum reads a member's wire string, or its code with @json(codes), and parses it (WIRE.md §5.3).
@@ -172,7 +172,8 @@ func (g *gen) readUnion(b *strings.Builder, t ir.TypeRef, raw string, loc locati
 }
 
 // readRef reads a ref's key: a table id, a baked package's id enum, a keyed list's key (CODEGEN.md §5.3, §5.8).
-func (g *gen) readRef(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
+func (g *gen) readRef(b *strings.Builder, l leaf, raw string, loc location) string {
+	t := l.t
 	key := g.keyType(t)
 	if isFieldRef(t.Ref) {
 		return g.readPlain(b, key, raw, loc)
@@ -184,8 +185,12 @@ func (g *gen) readRef(b *strings.Builder, t ir.TypeRef, raw string, loc location
 		return g.readValue(b, leaf{t: *t.Key}, raw, loc)
 	}
 	if g.enumIDs(t.Ref.Pkg) {
+		text := unknownValueText
+		if l.owned || g.holder() != g.p.Name { // any ref of another package's class, key-only ones included (log-2026-10-06 "gen/go re-verify FAIL")
+			text = noEntryText
+		}
 		s := g.readPlain(b, goString, raw, loc)
-		return g.parsed(b, g.qualify(t.Ref.Pkg, g.names.ParseName(g.idType(t.Ref.Elem)))+lparen+s+rparen, loc, unknownValueText, s)
+		return g.parsed(b, g.qualify(t.Ref.Pkg, g.names.ParseName(g.idType(t.Ref.Elem)))+lparen+s+rparen, loc, text, s)
 	}
 	return g.readPlain(b, key, raw, loc)
 }
@@ -223,17 +228,10 @@ func (g *gen) stringWire(t ir.TypeRef) {
 	}
 }
 
-// ownClass refuses a record or variant of another package: its decoder is unexported there.
-func (g *gen) ownClass(t ir.TypeRef) {
-	if pkg := typePkg(t.Named); pkg != g.p.Name {
-		g.fail(newDetail(ErrMalformed, g.at, foreignClassFormat, qname(t.Named), g.at)) // E8019 ForeignDataRecord
-	}
-}
-
-// decodeInto decodes a record or variant of this package into a new value.
+// decodeInto decodes a record or variant into a new value: this package's decoder, or its reader of another package's class (CODEGEN.md §2.8).
 func (g *gen) decodeInto(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
 	v := g.temp(tempValue)
-	fmt.Fprintf(b, decodeIntoFormat, v, g.goName(t.Named), g.lc.Err, g.decodeFunc(t.Named), g.lc.Name, g.locExpr(loc.dot()), raw)
+	fmt.Fprintf(b, decodeIntoFormat, v, g.typeName(t.Named), g.lc.Err, g.decodeFunc(t.Named), g.lc.Name, g.locExpr(loc.dot()), raw)
 	return v
 }
 
@@ -249,7 +247,7 @@ func (g *gen) readList(b *strings.Builder, l leaf, raw string, loc location) str
 	elem := g.sub(l.t.Elem)
 	v, i, x := g.temp(tempValue), g.temp(tempIndex), g.temp(tempElem)
 	fmt.Fprintf(b, listOpenFormat, v, g.goType(elem), array, i, x)
-	e := g.readValue(b, leaf{t: elem, unit: l.unit, enc: l.enc, disc: l.disc}, x, loc.index(i))
+	e := g.readValue(b, leaf{t: elem, unit: l.unit, enc: l.enc, disc: l.disc, owned: l.owned}, x, loc.index(i))
 	fmt.Fprintf(b, listCloseFormat, v, i, e)
 	return g.rt() + makeList + v + rparen
 }
@@ -263,7 +261,7 @@ func (g *gen) readKeyed(b *strings.Builder, t ir.TypeRef, array string, loc loca
 	}
 	kf := g.keyField(t)
 	v, k, i, x := g.temp(tempValue), g.temp(tempKey), g.temp(tempIndex), g.temp(tempElem)
-	fmt.Fprintf(b, keyedFromFormat, v, g.goName(rec), array, k, g.goType(kf.Type), i, x,
+	fmt.Fprintf(b, keyedFromFormat, v, g.typeName(rec), array, k, g.goType(kf.Type), i, x,
 		g.lc.Err, g.decodeFunc(rec), g.lc.Name, g.locExpr(loc.index(i).dot()), g.keyMember(rec, kf))
 	g.dupCheck(b, k, kf, loc)
 	return g.rt() + makeKeyedList + v + listSep + k + rparen
@@ -274,14 +272,14 @@ func (g *gen) dupCheck(b *strings.Builder, keys string, kf *ir.Field, loc locati
 	at, first, ok := g.temp(localAt), g.temp(localFirst), g.temp(tempOK)
 	token := g.keyTokenExpr(kf.Type, keys+lbracket+at+rbracket)
 	prefix, key := g.splitLoc(loc.index(at).dot().key(strings.Join(kf.WirePath, dot)))
-	fmt.Fprintf(b, dupCheckFormat, at, first, ok, g.rt(), keys, g.lc.Name, prefix, key, token, g.locExpr(loc.index(first)))
+	fmt.Fprintf(b, dupCheckFormat, at, first, ok, g.ownRT(), keys, g.lc.Name, prefix, key, token, g.locExpr(loc.index(first)))
 }
 
 // keyTokenExpr is expr's canonical JSON token for a duplicate-id error message (WIRE.md §7.3).
 func (g *gen) keyTokenExpr(t ir.TypeRef, expr string) string {
 	switch t.Kind {
 	case types.String, types.LitUnion:
-		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+		return g.ownRT() + wireTokenCall + goString + lparen + expr + rparen + rparen
 	case types.Int:
 		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), goInt64+lparen+expr+rparen)
 	case types.Enum:
@@ -304,22 +302,22 @@ func (g *gen) enumKeyToken(t ir.TypeRef, expr string) string {
 	if e.JSONCodes && e.Codes != nil {
 		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), goInt64+lparen+expr+dot+ir.GoCode+callSuffix+rparen)
 	}
-	return g.rt() + wireTokenCall + expr + dot + ir.GoWire + callSuffix + rparen
+	return g.ownRT() + wireTokenCall + expr + dot + ir.GoWire + callSuffix + rparen
 }
 
 // refKeyToken is a ref key's wire token, mirroring keyType's cases (gotype.go, WIRE.md §5.8).
 func (g *gen) refKeyToken(t ir.TypeRef, expr string) string {
 	if t.Ref != nil && t.Ref.Coll == types.CollDefines {
-		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+		return g.ownRT() + wireTokenCall + goString + lparen + expr + rparen + rparen
 	}
 	if isFieldRef(t.Ref) {
-		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+		return g.ownRT() + wireTokenCall + goString + lparen + expr + rparen + rparen
 	}
 	if isTableRef(t.Ref) {
 		if g.enumIDs(t.Ref.Pkg) {
-			return g.rt() + wireTokenCall + expr + dot + ir.GoString + callSuffix + rparen
+			return g.ownRT() + wireTokenCall + expr + dot + ir.GoString + callSuffix + rparen
 		}
-		return g.rt() + wireTokenCall + goString + lparen + expr + rparen + rparen
+		return g.ownRT() + wireTokenCall + goString + lparen + expr + rparen + rparen
 	}
 	if t.Key != nil {
 		return g.keyTokenExpr(*t.Key, expr)
@@ -353,6 +351,13 @@ func (g *gen) uint64Of(x string) string { return goUint64 + lparen + x + rparen 
 
 // keyMember is the storage of a keyed list's key on its row: a ref key's key member.
 func (g *gen) keyMember(rec *ir.Record, kf *ir.Field) string {
+	if rec.Pkg != g.p.Name { // another package's record: its key getter (CODEGEN.md §5.8)
+		s := g.names.Slot(kf)
+		if s.Ref != nil {
+			return s.KeyGetter + callSuffix
+		}
+		return s.Getter + callSuffix
+	}
 	for _, s := range g.bodyOf(rec).slots {
 		if s.src == kf && s.Ref != nil {
 			return s.KeyStore

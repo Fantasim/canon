@@ -105,7 +105,7 @@ func messageKey(s *slot) string {
 type refCell struct {
 	keys, ok, dst, dstOK string
 	list                 bool
-	elem                 ir.Type
+	elem                 string // the Go type of an entry (entryType)
 }
 
 // findIn is the Find of the target's rows, in the snapshot or in the holder's own container.
@@ -123,7 +123,7 @@ func (g *gen) resolveSlot(b *strings.Builder, s *slot, target *ir.Value, snapsho
 		return
 	}
 	out := g.lc.Out + dot
-	c := refCell{keys: out + s.KeyStore, dst: out + s.Store, list: s.List, elem: s.Ref.Elem}
+	c := refCell{keys: out + s.KeyStore, dst: out + s.Store, list: s.List, elem: g.entryType(s.Ref)}
 	if s.Optional {
 		c.ok = out + s.OKStore
 	}
@@ -136,12 +136,12 @@ func (g *gen) resolveCells(b *strings.Builder, f *finiteMethod, target *ir.Value
 		return
 	}
 	keys, dst, loc := g.lc.Out+dot+f.res.KeyStore, g.lc.Out+dot+f.store, g.keyLoc(dollar+f.fn.Name)
-	for _, p := range f.fn.Params {
+	for n := range f.fn.Params {
 		i, k := g.temp(tempIndex), g.temp(tempKey)
-		fmt.Fprintf(b, domainLoopFormat, i, k, strings.Join(g.domainKeys(p.Type), listSep))
+		fmt.Fprintf(b, domainLoopFormat, i, k, strings.Join(g.domainKeys(f.fn, n), listSep))
 		keys, dst, loc = keys+lbracket+i+rbracket, dst+lbracket+i+rbracket, loc.dot().arg(k)
 	}
-	c := refCell{keys: keys, dst: dst, list: f.res.List, elem: f.res.Ref.Elem}
+	c := refCell{keys: keys, dst: dst, list: f.res.List, elem: g.entryType(f.res.Ref)}
 	if f.res.Optional {
 		c.keys, c.ok = keys+pairValue, keys+pairOK
 	}
@@ -155,9 +155,9 @@ func (g *gen) resolveCells(b *strings.Builder, f *finiteMethod, target *ir.Value
 // walkCells checks the ref keys of the maps each cell of a lookup's table holds, a failure named by its domain keys (WIRE.md §5.8, CODEGEN.md §5.8, §5.10).
 func (g *gen) walkCells(b *strings.Builder, f *finiteMethod) {
 	dst, loc := g.lc.Out+dot+f.store, g.keyLoc(dollar+f.fn.Name)
-	for _, p := range f.fn.Params {
+	for n := range f.fn.Params {
 		i, k := g.temp(tempIndex), g.temp(tempKey)
-		fmt.Fprintf(b, domainLoopFormat, i, k, strings.Join(g.domainKeys(p.Type), listSep))
+		fmt.Fprintf(b, domainLoopFormat, i, k, strings.Join(g.domainKeys(f.fn, n), listSep))
 		dst, loc = dst+lbracket+i+rbracket, loc.dot().arg(k)
 	}
 	if f.pair {
@@ -179,7 +179,7 @@ func (g *gen) resolveRef(b *strings.Builder, c refCell, find string, loc locatio
 	}
 	if c.list {
 		v, i, e, ok := g.temp(tempValue), g.temp(tempIndex), g.temp(tempEntry), g.temp(tempOK)
-		fmt.Fprintf(b, resolveListFormat, v, g.typeName(c.elem), c.keys, i, e, ok, find,
+		fmt.Fprintf(b, resolveListFormat, v, c.elem, c.keys, i, e, ok, find,
 			g.errAt(loc.index(i), noEntryText, c.keys+atCall+i+rparen), c.dst, g.rt())
 	} else {
 		e, ok := g.temp(tempEntry), g.temp(tempOK)
@@ -242,7 +242,7 @@ func (g *gen) walkPairs(b *strings.Builder, s *slot, snapshot bool) {
 		key := g.temp(tempKey)
 		fmt.Fprintf(b, slotKeyFormat, key, strings.Join(g.slotKeys(s.src.Pairs.Keys[k], s.src.Pairs.Slots), listSep), i)
 		loc := g.root().arg(key)
-		c := refCell{keys: e + dot + es.KeyStore, dst: e + dot + es.Store, list: es.List, elem: es.Ref.Elem}
+		c := refCell{keys: e + dot + es.KeyStore, dst: e + dot + es.Store, list: es.List, elem: g.entryType(es.Ref)}
 		if es.Optional {
 			c.ok = e + dot + es.OKStore
 		}

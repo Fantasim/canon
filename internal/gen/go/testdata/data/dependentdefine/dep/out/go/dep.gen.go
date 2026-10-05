@@ -127,6 +127,37 @@ func (self *Thing) K() K { return self.k }
 
 func (self *Thing) P() *P { return self.p }
 
+// Make_P_One is for generated code.
+func Make_P_One(value int64) P {
+	return P{
+		branch: PBranchOne,
+		value:  value,
+	}
+}
+
+// Make_P_Two is for generated code.
+func Make_P_Two(value string, define_value int64) P {
+	return P{
+		branch:       PBranchTwo,
+		value:        value,
+		define_value: define_value,
+	}
+}
+
+// Make_Thing is for generated code.
+func Make_Thing(k K, p *P) Thing {
+	return Thing{
+		k: k,
+		p: p,
+	}
+}
+
+// MakeEntry_Thing is for generated code.
+func MakeEntry_Thing(record Thing, id ThingID, retired bool) Thing {
+	record.id, record.retired = id, retired
+	return record
+}
+
 var definesMonsters = []struct {
 	name  string
 	value int64

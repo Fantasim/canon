@@ -32,56 +32,27 @@ const (
 	enumHeaderFormat = "type %s %s\n\nconst (\n"
 	enumConstFormat  = "%s %s = %s\n"
 	fallbackFormat   = "}\nreturn \"%[1]s(\" + %[2]s.FormatInt(int64(self), 10) + \")\"\n}\n\n"
-	membersFormat    = `func %[1]s() %[2]s.Seq[%[3]s] {
-return func(yield func(%[3]s) bool) {
-for _, m := range [...]%[3]s{%[4]s} {
-if !yield(m) {
-return
-}
-}
-}
-}
-
-`
-	codesFormat = `func (self %[1]s) %[4]s() %[2]s { return %[2]s(self) }
-
-func %[3]s(code %[2]s) (%[1]s, bool) {
-switch v := %[1]s(code); v {
-`
-	notFoundTail = "}\nreturn 0, false\n}\n\n"
+	notFoundTail     = "}\nreturn 0, false\n}\n\n"
 )
 
-// Variant templates (CODEGEN.md §5.5).
+// Make hooks and rows of other packages' records (CODEGEN.md §5.9, §5.14; DECISIONS 323): templates, the row's own names, and the lines resolving a hook's refs.
 const (
-	variantFormat = `type %[1]s struct {
-%[3]s %[2]s
-%[4]s any
-}
-
-func (self *%[1]s) %[5]s() %[2]s { return self.%[3]s }
-
-`
-	asCaseFormat = `func (self *%[1]s) %[2]s() (*%[3]s, bool) {
-c, ok := self.%[4]s.(*%[3]s)
-return c, ok
-}
-
-`
+	tmplHook, tmplRow, tmplReader, tmplReaderOut = "hook", "row", "reader", "readerOut"
+	rowRecordStore, rowRecordGetter              = "record", "Record"
+	hookLookupFormat, hookFindFormat             = "%s = %s(%s)\n", "%s, _ = %s(%s)\n"
+	hookListFormat                               = "%[1]s := make([]*%[2]s, %[3]s.Len())\nfor %[4]s := range %[1]s {\n%[5]s}\n%[6]s = %[7]s.MakeList(%[1]s)\n"
+	hookEntries, hookIndex, hookCellIndex        = "entries", "i", "c"
+	firstElem, rangeOpenFormat                   = "[0]", "for %s := range %s {\n"
+	anonStructFormat                             = "struct {\n%s\n}"
+	ownerCheckFormat                             = "if %s%s == nil {\nreturn %s\n}\n"
+	ownerListCheckFormat                         = "for %[1]s := range %[2]s.Len() {\nif %[3]s.At(%[1]s) == nil {\nreturn %[4]s\n}\n}\n"
+	entriesPairFormat, domainValueFormat         = "%s, _ := %s\n", "[...]%s{%s}[%s]"
 )
 
 // Dependent-type templates (CODEGEN.md §5.6).
 const (
-	dependentAsFormat      = "func (self *%[1]s) %[2]s() (%[3]s, bool) {\nif self.%[4]s != %[5]s {\nvar zero %[3]s\nreturn zero, false\n}\nreturn self.%[6]s.(%[3]s), true\n}\n\n"
-	dependentAsValueFormat = "func (self *%[1]s) %[2]s() (int64, bool) {\nif self.%[3]s != %[4]s {\nreturn 0, false\n}\nreturn self.%[5]s, true\n}\n\n"
-	defineVariantFormat    = `type %[1]s struct {
-%[3]s %[2]s
-%[4]s any
-%[6]s int64
-}
-
-func (self *%[1]s) %[5]s() %[2]s { return self.%[3]s }
-
-`
+	dependentAsFormat       = "func (self *%[1]s) %[2]s() (%[3]s, bool) {\nif self.%[4]s != %[5]s {\nvar zero %[3]s\nreturn zero, false\n}\nreturn self.%[6]s.(%[3]s), true\n}\n\n"
+	dependentAsValueFormat  = "func (self *%[1]s) %[2]s() (int64, bool) {\nif self.%[3]s != %[4]s {\nreturn 0, false\n}\nreturn self.%[5]s, true\n}\n\n"
 	dependentFuncOpenFormat = "func %[1]s(%[2]s, %[3]s string, %[4]s %[5]s, %[6]s %[7]s, %[8]s *%[9]s) error {\n"
 	dependentDecodeFormat   = "%[1]s := &%[2]s{}\nif %[3]s := %[4]s(%[5]s, %[6]s, %[7]s, %[8]s, %[1]s); %[3]s != nil {\nreturn %[3]s\n}\n"
 	localDisc               = "disc"
@@ -369,11 +340,10 @@ const (
 	prefixFormat     = "%s := %s\n"
 	elseReturnFormat = "} else {\nreturn %s\n"
 	nestedOpenFormat = "%[1]s, %[2]s, %[3]s, %[4]s := %[5]s(%[6]s, %[7]s, %[8]s)\nif %[4]s != nil {\nreturn %[4]s\n}\n"
-	nestedRowsFormat = "%[1]s := make([]%[2]s, len(%[3]s))\n%[4]s := make([]%[5]s, len(%[3]s))\n" +
-		"for %[6]s, %[7]s := range %[3]s {\nif %[8]s := %[9]s(%[10]s, %[11]s, %[7]s, &%[1]s[%[6]s]); %[8]s != nil {\n" +
-		"return %[8]s\n}\n%[1]s[%[6]s].%[12]s, %[1]s[%[6]s].%[13]s = %[5]s(%[14]s[%[6]s]), %[15]s[%[6]s]\n" +
-		"%[4]s[%[6]s] = %[1]s[%[6]s].%[12]s\n}\n"
-	bitsCheckFormat = "if %[1]s := %[2]s &^ %[3]s; %[1]s != 0 {\nreturn %[4]s\n}\n"
+	nestedRowsFormat = "%[1]s := make([]%[2]s, len(%[3]s))\n%[4]s := make([]%[5]s, len(%[3]s))\nfor %[6]s, %[7]s := range %[3]s {\n"
+	setRowFormat     = "%[1]s.%[2]s, %[1]s.%[3]s = %[4]s, %[5]s\n"
+	newValueFormat   = "%s := &%s{}\n"
+	bitsCheckFormat  = "if %[1]s := %[2]s &^ %[3]s; %[1]s != 0 {\nreturn %[4]s\n}\n"
 )
 
 // helperOrder is the order a file with decoders writes its helpers in, jsonRowID after them.

@@ -12,7 +12,7 @@ import (
 
 // defineTables writes each define table the fields ref, defines<Table>, sorted by name (CODEGEN.md §5.8).
 func (g *gen) defineTables() {
-	for _, d := range ir.OwnDefines(g.p) {
+	for _, d := range ir.EmitDefines(g.p, g.e) {
 		if len(d.Names) != len(d.Values) {
 			g.failf(ErrMalformed, "define table %s.%s without a value per name", d.Pkg, d.Value)
 			continue

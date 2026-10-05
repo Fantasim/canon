@@ -280,6 +280,38 @@ func (self *Board) PerTone(t Tone) rt.Map[BoardID, int64] {
 	return self.perTone[t]
 }
 
+// Make_Board is for generated code.
+func Make_Board(power rt.Map[Element, int64], names rt.Map[string, string], levels rt.Map[int64, string], groups rt.Map[string, rt.List[int64]], slots rt.Map[string, *Slot], extra rt.Map[string, int64], extra_ok bool, ranks rt.Map[Rank, int64], tones rt.Map[string, int64], byLit rt.Map[string, *Slot], moods rt.Map[string, string], small rt.Map[int8, string], byBoard rt.Map[BoardID, int64], byNode rt.Map[int64, string], deep rt.Map[string, rt.Map[int64, string]], rankSlots rt.Map[Rank, *Slot], elemSlots rt.Map[Element, *Slot], totals rt.Map[string, int64], byBoardTotals rt.Map[BoardID, int64], perTone [2]rt.Map[BoardID, int64]) Board {
+	return Board{
+		power:         power,
+		names:         names,
+		levels:        levels,
+		groups:        groups,
+		slots:         slots,
+		extra:         extra,
+		extra_ok:      extra_ok,
+		ranks:         ranks,
+		tones:         tones,
+		byLit:         byLit,
+		moods:         moods,
+		small:         small,
+		byBoard:       byBoard,
+		byNode:        byNode,
+		deep:          deep,
+		rankSlots:     rankSlots,
+		elemSlots:     elemSlots,
+		totals:        totals,
+		byBoardTotals: byBoardTotals,
+		perTone:       perTone,
+	}
+}
+
+// MakeEntry_Board is for generated code.
+func MakeEntry_Board(record Board, id BoardID, retired bool) Board {
+	record.id, record.retired = id, retired
+	return record
+}
+
 type Boards struct {
 	rows rt.KeyedList[BoardID, Board]
 }

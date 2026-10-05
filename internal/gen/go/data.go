@@ -19,11 +19,14 @@ var (
 	translatedText string
 	//go:embed text/conformance.txt
 	conformanceText string
+	//go:embed text/hooks.txt
+	hooksText string
 )
 
 // dataTemplates are the fixed code shapes: data mode's table container, loaders, snapshot and
-// store; a translated fn's method and pure function; the conformance file's helpers and tests.
-var dataTemplates = parseTemplates(dataText, translatedText, conformanceText)
+// store; a translated fn's method and pure function; the conformance file's helpers and tests;
+// make hooks, rows and readers.
+var dataTemplates = parseTemplates(dataText, translatedText, conformanceText, hooksText)
 
 // parseTemplates parses texts of `define`s into one set.
 func parseTemplates(texts ...string) *template.Template {
@@ -45,7 +48,7 @@ type index struct{ Member, Method, Type, Store string }
 // dataSections are a data-mode file's sections in CODEGEN.md §2.7's order: decoders last.
 func (g *gen) dataSections() []func() {
 	return []func(){
-		g.constants, g.schemas, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.defineTables, g.containers,
+		g.constants, g.schemas, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.rowTypes, g.hooks, g.defineTables, g.containers,
 		g.loaders, g.snapshot, g.fns, g.runtimeInputs, g.decoders, g.resolvers, g.loads,
 	}
 }
@@ -79,7 +82,7 @@ func (g *gen) dataTable(v *ir.Value, rec *ir.Record) {
 		M                             members
 		Indexes                       []index
 	}{
-		Doc: docFor(name, v.Doc), Name: name, ID: g.idType(rec), Elem: g.goName(rec),
+		Doc: docFor(name, v.Doc), Name: name, ID: g.idType(rec), Elem: g.rowElem(rec, true),
 		RT: g.rt(), Iter: g.use(iterPkg, iterPkg), M: containerMembers, Indexes: g.indexes(v, rec),
 	}
 	g.exec(tableTemplate, view)
@@ -91,7 +94,7 @@ func (g *gen) indexes(v *ir.Value, rec *ir.Record) []index {
 		if f.Stable {
 			out = append(out, index{
 				Member: g.names.FindByIndex(v, f), Method: g.names.FindByName(f),
-				Type: g.goType(f.Type), Store: g.names.Slot(f).Store,
+				Type: g.goType(f.Type), Store: g.fieldRead(rec, f),
 			})
 		}
 	}

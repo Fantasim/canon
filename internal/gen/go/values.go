@@ -23,9 +23,8 @@ func (g *gen) indexValues() {
 		}
 		rec, ok := g.sub(v.Type.Elem).Named.(*ir.Record)
 		switch {
-		case !ok || rec.Pkg != g.p.Name:
-			// E8019 CrossPackageBakedValue and stage E's shape already rule this out.
-			g.failf(ErrMalformed, "table %s of a record of another package", v.Name)
+		case !ok:
+			g.failf(ErrMalformed, "table %s of no record", v.Name)
 		case g.tableOf[rec] != nil:
 			g.failf(errNameCollision, "%s is the id type of both %s and %s", g.idType(rec), g.tableOf[rec].Name, v.Name)
 		default:
@@ -104,6 +103,14 @@ func (g *gen) indexInstances() {
 			}
 		}
 	}
+	for _, class := range g.names.Foreign().Written { // another package's stored results its hooks take (CODEGEN.md §5.14)
+		switch x := class.(type) {
+		case *ir.Record:
+			g.addInstances(x.Methods)
+		case *ir.Case:
+			g.addInstances(x.Methods)
+		}
+	}
 }
 
 func (g *gen) addInstances(fns []*ir.ExportFn) {
@@ -141,9 +148,14 @@ func (g *gen) entryPointer(r *value.Record) (string, bool) {
 	if id == nil || id.Coll == nil || id.Coll.Kind != types.CollLet || id.Coll.Pkg != g.p.Name {
 		return "", false
 	}
-	if g.byValue[id.Coll.Name] == nil {
+	info := g.byValue[id.Coll.Name]
+	if info == nil {
 		return "", false
 	}
 	target := &ir.RefTarget{Coll: types.CollLet, Pkg: id.Coll.Pkg, Value: id.Coll.Name}
-	return g.resolvedExpr(target, id.Key), true
+	ptr := g.resolvedExpr(target, id.Key)
+	if rec, ok := rootKey(info.v).(*ir.Record); ok && rec.Pkg != g.p.Name && info.v.Type.Kind == types.Table {
+		ptr += dot + rowRecordGetter + callSuffix // the row of this package holds it (CODEGEN.md §5.9)
+	}
+	return ptr, true
 }

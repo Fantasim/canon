@@ -69,15 +69,19 @@ func (g *gen) branchDefines(t ir.TypeRef) *ir.DefineTable {
 // decodeDependent writes decode<T> of a dependent type a decoded class holds: the untagged wire switches on the discriminant its caller already decoded, an enum or a Bool (CODEGEN.md §5.6, §6.1); a member no branch covers (a Never arm's) is refused with the same text gen/cpp writes (WIRE.md §5.9).
 func (g *gen) decodeDependent(d *ir.Dependent) {
 	defer g.enter(d.QName())()
+	defer g.withRT(d.Pkg)()
 	g.temps = 0
 	discType, labels := g.discLabels(d)
 	if labels == nil {
 		g.fail(newDetail(errDependentNoDisc, d.QName(), dependentNoDiscFormat, d.QName()))
 		return
 	}
-	lc, n := g.lc, g.names.Dependent(d)
-	disc, name := g.names.DataLocal(localDisc), g.goName(d)
-	g.printf(dependentFuncOpenFormat, g.decodeFunc(d), lc.Name, lc.Path, lc.Raw, g.rawType(), disc, discType, lc.Out, name)
+	lc, out := g.lc, g.lc.Out
+	if d.Pkg != g.p.Name {
+		out = lc.Dst // another package's dependent type: this package's reader builds it (CODEGEN.md §2.8)
+	}
+	disc := g.names.DataLocal(localDisc)
+	g.printf(dependentFuncOpenFormat, g.decodeFunc(d), lc.Name, lc.Path, lc.Raw, g.rawType(), disc, discType, out, g.typeName(d))
 	g.printf(switchTagFormat, disc)
 	for i, br := range d.Branches {
 		cases := make([]string, len(br.Members))
@@ -87,28 +91,53 @@ func (g *gen) decodeDependent(d *ir.Dependent) {
 		g.printf(caseFormat, strings.Join(cases, listSep))
 		var b strings.Builder
 		x := g.readValue(&b, leaf{t: br.Type}, lc.Raw, g.root())
-		if n.Branches[i].AsValue != "" {
-			g.readBranchDefine(&b, br.Type, x, n.DefineStore)
-		}
 		g.body.WriteString(b.String())
-		g.printf(assignPairFormat, lc.Out+dot+n.BranchStore, lc.Out+dot+n.ValueStore, n.Branches[i].Member, x)
+		g.body.WriteString(g.storeBranch(d, i, x, g.branchDefineRead(i, d, x)))
 		g.body.WriteString(returnKw + nilLit + newline)
 	}
 	g.printf(unknownCaseFormat, g.errAt(g.root(), noBranchText, ""))
 	g.body.WriteString(closeBrace + newline)
 }
 
-// readBranchDefine looks a define branch's key up once read, into out's store, with the load error of a define field (CODEGEN.md §5.8; DECISIONS 298).
-func (g *gen) readBranchDefine(b *strings.Builder, t ir.TypeRef, key, store string) {
+// branchDefineRead reads a define branch's value right after its key, "" for any other branch.
+func (g *gen) branchDefineRead(i int, d *ir.Dependent, key string) string {
+	if g.names.Dependent(d).Branches[i].AsValue == "" {
+		return ""
+	}
+	var b strings.Builder
+	v := g.readBranchDefine(&b, d.Branches[i].Type, key)
+	g.body.WriteString(b.String())
+	return v
+}
+
+// storeBranch stores branch i read as x (and its define value v) into out, or builds another package's through its branch's make hook (CODEGEN.md §5.14).
+func (g *gen) storeBranch(d *ir.Dependent, i int, x, v string) string {
+	lc, n := g.lc, g.names.Dependent(d)
+	if d.Pkg != g.p.Name {
+		args := []string{x}
+		if v != "" {
+			args = append(args, v)
+		}
+		return fmt.Sprintf(cellStoreFormat, pointer+lc.Dst, g.qualify(d.Pkg, g.names.MakeBranchName(d, d.Branches[i]))+callArgs(args))
+	}
+	var s string
+	if v != "" {
+		s = fmt.Sprintf(assignFormat, lc.Out, n.DefineStore, v)
+	}
+	return s + fmt.Sprintf(assignPairFormat, lc.Out+dot+n.BranchStore, lc.Out+dot+n.ValueStore, n.Branches[i].Member, x)
+}
+
+// readBranchDefine looks a define branch's key up once read into a local, with the load error of a define field (CODEGEN.md §5.8; DECISIONS 298).
+func (g *gen) readBranchDefine(b *strings.Builder, t ir.TypeRef, key string) string {
 	d := g.branchDefines(t)
 	if d == nil {
-		return
+		return zeroLit
 	}
 	lc, v := g.lc, g.temp(tempValue)
 	prefix, k := g.splitLoc(g.root())
 	fmt.Fprintf(b, defineReadFormat, v, lc.Err, g.helper(helperDefine), lc.Name, prefix, k,
 		g.names.DefinesVar(d), strconv.Quote(ir.DefineTableName(d)), key)
-	fmt.Fprintf(b, assignFormat, lc.Out, store, v)
+	return v
 }
 
 // discLabels are the Go type of d's discriminant and each member's case label, in member order: false and true for a Bool, the member constants for an enum; nil labels for neither.
@@ -136,28 +165,28 @@ func dependentDiscEnum(d *ir.Dependent) (*ir.Enum, bool) {
 	return e, ok
 }
 
-// dependentDisc is the discriminant of app, a field's type application, as the decoder already holds it: out's storage down ir.DiscFields' path (CODEGEN.md §5.6). Stage E refuses any other, and another package's dependent type (E8019 DependentType).
+// dependentDisc is the discriminant of app, a field's type application, as the decoder already holds it: out's storage down ir.DiscFields' path, a record of another package read through its getter (CODEGEN.md §5.6). Stage E refuses any other (E8019 DependentType).
 func (g *gen) dependentDisc(owner *body, app ir.TypeRef) string {
 	path := g.discPath(owner, app)
 	if path == nil {
 		return ""
 	}
 	steps := []string{g.lc.Out}
-	for _, f := range path {
+	for i, f := range path {
+		in, ok := path[max(i-1, 0)].Type.Named.(*ir.Record)
+		if i > 0 && ok && in.Pkg != g.p.Name {
+			steps = append(steps, g.names.Slot(f).Getter+callSuffix)
+			continue
+		}
 		steps = append(steps, g.names.Slot(f).Store)
 	}
 	return strings.Join(steps, dot)
 }
 
-// discPath is ir.DiscFields of an own dependent type's application from owner's fields; nil, refused as malformed, for any other.
+// discPath is ir.DiscFields of a dependent type's application from owner's fields; nil, refused as malformed, for any other.
 func (g *gen) discPath(owner *body, app ir.TypeRef) []*ir.Field {
-	d, ok := app.Named.(*ir.Dependent)
-	switch {
-	case !ok:
+	if _, ok := app.Named.(*ir.Dependent); !ok {
 		g.fail(newDetail(errDependentNested, g.at, dependentNestedFormat, g.at))
-		return nil
-	case d.Pkg != g.p.Name:
-		g.fail(newDetail(errDependentForeign, g.at, dependentForeignFormat, g.at))
 		return nil
 	}
 	path := ir.DiscFields(owner.fields, app)
@@ -175,7 +204,7 @@ func (g *gen) readDependentValue(b *strings.Builder, l leaf, raw string, loc loc
 		return raw
 	}
 	v := g.temp(tempValue)
-	fmt.Fprintf(b, dependentDecodeFormat, v, g.goName(d), g.lc.Err, g.decodeFunc(d), g.lc.Name, g.locExpr(loc), raw, l.disc)
+	fmt.Fprintf(b, dependentDecodeFormat, v, g.typeName(d), g.lc.Err, g.decodeFunc(d), g.lc.Name, g.locExpr(loc), raw, l.disc)
 	return v
 }
 
@@ -233,6 +262,13 @@ func (g *gen) dependentExpr(t ir.TypeRef, v value.Value, d *ir.Dependent, br int
 	}
 	n, bt := g.names.Dependent(d), d.Branches[br].Type
 	x := g.expr(bt, v)
+	if d.Pkg != g.p.Name { // another package's dependent type: its branch's make hook (CODEGEN.md §5.6, §5.14)
+		args := []string{x}
+		if n.Branches[br].AsValue != "" {
+			args = append(args, g.branchDefineValue(bt, v))
+		}
+		return addressOf(g.typeName(d), g.qualify(d.Pkg, g.names.MakeBranchName(d, d.Branches[br]))+callArgs(args))
+	}
 	if untypedLit(bt) {
 		x = g.goType(bt) + lparen + x + rparen
 	}

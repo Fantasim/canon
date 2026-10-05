@@ -51,6 +51,25 @@ func (self *Shelf) Retired() bool { return self.retired }
 
 func (self *Shelf) Slots() rt.KeyedList[SlotID, Slot] { return self.slots }
 
+// Make_Shelf is for generated code.
+func Make_Shelf(slots rt.KeyedList[SlotID, Slot]) Shelf {
+	return Shelf{
+		slots: slots,
+	}
+}
+
+// MakeEntry_Slot is for generated code.
+func MakeEntry_Slot(record Slot, id SlotID, retired bool) Slot {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Shelf is for generated code.
+func MakeEntry_Shelf(record Shelf, id ShelfID, retired bool) Shelf {
+	record.id, record.retired = id, retired
+	return record
+}
+
 type Shelves struct {
 	rows rt.KeyedList[ShelfID, Shelf]
 }

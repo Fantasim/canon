@@ -95,6 +95,19 @@ func (self *Item) Retired() bool { return self.retired }
 
 func (self *Item) Status() string { return self.status }
 
+// Make_Item is for generated code.
+func Make_Item(status string) Item {
+	return Item{
+		status: status,
+	}
+}
+
+// MakeEntry_Item is for generated code.
+func MakeEntry_Item(record Item, id ItemID, retired bool) Item {
+	record.id, record.retired = id, retired
+	return record
+}
+
 type Items struct {
 	rows []Item
 }

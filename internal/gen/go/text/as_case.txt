@@ -1,0 +1,5 @@
+func (self *%[1]s) %[2]s() (*%[3]s, bool) {
+c, ok := self.%[4]s.(*%[3]s)
+return c, ok
+}
+

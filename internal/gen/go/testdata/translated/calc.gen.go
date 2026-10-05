@@ -318,6 +318,66 @@ func (self *Size) Retired() bool { return self.retired }
 // Cap: Its cap.
 func (self *Size) Cap() int64 { return self.cap_ }
 
+// Make_Shape_Circle is for generated code.
+func Make_Shape_Circle(r int64) Shape {
+	self := MakeCase_Shape_Circle(r)
+	return Shape{
+		kind:  ShapeKindCircle,
+		value: &self,
+	}
+}
+
+// MakeCase_Shape_Circle is for generated code.
+func MakeCase_Shape_Circle(r int64) ShapeCircle {
+	return ShapeCircle{
+		r: r,
+	}
+}
+
+// Make_Shape_Dot is for generated code.
+func Make_Shape_Dot() Shape {
+	return Shape{
+		kind: ShapeKindDot,
+	}
+}
+
+// Make_Bonus is for generated code.
+func Make_Bonus(value int64) Bonus {
+	return Bonus{
+		value: value,
+	}
+}
+
+// Make_Potion is for generated code.
+func Make_Potion(name string, heal int64, tone Tone, bonus *Bonus, level int64, level_ok bool, cooldown time.Duration, weight int32, ratio float32, shape *Shape, tenth int64) Potion {
+	return Potion{
+		name:     name,
+		heal:     heal,
+		tone:     tone,
+		bonus:    bonus,
+		level:    level,
+		level_ok: level_ok,
+		cooldown: cooldown,
+		weight:   weight,
+		ratio:    ratio,
+		shape:    shape,
+		tenth:    tenth,
+	}
+}
+
+// Make_Size is for generated code.
+func Make_Size(cap_ int64) Size {
+	return Size{
+		cap_: cap_,
+	}
+}
+
+// MakeEntry_Size is for generated code.
+func MakeEntry_Size(record Size, id SizeID, retired bool) Size {
+	record.id, record.retired = id, retired
+	return record
+}
+
 // Sizes: The sizes.
 type Sizes struct {
 	rows []Size

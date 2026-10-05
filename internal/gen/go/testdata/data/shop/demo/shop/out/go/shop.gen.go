@@ -672,6 +672,82 @@ type Gauge struct {
 
 func (self *Gauge) Level() int64 { return self.level }
 
+// Make_Point is for generated code.
+func Make_Point(x int16, y int16) Point {
+	return Point{
+		x: x,
+		y: y,
+	}
+}
+
+// Make_Reward_Item is for generated code.
+func Make_Reward_Item(itemID string, count int32) Reward {
+	self := MakeCase_Reward_Item(itemID, count)
+	return Reward{
+		kind:  RewardKindItem,
+		value: &self,
+	}
+}
+
+// MakeCase_Reward_Item is for generated code.
+func MakeCase_Reward_Item(itemID string, count int32) RewardItem {
+	return RewardItem{
+		itemID: itemID,
+		count:  count,
+	}
+}
+
+// Make_Reward_Gold is for generated code.
+func Make_Reward_Gold(amount uint64) Reward {
+	self := MakeCase_Reward_Gold(amount)
+	return Reward{
+		kind:  RewardKindGold,
+		value: &self,
+	}
+}
+
+// MakeCase_Reward_Gold is for generated code.
+func MakeCase_Reward_Gold(amount uint64) RewardGold {
+	return RewardGold{
+		amount: amount,
+	}
+}
+
+// Make_Reward_Nothing is for generated code.
+func Make_Reward_Nothing() Reward {
+	return Reward{
+		kind: RewardKindNothing,
+	}
+}
+
+// Make_Bonus is for generated code.
+func Make_Bonus(stat Tone, amount int64) Bonus {
+	return Bonus{
+		stat:   stat,
+		amount: amount,
+	}
+}
+
+// Make_Badge_Plain is for generated code.
+func Make_Badge_Plain() Badge {
+	return Badge{
+		kind: BadgeKindPlain,
+	}
+}
+
+// Make_Gauge is for generated code.
+func Make_Gauge(level int64) Gauge {
+	return Gauge{
+		level: level,
+	}
+}
+
+// MakeEntry_Item is for generated code.
+func MakeEntry_Item(record Item, id ItemID, retired bool) Item {
+	record.id, record.retired = id, retired
+	return record
+}
+
 // Items: Everything on sale.
 type Items struct {
 	rows           rt.KeyedList[ItemID, Item]

@@ -1,0 +1,7 @@
+type %[1]s struct {
+%[3]s %[2]s
+%[4]s any
+}
+
+func (self *%[1]s) %[5]s() %[2]s { return self.%[3]s }
+

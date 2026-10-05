@@ -658,6 +658,175 @@ func (self *AreaSection) Areas() rt.List[*Area] { return self.areas }
 
 func (self *AreaSection) AreasIDs() rt.List[AreaID] { return self.areas_ids }
 
+// Make_Intent is for generated code.
+func Make_Intent(tone ui.Tone, icon ui.Icon, label string, minRole roles.Role) Intent {
+	return Intent{
+		tone:    tone,
+		icon:    icon,
+		label:   label,
+		minRole: minRole,
+	}
+}
+
+// Make_Flag is for generated code.
+func Make_Flag(tone ui.Tone, icon ui.Icon, label string, hint string, hint_ok bool, setBy Actor, viewMinRole roles.Role, viewMinRole_ok bool) Flag {
+	return Flag{
+		tone:           tone,
+		icon:           icon,
+		label:          label,
+		hint:           hint,
+		hint_ok:        hint_ok,
+		setBy:          setBy,
+		viewMinRole:    viewMinRole,
+		viewMinRole_ok: viewMinRole_ok,
+	}
+}
+
+// Make_Status is for generated code.
+func Make_Status(tone ui.Tone, label string, terminal bool, next_ids rt.List[StatusID], requires rt.List[PostField], optional rt.List[PostField], by Actor, by_ok bool) Status {
+	self := Status{
+		tone:     tone,
+		label:    label,
+		terminal: terminal,
+		next_ids: next_ids,
+		requires: requires,
+		optional: optional,
+		by:       by,
+		by_ok:    by_ok,
+	}
+	{
+		entries := make([]*Status, next_ids.Len())
+		for i := range entries {
+			entries[i] = GetStatuses().Get(next_ids.At(i))
+		}
+		self.next = rt.MakeList(entries)
+	}
+	return self
+}
+
+// Make_Severity is for generated code.
+func Make_Severity(tone ui.Tone, label string, default_ bool) Severity {
+	return Severity{
+		tone:     tone,
+		label:    label,
+		default_: default_,
+	}
+}
+
+// Make_AreaGroup is for generated code.
+func Make_AreaGroup(label string) AreaGroup {
+	return AreaGroup{
+		label: label,
+	}
+}
+
+// Make_Area is for generated code.
+func Make_Area(group_id AreaGroupID, tone ui.Tone, icon ui.Icon, label string, hint string, hint_ok bool, minRole roles.Role, routesTo_ids rt.List[AreaID]) Area {
+	self := Area{
+		tone:         tone,
+		icon:         icon,
+		label:        label,
+		hint:         hint,
+		hint_ok:      hint_ok,
+		minRole:      minRole,
+		routesTo_ids: routesTo_ids,
+	}
+	self.group = GetAreaGroups().Get(group_id)
+	{
+		entries := make([]*Area, routesTo_ids.Len())
+		for i := range entries {
+			entries[i] = GetAreas().Get(routesTo_ids.At(i))
+		}
+		self.routesTo = rt.MakeList(entries)
+	}
+	return self
+}
+
+// Make_Column is for generated code.
+func Make_Column(label string, icon ui.Icon, statuses_ids rt.List[StatusID], assigneeFilter bool, hideable bool) Column {
+	self := Column{
+		label:          label,
+		icon:           icon,
+		statuses_ids:   statuses_ids,
+		assigneeFilter: assigneeFilter,
+		hideable:       hideable,
+	}
+	{
+		entries := make([]*Status, statuses_ids.Len())
+		for i := range entries {
+			entries[i] = GetStatuses().Get(statuses_ids.At(i))
+		}
+		self.statuses = rt.MakeList(entries)
+	}
+	return self
+}
+
+// Make_Deck is for generated code.
+func Make_Deck(layouts rt.List[string], maxHidden int64) Deck {
+	return Deck{
+		layouts:   layouts,
+		maxHidden: maxHidden,
+	}
+}
+
+// Make_AreaSection is for generated code.
+func Make_AreaSection(group_id AreaGroupID, areas_ids rt.List[AreaID]) AreaSection {
+	self := AreaSection{
+		areas_ids: areas_ids,
+	}
+	self.group = GetAreaGroups().Get(group_id)
+	{
+		entries := make([]*Area, areas_ids.Len())
+		for i := range entries {
+			entries[i] = GetAreas().Get(areas_ids.At(i))
+		}
+		self.areas = rt.MakeList(entries)
+	}
+	return self
+}
+
+// MakeEntry_Intent is for generated code.
+func MakeEntry_Intent(record Intent, id IntentID, retired bool) Intent {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Flag is for generated code.
+func MakeEntry_Flag(record Flag, id FlagID, retired bool) Flag {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Status is for generated code.
+func MakeEntry_Status(record Status, id StatusID, retired bool) Status {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Severity is for generated code.
+func MakeEntry_Severity(record Severity, id SeverityID, retired bool) Severity {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_AreaGroup is for generated code.
+func MakeEntry_AreaGroup(record AreaGroup, id AreaGroupID, retired bool) AreaGroup {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Area is for generated code.
+func MakeEntry_Area(record Area, id AreaID, retired bool) Area {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Column is for generated code.
+func MakeEntry_Column(record Column, id ColumnID, retired bool) Column {
+	record.id, record.retired = id, retired
+	return record
+}
+
 // Intents: What a post can be.
 type Intents struct {
 	rows []Intent

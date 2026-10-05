@@ -113,6 +113,41 @@ func (self *Post) ReplyID() (PostID, bool) {
 	return self.reply.id, true
 }
 
+// Make_Status is for generated code.
+func Make_Status(label string) Status {
+	return Status{
+		label: label,
+	}
+}
+
+// Make_Post is for generated code.
+func Make_Post(status_id StatusID, previous_id StatusID, previous_ok bool, seen_ids rt.List[StatusID], planned_ids rt.List[StatusID], planned_ok bool, reply_id PostID, reply_ok bool) Post {
+	self := Post{
+		status_id:   status_id,
+		previous_id: previous_id,
+		previous_ok: previous_ok,
+		seen_ids:    seen_ids,
+		planned_ids: planned_ids,
+		planned_ok:  planned_ok,
+	}
+	if reply_ok {
+		self.reply = GetPosts().Get(reply_id)
+	}
+	return self
+}
+
+// MakeEntry_Status is for generated code.
+func MakeEntry_Status(record Status, id StatusID, retired bool) Status {
+	record.id, record.retired = id, retired
+	return record
+}
+
+// MakeEntry_Post is for generated code.
+func MakeEntry_Post(record Post, id PostID, retired bool) Post {
+	record.id, record.retired = id, retired
+	return record
+}
+
 // Posts: Every post.
 type Posts struct {
 	rows []Post
