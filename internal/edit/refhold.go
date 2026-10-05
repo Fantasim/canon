@@ -29,7 +29,7 @@ func (tg *target) holds(t types.Type, seen map[types.Type]bool) bool {
 		return true
 	case types.Ref:
 		r, ok := b.(*types.RefType)
-		return ok && tg.ident != nil && r.Target == tg.ident.Coll
+		return ok && tg.names(r.Target)
 	case types.Enum:
 		return tg.member != nil && b == types.Type(tg.member.Enum)
 	default:

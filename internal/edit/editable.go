@@ -84,8 +84,16 @@ type cursor struct {
 	span    source.Span
 	layer   string           // layered: the amending layer; tree: the edit layer whose amendment holds the value
 	files   bool             // a collection ordered by file paths: load.dir, entry declarations
+	newFile bool             // a new entry goes into a file of its own (API.md N1)
 	entries []item           // the root collection's entry declarations (W2)
 	load    *syntax.LoadExpr // json: the load whose `at:` path reads the value (WIRE.md 6.3)
+}
+
+// ordersLiteral reports c's collection ordered by its literal for item it: no files order it,
+// or it is an item of the literal that entries declared in the let's own file follow (N1, W2).
+func (c cursor) ordersLiteral(it cursor) bool {
+	_, declared := it.node.(*syntax.EntryDecl)
+	return !c.files || !c.newFile && c.mode == ModeCanon && !declared
 }
 
 func (c cursor) to(st state) cursor {
@@ -289,7 +297,7 @@ func keyRow(j *judge) Reason {
 func orderRow(j *judge) Reason {
 	n := len(j.cur) - 1
 	switch {
-	case j.op == OpInsert && j.cur[n].files, j.op == OpMove && n > 0 && j.cur[n-1].files:
+	case j.op == OpInsert && !j.cur[n].ordersLiteral(cursor{}), j.op == OpMove && n > 0 && !j.cur[n-1].ordersLiteral(j.cur[n]):
 		return ReasonOrder
 	}
 	return ReasonNone

@@ -299,7 +299,7 @@ func (c *undoCheck) ordered(path string) bool {
 	if err != nil {
 		return true
 	}
-	return !c.a.base.judge(res, OpMove, c.a.env.EditLayer).last().files
+	return c.a.base.judge(res, OpMove, c.a.env.EditLayer).last().ordersLiteral(cursor{})
 }
 
 // forced is the value of root r in s, false when s has no such root or cannot compute it.

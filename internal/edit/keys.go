@@ -101,12 +101,29 @@ func refKey(lit KeyLit, coll *types.Collection) (keyMatch, bool) {
 	}, ok
 }
 
-// refWant is the key lit names in coll: a table's is a String, a keyed list's its key field's.
+// refWant is the key lit names in coll: a table's is a String, a keyed list's its key field's,
+// followed through ref keys; false for keys that lead back to a list already passed, which have
+// no base key type (E3012; DECISIONS 316).
 func refWant(lit KeyLit, coll *types.Collection) (value.Key, bool) {
-	var kt types.Type = types.StringType
-	if coll != nil && coll.KeyedBy != nil {
-		kt = coll.KeyedBy.Type
+	seen := map[*types.Collection]bool{}
+	for {
+		var kt types.Type = types.StringType
+		if coll != nil && coll.KeyedBy != nil {
+			kt = coll.KeyedBy.Type
+		}
+		r, isRef := kt.Base().(*types.RefType)
+		switch {
+		case !isRef:
+			return baseWant(lit, kt)
+		case seen[coll]:
+			return value.Key{}, false
+		}
+		seen[coll], coll = true, r.Target
 	}
+}
+
+// baseWant is the key lit names in a collection whose key type kt is no ref.
+func baseWant(lit KeyLit, kt types.Type) (value.Key, bool) {
 	switch b := kt.Base().(type) {
 	case types.Basic:
 		if b.K == types.Int {
@@ -115,8 +132,6 @@ func refWant(lit KeyLit, coll *types.Collection) (value.Key, bool) {
 		return value.Key{S: lit.Text}, lit.Kind != KeyInt
 	case *types.EnumType:
 		return memberKey(lit, b)
-	case *types.RefType:
-		return refWant(lit, b.Target)
 	}
 	return value.Key{S: litText(lit)}, true
 }

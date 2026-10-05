@@ -170,14 +170,13 @@ func (x *opCtx) undoRemove(parent value.Value, pos int) error {
 	if err != nil {
 		return err
 	}
-	files := x.j.holder().files
 	pp := x.parentPath()
 	switch p := parent.(type) {
 	case *value.List:
-		if files {
-			x.inverse(Operation{Kind: OpAdd, Path: pp, Value: lit})
+		if n, ordered := literalCount(x.j.holder(), parent); ordered && pos < n {
+			x.inverse(Operation{Kind: OpInsert, Path: pp, Index: pos, Value: lit}) // the literal orders it (N1)
 		} else {
-			x.inverse(Operation{Kind: OpInsert, Path: pp, Index: pos, Value: lit})
+			x.inverse(Operation{Kind: OpAdd, Path: pp, Value: lit})
 		}
 		return nil
 	case *value.Table:
@@ -185,10 +184,24 @@ func (x *opCtx) undoRemove(parent value.Value, pos int) error {
 	case *value.Map:
 		x.inverse(Operation{Kind: OpAddEntry, Path: pp, Key: keyLit(p.Keys[pos]), Value: lit})
 	}
-	if !files && pos != siblingCount(parent)-1 && x.a.env.EditLayer == "" { // a layer has no Move (W5 layer)
+	if n, ordered := literalCount(x.j.holder(), parent); ordered && pos < n-1 && x.a.env.EditLayer == "" { // a layer has no Move (W5 layer)
 		x.inverse(Operation{Kind: OpMove, Path: x.res.Canonical, Index: pos})
 	}
 	return nil
+}
+
+// literalCount is how many items of parent its holder pc's literal or JSON container orders:
+// all, or beside entries declared in the let's own file, which follow them (W2), the
+// literal's; false when file paths order them (API.md N1).
+func literalCount(pc cursor, parent value.Value) (int, bool) {
+	n := siblingCount(parent)
+	switch {
+	case !pc.files:
+		return n, true
+	case pc.newFile || pc.mode != ModeCanon:
+		return 0, false
+	}
+	return n - len(pc.entries), true
 }
 
 // moveOp moves an element or entry to position i among its siblings, counted after its
@@ -208,7 +221,7 @@ func moveOp(x *opCtx) error {
 		return nil
 	}
 	c, pc := x.j.last(), x.j.holder()
-	if c.state != stTree || pc.state != stTree || pc.files {
+	if lit, ordered := literalCount(pc, parent); c.state != stTree || pc.state != stTree || !ordered || pos >= lit || x.op.Index >= lit {
 		return &NotEditableError{Reason: ReasonOrder}
 	}
 	l, isList := parent.(*value.List)
@@ -240,7 +253,7 @@ func (x *opCtx) movedPath(parent value.Value) string {
 func (x *opCtx) moveCanon(c, pc cursor, from, to int) error {
 	item := itemOf(pc.node, c.node)
 	list, ok := listToken(pc.node)
-	if item == nil || !ok || itemCount(pc.node) != siblingCountOf(x) {
+	if item == nil || !ok || itemCount(pc.node) != literalCountOf(x, pc) {
 		return &NotEditableError{Reason: ReasonOrder}
 	}
 	at := to
@@ -251,9 +264,11 @@ func (x *opCtx) moveCanon(c, pc cursor, from, to int) error {
 	return nil
 }
 
-func siblingCountOf(x *opCtx) int {
+// literalCountOf is literalCount of the target's collection.
+func literalCountOf(x *opCtx, pc cursor) int {
 	parent, _, _ := x.sibling()
-	return siblingCount(parent)
+	n, _ := literalCount(pc, parent)
+	return n
 }
 
 // moveJSON removes the member or element, then inserts it at its new place counted after the

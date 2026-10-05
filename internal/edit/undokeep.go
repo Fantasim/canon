@@ -103,11 +103,11 @@ func (a *applier) lockedEntries(locked []Locked) []string {
 			continue
 		}
 		root := Path{Package: l.Name[:dot], Root: l.Name[dot+len(dotSeg):]}
-		res, err := a.base.open(root)
+		ref, err := a.base.lookup(root) // its declared type: a root with no value has one too (E19)
 		if err != nil {
-			res, err = a.snap.open(root)
+			ref, err = a.snap.lookup(root)
 		}
-		if err != nil || !stableTable(res.Target.Type()) {
+		if err != nil || ref.enum != nil || !stableTable(ref.obj.Type()) {
 			continue
 		}
 		out = append(out, childPath(root.String(), entrySeg(value.Key{S: l.Key})))
@@ -127,10 +127,16 @@ func (a *applier) readFacts(paths []string) *lockFacts {
 		case !inResult:
 			continue
 		}
-		before, held := entryAt(a.base, p)
-		f.ids[p], f.fresh[p] = rec, !held
-		if held {
-			f.stable[p] = stableNames(before)
+		var elem types.Type
+		before, stated := entryAt(a.base, p)
+		if stated {
+			elem = before.T
+		} else {
+			elem, stated = a.base.statedType(p) // a root without a value states its entries (E19)
+		}
+		f.ids[p], f.fresh[p] = rec, !stated
+		if stated {
+			f.stable[p] = stableNames(elem)
 		}
 	}
 	if a.multi {
@@ -139,10 +145,10 @@ func (a *applier) readFacts(paths []string) *lockFacts {
 	return f
 }
 
-// stableNames are the @stable fields of rec.
-func stableNames(rec *value.Record) []string {
+// stableNames are the @stable fields of record type t.
+func stableNames(t types.Type) []string {
 	var out []string
-	for _, fd := range fieldsOf(rec.T) {
+	for _, fd := range fieldsOf(t) {
 		if fd.Stable {
 			out = append(out, fd.Name)
 		}

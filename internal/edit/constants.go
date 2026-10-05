@@ -360,6 +360,7 @@ const (
 	pathSegment    = "a value a path segment can hold"
 	detailNotWord  = "a table key is a name"
 	detailNotUTF8  = "text that is not UTF-8"
+	detailNoEntry  = "names no entry of its collection"
 )
 
 // The members of an operation's JSON form as bits of a set; `value` and `source` are one (E24).

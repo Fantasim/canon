@@ -1,6 +1,8 @@
 package edit
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
@@ -17,10 +19,13 @@ func (s *Snapshot) rootCursor(res resolution) cursor {
 	switch shape.SourceForm(s.info, e) {
 	case shape.FormLiteral:
 		f := obj.File()
-		return cursor{state: stTree, mode: ModeCanon, node: e, file: f, span: f.Span(e), files: files, entries: entries}
+		c := cursor{state: stTree, mode: ModeCanon, node: e, file: f, span: f.Span(e), files: files, entries: entries}
+		c.newFile = filesLet(obj.Decl()) || slices.ContainsFunc(entries, func(it item) bool { return it.file != f })
+		return c
 	case shape.FormJSON:
 		c := loadCursor(s.info, e, res.val)
 		c.entries, c.files = entries, c.files || files
+		c.newFile = c.files
 		return c
 	case shape.FormFormat:
 		return cursor{state: stFormat}

@@ -137,8 +137,29 @@ func targetOf(op Operation) string {
 	return op.Path
 }
 
-// holds reports the edit's result holding the entry at path.
+// holds reports the edit's result holding the entry at path; when the result's table has no
+// value (AllowErrors, EVALUATION.md 7.2), as the request's operations left it (API.md E23).
 func (a *applier) holds(path string) bool {
-	_, ok := entryAt(a.snap, path)
-	return ok
+	if _, ok := entryAt(a.snap, path); ok {
+		return true
+	}
+	parent, _ := enclosing(path)
+	_, readable := tableAt(a.snap, parent)
+	return !readable && a.held[path]
+}
+
+// heldBy records, for a Set of a whole root table to v, which entries an earlier AddEntry put
+// there it keeps (holds).
+func (x *opCtx) heldBy(v value.Value) {
+	t, ok := v.(*value.Table)
+	if !ok || len(x.res.Steps) != 0 {
+		return
+	}
+	for p := range x.a.held { //canon:unordered each entry is judged alone
+		if parent, _ := enclosing(p); parent == x.res.Canonical {
+			x.a.held[p] = slices.ContainsFunc(t.Entries, func(e *value.Record) bool {
+				return childPath(parent, entrySeg(e.Ident.Key)) == p
+			})
+		}
+	}
 }

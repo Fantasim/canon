@@ -34,7 +34,7 @@ type work struct {
 	locked  []Locked
 	kept    keptCase
 	given   []givenValue
-	rekey   *pathMove // a Rename's item, which E15 follows to its new name
+	rekey   []pathMove // a Rename's item and the elements it moves, which E15 follows (E11)
 }
 
 // wholeWrite is a file written whole and the regions of it before the write that may change:
@@ -256,8 +256,8 @@ func (a *applier) commit(w *work) error {
 	a.dropped = append(a.dropped, w.dropped...)
 	a.records = append(a.records, w.records...)
 	a.given = append(a.given, w.given...)
-	if w.rekey != nil {
-		a.rekey(*w.rekey)
+	for _, m := range w.rekey {
+		a.rekey(m)
 	}
 	a.locked = append(a.locked, w.locked...)
 	a.kept = w.kept

@@ -78,17 +78,34 @@ func (x *opCtx) addTableEntry(t *value.Table) error {
 	}
 	if stable && len(x.res.Steps) == 0 {
 		x.w.locked = append(x.w.locked, Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()})
+		x.a.held[childPath(x.res.Canonical, e.seg)] = true
 	}
-	if x.j.last().files {
+	c := x.j.last()
+	if c.newFile {
 		return x.newEntryFile(rec, e.key)
 	}
 	key := e.key.CanonText()
 	grown := &value.Table{T: t.T, Entries: append(slices.Clone(t.Entries), rec), P: t.P}
 	count := len(t.Entries)
-	return x.insertItem(newItem{
-		v: rec, grown: grown, key: key, at: count, count: count,
-		text: func() (string, error) { return x.a.entryText(key, rec, false) },
-	})
+	it := newItem{v: rec, grown: grown, key: key, at: count, count: count, text: func() (string, error) { return x.a.entryText(key, rec, false) }}
+	if c.files && c.mode == ModeCanon {
+		return x.literalItem(c, it)
+	}
+	return x.insertItem(it)
+}
+
+// literalItem puts it into c's literal, which entries declared in the let's own file follow
+// (W2): appended after the literal's items, or at a place among them (API.md N1).
+func (x *opCtx) literalItem(c cursor, it newItem) error {
+	n := it.count - len(c.entries)
+	switch {
+	case it.at == it.count:
+		it.at = n
+	case it.at > n:
+		return &NotEditableError{Reason: ReasonOrder}
+	}
+	it.count = n
+	return x.insertCanon(c, it)
 }
 
 // newMapEntry types AddEntry's key and value for map m.

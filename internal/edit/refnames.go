@@ -151,7 +151,12 @@ func (sc *nameScan) throughOwn(x *syntax.SelectorExpr) bool {
 	return err == nil && isRec && owner == sc.tg.ident.Owner
 }
 
+// inColl reports key token e naming an entry of the target's collection: recorded as its key,
+// or typed `ref C` for it, as a path's key into a list keyed by a ref is (DECISIONS 316).
 func (sc *nameScan) inColl(e syntax.Expr) bool {
-	coll := sc.s.info.Keys[e]
-	return coll != nil && coll == sc.tg.ident.Coll
+	if sc.tg.names(sc.s.info.Keys[e]) {
+		return true
+	}
+	rt, isRef := baseOf(sc.s.info.Types[e]).(*types.RefType)
+	return isRef && sc.tg.names(rt.Target)
 }

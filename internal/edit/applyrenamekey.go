@@ -79,7 +79,11 @@ func (r *renaming) replace(f *syntax.File, n syntax.Node, text string, word bool
 		return badTemplate(r.to)
 	}
 	sp := f.Span(n)
-	r.done[tokenPlace{file: f.Src.Path, start: sp.Start, end: sp.End}] = true
+	at := tokenPlace{file: f.Src.Path, start: sp.Start, end: sp.End}
+	if r.done[at] {
+		return nil // a reference's token a cascade reaches again (E11)
+	}
+	r.done[at] = true
 	r.text[f.Src.Path] = append(r.text[f.Src.Path], format.Change{Kind: format.Replace, Node: n, Text: text})
 	return nil
 }

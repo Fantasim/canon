@@ -52,14 +52,18 @@ func (x *opCtx) addElem(l *value.List, at int) error {
 		if key != nil {
 			seg = keySeg(key, lt.KeyedBy.Type)
 		}
-		if rec, isRec := v.(*value.Record); isRec && x.j.last().files {
+		if rec, isRec := v.(*value.Record); isRec && x.j.last().newFile {
 			x.inverse(Operation{Kind: OpRemove, Path: childPath(x.res.Canonical, seg)})
 			return x.newEntryFile(rec, key)
 		}
 	}
 	x.addInverse(seg)
 	grown := &value.List{T: l.T, Elems: slices.Insert(slices.Clone(l.Elems), at, v), P: l.P}
-	return x.insertItem(newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func() (string, error) { return x.a.canonText(v) }})
+	it := newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func() (string, error) { return x.a.canonText(v) }}
+	if c := x.j.last(); c.files && c.ordersLiteral(cursor{}) {
+		return x.literalItem(c, it)
+	}
+	return x.insertItem(it)
 }
 
 // hasElemKey reports an element of l whose key is key.

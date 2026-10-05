@@ -28,6 +28,9 @@ func renameOp(x *opCtx) error {
 	if err != nil {
 		return err
 	}
+	if err := x.refKeyHeld(k, kt); err != nil {
+		return err
+	}
 	old := keyOfItem(parent, x.res.Target)
 	_, isTable := parent.(*value.Table)
 	switch {
@@ -38,14 +41,20 @@ func renameOp(x *opCtx) error {
 	case holdsKey(parent, k):
 		return ErrKeyExists
 	}
-	refs, err := x.renameRefs(parent)
+	return x.renameTo(parent, old, k, kt)
+}
+
+// renameTo rewrites the key old of the target of parent to k, every reference to it and the
+// keyed-list elements it keys (API.md E11, E12; DECISIONS 310).
+func (x *opCtx) renameTo(parent, old, k value.Value, kt types.Type) error {
+	refs, cascades, err := x.renameRefs(parent)
 	if err != nil {
 		return err
 	}
 	renamed := childPath(x.parentPath(), keySegOf(parent, k, kt))
-	x.inverse(Operation{Kind: OpRename, Path: renamed, Key: keyLit(old)})
-	x.w.rekey = &pathMove{from: x.res.Canonical, to: renamed}
-	r := &renaming{x: x, from: old, to: k, text: map[string][]format.Change{}, done: map[tokenPlace]bool{}, pkgs: map[string]string{}}
+	x.inverse(Operation{Kind: OpRename, Path: renamed, Key: keyLit(old)}) // it cascades as this one does
+	x.w.rekey = append(x.w.rekey, pathMove{from: x.res.Canonical, to: renamed})
+	r := &renaming{x: x, from: old, to: k, text: map[string][]format.Change{}, done: map[tokenPlace]bool{}, pkgs: map[string]string{}, moved: map[string]bool{}}
 	if err := r.key(parent); err != nil {
 		return err
 	}
@@ -53,6 +62,9 @@ func renameOp(x *opCtx) error {
 		if err := r.retoken(ref.Span, ref.Package); err != nil {
 			return err
 		}
+	}
+	if err := r.cascade(cascades); err != nil {
+		return err
 	}
 	r.flush()
 	return nil
@@ -111,30 +123,35 @@ func keySegOf(c, k value.Value, kt types.Type) Seg {
 }
 
 // renameRefs are the references a rename rewrites (E11): none for a map entry, which nothing
-// references; a value or key reference that cannot be edited refuses the rename (E12).
-func (x *opCtx) renameRefs(parent value.Value) ([]Ref, error) {
+// references; a value or key reference that cannot be edited refuses the rename (E12), but the
+// key field of a keyed-list element names an element the rename moves (DECISIONS 310).
+func (x *opCtx) renameRefs(parent value.Value) ([]Ref, []resolution, error) {
 	if _, isMap := parent.(*value.Map); isMap {
-		return nil, nil
+		return nil, nil, nil
 	}
 	refs, err := x.a.snap.Refs(x.a.ctx, x.res.Resolved)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var stuck []string
+	var moved []resolution
 	reason := ReasonNone
 	for _, r := range refs {
 		if r.Kind != RefValue && r.Kind != RefKey {
 			continue
 		}
-		if why := x.a.refReason(r); why != ReasonNone {
+		why := x.a.refReason(r)
+		if el, keyed := x.a.keyedElement(r); why == ReasonKey && keyed {
+			moved = append(moved, el)
+		} else if why != ReasonNone {
 			stuck = append(stuck, r.Package+packageMark+r.Path)
 			reason = cmpOr(reason, why)
 		}
 	}
 	if len(stuck) > 0 {
-		return nil, &NotEditableError{Reason: reason, Refs: stuck}
+		return nil, nil, &NotEditableError{Reason: reason, Refs: stuck}
 	}
-	return refs, nil
+	return refs, moved, nil
 }
 
 // cmpOr is r unless it is ReasonNone, else why.
@@ -162,6 +179,7 @@ type renaming struct {
 	text     map[string][]format.Change
 	done     map[tokenPlace]bool // the tokens already rewritten
 	pkgs     map[string]string   // the package of each file written, by display path
+	moved    map[string]bool     // the keyed-list elements a cascade moved, by old path (E11)
 }
 
 // tokenPlace is a token of a file by its display path and offsets, whichever file set read it.
@@ -258,4 +276,23 @@ func (r *renaming) flush() {
 	for display, changes := range r.text { //canon:unordered each file's changes are added under its own name
 		r.x.w.addCanon(display, r.pkgOf(display), changes)
 	}
+}
+
+// refKeyHeld refuses a new key of type `ref C` that names no entry of C, whatever AllowErrors
+// says: written, it would leave the keyed list without a value (API.md E3, V1; DECISIONS 316).
+func (x *opCtx) refKeyHeld(k value.Value, kt types.Type) error {
+	r, isRef := k.(*value.Ref)
+	rt, typed := baseOf(kt).(*types.RefType)
+	if !isRef || !typed || rt.Target == nil || rt.Target.Kind != types.CollLet {
+		return nil
+	}
+	p := Path{Package: rt.Target.Pkg, Root: rt.Target.Name}
+	for _, f := range rt.Target.FieldPath {
+		p.Segs = append(p.Segs, Seg{Kind: SegField, Name: f})
+	}
+	p.Segs = append(p.Segs, entrySeg(r.Key))
+	if _, err := Resolve(x.a.snap, p); err != nil {
+		return &ValueError{Expected: kt.String(), Got: describe(x.op.Key), Detail: detailNoEntry}
+	}
+	return nil
 }

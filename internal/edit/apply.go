@@ -138,10 +138,11 @@ type applier struct {
 	cascadeUndo []Operation
 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)
 	locked      []Locked
-	facts       *lockFacts // the edit's lock facts its Undo keeps (API.md E23)
-	kept        keptCase   // the fields the last SetCase kept for its refinements to judge (E14)
-	omit        []string   // the fields a SetCase leaves out: its refinements refuse them (E14)
-	step        int        // the operation being applied, cascadeStep for the cascades (M6 tests)
+	facts       *lockFacts      // the edit's lock facts its Undo keeps (API.md E23)
+	held        map[string]bool // each entry an AddEntry put in a root stable table, held by the ops after it (E23)
+	kept        keptCase        // the fields the last SetCase kept for its refinements to judge (E14)
+	omit        []string        // the fields a SetCase leaves out: its refinements refuse them (E14)
+	step        int             // the operation being applied, cascadeStep for the cascades (M6 tests)
 
 	multi, dependent, renamed bool      // what verifiedUndo needs of the request (noteUndo)
 	allowErrors               bool      // the request's AllowErrors: an id it adds may stay unlocked (E20)
@@ -158,7 +159,7 @@ type NameEdit struct {
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
 	h := env.Host(base.a)
-	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, marks: newSymMarks()}
+	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, held: map[string]bool{}, marks: newSymMarks()}
 	for _, pkg := range base.pkgs {
 		if base.a.Bag(pkg.Path) != nil {
 			a.selected = append(a.selected, pkg.Path)
@@ -218,7 +219,10 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 		return nil, err
 	}
 	res, err := a.snap.open(p)
-	if err != nil {
+	switch {
+	case err != nil && h == nil && poisonedRoot(err):
+		return a.sourceOp(op, p, err) // repairable from its source (E19)
+	case err != nil:
 		return nil, err
 	}
 	if res.root.enum != nil {

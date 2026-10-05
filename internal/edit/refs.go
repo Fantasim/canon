@@ -60,12 +60,14 @@ type target struct {
 	ident   *value.Identity
 	member  *value.Member
 	objects map[check.Object]bool
+	s       *Snapshot
+	paths   map[*types.Collection]bool // the let-path collections met, naming the target's instance or not
 }
 
 // target is the entry, keyed-list element or member res names (API.md R7, P7a).
 func (s *Snapshot) target(res resolution) (*target, bool) {
 	if m, ok := res.Target.(*value.Member); ok && res.root.enum != nil {
-		tg := &target{member: m, objects: map[check.Object]bool{}}
+		tg := &target{member: m, objects: map[check.Object]bool{}, s: s, paths: map[*types.Collection]bool{}}
 		if d, isEnum := res.root.obj.Decl().(*syntax.EnumDecl); isEnum && m.Index < len(d.Members) {
 			tg.objects[s.info.Defs[d.Members[m.Index].Name]] = true
 		}
@@ -76,7 +78,7 @@ func (s *Snapshot) target(res resolution) (*target, bool) {
 	if n == 0 || !ok || rec.Ident == nil || !keyedContainer(res.Steps[n-1].Container) {
 		return nil, false
 	}
-	return &target{ident: rec.Ident, objects: s.entryObjects(rec.Ident)}, true
+	return &target{ident: rec.Ident, objects: s.entryObjects(rec.Ident), s: s, paths: map[*types.Collection]bool{}}, true
 }
 
 // keyedContainer reports a table or a keyed list: what holds entries and keyed elements.
@@ -125,9 +127,55 @@ func (tg *target) isValue(v value.Value) bool {
 	switch x := v.(type) {
 	case *value.Ref:
 		rt, ok := baseOf(x.T).(*types.RefType)
-		return ok && tg.ident != nil && rt.Target == tg.ident.Coll && x.Key == tg.ident.Key && x.Owner == tg.ident.Owner
+		if !ok || tg.ident == nil || x.Key != tg.ident.Key {
+			return false
+		}
+		return rt.Target == tg.ident.Coll && x.Owner == tg.ident.Owner || rt.Target != tg.ident.Coll && tg.names(rt.Target)
 	case *value.Member:
 		return tg.member != nil && x.Enum == tg.member.Enum && x.Index == tg.member.Index
 	}
 	return false
+}
+
+// names reports coll naming the target's collection: that collection, or a let path to the
+// record field instance holding the target (DECISIONS 315, 316), resolved once.
+func (tg *target) names(coll *types.Collection) bool {
+	switch {
+	case tg.ident == nil || coll == nil:
+		return false
+	case coll == tg.ident.Coll:
+		return true
+	case coll.Kind != types.CollLet || len(coll.FieldPath) == 0:
+		return false
+	}
+	if known, ok := tg.paths[coll]; ok {
+		return known
+	}
+	tg.paths[coll] = tg.instanceAt(coll)
+	return tg.paths[coll]
+}
+
+// instanceAt reports the let path coll reaching the collection instance holding the target.
+func (tg *target) instanceAt(coll *types.Collection) bool {
+	p := Path{Package: coll.Pkg, Root: coll.Name}
+	for _, f := range coll.FieldPath {
+		p.Segs = append(p.Segs, Seg{Kind: SegField, Name: f})
+	}
+	res, err := Resolve(tg.s, p)
+	if err != nil {
+		return false
+	}
+	var entries []value.Value
+	switch c := res.Target.(type) {
+	case *value.List:
+		entries = c.Elems
+	case *value.Table:
+		for _, e := range c.Entries {
+			entries = append(entries, e)
+		}
+	}
+	return slices.ContainsFunc(entries, func(e value.Value) bool {
+		rec, ok := e.(*value.Record)
+		return ok && rec.Ident != nil && rec.Ident.Coll == tg.ident.Coll && rec.Ident.Owner == tg.ident.Owner
+	})
 }

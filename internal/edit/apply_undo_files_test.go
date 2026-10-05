@@ -298,7 +298,11 @@ func TestUndoStableAddEntry(t *testing.T) {
 		without := maps.Clone(f2)
 		without["law/d/d.canon"] = file(text[:at] + text[end:])
 		sameIn(t, "stable AddEntry, Undo, but the retired entry", fs, without, nil)
-		if want := []edit.Locked{{Name: "d.quests", Key: "hunt"}}; !slices.Equal(back.Locked, want) {
+		want := []edit.Locked{{Name: "d.quests", Key: "hunt"}}
+		if slices.ContainsFunc(ops, func(op edit.Operation) bool { return strings.HasPrefix(op.Path, "quests.slay.") }) {
+			want = append(want, edit.Locked{Name: "d.quests", Key: "slay"}) // a Set back in pending slay records it (E20)
+		}
+		if !slices.Equal(back.Locked, want) {
 			t.Errorf("API.md E20, %+v: the Undo locks %+v, want %+v", ops, back.Locked, want)
 		}
 	}
