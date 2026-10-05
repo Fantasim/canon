@@ -56,12 +56,12 @@ project demo {
 }
 -- findings.txt --
 error[E3506]  a/a.canon:34:34
-  ts.cur.x.c: Color.gone is retired
+  ts.cur.x.c: Color.gone is retired (only a retired entry or a past Color may hold it)
   expected by a/a.canon:8 (retired gone)
   in build (a/a.canon:45)
 
 error[E3506]  a/a.canon:40:34
-  ts2.cur.x.c: Color.gone is retired
+  ts2.cur.x.c: Color.gone is retired (only a retired entry or a past Color may hold it)
   expected by a/a.canon:8 (retired gone)
   in build2 (a/a.canon:48)
 

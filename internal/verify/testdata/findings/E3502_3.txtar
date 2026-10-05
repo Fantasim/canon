@@ -1,6 +1,6 @@
 TYPES.md §10.3, LOCK.md §4.3 (log-2026-09-28, verify round 5): stage B remembers an instance per
 enclosing entry, which E3502 names: the one `s` held by the live entries `ta.a` and `tb.b` is
-E3502 in each, naming its own entry.
+E3502 in each, naming its own entry, and in `s` itself, naming none (DECISIONS 304).
 -- a/a.canon --
 /// A.
 package a
@@ -56,11 +56,15 @@ project demo {
 }
 -- findings.txt --
 error[E3502]  a/a.canon:42:33
-  ta.a.x.t: old is retired; live ta.a cannot reference it
+  s.t: old is retired; a live value cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (t: ref tags)
 
 error[E3502]  a/a.canon:42:33
-  tb.b.x.t: old is retired; live tb.b cannot reference it
+  ta.a.x.t: old is retired; live ta.a cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (t: ref tags)
 
-2 errors, 0 warnings in 1 package (…)
+error[E3502]  a/a.canon:42:33
+  tb.b.x.t: old is retired; live tb.b cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:32 (t: ref tags)
+
+3 errors, 0 warnings in 1 package (…)

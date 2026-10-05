@@ -1,0 +1,47 @@
+TYPES.md §8.4, DECISIONS 304: `past` over a type-function application makes the branch selected
+for each value past: `[past Member(vocab)]` may list a retired member of the enum `vocab` selects;
+the same member through `[Member(vocab)]` is E3506.
+-- a/a.canon --
+/// A.
+package a
+
+/// Grant kinds.
+enum GrantKind { DAILY, retired GIFT }
+
+/// Shop kinds.
+enum ShopKind { BUY, retired TRADE }
+
+/// Vocabularies.
+enum Vocab { grant, shop }
+
+/// The members of a vocabulary.
+type Member(v: Vocab) = match v {
+  grant => GrantKind
+  shop => ShopKind
+}
+
+/// A role over a vocabulary.
+record Role {
+  /// Vocabulary.
+  vocab: Vocab
+  /// Kinds seen: history.
+  kinds: [past Member(vocab)]
+  /// Kinds offered: live.
+  live: [Member(vocab)]
+}
+
+/// Roles.
+let roles: [Role] = [
+  { vocab: grant, kinds: [DAILY, GIFT], live: [GIFT] },
+  { vocab: shop, kinds: [TRADE], live: [BUY] },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3506]  a/a.canon:31:48
+  roles[0].live[0]: GrantKind.GIFT is retired (only a retired entry or a past GrantKind may hold it)
+  expected by a/a.canon:5 (retired GIFT)
+
+1 error, 0 warnings in 1 package (…)

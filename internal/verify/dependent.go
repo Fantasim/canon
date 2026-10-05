@@ -66,20 +66,33 @@ func (w *walker) branch(app *types.TypeAppType, e *env) (types.Type, *env, bool)
 	case !w.charge(app):
 		return nil, nil, false
 	}
-	inner := &env{up: e, params: make(map[*types.Param]value.Value, len(fn.Params))}
-	for i, p := range fn.Params {
-		v, r := w.arg(app.Args[i], e)
-		if !w.settled(r, app) {
-			return nil, nil, false
-		}
-		inner.params[p] = v
-	}
-	t, ok := w.selected(fn, inner)
+	inner, none, ok := w.args(app, e)
 	if !ok {
 		return nil, nil, false
 	}
+	t := types.NeverType // an argument that reads none computes Never, its body unevaluated (TYPES.md §11.6)
+	if !none {
+		if t, ok = w.selected(fn, inner); !ok {
+			return nil, nil, false
+		}
+	}
 	w.branches[key] = branchOut{t: t, inner: inner}
 	return t, inner, true
+}
+
+// args binds app's arguments read in e, and reports one that reads none (TYPES.md §11.1).
+func (w *walker) args(app *types.TypeAppType, e *env) (inner *env, none, ok bool) {
+	fn := app.Fn
+	inner = &env{up: e, params: make(map[*types.Param]value.Value, len(fn.Params))}
+	for i, p := range fn.Params {
+		v, r := w.arg(app.Args[i], e)
+		if !w.settled(r, app) {
+			return nil, false, false
+		}
+		inner.params[p] = v
+		none = none || isNone(v)
+	}
+	return inner, none, true
 }
 
 // selected is the arm fn's scrutinee selects in inner, or its body.
@@ -201,7 +214,7 @@ func (w *walker) stored(v, nv value.Value, t types.Type, at *Path, sc scope) val
 		w.moved(v, s)
 	}
 	nsc := sc.part()
-	nsc.dep = nil
+	nsc.dep, nsc.past = nil, sc.past // a past application's selected branch is past (TYPES.md §8.4)
 	return w.walk(s, t, at, nsc)
 }
 

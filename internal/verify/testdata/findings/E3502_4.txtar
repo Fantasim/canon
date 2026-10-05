@@ -47,11 +47,11 @@ project demo {
 }
 -- findings.txt --
 error[E3502]  a/a.canon:36:44
-  ta.a.t: old is retired; live ta.a cannot reference it
+  ta.a.t: old is retired; live ta.a cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (t: ref tags)
 
 error[E3502]  a/a.canon:36:44
-  tc.a.t: old is retired; live tc.a cannot reference it
+  tc.a.t: old is retired; live tc.a cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (t: ref tags)
 
 2 errors, 0 warnings in 1 package (…)

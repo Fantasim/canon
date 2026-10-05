@@ -1,0 +1,70 @@
+TYPES.md §11.1, §11.6, DECISIONS 307: where an optional argument reads none, a list element of
+`[Member(column.values)](1..)` is E3802 (Never), and an optional field `Member(column.values)?`
+accepts only none; where the column has a vocabulary both verify as before.
+-- a/a.canon --
+/// A.
+package a
+
+/// Vocabularies.
+enum Vocabulary { grant, shop }
+
+/// Grant kinds.
+enum GrantKind { DAILY, WEEKLY }
+
+/// Shop kinds.
+enum ShopKind { BUY, SELL }
+
+/// The members of a vocabulary.
+type Member(v: Vocabulary) = match v {
+  grant => GrantKind
+  shop => ShopKind
+}
+
+/// A column.
+record Column {
+  /// Name.
+  name: String
+  /// Its vocabulary, if any.
+  values: Vocabulary?
+}
+
+/// Columns.
+let columns: table Column = {
+  kind { name: "kind", values: grant }
+  amount { name: "amount" }
+}
+
+/// A role.
+record Role {
+  /// Column.
+  column: ref columns
+  /// Kinds.
+  kinds: [Member(column.values)](1..)
+  /// A default kind, if any.
+  maybe: Member(column.values)?
+}
+
+/// Roles.
+let roles: [Role] = [
+  { column: kind, kinds: [DAILY, WEEKLY], maybe: WEEKLY },
+  { column: amount, kinds: [DAILY], maybe: none },
+  { column: amount, kinds: [SELL], maybe: DAILY },
+]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:46:29
+  roles[1].kinds[0]: value does not match Member(column.values) = Never
+  expected by a/a.canon:38 (Member(column.values))
+
+error[E3802]  a/a.canon:47:29
+  roles[2].kinds[0]: value does not match Member(column.values) = Never
+  expected by a/a.canon:38 (Member(column.values))
+
+error[E3802]  a/a.canon:47:43
+  roles[2].maybe: value does not match Member(column.values) = Never
+  expected by a/a.canon:40 (Member(column.values))
+
+3 errors, 0 warnings in 1 package (…)

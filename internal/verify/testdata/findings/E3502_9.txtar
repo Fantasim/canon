@@ -1,0 +1,67 @@
+EVALUATION.md §4.2, §5, LOCK.md §4.3, DECISIONS 304: a scope's judgement of a remembered instance
+is kept with the bag it was reported into: the instance made in z's retired entry `holders.gone`,
+judged live first by `a.ax` (forced first), is E3502 again in z for `zx`, held outside its table.
+-- z/z.canon --
+/// Z.
+package z
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = { retired old { label: "o" }, cur { label: "c" } }
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Tag.
+  t: ref tags
+}
+
+/// Holders: the instance is made inside a retired entry.
+let holders: table X = { retired gone { k: col, p: red, t: old } }
+
+/// Zx, live in z.
+let zx: X = holders.gone
+-- a/a.canon --
+/// A.
+package a
+
+import z
+
+/// Ax, live in a.
+let ax: z.X = z.holders.gone
+-- order.txt --
+a.ax
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  z/z.canon:36:60
+  ax.t: old is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by z/z.canon:32 (t: ref tags)
+
+error[E3502]  z/z.canon:36:60
+  zx.t: old is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by z/z.canon:32 (t: ref tags)
+
+2 errors, 0 warnings in 2 packages (…)

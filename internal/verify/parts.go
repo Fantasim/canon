@@ -6,9 +6,18 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// part is sc for an element, a key, a map value or a pair half: not a field's own value.
+// part is sc for a field, an element, a key, a map value or a pair half: not its own slot's field or past (TYPES.md §8.4).
 func (sc scope) part() scope {
-	sc.field, sc.direct = "", false
+	sc.field, sc.direct, sc.past = "", false, false
+	return sc
+}
+
+// entered is sc inside the table entry at p, retired or not (LOCK.md §4.3).
+func (sc scope) entered(p string, retired bool) scope {
+	sc.entry = p
+	if retired {
+		sc.retired = p
+	}
 	return sc
 }
 

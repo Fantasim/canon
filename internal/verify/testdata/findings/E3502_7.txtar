@@ -1,0 +1,59 @@
+TYPES.md §8.4, §10.3, EVALUATION.md §5, DECISIONS 304: a slot declared `past ref T` (alone, as a
+list element, optional) may hold a ref to a retired entry, in a live entry too; a plain `ref T`
+may not, in a live entry (naming it) or outside any entry (naming none).
+-- a/a.canon --
+/// A.
+package a
+
+/// Item.
+record Item {
+  /// Label.
+  label: String
+}
+
+/// Items.
+let items: table Item = {
+  sword { label: "Sword" }
+  retired oldSword { label: "Old sword" }
+}
+
+/// A sale: history.
+record Sale {
+  /// Item sold.
+  item: past ref items
+  /// Items bundled.
+  bundle: [past ref items]
+  /// Item traded in.
+  traded: past ref items?
+}
+
+/// A pick: live.
+record Pick {
+  /// Item.
+  item: ref items
+}
+
+/// Sales.
+let sales: table Sale = {
+  s1 { item: oldSword, bundle: [sword, oldSword], traded: oldSword }
+}
+
+/// Pick.
+let pick: Pick = { item: oldSword }
+
+/// Picks.
+let picks: table Pick = { p1 { item: oldSword } }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:38:26
+  pick.item: oldSword is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:29 (item: ref items)
+
+error[E3502]  a/a.canon:41:38
+  picks.p1.item: oldSword is retired; live picks.p1 cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:29 (item: ref items)
+
+2 errors, 0 warnings in 1 package (…)

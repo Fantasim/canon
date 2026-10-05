@@ -26,7 +26,12 @@ func SiteOf(v value.Value) Site {
 
 // Report adds the value path and the site's pointer, layer and stack to b, then reports it.
 func (s Site) Report(b *diag.Builder, at *Path, bag *diag.Bag) {
-	b.Path(at.String())
+	s.reportAt(b, at.String(), bag)
+}
+
+// reportAt is Report at a path already written out.
+func (s Site) reportAt(b *diag.Builder, path string, bag *diag.Bag) {
+	b.Path(path)
 	if p := s.prov; p != nil {
 		b.Pointer(p.Pointer).Layer(p.Layer).Stack(p.Stack).MoreFrames(p.MoreFrames)
 	}

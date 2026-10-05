@@ -138,10 +138,11 @@ type walker struct {
 	cachedOnly bool
 }
 
-// scope is where a value sits: its table entry, the env its type arguments read, its field.
+// scope is where a value sits: its table entry, the env its type arguments read, its field, a past slot.
 type scope struct {
 	entry   string
-	retired bool // a retired entry encloses it (LOCK.md §4.3)
+	retired string // the innermost retired entry around it, "" for none (LOCK.md §4.3)
+	past    bool
 	env     *env
 	field   string // the field it is given to directly, "" for an element, a key or a map value
 	dep     *depSite

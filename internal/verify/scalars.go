@@ -20,26 +20,6 @@ func (w *walker) finite(v *value.Float, b types.Basic, at *Path) {
 	}
 }
 
-func (w *walker) member(m *value.Member, at *Path, sc scope) {
-	e := m.Enum
-	if e == nil || m.Index < 0 || m.Index >= len(e.Members) || !e.Members[m.Index].Retired || sc.retired {
-		return
-	}
-	name, s := e.Members[m.Index].Name, SiteOf(m)
-	b := diag.E3506.At(s.Span, w.local(e.Pkg, e.Name), name)
-	w.flagScoped(s, w.src.relatedNode(b, e.Decl, memberNode(e, name)), m, at)
-}
-
-// retiredCase reports a retired case outside a retired entry (TYPES.md §8.1).
-func (w *walker) retiredCase(r *value.Record, c *types.CaseType, at *Path, sc scope) {
-	if !c.Retired || sc.retired {
-		return
-	}
-	v, s := c.Variant, SiteOf(r)
-	b := diag.E3506.At(s.Span, w.local(v.Pkg, v.Name), c.Name)
-	w.flagScoped(s, w.src.relatedNode(b, v.Decl, caseNode(v, c.Name)), r, at)
-}
-
 // local names a declaration of pkg, qualified outside the finding's package (ERRORS.md §1.3).
 func (w *walker) local(pkg, name string, fields ...string) string {
 	if pkg != w.pkg && pkg != "" {

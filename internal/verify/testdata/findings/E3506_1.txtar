@@ -21,11 +21,11 @@ let spells: stable table Spell = {
 }
 -- findings.txt --
 error[E3506]  teamboard/spells.canon:16:19
-  spells.gust.element: Element.WIND is retired
+  spells.gust.element: Element.WIND is retired (only a retired entry or a past Element may hold it)
   expected by teamboard/spells.canon:3 (retired WIND)
 
 error[E3506]  teamboard/spells.canon:16:33
-  spells.gust.reward: Reward.gold is retired
+  spells.gust.reward: Reward.gold is retired (only a retired entry or a past Reward may hold it)
   expected by teamboard/spells.canon:7 (retired gold { amount: Int })
 
 2 errors, 0 warnings in 1 package (…)

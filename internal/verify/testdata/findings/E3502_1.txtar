@@ -1,5 +1,6 @@
-TYPES.md §10.3, LOCK.md §4.3: a live entry cannot reference a retired one; a retired entry may,
-its refs still checked; a top-level value that is not an entry may.
+TYPES.md §10.3, LOCK.md §4.3, DECISIONS 304: a live entry cannot reference a retired one; a
+retired entry may, its refs still checked; a top-level value that is not an entry cannot either,
+its finding naming no entry (EVALUATION.md §5).
 -- teamboard/taxonomy.canon --
 package teamboard
 
@@ -17,11 +18,15 @@ let statuses: stable table Status = {
 let lastStatus: ref Status = duplicate
 -- findings.txt --
 error[E3502]  teamboard/taxonomy.canon:9:39
-  statuses.open.next[1]: duplicate is retired; live statuses.open cannot reference it
+  statuses.open.next[1]: duplicate is retired; live statuses.open cannot reference it (only a retired entry or a past ref may)
   expected by teamboard/taxonomy.canon:5 (ref Status)
 
 error[E3501]  teamboard/taxonomy.canon:11:56
   statuses.duplicate.next[1]: unknown key gone in statuses
   expected by teamboard/taxonomy.canon:5 (ref Status)
 
-2 errors, 0 warnings in 1 package (…)
+error[E3502]  teamboard/taxonomy.canon:14:30
+  lastStatus: duplicate is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by teamboard/taxonomy.canon:14 (lastStatus: ref Status)
+
+3 errors, 0 warnings in 1 package (…)

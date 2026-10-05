@@ -1,0 +1,82 @@
+TYPES.md §8.1, §8.4, EVALUATION.md §5, DECISIONS 304: a slot declared `past E` (alone, as list
+elements, as map keys, optional) or `past V` may hold retired members and cases; a field of a
+`past V` case keeps its own rules, and a plain slot is E3506.
+-- a/a.canon --
+/// A.
+package a
+
+/// Grant kinds.
+enum GrantKind { DAILY, retired LEVEL_UP_GIFT }
+
+/// Reward.
+variant Reward {
+  /// Item.
+  item {}
+  /// Gold.
+  retired gold {
+    /// Amount.
+    amount: Int
+    /// Grant: not past.
+    grant: GrantKind
+  }
+}
+
+/// A ledger row: history.
+record Row {
+  /// Kind.
+  kind: past GrantKind
+  /// Kinds.
+  kinds: [past GrantKind]
+  /// Counts by kind.
+  counts: {past GrantKind: Int}
+  /// Maybe a kind.
+  maybe: past GrantKind?
+  /// Reward.
+  reward: past Reward
+}
+
+/// An offer: live.
+record Offer {
+  /// Kind.
+  kind: GrantKind
+  /// Kinds.
+  kinds: [GrantKind]
+  /// Reward.
+  reward: Reward
+}
+
+/// Rows.
+let rows: [Row] = [
+  {
+    kind: LEVEL_UP_GIFT
+    kinds: [DAILY, LEVEL_UP_GIFT]
+    counts: { LEVEL_UP_GIFT: 3 }
+    maybe: LEVEL_UP_GIFT
+    reward: gold { amount: 3, grant: LEVEL_UP_GIFT }
+  },
+]
+
+/// Offer.
+let offer: Offer = { kind: LEVEL_UP_GIFT, kinds: [LEVEL_UP_GIFT], reward: gold { amount: 1, grant: DAILY } }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3506]  a/a.canon:51:38
+  rows[0].reward.grant: GrantKind.LEVEL_UP_GIFT is retired (only a retired entry or a past GrantKind may hold it)
+  expected by a/a.canon:5 (retired LEVEL_UP_GIFT)
+
+error[E3506]  a/a.canon:56:28
+  offer.kind: GrantKind.LEVEL_UP_GIFT is retired (only a retired entry or a past GrantKind may hold it)
+  expected by a/a.canon:5 (retired LEVEL_UP_GIFT)
+
+error[E3506]  a/a.canon:56:51
+  offer.kinds[0]: GrantKind.LEVEL_UP_GIFT is retired (only a retired entry or a past GrantKind may hold it)
+  expected by a/a.canon:5 (retired LEVEL_UP_GIFT)
+
+error[E3506]  a/a.canon:56:75
+  offer.reward: Reward.gold is retired (only a retired entry or a past Reward may hold it)
+  expected by a/a.canon:12 (retired gold { /// Amount. amount: Int /// Grant: not past. grant: GrantKind })
+
+4 errors, 0 warnings in 1 package (…)

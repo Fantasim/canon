@@ -1,0 +1,50 @@
+TYPES.md §8.4, §10.3, DECISIONS 304: a past type-function application whose selected branch is
+`ref olds` may hold a ref to a retired entry, in a live entry too; the same application without
+`past` is E3502.
+-- a/a.canon --
+/// A.
+package a
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Old tags.
+let olds: table Tag = { cur { label: "c" }, retired gone { label: "g" } }
+
+/// Sources.
+enum Src { tag, src }
+
+/// What a source picks.
+type Pick(s: Src) = match s {
+  tag => ref olds
+  src => Src
+}
+
+/// A sale.
+record Sale {
+  /// Source.
+  s: Src
+  /// Item sold: history.
+  item: past Pick(s)
+  /// Item offered: live.
+  offer: Pick(s)
+}
+
+/// Sales.
+let sales: [Sale] = [{ s: tag, item: gone, offer: gone }]
+
+/// Book.
+let book: table Sale = { s1 { s: tag, item: gone, offer: cur } }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:33:51
+  sales[0].offer: gone is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:18 (ref olds)
+
+1 error, 0 warnings in 1 package (…)

@@ -65,12 +65,12 @@ project demo {
 }
 -- findings.txt --
 error[E3502]  a/a.canon:43:36
-  ts.cur.x.tag: gone is retired; live ts.cur cannot reference it
+  ts.cur.x.tag: gone is retired; live ts.cur cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (tag: ref tags)
   in build (a/a.canon:54)
 
 error[E3502]  a/a.canon:49:36
-  ts2.cur.x.tag: gone is retired; live ts2.cur cannot reference it
+  ts2.cur.x.tag: gone is retired; live ts2.cur cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (tag: ref tags)
   in build2 (a/a.canon:57)
 

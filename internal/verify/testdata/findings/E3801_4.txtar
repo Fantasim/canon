@@ -1,0 +1,56 @@
+TYPES.md §11.1, §11.6, DECISIONS 307: an optional argument that reads none makes the application
+compute Never without evaluating its body: a required field `k: Member(column.values)` is E3801 at
+the value where the column has no vocabulary, and verifies as before where it has one.
+-- a/a.canon --
+/// A.
+package a
+
+/// Vocabularies.
+enum Vocabulary { grant, shop }
+
+/// Grant kinds.
+enum GrantKind { DAILY, WEEKLY }
+
+/// Shop kinds.
+enum ShopKind { BUY, SELL }
+
+/// The members of a vocabulary.
+type Member(v: Vocabulary) = match v {
+  grant => GrantKind
+  shop => ShopKind
+}
+
+/// A column.
+record Column {
+  /// Name.
+  name: String
+  /// Its vocabulary, if any.
+  values: Vocabulary?
+}
+
+/// Columns.
+let columns: table Column = {
+  kind { name: "kind", values: grant }
+  amount { name: "amount" }
+}
+
+/// A role.
+record Role {
+  /// Column.
+  column: ref columns
+  /// Kind: required.
+  k: Member(column.values)
+}
+
+/// Roles.
+let roles: [Role] = [{ column: kind, k: DAILY }, { column: amount, k: DAILY }]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3801]  a/a.canon:42:71
+  roles[1].k: k has type Member(column.values) = Never: this value cannot be built
+  expected by a/a.canon:38 (k: Member(column.values))
+
+1 error, 0 warnings in 1 package (…)

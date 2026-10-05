@@ -25,7 +25,7 @@ func (w *walker) entry(e *value.Record, t types.Type, at *Path, sc scope) value.
 	if !ok {
 		return w.walk(e, t, at, sc)
 	}
-	key := entryKey{root: w.root, elem: t, retired: sc.retired, seg: at.seg, form: at.form}
+	key := entryKey{root: w.root, elem: t, retired: sc.retired != "", seg: at.seg, form: at.form}
 	if kept, _ := w.memo.Attached(token, eval.Verified).(*entryKept); kept != nil && kept.key == key && w.replayEntry(e, kept) {
 		w.hit()
 		return e

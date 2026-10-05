@@ -1,6 +1,7 @@
 API.md P9, LOCK.md §4.3 (log-2026-09-29 M4 U13-r): the judgement re-run under `tc`'s entry path
 names a map entry by the key type declared for the field, `{String | "none": ref tags}`, not by
-the `{String: ref tags}` of the value assigned to it: `ta.a.ts["none"]` and `tc.a.ts["none"]`.
+the `{String: ref tags}` of the value assigned to it: `ta.a.ts["none"]` and `tc.a.ts["none"]`;
+`slots` itself names no entry (DECISIONS 304).
 -- a/a.canon --
 /// A.
 package a
@@ -50,11 +51,15 @@ project demo {
 }
 -- findings.txt --
 error[E3502]  a/a.canon:36:43
-  ta.a.ts["none"]: old is retired; live ta.a cannot reference it
+  slots[none]: old is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:36 (ref tags)
+
+error[E3502]  a/a.canon:36:43
+  ta.a.ts["none"]: old is retired; live ta.a cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (ref tags)
 
 error[E3502]  a/a.canon:36:43
-  tc.a.ts["none"]: old is retired; live tc.a cannot reference it
+  tc.a.ts["none"]: old is retired; live tc.a cannot reference it (only a retired entry or a past ref may)
   expected by a/a.canon:32 (ref tags)
 
-2 errors, 0 warnings in 1 package (…)
+3 errors, 0 warnings in 1 package (…)

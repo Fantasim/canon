@@ -1,0 +1,31 @@
+TYPES.md §8.4, LOCK.md §4.3, DECISIONS 304: a loaded value follows its slot: a retired member
+decoded into a `past GrantKind` field is allowed, into a `GrantKind` field it is E3506.
+-- a/a.canon --
+/// A.
+package a
+
+/// Grant kinds.
+enum GrantKind { DAILY, retired LEVEL_UP_GIFT }
+
+/// A ledger row.
+record Row {
+  /// Kind, history.
+  kind: past GrantKind
+  /// Plain.
+  plain: GrantKind
+}
+
+/// Rows.
+let rows: [Row] = load("rows.json")
+-- a/rows.json --
+[{"kind": "LEVEL_UP_GIFT", "plain": "LEVEL_UP_GIFT"}]
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3506]  a/rows.json:1:37
+  rows[0].plain: GrantKind.LEVEL_UP_GIFT is retired (only a retired entry or a past GrantKind may hold it)
+  expected by a/a.canon:5 (retired LEVEL_UP_GIFT)
+
+1 error, 0 warnings in 1 package (…)

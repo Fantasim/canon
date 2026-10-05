@@ -10,7 +10,7 @@ import (
 // reach is how a ref's target collection was reached.
 type reach uint8
 
-// ref checks the key's entry exists and is not retired for a live entry (TYPES.md §10.3).
+// ref checks the key's entry exists, and is not retired outside a retired entry and a past slot (TYPES.md §10.3).
 func (w *walker) ref(r *value.Ref, t types.Type, sc scope, at *Path) {
 	rt, ok := t.(*types.RefType)
 	if !ok {
@@ -37,7 +37,7 @@ func (w *walker) ref(r *value.Ref, t types.Type, sc scope, at *Path) {
 		w.flag(s, w.src.related(diag.E3501.At(s.Span, r, w.collName(rt.Target)), rt), r, at)
 		return
 	}
-	w.retiredTarget(r, rt, target, sc, at)
+	w.retiredTarget(r, rt, target, at, sc)
 }
 
 // collection forces the ref's target and indexes its entries by key.

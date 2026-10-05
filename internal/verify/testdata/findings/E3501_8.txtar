@@ -1,0 +1,85 @@
+EVALUATION.md §4.2, §5, TYPES.md §10.3: an instance remembered while it holds another, replayed
+in the same bag, keeps that one's findings: `a.ao`, the copy of `z.o` holding `z.s`, reports
+again in a both what `s` found (E3501) and what it found in the scope (E3502).
+-- z/z.canon --
+/// Z.
+package z
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Tag.
+record Tag {
+  /// Label.
+  label: String
+}
+
+/// Tags.
+let tags: table Tag = { retired old { label: "o" }, cur { label: "c" } }
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Tag, retired.
+  t: ref tags
+  /// Tag, missing.
+  u: ref tags
+}
+
+/// Y, holding an X.
+record Y {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// X.
+  x: X
+}
+
+/// S.
+let s: X = { k: col, p: red, t: old, u: "gone" }
+
+/// O, holding s.
+let o: Y = { k: col, p: blue, x: s }
+-- a/a.canon --
+/// A.
+package a
+
+import z
+
+/// Ao, o again.
+let ao: z.Y = z.o
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  z/z.canon:48:33
+  ao.x.t: old is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by z/z.canon:32 (t: ref tags)
+
+error[E3502]  z/z.canon:48:33
+  s.t: old is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by z/z.canon:32 (t: ref tags)
+
+error[E3501]  z/z.canon:48:41
+  ao.x.u: unknown key gone in tags
+  expected by z/z.canon:34 (u: ref tags)
+
+error[E3501]  z/z.canon:48:41
+  s.u: unknown key gone in tags
+  expected by z/z.canon:34 (u: ref tags)
+
+4 errors, 0 warnings in 2 packages (…)

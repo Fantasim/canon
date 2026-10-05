@@ -18,10 +18,15 @@ func (w *walker) walk(v value.Value, t types.Type, at *Path, sc scope) value.Val
 	case isNone(v):
 		return w.walkNone(v, t, at, sc)
 	}
-	base, optional, ok := layers(v, t, func(r *types.Refined) { w.refinement(v, r, at) })
+	past := false
+	base, optional, ok := layers(v, t, func(r *types.Refined) {
+		past = past || r.Past
+		w.refinement(v, r, at)
+	})
 	if !ok {
 		return v
 	}
+	sc.past = sc.past || past // this slot's own, never its parts' (TYPES.md §8.4)
 	if app, isApp := base.(*types.TypeAppType); isApp {
 		return w.dependent(v, app, optional, at, sc)
 	}
@@ -88,24 +93,30 @@ func (w *walker) dispatch(v value.Value, t types.Type, at *Path, sc scope) value
 	return v
 }
 
-// record verifies an instance once for every root reaching it, sharing its copy (EVALUATION.md §4.2).
+// record verifies a record, then its own case outside the instance's memo: past is the slot's, not the instance's (TYPES.md §8.4).
 func (w *walker) record(r *value.Record, t types.Type, at *Path, sc scope) value.Value {
+	nv := w.instance(r, t, at, sc)
+	if rec, ok := nv.(*value.Record); ok {
+		w.retiredCase(rec, at, sc)
+	}
+	return nv
+}
+
+// instance verifies an instance once for every root reaching it, sharing its copy (EVALUATION.md §4.2).
+func (w *walker) instance(r *value.Record, t types.Type, at *Path, sc scope) value.Value {
 	if w.stage == nil {
 		return w.fields(r, t, at, sc)
 	}
 	w.appliedArgs(r, t, at, sc)
 	if m, ok := w.stage.Verified(r); ok {
 		w.voidRec()
-		return w.replay(m.(*memo), t, at, sc) // the seam keeps verify's memo opaque; only remembered puts one there
+		return w.replay(m.(*memo), at, sc) // the seam keeps verify's memo opaque; only remembered puts one there
 	}
 	return w.remembered(r, t, at, sc)
 }
 
 // fields walks each field in the record's env; a field converted makes a copy.
 func (w *walker) fields(r *value.Record, t types.Type, at *Path, sc scope) value.Value {
-	if c, ok := r.T.Base().(*types.CaseType); ok {
-		w.retiredCase(r, c, at, sc)
-	}
 	fsc := sc.part()
 	fsc.env, fsc.dep = sc.env.within(r, t), nil
 	if w.stage != nil {
@@ -209,13 +220,12 @@ func (w *walker) table(tv *value.Table, t types.Type, at *Path, sc scope) value.
 		return tv
 	}
 	var entries []*value.Record
-	esc := sc.part()
 	for i, e := range tv.Entries {
 		if e == nil || e.Ident == nil {
 			continue
 		}
 		p := at.Entry(e.Ident.Key)
-		esc.entry, esc.retired = p.String(), sc.retired || e.Ident.Retired
+		esc := sc.part().entered(p.String(), e.Ident.Retired)
 		ne, isRec := w.entryAt(at, e, tt.Elem, p, esc).(*value.Record)
 		if isRec && ne != e && entries == nil {
 			entries = slices.Clone(tv.Entries)

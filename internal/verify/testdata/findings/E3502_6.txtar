@@ -1,0 +1,38 @@
+TYPES.md §8.4, §10.3, EVALUATION.md §5, DECISIONS 304: a ref to a retired entry is new use in
+every stored value outside a retired entry and a `past ref` slot, not only in a live table entry:
+a plain `let` and a list of refs are E3502, naming no entry.
+-- a/a.canon --
+/// A.
+package a
+
+/// Item.
+record Item {
+  /// Label.
+  label: String
+}
+
+/// Items.
+let items: table Item = {
+  sword { label: "Sword" }
+  retired oldSword { label: "Old sword" }
+}
+
+/// Featured.
+let featured: [ref items] = [sword, oldSword]
+
+/// Favourite.
+let favourite: ref items = oldSword
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:17:37
+  featured[1]: oldSword is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:17 (ref items)
+
+error[E3502]  a/a.canon:20:28
+  favourite: oldSword is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:20 (favourite: ref items)
+
+2 errors, 0 warnings in 1 package (…)

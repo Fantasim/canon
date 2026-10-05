@@ -67,20 +67,21 @@ func (w *walker) uniqueWire(m *value.Map, at *Path) {
 			seen[text] = k
 		case !value.Equal(first, k): // equal keys are E3322's
 			s := SiteOf(k)
-			w.report(s, diag.E3317.At(s.Span, mapKeyArg{first}, mapKeyArg{k}, text), at)
+			w.report(s, diag.E3317.At(s.Span, MapKeyArg{first}, MapKeyArg{k}, text), at)
 			w.invalid(m)
 		}
 	}
 }
 
-// mapKeyArg is a map key as a Value argument, in a map's key text form: strings quoted (STDLIB.md §9.1).
-type mapKeyArg struct{ v value.Value }
+// MapKeyArg is a map key as a Value argument, in a map's key text form: strings quoted (STDLIB.md §9.1); stage E's E3317 for a `@text` result prints its keys the same way.
+type MapKeyArg struct{ V value.Value }
 
-func (k mapKeyArg) CanonText() string {
-	if s, ok := k.v.(*value.Str); ok {
+// CanonText is the key's text, a string in quotes.
+func (k MapKeyArg) CanonText() string {
+	if s, ok := k.V.(*value.Str); ok {
 		return types.QuoteString(s.V)
 	}
-	return k.v.CanonText()
+	return k.V.CanonText()
 }
 
 // stableValue is a @stable value as the lock compares it: an integer or a string.

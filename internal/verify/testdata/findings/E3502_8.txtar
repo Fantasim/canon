@@ -1,0 +1,74 @@
+TYPES.md §8.1, §10.3, LOCK.md §4.3, DECISIONS 304: a table nested in a remembered instance keeps
+its own entries when the instance is reached again in another entry: `old` stays retired (no E3506,
+no E3502) and E3502 at `cur` names the nested live entry, `s.ts.cur` then `ta.a.x.ts.cur`.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Grant kinds.
+enum GrantKind { DAILY, retired GIFT }
+
+/// Tag2.
+record Tag2 {
+  /// Label.
+  label: String
+}
+
+/// Items.
+let items: table Tag2 = { sword { label: "s" }, retired oldSword { label: "o" } }
+
+/// Tag.
+record Tag {
+  /// Kind.
+  kind: GrantKind
+  /// Item.
+  item: ref items
+}
+
+/// X.
+record X {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Tags.
+  ts: table Tag
+}
+
+/// T.
+record T {
+  /// X.
+  x: X
+}
+
+/// S.
+let s: X = { k: col, p: red, ts: { retired old { kind: GIFT, item: oldSword }, cur { kind: DAILY, item: oldSword } } }
+
+/// Ta.
+let ta: table T = { a { x: s } }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3502]  a/a.canon:53:105
+  s.ts.cur.item: oldSword is retired; live s.ts.cur cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:33 (item: ref items)
+
+error[E3502]  a/a.canon:53:105
+  ta.a.x.ts.cur.item: oldSword is retired; live ta.a.x.ts.cur cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:33 (item: ref items)
+
+2 errors, 0 warnings in 1 package (…)

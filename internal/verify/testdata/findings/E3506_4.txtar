@@ -1,0 +1,93 @@
+TYPES.md §8.4, EVALUATION.md §4.2, §5, DECISIONS 304: past is the slot's, not the instance's: the
+one remembered instance of a retired case, held by a `past Reward` slot and a `Reward` slot, is
+E3506 in the plain slot only, whichever slot stage B reaches first.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+  num => Int
+}
+
+/// Reward.
+variant Reward {
+  /// Item.
+  item {}
+  /// Gold.
+  retired gold {
+    /// K.
+    k: K
+    /// Payload.
+    p: P(k)
+  }
+}
+
+/// Old: history.
+record Old {
+  /// R.
+  r: past Reward
+}
+
+/// Cur: live.
+record Cur {
+  /// R.
+  r: Reward
+}
+
+/// The past slot first.
+record OldFirst {
+  /// Old.
+  old: Old
+  /// Cur.
+  cur: Cur
+}
+
+/// The plain slot first.
+record CurFirst {
+  /// Cur.
+  cur: Cur
+  /// Old.
+  old: Old
+}
+
+/// Build, the past slot first.
+fn build() -> OldFirst {
+  let g = Reward.gold { k: col, p: red }
+  return { old: { r: g }, cur: { r: g } }
+}
+
+/// Build2, the plain slot first.
+fn build2() -> CurFirst {
+  let g = Reward.gold { k: col, p: red }
+  return { cur: { r: g }, old: { r: g } }
+}
+
+/// First.
+let first: OldFirst = build()
+
+/// Second.
+let second: CurFirst = build2()
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3506]  a/a.canon:59:11
+  first.cur.r: Reward.gold is retired (only a retired entry or a past Reward may hold it)
+  expected by a/a.canon:21 (retired gold { /// K. k: K /// Payload. p: P(k) })
+  in build (a/a.canon:70)
+
+error[E3506]  a/a.canon:65:11
+  second.cur.r: Reward.gold is retired (only a retired entry or a past Reward may hold it)
+  expected by a/a.canon:21 (retired gold { /// K. k: K /// Payload. p: P(k) })
+  in build2 (a/a.canon:73)
+
+2 errors, 0 warnings in 1 package (…)
