@@ -1,0 +1,54 @@
+DECISIONS 324, EVALUATION.md §2.3, §7.1, TYPES.md §11.6: a `where` predicate of a dependent value's
+computed branch runs at the result's verification; a hard error there poisons the result, reported
+with no value path under the precomputation's frame, and the result is a missing receiver: the
+emit is not written. The other receiver's result is stored.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Kind.
+enum Kind { odd, plain }
+
+/// An integer the predicate divides by itself minus three.
+type Risky = Int where 6 / (it - 3) > 0
+
+/// Amount by kind.
+type Amount(k: Kind) = match k {
+  odd => Risky
+  plain => Int
+}
+
+/// Perk.
+record Perk {
+  /// Kind.
+  kind: Kind
+  /// Amount.
+  amount: Amount(kind)
+}
+
+/// Hold.
+record Hold {
+  /// N.
+  n: Int = 3
+
+  /// A perk whose amount divides by zero in its predicate.
+  export fn perk(self) -> Perk { return { kind: odd, amount: n } }
+}
+
+/// Holds.
+let holds: table Hold = { h {}, i { n: 4 } }
+
+emit json { out: "@out/" }
+-- build.txt --
+error[E4102]  a/a.canon:8:24
+  division by zero
+  in Hold.perk() (a/a.canon:30)
+
+1 error, 0 warnings in 1 package (…)

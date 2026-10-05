@@ -1,0 +1,42 @@
+GRAMMAR.md §9.2: a const is UPPER_SNAKE (`const version = 7` is W1003), a widget lower_snake;
+enum members, variant cases, table keys and check names are data and free.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Bad.
+const version = 7
+
+/// Bad too.
+const Max_Size = 8
+
+/// Fine.
+const MAX_SIZE_2 = 9
+
+/// Free.
+enum Mode {
+  Fast_Mode
+}
+
+/// Rec.
+record Rec {
+  /// X.
+  x: Int
+
+  check Big_Check: x < 10 else "big"
+}
+-- select --
+a
+-- findings.txt --
+warning[W1003]  a/a.canon:5:7
+  const name "version" should be UPPER_SNAKE
+
+warning[W1003]  a/a.canon:8:7
+  const name "Max_Size" should be UPPER_SNAKE
+
+0 errors, 2 warnings in 1 package (…)

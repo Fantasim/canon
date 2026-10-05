@@ -1,0 +1,66 @@
+DECISIONS 324, EVALUATION.md §2.3, §13: a precomputed result built twenty calls deep keeps the
+innermost frames to the cap; the precomputation's frame stays the outermost one shown, in place of
+the outermost kept frame, which counts among the frames cut.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Pick.
+record Pick {
+  /// N.
+  n: Int
+
+  check n > 0 else "n must be positive, got {n}"
+}
+
+/// A pick built n calls down.
+fn down(n: Int) -> Pick {
+  if n == 0 {
+    return { n: 0 }
+  }
+  return down(n - 1)
+}
+
+/// Hold.
+record Hold {
+  /// N.
+  n: Int = 20
+
+  /// A pick failing its check, built deep.
+  export fn bad(self) -> Pick { return down(n) }
+}
+
+/// Holds.
+let holds: table Hold = { h {} }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E5001]  a/a.canon:15:12
+  n must be positive, got 0
+  expected by a/a.canon:9 (check)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in down (a/a.canon:17)
+  in Hold.bad() (a/a.canon:26)
+  (6 more frames)
+
+1 error, 0 warnings in 1 package (…)

@@ -266,7 +266,16 @@ type checks struct {
 }
 
 func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value, path string) rules.Run {
-	x := c.Evaluator.Run(ctx, d, self, path)
+	return ruleRun(c.Evaluator.Run(ctx, d, self, path))
+}
+
+// RunUnder runs d on self, an instance of a precomputed result, under its frame f (EVALUATION.md §2.3).
+func (c checks) RunUnder(ctx context.Context, d *syntax.CheckDecl, self value.Value, f diag.Frame) rules.Run {
+	return ruleRun(c.Evaluator.RunUnder(ctx, d, self, f))
+}
+
+// ruleRun is a check run as rules reads it.
+func ruleRun(x eval.CheckRun) rules.Run {
 	out := rules.Run{Aborted: x.Aborted, Failed: x.Failed, Message: x.Message}
 	for _, r := range x.Reports {
 		out.Reports = append(out.Reports, rules.Report{Warn: r.Warn, At: r.At, Message: r.Message})
@@ -277,19 +286,6 @@ func (c checks) Run(ctx context.Context, d *syntax.CheckDecl, self value.Value, 
 // Reported notes a false one-line check d of self whose finding carries path, fresh or replayed.
 func (c checks) Reported(d *syntax.CheckDecl, self value.Value, path string, run rules.Run) {
 	c.failed.note(d, self, path, run.Message)
-}
-
-// irHost is the evaluator as stage E's ir.Host; stage B has begun, so a first Force verifies.
-type irHost struct {
-	ev *eval.Evaluator
-}
-
-func (h irHost) Value(ctx context.Context, pkg, name string) (value.Value, bool) {
-	return h.ev.Force(ctx, eval.Root{Pkg: pkg, Name: name})
-}
-
-func (h irHost) Call(ctx context.Context, fn check.Object, recv value.Value, args []value.Value) (value.Value, bool) {
-	return h.ev.Call(ctx, fn, recv, args)
 }
 
 // assets finds asset files, each segment matched exactly against a listing (TYPES.md §13.4).

@@ -1,0 +1,53 @@
+GRAMMAR.md §9.2: record, enum, variant and type alias names are UpperCamel; W1003 at the name.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Bad.
+record bad_record {
+  /// X.
+  x: Int
+}
+
+/// Enum.
+enum color_kind {
+  red
+}
+
+/// Variant.
+variant reward_kind {
+  gold {
+    /// Amount.
+    amount: Int
+  }
+}
+
+/// Alias.
+type small_int = Int(0..9)
+
+/// Fine.
+record Fine {
+  /// X.
+  x: Int
+}
+-- select --
+a
+-- findings.txt --
+warning[W1003]  a/a.canon:5:8
+  record name "bad_record" should be UpperCamel
+
+warning[W1003]  a/a.canon:11:6
+  enum name "color_kind" should be UpperCamel
+
+warning[W1003]  a/a.canon:16:9
+  variant name "reward_kind" should be UpperCamel
+
+warning[W1003]  a/a.canon:24:6
+  type alias name "small_int" should be UpperCamel
+
+0 errors, 4 warnings in 1 package (…)

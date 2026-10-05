@@ -1,0 +1,63 @@
+DECISIONS 324, EVALUATION.md §2.3, §5, TYPES.md §11.6: a precomputed result is verified like an expect
+subject. A method's result whose bare name fits no computed branch, and a finite cell whose discriminant
+selects the Int branch, are E3802 at the value under the `while computing` frame; the cell selecting
+Tone resolves `loud` to its member, with no finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Kind.
+enum Kind { sound, count }
+
+/// Tone.
+enum Tone { quiet, loud }
+
+/// Bonus by kind.
+type Bonus(k: Kind) = match k {
+  sound => Tone
+  count => Int
+}
+
+/// Perk.
+record Perk {
+  /// Kind.
+  kind: Kind
+  /// Bonus.
+  bonus: Bonus(kind)
+}
+
+/// Hold.
+record Hold {
+  /// Kind.
+  k: Kind = count
+
+  /// A perk whose bonus fits no branch of its kind.
+  export fn bad(self) -> Perk { return { kind: k, bonus: loud } }
+
+  /// A perk per kind: the count cell fits no branch.
+  export fn pick(self, kind: Kind) -> Perk { return { kind: kind, bonus: quiet } }
+}
+
+/// Holds.
+let holds: table Hold = { h {} }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E3802]  a/a.canon:30:58
+  value does not match Bonus(kind) = Int
+  expected by a/a.canon:21 (bonus: Bonus(kind))
+  in Hold.bad() (a/a.canon:30)
+
+error[E3802]  a/a.canon:33:74
+  value does not match Bonus(kind) = Int
+  expected by a/a.canon:21 (bonus: Bonus(kind))
+  in Hold.pick(count) (a/a.canon:33)
+
+2 errors, 0 warnings in 1 package (…)

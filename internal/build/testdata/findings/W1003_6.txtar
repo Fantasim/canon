@@ -1,0 +1,61 @@
+GRAMMAR.md §9.2 (rulings): a comprehension `for` binder is a variable, its `let` a local, a
+dependent-map binder a variable; `_` is not a name; only the selected packages are checked, so the
+unselected import b declaring Bad_Name is not warned.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Bad.
+const Bad_Name = 1
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Item.
+record Item {
+  /// N.
+  n: Int
+}
+
+/// Items.
+let items: table Item = {
+  one { n: 1 }
+}
+
+/// Per.
+type Per(i: Item) = Int
+
+/// Holder.
+record Holder {
+  /// Per.
+  per: {Bad_Binder in items: Per(Bad_Binder)} = {}
+}
+
+/// Squares.
+let squares: [Int] = [Bad_Var for Bad_Var in [1, 2]]
+
+/// Skips.
+let skips: [Int] = [1 for _ in [1, 2]]
+
+/// Lets.
+let lets: [Int] = [Bad_Local for x in [1, 2] let Bad_Local = x]
+-- select --
+a
+-- findings.txt --
+warning[W1003]  a/a.canon:23:9
+  variable name "Bad_Binder" should be lowerCamel
+
+warning[W1003]  a/a.canon:27:35
+  variable name "Bad_Var" should be lowerCamel
+
+warning[W1003]  a/a.canon:33:50
+  local name "Bad_Local" should be lowerCamel
+
+0 errors, 3 warnings in 1 package (…)

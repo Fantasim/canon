@@ -1,0 +1,70 @@
+DECISIONS 324, EVALUATION.md §2.3, §5, TYPES.md §8.1, §8.4: a precomputed result is verified like an
+expect subject. A retired member in a method's result is E3506, with no value path, under the
+precomputation's frame: written in the fn body, copied in from the receiver's `past Tone` field (no
+frame of its own), or set by the result record's default (none either). One in a result declared
+`past Tone` is history, with no finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Tone.
+enum Tone { quiet, loud, retired old }
+
+/// Mood.
+record Mood {
+  /// Tone.
+  t: Tone = quiet
+}
+
+/// A mood defaulting to a retired tone.
+record OldMood {
+  /// Tone.
+  t: Tone = old
+}
+
+/// Hold.
+record Hold {
+  /// The tone it once had.
+  was: past Tone = old
+
+  /// A mood holding a retired member.
+  export fn mood(self) -> Mood { return { t: old } }
+
+  /// A mood holding the tone it once had: a stored field passed along.
+  export fn again(self) -> Mood { return { t: was } }
+
+  /// A mood whose default is retired.
+  export fn stale(self) -> OldMood { return {} }
+
+  /// The tone it once had: history.
+  export fn then(self) -> past Tone { return was }
+}
+
+/// Holds.
+let holds: table Hold = { h {} }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E3506]  a/a.canon:16:13
+  Tone.old is retired (only a retired entry or a past Tone may hold it)
+  expected by a/a.canon:5 (retired old)
+  in Hold.stale() (a/a.canon:31)
+
+error[E3506]  a/a.canon:22:20
+  Tone.old is retired (only a retired entry or a past Tone may hold it)
+  expected by a/a.canon:5 (retired old)
+  in Hold.again() (a/a.canon:28)
+
+error[E3506]  a/a.canon:25:46
+  Tone.old is retired (only a retired entry or a past Tone may hold it)
+  expected by a/a.canon:5 (retired old)
+  in Hold.mood() (a/a.canon:25)
+
+3 errors, 0 warnings in 1 package (…)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/conform"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	cppgen "github.com/fantasim/canonlang/internal/gen/cpp"
 	gogen "github.com/fantasim/canonlang/internal/gen/go"
@@ -133,3 +134,30 @@ var (
 
 // readConflict marks a number token loads read as two types or texts: kept as written (M9).
 const readConflict = ""
+
+// The naming conventions of GRAMMAR.md §9.2, by convention: the pattern a declared name matches.
+const (
+	patternUpperCamel = `^[A-Z][A-Za-z0-9]*$`
+	patternLowerCamel = `^[a-z][A-Za-z0-9]*$`
+	patternUpperSnake = `^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$`
+	patternLowerSnake = `^[a-z][a-z0-9]*(_[a-z0-9]+)*$`
+)
+
+// conventionOf is the convention of each kind of declared name (GRAMMAR.md §9.2).
+var conventionOf = map[diag.Kind]diag.Kind{
+	diag.KindRecord: diag.KindUpperCamel, diag.KindEnum: diag.KindUpperCamel,
+	diag.KindVariant: diag.KindUpperCamel, diag.KindTypeAlias: diag.KindUpperCamel,
+	diag.KindField: diag.KindLowerCamel, diag.KindFunction: diag.KindLowerCamel,
+	diag.KindMethod: diag.KindLowerCamel, diag.KindLet: diag.KindLowerCamel,
+	diag.KindParameter: diag.KindLowerCamel, diag.KindTypeParameter: diag.KindLowerCamel,
+	diag.KindLocal: diag.KindLowerCamel, diag.KindVariable: diag.KindLowerCamel,
+	diag.KindImportAlias: diag.KindLowerCamel, diag.KindPackageSegment: diag.KindLowerCamel,
+	diag.KindConst:  diag.KindUpperSnake,
+	diag.KindWidget: diag.KindLowerSnake,
+}
+
+// conventionPatterns are the patterns of the four conventions.
+var conventionPatterns = map[diag.Kind]string{
+	diag.KindUpperCamel: patternUpperCamel, diag.KindLowerCamel: patternLowerCamel,
+	diag.KindUpperSnake: patternUpperSnake, diag.KindLowerSnake: patternLowerSnake,
+}

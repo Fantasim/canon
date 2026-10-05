@@ -1,0 +1,115 @@
+EVALUATION.md §10.3: an identifier after fails that is not a code must name a check declared on a
+type reachable from the subject's static type, or in the package; else E5004 at the identifier.
+Package checks never run for a subject (§10.2): naming one is E5004. Codes, texts, case values
+with variant-level checks, optionals, maps and dependent fields are accepted.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int
+
+  check fits: size < 10 else "too big"
+}
+
+/// Deck.
+record Deck {
+  /// Slots.
+  slots: [Slot]
+}
+
+/// Reward.
+variant Reward {
+  check shared: n == 1 else "shared"
+
+  sq {
+    /// Side.
+    side: Int
+
+    check sqOk: side < 10 else "wide"
+  }
+  circle
+}
+
+/// Box.
+type Box(k: Kind) = match k {
+  num => Slot
+  _ => Slot
+}
+
+/// Kind.
+enum Kind {
+  num
+  txt
+}
+
+/// Holder.
+record Holder {
+  /// K.
+  k: Kind
+  /// B.
+  b: Box(k)
+}
+
+/// R.
+let r: Reward = sq { side: 3 }
+
+/// M.
+let m: {String: Slot} = {}
+
+/// H.
+let h: Holder = { k: num, b: { size: 3 } }
+
+/// D.
+let d: Deck = { slots: [] }
+
+/// S.
+let s: Slot = { size: 3 }
+
+/// N.
+let n: Int = 1
+
+check global: n == 1 else "x"
+
+test "names" {
+  expect d fails fits
+  expect s fails fits
+  expect s fails global
+  expect s fails missing
+  expect d fails missing
+  expect s warns missing
+  expect s fails E3204
+  expect s fails "too big"
+  expect r fails sqOk
+  expect r fails shared
+  expect m fails fits
+  expect h fails fits
+  expect h warns fits
+  expect h warns nothing
+}
+-- select --
+a
+-- findings.txt --
+error[E5004]  a/a.canon:74:18
+  no check named global applies to a.Slot
+
+error[E5004]  a/a.canon:75:18
+  no check named missing applies to a.Slot
+
+error[E5004]  a/a.canon:76:18
+  no check named missing applies to a.Deck
+
+error[E5004]  a/a.canon:77:18
+  no check named missing applies to a.Slot
+
+error[E5004]  a/a.canon:85:18
+  no check named nothing applies to a.Holder
+
+5 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,62 @@
+DECISIONS 324, EVALUATION.md §2.3, §5, TYPES.md §4.1: a precomputed result is verified like an expect
+subject. A symbolic key naming no entry of a keyed list is E3501, in a parameterless package fn and in a
+method of package b precomputed on the receivers package a holds (WIRE.md §5.11).
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Item.
+record Item {
+  /// Name.
+  name: String
+}
+
+/// Items, a keyed list: its keys are dynamic.
+let items: [Item] keyed by name = [{ name: "sword" }]
+
+/// A selection.
+record Sel {
+  /// Item.
+  item: ref items
+}
+
+/// Pick.
+record Pick {
+  /// N.
+  n: Int = 1
+
+  /// A selection naming no item.
+  export fn other(self) -> Sel { return { item: shield } }
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b { Pick, Sel }
+
+/// Picks held here.
+let picks: [Pick] = [{}]
+
+/// The best selection: names no item.
+export fn best() -> Sel { return { item: axe } }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E3501]  a/a.canon:10:42
+  unknown key axe in b.items
+  expected by b/b.canon:16 (item: ref items)
+  in best() (a/a.canon:10)
+
+error[E3501]  b/b.canon:25:49
+  unknown key shield in items
+  expected by b/b.canon:16 (item: ref items)
+  in Pick.other() (b/b.canon:25)
+
+2 errors, 0 warnings in 2 packages (…)

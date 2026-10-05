@@ -44,6 +44,6 @@ error[E4002]  a/a.canon:8:26
   initial: index 0 out of range for length 0
 
 error[E8019]  a/a.canon:19:13
-  emit cpp in data mode cannot generate a read of self that is not a path of fields
+  emit cpp in data mode cannot generate a read of self that is not a path of fields; read self through paths of fields (self.a.b)
 
 2 errors, 0 warnings in 1 package (…)

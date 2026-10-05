@@ -1,0 +1,33 @@
+GRAMMAR.md §9.2 (ruling: a match-pattern binder is a variable, lowerCamel); W1003 at the binder.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Reward.
+variant Reward {
+  gold {
+    /// Amount.
+    amount: Int
+  }
+  nothing
+}
+
+/// Worth.
+fn worth(r: Reward) -> Int {
+  return match r {
+    gold(The_Gold) => The_Gold.amount
+    nothing => 0
+  }
+}
+-- select --
+a
+-- findings.txt --
+warning[W1003]  a/a.canon:16:10
+  variable name "The_Gold" should be lowerCamel
+
+0 errors, 1 warning in 1 package (…)

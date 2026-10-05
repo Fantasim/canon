@@ -1,0 +1,55 @@
+DECISIONS 324, EVALUATION.md §2.3, TYPES.md §11.6: a precomputed result is verified before it reaches
+the IR, so `bonus: loud` in a method's result is converted to the member Tone.loud of the computed
+branch, in a parameterless method and in a finite cell; the TypeScript and JSON emits are written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Kind.
+enum Kind { sound, count }
+
+/// Tone.
+enum Tone { quiet, loud }
+
+/// Bonus by kind.
+type Bonus(k: Kind) = match k {
+  sound => Tone
+  count => Int
+}
+
+/// Perk.
+record Perk {
+  /// Kind.
+  kind: Kind
+  /// Bonus.
+  bonus: Bonus(kind)
+}
+
+/// Hold.
+record Hold {
+  /// Kind.
+  k: Kind = sound
+
+  /// A perk, its discriminant read from self.
+  export fn perk(self) -> Perk { return { kind: k, bonus: loud } }
+
+  /// A perk per tone.
+  export fn toned(self, t: Tone) -> Perk { return { kind: sound, bonus: if t == quiet { quiet } else { loud } } }
+}
+
+/// Holds.
+let holds: table Hold = { h {} }
+
+emit json { out: "@out/" }
+emit ts { out: "@out/a.ts", mode: embedded }
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @out/a.ts 0
+output @out/holds.json 0

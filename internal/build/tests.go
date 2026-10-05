@@ -8,6 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/rules"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
@@ -51,9 +52,12 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	if err := interrupted(ctx, r.check(ctx)); err != nil {
 		return nil, err
 	}
+	r.newHost(r.throwawayBags())
+	if err := r.testNames(); err != nil {
+		return nil, err
+	}
 	res := &TestResult{Files: r.s.set, Static: r.staticErrors(), Revision: r.s.revision()}
 	res.Static.Revision = res.Revision
-	r.newHost(r.throwawayBags())
 	r.host.logBags, r.host.causes = r.throwawayBags, map[eval.Root][]diag.Finding{}
 	r.ev.BeginVerification(ctx)
 	for _, cp := range r.prog.Packages {
@@ -69,6 +73,19 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	}
 	res.Manifest = r.manifest(r.inputs(), commandTest, nil)
 	return res, nil
+}
+
+// testNames reports E5004 and E5005 of the selected packages, which are static (EVALUATION.md §10.1, §10.3).
+func (r *run) testNames() error {
+	runner := rules.NewShared(r.rix, checks{Evaluator: r.ev, failed: &r.failed}, r.bags)
+	for _, cp := range r.prog.Packages {
+		if r.selects(cp.Path) {
+			if err := runner.Tests(cp); err != nil {
+				return internal(err)
+			}
+		}
+	}
+	return nil
 }
 
 // staticErrors is every error finding phases 1-2 left in project.canon and the loaded packages, the selected ones counted (ADR-0004).

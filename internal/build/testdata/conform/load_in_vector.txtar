@@ -54,6 +54,6 @@ b
 -- check-only --
 -- build.txt --
 error[E8019]  b/b.canon:15:13
-  emit cpp in data mode cannot generate a read of self that is not a path of fields
+  emit cpp in data mode cannot generate a read of self that is not a path of fields; read self through paths of fields (self.a.b)
 
 1 error, 0 warnings in 1 package (…)

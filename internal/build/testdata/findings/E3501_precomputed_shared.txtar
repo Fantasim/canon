@@ -1,0 +1,77 @@
+DECISIONS 324, EVALUATION.md §2.3, §8.1, §14: a precomputed result that holds a part of a top-level value
+is invalid when that part is, but the part's findings stay its value's, reported once at its path: a
+record, a ref and an imported method's result alike, and a failing check runs once per instance.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Item.
+record Item {
+  /// Name.
+  name: String
+}
+
+/// Items, a keyed list: its keys are dynamic.
+let items: [Item] keyed by name = [{ name: "sword" }]
+
+/// A selection.
+record Sel {
+  /// Item.
+  item: ref items
+  /// N.
+  n: Int = 1
+
+  check n > 0 else "n must be positive, got {n}"
+}
+
+/// Pick, holding a selection.
+record Pick {
+  /// Sel.
+  sel: Sel
+
+  /// Its selection.
+  export fn chosen(self) -> Sel { return sel }
+
+  /// Its item.
+  export fn it(self) -> ref items { return sel.item }
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b { Pick, Sel, items }
+
+/// Picks held here, one naming no item, one failing its check.
+let picks: [Pick] = [{ sel: { item: nosuch } }, { sel: { item: sword, n: 0 } }]
+
+/// A loose ref naming no item.
+let loose: ref items = gone
+
+/// The loose one again.
+export fn again() -> ref items { return loose }
+
+/// The second pick's selection.
+export fn second() -> Sel { return picks[1].sel }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E3501]  a/a.canon:7:37
+  picks[0].sel.item: unknown key nosuch in b.items
+  expected by b/b.canon:16 (item: ref items)
+
+error[E5001]  a/a.canon:7:56
+  picks[1].sel: n must be positive, got 0
+  expected by b/b.canon:20 (check)
+
+error[E3501]  a/a.canon:10:24
+  loose: unknown key gone in b.items
+  expected by a/a.canon:10 (loose: ref items)
+
+3 errors, 0 warnings in 2 packages (…)

@@ -1,0 +1,31 @@
+EVALUATION.md §10.1: test names are unique within a package; the second declaration is reported at its name.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = 1
+
+test "same" {
+  expect n == 1
+}
+
+test "other" {
+  expect n == 1
+}
+
+test "same" {
+  expect n == 1
+}
+-- select --
+a
+-- findings.txt --
+error[E5005]  a/a.canon:15:6
+  test "same" is declared twice in a
+
+1 error, 0 warnings in 1 package (…)

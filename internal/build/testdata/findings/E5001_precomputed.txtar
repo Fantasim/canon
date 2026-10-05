@@ -1,0 +1,71 @@
+DECISIONS 324, EVALUATION.md §2.3, §8.1, §8.3: a precomputed result is instance-checked like an expect
+subject. A method's result failing its record's check is E5001, and so is a nested instance of a
+result (a list element, a `check … at` field), and a block check's fail(); each with no value path,
+under the precomputation's frame. A passing one is silent.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Pick.
+record Pick {
+  /// N.
+  n: Int
+
+  check n > 0 at n else "n must be positive, got {n}"
+
+  check {
+    if n > 9 {
+      fail(n, "n above nine: {n}")
+    }
+  }
+}
+
+/// A box of picks.
+record Box {
+  /// Picks.
+  picks: [Pick]
+}
+
+/// Hold.
+record Hold {
+  /// N.
+  n: Int = 1
+
+  /// A pick failing its check.
+  export fn bad(self) -> Pick { return { n: n - 1 } }
+
+  /// A pick passing it.
+  export fn good(self) -> Pick { return { n: n } }
+
+  /// A box whose second pick fails one check, its third the other.
+  export fn box(self) -> Box { return { picks: [{ n: n }, { n: -2 }, { n: 12 }] } }
+}
+
+/// Holds.
+let holds: table Hold = { h {} }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E5001]  a/a.canon:30:45
+  n must be positive, got 0
+  expected by a/a.canon:9 (check)
+  in Hold.bad() (a/a.canon:30)
+
+error[E5001]  a/a.canon:36:64
+  n must be positive, got -2
+  expected by a/a.canon:9 (check)
+  in Hold.box() (a/a.canon:36)
+
+error[E5002]  a/a.canon:36:75
+  n above nine: 12
+  expected by a/a.canon:11 (check)
+  in Hold.box() (a/a.canon:36)
+
+3 errors, 0 warnings in 1 package (…)

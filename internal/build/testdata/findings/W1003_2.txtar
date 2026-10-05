@@ -1,0 +1,87 @@
+GRAMMAR.md §9.2: field, function, method, let, parameter, type parameter, local, loop and lambda
+variable, import alias and package segment names are lowerCamel; W1003 at the name.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- Shared/s.canon --
+/// S.
+package Shared
+
+/// V.
+let v: Int = 1
+-- a/a.canon --
+/// A.
+package a
+
+import Shared as Other_Name
+
+/// Rec.
+record Rec(Max_Flag: Bool) {
+  /// Field.
+  Bad_Field: Int
+
+  /// Method.
+  fn Do_It(self, An_Arg: Int) -> Int { return An_Arg }
+}
+
+/// Top.
+let Top_Level: Int = 1
+
+/// Fn.
+fn Do_Thing(Param_One: Int) -> Int {
+  let Local_Name = Param_One
+  var Other_Local = Local_Name
+  for Loop_Var in [1, 2] {
+    Other_Local = Loop_Var
+  }
+  return [1, 2].map(Lam_Var => Lam_Var).len() + Other_Local
+}
+
+/// Fine.
+let fineOk: Int = 1
+-- select --
+a
+Shared
+-- findings.txt --
+warning[W1003]  Shared/s.canon:2:9
+  package segment name "Shared" should be lowerCamel
+
+warning[W1003]  a/a.canon:4:18
+  import alias name "Other_Name" should be lowerCamel
+
+warning[W1003]  a/a.canon:7:12
+  type parameter name "Max_Flag" should be lowerCamel
+
+warning[W1003]  a/a.canon:9:3
+  field name "Bad_Field" should be lowerCamel
+
+warning[W1003]  a/a.canon:12:6
+  method name "Do_It" should be lowerCamel
+
+warning[W1003]  a/a.canon:12:18
+  parameter name "An_Arg" should be lowerCamel
+
+warning[W1003]  a/a.canon:16:5
+  let name "Top_Level" should be lowerCamel
+
+warning[W1003]  a/a.canon:19:4
+  function name "Do_Thing" should be lowerCamel
+
+warning[W1003]  a/a.canon:19:13
+  parameter name "Param_One" should be lowerCamel
+
+warning[W1003]  a/a.canon:20:7
+  local name "Local_Name" should be lowerCamel
+
+warning[W1003]  a/a.canon:21:7
+  local name "Other_Local" should be lowerCamel
+
+warning[W1003]  a/a.canon:22:7
+  variable name "Loop_Var" should be lowerCamel
+
+warning[W1003]  a/a.canon:25:21
+  variable name "Lam_Var" should be lowerCamel
+
+0 errors, 13 warnings in 2 packages (…)

@@ -1,0 +1,55 @@
+DECISIONS 324, EVALUATION.md §2.3, §5, TYPES.md §8.4, §10.3: a precomputed result is verified like an
+expect subject. A ref to a retired entry in a method's result is E3502, with no value path, under the
+precomputation's frame; one in a result declared `past ref` is history, with no finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Status.
+record Status {
+  /// Label.
+  label: String
+}
+
+/// Statuses.
+let statuses: stable table Status = {
+  open { label: "Open" }
+  retired duplicate { label: "Duplicate" }
+}
+
+/// A pick.
+record Pick {
+  /// Status.
+  s: ref statuses
+}
+
+/// Hold.
+record Hold {
+  /// N.
+  n: Int = 1
+
+  /// A pick naming a retired status.
+  export fn pick(self) -> Pick { return { s: duplicate } }
+
+  /// The status it once had: history.
+  export fn was(self) -> past ref statuses { return duplicate }
+}
+
+/// Holds.
+let holds: table Hold = { h {} }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E3502]  a/a.canon:28:46
+  duplicate is retired; a live value cannot reference it (only a retired entry or a past ref may)
+  expected by a/a.canon:19 (s: ref statuses)
+  in Hold.pick() (a/a.canon:28)
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,22 @@
+GRAMMAR.md §9.2: a widget name is lower_snake; W1003 at the name.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Bad.
+widget WeekTimeline(value: Int)
+
+/// Fine.
+widget week_timeline(value: Int)
+-- select --
+a
+-- findings.txt --
+warning[W1003]  a/a.canon:5:8
+  widget name "WeekTimeline" should be lower_snake
+
+0 errors, 1 warning in 1 package (…)

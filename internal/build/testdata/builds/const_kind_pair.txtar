@@ -38,13 +38,13 @@ emit cpp { out: "@gen/cpp", namespace: "a", mode: data }
 emit ts { out: "@gen/ts/a.ts" }
 -- build.txt --
 error[E8019]  a/a.canon:16:7
-  emit cpp in data mode cannot generate a constant of a variant's kind
+  emit cpp in data mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
 
 error[E8019]  a/a.canon:16:7
-  emit go in baked mode cannot generate a constant of a variant's kind
+  emit go in baked mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
 
 error[E8019]  a/a.canon:16:7
-  emit ts in baked mode cannot generate a constant of a variant's kind
+  emit ts in baked mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
 
 error[E8012]  a/a.canon:19:7
   P cannot be emitted: Pair(Int, Int) has no representation in generated code
