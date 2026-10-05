@@ -170,7 +170,8 @@ it when needed).
   are permanent: never removed (`E6001`), renamed (`E6001`), reused or un-retired (`E6002`).
 - Retire instead: `retired key { ... }` in a table, `retired NAME = 3` in a `@codes` enum, or
   `canon edit` op `retire`. A retired entry stays in data files (`"$retired": true`), generated
-  id enums and iteration; `.active()` skips it; a ref to it from a live table entry is `E3502`.
+  id enums and iteration; `.active()` skips it; a ref to it from a stored value is `E3502`
+  unless it sits in a retired entry or a `past ref` slot.
 - `canon.lock` (next to the package) records every stable value ever seen, one sorted line each:
   `table  shop.items  axe`, then `retired` when retired. `canon build` and `canon edit` append;
   nothing removes. A `--layer` build never writes it, and a layer cannot add stable entries

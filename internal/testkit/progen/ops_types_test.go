@@ -37,6 +37,7 @@ func typesOperators() []operator {
 		op(diag.E3022.Def().Code, "TYPES.md §13.1 (record contains itself)", selfRecord("")),
 		op(diag.E3022.Def().Code, "TYPES.md §13.1 (record contains itself, with a default)", selfRecordDefault),
 		op(diag.E3023.Def().Code, "TYPES.md §7.4 (range on Bool)", rangeOnBool),
+		op(diag.E3024.Def().Code, "TYPES.md §8.4 (past on a non-enum)", pastOnInt),
 		op(diag.E3025.Def().Code, "TYPES.md §13.3 (Float bound in a Range)", fnStatementFocus("let zzR: Range = ", "1.5..3", "")),
 		op(diag.E3101.Def().Code, "TYPES.md §9.3 (duplicate table key)", duplicateTableEntry),
 		{code: diag.E3102.Def().Code, rule: "TYPES.md §9.1 (@codes code twice)", also: []diag.Code{diag.E6002.Def().Code}, sites: codeTwice},
@@ -395,6 +396,14 @@ func rangeOnBool(tg target) []progen.Site {
 		func(f *syntax.FieldDecl) progen.Site {
 			_, e := span(tg, f.Type)
 			return seq(1, insert(e, "("), insert(e, "1.."), insert(e, ")"))
+		})
+}
+
+func pastOnInt(tg target) []progen.Site {
+	return sitesOf(tg, func(f *syntax.FieldDecl) bool { return isSource(tg) && text(tg, f.Type) == "Int" },
+		func(f *syntax.FieldDecl) progen.Site {
+			s, _ := span(tg, f.Type)
+			return site(insert(s, "past "))
 		})
 }
 

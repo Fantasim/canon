@@ -93,7 +93,32 @@ func TestTelemetryDDLMatchesLake(t *testing.T) {
 	t.Error("tables.sql has no farm_events table")
 }
 
-// telemetryCatalog is the shape examples/telemetry/catalog.canon documents for catalog.json.
+// telemetryCatalogFormat is the catalog.json format catalog.canon writes (CATALOG_FORMAT).
+const telemetryCatalogFormat = 3
+
+// liveState and tombstoneState are the "state" tags of a live and a retired event type in catalog.json.
+const (
+	liveState      = "live"
+	tombstoneState = "retired"
+)
+
+// catalogEventIDs returns every event id in order and the tombstones' ids, failing on a "state" that is neither live nor retired.
+func catalogEventIDs(t *testing.T, events []telemetryCatalogEvent) (ids, tombstones []int) {
+	t.Helper()
+	for _, e := range events {
+		ids = append(ids, e.ID)
+		switch e.State {
+		case liveState:
+		case tombstoneState:
+			tombstones = append(tombstones, e.ID)
+		default:
+			t.Errorf("event %d: state %q, want %q or %q", e.ID, e.State, liveState, tombstoneState)
+		}
+	}
+	return ids, tombstones
+}
+
+// telemetryCatalog is the shape examples/telemetry/catalog.canon declares for catalog.json.
 type telemetryCatalog struct {
 	Format     int `json:"format"`
 	Contract   int `json:"contract"`
@@ -114,9 +139,9 @@ type telemetryCatalog struct {
 }
 
 type telemetryCatalogEvent struct {
+	State         string   `json:"state"`
 	ID            int      `json:"id"`
 	Table         string   `json:"table"`
-	Retired       bool     `json:"retired"`
 	Version       int      `json:"version"`
 	Since         int      `json:"since"`
 	Tier          string   `json:"tier"`
@@ -158,7 +183,7 @@ type telemetryCatalogRole struct {
 	Note         string  `json:"note"`
 }
 
-// DECISIONS 299: catalog.json parses strictly into its documented shape and lists every event type in id order, tombstones flagged.
+// DECISIONS 299, 308: catalog.json, a typed @text value written as JSON, parses strictly into its declared shape and lists every event type in id order, tombstones tagged "state": "retired".
 func TestTelemetryCatalogParses(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join(telemetryText, "catalog.json"))
 	if err != nil {
@@ -170,13 +195,7 @@ func TestTelemetryCatalogParses(t *testing.T) {
 	if err := dec.Decode(&c); err != nil {
 		t.Fatal(err)
 	}
-	var ids, tombstones []int
-	for _, e := range c.Events {
-		ids = append(ids, e.ID)
-		if e.Retired {
-			tombstones = append(tombstones, e.ID)
-		}
-	}
+	ids, tombstones := catalogEventIDs(t, c.Events)
 	if want := []int{11, 20, 31, 70, 71, 110, 151, 152, 156}; !slices.Equal(ids, want) {
 		t.Errorf("event ids %v, want %v", ids, want)
 	}
@@ -197,7 +216,7 @@ func TestTelemetryCatalogParses(t *testing.T) {
 	if !labelled {
 		t.Error("GrantKind 3 (retired) has lost its label")
 	}
-	if len(c.Provenance) != 5 || c.Format != 2 || len(c.Enums) == 0 {
+	if len(c.Provenance) != 5 || c.Format != telemetryCatalogFormat || len(c.Enums) == 0 {
 		t.Errorf("catalog: %d provenance columns, format %d, %d enums", len(c.Provenance), c.Format, len(c.Enums))
 	}
 }

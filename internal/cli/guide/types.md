@@ -103,7 +103,7 @@ let weights: {Element: Int} = { FIRE: 2, WATER: 1 }
   A `table` element may not declare `id` or `retired` (`E2105`): entries have `.id`, `.retired`.
 - Enum members: `Day.Mon`, or bare (`Mon`) where the type is expected; `.name`, `.index`,
   `.wire`, `.retired`, and `.code` with `@codes`; `E.members` lists them in declaration order
-  (retired ones included, `.retired` tells them apart; `members` is reserved on enums, `E2105`). A retired member stays for `match`; using it is `E3506`.
+  (retired ones included, `.retired` tells them apart; `members` is reserved on enums, `E2105`). A retired member stays for `match`; using it is `E3506` outside a `past` slot (see History).
 - Variant literal: `gold { amount: 10 }`, `Reward.gold { ... }`; a case whose fields all have
   defaults may be bare (`item` needs `name`: `E3302`). `v.kind` is the case; `v is gold` tests
   it. Case fields are readable only on a narrowed value: `match`, `if v is gold { v.amount }`
@@ -145,7 +145,26 @@ collection of `Item` (enclosing record's collection fields, then the package, th
 none or several is `E2103`). A ref behaves like its entry (`q.next.opens`, `r.id` is the key),
 an entry converts to a ref when it belongs to the target (`E3503` otherwise). Unknown key:
 `E2102` when the collection's keys are written in source, `E3501` when loaded or computed.
-A ref from a live table entry to a retired one is `E3502`. Wire form: the key.
+A ref to a retired entry is `E3502` in every stored value, except inside a retired entry or a
+`past ref T` slot (see History). Wire form: the key.
+
+## History: `past`
+
+Retired means "no new use", not "unnameable". A slot that describes the past (a ledger of old
+rows) is typed `past E` or `past ref T`: it may hold retired members, cases or entries, where
+`E3506` and `E3502` would refuse them. `past X` is `X` everywhere else (members, `match`,
+assignability) and every target emits plain `X`; the lock is unchanged. Only that slot's own enum,
+variant or ref is lifted: fields of a `past V` case keep their rules.
+
+```canon fragment
+record Sale { kind: past GrantKind, item: past ref items }
+let history: [past ref items] = [oldSword]
+let kinds: [past Member(column.values)]       // a type function whose branches are all enums
+```
+
+`past X` takes an enum, a variant, a `ref T`, or a type-function application or `match` type whose
+every branch is one of those (the selected branch is past). Anything else is `E3024`: a list
+(`past [E]`: write `[past E]`), a case type, a record.
 
 ## Special types
 

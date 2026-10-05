@@ -303,6 +303,9 @@ func addArm(pattern func(string) string) func(target) []progen.Site {
 			}
 			ls, le := span(tg, last)
 			lastPatterns := a.patterns[len(a.arms)-1]
+			if slices.ContainsFunc(lastPatterns, func(p *syntax.Pattern) bool { return p.Binder != nil }) {
+				continue // the copied body would read a binder the new pattern lacks
+			}
 			_, pe := span(tg, lastPatterns[len(lastPatterns)-1])
 			body := string(tg.src[pe:le])
 			out = append(out, seq(1, insert(le, "\n"+indent(tg, ls)), insert(le, pattern(body)), insert(le, body)))

@@ -33,6 +33,14 @@ var lexicalCases = []struct {
 	{"2.7 comment after paren", "f(/* c */ 1)", `"/* c */" comment.block.canon`},
 	{"5.8 annotation", `@json("w", unit: s)`, `"json" meta.annotation.canon entity.name.function.decorator.canon`},
 	{"4.3 member named like a keyword", "Icon.check", `"check" variable.other.property.canon`},
+	{"4.2 past before a type name", "x: past GrantKind", `"past" storage.modifier.canon`},
+	{"4.2 past before a list type", "x: past [E]", `"past" storage.modifier.canon`},
+	{"4.2 past before ref", "x: past ref items", `"past" storage.modifier.canon`},
+	{"4.2 past before table", "x: past table T", `"past" storage.modifier.canon`},
+	{"4.2 past before stable", "x: past stable T", `"past" storage.modifier.canon`},
+	{"4.2 past before fn", "x: past fn() -> T", `"past" storage.modifier.canon`},
+	{"4.2 past before asset", "x: past asset", `"past" storage.modifier.canon`},
+	{"4.2 past before match", "x: past match", `"past" storage.modifier.canon`},
 	{"9.2 type name", "x: Int", `"Int" entity.name.type.canon`},
 }
 

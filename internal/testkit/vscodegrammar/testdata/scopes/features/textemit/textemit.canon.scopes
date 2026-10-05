@@ -108,25 +108,172 @@
 32:41-55 "SCHEMA_VERSION" string.quoted.double.canon meta.interpolation.canon constant.other.canon
 32:55-56 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 32:56-57 "\"" string.quoted.double.canon
-34:0-4 "emit" keyword.other.canon
-34:12-15 "out" variable.other.property.canon
-34:15-16 ":" punctuation.separator.key.canon
-34:17-26 "\"out/sql\"" string.quoted.double.canon
-35:0-4 "emit" keyword.other.canon
-35:10-13 "out" variable.other.property.canon
-35:13-14 ":" punctuation.separator.key.canon
-35:15-33 "\"out/go/textemit/\"" string.quoted.double.canon
-36:0-4 "emit" keyword.other.canon
-36:11-14 "out" variable.other.property.canon
-36:14-15 ":" punctuation.separator.key.canon
-36:16-38 "\"out/cpp/textemit.hpp\"" string.quoted.double.canon
-37:0-4 "emit" keyword.other.canon
-37:10-13 "out" variable.other.property.canon
-37:13-14 ":" punctuation.separator.key.canon
-37:15-35 "\"out/ts/textemit.ts\"" string.quoted.double.canon
-38:0-4 "emit" keyword.other.canon
-38:12-15 "out" variable.other.property.canon
-38:15-16 ":" punctuation.separator.key.canon
-38:17-36 "\"out/textemit.json\"" string.quoted.double.canon
-38:38-44 "values" variable.other.property.canon
-38:44-45 ":" punctuation.separator.key.canon
+34:0-85 "/// A section of the JSON document (a `local` type may be named by a `@text` result)." comment.line.documentation.canon
+35:0-5 "local" storage.modifier.canon
+35:6-12 "record" storage.type.canon
+35:13-20 "Section" entity.name.type.canon
+36:0-18 "  /// Its heading." comment.line.documentation.canon
+37:2-9 "heading" variable.other.property.canon
+37:9-10 ":" punctuation.separator.key.canon
+37:11-17 "String" entity.name.type.canon
+38:0-17 "  /// Its weight." comment.line.documentation.canon
+39:2-8 "weight" variable.other.property.canon
+39:8-9 ":" punctuation.separator.key.canon
+39:10-13 "Int" entity.name.type.canon
+41:0-106 "  /// Whether it weighs more than 1: a stored fn, which a data file writes as `$heavy`, a text file never." comment.line.documentation.canon
+42:2-8 "export" storage.modifier.canon
+42:9-11 "fn" storage.type.function.canon
+42:12-17 "heavy" entity.name.function.canon
+42:18-22 "self" variable.language.canon
+42:24-26 "->" keyword.operator.canon
+42:27-31 "Bool" entity.name.type.canon
+42:34-40 "return" keyword.control.canon
+42:41-45 "self" variable.language.canon
+42:45-46 "." punctuation.accessor.canon
+42:46-52 "weight" variable.other.property.canon
+42:53-54 ">" keyword.operator.canon
+42:55-56 "1" constant.numeric.integer.canon
+45:0-95 "/// A record whose stored fn would divide by zero for the value `doc` holds: a `@text` result's" comment.line.documentation.canon
+46:0-91 "/// stored fns are never evaluated (DECISIONS 308), so there is no error and no `$inv` key." comment.line.documentation.canon
+47:0-5 "local" storage.modifier.canon
+47:6-12 "record" storage.type.canon
+47:13-18 "Probe" entity.name.type.canon
+48:0-16 "  /// A divisor." comment.line.documentation.canon
+49:2-3 "n" variable.other.property.canon
+49:3-4 ":" punctuation.separator.key.canon
+49:5-8 "Int" entity.name.type.canon
+51:0-16 "  /// Ten per n." comment.line.documentation.canon
+52:2-8 "export" storage.modifier.canon
+52:9-11 "fn" storage.type.function.canon
+52:12-15 "inv" entity.name.function.canon
+52:16-20 "self" variable.language.canon
+52:22-24 "->" keyword.operator.canon
+52:25-28 "Int" entity.name.type.canon
+52:31-37 "return" keyword.control.canon
+52:38-40 "10" constant.numeric.integer.canon
+52:41-42 "/" keyword.operator.canon
+52:43-47 "self" variable.language.canon
+52:47-48 "." punctuation.accessor.canon
+52:48-49 "n" variable.other.property.canon
+55:0-21 "/// What a note says." comment.line.documentation.canon
+56:0-5 "local" storage.modifier.canon
+56:6-13 "variant" storage.type.canon
+56:14-18 "Note" entity.name.type.canon
+57:0-21 "  /// A line of text." comment.line.documentation.canon
+58:9-13 "text" variable.other.property.canon
+58:13-14 ":" punctuation.separator.key.canon
+58:15-21 "String" entity.name.type.canon
+59:0-37 "  /// A reference to another section." comment.line.documentation.canon
+60:8-14 "target" variable.other.property.canon
+60:14-15 ":" punctuation.separator.key.canon
+60:16-22 "String" entity.name.type.canon
+60:24-28 "page" variable.other.property.canon
+60:28-29 ":" punctuation.separator.key.canon
+60:30-33 "Int" entity.name.type.canon
+60:34-35 "=" keyword.operator.canon
+60:36-37 "1" constant.numeric.integer.canon
+63:0-83 "/// The JSON document: a `@text` fn whose result is not a String is written as JSON" comment.line.documentation.canon
+64:0-97 "/// (WIRE.md §8.5): raw UTF-8, integer map keys in decimal, `none` as `null`, a variant with its" comment.line.documentation.canon
+65:0-90 "/// tag first, a nested table as an object keyed by entry id with the retired one flagged." comment.line.documentation.canon
+66:0-5 "local" storage.modifier.canon
+66:6-12 "record" storage.type.canon
+66:13-16 "Doc" entity.name.type.canon
+67:0-42 "  /// A title with an accent and an emoji." comment.line.documentation.canon
+68:2-7 "title" variable.other.property.canon
+68:7-8 ":" punctuation.separator.key.canon
+68:9-15 "String" entity.name.type.canon
+69:0-30 "  /// Section names by number." comment.line.documentation.canon
+70:2-7 "names" variable.other.property.canon
+70:7-8 ":" punctuation.separator.key.canon
+70:10-13 "Int" variable.other.property.canon
+70:13-14 ":" punctuation.separator.key.canon
+70:15-21 "String" entity.name.type.canon
+71:0-35 "  /// An optional subtitle, absent." comment.line.documentation.canon
+72:2-10 "subtitle" variable.other.property.canon
+72:10-11 ":" punctuation.separator.key.canon
+72:12-18 "String" entity.name.type.canon
+72:18-19 "?" keyword.operator.canon
+73:0-13 "  /// A note." comment.line.documentation.canon
+74:2-6 "note" variable.other.property.canon
+74:6-7 ":" punctuation.separator.key.canon
+74:8-12 "Note" entity.name.type.canon
+75:0-14 "  /// A probe." comment.line.documentation.canon
+76:2-7 "probe" variable.other.property.canon
+76:7-8 ":" punctuation.separator.key.canon
+76:9-14 "Probe" entity.name.type.canon
+77:0-40 "  /// The sections, one of them retired." comment.line.documentation.canon
+78:2-10 "sections" variable.other.property.canon
+78:10-11 ":" punctuation.separator.key.canon
+78:12-17 "table" storage.type.canon
+78:18-25 "Section" entity.name.type.canon
+81:0-40 "/// The document, written to `doc.json`." comment.line.documentation.canon
+82:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+82:1-5 "text" meta.annotation.canon entity.name.function.decorator.canon
+82:5-6 "(" meta.annotation.canon
+82:6-16 "\"doc.json\"" meta.annotation.canon string.quoted.double.canon
+82:16-17 ")" meta.annotation.canon
+83:0-6 "export" storage.modifier.canon
+83:7-9 "fn" storage.type.function.canon
+83:10-13 "doc" entity.name.function.canon
+83:16-18 "->" keyword.operator.canon
+83:19-22 "Doc" entity.name.type.canon
+84:2-8 "return" keyword.control.canon
+85:4-9 "title" variable.other.property.canon
+85:9-10 ":" punctuation.separator.key.canon
+85:11-23 "\"Café 🎉\"" string.quoted.double.canon
+86:4-9 "names" variable.other.property.canon
+86:9-10 ":" punctuation.separator.key.canon
+86:13-15 "10" constant.numeric.integer.canon
+86:17-24 "\"intro\"" string.quoted.double.canon
+86:26-27 "2" constant.numeric.integer.canon
+86:29-35 "\"body\"" string.quoted.double.canon
+87:4-12 "subtitle" variable.other.property.canon
+87:12-13 ":" punctuation.separator.key.canon
+87:14-18 "none" constant.language.canon
+88:4-8 "note" variable.other.property.canon
+88:8-9 ":" punctuation.separator.key.canon
+88:16-22 "target" variable.other.property.canon
+88:22-23 ":" punctuation.separator.key.canon
+88:24-30 "\"body\"" string.quoted.double.canon
+89:4-9 "probe" variable.other.property.canon
+89:9-10 ":" punctuation.separator.key.canon
+89:13-14 "n" variable.other.property.canon
+89:14-15 ":" punctuation.separator.key.canon
+89:16-17 "0" constant.numeric.integer.canon
+90:4-12 "sections" variable.other.property.canon
+90:12-13 ":" punctuation.separator.key.canon
+91:14-21 "heading" variable.other.property.canon
+91:21-22 ":" punctuation.separator.key.canon
+91:23-30 "\"Intro\"" string.quoted.double.canon
+91:32-38 "weight" variable.other.property.canon
+91:38-39 ":" punctuation.separator.key.canon
+91:40-41 "1" constant.numeric.integer.canon
+92:6-13 "retired" storage.modifier.canon
+92:20-27 "heading" variable.other.property.canon
+92:27-28 ":" punctuation.separator.key.canon
+92:29-34 "\"Old\"" string.quoted.double.canon
+92:36-42 "weight" variable.other.property.canon
+92:42-43 ":" punctuation.separator.key.canon
+92:44-45 "2" constant.numeric.integer.canon
+97:0-4 "emit" keyword.other.canon
+97:12-15 "out" variable.other.property.canon
+97:15-16 ":" punctuation.separator.key.canon
+97:17-26 "\"out/sql\"" string.quoted.double.canon
+98:0-4 "emit" keyword.other.canon
+98:10-13 "out" variable.other.property.canon
+98:13-14 ":" punctuation.separator.key.canon
+98:15-33 "\"out/go/textemit/\"" string.quoted.double.canon
+99:0-4 "emit" keyword.other.canon
+99:11-14 "out" variable.other.property.canon
+99:14-15 ":" punctuation.separator.key.canon
+99:16-38 "\"out/cpp/textemit.hpp\"" string.quoted.double.canon
+100:0-4 "emit" keyword.other.canon
+100:10-13 "out" variable.other.property.canon
+100:13-14 ":" punctuation.separator.key.canon
+100:15-35 "\"out/ts/textemit.ts\"" string.quoted.double.canon
+101:0-4 "emit" keyword.other.canon
+101:12-15 "out" variable.other.property.canon
+101:15-16 ":" punctuation.separator.key.canon
+101:17-36 "\"out/textemit.json\"" string.quoted.double.canon
+101:38-44 "values" variable.other.property.canon
+101:44-45 ":" punctuation.separator.key.canon

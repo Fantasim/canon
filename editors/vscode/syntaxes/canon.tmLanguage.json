@@ -222,6 +222,9 @@
           }
         },
         {
+          "include": "#past"
+        },
+        {
           "include": "#keywords"
         },
         {
@@ -349,6 +352,81 @@
             },
             "3": {
               "name": "entity.name.namespace.canon"
+            }
+          }
+        }
+      ]
+    },
+    "past": {
+      "patterns": [
+        {
+          "match": "\\bpast[ \\t]+(?:from|keyed|at|fails|warns|passes|ordered)\\b"
+        },
+        {
+          "match": "\\b(past)[ \\t]+(and|or|in|is|as)\\b",
+          "captures": {
+            "2": {
+              "name": "keyword.operator.word.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(past)[ \\t]+(if|else|for|where)\\b",
+          "captures": {
+            "2": {
+              "name": "keyword.control.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(past)[ \\t]+(ref|stable|asset)\\b",
+          "captures": {
+            "1": {
+              "name": "storage.modifier.canon"
+            },
+            "2": {
+              "name": "storage.modifier.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(past)[ \\t]+(table|fn)\\b",
+          "captures": {
+            "1": {
+              "name": "storage.modifier.canon"
+            },
+            "2": {
+              "name": "storage.type.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(past)[ \\t]+(match)\\b",
+          "captures": {
+            "1": {
+              "name": "storage.modifier.canon"
+            },
+            "2": {
+              "name": "keyword.control.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(past)[ \\t]+\\[",
+          "captures": {
+            "1": {
+              "name": "storage.modifier.canon"
+            }
+          }
+        },
+        {
+          "match": "\\b(past)[ \\t]+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": {
+              "name": "storage.modifier.canon"
+            },
+            "2": {
+              "name": "entity.name.type.canon"
             }
           }
         }

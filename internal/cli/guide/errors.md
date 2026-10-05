@@ -51,7 +51,8 @@ error[E3002]  shop/shop.canon:30:17
 | `E3315` | `null` in a required field: make it `T?`, or fix the data |
 | `E3402` `E3403` | may be `none`: `if x != none`, `??`, `?.`, `!` |
 | `E3501` | ref to a missing key: fix the key or add the entry |
-| `E3502` `E3506` | a live table entry refers to a retired entry; a retired member is used |
+| `E3024` | `past` on a type that is not an enum, a variant or a `ref`: `[past E]`, not `past [E]` |
+| `E3502` `E3506` | a stored value refers to a retired entry, or uses a retired member: repoint it, or type the slot `past` |
 | `E4001` `E4002` | `!` on `none`; missing key or index: `get(k)` gives `T?` |
 | `E4101` `E4102` | overflow, division by zero: guard the operands |
 | `E4401` | budget spent: the heaviest value is named; fix the loop or raise `budget` |

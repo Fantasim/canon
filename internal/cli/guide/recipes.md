@@ -67,12 +67,13 @@ canon edit req/retire.json
 ```
 
 ```json req/retire.json
-{"ops": [{"op": "set", "path": "shop:starter[captain]", "source": "[bow]"}, {"op": "retire", "path": "shop:items.axe"}]}
+{"ops": [{"op": "set", "path": "shop:starter[private]", "source": "[bow]"}, {"op": "set", "path": "shop:starter[captain]", "source": "[bow]"}, {"op": "retire", "path": "shop:items.axe"}]}
 ```
 
-The edit writes the `retired` lock line. A live table entry whose `ref` points to the retired
-one is `E3502`, so repoint those first; other values may keep the key. Never delete, rename or
-reuse a stable id (`E6001`, `E6002`). A `@codes` member is retired the same way (`Kind.old`).
+The edit writes the `retired` lock line. Any stored value whose `ref` points to the retired
+one is `E3502` (new use of a retired entry), so repoint them all first, as the ops above do;
+only a retired entry and a `past ref T` slot (`canon guide types`) may keep the key. Never delete,
+rename or reuse a stable id (`E6001`, `E6002`). A `@codes` member is retired the same way (`Kind.old`).
 
 ## Add a check
 
