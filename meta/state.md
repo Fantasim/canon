@@ -1,37 +1,37 @@
 # State — Canon compiler
 
-Updated: 2026-10-05. Branch `feat/past-and-ergonomics` (worktree, based on 7fe4dbc; not yet on
-main) holds the design review's tier 1 and the Emberfall showcase findings: DECISIONS 304-316,
-[log-2026-10-05](decisions/log-2026-10-05.md), ADR-0015, ADR-0016. M5 accepted (CI run 36973712977).
+Updated: 2026-10-06. Branch `feat/past-and-ergonomics` (worktree, not yet on main) holds DECISIONS
+304-324: [log-2026-10-05](decisions/log-2026-10-05.md), [log-2026-10-06](decisions/log-2026-10-06.md),
+ADR-0015, -0016, [ADR-0017](decisions/0017-shared-records-make-hooks.md). M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-**2026-10-05 wave: done on the branch**, every unit spec-reviewed, `make check` green. `past E` /
-`past ref T` (304); every ban has a reason and a way out (305); enum reflection by value (306);
-optional type-function arguments (307); `@text` returns typed JSON (308); poisoned values
-repairable (309); Rename cascades through keyed-list keys (310); per-parameter check order (311);
-MapField in Go/C++ data loaders (312); `Info`, `CheckWith`, view-model cache (313); membership
-(314); one collection, two names (315); ref-key rules and cycles (316). Telemetry uses 304/306/308
-(catalog format 3). Handoffs: [Source](handoff/2026-10-05-telemetry-source.md) (codes 3 and 48 are
-a question for Source), [showcase](handoff/2026-10-05-showcase-workarounds.md).
-**Louis:** merge the branch into main and push (CI still down: Actions billing).
-**Before v0.1, ruled and owed** (DECISIONS 312): one generator step lifting cross-package records
-in data emits and dependent values read through a ref or optional in baked emits (then telemetry
-drops its `of:` field). Later items: entry-level isolation (309, optional), `ordered_json`, kind
-constants, API S11 vs §3.4, go `types`/`embedded` and cpp `embedded` modes, editor scope of calls
-inside interpolations. Long fuzz/progen campaigns stay deferred
-([log-2026-09-29](decisions/log-2026-09-29.md)).
+**v0.1.0 release prep.** Landed on the branch: `in` tests elements, `hasKey` tests keys (317); a
+name in scope is never a symbolic key (318); one form per meaning (`= none` warns W3001, `values: []`
+refused; 319); honest refusals, every generator limit refused by `check` with its way out (320);
+hygiene, `canon help`, never-reported codes reported (322); shared records across packages in Go,
+C++ and TS, all modes, through make hooks (323); precomputed results verified (324). Handoffs:
+[Source](handoff/2026-10-05-telemetry-source.md), [showcase](handoff/2026-10-05-showcase-workarounds.md),
+[audit](handoff/2026-10-06-design-audit.md).
+**Next:** merge to main, push, tag v0.1.0, publish the GitHub release with archives built locally
+(`make dist`; CI is down: Actions billing); remove the merged branches and worktrees.
+**Owed for v0.2** (refused today with a way out): Go `embedded`/`types` and C++ `embedded` modes,
+dependent values read through a ref or optional, legacy structs (M6), entry isolation of a poisoned
+table (321), input defaults (321). Also later: `ordered_json`, kind constants, API S11 vs §3.4,
+editor scope of calls inside interpolations. Long fuzz/progen campaigns stay deferred
+([log-2026-09-29](decisions/log-2026-09-29.md)); progen operators for the new codes are a follow-up.
 Environment for a cloud session: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci --prefix
 tools/tsc`; no systemd (run memory-capped targets by hand under `ulimit -v`).
 
 ## Milestones
 
-M0-M5 accepted; post-M4 done. M1.5 second wave and acceptance done in cloud run 1 (box unticked only
-for the unverified 3 GB cap). M6: TypeScript done, C++ baked done, legacy C++ not started (waits, Louis). M7 not started.
+M0-M5 accepted; post-M4 done. M1.5 second wave and acceptance done in cloud run 1 (box unticked
+only for the unverified 3 GB cap). M6: TypeScript done, C++ baked done, legacy C++ not started
+(waits, Louis). M7 not started.
 
 ## What exists (committed)
 
-spec + DECISIONS 1-292; `syntax`, `format` (+ §13 `Rewrite`; M9 and Rewrite judge a file in its role,
+spec + DECISIONS 1-324; `syntax`, `format` (+ §13 `Rewrite`; M9 and Rewrite judge a file in its role,
 258), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every WIRE §6 form; a `load` given to a field decodes
 in its scope, 268), `check`/`types` (dependent types, views, translations, broken-view/-translation
 tracking; E1903 `variantCase`, E3015 `notConstant`/`budget` for phase 2's folds only, 263),
@@ -40,7 +40,7 @@ stage A forces the constants phase 2's folds read, 264), `verify`, `lock`, `rule
 fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go`, `gen/cpp` (data and
 `types` modes), `views`, `i18n`, `gen/view`, `conform`, `build`, `project`, `check.Session`,
 `eval.Memo`, `workspace`, `views/live`, `edit` (+ ops, typing, codec, Refs), `api` over workspace,
-`cli` (version/init/new/check/build/test/explain/fmt), `internal/testkit`; `tools/audit`.
+`cli` (version/init/new/check/build/test/explain/fmt/help), `internal/testkit`; `tools/audit`.
 
 - Multi-destination emits (ME1, `051c3b7`): an `out` list per emit; `internal/check/emitout.go`
   (E8009 variants, E8004 `noEmit`/`noCopy`); `examples/features/copies`; ts copies checked only.
@@ -71,9 +71,10 @@ NFR-01 measured on this local reference machine only, not a 4-core CI runner, an
 `f53ba0c`. On the final code it was compared at equal load (no regression; Louis accepted it). The
 macOS/Windows link tests skip where links cannot be made. Long fuzz/progen campaigns beyond the
 stated acceptance, deferred by Louis. NFR-01 was not re-run after M4.1's Undo verification (it runs
-only for edit layers and multi-op dependent requests; the bench has neither).
+only for edit layers and multi-op dependent requests; the bench has neither). The 2026-10-06 wave's
+final `make check` result is the orchestrator's to record; this update did not run it.
 
 ## Verify queue
 
-Louis pushes `main` (HEAD `37968e3`); `claude/post-m4-ci` is pushed. Re-run `make bench-edit` on a
-quiet machine or a CI-class runner when one exists.
+Louis pushes `main` after the merge; tag v0.1.0 afterwards. Re-run `make bench-edit` on a quiet
+machine or a CI-class runner when one exists.

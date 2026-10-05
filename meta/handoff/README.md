@@ -21,6 +21,10 @@ Informational; the three calls are also in [../state.md](../state.md).
 the spec sync, multi-destination emits, M5–M7), with M4's lessons. `2026-10-01-m41-inputs/` holds
 M4.1's two unlanded patches and the reviewer's probes (log-2026-09-29 "U-E22-r").
 
+`2026-10-05-telemetry-source.md`, `2026-10-05-showcase-workarounds.md` and
+`2026-10-06-design-audit.md` are informational for the receivers (Source, the Emberfall showcase,
+Louis); the last is the audit behind DECISIONS 317-324 and v0.1.0.
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,

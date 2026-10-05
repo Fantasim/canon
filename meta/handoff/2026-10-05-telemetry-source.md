@@ -56,3 +56,10 @@ accept format 3 (switch on `state`).
         "DatabaseServer"
       ],
 ```
+
+## Note, 2026-10-06 (DECISIONS 317-323)
+
+- `examples/telemetry/telemetry.canon` now tests keys with `headerColumns.hasKey(c.name)` (317);
+  the catalog output is unchanged (format 3 as above).
+- Generated C++ headers gained `detail::<P>Make` structs and friend lines (323). No change to the
+  API Source code calls. No regenerated Source output is required unless Source regenerates.

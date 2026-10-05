@@ -35,3 +35,4 @@ the narration.
 | [0014](0014-cpp-baked-and-text-files.md) | C++ baked data, constexpr lookups and text-file ownership |
 | [0015](0015-past-types-name-retired-members.md) | `past E`: a type whose slots may name retired members |
 | [0016](0016-past-ergonomics-implementation.md) | How `past`, poisoned-value edits, let-path refs and `@text` JSON are built |
+| [0017](0017-shared-records-make-hooks.md) | Shared records across packages: make hooks, own readers, honest refusals |
