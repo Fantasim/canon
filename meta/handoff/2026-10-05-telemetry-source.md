@@ -19,9 +19,11 @@ and any version bound. The two roles then go into `examples/telemetry/events.can
   Member(of)]`) may hold retired members; plain slots still refuse them, and the error says so.
 - **Enum reflection by value** (DECISIONS 306): `Member(v).members` and `.typeName` replace the
   per-enum copies. Telemetry's `enumOf` is one expression; outputs did not change.
-- **Optional type-function arguments** (DECISIONS 307): accepted by the language, but the Go/C++
-  baked emits do not write them yet (E8019). Telemetry keeps its `of:` field until the generator
-  step before v0.1 (DECISIONS 312).
+- **A ledger role names its vocabulary, not its column.** `rows: some { of: grant_kind, kinds:
+  [...] }`: the column is the one column of the event that holds that vocabulary (`columnOf`), and
+  a check refuses a vocabulary held by no column or by several. Generated code: `RowsSome` loses
+  `ColumnID()` (Go) and `GetColumnKey()` / `column_` (C++); use `Of()`. No caller was found in
+  Engine, Tools or services/monitoring. SQL and catalog.json are unchanged.
 
 ## The catalog is now typed JSON: format 3
 
