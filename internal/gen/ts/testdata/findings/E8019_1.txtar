@@ -1,4 +1,4 @@
-CODEGEN.md §5.6, DECISIONS 278: a baked ts literal writes a dependent value in the branch its record's discriminant selects; a dependent value in a map, in a literal union whose value is no string, or read through a ref has none: DependentType at the value, from check, not a crash of the build.
+CODEGEN.md §5.6, DECISIONS 278: a baked ts literal writes a dependent value in the branch its record's discriminant selects; a dependent value in a map, in a literal union whose value is no string, or read through a ref has none: DependentOutsideField (a map, a literal union) or DependentType (through a ref) at the value, from check, not a crash of the build.
 -- a/a.canon --
 package a
 
@@ -61,12 +61,12 @@ let viaRef: R = { g: k, t: "wolf" }
 emit ts { out: "@features/a/a.ts" }
 -- findings.txt --
 error[E8019]  a/a.canon:51:5
-  emit ts in baked mode cannot generate a dependent type
+  emit ts in baked mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 error[E8019]  a/a.canon:54:5
-  emit ts in baked mode cannot generate a dependent type
+  emit ts in baked mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 error[E8019]  a/a.canon:57:5
-  emit ts in baked mode cannot generate a dependent type
+  emit ts in baked mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
 
 3 errors, 0 warnings in 1 package (…)

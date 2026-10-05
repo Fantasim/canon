@@ -58,6 +58,9 @@ export interface CanonTable<K, T> {
   find(key: K): T | null;
 }
 
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
 /** Deep-freezes plain objects and arrays (CanonMaps are already read-only). */
 function canonFreeze<T>(x: T): T {
   if (typeof x === "object" && x !== null && !Object.isFrozen(x)) {
@@ -83,7 +86,7 @@ export interface Q {
   /** A plain point. */
   readonly inner: P;
   /** Points by name. */
-  readonly slots: ReadonlyArray<P>;
+  readonly slots: ReadonlyArray<CanonRow<P, string>>;
 }
 
 const decOrder = Symbol.for("canon.order");
@@ -100,9 +103,9 @@ function decKeys(o: Record<string, unknown>): string[] {
   return order === undefined ? Object.keys(o) : order;
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -262,12 +265,12 @@ function decParse(text: string): unknown {
   return v;
 }
 
-function readP(raw: unknown, path: string, id?: string | null): P {
-  const o = decObject(raw, path);
-  const v1 = id === undefined ? undefined : id ?? decString(decGet(o, "$id"), path + "/$id");
-  const v2 = id === undefined ? undefined : decGet(o, "$retired") === undefined ? false : decBool(decGet(o, "$retired"), path + "/$retired");
-  const v3: number = decInt(decGet(o, "x"), path + "/x", -9223372036854776000, 9223372036854776000);
-  return { ...(v1 === undefined ? {} : { id: v1, retired: v2 }), x: v3 };
+function readP($raw: unknown, $path: string, $rowId?: string | null): P {
+  const $o = decObject($raw, $path);
+  const $v1 = $rowId === undefined ? undefined : $rowId ?? decString(decGet($o, "$id"), $path + "/$id");
+  const $v2 = $rowId === undefined ? undefined : decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + "/$retired");
+  const $v3: number = decInt(decGet($o, "x"), $path + "/x", -9223372036854776000, 9223372036854776000);
+  return { ...($v1 === undefined ? {} : { id: $v1, retired: $v2 }), x: $v3 };
 }
 
 /** A point. */
@@ -279,13 +282,13 @@ export function parseP(text: string): P {
   return decodeP(decParse(text));
 }
 
-function readQ(raw: unknown, path: string): Q {
-  const o = decObject(raw, path);
-  const v1: string = decString(decGet(o, "k"), path + "/k");
-  const v2: P = readP(decGet(o, "inner"), path + "/inner");
-  const r3 = decGet(o, "slots");
-  const v3: ReadonlyArray<P> = r3 === undefined ? [] : decTable(r3, path + "/slots", (x, p, id) => readP(x, p, id));
-  return { k: v1, inner: v2, slots: v3 };
+function readQ($raw: unknown, $path: string): Q {
+  const $o = decObject($raw, $path);
+  const $v1: string = decString(decGet($o, "k"), $path + "/k");
+  const $v2: P = readP(decGet($o, "inner"), $path + "/inner");
+  const $r3 = decGet($o, "slots");
+  const $v3: ReadonlyArray<CanonRow<P, string>> = $r3 === undefined ? [] : decTable($r3, $path + "/slots", ($x, $p, $rowId) => readP($x, $p, $rowId) as CanonRow<P, string>);
+  return { k: $v1, inner: $v2, slots: $v3 };
 }
 
 /** A holder of a point and of a table of them. */

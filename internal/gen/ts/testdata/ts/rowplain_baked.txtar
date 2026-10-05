@@ -58,6 +58,9 @@ export interface CanonTable<K, T> {
   find(key: K): T | null;
 }
 
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
@@ -100,14 +103,14 @@ export interface Q {
   /** A plain point. */
   readonly inner: P;
   /** Points by name. */
-  readonly slots: ReadonlyArray<P>;
+  readonly slots: ReadonlyArray<CanonRow<P, string>>;
 }
 
 /** The points, a table. */
-export const ps: CanonTable<PId, P> = canonTable(canonFreeze<ReadonlyArray<P>>([
+export const ps: CanonTable<PId, CanonRow<P, PId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<P, PId>>>([
   { id: "p1", retired: false, x: 1 },
   { id: "p2", retired: true, x: 2 },
-]), (e) => e.id);
+]), ($e) => $e.id);
 
 /** A single point. */
 export const single: P = canonFreeze<P>({ x: 5 });
@@ -115,4 +118,4 @@ export const single: P = canonFreeze<P>({ x: 5 });
 /** The holders. */
 export const qs: CanonTable<string, Q> = canonTable(canonFreeze<ReadonlyArray<Q>>([
   { k: "a", inner: { x: 3 }, slots: [{ id: "s1", retired: false, x: 4 }] },
-]), (e) => e.k);
+]), ($e) => $e.k);

@@ -57,6 +57,9 @@ export interface CanonTable<K, T> {
   find(key: K): T | null;
 }
 
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
@@ -95,8 +98,8 @@ export type SId = string;
 
 /** A status. */
 export interface S {
-  readonly id: SId;
-  readonly retired: boolean;
+  readonly id?: SId;
+  readonly retired?: boolean;
   /** Label. */
   readonly label: string;
 }
@@ -124,9 +127,9 @@ function decToken(text: string): unknown {
   return Object.freeze(Object.defineProperty({}, decTokenKey, { value: text }));
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -282,19 +285,19 @@ function decParse(text: string): unknown {
   return v;
 }
 
-export function decodeStatuses(json: unknown): CanonTable<SId, S> {
-  const doc = canonEnvelope(json, statusesSchema, "statuses.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readS(x, p))), (e) => e.id);
+export function decodeStatuses(json: unknown): CanonTable<SId, CanonRow<S, SId>> {
+  const $doc = canonEnvelope(json, statusesSchema, "statuses.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readS($x, $p) as CanonRow<S, SId>)), ($e) => $e.id);
 }
 
-export function parseStatuses(text: string): CanonTable<SId, S> {
+export function parseStatuses(text: string): CanonTable<SId, CanonRow<S, SId>> {
   return decodeStatuses(decParse(text));
 }
 
-function readS(raw: unknown, path: string, id?: string): S {
-  const o = decObject(raw, path);
-  const v1 = id ?? decString(decGet(o, "$id"), path + "/$id");
-  const v2 = decGet(o, "$retired") === undefined ? false : decBool(decGet(o, "$retired"), path + "/$retired");
-  const v3: string = decString(decGet(o, "label"), path + "/label");
-  return { id: v1, retired: v2, label: v3 };
+function readS($raw: unknown, $path: string, $rowId?: string): S {
+  const $o = decObject($raw, $path);
+  const $v1 = $rowId ?? decString(decGet($o, "$id"), $path + "/$id");
+  const $v2 = decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + "/$retired");
+  const $v3: string = decString(decGet($o, "label"), $path + "/label");
+  return { id: $v1, retired: $v2, label: $v3 };
 }

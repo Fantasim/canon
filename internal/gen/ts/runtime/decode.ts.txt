@@ -36,9 +36,9 @@ function decKeys(o: Record<string, unknown>): string[] {
   return order === undefined ? Object.keys(o) : order;
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -180,6 +180,13 @@ function decCode<T extends string>(raw: unknown, path: string, members: Readonly
   return m;
 }
 
+/** A ref's key into a table whose ids the file knows through its Index: a key it does not hold names no entry. */
+function decEntry<K extends string>(raw: unknown, path: string, index: Readonly<Record<K, number>>): K {
+  const k = decString(raw, path);
+  if (!Object.prototype.hasOwnProperty.call(index, k)) decFail(path, "no entry " + k);
+  return k as K;
+}
+
 function decBits<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, codes: Readonly<Record<T, number>>): T[] {
   if (typeof raw !== "bigint" && (typeof raw !== "number" || !Number.isSafeInteger(raw))) decFail(path, "expected a non-negative integer");
   let rest = BigInt(raw);
@@ -201,17 +208,6 @@ function decKeyed<K extends string, T>(raw: unknown, path: string, keys: Readonl
   const out = {} as Record<K, T>;
   for (const k of keys) out[k] = read(decGet(o, wire(k)), path + "/" + wire(k));
   return out;
-}
-
-/** Reads raw with another file's public decoder; its failure keeps one JSON path, this one joined with the decoder's (CODEGEN.md §5.13). */
-function decForeign<T>(raw: unknown, path: string, read: (json: unknown) => T): T {
-  try {
-    return read(raw);
-  } catch (e) {
-    const failure = typeof e === "object" && e !== null ? Reflect.get(e, Symbol.for("canon.failure")) : undefined;
-    if (Array.isArray(failure)) return decFail(path + failure[0], failure[1]);
-    return decFail(path, e instanceof Error ? e.message : String(e));
-  }
 }
 
 function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {

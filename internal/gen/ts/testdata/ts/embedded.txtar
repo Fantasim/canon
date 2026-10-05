@@ -87,7 +87,7 @@ export interface Country {
 export const countries: CanonTable<string, Country> = canonTable(canonFreeze<ReadonlyArray<Country>>([
   { code: "FR", vat: 20, cards: true },
   { code: "BE", vat: 21, cards: false },
-]), (e) => e.code);
+]), ($e) => $e.code);
 
 /** The default. */
 export const home: Country = canonFreeze<Country>({ code: "FR", vat: 20, cards: true });

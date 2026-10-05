@@ -68,7 +68,7 @@ func (g *gen) value(v *ir.Value) {
 	}
 }
 
-// tableValue is a table: its rows in entry order, found by id (CODEGEN.md §8.3).
+// tableValue is a table: its rows in entry order, typed CanonRow with the table's id type, found by id (CODEGEN.md §5.9, §8.1, §8.3; DECISIONS 323).
 func (g *gen) tableValue(name string, v *ir.Value) string {
 	elem := g.tableElem(v)
 	rec, ok := elem.(*ir.Record)
@@ -84,7 +84,7 @@ func (g *gen) tableValue(name string, v *ir.Value) string {
 	for i, r := range tab.Entries {
 		rows[i] = g.rowLit(rec, r)
 	}
-	return g.tableDecl(name, typeName(rec), idName(rec), rows, idProp)
+	return g.tableDecl(name, g.rowType(rec, idName(rec)), idName(rec), rows, idProp)
 }
 
 // keyedValue is a keyed list: its rows in order, found by the key field.

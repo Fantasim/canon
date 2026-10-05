@@ -39,6 +39,9 @@ export interface CanonTable<K, T> {
   find(key: K): T | null;
 }
 
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
@@ -68,11 +71,11 @@ export const OfferIdIndex: Readonly<Record<OfferId, number>> = Object.freeze({})
 
 /** An offer. */
 export interface Offer {
-  readonly id: OfferId;
-  readonly retired: boolean;
+  readonly id?: OfferId;
+  readonly retired?: boolean;
   /** Its group. */
   readonly group: string;
 }
 
 /** No offers yet. */
-export const offers: CanonTable<OfferId, Offer> = canonTable(canonFreeze<ReadonlyArray<Offer>>([]), (e) => e.id);
+export const offers: CanonTable<OfferId, CanonRow<Offer, OfferId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Offer, OfferId>>>([]), ($e) => $e.id);

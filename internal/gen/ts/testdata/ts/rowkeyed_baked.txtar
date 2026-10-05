@@ -42,6 +42,9 @@ export interface CanonTable<K, T> {
   find(key: K): T | null;
 }
 
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
@@ -78,11 +81,11 @@ export interface Item {
 }
 
 /** Extra items, a table. */
-export const extra: CanonTable<ItemId, Item> = canonTable(canonFreeze<ReadonlyArray<Item>>([
+export const extra: CanonTable<ItemId, CanonRow<Item, ItemId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Item, ItemId>>>([
   { id: "one", retired: false, sku: "one" },
-]), (e) => e.id);
+]), ($e) => $e.id);
 
 /** Items, a keyed list of the same record. */
 export const items: CanonTable<string, Item> = canonTable(canonFreeze<ReadonlyArray<Item>>([
   { sku: "i1" },
-]), (e) => e.sku);
+]), ($e) => $e.sku);

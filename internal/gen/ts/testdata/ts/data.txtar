@@ -37,7 +37,7 @@ variant Kind @json(tag: "type") {
     /// Damage.
     attack: Int
     /// Element.
-    affinity: Element? = none
+    affinity: Element?
   }
   /// An armor skill.
   armor {
@@ -67,7 +67,7 @@ record Skill @json(case: snake) {
   /// Focus.
   reqFp: Int = 0 @json(path: "legacy.reqFp")
   /// Element, 0 when none.
-  element: Element? = none @json(none: 0)
+  element: Element? @json(none: 0)
   /// Flags.
   flags: [Flag] = [] @json(bits)
   /// Two handed, 0 or 1.
@@ -75,7 +75,7 @@ record Skill @json(case: snake) {
   /// Side or "both".
   side: Side | "both" = "both"
   /// Cast time in seconds.
-  castTime: Duration? = none @json(unit: s)
+  castTime: Duration? @json(unit: s)
   /// Weights by element.
   weights: {Element: Float} = {}
   /// Counts by level.
@@ -121,11 +121,11 @@ record Mark {
   /// Its key.
   key: String
   /// A fraction marker.
-  half: Float? = none @json(none: 0.5)
+  half: Float? @json(none: 0.5)
   /// A negative marker written with a fraction.
-  minus: Float? = none @json(none: -1.0)
+  minus: Float? @json(none: -1.0)
   /// An integer marker past 2^53.
-  big: Int? = none @json(none: 9223372036854775807) @ts(bigint)
+  big: Int? @json(none: 9223372036854775807) @ts(bigint)
   /// Rounded once from the exact decimal.
   narrow: Float32 = 0.0
 }
@@ -175,6 +175,9 @@ export interface CanonTable<K, T> {
   at(i: number): T;
   find(key: K): T | null;
 }
+
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
 
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
@@ -331,8 +334,8 @@ export interface Skill {
 
 /** Statuses. */
 export interface Status {
-  readonly id: StatusId;
-  readonly retired: boolean;
+  readonly id?: StatusId;
+  readonly retired?: boolean;
   /** Label. */
   readonly label: string;
   /** Next. */
@@ -399,9 +402,9 @@ function decKeys(o: Record<string, unknown>): string[] {
   return order === undefined ? Object.keys(o) : order;
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -712,26 +715,26 @@ function decParse(text: string): unknown {
 }
 
 export function decodeSkills(json: unknown): CanonTable<string, Skill> {
-  const doc = canonEnvelope(json, skillsSchema, "skills.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readSkill(x, p))), (e) => e.id);
+  const $doc = canonEnvelope(json, skillsSchema, "skills.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readSkill($x, $p))), ($e) => $e.id);
 }
 
 export function parseSkills(text: string): CanonTable<string, Skill> {
   return decodeSkills(decParse(text));
 }
 
-export function decodeStatuses(json: unknown): CanonTable<StatusId, Status> {
-  const doc = canonEnvelope(json, statusesSchema, "statuses.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readStatus(x, p))), (e) => e.id);
+export function decodeStatuses(json: unknown): CanonTable<StatusId, CanonRow<Status, StatusId>> {
+  const $doc = canonEnvelope(json, statusesSchema, "statuses.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readStatus($x, $p) as CanonRow<Status, StatusId>)), ($e) => $e.id);
 }
 
-export function parseStatuses(text: string): CanonTable<StatusId, Status> {
+export function parseStatuses(text: string): CanonTable<StatusId, CanonRow<Status, StatusId>> {
   return decodeStatuses(decParse(text));
 }
 
 export function decodeObjective(json: unknown): Objective {
-  const doc = canonEnvelope(json, objectiveSchema, "objective.json");
-  return canonFreeze(readObjective(decGet(doc, "value"), "/value"));
+  const $doc = canonEnvelope(json, objectiveSchema, "objective.json");
+  return canonFreeze(readObjective(decGet($doc, "value"), "/value"));
 }
 
 export function parseObjective(text: string): Objective {
@@ -739,112 +742,112 @@ export function parseObjective(text: string): Objective {
 }
 
 export function decodeMarks(json: unknown): CanonTable<string, Mark> {
-  const doc = canonEnvelope(json, marksSchema, "marks.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readMark(x, p))), (e) => e.key);
+  const $doc = canonEnvelope(json, marksSchema, "marks.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readMark($x, $p))), ($e) => $e.key);
 }
 
 export function parseMarks(text: string): CanonTable<string, Mark> {
   return decodeMarks(decParse(text));
 }
 
-function readTarget(raw: unknown, path: string, disc: Goal): Target {
-  switch (disc) {
+function readTarget($raw: unknown, $path: string, $disc: Goal): Target {
+  switch ($disc) {
     case "kill":
-      return { branch: "kill", value: decString(raw, path) };
+      return { branch: "kill", value: decString($raw, $path) };
     case "collect":
-      return { branch: "collect", value: decInt(raw, path, -9223372036854776000, 9223372036854776000) };
+      return { branch: "collect", value: decInt($raw, $path, -9223372036854776000, 9223372036854776000) };
     default:
-      return decFail(path, "no branch for this value");
+      return decFail($path, "no branch for this value");
   }
 }
 
-function readKind(raw: unknown, path: string): Kind {
-  const o = decObject(raw, path);
-  const tag = decString(decGet(o, "type"), path + "/type");
-  switch (tag) {
+function readKind($raw: unknown, $path: string): Kind {
+  const $o = decObject($raw, $path);
+  const $tag = decString(decGet($o, "type"), $path + "/type");
+  switch ($tag) {
     case "weapon":
-      return readKindWeapon(o, path);
+      return readKindWeapon($o, $path);
     case "armor":
-      return readKindArmor(o, path);
+      return readKindArmor($o, $path);
     case "junk":
       return { kind: "junk" };
     case "plain":
       return { kind: "plain" };
     default:
-      return decFail(path + "/type", "unknown case");
+      return decFail($path + "/type", "unknown case");
   }
 }
 
-function readKindWeapon(o: Record<string, unknown>, path: string): KindWeapon {
-  const v1: number = decInt(decGet(o, "attack"), path + "/attack", -9223372036854776000, 9223372036854776000);
-  const r2 = decGet(o, "affinity");
-  const v2: Element | null = r2 === undefined || r2 === null ? null : decCode(r2, path + "/affinity", ElementMembers, ElementCodes);
-  return { kind: "weapon", attack: v1, affinity: v2 };
+function readKindWeapon($o: Record<string, unknown>, $path: string): KindWeapon {
+  const $v1: number = decInt(decGet($o, "attack"), $path + "/attack", -9223372036854776000, 9223372036854776000);
+  const $r2 = decGet($o, "affinity");
+  const $v2: Element | null = $r2 === undefined || $r2 === null ? null : decCode($r2, $path + "/affinity", ElementMembers, ElementCodes);
+  return { kind: "weapon", attack: $v1, affinity: $v2 };
 }
 
-function readKindArmor(o: Record<string, unknown>, path: string): KindArmor {
-  const v1: number = decInt(decGet(o, "defense"), path + "/defense", -9223372036854776000, 9223372036854776000);
-  return { kind: "armor", defense: v1 };
+function readKindArmor($o: Record<string, unknown>, $path: string): KindArmor {
+  const $v1: number = decInt(decGet($o, "defense"), $path + "/defense", -9223372036854776000, 9223372036854776000);
+  return { kind: "armor", defense: $v1 };
 }
 
-function readObjective(raw: unknown, path: string): Objective {
-  const o = decObject(raw, path);
-  const v1: Goal = decEnum(decGet(o, "goal"), path + "/goal", GoalMembers);
-  const r2 = decGet(o, "target");
-  const v2: Target | null = r2 === undefined || r2 === null ? null : readTarget(r2, path + "/target", v1);
-  return { goal: v1, target: v2 };
+function readObjective($raw: unknown, $path: string): Objective {
+  const $o = decObject($raw, $path);
+  const $v1: Goal = decEnum(decGet($o, "goal"), $path + "/goal", GoalMembers);
+  const $r2 = decGet($o, "target");
+  const $v2: Target | null = $r2 === undefined || $r2 === null ? null : readTarget($r2, $path + "/target", $v1);
+  return { goal: $v1, target: $v2 };
 }
 
-function readSkill(raw: unknown, path: string): Skill {
-  const o = decObject(raw, path);
-  const v1: string = decString(decGet(o, "dwID"), path + "/dwID");
-  const r2 = decAt(o, ["legacy", "reqMp"], path);
-  const v2: number = r2 === undefined ? 0 : decInt(r2, path + "/legacy/reqMp", -9223372036854776000, 9223372036854776000);
-  const r3 = decAt(o, ["legacy", "reqFp"], path);
-  const v3: number = r3 === undefined ? 0 : decInt(r3, path + "/legacy/reqFp", -9223372036854776000, 9223372036854776000);
-  const r4 = decGet(o, "element");
-  const v4: Element | null = r4 === undefined || r4 === null || decSame(r4, "0") ? null : decCode(r4, path + "/element", ElementMembers, ElementCodes);
-  const r5 = decGet(o, "flags");
-  const v5: ReadonlyArray<Flag> = r5 === undefined ? [] : decBits(r5, path + "/flags", FlagMembers, FlagCodes);
-  const r6 = decGet(o, "bTwoHanded");
-  const v6: boolean = r6 === undefined ? false : decBit(r6, path + "/bTwoHanded");
-  const r7 = decGet(o, "side");
-  const v7: Side | "both" = r7 === undefined ? "both" : decString(r7, path + "/side") as Side | "both";
-  const r8 = decGet(o, "cast_time");
-  const v8: number | null = r8 === undefined || r8 === null ? null : decDuration(r8, path + "/cast_time", 1000);
-  const r9 = decGet(o, "weights");
-  const v9: ReadonlyMap<Element, number> = r9 === undefined ? new CanonMap<Element, number>([]) : decMap(r9, path + "/weights", (k, p) => decCode(Number(k), p, ElementMembers, ElementCodes), (x, p) => decFloat(x, p));
-  const r10 = decGet(o, "counts");
-  const v10: ReadonlyMap<number, number> = r10 === undefined ? new CanonMap<number, number>([]) : decMap(r10, path + "/counts", (k, p) => decIntKey(k, p), (x, p) => decInt(x, p, -9223372036854776000, 9223372036854776000));
-  const v11: ReadonlyArray<StatBonus> = decPairs(o, path, ["dwDestParam0", "dwDestParam1", "dwDestParam2"], ["nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"], (a, b, pa, pb) => ({ attribute: decString(a, pa), value: decInt(b, pb, -9223372036854776000, 9223372036854776000) }));
-  const v12: Kind = readKind(o, path);
-  const r13 = decGet(o, "goals");
-  const v13: ReadonlyArray<Objective> = r13 === undefined ? [] : decList(r13, path + "/goals", (x, p) => readObjective(x, p));
-  const v14: boolean = decBool(decGet(o, "$isFree"), path + "/$isFree");
-  const v15: Readonly<Record<Element, number>> = decKeyed<Element, number>(decGet(o, "$resist"), path + "/$resist", ElementMembers, (k) => String(ElementCodes[k]), (x, p) => decInt(x, p, -9223372036854776000, 9223372036854776000));
-  return { id: v1, reqMp: v2, reqFp: v3, element: v4, flags: v5, twoHanded: v6, side: v7, castTime: v8, weights: v9, counts: v10, stats: v11, kind: v12, goals: v13, isFree: v14, resist: v15 };
+function readSkill($raw: unknown, $path: string): Skill {
+  const $o = decObject($raw, $path);
+  const $v1: string = decString(decGet($o, "dwID"), $path + "/dwID");
+  const $r2 = decAt($o, ["legacy", "reqMp"], $path);
+  const $v2: number = $r2 === undefined ? 0 : decInt($r2, $path + "/legacy/reqMp", -9223372036854776000, 9223372036854776000);
+  const $r3 = decAt($o, ["legacy", "reqFp"], $path);
+  const $v3: number = $r3 === undefined ? 0 : decInt($r3, $path + "/legacy/reqFp", -9223372036854776000, 9223372036854776000);
+  const $r4 = decGet($o, "element");
+  const $v4: Element | null = $r4 === undefined || $r4 === null || decSame($r4, "0") ? null : decCode($r4, $path + "/element", ElementMembers, ElementCodes);
+  const $r5 = decGet($o, "flags");
+  const $v5: ReadonlyArray<Flag> = $r5 === undefined ? [] : decBits($r5, $path + "/flags", FlagMembers, FlagCodes);
+  const $r6 = decGet($o, "bTwoHanded");
+  const $v6: boolean = $r6 === undefined ? false : decBit($r6, $path + "/bTwoHanded");
+  const $r7 = decGet($o, "side");
+  const $v7: Side | "both" = $r7 === undefined ? "both" : decString($r7, $path + "/side") as Side | "both";
+  const $r8 = decGet($o, "cast_time");
+  const $v8: number | null = $r8 === undefined || $r8 === null ? null : decDuration($r8, $path + "/cast_time", 1000);
+  const $r9 = decGet($o, "weights");
+  const $v9: ReadonlyMap<Element, number> = $r9 === undefined ? new CanonMap<Element, number>([]) : decMap($r9, $path + "/weights", ($k, $p) => decCode(Number($k), $p, ElementMembers, ElementCodes), ($x, $p) => decFloat($x, $p));
+  const $r10 = decGet($o, "counts");
+  const $v10: ReadonlyMap<number, number> = $r10 === undefined ? new CanonMap<number, number>([]) : decMap($r10, $path + "/counts", ($k, $p) => decIntKey($k, $p), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v11: ReadonlyArray<StatBonus> = decPairs($o, $path, ["dwDestParam0", "dwDestParam1", "dwDestParam2"], ["nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"], ($a, $b, $pa, $pb) => ({ attribute: decString($a, $pa), value: decInt($b, $pb, -9223372036854776000, 9223372036854776000) }));
+  const $v12: Kind = readKind($o, $path);
+  const $r13 = decGet($o, "goals");
+  const $v13: ReadonlyArray<Objective> = $r13 === undefined ? [] : decList($r13, $path + "/goals", ($x, $p) => readObjective($x, $p));
+  const $v14: boolean = decBool(decGet($o, "$isFree"), $path + "/$isFree");
+  const $v15: Readonly<Record<Element, number>> = decKeyed<Element, number>(decGet($o, "$resist"), $path + "/$resist", ElementMembers, ($k) => String(ElementCodes[$k]), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  return { id: $v1, reqMp: $v2, reqFp: $v3, element: $v4, flags: $v5, twoHanded: $v6, side: $v7, castTime: $v8, weights: $v9, counts: $v10, stats: $v11, kind: $v12, goals: $v13, isFree: $v14, resist: $v15 };
 }
 
-function readStatus(raw: unknown, path: string, id?: string): Status {
-  const o = decObject(raw, path);
-  const v1 = id ?? decString(decGet(o, "$id"), path + "/$id");
-  const v2 = decGet(o, "$retired") === undefined ? false : decBool(decGet(o, "$retired"), path + "/$retired");
-  const v3: string = decString(decGet(o, "label"), path + "/label");
-  const r4 = decGet(o, "next");
-  const v4: ReadonlyArray<StatusId> = r4 === undefined ? [] : decList(r4, path + "/next", (x, p) => decString(x, p) as StatusId);
-  return { id: v1, retired: v2, label: v3, next: v4 };
+function readStatus($raw: unknown, $path: string, $rowId?: string): Status {
+  const $o = decObject($raw, $path);
+  const $v1 = $rowId ?? decString(decGet($o, "$id"), $path + "/$id");
+  const $v2 = decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + "/$retired");
+  const $v3: string = decString(decGet($o, "label"), $path + "/label");
+  const $r4 = decGet($o, "next");
+  const $v4: ReadonlyArray<StatusId> = $r4 === undefined ? [] : decList($r4, $path + "/next", ($x, $p) => decString($x, $p) as StatusId);
+  return { id: $v1, retired: $v2, label: $v3, next: $v4 };
 }
 
-function readMark(raw: unknown, path: string): Mark {
-  const o = decObject(raw, path);
-  const v1: string = decString(decGet(o, "key"), path + "/key");
-  const r2 = decGet(o, "half");
-  const v2: number | null = r2 === undefined || r2 === null || decSame(r2, "0.5") ? null : decFloat(r2, path + "/half");
-  const r3 = decGet(o, "minus");
-  const v3: number | null = r3 === undefined || r3 === null || decSame(r3, "-1") ? null : decFloat(r3, path + "/minus");
-  const r4 = decGet(o, "big");
-  const v4: bigint | null = r4 === undefined || r4 === null || decSame(r4, "9223372036854775807") ? null : decBig(r4, path + "/big", -9223372036854775808n, 9223372036854775807n);
-  const r5 = decGet(o, "narrow");
-  const v5: number = r5 === undefined ? 0 : decF32(r5, path + "/narrow");
-  return { key: v1, half: v2, minus: v3, big: v4, narrow: v5 };
+function readMark($raw: unknown, $path: string): Mark {
+  const $o = decObject($raw, $path);
+  const $v1: string = decString(decGet($o, "key"), $path + "/key");
+  const $r2 = decGet($o, "half");
+  const $v2: number | null = $r2 === undefined || $r2 === null || decSame($r2, "0.5") ? null : decFloat($r2, $path + "/half");
+  const $r3 = decGet($o, "minus");
+  const $v3: number | null = $r3 === undefined || $r3 === null || decSame($r3, "-1") ? null : decFloat($r3, $path + "/minus");
+  const $r4 = decGet($o, "big");
+  const $v4: bigint | null = $r4 === undefined || $r4 === null || decSame($r4, "9223372036854775807") ? null : decBig($r4, $path + "/big", -9223372036854775808n, 9223372036854775807n);
+  const $r5 = decGet($o, "narrow");
+  const $v5: number = $r5 === undefined ? 0 : decF32($r5, $path + "/narrow");
+  return { key: $v1, half: $v2, minus: $v3, big: $v4, narrow: $v5 };
 }

@@ -51,8 +51,11 @@ func (g *gen) optionalType(t ir.TypeRef, big bool) string {
 	return g.tsType(g.elem(t), big) + unionSep + tsNull
 }
 
-// listType is ReadonlyArray of the element: a keyed list and a table field hold their rows (CODEGEN.md §4.2).
+// listType is ReadonlyArray of the element: a keyed list holds its records, a table field its rows, CanonRow with this package's id whoever owns the record (CODEGEN.md §3.3, §4.2; DECISIONS 323; log-2026-10-06 "U4 (gen/ts) done" (e)).
 func (g *gen) listType(t ir.TypeRef, big bool) string {
+	if rec, ok := rowRecord(t); ok {
+		return fmt.Sprintf(readonlyArrayFormat, g.rowType(rec, g.idTypeOf(rec)))
+	}
 	return fmt.Sprintf(readonlyArrayFormat, g.tsType(g.elem(t), big))
 }
 

@@ -8,13 +8,13 @@ record R {
   /// Its key.
   n: Int @ts(bigint)
   /// The next row, by its bigint key.
-  next: ref rs? = none
+  next: ref rs?
   /// Counts by bigint key.
   m: {Int: Int} = {} @ts(bigint)
   /// Bigints.
   l: [Int] = [] @ts(bigint)
   /// A bigint none marker.
-  mx: Int? = none @ts(bigint) @json(none: -1)
+  mx: Int? @ts(bigint) @json(none: -1)
   /// Weights by row.
   w: {ref rs: Int} = {}
 }
@@ -108,4 +108,4 @@ export interface R {
 export const rs: CanonTable<bigint, R> = canonTable(canonFreeze<ReadonlyArray<R>>([
   { n: 9007199254740993n, next: 9007199254740993n, m: new CanonMap<bigint, bigint>([[9007199254740995n, 1n]]), l: [9007199254740997n], mx: 9007199254740999n, w: new CanonMap<bigint, number>([[1n, 2]]) },
   { n: 1n, next: 9007199254740993n, m: new CanonMap<bigint, bigint>([]), l: [], mx: null, w: new CanonMap<bigint, number>([]) },
-]), (e) => e.n);
+]), ($e) => $e.n);

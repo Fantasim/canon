@@ -42,7 +42,7 @@ record Unit {
   /// Name.
   name: String
   /// An optional bonus.
-  bonus: Bonus? = none
+  bonus: Bonus?
   /// Its shape.
   shape: Shape = circle { r: 2 }
   /// A flag.

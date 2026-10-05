@@ -133,4 +133,4 @@ export interface O {
 export const os: CanonTable<string, O> = canonTable(canonFreeze<ReadonlyArray<O>>([
   { id: "a", p: { x: 1, double: 2 }, sh: { kind: "dot", area: 0 } },
   { id: "b", p: { x: 4, double: 8 }, sh: { kind: "circle", r: 2 } },
-]), (e) => e.id);
+]), ($e) => $e.id);

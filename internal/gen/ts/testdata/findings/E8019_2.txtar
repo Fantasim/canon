@@ -19,6 +19,6 @@ let things: [Thing] keyed by a = [{ a: 1 }]
 emit ts { out: "@features/a/a.ts" }
 -- findings.txt --
 error[E8019]  a/a.canon:11:13
-  emit ts in baked mode cannot generate a by-value cycle of records through a stored method result
+  emit ts in baked mode cannot generate a by-value cycle of records through a stored method result; return a ref to the record instead
 
 1 error, 0 warnings in 1 package (…)

@@ -28,7 +28,7 @@ record H {
   /// Plain-keyed rows by bigint: the key a bigint, the row's key a number.
   byBig: {Int: ref ks} = {} @ts(bigint)
   /// A bigint-keyed row in a field without the flag: a bigint.
-  b: ref bs? = none
+  b: ref bs?
   /// Plain-keyed rows by bigint-keyed row, in a field without the flag.
   bk: {ref bs: ref ks} = {}
 }
@@ -128,12 +128,12 @@ export interface H {
 export const ks: CanonTable<number, K> = canonTable(canonFreeze<ReadonlyArray<K>>([
   { n: 1 },
   { n: 2 },
-]), (e) => e.n);
+]), ($e) => $e.n);
 
 /** The bigint-keyed rows. */
 export const bs: CanonTable<bigint, B> = canonTable(canonFreeze<ReadonlyArray<B>>([
   { n: 9007199254740993n },
-]), (e) => e.n);
+]), ($e) => $e.n);
 
 /** The holder. */
 export const h: H = canonFreeze<H>({ m: new CanonMap<number, bigint>([[1, 9007199254740995n]]), byBig: new CanonMap<bigint, number>([[9007199254740997n, 2]]), b: 9007199254740993n, bk: new CanonMap<bigint, number>([[9007199254740993n, 1]]) });

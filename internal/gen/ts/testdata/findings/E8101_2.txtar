@@ -7,7 +7,7 @@ record R {
   /// Its key.
   n: Int
   /// The next row.
-  next: ref rs? = none
+  next: ref rs?
 }
 
 /// A row keyed by a bigint.
@@ -15,7 +15,7 @@ record B {
   /// Its key.
   n: Int @ts(bigint)
   /// The next row.
-  next: ref bs? = none
+  next: ref bs?
 }
 
 /// Rows, keyed by a number.

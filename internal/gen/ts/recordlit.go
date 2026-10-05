@@ -16,13 +16,9 @@ func (g *gen) recordLit(rec *ir.Record, r *value.Record) string {
 	return g.objectLit(nil, rec.Fields, rec.Methods, r)
 }
 
-// rowLit is a table's row as an object literal: `id` and `retired` first, then what recordLit writes; they are written only where the value sits in a table (CODEGEN.md §5.4, DECISIONS 279(c)).
+// rowLit is a table's row as an object literal: `id` and `retired` first, then what recordLit writes; they are written only where the value sits in a table, whichever package's table it is: this one's, or one inside another package's record (CODEGEN.md §5.4, §5.9, DECISIONS 279(c), 323).
 func (g *gen) rowLit(rec *ir.Record, r *value.Record) string {
-	var parts []string
-	if g.entries[rec] {
-		parts = g.entryParts(r)
-	}
-	return g.objectLit(parts, rec.Fields, rec.Methods, r)
+	return g.objectLit(g.entryParts(r), rec.Fields, rec.Methods, r)
 }
 
 // entryParts are `id: "open", retired: false` from the row's identity.

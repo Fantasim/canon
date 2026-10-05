@@ -131,9 +131,9 @@ function decToken(text: string): unknown {
   return Object.freeze(Object.defineProperty({}, decTokenKey, { value: text }));
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -298,40 +298,40 @@ function decParse(text: string): unknown {
 }
 
 export function decodeHs(json: unknown): CanonTable<string, H> {
-  const doc = canonEnvelope(json, hsSchema, "hs.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readH(x, p))), (e) => e.k);
+  const $doc = canonEnvelope(json, hsSchema, "hs.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readH($x, $p))), ($e) => $e.k);
 }
 
 export function parseHs(text: string): CanonTable<string, H> {
   return decodeHs(decParse(text));
 }
 
-function readShape(raw: unknown, path: string): Shape {
-  const o = decObject(raw, path);
-  const tag = decString(decGet(o, "kind"), path + "/kind");
-  switch (tag) {
+function readShape($raw: unknown, $path: string): Shape {
+  const $o = decObject($raw, $path);
+  const $tag = decString(decGet($o, "kind"), $path + "/kind");
+  switch ($tag) {
     case "circle":
-      return readShapeCircle(o, path);
+      return readShapeCircle($o, $path);
     case "point":
-      return readShapePoint(o, path);
+      return readShapePoint($o, $path);
     default:
-      return decFail(path + "/kind", "unknown case");
+      return decFail($path + "/kind", "unknown case");
   }
 }
 
-function readShapeCircle(o: Record<string, unknown>, path: string): ShapeCircle {
-  const v1: number = decInt(decGet(o, "r"), path + "/r", -9223372036854776000, 9223372036854776000);
-  return { kind: "circle", r: v1 };
+function readShapeCircle($o: Record<string, unknown>, $path: string): ShapeCircle {
+  const $v1: number = decInt(decGet($o, "r"), $path + "/r", -9223372036854776000, 9223372036854776000);
+  return { kind: "circle", r: $v1 };
 }
 
-function readShapePoint(o: Record<string, unknown>, path: string): ShapePoint {
-  const v1: boolean = decBool(decGet(o, "$atOrigin"), path + "/$atOrigin");
-  return { kind: "point", atOrigin: v1 };
+function readShapePoint($o: Record<string, unknown>, $path: string): ShapePoint {
+  const $v1: boolean = decBool(decGet($o, "$atOrigin"), $path + "/$atOrigin");
+  return { kind: "point", atOrigin: $v1 };
 }
 
-function readH(raw: unknown, path: string): H {
-  const o = decObject(raw, path);
-  const v1: string = decString(decGet(o, "k"), path + "/k");
-  const v2: Shape = readShape(decGet(o, "s"), path + "/s");
-  return { k: v1, s: v2 };
+function readH($raw: unknown, $path: string): H {
+  const $o = decObject($raw, $path);
+  const $v1: string = decString(decGet($o, "k"), $path + "/k");
+  const $v2: Shape = readShape(decGet($o, "s"), $path + "/s");
+  return { k: $v1, s: $v2 };
 }

@@ -151,9 +151,9 @@ function decToken(text: string): unknown {
   return Object.freeze(Object.defineProperty({}, decTokenKey, { value: text }));
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -313,50 +313,50 @@ function decParse(text: string): unknown {
 }
 
 export function decodeOs(json: unknown): CanonTable<string, O> {
-  const doc = canonEnvelope(json, osSchema, "os.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readO(x, p))), (e) => e.id);
+  const $doc = canonEnvelope(json, osSchema, "os.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readO($x, $p))), ($e) => $e.id);
 }
 
 export function parseOs(text: string): CanonTable<string, O> {
   return decodeOs(decParse(text));
 }
 
-function readP(raw: unknown, path: string): P {
-  const o = decObject(raw, path);
-  const v1: number = decInt(decGet(o, "x"), path + "/x", -9223372036854776000, 9223372036854776000);
-  const v2: number = decInt(decGet(o, "$double"), path + "/$double", -9223372036854776000, 9223372036854776000);
-  return { x: v1, double: v2 };
+function readP($raw: unknown, $path: string): P {
+  const $o = decObject($raw, $path);
+  const $v1: number = decInt(decGet($o, "x"), $path + "/x", -9223372036854776000, 9223372036854776000);
+  const $v2: number = decInt(decGet($o, "$double"), $path + "/$double", -9223372036854776000, 9223372036854776000);
+  return { x: $v1, double: $v2 };
 }
 
-function readShape(raw: unknown, path: string): Shape {
-  const o = decObject(raw, path);
-  const tag = decString(decGet(o, "kind"), path + "/kind");
-  switch (tag) {
+function readShape($raw: unknown, $path: string): Shape {
+  const $o = decObject($raw, $path);
+  const $tag = decString(decGet($o, "kind"), $path + "/kind");
+  switch ($tag) {
     case "circle":
-      return readShapeCircle(o, path);
+      return readShapeCircle($o, $path);
     case "dot":
-      return readShapeDot(o, path);
+      return readShapeDot($o, $path);
     default:
-      return decFail(path + "/kind", "unknown case");
+      return decFail($path + "/kind", "unknown case");
   }
 }
 
-function readShapeCircle(o: Record<string, unknown>, path: string): ShapeCircle {
-  const v1: number = decInt(decGet(o, "r"), path + "/r", -9223372036854776000, 9223372036854776000);
-  return { kind: "circle", r: v1 };
+function readShapeCircle($o: Record<string, unknown>, $path: string): ShapeCircle {
+  const $v1: number = decInt(decGet($o, "r"), $path + "/r", -9223372036854776000, 9223372036854776000);
+  return { kind: "circle", r: $v1 };
 }
 
-function readShapeDot(o: Record<string, unknown>, path: string): ShapeDot {
-  const v1: number = decInt(decGet(o, "$area"), path + "/$area", -9223372036854776000, 9223372036854776000);
-  return { kind: "dot", area: v1 };
+function readShapeDot($o: Record<string, unknown>, $path: string): ShapeDot {
+  const $v1: number = decInt(decGet($o, "$area"), $path + "/$area", -9223372036854776000, 9223372036854776000);
+  return { kind: "dot", area: $v1 };
 }
 
-function readO(raw: unknown, path: string): O {
-  const o = decObject(raw, path);
-  const v1: string = decString(decGet(o, "id"), path + "/id");
-  const r2 = decGet(o, "p");
-  const v2: P = r2 === undefined ? { x: 1, double: 2 } : readP(r2, path + "/p");
-  const r3 = decGet(o, "sh");
-  const v3: Shape = r3 === undefined ? { kind: "dot", area: 0 } : readShape(r3, path + "/sh");
-  return { id: v1, p: v2, sh: v3 };
+function readO($raw: unknown, $path: string): O {
+  const $o = decObject($raw, $path);
+  const $v1: string = decString(decGet($o, "id"), $path + "/id");
+  const $r2 = decGet($o, "p");
+  const $v2: P = $r2 === undefined ? { x: 1, double: 2 } : readP($r2, $path + "/p");
+  const $r3 = decGet($o, "sh");
+  const $v3: Shape = $r3 === undefined ? { kind: "dot", area: 0 } : readShape($r3, $path + "/sh");
+  return { id: $v1, p: $v2, sh: $v3 };
 }

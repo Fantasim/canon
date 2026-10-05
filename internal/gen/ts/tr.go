@@ -31,7 +31,7 @@ func (t *tr) stmts(n ir.PExpr, b *strings.Builder, depth int) {
 	case *ir.Block:
 		t.stmtList(x, b, depth)
 	case *ir.Let:
-		fmt.Fprintf(b, letFormat, pad, escape(x.Name), t.expr(x.Value))
+		fmt.Fprintf(b, letFormat, pad, t.g.bind(x.Name), t.expr(x.Value))
 		t.stmts(x.Body, b, depth)
 	case *ir.If:
 		fmt.Fprintf(b, ifOpenFormat, pad, t.expr(x.Cond))
@@ -49,7 +49,7 @@ func (t *tr) stmtList(x *ir.Block, b *strings.Builder, depth int) {
 	for _, st := range x.Stmts {
 		switch s := st.(type) {
 		case *ir.LetStmt:
-			fmt.Fprintf(b, letFormat, pad, escape(s.Name), t.expr(s.Value))
+			fmt.Fprintf(b, letFormat, pad, t.g.bind(s.Name), t.expr(s.Value))
 		case *ir.IfStmt:
 			t.ifStmt(s, b, depth)
 		case *ir.ReturnStmt:
@@ -107,7 +107,7 @@ func (t *tr) expr(n ir.PExpr) string {
 	case *ir.ReadRef:
 		return t.input(x.Index)
 	case *ir.LocalRef:
-		return escape(x.Name)
+		return t.g.bind(x.Name)
 	case *ir.Unary:
 		return t.unary(x)
 	case *ir.Binary:

@@ -78,10 +78,10 @@ test("Thing.with conformance", () => {
     [1, 1, 2, ""],
     [1, 9223372036854776000, 0, "E8303"],
   ];
-  for (const [kind, new_, want, code] of vectors) {
-    const [got, gotCode] = canonCatch(() => $thingWith(kind, new_));
-    assert.equal(gotCode, code, `Thing.with(kind=${kind}, new=${new_})`);
-    if (code === "") assert.ok(Object.is(got, want), `Thing.with(kind=${kind}, new=${new_}) = ${got}, canon says ${want}`);
+  for (const [kind, new$, want, code] of vectors) {
+    const [got, gotCode] = canonCatch(() => $thingWith(kind, new$));
+    assert.equal(gotCode, code, `Thing.with(kind=${kind}, new=${new$})`);
+    if (code === "") assert.ok(Object.is(got, want), `Thing.with(kind=${kind}, new=${new$}) = ${got}, canon says ${want}`);
   }
 });
 
@@ -94,10 +94,10 @@ test("Thing.within conformance", () => {
     [1, 1, 3, ""],
     [1, 9223372036854776000, 0, "E8303"],
   ];
-  for (const [kind, void_, want, code] of vectors) {
-    const [got, gotCode] = canonCatch(() => $thingWithin(kind, void_));
-    assert.equal(gotCode, code, `Thing.within(kind=${kind}, void=${void_})`);
-    if (code === "") assert.ok(Object.is(got, want), `Thing.within(kind=${kind}, void=${void_}) = ${got}, canon says ${want}`);
+  for (const [kind, void$, want, code] of vectors) {
+    const [got, gotCode] = canonCatch(() => $thingWithin(kind, void$));
+    assert.equal(gotCode, code, `Thing.within(kind=${kind}, void=${void$})`);
+    if (code === "") assert.ok(Object.is(got, want), `Thing.within(kind=${kind}, void=${void$}) = ${got}, canon says ${want}`);
   }
 });
 
@@ -215,32 +215,32 @@ export interface Item {
 /** The things. */
 export const allItems: CanonTable<string, Item> = canonTable(canonFreeze<ReadonlyArray<Item>>([
   { type: 0, class: "a", delete: false },
-]), (e) => e.class);
+]), ($e) => $e.class);
 
 /** A reserved value name. */
 export const default_: Item = canonFreeze<Item>({ type: 0, class: "d", delete: false });
 
 /** Takes a reserved parameter name. */
-export function thingWith(self: Item, new_: number): number {
-  return $thingWith(self.type, new_);
+export function thingWith(self: Item, new$: number): number {
+  return $thingWith(self.type, new$);
 }
 
-export function $thingWith(kind: number, new_: number): number {
+export function $thingWith(kind: number, new$: number): number {
   kind = canonInt(kind);
-  new_ = canonInt(new_);
-  return canonAdd(kind, new_);
+  new$ = canonInt(new$);
+  return canonAdd(kind, new$);
 }
 
 /** Escapes a local. */
-export function thingWithin(self: Item, void_: number): number {
-  return $thingWithin(self.type, void_);
+export function thingWithin(self: Item, void$: number): number {
+  return $thingWithin(self.type, void$);
 }
 
-export function $thingWithin(kind: number, void_: number): number {
+export function $thingWithin(kind: number, void$: number): number {
   kind = canonInt(kind);
-  void_ = canonInt(void_);
-  const this_ = canonMul(void_, 2);
-  return canonAdd(this_, kind);
+  void$ = canonInt(void$);
+  const this$ = canonMul(void$, 2);
+  return canonAdd(this$, kind);
 }
 
 /** A fn renamed. */

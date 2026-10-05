@@ -142,6 +142,14 @@ func idName(elem ir.Type) string { return typeName(elem) + idSuffix }
 // reserved reports a name a top-level binding or parameter may not take (CODEGEN.md §3.4).
 func reserved(name string) bool { return slices.Contains(reservedWords, name) }
 
+// bind is a parameter's or local's name: `$`-suffixed when reserved, or when it equals the namespace alias of a package the file imports, which it would shadow; a Canon name holds no `$`, so the escaped name meets no other parameter or local (`p` beside `p_`) (CODEGEN.md §3.4; log-2026-10-06 "U1 rounds 3-5" (2), "U4 re-review PASS" (1)).
+func (g *gen) bind(name string) string {
+	if g.aliases[name] || reserved(name) {
+		return name + escapeMark
+	}
+	return name
+}
+
 // escape suffixes `_` to a reserved name.
 func escape(name string) string {
 	if reserved(name) {

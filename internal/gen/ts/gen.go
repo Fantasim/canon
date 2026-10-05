@@ -17,10 +17,10 @@ type gen struct {
 	err          error
 	at           string
 	items        []string
-	names        map[string]string // generated name → what declared it: the module's one scope (CODEGEN.md §3.5)
-	typeImports  map[string]map[string]bool
-	valueImports map[string]map[string]bool
-	used         map[string]bool // helper units the code references
+	names        map[string]string    // generated name → what declared it: the module's one scope (CODEGEN.md §3.5)
+	imports      map[string]*nsImport // by specifier: each imported package's one namespace import
+	aliases      map[string]bool      // the namespace aliases of every package the file may import (ir.TSImports): no parameter or local takes one
+	used         map[string]bool      // helper units the code references
 	emitted      []*ir.Value
 	entries      map[*ir.Record]bool // records that are the rows of a table: they hold `id` and `retired`
 	loose        map[*ir.Record]bool // rows also held as plain values: `id` and `retired` are optional (CODEGEN.md §5.4)
@@ -28,6 +28,9 @@ type gen struct {
 	variantOf    map[*ir.Case]*ir.Variant
 	pures        []*pureFn // translated fns written, in declaration order: the conformance file tests them
 	decoded      map[any]bool
+	needed       []ir.Type       // the classes of other packages the readers read, in the order they were needed
+	foreignRead  []any           // ir.ForeignUses' Read, computed once
+	foreignDone  bool            // foreignRead is computed
 	props        map[string]bool // the properties declared per interface
 	instances    map[*ir.ExportFn]map[*value.Record]*ir.Instance
 	temps        int
@@ -63,12 +66,16 @@ func last(pkg string) string {
 func newGen(p *ir.Package, e *ir.Emit) *gen {
 	g := &gen{
 		p: p, e: e, at: p.Name, names: map[string]string{}, used: map[string]bool{},
-		typeImports: map[string]map[string]bool{}, valueImports: map[string]map[string]bool{},
+		imports: map[string]*nsImport{},
 		entries: map[*ir.Record]bool{}, loose: map[*ir.Record]bool{}, rowSites: map[*ir.Record]int{}, variantOf: map[*ir.Case]*ir.Variant{}, decoded: map[any]bool{}, props: map[string]bool{},
 		instances: map[*ir.ExportFn]map[*value.Record]*ir.Instance{},
 	}
 	for _, name := range ir.TSHelperNames() {
 		g.names[name] = helperOrigin
+	}
+	g.aliases = map[string]bool{}
+	for _, imp := range ir.TSImports(p) {
+		g.aliases[imp.Alias] = true
 	}
 	g.selectValues()
 	g.indexEntries()

@@ -62,7 +62,7 @@ func (g *gen) conformanceTest(p *pureFn, taken map[string]bool) string {
 		strings.Join(append(locals, vectorWant, vectorCode), listSep), call, fmt.Sprintf(messageFormat, label, args), fmt.Sprintf(failureFormat, label, args))
 }
 
-// loopNames are the loop variables of a test: the inputs' names, suffixed with `_` while they would shadow another name of the file.
+// loopNames are the loop variables of a test: the inputs' names, `$`-suffixed while they would shadow another name of the file (CODEGEN.md §3.4).
 func loopNames(inputs []input, taken map[string]bool) []string {
 	used := maps.Clone(taken)
 	for _, k := range reservedLoop {
@@ -72,7 +72,7 @@ func loopNames(inputs []input, taken map[string]bool) []string {
 	for i, in := range inputs {
 		name := in.name
 		for used[name] {
-			name += underscore
+			name += escapeMark
 		}
 		used[name], out[i] = true, name
 	}

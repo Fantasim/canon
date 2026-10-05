@@ -126,7 +126,7 @@ func (g *gen) markerTest(raw string, marker []byte) string {
 	return strconv.FormatBool(false)
 }
 
-// pairsRead is `decPairs(o, path, [k0, ...], [v0, ...], (a, b, pa, pb) => ({...}))`: the slots of a @json(pairs:) field (WIRE.md §5.14).
+// pairsRead is `decPairs($o, $path, [k0, ...], [v0, ...], ($a, $b, $pa, $pb) => ({...}))`: the slots of a @json(pairs:) field (WIRE.md §5.14).
 func (g *gen) pairsRead(f *ir.Field) string {
 	rec, ok := g.elem(f.Type).Named.(*ir.Record)
 	if !ok || len(rec.Fields) != pairFields || f.Pairs == nil || f.Pairs.Slots <= 0 {
@@ -190,7 +190,7 @@ func (g *gen) fnRead(rd *reading, fn *ir.ExportFn) {
 // finiteRead is a nested object, one level per parameter, keyed by the wires of its domain (WIRE.md §5.11).
 func (g *gen) finiteRead(fn *ir.ExportFn, level int, raw, path string) string {
 	p := fn.Params[level]
-	keys, wire := g.domainKeys(p.Type)
+	keys, wire := g.domainKeys(fn, level)
 	var inner string
 	if level+1 == len(fn.Params) {
 		inner = g.dec(fn.Result, lambdaRaw, lambdaPath, decCtx{})
@@ -210,8 +210,9 @@ func (g *gen) levelType(fn *ir.ExportFn, level int) string {
 	return t
 }
 
-// domainKeys is a finite parameter's keys as an array and the function from a key to its wire: `["false", "true"]`, or an enum's Members, written by name or, with @json(codes), by code (WIRE.md §5.8, §5.11).
-func (g *gen) domainKeys(t ir.TypeRef) (keys, wire string) {
+// domainKeys is a finite parameter's keys as an array and the function from a key to its wire: `["false", "true"]`, an enum's Members, written by name or, with @json(codes), by code, or, for a ref into a baked or embedded owner's table, its ids in entry order as a literal array from ir.ExportFn.Domains (WIRE.md §5.8, §5.11; CODEGEN.md §5.10; log-2026-10-06 "U5 + 320 done" G1, "U5 re-verify").
+func (g *gen) domainKeys(fn *ir.ExportFn, level int) (keys, wire string) {
+	t := fn.Params[level].Type
 	if t.Kind == types.Bool {
 		return boolKeyList, identityWire
 	}
@@ -221,6 +222,18 @@ func (g *gen) domainKeys(t ir.TypeRef) (keys, wire string) {
 		}
 		return g.membersConst(e), identityWire
 	}
-	g.failf(errUnsupported, unsupportedFinite, g.at)
+	if t.Kind == types.Ref && g.knownIDs(t.Ref) && level < len(fn.Domains) {
+		return g.refKeys(t, fn.Domains[level]), identityWire
+	}
+	g.failf(ErrMalformed, unsupportedFinite, g.at) // E8013 refParam, E8014, E8019 ForeignTableLookupParam refuse it first (DECISIONS 320)
 	return tsUndefined, tsUndefined
+}
+
+// refKeys is a ref parameter's domain as a literal array of its keys, in entry order (ir.ExportFn.Domains, which stage E fills whether or not a receiver exists): `["low", "high"]`, `[]` for an empty table; decKeyed's type argument types it as the owner's id union (CODEGEN.md §5.10).
+func (g *gen) refKeys(t ir.TypeRef, domain []value.Value) string {
+	keys := make([]string, len(domain))
+	for i, v := range domain {
+		keys[i] = quote(g.domainKey(t, v))
+	}
+	return lbracket + joinArgs(keys) + rbracket
 }

@@ -35,17 +35,18 @@ func (g *gen) record(r *ir.Record) {
 	g.add(docComment("", r.Doc) + g.interfaceText(name, props))
 }
 
-// entryProps are the `id` and `retired` properties of a table row, optional when the record is also a plain value (CODEGEN.md §5.3, §5.4).
+// entryProps are the `id` and `retired` properties of a row record, always optional: a container's CanonRow makes them present (CODEGEN.md §5.3, §5.4, §8.1; DECISIONS 323).
 func (g *gen) entryProps(r *ir.Record) []string {
-	id := g.idTypeOf(r)
-	mark := ""
-	if g.loose[r] {
-		mark = optionalMark
-	}
 	return []string{
-		fmt.Sprintf(propFormat, g.declareProp(r.QName(), idProp)+mark, id),
-		fmt.Sprintf(propFormat, g.declareProp(r.QName(), retiredProp)+mark, tsBoolean),
+		fmt.Sprintf(propFormat, g.declareProp(r.QName(), idProp)+optionalMark, g.idTypeOf(r)),
+		fmt.Sprintf(propFormat, g.declareProp(r.QName(), retiredProp)+optionalMark, tsBoolean),
 	}
+}
+
+// rowType is `CanonRow<T, K>`, the type of a row of a table whose record is rec and whose id type is id (CODEGEN.md §5.9, §8.2; DECISIONS 323).
+func (g *gen) rowType(rec *ir.Record, id string) string {
+	g.helper(canonRowName)
+	return fmt.Sprintf(rowTypeFormat, g.named(rec), id)
 }
 
 // idTypeOf is the type of a row's id: the table's id type when this emit declares one and no other table holds the record, else string.

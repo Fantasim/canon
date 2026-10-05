@@ -28,7 +28,7 @@ record H {
   /// Plain-keyed rows by bigint: the key a bigint, the row's key a number.
   byBig: {Int: ref ks} = {} @ts(bigint)
   /// A bigint-keyed row in a field without the flag: a bigint.
-  b: ref bs? = none
+  b: ref bs?
   /// Plain-keyed rows by bigint-keyed row, in a field without the flag.
   bk: {ref bs: ref ks} = {}
 }
@@ -154,9 +154,9 @@ function decKeys(o: Record<string, unknown>): string[] {
   return order === undefined ? Object.keys(o) : order;
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -336,8 +336,8 @@ function decParse(text: string): unknown {
 }
 
 export function decodeKs(json: unknown): CanonTable<number, K> {
-  const doc = canonEnvelope(json, ksSchema, "ks.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readK(x, p))), (e) => e.n);
+  const $doc = canonEnvelope(json, ksSchema, "ks.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readK($x, $p))), ($e) => $e.n);
 }
 
 export function parseKs(text: string): CanonTable<number, K> {
@@ -345,8 +345,8 @@ export function parseKs(text: string): CanonTable<number, K> {
 }
 
 export function decodeBs(json: unknown): CanonTable<bigint, B> {
-  const doc = canonEnvelope(json, bsSchema, "bs.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readB(x, p))), (e) => e.n);
+  const $doc = canonEnvelope(json, bsSchema, "bs.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readB($x, $p))), ($e) => $e.n);
 }
 
 export function parseBs(text: string): CanonTable<bigint, B> {
@@ -354,35 +354,35 @@ export function parseBs(text: string): CanonTable<bigint, B> {
 }
 
 export function decodeH(json: unknown): H {
-  const doc = canonEnvelope(json, hSchema, "h.json");
-  return canonFreeze(readH(decGet(doc, "value"), "/value"));
+  const $doc = canonEnvelope(json, hSchema, "h.json");
+  return canonFreeze(readH(decGet($doc, "value"), "/value"));
 }
 
 export function parseH(text: string): H {
   return decodeH(decParse(text));
 }
 
-function readK(raw: unknown, path: string): K {
-  const o = decObject(raw, path);
-  const v1: number = decInt(decGet(o, "n"), path + "/n", -9223372036854776000, 9223372036854776000);
-  return { n: v1 };
+function readK($raw: unknown, $path: string): K {
+  const $o = decObject($raw, $path);
+  const $v1: number = decInt(decGet($o, "n"), $path + "/n", -9223372036854776000, 9223372036854776000);
+  return { n: $v1 };
 }
 
-function readB(raw: unknown, path: string): B {
-  const o = decObject(raw, path);
-  const v1: bigint = decBig(decGet(o, "n"), path + "/n", -9223372036854775808n, 9223372036854775807n);
-  return { n: v1 };
+function readB($raw: unknown, $path: string): B {
+  const $o = decObject($raw, $path);
+  const $v1: bigint = decBig(decGet($o, "n"), $path + "/n", -9223372036854775808n, 9223372036854775807n);
+  return { n: $v1 };
 }
 
-function readH(raw: unknown, path: string): H {
-  const o = decObject(raw, path);
-  const r1 = decGet(o, "m");
-  const v1: ReadonlyMap<number, bigint> = r1 === undefined ? new CanonMap<number, bigint>([]) : decMap(r1, path + "/m", (k, p) => decIntKey(k, p), (x, p) => decBig(x, p, -9223372036854775808n, 9223372036854775807n));
-  const r2 = decGet(o, "byBig");
-  const v2: ReadonlyMap<bigint, number> = r2 === undefined ? new CanonMap<bigint, number>([]) : decMap(r2, path + "/byBig", (k, p) => decBigKey(k, p, -9223372036854775808n, 9223372036854775807n), (x, p) => decInt(x, p, -9223372036854776000, 9223372036854776000));
-  const r3 = decGet(o, "b");
-  const v3: bigint | null = r3 === undefined || r3 === null ? null : decBig(r3, path + "/b", -9223372036854775808n, 9223372036854775807n);
-  const r4 = decGet(o, "bk");
-  const v4: ReadonlyMap<bigint, number> = r4 === undefined ? new CanonMap<bigint, number>([]) : decMap(r4, path + "/bk", (k, p) => decBigKey(k, p, -9223372036854775808n, 9223372036854775807n), (x, p) => decInt(x, p, -9223372036854776000, 9223372036854776000));
-  return { m: v1, byBig: v2, b: v3, bk: v4 };
+function readH($raw: unknown, $path: string): H {
+  const $o = decObject($raw, $path);
+  const $r1 = decGet($o, "m");
+  const $v1: ReadonlyMap<number, bigint> = $r1 === undefined ? new CanonMap<number, bigint>([]) : decMap($r1, $path + "/m", ($k, $p) => decIntKey($k, $p), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $r2 = decGet($o, "byBig");
+  const $v2: ReadonlyMap<bigint, number> = $r2 === undefined ? new CanonMap<bigint, number>([]) : decMap($r2, $path + "/byBig", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $r3 = decGet($o, "b");
+  const $v3: bigint | null = $r3 === undefined || $r3 === null ? null : decBig($r3, $path + "/b", -9223372036854775808n, 9223372036854775807n);
+  const $r4 = decGet($o, "bk");
+  const $v4: ReadonlyMap<bigint, number> = $r4 === undefined ? new CanonMap<bigint, number>([]) : decMap($r4, $path + "/bk", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  return { m: $v1, byBig: $v2, b: $v3, bk: $v4 };
 }

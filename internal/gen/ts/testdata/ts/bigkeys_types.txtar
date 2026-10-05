@@ -8,13 +8,13 @@ record R {
   /// Its key.
   n: Int @ts(bigint)
   /// The next row, by its bigint key.
-  next: ref rs? = none
+  next: ref rs?
   /// Counts by bigint key.
   m: {Int: Int} = {} @ts(bigint)
   /// Bigints.
   l: [Int] = [] @ts(bigint)
   /// A bigint none marker.
-  mx: Int? = none @ts(bigint) @json(none: -1)
+  mx: Int? @ts(bigint) @json(none: -1)
   /// Weights by row.
   w: {ref rs: Int} = {}
 }
@@ -128,9 +128,9 @@ function decKeys(o: Record<string, unknown>): string[] {
   return order === undefined ? Object.keys(o) : order;
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -303,20 +303,20 @@ function decParse(text: string): unknown {
   return v;
 }
 
-function readR(raw: unknown, path: string): R {
-  const o = decObject(raw, path);
-  const v1: bigint = decBig(decGet(o, "n"), path + "/n", -9223372036854775808n, 9223372036854775807n);
-  const r2 = decGet(o, "next");
-  const v2: bigint | null = r2 === undefined || r2 === null ? null : decBig(r2, path + "/next", -9223372036854775808n, 9223372036854775807n);
-  const r3 = decGet(o, "m");
-  const v3: ReadonlyMap<bigint, bigint> = r3 === undefined ? new CanonMap<bigint, bigint>([]) : decMap(r3, path + "/m", (k, p) => decBigKey(k, p, -9223372036854775808n, 9223372036854775807n), (x, p) => decBig(x, p, -9223372036854775808n, 9223372036854775807n));
-  const r4 = decGet(o, "l");
-  const v4: ReadonlyArray<bigint> = r4 === undefined ? [] : decList(r4, path + "/l", (x, p) => decBig(x, p, -9223372036854775808n, 9223372036854775807n));
-  const r5 = decGet(o, "mx");
-  const v5: bigint | null = r5 === undefined || r5 === null || decSame(r5, "-1") ? null : decBig(r5, path + "/mx", -9223372036854775808n, 9223372036854775807n);
-  const r6 = decGet(o, "w");
-  const v6: ReadonlyMap<bigint, number> = r6 === undefined ? new CanonMap<bigint, number>([]) : decMap(r6, path + "/w", (k, p) => decBigKey(k, p, -9223372036854775808n, 9223372036854775807n), (x, p) => decInt(x, p, -9223372036854776000, 9223372036854776000));
-  return { n: v1, next: v2, m: v3, l: v4, mx: v5, w: v6 };
+function readR($raw: unknown, $path: string): R {
+  const $o = decObject($raw, $path);
+  const $v1: bigint = decBig(decGet($o, "n"), $path + "/n", -9223372036854775808n, 9223372036854775807n);
+  const $r2 = decGet($o, "next");
+  const $v2: bigint | null = $r2 === undefined || $r2 === null ? null : decBig($r2, $path + "/next", -9223372036854775808n, 9223372036854775807n);
+  const $r3 = decGet($o, "m");
+  const $v3: ReadonlyMap<bigint, bigint> = $r3 === undefined ? new CanonMap<bigint, bigint>([]) : decMap($r3, $path + "/m", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $r4 = decGet($o, "l");
+  const $v4: ReadonlyArray<bigint> = $r4 === undefined ? [] : decList($r4, $path + "/l", ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $r5 = decGet($o, "mx");
+  const $v5: bigint | null = $r5 === undefined || $r5 === null || decSame($r5, "-1") ? null : decBig($r5, $path + "/mx", -9223372036854775808n, 9223372036854775807n);
+  const $r6 = decGet($o, "w");
+  const $v6: ReadonlyMap<bigint, number> = $r6 === undefined ? new CanonMap<bigint, number>([]) : decMap($r6, $path + "/w", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  return { n: $v1, next: $v2, m: $v3, l: $v4, mx: $v5, w: $v6 };
 }
 
 /** A row keyed by a bigint. */

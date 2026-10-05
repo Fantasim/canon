@@ -68,10 +68,10 @@ func (g *gen) ownerName(s fnSite) string {
 func (g *gen) inputsOf(fn *ir.ExportFn) []input {
 	var out []input
 	for _, r := range fn.Reads {
-		out = append(out, input{canon: r.Name, name: escape(r.Name), t: r.Type, optional: r.Optional})
+		out = append(out, input{canon: r.Name, name: g.bind(r.Name), t: r.Type, optional: r.Optional})
 	}
 	for _, p := range fn.Params {
-		out = append(out, input{canon: p.Name, name: escape(p.Name), t: p.Type, param: p})
+		out = append(out, input{canon: p.Name, name: g.bind(p.Name), t: p.Type, param: p})
 	}
 	return out
 }

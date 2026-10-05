@@ -19,8 +19,6 @@ var (
 // What this generator refuses or finds malformed.
 const (
 	unsupportedKind      = "the type kind %s of %s"
-	unsupportedForeign   = "a record or variant of another package without a types-mode ts emit, read by a decoder, at %s"
-	unsupportedForeignDT = "a dependent type of another package read by a decoder, at %s"
 	unsupportedNoDisc    = "a dependent value whose discriminant the decoder does not hold (in a map, a literal union or a fn result, or read through a ref), at %s"
 	malformedPairs       = "a pairs field whose record is not a two-field record, at %s"
 	malformedNoElem      = "a list, optional or table without its element type, at %s"
@@ -56,5 +54,5 @@ const (
 	malformedRead        = "a read of %s that the type does not hold, at %s"
 	malformedVariant     = "a variant value that is no case, at %s"
 	malformedVectorValue = "a vector value %T for a %s, at %s"
-	unsupportedFinite    = "a finite parameter that is not an enum or a Bool, at %s"
+	unsupportedFinite    = "a finite parameter that is not an enum, a Bool or a ref into a table whose ids the file knows, at %s"
 )

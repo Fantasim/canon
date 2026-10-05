@@ -59,6 +59,9 @@ export interface CanonTable<K, T> {
   find(key: K): T | null;
 }
 
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
@@ -110,7 +113,7 @@ export interface Q {
   /** A plain point. */
   readonly inner: P;
   /** Points by name. */
-  readonly slots: ReadonlyArray<P>;
+  readonly slots: ReadonlyArray<CanonRow<P, string>>;
 }
 
 export const psSchema = "a.P@b5a47a2e";
@@ -133,9 +136,9 @@ function decKeys(o: Record<string, unknown>): string[] {
   return order === undefined ? Object.keys(o) : order;
 }
 
-/** Throws the failure at path; the path and the message ride on the error too, under a key every generated file shares, so that another file's decoder can place them under its own path. */
+/** Throws the failure at path. */
 function decFail(path: string, message: string): never {
-  throw Object.assign(new Error((path === "" ? "/" : path) + ": " + message), { [Symbol.for("canon.failure")]: [path, message] });
+  throw new Error((path === "" ? "/" : path) + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -304,18 +307,18 @@ function decParse(text: string): unknown {
   return v;
 }
 
-export function decodePs(json: unknown): CanonTable<PId, P> {
-  const doc = canonEnvelope(json, psSchema, "ps.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readP(x, p, null))), (e) => e.id);
+export function decodePs(json: unknown): CanonTable<PId, CanonRow<P, PId>> {
+  const $doc = canonEnvelope(json, psSchema, "ps.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readP($x, $p, null) as CanonRow<P, PId>)), ($e) => $e.id);
 }
 
-export function parsePs(text: string): CanonTable<PId, P> {
+export function parsePs(text: string): CanonTable<PId, CanonRow<P, PId>> {
   return decodePs(decParse(text));
 }
 
 export function decodeSingle(json: unknown): P {
-  const doc = canonEnvelope(json, singleSchema, "single.json");
-  return canonFreeze(readP(decGet(doc, "value"), "/value"));
+  const $doc = canonEnvelope(json, singleSchema, "single.json");
+  return canonFreeze(readP(decGet($doc, "value"), "/value"));
 }
 
 export function parseSingle(text: string): P {
@@ -323,27 +326,27 @@ export function parseSingle(text: string): P {
 }
 
 export function decodeQs(json: unknown): CanonTable<string, Q> {
-  const doc = canonEnvelope(json, qsSchema, "qs.json");
-  return canonTable(canonFreeze(decList(decGet(doc, "rows"), "/rows", (x, p) => readQ(x, p))), (e) => e.k);
+  const $doc = canonEnvelope(json, qsSchema, "qs.json");
+  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "/rows", ($x, $p) => readQ($x, $p))), ($e) => $e.k);
 }
 
 export function parseQs(text: string): CanonTable<string, Q> {
   return decodeQs(decParse(text));
 }
 
-function readP(raw: unknown, path: string, id?: string | null): P {
-  const o = decObject(raw, path);
-  const v1 = id === undefined ? undefined : id ?? decString(decGet(o, "$id"), path + "/$id");
-  const v2 = id === undefined ? undefined : decGet(o, "$retired") === undefined ? false : decBool(decGet(o, "$retired"), path + "/$retired");
-  const v3: number = decInt(decGet(o, "x"), path + "/x", -9223372036854776000, 9223372036854776000);
-  return { ...(v1 === undefined ? {} : { id: v1, retired: v2 }), x: v3 };
+function readP($raw: unknown, $path: string, $rowId?: string | null): P {
+  const $o = decObject($raw, $path);
+  const $v1 = $rowId === undefined ? undefined : $rowId ?? decString(decGet($o, "$id"), $path + "/$id");
+  const $v2 = $rowId === undefined ? undefined : decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + "/$retired");
+  const $v3: number = decInt(decGet($o, "x"), $path + "/x", -9223372036854776000, 9223372036854776000);
+  return { ...($v1 === undefined ? {} : { id: $v1, retired: $v2 }), x: $v3 };
 }
 
-function readQ(raw: unknown, path: string): Q {
-  const o = decObject(raw, path);
-  const v1: string = decString(decGet(o, "k"), path + "/k");
-  const v2: P = readP(decGet(o, "inner"), path + "/inner");
-  const r3 = decGet(o, "slots");
-  const v3: ReadonlyArray<P> = r3 === undefined ? [] : decTable(r3, path + "/slots", (x, p, id) => readP(x, p, id));
-  return { k: v1, inner: v2, slots: v3 };
+function readQ($raw: unknown, $path: string): Q {
+  const $o = decObject($raw, $path);
+  const $v1: string = decString(decGet($o, "k"), $path + "/k");
+  const $v2: P = readP(decGet($o, "inner"), $path + "/inner");
+  const $r3 = decGet($o, "slots");
+  const $v3: ReadonlyArray<CanonRow<P, string>> = $r3 === undefined ? [] : decTable($r3, $path + "/slots", ($x, $p, $rowId) => readP($x, $p, $rowId) as CanonRow<P, string>);
+  return { k: $v1, inner: $v2, slots: $v3 };
 }

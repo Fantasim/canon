@@ -10,30 +10,35 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// importType records a type name of another package's ts emit and returns it (CODEGEN.md §2.8: `import type`).
+// nsImport is the one namespace import of another package's ts emit: its alias, and whether the file uses a value through it (`import * as`) or types only (`import type * as`).
+type nsImport struct {
+	alias string
+	value bool
+}
+
+// importType is a type name of another package's ts emit, qualified through that package's namespace import (CODEGEN.md §2.8; log-2026-10-06 "U4 (gen/ts) done" (a)).
 func (g *gen) importType(pkg, name string) string {
-	return g.importName(g.typeImports, pkg, name)
+	return g.qualify(pkg, name, false)
 }
 
-// importValue records a value name (a const or function) of another package's ts emit and returns it.
+// importValue is a value name (a const or function) of another package's ts emit, qualified the same way; the import then brings values.
 func (g *gen) importValue(pkg, name string) string {
-	return g.importName(g.valueImports, pkg, name)
+	return g.qualify(pkg, name, true)
 }
 
-// importName adds name to the imports of pkg's file; the name must not collide with another name of the module.
-func (g *gen) importName(set map[string]map[string]bool, pkg, name string) string {
+// qualify is alias.name, pkg's namespace import created on first use, so the file imports only what it writes (noUnusedLocals): the alias is the plan's (ir.TSImportAlias), the module's one name for pkg; imported names never enter its scope.
+func (g *gen) qualify(pkg, name string, value bool) string {
 	spec, ok := g.specifier(pkg)
 	if !ok {
 		return name
 	}
-	if set[spec] == nil {
-		set[spec] = map[string]bool{}
+	imp := g.imports[spec]
+	if imp == nil {
+		imp = &nsImport{alias: g.declare(ir.TSImportAlias(pkg), fmt.Sprintf(importOrigin, spec))}
+		g.imports[spec] = imp
 	}
-	if !set[spec][name] {
-		set[spec][name] = true
-		g.declare(name, fmt.Sprintf(importOrigin, spec))
-	}
-	return name
+	imp.value = imp.value || value
+	return imp.alias + dot + name
 }
 
 // specifier is the relative module path of pkg's ts emit: `.ts` replaced by `.js`, always starting with `./` or `../` (CODEGEN.md §2.8).
@@ -87,27 +92,16 @@ func relPath(from, to string) string {
 	return path.Join(append(parts, t[i:]...)...)
 }
 
-// importLines are the import declarations: per specifier in byte order, the type import then the value import, names sorted.
+// importLines are the import declarations, one namespace import per package in specifier byte order: `import * as` when the file uses a value of it, else `import type * as`.
 func (g *gen) importLines() []string {
-	specs := map[string]bool{}
-	for s := range g.typeImports { //canon:unordered a set, sorted below
-		specs[s] = true
-	}
-	for s := range g.valueImports { //canon:unordered a set, sorted below
-		specs[s] = true
-	}
 	var out []string
-	for _, spec := range slices.Sorted(maps.Keys(specs)) {
-		if names := g.typeImports[spec]; len(names) > 0 {
-			out = append(out, fmt.Sprintf(importTypeFormat, joinSorted(names), spec))
+	for _, spec := range slices.Sorted(maps.Keys(g.imports)) {
+		imp := g.imports[spec]
+		format := importTypeFormat
+		if imp.value {
+			format = importValueFormat
 		}
-		if names := g.valueImports[spec]; len(names) > 0 {
-			out = append(out, fmt.Sprintf(importValueFormat, joinSorted(names), spec))
-		}
+		out = append(out, fmt.Sprintf(format, imp.alias, spec))
 	}
 	return out
-}
-
-func joinSorted(set map[string]bool) string {
-	return strings.Join(slices.Sorted(maps.Keys(set)), listSep)
 }

@@ -23,26 +23,27 @@ func (g *gen) local() string {
 	return localPrefix + strconv.Itoa(g.temps)
 }
 
-// recordReader is `function readT(raw, path[, id])`: the object, then every field in declaration order, then the `$` keys of its fns (WIRE.md §5.5).
+// recordReader is `function readT(raw, path[, id])`: the object, then every field in declaration order, then the `$` keys of its fns (WIRE.md §5.5). A row record of this package reads its row's `$id` and `$retired` too; this file's reader of another package's record reads the record alone, its rows adding theirs (CODEGEN.md §2.8, §5.9).
 func (g *gen) recordReader(r *ir.Record) string {
-	name := g.declare(readerName(r), r.QName())
+	name := g.declare(g.readerName(r), r.QName())
 	rd := &reading{locals: map[*ir.Field]string{}, fields: r.Fields}
-	if g.entries[r] || len(r.Fields)+len(r.Methods) > 0 {
+	row := g.entries[r] && r.Pkg == g.p.Name
+	if row || len(r.Fields)+len(r.Methods) > 0 {
 		rd.stmts = append(rd.stmts, fmt.Sprintf(localFormat, objVar, g.call(decObjectName, rawParam, pathParam)))
 	}
-	if g.entries[r] {
+	if row {
 		g.entryRead(rd, g.loose[r])
 	}
 	g.bodyRead(rd, r.Fields, r.Methods)
 	obj := g.objectText(rd)
 	params := rawParam + keyValueSep + tsUnknown + listSep + pathParam + keyValueSep + tsString
 	switch {
-	case g.loose[r]:
-		params += listSep + idParam + optionalMark + keyValueSep + tsString + unionSep + tsNull
-	case g.entries[r]:
-		params += listSep + idParam + optionalMark + keyValueSep + tsString
+	case row && g.loose[r]:
+		params += listSep + rowIDLocal + optionalMark + keyValueSep + tsString + unionSep + tsNull
+	case row:
+		params += listSep + rowIDLocal + optionalMark + keyValueSep + tsString
 	}
-	return fmt.Sprintf(readerFormat, name, params, typeName(r), g.readerBody(rd, obj))
+	return fmt.Sprintf(readerFormat, name, params, g.named(r), g.readerBody(rd, obj))
 }
 
 // readerBody is the statements of a reader and its return.
@@ -93,7 +94,7 @@ func (g *gen) bodyRead(rd *reading, fields []*ir.Field, fns []*ir.ExportFn) {
 
 // variantReader reads the tag, then the case's fields from the same object (WIRE.md §5.6).
 func (g *gen) variantReader(v *ir.Variant) string {
-	name := g.declare(readerName(v), v.QName())
+	name := g.declare(g.readerName(v), v.QName())
 	if v.Tag == "" {
 		g.failf(ErrMalformed, malformedNoTag, v.QName())
 	}
@@ -108,7 +109,7 @@ func (g *gen) variantReader(v *ir.Variant) string {
 	body := fmt.Sprintf(variantBodyFormat, objVar, g.call(decObjectName, rawParam, pathParam), tagVar, g.call(decStringName, g.getKey(objVar, v.Tag), tagPath),
 		tagVar, strings.Join(arms, ""), g.call(decFailName, tagPath, quote(unknownCase)))
 	params := rawParam + keyValueSep + tsUnknown + listSep + pathParam + keyValueSep + tsString
-	return strings.Join(append([]string{fmt.Sprintf(readerFormat, name, params, typeName(v), body)}, cases...), newline)
+	return strings.Join(append([]string{fmt.Sprintf(readerFormat, name, params, g.named(v), body)}, cases...), newline)
 }
 
 // caseBranch is a `case "wire":` of a variant reader: a case with an interface is read by its own reader, its `$` keys included, one without is its kind alone.
@@ -116,24 +117,24 @@ func (g *gen) caseBranch(v *ir.Variant, c *ir.Case) string {
 	if !hasInterface(c) {
 		return fmt.Sprintf(caseArmFormat, quote(c.Wire), fmt.Sprintf(bareLitFormat, quote(c.Wire)))
 	}
-	return fmt.Sprintf(caseArmFormat, quote(c.Wire), call1(readPrefix+caseName(v, c), objVar, pathParam))
+	return fmt.Sprintf(caseArmFormat, quote(c.Wire), call1(g.caseReaderName(v, c), objVar, pathParam))
 }
 
 // caseReader is `function readVCase(o, path)`: the case's fields from the variant's object.
 func (g *gen) caseReader(v *ir.Variant, c *ir.Case) string {
 	g.temps = 0
-	name := g.declare(readPrefix+caseName(v, c), v.QName()+dot+c.Name)
+	name := g.declare(g.caseReaderName(v, c), v.QName()+dot+c.Name)
 	rd := &reading{locals: map[*ir.Field]string{}, fields: c.Fields}
 	rd.props = append(rd.props, kindProp+keyValueSep+quote(c.Wire))
 	g.bodyRead(rd, c.Fields, c.Methods)
 	body := g.readerBody(rd, g.objectText(rd))
 	params := objVar + keyValueSep + objectType + listSep + pathParam + keyValueSep + tsString
-	return fmt.Sprintf(readerFormat, name, params, caseName(v, c), body)
+	return fmt.Sprintf(readerFormat, name, params, g.caseType(ir.TypeRef{Kind: types.Case, Named: v, Case: c}), body)
 }
 
 // dependentReader is `function readD(raw, path, disc)`: the untagged wire read in the branch the discriminant selects; a member no branch covers is refused (CODEGEN.md §5.6).
 func (g *gen) dependentReader(d *ir.Dependent) string {
-	name := g.declare(readerName(d), d.QName())
+	name := g.declare(g.readerName(d), d.QName())
 	discType, labels := g.discLabels(d)
 	if labels == nil {
 		g.failf(ErrMalformed, malformedNoDisc, d.QName())
@@ -151,7 +152,7 @@ func (g *gen) dependentReader(d *ir.Dependent) string {
 	g.use(decFailName)
 	body := fmt.Sprintf(dependentBodyFormat, arms.String())
 	params := rawParam + keyValueSep + tsUnknown + listSep + pathParam + keyValueSep + tsString + listSep + discVar + keyValueSep + discType
-	return fmt.Sprintf(readerFormat, name, params, typeName(d), body)
+	return fmt.Sprintf(readerFormat, name, params, g.named(d), body)
 }
 
 // discLabels are the type of a dependent type's discriminant and each member's case label, in member order: `false` and `true` for a Bool, the members' wires for an enum.

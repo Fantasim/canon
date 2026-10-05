@@ -111,7 +111,7 @@ func (g *gen) lookup(fn *ir.ExportFn) {
 	params := make([]string, len(fn.Params))
 	index := make([]string, len(fn.Params))
 	for i, p := range fn.Params {
-		pn := escape(p.Name)
+		pn := g.bind(p.Name)
 		params[i] = pn + keyValueSep + g.argType(p.Type)
 		index[i] = g.indexTerm(p.Type, pn, tab.Domains[i+1:])
 	}

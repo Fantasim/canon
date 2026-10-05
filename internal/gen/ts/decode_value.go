@@ -112,41 +112,41 @@ func (g *gen) decComposite(t ir.TypeRef, raw, path string, c decCtx) string {
 	}
 }
 
-// decClass reads a record or variant: through its reader here, through the public decoder of the package that declares it (CODEGEN.md §2.8, §5.13).
+// decClass reads a record or variant through this file's reader of it, another package's included: a package never calls another's public decoders (CODEGEN.md §2.8, §5.13; DECISIONS 323).
 func (g *gen) decClass(named ir.Type, raw, path string) string {
-	pkg := pkgOf(named)
-	if pkg == g.p.Name {
-		g.need(named)
-		return fmt.Sprintf(callFormat, readerName(named), joinArgs([]string{raw, path}))
-	}
-	o := g.tsEmit(pkg)
-	if o == nil || o.Mode != ir.ModeTypes {
-		g.failf(errUnsupported, unsupportedForeign, g.at)
-		return tsUndefined
-	}
-	fn := g.importValue(pkg, decodePrefix+typeName(named))
-	return g.call(decForeignName, raw, path, fn)
+	g.need(named)
+	return fmt.Sprintf(callFormat, g.readerName(named), joinArgs([]string{raw, path}))
 }
 
-// readerName is the private reader of a record, variant, case or dependent type.
-func readerName(t ir.Type) string { return readPrefix + typeName(t) }
+// readerName is this file's private reader of a record, variant or dependent type: read<T> for this package's, the plan's read_<alias>_<T> for another package's (ir.TSReaderName; CODEGEN.md §2.8; log-2026-10-06 "TS reader names").
+func (g *gen) readerName(t ir.Type) string {
+	if pkgOf(t) != g.p.Name {
+		return ir.TSReaderName(t)
+	}
+	return readPrefix + typeName(t)
+}
 
-// decDependent is a dependent value, read in the branch its discriminant selects (CODEGEN.md §5.6).
+// caseReaderName is the reader of a case with fields: read<V><Case> for this package's variant, the plan's ir.TSCaseReaderName for another package's.
+func (g *gen) caseReaderName(v *ir.Variant, c *ir.Case) string {
+	if v.Pkg != g.p.Name {
+		return ir.TSCaseReaderName(v, c)
+	}
+	return readPrefix + caseName(v, c)
+}
+
+// decDependent is a dependent value, read in the branch its discriminant selects by this file's reader of its type, another package's included (CODEGEN.md §2.8, §5.6).
 func (g *gen) decDependent(t ir.TypeRef, raw, path string, c decCtx) string {
 	d, ok := t.Named.(*ir.Dependent)
 	switch {
 	case !ok:
 		g.failf(ErrMalformed, malformedDecl, g.at)
 		return tsUndefined
-	case d.Pkg != g.p.Name:
-		g.failf(errUnsupported, unsupportedForeignDT, g.at)
-		return tsUndefined
 	case c.disc == "":
 		g.failf(errUnsupported, unsupportedNoDisc, g.at)
 		return tsUndefined
 	}
 	g.need(d)
-	return fmt.Sprintf(callFormat, readerName(d), joinArgs([]string{raw, path, c.disc}))
+	return fmt.Sprintf(callFormat, g.readerName(d), joinArgs([]string{raw, path, c.disc}))
 }
 
 // decList is an array decoded element by element; @json(bits) reads a list of enum members from one integer.
@@ -164,16 +164,20 @@ func (g *gen) decList(t ir.TypeRef, raw, path string, c decCtx) string {
 	return g.call(decListName, raw, path, fmt.Sprintf(lambdaFormat, g.dec(et, lambdaRaw, lambdaPath, inner)))
 }
 
-// decNested is a nested table: an object keyed by id, each row a record read with its key as its id (WIRE.md §5.7).
+// decNested is a nested table: an object keyed by id, each row a CanonRow: a record of this package read with its key as its id, one of another package this file's reader's record with the key and `$retired` added (WIRE.md §5.7, CODEGEN.md §4.2, §5.9).
 func (g *gen) decNested(t ir.TypeRef, raw, path string) string {
 	rec, ok := g.elem(t).Named.(*ir.Record)
-	if !ok || rec.Pkg != g.p.Name {
-		g.failf(errUnsupported, unsupportedForeign, g.at)
+	if !ok {
+		g.failf(ErrMalformed, malformedDecl, g.at)
 		return tsUndefined
 	}
+	if rec.Pkg != g.p.Name {
+		return g.call(decTableName, raw, path, fmt.Sprintf(tableLambdaFormat, g.foreignRowRead(rec, rowIDLocal)))
+	}
 	g.need(rec)
-	call := fmt.Sprintf(callFormat, readerName(rec), joinArgs([]string{lambdaRaw, lambdaPath, lambdaID}))
-	return g.call(decTableName, raw, path, fmt.Sprintf(tableLambdaFormat, call))
+	call := fmt.Sprintf(callFormat, g.readerName(rec), joinArgs([]string{lambdaRaw, lambdaPath, rowIDLocal}))
+	row := fmt.Sprintf(ownRowFormat, call, g.rowType(rec, g.idTypeOf(rec)))
+	return g.call(decTableName, raw, path, fmt.Sprintf(tableLambdaFormat, row))
 }
 
 // decMap is an object read into a CanonMap: its keys decoded by the key type (WIRE.md §5.8).
@@ -221,6 +225,9 @@ func (g *gen) decRefKey(t ir.TypeRef, key, path string, big bool) string {
 		g.failf(ErrMalformed, malformedNoKey, g.at)
 		return tsUndefined
 	}
+	if index := g.entryIndex(t.Ref); index != "" {
+		return g.call(decEntryName, key, path, index)
+	}
 	if id := g.tableID(t.Ref); id != "" {
 		return key + asKw + id
 	}
@@ -241,13 +248,36 @@ func (g *gen) decKey(t ir.TypeRef, raw, path string, c decCtx) string {
 		g.failf(ErrMalformed, malformedNoKey, g.at)
 		return tsUndefined
 	}
+	if index := g.entryIndex(t.Ref); index != "" {
+		return g.call(decEntryName, raw, path, index)
+	}
 	if id := g.tableID(t.Ref); id != "" {
 		return g.call(decStringName, raw, path) + asKw + id
 	}
 	return g.dec(*t.Key, raw, path, c)
 }
 
-// need marks a class of this package as read by a decoder.
+// need marks a class as read by a decoder; another package's is kept in the order it was needed.
 func (g *gen) need(t ir.Type) {
+	if !g.decoded[t] && pkgOf(t) != g.p.Name {
+		g.needed = append(g.needed, t)
+	}
 	g.decoded[t] = true
+}
+
+// entryIndex is the Index of the id type of a table another package's baked or embedded ts emit holds, which a ref into it is checked against (`no entry <key>`, CODEGEN.md §2.8 Refs); "" when the generator does not know the ids: a table of this package (read in data or types mode, its ids are the file's), or of a data or types owner.
+func (g *gen) entryIndex(r *ir.RefTarget) string {
+	if !g.knownIDs(r) {
+		return ""
+	}
+	return g.importValue(r.Pkg, idName(r.Elem)+indexSuffix)
+}
+
+// knownIDs reports a ref into a table another package's baked or embedded ts emit holds: its ids are that emit's id union, known when this file is generated.
+func (g *gen) knownIDs(r *ir.RefTarget) bool {
+	if !isTableRef(r) || r.Elem == nil || r.Pkg == g.p.Name {
+		return false
+	}
+	o := g.tsEmit(r.Pkg)
+	return o != nil && (o.Mode == ir.ModeBaked || o.Mode == ir.ModeEmbedded)
 }

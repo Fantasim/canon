@@ -37,7 +37,7 @@ variant Kind @json(tag: "type") {
     /// Damage.
     attack: Int
     /// Element.
-    affinity: Element? = none
+    affinity: Element?
   }
   /// An armor skill.
   armor {
@@ -67,7 +67,7 @@ record Skill @json(case: snake) {
   /// Focus.
   reqFp: Int = 0 @json(path: "legacy.reqFp")
   /// Element, 0 when none.
-  element: Element? = none @json(none: 0)
+  element: Element? @json(none: 0)
   /// Flags.
   flags: [Flag] = [] @json(bits)
   /// Two handed, 0 or 1.
@@ -75,7 +75,7 @@ record Skill @json(case: snake) {
   /// Side or "both".
   side: Side | "both" = "both"
   /// Cast time in seconds.
-  castTime: Duration? = none @json(unit: s)
+  castTime: Duration? @json(unit: s)
   /// Weights by element.
   weights: {Element: Float} = {}
   /// Counts by level.
@@ -205,6 +205,9 @@ export interface CanonTable<K, T> {
   at(i: number): T;
   find(key: K): T | null;
 }
+
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
 
 function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
   const index = new Map<K, number>();
@@ -381,8 +384,8 @@ export interface Skill {
 
 /** Statuses. */
 export interface Status {
-  readonly id: StatusId;
-  readonly retired: boolean;
+  readonly id?: StatusId;
+  readonly retired?: boolean;
   /** Label. */
   readonly label: string;
   /** Next. */
@@ -407,14 +410,14 @@ export interface Rates {
 export const skills: CanonTable<string, Skill> = canonTable(canonFreeze<ReadonlyArray<Skill>>([
   { id: "fireball", reqMp: 12, reqFp: 0, element: "FIRE", flags: ["tradable", "soulbound"], twoHanded: false, side: "both", castTime: 2000, weights: new CanonMap<Element, number>([]), counts: new CanonMap<number, number>([]), named: new CanonMap<string, Objective>([["x", canonFreeze<Objective>({ goal: "collect", target: { branch: "collect", value: 2 } })]]), stats: [], kind: { kind: "weapon", attack: 5, affinity: null }, goals: [], rate: 0.10000000149011612, zero: -0, wait: 90000, serial: 9007199254740993n, serials: [1n, 9007199254740993n], level: 200, isFree: false, resist: { FIRE: 1, WATER: 2, WIND: 3 } },
   { id: "aegis", reqMp: 0, reqFp: 0, element: null, flags: [], twoHanded: false, side: "RIGHT", castTime: null, weights: new CanonMap<Element, number>([]), counts: new CanonMap<number, number>([]), named: new CanonMap<string, Objective>([]), stats: [], kind: { kind: "armor", defense: 3 }, goals: [{ goal: "kill", target: { branch: "kill", value: "wolf" } }, { goal: "visit", target: null }], rate: 0.10000000149011612, zero: -0, wait: 90000, serial: 9007199254740993n, serials: [1n, 9007199254740993n], level: 200, isFree: true, resist: { FIRE: 1, WATER: 2, WIND: 3 } },
-]), (e) => e.id);
+]), ($e) => $e.id);
 
 /** The statuses, a table. */
-export const statuses: CanonTable<StatusId, Status> = canonTable(canonFreeze<ReadonlyArray<Status>>([
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Status, StatusId>>>([
   { id: "open", retired: false, label: "Open", next: ["closed"] },
   { id: "closed", retired: false, label: "Closed", next: [] },
   { id: "stale", retired: true, label: "Stale", next: [] },
-]), (e) => e.id);
+]), ($e) => $e.id);
 
 /** The rates. */
 export const rates: Rates = canonFreeze<Rates>({ byStatus: new CanonMap<StatusId, Rate>([["open", canonFreeze<Rate>({ value: 1 })], ["closed", canonFreeze<Rate>({ value: 2 })], ["stale", canonFreeze<Rate>({ value: 3 })]]), counts: new CanonMap<StatusId, number>([["open", 4]]) });
