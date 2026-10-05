@@ -155,8 +155,8 @@
 53:81-82 "<" keyword.operator.canon
 53:84-85 "." punctuation.accessor.canon
 53:85-88 "end" variable.other.property.canon
-56:0-89 "// Packages that use Window in their own C++ or view model need these types emitted once," comment.line.double-slash.canon
-57:0-67 "// here (AUDIT EMT-06, VM-03): they refer to them, never copy them." comment.line.double-slash.canon
+56:0-90 "// `mode: types` emits the C++ types only, with no data. Packages that use Window in their" comment.line.double-slash.canon
+57:0-97 "// own C++ or view model include these types from here once: they refer to them, never copy them." comment.line.double-slash.canon
 58:0-4 "emit" keyword.other.canon
 58:11-14 "out" variable.other.property.canon
 58:14-15 ":" punctuation.separator.key.canon

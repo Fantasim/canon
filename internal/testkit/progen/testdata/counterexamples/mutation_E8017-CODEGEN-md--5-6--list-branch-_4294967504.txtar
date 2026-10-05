@@ -12,7 +12,7 @@ package features.lookup
 /// Upgrade grades of a weapon, lowest first.
 enum Grade { normal, unique, ultimate }
 /// Job tiers, lowest first.
-enum ordered { }
+enum Ordered { }
 /// generated code.
 export fn canUpgrade(grade: Grade) -> Int {
   return match grade {

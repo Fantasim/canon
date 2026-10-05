@@ -116,7 +116,7 @@ record Status {
   /// Inputs a transition INTO this status must collect.
   requires: [PostField] = []
   /// Inputs a transition INTO this status may collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

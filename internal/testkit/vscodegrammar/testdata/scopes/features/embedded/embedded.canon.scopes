@@ -38,15 +38,7 @@
 19:39-40 "=" keyword.operator.canon
 19:41-45 "load" keyword.other.canon
 19:46-67 "\"data/countries.json\"" string.quoted.double.canon
-21:0-4 "emit" keyword.other.canon
-21:10-13 "out" variable.other.property.canon
-21:13-14 ":" punctuation.separator.key.canon
-21:15-24 "\"out/go/\"" string.quoted.double.canon
-21:26-33 "package" variable.other.property.canon
-21:33-34 ":" punctuation.separator.key.canon
-21:35-46 "\"countries\"" string.quoted.double.canon
-21:48-52 "mode" variable.other.property.canon
-21:52-53 ":" punctuation.separator.key.canon
+21:0-99 "// No Go emit: Go embedded mode is owed for v0.2 (DECISIONS 320); `canon check` refuses it (E8019)." comment.line.double-slash.canon
 22:0-4 "emit" keyword.other.canon
 22:10-13 "out" variable.other.property.canon
 22:13-14 ":" punctuation.separator.key.canon

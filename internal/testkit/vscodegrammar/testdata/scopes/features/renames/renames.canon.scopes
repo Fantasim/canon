@@ -70,8 +70,6 @@
 44:6-7 ":" punctuation.separator.key.canon
 44:8-11 "ref" storage.modifier.canon
 44:20-21 "?" keyword.operator.canon
-44:22-23 "=" keyword.operator.canon
-44:24-28 "none" constant.language.canon
 46:0-48 "  /// What a list shows: the name and the level." comment.line.documentation.canon
 47:2-4 "fn" storage.type.function.canon
 47:5-10 "label" entity.name.function.canon

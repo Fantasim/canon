@@ -107,16 +107,14 @@
 54:32-35 "..=" keyword.operator.canon
 54:35-37 "1d" constant.numeric.duration.canon
 54:38-39 "?" keyword.operator.canon
-54:40-41 "=" keyword.operator.canon
-54:42-46 "none" constant.language.canon
-54:47-48 "@" meta.annotation.canon punctuation.definition.annotation.canon
-54:48-52 "json" meta.annotation.canon entity.name.function.decorator.canon
-54:52-53 "(" meta.annotation.canon
-54:53-73 "\"monsterLifetimeSec\"" meta.annotation.canon string.quoted.double.canon
-54:73-75 ", " meta.annotation.canon
-54:75-79 "unit" meta.annotation.canon variable.parameter.canon
-54:79-80 ":" meta.annotation.canon punctuation.separator.key.canon
-54:80-83 " s)" meta.annotation.canon
+54:40-41 "@" meta.annotation.canon punctuation.definition.annotation.canon
+54:41-45 "json" meta.annotation.canon entity.name.function.decorator.canon
+54:45-46 "(" meta.annotation.canon
+54:46-66 "\"monsterLifetimeSec\"" meta.annotation.canon string.quoted.double.canon
+54:66-68 ", " meta.annotation.canon
+54:68-72 "unit" meta.annotation.canon variable.parameter.canon
+54:72-73 ":" meta.annotation.canon punctuation.separator.key.canon
+54:73-76 " s)" meta.annotation.canon
 56:0-71 "  /// Drops items on the ground in a region until enough are picked up." comment.line.documentation.canon
 58:0-25 "    /// The item dropped." comment.line.documentation.canon
 59:4-10 "itemId" variable.other.property.canon
@@ -141,16 +139,14 @@
 65:31-34 "..=" keyword.operator.canon
 65:34-36 "1d" constant.numeric.duration.canon
 65:37-38 "?" keyword.operator.canon
-65:39-40 "=" keyword.operator.canon
-65:41-45 "none" constant.language.canon
-65:46-47 "@" meta.annotation.canon punctuation.definition.annotation.canon
-65:47-51 "json" meta.annotation.canon entity.name.function.decorator.canon
-65:51-52 "(" meta.annotation.canon
-65:52-71 "\"groundLifetimeSec\"" meta.annotation.canon string.quoted.double.canon
-65:71-73 ", " meta.annotation.canon
-65:73-77 "unit" meta.annotation.canon variable.parameter.canon
-65:77-78 ":" meta.annotation.canon punctuation.separator.key.canon
-65:78-81 " s)" meta.annotation.canon
+65:39-40 "@" meta.annotation.canon punctuation.definition.annotation.canon
+65:40-44 "json" meta.annotation.canon entity.name.function.decorator.canon
+65:44-45 "(" meta.annotation.canon
+65:45-64 "\"groundLifetimeSec\"" meta.annotation.canon string.quoted.double.canon
+65:64-66 ", " meta.annotation.canon
+65:66-70 "unit" meta.annotation.canon variable.parameter.canon
+65:70-71 ":" meta.annotation.canon punctuation.separator.key.canon
+65:71-74 " s)" meta.annotation.canon
 67:4-9 "check" keyword.other.canon
 67:10-30 "itemcount_le_packmax" variable.other.property.canon
 67:30-31 ":" punctuation.separator.key.canon

@@ -6,7 +6,7 @@ born mismatch extra E3002
 left E8009/missing
 sig extra E3002
 packages teamboard
-want E2103 teamboard/taxonomy.canon 4992 5003 check
+want E2103 teamboard/taxonomy.canon 4985 4996 check
 failure extra [E3002 teamboard/taxonomy.canon:187:24 "expected [ref ], found [ref teamboard.areas]"] besides [E2103 teamboard/taxonomy.canon:182:15 "ref AreaSection: there is no collection of AreaSection; write ref <collection name>"]
 -- project.canon --
 project sovereign {
@@ -97,7 +97,7 @@ record Flag {
   /// Shown under the label.
   setBy: Actor
   /// Who may see that the flag was set; `none` means whoever can see the post.
-  viewMinRole: Role? = none
+  viewMinRole: Role?
 }
 /// One point of the post lifecycle.
 record Status {

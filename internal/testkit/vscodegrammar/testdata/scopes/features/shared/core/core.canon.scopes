@@ -1,0 +1,123 @@
+1:0-91 "/// The vocabulary the shared example's world builds on: statuses, level bands, rewards and" comment.line.documentation.canon
+2:0-67 "/// effects, emitted once in baked mode for Go, C++ and TypeScript." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-28 "features.shared.core" entity.name.namespace.canon
+5:0-30 "/// A status a zone can be in." comment.line.documentation.canon
+6:0-6 "record" storage.type.canon
+6:7-13 "Status" entity.name.type.canon
+7:0-16 "  /// Its label." comment.line.documentation.canon
+8:2-7 "label" variable.other.property.canon
+8:7-8 ":" punctuation.separator.key.canon
+8:9-15 "String" entity.name.type.canon
+11:0-17 "/// Every status." comment.line.documentation.canon
+12:0-3 "let" storage.type.canon
+12:4-12 "statuses" variable.other.property.canon
+12:12-13 ":" punctuation.separator.key.canon
+12:14-19 "table" storage.type.canon
+12:20-26 "Status" entity.name.type.canon
+12:27-28 "=" keyword.operator.canon
+13:9-14 "label" variable.other.property.canon
+13:14-15 ":" punctuation.separator.key.canon
+13:16-22 "\"Open\"" string.quoted.double.canon
+14:11-16 "label" variable.other.property.canon
+14:16-17 ":" punctuation.separator.key.canon
+14:18-26 "\"Closed\"" string.quoted.double.canon
+15:2-9 "retired" storage.modifier.canon
+15:17-22 "label" variable.other.property.canon
+15:22-23 ":" punctuation.separator.key.canon
+15:24-30 "\"Shut\"" string.quoted.double.canon
+18:0-25 "/// What a bonus aims at." comment.line.documentation.canon
+19:0-4 "enum" storage.type.canon
+19:5-8 "Aim" entity.name.type.canon
+21:0-11 "/// A mood." comment.line.documentation.canon
+22:0-4 "enum" storage.type.canon
+22:5-9 "Mood" entity.name.type.canon
+24:0-21 "/// A band of levels." comment.line.documentation.canon
+25:0-6 "record" storage.type.canon
+25:7-17 "LevelRange" entity.name.type.canon
+26:0-19 "  /// Lowest level." comment.line.documentation.canon
+27:2-5 "min" variable.other.property.canon
+27:5-6 ":" punctuation.separator.key.canon
+27:7-10 "Int" entity.name.type.canon
+28:0-20 "  /// Highest level." comment.line.documentation.canon
+29:2-5 "max" variable.other.property.canon
+29:5-6 ":" punctuation.separator.key.canon
+29:7-10 "Int" entity.name.type.canon
+30:0-24 "  /// The band's status." comment.line.documentation.canon
+31:2-8 "status" variable.other.property.canon
+31:8-9 ":" punctuation.separator.key.canon
+31:10-13 "ref" storage.modifier.canon
+32:0-31 "  /// Its width, computed once." comment.line.documentation.canon
+33:2-8 "export" storage.modifier.canon
+33:9-11 "fn" storage.type.function.canon
+33:12-17 "width" entity.name.function.canon
+33:18-22 "self" variable.language.canon
+33:24-26 "->" keyword.operator.canon
+33:27-30 "Int" entity.name.type.canon
+33:33-39 "return" keyword.control.canon
+33:40-44 "self" variable.language.canon
+33:44-45 "." punctuation.accessor.canon
+33:45-48 "max" variable.other.property.canon
+33:49-50 "-" keyword.operator.canon
+33:51-55 "self" variable.language.canon
+33:55-56 "." punctuation.accessor.canon
+33:56-59 "min" variable.other.property.canon
+36:0-13 "/// A reward." comment.line.documentation.canon
+37:0-7 "variant" storage.type.canon
+37:8-14 "Reward" entity.name.type.canon
+38:0-17 "  /// Some coins." comment.line.documentation.canon
+40:0-17 "    /// How many." comment.line.documentation.canon
+41:4-10 "amount" variable.other.property.canon
+41:10-11 ":" punctuation.separator.key.canon
+41:12-15 "Int" entity.name.type.canon
+43:0-14 "  /// Nothing." comment.line.documentation.canon
+47:0-32 "/// A bonus, by what it aims at." comment.line.documentation.canon
+48:0-4 "type" storage.type.canon
+48:5-10 "Bonus" entity.name.type.canon
+48:11-12 "a" variable.other.property.canon
+48:12-13 ":" punctuation.separator.key.canon
+48:14-17 "Aim" entity.name.type.canon
+48:19-20 "=" keyword.operator.canon
+48:21-26 "match" keyword.control.canon
+49:7-9 "=>" keyword.operator.canon
+49:10-13 "Int" entity.name.type.canon
+50:7-9 "=>" keyword.operator.canon
+50:10-14 "Mood" entity.name.type.canon
+53:0-48 "/// An effect: its bonus's type follows its aim." comment.line.documentation.canon
+54:0-6 "record" storage.type.canon
+54:7-13 "Effect" entity.name.type.canon
+55:0-22 "  /// What it aims at." comment.line.documentation.canon
+56:2-5 "aim" variable.other.property.canon
+56:5-6 ":" punctuation.separator.key.canon
+56:7-10 "Aim" entity.name.type.canon
+57:0-16 "  /// Its bonus." comment.line.documentation.canon
+58:2-7 "bonus" variable.other.property.canon
+58:7-8 ":" punctuation.separator.key.canon
+58:9-14 "Bonus" entity.name.type.canon
+61:0-22 "/// A marker on a map." comment.line.documentation.canon
+62:0-6 "record" storage.type.canon
+62:7-13 "Marker" entity.name.type.canon
+63:0-15 "  /// Its code." comment.line.documentation.canon
+64:2-6 "code" variable.other.property.canon
+64:6-7 ":" punctuation.separator.key.canon
+64:8-14 "String" entity.name.type.canon
+67:0-60 "/// A shelf of markers: a table the core's own record holds." comment.line.documentation.canon
+68:0-6 "record" storage.type.canon
+68:7-12 "Shelf" entity.name.type.canon
+69:0-16 "  /// Its slots." comment.line.documentation.canon
+70:2-7 "slots" variable.other.property.canon
+70:7-8 ":" punctuation.separator.key.canon
+70:9-14 "table" storage.type.canon
+70:15-21 "Marker" entity.name.type.canon
+73:0-4 "emit" keyword.other.canon
+73:10-13 "out" variable.other.property.canon
+73:13-14 ":" punctuation.separator.key.canon
+73:15-32 "\"../out/go/core/\"" string.quoted.double.canon
+74:0-4 "emit" keyword.other.canon
+74:11-14 "out" variable.other.property.canon
+74:14-15 ":" punctuation.separator.key.canon
+74:16-34 "\"../out/cpp/core/\"" string.quoted.double.canon
+75:0-4 "emit" keyword.other.canon
+75:10-13 "out" variable.other.property.canon
+75:13-14 ":" punctuation.separator.key.canon
+75:15-34 "\"../out/ts/core.ts\"" string.quoted.double.canon

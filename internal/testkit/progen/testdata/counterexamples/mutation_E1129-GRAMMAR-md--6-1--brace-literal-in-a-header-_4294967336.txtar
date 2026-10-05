@@ -6,7 +6,7 @@ born mismatch extra E3002
 left E8009/missing
 sig extra E3002, E8009/missing
 packages teamboard
-want E1129 teamboard/taxonomy.canon 5565 5567 check
+want E1129 teamboard/taxonomy.canon 5551 5553 check
 failure extra [E3002 teamboard/taxonomy.canon:219:31 "expected Bool, found {}"; E8009 sovcommon/ui/ui.canon:35:6 "emit go is missing out"] besides [E1129 teamboard/taxonomy.canon:219:31 "parenthesize this expression: \"{\" here would start the block"]
 -- project.canon --
 project sovereign {
@@ -97,7 +97,7 @@ record Flag {
   /// Shown under the label.
   setBy: Actor
   /// Who may see that the flag was set; `none` means whoever can see the post.
-  viewMinRole: Role? = none
+  viewMinRole: Role?
 }
 /// One point of the post lifecycle.
 record Status {
@@ -112,7 +112,7 @@ record Status {
   /// Inputs a transition INTO this status must collect.
   requires: [PostField] = []
   /// Inputs a transition INTO this status may collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

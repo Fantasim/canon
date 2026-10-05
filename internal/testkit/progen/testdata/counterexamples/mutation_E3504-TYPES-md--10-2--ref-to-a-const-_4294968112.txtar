@@ -6,7 +6,7 @@ born mismatch extra E3003
 left E8009/missing
 sig extra E3003
 packages teamboard
-want E3504 teamboard/taxonomy.canon 5232 5239 check
+want E3504 teamboard/taxonomy.canon 5225 5232 check
 failure extra [E3003 teamboard/taxonomy.canon:214:78 "invalid has no field next"] besides [E3504 teamboard/taxonomy.canon:214:35 "ref VERSION: VERSION is not a collection or a record type"]
 -- project.canon --
 project sovereign {
@@ -108,7 +108,7 @@ record Status {
   /// Inputs a transition INTO this status must collect.
   requires: [PostField] = []
   /// Inputs a transition INTO this status may collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

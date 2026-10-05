@@ -79,8 +79,6 @@
 37:6-7 ":" punctuation.separator.key.canon
 37:8-14 "String" entity.name.type.canon
 37:14-15 "?" keyword.operator.canon
-37:16-17 "=" keyword.operator.canon
-37:18-22 "none" constant.language.canon
 38:0-32 "  /// Weights by element, a map." comment.line.documentation.canon
 39:2-9 "weights" variable.other.property.canon
 39:9-10 ":" punctuation.separator.key.canon
@@ -102,8 +100,6 @@
 43:6-7 ":" punctuation.separator.key.canon
 43:8-11 "ref" storage.modifier.canon
 43:18-19 "?" keyword.operator.canon
-43:20-21 "=" keyword.operator.canon
-43:22-26 "none" constant.language.canon
 46:0-30 "/// Every skill, a keyed list." comment.line.documentation.canon
 47:0-3 "let" storage.type.canon
 47:4-10 "skills" variable.other.property.canon

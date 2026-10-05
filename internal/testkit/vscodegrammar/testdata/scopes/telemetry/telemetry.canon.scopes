@@ -170,8 +170,6 @@
 114:8-9 ":" punctuation.separator.key.canon
 114:10-20 "Vocabulary" entity.name.type.canon
 114:20-21 "?" keyword.operator.canon
-114:22-23 "=" keyword.operator.canon
-114:24-28 "none" constant.language.canon
 115:0-92 "  /// The version that added the column; none: present from the table's first known version." comment.line.documentation.canon
 116:2-7 "since" variable.other.property.canon
 116:7-8 ":" punctuation.separator.key.canon
@@ -179,8 +177,6 @@
 116:13-14 "2" constant.numeric.integer.canon
 116:14-16 ".." keyword.operator.canon
 116:17-18 "?" keyword.operator.canon
-116:19-20 "=" keyword.operator.canon
-116:21-25 "none" constant.language.canon
 117:0-91 "  /// The version that retired it. A retired column stays in the DDL (after the live ones)," comment.line.documentation.canon
 118:0-47 "  /// is appended as NULL, and leaves the wire." comment.line.documentation.canon
 119:2-11 "retiredIn" variable.other.property.canon
@@ -189,8 +185,6 @@
 119:17-18 "2" constant.numeric.integer.canon
 119:18-20 ".." keyword.operator.canon
 119:21-22 "?" keyword.operator.canon
-119:23-24 "=" keyword.operator.canon
-119:25-29 "none" constant.language.canon
 121:2-7 "check" keyword.other.canon
 121:14-16 "==" keyword.operator.canon
 121:24-26 "==" keyword.operator.canon
@@ -461,47 +455,35 @@
 218:5-6 ":" punctuation.separator.key.canon
 218:7-10 "Leg" entity.name.type.canon
 218:10-11 "?" keyword.operator.canon
-218:12-13 "=" keyword.operator.canon
-218:14-18 "none" constant.language.canon
 219:0-65 "  /// An extra predicate on the table's own columns (DuckDB SQL)." comment.line.documentation.canon
 220:2-8 "filter" variable.other.property.canon
 220:8-9 ":" punctuation.separator.key.canon
 220:10-16 "String" entity.name.type.canon
 220:16-17 "?" keyword.operator.canon
-220:18-19 "=" keyword.operator.canon
-220:20-24 "none" constant.language.canon
 221:0-73 "  /// The magnitude; none for a row that documents a path with no amount." comment.line.documentation.canon
 222:2-8 "amount" variable.other.property.canon
 222:8-9 ":" punctuation.separator.key.canon
 222:10-13 "ref" storage.modifier.canon
 222:14-20 "Column" entity.name.type.canon
 222:20-21 "?" keyword.operator.canon
-222:22-23 "=" keyword.operator.canon
-222:24-28 "none" constant.language.canon
 223:0-48 "  /// For item legs: the column naming the item." comment.line.documentation.canon
 224:2-6 "item" variable.other.property.canon
 224:6-7 ":" punctuation.separator.key.canon
 224:8-11 "ref" storage.modifier.canon
 224:12-18 "Column" entity.name.type.canon
 224:18-19 "?" keyword.operator.canon
-224:20-21 "=" keyword.operator.canon
-224:22-26 "none" constant.language.canon
 225:0-66 "  /// Whose ledger the leg lands on; none: the header's player_id." comment.line.documentation.canon
 226:2-8 "player" variable.other.property.canon
 226:8-9 ":" punctuation.separator.key.canon
 226:10-13 "ref" storage.modifier.canon
 226:14-20 "Column" entity.name.type.canon
 226:20-21 "?" keyword.operator.canon
-226:22-23 "=" keyword.operator.canon
-226:24-28 "none" constant.language.canon
 227:0-29 "  /// The other side, if any." comment.line.documentation.canon
 228:2-14 "counterparty" variable.other.property.canon
 228:14-15 ":" punctuation.separator.key.canon
 228:16-19 "ref" storage.modifier.canon
 228:20-26 "Column" entity.name.type.canon
 228:26-27 "?" keyword.operator.canon
-228:28-29 "=" keyword.operator.canon
-228:30-34 "none" constant.language.canon
 229:0-87 "  /// Summed into the reconciliation (true), or real telemetry that must not be summed." comment.line.documentation.canon
 230:2-9 "counted" variable.other.property.canon
 230:9-10 ":" punctuation.separator.key.canon
@@ -511,8 +493,6 @@
 232:9-10 ":" punctuation.separator.key.canon
 232:11-16 "Ident" entity.name.type.canon
 232:16-17 "?" keyword.operator.canon
-232:18-19 "=" keyword.operator.canon
-232:20-24 "none" constant.language.canon
 233:0-71 "  /// The last version whose rows this role reads; none: every version." comment.line.documentation.canon
 234:2-14 "untilVersion" variable.other.property.canon
 234:14-15 ":" punctuation.separator.key.canon
@@ -520,8 +500,6 @@
 234:20-21 "1" constant.numeric.integer.canon
 234:21-23 ".." keyword.operator.canon
 234:24-25 "?" keyword.operator.canon
-234:26-27 "=" keyword.operator.canon
-234:28-32 "none" constant.language.canon
 235:0-50 "  /// Why, citing a function, never a line number." comment.line.documentation.canon
 236:2-6 "note" variable.other.property.canon
 236:6-7 ":" punctuation.separator.key.canon
@@ -600,8 +578,6 @@
 269:15-18 "ref" storage.modifier.canon
 269:19-25 "Column" entity.name.type.canon
 269:25-26 "?" keyword.operator.canon
-269:27-28 "=" keyword.operator.canon
-269:29-33 "none" constant.language.canon
 271:2-7 "check" keyword.other.canon
 271:17-18 "." punctuation.accessor.canon
 271:18-26 "isUnique" variable.other.property.canon
@@ -710,17 +686,18 @@
 285:87-88 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 285:88-89 "\"" string.quoted.double.canon
 288:6-8 "if" keyword.control.canon
-288:10-11 "." punctuation.accessor.canon
-288:11-15 "name" variable.other.property.canon
-288:16-18 "in" keyword.operator.word.canon
-288:33-35 "or" keyword.operator.word.canon
-288:37-38 "." punctuation.accessor.canon
-288:38-42 "kind" variable.other.property.canon
-288:43-45 "==" keyword.operator.canon
-288:49-51 "or" keyword.operator.word.canon
-288:53-54 "." punctuation.accessor.canon
-288:54-58 "kind" variable.other.property.canon
-288:59-61 "==" keyword.operator.canon
+288:22-23 "." punctuation.accessor.canon
+288:23-29 "hasKey" variable.other.property.canon
+288:31-32 "." punctuation.accessor.canon
+288:32-36 "name" variable.other.property.canon
+288:38-40 "or" keyword.operator.word.canon
+288:42-43 "." punctuation.accessor.canon
+288:43-47 "kind" variable.other.property.canon
+288:48-50 "==" keyword.operator.canon
+288:54-56 "or" keyword.operator.word.canon
+288:58-59 "." punctuation.accessor.canon
+288:59-63 "kind" variable.other.property.canon
+288:64-66 "==" keyword.operator.canon
 289:16-17 "\"" string.quoted.double.canon
 289:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
 289:18-19 "c" string.quoted.double.canon meta.interpolation.canon

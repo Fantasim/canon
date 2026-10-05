@@ -6,7 +6,7 @@ born mismatch extra E3002
 left E8009/missing
 sig extra E3002
 packages teamboard
-want E3504 teamboard/taxonomy.canon 4652 4659 check
+want E3504 teamboard/taxonomy.canon 4645 4652 check
 failure extra [E3002 teamboard/taxonomy.canon:178:10 "expected ref ?, found teamboard.Column?"] besides [E3504 teamboard/taxonomy.canon:177:38 "ref VERSION: VERSION is not a collection or a record type"]
 -- project.canon --
 project sovereign {
@@ -113,7 +113,7 @@ record Status {
   /// Inputs a transition INTO this status must collect.
   requires: [PostField] = []
   /// Inputs a transition INTO this status may collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

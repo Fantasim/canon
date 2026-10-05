@@ -226,18 +226,16 @@
 84:6-7 ":" punctuation.separator.key.canon
 84:8-14 "String" entity.name.type.canon
 84:14-15 "?" keyword.operator.canon
-84:16-17 "=" keyword.operator.canon
-84:18-22 "none" constant.language.canon
-84:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
-84:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
-84:28-29 "(" meta.annotation.canon
-84:29-37 "\"szMotd\"" meta.annotation.canon string.quoted.double.canon
-84:37-39 ", " meta.annotation.canon
-84:39-43 "none" meta.annotation.canon variable.parameter.canon
-84:43-44 ":" meta.annotation.canon punctuation.separator.key.canon
-84:44-45 " " meta.annotation.canon
-84:45-47 "\"\"" meta.annotation.canon string.quoted.double.canon
-84:47-48 ")" meta.annotation.canon
+84:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
+84:17-21 "json" meta.annotation.canon entity.name.function.decorator.canon
+84:21-22 "(" meta.annotation.canon
+84:22-30 "\"szMotd\"" meta.annotation.canon string.quoted.double.canon
+84:30-32 ", " meta.annotation.canon
+84:32-36 "none" meta.annotation.canon variable.parameter.canon
+84:36-37 ":" meta.annotation.canon punctuation.separator.key.canon
+84:37-38 " " meta.annotation.canon
+84:38-40 "\"\"" meta.annotation.canon string.quoted.double.canon
+84:40-41 ")" meta.annotation.canon
 87:0-19 "/// The capacities." comment.line.documentation.canon
 88:0-3 "let" storage.type.canon
 88:4-10 "limits" variable.other.property.canon

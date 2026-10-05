@@ -28,12 +28,12 @@ func wireOperators() []operator {
 		op(diag.E7109.Def().Code, "WIRE.md §3.1 (trailing comma)", trailingComma),
 		op(diag.E7110.Def().Code, "WIRE.md §5.1 (string for a number)", onMembers(numberValue, setValue(`"zz"`))),
 		op(diag.E7111.Def().Code, "WIRE.md §5.3 (not a member of the enum)", addField(newField{
-			field: `zzKind: ZzKind? @json("zzKind")`, decl: "/// Kind.\nenum ZzKind { small, big }",
+			field: `zzKind: ZzKind? @json("zzKind")`, decl: "/// Kind.\nenum ZzKind { tiny, big }",
 			before: `"zzKind": `, focus: `"huge"`,
 		})),
 		op(diag.E7112.Def().Code, "WIRE.md §5.6 (variant object with an unknown case)", addField(newField{
 			field:  `zzVariant: ZzVariant? @json("zzVariant")`,
-			decl:   "/// Variant.\nvariant ZzVariant {\n  /// Small.\n  small {\n    /// N.\n    n: Int = 0\n  }\n}",
+			decl:   "/// Variant.\nvariant ZzVariant {\n  /// Tiny.\n  tiny {\n    /// N.\n    n: Int = 0\n  }\n}",
 			before: `"zzVariant": {"kind": `, focus: `"zznope"`, after: `}`,
 		})),
 		op(diag.E7114.Def().Code, "WIRE.md §5.7 (table key not an identifier)", addField(newField{

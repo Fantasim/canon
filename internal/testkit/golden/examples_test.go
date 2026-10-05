@@ -29,10 +29,12 @@ const (
 	fixturesDir = "_fixtures"
 )
 
-// exampleExtra are extra selectors an example's Build needs beyond its own package (M1
-// acceptance item 3: sovcommon.ui and sovcommon.roles must also be emitted, not just imported;
-// features.copies' copies import those of features.copies.base, DECISIONS 229).
-var exampleExtra = map[string][]string{"teamboard": {"sovcommon..."}, "features.copies": {"features.copies.base"}}
+// exampleExtra are extra selectors an example's Build needs beyond its own package: sovcommon.ui and
+// sovcommon.roles are emitted, not just imported (M1 acceptance 3); features.copies.base's copies
+// (DECISIONS 229) and features.shared.core's hooks (DECISIONS 323) are what their importers use.
+var exampleExtra = map[string][]string{
+	"teamboard": {"sovcommon..."}, "features.copies": {"features.copies.base"}, "features.shared": {"features.shared.core"},
+}
 
 // outDir is the directory name an emit's own out: option always writes under: copyProject skips
 // it so a fixture's own out/, if ever checked in by mistake, never looks "unchanged" on the

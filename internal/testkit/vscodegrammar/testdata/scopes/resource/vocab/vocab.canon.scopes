@@ -228,18 +228,16 @@
 89:5-6 ":" punctuation.separator.key.canon
 89:7-10 "ref" storage.modifier.canon
 89:15-16 "?" keyword.operator.canon
-89:17-18 "=" keyword.operator.canon
-89:19-23 "none" constant.language.canon
-89:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
-89:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
-89:29-30 "(" meta.annotation.canon
-89:30-41 "\"dwItemJob\"" meta.annotation.canon string.quoted.double.canon
-89:41-43 ", " meta.annotation.canon
-89:43-47 "none" meta.annotation.canon variable.parameter.canon
-89:47-48 ":" meta.annotation.canon punctuation.separator.key.canon
-89:48-49 " " meta.annotation.canon
-89:49-52 "\"=\"" meta.annotation.canon string.quoted.double.canon
-89:52-53 ")" meta.annotation.canon
+89:17-18 "@" meta.annotation.canon punctuation.definition.annotation.canon
+89:18-22 "json" meta.annotation.canon entity.name.function.decorator.canon
+89:22-23 "(" meta.annotation.canon
+89:23-34 "\"dwItemJob\"" meta.annotation.canon string.quoted.double.canon
+89:34-36 ", " meta.annotation.canon
+89:36-40 "none" meta.annotation.canon variable.parameter.canon
+89:40-41 ":" meta.annotation.canon punctuation.separator.key.canon
+89:41-42 " " meta.annotation.canon
+89:42-45 "\"=\"" meta.annotation.canon string.quoted.double.canon
+89:45-46 ")" meta.annotation.canon
 90:0-66 "  /// Item level. Absent means 1; \"=\" means the item has no level." comment.line.documentation.canon
 91:2-7 "level" variable.other.property.canon
 91:7-8 ":" punctuation.separator.key.canon
@@ -361,8 +359,6 @@
 146:6-7 ":" punctuation.separator.key.canon
 146:8-14 "String" entity.name.type.canon
 146:14-15 "?" keyword.operator.canon
-146:16-17 "=" keyword.operator.canon
-146:18-22 "none" constant.language.canon
 149:0-80 "/// What a filter parameter may be for event `e`. The type depends on the value." comment.line.documentation.canon
 150:0-4 "type" storage.type.canon
 150:5-10 "Param" entity.name.type.canon

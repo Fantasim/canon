@@ -6,7 +6,7 @@ born mismatch extra E8011
 left E8009/missing
 sig extra E8009/missing, E8011/derived
 packages teamboard
-want E8011 teamboard/taxonomy.canon 1276 1284 check
+want E8011 teamboard/taxonomy.canon 1269 1277 check
 failure extra [E8011 teamboard/taxonomy.canon:237:6 ", the go name derived for , is not a valid identifier"; E8009 sovcommon/ui/ui.canon:35:6 "emit go is missing out"] besides [E8011 teamboard/taxonomy.canon:40:8 "1Bad is not a valid go identifier for @go(name:)"]
 -- project.canon --
 project sovereign {
@@ -97,7 +97,7 @@ record Flag {
   /// Shown under the label.
   setBy: Actor
   /// Who may see that the flag was set; `none` means whoever can see the post.
-  viewMinRole: Role? = none
+  viewMinRole: Role?
 }
 /// One point of the post lifecycle.
 record Status {

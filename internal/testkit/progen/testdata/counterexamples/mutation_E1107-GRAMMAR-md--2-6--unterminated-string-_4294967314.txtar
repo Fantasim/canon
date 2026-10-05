@@ -6,7 +6,7 @@ born mismatch misplaced E1107
 left E2102/plain
 sig misplaced E1107, E2102/plain
 packages resource.vocab
-want E1107 resource/vocab/vocab.canon 1890 1891 check
+want E1107 resource/vocab/vocab.canon 1883 1884 check
 failure misplaced [E2102 resource/vocab/vocab.canon:57:11 "unknown name display"; E1107 resource/vocab/vocab.canon:57:18 "unterminated string"], want bytes 1890..1891
 -- _fixtures/resource/Server/Define/defineJob.h --
 -- _fixtures/resource/Server/Define/defineObj.h --
@@ -80,7 +80,7 @@ record EventType {
   /// Stored in the database: never renumbered, never reused (`@stable`).
   param: ParamKind = none_
   /// Compile flag the event only exists under.
-  flag: String? = none
+  flag: String?
 }
 /// What a filter parameter may be for event `e`. The type depends on the value.
 type Param(e: EventType) = match e.param {

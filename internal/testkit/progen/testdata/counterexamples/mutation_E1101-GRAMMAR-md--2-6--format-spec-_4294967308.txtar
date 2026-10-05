@@ -6,7 +6,7 @@ born mismatch extra E4503/plain
 left E8009/missing
 sig extra E4503/plain
 packages teamboard
-want E1101 teamboard/taxonomy.canon 5502 5504 check
+want E1101 teamboard/taxonomy.canon 5488 5490 check
 failure extra [E4503 teamboard/taxonomy.canon:218:24 "cannot format teamboard.Status with :q"] besides [E1101 teamboard/taxonomy.canon:218:25 "invalid format spec \"q\": expected [+][,][.N] with N at most 20"]
 -- project.canon --
 project sovereign {
@@ -97,7 +97,7 @@ record Flag {
   /// Shown under the label.
   setBy: Actor
   /// Who may see that the flag was set; `none` means whoever can see the post.
-  viewMinRole: Role? = none
+  viewMinRole: Role?
 }
 /// One point of the post lifecycle.
 record Status {
@@ -112,7 +112,7 @@ record Status {
   /// Inputs a transition INTO this status must collect.
   requires: [PostField] = []
   /// Inputs a transition INTO this status may collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

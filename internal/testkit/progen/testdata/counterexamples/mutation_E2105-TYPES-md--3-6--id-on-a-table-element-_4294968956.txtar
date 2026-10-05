@@ -6,7 +6,7 @@ born mismatch extra E3002
 left E3004/missing, E8009/missing
 sig extra E3002
 packages teamboard
-want E2105 teamboard/taxonomy.canon 1747 1749 check
+want E2105 teamboard/taxonomy.canon 1740 1742 check
 failure extra [E3002 teamboard/taxonomy.canon:147:62 "expected [String], found [Int]"] besides [E2105 teamboard/taxonomy.canon:56:3 "id is reserved on table entries"]
 -- project.canon --
 project sovereign {
@@ -101,7 +101,7 @@ record Status {
   /// Inputs a transition INTO this status must collect.
   requires: [PostField] = []
   /// Inputs a transition INTO this status may collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

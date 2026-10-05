@@ -66,15 +66,11 @@
 26:8-9 ":" punctuation.separator.key.canon
 26:10-16 "String" entity.name.type.canon
 26:16-17 "?" keyword.operator.canon
-26:18-19 "=" keyword.operator.canon
-26:20-24 "none" constant.language.canon
-26:25-63 "// dwLinkKind, an IK3_* kind or family" comment.line.double-slash.canon
+26:18-56 "// dwLinkKind, an IK3_* kind or family" comment.line.double-slash.canon
 27:2-8 "handed" variable.other.property.canon
 27:8-9 ":" punctuation.separator.key.canon
 27:10-16 "String" entity.name.type.canon
 27:16-17 "?" keyword.operator.canon
-27:18-19 "=" keyword.operator.canon
-27:20-24 "none" constant.language.canon
 28:2-8 "target" variable.other.property.canon
 28:8-9 ":" punctuation.separator.key.canon
 28:10-16 "String" entity.name.type.canon
@@ -82,9 +78,7 @@
 29:13-14 ":" punctuation.separator.key.canon
 29:15-18 "Int" entity.name.type.canon
 29:18-19 "?" keyword.operator.canon
-29:20-21 "=" keyword.operator.canon
-29:22-26 "none" constant.language.canon
-29:27-53 "// absent on common skills" comment.line.double-slash.canon
+29:20-46 "// absent on common skills" comment.line.double-slash.canon
 30:2-7 "reqMp" variable.other.property.canon
 30:7-8 ":" punctuation.separator.key.canon
 30:9-12 "Int" entity.name.type.canon
@@ -188,11 +182,9 @@
 46:41-42 ":" punctuation.separator.key.canon
 46:43-49 "String" entity.name.type.canon
 46:49-50 "?" keyword.operator.canon
-46:51-52 "=" keyword.operator.canon
-46:53-57 "none" constant.language.canon
-46:59-63 "name" variable.other.property.canon
-46:63-64 ":" punctuation.separator.key.canon
-46:65-71 "String" entity.name.type.canon
+46:52-56 "name" variable.other.property.canon
+46:56-57 ":" punctuation.separator.key.canon
+46:58-64 "String" entity.name.type.canon
 48:0-5 "local" storage.modifier.canon
 48:6-9 "let" storage.type.canon
 48:10-16 "skills" variable.other.property.canon

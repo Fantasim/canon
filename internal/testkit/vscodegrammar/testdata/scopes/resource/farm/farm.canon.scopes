@@ -140,8 +140,6 @@
 56:11-12 ":" punctuation.separator.key.canon
 56:13-16 "Int" entity.name.type.canon
 56:16-17 "?" keyword.operator.canon
-56:18-19 "=" keyword.operator.canon
-56:20-24 "none" constant.language.canon
 57:4-5 "@" meta.annotation.canon punctuation.definition.annotation.canon
 57:5-15 "deprecated" meta.annotation.canon entity.name.function.decorator.canon
 57:15-16 "(" meta.annotation.canon
@@ -174,13 +172,11 @@
 74:16-17 ":" punctuation.separator.key.canon
 74:18-21 "ref" storage.modifier.canon
 74:27-28 "?" keyword.operator.canon
-74:29-30 "=" keyword.operator.canon
-74:31-35 "none" constant.language.canon
-74:36-37 "@" meta.annotation.canon punctuation.definition.annotation.canon
-74:37-41 "json" meta.annotation.canon entity.name.function.decorator.canon
-74:41-42 "(" meta.annotation.canon
-74:42-64 "\"productionItemDefine\"" meta.annotation.canon string.quoted.double.canon
-74:64-65 ")" meta.annotation.canon
+74:29-30 "@" meta.annotation.canon punctuation.definition.annotation.canon
+74:30-34 "json" meta.annotation.canon entity.name.function.decorator.canon
+74:34-35 "(" meta.annotation.canon
+74:35-57 "\"productionItemDefine\"" meta.annotation.canon string.quoted.double.canon
+74:57-58 ")" meta.annotation.canon
 75:0-60 "  /// Items produced per hour; `none` on a decorative level." comment.line.documentation.canon
 76:2-19 "productionPerHour" variable.other.property.canon
 76:19-20 ":" punctuation.separator.key.canon
@@ -188,8 +184,6 @@
 76:25-26 "0" constant.numeric.integer.canon
 76:26-28 ".." keyword.operator.canon
 76:29-30 "?" keyword.operator.canon
-76:31-32 "=" keyword.operator.canon
-76:33-37 "none" constant.language.canon
 77:0-82 "  /// Items the level holds before production stops; `none` on a decorative level." comment.line.documentation.canon
 78:2-12 "maxStorage" variable.other.property.canon
 78:12-13 ":" punctuation.separator.key.canon
@@ -197,8 +191,6 @@
 78:18-19 "0" constant.numeric.integer.canon
 78:19-21 ".." keyword.operator.canon
 78:22-23 "?" keyword.operator.canon
-78:24-25 "=" keyword.operator.canon
-78:26-30 "none" constant.language.canon
 79:0-61 "  /// Bonuses granted while a model of this level is planted." comment.line.documentation.canon
 80:2-9 "bonuses" variable.other.property.canon
 80:9-10 ":" punctuation.separator.key.canon
@@ -243,13 +235,11 @@
 96:10-11 ":" punctuation.separator.key.canon
 96:12-15 "ref" storage.modifier.canon
 96:21-22 "?" keyword.operator.canon
-96:23-24 "=" keyword.operator.canon
-96:25-29 "none" constant.language.canon
-96:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
-96:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
-96:35-36 "(" meta.annotation.canon
-96:36-52 "\"nameTextDefine\"" meta.annotation.canon string.quoted.double.canon
-96:52-53 ")" meta.annotation.canon
+96:23-24 "@" meta.annotation.canon punctuation.definition.annotation.canon
+96:24-28 "json" meta.annotation.canon entity.name.function.decorator.canon
+96:28-29 "(" meta.annotation.canon
+96:29-45 "\"nameTextDefine\"" meta.annotation.canon string.quoted.double.canon
+96:45-46 ")" meta.annotation.canon
 97:0-31 "  /// Paid to unlock the model." comment.line.documentation.canon
 98:2-13 "unlockPrice" variable.other.property.canon
 98:13-14 ":" punctuation.separator.key.canon

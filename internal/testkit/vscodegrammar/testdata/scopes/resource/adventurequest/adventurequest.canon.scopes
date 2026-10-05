@@ -70,15 +70,11 @@
 40:10-11 ":" punctuation.separator.key.canon
 40:12-15 "Int" entity.name.type.canon
 40:15-16 "?" keyword.operator.canon
-40:17-18 "=" keyword.operator.canon
-40:19-23 "none" constant.language.canon
 41:0-39 "  /// The loader clamps it to [1, 100]." comment.line.documentation.canon
 42:2-19 "maxQuestsPerStyle" variable.other.property.canon
 42:19-20 ":" punctuation.separator.key.canon
 42:21-24 "Int" entity.name.type.canon
 42:24-25 "?" keyword.operator.canon
-42:26-27 "=" keyword.operator.canon
-42:28-32 "none" constant.language.canon
 43:0-52 "  /// Wait before a completed quest can be rerolled." comment.line.documentation.canon
 44:2-26 "completionRerollCooldown" variable.other.property.canon
 44:26-27 ":" punctuation.separator.key.canon
@@ -137,16 +133,14 @@
 64:12-13 ":" punctuation.separator.key.canon
 64:14-22 "Duration" entity.name.type.canon
 64:22-23 "?" keyword.operator.canon
-64:24-25 "=" keyword.operator.canon
-64:26-30 "none" constant.language.canon
-64:31-32 "@" meta.annotation.canon punctuation.definition.annotation.canon
-64:32-36 "json" meta.annotation.canon entity.name.function.decorator.canon
-64:36-37 "(" meta.annotation.canon
-64:37-54 "\"reroll_time_sec\"" meta.annotation.canon string.quoted.double.canon
-64:54-56 ", " meta.annotation.canon
-64:56-60 "unit" meta.annotation.canon variable.parameter.canon
-64:60-61 ":" meta.annotation.canon punctuation.separator.key.canon
-64:61-64 " s)" meta.annotation.canon
+64:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+64:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
+64:29-30 "(" meta.annotation.canon
+64:30-47 "\"reroll_time_sec\"" meta.annotation.canon string.quoted.double.canon
+64:47-49 ", " meta.annotation.canon
+64:49-53 "unit" meta.annotation.canon variable.parameter.canon
+64:53-54 ":" meta.annotation.canon punctuation.separator.key.canon
+64:54-57 " s)" meta.annotation.canon
 65:0-46 "  /// Time a quest of this style is sized for." comment.line.documentation.canon
 66:2-12 "targetTime" variable.other.property.canon
 66:12-13 ":" punctuation.separator.key.canon
@@ -188,14 +182,12 @@
 74:9-10 ":" punctuation.separator.key.canon
 74:11-18 "Rewards" entity.name.type.canon
 74:18-19 "?" keyword.operator.canon
-74:20-21 "=" keyword.operator.canon
-74:22-26 "none" constant.language.canon
-74:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
-74:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
-74:32-33 "(" meta.annotation.canon
-74:33-37 "none" meta.annotation.canon variable.parameter.canon
-74:37-38 ":" meta.annotation.canon punctuation.separator.key.canon
-74:38-42 " {})" meta.annotation.canon
+74:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+74:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+74:25-26 "(" meta.annotation.canon
+74:26-30 "none" meta.annotation.canon variable.parameter.canon
+74:30-31 ":" meta.annotation.canon punctuation.separator.key.canon
+74:31-35 " {})" meta.annotation.canon
 76:2-7 "check" keyword.other.canon
 76:23-24 "." punctuation.accessor.canon
 76:24-27 "sum" variable.other.property.canon
@@ -290,8 +282,6 @@
 105:21-22 "0" constant.numeric.integer.canon
 105:22-24 ".." keyword.operator.canon
 105:26-27 "?" keyword.operator.canon
-105:28-29 "=" keyword.operator.canon
-105:30-34 "none" constant.language.canon
 106:0-63 "  /// ...or one per item / monster / dungeon, depending on `e`." comment.line.documentation.canon
 107:2-17 "ratesBySpecific" variable.other.property.canon
 107:17-18 ":" punctuation.separator.key.canon
@@ -302,8 +292,6 @@
 107:48-49 "0" constant.numeric.integer.canon
 107:49-51 ".." keyword.operator.canon
 107:54-55 "?" keyword.operator.canon
-107:56-57 "=" keyword.operator.canon
-107:58-62 "none" constant.language.canon
 108:0-47 "  /// A daily cap per item / monster / dungeon." comment.line.documentation.canon
 109:2-20 "dailyMaxBySpecific" variable.other.property.canon
 109:20-21 ":" punctuation.separator.key.canon
@@ -312,8 +300,6 @@
 109:43-44 "0" constant.numeric.integer.canon
 109:44-46 ".." keyword.operator.canon
 109:48-49 "?" keyword.operator.canon
-109:50-51 "=" keyword.operator.canon
-109:52-56 "none" constant.language.canon
 110:0-52 "  /// The rate is a daily count, not an hourly rate." comment.line.documentation.canon
 111:2-13 "isDailyFlat" variable.other.property.canon
 111:13-14 ":" punctuation.separator.key.canon
@@ -380,8 +366,6 @@
 142:10-11 ":" punctuation.separator.key.canon
 142:12-15 "Int" entity.name.type.canon
 142:15-16 "?" keyword.operator.canon
-142:17-18 "=" keyword.operator.canon
-142:19-23 "none" constant.language.canon
 143:0-41 "  /// Lowest measure that gets the bonus." comment.line.documentation.canon
 144:2-10 "minValue" variable.other.property.canon
 144:10-11 ":" punctuation.separator.key.canon

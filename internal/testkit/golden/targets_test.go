@@ -13,12 +13,13 @@ import (
 // defaultTargets are the targets an example without its own row in exampleTargets is built for.
 var defaultTargets = []canon.Target{canon.TargetGo, canon.TargetTS, canon.TargetJSON}
 
-// exampleTargets overrides defaultTargets; an example with a row must have expected/MANIFEST (embedded: no Go emit, gen/go has no embedded mode).
+// exampleTargets overrides defaultTargets; an example with a row must have expected/MANIFEST (embedded: no Go emit, Go embedded mode is owed for v0.2, DECISIONS 320).
 var exampleTargets = map[string][]canon.Target{
 	"pipeline":           {canon.TargetGo, canon.TargetCpp, canon.TargetJSON, canon.TargetView},
 	"features.dependent": {canon.TargetGo, canon.TargetCpp, canon.TargetJSON},
 	"features.copies":    {canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON},
 	"features.lookup":    {canon.TargetGo, canon.TargetTS},
+	"features.shared":    {canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON},
 	"features.embedded":  {canon.TargetTS},
 	"features.textemit":  {canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON, canon.TargetText},
 	"resource.farm":      {canon.TargetGo, canon.TargetJSON, canon.TargetView},

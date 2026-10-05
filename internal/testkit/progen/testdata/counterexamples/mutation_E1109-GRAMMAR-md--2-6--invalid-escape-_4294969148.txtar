@@ -6,7 +6,7 @@ born mismatch extra E3205
 left E8009/missing
 sig extra E3205
 packages teamboard
-want E1109 teamboard/taxonomy.canon 2541 2543 check
+want E1109 teamboard/taxonomy.canon 2534 2536 check
 failure extra [E3205 teamboard/taxonomy.canon:90:37 "\"\\\\q2:2\" does not match /^[1-9]:[1-9]$/"] besides [E1109 teamboard/taxonomy.canon:90:38 "invalid escape sequence \"\\q\""]
 -- project.canon --
 project sovereign {
@@ -101,7 +101,7 @@ record Status {
   /// Inputs a transition INTO this status must collect.
   requires: [PostField] = []
   /// Inputs a transition INTO this status may collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

@@ -57,11 +57,11 @@ variant ItemKind @json(tag: "dwItemKind1") {
 variant GeneralKind {
   IK2_MATERIAL {
     /// What the material is used for.
-    referStat: ref attributes? = none @json()
+    referStat: ref attributes? @json()
   }
   IK2_FOOD {
     /// What kind of food.
-    cooldown: Duration? = none @json( unit: ms)
+    cooldown: Duration? @json( unit: ms)
   }
 }
 -- project.canon --

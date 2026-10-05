@@ -3,6 +3,7 @@ package progen_test
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -22,6 +23,8 @@ func emitOperators() []operator {
 	e8151.also = []diag.Code{diag.E8012.Def().Code}
 	e8152 := op(diag.E8152.Def().Code, "WIRE.md §8.1 (two outputs, one path)", collidingOutputs)
 	e8152.build = true
+	e8153 := op(diag.E8153.Def().Code, "WIRE.md §8.1 (data value not in emit json)", dropJSONEmit)
+	e8153.many, e8153.loose = true, true // one finding per public value, each at its own let
 	return []operator{
 		e8001,
 		op(diag.E8002.Def().Code, "CODEGEN.md §2.1 (two emits of one target)", duplicateEmit),
@@ -45,7 +48,7 @@ func emitOperators() []operator {
 		op(diag.E8150.Def().Code, "WIRE.md §8.1 (file out, two values)", jsonFileTwoValues),
 		e8151,
 		e8152,
-		op(diag.E8153.Def().Code, "WIRE.md §8.1 (data value not in emit json)", dropJSONEmit),
+		e8153,
 		op(diag.E8202.Def().Code, "CODEGEN.md §5.11 (@reload on baked)", reloadBaked),
 		op(diag.E9001.Def().Code, "CONFORMANCE.md §2.2 (var in a translated function)", withEmit("go", "/// Sums.\nexport fn zzBelow(n: Int) -> Int {\n  ", "var total = n", "\n  return total\n}")),
 		op(diag.E9002.Def().Code, "CONFORMANCE.md §8 (lookup table too big)", withoutTypes("", withEmit("go", wideEnum()+"\n\n/// Same.\nexport fn ", "zzSame", "(x: ZzWide, y: ZzWide) -> Bool { return x == y }"))),
@@ -413,27 +416,51 @@ func jsonWriters(tg target) []jsonWriter {
 			}
 			os, oe := span(other, option(od, "out").Value)
 			at := progen.Place{Path: other.path, Region: progen.Region{Start: os, End: oe}}
-			out = append(out, jsonWriter{pkg: other.pkg, file: dir + lets[0] + ".json", at: at})
+			out = append(out, jsonWriter{pkg: other.pkg, file: fromDir(tg, other, dir) + lets[0] + ".json", at: at})
 		}
 	}
 	return out
 }
 
+// fromDir names dir, written in other, from tg (WIRE.md §2.2).
+func fromDir(tg, other target, dir string) string {
+	if strings.HasPrefix(dir, "@") {
+		return dir
+	}
+	rel, err := filepath.Rel(path.Dir(tg.path), path.Join(path.Dir(other.path), dir))
+	if err != nil {
+		return dir
+	}
+	return filepath.ToSlash(rel) + "/"
+}
+
+// dropJSONEmit drops the only emit json of a data-mode package (WIRE.md §8.1).
 func dropJSONEmit(tg target) []progen.Site {
-	var out []progen.Site
-	for _, g := range emitsOf(tg, "go") {
-		if optionText(tg, g, "mode") != "data" {
+	js := emitsOf(tg, "json")
+	if len(js) != 1 || !hasDataModeEmit(tg) {
+		return nil
+	}
+	for _, d := range nodes[*syntax.LetDecl](tg) {
+		if d.Mods != nil && d.Mods.Local.Valid() {
 			continue
 		}
-		for _, j := range emitsOf(tg, "json") {
-			s, e := span(tg, j)
-			for _, d := range nodes[*syntax.LetDecl](tg) {
-				ns, ne := span(tg, d.Name)
-				out = append(out, seq(0, mark(tg, ns, ne), replace(s, e, "")))
+		ns, ne := span(tg, d.Name)
+		s, e := span(tg, js[0])
+		return []progen.Site{seq(0, mark(tg, ns, ne), replace(s, e, ""))}
+	}
+	return nil
+}
+
+// hasDataModeEmit tells a package with a code emit in data mode, whichever its target (WIRE.md §8.1).
+func hasDataModeEmit(tg target) bool {
+	for _, p := range peers(tg) {
+		for _, d := range emitsOf(p, "") {
+			if optionText(p, d, "mode") == modeData {
+				return true
 			}
 		}
 	}
-	return out
+	return false
 }
 
 // reloadBaked turns a data-mode go emit baked in a file with an @reload value.

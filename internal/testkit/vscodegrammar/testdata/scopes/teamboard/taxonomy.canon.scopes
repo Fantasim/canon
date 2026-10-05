@@ -83,8 +83,6 @@
 54:6-7 ":" punctuation.separator.key.canon
 54:8-14 "String" entity.name.type.canon
 54:14-15 "?" keyword.operator.canon
-54:16-17 "=" keyword.operator.canon
-54:18-22 "none" constant.language.canon
 55:0-27 "  /// Who may set the flag." comment.line.documentation.canon
 56:2-7 "setBy" variable.other.property.canon
 56:7-8 ":" punctuation.separator.key.canon
@@ -94,8 +92,6 @@
 58:13-14 ":" punctuation.separator.key.canon
 58:15-19 "Role" entity.name.type.canon
 58:19-20 "?" keyword.operator.canon
-58:21-22 "=" keyword.operator.canon
-58:23-27 "none" constant.language.canon
 61:0-36 "/// One point of the post lifecycle." comment.line.documentation.canon
 62:0-6 "record" storage.type.canon
 62:7-13 "Status" entity.name.type.canon
@@ -133,8 +129,6 @@
 76:4-5 ":" punctuation.separator.key.canon
 76:6-11 "Actor" entity.name.type.canon
 76:11-12 "?" keyword.operator.canon
-76:13-14 "=" keyword.operator.canon
-76:15-19 "none" constant.language.canon
 78:2-7 "check" keyword.other.canon
 78:12-13 "." punctuation.accessor.canon
 78:13-21 "isUnique" variable.other.property.canon
@@ -209,8 +203,6 @@
 110:6-7 ":" punctuation.separator.key.canon
 110:8-14 "String" entity.name.type.canon
 110:14-15 "?" keyword.operator.canon
-110:16-17 "=" keyword.operator.canon
-110:18-22 "none" constant.language.canon
 111:0-32 "  /// Gates posting AND viewing." comment.line.documentation.canon
 112:2-9 "minRole" variable.other.property.canon
 112:9-10 ":" punctuation.separator.key.canon

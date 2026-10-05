@@ -26,16 +26,14 @@
 20:13-14 ":" punctuation.separator.key.canon
 20:15-20 "Param" entity.name.type.canon
 20:31-32 "?" keyword.operator.canon
-20:33-34 "=" keyword.operator.canon
-20:35-39 "none" constant.language.canon
-20:40-41 "@" meta.annotation.canon punctuation.definition.annotation.canon
-20:41-45 "json" meta.annotation.canon entity.name.function.decorator.canon
-20:45-46 "(" meta.annotation.canon
-20:46-50 "none" meta.annotation.canon variable.parameter.canon
-20:50-51 ":" meta.annotation.canon punctuation.separator.key.canon
-20:51-52 " " meta.annotation.canon
-20:52-54 "\"\"" meta.annotation.canon string.quoted.double.canon
-20:54-55 ")" meta.annotation.canon
+20:33-34 "@" meta.annotation.canon punctuation.definition.annotation.canon
+20:34-38 "json" meta.annotation.canon entity.name.function.decorator.canon
+20:38-39 "(" meta.annotation.canon
+20:39-43 "none" meta.annotation.canon variable.parameter.canon
+20:43-44 ":" meta.annotation.canon punctuation.separator.key.canon
+20:44-45 " " meta.annotation.canon
+20:45-47 "\"\"" meta.annotation.canon string.quoted.double.canon
+20:47-48 ")" meta.annotation.canon
 21:0-38 "  /// How many each player must reach." comment.line.documentation.canon
 22:2-17 "targetPerPlayer" variable.other.property.canon
 22:17-18 ":" punctuation.separator.key.canon

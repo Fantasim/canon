@@ -1,0 +1,176 @@
+1:0-94 "/// Shared records (CODEGEN §2.8, §5.9, §5.14; DECISIONS 320, 323): a package holds another" comment.line.documentation.canon
+2:0-92 "/// package's records, variants, dependent types and tables in its own values and fields, in" comment.line.documentation.canon
+3:0-96 "/// every target and mode, without copying their types. features.shared.core is baked; the world" comment.line.documentation.canon
+4:0-97 "/// below is baked in Go and TypeScript, read from data in C++. Each builds core's values itself," comment.line.documentation.canon
+5:0-95 "/// through core's make hooks in Go and C++ and object literals in TypeScript, and holds core's" comment.line.documentation.canon
+6:0-64 "/// records in tables of its own row type, keyed by its own ids." comment.line.documentation.canon
+7:0-7 "package" keyword.other.canon
+7:8-23 "features.shared" entity.name.namespace.canon
+9:0-6 "import" keyword.other.canon
+9:15-16 "." punctuation.accessor.canon
+9:16-22 "shared" variable.other.property.canon
+9:22-23 "." punctuation.accessor.canon
+9:23-27 "core" variable.other.property.canon
+9:30-36 "Effect" entity.name.type.canon
+9:38-48 "LevelRange" entity.name.type.canon
+9:50-56 "Marker" entity.name.type.canon
+9:58-64 "Reward" entity.name.type.canon
+9:66-71 "Shelf" entity.name.type.canon
+9:73-79 "Status" entity.name.type.canon
+11:0-24 "/// A zone of the world." comment.line.documentation.canon
+12:0-6 "record" storage.type.canon
+12:7-11 "Zone" entity.name.type.canon
+13:0-21 "  /// Its level band." comment.line.documentation.canon
+14:2-8 "levels" variable.other.property.canon
+14:8-9 ":" punctuation.separator.key.canon
+14:10-20 "LevelRange" entity.name.type.canon
+15:0-29 "  /// What clearing it gives." comment.line.documentation.canon
+16:2-8 "reward" variable.other.property.canon
+16:8-9 ":" punctuation.separator.key.canon
+16:10-16 "Reward" entity.name.type.canon
+17:0-17 "  /// Its effect." comment.line.documentation.canon
+18:2-8 "effect" variable.other.property.canon
+18:8-9 ":" punctuation.separator.key.canon
+18:10-16 "Effect" entity.name.type.canon
+19:0-70 "  /// Its markers: rows of core's Marker, keyed by this package's ids." comment.line.documentation.canon
+20:2-9 "markers" variable.other.property.canon
+20:9-10 ":" punctuation.separator.key.canon
+20:11-16 "table" storage.type.canon
+20:17-23 "Marker" entity.name.type.canon
+23:0-15 "/// Every zone." comment.line.documentation.canon
+24:0-3 "let" storage.type.canon
+24:4-9 "zones" variable.other.property.canon
+24:9-10 ":" punctuation.separator.key.canon
+24:11-16 "table" storage.type.canon
+24:17-21 "Zone" entity.name.type.canon
+24:22-23 "=" keyword.operator.canon
+26:4-10 "levels" variable.other.property.canon
+26:10-11 ":" punctuation.separator.key.canon
+26:14-17 "min" variable.other.property.canon
+26:17-18 ":" punctuation.separator.key.canon
+26:19-20 "1" constant.numeric.integer.canon
+26:22-25 "max" variable.other.property.canon
+26:25-26 ":" punctuation.separator.key.canon
+26:27-28 "5" constant.numeric.integer.canon
+26:30-36 "status" variable.other.property.canon
+26:36-37 ":" punctuation.separator.key.canon
+27:4-10 "reward" variable.other.property.canon
+27:10-11 ":" punctuation.separator.key.canon
+27:20-26 "amount" variable.other.property.canon
+27:26-27 ":" punctuation.separator.key.canon
+27:28-29 "3" constant.numeric.integer.canon
+28:4-10 "effect" variable.other.property.canon
+28:10-11 ":" punctuation.separator.key.canon
+28:14-17 "aim" variable.other.property.canon
+28:17-18 ":" punctuation.separator.key.canon
+28:25-30 "bonus" variable.other.property.canon
+28:30-31 ":" punctuation.separator.key.canon
+28:32-33 "2" constant.numeric.integer.canon
+29:4-11 "markers" variable.other.property.canon
+29:11-12 ":" punctuation.separator.key.canon
+29:22-26 "code" variable.other.property.canon
+29:26-27 ":" punctuation.separator.key.canon
+29:28-31 "\"g\"" string.quoted.double.canon
+29:35-42 "retired" storage.modifier.canon
+29:50-54 "code" variable.other.property.canon
+29:54-55 ":" punctuation.separator.key.canon
+29:56-59 "\"w\"" string.quoted.double.canon
+32:4-10 "levels" variable.other.property.canon
+32:10-11 ":" punctuation.separator.key.canon
+32:14-17 "min" variable.other.property.canon
+32:17-18 ":" punctuation.separator.key.canon
+32:19-20 "4" constant.numeric.integer.canon
+32:22-25 "max" variable.other.property.canon
+32:25-26 ":" punctuation.separator.key.canon
+32:27-28 "9" constant.numeric.integer.canon
+32:30-36 "status" variable.other.property.canon
+32:36-37 ":" punctuation.separator.key.canon
+33:4-10 "reward" variable.other.property.canon
+33:10-11 ":" punctuation.separator.key.canon
+34:4-10 "effect" variable.other.property.canon
+34:10-11 ":" punctuation.separator.key.canon
+34:14-17 "aim" variable.other.property.canon
+34:17-18 ":" punctuation.separator.key.canon
+34:25-30 "bonus" variable.other.property.canon
+34:30-31 ":" punctuation.separator.key.canon
+35:4-11 "markers" variable.other.property.canon
+35:11-12 ":" punctuation.separator.key.canon
+39:0-59 "/// Level bands: core's LevelRange as this package's table." comment.line.documentation.canon
+40:0-3 "let" storage.type.canon
+40:4-9 "bands" variable.other.property.canon
+40:9-10 ":" punctuation.separator.key.canon
+40:11-16 "table" storage.type.canon
+40:17-27 "LevelRange" entity.name.type.canon
+40:28-29 "=" keyword.operator.canon
+41:8-11 "min" variable.other.property.canon
+41:11-12 ":" punctuation.separator.key.canon
+41:13-14 "1" constant.numeric.integer.canon
+41:16-19 "max" variable.other.property.canon
+41:19-20 ":" punctuation.separator.key.canon
+41:21-22 "5" constant.numeric.integer.canon
+41:24-30 "status" variable.other.property.canon
+41:30-31 ":" punctuation.separator.key.canon
+42:2-9 "retired" storage.modifier.canon
+42:16-19 "min" variable.other.property.canon
+42:19-20 ":" punctuation.separator.key.canon
+42:21-22 "0" constant.numeric.integer.canon
+42:24-27 "max" variable.other.property.canon
+42:27-28 ":" punctuation.separator.key.canon
+42:29-30 "1" constant.numeric.integer.canon
+42:32-38 "status" variable.other.property.canon
+42:38-39 ":" punctuation.separator.key.canon
+45:0-90 "/// Moods of the world: core's Status, keyed by this package's own StatusID beside core's." comment.line.documentation.canon
+46:0-3 "let" storage.type.canon
+46:4-9 "moods" variable.other.property.canon
+46:9-10 ":" punctuation.separator.key.canon
+46:11-16 "table" storage.type.canon
+46:17-23 "Status" entity.name.type.canon
+46:24-25 "=" keyword.operator.canon
+47:9-14 "label" variable.other.property.canon
+47:14-15 ":" punctuation.separator.key.canon
+47:16-22 "\"Calm\"" string.quoted.double.canon
+50:0-54 "/// The starting band: a plain value of core's record." comment.line.documentation.canon
+51:0-3 "let" storage.type.canon
+51:4-9 "start" variable.other.property.canon
+51:9-10 ":" punctuation.separator.key.canon
+51:11-21 "LevelRange" entity.name.type.canon
+51:22-23 "=" keyword.operator.canon
+51:26-29 "min" variable.other.property.canon
+51:29-30 ":" punctuation.separator.key.canon
+51:31-32 "1" constant.numeric.integer.canon
+51:34-37 "max" variable.other.property.canon
+51:37-38 ":" punctuation.separator.key.canon
+51:39-40 "2" constant.numeric.integer.canon
+51:42-48 "status" variable.other.property.canon
+51:48-49 ":" punctuation.separator.key.canon
+53:0-64 "/// A shelf: core's record holding a table of core's own Marker." comment.line.documentation.canon
+54:0-3 "let" storage.type.canon
+54:4-9 "shelf" variable.other.property.canon
+54:9-10 ":" punctuation.separator.key.canon
+54:11-16 "Shelf" entity.name.type.canon
+54:17-18 "=" keyword.operator.canon
+54:21-26 "slots" variable.other.property.canon
+54:26-27 ":" punctuation.separator.key.canon
+54:36-40 "code" variable.other.property.canon
+54:40-41 ":" punctuation.separator.key.canon
+54:42-45 "\"t\"" string.quoted.double.canon
+56:0-4 "emit" keyword.other.canon
+56:10-13 "out" variable.other.property.canon
+56:13-14 ":" punctuation.separator.key.canon
+56:15-31 "\"out/go/shared/\"" string.quoted.double.canon
+57:0-4 "emit" keyword.other.canon
+57:11-14 "out" variable.other.property.canon
+57:14-15 ":" punctuation.separator.key.canon
+57:16-33 "\"out/cpp/shared/\"" string.quoted.double.canon
+57:35-39 "mode" variable.other.property.canon
+57:39-40 ":" punctuation.separator.key.canon
+58:0-4 "emit" keyword.other.canon
+58:10-13 "out" variable.other.property.canon
+58:13-14 ":" punctuation.separator.key.canon
+58:15-33 "\"out/ts/shared.ts\"" string.quoted.double.canon
+59:0-4 "emit" keyword.other.canon
+59:12-15 "out" variable.other.property.canon
+59:15-16 ":" punctuation.separator.key.canon
+59:17-28 "\"out/data/\"" string.quoted.double.canon
+59:30-36 "values" variable.other.property.canon
+59:36-37 ":" punctuation.separator.key.canon

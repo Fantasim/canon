@@ -5,7 +5,7 @@ seed 4294967426
 born mismatch extra E3316/form
 sig extra E3316/form
 packages game.items
-want E3401 game/items/item.canon 478 488 check
+want E3401 game/items/item.canon 478 481 check
 failure extra [E3316 game/items/item.canon:14:42 "@json(none) does not apply to invalid"] besides [E3401 game/items/item.canon:14:11 "Int(0..)?? is not a type: Int(0..)? is already optional"]
 -- _fixtures/resource/Server/Define/defineAttribute.h --
 -- _fixtures/resource/Server/Define/defineJob.h --
@@ -30,7 +30,7 @@ record StatBonus {
 /// propItem.json's `defaults` block; "=" on the wire means "not set".
 record Item {
   /// Format version of the row (nVer). The loader ignores it.
-  rarity: Int(0..)?? = none @json( none: "=")
+  rarity: Int(0..)?? @json( none: "=")
 }
 /// material cannot carry an attack speed.
 variant ItemKind @json(tag: "dwItemKind1") {

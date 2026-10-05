@@ -28,21 +28,21 @@ func secondDefaultWidget(tg target) []progen.Site {
 	if !isStudioSource(tg) {
 		return nil
 	}
-	return []progen.Site{appendBlock(tg, "/// Zz.\nwidget zzE1629(value: TimeOfDay) default")}
+	return []progen.Site{appendBlock(tg, "/// Zz.\nwidget zz_e1629(value: TimeOfDay) default")}
 }
 
 func defaultWidgetBadType(tg target) []progen.Site {
 	if !isStudioSource(tg) {
 		return nil
 	}
-	return []progen.Site{appendBlock(tg, "/// Zz.\nwidget zzE1630(value: Int) default")}
+	return []progen.Site{appendBlock(tg, "/// Zz.\nwidget zz_e1630(value: Int) default")}
 }
 
 func siblingsMismatch(tg target) []progen.Site {
 	if !isStudioSource(tg) {
 		return nil
 	}
-	return []progen.Site{appendBlock(tg, "/// Zz.\nwidget zzE1631(value: Int, siblings: String)")}
+	return []progen.Site{appendBlock(tg, "/// Zz.\nwidget zz_e1631(value: Int, siblings: String)")}
 }
 
 // editableWithoutMenu adds a public value without a menu, past the studio and data emits (N4).

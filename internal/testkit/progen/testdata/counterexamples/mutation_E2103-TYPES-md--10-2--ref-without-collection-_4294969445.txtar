@@ -108,7 +108,7 @@ record Status {
   /// The closed set of statuses a post may move to from here.
   next: [ref AreaSection]
   /// Inputs a transition INTO this status must collect.
-  by: Actor? = none
+  by: Actor?
 }
 /// Set by a triager only. The reporter's single signal is the `blocking` flag.
 record Severity {

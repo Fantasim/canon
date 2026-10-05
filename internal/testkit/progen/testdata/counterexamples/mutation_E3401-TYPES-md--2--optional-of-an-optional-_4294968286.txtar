@@ -5,7 +5,7 @@ seed 4294968286
 born mismatch missing
 sig missing
 packages resource.farm
-want E3401 resource/farm/farm.canon 2649 2660 check
+want E3401 resource/farm/farm.canon 2628 2632 check
 failure missing E3401, got []
 -- _fixtures/resource/Icon/Item/Itm_ActivityPoints_50.dds --
 -- _fixtures/resource/Icon/Item/Itm_FaeryExperience.dds --
@@ -154,7 +154,7 @@ record Global {
   /// How often every planted model produces.
   productionTick: Duration(1s..) = 1h @json("productionTickIntervalSec", unit: s)
   /// A cap on planted models that nothing enforces.
-  maxModels: Int? = none
+  maxModels: Int?
     @deprecated("never read by LoadFromFile: the real cap is FARM_MAX_MODELS = 100. Kept as is; changing it changes nothing in game.")
 }
 /// production ever uses since there is no production item.
@@ -164,9 +164,9 @@ record Level {
   /// warning in C++; it is resolved again at runtime.
   modelName: String(1..)
   /// The item produced; `none` on a decorative level.
-  productionItem: ref items? = none @json()
+  productionItem: ref items? @json()
   /// Items produced per hour; `none` on a decorative level.
-  productionPerHour: Int(0..)? = none
+  productionPerHour: Int(0..)?
   /// Items the level holds before production stops; `none` on a decorative level.
   maxStorage: Int(0..)
   /// Bonuses granted while a model of this level is planted.
@@ -183,7 +183,7 @@ record ModelType {
   /// Logging label. The name shown to players is `nameText`.
   typeName: String
   /// Text shown to players as the model's name.
-  nameText: ref texts?? = none @json()
+  nameText: ref texts?? @json()
   /// Paid to unlock the model.
   unlockPrice: Penya = 0
   /// Paid in addition to the gold. Only read when it is an array.

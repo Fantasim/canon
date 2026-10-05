@@ -33,8 +33,6 @@
 19:9-10 ":" punctuation.separator.key.canon
 19:11-15 "Path" entity.name.type.canon
 19:15-16 "?" keyword.operator.canon
-19:17-18 "=" keyword.operator.canon
-19:19-23 "none" constant.language.canon
 20:0-52 "  /// Thumbnails and indexes. Never inside Resource." comment.line.documentation.canon
 21:2-10 "cacheDir" variable.other.property.canon
 21:10-11 ":" punctuation.separator.key.canon
