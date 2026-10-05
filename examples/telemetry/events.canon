@@ -25,7 +25,6 @@ let events: {EventType: Event} = {
     ledger: [
       {
         rows: some {
-          column: grant_kind
           of: grant_kind
           kinds: [BUYBACK_DELIVERY, BUFF_REWARD, EVENT_REWARD]
         }
@@ -41,7 +40,7 @@ let events: {EventType: Event} = {
           "SendSystemItem: a direct inventory grant (mail only on overflow, counted at its claim)"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [BOSS_REWARD_MAIL] }
+        rows: some { of: grant_kind, kinds: [BOSS_REWARD_MAIL] }
         currency: item
         bucket: mint
         sign: 1
@@ -52,7 +51,7 @@ let events: {EventType: Event} = {
         note: "MAIL-BORNE: lands in game.mail, not in a container, until claimed"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [MAIL_RETURN] }
+        rows: some { of: grant_kind, kinds: [MAIL_RETURN] }
         currency: item
         bucket: transfer
         sign: 1
@@ -65,7 +64,7 @@ let events: {EventType: Event} = {
           "NOT A MINT: re-posts items that already exist; the claim inflow is mail_items_claimed"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [PLAYER_MAIL] }
+        rows: some { of: grant_kind, kinds: [PLAYER_MAIL] }
         currency: item
         bucket: transfer
         sign: 1
@@ -77,7 +76,7 @@ let events: {EventType: Event} = {
         note: "NOT A MINT: the counted leg is the sender's mail_items_sent row"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [AUCTION_ESCROW_RECOVERY] }
+        rows: some { of: grant_kind, kinds: [AUCTION_ESCROW_RECOVERY] }
         currency: item
         bucket: transfer
         sign: 1
@@ -89,7 +88,7 @@ let events: {EventType: Event} = {
         note: "MAIL-BORNE, NOT A MINT: an escrow re-mailed after a restart"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [PERIN_OVERFLOW] }
+        rows: some { of: grant_kind, kinds: [PERIN_OVERFLOW] }
         currency: item
         bucket: mint
         sign: 1
@@ -101,7 +100,7 @@ let events: {EventType: Event} = {
         note: "EmitPerinMinted (gold.cpp): perin minted straight into the inventory"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [FARM_HARVEST] }
+        rows: some { of: grant_kind, kinds: [FARM_HARVEST] }
         currency: item
         bucket: mint
         sign: 1
@@ -113,7 +112,7 @@ let events: {EventType: Event} = {
         note: "FarmManager::ClaimModel: farm production granted to the inventory"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [STARTER_ITEM] }
+        rows: some { of: grant_kind, kinds: [STARTER_ITEM] }
         currency: item
         bucket: mint
         sign: 1
@@ -125,7 +124,7 @@ let events: {EventType: Event} = {
         note: "CDbManager::CreatePlayer: one row per starting item, after the container saved"
       },
       {
-        rows: some { column: grant_kind, of: grant_kind, kinds: [UNKNOWN] }
+        rows: some { of: grant_kind, kinds: [UNKNOWN] }
         currency: nothing
         bucket: nothing
         sign: 0
@@ -247,7 +246,7 @@ let events: {EventType: Event} = {
     ]
     ledger: [
       {
-        rows: some { column: kind, of: farm_event_kind, kinds: [Purchase, UnlockModel, VisitOther] }
+        rows: some { of: farm_event_kind, kinds: [Purchase, UnlockModel, VisitOther] }
         currency: gold
         bucket: sink
         sign: -1
@@ -281,7 +280,7 @@ let events: {EventType: Event} = {
     ]
     ledger: [
       {
-        rows: some { column: kind, of: sovereign_event_kind, kinds: [RewardGranted] }
+        rows: some { of: sovereign_event_kind, kinds: [RewardGranted] }
         currency: gold
         bucket: mint
         sign: 1

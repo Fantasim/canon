@@ -192,11 +192,9 @@ enum Leg { out, in }
 variant Rows {
   /// Every row.
   every
-  /// The rows whose `column` holds one of `kinds`, members of the column's vocabulary.
+  /// The rows whose `of` column holds one of `kinds`; the table has exactly one such column.
   some {
-    /// The enum8 column that splits the rows.
-    column: ref Column
-    /// Its vocabulary, so the kinds are typed.
+    /// The vocabulary whose column splits the rows.
     of: Vocabulary
     // `past` (DECISIONS 304): a retired member still classifies the rows written before.
     /// The members covered.
@@ -309,10 +307,21 @@ record Event {
           }
         }
       }
+      // A role's vocabulary names exactly one column of the table (what columnOf returns).
       match r.rows {
         some(s) => {
-          if s.column.values != s.of {
-            fail(s.of, "{s.column.name} holds {s.column.values}, not {s.of}")
+          let holders = [c.name for c in columns if c.values == s.of]
+          if holders.isEmpty() {
+            fail(
+              s.of,
+              "no column of this table holds {s.of}: the role splits rows it does not have",
+            )
+          }
+          if holders.len() > 1 {
+            fail(
+              s.of,
+              "{holders.join(", ")} all hold {s.of}: the role cannot tell which splits the rows",
+            )
           }
         }
         every => {}
@@ -328,7 +337,8 @@ record Event {
           match r.rows {
             every => { covered += liveNames(ledgerKinds.values) }
             some(s) => {
-              if ledgerKinds == s.column { covered += [String(k) for k in s.kinds] }
+              // ledgerKinds is the role's column (columnOf) exactly when it holds `of`.
+              if ledgerKinds.values == s.of { covered += [String(k) for k in s.kinds] }
             }
           }
         }
@@ -355,6 +365,10 @@ record Event {
     return headerColumns.values() + layout(version) + [c for c in columns if c.retiredIn != none]
   }
 }
+
+/// The column of `e` that holds vocabulary `v`: the one a role with `some { of: v }` splits on.
+/// Event's check makes it unique; a vocabulary no column holds is a failure.
+fn columnOf(e: Event, v: Vocabulary) -> Column { return e.columns.first(c => c.values == v)! }
 
 /// The table of event type `e`; none for a retired type, which has no table any more.
 fn eventOf(e: EventType) -> Event? { return events.get(e) }

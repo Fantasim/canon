@@ -79,14 +79,42 @@
 29:2-8 "expect" keyword.other.canon
 29:22-85 "\"the role reads cost, retired in 2: bound it with untilVersion\"" string.quoted.double.canon
 32:0-4 "test" keyword.other.canon
-32:5-38 "\"the lookups agree with the data\"" string.quoted.double.canon
-33:2-8 "expect" keyword.other.canon
-33:32-34 "==" keyword.operator.canon
-33:35-36 "2" constant.numeric.integer.canon
-34:2-8 "expect" keyword.other.canon
-34:31-33 "==" keyword.operator.canon
-34:34-36 "37" constant.numeric.integer.canon
-35:2-8 "expect" keyword.other.canon
-36:2-8 "expect" keyword.other.canon
-36:39-41 "==" keyword.operator.canon
-36:42-43 "0" constant.numeric.integer.canon
+32:5-65 "\"a role whose vocabulary no column of its table holds fails\"" string.quoted.double.canon
+33:2-5 "let" storage.type.canon
+33:11-12 "=" keyword.operator.canon
+34:2-5 "let" storage.type.canon
+34:6-12 "broken" variable.other.property.canon
+34:12-13 ":" punctuation.separator.key.canon
+34:14-19 "Event" entity.name.type.canon
+34:20-21 "=" keyword.operator.canon
+35:4-7 "..." keyword.operator.canon
+36:4-10 "ledger" variable.other.property.canon
+36:10-11 ":" punctuation.separator.key.canon
+36:16-17 "." punctuation.accessor.canon
+36:17-23 "ledger" variable.other.property.canon
+36:23-24 "." punctuation.accessor.canon
+36:24-27 "map" variable.other.property.canon
+36:30-32 "=>" keyword.operator.canon
+36:33-37 "Role" entity.name.type.canon
+36:40-43 "..." keyword.operator.canon
+36:46-50 "rows" variable.other.property.canon
+36:50-51 ":" punctuation.separator.key.canon
+36:59-61 "of" variable.other.property.canon
+36:61-62 ":" punctuation.separator.key.canon
+36:75-80 "kinds" variable.other.property.canon
+36:80-81 ":" punctuation.separator.key.canon
+36:83-90 "UNKNOWN" constant.other.canon
+38:2-8 "expect" keyword.other.canon
+38:22-64 "\"no column of this table holds grant_kind\"" string.quoted.double.canon
+41:0-4 "test" keyword.other.canon
+41:5-38 "\"the lookups agree with the data\"" string.quoted.double.canon
+42:2-8 "expect" keyword.other.canon
+42:32-34 "==" keyword.operator.canon
+42:35-36 "2" constant.numeric.integer.canon
+43:2-8 "expect" keyword.other.canon
+43:31-33 "==" keyword.operator.canon
+43:34-36 "37" constant.numeric.integer.canon
+44:2-8 "expect" keyword.other.canon
+45:2-8 "expect" keyword.other.canon
+45:39-41 "==" keyword.operator.canon
+45:42-43 "0" constant.numeric.integer.canon

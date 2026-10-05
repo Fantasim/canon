@@ -150,18 +150,21 @@ fn columnDoc(ev: Event, c: Column) -> CatalogColumn {
   }
 }
 
-/// The rows role `r` covers; none: every row.
-fn kindsDoc(r: Role) -> CatalogKinds? {
+/// The rows role `r` of event `ev` covers; none: every row.
+fn kindsDoc(ev: Event, r: Role) -> CatalogKinds? {
   return match r.rows {
     every => none
-    some(s) => CatalogKinds { column: s.column.name, values: [String(k) for k in s.kinds] }
+    some(s) => CatalogKinds {
+      column: columnOf(ev, s.of).name
+      values: [String(k) for k in s.kinds]
+    }
   }
 }
 
-/// Ledger role `r`, as the catalogue lists it.
-fn roleDoc(r: Role) -> CatalogRole {
+/// Ledger role `r` of event `ev`, as the catalogue lists it.
+fn roleDoc(ev: Event, r: Role) -> CatalogRole {
   return {
-    kinds: kindsDoc(r)
+    kinds: kindsDoc(ev, r)
     currency: r.currency
     bucket: r.bucket
     sign: r.sign
@@ -195,7 +198,7 @@ fn eventDoc(e: EventType) -> CatalogEvent {
     wireSize: wireSize(e)
     description: ev.description
     columns: [columnDoc(ev, c) for c in headerColumns.values() + ev.columns]
-    ledger: [roleDoc(r) for r in ev.ledger]
+    ledger: [roleDoc(ev, r) for r in ev.ledger]
   }
 }
 

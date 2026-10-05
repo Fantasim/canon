@@ -14,7 +14,7 @@ import (
 )
 
 // telemetryTests is how many test blocks examples/telemetry/checks.canon holds.
-const telemetryTests = 5
+const telemetryTests = 6
 
 // SPEC §18: telemetry's test blocks pass, pinning coverage (L-0111) and the V2–V4 history checks on broken tables.
 func TestTelemetryCanonTests(t *testing.T) {

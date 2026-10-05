@@ -29,6 +29,15 @@ test "a role reading a retired column without a bound fails V4" {
   expect broken fails "the role reads cost, retired in 2: bound it with untilVersion"
 }
 
+test "a role whose vocabulary no column of its table holds fails" {
+  let farm = events[farm_events]
+  let broken: Event = {
+    ...farm
+    ledger: farm.ledger.map(r => Role { ...r, rows: some { of: grant_kind, kinds: [UNKNOWN] } })
+  }
+  expect broken fails "no column of this table holds grant_kind"
+}
+
 test "the lookups agree with the data" {
   expect versionOf(farm_events) == 2
   expect wireSize(farm_events) == 37

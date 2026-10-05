@@ -1,4 +1,4 @@
-File: File FileKind=source @1:1-38:1
+File: File FileKind=source @1:1-47:1
   Package: QualifiedName telemetry @1:9-1:18
   Decls[0]: TestDecl @5:1-10:2
     Name: StringLit @5:6-5:54
@@ -135,35 +135,84 @@ File: File FileKind=source @1:1-38:1
         Outcome: Ident fails @29:17-29:22
         Message: StringLit @29:23-29:86
           Parts[0]: text "the role reads cost, retired in 2: bound it with untilVersion"
-  Decls[4]: TestDecl @32:1-37:2
-    Name: StringLit @32:6-32:39
+  Decls[4]: TestDecl @32:1-39:2
+    Name: StringLit @32:6-32:66
+      Parts[0]: text "a role whose vocabulary no column of its table holds fails"
+    Body: Block @32:67-39:2
+      Stmts[0]: LetStmt @33:3-33:33
+        Name: Ident farm @33:7-33:11
+        Value: IndexExpr @33:14-33:33
+          X: IdentExpr events @33:14-33:20
+          Index: IdentExpr farm_events @33:21-33:32
+      Stmts[1]: LetStmt @34:3-37:4
+        Name: Ident broken @34:7-34:13
+        Type: NamedType @34:15-34:20
+          Name: QualifiedName Event @34:15-34:20
+        Value: BraceLit @34:23-37:4
+          Items[0]: SpreadItem @35:5-35:12
+            X: IdentExpr farm @35:8-35:12
+          Items[1]: FieldItem @36:5-36:97
+            Name: Ident ledger @36:5-36:11
+            Value: CallExpr @36:13-36:97
+              Fun: SelectorExpr @36:13-36:28
+                X: SelectorExpr @36:13-36:24
+                  X: IdentExpr farm @36:13-36:17
+                  Name: Ident ledger @36:18-36:24
+                Name: Ident map @36:25-36:28
+              Args[0]: Arg @36:29-36:96
+                Value: LambdaExpr @36:29-36:96
+                  Params[0]: Ident r @36:29-36:30
+                  Body: TypedLit @36:34-36:96
+                    Type: QualifiedName Role @36:34-36:38
+                    Lit: BraceLit @36:39-36:96
+                      Items[0]: SpreadItem @36:41-36:45
+                        X: IdentExpr r @36:44-36:45
+                      Items[1]: FieldItem @36:47-36:94
+                        Name: Ident rows @36:47-36:51
+                        Value: TypedLit @36:53-36:94
+                          Type: QualifiedName some @36:53-36:57
+                          Lit: BraceLit @36:58-36:94
+                            Items[0]: FieldItem @36:60-36:74
+                              Name: Ident of @36:60-36:62
+                              Value: IdentExpr grant_kind @36:64-36:74
+                            Items[1]: FieldItem @36:76-36:92
+                              Name: Ident kinds @36:76-36:81
+                              Value: ListLit @36:83-36:92
+                                Elems[0]: IdentExpr UNKNOWN @36:84-36:91
+      Stmts[2]: ExpectStmt @38:3-38:65
+        X: IdentExpr broken @38:10-38:16
+        Outcome: Ident fails @38:17-38:22
+        Message: StringLit @38:23-38:65
+          Parts[0]: text "no column of this table holds grant_kind"
+  Decls[5]: TestDecl @41:1-46:2
+    Name: StringLit @41:6-41:39
       Parts[0]: text "the lookups agree with the data"
-    Body: Block @32:40-37:2
-      Stmts[0]: ExpectStmt @33:3-33:37
-        X: BinaryExpr Op=== @33:10-33:37
-          X: CallExpr @33:10-33:32
-            Fun: IdentExpr versionOf @33:10-33:19
-            Args[0]: Arg @33:20-33:31
-              Value: IdentExpr farm_events @33:20-33:31
-          Y: IntLit Value=2 @33:36-33:37
-      Stmts[1]: ExpectStmt @34:3-34:37
-        X: BinaryExpr Op=== @34:10-34:37
-          X: CallExpr @34:10-34:31
-            Fun: IdentExpr wireSize @34:10-34:18
-            Args[0]: Arg @34:19-34:30
-              Value: IdentExpr farm_events @34:19-34:30
-          Y: IntLit Value=37 @34:35-34:37
-      Stmts[2]: ExpectStmt @35:3-35:38
-        X: CallExpr @35:10-35:38
-          Fun: IdentExpr isRetired @35:10-35:19
-          Args[0]: Arg @35:20-35:37
-            Value: IdentExpr world_boss_spawns @35:20-35:37
-      Stmts[3]: ExpectStmt @36:3-36:44
-        X: BinaryExpr Op=== @36:10-36:44
-          X: CallExpr @36:10-36:39
-            Fun: IdentExpr versionOf @36:10-36:19
-            Args[0]: Arg @36:20-36:38
-              Value: IdentExpr mail_item_received @36:20-36:38
-          Y: IntLit Value=0 @36:43-36:44
+    Body: Block @41:40-46:2
+      Stmts[0]: ExpectStmt @42:3-42:37
+        X: BinaryExpr Op=== @42:10-42:37
+          X: CallExpr @42:10-42:32
+            Fun: IdentExpr versionOf @42:10-42:19
+            Args[0]: Arg @42:20-42:31
+              Value: IdentExpr farm_events @42:20-42:31
+          Y: IntLit Value=2 @42:36-42:37
+      Stmts[1]: ExpectStmt @43:3-43:37
+        X: BinaryExpr Op=== @43:10-43:37
+          X: CallExpr @43:10-43:31
+            Fun: IdentExpr wireSize @43:10-43:18
+            Args[0]: Arg @43:19-43:30
+              Value: IdentExpr farm_events @43:19-43:30
+          Y: IntLit Value=37 @43:35-43:37
+      Stmts[2]: ExpectStmt @44:3-44:38
+        X: CallExpr @44:10-44:38
+          Fun: IdentExpr isRetired @44:10-44:19
+          Args[0]: Arg @44:20-44:37
+            Value: IdentExpr world_boss_spawns @44:20-44:37
+      Stmts[3]: ExpectStmt @45:3-45:44
+        X: BinaryExpr Op=== @45:10-45:44
+          X: CallExpr @45:10-45:39
+            Fun: IdentExpr versionOf @45:10-45:19
+            Args[0]: Arg @45:20-45:38
+              Value: IdentExpr mail_item_received @45:20-45:38
+          Y: IntLit Value=0 @45:43-45:44
 == findings
 0 errors, 0 warnings in 1 package (…)

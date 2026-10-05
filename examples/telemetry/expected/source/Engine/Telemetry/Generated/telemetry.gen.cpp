@@ -90,7 +90,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[0];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(3);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::BUYBACK_DELIVERY);
@@ -111,7 +110,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[1];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::BOSS_REWARD_MAIL);
@@ -129,7 +127,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[2];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::MAIL_RETURN);
@@ -148,7 +145,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[3];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::PLAYER_MAIL);
@@ -167,7 +163,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[4];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::AUCTION_ESCROW_RECOVERY);
@@ -186,7 +181,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[5];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::PERIN_OVERFLOW);
@@ -205,7 +199,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[6];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::FARM_HARVEST);
@@ -224,7 +217,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[7];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::STARTER_ITEM);
@@ -243,7 +235,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[0].second.ledger_[8];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "grant_kind";
                 r4.of_ = Vocabulary::grant_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<6>(GrantKind::UNKNOWN);
@@ -458,7 +449,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[5].second.ledger_[0];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "kind";
                 r4.of_ = Vocabulary::farm_event_kind;
                 r4.kinds_.resize(3);
                 r4.kinds_[0].value_.emplace<0>(FarmEventKind::Purchase);
@@ -547,7 +537,6 @@ TelemetryAccess::Data TelemetryAccess::Build() {
             auto& r3 = r2[6].second.ledger_[0];
             {
                 auto& r4 = r3.rows_.value_.emplace<1>();
-                r4.column_ = "kind";
                 r4.of_ = Vocabulary::sovereign_event_kind;
                 r4.kinds_.resize(1);
                 r4.kinds_[0].value_.emplace<1>(SovereignEventKind::RewardGranted);

@@ -1130,12 +1130,10 @@ private:
     std::variant<FarmEventKind, SovereignEventKind, SovereignRole, SovereignDoctrine, SovereignPower, LifecycleKind, GrantKind> value_;
 };
 
-/// The rows whose `column` holds one of `kinds`, members of the column's vocabulary.
+/// The rows whose `of` column holds one of `kinds`; the table has exactly one such column.
 class RowsSome {
 public:
-    /// The enum8 column that splits the rows.
-    const std::string& GetColumnKey() const { return column_; }
-    /// Its vocabulary, so the kinds are typed.
+    /// The vocabulary whose column splits the rows.
     Vocabulary GetOf() const { return of_; }
     /// The members covered.
     const std::vector<Member>& GetKinds() const { return kinds_; }
@@ -1143,7 +1141,6 @@ public:
 private:
     friend struct detail::TelemetryAccess;
 
-    std::string column_;
     Vocabulary of_{};
     std::vector<Member> kinds_;
 };

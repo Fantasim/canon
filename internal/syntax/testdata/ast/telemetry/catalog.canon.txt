@@ -1,4 +1,4 @@
-File: File FileKind=source @1:1-219:1
+File: File FileKind=source @1:1-222:1
   Package: QualifiedName telemetry @1:9-1:18
   Decls[0]: RecordDecl @10:1-21:2
     Doc: DocComment "The catalogue document." @9:1-9:28
@@ -411,19 +411,23 @@ File: File FileKind=source @1:1-219:1
                   Name: Ident name @149:54-149:58
               Else: ExprBody @149:66-149:74
                 X: NoneLit @149:68-149:72
-  Decls[8]: FnDecl @154:1-159:2
-    Doc: DocComment "The rows role `r` covers; none: every row." @153:1-153:47
+  Decls[8]: FnDecl @154:1-162:2
+    Doc: DocComment "The rows role `r` of event `ev` covers; none: every row." @153:1-153:61
     Name: Ident kindsDoc @154:4-154:12
-    Params[0]: Param @154:13-154:20
-      Name: Ident r @154:13-154:14
-      Type: NamedType @154:16-154:20
-        Name: QualifiedName Role @154:16-154:20
-    Result: OptionalType @154:25-154:38
-      Elem: NamedType @154:25-154:37
-        Name: QualifiedName CatalogKinds @154:25-154:37
-    Body: Block @154:39-159:2
-      Stmts[0]: ReturnStmt @155:3-158:4
-        Value: MatchExpr @155:10-158:4
+    Params[0]: Param @154:13-154:22
+      Name: Ident ev @154:13-154:15
+      Type: NamedType @154:17-154:22
+        Name: QualifiedName Event @154:17-154:22
+    Params[1]: Param @154:24-154:31
+      Name: Ident r @154:24-154:25
+      Type: NamedType @154:27-154:31
+        Name: QualifiedName Role @154:27-154:31
+    Result: OptionalType @154:36-154:49
+      Elem: NamedType @154:36-154:48
+        Name: QualifiedName CatalogKinds @154:36-154:48
+    Body: Block @154:50-162:2
+      Stmts[0]: ReturnStmt @155:3-161:4
+        Value: MatchExpr @155:10-161:4
           Scrutinee: SelectorExpr @155:16-155:22
             X: IdentExpr r @155:16-155:17
             Name: Ident rows @155:18-155:22
@@ -431,355 +435,368 @@ File: File FileKind=source @1:1-219:1
             Patterns[0]: Pattern @156:5-156:10
               Name: QualifiedName every @156:5-156:10
             Body: NoneLit @156:14-156:18
-          Arms[1]: MatchArm @157:5-157:92
+          Arms[1]: MatchArm @157:5-160:6
             Patterns[0]: Pattern @157:5-157:12
               Name: QualifiedName some @157:5-157:9
               Binder: Ident s @157:10-157:11
-            Body: TypedLit @157:16-157:92
+            Body: TypedLit @157:16-160:6
               Type: QualifiedName CatalogKinds @157:16-157:28
-              Lit: BraceLit @157:29-157:92
-                Items[0]: FieldItem @157:31-157:52
-                  Name: Ident column @157:31-157:37
-                  Value: SelectorExpr @157:39-157:52
-                    X: SelectorExpr @157:39-157:47
-                      X: IdentExpr s @157:39-157:40
-                      Name: Ident column @157:41-157:47
-                    Name: Ident name @157:48-157:52
-                Items[1]: FieldItem @157:54-157:90
-                  Name: Ident values @157:54-157:60
-                  Value: ListComp @157:62-157:90
-                    Elem: CallExpr @157:63-157:72
-                      Fun: IdentExpr String @157:63-157:69
-                      Args[0]: Arg @157:70-157:71
-                        Value: IdentExpr k @157:70-157:71
-                    Clauses[0]: CompClause Keyword=for @157:73-157:89
-                      Vars[0]: Ident k @157:77-157:78
-                      X: SelectorExpr @157:82-157:89
-                        X: IdentExpr s @157:82-157:83
-                        Name: Ident kinds @157:84-157:89
-  Decls[9]: FnDecl @162:1-180:2
-    Doc: DocComment "Ledger role `r`, as the catalogue lists it." @161:1-161:48
-    Name: Ident roleDoc @162:4-162:11
-    Params[0]: Param @162:12-162:19
-      Name: Ident r @162:12-162:13
-      Type: NamedType @162:15-162:19
-        Name: QualifiedName Role @162:15-162:19
-    Result: NamedType @162:24-162:35
-      Name: QualifiedName CatalogRole @162:24-162:35
-    Body: Block @162:36-180:2
-      Stmts[0]: ReturnStmt @163:3-179:4
-        Value: BraceLit @163:10-179:4
-          Items[0]: FieldItem @164:5-164:23
-            Name: Ident kinds @164:5-164:10
-            Value: CallExpr @164:12-164:23
-              Fun: IdentExpr kindsDoc @164:12-164:20
-              Args[0]: Arg @164:21-164:22
-                Value: IdentExpr r @164:21-164:22
-          Items[1]: FieldItem @165:5-165:25
-            Name: Ident currency @165:5-165:13
-            Value: SelectorExpr @165:15-165:25
-              X: IdentExpr r @165:15-165:16
-              Name: Ident currency @165:17-165:25
-          Items[2]: FieldItem @166:5-166:21
-            Name: Ident bucket @166:5-166:11
-            Value: SelectorExpr @166:13-166:21
-              X: IdentExpr r @166:13-166:14
-              Name: Ident bucket @166:15-166:21
-          Items[3]: FieldItem @167:5-167:17
-            Name: Ident sign @167:5-167:9
-            Value: SelectorExpr @167:11-167:17
-              X: IdentExpr r @167:11-167:12
-              Name: Ident sign @167:13-167:17
-          Items[4]: FieldItem @168:5-168:19
-            Name: Ident token @168:5-168:10
-            Value: SelectorExpr @168:12-168:19
-              X: IdentExpr r @168:12-168:13
-              Name: Ident token @168:14-168:19
-          Items[5]: FieldItem @169:5-169:15
-            Name: Ident leg @169:5-169:8
-            Value: SelectorExpr @169:10-169:15
-              X: IdentExpr r @169:10-169:11
-              Name: Ident leg @169:12-169:15
-          Items[6]: FieldItem @170:5-170:21
-            Name: Ident filter @170:5-170:11
-            Value: SelectorExpr @170:13-170:21
-              X: IdentExpr r @170:13-170:14
-              Name: Ident filter @170:15-170:21
-          Items[7]: FieldItem @171:5-171:27
-            Name: Ident amount @171:5-171:11
-            Value: SelectorExpr Optional @171:13-171:27
-              X: SelectorExpr @171:13-171:21
-                X: IdentExpr r @171:13-171:14
-                Name: Ident amount @171:15-171:21
-              Name: Ident name @171:23-171:27
-          Items[8]: FieldItem @172:5-172:23
-            Name: Ident item @172:5-172:9
-            Value: SelectorExpr Optional @172:11-172:23
-              X: SelectorExpr @172:11-172:17
-                X: IdentExpr r @172:11-172:12
-                Name: Ident item @172:13-172:17
-              Name: Ident name @172:19-172:23
-          Items[9]: FieldItem @173:5-173:45
-            Name: Ident player @173:5-173:11
-            Value: BinaryExpr Op=?? @173:13-173:45
-              X: SelectorExpr Optional @173:13-173:27
-                X: SelectorExpr @173:13-173:21
-                  X: IdentExpr r @173:13-173:14
-                  Name: Ident player @173:15-173:21
-                Name: Ident name @173:23-173:27
-              Y: CallExpr @173:31-173:45
-                Fun: IdentExpr playerColumn @173:31-173:43
-          Items[10]: FieldItem @174:5-174:39
-            Name: Ident counterparty @174:5-174:17
-            Value: SelectorExpr Optional @174:19-174:39
-              X: SelectorExpr @174:19-174:33
-                X: IdentExpr r @174:19-174:20
-                Name: Ident counterparty @174:21-174:33
-              Name: Ident name @174:35-174:39
-          Items[11]: FieldItem @175:5-175:23
-            Name: Ident counted @175:5-175:12
-            Value: SelectorExpr @175:14-175:23
-              X: IdentExpr r @175:14-175:15
-              Name: Ident counted @175:16-175:23
-          Items[12]: FieldItem @176:5-176:23
-            Name: Ident dedupOf @176:5-176:12
-            Value: SelectorExpr @176:14-176:23
-              X: IdentExpr r @176:14-176:15
-              Name: Ident dedupOf @176:16-176:23
-          Items[13]: FieldItem @177:5-177:33
-            Name: Ident untilVersion @177:5-177:17
-            Value: SelectorExpr @177:19-177:33
-              X: IdentExpr r @177:19-177:20
-              Name: Ident untilVersion @177:21-177:33
-          Items[14]: FieldItem @178:5-178:17
-            Name: Ident note @178:5-178:9
-            Value: SelectorExpr @178:11-178:17
-              X: IdentExpr r @178:11-178:12
-              Name: Ident note @178:13-178:17
-  Decls[10]: FnDecl @183:1-200:2
-    Doc: DocComment "Event type `e`: its live table, or its tombstone." @182:1-182:54
-    Name: Ident eventDoc @183:4-183:12
-    Params[0]: Param @183:13-183:25
-      Name: Ident e @183:13-183:14
-      Type: NamedType @183:16-183:25
-        Name: QualifiedName EventType @183:16-183:25
-    Result: NamedType @183:30-183:42
-      Name: QualifiedName CatalogEvent @183:30-183:42
-    Body: Block @183:43-200:2
-      Stmts[0]: LetStmt @184:3-184:22
-        Name: Ident ev @184:7-184:9
-        Value: CallExpr @184:12-184:22
-          Fun: IdentExpr eventOf @184:12-184:19
-          Args[0]: Arg @184:20-184:21
-            Value: IdentExpr e @184:20-184:21
-      Stmts[1]: IfStmt @185:3-185:86
-        Cond: BinaryExpr Op=== @185:6-185:16
-          X: IdentExpr ev @185:6-185:8
-          Y: NoneLit @185:12-185:16
-        Then: Block @185:17-185:86
-          Stmts[0]: ReturnStmt @185:19-185:84
-            Value: TypedLit @185:26-185:84
-              Type: QualifiedName CatalogEvent.retired @185:26-185:46
-              Lit: BraceLit @185:47-185:84
-                Items[0]: FieldItem @185:49-185:59
-                  Name: Ident id @185:49-185:51
-                  Value: SelectorExpr @185:53-185:59
-                    X: IdentExpr e @185:53-185:54
-                    Name: Ident code @185:55-185:59
-                Items[1]: FieldItem @185:61-185:82
-                  Name: Ident tableName @185:61-185:70
-                  Value: CallExpr @185:72-185:82
-                    Fun: IdentExpr tableOf @185:72-185:79
-                    Args[0]: Arg @185:80-185:81
-                      Value: IdentExpr e @185:80-185:81
-      Stmts[2]: ReturnStmt @186:3-199:4
-        Value: TypedLit @186:10-199:4
-          Type: QualifiedName CatalogEvent.live @186:10-186:27
-          Lit: BraceLit @186:28-199:4
-            Items[0]: FieldItem @187:5-187:15
-              Name: Ident id @187:5-187:7
-              Value: SelectorExpr @187:9-187:15
-                X: IdentExpr e @187:9-187:10
-                Name: Ident code @187:11-187:15
-            Items[1]: FieldItem @188:5-188:26
-              Name: Ident tableName @188:5-188:14
-              Value: CallExpr @188:16-188:26
-                Fun: IdentExpr tableOf @188:16-188:23
-                Args[0]: Arg @188:24-188:25
-                  Value: IdentExpr e @188:24-188:25
-            Items[2]: FieldItem @189:5-189:24
-              Name: Ident version @189:5-189:12
-              Value: SelectorExpr @189:14-189:24
-                X: IdentExpr ev @189:14-189:16
-                Name: Ident version @189:17-189:24
-            Items[3]: FieldItem @190:5-190:20
-              Name: Ident since @190:5-190:10
-              Value: SelectorExpr @190:12-190:20
-                X: IdentExpr ev @190:12-190:14
-                Name: Ident since @190:15-190:20
-            Items[4]: FieldItem @191:5-191:18
-              Name: Ident tier @191:5-191:9
-              Value: SelectorExpr @191:11-191:18
-                X: IdentExpr ev @191:11-191:13
-                Name: Ident tier @191:14-191:18
-            Items[5]: FieldItem @192:5-192:28
-              Name: Ident producers @192:5-192:14
-              Value: SelectorExpr @192:16-192:28
-                X: IdentExpr ev @192:16-192:18
-                Name: Ident producers @192:19-192:28
-            Items[6]: FieldItem @193:5-193:24
-              Name: Ident enqueue @193:5-193:12
-              Value: SelectorExpr @193:14-193:24
-                X: IdentExpr ev @193:14-193:16
-                Name: Ident enqueue @193:17-193:24
-            Items[7]: FieldItem @194:5-194:36
-              Name: Ident hasInstanceId @194:5-194:18
-              Value: CallExpr @194:20-194:36
-                Fun: IdentExpr hasInstanceId @194:20-194:33
-                Args[0]: Arg @194:34-194:35
-                  Value: IdentExpr e @194:34-194:35
-            Items[8]: FieldItem @195:5-195:26
-              Name: Ident wireSize @195:5-195:13
-              Value: CallExpr @195:15-195:26
-                Fun: IdentExpr wireSize @195:15-195:23
-                Args[0]: Arg @195:24-195:25
-                  Value: IdentExpr e @195:24-195:25
-            Items[9]: FieldItem @196:5-196:32
-              Name: Ident description @196:5-196:16
-              Value: SelectorExpr @196:18-196:32
-                X: IdentExpr ev @196:18-196:20
-                Name: Ident description @196:21-196:32
-            Items[10]: FieldItem @197:5-197:77
-              Name: Ident columns @197:5-197:12
-              Value: ListComp @197:14-197:77
-                Elem: CallExpr @197:15-197:31
-                  Fun: IdentExpr columnDoc @197:15-197:24
-                  Args[0]: Arg @197:25-197:27
-                    Value: IdentExpr ev @197:25-197:27
-                  Args[1]: Arg @197:29-197:30
-                    Value: IdentExpr c @197:29-197:30
-                Clauses[0]: CompClause Keyword=for @197:32-197:76
-                  Vars[0]: Ident c @197:36-197:37
-                  X: BinaryExpr Op=+ @197:41-197:76
-                    X: CallExpr @197:41-197:63
-                      Fun: SelectorExpr @197:41-197:61
-                        X: IdentExpr headerColumns @197:41-197:54
-                        Name: Ident values @197:55-197:61
-                    Y: SelectorExpr @197:66-197:76
-                      X: IdentExpr ev @197:66-197:68
-                      Name: Ident columns @197:69-197:76
-            Items[11]: FieldItem @198:5-198:44
-              Name: Ident ledger @198:5-198:11
-              Value: ListComp @198:13-198:44
-                Elem: CallExpr @198:14-198:24
-                  Fun: IdentExpr roleDoc @198:14-198:21
-                  Args[0]: Arg @198:22-198:23
-                    Value: IdentExpr r @198:22-198:23
-                Clauses[0]: CompClause Keyword=for @198:25-198:43
-                  Vars[0]: Ident r @198:29-198:30
-                  X: SelectorExpr @198:34-198:43
-                    X: IdentExpr ev @198:34-198:36
-                    Name: Ident ledger @198:37-198:43
-  Decls[11]: FnDecl @203:1-206:2
-    Doc: DocComment "The enum view of vocabulary `v`." @202:1-202:37
-    Name: Ident enumDoc @203:4-203:11
-    Params[0]: Param @203:12-203:25
-      Name: Ident v @203:12-203:13
-      Type: NamedType @203:15-203:25
-        Name: QualifiedName Vocabulary @203:15-203:25
-    Result: NamedType @203:30-203:41
-      Name: QualifiedName CatalogEnum @203:30-203:41
-    Body: Block @203:42-206:2
-      Stmts[0]: LetStmt @204:3-204:23
-        Name: Ident info @204:7-204:11
-        Value: CallExpr @204:14-204:23
-          Fun: IdentExpr enumOf @204:14-204:20
-          Args[0]: Arg @204:21-204:22
-            Value: IdentExpr v @204:21-204:22
-      Stmts[1]: ReturnStmt @205:3-205:72
-        Value: BraceLit @205:10-205:72
-          Items[0]: FieldItem @205:12-205:27
-            Name: Ident name @205:12-205:16
-            Value: SelectorExpr @205:18-205:27
-              X: IdentExpr info @205:18-205:22
-              Name: Ident name @205:23-205:27
-          Items[1]: FieldItem @205:29-205:49
-            Name: Ident viewName @205:29-205:37
-            Value: StringLit @205:39-205:49
+              Lit: BraceLit @157:29-160:6
+                Items[0]: FieldItem @158:7-158:38
+                  Name: Ident column @158:7-158:13
+                  Value: SelectorExpr @158:15-158:38
+                    X: CallExpr @158:15-158:33
+                      Fun: IdentExpr columnOf @158:15-158:23
+                      Args[0]: Arg @158:24-158:26
+                        Value: IdentExpr ev @158:24-158:26
+                      Args[1]: Arg @158:28-158:32
+                        Value: SelectorExpr @158:28-158:32
+                          X: IdentExpr s @158:28-158:29
+                          Name: Ident of @158:30-158:32
+                    Name: Ident name @158:34-158:38
+                Items[1]: FieldItem @159:7-159:43
+                  Name: Ident values @159:7-159:13
+                  Value: ListComp @159:15-159:43
+                    Elem: CallExpr @159:16-159:25
+                      Fun: IdentExpr String @159:16-159:22
+                      Args[0]: Arg @159:23-159:24
+                        Value: IdentExpr k @159:23-159:24
+                    Clauses[0]: CompClause Keyword=for @159:26-159:42
+                      Vars[0]: Ident k @159:30-159:31
+                      X: SelectorExpr @159:35-159:42
+                        X: IdentExpr s @159:35-159:36
+                        Name: Ident kinds @159:37-159:42
+  Decls[9]: FnDecl @165:1-183:2
+    Doc: DocComment "Ledger role `r` of event `ev`, as the catalogue lists it." @164:1-164:62
+    Name: Ident roleDoc @165:4-165:11
+    Params[0]: Param @165:12-165:21
+      Name: Ident ev @165:12-165:14
+      Type: NamedType @165:16-165:21
+        Name: QualifiedName Event @165:16-165:21
+    Params[1]: Param @165:23-165:30
+      Name: Ident r @165:23-165:24
+      Type: NamedType @165:26-165:30
+        Name: QualifiedName Role @165:26-165:30
+    Result: NamedType @165:35-165:46
+      Name: QualifiedName CatalogRole @165:35-165:46
+    Body: Block @165:47-183:2
+      Stmts[0]: ReturnStmt @166:3-182:4
+        Value: BraceLit @166:10-182:4
+          Items[0]: FieldItem @167:5-167:27
+            Name: Ident kinds @167:5-167:10
+            Value: CallExpr @167:12-167:27
+              Fun: IdentExpr kindsDoc @167:12-167:20
+              Args[0]: Arg @167:21-167:23
+                Value: IdentExpr ev @167:21-167:23
+              Args[1]: Arg @167:25-167:26
+                Value: IdentExpr r @167:25-167:26
+          Items[1]: FieldItem @168:5-168:25
+            Name: Ident currency @168:5-168:13
+            Value: SelectorExpr @168:15-168:25
+              X: IdentExpr r @168:15-168:16
+              Name: Ident currency @168:17-168:25
+          Items[2]: FieldItem @169:5-169:21
+            Name: Ident bucket @169:5-169:11
+            Value: SelectorExpr @169:13-169:21
+              X: IdentExpr r @169:13-169:14
+              Name: Ident bucket @169:15-169:21
+          Items[3]: FieldItem @170:5-170:17
+            Name: Ident sign @170:5-170:9
+            Value: SelectorExpr @170:11-170:17
+              X: IdentExpr r @170:11-170:12
+              Name: Ident sign @170:13-170:17
+          Items[4]: FieldItem @171:5-171:19
+            Name: Ident token @171:5-171:10
+            Value: SelectorExpr @171:12-171:19
+              X: IdentExpr r @171:12-171:13
+              Name: Ident token @171:14-171:19
+          Items[5]: FieldItem @172:5-172:15
+            Name: Ident leg @172:5-172:8
+            Value: SelectorExpr @172:10-172:15
+              X: IdentExpr r @172:10-172:11
+              Name: Ident leg @172:12-172:15
+          Items[6]: FieldItem @173:5-173:21
+            Name: Ident filter @173:5-173:11
+            Value: SelectorExpr @173:13-173:21
+              X: IdentExpr r @173:13-173:14
+              Name: Ident filter @173:15-173:21
+          Items[7]: FieldItem @174:5-174:27
+            Name: Ident amount @174:5-174:11
+            Value: SelectorExpr Optional @174:13-174:27
+              X: SelectorExpr @174:13-174:21
+                X: IdentExpr r @174:13-174:14
+                Name: Ident amount @174:15-174:21
+              Name: Ident name @174:23-174:27
+          Items[8]: FieldItem @175:5-175:23
+            Name: Ident item @175:5-175:9
+            Value: SelectorExpr Optional @175:11-175:23
+              X: SelectorExpr @175:11-175:17
+                X: IdentExpr r @175:11-175:12
+                Name: Ident item @175:13-175:17
+              Name: Ident name @175:19-175:23
+          Items[9]: FieldItem @176:5-176:45
+            Name: Ident player @176:5-176:11
+            Value: BinaryExpr Op=?? @176:13-176:45
+              X: SelectorExpr Optional @176:13-176:27
+                X: SelectorExpr @176:13-176:21
+                  X: IdentExpr r @176:13-176:14
+                  Name: Ident player @176:15-176:21
+                Name: Ident name @176:23-176:27
+              Y: CallExpr @176:31-176:45
+                Fun: IdentExpr playerColumn @176:31-176:43
+          Items[10]: FieldItem @177:5-177:39
+            Name: Ident counterparty @177:5-177:17
+            Value: SelectorExpr Optional @177:19-177:39
+              X: SelectorExpr @177:19-177:33
+                X: IdentExpr r @177:19-177:20
+                Name: Ident counterparty @177:21-177:33
+              Name: Ident name @177:35-177:39
+          Items[11]: FieldItem @178:5-178:23
+            Name: Ident counted @178:5-178:12
+            Value: SelectorExpr @178:14-178:23
+              X: IdentExpr r @178:14-178:15
+              Name: Ident counted @178:16-178:23
+          Items[12]: FieldItem @179:5-179:23
+            Name: Ident dedupOf @179:5-179:12
+            Value: SelectorExpr @179:14-179:23
+              X: IdentExpr r @179:14-179:15
+              Name: Ident dedupOf @179:16-179:23
+          Items[13]: FieldItem @180:5-180:33
+            Name: Ident untilVersion @180:5-180:17
+            Value: SelectorExpr @180:19-180:33
+              X: IdentExpr r @180:19-180:20
+              Name: Ident untilVersion @180:21-180:33
+          Items[14]: FieldItem @181:5-181:17
+            Name: Ident note @181:5-181:9
+            Value: SelectorExpr @181:11-181:17
+              X: IdentExpr r @181:11-181:12
+              Name: Ident note @181:13-181:17
+  Decls[10]: FnDecl @186:1-203:2
+    Doc: DocComment "Event type `e`: its live table, or its tombstone." @185:1-185:54
+    Name: Ident eventDoc @186:4-186:12
+    Params[0]: Param @186:13-186:25
+      Name: Ident e @186:13-186:14
+      Type: NamedType @186:16-186:25
+        Name: QualifiedName EventType @186:16-186:25
+    Result: NamedType @186:30-186:42
+      Name: QualifiedName CatalogEvent @186:30-186:42
+    Body: Block @186:43-203:2
+      Stmts[0]: LetStmt @187:3-187:22
+        Name: Ident ev @187:7-187:9
+        Value: CallExpr @187:12-187:22
+          Fun: IdentExpr eventOf @187:12-187:19
+          Args[0]: Arg @187:20-187:21
+            Value: IdentExpr e @187:20-187:21
+      Stmts[1]: IfStmt @188:3-188:86
+        Cond: BinaryExpr Op=== @188:6-188:16
+          X: IdentExpr ev @188:6-188:8
+          Y: NoneLit @188:12-188:16
+        Then: Block @188:17-188:86
+          Stmts[0]: ReturnStmt @188:19-188:84
+            Value: TypedLit @188:26-188:84
+              Type: QualifiedName CatalogEvent.retired @188:26-188:46
+              Lit: BraceLit @188:47-188:84
+                Items[0]: FieldItem @188:49-188:59
+                  Name: Ident id @188:49-188:51
+                  Value: SelectorExpr @188:53-188:59
+                    X: IdentExpr e @188:53-188:54
+                    Name: Ident code @188:55-188:59
+                Items[1]: FieldItem @188:61-188:82
+                  Name: Ident tableName @188:61-188:70
+                  Value: CallExpr @188:72-188:82
+                    Fun: IdentExpr tableOf @188:72-188:79
+                    Args[0]: Arg @188:80-188:81
+                      Value: IdentExpr e @188:80-188:81
+      Stmts[2]: ReturnStmt @189:3-202:4
+        Value: TypedLit @189:10-202:4
+          Type: QualifiedName CatalogEvent.live @189:10-189:27
+          Lit: BraceLit @189:28-202:4
+            Items[0]: FieldItem @190:5-190:15
+              Name: Ident id @190:5-190:7
+              Value: SelectorExpr @190:9-190:15
+                X: IdentExpr e @190:9-190:10
+                Name: Ident code @190:11-190:15
+            Items[1]: FieldItem @191:5-191:26
+              Name: Ident tableName @191:5-191:14
+              Value: CallExpr @191:16-191:26
+                Fun: IdentExpr tableOf @191:16-191:23
+                Args[0]: Arg @191:24-191:25
+                  Value: IdentExpr e @191:24-191:25
+            Items[2]: FieldItem @192:5-192:24
+              Name: Ident version @192:5-192:12
+              Value: SelectorExpr @192:14-192:24
+                X: IdentExpr ev @192:14-192:16
+                Name: Ident version @192:17-192:24
+            Items[3]: FieldItem @193:5-193:20
+              Name: Ident since @193:5-193:10
+              Value: SelectorExpr @193:12-193:20
+                X: IdentExpr ev @193:12-193:14
+                Name: Ident since @193:15-193:20
+            Items[4]: FieldItem @194:5-194:18
+              Name: Ident tier @194:5-194:9
+              Value: SelectorExpr @194:11-194:18
+                X: IdentExpr ev @194:11-194:13
+                Name: Ident tier @194:14-194:18
+            Items[5]: FieldItem @195:5-195:28
+              Name: Ident producers @195:5-195:14
+              Value: SelectorExpr @195:16-195:28
+                X: IdentExpr ev @195:16-195:18
+                Name: Ident producers @195:19-195:28
+            Items[6]: FieldItem @196:5-196:24
+              Name: Ident enqueue @196:5-196:12
+              Value: SelectorExpr @196:14-196:24
+                X: IdentExpr ev @196:14-196:16
+                Name: Ident enqueue @196:17-196:24
+            Items[7]: FieldItem @197:5-197:36
+              Name: Ident hasInstanceId @197:5-197:18
+              Value: CallExpr @197:20-197:36
+                Fun: IdentExpr hasInstanceId @197:20-197:33
+                Args[0]: Arg @197:34-197:35
+                  Value: IdentExpr e @197:34-197:35
+            Items[8]: FieldItem @198:5-198:26
+              Name: Ident wireSize @198:5-198:13
+              Value: CallExpr @198:15-198:26
+                Fun: IdentExpr wireSize @198:15-198:23
+                Args[0]: Arg @198:24-198:25
+                  Value: IdentExpr e @198:24-198:25
+            Items[9]: FieldItem @199:5-199:32
+              Name: Ident description @199:5-199:16
+              Value: SelectorExpr @199:18-199:32
+                X: IdentExpr ev @199:18-199:20
+                Name: Ident description @199:21-199:32
+            Items[10]: FieldItem @200:5-200:77
+              Name: Ident columns @200:5-200:12
+              Value: ListComp @200:14-200:77
+                Elem: CallExpr @200:15-200:31
+                  Fun: IdentExpr columnDoc @200:15-200:24
+                  Args[0]: Arg @200:25-200:27
+                    Value: IdentExpr ev @200:25-200:27
+                  Args[1]: Arg @200:29-200:30
+                    Value: IdentExpr c @200:29-200:30
+                Clauses[0]: CompClause Keyword=for @200:32-200:76
+                  Vars[0]: Ident c @200:36-200:37
+                  X: BinaryExpr Op=+ @200:41-200:76
+                    X: CallExpr @200:41-200:63
+                      Fun: SelectorExpr @200:41-200:61
+                        X: IdentExpr headerColumns @200:41-200:54
+                        Name: Ident values @200:55-200:61
+                    Y: SelectorExpr @200:66-200:76
+                      X: IdentExpr ev @200:66-200:68
+                      Name: Ident columns @200:69-200:76
+            Items[11]: FieldItem @201:5-201:48
+              Name: Ident ledger @201:5-201:11
+              Value: ListComp @201:13-201:48
+                Elem: CallExpr @201:14-201:28
+                  Fun: IdentExpr roleDoc @201:14-201:21
+                  Args[0]: Arg @201:22-201:24
+                    Value: IdentExpr ev @201:22-201:24
+                  Args[1]: Arg @201:26-201:27
+                    Value: IdentExpr r @201:26-201:27
+                Clauses[0]: CompClause Keyword=for @201:29-201:47
+                  Vars[0]: Ident r @201:33-201:34
+                  X: SelectorExpr @201:38-201:47
+                    X: IdentExpr ev @201:38-201:40
+                    Name: Ident ledger @201:41-201:47
+  Decls[11]: FnDecl @206:1-209:2
+    Doc: DocComment "The enum view of vocabulary `v`." @205:1-205:37
+    Name: Ident enumDoc @206:4-206:11
+    Params[0]: Param @206:12-206:25
+      Name: Ident v @206:12-206:13
+      Type: NamedType @206:15-206:25
+        Name: QualifiedName Vocabulary @206:15-206:25
+    Result: NamedType @206:30-206:41
+      Name: QualifiedName CatalogEnum @206:30-206:41
+    Body: Block @206:42-209:2
+      Stmts[0]: LetStmt @207:3-207:23
+        Name: Ident info @207:7-207:11
+        Value: CallExpr @207:14-207:23
+          Fun: IdentExpr enumOf @207:14-207:20
+          Args[0]: Arg @207:21-207:22
+            Value: IdentExpr v @207:21-207:22
+      Stmts[1]: ReturnStmt @208:3-208:72
+        Value: BraceLit @208:10-208:72
+          Items[0]: FieldItem @208:12-208:27
+            Name: Ident name @208:12-208:16
+            Value: SelectorExpr @208:18-208:27
+              X: IdentExpr info @208:18-208:22
+              Name: Ident name @208:23-208:27
+          Items[1]: FieldItem @208:29-208:49
+            Name: Ident viewName @208:29-208:37
+            Value: StringLit @208:39-208:49
               Parts[0]: text "enum_"
-              Parts[1]: Interp @205:46-205:47
-                X: IdentExpr v @205:46-205:47
-          Items[2]: FieldItem @205:51-205:70
-            Name: Ident values @205:51-205:57
-            Value: SelectorExpr @205:59-205:70
-              X: IdentExpr info @205:59-205:63
-              Name: Ident labels @205:64-205:70
-  Decls[12]: FnDecl @209:1-218:2
-    Doc: DocComment "The catalogue, written as JSON." @208:1-208:36
-    Annotations[0]: Annotation @209:1-209:22
-      Name: Ident text @209:2-209:6
-      Args[0]: AnnotationArg @209:7-209:21
-        Value: StringLit @209:7-209:21
+              Parts[1]: Interp @208:46-208:47
+                X: IdentExpr v @208:46-208:47
+          Items[2]: FieldItem @208:51-208:70
+            Name: Ident values @208:51-208:57
+            Value: SelectorExpr @208:59-208:70
+              X: IdentExpr info @208:59-208:63
+              Name: Ident labels @208:64-208:70
+  Decls[12]: FnDecl @212:1-221:2
+    Doc: DocComment "The catalogue, written as JSON." @211:1-211:36
+    Annotations[0]: Annotation @212:1-212:22
+      Name: Ident text @212:2-212:6
+      Args[0]: AnnotationArg @212:7-212:21
+        Value: StringLit @212:7-212:21
           Parts[0]: text "catalog.json"
-    Mods: Modifiers Export="export" @210:1-210:7
-    Name: Ident catalogJson @210:11-210:22
-    Result: NamedType @210:28-210:38
-      Name: QualifiedName CatalogDoc @210:28-210:38
-    Body: Block @210:39-218:2
-      Stmts[0]: ReturnStmt @211:3-217:4
-        Value: BraceLit @211:10-217:4
-          Items[0]: FieldItem @212:5-212:27
-            Name: Ident format @212:5-212:11
-            Value: IdentExpr CATALOG_FORMAT @212:13-212:27
-          Items[1]: FieldItem @213:5-213:31
-            Name: Ident contract @213:5-213:13
-            Value: IdentExpr CONTRACT_VERSION @213:15-213:31
-          Items[2]: FieldItem @214:5-214:78
-            Name: Ident provenance @214:5-214:15
-            Value: ListComp @214:17-214:78
-              Elem: BraceLit @214:18-214:50
-                Items[0]: FieldItem @214:20-214:32
-                  Name: Ident name @214:20-214:24
-                  Value: SelectorExpr @214:26-214:32
-                    X: IdentExpr p @214:26-214:27
-                    Name: Ident name @214:28-214:32
-                Items[1]: FieldItem @214:34-214:48
-                  Name: Ident sqlType @214:34-214:41
-                  Value: SelectorExpr @214:43-214:48
-                    X: IdentExpr p @214:43-214:44
-                    Name: Ident sql @214:45-214:48
-              Clauses[0]: CompClause Keyword=for @214:51-214:77
-                Vars[0]: Ident p @214:55-214:56
-                X: IdentExpr provenanceColumns @214:60-214:77
-          Items[3]: FieldItem @215:5-215:67
-            Name: Ident events @215:5-215:11
-            Value: ListComp @215:13-215:67
-              Elem: CallExpr @215:14-215:25
-                Fun: IdentExpr eventDoc @215:14-215:22
-                Args[0]: Arg @215:23-215:24
-                  Value: IdentExpr e @215:23-215:24
-              Clauses[0]: CompClause Keyword=for @215:26-215:66
-                Vars[0]: Ident e @215:30-215:31
-                X: CallExpr @215:35-215:66
-                  Fun: SelectorExpr @215:35-215:59
-                    X: SelectorExpr @215:35-215:52
-                      X: IdentExpr EventType @215:35-215:44
-                      Name: Ident members @215:45-215:52
-                    Name: Ident sortBy @215:53-215:59
-                  Args[0]: Arg @215:60-215:65
-                    Value: ShorthandLambda @215:60-215:65
-                      Body: SelectorExpr @215:60-215:65
-                        Name: Ident code @215:61-215:65
-          Items[4]: FieldItem @216:5-216:52
-            Name: Ident enums @216:5-216:10
-            Value: ListComp @216:12-216:52
-              Elem: CallExpr @216:13-216:23
-                Fun: IdentExpr enumDoc @216:13-216:20
-                Args[0]: Arg @216:21-216:22
-                  Value: IdentExpr v @216:21-216:22
-              Clauses[0]: CompClause Keyword=for @216:24-216:51
-                Vars[0]: Ident v @216:28-216:29
-                X: CallExpr @216:33-216:51
-                  Fun: IdentExpr usedVocabularies @216:33-216:49
+    Mods: Modifiers Export="export" @213:1-213:7
+    Name: Ident catalogJson @213:11-213:22
+    Result: NamedType @213:28-213:38
+      Name: QualifiedName CatalogDoc @213:28-213:38
+    Body: Block @213:39-221:2
+      Stmts[0]: ReturnStmt @214:3-220:4
+        Value: BraceLit @214:10-220:4
+          Items[0]: FieldItem @215:5-215:27
+            Name: Ident format @215:5-215:11
+            Value: IdentExpr CATALOG_FORMAT @215:13-215:27
+          Items[1]: FieldItem @216:5-216:31
+            Name: Ident contract @216:5-216:13
+            Value: IdentExpr CONTRACT_VERSION @216:15-216:31
+          Items[2]: FieldItem @217:5-217:78
+            Name: Ident provenance @217:5-217:15
+            Value: ListComp @217:17-217:78
+              Elem: BraceLit @217:18-217:50
+                Items[0]: FieldItem @217:20-217:32
+                  Name: Ident name @217:20-217:24
+                  Value: SelectorExpr @217:26-217:32
+                    X: IdentExpr p @217:26-217:27
+                    Name: Ident name @217:28-217:32
+                Items[1]: FieldItem @217:34-217:48
+                  Name: Ident sqlType @217:34-217:41
+                  Value: SelectorExpr @217:43-217:48
+                    X: IdentExpr p @217:43-217:44
+                    Name: Ident sql @217:45-217:48
+              Clauses[0]: CompClause Keyword=for @217:51-217:77
+                Vars[0]: Ident p @217:55-217:56
+                X: IdentExpr provenanceColumns @217:60-217:77
+          Items[3]: FieldItem @218:5-218:67
+            Name: Ident events @218:5-218:11
+            Value: ListComp @218:13-218:67
+              Elem: CallExpr @218:14-218:25
+                Fun: IdentExpr eventDoc @218:14-218:22
+                Args[0]: Arg @218:23-218:24
+                  Value: IdentExpr e @218:23-218:24
+              Clauses[0]: CompClause Keyword=for @218:26-218:66
+                Vars[0]: Ident e @218:30-218:31
+                X: CallExpr @218:35-218:66
+                  Fun: SelectorExpr @218:35-218:59
+                    X: SelectorExpr @218:35-218:52
+                      X: IdentExpr EventType @218:35-218:44
+                      Name: Ident members @218:45-218:52
+                    Name: Ident sortBy @218:53-218:59
+                  Args[0]: Arg @218:60-218:65
+                    Value: ShorthandLambda @218:60-218:65
+                      Body: SelectorExpr @218:60-218:65
+                        Name: Ident code @218:61-218:65
+          Items[4]: FieldItem @219:5-219:52
+            Name: Ident enums @219:5-219:10
+            Value: ListComp @219:12-219:52
+              Elem: CallExpr @219:13-219:23
+                Fun: IdentExpr enumDoc @219:13-219:20
+                Args[0]: Arg @219:21-219:22
+                  Value: IdentExpr v @219:21-219:22
+              Clauses[0]: CompClause Keyword=for @219:24-219:51
+                Vars[0]: Ident v @219:28-219:29
+                X: CallExpr @219:33-219:51
+                  Fun: IdentExpr usedVocabularies @219:33-219:49
 == findings
 0 errors, 0 warnings in 1 package (…)

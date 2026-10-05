@@ -1731,17 +1731,13 @@ func (self *Rows) AsSome() (*RowsSome, bool) {
 	return c, ok
 }
 
-// RowsSome: The rows whose `column` holds one of `kinds`, members of the column's vocabulary.
+// RowsSome: The rows whose `of` column holds one of `kinds`; the table has exactly one such column.
 type RowsSome struct {
-	column_id string
-	of        Vocabulary
-	kinds     rt.List[*Member]
+	of    Vocabulary
+	kinds rt.List[*Member]
 }
 
-// ColumnID: The enum8 column that splits the rows.
-func (self *RowsSome) ColumnID() string { return self.column_id }
-
-// Of: Its vocabulary, so the kinds are typed.
+// Of: The vocabulary whose column splits the rows.
 func (self *RowsSome) Of() Vocabulary { return self.of }
 
 // Kinds: The members covered.
@@ -2033,8 +2029,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2068,8 +2063,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2093,8 +2087,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2120,8 +2113,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2147,8 +2139,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2174,8 +2165,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2201,8 +2191,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2228,8 +2217,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2255,8 +2243,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "grant_kind",
-							of:        VocabularyGrantKind,
+							of: VocabularyGrantKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchGrantKind,
@@ -2508,8 +2495,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "kind",
-							of:        VocabularyFarmEventKind,
+							of: VocabularyFarmEventKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchFarmEventKind,
@@ -2620,8 +2606,7 @@ func buildTelemetry() *telemetryData {
 					rows: &Rows{
 						kind: RowsKindSome,
 						value: &RowsSome{
-							column_id: "kind",
-							of:        VocabularySovereignEventKind,
+							of: VocabularySovereignEventKind,
 							kinds: rt.MakeList([]*Member{
 								{
 									branch: MemberBranchSovereignEventKind,

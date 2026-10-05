@@ -415,783 +415,818 @@
 192:0-7 "variant" storage.type.canon
 192:8-12 "Rows" entity.name.type.canon
 193:0-16 "  /// Every row." comment.line.documentation.canon
-195:0-87 "  /// The rows whose `column` holds one of `kinds`, members of the column's vocabulary." comment.line.documentation.canon
-197:0-46 "    /// The enum8 column that splits the rows." comment.line.documentation.canon
-198:4-10 "column" variable.other.property.canon
-198:10-11 ":" punctuation.separator.key.canon
-198:12-15 "ref" storage.modifier.canon
-198:16-22 "Column" entity.name.type.canon
-199:0-47 "    /// Its vocabulary, so the kinds are typed." comment.line.documentation.canon
-200:4-6 "of" variable.other.property.canon
-200:6-7 ":" punctuation.separator.key.canon
-200:8-18 "Vocabulary" entity.name.type.canon
-201:4-89 "// `past` (DECISIONS 304): a retired member still classifies the rows written before." comment.line.double-slash.canon
-202:0-28 "    /// The members covered." comment.line.documentation.canon
-203:4-9 "kinds" variable.other.property.canon
-203:9-10 ":" punctuation.separator.key.canon
-203:12-16 "past" storage.modifier.canon
-203:17-23 "Member" entity.name.type.canon
-203:29-30 "1" constant.numeric.integer.canon
-203:30-32 ".." keyword.operator.canon
-207:0-86 "/// One ledger leg a table's rows contribute, or the statement that they move nothing." comment.line.documentation.canon
-208:0-6 "record" storage.type.canon
-208:7-11 "Role" entity.name.type.canon
-209:0-25 "  /// The rows it covers." comment.line.documentation.canon
-210:2-6 "rows" variable.other.property.canon
-210:6-7 ":" punctuation.separator.key.canon
-210:8-12 "Rows" entity.name.type.canon
-210:13-14 "=" keyword.operator.canon
-211:0-17 "  /// What moves." comment.line.documentation.canon
-212:2-10 "currency" variable.other.property.canon
-212:10-11 ":" punctuation.separator.key.canon
-212:12-20 "Currency" entity.name.type.canon
-213:0-29 "  /// Mint, sink or transfer." comment.line.documentation.canon
-214:2-8 "bucket" variable.other.property.canon
-214:8-9 ":" punctuation.separator.key.canon
-214:10-16 "Bucket" entity.name.type.canon
-215:0-78 "  /// +1 credit, -1 debit, 0: the amount is already signed (or there is none)." comment.line.documentation.canon
-216:2-6 "sign" variable.other.property.canon
-216:6-7 ":" punctuation.separator.key.canon
-216:8-11 "Int" entity.name.type.canon
-216:12-13 "-" keyword.operator.canon
-216:13-14 "1" constant.numeric.integer.canon
-216:14-17 "..=" keyword.operator.canon
-216:17-18 "1" constant.numeric.integer.canon
-217:0-56 "  /// The stable vocabulary the economy panel groups on." comment.line.documentation.canon
-218:2-7 "token" variable.other.property.canon
-218:7-8 ":" punctuation.separator.key.canon
-218:9-14 "Ident" entity.name.type.canon
-219:0-83 "  /// The side a single-row transfer reads; none for a table with one row per side." comment.line.documentation.canon
-220:2-5 "leg" variable.other.property.canon
-220:5-6 ":" punctuation.separator.key.canon
-220:7-10 "Leg" entity.name.type.canon
-220:10-11 "?" keyword.operator.canon
-220:12-13 "=" keyword.operator.canon
-220:14-18 "none" constant.language.canon
-221:0-65 "  /// An extra predicate on the table's own columns (DuckDB SQL)." comment.line.documentation.canon
-222:2-8 "filter" variable.other.property.canon
+195:0-93 "  /// The rows whose `of` column holds one of `kinds`; the table has exactly one such column." comment.line.documentation.canon
+197:0-52 "    /// The vocabulary whose column splits the rows." comment.line.documentation.canon
+198:4-6 "of" variable.other.property.canon
+198:6-7 ":" punctuation.separator.key.canon
+198:8-18 "Vocabulary" entity.name.type.canon
+199:4-89 "// `past` (DECISIONS 304): a retired member still classifies the rows written before." comment.line.double-slash.canon
+200:0-28 "    /// The members covered." comment.line.documentation.canon
+201:4-9 "kinds" variable.other.property.canon
+201:9-10 ":" punctuation.separator.key.canon
+201:12-16 "past" storage.modifier.canon
+201:17-23 "Member" entity.name.type.canon
+201:29-30 "1" constant.numeric.integer.canon
+201:30-32 ".." keyword.operator.canon
+205:0-86 "/// One ledger leg a table's rows contribute, or the statement that they move nothing." comment.line.documentation.canon
+206:0-6 "record" storage.type.canon
+206:7-11 "Role" entity.name.type.canon
+207:0-25 "  /// The rows it covers." comment.line.documentation.canon
+208:2-6 "rows" variable.other.property.canon
+208:6-7 ":" punctuation.separator.key.canon
+208:8-12 "Rows" entity.name.type.canon
+208:13-14 "=" keyword.operator.canon
+209:0-17 "  /// What moves." comment.line.documentation.canon
+210:2-10 "currency" variable.other.property.canon
+210:10-11 ":" punctuation.separator.key.canon
+210:12-20 "Currency" entity.name.type.canon
+211:0-29 "  /// Mint, sink or transfer." comment.line.documentation.canon
+212:2-8 "bucket" variable.other.property.canon
+212:8-9 ":" punctuation.separator.key.canon
+212:10-16 "Bucket" entity.name.type.canon
+213:0-78 "  /// +1 credit, -1 debit, 0: the amount is already signed (or there is none)." comment.line.documentation.canon
+214:2-6 "sign" variable.other.property.canon
+214:6-7 ":" punctuation.separator.key.canon
+214:8-11 "Int" entity.name.type.canon
+214:12-13 "-" keyword.operator.canon
+214:13-14 "1" constant.numeric.integer.canon
+214:14-17 "..=" keyword.operator.canon
+214:17-18 "1" constant.numeric.integer.canon
+215:0-56 "  /// The stable vocabulary the economy panel groups on." comment.line.documentation.canon
+216:2-7 "token" variable.other.property.canon
+216:7-8 ":" punctuation.separator.key.canon
+216:9-14 "Ident" entity.name.type.canon
+217:0-83 "  /// The side a single-row transfer reads; none for a table with one row per side." comment.line.documentation.canon
+218:2-5 "leg" variable.other.property.canon
+218:5-6 ":" punctuation.separator.key.canon
+218:7-10 "Leg" entity.name.type.canon
+218:10-11 "?" keyword.operator.canon
+218:12-13 "=" keyword.operator.canon
+218:14-18 "none" constant.language.canon
+219:0-65 "  /// An extra predicate on the table's own columns (DuckDB SQL)." comment.line.documentation.canon
+220:2-8 "filter" variable.other.property.canon
+220:8-9 ":" punctuation.separator.key.canon
+220:10-16 "String" entity.name.type.canon
+220:16-17 "?" keyword.operator.canon
+220:18-19 "=" keyword.operator.canon
+220:20-24 "none" constant.language.canon
+221:0-73 "  /// The magnitude; none for a row that documents a path with no amount." comment.line.documentation.canon
+222:2-8 "amount" variable.other.property.canon
 222:8-9 ":" punctuation.separator.key.canon
-222:10-16 "String" entity.name.type.canon
-222:16-17 "?" keyword.operator.canon
-222:18-19 "=" keyword.operator.canon
-222:20-24 "none" constant.language.canon
-223:0-73 "  /// The magnitude; none for a row that documents a path with no amount." comment.line.documentation.canon
-224:2-8 "amount" variable.other.property.canon
-224:8-9 ":" punctuation.separator.key.canon
-224:10-13 "ref" storage.modifier.canon
-224:14-20 "Column" entity.name.type.canon
-224:20-21 "?" keyword.operator.canon
-224:22-23 "=" keyword.operator.canon
-224:24-28 "none" constant.language.canon
-225:0-48 "  /// For item legs: the column naming the item." comment.line.documentation.canon
-226:2-6 "item" variable.other.property.canon
-226:6-7 ":" punctuation.separator.key.canon
-226:8-11 "ref" storage.modifier.canon
-226:12-18 "Column" entity.name.type.canon
-226:18-19 "?" keyword.operator.canon
-226:20-21 "=" keyword.operator.canon
-226:22-26 "none" constant.language.canon
-227:0-66 "  /// Whose ledger the leg lands on; none: the header's player_id." comment.line.documentation.canon
-228:2-8 "player" variable.other.property.canon
-228:8-9 ":" punctuation.separator.key.canon
-228:10-13 "ref" storage.modifier.canon
-228:14-20 "Column" entity.name.type.canon
-228:20-21 "?" keyword.operator.canon
-228:22-23 "=" keyword.operator.canon
-228:24-28 "none" constant.language.canon
-229:0-29 "  /// The other side, if any." comment.line.documentation.canon
-230:2-14 "counterparty" variable.other.property.canon
-230:14-15 ":" punctuation.separator.key.canon
-230:16-19 "ref" storage.modifier.canon
-230:20-26 "Column" entity.name.type.canon
-230:26-27 "?" keyword.operator.canon
-230:28-29 "=" keyword.operator.canon
-230:30-34 "none" constant.language.canon
-231:0-87 "  /// Summed into the reconciliation (true), or real telemetry that must not be summed." comment.line.documentation.canon
-232:2-9 "counted" variable.other.property.canon
+222:10-13 "ref" storage.modifier.canon
+222:14-20 "Column" entity.name.type.canon
+222:20-21 "?" keyword.operator.canon
+222:22-23 "=" keyword.operator.canon
+222:24-28 "none" constant.language.canon
+223:0-48 "  /// For item legs: the column naming the item." comment.line.documentation.canon
+224:2-6 "item" variable.other.property.canon
+224:6-7 ":" punctuation.separator.key.canon
+224:8-11 "ref" storage.modifier.canon
+224:12-18 "Column" entity.name.type.canon
+224:18-19 "?" keyword.operator.canon
+224:20-21 "=" keyword.operator.canon
+224:22-26 "none" constant.language.canon
+225:0-66 "  /// Whose ledger the leg lands on; none: the header's player_id." comment.line.documentation.canon
+226:2-8 "player" variable.other.property.canon
+226:8-9 ":" punctuation.separator.key.canon
+226:10-13 "ref" storage.modifier.canon
+226:14-20 "Column" entity.name.type.canon
+226:20-21 "?" keyword.operator.canon
+226:22-23 "=" keyword.operator.canon
+226:24-28 "none" constant.language.canon
+227:0-29 "  /// The other side, if any." comment.line.documentation.canon
+228:2-14 "counterparty" variable.other.property.canon
+228:14-15 ":" punctuation.separator.key.canon
+228:16-19 "ref" storage.modifier.canon
+228:20-26 "Column" entity.name.type.canon
+228:26-27 "?" keyword.operator.canon
+228:28-29 "=" keyword.operator.canon
+228:30-34 "none" constant.language.canon
+229:0-87 "  /// Summed into the reconciliation (true), or real telemetry that must not be summed." comment.line.documentation.canon
+230:2-9 "counted" variable.other.property.canon
+230:9-10 ":" punctuation.separator.key.canon
+230:11-15 "Bool" entity.name.type.canon
+231:0-49 "  /// The token this row would double-count with." comment.line.documentation.canon
+232:2-9 "dedupOf" variable.other.property.canon
 232:9-10 ":" punctuation.separator.key.canon
-232:11-15 "Bool" entity.name.type.canon
-233:0-49 "  /// The token this row would double-count with." comment.line.documentation.canon
-234:2-9 "dedupOf" variable.other.property.canon
-234:9-10 ":" punctuation.separator.key.canon
-234:11-16 "Ident" entity.name.type.canon
-234:16-17 "?" keyword.operator.canon
-234:18-19 "=" keyword.operator.canon
-234:20-24 "none" constant.language.canon
-235:0-71 "  /// The last version whose rows this role reads; none: every version." comment.line.documentation.canon
-236:2-14 "untilVersion" variable.other.property.canon
-236:14-15 ":" punctuation.separator.key.canon
-236:16-19 "Int" entity.name.type.canon
-236:20-21 "1" constant.numeric.integer.canon
-236:21-23 ".." keyword.operator.canon
-236:24-25 "?" keyword.operator.canon
-236:26-27 "=" keyword.operator.canon
-236:28-32 "none" constant.language.canon
-237:0-50 "  /// Why, citing a function, never a line number." comment.line.documentation.canon
-238:2-6 "note" variable.other.property.canon
-238:6-7 ":" punctuation.separator.key.canon
-238:8-14 "String" entity.name.type.canon
+232:11-16 "Ident" entity.name.type.canon
+232:16-17 "?" keyword.operator.canon
+232:18-19 "=" keyword.operator.canon
+232:20-24 "none" constant.language.canon
+233:0-71 "  /// The last version whose rows this role reads; none: every version." comment.line.documentation.canon
+234:2-14 "untilVersion" variable.other.property.canon
+234:14-15 ":" punctuation.separator.key.canon
+234:16-19 "Int" entity.name.type.canon
+234:20-21 "1" constant.numeric.integer.canon
+234:21-23 ".." keyword.operator.canon
+234:24-25 "?" keyword.operator.canon
+234:26-27 "=" keyword.operator.canon
+234:28-32 "none" constant.language.canon
+235:0-50 "  /// Why, citing a function, never a line number." comment.line.documentation.canon
+236:2-6 "note" variable.other.property.canon
+236:6-7 ":" punctuation.separator.key.canon
+236:8-14 "String" entity.name.type.canon
+238:2-7 "check" keyword.other.canon
+238:18-20 "==" keyword.operator.canon
+238:30-32 "==" keyword.operator.canon
+238:41-43 "==" keyword.operator.canon
+239:4-8 "else" keyword.control.canon
+239:9-67 "\"a role moves no currency exactly when its bucket is none\"" string.quoted.double.canon
 240:2-7 "check" keyword.other.canon
-240:18-20 "==" keyword.operator.canon
-240:30-32 "==" keyword.operator.canon
-240:41-43 "==" keyword.operator.canon
-241:4-8 "else" keyword.control.canon
-241:9-67 "\"a role moves no currency exactly when its bucket is none\"" string.quoted.double.canon
-242:2-7 "check" keyword.other.canon
-242:8-11 "not" keyword.operator.word.canon
-242:20-22 "or" keyword.operator.word.canon
-242:32-34 "!=" keyword.operator.canon
-242:54-58 "else" keyword.control.canon
-242:59-92 "\"a counted role moves a currency\"" string.quoted.double.canon
-243:2-7 "check" keyword.other.canon
-243:12-14 "==" keyword.operator.canon
-243:15-19 "none" constant.language.canon
-243:20-22 "or" keyword.operator.word.canon
-243:30-32 "==" keyword.operator.canon
-243:49-53 "else" keyword.control.canon
-243:54-81 "\"only a transfer has a leg\"" string.quoted.double.canon
+240:8-11 "not" keyword.operator.word.canon
+240:20-22 "or" keyword.operator.word.canon
+240:32-34 "!=" keyword.operator.canon
+240:54-58 "else" keyword.control.canon
+240:59-92 "\"a counted role moves a currency\"" string.quoted.double.canon
+241:2-7 "check" keyword.other.canon
+241:12-14 "==" keyword.operator.canon
+241:15-19 "none" constant.language.canon
+241:20-22 "or" keyword.operator.word.canon
+241:30-32 "==" keyword.operator.canon
+241:49-53 "else" keyword.control.canon
+241:54-81 "\"only a transfer has a leg\"" string.quoted.double.canon
+244:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+245:0-9 "// Events" comment.line.double-slash.canon
 246:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
-247:0-9 "// Events" comment.line.double-slash.canon
-248:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
-250:0-52 "/// One telemetry table: the rows of one event type." comment.line.documentation.canon
-251:0-6 "record" storage.type.canon
-251:7-12 "Event" entity.name.type.canon
-252:0-27 "  /// What one row records." comment.line.documentation.canon
-253:2-13 "description" variable.other.property.canon
-253:13-14 ":" punctuation.separator.key.canon
-253:15-21 "String" entity.name.type.canon
-254:0-85 "  /// The current layout version: the wire version byte and the lake's event_version." comment.line.documentation.canon
-255:2-9 "version" variable.other.property.canon
-255:9-10 ":" punctuation.separator.key.canon
-255:11-16 "UInt8" entity.name.type.canon
-255:17-18 "1" constant.numeric.integer.canon
-255:18-20 ".." keyword.operator.canon
-256:0-92 "  /// The first version whose layout this catalogue knows. Tables older than the schema lock" comment.line.documentation.canon
-257:0-59 "  /// start at 2, its floor; their earlier history is lost." comment.line.documentation.canon
-258:2-7 "since" variable.other.property.canon
-258:7-8 ":" punctuation.separator.key.canon
-258:9-12 "Int" entity.name.type.canon
-258:13-14 "1" constant.numeric.integer.canon
-258:14-16 ".." keyword.operator.canon
-258:18-19 "=" keyword.operator.canon
-258:20-21 "1" constant.numeric.integer.canon
-259:0-18 "  /// Ring policy." comment.line.documentation.canon
-260:2-6 "tier" variable.other.property.canon
-260:6-7 ":" punctuation.separator.key.canon
-260:8-12 "Tier" entity.name.type.canon
-261:0-69 "  /// The processes that own a ring for it (none: read-only history)." comment.line.documentation.canon
-262:2-11 "producers" variable.other.property.canon
-262:11-12 ":" punctuation.separator.key.canon
-262:14-22 "Producer" entity.name.type.canon
-262:24-25 "=" keyword.operator.canon
-263:0-33 "  /// How the client enqueues it." comment.line.documentation.canon
-264:2-9 "enqueue" variable.other.property.canon
+248:0-52 "/// One telemetry table: the rows of one event type." comment.line.documentation.canon
+249:0-6 "record" storage.type.canon
+249:7-12 "Event" entity.name.type.canon
+250:0-27 "  /// What one row records." comment.line.documentation.canon
+251:2-13 "description" variable.other.property.canon
+251:13-14 ":" punctuation.separator.key.canon
+251:15-21 "String" entity.name.type.canon
+252:0-85 "  /// The current layout version: the wire version byte and the lake's event_version." comment.line.documentation.canon
+253:2-9 "version" variable.other.property.canon
+253:9-10 ":" punctuation.separator.key.canon
+253:11-16 "UInt8" entity.name.type.canon
+253:17-18 "1" constant.numeric.integer.canon
+253:18-20 ".." keyword.operator.canon
+254:0-92 "  /// The first version whose layout this catalogue knows. Tables older than the schema lock" comment.line.documentation.canon
+255:0-59 "  /// start at 2, its floor; their earlier history is lost." comment.line.documentation.canon
+256:2-7 "since" variable.other.property.canon
+256:7-8 ":" punctuation.separator.key.canon
+256:9-12 "Int" entity.name.type.canon
+256:13-14 "1" constant.numeric.integer.canon
+256:14-16 ".." keyword.operator.canon
+256:18-19 "=" keyword.operator.canon
+256:20-21 "1" constant.numeric.integer.canon
+257:0-18 "  /// Ring policy." comment.line.documentation.canon
+258:2-6 "tier" variable.other.property.canon
+258:6-7 ":" punctuation.separator.key.canon
+258:8-12 "Tier" entity.name.type.canon
+259:0-69 "  /// The processes that own a ring for it (none: read-only history)." comment.line.documentation.canon
+260:2-11 "producers" variable.other.property.canon
+260:11-12 ":" punctuation.separator.key.canon
+260:14-22 "Producer" entity.name.type.canon
+260:24-25 "=" keyword.operator.canon
+261:0-33 "  /// How the client enqueues it." comment.line.documentation.canon
+262:2-9 "enqueue" variable.other.property.canon
+262:9-10 ":" punctuation.separator.key.canon
+262:11-18 "Enqueue" entity.name.type.canon
+262:19-20 "=" keyword.operator.canon
+263:0-86 "  /// The body columns after the header, in wire order, retired ones where they stood." comment.line.documentation.canon
+264:2-9 "columns" variable.other.property.canon
 264:9-10 ":" punctuation.separator.key.canon
-264:11-18 "Enqueue" entity.name.type.canon
-264:19-20 "=" keyword.operator.canon
-265:0-86 "  /// The body columns after the header, in wire order, retired ones where they stood." comment.line.documentation.canon
-266:2-9 "columns" variable.other.property.canon
-266:9-10 ":" punctuation.separator.key.canon
-266:12-18 "Column" entity.name.type.canon
-267:0-65 "  /// What its rows mean to the ledgers; empty: no ledger at all." comment.line.documentation.canon
-268:2-8 "ledger" variable.other.property.canon
-268:8-9 ":" punctuation.separator.key.canon
-268:11-15 "Role" entity.name.type.canon
-268:17-18 "=" keyword.operator.canon
-269:0-92 "  /// The enum8 column the ledger is typed by. When set, every live member of its vocabulary" comment.line.documentation.canon
-270:0-92 "  /// is covered by some role (L-0111), so a new kind cannot ship without a ledger decision." comment.line.documentation.canon
-271:2-13 "ledgerKinds" variable.other.property.canon
-271:13-14 ":" punctuation.separator.key.canon
-271:15-18 "ref" storage.modifier.canon
-271:19-25 "Column" entity.name.type.canon
-271:25-26 "?" keyword.operator.canon
-271:27-28 "=" keyword.operator.canon
-271:29-33 "none" constant.language.canon
-273:2-7 "check" keyword.other.canon
-273:17-18 "." punctuation.accessor.canon
-273:18-26 "isUnique" variable.other.property.canon
-273:42-46 "else" keyword.control.canon
-273:47-75 "\"a producer is listed twice\"" string.quoted.double.canon
+264:12-18 "Column" entity.name.type.canon
+265:0-65 "  /// What its rows mean to the ledgers; empty: no ledger at all." comment.line.documentation.canon
+266:2-8 "ledger" variable.other.property.canon
+266:8-9 ":" punctuation.separator.key.canon
+266:11-15 "Role" entity.name.type.canon
+266:17-18 "=" keyword.operator.canon
+267:0-92 "  /// The enum8 column the ledger is typed by. When set, every live member of its vocabulary" comment.line.documentation.canon
+268:0-92 "  /// is covered by some role (L-0111), so a new kind cannot ship without a ledger decision." comment.line.documentation.canon
+269:2-13 "ledgerKinds" variable.other.property.canon
+269:13-14 ":" punctuation.separator.key.canon
+269:15-18 "ref" storage.modifier.canon
+269:19-25 "Column" entity.name.type.canon
+269:25-26 "?" keyword.operator.canon
+269:27-28 "=" keyword.operator.canon
+269:29-33 "none" constant.language.canon
+271:2-7 "check" keyword.other.canon
+271:17-18 "." punctuation.accessor.canon
+271:18-26 "isUnique" variable.other.property.canon
+271:42-46 "else" keyword.control.canon
+271:47-75 "\"a producer is listed twice\"" string.quoted.double.canon
+272:2-7 "check" keyword.other.canon
+272:18-19 "." punctuation.accessor.canon
+272:19-26 "isEmpty" variable.other.property.canon
+272:30-32 "==" keyword.operator.canon
+272:39-41 "==" keyword.operator.canon
+272:42-50 "READONLY" constant.other.canon
+273:4-8 "else" keyword.control.canon
+273:9-70 "\"a READONLY table has no producer, and only a READONLY table\"" string.quoted.double.canon
 274:2-7 "check" keyword.other.canon
-274:18-19 "." punctuation.accessor.canon
-274:19-26 "isEmpty" variable.other.property.canon
-274:30-32 "==" keyword.operator.canon
-274:39-41 "==" keyword.operator.canon
-274:42-50 "READONLY" constant.other.canon
+274:14-16 "<=" keyword.operator.canon
 275:4-8 "else" keyword.control.canon
-275:9-70 "\"a READONLY table has no producer, and only a READONLY table\"" string.quoted.double.canon
+275:9-18 "\"version " string.quoted.double.canon
+275:18-19 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+275:19-26 "version" string.quoted.double.canon meta.interpolation.canon
+275:26-27 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+275:27-66 " is older than the first known version " string.quoted.double.canon
+275:66-67 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+275:67-72 "since" string.quoted.double.canon meta.interpolation.canon
+275:72-73 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+275:73-74 "\"" string.quoted.double.canon
 276:2-7 "check" keyword.other.canon
-276:14-16 "<=" keyword.operator.canon
-277:4-8 "else" keyword.control.canon
-277:9-18 "\"version " string.quoted.double.canon
-277:18-19 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-277:19-26 "version" string.quoted.double.canon meta.interpolation.canon
-277:26-27 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-277:27-66 " is older than the first known version " string.quoted.double.canon
-277:66-67 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-277:67-72 "since" string.quoted.double.canon meta.interpolation.canon
-277:72-73 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-277:73-74 "\"" string.quoted.double.canon
-278:2-7 "check" keyword.other.canon
-279:4-7 "for" keyword.control.canon
-279:10-12 "in" keyword.operator.word.canon
-280:6-77 "// V2: a column is added and retired at versions the table has reached." comment.line.double-slash.canon
-281:6-8 "if" keyword.control.canon
-281:10-11 "." punctuation.accessor.canon
-281:11-16 "since" variable.other.property.canon
-281:17-19 "!=" keyword.operator.canon
-281:20-24 "none" constant.language.canon
-281:25-28 "and" keyword.operator.word.canon
-281:31-32 "." punctuation.accessor.canon
-281:32-37 "since" variable.other.property.canon
-281:38-40 "<=" keyword.operator.canon
-281:47-49 "or" keyword.operator.word.canon
-281:51-52 "." punctuation.accessor.canon
-281:52-57 "since" variable.other.property.canon
-281:58-59 ">" keyword.operator.canon
-282:14-15 "." punctuation.accessor.canon
-282:15-20 "since" variable.other.property.canon
-282:22-23 "\"" string.quoted.double.canon
-282:23-24 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-282:24-25 "c" string.quoted.double.canon meta.interpolation.canon
-282:25-26 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-282:26-30 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-282:30-31 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-282:31-52 " is added in version " string.quoted.double.canon
-282:52-53 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-282:53-54 "c" string.quoted.double.canon meta.interpolation.canon
-282:54-55 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-282:55-60 "since" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-282:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-282:61-71 ", outside " string.quoted.double.canon
-282:71-72 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-282:72-78 "since " string.quoted.double.canon meta.interpolation.canon
-282:78-79 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
-282:79-80 " " string.quoted.double.canon meta.interpolation.canon
-282:80-81 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
-282:81-82 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-282:82-85 "..=" string.quoted.double.canon
-282:85-86 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-282:86-93 "version" string.quoted.double.canon meta.interpolation.canon
-282:93-94 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-282:94-95 "\"" string.quoted.double.canon
-284:6-8 "if" keyword.control.canon
-284:10-11 "." punctuation.accessor.canon
-284:11-20 "retiredIn" variable.other.property.canon
-284:21-23 "!=" keyword.operator.canon
-284:24-28 "none" constant.language.canon
-284:29-32 "and" keyword.operator.word.canon
-284:35-36 "." punctuation.accessor.canon
-284:36-45 "retiredIn" variable.other.property.canon
-284:46-48 "<=" keyword.operator.canon
-284:55-57 "or" keyword.operator.word.canon
-284:59-60 "." punctuation.accessor.canon
-284:60-69 "retiredIn" variable.other.property.canon
-284:70-71 ">" keyword.operator.canon
-286:11-12 "." punctuation.accessor.canon
-286:12-21 "retiredIn" variable.other.property.canon
-287:10-11 "\"" string.quoted.double.canon
-287:11-12 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-287:12-13 "c" string.quoted.double.canon meta.interpolation.canon
-287:13-14 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-287:14-18 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-287:18-19 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-287:19-42 " is retired in version " string.quoted.double.canon
-287:42-43 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-287:43-44 "c" string.quoted.double.canon meta.interpolation.canon
-287:44-45 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-287:45-54 "retiredIn" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-287:54-55 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-287:55-65 ", outside " string.quoted.double.canon
-287:65-66 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-287:66-72 "since " string.quoted.double.canon meta.interpolation.canon
-287:72-73 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
-287:73-74 " " string.quoted.double.canon meta.interpolation.canon
-287:74-75 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
-287:75-76 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-287:76-79 "..=" string.quoted.double.canon
-287:79-80 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-287:80-87 "version" string.quoted.double.canon meta.interpolation.canon
-287:87-88 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-287:88-89 "\"" string.quoted.double.canon
-290:6-8 "if" keyword.control.canon
-290:10-11 "." punctuation.accessor.canon
-290:11-15 "name" variable.other.property.canon
-290:16-18 "in" keyword.operator.word.canon
-290:33-35 "or" keyword.operator.word.canon
-290:37-38 "." punctuation.accessor.canon
-290:38-42 "kind" variable.other.property.canon
-290:43-45 "==" keyword.operator.canon
-290:49-51 "or" keyword.operator.word.canon
-290:53-54 "." punctuation.accessor.canon
-290:54-58 "kind" variable.other.property.canon
-290:59-61 "==" keyword.operator.canon
-291:16-17 "\"" string.quoted.double.canon
-291:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-291:18-19 "c" string.quoted.double.canon meta.interpolation.canon
-291:19-20 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-291:20-24 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-291:24-25 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-291:25-73 " is a header column: every table has it already\"" string.quoted.double.canon
-294:4-76 "// V3: every version after the first known one adds or retires a column." comment.line.double-slash.canon
-295:4-7 "for" keyword.control.canon
-295:10-12 "in" keyword.operator.word.canon
-295:19-20 "+" keyword.operator.canon
-295:21-22 "1" constant.numeric.integer.canon
-295:22-24 ".." keyword.operator.canon
-295:32-33 "+" keyword.operator.canon
-295:34-35 "1" constant.numeric.integer.canon
-296:6-8 "if" keyword.control.canon
-296:9-12 "not" keyword.operator.word.canon
-296:20-21 "." punctuation.accessor.canon
-296:21-24 "any" variable.other.property.canon
-296:27-29 "=>" keyword.operator.canon
-296:31-32 "." punctuation.accessor.canon
-296:32-37 "since" variable.other.property.canon
-296:38-40 "==" keyword.operator.canon
-296:43-45 "or" keyword.operator.word.canon
-296:47-48 "." punctuation.accessor.canon
-296:48-57 "retiredIn" variable.other.property.canon
-296:58-60 "==" keyword.operator.canon
-297:13-17 "self" variable.language.canon
-297:19-28 "\"version " string.quoted.double.canon
-297:28-29 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-297:29-30 "v" string.quoted.double.canon meta.interpolation.canon
-297:30-31 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-297:31-94 " changes no column: bump the version only with a layout change\"" string.quoted.double.canon
-300:4-7 "for" keyword.control.canon
-300:10-12 "in" keyword.operator.word.canon
-301:6-61 "// V4: a role never reads a column past its retirement." comment.line.double-slash.canon
-302:6-9 "for" keyword.control.canon
-302:14-16 "in" keyword.operator.word.canon
-302:19-20 "." punctuation.accessor.canon
-302:20-26 "amount" variable.other.property.canon
-302:29-30 "." punctuation.accessor.canon
-302:30-34 "item" variable.other.property.canon
-302:37-38 "." punctuation.accessor.canon
-302:38-44 "player" variable.other.property.canon
-302:47-48 "." punctuation.accessor.canon
-302:48-60 "counterparty" variable.other.property.canon
-303:8-10 "if" keyword.control.canon
-303:15-17 "!=" keyword.operator.canon
-303:18-22 "none" constant.language.canon
-303:23-26 "and" keyword.operator.word.canon
-303:30-31 "." punctuation.accessor.canon
-303:31-40 "retiredIn" variable.other.property.canon
-303:41-43 "!=" keyword.operator.canon
-303:44-48 "none" constant.language.canon
-304:10-12 "if" keyword.control.canon
-304:14-15 "." punctuation.accessor.canon
-304:15-27 "untilVersion" variable.other.property.canon
-304:28-30 "==" keyword.operator.canon
-304:31-35 "none" constant.language.canon
-304:36-38 "or" keyword.operator.word.canon
-304:40-41 "." punctuation.accessor.canon
-304:41-53 "untilVersion" variable.other.property.canon
-304:54-56 ">=" keyword.operator.canon
-304:60-61 "." punctuation.accessor.canon
-304:61-70 "retiredIn" variable.other.property.canon
-307:14-30 "\"the role reads " string.quoted.double.canon
-307:30-31 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-307:31-34 "col" string.quoted.double.canon meta.interpolation.canon
-307:34-35 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-307:35-39 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-307:39-40 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-307:40-53 ", retired in " string.quoted.double.canon
-307:53-54 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-307:54-57 "col" string.quoted.double.canon meta.interpolation.canon
-307:57-58 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-307:58-67 "retiredIn" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-307:67-68 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-307:68-97 ": bound it with untilVersion\"" string.quoted.double.canon
-312:6-11 "match" keyword.control.canon
-312:13-14 "." punctuation.accessor.canon
-312:14-18 "rows" variable.other.property.canon
-313:16-18 "=>" keyword.operator.canon
+277:4-7 "for" keyword.control.canon
+277:10-12 "in" keyword.operator.word.canon
+278:6-77 "// V2: a column is added and retired at versions the table has reached." comment.line.double-slash.canon
+279:6-8 "if" keyword.control.canon
+279:10-11 "." punctuation.accessor.canon
+279:11-16 "since" variable.other.property.canon
+279:17-19 "!=" keyword.operator.canon
+279:20-24 "none" constant.language.canon
+279:25-28 "and" keyword.operator.word.canon
+279:31-32 "." punctuation.accessor.canon
+279:32-37 "since" variable.other.property.canon
+279:38-40 "<=" keyword.operator.canon
+279:47-49 "or" keyword.operator.word.canon
+279:51-52 "." punctuation.accessor.canon
+279:52-57 "since" variable.other.property.canon
+279:58-59 ">" keyword.operator.canon
+280:14-15 "." punctuation.accessor.canon
+280:15-20 "since" variable.other.property.canon
+280:22-23 "\"" string.quoted.double.canon
+280:23-24 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+280:24-25 "c" string.quoted.double.canon meta.interpolation.canon
+280:25-26 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+280:26-30 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+280:30-31 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+280:31-52 " is added in version " string.quoted.double.canon
+280:52-53 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+280:53-54 "c" string.quoted.double.canon meta.interpolation.canon
+280:54-55 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+280:55-60 "since" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+280:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+280:61-71 ", outside " string.quoted.double.canon
+280:71-72 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+280:72-78 "since " string.quoted.double.canon meta.interpolation.canon
+280:78-79 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
+280:79-80 " " string.quoted.double.canon meta.interpolation.canon
+280:80-81 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+280:81-82 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+280:82-85 "..=" string.quoted.double.canon
+280:85-86 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+280:86-93 "version" string.quoted.double.canon meta.interpolation.canon
+280:93-94 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+280:94-95 "\"" string.quoted.double.canon
+282:6-8 "if" keyword.control.canon
+282:10-11 "." punctuation.accessor.canon
+282:11-20 "retiredIn" variable.other.property.canon
+282:21-23 "!=" keyword.operator.canon
+282:24-28 "none" constant.language.canon
+282:29-32 "and" keyword.operator.word.canon
+282:35-36 "." punctuation.accessor.canon
+282:36-45 "retiredIn" variable.other.property.canon
+282:46-48 "<=" keyword.operator.canon
+282:55-57 "or" keyword.operator.word.canon
+282:59-60 "." punctuation.accessor.canon
+282:60-69 "retiredIn" variable.other.property.canon
+282:70-71 ">" keyword.operator.canon
+284:11-12 "." punctuation.accessor.canon
+284:12-21 "retiredIn" variable.other.property.canon
+285:10-11 "\"" string.quoted.double.canon
+285:11-12 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+285:12-13 "c" string.quoted.double.canon meta.interpolation.canon
+285:13-14 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+285:14-18 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+285:18-19 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+285:19-42 " is retired in version " string.quoted.double.canon
+285:42-43 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+285:43-44 "c" string.quoted.double.canon meta.interpolation.canon
+285:44-45 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+285:45-54 "retiredIn" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+285:54-55 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+285:55-65 ", outside " string.quoted.double.canon
+285:65-66 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+285:66-72 "since " string.quoted.double.canon meta.interpolation.canon
+285:72-73 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
+285:73-74 " " string.quoted.double.canon meta.interpolation.canon
+285:74-75 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+285:75-76 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+285:76-79 "..=" string.quoted.double.canon
+285:79-80 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+285:80-87 "version" string.quoted.double.canon meta.interpolation.canon
+285:87-88 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+285:88-89 "\"" string.quoted.double.canon
+288:6-8 "if" keyword.control.canon
+288:10-11 "." punctuation.accessor.canon
+288:11-15 "name" variable.other.property.canon
+288:16-18 "in" keyword.operator.word.canon
+288:33-35 "or" keyword.operator.word.canon
+288:37-38 "." punctuation.accessor.canon
+288:38-42 "kind" variable.other.property.canon
+288:43-45 "==" keyword.operator.canon
+288:49-51 "or" keyword.operator.word.canon
+288:53-54 "." punctuation.accessor.canon
+288:54-58 "kind" variable.other.property.canon
+288:59-61 "==" keyword.operator.canon
+289:16-17 "\"" string.quoted.double.canon
+289:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+289:18-19 "c" string.quoted.double.canon meta.interpolation.canon
+289:19-20 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+289:20-24 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+289:24-25 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+289:25-73 " is a header column: every table has it already\"" string.quoted.double.canon
+292:4-76 "// V3: every version after the first known one adds or retires a column." comment.line.double-slash.canon
+293:4-7 "for" keyword.control.canon
+293:10-12 "in" keyword.operator.word.canon
+293:19-20 "+" keyword.operator.canon
+293:21-22 "1" constant.numeric.integer.canon
+293:22-24 ".." keyword.operator.canon
+293:32-33 "+" keyword.operator.canon
+293:34-35 "1" constant.numeric.integer.canon
+294:6-8 "if" keyword.control.canon
+294:9-12 "not" keyword.operator.word.canon
+294:20-21 "." punctuation.accessor.canon
+294:21-24 "any" variable.other.property.canon
+294:27-29 "=>" keyword.operator.canon
+294:31-32 "." punctuation.accessor.canon
+294:32-37 "since" variable.other.property.canon
+294:38-40 "==" keyword.operator.canon
+294:43-45 "or" keyword.operator.word.canon
+294:47-48 "." punctuation.accessor.canon
+294:48-57 "retiredIn" variable.other.property.canon
+294:58-60 "==" keyword.operator.canon
+295:13-17 "self" variable.language.canon
+295:19-28 "\"version " string.quoted.double.canon
+295:28-29 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+295:29-30 "v" string.quoted.double.canon meta.interpolation.canon
+295:30-31 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+295:31-94 " changes no column: bump the version only with a layout change\"" string.quoted.double.canon
+298:4-7 "for" keyword.control.canon
+298:10-12 "in" keyword.operator.word.canon
+299:6-61 "// V4: a role never reads a column past its retirement." comment.line.double-slash.canon
+300:6-9 "for" keyword.control.canon
+300:14-16 "in" keyword.operator.word.canon
+300:19-20 "." punctuation.accessor.canon
+300:20-26 "amount" variable.other.property.canon
+300:29-30 "." punctuation.accessor.canon
+300:30-34 "item" variable.other.property.canon
+300:37-38 "." punctuation.accessor.canon
+300:38-44 "player" variable.other.property.canon
+300:47-48 "." punctuation.accessor.canon
+300:48-60 "counterparty" variable.other.property.canon
+301:8-10 "if" keyword.control.canon
+301:15-17 "!=" keyword.operator.canon
+301:18-22 "none" constant.language.canon
+301:23-26 "and" keyword.operator.word.canon
+301:30-31 "." punctuation.accessor.canon
+301:31-40 "retiredIn" variable.other.property.canon
+301:41-43 "!=" keyword.operator.canon
+301:44-48 "none" constant.language.canon
+302:10-12 "if" keyword.control.canon
+302:14-15 "." punctuation.accessor.canon
+302:15-27 "untilVersion" variable.other.property.canon
+302:28-30 "==" keyword.operator.canon
+302:31-35 "none" constant.language.canon
+302:36-38 "or" keyword.operator.word.canon
+302:40-41 "." punctuation.accessor.canon
+302:41-53 "untilVersion" variable.other.property.canon
+302:54-56 ">=" keyword.operator.canon
+302:60-61 "." punctuation.accessor.canon
+302:61-70 "retiredIn" variable.other.property.canon
+305:14-30 "\"the role reads " string.quoted.double.canon
+305:30-31 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+305:31-34 "col" string.quoted.double.canon meta.interpolation.canon
+305:34-35 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+305:35-39 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+305:39-40 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+305:40-53 ", retired in " string.quoted.double.canon
+305:53-54 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+305:54-57 "col" string.quoted.double.canon meta.interpolation.canon
+305:57-58 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+305:58-67 "retiredIn" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+305:67-68 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+305:68-97 ": bound it with untilVersion\"" string.quoted.double.canon
+310:6-91 "// A role's vocabulary names exactly one column of the table (what columnOf returns)." comment.line.double-slash.canon
+311:6-11 "match" keyword.control.canon
+311:13-14 "." punctuation.accessor.canon
+311:14-18 "rows" variable.other.property.canon
+312:16-18 "=>" keyword.operator.canon
+313:10-13 "let" storage.type.canon
+313:22-23 "=" keyword.operator.canon
+313:26-27 "." punctuation.accessor.canon
+313:27-31 "name" variable.other.property.canon
+313:32-35 "for" keyword.control.canon
+313:38-40 "in" keyword.operator.word.canon
+313:49-51 "if" keyword.control.canon
+313:53-54 "." punctuation.accessor.canon
+313:54-60 "values" variable.other.property.canon
+313:61-63 "==" keyword.operator.canon
+313:65-66 "." punctuation.accessor.canon
+313:66-68 "of" variable.other.property.canon
 314:10-12 "if" keyword.control.canon
-314:14-15 "." punctuation.accessor.canon
-314:15-21 "column" variable.other.property.canon
-314:21-22 "." punctuation.accessor.canon
-314:22-28 "values" variable.other.property.canon
-314:29-31 "!=" keyword.operator.canon
-314:33-34 "." punctuation.accessor.canon
-314:34-36 "of" variable.other.property.canon
-315:18-19 "." punctuation.accessor.canon
-315:19-21 "of" variable.other.property.canon
-315:23-24 "\"" string.quoted.double.canon
-315:24-25 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-315:25-26 "s" string.quoted.double.canon meta.interpolation.canon
-315:26-27 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-315:27-33 "column" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-315:33-34 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-315:34-38 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-315:38-39 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-315:39-46 " holds " string.quoted.double.canon
-315:46-47 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-315:47-48 "s" string.quoted.double.canon meta.interpolation.canon
-315:48-49 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-315:49-55 "column" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-315:55-56 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-315:56-62 "values" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-315:62-63 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-315:63-69 ", not " string.quoted.double.canon
-315:69-70 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-315:70-71 "s" string.quoted.double.canon meta.interpolation.canon
-315:71-72 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-315:72-74 "of" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-315:74-75 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-315:75-76 "\"" string.quoted.double.canon
-318:14-16 "=>" keyword.operator.canon
-321:4-81 "// L-0111 coverage: a ledger typed by an enum covers every live member of it." comment.line.double-slash.canon
-322:4-6 "if" keyword.control.canon
-322:19-21 "!=" keyword.operator.canon
-322:22-26 "none" constant.language.canon
-323:6-8 "if" keyword.control.canon
-323:20-21 "." punctuation.accessor.canon
-323:21-27 "values" variable.other.property.canon
-323:28-30 "==" keyword.operator.canon
-323:31-35 "none" constant.language.canon
-324:26-27 "\"" string.quoted.double.canon
-324:27-28 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-324:28-39 "ledgerKinds" string.quoted.double.canon meta.interpolation.canon
-324:39-40 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-324:40-44 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-324:44-45 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-324:45-69 " is not an enum8 column\"" string.quoted.double.canon
-325:8-12 "else" keyword.control.canon
-326:8-11 "var" storage.type.canon
-326:12-19 "covered" variable.other.property.canon
-326:19-20 ":" punctuation.separator.key.canon
-326:22-28 "String" entity.name.type.canon
-326:30-31 "=" keyword.operator.canon
-327:8-11 "for" keyword.control.canon
-327:14-16 "in" keyword.operator.word.canon
-328:10-15 "match" keyword.control.canon
-328:17-18 "." punctuation.accessor.canon
-328:18-22 "rows" variable.other.property.canon
-329:18-20 "=>" keyword.operator.canon
-329:31-33 "+=" keyword.operator.canon
-329:55-56 "." punctuation.accessor.canon
-329:56-62 "values" variable.other.property.canon
-330:20-22 "=>" keyword.operator.canon
-331:14-16 "if" keyword.control.canon
-331:29-31 "==" keyword.operator.canon
-331:33-34 "." punctuation.accessor.canon
-331:34-40 "column" variable.other.property.canon
-331:51-53 "+=" keyword.operator.canon
-331:55-61 "String" entity.name.type.canon
-331:65-68 "for" keyword.control.canon
-331:71-73 "in" keyword.operator.word.canon
-331:75-76 "." punctuation.accessor.canon
-331:76-81 "kinds" variable.other.property.canon
-335:8-11 "for" keyword.control.canon
-335:14-16 "in" keyword.operator.word.canon
-335:38-39 "." punctuation.accessor.canon
-335:39-45 "values" variable.other.property.canon
-336:10-12 "if" keyword.control.canon
-336:13-16 "not" keyword.operator.word.canon
-336:20-22 "in" keyword.operator.word.canon
-337:30-31 "\"" string.quoted.double.canon
-337:31-32 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-337:32-43 "ledgerKinds" string.quoted.double.canon meta.interpolation.canon
-337:43-44 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-337:44-48 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-337:48-49 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-337:49-50 " " string.quoted.double.canon
-337:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-337:51-52 "n" string.quoted.double.canon meta.interpolation.canon
-337:52-53 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-337:53-83 " is covered by no ledger role\"" string.quoted.double.canon
-344:0-49 "  /// The columns of `v`'s layout, in wire order." comment.line.documentation.canon
-345:2-4 "fn" storage.type.function.canon
-345:5-11 "layout" entity.name.function.canon
-345:12-16 "self" variable.language.canon
-345:18-19 "v" variable.other.property.canon
-345:19-20 ":" punctuation.separator.key.canon
-345:21-24 "Int" entity.name.type.canon
-345:26-28 "->" keyword.operator.canon
-345:30-36 "Column" entity.name.type.canon
-346:4-10 "return" keyword.control.canon
-348:6-9 "for" keyword.control.canon
-348:12-14 "in" keyword.operator.word.canon
-349:6-8 "if" keyword.control.canon
-349:11-12 "." punctuation.accessor.canon
-349:12-17 "since" variable.other.property.canon
-349:18-20 "??" keyword.operator.canon
-349:28-30 "<=" keyword.operator.canon
-349:33-36 "and" keyword.operator.word.canon
-349:39-40 "." punctuation.accessor.canon
-349:40-49 "retiredIn" variable.other.property.canon
-349:50-52 "==" keyword.operator.canon
-349:53-57 "none" constant.language.canon
-349:58-60 "or" keyword.operator.word.canon
-349:62-63 "." punctuation.accessor.canon
-349:63-72 "retiredIn" variable.other.property.canon
-349:73-74 ">" keyword.operator.canon
-353:0-63 "  /// The live columns, then the retired ones: the DDL's order." comment.line.documentation.canon
-354:2-4 "fn" storage.type.function.canon
-354:5-17 "tableColumns" entity.name.function.canon
-354:18-22 "self" variable.language.canon
-354:24-26 "->" keyword.operator.canon
-354:28-34 "Column" entity.name.type.canon
-355:4-10 "return" keyword.control.canon
-355:24-25 "." punctuation.accessor.canon
-355:25-31 "values" variable.other.property.canon
-355:34-35 "+" keyword.operator.canon
-355:52-53 "+" keyword.operator.canon
-355:57-60 "for" keyword.control.canon
-355:63-65 "in" keyword.operator.word.canon
-355:74-76 "if" keyword.control.canon
-355:78-79 "." punctuation.accessor.canon
-355:79-88 "retiredIn" variable.other.property.canon
-355:89-91 "!=" keyword.operator.canon
-355:92-96 "none" constant.language.canon
-359:0-86 "/// The table of event type `e`; none for a retired type, which has no table any more." comment.line.documentation.canon
-360:0-2 "fn" storage.type.function.canon
-360:3-10 "eventOf" entity.name.function.canon
-360:11-12 "e" variable.other.property.canon
-360:12-13 ":" punctuation.separator.key.canon
-360:14-23 "EventType" entity.name.type.canon
-360:25-27 "->" keyword.operator.canon
-360:28-33 "Event" entity.name.type.canon
-360:33-34 "?" keyword.operator.canon
-360:37-43 "return" keyword.control.canon
-360:50-51 "." punctuation.accessor.canon
-360:51-54 "get" variable.other.property.canon
-362:0-38 "/// The live event types, in id order." comment.line.documentation.canon
-363:0-2 "fn" storage.type.function.canon
-363:3-13 "liveEvents" entity.name.function.canon
-363:16-18 "->" keyword.operator.canon
-363:20-29 "EventType" entity.name.type.canon
-363:33-39 "return" keyword.control.canon
-363:40-49 "EventType" entity.name.type.canon
-363:49-50 "." punctuation.accessor.canon
-363:50-57 "members" variable.other.property.canon
-363:57-58 "." punctuation.accessor.canon
-363:58-64 "filter" variable.other.property.canon
-363:67-69 "=>" keyword.operator.canon
-363:70-73 "not" keyword.operator.word.canon
-363:75-76 "." punctuation.accessor.canon
-363:76-83 "retired" variable.other.property.canon
-363:84-85 "." punctuation.accessor.canon
-363:85-91 "sortBy" variable.other.property.canon
-363:92-93 "." punctuation.accessor.canon
-363:93-97 "code" variable.other.property.canon
-365:0-5 "check" keyword.other.canon
-366:2-5 "for" keyword.control.canon
-366:8-10 "in" keyword.operator.word.canon
-366:11-20 "EventType" entity.name.type.canon
-366:20-21 "." punctuation.accessor.canon
-366:21-28 "members" variable.other.property.canon
-367:4-6 "if" keyword.control.canon
-367:7-10 "not" keyword.operator.word.canon
-367:12-13 "." punctuation.accessor.canon
-367:13-20 "retired" variable.other.property.canon
-367:21-24 "and" keyword.operator.word.canon
-367:25-28 "not" keyword.operator.word.canon
-367:32-34 "in" keyword.operator.word.canon
-368:19-20 "\"" string.quoted.double.canon
-368:20-21 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-368:21-22 "e" string.quoted.double.canon meta.interpolation.canon
-368:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-368:23-85 " is a live event type with no table: give it one or retire it\"" string.quoted.double.canon
-373:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
-374:0-79 "// Per-event metadata: lookups over EventType, constexpr in C++ (DECISIONS 293)" comment.line.double-slash.canon
-375:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
-377:0-65 "/// Whether `e` is a tombstone: an id no producer may send again." comment.line.documentation.canon
-378:0-6 "export" storage.modifier.canon
-378:7-9 "fn" storage.type.function.canon
-378:10-19 "isRetired" entity.name.function.canon
-378:20-21 "e" variable.other.property.canon
-378:21-22 ":" punctuation.separator.key.canon
-378:23-32 "EventType" entity.name.type.canon
-378:34-36 "->" keyword.operator.canon
-378:37-41 "Bool" entity.name.type.canon
-378:44-50 "return" keyword.control.canon
-378:52-53 "." punctuation.accessor.canon
-378:53-60 "retired" variable.other.property.canon
-380:0-84 "/// The current layout version of `e` (the wire version byte); 0 for a retired type." comment.line.documentation.canon
-381:0-6 "export" storage.modifier.canon
-381:7-9 "fn" storage.type.function.canon
-381:10-19 "versionOf" entity.name.function.canon
-381:20-21 "e" variable.other.property.canon
-381:21-22 ":" punctuation.separator.key.canon
-381:23-32 "EventType" entity.name.type.canon
-381:34-36 "->" keyword.operator.canon
-381:37-42 "UInt8" entity.name.type.canon
-381:45-51 "return" keyword.control.canon
-381:62-64 "?." punctuation.accessor.canon
-381:64-71 "version" variable.other.property.canon
-381:72-74 "??" keyword.operator.canon
-381:75-76 "0" constant.numeric.integer.canon
-383:0-73 "/// The ring tier of `e`; a retired type is READONLY (nothing writes it)." comment.line.documentation.canon
-384:0-6 "export" storage.modifier.canon
-384:7-9 "fn" storage.type.function.canon
-384:10-16 "tierOf" entity.name.function.canon
-384:17-18 "e" variable.other.property.canon
-384:18-19 ":" punctuation.separator.key.canon
-384:20-29 "EventType" entity.name.type.canon
-384:31-33 "->" keyword.operator.canon
-384:34-38 "Tier" entity.name.type.canon
-384:41-47 "return" keyword.control.canon
-384:58-60 "?." punctuation.accessor.canon
-384:60-64 "tier" variable.other.property.canon
-384:65-67 "??" keyword.operator.canon
-384:68-76 "READONLY" constant.other.canon
-386:0-93 "/// The lake table of `e`, retired types included (their tables stay readable); for tombstone" comment.line.documentation.canon
-387:0-54 "/// 20, whose table is not recorded, the event's name." comment.line.documentation.canon
-388:0-6 "export" storage.modifier.canon
-388:7-9 "fn" storage.type.function.canon
-388:10-17 "tableOf" entity.name.function.canon
-388:18-19 "e" variable.other.property.canon
-388:19-20 ":" punctuation.separator.key.canon
-388:21-30 "EventType" entity.name.type.canon
-388:32-34 "->" keyword.operator.canon
-388:35-41 "String" entity.name.type.canon
-388:44-50 "return" keyword.control.canon
-388:52-53 "." punctuation.accessor.canon
-388:53-57 "name" variable.other.property.canon
-390:0-65 "/// Whether `e`'s current layout has the item_instance_id column." comment.line.documentation.canon
-391:0-6 "export" storage.modifier.canon
-391:7-9 "fn" storage.type.function.canon
-391:10-23 "hasInstanceId" entity.name.function.canon
-391:24-25 "e" variable.other.property.canon
-391:25-26 ":" punctuation.separator.key.canon
-391:27-36 "EventType" entity.name.type.canon
-391:38-40 "->" keyword.operator.canon
-391:41-45 "Bool" entity.name.type.canon
-392:2-5 "let" storage.type.canon
-392:9-10 "=" keyword.operator.canon
-393:2-8 "return" keyword.control.canon
-393:12-14 "!=" keyword.operator.canon
-393:15-19 "none" constant.language.canon
-393:20-23 "and" keyword.operator.word.canon
-393:24-42 "\"item_instance_id\"" string.quoted.double.canon
-393:43-45 "in" keyword.operator.word.canon
-393:48-49 "." punctuation.accessor.canon
-393:49-55 "layout" variable.other.property.canon
-393:58-59 "." punctuation.accessor.canon
-393:59-66 "version" variable.other.property.canon
-393:67-68 "." punctuation.accessor.canon
-393:68-71 "map" variable.other.property.canon
-393:72-73 "." punctuation.accessor.canon
-393:73-77 "name" variable.other.property.canon
-396:0-75 "/// The packed size of `e`'s current struct: header plus live body columns." comment.line.documentation.canon
-397:0-6 "export" storage.modifier.canon
-397:7-9 "fn" storage.type.function.canon
-397:10-18 "wireSize" entity.name.function.canon
-397:19-20 "e" variable.other.property.canon
-397:20-21 ":" punctuation.separator.key.canon
-397:22-31 "EventType" entity.name.type.canon
-397:33-35 "->" keyword.operator.canon
-397:36-39 "Int" entity.name.type.canon
-398:2-5 "let" storage.type.canon
-398:9-10 "=" keyword.operator.canon
-399:2-4 "if" keyword.control.canon
-399:8-10 "==" keyword.operator.canon
-399:11-15 "none" constant.language.canon
-399:18-24 "return" keyword.control.canon
-399:25-26 "0" constant.numeric.integer.canon
-400:2-8 "return" keyword.control.canon
-400:22-23 "." punctuation.accessor.canon
-400:23-26 "map" variable.other.property.canon
-400:27-28 "." punctuation.accessor.canon
-400:28-33 "width" variable.other.property.canon
-400:36-37 "." punctuation.accessor.canon
-400:37-40 "sum" variable.other.property.canon
-400:43-44 "+" keyword.operator.canon
-400:47-48 "." punctuation.accessor.canon
-400:48-54 "layout" variable.other.property.canon
-400:57-58 "." punctuation.accessor.canon
-400:58-65 "version" variable.other.property.canon
-400:66-67 "." punctuation.accessor.canon
-400:67-70 "map" variable.other.property.canon
-400:71-72 "." punctuation.accessor.canon
-400:72-77 "width" variable.other.property.canon
-400:80-81 "." punctuation.accessor.canon
-400:81-84 "sum" variable.other.property.canon
-403:0-45 "/// Whether producer `p` owns a ring for `e`." comment.line.documentation.canon
-404:0-6 "export" storage.modifier.canon
-404:7-9 "fn" storage.type.function.canon
-404:10-15 "emits" entity.name.function.canon
-404:16-17 "e" variable.other.property.canon
-404:17-18 ":" punctuation.separator.key.canon
-404:19-28 "EventType" entity.name.type.canon
-404:30-31 "p" variable.other.property.canon
-404:31-32 ":" punctuation.separator.key.canon
-404:33-41 "Producer" entity.name.type.canon
-404:43-45 "->" keyword.operator.canon
-404:46-50 "Bool" entity.name.type.canon
-404:53-59 "return" keyword.control.canon
-404:62-64 "in" keyword.operator.word.canon
-404:76-78 "?." punctuation.accessor.canon
-404:78-87 "producers" variable.other.property.canon
-404:88-90 "??" keyword.operator.canon
-406:0-71 "/// The CREATE TABLE of `e`'s current layout; empty for a retired type." comment.line.documentation.canon
-407:0-6 "export" storage.modifier.canon
-407:7-9 "fn" storage.type.function.canon
-407:10-24 "createTableSql" entity.name.function.canon
-407:25-26 "e" variable.other.property.canon
-407:26-27 ":" punctuation.separator.key.canon
-407:28-37 "EventType" entity.name.type.canon
-407:39-41 "->" keyword.operator.canon
-407:42-48 "String" entity.name.type.canon
-408:2-5 "let" storage.type.canon
-408:9-10 "=" keyword.operator.canon
-409:2-4 "if" keyword.control.canon
-409:8-10 "==" keyword.operator.canon
-409:11-15 "none" constant.language.canon
-409:18-24 "return" keyword.control.canon
-409:25-27 "\"\"" string.quoted.double.canon
-410:2-5 "let" storage.type.canon
-410:11-12 "=" keyword.operator.canon
-410:30-31 "." punctuation.accessor.canon
-410:31-34 "map" variable.other.property.canon
-410:35-36 "." punctuation.accessor.canon
-410:36-39 "ddl" variable.other.property.canon
-410:43-44 "+" keyword.operator.canon
-410:47-48 "." punctuation.accessor.canon
-410:48-60 "tableColumns" variable.other.property.canon
-410:62-63 "." punctuation.accessor.canon
-410:63-66 "map" variable.other.property.canon
-410:67-68 "." punctuation.accessor.canon
-410:68-71 "ddl" variable.other.property.canon
-411:2-8 "return" keyword.control.canon
-411:9-37 "\"CREATE TABLE IF NOT EXISTS " string.quoted.double.canon
-411:37-38 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-411:38-39 "e" string.quoted.double.canon meta.interpolation.canon
-411:39-40 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-411:40-44 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-411:44-45 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-411:45-47 " (" string.quoted.double.canon
-411:47-48 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-411:48-52 "cols" string.quoted.double.canon meta.interpolation.canon
-411:52-53 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-411:53-57 "join" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-411:57-58 "(" string.quoted.double.canon meta.interpolation.canon
-411:58-62 "\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon
-411:62-63 ")" string.quoted.double.canon meta.interpolation.canon
-411:63-64 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-411:64-67 ");\"" string.quoted.double.canon
-414:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
-415:0-10 "// Outputs" comment.line.double-slash.canon
-416:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
-418:0-4 "emit" keyword.other.canon
-418:11-14 "out" variable.other.property.canon
-418:14-15 ":" punctuation.separator.key.canon
-418:16-52 "\"@source/Engine/Telemetry/Generated\"" string.quoted.double.canon
-418:54-63 "namespace" variable.other.property.canon
-418:63-64 ":" punctuation.separator.key.canon
-418:65-76 "\"Telemetry\"" string.quoted.double.canon
-418:78-82 "mode" variable.other.property.canon
-418:82-83 ":" punctuation.separator.key.canon
-419:0-4 "emit" keyword.other.canon
-419:10-13 "out" variable.other.property.canon
-419:13-14 ":" punctuation.separator.key.canon
-419:15-51 "\"@services/monitoring/gen/telemetry\"" string.quoted.double.canon
-419:53-57 "mode" variable.other.property.canon
-419:57-58 ":" punctuation.separator.key.canon
-420:0-4 "emit" keyword.other.canon
-420:12-15 "out" variable.other.property.canon
-420:15-16 ":" punctuation.separator.key.canon
-420:17-52 "\"@source/Tools/telemetry/generated\"" string.quoted.double.canon
+314:20-21 "." punctuation.accessor.canon
+314:21-28 "isEmpty" variable.other.property.canon
+316:15-16 "." punctuation.accessor.canon
+316:16-18 "of" variable.other.property.canon
+317:14-45 "\"no column of this table holds " string.quoted.double.canon
+317:45-46 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+317:46-47 "s" string.quoted.double.canon meta.interpolation.canon
+317:47-48 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+317:48-50 "of" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+317:50-51 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+317:51-91 ": the role splits rows it does not have\"" string.quoted.double.canon
+320:10-12 "if" keyword.control.canon
+320:20-21 "." punctuation.accessor.canon
+320:21-24 "len" variable.other.property.canon
+320:27-28 ">" keyword.operator.canon
+320:29-30 "1" constant.numeric.integer.canon
+322:15-16 "." punctuation.accessor.canon
+322:16-18 "of" variable.other.property.canon
+323:14-15 "\"" string.quoted.double.canon
+323:15-16 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+323:16-23 "holders" string.quoted.double.canon meta.interpolation.canon
+323:23-24 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+323:24-28 "join" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+323:28-29 "(" string.quoted.double.canon meta.interpolation.canon
+323:29-33 "\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon
+323:33-34 ")" string.quoted.double.canon meta.interpolation.canon
+323:34-35 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+323:35-45 " all hold " string.quoted.double.canon
+323:45-46 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+323:46-47 "s" string.quoted.double.canon meta.interpolation.canon
+323:47-48 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+323:48-50 "of" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+323:50-51 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+323:51-96 ": the role cannot tell which splits the rows\"" string.quoted.double.canon
+327:14-16 "=>" keyword.operator.canon
+330:4-81 "// L-0111 coverage: a ledger typed by an enum covers every live member of it." comment.line.double-slash.canon
+331:4-6 "if" keyword.control.canon
+331:19-21 "!=" keyword.operator.canon
+331:22-26 "none" constant.language.canon
+332:6-8 "if" keyword.control.canon
+332:20-21 "." punctuation.accessor.canon
+332:21-27 "values" variable.other.property.canon
+332:28-30 "==" keyword.operator.canon
+332:31-35 "none" constant.language.canon
+333:26-27 "\"" string.quoted.double.canon
+333:27-28 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+333:28-39 "ledgerKinds" string.quoted.double.canon meta.interpolation.canon
+333:39-40 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+333:40-44 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+333:44-45 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+333:45-69 " is not an enum8 column\"" string.quoted.double.canon
+334:8-12 "else" keyword.control.canon
+335:8-11 "var" storage.type.canon
+335:12-19 "covered" variable.other.property.canon
+335:19-20 ":" punctuation.separator.key.canon
+335:22-28 "String" entity.name.type.canon
+335:30-31 "=" keyword.operator.canon
+336:8-11 "for" keyword.control.canon
+336:14-16 "in" keyword.operator.word.canon
+337:10-15 "match" keyword.control.canon
+337:17-18 "." punctuation.accessor.canon
+337:18-22 "rows" variable.other.property.canon
+338:18-20 "=>" keyword.operator.canon
+338:31-33 "+=" keyword.operator.canon
+338:55-56 "." punctuation.accessor.canon
+338:56-62 "values" variable.other.property.canon
+339:20-22 "=>" keyword.operator.canon
+340:14-88 "// ledgerKinds is the role's column (columnOf) exactly when it holds `of`." comment.line.double-slash.canon
+341:14-16 "if" keyword.control.canon
+341:28-29 "." punctuation.accessor.canon
+341:29-35 "values" variable.other.property.canon
+341:36-38 "==" keyword.operator.canon
+341:40-41 "." punctuation.accessor.canon
+341:41-43 "of" variable.other.property.canon
+341:54-56 "+=" keyword.operator.canon
+341:58-64 "String" entity.name.type.canon
+341:68-71 "for" keyword.control.canon
+341:74-76 "in" keyword.operator.word.canon
+341:78-79 "." punctuation.accessor.canon
+341:79-84 "kinds" variable.other.property.canon
+345:8-11 "for" keyword.control.canon
+345:14-16 "in" keyword.operator.word.canon
+345:38-39 "." punctuation.accessor.canon
+345:39-45 "values" variable.other.property.canon
+346:10-12 "if" keyword.control.canon
+346:13-16 "not" keyword.operator.word.canon
+346:20-22 "in" keyword.operator.word.canon
+347:30-31 "\"" string.quoted.double.canon
+347:31-32 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+347:32-43 "ledgerKinds" string.quoted.double.canon meta.interpolation.canon
+347:43-44 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+347:44-48 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+347:48-49 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+347:49-50 " " string.quoted.double.canon
+347:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+347:51-52 "n" string.quoted.double.canon meta.interpolation.canon
+347:52-53 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+347:53-83 " is covered by no ledger role\"" string.quoted.double.canon
+354:0-49 "  /// The columns of `v`'s layout, in wire order." comment.line.documentation.canon
+355:2-4 "fn" storage.type.function.canon
+355:5-11 "layout" entity.name.function.canon
+355:12-16 "self" variable.language.canon
+355:18-19 "v" variable.other.property.canon
+355:19-20 ":" punctuation.separator.key.canon
+355:21-24 "Int" entity.name.type.canon
+355:26-28 "->" keyword.operator.canon
+355:30-36 "Column" entity.name.type.canon
+356:4-10 "return" keyword.control.canon
+358:6-9 "for" keyword.control.canon
+358:12-14 "in" keyword.operator.word.canon
+359:6-8 "if" keyword.control.canon
+359:11-12 "." punctuation.accessor.canon
+359:12-17 "since" variable.other.property.canon
+359:18-20 "??" keyword.operator.canon
+359:28-30 "<=" keyword.operator.canon
+359:33-36 "and" keyword.operator.word.canon
+359:39-40 "." punctuation.accessor.canon
+359:40-49 "retiredIn" variable.other.property.canon
+359:50-52 "==" keyword.operator.canon
+359:53-57 "none" constant.language.canon
+359:58-60 "or" keyword.operator.word.canon
+359:62-63 "." punctuation.accessor.canon
+359:63-72 "retiredIn" variable.other.property.canon
+359:73-74 ">" keyword.operator.canon
+363:0-63 "  /// The live columns, then the retired ones: the DDL's order." comment.line.documentation.canon
+364:2-4 "fn" storage.type.function.canon
+364:5-17 "tableColumns" entity.name.function.canon
+364:18-22 "self" variable.language.canon
+364:24-26 "->" keyword.operator.canon
+364:28-34 "Column" entity.name.type.canon
+365:4-10 "return" keyword.control.canon
+365:24-25 "." punctuation.accessor.canon
+365:25-31 "values" variable.other.property.canon
+365:34-35 "+" keyword.operator.canon
+365:52-53 "+" keyword.operator.canon
+365:57-60 "for" keyword.control.canon
+365:63-65 "in" keyword.operator.word.canon
+365:74-76 "if" keyword.control.canon
+365:78-79 "." punctuation.accessor.canon
+365:79-88 "retiredIn" variable.other.property.canon
+365:89-91 "!=" keyword.operator.canon
+365:92-96 "none" constant.language.canon
+369:0-96 "/// The column of `e` that holds vocabulary `v`: the one a role with `some { of: v }` splits on." comment.line.documentation.canon
+370:0-77 "/// Event's check makes it unique; a vocabulary no column holds is a failure." comment.line.documentation.canon
+371:0-2 "fn" storage.type.function.canon
+371:3-11 "columnOf" entity.name.function.canon
+371:12-13 "e" variable.other.property.canon
+371:13-14 ":" punctuation.separator.key.canon
+371:15-20 "Event" entity.name.type.canon
+371:22-23 "v" variable.other.property.canon
+371:23-24 ":" punctuation.separator.key.canon
+371:25-35 "Vocabulary" entity.name.type.canon
+371:37-39 "->" keyword.operator.canon
+371:40-46 "Column" entity.name.type.canon
+371:49-55 "return" keyword.control.canon
+371:57-58 "." punctuation.accessor.canon
+371:58-65 "columns" variable.other.property.canon
+371:65-66 "." punctuation.accessor.canon
+371:66-71 "first" variable.other.property.canon
+371:74-76 "=>" keyword.operator.canon
+371:78-79 "." punctuation.accessor.canon
+371:79-85 "values" variable.other.property.canon
+371:86-88 "==" keyword.operator.canon
+371:91-92 "!" keyword.operator.canon
+373:0-86 "/// The table of event type `e`; none for a retired type, which has no table any more." comment.line.documentation.canon
+374:0-2 "fn" storage.type.function.canon
+374:3-10 "eventOf" entity.name.function.canon
+374:11-12 "e" variable.other.property.canon
+374:12-13 ":" punctuation.separator.key.canon
+374:14-23 "EventType" entity.name.type.canon
+374:25-27 "->" keyword.operator.canon
+374:28-33 "Event" entity.name.type.canon
+374:33-34 "?" keyword.operator.canon
+374:37-43 "return" keyword.control.canon
+374:50-51 "." punctuation.accessor.canon
+374:51-54 "get" variable.other.property.canon
+376:0-38 "/// The live event types, in id order." comment.line.documentation.canon
+377:0-2 "fn" storage.type.function.canon
+377:3-13 "liveEvents" entity.name.function.canon
+377:16-18 "->" keyword.operator.canon
+377:20-29 "EventType" entity.name.type.canon
+377:33-39 "return" keyword.control.canon
+377:40-49 "EventType" entity.name.type.canon
+377:49-50 "." punctuation.accessor.canon
+377:50-57 "members" variable.other.property.canon
+377:57-58 "." punctuation.accessor.canon
+377:58-64 "filter" variable.other.property.canon
+377:67-69 "=>" keyword.operator.canon
+377:70-73 "not" keyword.operator.word.canon
+377:75-76 "." punctuation.accessor.canon
+377:76-83 "retired" variable.other.property.canon
+377:84-85 "." punctuation.accessor.canon
+377:85-91 "sortBy" variable.other.property.canon
+377:92-93 "." punctuation.accessor.canon
+377:93-97 "code" variable.other.property.canon
+379:0-5 "check" keyword.other.canon
+380:2-5 "for" keyword.control.canon
+380:8-10 "in" keyword.operator.word.canon
+380:11-20 "EventType" entity.name.type.canon
+380:20-21 "." punctuation.accessor.canon
+380:21-28 "members" variable.other.property.canon
+381:4-6 "if" keyword.control.canon
+381:7-10 "not" keyword.operator.word.canon
+381:12-13 "." punctuation.accessor.canon
+381:13-20 "retired" variable.other.property.canon
+381:21-24 "and" keyword.operator.word.canon
+381:25-28 "not" keyword.operator.word.canon
+381:32-34 "in" keyword.operator.word.canon
+382:19-20 "\"" string.quoted.double.canon
+382:20-21 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+382:21-22 "e" string.quoted.double.canon meta.interpolation.canon
+382:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+382:23-85 " is a live event type with no table: give it one or retire it\"" string.quoted.double.canon
+387:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+388:0-79 "// Per-event metadata: lookups over EventType, constexpr in C++ (DECISIONS 293)" comment.line.double-slash.canon
+389:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+391:0-65 "/// Whether `e` is a tombstone: an id no producer may send again." comment.line.documentation.canon
+392:0-6 "export" storage.modifier.canon
+392:7-9 "fn" storage.type.function.canon
+392:10-19 "isRetired" entity.name.function.canon
+392:20-21 "e" variable.other.property.canon
+392:21-22 ":" punctuation.separator.key.canon
+392:23-32 "EventType" entity.name.type.canon
+392:34-36 "->" keyword.operator.canon
+392:37-41 "Bool" entity.name.type.canon
+392:44-50 "return" keyword.control.canon
+392:52-53 "." punctuation.accessor.canon
+392:53-60 "retired" variable.other.property.canon
+394:0-84 "/// The current layout version of `e` (the wire version byte); 0 for a retired type." comment.line.documentation.canon
+395:0-6 "export" storage.modifier.canon
+395:7-9 "fn" storage.type.function.canon
+395:10-19 "versionOf" entity.name.function.canon
+395:20-21 "e" variable.other.property.canon
+395:21-22 ":" punctuation.separator.key.canon
+395:23-32 "EventType" entity.name.type.canon
+395:34-36 "->" keyword.operator.canon
+395:37-42 "UInt8" entity.name.type.canon
+395:45-51 "return" keyword.control.canon
+395:62-64 "?." punctuation.accessor.canon
+395:64-71 "version" variable.other.property.canon
+395:72-74 "??" keyword.operator.canon
+395:75-76 "0" constant.numeric.integer.canon
+397:0-73 "/// The ring tier of `e`; a retired type is READONLY (nothing writes it)." comment.line.documentation.canon
+398:0-6 "export" storage.modifier.canon
+398:7-9 "fn" storage.type.function.canon
+398:10-16 "tierOf" entity.name.function.canon
+398:17-18 "e" variable.other.property.canon
+398:18-19 ":" punctuation.separator.key.canon
+398:20-29 "EventType" entity.name.type.canon
+398:31-33 "->" keyword.operator.canon
+398:34-38 "Tier" entity.name.type.canon
+398:41-47 "return" keyword.control.canon
+398:58-60 "?." punctuation.accessor.canon
+398:60-64 "tier" variable.other.property.canon
+398:65-67 "??" keyword.operator.canon
+398:68-76 "READONLY" constant.other.canon
+400:0-93 "/// The lake table of `e`, retired types included (their tables stay readable); for tombstone" comment.line.documentation.canon
+401:0-54 "/// 20, whose table is not recorded, the event's name." comment.line.documentation.canon
+402:0-6 "export" storage.modifier.canon
+402:7-9 "fn" storage.type.function.canon
+402:10-17 "tableOf" entity.name.function.canon
+402:18-19 "e" variable.other.property.canon
+402:19-20 ":" punctuation.separator.key.canon
+402:21-30 "EventType" entity.name.type.canon
+402:32-34 "->" keyword.operator.canon
+402:35-41 "String" entity.name.type.canon
+402:44-50 "return" keyword.control.canon
+402:52-53 "." punctuation.accessor.canon
+402:53-57 "name" variable.other.property.canon
+404:0-65 "/// Whether `e`'s current layout has the item_instance_id column." comment.line.documentation.canon
+405:0-6 "export" storage.modifier.canon
+405:7-9 "fn" storage.type.function.canon
+405:10-23 "hasInstanceId" entity.name.function.canon
+405:24-25 "e" variable.other.property.canon
+405:25-26 ":" punctuation.separator.key.canon
+405:27-36 "EventType" entity.name.type.canon
+405:38-40 "->" keyword.operator.canon
+405:41-45 "Bool" entity.name.type.canon
+406:2-5 "let" storage.type.canon
+406:9-10 "=" keyword.operator.canon
+407:2-8 "return" keyword.control.canon
+407:12-14 "!=" keyword.operator.canon
+407:15-19 "none" constant.language.canon
+407:20-23 "and" keyword.operator.word.canon
+407:24-42 "\"item_instance_id\"" string.quoted.double.canon
+407:43-45 "in" keyword.operator.word.canon
+407:48-49 "." punctuation.accessor.canon
+407:49-55 "layout" variable.other.property.canon
+407:58-59 "." punctuation.accessor.canon
+407:59-66 "version" variable.other.property.canon
+407:67-68 "." punctuation.accessor.canon
+407:68-71 "map" variable.other.property.canon
+407:72-73 "." punctuation.accessor.canon
+407:73-77 "name" variable.other.property.canon
+410:0-75 "/// The packed size of `e`'s current struct: header plus live body columns." comment.line.documentation.canon
+411:0-6 "export" storage.modifier.canon
+411:7-9 "fn" storage.type.function.canon
+411:10-18 "wireSize" entity.name.function.canon
+411:19-20 "e" variable.other.property.canon
+411:20-21 ":" punctuation.separator.key.canon
+411:22-31 "EventType" entity.name.type.canon
+411:33-35 "->" keyword.operator.canon
+411:36-39 "Int" entity.name.type.canon
+412:2-5 "let" storage.type.canon
+412:9-10 "=" keyword.operator.canon
+413:2-4 "if" keyword.control.canon
+413:8-10 "==" keyword.operator.canon
+413:11-15 "none" constant.language.canon
+413:18-24 "return" keyword.control.canon
+413:25-26 "0" constant.numeric.integer.canon
+414:2-8 "return" keyword.control.canon
+414:22-23 "." punctuation.accessor.canon
+414:23-26 "map" variable.other.property.canon
+414:27-28 "." punctuation.accessor.canon
+414:28-33 "width" variable.other.property.canon
+414:36-37 "." punctuation.accessor.canon
+414:37-40 "sum" variable.other.property.canon
+414:43-44 "+" keyword.operator.canon
+414:47-48 "." punctuation.accessor.canon
+414:48-54 "layout" variable.other.property.canon
+414:57-58 "." punctuation.accessor.canon
+414:58-65 "version" variable.other.property.canon
+414:66-67 "." punctuation.accessor.canon
+414:67-70 "map" variable.other.property.canon
+414:71-72 "." punctuation.accessor.canon
+414:72-77 "width" variable.other.property.canon
+414:80-81 "." punctuation.accessor.canon
+414:81-84 "sum" variable.other.property.canon
+417:0-45 "/// Whether producer `p` owns a ring for `e`." comment.line.documentation.canon
+418:0-6 "export" storage.modifier.canon
+418:7-9 "fn" storage.type.function.canon
+418:10-15 "emits" entity.name.function.canon
+418:16-17 "e" variable.other.property.canon
+418:17-18 ":" punctuation.separator.key.canon
+418:19-28 "EventType" entity.name.type.canon
+418:30-31 "p" variable.other.property.canon
+418:31-32 ":" punctuation.separator.key.canon
+418:33-41 "Producer" entity.name.type.canon
+418:43-45 "->" keyword.operator.canon
+418:46-50 "Bool" entity.name.type.canon
+418:53-59 "return" keyword.control.canon
+418:62-64 "in" keyword.operator.word.canon
+418:76-78 "?." punctuation.accessor.canon
+418:78-87 "producers" variable.other.property.canon
+418:88-90 "??" keyword.operator.canon
+420:0-71 "/// The CREATE TABLE of `e`'s current layout; empty for a retired type." comment.line.documentation.canon
+421:0-6 "export" storage.modifier.canon
+421:7-9 "fn" storage.type.function.canon
+421:10-24 "createTableSql" entity.name.function.canon
+421:25-26 "e" variable.other.property.canon
+421:26-27 ":" punctuation.separator.key.canon
+421:28-37 "EventType" entity.name.type.canon
+421:39-41 "->" keyword.operator.canon
+421:42-48 "String" entity.name.type.canon
+422:2-5 "let" storage.type.canon
+422:9-10 "=" keyword.operator.canon
+423:2-4 "if" keyword.control.canon
+423:8-10 "==" keyword.operator.canon
+423:11-15 "none" constant.language.canon
+423:18-24 "return" keyword.control.canon
+423:25-27 "\"\"" string.quoted.double.canon
+424:2-5 "let" storage.type.canon
+424:11-12 "=" keyword.operator.canon
+424:30-31 "." punctuation.accessor.canon
+424:31-34 "map" variable.other.property.canon
+424:35-36 "." punctuation.accessor.canon
+424:36-39 "ddl" variable.other.property.canon
+424:43-44 "+" keyword.operator.canon
+424:47-48 "." punctuation.accessor.canon
+424:48-60 "tableColumns" variable.other.property.canon
+424:62-63 "." punctuation.accessor.canon
+424:63-66 "map" variable.other.property.canon
+424:67-68 "." punctuation.accessor.canon
+424:68-71 "ddl" variable.other.property.canon
+425:2-8 "return" keyword.control.canon
+425:9-37 "\"CREATE TABLE IF NOT EXISTS " string.quoted.double.canon
+425:37-38 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+425:38-39 "e" string.quoted.double.canon meta.interpolation.canon
+425:39-40 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+425:40-44 "name" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+425:44-45 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+425:45-47 " (" string.quoted.double.canon
+425:47-48 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+425:48-52 "cols" string.quoted.double.canon meta.interpolation.canon
+425:52-53 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
+425:53-57 "join" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+425:57-58 "(" string.quoted.double.canon meta.interpolation.canon
+425:58-62 "\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon
+425:62-63 ")" string.quoted.double.canon meta.interpolation.canon
+425:63-64 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+425:64-67 ");\"" string.quoted.double.canon
+428:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+429:0-10 "// Outputs" comment.line.double-slash.canon
+430:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
+432:0-4 "emit" keyword.other.canon
+432:11-14 "out" variable.other.property.canon
+432:14-15 ":" punctuation.separator.key.canon
+432:16-52 "\"@source/Engine/Telemetry/Generated\"" string.quoted.double.canon
+432:54-63 "namespace" variable.other.property.canon
+432:63-64 ":" punctuation.separator.key.canon
+432:65-76 "\"Telemetry\"" string.quoted.double.canon
+432:78-82 "mode" variable.other.property.canon
+432:82-83 ":" punctuation.separator.key.canon
+433:0-4 "emit" keyword.other.canon
+433:10-13 "out" variable.other.property.canon
+433:13-14 ":" punctuation.separator.key.canon
+433:15-51 "\"@services/monitoring/gen/telemetry\"" string.quoted.double.canon
+433:53-57 "mode" variable.other.property.canon
+433:57-58 ":" punctuation.separator.key.canon
+434:0-4 "emit" keyword.other.canon
+434:12-15 "out" variable.other.property.canon
+434:15-16 ":" punctuation.separator.key.canon
+434:17-52 "\"@source/Tools/telemetry/generated\"" string.quoted.double.canon
