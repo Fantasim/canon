@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -63,6 +64,9 @@ func Main(ctx context.Context, args []string, env Env) int {
 		return usageError(env, global, errNoCommand)
 	}
 	name, rest := global.Arg(0), global.Args()[1:]
+	if name == cmdHelp {
+		return helpOut(env, global)
+	}
 	cmd, ok := commands()[name]
 	if !ok {
 		return usageError(env, global, fmt.Errorf(fmtQuoted, name, errUnknownCommand))
@@ -101,9 +105,20 @@ func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
 }
 
 // usageError writes err and the usage to stderr (exit 2).
+// A request for help (-h, --help, the help command) is not an error: DECISIONS 322.
 func usageError(env Env, fs *flag.FlagSet, err error) int {
+	if errors.Is(err, flag.ErrHelp) {
+		return helpOut(env, fs)
+	}
 	writeLine(env.Stderr, msgPrefix+err.Error())
 	return printUsage(env.Stderr, fs, exitUsage)
+}
+
+// helpOut prints the usage to stdout and exits 0 (DECISIONS 322).
+func helpOut(env Env, fs *flag.FlagSet) int {
+	printUsage(env.Stdout, fs, exitOK)
+	writeLine(env.Stdout, guidePointer)
+	return exitOK
 }
 
 func printUsage(w io.Writer, fs *flag.FlagSet, code int) int {

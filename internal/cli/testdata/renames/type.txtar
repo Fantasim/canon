@@ -4,7 +4,7 @@ features.renames:Mission Quest
 -- want --
 [exit 0]
 [stdout]
-{"rename":{"applied":true,"revision":"r1:94e623c843301100151fc1edb1e20d202808373a9c7e3c8decc65a458c376c74","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/renames.fr.canon"},{"kind":"modified","path":"features/renames/renames.view.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"}],"dropped":[],"undo":{"base":"r1:94e623c843301100151fc1edb1e20d202808373a9c7e3c8decc65a458c376c74","ops":[{"op":"renameName","path":"features.renames:Quest","name":"Mission"}]}}}
+{"rename":{"applied":true,"revision":"r1:b364b0a38cf850306840039a1ad27a590b208ffd85e2ce0862149d47fdc9d26e","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/renames.fr.canon"},{"kind":"modified","path":"features/renames/renames.view.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"}],"dropped":[],"undo":{"base":"r1:b364b0a38cf850306840039a1ad27a590b208ffd85e2ce0862149d47fdc9d26e","ops":[{"op":"renameName","path":"features.renames:Quest","name":"Mission"}]}}}
 {"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
 [stderr]
 [diff features/renames/renames.canon]

@@ -4,7 +4,7 @@ features.renames:Capacity.players members
 -- want --
 [exit 0]
 [stdout]
-{"rename":{"applied":true,"revision":"r1:e63ff971506b8def4665756c1de64bf428e408b1c73c6071c403113bf01188bd","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/staging.layer.canon"}],"dropped":[],"undo":{"base":"r1:e63ff971506b8def4665756c1de64bf428e408b1c73c6071c403113bf01188bd","ops":[{"op":"renameName","path":"features.renames:Capacity.members","name":"players"}]}}}
+{"rename":{"applied":true,"revision":"r1:0c7344978f2767f9773a24c49b5da8d3f75e77ef03a444ba40798b24aea7b78c","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/staging.layer.canon"}],"dropped":[],"undo":{"base":"r1:0c7344978f2767f9773a24c49b5da8d3f75e77ef03a444ba40798b24aea7b78c","ops":[{"op":"renameName","path":"features.renames:Capacity.members","name":"players"}]}}}
 {"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
 [stderr]
 [diff features/renames/renames.canon]

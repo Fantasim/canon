@@ -82,9 +82,9 @@ record Quest {
   /// What it gives.
   reward: Reward = nothing
   /// Entry cost; none is free.
-  fee: Price? = none
+  fee: Price?
   /// Quest unlocked next.
-  next: ref quests? = none
+  next: ref quests?
 }
 
 /// The quests, keyed by identifier.
@@ -195,7 +195,7 @@ record Objective {
   /// What it counts.
   goal: Goal
   /// Typed by the earlier field `goal`; none when the goal aims at nothing.
-  target: Target(goal)? = none
+  target: Target(goal)?
 }
 ```
 

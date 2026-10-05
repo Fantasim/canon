@@ -32,7 +32,11 @@ const (
 	cmdLSP     = "lsp"
 	cmdGuide   = "guide"
 	cmdLock    = "lock"
+	cmdHelp    = "help"
 )
+
+// guidePointer ends the help output (DECISIONS 322).
+const guidePointer = "more: canon guide"
 
 // Flags (CLI.md §2.3, §3.1, §3.4).
 const (
@@ -98,6 +102,7 @@ commands:
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
   guide [topic]         print the agent guide: the index, or one topic
+  help                  print this usage
   init                  create project.canon in the current directory
   lock check [pkgs...]  verify canon.lock against the sources, no build
   lsp                   run the language server on stdin and stdout

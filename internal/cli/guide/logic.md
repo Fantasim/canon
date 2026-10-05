@@ -97,7 +97,7 @@ postfix `.f` `?.f` `[i]` `(args)` `!`. `and`/`or`/`not` take `Bool` only and sho
 - `==` is deep on records, lists and maps; refs and entries compare by identity. `<` works on
   numbers, durations, strings and `ordered` enums only (`E3310`).
 - `if c { a } else { b }` is an expression when each branch is one expression and `else` exists.
-- `x in xs`: list membership, map or table key, range. `v is case` tests a variant case.
+- `x in xs`: list element, range; never a key: a key is tested with `xs.hasKey(k)` (or `xs.get(k) != none`). `v is case` tests a variant case.
 
 ```canon fragment
 match reward {
@@ -121,8 +121,8 @@ enum, a variant, a `Bool`, or an optional of one (`none` pattern). No literal pa
 | numbers | `Int(f)` `Float(i)` `String(x)` `abs` `min(a, b, ...)` `max` `clamp(x, lo, hi)` `floor` `ceil` `round` `sqrt` `pow` |
 | strings | `len()` (bytes) `isEmpty()` `contains` `startsWith` `endsWith` `split(sep)` `trim()` `lower()` `upper()` `replace(a, b)` `matches(/re/)` `find(s)` `s[a..b]` |
 | lists, tables, keyed lists | `len` `isEmpty` `first()` `last()` `first(pred)` `get` `contains` `indexOf` `map` `filter` `flatMap` `flatten` `any` `all` `count` `sum` `min` `max` `minBy` `maxBy` `sortBy` `reverse` `groupBy` `unique` `isUnique` `enumerate` `pairs` `zip` `join(sep)` `intersect` `union` `diff` `toMap(kf, vf)` |
-| tables, keyed lists | `t[k]` `t.k` `get(k)` `find(k)` `at(i)` `keys()` `values()`; tables: `active()` (not retired) |
-| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `contains(k)` `map` `filter` `all` `any` `count` (predicates take `(k, v)`) |
+| tables, keyed lists | `t[k]` `t.k` `get(k)` `hasKey(k)` `find(k)` `at(i)` `keys()` `values()`; tables: `active()` (not retired) |
+| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `hasKey(k)` `map` `filter` `all` `any` `count` (predicates take `(k, v)`) |
 | ranges | `r.start` `r.end` `r.len()` `r.isEmpty()` `r.contains(x)` |
 | graphs | `reachable(from: x, next: f)` `cycles(xs, next: f)` `topoSort(xs, next: f)` |
 | optional results | `first` `last` `get` `find` `min` `max` `minBy` `maxBy` return `T?` |

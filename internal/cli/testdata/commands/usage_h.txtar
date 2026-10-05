@@ -1,12 +1,10 @@
-CLI.md §2.3, §2.5: CLI.md lists no -h flag; it is a usage error.
+CLI.md §2.3, §2.5; DECISIONS 322: -h prints the usage to stdout and exits 0.
 -- args --
 check
 -h
 -- want --
-[exit 2]
+[exit 0]
 [stdout]
-[stderr]
-canon: flag: help requested
 usage: canon <command> [arguments] [flags]
 
 commands:
@@ -16,6 +14,7 @@ commands:
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
   guide [topic]         print the agent guide: the index, or one topic
+  help                  print this usage
   init                  create project.canon in the current directory
   lock check [pkgs...]  verify canon.lock against the sources, no build
   lsp                   run the language server on stdin and stdout
@@ -45,3 +44,5 @@ flags:
     	use name=dir for a declared root; repeatable
   -watch
     	run again after every change, printing what changed
+more: canon guide
+[stderr]

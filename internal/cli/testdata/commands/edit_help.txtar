@@ -2,10 +2,8 @@ CLI.md §3.15: -h lists --edit-layer.
 -- args --
 edit -h
 -- want --
-[exit 2]
+[exit 0]
 [stdout]
-[stderr]
-canon: flag: help requested
 usage: canon <command> [arguments] [flags]
 
 commands:
@@ -15,6 +13,7 @@ commands:
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
   guide [topic]         print the agent guide: the index, or one topic
+  help                  print this usage
   init                  create project.canon in the current directory
   lock check [pkgs...]  verify canon.lock against the sources, no build
   lsp                   run the language server on stdin and stdout
@@ -44,3 +43,5 @@ flags:
     	print errors only
   -root name=dir
     	use name=dir for a declared root; repeatable
+more: canon guide
+[stderr]

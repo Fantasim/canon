@@ -89,7 +89,7 @@ record Limits {
   /// Session length, written in seconds.
   timeout: Duration @json("timeoutSec", unit: s)
   /// Message of the day; "" in the file means none.
-  motd: String? = none @json("szMotd", none: "")
+  motd: String? @json("szMotd", none: "")
 }
 
 /// The whole file, read as the expected type.

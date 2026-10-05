@@ -4,7 +4,7 @@ features.renames:missions quests
 -- want --
 [exit 0]
 [stdout]
-{"rename":{"applied":true,"revision":"r1:70b98e26197fe959c5828ea95a7a5830243650f236db159d0699e4f5b99e0a42","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"},{"kind":"modified","path":"features/renames/store/rare/hunt.canon"}],"dropped":[],"undo":{"base":"r1:70b98e26197fe959c5828ea95a7a5830243650f236db159d0699e4f5b99e0a42","ops":[{"op":"renameName","path":"features.renames:quests","name":"missions"}]}}}
+{"rename":{"applied":true,"revision":"r1:6a5643441f90a071a936d4f62dcd78375aee45a59956f8f8b79c8f2bb271808f","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"},{"kind":"modified","path":"features/renames/store/rare/hunt.canon"}],"dropped":[],"undo":{"base":"r1:6a5643441f90a071a936d4f62dcd78375aee45a59956f8f8b79c8f2bb271808f","ops":[{"op":"renameName","path":"features.renames:quests","name":"missions"}]}}}
 {"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
 [stderr]
 [diff features/renames/renames.canon]
@@ -14,8 +14,8 @@ features.renames:missions quests
    /// What it gives.
    reward: Prize
    /// The quest that follows it.
--  next: ref missions? = none
-+  next: ref quests? = none
+-  next: ref missions?
++  next: ref quests?
  
    /// What a list shows: the name and the level.
    fn label(self) -> String { return "{name} ({level})" }

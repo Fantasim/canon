@@ -4,7 +4,7 @@ features/renames/renames.canon:112:9 inner
 -- want --
 [exit 0]
 [stdout]
-{"rename":{"applied":true,"revision":"r1:cff4f10762ebaba578f508f2403aa1e48b0e17d0997e0b2e88b8f82f08994e01","changes":[{"kind":"modified","path":"features/renames/renames.canon"}],"dropped":[],"undo":{"base":"r1:cff4f10762ebaba578f508f2403aa1e48b0e17d0997e0b2e88b8f82f08994e01","ops":[{"op":"renameName","path":"features.renames:bonus.inner","name":"step"}]}}}
+{"rename":{"applied":true,"revision":"r1:d806f63ac7c26e9272dfc940f0240eb8e7f530750acdd1f9dd847d9b034d2e7b","changes":[{"kind":"modified","path":"features/renames/renames.canon"}],"dropped":[],"undo":{"base":"r1:d806f63ac7c26e9272dfc940f0240eb8e7f530750acdd1f9dd847d9b034d2e7b","ops":[{"op":"renameName","path":"features.renames:bonus.inner","name":"step"}]}}}
 {"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
 [stderr]
 [diff features/renames/renames.canon]

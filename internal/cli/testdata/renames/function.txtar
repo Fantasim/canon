@@ -4,7 +4,7 @@ features.renames:xpFor experienceFor
 -- want --
 [exit 0]
 [stdout]
-{"rename":{"applied":true,"revision":"r1:251e071b605a2f72edca2676ef894e4a6317cc73373a0383ca8e53466c82b921","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"}],"dropped":[],"undo":{"base":"r1:251e071b605a2f72edca2676ef894e4a6317cc73373a0383ca8e53466c82b921","ops":[{"op":"renameName","path":"features.renames:experienceFor","name":"xpFor"}]}}}
+{"rename":{"applied":true,"revision":"r1:cdf30f300ede382ffec14eaf4b2ff97b2481f52710cb7bf22f6dfdac929666a6","changes":[{"kind":"modified","path":"features/renames/renames.canon"},{"kind":"modified","path":"features/renames/shop/shop.canon"}],"dropped":[],"undo":{"base":"r1:cdf30f300ede382ffec14eaf4b2ff97b2481f52710cb7bf22f6dfdac929666a6","ops":[{"op":"renameName","path":"features.renames:experienceFor","name":"xpFor"}]}}}
 {"summary":{"errors":0,"warnings":0,"packages":2,"ms":0}}
 [stderr]
 [diff features/renames/renames.canon]
