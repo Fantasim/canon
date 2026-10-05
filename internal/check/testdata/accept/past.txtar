@@ -1,0 +1,104 @@
+TYPES.md §8.4, DECISIONS 304: `past X` on an enum, a variant, a ref or an alias of one, anywhere a type is written (a list element, a map key, under `?` and `where`), is accepted; statically `past X` is `X`: assignable both ways, a key field of `keyed by`, a type-level match scrutinee, `match` (on `past E?` too) covers retired members as usual, and value members and `E.members` work on it.
+-- a/a.canon --
+package a
+
+local enum E {
+  a
+  retired b
+  c
+}
+
+local variant V {
+  one {
+    n: Int
+  }
+  two
+}
+
+local record Item {
+  n: Int = 1
+}
+
+local let items: table Item = {
+  first {}
+}
+
+local type Alias = E
+local type PastE = past E
+
+local record Row {
+  kind: past E
+  kinds: [past E]
+  counts: {past E: Int}
+  maybe: past E?
+  item: past ref items
+  sold: [past ref items]
+  v: past V
+  aliased: past Alias
+  odd: past E where it != c
+}
+
+local let row: Row = Row {
+  kind: a
+  kinds: [a, c]
+  counts: { a: 1 }
+  maybe: none
+  item: items.first
+  sold: [items.first]
+  v: two
+  aliased: a
+  odd: a
+}
+
+local fn name(k: past E) -> String {
+  return match k {
+    a => "a"
+    b => "b"
+    c => "c"
+  }
+}
+
+local fn back(k: E) -> past E {
+  let p: past E = k
+  let q: E = p
+  return q
+}
+
+local fn facts(k: PastE) -> Bool {
+  let all: [past E] = E.members
+  return k.retired or k.name == "a" or k.index == 0 or all.len() > 0
+}
+
+local fn kinds(v: past V) -> Int {
+  return match v {
+    one(o) => o.n
+    two => 0
+  }
+}
+
+local let n: String = name(row.kind) + name(back(c))
+local let ok: Bool = facts(row.aliased) and kinds(row.v) == 0
+
+local record Grant {
+  kind: past E
+  n: Int = 0
+}
+
+local let grants: [Grant] keyed by kind = [Grant { kind: b }]
+
+local type ByKind(g: Grant) = match g.kind {
+  a => Int
+  b => String
+  c => Never
+}
+
+local fn label(k: past E?) -> String {
+  return match k {
+    a => "a"
+    b => "b"
+    c => "c"
+    none => "-"
+  }
+}
+
+local let l: String = label(grants.at(0).kind)

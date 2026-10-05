@@ -1,0 +1,22 @@
+TYPES.md §9.1, DECISIONS 316: a list keyed by a ref to itself has no base key type: E3012; so has a local list keyed by a ref to it (judged after resolution), whose chain of keys never ends either.
+-- a/a.canon --
+package a
+
+local record N {
+  p: ref ns
+}
+
+local let ns: [N] keyed by p = []
+
+local fn f() -> Int {
+  let local1: [N] keyed by p = []
+  return local1.len()
+}
+-- findings.txt --
+error[E3012]  a/a.canon:7:28
+  keyed by p: the keys of ref a.ns loop back to it; key one list by a String, integer or enum field
+
+error[E3012]  a/a.canon:10:28
+  keyed by p: the keys of ref a.ns loop back to it; key one list by a String, integer or enum field
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,29 @@
+TYPES.md §11.1, DECISIONS 307: an optional argument given to a parameterized record `R(args)` stays E3806; a type function takes it.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local record Ev {
+  k: K
+}
+
+local record H(e: Ev) {
+  n: Int = 0
+}
+
+local type P(e: Ev) = match e.k {
+  a => Int
+  b => String
+}
+
+local record R {
+  maybe: Ev? = none
+  held: H(maybe)
+  typed: P(maybe)
+}
+-- findings.txt --
+error[E3806]  a/a.canon:20:11
+  H takes 1 arguments of types a.Ev
+
+1 error, 0 warnings in 1 package (…)

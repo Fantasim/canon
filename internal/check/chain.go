@@ -66,6 +66,11 @@ func (c *checker) optionalRecv(env *env, x syntax.Expr, t types.Type, optDot boo
 
 // selector is `x.name` or `x?.name` (TYPES.md §3.5).
 func (c *checker) selector(env *env, s *syntax.SelectorExpr) (types.Type, bool) {
+	if x, isCall := s.X.(*syntax.CallExpr); isCall && !s.Optional {
+		if fn := c.typeFuncCallee(env, x); fn != nil {
+			return c.typeFuncReflection(env, s, x, fn), false
+		}
+	}
 	if q := c.qualifier(env, s.X); q != nil {
 		return c.qualifiedValue(env, s, q), false
 	}
@@ -191,7 +196,9 @@ func (c *checker) selectOn(t types.Type, name string) (*Selection, types.Type) {
 	case *types.VariantType:
 		return c.builtinMember(name, kindMember, &types.VariantKindType{Variant: x})
 	case *types.EnumType:
-		return c.enumBuiltin(x, name)
+		return c.enumValueMember(name, x.Codes != nil)
+	case *types.DepUnionType:
+		return c.depEnumMember(x.Fn, name)
 	case *types.TableType:
 		return entryMember(x.Elem)
 	case *types.ListType:
@@ -239,8 +246,8 @@ func (c *checker) builtinMember(name, want string, t types.Type) (*Selection, ty
 	return &Selection{Kind: SelBuiltinMember, Obj: c.builtins[name]}, t
 }
 
-// enumBuiltin is `.name`, `.index`, `.wire`, `.retired`, and `.code` with `@codes` (TYPES.md §8.1, STDLIB.md §3).
-func (c *checker) enumBuiltin(e *types.EnumType, name string) (*Selection, types.Type) {
+// enumValueMember is `.name`, `.index`, `.wire`, `.retired`, and `.code` with codes (TYPES.md §8.1).
+func (c *checker) enumValueMember(name string, codes bool) (*Selection, types.Type) {
 	switch name {
 	case nameMember, wireMember:
 		return c.builtinMember(name, name, types.StringType)
@@ -249,7 +256,7 @@ func (c *checker) enumBuiltin(e *types.EnumType, name string) (*Selection, types
 	case retiredMember:
 		return c.builtinMember(name, name, types.BoolType)
 	case codeMember:
-		if e.Codes != nil {
+		if codes {
 			return c.builtinMember(name, name, types.IntType)
 		}
 	}
@@ -280,6 +287,10 @@ func (c *checker) unknownMember(env *env, s *syntax.SelectorExpr, t types.Type) 
 	kind := diag.KindField
 	switch t.Base().Kind() {
 	case types.DepUnion:
+		if depCodeless(t, s.Name.Name) {
+			c.report(env, diag.E3003.At(env.span(s.Name), t, diag.KindMember, s.Name.Name))
+			return
+		}
 		c.report(env, diag.E3804.At(env.span(s.Name), dot+s.Name.Name, depName(t)))
 		return
 	case types.Enum:

@@ -1,0 +1,58 @@
+TYPES.md §8.4, DECISIONS 304: `past` on a type that is not an enum, a variant or a ref is E3024 and the type is kept: a basic type, a list (`past [K]`, write `[past K]`), a record, a case type, a table, an alias of an optional, a refined list under `keyed by`, and the match of a type function body. A variant kind `Kind(V)` is not writable in source (§8.3), so `past Kind(V)` cannot be reached.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local record Rec {
+  key: String
+  n: Int = 1
+}
+
+local variant V {
+  c {
+    n: Int
+  }
+  d
+}
+
+local type S = String?
+
+local let a: past Int = 1
+local let b: past [K] = [a]
+local let c: past Rec = Rec { key: "x" }
+local let d: past V.c = V.c { n: 1 }
+local let f: past table Rec = {}
+local let g: past S = none
+local let h: past [Rec](..=3) keyed by key = []
+
+local type F(k: K) = past match k {
+  a => Int
+  b => String
+}
+-- findings.txt --
+error[E3024]  a/a.canon:19:14
+  past applies to an enum, a variant or a ref, not Int (for a list, write [past E])
+
+error[E3024]  a/a.canon:20:14
+  past applies to an enum, a variant or a ref, not [a.K] (for a list, write [past E])
+
+error[E3024]  a/a.canon:21:14
+  past applies to an enum, a variant or a ref, not a.Rec (for a list, write [past E])
+
+error[E3024]  a/a.canon:22:14
+  past applies to an enum, a variant or a ref, not a.V.c (for a list, write [past E])
+
+error[E3024]  a/a.canon:23:14
+  past applies to an enum, a variant or a ref, not table a.Rec (for a list, write [past E])
+
+error[E3024]  a/a.canon:24:14
+  past applies to an enum, a variant or a ref, not a.S (for a list, write [past E])
+
+error[E3024]  a/a.canon:25:14
+  past applies to an enum, a variant or a ref, not [a.Rec](..=3) (for a list, write [past E])
+
+error[E3024]  a/a.canon:27:22
+  past applies to an enum, a variant or a ref, not a.F(*) (for a list, write [past E])
+
+8 errors, 0 warnings in 1 package (…)

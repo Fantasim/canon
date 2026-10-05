@@ -44,8 +44,28 @@ func (c *checker) callName(env *env, x *syntax.CallExpr, id *syntax.IdentExpr, w
 	default:
 	}
 	c.report(env, diag.E3005.At(env.span(id), nameType(o)))
+	if params, ok := c.valueParams(o); ok {
+		c.typeArgsAlone(env, x, params)
+		return types.ErrorType
+	}
 	c.argsAlone(env, x)
 	return types.ErrorType
+}
+
+// valueParams are the value parameters of a type function or a parameterized record o names.
+func (c *checker) valueParams(o *object) ([]*types.Param, bool) {
+	if fn := c.typeFuncOf(o); fn != nil {
+		return fn.Params, true
+	}
+	if o.kind != ObjTypeName {
+		return nil, false
+	}
+	rec, ok := c.resolveTypeName(o).(*types.RecordType)
+	if !ok || rec.Decl == nil || len(rec.Decl.Params) == 0 {
+		return nil, false
+	}
+	c.completeRecord(rec)
+	return rec.Params, true
 }
 
 // nameType is what a name that cannot be called is, for E3005.

@@ -1,0 +1,21 @@
+TYPES.md §15, §4.3, DECISIONS 306: the arguments of `F(a…).typeName` in a const are constant expressions: a let is E3015.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local enum E { x, y }
+
+local type F(k: K) = match k {
+  a => E
+  b => K
+}
+
+local let kk: K = a
+
+local const P = F(kk).typeName
+-- findings.txt --
+error[E3015]  a/a.canon:14:19
+  this const value must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

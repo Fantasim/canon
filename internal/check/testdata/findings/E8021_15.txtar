@@ -11,7 +11,7 @@ emit text { out: "@generated/sql" }
 emit text { out: "@generated/sql" }
 -- findings.txt --
 error[E8021]  a/a.canon:4:1
-  @text belongs on a public package-level export fn with no parameter that returns String
+  @text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form
 
 error[E8002]  a/a.canon:9:6
   package a has two emits for target text

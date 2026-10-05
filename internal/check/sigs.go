@@ -92,7 +92,7 @@ func (c *checker) letType(o *object) types.Type {
 	o.state = stateDone
 	c.settle(o)
 	if o.typ == nil {
-		o.typ = t
+		o.typ = inferred(t)
 	}
 	if _, isTable := o.typ.Base().(*types.TableType); !isTable {
 		o.keys = nil

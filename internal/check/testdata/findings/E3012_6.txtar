@@ -1,0 +1,38 @@
+TYPES.md §9.1, DECISIONS 316: a cycle of three lists keyed by refs has no base key type: E3012 at each, and at a list keyed by a ref into the cycle, whose target's key never reaches a base type either.
+-- a/a.canon --
+package a
+
+local record A {
+  b: ref bs
+}
+
+local record B {
+  c: ref cs
+}
+
+local record C {
+  a: ref as1
+}
+
+local record D {
+  a: ref as1
+}
+
+local let as1: [A] keyed by b = []
+local let bs: [B] keyed by c = []
+local let cs: [C] keyed by a = []
+local let ds: [D] keyed by a = []
+-- findings.txt --
+error[E3012]  a/a.canon:19:29
+  keyed by b: the keys of ref a.bs loop back to it; key one list by a String, integer or enum field
+
+error[E3012]  a/a.canon:20:28
+  keyed by c: the keys of ref a.cs loop back to it; key one list by a String, integer or enum field
+
+error[E3012]  a/a.canon:21:28
+  keyed by a: the keys of ref a.as1 loop back to it; key one list by a String, integer or enum field
+
+error[E3012]  a/a.canon:22:28
+  keyed by a: the keys of ref a.as1 loop back to it; key one list by a String, integer or enum field
+
+4 errors, 0 warnings in 1 package (…)

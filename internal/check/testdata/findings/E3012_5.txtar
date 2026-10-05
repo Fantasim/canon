@@ -1,0 +1,22 @@
+TYPES.md §9.1, DECISIONS 316: two lists keyed by refs to each other have no base key type: E3012 at each.
+-- a/a.canon --
+package a
+
+local record A {
+  b: ref bs
+}
+
+local record B {
+  a: ref as1
+}
+
+local let as1: [A] keyed by b = []
+local let bs: [B] keyed by a = []
+-- findings.txt --
+error[E3012]  a/a.canon:11:29
+  keyed by b: the keys of ref a.bs loop back to it; key one list by a String, integer or enum field
+
+error[E3012]  a/a.canon:12:28
+  keyed by a: the keys of ref a.as1 loop back to it; key one list by a String, integer or enum field
+
+2 errors, 0 warnings in 1 package (…)

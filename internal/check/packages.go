@@ -23,6 +23,8 @@ type pkgState struct {
 	pkg     *Package
 	entries []entryAt
 	edges   []importEdge
+	refKeys []refKey // ref key fields met while resolving, judged after it (DECISIONS 316)
+	keyed   bool     // the ref keys of resolution are judged: a later one is judged at once
 }
 
 // entryAt is an `entry` declaration, its file and its object.

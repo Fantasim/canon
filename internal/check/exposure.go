@@ -23,7 +23,8 @@ func (s letSelection) has(name string) bool { return s.all || s.names[name] }
 func (c *checker) checkExposure(p *pkgState) {
 	sel := emittedLets(p)
 	for _, o := range p.all {
-		if o.local || o.kind == ObjMethod { // a method is exposed with its record or variant
+		// A method is exposed with its record or variant; a @text fn is a file (DECISIONS 308).
+		if o.local || o.kind == ObjMethod || c.textFn(o) {
 			continue
 		}
 		env := c.declEnv(o)

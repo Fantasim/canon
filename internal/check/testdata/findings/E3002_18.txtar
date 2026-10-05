@@ -1,0 +1,10 @@
+TYPES.md §8.4, §13.2, DECISIONS 304: a lone literal alternative after `past` is E3002 only; its error type takes no second finding (no E3024).
+-- a/a.canon --
+package a
+
+local let a: past "lit" = "lit"
+-- findings.txt --
+error[E3002]  a/a.canon:3:14
+  expected _, found String
+
+1 error, 0 warnings in 1 package (…)

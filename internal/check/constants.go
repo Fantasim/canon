@@ -233,17 +233,18 @@ const (
 
 // Built-in members (STDLIB.md §3).
 const (
-	idMember      = "id"
-	retiredMember = "retired"
-	kindMember    = "kind"
-	nameMember    = "name"
-	indexMember   = "index"
-	wireMember    = "wire"
-	codeMember    = "code"
-	startMember   = "start"
-	endMember     = "end"
-	membersMember = "members" // E.members, on an enum type (DECISIONS 299)
-	defaultTag    = kindMember
+	idMember       = "id"
+	retiredMember  = "retired"
+	kindMember     = "kind"
+	nameMember     = "name"
+	indexMember    = "index"
+	wireMember     = "wire"
+	codeMember     = "code"
+	startMember    = "start"
+	endMember      = "end"
+	membersMember  = "members"  // E.members, on an enum type (DECISIONS 299)
+	typeNameMember = "typeName" // E.typeName, on an enum type (DECISIONS 306)
+	defaultTag     = kindMember
 )
 
 // View words, properties and studio names (VIEWMODEL.md G16), translation key segments

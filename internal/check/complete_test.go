@@ -16,6 +16,7 @@ func gaps(f *syntax.File, info *check.Info, broken func(syntax.Decl) bool) []str
 	var out []string
 	noObject := map[*syntax.Ident]bool{}
 	noRecord := map[syntax.Node]bool{}
+	reflected := map[*syntax.CallExpr]bool{}
 	for _, root := range roots(f, broken) {
 		syntax.Inspect(root, func(n syntax.Node) bool {
 			if n == nil || exemptNode(n) || noObject[identOf(n)] {
@@ -30,7 +31,10 @@ func gaps(f *syntax.File, info *check.Info, broken func(syntax.Decl) bool) []str
 			if noRecord[n] {
 				return true
 			}
-			if msg := missing(info, n); msg != "" {
+			if s, ok := n.(*syntax.SelectorExpr); ok && reflection(info, s) != nil {
+				reflected[s.X.(*syntax.CallExpr)] = true
+			}
+			if msg := missing(info, n, reflected); msg != "" {
 				line, col := f.Src.Position(f.Span(n).Start)
 				out = append(out, fmt.Sprintf("%s:%d:%d %s %s", f.Src.Path, line, col, n.Kind(), msg))
 			}
@@ -192,8 +196,8 @@ func exemptNode(n syntax.Node) bool {
 }
 
 // missing is what Info lacks for n, "" when it has it.
-func missing(info *check.Info, n syntax.Node) string {
-	if msg := missingRecord(info, n); msg != "" {
+func missing(info *check.Info, n syntax.Node, reflected map[*syntax.CallExpr]bool) string {
+	if msg := missingRecord(info, n, reflected); msg != "" {
 		return msg
 	}
 	switch n := n.(type) {
@@ -216,10 +220,10 @@ func missing(info *check.Info, n syntax.Node) string {
 }
 
 // missingRecord is the per-kind table of §4.7 a node lacks: Calls, Selections, Literals, Matches.
-func missingRecord(info *check.Info, n syntax.Node) string {
+func missingRecord(info *check.Info, n syntax.Node, reflected map[*syntax.CallExpr]bool) string {
 	switch n := n.(type) {
 	case *syntax.CallExpr:
-		if info.Calls[n] == nil {
+		if info.Calls[n] == nil && !reflected[n] {
 			return "not in Calls"
 		}
 	case *syntax.SelectorExpr:
@@ -238,9 +242,11 @@ func missingRecord(info *check.Info, n syntax.Node) string {
 	return ""
 }
 
-// qualifiedForm reports `pkg.x`, `T.member` or `pkg.T.member`, which have no Selection.
+// qualifiedForm reports `pkg.x`, `T.member`, `pkg.T.member` or `F(a…).member`, which have no Selection.
 func qualifiedForm(info *check.Info, s *syntax.SelectorExpr) bool {
 	switch x := s.X.(type) {
+	case *syntax.CallExpr:
+		return reflection(info, s) != nil
 	case *syntax.IdentExpr:
 		o := info.Uses[x]
 		return o != nil && (o.Kind() == check.ObjPackage || o.Kind() == check.ObjTypeName || o.Kind() == check.ObjBuiltin)
@@ -249,6 +255,25 @@ func qualifiedForm(info *check.Info, s *syntax.SelectorExpr) bool {
 		return o != nil && o.Kind() == check.ObjTypeName
 	}
 	return false
+}
+
+// reflection is the `F(a…)` of `F(a…).members` or `.typeName`: no call, it has no Callee (TYPES.md §4.3).
+func reflection(info *check.Info, s *syntax.SelectorExpr) *syntax.CallExpr {
+	x, ok := s.X.(*syntax.CallExpr)
+	if !ok || s.Optional || (s.Name.Name != "members" && s.Name.Name != "typeName") {
+		return nil
+	}
+	var o check.Object
+	switch f := x.Fun.(type) {
+	case *syntax.IdentExpr:
+		o = info.Uses[f]
+	case *syntax.SelectorExpr:
+		o = info.NameUses[f.Name]
+	}
+	if o == nil || o.Kind() != check.ObjTypeName || o.Type() == nil || o.Type().Kind() != types.DepUnion {
+		return nil
+	}
+	return x
 }
 
 // isPackage reports a package qualifier, which has no type (DECISIONS 152).

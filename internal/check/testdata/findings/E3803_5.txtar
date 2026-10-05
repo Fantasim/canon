@@ -1,4 +1,4 @@
-TYPES.md §11.1, §11.2: a path through an optional field is not a type path: E3803, for an argument and for a scrutinee.
+TYPES.md §11.1, §11.2, DECISIONS 307: a path through an optional field is not a type path: E3803, for an argument and for a scrutinee; a path ending at an optional field is a type function's optional argument, accepted.
 -- a/a.canon --
 package a
 
@@ -31,10 +31,7 @@ local record R {
 error[E3803]  a/a.canon:19:29
   a type function must match on a path rooted at a parameter, of an enum or Bool type
 
-error[E3806]  a/a.canon:25:8
-  P takes 1 arguments of types a.Sub
-
 error[E3803]  a/a.canon:26:11
   a type-function argument must be a path rooted at a parameter
 
-3 errors, 0 warnings in 1 package (…)
+2 errors, 0 warnings in 1 package (…)

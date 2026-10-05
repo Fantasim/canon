@@ -1,0 +1,91 @@
+STDLIB.md §3, TYPES.md §4.3, §8.1, §11.4, DECISIONS 306: `E.typeName` is a String; in value position `F(a…).members` and `F(a…).typeName` are accepted when every branch of F is an enum (`_` included, a plain body too, `pkg.F` too), the arguments being ordinary expressions (a contextual member, a ref dereferenced, a call); an alias branch; in a const; a dependent value whose branches are all enums has `.name`, `.index`, `.wire`, `.retired`, and `.code` when every branch has `@codes`.
+-- b/b.canon --
+package b
+
+/// A colour.
+enum Colour { red, green }
+
+/// A shape.
+enum Shape { round, square }
+
+/// A pick.
+enum Pick { colour, shape }
+
+/// What a pick lists.
+type Of(p: Pick) = match p {
+  colour => Colour
+  shape => Shape
+}
+-- a/a.canon --
+package a
+
+import b
+
+local enum Kind { coin, gem, other }
+
+local enum Coin @codes(UInt8) { copper = 1, retired silver = 2 }
+
+local enum Gem @codes(UInt8) { ruby = 1, jade = 2 }
+
+local enum Rest { x, y }
+
+local record Ev {
+  kind: Kind
+}
+
+local let evs: table Ev = {
+  first { kind: coin }
+}
+
+local type Detail(e: Ev) = match e.kind {
+  coin => Coin
+  gem => Gem
+  _ => Coin
+}
+
+local type Mixed(e: Ev) = match e.kind {
+  coin => Coin
+  _ => Rest
+}
+
+local type Same(k: Kind) = Rest
+
+local record Row {
+  ev: Ev
+  detail: Detail(ev)
+  mixed: Mixed(ev)
+}
+
+local fn ev() -> Ev {
+  return Ev { kind: gem }
+}
+
+local let name: String = Kind.typeName
+local let names: [String] = [b.Colour.typeName, Coin.typeName]
+local let details = Detail(Ev { kind: coin }).members
+local let byRef: [String] = Detail(evs.first).members.map(.name)
+local let called: String = Detail(ev()).typeName
+local let detailName: String = Detail(evs.first).typeName
+local let colours = b.Of(colour).members
+local let colourName: String = b.Of(shape).typeName
+local let same: [Rest] = Same(gem).members
+local let sameName: String = Same(other).typeName
+
+local type AliasCoin = Coin
+
+local type Aliased(k: Kind) = match k {
+  coin => AliasCoin
+  _ => Gem
+}
+
+local let aliasName: String = Aliased(coin).typeName
+
+local const KIND_NAME = Kind.typeName
+local const SAME_NAME = Same(gem).typeName
+local const ALIASED = Aliased(gem).members
+
+local fn facts(r: Row) -> String {
+  let d = r.detail
+  let m = r.mixed
+  return "{d.name}{d.index}{d.wire}{d.retired}{d.code}{m.name}{m.index}{m.wire}{m.retired}"
+}

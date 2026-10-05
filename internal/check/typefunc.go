@@ -56,9 +56,26 @@ func (c *checker) typeFuncCycle(o *object, td *syntax.TypeDecl) types.Type {
 	return o.typ
 }
 
-// typeMatch is a type-level match: its scrutinee a path of enum or Bool type rooted at a
-// parameter (E3803); arms of members, `true`/`false` or `_`, exhaustive (E3601, E3602).
+// typeMatch is a type-level match, then its `past`, judged once the arms are resolved (TYPES.md §8.4).
 func (c *checker) typeMatch(tc *typeCtx, fn *types.TypeFunc, m *syntax.MatchType) {
+	c.typeMatchArms(tc, fn, m)
+	t := c.pastType(tc, m, &types.DepUnionType{Fn: fn})
+	c.info.TypeExprs[m] = t
+	if r, ok := t.(*types.Refined); ok && r.Past {
+		pastArms(fn) // the slot a value lands in is the computed branch: it carries the `past`
+	}
+}
+
+// pastArms makes each arm's result `past`: a `past match` body computes past branches (TYPES.md §8.4).
+func pastArms(fn *types.TypeFunc) {
+	for _, a := range fn.Arms {
+		a.Result, _ = types.Past(a.Result)
+	}
+}
+
+// typeMatchArms is a type-level match: its scrutinee a path of enum or Bool type rooted at a
+// parameter (E3803); arms of members, `true`/`false` or `_`, exhaustive (E3601, E3602).
+func (c *checker) typeMatchArms(tc *typeCtx, fn *types.TypeFunc, m *syntax.MatchType) {
 	env := tc.env
 	c.info.TypeExprs[m] = &types.DepUnionType{Fn: fn}
 	sc := *tc
@@ -217,7 +234,7 @@ func (c *checker) fieldOf(env *env, t types.Type, name *syntax.Ident) *types.Fie
 
 // applyTypeFunc is `F(args)` (TYPES.md §11.1): a dependent type.
 func (c *checker) applyTypeFunc(tc *typeCtx, t *syntax.NamedType, fn *types.TypeFunc) types.Type {
-	args, ok := c.typeArgs(tc, t, fn.Name, fn.Params)
+	args, ok := c.typeArgs(tc, t, fn.Name, fn.Params, true)
 	if !ok {
 		return types.ErrorType
 	}
@@ -227,7 +244,7 @@ func (c *checker) applyTypeFunc(tc *typeCtx, t *syntax.NamedType, fn *types.Type
 // applyRecord is `R(args)`, a parameterized record applied (TYPES.md §11.1, TYP-18).
 func (c *checker) applyRecord(tc *typeCtx, t *syntax.NamedType, rec *types.RecordType) types.Type {
 	c.completeRecord(rec)
-	args, ok := c.typeArgs(tc, t, rec.Name, rec.Params)
+	args, ok := c.typeArgs(tc, t, rec.Name, rec.Params, false)
 	if !ok {
 		return types.ErrorType
 	}
@@ -235,8 +252,8 @@ func (c *checker) applyRecord(tc *typeCtx, t *syntax.NamedType, rec *types.Recor
 }
 
 // typeArgs checks the arity (none written is 0 given) and the type of each argument against its
-// parameter (E3806).
-func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params []*types.Param) ([]*types.Arg, bool) {
+// parameter (E3806); optional: an optional argument is accepted, as for a type function's (DECISIONS 307).
+func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params []*types.Param, optional bool) ([]*types.Arg, bool) {
 	env := tc.env
 	if t.Args == nil || len(t.Args.Args) != len(params) {
 		c.wrongArity(env, arityNode(t), name, params)
@@ -251,7 +268,7 @@ func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params
 			continue
 		}
 		c.info.Types[a] = at
-		if !c.argFits(at, params[i].Type) {
+		if !c.argFits(at, params[i].Type, optional) {
 			c.wrongArity(env, a, name, params)
 			ok = false
 		}
@@ -260,13 +277,16 @@ func (c *checker) typeArgs(tc *typeCtx, t *syntax.NamedType, name string, params
 	return out, ok
 }
 
-// argFits reports an argument fit for its parameter, a ref dereferenced, never an optional (TYPES.md §11.2).
-func (c *checker) argFits(at, param types.Type) bool {
+// argFits reports an argument fit for its parameter, a ref dereferenced, an optional if optional (TYPES.md §11.1).
+func (c *checker) argFits(at, param types.Type, optional bool) bool {
 	if param.Kind() == types.Error { // a refused parameter takes any argument (TYPES.md §1)
 		return true
 	}
-	if at.Base().Kind() == types.Optional {
-		return false
+	if o, isOpt := at.Base().(*types.OptionalType); isOpt {
+		if !optional {
+			return false
+		}
+		at = o.Elem
 	}
 	if r, ok := param.Base().(*types.RefType); ok {
 		c.coll(r) // a ref parameter is compared by its target, resolved

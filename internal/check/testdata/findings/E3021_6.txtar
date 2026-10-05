@@ -1,0 +1,17 @@
+TYPES.md §13.1, §8.4, DECISIONS 304: an alias reaching itself through `past` is E3021 once, with no E3024 on its error type; a `past` alias of an alias declared later resolves on demand and reports nothing.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local type Self = past Self
+
+local type Early = past Late
+local type Late = K
+
+local let x: Early = a
+-- findings.txt --
+error[E3021]  a/a.canon:5:12
+  type alias Self refers to itself
+
+1 error, 0 warnings in 1 package (…)

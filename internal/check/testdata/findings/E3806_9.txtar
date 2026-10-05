@@ -1,0 +1,42 @@
+TYPES.md §4.3, §11.1, DECISIONS 306, 307: the arguments of `F(a…).members` and `F(a…).typeName` are ordinary expressions checked against F's parameters: a wrong count, a wrong type, an optional (refused in value position) or a named argument is E3806.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local enum E { x, y }
+
+local type F(k: K) = match k {
+  a => E
+  b => K
+}
+
+local fn maybe() -> K? {
+  return none
+}
+
+local let none0 = F().members
+local let two = F(a, b).members
+local let wrong: String = F(1).typeName
+local let optional = F(maybe()).members
+local let named = F(k: a).members
+-- findings.txt --
+error[E3806]  a/a.canon:16:19
+  F takes 1 arguments of types a.K
+
+error[E3806]  a/a.canon:17:17
+  F takes 1 arguments of types a.K
+
+error[E2102]  a/a.canon:17:22
+  unknown name b
+
+error[E3806]  a/a.canon:18:29
+  F takes 1 arguments of types a.K
+
+error[E3806]  a/a.canon:19:24
+  F takes 1 arguments of types a.K
+
+error[E3806]  a/a.canon:20:19
+  F takes 1 arguments of types a.K
+
+6 errors, 0 warnings in 1 package (…)

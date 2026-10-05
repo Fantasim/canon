@@ -53,16 +53,15 @@ func (c *checker) qualifiedType(env *env, s *syntax.SelectorExpr) *object {
 	return m
 }
 
-// qualifiedValue is what a qualified form names, `E.members` included (STDLIB.md §3); it has no Selection.
+// qualifiedValue is what a qualified form names, `E.members` included (STDLIB.md §3); no Selection.
 func (c *checker) qualifiedValue(env *env, s *syntax.SelectorExpr, q *object) types.Type {
 	if q.kind == ObjPackage {
 		return c.packageMember(env, s, q)
 	}
 	switch t := c.typeOfName(env, q, nil).(type) {
 	case *types.EnumType:
-		if s.Name.Name == membersMember {
-			c.info.NameUses[s.Name] = c.builtins[membersMember]
-			return &types.ListType{Elem: t}
+		if r := c.enumReflection(s, t); r != nil {
+			return r
 		}
 		if m := c.memberObject(t, s.Name.Name); m != nil {
 			c.info.NameUses[s.Name] = m
@@ -105,4 +104,17 @@ func (c *checker) packageMember(env *env, s *syntax.SelectorExpr, q *object) typ
 	}
 	c.report(env, diag.E2110.AtType(env.span(s), m.name))
 	return types.ErrorType
+}
+
+// enumReflection is `.members` ([elem]) or `.typeName` (String) on an enum type or F(a…), else nil (STDLIB.md §3).
+func (c *checker) enumReflection(s *syntax.SelectorExpr, elem types.Type) types.Type {
+	switch s.Name.Name {
+	case membersMember:
+		c.info.NameUses[s.Name] = c.builtins[membersMember]
+		return &types.ListType{Elem: elem}
+	case typeNameMember:
+		c.info.NameUses[s.Name] = c.builtins[typeNameMember]
+		return types.StringType
+	}
+	return nil
 }

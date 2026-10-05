@@ -89,14 +89,26 @@ func (c *checker) textFile(s textSite) (string, bool) {
 	return file, true
 }
 
-// textPlaced reports a `@text` at a public package-level export fn with no parameter whose
-// result is String; known is false when the fn's result type is in error.
+// textShape reports a fn written where a `@text` file may stand: named, public, package-level, `export`, with no parameter.
+func textShape(d *syntax.FnDecl) bool {
+	if d.Name == nil || d.Mods == nil || d.Mods.Local.Valid() || !d.Mods.Export.Valid() {
+		return false
+	}
+	return len(d.Params) == 0 && !d.Self.Valid()
+}
+
+// TextPlaced reports a `@text` well placed at d, whose signature is sig: a public package-level export fn with no parameter and a result in no error and not `String?` (CODEGEN.md §2.9). A misplaced one is E8021 `position` and the fn stays API.
+func TextPlaced(d *syntax.FnDecl, sig *types.FuncType) bool {
+	if !textShape(d) || sig == nil || sig.Result == nil || isErrorTyped(sig.Result) {
+		return false
+	}
+	return !optionalString(sig.Result)
+}
+
+// textPlaced is TextPlaced at a site; known is false when the fn's result type is in error, which has its own finding.
 func (c *checker) textPlaced(s textSite) (placed, known bool) {
 	d, isFn := s.decl.(*syntax.FnDecl)
-	if !isFn || d.Name == nil {
-		return false, true
-	}
-	if d.Mods == nil || d.Mods.Local.Valid() || !d.Mods.Export.Valid() || len(d.Params) > 0 || d.Self.Valid() {
+	if !isFn || !textShape(d) {
 		return false, true
 	}
 	o := s.env.pkg.names[d.Name.Name]
@@ -107,7 +119,27 @@ func (c *checker) textPlaced(s textSite) (placed, known bool) {
 	if !ok || sig.Result == nil || isErrorTyped(sig.Result) {
 		return false, false
 	}
-	return sig.Result.Base().Kind() == types.String, true
+	return TextPlaced(d, sig), true
+}
+
+// optionalString reports `String?`, through aliases and refinements: no file form says what none writes.
+func optionalString(t types.Type) bool {
+	o, ok := t.Base().(*types.OptionalType)
+	return ok && o.Elem.Base().Kind() == types.String
+}
+
+// textFn reports o a well-placed `@text` fn: a file, not API (CODEGEN.md §2.9, DECISIONS 300).
+func (c *checker) textFn(o *object) bool {
+	d, isFn := o.decl.(*syntax.FnDecl)
+	if o.kind != ObjFn || !isFn {
+		return false
+	}
+	ann := annotation(prefixAnnotations(d), syntax.AnnText)
+	if ann == nil {
+		return false
+	}
+	placed, known := c.textPlaced(textSite{env: c.fileEnv(c.pkgs[o.pkg], o.file, nil), decl: d, ann: ann})
+	return placed && known
 }
 
 // validTextName reports a portable `@text` file name (CODEGEN.md §2.9, DECISIONS 297).
@@ -136,16 +168,8 @@ func writtenText(f *syntax.File, v syntax.Node) string {
 
 // textUse is E8021 `called` at a call to a `@text` fn, or its use as a value, but a test's call (CODEGEN.md §2.9).
 func (c *checker) textUse(env *env, at syntax.Node, o *object, call bool) {
-	d, isFn := o.decl.(*syntax.FnDecl)
-	if o.kind != ObjFn || !isFn || o == env.owner {
+	if o == env.owner || !c.textFn(o) { // a misplaced @text is E8021 position already, not a @text fn
 		return
-	}
-	ann := annotation(prefixAnnotations(d), syntax.AnnText)
-	if ann == nil {
-		return
-	}
-	if placed, known := c.textPlaced(textSite{env: c.fileEnv(c.pkgs[o.pkg], o.file, nil), decl: d, ann: ann}); !placed || !known {
-		return // a misplaced @text is E8021 position already, not a @text fn
 	}
 	if call && env.owner != nil && env.owner.kind == ObjTest {
 		return

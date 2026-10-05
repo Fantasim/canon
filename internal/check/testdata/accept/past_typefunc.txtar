@@ -1,0 +1,31 @@
+TYPES.md §8.4, DECISIONS 304 (amended): `past` on a `match` type-function body, or on an application, whose every branch is an enum, a variant or a ref is accepted: `past match k { a => E1, b => E2 }`, whose application may store a retired member, and a `[past Member(v)]` field whose branches are all enums.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local enum E1 { x, retired y }
+
+local enum E2 { u, v }
+
+local type F(k: K) = past match k {
+  a => E1
+  b => E2
+}
+
+local record Values {
+  k: K
+}
+
+local type Member(v: Values) = match v.k {
+  a => E1
+  b => E2
+}
+
+local record Role {
+  v: Values
+  kinds: [past Member(v)] = []
+  one: F(v.k)
+}
+
+local let role: Role = Role { v: { k: a }, kinds: [y], one: y }

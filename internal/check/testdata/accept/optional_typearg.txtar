@@ -1,0 +1,45 @@
+TYPES.md §11.1, §11.6, DECISIONS 307: an argument of type `P?` given to a `P` parameter of a type function is accepted (its none computes Never at evaluation): a field, a path ending at an optional field through a ref, an optional alias, an application inside a type function body, under `past` and in a list.
+-- a/a.canon --
+package a
+
+local enum Vocab { colour, size }
+
+local enum Colour { red, blue }
+
+local enum Size { small, large }
+
+local record Values {
+  vocab: Vocab
+}
+
+local let vocabs: table Values = {
+  colours { vocab: colour }
+}
+
+local type Member(v: Values) = match v.vocab {
+  colour => Colour
+  size => Size
+}
+
+local type MaybeValues = Values?
+
+local record Column {
+  values: ref vocabs?
+  inline: Values? = none
+}
+
+local let columns: table Column = {
+  tint { values: colours }
+}
+
+local type Of(c: Column) = Member(c.values)
+
+local record Role {
+  column: ref columns
+  maybe: MaybeValues = none
+  of: Member(column.values)
+  kinds: [past Member(column.values)] = []
+  inline: Member(column.inline)?
+  aliased: Member(maybe)?
+  computed: Of(column)
+}

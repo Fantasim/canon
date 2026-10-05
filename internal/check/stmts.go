@@ -50,7 +50,7 @@ func (c *checker) local(env *env, name *syntax.Ident, typ syntax.Type, value syn
 		t = c.resolveType(&typeCtx{env: env, pos: posFn}, typ)
 		c.expr(env, value, t)
 	} else {
-		t = c.synth(env, value)
+		t = inferred(c.synth(env, value))
 	}
 	o := c.newLocal(env, ObjLocal, name, decl, t)
 	c.declare(env, name, o)

@@ -1,0 +1,44 @@
+CODEGEN.md §2.9, TYPES.md §3.7, DECISIONS 308: a `@text` fn may return any type, written as JSON (its wire form is judged at stage E, not here): an Int, a list, an optional other than String?, a public record; and its result may name `local` types, a file and not API (no E2111).
+-- a/a.canon --
+package a
+
+local enum Kind { coin, gem }
+
+local record Entry {
+  name: String
+  kind: Kind
+}
+
+/// A public row.
+record Row {
+  /// Its name.
+  name: String
+}
+
+/// Doc.
+@text("version.json")
+export fn version() -> Int { return 3 }
+
+/// Doc.
+@text("names.json")
+export fn names() -> [String] { return ["a", "b"] }
+
+/// Doc.
+@text("maybe.json")
+export fn maybe() -> Int? { return none }
+
+/// Doc.
+@text("row.json")
+export fn row() -> Row { return Row { name: "x" } }
+
+/// Doc.
+@text("catalog.json")
+export fn catalog() -> [Entry] { return [Entry { name: "x", kind: coin }] }
+
+/// Doc.
+@text("kinds.json")
+export fn kinds() -> {Kind: Int} { return { coin: 1 } }
+
+emit text { out: "@generated/json" }
+
+emit go { out: "@sovcommon/a" }

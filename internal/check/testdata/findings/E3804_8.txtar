@@ -1,0 +1,65 @@
+TYPES.md §4.3, §11.4, DECISIONS 306: `F(a…).members` and `F(a…).typeName` need every branch of F to be an enum: a branch of another type, `Never`, an optional or a nested application is E3804; so is any other member after `F(a…)`, on an all-enum F too.
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local enum E { x, y }
+
+local type WithInt(k: K) = match k {
+  a => E
+  b => Int
+}
+
+local type WithNever(k: K) = match k {
+  a => E
+  _ => Never
+}
+
+local type WithOptional(k: K) = match k {
+  a => E
+  b => E?
+}
+
+local type Nested(k: K) = match k {
+  a => E
+  b => WithInt(k)
+}
+
+local type Plain(k: K) = Int
+
+local type Enums(k: K) = match k {
+  a => E
+  b => K
+}
+
+local let p: [String] = [WithInt(a).typeName]
+local let q = WithNever(a).members
+local let r = WithOptional(b).members
+local let s = Nested(a).members
+local let t: String = Plain(a).typeName
+local let u = Enums(a).name
+local let v = Enums(a).member
+-- findings.txt --
+error[E3804]  a/a.canon:34:37
+  .typeName is not available on a dependent value (WithInt(*))
+
+error[E3804]  a/a.canon:35:28
+  .members is not available on a dependent value (WithNever(*))
+
+error[E3804]  a/a.canon:36:31
+  .members is not available on a dependent value (WithOptional(*))
+
+error[E3804]  a/a.canon:37:25
+  .members is not available on a dependent value (Nested(*))
+
+error[E3804]  a/a.canon:38:32
+  .typeName is not available on a dependent value (Plain(*))
+
+error[E3804]  a/a.canon:39:24
+  .name is not available on a dependent value (Enums(*))
+
+error[E3804]  a/a.canon:40:24
+  .member is not available on a dependent value (Enums(*))
+
+7 errors, 0 warnings in 1 package (…)

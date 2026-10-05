@@ -1,4 +1,4 @@
-TYPES.md §11.1, §11.2: a type argument of optional type is E3806 at its use site, through an alias too: a dependent type reads a present enum or Bool (log-2026-09-25 "gen/go review round 1 calls").
+TYPES.md §11.1, DECISIONS 307: a type argument of optional type, through an alias too, is E3806 at its use site for a parameterized record (log-2026-09-25 "gen/go review round 1 calls"); for a type function it is accepted, its none computing Never.
 -- a/a.canon --
 package a
 
@@ -21,10 +21,7 @@ local record R {
   h: H(mk)
 }
 -- findings.txt --
-error[E3806]  a/a.canon:18:8
-  P takes 1 arguments of types a.K
-
 error[E3806]  a/a.canon:19:8
   H takes 1 arguments of types a.K
 
-2 errors, 0 warnings in 1 package (…)
+1 error, 0 warnings in 1 package (…)

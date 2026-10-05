@@ -1,0 +1,10 @@
+TYPES.md §3.6, STDLIB.md §3, DECISIONS 306: `typeName` is reserved on enums, since E.typeName is the enum's name.
+-- a/a.canon --
+package a
+
+local enum E { a, typeName }
+-- findings.txt --
+error[E2105]  a/a.canon:3:19
+  typeName is reserved on enums: E.members and E.typeName are built in
+
+1 error, 0 warnings in 1 package (…)

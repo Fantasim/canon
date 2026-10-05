@@ -28,6 +28,7 @@ func (c *checker) resolveType(tc *typeCtx, t syntax.Type) types.Type {
 	if r == nil {
 		r = types.ErrorType
 	}
+	r = c.pastType(tc, t, r)
 	c.info.TypeExprs[t] = r
 	return r
 }
@@ -209,6 +210,7 @@ func (c *checker) resolveKeyed(tc *typeCtx, t *syntax.KeyedType) types.Type {
 	}
 	l.KeyedBy = f
 	c.keyedOf[rec] = true
+	c.refKey(tc.env, t.Key, c.fieldType(f))
 	return inner
 }
 

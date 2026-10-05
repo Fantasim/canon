@@ -1,0 +1,43 @@
+TYPES.md §9.1, DECISIONS 316: a ref key whose target's key chain ends at a base type is accepted, over three levels: a String key, an enum key, an integer key, a table target.
+-- a/a.canon --
+package a
+
+local enum Kind { one, two }
+
+local record Item {
+  id: Int
+}
+
+local record Root {
+  kind: Kind
+}
+
+local record Mid {
+  root: ref roots
+}
+
+local record Top {
+  mid: ref mids
+}
+
+local record Leaf {
+  top: ref tops
+  item: ref items
+}
+
+local record Entry {
+  n: Int = 0
+}
+
+local record ByEntry {
+  e: ref entries
+}
+
+local let items: [Item] keyed by id = []
+local let roots: [Root] keyed by kind = []
+local let mids: [Mid] keyed by root = []
+local let tops: [Top] keyed by mid = []
+local let leaves: [Leaf] keyed by top = []
+local let byItem: [Leaf] keyed by item = []
+local let entries: table Entry = {}
+local let byEntry: [ByEntry] keyed by e = []

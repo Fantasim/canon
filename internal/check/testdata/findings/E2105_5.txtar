@@ -5,6 +5,6 @@ package a
 local enum E { a, members }
 -- findings.txt --
 error[E2105]  a/a.canon:3:19
-  members is reserved on enums: E.members lists them
+  members is reserved on enums: E.members and E.typeName are built in
 
 1 error, 0 warnings in 1 package (…)

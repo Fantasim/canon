@@ -1,0 +1,39 @@
+TYPES.md §12.2, §4.3, DECISIONS 306: a type function applied in value position is not a call, E3005, but as `F(a…).members` or `F(a…).typeName`: so is a call of `.members` on it, `F(a)?.members` and `(F(a)).members`, and a parameterized record applied (its arguments still resolve against its parameters).
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local enum E { x, y }
+
+local type F(k: K) = match k {
+  a => E
+  b => K
+}
+
+local record R(k: K) {
+  n: Int = 0
+}
+
+local let bare = F(a)
+local let called = F(a).members()
+local let applied = R(a).members
+local let optional = F(a)?.members
+local let paren = (F(a)).members
+-- findings.txt --
+error[E3005]  a/a.canon:16:18
+  a.F(*) is not callable
+
+error[E3005]  a/a.canon:17:20
+  a.F(*) is not callable
+
+error[E3005]  a/a.canon:18:21
+  a.R is not callable
+
+error[E3005]  a/a.canon:19:22
+  a.F(*) is not callable
+
+error[E3005]  a/a.canon:20:20
+  a.F(*) is not callable
+
+5 errors, 0 warnings in 1 package (…)

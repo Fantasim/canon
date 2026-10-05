@@ -7,6 +7,6 @@ package a
 local export fn v() -> String { return "SELECT 1;" }
 -- findings.txt --
 error[E8021]  a/a.canon:4:1
-  @text belongs on a public package-level export fn with no parameter that returns String
+  @text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form
 
 1 error, 0 warnings in 1 package (…)
