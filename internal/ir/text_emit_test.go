@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	textFn     = "/// The notes.\n@text(\"a.txt\")\nexport fn notes() -> String { return \"hi\" }\n"
-	textEmitGo = "\nemit go { out: \"@features/a\", package: \"a\", mode: %s }\n"
-	plainFn    = "\n/// Doubles a flag.\nexport fn weight(heavy: Bool) -> Int { return if heavy { 2 } else { 1 } }\n"
-	textFile   = "hi"
-	noErrors   = "0 errors"
+	textFn      = "/// The notes.\n@text(\"a.txt\")\nexport fn notes() -> String { return \"hi\" }\n"
+	textEmitCpp = "\nemit cpp { out: \"@features/a\", namespace: \"a\", mode: %s }\n" // go types is E8019 `unbuilt` (DECISIONS 320)
+	plainFn     = "\n/// Doubles a flag.\nexport fn weight(heavy: Bool) -> Int { return if heavy { 2 } else { 1 } }\n"
+	textFile    = "hi"
+	noErrors    = "0 errors"
 )
 
 // textWorld builds package a (source) with a notes fn answering "hi".
@@ -34,7 +34,7 @@ func textWorld(t *testing.T, src string) (*world, []*ir.Package) {
 // CODEGEN.md §2.9, DECISIONS 300: a `@text` fn is a file, not API; a data or types emit of its package leaves it out (no E8013, no E8014), and its file is still written.
 func TestTextFnIsNotApiInDataAndTypesEmit(t *testing.T) {
 	for _, mode := range []string{"data", "types"} {
-		src := "package a\n\n" + textFn + strings.Replace(textEmitGo, "%s", mode, 1)
+		src := "package a\n\n" + textFn + strings.Replace(textEmitCpp, "%s", mode, 1)
 		w, pkgs := textWorld(t, src)
 		if out := w.findings(t); !strings.Contains(out, noErrors) {
 			t.Errorf("mode %s: want no finding:\n%s", mode, out)
@@ -53,7 +53,7 @@ func TestPlainFnBesideTextFnStillRefused(t *testing.T) {
 		code diag.Code
 	}{{"data", diag.E8013.Def().Code}, {"types", diag.E8014.Def().Code}} {
 		mode, code := c.mode, c.code
-		src := "package a\n\n" + textFn + plainFn + strings.Replace(textEmitGo, "%s", mode, 1)
+		src := "package a\n\n" + textFn + plainFn + strings.Replace(textEmitCpp, "%s", mode, 1)
 		w, _ := textWorld(t, src)
 		if out := w.findings(t); !strings.Contains(out, "["+string(code)+"]") || strings.Contains(out, "notes") {
 			t.Errorf("mode %s: want %s on weight only:\n%s", mode, code, out)

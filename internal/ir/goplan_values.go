@@ -91,9 +91,10 @@ func (pl *GoNamePlan) declareFns(top *nameScope) {
 	}
 }
 
-// declareImports declares the package names the generated file imports (CODEGEN.md §2.8): the standard ones gen/go writes when it needs them, then the imported Canon packages whose names it qualifies.
+// declareImports declares the package names the generated file imports (CODEGEN.md §2.8): the standard ones gen/go writes when it needs them, the imported Canon packages whose names it qualifies, then the other packages' rt it passes (`<gopkg>rt`).
 func (pl *GoNamePlan) declareImports(top *nameScope) {
 	pl.declareUsed(top, pl.importUse())
+	pl.declareRTImports(top)
 }
 
 // declareUsed declares, in sc, the standard packages u marks, then the imported Canon packages it marks, each once per import path: of a package's copies, the first, since copies share their package name (CODEGEN.md §2.1, DECISIONS 229) and a generator sees only the copy it imports (CopyOf).

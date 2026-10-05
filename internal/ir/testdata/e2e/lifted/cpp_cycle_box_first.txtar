@@ -1,0 +1,23 @@
+log-2026-10-06 "U5 review FAIL" (cycles): an optional field on a cycle of records is boxed and breaks it whatever the declaration order, in stage E and in gen/cpp's class order alike, so this checks and builds and its C++ compiles; formerly refused (RecordFieldCycle): CODEGEN.md §2.7: a cycle of records through fields only, its optional field boxed, still meets gen/cpp's class order when the record holding the box is declared first (gen/cpp: "a type that holds itself"), so refusedRecords stays reachable without a stored method (DECISIONS 284 moved those to cyclicFn); its kind is RecordFieldCycle (DECISIONS 292).
+-- a/a.canon --
+package a
+
+/// A first.
+record First {
+  /// Its second.
+  second: Second?
+}
+
+/// A second.
+record Second {
+  /// Its first.
+  first: First
+}
+
+/// The first.
+let first: First = { second: none }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

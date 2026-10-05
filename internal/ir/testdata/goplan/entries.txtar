@@ -29,5 +29,5 @@ Tiers: All At Find Get Len rows
 a.tierFor(): n
 aData: tiers
 conformance imports: math rt testing
-package: GetTiers ParseTierID TestTierForConformance Tier TierFor TierID TierIDHigh TierIDLow Tiers aData aValues buildA canonCatch iter strconv sync
+package: GetTiers MakeEntry_Tier Make_Tier ParseTierID TestTierForConformance Tier TierFor TierID TierIDHigh TierIDLow Tiers aData aValues buildA canonCatch iter strconv sync
 0 errors, 0 warnings in 1 package (…)

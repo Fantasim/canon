@@ -1,0 +1,40 @@
+CODEGEN.md §2.8, DECISIONS 323: a go emit needs an emit of its target in every package it reaches through other packages' types, as a ts emit does (279): a reaches c only through b.Badge's tone, c has no go emit, so a's go emit is E8004 beside b's own.
+-- c/c.canon --
+package c
+
+/// A colour.
+enum Tone { red, blue }
+
+emit cpp { out: "@features/c/cpp", namespace: "sov::c", mode: types }
+-- b/b.canon --
+package b
+
+import c { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit go { out: "@features/b/go", package: "b", mode: baked }
+-- a/a.canon --
+package a
+
+import b { Badge }
+
+/// An award.
+record Award {
+  /// Its badge.
+  badge: Badge
+}
+
+emit go { out: "@features/a/go", package: "a", mode: baked }
+-- findings.txt --
+error[E8004]  a/a.canon:11:6
+  c.Tone of package c is used by this go emit, but c has no go emit
+
+error[E8004]  b/b.canon:11:6
+  c.Tone of package c is used by this go emit, but c has no go emit
+
+2 errors, 0 warnings in 3 packages (…)

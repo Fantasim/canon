@@ -30,9 +30,9 @@ emit cpp { out: "@features/a", namespace: "a", mode: data }
 emit json { out: "@features/a" }
 -- findings.txt --
 error[E8019]  a/a.canon:14:13
-  emit cpp in data mode cannot generate a variant-level method a generator must write
+  emit cpp in data mode cannot generate a variant-level method a generator must write; move the method onto each case
 
 error[E8019]  a/a.canon:14:13
-  emit go in data mode cannot generate a variant-level method a generator must write
+  emit go in data mode cannot generate a variant-level method a generator must write; move the method onto each case
 
 2 errors, 0 warnings in 1 package (…)

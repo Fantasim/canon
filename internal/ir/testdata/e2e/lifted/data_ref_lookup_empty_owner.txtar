@@ -1,0 +1,44 @@
+CODEGEN.md §5.10, log-2026-10-06 "U5 re-verify": a data-mode reader of another package's record whose lookup takes a ref parameter into that package's EMPTY baked table has an empty cell domain (the TypeScript reader writes it as the literal `[]` from ir.ExportFn.Domains, never `Object.keys` of an Index typed `never`); it checks and builds in go, cpp and ts, its Go vetting and its C++ and TypeScript compiling.
+-- b/b.canon --
+package b
+
+/// An item.
+record Item {
+  /// Its rank.
+  rank: Int
+}
+
+/// The items: none yet.
+let items: table Item = {}
+
+/// A band.
+record Band {
+  /// Its base.
+  base: Int
+  /// Its bonus for an item.
+  export fn bonus(self, t: ref items) -> Int { return self.base + t.rank }
+}
+
+emit go { out: "@features/b/go", package: "b" }
+emit cpp { out: "@features/b/cpp", namespace: "b" }
+emit ts { out: "@features/b/b.ts" }
+-- a/a.canon --
+package a
+
+import b { Band }
+
+/// A zone.
+record Zone {
+  /// Its band.
+  band: Band
+}
+
+/// The zone.
+let zone: Zone = { band: { base: 3 } }
+
+emit go { out: "@features/a/go", package: "a", mode: data }
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: data }
+emit ts { out: "@features/a/a.ts", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

@@ -1,0 +1,32 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_8, refused: EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentForeignFormat): baked gen/go writes a field of another package's dependent type, but no literal of one (its fields are unexported there): DependentType at the value holding one, not CrossPackageBakedValue; the type's own package writes it.
+-- b/b.canon --
+package b
+
+/// A kind.
+enum K { n, s }
+
+/// A payload.
+type P(k: K) = match k { n => Int, s => String }
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { K, P }
+
+/// A rule.
+record R {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  v: P(k)
+}
+
+/// The rule.
+let r: R = { k: n, v: 1 }
+
+emit go { out: "@features/a", package: "a" }
+-- a.r.json --
+{"k": "n", "v": 1}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

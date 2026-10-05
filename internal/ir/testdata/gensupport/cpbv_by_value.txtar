@@ -1,4 +1,4 @@
-Decision 37, clean: a baked value whose field of another package's record is none, and an empty list of them, writes no foreign literal (CrossPackageBakedValue by value).
+Decision 37, clean: a baked value whose field of another package's record is none, and an empty list of them, writes no foreign literal (and since DECISIONS 323 one would be written through its make hook).
 -- b/b.canon --
 package b
 

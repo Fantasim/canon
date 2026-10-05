@@ -1,0 +1,13 @@
+DECISIONS 305, 320: cpp embedded mode is not built yet (owed for v0.2): E8019 `unbuilt` at the mode, naming baked mode instead; no rule of the mode judges the emit (the plain list is no E8015).
+-- a/a.canon --
+package a
+
+/// The counts.
+let counts: [Int] = [1, 2]
+
+emit cpp { out: "@features/a", namespace: "a", mode: embedded }
+-- findings.txt --
+error[E8019]  a/a.canon:6:54
+  emit cpp cannot use embedded mode yet; use baked mode
+
+1 error, 0 warnings in 1 package (…)

@@ -95,12 +95,13 @@ RewardGold: GetAmount amount_
 RewardKind: gold nothing
 Shop: GetBestKey GetName best_ name_
 ShopAccess: LoadItems LoadShops LoadSnapshot Resolve
+ShopMake: Case_Reward_Gold Entry_Item Item Reward_Gold Reward_Nothing Shop
 ShopSnapshot: GetShops Load shops_
 ShopStore: Current Reload current_
 Shops: All At Find Len rows_
 Tone: loud soft
 TwiceVector: code want x
 conformance: Capture ItemTimesVector RunShopConformance TwiceVector g_code kItemTimes kTwice
-detail: Decode Item_times ShopAccess
+detail: Decode Item_times ShopAccess ShopMake
 shop: Item Items MAX_PRICE Reward RewardGold RewardKind RewardKindFromWire Shop ShopSnapshot ShopStore Shops ToName ToWire Tone ToneFromWire Twice kItemsSchema kRewardKindMembers kShopsSchema kToneMembers
 0 errors, 0 warnings in 1 package (…)

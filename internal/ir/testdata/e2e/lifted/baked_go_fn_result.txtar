@@ -1,0 +1,24 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_6, refused: EVALUATION.md §1 (stage E, CODEGEN.md §5.9): baked Go cannot literal-ize a precomputed fn's result of another package's record.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// The origin.
+export fn origin() -> Point { return { x: 0 } }
+
+emit go { out: "@features/a", package: "a" }
+-- a.origin.calls.json --
+{"": {"x": 0}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

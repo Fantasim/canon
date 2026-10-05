@@ -21,6 +21,7 @@ func (pl *CppNamePlan) declareAll() {
 			pl.shareNS(pl.ContainerName(v), pl.valueOrigin(v), v)
 		}
 	}
+	pl.declareForeign()
 	for _, fn := range pl.p.Fns {
 		if fn.Kind == FnTranslated {
 			pl.shareNS(pl.FnName(fn), pl.fnOrigin(fn), fn)
@@ -94,11 +95,12 @@ func (pl *CppNamePlan) shareAs(scope, name, origin string, item any, meets cppMe
 	pl.shared = append(pl.shared, cppShared{scope: scope, name: name, origin: origin, item: item, meets: meets})
 }
 
-// shareSegments shares each segment of the emit's namespace in its parent: a class or any other name of another package there collides with the namespace (CODEGEN.md §3.5; g++: "redeclared as different kind of entity").
+// shareSegments shares each segment of the emit's namespace in its parent: a class or any other name of another package there collides with the namespace (CODEGEN.md §3.5; g++: "redeclared as different kind of entity"); a segment that is a platform macro warns (W8006).
 func (pl *CppNamePlan) shareSegments() {
 	segs := strings.Split(pl.e.Namespace, cppScope)
 	for i := range segs {
 		pl.shareAs(strings.Join(segs[:i], cppScope), segs[i], pl.p.Name, nil, meetsNamespace)
+		pl.warnMacro(pl.ns, segs[i], pl.e.Namespace, nil) // a segment is a generated name too (W8006)
 	}
 }
 

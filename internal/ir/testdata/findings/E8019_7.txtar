@@ -22,9 +22,9 @@ variant Shape {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8019]  a/a.canon:7:6
-  emit go in baked mode cannot generate a dependent type
+  emit go in baked mode cannot generate a dependent type every branch of which is Never; give it a branch that is not Never, or remove it
 
 error[E8019]  a/a.canon:14:3
-  emit go in baked mode cannot generate an export fn of a case without fields
+  emit go in baked mode cannot generate an export fn of a case without fields; give the case a field
 
 2 errors, 0 warnings in 1 package (…)

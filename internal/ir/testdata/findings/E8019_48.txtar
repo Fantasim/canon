@@ -16,6 +16,6 @@ record Rule {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8019]  a/a.canon:11:26
-  emit go in baked mode cannot generate a lookup parameter that refs a load.defines table
+  emit go in baked mode cannot generate a lookup parameter that refs a load.defines table; take an enum parameter instead
 
 1 error, 0 warnings in 1 package (…)

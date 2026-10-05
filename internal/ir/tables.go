@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
@@ -89,6 +90,29 @@ var (
 	}
 	accessWords = append([]string{""}, syntax.AccessModes()...) // indexed by Access
 )
+
+// wayOf is the way out an E8019 finding names for each refusal kind (DECISIONS 305, 320; ERRORS.md §1.4, the Way rows).
+var wayOf = map[diag.Kind]diag.Kind{
+	diag.KindCaseField: diag.KindWayCaseField, diag.KindDefineKey: diag.KindWayDefineKey,
+	diag.KindDependentDefault: diag.KindWayDependentDefault, diag.KindDependentOutsideField: diag.KindWayDependentOutsideField,
+	diag.KindDependentType: diag.KindWayDependentType, diag.KindFieldlessCaseExportFn: diag.KindWayFieldlessCaseExportFn,
+	diag.KindForeignResolvedRef:      diag.KindWayForeignResolvedRef,
+	diag.KindForeignTableLookupParam: diag.KindWayForeignTableLookupParam, diag.KindInlineFoldedKey: diag.KindWayInlineFoldedKey,
+	diag.KindInputField: diag.KindWayInputField, diag.KindLegacyStruct: diag.KindWayLegacyStruct,
+	diag.KindMapField: diag.KindWayMapField, diag.KindNeverDependent: diag.KindWayNeverDependent,
+	diag.KindOptionalElementList: diag.KindWayOptionalElementList, diag.KindOptionalMapValue: diag.KindWayOptionalMapValue,
+	diag.KindRecordConstant: diag.KindWayRecordConstant, diag.KindRecordDefault: diag.KindWayRecordDefault, diag.KindRecordCycleThroughMethod: diag.KindWayRecordCycleThroughMethod,
+	diag.KindRecordFieldCycle: diag.KindWayRecordFieldCycle, diag.KindRecursiveVariantCase: diag.KindWayRecursiveVariantCase,
+	diag.KindRefUnion: diag.KindWayRefUnion, diag.KindResolvedLookupResult: diag.KindWayResolvedLookupResult,
+	diag.KindSelfReadNotAPath: diag.KindWaySelfReadNotAPath, diag.KindTableField: diag.KindWayTableField,
+	diag.KindVariantKindConstant: diag.KindWayVariantKindConstant, diag.KindVariantMethod: diag.KindWayVariantMethod,
+}
+
+// unbuiltAlt is, for each mode a target's generator does not write yet, the mode an E8019 `unbuilt` finding offers instead (DECISIONS 320; owed for v0.2): baked, the one mode that always holds (CODEGEN.md §2.2: a types package may hold values a data file cannot, E8015); ModeNone for a mode that is built.
+var unbuiltAlt = [...][ModeTypes + 1]Mode{
+	TargetGo:  {ModeEmbedded: ModeBaked, ModeTypes: ModeBaked},
+	TargetCpp: {ModeEmbedded: ModeBaked},
+}
 
 // branchKinds are the kinds a dependent type's branch may have (CODEGEN.md §5.6, E8017).
 var branchKinds = kindSet(types.Bool, types.Int, types.Float, types.String, types.Duration,

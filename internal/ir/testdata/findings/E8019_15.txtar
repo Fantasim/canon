@@ -19,6 +19,6 @@ emit json { out: "out/" }
 {"one": {"cells": [1, null]}}
 -- findings.txt --
 error[E8019]  a/a.canon:6:3
-  emit cpp in data mode cannot generate a list of optional elements
+  emit cpp in data mode cannot generate a list of optional elements; wrap each element in a record with an optional field
 
 1 error, 0 warnings in 1 package (…)

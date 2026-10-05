@@ -29,15 +29,15 @@ emit json { out: "out/" }
 emit ts { out: "@features/a/a.ts", mode: data }
 -- findings.txt --
 error[E8019]  a/a.canon:11:13
-  emit json cannot generate a by-value cycle of records through a stored method result
+  emit json cannot generate a by-value cycle of records through a stored method result; return a ref to the record instead
 
 error[E8019]  a/a.canon:11:13
-  emit ts in data mode cannot generate a by-value cycle of records through a stored method result
+  emit ts in data mode cannot generate a by-value cycle of records through a stored method result; return a ref to the record instead
 
 error[E8019]  a/a.canon:20:13
-  emit json cannot generate a by-value cycle of records through a stored method result
+  emit json cannot generate a by-value cycle of records through a stored method result; return a ref to the record instead
 
 error[E8019]  a/a.canon:20:13
-  emit ts in data mode cannot generate a by-value cycle of records through a stored method result
+  emit ts in data mode cannot generate a by-value cycle of records through a stored method result; return a ref to the record instead
 
 4 errors, 0 warnings in 1 package (…)

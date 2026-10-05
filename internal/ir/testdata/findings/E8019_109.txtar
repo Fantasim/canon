@@ -1,0 +1,47 @@
+CODEGEN.md §2.8, §5.6, DECISIONS 305, 320: app's go data loader reads lib's Ev with app's own reader, and Ev's payload is decided through a ref (its discriminant sits behind ref kinds), which no loader reads before v0.2: E8019 `DependentType` at app's value that reads Ev, naming the way out. lib's baked emit holds no such value, so it writes Ev.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A kind.
+enum K { one, two }
+
+/// A kind entry.
+record KindEntry {
+  /// Its kind.
+  k: K
+}
+
+/// The kinds.
+let kinds: table KindEntry = {
+  first { k: one }
+}
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// An event.
+record Ev {
+  /// Its kind entry.
+  kind: ref kinds
+  /// Its payload, decided through the ref.
+  p: P(kind.k)
+}
+
+emit go { out: "@features/lib/go", package: "lib" }
+-- app/app.canon --
+/// The app.
+package app
+
+import lib { Ev }
+
+/// The app's event.
+let ev: Ev = { kind: first, p: 1 }
+
+emit go { out: "@features/app/go", package: "app", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8019]  app/app.canon:7:5
+  emit go in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
+
+1 error, 0 warnings in 2 packages (…)

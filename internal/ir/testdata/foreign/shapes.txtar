@@ -1,0 +1,234 @@
+CODEGEN.md §2.8, §5.6, §5.8, §5.9, §5.10, §5.14 and DECISIONS 323 with the U1 review rulings (log-2026-10-06): the hook shapes another package builds. lib (baked) has a dependent type, a define ref (D), a lookup method's cells, an optional field's presence (?), a record whose table field holds its own entries (entry hook), a case without fields whose stored result its hook takes, and a dependent type whose branch is another package's record; store (data) has a record its loader resolves a ref of (no hook written); app reads both in data mode and bakes a table of lib's record in its cpp emit (a C++ row in a baked holder).
+-- shapes/kinds/kinds.canon --
+/// Kinds.
+package shapes.kinds
+
+/// A flag.
+record Flag {
+  /// Its name.
+  name: String
+}
+
+emit go { out: "@features/kinds/go", package: "kinds", mode: baked }
+emit cpp { out: "@features/kinds/cpp", namespace: "shapes::kinds", mode: baked }
+-- shapes/lib/lib.canon --
+/// The library.
+package shapes.lib
+
+import shapes.kinds { Flag }
+
+local let monsters = load.defines("@features/lib/monsters.h")
+
+/// A kind.
+enum K { num, flag }
+
+/// A role.
+enum Role { member, admin }
+
+/// A payload.
+type P(k: K) = match k { num => Int, flag => Flag }
+
+/// A part.
+record Part {
+  /// Its label.
+  label: String
+}
+
+/// A widget.
+record Widget {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  p: P(k)
+  /// Its monster.
+  monster: ref monsters
+  /// Its hint.
+  hint: String?
+  /// Its parts, entries of its own table.
+  parts: table Part
+  /// By role.
+  export fn rank(self, r: Role) -> Int { return match r { member => 1, admin => 2 } }
+}
+
+/// A mood.
+variant Mood {
+  /// Calm, with no field.
+  calm {
+    /// Its score, stored.
+    export fn score(self) -> Int { return 1 }
+  }
+  /// Angry.
+  angry {
+    /// How much.
+    level: Int
+  }
+}
+
+emit go { out: "@features/lib/go", package: "lib", mode: baked }
+emit cpp { out: "@features/lib/cpp", namespace: "shapes::lib", mode: baked }
+-- shapes/store/store.canon --
+/// A store, in data mode.
+package shapes.store
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+  /// The next item, resolved by this package's loader.
+  next: ref items?
+}
+
+/// The items.
+let items: table Item = {
+  a { label: "a" }
+}
+
+emit go { out: "@features/store/go", package: "store", mode: data }
+emit cpp { out: "@features/store/cpp", namespace: "shapes::store", mode: data }
+emit json { out: "out/" }
+-- shapes/app/app.canon --
+/// The app.
+package shapes.app
+
+import shapes.lib { Widget, Mood, P, K }
+import shapes.store { Item }
+
+/// A screen.
+record Screen {
+  /// Its kind.
+  k: K
+  /// Its gadget.
+  gadget: Widget
+  /// Its mood.
+  mood: Mood
+  /// Its payload.
+  p: P(k)
+  /// Its item.
+  item: Item
+}
+
+/// The screens.
+let screens: table Screen = {
+  home { k: num, gadget: { k: num, p: 1, monster: "M", parts: {} }, mood: calm, p: 2, item: { label: "x" } }
+}
+
+/// The widgets, baked by the cpp emit.
+let widgets: table Widget = {
+  w { k: num, p: 1, monster: "M", parts: {} }
+}
+
+emit go { out: "@features/app/go", package: "app", mode: data, values: [screens] }
+emit cpp { out: "@features/app/cpp", namespace: "shapes::app", mode: baked }
+-- plan.txt --
+== go shapes.kinds baked
+  imports: 
+  read: 
+  written: 
+  readers: 
+  hook Make_Flag [Name]
+  define tables:  (0 loaded)
+== cpp shapes.kinds baked
+  imports: 
+  read: 
+  written: 
+  make struct: KindsMake
+  hook Flag [name_]
+  define tables:  (0 loaded)
+== go shapes.lib baked
+  imports: shapes.kinds[go,cpp]
+  read: 
+  written: 
+  readers: 
+  hook Make_P_Num
+  hook Make_P_Flag
+  hook Make_Part [Label]
+  hook Make_Widget [K P Monster(K,D) Hint(?) Parts Rank(cells)]
+  hook Make_Mood_Calm [Score]
+  hook Make_Mood_Angry/MakeCase_Mood_Angry [Level]
+  entry hook MakeEntry_Part
+  define tables: shapes.lib.monsters (0 loaded)
+== cpp shapes.lib baked
+  imports: shapes.kinds[go,cpp]
+  read: 
+  written: 
+  make struct: LibMake
+  hook P_Num
+  hook P_Flag
+  hook Part [label_]
+  hook Widget [k_ p_ monster_+monsterValue_ hint_ parts_ rank_]
+  hook Mood_Calm [score_]
+  hook Mood_Angry/Case_Mood_Angry [level_]
+  entry hook Entry_Part
+  define tables: shapes.lib.monsters (0 loaded)
+== go shapes.store data
+  imports: 
+  read: 
+  written: 
+  readers: 
+  hook Make_Item unwritten [Label Next(R,K,?)]
+  entry hook MakeEntry_Item
+  define tables:  (0 loaded)
+== cpp shapes.store data
+  imports: 
+  read: 
+  written: 
+  make struct: StoreMake
+  readers: 
+  hook Item unwritten [label_ next_(R)]
+  entry hook Entry_Item
+  define tables:  (0 loaded)
+== go shapes.app data
+  imports: shapes.kinds[go,cpp] shapes.lib[go,cpp] shapes.store[go,cpp,json]
+  read: shapes.lib.Widget shapes.lib.P shapes.kinds.Flag shapes.lib.Part shapes.lib.Mood shapes.lib.Mood.angry shapes.store.Item
+  written: 
+  readers: decode_lib_Widget decode_lib_P decode_kinds_Flag decode_lib_Part decode_lib_Mood decode_lib_MoodAngry decode_store_Item
+  rt import librt "example.com/features/lib/go/rt" of shapes.lib
+  hook Make_Screen [K Gadget Mood P Item]
+  hook Make_Widget [K P Monster(K,D) Hint(?) Parts Rank(cells)]
+  hook Make_P_Num
+  hook Make_P_Flag
+  hook Make_Flag [Name]
+  hook Make_Part [Label]
+  hook Make_Mood_Calm [Score]
+  hook Make_Mood_Angry/MakeCase_Mood_Angry [Level]
+  hook Make_Item [Label Next(K,?)]
+  entry hook MakeEntry_Screen
+  table of shapes.lib.Part held by shapes.lib: MakeEntry_Part
+  define tables: shapes.lib.monsters (0 loaded)
+== cpp shapes.app baked
+  imports: shapes.kinds[go,cpp] shapes.lib[go,cpp] shapes.store[go,cpp,json]
+  read: 
+  written: shapes.lib.Widget shapes.lib.P shapes.kinds.Flag shapes.lib.Part shapes.lib.Mood shapes.lib.Mood.angry shapes.store.Item
+  make struct: AppMake
+  row WidgetRow hook WidgetRow of shapes.lib.Widget, held by widgets, scope GetHint GetId GetK GetMonsterKey GetMonsterValue GetP GetParts GetRetired Rank id_ retired_
+  hook Screen [k_ gadget_ mood_ p_ item_]
+  hook Widget [k_ p_ monster_+monsterValue_ hint_ parts_ rank_]
+  hook P_Num
+  hook P_Flag
+  hook Flag [name_]
+  hook Part [label_]
+  hook Mood_Calm [score_]
+  hook Mood_Angry/Case_Mood_Angry [level_]
+  hook Item [label_ next_]
+  entry hook Entry_Screen
+  table of shapes.lib.Part held by shapes.lib: Entry_Part
+  define tables: shapes.lib.monsters (0 loaded)
+error[E8019]  shapes/app/app.canon:22:5
+  emit cpp in baked mode cannot generate a record of another package whose loader resolves one of its refs; emit the owning package in baked mode, or keep the record inside the owner's value
+
+error[E8019]  shapes/app/app.canon:22:5
+  emit go in data mode cannot generate a record of another package whose loader resolves one of its refs; emit the owning package in baked mode, or keep the record inside the owner's value
+
+error[E8153]  shapes/app/app.canon:22:5
+  screens is emitted in data mode but not written by emit json
+
+error[E8017]  shapes/lib/lib.canon:15:6
+  branch flag of P has type shapes.kinds.Flag: dependent types may only have scalar, String, enum or ref branches
+
+error[E8019]  shapes/lib/lib.canon:42:3
+  emit cpp in baked mode cannot generate an export fn of a case without fields; give the case a field
+
+error[E8019]  shapes/lib/lib.canon:42:3
+  emit go in baked mode cannot generate an export fn of a case without fields; give the case a field
+
+6 errors, 0 warnings in 4 packages (…)

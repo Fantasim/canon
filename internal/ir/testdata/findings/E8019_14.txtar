@@ -16,9 +16,9 @@ emit go { out: "@features/a", package: "a" }
 [1, null]
 -- findings.txt --
 error[E8019]  a/a.canon:6:3
-  emit go in baked mode cannot generate a list of optional elements
+  emit go in baked mode cannot generate a list of optional elements; wrap each element in a record with an optional field
 
 error[E8019]  a/a.canon:10:7
-  emit go in baked mode cannot generate a list of optional elements
+  emit go in baked mode cannot generate a list of optional elements; wrap each element in a record with an optional field
 
 2 errors, 0 warnings in 1 package (…)

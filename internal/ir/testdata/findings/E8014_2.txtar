@@ -10,7 +10,7 @@ export fn grants(t: Tier) -> Bool {
   return true
 }
 
-emit go { out: "@features/a", package: "a", mode: types }
+emit cpp { out: "@features/a", namespace: "a", mode: types }
 -- findings.txt --
 error[E8014]  a/a.canon:7:11
   types mode cannot emit the lookup function of grants: there is no data to read it from

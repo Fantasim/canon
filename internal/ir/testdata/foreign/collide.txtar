@@ -1,0 +1,111 @@
+log-2026-10-06 "U1 review" 4 and "Ruling 4 refined": two packages whose go emits share the package name core give q one Go reader name, decode_core_Tag, and one rt import name, corert: each is E8005 at q's import of the later package, besides the import name core itself (E8005 at the emit, as before). C++ readers are named from the whole package path (Read_One_Core_Tag, Read_Two_Core_Tag), so they never meet.
+-- one/core/core.canon --
+/// The first core.
+package one.core
+
+/// A tag.
+record Tag {
+  /// Its labels.
+  labels: [String]
+}
+
+emit go { out: "@features/one/go", package: "core", mode: baked }
+emit cpp { out: "@features/one/cpp", namespace: "one::core", mode: baked }
+-- two/core/core.canon --
+/// The second core.
+package two.core
+
+/// A tag.
+record Tag {
+  /// Its labels.
+  labels: [String]
+}
+
+emit go { out: "@features/two/go", package: "core", mode: baked }
+emit cpp { out: "@features/two/cpp", namespace: "two::core", mode: baked }
+-- q/q.canon --
+/// Holds both tags.
+package q
+
+import one.core as first
+import two.core as second
+
+/// A pair.
+record Pair {
+  /// One.
+  a: first.Tag
+  /// Two.
+  b: second.Tag
+}
+
+/// The pair.
+let pair: Pair = { a: { labels: [] }, b: { labels: [] } }
+
+emit go { out: "@features/q/go", package: "q", mode: data }
+emit cpp { out: "@features/q/cpp", namespace: "q", mode: data }
+-- plan.txt --
+== go one.core baked
+  imports: 
+  read: 
+  written: 
+  readers: 
+  hook Make_Tag [Labels]
+  define tables:  (0 loaded)
+== cpp one.core baked
+  imports: 
+  read: 
+  written: 
+  make struct: CoreMake
+  hook Tag [labels_]
+  define tables:  (0 loaded)
+== go two.core baked
+  imports: 
+  read: 
+  written: 
+  readers: 
+  hook Make_Tag [Labels]
+  define tables:  (0 loaded)
+== cpp two.core baked
+  imports: 
+  read: 
+  written: 
+  make struct: CoreMake
+  hook Tag [labels_]
+  define tables:  (0 loaded)
+== go q data
+  imports: one.core[go,cpp] two.core[go,cpp]
+  read: one.core.Tag two.core.Tag
+  written: 
+  readers: decode_core_Tag decode_core_Tag
+  rt import corert "example.com/features/one/go/rt" of one.core
+  rt import corert "example.com/features/two/go/rt" of two.core
+  hook Make_Pair [A B]
+  hook Make_Tag [Labels]
+  hook Make_Tag [Labels]
+  problem 0 package decode_core_Tag: one.core.Tag, two.core.Tag
+  problem 0 package core: example.com/features/one/go, example.com/features/two/go
+  problem 0 package corert: example.com/features/one/go/rt, example.com/features/two/go/rt
+  define tables:  (0 loaded)
+== cpp q data
+  imports: one.core[go,cpp] two.core[go,cpp]
+  read: one.core.Tag two.core.Tag
+  written: 
+  make struct: QMake
+  readers: Read_One_Core_Tag Read_Two_Core_Tag
+  hook Pair [a_ b_]
+  hook Tag [labels_]
+  hook Tag [labels_]
+  define tables:  (0 loaded)
+error[E8005]  q/q.canon:5:1
+  go: corert is generated for both example.com/features/one/go/rt and example.com/features/two/go/rt; give one of their emits a distinct package option
+
+error[E8005]  q/q.canon:5:1
+  go: decode_core_Tag is generated for both one.core.Tag and two.core.Tag; give one of their emits a distinct package option
+
+error[E8153]  q/q.canon:16:5
+  pair is emitted in data mode but not written by emit json
+
+error[E8005]  q/q.canon:18:6
+  go: core is generated for both example.com/features/one/go and example.com/features/two/go
+
+4 errors, 0 warnings in 3 packages (…)

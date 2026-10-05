@@ -1,0 +1,31 @@
+CODEGEN.md §3.5: a generated C++ name that is a platform macro is W8006 and generation proceeds: the enum member min, the record GetObject, the getter GetMessage of field message; field min does not warn (its names are GetMin and min_).
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { min, soft }
+
+/// A handle.
+record GetObject {
+  /// Its floor.
+  min: Int
+}
+
+/// A letter.
+record Letter {
+  /// Its message (getter GetMessage).
+  message: Int
+}
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: types }
+-- findings.txt --
+warning[W8006]  a/a.canon:4:13
+  C++ name min (from a.Tone.min) is a macro in common platform headers
+
+warning[W8006]  a/a.canon:7:8
+  C++ name GetObject (from a.GetObject) is a macro in common platform headers
+
+warning[W8006]  a/a.canon:15:3
+  C++ name GetMessage (from a.Letter.message) is a macro in common platform headers
+
+0 errors, 3 warnings in 1 package (…)

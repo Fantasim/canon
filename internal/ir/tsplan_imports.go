@@ -3,40 +3,72 @@ package ir
 import (
 	"maps"
 	"slices"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// declareImports declares the names gen/ts may import from another package for each of its types the file reaches (tsReached; CODEGEN.md §2.8, §3.5, DECISIONS 278, 279(b)): the type, an enum's Members, Names, Index and Codes, a variant's kind union and case types, the public decoder of a types-mode emit's record or variant, a table's id type and its Index. A type's whole family is reserved, imported or not, as the helpers are, so a field or a value added later never breaks a valid name.
+// TSImport is one namespace import of a TypeScript file (log-2026-10-06 "U4 (gen/ts) done" (a)): another package's names are written qualified, `Alias.Name`; gen/ts chooses `import type * as` or `import * as` from what it writes ("U1 rounds 3-5").
+type TSImport struct {
+	Pkg, Alias string
+}
+
+// TSImportAlias is the namespace alias of package pkg in every TypeScript file: its path's segments joined by `_` (`game.core` gives game_core), with `_` added to a reserved word (`default` gives default_, CODEGEN.md §3.4).
+func TSImportAlias(pkg string) string { return tsEscape(strings.ReplaceAll(pkg, qnameSep, underscore)) }
+
+// TSImports are the packages a ts emit of p imports, one namespace each, in the order of p.Imports: those whose types the file reaches (tsReached; CODEGEN.md §2.8, DECISIONS 279(b), 323).
+func TSImports(p *Package) []TSImport {
+	reached := map[string]bool{}
+	tsReached(p, func(t *TypeRef) {
+		if t.Named != nil && pkgOf(t.Named) != p.Name {
+			reached[pkgOf(t.Named)] = true
+		}
+		if r := t.Ref; t.Kind == types.Ref && r != nil && r.Pkg != p.Name && tsTableRef(r) {
+			reached[r.Pkg] = true
+		}
+	})
+	var out []TSImport
+	for _, ref := range p.Imports {
+		if reached[ref.Name] && tsEmitOf(p, ref.Name) != nil {
+			out = append(out, TSImport{Pkg: ref.Name, Alias: TSImportAlias(ref.Name)})
+		}
+	}
+	return out
+}
+
+// declareImports declares each namespace alias the file imports, before the package's own names, so a name of the package meeting one is E8005 at that name's declaration (CODEGEN.md §3.5); imported names live in their namespace, never in the module's scope. In data and types mode it declares this file's own reader of each class of another package it reaches, read_<alias>_<T> (§2.8).
 func (pl *tsNamePlan) declareImports(mod *nameScope) {
-	named, tables := map[Type]bool{}, map[Type]bool{}
+	for _, imp := range TSImports(pl.p) {
+		pl.declare(mod, imp.Alias, imp.Pkg, nil) // two packages giving one alias: E8005 at the emit (log-2026-10-06 "U1 rounds 3-5" 3)
+	}
+	named := map[Type]bool{}
 	tsReached(pl.p, func(t *TypeRef) {
 		if t.Named != nil && pkgOf(t.Named) != pl.p.Name && !named[t.Named] {
 			named[t.Named] = true
-			pl.declareForeign(mod, t.Named)
-		}
-		if r := t.Ref; t.Kind == types.Ref && r != nil && r.Pkg != pl.p.Name && tsTableRef(r) && !tables[r.Elem] {
-			tables[r.Elem] = true
-			pl.declareForeignIDs(mod, r)
+			pl.declareForeignReaders(mod, t.Named)
 		}
 	})
 }
 
-// tsReached calls visit on every type a TypeScript file of p may write a name of (DECISIONS 279(b)): those its declarations hold, then, followed through the fields, cases, export fns and dependent branches of every type they reach, of any package, those its literals, decoders and translated reads write.
+// tsReached calls visit on every type a code file of p may write a name of (DECISIONS 279(b), 323): those its declarations hold, then, followed through the fields, cases, export fns and dependent branches of every type they reach, of any package, those its literals, decoders and translated reads write.
 func tsReached(p *Package, visit func(*TypeRef)) {
 	newWalker(nil, visit).pkgRefs(p)
 }
 
-// tsImports are the packages a ts emit of u reaches only through other packages' types (CODEGEN.md §2.8, DECISIONS 279(b)): the file imports every package whose names it writes, so each is listed with its ts emits alone, the only generator that reads them; u.tsReach keeps the first type of each reached, for E8004.
-func (s *stage) tsImports(u *unit) []*PackageRef {
-	u.tsReach = map[string]string{}
-	if emitFor(u, TargetTS) == nil {
+// reachImports are the packages the code emits of u reach only through other packages' types (CODEGEN.md §2.8; DECISIONS 279(b), 323): their readers and literals may build any of their values, so each is listed with its emits of the code targets u emits, the generators that read them; u.reach keeps the first type of each reached, for E8004.
+func (s *stage) reachImports(u *unit) []*PackageRef {
+	u.reach = map[string]string{}
+	code := map[Target]bool{}
+	for _, es := range u.emits {
+		code[es.e.Target] = isCode(es.e.Target)
+	}
+	if !code[TargetGo] && !code[TargetCpp] && !code[TargetTS] {
 		return nil
 	}
 	reach := func(pkg, name string) {
 		_, direct := u.firstUse[pkg]
-		if _, seen := u.tsReach[pkg]; !seen && !direct && pkg != u.p.Name {
-			u.tsReach[pkg] = name
+		if _, seen := u.reach[pkg]; !seen && !direct && pkg != u.p.Name {
+			u.reach[pkg] = name
 		}
 	}
 	tsReached(u.p, func(t *TypeRef) {
@@ -48,50 +80,38 @@ func (s *stage) tsImports(u *unit) []*PackageRef {
 		}
 	})
 	var out []*PackageRef
-	for _, name := range slices.Sorted(maps.Keys(u.tsReach)) {
+	for _, name := range slices.Sorted(maps.Keys(u.reach)) {
 		if dep := s.units[name]; dep != nil {
-			emits := slices.DeleteFunc(slices.Clone(dep.p.Emits), func(e *Emit) bool { return e.Target != TargetTS })
+			emits := slices.DeleteFunc(slices.Clone(dep.p.Emits), func(e *Emit) bool { return !code[e.Target] })
 			out = append(out, &PackageRef{Name: name, Dir: dep.p.Dir, Emits: emits})
 		}
 	}
 	return out
 }
 
-// declareForeign declares the names gen/ts may import for a type of another package.
-func (pl *tsNamePlan) declareForeign(mod *nameScope, t Type) {
-	name, org := tsName(t), t.QName()
-	pl.declare(mod, name, org, nil)
-	switch x := t.(type) {
-	case *Enum:
-		for _, suffix := range []string{tsMembersName, tsNamesName, tsIndexName} {
-			pl.declare(mod, name+suffix, org, nil)
-		}
-		if x.Codes != nil {
-			pl.declare(mod, name+tsCodesName, org, nil)
-		}
-	case *Variant:
-		pl.declare(mod, name+tsKindSuffix, org, nil)
-		for _, c := range x.Cases {
-			if len(c.Fields) > 0 || len(c.Methods) > 0 {
-				pl.declare(mod, tsCaseName(x, c), org+qnameSep+c.Name, nil)
-			}
-		}
-	}
-	if e := tsEmitOf(pl.p, pkgOf(t)); e != nil && e.Mode == ModeTypes && (isVariant(t) || isRecord(t)) {
-		pl.declare(mod, tsDecodePrefix+name, org, nil)
-	}
+// TSReaderName is a TypeScript file's reader of a record, variant or dependent type t of another package, read_<alias>_<T> (`read_game_core_LevelRange`); a package's own readers keep read<T> (log-2026-10-06 "TS reader names").
+func TSReaderName(t Type) string { return tsForeignRead(pkgOf(t), tsName(t)) }
+
+// TSCaseReaderName is the reader of case c of another package's variant v, read_<alias>_<V><Case>.
+func TSCaseReaderName(v *Variant, c *Case) string { return tsForeignRead(v.Pkg, tsCaseName(v, c)) }
+
+// tsForeignRead is read_<alias of pkg>_<name>.
+func tsForeignRead(pkg, name string) string {
+	return tsReadPrefix + underscore + TSImportAlias(pkg) + underscore + name
 }
 
-// declareForeignIDs declares the id type of another package's table, and its Index in a baked or embedded emit (CODEGEN.md §5.3).
-func (pl *tsNamePlan) declareForeignIDs(mod *nameScope, r *RefTarget) {
-	e := tsEmitOf(pl.p, r.Pkg)
-	if e == nil || e.Mode == ModeTypes {
+// declareForeignReaders declares, in data and types mode, the reader this file writes for a class of another package (TSReaderName), and for each of its cases that has a type (CODEGEN.md §2.8, §8.1; DECISIONS 323): it never calls that package's decoders.
+func (pl *tsNamePlan) declareForeignReaders(mod *nameScope, t Type) {
+	if _, enum := t.(*Enum); enum || pl.e.Mode != ModeData && pl.e.Mode != ModeTypes {
 		return
 	}
-	id, org := tsName(r.Elem)+tsIDSuffix, r.Pkg+qnameSep+r.Value
-	pl.declare(mod, id, org, nil)
-	if e.Mode != ModeData {
-		pl.declare(mod, id+tsIndexName, org, nil)
+	pl.declare(mod, TSReaderName(t), t.QName(), nil)
+	if v, ok := t.(*Variant); ok {
+		for _, c := range v.Cases {
+			if len(c.Fields) > 0 || len(c.Methods) > 0 {
+				pl.declare(mod, TSCaseReaderName(v, c), v.QName()+qnameSep+c.Name, nil)
+			}
+		}
 	}
 }
 

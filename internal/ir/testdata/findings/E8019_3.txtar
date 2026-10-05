@@ -16,6 +16,6 @@ variant Shape {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8019]  a/a.canon:8:3
-  emit go in baked mode cannot generate an export fn of a case without fields
+  emit go in baked mode cannot generate an export fn of a case without fields; give the case a field
 
 1 error, 0 warnings in 1 package (…)

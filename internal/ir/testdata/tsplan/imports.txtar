@@ -1,4 +1,4 @@
-CODEGEN.md §2.8, §3.5, DECISIONS 278: every name gen/ts imports into a module is reserved in the TS name plan's module scope: imported types, an enum's Members, Codes and Index, a case type, a types-mode decoder, a table's id type and its Index (20 names; Names and a variant's Kind are reserved too, not reached here).
+CODEGEN.md §2.8, §3.5, DECISIONS 278: every name gen/ts imports into a module is reserved in the TS name plan's module scope: imported types, an enum's Members, Codes and Index, a case type, a table's id type and its Index (19 names; another package's decoders are never imported, DECISIONS 323; Names and a variant's Kind are reserved too, not reached here).
 -- base/base.canon --
 /// The vocabulary.
 package base
@@ -97,7 +97,7 @@ record Display {
   /// Its name.
   name: String
   /// Its circle, when it is one.
-  circle: Shape.circle? = none
+  circle: Shape.circle?
 }
 
 emit ts { out: "@features/show/show.ts" }

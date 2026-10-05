@@ -1,0 +1,25 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_90, refused: CODEGEN.md §4.2: gen/cpp in types mode writes a table field of its own package's record, but not of another package's: TableField at that field.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: types }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A shelf.
+record Shelf {
+  /// Points by name.
+  points: table Point
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

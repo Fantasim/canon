@@ -1,8 +1,12 @@
 package ir
 
-import "slices"
+import (
+	"slices"
 
-// nestedRows are the records of this package that a table field of its own classes holds, in first-use order: their entries have an id and a retired flag (CODEGEN.md §4.2, §5.3); a record another package declares is refused (E8019 `TableField`).
+	"github.com/fantasim/canonlang/internal/types"
+)
+
+// nestedRows are the records of this package that a table field of its own classes holds, in first-use order: their entries have an id and a retired flag (CODEGEN.md §4.2, §5.3); a record another package declares is held in this package's row type instead (ForeignRows, CODEGEN.md §5.9, DECISIONS 323).
 func nestedRows(p *Package) []*Record {
 	var out []*Record
 	seen := map[*Record]bool{}
@@ -35,8 +39,15 @@ func (pl *GoNamePlan) NestedRow(rec *Record) bool {
 	return slices.Contains(pl.nested, rec)
 }
 
-// HasNestedTables reports a package with a table field: a data-mode decoder then reads a nested table (WIRE.md §5.7).
-func (pl *GoNamePlan) HasNestedTables() bool { return len(pl.nested) > 0 }
+// HasNestedTables reports a package with a table field, of its own records or another package's, or another package's class its readers read holding one: a data-mode decoder then reads a nested table (WIRE.md §5.7; log-2026-10-06 "U2 (gen/go) done" 5).
+func (pl *GoNamePlan) HasNestedTables() bool {
+	if len(pl.nested) > 0 || slices.ContainsFunc(pl.rows, func(r ForeignRow) bool { return r.Field != nil }) {
+		return true
+	}
+	return pl.data != nil && slices.ContainsFunc(pl.foreign.Read, func(class any) bool {
+		return classHolds(class, func(t TypeRef) bool { return t.Kind == types.Table })
+	})
+}
 
 // declareNestedIDs declares the id type of each record only a table field holds, a string in both modes: a nested table has no id constants (CODEGEN.md §5.3).
 func (pl *GoNamePlan) declareNestedIDs(top *nameScope) {

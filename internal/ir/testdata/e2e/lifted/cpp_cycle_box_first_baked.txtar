@@ -1,0 +1,24 @@
+log-2026-10-06 "U5 review FAIL" (cycles): A, declared first, holds B through an optional (boxed), and B holds A by value: the optional breaks the cycle whatever the order, so a baked cpp and go emit check and build, the C++ compiling and the Go vetting (it was E8019 RecordFieldCycle in this order, accepted in the other).
+-- a/a.canon --
+/// A.
+package a
+
+/// A.
+record A {
+  /// B.
+  b: B?
+}
+
+/// B.
+record B {
+  /// A.
+  a: A
+}
+
+/// X.
+let x: B = { a: {} }
+
+emit cpp { out: "@features/ca", namespace: "a" }
+emit go { out: "@features/ga", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

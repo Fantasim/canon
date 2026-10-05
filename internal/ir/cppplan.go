@@ -17,7 +17,9 @@ type CppNamePlan struct {
 	ns      *nameScope     // the namespace's own names that other packages' headers share (§3.5)
 	nsItems map[string]any // the item each namespace name was declared for
 	shared  []cppShared
-	nested  []*Record // the records a table field of the package holds (CODEGEN.md §4.2)
+	nested  []*Record    // the records a table field of the package holds (CODEGEN.md §4.2)
+	foreign *ForeignUse  // the other packages' classes the emit builds (CODEGEN.md §2.8)
+	rows    []ForeignRow // the other packages' records its tables hold (§5.9)
 }
 
 // cppShared is a name a header declares in the emit's namespace, or in its detail or conformance namespace, a name its sources declare in an anonymous namespace there, or a segment of the namespace itself, with what declared it.
@@ -33,12 +35,14 @@ type cppMeet uint8
 // PlanCppNames is the name plan of p's cpp emit e, with every problem found; a types-mode emit writes no value (CODEGEN.md §2.2).
 func PlanCppNames(p *Package, e *Emit) *CppNamePlan {
 	pl := &CppNamePlan{p: p, e: e, holders: map[any][]*Value{}, nsItems: map[string]any{}, namer: newNamer(p.Name, cppValidIdent)}
+	pl.macros = cppMacros
 	for _, v := range p.Values {
 		if e.Mode != ModeTypes && (e.Values == nil || slices.Contains(e.Values, v.Name)) {
 			pl.values = append(pl.values, v)
 		}
 	}
 	pl.nested = nestedRows(p)
+	pl.foreign, pl.rows = ForeignUses(p, e), ForeignRows(p, e)
 	pl.holdersOf()
 	pl.declareAll()
 	pl.shareSegments()
@@ -47,6 +51,18 @@ func PlanCppNames(p *Package, e *Emit) *CppNamePlan {
 
 // Problems are the plan's problems, in generation order.
 func (pl *CppNamePlan) Problems() []GoNameProblem { return pl.problems }
+
+// cppMacros is cppMacroNames as a set, built once.
+var cppMacros = cppMacroSet()
+
+// cppMacroSet is cppMacroNames as a set.
+func cppMacroSet() map[string]bool {
+	set := make(map[string]bool, len(cppMacroNames))
+	for _, n := range cppMacroNames {
+		set[n] = true
+	}
+	return set
+}
 
 // cppUpperCamel is C++'s UpperCamel(x) (CODEGEN.md §3.2): Cap of every word.
 func cppUpperCamel(name string) string {

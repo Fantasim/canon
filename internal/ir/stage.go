@@ -46,6 +46,7 @@ func Build(ctx context.Context, in Input) []*Package {
 		}
 	}
 	s.precompute()
+	s.lookupDomains()
 	for _, u := range s.order {
 		if u.selected && len(u.emits) > 0 {
 			s.finish(u)
@@ -80,10 +81,11 @@ type stage struct {
 	variantFns    map[*syntax.FnDecl]bool    // every fn written in a variant body outside its cases
 	cyclic        map[*ExportFn]bool         // cyclicFn's verdicts (DECISIONS 284)
 	cycleReported map[cycleReport]bool
+	owners        map[ownerKey]func(Type, *Case) bool // each owner's Written of its hooks, per target (hookWritten)
 }
 
 // unit is one checked package on its way to IR; firstUse is the first type of each imported
-// package its IR names, tsReach that of each package only its ts emit reaches, for E8004.
+// package its IR names, reach that of each package only its code emits reach, for E8004.
 type unit struct {
 	cp           *check.Package
 	p            *Package
@@ -94,7 +96,7 @@ type unit struct {
 	fns          []*fnSite
 	consts       []*constSite
 	firstUse     map[string]string
-	tsReach      map[string]string
+	reach        map[string]string
 	cppNames     []cppShared   // the names its data-mode cpp header declares in namespaces other packages share
 	variantCalls []source.Span // translated calls of a variant-level export fn (E8019 VariantMethod)
 }
@@ -142,6 +144,7 @@ func newStage(ctx context.Context, in Input) *stage {
 		domainsOf: map[*ExportFn]*fnDomains{}, fieldSites: map[*Field]*fieldSite{}, depFns: map[*Dependent]*types.TypeFunc{},
 		branchTypes: map[*Branch]types.Type{}, members: map[*Variant][]source.Span{},
 		variantFns: map[*syntax.FnDecl]bool{}, cyclic: map[*ExportFn]bool{}, cycleReported: map[cycleReport]bool{},
+		owners: map[ownerKey]func(Type, *Case) bool{},
 	}
 	// nil overrides (decision 108) never name an undeclared root, so NewLayout's ok is always true.
 	s.layout, _ = project.NewLayout(in.Project, curDir, nil, nil)

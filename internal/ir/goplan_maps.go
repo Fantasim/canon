@@ -1,29 +1,41 @@
 package ir
 
-import "github.com/fantasim/canonlang/internal/types"
+import (
+	"slices"
 
-// HasMaps reports a decoded class holding a map in a field or stored result: a data-mode decoder then reads it in file order through jsonMap (WIRE.md §5.8, CODEGEN.md §5.9, DECISIONS 312).
+	"github.com/fantasim/canonlang/internal/types"
+)
+
+// HasMaps reports a decoded class holding a map in a field or stored result, this package's or another's this emit's readers read: a data-mode decoder then reads it in file order through jsonMap (WIRE.md §5.8, CODEGEN.md §2.8, §5.9; DECISIONS 312; log-2026-10-06 "U2 (gen/go) done" 5).
 func (pl *GoNamePlan) HasMaps() bool {
-	for _, class := range pl.classes() {
-		if !pl.Decoded(class) {
-			continue
-		}
-		fields, fns := classBody(class)
-		found := false
-		visit := func(t TypeRef) { found = found || t.Kind == types.Map }
-		for _, f := range fields {
-			walkTypeRef(f.Type, visit)
-		}
-		for _, fn := range fns {
-			if fn.Kind != FnTranslated {
-				walkTypeRef(fn.Result, visit)
-			}
-		}
-		if found {
-			return true
+	return slices.ContainsFunc(pl.readClasses(), func(class any) bool {
+		return classHolds(class, func(t TypeRef) bool { return t.Kind == types.Map })
+	})
+}
+
+// readClasses are the classes data mode's decoders read: this package's decoded ones, then the other packages' its readers read.
+func (pl *GoNamePlan) readClasses() []any {
+	if pl.data == nil {
+		return nil
+	}
+	out := slices.DeleteFunc(pl.classes(), func(class any) bool { return !pl.Decoded(class) })
+	return append(out, pl.foreign.Read...)
+}
+
+// classHolds reports a record or case whose fields or stored results hold a type is reports, at any depth.
+func classHolds(class any, is func(TypeRef) bool) bool {
+	fields, fns := classBody(class)
+	found := false
+	visit := func(t TypeRef) { found = found || is(t) }
+	for _, f := range fields {
+		walkTypeRef(f.Type, visit)
+	}
+	for _, fn := range fns {
+		if fn.Kind != FnTranslated {
+			walkTypeRef(fn.Result, visit)
 		}
 	}
-	return false
+	return found
 }
 
 // MapKeyTarget is the value the ref keys of map t resolve into at load, in class (WIRE.md §5.8, DECISIONS 312): nil when t's key is no ref, or its target is none class's holders all resolve a ref into (CODEGEN.md §5.8), where the key is read unchecked.

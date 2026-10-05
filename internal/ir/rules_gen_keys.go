@@ -43,19 +43,25 @@ func tableElem(t TypeRef) (*Record, bool) {
 	return rec, ok
 }
 
-// checkInlineFolds is E8019 `InlineFoldedKey`: an inline variant key equal to another key of its parent but for ASCII case (WIRE.md §5.6).
+// checkInlineFolds is E8019 `InlineFoldedKey` at each field inlineFolds finds.
 func (s *stage) checkInlineFolds(u *unit, es *emitSite, class any, shape objectShape) {
+	for _, f := range inlineFolds(class, shape) {
+		u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindInlineFoldedKey)
+	}
+}
+
+// inlineFolds are the inline variant fields of class with a key equal to another key of its parent but for ASCII case (WIRE.md §5.6).
+func inlineFolds(class any, shape objectShape) []*Field {
 	fields, fns := classBody(class)
 	all := append(slices.Clone(shape.extras[class]), shape.keys(fields, fns)...)
+	var out []*Field
 	for _, f := range fields {
 		v, ok := f.Type.Named.(*Variant)
-		if !f.Inline || !ok {
-			continue
-		}
-		if own := shape.inlineKeys(v); foldsOnto(own, all) {
-			u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindInlineFoldedKey)
+		if f.Inline && ok && foldsOnto(shape.inlineKeys(v), all) {
+			out = append(out, f)
 		}
 	}
+	return out
 }
 
 // keys are the object keys of fields and fns: first path segments, pairs slots, inline keys, then `$<fn>` (WIRE.md §5.11).

@@ -4,7 +4,9 @@ import (
 	"cmp"
 	"maps"
 	"slices"
+	"strings"
 
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -24,6 +26,7 @@ func (s *stage) finish(u *unit) {
 		}
 	}
 	u.p.Imports = s.imports(u)
+	s.importSites(u)
 	u.p.Defines = s.defines(u)
 }
 
@@ -53,7 +56,7 @@ func selectedNames(u *unit, e *Emit) []string {
 	return out
 }
 
-// imports are the packages whose types or collections the IR names directly, by name (EMT-06, CODEGEN.md §2.8): another package's type is referenced, never entered; then those only a ts emit reaches (tsImports).
+// imports are the packages whose types or collections the IR names directly, by name (EMT-06, CODEGEN.md §2.8): another package's type is referenced, never entered; then those only its code emits reach (reachImports).
 func (s *stage) imports(u *unit) []*PackageRef {
 	u.firstUse = map[string]string{}
 	use := func(pkg, name string) {
@@ -76,7 +79,7 @@ func (s *stage) imports(u *unit) []*PackageRef {
 			out = append(out, &PackageRef{Name: name, Dir: dep.p.Dir, Emits: dep.p.Emits})
 		}
 	}
-	out = append(out, s.tsImports(u)...)
+	out = append(out, s.reachImports(u)...)
 	slices.SortFunc(out, func(a, b *PackageRef) int { return cmp.Compare(a.Name, b.Name) })
 	return out
 }
@@ -158,4 +161,31 @@ func tableIDs(v value.Value) []string {
 		out[i] = e.Ident.Key.Text()
 	}
 	return out
+}
+
+// importSites locates each import of the package at its first import declaration, in file path order: a name only an imported package gives is reported there (log-2026-10-06 "U1 review" 4); a package reached only through others has none.
+func (s *stage) importSites(u *unit) {
+	for _, f := range sourceFiles(u.cp) {
+		for _, imp := range f.Imports {
+			i := slices.IndexFunc(u.p.Imports, func(r *PackageRef) bool { return r.Name == importPath(imp) })
+			if i < 0 {
+				continue
+			}
+			if _, seen := s.nodeSites[u.p.Imports[i]]; !seen {
+				s.nodeSites[u.p.Imports[i]] = declSite{file: f, node: imp}
+			}
+		}
+	}
+}
+
+// importPath is an import declaration's package path.
+func importPath(imp *syntax.Import) string {
+	if imp.Path == nil {
+		return ""
+	}
+	parts := make([]string, len(imp.Path.Parts))
+	for i, p := range imp.Path.Parts {
+		parts[i] = p.Name
+	}
+	return strings.Join(parts, qnameSep)
 }

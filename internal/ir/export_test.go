@@ -23,3 +23,12 @@ func scopeNames(scopes []*nameScope) map[string]map[string]bool {
 func TSModuleNames(p *Package, e *Emit) map[string]bool {
 	return scopeNames(planTSNames(p, e).scopes)[tsModuleScope]
 }
+
+// EmitDefineRefs are the define tables emit e of p carries, as package.let, whether or not stage E could read them (CODEGEN.md §5.8).
+func EmitDefineRefs(p *Package, e *Emit) []string {
+	var out []string
+	for _, d := range emitDefineRefs(p, e) {
+		out = append(out, d.Pkg+qnameSep+d.Value)
+	}
+	return out
+}

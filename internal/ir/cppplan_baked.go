@@ -22,6 +22,12 @@ func (pl *CppNamePlan) Accessor(v *Value) (getter, resolved string) {
 	return resolved + cppKeySuffix(t), resolved
 }
 
+// OwnerAccessor is the resolved accessor of the value r targets in its owner package's cpp emit, Get<V> or that value's @cpp(name:), named as the owner's own plan names it (Accessor; CODEGEN.md §3.3, §5.9).
+func (pl *CppNamePlan) OwnerAccessor(r *RefTarget) string {
+	_, resolved := pl.Accessor(&Value{Name: r.Value, Cpp: r.Cpp})
+	return resolved
+}
+
 // DataMember is a value's or a package fn's member of detail::<P>Access::Data, verbatim (CODEGEN.md §7.3).
 func (pl *CppNamePlan) DataMember(canon string) string { return cppVerbatim(canon) }
 

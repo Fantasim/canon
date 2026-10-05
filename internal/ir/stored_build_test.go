@@ -22,7 +22,6 @@ import (
 const (
 	e2eStored      = "testdata/e2e/stored/*.txtar"
 	e2eChain       = "testdata/e2e/chain.txtar"
-	e2eResultOrder = "testdata/e2e/resultorder.txtar"
 	e2eStoredJSON  = "json.golden"
 	e2eJSONSuffix  = ".json"
 	e2eTSSuffix    = ".ts"
@@ -57,11 +56,10 @@ func TestStoredResultsBuild(t *testing.T) {
 	}, golden.Expected(e2eStoredJSON))
 }
 
-// TestStoredResultRefusedAtCheck is DECISIONS 284 and CODEGEN.md §2.7 through internal/build: a stored result that always holds a fresh receiver of its own record is E8019 from `canon check`, so stage E never precomputes it (an endless chain before); a stored result that reaches a field cycle first orders gen/cpp's classes like a field, so the cycle is E8019 at its record from `canon check`, never gen/cpp's "a type that holds itself" at build. Neither raises an internal error, and `canon build` stops at the same one finding.
+// TestStoredResultRefusedAtCheck is DECISIONS 284 and CODEGEN.md §2.7 through internal/build: a stored result that always holds a fresh receiver of its own record is E8019 from `canon check`, so stage E never precomputes it (an endless chain before); it raises no internal error, and `canon build` stops at the same one finding. A stored result reaching a field cycle that an optional breaks builds (log-2026-10-06 "U5 review FAIL"; e2e/lifted/cpp_cycle_result_order_q.txtar).
 func TestStoredResultRefusedAtCheck(t *testing.T) {
 	for _, tc := range []struct{ fixture, place string }{
 		{e2eChain, "q/q.canon:11:13"},
-		{e2eResultOrder, "q/q.canon:13:8"},
 	} {
 		dir := t.TempDir()
 		writeProject(t, dir, tc.fixture)

@@ -22,15 +22,6 @@ func (s *stage) checkCppDecoded(u *unit, es *emitSite) {
 	}
 }
 
-// checkCppForeignRoots is E8019 `ForeignDataRecord` at a selected value whose record, or whose rows' record, is another package's: its static Load (CODEGEN.md §5.9) is a member of a class only that package's emit writes, and a row's id and retired getters likewise (§4.2), so no loader of this package can be its home.
-func (s *stage) checkCppForeignRoots(u *unit, es *emitSite) {
-	for _, v := range selectedValues(u, es.e) {
-		if root, ok := goRootClass(v.v).(Type); ok && pkgOf(root) != u.p.Name {
-			u.reportGenConstruct(es, v.span().span(), diag.KindForeignDataRecord)
-		}
-	}
-}
-
 // decodesClasses reports an emit whose generator decodes the package's classes from JSON: a data loader, or gen/cpp's types-mode decoders (CODEGEN.md §5.13).
 func decodesClasses(e *Emit) bool {
 	return e.Mode == ModeData || e.Target == TargetCpp && e.Mode == ModeTypes
@@ -53,35 +44,29 @@ func (s *stage) checkTypesInputs(u *unit, es *emitSite) {
 	})
 }
 
-// checkCppDefaults is E8019 where a types-mode decoder cannot write a field's constant default when its key is absent (CODEGEN.md §5.13): `RecordConstant` for one holding a record or case value (gen/cpp's literals write none, §5.1), `DependentType` for a present value of a dependent type the decoder otherwise reads, whose branch only a discriminant decides (§5.6).
+// checkCppDefaults is E8019 where a types-mode decoder cannot write a field's constant default when its key is absent (CODEGEN.md §5.13), at each field of the package's classes (cppDefault).
 func (s *stage) checkCppDefaults(u *unit, es *emitSite) {
 	for _, class := range packageClasses(u.p) {
 		fields, _ := classBody(class)
 		for _, f := range fields {
-			switch {
-			case f.Input != nil || !written(f.Default):
-			case holdsRecordValue(f.Default):
-				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindRecordConstant)
-			case typeHolds(&f.Type, isApp) && readsField(u.p.Name, es.e, fields, f, cppDiscRead):
-				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindDependentType)
+			if kind, bad := cppDefault(es.e, fields, f); bad {
+				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), kind)
 			}
 		}
 	}
 }
 
-// checkForeignPairs is E8019 `ForeignPairsField`: gen/cpp fills a pair record as its friend, which another package's record is not (CODEGEN.md §4.2).
-func (s *stage) checkForeignPairs(u *unit, es *emitSite) {
-	for _, class := range packageClasses(u.p) {
-		fields, _ := classBody(class)
-		for _, f := range fields {
-			if f.Pairs == nil || f.Type.Kind != types.List || f.Type.Elem == nil {
-				continue
-			}
-			if rec, ok := f.Type.Elem.Named.(*Record); ok && rec.Pkg != u.p.Name {
-				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), diag.KindForeignPairsField)
-			}
-		}
+// cppDefault is what a types-mode decoder cannot write of field f's constant default: `RecordDefault` for one holding a record or case value (gen/cpp's literals write none, §5.1), `DependentDefault` for a present value of a dependent type the decoder otherwise reads, whose branch only a discriminant decides (§5.6).
+func cppDefault(e *Emit, fields []*Field, f *Field) (diag.Kind, bool) {
+	switch {
+	case f.Input != nil || !written(f.Default):
+		return 0, false
+	case holdsRecordValue(f.Default):
+		return diag.KindRecordDefault, true
+	case typeHolds(&f.Type, isApp) && readsField(e, fields, f):
+		return diag.KindDependentDefault, true
 	}
+	return 0, false
 }
 
 // checkSelfReads is E8019 `SelfReadNotAPath`: gen/cpp passes a translated method its receiver's field paths only (CONFORMANCE.md §2.3).

@@ -1,4 +1,4 @@
-Decision 37, clean: gen/go's data loader reads another package's pairs record slot by slot, with no decoder (ForeignPairsField and ForeignDataRecord are refused elsewhere).
+Decision 37, clean: gen/go's data loader reads another package's pairs record slot by slot, with no decoder into its make hook (DECISIONS 323).
 -- b/b.canon --
 package b
 

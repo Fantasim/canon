@@ -19,6 +19,6 @@ emit cpp { out: "@features/a", namespace: "a", mode: data }
 [{"x": 0}]
 -- findings.txt --
 error[E8019]  a/a.canon:10:7
-  emit cpp in data mode cannot generate a constant of a record or variant type
+  emit cpp in data mode cannot generate a constant of a record or variant type; make it a let
 
 1 error, 0 warnings in 1 package (…)

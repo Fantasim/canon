@@ -16,7 +16,7 @@ type classGraph struct {
 	// fnIn tells, for each class on stack, that the edge it was entered by is a stored fn's result.
 	fnIn    []bool
 	refused []any
-	// refusedRecords close a cycle of records only, through fields: an optional field boxed on it, gen/cpp still refuses the order where the record holding the box comes first (E8019_84). A stored result orders classes like a field but never closes a cycle: one through it is cyclicFn's (CODEGEN.md §2.7, DECISIONS 284).
+	// refusedRecords close a cycle of records only, through fields held by value; an optional field on the cycle is boxed and breaks it whatever the declaration order (log-2026-10-06 "U5 review FAIL"). A stored result orders classes like a field but never closes a cycle: one through it is cyclicFn's (CODEGEN.md §2.7, DECISIONS 284).
 	refusedRecords []any
 }
 
@@ -103,7 +103,7 @@ func (g *classGraph) reaches(from, to any, seen map[any]bool) bool {
 	return false
 }
 
-// visit orders c, entered through a stored fn's result when viaFn, after the classes it holds, noting c where it holds by value one still being visited.
+// visit orders c, entered through a stored fn's result when viaFn, after the classes it holds, noting c where it holds by value one still being visited; a class held weakly that holds by value one still being visited is left for later, as gen/cpp forward-declares it (sortClasses).
 func (g *classGraph) visit(c any, viaFn bool) {
 	g.state[c] = visiting
 	g.stack = append(g.stack, c)
@@ -113,13 +113,31 @@ func (g *classGraph) visit(c any, viaFn bool) {
 		case !g.own[d.to], g.state[d.to] == visited:
 		case g.state[d.to] == visiting && d.strong:
 			g.closes(c, d)
-		case g.state[d.to] == unvisited:
+		case g.state[d.to] == visiting, !d.strong && g.holdsVisiting(d.to, map[any]bool{}):
+		default:
 			g.visit(d.to, d.fn)
 		}
 	}
 	g.state[c] = visited
 	g.stack = g.stack[:len(g.stack)-1]
 	g.fnIn = g.fnIn[:len(g.fnIn)-1]
+}
+
+// holdsVisiting reports c a class still being visited, or one holding such a class by value, itself or through the classes it holds by value.
+func (g *classGraph) holdsVisiting(c any, seen map[any]bool) bool {
+	if g.state[c] == visiting {
+		return true
+	}
+	if !g.own[c] || g.state[c] == visited || seen[c] {
+		return false
+	}
+	seen[c] = true
+	for _, d := range g.deps(c) {
+		if d.strong && g.holdsVisiting(d.to, seen) {
+			return true
+		}
+	}
+	return false
 }
 
 // closes notes c, whose by-value dep d closes a cycle, by whether the cycle goes through a variant; a cycle through a stored fn's result is cyclicFn's, one finding per cause (CODEGEN.md §2.7).

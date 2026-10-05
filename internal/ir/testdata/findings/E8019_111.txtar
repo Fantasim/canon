@@ -1,0 +1,40 @@
+CODEGEN.md §4.2, §5.3, DECISIONS 305, log-2026-10-06 "U5 review FAIL" 3: q's baked go emit gives p's Status an id enum, StatusID, through q's own table value more; a `table` field of Status then keys its rows by StatusID while a nested table's keys are no members of it, so the field is E8019 `TableField` in Go, naming the way out, as for q's own records (gen/cpp keys such rows by String and is not refused).
+-- p/p.canon --
+/// P.
+package p
+
+/// A status.
+record Status {
+  /// Label.
+  label: String
+}
+
+emit go { out: "@features/p/go", package: "p" }
+-- q/q.canon --
+/// Q.
+package q
+
+import p { Status }
+
+/// Z.
+record Z {
+  /// S.
+  s: table Status
+}
+
+/// Zs.
+let zs: table Z = {
+  a { s: { x { label: "x" } } }
+}
+
+/// More.
+let more: table Status = {
+  m { label: "m" }
+}
+
+emit go { out: "@features/q/go", package: "q" }
+-- findings.txt --
+error[E8019]  q/q.canon:9:3
+  emit go in baked mode cannot generate a table field; hold it in a keyed list
+
+1 error, 0 warnings in 2 packages (…)

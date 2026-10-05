@@ -1,0 +1,54 @@
+CODEGEN.md §2.8, §5.10, DECISIONS 305, 323, log-2026-10-06 "U5 review FAIL" 1: r's ts emit is in data mode, so no ts file knows its table's ids. p's baked ts emit writes Holder.price's cells keyed by them, and q's data reader of p's Holder reads them: both are E8019 `ForeignTableLookupParam`, at p's parameter and at q's value, naming the way out, never a build failure.
+-- r/r.canon --
+/// R.
+package r
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String
+}
+
+/// The items.
+let items: table Item = {
+  a { name: "a" }
+}
+
+emit ts { out: "@features/r.ts", mode: data }
+emit json { out: "out/r/" }
+-- p/p.canon --
+/// P.
+package p
+
+import r { items }
+
+/// A holder.
+record Holder {
+  /// N.
+  n: Int
+  /// A price per item.
+  export fn price(self, it: ref items) -> Int { return self.n }
+}
+
+emit ts { out: "@features/p.ts" }
+-- q/q.canon --
+/// Q.
+package q
+
+import p { Holder }
+
+/// Q holders.
+let qs: table Holder = {
+  y { n: 2 }
+}
+
+emit ts { out: "@features/q.ts", mode: data }
+emit json { out: "out/q/" }
+-- findings.txt --
+error[E8019]  p/p.canon:11:25
+  emit ts in baked mode cannot generate a lookup whose parameter is a ref into another package's table without an id enum; emit the table's package in baked mode, or take an enum parameter
+
+error[E8019]  q/q.canon:7:5
+  emit ts in data mode cannot generate a lookup whose parameter is a ref into another package's table without an id enum; emit the table's package in baked mode, or take an enum parameter
+
+2 errors, 0 warnings in 3 packages (…)

@@ -1,0 +1,33 @@
+DECISIONS 305, 320, decision 213: go types mode is not built yet (owed for v0.2), so stage E refuses the
+emit with E8019 `unbuilt` at its mode, naming data mode instead, and judges it by no rule of its mode:
+a variant-level export fn (VariantMethod) and a stored fn in types mode (E8014) draw nothing more.
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Some gold.
+  gold {
+    /// How much.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+
+  /// What it is worth.
+  export fn worth(self) -> Int {
+    return match self {
+      gold(g) => g.amount
+      nothing => 0
+    }
+  }
+
+  check worth() >= 0 else "negative"
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:24:51
+  emit go cannot use types mode yet; use baked mode
+
+1 error, 0 warnings in 1 package (…)

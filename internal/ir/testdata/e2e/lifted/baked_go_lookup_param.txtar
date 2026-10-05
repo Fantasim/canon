@@ -1,0 +1,29 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_32, refused: EVALUATION.md §1, CODEGEN.md §5.10: baked Go enumerates a lookup's ref domain from its own package's tables, so a parameter into another package's table is ForeignTableLookupParam.
+-- b/b.canon --
+package b
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+emit go { out: "@features/b", package: "b" }
+-- b.statuses.json --
+{"open": {"label": "Open"}}
+-- a/a.canon --
+package a
+
+import b { statuses }
+
+/// A weight per status.
+export fn weight(s: ref statuses) -> Int { return 1 }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

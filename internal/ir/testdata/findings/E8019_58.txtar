@@ -39,6 +39,6 @@ emit json { out: "@features/a/data/" }
 emit ts { out: "@features/a/a.ts", mode: data }
 -- findings.txt --
 error[E8019]  a/a.canon:30:3
-  emit ts in data mode cannot generate a dependent type
+  emit ts in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
 
 1 error, 0 warnings in 1 package (…)

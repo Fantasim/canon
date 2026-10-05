@@ -24,6 +24,6 @@ emit go { out: "@features/a", package: "a" }
 {"c1": {"v": 1}}
 -- findings.txt --
 error[E8019]  a/a.canon:12:3
-  emit go in baked mode cannot generate a table field
+  emit go in baked mode cannot generate a table field; hold it in a keyed list
 
 1 error, 0 warnings in 1 package (…)

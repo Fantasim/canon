@@ -17,6 +17,6 @@ let nodes: [Node] keyed by id = [{ id: "x" }]
 emit go { out: "@features/a", package: "a", mode: baked }
 -- findings.txt --
 error[E8019]  a/a.canon:9:13
-  emit go in baked mode cannot generate a by-value cycle of records through a stored method result
+  emit go in baked mode cannot generate a by-value cycle of records through a stored method result; return a ref to the record instead
 
 1 error, 0 warnings in 1 package (…)

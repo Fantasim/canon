@@ -1,0 +1,47 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.10, §5.14; log-2026-10-06 "U2 fixes done"): a data-mode reader of another package's record whose lookup takes a ref parameter into that package's baked table reads the cells by the id enum's wire keys, in go, cpp and ts; it checks and builds, its Go vetting and its C++ and TypeScript compiling.
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  low { rank: 1 }
+  high { rank: 2 }
+}
+
+/// A band.
+record Band {
+  /// Its base.
+  base: Int
+  /// Its bonus for a tier.
+  export fn bonus(self, t: ref tiers) -> Int { return self.base }
+}
+
+emit go { out: "@features/b/go", package: "b" }
+emit cpp { out: "@features/b/cpp", namespace: "b" }
+emit ts { out: "@features/b/b.ts" }
+-- a/a.canon --
+package a
+
+import b { Band }
+
+/// A zone.
+record Zone {
+  /// Its band.
+  band: Band
+}
+
+/// The zone.
+let zone: Zone = { band: { base: 3 } }
+
+emit go { out: "@features/a/go", package: "a", mode: data }
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: data }
+emit ts { out: "@features/a/a.ts", mode: data }
+emit json { out: "out/" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

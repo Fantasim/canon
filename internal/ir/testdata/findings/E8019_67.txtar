@@ -1,4 +1,4 @@
-CODEGEN.md §5.6, §5.13, DECISIONS 278: a ts reader fills an absent key with the field's default, and a dependent value's branch is decided by its discriminant at run time, so a dependent field with a present default is DependentType (as gen/cpp); none, or an empty list, is written.
+CODEGEN.md §5.6, §5.13, DECISIONS 278: a ts reader fills an absent key with the field's default, and a dependent value's branch is decided by its discriminant at run time, so a dependent field with a present default is DependentDefault (as gen/cpp); none, or an empty list, is written.
 -- a/a.canon --
 package a
 
@@ -15,7 +15,7 @@ record Rule {
   /// A payload, 3 by default.
   p: P(k) = 3
   /// None by default.
-  q: P(k)? = none
+  q: P(k)?
   /// Empty by default.
   r: [P(k)] = []
 }
@@ -23,6 +23,6 @@ record Rule {
 emit ts { out: "@features/a/a.ts", mode: types }
 -- findings.txt --
 error[E8019]  a/a.canon:14:3
-  emit ts in types mode cannot generate a dependent type
+  emit ts in types mode cannot generate a default holding a dependent value, read by a decoder; drop the default, or make the field optional
 
 1 error, 0 warnings in 1 package (…)

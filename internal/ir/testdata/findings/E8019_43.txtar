@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.4, §5.6 (gen/go dependentNoBranchFormat, gen/cpp dependentNoBranch; log-2026-09-28 "Start"): no data loader writes a dependent type every arm of which is Never, used or not: DependentType at its declaration, for both generators.
+EVALUATION.md §1, CODEGEN.md §4.4, §5.6 (gen/go dependentNoBranchFormat, gen/cpp dependentNoBranch; log-2026-09-28 "Start"): no data loader writes a dependent type every arm of which is Never, used or not: NeverDependent at its declaration, for both generators.
 -- a/a.canon --
 package a
 
@@ -12,9 +12,9 @@ emit go { out: "@features/a", package: "a", mode: data }
 emit cpp { out: "@features/ac", namespace: "a", mode: data }
 -- findings.txt --
 error[E8019]  a/a.canon:7:6
-  emit cpp in data mode cannot generate a dependent type
+  emit cpp in data mode cannot generate a dependent type every branch of which is Never; give it a branch that is not Never, or remove it
 
 error[E8019]  a/a.canon:7:6
-  emit go in data mode cannot generate a dependent type
+  emit go in data mode cannot generate a dependent type every branch of which is Never; give it a branch that is not Never, or remove it
 
 2 errors, 0 warnings in 1 package (…)

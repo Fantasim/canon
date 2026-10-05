@@ -8,84 +8,57 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkTSDecoded is E8019 where gen/ts's decoders cannot read what a class they decode holds (CODEGEN.md §5.6, §5.13, DECISIONS 278): `DependentType` for a dependent map, a dependent value whose discriminant the reader does not hold (in a map, a literal union, a pairs slot or a fn result, or read through a ref or a record parameter), or a dependent type of another package; `ForeignDataRecord` for a record or variant of a package whose ts emit is neither in types mode, the one that has public decoders, nor baked (E8018's); `CaseField` for a case used as a type; `DependentType` for a field default its reader cannot write (tsDefault). A data emit decodes the classes its values reach, a types emit every class; a data value whose rows or record are another package's decodes through that package's types-mode decoder, so it is `ForeignDataRecord` when there is none, or when that record is a row there (its decoder requires `$id`).
+// checkTSDecoded is E8019 where gen/ts's decoders cannot read what a class they decode holds (CODEGEN.md §5.6, §5.13, DECISIONS 278), at each field and stored fn (tsField, tsUnreadType). A data emit decodes the classes its values reach, a types emit every class; another package's classes are read with this package's own readers (§2.8, DECISIONS 323), judged at the site that reaches them (checkForeignReads).
 func (s *stage) checkTSDecoded(u *unit, es *emitSite) {
-	decoded, strict := tsDecodedClasses(u, es.e), s.tsStrictRows(u)
+	decoded := tsDecodedClasses(u, es.e)
 	for _, class := range tsClasses(u.p) {
 		if decoded[class] {
-			s.checkTSClass(u, es, class, strict)
-		}
-	}
-	for _, v := range selectedValues(u, es.e) {
-		r := goRootClass(v.v)
-		if r == nil {
-			continue
-		}
-		root := &TypeRef{Kind: types.Record, Named: r.(Type)}
-		if tsForeignClass(u, root) || tsPlainRow(root, strict) && v.v.Type.Kind != types.Table {
-			u.reportGenConstruct(es, v.span().span(), diag.KindForeignDataRecord)
+			s.checkTSClass(u, es, class)
 		}
 	}
 }
 
 // checkTSClass reports each field and stored fn of a decoded class that gen/ts cannot read, and each field default its reader cannot write.
-func (s *stage) checkTSClass(u *unit, es *emitSite, class any, strict func(*Record) bool) {
+func (s *stage) checkTSClass(u *unit, es *emitSite, class any) {
 	fields, fns := classBody(class)
 	for _, f := range fields {
-		if f.Input != nil || f.Optional && f.Type.Kind == types.Never {
-			continue
-		}
-		if kind, bad := tsField(u, fields, f, strict); bad {
+		if kind, bad := tsField(fields, f); bad {
 			u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), kind)
 		}
 	}
 	for _, fn := range readFns(es.e, fns) {
-		if kind, bad := tsUnreadType(u, &fn.Result, true); fn.Kind != FnTranslated && bad {
+		if kind, bad := tsUnreadType(&fn.Result, true); fn.Kind != FnTranslated && bad {
 			u.reportGenConstruct(es, s.itemSpan(fn, source.Span{}), kind)
 		}
 	}
 }
 
-// tsUnread is what gen/ts cannot read of field f of fields: a dependent value held, itself or through lists, is read with its discriminant when goDiscRead finds it (DiscFields, of an own dependent type: gen/ts reads as gen/go does); any other is refused, as is a pairs slot's.
-func tsUnread(u *unit, fields []*Field, f *Field) (diag.Kind, bool) {
+// tsUnread is what gen/ts cannot read of field f of fields: a dependent value held, itself or through lists, is read with its discriminant when DiscFields finds it, of any package's dependent type (gen/ts reads as gen/go does; DECISIONS 320), else `DependentType`; a pairs slot's is refused (tsUnreadType).
+func tsUnread(fields []*Field, f *Field) (diag.Kind, bool) {
 	if f.Pairs != nil {
 		for _, site := range readFieldSites(f, source.Span{}) {
-			if kind, bad := tsUnreadType(u, site.t, true); bad {
+			if kind, bad := tsUnreadType(site.t, true); bad {
 				return kind, true
 			}
 		}
 		return 0, false
 	}
 	app := HeldApp(f.Type)
-	if app != nil && !goDiscRead(u.p.Name, fields, app) {
+	if app != nil && DiscFields(fields, *app) == nil {
 		return diag.KindDependentType, true
 	}
-	return tsUnreadType(u, &f.Type, app == nil)
+	return tsUnreadType(&f.Type, app == nil)
 }
 
-// tsUnreadType is what gen/ts cannot read in t, through its elements, keys and map values: a dependent map, a dependent value when noDisc (no discriminant reaches it), another package's dependent type, another package's record or variant without a types-mode emit, or a case used as a type (no reader reads one, as in gen/go's loader).
-func tsUnreadType(u *unit, t *TypeRef, noDisc bool) (diag.Kind, bool) {
-	own := u.p.Name
+// tsUnreadType is what gen/ts cannot read in t, through its elements, keys and map values: `DependentOutsideField` for a dependent map or, when noDisc (no discriminant reaches it), a dependent value; `CaseField` for a case used as a type (no reader reads one, as in gen/go's loader).
+func tsUnreadType(t *TypeRef, noDisc bool) (diag.Kind, bool) {
 	switch {
-	case typeHolds(t, func(t *TypeRef) bool { return t.Kind == types.DepMap }):
-		return diag.KindDependentType, true
-	case typeHolds(t, func(t *TypeRef) bool { return isApp(t) && (noDisc || pkgOf(t.Named) != own) }):
-		return diag.KindDependentType, true
-	case typeHolds(t, func(t *TypeRef) bool { return tsForeignClass(u, t) }):
-		return diag.KindForeignDataRecord, true
+	case typeHolds(t, func(t *TypeRef) bool { return t.Kind == types.DepMap || noDisc && isApp(t) }):
+		return diag.KindDependentOutsideField, true
 	case typeHolds(t, func(t *TypeRef) bool { return t.Kind == types.Case }):
 		return diag.KindCaseField, true
 	}
 	return 0, false
-}
-
-// tsForeignClass reports a record or variant of another package whose ts emit is not in types mode (a table of one is checkTSForeignTables'); a package whose ts emit is baked is E8018 alone (CODEGEN.md §2.8; DECISIONS 279, one finding per cause), as in gen/go's foreign.
-func tsForeignClass(u *unit, t *TypeRef) bool {
-	if t.Kind != types.Record && t.Kind != types.Variant || pkgOf(t.Named) == u.p.Name {
-		return false
-	}
-	e := tsEmitOf(u.p, pkgOf(t.Named))
-	return e != nil && e.Mode != ModeTypes && e.Mode != ModeBaked
 }
 
 // tsDecodedClasses are the classes gen/ts decodes: in types mode every one; in data mode those its selected values reach, through fields (a pairs field's pair record's fields), stored fn results, lists, optionals, maps and tables, a variant reaching its cases with an interface (CODEGEN.md §5.13; gen/ts need).
@@ -172,19 +145,13 @@ func tsCases(v *Variant) []any {
 	return out
 }
 
-// tsPlainRow reports t a record of another package whose own reader requires `$id` (strict), held in a plain position: its public decoder would refuse every value.
-func tsPlainRow(t *TypeRef, strict func(*Record) bool) bool {
-	r, ok := t.Named.(*Record)
-	return ok && t.Kind == types.Record && strict(r)
-}
-
-// tsField is what a ts reader cannot read or write of field f: tsUnread, a plain foreign row (tsPlainRow), then its default (tsDefault).
-func tsField(u *unit, fields []*Field, f *Field, strict func(*Record) bool) (diag.Kind, bool) {
-	if kind, bad := tsUnread(u, fields, f); bad {
-		return kind, true
+// tsField is what a ts reader cannot read or write of field f: tsUnread, then its default (tsDefault); an input or a Never? field is not read.
+func tsField(fields []*Field, f *Field) (diag.Kind, bool) {
+	if f.Input != nil || f.Optional && f.Type.Kind == types.Never {
+		return 0, false
 	}
-	if typeHolds(&f.Type, func(t *TypeRef) bool { return tsPlainRow(t, strict) }) {
-		return diag.KindForeignDataRecord, true
+	if kind, bad := tsUnread(fields, f); bad {
+		return kind, true
 	}
 	return tsDefault(f)
 }

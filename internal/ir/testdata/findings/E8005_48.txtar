@@ -1,0 +1,22 @@
+CODEGEN.md §3.5, §5.14, DECISIONS 323: a @go(name:) override equal to a make hook is E8005 at the overriding declaration: the record Other named Make_Status meets the hook of the record Status.
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// Another record, named like Status's hook.
+record Other @go(name: "Make_Status") {
+  /// Its value.
+  v: Int
+}
+
+emit go { out: "@features/a/go", package: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:10:8
+  go: Make_Status is generated for both a.Status and a.Other
+
+1 error, 0 warnings in 1 package (…)

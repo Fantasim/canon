@@ -152,6 +152,7 @@ emit cpp { out: "@features/board", namespace: "demo::board", mode: baked }
 { "": [2, 3, 5] }
 -- plan.txt --
 BoardAccess: Build Data Get
+BoardMake: Case_Reward_Coins Column Entry_Column Entry_Status Point Reward_Coins Reward_Nothing Status
 Column: GetId GetRetired GetTitle id_ retired_ title_
 ColumnId: done todo
 Columns: All At Find Get Len rows_
@@ -168,5 +169,5 @@ Statuses: All At Find Get Len rows_
 Tone: loud old quiet
 conformance: Capture DoubledVector RunBoardConformance g_code kDoubled
 demo::board: Column ColumnId ColumnIdFromWire ColumnOf Columns DelayOf Doubled Element ElementFromCode ElementFromWire GetColumns GetInitialStatus GetInitialStatusKey GetLimit GetStatuses GetTags Greeting IsOpen LabelOf MaybeColumn NextOf Point Primes Reward RewardCoins RewardKind RewardKindFromWire Status StatusId StatusIdFromWire Statuses ToName ToWire Tone ToneFromWire ToneOf VersionOf kElementMembers kRewardKindMembers kToneMembers
-detail: BoardAccess kColumnOfCells kDelayOfCells kGreetingCells kIsOpenCells kLabelOfCells kToneOfCells kVersionOfCells
+detail: BoardAccess BoardMake kColumnOfCells kDelayOfCells kGreetingCells kIsOpenCells kLabelOfCells kToneOfCells kVersionOfCells
 0 errors, 0 warnings in 1 package (…)

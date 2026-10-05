@@ -1,0 +1,31 @@
+CODEGEN.md §3.5, §5.14, DECISIONS 323: the name plans reserve the make hooks; a record A_B beside a case b of a variant A gives two hooks of one name, Go Make_A_B and the member A_B of C++ detail::AMake, each E8005 at the later declaration in source order (log-2026-10-06 "U1 review" 2).
+-- a/a.canon --
+package a
+
+/// A pair.
+record A_B {
+  /// Its value.
+  v: Int
+}
+
+/// A choice.
+variant A {
+  /// The b case.
+  b {
+    /// Its value.
+    x: Int
+  }
+  /// The c case.
+  c
+}
+
+emit go { out: "@features/a/go", package: "a", mode: baked }
+emit cpp { out: "@features/a/cpp", namespace: "sov::a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:12:3
+  cpp: A_B is generated for both a.A_B and a.A.b
+
+error[E8005]  a/a.canon:12:3
+  go: Make_A_B is generated for both a.A_B and a.A.b
+
+2 errors, 0 warnings in 1 package (…)

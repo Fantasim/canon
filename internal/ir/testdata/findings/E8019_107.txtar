@@ -1,0 +1,53 @@
+CODEGEN.md §5.3, §5.10, DECISIONS 305, 323: a baked lookup's ref parameter is indexed by its table's id enum; lib's go emit is in data mode, so its table has none: E8019 `ForeignTableLookupParam` at the parameter, naming the way out (emit lib in baked mode, or take an enum parameter). The parameter into core's baked table is accepted (DECISIONS 323 narrowed the refusal).
+-- core/core.canon --
+/// The core.
+package core
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  low { rank: 1 }
+}
+
+emit go { out: "@features/core/go", package: "core" }
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A slot.
+record Slot {
+  /// Its width.
+  width: Int
+}
+
+/// The slots.
+let slots: table Slot = {
+  wide { width: 2 }
+}
+
+emit go { out: "@features/lib/go", package: "lib", mode: data }
+emit json { out: "out/" }
+-- app/app.canon --
+/// The app.
+package app
+
+import core { tiers }
+import lib { slots }
+
+/// A tier's bonus: its parameter refs core's baked table.
+export fn bonus(t: ref tiers) -> Int { return 1 }
+
+/// A slot's cost: its parameter refs lib's table, which has no id enum.
+export fn cost(s: ref slots) -> Int { return 2 }
+
+emit go { out: "@features/app/go", package: "app" }
+-- findings.txt --
+error[E8019]  app/app.canon:11:16
+  emit go in baked mode cannot generate a lookup whose parameter is a ref into another package's table without an id enum; emit the table's package in baked mode, or take an enum parameter
+
+1 error, 0 warnings in 3 packages (…)

@@ -13,7 +13,7 @@ record Span {
   high: Int = low + 10
 }
 
-emit go { out: "@features/a", package: "a", mode: types }
+emit cpp { out: "@features/a", namespace: "a", mode: types }
 -- findings.txt --
 error[E8014]  a/a.canon:4:11
   types mode cannot emit the precomputed function of answer: there is no data to read it from

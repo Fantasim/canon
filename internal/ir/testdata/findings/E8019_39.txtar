@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentUnionFormat, gen/cpp unionDependent): neither data loader reads a literal union over a dependent type, so such a field of a class it decodes is DependentType at the field, in both loaders.
+EVALUATION.md §1, CODEGEN.md §5.6 (gen/go dependentUnionFormat, gen/cpp unionDependent): neither data loader reads a literal union over a dependent type, so such a field of a class it decodes is DependentOutsideField at the field, in both loaders.
 -- a/a.canon --
 package a
 
@@ -28,9 +28,9 @@ emit json { out: "out/" }
 {"a": {"k": "one", "u": "x"}}
 -- findings.txt --
 error[E8019]  a/a.canon:14:3
-  emit cpp in data mode cannot generate a dependent type
+  emit cpp in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 error[E8019]  a/a.canon:14:3
-  emit go in data mode cannot generate a dependent type
+  emit go in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 2 errors, 0 warnings in 1 package (…)

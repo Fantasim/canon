@@ -113,6 +113,7 @@ func (s *stage) collRef(c *types.Collection) TypeRef {
 	target := &RefTarget{Coll: c.Kind, Pkg: c.Pkg, Path: c.FieldPath, Keyed: c.KeyedBy != nil, Local: c.Local, BigInt: bigKey(c)}
 	if c.Kind != types.CollField {
 		target.Value = c.Name
+		target.Cpp = s.letCpp(c.Pkg, c.Name)
 	}
 	if e := s.ref(c.Elem); e.Named != nil {
 		target.Elem = e.Named
@@ -159,4 +160,18 @@ func wirePath(fields []*types.Field) []string {
 // bigKey reports a collection keyed by a @ts(bigint) field: a ref into it is a bigint in TypeScript (DECISIONS 278).
 func bigKey(c *types.Collection) bool {
 	return c != nil && c.KeyedBy != nil && hasFlag(annotation(c.KeyedBy.Annotations, syntax.AnnTS), syntax.ArgBigint)
+}
+
+// letCpp is the @cpp(name:) of let name of package pkg, as its own plan reads it (letDecl): a ref of another package names that value's accessor with it.
+func (s *stage) letCpp(pkg, name string) NameOptions {
+	u := s.units[pkg]
+	if u == nil {
+		return NameOptions{}
+	}
+	for _, obj := range u.cp.Decls {
+		if d, ok := obj.Decl().(*syntax.LetDecl); ok && obj.Name() == name {
+			return nameOverrides(d.Annotations).cpp
+		}
+	}
+	return NameOptions{}
 }

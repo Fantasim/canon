@@ -1,0 +1,58 @@
+CODEGEN.md §3.3, §5.9: a ref of another package's keyed list reaches the owner's accessor of that value as the owner names it: Get<V>, or the value's @cpp(name:) (here AllMonsters for lib's monsters, GetItems for its items).
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A monster.
+record Monster {
+  /// Its key.
+  key: String
+}
+
+/// The monsters.
+@cpp(name: "AllMonsters")
+let monsters: [Monster] keyed by key = [{ key: "wolf" }]
+
+/// An item.
+record Item {
+  /// Its key.
+  key: String
+}
+
+/// The items.
+let items: [Item] keyed by key = [{ key: "axe" }]
+
+emit cpp { out: "@features/lib/cpp", namespace: "lib", mode: baked }
+-- app/app.canon --
+/// The app.
+package app
+
+import lib { monsters, items }
+
+/// A spawn.
+record Spawn {
+  /// Its monster.
+  monster: ref monsters
+  /// Its loot.
+  loot: ref items
+}
+
+emit cpp { out: "@features/app/cpp", namespace: "app", mode: types }
+-- plan.txt --
+== cpp lib baked
+  imports: 
+  read: 
+  written: 
+  make struct: LibMake
+  hook Monster [key_]
+  hook Item [key_]
+  define tables:  (0 loaded)
+== cpp app types
+  imports: lib[cpp]
+  read: 
+  written: 
+  make struct: AppMake
+  readers: 
+  hook Spawn [monster_ loot_]
+  define tables:  (0 loaded)
+0 errors, 0 warnings in 2 packages (…)

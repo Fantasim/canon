@@ -28,12 +28,12 @@ variant Reward {
 emit cpp { out: "@features/a", namespace: "a", mode: data }
 -- findings.txt --
 error[E8019]  a/a.canon:11:52
-  emit cpp in data mode cannot generate a variant-level method a generator must write
+  emit cpp in data mode cannot generate a variant-level method a generator must write; move the method onto each case
 
 error[E8019]  a/a.canon:14:53
-  emit cpp in data mode cannot generate a variant-level method a generator must write
+  emit cpp in data mode cannot generate a variant-level method a generator must write; move the method onto each case
 
 error[E8019]  a/a.canon:20:13
-  emit cpp in data mode cannot generate a variant-level method a generator must write
+  emit cpp in data mode cannot generate a variant-level method a generator must write; move the method onto each case
 
 3 errors, 0 warnings in 1 package (…)

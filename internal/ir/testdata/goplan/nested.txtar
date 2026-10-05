@@ -28,5 +28,5 @@ emit json { out: "out/" }
 Shelf: Slots Spare slots spare spare_ok
 Slot: ID N Retired id n retired
 bData: shelf
-package: GetShelf Shelf Slot SlotID bData bValues buildB rt sync
+package: GetShelf MakeEntry_Slot Make_Shelf Make_Slot Shelf Slot SlotID bData bValues buildB rt sync
 0 errors, 0 warnings in 1 package (…)

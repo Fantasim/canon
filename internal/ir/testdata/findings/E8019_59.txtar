@@ -1,4 +1,4 @@
-CODEGEN.md §5.13, DECISIONS 278: a ts types emit decodes every record, so a dependent map no value holds is still DependentType (in data mode only the selected values' classes are judged: gensupport/ts_data_unreachable.txtar).
+CODEGEN.md §5.13, DECISIONS 278: a ts types emit decodes every record, so a dependent map no value holds is still DependentOutsideField (in data mode only the selected values' classes are judged: gensupport/ts_data_unreachable.txtar).
 -- a/a.canon --
 package a
 
@@ -31,6 +31,6 @@ let rates: Rates = { byStatus: { open: { value: 1 } } }
 emit ts { out: "@features/a/a.ts", mode: types }
 -- findings.txt --
 error[E8019]  a/a.canon:23:3
-  emit ts in types mode cannot generate a dependent type
+  emit ts in types mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 1 error, 0 warnings in 1 package (…)

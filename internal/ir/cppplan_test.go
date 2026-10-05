@@ -60,7 +60,7 @@ func compareCpp(t *testing.T, p *ir.Package, e *ir.Emit, pl *ir.CppNamePlan) {
 			scan.file(string(f.Content))
 		}
 	}
-	want := ir.CppScopeNames(pl)
+	want := cppPlanned(p, pl)
 	scopes := maps.Clone(scan.names)
 	maps.Copy(scopes, want)
 	for _, sc := range slices.Sorted(maps.Keys(scopes)) {

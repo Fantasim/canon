@@ -10,6 +10,8 @@ import (
 type nameScope struct {
 	what          string
 	names, hidden map[string]string
+	items         map[string]any  // the item each name was declared for, nil for a fixed name
+	hooks         map[string]bool // the names declared for make hooks (declareHook)
 }
 
 // namer is a name plan's scopes and problems; ident tells an identifier of the target, and
@@ -18,6 +20,9 @@ type nameScope struct {
 type namer struct {
 	scopes   []*nameScope
 	problems []GoNameProblem
+	macros   map[string]bool     // cpp only: the names common platform headers define as macros (CODEGEN.md §3.5); nil for Go
+	warnings []GoNameProblem     // W8006: a declared name found in macros, never a problem (generation proceeds)
+	warned   map[originPair]bool // the (name, origin) pairs already warned
 	reported map[originPair]bool // the pairs of origins already reported colliding: one E8005 per cause (decision 203)
 	derived  map[any]bool        // the items whose name, built on a refused type's, is that type's E8011 (decision 213)
 	ident    func(string) (ok, reserved bool)
@@ -40,7 +45,7 @@ func (n *namer) typeOverride(o NameOptions) NameOptions {
 }
 
 func newNamer(pkg string, ident func(string) (ok, reserved bool)) namer {
-	return namer{reported: map[originPair]bool{}, derived: map[any]bool{}, ident: ident, self: pkg}
+	return namer{reported: map[originPair]bool{}, warned: map[originPair]bool{}, derived: map[any]bool{}, ident: ident, self: pkg}
 }
 
 // fnOrigin is a package-level export fn's origin, qualified as a method's is (a.echo, like a.Item.mix).
@@ -64,6 +69,11 @@ func (n *namer) declare(sc *nameScope, name, origin string, item any) {
 		return
 	}
 	sc.names[name] = origin
+	if sc.items == nil {
+		sc.items = map[string]any{}
+	}
+	sc.items[name] = item
+	n.warnMacro(sc, name, origin, item)
 	if first, ok := sc.hidden[name]; ok {
 		n.collide(sc, name, first, origin, item)
 	}
@@ -81,7 +91,7 @@ func (n *namer) collide(sc *nameScope, name, first, origin string, item any) {
 	if origin == first {
 		origin = n.self
 	}
-	n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item})
+	n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item, FirstItem: sc.items[name]})
 }
 
 // declareFrom is declare for a name d builds on the name of a type (a member constant, a case type, a table id, a method's generated helper), unless it is that type's E8011 (builtOnRefused).
@@ -141,6 +151,10 @@ func (pl *GoNamePlan) declareAll() {
 	for _, t := range pl.p.Types {
 		pl.declareType(top, t)
 	}
+	pl.declareForeignRows(top)
+	pl.declareHooks(top, pl.p, pl) // after the types and rows: their own names keep their findings (CODEGEN.md §2.7, §5.14)
+	pl.declareEntryHooks(top)      // hook vs hook E8005 follows this order: type, entry, row (log-2026-10-06 "U1 re-review")
+	pl.declareRowHooks(top)
 	if pl.data != nil {
 		pl.declareDataContainers(top)
 		pl.declareLoaders(top)
@@ -154,6 +168,7 @@ func (pl *GoNamePlan) declareAll() {
 	pl.declareInputs(top)
 	if pl.data != nil {
 		pl.declareDecoders(top)
+		pl.declareReaders(top)
 		pl.declareResolvers(top)
 		pl.declareLoads(top)
 		pl.declareDataLocals()
@@ -392,4 +407,14 @@ func (pl *GoNamePlan) declareParams(root, origin string, fn *ExportFn) {
 			pl.declare(sc, index, origin+qnameSep+p.Name, p)
 		}
 	}
+}
+
+// warnMacro is W8006 for a declared name that is a macro of common platform headers, once per name and origin (CODEGEN.md §3.5).
+func (n *namer) warnMacro(sc *nameScope, name, origin string, item any) {
+	pair := originPair{name, origin}
+	if !n.macros[name] || n.warned[pair] {
+		return
+	}
+	n.warned[pair] = true
+	n.warnings = append(n.warnings, GoNameProblem{Kind: goMacroName, Scope: sc.what, Name: name, Origin: origin, Item: item})
 }

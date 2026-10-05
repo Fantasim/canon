@@ -65,7 +65,7 @@ record Thing {
   /// A kind.
   k: K
   /// A payload.
-  p: P(k)? = none
+  p: P(k)?
   /// Payloads.
   ps: [P(k)] = []
   /// A mode.

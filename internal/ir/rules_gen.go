@@ -20,30 +20,33 @@ func init() {
 	common := []genRule{
 		(*stage).checkFieldlessCaseFns, (*stage).checkOptionalElements,
 		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkKindConstants,
-		(*stage).checkNeverDependents, (*stage).checkVariantMembers,
+		(*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkForeignBuilt,
 	}
-	goCode := append(slices.Clone(common), (*stage).checkForeignTables, (*stage).checkConstLiterals, (*stage).checkNegativeZero)
-	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups,
+	goCode := append(slices.Clone(common), (*stage).checkNegativeZero)
+	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkForeignTableLookups,
 		(*stage).checkGoDependentLiterals, (*stage).checkDefineKeys)
 	genRules[TargetGo][ModeData] = append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkResolvedLookups,
-		(*stage).checkGoDecodedDependents, (*stage).checkRefUnions)
+		(*stage).checkGoDecodedDependents, (*stage).checkRefUnions, (*stage).checkForeignReads)
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
-		(*stage).checkForeignPairs, (*stage).checkCppForeignRoots, (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions)
-	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns.
-	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkTSForeignTables}
-	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals)
+		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
+	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns, other packages' records (DECISIONS 323).
+	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkVariantMembers}
+	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals, (*stage).checkForeignTableLookups)
 	genRules[TargetTS][ModeBaked], genRules[TargetTS][ModeEmbedded] = tsBaked, tsBaked
-	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded)
+	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded, (*stage).checkForeignReads)
 	genRules[TargetTS][ModeData], genRules[TargetTS][ModeTypes] = tsDecode, tsDecode
 	genRules[TargetCpp][ModeData] = cppCode
 	// a baked cpp emit decodes nothing: it writes every value in detail::<P>Access::Build, as the friend of its own package's classes only (CODEGEN.md §5.9, §7.3).
 	genRules[TargetCpp][ModeBaked] = append(slices.Clone(common), (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions,
-		(*stage).checkForeignTables, (*stage).checkBakedLiterals, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals, (*stage).checkDefineKeys)
+		(*stage).checkLegacyStructs, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals, (*stage).checkDefineKeys)
 	genRules[TargetCpp][ModeTypes] = append(slices.Clone(cppCode), (*stage).checkCppDefaults, (*stage).checkTypesInputs)
 }
 
 // checkGenSupport is E8019 and E8020: what the emit's generator refuses, so that check fails where build would (decision 37).
 func (s *stage) checkGenSupport(u *unit, es *emitSite) {
+	if modeRefused(es.e) {
+		return
+	}
 	for _, rule := range genRules[es.e.Target][es.e.Mode] {
 		rule(s, u, es)
 	}
@@ -51,7 +54,7 @@ func (s *stage) checkGenSupport(u *unit, es *emitSite) {
 
 // reportGenConstruct is one E8019 finding, at the construct's own span, for the Kind an emit's generator cannot produce.
 func (u *unit) reportGenConstruct(es *emitSite, span source.Span, kind diag.Kind) {
-	u.report(diag.E8019.AtMode(span, targetWords[es.e.Target], modeWords[es.e.Mode], kind))
+	u.report(diag.E8019.AtMode(span, targetWords[es.e.Target], modeWords[es.e.Mode], kind, wayOf[kind]))
 }
 
 // checkFieldlessCaseFns is E8019 `FieldlessCaseExportFn`: a case without fields has no class for its export fns (CODEGEN.md §5.5).

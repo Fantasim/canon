@@ -1,4 +1,4 @@
-Decision 37, clean: gen/cpp decodes a record of another package (ForeignDataRecord is gen/go's).
+Decision 37, clean: gen/cpp decodes a record of another package with its own reader (DECISIONS 323).
 -- b/b.canon --
 package b
 

@@ -14,14 +14,14 @@ var emitRules [targetCount][]func(*stage, *unit, *emitSite)
 var modeRules [ModeTypes + 1][]func(*stage, *unit, *emitSite)
 
 func init() {
-	code := []func(*stage, *unit, *emitSite){(*stage).checkImports, (*stage).checkMode, (*stage).checkGenSupport}
+	code := []func(*stage, *unit, *emitSite){(*stage).checkImports, (*stage).checkUnbuilt, (*stage).checkMode, (*stage).checkGenSupport}
 	emitRules[TargetGo], emitRules[TargetCpp] = code, code
 	emitRules[TargetTS] = append(slices.Clone(code), (*stage).checkSafeInts, (*stage).checkNoInputs)
 	emitRules[TargetJSON] = []func(*stage, *unit, *emitSite){(*stage).checkWireForms, (*stage).checkFnResultForms}
 	emitRules[TargetText] = []func(*stage, *unit, *emitSite){(*stage).checkTextResults}
-	modeRules[ModeEmbedded] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders, (*stage).checkFingerprinted}
-	modeRules[ModeData] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDecoders, (*stage).checkDataFns, (*stage).checkFingerprinted}
-	modeRules[ModeTypes] = []func(*stage, *unit, *emitSite){(*stage).checkDecoders, (*stage).checkTypesMode}
+	modeRules[ModeEmbedded] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkFingerprinted}
+	modeRules[ModeData] = []func(*stage, *unit, *emitSite){(*stage).checkContainers, (*stage).checkDataFns, (*stage).checkFingerprinted}
+	modeRules[ModeTypes] = []func(*stage, *unit, *emitSite){(*stage).checkTypesMode}
 }
 
 // validate reports every emit rule of one package, writing nothing (EVALUATION.md §1 phase 7).
@@ -94,7 +94,7 @@ func emittedValues(u *unit) []*valueSite {
 
 func (v *valueSite) span() declSite { return declSite{file: v.obj.File(), node: v.decl.Name} }
 
-// checkImports is E8004 `noEmit`: a package whose types this code emit uses has an emit of its target (CODEGEN.md §2.8), a ts emit's indirect ones included (DECISIONS 279(b)).
+// checkImports is E8004 `noEmit`: a package whose types this code emit uses has an emit of its target (CODEGEN.md §2.8), the packages it reaches through other packages' types included (DECISIONS 279(b), 323).
 func (s *stage) checkImports(u *unit, es *emitSite) {
 	for _, imp := range u.p.Imports {
 		if first, used := u.importUse(imp.Name, es.e.Target); used && countTarget(imp.Emits, es.e.Target) == 0 {
@@ -121,8 +121,20 @@ func (s *stage) checkImportedGoRoots(u *unit, es *emitSite) {
 	}
 }
 
-// checkMode runs the rules of the emit's mode.
+// checkUnbuilt is E8019 `unbuilt` at the mode of an emit whose generator does not write that mode yet, naming the mode to use instead (DECISIONS 305, 320): nothing else judges it (modeRefused).
+func (s *stage) checkUnbuilt(u *unit, es *emitSite) {
+	if !unbuiltMode(es.e) {
+		return
+	}
+	alt := unbuiltAlt[es.e.Target][es.e.Mode]
+	u.report(diag.E8019.AtUnbuilt(es.modeSpan, targetWords[es.e.Target], modeWords[es.e.Mode], modeWords[alt]))
+}
+
+// checkMode runs the rules of the emit's mode, none for a mode check or stage E refused (modeRefused).
 func (s *stage) checkMode(u *unit, es *emitSite) {
+	if modeRefused(es.e) {
+		return
+	}
 	for _, rule := range modeRules[es.e.Mode] {
 		rule(s, u, es)
 	}
@@ -142,21 +154,26 @@ func dataContainer(t TypeRef) bool {
 	return t.Kind == types.Table || t.Kind == types.Record || t.Kind == types.List && t.KeyedBy != nil
 }
 
-// checkDataFns is E8013: data files hold no package fn and no method table keyed by a ref (CODEGEN.md §5.10).
+// checkDataFns is E8013: data files hold no package fn and no method table keyed by a ref (CODEGEN.md §5.10); the message names, once per package, a mode that builds in every target the package emits (DECISIONS 320): baked or embedded when its only code emits are ts, baked as soon as it has a go or cpp one (their embedded mode is not built yet).
 func (s *stage) checkDataFns(u *unit, _ *emitSite) {
+	modes := diag.KindBakedOrEmbeddedMode
+	if slices.ContainsFunc(u.emits, func(es *emitSite) bool { return es.e.Target == TargetGo || es.e.Target == TargetCpp }) {
+		modes = diag.KindBakedMode
+	}
 	for _, site := range s.ownFns(u) {
 		switch {
 		case site.fn.Kind == FnTranslated:
 		case site.recv == nil:
-			u.report(diag.E8013.AtPackage(site.span(), site.label))
+			u.report(diag.E8013.AtPackage(site.span(), site.label, modes))
 		case refKeyedLookup(site.fn):
-			u.report(diag.E8013.AtRefParam(site.span(), site.label))
+			u.report(diag.E8013.AtRefParam(site.span(), site.label, modes))
 		}
 	}
 }
 
-// checkTypesMode is E8014: types mode has no data for stored fns or computed defaults (§5.13).
-func (s *stage) checkTypesMode(u *unit, _ *emitSite) {
+// checkTypesMode is E8014: types mode has no data for stored fns or computed defaults (§5.13), on its own records and on another package's it reads (checkForeignTypesMode).
+func (s *stage) checkTypesMode(u *unit, es *emitSite) {
+	s.checkForeignTypesMode(u, es)
 	for _, site := range s.ownFns(u) {
 		switch site.fn.Kind {
 		case FnPrecomputed:
@@ -171,31 +188,6 @@ func (s *stage) checkTypesMode(u *unit, _ *emitSite) {
 			u.report(diag.E8014.At(s.fieldSites[f].span(), diag.KindComputedDefault, owner+qnameSep+f.Name))
 		}
 	})
-}
-
-// checkDecoders is E8018: a record or variant of another package held by value in what this emit decodes from JSON comes from an emit that provides decoders (CODEGEN.md §2.8).
-func (s *stage) checkDecoders(u *unit, es *emitSite) {
-	reported := map[Type]bool{}
-	w := newWalker(func(n Type) bool {
-		if pkgOf(n) == u.p.Name {
-			return true
-		}
-		_, isEnum := n.(*Enum)
-		if dep := s.units[pkgOf(n)]; !isEnum && dep != nil && !reported[n] && bakedFor(dep, es.e.Target) {
-			reported[n] = true
-			u.report(diag.E8018.At(es.span(), n.QName(), targetWords[es.e.Target], dep.p.Name))
-		}
-		return false
-	}, func(*TypeRef) {})
-	if es.e.Mode == ModeTypes {
-		for _, t := range u.p.Types {
-			w.named(t)
-		}
-		return
-	}
-	for _, v := range selectedValues(u, es.e) {
-		w.ref(&v.v.Type)
-	}
 }
 
 // bakedGoSelects reports a value the package's baked go emit writes: that emit cannot hold a define record or table (decisions 180, 194, judged per emit).
@@ -278,11 +270,11 @@ func (s *stage) crossPackage() {
 	}
 }
 
-// importUse is the first type of package pkg an emit of target t uses, and whether it uses pkg: a package reached only through other packages' types is used by a ts emit alone (DECISIONS 279(b)).
+// importUse is the first type of package pkg an emit of target t uses, and whether it uses pkg: a package reached only through other packages' types is used by every code emit, whose readers and literals may build its values (CODEGEN.md §2.8; DECISIONS 279(b), 323).
 func (u *unit) importUse(pkg string, t Target) (string, bool) {
 	if first, ok := u.firstUse[pkg]; ok {
 		return first, true
 	}
-	first, ok := u.tsReach[pkg]
-	return first, ok && t == TargetTS
+	first, ok := u.reach[pkg]
+	return first, ok && isCode(t)
 }

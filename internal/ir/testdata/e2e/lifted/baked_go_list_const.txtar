@@ -1,0 +1,35 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_9, refused: EVALUATION.md §1, CODEGEN.md §5.1: gen/go writes a list constant as a Go composite literal, which cannot hold a record of another package (its fields are unexported there), so the constant is CrossPackageBakedValue in baked mode.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// The origins.
+const origins = [Point { x: 0 }]
+
+/// Numbers, fine.
+const ns = [1, 2]
+
+emit go { out: "@features/a", package: "a" }
+-- a.origins.json --
+[{"x": 0}]
+-- a.ns.json --
+[1, 2]
+-- findings.txt --
+warning[W1003]  a/a.canon:6:7
+  const name "origins" should be UPPER_SNAKE
+
+warning[W1003]  a/a.canon:9:7
+  const name "ns" should be UPPER_SNAKE
+
+0 errors, 2 warnings in 2 packages (…)

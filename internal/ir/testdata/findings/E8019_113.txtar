@@ -1,0 +1,35 @@
+DECISIONS 320, log-2026-10-06 "U5 review FAIL": p's cpp emit is embedded, which is not built yet, so p is E8019 `unbuilt` and is not judged as an owner: q's baked cpp emit building p's Thing, whose ref p's loader would resolve, adds no ForeignResolvedRef.
+-- p/p.canon --
+/// P.
+package p
+
+/// A thing.
+record Thing {
+  /// Its name.
+  name: String
+  /// Next.
+  next: ref things?
+}
+
+/// The things.
+let things: table Thing = {
+  a { name: "a" }
+  b { name: "b", next: a }
+}
+
+emit cpp { out: "@features/p/cpp", namespace: "p", mode: embedded }
+-- q/q.canon --
+/// Q.
+package q
+
+import p { Thing }
+
+/// One.
+let one: Thing = { name: "c" }
+
+emit cpp { out: "@features/q/cpp", namespace: "q" }
+-- findings.txt --
+error[E8019]  p/p.canon:18:58
+  emit cpp cannot use embedded mode yet; use baked mode
+
+1 error, 0 warnings in 2 packages (…)

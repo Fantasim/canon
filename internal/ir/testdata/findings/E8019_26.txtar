@@ -30,9 +30,9 @@ emit go { out: "@features/a", package: "a" }
 {"x": 0}
 -- findings.txt --
 error[E8019]  a/a.canon:21:7
-  emit go in baked mode cannot generate a constant of a record or variant type
+  emit go in baked mode cannot generate a constant of a record or variant type; make it a let
 
 error[E8019]  a/a.canon:24:7
-  emit go in baked mode cannot generate a constant of a record or variant type
+  emit go in baked mode cannot generate a constant of a record or variant type; make it a let
 
 2 errors, 0 warnings in 1 package (…)

@@ -93,12 +93,14 @@ emit json { out: "out/" }
 { "title": "s" }
 -- plan.txt --
 NamesAccess: 
+NamesMake: 
 Role: admin user
-detail: NamesAccess
+detail: NamesAccess NamesMake
 names: Role RoleFromWire ToName ToWire kRoleMembers
 Bonus: GetStat GetValue stat_ value_
 Club: GetCaptain GetCaptainKey GetTitle captain_ captain_ref_ title_
 ClubAccess: LoadClub LoadMembers LoadSettings LoadSnapshot Resolve
+ClubMake: Bonus Case_Shape_Circle Club Entry_Member Member Settings Shape_Circle Shape_Dot
 ClubSnapshot: GetClub GetMembers Load club_ members_
 ClubStore: Current Reload current_
 Member: GetBonuses GetCode GetDeep GetFriend GetFriendKey GetId GetRetired GetRole GetShape bonuses_ code_ deep_ friend_ friend_ref_ id_ retired_ role_ shape_
@@ -110,5 +112,5 @@ ShapeCircleScaledVector: code n radius want
 ShapeKind: circle dot
 club: Bonus Club ClubSnapshot ClubStore Member Members Settings Shape ShapeCircle ShapeKind ShapeKindFromWire ToName ToWire kClubSchema kMembersSchema kSettingsSchema kShapeKindMembers
 conformance: Capture RunClubConformance ShapeCircleScaledVector g_code kShapeCircleScaled
-detail: ClubAccess Decode ShapeCircle_scaled
+detail: ClubAccess ClubMake Decode ShapeCircle_scaled
 0 errors, 0 warnings in 2 packages (…)

@@ -34,7 +34,7 @@ func tsValidOverride(site nameSite) bool {
 // checkTSNames reports the ts emit's names from the name plan gen/ts writes from (CODEGEN.md §3.5, DECISIONS 278): E8005 for two names of one scope, a helper's included.
 func (s *stage) checkTSNames(u *unit) {
 	if es := emitFor(u, TargetTS); es != nil {
-		reportNames(u, s.itemSpans(es), planTSNames(u.p, es.e).found(), check.TargetTS, map[any]bool{})
+		reportNames(u, nameReport{s.itemSpans(es), check.TargetTS, tsIDName}, planTSNames(u.p, es.e).found(), map[any]bool{})
 	}
 }
 
@@ -45,10 +45,13 @@ func (s *stage) checkGoNames(u *unit) {
 		return
 	}
 	problems := goOverrideProblems(u.p)
+	report := nameReport{span: s.itemSpans(es), target: check.TargetGo}
 	if es.e.Mode == ModeBaked || es.e.Mode == ModeData {
-		problems = slices.DeleteFunc(PlanGoNames(u.p, es.e).Problems(), s.refusedImport(u))
+		pl := PlanGoNames(u.p, es.e)
+		problems = slices.DeleteFunc(pl.Problems(), s.refusedImport(u))
+		report.idOf = func(rec *Record) string { return pl.IDTypeName(rec) }
 	}
-	reportNames(u, s.itemSpans(es), problems, check.TargetGo, map[any]bool{})
+	reportNames(u, report, problems, map[any]bool{})
 }
 
 // refusedImport reports the import name of a dependency whose go package check refused at that emit (E8009): written, defaulted from out, or none for an emit with no out or one that does not resolve (decisions 213, 215), matched by its import path, never by the name's text: the importer adds nothing to it.
@@ -81,7 +84,10 @@ func (s *stage) checkCppNames(u *unit) {
 		ok, _ := cppValidIdent(site.cpp)
 		refused[site.item] = site.cpp != "" && !ok // checkOverrideNames reported it
 	}
-	reportNames(u, s.itemSpans(es), pl.Problems(), check.TargetCpp, refused)
+	reportNames(u, nameReport{s.itemSpans(es), check.TargetCpp, pl.IDName}, pl.Problems(), refused)
+	for _, w := range pl.warnings { // W8006: never a problem, generation proceeds
+		u.report(diag.W8006.At(s.itemSpan(w.Item, es.span()), w.Name, w.Origin))
+	}
 }
 
 // itemSpans locates a plan's item, at the emit for an import or the package's own names.
@@ -89,19 +95,74 @@ func (s *stage) itemSpans(es *emitSite) func(any) source.Span {
 	return func(item any) source.Span { return s.itemSpan(item, es.span()) }
 }
 
-// reportNames reports a plan's problems for target: E8005 for a collision, E8011 once per declaration not refused yet (decisions 202, 218).
-func reportNames(u *unit, span func(any) source.Span, problems []GoNameProblem, target string, refused map[any]bool) {
+// nameReport is how one target's plan problems are reported: where an item is, the target's word, and the id type it gives a table's record (nil where no plan names one).
+type nameReport struct {
+	span   func(any) source.Span
+	target string
+	idOf   func(*Record) string
+}
+
+// reportNames reports a plan's problems for a target: E8005 for a collision, E8011 once per declaration not refused yet (decisions 202, 218).
+func reportNames(u *unit, r nameReport, problems []GoNameProblem, refused map[any]bool) {
 	for _, pr := range problems {
 		if pr.Kind == GoCollision {
-			u.report(diag.E8005.At(span(pr.Item), target, pr.Name, pr.First, pr.Origin))
+			u.report(r.collisionFinding(pr))
 			continue
 		}
 		if pr.Item != nil && refused[pr.Item] {
 			continue
 		}
 		refused[pr.Item] = true
-		u.report(nameProblemFinding(span(pr.Item), pr, target))
+		u.report(nameProblemFinding(r.span(pr.Item), pr, r.target))
 	}
+}
+
+// collisionFinding is E8005 with the way out its pair has (DECISIONS 305): `reached` for two packages a go emit reaches giving it one reader or rt name, a distinct package option on one of their emits; `idType` for two table holders whose records' id types are the colliding name, one held in a keyed list (log-2026-10-06 "Own table Badge beside table base.Badge", "U5 review FAIL" 4); `both` otherwise.
+func (r nameReport) collisionFinding(pr GoNameProblem) *diag.Builder {
+	span := r.span(pr.Item)
+	switch {
+	case r.target == check.TargetGo && reachedPair(pr):
+		return diag.E8005.AtReached(span, r.target, pr.Name, pr.First, pr.Origin)
+	case pr.Item != pr.FirstItem && r.isIDType(pr.Name, pr.Item) && r.isIDType(pr.Name, pr.FirstItem):
+		return diag.E8005.AtIdType(span, r.target, pr.Name, pr.First, pr.Origin)
+	}
+	return diag.E8005.AtBoth(span, r.target, pr.Name, pr.First, pr.Origin)
+}
+
+// isIDType reports name the id type of a table item holds: a table value's record, or a table a field holds, at any depth.
+func (r nameReport) isIDType(name string, item any) bool {
+	if r.idOf == nil {
+		return false
+	}
+	recs := heldTableRecords(item)
+	return slices.ContainsFunc(recs, func(rec *Record) bool { return r.idOf(rec) == name })
+}
+
+// reachedPair reports a collision of two names imported packages give: both items are imports of the package (CODEGEN.md §2.8).
+func reachedPair(pr GoNameProblem) bool {
+	a, ok := pr.Item.(*PackageRef)
+	b, isRef := pr.FirstItem.(*PackageRef)
+	return ok && isRef && a != b
+}
+
+// heldTableRecords are the records the tables of a table value or a field hold (CODEGEN.md §5.3, §5.9).
+func heldTableRecords(item any) []*Record {
+	var t TypeRef
+	switch x := item.(type) {
+	case *Value:
+		t = x.Type
+	case *Field:
+		t = x.Type
+	default:
+		return nil
+	}
+	var out []*Record
+	walkTypeRef(t, func(sub TypeRef) {
+		if rec, ok := tableElem(sub); ok {
+			out = append(out, rec)
+		}
+	})
+	return out
 }
 
 // nameProblemFinding is the E8011 variant a non-collision GoNameProblem reports (decisions 182, 202, 218).

@@ -1,0 +1,57 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.10, §5.14): a baked emit in go, cpp and ts writes another package's record whose lookup takes a ref parameter into that package's baked table (its cells passed to the make hook, or a ts object literal), and a plain value of another package's record; it checks and builds, its Go vetting and its C++ and TypeScript compiling.
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  low { rank: 1 }
+  high { rank: 2 }
+}
+
+/// A band.
+record Band {
+  /// Its base.
+  base: Int
+  /// Its bonus for a tier.
+  export fn bonus(self, t: ref tiers) -> Int { return self.base }
+}
+
+/// A marker.
+record Marker {
+  /// Its code.
+  code: String
+  /// Its size.
+  size: Int
+}
+
+emit go { out: "@features/b/go", package: "b" }
+emit cpp { out: "@features/b/cpp", namespace: "b" }
+emit ts { out: "@features/b/b.ts" }
+-- a/a.canon --
+package a
+
+import b { Band, Marker }
+
+/// A zone.
+record Zone {
+  /// Its band.
+  band: Band
+}
+
+/// The zone.
+let zone: Zone = { band: { base: 3 } }
+
+/// The start marker.
+let start: Marker = { code: "s", size: 1 }
+
+emit go { out: "@features/a/go", package: "a" }
+emit cpp { out: "@features/a/cpp", namespace: "a" }
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

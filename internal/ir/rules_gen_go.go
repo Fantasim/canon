@@ -6,43 +6,34 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkForeignTables is E8019 `CrossPackageBakedValue`: gen/go indexes every table value, selected or not, by its own record (CODEGEN.md §5.3).
-func (s *stage) checkForeignTables(u *unit, es *emitSite) {
-	for _, v := range u.values {
-		if foreignTable(u.p.Name, v.v.Type) {
-			u.reportGenConstruct(es, v.span().span(), diag.KindCrossPackageBakedValue)
-		}
-	}
-}
-
-// foreignTable reports a table whose element is not a record of package own.
-func foreignTable(own string, t TypeRef) bool {
-	if t.Kind != types.Table || t.Elem == nil {
-		return false
-	}
-	rec, ok := t.Elem.Named.(*Record)
-	return !ok || rec.Pkg != own
-}
-
-// checkForeignTableLookups is E8019 `ForeignTableLookupParam`: baked Go enumerates a lookup's ref domain from its own package's tables only (CODEGEN.md §5.10).
+// checkForeignTableLookups is E8019 `ForeignTableLookupParam`: a baked lookup's ref parameter is indexed by its table's id enum, which a table of another package has only when that package's emit for the target is baked or embedded (CODEGEN.md §5.10, DECISIONS 323).
 func (s *stage) checkForeignTableLookups(u *unit, es *emitSite) {
 	for _, site := range s.ownFns(u) {
 		if site.fn.Kind != FnLookup {
 			continue
 		}
 		for _, p := range site.fn.Params {
-			if r := p.Type.Ref; p.Type.Kind == types.Ref && r != nil && r.Coll == types.CollLet && !r.Local && !r.Keyed && r.Pkg != u.p.Name {
+			if noIDEnum(u.p, es.e.Target, p.Type) {
 				u.reportGenConstruct(es, s.itemSpan(p, site.span()), diag.KindForeignTableLookupParam)
 			}
 		}
 	}
 }
 
-// checkGoDecoded is E8019 for what gen/go's data loaders cannot read in a class they decode (the plan's Decoded; CODEGEN.md §5.9) and in a value's root.
+// noIDEnum reports a ref into a public table of another package than p whose emit of target t, as p imports it, gives the table no id enum: neither baked nor embedded, or no emit p imports (CODEGEN.md §5.3, §5.10).
+func noIDEnum(p *Package, t Target, ref TypeRef) bool {
+	r := ref.Ref
+	if ref.Kind != types.Ref || r == nil || r.Coll != types.CollLet || r.Local || r.Keyed || r.Pkg == p.Name {
+		return false
+	}
+	e := ownerEmit(p, r.Pkg, t)
+	return e == nil || e.Mode != ModeBaked && e.Mode != ModeEmbedded
+}
+
+// checkGoDecoded is E8019 for what gen/go's data loaders cannot read in a class they decode (the plan's Decoded; CODEGEN.md §5.9): a map (MapField), an inline key folding onto another (InlineFoldedKey). A pairs field's element record of another package is read slot by slot into its hook's two parameters: check's E3316 leaves a pair record two scalar fields and no stored fn (WIRE.md §4.1), so nothing more is refused here.
 func (s *stage) checkGoDecoded(u *unit, es *emitSite) {
 	pl := PlanGoNames(u.p, es.e)
 	shape := objectShape{extras: s.objectExtras(u, u.values)}
-	own := u.p.Name
 	for _, class := range packageClasses(u.p) {
 		if !pl.Decoded(class) {
 			continue
@@ -50,27 +41,9 @@ func (s *stage) checkGoDecoded(u *unit, es *emitSite) {
 		fields, fns := classBody(class)
 		for _, site := range s.decodedSites(fields, fns) {
 			s.checkDecodedType(u, es, site)
-			if readHolds(site.t, func(t *TypeRef) bool { return s.foreignClass(own, t) }) {
-				u.reportGenConstruct(es, site.span, diag.KindForeignDataRecord)
-			}
 		}
 		s.checkInlineFolds(u, es, class, shape)
 	}
-	for _, v := range selectedValues(u, es.e) {
-		if root, ok := goRootClass(v.v).(Type); ok && !foreignTable(own, v.v.Type) && s.foreign(own, pkgOf(root)) {
-			u.reportGenConstruct(es, v.span().span(), diag.KindForeignDataRecord)
-		}
-	}
-}
-
-// foreignClass reports a record or variant of a package other than own whose package does not answer for it: a data loader decodes it with that package's unexported decoder.
-func (s *stage) foreignClass(own string, t *TypeRef) bool {
-	return (t.Kind == types.Record || t.Kind == types.Variant) && t.Named != nil && s.foreign(own, pkgOf(t.Named))
-}
-
-// foreign reports pkg, another package than own, that E8018 does not already judge: a package whose go emit is baked is E8018 `decoders across packages` alone (CODEGEN.md §2.8).
-func (s *stage) foreign(own, pkg string) bool {
-	return pkg != own && (s.units[pkg] == nil || !bakedFor(s.units[pkg], TargetGo))
 }
 
 // checkResolvedLookups is E8019 `ResolvedLookupResult`: gen/go's data resolver has no walk for a lookup's cells holding a ref resolved at load (CODEGEN.md §5.8).

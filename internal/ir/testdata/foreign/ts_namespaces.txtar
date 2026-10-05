@@ -1,0 +1,71 @@
+log-2026-10-06 "U4 (gen/ts) done" (a): TypeScript writes another package's names qualified through one namespace import per package, alias game_core, so world's own `table Status` (StatusId) sits beside game.core's `statuses` (game_core.StatusId), which world refs: accepted, no E8005; the alias itself is reserved in world's module. A package named new, a reserved word, gets the escaped alias new_ (CODEGEN.md §3.4).
+-- game/core/core.canon --
+/// The core vocabulary.
+package game.core
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit ts { out: "@features/core/core.ts", mode: baked }
+-- new/new.canon --
+/// A package named with a TypeScript reserved word.
+package new
+
+/// A size.
+enum Size { small, large }
+
+emit ts { out: "@features/new/new.ts", mode: baked }
+-- game/world/world.canon --
+/// The world.
+package game.world
+
+import game.core { statuses, Tone }
+import new { Size }
+
+/// A mood, world's own status.
+record Status {
+  /// Its core status.
+  core: ref statuses
+  /// Its tone.
+  tone: Tone
+  /// Its size.
+  size: Size
+}
+
+/// The moods.
+let moods: table Status = {
+  calm { core: open, tone: soft, size: small }
+}
+
+emit ts { out: "@features/world/world.ts", mode: baked }
+-- plan.txt --
+== ts game.core baked
+  imports: 
+  namespaces: 
+  readers: 
+  CanonRow reserved: true
+  define tables:  (0 loaded)
+== ts new baked
+  imports: 
+  namespaces: 
+  readers: 
+  CanonRow reserved: true
+  define tables:  (0 loaded)
+== ts game.world baked
+  imports: game.core[ts] new[ts]
+  namespaces: game.core=game_core(reserved true) new=new_(reserved true)
+  readers: 
+  CanonRow reserved: true
+  define tables:  (0 loaded)
+0 errors, 0 warnings in 3 packages (…)

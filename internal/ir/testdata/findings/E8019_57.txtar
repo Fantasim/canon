@@ -1,4 +1,4 @@
-CODEGEN.md §5.6, DECISIONS 278: a dependent value in a map a ts data loader reads has no discriminant to read it with: DependentType at the field, from check, not a crash of the build.
+CODEGEN.md §5.6, DECISIONS 278: a dependent value in a map a ts data loader reads has no discriminant to read it with: DependentOutsideField at the field, from check, not a crash of the build.
 -- a/a.canon --
 package a
 
@@ -28,6 +28,6 @@ emit json { out: "@features/a/data/" }
 emit ts { out: "@features/a/a.ts", mode: data }
 -- findings.txt --
 error[E8019]  a/a.canon:19:3
-  emit ts in data mode cannot generate a dependent type
+  emit ts in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 1 error, 0 warnings in 1 package (…)

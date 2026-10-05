@@ -3,36 +3,9 @@ package ir
 import (
 	"slices"
 
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
-
-// checkConstLiterals is E8019 `CrossPackageBakedValue`: gen/go writes a list or map constant as a literal in every mode (CODEGEN.md §5.1).
-func (s *stage) checkConstLiterals(u *unit, es *emitSite) {
-	for _, c := range u.consts {
-		if bakesForeign(u.p.Name, &c.c.Type, c.c.V) {
-			u.reportGenConstruct(es, c.span(), diag.KindCrossPackageBakedValue)
-		}
-	}
-}
-
-// checkBakedLiterals is E8019 `CrossPackageBakedValue` for baked literals: a selected value, and a stored fn's results once, at the fn (CODEGEN.md §5.9).
-func (s *stage) checkBakedLiterals(u *unit, es *emitSite) {
-	own := u.p.Name
-	for _, v := range selectedValues(u, es.e) {
-		if !foreignTable(own, v.v.Type) && bakesForeign(own, &v.v.Type, v.v.V) {
-			u.reportGenConstruct(es, v.span().span(), diag.KindCrossPackageBakedValue)
-		}
-	}
-	for _, site := range s.ownFns(u) {
-		fn := site.fn
-		results := func(r value.Value) bool { return bakesForeign(own, &fn.Result, r) }
-		if fn.Kind != FnTranslated && slices.ContainsFunc(storedResults(fn), results) {
-			u.reportGenConstruct(es, site.span(), diag.KindCrossPackageBakedValue)
-		}
-	}
-}
 
 // storedResults are every result baked Go writes for a stored fn: its value or cells, per receiver for a method.
 func storedResults(fn *ExportFn) []value.Value {
@@ -51,14 +24,6 @@ func cellsOf(t *LookupTable) []value.Value {
 		return nil
 	}
 	return t.Cells
-}
-
-// bakesForeign reports that the Go literal of v, of type t, writes a record, variant or case of a package other than own; an own record's fns' results are reported at the fn.
-func bakesForeign(own string, t *TypeRef, v value.Value) bool {
-	return literalHolds(t, v, func(t *TypeRef, v value.Value) bool {
-		_, rec := v.(*value.Record)
-		return rec && recordKinds[t.Kind] && t.Named != nil && pkgOf(t.Named) != own
-	})
 }
 
 // literalHolds reports a part of the Go literal of v, of type t, that bad accepts, v itself or its elements, keys, map values and fields: none is written for a `none` or an empty list.

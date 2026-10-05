@@ -1,0 +1,30 @@
+CODEGEN.md §2.8, §5.13, DECISIONS 320, 323: app's cpp types-mode decoders read lib's Band with app's own reader (lib is baked), and a types-mode decoder reads no map (nlohmann::json keeps no key order): E8019 `MapField` at app's field that reads Band, naming the way out, as for one of app's own classes; lib's baked emit writes the map.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A band.
+record Band {
+  /// Weights by name.
+  weights: {String: Int} = {}
+}
+
+emit cpp { out: "@features/lib/cpp", namespace: "lib" }
+-- app/app.canon --
+/// The app.
+package app
+
+import lib { Band }
+
+/// A zone.
+record Zone {
+  /// Its band.
+  band: Band
+}
+
+emit cpp { out: "@features/app/cpp", namespace: "app", mode: types }
+-- findings.txt --
+error[E8019]  app/app.canon:9:3
+  emit cpp in types mode cannot generate a map; hold the entries in a keyed list
+
+1 error, 0 warnings in 2 packages (…)

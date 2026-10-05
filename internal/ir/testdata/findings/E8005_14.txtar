@@ -25,6 +25,6 @@ emit go { out: "@features/a", package: "a" }
 { "y": { "n": 2 } }
 -- findings.txt --
 error[E8005]  a/a.canon:15:5
-  go: ThingID is generated for both small and large
+  go: ThingID is generated for both small and large; hold one of them in a keyed list
 
 1 error, 0 warnings in 1 package (…)

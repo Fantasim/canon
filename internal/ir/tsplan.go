@@ -67,6 +67,9 @@ func tsEffective(n NameOptions, name string) string {
 	return name
 }
 
+// tsIDName is the id type of a table of rec, <Rec>Id (CODEGEN.md §5.3).
+func tsIDName(rec *Record) string { return tsName(rec) + tsIDSuffix }
+
 // tsName is the TypeScript name of a named type.
 func tsName(t Type) string {
 	switch x := t.(type) {
@@ -203,6 +206,27 @@ func (pl *tsNamePlan) declareAll() {
 	pl.declareMethods(mod)
 	for _, t := range pl.p.Types {
 		pl.declareProps(t)
+	}
+	pl.declareForeignRows()
+}
+
+// declareForeignRows declares the properties of CanonRow<T, K> for each record of another package a table of this file holds: its `id` and `retired`, then the record's own, fields and stored fns alike, so a property `id` or `retired` is E8005 at the table (log-2026-10-06 "U4 (gen/ts) done" (g), "U1 rounds 3-5" 1).
+func (pl *tsNamePlan) declareForeignRows() {
+	for _, row := range ForeignRows(pl.p, pl.e) {
+		holder, org := rowHolder(row), row.Record.QName()
+		sc := pl.scope(tsCanonRowScope + org)
+		pl.declare(sc, tsIDProp, tsCanonRowScope+org, holder)
+		pl.declare(sc, tsRetiredProp, tsCanonRowScope+org, holder)
+		for _, f := range row.Record.Fields {
+			if f.Input == nil && (!f.Optional || f.Type.Kind != types.Never) {
+				pl.declare(sc, tsEffective(f.TS, f.Name), org+qnameSep+f.Name, holder)
+			}
+		}
+		for _, fn := range row.Record.Methods {
+			if fn.Kind != FnTranslated {
+				pl.declare(sc, tsEffective(fn.TS, fn.Name), org+qnameSep+fn.Name, holder)
+			}
+		}
 	}
 }
 

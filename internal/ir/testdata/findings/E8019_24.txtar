@@ -30,6 +30,6 @@ emit json { out: "out/" }
 {"one": {"tree": {"kind": "leaf"}}}
 -- findings.txt --
 error[E8019]  a/a.canon:8:3
-  emit cpp in data mode cannot generate a variant that recurses through a case
+  emit cpp in data mode cannot generate a variant that recurses through a case; hold the recursion through an optional field or a ref
 
 1 error, 0 warnings in 1 package (…)

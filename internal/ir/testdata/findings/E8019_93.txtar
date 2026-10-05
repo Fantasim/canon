@@ -22,9 +22,9 @@ const KS = [Reward.gold.kind]
 emit cpp { out: "@features/a", namespace: "a", mode: types }
 -- findings.txt --
 error[E8019]  a/a.canon:15:7
-  emit cpp in types mode cannot generate a constant of a variant's kind
+  emit cpp in types mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
 
 error[E8019]  a/a.canon:18:7
-  emit cpp in types mode cannot generate a constant of a variant's kind
+  emit cpp in types mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
 
 2 errors, 0 warnings in 1 package (…)

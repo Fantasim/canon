@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2, §5.6 (gen/go dependentNestedFormat): baked gen/go writes a dependent value as a field of its record or its list's elements only, so a selected value holding one as a map's value is DependentType at the value; an empty map writes none.
+EVALUATION.md §1, CODEGEN.md §4.2, §5.6 (gen/go dependentNestedFormat): baked gen/go writes a dependent value as a field of its record or its list's elements only, so a selected value holding one as a map's value is DependentOutsideField at the value; an empty map writes none.
 -- a/a.canon --
 package a
 
@@ -29,6 +29,6 @@ emit go { out: "@features/a", package: "a" }
 {"k": "two", "m": {}}
 -- findings.txt --
 error[E8019]  a/a.canon:18:5
-  emit go in baked mode cannot generate a dependent type
+  emit go in baked mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 1 error, 0 warnings in 1 package (…)

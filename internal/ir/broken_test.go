@@ -31,7 +31,7 @@ record Potion {
   export fn twice() -> Int { return zzUnknown }
 }
 
-emit go { out: "@features/a", package: "a", mode: types }
+emit cpp { out: "@features/a", namespace: "a", mode: types }
 `},
 		{"Int let in data mode", `package a
 

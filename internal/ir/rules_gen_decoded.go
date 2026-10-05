@@ -74,19 +74,6 @@ func decodedHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
 	return false
 }
 
-// readHolds reports what a loader reads of t, t itself or its elements through lists, optionals and map values, that bad accepts; a record or variant is its own decoder's.
-func readHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
-	for ; t != nil; t = t.Elem {
-		if bad(t) {
-			return true
-		}
-		if t.Kind != types.List && t.Kind != types.Optional && t.Kind != types.Map {
-			return false
-		}
-	}
-	return false
-}
-
 // NumericMapKey reports a map key written as a canonical decimal integer (`0|-?[1-9][0-9]*`, WIRE.md §5.1, §5.8): an integer, an enum with @json(codes), a ref keyed by one; both data loaders read such a key by that rule.
 func NumericMapKey(t TypeRef) bool {
 	switch t.Kind {

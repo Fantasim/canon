@@ -1,0 +1,247 @@
+CODEGEN.md §2.8, §3.3, §3.5, §5.9, §5.14 and DECISIONS 323, the Emberfall shape: game.world holds game.core's records in its data (a field, a value, a table value, a table field) and game.shop writes one in its baked data; both reach game.tone only through game.core's types; each builds every value of another package through its owner's make hooks. Each go, cpp and ts emit's plan is dumped: imports, what it reads and writes of other packages, its rows, readers, rt imports, hooks and define tables, then its problems; stage E's findings follow, none since DECISIONS 320 and 323 lifted the foreign refusals.
+-- game/tone/tone.canon --
+/// Tones.
+package game.tone
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit go { out: "@features/tone/go", package: "tone", mode: baked }
+emit cpp { out: "@features/tone/cpp", namespace: "game::tone", mode: baked }
+emit ts { out: "@features/tone/tone.ts", mode: baked }
+-- game/core/core.canon --
+/// The core vocabulary.
+package game.core
+
+import game.tone { Tone }
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// A level band.
+record LevelRange {
+  /// Lowest.
+  min: Int
+  /// Highest.
+  max: Int
+  /// Labels.
+  labels: [String] = []
+  /// Its tone.
+  tone: Tone
+  /// Its status, resolved by game.core's baked hook.
+  status: ref statuses
+  /// Its width.
+  export fn width(self) -> Int { return self.max - self.min }
+}
+
+/// A reward.
+variant Reward {
+  /// Coins.
+  coins {
+    /// How many.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+}
+
+/// A marker whose getters meet a row's own.
+record Marker {
+  /// Its code: Go Record(), C++ GetId(), TS retired.
+  code: String @go(name: "Record") @cpp(name: "GetId") @ts(name: "retired")
+  /// Its size, a TS property named like a row's id.
+  @ts(name: "id")
+  export fn size(self) -> Int { return 1 }
+}
+
+emit go { out: "@features/core/go", package: "core", mode: baked }
+emit cpp { out: "@features/core/cpp", namespace: "game::core", mode: baked }
+emit ts { out: "@features/core/core.ts", mode: baked }
+-- game/world/world.canon --
+/// The world.
+package game.world
+
+import game.core { LevelRange, Reward, Marker }
+
+/// A zone.
+record Zone {
+  /// Its levels.
+  levels: LevelRange
+  /// Its reward.
+  reward: Reward
+  /// Its markers.
+  markers: table Marker
+}
+
+/// The zones.
+let zones: table Zone = {
+  forest {
+    levels: { min: 1, max: 5, tone: soft, status: open }
+    reward: coins { amount: 3 }
+    markers: { gate { code: "g" } }
+  }
+}
+
+/// Level bands.
+let bands: table LevelRange = {
+  low { min: 1, max: 5, tone: soft, status: open }
+}
+
+/// The start band.
+let start: LevelRange = { min: 1, max: 2, tone: loud, status: open }
+
+emit go { out: "@features/world/go", package: "world", mode: data }
+emit cpp { out: "@features/world/cpp", namespace: "game::world", mode: data }
+emit ts { out: "@features/world/world.ts", mode: data }
+-- game/shop/shop.canon --
+/// A shop, baked.
+package game.shop
+
+import game.core { LevelRange }
+
+/// A deal.
+record Deal {
+  /// Its band.
+  band: LevelRange
+}
+
+/// Today's deal.
+let deal: Deal = { band: { min: 2, max: 3, tone: loud, status: open } }
+
+emit go { out: "@features/shop/go", package: "shop", mode: baked }
+emit cpp { out: "@features/shop/cpp", namespace: "game::shop", mode: baked }
+-- plan.txt --
+== go game.tone baked
+  imports: 
+  read: 
+  written: 
+  readers: 
+  define tables:  (0 loaded)
+== cpp game.tone baked
+  imports: 
+  read: 
+  written: 
+  make struct: ToneMake
+  define tables:  (0 loaded)
+== ts game.tone baked
+  imports: 
+  namespaces: 
+  readers: 
+  CanonRow reserved: true
+  define tables:  (0 loaded)
+== go game.core baked
+  imports: game.tone[go,cpp,ts]
+  read: 
+  written: 
+  readers: 
+  hook Make_Status [Label]
+  hook Make_LevelRange [Min Max Labels Tone Status(R) Width]
+  hook Make_Reward_Coins/MakeCase_Reward_Coins [Amount]
+  hook Make_Reward_Nothing []
+  hook Make_Marker [Record Size]
+  entry hook MakeEntry_Status
+  define tables:  (0 loaded)
+== cpp game.core baked
+  imports: game.tone[go,cpp,ts]
+  read: 
+  written: 
+  make struct: CoreMake
+  hook Status [label_]
+  hook LevelRange [min_ max_ labels_ tone_ status_(R) width_]
+  hook Reward_Coins/Case_Reward_Coins [amount_]
+  hook Reward_Nothing []
+  hook Marker [code_ size_]
+  entry hook Entry_Status
+  define tables:  (0 loaded)
+== ts game.core baked
+  imports: game.tone[go,cpp,ts]
+  namespaces: game.tone=game_tone(reserved true)
+  readers: 
+  CanonRow reserved: true
+  define tables:  (0 loaded)
+== go game.shop baked
+  imports: game.core[go,cpp,ts] game.tone[go,cpp]
+  read: 
+  written: game.core.LevelRange
+  readers: 
+  rt import corert "example.com/features/core/go/rt" of game.core
+  hook Make_Deal [Band]
+  hook Make_LevelRange [Min Max Labels Tone Status(R) Width]
+  define tables:  (0 loaded)
+== cpp game.shop baked
+  imports: game.core[go,cpp,ts] game.tone[go,cpp]
+  read: 
+  written: game.core.LevelRange
+  make struct: ShopMake
+  hook Deal [band_]
+  hook LevelRange [min_ max_ labels_ tone_ status_(R) width_]
+  define tables:  (0 loaded)
+== go game.world data
+  imports: game.core[go,cpp,ts] game.tone[go,cpp,ts]
+  read: game.core.LevelRange game.core.Reward game.core.Reward.coins game.core.Marker
+  written: 
+  row LevelRangeRow id LevelRangeID hook Make_LevelRangeRow of game.core.LevelRange, held by bands, forwards Min Max Labels Tone Status StatusID Width
+  row MarkerRow id MarkerID hook Make_MarkerRow of game.core.Marker, held by game.world.Zone.markers, forwards Record Size
+  readers: decode_core_LevelRange decode_core_Reward decode_core_RewardCoins decode_core_Marker
+  rt import corert "example.com/features/core/go/rt" of game.core
+  hook Make_Zone [Levels Reward Markers]
+  hook Make_LevelRange [Min Max Labels Tone Status(R) Width]
+  hook Make_Reward_Coins/MakeCase_Reward_Coins [Amount]
+  hook Make_Reward_Nothing []
+  hook Make_Marker [Record Size]
+  entry hook MakeEntry_Zone
+  problem 0 MarkerRow Record: MarkerRow, game.core.Marker.code
+  define tables:  (0 loaded)
+== cpp game.world data
+  imports: game.core[go,cpp,ts] game.tone[go,cpp,ts]
+  read: game.core.LevelRange game.core.Reward game.core.Reward.coins game.core.Marker
+  written: 
+  make struct: WorldMake
+  row LevelRangeRow hook LevelRangeRow of game.core.LevelRange, held by bands, scope GetId GetLabels GetMax GetMin GetRetired GetStatus GetStatusKey GetTone Width id_ retired_
+  row MarkerRow hook MarkerRow of game.core.Marker, held by game.world.Zone.markers, scope GetId GetRetired Size id_ retired_
+  free loader LoadStart of start
+  readers: Read_Game_Core_LevelRange Read_Game_Core_Reward Read_Game_Core_RewardCoins Read_Game_Core_Marker
+  hook Zone [levels_ reward_ markers_]
+  hook LevelRange [min_ max_ labels_ tone_ status_(R) width_]
+  hook Reward_Coins/Case_Reward_Coins [amount_]
+  hook Reward_Nothing []
+  hook Marker [code_ size_]
+  entry hook Entry_Zone
+  problem 0 MarkerRow GetId: MarkerRow, game.core.Marker.code
+  define tables:  (0 loaded)
+== ts game.world data
+  imports: game.core[go,cpp,ts] game.tone[go,cpp,ts]
+  namespaces: game.core=game_core(reserved true) game.tone=game_tone(reserved true)
+  readers: readZone read_game_core_LevelRange read_game_core_Marker read_game_core_Reward read_game_core_RewardCoins
+  CanonRow reserved: true
+  define tables:  (0 loaded)
+error[E8005]  game/world/world.canon:13:3
+  cpp: GetId is generated for both MarkerRow and game.core.Marker.code
+
+error[E8005]  game/world/world.canon:13:3
+  go: Record is generated for both MarkerRow and game.core.Marker.code
+
+error[E8005]  game/world/world.canon:13:3
+  ts: id is generated for both CanonRow of game.core.Marker and game.core.Marker.size
+
+error[E8005]  game/world/world.canon:13:3
+  ts: retired is generated for both CanonRow of game.core.Marker and game.core.Marker.code
+
+error[E8153]  game/world/world.canon:17:5
+  zones is emitted in data mode but not written by emit json
+
+error[E8153]  game/world/world.canon:26:5
+  bands is emitted in data mode but not written by emit json
+
+error[E8153]  game/world/world.canon:31:5
+  start is emitted in data mode but not written by emit json
+
+7 errors, 0 warnings in 4 packages (…)

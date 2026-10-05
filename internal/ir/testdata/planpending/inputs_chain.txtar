@@ -29,12 +29,13 @@ emit json { out: "out/" }
 Gen: Code Plain
 LoadInputs(): errs
 aData: settings
-package: Gen GetSettings LoadInputs aData aValues buildA errors input_Gen_code input_Gen_code_OK input_Gen_code_Pattern input_Gen_code_Pattern2 input_Gen_code_Pattern3 input_Gen_plain input_Gen_plain_OK input_Gen_plain_Pattern inputsLoaded_ regexp rt sync
+package: Gen GetSettings LoadInputs Make_Gen aData aValues buildA errors input_Gen_code input_Gen_code_OK input_Gen_code_Pattern input_Gen_code_Pattern2 input_Gen_code_Pattern3 input_Gen_plain input_Gen_plain_OK input_Gen_plain_Pattern inputsLoaded_ regexp rt sync
 == cpp a
 AAccess: LoadSettings
 AInputs: Gen
 AInputs::Gen: code_ plain_
+AMake: Gen
 Gen: GetCode GetPlain Load
 a: EnvText Gen LoadInputs MatchPattern ParseStringLiteral kSettingsSchema
-detail: AAccess AInputs AInputsLoaded Decode
+detail: AAccess AInputs AInputsLoaded AMake Decode
 0 errors, 0 warnings in 1 package (…)

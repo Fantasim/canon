@@ -11,9 +11,10 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-var importLine = regexp.MustCompile(`(?m)^import (?:type )?\{ ([^}]*) \} from `)
+// importLine is a module import: a namespace alias, or (an older form) a list of names.
+var importLine = regexp.MustCompile(`(?m)^import (?:type )?(?:\* as (\w+)|\{ ([^}]*) \}) from `)
 
-// TestTSPlanReservesImports is CODEGEN.md §2.8, §3.5 and DECISIONS 278: every name gen/ts imports into a module is in the module scope of the TS name plan, so a declaration taking it is E8005 from check (testdata/findings/E8005_45.txtar), never a crash of the build.
+// TestTSPlanReservesImports is CODEGEN.md §2.8, §3.5, DECISIONS 278 and log-2026-10-06 "U4 (gen/ts) done" (a): every name gen/ts imports into a module, now one namespace alias per imported package, is in the module scope of the TS name plan and is the plan's TSImportAlias, so a declaration taking it is E8005 from check (testdata/findings/E8005_49.txtar), never a crash of the build.
 func TestTSPlanReservesImports(t *testing.T) {
 	ar, err := txtar.ParseFile("testdata/tsplan/imports.txtar")
 	if err != nil {
@@ -32,7 +33,7 @@ func TestTSPlanReservesImports(t *testing.T) {
 			}
 		}
 	}
-	if want := 20; imported < want {
+	if want := 2; imported < want {
 		t.Errorf("%d imported names, want at least %d: the case no longer exercises every import", imported, want)
 	}
 }
@@ -48,11 +49,19 @@ func checkTSImports(t *testing.T, w *world, p *ir.Package, e *ir.Emit) int {
 	module := ir.TSModuleNames(p, e)
 	var names []string
 	for _, m := range importLine.FindAllStringSubmatch(string(files[0].Content), -1) {
-		names = append(names, strings.Split(m[1], ", ")...)
+		if m[1] != "" {
+			names = append(names, m[1])
+			continue
+		}
+		names = append(names, strings.Split(m[2], ", ")...)
+	}
+	aliases := map[string]bool{}
+	for _, imp := range ir.TSImports(p) {
+		aliases[imp.Alias] = true
 	}
 	for _, name := range names {
-		if !module[name] {
-			t.Errorf("%s imports %s, which its TS name plan does not reserve", p.Name, name)
+		if !module[name] || !aliases[name] {
+			t.Errorf("%s imports %s, which its TS name plan does not reserve as an import alias", p.Name, name)
 		}
 	}
 	return len(names)

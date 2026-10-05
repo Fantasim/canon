@@ -1,0 +1,187 @@
+DECISIONS 320, 323; CODEGEN.md §2.2, §2.8, §5.9, §5.10, §5.14: the Emberfall shape in types mode: game.world, in types mode in cpp and ts (go types is owed v0.2, DECISIONS 320), holds game.core's records, variant, case, dependent type and tables (fields, table fields, a pairs field, a record of game.core holding a table of its own; no map, which a C++ types decoder cannot read, and no stored fn, E8014); game.core is baked; game.tone is reached only through game.core's types. `canon check` and `canon build` report nothing, and the Go vets, the C++ and the TypeScript compile.
+-- project.canon --
+project ember {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- game/tone/tone.canon --
+/// Tones.
+package game.tone
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit go { out: "@gen/go/tone/" }
+emit cpp { out: "@gen/cpp/tone/" }
+emit ts { out: "@gen/ts/tone/tone.ts" }
+-- game/core/core.canon --
+/// The core vocabulary.
+package game.core
+
+import game.tone { Tone }
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+  closed { label: "Closed" }
+  retired shut { label: "Shut" }
+}
+
+/// What a bonus aims at.
+enum Aim { gold, mood }
+
+/// A level band.
+record LevelRange {
+  /// Lowest.
+  min: Int
+  /// Highest.
+  max: Int
+  /// Labels.
+  labels: [String] = []
+  /// Its tone.
+  tone: Tone
+  /// Its status.
+  status: ref statuses
+}
+
+/// A reward.
+variant Reward {
+  /// Coins.
+  coins {
+    /// How many.
+    amount: Int
+  }
+  /// Nothing.
+  nothing
+}
+
+/// A badge.
+record Badge {
+  /// Its label.
+  label: String
+}
+
+/// The badges.
+let badges: table Badge = {
+  gold { label: "Gold" }
+}
+
+/// A marker.
+record Marker {
+  /// Its code.
+  code: String
+}
+
+/// A bonus, by its aim.
+type Bonus(a: Aim) = match a {
+  gold => Int
+  mood => Tone
+}
+
+/// An effect.
+record Effect {
+  /// Its aim.
+  aim: Aim
+  /// Its bonus.
+  bonus: Bonus(aim)
+}
+
+/// A shelf, holding a table of game.core's own.
+record Shelf {
+  /// Its slots.
+  slots: table Marker
+}
+
+/// A pair.
+record Slot {
+  /// Its key.
+  k: String
+  /// Its value.
+  v: Int
+}
+
+emit go { out: "@gen/go/core/" }
+emit cpp { out: "@gen/cpp/core/" }
+emit ts { out: "@gen/ts/core/core.ts" }
+-- game/world/world.canon --
+/// The world.
+package game.world
+
+import game.core { LevelRange, Reward, Marker, Status, Badge, Effect, Aim, Bonus, Shelf, Slot, statuses }
+
+/// A zone.
+record Zone {
+  /// Its levels.
+  levels: LevelRange
+  /// Its reward.
+  reward: Reward
+  /// Its markers.
+  markers: table Marker
+  /// Its effect.
+  effect: Effect
+  /// Its slots.
+  slots: [Slot](..=2) = [] @json(pairs: ["k{i}", "v{i}"])
+}
+
+/// A perk.
+record Perk {
+  /// Its aim.
+  aim: Aim
+  /// Its bonus.
+  bonus: Bonus(aim)
+}
+
+/// The zones.
+let zones: table Zone = {
+  forest {
+    levels: { min: 1, max: 5, tone: soft, status: open }
+    reward: coins { amount: 3 }
+    markers: { gate { code: "g" }, retired well { code: "w" } }
+    effect: { aim: gold, bonus: 2 }
+    slots: [{ k: "a", v: 1 }]
+  }
+}
+
+/// Level bands.
+let bands: table LevelRange = {
+  low { min: 1, max: 5, tone: soft, status: open }
+  retired old { min: 0, max: 1, tone: loud, status: shut }
+}
+
+/// Moods.
+let moods: table Status = {
+  calm { label: "Calm" }
+  retired grim { label: "Grim" }
+}
+
+/// Medals.
+let medals: table Badge = {
+  bronze { label: "Bronze" }
+}
+
+/// The start band.
+let start: LevelRange = { min: 1, max: 2, tone: loud, status: open }
+
+/// A shelf.
+let shelf: Shelf = { slots: { top { code: "t" }, retired low { code: "l" } } }
+
+/// The perks.
+let perks: table Perk = {
+  rich { aim: gold, bonus: 7 }
+}
+
+emit cpp { out: "@gen/cpp/world/", mode: types }
+emit ts { out: "@gen/ts/world/world.ts", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 3 packages (…)

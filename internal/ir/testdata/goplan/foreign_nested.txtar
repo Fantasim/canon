@@ -1,0 +1,47 @@
+CODEGEN.md §2.8, WIRE.md §5.7, §5.8, log-2026-10-06 "U2 (gen/go) done" 5: only another package's class holds a nested table and a map; this package's data loader reads it with its own reader, so its plan reserves jsonTable and jsonMap as gen/go writes them.
+-- lib/lib.canon --
+/// Shelves.
+package lib
+
+/// A slot.
+record Slot {
+  /// How many.
+  n: Int
+}
+
+/// A shelf.
+record Shelf {
+  /// Its slots by id.
+  slots: table Slot
+  /// Weights by name.
+  weights: {String: Int}
+}
+
+emit go { out: "@features/lib", package: "lib", mode: baked }
+-- app/app.canon --
+/// Rooms.
+package app
+
+import lib { Shelf }
+
+/// A room.
+record Room {
+  /// Its shelf.
+  shelf: Shelf
+}
+
+/// The room.
+let room: Room = { shelf: { slots: { a { n: 1 } }, weights: { "x": 2 } } }
+
+emit go { out: "@features/app", package: "app", mode: data }
+emit json { out: "out/" }
+-- app.room.json --
+{ "shelf": { "slots": { "a": { "n": 1 } }, "weights": { "x": 2 } } }
+-- plan.txt --
+Shelf: Slots Weights slots weights
+Slot: ID N Retired id n retired
+package: MakeEntry_Slot Make_Shelf Make_Slot Shelf Slot SlotID rt
+Room: Shelf shelf
+locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag v values vr want
+package: LoadRoom Make_Room Room RoomSchema decodeRoom decode_lib_Shelf decode_lib_Slot fmt json jsonCell jsonInt jsonKeyPath jsonKeys jsonMap jsonMay jsonNeed jsonObject jsonRead jsonSame jsonSlot jsonTable lib librt loadRoom rt slices strings
+0 errors, 0 warnings in 2 packages (…)

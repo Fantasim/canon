@@ -1,0 +1,27 @@
+CODEGEN.md §3.5, log-2026-10-06 "U4 (gen/ts) done" (a): a TypeScript file imports another package through one namespace alias, its path's segments joined by `_`; the alias is reserved, so q's record named shop_lib by its @ts(name:) is E8005 at the record.
+-- shop/lib/lib.canon --
+/// The library.
+package shop.lib
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit ts { out: "@features/lib/lib.ts", mode: baked }
+-- q/q.canon --
+/// Uses the library.
+package q
+
+import shop.lib { Tone }
+
+/// A badge, named like the alias.
+record Badge @ts(name: "shop_lib") {
+  /// Its tone.
+  tone: Tone
+}
+
+emit ts { out: "@features/q/q.ts", mode: baked }
+-- findings.txt --
+error[E8005]  q/q.canon:7:8
+  ts: shop_lib is generated for both shop.lib and q.Badge
+
+1 error, 0 warnings in 2 packages (…)

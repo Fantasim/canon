@@ -1,4 +1,4 @@
-CODEGEN.md §5.13, §5.6 (gen/cpp defaultLit: a dependent value's branch is decided by its discriminant, which an absent key's default does not follow): a dependent field with a present default, DependentType at the field; none, or an empty list, is written.
+CODEGEN.md §5.13, §5.6 (gen/cpp defaultLit: a dependent value's branch is decided by its discriminant, which an absent key's default does not follow): a dependent field with a present default, DependentDefault at the field; none, or an empty list, is written.
 -- a/a.canon --
 package a
 
@@ -15,7 +15,7 @@ record Rule {
   /// Its payload.
   p: P(k) = 3
   /// An optional payload.
-  q: P(k)? = none
+  q: P(k)?
   /// Payloads.
   r: [P(k)] = []
 }
@@ -23,6 +23,6 @@ record Rule {
 emit cpp { out: "@features/ac", namespace: "a", mode: types }
 -- findings.txt --
 error[E8019]  a/a.canon:14:3
-  emit cpp in types mode cannot generate a dependent type
+  emit cpp in types mode cannot generate a default holding a dependent value, read by a decoder; drop the default, or make the field optional
 
 1 error, 0 warnings in 1 package (…)

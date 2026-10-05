@@ -1,0 +1,23 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_69, refused: CODEGEN.md §5.9, §5.13, DECISIONS 278: a ts data value of another package's record decodes through that package's types-mode decoder; when its ts emit is in another mode there is none: ForeignDataRecord at the value, from check, not an undefined reader in the output.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit ts { out: "@features/b/b.ts", mode: data }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// Points, keyed.
+let pts: [Point] keyed by x = [{ x: 1 }]
+
+emit json { out: "@features/a/data/" }
+emit ts { out: "@features/a/a.ts", mode: data }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

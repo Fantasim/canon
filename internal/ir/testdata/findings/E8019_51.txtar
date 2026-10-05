@@ -22,6 +22,6 @@ record Pick {
 emit cpp { out: "@features/ac", namespace: "a", mode: types }
 -- findings.txt --
 error[E8019]  a/a.canon:17:3
-  emit cpp in types mode cannot generate a literal union over a ref
+  emit cpp in types mode cannot generate a literal union over a ref; use an optional ref instead
 
 1 error, 0 warnings in 1 package (…)

@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.9, DECISIONS 312: gen/go's data loader reads a map in a class it decodes, keys as WIRE.md §5.8 (a literal union too), but a dependent map is DependentType; Loose, held by no value, is not decoded and is fine.
+EVALUATION.md §1, CODEGEN.md §5.9, DECISIONS 312: gen/go's data loader reads a map in a class it decodes, keys as WIRE.md §5.8 (a literal union too), but a dependent map is DependentOutsideField; Loose, held by no value, is not decoded and is fine.
 -- a/a.canon --
 package a
 
@@ -47,6 +47,6 @@ emit json { out: "out/" }
 {"one": {"cells": {"all": 1}, "by": {"open": {"value": 1}}}}
 -- findings.txt --
 error[E8019]  a/a.canon:28:3
-  emit go in data mode cannot generate a dependent type
+  emit go in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,30 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_2, refused: EVALUATION.md §1 (stage E, CODEGEN.md §5.9): baked Go writes each value as a Go composite literal of its own package's generated types, so a record of another package held by value cannot be baked.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A place.
+record Place {
+  /// Where it is.
+  at: Point
+}
+
+/// The place.
+let place: Place = { at: { x: 1 } }
+
+emit go { out: "@features/a", package: "a" }
+-- a.place.json --
+{"at": {"x": 1}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

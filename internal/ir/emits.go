@@ -24,6 +24,7 @@ type emitSite struct {
 	unmapped bool        // a go emit whose resolved directory is under no go_module root (E8007)
 	named    bool        // a go emit that writes its package, so none is defaulted from out
 	refused  bool        // a go emit whose package check refused (E8009, or E1132 for an interpolation), written, defaulted, or none for want of an out (decisions 213, 215)
+	modeSpan source.Span // the mode option's value, or none without one
 }
 
 // outText is one entry of an emit's out: its text as written ("" for one check refused) and its span.
@@ -111,9 +112,14 @@ func sharedGoPackage(sites []*emitSite) {
 	}
 }
 
-// modeRefused reports a code emit whose mode check refused (E8009): its out, directory and package still count in every rule that does not depend on the mode, and no mode-dependent rule judges it (decision 213).
+// modeRefused reports a code emit whose mode check refused (E8009) or stage E refuses as not built yet (unbuiltMode): its out, directory and package still count in every rule that does not depend on the mode, and no mode-dependent rule judges it (decision 213).
 func modeRefused(e *Emit) bool {
-	return isCode(e.Target) && e.Mode == ModeNone
+	return isCode(e.Target) && (e.Mode == ModeNone || unbuiltMode(e))
+}
+
+// unbuiltMode reports a mode its target's generator does not write yet (DECISIONS 320): go embedded and types, cpp embedded (CODEGEN.md §2.1, §2.2).
+func unbuiltMode(e *Emit) bool {
+	return int(e.Target) < len(unbuiltAlt) && unbuiltAlt[e.Target][e.Mode] != ModeNone
 }
 
 // readOptions types the options check validated (E8003, E8009): out, mode (ModeNone when check refused it), values, package, namespace; an absent `values` and an explicit `values: []` both read as nil, so selectedNames expands either to every public value (decision 127).
@@ -131,7 +137,7 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 		case check.OptOut:
 			es.outSpan, es.outs = es.file.Span(fi.Value), outTexts(es.file, fi.Value, e.Target)
 		case check.OptMode:
-			e.Mode = ModeNone
+			e.Mode, es.modeSpan = ModeNone, es.file.Span(fi.Value)
 			if id, isWord := fi.Value.(*syntax.IdentExpr); isWord {
 				e.Mode, _ = wordIndex[Mode](modeWords[:], id.Name)
 			}

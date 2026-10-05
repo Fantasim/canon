@@ -1,0 +1,24 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_96, refused: CODEGEN.md §5.9, §7.3: a baked cpp emit fills every value inside detail::<P>Access::Build, the friend of its own package's classes only, so a value holding a record of another package is refused.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// The corner.
+let corner: Point = { x: 1 }
+
+emit cpp { out: "@features/a", namespace: "a", mode: baked }
+-- a.corner.json --
+{"x": 1}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

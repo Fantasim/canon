@@ -1,0 +1,37 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_11, refused: EVALUATION.md §1, CODEGEN.md §5.9: a stored method's result of another package's record is reported once, at the method, not again at the baked value whose records hold it.
+-- b/b.canon --
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+emit go { out: "@features/b", package: "b" }
+-- a/a.canon --
+package a
+
+import b { Point }
+
+/// A place.
+record Place {
+  /// Where.
+  x: Int
+
+  /// Its point.
+  export fn point(self) -> Point { return { x: x } }
+}
+
+/// The places.
+let places: table Place = {
+  one { x: 1 }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- a.places.json --
+{"one": {"x": 1}}
+-- a.point.calls.json --
+{"": {"x": 1}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

@@ -1,0 +1,44 @@
+CODEGEN.md §2.8 Refs, §5.14, DECISIONS 305, 323, log-2026-10-06 "U1 review" 3: store's data loader resolves Item.next inside its own value items, so store writes no make hook for Item; app, whose go and cpp emits build an Item (a reader in data mode, a literal in baked mode), is E8019 `ForeignResolvedRef` at the value that holds one, naming the way out (emit store in baked mode, or keep the record inside store's value). Its ts emit is not refused: TypeScript refs are keys.
+-- store/store.canon --
+/// The store.
+package store
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+  /// The next item.
+  next: ref items?
+}
+
+/// The items.
+let items: table Item = {
+  a { label: "a" }
+  b { label: "b", next: a }
+}
+
+emit go { out: "@features/store/go", package: "store", mode: data }
+emit cpp { out: "@features/store/cpp", namespace: "store", mode: data }
+emit ts { out: "@features/store/store.ts", mode: data }
+emit json { out: "out/store/" }
+-- app/app.canon --
+/// The app.
+package app
+
+import store { Item }
+
+/// The app's chosen item.
+let chosen: Item = { label: "c" }
+
+emit go { out: "@features/app/go", package: "app", mode: data }
+emit cpp { out: "@features/app/cpp", namespace: "app", mode: baked }
+emit ts { out: "@features/app/app.ts", mode: data }
+emit json { out: "out/app/" }
+-- findings.txt --
+error[E8019]  app/app.canon:7:5
+  emit cpp in baked mode cannot generate a record of another package whose loader resolves one of its refs; emit the owning package in baked mode, or keep the record inside the owner's value
+
+error[E8019]  app/app.canon:7:5
+  emit go in data mode cannot generate a record of another package whose loader resolves one of its refs; emit the owning package in baked mode, or keep the record inside the owner's value
+
+2 errors, 0 warnings in 2 packages (…)

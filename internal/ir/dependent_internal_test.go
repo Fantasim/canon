@@ -3,6 +3,7 @@ package ir
 import (
 	"testing"
 
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -14,28 +15,32 @@ type bakedCase struct {
 	from []string // p's argument, a wire path
 	pkg  string
 	v    value.Value
-	want bool
+	want diag.Kind // 0: written
 }
 
-// TestBakedDependent is CODEGEN.md §5.6 and decision 37: baked gen/go writes a dependent value only as a field value, or its list's elements, whose discriminant its record's fields hold (DiscFields), of its own package's type; anything else is refused at stage E.
+// TestBakedDependent is CODEGEN.md §5.6, decision 37 and DECISIONS 320: baked gen/go writes a dependent value only as a field value, or its list's elements, whose discriminant its record's fields hold (DiscFields), of any package's type; one decided through a ref is DependentType, one outside a field DependentOutsideField, at stage E.
 func TestBakedDependent(t *testing.T) {
 	str := TypeRef{Kind: types.String}
 	cases := []bakedCase{
-		{"an earlier enum field", nil, []string{"k"}, "a", &value.Int{V: 1}, false},
-		{"a list sharing the field's discriminant", listOf, []string{"k"}, "a", &value.List{Elems: []value.Value{&value.Int{V: 1}}}, false},
-		{"none", nil, []string{"ev"}, "a", &value.None{}, false},
-		{"an empty list", listOf, []string{"ev"}, "a", &value.List{}, false},
-		{"a discriminant read through a ref (WIRE.md §5.9)", nil, []string{"ev"}, "a", &value.Int{V: 1}, true},
-		{"another package's type", nil, []string{"k"}, "b", &value.Int{V: 1}, true},
+		{"an earlier enum field", nil, []string{"k"}, "a", &value.Int{V: 1}, 0},
+		{"a list sharing the field's discriminant", listOf, []string{"k"}, "a", &value.List{Elems: []value.Value{&value.Int{V: 1}}}, 0},
+		{"none", nil, []string{"ev"}, "a", &value.None{}, 0},
+		{"an empty list", listOf, []string{"ev"}, "a", &value.List{}, 0},
+		{"a discriminant read through a ref (WIRE.md §5.9)", nil, []string{"ev"}, "a", &value.Int{V: 1}, diag.KindDependentType},
+		{"another package's type (DECISIONS 320)", nil, []string{"k"}, "b", &value.Int{V: 1}, 0},
 		{"a map's value", func(app TypeRef) TypeRef { return TypeRef{Kind: types.Map, Key: &str, Elem: &app} },
-			[]string{"k"}, "a", &value.Map{Keys: []value.Value{&value.Str{V: "x"}}, Vals: []value.Value{&value.Int{V: 1}}}, true},
-		{"a union's string value", unionOf, []string{"k"}, "a", &value.Str{V: "x"}, false},
-		{"a union's member value", unionOf, []string{"k"}, "a", &value.Member{Index: 0}, true},
+			[]string{"k"}, "a", &value.Map{Keys: []value.Value{&value.Str{V: "x"}}, Vals: []value.Value{&value.Int{V: 1}}}, diag.KindDependentOutsideField},
+		{"a union's string value", unionOf, []string{"k"}, "a", &value.Str{V: "x"}, 0},
+		{"a union's member value", unionOf, []string{"k"}, "a", &value.Member{Index: 0}, diag.KindDependentOutsideField},
 	}
 	for _, c := range cases {
 		thing, row := bakedThing(c)
-		if got := bakedDependent("a", &thing, row); got != c.want {
-			t.Errorf("%s: bakedDependent = %v, want %v", c.name, got, c.want)
+		kind, bad := literalDependent(&thing, row)
+		if !bad {
+			kind = 0
+		}
+		if kind != c.want {
+			t.Errorf("%s: literalDependent = %v, want %v", c.name, kind, c.want)
 		}
 	}
 }

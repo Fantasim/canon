@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.6, §5.9, DECISIONS 312: a dependent value in a map, and a dependent map, read by a data loader is DependentType (not MapField), for both generators.
+EVALUATION.md §1, CODEGEN.md §5.6, §5.9, DECISIONS 312: a dependent value in a map, and a dependent map, read by a data loader is DependentOutsideField (not MapField), for both generators.
 -- a/a.canon --
 package a
 
@@ -46,15 +46,15 @@ emit cpp { out: "@features/ac", namespace: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8019]  a/a.canon:34:3
-  emit cpp in data mode cannot generate a dependent type
+  emit cpp in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 error[E8019]  a/a.canon:34:3
-  emit go in data mode cannot generate a dependent type
+  emit go in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 error[E8019]  a/a.canon:36:3
-  emit cpp in data mode cannot generate a dependent type
+  emit cpp in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 error[E8019]  a/a.canon:36:3
-  emit go in data mode cannot generate a dependent type
+  emit go in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
 4 errors, 0 warnings in 1 package (…)

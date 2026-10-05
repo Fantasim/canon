@@ -61,7 +61,7 @@ func compareModes(t *testing.T, p *ir.Package, e *ir.Emit) {
 	if err != nil {
 		t.Fatalf("%s: %v", p.Name, err) // the golden's findings say why
 	}
-	want := ir.GoScopeNames(ir.PlanGoNames(p, e))
+	want := goPlanned(p, ir.PlanGoNames(p, e))
 	got := declaredNames(t, goFile(t, files))
 	imports := map[string]bool{}
 	for _, f := range files {

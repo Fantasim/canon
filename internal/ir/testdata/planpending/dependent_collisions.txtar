@@ -21,16 +21,17 @@ emit cpp { out: "@features/ac", namespace: "a", mode: data }
 K: String Wire
 P: AsAB Branch branch value
 PBranch: N n
-package: K KC KMembers KOne KTwo P PBranch PBranchAB ParseK iter strconv
+package: K KC KMembers KOne KTwo Make_PBranch Make_P_AB P PBranch PBranchAB ParseK iter strconv
 problem 0 package PBranchAB: a.P.a_b, a.P.aB
 problem 0 package PBranch: a.P, a.PBranch
 == cpp a
 AAccess: 
+AMake: PBranch P_AB
 K: c one two
 P: AsAB GetBranch value_
 PBranch: GetN aB a_b n_
 a: K KFromWire P PBranch ToName ToWire kKMembers
-detail: AAccess Decode DecodeP
+detail: AAccess AMake Decode DecodeP
 problem 0 P AsAB: a.P.a_b, a.P.aB
 problem 0 a PBranch: a.P, a.PBranch
 error[E8005]  a/a.canon:7:6

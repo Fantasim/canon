@@ -238,6 +238,18 @@ func (s *stage) results(site *fnSite, recv *value.Record) (value.Value, *LookupT
 	return nil, table, true
 }
 
+// lookupDomains sets each lookup's Domains, of every package the stage builds, so a reader of another package's record enumerates them with no receiver held (CODEGEN.md §5.10).
+func (s *stage) lookupDomains() {
+	for fn, site := range s.fnObjs { //canon:unordered each fn's own field is set, independently of the others
+		if fn.Kind != FnLookup {
+			continue
+		}
+		if domains, _, ok := s.domains(site); ok {
+			fn.Domains = domains
+		}
+	}
+}
+
 // domains are the values of each finite parameter in domain order (CODEGEN.md §5.10): enum members and table entries retired included, false then true; n is the number of cells.
 func (s *stage) domains(site *fnSite) ([][]value.Value, int64, bool) {
 	if d, ok := s.domainsOf[site.fn]; ok {

@@ -20,9 +20,9 @@ emit cpp { out: "@features/ac", namespace: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8019]  a/a.canon:8:3
-  emit cpp in data mode cannot generate a literal union over a ref
+  emit cpp in data mode cannot generate a literal union over a ref; use an optional ref instead
 
 error[E8019]  a/a.canon:8:3
-  emit go in data mode cannot generate a literal union over a ref
+  emit go in data mode cannot generate a literal union over a ref; use an optional ref instead
 
 2 errors, 0 warnings in 1 package (…)

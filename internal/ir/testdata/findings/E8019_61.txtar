@@ -26,6 +26,6 @@ variant Reward {
 emit ts { out: "@features/a/a.ts", mode: baked }
 -- findings.txt --
 error[E8019]  a/a.canon:14:13
-  emit ts in baked mode cannot generate a variant-level method a generator must write
+  emit ts in baked mode cannot generate a variant-level method a generator must write; move the method onto each case
 
 1 error, 0 warnings in 1 package (…)

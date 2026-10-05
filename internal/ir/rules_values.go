@@ -58,8 +58,7 @@ func dataModeNames(u *unit) map[string]bool {
 	return need
 }
 
-// checkReload is E8202 (a go or cpp emit of an @reload value has a file to reload: data mode)
-// and E8201 (an @reload value is not held by a legacy struct in fields or both access).
+// checkReload is E8202: a go or cpp emit of an @reload value has a file to reload, data mode. E8201 (an @reload value held by a legacy struct in fields or both access) has no case before M6: every legacy struct is E8019 `LegacyStruct` first (checkLegacyStructs, DECISIONS 320).
 func (s *stage) checkReload(u *unit) {
 	for _, v := range u.values {
 		if !v.v.Reload {
@@ -71,21 +70,7 @@ func (s *stage) checkReload(u *unit) {
 			}
 			u.report(diag.E8202.At(v.span().span(), v.v.Name, targetWords[es.e.Target], modeWords[es.e.Mode]))
 		}
-		if hasTarget(u, TargetCpp) {
-			s.checkReloadStructs(u, v)
-		}
 	}
-}
-
-// checkReloadStructs is E8201: an `@reload` value's type, or any type it contains at any depth (a map, a variant case, a nested record of any package), maps onto a legacy C++ struct in `fields` or `both` access (SPEC.md §15.5).
-func (s *stage) checkReloadStructs(u *unit, v *valueSite) {
-	w := newWalker(func(n Type) bool {
-		if rec, ok := n.(*Record); ok && (rec.Cpp.Access == AccessFields || rec.Cpp.Access == AccessBoth) {
-			u.report(diag.E8201.At(v.span().span(), v.v.Name, rec.Name, rec.Cpp.Struct, accessWords[rec.Cpp.Access]))
-		}
-		return true
-	}, func(*TypeRef) {})
-	w.ref(&v.v.Type)
 }
 
 func selects(u *unit, e *Emit, name string) bool {

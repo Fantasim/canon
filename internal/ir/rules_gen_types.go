@@ -75,18 +75,14 @@ func (s *stage) checkOptionalMapValues(u *unit, es *emitSite) {
 
 func optionalElem(t *TypeRef) bool { return t.Elem != nil && t.Elem.Kind == types.Optional }
 
-// checkTableFields is E8019 `TableField`: gen/ts writes no table type but a table value's own container (CODEGEN.md §4.2, §5.9); gen/go and gen/cpp write a field of `table T` for a record of their own package in every mode they write (gen/cpp keyed by String, as CODEGEN.md §4.2 and the data mode do), but not where a mode gives that record an id enum, whose members are the keys of a public table value, which a nested table's keys are not (§5.3).
+// checkTableFields is E8019 `TableField` where gen/go or gen/cpp writes no `table T` (CODEGEN.md §4.2, §5.3): a field holds a table of any record, its package's own or another package's (whose rows are the holder's row type, §5.9, DECISIONS 323), in every mode, but not of an own record where the mode gives that record an id enum, whose members are the keys of a public table value, which a nested table's keys are not, nor in Go of another package's record that a table value of this package gives an id enum (log-2026-10-06 "U5 review FAIL" 3; gen/cpp keys such rows by String); a table anywhere else than a field or a value's top (a fn's parameter or result, a constant, nested in a value's type) has no type. gen/ts writes every table (§4.2, log-2026-10-06 "ERRORS batch for U5/320 done"), so it has no rule.
 func (s *stage) checkTableFields(u *unit, es *emitSite) {
-	if es.e.Target != TargetGo && es.e.Target != TargetCpp {
-		s.reportTypeSites(u, es, diag.KindTableField, func(t *TypeRef) bool { return t.Kind == types.Table },
-			func(site typeSite) bool { return site.isValue })
-		return
-	}
 	enumIDs := es.e.Mode != ModeData && es.e.Mode != ModeTypes
+	goEmit := es.e.Target == TargetGo
 	tables := tableValueRecords(u.p)
 	unwritten := func(t *TypeRef) bool {
 		rec, ok := tableElem(*t)
-		return t.Kind == types.Table && (!ok || rec.Pkg != u.p.Name || enumIDs && tables[rec])
+		return t.Kind == types.Table && (!ok || (rec.Pkg == u.p.Name || goEmit) && enumIDs && tables[rec])
 	}
 	anyTable := func(t *TypeRef) bool { return t.Kind == types.Table }
 	for _, site := range s.typeSites(u, es) {

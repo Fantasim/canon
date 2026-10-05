@@ -62,3 +62,13 @@ func ExampleCppNamePlan_Enumerator() {
 		pl.CaseName(shape, shape.Cases[0]), pl.AsName(shape.Cases[0]))
 	// Output: class_ MAX ShapeKind big_dot ShapeBigDot AsBigDot
 }
+
+// A ref into another package's value names that value's accessor as its owner's plan does: Get<V>, or the value's @cpp(name:) (CODEGEN.md §3.3, §5.9).
+func ExampleCppNamePlan_OwnerAccessor() {
+	p, _ := shop(ir.TargetCpp)
+	pl := ir.PlanCppNames(p, p.Emits[0])
+	plain := &ir.RefTarget{Pkg: "lib", Value: "items"}
+	named := &ir.RefTarget{Pkg: "lib", Value: "monsters", Cpp: ir.NameOptions{Name: "AllMonsters"}}
+	fmt.Println(pl.OwnerAccessor(plain), pl.OwnerAccessor(named))
+	// Output: GetItems AllMonsters
+}

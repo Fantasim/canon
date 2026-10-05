@@ -10,11 +10,11 @@ record Skill @json(case: snake) {
   id: String @json("dwID")
   reqMp: Int = 0 @json(path: "legacy.reqMp")
   reqFp: Int = 0 @json(path: "legacy.reqFp")
-  element: Element? = none @json(none: 0)
+  element: Element? @json(none: 0)
   flags: [Flag] where it.isUnique() = [] @json(bits)
   twoHanded: Bool = false @json("bTwoHanded", int)
   side: Side | "both" = "both"
-  castTime: Duration? = none @json(unit: s)
+  castTime: Duration? @json(unit: s)
   weights: {Element: Float} = {}
   export fn isFree(self) -> Bool { return reqMp == 0 and reqFp == 0 }
 }

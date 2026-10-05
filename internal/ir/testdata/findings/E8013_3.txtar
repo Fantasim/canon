@@ -1,0 +1,13 @@
+CODEGEN.md §5.10, DECISIONS 305, 320: E8013 names only the modes that build a package fn in the emit's target: baked or embedded for ts (go and cpp embedded are not built yet, so their message says baked, E8013_1).
+-- a/a.canon --
+package a
+
+/// A weight.
+export fn weight() -> Int { return 2 }
+
+emit ts { out: "@features/a/a.ts", mode: data }
+-- findings.txt --
+error[E8013]  a/a.canon:4:11
+  weight needs baked or embedded mode: data files cannot hold package functions
+
+1 error, 0 warnings in 1 package (…)

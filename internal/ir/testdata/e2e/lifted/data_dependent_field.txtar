@@ -1,0 +1,38 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_13, refused: EVALUATION.md §1, CODEGEN.md §2.8, §5.6 (gen/go dependentForeignFormat: another package's decoder is unexported): gen/go's data loader cannot read a field of another package's dependent type, DependentType at the field; gen/cpp calls that package's Decode, and the type's own package writes it.
+-- b/b.canon --
+package b
+
+/// A kind.
+enum K { n, s }
+
+/// A payload.
+type P(k: K) = match k { n => Int, s => String }
+
+emit go { out: "@features/b", package: "b", mode: data }
+emit cpp { out: "@features/bc", namespace: "b", mode: data }
+emit json { out: "out/b/" }
+-- a/a.canon --
+package a
+
+import b { K, P }
+
+/// A rule.
+record R {
+  /// Its kind.
+  k: K
+  /// Its payload.
+  v: P(k)
+}
+
+/// The rules.
+let rules: table R = {
+  one { k: n, v: 1 }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit cpp { out: "@features/ac", namespace: "a", mode: data }
+emit json { out: "out/a/" }
+-- a.rules.json --
+{"one": {"k": "n", "v": 1}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

@@ -1,11 +1,11 @@
-CODEGEN.md §2.1, decision 127: an explicit `values: []` expands to every public value, not none.
+CODEGEN.md §2.1, §2.2, DECISIONS 319: an emit without `values` selects every public value (an explicit `values: []` is refused, E8009), so a data emit holding the Int cap is E8015.
 -- a/a.canon --
 package a
 
 /// A level cap.
 let cap: Int = 3
 
-emit go { out: "@features/a", package: "a", mode: data, values: [] }
+emit go { out: "@features/a", package: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8015]  a/a.canon:4:5

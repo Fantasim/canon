@@ -1,0 +1,31 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_71, refused: CODEGEN.md §5.4, §5.13, DECISIONS 278: another package's record that is only ever a table row there has a public decoder requiring `$id`: ForeignDataRecord at a field a ts reader holds it in as a plain value.
+-- b/b.canon --
+package b
+
+/// A badge.
+record Badge {
+  /// Its label.
+  label: String
+}
+
+/// A holder of badges by name.
+record Shelf {
+  /// Its badges.
+  badges: table Badge = {}
+}
+
+emit ts { out: "@features/b/b.ts", mode: types }
+-- a/a.canon --
+package a
+
+import b { Badge }
+
+/// A holder.
+record H {
+  /// A badge.
+  badge: Badge
+}
+
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

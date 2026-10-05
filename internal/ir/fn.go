@@ -21,6 +21,7 @@ type ExportFn struct {
 	Instances   []*Instance // one per receiver, in traversal order (EVL-02)
 	Value       value.Value
 	Table       *LookupTable
+	Domains     [][]value.Value // a lookup's parameter domains in CODEGEN.md §5.10 order, whatever receivers exist (a ref's: its table's entries); nil when one is not finite (log-2026-10-06 "U5 review FAIL" 2)
 	Body        PExpr
 	Reads       []*Read
 	Vectors     []*Vector

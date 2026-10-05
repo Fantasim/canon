@@ -4,21 +4,23 @@ import (
 	"slices"
 )
 
-// declareDetail declares detail's access struct with its loaders and resolvers (a baked emit's Data, Build, Get and constexpr cells), the decoders when a class is decoded, each dependent type's Decode<Alias>, each translated method's pure function <Class>_<fn> (CODEGEN.md §2.7 step 4, §3.3, §5.6, §7.6), and the input namespace (§7.7).
+// declareDetail declares detail's access struct with its loaders and resolvers (a baked emit's Data, Build, Get and constexpr cells), the make struct (§5.14), the decoders when a class is decoded and the readers of other packages' classes (§2.8), each dependent type's Decode<Alias>, each translated method's pure function <Class>_<fn> (CODEGEN.md §2.7 step 4, §3.3, §5.6, §7.6), and the input namespace (§7.7).
 func (pl *CppNamePlan) declareDetail() {
 	sc := pl.scope(cppDetail)
 	access := pl.AccessName()
 	pl.shareInner(sc, access, pl.p.Name, nil)
+	pl.declareMake(sc)
 	if pl.baked() {
 		pl.declareBakedDetail(sc, pl.accessScope(access))
 	} else {
 		pl.declareAccess(access)
 		pl.declareDecoders(sc)
+		pl.declareReaders(sc)
 	}
 	for _, m := range pl.methods() {
 		pl.innerFrom(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })
 	}
-	for _, d := range ownDefineRefs(pl.p) {
+	for _, d := range emitDefineRefs(pl.p, pl.e) {
 		pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d)
 	}
 	pl.declareInputSlots(sc)

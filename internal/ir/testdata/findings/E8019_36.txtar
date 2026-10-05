@@ -25,9 +25,9 @@ emit json { out: "out/" }
 {"one": {"cells": {"a": 1}}}
 -- findings.txt --
 error[E8019]  a/a.canon:6:3
-  emit go in data mode cannot generate a map with optional values
+  emit go in data mode cannot generate a map with optional values; leave absent entries out of the map
 
 error[E8019]  a/a.canon:12:3
-  emit go in data mode cannot generate a map with optional values
+  emit go in data mode cannot generate a map with optional values; leave absent entries out of the map
 
 2 errors, 0 warnings in 1 package (…)

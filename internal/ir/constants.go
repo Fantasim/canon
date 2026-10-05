@@ -356,6 +356,18 @@ const (
 	goFloat32Bits      = 32
 )
 
+// Make hooks, rows and readers of other packages' classes (CODEGEN.md §2.8, §5.9, §5.14; DECISIONS 323).
+const (
+	hookMake      = "Make"  // Go Make_<T> and MakeCase_<V>_<Case>, C++ detail::<P>Make
+	hookCase      = "Case"  // a case-type hook: Go MakeCase_<V>_<Case>, C++ Case_<V>_<Case>
+	hookEntry     = "Entry" // an entry hook: Go MakeEntry_<T>, C++ Entry_<T>
+	rowSuffix     = "Row"   // <Element>Row, in Go and C++
+	goRecord      = "Record"
+	goRecordStore = "record"
+	cppReadPrefix = "Read"                // a C++ reader of another package's class, Read_<Seg1>_…_<T>
+	goHookPrefix  = hookMake + underscore // Make_: the interior _ keeps hooks apart from §3.3's names
+)
+
 // Translated fns and the conformance file (CODEGEN.md §3.3, §5.10; CONFORMANCE.md §7).
 const (
 	goTestPrefix        = "Test"
@@ -378,7 +390,20 @@ const (
 	GoUnexported
 	// GoOverrideInvalid is a @go(name:) override that is no Go identifier at all (E8011 `override`).
 	GoOverrideInvalid
+	// goMacroName is a generated C++ name that common platform headers define as a macro (W8006).
+	goMacroName
 )
+
+// cppMacroNames are the names common platform headers define as macros, and the Win32 A/W names (CODEGEN.md §3.5, W8006).
+var cppMacroNames = []string{
+	"min", "max", "near", "far", "IN", "OUT", "OPTIONAL", "ERROR", "DELETE", "TRUE", "FALSE", "VOID", "CONST",
+	"interface", "small", "TEXT", "ABSOLUTE", "RELATIVE", "TRANSPARENT", "OPAQUE", "CALLBACK", "WINAPI", "PASCAL",
+	"CDECL", "EXPORT", "DOMAIN", "OVERFLOW", "UNDERFLOW", "NO_ERROR", "IGNORE", "INFINITE", "BOOL", "BYTE", "WORD",
+	"DWORD", "INT", "UINT", "LONG", "major", "minor", "unix", "linux", "i386",
+	"GetObject", "GetMessage", "GetClassName", "GetCommandLine", "GetCurrentTime", "GetUserName", "GetFileAttributes",
+	"GetProp", "SetProp", "CreateWindow", "CreateFile", "DeleteFile", "CopyFile", "MoveFile", "LoadImage", "LoadString",
+	"DrawText", "SendMessage", "PostMessage", "RegisterClass",
+}
 
 // The code points of `.` (all but `\n`: the Perl flags lack DotNL) and of any, as rune pairs.
 var (
@@ -418,30 +443,31 @@ var patternEmpty = []struct {
 var (
 	tsReserved   = strings.Fields("await break case catch class const continue debugger default delete do else enum export extends false finally for function if import in instanceof new null return super switch this throw true try typeof var void while with yield implements interface let package private protected public static undefined NaN Infinity arguments eval")
 	tsPredefined = strings.Fields("string number boolean symbol bigint object any unknown never void")
-	tsHelpers    = strings.Fields("CanonEvalError canonFail canonInt canonAdd canonSub canonMul canonDiv canonMod canonNeg canonAbs canonClamp canonF canonMinF canonMaxF canonClampF canonToInt canonFloor canonCeil canonRound canonDivDuration canonCheckRange canonCheckWidth canonF32 CanonMap CanonTable canonTable canonFreeze canonEnvelope decOrder decTokenKey decToken decText decDecimal decSame decKeys decFail decGet decIsObject decObject decArray decAt decEmptyObject decEmptyArray decBool decBit decInt decBig decFloat decCompare decHalf decF32 decString decDuration decEnum decCode decBits decKeyed decForeign decList decTable decIntKey decBigKey decMap decPairs decParse")
+	tsHelpers    = strings.Fields("CanonEvalError canonFail canonInt canonAdd canonSub canonMul canonDiv canonMod canonNeg canonAbs canonClamp canonF canonMinF canonMaxF canonClampF canonToInt canonFloor canonCeil canonRound canonDivDuration canonCheckRange canonCheckWidth canonF32 CanonMap CanonTable canonTable CanonRow canonFreeze canonEnvelope decOrder decTokenKey decToken decText decDecimal decSame decKeys decFail decEntry decGet decIsObject decObject decArray decAt decEmptyObject decEmptyArray decBool decBit decInt decBig decFloat decCompare decHalf decF32 decString decDuration decEnum decCode decBits decKeyed decList decTable decIntKey decBigKey decMap decPairs decParse")
 )
 
 // tsIdentPattern is a TypeScript identifier as generated code spells it: `$` starts a method's pure function.
 var tsIdentPattern = regexp.MustCompile(`^[A-Za-z_$][A-Za-z0-9_$]*$`)
 
 const (
-	tsHelperOrigin = "the TypeScript helper block"
-	tsModuleScope  = "module"
-	tsPureMark     = "$"
-	tsIDSuffix     = "Id"
-	tsKindSuffix   = "Kind"
-	tsBranchSuffix = "Branch"
-	tsDecodePrefix = "decode"
-	tsParsePrefix  = "parse"
-	tsReadPrefix   = "read"
-	tsSchemaSuffix = "Schema"
-	tsMembersName  = "Members"
-	tsNamesName    = "Names"
-	tsIndexName    = "Index"
-	tsCodesName    = "Codes"
-	tsIDProp       = "id"
-	tsRetiredProp  = "retired"
-	tsKindProp     = "kind"
+	tsHelperOrigin  = "the TypeScript helper block"
+	tsModuleScope   = "module"
+	tsPureMark      = "$"
+	tsIDSuffix      = "Id"
+	tsKindSuffix    = "Kind"
+	tsBranchSuffix  = "Branch"
+	tsDecodePrefix  = "decode"
+	tsParsePrefix   = "parse"
+	tsReadPrefix    = "read"
+	tsSchemaSuffix  = "Schema"
+	tsMembersName   = "Members"
+	tsNamesName     = "Names"
+	tsIndexName     = "Index"
+	tsCodesName     = "Codes"
+	tsIDProp        = "id"
+	tsCanonRowScope = "CanonRow of " // the scope of a row of another package's record (CanonRow<T, K>)
+	tsRetiredProp   = "retired"
+	tsKindProp      = "kind"
 )
 
 // The names a baked cpp emit adds (CODEGEN.md §5.3, §5.10, §7.3; decision 293).

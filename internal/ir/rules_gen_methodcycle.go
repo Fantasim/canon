@@ -162,10 +162,10 @@ func (s *stage) reportCycle(e *Emit, fn *ExportFn) {
 	}
 	s.cycleReported[key] = true
 	if e.Target == TargetJSON {
-		s.units[site.pkg].report(diag.E8019.AtJson(site.span(), diag.KindRecordCycleThroughMethod))
+		s.units[site.pkg].report(diag.E8019.AtJson(site.span(), diag.KindRecordCycleThroughMethod, wayOf[diag.KindRecordCycleThroughMethod]))
 		return
 	}
-	s.units[site.pkg].report(diag.E8019.AtMode(site.span(), targetWords[e.Target], modeWords[e.Mode], diag.KindRecordCycleThroughMethod))
+	s.units[site.pkg].report(diag.E8019.AtMode(site.span(), targetWords[e.Target], modeWords[e.Mode], diag.KindRecordCycleThroughMethod, wayOf[diag.KindRecordCycleThroughMethod]))
 }
 
 // endlessChain is the internal error of a stored result that holds, below it, a receiver of a declaration whose results led to it: cyclicFn refuses every such chain first, so stage E is broken (DECISIONS 284).

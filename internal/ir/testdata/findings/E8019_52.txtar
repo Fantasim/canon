@@ -28,6 +28,6 @@ variant Reward {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8019]  a/a.canon:14:13
-  emit go in baked mode cannot generate a variant-level method a generator must write
+  emit go in baked mode cannot generate a variant-level method a generator must write; move the method onto each case
 
 1 error, 0 warnings in 1 package (…)

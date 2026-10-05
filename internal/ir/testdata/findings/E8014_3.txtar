@@ -1,6 +1,7 @@
 DECISIONS 282, CODEGEN.md §5.13: a default that does not fold and whose type takes an argument (the
-earlier field ev, or a dependent map's key) is computed, so types mode refuses it like L's own default
-reading its parameter.
+earlier field ev) is computed, so types mode refuses it like L's own default reading its parameter. (A
+dependent map's key was the other case: only go types read one, which is E8019 `unbuilt` since
+DECISIONS 320, and a cpp types decoder reads no map.)
 -- a/a.canon --
 package a
 
@@ -27,11 +28,9 @@ record R {
   l: L(ev) = {}
   /// Many, none by default: a constant.
   ls: [L(ev)] = []
-  /// By key: L of each key.
-  dm: {k in evs: L(k)} = { a: {} }
 }
 
-emit go { out: "@features/a", package: "a", mode: types }
+emit cpp { out: "@features/a", namespace: "a", mode: types }
 -- findings.txt --
 error[E8014]  a/a.canon:15:3
   types mode cannot emit the computed default of L.top: there is no data to read it from
@@ -39,7 +38,4 @@ error[E8014]  a/a.canon:15:3
 error[E8014]  a/a.canon:23:3
   types mode cannot emit the computed default of R.l: there is no data to read it from
 
-error[E8014]  a/a.canon:27:3
-  types mode cannot emit the computed default of R.dm: there is no data to read it from
-
-3 errors, 0 warnings in 1 package (…)
+2 errors, 0 warnings in 1 package (…)

@@ -14,7 +14,7 @@ type goImportUse struct {
 	pkgs map[string]bool
 }
 
-// importUse walks what gen/go writes (CODEGEN.md §2.8): enums need strconv, enums and containers iter, the baked data sync, a -0.0 literal math (decision 202), each type its kind's package, translated bodies their helpers; data mode's loaders rt, encoding/json, fmt, strings and slices, its snapshot sync/atomic.
+// importUse walks what gen/go writes (CODEGEN.md §2.8): enums need strconv, enums and containers iter, the baked data sync, a -0.0 literal math (decision 202), each type its kind's package, translated bodies their helpers; data mode's loaders rt, encoding/json, fmt, strings and slices, its snapshot sync/atomic; another package's class built or forwarded, its package and what it names (DECISIONS 323).
 func (pl *GoNamePlan) importUse() *goImportUse {
 	u := &goImportUse{own: pl.p.Name, std: map[string]bool{}, pkgs: map[string]bool{}}
 	u.std[goMath] = pl.writesNegZero()
@@ -39,7 +39,49 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 	for _, fn := range pl.p.Fns {
 		u.fn(fn, false)
 	}
+	for _, c := range pl.foreign.Built() {
+		u.foreignClass(c, pl.foreign.classPkg(c))
+	}
+	for _, row := range pl.rows {
+		u.foreignClass(row.Record, row.Record.Pkg)
+	}
 	return u
+}
+
+// foreignClass marks what building another package's class through its hook, or forwarding its methods from a row, writes: that package, and what its stored fields, fns and branches name, its lists, maps and keyed lists aside, which are that package's rt (CODEGEN.md §2.8, §5.9, §5.14).
+func (u *goImportUse) foreignClass(c any, pkg string) {
+	u.pkgs[pkg] = true
+	if d, ok := c.(*Dependent); ok {
+		for _, b := range d.Branches {
+			u.foreignRef(&b.Type)
+		}
+		return
+	}
+	fields, fns := classBody(c)
+	for _, f := range fields {
+		if f.Input == nil && (!f.Optional || f.Type.Kind != types.Never) {
+			u.foreignRef(&f.Type)
+		}
+	}
+	for _, fn := range fns {
+		for _, p := range fn.Params {
+			u.foreignRef(&p.Type)
+		}
+		u.foreignRef(&fn.Result)
+	}
+}
+
+// foreignRef is ref for a type of another package's class: its rt types are that package's.
+func (u *goImportUse) foreignRef(t *TypeRef) {
+	if t == nil {
+		return
+	}
+	if std := goStdOfKind[t.Kind]; std != "" && std != goRT {
+		u.std[std] = true
+	}
+	u.markPkg(t)
+	u.foreignRef(t.Elem)
+	u.foreignRef(t.Key)
 }
 
 // mark marks standard packages used.

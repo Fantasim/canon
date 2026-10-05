@@ -22,6 +22,8 @@ type GoNamePlan struct {
 	pures    map[*ExportFn]*GoPure
 	pkgNames map[string]bool // the package-level names a translated body may name unqualified
 	nested   []*Record       // the records a table field of the package holds (CODEGEN.md §4.2)
+	foreign  *ForeignUse     // the other packages' classes the emit builds (CODEGEN.md §2.8)
+	rows     []ForeignRow    // the other packages' records its tables hold (§5.9)
 }
 
 // GoNameProblem is a name gen/go or gen/cpp cannot declare (CODEGEN.md §3.5, decision 182); both plans report it. Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import.
@@ -30,6 +32,7 @@ type GoNameProblem struct {
 	Scope, Name   string
 	First, Origin string // First: what declared Name before Origin, for a collision
 	Item          any
+	FirstItem     any  // a collision's first item, nil when unknown
 	Reserved      bool // GoNotIdentifier only: name failed for a reserved reason (E8011 `reserved`), cpp only
 }
 
@@ -89,6 +92,7 @@ func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 	}
 	pl.indexClasses()
 	pl.nested = nestedRows(p)
+	pl.foreign, pl.rows = ForeignUses(p, e), ForeignRows(p, e)
 	if e.Mode == ModeData {
 		pl.data = newGoData(pl)
 	}
@@ -200,6 +204,12 @@ func (pl *GoNamePlan) Data() GoData {
 func (pl *GoNamePlan) Slot(f *Field) GoSlot {
 	s := pl.slot(f.Type, f.Optional, goExported(f.Go, f.Name), goEffectiveStore(f.Go, f.Name))
 	pl.data.layout(&s, pl.classOf[f])
+	defineSlot(&s, f)
+	return s
+}
+
+// defineSlot adds a field's define value to its slot: a ref into a load.defines table (CODEGEN.md §5.8).
+func defineSlot(s *GoSlot, f *Field) {
 	if DefineTarget(f.Type) != nil && f.Input == nil {
 		s.Define, s.ValueGetter = true, s.Getter+defineSuffix(s.List)
 		s.ValueStore = s.Store + goDefineStoreSuffix
@@ -207,7 +217,6 @@ func (pl *GoNamePlan) Slot(f *Field) GoSlot {
 			s.ValueStore += goPluralSuffix
 		}
 	}
-	return s
 }
 
 // ValueSlot is a value that is not a container, read like a field of its type (§5.9).
@@ -259,6 +268,11 @@ func goUnwrap(t TypeRef) (TypeRef, bool) {
 
 // slot lays out a slot of type t (CODEGEN.md §4.3, §5.8): a resolved ref stores its entry, an unresolved one its key, a resolved list both; an optional value nil cannot mark gets ok.
 func (pl *GoNamePlan) slot(t TypeRef, opt bool, getter, store string) GoSlot {
+	return slotWith(t, opt, getter, store, pl.resolvable)
+}
+
+// slotWith is slot with resolves telling a ref whose getter returns the entry.
+func slotWith(t TypeRef, opt bool, getter, store string, resolves func(*RefTarget) bool) GoSlot {
 	s := GoSlot{T: t, Optional: opt}
 	switch {
 	case t.Kind == types.Ref:
@@ -266,7 +280,7 @@ func (pl *GoNamePlan) slot(t TypeRef, opt bool, getter, store string) GoSlot {
 	case t.Kind == types.List && t.KeyedBy == nil && t.Elem != nil && t.Elem.Kind == types.Ref:
 		s.Ref, s.List = t.Elem.Ref, true
 	}
-	s.Resolved = s.Ref != nil && pl.resolvable(s.Ref)
+	s.Resolved = s.Ref != nil && resolves(s.Ref)
 	s.Main = s.Ref == nil || s.Resolved
 	s.Key = s.Ref != nil && (!s.Resolved || s.List)
 	pointer := s.Ref == nil && goPointerKinds[t.Kind] || s.Ref != nil && !s.List
@@ -304,9 +318,9 @@ func (pl *GoNamePlan) DefinesVar(d *DefineTable) string {
 	return goDefinesPrefix + goUpperCamel(d.Value)
 }
 
-// declareDefines declares each define table the fields ref, and data mode's lookup, jsonDefine, beside its decoders (CODEGEN.md §5.8).
+// declareDefines declares each define table the emit carries (EmitDefines), and data mode's lookup, jsonDefine, beside its decoders (CODEGEN.md §5.8).
 func (pl *GoNamePlan) declareDefines(top *nameScope) {
-	tables := ownDefineRefs(pl.p)
+	tables := emitDefineRefs(pl.p, pl.e)
 	for _, d := range tables {
 		pl.declare(top, pl.DefinesVar(d), d.Pkg+qnameSep+d.Value, d)
 	}

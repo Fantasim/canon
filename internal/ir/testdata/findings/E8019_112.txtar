@@ -1,0 +1,63 @@
+CODEGEN.md §2.8, §5.10, DECISIONS 305, 323, log-2026-10-06 "U2 fixes done": q's data readers in go and cpp read p's Holder, whose lookup takes a ref into r's table; r is emitted in data mode, so its table has no id enum to key the cells by: E8019 `ForeignTableLookupParam` at q's value that reads Holder, in each target, naming the way out, and at p's own baked lookup parameter (checkForeignTableLookups).
+-- r/r.canon --
+/// R.
+package r
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String
+}
+
+/// The items.
+let items: table Item = {
+  a { name: "a" }
+}
+
+emit go { out: "@features/r/go", package: "r", mode: data }
+emit cpp { out: "@features/r/cpp", namespace: "r", mode: data }
+emit json { out: "out/r/" }
+-- p/p.canon --
+/// P.
+package p
+
+import r { items }
+
+/// A holder.
+record Holder {
+  /// N.
+  n: Int
+  /// A price per item.
+  export fn price(self, it: ref items) -> Int { return self.n }
+}
+
+emit go { out: "@features/p/go", package: "p" }
+emit cpp { out: "@features/p/cpp", namespace: "p" }
+-- q/q.canon --
+/// Q.
+package q
+
+import p { Holder }
+
+/// Q holders.
+let qs: table Holder = {
+  y { n: 2 }
+}
+
+emit go { out: "@features/q/go", package: "q", mode: data }
+emit cpp { out: "@features/q/cpp", namespace: "q", mode: data }
+emit json { out: "out/q/" }
+-- findings.txt --
+error[E8019]  p/p.canon:11:25
+  emit cpp in baked mode cannot generate a lookup whose parameter is a ref into another package's table without an id enum; emit the table's package in baked mode, or take an enum parameter
+
+error[E8019]  p/p.canon:11:25
+  emit go in baked mode cannot generate a lookup whose parameter is a ref into another package's table without an id enum; emit the table's package in baked mode, or take an enum parameter
+
+error[E8019]  q/q.canon:7:5
+  emit cpp in data mode cannot generate a lookup whose parameter is a ref into another package's table without an id enum; emit the table's package in baked mode, or take an enum parameter
+
+error[E8019]  q/q.canon:7:5
+  emit go in data mode cannot generate a lookup whose parameter is a ref into another package's table without an id enum; emit the table's package in baked mode, or take an enum parameter
+
+4 errors, 0 warnings in 3 packages (…)

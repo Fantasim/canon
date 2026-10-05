@@ -11,6 +11,6 @@ record Weights {
 emit cpp { out: "@features/ac", namespace: "a", mode: types }
 -- findings.txt --
 error[E8019]  a/a.canon:6:3
-  emit cpp in types mode cannot generate a map
+  emit cpp in types mode cannot generate a map; hold the entries in a keyed list
 
 1 error, 0 warnings in 1 package (…)

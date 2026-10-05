@@ -34,9 +34,9 @@ emit json { out: "out/" }
 {"a": {"k": "one", "l": {"p": 1}}}
 -- findings.txt --
 error[E8019]  a/a.canon:12:3
-  emit cpp in data mode cannot generate a dependent type
+  emit cpp in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
 
 error[E8019]  a/a.canon:12:3
-  emit go in data mode cannot generate a dependent type
+  emit go in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
 
 2 errors, 0 warnings in 1 package (…)

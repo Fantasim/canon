@@ -25,8 +25,9 @@ emit json { out: "out/" }
 { "slots": { "a": { "n": 1 } }, "spare": { "b": { "n": 2 } } }
 -- plan.txt --
 AAccess: LoadShelf
+AMake: Entry_Slot Shelf Slot
 Shelf: GetSlots GetSpare Load slots_ spare_
 Slot: GetId GetN GetRetired id_ n_ retired_
 a: Shelf Slot kShelfSchema
-detail: AAccess Decode
+detail: AAccess AMake Decode
 0 errors, 0 warnings in 1 package (…)

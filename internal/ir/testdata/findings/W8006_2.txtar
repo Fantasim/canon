@@ -1,0 +1,13 @@
+CODEGEN.md §3.5: a segment of an emit's namespace is a generated C++ name too, so `linux` in `sov::linux` is W8006, at the emit.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+emit cpp { out: "@features/a", namespace: "sov::linux", mode: types }
+-- findings.txt --
+warning[W8006]  a/a.canon:6:6
+  C++ name linux (from sov::linux) is a macro in common platform headers
+
+0 errors, 1 warning in 1 package (…)

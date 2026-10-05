@@ -1,0 +1,35 @@
+DECISIONS 320, 323 (CODEGEN.md §2.8, §5.14): checks and builds, its Go vetting and its C++ and TypeScript compiling; formerly E8019_21, refused: EVALUATION.md §1, CODEGEN.md §4.2: gen/cpp's pairs decoder fills the pair record through friendship, which a record of another package does not grant.
+-- b/b.canon --
+package b
+
+/// A bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// The amount.
+  amount: Int
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: data }
+-- a/a.canon --
+package a
+
+import b { Bonus }
+
+/// An item.
+record Item {
+  /// Its bonuses.
+  stats: [Bonus](..=2) = [] @json(pairs: ["s{i}", "a{i}"])
+}
+
+/// The items.
+let items: table Item = {
+  one { stats: [{ stat: 1, amount: 2 }] }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.items.json --
+{"one": {"s0": 1, "a0": 2}}
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

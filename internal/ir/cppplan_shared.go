@@ -82,7 +82,7 @@ func reportShared(first, later cppHolder) {
 		at = first.u
 	}
 	if es := emitFor(at, TargetCpp); at.selected && es != nil {
-		at.report(diag.E8005.At(es.span(), check.TargetCpp, later.name, first.origin, later.origin))
+		at.report(diag.E8005.AtBoth(es.span(), check.TargetCpp, later.name, first.origin, later.origin))
 	}
 }
 
