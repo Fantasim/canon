@@ -33,8 +33,11 @@ const wildcard = "_"
 // dot joins the fields of a `select` path and of a wire path.
 const dot = "."
 
-// computedDefault is the `default` of a field whose default is not constant (TYP-15).
-const computedDefault = `{"computed":true}`
+// The `default`s of a field: not constant (TYP-15), and `none` (J10).
+const (
+	computedDefault = `{"computed":true}`
+	nullDefault     = "null"
+)
 
 // fmtArgKey is an argument of an applied record's walk key.
 const fmtArgKey = "%d:%p:%p/"

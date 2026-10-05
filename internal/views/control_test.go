@@ -80,7 +80,7 @@ local record Item {
   cards: {String: Pt}
   kv: {String: Int}
   opt: Int? = 3
-  optNone: Int? = none
+  optNone: Int?
   optSmall: Small?
 }
 `

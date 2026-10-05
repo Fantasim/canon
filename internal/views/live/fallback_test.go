@@ -39,7 +39,7 @@ view Gem {
 record Piece {
   label: String
   ore: ref ores
-  note: String? = none
+  note: String?
 }
 
 view Piece {
@@ -53,7 +53,7 @@ record Thing {
   goal: Goal
   ore: ref ores
   gem: ref gems
-  note: String? = none
+  note: String?
   pieces: [Piece]
   gemMap: {String: Gem} = {}
 }
@@ -66,8 +66,8 @@ view Thing {
 }
 
 record Tag {
-  note: String? = none
-  alt: String? = none
+  note: String?
+  alt: String?
 }
 
 view Tag {

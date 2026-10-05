@@ -43,7 +43,9 @@ record Thing(k: Kind) {
   n: Int = 1 + 2
   m: Int = n * 2
   kept: Int = 0 @json(path: "legacy.kept")
-  opt: Int? = none @json(none: -1)
+  opt: Int? @json(none: -1)
+  optNone: Int? = none
+  optBare: Int?
   dep: Int = 0 @deprecated("gone")
   dep2: Int = 0 @deprecated("123")
   dep3: Int = 0 @deprecated
@@ -127,7 +129,9 @@ func TestFieldDefinitions(t *testing.T) {
 		{"n", `{"name":"n","type":` + int64Type + `,"default":3,"help":"a:Thing.n.help","wire":{"name":"n"}}`, "a folded default, help property"},
 		{"m", `{"name":"m","type":` + int64Type + `,"default":{"computed":true},"wire":{"name":"m"}}`, "TYP-15"},
 		{"kept", `{"name":"kept","type":` + int64Type + `,"default":0,"wire":{"name":"kept","path":"legacy.kept"}}`, "wire path"},
-		{"opt", `{"name":"opt","type":{"kind":"optional","of":` + int64Type + `},"default":null,"wire":{"name":"opt","none":-1}}`, "wire none"},
+		{"opt", `{"name":"opt","type":{"kind":"optional","of":` + int64Type + `},"wire":{"name":"opt","none":-1}}`, "wire none, DECISIONS 319 no default for an optional"},
+		{"optNone", `{"name":"optNone","type":{"kind":"optional","of":` + int64Type + `},"wire":{"name":"optNone"}}`, "VIEWMODEL Field row, DECISIONS 319: `T? = none` is `T?`"},
+		{"optBare", `{"name":"optBare","type":{"kind":"optional","of":` + int64Type + `},"wire":{"name":"optBare"}}`, "VIEWMODEL Field row, DECISIONS 319: bare `T?`"},
 		{"dep", `{"name":"dep","type":` + int64Type + `,"default":0,"deprecated":"a:Thing.dep.deprecated","wire":{"name":"dep"}}`, "deprecated"},
 		{"dep2", `{"name":"dep2","type":` + int64Type + `,"default":0,"deprecated":{"text":"123"},"wire":{"name":"dep2"}}`, "L7 deprecated"},
 		{"dep3", `{"name":"dep3","type":` + int64Type + `,"default":0,"deprecated":{"text":""},"wire":{"name":"dep3"}}`, "12.3 no reason"},

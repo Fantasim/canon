@@ -52,7 +52,7 @@ local let lone: table Tag = {
 record Holder {
   tag: ref tags
   count: Int = 1234567
-  note: String? = none
+  note: String?
 }
 
 view Tag {

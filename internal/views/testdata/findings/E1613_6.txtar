@@ -2,7 +2,7 @@ VIEWMODEL.md §3.5 (log-2026-09-28 check follow-ups 2): a literal-only property 
 -- a/a.canon --
 package a
 
-const tip = "A tip"
+const TIP = "A tip"
 
 local record Item {
   count: Int
@@ -19,9 +19,9 @@ local record Item {
 
 view Item {
   count { hidden: count > 1, help: note }
-  flag { readonly: flag, placeholder: tip }
-  label { none: tip, when: flag }
-  steps { step: tip }
+  flag { readonly: flag, placeholder: TIP }
+  label { none: TIP, when: flag }
+  steps { step: TIP }
   size { hidden: (false), help: ("Size") }
   doubled { hidden: flag }
 }

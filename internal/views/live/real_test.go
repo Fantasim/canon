@@ -36,7 +36,7 @@ record Thing {
   name: String
   goal: Goal
   ore: ref ores
-  note: String? = none
+  note: String?
 
   fn aim(self) -> Goal { return goal }
 

@@ -79,7 +79,8 @@ func unitWritten(f *types.Field) bool {
 }
 
 // defaultOf is a field's default in the value encoding (J10), `{"computed": true}` when it reads
-// the record's fields or parameters (TYP-15); nil without a default, a folder, or a fold.
+// the record's fields or parameters (TYP-15); nil without a default, a folder, or a fold, and for
+// an optional field whose default is `none`, written or not (VIEWMODEL.md Field, DECISIONS 319).
 func (s *Types) defaultOf(decl types.Type, f *types.Field) json.RawMessage {
 	if f.Default == nil {
 		return nil
@@ -96,7 +97,11 @@ func (s *Types) defaultOf(decl types.Type, f *types.Field) json.RawMessage {
 	if !ok {
 		return nil
 	}
-	return encode.Value(v)
+	out := encode.Value(v)
+	if _, opt := f.Type.Underlying().(*types.OptionalType); opt && string(out) == nullDefault {
+		return nil
+	}
+	return out
 }
 
 // ownerKey is the declaration holding the fields of the record or case decl.
