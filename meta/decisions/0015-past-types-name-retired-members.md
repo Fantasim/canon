@@ -48,7 +48,9 @@ Refs have the same gap: a live entry referencing a retired one is `E3502` (TYPES
 design review ([2026-10-05](../handoff/2026-10-05-design-review.md) item 1) proposes
 `past ref T` in the same unit; it is decided together with DECISIONS 304.
 
-Telemetry's ledger types `kinds` as `[past GrantKind]` and restores the roles for codes 3 and 48.
+Telemetry's ledger types `kinds` as `[past Member(of)]` (2026-10-05); restoring the roles for codes
+3 and 48 waits for their classification from Source (handoff 2026-10-05-telemetry-source); originally:
+`[past GrantKind]` and restores the roles for codes 3 and 48.
 Retirement stays meaningful: a retired member can come back only through a slot that says it is
 about the past, and a reviewer sees that in the type. The rejected option, retired members
 nameable everywhere, would let them creep back into live data unnoticed.

@@ -1,27 +1,26 @@
 # State — Canon compiler
 
-Updated: 2026-10-04. Main (local, not pushed: CI down) holds cloud run 1 (`claude/m6-run-1`,
-verified locally; [report](handoff/2026-10-03-cloud-m6-run-1.md)) plus telemetry readiness. Calls [log-2026-10-04](decisions/log-2026-10-04.md),
-DECISIONS 293-298. M5 accepted (CI run 36973712977).
+Updated: 2026-10-05. Branch `feat/past-and-ergonomics` (worktree, based on 7fe4dbc; not yet on
+main) holds the design review's tier 1 and the Emberfall showcase findings: DECISIONS 304-316,
+[log-2026-10-05](decisions/log-2026-10-05.md), ADR-0015, ADR-0016. M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-**Telemetry readiness: done** (Louis: before M6's legacy C++, which waits; Source ADR L-0111
-d.1.8). Landed, each green under `make check`: C++ `baked` + constexpr lookups + define-branch
-values (293, 296, 298; `6fcb139`, `43f1ff3`); the `text` target (294, 295, 297, 300; `8f8da42`,
-`67e777f`); enum reflection `E.members`/`.retired` (299, `ffae68b`); `SQL` initialism (301); fixes
-found by the dry run: keyword-after-dot items (302, `7616293`), `String(x)` Info leak, unknown-case
-binder cascade, `ref == ref?` wrong answer, optional names never symbolic keys (303, `f96d2fa`,
-`ca285e0`, `03fa330`); `examples/telemetry` (`9d53590`, `3b3c3a0`), the first real use: 7 events,
-Canon-native design (Louis, "elegance over legacy"). ADR-0014. Handoff to Source:
-[handoff/2026-10-04-telemetry-canon-ready.md](handoff/2026-10-04-telemetry-canon-ready.md).
-Louis Q1 answered: retired members are nameable only in `past E` slots ([ADR-0015](decisions/0015-past-types-name-retired-members.md)); not implemented.
-Not reviewed by a spec-reviewer (weekly limit hit): R4's three fixes and TE round 3 (orchestrator
-read the diffs; `make check` green). Re-review when the limit resets (2026-10-06).
-**Blocked:** CI (Actions billing, Louis), then push main.
-Later items: cross-package decoders §2.2 vs §2.8, `ordered_json`, kind constants, API S11 vs §3.4,
-go `types`/`embedded` and cpp `embedded` modes still refused at build (GM ruling). Long fuzz/progen
-campaigns stay deferred ([log-2026-09-29](decisions/log-2026-09-29.md)).
+**2026-10-05 wave: done on the branch**, every unit spec-reviewed, `make check` green. `past E` /
+`past ref T` (304); every ban has a reason and a way out (305); enum reflection by value (306);
+optional type-function arguments (307); `@text` returns typed JSON (308); poisoned values
+repairable (309); Rename cascades through keyed-list keys (310); per-parameter check order (311);
+MapField in Go/C++ data loaders (312); `Info`, `CheckWith`, view-model cache (313); membership
+(314); one collection, two names (315); ref-key rules and cycles (316). Telemetry uses 304/306/308
+(catalog format 3). Handoffs: [Source](handoff/2026-10-05-telemetry-source.md) (codes 3 and 48 are
+a question for Source), [showcase](handoff/2026-10-05-showcase-workarounds.md).
+**Louis:** merge the branch into main and push (CI still down: Actions billing).
+**Before v0.1, ruled and owed** (DECISIONS 312): one generator step lifting cross-package records
+in data emits and dependent values read through a ref or optional in baked emits (then telemetry
+drops its `of:` field). Later items: entry-level isolation (309, optional), `ordered_json`, kind
+constants, API S11 vs §3.4, go `types`/`embedded` and cpp `embedded` modes, editor scope of calls
+inside interpolations. Long fuzz/progen campaigns stay deferred
+([log-2026-09-29](decisions/log-2026-09-29.md)).
 Environment for a cloud session: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci --prefix
 tools/tsc`; no systemd (run memory-capped targets by hand under `ulimit -v`).
 
