@@ -179,7 +179,7 @@ func (g *gtype) float() float64 {
 
 // of is a random type of depth at most d, with a function drawing its values.
 func (g *gtype) of(d int) (types.Type, func() value.Value) {
-	if d == 0 {
+	if d <= 0 {
 		return g.scalar()
 	}
 	switch g.r.IntN(9) {

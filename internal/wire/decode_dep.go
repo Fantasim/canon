@@ -2,6 +2,7 @@ package wire
 
 import (
 	"maps"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/jsonsrc"
 	"github.com/fantasim/canonlang/internal/types"
@@ -40,7 +41,7 @@ func (r *run) dependent(sel Selection, t types.Type, sc wscope) value.Value {
 	return r.value(sel, branch, wscope{unit: sc.unit, asInt: sc.asInt, bits: sc.bits, root: sc.root, fr: fr})
 }
 
-// branch is the type app selects, and the frame binding its function's parameters (DEP-02).
+// branch is the type app selects, Never on a none argument, and the frame binding its parameters.
 func (r *run) branch(app *types.TypeAppType, fr *frame) (types.Type, *frame, bool) {
 	fn := app.Fn
 	params, ok := r.bind(fn.Params, app.Args, fr)
@@ -48,6 +49,9 @@ func (r *run) branch(app *types.TypeAppType, fr *frame) (types.Type, *frame, boo
 		return nil, nil, false
 	}
 	inner := &frame{params: params}
+	if slices.ContainsFunc(fn.Params, func(p *types.Param) bool { return isNone(params[p]) }) {
+		return types.NeverType, inner, true // TYPES.md §11.6, WIRE.md §5.9, DECISIONS 307
+	}
 	if fn.Scrutinee == nil {
 		return fn.Body, inner, true
 	}
@@ -60,6 +64,12 @@ func (r *run) branch(app *types.TypeAppType, fr *frame) (types.Type, *frame, boo
 	}
 	r.misuse(ErrShape, app)
 	return nil, nil, false
+}
+
+// isNone tells an argument that reads none (an optional one, TYPES.md §11.1).
+func isNone(v value.Value) bool {
+	_, ok := v.(*value.None)
+	return ok
 }
 
 // bind evaluates each argument in fr and binds it to its parameter (TYPES.md §11.1).

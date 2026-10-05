@@ -46,7 +46,7 @@ func SameType(a, b types.Type) bool {
 
 // sameRefinements compares the refinements of two identical types, layer by layer.
 func sameRefinements(a, b types.Type) bool {
-	a, b = Unalias(a), Unalias(b)
+	a, b = unPast(a), unPast(b)
 	ra, aRefined := a.(*types.Refined)
 	rb, bRefined := b.(*types.Refined)
 	if aRefined || bRefined {
@@ -55,6 +55,18 @@ func sameRefinements(a, b types.Type) bool {
 	ea, ka, va := parts(a)
 	eb, kb, vb := parts(b)
 	return sameParts(ea, eb) && sameParts(ka, kb) && sameParts(va, vb)
+}
+
+// unPast is t unaliased with each layer that only says `past` removed: statically `past X` is X (TYPES.md §8.4, DECISIONS 304).
+func unPast(t types.Type) types.Type {
+	for {
+		t = Unalias(t)
+		r, ok := t.(*types.Refined)
+		if !ok || !r.Past || !types.PastOnly(r) {
+			return t
+		}
+		t = r.Of
+	}
 }
 
 // parts are the element of an optional or a list, and the key and value of a map.

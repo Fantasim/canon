@@ -44,7 +44,9 @@ func (s *session) substitute(t types.Type, fr *frame) (types.Type, bool) {
 		return s.substitute(bt, inner)
 	case *types.Refined:
 		of, ok := s.substitute(x.Of, fr)
-		return &types.Refined{Of: of, Range: x.Range, Pattern: x.Pattern, Where: x.Where, Asset: x.Asset}, ok
+		r := *x
+		r.Of = of
+		return &r, ok
 	case *types.Alias:
 		return s.substitute(x.Def, fr)
 	case *types.OptionalType:
@@ -65,7 +67,8 @@ func (s *session) substitute(t types.Type, fr *frame) (types.Type, bool) {
 }
 
 // branch is the type app computes in fr: the arm its scrutinee selects, or its function's body,
-// and the frame binding the function's parameters (TYPES.md 11.2).
+// and the frame binding the function's parameters (TYPES.md 11.2); no branch when an argument
+// reads none (TYPES.md 11.6).
 func (s *session) branch(fr *frame, app *types.TypeAppType) (types.Type, *frame, bool) {
 	fn := app.Fn
 	if len(fn.Params) != len(app.Args) {
@@ -73,7 +76,11 @@ func (s *session) branch(fr *frame, app *types.TypeAppType) (types.Type, *frame,
 	}
 	inner := &frame{params: map[*types.Param]value.Value{}}
 	for i, p := range fn.Params {
-		if v, ok := s.arg(fr, app.Args[i]); ok {
+		v, ok := s.arg(fr, app.Args[i])
+		if _, none := v.(*value.None); none {
+			return nil, nil, false // an optional argument reading none: Never, no branch (J14, DECISIONS 307)
+		}
+		if ok {
 			inner.params[p] = v
 		}
 	}
