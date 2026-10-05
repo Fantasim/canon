@@ -535,7 +535,8 @@ enum Element @codes(UInt8) { FIRE = 1, WATER = 2, ELECTRICITY = 3, WIND = 4, EAR
 - `ordered` enables `<`, `<=`, `>`, `>=`.
 - An enum with `@codes` is stable: members may be retired (`retired FIRE = 1`) but never
   removed, renumbered or reused (§12). A retired member stays for `match` exhaustiveness and in
-  generated code; using it in a value is `E3506`, except inside a retired entry.
+  generated code; using it in a value is `E3506`, except inside a retired entry or a slot typed
+  `past E` (TYPES.md §8.4).
 - **Wire value.** Without `@codes`, a member's wire value is its name, or the string after `=`.
   With `@codes`, `=` gives the code, so a different wire name is written `@json("…")` on the
   member; the wire value is still the name unless the enum has `@json(codes)`, in which case the
@@ -703,8 +704,8 @@ followed by a (qualified) name only: a type name `T`, or a collection name. `?`,
   generated code holds such refs by key (§15.1).
 - A key is written as an identifier or, for a keyed list with a non-`String` key field, as a
   literal of that field's type (`modelType: 3`).
-- A dangling reference is an error (`E3501`) at the reference's location. A reference from a live
-  entry to a retired one is an error (`E3502`).
+- A dangling reference is an error (`E3501`) at the reference's location. A reference to a retired
+  entry is an error (`E3502`), except from a retired entry or a `past ref T` slot (TYPES.md §8.4).
 - **Entries, refs and values.** Statically there are `T` and `ref T`. An entry of a table or keyed
   list is a `T` that also carries an identity (collection, key); `self` in a record body is an
   entry when the value is one. `ref T` converts implicitly to `T` (dereference), so a ref behaves
@@ -767,7 +768,8 @@ record QuestConfig {
   §11.2), and counts toward the step budget. A mismatch is `E3802` ("value does not match
   `Param(COMBAT_KILL_FFA)` = `Never`"). `none` is always valid for an optional dependent field.
 - **In expressions**, a dependent field has a synthesized union type (`Param(*)`) that supports
-  only `==`, `!= none`, interpolation, `String(x)` and `match` on the discriminant. There is no
+  only `==`, `!= none`, interpolation, `String(x)` and `match` on the discriminant, plus the enum
+  value members (`.name`, `.index`, …) when every branch is an enum (DECISIONS 306). There is no
   narrowing by discriminant in v0.
 - **Generated code**: a dependent type is emitted as a generated union named after the alias
   (`Param`), with a branch enum `<Alias>Branch` (`ParamBranch`) whose members are the first
@@ -1300,8 +1302,8 @@ renamed, never reused, retired instead of deleted.
 - **Retiring**: prefix the entry, member or case with `retired`. A retired entry stays everywhere: in
   generated id enums (so stored data still decodes), in data files (`"$retired": true`), in baked
   values, in the view model and search (flagged), and in plain iteration. It is left out of
-  `.active()` only. A reference from a live entry to it is `E3502`. Retirement is recorded in the
-  lock: the value's line ends with `retired`.
+  `.active()` only. A reference to it is `E3502` outside a retired entry or a `past ref` slot.
+  Retirement is recorded in the lock: the value's line ends with `retired`.
 - **Reusing** a retired id, or moving a `@stable` value to another entry: `E6002`. So is
   **un-retiring**: removing the `retired` prefix brings a retired id back, which is `E6002`. An id
   comes back only through a reviewed hand edit of the lock (LOCK.md §4.6); the studio's

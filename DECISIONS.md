@@ -2789,6 +2789,171 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      with the key "pick" (a wrong answer, no finding); R4 found the same in arguments, `in` and
      `contains`. log-2026-10-04.
 
+## 2026-10-05 — Louis: describing history, and every ban has a way out
+
+304. **`past E` and `past ref T`: slots that may name retired things (GRAMMAR.md §4.2, §5.9;
+     TYPES.md §8.1, §8.4, §10.3; EVALUATION.md §5; LOCK.md §4.3; ERRORS.md E3024, E3502, E3506).**
+     Retired means "no new use", not "unnameable". A type may be prefixed by the contextual
+     keyword `past` when it names an enum, a variant or a `ref T`, or applies a type function (or
+     is a `match` type) whose every branch is one of those, the selected branch being past; on any
+     other type (a list, a case type, a record) it is `E3024`, not a syntax error, so `past [E]` is
+     told to write `[past E]`. `past` comes only from a written type: an inferred type never
+     carries it. Type text shows `past X`. `types.Refined` gains `Past bool` (IMPLEMENTATION-PLAN
+     §4.2, additive, under §4's review rule as DECISIONS 270: every consumer audited, spec-reviewed).
+     Statically `past X` is `X` (members, `match`, operators, assignability both ways). At
+     verification a value inside a slot declared `past X` may hold retired members or cases of
+     `X` (`E3506` lifted), or a ref to a retired entry (`E3502` lifted); only that slot's own
+     enum, variant or ref is concerned, and values nested inside a `past V` case keep their rules.
+     A loaded value follows its slot. Every target emits `past X` as `X`; the lock is unchanged.
+     `E3502` now applies to every stored value, as `E3506` always did, not only inside a live table
+     entry: outside a retired entry, a ref to a retired entry is new use. Both messages name
+     `past` as the way out. Reason: telemetry's ledger must classify lake rows whose GrantKind is
+     retired (louis-calls Q1, ADR-0015); refs had the same gap (design review 2026-10-05 item 1).
+
+305. **Every ban has a reason and a way out (ERRORS.md §1; DOCTRINE §2).** A rule that forbids a
+     construct states, in its owning section, why, and what a user with a legitimate need writes
+     instead, or why no such need exists. Where a way out exists, the message names it when it fits
+     (E3502, E3506 name `past`). spec-reviewer checks it for every new or widened ban. Reason: the
+     2026-10-05 design review found bans with no way out pushing users to strings, copies and data
+     outside Canon (meta/handoff/2026-10-05-design-review.md).
+
+306. **Enum reflection through a type function (STDLIB.md §3; TYPES.md §3.6, §4.3, §8.1, §11.4,
+     §12.2; EVALUATION.md §12.1; CONFORMANCE.md §2.2; ERRORS.md E2105, E3804, E3806).** An enum
+     has `E.typeName: String`, its declared name, unqualified (`"FarmEventKind"`); `typeName` is
+     reserved on enums (`E2105`). In value position `F(a…).members` and `F(a…).typeName` are
+     accepted when every branch of the type function `F` is an enum (`_` included; no `Never`, no
+     optional): the arguments are ordinary expressions checked against `F`'s parameters (`E3806`
+     on wrong arity or type, an optional included); `.members` is `[F(*)]`, `.typeName` is
+     `String`. Any other member after `F(a)`, or an `F` with a non-enum branch, is `E3804`; a bare
+     `F(a)` in value position stays `E3005`. A `DepUnion` whose branches are all enums has the
+     enum value members `.name`, `.index`, `.wire`, `.retired`, and `.code` when every branch has
+     `@codes` (`E3003` otherwise); there is no branch narrowing. Evaluation selects the arm as
+     DEP-02 and returns that enum's `E.members` or name; each form costs steps as EVALUATION
+     §12.1 says. In a translated fn each form is `E9001`, like `E.members`. No backend, wire,
+     lock or view-model change. Reason: telemetry's `enumOf` repeated `X.members.map(…)` per enum
+     and typed each name by hand (design review 2026-10-05 item 2; log-2026-10-05).
+
+307. **An optional type-function argument computes `Never` (TYPES.md §11.1, §11.6; WIRE.md §5.9;
+     CODEGEN.md §5.6; VIEWMODEL.md J14).** An argument of type `P?` given to a `P` parameter of a
+     type function `F` is accepted; when it reads `none` at evaluation, `F(…)` computes `Never`
+     without evaluating its body, so a required field is `E3801`, a list element `E3802`, an
+     optional field accepts only `none`. An optional segment inside a path stays `E3803`; an
+     optional argument to a record `R(args)` stays `E3806`. The wire decoder takes the `Never`
+     branch; the studio selects no branch. Generators are unchanged: an optional discriminant is
+     `E8019` wherever a loader or baked literal must read it, as CODEGEN §5.6 now says. Reason:
+     telemetry wrote `column:` and `of:` together on every ledger role, because `Column.values` is
+     optional; paths through refs were already legal (TYPES §6.6) (design review 2026-10-05
+     item 3; log-2026-10-05).
+
+308. **A `@text` fn may return a typed value, written as JSON (CODEGEN.md §2.9; WIRE.md §5.9,
+     §5.11, new §8.5; TYPES.md §3.7; GRAMMAR.md §8; ERRORS.md E8021, E8102, E8151; amends 294).**
+     A `@text` fn's result may be any type with a wire form (WIRE §5). A result whose base type
+     is `String` is written verbatim (294); `String?` stays `E8021 position`. Any other result is
+     written as JSON: the WIRE §5 mapping of the value as if nested in a file, pretty-printed by
+     WIRE §7.4 at depth 0, then one LF; no `$schema`, `$id`, `$<fn>` or `$fns` key, so `load` of
+     the file at the result type gives the value back. One dialect: no indentation option. It is
+     encoded in `build` at no step cost, never translated, never called (300); the file is a text
+     output (ownership by `.canon-text`, 294), not a data file: no marker, no fingerprint, no
+     generated loader, so GEN-06 ("no bare data file") is untouched. A `@text` result may name
+     `local` types (exemption to `E2111`). A result type holding `Range`, a function, `Pair`, a
+     variant kind or a `Define` record or table is `E8151`; a part with no wire form is `E8102`;
+     two map keys with the same text are `E3317`, in 283's stage-E walk, which now covers `@text`
+     results. `Pair` and a variant kind have no wire form (WIRE §5.9 says so; the `emit json`
+     check had missed them). No SQL helper: quoting differs by dialect and the ANSI form is one
+     `replace`. Reason: telemetry's catalog.json was built by hand-escaping, safe only for printable
+     ASCII (design review 2026-10-05 item 4; log-2026-10-05). Precisions
+     (review): a result whose type is text (String, an alias or refinement of it, or a literal
+     union of strings) is written verbatim; a `@text` result's stored fns are never evaluated (no
+     `$` keys, no step cost); the stage-E walk skips values stage B verified, as 283's does, and
+     names the field (not a path) in E8102; these checks apply only where `emit text` writes the
+     file.
+
+## 2026-10-05 — Emberfall showcase findings (meta/handoff/2026-10-05-showcase-issues-prompt.md)
+
+309. **New values are sent complete; a poisoned value stays repairable (VIEWMODEL.md D3, T3; API.md
+     E19, Remove).** A missing required field (`E3302`) is a static error that breaks its whole
+     top-level value (TYPES §1, DECISIONS 185); that stands. The studio and agents ask for the
+     `required` fields (VIEWMODEL J) before `AddEntry` or `SetCase`, so they write complete values;
+     `AllowErrors` stays for what cannot be known in advance, and a draft is shown through
+     `Evaluate` with `Draft`. An edit that only removes or rewrites source (`Remove`, `Set` of
+     the broken entry's field, `Undo`) must work while the value is poisoned. Entry-level isolation
+     (a bad entry invalid, its siblings readable) is a possible later change, not v0.1. Reason:
+     Emberfall #4: one incomplete row made the table unreadable and its own `Remove` failed;
+     isolation costs 250-800 lines in six packages, and DECISIONS 274 and L15 already assume
+     complete writes (log-2026-10-05).
+
+310. **Rename cascades through keyed-list keys (API.md §7.2, E11, E12, E15).** When a renamed
+     entry is the key field of a keyed-list element, the rename rewrites that key; the element's
+     path moves (`z.spawns[wolf]` → `z.spawns[timber]`) with every ref and path into it, its
+     `@files` file follows E11's template, and a keyed list keyed by a ref to that element cascades
+     in turn. The `key` reason of §7.2 no longer refuses a rename. Undo is the inverse rename.
+     Reason: Emberfall #3: such an entry could never be renamed; no decision chose the refusal,
+     and §7.2's own row says keys change only with Rename.
+
+311. **A translated fn checks each parameter in turn (CONFORMANCE.md §2.3, §4).** Each parameter
+     is checked for representability (`E8303`, `E4104`), then its sized type, then its range,
+     before the next parameter. This is §2.3's order, already used by the Go, C++ and TS
+     generators. The evaluator's TS mode follows it too; §4's "a vector whose inputs are not safe
+     integers expects `E8303`" holds unless an earlier parameter fails first. Reason: Emberfall
+     #2: the generated TS conformance test failed on its own generated function.
+
+312. **Generator gaps lifted for v0.1 (CODEGEN.md §2.2, §2.8, §5; ERRORS.md E8019).** `MapField`
+     is lifted now: Go and C++ `data` emits read map fields, keys as WIRE §5.8 (String, integer,
+     enum, ref, literal union; `-0` is no canonical integer), in file order, a ref key checked where a
+     ref value is (CODEGEN §5.8), a literal-union key or value checked for membership in both; a dependent key or value in a map is `DependentType`; a C++ `types` decoder still
+     refuses maps (§5.13).
+     `ForeignDataRecord` and `CrossPackageBakedValue` are lifted before v0.1 ships, in one step
+     that also settles §2.2 vs §2.8 (DECISIONS 291's later item); that step also lets baked emits
+     take a dependent value's branch from the evaluated value, lifting `E8019` `DependentType` for
+     a discriminant read through a ref or optional (307's cases). `E8018` stays: a baked emit has
+     no decoders by design (§2.2). Reason: Emberfall had to reshape its data model around them,
+     against "elegance over legacy".
+
+313. **API additions from Emberfall (API.md §5.5, §11, S8; additive under IMPLEMENTATION-PLAN §4's
+     review rule).** `func (p *Project) Info(ctx context.Context) (ProjectInfo, error)` with
+     `ProjectInfo{Name, Doc string}`: the doc comment's text (GRAMMAR §2.2), source language; it
+     fails like `Packages` (an invalid project.canon is a `*ProjectError`). `func (p
+     *Project) CheckWith(ctx context.Context, r CheckRequest) (*CheckResult, error)` with
+     `CheckRequest{Packages []string; Lang string}`, like `EvalRequest`; `Check(ctx, pkgs...)` is
+     `CheckWith` with no `Lang`; the result does not echo the language; only messages are
+     re-rendered from the kept analysis (DECISIONS 281). A view model is kept per snapshot
+     and package, and a new snapshot invalidates it. Reason: Emberfall's editor parsed
+     `project.canon` text, opened one `Project` per language, and cached view models itself.
+
+314. **Membership on a keyed list: an exact type decides first (STDLIB.md §5).** For `x in xs`,
+     `contains` and `indexOf` on a collection of `T` keyed by `KT`: an operand whose static type is
+     `KT` is a key; else one whose static type is assignable to `T` (a type function computing
+     `T`, `past T` and refinements included) or is `ref T` is an element (by equality, entries by
+     identity); else one that converts to `KT` (an entry of `KT`'s target) is a key. A value
+     that is not an entry has no key: the answer is `false`, with no finding. Reason: Emberfall #1
+     (`ref ms` in `[S] keyed by m` was judged as an element and never matched); the fix found
+     `[S] keyed by m`, `m: ref pool`, `pool: table S`, where a `ref pool` is both, and only the key
+     reading can ever be true (log-2026-10-05).
+
+315. **A let path names a field's collection instance (TYPES.md §6.3, §10.2, §10.3; EVALUATION.md
+     §4.2).** `ref v.f….g` (a path through record fields of a top-level let) targets the
+     collection held by field `g` of the record instance found at `v.f…`, not a collection of its
+     own. An entry keeps the identity of the field that holds it (that field, its owning
+     instance); a let path is only how a ref names it. An entry converts to `ref v.f….g`, and
+     equals such a ref with the same key (`==`, `in`, `contains`, `indexOf`), exactly when it is an
+     entry of that instance's `g`, whatever let reached it (`let w: Z = z` names z's instance; a
+     collection-valued let still re-adopts its entries). A let-path ref carries no instance, however
+     it was made; two are equal when their keys are. Deciding membership reads the let like a
+     dereference: `E4301` inside the let's own evaluation, never in a fold (DECISIONS 210); it
+     costs one step per pair compared, the read of the let nothing more.
+     Level-1 refs and other instances' collections are unchanged. Reason: `let e: ref z.spawns =
+     z.spawns.at(0)` was `E3503` and `ref z.spawns` never equalled its entry, because one
+     collection had two names (found while fixing Emberfall #1; log-2026-10-05).
+
+316. **Ref keys: refs and cycles (TYPES.md §9.1; API.md §5.3, E11; ERRORS.md E3012; amends 310,
+     315).** A key token typed `ref C` in a path (a layer's `amend y { ts[wolf].k: 3 }`) is a ref of
+     the entry it names, and `Refs` lists it there, so a rename cascade (310) rewrites it. `Refs`
+     resolves a let-path collection to its instance (315), so refs through `z.spawns` are found. A
+     keyed list whose `ref` key leads back to itself (keyed by a ref to itself, or a cycle of lists
+     keyed by refs to each other) has no base key type: `E3012`. Reason: the 310 review found a
+     layer path silently left stale, refs through record-field lists not found, and a self-keyed
+     list overflowing the stack in edit's path resolution (log-2026-10-05).
+
 ## Still open
 
 See SPEC §23: the name, several views per type, binary layouts.
@@ -2797,6 +2962,8 @@ Checker and edit gaps recorded for a later ruling (log-2026-09-29 M4 U-E22-r, "M
 round 2", "PS1 review", "PS2 round 2"):
 
 - `Target(sub.kind)` with `sub: Sub(goal)` gives `E3003` (TYPES §11.1).
+- VIEWMODEL J13/J14 do not say how the studio follows a driver path through a ref (`Target(g.goal)`,
+  and since 307 `Member(column.values)`); log-2026-10-05.
 - `E3806` on a dependent ref (TYPES §11.1): `aim: Aim(foe)` with `foe: Pick(goal)`, where `Pick` is
   a ref chosen by the driver `goal`, from M4.1's builder report (log-2026-09-29 "Sync 2 review: the Undo verification gate"):
   to confirm or rule.

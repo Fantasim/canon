@@ -257,6 +257,7 @@ type Basic struct { K Kind; Bits int; Signed bool }   // Int8..UInt64 are Int + 
 type Refined struct {                                   // not a kind: Kind() is Of's (TYPES.md §2, refinements)
     Of Type; Ranges []Bound; Pattern *regexp.Regexp; Where *Predicate
     Asset *AssetSpec                                    // asset(root, ext: […]): a String refinement (TYPES.md §13.4)
+    Past bool                                           // `past X` (TYPES.md §8.4; DECISIONS 304, §4 review rule)
 }                                                       // checked at storage points (EVALUATION.md §4.3)
 type Alias struct { Pkg, Name string; Params []*Param; Def Type; Decl *syntax.TypeDecl }
 
@@ -609,7 +610,7 @@ type Info struct {
     Conv       map[syntax.Expr]*Conversion          // the implicit conversion at a use (TYPES.md §6.2); absent: none
     Keys       map[syntax.Expr]*types.Collection    // symbolic keys and key literals, checked at evaluation (TYPES.md §1, §4.1)
     Symbols    map[*syntax.IdentExpr]bool           // identifiers kept as symbols: a dependent value's (§11.4), a load format (WIRE.md §6.1)
-    Calls      map[*syntax.CallExpr]*Callee         // the resolved callee of each call
+    Calls      map[*syntax.CallExpr]*Callee         // the resolved callee of each call; `F(a…)` in `F(a…).members`/`.typeName` has none (DECISIONS 306)
     Literals   map[*syntax.BraceLit]LitKind         // brace-literal classification (TYPES.md §5.2)
     Matches    map[syntax.Node]*MatchInfo           // each `match` expression or statement (TYPES.md §12.6)
     Broken     map[Object]bool                      // declarations with a static error, or naming one (TYPES.md §1)
@@ -1101,7 +1102,8 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
 
 Native Go fuzz targets, run 10 minutes nightly each: the lexer and parser (no panic; every error
 has a span), `Format` idempotence, `FormatJSONSource` idempotence, wire round trip
-(`decode(encode(v)) == v`), path `Parse`/`String` round trip, and edit invariants (API.md M6).
+(`decode(encode(v)) == v`, the `@text` JSON form of WIRE.md §8.5 included, DECISIONS 308), path
+`Parse`/`String` round trip, and edit invariants (API.md M6).
 The edit fuzz (`make fuzz-edit`) fails when it never leaves its baseline or falls under its
 throughput floor (§7.6): a fuzz run that does not fuzz is not a pass. The other targets have no
 such judge yet (DECISIONS 261).

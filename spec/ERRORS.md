@@ -355,7 +355,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 302 codes: 281 errors, 18 warnings and 3 run-time codes, with 481 messages.
+The catalogue holds 303 codes: 282 errors, 18 warnings and 3 run-time codes, with 484 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -688,7 +688,7 @@ Owner: TYPES.md.
 | E2102 | error | check | TYPES.md §3.3 | unknown name |
 | E2103 | error | check | TYPES.md §10.2 | `ref T` finds no collection of `T`, or several |
 | E2104 | error | check | TYPES.md §3.6 | a field and a method with the same name |
-| E2105 | error | check | TYPES.md §3.6 | a reserved member name: `id`/`retired` on a table element, `kind` on a case, `members` on an enum (DECISIONS 299) |
+| E2105 | error | check | TYPES.md §3.6 | a reserved member name: `id`/`retired` on a table element, `kind` on a case, `members` or `typeName` on an enum (DECISIONS 299, 306) |
 | E2106 | error | check | TYPES.md §3.2 | a name declared twice in one namespace |
 | E2107 | error | check | TYPES.md §3.4 | a name declared twice in one block |
 | E2108 | error | check | TYPES.md §3.4 | `self` outside a record, case or variant body |
@@ -712,7 +712,7 @@ Owner: TYPES.md.
 | E2104 | - | record:Name, name:Name | `{record} has a field and a method named {name}` |
 | E2105 | entry | name:Name | `{name} is reserved on table entries` |
 | E2105 | case | name:Name | `{name} is reserved on variant cases` |
-| E2105 | enum | name:Name | `{name} is reserved on enums: E.members lists them` |
+| E2105 | enum | name:Name | `{name} is reserved on enums: E.members and E.typeName are built in` |
 | E2106 | - | name:Name, first:Loc | `{name} is declared twice (first at {first})` |
 | E2107 | - | name:Name | `{name} is already declared in this block` |
 | E2108 | - | - | `self is only valid in a record, case or variant body` |
@@ -737,7 +737,7 @@ Owner: TYPES.md, WIRE.md.
 | E3008 | error | check | TYPES.md §5.1 | the type of an expression cannot be inferred |
 | E3010 | error | check | TYPES.md §15 | a field default reads something other than constants, earlier fields, parameters and built-ins |
 | E3011 | error | check | TYPES.md §9.2 | a type that cannot be a map key |
-| E3012 | error | check | TYPES.md §9.1 | `keyed by` names no field, or a field whose type cannot be a key |
+| E3012 | error | check | TYPES.md §9.1 | `keyed by` names no field, or a field whose type cannot be a key, or whose `ref` keys loop back (DECISIONS 316) |
 | E3013 | error | check | TYPES.md §9.3 | a table of something that is not a record |
 | E3015 | error | check | TYPES.md §15 | a position that needs a constant expression gets something else, or its fold stops on the spent step budget |
 | E3016 | error | check | TYPES.md §12.3 | a method or built-in used as a value |
@@ -748,6 +748,7 @@ Owner: TYPES.md, WIRE.md.
 | E3021 | error | check | TYPES.md §13.1 | a type alias refers to itself |
 | E3022 | error | check | TYPES.md §13.1 | a record contains itself and can never be built |
 | E3023 | error | check | TYPES.md §7.4 | a refinement not valid on its type, or an empty range |
+| E3024 | error | check | TYPES.md §8.4 | `past` on a type that is not an enum, a variant or a `ref` |
 | E3025 | error | check | TYPES.md §13.3 | a `Range` value without `Int` bounds or without a start |
 | E3101 | error | check | TYPES.md §9.3 | duplicate table key |
 | E3102 | error | verify | TYPES.md §9.1 | a key, `@codes` code or `@stable` value used twice |
@@ -786,11 +787,11 @@ Owner: TYPES.md, WIRE.md.
 | E3402 | error | check | TYPES.md §6.5 | member access, call, index, iteration or arithmetic on a value that may be `none` |
 | E3403 | error | check | TYPES.md §6.5 | a `T?` where a `T` is expected |
 | E3501 | error | verify | TYPES.md §10.3 | a ref to a key that does not exist |
-| E3502 | error | verify | TYPES.md §10.3 | a live entry references a retired one |
+| E3502 | error | verify | TYPES.md §10.3 | a ref to a retired entry, outside a retired entry and a `past ref` slot |
 | E3503 | error | eval | TYPES.md §6.2 | a `T` converted to `ref T` is not an entry of the target |
 | E3504 | error | check | TYPES.md §10.2 | `ref X` where `X` is not a collection or a record type |
 | E3505 | error | eval | TYPES.md §10.2 | a per-instance ref with no enclosing instance to resolve against |
-| E3506 | error | verify | TYPES.md §8.1 | a retired enum member or variant case used in a value |
+| E3506 | error | verify | TYPES.md §8.1 | a retired enum member or variant case in a value, outside a retired entry and a `past` slot |
 | E3601 | error | check | TYPES.md §12.6 | a `match` that does not cover every member or case |
 | W3601 | warning | check | TYPES.md §12.6 | an unreachable `_` arm |
 | E3602 | error | check | TYPES.md §12.6 | a `match` pattern already covered |
@@ -804,9 +805,9 @@ Owner: TYPES.md, WIRE.md.
 | E3801 | error | verify | TYPES.md §11.6 | a non-optional field whose computed type is `Never` |
 | E3802 | error | verify | TYPES.md §11.6 | a value that does not match its computed dependent type |
 | E3803 | error | check | TYPES.md §11.2 | a type-function argument or scrutinee that is not a path rooted at a parameter |
-| E3804 | error | check | TYPES.md §11.4 | an operation not available on a dependent value |
+| E3804 | error | check | TYPES.md §11.4 | an operation not available on a dependent value, or `.members`/`.typeName` on a type function with a branch that is not an enum (§4.3) |
 | E3805 | error | check | TYPES.md §11.1 | a field type that uses a later field |
-| E3806 | error | check | TYPES.md §11.1 | wrong number or types of arguments to a parameterized type, or a parameter of another kind |
+| E3806 | error | check | TYPES.md §11.1 | wrong number or types of arguments to a parameterized type (in value position too, §4.3; an optional only for a type function, DECISIONS 307), or a parameter of another kind |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -825,6 +826,7 @@ Owner: TYPES.md, WIRE.md.
 | E3011 | - | typ:Type | `{typ} cannot be a map key` |
 | E3012 | field | field:Name | `keyed by {field}: no such field` |
 | E3012 | type | field:Name, typ:Type | `keyed by {field}: type {typ} cannot be a key` |
+| E3012 | cycle | field:Name, typ:Type | `keyed by {field}: the keys of {typ} loop back to it; key one list by a String, integer or enum field` |
 | E3013 | - | typ:Type | `a table holds records; {typ} is not a record` |
 | E3015 | notConstant | what:Kind | `this {what} must be a constant expression` |
 | E3015 | budget | what:Kind | `this {what} could not be folded: the evaluation budget is exhausted` |
@@ -837,6 +839,7 @@ Owner: TYPES.md, WIRE.md.
 | E3022 | - | record:Name | `{record} contains itself and can never be built` |
 | E3023 | invalid | refinement:Expr, typ:Type | `refinement {refinement} is not valid on {typ}` |
 | E3023 | empty | refinement:Expr | `range {refinement} is empty` |
+| E3024 | - | typ:Type | `past applies to an enum, a variant or a ref, not {typ} (for a list, write [past E])` |
 | E3025 | - | - | `a Range value must have Int bounds and a start` |
 | E3101 | - | key:Name, table:Name, first:Loc | `duplicate key {key} in {table} (first at {first})` |
 | E3102 | key | key:Value, first:Loc | `key {key} is used twice (first at {first})` |
@@ -892,11 +895,12 @@ Owner: TYPES.md, WIRE.md.
 | E3402 | - | expr:Expr | `{expr} may be none: use ?., !, ?? or test != none first` |
 | E3403 | - | typ:Type, found:Type | `expected {typ}, found {found}: prove it is present (!= none, !, ??)` |
 | E3501 | - | key:Value, coll:Name | `unknown key {key} in {coll}` |
-| E3502 | - | key:Value, entry:Name | `{key} is retired; live {entry} cannot reference it` |
+| E3502 | entry | key:Value, entry:Name | `{key} is retired; live {entry} cannot reference it (only a retired entry or a past ref may)` |
+| E3502 | value | key:Value | `{key} is retired; a live value cannot reference it (only a retired entry or a past ref may)` |
 | E3503 | - | typ:Type, coll:Name | `this {typ} is not an entry of {coll}` |
 | E3504 | - | name:Name | `ref {name}: {name} is not a collection or a record type` |
 | E3505 | - | typ:Name, record:Name | `ref {typ} has no enclosing {record} to resolve against` |
-| E3506 | - | typ:Name, name:Name | `{typ}.{name} is retired` |
+| E3506 | - | typ:Name, name:Name | `{typ}.{name} is retired (only a retired entry or a past {typ} may hold it)` |
 | E3601 | - | missing:Names | `match does not cover {missing}; add them or _` |
 | W3601 | - | - | `_ is unreachable: every case is covered` |
 | E3602 | - | pattern:Expr | `pattern {pattern} is already covered` |
@@ -1149,9 +1153,9 @@ Owner: CODEGEN.md, WIRE.md.
 | E8018 | error | ir | CODEGEN.md §2.8 | a type decoded from JSON whose package is emitted in `baked` mode |
 | E8019 | error | ir | EVALUATION.md §1 | an emit whose generator cannot produce a construct valid Canon allows |
 | E8020 | error | ir | CODEGEN.md §5.1 | a Go constant of -0.0, which Go constants cannot hold |
-| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text`, an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) |
+| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text` (a `String?` result included), an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
-| E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field (not a whole unit, equals the `none` marker, repeated bits member) |
+| E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field or `@text` result part (not a whole unit, equals the `none` marker, repeated bits member; DECISIONS 308) |
 | E8103 | error | ir | CODEGEN.md §7.8.1 | a string or list longer than its fixed-size legacy C++ array |
 | E8104 | error | ir | CODEGEN.md §5.12 | a TypeScript emit of a package with input fields |
 | E8106 | error | ir | CODEGEN.md §7.8.1 | a value outside the range of its legacy C++ member |
@@ -1159,7 +1163,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8108 | error | ir | CODEGEN.md §7.8.1 | a case of an inline variant on a legacy struct lacks `@cpp(value:)` |
 | E8109 | error | ir | CODEGEN.md §7.8 | invalid `@cpp(struct:)` mapping (missing header, bad access, unmappable field) |
 | E8150 | error | check | WIRE.md §8.1 | `emit json` file mode with other than one value |
-| E8151 | error | ir | WIRE.md §5.9 | a value with no wire form (`Range`, function) emitted to JSON |
+| E8151 | error | ir | WIRE.md §5.9 | a value with no wire form (`Range`, function, `Pair`, variant kind) emitted to JSON or written by a `@text` fn (DECISIONS 308) |
 | E8152 | error | build | WIRE.md §8.1 | two outputs of a build with the same path, or paths differing only in letter case |
 | E8153 | error | ir | WIRE.md §8.1 | a `data`-mode or `@reload` value not written by the package's `emit json` as `<value>.json` |
 | E8201 | error | ir | CODEGEN.md §5.11 | `@reload` on data mapped to a legacy struct in `fields` or `both` mode |
@@ -1210,7 +1214,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8019 | mode | target:Name, mode:Name, what:Kind | `emit {target} in {mode} mode cannot generate {what}` |
 | E8019 | json | what:Kind | `emit json cannot generate {what}` |
 | E8020 | - | name:Name | `constant {name} is -0.0, which a Go constant cannot hold: make it a let` |
-| E8021 | position | - | `@text belongs on a public package-level export fn with no parameter that returns String` |
+| E8021 | position | - | `@text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form` |
 | E8021 | file | value:Text | `invalid @text file name "{value}": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)` |
 | E8021 | twice | value:Text, other:Name | `@text file "{value}" is also written by {other}` |
 | E8021 | called | name:Name | `{name} has @text: it is a file, not a function other declarations can call` |

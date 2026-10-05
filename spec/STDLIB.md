@@ -166,8 +166,19 @@ A ref reads the members of its entry (implicit dereference).
 forms included, TYPES.md §4.3), is the `[E]` of every member in declaration order, retired members
 included (`.retired` tells them apart). It is a constant and costs one step per member. Computing
 with a retired member read this way is allowed; a value that still holds one when it is stored is
-`E3506`, as a written retired member is. `members` is therefore a reserved member name on enums
-(`E2105`).
+`E3506`, as a written retired member is. `E.typeName` is a `String`, the enum's declared name,
+unqualified (`"FarmEventKind"`, DECISIONS 306). `members` and `typeName` are therefore reserved
+member names on enums (`E2105`).
+
+**Through a type function** (DECISIONS 306). In value position, `F(a…).members` and
+`F(a…).typeName`, where every branch of the type function `F` is an enum, are the `E.members`
+(typed `[F(*)]`) and the `E.typeName` of the enum the arguments select. TYPES.md §4.3 gives the
+rules and EVALUATION.md §12.1 the cost. A value typed `F(*)` has the enum value members above
+(TYPES.md §11.4), `.code` only when every branch has `@codes`. Arguments are positional (a named
+argument is `E3806`); a type function with a plain body types `.members` as its expansion (§11.4).
+Only the bare form reflects: `(F(a)).members` is `E3005`. `.typeName` is the enum's declared name,
+through an alias branch too. `E.typeName` is a constant like `E.members`; `F(a…).members` and `F(a…).typeName` are constant
+when their arguments are (TYPES.md §15).
 
 ---
 
@@ -285,7 +296,11 @@ the same collection is also accepted.
 
 Membership: `x in xs` and `xs.contains(x)` accept either an element (`T` or `ref T`: true when
 an element equals it, entries by identity) or a key (`KT`: true when the key exists). The static
-type of `x` decides; a bare identifier that does not resolve in scope is a key (TYPES.md §4.1).
+type of `x` decides, an exact type first: `KT` is a key; else a type assignable to `T` or `ref T`
+is an element; else a
+type that converts to `KT` (an entry of `KT`'s target) is a key, and a value that is not an entry is
+not found (`false`, no finding). `indexOf` follows the same rule. A bare identifier that does not
+resolve in scope is a key (TYPES.md §4.1; DECISIONS 314).
 
 ---
 

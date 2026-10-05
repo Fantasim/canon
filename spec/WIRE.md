@@ -418,7 +418,7 @@ A map is a JSON object whose members follow the map's insertion order. Keys:
 | Key type | Wire key |
 |---|---|
 | `String` | the string, verbatim |
-| integer types | canonical decimal (`-5`, `0`, `42`); decode requires exactly `-?(0\|[1-9][0-9]*)`, else `E7103` |
+| integer types | canonical decimal (`-5`, `0`, `42`); decode requires exactly `0\|-?[1-9][0-9]*` (`-0` is not canonical), else `E7103` |
 | enum | the member's wire value; with `@json(codes)`, the code in decimal |
 | `ref` into a table or a define table | the entry key |
 | `ref` into a keyed list | the key field's wire value, as text (decimal for integer keys) |
@@ -443,8 +443,12 @@ is decoded with the parameter bound to that key's entry.
 - **Dependent type** `Param(e)`: the wire form of the branch selected by the discriminant, with no
   tag. The discriminant (an earlier field, a record parameter or a map key) is decoded first. A
   `Never` branch accepts only `none` (absent, `null`, or the marker); any other value is `E3802`.
+  A discriminant argument that reads `none` (an optional argument, TYPES.md §11.1) selects the
+  `Never` branch (DECISIONS 307).
 - **`Range` and function types** have no wire form: `load` into them is `E7116`, emitting them is
   `E8151`.
+- **`Pair` and a variant kind** (`Kind(V)`, TYPES.md §8.3) have no wire form either: `load` into
+  them is `E7116`, emitting them is `E8151` (DECISIONS 308).
 
 ### 5.10 Aliases and refinements
 
@@ -468,7 +472,8 @@ data wire only, a value inside a stored result included (DECISIONS 284):
 **Package-level** export functions of the same two kinds go under the top-level key `"$fns"` of
 the data file of the **first value** listed in the package's `emit json` (§8.1): an object keyed
 by the function's Canon name (no `$`), each holding the result or the nested objects above.
-Translated functions never appear in data.
+Translated functions never appear in data. A `@text` JSON file (§8.5) carries neither: no
+`$<fn>` key and no `$fns` (DECISIONS 308).
 
 ### 5.12 Summary of `$` keys
 
@@ -480,7 +485,8 @@ Translated functions never appear in data.
 | `$<fn>` | after the fields of a record or case object | data |
 | `$fns` | after `rows` / `value` in a data file | data |
 
-Any other `$` key in a source file is an unknown key (`E3301`, or ignored with `partial`).
+Any other `$` key in a source file is an unknown key (`E3301`, or ignored with `partial`). A
+`@text` JSON file (§8.5) carries no `$schema`, `$id`, `$<fn>` or `$fns` key (DECISIONS 308).
 
 ### 5.13 Source wire vs data wire
 
@@ -866,9 +872,9 @@ emit json { out: "<path>", values: [v1, v2, …] }
   runtime helper files of CODEGEN.md §2.3, written with identical content by several emits into one
   directory, are not a collision. (Two Go emits writing different files into one directory are
   CODEGEN.md's `E8008`.)
-- A value whose type contains `Range`, a function type, or the `Define` record of `load.defines`
-  (a define table included: it has no `canon-fp` form, FINGERPRINT.md §8) is `E8151`. A `ref`
-  into a define table is a key and is written.
+- A value whose type contains `Range`, a function type, `Pair`, a variant kind (DECISIONS 308), or
+  the `Define` record of `load.defines` (a define table included: it has no `canon-fp` form,
+  FINGERPRINT.md §8) is `E8151`. A `ref` into a define table is a key and is written.
 - **Data mode link** (EMT-03/05, RLD-01): every value emitted by a `data`-mode code target of the
   package, and each `@reload` value, must be written by the package's `emit json` to a file named
   `<value>.json`, all `@reload` values of the package in the same directory [`E8153`]. This code
@@ -1066,6 +1072,79 @@ Otherwise the write is refused with `E8001` (CLI.md §3.4), and `canon convert` 
 that may adopt the file. The view model's marker is its `$schema` (`canon-vm/N`, VIEWMODEL.md).
 This regex is wider than the one proposed in GEN-05, which rejected upper-case letters in package
 names.
+
+### 8.5 JSON text files (DECISIONS 308)
+
+A `@text` fn whose result's base type is not `String` (CODEGEN.md §2.9) writes its value as JSON.
+The file is a text output, not a data file.
+
+- The bytes are `pretty(w, 0)` (§7.4) followed by one LF (§7.1), where `w` is the §5 encoding of
+  the value as if it were nested in a data file. A table is therefore the object keyed by entry id
+  of §5.7, not `rows`.
+- No `$schema`, `$id`, `$<fn>` or `$fns` key is written: there is no document (§8.2), no marker
+  (§8.4) and no fingerprint.
+- There is one form: no indentation option.
+- `load` of the file at the result type gives the value back.
+
+```
+package shop
+
+local record Badge {
+  title: String
+  count: Int
+  tags:  [String]
+}
+
+variant Reward {
+  item { id: String, count: Int = 1 }
+  gold { amount: Int }
+}
+
+@text("badge.json")
+export fn badge() -> Badge { return { title: "Café 🎉", count: 2, tags: [] } }
+
+@text("tiers.json")
+export fn tiers() -> {Int: String} { return { 10: "high", 2: "low" } }
+
+@text("reward.json")
+export fn reward() -> Reward { return item { id: "sword" } }
+
+@text("limit.json")
+export fn limit() -> Int? { return none }
+
+emit text { out: "out" }
+```
+
+`badge.json`: non-ASCII text is raw UTF-8 (§7.3), the emoji included.
+
+```json
+{
+  "title": "Café 🎉",
+  "count": 2,
+  "tags": []
+}
+```
+
+`tiers.json`: integer keys in decimal, in insertion order (§5.8).
+
+```json
+{
+  "10": "high",
+  "2": "low"
+}
+```
+
+`reward.json`: the tag first, then every field, defaults included (§5.6).
+
+```json
+{
+  "kind": "item",
+  "id": "sword",
+  "count": 1
+}
+```
+
+`limit.json` is `null` then one LF, five bytes (§5.4: `none` is `null`).
 
 ---
 

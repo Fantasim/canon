@@ -84,7 +84,8 @@ SPEC §9.4 lists the constructs. Precisely:
 Everything else is `E9001`, naming the construct: loops, `var` and assignment, `match`, lambdas,
 comprehensions, collection literals, indexing, every collection, string and graph method,
 `String(x)`, `sqrt`, `pow`, ordering on `String`, format specs, calls to non-exported functions,
-`load`, `fail`, `warn`. These are exactly the constructs whose behaviour differs across targets
+`load`, `fail`, `warn`, `E.members`, `F(a).members` and `F(a).typeName` (TYPES.md §4.3,
+DECISIONS 306). These are exactly the constructs whose behaviour differs across targets
 or needs a runtime library.
 
 ### 2.3 The pure function
@@ -105,6 +106,9 @@ xOk bool)` in Go, `std::optional<T>` in C++, `T | null` in TS.
    of TYPES.md §7.2, also `E3201`), then its range refinement (`E3204`), the order in which
    EVALUATION.md §4.3 checks a stored value. Values read from `self` are not checked: they were
    validated at build time.
+
+The order is per parameter: one parameter passes steps 1 and 2 before the next is checked. The Go,
+C++ and TypeScript translations and the evaluator's TS mode (§4) all follow it (DECISIONS 311).
 
 **On exit**, the result's sized type or `Duration` range (`E3201`) and range refinement (`E3204`)
 are checked; a `Float32` result is rounded to nearest-even binary32, and one that overflows is
@@ -193,7 +197,8 @@ Each vector therefore has a **TS expectation**, computed by the evaluator in *TS
 evaluation, where every integer parameter, every integer read from `self`, and the exact result of
 every integer operation (including those that would overflow int64) is checked against
 ±(2⁵³−1) right after the operation's own checks, and the first failure is `E8303`. A vector whose
-inputs are not safe integers expects `E8303` in TS. In TS test files, an input outside the safe
+inputs are not safe integers expects `E8303` in TS, unless an earlier parameter fails first (§2.3,
+DECISIONS 311). In TS test files, an input outside the safe
 range is written as its nearest double, in ECMAScript `Number::toString` form
 (`9223372036854776000`, `-9223372036854776000`).
 

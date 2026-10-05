@@ -578,8 +578,11 @@ Each has a `path` (API.md F1).
 - **D2.** Before changing the case of a value that sets at least one field, the studio runs the
   edit with `DryRun: true`, and if `Dropped` is not empty it names the fields that would be dropped
   and asks for confirmation. After the change it offers Undo (`EditResult.Undo`).
-- **D3.** Changing a case usually leaves required fields of the new case missing; the studio sends
-  the edit with `AllowErrors: true` and the missing-field findings guide the user (API.md E19).
+- **D3.** A missing required field (`E3302`) breaks its whole top-level value (TYPES.md §1), so
+  new values are sent complete (DECISIONS 309): before `SetCase` or `AddEntry`, the studio asks for
+  the `required` fields (§12.3) and sends them with the op. `AllowErrors: true` stays for what
+  cannot be known in advance (API.md E19); a draft is shown through `Evaluate` with `Draft` (§13,
+  API.md §11).
 - **D4.** In a table, a case column is read-only; the case is changed in the detail panel
   (MOCKUP-GAPS 15).
 
@@ -629,8 +632,8 @@ the selected row (SPEC §16.9).
 - **T2.** `orderable` is true when rows can be moved (`Move`): false for tables and keyed lists
   whose order comes from file paths (`load.dir`, entry files; API.md reason `order`).
 - **T3.** "Add" is labelled with the element view's `singular` ("Add a level"), else the chrome
-  "Add". For keyed collections the key is asked first. The new element is sent with
-  `AllowErrors: true` (D3).
+  "Add". For keyed collections the key is asked first, then the element's `required` fields; the
+  new element is sent complete (D3).
 - **T4.** Retired entries are shown with a "retired" badge and cannot be un-retired from the
   studio (retirement is one-way, LOCK.md §4.3; API.md `Unretire` is refused); they are never
   offered by pickers (§8).
@@ -968,7 +971,9 @@ Top level, every member always present except `studio`:
 
 `types` maps qualified names to **type definitions**. Field types use **type expressions**.
 
-**Type expressions** (VM-02), one object tagged by `kind`:
+**Type expressions** (VM-02), one object tagged by `kind`. A `past X` type (TYPES.md §8.4) is
+written as `X`: `past` is a verification property, not a shape, and is no refinement for G8 or
+G21 (DECISIONS 304); retired members and entries are flagged as everywhere.
 
 | `kind` | Members | Notes |
 |---|---|---|
@@ -1038,7 +1043,8 @@ predicate, when it has one (VM-02).
 
 - **J14.** The studio picks the branch of a `dependent` value by: the driver's key → `drivers` →
   discriminant member → the first branch whose `match` contains it or `_`. A driver that is an enum
-  field is its own discriminant (`select` is `""`).
+  field is its own discriminant (`select` is `""`). A driver that reads `none` (an optional
+  argument, TYPES.md §11.1) selects no branch (DECISIONS 307).
 
 ### 12.4 `views`
 

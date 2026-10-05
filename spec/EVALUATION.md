@@ -191,7 +191,9 @@ is `E3505`. Verifying one (§5) that is still unbound when its top-level value i
 Elements of tables and keyed lists carry an identity (collection instance and key) as defined
 in TYPES.md §6.3. The evaluator keeps it through bindings, calls, returns and every stdlib
 function that returns elements (`filter`, `active`, `first`…). A spread or a literal creates a
-value without identity.
+value without identity. Deciding whether an entry belongs to a let path's collection (TYPES.md
+§10.3) reads the let like a dereference: inside the let's own evaluation it is `E4301`, and a fold,
+which reads no let, never decides it (DECISIONS 210, 315).
 
 Every record or case value is also an **instance**: each evaluation of a literal, each default,
 each object decoded from a file creates a new instance. Copies share the instance. Checks run
@@ -237,7 +239,8 @@ evaluation completed. Verification walks the value (not through refs) and checks
 | Check | Code | Located at |
 |---|---|---|
 | every ref key exists in its target collection (forcing the target) | `E3501` | the ref value |
-| a live table entry does not reference a retired entry | `E3502` | the ref value |
+| no ref to a retired entry, outside a retired entry and a `past ref` slot (TYPES §8.4) | `E3502` | the ref value |
+| no retired member or case, outside a retired entry and a `past` slot (TYPES §8.1, §8.4) | `E3506` | the value |
 | level-1 refs are bound | `E3505` | the ref value |
 | table keys and keyed-list keys are unique | `E3101`, `E3102` | the second occurrence; the message names the first |
 | dependent types: each dependent value fits the type computed from its arguments; symbolic identifiers resolve | `E3802`, `E3801`, `E3501` | the value |
@@ -632,6 +635,7 @@ The following cost exactly one step each time they are evaluated or executed:
 | invocation | each entry into the body of a user function, method or lambda (in addition to the call node) |
 | built-in | the cost listed in STDLIB.md, in addition to the call node and to the lambdas it invokes |
 | type function | each evaluation of a type application in verification (§5), plus its argument and scrutinee paths as nodes: once per record for a type written at a field (an application inside its container type included), whatever its container holds, once per element for one a computed type nests, so a nested empty container costs nothing (DECISIONS 265) |
+| type function in value position | each evaluation of `F(a…).members` or `F(a…).typeName` (TYPES.md §4.3): 1 for the application, plus its argument nodes, plus 1 + the length of the scrutinee path (nothing for a plain body, which has none; charged even when a `none` argument makes it compute `Never`, DECISIONS 307), plus one step per member listed (`.typeName` lists none) (DECISIONS 306) |
 
 A shorthand lambda (`.f`, `.m(args)`, `.compared()[k]`) is one lambda-creation node; each
 invocation costs one step plus its body's nodes: one for the implicit parameter and one per
@@ -645,7 +649,8 @@ time and memory and `E4401` is the only way evaluation runs long:
   `unique`, map and set lookups) costs one step per pair of values compared, scalar pairs
   included, in addition to the listed cost of the node or built-in: `x in xs` over n elements
   costs n. A map finds a key through a hash index, never a scan, so `m[k]` is charged only for the
-  pairs its genuine hash matches compare.
+  pairs its genuine hash matches compare. A let-path ref against an entry is one pair whether or
+  not the keys match; reading the let to decide membership costs nothing more (DECISIONS 315).
 - **Producing a string or a list.** `+` on lists and strings costs one step per element or byte
   of its result; every built-in that produces a string (interpolation, `join`, `replace`,
   `lower`, `upper`, `trim`, `String`, format specs) costs one step per byte of its result,

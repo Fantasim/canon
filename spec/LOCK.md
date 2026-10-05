@@ -171,9 +171,10 @@ A retired entry or member stays in the sources forever, keeps its locked values,
 like any other (its refinements, refs and checks still apply). Retirement is one-way: removing
 `retired` from an entry or member whose lock line says `retired` is `E6002` (§4.2). The only way
 back is the reviewed hand edit of §4.6; the edit API's `Unretire` is always refused
-(`ErrStableKey`, API.md E4). A reference from a live entry to a
-retired one is `E3502` (TYPES.md); from a retired entry to anything, it is allowed. Using a retired
-enum member or variant case in a value, in Canon source or loaded data, is `E3506` (TYPES.md);
+(`ErrStableKey`, API.md E4). A reference to a retired entry
+is `E3502` (TYPES.md); from a retired entry or a `past ref` slot, it is allowed. Using a retired
+enum member or variant case in a value, in Canon source or loaded data, is `E3506` (TYPES.md),
+except in a retired entry or a `past` slot (TYPES.md §8.4);
 the decoder still recognises its wire value (it is not `E7111`), so the finding names it.
 
 ### 4.4 Adding

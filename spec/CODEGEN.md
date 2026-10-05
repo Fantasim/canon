@@ -378,11 +378,21 @@ export fn versionSql() -> String { return "SELECT {CONTRACT_VERSION} AS contract
 emit text { out: "@source/Tools/telemetry" }
 ```
 
-- Each public package-level export fn with no parameter, result `String` and `@text("<file>")`
-  is written to `<out>/<file>`: the value's UTF-8 bytes, verbatim. Nothing is added: no marker,
-  no final newline, no line-ending change.
-- `@text` on anything else (a `let`, a local or non-exported fn, a fn with a parameter or another
-  result type), a file name that is not portable (empty, `.`, `..`, holding `/`, `\`, a control
+- Each public package-level export fn with no parameter and `@text("<file>")` is written to
+  `<out>/<file>`. Its result may be any type with a wire form (WIRE.md §5; DECISIONS 308):
+  - a result whose base type is `String` is the value's UTF-8 bytes, verbatim. Nothing is added:
+    no marker, no final newline, no line-ending change;
+  - any other result is written as JSON, in the one form of WIRE.md §8.5 (no indentation option),
+    so `load` of the file at the result type gives the value back.
+- The value is encoded in `build` at no step cost; a `@text` fn is never translated. The file is
+  a text output, owned through `.canon-text` below, not a data file: no marker, no fingerprint, no
+  generated loader. GEN-06 (no bare data file, WIRE.md §8.1) does not concern it.
+- A result type holding `Range`, a function type, `Pair`, a variant kind, or the `Define` record
+  or a define table is `E8151`. A part of the value with no wire form is `E8102`, and two map keys
+  with the same text are `E3317`, found by stage E's walk of precomputed export fn results
+  (DECISIONS 283), which covers `@text` results.
+- `@text` on anything else (a `let`, a local or non-exported fn, a fn with a parameter or a
+  `String?` result), a file name that is not portable (empty, `.`, `..`, holding `/`, `\`, a control
   character or one of `<>:"|?*`, ending in a dot or a space, or a Windows device name such as
   `CON` or `nul.txt`, matched ignoring case), and two `@text` fns of one package whose file names
   are equal ignoring letter case, are `E8021`, found in phase 2. On a `record`, `enum` or `variant`,
@@ -895,9 +905,10 @@ dependent values shares its field's discriminant. A discriminant member no branc
 the value with the loader text `no branch for this value` at its pointer, in every loader. Baked Go writes a dependent value (a field's, or
 its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
 typed as `As<Branch>` returns it. What a generator does not write is E8019 `DependentType` at
-stage E: a discriminant read through a `ref` or a record parameter, a dependent value in a map or
-in a literal union a loader reads, another package's dependent type in a Go loader or baked Go
-literal, and a dependent type every arm of which is `Never`.
+stage E: a discriminant read through a `ref` or a record parameter, an optional discriminant
+(TYPES.md §11.1, DECISIONS 307), a dependent value in a map or in a literal union a loader reads,
+another package's dependent type in a Go loader or baked Go literal, and a dependent type every
+arm of which is `Never`.
 
 - The Go struct stores `branch` and `value` (unexported); the Go branch enum has no `String`,
   `Wire` or `Parse<…>` (it is never on the wire). A Go data-mode loader writes `decode<T>`
@@ -971,7 +982,9 @@ For each emitted value `v` of type `X`, the **container** is:
 - a table or keyed list: a generated class `UpperCamel(v)` (`Potions`, `Statuses`);
 - a record or variant: the type itself (CG-04); in a `data` emit of Go or C++, a value whose
   record (or whose rows' record) belongs to another package has no container here and is `E8019`
-  ForeignDataRecord (DECISIONS 291);
+  ForeignDataRecord (DECISIONS 291). It and `E8019` CrossPackageBakedValue (a value of a record,
+  variant or table of another package) stay until the one step before v0.1 that also settles §2.2
+  vs §2.8 (DECISIONS 312);
 - anything else (`baked` only, [§2.2](#22-what-each-mode-contains)): no container; the accessor
   returns what a field getter of type `X` returns.
 
@@ -1023,7 +1036,11 @@ C++ `Get(id)` with an id outside the id enum calls `std::abort()`, as every look
 - `embedded`: a decode failure is a build defect. It is signalled with `E8301` (C++
   `canon::OnEvalError`, Go panic with `*rt.EvalError`).
 - `data`: loaders read one file, check `$schema`, fill every field and never validate (SPEC
-  §14.5). Refs inside the file are resolved at load. `@reload` values have no public per-value
+  §14.5). Refs inside the file are resolved at load. Go and C++ loaders read map fields, keys as
+  WIRE.md §5.8 (String, integer, enum, ref, literal union), in file order, a ref key checked where a
+  ref value is (§5.8), with the same error texts in both (DECISIONS 312). A dependent key or value in a
+  map is `E8019` `DependentType` until the generator step 312 names; a C++ `types`-mode decoder
+  still refuses maps (§5.13: its JSON keeps no key order). `@reload` values have no public per-value
   loader: they load through their snapshot ([§5.11](#511-reloadable-values-snapshot-and-store)).
 
 ### 5.10 Exported functions

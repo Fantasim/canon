@@ -467,6 +467,7 @@ They are identifiers everywhere except in the listed position.
 | `value` `siblings` | as the parameter names of a `widget` (§5.3) |
 | `default` | after the parameter list of a `widget` (§5.3) |
 | `ext` | as the named argument of `asset(…)` |
+| `past` | at the start of a type (not right after another `past`), followed on the same line by a token that can start a type other than `(`, `{`, `from` and `keyed` (`past GrantKind`, `past [E]`, `past ref items`; `past(…)`, `-> past {`, `input past from`, `past keyed by` keep `past` a name; TYPES.md §8.4) |
 
 `it` (the value in a `where` predicate), `fail` and the stdlib functions are ordinary identifiers
 with predeclared meanings, not keywords. `self` is reserved.
@@ -778,6 +779,7 @@ type            = unionType ;
 unionType       = optType { "|" optType } ;
 optType         = primType [ "?" ] [ "where" expr ] ;
 primType        = namedType
+                | pastType
                 | listType
                 | mapType
                 | depMapType
@@ -797,6 +799,7 @@ mapType         = "{" type ":" type "}" [ typeArgs ] ;
 depMapType      = "{" IDENT "in" expr ":" type "}" [ typeArgs ] ;
 tableType       = [ "stable" ] "table" qualifiedIdent ;
 refType         = "ref" qualifiedIdent ;
+pastType        = "past" primType ;          (* not before "(", "{", "from", "keyed"; no nesting: §4.2 *)
 fnType          = "fn" "(" [ type { "," type } [ "," ] ] ")" "->" primType [ "?" ] ;
 assetType       = "asset" "(" stringLit [ "," "ext" ":" "[" extName { "," extName } [ "," ] "]" ]
                   [ "," ] ")" ;
@@ -1178,7 +1181,7 @@ mutually exclusive arguments is `E1119`. An unknown annotation name or an unknow
 | `@cpp(field: "m", type: "T")` | `string`, `string` | `FD` | CODEGEN.md §7.8 |
 | `@cpp(value: N)` | `int` | `VC` (case of a variant held by a legacy struct) | CODEGEN.md §7.8 |
 | `@cpp(unit: u)` | `symbol{ms, s, m, h, d}` | `FD` (`Duration` field mapped to a legacy member) | CODEGEN.md §7.8 |
-| `@text("file")` | positional `string` (a file name: not empty, `.` or `..`, no `/` or `\`) | `TL` (`fn`: public, package-level, no parameter, result `String`) | CODEGEN.md §2.9 (DECISIONS 294) |
+| `@text("file")` | positional `string` (a file name: not empty, `.` or `..`, no `/` or `\`) | `TL` (`fn`: public, package-level, no parameter, result `String` or any type with a wire form) | CODEGEN.md §2.9 (DECISIONS 294, 308) |
 | `@cpp(name: "N")`, `@go(name: "N")`, `@ts(name: "N")` | `string` (a target identifier) | `TH`, `FD`, `EM`, `VC`, `MB`, `TL` (`let`, `const`, `type`, `fn`) | CODEGEN.md (CG-02) |
 | `@ts(bigint)` | flag | `FD` (a field with an integer position outside a ref: the integer, list elements, map keys and values, optional contents; DECISIONS 279) | CODEGEN.md (SPEC §15.4) |
 

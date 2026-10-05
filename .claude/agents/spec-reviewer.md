@@ -22,6 +22,8 @@ whole — a hunk hides its paired code. Work through this ordered checklist:
 2. **Diagnostics** (DECISIONS 27). Codes and message text only via `internal/diag`; the code,
    its severity and its span match `spec/ERRORS.md` and the owning document's table; every code
    made reachable has a test producing it. A message string outside `internal/diag` is CRITICAL.
+   A new or widened ban (a code that forbids a construct) whose owning section states no reason
+   and no way out, nor why none is needed, is WARN (DECISIONS 305).
 3. **Frozen contracts and scope.** A change to an IMPLEMENTATION-PLAN §4 contract or to
    `api/canon.go` outside §4's review rule, or an edit to a package the task does not own, is
    CRITICAL. An import against §3's dependency rule is CRITICAL.

@@ -21,6 +21,7 @@ its codes, `spec/ERRORS.md` lists them all). 4. The summaries in `SPEC.md` and `
 and loses on behaviour. Code implements a numbered rule and cites it (`// TYPES.md T12`); a test
 names the rule it proves. A contradiction, an ambiguity or a missing rule stops the work and goes
 to Louis through `meta/state.md`; implementing a guess is a review FAIL.
+A ban states its reason and its way out, or why none is needed (DECISIONS 305).
 
 ## §3 Code doctrine and strictness
 

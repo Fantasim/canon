@@ -227,9 +227,10 @@ func (p *Project) Revision() Revision
 ### 3.3 Concurrency (API-05)
 
 - **S7.** A `Project` is safe for concurrent use by any number of goroutines.
-- **S8.** Reads (`Check`, `Value`, `Refs`, `ViewModel`, `Evaluate`, `Test`, `LockCheck`,
-  `Build` with `Check: true`) run in parallel with each other and with a writer. Identical
-  concurrent reads of the same snapshot share one computation.
+- **S8.** Reads (`Check`, `CheckWith`, `Info`, `Value`, `Refs`, `ViewModel`, `Evaluate`, `Test`,
+  `LockCheck`, `Build` with `Check: true`) run in parallel with each other and with a writer. Identical
+  concurrent reads of the same snapshot share one computation. A view model (R9) is kept per
+  snapshot and package; a new snapshot invalidates it (DECISIONS 313).
 - **S9.** There is one writer at a time: `Edit`, `Build` that writes, `SetOverlay` and
   `ClearOverlay` take the project's write lock. A writer never blocks readers; readers that
   started before the writer finished keep their snapshot.
@@ -419,6 +420,12 @@ type WriteOptions struct {
 
 ```go
 func (p *Project) Check(ctx context.Context, packages ...string) (*CheckResult, error)
+func (p *Project) CheckWith(ctx context.Context, r CheckRequest) (*CheckResult, error)
+
+type CheckRequest struct {
+    Packages []string        // selectors, as `packages` above
+    Lang     string          // overrides Options.Lang; "" keeps it
+}
 
 type CheckResult struct {
     Revision Revision
@@ -437,6 +444,11 @@ func (r *CheckResult) HasErrors() bool
 - **R3.** Findings in the result are errors and warnings of the snapshot, not a failure of the
   call: `err` is non-nil only for `ErrUnknownPackage`, `ErrUnknownLayer`, `ErrClosed`, `ctx.Err()`
   or `*InternalError`.
+- **R3a.** `CheckWith` takes a per-call language, like `EvalRequest.Lang` (§11); `Check(ctx,
+  packages...)` is `CheckWith` with `Packages` and no `Lang`, and `Lang` `""` means
+  `Options.Lang`. Only the messages are re-rendered in that language, from the kept analysis: the
+  finding set and the counts do not change (F7, DECISIONS 281). The result does not echo the
+  language (DECISIONS 313).
 
 ### 5.2 Value
 
@@ -524,7 +536,8 @@ type Editability struct {
 ```go
 func (p *Project) Refs(ctx context.Context, path string) (*RefsResult, error)
 
-type RefsResult struct { Target string; Refs []Ref }
+type RefsResult struct { Target string; Refs []Ref }   // a key token typed `ref` in a path (a layer's
+                                                       // `ts[wolf]`) is a ref of that entry (DECISIONS 316)
 type Ref struct {
     Kind    RefKind   // value | key | code | view | check | layer
     Package string
@@ -583,7 +596,12 @@ func (vm *ViewModel) Decode(v any) error
 
 ```go
 func (p *Project) Root() string
+func (p *Project) Info(ctx context.Context) (ProjectInfo, error)
 func (p *Project) Packages(ctx context.Context) ([]PackageInfo, error)   // sorted by Name
+type ProjectInfo struct {
+    Name string
+    Doc  string    // the project doc comment's text (GRAMMAR.md §2.2), source language
+}                  // Info fails like Packages: an invalid project.canon is a *ProjectError
 type PackageInfo struct {
     Name    string
     Dir     string    // display path
@@ -725,7 +743,7 @@ source and where the edit goes.
 | `layered` | an active layer amends this path or an ancestor, and `EditLayer` is not that layer (MOCKUP-GAPS 48) |
 | `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0); a JSON source whose file extension is not `.json` (`load(…, format: json)` of `x.cfg`), or a value whose defining file has a path segment starting with `.`, `.canon` files included (`Detail` names the path): the journal could not recover such writes (§10.3); below a `load` `at:` path past a `*` (whose `*`-level member is the item structural ops act on), an op when that member holds more than the selected remainder, or when the remainder's index is above 0: it would touch data outside the selection or another load's view of the file (`Detail` names the outside datum as `<display>#<pointer>`) |
 | `input` | an `input` field (it has no value at build time) |
-| `key` | the key field of a keyed-list element, or a key of a dependent map (MOCKUP-GAPS 17); keys change only with `Rename` |
+| `key` | the key field of a keyed-list element, or a key of a dependent map (MOCKUP-GAPS 17); keys change only with `Rename`, and this reason never refuses a `Rename` that rewrites a keyed-list key (E11, DECISIONS 310) |
 | `pseudo` | `.id`, `.retired`, `.kind` (P3) |
 | `order` | `Insert` or `Move` in a collection whose order comes from file paths (`load.dir`, entry files) |
 | `layer` | an operation that cannot be written as an amendment when `EditLayer` is set (§7.5) |
@@ -885,8 +903,9 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 - **E1.** Ops apply in order to the state left by the previous ops; paths in later ops see earlier
   changes (a key added by op 0 can be addressed by op 1). Each op is resolved against, and applied
   in memory to, the re-analysed state the previous ops left, so a path under an intermediate value
-  that failed to compute is `ErrNoValue`, even if the final state would be valid. A value under a
-  dependent type is typed against the branch its driver has in that state (DECISIONS 257).
+  that failed to compute is `ErrNoValue`, even if the final state would be valid, except for an
+  edit that only removes or rewrites source (E19). A value under a dependent type is typed against
+  the branch its driver has in that state (DECISIONS 257).
 - **E2.** An op on a container kind it does not support (for example `Add` on a table, `AddEntry`
   on a list, `Reset` on a required field) is `ErrBadOp`.
 - **E3.** `Add`, `Insert` and `AddEntry` with a key that already exists are `ErrKeyExists`.
@@ -934,10 +953,15 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
     equals the template instantiated for the old entry: the file is renamed to the template
     instantiated for the new entry (§10.2); a file placed by N4's default path, without `@files`,
     keeps its name (DECISIONS 256); the file of a `load.dir` table's entry, whose key is the file's
-    stem (WIRE.md §6.5), is renamed to the new key with the same extension, in its directory.
+    stem (WIRE.md §6.5), is renamed to the new key with the same extension, in its directory;
+  - a reference that is the key field of a keyed-list element (DECISIONS 310): that key is
+    rewritten, and the element's path moves (`z.spawns[wolf]` → `z.spawns[timber]`) with every ref
+    and path into it; its `@files` file follows the template rule above; a keyed list keyed by a
+    ref to that element cascades in turn.
 - **E12.** If any reference of kind `value` or `key` is not editable (for example a ref computed by
   a function), the whole rename fails with `*NotEditableError` for that reference; `Detail` lists
-  every such reference.
+  every such reference. The key field of a keyed-list element is not refused: E11 rewrites it
+  (DECISIONS 310).
 - **E13.** `Rename` of a key in a dependent map is `ErrNotEditable` with reason `key`
   (MOCKUP-GAPS 17). `Rename` in a stable table is `ErrStableKey` (E4).
 
@@ -971,7 +995,9 @@ inside the same edit and reports it, so every client behaves the same.
   dependent symbol "as the file wrote it" (DECISIONS 175), before the edit or given by the op as
   `FromJSON`, is not dropped: it stays with its `E3802` as before, so `Undo` restores it (E22),
   until a later op of the edit changes a field it depends on. Only the symbols the op's literal
-  gives are resolved by V1; kept and carried values are left to this rule.
+  gives are resolved by V1; kept and carried values are left to this rule. An element a `Rename`
+  moves (E11) is addressed here by its new path; the key a `Rename` cascade rewrites still names
+  the same entry, so it is not a changed driver for dependent fields (DECISIONS 310).
 - **E16.** Cascades never apply to anything but the records touched by the ops.
 
 ### 8.6 Checking and refusal
@@ -988,7 +1014,17 @@ inside the same edit and reports it, so every client behaves the same.
 - **E19.** If any finding is an error and `AllowErrors` is false, nothing is written, `Applied` is
   false, and `Edit` returns the result together with a `*RejectedError` (wraps `ErrRejected`).
   With `AllowErrors`, the files are written and the result has `Applied: true` and the error
-  findings (drafts in progress, MOCKUP-GAPS 47). A `DryRun` applies this rule too.
+  findings (drafts in progress, MOCKUP-GAPS 47). A `DryRun` applies this rule too. Clients send
+  new values complete, with their required fields (VIEWMODEL.md D3); `AllowErrors` is for what
+  cannot be known in advance. An edit that only removes or rewrites source (`Remove`, a `Set` of a
+  field of the broken entry, `Undo`) works while the value is poisoned (R6), so a project broken
+  by a missing required field (`E3302`) stays repairable through the API (DECISIONS 309). Each op
+  is judged on its own, in any request. On a root table with no value, `Remove`, `Retire`,
+  `AddEntry`, `Move`, and `Set`/`Reset` of an entry or its field are written from source; any
+  other root with no value takes a `Set` of the whole root. Such an op is refused with the root's
+  error when it would need a value: a field that drives a dependent field (E15), an entry with a
+  spread (W9), or an inverse whose old text is not literal-only (§8.2). A field set to its default
+  is written explicitly there (no E6/E7 omission), and E4 is judged before anything else.
 - **E20.** An edit that adds an id to a stable table, or a new value of a `@stable` field, appends
   the new lock lines to the package's `canon.lock` inside the same edit (LCK-04), and `Retire` adds
   `retired` to its lock line, according to LOCK.md §5. The lines come from the edit's plan, the ids
@@ -1034,7 +1070,9 @@ inside the same edit and reports it, so every client behaves the same.
   uncomputable (only with `AllowErrors`), the plain Undo is returned unverified. When no verified
   Undo is found within the repair rounds, `Edit` fails with an `*InternalError` (`ErrInternal`) and
   writes nothing (DECISIONS 273).
-- **E23.** Inverses: `Set` → `Set(old)`, or `Reset` if the field was absent; `Reset` → `Set(old)`;
+- **E23.** Inverses: `Set` → `Set(old)`, or `Reset` if the field was absent (for an absent
+  required field, only possible on a broken entry, `Set` of the enclosing entry to its old text,
+  DECISIONS 257, 309); `Reset` → `Set(old)`;
   `Add`/`Insert`/`AddEntry` → `Remove`, except an `AddEntry` into a stable table → `Retire` of the
   new key (its id is in `canon.lock` and is never removed, E4; DECISIONS 277); the inverses of
   the request's other ops on paths inside that entry are left out, and verification (E22) ignores
@@ -1049,13 +1087,14 @@ inside the same edit and reports it, so every client behaves the same.
   wrote lock lines the Undo's verification (E22) checks the lock too; a before value whose restore
   would contradict a lock fact the edit made (a `@stable` value now locked to another id) keeps the
   result's form, and verification excludes it; an id the edit tried to lock but whose lines E20
-  skipped (an `AllowErrors` conflict) was never locked, and its inverse is a `Remove` when the
-  result still holds the entry, none when it does not; a before entry the edit removed or renamed
+  skipped (an `AllowErrors` conflict, or an entry that does not evaluate) was never locked, and
+  its inverse is a `Remove` when the result still holds the entry, none when it does not; a before entry the edit removed or renamed
   whose restore would contradict a lock fact stays as the result holds it, and verification excludes
   it; an `AddEntry` that re-creates a pending entry locks it, as the next build would (LOCK.md §4.4); `Remove` → `Insert(parent, oldPosition, old)` or
   `AddEntry(parent, key, old)` followed by a `Move` to the old position (where file paths fix the
   order, reason `order`, an `Add` or `AddEntry` alone, placed by N1–N4); `Move` → `Move` back;
-  `Rename` → `Rename` back; `RenameName` → `RenameName(<canonical new name>, <old name>)` (E37); `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
+  `Rename` → `Rename` back, a cascade through keyed-list keys included (E11, DECISIONS 310);
+  `RenameName` → `RenameName(<canonical new name>, <old name>)` (E37); `SetCase` → `Set(old whole variant value)`. `Retire` has no inverse
   (E4): `Undo` restores every other change of the edit, and the studio warns before retiring. `Undo`
   lists the inverses in reverse order of the ops, then every cascade's inverse. Where E22 requires
   it, the Undo is verified by a dry apply against the after state; where that does not restore the
@@ -1269,7 +1308,8 @@ comments, and a trailing comment on its last line.
 
 - **N1.** `AddEntry` on a table, or `Add`/`Insert` on a keyed list, creates a new **file** when the
   value's `let` has a `@files` annotation, or when at least one existing entry is declared with
-  `entry` in its own file (or, for `load.dir`, always). Otherwise the entry is added to the literal.
+  `entry` in a file other than the `let`'s (or, for `load.dir`, always). Otherwise the entry is
+  added to the literal, and `entry` declarations in the `let`'s own file do not order it.
 - **N2.** The template of `@files("items/{itemKind1}/{id}.canon")` is expanded with the new
   entry's value: `{id}` is the key; `{f}` and `{f.g}` are fields (nested through records and the
   current case of variants, and through a dependent field's current branch). A value is written as: enum → wire value; ref → key; variant → case

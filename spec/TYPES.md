@@ -198,8 +198,9 @@ So the table entry `units.count` is the entry, and `units.count(pred)` is the me
   holding a variant is fine: `e.kind.kind`.
 - Enum members, variant cases and table keys may be any identifier, including reserved words
   where GRAMMAR.md allows them. They never clash with declarations: they live in their type or
-  collection, not in the package namespace. One name is reserved per kind (`E2105`): `members` on
-  an enum (`E.members`, DECISIONS 299), as `id`/`retired` on table elements and `kind` on cases.
+  collection, not in the package namespace. Some names are reserved per kind (`E2105`): `members`
+  and `typeName` on an enum (`E.members`, `E.typeName`; DECISIONS 299, 306), as `id`/`retired` on
+  table elements and `kind` on cases.
 
 ### 3.7 Public signatures
 
@@ -213,7 +214,8 @@ or `values` selects none). The parameter types of a parameterized record or type
 not exposed by themselves (the record is emitted without its parameter, CODEGEN.md §5.7). These may name a `local` type only as the target of a `ref` (held by its key,
 §10.2). Anything else is `E2111`, at the type expression that names it. A public `fn` that is not
 exported, and a public `let` no such emit selects (one only written as JSON, say), may use
-`local` types: neither is emitted as a type.
+`local` types: neither is emitted as a type. Nor is a `@text` fn, a file and not API (CODEGEN.md
+§2.9): its result may name `local` types (DECISIONS 308).
 
 ---
 
@@ -263,8 +265,21 @@ the `Icon` member, although `let columns` exists.
 
 ### 4.3 Qualified forms
 
-`Enum.member`, `Enum.members` (STDLIB.md §3, DECISIONS 299), `Variant.case`, `pkg.Name`, `alias.Name`, `pkg.Enum.member` and `table.key`
-(value position) are always accepted and never ambiguous.
+`Enum.member`, `Enum.members` (STDLIB.md §3, DECISIONS 299), `Enum.typeName` (DECISIONS 306),
+`Variant.case`, `pkg.Name`, `alias.Name`, `pkg.Enum.member` and `table.key` (value position) are
+always accepted and never ambiguous.
+
+**Through a type function** (DECISIONS 306). In value position, `F(a…).members` and
+`F(a…).typeName` are accepted when every branch of the type function `F`, `_` included, is an
+enum: not `Never`, not an optional.
+
+- The arguments are ordinary expressions, not the paths of §11.1, checked against `F`'s
+  parameters: wrong arity or type, an optional argument included, is `E3806`.
+- `.members` has the type `[F(*)]` (§11.4); `.typeName` has the type `String`.
+- Any other member after `F(a…)`, or an `F` with a branch that is not an enum, is `E3804`. A bare
+  `F(a…)` in value position stays `E3005` (§12.2).
+- Evaluation selects the arm as §11.6 does and returns that enum's `E.members` or its name
+  (`E.typeName`). EVALUATION.md §12.1 gives the cost.
 
 ---
 
@@ -439,7 +454,9 @@ values, and loaded values. EVALUATION.md §4.3 specifies the check.
 
 - Static types are `T` and `ref T`. There is no separate "entry type".
 - At evaluation, an element of a table or keyed list carries an **identity**: its collection
-  and its key. Copying, binding, passing and returning keep it. A spread (`{ ...e, … }`) or any
+  and its key. An entry keeps the identity of the field that holds it (that field and its owning
+  instance); a let path (§10.2) is only how a ref names it (DECISIONS 315). Copying, binding,
+  passing and returning keep it. A spread (`{ ...e, … }`) or any
   other construction makes a new value without identity.
 - `self` in a record body is an entry when the value is one.
 - Implicit conversions between `T` and `ref T` follow §6.2. `==` uses identity when both
@@ -744,10 +761,13 @@ non-`ordered` enums, is `E3310`. Optionals are not orderable (`E3403`). Comparis
 - Members have built-in members: `.name: String` (Canon name), `.index: Int` (position from
   0, retired members included), `.wire: String` (the wire value), `.retired: Bool`, and `.code: Int`
   with `@codes` only (`E3003` otherwise). `E.members` lists them all (STDLIB.md §3, DECISIONS 299).
+- `E.typeName: String` is the enum's declared name, unqualified (`"FarmEventKind"`; STDLIB.md §3,
+  DECISIONS 306).
 - `ordered` makes the enum orderable (§7.5).
 - A retired member (`retired FIRE = 1`) still exists for `match` exhaustiveness (§12.6) and
   for generated code. Using it in a value, in Canon source or loaded data, is `E3506`, except
-  inside a retired table entry (LOCK.md: a retired entry may name anything).
+  inside a retired table entry (LOCK.md: a retired entry may name anything) or a `past` slot
+  (§8.4).
 - An enum with `@codes(T)` requires every member to have an `= integer` value that fits `T`
   (`E3201`); codes are unique (`E3102`).
 
@@ -776,6 +796,32 @@ if reward is item { total += reward.count }        // reward narrowed to Reward.
 - On a value typed `V`, `.f` for a case field is `E3003`, with the hint "narrow with `is` or
   `match`". Built-in members (`.kind`) are always available.
 
+### 8.4 History: `past` (DECISIONS 304)
+
+Retired means "no new use", not "unnameable". Data that describes the past (a ledger of old rows,
+a migration map) declares it in its type.
+
+- `past X` is a type when `X` names an enum or a variant, or is `ref T`, or applies a type
+  function (or is a `match` type) whose every branch is one of those: the branch selected for a
+  value is past (`[past Member(column.values)]`). On any other type it is `E3024`: a list
+  (`past [E]`; write `[past E]`), a case type `V.c`, a record. `past` is a contextual keyword (GRAMMAR.md §4.2).
+- Statically `past X` is `X`: same members, `match`, operators and assignability in both
+  directions.
+- At verification (EVALUATION.md §5) a value in a slot declared `past X` may hold the retired
+  members or cases of `X` (no `E3506`), or a ref to a retired entry (no `E3502`). Only the
+  slot's own enum, variant or ref is concerned: fields of a `past V` case keep their own rules.
+  A loaded value follows its slot.
+- Every target emits `past X` as `X` (generated enums already hold every member); the lock is
+  unchanged (LOCK.md §2). Type text (messages, hover, API `TypeInfo.Expr`) shows `past X`.
+- `past` comes only from a written type: an inferred type never carries it (`let a = row.kind`
+  is a plain slot, even when `row.kind` is declared `past K`). History is declared.
+
+```
+record Role { kinds: [past GrantKind] }       // may list LEVEL_UP_GIFT, retired
+let featured: [ref items] = [oldSword]        // E3502: oldSword is retired
+let sold: [past ref items] = [oldSword]       // history: allowed
+```
+
 ---
 
 ## 9. Collections
@@ -785,8 +831,9 @@ if reward is item { total += reward.count }        // reward narrowed to Reward.
 - `[T]` is an ordered list. `xs[i]` indexes from 0; a negative index counts from the end.
   `xs[r]` with a `Range` is a slice (GRM-13).
 - `[T] keyed by f` requires `T` to be a record with a field `f` whose type is `String`, an
-  integer type, an enum or a `ref`, possibly refined (`E3012`). Keys are unique (`E3102`, at
-  evaluation).
+  integer type, an enum or a `ref`, possibly refined (`E3012`). A `ref` key needs a target whose
+  own key leads back to a base type: a list keyed by a ref to itself, or a cycle of lists keyed by
+  refs to each other, is `E3012` (DECISIONS 316). Keys are unique (`E3102`, at evaluation).
 - On a keyed list, `xs[k]` and `xs.k` look up **by key** (like a table), and positional access
   is `xs.at(i)`. A `Range` index is still a positional slice. The list methods of STDLIB.md
   apply to its elements. This keeps expression indexing consistent with value paths (API-02),
@@ -843,7 +890,11 @@ is the key for a table target. Wire form: WIRE.md.
 
 - If `X` names a top-level `let` (of this package, `local` included, or imported, or qualified
   `pkg.v`), or a path `v.f.g` through record fields of a top-level `let`, the target is that
-  collection. It must be a collection (§9.4), else `E3504`.
+  collection. It must be a collection (§9.4), else `E3504`. A path `v.f….g` targets the collection
+  held by field `g` of the record instance found at `v.f…`, not a collection of its own:
+  `let w: Z = z` names z's instance, and a collection-valued let still re-adopts its entries
+  (DECISIONS 315). A path through a table entry or list element (`t.e.f`) is `E3504`: entries are
+  many instances; inside the entry, a per-instance `ref T` reaches its own collection (below).
 - If `X` names a record type `T`, the target is searched **level by level**. The first level
   with at least one candidate decides; it must have exactly one (`E2103`, listing the
   candidates and asking for `ref name`):
@@ -880,8 +931,14 @@ RES-07). Other packages then validate against that collection.
   type (§4.1), a value of type `T` converted to `ref T` (§6.2), or another `ref` of the same
   target.
 - Existence is checked at evaluation: a missing key is `E3501` at the ref's location. A ref
-  from a live entry to a retired entry is `E3502`. A converted entry that does not belong to the
-  target is `E3503`. EVALUATION.md §5 says when.
+  to a retired entry, outside a retired entry and a `past ref` slot (§8.4), is `E3502`. A
+  converted entry that does not belong to the target is `E3503`. EVALUATION.md §5 says when. A
+  retired entry's record held outside its table (`let x: Item = items.oldSword`) is live data
+  there: its contents follow `E3502` and `E3506` like any stored value (DECISIONS 304).
+- An entry converts to `ref v.f….g`, and equals such a ref with the same key (`==`, `in`,
+  `contains`, `indexOf`), exactly when it is an entry of that instance's `g`, whatever let reached
+  it. A let-path ref carries no instance, however it was made: two are equal when their keys are.
+  Level-1 refs and other instances' collections are unchanged (DECISIONS 315).
 - Refs may form cycles (`next: [ref Status]`), since a ref is a key.
 
 ---
@@ -900,6 +957,10 @@ RES-07). Other packages then validate against that collection.
   its parameter type (a `ref` argument dereferences, so `Param(eventType)` with `eventType: ref
   eventTypes` is fine). Wrong arity or type is `E3806`. A bare name `R` is zero arguments, so a
   field typed `R` or a typed literal `R { … }` of a parameterized `R` is `E3806` too.
+- An argument of type `P?` given to a `P` parameter of a type function `F` is accepted: when it
+  reads `none`, `F(…)` computes `Never` (§11.6, DECISIONS 307). Given to a record `R(args)`, it
+  stays `E3806`: a record type cannot be `Never`. Narrow the argument first (`if x != none`), or
+  type the field with a type function (DECISIONS 305).
 - An applied record instance keeps the arguments it was built with (DECISIONS 220 `Bind`; an
   amended copy keeps them too): its dependent fields are judged against its own arguments. Stored
   where the computed type applies the same record to different arguments (`l: x.l` into a
@@ -907,7 +968,9 @@ RES-07). Other packages then validate against that collection.
   field.
 - An argument must be a stable path rooted at a type parameter, an **earlier** field of the
   same record, or the binder of a dependent map (§11.5). A later field, the field itself, or any
-  other expression is `E3805` (for fields) or `E3803` (otherwise).
+  other expression is `E3805` (for fields) or `E3803` (otherwise). An optional segment inside the
+  path (`ev.sub.k` with `sub: Sub?`) is `E3803` (DECISIONS 307). The arguments of the value forms
+  `F(a…).members` and `F(a…).typeName` are ordinary expressions instead (§4.3).
 
 ### 11.2 Type functions
 
@@ -942,11 +1005,13 @@ P(k) | "none"` is `P(*) | "none"`. A `DepUnion` supports only:
 - `==` and `!=` with the same `DepUnion` or with `none`, and flow narrowing on `!= none`;
 - interpolation and `String(x)`;
 - being passed to `fail`/`warn`, stored in a field or list of the same declared type, or
-  returned from a function whose return type is that `DepUnion`'s type application.
+  returned from a function whose return type is that `DepUnion`'s type application;
+- when every branch is an enum, the enum value members `.name`, `.index`, `.wire`, `.retired`,
+  and `.code` when every branch has `@codes` (`E3003` otherwise) (§8.1, DECISIONS 306).
 
-Anything else (field access, arithmetic, passing it as a `ref items`) is `E3804`. There is no
-branch narrowing in this version: `match` on the discriminating field (`e.param`), not on the
-dependent value.
+Anything else (any other field access, arithmetic, passing it as a `ref items`) is `E3804`. There
+is no branch narrowing in this version, enum branches included: `match` on the discriminating
+field (`e.param`), not on the dependent value.
 
 **Literals.** When a literal gives a value to a dependent field, the value is checked against the
 union of the branches: any scalar literal a branch takes is accepted, a bare identifier stays
@@ -984,6 +1049,10 @@ type (`{SpecificKey(e): …}`) has `DepUnion` keys.
 - `none` is always valid for an optional dependent field.
 - A **non-optional** field whose computed type is `Never` makes the value unbuildable:
   `E3801` at the value (TYP-13).
+- An optional argument (§11.1) that reads `none` makes `F(…)` compute `Never` without evaluating
+  its body (DECISIONS 307): a required field is then `E3801`, a list element `E3802`, and an
+  optional field accepts only `none`. In loaded data a required field that is absent is `E3302`
+  first (WIRE.md §5.4); a present one decodes as a symbol for verification's `E3801`.
 
 ### 11.7 What other documents do with them
 
@@ -1018,7 +1087,8 @@ above.
 
 - `f(a, b, name: c)`: positional arguments first, then named ones. An unknown name, a
   parameter given twice, a missing parameter without default, or too many arguments is
-  `E3004`. Calling something that is not a function is `E3005`.
+  `E3004`. Calling something that is not a function is `E3005`, a type function applied in value
+  position included, except as `F(a…).members` or `F(a…).typeName` (§4.3, DECISIONS 306).
 - Built-in functions and methods are generic (STDLIB.md). Type parameters are bound from the
   arguments left to right, **non-lambda arguments first**, then lambdas are checked with the
   bound parameter types. A type parameter that appears only in a lambda's result is taken from
@@ -1240,7 +1310,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E2102 | error | name found by no step of §3.3 |
 | E2103 | error | §10.2 |
 | E2104 | error | §3.6 |
-| E2105 | error | field or method `id`/`retired` on a table element, `kind` on a case, member `members` on an enum |
+| E2105 | error | field or method `id`/`retired` on a table element, `kind` on a case, member `members` or `typeName` on an enum |
 | E2106 | error | duplicate declaration, field, member, case, method or parameter |
 | E2107 | error | redeclaration in one block |
 | E2108 | error | `self` outside a record, case or variant body |
@@ -1316,9 +1386,9 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E3801 | error | evaluation |
 | E3802 | error | evaluation |
 | E3803 | error | §11.1, §11.2 |
-| E3804 | error | §11.4 |
+| E3804 | error | §4.3, §11.4 |
 | E3805 | error | §11.1 |
-| E3806 | error | §11.1 |
+| E3806 | error | §4.3, §11.1 |
 | W3301 | warning | §16 |
 | W3401 | warning | §6.5 |
 | W3601 | warning | §12.6 |

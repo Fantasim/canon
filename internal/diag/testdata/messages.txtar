@@ -166,7 +166,7 @@ E2103 several: ref resource.vocab.items: several collections of resource.vocab.i
 E2104 -: resource.vocab.items has a field and a method named resource.vocab.items
 E2105 entry: resource.vocab.items is reserved on table entries
 E2105 case: resource.vocab.items is reserved on variant cases
-E2105 enum: resource.vocab.items is reserved on enums: E.members lists them
+E2105 enum: resource.vocab.items is reserved on enums: E.members and E.typeName are built in
 E2106 -: resource.vocab.items is declared twice (first at @resource/Server/System/farm_config.json:1)
 E2107 -: resource.vocab.items is already declared in this block
 E2108 -: self is only valid in a record, case or variant body
@@ -189,6 +189,7 @@ E3010 -: a default may use only constants, earlier fields, parameters and built-
 E3011 -: Int cannot be a map key
 E3012 field: keyed by resource.vocab.items: no such field
 E3012 type: keyed by resource.vocab.items: type Int cannot be a key
+E3012 cycle: keyed by resource.vocab.items: the keys of Int loop back to it; key one list by a String, integer or enum field
 E3013 -: a table holds records; Int is not a record
 E3015 notConstant: this code must be a constant expression
 E3015 budget: this code could not be folded: the evaluation budget is exhausted
@@ -201,6 +202,7 @@ E3021 -: type alias resource.vocab.items refers to itself
 E3022 -: resource.vocab.items contains itself and can never be built
 E3023 invalid: refinement a b is not valid on Int
 E3023 empty: range a b is empty
+E3024 -: past applies to an enum, a variant or a ref, not Int (for a list, write [past E])
 E3025 -: a Range value must have Int bounds and a start
 E3101 -: duplicate key resource.vocab.items in resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
 E3102 key: key "II_SYS_SYS_SCR_FARM3" is used twice (first at @resource/Server/System/farm_config.json:1)
@@ -253,11 +255,12 @@ E3401 -: Int? is not a type: Int is already optional
 E3402 -: a b may be none: use ?., !, ?? or test != none first
 E3403 -: expected Int, found Int: prove it is present (!= none, !, ??)
 E3501 -: unknown key "II_SYS_SYS_SCR_FARM3" in resource.vocab.items
-E3502 -: "II_SYS_SYS_SCR_FARM3" is retired; live resource.vocab.items cannot reference it
+E3502 entry: "II_SYS_SYS_SCR_FARM3" is retired; live resource.vocab.items cannot reference it (only a retired entry or a past ref may)
+E3502 value: "II_SYS_SYS_SCR_FARM3" is retired; a live value cannot reference it (only a retired entry or a past ref may)
 E3503 -: this Int is not an entry of resource.vocab.items
 E3504 -: ref resource.vocab.items: resource.vocab.items is not a collection or a record type
 E3505 -: ref resource.vocab.items has no enclosing resource.vocab.items to resolve against
-E3506 -: resource.vocab.items.resource.vocab.items is retired
+E3506 -: resource.vocab.items.resource.vocab.items is retired (only a retired entry or a past resource.vocab.items may hold it)
 E3601 -: match does not cover go, cpp; add them or _
 E3602 -: pattern a b is already covered
 E3603 -: a b is not a case of Int
@@ -419,7 +422,7 @@ E8018 -: resource.vocab.items is decoded from JSON by resource.vocab.items, but 
 E8019 mode: emit resource.vocab.items in resource.vocab.items mode cannot generate a case used as a type
 E8019 json: emit json cannot generate a case used as a type
 E8020 -: constant resource.vocab.items is -0.0, which a Go constant cannot hold: make it a let
-E8021 position: @text belongs on a public package-level export fn with no parameter that returns String
+E8021 position: @text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form
 E8021 file: invalid @text file name "0.9": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
 E8021 twice: @text file "0.9" is also written by resource.vocab.items
 E8021 called: resource.vocab.items has @text: it is a file, not a function other declarations can call
