@@ -1,7 +1,7 @@
 # State — Canon compiler
 
 Updated: 2026-10-06. **v0.1.0 released** (tag on `f4f7da5`, GitHub release with linux amd64/arm64
-archives); `main` is the only branch. DECISIONS 304-324: [log-2026-10-05](decisions/log-2026-10-05.md), [log-2026-10-06](decisions/log-2026-10-06.md),
+archives); v0.1.1 fixes the stale `canon guide`; `main` is the only branch. DECISIONS 304-324: [log-2026-10-05](decisions/log-2026-10-05.md), [log-2026-10-06](decisions/log-2026-10-06.md),
 ADR-0015, -0016, [ADR-0017](decisions/0017-shared-records-make-hooks.md). M5 accepted (CI run 36973712977).
 
 ## Current focus
