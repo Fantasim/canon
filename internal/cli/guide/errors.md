@@ -50,6 +50,9 @@ error[E3002]  shop/shop.canon:30:17
 | `E3204` `E3205` `E3206` | range or length, regex, `where`: fix the value or the refinement |
 | `E3315` | `null` in a required field: make it `T?`, or fix the data |
 | `E3402` `E3403` | may be `none`: `if x != none`, `??`, `?.`, `!` |
+| `E3027` | a name in scope used as a ref key: write the key as a string (`"n"`) |
+| `W3001` | `x: T? = none`: remove the `= none` (`canon fmt` does) |
+| `E8019` | the emit asks for what no generator builds: the message names the way out |
 | `E3501` | ref to a missing key: fix the key or add the entry |
 | `E3024` | `past` on a type that is not an enum, a variant or a `ref`: `[past E]`, not `past [E]` |
 | `E3502` `E3506` | a stored value refers to a retired entry, or uses a retired member: repoint it, or type the slot `past` |

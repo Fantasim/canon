@@ -68,18 +68,26 @@ emit json { out: "@gen/data/" }
   (default: every public `let`) selects values.
 - A package whose types another package's output uses must emit the same target (`E8004`).
 - Go needs `go_module` for the root holding `out` (`E8007`).
-- This build generates `go` (modes `baked`, `data`), `cpp` (`data`, `types`), `json` and `view`.
-  Other targets and modes pass `canon check`; `canon build` then stops with exit 2 ("no
-  generator for this emit target yet", "not supported: mode ...").
+- `values: []` is refused (`E8009`): omit `values` for every value.
+- Generated: `go` and `cpp` in `baked` and `data`, `cpp` also in `types`, `ts`, `json`, `view`.
+  `canon check` refuses what no generator builds, with a message naming the way out (`E8019`):
+  Go `embedded` and `types`, C++ `embedded` (use `baked` or `data`); legacy C++ structs
+  (`@cpp(struct:)`); a dependent value decided through a ref, an optional or a record parameter,
+  in any go/cpp emit (decide it by an enum field of the same record; owed for v0.2).
+- Shared records: a record, variant, dependent type or table of another package is usable in
+  values and data in every target and mode; do not copy the type. A package reached only through
+  another's types needs the same emits in its imports. Still `E8019`: a foreign record whose ref
+  the owner's loader resolves, and a lookup over a foreign table without an id enum. The
+  generated make hooks (Go `Make_<T>`, C++ `detail::<P>Make`) are for generated code, not API.
 
 ## Modes
 
 | Mode | Runtime gets | Table ids |
 |---|---|---|
 | `baked` (default) | values compiled into the binary | an id enum |
-| `embedded` | data file embedded, plus a decoder | an id enum |
+| `embedded` | refused by `check` in this release (`E8019`); use `baked` or `data` | an id enum |
 | `data` | a separate data file plus a loader that checks its fingerprint | strings |
-| `types` | types plus a decoder; the runtime reads its own file | strings |
+| `types` | types plus a decoder; the runtime reads its own file; C++ only (Go: `E8019`) | strings |
 
 In `data` mode a value change rebuilds only the data file. `@reload` on a `let` (data mode only,
 `E8202`) lets a runtime swap it while running; it must be written by the package's `emit json`.

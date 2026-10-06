@@ -102,8 +102,9 @@ let weights: {Element: Int} = { FIRE: 2, WATER: 1 }
   scope by name and `self` is the value. A default may use constants, earlier fields and the stdlib.
   A `table` element may not declare `id` or `retired` (`E2105`): entries have `.id`, `.retired`.
 - Enum members: `Day.Mon`, or bare (`Mon`) where the type is expected; `.name`, `.index`,
-  `.wire`, `.retired`, and `.code` with `@codes`; `E.members` lists them in declaration order
-  (retired ones included, `.retired` tells them apart; `members` is reserved on enums, `E2105`). A retired member stays for `match`; using it is `E3506` outside a `past` slot (see History).
+  `.wire`, `.retired`, and `.code` with `@codes`; `E.typeName` is its unqualified name;
+  `E.members` lists them in declaration order (retired ones included, `.retired` tells them
+  apart; `members` and `typeName` are reserved on enums, `E2105`). A retired member stays for `match`; using it is `E3506` outside a `past` slot (see History).
 - Variant literal: `gold { amount: 10 }`, `Reward.gold { ... }`; a case whose fields all have
   defaults may be bare (`item` needs `name`: `E3302`). `v.kind` is the case; `v is gold` tests
   it. Case fields are readable only on a narrowed value: `match`, `if v is gold { v.amount }`
@@ -122,6 +123,12 @@ let weights: {Element: Int} = { FIRE: 2, WATER: 1 }
 | `x ?? fallback` | `x` when present, else `fallback` |
 | `x?.f`, `x?.m()` | `none` if `x` is `none`, and so is the rest of the chain |
 | `x!` | `x` as `T`; `E4001` at evaluation if `none` |
+
+An optional field defaults to `none`: `x: T? = none` is warning `W3001` and `canon fmt` removes it.
+Where a `ref C` is expected and C's keys are not known statically (loaded, computed, keyed
+lists), a name in scope is that name, whatever its type: a `ref C?` is `E3403`, any other type
+`E3027`; write the key as a string (`"n"`). Only an unresolved name becomes a key. Against a
+table literal's static keys, a bare name is the key.
 
 Narrowing works on stable paths (locals, params, fields, `self.f.g`), never on indexes or calls:
 `let t = tiers.get(k)` first. `!`, `?.`, `??` on a value that is never `none` is `W3401`.
@@ -200,6 +207,8 @@ record Objective {
 ```
 
 - A field type may use earlier fields; `match` over an enum or `Bool` must be exhaustive.
+- `F(a).members` and `F(a).typeName` work in values when every branch of the type function `F`
+  is an enum (`E3804` otherwise; `E3806` on a bad argument).
 - `{e in coll: T(e)}` is a map keyed by `ref coll` whose value type depends on the key.
 - A value that does not fit its computed type is `E3802`; a required field computed as `Never`
   is `E3801`. In expressions a dependent value supports `==`, `!= none`, interpolation, `match`.
