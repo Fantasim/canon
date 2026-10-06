@@ -3088,3 +3088,14 @@ round 2", "PS1 review", "PS2 round 2"):
   file.
 - API.md R6 gives no cause for a constant only a stage-E fold evaluated (the folder reports
   `E4102`; a cold `Cause` is empty).
+
+325. **Releases for Windows and macOS; notes from the tag (CLI.md §7; amends 276).** A release
+     also builds windows/amd64 (`canon_<version>_windows_amd64.zip` holding `canon.exe`) and
+     darwin/amd64 and darwin/arm64 (`canon_<version>_darwin_<arch>.tar.gz`), beside the two Linux
+     archives, all in `checksums.txt`, all reproducible (fixed mtime, sorted entries). CI already
+     tests Windows and macOS; the binaries are pure Go (no cgo). `tools/install.sh` picks the
+     archive from `uname` (Linux, Darwin); Windows users download the zip. The release workflow
+     takes its notes from the annotated tag's message, so the tag is the one place the notes are
+     written, and a release is made only by pushing the tag (no manual `gh release create`).
+     Reason: Louis, 2026-10-06: v0.1.0 shipped Linux-only, and a manual release collided with the
+     workflow.

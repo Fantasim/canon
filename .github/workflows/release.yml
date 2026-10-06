@@ -1,4 +1,4 @@
-# DECISIONS 276: a tag v<semver> checks the repository, builds the linux archives and publishes
+# DECISIONS 276, 325: a tag v<semver> checks the repository, builds the linux, macOS and Windows archives and publishes
 # them as a GitHub release (make dist, CLI.md §7). Setup is check.yml's.
 name: release
 
@@ -43,7 +43,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # checkout may leave the tag lightweight; --notes-from-tag needs the annotated object.
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
           flags=""
           case "$TAG" in *-*) flags="--prerelease" ;; esac
           # shellcheck disable=SC2086
-          gh release create "$TAG" dist/*.tar.gz dist/checksums.txt --title "$TAG" --generate-notes --verify-tag $flags
+          gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/checksums.txt --title "$TAG" --notes-from-tag --verify-tag $flags

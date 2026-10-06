@@ -111,7 +111,8 @@ keywords, rule scripts (Lua, Python), a hand-written loader per language, and ed
 
 ## Install
 
-Linux amd64 and arm64, from the GitHub releases ([CLI.md](CLI.md) §7, DECISIONS 276):
+Linux and macOS (amd64, arm64) and Windows (amd64), from the GitHub releases ([CLI.md](CLI.md) §7,
+DECISIONS 276, 325):
 
 ```sh
 # latest release
@@ -121,9 +122,10 @@ curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.s
 curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.sh | sh -s -- v0.2.0
 ```
 
-The script downloads `canon_<version>_linux_<arch>.tar.gz`, verifies it against
+The script picks `canon_<version>_<os>_<arch>.tar.gz` from `uname` (Linux, Darwin), verifies it against
 `checksums.txt` and installs `canon` into `$CANON_INSTALL_DIR` (default `~/.local/bin`).
-Running it again updates; the compiler itself never touches the network, so there is no
+On Windows, download `canon_<version>_windows_amd64.zip` (it holds `canon.exe`) from the release
+page and check it against `checksums.txt`. Running it again updates; the compiler itself never touches the network, so there is no
 self-update command. Releases are tagged `v<semver>`.
 
 ```

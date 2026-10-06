@@ -255,11 +255,11 @@ bench-lsp:
 	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local TMPDIR=/var/tmp go test -count=1 -timeout 0 \
 	  -run '^TestLatency$$' -v ./internal/lsp -lsp.bench $(BENCH_EDIT_N)
 
-# DECISIONS 276, CLI.md §7: `make dist VERSION=v0.2.0` builds the release archives of linux/amd64
-# and linux/arm64 into dist/ (git-ignored), with the version (the tag without its "v") set at link
+# DECISIONS 276, CLI.md §7: `make dist VERSION=v0.2.0` builds the release archives of linux/amd64,
+# linux/arm64, darwin/amd64, darwin/arm64 (.tar.gz) and windows/amd64 (.zip with canon.exe; DECISIONS 325) into dist/ (git-ignored), with the version (the tag without its "v") set at link
 # time (the commit is the binary's VCS stamp, API.md T3, hence the clean-tree rule), and
 # dist/checksums.txt. The archives are reproducible: sorted, owner 0, fixed mode, the commit's
-# time, gzip -n. A LICENSE file joins README.md when one exists. `make tag VERSION=v0.2.0` makes
+# time, gzip -n; the zip: files touched to that time, sorted, zip -X. A LICENSE file joins README.md when one exists. `make tag VERSION=v0.2.0` makes
 # the annotated tag on a clean main and never pushes it. VERSION is untrusted text: recipes read
 # "$$VERSION" from the environment, never "$(VERSION)" (make would expand it), and a "$" in it is
 # refused before anything expands it, and it must be one line. (A VERSION:= on the command line is
@@ -267,22 +267,29 @@ bench-lsp:
 VERSION    ?=
 export VERSION
 VERSION_RE := ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$$
-DIST_ARCHS := amd64 arm64
+DIST_TARGETS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 BUILD_PKG  := github.com/fantasim/canonlang/internal/build
 .PHONY: dist tag
 dist:
 	@[ "$$(printf '%s\n' "$$VERSION" | wc -l)" -eq 1 ] && printf '%s\n' "$$VERSION" | grep -Eq '$(VERSION_RE)' || { echo "dist: VERSION=vX.Y.Z[-suffix] is required"; exit 1; }
 	@[ -z "$$(git status --porcelain)" ] || { echo "dist: the working tree is not clean (untracked files included)"; exit 1; }
 	@set -e; v="$$VERSION"; v="$${v#v}"; when="$$(git log -1 --format=%ct)"; rm -rf dist; mkdir -p dist; \
-	for arch in $(DIST_ARCHS); do \
-	  name="canon_$${v}_linux_$${arch}"; stage="dist/$$name"; mkdir -p "$$stage"; \
-	  GOTOOLCHAIN=local CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath \
-	    -ldflags "-s -w -X $(BUILD_PKG).CompilerVersion=$$v" -o "$$stage/canon" ./cmd/canon; \
+	for target in $(DIST_TARGETS); do \
+	  os="$${target%/*}"; arch="$${target#*/}"; exe=canon; [ "$$os" != windows ] || exe=canon.exe; \
+	  name="canon_$${v}_$${os}_$${arch}"; stage="dist/$$name"; mkdir -p "$$stage"; \
+	  GOTOOLCHAIN=local CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -trimpath \
+	    -ldflags "-s -w -X $(BUILD_PKG).CompilerVersion=$$v" -o "$$stage/$$exe" ./cmd/canon; \
 	  cp README.md "$$stage/"; if [ -f LICENSE ]; then cp LICENSE "$$stage/"; fi; \
-	  tar --sort=name --mtime="@$$when" --owner=0 --group=0 --numeric-owner --mode=u=rwX,go=rX \
-	    -cf - -C "$$stage" . | gzip -n > "dist/$$name.tar.gz"; rm -rf "$$stage"; \
+	  if [ "$$os" = windows ]; then \
+	    chmod 755 "$$stage/$$exe"; chmod 644 "$$stage"/README.md; if [ -f "$$stage/LICENSE" ]; then chmod 644 "$$stage/LICENSE"; fi; \
+	    find "$$stage" -exec touch -d "@$$when" {} +; \
+	    (cd "$$stage" && find . -type f | LC_ALL=C sort | sed 's|^\./||' | TZ=UTC zip -X -q -9 "../$$name.zip" -@); \
+	  else \
+	    tar --sort=name --mtime="@$$when" --owner=0 --group=0 --numeric-owner --mode=u=rwX,go=rX \
+	      -cf - -C "$$stage" . | gzip -n > "dist/$$name.tar.gz"; \
+	  fi; rm -rf "$$stage"; \
 	done; \
-	cd dist && sha256sum ./*.tar.gz | sed 's| \./| |' > checksums.txt
+	cd dist && sha256sum ./*.tar.gz ./*.zip | sed 's| \./| |' > checksums.txt
 
 tag:
 	@[ "$$(printf '%s\n' "$$VERSION" | wc -l)" -eq 1 ] && printf '%s\n' "$$VERSION" | grep -Eq '$(VERSION_RE)' || { echo "tag: VERSION=vX.Y.Z[-suffix] is required"; exit 1; }

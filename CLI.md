@@ -890,17 +890,19 @@ canon fmt                                 # after any hand edit of the code itse
 
 ## 7. Installing and updating
 
-Linux (amd64, arm64), from the GitHub releases (DECISIONS 276):
+Linux and macOS (amd64, arm64) and Windows (amd64), from the GitHub releases (DECISIONS 276, 325):
 
 ```
 curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.sh | sh             # latest
 curl -fsSL https://raw.githubusercontent.com/Fantasim/canon/main/tools/install.sh | sh -s -- v0.2.0 # a version
 ```
 
-The script downloads `canon_<version>_linux_<arch>.tar.gz`, checks it against `checksums.txt`, and
+The script picks `canon_<version>_<os>_<arch>.tar.gz` from `uname` (Linux, Darwin), checks it against `checksums.txt`, and
 installs `canon` into `$CANON_INSTALL_DIR` (default `~/.local/bin`). Running it again updates.
-The version can also come from `$CANON_VERSION`; `$CANON_RELEASE_BASE` replaces the release
+Windows users download `canon_<version>_windows_amd64.zip` (holding `canon.exe`) from the release
+page; every archive is listed in `checksums.txt`. The version can also come from `$CANON_VERSION`; `$CANON_RELEASE_BASE` replaces the release
 download URL (a mirror, or a local test release). A tag `vX.Y.Z-suffix` is a prerelease: it is
 published but never installed as the latest.
-`canon version` prints the installed version. A release is made by pushing a tag `v<semver>`.
+`canon version` prints the installed version. A release is made only by pushing an annotated tag `v<semver>`; its notes are the tag's message
+(DECISIONS 325).
 
