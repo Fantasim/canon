@@ -1,20 +1,20 @@
 # State — Canon compiler
 
-Updated: 2026-10-06. Branch `feat/past-and-ergonomics` (worktree, not yet on main) holds DECISIONS
-304-324: [log-2026-10-05](decisions/log-2026-10-05.md), [log-2026-10-06](decisions/log-2026-10-06.md),
+Updated: 2026-10-06. **v0.1.0 released** (tag on `f4f7da5`, GitHub release with linux amd64/arm64
+archives); `main` is the only branch. DECISIONS 304-324: [log-2026-10-05](decisions/log-2026-10-05.md), [log-2026-10-06](decisions/log-2026-10-06.md),
 ADR-0015, -0016, [ADR-0017](decisions/0017-shared-records-make-hooks.md). M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-**v0.1.0 release prep.** Landed on the branch: `in` tests elements, `hasKey` tests keys (317); a
+**Post-v0.1.0 hardening**, then telemetry as first real use. Shipped in v0.1.0: `in` tests elements, `hasKey` tests keys (317); a
 name in scope is never a symbolic key (318); one form per meaning (`= none` warns W3001, `values: []`
 refused; 319); honest refusals, every generator limit refused by `check` with its way out (320);
 hygiene, `canon help`, never-reported codes reported (322); shared records across packages in Go,
 C++ and TS, all modes, through make hooks (323); precomputed results verified (324). Handoffs:
 [Source](handoff/2026-10-05-telemetry-source.md), [showcase](handoff/2026-10-05-showcase-workarounds.md),
 [audit](handoff/2026-10-06-design-audit.md).
-**Next:** merge to main, push, tag v0.1.0, publish the GitHub release with archives built locally
-(`make dist`; CI is down: Actions billing); remove the merged branches and worktrees.
+**Next:** hardening (fix every known bug), then telemetry first use; release builds stay local
+(`make dist`) while CI is down (Actions billing).
 **Owed for v0.2** (refused today with a way out): Go `embedded`/`types` and C++ `embedded` modes,
 dependent values read through a ref or optional, legacy structs (M6), entry isolation of a poisoned
 table (321), input defaults (321). Also later: `ordered_json`, kind constants, API S11 vs §3.4,
@@ -72,9 +72,9 @@ NFR-01 measured on this local reference machine only, not a 4-core CI runner, an
 macOS/Windows link tests skip where links cannot be made. Long fuzz/progen campaigns beyond the
 stated acceptance, deferred by Louis. NFR-01 was not re-run after M4.1's Undo verification (it runs
 only for edit layers and multi-op dependent requests; the bench has neither). The 2026-10-06 wave's
-final `make check` result is the orchestrator's to record; this update did not run it.
+final `make check` was green on `f4f7da5`.
 
 ## Verify queue
 
-Louis pushes `main` after the merge; tag v0.1.0 afterwards. Re-run `make bench-edit` on a quiet
+Re-run `make bench-edit` on a quiet
 machine or a CI-class runner when one exists.

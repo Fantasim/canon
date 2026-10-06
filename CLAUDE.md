@@ -27,8 +27,8 @@ section the task implements (its owning companion document under [spec/](spec), 
 Canon is a generic configuration language; `canon` is its compiler. It reads `.canon` sources
 (and legacy JSON/CSV/headers through `load`), checks them once at build time, and translates them
 into typed Go, C++17 and TypeScript, JSON data files and a studio view model. One Go module,
-`github.com/fantasim/canonlang` (Go 1.25), public on GitHub. Language v0.1 is being locked;
-nothing is implemented yet. [README.md](README.md) maps every document.
+`github.com/fantasim/canonlang` (Go 1.25), public on GitHub. v0.1.0 is released
+(tag `v0.1.0`); hardening is in flight. [README.md](README.md) maps every document.
 
 ## Ground rules (non-negotiable)
 
