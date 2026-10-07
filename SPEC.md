@@ -272,7 +272,8 @@ Tokens are matched longest first. `!` is only the postfix presence assertion (§
 ### 3.1 The project file
 
 The root of the law repository contains `project.canon`. It is the only file without a `package`
-line: it may start with doc comments, then holds exactly one `project` declaration.
+line, with `project.local.canon` (below): it may start with doc comments, then holds exactly one
+`project` declaration.
 
 ```
 /// The law repository of the Acme project.
@@ -302,7 +303,8 @@ unknown key is `E1002`.
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `canon` | `String`, `"MAJOR.MINOR"` | required | language version this project is written for |
-| `roots` | `{identifier: String}` | `{}` | named roots; paths are relative to the project directory and may point outside it |
+| `roots` | `{identifier: String}` | `{}` | named roots; paths are relative to the project directory and may point outside it. A root is required unless `optional_roots` lists it; this machine may place it elsewhere (below) |
+| `optional_roots` | `[root name]` | `[]` | the declared roots that may be absent on a machine (below); each names a declared root, once (`E1009`) |
 | `languages` | `[identifier](1..)` | `[en]` | the first one is the source language (§17); codes match `[a-z]{2,3}(_[A-Z][a-z]{3})?(_[A-Z]{2})?` |
 | `studio` | package name, optional | `none` | package holding the studio vocabulary (§16.11); it must exist (`E1012`) |
 | `budget` | `Int(1..)` | `100_000_000` | evaluation steps per package and invocation (§11.6) |
@@ -317,7 +319,43 @@ unknown key is `E1002`.
 - `canon` states the language version. A compiler accepts the minor versions it knows within its
   major version, refuses newer ones and other majors (`E1001`), and never silently reinterprets
   older code.
-- Tests and tools can redirect a root without editing the file (CLI `--root name=path`).
+- **Roots on this machine** (DECISIONS 332). A root's directory is the path `project.canon` gives
+  it, unless this machine places it elsewhere. `project.local.canon`, beside `project.canon` and
+  git-ignored, moves declared roots for one machine:
+
+  ```
+  // project.local.canon: this machine only
+  project acme {
+    roots {
+      source: "/home/sam/work/Source"
+    }
+  }
+  ```
+
+  It is written like `project.canon`, under the same project name, and holds only a `roots` map
+  of declared root names to path strings, absolute or relative to the project directory. It
+  cannot add a root, make one optional or required, or set anything else (`E1014`;
+  [spec/GRAMMAR.md](spec/GRAMMAR.md) §7.2). Every client that opens the project reads it: the
+  CLI, the language server, the studio and the API's `Open`. Precedence, root by root: `--root
+  name=path` (CLI) or `Options.Roots` (API), used by tests and fixtures, then
+  `project.local.canon`, then `project.canon`. It is not an environment variable: the environment
+  changes how `canon` prints, never what it computes (CLI.md §2.3).
+- **Present and absent roots.** A root is present when its directory exists on this machine. A root
+  whose directory is the project directory or lies inside it is always present: `canon` creates
+  its directories as outputs need them. A required root outside the project that is absent stops
+  every command (`E1013`, which names the three ways out). A root listed in `optional_roots` may
+  be absent:
+  - a `load` or `asset` reading it is an error at that value (`E7009`, `E3705`), so a package's
+    verdict never depends on the machine that checks it;
+  - an `emit` writing into it is skipped, with one warning per root (`W8024`);
+  - `canon build --check` refuses such an output (`E8023`) (§14.1, CODEGEN.md §2.4).
+
+  `canon` creates the directories an output needs below a present root, never a root's own
+  directory outside the project nor one above it. Which roots are optional is the project's
+  decision.
+- Wherever this machine places the roots, generated files are the same bytes: import paths and
+  relative includes are computed from `project.canon` alone (CODEGEN.md §2.8, DECISIONS 108). A
+  relative include between two roots that this machine places otherwise is `E8022`.
 
 ### 3.2 Packages
 
@@ -332,8 +370,8 @@ import shared.roles { Role } // brings names into scope
 import shared.ui // use qualified: ui.Tone
 ```
 
-- Every file except `project.canon` starts with a `package` line, optionally preceded by the
-  package doc comment (§2.2). A file may declare the package of its own directory or of an
+- Every file except `project.canon` and `project.local.canon` starts with a `package` line,
+  optionally preceded by the package doc comment (§2.2). A file may declare the package of its own directory or of an
   ancestor directory, never of a descendant, so a large package can keep entries in
   subdirectories (`game/items/weapon/axe/II_WEA_AXE_ANGEL.canon` may declare
   `package game.items`); any other package line is `E2006`. A directory cannot contain files of
@@ -349,6 +387,7 @@ import shared.ui // use qualified: ui.Tone
 | First lines | Kind | Contains |
 |---|---|---|
 | `project name` (file `project.canon`) | project | the project declaration (§3.1) |
+| `project name` (file `project.local.canon`) | local roots | this machine's root paths (§3.1) |
 | `package p` | source | declarations (§4) |
 | `package p` then `layer name` | layer | `amend` blocks only (§19) |
 | `package p` then `translation lang` | translation | translation entries only (§17) |
@@ -1392,7 +1431,7 @@ load.text("@resource/Server/Text/notice.txt")
   (`E7108`), and an empty cell means the default or `none`. `load.text` is strict UTF-8 with
   `\r\n` normalized.
 - Each loaded file is recorded in the build manifest with its hash, alongside the compiler and
-  language versions, the layers and `--lang`. An unchanged manifest means an unchanged output, so
+  language versions, the layers, `--lang`, and where each root is and whether it is present. An unchanged manifest means an unchanged output, so
   builds can be cached.
 - `load` is a migration bridge: when a domain is converted (`canon convert`), its `load` becomes
   Canon source.
@@ -1433,7 +1472,9 @@ emit view { out: "@web/studio/generated/items.view.json" }
   re-emitted (§14.6).
 - `emit view` writes the package's whole view model (§16.10).
 - Code and data outputs are written only when the build has no error. `emit view` is written even
-  when there are errors, so the studio can show them.
+  when there are errors, so the studio can show them. An output under an optional root absent on
+  this machine is skipped with a warning, and `canon build --check` refuses it (§3.1, CODEGEN.md
+  §2.4).
 
 ### 14.2 Modes
 
@@ -1544,6 +1585,9 @@ is referenced, never re-emitted.
 - C++ includes the imported package's header by its path relative to the including file's
   directory (`#include "../vocab/vocab.gen.h"`).
 - TypeScript uses relative imports computed from the `out` paths, with `.js` specifiers.
+- Both relative paths are computed from `project.canon`'s roots, whatever this machine's are. A
+  build where one crosses two roots this machine places otherwise is `E8022`; one that would climb
+  above the project's parent directories is `E8025` on every machine (CODEGEN.md §2.8).
 - A record, variant or table of package P can be used in the values and data of another package
   Q in every target and mode, whatever P's mode: Q reads P's wire with its own readers and writes
   P's values itself, through the **make hooks** every Go and C++ emit of P writes (TypeScript: object
@@ -1965,7 +2009,7 @@ record Item {
 - **The file must exist**, with exactly that name: matching is exact and case-sensitive, byte for
   byte. A missing file, or one that differs only in letter case, is an error at build time
   (`E3701`) (DECISIONS 19). Legacy case drift in data is fixed once by a script, not by the
-  language.
+  language. Under an optional root absent on this machine every asset value is `E3705` (§3.1).
 - The studio shows a thumbnail and edits the value with a file picker limited to that root and
   those extensions. Decoding formats such as DDS is the studio's job.
 - `preview <expr>` in a view names the asset that represents an entry (§16.6), for example

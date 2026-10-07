@@ -97,13 +97,25 @@ func (p *Project) Close() error
 - **O1.** `FindProject` looks for `project.canon` in `dir` and then in each parent (CLI.md §2.1).
   It returns `ErrNoProject` when none is found.
 - **O2.** `Open` requires `root` to contain `project.canon`; it does not search. It reads and
-  checks `project.canon`, applies `Options.Roots`, and scans the file set (every `.canon` file
-  under the project root, skipping directories whose name starts with `.`, and the directory
-  listing needed to map packages to directories). It parses no other source. Parsing, checking and
+  checks `project.canon`, then `project.local.canon` when it exists (GRAMMAR.md §7.2). It places
+  the roots, root by root: `Options.Roots` over `project.local.canon` over `project.canon`. It
+  judges which roots are present (SPEC §3.1). It then scans the file set (every `.canon` file
+  under the project root except `project.canon` and `project.local.canon` at its top, skipping
+  directories whose name starts with `.`, and the directory listing needed to map packages to
+  directories). It parses no other source. Parsing, checking and
   loading happen on first use.
-- **O3.** Errors from `project.canon` itself (syntax, `E1001` unsupported language version,
-  `E1002` unknown key, a root that does not exist) make `Open` fail with a `*ProjectError`, which
-  wraps `ErrProject` and carries the findings.
+- **O3.** These make `Open` fail with a `*ProjectError`, which wraps `ErrProject` and carries the
+  findings:
+  - errors from `project.canon` itself (syntax, `E1001` unsupported language version, `E1002`
+    unknown key, …);
+  - errors from `project.local.canon` (syntax, `E1011`, `E1014`);
+  - a root name `Options.Roots` does not declare (`E7003`, DECISIONS 141);
+  - a required root outside the project whose directory does not exist (`E1013`), whichever of
+    the three places set its path (DECISIONS 332).
+
+  An absent optional root does not: what reads it fails at the value (`E7009`, `E3705`), and what
+  writes into it is skipped (`W8024`). Every new snapshot (S1) reads both files and judges
+  presence again, so a root cloned after `Open` counts from then on.
 - **O4.** An unknown name in `Options.Layers` is not an `Open` error: layers are found per package
   (LAY-01), so the first call that loads packages returns `ErrUnknownLayer` if no loaded package
   has a file for that layer.
@@ -124,7 +136,7 @@ func (p *Project) Close() error
 | `Layers []string` | none | layers to apply, in order (SPEC §19, CLI `--layer`) |
 | `Lang string` | source language | language of translated texts: check messages, titles, `show` labels (CLI `--lang`) |
 | `EditLayer string` | `""` | when set, `Set`/`Reset`/`AddEntry` edits write amendments into this layer (§7.5) |
-| `Roots map[string]string` | none | replaces the directory of a declared root (CLI `--root name=dir`); a relative directory is relative to the project root; a name that is not declared is `ErrProject` |
+| `Roots map[string]string` | none | replaces the directory of a declared root (CLI `--root name=dir`); a relative directory is relative to the project root; a name that is not declared is `ErrProject`; it wins over `project.local.canon` for the roots it names (O2) |
 | `FS FS` | the OS | file system used for every read and write (tests use an in-memory one) |
 | `Cache string` | `<root>/.canon/cache` | cache directory; `"off"` disables the cache |
 | `Workers int` | `runtime.GOMAXPROCS(0)` | parallelism; results are byte-identical for every value (NFR-05) |
@@ -132,8 +144,9 @@ func (p *Project) Close() error
 | `Logger *slog.Logger` | discard | diagnostics about the compiler itself, never findings |
 
 - **O7.** `Options` never changes what a program computes, except `Layers` (which is part of the
-  program, SPEC §19) and `Roots` (which changes the files read). Both are part of the build
-  manifest (LOD-11).
+  program, SPEC §19) and `Roots` (which changes the files read). `project.local.canon` is the
+  same kind of input as `Roots`: it changes the files read and where outputs go, never the bytes
+  generated (CODEGEN.md §2.8). Both are part of the build manifest (LOD-11).
 
 ### 2.2 The FS interface
 
@@ -198,7 +211,7 @@ func (p *Project) Revision() Revision
 - **S3.** A revision is `"r1:"` followed by the lowercase hex SHA-256 of the **read-set listing**:
   one line per file, `<display path> NUL <lowercase hex SHA-256 of the content> LF`, sorted by
   display path bytes. The listing covers the project's **static read set**, the same whatever a
-  call analysed: `project.canon`; every source, translation and layer file the scan finds (O2); the
+  call analysed: `project.canon`, and `project.local.canon` when it exists; every source, translation and layer file the scan finds (O2); the
   existing `canon.lock` of every directory below the project root that holds a source file or is
   an ancestor of one (LOCK.md §2.1); and every file a `load` of any package names, its path or, for
   `load.dir`, each file its glob matches (WIRE.md §6.5), counting the `load`s of source and layer
@@ -225,7 +238,7 @@ func (p *Project) Revision() Revision
   to a touched package after `Base` makes the edit stale, an editor swap file never does. A file
   first read after `Base` is compared with the first content the project read for it. Since any
   source can reshape the import graph, the edit or evaluation is also stale when any scanned
-  source file or `project.canon` changed since `Base`; the unrelated files are non-source files
+  source file, `project.canon` or `project.local.canon` changed since `Base`; the unrelated files are non-source files
   (other packages' loads, assets). An `Evaluate` without a draft touches the packages its
   `Summary` covers (V13). Per-package comparison needs `Base`'s per-file hashes, which only the
   `Project` that produced it holds (S4).
@@ -1398,8 +1411,13 @@ comments, and a trailing comment on its last line.
   - it restores only what this edit changed and recreates the directories it removed; a directory
     the edit created must lie above a file the edit created, and is removed with its contents only
     when it holds nothing but the edit's new files, their staged copies and temporary leftovers;
-  - it accepts only paths inside the project directory or a current declared root (paths outside
-    the project stored absolute), with no segment starting with `.`, and with an extension an edit
+  - it accepts only paths inside the project directory or a declared root as this `Open` places
+    it (O2: `Options.Roots`, `project.local.canon`, `project.canon`), paths outside the project
+    being stored absolute. A journal written before a root moved names paths outside every
+    current root: it is kept, with an error naming it and the files (O5), and nothing is written.
+    A journal holding a path under an absent optional root is kept too, since applying it could
+    create the root's directory (DECISIONS 332). Accepted paths also have no segment starting
+    with `.`, and with an extension an edit
     writes (`.canon`, `.json`, `.lock`); it never traverses a symbolic link (every component it
     resolves must equal the lexical path; a link is removed, never descended);
   - it applies modes masked to the read and write permission bits (`mode & 0o666`), and refuses
@@ -1552,7 +1570,10 @@ type Event struct {
 ```
 
 - **W12.** `Watch` starts watching the read set of every loaded package, the package directories,
-  the directories listed by globs, and `project.canon`, then returns. It returns an error only if
+  the directories listed by globs, `project.canon` and `project.local.canon` (whether it exists
+  or not), then returns. The presence of a root is judged again at each new snapshot; a root that
+  only appears or disappears, with nothing in the read set changing, is seen at the next `Build`
+  or the next change. It returns an error only if
   watching cannot start. Watching stops when `ctx` is cancelled or the project is closed. Starting
   runs one check of every package, so the read set of each is known (one package at a time when they
   cannot be checked together). The watcher follows the OS's change notifications for the OS FS or an
@@ -1689,7 +1710,7 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
 | Sentinel | Error type | When | CLI exit |
 |---|---|---|---|
 | `ErrNoProject` | | no `project.canon` found (O1) | 2 |
-| `ErrProject` | `*ProjectError` | `project.canon` has errors, bad `Roots` (O3); wrapped by the error of a journal `Open` must keep (O5), and of an edit refused because a journal exists or a path goes through a symbolic link or a hidden segment (N3, N11), which name the journal or the files | 2 |
+| `ErrProject` | `*ProjectError` | `project.canon` or `project.local.canon` has errors, bad `Roots`, a required root absent (O3); wrapped by the error of a journal `Open` must keep (O5), and of an edit refused because a journal exists or a path goes through a symbolic link or a hidden segment (N3, N11), which name the journal or the files | 2 |
 | `ErrUnsupportedVersion` | `*ProjectError` | `E1001` | 2 |
 | `ErrUnknownPackage` | | a selector matches no package (R1) | 2 |
 | `ErrUnknownLayer` | | a layer name matches no file (O4, LAY-01) | 2 |

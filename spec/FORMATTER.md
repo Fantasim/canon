@@ -530,8 +530,8 @@ Global.farmPurchasePrice "Prix d'achat de la ferme"
   on the item's line unless §7.2 moves them to continuation lines. Annotation order is never
   changed.
 - `if`/`else`: `} else {` and `} else if … {` on one line.
-- `project.canon`: `key: value` items; a map-valued key is printed in block form `roots { … }`
-  (`roots: { … }` is rewritten).
+- `project.canon` and `project.local.canon` (GRAMMAR.md §7.2): `key: value` items; a map-valued
+  key is printed in block form `roots { … }` (`roots: { … }` is rewritten).
 - Layer files: `package p`, then `layer name` on the next line, then one blank line.
 - Translation files: `package p`, then `translation lang` on the next line, then one blank line;
   entries keep their order.

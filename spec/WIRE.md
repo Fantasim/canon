@@ -64,8 +64,10 @@ segment    = 1*( any character except "/" and "\" )
 
 ### 2.2 Resolution
 
-1. **Base.** A rooted path starts at the root's directory, itself resolved lexically relative to the
-   project directory (`resource: "../../../Resource"`). An unrooted path starts at the directory of
+1. **Base.** A rooted path starts at the root's directory on this machine: the path
+   `project.canon` gives (`resource: "../../../Resource"`), resolved lexically relative to the
+   project directory, unless `project.local.canon`, `--root` or `Options.Roots` places the root
+   elsewhere (SPEC §3.1). An unrooted path starts at the directory of
    the `.canon` file that contains it.
 2. **Lexical normalisation.** Segments `.` are dropped. Each `..` removes the previous segment.
    This is done on the text, before any file system access, and symbolic links are not consulted.
@@ -79,6 +81,12 @@ segment    = 1*( any character except "/" and "\" )
    file; each keeps the form it was written in (§2.3). Such a root exists for what needs the
    directory as a root, such as a Go module path (CODEGEN.md §2.8), not to change how paths are
    written.
+5. **Absent roots** (DECISIONS 332). A rooted path into an optional root that is not present on
+   this machine resolves as usual, but nothing is read through it. Every `load` form reading it
+   is `E7009` at the `load`, naming the root, instead of `E7004` or a `W7107` empty glob. An asset
+   under it is TYPES.md's `E3705`. A package that reads it therefore has an error on every
+   machine that cannot read it, never a silent pass. An `emit` into it is skipped (CODEGEN.md
+   §2.4).
 
 | Written in `examples/pipeline/potion.canon` | Result |
 |---|---|
@@ -569,7 +577,8 @@ stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"]
   pass none, and a unary `-` gives `load` no expected type (`-load(…)` is `E7002`). A `load` as the
   value of an `amend` or layer path decodes in the scope of the field the path names, as an edit's
   `FromJSON` at that path does; a path through `none` (`E1905`) gives no scope (DECISIONS 272).
-- The path must exist and be a readable regular file [`E7004`].
+- The path must exist and be a readable regular file [`E7004`]; under an optional root absent on
+  this machine, [`E7009`] (§2.2).
 - The path of every `load` form is a string literal without interpolation [`E7008`], so the files
   a package reads are known from its sources alone, before any checking or evaluation, as the
   revision (API.md S3), the packages an edit affects (API.md E17) and the build manifest (§10) need
@@ -1209,7 +1218,7 @@ lang <code>                        the --lang value (source language if absent)
 command <check|build|test>
 target <go|cpp|ts|json|view|text>  one line per selected target, sorted; all when none selected
 package <qualified name>           one line per selected package, sorted
-root <name> <dir>                  one line per declared root, sorted by name
+root <name> <dir>[ absent]         one line per declared root, sorted by name
 file <sha256> <path>               every file read, sorted by path bytes
 glob <sha256> <pattern>            every glob evaluated, sorted by pattern bytes
 list <sha256> <directory>          every directory listing consulted, sorted by path bytes
@@ -1218,10 +1227,13 @@ list <sha256> <directory>          every directory listing consulted, sorted by 
 - `file` lines cover `project.canon`, every `.canon` source, layer and translation file parsed,
   every `canon.lock` read, and every file read by `load`, `load.*` and asset checks. `<path>` is the
   display form (§2.3). `<sha256>` is the lower-case hex SHA-256 of the file's bytes.
-- `root` gives the directory a declared root resolves to, `--root` applied (API.md O7:
-  `Options.Roots` changes the files read), relative to the project directory, `/`-separated
-  (`../../Resource`); a root with no relative form (another volume) is `root <name> sha256:<hex>`,
-  the hash of its absolute `/`-separated path, never the path itself.
+- `root` gives the directory a declared root resolves to, `project.local.canon` and `--root`
+  applied (API.md O7: `Options.Roots` changes the files read), relative to the project directory,
+  `/`-separated (`../../Resource`); a root with no relative form (another volume) is `root <name>
+  sha256:<hex>`, the hash of its absolute `/`-separated path, never the path itself. An optional
+  root not present on this machine ends its line with ` absent` (`root source ../../../Source
+  absent`): presence changes the findings and the outputs written, so a root cloned since gives
+  another manifest (DECISIONS 332).
 - `glob` hashes the list of matched paths (display form, one per line, each followed by LF, in match
   order), so adding or removing a matching file changes the manifest. The matches are those the run
   used, recorded as it loaded, never a later walk.
@@ -1284,6 +1296,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E7006 | error | §6.1, §6.2 |
 | E7007 | error | §6.2 |
 | E7008 | error | §6.1 (DECISIONS 330) |
+| E7009 | error | §2.2 rule 5, §6.1 (DECISIONS 332) |
 | W7101 | warning | §6.8 |
 | E7102 | error | §6.8 |
 | E7103 | error | §5.1, §5.3, §5.8 |

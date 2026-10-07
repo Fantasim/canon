@@ -10,16 +10,18 @@ The test harness opens `examples/` with **every root redirected**:
 
 - a root that has a directory here (`_fixtures/resource/`, `_fixtures/client/`) points at it;
 - every other root outside the project (`source`, `services`, `sovcommon`, `web`, `parity`,
-  `generated`) is only written by `emit`, and points at a fresh temporary directory, so a test
-  never writes into a real repository;
+  `generated`) is only written by `emit`, and points at a fresh, empty temporary directory that
+  the harness creates (a required root must exist, DECISIONS 332), so a test never writes into a
+  real repository;
 - the roots inside the project (`pipeline_go`, `features`) are not redirected: build tests
   already work on a copy of the project.
 
-`project.canon` itself is not changed and there is no second project file. The override is a
-harness option: `canon.Options{Roots: map[string]string{"resource": "_fixtures/resource", …}}`
+`project.canon` itself is not changed, and the harness's copy leaves out any
+`project.local.canon`. The override is a harness option: `canon.Options{Roots: map[string]string{"resource": "_fixtures/resource", …}}`
 in the Go API, and `--root resource=_fixtures/resource` (repeatable) on the command line:
 
 ```
+mkdir -p "$TMP"/{source,services,sovcommon,web,parity,generated}
 canon check --project examples \
   --root resource=_fixtures/resource --root client=_fixtures/client \
   --root source=$TMP/source --root services=$TMP/services --root sovcommon=$TMP/sovcommon \

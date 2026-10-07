@@ -23,7 +23,7 @@ other file declares a code or holds message text.
   lines, summary).
 - **Reserved codes** are catalogued but not reported yet, each with its owner (DECISIONS 322):
   `E8103`, `E8106`-`E8109`, `E8201` (legacy C++ structs, M6; `LegacyStruct` refuses them first, DECISIONS 320), `E8301` (the embedded mode, v0.2), `E4201`
-  (an internal safety net, EVALUATION.md §4.5), `E7008` (the literal `load` path check of DECISIONS 330, `check`, until it lands), `W4001` (DECISIONS 331, `eval`, until it lands).
+  (an internal safety net, EVALUATION.md §4.5), `E7008` (the literal `load` path check of DECISIONS 330, `check`, until it lands), `W4001` (DECISIONS 331, `eval`, until it lands), `E1013`, `E1014` (`project`), `E3705` (`verify`), `E7009` (`load`), `E8022`, `E8023`, `W8024` (`build`) and `E8025` (`ir`) (DECISIONS 332, until it lands).
 - **Retired numbers** are never reused: `E1624` and `E1625` (the view `row` item, removed by
   DECISIONS 21), `E8016` (merged into `E8153`), `E8018` (decoders across packages, removed by
   DECISIONS 323: a package reads another package's classes with its own readers). `E3014` and `E3319` were referenced once but never
@@ -391,7 +391,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 308 codes: 285 errors, 20 warnings and 3 run-time codes, with 496 messages.
+The catalogue holds 316 codes: 292 errors, 21 warnings and 3 run-time codes, with 518 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -410,10 +410,12 @@ Owner: GRAMMAR.md.
 | E1006 | error | project | GRAMMAR.md §7.1 | a project value of the wrong kind or out of range |
 | E1007 | error | project | GRAMMAR.md §7.1 | invalid root name or path (absolute, empty, `\`) |
 | E1008 | error | project | GRAMMAR.md §7.1 | invalid or duplicate language code in `languages` |
-| E1009 | error | project | GRAMMAR.md §7.1 | `go_module` key is not a declared root, or its module path is empty or invalid |
+| E1009 | error | project | GRAMMAR.md §7.1 | a `go_module` key or an `optional_roots` name is not a declared root, an `optional_roots` name is listed twice, or a `go_module` module path is empty or invalid |
 | E1010 | error | project | GRAMMAR.md §7.1 | `canon` is not `"MAJOR.MINOR"` |
-| E1011 | error | syntax | GRAMMAR.md §5.2 | a `project` declaration outside `project.canon`, or anything else inside it |
+| E1011 | error | syntax | GRAMMAR.md §5.2 | a `project` declaration outside `project.canon` and `project.local.canon`, or anything else inside them |
 | E1012 | error | project | GRAMMAR.md §7.1 | `studio` names a package that does not exist |
+| E1013 | error | project | GRAMMAR.md §7.1 | a required root outside the project whose directory does not exist on this machine (DECISIONS 332) |
+| E1014 | error | project | GRAMMAR.md §7.2 | `project.local.canon` holds something other than a `roots` map moving declared roots to path strings, or names another project (DECISIONS 332) |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -432,6 +434,7 @@ Owner: GRAMMAR.md.
 | E1006 | studio | - | `"studio" must be a package name` |
 | E1006 | budget | - | `"budget" must be an integer of at least 1` |
 | E1006 | goModule | - | `"go_module" must be a map of root names to module path strings` |
+| E1006 | optionalRoots | - | `"optional_roots" must be a list of root names` |
 | E1007 | name | name:Name | `invalid root name "{name}": a root name is an identifier` |
 | E1007 | empty | name:Name | `invalid root "{name}": the path is empty` |
 | E1007 | absolute | name:Name | `invalid root "{name}": the path is absolute` |
@@ -440,10 +443,23 @@ Owner: GRAMMAR.md.
 | E1008 | duplicate | code:Name | `language "{code}" listed twice` |
 | E1009 | root | name:Name | `go_module: "{name}" is not a declared root` |
 | E1009 | path | name:Name | `go_module: the module path of root "{name}" is empty or contains a space` |
+| E1009 | optionalRoot | name:Name | `optional_roots: "{name}" is not a declared root` |
+| E1009 | optionalDuplicate | name:Name | `optional_roots: "{name}" is listed twice` |
 | E1010 | - | value:Text | `"canon" must be "MAJOR.MINOR", found "{value}"` |
 | E1011 | outside | - | `a project declaration is only allowed in project.canon` |
 | E1011 | inside | - | `project.canon may only contain the project declaration` |
+| E1011 | local | - | `project.local.canon may only contain the project declaration` |
 | E1012 | - | pkg:Name | `studio package "{pkg}" does not exist` |
+| E1013 | declared | name:Name, path:Text | `root "{name}" ("{path}") is not a directory on this machine: clone the repository there, point to it in project.local.canon, or list the root in optional_roots in project.canon` |
+| E1013 | local | name:Name, path:Text | `root "{name}" ("{path}", from project.local.canon) is not a directory on this machine: fix the path there, remove the line to use project.canon's, or list the root in optional_roots in project.canon` |
+| E1013 | option | name:Name, path:Text | `root "{name}" ("{path}", from --root or Options.Roots) is not a directory on this machine: give an existing directory, or list the root in optional_roots in project.canon` |
+| E1014 | name | got:Name, want:Name | `project.local.canon names project "{got}", project.canon "{want}"` |
+| E1014 | key | key:Name | `project.local.canon may only hold roots: remove "{key}"` |
+| E1014 | roots | - | `"roots" in project.local.canon must be a map of root names to path strings` |
+| E1014 | path | name:Name | `root "{name}" in project.local.canon must be a path string` |
+| E1014 | root | name:Name, roots:Names | `"{name}" in project.local.canon is not a root of project.canon (roots: {roots}): this file can only move a declared root` |
+| E1014 | duplicate | key:Name | `"{key}" is given twice in project.local.canon` |
+| E1014 | empty | name:Name | `root "{name}" in project.local.canon has an empty path` |
 
 ## E11xx: Lexer and parser
 
@@ -842,6 +858,7 @@ Owner: TYPES.md, WIRE.md.
 | E3702 | error | verify | TYPES.md §13.4 | an asset with an extension not allowed |
 | E3703 | error | verify | TYPES.md §13.4 | an asset path that is not a clean relative path |
 | E3704 | error | check | TYPES.md §13.4 | invalid `asset(…)` type arguments |
+| E3705 | error | verify | TYPES.md §13.4 | an asset under an optional root absent on this machine (DECISIONS 332) |
 | E3801 | error | verify | TYPES.md §11.6 | a non-optional field whose computed type is `Never` |
 | E3802 | error | verify | TYPES.md §11.6 | a value that does not match its computed dependent type |
 | E3803 | error | check | TYPES.md §11.2 | a type-function argument or scrutinee that is not a path rooted at a parameter |
@@ -960,6 +977,7 @@ Owner: TYPES.md, WIRE.md.
 | E3704 | root | root:Text | `invalid asset(…): "{root}" is not a load path` |
 | E3704 | ext | ext:Text | `invalid asset(…): "{ext}" is not a bare extension` |
 | E3704 | missing | - | `invalid asset(…): it needs a root and ext` |
+| E3705 | - | path:Text, root:Name | `asset {path} cannot be checked: root @{root} is optional and not present on this machine; clone it or point to it in project.local.canon` |
 | E3801 | - | field:Name, dep:Expr | `{field} has type {dep} = Never: this value cannot be built` |
 | E3802 | - | dep:Expr, typ:Type | `value does not match {dep} = {typ}` |
 | E3803 | argument | - | `a type-function argument must be a path rooted at a parameter` |
@@ -1100,6 +1118,7 @@ Owner: WIRE.md.
 | E7006 | error | load | WIRE.md §6.1 | a `load` option not valid for the form or format |
 | E7007 | error | load | WIRE.md §6.2 | the format of a loaded file cannot be told from its extension |
 | E7008 | error | check | WIRE.md §6.1 | a `load` path that is not a string literal (DECISIONS 330) |
+| E7009 | error | load | WIRE.md §2.2 | a `load` reading under an optional root absent on this machine (DECISIONS 332) |
 | W7101 | warning | load | WIRE.md §6.8 | `load.defines` skipped defines it cannot evaluate (once per file) |
 | E7102 | error | load | WIRE.md §6.8 | a define redefined with a different value |
 | E7103 | error | wire | WIRE.md §5.1 | a JSON number that must be an integer is not |
@@ -1134,6 +1153,7 @@ Owner: WIRE.md.
 | E7006 | format | format:Name | `format {format} is not one of json, csv and text` |
 | E7007 | - | path:Path | `cannot tell the format of {path}; add format: json, csv or text` |
 | E7008 | - | - | `the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir` |
+| E7009 | - | path:Path, root:Name | `cannot read {path}: root @{root} is optional and not present on this machine; clone it or point to it in project.local.canon, or check only the packages that do not read it` |
 | W7101 | one | path:Path, name:Name | `1 define skipped in {path} ({name}): not a supported integer expression` |
 | W7101 | many | n:Int, path:Path, name:Name | `{n} defines skipped in {path} (first: {name}): not a supported integer expression` |
 | E7102 | - | name:Name, renamed:Int, previous:Int, first:Loc | `{name} redefined with a different value ({renamed}, first {previous} at {first})` |
@@ -1204,6 +1224,10 @@ Owner: CODEGEN.md, WIRE.md.
 | E8019 | error | ir | EVALUATION.md §1 | an emit whose generator cannot produce a construct valid Canon allows, or a mode not built yet (DECISIONS 320); the message names the way out (DECISIONS 305) |
 | E8020 | error | ir | CODEGEN.md §5.1 | a Go constant of -0.0, which Go constants cannot hold |
 | E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text` (a `String?` result included), an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) |
+| E8022 | error | build | CODEGEN.md §2.8 | a relative include or import crossing two roots this machine places otherwise than `project.canon` does (DECISIONS 332) |
+| E8023 | error | build | CODEGEN.md §2.4 | `build --check` with outputs under an optional root absent on this machine (DECISIONS 332) |
+| W8024 | warning | build | CODEGEN.md §2.4 | outputs under an optional root absent on this machine were skipped; one per root (DECISIONS 332) |
+| E8025 | error | ir | CODEGEN.md §2.8 | a relative include or import that would climb above the project's parent directories, wrong on every checkout (DECISIONS 332) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
 | E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field or `@text` result part (not a whole unit, equals the `none` marker, repeated bits member; DECISIONS 308) |
 | E8103 | error | ir | CODEGEN.md §7.8.1 | a string or list longer than its fixed-size legacy C++ array |
@@ -1271,6 +1295,12 @@ Owner: CODEGEN.md, WIRE.md.
 | E8021 | file | value:Text | `invalid @text file name "{value}": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)` |
 | E8021 | twice | value:Text, other:Name | `@text file "{value}" is also written by {other}` |
 | E8021 | called | name:Name | `{name} has @text: it is a file, not a function other declarations can call` |
+| E8022 | - | out:Path, other:Path, from:Name, to:Name | `{out} reaches {other} by a relative path computed from project.canon, but this machine places {to} elsewhere relative to {from}: place both as project.canon does (project.local.canon or --root), or the generated path would break` |
+| E8023 | one | root:Name, path:Text | `build --check cannot compare 1 output under root @{root}: "{path}" is not present on this machine; check the repository out there (CI needs every root its outputs go to)` |
+| E8023 | many | n:Int, root:Name, path:Text | `build --check cannot compare {n} outputs under root @{root}: "{path}" is not present on this machine; check the repository out there (CI needs every root its outputs go to)` |
+| W8024 | one | root:Name, path:Text | `1 output skipped: root @{root} ("{path}") is optional and not present on this machine; clone it or point to it in project.local.canon to write it` |
+| W8024 | many | n:Int, root:Name, path:Text | `{n} outputs skipped: root @{root} ("{path}") is optional and not present on this machine; clone it or point to it in project.local.canon to write them` |
+| E8025 | - | out:Path, other:Path, pkg:Name | `{out} would reach {other} by a relative path climbing above the project's parent directories, which differ per checkout: emit {pkg} a copy under the same root` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |
 | E8102 | unit | value:Value, field:Name, unit:Name | `{value} has no wire form for {field}: not a whole number of {unit}` |

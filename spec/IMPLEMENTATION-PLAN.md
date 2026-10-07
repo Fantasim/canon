@@ -105,7 +105,7 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `syntax` | lexer (modes, interpolation, regex rule), parser, lossless token stream with trivia, AST | GRAMMAR.md | source, diag |
 | `format` | printer over the AST and trivia; comment attachment | FORMATTER.md (FMT-01) | syntax |
 | `jsonsrc` | JSON reader with byte spans and RFC 6901 pointers; canonical source-JSON printer | WIRE.md (LOD-02), FORMATTER.md (FMT-02) | source, diag |
-| `project` | `project.canon` schema, roots, path normalization (`E7001`), package discovery, file set scan | SPEC §3, GRM-07, GEN-04 | syntax, source |
+| `project` | `project.canon` schema, roots, `project.local.canon`, root presence (`E1013`, `E1014`), path normalization (`E7001`), package discovery, file set scan | SPEC §3, GRM-07, GEN-04 | syntax, source |
 | `types` | type representation, aliases, dependent type functions, assignability, joins | TYPES.md | syntax |
 | `value` | immutable values, identity, `Prov`, equality, canonical text form | EVALUATION.md, STD-06 | types, source, diag |
 | `check` | resolver + bidirectional type checker for declarations, bodies, views, translations, layers; the `Folder` interface through which it folds constants with `eval` (§4.7) | TYPES.md, GRAMMAR.md (names), RES-01..09 | syntax, types, project, value |
@@ -959,8 +959,10 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   folder: copy the project and `examples/_fixtures` into a temporary directory; open it with
   `Options.Roots` redirecting the roots as `examples/_fixtures/README.md` says (a root with a
   fixture directory, `resource` and `client`, at the copied fixtures; every other root outside the
-  project at an empty temporary directory; the roots inside the project, `pipeline_go` and
-  `features`, unchanged, since the project is already a copy); run `Check`, then `Build`.
+  project at an empty temporary directory the harness creates, since a required root that does
+  not exist stops `Open` (`E1013`, DECISIONS 332); the roots inside the project, `pipeline_go` and
+  `features`, unchanged, since the project is already a copy); run `Check`, then `Build`. The
+  copy leaves out a `project.local.canon`.
 - **Manifest.** Outputs are compared only for an example that has `expected/MANIFEST`: today
   `pipeline`; `teamboard` gets one in M1 (M1 item 3), and each later example when its outputs are
   frozen. The manifest lists one line per output: `<display path written> <golden path relative
@@ -1256,6 +1258,9 @@ Not part of v0.1 (DECISIONS 188).
     first. References start from a ref key naming the target, or a ref in a JSON buffer. In a `*.layer.canon` file, hover shows
     the base value, labelled as such.
   - **formatting:** `Format`.
+  - **Roots.** Each project is opened with no `Options.Roots`; `project.local.canon` places its
+    roots (SPEC §3.1). An open buffer of it counts like the file, and it is parsed as a project
+    file (GRAMMAR.md §7.2), never as a source.
   - Completion, code actions and rename are not offered (DECISIONS 274). The rename of a Canon
     name is `canon rename` (CLI.md §3.16, API.md §8.9, DECISIONS 275).
 - **Highlighting.** A hand-written TextMate grammar (`editors/vscode/syntaxes/canon.tmLanguage.json`),

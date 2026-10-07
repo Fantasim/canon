@@ -535,12 +535,13 @@ The kind of a file is decided by its first tokens:
 | File | Starts with | Contains |
 |---|---|---|
 | `project.canon` at the project root | `project` | the project declaration only (§7) |
+| `project.local.canon` at the project root | `project` | the project declaration, holding only `roots` (§7.2) |
 | source | `package p` | imports, then declarations |
 | layer | `package p` NL `layer name` | `amend` declarations only |
 | translation | `package p` NL `translation lang` | translation entries only |
 
 ```ebnf
-projectFile     = { DOC } "project" IDENT BraceList( projectItem ) { NL } EOF ;   (* §7 *)
+projectFile     = { DOC } "project" IDENT BraceList( projectItem ) { NL } EOF ;   (* §7, §7.2 *)
 
 sourceFile      = { DOC } packageClause NL
                   { importDecl NL }
@@ -555,10 +556,13 @@ importDecl      = "import" qualifiedIdent [ "as" IDENT ] [ BraceList( IDENT ) ] 
 
 - Comments may precede `package`. A doc block directly before `package` in a source file is the
   **package doc** (GRM-08, §9.1). In a layer or translation file it is `W1001`.
-- A file that does not start with `package` (or `project` for `project.canon`), a second
-  `package` clause, an `import` after a declaration, or a declaration in a layer or translation
-  file is `E1127`. A `project` declaration anywhere but `project.canon`, or anything else in
-  `project.canon`, is `E1011`.
+- A file that does not start with `package` (or `project` for `project.canon` and
+  `project.local.canon`), a second `package` clause, an `import` after a declaration, or a
+  declaration in a layer or translation file is `E1127`. A `project` declaration anywhere but
+  `project.canon` or `project.local.canon`, or anything else in either, is `E1011`.
+- `project.canon` and `project.local.canon` are project files because of their name and place,
+  at the project root: the scan never reads them as sources (API.md O2). Elsewhere, a file of
+  either name is an ordinary source.
 
 ### 5.3 Top-level declarations
 
@@ -1063,6 +1067,7 @@ map type followed by `typeArgs` is always a length refinement.
 ## 7. The project file
 
 `project.canon` sits at the project root and contains only the project declaration (GRM-07).
+`project.local.canon` beside it has the same grammar and a narrower schema (§7.2).
 
 ```ebnf
 projectFile     = { DOC } "project" IDENT BraceList( projectItem ) { NL } EOF ;
@@ -1082,7 +1087,8 @@ pValue          = stringLit | INT | qualifiedIdent
 | Key | Type | Default | Rules |
 |---|---|---|---|
 | `canon` | string `"MAJOR.MINOR"` | required (`E1004`) | must match `^[0-9]+\.[0-9]+$` (`E1010`); an unsupported version is `E1001` (NFR-03: same major, known minor) |
-| `roots` | map name → path string | `{}` | names are `IDENT`s, unique (`E1005`); paths are non-empty, relative to the project directory, `/`-separated, not absolute, no `\` (`E1007`). Roots may point outside the project directory. Path resolution inside roots: SPEC §3.1 and GEN-04 |
+| `roots` | map name → path string | `{}` | names are `IDENT`s, unique (`E1005`); paths are non-empty, relative to the project directory, `/`-separated, not absolute, no `\` (`E1007`). Roots may point outside the project directory. A required root outside the project whose directory does not exist on this machine is `E1013` (DECISIONS 332). Path resolution inside roots: SPEC §3.1 and GEN-04; a root's place on this machine: §7.2 |
+| `optional_roots` | list of root names | `[]` | the roots that may be absent on a machine (SPEC §3.1, DECISIONS 332), written as identifiers (`[source, client]`). Not a list of identifiers: `E1006`. Each must be a declared root and listed once (`E1009`). A root inside the project may be listed: it matters only once this machine places it outside (§7.2) |
 | `languages` | list of language codes, at least one | `[en]` | each matches `^[a-z]{2,3}(_[A-Z][a-z]{3})?(_[A-Z]{2})?$`, written as an identifier (`en`, `pt_BR`); no duplicates (`E1008`). The first is the source language |
 | `studio` | package path | none | the package holding the studio vocabulary (SPEC §16.11); it must exist (`E1012`) |
 | `budget` | integer ≥ 1 | `100_000_000` | evaluation steps (EVALUATION.md); out of range `E1006` |
@@ -1114,6 +1120,45 @@ project sovereign {
   }
 }
 ```
+
+### 7.2 The local root file
+
+`project.local.canon`, beside `project.canon`, places declared roots on one machine (SPEC §3.1,
+DECISIONS 332). It is optional and git-ignored (`canon init` adds the line, CLI.md §3.1). It is
+a `projectFile` like `project.canon`, read by the same parser: no other grammar.
+
+```
+// project.local.canon: git-ignored, this machine only
+project sovereign {
+  roots {
+    resource: "/home/sam/work/Resource"
+    sovcommon: "../../../sovcommon"
+  }
+}
+```
+
+- The project name must be `project.canon`'s, and the one key is `roots`, a map of declared root
+  names to path strings. The errors, all `E1014`:
+  - a project name other than `project.canon`'s: `name`;
+  - a key other than `roots`: `key`;
+  - `roots` given twice, or a root given twice: `duplicate`;
+  - `roots` not a map: `roots`;
+  - a root value that is not a string: `path`;
+  - a name `project.canon` does not declare: `root`;
+  - an empty path: `empty`.
+
+  A second `project` declaration or anything after it is `E1011` (§5.2), as in `project.canon`.
+- A path is absolute, or relative to the project directory. It follows the rule of
+  `Options.Roots` (API.md §2.1, §2.2), the Windows form included. It belongs to this machine, so
+  unlike `project.canon` it may be absolute.
+- Each entry replaces the directory of its root; a root it does not name keeps `project.canon`'s.
+  `--root` and `Options.Roots` win over it, root by root. Whether a root is optional is decided in
+  `project.canon` alone (`optional_roots`, §7.1).
+- Its errors stop the project like `project.canon`'s (API.md O3; exit 2). A file with an empty
+  `roots`, or none, moves nothing.
+- Every client that opens the project reads it, at every snapshot (API.md S1): the CLI, the
+  language server, the studio and the API. `canon fmt` formats it like `project.canon`
+  (FORMATTER.md §9.3).
 
 ---
 
@@ -1309,10 +1354,12 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1006 | error | a project value of the wrong kind or out of range |
 | E1007 | error | bad root name or path (absolute, empty, `\`) |
 | E1008 | error | `languages` item |
-| E1009 | error | key is not a declared root, or empty/invalid module path |
+| E1009 | error | a `go_module` key or an `optional_roots` name is not a declared root, an `optional_roots` name is listed twice, or an empty/invalid module path |
 | E1010 | error | malformed version |
-| E1011 | error | misplaced `project` or extra content |
+| E1011 | error | misplaced `project` or extra content (`project.canon`, `project.local.canon`) |
 | E1012 | error | `studio` names a missing package |
+| E1013 | error | a required root outside the project whose directory does not exist on this machine (§7.1) |
+| E1014 | error | `project.local.canon` holds something other than a `roots` map moving declared roots to path strings, or names another project (§7.2) |
 | E1101 | error | depth-0 `:` in an interpolation not followed by a valid spec and `}` |
 | E1102 | error | indentation prefix of a multiline string |
 | E1103 | error | a second `typeArgs` |

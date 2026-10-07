@@ -1186,11 +1186,15 @@ Titles in rows are already disambiguated (S9).
 ### 12.9 `assets`, `units`, `widgets`, `studio`
 
 - `assets` maps each asset root used by the package's types, by its display path as in `asset.root`
-  (`"@resource/Icon/Item"`), to
-  `{dir}`, the root's directory relative to the project directory, with `/` (an unrooted root
-  resolves from the file that declares the asset type, as `check` does). Files are matched
-  exactly and case-sensitively (DECISIONS 19). The studio lists `dir` for the file picker and reads
-  thumbnails from it.
+  (`"@resource/Icon/Item"`), to `{dir}`: the root's directory relative to the project directory,
+  with `/`, placed through `project.canon`'s roots alone. `project.local.canon`, `--root` and
+  `Options.Roots` never change it, so the view model is the same bytes on every machine
+  (DECISIONS 108, 332). An unrooted root resolves from the file that declares the asset type, as
+  `check` does. Files are matched exactly and case-sensitively (DECISIONS 19). The studio lists
+  the asset root on its own machine for the file picker, and reads thumbnails from it: `dir` for
+  an unrooted root; for a rooted one, the studio places it on its machine through the project's
+  roots (`project.local.canon` included), by a mechanism to be specified with the studio
+  (DECISIONS 191).
 - `units` maps unit names to `{suffix, scale, thousands, decimals}` copied from the studio
   package's `units` table; `suffix` is a text reference (`"studio:units.hp.suffix"`), absent when
   the suffix is empty.

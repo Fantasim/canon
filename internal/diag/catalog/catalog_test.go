@@ -59,7 +59,7 @@ func TestParseRefuses(t *testing.T) {
 		{"gen for a static code", "| E1012 | error | project |", "| E1012 | error | gen |", errPackage, false},
 		{"runtime code outside gen", "| E8301 | runtime | gen |", "| E8301 | runtime | ir |", errPackage, false},
 		{"no message row", e1012Message + "\n", "", errMessage, false},
-		{"message row of another code", e1012Message, strings.Replace(e1012Message, "E1012", "E1013", 1), errMessage, false},
+		{"message row of another code", e1012Message, strings.Replace(e1012Message, "E1012", "E1099", 1), errMessage, false},
 		{"unnamed variant among several", "| E1005 | key |", "| E1005 | - |", errMessage, false},
 		{"named single variant", "| E1012 | - |", "| E1012 | only |", errMessage, false},
 		{"variant not lowerCamel", "| E1005 | key |", "| E1005 | Key |", errMessage, false},

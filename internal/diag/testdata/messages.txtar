@@ -13,6 +13,7 @@ E1006 languages: "languages" must be a non-empty list of language codes
 E1006 studio: "studio" must be a package name
 E1006 budget: "budget" must be an integer of at least 1
 E1006 goModule: "go_module" must be a map of root names to module path strings
+E1006 optionalRoots: "optional_roots" must be a list of root names
 E1007 name: invalid root name "resource.vocab.items": a root name is an identifier
 E1007 empty: invalid root "resource.vocab.items": the path is empty
 E1007 absolute: invalid root "resource.vocab.items": the path is absolute
@@ -21,10 +22,23 @@ E1008 invalid: invalid language code "resource.vocab.items"
 E1008 duplicate: language "resource.vocab.items" listed twice
 E1009 root: go_module: "resource.vocab.items" is not a declared root
 E1009 path: go_module: the module path of root "resource.vocab.items" is empty or contains a space
+E1009 optionalRoot: optional_roots: "resource.vocab.items" is not a declared root
+E1009 optionalDuplicate: optional_roots: "resource.vocab.items" is listed twice
 E1010 -: "canon" must be "MAJOR.MINOR", found "0.9"
 E1011 outside: a project declaration is only allowed in project.canon
 E1011 inside: project.canon may only contain the project declaration
+E1011 local: project.local.canon may only contain the project declaration
 E1012 -: studio package "resource.vocab.items" does not exist
+E1013 declared: root "resource.vocab.items" ("0.9") is not a directory on this machine: clone the repository there, point to it in project.local.canon, or list the root in optional_roots in project.canon
+E1013 local: root "resource.vocab.items" ("0.9", from project.local.canon) is not a directory on this machine: fix the path there, remove the line to use project.canon's, or list the root in optional_roots in project.canon
+E1013 option: root "resource.vocab.items" ("0.9", from --root or Options.Roots) is not a directory on this machine: give an existing directory, or list the root in optional_roots in project.canon
+E1014 name: project.local.canon names project "resource.vocab.items", project.canon "resource.vocab.items"
+E1014 key: project.local.canon may only hold roots: remove "resource.vocab.items"
+E1014 roots: "roots" in project.local.canon must be a map of root names to path strings
+E1014 path: root "resource.vocab.items" in project.local.canon must be a path string
+E1014 root: "resource.vocab.items" in project.local.canon is not a root of project.canon (roots: go, cpp): this file can only move a declared root
+E1014 duplicate: "resource.vocab.items" is given twice in project.local.canon
+E1014 empty: root "resource.vocab.items" in project.local.canon has an empty path
 E1101 -: invalid format spec "0.9": expected [+][,][.N] with N at most 20
 E1102 -: multiline string indentation mixes tabs and spaces
 E1103 -: a type takes one refinement; use "where" for more
@@ -278,6 +292,7 @@ E3703 -: asset path 0.9 is not a clean relative path
 E3704 root: invalid asset(…): "0.9" is not a load path
 E3704 ext: invalid asset(…): "0.9" is not a bare extension
 E3704 missing: invalid asset(…): it needs a root and ext
+E3705 -: asset 0.9 cannot be checked: root @resource.vocab.items is optional and not present on this machine; clone it or point to it in project.local.canon
 E3801 -: resource.vocab.items has type a b = Never: this value cannot be built
 E3802 -: value does not match a b = Int
 E3803 argument: a type-function argument must be a path rooted at a parameter
@@ -352,6 +367,7 @@ E7006 option: option resource.vocab.items is not valid for resource.vocab.items 
 E7006 format: format resource.vocab.items is not one of json, csv and text
 E7007 -: cannot tell the format of @resource/Server/Item/propItem.json; add format: json, csv or text
 E7008 -: the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir
+E7009 -: cannot read @resource/Server/Item/propItem.json: root @resource.vocab.items is optional and not present on this machine; clone it or point to it in project.local.canon, or check only the packages that do not read it
 E7102 -: resource.vocab.items redefined with a different value (-42, first -42 at @resource/Server/System/farm_config.json:1)
 E7103 number: 0.9 is not an integer
 E7103 mapKey: map key "0.9" is not a canonical integer
@@ -435,6 +451,10 @@ E8021 position: @text belongs on a public package-level export fn with no parame
 E8021 file: invalid @text file name "0.9": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
 E8021 twice: @text file "0.9" is also written by resource.vocab.items
 E8021 called: resource.vocab.items has @text: it is a file, not a function other declarations can call
+E8022 -: @resource/Server/Item/propItem.json reaches @resource/Server/Item/propItem.json by a relative path computed from project.canon, but this machine places resource.vocab.items elsewhere relative to resource.vocab.items: place both as project.canon does (project.local.canon or --root), or the generated path would break
+E8023 one: build --check cannot compare 1 output under root @resource.vocab.items: "0.9" is not present on this machine; check the repository out there (CI needs every root its outputs go to)
+E8023 many: build --check cannot compare -42 outputs under root @resource.vocab.items: "0.9" is not present on this machine; check the repository out there (CI needs every root its outputs go to)
+E8025 -: @resource/Server/Item/propItem.json would reach @resource/Server/Item/propItem.json by a relative path climbing above the project's parent directories, which differ per checkout: emit resource.vocab.items a copy under the same root
 E8101 field: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
 E8101 result: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; resource.vocab.items is precomputed for TypeScript and cannot be bigint
 E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items
@@ -499,3 +519,5 @@ W7115 dangling: symbolic link @resource/Server/Item/propItem.json points to noth
 W7115 looping: symbolic link @resource/Server/Item/propItem.json is part of a loop; skipped
 W7115 statFailed: symbolic link @resource/Server/Item/propItem.json cannot be resolved or read; skipped
 W8006 -: C++ name resource.vocab.items (from resource.vocab.items) is a macro in common platform headers
+W8024 one: 1 output skipped: root @resource.vocab.items ("0.9") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
+W8024 many: -42 outputs skipped: root @resource.vocab.items ("0.9") is optional and not present on this machine; clone it or point to it in project.local.canon to write them

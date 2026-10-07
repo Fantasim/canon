@@ -703,7 +703,7 @@ points (§6.2), reported at the value's location (EVALUATION.md §4.3):
 | `where p` | any type | `p` evaluates to `true` with `it` bound to the value | `E3206` |
 | implicit sized range (§7.2) | integer types | | `E3201` |
 | implicit finiteness | `Float`, `Float32` | | `E3202` |
-| asset (§13.4) | `String` | the file exists | `E3701`–`E3703` |
+| asset (§13.4) | `String` | the file exists | `E3701`–`E3703`, `E3705` |
 
 Rules:
 
@@ -1209,6 +1209,8 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 - The file must exist under the root, matched **exactly and case-sensitively**, byte for byte,
   on every platform. A file that differs only in letter case is a missing file: `E3701`. Legacy
   case drift is fixed by a script, never tolerated by the language (DECISIONS 19).
+- Under an optional root not present on this machine (SPEC §3.1) there is no listing to match
+  against: each asset value is `E3705`, naming the root, instead of `E3701` (DECISIONS 332).
 - Checked at evaluation, at storage points (EVALUATION.md §5). Directory listings may be cached
   per build.
 
@@ -1390,6 +1392,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E3702 | error | evaluation |
 | E3703 | error | evaluation |
 | E3704 | error | static |
+| E3705 | error | an asset under an optional root absent on this machine (evaluation, §13.4) |
 | E3801 | error | evaluation |
 | E3802 | error | evaluation |
 | E3803 | error | §11.1, §11.2 |

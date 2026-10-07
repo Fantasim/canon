@@ -78,7 +78,7 @@ formatted or tested.
 | Flag | Meaning |
 |---|---|
 | `--project <dir>` | project root (default: search upward) |
-| `--root <name>=<dir>` | use `<dir>` for the declared root `<name>` instead of the path in `project.canon`; repeatable. Tests and fixtures use it to redirect every root (`examples/_fixtures/README.md`); a name the project does not declare is a usage error (exit 2) |
+| `--root <name>=<dir>` | use `<dir>` for the declared root `<name>`, over `project.local.canon` and `project.canon` (SPEC §3.1); repeatable; a relative `<dir>` is relative to the project directory. Tests and fixtures use it to redirect every root (`examples/_fixtures/README.md`); to place a root on your machine for every command, the editor and the studio, write it in `project.local.canon` instead. A name the project does not declare is a usage error (exit 2) |
 | `--layer <name>` | apply a layer (SPEC §19); repeatable, applied in order; a name that matches no layer file of any loaded package is `E1901` (exit 2) |
 | `--format text\|json` | output format (default `text`) |
 | `--color auto\|always\|never` | colours the severity word and code of each finding header in text output (default `auto`: only on a terminal; a non-empty `NO_COLOR` turns `auto` off; `always` wins over it) |
@@ -145,7 +145,7 @@ is given with it in §3.
 |---|---|
 | 0 | success; also `canon help`, `-h` and `--help`, which print the usage to stdout (DECISIONS 322) |
 | 1 | at least one error finding, or `--check` found something out of date |
-| 2 | usage error: bad flag, unknown package, missing `project.canon`, a `--layer` name that matches no layer file (`E1901`) |
+| 2 | usage error: bad flag, unknown package, missing `project.canon`, a `--layer` name that matches no layer file (`E1901`); a project that cannot open: errors in `project.canon` or `project.local.canon`, a required root that does not exist (`E1013`) |
 | 3 | internal compiler error (a bug in `canon`; the message says how to report it) |
 | 4 | more warnings than `--max-warnings` |
 | 130 | interrupted (SIGINT, SIGTERM): the command stops, and any write in progress is finished or rolled back, so no output is left half-written |
@@ -186,8 +186,8 @@ layered values) is defined in [spec/API.md](spec/API.md) §6 and §7.
 ### 2.7 Cache
 
 Build results are cached in `.canon/cache/` at the project root, keyed by the hash of the build
-manifest (SPEC §13.2): compiler version, language version, layers, `--lang`, and a SHA-256 of
-every source and loaded file. The cache format is versioned and opaque. Deleting the directory is
+manifest (SPEC §13.2): compiler version, language version, layers, `--lang`, where each root is
+and whether it is present, and a SHA-256 of every source and loaded file. The cache format is versioned and opaque. Deleting the directory is
 always safe. `.canon/` belongs in `.gitignore`.
 
 ---
@@ -201,7 +201,8 @@ canon init [--name <project>]
 ```
 
 Creates `project.canon` with `canon: "<current language version>"`, an empty `roots` block and
-`languages: [en]`, plus a `.gitignore` entry for `.canon/`. Refuses to run where a
+`languages: [en]`, plus `.gitignore` entries for `.canon/` and `project.local.canon`, each added
+unless present. Refuses to run where a
 `project.canon` exists.
 
 ### 3.2 `canon new`
@@ -247,9 +248,9 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
 | Flag | Meaning |
 |---|---|
 | `--target t` | emit only these targets (repeatable) |
-| `--check` | write nothing; exit 1 if any output or lock would change (conformance tests included). For CI |
+| `--check` | write nothing; exit 1 if any output or lock would change (conformance tests included), or if an output goes to an optional root absent on this machine (`E8023`). For CI |
 | `--watch` | rebuild on every change; used by a local server and by the studio |
-| `--adopt <path>` | take over the hand-written file at `path`, which the build would otherwise refuse to overwrite (`E8001`): the header of a legacy C++ struct moving to `access: both` (SPEC §15.3), or a file of an `emit text` (CODEGEN.md §2.9, DECISIONS 294). Only those can be adopted: a JSON output without a `$schema` is `E8001` even when listed. The build prints `adopting <path>`; from then on the header carries the marker, and a text file is named in its package's `canon.outputs` (DECISIONS 326). Under `--check` nothing is adopted: the output is reported and counted as stale. Repeatable |
+| `--adopt <path>` | take over the hand-written file at `path`, which the build would otherwise refuse to overwrite (`E8001`): the header of a legacy C++ struct moving to `access: both` (SPEC §15.3), or a file of an `emit text` (CODEGEN.md §2.9, DECISIONS 294). Only those can be adopted: a JSON output without a `$schema` is `E8001` even when listed. The build prints `adopting <path>`; from then on the header carries the marker, and a text file is named in its package's `canon.outputs` (DECISIONS 326). Under `--check` nothing is adopted: the output is reported and counted as stale. A path under an optional root absent on this machine is refused like any path that is not an output of the build (DECISIONS 332). Repeatable |
 
 - Outputs are written atomically: into a temporary file, then renamed. A failed build leaves every
   previous output untouched.
@@ -265,6 +266,18 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
   header or a text file, `canon convert --adopt` for a JSON source (§3.10).
 - A build with `--layer` writes the same `out` files as a plain build: do not commit outputs of a
   layered build.
+- **Absent roots** (SPEC §3.1, CODEGEN.md §2.4). An output under an optional root that is not
+  present on this machine is skipped: not written, not listed, and counted in one `W8024` per root,
+  which names the root. Everything else is written as usual, and `canon.outputs` keeps the lines
+  of skipped text files. `--max-warnings 0` turns a skip into a failure (exit 4). Under `--check`
+  a skip is `E8023` instead: freshness cannot be judged without the repository, so CI checks out
+  every root its outputs go to. A required root that does not exist stops the build before
+  anything runs (`E1013`, exit 2). A package that reads an absent root has errors (`E7009`,
+  `E3705`); like any error, they block every code and data output of the build (API.md B1a), so
+  build only the packages that do not read it (`canon build telemetry`).
+- **Relative paths between roots.** Generated includes and imports are computed from
+  `project.canon`. A build whose C++ include or TypeScript import crosses two roots that this
+  machine places otherwise is `E8022` and writes nothing (CODEGEN.md §2.8).
 - **Report.** After the findings and the summary line (§2.4), the text report prints one line
   `adopting <path>` per adopted output, then lists the outputs the build changed (with `--check`:
   would change), grouped by target in the order `go`, `cpp`, `ts`, `json`, `view`, `text` (DECISIONS 294): a line
@@ -384,6 +397,9 @@ naming conventions; `canon check` does (`W1003`).
 - `--diff` alone writes nothing and exits 0; a writing run prints nothing; `-q` keeps the
   `--check` list and the diffs (they are the result, not findings). The JSON lines are in
   spec/IMPLEMENTATION-PLAN.md §8.1.
+- With no path, `fmt` also formats `project.local.canon` when it exists (FORMATTER.md §9.3).
+  `fmt` opens the project as every command does, so a required root that does not exist stops it
+  (`E1013`, exit 2).
 
 ### 3.7 `canon explain`
 
@@ -662,6 +678,9 @@ findings are converted from their UTF-8 byte columns.
 | find references | same as `canon refs` |
 | formatting | `canon fmt` |
 
+The server opens each project as the CLI does, with no `--root`: `project.local.canon` places its
+roots (SPEC §3.1).
+
 The server is for reading: completion, code actions and rename are not offered (DECISIONS 274).
 Values are edited in the studio or, by agents, with `canon edit`; names with `canon rename` (§6.5).
 
@@ -694,7 +713,8 @@ defer p.Close()
 
 A `Project` holds the parsed sources and caches. It is safe for concurrent use: reads run in
 parallel, and edits are serialized (a single writer). `Options.Roots` redirects declared roots
-(the API side of `--root`), and `Options.EditLayer` sends edits to a layer (§5.3).
+(the API side of `--root`) over `project.local.canon`, which `Open` reads itself (SPEC §3.1);
+`Options.EditLayer` sends edits to a layer (§5.3).
 
 ### 5.2 Reading
 
@@ -840,6 +860,7 @@ gen-check:  ## CI: fail if generated code is stale
 ```
 canon fmt --check
 canon lock check
+# every root the outputs go to must be checked out: an absent optional root is E8023 under --check
 canon build --check --max-warnings 0     # or no limit while migrating
 canon test
 ```
