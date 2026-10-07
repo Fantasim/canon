@@ -2553,8 +2553,8 @@ var Registry = []Def{
 	{
 		Code: "W4001", Severity: Warning, Package: "eval",
 		Variants: []Variant{
-			{Name: "one", Args: []Arg{{Name: "typ", Type: ArgTypeName}}, Template: "1 value typed by {typ} was not evaluated or checked: {typ} is broken; fix its errors first"},
-			{Name: "many", Args: []Arg{{Name: "n", Type: ArgTypeInt}, {Name: "typ", Type: ArgTypeName}}, Template: "{n} values typed by {typ} were not evaluated or checked: {typ} is broken; fix its errors first"},
+			{Name: "one", Args: []Arg{{Name: "typ", Type: ArgTypeName}}, Template: "1 value was not evaluated or checked because {typ} is broken: fix its errors first"},
+			{Name: "many", Args: []Arg{{Name: "n", Type: ArgTypeInt}, {Name: "typ", Type: ArgTypeName}}, Template: "{n} values were not evaluated or checked because {typ} is broken: fix its errors first"},
 		},
 	},
 	{
@@ -7582,12 +7582,12 @@ type codeW4001 struct{}
 // Def is the registry entry of W4001.
 func (codeW4001) Def() *Def { return &Registry[307] }
 
-// AtOne reports: 1 value typed by {typ} was not evaluated or checked: {typ} is broken; fix its errors first
+// AtOne reports: 1 value was not evaluated or checked because {typ} is broken: fix its errors first
 func (codeW4001) AtOne(span source.Span, typ string) *Builder {
 	return newBuilder(&Registry[307], 0, span, typ)
 }
 
-// AtMany reports: {n} values typed by {typ} were not evaluated or checked: {typ} is broken; fix its errors first
+// AtMany reports: {n} values were not evaluated or checked because {typ} is broken: fix its errors first
 func (codeW4001) AtMany(span source.Span, n int64, typ string) *Builder {
 	return newBuilder(&Registry[307], 1, span, n, typ)
 }

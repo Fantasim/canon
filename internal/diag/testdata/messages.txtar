@@ -507,8 +507,8 @@ W3301 plain: resource.vocab.items is deprecated
 W3301 reason: resource.vocab.items is deprecated: 0.9
 W3401 -: a b is never none: resource.vocab.items has no effect
 W3601 -: _ is unreachable: every case is covered
-W4001 one: 1 value typed by resource.vocab.items was not evaluated or checked: resource.vocab.items is broken; fix its errors first
-W4001 many: -42 values typed by resource.vocab.items were not evaluated or checked: resource.vocab.items is broken; fix its errors first
+W4001 one: 1 value was not evaluated or checked because resource.vocab.items is broken: fix its errors first
+W4001 many: -42 values were not evaluated or checked because resource.vocab.items is broken: fix its errors first
 W5001 -: 0.9
 W5002 -: 0.9
 W6006 one: 1 stable value is not in canon.lock yet: run canon build
