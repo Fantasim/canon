@@ -23,7 +23,7 @@ Duration(1s..=10m)
 String(1..=64)                // byte length
 [Item](1..=64)                // element count of a list or map
 String(/^II_[A-Z0-9_]+$/)     // RE2, matches anywhere: anchor with ^ and $
-Int(0..) where it % 2 == 0    // `where` takes any Bool expression over `it`
+Int(0..) where it % 2 == 0    // `where` takes any Bool expression over `it`; `it` exists only there (`E2109`)
 ```
 
 One range or regex per type (`Int(0..)(..=5)` is `E1103`; add `where`). Refinements are checked
@@ -128,7 +128,8 @@ An optional field defaults to `none`: `x: T? = none` is warning `W3001` and `can
 Where a `ref C` is expected and C's keys are not known statically (loaded, computed, keyed
 lists), a name in scope is that name, whatever its type: a `ref C?` is `E3403`, any other type
 `E3027`; write the key as a string (`"n"`). Only an unresolved name becomes a key. Against a
-table literal's static keys, a bare name is the key.
+table literal's static keys, a bare name is the key. The same `E3027` for a map-literal key of
+another type than the key type: for an enum key type, write a member of it.
 
 Narrowing works on stable paths (locals, params, fields, `self.f.g`), never on indexes or calls:
 `let t = tiers.get(k)` first. `!`, `?.`, `??` on a value that is never `none` is `W3401`.
@@ -177,7 +178,7 @@ every branch is one of those (the selected branch is past). Anything else is `E3
 
 | Type | Meaning |
 |---|---|
-| `A \| "lit"` | an `A` or exactly the string `"lit"`; `A` has a string wire form |
+| `A \| "lit"` | an `A` or exactly the string `"lit"`; `A` has a string wire form. No other union: a later alternative that is a type (`"x"?`, `["x"]`, `Int`) is `E3028`; a choice of types is a `variant` |
 | `Never` | no values; `Never?` accepts only `none` |
 | `Range` | value of `a..b`: `.start`, `.end`, `.len()`, `.contains(x)`; never in emitted data (`E8151`) |
 | `asset("@root/dir", ext: [png, dds])` | a file name under that root; the file must exist, exact case (`E3701`) |

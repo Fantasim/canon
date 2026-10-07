@@ -26,6 +26,7 @@ const (
 	defaultProject = "project guide {\n  canon: \"0.1\"\n  languages: [en, fr]\n}\n"
 	looseFile      = "guide.canon"
 	reqDir         = "req/" // recipes' request files, written into every project a recipe runs in
+	outDir         = "out/" // `text out/<path>`: the exact bytes `canon build` writes at <path>
 	warnsMark      = "warns="
 	codeSep        = ","
 )
@@ -165,7 +166,7 @@ func guideProjects(t *testing.T) map[string]map[string]string {
 	t.Helper()
 	out := map[string]map[string]string{}
 	for _, f := range allFences(t) {
-		if f.arg == "" || f.arg == fragment || f.lang == "sh" || strings.HasPrefix(f.arg, reqDir) {
+		if f.arg == "" || f.arg == fragment || f.lang == "sh" || strings.HasPrefix(f.arg, reqDir) || strings.HasPrefix(f.arg, outDir) {
 			continue
 		}
 		if out[f.topic] == nil {
@@ -301,5 +302,45 @@ func runRecipe(t *testing.T, f guideFence, dir string) {
 		if code := Main(context.Background(), words[1:], env); code != exitOK {
 			t.Errorf("%s: %q: exit %d\n%s%s", f, line, code, out.String(), errs.String())
 		}
+	}
+}
+
+// CODEGEN.md §2.9, WIRE.md §8.5: the files `canon build` writes are the bytes of the `text out/` fences.
+func TestGuideOutputsBytes(t *testing.T) {
+	projects := guideProjects(t)
+	seen := 0
+	built := map[string]string{}
+	for _, f := range allFences(t) {
+		if !strings.HasPrefix(f.arg, outDir) {
+			continue
+		}
+		seen++
+		dir, ok := built[f.topic]
+		if !ok {
+			dir = writeFiles(t, projects[f.topic])
+			buildGuideProject(t, dir)
+			built[f.topic] = dir
+		}
+		got, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(strings.TrimPrefix(f.arg, outDir))))
+		if err != nil {
+			t.Errorf("%s: %v", f, err)
+		} else if string(got) != f.body {
+			t.Errorf("%s: canon build writes\n%s", f, got)
+		}
+	}
+	if seen == 0 {
+		t.Fatal("no output fence to check")
+	}
+}
+
+func buildGuideProject(t *testing.T, dir string) {
+	t.Helper()
+	p, err := canon.Open(dir, canon.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = p.Close() }()
+	if _, err := p.Build(context.Background(), canon.BuildOptions{}); err != nil {
+		t.Fatal(err)
 	}
 }

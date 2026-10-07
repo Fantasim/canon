@@ -31,11 +31,32 @@ project demo {
 }
 ```
 
-`canon` is required. `languages`: the first is the source language (default `[en]`).
+`canon` is required. `budget` is the step budget of each package, not of the project.
+`languages`: the first is the source language (default `[en]`).
 `studio: <package>` names the studio package (`views-i18n`). `go_module` maps a root to the Go
-module path of the Go outputs under it. No expressions; unknown key `E1002`. Reading an absent
-optional root is an error at the value; an output into it is skipped. `project.local.canon`
-beside it (git-ignored, same grammar, only `roots`) places roots on one machine; `--root` wins.
+module path of the Go outputs under it. No expressions; unknown key `E1002`.
+
+## Roots on each machine (DECISIONS 332, SPEC §3.1)
+
+A team does not all have every repository, nor at the same place. A root is present when its
+directory exists (a root at or inside the project always is).
+
+- A root outside the project that is absent stops every command with `E1013`. Three ways out:
+  clone the repository there, point to it in `project.local.canon`, or list the root in
+  `optional_roots` of `project.canon` (a name that is not a root, or listed twice: `E1009`).
+- `project.local.canon`, beside `project.canon`, is git-ignored (`canon init` adds the line). It
+  has the grammar of `project.canon`, the same project name and only a `roots` map moving declared
+  roots to a path (absolute or project-relative): anything else is `E1014`. Precedence for each
+  root: `--root` > `project.local.canon` > `project.canon`. Editor, studio and API read it too.
+- An absent optional root: a `load` or `asset` reading it is an error at that value naming the
+  root (`E7009`, `E3705`; check only the packages that do not read it, or place the root). An
+  output into it is skipped, still generated and checked, and one `W8024` per root says so
+  (`--max-warnings 0` makes it fail). `canon build --check` with such an output is `E8023`: CI
+  needs every root its outputs go to. `--adopt` of a path under it is refused.
+- `canon` creates directories below a present root only, never a root's own directory outside
+  the project. A relative C++ include or TypeScript import between two roots placed differently
+  than `project.canon` places them is `E8022`; one climbing above the project's parents is
+  `E8025`: emit a copy of the package under the same root.
 
 ## A source file
 

@@ -11,17 +11,17 @@ values that are already valid. A project is the directory holding `project.canon
    project or its declared roots, read by `load`. Same sources, same output bytes.
 2. Build-time only: functions, checks and loops run in the compiler; generated code holds types,
    values, lookups and getters, plus translated `export fn` bodies that take runtime inputs.
-3. Always finishes: evaluation runs under a step budget (`E4401` when spent).
+3. Always finishes: evaluation runs under a step budget per package (`E4401` when spent).
 
 ## Topics: `canon guide <topic>`
 
 | Topic | Content |
 |---|---|
-| `syntax` | files, packages, imports, comments, literals, naming, canonical layout |
+| `syntax` | files, packages, imports, comments, literals, naming, canonical layout, roots per machine (`project.local.canon`) |
 | `types` | scalars, refinements, enums, records, variants, optionals, collections, refs, dependent types |
 | `data` | `let`/`const`, tables, `entry` files, `load`, `@json` wire names, stable ids and `canon.lock` |
 | `logic` | functions, methods, expressions, `match`, standard library, checks, tests |
-| `emit` | `emit` targets and modes, what is generated, `export fn` |
+| `emit` | `emit` targets and modes, what is generated, `export fn`, text files (`emit text`, `@text`) |
 | `views-i18n` | views, the studio package, translation files |
 | `layers` | `amend`, layer files, `--layer`, runtime `input` fields |
 | `cli` | commands, value paths, the JSON of `check`, `explain`, `refs`, `edit`, `rename` |

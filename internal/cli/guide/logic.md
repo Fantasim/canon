@@ -82,7 +82,7 @@ test "checks fire" {
   A lambda needs an expected function type (a stdlib or user parameter).
 - `var` only can be assigned: `x = e`, `+= -= *= /=`, `xs[i] = e`; `p.f = e` is `E3307`.
   Lists and maps are values: copying then mutating never changes the copy. Recursion and
-  `while` are allowed: the step budget bounds them.
+  `while` are allowed: the step budget of the package bounds them (`E4401`).
 
 ## Expressions
 
@@ -97,7 +97,10 @@ postfix `.f` `?.f` `[i]` `(args)` `!`. `and`/`or`/`not` take `Bool` only and sho
 - `==` is deep on records, lists and maps; refs and entries compare by identity. `<` works on
   numbers, durations, strings and `ordered` enums only (`E3310`).
 - `if c { a } else { b }` is an expression when each branch is one expression and `else` exists.
-- `x in xs`: list element, range; never a key: a key is tested with `xs.hasKey(k)` (or `xs.get(k) != none`). `v is case` tests a variant case.
+- `x in xs`: an element of a list, table, keyed list or range; for a map, a key (`k in m`, same as
+  `m.contains(k)`). A key of a table or keyed list is not an element (`E3026`): test it with
+  `xs.hasKey(k)` (or `xs.get(k) != none`). `hasKey` does not exist on a map (`E3003`).
+  `v is case` tests a variant case.
 
 ```canon fragment
 match reward {
@@ -122,10 +125,22 @@ enum, a variant, a `Bool`, or an optional of one (`none` pattern). No literal pa
 | strings | `len()` (bytes) `isEmpty()` `contains` `startsWith` `endsWith` `split(sep)` `trim()` `lower()` `upper()` `replace(a, b)` `matches(/re/)` `find(s)` `s[a..b]` |
 | lists, tables, keyed lists | `len` `isEmpty` `first()` `last()` `first(pred)` `get` `contains` `indexOf` `map` `filter` `flatMap` `flatten` `any` `all` `count` `sum` `min` `max` `minBy` `maxBy` `sortBy` `reverse` `groupBy` `unique` `isUnique` `enumerate` `pairs` `zip` `join(sep)` `intersect` `union` `diff` `toMap(kf, vf)` |
 | tables, keyed lists | `t[k]` `t.k` `get(k)` `hasKey(k)` `find(k)` `at(i)` `keys()` `values()`; tables: `active()` (not retired) |
-| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `hasKey(k)` `map` `filter` `all` `any` `count` (predicates take `(k, v)`) |
+| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `contains(k)` (a key, same as `k in m`) `map` `filter` `all` `any` `count` (predicates take `(k, v)`) |
 | ranges | `r.start` `r.end` `r.len()` `r.isEmpty()` `r.contains(x)` |
 | graphs | `reachable(from: x, next: f)` `cycles(xs, next: f)` `topoSort(xs, next: f)` |
 | optional results | `first` `last` `get` `find` `min` `max` `minBy` `maxBy` return `T?` |
+
+## Cost
+
+Evaluation runs under a step budget of `project.budget`, counted per package: each step is
+charged to the package that declares the value, check or function evaluated, whoever forced it
+(`E4401` names the heaviest value; a package never fails for another's work).
+
+- Fine in a loop (v0.1.2): `xs.isUnique()` (linear in `xs`, not quadratic), `xs[i] = e` and
+  `m[k] = e` (not proportional to the length), and reading a field through a `ref`
+  (`p.item.price`).
+- Linear, so not inside a loop over the same data: `xs.contains(x)`, `xs.indexOf(x)`, `filter`,
+  `map`. To test membership many times, build a map once (`xs.toMap(...)`) and use `k in m` (cost 1).
 
 ## Checks
 

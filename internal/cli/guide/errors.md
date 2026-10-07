@@ -36,13 +36,19 @@ error[E3002]  shop/shop.canon:30:17
 | Code | Fix |
 |---|---|
 | `E1116` `E1117` | syntax; `E1117`: a `,` or newline between items |
+| `E1013` | a required root is not on this machine: clone it there, place it in `project.local.canon`, or list it in `optional_roots` |
+| `E1014` `E1009` | `project.local.canon` holds more than a `roots` map of declared roots; `optional_roots` names a non-root |
+| `E7009` `E3705` | a `load` or `asset` under an absent optional root: place the root, or check other packages |
+| `W8024` `E8023` | outputs skipped under an absent optional root (build); `build --check` refuses them: CI needs the root |
+| `E8022` `E8025` | a relative include or import between roots placed differently, or climbing above the project: emit a copy under the same root |
 | `E1125` `E1126` | reserved word as a name: rename; keep a wire name with `@json` |
-| `E2102` | unknown name: typo, missing `import`, or a key the table does not have |
+| `E2102` | unknown name: typo (also beside a literal: `weigth < 5`), missing `import`, or a key the table does not have |
 | `E2103` `E2106` | write `ref <collection>`; a name declared twice |
 | `E3001` | annotate the public `let`: `let n: T = ...` |
 | `E3002` `E3311` | wrong type; an Int where a Float is expected: `Float(i)` |
 | `E3003` | no such field or method: typo, or a case field read without `match`/`is` |
-| `E3008` | annotate; `.f > 1` is not a lambda: `x => x.f > 1` |
+| `E3008` | type not inferable (only literals): annotate; `.f > 1` is not a lambda: `x => x.f > 1` |
+| `E2109` | `it` outside a `where` predicate (never a key: write `"it"` for the key) |
 | `E3301` | unknown field: remove it, fix the wire name, or `load(..., partial: true)` |
 | `E3302` | missing field: give it, or add a default to the field |
 | `E3101` `E3102` | keys of tables, keyed lists and `@stable` values are unique |
@@ -50,21 +56,30 @@ error[E3002]  shop/shop.canon:30:17
 | `E3204` `E3205` `E3206` | range or length, regex, `where`: fix the value or the refinement |
 | `E3315` | `null` in a required field: make it `T?`, or fix the data |
 | `E3402` `E3403` | may be `none`: `if x != none`, `??`, `?.`, `!` |
-| `E3027` | a name in scope used as a ref key: write the key as a string (`"n"`) |
+| `E3026` | a key tested with `in` on a table or keyed list: `xs.hasKey(k)` (a map: `k in m`) |
+| `E3028` | a type after the first alternative of `A \| "lit"`: write a string literal, or a variant for a choice of types (`"x"?` and `["x"]` are types too) |
+| `E3027` | a name in scope used as a key but not a value of the key type: write the key as a string (`"n"`), or for an enum or union key type a member of it |
 | `W3001` | `x: T? = none`: remove the `= none` (`canon fmt` does) |
+| `E8001` | the build would overwrite a file it does not own: `canon build --adopt <path>` (text files, legacy C++ headers), or move it |
+| `E8021` | a misplaced `@text` or a bad file name (`canon guide emit`) |
 | `E8019` | the emit asks for what no generator builds: the message names the way out |
 | `E3501` | ref to a missing key: fix the key or add the entry |
 | `E3024` | `past` on a type that is not an enum, a variant or a `ref`: `[past E]`, not `past [E]` |
 | `E3502` `E3506` | a stored value refers to a retired entry, or uses a retired member: repoint it, or type the slot `past` |
 | `E4001` `E4002` | `!` on `none`; missing key or index: `get(k)` gives `T?` |
 | `E4101` `E4102` | overflow, division by zero: guard the operands |
-| `E4401` | budget spent: the heaviest value is named; fix the loop or raise `budget` |
+| `E4401` | budget spent (per package): the heaviest value is named; fix the loop or raise `budget` |
 | `E5001` `E5002` | your check: fix the data, or the check |
 | `E6001` `E6002` | a stable id removed or reused: put it back as `retired`, pick a new key |
 | `E7002` | `load` needs an expected type: annotate the `let` |
+| `E7008` | `load` path is not a string literal: one literal `load` per file chosen with `if`/`match`, or `load.dir` |
 | `E7103` `E7110` `E7111` `E7112` | JSON value of the wrong kind, member or case: fix the file or `@json` |
 | `E1702` | translation key matches nothing: renamed field or misspelled key |
 | `E9001` `E9008` | translated `export fn`: portable subset only; call the method from a `test` |
+
+A broken record or variant silences the values it types: one `W4001` at its declaration says "N
+values were not evaluated or checked because T is broken: fix the errors in it or in the types it
+names". Fix those first; "0 findings" on those values means "not checked".
 
 Warnings never block a build (`--max-warnings N` exits 4 past `N`): `W1001` stray doc comment, `W1002` missing doc comment, `W1003`
 naming, `W3401` useless `?.`/`??`/`!`, `W1701` missing translations, `W5001`/`W5002` your warns.

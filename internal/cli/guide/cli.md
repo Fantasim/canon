@@ -8,7 +8,7 @@ JSON Lines; `edit` and `rename` always do.
 
 | Command | Does |
 |---|---|
-| `canon init` | write `project.canon` and a `.gitignore` entry for `.canon/` |
+| `canon init` | write `project.canon` and `.gitignore` entries for `.canon/` and `project.local.canon` |
 | `canon new <package>` | create `<dir>/<last>.canon` with the `package` line |
 | `canon check [packages]` | everything but writing; findings, then the summary |
 | `canon build [packages]` | check, then write outputs and `canon.lock` |
@@ -16,14 +16,16 @@ JSON Lines; `edit` and `rename` always do.
 | `canon fmt [paths]` | rewrite in canonical layout |
 | `canon explain <path>` | value, type, origin of every part |
 | `canon refs <path>` | every reference to an entry or enum member |
-| `canon edit [request.json]` | apply one edit request (stdin without a file) |
+| `canon edit [request.json]` | apply one edit request (stdin without a file); analyses only the packages it affects |
 | `canon rename <name> <new-name>` | rename a Canon name everywhere |
 | `canon lock check [packages]` | verify `canon.lock` against the sources without building: `E6001`..`E6005`, and `W6006` for values not locked yet |
 | `canon lsp` | language server for editors (read-only) |
 | `canon version` | compiler, language and format versions |
 | `canon guide [topic]` | this guide |
 
-Global flags: `--color auto|always|never` colours the severity and code of text findings (auto: a
+Global flags: `--root <name>=<dir>` (repeatable) places a declared root for one command, over
+`project.local.canon` and `project.canon` (`canon guide syntax`, roots on each machine);
+`--color auto|always|never` colours the severity and code of text findings (auto: a
 terminal and no `NO_COLOR`; never in JSON); `--lang <code>` is the language of translated check
 messages, the source language otherwise (named-check messages are not translated yet).
 
@@ -44,6 +46,13 @@ Element.FIRE                        an enum member
 
 Paths start at a public `let` or `const` (`pkg:` also reaches `local` ones). Quote them in a
 shell when they contain `[`: `canon explain 'potions[0]'`.
+
+## Working in a team
+
+Commit `canon.lock`, each package's `canon.outputs` and generated files; do not commit
+`project.local.canon` (your machine's root paths, `canon guide syntax`). CI runs `canon fmt
+--check`, `canon check`, `canon test` and `canon build --check`, with every root its outputs go
+to checked out (`E8023` otherwise).
 
 ## check: findings
 
@@ -132,6 +141,10 @@ or spread came through), `stack`, `replaced` (the origin a layer replaced).
   Canon literal text (Canon names, bare members). Never both.
 - `base`: the `revision` of the last output; files changed since refuse the edit (`ErrStale`).
   `{"ops":[]}` writes nothing and prints the current `revision`. Omit `base` to skip the check.
+- The cost is that of the packages the edit affects (the ones its ops name, those whose files or
+  `load`s it touches, their importers, and what these import), not of the project: the others are
+  only parsed. The findings printed are those packages'; `canon check` stays the verdict of the
+  whole project. The `revision` covers the whole project's files.
 - Ops apply in order, all or none. The result is checked: an error refuses it unless
   `allowErrors`. `dryRun` writes nothing. A file not in canonical layout is refused unless
   `normalize` (or run `canon fmt`, `canon fmt --json-sources` first).

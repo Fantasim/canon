@@ -143,6 +143,9 @@ level,exp_to_next
 | `load.text(path)` | `String` |
 
 - The expected type must come from the context (annotation, field, argument): `E7002` otherwise.
+- The path is a string literal (`E7008`): the compiler knows every file a package reads before
+  evaluating anything. To choose among files, write one literal `load` per file in an `if` or
+  `match`; to read several, use `load.dir`.
 - JSON is strict: an absent key is the default, `null` is `none` (`E3315` on a required field),
   `2.0` in an `Int` is `E7103`, an unknown key is `E3301` unless `partial: true`.
 - Paths: `@root/...` or relative to the file; never outside the project or a root (`E7001`).
@@ -176,3 +179,8 @@ it when needed).
   `table  shop.items  axe`, then `retired` when retired. `canon build` and `canon edit` append;
   nothing removes. A `--layer` build never writes it, and a layer cannot add stable entries
   (`E6004`). Commit it with the sources.
+- The lock cannot tell a lost line from one never written: delete a line (or the file) and
+  rename that stable entry, and `canon build` re-locks the new name with no `E6001`. The guard is
+  git: the history of `canon.lock` must only gain lines, or gain `retired`; review every diff of
+  it, and treat a removed line as a mistake. In CI, `canon build --check` exits 1 on a stale lock
+  (it cannot tell an append from a lost line either) and `canon lock check` reports `W6006`.
