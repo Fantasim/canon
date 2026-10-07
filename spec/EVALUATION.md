@@ -528,8 +528,9 @@ rewrites the outputs each time. This is by design; the CI build runs without lay
 - Top-level values are forced on demand, verified (§5), and shared by all tests of the
   invocation. Instance checks and package checks do not run on them in `canon test`.
 - The body is a block. Its statements run in order; `expect` is allowed only in test blocks
-  (`E1130`, GRAMMAR.md). The budget is shared by all tests of the invocation: they start on the
-  counter phase 2's constant folding spent (§12.2).
+  (`E1130`, GRAMMAR.md). Tests spend their package's budget (DECISIONS 328): the tests of a package
+  start on the counter phase 2's constant folding left to that package, and a value of another
+  package they force is charged to that package (§12.2).
 
 ### 10.2 Building a subject
 
@@ -712,7 +713,8 @@ error[E4401]  balance/parity/sweep_plan.canon:265:15
   from another package is poisoned (with no further finding), and the build fails. Other packages
   run on their own counters. Findings already produced are kept. `E4401` is reported once per
   package and invocation; a phase-2 constant fold that fails because its package's budget is
-  spent is still `E3015`, variant `budget` (DECISIONS 150: no declaration breaks silently; 263).
+  spent, or because it reads a constant of a package whose budget is spent, is still `E3015`,
+  variant `budget` (DECISIONS 150: no declaration breaks silently; 263).
   Stage E still runs after `E4401`, but a fold there that fails on a spent counter adds no
   finding: `E4401` has already failed the build. Because the order of evaluation
   (§2) is fixed, two implementations stop at the same expression.
