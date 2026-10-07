@@ -15,15 +15,16 @@ type unionJob struct {
 	of  types.Type
 }
 
-// resolveUnion is `A | "lit" | …` (TYPES.md §13.2).
+// resolveUnion is `A | "lit" | …`: a type after the first alternative is E3028, unless in error (TYPES.md §13.2, §1).
 func (c *checker) resolveUnion(tc *typeCtx, t *syntax.UnionType) types.Type {
 	of := c.resolveType(tc.element(), t.Alts[0])
 	u := &types.LitUnionType{Of: of}
 	for _, alt := range t.Alts[1:] {
 		lit, ok := alt.(*syntax.LiteralType)
 		if !ok {
-			c.resolveType(tc.element(), alt)
-			c.report(tc.env, diag.E3002.At(tc.env.span(alt), types.StringType, c.info.TypeExprs[alt]))
+			if typ := c.resolveType(tc.element(), alt); typ.Kind() != types.Error {
+				c.report(tc.env, diag.E3028.At(tc.env.span(alt), typ))
+			}
 			continue
 		}
 		c.info.TypeExprs[alt] = types.StringType

@@ -1,0 +1,59 @@
+TYPES.md §7.4, STDLIB.md §5, DECISIONS 317, 318: a where predicate keyed by `it` refuses a value
+that is not a key (E3206), on an alias and on a record field, and only that value: `it` is never
+the symbolic key "it". The values that hold are testdata/membership/wherekeys.txtar.
+-- a/a.canon --
+/// A.
+package a
+
+/// Row.
+record Row {
+  /// V.
+  v: Int
+}
+
+/// Rows.
+let rows: table Row = {
+  A { v: 1 }
+  B { v: 2 }
+}
+
+/// T1.
+type T1 = String where rows.hasKey(it)
+
+/// T2.
+type T2 = String where rows.get(it) != none
+
+/// R.
+record R {
+  /// S.
+  s: String where rows.hasKey(it)
+}
+
+/// Holds.
+let a1: T1 = "A"
+
+/// Holds.
+let a2: T2 = "B"
+
+/// Refused.
+let z1: T1 = "Z"
+
+/// Refused.
+let z2: T2 = "it"
+
+/// Refused.
+let r: R = { s: "Z" }
+-- findings.txt --
+error[E3206]  a/a.canon:35:14
+  z1: Z fails where rows.hasKey(it)
+  expected by a/a.canon:17 (String where rows.hasKey(it))
+
+error[E3206]  a/a.canon:38:14
+  z2: it fails where rows.get(it) != none
+  expected by a/a.canon:20 (String where rows.get(it) != none)
+
+error[E3206]  a/a.canon:41:17
+  r.s: Z fails where rows.hasKey(it)
+  expected by a/a.canon:25 (s: String where rows.hasKey(it))
+
+3 errors, 0 warnings in 1 package (…)

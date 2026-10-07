@@ -1,0 +1,53 @@
+TYPES.md §13.2, §1: there are no unions of types, only `A | "lit" | …`. Each alternative after the
+first written as a type is E3028, naming that type (`Stage | String`, `String | Int`); a first
+alternative without a string wire form is E3002 on its own, an independent mistake, so
+`Int | String` is E3002 at `Int` and E3028 at `String`. An alternative already in error is not
+judged again (`String | Strin` is E2102 only).
+-- a/a.canon --
+package a
+
+local enum Stage { one, two }
+
+local let u: Int | String = 3
+
+local let v: Int | Bool | String = 3
+
+local type W = String | Strin
+
+local type X = Stage | String
+
+local type Y = Int | "x" | Bool
+
+local type Z = String | Int | "x"
+-- findings.txt --
+error[E3002]  a/a.canon:5:14
+  expected String, found Int
+
+error[E3028]  a/a.canon:5:20
+  String is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3002]  a/a.canon:7:14
+  expected String, found Int
+
+error[E3028]  a/a.canon:7:20
+  Bool is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:7:27
+  String is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E2102]  a/a.canon:9:25
+  unknown name Strin (did you mean String?)
+
+error[E3028]  a/a.canon:11:24
+  String is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3002]  a/a.canon:13:16
+  expected String, found Int
+
+error[E3028]  a/a.canon:13:28
+  Bool is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:15:25
+  Int is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+10 errors, 0 warnings in 1 package (…)

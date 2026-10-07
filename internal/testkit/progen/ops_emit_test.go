@@ -270,11 +270,13 @@ func collidingMember(tg target) []progen.Site {
 	return out
 }
 
+// unmappedGoOut points a go emit outside every root; its last segment, the default package
+// name, is a Go identifier so that an emit without `package:` meets no E8009.
 func unmappedGoOut(tg target) []progen.Site {
 	if strings.HasPrefix(tg.path, "features/") || strings.HasPrefix(tg.path, "pipeline/") {
 		return nil
 	}
-	return emitValueOf(tg, "go", "out", `"zz/go/"`)
+	return emitValueOf(tg, "go", "out", `"zz/gen/"`)
 }
 
 func emitValueOf(tg target, kind, name, value string) []progen.Site {

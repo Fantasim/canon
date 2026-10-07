@@ -17,9 +17,6 @@ func (c *checker) ident(env *env, e *syntax.IdentExpr, want types.Type) types.Ty
 		return c.dependentIdent(env, e, want, fn)
 	}
 	o := c.lookup(env, e.Name)
-	if o == nil && e.Name == itName && env.it != nil {
-		o = env.it
-	}
 	if o == nil {
 		return c.unresolved(env, e, want)
 	}

@@ -1,0 +1,51 @@
+STDLIB.md §5, TYPES.md §3.4, §4.1, DECISIONS 317, 318: `it` in a where predicate is a name in
+scope, never the symbolic key "it": `hasKey(it)`, `get(it) != none`, `find(it)` and `xs[it]` test
+the value against a literal table, a loaded table and a keyed list, on an alias and on a record
+field. Every value below holds its refinement; the refusals are findings/E3206_1.txtar.
+-- a/a.canon --
+package a
+
+record Row {
+  v: Int
+}
+
+let rows: table Row = {
+  A { v: 1 }
+  B { v: 2 }
+}
+
+let loaded: table Row = load("@resource/rows.json")
+
+record Named {
+  name: String
+}
+
+let named: [Named] keyed by name = [{ name: "A" }]
+
+type T1 = String where rows.hasKey(it)
+
+type T2 = String where rows.get(it) != none
+
+type T3 = String where loaded.hasKey(it) and loaded.find(it) != none
+
+type T4 = String where named.hasKey(it) and named[it].name == it
+
+record R {
+  s: String where rows.hasKey(it) and loaded.get(it) != none
+}
+
+let a1: T1 = "A"
+
+let a2: T2 = "B"
+
+let a3: T3 = "B"
+
+let a4: T4 = "A"
+
+let r: R = { s: "A" }
+
+test "a key read through it holds" {
+  expect a1 == "A" and a2 == "B" and a3 == "B" and a4 == "A" and r.s == "A"
+}
+-- resource/rows.json --
+{"A": {"v": 1}, "B": {"v": 2}}

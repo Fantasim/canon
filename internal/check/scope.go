@@ -151,8 +151,16 @@ func (c *checker) lookupGlobal(env *env, name string) *object {
 	return c.universe[name]
 }
 
-// lookup is steps 2 to 6 of TYPES.md §3.3 for a name in value position.
+// lookup is steps 2 to 6 of TYPES.md §3.3, then `it` in a where predicate (§3.4, DECISIONS 318).
 func (c *checker) lookup(env *env, name string) *object {
+	if o := c.lookupSteps(env, name); o != nil || name != itName {
+		return o
+	}
+	return env.it
+}
+
+// lookupSteps is steps 2 to 6 of TYPES.md §3.3.
+func (c *checker) lookupSteps(env *env, name string) *object {
 	if o := env.lookupLocal(name); o != nil {
 		return o
 	}

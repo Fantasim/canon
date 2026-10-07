@@ -1,0 +1,50 @@
+TYPES.md §13.2: E3028 names the later alternative's type as written: a list, an optional,
+a refined String, an alias of String and a type function application, after a first alternative
+that has a string wire form (a ref keyed by name, a dependent type).
+-- a/a.canon --
+package a
+
+local enum K { name, off }
+
+local type P(k: K) = match k {
+  name => String
+  off => Never
+}
+
+local record Row {
+  v: Int
+}
+
+local let rows: table Row = {
+  A { v: 1 }
+}
+
+local type Name = String
+
+local type R1 = ref rows | [String]
+
+local type R2 = String | String?
+
+local type R3 = String | String(1..) | Name
+
+local record D {
+  k: K
+  d: P(k) | "none" | P(k)
+}
+-- findings.txt --
+error[E3028]  a/a.canon:20:28
+  [String] is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:22:26
+  String? is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:24:26
+  String(1..) is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:24:40
+  a.Name is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:28:22
+  a.P(k) is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+5 errors, 0 warnings in 1 package (…)

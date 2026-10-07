@@ -274,7 +274,7 @@ func TestLexErrorInMapKey(t *testing.T) {
 	})
 }
 
-// TYPES.md §1, §3.2, WIRE.md §4.1: a field's own type expression decides its @json forms, in either declaration order.
+// TYPES.md §1, §3.2, §13.2, WIRE.md §4.1: a field's own type expression decides its @json forms, in either declaration order.
 func TestFieldTypeErrorOrderFree(t *testing.T) {
 	e2102, e3002, e3015, e3316 := diag.E2102.Def().Code, diag.E3002.Def().Code, diag.E3015.Def().Code, diag.E3316.Def().Code
 	for _, tc := range []struct {
@@ -282,7 +282,7 @@ func TestFieldTypeErrorOrderFree(t *testing.T) {
 		want            []diag.Code
 	}{
 		{"unit on an alias holding an error", "local type D = Duration | \"never\" | Nope2\n\n",
-			"local record R {\n  d: D @json(unit: s)\n}\n\n", []diag.Code{e2102, e3002, e3002, e3316}},
+			"local record R {\n  d: D @json(unit: s)\n}\n\n", []diag.Code{e2102, e3002, e3316}}, // TYPES.md §1: Nope2 in error is not judged again
 		{"pairs over a record with an error field", "local record Pair {\n  k: Int\n  v: Int\n  w: Nope\n}\n\n",
 			"local record R {\n  ps: [Pair](..=3) = [] @json(pairs: [\"a{i}\", \"b{i}\"])\n}\n\n", []diag.Code{e2102, e3316}},
 		{"pairs bound reading a let", "local let lim = 3\n\nlocal record Pair {\n  k: Int\n  v: Int\n}\n\n",

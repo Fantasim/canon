@@ -111,7 +111,7 @@ func (c *checker) cond(env *env, e syntax.Expr) (tf, ff facts) {
 func (c *checker) contextDependent(env *env, e syntax.Expr) bool {
 	switch x := e.(type) {
 	case *syntax.IdentExpr:
-		return c.lookup(env, x.Name) == nil && (x.Name != itName || env.it == nil)
+		return c.lookup(env, x.Name) == nil
 	case *syntax.NoneLit, *syntax.IntLit, *syntax.FloatLit:
 		return true
 	case *syntax.ListLit:

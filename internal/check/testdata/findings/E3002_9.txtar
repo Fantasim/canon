@@ -1,4 +1,4 @@
-TYPES.md §13.2: the alternatives after the first are string literals, the first has a string wire form, `Never | "default"` accepts only "default", and a union compares only with its literals and its alternative.
+TYPES.md §13.2: the alternatives after the first are string literals (a type there is E3028), the first has a string wire form, `Never | "default"` accepts only "default", and a union compares only with its literals and its alternative.
 -- a/a.canon --
 package a
 
@@ -16,8 +16,8 @@ local fn same(k: Key) -> Bool {
   return k == "default" and k == one and k != "other"
 }
 -- findings.txt --
-error[E3002]  a/a.canon:5:33
-  expected String, found a.Stage
+error[E3028]  a/a.canon:5:33
+  a.Stage is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
 
 error[E3002]  a/a.canon:6:21
   expected String, found Int

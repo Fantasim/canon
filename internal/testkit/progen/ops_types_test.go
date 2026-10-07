@@ -39,6 +39,7 @@ func typesOperators() []operator {
 		op(diag.E3023.Def().Code, "TYPES.md §7.4 (range on Bool)", rangeOnBool),
 		op(diag.E3024.Def().Code, "TYPES.md §8.4 (past on a non-enum)", pastOnInt),
 		op(diag.E3025.Def().Code, "TYPES.md §13.3 (Float bound in a Range)", fnStatementFocus("let zzR: Range = ", "1.5..3", "")),
+		op(diag.E3028.Def().Code, "TYPES.md §13.2 (a type after a union's first alternative)", appendSite("local type ZzE3028 = String | ", "Int", "")),
 		op(diag.E3101.Def().Code, "TYPES.md §9.3 (duplicate table key)", duplicateTableEntry),
 		{code: diag.E3102.Def().Code, rule: "TYPES.md §9.1 (@codes code twice)", also: []diag.Code{diag.E6002.Def().Code}, sites: codeTwice},
 		op(diag.E3103.Def().Code, "TYPES.md §9.3 (entry of a non-table)", entryOfNonTable),
