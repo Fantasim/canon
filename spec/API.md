@@ -1022,7 +1022,8 @@ inside the same edit and reports it, so every client behaves the same.
 ### 8.6 Checking and refusal
 
 - **E17.** The **affected packages** of an edit are: the packages whose static read set (S3, S5)
-  holds a file the edit writes or removes, or a directory listing the edit changes; each package
+  holds a file the edit writes or removes, or a directory listing the edit changes (a `load.dir`
+  base directory that does not exist yet is in the set, as a missing named file is); each package
   declaring an `asset` type whose root holds, by real path, a name the edit creates or removes (its
   asset checks list that directory, TYPES.md §13.4); and every package importing one of these,
   directly or not. Static read sets are known from the parsed sources, never by evaluation, so a

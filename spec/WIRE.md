@@ -579,7 +579,8 @@ stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"]
   `FromJSON` at that path does; a path through `none` (`E1905`) gives no scope (DECISIONS 272).
 - The path must exist and be a readable regular file [`E7004`]; under an optional root absent on
   this machine, [`E7009`] (§2.2).
-- The path of every `load` form is a string literal without interpolation [`E7008`], so the files
+- The path of every `load` form is a string literal without interpolation [`E7008`, at the path,
+  or at the `load` when it has no positional path], so the files
   a package reads are known from its sources alone, before any checking or evaluation, as the
   revision (API.md S3), the packages an edit affects (API.md E17) and the build manifest (§10) need
   (DECISIONS 103, 330). Way out: a computed choice of file is a choice among literal `load`s,
