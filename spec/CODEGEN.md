@@ -203,6 +203,8 @@ The first line of every generated file is its **marker**:
 `^// (Code generated|GENERATED) by canon\b.* DO NOT EDIT\.$`, or, for `.json`, if its top-level
 `$schema` matches WIRE.md's pattern, or, for a file of a `text` emit, if the `canon.outputs` of
 its package names it (§2.9). Otherwise the build fails with `E8001` and writes nothing.
+A new file is created with mode `0666 &^ umask` and a new directory `0777 &^ umask`; an
+overwritten file keeps its mode (DECISIONS 329).
 The one way to take over a hand-written file is the `--adopt` flag: `canon convert --adopt` for a
 JSON source that becomes the emitted data file (IMPLEMENTATION-PLAN.md §8.3), and
 `canon build --adopt <path>` for a file of a `text` emit (§2.9) or the header of an `access: both` struct

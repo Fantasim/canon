@@ -3139,3 +3139,8 @@ round 2", "PS1 review", "PS2 round 2"):
      Resource port (handoff 2026-10-07 C, "Budget"): one project-wide counter made an unrelated
      package (telemetry) fail with `E4401` when an item family grew. A package's verdict now
      depends on it and the packages it reads only, never on an unrelated package.
+
+329. **Files `canon` writes take a plain create's mode (CODEGEN.md §2.4).** A new output, lock,
+     journal or created file is `0666 &^ umask`, a new directory `0777 &^ umask`; an overwrite
+     keeps the existing file's mode. Reason: the Sovereign Resource port (handoff 2026-10-07 A2):
+     every file was 0600, unreadable by a server running as another user.
