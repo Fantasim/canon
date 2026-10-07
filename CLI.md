@@ -249,7 +249,7 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
 | `--target t` | emit only these targets (repeatable) |
 | `--check` | write nothing; exit 1 if any output or lock would change (conformance tests included). For CI |
 | `--watch` | rebuild on every change; used by a local server and by the studio |
-| `--adopt <path>` | take over the hand-written file at `path`, which the build would otherwise refuse to overwrite (`E8001`): the header of a legacy C++ struct moving to `access: both` (SPEC §15.3), or a file of an `emit text` (CODEGEN.md §2.9, DECISIONS 294). Only those can be adopted: a JSON output without a `$schema` is `E8001` even when listed. The build prints `adopting <path>`; from then on the header carries the marker, and a text file is named in its directory's `.canon-text`. Under `--check` nothing is adopted: the output is reported and counted as stale. Repeatable |
+| `--adopt <path>` | take over the hand-written file at `path`, which the build would otherwise refuse to overwrite (`E8001`): the header of a legacy C++ struct moving to `access: both` (SPEC §15.3), or a file of an `emit text` (CODEGEN.md §2.9, DECISIONS 294). Only those can be adopted: a JSON output without a `$schema` is `E8001` even when listed. The build prints `adopting <path>`; from then on the header carries the marker, and a text file is named in its package's `canon.outputs` (DECISIONS 326). Under `--check` nothing is adopted: the output is reported and counted as stale. Repeatable |
 
 - Outputs are written atomically: into a temporary file, then renamed. A failed build leaves every
   previous output untouched.

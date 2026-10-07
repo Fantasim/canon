@@ -672,24 +672,28 @@ re-run is capped at the budget, and past it that re-run alone stops, its value i
 
 ### 12.2 Budget
 
-- The budget is `project.budget` (default 10⁸) for one `canon check`, `canon build` or `canon
-  test` invocation, or for one API re-check. Every budgeted stage (evaluation, verification,
-  checks, precomputation, tests) spends from the same counter. Cached results (CLI §2.7) are reused
-  only for an identical build manifest, so they reproduce the same verdict.
-- One counter per invocation (DECISIONS 104): phase 2's constant folding spends from it first,
-  then stages A–E; `canon test`'s tests start on the counter phase 2 left. A constant folded in
-  phase 2 and forced again in stage A is evaluated, and charged, twice (TYPES.md §15). An API
-  re-check that reuses earlier folds re-spends their steps, so `E4401` lands where a cold run puts
-  it. Not on this counter: the tests run to compute conformance vectors (one budget per package,
-  §1); view-model rendering and phase 8's verification, which spend nothing (§2.1); and the
-  re-run that explains a poisoned value (API.md R6), which starts from a fresh counter, replays
-  phase 2's folds and discards its findings, so its causes are those of a cold run.
+- The budget is `project.budget` (default 10⁸) **per package** (DECISIONS 328) for one `canon
+  check`, `canon build` or `canon test` invocation, or for one API re-check: each package has its
+  own counter. Every budgeted stage (evaluation, verification, checks, precomputation, tests)
+  spends from the counter of the package that declares what is being run: the value, constant,
+  check, test or fn. Cached results (CLI §2.7) are reused only for an identical build manifest, so
+  they reproduce the same verdict.
+- One counter per package and invocation (DECISIONS 104, 328): phase 2's constant folding spends
+  from the counter of the constant's package first, then stages A–E; `canon test`'s tests start on
+  the counter phase 2 left to their package. A constant folded in phase 2 and forced again in stage
+  A is evaluated, and charged, twice (TYPES.md §15). An API re-check that reuses earlier folds
+  re-spends their steps, so `E4401` lands where a cold run puts it. Not on these counters: the
+  tests run to compute conformance vectors (one budget per package, §1); view-model rendering and
+  phase 8's verification, which spend nothing (§2.1); and the re-run that explains a poisoned value
+  (API.md R6), which starts from fresh counters, replays phase 2's folds and discards its findings,
+  so its causes are those of a cold run.
 - Steps are **charged** to the root being evaluated (§7.1). Forcing a top-level value from inside
   another root charges the forced value, not the forcer. All runs of one instance-check
   declaration are charged to that declaration.
-- Spending the last step is `E4401` at the expression being evaluated, with its stack and the
-  heaviest root (on a tie, the first charged), so a run that costs n steps needs a budget of at
-  least n + 1. Its path is the value being evaluated (API.md F1):
+- Spending the last step of a package's counter is `E4401` at the expression being evaluated,
+  with its stack and the package's heaviest root (on a tie, the first charged), so a package whose
+  run costs n steps needs a budget of at least n + 1. Its path is the value being evaluated
+  (API.md F1):
 
 ```
 error[E4401]  balance/parity/sweep_plan.canon:265:15
@@ -697,11 +701,13 @@ error[E4401]  balance/parity/sweep_plan.canon:265:15
   heaviest: plan (98412330 steps)
 ```
 
-- After `E4401`, evaluation stops: no further root runs, and the build fails. Findings already
-  produced are kept. `E4401` is reported once per invocation; a phase-2 constant fold that fails
-  because the budget is spent is still `E3015`, variant `budget` (DECISIONS 150: no declaration
-  breaks silently; 263). Stage E still runs after `E4401`, but a fold there that fails on the spent
-  counter adds no finding: `E4401` has already failed the build. Because the order of evaluation
+- After `E4401`, that package's evaluation stops: no further root of it runs, a value of it read
+  from another package is poisoned (with no further finding), and the build fails. Other packages
+  run on their own counters. Findings already produced are kept. `E4401` is reported once per
+  package and invocation; a phase-2 constant fold that fails because its package's budget is
+  spent is still `E3015`, variant `budget` (DECISIONS 150: no declaration breaks silently; 263).
+  Stage E still runs after `E4401`, but a fold there that fails on a spent counter adds no
+  finding: `E4401` has already failed the build. Because the order of evaluation
   (§2) is fixed, two implementations stop at the same expression.
 
 ---

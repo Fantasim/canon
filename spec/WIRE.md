@@ -1085,6 +1085,12 @@ The file is a text output, not a data file.
 - The bytes are `pretty(w, 0)` (§7.4) followed by one LF (§7.1), where `w` is the §5 encoding of
   the value as if it were nested in a data file. A table is therefore the object keyed by entry id
   of §5.7, not `rows`.
+- **An absent field is left out** (DECISIONS 327), the one exception to §5.4's "every field is
+  written": a record or variant field whose value is `none` and whose declared default is `none`
+  (`T?` with no default, or `= none`) has no key. A field with `@json(none: X)` is written as
+  `X`; a field `T? = d` holding `none` is written `null` (absent would decode as `d`). `none` as a
+  list element, a map value or the whole value is `null`, as in §5.4. Data files (§8.1) keep §5.4
+  unchanged.
 - No `$schema`, `$id`, `$<fn>` or `$fns` key is written: there is no document (§8.2), no marker
   (§8.4) and no fingerprint.
 - There is one form: no indentation option.
@@ -1149,6 +1155,9 @@ emit text { out: "out" }
 ```
 
 `limit.json` is `null` then one LF, five bytes (§5.4: `none` is `null`).
+
+With a field `note: String?` added to `Badge` and left `none`, `badge.json` is unchanged: the
+absent field has no key. In an `emit json` data file the same value carries `"note": null`.
 
 ---
 

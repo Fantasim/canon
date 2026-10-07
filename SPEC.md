@@ -305,7 +305,7 @@ unknown key is `E1002`.
 | `roots` | `{identifier: String}` | `{}` | named roots; paths are relative to the project directory and may point outside it |
 | `languages` | `[identifier](1..)` | `[en]` | the first one is the source language (§17); codes match `[a-z]{2,3}(_[A-Z][a-z]{3})?(_[A-Z]{2})?` |
 | `studio` | package name, optional | `none` | package holding the studio vocabulary (§16.11); it must exist (`E1012`) |
-| `budget` | `Int(1..)` | `100_000_000` | evaluation steps per invocation (§11.6) |
+| `budget` | `Int(1..)` | `100_000_000` | evaluation steps per package and invocation (§11.6) |
 | `go_module` | `{root name: String}` | `{}` | the Go module path of each root that receives Go code, keyed by a declared root name (`E1009`), so imports between generated packages can be derived (§14.6) |
 
 - `key { … }` is the canonical spelling of a map-valued key (`roots { … }`); `key: { … }` means
@@ -1278,10 +1278,11 @@ amended values record the layer. Findings, `canon explain` and the studio's edit
 
 ### 11.6 Step budget
 
-Evaluation runs under a step budget: `project.budget` steps (10⁸ if not set) for one `canon`
-invocation, or one re-check through the API, shared by constant folding during checking, values,
-verification, checks, precomputation and tests. Exceeding it is `E4401`, with the stack and the
-heaviest value (the top-level value charged the most steps). What costs a step, and to which value
+Evaluation runs under a step budget: `project.budget` steps (10⁸ if not set) **per package** for
+one `canon` invocation, or one re-check through the API (DECISIONS 328), shared by that package's
+constant folding during checking, values, verification, checks, precomputation and tests.
+Exceeding it is `E4401` in that package, with the stack and the package's heaviest value (the
+top-level value charged the most steps); other packages run on. What costs a step, and to which value
 it is charged, is [spec/EVALUATION.md](spec/EVALUATION.md) §12; the cost of each standard function
 is in [spec/STDLIB.md](spec/STDLIB.md).
 
