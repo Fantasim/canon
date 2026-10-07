@@ -23,7 +23,7 @@ other file declares a code or holds message text.
   lines, summary).
 - **Reserved codes** are catalogued but not reported yet, each with its owner (DECISIONS 322):
   `E8103`, `E8106`-`E8109`, `E8201` (legacy C++ structs, M6; `LegacyStruct` refuses them first, DECISIONS 320), `E8301` (the embedded mode, v0.2), `E4201`
-  (an internal safety net, EVALUATION.md §4.5), `E7008` (the literal `load` path check of DECISIONS 330, `check`, until it lands).
+  (an internal safety net, EVALUATION.md §4.5), `E7008` (the literal `load` path check of DECISIONS 330, `check`, until it lands), `W4001` (DECISIONS 331, `eval`, until it lands).
 - **Retired numbers** are never reused: `E1624` and `E1625` (the view `row` item, removed by
   DECISIONS 21), `E8016` (merged into `E8153`), `E8018` (decoders across packages, removed by
   DECISIONS 323: a package reads another package's classes with its own readers). `E3014` and `E3319` were referenced once but never
@@ -391,7 +391,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 307 codes: 285 errors, 19 warnings and 3 run-time codes, with 494 messages.
+The catalogue holds 308 codes: 285 errors, 20 warnings and 3 run-time codes, with 496 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -969,13 +969,14 @@ Owner: TYPES.md, WIRE.md.
 | E3806 | arity | fn:Name, n:Int, types:Types | `{fn} takes {n} arguments of types {types}` |
 | E3806 | param | name:Name, typ:Type | `type parameter {name} must be a record, a ref, an enum or Bool, found {typ}` |
 
-## E4xxx: Evaluation and the standard library
+## E4xxx, W4xxx: Evaluation and the standard library
 
 Owner: EVALUATION.md, STDLIB.md.
 
 | Code | Severity | Package | Owner | Meaning |
 |---|---|---|---|---|
 | E4001 | error | eval | EVALUATION.md §7.1 | postfix `!` on `none` (the rule: TYPES.md §6.5) |
+| W4001 | warning | eval | EVALUATION.md §1 | values not evaluated or checked because their record or variant is broken (DECISIONS 209) |
 | E4002 | error | eval | EVALUATION.md §4.1 | missing key, index out of range, open range without an end, or slice out of range |
 | E4101 | error | eval | EVALUATION.md §6.1 | integer or duration overflow |
 | E4102 | error | eval | EVALUATION.md §6.1 | division by zero |
@@ -996,6 +997,8 @@ Owner: EVALUATION.md, STDLIB.md.
 | Code | Variant | Args | Template |
 |---|---|---|---|
 | E4001 | - | expr:Expr | `{expr} is none` |
+| W4001 | one | typ:Name | `1 value typed by {typ} was not evaluated or checked: {typ} is broken; fix its errors first` |
+| W4001 | many | n:Int, typ:Name | `{n} values typed by {typ} were not evaluated or checked: {typ} is broken; fix its errors first` |
 | E4002 | index | index:Int, n:Int | `index {index} out of range for length {n}` |
 | E4002 | key | key:Value, coll:Name | `no key {key} in {coll}` |
 | E4002 | open | - | `open range has no end` |

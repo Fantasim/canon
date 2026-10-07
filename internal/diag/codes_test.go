@@ -484,6 +484,8 @@ var constructed = []*Builder{
 	W3301.AtReason(sampleSpan, sampleName, sampleText),
 	W3401.At(sampleSpan, sampleExpr, sampleName),
 	W3601.At(sampleSpan),
+	W4001.AtOne(sampleSpan, sampleName),
+	W4001.AtMany(sampleSpan, sampleInt, sampleName),
 	W5001.At(sampleSpan, sampleText),
 	W5002.At(sampleSpan, sampleText),
 	W6006.AtOne(sampleSpan),

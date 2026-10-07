@@ -3168,3 +3168,10 @@ round 2", "PS1 review", "PS2 round 2"):
      10.7 s, against 1.9 s without four telemetry packages it cannot reach. 252 analysed every
      package for read-set ownership and the one project budget; 328 made the budget per package,
      and static read sets give ownership without evaluation.
+
+331. **A broken type says what it silences (EVALUATION.md §1; ERRORS.md W4001).** When a record or
+     variant is broken (209), one warning at its declaration counts the top-level values of the
+     selected packages typed by it, which were not evaluated or checked. Reason: the Sovereign
+     Resource port (handoff 2026-10-07, "Also found"): a broken check in the item record silenced
+     7,161 items and `canon check` ran faster with no hint; an agent reads "0 findings on items" as
+     "items are valid".

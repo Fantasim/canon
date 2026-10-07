@@ -50,6 +50,11 @@ This replaces SPEC §11.2.
   `check` or `build` runs tests.
 - A **broken** declaration (TYPES.md §1) is never evaluated. A value, check or test that is
   broken produces no evaluation finding. Other values are evaluated normally.
+- A broken record or variant (DECISIONS 209) silences every value typed by it, so the silence is
+  reported: one `W4001` per broken type, at its declaration, counting the top-level values of the
+  selected packages that were not evaluated because they are typed by it (directly, or as an
+  element, entry or field of their type). Values silenced only because they read a broken value
+  are not counted (DECISIONS 331).
 - A value forced for the first time after stage B has started (for example by a package check)
   is verified immediately after its evaluation.
 - **Names.** These phase numbers and stage names are the reference: every other document says
@@ -798,6 +803,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E4301 | error | §3.2 (hard) |
 | E4401 | error | §12.2 |
 | E4402 | error | §3.3 (hard) |
+| W4001 | warning | §1: values not evaluated because their type is broken |
 | E5001 | error | a one-line `check` is false |
 | W5001 | warning | a one-line `warn` is false |
 | E5002 | error | `fail(at, message)` |

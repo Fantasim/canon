@@ -2494,6 +2494,13 @@ var Registry = []Def{
 		},
 	},
 	{
+		Code: "W4001", Severity: Warning, Package: "eval",
+		Variants: []Variant{
+			{Name: "one", Args: []Arg{{Name: "typ", Type: ArgTypeName}}, Template: "1 value typed by {typ} was not evaluated or checked: {typ} is broken; fix its errors first"},
+			{Name: "many", Args: []Arg{{Name: "n", Type: ArgTypeInt}, {Name: "typ", Type: ArgTypeName}}, Template: "{n} values typed by {typ} were not evaluated or checked: {typ} is broken; fix its errors first"},
+		},
+	},
+	{
 		Code: "W5001", Severity: Warning, Package: "rules",
 		Variants: []Variant{
 			{Args: []Arg{{Name: "message", Type: ArgTypeText}}, Template: "{message}"},
@@ -7337,17 +7344,35 @@ func (codeW3601) At(span source.Span) *Builder {
 	return newBuilder(&Registry[299], 0, span)
 }
 
+// W4001: values not evaluated or checked because their record or variant is broken (DECISIONS 209) (EVALUATION.md §1).
+var W4001 codeW4001
+
+type codeW4001 struct{}
+
+// Def is the registry entry of W4001.
+func (codeW4001) Def() *Def { return &Registry[300] }
+
+// AtOne reports: 1 value typed by {typ} was not evaluated or checked: {typ} is broken; fix its errors first
+func (codeW4001) AtOne(span source.Span, typ string) *Builder {
+	return newBuilder(&Registry[300], 0, span, typ)
+}
+
+// AtMany reports: {n} values typed by {typ} were not evaluated or checked: {typ} is broken; fix its errors first
+func (codeW4001) AtMany(span source.Span, n int64, typ string) *Builder {
+	return newBuilder(&Registry[300], 1, span, n, typ)
+}
+
 // W5001: a one-line `warn` is false (EVALUATION.md §8.3).
 var W5001 codeW5001
 
 type codeW5001 struct{}
 
 // Def is the registry entry of W5001.
-func (codeW5001) Def() *Def { return &Registry[300] }
+func (codeW5001) Def() *Def { return &Registry[301] }
 
 // At reports: {message}
 func (codeW5001) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[300], 0, span, message)
+	return newBuilder(&Registry[301], 0, span, message)
 }
 
 // W5002: `warn(at, message)` in a check block (EVALUATION.md §8.3).
@@ -7356,11 +7381,11 @@ var W5002 codeW5002
 type codeW5002 struct{}
 
 // Def is the registry entry of W5002.
-func (codeW5002) Def() *Def { return &Registry[301] }
+func (codeW5002) Def() *Def { return &Registry[302] }
 
 // At reports: {message}
 func (codeW5002) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[301], 0, span, message)
+	return newBuilder(&Registry[302], 0, span, message)
 }
 
 // W6006: stable values not yet in `canon.lock` (`canon lock check` only) (LOCK.md §8).
@@ -7369,16 +7394,16 @@ var W6006 codeW6006
 type codeW6006 struct{}
 
 // Def is the registry entry of W6006.
-func (codeW6006) Def() *Def { return &Registry[302] }
+func (codeW6006) Def() *Def { return &Registry[303] }
 
 // AtOne reports: 1 stable value is not in canon.lock yet: run canon build
 func (codeW6006) AtOne(span source.Span) *Builder {
-	return newBuilder(&Registry[302], 0, span)
+	return newBuilder(&Registry[303], 0, span)
 }
 
 // AtMany reports: {n} stable values are not in canon.lock yet: run canon build
 func (codeW6006) AtMany(span source.Span, n int64) *Builder {
-	return newBuilder(&Registry[302], 1, span, n)
+	return newBuilder(&Registry[303], 1, span, n)
 }
 
 // W7101: `load.defines` skipped defines it cannot evaluate (once per file) (WIRE.md §6.8).
@@ -7387,16 +7412,16 @@ var W7101 codeW7101
 type codeW7101 struct{}
 
 // Def is the registry entry of W7101.
-func (codeW7101) Def() *Def { return &Registry[303] }
+func (codeW7101) Def() *Def { return &Registry[304] }
 
 // AtOne reports: 1 define skipped in {path} ({name}): not a supported integer expression
 func (codeW7101) AtOne(span source.Span, path string, name string) *Builder {
-	return newBuilder(&Registry[303], 0, span, path, name)
+	return newBuilder(&Registry[304], 0, span, path, name)
 }
 
 // AtMany reports: {n} defines skipped in {path} (first: {name}): not a supported integer expression
 func (codeW7101) AtMany(span source.Span, n int64, path string, name string) *Builder {
-	return newBuilder(&Registry[303], 1, span, n, path, name)
+	return newBuilder(&Registry[304], 1, span, n, path, name)
 }
 
 // W7107: a glob matches no file (WIRE.md §6.5).
@@ -7405,11 +7430,11 @@ var W7107 codeW7107
 type codeW7107 struct{}
 
 // Def is the registry entry of W7107.
-func (codeW7107) Def() *Def { return &Registry[304] }
+func (codeW7107) Def() *Def { return &Registry[305] }
 
 // At reports: glob {pattern} matches no file
 func (codeW7107) At(span source.Span, pattern string) *Builder {
-	return newBuilder(&Registry[304], 0, span, pattern)
+	return newBuilder(&Registry[305], 0, span, pattern)
 }
 
 // W7115: a symbolic link skipped: outside the roots, dangling, looping or unreadable (WIRE.md §6.5).
@@ -7418,26 +7443,26 @@ var W7115 codeW7115
 type codeW7115 struct{}
 
 // Def is the registry entry of W7115.
-func (codeW7115) Def() *Def { return &Registry[305] }
+func (codeW7115) Def() *Def { return &Registry[306] }
 
 // AtOutsideRoots reports: symbolic link {path} points outside the roots; skipped
 func (codeW7115) AtOutsideRoots(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[305], 0, span, path)
+	return newBuilder(&Registry[306], 0, span, path)
 }
 
 // AtDangling reports: symbolic link {path} points to nothing; skipped
 func (codeW7115) AtDangling(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[305], 1, span, path)
+	return newBuilder(&Registry[306], 1, span, path)
 }
 
 // AtLooping reports: symbolic link {path} is part of a loop; skipped
 func (codeW7115) AtLooping(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[305], 2, span, path)
+	return newBuilder(&Registry[306], 2, span, path)
 }
 
 // AtStatFailed reports: symbolic link {path} cannot be resolved or read; skipped
 func (codeW7115) AtStatFailed(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[305], 3, span, path)
+	return newBuilder(&Registry[306], 3, span, path)
 }
 
 // W8006: a generated C++ name is a common platform macro (CODEGEN.md §3.5).
@@ -7446,9 +7471,9 @@ var W8006 codeW8006
 type codeW8006 struct{}
 
 // Def is the registry entry of W8006.
-func (codeW8006) Def() *Def { return &Registry[306] }
+func (codeW8006) Def() *Def { return &Registry[307] }
 
 // At reports: C++ name {name} (from {item}) is a macro in common platform headers
 func (codeW8006) At(span source.Span, name string, item string) *Builder {
-	return newBuilder(&Registry[306], 0, span, name, item)
+	return newBuilder(&Registry[307], 0, span, name, item)
 }
