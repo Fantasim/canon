@@ -54,7 +54,9 @@ This replaces SPEC §11.2.
   reported: one `W4001` per type broken by an error of its own (not one broken only because it
   names a broken type), at its declaration, counting the top-level values of the selected
   packages that were not evaluated because they reach it through their type (directly, or as an
-  element, entry, case or field, never through a `ref`). Values silenced only because they read a
+  element, entry, case or field, never through a `ref`). A type broken only because it names
+  broken types (a field type, a check or a default naming one) gets no warning of its own: its
+  values count under each type broken by an error of its own that its breakage traces to. Values silenced only because they read a
   broken value are not counted. When the type's package is not selected, the warning belongs to
   the first selected package (package order) holding a counted value (DECISIONS 331).
 - A value forced for the first time after stage B has started (for example by a package check)
