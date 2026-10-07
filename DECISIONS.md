@@ -3229,3 +3229,10 @@ round 2", "PS1 review", "PS2 round 2"):
      `E3008`. Reason: a misspelled field in a record check (`weigth < 5`) said "cannot infer the
      type of this expression", which tells an agent nothing; §3.3 (a name found nowhere is
      `E2102`) and §1 (no further finding after an error) decide it.
+
+334. **`it` and keys, three readings fixed (TYPES.md §3.4, §4.1, §13.2).** `it` outside a `where`
+     is `E2109` in every position, keys and callees included, never the symbolic key `"it"`;
+     inside one it is found after §3.3's steps 2–6. A parenthesised string literal is a literal
+     in a union (`String | ("a")`); a refined literal is a type (`E3028`). A name in scope whose
+     type is not the key type, as a map-literal key against static keys, is `E3027` (318), not
+     `E2102`. Reason: the review of the A1 fix (2026-10-07) found each silently wrong or cryptic.

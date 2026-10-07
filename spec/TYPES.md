@@ -172,7 +172,9 @@ acceptable there, plus let names after `ref` (§10.2).
 - Declaring a name that is already declared **in the same block** (or a parameter redeclared
   in the function's top block) is `E2107`. Shadowing a name of an outer scope is allowed.
 - `self` outside a record, case or variant body is `E2108`. `it` outside a refinement predicate
-  (`where`) is `E2109`.
+  (`where`) is `E2109`, in every position, keys and callees included: it is never a symbolic key
+  (DECISIONS 334). Inside a predicate, `it` is found after steps 2–6 of §3.3, so a local,
+  parameter or package value named `it` hides it.
 
 ### 3.5 `.name`: field, entry or method (RES-05)
 
@@ -250,6 +252,9 @@ expected: a key argument of `hasKey`, `get`, `find` and `xs[k]` (STDLIB.md §5, 
 a name that resolves nowhere becomes a **symbolic key** of `C`, checked at evaluation (`E3501`).
 `II_GEN_GOLD` in a `ref items` field is a symbolic key. For a dependent field (§11.4) the rule applies when some branch takes
 dynamic keys; when every ref branch has static keys, a bare name stays one of those keys.
+A map literal key against a key type with static keys (an enum, a table literal) is that key when
+it names one; otherwise a name in scope whose type is not the key type is `E3027`, and only a name
+found nowhere is `E2102` (DECISIONS 334).
 
 A string literal or an integer literal checked against `ref C` is a key too, if it is a
 literal of the key's type: a table key is written as an identifier or a string; a keyed-list
@@ -1177,7 +1182,8 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 
 ### 13.2 String-literal unions (TYP-09)
 
-- `A | "lit" | …`: the alternatives other than the first are string literals; a type there is
+- `A | "lit" | …`: the alternatives other than the first are string literals, parentheses
+  allowed (`("a")`); a type there, a refined literal (`"x" where …`) included, is
   `E3028` (there are no unions of types: a variant is the tagged form). `A` must have a
   string wire form: `String` (possibly refined), an enum without `@json(codes)`, a `ref` whose
   key type has a string wire form, or a type application whose branches do (`E3002`
