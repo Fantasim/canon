@@ -1,0 +1,45 @@
+CODEGEN.md §2.8 "This machine" (DECISIONS 332): project.local.canon moves @web and not @gen, but app's ts copy names no type of core (it only folds core's constant), so core is no import of the copy and no relative import crosses the roots: no E8022, both written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "../gen"
+    web: "../web"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots {
+    web: "../far/web"
+  }
+}
+-- ../gen/README --
+-- ../far/web/README --
+-- core/core.canon --
+/// Core.
+package core
+
+/// A base.
+const BASE = 1
+
+/// A colour.
+enum Tone { red, blue }
+
+emit ts { out: "@gen/core.ts", mode: types }
+-- app/app.canon --
+/// App.
+package app
+
+import core
+
+/// A badge.
+record Badge {
+  /// Its size.
+  size: Int = core.BASE + 1
+}
+
+emit ts { out: "@web/app.ts", mode: types }
+-- build.txt --
+0 errors, 0 warnings in 2 packages (…)
+output @gen/core.ts 0
+output @web/app.ts 0

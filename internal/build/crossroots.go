@@ -20,7 +20,7 @@ func (r *run) crossRoots(p *ir.Package, e *ir.Emit) {
 		return
 	}
 	declared, _ := project.NewLayout(r.s.proj, r.p.dir, nil, diag.NewBag(nil, p.Name))
-	for _, ref := range p.Imports {
+	for _, ref := range p.Imports { // what the copy names or reaches: ir's importUse of a code target, as for E8025
 		if other, crosses := r.crosses(declared, at, copyOf(ref.Emits, e.Target)); crosses {
 			proj := r.s.proj
 			diag.E8022.At(r.emitSpan(p, e), at.Display, other.Display, check.RootLabel(proj, at.Root), check.RootLabel(proj, other.Root)).

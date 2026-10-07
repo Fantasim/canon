@@ -8,4 +8,7 @@ E1014 reported for project.local.canon (GRAMMAR.md §7.2), which no generated pr
 E3705 an asset under an optional root absent on this machine (DECISIONS 332): the harness places every root through Options.Roots and lists none optional; internal/verify's E3705_1.txtar produces it
 E7009 a load under an optional root absent on this machine (DECISIONS 332): the harness lists no root optional; internal/load's E7009_*.txtar and internal/build's E7009_1.txtar produce it
 E8019 each E8019 construct is a generator gap; an operator would break once the generator implements it
+E8022 a fact of the machine: two roots placed relative to each other otherwise than project.canon does (CODEGEN.md §2.8), which no generated program carries; internal/build's E8022_*.txtar produce it
+E8023 build --check with an output under an absent optional root (CODEGEN.md §2.4), a fact of the machine; internal/build's E8023_*.txtar produce it
 W6006 reported by canon lock check only (LOCK.md §8), which neither check nor build runs
+W8024 an output under an absent optional root (CODEGEN.md §2.4), a fact of the machine; internal/build's W8024_*.txtar produce it
