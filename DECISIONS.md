@@ -3170,7 +3170,11 @@ round 2", "PS1 review", "PS2 round 2"):
      Reason: the Sovereign Resource port (handoff 2026-10-07 §C(d)): a one-value skill edit took
      10.7 s, against 1.9 s without four telemetry packages it cannot reach. 252 analysed every
      package for read-set ownership and the one project budget; 328 made the budget per package,
-     and static read sets give ownership without evaluation.
+     and static read sets give ownership without evaluation. Readings of the implementation: a
+     header several packages load reports its `E7102`/`W7101` once per loading package (WIRE §6.8);
+     a `RenameName` target's scope is a superset from the parse (its file's package, imports and
+     their importers); the project's own findings stay in an edit's result; the asset listings of
+     packages outside the scope are compared for staleness after the re-check, before E19.
 
 331. **A broken type says what it silences (EVALUATION.md §1; ERRORS.md W4001).** When a record or
      variant is broken (209), one warning at its declaration counts the top-level values of the

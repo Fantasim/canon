@@ -743,7 +743,8 @@ integer  = ( "0" ( "x" | "X" ) hexDigit { hexDigit }     (* hexadecimal *)
 
 - Evaluation uses unbounded integers; `>>` is arithmetic; a shift count must be 0..63. A result
   outside `Int` (int64), or a shift count out of range, makes the define skipped and counted.
-- **Count.** At most one `W7101` per file per build: "N defines skipped", located at the first
+- **Count.** At most one `W7101` per file per package that loads it, in that package's findings, so a
+  package's findings never depend on which other packages loaded the same header (DECISIONS 330): "N defines skipped", located at the first
   skipped define, counting only skipped defines whose name starts with the `prefix` of some
   `load.defines` of that file (all of them if one has no prefix).
 - **Duplicates.** The same name defined again with the same value is ignored. With a different

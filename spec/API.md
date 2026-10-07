@@ -1049,7 +1049,7 @@ inside the same edit and reports it, so every client behaves the same.
   lazily is evaluated as `canon check <pkg>` evaluates it (EVALUATION.md §2.1 item 2). When these
   packages are every package, the edit analyses the whole project, as before DECISIONS 330.
 - **E18.** After applying the ops in memory, the affected packages are re-checked (phases 1–7)
-  with what E17a loads for them. `Findings` holds all their findings, and only theirs: the
+  with what E17a loads for them. `Findings` holds all their findings and the project's own (package `""`), and only those: the
   findings of a package the edit does not affect, errors included, are not reported and never
   refuse the edit (E19). `canon check` stays the verdict of the whole project (DECISIONS 330).
 - **E19.** If any finding is an error and `AllowErrors` is false, nothing is written, `Applied` is
