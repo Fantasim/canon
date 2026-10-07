@@ -69,7 +69,7 @@ func (r *run) commit(check bool, out *BuildResult, outputs []*output, locks []*l
 	if !ok {
 		return ErrReadOnly
 	}
-	return writeAll(fsys, changes)
+	return writeAll(fsys, changes, r.bounds().allows)
 }
 
 // markStale gives every output and lock a build would write or adopt the status stale, an
@@ -92,17 +92,19 @@ type ModeFS interface {
 	Chmod(name string, mode fs.FileMode) error
 }
 
-// writer is one all-or-nothing write: the directories it created, removed again on a failure.
+// writer is one all-or-nothing write: the directories it created, removed again on a failure,
+// and the directories it may create (nil: any).
 type writer struct {
 	fsys    WriteFS
 	created []string
+	may     func(dir string) bool
 }
 
-// writeAll writes every file to a temporary file beside it, then renames each over its target;
-// after a failure, the files already renamed get their previous content back and the
-// directories it created are removed (API.md N11).
-func writeAll(fsys WriteFS, changes []change) error {
-	w := &writer{fsys: fsys}
+// writeAll writes every file to a temporary file beside it, then renames each over its target,
+// creating only the directories may allows; after a failure, the files already renamed get
+// their previous content back and the directories it created are removed (API.md N11).
+func writeAll(fsys WriteFS, changes []change, may func(dir string) bool) error {
+	w := &writer{fsys: fsys, may: may}
 	for i, c := range changes {
 		if err := w.stage(c); err != nil {
 			removeTemps(fsys, changes[:i+1])
@@ -254,12 +256,15 @@ func keepMode(fsys WriteFS, tmp, abs string) error {
 	return chmod.Chmod(tmp, info.Mode().Perm())
 }
 
-// mkdirs creates dir and records the directories that did not exist.
+// mkdirs creates dir and records the directories that did not exist; one it may not create fails (CODEGEN.md §2.4).
 func (w *writer) mkdirs(dir string) error {
 	var missing []string
 	for d := dir; d != project.DirOf(d); d = project.DirOf(d) {
 		if _, err := w.fsys.Stat(d); !errors.Is(err, fs.ErrNotExist) {
 			break
+		}
+		if w.may != nil && !w.may(d) {
+			return &fs.PathError{Op: opMkdir, Path: d, Err: errRootMissing}
 		}
 		missing = append(missing, d)
 	}

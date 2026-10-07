@@ -1,0 +1,41 @@
+CODEGEN.md §2.8 "This machine" (DECISIONS 332): project.local.canon moves @gen alone; a cpp copy inside the project including a copy under @gen is E8022, the project's directory being the first end of the relative path.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "../gen"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots {
+    gen: "../work/gen"
+  }
+}
+-- ../work/gen/README --
+-- core/core.canon --
+/// Core.
+package core
+
+/// A colour.
+enum Tone { red, blue }
+
+emit cpp { out: "@gen/core", namespace: "acme::core", mode: types }
+-- app/app.canon --
+/// App.
+package app
+
+import core { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit cpp { out: "out/cpp", namespace: "acme::app", mode: types }
+-- findings.txt --
+error[E8022]  app/app.canon:12:17
+  app/out/cpp reaches @gen/core by a relative path computed from project.canon, but this machine places gen elsewhere relative to project acme: place both as project.canon does (project.local.canon or --root), or the generated path would break
+
+1 error, 0 warnings in 2 packages (…)

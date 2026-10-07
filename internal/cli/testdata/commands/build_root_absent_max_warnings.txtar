@@ -1,0 +1,31 @@
+CLI.md §3.4 "Absent roots", §2.3 (DECISIONS 332): --max-warnings 0 turns the skip of an output under an absent optional root, W8024, into a failure: exit 4.
+-- dir --
+p
+-- args --
+build
+--max-warnings
+0
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+  }
+  optional_roots: [src]
+}
+-- p/a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@src/json/" }
+-- want --
+[exit 4]
+[stdout]
+warning[W8024]  project.canon:4:5
+  1 output skipped: root @src ("../Source") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
+
+0 errors, 1 warning in 1 package (…)
+[stderr]

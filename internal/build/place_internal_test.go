@@ -74,7 +74,7 @@ func (failingRead) ReadFile(string) ([]byte, error) { return nil, errReadDenied 
 // absolute one.
 func TestPlaceReadErrorNamesDisplayPath(t *testing.T) {
 	r := &run{p: &Project{fs: failingRead{}}, s: &snapshot{}}
-	_, err := r.place([]*output{{Output: Output{Path: "@out/v.json", Abs: "/o/v.json", Package: "a"}}}, nil)
+	_, err := r.place([]*output{{Output: Output{Path: "@out/v.json", Abs: "/o/v.json", Package: "a"}}}, BuildOptions{})
 	if !errors.Is(err, fs.ErrPermission) {
 		t.Fatalf("place: %v", err)
 	}
@@ -97,12 +97,12 @@ func (listingDenied) ReadFile(name string) ([]byte, error) {
 func TestPlaceListingReadError(t *testing.T) {
 	r := &run{p: &Project{fs: listingDenied{}}, s: &snapshot{}}
 	o := &output{Output: Output{Path: "@out/sql/a.sql", Abs: "/o/sql/a.sql", Package: "a", Target: ir.TargetText, Content: []byte("new")}}
-	_, err := r.place([]*output{o}, nil)
+	_, err := r.place([]*output{o}, BuildOptions{})
 	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "a/canon.outputs") {
 		t.Fatalf("place: %v", err)
 	}
 	same := &output{Output: Output{Path: "@out/sql/a.sql", Abs: "/o/sql/a.sql", Package: "a", Target: ir.TargetText, Content: []byte("-- old")}}
-	if _, err := r.place([]*output{same}, nil); err != nil || same.Status != StatusUnchanged {
+	if _, err := r.place([]*output{same}, BuildOptions{}); err != nil || same.Status != StatusUnchanged {
 		t.Errorf("an unchanged output read its listing: %v, status %d", err, same.Status)
 	}
 }

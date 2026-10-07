@@ -1,0 +1,31 @@
+CLI.md §3.4 --check, CODEGEN.md §2.4 (DECISIONS 332): under --check an output under an absent optional root cannot be compared: E8023 in place of W8024, exit 1, nothing written.
+-- dir --
+p
+-- args --
+build
+--check
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+    out: "out"
+  }
+  optional_roots: [src]
+}
+-- p/a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@out/", "@src/json/"] }
+-- want --
+[exit 1]
+[stdout]
+error[E8023]  project.canon:4:5
+  build --check cannot compare 1 output under root @src: "../Source" is not present on this machine; check the repository out there (CI needs every root its outputs go to)
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

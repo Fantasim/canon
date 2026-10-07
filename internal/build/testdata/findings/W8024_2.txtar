@@ -1,0 +1,33 @@
+CODEGEN.md §2.4, §2.9 (DECISIONS 332): project.local.canon places the optional root @src where nothing is; its two text files are skipped, counted in one W8024 naming that path, at its line there.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+  }
+  optional_roots: [src]
+}
+-- project.local.canon --
+project acme {
+  roots {
+    src: "../work/Source"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The version.
+@text("_version.sql")
+export fn versionSql() -> String { return "SELECT 1;\n" }
+
+/// The schema.
+@text("Schema.sql")
+export fn schemaSql() -> String { return "CREATE TABLE t (id INT);\n" }
+
+emit text { out: "@src/sql" }
+-- findings.txt --
+warning[W8024]  project.local.canon:3:5
+  2 outputs skipped: root @src ("../work/Source") is optional and not present on this machine; clone it or point to it in project.local.canon to write them
+
+0 errors, 1 warning in 1 package (…)

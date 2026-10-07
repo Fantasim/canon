@@ -1,0 +1,23 @@
+CODEGEN.md §2.4 "Absent roots", CLI.md §3.4 (DECISIONS 332): the one output under the optional root @src, absent here, is skipped with one W8024 at the root's line of project.canon; the copy under @out is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+    out: "out"
+  }
+  optional_roots: [src]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@out/", "@src/json/"] }
+-- findings.txt --
+warning[W8024]  project.canon:4:5
+  1 output skipped: root @src ("../Source") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
+
+0 errors, 1 warning in 1 package (…)

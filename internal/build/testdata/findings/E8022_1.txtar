@@ -1,0 +1,43 @@
+CODEGEN.md §2.8 "This machine", CLI.md §3.4 (DECISIONS 332): project.local.canon moves @web but not @gen, so the relative import from app's ts copy to core's, computed from project.canon, would break here: E8022 at the copy's out, nothing written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "../gen"
+    web: "../web"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots {
+    web: "../far/web"
+  }
+}
+-- ../gen/README --
+-- ../far/web/README --
+-- core/core.canon --
+/// Core.
+package core
+
+/// A colour.
+enum Tone { red, blue }
+
+emit ts { out: "@gen/core.ts", mode: types }
+-- app/app.canon --
+/// App.
+package app
+
+import core { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit ts { out: "@web/app.ts", mode: types }
+-- findings.txt --
+error[E8022]  app/app.canon:12:16
+  @web/app.ts reaches @gen/core.ts by a relative path computed from project.canon, but this machine places gen elsewhere relative to web: place both as project.canon does (project.local.canon or --root), or the generated path would break
+
+1 error, 0 warnings in 2 packages (…)

@@ -129,7 +129,7 @@ func (p *Project) readProject(s *snapshot) error {
 	if !ok {
 		return &OpenError{Err: project.ErrInvalid}
 	}
-	s.layout = layout
+	s.layout, s.local = layout, local
 	s.canon = placedKey(sum, rootLinesOf(p.dir, s.proj, layout))
 	return nil
 }

@@ -1,0 +1,50 @@
+CLI.md §3.4 "Relative paths between roots", CODEGEN.md §2.8 (DECISIONS 332): project.local.canon moves @web and not @gen, so app's include of core, computed from project.canon, would break on this machine: E8022, exit 1, nothing written.
+-- dir --
+p
+-- args --
+build
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "../gen"
+    web: "../web"
+  }
+}
+-- p/project.local.canon --
+project acme {
+  roots {
+    web: "../far/web"
+  }
+}
+-- gen/README --
+-- far/web/README --
+-- p/core/core.canon --
+/// Core.
+package core
+
+/// A colour.
+enum Tone { red, blue }
+
+emit cpp { out: "@gen/core", namespace: "acme::core", mode: types }
+-- p/app/app.canon --
+/// App.
+package app
+
+import core { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit cpp { out: "@web/app", namespace: "acme::app", mode: types }
+-- want --
+[exit 1]
+[stdout]
+error[E8022]  app/app.canon:12:17
+  @web/app reaches @gen/core by a relative path computed from project.canon, but this machine places gen elsewhere relative to web: place both as project.canon does (project.local.canon or --root), or the generated path would break
+
+1 error, 0 warnings in 2 packages (…)
+[stderr]

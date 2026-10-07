@@ -20,6 +20,7 @@ const (
 	adoptFile    = "adopt"      // display paths the build may take over (API.md B2)
 	selectFile   = "select"     // the selectors (API.md R1); none selects every package
 	checkOnly    = "check-only" // present: the case is analysed, never built
+	checkMode    = "check"      // present: the case is built with --check (CLI.md §3.4)
 )
 
 // archiveFS is a case's files as a project under /p, its expected output and options left out.
@@ -27,7 +28,7 @@ func archiveFS(a *txtar.Archive) mapFS {
 	fsys := mapFS{}
 	for _, f := range a.Files {
 		switch f.Name {
-		case findingsFile, buildFile, layersFile, adoptFile, selectFile, checkOnly:
+		case findingsFile, buildFile, layersFile, adoptFile, selectFile, checkOnly, checkMode:
 		default:
 			fsys[path.Join("p", f.Name)] = file(string(f.Data)) // "../x" is beside the project (SPEC §3.1)
 		}
@@ -54,7 +55,8 @@ func buildCase(t *testing.T, a *txtar.Archive) *build.BuildResult {
 	if _, only := archived(a, checkOnly); only {
 		return checkCase(t, p, selectors)
 	}
-	opt := build.BuildOptions{Packages: selectors, Adopt: fields(a, adoptFile)}
+	_, check := archived(a, checkMode)
+	opt := build.BuildOptions{Packages: selectors, Adopt: fields(a, adoptFile), Check: check}
 	res, err := p.Build(context.Background(), opt)
 	var oe *build.OpenError
 	if errors.As(err, &oe) { // a refusal with findings: E1901 (EVALUATION.md §9.1)

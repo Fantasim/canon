@@ -38,6 +38,7 @@ type snapshot struct {
 	bags   map[string]*diag.Bag
 	proj   *project.Project
 	layout *project.Layout
+	local  *project.Local // project.local.canon checked; nil when there is none (DECISIONS 332)
 	names  []string
 	units  []*project.Unit
 	sums   []project.FileSum

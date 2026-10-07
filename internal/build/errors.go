@@ -13,10 +13,11 @@ var (
 	// ErrReadOnly is a build that must write through a file system without WriteFS's methods.
 	ErrReadOnly = errors.New("the project's file system cannot be written")
 
-	errNoProgram  = errors.New("the checker returned no program")
-	errLinkLoop   = errors.New("too many levels of symbolic links")
-	errNoLoadSite = errors.New("a forced load expression is in no file of the program")
-	errTwoCounts  = errors.New("the evaluator cannot spend the folder's step counter")
+	errNoProgram   = errors.New("the checker returned no program")
+	errLinkLoop    = errors.New("too many levels of symbolic links")
+	errNoLoadSite  = errors.New("a forced load expression is in no file of the program")
+	errTwoCounts   = errors.New("the evaluator cannot spend the folder's step counter")
+	errRootMissing = errors.New("the root's directory does not exist, and canon never creates a root outside the project")
 )
 
 // internalError is a build's ErrInternal, its text the cause's alone (API.md §15 X1).

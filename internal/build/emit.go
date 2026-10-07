@@ -81,7 +81,7 @@ func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error)
 	if err = interrupted(ctx, err); err != nil {
 		return nil, err
 	}
-	if outputs, err = r.place(outputs, opt.Adopt); err != nil {
+	if outputs, err = r.place(outputs, opt); err != nil {
 		return nil, err
 	}
 	res := r.result()
@@ -109,8 +109,9 @@ type output struct {
 	at      source.Span
 	old     []byte // the file's content before the build
 	existed bool
-	listing bool // a package's canon.outputs (CODEGEN.md §2.9)
-	remove  bool // a legacy `.canon-text` the build deletes, written nowhere (CODEGEN.md §2.9)
+	listing bool   // a package's canon.outputs (CODEGEN.md §2.9)
+	remove  bool   // a legacy `.canon-text` the build deletes, written nowhere (CODEGEN.md §2.9)
+	under   string // the optional root absent on this machine it goes under: skipped (CODEGEN.md §2.4)
 }
 
 // emit runs the generator of every emit (each copy in list order, CODEGEN.md §2.8) of the selected packages whose target opt selects, in package then source order, always on p narrowed by ir.CopyOf; after an error, only the views run.
@@ -121,7 +122,9 @@ func (r *run) emit(ctx context.Context, opt BuildOptions, failed bool) ([]*outpu
 			if skipped(e, opt.Targets, failed) {
 				continue
 			}
-			placed, err := r.emitOne(ctx, ir.CopyOf(r.s.proj, p, e), e)
+			cp := ir.CopyOf(r.s.proj, p, e)
+			r.crossRoots(cp, e)
+			placed, err := r.emitOne(ctx, cp, e)
 			if err != nil {
 				return nil, err
 			}
@@ -196,10 +199,13 @@ func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, er
 	if e.FileName != "" {
 		display, abs = path.Dir(display), project.DirOf(abs)
 	}
-	span := r.emitSpan(p, e)
+	span, under := r.emitSpan(p, e), ""
+	if r.s.layout.Absent(at.Root) {
+		under = at.Root
+	}
 	out := make([]*output, len(files))
 	for i, f := range files {
-		out[i] = &output{at: span, Output: Output{
+		out[i] = &output{at: span, under: under, Output: Output{
 			Path: path.Join(display, f.Path), Abs: project.Join(abs, f.Path), Target: e.Target, Package: p.Name, Content: f.Content,
 		}}
 	}

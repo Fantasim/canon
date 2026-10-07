@@ -88,8 +88,9 @@ const (
 	tempRandBytes = 8  // the random part of the OS WriteFile's temporary name
 	maxLinks      = 40 // the symbolic links the OS WriteFile follows to the file it writes
 	linkOp        = "readlink"
-	fileMode      = 0o666 // a plain create's mode before the umask: the kernel applies it (handoff 2026-10-07 A2)
-	dirMode       = 0o777 // idem, for the directories a write creates
+	opMkdir       = "mkdir" // the op of a refused directory creation (DECISIONS 332)
+	fileMode      = 0o666   // a plain create's mode before the umask: the kernel applies it (handoff 2026-10-07 A2)
+	dirMode       = 0o777   // idem, for the directories a write creates
 )
 
 // The statuses of an output: Written is new or changed content, which the build writes.

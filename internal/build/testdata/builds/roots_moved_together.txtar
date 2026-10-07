@@ -1,0 +1,43 @@
+CODEGEN.md §2.8 "This machine" (DECISIONS 332): project.local.canon moves @gen and @web together, so the relative import between their copies is the one project.canon gives: no E8022, both written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "../gen"
+    web: "../web"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots {
+    gen: "../x/gen"
+    web: "../x/web"
+  }
+}
+-- ../x/gen/README --
+-- ../x/web/README --
+-- core/core.canon --
+/// Core.
+package core
+
+/// A colour.
+enum Tone { red, blue }
+
+emit ts { out: "@gen/core.ts", mode: types }
+-- app/app.canon --
+/// App.
+package app
+
+import core { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit ts { out: "@web/app.ts", mode: types }
+-- build.txt --
+0 errors, 0 warnings in 2 packages (…)
+output @gen/core.ts 0
+output @web/app.ts 0

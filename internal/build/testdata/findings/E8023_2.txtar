@@ -1,0 +1,26 @@
+CODEGEN.md §2.4, CLI.md §3.4 --check (DECISIONS 332): two outputs under the absent optional root @src make one E8023, its many form.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+  }
+  optional_roots: [src]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+/// W.
+let w: Int = 2
+
+emit json { out: "@src/json/" }
+-- check --
+-- findings.txt --
+error[E8023]  project.canon:4:5
+  build --check cannot compare 2 outputs under root @src: "../Source" is not present on this machine; check the repository out there (CI needs every root its outputs go to)
+
+1 error, 0 warnings in 1 package (…)
