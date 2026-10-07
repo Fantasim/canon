@@ -56,7 +56,7 @@ func (l *Loader) realOr(name string) string {
 // within is whether real, a resolved '/'-separated path, is one of bounds or under one.
 func within(real string, bounds []string) bool {
 	for _, b := range bounds {
-		if real == b || strings.HasPrefix(real, strings.TrimSuffix(b, sepStr)+sepStr) {
+		if project.Within(real, b) {
 			return true
 		}
 	}

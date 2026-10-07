@@ -54,7 +54,6 @@ type Project struct {
 	lang      string             // Options.Lang, the language of Evaluate's texts unless a request names one (§11)
 	logger    *slog.Logger       // Options.Logger, nil to discard
 	osFiles   bool               // no Options.FS: a Watch follows the OS's notifications (W12)
-	roots     map[string]string  // Options.Roots, which a Watch lays load globs out by (W12)
 }
 
 // FindProject returns the directory holding project.canon in dir or a parent (rule O1).
@@ -98,7 +97,7 @@ func Open(root string, opts Options) (p *Project, err error) {
 	}
 	return &Project{
 		root: dir, b: b, editLayer: opts.EditLayer, layers: slices.Clone(opts.Layers), lang: opts.Lang,
-		logger: opts.Logger, osFiles: opts.FS == nil, roots: roots,
+		logger: opts.Logger, osFiles: opts.FS == nil,
 	}, nil
 }
 

@@ -323,6 +323,19 @@ func TestWatchNewDirectories(t *testing.T) {
 	}
 }
 
+// API.md W12 (DECISIONS 332): project.local.canon is watched whether it exists or not: creating it
+// after the watch starts, then editing it, are events naming it.
+func TestWatchLocalRootFile(t *testing.T) {
+	p, opts := openLaw(t, watchLaw)
+	events, _ := watch(t, p, nil)
+	for i, text := range []string{"project acme {\n}\n", "project acme {\n  roots {}\n}\n"} {
+		writeLaw(t, opts.FS, "project.local.canon", text)
+		if ev := nextEvent(t, events); !slices.Contains(ev.Files, "project.local.canon") || ev.Err != nil {
+			t.Errorf("write %d: %+v", i, ev)
+		}
+	}
+}
+
 // API.md W12 (DECISIONS 332): a recursive glob under a root project.local.canon moves is watched
 // where the root is placed, not where project.canon puts it.
 func TestWatchGlobUnderLocalRoot(t *testing.T) {

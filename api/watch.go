@@ -30,7 +30,7 @@ func (p *Project) Watch(ctx context.Context, fn func(Event)) (err error) {
 	if err != nil {
 		return err
 	}
-	w := &watching{fn: fn, known: map[string]bool{}, reads: map[string]*pkgReads{}, roots: p.roots}
+	w := &watching{fn: fn, known: map[string]bool{}, reads: map[string]*pkgReads{}}
 	if err := w.seed(ctx, s); err != nil {
 		return err
 	}
@@ -54,8 +54,7 @@ type watching struct {
 	reads   map[string]*pkgReads
 	listed  map[string]string // absolute name to display path
 	sources map[string]string
-	roots   map[string]string // Options.Roots, which load calls resolve through
-	matched []string          // every file the loads' globs read at the last event, absolute
+	matched []string // every file the loads' globs read at the last event, absolute
 	fault   error
 }
 

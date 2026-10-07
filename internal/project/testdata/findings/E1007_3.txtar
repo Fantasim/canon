@@ -1,0 +1,19 @@
+GRAMMAR.md §7.1, §7.2 (DECISIONS 332): a root name in project.local.canon is an identifier, as in project.canon; a quoted one is refused even when it names a declared root.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots {
+    "resource": "/home/sam/Resource"
+  }
+}
+-- findings.txt --
+error[E1007]  project.local.canon:3:5
+  invalid root name "resource": a root name is an identifier
+
+1 error, 0 warnings in 1 package (…)

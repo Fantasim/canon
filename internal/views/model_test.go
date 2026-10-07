@@ -294,7 +294,10 @@ func TestAssetRootsByDisplayPath(t *testing.T) {
 // VIEWMODEL.md 12.9, DECISIONS 108, 332: `assets.<root>.dir` is placed through project.canon's roots
 // alone, so --root (Options.Roots) never changes it: the view model is the same on every machine.
 func TestAssetDirIgnoresRootOverride(t *testing.T) {
-	files := map[string]string{"a/a.canon": "package a\n\nrecord Top {\n  icon: asset(\"@res/Icon\", ext: [png])\n}\n"}
+	files := map[string]string{
+		"a/a.canon":              "package a\n\nrecord Top {\n  icon: asset(\"@res/Icon\", ext: [png])\n}\n",
+		"../Resource/Icon/a.png": "", // a required root exists (DECISIONS 332)
+	}
 	head := "  roots {\n    res: \"../Resource\"\n  }\n"
 	want := `{"@res/Icon":{"dir":"../Resource/Icon"}}`
 	plain := tree(t, head, files, build.Options{}).model(t, demoPkg)

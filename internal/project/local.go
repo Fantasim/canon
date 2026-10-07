@@ -74,14 +74,17 @@ func (ls *localSchema) item(e *syntax.ProjectEntry) {
 	}
 }
 
-// root moves one declared root, given once, to a non-empty path string (E1014 root, duplicate,
-// path, empty); a root's key is its text, as written.
+// root moves one declared root, named by an identifier (E1007, as in project.canon), given once,
+// to a non-empty path string (E1014 root, duplicate, path, empty).
 func (ls *localSchema) root(e *syntax.ProjectEntry) {
-	name, _ := ls.keyName(e.Key)
+	name, ident := ls.keyName(e.Key)
 	span := ls.span(e.Key)
 	_, declared := ls.decl.Root(name)
 	switch {
 	case isBad(e.Key):
+		return
+	case !ident:
+		ls.fail(diag.E1007.AtName(span, name))
 		return
 	case !declared:
 		ls.fail(diag.E1014.AtRoot(span, name, rootNames(ls.decl)))

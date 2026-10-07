@@ -55,6 +55,7 @@ roots=(
   --root "client=$(pwd)/examples/_fixtures/client"
 )
 for name in source services sovcommon web parity generated; do
+  mkdir -p "$scratch/$name" # a required root must exist (DECISIONS 332)
   roots+=(--root "$name=$scratch/$name")
 done
 

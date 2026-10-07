@@ -1,8 +1,6 @@
 package project
 
 import (
-	"strings"
-
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 )
@@ -62,7 +60,7 @@ func Place(p *Project, dir string, pl Placement, bag *diag.Bag) (*Layout, bool) 
 // a directory fsys finds, a symbolic link to one included (DECISIONS 332).
 func (l *Layout) present(fsys FS, root string) bool {
 	dir := l.dirs[root]
-	if dir == l.Dir || strings.HasPrefix(dir, strings.TrimSuffix(l.Dir, sep)+sep) {
+	if Within(dir, l.Dir) {
 		return true
 	}
 	info, err := fsys.Stat(dir)

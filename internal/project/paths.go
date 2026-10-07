@@ -52,6 +52,11 @@ func (l *Layout) override(overrides map[string]string, from map[string]placed, b
 	return ok
 }
 
+// Within reports name dir itself or a path below it, judged on the '/'-separated text.
+func Within(name, dir string) bool {
+	return name == dir || strings.HasPrefix(name, strings.TrimSuffix(dir, sep)+sep)
+}
+
 // RootDirs is every declared root's resolved directory, sorted (meta/decisions/log-2026-09-24.md
 // "load.dir round 2": where a followed symbolic link may point and still count as inside a root).
 func (l *Layout) RootDirs() []string {

@@ -114,8 +114,8 @@ func (r *fmtRun) syntaxBroken(name string) bool {
 
 // run reads and formats the files, then writes the changes unless --check or --diff asks not to.
 func (r *fmtRun) run(p *canon.Project) error {
-	if !r.place() {
-		return nil
+	if placed, err := r.place(); !placed || err != nil {
+		return err
 	}
 	files, err := r.files(p)
 	if err != nil {
@@ -139,45 +139,50 @@ func (r *fmtRun) run(p *canon.Project) error {
 }
 
 // place lays the roots on disk, --root applied; false after keeping the findings of a project.canon that does not load (WIRE.md §2.2).
-func (r *fmtRun) place() bool {
+func (r *fmtRun) place() (bool, error) {
 	abs := project.Join(r.root, project.FileName)
 	data, err := r.fsys.ReadFile(abs)
 	if err != nil {
-		r.failed = true
-		return false
+		return false, fmt.Errorf(fmtArgs, project.FileName, readCause(err))
 	}
 	src, err := r.set.Add(project.FileName, abs, data)
 	if err != nil {
-		r.failed = true
-		return false
+		return false, fmt.Errorf(fmtArgs, project.FileName, errTooLarge)
 	}
 	bag := diag.NewBag(&r.set, "")
 	if proj, err := project.Load(src, bag); err == nil {
-		if local, ok := r.local(proj, bag); ok {
+		local, ok, err := r.local(proj, bag)
+		if err != nil {
+			return false, err
+		}
+		if ok {
 			roots := project.HostPaths().RootsFromAPI(r.inv.opt.roots, r.root)
 			if r.layout, ok = project.Place(proj, r.root, project.Placement{Local: local, Overrides: roots, FS: r.fsys}, bag); ok {
-				return true
+				return true, nil
 			}
 		}
 	}
 	r.reject(bag)
-	return false
+	return false, nil
 }
 
 // local is project.local.canon checked into bag, nil when there is none; false when it does not
-// check (DECISIONS 332).
-func (r *fmtRun) local(proj *project.Project, bag *diag.Bag) (*project.Local, bool) {
+// check, an error when it cannot be read (DECISIONS 332).
+func (r *fmtRun) local(proj *project.Project, bag *diag.Bag) (*project.Local, bool, error) {
 	abs := project.Join(r.root, project.LocalFileName)
 	data, err := r.fsys.ReadFile(abs)
-	if err != nil {
-		return nil, errors.Is(err, fs.ErrNotExist)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return nil, true, nil
+	case err != nil:
+		return nil, false, fmt.Errorf(fmtArgs, project.LocalFileName, readCause(err))
 	}
 	src, err := r.set.Add(project.LocalFileName, abs, data)
 	if err != nil {
-		return nil, false
+		return nil, false, fmt.Errorf(fmtArgs, project.LocalFileName, errTooLarge)
 	}
 	local, err := project.LoadLocal(src, proj, bag)
-	return local, err == nil
+	return local, err == nil, nil
 }
 
 // files are the files fmt visits, in path order: project.canon and every .canon file, or the selected packages' (CLI.md §2.2).

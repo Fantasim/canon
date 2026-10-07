@@ -44,8 +44,9 @@ func newExampleFS() *memFS {
 	m := newMemFS(committedExamples())
 	//canon:unordered each directory is made on its own
 	for _, dir := range exampleRoots {
-		if path.IsAbs(dir) {
-			_ = m.MkdirAll(dir)
+		if path.IsAbs(dir) { // a directory, never a file of examples/: nothing can refuse it
+			m.dirs[dir] = true
+			m.addParents(dir)
 		}
 	}
 	return m

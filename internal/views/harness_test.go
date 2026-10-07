@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -160,7 +161,7 @@ func broken(t *testing.T, head string, files map[string]string, opt build.Option
 	studio := ""
 	//canon:unordered a map copied into a map
 	for name, src := range files {
-		fsys["law/"+name] = &fstest.MapFile{Data: []byte(src)}
+		fsys[path.Join("law", name)] = &fstest.MapFile{Data: []byte(src)} // "../x" lies beside the project
 		if strings.HasPrefix(name, studioPkg+"/") {
 			studio = studioPkg
 		}
