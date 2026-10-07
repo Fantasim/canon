@@ -1678,7 +1678,8 @@ func FormatJSONSource(src []byte) ([]byte, error)
 
 - **T1.** `Format` returns the canonical layout of one `.canon` file (FORMATTER.md). A syntax error
   returns a `*SyntaxError` with its findings. `Format(Format(x)) == Format(x)`. A file whose base
-  name is `project.canon` is formatted as a project file.
+  name is `project.canon` or `project.local.canon` is formatted as a project file (GRAMMAR.md §7.2,
+  DECISIONS 332).
 - **T2.** `FormatJSONSource` returns the canonical source layout of a JSON file (FMT-02); key
   order is preserved. Invalid JSON returns a `*SyntaxError`; having no file name, its findings use
   the display name `<json>`.

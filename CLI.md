@@ -373,8 +373,8 @@ canon fmt [paths…] [--check] [--diff] [--json-sources]
 Rewrites `.canon` files in the canonical layout defined by [spec/FORMATTER.md](spec/FORMATTER.md).
 Comments are kept. The layout never aligns columns, so a one-value edit is a one-line diff.
 `fmt` evaluates nothing, except what `--json-sources` needs (below). A file with a syntax error is
-left unchanged: its errors are printed and the exit code is 1; so is a `project.canon` with a
-syntax error, and then nothing is written (exit 2 stays for a missing file). `fmt` does not report
+left unchanged: its errors are printed and the exit code is 1; so is a `project.canon` or a
+`project.local.canon` with a syntax error, and then nothing is written (exit 2 stays for a missing file). `fmt` does not report
 naming conventions; `canon check` does (`W1003`).
 
 | Flag | Meaning |
