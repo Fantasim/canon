@@ -68,6 +68,11 @@ func (a assets) Exists(root, _, p string) (string, bool) {
 	return root, slices.Contains(a[root], p)
 }
 
+// Absent: a fixture listing has no optional root absent from its machine.
+func (a assets) Absent(string, string) (string, bool) {
+	return "", false
+}
+
 // fixture is one package of one parsed .canon file, its values built by hand.
 type fixture struct {
 	t       *testing.T

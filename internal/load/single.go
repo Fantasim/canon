@@ -33,8 +33,20 @@ func (l *Loader) resolvePath(path string, req Request) (project.Path, bool) {
 	return l.Layout.Resolve(path, req.From, req.Span, req.Bag)
 }
 
+// refuseAbsent is E7009, and true, when display lies under root, an optional root this machine lacks (WIRE.md §2.2 rule 5).
+func (l *Loader) refuseAbsent(display, root string, req Request) bool {
+	if root == "" || !l.Layout.Absent(root) {
+		return false
+	}
+	diag.E7009.At(req.Span, display, root).Report(req.Bag)
+	return true
+}
+
 // statFile is p's existence check: a directory or non-regular file (a FIFO could hang) refuses too (WIRE.md §6.1).
 func (l *Loader) statFile(p project.Path, req Request) bool {
+	if l.refuseAbsent(p.Display, p.Root, req) {
+		return false
+	}
 	info, err := l.stat(p.Abs)
 	switch {
 	case err != nil:

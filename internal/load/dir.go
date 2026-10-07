@@ -80,6 +80,9 @@ func (l *Loader) match(pattern string, req Request) ([]matchFile, bool) {
 		diag.E7005.At(req.Span, pattern, chk.kind).Report(req.Bag)
 		return nil, false
 	}
+	if l.refuseAbsent(absentDisplay(base, rest), base.Root, req) {
+		return nil, false
+	}
 	var matches []matchFile
 	if !chk.dirOnly {
 		var err error
@@ -90,6 +93,14 @@ func (l *Loader) match(pattern string, req Request) ([]matchFile, bool) {
 	}
 	l.globbed(path.Join(base.Display, rest), matches)
 	return matches, true
+}
+
+// absentDisplay is the glob as E7009 names it: base alone when nothing follows it, so a trailing "/" stays.
+func absentDisplay(base project.Path, rest string) string {
+	if rest == "" {
+		return base.Display
+	}
+	return path.Join(base.Display, rest)
 }
 
 // causeOf is E7004's fixed Kind for err, chosen by errors.Is, never the OS message or a path (ERRORS.md §1.4, WIRE.md §6.1, §6.5).

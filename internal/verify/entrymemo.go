@@ -45,7 +45,7 @@ type entryRead struct {
 	how     reach
 	found   bool
 	retired bool
-	display string
+	look    lookup
 }
 
 // entryRec is an entry's verification being recorded; void, one a replay could not reproduce.

@@ -20,8 +20,7 @@ type Evaluator interface {
 	MarkInvalid(v value.Value)
 	// Invalid reports a value marked invalid, by a conversion or by a soft finding.
 	Invalid(v value.Value) bool
-	// Where re-runs a `where` predicate on it, at path, in its package's scope, at no step cost. ok
-	// false: a hard error, which it reported with that path (API.md F1).
+	// Where re-runs a `where` predicate on it at path in its package's scope, at no step cost; ok false: a hard error (API.md F1).
 	Where(ctx context.Context, p *types.Predicate, it value.Value, path string) (holds, ok bool)
 }
 
@@ -34,6 +33,8 @@ type dependents interface {
 type Assets interface {
 	// Exists looks name up under root, written in a file of directory from (WIRE.md §2.2, §2.3).
 	Exists(root, from, name string) (display string, found bool)
+	// Absent names the optional root of root that this machine lacks.
+	Absent(root, from string) (name string, absent bool)
 }
 
 // Verifier runs stage B (EVALUATION.md §5), from any goroutine; eval.Host.Verify uses Check.

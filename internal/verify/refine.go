@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -123,23 +124,44 @@ func (w *walker) asset(v value.Value, r *types.Refined, at *Path) {
 	case !slices.Contains(a.Exts, extension(s.V)):
 		b = diag.E3702.At(site.Span, s.V, a.Exts)
 	default:
-		display, found := w.findAsset(a, s.V)
-		if found {
+		look := w.findAsset(a, s.V)
+		if look.found {
 			return
 		}
-		b = diag.E3701.At(site.Span, s.V, display)
+		b = look.missing(site.Span, s.V)
 	}
 	w.flag(site, w.src.related(b, r), v, at)
 }
 
-// findAsset looks name up under a's root, from the file declaring it (WIRE.md §2.2 rule 1, §2.3).
-func (w *walker) findAsset(a *types.AssetSpec, name string) (display string, found bool) {
-	display, found = a.Root, false
-	if w.assets != nil {
-		display, found = w.assets.Exists(a.Root, w.src.assetDirs[a], name)
+// lookup is what looking an asset up gave: the root's display and whether the file is there, or, for
+// a root absent on this machine, that root's name in display and absent set.
+type lookup struct {
+	display string
+	found   bool
+	absent  bool
+}
+
+// missing is the finding of a file not found: E3705 under an absent root, else E3701 (TYPES.md §13.4).
+func (l lookup) missing(span source.Span, name string) *diag.Builder {
+	if l.absent {
+		return diag.E3705.At(span, name, l.display)
 	}
-	w.noteAsset(a, name, display, found)
-	return display, found
+	return diag.E3701.At(span, name, l.display)
+}
+
+// findAsset looks name up under a's root, from the file declaring it (WIRE.md §2.2 rule 1, §2.3).
+func (w *walker) findAsset(a *types.AssetSpec, name string) lookup {
+	look := lookup{display: a.Root}
+	if w.assets != nil {
+		from := w.src.assetDirs[a]
+		if root, absent := w.assets.Absent(a.Root, from); absent {
+			look = lookup{display: root, absent: true}
+		} else {
+			look.display, look.found = w.assets.Exists(a.Root, from, name)
+		}
+	}
+	w.noteAsset(a, name, look)
+	return look
 }
 
 // cleanPath: `/` separators, no empty, `.` or `..` segment, no leading `/`, no `\`.

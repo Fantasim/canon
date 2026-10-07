@@ -1,0 +1,10 @@
+WIRE.md §2.2 rule 5, §6.6 (DECISIONS 332): load.csv under an absent optional root is E7009.
+-- call --
+load.csv("@gone/data/a.csv")
+-- type --
+strings
+-- findings.txt --
+error[E7009]  call:1:1
+  cannot read @gone/data/a.csv: root @gone is optional and not present on this machine; clone it or point to it in project.local.canon, or check only the packages that do not read it
+
+1 error, 0 warnings in 1 package (…)

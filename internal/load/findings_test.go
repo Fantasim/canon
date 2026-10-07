@@ -113,6 +113,26 @@ func archiveFile(a *txtar.Archive, name string) ([]byte, bool) {
 	return nil, false
 }
 
+// The optional roots of every findings case: gone is absent, here is present when the archive holds a file under /here.
+const (
+	goneRoot = "gone"
+	hereRoot = "here"
+)
+
+// machineLayout places the two optional roots outside projectDir, as the case's tree has them.
+func machineLayout(t *testing.T, fsys project.FS, bag *diag.Bag) *project.Layout {
+	t.Helper()
+	p := &project.Project{Roots: []project.Root{
+		{Name: goneRoot, Path: "../" + goneRoot, Optional: true},
+		{Name: hereRoot, Path: "../" + hereRoot, Optional: true},
+	}}
+	layout, ok := project.Place(p, projectDir, project.Placement{FS: fsys}, bag)
+	if !ok {
+		t.Fatalf("layout: %v", bag.Findings())
+	}
+	return layout
+}
+
 // dirExpr is `load.dir(pattern)`, built directly since dirPattern reads it off the syntax tree (WIRE.md §6.5).
 func dirExpr(pattern string) *syntax.LoadExpr {
 	return &syntax.LoadExpr{
@@ -143,11 +163,8 @@ func TestFindings(t *testing.T) {
 			t.Fatal(err)
 		}
 		span := source.Span{File: src.ID, Start: 0, End: source.Pos(len(pattern))}
-		layout, ok := project.NewLayout(&project.Project{}, projectDir, nil, bag)
-		if !ok {
-			t.Fatalf("%s: layout", c.Path)
-		}
-		l := &load.Loader{FS: newMemFS(c.Archive), Layout: layout, Set: set}
+		fsys := newMemFS(c.Archive)
+		l := &load.Loader{FS: fsys, Layout: machineLayout(t, fsys, bag), Set: set}
 		req := load.Request{Pkg: "p", Span: span, Bag: bag}
 		_, _, err = l.Load(context.Background(), req, dirExpr(pattern), rowType())
 		if err != nil {

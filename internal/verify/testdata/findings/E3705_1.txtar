@@ -1,0 +1,46 @@
+TYPES.md §13.4, WIRE.md §2.2 rule 5 (DECISIONS 332): under an optional root absent on this machine
+there is no listing to match against, so each asset value is E3705 naming the root, instead of E3701;
+a path that is not clean or has the wrong extension is still E3703 or E3702.
+-- items/items.canon --
+/// Items.
+package items
+
+/// Item.
+record Item {
+  /// Icon.
+  icon: asset("@client/Icon", ext: [png])
+}
+
+/// Items.
+let items: stable table Item = {
+  sword { icon: "sword.png" }
+  shield { icon: "Shield.png" }
+  staff { icon: "staff.jpg" }
+  bow { icon: "../bow.png" }
+}
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    client: "../absent-client"
+  }
+  optional_roots: [client]
+}
+-- findings.txt --
+error[E3705]  items/items.canon:12:17
+  items.sword.icon: asset sword.png cannot be checked: root @client is optional and not present on this machine; clone it or point to it in project.local.canon
+  expected by items/items.canon:7 (icon: asset("@client/Icon", ext: [png]))
+
+error[E3705]  items/items.canon:13:18
+  items.shield.icon: asset Shield.png cannot be checked: root @client is optional and not present on this machine; clone it or point to it in project.local.canon
+  expected by items/items.canon:7 (icon: asset("@client/Icon", ext: [png]))
+
+error[E3702]  items/items.canon:14:17
+  items.staff.icon: asset staff.jpg: extension must be one of png
+  expected by items/items.canon:7 (icon: asset("@client/Icon", ext: [png]))
+
+error[E3703]  items/items.canon:15:15
+  items.bow.icon: asset path ../bow.png is not a clean relative path
+  expected by items/items.canon:7 (icon: asset("@client/Icon", ext: [png]))
+
+4 errors, 0 warnings in 1 package (…)

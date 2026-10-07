@@ -95,8 +95,7 @@ func (w *walker) replayEntry(e *value.Record, kept *entryKept) bool {
 // sameRead reports that asking rd again gives what it gave.
 func (w *walker) sameRead(rd entryRead) bool {
 	if rd.coll == nil {
-		display, found := w.findAsset(rd.asset, rd.name)
-		return display == rd.display && found == rd.found
+		return w.findAsset(rd.asset, rd.name) == rd.look
 	}
 	how, target := w.target(rd.coll, rd.key)
 	return how == rd.how && (target != nil) == rd.found && (target != nil && target.Ident.Retired) == rd.retired
@@ -125,9 +124,9 @@ func (w *walker) noteRef(c *types.Collection, key value.Key, how reach, target *
 }
 
 // noteAsset records an asset looked up.
-func (w *walker) noteAsset(a *types.AssetSpec, name, display string, found bool) {
+func (w *walker) noteAsset(a *types.AssetSpec, name string, look lookup) {
 	if w.rec != nil {
-		w.rec.reads = append(w.rec.reads, entryRead{asset: a, name: name, display: display, found: found})
+		w.rec.reads = append(w.rec.reads, entryRead{asset: a, name: name, look: look})
 	}
 }
 

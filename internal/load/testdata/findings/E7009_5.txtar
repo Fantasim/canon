@@ -1,0 +1,10 @@
+WIRE.md §2.2 rule 5, §6.8 (DECISIONS 332): load.defines under an absent optional root is E7009.
+-- call --
+load.defines("@gone/Define/a.h")
+-- type --
+defines
+-- findings.txt --
+error[E7009]  call:1:1
+  cannot read @gone/Define/a.h: root @gone is optional and not present on this machine; clone it or point to it in project.local.canon, or check only the packages that do not read it
+
+1 error, 0 warnings in 1 package (…)

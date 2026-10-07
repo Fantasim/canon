@@ -304,6 +304,15 @@ type dirListing struct {
 	subs  map[string]bool
 }
 
+// Absent names the optional root an asset root lies under when this machine lacks it, never listing it (DECISIONS 332).
+func (a *assets) Absent(root, from string) (string, bool) {
+	dir, ok := a.places.root(a.layout, root, from)
+	if !ok || !a.layout.Absent(dir.Root) {
+		return "", false
+	}
+	return dir.Root, true
+}
+
 // Exists walks name under root one listed folder at a time (WIRE.md §2.2, TYPES.md §13.4).
 func (a *assets) Exists(root, from, name string) (string, bool) {
 	dir, ok := a.places.root(a.layout, root, from)

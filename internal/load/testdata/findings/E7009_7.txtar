@@ -1,0 +1,9 @@
+WIRE.md §2.2 rule 5, §6.5 (DECISIONS 332): a load.dir of a directory (a trailing /) under an absent
+optional root is E7009 as well; a root that is present reads as today (absent_test.go).
+-- pattern --
+@gone/data/
+-- findings.txt --
+error[E7009]  pattern:1:1
+  cannot read @gone/data/: root @gone is optional and not present on this machine; clone it or point to it in project.local.canon, or check only the packages that do not read it
+
+1 error, 0 warnings in 1 package (…)

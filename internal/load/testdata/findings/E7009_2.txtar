@@ -1,0 +1,11 @@
+WIRE.md §2.2 rule 5, §6.1 (DECISIONS 332): a plain load, its at: option included, under an absent
+optional root is E7009 naming the root, instead of E7004.
+-- call --
+load("@gone/data/a.json", at: "rows")
+-- type --
+rows
+-- findings.txt --
+error[E7009]  call:1:1
+  cannot read @gone/data/a.json: root @gone is optional and not present on this machine; clone it or point to it in project.local.canon, or check only the packages that do not read it
+
+1 error, 0 warnings in 1 package (…)

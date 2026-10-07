@@ -9,7 +9,6 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/load"
-	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
@@ -76,12 +75,9 @@ func TestFindingsCall(t *testing.T) {
 			t.Fatal(err)
 		}
 		span := source.Span{File: src.ID, Start: 0, End: source.Pos(len(text))}
-		layout, ok := project.NewLayout(&project.Project{}, projectDir, nil, bag)
-		if !ok {
-			t.Fatalf("%s: layout", c.Path)
-		}
 		kind, _ := archiveFile(c.Archive, typeFile)
-		l := &load.Loader{FS: newMemFS(c.Archive), Layout: layout, Set: set}
+		fsys := newMemFS(c.Archive)
+		l := &load.Loader{FS: fsys, Layout: machineLayout(t, fsys, bag), Set: set}
 		req := load.Request{Pkg: "p", Span: span, Bag: bag}
 		_, _, err = l.Load(context.Background(), req, loadCall(t, text), callType(string(kind)))
 		if err != nil {

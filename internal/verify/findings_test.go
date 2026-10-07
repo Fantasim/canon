@@ -31,6 +31,7 @@ var cases = map[string]func(fx *fixture){
 	"E3506_1":  retiredUseCase,
 	"E3701_1":  assetCase(`sword.png`, `Shield.png`),
 	"E3701_2":  builtCase,
+	"E3705_1":  builtCase,
 	"E3702_1":  assetCase(`sword.png`, `shield.jpg`),
 	"E3703_1":  assetCase(`../sword.png`, `Icon//shield.png`),
 	"E3201_1":  builtCase,

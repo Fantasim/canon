@@ -5,5 +5,7 @@
 E1003 the harness opens a project; E1003 is the search for project.canon failing (CLI.md §2.1), which Run never does
 E1013 the harness places every root outside the project through Options.Roots, and a root inside it is always present (SPEC §3.1); internal/project's E1013_*.txtar produce it
 E1014 reported for project.local.canon (GRAMMAR.md §7.2), which no generated program holds; internal/project's E1014_*.txtar produce it
+E3705 an asset under an optional root absent on this machine (DECISIONS 332): the harness places every root through Options.Roots and lists none optional; internal/verify's E3705_1.txtar produces it
+E7009 a load under an optional root absent on this machine (DECISIONS 332): the harness lists no root optional; internal/load's E7009_*.txtar and internal/build's E7009_1.txtar produce it
 E8019 each E8019 construct is a generator gap; an operator would break once the generator implements it
 W6006 reported by canon lock check only (LOCK.md §8), which neither check nor build runs
