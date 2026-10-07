@@ -14,7 +14,9 @@ import (
 	"testing"
 
 	canon "github.com/fantasim/canonlang/api"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/source"
 )
 
 // errDuplicateGolden is buildManifest's error when two display paths would share one golden
@@ -42,10 +44,14 @@ var exampleExtra = map[string][]string{
 // harness's first build.
 const outDir = "out"
 
-// exampleWriteRoots are the roots examples/project.canon declares that only a build writes to;
-// resource and client are redirected to the fixtures instead, read-only
-// (examples/_fixtures/README.md).
-var exampleWriteRoots = []string{"source", "services", "sovcommon", "web", "parity", "generated"}
+// exampleReadRoots are the roots examples/project.canon declares that loads read: redirected to
+// the copy's fixtures, read-only (examples/_fixtures/README.md); every other root stays where
+// project.canon places it.
+var exampleReadRoots = []string{"resource", "client"}
+
+// exampleCopyDir is where a test copies examples/ under its temporary directory: as deep as the
+// real checkout, so project.canon's roots above it land inside that directory as declared.
+var exampleCopyDir = []string{"services", "configlang", "examples"}
 
 // TestExamples rebuilds every example with expected/MANIFEST, comparing every listed file with its golden (-update rewrites it) and failing on an unlisted write or a listed-but-unwritten path (DECISIONS 201).
 func TestExamples(t *testing.T) {
@@ -125,17 +131,16 @@ func runExample(t *testing.T, root, name, expected string) {
 	checkViewGoldens(t, expected, res)
 }
 
-// openExamples copies root (examples/) into a temporary project and opens it with every outside
-// root redirected (exampleRoots); the project is closed when t ends.
+// openExamples copies root (examples/) into a temporary project and opens it with the read roots
+// redirected (exampleRoots); the project is closed when t ends; roots is every root's directory.
 func openExamples(t *testing.T, root string) (proj string, roots map[string]string, p *canon.Project) {
 	t.Helper()
-	tmp := t.TempDir()
-	proj = filepath.Join(tmp, "proj")
+	proj = exampleCopy(t.TempDir())
 	if err := copyProject(proj, root); err != nil {
 		t.Fatal(err)
 	}
-	roots = exampleRoots(t, proj, tmp)
-	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: roots, Cache: "off"})
+	roots, read := exampleRoots(t, proj)
+	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: read, Cache: "off"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,22 +173,51 @@ func copyProject(proj, root string) error {
 	})
 }
 
-// exampleRoots redirects every root outside the project into tmp, and resource/client into the
-// copy's own fixtures (examples/_fixtures/README.md); pipeline_go and features are not
-// redirected, since they are inside the project already.
-func exampleRoots(t *testing.T, proj, tmp string) map[string]string {
+// exampleCopy is the directory examples/ is copied to under tmp (exampleCopyDir).
+func exampleCopy(tmp string) string {
+	return filepath.Join(append([]string{tmp}, exampleCopyDir...)...)
+}
+
+// exampleRoots is every root of the copy at proj by directory, and the read roots alone, sent to
+// its fixtures (the Options.Roots to open with); the others stay as declared, made when outside.
+func exampleRoots(t *testing.T, proj string) (all, read map[string]string) {
 	t.Helper()
-	roots := map[string]string{
-		"resource": filepath.Join(proj, "_fixtures", "resource"),
-		"client":   filepath.Join(proj, "_fixtures", "client"),
-	}
-	for _, r := range exampleWriteRoots {
-		roots[r] = filepath.Join(tmp, "out", r)
-		if err := os.MkdirAll(roots[r], dirPerm); err != nil {
+	all, read = map[string]string{}, map[string]string{}
+	for _, r := range declaredRoots(t, proj) {
+		if slices.Contains(exampleReadRoots, r.Name) {
+			read[r.Name] = filepath.Join(proj, fixturesDir, r.Name)
+			all[r.Name] = read[r.Name]
+			continue
+		}
+		all[r.Name] = filepath.Join(proj, filepath.FromSlash(r.Path))
+		if rel, err := filepath.Rel(proj, all[r.Name]); err == nil && !strings.HasPrefix(rel, "..") {
+			continue
+		}
+		if err := os.MkdirAll(all[r.Name], dirPerm); err != nil {
 			t.Fatal(err)
 		}
 	}
-	return roots
+	return all, read
+}
+
+// declaredRoots are the roots the copy's project.canon declares.
+func declaredRoots(t *testing.T, proj string) []project.Root {
+	t.Helper()
+	name := filepath.Join(proj, project.FileName)
+	data, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set := &source.FileSet{}
+	src, err := set.Add(project.FileName, filepath.ToSlash(name), data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := project.Load(src, diag.NewBag(set, ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p.Roots
 }
 
 // compareFindings compares (or, under -update, rewrites) expected/findings.txt: `canon check`'s text form, sorted per API.md F2, the duration replaced by "(…)" (IMPLEMENTATION-PLAN.md §7.2).

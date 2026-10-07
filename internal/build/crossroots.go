@@ -16,7 +16,7 @@ func (r *run) crossRoots(p *ir.Package, e *ir.Emit) {
 		return
 	}
 	at, ok := r.outPath(e)
-	if !ok || r.s.layout.Absent(at.Root) {
+	if !ok || r.absentAt(at.Abs) != "" {
 		return
 	}
 	declared, _ := project.NewLayout(r.s.proj, r.p.dir, nil, diag.NewBag(nil, p.Name))

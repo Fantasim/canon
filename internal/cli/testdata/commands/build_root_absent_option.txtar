@@ -1,0 +1,32 @@
+CLI.md §3.4 "Absent roots", SPEC §3.1 (DECISIONS 332): --root places the optional root @src where nothing is; the skip is W8024 naming the --root path, with no location, since no file writes it.
+-- dir --
+p
+-- args --
+build
+--root
+src=../nowhere
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+  }
+  optional_roots: [src]
+}
+-- Source/README --
+-- p/a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@src/json/" }
+-- want --
+[exit 0]
+[stdout]
+warning[W8024]
+  1 output skipped: root @src ("../nowhere") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
+
+0 errors, 1 warning in 1 package (…)
+[stderr]

@@ -6,6 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // vanishing is the OS file system whose first write removes the directory gone, as a root
@@ -79,5 +82,18 @@ func TestDirBounds(t *testing.T) {
 		if got := b.allows(c.dir); got != c.want {
 			t.Errorf("allows(%s) = %t, want %t", c.dir, got, c.want)
 		}
+	}
+}
+
+// CODEGEN.md §2.8 "This machine": no relative path between two roots (another volume) is a difference.
+func TestCrossRootsNoRelativePath(t *testing.T) {
+	proj := &project.Project{Roots: []project.Root{{Name: "x", Path: "x"}}}
+	declared, _ := project.NewLayout(proj, "/p", nil, diag.NewBag(nil, ""))
+	placed, _ := project.NewLayout(proj, "/p", map[string]string{"x": "Z:/x"}, diag.NewBag(nil, ""))
+	if _, ok := relativeRoot(placed, "", "x"); ok {
+		t.Error("a relative path from /p to Z:/x")
+	}
+	if sameRelative(placed, declared, "", "x") || !sameRelative(declared, declared, "", "x") {
+		t.Error("sameRelative")
 	}
 }

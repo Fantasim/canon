@@ -1,0 +1,33 @@
+CLI.md §3.4 --check, SPEC §3.1 (DECISIONS 332): --root places the optional root @src where nothing is; under --check the skip is E8023 naming the --root path, with no location; exit 1.
+-- dir --
+p
+-- args --
+build
+--check
+--root
+src=../nowhere
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+  }
+  optional_roots: [src]
+}
+-- Source/README --
+-- p/a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@src/json/" }
+-- want --
+[exit 1]
+[stdout]
+error[E8023]
+  build --check cannot compare 1 output under root @src: "../nowhere" is not present on this machine; check the repository out there (CI needs every root its outputs go to)
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

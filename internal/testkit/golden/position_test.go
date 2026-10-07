@@ -70,14 +70,13 @@ func TestFindingPositionInLoadedJSON(t *testing.T) {
 // runs `canon check pipeline` as TestExamples does, and compares the one finding it produces.
 func runPositionCase(t *testing.T, root string, c positionCase) {
 	t.Helper()
-	tmp := t.TempDir()
-	proj := filepath.Join(tmp, "proj")
+	proj := exampleCopy(t.TempDir())
 	if err := copyProject(proj, root); err != nil {
 		t.Fatal(err)
 	}
 	mutateJSON(t, proj, c.old, c.mu)
-	roots := exampleRoots(t, proj, tmp)
-	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: roots, Cache: "off"})
+	_, read := exampleRoots(t, proj)
+	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: read, Cache: "off"})
 	if err != nil {
 		t.Fatal(err)
 	}

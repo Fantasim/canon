@@ -1,0 +1,24 @@
+CODEGEN.md §2.4 (DECISIONS 332): roots nest. An out naming the present root @ext lies below the absent optional root @sub (../Ext/sub): it is skipped and counted under @sub, by location; the copy directly under @ext is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    ext: "../Ext"
+    sub: "../Ext/sub"
+  }
+  optional_roots: [sub]
+}
+-- ../Ext/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@ext/sub/json/", "@ext/json/"] }
+-- findings.txt --
+warning[W8024]  project.canon:5:5
+  1 output skipped: root @sub ("../Ext/sub") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
+
+0 errors, 1 warning in 1 package (…)

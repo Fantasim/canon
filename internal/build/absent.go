@@ -21,14 +21,14 @@ func (r *run) skipAbsent(outputs []*output, check bool) []*output {
 		counts[o.under]++
 	}
 	for _, root := range slices.Sorted(maps.Keys(counts)) {
-		r.skipped(root, counts[root], check).Report(r.s.own)
+		r.skipFinding(root, counts[root], check).Report(r.s.own)
 	}
 	return kept
 }
 
-// skipped is the finding of n outputs skipped under root: W8024, or E8023 under --check, one or many,
+// skipFinding is the finding of n outputs skipped under root: W8024, or E8023 under --check, one or many,
 // at where this machine's path of root is written.
-func (r *run) skipped(root string, n int64, check bool) *diag.Builder {
+func (r *run) skipFinding(root string, n int64, check bool) *diag.Builder {
 	span, written := r.placedAs(root)
 	switch {
 	case check && n == 1:
@@ -39,6 +39,18 @@ func (r *run) skipped(root string, n int64, check bool) *diag.Builder {
 		return diag.W8024.AtOne(span, root, written)
 	}
 	return diag.W8024.AtMany(span, n, root, written)
+}
+
+// absentAt is the absent optional root at or closest above abs, "" for none: roots nest (CODEGEN.md §2.4).
+func (r *run) absentAt(abs string) string {
+	best, bestDir := "", ""
+	for _, root := range r.s.proj.Roots {
+		dir := rootDir(r.s.layout, root.Name)
+		if _, in := under(dir, abs); in && r.s.layout.Absent(root.Name) && len(dir) > len(bestDir) {
+			best, bestDir = root.Name, dir
+		}
+	}
+	return best
 }
 
 // placedAs is root's path as written where this machine's placement sets it: --root, project.local.canon, project.canon (SPEC §3.1).

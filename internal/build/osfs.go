@@ -41,6 +41,11 @@ func (osFS) Chmod(name string, mode fs.FileMode) error {
 	return wrapIO(os.Chmod(filepath.FromSlash(name), mode))
 }
 
+// Mkdir creates one directory, its parent existing.
+func (osFS) Mkdir(name string) error {
+	return wrapIO(os.Mkdir(filepath.FromSlash(name), dirMode))
+}
+
 func (osFS) MkdirAll(name string) error {
 	return wrapIO(os.MkdirAll(filepath.FromSlash(name), dirMode))
 }

@@ -127,3 +127,32 @@ func TestNoRootDirectoryCreated(t *testing.T) {
 		t.Errorf("below the present root: %v", err)
 	}
 }
+
+// CODEGEN.md §2.4, DECISIONS 332: an out naming present @ext below absent @sub is skipped under @sub.
+func TestNestedAbsentRootOnDisk(t *testing.T) {
+	tmp := t.TempDir()
+	writeTree(t, tmp, map[string]string{
+		"p/project.canon": "project acme {\n  canon: \"0.1\"\n  roots {\n    ext: \"../Ext\"\n    sub: \"../Ext/sub\"\n  }\n  optional_roots: [sub]\n}\n",
+		"p/a/a.canon":     "/// A.\npackage a\n\n/// V.\nlet v: Int = 1\n\nemit json { out: [\"@ext/sub/json/\", \"@ext/json/\"] }\n",
+		"Ext/README":      "",
+	})
+	p, err := build.Open(build.OS(), filepath.ToSlash(filepath.Join(tmp, "p")), build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := p.Build(context.Background(), build.BuildOptions{})
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	want := diag.NewBag(&source.FileSet{}, "")
+	diag.W8024.AtOne(source.Span{}, "sub", "../Ext/sub").Report(want)
+	if len(res.List) != 1 || res.List[0].Message != want.Findings()[0].Message {
+		t.Errorf("findings %v", res.List)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "Ext", "sub")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the absent nested root's directory was created: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "Ext", "json", "v.json")); err != nil {
+		t.Errorf("the output under @ext: %v", err)
+	}
+}

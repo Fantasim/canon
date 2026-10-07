@@ -1,0 +1,38 @@
+CLI.md §3.4 "Absent roots", CODEGEN.md §2.4 (DECISIONS 332): @sub, optional and absent, nests in the present @ext; an out naming @ext below @sub is skipped under @sub (W8024), nothing is written there, the rest is written.
+-- dir --
+p
+-- args --
+build
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    ext: "../Ext"
+    sub: "../Ext/sub"
+  }
+  optional_roots: [sub]
+}
+-- Ext/README --
+-- p/a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@ext/sub/json/", "@ext/json/"] }
+-- want --
+[exit 0]
+[stdout]
+warning[W8024]  project.canon:5:5
+  1 output skipped: root @sub ("../Ext/sub") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
+
+0 errors, 1 warning in 1 package (…)
+json:
+  @ext/json/v.json
+[stderr]
+[file Ext/json/v.json]
+{
+  "$schema": "a.v@f51a4c21",
+  "value": 1
+}

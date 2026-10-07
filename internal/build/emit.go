@@ -199,10 +199,7 @@ func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, er
 	if e.FileName != "" {
 		display, abs = path.Dir(display), project.DirOf(abs)
 	}
-	span, under := r.emitSpan(p, e), ""
-	if r.s.layout.Absent(at.Root) {
-		under = at.Root
-	}
+	span, under := r.emitSpan(p, e), r.absentAt(abs)
 	out := make([]*output, len(files))
 	for i, f := range files {
 		out[i] = &output{at: span, under: under, Output: Output{

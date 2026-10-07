@@ -256,7 +256,7 @@ func keepMode(fsys WriteFS, tmp, abs string) error {
 	return chmod.Chmod(tmp, info.Mode().Perm())
 }
 
-// mkdirs creates dir and records the directories that did not exist; one it may not create fails (CODEGEN.md §2.4).
+// mkdirs makes dir's missing directories top-down, recording each; a forbidden one fails first (CODEGEN.md §2.4).
 func (w *writer) mkdirs(dir string) error {
 	var missing []string
 	for d := dir; d != project.DirOf(d); d = project.DirOf(d) {
@@ -268,8 +268,27 @@ func (w *writer) mkdirs(dir string) error {
 		}
 		missing = append(missing, d)
 	}
-	w.created = append(w.created, missing...)
-	return w.fsys.MkdirAll(dir)
+	for _, d := range slices.Backward(missing) {
+		if err := w.mkdir(d); err != nil {
+			return err
+		}
+		w.created = append(w.created, d)
+	}
+	return nil
+}
+
+// dirMaker is a file system that creates one directory whose parent exists.
+type dirMaker interface {
+	Mkdir(name string) error
+}
+
+// mkdir creates the directory d, its parent existing: Mkdir where the file system has it, so
+// that a parent gone meanwhile is never made again; else MkdirAll.
+func (w *writer) mkdir(d string) error {
+	if m, ok := w.fsys.(dirMaker); ok {
+		return m.Mkdir(d)
+	}
+	return w.fsys.MkdirAll(d)
 }
 
 // removeDirs removes the directories the write created, deepest first.
