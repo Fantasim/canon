@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-10-07. **v0.1.2 being released** (the orchestrator flips this after the tag). v0.1.0
+Updated: 2026-10-07. **v0.1.2 released** (tag on main; archives from the tag workflow). v0.1.0
 (tag on `f4f7da5`) and v0.1.1 (stale `canon guide`) are out; `main` is the only branch. DECISIONS
 304-334: [log-2026-10-05](decisions/log-2026-10-05.md), [log-2026-10-06](decisions/log-2026-10-06.md),
 ADR-0015, -0016, [ADR-0017](decisions/0017-shared-records-make-hooks.md),
