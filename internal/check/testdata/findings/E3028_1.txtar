@@ -1,7 +1,7 @@
 TYPES.md §13.2, §1: there are no unions of types, only `A | "lit" | …`. Each alternative after the
 first written as a type is E3028, naming that type (`Stage | String`, `String | Int`); a first
 alternative without a string wire form is E3002 on its own, an independent mistake, so
-`Int | String` is E3002 at `Int` and E3028 at `String`. An alternative already in error is not
+`Int | String` is E3002 at `Int` and E3028 at `String`. An alternative holding the error type is not
 judged again (`String | Strin` is E2102 only).
 -- a/a.canon --
 package a

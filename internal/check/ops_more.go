@@ -125,7 +125,7 @@ func (c *checker) keyNotElement(env *env, x, recv syntax.Expr) {
 // unscopedKey records a bare name no scope has as a key, never E2102: the caller reports E3026 (TYPES.md §4.1).
 func (c *checker) unscopedKey(env *env, x, recv syntax.Expr, key types.Type) bool {
 	id, ok := x.(*syntax.IdentExpr)
-	if !ok || c.lookup(env, id.Name) != nil {
+	if !ok || c.lookup(env, id.Name) != nil || !c.mayKey(c.receiverColl(recv), id.Name) {
 		return false
 	}
 	c.info.Types[x] = key

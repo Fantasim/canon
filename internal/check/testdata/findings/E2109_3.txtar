@@ -1,0 +1,114 @@
+TYPES.md §3.4, §4.1, DECISIONS 334: `it` outside a where predicate is E2109 in every position, never
+the symbolic key "it" and never E2102: a key argument of hasKey and get on a static and a loaded
+table, a ref field, a map-literal key against dynamic, enum and dependent key types, a dependent
+value, a callee, the left of `in`, an assignment target and an amend key in a layer.
+-- a/a.canon --
+package a
+
+local record Row {
+  v: Int
+}
+
+local let rows: table Row = {
+  A { v: 1 }
+}
+
+local let loaded: table Row = load("rows.json")
+
+local enum E { a, b }
+
+local enum K { name, off }
+
+local type P(k: K) = match k {
+  name => String
+  off => Never
+}
+
+local record H {
+  r: ref loaded
+}
+
+local record Cfg {
+  tiers: table Row
+}
+
+local let cfg: Cfg = { tiers: { A { v: 1 } } }
+
+local record D {
+  k: K
+  d: P(k)
+}
+
+local record M {
+  k: K
+  m: {P(k): Int}
+}
+
+local fn keys() -> Bool {
+  return rows.hasKey(it) and loaded.get(it) != none
+}
+
+local let h: H = { r: it }
+
+local let byRef: {ref loaded: Int} = { it: 1 }
+
+local let byEnum: {E: Int} = { it: 1 }
+
+local let dep: D = { k: name, d: it }
+
+local let depKey: M = { k: name, m: { it: 1 } }
+
+local fn call() -> Int {
+  return it(1)
+}
+
+local fn member() -> Bool {
+  return it in rows
+}
+
+local fn assign() -> Int {
+  it = 1
+  return 1
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  tiers[it].v: 2
+}
+-- findings.txt --
+error[E2109]  a/a.canon:43:22
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:43:41
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:46:23
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:48:40
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:50:32
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:52:34
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:54:39
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:57:10
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:61:10
+  it is only valid in a refinement predicate
+
+error[E2109]  a/a.canon:65:3
+  it is only valid in a refinement predicate
+
+error[E2109]  a/dev.layer.canon:5:9
+  it is only valid in a refinement predicate
+
+11 errors, 0 warnings in 1 package (…)

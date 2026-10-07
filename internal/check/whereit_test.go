@@ -110,6 +110,101 @@ func TestItIsAName(t *testing.T) {
 	}
 }
 
+// TYPES.md §3.4, DECISIONS 334: inside a predicate `it` is its value, never a member or key named `it`.
+func TestPredicateItBeatsStepOne(t *testing.T) {
+	prog, f := checkSource(t, `package a
+
+local enum G { it, other }
+
+local record Row {
+  v: Int
+}
+
+local let marks: table Row = {
+  it { v: 1 }
+  A { v: 2 }
+}
+
+local fn pick(r: ref marks) -> Bool {
+  return marks[r].v == 2
+}
+
+local fn isOther(g: G) -> Bool {
+  return g == other
+}
+
+local fn oneG(m: {G: Int}) -> Bool {
+  return m.len() == 1
+}
+
+local type T1 = ref marks where pick(it)
+
+local type T2 = G where isOther(it) and oneG({ it: 1 })
+`)
+	seen := 0
+	for _, id := range nodesOf[*syntax.IdentExpr](f) {
+		if id.Name == "it" {
+			seen++
+			assertIt(t, "value", prog.Info.Uses[id], prog.Info.Keys[id] != nil || prog.Info.Symbols[id])
+		}
+	}
+	for _, id := range nodesOf[*syntax.Ident](f) {
+		if id.Name == "it" && prog.Info.Defs[id] == nil {
+			seen++
+			assertIt(t, "map key", prog.Info.NameUses[id], false)
+		}
+	}
+	const its = 3
+	if seen != its {
+		t.Errorf("saw %d `it` in predicates, want %d", seen, its)
+	}
+}
+
+// TYPES.md §3.4, DECISIONS 334: a value named `it` hides the predicate's, so step 1 finds the member `it`.
+func TestHiddenItTakesStepOne(t *testing.T) {
+	prog, f := checkSource(t, `package a
+
+local enum G { it, other }
+
+local let it: Int = 3
+
+local fn pickG(g: G) -> Bool {
+  return g == other
+}
+
+local fn one(m: {G: Int}) -> Bool {
+  return m.len() == 1
+}
+
+local type A2 = String where pickG(it) and one({ it: 1 })
+`)
+	seen := 0
+	for _, id := range nodesOf[*syntax.IdentExpr](f) {
+		if id.Name == "it" {
+			seen++
+			assertMember(t, prog.Info.Uses[id])
+		}
+	}
+	for _, id := range nodesOf[*syntax.Ident](f) {
+		if id.Name == "it" && prog.Info.Defs[id] == nil {
+			seen++
+			assertMember(t, prog.Info.NameUses[id])
+		}
+	}
+	const its = 2
+	if seen != its {
+		t.Errorf("saw %d `it` in the predicate, want %d", seen, its)
+	}
+}
+
+// assertMember fails unless o is the enum member `it`.
+func assertMember(t *testing.T, o check.Object) {
+	t.Helper()
+	if o == nil || o.Kind() != check.ObjMember || o.Name() != "it" {
+		t.Errorf("it names %v, want the member G.it", o)
+	}
+}
+
 // assertIt fails unless o is the predicate's `it` and the name was not kept as a key or a symbol.
 func assertIt(t *testing.T, name string, o check.Object, kept bool) {
 	t.Helper()

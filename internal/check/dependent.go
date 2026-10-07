@@ -270,6 +270,9 @@ func (c *checker) dependentIdent(env *env, e *syntax.IdentExpr, want types.Type,
 	if o := c.scopedKey(env, e.Name, fn); o != nil {
 		return c.notAKey(env, e, o, want)
 	}
+	if c.strayDependentIt(env, e, e.Name, fn) {
+		return types.ErrorType
+	}
 	c.info.Symbols[e] = true
 	if u, isUnion := unwrap(want).(*types.LitUnionType); isUnion {
 		return u
@@ -279,7 +282,7 @@ func (c *checker) dependentIdent(env *env, e *syntax.IdentExpr, want types.Type,
 
 // dependentName is the local, parameter or field a bare name against a dependent type names
 // (E2101 when a branch offers it too), else nil when a branch offers it (package names and
-// built-ins lose), else a let or const of the package or its imports, else `it`; nil is symbolic.
+// built-ins lose), else a let or const of the package or its imports; nil is symbolic (a predicate's `it` never comes here).
 func (c *checker) dependentName(env *env, n syntax.Node, name string, fn *types.TypeFunc) *object {
 	if local := localValue(env, name); local != nil {
 		c.offered(fn, name, func(m *object, t types.Type) bool { return c.ambiguity(env, n, name, m, t) })
@@ -288,11 +291,7 @@ func (c *checker) dependentName(env *env, n syntax.Node, name string, fn *types.
 	if c.offered(fn, name, func(*object, types.Type) bool { return true }) {
 		return nil
 	}
-	o := c.lookupGlobal(env, name)
-	if o == nil && name == itName {
-		return env.it // TYPES.md §3.4, DECISIONS 318
-	}
-	if o != nil && (o.kind == ObjLet || o.kind == ObjConst) {
+	if o := c.lookupGlobal(env, name); o != nil && (o.kind == ObjLet || o.kind == ObjConst) {
 		return o
 	}
 	return nil

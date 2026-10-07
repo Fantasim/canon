@@ -1,4 +1,4 @@
-TYPES.md §13.2: E3028 names the later alternative's type as written: a list, an optional,
+TYPES.md §13.2: E3028 names the alternative's type: a list, an optional,
 a refined String, an alias of String and a type function application, after a first alternative
 that has a string wire form (a ref keyed by name, a dependent type).
 -- a/a.canon --

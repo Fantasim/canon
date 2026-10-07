@@ -8,13 +8,10 @@ import (
 
 // ident is a bare name in value position (TYPES.md §3.3).
 func (c *checker) ident(env *env, e *syntax.IdentExpr, want types.Type) types.Type {
-	if want != nil {
-		if t, ok := c.contextual(env, e, want); ok {
+	if !c.predicateIt(env, e.Name) {
+		if t, ok := c.stepOne(env, e, want); ok {
 			return t
 		}
-	}
-	if fn := depFunc(unwrapUnion(want)); fn != nil {
-		return c.dependentIdent(env, e, want, fn)
 	}
 	o := c.lookup(env, e.Name)
 	if o == nil {
@@ -24,6 +21,19 @@ func (c *checker) ident(env *env, e *syntax.IdentExpr, want types.Type) types.Ty
 		return c.notAKey(env, e, o, want)
 	}
 	return c.use(env, e, o)
+}
+
+// stepOne is step 1 of the lookup: a name of the expected type, or one against a dependent type (TYPES.md §4.1, §11.4).
+func (c *checker) stepOne(env *env, e *syntax.IdentExpr, want types.Type) (types.Type, bool) {
+	if want != nil {
+		if t, ok := c.contextual(env, e, want); ok {
+			return t, true
+		}
+	}
+	if fn := depFunc(unwrapUnion(want)); fn != nil {
+		return c.dependentIdent(env, e, want, fn), true
+	}
+	return nil, false
 }
 
 // notAKey is E3027: a name in scope is never a symbolic key (TYPES.md §4.1, DECISIONS 318).
@@ -80,18 +90,48 @@ func notValueKind(o *object) diag.Kind {
 
 // unresolved is a name no scope has: a dynamic key (§4.1, §11.4), silent against an error type (TYPES.md §1).
 func (c *checker) unresolved(env *env, e *syntax.IdentExpr, want types.Type) types.Type {
+	if c.strayIt(env, e, e.Name) {
+		return types.ErrorType
+	}
 	if coll := c.dynamicKeys(want); coll != nil {
 		c.info.Keys[e] = coll
 		return refTo(want)
-	}
-	if e.Name == itName {
-		c.report(env, diag.E2109.At(env.span(e)))
-		return types.ErrorType
 	}
 	if want == nil || want.Base().Kind() != types.Error {
 		c.unknownName(env, e, e.Name)
 	}
 	return types.ErrorType
+}
+
+// predicateIt reports a name that is a predicate's `it`, unhidden: never a member or key of §4.1 step 1 (TYPES.md §3.4).
+func (c *checker) predicateIt(env *env, name string) bool {
+	return name == itName && env.it != nil && c.lookupSteps(env, name) == nil
+}
+
+// strayIt is E2109 for an `it` found nowhere, in every position, never a key (TYPES.md §3.4, DECISIONS 334).
+func (c *checker) strayIt(env *env, n syntax.Node, name string) bool {
+	if name != itName || c.lookup(env, name) != nil {
+		return false
+	}
+	c.report(env, diag.E2109.At(env.span(n)))
+	return true
+}
+
+// strayDependentIt is strayIt where no branch of fn offers a member, case or key named it (§4.1 step 1).
+func (c *checker) strayDependentIt(env *env, n syntax.Node, name string, fn *types.TypeFunc) bool {
+	return name == itName && !c.offered(fn, name, func(*object, types.Type) bool { return true }) && c.strayIt(env, n, name)
+}
+
+// mayKey reports a bare name that may be a key of coll: `it` only as a static key of it (TYPES.md §4.1 step 1, DECISIONS 334).
+func (c *checker) mayKey(coll *types.Collection, name string) bool {
+	if name != itName {
+		return true
+	}
+	if coll == nil {
+		return false
+	}
+	keys := c.staticKeys(coll)
+	return keys != nil && keys.byName[name] != nil
 }
 
 // dynamicKeys is the collection of an expected ref whose keys are not known statically.

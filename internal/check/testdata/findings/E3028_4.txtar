@@ -1,0 +1,33 @@
+TYPES.md §13.2, DECISIONS 334: a later union alternative that is not a string literal, parenthesised
+or not, is a type, E3028, naming it with each literal inside read as a String: an optional literal
+(`"x"?`, `("x")?`), a list of one, a map keyed by one. A nested union's first alternative is a
+type again: `("a" | "b")` is E3002 for the literal in its A place only (TYPES.md §1).
+-- a/a.canon --
+package a
+
+local type O1 = String | "x"?
+
+local type O2 = String | ("y")?
+
+local type L1 = String | ["z"]
+
+local type M1 = String | {"k": Int}
+
+local type N1 = String | ("a" | "b")
+-- findings.txt --
+error[E3028]  a/a.canon:3:26
+  String? is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:5:26
+  String? is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:7:26
+  [String] is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:9:26
+  {String: Int} is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3002]  a/a.canon:11:27
+  expected _, found String
+
+5 errors, 0 warnings in 1 package (…)

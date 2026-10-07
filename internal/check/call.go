@@ -25,7 +25,9 @@ func (c *checker) call(env *env, x *syntax.CallExpr, want types.Type) (types.Typ
 func (c *checker) callName(env *env, x *syntax.CallExpr, id *syntax.IdentExpr, want types.Type) types.Type {
 	o := c.lookup(env, id.Name)
 	if o == nil {
-		c.unknownName(env, id, id.Name)
+		if !c.strayIt(env, id, id.Name) {
+			c.unknownName(env, id, id.Name)
+		}
 		c.argsAlone(env, x)
 		return types.ErrorType
 	}

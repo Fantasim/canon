@@ -1,7 +1,9 @@
 STDLIB.md §5, TYPES.md §3.4, §4.1, DECISIONS 317, 318: `it` in a where predicate is a name in
 scope, never the symbolic key "it": `hasKey(it)`, `get(it) != none`, `find(it)` and `xs[it]` test
 the value against a literal table, a loaded table and a keyed list, on an alias and on a record
-field. Every value below holds its refinement; the refusals are findings/E3206_1.txtar.
+field. Inside a predicate `it` is its value even where a static key or a member is named `it`
+(TYPES.md §3.4, DECISIONS 334): `ref marks where pick(it)` passes the value A to pick, not the
+row it. Every value below holds its refinement; the refusals are findings/E3206_1.txtar.
 -- a/a.canon --
 package a
 
@@ -44,8 +46,32 @@ let a4: T4 = "A"
 
 let r: R = { s: "A" }
 
+let marks: table Row = {
+  it { v: 1 }
+  A { v: 2 }
+}
+
+fn pick(m: ref marks) -> Bool {
+  return marks[m].v == 2
+}
+
+type T5 = ref marks where pick(it)
+
+let a5: T5 = A
+
+enum G { it, other }
+
+fn isOther(g: G) -> Bool {
+  return g == other
+}
+
+type T6 = G where isOther(it)
+
+let a6: T6 = other
+
 test "a key read through it holds" {
   expect a1 == "A" and a2 == "B" and a3 == "B" and a4 == "A" and r.s == "A"
+  expect a5 == marks.A and a6 == G.other
 }
 -- resource/rows.json --
 {"A": {"v": 1}, "B": {"v": 2}}

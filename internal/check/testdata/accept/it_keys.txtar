@@ -1,0 +1,28 @@
+TYPES.md §4.1 step 1, §3.4, DECISIONS 334: outside a where predicate, an enum member or a static
+table key literally named `it` is that member or key wherever one is expected (a map-literal key,
+an enum value, a ref, a key argument of hasKey, get and xs[k]); E2109 is only for an `it` found
+nowhere.
+-- a/a.canon --
+package a
+
+local enum G { it, other }
+
+local record Row {
+  v: Int
+}
+
+local let marks: table Row = {
+  it { v: 1 }
+}
+
+local let byMember: {G: Int} = { it: 1 }
+
+local let g: G = it
+
+local let r: ref marks = it
+
+local let byKey: {ref marks: Int} = { it: 2 }
+
+local fn keys() -> Bool {
+  return marks.hasKey(it) and marks.get(it) != none and marks[it].v == 1
+}

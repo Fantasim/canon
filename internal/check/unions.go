@@ -17,18 +17,19 @@ type unionJob struct {
 
 // resolveUnion is `A | "lit" | …`: a type after the first alternative is E3028, unless in error (TYPES.md §13.2, §1).
 func (c *checker) resolveUnion(tc *typeCtx, t *syntax.UnionType) types.Type {
-	of := c.resolveType(tc.element(), t.Alts[0])
+	first := tc.element()
+	first.pos &^= posLiteral // a nested union's A is a type again
+	of := c.resolveType(first, t.Alts[0])
 	u := &types.LitUnionType{Of: of}
 	for _, alt := range t.Alts[1:] {
-		lit, ok := alt.(*syntax.LiteralType)
+		lit, ok := literalAlt(alt)
 		if !ok {
-			if typ := c.resolveType(tc.element(), alt); typ.Kind() != types.Error {
+			if typ := c.resolveType(tc.literalAlt(), alt); !holdsError(typ) {
 				c.report(tc.env, diag.E3028.At(tc.env.span(alt), typ))
 			}
 			continue
 		}
-		c.info.TypeExprs[alt] = types.StringType
-		c.info.Types[lit.Value] = types.StringType
+		c.stringAlt(alt, lit)
 		u.Literals = append(u.Literals, constText(lit.Value))
 	}
 	j := unionJob{env: tc.env, at: t.Alts[0], of: of}
@@ -38,6 +39,39 @@ func (c *checker) resolveUnion(tc *typeCtx, t *syntax.UnionType) types.Type {
 		c.unions = append(c.unions, j)
 	}
 	return u
+}
+
+// literalAlt is a later union alternative's context, a literal in it a String (TYPES.md §13.2).
+func (tc *typeCtx) literalAlt() *typeCtx {
+	in := tc.element()
+	in.pos |= posLiteral
+	return in
+}
+
+// unparen is t without the parentheses around it.
+func unparen(t syntax.Type) syntax.Type {
+	for {
+		p, ok := t.(*syntax.ParenType)
+		if !ok {
+			return t
+		}
+		t = p.Type
+	}
+}
+
+// literalAlt is a union alternative written as a string literal, parentheses allowed (TYPES.md §13.2).
+func literalAlt(alt syntax.Type) (*syntax.LiteralType, bool) {
+	lit, ok := unparen(alt).(*syntax.LiteralType)
+	return lit, ok
+}
+
+// stringAlt records a literal alternative, and each parenthesis around it, as a String.
+func (c *checker) stringAlt(alt syntax.Type, lit *syntax.LiteralType) {
+	for t := alt; t != syntax.Type(lit); t = t.(*syntax.ParenType).Type {
+		c.info.TypeExprs[t] = types.StringType
+	}
+	c.info.TypeExprs[lit] = types.StringType
+	c.info.Types[lit.Value] = types.StringType
 }
 
 // checkUnions judges the literal unions written in p's types, its refs now resolved; judging one may resolve more.

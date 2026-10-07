@@ -70,11 +70,13 @@ func (c *checker) resolveTypeNode(tc *typeCtx, t syntax.Type) types.Type {
 	return c.misplacedType(tc, t)
 }
 
-// misplacedType is a literal alternative outside a union or a type-level match outside a type
-// function body: E3002.
+// misplacedType is E3002 for a misplaced literal or type-level match; a later union alternative's literal is a String (TYPES.md §13.2).
 func (c *checker) misplacedType(tc *typeCtx, t syntax.Type) types.Type {
 	if l, ok := t.(*syntax.LiteralType); ok {
 		c.info.Types[l.Value] = types.StringType
+		if tc.pos&posLiteral != 0 {
+			return types.StringType
+		}
 	}
 	c.report(tc.env, diag.E3002.At(tc.env.span(t), types.AnyType, types.StringType))
 	return types.ErrorType

@@ -1,0 +1,15 @@
+TYPES.md §9.2, §1: a refused map key type (E3011) is not judged again at the keys of its literal:
+no E2102 or E3027 for `it` or a name in scope after it.
+-- a/a.canon --
+package a
+
+local enum F { x, y }
+
+local let s: String = "a"
+
+local let bad: {F?: Int} = { it: 1, s: 2 }
+-- findings.txt --
+error[E3011]  a/a.canon:7:17
+  a.F? cannot be a map key
+
+1 error, 0 warnings in 1 package (…)

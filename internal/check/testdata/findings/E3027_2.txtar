@@ -1,0 +1,38 @@
+TYPES.md §4.1 (last paragraph), DECISIONS 334, 318: a map-literal key against a key type with
+static keys (an enum, a table literal) is that key when it names one; otherwise a name in scope
+whose type is not the key type is E3027, and only a name found nowhere is E2102.
+-- a/a.canon --
+package a
+
+local enum F { x, y }
+
+local record Row {
+  v: Int
+}
+
+local let rows: table Row = {
+  A { v: 1 }
+}
+
+local fn oneF(m: {F: Int}) -> Bool {
+  return m.len() == 1
+}
+
+local fn oneRow(m: {ref rows: Int}) -> Bool {
+  return m.len() == 1
+}
+
+local fn g(s: String, n: Int) -> Bool {
+  return oneF({ s: 1 }) and oneRow({ n: 1 }) and oneF({ x: 1 }) and oneRow({ A: 1 }) and oneF({ zz: 1 })
+}
+-- findings.txt --
+error[E3027]  a/a.canon:22:17
+  s has type String, not a.F: write a member of a.F
+
+error[E3027]  a/a.canon:22:38
+  n has type Int, not ref a.rows; to name the key n, write "n"
+
+error[E2102]  a/a.canon:22:97
+  unknown name zz
+
+3 errors, 0 warnings in 1 package (…)

@@ -148,11 +148,12 @@ const (
 // The flags of an env: modeJoin types a branch a join may still type (TYPES.md §6.4).
 const modeJoin mode = 1
 
-// What a type position allows: a function type, `_`, `stable table`.
+// What a type position allows: a function type, `_`, `stable table`, a string literal as String.
 const (
 	posFn typePos = 1 << iota
 	posAny
 	posStable
+	posLiteral
 )
 
 // The constraints of STDLIB.md §1.1, and consString for join's elements.

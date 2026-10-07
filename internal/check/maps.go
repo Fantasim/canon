@@ -37,43 +37,63 @@ func (c *checker) identKey(env *env, n *syntax.Ident, key types.Type) {
 		return
 	default:
 	}
-	if o, _ := c.inExpected(unwrapUnion(key), n.Name); o != nil {
-		c.info.NameUses[n] = o
-		c.deprecatedUse(env, n, o)
+	if !mapKey(key) { // its map type was refused, E3011 (TYPES.md §1)
 		return
 	}
-	if fn := depFunc(unwrapUnion(key)); fn != nil {
-		o := c.dependentName(env, n, n.Name, fn)
-		if o == nil {
-			o = c.scopedKey(env, n.Name, fn)
-			c.keyInScope(env, n, o, key)
-		}
-		if o != nil {
-			c.info.NameUses[n] = o
-			c.dependsOn(env, o)
-		}
+	if !c.predicateIt(env, n.Name) && c.keyStepOne(env, n, key) {
 		return
 	}
 	o := c.lookup(env, n.Name)
-	if o != nil && c.valueOf(o, key) {
-		c.info.NameUses[n] = o
-		c.dependsOn(env, o)
+	if o == nil {
+		if !c.strayIt(env, n, n.Name) && c.dynamicKeys(key) == nil {
+			c.unknownName(env, n, n.Name)
+		}
 		return
 	}
-	if c.dynamicKeys(key) == nil {
-		c.unknownName(env, n, n.Name)
-		return
-	}
-	if o != nil {
-		c.info.NameUses[n] = o
-		c.dependsOn(env, o)
+	c.info.NameUses[n] = o
+	c.dependsOn(env, o)
+	if !c.valueOf(o, key) { // static keys too: E3027, not E2102 (TYPES.md §4.1, DECISIONS 334)
 		c.keyInScope(env, n, o, key)
 	}
+}
+
+// keyStepOne is step 1 for `name:`: a member or static key of the key type, or a dependent key (TYPES.md §4.1).
+func (c *checker) keyStepOne(env *env, n *syntax.Ident, key types.Type) bool {
+	if o, _ := c.inExpected(unwrapUnion(key), n.Name); o != nil {
+		c.info.NameUses[n] = o
+		c.deprecatedUse(env, n, o)
+		return true
+	}
+	if fn := depFunc(unwrapUnion(key)); fn != nil {
+		c.dependentKey(env, n, key, fn)
+		return true
+	}
+	return false
+}
+
+// dependentKey is `name:` against a dependent key type: a name in scope, else symbolic (TYPES.md §11.4).
+func (c *checker) dependentKey(env *env, n *syntax.Ident, key types.Type, fn *types.TypeFunc) {
+	o := c.dependentName(env, n, n.Name, fn)
+	if o == nil {
+		o = c.scopedKey(env, n.Name, fn)
+		c.keyInScope(env, n, o, key)
+	}
+	if o == nil {
+		c.strayDependentIt(env, n, n.Name, fn)
+		return
+	}
+	c.info.NameUses[n] = o
+	c.dependsOn(env, o)
 }
 
 // keyInScope is E3027 (E3403 for an optional ref) for a map key `n:` naming something in scope (TYPES.md §4.1).
 func (c *checker) keyInScope(env *env, n *syntax.Ident, o *object, key types.Type) {
 	if o == nil {
+		return
+	}
+	member := c.memberKey(key)
+	if !isValue(o.kind) && member {
+		c.report(env, diag.E3027.AtNotValueMember(env.span(n), o.name, notValueKind(o), key))
 		return
 	}
 	if !isValue(o.kind) {
@@ -85,9 +105,16 @@ func (c *checker) keyInScope(env *env, n *syntax.Ident, o *object, key types.Typ
 	case silent:
 	case c.optionalOf(o, key):
 		c.report(env, diag.E3403.At(env.span(n), key, found))
+	case member:
+		c.report(env, diag.E3027.AtValueMember(env.span(n), n.Name, key, found))
 	default:
 		c.report(env, diag.E3027.AtValue(env.span(n), n.Name, key, found))
 	}
+}
+
+// memberKey reports a key type with no string form, whose E3027 says to write a member (DECISIONS 334).
+func (c *checker) memberKey(key types.Type) bool {
+	return c.keyTarget(key) == nil && depFunc(unwrapUnion(key)) == nil
 }
 
 // scopedType is the type of the value o names; silent for a value already in error (TYPES.md §1).

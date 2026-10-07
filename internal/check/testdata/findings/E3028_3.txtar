@@ -1,0 +1,29 @@
+TYPES.md §13.2, §1, DECISIONS 334: a parenthesised string literal is a literal of the union
+(`String | ("a")`, `String | (("b"))` are accepted); a refined literal is a type, E3028 naming the
+refined String (`"x" where it != ""`, parenthesised or not); an alternative holding the error type
+anywhere is not judged again (`String | [Nope]` is E2102 only).
+-- a/a.canon --
+package a
+
+local type P1 = String | ("a")
+
+local type P2 = String | (("b")) | "c"
+
+local let p: P1 = "a"
+
+local type R1 = String | "x" where it != ""
+
+local type R2 = String | ("y" where it.len() > 0)
+
+local type N1 = String | [Nope]
+-- findings.txt --
+error[E3028]  a/a.canon:9:26
+  String where it != "" is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E3028]  a/a.canon:11:26
+  String where it.len() > 0 is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
+
+error[E2102]  a/a.canon:13:27
+  unknown name Nope
+
+3 errors, 0 warnings in 1 package (…)

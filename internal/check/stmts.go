@@ -95,7 +95,9 @@ func (c *checker) assign(env *env, s *syntax.AssignStmt) *env {
 // assignError is E3017 for a name that is not a var, E2102 for an unknown one.
 func (c *checker) assignError(env *env, root *syntax.IdentExpr, o *object) {
 	if o == nil {
-		c.unknownName(env, root, root.Name)
+		if !c.strayIt(env, root, root.Name) {
+			c.unknownName(env, root, root.Name)
+		}
 		return
 	}
 	c.info.Uses[root] = o

@@ -1,0 +1,46 @@
+TYPES.md §4.1 (last paragraph), DECISIONS 334: a name in scope as a map-literal key whose key type
+has no string form (an enum, a union over one) is E3027 saying to write a member of the key type:
+`valueMember` for a value of another type, `notValueMember` for a name that is not a value (a
+function). Against a ref key type the message still says to write the key as a string.
+-- a/a.canon --
+package a
+
+local enum F { x, y }
+
+local record Row {
+  v: Int
+}
+
+local let rows: table Row = {
+  A { v: 1 }
+}
+
+local fn oneF(m: {F: Int}) -> Bool {
+  return m.len() == 1
+}
+
+local fn oneU(m: {F | "none": Int}) -> Bool {
+  return m.len() == 1
+}
+
+local fn oneRow(m: {ref rows: Int}) -> Bool {
+  return m.len() == 1
+}
+
+local fn g(s: String) -> Bool {
+  return oneF({ s: 1 }) and oneU({ s: 1 }) and oneF({ oneF: 1 }) and oneU({ x: 1 }) and oneRow({ oneF: 1 })
+}
+-- findings.txt --
+error[E3027]  a/a.canon:26:17
+  s has type String, not a.F: write a member of a.F
+
+error[E3027]  a/a.canon:26:36
+  s has type String, not a.F | "none": write a member of a.F | "none"
+
+error[E3027]  a/a.canon:26:55
+  oneF is not a value (function): write a member of a.F
+
+error[E3027]  a/a.canon:26:98
+  oneF is not a value (function); to name the key oneF, write "oneF"
+
+4 errors, 0 warnings in 1 package (…)

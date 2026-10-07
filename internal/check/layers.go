@@ -223,9 +223,11 @@ func (c *checker) entryKey(env *env, w *amendWalk, k syntax.Expr, key types.Type
 	id, isName := k.(*syntax.IdentExpr)
 	if isName && w.plain && c.lookup(env, id.Name) == nil {
 		if o, _ := c.inExpected(unwrapUnion(key), id.Name); o == nil {
-			c.info.Keys[k] = c.fieldColl(w.let, w.fields, w.t)
-			c.info.Types[k] = key
-			return
+			if coll := c.fieldColl(w.let, w.fields, w.t); c.mayKey(coll, id.Name) {
+				c.info.Keys[k] = coll
+				c.info.Types[k] = key
+				return
+			}
 		}
 	}
 	c.expr(env, k, key)

@@ -171,7 +171,7 @@ func (c *checker) bareKey(env *env, x, recv syntax.Expr, key types.Type) bool {
 		return false
 	}
 	if o, _ := c.inExpected(unwrapUnion(key), id.Name); o == nil {
-		if coll := c.receiverColl(recv); coll != nil {
+		if coll := c.receiverColl(recv); coll != nil && c.mayKey(coll, id.Name) {
 			c.info.Keys[x] = coll
 			c.info.Types[x] = key
 			return true

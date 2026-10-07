@@ -1,0 +1,16 @@
+TYPES.md §3.4, §4.2, DECISIONS 334: a lambda parameter named `it` inside a predicate hides the
+predicate's `it`, so it gets the ordinary §4.1/§4.2 treatment: against an enum with a member `it`,
+it is ambiguous (E2101).
+-- a/a.canon --
+package a
+
+local enum G { it, other }
+
+local let gs: [G] = [other]
+
+local type A1 = G where gs.any(it => it == it)
+-- findings.txt --
+error[E2101]  a/a.canon:7:44
+  it is ambiguous: G.it or the parameter it; write it qualified
+
+1 error, 0 warnings in 1 package (…)
