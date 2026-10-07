@@ -45,27 +45,21 @@
           "type": "BIGINT",
           "kind": "ts",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "player_id",
           "type": "UINTEGER",
           "kind": "id",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "item_instance_id",
           "type": "UBIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 3,
-          "retiredIn": null,
-          "enum": null
+          "since": 3
         },
         {
           "name": "grant_kind",
@@ -73,7 +67,6 @@
           "kind": "enum8",
           "nullable": true,
           "since": 2,
-          "retiredIn": null,
           "enum": "GrantKind"
         },
         {
@@ -81,36 +74,28 @@
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "quantity",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "via_mail",
           "type": "UTINYINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 4,
-          "retiredIn": null,
-          "enum": null
+          "since": 4
         },
         {
           "name": "fact_id",
           "type": "UBIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 5,
-          "retiredIn": null,
-          "enum": null
+          "since": 5
         }
       ],
       "ledger": [
@@ -127,15 +112,11 @@
           "bucket": "mint",
           "sign": 1,
           "token": "system_grant",
-          "leg": null,
           "filter": "COALESCE(via_mail, 0) = 0",
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": true,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "SendSystemItem: a direct inventory grant (mail only on overflow, counted at its claim)"
         },
         {
@@ -149,15 +130,10 @@
           "bucket": "mint",
           "sign": 1,
           "token": "mail_grant",
-          "leg": null,
-          "filter": null,
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "MAIL-BORNE: lands in game.mail, not in a container, until claimed"
         },
         {
@@ -172,14 +148,10 @@
           "sign": 1,
           "token": "mail_return",
           "leg": "in",
-          "filter": null,
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "NOT A MINT: re-posts items that already exist; the claim inflow is mail_items_claimed"
         },
         {
@@ -194,14 +166,10 @@
           "sign": 1,
           "token": "mail_out",
           "leg": "in",
-          "filter": null,
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "NOT A MINT: the counted leg is the sender's mail_items_sent row"
         },
         {
@@ -216,14 +184,10 @@
           "sign": 1,
           "token": "auction_return",
           "leg": "in",
-          "filter": null,
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "MAIL-BORNE, NOT A MINT: an escrow re-mailed after a restart"
         },
         {
@@ -237,15 +201,11 @@
           "bucket": "mint",
           "sign": 1,
           "token": "perin_overflow",
-          "leg": null,
           "filter": "COALESCE(via_mail, 0) = 0",
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": true,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "EmitPerinMinted (gold.cpp): perin minted straight into the inventory"
         },
         {
@@ -259,15 +219,11 @@
           "bucket": "mint",
           "sign": 1,
           "token": "farm_harvest",
-          "leg": null,
           "filter": "COALESCE(via_mail, 0) = 0",
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": true,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "FarmManager::ClaimModel: farm production granted to the inventory"
         },
         {
@@ -281,15 +237,11 @@
           "bucket": "mint",
           "sign": 1,
           "token": "starter_item",
-          "leg": null,
           "filter": "COALESCE(via_mail, 0) = 0",
           "amount": "quantity",
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": true,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "CDbManager::CreatePlayer: one row per starting item, after the container saved"
         },
         {
@@ -303,15 +255,9 @@
           "bucket": "none",
           "sign": 0,
           "token": "unknown_grant",
-          "leg": null,
-          "filter": null,
-          "amount": null,
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "NOT A LEDGER LEG: no caller passes GrantKind 0"
         }
       ]
@@ -339,54 +285,40 @@
           "type": "BIGINT",
           "kind": "ts",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "player_id",
           "type": "UINTEGER",
           "kind": "id",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "item_instance_id",
           "type": "UBIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 3,
-          "retiredIn": null,
-          "enum": null
+          "since": 3
         },
         {
           "name": "item_id",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         }
       ],
       "ledger": [
         {
-          "kinds": null,
           "currency": "item",
           "bucket": "sink",
           "sign": -1,
           "token": "consume",
-          "leg": null,
-          "filter": null,
-          "amount": null,
           "item": "item_id",
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
           "dedupOf": "consume",
-          "untilVersion": null,
           "note": "no quantity column; item_removed(Consumed) is the quantity-bearing sink"
         }
       ]
@@ -411,54 +343,39 @@
           "type": "BIGINT",
           "kind": "ts",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "player_id",
           "type": "UINTEGER",
           "kind": "id",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "amount",
           "type": "BIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "mob_index",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         }
       ],
       "ledger": [
         {
-          "kinds": null,
           "currency": "gold",
           "bucket": "mint",
           "sign": 1,
           "token": "mob_drop",
-          "leg": null,
-          "filter": null,
           "amount": "amount",
-          "item": null,
           "player": "player_id",
-          "counterparty": null,
           "counted": true,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "CMover::PickupGoldCore on the kill's auto-loot (GameEventGeneral::OnPenyasDropped)"
         }
       ]
@@ -483,89 +400,67 @@
           "type": "BIGINT",
           "kind": "ts",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "player_id",
           "type": "UINTEGER",
           "kind": "id",
           "nullable": false,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "trade_id",
           "type": "UBIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "giver_player_id",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "receiver_player_id",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         },
         {
           "name": "amount",
           "type": "BIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         }
       ],
       "ledger": [
         {
-          "kinds": null,
           "currency": "gold",
           "bucket": "transfer",
           "sign": -1,
           "token": "trade",
           "leg": "out",
-          "filter": null,
           "amount": "amount",
-          "item": null,
           "player": "giver_player_id",
           "counterparty": "receiver_player_id",
           "counted": true,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "GameEventGeneral::OnTradeGold from CVTInfo::TradeLastConfirm: one row per giver leg"
         },
         {
-          "kinds": null,
           "currency": "gold",
           "bucket": "transfer",
           "sign": 1,
           "token": "trade",
           "leg": "in",
-          "filter": null,
           "amount": "amount",
-          "item": null,
           "player": "receiver_player_id",
           "counterparty": "giver_player_id",
           "counted": true,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "the receiving half of the same row"
         }
       ]
@@ -593,18 +488,14 @@
           "type": "BIGINT",
           "kind": "ts",
           "nullable": false,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "player_id",
           "type": "UINTEGER",
           "kind": "id",
           "nullable": false,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "kind",
@@ -612,7 +503,6 @@
           "kind": "enum8",
           "nullable": true,
           "since": 1,
-          "retiredIn": null,
           "enum": "LifecycleKind"
         }
       ],
@@ -638,18 +528,14 @@
           "type": "BIGINT",
           "kind": "ts",
           "nullable": false,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "player_id",
           "type": "UINTEGER",
           "kind": "id",
           "nullable": false,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "kind",
@@ -657,7 +543,6 @@
           "kind": "enum8",
           "nullable": true,
           "since": 1,
-          "retiredIn": null,
           "enum": "FarmEventKind"
         },
         {
@@ -665,36 +550,28 @@
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "type_id",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "item_count",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "target_player_id",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "cost",
@@ -702,17 +579,14 @@
           "kind": "scalar",
           "nullable": true,
           "since": 1,
-          "retiredIn": 2,
-          "enum": null
+          "retiredIn": 2
         },
         {
           "name": "fact_id",
           "type": "UBIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 2,
-          "retiredIn": null,
-          "enum": null
+          "since": 2
         }
       ],
       "ledger": [
@@ -729,12 +603,9 @@
           "bucket": "sink",
           "sign": -1,
           "token": "farm",
-          "leg": null,
           "filter": "cost <> 0",
           "amount": "cost",
-          "item": null,
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
           "dedupOf": "farm",
           "untilVersion": 1,
@@ -762,18 +633,14 @@
           "type": "BIGINT",
           "kind": "ts",
           "nullable": false,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "player_id",
           "type": "UINTEGER",
           "kind": "id",
           "nullable": false,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "kind",
@@ -781,7 +648,6 @@
           "kind": "enum8",
           "nullable": true,
           "since": 1,
-          "retiredIn": null,
           "enum": "SovereignEventKind"
         },
         {
@@ -790,7 +656,6 @@
           "kind": "enum8",
           "nullable": true,
           "since": 1,
-          "retiredIn": null,
           "enum": "SovereignRole"
         },
         {
@@ -799,7 +664,6 @@
           "kind": "enum8",
           "nullable": true,
           "since": 1,
-          "retiredIn": null,
           "enum": "SovereignDoctrine"
         },
         {
@@ -808,7 +672,6 @@
           "kind": "enum8",
           "nullable": true,
           "since": 1,
-          "retiredIn": null,
           "enum": "SovereignPower"
         },
         {
@@ -816,45 +679,35 @@
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "used",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "max",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "gold",
           "type": "BIGINT",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         },
         {
           "name": "item_count",
           "type": "UINTEGER",
           "kind": "scalar",
           "nullable": true,
-          "since": 1,
-          "retiredIn": null,
-          "enum": null
+          "since": 1
         }
       ],
       "ledger": [
@@ -869,32 +722,21 @@
           "bucket": "mint",
           "sign": 1,
           "token": "sovereign_reward",
-          "leg": null,
           "filter": "gold <> 0",
           "amount": "gold",
-          "item": null,
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
           "dedupOf": "mail_claim",
-          "untilVersion": null,
           "note": "MIRROR, never summed: the reward is mailed; the penya enters at gold_changes(MailClaim)"
         },
         {
-          "kinds": null,
           "currency": "none",
           "bucket": "none",
           "sign": 0,
           "token": "sovereign",
-          "leg": null,
           "filter": "gold = 0",
-          "amount": null,
-          "item": null,
           "player": "player_id",
-          "counterparty": null,
           "counted": false,
-          "dedupOf": null,
-          "untilVersion": null,
           "note": "NOT A LEDGER LEG: role assignments, the doctrine choice and power triggers move nothing"
         }
       ]

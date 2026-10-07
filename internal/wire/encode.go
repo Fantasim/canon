@@ -15,9 +15,10 @@ type scope struct {
 	asInt bool
 }
 
-// encoder turns values into nodes; methods supplies the `$` keys of each record (§5.11).
+// encoder turns values into nodes: methods gives the `$` keys (§5.11), omitAbsent the §8.5 form.
 type encoder struct {
-	methods Methods
+	methods    Methods
+	omitAbsent bool
 }
 
 // value encodes v per WIRE.md §5 in scope s.

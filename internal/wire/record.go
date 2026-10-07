@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -68,12 +69,29 @@ func (e *encoder) field(obj *node, f *types.Field, v value.Value) error {
 		return e.pairs(obj, f, v)
 	case len(f.WirePath) == 0:
 		return fmt.Errorf("%w: no wire path", ErrShape)
+	case e.leaveOut(f, v):
+		return nil
 	}
 	n, err := e.fieldValue(f, v)
 	if err != nil {
 		return err
 	}
 	return obj.put(f.WirePath, n)
+}
+
+// leaveOut: a none field with no `@json(none:)` marker and no default or `= none` has no key (WIRE.md §8.5, DECISIONS 327).
+func (e *encoder) leaveOut(f *types.Field, v value.Value) bool {
+	if !e.omitAbsent || f.NoneWire != nil {
+		return false
+	}
+	if _, none := v.(*value.None); !none {
+		return false
+	}
+	if f.Default == nil {
+		return true
+	}
+	_, isNone := f.Default.(*syntax.NoneLit)
+	return isNone
 }
 
 func (e *encoder) inline(obj *node, v value.Value) error {
