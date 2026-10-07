@@ -51,10 +51,12 @@ This replaces SPEC §11.2.
 - A **broken** declaration (TYPES.md §1) is never evaluated. A value, check or test that is
   broken produces no evaluation finding. Other values are evaluated normally.
 - A broken record or variant (DECISIONS 209) silences every value typed by it, so the silence is
-  reported: one `W4001` per broken type, at its declaration, counting the top-level values of the
-  selected packages that were not evaluated because they are typed by it (directly, or as an
-  element, entry or field of their type). Values silenced only because they read a broken value
-  are not counted (DECISIONS 331).
+  reported: one `W4001` per type broken by an error of its own (not one broken only because it
+  names a broken type), at its declaration, counting the top-level values of the selected
+  packages that were not evaluated because they reach it through their type (directly, or as an
+  element, entry, case or field, never through a `ref`). Values silenced only because they read a
+  broken value are not counted. When the type's package is not selected, the warning belongs to
+  the first selected package (package order) holding a counted value (DECISIONS 331).
 - A value forced for the first time after stage B has started (for example by a package check)
   is verified immediately after its evaluation.
 - **Names.** These phase numbers and stage names are the reference: every other document says
