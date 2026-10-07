@@ -208,6 +208,7 @@ E3026 written: a b is a key of a b, not an element: test it with a b.hasKey(a b)
 E3026 implicit: a b is a key, not an element: test it with hasKey(a b)
 E3027 value: resource.vocab.items has type Int, not Int; to name the key resource.vocab.items, write "resource.vocab.items"
 E3027 notValue: resource.vocab.items is not a value (built-in); to name the key resource.vocab.items, write "resource.vocab.items"
+E3028 -: Int is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
 E3101 -: duplicate key resource.vocab.items in resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
 E3102 key: key "II_SYS_SYS_SCR_FARM3" is used twice (first at @resource/Server/System/farm_config.json:1)
 E3102 code: code -42 is used twice (first at @resource/Server/System/farm_config.json:1)
@@ -350,6 +351,7 @@ E7005 -: invalid glob 0.9: an unclosed, empty or nested brace
 E7006 option: option resource.vocab.items is not valid for resource.vocab.items (resource.vocab.items)
 E7006 format: format resource.vocab.items is not one of json, csv and text
 E7007 -: cannot tell the format of @resource/Server/Item/propItem.json; add format: json, csv or text
+E7008 -: the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir
 E7102 -: resource.vocab.items redefined with a different value (-42, first -42 at @resource/Server/System/farm_config.json:1)
 E7103 number: 0.9 is not an integer
 E7103 mapKey: map key "0.9" is not a canonical integer

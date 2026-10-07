@@ -197,30 +197,38 @@ func (p *Project) Revision() Revision
 
 - **S3.** A revision is `"r1:"` followed by the lowercase hex SHA-256 of the **read-set listing**:
   one line per file, `<display path> NUL <lowercase hex SHA-256 of the content> LF`, sorted by
-  display path bytes. The read set is `project.canon`, every source, translation and layer file
-  of the packages loaded so far, every file read by `load` (globs expanded), and, whatever the
-  packages loaded, the existing `canon.lock` of every directory below the project root that
-  holds a source file or is an ancestor of one (every place a package's lock can be, LOCK.md §2.1):
-  the revision cannot know the packages of files not yet parsed. Overlays (§3.4) replace file
-  contents in the listing. In practice the listing names every scanned source (a superset of the
-  packages loaded so far) and keeps the `load` files earlier calls read. A file reached through
-  several display paths is listed once, by the smallest display (bytes) among those the run's own
-  reads used; a `load` file no display path names is listed by its project-relative path. So one
-  unchanged snapshot can carry more than one revision as `load` files join its read set
-  (DECISIONS 143): those revisions only grow, and S5 compares file by file.
+  display path bytes. The listing covers the project's **static read set**, the same whatever a
+  call analysed: `project.canon`; every source, translation and layer file the scan finds (O2); the
+  existing `canon.lock` of every directory below the project root that holds a source file or is
+  an ancestor of one (LOCK.md §2.1); and every file a `load` of any package names, its path or, for
+  `load.dir`, each file its glob matches (WIRE.md §6.5), counting the `load`s of source and layer
+  files alike, evaluated or not. A `load` path is a string literal (WIRE.md §6.1), so this set is
+  known from the parsed sources before any checking or evaluation (DECISIONS 330). A named file
+  that does not exist or cannot be read is listed as `<display path> NUL unreadable` (DECISIONS
+  143). Overlays (§3.4) replace file contents in the listing. A file reached through several
+  display paths is listed once, by the smallest display (bytes) the `load`s give it; a file no
+  display path names is listed by its project-relative path. A snapshot therefore has one
+  revision, a function of its files alone.
 - **S4.** The project remembers the per-file hashes of at least the last 64 revisions it has
-  produced. A revision it does not remember is stale. Revisions are content-addressed, so a
-  revision from another `Project` is stale only when its content differs.
+  produced. A revision equal to the current one is current, whoever produced it: the listing
+  covers the whole static read set (S3), so another `Project` or another process reading the same
+  files computes the same revision. Any other revision the project does not remember is stale,
+  since it cannot be compared file by file (S5). So a revision printed by an earlier process is
+  current exactly when no file of the project's static read set has changed since (CLI.md §3.15).
 - **S5.** A revision is compared per package: an edit or an evaluation against `Base` is **stale**
-  when a file in the read set of the packages it touches (§8.6) has a different hash now than at
-  `Base`. Changes to unrelated files do not make it stale. A package's read set includes its
-  directory listing, restricted to the names the scan takes as sources (O2): a source file added
+  when a file in the read set of the packages it touches (§8.6; an edit's affected packages, E17)
+  has a different hash now than at `Base`. Changes to unrelated files do not make it stale. A
+  package's read set is its **static read set**: its source, translation and layer files, its own
+  `canon.lock` (LOCK.md §2.1), and the files its `load`s name with the directories their globs
+  walk (S3), each by real path; plus the directory listings its asset checks consulted (TYPES.md
+  §13.4). It includes its directory listing, restricted to the names the scan takes as sources (O2): a source file added
   to a touched package after `Base` makes the edit stale, an editor swap file never does. A file
   first read after `Base` is compared with the first content the project read for it. Since any
   source can reshape the import graph, the edit or evaluation is also stale when any scanned
   source file or `project.canon` changed since `Base`; the unrelated files are non-source files
   (other packages' loads, assets). An `Evaluate` without a draft touches the packages its
-  `Summary` covers (V13).
+  `Summary` covers (V13). Per-package comparison needs `Base`'s per-file hashes, which only the
+  `Project` that produced it holds (S4).
 - **S6.** `Base == ""` disables the staleness check. It is for scripts and tests; the studio MUST
   send the revision it last read.
 
@@ -236,9 +244,7 @@ func (p *Project) Revision() Revision
   started before the writer finished keep their snapshot.
 - **S10.** A writer publishes its new snapshot atomically when it returns. The revision in its
   result is that snapshot's. `Revision()` is monotonic: it only moves to a snapshot at least as new
-  as the last one published, so a read that finishes late never rolls it back. After an `Edit`,
-  `Revision()` may differ from `EditResult.Revision` with nothing changed on disk, when later reads
-  added `load` files to the read set (S3). Without an active `Watch`, the snapshot an `Edit`
+  as the last one published, so a read that finishes late never rolls it back. Without an active `Watch`, the snapshot an `Edit`
   publishes reads again every name its commit changed or pinned: each file written, renamed or
   removed, each directory created (N3) or removed (N6), every ancestor listing of those up to the
   file-system root, and the journal's directory with its ancestors (N10); it equals a fresh read of
@@ -1002,15 +1008,37 @@ inside the same edit and reports it, so every client behaves the same.
 
 ### 8.6 Checking and refusal
 
-- **E17.** The **affected packages** of an edit are the packages whose read set (S3, S5), as the
-  base's every-package analysis has it, holds a file the edit writes or removes, or a directory
-  listing the edit changes, plus every package that imports one of them. Files are compared by real
-  path, resolved through the snapshot's links as WIRE.md §6.5 does, so a package reading a written
-  file through a link or another root is affected. A directory the edit creates or removes changes
-  the listing of each ancestor up to the first that existed. The staleness check (S5) covers their
-  read set (DECISIONS 252).
-- **E18.** After applying the ops in memory, the affected packages are re-checked (phases 1–7).
-  `Findings` holds all their findings.
+- **E17.** The **affected packages** of an edit are: the packages whose static read set (S3, S5)
+  holds a file the edit writes or removes, or a directory listing the edit changes; each package
+  declaring an `asset` type whose root holds, by real path, a name the edit creates or removes (its
+  asset checks list that directory, TYPES.md §13.4); and every package importing one of these,
+  directly or not. Static read sets are known from the parsed sources, never by evaluation, so a
+  package whose `load` names a written file is affected even if that `load` is never evaluated.
+  Files are compared by real path, resolved through the snapshot's links as WIRE.md §6.5 does, so a
+  package reading a written file through a link or another root is affected. A directory the edit
+  creates or removes changes the listing of each ancestor up to the first that existed. The
+  staleness check (S5) covers their read sets (DECISIONS 252, 330).
+- **E17a.** An edit analyses (phases 2–7) only these packages (DECISIONS 330):
+  - before its first op, the **scope** of its ops: the package declaring each op's path root (§6.3)
+    or `RenameName` target (E27), found from the parsed declarations, and, for a `Rename` or
+    `RenameName`, every package importing one of those, directly or not, where its references and
+    occurrences lie (E11, E33). A root that names no package adds none; its op fails in E21's
+    order. Each op is resolved and applied against the scope's analysis (E1);
+  - after the ops, the affected packages (E17, E18);
+  - for both, every package they import, directly or not, and `project.studio`'s package with its
+    imports when one of them declares a view, a `@menu` or an `emit view` (DECISIONS 227).
+
+  An active layer (`Options.Layers`) is judged against the layer headers of every scanned package
+  (O4): a layer amends only its own package (`E1909`), so a package declaring it outside these sets
+  changes nothing they compute. Every other package is only scanned and parsed, for the import
+  graph, the path roots and the static read sets: it is neither checked nor evaluated, its findings
+  are not reported, and a failure in it does not fail the edit. An import these packages force
+  lazily is evaluated as `canon check <pkg>` evaluates it (EVALUATION.md §2.1 item 2). When these
+  packages are every package, the edit analyses the whole project, as before DECISIONS 330.
+- **E18.** After applying the ops in memory, the affected packages are re-checked (phases 1–7)
+  with what E17a loads for them. `Findings` holds all their findings, and only theirs: the
+  findings of a package the edit does not affect, errors included, are not reported and never
+  refuse the edit (E19). `canon check` stays the verdict of the whole project (DECISIONS 330).
 - **E19.** If any finding is an error and `AllowErrors` is false, nothing is written, `Applied` is
   false, and `Edit` returns the result together with a `*RejectedError` (wraps `ErrRejected`).
   With `AllowErrors`, the files are written and the result has `Applied: true` and the error

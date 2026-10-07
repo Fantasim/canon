@@ -23,7 +23,7 @@ other file declares a code or holds message text.
   lines, summary).
 - **Reserved codes** are catalogued but not reported yet, each with its owner (DECISIONS 322):
   `E8103`, `E8106`-`E8109`, `E8201` (legacy C++ structs, M6; `LegacyStruct` refuses them first, DECISIONS 320), `E8301` (the embedded mode, v0.2), `E4201`
-  (an internal safety net, EVALUATION.md §4.5).
+  (an internal safety net, EVALUATION.md §4.5), `E7008` (the literal `load` path check of DECISIONS 330, `check`, until it lands).
 - **Retired numbers** are never reused: `E1624` and `E1625` (the view `row` item, removed by
   DECISIONS 21), `E8016` (merged into `E8153`), `E8018` (decoders across packages, removed by
   DECISIONS 323: a package reads another package's classes with its own readers). `E3014` and `E3319` were referenced once but never
@@ -391,7 +391,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 306 codes: 284 errors, 19 warnings and 3 run-time codes, with 493 messages.
+The catalogue holds 307 codes: 285 errors, 19 warnings and 3 run-time codes, with 494 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1096,6 +1096,7 @@ Owner: WIRE.md.
 | E7005 | error | load | WIRE.md §6.5 | invalid glob |
 | E7006 | error | load | WIRE.md §6.1 | a `load` option not valid for the form or format |
 | E7007 | error | load | WIRE.md §6.2 | the format of a loaded file cannot be told from its extension |
+| E7008 | error | check | WIRE.md §6.1 | a `load` path that is not a string literal (DECISIONS 330) |
 | W7101 | warning | load | WIRE.md §6.8 | `load.defines` skipped defines it cannot evaluate (once per file) |
 | E7102 | error | load | WIRE.md §6.8 | a define redefined with a different value |
 | E7103 | error | wire | WIRE.md §5.1 | a JSON number that must be an integer is not |
@@ -1129,6 +1130,7 @@ Owner: WIRE.md.
 | E7006 | option | option:Name, form:Name, format:Name | `option {option} is not valid for {form} ({format})` |
 | E7006 | format | format:Name | `format {format} is not one of json, csv and text` |
 | E7007 | - | path:Path | `cannot tell the format of {path}; add format: json, csv or text` |
+| E7008 | - | - | `the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir` |
 | W7101 | one | path:Path, name:Name | `1 define skipped in {path} ({name}): not a supported integer expression` |
 | W7101 | many | n:Int, path:Path, name:Name | `{n} defines skipped in {path} (first: {name}): not a supported integer expression` |
 | E7102 | - | name:Name, renamed:Int, previous:Int, first:Loc | `{name} redefined with a different value ({renamed}, first {previous} at {first})` |

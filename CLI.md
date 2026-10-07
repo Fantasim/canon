@@ -564,9 +564,17 @@ Applies one edit request through the edit API (§5.3, [spec/API.md](spec/API.md)
 the write is checked, atomic and minimal. The request is the JSON form of API.md §8.8, read from
 the file or, without one, from stdin, plus one optional top-level key read by the command itself:
 `"editLayer"`, which sets `Options.EditLayer` as `--edit-layer` does (both given and different is
-a usage error). Before editing, the command checks every package, so its revision covers the
-whole project and a printed `base` is current for the next run. A request with no ops (`{"ops":[]}`) writes nothing and
-prints the current `revision`: the way to get a `base` before a first edit.
+a usage error). The command analyses only what the edit can affect (API.md E17, E17a): the packages its ops
+name, the packages that may read a file it writes (by their sources and their `load`s, known
+without evaluating anything), every package importing those, and what they import. Other packages
+are parsed but never checked or evaluated, so an edit costs the analysis of what it affects, not
+of the project (DECISIONS 330). The findings printed are those of the affected packages (API.md
+E18); `canon check` remains the verdict of the whole project. The printed `revision` covers the
+static read set of the whole project (API.md S3), whatever the edit analysed, so a printed `base`
+is current for the next run exactly when no source, `canon.lock`, `project.canon` or loaded file
+of the project has changed since (API.md S4). A request with no ops (`{"ops":[]}`) analyses no
+package, writes nothing and prints the current `revision`: the way to get a `base` before a first
+edit.
 
 `canon edit` is a command for agents: its output is always JSON lines, whatever `--format` says
 (DECISIONS 274). First one object:
@@ -620,7 +628,9 @@ declaration; a collision; and a rename that would make another name refer to som
 
 Like `canon edit`, its output is always JSON lines: one `{"rename":{…}}` object with the keys of
 §3.15's `edit` object, whose `undo` is the reverse rename as a request for `canon edit`, then the
-findings and the summary. Errors print and exit as §3.15 says.
+findings and the summary. Errors print and exit as §3.15 says. Like `canon edit`, it analyses
+only the named declaration's package, every package importing it directly or not, and their
+imports (API.md E17a).
 
 Exit: 0, 1, 2, 3.
 

@@ -721,6 +721,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     Reason: the build manifest, caching and determinism need the set of files read to be known
     before evaluation, and `Host.Load` receives the syntax node (DECISIONS 34). A non-constant
     argument is a type error. WIRE §6.1 gains this sentence at the next spec pass.
+    [amended by 330]
 
 104. **Constant folding during checking spends the step budget.** It is one counter per invocation
     (EVALUATION §12). Folding is evaluation, so it is charged the same way; nothing is free.
@@ -1130,7 +1131,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     wrapped and exits 2, although API.md R3 does not list it and CLI.md §2.5 has no I/O exit code
     (departs from both, Louis-call 6); `ErrInternal` exits 3 with the report line, an interrupt
     130. Reason: correct before incremental (NFR-01 memoization is M4's workspace).
-    [amended by 196]
+    [amended by 196, 330]
 
 144. **`init`, `new` and `version` outputs.** `canon init` names the project after its directory
     unless `--name` (an `IDENT`, else exit 2), writes `project acme {` / `canon: "0.1"` / `roots {}`
@@ -2266,6 +2267,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      P14-r3: E17's "own a file" was undefined, so a package loading another's file
      (`load("../b/b.json")`) or reading it through a link was not re-checked, and the Edit reported
      nothing that `Check()` then reported.
+     [amended by 330]
 
 253. **Overlays are compared by real path; what an event names (API.md S12, §3.4, W13; completes
      241).** S12 compares real paths: an `Edit` refuses (`ErrOverlay`) to write a file whose real
@@ -3144,3 +3146,25 @@ round 2", "PS1 review", "PS2 round 2"):
      journal or created file is `0666 &^ umask`, a new directory `0777 &^ umask`; an overwrite
      keeps the existing file's mode. Reason: the Sovereign Resource port (handoff 2026-10-07 A2):
      every file was 0600, unreadable by a server running as another user.
+
+330. **An edit analyses what it affects, found statically (API.md S3–S5, S10, E17, E17a, E18; CLI.md
+     §3.15, §3.16; WIRE.md §6.1; ERRORS.md E7008; amends 103, 143, 252 and log-2026-10-02 A1).** An
+     edit checks and evaluates only its scope (the packages its ops name, with their importers for
+     `Rename` and `RenameName`), its affected packages (those whose static read set holds a file it
+     writes or removes or a listing it changes, those with an asset root holding a name it creates
+     or removes, and every package importing either), and what these import, with the studio when
+     they use it (227). Other packages are only parsed. A package's **static read set** is its
+     files, its own `canon.lock`, and every file its `load`s name with the listings their globs
+     walk, by real path: known from the parse, because a `load` path is a string literal (`E7008`;
+     narrows 103 for the path only: the code never read any other form, and 103's WIRE sentence
+     never landed). An active layer is judged against the layer headers of every scanned package:
+     a layer amends only its own package (E1909). The revision covers the static read set of the
+     whole project, whatever a call analysed (amends 143: a snapshot has one revision), so a fresh
+     process accepts a printed base by equality without analysing anything; per-package staleness
+     stays within the process that produced the base. 252's read sets "taken from the base's
+     every-package analysis" become the static ones, a superset. `canon check` stays the verdict of
+     the whole project; an import forced lazily by an edit is evaluated as `canon check <pkg>` does.
+     Reason: the Sovereign Resource port (handoff 2026-10-07 §C(d)): a one-value skill edit took
+     10.7 s, against 1.9 s without four telemetry packages it cannot reach. 252 analysed every
+     package for read-set ownership and the one project budget; 328 made the budget per package,
+     and static read sets give ownership without evaluation.

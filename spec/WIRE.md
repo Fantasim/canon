@@ -570,6 +570,11 @@ stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"]
   value of an `amend` or layer path decodes in the scope of the field the path names, as an edit's
   `FromJSON` at that path does; a path through `none` (`E1905`) gives no scope (DECISIONS 272).
 - The path must exist and be a readable regular file [`E7004`].
+- The path of every `load` form is a string literal without interpolation [`E7008`], so the files
+  a package reads are known from its sources alone, before any checking or evaluation, as the
+  revision (API.md S3), the packages an edit affects (API.md E17) and the build manifest (§10) need
+  (DECISIONS 103, 330). Way out: a computed choice of file is a choice among literal `load`s,
+  through an `if` or a `match`; a set of files is a `load.dir` glob.
 - The option values: `at` a string (§6.3), `partial` a Bool constant, `format` one of the symbols
   `json`, `csv`, `text`, `header` a Bool constant, `prefix` a string.
 
@@ -1278,6 +1283,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E7005 | error | §6.5 |
 | E7006 | error | §6.1, §6.2 |
 | E7007 | error | §6.2 |
+| E7008 | error | §6.1 (DECISIONS 330) |
 | W7101 | warning | §6.8 |
 | E7102 | error | §6.8 |
 | E7103 | error | §5.1, §5.3, §5.8 |
