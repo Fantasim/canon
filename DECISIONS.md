@@ -3235,4 +3235,8 @@ round 2", "PS1 review", "PS2 round 2"):
      inside one it is found after §3.3's steps 2–6. A parenthesised string literal is a literal
      in a union (`String | ("a")`); a refined literal is a type (`E3028`). A name in scope whose
      type is not the key type, as a map-literal key against static keys, is `E3027` (318), not
-     `E2102`. Reason: the review of the A1 fix (2026-10-07) found each silently wrong or cryptic.
+     `E2102`; its message, for a key type with no string form (an enum, a union), says to write a
+     member of it. Inside a predicate `it` is its value in every position, §4.1 step 1 included;
+     outside, step 1 may find a member or static key named `it`. In a union, any later alternative
+     that is not a (parenthesised) string literal is a type (`E3028`): `"x"?`, `["x"]`.
+     Reason: the reviews of the A1 fix (2026-10-07) found each silently wrong or cryptic.

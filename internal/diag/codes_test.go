@@ -226,6 +226,8 @@ var constructed = []*Builder{
 	E3026.AtImplicit(sampleSpan, sampleExpr),
 	E3027.AtValue(sampleSpan, sampleName, sampleType, sampleType),
 	E3027.AtNotValue(sampleSpan, sampleName, KindBuiltin),
+	E3027.AtValueMember(sampleSpan, sampleName, sampleType, sampleType),
+	E3027.AtNotValueMember(sampleSpan, sampleName, KindBuiltin, sampleType),
 	E3028.At(sampleSpan, sampleType),
 	E3101.At(sampleSpan, sampleName, sampleName, sampleLoc),
 	E3102.AtKey(sampleSpan, sampleValue, sampleLoc),

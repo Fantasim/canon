@@ -1435,6 +1435,8 @@ var Registry = []Def{
 		Variants: []Variant{
 			{Name: "value", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeType}, {Name: "found", Type: ArgTypeType}}, Template: "{name} has type {found}, not {expected}; to name the key {name}, write \"{name}\""},
 			{Name: "notValue", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "kind", Type: ArgTypeKind}}, Template: "{name} is not a value ({kind}); to name the key {name}, write \"{name}\""},
+			{Name: "valueMember", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeType}, {Name: "found", Type: ArgTypeType}}, Template: "{name} has type {found}, not {expected}: write a member of {expected}"},
+			{Name: "notValueMember", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "kind", Type: ArgTypeKind}, {Name: "expected", Type: ArgTypeType}}, Template: "{name} is not a value ({kind}): write a member of {expected}"},
 		},
 	},
 	{
@@ -4842,6 +4844,16 @@ func (codeE3027) AtValue(span source.Span, name string, expected TypeArg, found 
 // AtNotValue reports: {name} is not a value ({kind}); to name the key {name}, write "{name}"
 func (codeE3027) AtNotValue(span source.Span, name string, kind Kind) *Builder {
 	return newBuilder(&Registry[140], 1, span, name, kind)
+}
+
+// AtValueMember reports: {name} has type {found}, not {expected}: write a member of {expected}
+func (codeE3027) AtValueMember(span source.Span, name string, expected TypeArg, found TypeArg) *Builder {
+	return newBuilder(&Registry[140], 2, span, name, expected, found)
+}
+
+// AtNotValueMember reports: {name} is not a value ({kind}): write a member of {expected}
+func (codeE3027) AtNotValueMember(span source.Span, name string, kind Kind, expected TypeArg) *Builder {
+	return newBuilder(&Registry[140], 3, span, name, kind, expected)
 }
 
 // E3028: a type where a union expects a string literal (an alternative after the first) (TYPES.md §13.2).

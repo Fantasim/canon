@@ -173,8 +173,10 @@ acceptable there, plus let names after `ref` (§10.2).
   in the function's top block) is `E2107`. Shadowing a name of an outer scope is allowed.
 - `self` outside a record, case or variant body is `E2108`. `it` outside a refinement predicate
   (`where`) is `E2109`, in every position, keys and callees included: it is never a symbolic key
-  (DECISIONS 334). Inside a predicate, `it` is found after steps 2–6 of §3.3, so a local,
-  parameter or package value named `it` hides it.
+  (DECISIONS 334), unless step 1 of §4.1 finds a member or static key named `it`. Inside a
+  predicate, `it` is found after steps 2–6 of §3.3, so a local, parameter or package value named
+  `it` hides it; and it is the predicate's value in every position, step 1 included: a member or
+  static key named `it` never takes it there, so one predicate never gives `it` two meanings.
 
 ### 3.5 `.name`: field, entry or method (RES-05)
 
@@ -253,8 +255,9 @@ a name that resolves nowhere becomes a **symbolic key** of `C`, checked at evalu
 `II_GEN_GOLD` in a `ref items` field is a symbolic key. For a dependent field (§11.4) the rule applies when some branch takes
 dynamic keys; when every ref branch has static keys, a bare name stays one of those keys.
 A map literal key against a key type with static keys (an enum, a table literal) is that key when
-it names one; otherwise a name in scope whose type is not the key type is `E3027`, and only a name
-found nowhere is `E2102` (DECISIONS 334).
+it names one; otherwise a name in scope whose type is not the key type is `E3027` (whose message, for a key
+type with no string form such as an enum, says to write a member of it), and only a name found
+nowhere is `E2102` (DECISIONS 334).
 
 A string literal or an integer literal checked against `ref C` is a key too, if it is a
 literal of the key's type: a table key is written as an identifier or a string; a keyed-list
@@ -1183,8 +1186,8 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 ### 13.2 String-literal unions (TYP-09)
 
 - `A | "lit" | …`: the alternatives other than the first are string literals, parentheses
-  allowed (`("a")`); a type there, a refined literal (`"x" where …`) included, is
-  `E3028` (there are no unions of types: a variant is the tagged form). `A` must have a
+  allowed (`("a")`); anything else there is a type, `E3028`: a type name, a refined literal
+  (`"x" where …`), or a literal inside a type (`"x"?`, `["x"]`, `{"x": Int}`) (there are no unions of types: a variant is the tagged form). `A` must have a
   string wire form: `String` (possibly refined), an enum without `@json(codes)`, a `ref` whose
   key type has a string wire form, or a type application whose branches do (`E3002`
   otherwise: a `@json(codes)` enum, or a `ref` keyed by one, is written as a number).
