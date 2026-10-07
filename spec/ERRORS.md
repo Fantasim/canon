@@ -391,7 +391,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 305 codes: 283 errors, 19 warnings and 3 run-time codes, with 492 messages.
+The catalogue holds 306 codes: 284 errors, 19 warnings and 3 run-time codes, with 493 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
