@@ -357,9 +357,23 @@ func TestOSRollbackAndModes(t *testing.T) {
 	if err != nil || lerr != nil {
 		t.Fatalf("stat: %v, %v", err, lerr)
 	}
-	if unixModes() && (info.Mode().Perm() != 0o644 || lock.Mode().Perm() != 0o600) {
+	if unixModes() && (info.Mode().Perm() != 0o644 || lock.Mode().Perm() != plainCreateMode(t)) {
 		t.Errorf("modes: %v, %v", info.Mode(), lock.Mode())
 	}
+}
+
+// plainCreateMode is the mode a plain file create gets under the process's umask (handoff 2026-10-07 A2).
+func plainCreateMode(t *testing.T) fs.FileMode {
+	t.Helper()
+	probe := filepath.Join(t.TempDir(), "probe")
+	if err := os.WriteFile(probe, nil, 0o666); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(probe)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return info.Mode().Perm()
 }
 
 // unixModes reports whether files carry Unix permission bits: Windows keeps only a read-only

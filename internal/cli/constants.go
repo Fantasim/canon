@@ -131,8 +131,8 @@ const (
 	cacheIgnore   = ".canon/"
 	initFormat    = "project %s {\n  canon: \"%s\"\n  roots {}\n  languages: [en]\n}\n"
 	newFormat     = "/// Describe package %s here.\npackage %s\n"
-	filePerm      = 0o600
-	dirPerm       = 0o750
+	filePerm      = 0o666 // a plain create's mode before the umask: the kernel applies it (handoff 2026-10-07 A2)
+	dirPerm       = 0o777 // idem, for a directory
 	lineBreak     = "\n"
 	pathSep       = "/"
 	dotSep        = "."

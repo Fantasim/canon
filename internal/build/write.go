@@ -203,11 +203,19 @@ func (w *writer) stage(c change) error {
 	if err := writeTemp(w.fsys, tmp, c.data); err != nil {
 		return err
 	}
-	chmod, ok := w.fsys.(ModeFS)
-	if !c.existed || !ok {
+	if !c.existed {
 		return nil
 	}
-	info, err := w.fsys.Stat(c.abs)
+	return keepMode(w.fsys, tmp, c.abs)
+}
+
+// keepMode gives tmp the permissions of the file abs, where the file system sets them (handoff 2026-10-07 A2).
+func keepMode(fsys WriteFS, tmp, abs string) error {
+	chmod, ok := fsys.(ModeFS)
+	if !ok {
+		return nil
+	}
+	info, err := fsys.Stat(abs)
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
@@ -264,6 +272,9 @@ func restoreOne(fsys WriteFS, c change) error {
 		return fsys.Remove(c.abs)
 	}
 	if err := writeTemp(fsys, tempOf(c.abs), c.old); err != nil {
+		return err
+	}
+	if err := keepMode(fsys, tempOf(c.abs), c.abs); err != nil {
 		return err
 	}
 	return fsys.Rename(tempOf(c.abs), c.abs)
