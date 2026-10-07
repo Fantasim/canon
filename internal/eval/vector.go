@@ -68,6 +68,7 @@ func (e *Evaluator) vectorEvaluator(steps int64) *Evaluator {
 	v.regexps, v.frees, v.colls, v.fieldColls, v.pathFields = e.regexps, e.frees, e.interned(), e.fieldColls, e.pathFields
 	v.ownedBy, v.sites, v.selfReads = e.ownedBy, e.sites, e.selfReads
 	v.parent, v.vec, v.verifying = e, &vectorState{}, true
+	v.whole = true // the vector's cap counts every package's steps (CONFORMANCE.md §6.5)
 	return v
 }
 

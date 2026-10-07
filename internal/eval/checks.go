@@ -42,13 +42,17 @@ func (e *Evaluator) RunUnder(ctx context.Context, c *syntax.CheckDecl, self valu
 	return r.check(c)
 }
 
-// checkRun is the run of c on self, nil when c is not run: the budget is spent, or c is broken.
+// checkRun is the run of c on self, nil when c is not run: its package's budget is spent, or c is broken.
 func (e *Evaluator) checkRun(ctx context.Context, c *syntax.CheckDecl, self value.Value, path string) *run {
 	file := e.fileOf(c)
-	if file == nil || e.exhausted || e.brokenCheck(c) {
+	if file == nil || e.brokenCheck(c) {
 		return nil
 	}
-	r := e.newRun(ctx, e.checkCharge(c, file), file)
+	ch := e.checkCharge(c, file)
+	if e.halted(ch.pkg) {
+		return nil
+	}
+	r := e.newRun(ctx, ch, file)
 	r.fr.self, r.instPath = self, path
 	return r
 }
@@ -106,6 +110,36 @@ func (e *Evaluator) checkCharge(c *syntax.CheckDecl, file *syntax.File) charge {
 	}
 	if c.Name != nil {
 		ch.name = c.Name.Name
+	}
+	return e.chargedHere(ch)
+}
+
+// ChargeChecksTo charges the instance checks run until restore to pkg, their value's (EVALUATION.md §12.2).
+func (e *Evaluator) ChargeChecksTo(pkg string) (restore func()) {
+	saved := e.checksTo
+	e.checksTo = pkg
+	return func() { e.checksTo = saved }
+}
+
+// charge is what steps are charged to: the root name of pkg's budget, declared in decl when not pkg (EVALUATION.md §12.2).
+type charge struct {
+	pkg, name, decl string
+}
+
+// declPkg is the package declaring what c names: decl, set when an instance check runs for pkg's value.
+func (c charge) declPkg() string {
+	if c.decl != "" {
+		return c.decl
+	}
+	return c.pkg
+}
+
+// chargedHere is the check charge ch, of its declaring package, charged where checks now are.
+func (e *Evaluator) chargedHere(ch charge) charge {
+	decl := ch.declPkg()
+	ch.pkg, ch.decl = decl, ""
+	if e.checksTo != "" && e.checksTo != decl {
+		ch.pkg, ch.decl = e.checksTo, decl
 	}
 	return ch
 }

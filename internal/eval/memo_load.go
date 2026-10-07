@@ -161,7 +161,7 @@ func (r *run) recordLoad(lm LoadMemo, k loadKey, site *loadSite) value.Value {
 // loadEntry is what tr recorded of a load giving v, false when a replay could not reproduce it:
 // a failure, inputs the host could not record, or what an entry's recording refuses.
 func (tr *entryTrace) loadEntry(e *Evaluator, v value.Value, in LoadInputs) (*loadEntry, bool) {
-	if v == nil || in == nil || tr.void || e.exhausted || len(e.bugs) != tr.bugs || tr.run.tainted != tr.key.tainted || !tr.unchanged(e) {
+	if v == nil || in == nil || tr.void || e.stopped() || len(e.bugs) != tr.bugs || tr.run.tainted != tr.key.tainted || !tr.unchanged(e) {
 		return nil, false
 	}
 	kept, ok := e.freezeValue(v, tr.infos)

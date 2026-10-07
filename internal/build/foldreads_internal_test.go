@@ -35,10 +35,11 @@ func TestFoldReadsVerified(t *testing.T) {
 	}
 }
 
-// DECISIONS 244, 264, EVALUATION.md §12.2: a fold's reads are charged again in stage A; E4401 as cold.
+// DECISIONS 264, 328, EVALUATION.md §12.2: a fold's reads are charged again, to their package; E4401 as cold.
 func TestFoldReadsCharged(t *testing.T) {
 	// Under a alone, b.N and b.L cost their fold and stage A's force: twice what b alone charges,
-	// which folds neither. At every budget up to the need, one E4401 lands where cold puts it.
+	// which folds neither. At every budget up to the need of the costliest package, E4401 lands
+	// where cold puts it, at most once per package.
 	top := foldBudgetTop * foldBudgetTop
 	_, once := withBudget(t, foldReadCase, top).pairSel(t, []string{foldReadLib})
 	_, twice := withBudget(t, foldReadCase, top).pairSel(t, []string{foldReadPkg})
@@ -47,21 +48,45 @@ func TestFoldReadsCharged(t *testing.T) {
 			t.Errorf("%v: %d steps under a, %d under b: want twice b's", root, spentOn(twice, root), n)
 		}
 	}
-	need := int(charged(twice)) + 1 // spending the last step is E4401
+	need := int(costliest(twice)) + 1 // spending the last step of a package's budget is E4401
 	if counts(twice, diag.E4401.Def().Code) != 0 {
 		t.Fatalf("budget %d runs out", top)
 	}
 	for n := 1; n <= need; n++ {
 		warm, cold := withBudget(t, foldReadCase, n).pairSel(t, []string{foldReadPkg})
 		same(t, strconv.Itoa(n), warm, cold)
-		want := 1
-		if n == need {
-			want = 0
+		stops := stopsByPackage(cold)
+		for pkg, k := range stops { //canon:unordered every package is checked
+			if k > 1 {
+				t.Errorf("budget %d: %s stops %d times, want once at most", n, pkg, k)
+			}
 		}
-		if got := counts(cold, diag.E4401.Def().Code); got != want {
-			t.Errorf("budget %d of %d needed: %d exhausted, want %d", n, need, got, want)
+		if got := len(stops) > 0; got != (n < need) {
+			t.Errorf("budget %d of %d needed: exhausted %v, want %t", n, need, stops, n < need)
 		}
 	}
+}
+
+// costliest is the steps of a's package that spent the most, folds included (EVALUATION.md §12.2).
+func costliest(a *Analysis) int64 {
+	per := map[string]int64{}
+	var most int64
+	for _, c := range a.r.ev.Charged() {
+		per[c.Pkg] += c.Steps
+		most = max(most, per[c.Pkg])
+	}
+	return most
+}
+
+// stopsByPackage is how many E4401 each package of a holds.
+func stopsByPackage(a *Analysis) map[string]int {
+	out := map[string]int{}
+	for _, f := range a.Result().List {
+		if f.Code == diag.E4401.Def().Code {
+			out[f.Package]++
+		}
+	}
+	return out
 }
 
 // DECISIONS 264, IMPLEMENTATION-PLAN §7.6: under a alone, entry edits recheck along one lineage as cold.

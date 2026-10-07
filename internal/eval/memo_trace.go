@@ -77,7 +77,7 @@ func (r *run) finishTrace(tr *entryTrace, rec *value.Record) {
 // finding, the budget spent, an internal error, a taint, or a value read then marked.
 func (tr *entryTrace) entry(e *Evaluator, rec *value.Record) (*memoEntry, bool) {
 	r := tr.run
-	if tr.void || e.exhausted || len(e.bugs) != tr.bugs || r.tainted != tr.key.tainted {
+	if tr.void || e.stopped() || len(e.bugs) != tr.bugs || r.tainted != tr.key.tainted {
 		return nil, false
 	}
 	if (rec == nil) != r.failed || rec == nil && !tr.aborted {

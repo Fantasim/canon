@@ -14,7 +14,7 @@ import (
 
 // Call runs one precomputation of stage E on fn, recv and args (EVALUATION.md §2.3).
 func (e *Evaluator) Call(ctx context.Context, fn check.Object, recv value.Value, args []value.Value) (value.Value, bool) {
-	if fn == nil || e.exhausted {
+	if fn == nil || e.halted(fn.Pkg()) {
 		return nil, false
 	}
 	d, ok := fn.Decl().(*syntax.FnDecl)

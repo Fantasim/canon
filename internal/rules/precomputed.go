@@ -21,6 +21,7 @@ func (r *Runner) Result(ctx context.Context, pkg string, v value.Value, frame di
 		return err
 	}
 	t := &traversal{Runner: r, ctx: ctx, bag: bag, rootOf: eval.Root{Pkg: pkg}, under: &frame}
+	defer t.chargeTo()()
 	t.visit(v, nil)
 	return nil
 }

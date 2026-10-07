@@ -49,7 +49,7 @@ func (e *Evaluator) TestCalls(ctx context.Context, pkg string, fns []check.Objec
 		if !ok || obj.Kind() != check.ObjTest {
 			continue
 		}
-		if e.exhausted || ctx.Err() != nil {
+		if e.halted(pkg) || ctx.Err() != nil {
 			break
 		}
 		e.Test(ctx, t, b)
@@ -59,7 +59,7 @@ func (e *Evaluator) TestCalls(ctx context.Context, pkg string, fns []check.Objec
 
 // fresh reports an evaluator that has evaluated nothing yet.
 func (e *Evaluator) fresh() bool {
-	if e.parent != nil || e.steps != 0 || e.exhausted || e.verifying || len(e.stack) != 0 {
+	if e.parent != nil || e.steps != 0 || e.stopped() || e.verifying || len(e.stack) != 0 {
 		return false
 	}
 	for _, st := range e.states { //canon:unordered a predicate over every state

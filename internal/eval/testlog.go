@@ -9,12 +9,10 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 )
 
-// beginTestLog starts a test's log of its stops and of what poisons the values it forces (CLI.md §3.5).
-func (e *Evaluator) beginTestLog() {
-	e.testStops, e.testFiles = map[string]*diag.Bag{}, e.files()
-	if e.causes == nil {
-		e.causes, e.via = map[*rootState]*diag.Bag{}, map[*rootState]*rootState{}
-	}
+// beginTestLog starts the log of a test of pkg: its stops and what poisons the values it forces (CLI.md §3.5).
+func (e *Evaluator) beginTestLog(pkg string) {
+	e.testStops, e.testFiles, e.testPkg = map[string]*diag.Bag{}, e.files(), e.key(pkg)
+	e.logCauses()
 }
 
 // LogCauses makes the evaluator keep what poisons each value it forces, as a test's log does (EVALUATION.md §7.2).
@@ -22,6 +20,11 @@ func (e *Evaluator) LogCauses() {
 	if e.testFiles == nil {
 		e.testFiles = e.files()
 	}
+	e.logCauses()
+}
+
+// logCauses starts keeping what poisons each value, once.
+func (e *Evaluator) logCauses() {
 	if e.causes == nil {
 		e.causes, e.via = map[*rootState]*diag.Bag{}, map[*rootState]*rootState{}
 	}
@@ -79,6 +82,29 @@ func (e *Evaluator) notePoisonedRead(r *run, root Root) {
 	}
 }
 
+// noteOut keeps E4401 b as the stop of a test of its package and as the cause of r's value (API.md R6).
+func (e *Evaluator) noteOut(r *run, b *diag.Builder) {
+	pkg := r.charge.pkg
+	if e.testStops != nil && e.testPkg == pkg {
+		b.Report(e.stopBag(pkg))
+	}
+	if e.causes != nil && r.root != nil && e.causes[r.root] == nil {
+		e.causes[r.root] = e.logBag(pkg)
+		b.Report(e.causes[r.root])
+	}
+}
+
+// outCause is the E4401 of pkg's spent budget, the cause of a value it left unevaluated (API.md R6).
+func (e *Evaluator) outCause(st *rootState) []diag.Finding {
+	b := e.out[e.key(st.root.Pkg)]
+	if b == nil || !st.starved && st.status != idle {
+		return nil
+	}
+	bag := diag.NewBag(e.files(), st.root.Pkg)
+	b.Report(bag)
+	return bag.Findings()
+}
+
 // Cause is the value first poisoned and its evaluation's hard error, as a test kept it (EVALUATION.md §7.2).
 type Cause struct {
 	Root     Root
@@ -99,6 +125,8 @@ func (e *Evaluator) PoisonCause(root Root) Cause {
 	c := Cause{Root: st.root}
 	if bag := e.causes[st]; bag != nil {
 		c.Findings = bag.Findings()
+	} else {
+		c.Findings = e.outCause(st)
 	}
 	return c
 }

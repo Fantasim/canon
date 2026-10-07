@@ -3,6 +3,7 @@ package eval
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -77,33 +78,28 @@ func (f *folder) fold(ctx context.Context, call foldCall) (value.Value, bool) {
 		f.ev.info, f.ev.constant, f.ev.counter = call.info, true, f.steps
 	}
 	ev := f.ev
-	ev.index.pkg[call.owner.File()] = call.owner.Pkg()
+	ev.index.add(call.owner.File(), call.owner.Pkg())
 	call.log = &f.reads
 	ev.folding = &call
-	was := f.spent()
+	before := len(f.steps.reported)
 	r := ev.newRun(ctx, charge{pkg: call.owner.Pkg(), name: call.owner.Name()}, call.owner.File())
 	v := r.eval(call.e)
 	ev.folding = nil
 	if v == nil || r.failed {
-		f.budgetStopped(&call, was)
+		f.budgetStopped(&call, r, before)
 	}
 	f.calls = append(f.calls, call)
 	f.bugs, ev.bugs = append(f.bugs, ev.bugs...), nil
 	return v, v != nil && !r.failed
 }
 
-// budgetStopped is E3015 budget for call, failed on a spent counter, was it spent before the fold; only phase 2's folds report it (DECISIONS 263).
-func (f *folder) budgetStopped(call *foldCall, was bool) {
+// budgetStopped is E3015 budget for phase 2's call, which r failed on a spent budget, unless an E4401 since the before'th went to the owner's bag (DECISIONS 263).
+func (f *folder) budgetStopped(call *foldCall, r *run, before int) {
 	pkg := call.owner.Pkg()
-	if f.given || !f.spent() || (!was && f.steps.stopPkg == pkg) {
+	if f.given || !r.starved || slices.Contains(f.steps.reported[before:], pkg) {
 		return
 	}
 	f.ev.report(pkg, diag.E3015.AtBudget(call.owner.File().Span(call.e), diag.KindRefinementBound))
-}
-
-// spent is the step counter run out; a cancelled context is not it.
-func (f *folder) spent() bool {
-	return f.steps.steps >= f.steps.budget
 }
 
 // brokenAt is Broken[obj] as this fold sees it: the answer a replayed fold recorded, else info's.
@@ -121,7 +117,7 @@ func (c *foldCall) brokenAt(info *check.Info, obj check.Object) bool {
 	return b
 }
 
-// UseFolder makes e spend f's step counter, NewFolder's: one per invocation (DECISIONS 104).
+// UseFolder makes e spend f's step counters, NewFolder's: one per package and invocation (DECISIONS 104, 328).
 // False, a no-op, once e has evaluated anything or for another Folder.
 func (e *Evaluator) UseFolder(f check.Folder) bool {
 	x, ok := f.(*folder)

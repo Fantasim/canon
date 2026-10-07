@@ -1,0 +1,59 @@
+EVALUATION.md §12.2, DECISIONS 328: each package spends a budget of its own. a's `big` spends the
+last step of a's budget: E4401 lands in a, once, its heaviest root one of a's although b's `wide`
+cost more; a's `after`, left unevaluated, is not reported. b, which reads nothing of a, runs whole
+on its own budget. c reads both values of a: each is poisoned for it with no further finding,
+while c's own value, which reads none, is evaluated.
+-- budget --
+200
+-- a/a.canon --
+/// A.
+package a
+
+/// Loops n times.
+fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// A small value.
+let small: Int = loop(10)
+
+/// Past a's budget.
+let big: Int = loop(1000)
+
+/// Left unevaluated once a's budget is spent.
+let after: Int = 2
+-- b/b.canon --
+/// B.
+package b
+
+local fn count(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// Costlier than any root of a, within b's budget.
+let wide: Int = count(25)
+-- c/c.canon --
+/// C.
+package c
+
+import a
+
+/// Reads a's poisoned value.
+let viaBig: Int = a.big + 1
+
+/// Reads a's unevaluated value.
+let viaAfter: Int = a.after + 1
+
+/// Reads nothing of a.
+let own: Int = 3
+-- findings.txt --
+error[E4401]  a/a.canon:7:9
+  big: evaluation budget of 200 steps exhausted
+  heaviest: big (128 steps)
+  in loop (a/a.canon:15)
+
+1 error, 0 warnings in 3 packages (…)

@@ -43,7 +43,7 @@ type ExpectFailure struct {
 	Cause    []diag.Finding // the errors that poisoned it
 }
 
-// Test runs phases 1 and 2, then the selected tests match accepts (nil: all) in order, sharing one evaluator's budget and values (EVALUATION.md §1, §10.1).
+// Test runs phases 1 and 2, then the selected tests match accepts (nil: all) in order, sharing one evaluator's values and per-package budgets (EVALUATION.md §1, §10.1, §12.2).
 func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Regexp) (*TestResult, error) {
 	r, err := p.prepare(ctx, selectors)
 	if err != nil {

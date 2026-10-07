@@ -47,7 +47,7 @@ func (e *Evaluator) RunTraced(ctx context.Context, c *syntax.CheckDecl, self val
 	u.trace = tr
 	out := r.check(c)
 	u.trace = nil
-	if tr.void || r.tainted || e.exhausted || len(e.bugs) != tr.bugs || len(out.Reports) > 0 ||
+	if tr.void || r.tainted || e.stopped() || len(e.bugs) != tr.bugs || len(out.Reports) > 0 ||
 		e.marksGen() != marks || e.gens.retagged != tr.retagged || !tr.unchanged(e) {
 		return out, nil
 	}
@@ -55,25 +55,29 @@ func (e *Evaluator) RunTraced(ctx context.Context, c *syntax.CheckDecl, self val
 }
 
 // ReplayChecks replays traces in order, each value they read forced and unchanged, their code
-// the program's and their steps within the budget: each one's steps charged to its check and its
-// findings reported, as its run did. False: nothing was done; the caller runs the checks.
+// the program's and their steps within their packages' budgets: each one's steps charged to its
+// check and its findings reported, as its run did. False: nothing was done; the caller runs the checks.
 func (e *Evaluator) ReplayChecks(ctx context.Context, traces []*CheckTrace) bool {
 	u := e.memo
-	if u == nil || u.trace != nil || e.exhausted || ctx.Err() != nil {
+	if u == nil || u.trace != nil || e.stopped() || ctx.Err() != nil {
 		return false
 	}
-	var total int64
+	total := map[string]int64{}
 	for _, tr := range traces {
 		if !e.replayable(tr) {
 			return false
 		}
-		total += tr.steps
+		total[e.chargedHere(tr.charge).pkg] += tr.steps
 	}
-	if e.steps+total >= e.budget {
-		return false // a run reports E4401 at its own expression
+	for pkg, n := range total { //canon:unordered a predicate over every package
+		if !e.fits(pkg, n) {
+			return false // a run reports E4401 at its own expression
+		}
 	}
 	for _, tr := range traces {
-		e.chargeKept(tr.charge, tr.steps)
+		if tr.steps != 0 {
+			e.pay(e.chargedHere(tr.charge), tr.steps)
+		}
 		for _, f := range tr.found {
 			e.report(f.pkg, f.b)
 		}
@@ -99,16 +103,4 @@ func (e *Evaluator) replayable(tr *CheckTrace) bool {
 		}
 	}
 	return true
-}
-
-// chargeKept charges n steps to c as the runs of a replayed check spent them (EVALUATION.md §12.2).
-func (e *Evaluator) chargeKept(c charge, n int64) {
-	if n == 0 {
-		return
-	}
-	if e.spent[c] == 0 {
-		e.order = append(e.order, c)
-	}
-	e.steps += n
-	e.spent[c] += n
 }

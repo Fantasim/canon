@@ -65,7 +65,7 @@ func TestCauseRunAfterFolds(t *testing.T) {
 	}
 }
 
-// causeAt compares root's cause warm and cold; 1 when cold finds none, root left unevaluated.
+// causeAt compares root's cause warm and cold; 1 when root was left unevaluated: no cause, or its package's spent budget.
 func causeAt(t *testing.T, z *analyzer, sel []string, root eval.Root) int {
 	t.Helper()
 	warm, cold := z.pairSel(t, sel)
@@ -77,7 +77,7 @@ func causeAt(t *testing.T, z *analyzer, sel []string, root eval.Root) int {
 	if err != nil || !reflect.DeepEqual(got, want) {
 		t.Errorf("budget %d: cause %v, %v; cold %v", cold.r.s.proj.Budget, got, err, want)
 	}
-	if len(want) == 0 {
+	if len(want) == 0 || len(want) == 1 && want[0].Code == diag.E4401.Def().Code && want[0].Package == root.Pkg {
 		return 1
 	}
 	return 0

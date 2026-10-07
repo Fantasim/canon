@@ -103,8 +103,8 @@ func (e *Evaluator) Savepoint() (end func(undo bool)) {
 		for _, rec := range sp.binds {
 			delete(e.bound, rec)
 		}
-		e.steps -= e.spent[r.charge] - sp.spent
-		e.spent[r.charge], r.freeSteps = sp.spent, sp.free
+		e.takeBack(r.charge, sp.spent)
+		r.freeSteps = sp.free
 		if sp.spent == 0 {
 			e.order = slices.DeleteFunc(e.order, func(c charge) bool { return c == r.charge })
 		}

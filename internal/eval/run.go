@@ -18,6 +18,7 @@ type run struct {
 	fr         *frame
 	failed     bool
 	tainted    bool
+	starved    bool      // aborted by a spent budget, its package's or that of a value it read
 	free       bool      // stage B's where re-runs cost nothing (DECISIONS 148)
 	sink       *diag.Bag // captures the findings of an expect subject
 	site       source.Span
@@ -115,16 +116,14 @@ func (r *run) spend(n int, at func() source.Span) bool {
 		return false
 	case r.free:
 		return r.spendFree(n)
+	case e.spentOut(r.charge.pkg): // that package's evaluation stopped at its E4401
+		r.failed, r.starved = true, true
+		return false
 	case n == 0:
 		return true
 	}
-	if e.spent[r.charge] == 0 {
-		e.order = append(e.order, r.charge)
-	}
 	before := e.steps
-	e.steps += int64(n)
-	e.spent[r.charge] += int64(n)
-	if e.steps >= e.budget {
+	if e.pay(r.charge, int64(n)) {
 		r.budgetOut(at())
 		return false
 	}
@@ -152,34 +151,30 @@ func (r *run) spendFree(n int) bool {
 	return true
 }
 
-// remaining is the steps the run may spend before its budget, or a free run's cap, runs out.
+// remaining is the steps the run may spend before its package's budget, or a free run's cap, runs out.
 func (r *run) remaining() int {
-	spent := r.ev.steps
 	if r.free {
-		spent = r.freeSteps
+		return int(max(r.ev.budget-r.freeSteps, 0))
 	}
-	return int(max(r.ev.budget-spent, 0))
+	e := r.ev
+	return int(max(e.budget-e.per[e.key(r.charge.pkg)], 0))
 }
 
-// budgetOut is E4401 with the heaviest charge; evaluation stops (EVALUATION.md §12.2).
+// budgetOut is E4401, among the findings of the run's package, whose evaluation alone stops (EVALUATION.md §12.2).
 func (r *run) budgetOut(at source.Span) {
-	e := r.ev
-	e.exhausted, r.failed, e.stopPkg = true, true, r.fr.pkg
-	var heavy charge
-	for _, c := range e.order {
-		if e.spent[c] > e.spent[heavy] {
-			heavy = c
-		}
-	}
+	e, pkg := r.ev, r.charge.pkg
+	r.failed, r.starved = true, true
 	if e.vec != nil {
+		e.out[e.key(pkg)] = nil
 		e.cut(StepLimit)
 		return
 	}
-	b := r.withStack(diag.E4401.At(at, e.budget, r.qualified(heavy.pkg, heavy.name), e.spent[heavy])).Path(r.findingPath())
-	if e.testStops != nil { // it stops the running test, from whichever root spent the step
-		b.Report(e.stopBag(r.fr.pkg))
-	}
-	e.report(r.fr.pkg, b)
+	heavy := e.heaviest(pkg)
+	b := r.withStack(diag.E4401.At(at, e.budget, qualify(pkg, heavy.declPkg(), heavy.name), e.spent[heavy])).Path(r.findingPath())
+	e.out[pkg] = b
+	e.noteOut(r, b)
+	e.reported = append(e.reported, pkg)
+	e.report(pkg, b)
 }
 
 // fail reports a hard error with the root's call stack and aborts the root.

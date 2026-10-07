@@ -1,6 +1,6 @@
 package eval
 
-// Charge is the steps charged to one root, named in its package (EVALUATION.md §12.2).
+// Charge is the steps one root charged to Pkg's budget; an instance check run for Pkg's value may be declared elsewhere (EVALUATION.md §12.2).
 type Charge struct {
 	Pkg, Name string
 	Steps     int64

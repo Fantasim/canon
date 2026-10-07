@@ -125,6 +125,15 @@ func (e *Evaluator) walkFiles() {
 	}
 }
 
+// add indexes f, a file of pkg a fold or a value met: its declarations are found on the next lookup.
+func (x *index) add(f *syntax.File, pkg string) {
+	if _, known := x.pkg[f]; known || f == nil {
+		return
+	}
+	x.pkg[f], x.walked = pkg, false
+	x.files = append(x.files, f)
+}
+
 // fileOf is the file declaring n: a record, variant, check, function, test, amend block or where predicate.
 func (e *Evaluator) fileOf(n syntax.Node) *syntax.File {
 	e.walkFiles()

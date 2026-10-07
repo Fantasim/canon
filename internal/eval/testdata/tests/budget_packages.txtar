@@ -1,0 +1,54 @@
+EVALUATION.md §10.1, §12.2, DECISIONS 328: tests spend the budget of their own package. a's value
+`big` spends a's budget in stage A, so a's test stops before it runs; b's tests run on b's budget,
+the call of a's loop charged to b's test that makes it; reading a's `after`, which a's spent budget
+left unevaluated, fails the expect that reads it, naming it, and adds no finding.
+-- budget --
+200
+-- a/a.canon --
+/// A.
+package a
+
+/// Loops n times.
+fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// Past a's budget.
+let big: Int = loop(1000)
+
+/// Left unevaluated once a's budget is spent.
+let after: Int = 2
+
+test "a's budget is spent" {
+  expect true
+}
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+test "b runs on its own budget" {
+  expect a.loop(25) == 25
+}
+
+test "b reads what a's budget left unevaluated" {
+  expect a.after == 2
+  expect a.loop(2) == 2
+}
+-- outcomes.txt --
+a "a's budget is spent": failed true, stopped true, broken false
+b "b runs on its own budget": failed false, stopped false, broken false
+  expect line 7: passed true
+b "b reads what a's budget left unevaluated": failed true, stopped false, broken false
+  expect line 11: passed false (reads poisoned a.after)
+  expect line 12: passed true
+
+error[E4401]  a/a.canon:7:9
+  big: evaluation budget of 200 steps exhausted
+  heaviest: big (200 steps)
+  in loop (a/a.canon:12)
+
+1 error, 0 warnings in 2 packages (…)

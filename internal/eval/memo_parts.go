@@ -80,7 +80,7 @@ func (u *memoUse) partsOf(r *run, tr *entryTrace, k loadKey) *Parts {
 func (p *Parts) Kept(src any) (*value.Record, bool, bool) {
 	en := p.kept[src]
 	r, e := p.r, p.r.ev
-	if en == nil || r.failed || e.exhausted || r.tainted != p.key.tainted || !e.canReplay(en) {
+	if en == nil || r.failed || e.stopped() || r.tainted != p.key.tainted || !e.canReplay(en) {
 		return nil, false, false
 	}
 	if r.replaySteps(en.tail) != replayOn {
@@ -136,7 +136,7 @@ func (e *Evaluator) partState(r *run, tr *entryTrace) partState {
 	return partState{
 		marks: e.marksGen(), origin: len(e.origin), bound: len(e.bound), bugs: len(e.bugs), stable: len(e.stable),
 		retagged: e.gens.retagged, reads: len(tr.reads), found: len(tr.found),
-		void: tr.void, aborted: tr.aborted, failed: r.failed, tainted: r.tainted, exhausted: e.exhausted,
+		void: tr.void, aborted: tr.aborted, failed: r.failed, tainted: r.tainted, exhausted: e.stopped(),
 	}
 }
 

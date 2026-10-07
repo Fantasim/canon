@@ -108,11 +108,11 @@ func (r *run) replayForce(rd *memoRead) (*readInfo, replayOutcome) {
 	return in, replayOn
 }
 
-// replaySteps charges n steps at once, unless they would reach the budget: evaluating the
+// replaySteps charges n steps at once, unless they would reach the package's budget: evaluating the
 // entry reports E4401 at its own expression.
 func (r *run) replaySteps(n int64) replayOutcome {
 	e := r.ev
-	if e.steps+n >= e.budget || int64(int(n)) != n {
+	if !e.fits(r.charge.pkg, n) || int64(int(n)) != n {
 		return replayMiss
 	}
 	if !r.spend(int(n), noSpan) {
@@ -129,7 +129,5 @@ func noSpan() source.Span {
 // rollback takes back the steps the entry was charged since start; those of the values forced
 // meanwhile stay theirs.
 func (r *run) rollback(start int64) {
-	e := r.ev
-	e.steps -= e.spent[r.charge] - start
-	e.spent[r.charge] = start
+	r.ev.takeBack(r.charge, start)
 }

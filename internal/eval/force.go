@@ -10,8 +10,17 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// force evaluates a const or let once, read by reader at node at (EVALUATION.md §3.1).
+// force evaluates a const or let once, read by reader at node at, which a spent budget's poison starves (EVALUATION.md §3.1).
 func (e *Evaluator) force(ctx context.Context, st *rootState, reader *run, at syntax.Node) (value.Value, bool) {
+	v, ok := e.forceState(ctx, st, reader, at)
+	if !ok && st.starved && reader != nil {
+		reader.starved = true
+	}
+	return v, ok
+}
+
+// forceState is force without the starving of its reader.
+func (e *Evaluator) forceState(ctx context.Context, st *rootState, reader *run, at syntax.Node) (value.Value, bool) {
 	e.noteRead(st, reader)
 	e.folding.note(st)
 	switch st.status {
@@ -29,7 +38,8 @@ func (e *Evaluator) force(ctx context.Context, st *rootState, reader *run, at sy
 		st.status = poisoned
 		return nil, false
 	}
-	if e.exhausted || ctx.Err() != nil {
+	if e.halted(st.root.Pkg) || ctx.Err() != nil {
+		st.starved = st.starved || e.spentOut(st.root.Pkg)
 		return nil, false
 	}
 	st.status = forcing
@@ -73,9 +83,7 @@ func (e *Evaluator) broken(obj check.Object) bool {
 
 // evalRoot evaluates a const or a let, entries and conversion included (EVALUATION.md §9.3).
 func (e *Evaluator) evalRoot(ctx context.Context, st *rootState) (value.Value, bool) {
-	if _, known := e.index.pkg[st.obj.File()]; !known {
-		e.index.pkg[st.obj.File()] = st.obj.Pkg()
-	}
+	e.index.add(st.obj.File(), st.obj.Pkg())
 	r := e.newRun(ctx, charge{pkg: st.root.Pkg, name: st.root.Name}, st.obj.File())
 	r.root, r.free = st, e.late.free
 	loading := e.loading // a root forced while a load decodes is not part of it (Savepoint)
@@ -88,6 +96,7 @@ func (e *Evaluator) evalRoot(ctx context.Context, st *rootState) (value.Value, b
 	case *syntax.LetDecl:
 		v = r.letValue(st, d)
 	}
+	st.starved = r.starved
 	return v, v != nil && !r.failed
 }
 

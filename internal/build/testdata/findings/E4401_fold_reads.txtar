@@ -1,13 +1,14 @@
-DECISIONS 264, 244, EVALUATION.md §2.1 item 3, §12.2: `a` alone is selected; after its values,
-stage A forces what P's bound folded, in fold order: b.N first, which reads b.L. The budget runs
-out inside N's force, so E4401 is at N, not at L (a reversed order) nor before a's values.
+DECISIONS 264, 244, 328, EVALUATION.md §2.1 item 3, §12.2: `a` alone is selected; after its values,
+stage A forces what P's bound folded, in fold order, charged again to b's own budget: b.N first,
+which reads b.L. b's budget runs out inside N's force, so E4401 is at N, not at L (a reversed
+order); a's values spend a's budget and run whole.
 -- select --
 a
 -- check-only --
 -- project.canon --
 project acme {
   canon: "0.1"
-  budget: 20
+  budget: 12
 }
 -- b/b.canon --
 /// B.
@@ -69,8 +70,8 @@ entry ps.two {
   x: 2
 }
 -- findings.txt --
-error[E4401]  b/b.canon:28:11
-  N: evaluation budget of 20 steps exhausted
-  heaviest: N (8 steps)
+error[E4401]  b/b.canon:28:12
+  N: evaluation budget of 12 steps exhausted
+  heaviest: N (10 steps)
 
 1 error, 0 warnings in 1 package (…)

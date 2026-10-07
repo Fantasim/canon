@@ -21,8 +21,22 @@ func (r *Runner) Instances(ctx context.Context, root eval.Root, v value.Value) e
 	r.later(v, dt, root.Name)
 	t := &traversal{Runner: r, ctx: ctx, bag: bag, root: root.Name, rootOf: root}
 	t.alone = r.memo != nil && r.memo.alone(root)
+	defer t.chargeTo()()
 	t.visit(v, dt)
 	return nil
+}
+
+// packageCharger is an Evaluator that charges the instance checks it runs to a package.
+type packageCharger interface {
+	ChargeChecksTo(pkg string) (restore func())
+}
+
+// chargeTo charges the checks t runs to the package of the value it visits (EVALUATION.md §12.2).
+func (t *traversal) chargeTo() (restore func()) {
+	if c, ok := t.ev.(packageCharger); ok {
+		return c.ChargeChecksTo(t.rootOf.Pkg)
+	}
+	return func() {}
 }
 
 // traversal is one Instances run: where it stands, as the segments of the path of the value

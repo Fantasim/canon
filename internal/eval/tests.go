@@ -64,13 +64,14 @@ func (e *Evaluator) Test(ctx context.Context, t *syntax.TestDecl, b Builder) Tes
 	if file == nil || e.info == nil || e.broken(e.index.decls[t]) {
 		return TestRun{Failed: true, Broken: true}
 	}
-	if e.exhausted {
+	pkg := e.index.pkg[file]
+	if e.halted(pkg) {
 		return TestRun{Failed: true, Stopped: true}
 	}
 	var out TestRun
-	e.beginTestLog()
-	defer func() { e.testStops = nil }()
-	r := e.newRun(ctx, charge{pkg: e.index.pkg[file], name: TestName(t)}, file)
+	e.beginTestLog(pkg)
+	defer func() { e.testStops, e.testPkg = nil, "" }()
+	r := e.newRun(ctx, charge{pkg: pkg, name: TestName(t)}, file)
 	r.test = &testState{builder: b, out: &out}
 	if r.block(t.Body) == flowAbort || r.failed {
 		out.Failed, out.Stopped = true, true
@@ -99,7 +100,7 @@ func execExpect(r *run, s syntax.Stmt) flow {
 		return flowAbort
 	}
 	b := r.subject(x)
-	if r.ev.exhausted {
+	if r.ev.halted(r.charge.pkg) {
 		r.failed = true
 		return flowAbort
 	}

@@ -17,8 +17,7 @@ type Options struct {
 	Layers []string // the active layers, in stack order (EVALUATION.md §9.1)
 }
 
-// Evaluator is Canon's one evaluator over a checked program: it forces top-level values, runs checks,
-// tests and precomputations on one step counter, one goroutine at a time; findings go to the package bags.
+// Evaluator is Canon's one evaluator over a checked program, on a step counter per package, one goroutine at a time.
 type Evaluator struct {
 	prog  *check.Program
 	info  *check.Info
@@ -81,23 +80,21 @@ type Evaluator struct {
 	memo   *memoUse
 	gens   memoGens
 	retags retagLog
+
+	testPkg, checksTo string // the running test's package; the one instance checks are charged to (ChargeChecksTo)
 }
 
 // status is where a top-level value is in its evaluation.
 type status uint8
 
-// rootState is a top-level value: its declaration, status, value and, with a memo, its readers (memo_token.go).
+// rootState is a top-level value: its declaration, status, value, whether a spent budget poisoned it and, with a memo, its readers (memo_token.go).
 type rootState struct {
-	root   Root
-	obj    check.Object
-	status status
-	v      value.Value
-	readBy []*rootState
-}
-
-// charge is what steps are charged to, named in its package (EVALUATION.md §12.2).
-type charge struct {
-	pkg, name string
+	root    Root
+	obj     check.Object
+	status  status
+	v       value.Value
+	readBy  []*rootState
+	starved bool
 }
 
 // New is the evaluator of a checked program; host serves load and verify, bags take the findings.

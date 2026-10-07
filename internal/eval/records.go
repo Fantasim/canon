@@ -231,13 +231,32 @@ func (r *run) bareCase(ct *types.CaseType, at syntax.Expr) value.Value {
 
 // declFile is the file declaring a record or a case's variant.
 func (e *Evaluator) declFile(t types.Type) *syntax.File {
+	n, name := typeDecl(t)
+	if name == nil {
+		return nil
+	}
+	if f := e.fileOf(n); f != nil || e.info == nil {
+		return f
+	}
+	if obj := e.info.Defs[name]; obj != nil { // a fold's evaluator indexes only the files it meets
+		e.index.add(obj.File(), obj.Pkg())
+	}
+	return e.fileOf(n)
+}
+
+// typeDecl is the declaration of a record or a case's variant, and its name; none for another type.
+func typeDecl(t types.Type) (syntax.Node, *syntax.Ident) {
 	switch x := t.Base().(type) {
 	case *types.RecordType:
-		return e.fileOf(x.Decl)
+		if x.Decl != nil {
+			return x.Decl, x.Decl.Name
+		}
 	case *types.AppliedRecord:
-		return e.fileOf(x.Rec.Decl)
+		return typeDecl(x.Rec)
 	case *types.CaseType:
-		return e.fileOf(x.Variant.Decl)
+		if x.Variant != nil && x.Variant.Decl != nil {
+			return x.Variant.Decl, x.Variant.Decl.Name
+		}
 	}
-	return nil
+	return nil, nil
 }

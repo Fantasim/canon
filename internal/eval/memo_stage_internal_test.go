@@ -56,7 +56,7 @@ func TestReplayChecksDepth(t *testing.T) {
 	e, _ := stagedEntry(t)
 	e.index = &index{pkg: map[*syntax.File]string{}}
 	tr := &CheckTrace{charge: charge{pkg: "a", name: "c"}, steps: 3, need: 2}
-	e.counter = &counter{budget: 1 << 20, spent: map[charge]int64{}}
+	e.counter = newCounter(Options{Budget: 1 << 20})
 	if e.depth = maxDepth - 1; e.ReplayChecks(context.Background(), []*CheckTrace{tr}) || e.steps != 0 {
 		t.Error("past the frame limit: want the replay refused, no step charged")
 	}

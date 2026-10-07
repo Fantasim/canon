@@ -1,0 +1,53 @@
+EVALUATION.md §12.2, DECISIONS 328: E4401 is among the findings of the package whose budget ran
+out, at the expression being evaluated, whatever package's code was running. a's `viaFn` spends
+a's budget inside b's `spin`: E4401 in a, at b's loop, once, a's `again` left unevaluated. c's
+`item` spends c's budget inside the default a declares for its field: E4401 in c, at a's default.
+b spends nothing.
+-- budget --
+200
+-- b/b.canon --
+/// B.
+package b
+
+/// Loops n times.
+fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Spends a's budget in b's code.
+let viaFn: Int = b.spin(1000)
+
+/// Left unevaluated once a's budget is spent.
+let again: Int = b.spin(2)
+
+/// A thing whose default costs.
+record Thing {
+  /// Its size, costly by default.
+  size: Int = [i * 2 for i in 0..1000].len()
+}
+-- c/c.canon --
+/// C.
+package c
+
+import a
+
+/// Spends c's budget in a's default.
+let item: a.Thing = {}
+-- findings.txt --
+error[E4401]  a/a.canon:15:22
+  item.size: evaluation budget of 200 steps exhausted
+  heaviest: item (200 steps)
+
+error[E4401]  b/b.canon:7:9
+  viaFn: evaluation budget of 200 steps exhausted
+  heaviest: viaFn (200 steps)
+  in spin (a/a.canon:7)
+
+2 errors, 0 warnings in 3 packages (…)
