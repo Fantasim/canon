@@ -1,0 +1,36 @@
+EVALUATION.md §1, DECISIONS 331: W4001_7 with B declared first and the values in the other
+order: A and B still count 2 each.
+-- a/a.canon --
+/// A.
+package a
+
+/// B.
+record B {
+  /// A.
+  a: A?
+
+  check broken: 1 < "2" else "broken"
+}
+
+/// A.
+record A {
+  /// B.
+  b: B?
+}
+
+/// A B.
+let y: B = {}
+
+/// An A.
+let x: A = {}
+-- findings.txt --
+warning[W4001]  a/a.canon:5:8
+  2 values were not evaluated or checked because a.B is broken: fix the errors in it or in the types it names
+
+error[E3310]  a/a.canon:9:17
+  < needs an orderable type, found String
+
+warning[W4001]  a/a.canon:13:8
+  2 values were not evaluated or checked because a.A is broken: fix the errors in it or in the types it names
+
+1 error, 2 warnings in 1 package (…)

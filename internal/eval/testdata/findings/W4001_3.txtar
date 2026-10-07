@@ -1,0 +1,39 @@
+EVALUATION.md §1, DECISIONS 331: a broken variant silences its values too, a case value typed by
+the variant counted with them; a broken type no value is typed by reports nothing.
+-- a/a.canon --
+/// A.
+package a
+
+/// Reward.
+variant Reward {
+  check shared: 1 < "2" else "shared"
+
+  gold {
+    /// Amount.
+    amount: Int
+  }
+  none_
+}
+
+/// Unused, broken: no value is typed by it.
+record Lone {
+  /// N.
+  n: Int = true
+}
+
+/// A case.
+let r: Reward = gold { amount: 3 }
+
+/// Another.
+let rs: [Reward] = [none_]
+-- findings.txt --
+warning[W4001]  a/a.canon:5:9
+  2 values were not evaluated or checked because a.Reward is broken: fix the errors in it or in the types it names
+
+error[E3310]  a/a.canon:6:17
+  < needs an orderable type, found String
+
+error[E3002]  a/a.canon:18:12
+  expected Int, found Bool
+
+2 errors, 1 warning in 1 package (…)

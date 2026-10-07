@@ -1,0 +1,46 @@
+EVALUATION.md §1, DECISIONS 331: two selected packages hold values reaching the broken `b.Gem`
+of an unselected import; one W4001 counts all three, and belongs to `a`, first in package order.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Gem.
+record Gem {
+  /// Weight.
+  weight: Int = "heavy"
+}
+-- c/c.canon --
+/// C.
+package c
+
+import b
+
+/// One in c.
+let inC: b.Gem = { weight: 1 }
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// One in a.
+let inA: b.Gem = { weight: 1 }
+
+/// Two in a.
+let more: [b.Gem] = []
+-- select --
+a
+c
+-- findings.txt --
+warning[W4001]  b/b.canon:5:8
+  3 values were not evaluated or checked because b.Gem is broken: fix the errors in it or in the types it names
+
+error[E3002]  b/b.canon:7:17
+  expected Int, found String
+
+1 error, 1 warning in 2 packages (…)

@@ -24,4 +24,7 @@ let server: Server = {}
 error[E3022]  service/app/app.canon:5:8
   Config contains itself and can never be built
 
-1 error, 0 warnings in 1 package (…)
+warning[W4001]  service/app/app.canon:11:8
+  1 value was not evaluated or checked because service.app.Server is broken: fix the errors in it or in the types it names
+
+1 error, 1 warning in 1 package (…)

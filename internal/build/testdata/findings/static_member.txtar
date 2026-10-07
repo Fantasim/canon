@@ -1,0 +1,68 @@
+EVALUATION.md §1, TYPES.md §1, DECISIONS 209: a broken check is part of its record's body, so it
+breaks the record and every value typed by it: `heavy` is neither evaluated nor checked, nor is
+`gemDiv`, which reads it; W4001 at Gem counts `heavy` only (DECISIONS 331). A broken method breaks only its callers: `box` is still checked (E5001)
+and `other` still evaluated (E4102) while `viaMethod` stays silent.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Gem.
+record Gem {
+  /// Weight.
+  weight: Int
+
+  check light: weight < 5 else "heavy"
+
+  check broken: weight < "5" else "broken"
+}
+
+/// Fails light, but Gem is broken.
+let heavy: Gem = { weight: 9 }
+
+/// Reads heavy.
+let gemDiv: Int = heavy.weight / 0
+
+/// Box.
+record Box {
+  /// N.
+  n: Int
+
+  check small: n < 10 else "big"
+
+  /// Broken method.
+  fn twice() -> Int { return n * "2" }
+}
+
+/// Fails small.
+let box: Box = { n: 20 }
+
+/// Calls the broken method.
+let viaMethod: Int = box.twice() / 0
+
+/// Unrelated.
+let other: Int = box.n / 0
+-- select --
+a
+-- findings.txt --
+warning[W4001]  a/a.canon:5:8
+  1 value was not evaluated or checked because a.Gem is broken: fix the errors in it or in the types it names
+
+error[E3310]  a/a.canon:11:17
+  < needs an orderable type, found String
+
+error[E3007]  a/a.canon:28:30
+  operator * is not defined for Int and String
+
+error[E5001]  a/a.canon:32:16
+  box: big
+  expected by a/a.canon:25 (check small)
+
+error[E4102]  a/a.canon:38:18
+  other: division by zero
+
+4 errors, 1 warning in 1 package (…)

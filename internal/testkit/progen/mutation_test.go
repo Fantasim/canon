@@ -14,6 +14,9 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 )
 
+// silenced is W4001, which any static error breaking a record or variant brings along (DECISIONS 331).
+var silenced = diag.W4001.Def().Code
+
 // operator is one rule-targeted mutation (DECISIONS 200): applied at a site of an example, it
 // must make the compiler report code, at the site, and nothing else but the also codes the
 // spec expects there too.
@@ -130,11 +133,14 @@ func sorted(o operator, r run, at progen.Place, p *progen.Project, base map[base
 	j := judged{out: progen.Run(context.Background(), p, progen.RunOptions{
 		Packages: r.pkgs, Roots: exampleRoots(), Layers: r.layers, Build: o.build, Targets: goAndJSON,
 	})}
+	consequence := disqualifies(j.out.Findings) // W4001 never stands alone (DECISIONS 331)
 	for _, f := range j.out.Findings {
 		inside := o.loose || f.Path == at.Path && at.Start <= f.Start && f.Start <= at.End
 		switch {
 		case f.Code == o.code && inside:
 			j.hit = append(j.hit, f)
+		case f.Code == silenced && consequence:
+			// a broken type's silence, a consequence of the case's error.
 		case base[keyOf(f)]:
 			// the run's own unmutated finding, same code and position: neither hit nor extra.
 		case !inside || !slices.Contains(o.also, f.Code):

@@ -14,7 +14,10 @@ record Mail {
 /// The mails.
 let mails: [Mail] = [{ subject: "Spring cleaning" }]
 -- findings.txt --
+warning[W4001]  features/mail/mail.canon:5:8
+  1 value was not evaluated or checked because features.mail.Mail is broken: fix the errors in it or in the types it names
+
 error[E2102]  features/mail/mail.canon:8:8
   unknown name attachment
 
-1 error, 0 warnings in 1 package (…)
+1 error, 1 warning in 1 package (…)

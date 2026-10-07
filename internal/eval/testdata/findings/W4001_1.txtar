@@ -1,0 +1,30 @@
+EVALUATION.md §1, DECISIONS 331: a broken check breaks its record (DECISIONS 209); the one value
+typed by it is not evaluated or checked, so one W4001 (one) at the record says so. `w`, which
+only reads that value, is silent and not counted.
+-- a/a.canon --
+/// A.
+package a
+
+/// Gem.
+record Gem {
+  /// Weight.
+  weight: Int
+
+  check light: weight < 5 else "heavy"
+
+  check broken: weight < "5" else "broken"
+}
+
+/// Fails light, but Gem is broken.
+let heavy: Gem = { weight: 9 }
+
+/// Reads heavy: silenced, not counted.
+let w: Int = heavy.weight / 0
+-- findings.txt --
+warning[W4001]  a/a.canon:5:8
+  1 value was not evaluated or checked because a.Gem is broken: fix the errors in it or in the types it names
+
+error[E3310]  a/a.canon:11:17
+  < needs an orderable type, found String
+
+1 error, 1 warning in 1 package (…)

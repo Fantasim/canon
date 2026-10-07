@@ -1,0 +1,32 @@
+EVALUATION.md §1, DECISIONS 331: Gem is broken only because its field's type is a broken alias;
+an alias is no record or variant, so Gem itself warns for the value reaching it, and a table of
+Gem entries counts once.
+-- a/a.canon --
+/// A.
+package a
+
+/// Weight, broken.
+type Weight = Int(0..="ten")
+
+/// Gem.
+record Gem {
+  /// W.
+  w: Weight
+}
+
+/// Direct.
+let gem: Gem = { w: 1 }
+
+/// A table of entries.
+let gems: table Gem = {
+  ruby { w: 1 }
+  opal { w: 2 }
+}
+-- findings.txt --
+error[E3002]  a/a.canon:5:23
+  expected Int, found String
+
+warning[W4001]  a/a.canon:8:8
+  2 values were not evaluated or checked because a.Gem is broken: fix the errors in it or in the types it names
+
+1 error, 1 warning in 1 package (…)

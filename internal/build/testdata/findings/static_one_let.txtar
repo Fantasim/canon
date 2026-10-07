@@ -1,0 +1,78 @@
+EVALUATION.md §1, TYPES.md §1: a type error in one let and an unknown name in one fn break those
+declarations and their readers only. `readsBad` and `callsBad` produce no evaluation finding;
+`div` is still evaluated (E4102), `big` still checked (E5001), and so is the value of the
+imported package that `viaFine` reads, while `viaBroken` reads a broken import and stays silent.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Broken in the import.
+let broken: Int = true
+
+/// Divides by zero when read.
+let fine: Int = 1 / 0
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int
+
+  check fits: size < 10 else "too big"
+}
+
+/// Type error.
+let bad: Int = "nope"
+
+/// Reads the broken let: broken too, never evaluated.
+let readsBad: Int = bad / 0
+
+/// Unknown name.
+fn badFn(x: Int) -> Int { return x + unknownName }
+
+/// Calls the broken fn: broken too, never evaluated.
+let callsBad: Int = badFn(2) / 0
+
+/// Unrelated: still evaluated.
+let div: Int = 1 / 0
+
+/// Unrelated: still checked.
+let big: Slot = { size: 30 }
+
+/// Reads a broken value of an import: never evaluated.
+let viaBroken: Int = b.broken / 0
+
+/// Reads a sound value of an import: evaluated.
+let viaFine: Int = b.fine
+-- select --
+a
+-- findings.txt --
+error[E3002]  a/a.canon:15:16
+  expected Int, found String
+
+error[E2102]  a/a.canon:21:38
+  unknown name unknownName
+
+error[E4102]  a/a.canon:27:16
+  div: division by zero
+
+error[E5001]  a/a.canon:30:17
+  big: too big
+  expected by a/a.canon:11 (check fits)
+
+error[E3002]  b/b.canon:5:19
+  expected Int, found Bool
+
+error[E4102]  b/b.canon:8:17
+  fine: division by zero
+
+6 errors, 0 warnings in 1 package (…)

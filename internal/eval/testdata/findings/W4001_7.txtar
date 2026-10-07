@@ -1,0 +1,36 @@
+EVALUATION.md §1, DECISIONS 331: two broken records naming each other, A declared first: each
+value reaches both, so A and B each count 2. W4001_8 declares B first and counts the same.
+-- a/a.canon --
+/// A.
+package a
+
+/// A.
+record A {
+  /// B.
+  b: B?
+}
+
+/// B.
+record B {
+  /// A.
+  a: A?
+
+  check broken: 1 < "2" else "broken"
+}
+
+/// An A.
+let x: A = {}
+
+/// A B.
+let y: B = {}
+-- findings.txt --
+warning[W4001]  a/a.canon:5:8
+  2 values were not evaluated or checked because a.A is broken: fix the errors in it or in the types it names
+
+warning[W4001]  a/a.canon:11:8
+  2 values were not evaluated or checked because a.B is broken: fix the errors in it or in the types it names
+
+error[E3310]  a/a.canon:15:17
+  < needs an orderable type, found String
+
+1 error, 2 warnings in 1 package (…)

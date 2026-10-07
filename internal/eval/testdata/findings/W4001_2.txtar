@@ -1,0 +1,57 @@
+EVALUATION.md §1, DECISIONS 331: W4001 (many) counts every top-level value whose type reaches a
+broken record, directly or as an element, entry or field: `one`, `list`, `byName`, `maybe` and
+`pouch` count under Gem; Pouch, broken because it names Gem, warns too, for `pouch`. `w` and `n`
+only read broken values and are not counted; `fine` is evaluated (E4102).
+-- a/a.canon --
+/// A.
+package a
+
+/// Gem.
+record Gem {
+  /// Weight.
+  weight: Int = "heavy"
+}
+
+/// Pouch.
+record Pouch {
+  /// Gem.
+  gem: Gem
+}
+
+/// Direct.
+let one: Gem = { weight: 1 }
+
+/// List element.
+let list: [Gem] = [{ weight: 1 }]
+
+/// Map entry.
+let byName: {String: Gem} = {}
+
+/// Optional.
+let maybe: Gem? = none
+
+/// Field.
+let pouch: Pouch = { gem: { weight: 2 } }
+
+/// Reads a broken value: not counted.
+let w: Int = one.weight
+
+/// Reads a broken value: not counted.
+let n: Int = list.len()
+
+/// Unrelated: evaluated.
+let fine: Int = 1 / 0
+-- findings.txt --
+warning[W4001]  a/a.canon:5:8
+  5 values were not evaluated or checked because a.Gem is broken: fix the errors in it or in the types it names
+
+error[E3002]  a/a.canon:7:17
+  expected Int, found String
+
+warning[W4001]  a/a.canon:11:8
+  1 value was not evaluated or checked because a.Pouch is broken: fix the errors in it or in the types it names
+
+error[E4102]  a/a.canon:38:17
+  fine: division by zero
+
+2 errors, 2 warnings in 1 package (…)

@@ -201,6 +201,8 @@ func (r *run) stageA(ctx context.Context) {
 		r.ev.LogCauses() // API.md R6; a memoized run's causes are logged apart (cause.go)
 	}
 	r.forceSelected(ctx)
+	// EVALUATION.md §1, DECISIONS 331: what the broken records and variants left unevaluated.
+	eval.ReportSilenced(r.prog, r.cps, r.bags)
 	for _, root := range r.folds.Reads() { // item 3: charged again, a value already forced is not (§12.2)
 		r.ev.Force(ctx, root)
 	}

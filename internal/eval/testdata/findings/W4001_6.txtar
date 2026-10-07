@@ -1,0 +1,42 @@
+EVALUATION.md §1, DECISIONS 331: a dependent map whose branch is a broken record reaches it:
+`byKind` counts under Gem through the dependent branch of Payload.
+-- a/a.canon --
+/// A.
+package a
+
+/// Gem.
+record Gem {
+  /// W.
+  w: Int = "heavy"
+}
+
+/// Kind.
+enum Kind { gem, none_ }
+
+/// Holder.
+record Holder {
+  /// Key.
+  key: String
+  /// Kind.
+  kind: Kind
+}
+
+/// Payload.
+type Payload(k: Kind) = match k {
+  gem => Gem
+  none_ => Never
+}
+
+/// Holders.
+let holders: [Holder] keyed by key = [{ key: "a", kind: gem }]
+
+/// A dependent map.
+let byKind: {h in holders: Payload(h.kind)} = { a: { w: 1 } }
+-- findings.txt --
+warning[W4001]  a/a.canon:5:8
+  1 value was not evaluated or checked because a.Gem is broken: fix the errors in it or in the types it names
+
+error[E3002]  a/a.canon:7:12
+  expected Int, found String
+
+1 error, 1 warning in 1 package (…)

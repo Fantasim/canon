@@ -1,0 +1,43 @@
+EVALUATION.md §1, DECISIONS 331: W4001 counts the top-level values of the selected packages only.
+`b.Gem` is broken: `a` selects two values typed by it, so the warning, at b's declaration, says
+2 (b's own `local` value is not counted, b not being selected) and is shown with a's findings.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Gem.
+record Gem {
+  /// Weight.
+  weight: Int
+
+  check broken: weight < "5" else "broken"
+}
+
+/// Typed by Gem, in b.
+let own: Gem = { weight: 1 }
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// One.
+let one: b.Gem = { weight: 1 }
+
+/// Two.
+let two: [b.Gem] = []
+-- select --
+a
+-- findings.txt --
+warning[W4001]  b/b.canon:5:8
+  2 values were not evaluated or checked because b.Gem is broken: fix the errors in it or in the types it names
+
+error[E3310]  b/b.canon:9:17
+  < needs an orderable type, found String
+
+1 error, 1 warning in 1 package (…)

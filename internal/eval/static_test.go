@@ -10,7 +10,7 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
 
-// TYPES.md §1, EVALUATION.md §1: a broken declaration is never evaluated, so only the case's static error is reported.
+// TYPES.md §1, EVALUATION.md §1: a broken declaration is never evaluated: only the static error, and W4001 (DECISIONS 331).
 func TestStaticErrorsDoNotCascade(t *testing.T) {
 	golden.Run(t, "testdata/static/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()

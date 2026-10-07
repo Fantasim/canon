@@ -1,0 +1,40 @@
+EVALUATION.md §1: a broken value, check or test produces no evaluation finding; other values are
+evaluated normally. A test naming no check (E5004, §10.3) stops nothing: the failing check on
+`big` is still reported beside it.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Slot.
+record Slot {
+  /// Size.
+  size: Int
+
+  check fits: size < 10 else "too big"
+}
+
+/// Big: fails fits.
+let big: Slot = { size: 30 }
+
+/// Ok.
+let ok: Slot = { size: 3 }
+
+test "names a removed check" {
+  expect ok fails removed
+}
+-- select --
+a
+-- findings.txt --
+error[E5001]  a/a.canon:13:17
+  big: too big
+  expected by a/a.canon:9 (check fits)
+
+error[E5004]  a/a.canon:19:19
+  no check named removed applies to a.Slot
+
+2 errors, 0 warnings in 1 package (…)

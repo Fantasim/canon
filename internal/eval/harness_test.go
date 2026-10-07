@@ -211,6 +211,7 @@ func (b *build) evaluate(ctx context.Context, h *host, opt eval.Options, selecte
 			}
 		}
 	}
+	eval.ReportSilenced(b.checked, pkgs, b.bags) // as a build (EVALUATION.md §1, DECISIONS 331)
 	for _, root := range b.folded {
 		b.ev.Force(ctx, root)
 	}

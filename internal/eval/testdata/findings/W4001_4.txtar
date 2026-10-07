@@ -1,0 +1,51 @@
+EVALUATION.md §1, DECISIONS 331: why a type is broken is not traced. `Box`, whose check names a
+broken value, warns for `box`; `Holder`, whose check names the broken type Gem, warns for
+`holder`; Gem, which no value's type reaches, reports nothing.
+-- a/a.canon --
+/// A.
+package a
+
+/// Broken value.
+let limit: Int = "ten"
+
+/// Box.
+record Box {
+  /// N.
+  n: Int
+
+  check fits: n < limit else "big"
+}
+
+/// Gem.
+record Gem {
+  /// W.
+  w: Int = "heavy"
+}
+
+/// Holder.
+record Holder {
+  /// N.
+  n: Int
+
+  check gems: Gem { w: n } == Gem { w: n } else "never"
+}
+
+/// Typed by Box.
+let box: Box = { n: 1 }
+
+/// Typed by Holder.
+let holder: Holder = { n: 1 }
+-- findings.txt --
+error[E3002]  a/a.canon:5:18
+  expected Int, found String
+
+warning[W4001]  a/a.canon:8:8
+  1 value was not evaluated or checked because a.Box is broken: fix the errors in it or in the types it names
+
+error[E3002]  a/a.canon:18:12
+  expected Int, found String
+
+warning[W4001]  a/a.canon:22:8
+  1 value was not evaluated or checked because a.Holder is broken: fix the errors in it or in the types it names
+
+2 errors, 2 warnings in 1 package (…)
