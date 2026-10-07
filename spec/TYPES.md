@@ -333,7 +333,8 @@ literal, or `(e)`, `-e` or an arithmetic `a op b` whose operands are context-dep
 Otherwise the left operand is synthesized and the right one checked. If both operands are
 context-dependent, an arithmetic expression whose expected type is `Int`, `Float` or a list type
 (aliases, refinements, sizes and one `?` removed) checks both against that type; any other is
-`E3008`. So `tone == warning` and `warning == tone` both resolve `warning` against `Tone`; `x ==
+`E3008`, unless an operand holds a bare name: that name is then `E2102` (§3.3, with the closest
+spelling in scope as a hint) and the operator reports nothing more (§1, DECISIONS 333). So `tone == warning` and `warning == tone` both resolve `warning` against `Tone`; `x ==
 0 - 20` and `0 - 20 == x` (with `x: Int`), `let w: Int = 7 * 1440` and `let v: Int = (1 + 2) *
 3` are well-typed, `let f: Float = 1 / 2` is a `Float` division (`0.5`); `1 == 2`, `let d:
 Duration = 2 * 3`, an untyped `let n = 1 + 2` or `const WEEK = 7 * 1440` is `E3008` (`const

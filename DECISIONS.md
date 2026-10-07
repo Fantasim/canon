@@ -3222,3 +3222,10 @@ round 2", "PS1 review", "PS2 round 2"):
      no hint; O3 was never implemented; and `--root`, needed on every command, could not reach the
      editor or the studio. `optional_roots` instead of a per-root map: no parser or frozen syntax
      change, one spelling (orchestrator).
+
+333. **An unknown name beside a literal is an unknown name (TYPES.md §5.1).** When both operands of
+     a comparison or arithmetic operator are context-dependent and one holds a bare name, that
+     name is `E2102` with its spelling hint, not `E3008`; operands that are literals only stay
+     `E3008`. Reason: a misspelled field in a record check (`weigth < 5`) said "cannot infer the
+     type of this expression", which tells an agent nothing; §3.3 (a name found nowhere is
+     `E2102`) and §1 (no further finding after an error) decide it.
