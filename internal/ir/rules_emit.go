@@ -39,6 +39,7 @@ func (s *stage) validate(u *unit) {
 	}
 	for _, es := range u.emits {
 		s.checkCopies(u, es)
+		s.checkAboveProject(u, es)
 		if es.index > 0 {
 			continue // a further copy: the same options, judged once (CODEGEN.md §2.1)
 		}

@@ -1,7 +1,9 @@
 package ir
 
 import (
+	"path"
 	"slices"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -69,4 +71,52 @@ func (s *stage) checkCopies(u *unit, es *emitSite) {
 		root := check.RootLabel(proj, check.OwningRoot(proj, es.e.Dir))
 		u.report(diag.E8004.AtNoCopy(es.outSpan, first, imp.Name, targetWords[es.e.Target], root))
 	}
+}
+
+// climbsAbove reports that the relative path from directory from to directory to climbs above the project's parent directories: once their common leading segments go, what remains of from holds a `..`, so the path would come back down through directories above the project, whose names depend on the checkout (CODEGEN.md §2.8, DECISIONS 332). Both are cleaned project-relative directories.
+func climbsAbove(from, to string) bool {
+	f, t := dirSegments(from), dirSegments(to)
+	i := 0
+	for i < len(f) && i < len(t) && f[i] == t[i] {
+		i++
+	}
+	return slices.Contains(f[i:], parentDir)
+}
+
+// dirSegments are the segments of a cleaned directory, none for the project directory itself.
+func dirSegments(dir string) []string {
+	dir = path.Clean(dir)
+	if dir == curDir {
+		return nil
+	}
+	return strings.Split(dir, pathSep)
+}
+
+// checkAboveProject is E8025: a cpp or ts copy that reaches the copy of an imported package it uses by a relative path climbing above the project (CODEGEN.md §2.8, DECISIONS 332), whatever machine builds it. A copy under no usable root is E8004's.
+func (s *stage) checkAboveProject(u *unit, es *emitSite) {
+	if es.e.Target != TargetCpp && es.e.Target != TargetTS || es.e.Dir == "" {
+		return
+	}
+	for _, imp := range u.p.Imports {
+		if _, used := u.importUse(imp.Name, es.e.Target); !used {
+			continue
+		}
+		o := copyFor(s.in.Project, imp.Emits, es.e)
+		if o == nil || o.Dir == "" || !climbsAbove(es.e.Dir, o.Dir) {
+			continue
+		}
+		u.report(diag.E8025.At(es.outSpan, es.display, s.displayOf(imp.Name, o), imp.Name))
+	}
+}
+
+// displayOf is the display path of the out of emit o of package pkg, its out as written when its site is unknown.
+func (s *stage) displayOf(pkg string, o *Emit) string {
+	if dep := s.units[pkg]; dep != nil {
+		for _, es := range dep.emits {
+			if es.e == o {
+				return es.display
+			}
+		}
+	}
+	return o.Out
 }

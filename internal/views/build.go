@@ -31,12 +31,24 @@ type Input struct {
 	Fold      check.Folder                        // folds constant field defaults; nil writes none
 	I18N      map[string]*i18n.Result             // every package's catalogue and translations (i18n.Check)
 	Layout    *project.Layout                     // places loads and asset roots; nil: none written
+	Project   *project.Project                    // places `assets.<root>.dir` through its roots alone (12.9); nil: Layout does
 	Layers    []string                            // the active layers, in application order
 	Findings  []diag.Finding                      // the package's findings of phases 1-7, F2 order (J15)
 	Files     diag.Files                          // locates Findings
 	Eval      render.Evaluator                    // evaluates view expressions; nil: nothing rendered
 	CheckRun  CheckRun                            // the check run behind a finding, for its translated messages (J15); nil: none
 	Drivers   func() (*World, error)              // the program typeFunction drivers are read over (12.3, J5), asked on first need; nil: Program and Force
+}
+
+// declared is the layout that places `assets.<root>.dir`: the project's roots as project.canon
+// declares them, never --root, Options.Roots or project.local.canon, so the model is the same
+// bytes on every machine (VIEWMODEL.md 12.9, DECISIONS 108, 332).
+func declared(in Input) *project.Layout {
+	if in.Project == nil || in.Layout == nil {
+		return in.Layout
+	}
+	l, _ := project.NewLayout(in.Project, in.Layout.Dir, nil, nil)
+	return l
 }
 
 // World is a program wider than Input.Program, every package that may pass a collection to the
@@ -110,7 +122,7 @@ func newBuilder(ctx context.Context, in Input) (*builder, error) {
 	}
 	b := &builder{ctx: ctx, in: in, pkg: pkg, colls: encode.NewColls(force(in.Force)), texts: encode.NewTexts(encode.Catalogues(in.I18N))}
 	b.index = control.NewIndex(in.Program, in.Studio)
-	b.roots = encode.NewAssets(in.Program, in.Layout)
+	b.roots = encode.NewAssets(in.Program, declared(in))
 	tables := table.New(b.index, b.texts)
 	b.res = control.NewResolver(b.index, control.Env{
 		Counts: b.colls.Counts, Fold: control.FoldWith(ctx, in.Program, in.Fold), Table: tables.Complete,

@@ -1,0 +1,25 @@
+CODEGEN.md §2.8, DECISIONS 332: a cpp copy under @source reaches b copy inside the project by a relative include climbing above the project parent directories, wrong on every checkout.
+-- b/b.canon --
+package b
+
+/// A colour.
+enum Tone { red, blue }
+
+emit cpp { out: "@features/b/cpp", namespace: "sov::b", mode: types }
+-- a/a.canon --
+package a
+
+import b { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit cpp { out: "@source/Generated/a", namespace: "sov::a", mode: types }
+-- findings.txt --
+error[E8025]  a/a.canon:11:17
+  @source/Generated/a would reach @features/b/cpp by a relative path climbing above the project's parent directories, which differ per checkout: emit b a copy under the same root
+
+1 error, 0 warnings in 2 packages (…)

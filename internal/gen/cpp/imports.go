@@ -79,7 +79,7 @@ func cppEmitOf(emits []*ir.Emit) *ir.Emit {
 	return nil
 }
 
-// relPath is the `/` path from directory from to directory to, both project-relative.
+// relPath is the `/` path from directory from to directory to, both project-relative; ir refuses a pair that would climb above the project first (E8025, CODEGEN.md §2.8).
 func relPath(from, to string) string {
 	f, t := strings.Split(path.Clean(from), pathSep), strings.Split(path.Clean(to), pathSep)
 	i := 0

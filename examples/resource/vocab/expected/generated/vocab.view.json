@@ -1567,7 +1567,7 @@
   },
   "assets": {
     "@resource/Icon/Item": {
-      "dir": "_fixtures/resource/Icon/Item"
+      "dir": "../../../Resource/Icon/Item"
     }
   },
   "units": {},

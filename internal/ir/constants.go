@@ -151,6 +151,8 @@ const (
 // Paths, separators and names stage E composes.
 const (
 	curDir = "."
+	// parentDir is the path segment above a directory.
+	parentDir = ".."
 	// severalCopies is the fewest copies an emit with a list out writes (CODEGEN.md §2.1).
 	severalCopies = 2
 	pathSep       = "/"

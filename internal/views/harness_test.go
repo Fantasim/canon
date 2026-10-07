@@ -201,7 +201,7 @@ func (p *analyzed) modelWith(t *testing.T, pkg string, ev render.Evaluator) *vm.
 	}
 	m, err := views.Build(context.Background(), views.Input{
 		Program: p.a.Program(), Package: pkg, Language: language, Studio: p.studio, Languages: p.proj.Languages,
-		Force: p.a.Force, Fold: eval.NewFolder(p.bags, eval.Options{}), I18N: p.texts, Layout: p.layout, Layers: p.layers,
+		Force: p.a.Force, Fold: eval.NewFolder(p.bags, eval.Options{}), I18N: p.texts, Layout: p.layout, Project: p.proj, Layers: p.layers,
 		Findings: found, Files: p.a.Files(), Eval: ev,
 	})
 	if err != nil {

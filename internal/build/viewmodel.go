@@ -68,7 +68,7 @@ func (r *run) viewInput(ctx context.Context, pkg string, scratch check.Bags, fol
 	return views.Input{
 		Program: r.prog, Package: pkg, Language: proj.Canon.String(), Studio: proj.Studio.Path,
 		Languages: proj.Languages, Force: r.forceAside(ctx, scratch), Fold: fold,
-		I18N: r.texts, Layout: r.s.layout, Layers: r.p.opt.Layers, Findings: r.bags[pkg].Findings(),
+		I18N: r.texts, Layout: r.s.layout, Project: proj, Layers: r.p.opt.Layers, Findings: r.bags[pkg].Findings(),
 		Files: r.s.set, Eval: viewEval{r.ev}, CheckRun: r.failed.find,
 	}
 }
