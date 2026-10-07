@@ -42,10 +42,10 @@ This replaces SPEC §11.2.
 - `canon check` and `canon build` both compute the conformance vectors in phase 7, so both report
   `E9008` and `E9009`. Computing them runs the tests of a package with a translated function, only
   to collect the calls the vectors need (CONFORMANCE.md §6.1). Each package's tests run as
-  `canon test <pkg>` runs them (§10): values forced afresh, never reusing stage A's, one budget of
-  `project.budget` steps shared by that package's tests only, in declaration order, not the
-  project's budget. So the calls collected, hence the vectors, are what `canon test` sees, unless
-  `canon test`'s counter, which also paid phase 2's constant folding (§12.2), runs out first; none
+  `canon test <pkg>` runs them (§10): values forced afresh, never reusing stage A's, on per-package
+  counters of `project.budget` steps (§12.2), in declaration order. So the calls collected, hence
+  the vectors, are what `canon test` sees, unless a counter, which also paid phase 2's constant
+  folding (§12.2), runs out first; none
   of the tests' findings is reported, and the calls made before any stop are kept. No other part of
   `check` or `build` runs tests.
 - A **broken** declaration (TYPES.md §1) is never evaluated. A value, check or test that is
@@ -78,7 +78,7 @@ This replaces SPEC §11.2.
    position);
 2. whatever these values read, lazily, including values of imported packages;
 3. every constant a phase-2 fold read, directly or through other constants, that 1 and 2 did not
-   force, in fold order, charged again on the one counter (§12.2), so stage B verifies it whatever
+   force, in fold order, charged again on its package's counter (§12.2), so stage B verifies it whatever
    the selection (DECISIONS 264, 271).
 
 Values of imported packages that nothing reads are not evaluated; phase 8 evaluates, on demand,
@@ -685,8 +685,11 @@ re-run is capped at the budget, and past it that re-run alone stops, its value i
 - The budget is `project.budget` (default 10⁸) **per package** (DECISIONS 328) for one `canon
   check`, `canon build` or `canon test` invocation, or for one API re-check: each package has its
   own counter. Every budgeted stage (evaluation, verification, checks, precomputation, tests)
-  spends from the counter of the package that declares what is being run: the value, constant,
-  check, test or fn. Cached results (CLI §2.7) are reused only for an identical build manifest, so
+  spends from the counter of the package of the root being run: a top-level value or constant
+  (its package), an instance check (the package of the value it checks, not of the check's
+  declaration, so importers never spend a package's budget), a package check or a test (its
+  package), a stage-E precomputed fn (its package). A call, a default or a member check run inside
+  a root is charged to that root. Cached results (CLI §2.7) are reused only for an identical build manifest, so
   they reproduce the same verdict.
 - One counter per package and invocation (DECISIONS 104, 328): phase 2's constant folding spends
   from the counter of the constant's package first, then stages A–E; `canon test`'s tests start on
@@ -700,7 +703,8 @@ re-run is capped at the budget, and past it that re-run alone stops, its value i
 - Steps are **charged** to the root being evaluated (§7.1). Forcing a top-level value from inside
   another root charges the forced value, not the forcer. All runs of one instance-check
   declaration are charged to that declaration.
-- Spending the last step of a package's counter is `E4401` at the expression being evaluated,
+- Spending the last step of a package's counter is `E4401`, among the findings of that package
+  (whatever package's code was running), at the expression being evaluated,
   with its stack and the package's heaviest root (on a tie, the first charged), so a package whose
   run costs n steps needs a budget of at least n + 1. Its path is the value being evaluated
   (API.md F1):

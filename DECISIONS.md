@@ -3143,7 +3143,11 @@ round 2", "PS1 review", "PS2 round 2"):
      and only values that read a poisoned value are affected elsewhere. Reason: the Sovereign
      Resource port (handoff 2026-10-07 C, "Budget"): one project-wide counter made an unrelated
      package (telemetry) fail with `E4401` when an item family grew. A package's verdict now
-     depends on it and the packages it reads only, never on an unrelated package.
+     depends on it and the packages it reads only, never on an unrelated package. Charging (review
+     2026-10-07): an instance check is charged to the package of the value it checks, so an
+     importer's instances never spend the declaring package's budget; `E4401` is among the
+     findings of the package whose counter ran out; a root its spent budget left unevaluated has
+     that `E4401` as its cause (API.md R6).
 
 329. **Files `canon` writes take a plain create's mode (CODEGEN.md §2.4).** A new output, lock,
      journal or created file is `0666 &^ umask`, a new directory `0777 &^ umask`; an overwrite

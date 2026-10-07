@@ -516,7 +516,8 @@ Methods, all cheap, never re-evaluating:
   wraps the findings that explain why: the cause evaluation or verification recorded for its root
   (its own hard error or, through taint, the first poisoned value it read, in any package), else
   the checker's findings in the root's declaration and in its active layers' amendments, else those
-  of the checker-broken declarations it depends on.
+  of the checker-broken declarations it depends on. A root left unevaluated because its package's
+  budget was spent has that package's `E4401` as its cause (DECISIONS 328).
 
 `Origin` records where a value comes from (EVL-07):
 

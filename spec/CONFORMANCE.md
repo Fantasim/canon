@@ -234,9 +234,8 @@ The receivers are the `self` values of the calls of `F` made while running the p
 blocks, in the order the calls are evaluated, each **projected** on the paths the body reads
 (§2.3). Distinct projections are kept in first-seen order. None is `E9008`. `canon check` and
 `canon build` both run the tests to collect these calls, and only for that. Each package's tests
-run as `canon test <pkg>` runs them: values forced afresh, never reusing stage A's, one budget of
-`project.budget` steps shared by that package's tests only, in declaration order, not the
-project's budget. None of their findings is reported, and the calls made before any stop are kept
+run as `canon test <pkg>` runs them: values forced afresh, never reusing stage A's, per-package
+counters of `project.budget` steps (EVALUATION.md §12.2), in declaration order. None of their findings is reported, and the calls made before any stop are kept
 (EVALUATION.md §1). A call whose
 receiver reads a precomputed method of `self` that fails there (an error code or a limit, on a
 receiver built only in a test) gives no receiver and no vector, but still counts as a call for
