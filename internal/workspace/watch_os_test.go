@@ -2,10 +2,14 @@ package workspace_test
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
 	"slices"
+	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -46,10 +50,12 @@ func osWatch(t *testing.T, p *workspace.Project, clk *fakeClock) <-chan workspac
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	changes := make(chan workspace.Change, 64)
+	lim := &limitLog{}
+	clk.exhausted = lim.err
 	w, err := p.Watch(ctx, func(ctx context.Context, c workspace.Change) {
 		_, _ = c.Snapshot.Revision(ctx)
 		changes <- c
-	}, workspace.WatchOptions{Clock: clk, OS: true})
+	}, workspace.WatchOptions{Clock: clk, OS: true, Logger: slog.New(lim)})
 	if err != nil {
 		cancel()
 		t.Fatal(err)
@@ -59,8 +65,39 @@ func osWatch(t *testing.T, p *workspace.Project, clk *fakeClock) <-chan workspac
 		stopped(t, w)
 	})
 	clk.idle(t)
+	clk.skipIfExhausted(t)
 	clk.step(t, quietForTest) // the directories first watched were a change: nothing changed
 	return changes
+}
+
+// limitLog is a log handler that keeps the error the hub gave when it fell back to polling for
+// want of what the machine limits per user: inotify watches (ENOSPC) or instances (EMFILE).
+type limitLog struct {
+	mu  sync.Mutex
+	got error
+}
+
+func (l *limitLog) Enabled(context.Context, slog.Level) bool { return true }
+func (l *limitLog) WithAttrs([]slog.Attr) slog.Handler       { return l }
+func (l *limitLog) WithGroup(string) slog.Handler            { return l }
+
+func (l *limitLog) Handle(_ context.Context, r slog.Record) error {
+	r.Attrs(func(a slog.Attr) bool {
+		err, ok := a.Value.Any().(error)
+		if ok && (errors.Is(err, syscall.ENOSPC) || errors.Is(err, syscall.EMFILE)) {
+			l.mu.Lock()
+			l.got = err
+			l.mu.Unlock()
+		}
+		return true
+	})
+	return nil
+}
+
+func (l *limitLog) err() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.got
 }
 
 const osProjectCanon = "project acme {\n  canon: \"0.1\"\n}\n"

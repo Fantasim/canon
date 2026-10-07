@@ -11,10 +11,11 @@ import (
 // fakeClock is a Clock that moves only when a test advances it; the hub arms one timer at a time,
 // so one pending timer means the hub waits, done with everything before it.
 type fakeClock struct {
-	mu     sync.Mutex
-	now    time.Time
-	timers []*fakeTimer
-	boom   atomic.Bool // the next After panics, as a bug in the hub would
+	mu        sync.Mutex
+	now       time.Time
+	timers    []*fakeTimer
+	boom      atomic.Bool  // the next After panics, as a bug in the hub would
+	exhausted func() error // the machine's inotify limit the hub fell back for, nil while it runs
 }
 
 type fakeTimer struct {
@@ -90,6 +91,19 @@ func (c *fakeClock) idleWithin(d time.Duration) bool {
 	return false
 }
 
+// skipIfExhausted skips the test once the hub fell back to polling for want of inotify watches or
+// instances (the machine's per-user limits, shared with every editor and test on it): the OS
+// notifications these tests exist to prove cannot run there.
+func (c *fakeClock) skipIfExhausted(t *testing.T) {
+	t.Helper()
+	if c.exhausted == nil {
+		return
+	}
+	if err := c.exhausted(); err != nil {
+		t.Skipf("the OS cannot notify changes here: %v", err)
+	}
+}
+
 // armedIn waits until the hub waits for exactly d from now: a change noted now, when its next
 // comparison with the disk is further away.
 func (c *fakeClock) armedIn(t *testing.T, d time.Duration) {
@@ -102,6 +116,7 @@ func (c *fakeClock) armedIn(t *testing.T, d time.Duration) {
 		if ok {
 			return
 		}
+		c.skipIfExhausted(t)
 		time.Sleep(time.Millisecond)
 	}
 	t.Fatalf("the watcher never waited %v", d)
