@@ -96,8 +96,8 @@ func (v *List) match(o Value, w *eqWalk) bool {
 }
 
 // Map is a map value; Keys and Vals are parallel, in insertion order. Once a map has been read
-// (Get, Lookup, equality, Hash), Keys and Vals are only appended to, never replaced or
-// reordered: its key index and entry sum follow them (DECISIONS 199).
+// (Get, Lookup, equality, Hash), Keys and Vals are only appended to, never reordered, and a
+// value is replaced only through Set: its key index and entry sum follow them (DECISIONS 199).
 type Map struct {
 	T    types.Type
 	Keys []Value

@@ -11,7 +11,7 @@ import (
 
 // index is `x[i]`: a position, a key, or a slice (STDLIB.md §4.1, §5, §6, §7).
 func (r *run) index(x *syntax.IndexExpr) value.Value {
-	v := r.recv(x.X)
+	v := r.peekRecv(x.X)
 	if !r.unwrap(v, false) {
 		return nil
 	}

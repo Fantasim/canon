@@ -106,12 +106,11 @@ func ownerName(c *types.Collection) string {
 }
 
 // entry is the entry of key k of a table or keyed list, through an index built once per
-// collection value when it is large enough to need one.
+// collection value when it is large enough to need one, never listing its entries again.
 func (e *Evaluator) entry(coll value.Value, k value.Key) (*value.Record, bool) {
-	elems := std.Elems(coll)
-	if len(elems) < indexFrom {
-		for _, x := range elems {
-			if rec, ok := x.(*value.Record); ok && rec.Ident != nil && rec.Ident.Key == k {
+	if seqLen(coll) < indexFrom {
+		for _, x := range std.Elems(coll) {
+			if rec, ok := x.(*value.Record); ok && hasKey(rec, k) {
 				return rec, true
 			}
 		}
@@ -122,11 +121,19 @@ func (e *Evaluator) entry(coll value.Value, k value.Key) (*value.Record, bool) {
 		idx = e.parent.keyed[coll] // a parent's value is indexed there once
 	}
 	if idx == nil {
-		idx = keyIndex(elems)
+		idx = keyIndex(std.Elems(coll))
 		e.keyed[coll] = idx
 	}
 	rec, ok := idx[k]
 	return rec, ok
+}
+
+// seqLen is the number of elements of a list or entries of a table, 0 for another value.
+func seqLen(coll value.Value) int {
+	if t, ok := coll.(*value.Table); ok {
+		return len(t.Entries)
+	}
+	return len(std.Elems(coll))
 }
 
 // keyIndex maps each key to its first entry.

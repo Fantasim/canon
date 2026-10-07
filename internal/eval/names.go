@@ -84,7 +84,7 @@ func (r *run) objectValue(obj check.Object, at syntax.Expr) value.Value {
 
 // local is a local, a parameter (of a record included: TYPES.md §11.1), or `it` in a where predicate.
 func (r *run) local(obj check.Object, at syntax.Expr) value.Value {
-	if v, ok := r.fr.vars[obj]; ok {
+	if v, ok := r.readVar(obj, at); ok {
 		return r.read(v)
 	}
 	if v, ok := r.magicValue(obj); ok {

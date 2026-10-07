@@ -85,6 +85,22 @@ func (v *Map) entrySum() uint64 {
 	return ix.sum
 }
 
+// Set makes x the value at position i, or appends key k with x when i is -1; only the map's sole
+// holder may call it. The key index follows; the entry sum is computed again when next read.
+func (v *Map) Set(i int, k, x Value) {
+	lock := v.lock()
+	lock.Lock()
+	defer lock.Unlock()
+	if i < 0 {
+		v.Keys, v.Vals = append(v.Keys, k), append(v.Vals, x)
+		return
+	}
+	v.Vals[i] = x
+	if v.idx != nil {
+		v.idx.summed, v.idx.sum = 0, 0
+	}
+}
+
 // lock is the lock guarding v's index.
 func (v *Map) lock() *sync.Mutex {
 	return &indexLocks[maphash.Comparable(stripeSeed, v)%indexStripes]

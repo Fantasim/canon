@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval/std"
@@ -39,12 +41,24 @@ func execAssign(r *run, s syntax.Stmt) flow {
 	if v == nil {
 		return flowAbort
 	}
-	next := r.setAt(cur, keys, v, x)
+	owned := len(keys) > 0 && r.fr.owner(obj)
+	next := r.setAt(cur, keys, v, x, owned)
 	if next == nil {
 		return flowAbort
 	}
-	r.fr.vars[obj] = next
+	r.rebind(obj, next, owned || len(keys) > 0 && next != cur)
 	return flowNext
+}
+
+// rebind binds obj to v, owned by the frame when an element assignment made v: a copy, or the
+// collection the frame already owned, updated in place (owned.go).
+func (r *run) rebind(obj check.Object, v value.Value, owned bool) {
+	r.fr.vars[obj] = v
+	if owned {
+		r.fr.own(obj, v)
+		return
+	}
+	r.fr.disown(obj)
 }
 
 // assigned is e, or `old op e` with old read before e is evaluated (EVALUATION.md §2.2).
@@ -127,8 +141,8 @@ func (r *run) getAt(v value.Value, keys []value.Value, at syntax.Node) value.Val
 	return v
 }
 
-// setAt is v with the element at keys replaced (EVALUATION.md §4.1).
-func (r *run) setAt(v value.Value, keys []value.Value, nv value.Value, at syntax.Node) value.Value {
+// setAt is v with the element at keys replaced (EVALUATION.md §4.1), in place when owned.
+func (r *run) setAt(v value.Value, keys []value.Value, nv value.Value, at syntax.Node, owned bool) value.Value {
 	if len(keys) == 0 {
 		return nv
 	}
@@ -138,9 +152,12 @@ func (r *run) setAt(v value.Value, keys []value.Value, nv value.Value, at syntax
 	}
 	inner := nv
 	if len(keys) > 1 {
-		if inner = r.setAt(slotValue(v, i), keys[1:], nv, at); inner == nil {
+		if inner = r.setAt(slotValue(v, i), keys[1:], nv, at, false); inner == nil { // below the root, always a copy
 			return nil
 		}
+	}
+	if owned {
+		return r.ev.updated(v, i, keys[0], inner)
 	}
 	return r.ev.replaced(v, i, keys[0], inner)
 }
@@ -184,13 +201,27 @@ func (r *run) listSlot(l *value.List, n int64, at syntax.Node) (int, bool) {
 
 func (r *run) keyedSlot(v, k value.Value, at syntax.Node) (int, bool) {
 	key, _ := std.KeyOf(k)
-	for i, e := range std.Elems(v) {
-		if rec, ok := e.(*value.Record); ok && rec.Ident != nil && rec.Ident.Key == key {
-			return i, true
-		}
+	if i := keyedPos(v, key); i >= 0 {
+		return i, true
 	}
 	r.fail(diag.E4002.AtKey(r.span(at), k, r.typeOfNode(v)))
 	return 0, false
+}
+
+// keyedPos is the position of the first entry of key k of a table or keyed list, -1 when none.
+func keyedPos(v value.Value, k value.Key) int {
+	if t, ok := v.(*value.Table); ok {
+		return slices.IndexFunc(t.Entries, func(rec *value.Record) bool { return hasKey(rec, k) })
+	}
+	return slices.IndexFunc(std.Elems(v), func(e value.Value) bool {
+		rec, ok := e.(*value.Record)
+		return ok && hasKey(rec, k)
+	})
+}
+
+// hasKey reports an entry of key k.
+func hasKey(rec *value.Record, k value.Key) bool {
+	return rec.Ident != nil && rec.Ident.Key == k
 }
 
 // typeOfNode names a collection by its type, for E4002 in an assignment.

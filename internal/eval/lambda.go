@@ -38,7 +38,7 @@ func evalLambda(r *run, e syntax.Expr, _ *vpath) value.Value {
 		short: r.fr.short, file: r.fr.file, pkg: r.fr.pkg, t: r.typeOf(e), p: r.prov(e, value.ProvComputed),
 	}
 	for _, obj := range r.ev.freeNames(e) {
-		if v, ok := r.fr.vars[obj]; ok {
+		if v, ok := r.readVar(obj, nil); ok {
 			c.vars[obj] = v
 		}
 	}

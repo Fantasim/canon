@@ -59,6 +59,27 @@ func Method(h Host, c *Call) (value.Value, bool) {
 	return fn(h, c)
 }
 
+// Peeks reports a method that keeps at most one element of a receiver of type t (ADR-0018).
+func Peeks(t types.Type, name string) bool {
+	return t != nil && peekers[typeFamily(t)][name]
+}
+
+// typeFamily is the family of a list, keyed list, table or map type, famFree for another.
+func typeFamily(t types.Type) family {
+	switch x := t.Base().(type) {
+	case *types.TableType:
+		return famKeyed
+	case *types.ListType:
+		if x.KeyedBy != nil {
+			return famKeyed
+		}
+		return famList
+	case *types.MapType:
+		return famMap
+	}
+	return famFree
+}
+
 // Free runs the free function c.Name (STDLIB.md §2).
 func Free(h Host, c *Call) (value.Value, bool) {
 	fn := freeFunctions[c.Name]

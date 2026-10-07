@@ -137,3 +137,10 @@ const (
 	minIntFloat = -9223372036854775808.0
 	maxIntFloat = 9223372036854775808.0
 )
+
+// The methods, per receiver family, that keep at most one element of their receiver (ADR-0018).
+var peekers = map[family]map[string]bool{
+	famList:  {bLen: true, bIsEmpty: true, bGet: true, bContains: true},
+	famKeyed: {bLen: true, bIsEmpty: true, bGet: true, bContains: true, bHasKey: true},
+	famMap:   {bLen: true, bIsEmpty: true, bGet: true, bContains: true},
+}

@@ -281,7 +281,12 @@ func (r *run) callBuiltin(x *syntax.CallExpr, callee *check.Callee) value.Value 
 		}
 		return r.runStd(std.Free, x, callee, nil)
 	}
-	recv := r.recv(s.X)
+	var recv value.Value
+	if r.peeks(callee, s.X) {
+		recv = r.peekRecv(s.X)
+	} else {
+		recv = r.recv(s.X)
+	}
 	if !r.unwrap(recv, s.Optional) {
 		return nil
 	}

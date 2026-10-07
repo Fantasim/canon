@@ -41,6 +41,7 @@ type run struct {
 	magic      *Magic           // a view run's magic names (viewexpr.go)
 	outer      *diag.Frame      // a precomputation's frame its findings carry (EVALUATION.md §2.3)
 	notesCuts  bool             // a precomputation: its cut stacks keep their outermost frame (outermost.go)
+	peek       syntax.Expr      // the receiver being read as a peek, until that read (owned.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).
@@ -61,9 +62,10 @@ type frame struct {
 	stack  []diag.Frame
 	more   int
 	cached bool
-	decl   bool                     // an implicit frame: a field default or a where run (DECISIONS 210)
-	ts     bool                     // a translated fn's frame in a TS-mode vector (CONFORMANCE.md §4)
-	reads  map[syntax.Expr]selfRead // its paths of self, read on entry in TS mode
+	decl   bool                         // an implicit frame: a field default or a where run (DECISIONS 210)
+	ts     bool                         // a translated fn's frame in a TS-mode vector (CONFORMANCE.md §4)
+	reads  map[syntax.Expr]selfRead     // its paths of self, read on entry in TS mode
+	owns   map[check.Object]value.Value // the vars' collections no one else holds (owned.go)
 }
 
 // under links f below caller, counting its user frames; it returns f.
