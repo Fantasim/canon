@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 	"testing"
 
@@ -28,7 +29,7 @@ func archiveFS(a *txtar.Archive) mapFS {
 		switch f.Name {
 		case findingsFile, buildFile, layersFile, adoptFile, selectFile, checkOnly:
 		default:
-			fsys["p/"+f.Name] = file(string(f.Data))
+			fsys[path.Join("p", f.Name)] = file(string(f.Data)) // "../x" is beside the project (SPEC §3.1)
 		}
 	}
 	return fsys

@@ -1,0 +1,30 @@
+GRAMMAR.md §7.2 (DECISIONS 332): project.local.canon holds keys other than roots, and roots twice.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+}
+-- project.local.canon --
+project acme {
+  canon: "0.1"
+  optional_roots: [resource]
+  roots {
+    resource: "/home/sam/Resource"
+  }
+  roots {
+    resource: "/home/sam/Resource"
+  }
+}
+-- findings.txt --
+error[E1014]  project.local.canon:2:3
+  project.local.canon may only hold roots: remove "canon"
+
+error[E1014]  project.local.canon:3:3
+  project.local.canon may only hold roots: remove "optional_roots"
+
+error[E1014]  project.local.canon:7:3
+  "roots" is given twice in project.local.canon
+
+3 errors, 0 warnings in 1 package (…)

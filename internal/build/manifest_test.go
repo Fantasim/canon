@@ -95,6 +95,7 @@ func TestManifestOptions(t *testing.T) {
 	fsys["p/copy/items/a.json"] = file(`{"name": "a", "icon": "a.png"}`)
 	fsys["p/copy/items/b.json"] = file(`{"name": "b", "icon": "a.png"}`)
 	fsys["p/copy/icons/a.png"] = file("")
+	fsys["gen/.keep"] = file("") // SPEC §3.1: the root moved outside the project exists
 	//canon:unordered each file copied alone: the same bytes under another directory
 	for name, f := range maps.Clone(fsys) {
 		if rest, ok := strings.CutPrefix(name, "p/res/"); ok {

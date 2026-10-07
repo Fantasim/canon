@@ -28,7 +28,7 @@ func TestFindings(t *testing.T) {
 				t.Fatal(err)
 			}
 			kind := syntax.FileSource
-			if path.Base(f.Name) == projectFile {
+			if path.Base(f.Name) == projectFile || f.Name == syntax.LocalProjectFile {
 				kind = syntax.FileProject
 			}
 			tree := syntax.Parse(src, kind, bag)

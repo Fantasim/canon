@@ -1,0 +1,15 @@
+GRAMMAR.md §5.2, §7.2 (DECISIONS 332): project.local.canon at the project root holds the project declaration only; elsewhere a file of that name is an ordinary source.
+-- project.local.canon --
+project x {
+  roots {
+    a: "/a"
+  }
+}
+let y = 1
+-- sub/project.local.canon --
+package sub
+-- findings.txt --
+error[E1011]  project.local.canon:6:1
+  project.local.canon may only contain the project declaration
+
+1 error, 0 warnings in 1 package (…)

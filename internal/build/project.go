@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io/fs"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -100,7 +101,8 @@ func (p *Project) readOwn(s *snapshot) error {
 	return err
 }
 
-// readProject reads project.canon into s; a finding that stops the call is an *OpenError.
+// readProject reads project.canon, then project.local.canon when it exists, into s and places
+// the roots (API.md O2); a finding that stops the call is an *OpenError (O3).
 func (p *Project) readProject(s *snapshot) error {
 	if err := project.Require(p.fs, p.dir, s.own); err != nil {
 		if errors.Is(err, project.ErrNoProject) {
@@ -108,26 +110,84 @@ func (p *Project) readProject(s *snapshot) error {
 		}
 		return displayErrorIn(p.dir, err)
 	}
-	file := project.Join(p.dir, project.FileName)
-	content, err := p.fs.ReadFile(file)
+	content, err := p.fs.ReadFile(project.Join(p.dir, project.FileName))
 	if err != nil {
 		return displayError(project.FileName, err)
 	}
-	s.canon = sha256.Sum256(content)
-	s.sums = append(s.sums, project.FileSum{Path: project.FileName, Sum: s.canon})
-	src, err := s.add(project.FileName, file, content)
+	src, sum, err := s.addOwn(project.FileName, content)
 	if err != nil {
-		return fmt.Errorf(fmtWrap, err)
+		return err
 	}
 	if s.proj, err = project.Load(src, s.own); err != nil {
 		return &OpenError{Err: err}
 	}
-	layout, ok := project.NewLayout(s.proj, p.dir, p.opt.Roots, s.own)
+	local, err := p.readLocal(s)
+	if err != nil {
+		return err
+	}
+	layout, ok := project.Place(s.proj, p.dir, project.Placement{Local: local, Overrides: p.opt.Roots, FS: p.fs}, s.own)
 	if !ok {
 		return &OpenError{Err: project.ErrInvalid}
 	}
 	s.layout = layout
+	s.canon = placedKey(sum, rootLinesOf(p.dir, s.proj, layout))
 	return nil
+}
+
+// readLocal checks project.local.canon, read through p's FS (its overlays included); nil when
+// it does not exist (DECISIONS 332).
+func (p *Project) readLocal(s *snapshot) (*project.Local, error) {
+	content, err := p.fs.ReadFile(project.Join(p.dir, project.LocalFileName))
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return nil, nil
+	case err != nil:
+		return nil, displayError(project.LocalFileName, err)
+	}
+	src, _, err := s.addOwn(project.LocalFileName, content)
+	if err != nil {
+		return nil, err
+	}
+	local, err := project.LoadLocal(src, s.proj, s.own)
+	if err != nil {
+		return nil, &OpenError{Err: err}
+	}
+	return local, nil
+}
+
+// addOwn adds a project file at the project's top to s's set and to the files it read (API.md S3).
+func (s *snapshot) addOwn(name string, content []byte) (*source.File, [sha256.Size]byte, error) {
+	sum := sha256.Sum256(content)
+	s.sums = append(s.sums, project.FileSum{Path: name, Sum: sum})
+	src, err := s.add(name, project.Join(s.p.dir, name), content)
+	if err != nil {
+		return nil, sum, fmt.Errorf(fmtWrap, err)
+	}
+	return src, sum, nil
+}
+
+// placedKey is project.canon's SHA-256 with where this machine places each root, and which are
+// absent: what a checked program depends on besides its files (DECISIONS 332).
+func placedKey(sum [sha256.Size]byte, roots []string) [sha256.Size]byte {
+	h := sha256.New()
+	h.Write(sum[:])
+	for _, line := range roots {
+		h.Write([]byte(line + lineEnd))
+	}
+	var out [sha256.Size]byte
+	h.Sum(out[:0])
+	return out
+}
+
+// ownDigests is the listing lines of project.canon and, when it exists, project.local.canon
+// (API.md S3).
+func (p *Project) ownDigests() []digest {
+	lines := []digest{p.digestOf(project.FileName)}
+	data, err := p.fs.ReadFile(project.Join(p.dir, project.LocalFileName))
+	if !errors.Is(err, fs.ErrNotExist) {
+		lines = append(lines, digestData(project.LocalFileName, data, err))
+	}
+	return lines
 }
 
 func (p *Project) newBag(set *source.FileSet, pkg string) *diag.Bag {

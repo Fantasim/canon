@@ -1,0 +1,18 @@
+SPEC §3.1, GRAMMAR.md §7.1, API.md O3 (DECISIONS 332): a required root outside the project whose directory does not exist; an absent optional root, a present one and a root inside the project that does not exist yet are no finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "../Resource"
+    source: "../Source"
+    client: "../Client"
+    features: "features"
+  }
+  optional_roots: [client]
+}
+-- ../Resource/Server/x.h --
+-- findings.txt --
+error[E1013]  project.canon:5:5
+  root "source" ("../Source") is not a directory on this machine: clone the repository there, point to it in project.local.canon, or list the root in optional_roots in project.canon
+
+1 error, 0 warnings in 1 package (…)

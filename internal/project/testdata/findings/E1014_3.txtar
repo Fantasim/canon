@@ -1,0 +1,17 @@
+GRAMMAR.md §7.2 (DECISIONS 332): roots in project.local.canon is not a map.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots: ["/home/sam/Resource"]
+}
+-- findings.txt --
+error[E1014]  project.local.canon:2:10
+  "roots" in project.local.canon must be a map of root names to path strings
+
+1 error, 0 warnings in 1 package (…)

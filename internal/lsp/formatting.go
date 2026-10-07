@@ -68,10 +68,16 @@ func formatted(abs string, text []byte) ([]byte, error) {
 	return out, err
 }
 
-// fileKind is how a .canon file parses: a project file by its name, else a source (API.md T1).
+// fileKind is how a .canon file parses: project.canon, and project.local.canon at the root of a
+// project (beside its project.canon), are project files; anything else a source (DECISIONS 332).
 func fileKind(abs string) syntax.FileKind {
-	if path.Base(abs) == project.FileName {
+	switch path.Base(abs) {
+	case project.FileName:
 		return syntax.FileProject
+	case project.LocalFileName:
+		if root, err := projectAbove(abs); err == nil && root == project.DirOf(abs) {
+			return syntax.FileProject
+		}
 	}
 	return syntax.FileSource
 }

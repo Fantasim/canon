@@ -41,6 +41,9 @@ func openExamplesWith(t *testing.T, out string, opt build.Options) *build.Projec
 	roots := map[string]string{"resource": "_fixtures/resource", "client": "_fixtures/client"}
 	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
 		roots[name] = filepath.ToSlash(filepath.Join(out, name))
+		if err := os.MkdirAll(filepath.Join(out, name), 0o750); err != nil { // SPEC §3.1: a required root exists
+			t.Fatal(err)
+		}
 	}
 	opt.Roots = roots
 	p, err := build.Open(project.OS(), filepath.ToSlash(dir), opt)

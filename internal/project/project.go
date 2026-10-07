@@ -25,11 +25,13 @@ type Version struct {
 	Major, Minor int
 }
 
-// Root is a named root: its name and its path as written, relative to the project directory.
+// Root is a named root: its name, its path as written, relative to the project directory, and
+// whether optional_roots lists it (DECISIONS 332).
 type Root struct {
-	Name string
-	Path string
-	Span source.Span
+	Name     string
+	Path     string
+	Span     source.Span
+	Optional bool
 }
 
 // Package is a package path the project names, with the span that names it; Path "" is none.

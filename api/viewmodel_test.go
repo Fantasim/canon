@@ -27,7 +27,7 @@ var viewPackages = []struct{ pkg, file, golden string }{
 // openViewExamples is the examples project with the files a build writes kept in memory.
 func openViewExamples(t *testing.T) (*canon.Project, *memFS) {
 	t.Helper()
-	fsys := newMemFS(committedExamples())
+	fsys := newExampleFS()
 	p, err := canon.Open(exampleRoot, canon.Options{FS: fsys, Roots: exampleRoots, Cache: "off"})
 	if err != nil {
 		t.Fatal(err)

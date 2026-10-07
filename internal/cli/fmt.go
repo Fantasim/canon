@@ -81,14 +81,25 @@ func (r *fmtRun) finish(start time.Time) int {
 	return exitOK
 }
 
-// projectBroken keeps the findings of a project.canon with a syntax error, exit 1, nothing written (CLI.md §3.6, §2.5).
+// projectBroken keeps the findings of a project.canon or project.local.canon with a syntax error, exit 1, nothing written (CLI.md §3.6).
 func (r *fmtRun) projectBroken() bool {
-	abs := project.Join(r.root, project.FileName)
+	broken := false
+	for _, name := range [...]string{project.FileName, project.LocalFileName} {
+		if r.syntaxBroken(name) {
+			broken = true
+		}
+	}
+	return broken
+}
+
+// syntaxBroken keeps the findings of the project file name when it has a syntax error.
+func (r *fmtRun) syntaxBroken(name string) bool {
+	abs := project.Join(r.root, name)
 	data, err := r.fsys.ReadFile(abs)
 	if err != nil {
 		return false
 	}
-	src, err := r.set.Add(project.FileName, abs, data)
+	src, err := r.set.Add(name, abs, data)
 	if err != nil {
 		return false
 	}
@@ -141,15 +152,32 @@ func (r *fmtRun) place() bool {
 		return false
 	}
 	bag := diag.NewBag(&r.set, "")
-	proj, err := project.Load(src, bag)
-	if err == nil {
-		var ok bool
-		if r.layout, ok = project.NewLayout(proj, r.root, project.HostPaths().RootsFromAPI(r.inv.opt.roots, r.root), bag); ok {
-			return true
+	if proj, err := project.Load(src, bag); err == nil {
+		if local, ok := r.local(proj, bag); ok {
+			roots := project.HostPaths().RootsFromAPI(r.inv.opt.roots, r.root)
+			if r.layout, ok = project.Place(proj, r.root, project.Placement{Local: local, Overrides: roots, FS: r.fsys}, bag); ok {
+				return true
+			}
 		}
 	}
 	r.reject(bag)
 	return false
+}
+
+// local is project.local.canon checked into bag, nil when there is none; false when it does not
+// check (DECISIONS 332).
+func (r *fmtRun) local(proj *project.Project, bag *diag.Bag) (*project.Local, bool) {
+	abs := project.Join(r.root, project.LocalFileName)
+	data, err := r.fsys.ReadFile(abs)
+	if err != nil {
+		return nil, errors.Is(err, fs.ErrNotExist)
+	}
+	src, err := r.set.Add(project.LocalFileName, abs, data)
+	if err != nil {
+		return nil, false
+	}
+	local, err := project.LoadLocal(src, proj, bag)
+	return local, err == nil
 }
 
 // files are the files fmt visits, in path order: project.canon and every .canon file, or the selected packages' (CLI.md §2.2).
@@ -176,24 +204,27 @@ func (r *fmtRun) files(p *canon.Project) ([]fmtFile, error) {
 	return sortedFiles(files), nil
 }
 
-// allFiles are project.canon and every scanned .canon file.
+// allFiles are project.canon, project.local.canon when it exists and every scanned .canon file.
 func (r *fmtRun) allFiles() ([]fmtFile, error) {
 	names, err := project.Scan(r.fsys, r.root)
 	if err != nil {
 		return nil, fmt.Errorf(fmtArgs, dotSep, readCause(err))
 	}
 	files := []fmtFile{{display: project.FileName, kind: syntax.FileProject}}
+	if _, err := r.fsys.Stat(project.Join(r.root, project.LocalFileName)); err == nil {
+		files = append(files, fmtFile{display: project.LocalFileName, kind: syntax.FileProject})
+	}
 	for _, name := range names {
 		files = append(files, fmtFile{display: name, kind: syntax.FileSource})
 	}
 	return sortedFiles(files), nil
 }
 
-// selectFiles are the files of the packages sel selects; project.canon, and a .canon file that
-// declares no package, select themselves.
+// selectFiles are the files of the packages sel selects; project.canon, project.local.canon and
+// a .canon file that declares no package select themselves.
 func (r *fmtRun) selectFiles(listings []project.Listing, sel string) ([]fmtFile, error) {
-	if sel == project.FileName {
-		return []fmtFile{{display: project.FileName, kind: syntax.FileProject}}, nil
+	if sel == project.FileName || sel == project.LocalFileName {
+		return []fmtFile{{display: sel, kind: syntax.FileProject}}, nil
 	}
 	matched, err := project.Match(listings, sel)
 	if err != nil {

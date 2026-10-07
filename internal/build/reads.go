@@ -79,11 +79,11 @@ func (p *Project) FS() project.FS { return p.fs }
 // Dir is the project directory, absolute and '/'-separated.
 func (p *Project) Dir() string { return p.dir }
 
-// Inputs is the read set every call has (API.md S3): project.canon, each source the scan lists
-// and every place a canon.lock can be; the caller drops those that do not exist. A listing that
-// fails ends the list with its error.
+// Inputs is the read set every call has (API.md S3): project.canon, the place of
+// project.local.canon, each source the scan lists and every place a canon.lock can be; the
+// caller drops those that do not exist. A listing that fails ends the list with its error.
 func (p *Project) Inputs() ([]Read, error) {
-	out := []Read{p.fileRead(project.FileName)}
+	out := p.ownReads()
 	names, err := project.Scan(p.fs, p.dir)
 	if err != nil {
 		return out, displayErrorIn(p.dir, err)
@@ -95,6 +95,11 @@ func (p *Project) Inputs() ([]Read, error) {
 		out = append(out, p.fileRead(name))
 	}
 	return out, nil
+}
+
+// ownReads is project.canon and the place of project.local.canon, which may not exist (API.md S3, S5).
+func (p *Project) ownReads() []Read {
+	return []Read{p.fileRead(project.FileName), p.fileRead(project.LocalFileName)}
 }
 
 // fileRead is the project-relative file name as a Read.
@@ -150,6 +155,13 @@ func (p *Project) Display(abs string) string {
 	return best
 }
 
+// Layout is the roots as this machine places them now: project.local.canon and the overrides
+// applied, presence judged; false when the project does not open (API.md O2, W12).
+func (p *Project) Layout() (*project.Layout, bool) {
+	s, ok := p.roots()
+	return s.layout, ok
+}
+
 // roots is project.canon read and its roots placed, false when it does not check.
 func (p *Project) roots() (*snapshot, bool) {
 	set := &source.FileSet{}
@@ -178,7 +190,7 @@ func (a *Analysis) Reads(pkg string) []Read {
 		return nil
 	}
 	units := withStudio(r.s.units, imported(r.s.units, r.s.units[i:i+1]), r.s.proj.Studio.Path)
-	out := []Read{r.p.fileRead(project.FileName)}
+	out := r.p.ownReads()
 	names := []string{""} // what no package asked for counts for every one
 	for _, u := range units {
 		names = append(names, u.Name)

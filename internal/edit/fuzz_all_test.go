@@ -2,6 +2,7 @@ package edit_test
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -60,6 +61,9 @@ func exampleRoots(t testing.TB) (string, map[string]string) {
 	out := t.TempDir()
 	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
 		roots[name] = filepath.ToSlash(filepath.Join(out, name))
+		if err := os.MkdirAll(filepath.Join(out, name), 0o750); err != nil { // SPEC §3.1: a required root exists
+			t.Fatal(err)
+		}
 	}
 	return filepath.ToSlash(dir), roots
 }

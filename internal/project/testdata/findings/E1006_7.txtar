@@ -1,0 +1,17 @@
+GRAMMAR.md §7.1 (DECISIONS 332): optional_roots holds a string and a dotted name, not root names written as identifiers.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+  optional_roots: ["resource", a.b, resource]
+}
+-- findings.txt --
+error[E1006]  project.canon:6:20
+  "optional_roots" must be a list of root names
+
+error[E1006]  project.canon:6:32
+  "optional_roots" must be a list of root names
+
+2 errors, 0 warnings in 1 package (…)

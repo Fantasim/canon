@@ -3,6 +3,7 @@ package build
 import (
 	"fmt"
 	"math/rand/v2"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -216,8 +217,12 @@ func examplesAnalyzer(t *testing.T) *analyzer {
 		t.Fatal(err)
 	}
 	roots := map[string]string{"resource": "_fixtures/resource", "client": "_fixtures/client"}
+	out := t.TempDir()
 	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
-		roots[name] = filepath.ToSlash(filepath.Join(t.TempDir(), name))
+		roots[name] = filepath.ToSlash(filepath.Join(out, name))
+		if err := os.MkdirAll(filepath.Join(out, name), 0o750); err != nil { // SPEC §3.1: a required root exists
+			t.Fatal(err)
+		}
 	}
 	return &analyzer{fs: newEditFS(project.OS()), dir: filepath.ToSlash(dir), opt: Options{Roots: roots}, cache: NewCache()}
 }

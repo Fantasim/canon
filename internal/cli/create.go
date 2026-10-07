@@ -95,20 +95,28 @@ func createFile(root *os.Root, name, text string) error {
 	return nil
 }
 
-// ignoreCache adds the `.canon/` line to .gitignore unless it is there (CLI.md §2.7).
+// ignoreCache adds the `.canon/` and `project.local.canon` lines to .gitignore unless there (CLI.md §3.1).
 func ignoreCache(root *os.Root) error {
 	data, err := root.ReadFile(gitignoreFile)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf(fmtWrap, err)
 	}
 	text := string(data)
-	if slices.Contains(strings.Split(text, lineBreak), cacheIgnore) {
+	lines := strings.Split(text, lineBreak)
+	added := text
+	for _, line := range [...]string{cacheIgnore, project.LocalFileName} {
+		if slices.Contains(lines, line) {
+			continue
+		}
+		if added != "" && !strings.HasSuffix(added, lineBreak) {
+			added += lineBreak
+		}
+		added += line + lineBreak
+	}
+	if added == text {
 		return nil
 	}
-	if text != "" && !strings.HasSuffix(text, lineBreak) {
-		text += lineBreak
-	}
-	if err := root.WriteFile(gitignoreFile, []byte(text+cacheIgnore+lineBreak), filePerm); err != nil {
+	if err := root.WriteFile(gitignoreFile, []byte(added), filePerm); err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
 	return nil

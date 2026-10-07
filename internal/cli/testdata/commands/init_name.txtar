@@ -9,6 +9,7 @@ acme
 [stderr]
 [file .gitignore]
 .canon/
+project.local.canon
 [file project.canon]
 project acme {
   canon: "0.1"

@@ -53,8 +53,7 @@ func TestDriversBuiltLazily(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	roots := map[string]string{"resource": "_fixtures/resource", "client": "_fixtures/client"}
-	p, err := Open(project.OS(), filepath.ToSlash(dir), Options{Roots: roots})
+	p, err := Open(project.OS(), filepath.ToSlash(dir), examplesAnalyzer(t).opt)
 	if err != nil {
 		t.Fatal(err)
 	}

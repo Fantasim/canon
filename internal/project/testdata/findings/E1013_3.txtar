@@ -1,0 +1,22 @@
+SPEC §3.1, API.md §2.1, O3 (DECISIONS 332): an override places a required root where no directory is, over project.local.canon, which placed it on an existing one.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "../Resource"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots {
+    resource: "../Resource2"
+  }
+}
+-- ../Resource2/a.h --
+-- roots --
+resource=/nowhere/Resource
+-- findings.txt --
+error[E1013]
+  root "resource" ("/nowhere/Resource", from --root or Options.Roots) is not a directory on this machine: give an existing directory, or list the root in optional_roots in project.canon
+
+1 error, 0 warnings in 1 package (…)

@@ -114,7 +114,7 @@ func (s *Snapshot) sourcesStale(base string) error {
 	if !ok {
 		return &StaleError{}
 	}
-	files := s.changedFiles(was, append([]string{project.FileName}, names...))
+	files := s.changedFiles(was, append([]string{project.FileName, project.LocalFileName}, names...))
 	files = append(files, s.changedDirs(was, names)...)
 	if len(files) == 0 {
 		return nil

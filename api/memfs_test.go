@@ -35,7 +35,20 @@ var exampleRoots = map[string]string{
 // exampleOptions are the options of every Example: the in-memory copy of examples/, every root
 // redirected, no cache, so an Example reads nothing outside the repository and writes nothing.
 func exampleOptions() canon.Options {
-	return canon.Options{FS: newMemFS(committedExamples()), Roots: exampleRoots, Cache: "off"}
+	return canon.Options{FS: newExampleFS(), Roots: exampleRoots, Cache: "off"}
+}
+
+// newExampleFS is the in-memory copy of examples/ with the directories of the roots redirected
+// into memory: a required root exists (DECISIONS 332).
+func newExampleFS() *memFS {
+	m := newMemFS(committedExamples())
+	//canon:unordered each directory is made on its own
+	for _, dir := range exampleRoots {
+		if path.IsAbs(dir) {
+			_ = m.MkdirAll(dir)
+		}
+	}
+	return m
 }
 
 // committedExamples is the repository's examples/ tree, read once, by absolute name.

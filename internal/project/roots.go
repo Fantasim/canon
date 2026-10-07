@@ -71,3 +71,31 @@ func rootPathError(span source.Span, name, path string) *diag.Builder {
 func isAbsolute(path string) bool {
 	return strings.HasPrefix(path, sep) || strings.HasPrefix(path, backslash) || drivePattern.MatchString(path)
 }
+
+// optionalRoots is a list of declared root names, each once (GRAMMAR.md §7.1: E1006, E1009).
+func (s *schema) optionalRoots(e *syntax.ProjectEntry) {
+	l, ok := e.Value.(*syntax.ProjectList)
+	if !ok {
+		s.fail(diag.E1006.AtOptionalRoots(s.span(e.Value)))
+		return
+	}
+	listed := map[string]bool{}
+	for _, item := range l.Items {
+		q, ok := item.(*syntax.QualifiedName)
+		span := s.span(item)
+		switch {
+		case isBad(item):
+		case !ok || len(q.Parts) != 1:
+			s.fail(diag.E1006.AtOptionalRoots(span))
+		case !s.named[qualified(q)]:
+			s.fail(diag.E1009.AtOptionalRoot(span, qualified(q)))
+		case listed[qualified(q)]:
+			s.fail(diag.E1009.AtOptionalDuplicate(span, qualified(q)))
+		default:
+			listed[qualified(q)] = true
+		}
+	}
+	for i := range s.p.Roots {
+		s.p.Roots[i].Optional = listed[s.p.Roots[i].Name]
+	}
+}

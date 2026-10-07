@@ -43,7 +43,7 @@ func Example() {
 	p.Close()
 	_, err = p.Read(ctx)
 	fmt.Println(isStale, stale.Files, errors.Is(err, workspace.ErrClosed))
-	// Output: 0 4
+	// Output: 0 5
 	// overlay [x/x.canon]
 	// true [x/x.canon] true
 }

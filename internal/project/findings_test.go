@@ -87,7 +87,7 @@ func loadCase(t *testing.T, a *txtar.Archive, fsys memFS, set *source.FileSet, b
 	if p == nil {
 		return
 	}
-	layout, _ := project.NewLayout(p, projectDir, overrides(a), bag)
+	layout, _ := project.Place(p, projectDir, project.Placement{Local: loadLocal(t, a, p, set, bag), Overrides: overrides(a), FS: fsys}, bag)
 	resolvePaths(t, a, layout, set, bag)
 	names, err := project.Scan(fsys, projectDir)
 	if err != nil {
@@ -99,6 +99,21 @@ func loadCase(t *testing.T, a *txtar.Archive, fsys memFS, set *source.FileSet, b
 		t.Fatal(err)
 	}
 	project.CheckStudio(p, units, bag)
+}
+
+// loadLocal checks the archive's project.local.canon, nil when it has none (GRAMMAR.md §7.2).
+func loadLocal(t *testing.T, a *txtar.Archive, p *project.Project, set *source.FileSet, bag *diag.Bag) *project.Local {
+	t.Helper()
+	data, ok := archiveFile(a, project.LocalFileName)
+	if !ok {
+		return nil
+	}
+	src, err := set.Add(project.LocalFileName, path.Join(projectDir, project.LocalFileName), data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	local, _ := project.LoadLocal(src, p, bag)
+	return local
 }
 
 func overrides(a *txtar.Archive) map[string]string {

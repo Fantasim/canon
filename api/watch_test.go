@@ -323,6 +323,25 @@ func TestWatchNewDirectories(t *testing.T) {
 	}
 }
 
+// API.md W12 (DECISIONS 332): a recursive glob under a root project.local.canon moves is watched
+// where the root is placed, not where project.canon puts it.
+func TestWatchGlobUnderLocalRoot(t *testing.T) {
+	files := maps.Clone(watchLaw)
+	files["project.canon"] = "project acme {\n  canon: \"0.1\"\n  roots {\n    data: \"declared\"\n  }\n}\n"
+	files["project.local.canon"] = "project acme {\n  roots {\n    data: \"placed\"\n  }\n}\n"
+	files["e/e.canon"] = "/// E.\npackage e\n\n/// Xs.\nlet xs: [Int] = load.dir(\"@data/**/*.json\")\n"
+	files["placed/1.json"] = "1\n"
+	files["declared/1.json"] = "1\n"
+	p, opts := openLaw(t, files)
+	events, _ := watch(t, p, nil)
+	writeLaw(t, opts.FS, "declared/sub/deep/2.json", "2\n")
+	noEvent(t, events, "a file where project.canon, not this machine, places the root")
+	writeLaw(t, opts.FS, "placed/sub/deep/2.json", "2\n")
+	if ev := nextEvent(t, events); !slices.Equal(ev.Packages, []string{"e"}) || ev.Err != nil {
+		t.Errorf("a file under the placed root: %+v", ev)
+	}
+}
+
 // API.md W12, S1 (log-2026-09-29 M4 U5-r4): a load.dir of CSV or text files is watched by its
 // own glob too: a new matching file is one event naming it, any other file none.
 func TestWatchLoadDirectoryFormats(t *testing.T) {

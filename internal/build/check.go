@@ -42,7 +42,7 @@ type snapshot struct {
 	units  []*project.Unit
 	sums   []project.FileSum
 	locks  map[string][]byte // every package directory's canon.lock read, by project-relative path
-	canon  [sha256.Size]byte // project.canon's SHA-256
+	canon  [sha256.Size]byte // project.canon's SHA-256 with the placed root lines (placedKey)
 	gen    *cacheGen         // the cache generation whose set this is; nil without a cache
 	base   source.FileID     // the set's last file when the snapshot began
 }
@@ -81,7 +81,7 @@ func (p *Project) Info() (*project.Project, error) {
 // checks or not; a file, or the listing of the file set, that cannot be read is marked so. The
 // canon.lock of every package directory counts, whatever a call selects.
 func (p *Project) Revision(ctx context.Context) (string, error) {
-	lines := []digest{p.digestOf(project.FileName)}
+	lines := p.ownDigests()
 	names, err := project.Scan(p.fs, p.dir)
 	if err != nil {
 		lines = append(lines, digest{path: listingMark, text: unreadMark})

@@ -10,11 +10,13 @@ project acme {
     resource: "../Resource"
     web: "../web"
   }
+  optional_roots: [web]
   languages: [en, fr, pt_BR, zh_Hant_TW]
   studio: studio
   budget: 100_000_000
   canon: "0.1"
 }
+-- ../Resource/Server/Define/x.h --
 -- studio/studio.canon --
 package studio
 -- paths --

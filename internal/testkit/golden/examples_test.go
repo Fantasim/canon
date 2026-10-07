@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	canon "github.com/fantasim/canonlang/api"
+	"github.com/fantasim/canonlang/internal/project"
 )
 
 // errDuplicateGolden is buildManifest's error when two display paths would share one golden
@@ -133,7 +134,7 @@ func openExamples(t *testing.T, root string) (proj string, roots map[string]stri
 	if err := copyProject(proj, root); err != nil {
 		t.Fatal(err)
 	}
-	roots = exampleRoots(proj, tmp)
+	roots = exampleRoots(t, proj, tmp)
 	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: roots, Cache: "off"})
 	if err != nil {
 		t.Fatal(err)
@@ -156,6 +157,9 @@ func copyProject(proj, root string) error {
 			}
 			return os.MkdirAll(filepath.Join(proj, p), dirPerm)
 		}
+		if p == project.LocalFileName { // the harness places every root itself
+			return nil
+		}
 		b, err := os.ReadFile(filepath.Join(root, p))
 		if err != nil {
 			return err
@@ -167,13 +171,17 @@ func copyProject(proj, root string) error {
 // exampleRoots redirects every root outside the project into tmp, and resource/client into the
 // copy's own fixtures (examples/_fixtures/README.md); pipeline_go and features are not
 // redirected, since they are inside the project already.
-func exampleRoots(proj, tmp string) map[string]string {
+func exampleRoots(t *testing.T, proj, tmp string) map[string]string {
+	t.Helper()
 	roots := map[string]string{
 		"resource": filepath.Join(proj, "_fixtures", "resource"),
 		"client":   filepath.Join(proj, "_fixtures", "client"),
 	}
 	for _, r := range exampleWriteRoots {
 		roots[r] = filepath.Join(tmp, "out", r)
+		if err := os.MkdirAll(roots[r], dirPerm); err != nil {
+			t.Fatal(err)
+		}
 	}
 	return roots
 }

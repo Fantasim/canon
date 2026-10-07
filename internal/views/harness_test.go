@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -182,6 +183,9 @@ func examples(t *testing.T) *analyzed {
 	roots := map[string]string{"resource": "_fixtures/resource", "client": "_fixtures/client"}
 	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
 		roots[name] = filepath.ToSlash(filepath.Join(out, name))
+		if err := os.MkdirAll(filepath.Join(out, name), 0o750); err != nil { // SPEC §3.1: a required root exists
+			t.Fatal(err)
+		}
 	}
 	return analyze(t, project.OS(), filepath.ToSlash(dir), studioPkg, build.Options{Roots: roots})
 }

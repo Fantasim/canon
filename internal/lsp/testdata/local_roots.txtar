@@ -1,0 +1,97 @@
+The server opens each project as the CLI does, with no --root: project.local.canon places its
+roots (CLI.md §4, SPEC §3.1, GRAMMAR.md §7.2, DECISIONS 332). Its buffer is a project file,
+never a source (no E1127): an edited one is an overlay whose own findings (E1014, E1013 local)
+stop the project as project.canon's do; fixed, the findings return; it is formatted as a
+project file. Below the root, a file of that name is an ordinary source (GRAMMAR.md §5.2).
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+  }
+}
+-- proj/project.local.canon --
+project acme {
+  roots {
+    src: "../work/Source"
+  }
+}
+-- work/Source/n.json --
+3
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = load("@src/n.json")
+
+/// M.
+let m: Int = "x"
+-- proj/b/project.local.canon --
+/// B.
+package b
+
+/// K.
+let  k: Int=2
+-- edits/key.canon --
+project acme {
+  canon: "0.1"
+}
+-- edits/nowhere.canon --
+project acme {
+  roots {
+    src: "../nowhere"
+  }
+}
+-- edits/loose.canon --
+project acme {
+  roots: {
+      src:   "../work/Source"
+  }
+}
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/project.local.canon
+wait
+change proj/project.local.canon edits/key.canon
+wait
+change proj/project.local.canon edits/nowhere.canon
+wait
+change proj/project.local.canon edits/loose.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/project.local.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+open proj/b/project.local.canon
+wait
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/b/project.local.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/project.local.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":7,"character":13},"end":{"line":7,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+> change proj/project.local.canon edits/key.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/project.local.canon","diagnostics":[{"range":{"start":{"line":1,"character":2},"end":{"line":1,"character":7}},"severity":1,"code":"E1014","source":"canon","message":"project.local.canon may only hold roots: remove \"canon\""}]}}
+> change proj/project.local.canon edits/nowhere.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/project.local.canon","diagnostics":[{"range":{"start":{"line":2,"character":4},"end":{"line":2,"character":7}},"severity":1,"code":"E1013","source":"canon","message":"root \"src\" (\"../nowhere\", from project.local.canon) is not a directory on this machine: fix the path there, remove the line to use project.canon's, or list the root in optional_roots in project.canon"}]}}
+> change proj/project.local.canon edits/loose.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":7,"character":13},"end":{"line":7,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/project.local.canon","diagnostics":[]}}
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/project.local.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":1,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":5,"character":0}},"newText":"project acme {\n  roots {\n    src: \"../work/Source\"\n  }\n}\n"}]}
+> open proj/b/project.local.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":7,"character":13},"end":{"line":7,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/formatting","params":{"textDocument":{"uri":"$URI/proj/b/project.local.canon"},"options":{"tabSize":4,"insertSpaces":true}}}
+< {"jsonrpc":"2.0","id":2,"result":[{"range":{"start":{"line":0,"character":0},"end":{"line":5,"character":0}},"newText":"/// B.\npackage b\n\n/// K.\nlet k: Int = 2\n"}]}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

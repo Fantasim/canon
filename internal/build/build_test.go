@@ -11,7 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-const okProject = "project acme {\n  canon: \"0.1\"\n  roots {\n    res: \"../res\"\n  }\n}\n"
+const okProject = "project acme {\n  canon: \"0.1\"\n  roots {\n    res: \"res\"\n  }\n}\n"
 
 // API.md O2, O3: Open fails on project.canon's errors and on a bad override, with findings;
 // without project.canon it wraps ErrNoProject.

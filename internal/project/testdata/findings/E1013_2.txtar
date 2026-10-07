@@ -1,0 +1,24 @@
+SPEC §3.1, GRAMMAR.md §7.2 (DECISIONS 332): project.local.canon places a required root where no directory is; the root it places on an existing directory, and a project-relative one inside the project, are present.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "../Resource"
+    source: "../Source"
+    web: "../web"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots {
+    resource: "/elsewhere/Resource"
+    source: "../work/Source"
+    web: "vendor/web"
+  }
+}
+-- ../work/Source/a.h --
+-- findings.txt --
+error[E1013]  project.local.canon:3:5
+  root "resource" ("/elsewhere/Resource", from project.local.canon) is not a directory on this machine: fix the path there, remove the line to use project.canon's, or list the root in optional_roots in project.canon
+
+1 error, 0 warnings in 1 package (…)

@@ -8,6 +8,9 @@ const NoTok Tok = 0
 // NoDecimals is FormatSpec.Decimals when the spec has no ".N" part.
 const NoDecimals = -1
 
+// LocalProjectFile is project.local.canon, a project file of its own E1011 variant (GRAMMAR.md §7.2).
+const LocalProjectFile = "project.local.canon"
+
 // Blank is the name of the "_" binder.
 const Blank = "_"
 

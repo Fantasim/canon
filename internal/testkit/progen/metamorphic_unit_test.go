@@ -43,7 +43,7 @@ local fn twice(N: Int) -> Int { return N * 2 }
 `
 
 // metaProject is a project whose map entries a reorder may swap (GRAMMAR.md §7.1).
-const metaProject = "project p {\n  canon: \"0.1\"\n  budget: 200_000\n  roots {\n    a: \"../a\"\n    b: \"../b\"\n  }\n}\n"
+const metaProject = "project p {\n  canon: \"0.1\"\n  budget: 200_000\n  roots {\n    a: \"_out/a\"\n    b: \"_out/b\"\n  }\n}\n"
 
 func metaTarget(path, src string) target {
 	tg := target{pkg: metaPkg, path: path, src: []byte(src), file: parse(path, []byte(src))}

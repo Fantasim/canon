@@ -76,7 +76,7 @@ func runPositionCase(t *testing.T, root string, c positionCase) {
 		t.Fatal(err)
 	}
 	mutateJSON(t, proj, c.old, c.mu)
-	roots := exampleRoots(proj, tmp)
+	roots := exampleRoots(t, proj, tmp)
 	p, err := canon.Open(filepath.ToSlash(proj), canon.Options{Roots: roots, Cache: "off"})
 	if err != nil {
 		t.Fatal(err)

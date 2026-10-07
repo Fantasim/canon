@@ -7,7 +7,6 @@ import (
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/load"
-	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/workspace"
@@ -43,7 +42,7 @@ func (w *watching) globs(s *workspace.Snapshot, units *build.Units) []string {
 	if units == nil {
 		return nil
 	}
-	layout, ok := layoutOf(s, w.roots)
+	layout, ok := s.Build().Layout()
 	if !ok {
 		return nil
 	}
@@ -56,27 +55,6 @@ func (w *watching) globs(s *workspace.Snapshot, units *build.Units) []string {
 	}
 	slices.Sort(out)
 	return slices.Compact(out)
-}
-
-// layoutOf lays out s's roots as a build does: its project.canon, the Options.Roots overrides.
-func layoutOf(s *workspace.Snapshot, roots map[string]string) (*project.Layout, bool) {
-	b := s.Build()
-	abs := project.Join(b.Dir(), project.FileName)
-	data, err := b.FS().ReadFile(abs)
-	if err != nil {
-		return nil, false
-	}
-	set := &source.FileSet{}
-	src, err := set.Add(project.FileName, abs, data)
-	if err != nil {
-		return nil, false
-	}
-	bag := diag.NewBag(set, "")
-	proj, err := project.Load(src, bag)
-	if err != nil {
-		return nil, false
-	}
-	return project.NewLayout(proj, b.Dir(), roots, bag)
 }
 
 // holds reports name a file of matched, a sorted list, or, unless its own listing changed, a

@@ -17,7 +17,7 @@ func TestExamplesFmtCheck(t *testing.T) {
 	}
 	var stdout, stderr bytes.Buffer
 	env := cli.Env{Stdout: &stdout, Stderr: &stderr, Dir: dir}
-	code := cli.Main(context.Background(), []string{"fmt", "--check"}, env)
+	code := cli.Main(context.Background(), append([]string{"fmt", "--check"}, exampleRoots(t)...), env)
 	if code != 0 || stdout.Len() > 0 || stderr.Len() > 0 {
 		t.Errorf("exit %d\n--- stdout\n%s--- stderr\n%s", code, stdout.String(), stderr.String())
 	}

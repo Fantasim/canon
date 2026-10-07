@@ -1,0 +1,31 @@
+SPEC §3.1, GRAMMAR.md §7.2 (DECISIONS 332): project.local.canon places a root on this machine; a load reads it there, and the file is never read as a source.
+-- dir --
+p
+-- args --
+check
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+  }
+}
+-- p/project.local.canon --
+project acme {
+  roots {
+    src: "../work/Source"
+  }
+}
+-- work/Source/n.json --
+3
+-- p/a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = load("@src/n.json")
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+[stderr]

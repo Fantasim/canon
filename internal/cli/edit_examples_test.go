@@ -71,12 +71,7 @@ func editRun(t *testing.T, dir string, roots []string, request string) (int, str
 // exampleRootsIn redirects the roots of a copy of examples/project.canon, the written ones to one new directory.
 func exampleRootsIn(t *testing.T) []string {
 	t.Helper()
-	out := t.TempDir()
-	args := []string{"--root", "resource=_fixtures/resource", "--root", "client=_fixtures/client"}
-	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
-		args = append(args, "--root", name+"="+filepath.ToSlash(filepath.Join(out, name)))
-	}
-	return args
+	return exampleRoots(t)
 }
 
 // CLI.md §3.15, API.md §8.8: the printed undo applies and every file is byte-identical again.

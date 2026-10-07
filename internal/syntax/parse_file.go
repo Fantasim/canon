@@ -1,6 +1,10 @@
 package syntax
 
-import "github.com/fantasim/canonlang/internal/diag"
+import (
+	"path"
+
+	"github.com/fantasim/canonlang/internal/diag"
+)
 
 // file parses the whole file; its kind is decided by its first tokens (GRAMMAR.md §5.2).
 func (p *parser) file(isProject bool) *File {
@@ -12,7 +16,7 @@ func (p *parser) file(isProject bool) *File {
 		}
 		p.projectFile(f)
 	case isProject:
-		diag.E1011.AtInside(p.span(p.pos, p.pos)).Report(p.bag)
+		p.notProjectDecl()
 		for !p.at(TokEOF) && (!p.at(KwProject) || !p.topSync()) {
 			p.next()
 		}
@@ -35,8 +39,19 @@ func (p *parser) projectFile(f *File) {
 	}
 	p.skipNL()
 	if !p.at(TokEOF) {
-		diag.E1011.AtInside(p.span(p.pos, p.pos)).Report(p.bag)
+		p.notProjectDecl()
 	}
+}
+
+// notProjectDecl is E1011 for anything but the project declaration in a project file, the local
+// one named by its own variant (DECISIONS 332).
+func (p *parser) notProjectDecl() {
+	at := p.span(p.pos, p.pos)
+	if path.Base(p.src.Path) == LocalProjectFile {
+		diag.E1011.AtLocal(at).Report(p.bag)
+		return
+	}
+	diag.E1011.AtInside(at).Report(p.bag)
 }
 
 // packageFile reads the package clause, then a layer, a translation or a source file.

@@ -12,6 +12,9 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 )
 
+// exampleRootsBesideEx is where examples/project.canon's outside roots lie for a project at /ex.
+var exampleRootsBesideEx = []string{"Resource", "Client", "Source", "sovcommon/web/src/lib", "balance/parity", "resourcestudio/generated"}
+
 // teamboardFS is examples/teamboard and its imports in memory under /ex, taxonomy.canon edited
 // by the replacements (old, new…), with the golden canon.lock.
 func teamboardFS(t *testing.T, edits ...string) mapFS {
@@ -28,6 +31,9 @@ func teamboardFS(t *testing.T, edits ...string) mapFS {
 		fsys["ex/"+name] = file(string(data))
 	}
 	fsys["ex/teamboard/canon.lock"] = file(teamboardGolden(t, "canon.lock"))
+	for _, dir := range exampleRootsBesideEx { // SPEC §3.1: a required root exists
+		fsys[dir+"/.keep"] = file("")
+	}
 	return fsys
 }
 

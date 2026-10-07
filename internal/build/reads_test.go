@@ -56,7 +56,7 @@ func displaysOf(reads []build.Read) []string {
 }
 
 // API.md S5: a package's read set is its own files, locks and loads and its imports', never an
-// unrelated package's.
+// unrelated package's; project.canon and the place of project.local.canon count for every one.
 func TestAnalysisReads(t *testing.T) {
 	p, err := build.Open(readsFS(), "/p", build.Options{})
 	if err != nil {
@@ -70,9 +70,9 @@ func TestAnalysisReads(t *testing.T) {
 		pkg  string
 		want []string
 	}{
-		{"a", []string{"a/a.canon", "a/a.json", "a/canon.lock", "project.canon"}},
-		{"b", []string{"a/a.canon", "a/a.json", "a/canon.lock", "b/b.canon", "b/canon.lock", "project.canon"}},
-		{"c", []string{"@data/c.json", "c/c.canon", "c/canon.lock", "project.canon"}},
+		{"a", []string{"a/a.canon", "a/a.json", "a/canon.lock", "project.canon", "project.local.canon"}},
+		{"b", []string{"a/a.canon", "a/a.json", "a/canon.lock", "b/b.canon", "b/canon.lock", "project.canon", "project.local.canon"}},
+		{"c", []string{"@data/c.json", "c/c.canon", "c/canon.lock", "project.canon", "project.local.canon"}},
 		{"nope", nil},
 	} {
 		if got := displaysOf(a.Reads(c.pkg)); !slices.Equal(got, c.want) {

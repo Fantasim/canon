@@ -1,0 +1,25 @@
+SPEC §3.1, CLI.md §2.5, API.md O3 (DECISIONS 332): a required root outside the project whose directory does not exist stops the command, exit 2; an absent optional root does not.
+-- dir --
+p
+-- args --
+check
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "../Source"
+    web: "../web"
+  }
+  optional_roots: [web]
+}
+-- p/a/a.canon --
+/// A.
+package a
+-- want --
+[exit 2]
+[stdout]
+error[E1013]  project.canon:4:5
+  root "src" ("../Source") is not a directory on this machine: clone the repository there, point to it in project.local.canon, or list the root in optional_roots in project.canon
+
+1 error, 0 warnings in 0 packages (…)
+[stderr]

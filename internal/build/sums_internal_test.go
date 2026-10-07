@@ -92,14 +92,14 @@ func (c *countedReads) sumOf(f *editFS, name string) (sha256Sum, bool, error) {
 	return contentSum(c.FS.ReadFile(name))
 }
 
-// taken is the loaded and source files read since the last call, sorted: project.canon and the
-// canon.lock probes aside, which a snapshot reads as it did before P18.
+// taken is the loaded and source files read since the last call, sorted: project.canon,
+// project.local.canon and the canon.lock probes aside, which a snapshot reads as it did before P18.
 func (c *countedReads) taken() []string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	var out []string
 	for _, name := range slices.Sorted(maps.Keys(c.reads)) {
-		if base := path.Base(name); base != project.FileName && base != lockName {
+		if base := path.Base(name); base != project.FileName && base != project.LocalFileName && base != lockName {
 			out = append(out, strings.TrimPrefix(name, archiveRoot+"/"))
 		}
 	}

@@ -3,6 +3,8 @@ package project
 import (
 	"regexp"
 
+	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
@@ -11,6 +13,9 @@ const DefaultLanguage = "en"
 
 // FileName is the name of the project file at the project root (SPEC §3.1).
 const FileName = "project.canon"
+
+// LocalFileName is the file beside FileName that places declared roots on one machine (GRAMMAR.md §7.2).
+const LocalFileName = syntax.LocalProjectFile
 
 // SourceExt is the extension of every Canon file (SPEC §3.3).
 const SourceExt = ".canon"
@@ -31,9 +36,10 @@ const (
 	keyStudio    = "studio"
 	keyBudget    = "budget"
 	keyGoModule  = "go_module"
+	keyOptional  = "optional_roots"
 )
 
-// keyRules reads each key; go_module waits for the roots, keys coming in any order (GRAMMAR.md §7.1).
+// keyRules reads each key; go_module and optional_roots wait for the roots, keys coming in any order (GRAMMAR.md §7.1).
 var keyRules = map[string]func(*schema, *syntax.ProjectEntry){
 	keyCanon:     (*schema).canon,
 	keyRoots:     (*schema).roots,
@@ -41,6 +47,21 @@ var keyRules = map[string]func(*schema, *syntax.ProjectEntry){
 	keyStudio:    (*schema).studio,
 	keyBudget:    (*schema).budget,
 	keyGoModule:  (*schema).deferGoModule,
+	keyOptional:  (*schema).deferOptional,
+}
+
+// The origins of a root's directory (origin).
+const (
+	fromDeclared origin = iota
+	fromLocal
+	fromOption
+)
+
+// absentRoot is E1013's variant by where the absent root's directory was placed (SPEC §3.1).
+var absentRoot = [...]func(source.Span, string, string) *diag.Builder{
+	fromDeclared: diag.E1013.AtDeclared,
+	fromLocal:    diag.E1013.AtLocal,
+	fromOption:   diag.E1013.AtOption,
 }
 
 var (

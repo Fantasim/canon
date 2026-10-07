@@ -51,6 +51,7 @@ const (
 	kwTarget       = "target"
 	kwPackage      = "package"
 	kwRoot         = "root"
+	kwAbsent       = "absent" // ends an absent optional root's line (DECISIONS 332)
 	kwFile         = "file"
 	kwGlob         = "glob"
 	kwList         = "list"

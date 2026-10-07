@@ -1,0 +1,19 @@
+GRAMMAR.md §7.2 (DECISIONS 332): project.local.canon names another project.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+}
+-- project.local.canon --
+project other {
+  roots {
+    resource: "/home/sam/Resource"
+  }
+}
+-- findings.txt --
+error[E1014]  project.local.canon:1:9
+  project.local.canon names project "other", project.canon "acme"
+
+1 error, 0 warnings in 1 package (…)

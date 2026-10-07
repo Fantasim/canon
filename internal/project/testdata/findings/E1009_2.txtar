@@ -1,0 +1,17 @@
+GRAMMAR.md §7.1 (DECISIONS 332): optional_roots names a root project.canon does not declare, and a root twice; it may come before roots.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  optional_roots: [source, client, source]
+  roots {
+    source: "../Source"
+  }
+}
+-- findings.txt --
+error[E1009]  project.canon:3:28
+  optional_roots: "client" is not a declared root
+
+error[E1009]  project.canon:3:36
+  optional_roots: "source" is listed twice
+
+2 errors, 0 warnings in 1 package (…)

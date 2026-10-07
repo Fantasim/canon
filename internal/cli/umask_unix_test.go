@@ -80,7 +80,7 @@ func TestGitignoreKeepsMode(t *testing.T) {
 	if got := modeOf(t, path); got != umaskGroup {
 		t.Errorf(".gitignore: mode %o after init, want %o", got, umaskGroup)
 	}
-	if data, err := os.ReadFile(path); err != nil || string(data) != "bin/\n.canon/\n" {
+	if data, err := os.ReadFile(path); err != nil || string(data) != "bin/\n.canon/\nproject.local.canon\n" {
 		t.Errorf(".gitignore = %q, %v", data, err)
 	}
 }

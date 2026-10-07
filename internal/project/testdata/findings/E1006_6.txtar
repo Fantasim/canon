@@ -1,0 +1,14 @@
+GRAMMAR.md §7.1 (DECISIONS 332): optional_roots is not a list.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+  optional_roots: resource
+}
+-- findings.txt --
+error[E1006]  project.canon:6:19
+  "optional_roots" must be a list of root names
+
+1 error, 0 warnings in 1 package (…)

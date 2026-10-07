@@ -19,7 +19,7 @@ type head struct {
 	files []*syntax.File
 }
 
-// checkKey is what a program depends on besides its files: project.canon and the layers.
+// checkKey is what a program depends on besides its files: project.canon with the roots as placed, and the layers.
 type checkKey struct {
 	canon  [sha256.Size]byte
 	layers string

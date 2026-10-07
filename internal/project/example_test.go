@@ -48,3 +48,20 @@ func ExampleLayout_Resolve() {
 	// @resource/Server/x.h /law/fixtures/resource/Server/x.h items/data/ /law/items/data pipeline/a.json /law/pipeline/a.json
 	// path ../../x: leaves the project
 }
+
+// project.local.canon places a root on this machine, here inside the project, so present; an
+// optional root no directory holds is absent (DECISIONS 332).
+func ExamplePlace() {
+	var set source.FileSet
+	src, _ := set.Add(project.FileName, "/law/project.canon", []byte(
+		"project acme {\n  canon: \"0.1\"\n  roots {\n    src: \"../Source\"\n    web: \"../no-such-web\"\n  }\n  optional_roots: [web]\n}\n"))
+	bag := diag.NewBag(&set, "")
+	p, _ := project.Load(src, bag)
+	lsrc, _ := set.Add(project.LocalFileName, "/law/project.local.canon", []byte(
+		"project acme {\n  roots {\n    src: \"vendor/Source\"\n  }\n}\n"))
+	local, _ := project.LoadLocal(lsrc, p, bag)
+	l, ok := project.Place(p, "/law", project.Placement{Local: local, FS: project.OS()}, bag)
+	r, _ := l.Resolve("@src/a.h", "", source.Span{}, bag)
+	fmt.Println(ok, r.Abs, l.Moved("src"), l.Absent("src"), l.Absent("web"))
+	// Output: true /law/vendor/Source/a.h true false true
+}

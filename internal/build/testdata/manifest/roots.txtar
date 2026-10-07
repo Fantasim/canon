@@ -1,0 +1,75 @@
+WIRE.md §10, SPEC §3.1 (DECISIONS 332): the root lines with project.local.canon
+applied: web is placed by it on an existing directory, src is an optional root absent on this
+machine and ends its line with " absent", out lies inside the project; project.local.canon has no
+file line, its effect being the root lines.
+-- project.canon --
+project acme {
+  canon: "0.1"
+
+  roots {
+    out: "out"
+    src: "../Source"
+    web: "../web"
+  }
+  optional_roots: [src]
+}
+-- project.local.canon --
+project acme {
+  roots {
+    web: "../work/web"
+  }
+}
+-- ../work/web/.keep --
+-- a/a.canon --
+/// A.
+package a
+
+/// N.
+const N = 1
+-- manifest.txt --
+canon-manifest v1
+compiler 0.1.0
+language 0.1
+lang en
+command check
+target cpp
+target go
+target json
+target text
+target ts
+target view
+package a
+root out out
+root src ../Source absent
+root web ../work/web
+file 9765678494e9e172e143b2c49a07f79dcbe28d4da847ecbb3956540d6a477f56 a/a.canon
+file b119e7d55a71c6431c8630988712ac684e2aa7bd6b63ec5e9f21384eceb804fd project.canon
+canon-manifest v1
+compiler 0.1.0
+language 0.1
+lang en
+command build
+target json
+package a
+root out out
+root src ../Source absent
+root web ../work/web
+file 9765678494e9e172e143b2c49a07f79dcbe28d4da847ecbb3956540d6a477f56 a/a.canon
+file b119e7d55a71c6431c8630988712ac684e2aa7bd6b63ec5e9f21384eceb804fd project.canon
+canon-manifest v1
+compiler 0.1.0
+language 0.1
+lang en
+command test
+target cpp
+target go
+target json
+target text
+target ts
+target view
+package a
+root out out
+root src ../Source absent
+root web ../work/web
+file 9765678494e9e172e143b2c49a07f79dcbe28d4da847ecbb3956540d6a477f56 a/a.canon
+file b119e7d55a71c6431c8630988712ac684e2aa7bd6b63ec5e9f21384eceb804fd project.canon

@@ -20,6 +20,8 @@ project demo {
     data: "../shared-data"
     gen: "gen"
   }
+  /// Roots a machine may lack; any other root outside the project must exist (E1013).
+  optional_roots: [data]
 
   languages: [en, fr]
   budget: 100_000_000
@@ -31,7 +33,9 @@ project demo {
 
 `canon` is required. `languages`: the first is the source language (default `[en]`).
 `studio: <package>` names the studio package (`views-i18n`). `go_module` maps a root to the Go
-module path of the Go outputs under it. No expressions; unknown key `E1002`.
+module path of the Go outputs under it. No expressions; unknown key `E1002`. Reading an absent
+optional root is an error at the value; an output into it is skipped. `project.local.canon`
+beside it (git-ignored, same grammar, only `roots`) places roots on one machine; `--root` wins.
 
 ## A source file
 

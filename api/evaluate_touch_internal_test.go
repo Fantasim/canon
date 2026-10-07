@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"maps"
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -71,8 +72,12 @@ func openTouchExamples(t *testing.T) *Project {
 	for _, name := range touchReadRoots {
 		roots[name] = filepath.Join(touchFixtures, name)
 	}
+	out := t.TempDir()
 	for _, name := range touchWriteRoots {
-		roots[name] = filepath.Join(t.TempDir(), name)
+		roots[name] = filepath.Join(out, name)
+		if err := os.MkdirAll(roots[name], 0o750); err != nil { // SPEC §3.1: a required root exists
+			t.Fatal(err)
+		}
 	}
 	p, err := Open(touchExamples, Options{Roots: roots, Cache: "off"})
 	if err != nil {

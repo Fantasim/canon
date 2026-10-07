@@ -66,14 +66,26 @@ func (r *run) manifest(in inputs, command string, targets []ir.Target) []byte {
 	return []byte(b.String())
 }
 
-// rootLines is each declared root by name and its directory relative to the project's, --root applied (API.md O7).
+// rootLines is each declared root by name and its directory relative to the project's,
+// project.local.canon and --root applied, an absent one marked (API.md O7, DECISIONS 332).
 func (r *run) rootLines() []string {
+	return rootLinesOf(r.p.dir, r.s.proj, r.s.layout)
+}
+
+// rootLinesOf is rootLines for the project proj at dir placed by layout.
+func rootLinesOf(dir string, proj *project.Project, layout *project.Layout) []string {
 	bag := diag.NewBag(nil, "")
-	out := make([]string, 0, len(r.s.proj.Roots))
-	for _, root := range r.s.proj.Roots {
-		if dir, ok := r.s.layout.Resolve(rootMark+root.Name, "", source.Span{}, bag); ok {
-			out = append(out, root.Name+lineSep+relativeDir(r.p.dir, dir.Abs))
+	out := make([]string, 0, len(proj.Roots))
+	for _, root := range proj.Roots {
+		placed, ok := layout.Resolve(rootMark+root.Name, "", source.Span{}, bag)
+		if !ok {
+			continue
 		}
+		line := root.Name + lineSep + relativeDir(dir, placed.Abs)
+		if layout.Absent(root.Name) {
+			line += lineSep + kwAbsent
+		}
+		out = append(out, line)
 	}
 	slices.Sort(out)
 	return out
@@ -139,6 +151,9 @@ func (r *run) fileLines(loaded map[string]loadedFile) []sumLine {
 	out := make([]sumLine, 0, len(r.s.sums)+len(loaded))
 	own := make(map[string]bool, len(r.s.sums))
 	for _, f := range r.s.sums {
+		if f.Path == project.LocalFileName { // its effect is the root lines (WIRE.md §10)
+			continue
+		}
 		own[project.Join(r.p.dir, f.Path)] = true
 		out = append(out, sumLine{key: f.Path, sum: hex.EncodeToString(f.Sum[:])})
 	}

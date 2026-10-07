@@ -3,7 +3,6 @@ package edit_test
 import (
 	"context"
 	"io/fs"
-	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -232,16 +231,8 @@ func (f fixture) text(sp source.Span) string {
 // as internal/build's tests do.
 func examples(t *testing.T, layers []string, pkgs ...string) fixture {
 	t.Helper()
-	dir, err := filepath.Abs("../../examples")
-	if err != nil {
-		t.Fatal(err)
-	}
-	roots := map[string]string{"resource": "_fixtures/resource", "client": "_fixtures/client"}
-	out := t.TempDir()
-	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
-		roots[name] = filepath.ToSlash(filepath.Join(out, name))
-	}
-	p, err := build.Open(project.OS(), filepath.ToSlash(dir), build.Options{Roots: roots, Layers: layers})
+	dir, roots := exampleRoots(t)
+	p, err := build.Open(project.OS(), dir, build.Options{Roots: roots, Layers: layers})
 	if err != nil {
 		t.Fatal(err)
 	}

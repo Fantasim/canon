@@ -13,6 +13,7 @@ The law.
 [stderr]
 [file law/.gitignore]
 .canon/
+project.local.canon
 [file law/project.canon]
 project acme {
   canon: "0.1"

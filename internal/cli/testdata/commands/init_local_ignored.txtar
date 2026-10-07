@@ -1,0 +1,20 @@
+CLI.md §3.1 (DECISIONS 332): .canon/ and project.local.canon are each added to .gitignore unless there; here project.local.canon is.
+-- args --
+init
+--name
+acme
+-- .gitignore --
+project.local.canon
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file .gitignore]
+project.local.canon
+.canon/
+[file project.canon]
+project acme {
+  canon: "0.1"
+  roots {}
+  languages: [en]
+}

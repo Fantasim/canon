@@ -42,11 +42,13 @@ func TestFormatIsIdempotent(t *testing.T) {
 	}
 }
 
-// API.md T1: the canonical layout, CRLF read as LF; project.canon is formatted as one.
+// API.md T1: the canonical layout, CRLF read as LF; project.canon and project.local.canon are
+// formatted as project files.
 func TestFormatLayout(t *testing.T) {
 	for _, c := range []struct{ name, src, want string }{
 		{"a/a.canon", "package a\r\nconst N=7\r\n", "package a\n\nconst N = 7\n"},
 		{"law/project.canon", "project demo {\n  canon:\"0.1\"\n}\n", "project demo {\n  canon: \"0.1\"\n}\n"},
+		{"law/project.local.canon", "project demo {\n  roots: {\n    a:\"/a\"\n  }\n}\n", "project demo {\n  roots {\n    a: \"/a\"\n  }\n}\n"},
 	} {
 		got, err := canon.Format(c.name, []byte(c.src))
 		if err != nil || string(got) != c.want {

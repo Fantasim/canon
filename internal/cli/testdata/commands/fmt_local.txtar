@@ -1,0 +1,26 @@
+CLI.md §3.6, FORMATTER.md §9.3 (DECISIONS 332): with no path, fmt also formats project.local.canon, as a project file.
+-- args --
+fmt
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    src: "src"
+  }
+}
+-- project.local.canon --
+project acme {
+  roots: {
+      src:   "elsewhere/src"
+  }
+}
+-- want --
+[exit 0]
+[stdout]
+[stderr]
+[file project.local.canon]
+project acme {
+  roots {
+    src: "elsewhere/src"
+  }
+}

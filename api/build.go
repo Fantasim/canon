@@ -291,7 +291,7 @@ func Format(filename string, src []byte) (out []byte, err error) {
 		return nil, err
 	}
 	kind := syntax.FileSource
-	if path.Base(filepath.ToSlash(filename)) == project.FileName {
+	if base := path.Base(filepath.ToSlash(filename)); base == project.FileName || base == project.LocalFileName { // T1
 		kind = syntax.FileProject
 	}
 	bag := diag.NewBag(set, "")

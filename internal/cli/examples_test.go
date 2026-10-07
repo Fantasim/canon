@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -29,12 +30,27 @@ const (
 // the read roots to their fixtures, the written ones to a new directory.
 func exampleRoots(t *testing.T) []string {
 	t.Helper()
-	out := t.TempDir()
-	args := []string{"--root", "resource=_fixtures/resource", "--root", "client=_fixtures/client"}
-	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
-		args = append(args, "--root", name+"="+filepath.ToSlash(filepath.Join(out, name)))
+	roots := exampleRootMap(t)
+	var args []string
+	for _, name := range slices.Sorted(maps.Keys(roots)) {
+		args = append(args, "--root", name+"="+roots[name])
 	}
 	return args
+}
+
+// exampleRootMap is exampleRoots as Options.Roots, the written roots' directories made: a
+// required root exists (DECISIONS 332).
+func exampleRootMap(t *testing.T) map[string]string {
+	t.Helper()
+	out := t.TempDir()
+	roots := map[string]string{"resource": "_fixtures/resource", "client": "_fixtures/client"}
+	for _, name := range []string{"source", "services", "sovcommon", "web", "parity", "generated"} {
+		roots[name] = filepath.ToSlash(filepath.Join(out, name))
+		if err := os.MkdirAll(filepath.Join(out, name), 0o750); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return roots
 }
 
 func checkExample(t *testing.T, args ...string) (int, string) {
@@ -65,7 +81,7 @@ func owners() map[diag.Code]string {
 // root redirected, prints no finding of the parser or of project.canon.
 func TestExamplesParse(t *testing.T) {
 	dir, _ := filepath.Abs(examplesDir)
-	p, err := canon.Open(dir, canon.Options{})
+	p, err := canon.Open(dir, canon.Options{Roots: exampleRootMap(t)})
 	if err != nil {
 		t.Fatal(err)
 	}
