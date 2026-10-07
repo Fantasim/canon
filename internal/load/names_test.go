@@ -21,6 +21,11 @@ func TestNames(t *testing.T) {
 	}, map[string]string{"proj/d/in.json": "proj/real/x.json", "proj/d/out.json": "outside/o.json"})
 	proj := root + "/proj"
 	layout := layoutAt(t, proj)
+	realProj, err := filepath.EvalSymlinks(proj) // the walk lists real paths (macOS: /var is /private/var)
+	if err != nil {
+		t.Fatal(err)
+	}
+	realProj = filepath.ToSlash(realProj)
 	for _, c := range []struct {
 		name, call string
 		files      []string
@@ -48,7 +53,7 @@ func TestNames(t *testing.T) {
 			if !slices.Equal(named.Files, same) {
 				t.Errorf("%s: Names %v, the loader's matches %v", c.name, named.Files, same)
 			}
-			if !slices.Contains(named.Dirs, proj+"/d/sub") || len(named.Links) == 0 {
+			if !slices.Contains(named.Dirs, realProj+"/d/sub") || len(named.Links) == 0 {
 				t.Errorf("%s: the walk listed %v and resolved %v", c.name, named.Dirs, named.Links)
 			}
 		}
