@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"context"
 	"io/fs"
 	"maps"
 	"slices"
@@ -95,8 +96,8 @@ func (s *snapFS) entries() map[name]*entry {
 	return maps.Clone(s.ents)
 }
 
-// Recorded is every file a load of this project read so far, which the revision lists with the
-// build's inputs (API.md S3).
-func (s *Snapshot) Recorded() []build.Read {
-	return s.fs.recorded()
+// Loads is every file a load of any package names, which the revision lists with the build's
+// inputs (API.md S3, DECISIONS 330); none when project.canon does not check.
+func (s *Snapshot) Loads(ctx context.Context) ([]build.Read, error) {
+	return s.loads(ctx)
 }

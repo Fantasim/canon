@@ -1,6 +1,7 @@
 package canon
 
 import (
+	"context"
 	"maps"
 	"slices"
 
@@ -208,14 +209,14 @@ func below(abs string, changed []string) bool {
 }
 
 // readSet is s's read set (S3), and the sources the project scan selects (O2), absolute name to
-// display path; once per event, the loads a re-check reads added after it by recorded.
-func readSet(s *workspace.Snapshot) (listed, sources map[string]string) {
+// display path, the files every load names included (DECISIONS 330).
+func readSet(ctx context.Context, s *workspace.Snapshot) (listed, sources map[string]string) {
 	listed, sources = map[string]string{}, map[string]string{}
 	inputs, _ := s.Build().Inputs()
 	for _, r := range inputs {
 		listed[r.Abs] = r.Display
 	}
-	recorded(listed, s)
+	addLoads(ctx, listed, s)
 	b := s.Build()
 	names, _ := project.Scan(b.FS(), b.Dir())
 	for _, name := range names {
@@ -224,9 +225,11 @@ func readSet(s *workspace.Snapshot) (listed, sources map[string]string) {
 	return listed, sources
 }
 
-// recorded adds to listed every file a load of s's project has read so far (S3).
-func recorded(listed map[string]string, s *workspace.Snapshot) {
-	for _, r := range s.Recorded() {
+// addLoads adds to listed every file a load of s's project names (S3, DECISIONS 330); a failure to
+// find them adds none, as a failed Inputs lists less: the event's re-check reports it.
+func addLoads(ctx context.Context, listed map[string]string, s *workspace.Snapshot) {
+	loads, _ := s.Loads(ctx)
+	for _, r := range loads {
 		listed[r.Abs] = r.Display
 	}
 }

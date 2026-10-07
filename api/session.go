@@ -64,9 +64,8 @@ func analyze(ctx context.Context, s *workspace.Snapshot, selectors []string) (*b
 	return a, nil
 }
 
-// revision is s's revision once a call read what it needed (S3), kept unless a snapshot published
-// later was read (S10); in one snapshot the last read to end wins, maybe a smaller read set: its
-// revisions only grow as loads join (DECISIONS 143) and S5 compares file by file (log M4 B6-r).
+// revision is s's revision, one per snapshot (S3, DECISIONS 330), kept unless a snapshot published
+// later was read (S10, log M4 B6-r).
 func (p *Project) revision(ctx context.Context, s *workspace.Snapshot) (Revision, error) {
 	rev, err := s.Revision(ctx)
 	if err != nil {

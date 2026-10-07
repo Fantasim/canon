@@ -2,6 +2,7 @@ package workspace_test
 
 import (
 	"context"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -27,9 +28,9 @@ func commit(t *testing.T, p *workspace.Project, c workspace.Changes) *workspace.
 	return out
 }
 
-// API.md S10, E18, V13 (log-2026-09-29 M4 P14): an edit publishes the snapshot its re-check
-// analyzed, which keeps that analysis for an evaluation of the edited package. (The first edit
-// creates the journal's directory, a change the refresh after it reads.)
+// API.md S10, E17a, E18 (log-2026-09-29 M4 P14, DECISIONS 330): an edit publishes the snapshot
+// its re-check analyzed, which keeps that analysis of the affected packages alone. (The first
+// edit creates the journal's directory, a change the refresh after it reads.)
 func TestEditPublishesItsRecheck(t *testing.T) {
 	p := open(t, newMemFS(lawFiles()))
 	commit(t, p, setB(2))
@@ -39,16 +40,16 @@ func TestEditPublishesItsRecheck(t *testing.T) {
 	if err != nil || !slices.Equal(touched, []string{"b"}) {
 		t.Fatalf("API.md E17: b touches %v, %v", touched, err)
 	}
-	a, err := workspace.Analyze(ctx, read(t, p), touched)
-	if err != nil || a.Result() != out.Checked {
+	a, err := workspace.AnalyzeOnly(ctx, read(t, p), touched)
+	if err != nil || !reflect.DeepEqual(a.Own(), out.Checked) {
 		t.Fatalf("API.md E18: the published snapshot analyzes b again: %v", err)
 	}
-	again, err := workspace.Analyze(ctx, read(t, p), touched)
+	if !slices.Equal(a.Selected(), []string{"b"}) {
+		t.Errorf("API.md E17a: the re-check selected %v, want b alone", a.Selected())
+	}
+	again, err := workspace.AnalyzeOnly(ctx, read(t, p), touched)
 	if err != nil || again != a {
 		t.Fatalf("NFR-02: a snapshot keeps its analysis: %v", err)
-	}
-	if !workspace.Covered(read(t, p), touched) {
-		t.Error("log-2026-09-29 M4 P14-r: within the budget, b's analysis does not give every package's values")
 	}
 }
 

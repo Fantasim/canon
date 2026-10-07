@@ -31,9 +31,9 @@ func (s *Snapshot) Published() uint64 {
 	return s.seq
 }
 
-// Revision is the snapshot's revision (API.md S3): the listing of project.canon, every source
-// and existing canon.lock, and every file a load of this project has read, with their content
-// in this snapshot, overlays included. The project remembers it (S4).
+// Revision is the snapshot's revision, the listing of the project's static read set with its
+// content in this snapshot, overlays included, whatever a call analysed (API.md S3); the project
+// remembers it (S4).
 func (s *Snapshot) Revision(ctx context.Context) (string, error) {
 	rev, err := s.revision(ctx)
 	if err != nil {
@@ -50,12 +50,21 @@ func (s *Snapshot) revision(ctx context.Context) (string, error) {
 	if ok {
 		return was, nil
 	}
-	at := s.fs.inputsSeen()
 	rev, err := s.list(ctx)
 	if err == nil {
-		s.fs.revise(rev, at)
+		s.fs.revise(rev)
 	}
 	return rev, err
+}
+
+// fresh reports that base is the snapshot's own revision: nothing of the static read set changed
+// since, whoever produced base, so nothing is stale (API.md S4, S5; DECISIONS 330).
+func (s *Snapshot) fresh(ctx context.Context, base string) (bool, error) {
+	if base == "" {
+		return false, nil
+	}
+	rev, err := s.revision(ctx)
+	return rev == base, err
 }
 
 // current reports that base is the revision the project last produced, from this snapshot's
@@ -135,13 +144,12 @@ func (s *Snapshot) displays(names []name) []string {
 	return slices.Compact(out)
 }
 
-// display is abs as a load first displayed it, else as the project displays it (WIRE.md §2.3).
+// display is abs as the last listing lists a file a load names, else as the project displays it.
 func (s *Snapshot) display(abs string) string {
-	s.fs.mu.Lock()
-	d, ok := s.fs.inputs.byAbs[abs]
-	s.fs.mu.Unlock()
-	if ok {
-		return d
+	if l := s.fs.listed(); l != nil {
+		if d, ok := l.named[abs]; ok {
+			return d
+		}
 	}
 	return s.b.Display(abs)
 }

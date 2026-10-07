@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"path"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -45,7 +44,7 @@ func (r *run) compareLocks(ctx context.Context) error {
 }
 
 func (r *run) readLock(ctx context.Context, cp *check.Package) (*lockState, error) {
-	rel := path.Join(packageRel(cp.Path), lockName)
+	rel := lockOf(cp.Path)
 	st := &lockState{pkg: cp.Path, path: rel, abs: project.Join(r.p.dir, rel), file: lock.New(cp.Path), whole: true}
 	sources, err := r.sourcesOf(ctx, cp)
 	if err != nil {

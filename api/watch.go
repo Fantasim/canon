@@ -74,7 +74,7 @@ func (w *watching) seed(ctx context.Context, s *workspace.Snapshot) error {
 			return err
 		}
 	}
-	w.listed, w.sources = readSet(s)
+	w.listed, w.sources = readSet(ctx, s)
 	return nil
 }
 
@@ -143,7 +143,7 @@ func (w *watching) fill(ctx context.Context, c workspace.Change, ev *Event) (del
 	if uerr != nil {
 		units = nil
 	}
-	listed, sources := readSet(s)
+	listed, sources := readSet(ctx, s)
 	g := w.relevance(s, units)
 	names := g.names(c, listed, sources)
 	outside := c.Cause == workspace.CauseExternal
@@ -157,7 +157,6 @@ func (w *watching) fill(ctx context.Context, c workspace.Change, ev *Event) (del
 		err = w.recheck(ctx, s, units, names, ev)
 	}
 	w.matched = g.globs()
-	recorded(listed, s)
 	ev.Files = w.files(c, listed, sources, g.matched)
 	rev, rerr := s.Revision(ctx)
 	ev.Revision = Revision(rev)

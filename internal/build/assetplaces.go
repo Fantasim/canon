@@ -32,13 +32,19 @@ type assetFolder struct {
 	seg string
 }
 
-// root is root, written in from, placed through layout; its finding is thrown away (WIRE.md §2.2).
-func (p *assetPlaces) root(layout *project.Layout, root, from string) (project.Path, bool) {
+// root is root, written in from, placed through layout, its finding thrown away, and named by its
+// real path, links resolved through fsys as load.dir resolves them (TYPES.md 13.4, WIRE.md 2.2).
+func (p *assetPlaces) root(fsys project.FS, layout *project.Layout, root, from string) (project.Path, bool) {
 	k := assetRoot{root: root, from: from}
 	if r, ok := p.roots[k]; ok {
 		return r.dir, r.ok
 	}
 	dir, ok := layout.Resolve(root, from, source.Span{}, diag.NewBag(nil, ""))
+	if ok && !layout.Absent(dir.Root) { // an absent root is never touched (DECISIONS 332)
+		if real, err := project.EvalSymlinks(fsys, dir.Abs); err == nil {
+			dir.Abs = real // a root that does not resolve, missing or on a file system without links, keeps its name
+		}
+	}
 	if p.roots == nil {
 		p.roots = map[assetRoot]placedRoot{}
 	}

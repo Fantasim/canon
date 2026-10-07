@@ -20,5 +20,6 @@ func ergonomicsOperators() []operator {
 		op(diag.W3001.Def().Code, "TYPES.md §15 (optional field written = none)", appendSite("local record ZzW3001 {\n  /// N.\n  zzN: Int? = ", "none", "\n}")),
 		{code: diag.W4001.Def().Code, rule: "EVALUATION.md §1 (a broken record silences its values)", also: []diag.Code{diag.E3002.Def().Code},
 			sites: appendSite("", "local record ZzGem {\n  zzW: Int = \"heavy\"\n}", "\n\nlocal let zzGem: ZzGem = { zzW: 1 }")},
+		op(diag.E7008.Def().Code, "WIRE.md §6.1 (load path not a string literal)", appendSite("const ZZ_DIR = \"zz\"\nlocal let zzT: String = ", `load.text("{ZZ_DIR}/x.txt")`, "")),
 	}
 }

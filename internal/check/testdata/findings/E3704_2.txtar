@@ -1,0 +1,14 @@
+TYPES.md §13.4 (DECISIONS 330): an asset root is a string literal without interpolation, so the
+directories a package lists are known from its sources; a raw string is one.
+-- a/a.canon --
+package a
+
+const DIR = "Icon"
+
+local type Interpolated = asset("{DIR}/Item", ext: [dds])
+local type Raw = asset(r"Icon/Item", ext: [dds])
+-- findings.txt --
+error[E3704]  a/a.canon:5:33
+  invalid asset(…): "{DIR}/Item" is not a load path
+
+1 error, 0 warnings in 1 package (…)

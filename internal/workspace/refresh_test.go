@@ -131,8 +131,9 @@ func TestRefreshListing(t *testing.T) {
 	}
 }
 
-// API.md S3: the revision lists project.canon, every source and existing lock, and every file a
-// load read, by display path and SHA-256; a change of a loaded file changes it.
+// API.md S3 (DECISIONS 330): the revision lists project.canon, every source and existing lock, and
+// every file a load names, by display path and SHA-256, the same before and after an analysis;
+// a change of a loaded file changes it.
 func TestRevisionReadSet(t *testing.T) {
 	files := lawFiles()
 	files["/law/a/canon.lock"] = "canon-lock v1\n"
@@ -150,7 +151,7 @@ func TestRevisionReadSet(t *testing.T) {
 		}
 		lines = append(lines, build.Listed{Display: display, Sum: sha256.Sum256([]byte(files[abs]))})
 	}
-	if want := build.RevisionOf(lines); rev != want || scanOnly == rev {
+	if want := build.RevisionOf(lines); rev != want || scanOnly != rev {
 		t.Errorf("revision %s, want %s (before the loads: %s)", rev, want, scanOnly)
 	}
 	_ = fsys.WriteFile("/law/data/c.json", []byte("[4]\n"))

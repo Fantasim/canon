@@ -55,23 +55,29 @@ func Evaluate(ctx context.Context, s *Snapshot, e Eval) (*Evaluation, error) {
 // EvalStale is a *StaleError when, since base, a file read by a package e touches changed on s
 // (the path's package, a draft's packages and their importers, API.md S5, E17), or any source
 // or project.canon did: each can change the import graph (log-2026-09-29 M4 U5a-r2).
-func EvalStale(s *Snapshot, base string, e Eval) error {
+func EvalStale(ctx context.Context, s *Snapshot, base string, e Eval) error {
 	at, err := edit.Parse(e.At.Canonical)
 	if err != nil {
 		return err
 	}
-	return s.staleFor(base, e.Analysis, append([]string{at.Package}, e.Touched...))
+	return s.staleFor(ctx, base, e.Analysis, append([]string{at.Package}, e.Touched...))
 }
 
-// staleFor is a *StaleError when, since base, a file a's pkgs or their importers read changed
-// (API.md S5, E17), or any source or project.canon did (log-2026-09-29 M4 U5a-r2); nil for "".
-func (s *Snapshot) staleFor(base string, a *build.Analysis, pkgs []string) error {
-	if s.current(base) {
+// staleFor is a *StaleError when, since base, a file a's pkgs or their importers read changed, or
+// any source or project.canon did; nil for "" or the snapshot's own revision, whoever produced it;
+// a nil a reads no package (API.md S4, S5, E17; log-2026-09-29 M4 U5a-r2).
+func (s *Snapshot) staleFor(ctx context.Context, base string, a *build.Analysis, pkgs []string) error {
+	if base == "" || s.current(base) {
 		return nil
 	}
+	if fresh, err := s.fresh(ctx, base); err != nil || fresh {
+		return err
+	}
 	var reads []build.Read
-	for _, pkg := range importing(a.Units(), pkgs...) {
-		reads = append(reads, a.Reads(pkg)...)
+	if a != nil {
+		for _, pkg := range importing(a.Units(), pkgs...) {
+			reads = append(reads, a.Reads(pkg)...)
+		}
 	}
 	return bothStale(s.Stale(base, reads), s.sourcesStale(base))
 }

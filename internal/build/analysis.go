@@ -27,6 +27,7 @@ type Analysis struct {
 	source  []diag.Finding            // Result's findings as Analyze first sorted them, in the source language
 	listed  []byte                    // the manifest, made on first use
 	numbers numberIndex               // the typed number readings of each JSON source, made on first use
+	statics *Static                   // the static read sets of the snapshot analyzed, made on first use
 }
 
 // Analyze runs phases 1 to 7, writes nothing, and freezes the result (CLI.md §3.3).
@@ -35,6 +36,20 @@ func (p *Project) Analyze(ctx context.Context, selectors []string) (*Analysis, e
 	if err != nil {
 		return nil, err
 	}
+	return r.analyzed(ctx)
+}
+
+// AnalyzeOnly is Analyze of exactly the packages pkgs names, none for none: an edit's (API.md E17a).
+func (p *Project) AnalyzeOnly(ctx context.Context, pkgs []string) (*Analysis, error) {
+	r, err := p.prepareOnly(ctx, pkgs)
+	if err != nil {
+		return nil, err
+	}
+	return r.analyzed(ctx)
+}
+
+// analyzed is r's phases 2 to 7, frozen, its findings localized.
+func (r *run) analyzed(ctx context.Context) (*Analysis, error) {
 	r.causes = true
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
@@ -137,6 +152,9 @@ func (a *Analysis) Localized(ctx context.Context, findings []diag.Finding, lang 
 func (a *Analysis) ResultIn(ctx context.Context, lang string) ([]diag.Finding, error) {
 	return a.Localized(ctx, a.source, lang)
 }
+
+// Selected is the packages the analysis selected, in name order (API.md R2, E17a).
+func (a *Analysis) Selected() []string { return a.r.selectedNames() }
 
 // Units are the packages of the snapshot Analyze read, every one, selected or not, read-only.
 func (a *Analysis) Units() []*project.Unit { return a.r.s.units }

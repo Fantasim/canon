@@ -3,6 +3,7 @@ package workspace
 import (
 	"cmp"
 	"context"
+	"errors"
 	"io/fs"
 	"slices"
 
@@ -13,14 +14,14 @@ import (
 // a fork, keeps the scan, the members and each member's entry while what they read is unchanged
 // (log-2026-09-29 M4 P18).
 type listing struct {
-	rev      string
-	inputs   []build.Read // the build's inputs (build.Project.Inputs)
-	scanned  []scanned    // every directory the scan listed, in order
-	scanErr  bool
-	set      *inputSet    // the files loads read, as it took them
-	recorded []build.Read // set, by absolute name
-	members  []member     // each name read, once, in the order of the reads: inputs then recorded
-	order    []int        // members, by display
+	rev     string
+	inputs  []build.Read // the build's inputs (build.Project.Inputs)
+	scanned []scanned    // every directory the scan listed, in order
+	scanErr bool
+	loads   []build.Read      // every file a load names (build.Static.Loads, DECISIONS 330)
+	members []member          // each name read, once, in the order of the reads: inputs then loads
+	order   []int             // members, by display
+	named   map[string]string // each file a load names, by absolute name, to its display
 }
 
 // scanned is a directory the scan listed and its listing's key.
@@ -29,10 +30,12 @@ type scanned struct {
 	sum sum
 }
 
-// member is one name of the read set, by the display it is listed under, and its entry.
+// member is one name of the read set, by the display it is listed under, and its entry; named
+// for a file a load names, listed even when it does not exist (S3, DECISIONS 143).
 type member struct {
 	display, abs string
 	e            *entry
+	named        bool
 }
 
 // list is the revision of s's read set as it holds it now (S3).
@@ -43,12 +46,22 @@ func (s *Snapshot) list(ctx context.Context) (string, error) {
 	was := s.fs.listed()
 	l := &listing{}
 	l.inputs, l.scanned, l.scanErr = s.scan(was)
-	l.set, l.recorded = s.fs.recordedFor(was)
+	if !l.scanErr { // a failed scan lists no load either, as build.Project.Revision does
+		loads, err := s.loads(ctx)
+		if err != nil {
+			return "", err
+		}
+		l.loads = loads
+	}
 	same := was != nil && sameReads(was, l)
 	if same {
-		l.members, l.order = was.members, was.order
+		l.members, l.order, l.named = was.members, was.order, was.named
 	} else {
-		l.members, l.order = membersOf(l.inputs, l.recorded)
+		l.members, l.order = membersOf(l.inputs, l.loads)
+		l.named = make(map[string]string, len(l.loads))
+		for _, r := range l.loads {
+			l.named[r.Abs] = r.Display
+		}
 	}
 	members, changed, err := s.fs.entriesNow(ctx, l.members)
 	if err != nil {
@@ -87,20 +100,36 @@ func (s *snapFS) sameDirs(dirs []scanned) bool {
 
 // sameReads reports l reading the same names under the same displays as was.
 func sameReads(was, l *listing) bool {
-	return was.set == l.set && slices.Equal(was.inputs, l.inputs) && was.scanErr == l.scanErr
+	return slices.Equal(was.loads, l.loads) && slices.Equal(was.inputs, l.inputs) && was.scanErr == l.scanErr
 }
 
-// membersOf is each name of inputs then recorded, once, the first display kept, and their order
+// loads is every file a load of s's project names (S3): none when project.canon does not check,
+// where no load's path resolves; any other failure is returned.
+func (s *Snapshot) loads(ctx context.Context) ([]build.Read, error) {
+	st, err := s.static(ctx)
+	var oe *build.OpenError
+	switch {
+	case errors.As(err, &oe):
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+	return st.Loads(), nil
+}
+
+// membersOf is each name of inputs then loads, once, the first display kept, and their order
 // by display, ties in the order of the reads.
-func membersOf(inputs, recorded []build.Read) ([]member, []int) {
-	seen := map[string]bool{}
+func membersOf(inputs, loads []build.Read) ([]member, []int) {
+	seen := map[string]int{}
 	var out []member
-	for _, reads := range [...][]build.Read{inputs, recorded} {
+	for i, reads := range [...][]build.Read{inputs, loads} {
 		for _, r := range reads {
-			if !seen[r.Abs] {
-				seen[r.Abs] = true
-				out = append(out, member{display: r.Display, abs: r.Abs})
+			if j, ok := seen[r.Abs]; ok {
+				out[j].named = out[j].named || i == 1 // a lock place a load names is listed even when missing
+				continue
 			}
+			seen[r.Abs] = len(out)
+			out = append(out, member{display: r.Display, abs: r.Abs, named: i == 1})
 		}
 	}
 	order := make([]int, len(out))
@@ -171,7 +200,7 @@ func (l *listing) readOrder() []build.Listed {
 	return out
 }
 
-// line is m's line of the listing, false for a file that does not exist.
+// line is m's line of the listing, false for a file that does not exist unless a load names it.
 func (m member) line() (build.Listed, bool) {
 	switch m.e.sum.class {
 	case classOK:
@@ -180,7 +209,7 @@ func (m member) line() (build.Listed, bool) {
 		return build.Listed{Display: m.display, Unreadable: true}, true
 	case classMissing, classGone:
 	}
-	return build.Listed{}, false
+	return build.Listed{Display: m.display, Unreadable: true}, m.named
 }
 
 // listed is the listing last computed on s, or on the snapshot it was forked from; nil for none.
@@ -195,18 +224,6 @@ func (s *snapFS) keepListing(l *listing) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.lst = l
-}
-
-// recordedFor is the files loads read, shared from now on so that they change only in a copy,
-// and their reads: was's when it took the same set.
-func (s *snapFS) recordedFor(was *listing) (*inputSet, []build.Read) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.inShared = true
-	if was != nil && was.set == s.inputs {
-		return was.set, was.recorded
-	}
-	return s.inputs, s.inputs.reads()
 }
 
 // scanRecorder is a snapshot's file system that notes each directory a scan lists, with its key.

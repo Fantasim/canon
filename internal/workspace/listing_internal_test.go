@@ -26,9 +26,9 @@ func ListedInputs(s *Snapshot) []build.Read {
 func TestListingLines(t *testing.T) {
 	key := func(text string) *entry { return &entry{sum: sum{class: classOK, hash: sha256.Sum256([]byte(text))}} }
 	missing := &entry{sum: sum{class: classMissing}}
-	members := []member{{display: "b", abs: "/1", e: key("x")}, {display: "a", abs: "/2", e: key("y")}, {display: "a", abs: "/3", e: key("z")}, {display: "c", abs: "/4", e: missing}}
+	members := []member{{display: "b", abs: "/1", e: key("x")}, {display: "a", abs: "/2", e: key("y")}, {display: "a", abs: "/3", e: key("z")}, {display: "c", abs: "/4", e: missing}, {display: "d", abs: "/5", e: missing, named: true}}
 	inRead := []build.Listed{{Display: "b", Sum: key("x").sum.hash}, {Display: "a", Sum: key("y").sum.hash}, {Display: "a", Sum: key("z").sum.hash}}
-	tied := &listing{members: members, order: []int{1, 2, 0, 3}}
+	tied := &listing{members: members[:4], order: []int{1, 2, 0, 3}}
 	if got := tied.lines(); !reflect.DeepEqual(got, inRead) {
 		t.Errorf("ties: %v", got)
 	}
@@ -40,19 +40,11 @@ func TestListingLines(t *testing.T) {
 	if got := plain.lines(); !reflect.DeepEqual(got, []build.Listed{inRead[1], inRead[0]}) {
 		t.Errorf("display order: %v", got)
 	}
-}
-
-// API.md S3 (log-2026-09-29 M4 P18): a snapshot and one forked from it share the files loads
-// read until either records another, which only it then holds; a listing's set never changes.
-func TestInputsShared(t *testing.T) {
-	parent := newSnapFS(nil, nil, time.Now)
-	parent.RecordReads([]build.Read{{Display: "a", Abs: "/a"}})
-	child := parent.fork(nil, nil)
-	set, _ := child.recordedFor(nil)
-	parent.RecordReads([]build.Read{{Display: "b", Abs: "/b"}})
-	child.RecordReads([]build.Read{{Display: "c", Abs: "/c"}})
-	if len(parent.recorded()) != 2 || len(child.recorded()) != 2 || len(set.byAbs) != 1 {
-		t.Errorf("parent %v, child %v, the listing's %v", parent.recorded(), child.recorded(), set.byAbs)
+	// S3 (DECISIONS 143, 330): a file a load names that does not exist is listed, unreadable;
+	// a missing source or lock is not
+	named := &listing{members: members[3:], order: []int{0, 1}}
+	if got := named.lines(); !reflect.DeepEqual(got, []build.Listed{{Display: "d", Unreadable: true}}) {
+		t.Errorf("a missing named file: %v", got)
 	}
 }
 

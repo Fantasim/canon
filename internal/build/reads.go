@@ -26,12 +26,6 @@ type Read struct {
 	Link    bool // the path Abs's symbolic links resolve to, not its content
 }
 
-// ReadRecorder is a file system that wants the files each load reads, with their display
-// paths, for its revision (API.md S3); a run tells the file system it was opened on.
-type ReadRecorder interface {
-	RecordReads(reads []Read)
-}
-
 // Listed is one line of a read-set listing: a file's display path and SHA-256, or Unreadable.
 type Listed struct {
 	Display    string
@@ -178,43 +172,49 @@ func under(dir, name string) (string, bool) {
 	return rel, ok
 }
 
-// Reads is the read set of pkg (API.md S5): project.canon, the files and possible locks of pkg,
-// of every package it imports and of the studio when one of them needs it, and every file or
-// listing their loads and verifications consulted, in display order.
+// Reads is the read set of pkg (API.md S5): the project files, the static read sets of pkg, of every
+// package it imports and of the studio when one of them needs it (DECISIONS 330), and every file
+// or listing their loads and asset checks consulted in this analysis, in display order.
 func (a *Analysis) Reads(pkg string) []Read {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	r := a.r
-	i := slices.IndexFunc(r.s.units, func(u *project.Unit) bool { return u.Name == pkg })
-	if i < 0 {
+	names := a.closure(pkg)
+	if names == nil {
 		return nil
 	}
-	units := withStudio(r.s.units, imported(r.s.units, r.s.units[i:i+1]), r.s.proj.Studio.Path)
-	out := r.p.ownReads()
-	names := []string{""} // what no package asked for counts for every one
-	for _, u := range units {
-		names = append(names, u.Name)
-		out = append(out, r.p.unitReads(u)...)
+	st := a.static()
+	out := a.r.p.ownReads()
+	for _, name := range names {
+		out = append(out, st.Of(name)...)
 	}
-	if l := r.host.log(); l != nil {
-		out = append(out, l.reads(names)...)
-	}
+	out = append(out, a.Consulted(pkg)...)
 	slices.SortFunc(out, compareReads)
 	return slices.Compact(out)
 }
 
-// unitReads is u's files, the sources listed in each directory holding one, so that a source
-// added there after a base is a change (API.md S5), and every place its canon.lock can be.
-func (p *Project) unitReads(u *project.Unit) []Read {
-	var out []Read
-	var files []string
-	for _, f := range u.Files {
-		dir := path.Dir(f.Src.Path)
-		out = append(out, Read{Display: f.Src.Path, Abs: f.Src.Abs}, Read{Display: dir, Abs: project.Join(p.dir, dir), Dir: true, Sources: true})
-		files = append(files, f.Src.Path)
+// Consulted is every file or listing the loads and asset checks of pkg, of every package it
+// imports and of the studio when one of them needs it consulted in this analysis (API.md S5): a
+// listing an asset check reads is known only once it ran. Unsorted.
+func (a *Analysis) Consulted(pkg string) []Read {
+	names := a.closure(pkg)
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	l := a.r.host.log()
+	if names == nil || l == nil {
+		return nil
 	}
-	for _, name := range lockPaths(files) {
-		out = append(out, p.fileRead(name))
+	return l.reads(append(names, "")) // what no package asked for counts for every one
+}
+
+// closure is pkg, every package it imports and the studio when one of them needs it, nil for a
+// package the snapshot lacks.
+func (a *Analysis) closure(pkg string) []string {
+	units := a.r.s.units
+	i := slices.IndexFunc(units, func(u *project.Unit) bool { return u.Name == pkg })
+	if i < 0 {
+		return nil
+	}
+	var out []string
+	for _, u := range withStudio(units, imported(units, units[i:i+1]), a.r.s.proj.Studio.Path) {
+		out = append(out, u.Name)
 	}
 	return out
 }
@@ -245,38 +245,36 @@ type touch struct {
 // readLog is a run's file system as its loads and asset checks see it: every name they read,
 // stat or list is kept under the package whose load or verification asked (API.md S5).
 type readLog struct {
-	fs      project.FS
-	mu      sync.Mutex
-	pkg     string
-	by      map[string]map[touch]bool
-	pending []string              // files read since they were last told to the file system (API.md S3)
-	read    map[string]bool       // every file read
-	known   map[string]string     // each file this run's loads added to the set, by its least display (added)
-	dir     string                // the project directory, which displays a file the file set lacks
-	kept    map[string]loadedFile // each file the loads handed the file set, by name (keep)
-	site    siteKey               // the load reading now, the zero key for none
-	globs   []globMatch           // each load.dir's matches as used, in order (globbed)
+	fs    project.FS
+	mu    sync.Mutex
+	pkg   string
+	by    map[string]map[touch]bool
+	known map[string]string     // each file this run's loads added to the set, by its least display (added)
+	dir   string                // the project directory, which displays a file the file set lacks
+	kept  map[string]loadedFile // each file the loads handed the file set, by name (keep)
+	site  siteKey               // the load reading now, the zero key for none
+	globs []globMatch           // each load.dir's matches as used, in order (globbed)
 }
 
 func (l *readLog) ReadFile(name string) ([]byte, error) {
-	l.note(touch{abs: name}, true)
+	l.note(touch{abs: name})
 	return l.fs.ReadFile(name)
 }
 
 func (l *readLog) Stat(name string) (fs.FileInfo, error) {
-	l.note(touch{abs: name}, false)
+	l.note(touch{abs: name})
 	return l.fs.Stat(name)
 }
 
 func (l *readLog) ReadDir(name string) ([]fs.DirEntry, error) {
-	l.note(touch{abs: name, dir: true}, false)
+	l.note(touch{abs: name, dir: true})
 	return l.fs.ReadDir(name)
 }
 
 // EvalSymlinks resolves links as the file system under the log does, charged like a read, so a
 // retargeted link is a change (API.md S5).
 func (l *readLog) EvalSymlinks(name string) (string, error) {
-	l.note(touch{abs: name, link: true}, false)
+	l.note(touch{abs: name, link: true})
 	return project.EvalSymlinks(l.fs, name)
 }
 
@@ -285,22 +283,18 @@ func (l *readLog) EvalSymlinks(name string) (string, error) {
 func (l *readLog) SumFile(name string) (sha256Sum, bool, error) {
 	sum, ok, err := project.SumFile(l.fs, name)
 	if ok {
-		l.note(touch{abs: name}, true)
+		l.note(touch{abs: name})
 	}
 	return sum, ok, err
 }
 
-func (l *readLog) note(t touch, read bool) {
+func (l *readLog) note(t touch) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.by[l.pkg] == nil {
 		l.by[l.pkg] = map[touch]bool{}
 	}
 	l.by[l.pkg][t] = true
-	if read {
-		l.pending = append(l.pending, t.abs)
-		l.read[t.abs] = true
-	}
 }
 
 // added notes the display a load of this run gave a file it read, kept when least (S3).
@@ -319,28 +313,6 @@ func (l *readLog) enter(pkg string) string {
 	prev := l.pkg
 	l.pkg = pkg
 	return prev
-}
-
-// flush tells the file system under the log, if it records reads, each file read since the
-// last flush, once, by the least display this run's loads gave it or else by display (API.md
-// S3): a file whose sum was known and that was read after all is told as one read (P18).
-func (l *readLog) flush() {
-	rec, ok := l.fs.(ReadRecorder)
-	l.mu.Lock()
-	pending := l.pending
-	l.pending = nil
-	out := make([]Read, 0, len(pending))
-	told := make(map[string]bool, len(pending))
-	for _, abs := range pending {
-		if !told[abs] {
-			told[abs] = true
-			out = append(out, Read{Display: l.displayOf(abs), Abs: abs})
-		}
-	}
-	l.mu.Unlock()
-	if ok && len(out) > 0 {
-		rec.RecordReads(out)
-	}
 }
 
 // reads is every name the packages names consulted.
@@ -366,7 +338,7 @@ func (l *readLog) displayOf(abs string) string {
 }
 
 // track points the run's loads and asset checks at its read log, made on first use, and
-// charges what they consult to pkg until the returned function runs (API.md S3, S5).
+// charges what they consult to pkg until the returned function runs (API.md S5).
 func (h *evalHost) track(pkg string) func() {
 	if h.loader == nil {
 		return func() {}
@@ -374,14 +346,14 @@ func (h *evalHost) track(pkg string) func() {
 	l := h.log()
 	if l == nil {
 		l = &readLog{
-			fs: h.loader.FS, by: map[string]map[touch]bool{}, read: map[string]bool{}, known: map[string]string{},
+			fs: h.loader.FS, by: map[string]map[touch]bool{}, known: map[string]string{},
 			kept: map[string]loadedFile{},
 		}
 		if h.loader.Layout != nil {
 			l.dir = h.loader.Layout.Dir
 		}
 		h.loader.FS = l
-		h.loader.Reused = func(abs string) { l.note(touch{abs: abs}, false) } // a cached header counts too (S5)
+		h.loader.Reused = func(abs string) { l.note(touch{abs: abs}) } // a cached header counts too (S5)
 		h.loader.Add, h.loader.Kept = h.adder(l), h.keeper(l)
 		h.loader.Globbed = l.globbed
 		if h.assets != nil {
@@ -389,10 +361,7 @@ func (h *evalHost) track(pkg string) func() {
 		}
 	}
 	prev := l.enter(pkg)
-	return func() {
-		l.enter(prev)
-		l.flush()
-	}
+	return func() { l.enter(prev) }
 }
 
 // log is the read log over the loader's file system, nil before the first load or verification.

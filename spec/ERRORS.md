@@ -23,7 +23,7 @@ other file declares a code or holds message text.
   lines, summary).
 - **Reserved codes** are catalogued but not reported yet, each with its owner (DECISIONS 322):
   `E8103`, `E8106`-`E8109`, `E8201` (legacy C++ structs, M6; `LegacyStruct` refuses them first, DECISIONS 320), `E8301` (the embedded mode, v0.2), `E4201`
-  (an internal safety net, EVALUATION.md §4.5), `E7008` (the literal `load` path check of DECISIONS 330, `check`, until it lands), `E8022`, `E8023` and `W8024` (`build`) (DECISIONS 332, until it lands).
+  (an internal safety net, EVALUATION.md §4.5), `E8022`, `E8023` and `W8024` (`build`) (DECISIONS 332, until it lands).
 - **Retired numbers** are never reused: `E1624` and `E1625` (the view `row` item, removed by
   DECISIONS 21), `E8016` (merged into `E8153`), `E8018` (decoders across packages, removed by
   DECISIONS 323: a package reads another package's classes with its own readers). `E3014` and `E3319` were referenced once but never

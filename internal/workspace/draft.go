@@ -69,7 +69,10 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 	if err := s.noOverlay(base, plan.Changes); err != nil { // the rules of Edit (API.md V13, S12)
 		return nil, err
 	}
-	owners, aliases := s.owners(base, plan)
+	owners, aliases, err := s.owners(ctx, plan)
+	if err != nil {
+		return nil, err
+	}
 	after := s.planned(plan.Changes, aliases)
 	a, err := after.analyze(ctx, nil)
 	if err != nil {
@@ -107,14 +110,13 @@ func (s *Snapshot) planned(changes []edit.Change, aliases map[string]string) *Sn
 	}
 	for _, c := range changes {
 		switch c.Kind {
-		case edit.ChangeDeleted:
+		case edit.ChangeDeleted, edit.ChangeRemovedDir: // a directory left empty is removed too (API.md N6)
 			put(c.Path, nil)
 		case edit.ChangeRenamed:
 			put(c.OldPath, nil)
 			put(c.Path, present(c.After))
 		case edit.ChangeModified, edit.ChangeCreated:
 			put(c.Path, present(c.After))
-		case edit.ChangeRemovedDir: // an empty directory holds no source
 		}
 	}
 	//canon:unordered each alias is stored under its own name
@@ -123,6 +125,9 @@ func (s *Snapshot) planned(changes []edit.Change, aliases map[string]string) *Sn
 			over[alias], mine[alias] = data, true
 			dropAt(dropped, alias)
 		}
+	}
+	for _, n := range s.fs.unresolved() { // a dangling link may lead to what the edit creates
+		dropped[n] = nil
 	}
 	next := s.fs.fork(over, dropped)
 	next.mine = mine

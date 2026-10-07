@@ -34,8 +34,8 @@ type Loader struct {
 	Headers *Headers
 
 	mu      sync.Mutex
-	headers map[string]*headerFile // by resolved absolute path
-	rec     *Inputs                // the inputs of the load being recorded (Recorded), nil for none
+	headers map[headerKey]*headerFile // by package, then resolved absolute path
+	rec     *Inputs                   // the inputs of the load being recorded (Recorded), nil for none
 }
 
 // Load reads e against t; false after a finding, poisoning the value (EVALUATION.md §7).
@@ -76,11 +76,11 @@ func (l *Loader) parse(src *source.File, bag *diag.Bag) (*jsonsrc.Node, error) {
 	return jsonsrc.Parse(src, bag)
 }
 
-// FinishDefines reports each header's W7101 once every load of the build is forced (WIRE.md §6.8).
+// FinishDefines reports each header's W7101, once per package reading it, once every load is forced.
 func (l *Loader) FinishDefines() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	for _, abs := range slices.Sorted(maps.Keys(l.headers)) {
-		reportHeaderSkips(l.headers[abs])
+	for _, key := range slices.SortedFunc(maps.Keys(l.headers), compareHeaderKeys) {
+		reportHeaderSkips(l.headers[key])
 	}
 }

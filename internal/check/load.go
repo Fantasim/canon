@@ -11,6 +11,9 @@ import (
 // load types a `load` form (WIRE.md §6.1).
 func (c *checker) load(env *env, e *syntax.LoadExpr, want types.Type) types.Type {
 	c.loadArgs(env, e)
+	if !c.literalPath(env, e) {
+		return types.ErrorType
+	}
 	form := loadForm
 	if e.Method != nil {
 		form = e.Method.Name
@@ -37,6 +40,22 @@ func (c *checker) load(env *env, e *syntax.LoadExpr, want types.Type) types.Type
 		return types.ErrorType
 	}
 	return want
+}
+
+// literalPath is E7008 for a load whose path is no positional string literal without interpolation,
+// raw or not, at the path or, without one, at the load: the one form load reads (DECISIONS 330).
+func (c *checker) literalPath(env *env, e *syntax.LoadExpr) bool {
+	if len(e.Args) == 0 || e.Args[0].Name != nil {
+		c.report(env, diag.E7008.At(env.span(e)))
+		return false
+	}
+	if s, ok := e.Args[0].Value.(syntax.StrLit); ok {
+		if _, literal := LiteralText(s); literal {
+			return true
+		}
+	}
+	c.report(env, diag.E7008.At(env.span(e.Args[0].Value)))
+	return false
 }
 
 // loadFits reports whether a load form can build want, else E7116 (WIRE.md §6.1, §6.2, §6.5, §6.6, §5.9).

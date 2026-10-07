@@ -68,6 +68,27 @@ func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error)
 	return &run{p: p, s: s, selected: selected, loaded: loaded, bags: s.bagsOf(loaded), cached: true}, nil
 }
 
+// prepareOnly is prepare of exactly the packages pkgs names, an unknown name left out and none
+// for none, with their imports and the studio when they use it; an active layer is judged against
+// the layer headers of every scanned package, a layer amending only its own (API.md E17a, E1909).
+func (p *Project) prepareOnly(ctx context.Context, pkgs []string) (*run, error) {
+	s, err := p.load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var selected []*project.Unit
+	for _, u := range s.units {
+		if slices.Contains(pkgs, u.Name) {
+			selected = append(selected, u)
+		}
+	}
+	if err := p.checkLayers(s, s.units); err != nil {
+		return nil, err
+	}
+	loaded := withStudio(s.units, imported(s.units, selected), s.proj.Studio.Path)
+	return &run{p: p, s: s, selected: selected, loaded: loaded, bags: s.bagsOf(loaded), cached: true}, nil
+}
+
 // analyze runs phases 2 to 7: check, then stages A to E (EVALUATION.md §1).
 func (r *run) analyze(ctx context.Context) error {
 	if err := r.check(ctx); err != nil {
@@ -338,6 +359,26 @@ func (r *run) reportStableAmendments() {
 	for _, a := range r.ev.StableAmendments() {
 		lock.ReportLayer(lock.LayerAmendment{Layer: a.Layer, Table: a.Table, Field: a.Field, Span: a.Span}, r.s.bag(a.Pkg))
 	}
+}
+
+// Own is Result without the errors of the packages a only imports: the selected packages' findings
+// and the project's own, what an edit's re-check reports (API.md E18).
+func (a *Analysis) Own() *Result {
+	r := a.r
+	keep := map[string]bool{"": true}
+	bags := make([]*diag.Bag, len(r.selected))
+	for i, u := range r.selected {
+		keep[u.Name], bags[i] = true, r.s.bag(u.Name)
+	}
+	res := a.res
+	out := &Result{Packages: slices.Clone(res.Packages), Revision: res.Revision}
+	out.Findings = Findings{Files: res.Files, Summary: collect(r.s.set, r.s.own, bags...).Summary}
+	for _, f := range res.List {
+		if keep[f.Package] {
+			out.List = append(out.List, f)
+		}
+	}
+	return out
 }
 
 // result is the findings of the selected packages and of the project itself, with the errors

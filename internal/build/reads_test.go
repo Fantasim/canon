@@ -7,10 +7,10 @@ import (
 	"io/fs"
 	"slices"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	viewrender "github.com/fantasim/canonlang/internal/views/render"
 )
@@ -28,21 +28,6 @@ func readsFS() mapFS {
 		"p/c/c.canon":     file("/// C.\npackage c\n\n/// Ys.\nlet ys: [Int] = load(\"@data/c.json\")\n"),
 		"p/data/c.json":   file("[3]\n"),
 	}
-}
-
-// recordingFS is a file system that is told what each load read (build.ReadRecorder).
-type recordingFS struct {
-	mapFS
-	mu    sync.Mutex
-	reads []build.Read
-}
-
-var _ build.ReadRecorder = (*recordingFS)(nil)
-
-func (r *recordingFS) RecordReads(reads []build.Read) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.reads = append(r.reads, reads...)
 }
 
 func displaysOf(reads []build.Read) []string {
@@ -89,32 +74,54 @@ func TestAnalysisReads(t *testing.T) {
 	}
 }
 
-// API.md S3: a file system that records reads is told each file a load read, with its display
-// path, by Analyze and by Build alike.
-func TestReadRecorder(t *testing.T) {
-	for _, run := range []func(*build.Project) error{
-		func(p *build.Project) error { _, err := p.Analyze(context.Background(), nil); return err },
-		func(p *build.Project) error {
-			_, err := p.Build(context.Background(), build.BuildOptions{Check: true})
-			return err
-		},
-	} {
-		fsys := &recordingFS{mapFS: readsFS()}
-		p, err := build.Open(fsys, "/p", build.Options{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := run(p); err != nil {
-			t.Fatal(err)
-		}
-		want := []build.Read{{Display: "a/a.json", Abs: "/p/a/a.json"}, {Display: "@data/c.json", Abs: "/p/data/c.json"}}
-		if !slices.Equal(fsys.reads, want) {
-			t.Errorf("recorded %v, want %v", fsys.reads, want)
-		}
+// API.md S3, S5 (DECISIONS 330): the files every load names are known from the parse, nothing
+// checked or evaluated, with their displays, in display order; and each package's static read set
+// is its own files, its own lock and what its loads name.
+func TestStaticLoads(t *testing.T) {
+	p, err := build.Open(readsFS(), "/p", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := p.Static(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []build.Read{{Display: "@data/c.json", Abs: "/p/data/c.json"}, {Display: "a/a.json", Abs: "/p/a/a.json"}}
+	if got := st.Loads(); !slices.Equal(got, want) {
+		t.Errorf("Loads = %v, want %v", got, want)
+	}
+	if got := displaysOf(st.Of("b")); !slices.Equal(got, []string{"b/b.canon", "b/canon.lock"}) {
+		t.Errorf("Of(b) = %q: an import's files are not b's own", got)
+	}
+	if got := displaysOf(st.Of("a")); !slices.Equal(got, []string{"a/a.canon", "a/a.json", "a/canon.lock"}) {
+		t.Errorf("Of(a) = %q", got)
 	}
 }
 
-// API.md S3: Inputs and RevisionOf give the revision a build reads of the same files.
+// WIRE.md 6.1 E7008 (DECISIONS 330): a load path that is no literal is a finding of phase 2, never
+// a failure of the run, and its load names no file.
+func TestLoadPathNotLiteral(t *testing.T) {
+	fsys := readsFS()
+	fsys["p/d/d.canon"] = file("/// D.\npackage d\n\nconst DIR = \"d\"\n\n/// T.\nlet t: String = load.text(\"{DIR}.txt\")\n")
+	p, err := build.Open(fsys, "/p", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := p.Analyze(context.Background(), []string{"d"})
+	if err != nil {
+		t.Fatalf("Analyze: %v, want a finding", err)
+	}
+	list := a.Result().List
+	if len(list) != 1 || list[0].Code != diag.E7008.Def().Code {
+		t.Errorf("findings %+v, want the literal path one alone", list)
+	}
+	if st, err := p.Static(context.Background()); err != nil || len(st.Of("d")) != 3 {
+		t.Errorf("d's static read set %v (%v): its file, directory and lock alone", st.Of("d"), err)
+	}
+}
+
+// API.md S3 (DECISIONS 330): Inputs, the files the loads name and RevisionOf give the revision a
+// build reads of the same files.
 func TestInputsRevision(t *testing.T) {
 	fsys := readsFS()
 	fsys["p/a/canon.lock"] = file("canon-lock v1\n")
@@ -126,8 +133,12 @@ func TestInputsRevision(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	st, err := p.Static(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
 	var lines []build.Listed
-	for _, r := range reads {
+	for _, r := range append(reads, st.Loads()...) {
 		data, err := fsys.ReadFile(r.Abs)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
@@ -135,7 +146,7 @@ func TestInputsRevision(t *testing.T) {
 		lines = append(lines, build.Listed{Display: r.Display, Sum: sha256.Sum256(data)})
 	}
 	want, err := p.Revision(context.Background())
-	if err != nil || build.RevisionOf(lines) != want || len(lines) != 5 {
+	if err != nil || build.RevisionOf(lines) != want || len(lines) != 7 {
 		t.Errorf("RevisionOf %d lines = %s, Revision %s (%v)", len(lines), build.RevisionOf(lines), want, err)
 	}
 	if unread := build.RevisionOf(append(lines, build.Listed{Display: "x", Unreadable: true})); unread == want {

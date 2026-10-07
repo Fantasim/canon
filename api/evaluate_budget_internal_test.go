@@ -87,7 +87,7 @@ var sweepEdits = []struct {
 // sweepPaths are the values the sweep evaluates, the unqualified roots among them.
 var sweepPaths = []string{"b:x", "x", "b:y", "b:xs", "xs", "b:items", "b:items.sword", "b:items.sword.target", "c:y", "a:echo"}
 
-// API.md V13, V14, E17, DECISIONS 244 (log-2026-09-29 M4 P14-r, P14-r2): at every budget from 1
+// API.md V13, V14, E17, DECISIONS 244, 330 (log-2026-09-29 M4 P14-r, P14-r2): at every budget from 1
 // to twice the cold need, after edits, Evaluate gives what the snapshot's every-package analysis
 // gives, the one Value reads, with or without a draft, qualified or not, whichever it reads.
 func TestEvaluateBudgetSweep(t *testing.T) {
@@ -123,6 +123,9 @@ func sweepAt(t *testing.T, budget, i int) (held, covered, edited bool) {
 	p := sweepOpen(t, budget)
 	sc := sweepEdits[i]
 	for _, n := range sc.values {
+		if _, err := p.Check(ctx); err != nil { // the every-package analysis an edit's Covers needs: its own base is its scope's (DECISIONS 330)
+			t.Fatal(err)
+		}
 		res, err := p.Edit(ctx, Edit{Ops: []Op{Set(sc.path, Int(n))}, AllowErrors: true, Normalize: true})
 		edited = err == nil && res.Applied
 	}

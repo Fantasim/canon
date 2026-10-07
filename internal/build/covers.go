@@ -1,8 +1,6 @@
 package build
 
 import (
-	"slices"
-
 	"github.com/fantasim/canonlang/internal/eval"
 )
 
@@ -37,59 +35,8 @@ func (a *Analysis) charges() []eval.Charge {
 	return a.r.ev.Charged()
 }
 
-// Readers are the packages owning one of files or a listing of dirs by their real paths, sorted,
-// and the other names they read each of files by (API.md S5, E17; log-2026-09-29 M4 P14-r2,
-// P14-r3); what no package asked for counts for every one.
-func (a *Analysis) Readers(files, dirs []string) (pkgs []string, aliases map[string]string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	real := newRealPaths(a.r.p.fs)
-	wantFiles, wantDirs := map[string]string{}, map[string]bool{}
-	for _, f := range files {
-		wantFiles[real.file(f)] = f
-	}
-	for _, d := range dirs {
-		wantDirs[real.dir(d)] = true
-	}
-	aliases = map[string]string{}
-	hit := func(rd Read) bool {
-		if rd.Dir {
-			return wantDirs[real.dir(rd.Abs)]
-		}
-		f, ok := wantFiles[real.file(rd.Abs)]
-		if ok && f != rd.Abs && !rd.Link {
-			aliases[rd.Abs] = f
-		}
-		return ok
-	}
-	l := a.r.host.log()
-	every := l != nil && l.touches("", hit)
-	for _, u := range a.r.s.units {
-		own := l != nil && l.touches(u.Name, hit)
-		if every || own || slices.ContainsFunc(a.r.p.unitReads(u), hit) {
-			pkgs = append(pkgs, u.Name)
-		}
-	}
-	slices.Sort(pkgs)
-	return pkgs, aliases
-}
-
-// touches reports a name pkg consulted that hit takes, asking hit of every one.
-func (l *readLog) touches(pkg string, hit func(Read) bool) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	found := false
-	//canon:unordered every name is asked; the answer is whether one hit
-	for t := range l.by[pkg] {
-		if hit(Read{Abs: t.abs, Dir: t.dir, Link: t.link}) {
-			found = true
-		}
-	}
-	return found
-}
-
 // RealPaths are names resolved through the links of the file system a's snapshot reads, as
-// Readers compares them (API.md S12; log-2026-09-29 M4 P14-r4).
+// Static.Readers compares them (API.md S12; log-2026-09-29 M4 P14-r4).
 func (a *Analysis) RealPaths(names ...string) []string {
 	a.mu.Lock()
 	defer a.mu.Unlock()

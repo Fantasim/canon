@@ -59,11 +59,17 @@ func (p *Project) Edit(ctx context.Context, req EditRequest) (*EditOutcome, erro
 	return out, err
 }
 
+// edit is the edit computed on s: its ops applied against the analysis of their scope alone,
+// then its affected packages re-checked (API.md E17, E17a, E18; DECISIONS 330), the refusals in
+// E21's order; an edit without ops analyses nothing.
 func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, error) {
 	if err := edit.RenameRequest(req.Ops, req.AllowErrors, req.EditLayer); err != nil {
 		return nil, err
 	}
-	a, err := s.analyze(ctx, nil)
+	if len(req.Ops) == 0 {
+		return s.noOps(ctx, req.Base)
+	}
+	a, err := s.scoped(ctx, req.Ops)
 	if err != nil {
 		return nil, err
 	}
@@ -71,12 +77,18 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if err != nil {
 		return nil, err
 	}
-	owners, aliases := s.owners(a, plan)
-	if err := s.refuse(req, a, plan, owners); err != nil {
+	owners, aliases, err := s.owners(ctx, plan)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.refuse(ctx, req, a, plan, owners); err != nil {
 		return nil, err
 	}
 	out := &EditOutcome{Plan: plan, Changes: slices.Clone(plan.Changes), Before: s, After: s.planned(plan.Changes, aliases), aliases: aliases}
 	if err := out.recheck(ctx, a, owners); err != nil {
+		return nil, err
+	}
+	if err := s.staleConsulted(ctx, req.Base, out); err != nil {
 		return nil, err
 	}
 	if out.Checked.Summary.Errors > 0 && !req.AllowErrors {
@@ -108,11 +120,11 @@ func (o *EditOutcome) written() []string {
 	return out
 }
 
-// owners are the packages that own what the edit writes (API.md E17, log-2026-09-29 M4 P14-r2):
-// those its plan touches, and each whose read set in a holds a file it writes or removes, or lists
-// a directory whose names it changes; with the other names they read a file it writes by.
-func (s *Snapshot) owners(a *build.Analysis, plan *edit.Plan) ([]string, map[string]string) {
-	var files, dirs []string
+// owners are the packages its plan touches and those whose static read sets or asset roots hold
+// what the edit writes, removes or creates, with the other names they read a file it writes by
+// (API.md E17, DECISIONS 252, 330).
+func (s *Snapshot) owners(ctx context.Context, plan *edit.Plan) ([]string, map[string]string, error) {
+	var files, dirs, names []string
 	for _, c := range plan.Changes {
 		for _, display := range []string{c.Path, c.OldPath} {
 			abs, ok := s.b.Abs(display)
@@ -121,12 +133,16 @@ func (s *Snapshot) owners(a *build.Analysis, plan *edit.Plan) ([]string, map[str
 			}
 			files = append(files, abs)
 			if c.Kind != edit.ChangeModified {
-				dirs = append(dirs, s.listings(abs)...)
+				dirs, names = append(dirs, s.listings(abs)...), append(names, abs)
 			}
 		}
 	}
-	readers, aliases := a.Readers(files, dirs)
-	return append(slices.Clone(plan.Touched), readers...), aliases
+	st, err := s.static(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	readers, aliases := st.Readers(files, dirs, names)
+	return append(slices.Clone(plan.Touched), readers...), aliases, nil
 }
 
 // listings are the directories whose listing gains or loses abs, a name created or removed: abs
@@ -144,11 +160,11 @@ func (s *Snapshot) listings(abs string) []string {
 
 // refuse is the first refusal of a plan after its operations (API.md E21): a file with an
 // overlay (S12), a stale base (S5), then files not in canonical layout without Normalize (M9).
-func (s *Snapshot) refuse(req EditRequest, a *build.Analysis, plan *edit.Plan, owners []string) error {
+func (s *Snapshot) refuse(ctx context.Context, req EditRequest, a *build.Analysis, plan *edit.Plan, owners []string) error {
 	if err := s.noOverlay(a, plan.Changes); err != nil {
 		return err
 	}
-	if err := s.staleFor(req.Base, a, owners); err != nil {
+	if err := s.staleFor(ctx, req.Base, a, owners); err != nil {
 		return err
 	}
 	if len(plan.NotCanonical) > 0 && !req.Normalize {
@@ -184,8 +200,9 @@ func (s *Snapshot) noOverlay(a *build.Analysis, changes []edit.Change) error {
 	return nil
 }
 
-// recheck re-checks, on After, the packages owning a file the edit writes and their importers
-// (API.md E17, E18), and adds the lock lines the edit requires (E20).
+// recheck re-checks on After the owners and their importers, with their imports alone, and adds
+// the lock lines the edit requires (API.md E17, E17a, E18, E20); Covers needs an every-package
+// analysis a call kept on Before, the edit's own base being its scope's.
 func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []string) error {
 	pkgs := importing(a.Units(), owners...)
 	switch {
@@ -195,13 +212,13 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 		o.Checked = &build.Result{Findings: build.Findings{Files: a.Files()}}
 		return nil
 	}
-	checked, err := Analyze(ctx, o.After, pkgs)
+	checked, err := AnalyzeOnly(ctx, o.After, pkgs)
 	if err != nil {
 		return err
 	}
-	o.Checked, o.checked, o.rechecked = checked.Result(), checked, pkgs
-	if build.Covers(a, checked) { // the packages outside pkgs read none of the files written (owners)
-		o.After.cover(pkgs)
+	o.Checked, o.checked, o.rechecked = checked.Own(), checked, pkgs
+	if all := o.Before.keptAnalysis(Key(OpAnalyze, nil), true); all != nil && build.Covers(all, checked) {
+		o.After.cover(pkgs) // the packages outside pkgs read none of the files written (owners)
 	}
 	locked, err := o.ownLocks(checked)
 	if locked {

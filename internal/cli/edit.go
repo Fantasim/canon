@@ -31,16 +31,15 @@ func runEdit(inv *invocation) int {
 	return inv.applyEdit(req, start, wrapEdit)
 }
 
-// applyEdit checks every package, so the printed base is current for the next run (API.md S3), applies req and prints its object through wrap.
+// applyEdit applies req, which analyses only what it can affect, and prints its object through
+// wrap; its revision covers the whole static read set, so the printed base stays current for the
+// next run while nothing changed (API.md E17a, S3, S4; DECISIONS 330).
 func (inv *invocation) applyEdit(req canon.Edit, start time.Time, wrap func(editBody) any) int {
 	p, err := inv.openProject()
 	if err != nil {
 		return inv.editFail(err, start)
 	}
 	defer func() { _ = p.Close() }()
-	if _, err := p.Check(inv.ctx); err != nil {
-		return inv.editFail(err, start)
-	}
 	res, err := p.Edit(inv.ctx, req)
 	if res != nil && errors.Is(err, canon.ErrRejected) {
 		return inv.writeEdit(res, start, true, wrap)

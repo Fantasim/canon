@@ -4,34 +4,21 @@ import (
 	"testing"
 	"testing/fstest"
 	"time"
-
-	"github.com/fantasim/canonlang/internal/build"
 )
 
-// API.md S3 (log-2026-09-29 M4 P14): a snapshot's revision is kept while the files its loads read
-// are the same; one computed before a load's read changed them is not kept.
+// API.md S3, S10 (DECISIONS 330): a snapshot has one revision, a function of its files, so the
+// first computed is kept; a fork, a new snapshot, starts without one.
 func TestRevisionKept(t *testing.T) {
 	s := newSnapFS(&clockFS{MapFS: fstest.MapFS{"f": {Data: []byte("a")}}}, nil, time.Now)
 	if _, ok := s.revised(); ok {
 		t.Fatal("a revision before any was computed")
 	}
-	at := s.inputsSeen()
-	s.revise("r1", at)
+	s.revise("r1")
 	if rev, ok := s.revised(); !ok || rev != "r1" {
 		t.Fatalf("revised = %q, %v", rev, ok)
 	}
-	s.RecordReads([]build.Read{{Display: "f", Abs: "/f"}})
-	if _, ok := s.revised(); ok {
-		t.Error("a file a load read keeps the revision")
-	}
-	s.revise("r2", at) // computed before the load's read
-	if _, ok := s.revised(); ok {
-		t.Error("a revision computed before a read is kept")
-	}
-	s.RecordReads([]build.Read{{Display: "f", Abs: "/f"}})
-	s.revise("r3", s.inputsSeen())
-	if rev, ok := s.revised(); !ok || rev != "r3" {
-		t.Errorf("a read already recorded drops the revision: %q, %v", rev, ok)
+	if _, ok := s.fork(nil, nil).revised(); ok {
+		t.Error("a fork inherits its parent's revision")
 	}
 }
 

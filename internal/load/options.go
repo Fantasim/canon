@@ -22,10 +22,7 @@ type parsedCall struct {
 // parseCall reads e's positional path and named options; ok is false when the call is not
 // literal enough for this milestone to read without the evaluator.
 func parseCall(e *syntax.LoadExpr) (parsedCall, bool) {
-	if len(e.Args) == 0 || e.Args[0].Name != nil {
-		return parsedCall{}, false
-	}
-	path, ok := pathOf(e.Args[0].Value)
+	path, ok := literalPath(e)
 	if !ok {
 		return parsedCall{}, false
 	}
@@ -36,6 +33,18 @@ func parseCall(e *syntax.LoadExpr) (parsedCall, bool) {
 		}
 	}
 	return c, true
+}
+
+// literalPath is e's path: its first argument when positional and a string literal without
+// interpolation, raw or not; false for any other, which check refuses (E7008).
+func literalPath(e *syntax.LoadExpr) (string, bool) {
+	if len(e.Args) == 0 || e.Args[0].Name != nil {
+		return "", false
+	}
+	if raw, ok := e.Args[0].Value.(*syntax.RawStringLit); ok {
+		return raw.Value, true
+	}
+	return pathOf(e.Args[0].Value)
 }
 
 func pathOf(e syntax.Expr) (string, bool) {

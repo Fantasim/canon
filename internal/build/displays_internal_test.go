@@ -3,8 +3,6 @@ package build
 import (
 	"context"
 	"fmt"
-	"maps"
-	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -24,32 +22,8 @@ var twoDisplays = map[string]string{
 	"d/d.canon":     "/// D.\npackage d\n\nimport c { P }\n\n/// Ps.\nlet ps: [P] keyed by id = load.dir(\"../link/*.json\")\n",
 }
 
-// recFS records the displays each run tells it (API.md S3), by absolute name.
-type recFS struct {
-	*editFS
-	mu   sync.Mutex
-	told map[string][]string
-}
-
-func (r *recFS) RecordReads(reads []Read) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for _, rd := range reads {
-		r.told[rd.Abs] = append(r.told[rd.Abs], rd.Display)
-	}
-}
-
-// listing is what the run told, in order.
-func (r *recFS) listing() string {
-	var sb strings.Builder
-	for _, abs := range slices.Sorted(maps.Keys(r.told)) {
-		fmt.Fprintf(&sb, "%s %v\n", abs, r.told[abs])
-	}
-	return sb.String()
-}
-
-// API.md S3, S5 (log-2026-09-29 M4 U8-r): one file reached through two displays is told and read
-// by the least display this run's loads used, whatever other runs load meanwhile.
+// API.md S3, S5 (log-2026-09-29 M4 U8-r): one file reached through two displays is read by the
+// least display this run's loads used, whatever other runs load meanwhile.
 func TestLeastDisplayAcrossRuns(t *testing.T) {
 	dir := twoDisplaysDir(t)
 	base, cache := newEditFS(project.OS()), NewCache()
@@ -76,11 +50,9 @@ func TestLeastDisplayAcrossRuns(t *testing.T) {
 	}
 }
 
-// displaysOf is what a run of sel through cache (nil: cold) tells its file system and the read
-// sets of its packages.
+// displaysOf is the read sets of the packages of a run of sel through cache (nil: cold).
 func displaysOf(t *testing.T, base *editFS, dir string, cache *Cache, sel []string) string {
-	rec := &recFS{editFS: base, told: map[string][]string{}}
-	p, err := Open(rec, dir, Options{})
+	p, err := Open(base, dir, Options{})
 	if err != nil {
 		t.Error(err)
 		return ""
@@ -91,7 +63,6 @@ func displaysOf(t *testing.T, base *editFS, dir string, cache *Cache, sel []stri
 		return ""
 	}
 	var sb strings.Builder
-	sb.WriteString(rec.listing())
 	for _, pkg := range a.Result().Packages {
 		for _, r := range a.Reads(pkg) {
 			fmt.Fprintf(&sb, "%s: %s\n", pkg, r.Display)

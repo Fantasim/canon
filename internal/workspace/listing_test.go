@@ -13,18 +13,27 @@ import (
 )
 
 // fullRevision is the revision of s's read set computed whole, as before listings were kept: the
-// build's inputs then every file a load read, each once, by its first display (API.md S3).
+// build's inputs then every file a load names, each once, by its first display, a named file
+// that does not exist unreadable (API.md S3, DECISIONS 143, 330).
 func fullRevision(s *workspace.Snapshot, inputs []build.Read, scanErr error) string {
+	var loads []build.Read
+	if scanErr == nil {
+		loads, _ = s.Loads(context.Background())
+	}
+	named := map[string]bool{}
+	for _, r := range loads {
+		named[r.Abs] = true
+	}
 	seen := map[string]bool{}
 	var lines []build.Listed
-	for _, r := range append(slices.Clone(inputs), s.Recorded()...) {
+	for _, r := range append(slices.Clone(inputs), loads...) {
 		if seen[r.Abs] {
 			continue
 		}
 		seen[r.Abs] = true
 		data, err := s.Build().FS().ReadFile(r.Abs)
 		switch {
-		case errors.Is(err, fs.ErrNotExist):
+		case errors.Is(err, fs.ErrNotExist) && !named[r.Abs]:
 		case err != nil:
 			lines = append(lines, build.Listed{Display: r.Display, Unreadable: true})
 		default:

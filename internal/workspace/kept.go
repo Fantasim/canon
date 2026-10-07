@@ -16,6 +16,7 @@ type kept struct {
 	units   []*project.Unit   // the packages its sources declare
 	covered string            // the selection whose analysis gives every package's values (Covered)
 	views   map[string][]byte // each package's view model bytes (S8, DECISIONS 313)
+	static  *build.Static     // the static read sets of its files (API.md S3, S5)
 }
 
 // Analyze is the analysis of the packages selectors name on s, shared by identical concurrent
@@ -36,6 +37,45 @@ func Analyze(ctx context.Context, s *Snapshot, selectors []string) (*build.Analy
 		}
 		return a, err
 	})
+}
+
+// AnalyzeOnly is the analysis of exactly the packages pkgs names on s (build.Project.AnalyzeOnly),
+// none for none: an edit's scope or affected packages (API.md E17a), shared by identical concurrent
+// calls (S8) and kept as the latest selection.
+func AnalyzeOnly(ctx context.Context, s *Snapshot, pkgs []string) (*build.Analysis, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	key := Key(opOnly, pkgs)
+	if a := s.keptAnalysis(key, false); a != nil {
+		return a, nil
+	}
+	return Share(ctx, s, key, func(ctx context.Context) (*build.Analysis, error) {
+		a, err := s.b.AnalyzeOnly(ctx, pkgs)
+		if err == nil {
+			s.keepAnalysis(key, false, a)
+		}
+		return a, err
+	})
+}
+
+// static is s's static read sets (build.Project.Static; API.md S3, S5, DECISIONS 330), shared by
+// identical concurrent calls (S8) and kept.
+func (s *Snapshot) static(ctx context.Context) (*build.Static, error) {
+	s.mu.Lock()
+	st := s.kept.static
+	s.mu.Unlock()
+	if st != nil {
+		return st, nil
+	}
+	got, err := Share(ctx, s, Key(opStatic, nil), s.b.Static)
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.kept.static = got
+	return got, nil
 }
 
 // Covered reports that the analysis of pkgs on s gives every package's values (log-2026-09-29

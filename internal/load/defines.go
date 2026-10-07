@@ -2,6 +2,7 @@ package load
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"strings"
 
@@ -57,11 +58,13 @@ func (l *Loader) defines(_ context.Context, req Request, e *syntax.LoadExpr, t t
 	return definesTable(hf.defs, prefix, t), hf.ok, nil
 }
 
-// headerFileAt is p's classification, read once so two calls of one file never report E7102 twice (WIRE.md §6.8).
+// headerFileAt is p's classification for req's package, read once per package, its findings in
+// that package's bag: E7102 once per package, and never depending on which packages a run loads.
 func (l *Loader) headerFileAt(p project.Path, req Request) (*headerFile, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if hf, ok := l.headers[p.Abs]; ok {
+	key := headerKey{pkg: req.Pkg, abs: p.Abs}
+	if hf, ok := l.headers[key]; ok {
 		if l.Reused != nil {
 			l.Reused(p.Abs)
 		}
@@ -72,10 +75,20 @@ func (l *Loader) headerFileAt(p project.Path, req Request) (*headerFile, bool) {
 		return nil, false
 	}
 	if l.headers == nil {
-		l.headers = map[string]*headerFile{}
+		l.headers = map[headerKey]*headerFile{}
 	}
-	l.headers[p.Abs] = hf
+	l.headers[key] = hf
 	return hf, true
+}
+
+// headerKey is a header read by a package: the package, then the header's resolved absolute path.
+type headerKey struct {
+	pkg, abs string
+}
+
+// compareHeaderKeys orders headers by package, then path, as FinishDefines reports them.
+func compareHeaderKeys(a, b headerKey) int {
+	return cmp.Or(cmp.Compare(a.pkg, b.pkg), cmp.Compare(a.abs, b.abs))
 }
 
 // readHeader reads and classifies p's #defines, reporting into req's bag (WIRE.md §6.8).

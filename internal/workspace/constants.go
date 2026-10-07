@@ -57,6 +57,8 @@ const (
 	OpLockCheck Op = "lockcheck"
 	opEvaluate  Op = "evaluate"
 	opDraft     Op = "draft"
+	opOnly      Op = "only"
+	opStatic    Op = "static"
 )
 
 // refreshWorkers is how many goroutines stat a snapshot's entries at a refresh (API.md S1).

@@ -160,11 +160,7 @@ type NameEdit struct {
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
 	h := env.Host(base.a)
 	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, held: map[string]bool{}, marks: newSymMarks()}
-	for _, pkg := range base.pkgs {
-		if base.a.Bag(pkg.Path) != nil {
-			a.selected = append(a.selected, pkg.Path)
-		}
-	}
+	a.selected = base.a.Selected() // each op is analyzed again over the base's selection, an edit's scope (API.md E1, E17a)
 	return a
 }
 

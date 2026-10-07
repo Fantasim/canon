@@ -77,28 +77,66 @@ func (p *Project) Info() (*project.Project, error) {
 	return s.proj, nil
 }
 
-// Revision is the revision of what is on disk now (API.md S1, S3), whether project.canon
-// checks or not; a file, or the listing of the file set, that cannot be read is marked so. The
-// canon.lock of every package directory counts, whatever a call selects.
+// Revision is the revision of the static read set on disk now, whether project.canon checks or
+// not (no load path resolves then); a file, or the file set's listing, that cannot be read is
+// marked so (API.md S1, S3).
 func (p *Project) Revision(ctx context.Context) (string, error) {
 	lines := p.ownDigests()
 	names, err := project.Scan(p.fs, p.dir)
 	if err != nil {
 		lines = append(lines, digest{path: listingMark, text: unreadMark})
 	}
+	scanned := err == nil
+	listed := map[string]string{project.Join(p.dir, project.FileName): ""} // "": a line already
 	for _, name := range names {
 		if err := ctx.Err(); err != nil {
 			return "", err
 		}
 		lines = append(lines, p.digestOf(name))
+		listed[project.Join(p.dir, name)] = ""
 	}
 	for _, name := range lockPaths(names) {
 		data, err := p.fs.ReadFile(project.Join(p.dir, name))
+		listed[project.Join(p.dir, name)] = name
 		if !errors.Is(err, fs.ErrNotExist) {
 			lines = append(lines, digestData(name, data, err))
+			listed[project.Join(p.dir, name)] = ""
 		}
 	}
-	return revisionOf(lines), nil
+	if !scanned {
+		return revisionOf(lines), nil
+	}
+	loads, err := p.loadDigests(ctx, listed)
+	if err != nil {
+		return "", err
+	}
+	return revisionOf(append(lines, loads...)), nil
+}
+
+// loadDigests is the listing line of each file a load names (API.md S3) that has none in listed,
+// a file it cannot read unreadMark, a missing lock place under its own display; none when
+// project.canon does not check, where no load path resolves.
+func (p *Project) loadDigests(ctx context.Context, listed map[string]string) ([]digest, error) {
+	st, err := p.Static(ctx)
+	var oe *OpenError
+	switch {
+	case errors.As(err, &oe):
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+	var out []digest
+	for _, rd := range st.Loads() {
+		display, had := listed[rd.Abs]
+		switch {
+		case !had:
+			data, err := p.fs.ReadFile(rd.Abs)
+			out = append(out, digestData(rd.Display, data, err))
+		case display != "":
+			out = append(out, digest{path: display, text: unreadMark})
+		}
+	}
+	return out, nil
 }
 
 // lockPaths is the canon.lock path of every directory holding a source file or above one (LOCK.md §2.1).

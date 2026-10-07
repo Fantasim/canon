@@ -181,7 +181,7 @@ func (p *Project) evaluateOn(ctx context.Context, on evalOn, path string) (*Eval
 	}
 	e := workspace.Eval{Analysis: on.a, Edit: snap.s, At: at, Lang: on.lang, Touched: on.touched}
 	if on.base != "" {
-		if err := workspace.EvalStale(on.from, on.base, e); err != nil {
+		if err := workspace.EvalStale(ctx, on.from, on.base, e); err != nil {
 			return nil, evalError(ctx, err)
 		}
 	}

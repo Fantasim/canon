@@ -91,7 +91,7 @@ func (a *applier) settle() error {
 	if !a.dirty {
 		return nil
 	}
-	an, err := a.env.Project.Over(a.overlay()).Analyze(a.ctx, a.selected)
+	an, err := a.env.Project.Over(a.overlay()).AnalyzeOnly(a.ctx, a.selected)
 	if err != nil {
 		return asIO(err)
 	}

@@ -54,14 +54,26 @@ func (r *realPaths) dir(name string) string {
 	if real, ok := r.dirs[name]; ok {
 		return real
 	}
+	r.dirs[name] = name // a loop of dangling links ends here
 	real, err := project.EvalSymlinks(r.fs, name)
 	if parent := project.DirOf(name); err != nil && parent != name {
-		real = project.Join(r.dir(parent), path.Base(name))
+		real = r.missingDir(parent, path.Base(name))
 	} else if err != nil {
 		real = name
 	}
 	r.dirs[name] = real
 	return real
+}
+
+// missingDir is the real path of base in parent, which does not resolve: a dangling link's,
+// through its text, as follow does for a file; else base below parent's real path.
+func (r *realPaths) missingDir(parent, base string) string {
+	if lr, ok := r.fs.(LinkReader); ok && r.linked(parent)[base] {
+		if text, err := lr.Readlink(project.Join(parent, base)); err == nil {
+			return r.dir(linkTo(parent, text))
+		}
+	}
+	return project.Join(r.dir(parent), base)
 }
 
 // linkTo is the name a link in dir whose text is text leads to: text itself when absolute.

@@ -1,0 +1,32 @@
+WIRE.md §6.1 E7008 (DECISIONS 330): the path of every load form is a string literal without
+interpolation, raw or not; an interpolation, a name, an operation or a missing path is refused.
+-- a/a.canon --
+package a
+
+const DIR = "data"
+const NAME = "data/x.txt"
+
+local let interpolated: String = load.text("{DIR}/x.txt")
+local let named: String = load.text(NAME)
+local let missing: String = load.text()
+local let joined: String = load.text("data/" + "x.txt")
+local let dir: [String] = load.dir("{DIR}/*.json")
+local let raw: String = load.text(r"data/x.txt")
+local let plain: String = load.text("data/x.txt")
+-- findings.txt --
+error[E7008]  a/a.canon:6:44
+  the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir
+
+error[E7008]  a/a.canon:7:37
+  the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir
+
+error[E7008]  a/a.canon:8:29
+  the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir
+
+error[E7008]  a/a.canon:9:38
+  the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir
+
+error[E7008]  a/a.canon:10:36
+  the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir
+
+5 errors, 0 warnings in 1 package (…)

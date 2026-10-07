@@ -16,9 +16,9 @@ type LockID struct {
 	Name, Key string
 }
 
-// LocksWith is each selected package's canon.lock as read with the current facts of ids added,
-// an id once its entry or member and every @stable field evaluated, whatever else the analysis
-// found; none with a layer (API.md E20, B1a; log-2026-09-29 M4 U5b-r).
+// LocksWith is each selected package's canon.lock as read with the current facts of ids added, an
+// id once its entry or member and every @stable field evaluated; a lock they add no line to is
+// left out, as is every lock under a layer (API.md E20, B1a; log-2026-09-29 M4 U5b-r).
 func (a *Analysis) LocksWith(ids []LockID) ([]Lock, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -62,6 +62,9 @@ func (st *lockState) with(ids []LockID, stable func(string) int) (*Lock, error) 
 		if line != "" && !before[line] {
 			out.Lines = append(out.Lines, strings.TrimSuffix(line, lineEnd))
 		}
+	}
+	if len(out.Lines) == 0 { // no id of this package added: its lock, canonical or not, is not touched (E20, LOCK.md §2.4)
+		return nil, nil
 	}
 	return out, nil
 }

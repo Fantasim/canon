@@ -203,13 +203,25 @@ func constText(s syntax.StrLit) string {
 	return ""
 }
 
+// LiteralText is a string literal's text and whether it holds no interpolation: false for any
+// other, the one test of a literal asset root, which build places too (TYPES.md 13.4).
+func LiteralText(s syntax.StrLit) (string, bool) {
+	if s == nil {
+		return "", false
+	}
+	return constText(s), interpolationFree(s)
+}
+
 // resolveAsset is `asset(root, ext: […])`; a part holding a lexer error is not judged (TYPES.md §13.4, §1).
 func (c *checker) resolveAsset(tc *typeCtx, t *syntax.AssetType) types.Type {
 	env := tc.env
-	root := constText(t.Dir)
+	root, literal := LiteralText(t.Dir)
+	if !literal && t.Dir != nil {
+		root = strings.Trim(env.written(t.Dir), quoteMark) // shown as written, interpolation included
+	}
 	c.info.Types[t.Dir] = types.StringType
 	spec := &types.AssetSpec{Root: root}
-	ok := !c.lexError(t.Dir) && c.assetRoot(env, t.Dir, root)
+	ok := !c.lexError(t.Dir) && c.assetRoot(env, t.Dir, root, literal)
 	if len(t.Exts) == 0 {
 		c.report(env, diag.E3704.AtMissing(env.span(t)))
 		ok = false
@@ -235,9 +247,9 @@ func (c *checker) resolveAsset(tc *typeCtx, t *syntax.AssetType) types.Type {
 	return &types.Refined{Of: types.StringType, Asset: spec}
 }
 
-// assetRoot is E3704 (no load path), E7003 (unknown root) or E7001 (leaves it): WIRE.md §2.1, §2.2.
-func (c *checker) assetRoot(env *env, at syntax.Node, root string) bool {
-	if !loadSyntax(root) {
+// assetRoot is E3704 (an interpolated root, or no load path), E7003 (unknown root) or E7001 (leaves it): WIRE.md §2.1, §2.2.
+func (c *checker) assetRoot(env *env, at syntax.Node, root string, literal bool) bool {
+	if !literal || !loadSyntax(root) {
 		c.report(env, diag.E3704.AtRoot(env.span(at), root))
 		return false
 	}

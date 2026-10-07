@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io/fs"
 	"maps"
@@ -75,12 +76,13 @@ func (p *Project) overlay(ctx context.Context, file string, change func(map[stri
 	return nil
 }
 
-// dropAt marks for a fork the entries an overlay at abs changes: abs's content, and the stat and
-// listing of abs and of each directory above it.
+// dropAt marks for a fork the entries an overlay at abs changes: abs's content, and the stat,
+// real path and listing of abs and of each directory above it.
 func dropAt(dropped map[name]*entry, abs string) {
 	dropped[name{kind: kindFile, abs: abs}] = nil
 	for d := abs; ; d = project.DirOf(d) {
 		dropped[name{kind: kindStat, abs: d}] = nil
+		dropped[name{kind: kindLink, abs: d}] = nil
 		dropped[name{kind: kindDir, abs: project.DirOf(d)}] = nil
 		if project.DirOf(d) == d {
 			return
@@ -107,6 +109,70 @@ func (s *snapFS) overlayStat(abs string) (fs.FileInfo, bool) {
 		return nil, false
 	}
 	return overlayInfo{name: path.Base(abs), dir: true}, true
+}
+
+// overlayResolve is abs's real path when an overlay makes it, a file or a directory above one the
+// disk lacks: its parent's real path and its name; a file an overlay deletes does not resolve.
+// False for any other name, which the disk resolves (API.md E18, V13).
+func (s *snapFS) overlayResolve(abs string) (*entry, bool) {
+	data, over := s.over[abs]
+	switch {
+	case over && data == nil:
+		return gone(abs), true
+	case !over && !s.holdsOverlay(abs):
+		return nil, false
+	}
+	parent := project.DirOf(abs)
+	// The disk, not the snapshot's entries, which hold the overlay; asked once, the answer kept as abs's link entry (S1).
+	if _, err := s.base.Stat(abs); err == nil || parent == abs || s.linkOnDisk(parent, path.Base(abs)) {
+		return nil, false // a dangling link resolves through its text (API.md S12)
+	}
+	up := s.get(name{kind: kindLink, abs: parent}, s.resolve)
+	if up.err != nil {
+		return up, true
+	}
+	e := &entry{data: []byte(project.Join(string(up.data), path.Base(abs))), over: true}
+	e.sum = sum{class: classOK, hash: sha256.Sum256(e.data)}
+	return e, true
+}
+
+// throughLink is the real path of abs, a link dangling on the disk, when an overlay makes its
+// target: a load.dir base an edit in memory brings to life (API.md E17, E18).
+func (s *snapFS) throughLink(abs string) (*entry, bool) {
+	text, err := s.Readlink(abs)
+	if err != nil {
+		return nil, false
+	}
+	target := text
+	if !path.IsAbs(text) {
+		target = project.Join(project.DirOf(abs), text)
+	}
+	if data, over := s.over[target]; (!over || data == nil) && !s.holdsOverlay(target) {
+		return nil, false
+	}
+	return s.get(name{kind: kindLink, abs: target}, s.resolve), true
+}
+
+// unresolved is every name s failed to resolve to a real path, as a link dangling there does.
+func (s *snapFS) unresolved() []name {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []name
+	//canon:unordered each name is dropped on its own
+	for n, e := range s.ents {
+		if n.kind == kindLink && e.err != nil {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+// linkOnDisk reports base a symbolic link in the disk's listing of dir.
+func (s *snapFS) linkOnDisk(dir, base string) bool {
+	list, err := s.base.ReadDir(dir)
+	return err == nil && slices.ContainsFunc(list, func(e fs.DirEntry) bool {
+		return e.Name() == base && e.Type()&fs.ModeSymlink != 0
+	})
 }
 
 // holdsOverlay reports a file an overlay makes below dir.

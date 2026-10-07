@@ -306,7 +306,7 @@ type dirListing struct {
 
 // Absent names the optional root an asset root lies under when this machine lacks it, never listing it (DECISIONS 332).
 func (a *assets) Absent(root, from string) (string, bool) {
-	dir, ok := a.places.root(a.layout, root, from)
+	dir, ok := a.places.root(a.fs, a.layout, root, from)
 	if !ok || !a.layout.Absent(dir.Root) {
 		return "", false
 	}
@@ -315,7 +315,7 @@ func (a *assets) Absent(root, from string) (string, bool) {
 
 // Exists walks name under root one listed folder at a time (WIRE.md §2.2, TYPES.md §13.4).
 func (a *assets) Exists(root, from, name string) (string, bool) {
-	dir, ok := a.places.root(a.layout, root, from)
+	dir, ok := a.places.root(a.fs, a.layout, root, from)
 	if !ok {
 		return root, false
 	}
@@ -337,7 +337,7 @@ func (a *assets) Exists(root, from, name string) (string, bool) {
 func (a *assets) list(dir string) dirListing {
 	if l, ok := a.dirs[dir]; ok {
 		if log, ok := a.fs.(*readLog); ok { // a listing read once still counts for each package (API.md S5)
-			log.note(touch{abs: dir, dir: true}, false)
+			log.note(touch{abs: dir, dir: true})
 		}
 		return l
 	}
