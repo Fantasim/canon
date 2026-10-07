@@ -25,7 +25,8 @@ type origin struct {
 type journal struct {
 	findings []journaled
 	folds    []foldCall
-	breaks   []Object // each object breakObj broke, in order: what a fold saw is a prefix
+	breaks   []Object        // each object breakObj broke, in order: what a fold saw is a prefix
+	byFold   map[Object]bool // the objects a failed fold broke: a let checked again keeps its signature's
 	direct   map[Object]bool
 	views    map[*syntax.ViewDecl]bool
 	hold     bool // Recheck: journal findings without reporting them until it succeeds
@@ -46,6 +47,15 @@ type foldCall struct {
 	owner  Object
 	e      syntax.Expr
 	breaks int
+}
+
+// foldBroke notes that a failed fold broke o (DECISIONS 150): a Recheck keeps the break with the
+// fold, which it replays, as cold breaks o again with it.
+func (j *journal) foldBroke(o Object) {
+	if j.byFold == nil {
+		j.byFold = map[Object]bool{}
+	}
+	j.byFold[o] = true
 }
 
 // deliver puts a finding in p's bag; a session journals it first.

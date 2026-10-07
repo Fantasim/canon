@@ -96,8 +96,8 @@ func same(t *testing.T, name string, warm, cold *Analysis) {
 }
 
 // dumpAnalysis is everything observable of an analysis (log-2026-09-29 M4 "U11 review"): its
-// findings as text and JSON, revision, each selected package's values in depth, causes, read
-// sets and view model bytes. Spans are resolved, since file ids differ between file sets.
+// findings as text and JSON, revision, the broken declarations, each selected package's values in
+// depth, causes, read sets and view model bytes. Spans are resolved, since file ids differ between file sets.
 func dumpAnalysis(t *testing.T, a *Analysis) string {
 	t.Helper()
 	res := a.Result()
@@ -118,6 +118,7 @@ func dumpAnalysis(t *testing.T, a *Analysis) string {
 	for _, l := range locks {
 		fmt.Fprintf(&sb, "lock %s %s %d %q\n%s", l.Package, l.Path, l.Status, l.Lines, l.Content)
 	}
+	sb.WriteString(dumpBroken(a.Program().Info))
 	d := &deepDump{t: t, a: a, ids: map[value.Value]int{}}
 	for _, cp := range a.Program().Packages {
 		if !a.r.selects(cp.Path) {
@@ -130,6 +131,21 @@ func dumpAnalysis(t *testing.T, a *Analysis) string {
 		dumpView(t, &sb, a, cp)
 	}
 	return sb.String()
+}
+
+// dumpBroken is each declaration Info holds broken, sorted (TYPES.md §1): warm breaks what cold does.
+func dumpBroken(info *check.Info) string {
+	var lines []string
+	for o, broken := range info.Broken { //canon:unordered the lines are sorted below
+		at := "-"
+		if f := o.File(); f != nil && o.Decl() != nil {
+			line, col := f.Src.Position(f.Span(o.Decl()).Start)
+			at = fmt.Sprintf("%s:%d:%d", f.Src.Path, line, col)
+		}
+		lines = append(lines, fmt.Sprintf("broken %s %s.%s at %s %t\n", o.Kind(), o.Pkg(), o.Name(), at, broken))
+	}
+	slices.Sort(lines)
+	return strings.Join(lines, "")
 }
 
 // dumpView writes cp's view model bytes when it emits one.

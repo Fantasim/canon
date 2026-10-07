@@ -12,11 +12,11 @@ import (
 
 // kept is the journal Recheck starts from, findings held back until it succeeds: the findings and
 // folds it keeps (a let checked again keeps its signature's), and Broken and BrokenViews before
-// propagation less the declarations checked again.
+// propagation less the declarations checked again, but for the breaks of the folds it keeps.
 func (j *journal) kept(pl *recheckPlan) *journal {
-	out := &journal{hold: true, views: maps.Clone(j.views)}
+	out := &journal{hold: true, views: maps.Clone(j.views), byFold: maps.Clone(j.byFold)}
 	out.direct = maps.Clone(j.direct)
-	maps.DeleteFunc(out.direct, func(o Object, _ bool) bool { return pl.dropped(o) })
+	maps.DeleteFunc(out.direct, func(o Object, _ bool) bool { return !j.keepsBreak(pl, o) })
 	for _, f := range j.findings {
 		if !pl.redoes(f) {
 			out.findings = append(out.findings, f)
@@ -32,18 +32,25 @@ func (j *journal) kept(pl *recheckPlan) *journal {
 	return out
 }
 
-// keptBreaks puts in out the breaks of objects pl keeps; the result maps a count of j's breaks
-// to the count of out's among them, for the folds' positions.
+// keptBreaks puts in out the breaks pl keeps; the result maps a count of j's breaks to the count
+// of out's among them, for the folds' positions.
 func (j *journal) keptBreaks(pl *recheckPlan, out *journal) []int {
 	at := make([]int, len(j.breaks)+1)
 	for i, o := range j.breaks {
 		at[i+1] = at[i]
-		if !pl.dropped(o) {
+		if j.keepsBreak(pl, o) {
 			out.breaks = append(out.breaks, o)
 			at[i+1]++
 		}
 	}
 	return at
+}
+
+// keepsBreak reports a break Recheck keeps: an object it keeps, or one a failed fold broke, which
+// it keeps only with the fold (keepable): the replayed fold fails as cold's, which breaks the let
+// before its value is checked (DECISIONS 150, 263).
+func (j *journal) keepsBreak(pl *recheckPlan, o Object) bool {
+	return !pl.dropped(o) || j.byFold[o]
 }
 
 // replayFolds refolds the kept folds for their findings and steps, in cold's order, before stage E's (DECISIONS 104).

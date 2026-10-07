@@ -254,7 +254,8 @@ func (c *checker) renewSpans(pl *recheckPlan) {
 }
 
 // renew moves the journal's objects to the program checked again: the kept findings'
-// origins, the breaks, the direct breaks, and the kept folds' owners and signature nodes.
+// origins, the breaks, the direct breaks, the folds' breaks, and the kept folds' owners and
+// signature nodes.
 func (j *journal) renew(r *renewer, pl *recheckPlan) {
 	for i := range j.findings {
 		f := &j.findings[i]
@@ -264,6 +265,7 @@ func (j *journal) renew(r *renewer, pl *recheckPlan) {
 		j.breaks[i] = r.obj(o)
 	}
 	j.direct = renewSet(j.direct, r.obj)
+	j.byFold = renewSet(j.byFold, r.obj)
 	for i := range j.folds {
 		fc := &j.folds[i]
 		fc.owner = r.obj(fc.owner)

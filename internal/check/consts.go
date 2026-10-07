@@ -49,9 +49,18 @@ func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
 	case env.pkg.bag.ErrorCount() == before:
 		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
 	default:
-		c.breakObj(env.owner)
+		c.breakFolded(env.owner)
 	}
 	return nil, false
+}
+
+// breakFolded breaks the owner of a fold that failed with a finding (DECISIONS 150); a session
+// notes the break as the fold's when the fold made it.
+func (c *checker) breakFolded(o *object) {
+	if c.journal != nil && o != nil && !c.info.Broken[o] {
+		c.journal.foldBroke(o)
+	}
+	c.breakObj(o)
 }
 
 // notConstant is E3015 for a `load`, `self`, an `if` or a `match` in a constant (TYPES.md §15).
