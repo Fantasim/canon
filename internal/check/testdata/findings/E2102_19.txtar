@@ -1,0 +1,55 @@
+TYPES.md §3.3, §5.1, §1, DECISIONS 333: an unknown name compared with a literal is E2102, not E3008, in every position that checks such a comparison: a refinement predicate of a let and of a field (`where weigth > 0`; `it.weigth` is E3003, §3.5), a field default (`weigth < 5`, and `weigth + 1` against `Int`), a function body (with the parameter as the hint), and a view's template, show line and `when:` (VIEWMODEL.md §3.4).
+-- a/a.canon --
+package a
+
+local let x: Int where weigth > 0 = 3
+local let y: Int where it.weigth > 0 = 3
+
+local record Pos {
+  weight: Int where weigth > 0
+  sum: Int = weigth + 1
+  light: Bool = weigth < 5
+}
+
+local fn heavy(weight: Int) -> Bool {
+  return weigth > 5
+}
+
+local record Box {
+  weight: Int
+}
+
+view Box {
+  title "{weigth}"
+  show "Light" "{weigth < 5}"
+  weight "Weight" { when: weigth < 5 }
+}
+-- findings.txt --
+error[E2102]  a/a.canon:3:24
+  unknown name weigth
+
+error[E3003]  a/a.canon:4:27
+  Int has no field weigth
+
+error[E2102]  a/a.canon:7:21
+  unknown name weigth
+
+error[E2102]  a/a.canon:8:14
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:9:17
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:13:10
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:21:11
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:22:18
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:23:27
+  unknown name weigth (did you mean weight?)
+
+9 errors, 0 warnings in 1 package (…)

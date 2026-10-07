@@ -1,0 +1,44 @@
+TYPES.md §3.3, §5.1, §1, DECISIONS 333: a misspelled field in a record check whose other operand is context-dependent too (`weigth < 5`, `weigth == none`, `weigth + 1 > 5`, `-weigth < 5`, `(weigth) >= 0`) is found by no step of the lookup order (no expected type gives step 1 anything to look in), so it is E2102 with the field as the hint, not E3008; its operand takes the error type and the comparison reports nothing more. Two unknown names are one finding each (`Mon == Tue`). With a typed other operand (`weight < weigth`) it was already E2102. Only literals stay E3008 (E3008_5).
+-- a/a.canon --
+package a
+
+local record Box {
+  weight: Int
+  check light: weigth < 5 else "too heavy"
+  check set: weigth == none else "unset"
+  check sum: weigth + 1 > 5 else "too light"
+  check neg: -weigth < 5 else "negative"
+  check paren: (weigth) >= 0 else "negative"
+  check typed: weight < weigth else "typed"
+  check days: Mon == Tue else "days"
+  check both: weigth > 0 and weight < 5 else "both"
+}
+-- findings.txt --
+error[E2102]  a/a.canon:5:16
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:6:14
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:7:14
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:8:15
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:9:17
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:10:25
+  unknown name weigth (did you mean weight?)
+
+error[E2102]  a/a.canon:11:15
+  unknown name Mon (did you mean Box?)
+
+error[E2102]  a/a.canon:11:22
+  unknown name Tue
+
+error[E2102]  a/a.canon:12:15
+  unknown name weigth (did you mean weight?)
+
+9 errors, 0 warnings in 1 package (…)

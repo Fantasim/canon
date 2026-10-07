@@ -100,7 +100,7 @@ error[E3204]  a/a.canon:43:26
   invalid.s: abcdef is outside ..3
   expected by a/a.canon:48 (s: String(..3))
 
-error[E3008]  a/a.canon:59:10
-  cannot infer the type of this expression; add a type
+error[E2102]  a/a.canon:59:10
+  unknown name nothing
 
 4 errors, 3 warnings in 1 package (…)

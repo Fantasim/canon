@@ -186,7 +186,7 @@ func (c *checker) operands(env *env, e *syntax.BinaryExpr) (tx, ty types.Type, o
 	dx, dy := c.contextDependent(env, e.X), c.contextDependent(env, e.Y)
 	switch {
 	case dx && dy:
-		c.report(env, diag.E3008.At(env.span(e)))
+		c.bothDependent(env, e)
 		return nil, nil, false
 	case dx:
 		ty = c.synth(env, e.Y)

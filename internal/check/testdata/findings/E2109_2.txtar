@@ -1,0 +1,12 @@
+TYPES.md §3.4, §5.1, DECISIONS 333: `it` outside a refinement predicate compared with a literal (`it < 5`) is E2109, not E3008: it resolves nowhere, as in E2109_1.
+-- a/a.canon --
+package a
+
+local fn f() -> Bool {
+  return it < 5
+}
+-- findings.txt --
+error[E2109]  a/a.canon:4:10
+  it is only valid in a refinement predicate
+
+1 error, 0 warnings in 1 package (…)

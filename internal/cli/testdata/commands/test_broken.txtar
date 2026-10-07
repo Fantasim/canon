@@ -20,13 +20,13 @@ test "fine" {
 -- want --
 [exit 1]
 [stdout]
-error[E3008]  a/a.canon:5:10
-  cannot infer the type of this expression; add a type
+error[E2102]  a/a.canon:5:10
+  unknown name nothing
 
 1 error, 0 warnings in 1 package (…)
 
 FAIL  a/a.canon:4  broken
-  a/a.canon:5  error[E3008]  cannot infer the type of this expression; add a type
+  a/a.canon:5  error[E2102]  unknown name nothing
 
 1 passed, 1 failed (…)
 [stderr]
