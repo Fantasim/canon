@@ -207,7 +207,9 @@ A new file is created with mode `0666 &^ umask` and a new directory `0777 &^ uma
 overwritten file keeps its mode (DECISIONS 329).
 
 **Absent roots** (DECISIONS 332). An output under an optional root that is not present on this
-machine (SPEC §3.1) is skipped. `canon build` writes the others and reports one `W8024` per such
+machine (SPEC §3.1) is skipped. "Under" is judged by location, as §2.8 judges ownership: an output whose
+path lies at or below the directory of an absent optional root is skipped and counted under that
+root, whichever root its `out` names (roots nest). `canon build` writes the others and reports one `W8024` per such
 root, counting its skipped files; `canon build --check` reports `E8023` per such root instead,
 since it cannot compare them. A skipped output is still generated and validated like any other:
 `check` and stage E judge every emit without the disk (paths, names, generator limits), so a
