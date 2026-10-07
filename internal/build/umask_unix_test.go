@@ -25,10 +25,10 @@ const (
 	umaskDir    = 0o755
 )
 
-// umaskFiles are the files a build of umaskSource writes: outputs, the text manifest and a lock.
+// umaskFiles are the files a build of umaskSource writes: outputs, the text ownership file and a lock.
 var restoreFiles = []string{"out/sql/Schema.sql", "out/sql/_version.sql"}
 
-var umaskFiles = []string{"out/sql/Schema.sql", "out/sql/.canon-text", "out/json/tiers.json", "a/canon.lock"}
+var umaskFiles = []string{"out/sql/Schema.sql", "a/canon.outputs", "out/json/tiers.json", "a/canon.lock"}
 
 // setUmask sets the process umask for the test, restored after it; no test using it is parallel.
 func setUmask(t *testing.T, mask int) {

@@ -16,7 +16,7 @@ func TestBuildTextTarget(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(res.Outputs) != 2 || res.Outputs[0].Path != "@out/sql/.canon-text" || res.Outputs[1].Path != "@out/sql/q.sql" {
+	if len(res.Outputs) != 2 || res.Outputs[0].Path != "@out/sql/q.sql" || res.Outputs[1].Path != "a/canon.outputs" {
 		t.Fatalf("outputs %+v", res.Outputs)
 	}
 	for _, o := range res.Outputs {

@@ -25,7 +25,7 @@ func TestCollisions(t *testing.T) {
 		{"letter case", "/o/g/rt/rt.go", "/o/G/rt/rt.go", 1, 1},
 	} {
 		bag := diag.NewBag(&source.FileSet{}, "a")
-		r := &run{bags: check.Bags{"a": bag}}
+		r := &run{bags: check.Bags{"a": bag}, p: &Project{dir: "/o"}, s: &snapshot{}}
 		kept := r.collisions([]*output{
 			{Output: Output{Path: c.a, Abs: c.a, Package: "a", Content: []byte("x")}},
 			{Output: Output{Path: c.b, Abs: c.b, Package: "a", Content: []byte("x")}},
@@ -36,12 +36,13 @@ func TestCollisions(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.4, §2.9, WIRE.md §8.4, VIEWMODEL.md V1: adopting headers and text files; the view marker.
+// CODEGEN.md §2.4, §2.9, DECISIONS 326, WIRE.md §8.4, VIEWMODEL.md V1: adopting headers and text files, never canon.outputs; the view marker.
 func TestAdoptAndViewMarker(t *testing.T) {
 	adopt := []string{"@source/x.h", "@out/v.json", "@out/sql/a.sql"}
-	header, json := Output{Path: "@source/x.h", Target: ir.TargetCpp}, Output{Path: "@out/v.json", Target: ir.TargetJSON}
-	other, text := Output{Path: "@source/y.h", Target: ir.TargetCpp}, Output{Path: "@out/sql/a.sql", Target: ir.TargetText}
-	if !adoptable(header, adopt) || adoptable(json, adopt) || adoptable(other, adopt) || !adoptable(text, adopt) {
+	header, json := &output{Output: Output{Path: "@source/x.h", Target: ir.TargetCpp}}, &output{Output: Output{Path: "@out/v.json", Target: ir.TargetJSON}}
+	other, text := &output{Output: Output{Path: "@source/y.h", Target: ir.TargetCpp}}, &output{Output: Output{Path: "@out/sql/a.sql", Target: ir.TargetText}}
+	list := &output{listing: true, Output: Output{Path: "a/canon.outputs", Target: ir.TargetText}}
+	if !adoptable(header, adopt) || adoptable(json, adopt) || adoptable(other, adopt) || !adoptable(text, adopt) || adoptable(list, append(adopt, list.Path)) {
 		t.Error("adoptable")
 	}
 	view := Output{Abs: "/o/a.view.json", Target: ir.TargetView}
@@ -72,7 +73,7 @@ func (failingRead) ReadFile(string) ([]byte, error) { return nil, errReadDenied 
 // DECISIONS 201: a read error on an existing output names the display path, not r.p.fs's
 // absolute one.
 func TestPlaceReadErrorNamesDisplayPath(t *testing.T) {
-	r := &run{p: &Project{fs: failingRead{}}}
+	r := &run{p: &Project{fs: failingRead{}}, s: &snapshot{}}
 	_, err := r.place([]*output{{Output: Output{Path: "@out/v.json", Abs: "/o/v.json", Package: "a"}}}, nil)
 	if !errors.Is(err, fs.ErrPermission) {
 		t.Fatalf("place: %v", err)
@@ -82,22 +83,22 @@ func TestPlaceReadErrorNamesDisplayPath(t *testing.T) {
 	}
 }
 
-// listingDenied reads every file but a `.canon-text`, whose read fails with a permission error.
+// listingDenied reads every file but a `canon.outputs`, whose read fails with a permission error.
 type listingDenied struct{ project.FS }
 
 func (listingDenied) ReadFile(name string) ([]byte, error) {
-	if strings.HasSuffix(name, "/"+textListing) {
+	if strings.HasSuffix(name, "/"+outputsName) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrPermission}
 	}
 	return []byte("-- old"), nil
 }
 
-// CODEGEN.md §2.9, DECISIONS 201: a .canon-text that exists but cannot be read is an I/O error naming its display path, never E8001.
+// CODEGEN.md §2.9, DECISIONS 201, 326: a canon.outputs that exists but cannot be read is an I/O error naming its display path, never E8001.
 func TestPlaceListingReadError(t *testing.T) {
-	r := &run{p: &Project{fs: listingDenied{}}}
+	r := &run{p: &Project{fs: listingDenied{}}, s: &snapshot{}}
 	o := &output{Output: Output{Path: "@out/sql/a.sql", Abs: "/o/sql/a.sql", Package: "a", Target: ir.TargetText, Content: []byte("new")}}
 	_, err := r.place([]*output{o}, nil)
-	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "@out/sql/.canon-text") {
+	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "a/canon.outputs") {
 		t.Fatalf("place: %v", err)
 	}
 	same := &output{Output: Output{Path: "@out/sql/a.sql", Abs: "/o/sql/a.sql", Package: "a", Target: ir.TargetText, Content: []byte("-- old")}}

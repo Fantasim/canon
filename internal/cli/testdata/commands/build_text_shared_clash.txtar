@@ -1,0 +1,36 @@
+CODEGEN.md §2.9, WIRE.md §8.1, DECISIONS 326: one path written by two packages stays E8152.
+-- args --
+build
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// X.
+@text("x.txt")
+export fn x() -> String { return "x\n" }
+
+emit text { out: "@out/shared" }
+-- b/b.canon --
+/// B.
+package b
+
+/// X.
+@text("x.txt")
+export fn y() -> String { return "y\n" }
+
+emit text { out: "@out/shared" }
+-- want --
+[exit 1]
+[stdout]
+error[E8152]  b/b.canon:8:18
+  outputs collide: @out/shared/x.txt and @out/shared/x.txt
+
+1 error, 0 warnings in 2 packages (…)
+[stderr]

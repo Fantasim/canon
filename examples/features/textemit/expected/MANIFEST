@@ -1,9 +1,9 @@
+features/textemit/canon.outputs textemit/canon.outputs
 features/textemit/out/cpp/textemit.hpp/canon_runtime.h textemit/out/cpp/textemit.hpp/canon_runtime.h
 features/textemit/out/cpp/textemit.hpp/textemit.gen.cpp textemit/out/cpp/textemit.hpp/textemit.gen.cpp
 features/textemit/out/cpp/textemit.hpp/textemit.gen.h textemit/out/cpp/textemit.hpp/textemit.gen.h
 features/textemit/out/go/textemit/rt/rt.go textemit/out/go/textemit/rt/rt.go
 features/textemit/out/go/textemit/textemit.gen.go textemit/out/go/textemit/textemit.gen.go
-features/textemit/out/sql/.canon-text textemit/out/sql/.canon-text
 features/textemit/out/sql/VERSION textemit/out/sql/VERSION
 features/textemit/out/sql/doc.json textemit/out/sql/doc.json
 features/textemit/out/sql/events.sql textemit/out/sql/events.sql

@@ -34,13 +34,17 @@ type change struct {
 	abs, display string
 	data, old    []byte
 	existed      bool
+	remove       bool // delete the file: renamed aside, then removed once every other write is done
 }
 
 // commit writes what changed, or, in Check mode, marks it stale and writes nothing (CLI.md §3.4).
 func (r *run) commit(check bool, out *BuildResult, outputs []*output, locks []*lockOut) error {
-	var changes []change
+	var changes, removals []change
 	for _, o := range outputs {
-		if o.Status == StatusWritten || o.Status == StatusAdopted {
+		switch {
+		case o.remove:
+			removals = append(removals, change{abs: o.Abs, display: o.Path, remove: true})
+		case o.Status == StatusWritten || o.Status == StatusAdopted:
 			changes = append(changes, change{abs: o.Abs, display: o.Path, data: o.Content, old: o.old, existed: o.existed})
 		}
 		out.Outputs = append(out.Outputs, o.Output)
@@ -51,6 +55,7 @@ func (r *run) commit(check bool, out *BuildResult, outputs []*output, locks []*l
 		}
 		out.Locks = append(out.Locks, l.Lock)
 	}
+	changes = append(changes, removals...)
 	sortOutputs(out.Outputs)
 	if check {
 		out.Stale = len(changes) > 0
@@ -106,14 +111,38 @@ func writeAll(fsys WriteFS, changes []change) error {
 		}
 	}
 	for i, c := range changes {
-		if err := fsys.Rename(tempOf(c.abs), c.abs); err != nil {
+		if err := replace(fsys, c); err != nil {
 			removeTemps(fsys, changes[i:])
 			err = errors.Join(displayError(c.display, err), restore(fsys, changes[:i]))
 			w.removeDirs()
 			return err
 		}
 	}
-	return nil
+	return deleteAside(fsys, removals(changes))
+}
+
+// deleteAside deletes the files set aside by a write whose renames all succeeded; a failure says so, since the outputs are written, and the next build sweeps what is left (CODEGEN.md §2.9).
+func deleteAside(fsys WriteFS, changes []change) error {
+	var errs []error
+	for _, c := range changes {
+		if err := fsys.Remove(tempOf(c.abs)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			errs = append(errs, fmt.Errorf(fmtAsideLeft, c.display, err))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// replace puts a change's staged file in its place, or sets the file aside under its temporary name when the change deletes it (CODEGEN.md §2.9).
+func replace(fsys WriteFS, c change) error {
+	if c.remove {
+		return fsys.Rename(c.abs, tempOf(c.abs))
+	}
+	return fsys.Rename(tempOf(c.abs), c.abs)
+}
+
+// removals are the changes that delete a file.
+func removals(changes []change) []change {
+	return slices.DeleteFunc(slices.Clone(changes), func(c change) bool { return !c.remove })
 }
 
 // WriteAtomic replaces the existing file abs with data through a temporary file beside it, the file's permissions kept; after a failure the file is as it was and no temporary file is left.
@@ -196,6 +225,9 @@ func relativeTo(dir, name string, sep rune) string {
 
 // stage writes a change's temporary file, its directory created, an existing file's mode kept.
 func (w *writer) stage(c change) error {
+	if c.remove {
+		return nil
+	}
 	if err := w.mkdirs(project.DirOf(c.abs)); err != nil {
 		return err
 	}
@@ -268,6 +300,9 @@ func restore(fsys WriteFS, done []change) error {
 
 // restoreOne restores one file already replaced, or removes one that did not exist before.
 func restoreOne(fsys WriteFS, c change) error {
+	if c.remove {
+		return fsys.Rename(tempOf(c.abs), c.abs)
+	}
 	if !c.existed {
 		return fsys.Remove(c.abs)
 	}

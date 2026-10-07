@@ -109,6 +109,8 @@ type output struct {
 	at      source.Span
 	old     []byte // the file's content before the build
 	existed bool
+	listing bool // a package's canon.outputs (CODEGEN.md §2.9)
+	remove  bool // a legacy `.canon-text` the build deletes, written nowhere (CODEGEN.md §2.9)
 }
 
 // emit runs the generator of every emit (each copy in list order, CODEGEN.md §2.8) of the selected packages whose target opt selects, in package then source order, always on p narrowed by ir.CopyOf; after an error, only the views run.
@@ -126,7 +128,12 @@ func (r *run) emit(ctx context.Context, opt BuildOptions, failed bool) ([]*outpu
 			out = append(out, placed...)
 		}
 	}
-	return out, nil
+	out = append(out, r.listings(out)...)
+	if failed || len(opt.Targets) > 0 && !slices.Contains(opt.Targets, ir.TargetText) {
+		return out, nil
+	}
+	stale, err := r.staleListings()
+	return append(out, stale...), err
 }
 
 // skipped reports an emit the build does not run: a target not selected, a code or data

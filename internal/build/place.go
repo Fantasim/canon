@@ -13,13 +13,21 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// place finds collisions, then files an output may not overwrite (CODEGEN.md §2.4, API.md B2).
+// place finds collisions, then files an output may not overwrite (CODEGEN.md §2.4, API.md B2); the legacy text manifests the build deletes come last (CODEGEN.md §2.9).
 func (r *run) place(outputs []*output, adopt []string) ([]*output, error) {
 	outputs = r.collisions(outputs)
+	own, err := r.owners(outputs)
+	if err != nil {
+		return nil, err
+	}
 	for _, o := range outputs {
+		if o.remove {
+			continue
+		}
 		old, err := r.p.fs.ReadFile(o.Abs)
 		switch {
 		case errors.Is(err, fs.ErrNotExist):
@@ -29,26 +37,26 @@ func (r *run) place(outputs []*output, adopt []string) ([]*output, error) {
 			return nil, displayError(o.Path, err)
 		}
 		o.old, o.existed = old, true
-		if err := r.judge(o, adopt); err != nil {
+		if err := r.judge(o, adopt, own); err != nil {
 			return nil, err
 		}
 	}
-	return outputs, nil
+	return append(outputs, own.gone...), nil
 }
 
 // judge sets an existing output's status: unchanged, canon's to overwrite, adopted, or E8001; ownership is read only when the content differs (CODEGEN.md §2.4, §2.9).
-func (r *run) judge(o *output, adopt []string) error {
+func (r *run) judge(o *output, adopt []string, own *ownership) error {
 	if bytes.Equal(o.old, o.Content) {
 		o.Status = StatusUnchanged
 		return nil
 	}
-	owned, err := r.owned(o, o.old)
+	owned, err := own.owned(o, o.old)
 	switch {
 	case err != nil:
 		return err
 	case owned:
 		o.Status = StatusWritten
-	case adoptable(o.Output, adopt):
+	case adoptable(o, adopt):
 		o.Status = StatusAdopted
 	default:
 		diag.E8001.At(o.at, o.Path).Report(r.bags[o.Package])
@@ -56,12 +64,28 @@ func (r *run) judge(o *output, adopt []string) error {
 	return nil
 }
 
-// collisions reports two outputs on one file, letter case aside, but a runtime file (WIRE.md §8.1).
+// reserved are the canon.lock and canon.outputs paths of every package directory, by lower-cased file, each with its display path: no output may be written there (CODEGEN.md §2.9).
+func (r *run) reserved() map[string]string {
+	out := map[string]string{}
+	for _, lock := range lockPaths(r.s.names) {
+		for _, rel := range []string{lock, path.Join(path.Dir(lock), outputsName)} {
+			out[strings.ToLower(project.Join(r.p.dir, rel))] = rel
+		}
+	}
+	return out
+}
+
+// collisions reports two outputs on one file, letter case aside, but a runtime file, and an output on a canon.lock or canon.outputs path (WIRE.md §8.1, CODEGEN.md §2.9).
 func (r *run) collisions(outputs []*output) []*output {
 	first := map[string]*output{}
+	reserved := r.reserved()
 	kept := outputs[:0:0]
 	for _, o := range outputs {
 		key := strings.ToLower(o.Abs)
+		if rel, clash := reserved[key]; clash && !o.listing && !o.remove {
+			diag.E8152.At(o.at, rel, o.Path).Report(r.bags[o.Package])
+			continue
+		}
 		prev, seen := first[key]
 		switch {
 		case !seen:
@@ -74,9 +98,9 @@ func (r *run) collisions(outputs []*output) []*output {
 	return kept
 }
 
-// adoptable reports an output the build may take over: a C++ header or a file of a text emit, listed (CODEGEN.md §2.4, §2.9).
-func adoptable(o Output, adopt []string) bool {
-	return (path.Ext(o.Path) == headerExt || o.Target == ir.TargetText) && slices.Contains(adopt, o.Path)
+// adoptable reports an output the build may take over: a C++ header or a file of a text emit but its canon.outputs, listed (CODEGEN.md §2.4, §2.9).
+func adoptable(o *output, adopt []string) bool {
+	return (path.Ext(o.Path) == headerExt || o.Target == ir.TargetText && !o.listing) && slices.Contains(adopt, o.Path)
 }
 
 // runtimeFile reports a runtime helper file, which several emits write alike (CODEGEN.md §2.3).
@@ -99,6 +123,12 @@ func marked(o Output, content []byte) bool {
 func firstLineMatches(content []byte, marker *regexp.Regexp) bool {
 	line, _, _ := bytes.Cut(content, []byte(lineEnd))
 	return marker.Match(bytes.TrimSuffix(line, []byte(carriageReturn)))
+}
+
+// firstLineIs reports content whose first line, a final `\r` aside, is line.
+func firstLineIs(content []byte, line string) bool {
+	first, _, _ := bytes.Cut(content, []byte(lineEnd))
+	return string(bytes.TrimSuffix(first, []byte(carriageReturn))) == line
 }
 
 // jsonMarked reports a JSON object whose first member is a canon $schema (WIRE.md §8.4).
