@@ -789,6 +789,7 @@ Owner: TYPES.md, WIRE.md.
 | E3025 | error | check | TYPES.md §13.3 | a `Range` value without `Int` bounds or without a start |
 | E3026 | error | check | STDLIB.md §5 | a key where `in`, `contains` or `indexOf` expects an element (DECISIONS 317) |
 | E3027 | error | check | TYPES.md §4.1 | a name in scope that is not a value of the key type where a key is expected (DECISIONS 318) |
+| E3028 | error | check | TYPES.md §13.2 | a type where a union expects a string literal (an alternative after the first) |
 | E3101 | error | check | TYPES.md §9.3 | duplicate table key |
 | E3102 | error | verify | TYPES.md §9.1 | a key, `@codes` code or `@stable` value used twice |
 | E3103 | error | check | TYPES.md §9.3 | `entry t.k` where `t` is not a table or keyed list of the package or not initialized by a table or list literal, or `retired entry` on a keyed list |
@@ -885,6 +886,7 @@ Owner: TYPES.md, WIRE.md.
 | E3026 | implicit | key:Expr | `{key} is a key, not an element: test it with hasKey({key})` |
 | E3027 | value | name:Name, expected:Type, found:Type | `{name} has type {found}, not {expected}; to name the key {name}, write "{name}"` |
 | E3027 | notValue | name:Name, kind:Kind | `{name} is not a value ({kind}); to name the key {name}, write "{name}"` |
+| E3028 | - | typ:Type | `{typ} is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types` |
 | E3101 | - | key:Name, table:Name, first:Loc | `duplicate key {key} in {table} (first at {first})` |
 | E3102 | key | key:Value, first:Loc | `key {key} is used twice (first at {first})` |
 | E3102 | code | code:Int, first:Loc | `code {code} is used twice (first at {first})` |

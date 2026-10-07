@@ -1176,7 +1176,8 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 
 ### 13.2 String-literal unions (TYP-09)
 
-- `A | "lit" | …`: the alternatives other than the first are string literals. `A` must have a
+- `A | "lit" | …`: the alternatives other than the first are string literals; a type there is
+  `E3028` (there are no unions of types: a variant is the tagged form). `A` must have a
   string wire form: `String` (possibly refined), an enum without `@json(codes)`, a `ref` whose
   key type has a string wire form, or a type application whose branches do (`E3002`
   otherwise: a `@json(codes)` enum, or a `ref` keyed by one, is written as a number).
@@ -1398,6 +1399,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | W3001 | warning | §15 |
 | E3026 | error | §5.1 (STDLIB.md §5) |
 | E3027 | error | §4.1 |
+| E3028 | error | §13.2 |
 | W3301 | warning | §16 |
 | W3401 | warning | §6.5 |
 | W3601 | warning | §12.6 |
