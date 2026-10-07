@@ -269,7 +269,13 @@ func (w *writer) mkdirs(dir string) error {
 		missing = append(missing, d)
 	}
 	for _, d := range slices.Backward(missing) {
-		if err := w.mkdir(d); err != nil {
+		err := w.mkdir(d)
+		if errors.Is(err, fs.ErrExist) {
+			if info, serr := w.fsys.Stat(d); serr == nil && info.IsDir() {
+				continue // made meanwhile by another process: not ours to remove
+			}
+		}
+		if err != nil {
 			return err
 		}
 		w.created = append(w.created, d)
