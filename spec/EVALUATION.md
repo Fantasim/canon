@@ -51,14 +51,14 @@ This replaces SPEC §11.2.
 - A **broken** declaration (TYPES.md §1) is never evaluated. A value, check or test that is
   broken produces no evaluation finding. Other values are evaluated normally.
 - A broken record or variant (DECISIONS 209) silences every value typed by it, so the silence is
-  reported: one `W4001` per type broken by an error of its own (not one broken only because it
-  names a broken type), at its declaration, counting the top-level values of the selected
-  packages that were not evaluated because they reach it through their type (directly, or as an
-  element, entry, case or field, never through a `ref`). A type broken only because it names
-  broken types (a field type, a check or a default naming one) gets no warning of its own: its
-  values count under each type broken by an error of its own that its breakage traces to. Values silenced only because they read a
-  broken value are not counted. When the type's package is not selected, the warning belongs to
-  the first selected package (package order) holding a counted value (DECISIONS 331).
+  reported: one `W4001` per broken record or variant, at its declaration, counting the top-level
+  values of the selected packages whose type reaches it (directly, or as an element, entry, case,
+  field or dependent branch, never through a `ref`); a value is counted under each such type it
+  reaches. Why the type is broken is not traced: the warning names the type, and its message says
+  to fix the errors in it or in the types it names. A broken type no counted value reaches reports
+  nothing; values silenced only because they read a broken value are not counted. When the type's
+  package is not selected, the warning belongs to the first selected package (package order)
+  holding a counted value (DECISIONS 331).
 - A value forced for the first time after stage B has started (for example by a package check)
   is verified immediately after its evaluation.
 - **Names.** These phase numbers and stage names are the reference: every other document says

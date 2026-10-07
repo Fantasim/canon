@@ -1017,8 +1017,8 @@ Owner: EVALUATION.md, STDLIB.md.
 | Code | Variant | Args | Template |
 |---|---|---|---|
 | E4001 | - | expr:Expr | `{expr} is none` |
-| W4001 | one | typ:Name | `1 value was not evaluated or checked because {typ} is broken: fix its errors first` |
-| W4001 | many | n:Int, typ:Name | `{n} values were not evaluated or checked because {typ} is broken: fix its errors first` |
+| W4001 | one | typ:Name | `1 value was not evaluated or checked because {typ} is broken: fix the errors in it or in the types it names` |
+| W4001 | many | n:Int, typ:Name | `{n} values were not evaluated or checked because {typ} is broken: fix the errors in it or in the types it names` |
 | E4002 | index | index:Int, n:Int | `index {index} out of range for length {n}` |
 | E4002 | key | key:Value, coll:Name | `no key {key} in {coll}` |
 | E4002 | open | - | `open range has no end` |

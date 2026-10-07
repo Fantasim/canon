@@ -3185,7 +3185,10 @@ round 2", "PS1 review", "PS2 round 2"):
      selected packages typed by it, which were not evaluated or checked. Reason: the Sovereign
      Resource port (handoff 2026-10-07, "Also found"): a broken check in the item record silenced
      7,161 items and `canon check` ran faster with no hint; an agent reads "0 findings on items" as
-     "items are valid".
+     "items are valid". Final form (review 2026-10-07): one warning per broken record or variant that a
+     counted value reaches through its type; a value counts under each such type; why the type is
+     broken is not traced (an earlier root-tracing rule gave order-dependent counts through
+     cycles and silences through broken aliases).
 
 332. **Roots per machine: optional roots and `project.local.canon` (SPEC §3.1, §3.3, §13.2, §14.1,
      §14.6, §16.5; GRAMMAR.md §5.2, §7, §7.1, §7.2; FORMATTER.md §9.3; API.md O2, O3, O7, S3, S5,
