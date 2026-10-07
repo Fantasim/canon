@@ -157,6 +157,26 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   through a handoff (`Source/` X-macros read Canon IDs/metadata; monitoring uses generated Go and
   build-time DDL). M6 and M7 follow.
 
+## Post-v0.1.0 hardening (v0.1.1, v0.1.2)
+
+Not in IMPLEMENTATION-PLAN §5-§6; recorded here so the order stays visible. DECISIONS are in
+[DECISIONS.md](../DECISIONS.md); [state.md](state.md) has the one-line summary.
+
+- [x] **v0.1.1**: the stale `canon guide` fixed.
+- [x] **v0.1.2, the Resource port findings** (2026-10-07; handoff
+  [findings](handoff/2026-10-07-sovereign-resource-port.md), answered by
+  [the reply](handoff/2026-10-07-canon-reply-resource-port.md); release in progress at the time of
+  writing): 326 text-output ownership in `<pkg>/canon.outputs`; 327 absent JSON fields left out;
+  328 one budget per package; 329 file modes follow the umask; 330 scoped edit analysis, E7008; 331
+  W4001; 332 roots per machine (`optional_roots`, `project.local.canon`); 333 E2102 beside a
+  literal; 334 `it` and keys. Performance: frame-owned collections
+  ([ADR-0018](decisions/0018-frame-owned-collections.md)), linear reporting of findings. Bugs:
+  `hasKey(it)` in a `where`, E3028, the warm re-check losing a failed fold's break.
+- [ ] **Warm re-check for an entry add/remove** (`addEntry`, `@files`): key-set dependencies in the
+  incremental checker (today that op re-checks its package cold, ~3-4 s on items).
+- [ ] **On-disk cache** (`Options.Cache`), the other half of the "one-value edit on items under 2 s"
+  target.
+
 ## Feature examples owed (§7.9, QA)
 
 `entries` (before M1), `pairs` (before M2), `edits` (before M4), `ts` (before M6).

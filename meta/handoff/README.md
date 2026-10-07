@@ -3,7 +3,7 @@
 What this project needs from someone or somewhere it may not change itself. A handoff is a file
 here, `<PREFIX>-<n>-slug.md`, written so it can be pasted into a session of the receiver as is:
 what is needed, why, the exact acceptance, and the paths involved. It is deleted once applied
-(git keeps it). One open needing action: `2026-10-07-sovereign-resource-port.md` (below).
+(git keeps it). No handoff needing action is open.
 
 `2026-09-24-GEN-01-pipeline-diff.md` is on record here as **informational** (DECISIONS 190: the
 M2 pipeline-regeneration diff Louis may want to read); the orchestrator already reviewed it and
@@ -25,9 +25,10 @@ M4.1's two unlanded patches and the reviewer's probes (log-2026-09-29 "U-E22-r")
 `2026-10-06-design-audit.md` are informational for the receivers (Source, the Emberfall showcase,
 Louis); the last is the audit behind DECISIONS 317-324 and v0.1.0.
 
-`2026-10-07-sovereign-resource-port.md` is **open**: what Sovereign's Resource port (its ADR
-L-0119) needs from Canon before the migration resumes: bugs, the plain-shape JSON gap, and the
-performance isolation behind "why is it slower than the benchmark".
+`2026-10-07-sovereign-resource-port.md` (what Sovereign's Resource port, ADR L-0119, needed from
+Canon) is **answered** by `2026-10-07-canon-reply-resource-port.md`, shipped in v0.1.2. The reply is
+informational for the Source session: what changed per item, the plain JSON writer, optional roots,
+and what Canon still owes (warm entry add/remove re-check, the on-disk cache).
 
 ## To Louis (`L-*`)
 
