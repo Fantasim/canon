@@ -41,12 +41,12 @@ func (c *checker) constCycle(o *object) {
 
 // foldConst folds through the Folder; a failure it did not report is E3015 (DECISIONS 150, 263).
 func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
-	before := env.pkg.bag.Summary().Errors
+	before := env.pkg.bag.ErrorCount()
 	v, ok := c.fold.Fold(c.ctx, env.owner, e, c.info)
 	switch {
 	case ok:
 		return v, true
-	case env.pkg.bag.Summary().Errors == before:
+	case env.pkg.bag.ErrorCount() == before:
 		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
 	default:
 		c.breakObj(env.owner)

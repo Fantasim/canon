@@ -15,7 +15,7 @@ import (
 // Load reads project.canon into a Project and its findings into bag. After an error finding the
 // project is nil, and err is ErrUnsupportedVersion for an E1001, ErrInvalid otherwise.
 func Load(src *source.File, bag *diag.Bag) (*Project, error) {
-	before := bag.Summary().Errors
+	before := bag.ErrorCount()
 	f := syntax.Parse(src, syntax.FileProject, bag)
 	if f.Project == nil {
 		return nil, ErrInvalid
@@ -37,7 +37,7 @@ func Load(src *source.File, bag *diag.Bag) (*Project, error) {
 	switch {
 	case s.unsupported:
 		return nil, ErrUnsupportedVersion
-	case s.failed || bag.Summary().Errors > before:
+	case s.failed || bag.ErrorCount() > before:
 		return nil, ErrInvalid
 	}
 	return s.p, nil

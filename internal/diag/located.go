@@ -115,12 +115,6 @@ func compareFrame(a, b FrameLoc) int {
 	return cmp.Or(cmp.Compare(a.Fn, b.Fn), compareLoc(a.Loc, b.Loc))
 }
 
-// duplicate tells two findings reported once (EVALUATION.md §14).
-func duplicate(a, b *Located) bool {
-	return a.Severity == b.Severity && a.Code == b.Code && a.Loc.Path == b.Loc.Path &&
-		a.Loc.Line == b.Loc.Line && a.Loc.Col == b.Loc.Col && a.Message == b.Message
-}
-
 // sortLocated sorts a copy of findings in the total order.
 func sortLocated(findings []Located) []Located {
 	out := slices.Clone(findings)

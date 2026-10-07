@@ -74,7 +74,7 @@ func readsOf(pkg string, put func(*diag.Bag)) []source.FileID {
 	spy := &spyFiles{}
 	bag := diag.NewBag(spy, pkg)
 	put(bag)
-	bag.Findings()
+	diag.Locate(spy, bag.Findings())
 	slices.Sort(spy.read)
 	return slices.Compact(spy.read)
 }

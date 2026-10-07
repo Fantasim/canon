@@ -1,6 +1,7 @@
 package check
 
 import (
+	"cmp"
 	"math"
 	"slices"
 
@@ -23,14 +24,14 @@ func (c *checker) syntaxErrors() {
 
 // syntaxErrorsIn is syntaxErrors for one file.
 func (c *checker) syntaxErrorsIn(f *syntax.File, found syntaxFound) {
-	if errs := found.all[f.Src.ID]; len(errs) > 0 {
+	if errs := byStart(found.all[f.Src.ID]); len(errs) > 0 {
 		c.holdErrors(f, errs)
 		c.holdTranslationErrors(f, errs)
 	}
-	if errs := found.inLiterals[f.Src.ID]; len(errs) > 0 {
+	if errs := byStart(found.inLiterals[f.Src.ID]); len(errs) > 0 {
 		c.markBadLiterals(f, errs)
 	}
-	if errs := found.dataWords[f.Src.ID]; len(errs) > 0 {
+	if errs := byStart(found.dataWords[f.Src.ID]); len(errs) > 0 {
 		c.markUnmatchable(f, errs)
 	}
 }
@@ -68,6 +69,22 @@ func (c *checker) syntaxSpans(pkgs []*pkgState) syntaxFound {
 	return found
 }
 
+// byStart is a copy of spans sorted by start, the order within reads: a node finds its errors by
+// bisection, so a file with N findings costs N log N, not N times its node count.
+func byStart(spans []source.Span) []source.Span {
+	out := slices.Clone(spans)
+	slices.SortFunc(out, func(a, b source.Span) int { return cmp.Compare(a.Start, b.Start) })
+	return out
+}
+
+// within is the errs, sorted by start, that d encloses (see encloses).
+func within(errs []source.Span, d source.Span) []source.Span {
+	from := func(s source.Span, p source.Pos) int { return cmp.Compare(s.Start, p) }
+	lo, _ := slices.BinarySearchFunc(errs, d.Start, from)
+	hi, _ := slices.BinarySearchFunc(errs, d.End, from)
+	return errs[lo:max(lo, hi)]
+}
+
 // markUnmatchable marks each enum member and variant case whose own name is one of errs (E1126):
 // it exists, but no pattern can name it, so no match is asked to cover it.
 func (c *checker) markUnmatchable(f *syntax.File, errs []source.Span) {
@@ -81,8 +98,7 @@ func (c *checker) markUnmatchable(f *syntax.File, errs []source.Span) {
 		default:
 			return true
 		}
-		at := f.Span(name)
-		if slices.ContainsFunc(errs, func(s source.Span) bool { return encloses(at, s) }) {
+		if len(within(errs, f.Span(name))) > 0 {
 			c.unmatchable[n] = true
 		}
 		return true
@@ -96,8 +112,7 @@ func (c *checker) markBadLiterals(f *syntax.File, errs []source.Span) {
 		if !leafLiteral(n) {
 			return true
 		}
-		at := f.Span(n)
-		if slices.ContainsFunc(errs, func(s source.Span) bool { return encloses(at, s) }) {
+		if len(within(errs, f.Span(n))) > 0 {
 			c.badLits[n] = true
 		}
 		return true
@@ -147,11 +162,13 @@ func (c *checker) holdErrors(f *syntax.File, errs []source.Span) {
 		return
 	}
 	for _, d := range f.Decls {
-		at := f.Span(d)
-		for _, e := range errs {
-			if encloses(at, e) {
-				c.syntaxHeld[innermost(f, d, e)] = true
-			}
+		in := within(errs, f.Span(d))
+		if len(in) == 0 {
+			continue
+		}
+		members := memberSpans(f, d)
+		for _, e := range in {
+			c.syntaxHeld[innermost(d, members, e)] = true
 		}
 	}
 }
@@ -159,28 +176,43 @@ func (c *checker) holdErrors(f *syntax.File, errs []source.Span) {
 // holdTranslationErrors marks each translation entry of f holding one of errs (ADR-0009).
 func (c *checker) holdTranslationErrors(f *syntax.File, errs []source.Span) {
 	for _, e := range f.Entries {
-		at := f.Span(e)
-		for _, err := range errs {
-			if encloses(at, err) {
-				c.info.BrokenTranslations[e] = true
-			}
+		if len(within(errs, f.Span(e))) > 0 {
+			c.info.BrokenTranslations[e] = true
 		}
 	}
 }
 
-// innermost is the narrowest of d and its member methods and checks that encloses e.
-func innermost(f *syntax.File, d syntax.Decl, e source.Span) syntax.Node {
-	var best syntax.Node = d
+// member is a method or check inside a declaration, with its span.
+type member struct {
+	node syntax.Node
+	span source.Span
+}
+
+// memberSpans are the methods and checks of d, d itself excluded, in pre-order: read once per
+// declaration holding an error, not once per error.
+func memberSpans(f *syntax.File, d syntax.Decl) []member {
+	var out []member
 	syntax.Inspect(d, func(n syntax.Node) bool {
 		switch n.(type) {
 		case *syntax.FnDecl, *syntax.CheckDecl:
-			if n != d && encloses(f.Span(n), e) {
-				best = n
+			if n != d {
+				out = append(out, member{node: n, span: f.Span(n)})
 			}
 		}
 		return true
 	})
-	return best
+	return out
+}
+
+// innermost is the narrowest of d and its member methods and checks that encloses e: the last
+// of members, in pre-order, that does.
+func innermost(d syntax.Decl, members []member, e source.Span) syntax.Node {
+	for _, m := range slices.Backward(members) {
+		if encloses(m.span, e) {
+			return m.node
+		}
+	}
+	return d
 }
 
 // encloses reports a span d that holds the start of the finding at e.
