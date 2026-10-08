@@ -1,0 +1,107 @@
+Evaluated, no internal error: TYPES.md §11.4, DECISIONS 338: one predicate, "the value type depends on the key", refuses union: {x in nodes: P(x)} and a toMap or an optional whose values mention a key binder are E3804; a plain map, a dependent-KEY map {SK(like): Int}, a toMap of dependent values that read no key and `?.union` on a plain optional map keep it; == between a dependent map and a literal holding no record literal, an empty literal or another map is allowed.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// A kind.
+enum K { num, col, text }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+}
+
+/// Nodes.
+let nodes: table Node = { a { k: num }, b { k: text }, c { k: col } }
+
+/// A value per node kind.
+type P(e: Node) = match e.k {
+  num => Int
+  col => Tone
+  text => String
+}
+
+/// A key per node kind.
+type SK(e: Node) = match e.k {
+  col => Tone
+  _ => String
+}
+
+/// Ev.
+record Ev {
+  /// Max.
+  max: Int
+}
+
+/// Evs.
+let evs: table Ev = {
+  a { max: 3 }
+}
+
+/// L, of an ev.
+record L(e: Ev) {
+  /// Lim.
+  lim: Int = e.max
+}
+
+/// A holder.
+record H {
+  /// Its name.
+  name: String
+  /// The node its keys and value follow.
+  like: ref nodes
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+  /// By key.
+  ks: {SK(like): Int} = {}
+  /// A value.
+  p: P(like)?
+  /// Maybe counts.
+  counts: {String: Int}?
+  /// Maybe by ev.
+  byEv: {x in evs: L(x)}?
+}
+
+let hs: [H] = [{ name: "h", like: c, by: { a: 1, c: soft }, ks: { soft: 1 } }]
+
+local let plain: {String: Int} = { "a": 1 }
+
+local let plainUnion: {String: Int} = plain.union({ "b": 2 })
+
+local let plainEq: Bool = plain == { "a": 1 }
+
+local let keyUnion = hs[0].ks.union({ loud: 8 })
+
+local let valueMap = hs.toMap(h => h.name, h => h.p)
+
+local let valueUnion = valueMap.union(valueMap)
+
+local let optUnion = hs[0].counts?.union({ "b": 2 })
+
+local let depUnion = hs[0].by.union({ b: "w" })
+
+local let depEq: Bool = hs[0].by == { a: 1 }
+
+local let depEmpty: Bool = hs[0].by == {}
+
+local let depBoth: Bool = hs[0].by == hs[0].by
+
+local let byEvs = hs.toMap(h => h.name, h => h.byEv)
+
+local let byEvsUnion = byEvs.union(byEvs)
+
+local let optDep = hs[0].byEv?.union({ a: {} })
+-- findings.txt --
+error[E3804]  a/a.canon:82:31
+  union is not available on a dependent value (P(*))
+
+error[E3804]  a/a.canon:92:30
+  union is not available on a dependent value (L(*))
+
+error[E3804]  a/a.canon:94:32
+  union is not available on a dependent value (L(*))
+
+3 errors, 0 warnings in 1 package (…)

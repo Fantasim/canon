@@ -11,14 +11,16 @@ import (
 // mapLit is a map literal against {K: V} or a dependent map (TYPES.md §5.2).
 func (c *checker) mapLit(env *env, e *syntax.BraceLit, key, value, t types.Type) types.Type {
 	c.info.Literals[e] = LitMap
+	ve := env.with()
+	ve.bind = env.bind.withBinder(env.bind.mapBinder(t))
 	for _, it := range e.Items {
 		switch it := it.(type) {
 		case *syntax.MapItem:
 			c.expr(env, it.Key, key)
-			c.expr(env, it.Value, value)
+			c.expr(ve, it.Value, value)
 		case *syntax.FieldItem:
 			c.identKey(env, it.Name, key)
-			c.expr(env, it.Value, value)
+			c.expr(ve, it.Value, value)
 		default:
 			c.report(env, diag.E3320.At(env.span(it), itemKind(it), diag.KindMap))
 			c.itemsAlone(env, []syntax.BraceItem{it})

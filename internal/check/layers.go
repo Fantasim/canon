@@ -69,7 +69,7 @@ func (c *checker) declaredElsewhere(p *pkgState, name string) bool {
 // amendment types one `path: value`: the path resolved against the let's static type (E1905),
 // set once and not overlapping another in the layer (E1908), the value checked at the path.
 func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen amendPaths) {
-	w := &amendWalk{let: let, t: c.letType(let), plain: true}
+	w := &amendWalk{let: let, t: c.letType(let), plain: true, bind: &bindCtx{field: c.letType(let)}}
 	for i, seg := range a.Path {
 		if i == 0 && seg.Name != nil {
 			w.text = append(w.text, seg.Name.Name)
@@ -84,7 +84,9 @@ func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen ame
 		w.canon = append(w.canon, c.canonSegment(env, container, seg))
 	}
 	c.overlap(env, a, let, amendPath{text: w.path(), canon: w.canon}, seen)
-	c.expr(env, a.Value, w.t)
+	ve := env.with()
+	ve.bind = w.bind
+	c.expr(ve, a.Value, w.t)
 }
 
 // amendWalk is a path being resolved: the type reached, the path's text so far and its
@@ -97,6 +99,7 @@ type amendWalk struct {
 	canon  []string
 	fields []string
 	plain  bool
+	bind   *bindCtx // where evaluation reads a literal's type arguments at the path so far
 }
 
 func (w *amendWalk) path() string { return strings.Join(w.text, "") }
@@ -139,6 +142,7 @@ func (c *checker) amendSegment(env *env, w *amendWalk, seg *syntax.AmendSegment)
 	if seg.Name == nil {
 		w.plain = false
 	}
+	w.bind = w.bind.step(t, seg, next)
 	w.t = next
 	return true
 }

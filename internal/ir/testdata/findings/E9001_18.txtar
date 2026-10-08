@@ -1,0 +1,22 @@
+CONFORMANCE.md §2.2, STDLIB.md §6, DECISIONS 338: a map's `union` in a translated fn is outside the portable subset, like every collection method.
+-- a/a.canon --
+package a
+
+/// Row.
+record Row {
+  /// Counts.
+  counts: {String: Int}
+
+  /// Size.
+  export fn size(self, k: Int) -> Int {
+    let u: {String: Int} = self.counts.union(self.counts)
+    return k
+  }
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:10:28
+  self.counts.union(self.counts) is not allowed in translated function Row.size: it is outside the portable subset
+
+1 error, 0 warnings in 1 package (…)

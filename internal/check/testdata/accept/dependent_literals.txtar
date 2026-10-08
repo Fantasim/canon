@@ -1,0 +1,102 @@
+TYPES.md §11.4, §11.5, DECISIONS 338: a record literal of a dependent value is legal where evaluation binds its arguments: a dependent field's own literal, its list, its default, a dependent map's values (a let declared with the dependent type, a field), a full literal written into the declared field, and maps nested under a dependent map (keyed by String or by another collection), whose values keep the outer key's binding, at the top level and in a fn body (DECISIONS 338).
+-- a/a.canon --
+package a
+
+/// K.
+enum K { num, sub }
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+  /// Max.
+  max: Int = 5
+}
+
+/// Nodes.
+let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+/// Sub, of a node.
+record Sub(e: Node) {
+  /// Limit, the node's max unless given.
+  lim: Int = e.max
+
+  check lim <= e.max else "lim {lim} above {e.max}"
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// L, of a node.
+record L(e: Node) {
+  /// Top.
+  top: Int = e.max
+}
+
+/// Holder.
+record Holder {
+  /// Like.
+  like: ref nodes
+  /// P.
+  p: P(like)
+  /// Ps.
+  ps: [P(like)] = [{}, { lim: 1 }]
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+  /// L by node.
+  ls: {x in nodes: L(x)} = { a: {} }
+  /// L by node, then by name.
+  named: {x in nodes: {String: L(x)}} = {}
+  /// Its own L.
+  own: L(like) = {}
+}
+
+/// Holders.
+let hs: [Holder] = [
+  { like: a, p: {}, ps: [{ lim: 2 }], by: { a: {}, d: { lim: 3 }, n: 4 }, ls: { d: {} }, named: { a: { "k": {} } }, own: {} },
+  { like: n, p: 1, ps: [2] },
+]
+
+/// One holder, written in full into its declared type.
+let one: Holder = { like: d, p: { lim: 6 }, ps: [{}], by: { d: {} }, ls: { a: {}, d: {} }, named: { d: { "x": {}, "y": {} } }, own: {} }
+
+/// A dependent map let.
+let top: {x in nodes: P(x)} = { a: {}, d: { lim: 4 }, n: 2 }
+
+/// L by node.
+let tops: {x in nodes: L(x)} = { a: {}, d: {} }
+
+/// L by node, then by name.
+let nested: {x in nodes: {String: L(x)}} = { a: { "k": {} } }
+
+/// Other.
+record Other {
+  /// Weight.
+  w: Int = 1
+}
+
+/// Others.
+let others: table Other = { o1 {}, o2 {} }
+
+/// A String-keyed map under a dependent map: its values keep the outer key's binding.
+let zs: {x in nodes: {String: L(x)}} = { d: { "k": {} }, a: { "j": {} } }
+
+/// A map keyed by another collection under a dependent map: its values keep the outer key's binding.
+let zo: {x in nodes: {ref others: L(x)}} = { d: { o1: {}, o2: {} } }
+
+local fn strings() -> Int {
+  let z: {x in nodes: {String: L(x)}} = { d: { "k": {} } }
+  return z[d]["k"].top
+}
+
+local fn refs() -> Int {
+  let z: {x in nodes: {ref others: L(x)}} = { d: { o2: {} } }
+  return z[d][o2].top
+}
+
+local let fromStrings: Int = strings()
+
+local let fromRefs: Int = refs()

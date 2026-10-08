@@ -1,0 +1,74 @@
+TYPES.md §5.1, DECISIONS 338: a map literal with no expected type, as an if branch, a list element beside a dependent map or an `in` list, is E3305 (no dependent type reaches it, so no E3804), and never an internal error.
+-- a/a.canon --
+package a
+
+/// K.
+enum K { num, sub }
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+  /// Max.
+  max: Int = 5
+}
+
+/// Nodes.
+let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+/// Sub, of a node.
+record Sub(e: Node) {
+  /// Limit, the node's max unless given.
+  lim: Int = e.max
+
+  check lim <= e.max else "lim {lim} above {e.max}"
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// Holder.
+record Holder {
+  /// Like.
+  like: ref nodes
+  /// P.
+  p: P(like)
+  /// Ps.
+  ps: [P(like)] = [{}]
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+/// Holders.
+let hs: [Holder] = [{ like: a, p: {}, by: { a: {} } }, { like: d, p: { lim: 1 } }]
+
+local let m = hs[0].by
+
+local let branch = if hs.isEmpty() { m } else { { a: {} } }
+
+local let listed = [m, { a: {} }]
+
+local let member: Bool = m in [{ a: {} }]
+-- findings.txt --
+error[E3305]  a/a.canon:48:49
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:48:54
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:50:24
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:50:29
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:52:32
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:52:37
+  cannot tell what this { … } is; give it a type
+
+6 errors, 0 warnings in 1 package (…)

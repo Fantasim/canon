@@ -22,6 +22,13 @@ import (
 // and declaration order; it returns the rendered findings.
 func evaluate(t *testing.T, a *txtar.Archive) string {
 	t.Helper()
+	out, _ := evaluateAll(t, a)
+	return out
+}
+
+// evaluateAll is evaluate, with the canonical text of each value forced, by pkg.name; an internal error fails.
+func evaluateAll(t *testing.T, a *txtar.Archive) (string, map[string]string) {
+	t.Helper()
 	ctx := context.Background()
 	fs := &source.FileSet{}
 	parse := diag.NewBag(fs, "")
@@ -41,22 +48,29 @@ func evaluate(t *testing.T, a *txtar.Archive) string {
 	prog := check.Check(ctx, proj, files, bags, eval.NewFolder(bags, eval.Options{}))
 	ev := eval.New(prog, nil, bags, eval.Options{})
 	var all []diag.Finding
+	values := map[string]string{}
 	sum := parse.Summary()
 	sum.Packages = 0
 	for _, pkg := range prog.Packages {
 		for _, obj := range pkg.Decls {
-			if obj.Kind() == check.ObjLet || obj.Kind() == check.ObjConst {
-				ev.Force(ctx, eval.Root{Pkg: pkg.Path, Name: obj.Name()})
+			if obj.Kind() != check.ObjLet && obj.Kind() != check.ObjConst {
+				continue
+			}
+			if v, ok := ev.Force(ctx, eval.Root{Pkg: pkg.Path, Name: obj.Name()}); ok && v != nil {
+				values[pkg.Path+"."+obj.Name()] = v.CanonText()
 			}
 		}
 		all = append(all, bags[pkg.Path].Findings()...)
 		sum = sum.Merge(bags[pkg.Path].Summary())
 	}
+	if err := ev.Err(); err != nil {
+		t.Fatal(err)
+	}
 	var buf bytes.Buffer
 	if err := diag.Render(&buf, fs, append(parse.Findings(), all...), diag.RenderOptions{Summary: sum, Golden: true}); err != nil {
 		t.Fatal(err)
 	}
-	return buf.String()
+	return buf.String(), values
 }
 
 // IMPLEMENTATION-PLAN §7.2: each case produces the code its name starts with.

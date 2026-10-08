@@ -1,6 +1,8 @@
 package std
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -9,7 +11,7 @@ func mapMethods() map[string]builtin {
 	return map[string]builtin{
 		bLen: mapLen, bIsEmpty: mapIsEmpty, bKeys: mapKeys, bValues: mapValues, bGet: mapGet,
 		bContains: mapContains, bMap: mapMap, bFilter: mapFilter, bAny: mapAny, bAll: mapAll,
-		bCount: mapCount,
+		bCount: mapCount, bUnion: mapUnion,
 	}
 }
 
@@ -129,4 +131,34 @@ func mapAll(h Host, c *Call) (value.Value, bool) {
 func mapCount(h Host, c *Call) (value.Value, bool) {
 	n, _, ok := mapScan(h, c, func(bool) bool { return false })
 	return c.intv(int64(n)), ok
+}
+
+// mapUnion is the receiver's entries, then b's whose key it lacks, in b order (DECISIONS 338).
+func mapUnion(h Host, c *Call) (value.Value, bool) {
+	a, b := c.Recv.(*value.Map), c.arg(0).(*value.Map)
+	out := &value.Map{T: c.Result, Keys: slices.Clone(a.Keys), Vals: slices.Clone(a.Vals), P: c.Prov}
+	if !each(h, a.Keys, func(int, value.Value) {}) {
+		return nil, false
+	}
+	kt, vt := mapKeyType(c.Result), mapValueType(c.Result)
+	ok := eachWhile(h, b.Keys, func(i int, k value.Value) bool {
+		ck, ok := h.Coerce(k, kt)
+		if !ok {
+			return false
+		}
+		j, ok := MapIndex(h, a, ck)
+		if !ok || j >= 0 {
+			return ok
+		}
+		v, ok := h.Coerce(b.Vals[i], vt)
+		if !ok {
+			return false
+		}
+		out.Keys, out.Vals = append(out.Keys, ck), append(out.Vals, v)
+		return true
+	})
+	if !ok {
+		return nil, false
+	}
+	return out, true
 }

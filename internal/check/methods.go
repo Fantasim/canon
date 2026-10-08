@@ -20,7 +20,7 @@ func (c *checker) builtinMethod(env *env, x *syntax.CallExpr, s *syntax.Selector
 		c.argsAlone(env, x)
 		return types.ErrorType
 	}
-	if c.misplacedArgs(env, x) {
+	if c.unionOnKeyDependent(env, x, s, recv) || c.misplacedArgs(env, x) {
 		return types.ErrorType
 	}
 	if s.X != nil {

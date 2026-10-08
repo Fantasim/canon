@@ -1,0 +1,31 @@
+STDLIB.md §6, DECISIONS 338: union(b: {K: V}) -> {K: V} on a map, b by position or by name (§1.1), a literal b typed by the receiver's K and V, chained to merge several maps first-wins; enum and ref keys.
+-- a/a.canon --
+package a
+
+local enum Tone { soft, loud }
+
+local record Pet {
+  age: Int
+}
+
+local let pets: table Pet = {
+  rex { age: 3 }
+}
+
+local let a: {String: Int} = { "a": 1 }
+
+local let b: {String: Int} = { "b": 2 }
+
+local let c: {String: Int} = { "c": 3 }
+
+local let merged: {String: Int} = a.union(b).union(b: c).union({ "d": 4 })
+
+local let size: Int = a.union({}).len()
+
+local let soft: {Tone: Int} = { soft: 1 }
+
+local let tones: {Tone: Int} = soft.union({ loud: 2 })
+
+local let byPet: {ref pets: Int} = { rex: 1 }
+
+local let pick: Int? = byPet.union({ rex: 2 }).get(rex)

@@ -1,0 +1,35 @@
+STDLIB.md §6, DECISIONS 338: map union takes a map of the receiver's key and value types, else E3002, as the list union (§4.2) does for a wrong argument.
+-- a/a.canon --
+package a
+
+local let m: {String: Int} = { "a": 1 }
+
+local let names: {String: String} = { "a": "x" }
+
+local let byInt: {Int: Int} = { 1: 1 }
+
+local let xs: [Int] = [1]
+
+local let words: [String] = ["x"]
+
+local let badValue: {String: Int} = m.union(names)
+
+local let badKey: {String: Int} = m.union(byInt)
+
+local let notMap: {String: Int} = m.union(xs)
+
+local let listBad: [Int] = xs.union(words)
+-- findings.txt --
+error[E3002]  a/a.canon:13:45
+  expected {String: Int}, found {String: String}
+
+error[E3002]  a/a.canon:15:43
+  expected {String: Int}, found {Int: Int}
+
+error[E3002]  a/a.canon:17:43
+  expected {String: Int}, found [Int]
+
+error[E3002]  a/a.canon:19:37
+  expected [Int], found [String]
+
+4 errors, 0 warnings in 1 package (…)

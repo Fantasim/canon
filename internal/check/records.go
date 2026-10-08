@@ -11,8 +11,13 @@ import (
 
 // recordLit is a record or case literal (TYPES.md §5.2).
 func (c *checker) recordLit(env *env, e *syntax.BraceLit, t types.Type) types.Type {
+	if c.unboundLiteral(env, e, t) {
+		return types.ErrorType
+	}
 	c.info.Literals[e] = LitRecord
 	fields := recordFields(c, t)
+	env = env.with()
+	env.bind = inRecord(t)
 	given := map[string]bool{}
 	spread := false
 	for i, it := range e.Items {
@@ -82,7 +87,9 @@ func (c *checker) fieldItem(env *env, it *syntax.FieldItem, t types.Type, fields
 		return
 	}
 	c.deprecatedUse(env, it.Name, fo)
-	c.expr(env.storing(fo), it.Value, staticView(f.Type))
+	fe := env.storing(fo)
+	fe.bind = env.bind.forField(f.Type)
+	c.expr(fe, it.Value, staticView(f.Type))
 }
 
 // requiredFields is E3302 for each required field the literal leaves out; a field its record

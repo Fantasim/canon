@@ -199,142 +199,31 @@ func recordParam(rt *types.RecordType, decl *syntax.Param) *types.Param {
 // application reaching p's function: a record literal given to a dependent field is classified
 // against the first branch that takes it, whose applied record reads p.
 func (r *run) fnArg(cx *depCtx, p *types.Param) value.Value {
-	chain := appChain(cx.field, p, map[*types.TypeFunc]bool{})
-	if len(chain) == 0 {
+	root, paths, ok := types.ChainArg(cx.field, p)
+	if !ok {
 		return nil
 	}
-	return r.chainArg(chain, p, cx)
-}
-
-// chainArg is p's argument in the last application of chain, each application's arguments
-// naming the parameters of the one before it; only the arguments on the way are read.
-func (r *run) chainArg(chain []*types.TypeAppType, p *types.Param, cx *depCtx) value.Value {
-	app := chain[len(chain)-1]
-	i := slices.Index(app.Fn.Params, p)
-	if i < 0 || i >= len(app.Args) {
-		return nil
-	}
-	a := app.Args[i]
-	if len(chain) == 1 {
-		return r.argValue(a, cx)
-	}
-	if a.Source != types.ArgParam {
-		return nil
-	}
-	if root := r.chainArg(chain[:len(chain)-1], a.Param, cx); root != nil {
-		return r.follow(root, a.Path, cx.at)
-	}
-	return nil
-}
-
-// appChain is the applications from t down to one of p's function, outermost first, each
-// function's body then arms searched once; nil when none reaches it.
-func appChain(t types.Type, p *types.Param, seen map[*types.TypeFunc]bool) []*types.TypeAppType {
-	if t == nil {
-		return nil
-	}
-	switch x := t.Base().(type) {
-	case *types.OptionalType:
-		return appChain(x.Elem, p, seen)
-	case *types.ListType:
-		return appChain(x.Elem, p, seen)
-	case *types.MapType:
-		return appChain(x.Value, p, seen)
-	case *types.DepMapType:
-		return appChain(x.Value, p, seen)
-	case *types.LitUnionType:
-		return appChain(x.Of, p, seen)
-	case *types.TypeAppType:
-		return fnChain(x, p, seen)
-	}
-	return nil
-}
-
-func fnChain(app *types.TypeAppType, p *types.Param, seen map[*types.TypeFunc]bool) []*types.TypeAppType {
-	fn := app.Fn
-	if seen[fn] {
-		return nil
-	}
-	seen[fn] = true
-	if slices.Contains(fn.Params, p) {
-		return []*types.TypeAppType{app}
-	}
-	results := []types.Type{fn.Body}
-	for _, arm := range fn.Arms {
-		results = append(results, arm.Result)
-	}
-	for _, res := range results {
-		if rest := appChain(res, p, seen); rest != nil {
-			return append([]*types.TypeAppType{app}, rest...)
+	v := r.argValue(root, cx)
+	for _, path := range paths {
+		if v == nil {
+			return nil
 		}
+		v = r.follow(v, path, cx.at)
 	}
-	return nil
+	return v
 }
 
-// binderOf is the binder of a dependent map type, or of a map whose values apply one (TYPES.md §11.5).
-func binderOf(t types.Type) string {
-	switch x := t.Base().(type) {
-	case *types.DepMapType:
-		return x.Binder
-	case *types.MapType:
-		return argBinder(x.Value)
+// declared is the declared type cx gives a value, nil for none.
+func (cx *depCtx) declared() types.Type {
+	if cx == nil {
+		return nil
 	}
-	return ""
+	return cx.field
 }
 
-// mapBinder is the binder a map literal of type t binds to each key: where cx gives a declared
-// type, that of its dependent map on the same collection, which a static view erases; else
-// binderOf's.
-func mapBinder(t types.Type, cx *depCtx) string {
-	mt, ok := t.Base().(*types.MapType)
-	if !ok || cx == nil || cx.field == nil {
-		return binderOf(t)
-	}
-	if rt, isRef := mt.Key.Base().(*types.RefType); isRef {
-		if d := depMapOn(cx.field, rt.Target); d != nil {
-			return d.Binder
-		}
-	}
-	return ""
-}
-
-// depMapOn is the first dependent map keyed by coll in t, through optionals, lists and map values.
-func depMapOn(t types.Type, coll *types.Collection) *types.DepMapType {
-	switch x := t.Base().(type) {
-	case *types.OptionalType:
-		return depMapOn(x.Elem, coll)
-	case *types.ListType:
-		return depMapOn(x.Elem, coll)
-	case *types.MapType:
-		return depMapOn(x.Value, coll)
-	case *types.DepMapType:
-		if x.Coll == coll {
-			return x
-		}
-		return depMapOn(x.Value, coll)
-	}
-	return nil
-}
-
-// argBinder is the binder an argument of an application in t reads, "" for none.
-func argBinder(t types.Type) string {
-	var args []*types.Arg
-	switch x := t.Base().(type) {
-	case *types.OptionalType:
-		return argBinder(x.Elem)
-	case *types.ListType:
-		return argBinder(x.Elem)
-	case *types.AppliedRecord:
-		args = x.Args
-	case *types.TypeAppType:
-		args = x.Args
-	}
-	for _, a := range args {
-		if a.Source == types.ArgKey {
-			return a.Binder
-		}
-	}
-	return ""
+// bound reports a dependent map's binder cx binds to a key.
+func (cx *depCtx) bound(name string) bool {
+	return cx != nil && cx.binders[name] != nil
 }
 
 // dependentKey reports a map key type whose names stay symbolic: a dependent type, maybe in a literal union (TYPES.md §11.4).

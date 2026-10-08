@@ -33,6 +33,7 @@ type env struct {
 	scopeFile *syntax.File       // the file whose imports are in scope, when not file (I18N.md T1)
 	trans     *transCtx          // a translated template: its errors are E1703 (I18N.md T2)
 	sig       bool               // a let annotation, its refs resolved later included: what it names is its signature's
+	bind      *bindCtx           // where evaluation reads a record literal's type arguments; nil: nowhere
 }
 
 // mode is a set of flags on an env.

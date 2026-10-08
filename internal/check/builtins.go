@@ -78,6 +78,7 @@ var (
 	otherT = bp(paramB, &seqOf{elem: tT})
 	sepS   = bp(paramSep, types.StringType)
 	strS   = bp(paramS, types.StringType)
+	mapKV  = &types.MapType{Key: tK, Value: tV}
 )
 
 // seqMethods are STDLIB.md §4, in its order: every method of Seq(T).
@@ -145,6 +146,7 @@ var mapMethods = []bsig{
 	{name: methodAny, params: []bparam{predKV}, result: types.BoolType},
 	{name: methodAll, params: []bparam{predKV}, result: types.BoolType},
 	{name: methodCount, params: []bparam{predKV}, result: types.IntType},
+	{name: methodUnion, params: []bparam{bp(paramB, mapKV)}, result: mapKV},
 }
 
 // stringMethods are STDLIB.md §7; matches takes a regex literal.

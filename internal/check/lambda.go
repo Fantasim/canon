@@ -76,6 +76,7 @@ func (c *checker) lambdaBody(env *env, e *syntax.LambdaExpr, fp *types.FuncType,
 		return types.ErrorType
 	}
 	inner := env.push()
+	inner.bind = nil // a body computes: evaluation reads no argument there
 	for i, id := range e.Params {
 		o := c.newLocal(inner, ObjParam, id, id, ptypes[i])
 		c.declare(inner, id, o)
@@ -127,6 +128,6 @@ func (c *checker) shorthandBody(env *env, e *syntax.ShorthandLambda, fp *types.F
 		return types.ErrorType
 	}
 	inner := env.with()
-	inner.shorthand = fp.Params[0]
+	inner.shorthand, inner.bind = fp.Params[0], nil
 	return &types.FuncType{Params: fp.Params, Result: c.lambdaResult(inner, e.Body, fp.Result, b)}
 }

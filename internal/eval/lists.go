@@ -126,7 +126,7 @@ func (r *run) tableLit(lit *syntax.BraceLit, at *vpath) value.Value {
 // mapLit is a map literal in the order written, a dependent map's binder bound to each key (TYPES.md §11.5).
 func (r *run) mapLit(lit *syntax.BraceLit, at *vpath) value.Value {
 	m := &value.Map{T: r.typeOf(lit), P: r.prov(lit, value.ProvLiteral)}
-	binder := mapBinder(m.T, r.dep)
+	binder := types.MapBinder(m.T, r.dep.declared(), r.dep.bound)
 	for _, it := range lit.Items {
 		k, kn, x := r.mapItem(it, mapKeyType(m.T))
 		if k == nil {

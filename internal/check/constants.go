@@ -213,6 +213,7 @@ const (
 	cppScope       = "::"
 	optDotText     = "?."
 	forceText      = "!"
+	opLiteral      = "a literal" // E3804's operation on a dependent value's static view (TYPES.md §11.4)
 	emptyArray     = "[]"
 	emptyObject    = "{}"
 	indexText      = emptyArray

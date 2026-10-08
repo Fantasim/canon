@@ -121,7 +121,9 @@ func (c *checker) letInit(o *object) {
 		return
 	}
 	c.initDone[o] = true
-	c.expr(c.declEnv(o).storing(o), d.Value, c.letType(o))
+	env := c.declEnv(o).storing(o)
+	env.bind = &bindCtx{field: c.letType(o)}
+	c.expr(env, d.Value, c.letType(o))
 }
 
 // fnBody checks a function's parameter defaults (constant, E3015) and body: every path that
@@ -234,7 +236,9 @@ func (c *checker) fieldDefaults(o *object, body *recordCtx) {
 		}
 		env := c.bodyEnv(c.pkgs[o.pkg], fo.file, o, body)
 		env.fields = fo.field.Index
-		c.expr(env.storing(fo), d.Default, fo.field.Type)
+		de := env.storing(fo)
+		de.bind = inRecord(o.typ).forField(fo.field.Type)
+		c.expr(de, d.Default, fo.field.Type)
 		c.noneDefault(env, d, fo.field)
 	}
 }
