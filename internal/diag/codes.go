@@ -561,6 +561,7 @@ var Registry = []Def{
 			{Name: "budget", Template: "\"budget\" must be an integer of at least 1"},
 			{Name: "goModule", Template: "\"go_module\" must be a map of root names to module path strings"},
 			{Name: "optionalRoots", Template: "\"optional_roots\" must be a list of root names"},
+			{Name: "consumerRoots", Template: "\"consumer_roots\" must be a list of root names"},
 		},
 	},
 	{
@@ -2759,6 +2760,11 @@ func (codeE1006) AtGoModule(span source.Span) *Builder {
 // AtOptionalRoots reports: "optional_roots" must be a list of root names
 func (codeE1006) AtOptionalRoots(span source.Span) *Builder {
 	return newBuilder(&Registry[5], 6, span)
+}
+
+// AtConsumerRoots reports: "consumer_roots" must be a list of root names
+func (codeE1006) AtConsumerRoots(span source.Span) *Builder {
+	return newBuilder(&Registry[5], 7, span)
 }
 
 // E1007: invalid root name or path (absolute, empty, `\`) (GRAMMAR.md §7.1).

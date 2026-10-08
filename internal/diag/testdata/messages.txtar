@@ -14,6 +14,7 @@ E1006 studio: "studio" must be a package name
 E1006 budget: "budget" must be an integer of at least 1
 E1006 goModule: "go_module" must be a map of root names to module path strings
 E1006 optionalRoots: "optional_roots" must be a list of root names
+E1006 consumerRoots: "consumer_roots" must be a list of root names
 E1007 name: invalid root name "resource.vocab.items": a root name is an identifier
 E1007 empty: invalid root "resource.vocab.items": the path is empty
 E1007 absolute: invalid root "resource.vocab.items": the path is absolute

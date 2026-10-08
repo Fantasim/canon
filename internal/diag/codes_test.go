@@ -18,6 +18,7 @@ var constructed = []*Builder{
 	E1006.AtBudget(sampleSpan),
 	E1006.AtGoModule(sampleSpan),
 	E1006.AtOptionalRoots(sampleSpan),
+	E1006.AtConsumerRoots(sampleSpan),
 	E1007.AtName(sampleSpan, sampleName),
 	E1007.AtEmpty(sampleSpan, sampleName),
 	E1007.AtAbsolute(sampleSpan, sampleName),

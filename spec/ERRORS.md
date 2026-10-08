@@ -394,7 +394,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 319 codes: 295 errors, 21 warnings and 3 run-time codes, with 531 messages.
+The catalogue holds 319 codes: 295 errors, 21 warnings and 3 run-time codes, with 532 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -438,6 +438,7 @@ Owner: GRAMMAR.md.
 | E1006 | budget | - | `"budget" must be an integer of at least 1` |
 | E1006 | goModule | - | `"go_module" must be a map of root names to module path strings` |
 | E1006 | optionalRoots | - | `"optional_roots" must be a list of root names` |
+| E1006 | consumerRoots | - | `"consumer_roots" must be a list of root names` |
 | E1007 | name | name:Name | `invalid root name "{name}": a root name is an identifier` |
 | E1007 | empty | name:Name | `invalid root "{name}": the path is empty` |
 | E1007 | absolute | name:Name | `invalid root "{name}": the path is absolute` |
