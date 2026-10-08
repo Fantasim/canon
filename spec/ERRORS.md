@@ -1235,7 +1235,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8023 | error | build | CODEGEN.md §2.4 | `build --check` with outputs under an optional root absent on this machine (DECISIONS 332) |
 | W8024 | warning | build | CODEGEN.md §2.4 | outputs under an optional root absent on this machine were skipped; one per root (DECISIONS 332) |
 | E8025 | error | ir | CODEGEN.md §2.8 | a relative include or import that would climb above the project's parent directories, wrong on every checkout (DECISIONS 332) |
-| E8026 | error | check | CODEGEN.md §2.4 | a file a load of the project reads that an emit of the same build writes (DECISIONS 341) |
+| E8026 | error | build | CODEGEN.md §2.4 | a file a load of the project reads that an emit of the same build writes (DECISIONS 341) |
 | E8027 | error | build | CODEGEN.md §2.4 | an output path with a symbolic link below its root's directory (DECISIONS 342) |
 | E8028 | error | build | CODEGEN.md §2.4 | `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (DECISIONS 343) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |

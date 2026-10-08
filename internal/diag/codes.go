@@ -2328,7 +2328,7 @@ var Registry = []Def{
 		},
 	},
 	{
-		Code: "E8026", Severity: Error, Package: "check",
+		Code: "E8026", Severity: Error, Package: "build",
 		Variants: []Variant{
 			{Args: []Arg{{Name: "path", Type: ArgTypePath}, {Name: "target", Type: ArgTypeName}, {Name: "pkg", Type: ArgTypeName}}, Template: "{path} is read by this load and written by emit {target} of {pkg}: an output is never an input of its own build"},
 		},
