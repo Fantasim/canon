@@ -1,33 +1,30 @@
 # State — Canon compiler
 
-Updated: 2026-10-07. **v0.1.2 released** (tag on main; archives from the tag workflow). v0.1.0
-(tag on `f4f7da5`) and v0.1.1 (stale `canon guide`) are out; `main` is the only branch. DECISIONS
-304-334: [log-2026-10-05](decisions/log-2026-10-05.md), [log-2026-10-06](decisions/log-2026-10-06.md),
-ADR-0015, -0016, [ADR-0017](decisions/0017-shared-records-make-hooks.md),
-[ADR-0018](decisions/0018-frame-owned-collections.md). M5 accepted (CI run 36973712977).
+Updated: 2026-10-08. **v0.1.3** (Sovereign's 2026-10-08 handoffs) on main; v0.1.2, v0.1.1 and
+v0.1.0 are out; `main` is the only branch. DECISIONS 304-338:
+[log-2026-10-06](decisions/log-2026-10-06.md), [log-2026-10-08](decisions/log-2026-10-08.md),
+[ADR-0018](decisions/0018-frame-owned-collections.md),
+[ADR-0019](decisions/0019-edit-memory-adopted-verdicts.md). M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-**v0.1.2 (the Resource port's findings), then telemetry as first real use.** Shipped in v0.1.2
-(DECISIONS in DECISIONS.md): 326 text-output ownership in `<pkg>/canon.outputs`; 327 a JSON text file
-leaves an absent field out; 328 one step budget per package; 329 files take a plain create's mode
-(umask); 330 an edit analyses only what it affects, found statically (E7008); 331 W4001 says what a
-broken type silences; 332 roots per machine (`optional_roots`, `project.local.canon`, E1013, E8022,
-E8023, E8025); 333 an unknown name beside a literal is E2102; 334 `it` and keys, three readings
-fixed. Perf: frame-owned collections (ADR-0018), reporting N findings linear. Bugs: A1
-`hasKey(it)` in a `where`; E3028 for a type after a union's first alternative; a warm re-check kept
-the break of a let whose fold failed. v0.1.0 was 317-324.
-Handoffs: Resource port [findings](handoff/2026-10-07-sovereign-resource-port.md), answered by
-[Canon's reply](handoff/2026-10-07-canon-reply-resource-port.md); [all](handoff/README.md).
-**Next:** telemetry first use; the Resource port resumes on Sovereign's side; fix every known bug
-that surfaces. Release builds stay local (`make dist`) while CI is down (Actions billing).
-**Owed, performance** (the reply): warm re-check when an edit adds or removes an entry (key-set
-dependencies in the checker; ~3-4 s cold today); the on-disk cache (`Options.Cache`).
-**Owed for v0.2** (refused today with a way out): Go `embedded`/`types` and C++ `embedded` modes,
-dependent values read through a ref or optional, legacy structs (M6), entry isolation of a poisoned
-table (321), input defaults (321). Also later: `ordered_json`, kind constants, API S11 vs §3.4,
-editor scope of calls inside interpolations. Long fuzz/progen campaigns stay deferred
-([log-2026-09-29](decisions/log-2026-09-29.md)); progen operators for new codes follow.
+**v0.1.3, then telemetry as first real use.** Shipped: 335 Go `types` mode (`Decode<X>(raw)`,
+WIRE byte rules, `<name>pkg` imports); 336 an optional `@text` result is a maybe-file, and a
+stale owned file is removed when its bytes still hash to its `canon.outputs` line; 337 a Source
+and its Undo keep a literal's spelling; 338 map `union`, with one binder rule for check and eval
+(fixes internal errors on dependent literals). Fixes: `in` keeps a var's ownership (a 40x
+loop); edit memory per op (ADR-0019); edit-layer Undo verification by value.
+Handoffs: [Canon's reply](handoff/2026-10-08-canon-reply-go-types-followups.md); [all](handoff/README.md).
+**Next:** telemetry first use; Sovereign's cutover on Go types; fix every known bug that surfaces.
+Release builds stay local (`make dist`) while CI is down.
+**Owed, performance:** edit time is ops × a full analysis (E1); FMT's whole-file judgement holds
+the edit peak (per-item judgement, or the on-disk cache `Options.Cache`); a token-streaming JSON
+reader for Go data/types loaders (~110 ms/MB today); warm re-check on entry add/remove.
+**Owed for v0.2:** dependent types kept through static typing (lifts E3804 on dependent-map
+`union`/literals); an amend path into a dependent map (E1905 today); Go and C++ `embedded`;
+legacy structs (M6); entry isolation (321); input defaults (321); E3305 duplicated on nested
+untyped literals. Also later: `ordered_json`, kind constants, API S11 vs §3.4, editor scope of calls
+inside interpolations. Long fuzz/progen campaigns stay deferred.
 Environment: OS watch tests in `internal/workspace` skip when inotify watches are exhausted (raise
 `fs.inotify.max_user_watches`). Cloud: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci
 --prefix tools/tsc`; no systemd (memory-cap targets by hand under `ulimit -v`).
@@ -39,13 +36,13 @@ TypeScript and C++ baked done, legacy C++ not started (waits, Louis). M7 not sta
 
 ## What exists (committed)
 
-spec + DECISIONS 1-334; `syntax`, `format` (+ §13 `Rewrite`; M9 and Rewrite judge a file in its role,
+spec + DECISIONS 1-338; `syntax`, `format` (+ §13 `Rewrite`; M9 and Rewrite judge a file in its role,
 258), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every WIRE §6 form; a `load` given to a field decodes
 in its scope, 268), `check`/`types` (dependent types, views, translations, broken-view/-translation
 tracking; E1903 `variantCase`, E3015 `notConstant`/`budget` for phase 2's folds only, 263),
 `eval`/`eval/std` + `value` (layers, provenance, variant-level methods, drivers across the project;
 stage A forces the constants phase 2's folds read, 264), `verify`, `lock`, `rules`, `ir` (stage E,
-fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go`, `gen/cpp` (data, `types`), `views`, `i18n`, `gen/view`, `conform`,
+fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go` (baked, data, `types`), `gen/cpp` (data, `types`), `views`, `i18n`, `gen/view`, `conform`,
 `build`, `project`, `check.Session`, `eval.Memo`, `workspace`, `views/live`, `edit` (+ ops, typing,
 codec, Refs), `api` over workspace,
 `cli` (version/init/new/check/build/test/explain/fmt/help), `internal/testkit`, `tools/audit`.
@@ -74,7 +71,8 @@ macOS/Windows link tests skip where links cannot be made. Long fuzz/progen campa
 stated acceptance, deferred by Louis. NFR-01 was not re-run after M4.1's Undo verification (it runs
 only for edit layers and multi-op dependent requests; the bench has neither). The 2026-10-06 wave's
 final `make check` was green on `f4f7da5`. The v0.1.2 `make check` and the "one-value edit ~2 s" figure (the reply's bench) were not re-run
-for this update.
+for this update. v0.1.3: Go types decoding was not run on Sovereign's real files (synthetic
+5 MB only); edit memory was measured on synthetic tables, not the real `model` package.
 
 ## Verify queue
 Re-run `make bench-edit` on a quiet machine or a CI-class runner when one exists.

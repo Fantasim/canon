@@ -30,6 +30,11 @@ Canon) is **answered** by `2026-10-07-canon-reply-resource-port.md`, shipped in 
 informational for the Source session: what changed per item, the plain JSON writer, optional roots,
 and what Canon still owes (warm entry add/remove re-check, the on-disk cache).
 
+`2026-10-08-sovereign-go-types-mode.md` and `2026-10-08-sovereign-port-followups.md` are
+**answered** by `2026-10-08-canon-reply-go-types-followups.md`, shipped in v0.1.3 (DECISIONS
+335-338, ADR-0019): Go types mode, maybe-files, the map-write fix and map `union`, edit memory,
+literal spellings; `load.defines` unchanged, with the flag-header recipe instead.
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,
