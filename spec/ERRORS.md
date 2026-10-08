@@ -125,6 +125,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Entry` | entry | `E1133`, `E6002` |
 | `Enum` | enum | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3027`, `E6001` |
 | `EnumMember` | enum member | `E1118` |
+| `EnumNames` | a list of enum names | `E8009` |
 | `Field` | field | `W1002`, `W1003`, `E1118`, `E1125`, `E1133`, `E1613`, `E2101`, `E3003`, `E3320`, `E6001` |
 | `FieldlessCaseExportFn` | an export fn of a case without fields | `E8019` |
 | `ForeignResolvedRef` | a record of another package whose loader resolves one of its refs | `E8019` |

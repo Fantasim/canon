@@ -522,6 +522,7 @@ type Emit struct {
     FileName string                        // ts: the file name in Dir
     GoImport string                        // go: the import path of Dir (CODEGEN.md §2.8)
     Mode Mode; Values []string; GoPackage, Namespace string   // typed options (DECISIONS 80)
+    Open []string                          // go types: the opened enums (DECISIONS 339, §4 review rule)
 }
 ```
 

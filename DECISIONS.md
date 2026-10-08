@@ -3333,13 +3333,18 @@ round 2", "PS1 review", "PS2 round 2"):
      made the whole file undecodable, while unknown keys were already ignored (handoff
      2026-10-08-sovereign-go-open-ids-consumer-roots item 1). Per enum, not `open: all`: an
      agent cannot drop enum safety project-wide by one word (orchestrator).
+     Settled while building (2026-10-09): an `open` that is not a list of words is `E8009` `kind`
+     with `EnumNames`; a numeric wire (`@json(codes)`, a bits mask) has no string to keep, so an
+     unknown code or bit still fails; `ir.Emit` gains `Open []string` (additive, IMPLEMENTATION-PLAN
+     §4.5 review rule, approved by the orchestrator).
 
 340. **A `types`-mode decoder for a `@text` result that is not a record (CODEGEN.md §5.13).** In Go
      `types` mode, each public `@text` export fn whose result (its non-optional type, for a
      maybe-file) is a map, a list or a keyed list gets `func Decode<Fn>File(raw []byte) (<T>,
      error)`, `<Fn>` the fn's generated UpperCamel name and `<T>` the Go type of its result, with
      every rule of §5.13 (byte rules, the JSON path of the first failure, no partial value). A
-     name it meets is `E8005` as usual. C++ and TypeScript: owed if asked. Reason: a top-level
+     name it meets is `E8005` as usual. A result holding a type with no public Go type (a local
+     record) gets no decoder, as a private record gets none. C++ and TypeScript: owed if asked. Reason: a top-level
      `{TextId: TextEntry}` file had no public decoder (handoff item 3).
 
 341. **An output is never an input of its own build (CODEGEN.md §2.4; WIRE.md §2.2; ERRORS.md

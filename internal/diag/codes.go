@@ -88,6 +88,7 @@ const (
 	KindEntry
 	KindEnum
 	KindEnumMember
+	KindEnumNames
 	KindField
 	KindFieldlessCaseExportFn
 	KindForeignResolvedRef
@@ -245,6 +246,7 @@ var kindNames = [...]string{
 	"Entry",
 	"Enum",
 	"EnumMember",
+	"EnumNames",
 	"Field",
 	"FieldlessCaseExportFn",
 	"ForeignResolvedRef",
@@ -382,6 +384,7 @@ var kindWords = [...]string{
 	"entry",
 	"enum",
 	"enum member",
+	"a list of enum names",
 	"field",
 	"an export fn of a case without fields",
 	"a record of another package whose loader resolves one of its refs",
