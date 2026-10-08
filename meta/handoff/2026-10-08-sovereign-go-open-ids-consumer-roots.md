@@ -54,6 +54,15 @@ public decoder; admin would hand-write a shim. **Ask:** a generated `Decode<Fn>F
 (map[K]V, error)` for a `@text` fn whose result is a map or list of public types (the decoder of
 the fn's result, not of a record).
 
+## 4b. An output that is also an input of its own build (security, found by our gate review)
+
+A `@text("evil.json")` fn whose body is `load.text("@resource/Server/System/evil.json")` makes a
+hand-written runtime file a canon output: `build --check` reports it unchanged and owned, so
+"Canon owns this file" proves provenance, not validation. **Ask:** refuse (an error) a build in
+which a `@text`/emit output path is also loaded (`load`, `load.text`, `load.defines`...) by the
+same build -- at least by the fn that writes it, ideally by any package. Our gate greps for it as
+a stopgap. **Acceptance:** the snippet above fails `canon check` with a code naming both paths.
+
 ## 4. Smaller findings from the port (non-blocking)
 
 - **Cross-root import trap, not refused.** A types-mode copy into root B of a package whose
