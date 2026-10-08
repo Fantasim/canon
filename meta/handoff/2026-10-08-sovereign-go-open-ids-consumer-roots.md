@@ -63,6 +63,16 @@ which a `@text`/emit output path is also loaded (`load`, `load.text`, `load.defi
 same build -- at least by the fn that writes it, ideally by any package. Our gate greps for it as
 a stopgap. **Acceptance:** the snippet above fails `canon check` with a code naming both paths.
 
+## 4c. Never write through a symlink (security, found by our gate review)
+
+A committed symlinked directory (`Server/Evil.png -> /some/dir`) plus a package with
+`emit text { out: "@resource/Server/Evil.png" }` and `@text("pwned.txt")` makes `canon build` write
+`pwned.txt` INTO the link's target -- outside the project (a relative link reaches a sibling repo,
+an absolute one `~/.ssh`). Our gate now refuses tracked symlinks before running canon. **Ask:**
+`canon build` refuses (an error, nothing written) when an output path or any of its parent
+directories is a symlink, or resolves outside its root. **Acceptance:** the setup above fails with
+a code naming the path, and the link target is untouched.
+
 ## 4. Smaller findings from the port (non-blocking)
 
 - **Cross-root import trap, not refused.** A types-mode copy into root B of a package whose
