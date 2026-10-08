@@ -67,7 +67,7 @@ func (a *applier) keepHeld(c fieldCheck) error {
 	if !decodedIn(v) {
 		return nil
 	}
-	lit, err := a.baseLit(v, fieldRules(c.f))
+	lit, err := a.baseLit(v, fieldRules(c.f), stated{})
 	if err != nil {
 		return err
 	}
@@ -77,9 +77,9 @@ func (a *applier) keepHeld(c fieldCheck) error {
 
 // baseLit is v, a value of the base, as E23 carries an old value in scope's rules: read, its
 // tokens included, in the base snapshot through the base's host.
-func (a *applier) baseLit(v value.Value, scope *types.Field) (Lit, error) {
+func (a *applier) baseLit(v value.Value, scope *types.Field, at stated) (Lit, error) {
 	base := &applier{ctx: a.ctx, env: a.env, snap: a.base, base: a.base, host: a.baseHost, baseHost: a.baseHost, marks: a.marks}
-	return base.sourceLit(v, scope)
+	return base.sourceLit(v, scope, at)
 }
 
 // dropBack is the inverse's value of c's field that E15 drops unread, raw its member: the value
@@ -93,7 +93,7 @@ func (a *applier) dropBack(c fieldCheck, raw []byte) (Lit, error) {
 	if v == nil {
 		return FromJSON(raw), nil
 	}
-	return a.baseLit(v, fieldRules(c.f))
+	return a.baseLit(v, fieldRules(c.f), stated{})
 }
 
 // baseValue is c's field's value before the edit, nil when the base does not reach it.

@@ -149,6 +149,7 @@ type applier struct {
 	named                     []rootRef // the roots its operations name
 	nameClash                 string    // Plan.NameClash
 	nameEdits                 map[string]NameEdit
+	spelled                   spellings
 }
 
 // NameEdit is what a RenameName adds to a file besides renaming: the places, among the file's
@@ -159,14 +160,14 @@ type NameEdit struct {
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
 	h := env.Host(base.a)
-	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, held: map[string]bool{}, marks: newSymMarks()}
+	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, held: map[string]bool{}, marks: newSymMarks(), spelled: spellings{}}
 	a.selected = base.a.Selected() // each op is analyzed again over the base's selection, an edit's scope (API.md E1, E17a)
 	return a
 }
 
 // typer types an operation's values against the current state (API.md V1).
 func (a *applier) typer(pkg string) Typer {
-	return Typer{Host: a.host, Pkg: pkg, Outer: a.outer, marks: a.marks}
+	return Typer{Host: a.host, Pkg: pkg, Outer: a.outer, marks: a.marks, spelled: a.spelled}
 }
 
 // operation applies op to the current state: its changes are planned, the files they write

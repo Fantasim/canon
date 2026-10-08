@@ -107,7 +107,7 @@ func (x *opCtx) undoStatic(cur value.Value, upto int) error {
 		x.inverse(Operation{Kind: OpReset, Path: path})
 		return nil
 	}
-	lit, err := x.a.sourceLit(cur, x.scopeAt(k, true))
+	lit, err := x.a.sourceLit(cur, x.scopeAt(k, true), stated{}) // typed from the line: its tokens kept
 	if err != nil {
 		return err
 	}

@@ -115,7 +115,7 @@ func (x *opCtx) removeLine(at staticSite) error {
 		}
 		old = v
 	}
-	lit, err := x.a.sourceLit(old, x.scopeAt(len(x.res.Steps), true))
+	lit, err := x.a.sourceLit(old, x.scopeAt(len(x.res.Steps), true), x.statedAt(len(x.res.Steps)))
 	if err != nil {
 		return err
 	}

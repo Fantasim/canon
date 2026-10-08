@@ -1,6 +1,6 @@
 API.md M7 (log-2026-09-29 M4 U4b-r3): a String holding `{` or `}` is written with each brace
-escaped as `\{` or `\}` (GRAMMAR.md §2.6), never as an interpolation; API.md E23: the inverse of
-a Set of a String that held braces gives them back, escaped the same way.
+escaped as `\{` or `\}` (GRAMMAR.md §2.6), never as an interpolation; API.md E23, DECISIONS 337:
+the inverse of a Set of a String that held braces gives the token back as the source wrote it.
 -- options --
 pkgs: p
 -- edit.json --
@@ -46,7 +46,7 @@ let labels: {String: String} = { "a": "x", "b\{": "y" }
     {
       "op": "set",
       "path": "p:motto",
-      "source": "\"keep \\{this\\} and \\{that\\}\""
+      "source": "\"keep {{this}} and \\{that\\}\""
     },
     {
       "op": "set",

@@ -68,7 +68,7 @@ func (x *opCtx) pairsInverse(k int) error {
 		x.w.undo = []Operation{{Kind: OpReset, Path: path}}
 		return nil
 	}
-	lit, err := x.a.sourceLit(x.valueAt(k), x.scopeAt(k, true))
+	lit, err := x.a.sourceLit(x.valueAt(k), x.scopeAt(k, true), x.statedAt(k))
 	if err != nil {
 		return err
 	}

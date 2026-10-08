@@ -17,6 +17,7 @@ type heldValue struct {
 	old   value.Value
 	scope *types.Field
 	lit   Lit
+	notes spellings
 }
 
 func (heldValue) isLit() {}
@@ -204,7 +205,7 @@ func (a *applier) heldLit(h heldValue, path string) (Lit, error) {
 	if v == h.old {
 		return h.lit, nil
 	}
-	return a.sourceLit(v, h.scope)
+	return a.notedLit(v, h.scope, h.notes) // its tokens noted when the Undo was made
 }
 
 // form is v, written back at path, with the lock facts kept: a stable table its locked entries as

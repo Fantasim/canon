@@ -168,7 +168,8 @@ func (c *undoCheck) restore(path string) []Operation {
 		return slices.DeleteFunc(c.restoreFields(res, p, rec), func(op Operation) bool { return c.a.facts.kept(op.Path) })
 	}
 	x := &opCtx{a: c.a, res: res}
-	lit, err := c.a.baseLit(c.a.facts.form(c.a.base, res.Target, res.Canonical), x.scopeAt(len(res.Steps), true))
+	at := c.baseStated(res)
+	lit, err := c.a.baseLit(c.a.facts.form(c.a.base, res.Target, res.Canonical), x.scopeAt(len(res.Steps), true), at)
 	if err != nil {
 		return nil
 	}
@@ -180,6 +181,7 @@ func (c *undoCheck) restore(path string) []Operation {
 func (c *undoCheck) restoreFields(res resolution, p Path, rec *value.Record) []Operation {
 	now, _ := c.last.open(p)
 	cur, _ := now.Target.(*value.Record)
+	at := c.baseStated(res)
 	var out []Operation
 	for i, f := range fieldsOf(rec.T) {
 		if f.Input != nil || cur != nil && i < len(cur.Fields) && sameText(rec.Fields[i], cur.Fields[i]) {
@@ -190,7 +192,7 @@ func (c *undoCheck) restoreFields(res resolution, p Path, rec *value.Record) []O
 			out = append(out, Operation{Kind: OpReset, Path: fp})
 			continue
 		}
-		lit, err := c.a.baseLit(rec.Fields[i], fieldRules(f))
+		lit, err := c.a.baseLit(rec.Fields[i], fieldRules(f), at.field(f.Name))
 		if err != nil {
 			return nil
 		}
@@ -286,4 +288,9 @@ func (c *undoCheck) add(path string) bool {
 	c.regions = append(c.regions, path)
 	slices.Sort(c.regions)
 	return true
+}
+
+// baseStated is the base's literal stating the value at res, a resolution in the base.
+func (c *undoCheck) baseStated(res resolution) stated {
+	return statedBy(c.a.base.judge(res, OpSet, c.a.env.EditLayer).last())
 }

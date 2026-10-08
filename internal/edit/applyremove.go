@@ -166,7 +166,8 @@ func (x *opCtx) removeFile(display, stop string) error {
 // undoRemove is the inverse of a Remove (E23): Insert at the old position, or AddEntry then
 // Move back; into a collection its files order, Add or AddEntry alone, placed by N1.
 func (x *opCtx) undoRemove(parent value.Value, pos int) error {
-	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(len(x.res.Steps), false)) // read back as an item
+	k := len(x.res.Steps)
+	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(k, false), x.statedAt(k)) // read back as an item
 	if err != nil {
 		return err
 	}

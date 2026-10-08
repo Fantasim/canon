@@ -195,7 +195,8 @@ func (a *applier) dropResolved(c fieldCheck, res resolution) error {
 	if err != nil {
 		return err
 	}
-	back, err := a.sourceLit(res.Target, fieldRules(c.f)) // as E23 carries it, in the scope the inverse reads
+	at := statedBy(a.snap.judge(res, OpSet, a.env.EditLayer).last())
+	back, err := a.sourceLit(res.Target, fieldRules(c.f), at) // as E23 carries it, in the scope the inverse reads
 	if err != nil {
 		return err
 	}

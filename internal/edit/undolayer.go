@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // layerUndo is the Undo under an edit layer, which writes only that layer's lines (API.md W11):
@@ -168,13 +170,31 @@ func (c *undoCheck) computedLines() map[string]bool {
 // typesAsSource reports text a value of the declared type at path, read in the base, an entry's
 // line by its collection's item type.
 func (c *undoCheck) typesAsSource(path, text string) bool {
+	_, ok := c.lineTyped(path, text)
+	return ok
+}
+
+// lineTyped is text typed as a Source at path, as typesAsSource reads it.
+func (c *undoCheck) lineTyped(path, text string) (value.Value, bool) {
 	t, pkg, ok := c.lineType(path)
 	if !ok {
-		return false
+		return nil, false
 	}
 	ty := Typer{Host: c.a.baseHost, Pkg: pkg, marks: c.a.marks}
-	_, err := ty.Value(c.a.ctx, Source(flatText(text)), t)
-	return err == nil
+	v, err := ty.Value(c.a.ctx, Source(flatText(text)), t)
+	return v, err == nil
+}
+
+// lineValue is the line at path as verification compares it (API.md E22, W11): the base kind and
+// canonical text of the value it types to, so a spelling the formatter keeps (parentheses, a
+// number's digits, a multiline string) compares equal; a line no Source writes by its text.
+func (c *undoCheck) lineValue(path, text string) string {
+	if v, ok := c.lineTyped(path, text); ok {
+		if canon, err := c.a.canonText(v); err == nil {
+			return strconv.Itoa(int(v.Type().Base().Kind())) + newline + canon
+		}
+	}
+	return flatText(text)
 }
 
 // lineType is the declared type of the value at path in the base, or of an item of the
@@ -264,7 +284,7 @@ func (c *undoCheck) lines(s *Snapshot) map[string]string {
 				before = append(before, q)
 			}
 		}
-		out[path] = flatText(text) + newline + strings.Join(before, newline)
+		out[path] = c.lineValue(path, text) + newline + strings.Join(before, newline)
 	}
 	return out
 }

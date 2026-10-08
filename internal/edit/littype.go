@@ -21,6 +21,8 @@ type Typer struct {
 	marks *symMarks    // what the applier keeps of the symbols typed, nil for none
 	json  bool         // the value goes into a JSON source, its Durations in whole units
 	scope *types.Field // the field whose wire rules FromJSON and those units follow, nil for none
+	// spelled keeps the tokens a Source spelled its numbers and strings in, nil for none
+	spelled spellings
 }
 
 // Value is lit typed as a value of t; a value that does not fit is a *ValueError (V1).

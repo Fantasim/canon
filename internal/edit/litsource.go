@@ -62,19 +62,20 @@ func (st *srcTyping) expr(e syntax.Expr, t types.Type) (value.Value, error) {
 	et := present(t)
 	if _, isName := e.(*syntax.IdentExpr); dependent(et) && !isName {
 		if v, ok := st.asWritten(e, et); ok {
+			st.spell(e, v)
 			return v, nil
 		}
 		return nil, st.wrong(e, et, detailDependent)
 	}
 	switch e.(type) {
 	case *syntax.IntLit:
-		return st.intLit(e, et)
+		return st.token(e, et, st.intLit)
 	case *syntax.FloatLit:
-		return st.floatLit(e, et)
+		return st.token(e, et, st.floatLit)
 	case *syntax.DurationLit:
 		return st.durLit(e, et)
 	case *syntax.StringLit, *syntax.RawStringLit:
-		return st.strLit(e, et)
+		return st.token(e, et, st.strLit)
 	case *syntax.BoolLit:
 		return st.boolLit(e, et)
 	case *syntax.IdentExpr:

@@ -13,9 +13,10 @@ import (
 // M7): bare members, cases and keys, records without the fields left or equal to their
 // defaults. The text is laid out canonically where it is spliced (API-03).
 type canonPrinter struct {
-	a   *applier
-	b   strings.Builder
-	err error
+	a     *applier
+	b     strings.Builder
+	err   error
+	notes spellings // the old value's tokens as written, for an Undo (DECISIONS 337)
 }
 
 // canonText is v as a Canon literal (API.md M7).
@@ -25,7 +26,21 @@ func (a *applier) canonText(v value.Value) (string, error) {
 	return p.b.String(), p.err
 }
 
+// spelling is the token v is printed as, when not canonical: as the restored source or an
+// operation's Source wrote it.
+func (p *canonPrinter) spelling(v value.Value) (string, bool) {
+	if text, ok := p.notes[v]; ok {
+		return text, true
+	}
+	text, ok := p.a.spelled[v]
+	return text, ok
+}
+
 func (p *canonPrinter) value(v value.Value) {
+	if text, ok := p.spelling(v); ok {
+		p.b.WriteString(text)
+		return
+	}
 	switch x := v.(type) {
 	case *value.Str:
 		p.b.WriteString(canonQuote(x.V))
