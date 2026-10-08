@@ -50,6 +50,12 @@ func (r rootRef) lockName() string {
 	return r.pkg.Path + dotSeg + r.obj.Name()
 }
 
+// at is the root as a path with no segment: what an edit keeps of it across its operations, so
+// that no operation's analysis outlives the next one.
+func (r rootRef) at() Path {
+	return Path{Package: r.pkg.Path, Root: r.obj.Name()}
+}
+
 // qualified is the root in path form, `package:name`.
 func (r rootRef) qualified() string {
 	return r.pkg.Path + packageMark + r.obj.Name()

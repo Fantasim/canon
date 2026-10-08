@@ -95,7 +95,7 @@ func (a *applier) comparedRoots(ops []Operation, touched []string) []Path {
 		set[Path{Package: p.Package, Root: p.Root}.String()] = Path{Package: p.Package, Root: p.Root}
 	}
 	for _, r := range a.named {
-		add(Path{Package: r.pkg.Path, Root: r.obj.Name()})
+		add(r)
 	}
 	for _, op := range ops {
 		if p, err := Parse(op.Path); err == nil && p.Package != "" {

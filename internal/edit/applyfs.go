@@ -24,6 +24,7 @@ type fileState struct {
 	origin       string // the base path cur descends from, through edits and Renames (N8)
 	checked      bool   // its layout was judged (M9)
 	normalized   bool   // it was not in canonical layout: normalized first (M9)
+	fixed        bool   // cur is what Rewrite printed from a fixed point: one too (API.md M5)
 	steps        []writeStep
 	tree         *jsonsrc.Node // its JSON document, parsed from treeOf
 	treeOf       []byte

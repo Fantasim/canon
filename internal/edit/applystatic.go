@@ -86,7 +86,7 @@ func (a *applier) sourceRoot(p Path) (rootRef, bool) {
 	if !isLet || !visible(root.obj.File().Src.Path) {
 		return rootRef{}, false
 	}
-	a.named = append(a.named, root)
+	a.named = append(a.named, root.at())
 	return root, true
 }
 

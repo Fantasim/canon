@@ -144,10 +144,10 @@ type applier struct {
 	omit        []string        // the fields a SetCase leaves out: its refinements refuse them (E14)
 	step        int             // the operation being applied, cascadeStep for the cascades (M6 tests)
 
-	multi, dependent, renamed bool      // what verifiedUndo needs of the request (noteUndo)
-	allowErrors               bool      // the request's AllowErrors: an id it adds may stay unlocked (E20)
-	named                     []rootRef // the roots its operations name
-	nameClash                 string    // Plan.NameClash
+	multi, dependent, renamed bool   // what verifiedUndo needs of the request (noteUndo)
+	allowErrors               bool   // the request's AllowErrors: an id it adds may stay unlocked (E20)
+	named                     []Path // the roots its operations name
+	nameClash                 string // Plan.NameClash
 	nameEdits                 map[string]NameEdit
 	spelled                   spellings
 }
@@ -320,7 +320,7 @@ func (a *applier) finish() *Plan {
 // noteUndo records what verifiedUndo needs of x: its root, a Rename, and, in a request of several
 // operations, whether it touches a dependent field or a driver (log-2026-09-29 U-E22-r).
 func (a *applier) noteUndo(x *opCtx) {
-	a.named = append(a.named, x.res.root)
+	a.named = append(a.named, x.res.root.at())
 	a.renamed = a.renamed || x.op.Kind == OpRename
 	if a.multi && !a.dependent {
 		a.dependent = x.touchesDependent()

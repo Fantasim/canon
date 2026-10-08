@@ -294,11 +294,17 @@ func (a *applier) rewriteCanon(display string, changes []format.Change) error {
 	if f == nil || s == nil || !bytes.Equal(f.Src.Content, s.cur) {
 		return fmt.Errorf(fmtFile, errNoTree, display)
 	}
-	out, err := format.Rewrite(f, roleOf(display), changes)
+	role := roleOf(display)
+	if s.fixed {
+		format.Adopt(f, role) // cur's tree, parsed again by the settle, is not judged whole again (M5)
+	}
+	out, err := format.Rewrite(f, role, changes)
 	if err != nil {
 		return fmt.Errorf(fmtFileErr, display, err)
 	}
 	s.wrote(out, func() []region { return canonRegions(f, changes) })
+	fixed, err := format.Canonical(f, role) // Rewrite judged f: from a fixed point, out is one (M5)
+	s.fixed = err == nil && fixed
 	s.reprinted(func() bool {
 		return !slices.ContainsFunc(changes, func(c format.Change) bool { return c.Kind != format.Replace })
 	})

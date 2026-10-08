@@ -60,7 +60,7 @@ func (s *fileState) wrote(after []byte, regions func() []region) {
 		}
 		s.steps = append(s.steps, writeStep{before: s.cur, after: after, regions: rs})
 	}
-	s.cur = after
+	s.cur, s.fixed = after, false
 	if after == nil {
 		s.origin = ""
 	}
