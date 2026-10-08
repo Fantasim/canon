@@ -9,13 +9,19 @@ import (
 	"github.com/fantasim/canonlang/internal/eval"
 )
 
-// costCase is a program whose let n does work proportional to a size, by name.
+// costCase is a program whose let n does work proportional to a size, by name; lib, when set,
+// is the source of each package of costLibs the program imports.
 type costCase struct {
 	name   string
 	source func(n int) string
+	lib    func(pkg string, n int) string
 }
 
-// costCases are element assignment loops and field reads through a ref, at a size.
+// costLibs are the packages a case with a lib imports.
+var costLibs = []string{"b", "c"}
+
+// costCases are element assignment loops, one merging imported tables, and field reads through
+// a ref, at a size.
 var costCases = []costCase{
 	{"mapAppend", func(n int) string {
 		return fmt.Sprintf(`/// A.
@@ -35,7 +41,7 @@ fn dupes(xs: [Int]) -> Int {
 /// N.
 let n: Int = dupes([i for i in 0..%d])
 `, n)
-	}},
+	}, nil},
 	{"mapReplace", func(n int) string {
 		return fmt.Sprintf(`/// A.
 package a
@@ -52,7 +58,7 @@ fn bump(m: {Int: Int}) -> Int {
 /// N.
 let n: Int = bump({ i: i for i in 0..%d })
 `, n)
-	}},
+	}, nil},
 	{"listSet", func(n int) string {
 		return fmt.Sprintf(`/// A.
 package a
@@ -69,7 +75,7 @@ fn bump(xs: [Int]) -> Int {
 /// N.
 let n: Int = bump([i for i in 0..%d])
 `, n)
-	}},
+	}, nil},
 	{"refRead", func(n int) string {
 		var src strings.Builder
 		src.WriteString("/// A.\npackage a\n\n/// Row.\nrecord Row {\n")
@@ -102,6 +108,38 @@ fn sum() -> Int {
 let n: Int = sum()
 `, strings.Join(reads, " + "))
 		return src.String()
+	}, nil},
+	{"mergeImported", func(int) string {
+		return `/// A.
+package a
+
+import b
+import c
+
+/// The rows of every imported table, the first of each key kept.
+fn merge() -> {String: String} {
+  var m: {String: String} = {}
+  for t in [b.names, b.more, c.names, c.more] {
+    for k, v in t {
+      if not (k in m) { m[k] = v }
+    }
+  }
+  return m
+}
+
+/// N.
+let n: Int = merge().len()
+`
+	}, func(pkg string, n int) string {
+		return fmt.Sprintf(`/// L.
+package %[1]s
+
+/// Names, the same keys in every package.
+let names: {String: String} = { "k{i}": "%[1]s{i}" for i in 0..%[2]d }
+
+/// More names, keys of this package only.
+let more: {String: String} = { "%[1]s{i}": "%[1]s{i}" for i in 0..%[2]d }
+`, pkg, n)
 	}},
 }
 
@@ -115,7 +153,13 @@ const (
 // costBuild builds case c at size n.
 func costBuild(t testing.TB, c costCase, n int) *build {
 	t.Helper()
-	b := runBuild(t, parseFiles(t, []string{"a/a.canon"}, [][]byte{[]byte(c.source(n))}), eval.Options{})
+	names, files := []string{"a/a.canon"}, [][]byte{[]byte(c.source(n))}
+	if c.lib != nil {
+		for _, pkg := range costLibs {
+			names, files = append(names, pkg+"/"+pkg+".canon"), append(files, []byte(c.lib(pkg, n)))
+		}
+	}
+	b := runBuild(t, parseFiles(t, names, files), eval.Options{})
 	if _, ok := b.values[eval.Root{Pkg: "a", Name: "n"}]; !ok {
 		t.Fatalf("%s at %d: n is poisoned\n%s", c.name, n, b.findings(t))
 	}
@@ -130,7 +174,7 @@ const (
 	costGrowth = 2
 )
 
-// EVALUATION.md §4.1, DECISIONS 199: element assignments and ref reads allocate linearly.
+// EVALUATION.md §4.1, DECISIONS 199: element assignments, `in` tests and ref reads allocate linearly.
 func TestCostScale(t *testing.T) {
 	for _, c := range costCases {
 		small := allocated(t, c, costBase)

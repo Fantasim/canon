@@ -22,7 +22,8 @@ copy-on-write buffers internal to `eval`. Neither forbids updating a collection 
   place; either way the frame then owns the result (by var and pointer identity). Nested
   collections below the root are always copied.
 - **Every read of the var clears ownership, except a peek**: the receiver of an index read `v[k]`
-  and of a built-in in `std.Peeks` (`len`, `isEmpty`, `get`, `contains`, `hasKey`), which return a
+  and of a built-in in `std.Peeks` (`len`, `isEmpty`, `get`, `contains`, `hasKey`), the
+  collection operand of `x in xs` (2026-10-08: `contains` by another spelling), which return a
   scalar, an element or a fresh copy and keep nothing of the receiver. A receiver the checker
   converts is never a peek; lambda captures, call arguments, returns, operands, `for`, `match` and
   literals holding the var all clear it. The peek mark is consumed by the read it marks.

@@ -28,20 +28,31 @@ func (f *frame) disown(obj check.Object) {
 	delete(f.owns, obj)
 }
 
-// peekRecv is recv(x), the receiver of an index read or of a std.Peeks method, read as a peek:
-// it leaves a var's collection owned, unless the checker converts x, which may keep or mark it.
+// peekRecv is recv(x), the receiver of an index read or of a std.Peeks method, read as a peek.
 func (r *run) peekRecv(x syntax.Expr) value.Value {
+	return r.peeked(x, r.recv)
+}
+
+// peekIn is the collection operand x of `e in x`, read as a peek: the test is a Bool and keeps
+// nothing of it, as the receiver of `contains` (std.Peeks).
+func (r *run) peekIn(x syntax.Expr) value.Value {
+	return r.peeked(x, r.eval)
+}
+
+// peeked is read(x) with x read as a peek: it leaves a var's collection owned, unless the
+// checker converts x, which may keep or mark it.
+func (r *run) peeked(x syntax.Expr, read func(syntax.Expr) value.Value) value.Value {
 	r.peek = nil
 	if id := syntax.Unparen(x); r.ev.info.Conv[id] == nil {
 		r.peek = id
 	}
-	v := r.recv(x)
+	v := read(x)
 	r.peek = nil
 	return v
 }
 
 // readVar is the value obj is bound to, read at at: the frame keeps owning it only when at is
-// the peek peekRecv marked, a mark the read consumes.
+// the peek peeked marked, a mark the read consumes.
 func (r *run) readVar(obj check.Object, at syntax.Expr) (value.Value, bool) {
 	v, ok := r.fr.vars[obj]
 	if at != nil && at == r.peek {

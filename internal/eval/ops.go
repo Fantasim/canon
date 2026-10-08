@@ -47,6 +47,8 @@ func evalBinary(r *run, e syntax.Expr, _ *vpath) value.Value {
 			return r.eval(x.Y)
 		}
 		return a
+	case syntax.KwIn:
+		return r.inOp(x)
 	default:
 	}
 	a := r.eval(x.X)
@@ -60,14 +62,19 @@ func evalBinary(r *run, e syntax.Expr, _ *vpath) value.Value {
 	if r.cmp != nil && r.cmp.at == e {
 		r.cmp.left, r.cmp.right = a, b
 	}
-	if x.Op == syntax.KwIn {
-		return r.inOp(x, a, b)
-	}
 	return r.binop(x.Op, a, b, e, r.typeOf(e))
 }
 
-// inOp is `x in xs`; a table or keyed list takes an element, never a key (STDLIB.md §5, DECISIONS 317).
-func (r *run) inOp(x *syntax.BinaryExpr, a, b value.Value) value.Value {
+// inOp is `x in xs`, xs a peek; a table or keyed list takes an element (STDLIB.md §5, DECISIONS 317).
+func (r *run) inOp(x *syntax.BinaryExpr) value.Value {
+	a := r.eval(x.X)
+	if a == nil {
+		return nil
+	}
+	b := r.peekIn(x.Y)
+	if b == nil {
+		return nil
+	}
 	r.site = r.span(x)
 	in, ok := r.memberOf(a, b)
 	return r.boolOr(in, ok, r.prov(x, value.ProvComputed))

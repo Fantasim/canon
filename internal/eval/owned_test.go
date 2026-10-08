@@ -104,6 +104,63 @@ var ownedCases = []struct {
   return [s, "{m}"]`, `["{1: 1, 2: 2}", "{1: 9, 2: 2}"]`},
 	{"each recursive frame owns its own var", "[{Int: Int}]", `
   return [fill(2), grow({}, 2)]`, "[{0: 2, 1: 2, 2: 1, 3: 2}, {2: 2, 102: 3}]"},
+	{"an in test keeps the map owned, a let taken after it keeps its value", "[String]", `
+  var m: {Int: Int} = {}
+  m[1] = 1
+  let a = 2 in m
+  m[2] = 2
+  let c = m
+  let b = 2 in m
+  m[3] = 3
+  m[2] = 9
+  return ["{a}", "{b}", "{c}", "{m}"]`, `["false", "true", "{1: 1, 2: 2}", "{1: 1, 2: 9, 3: 3}"]`},
+	{"a map observed in a first-wins loop keeps the rows it had", "[{String: Int}]", `
+  var m: {String: Int} = {}
+  var seen: [{String: Int}] = []
+  for t in [{ "a": 1, "b": 2 }, { "b": 3, "c": 4 }] {
+    for k, v in t {
+      if not (k in m) { m[k] = v }
+    }
+    seen += [m]
+  }
+  m["a"] = 0
+  return seen + [m]`, `[{"a": 1, "b": 2}, {"a": 1, "b": 2, "c": 4}, {"a": 0, "b": 2, "c": 4}]`},
+	{"an in test of a list keeps the list a let holds", "[[Int]]", `
+  var xs = [1, 2, 3]
+  xs[0] = 0
+  let ys = xs
+  if 2 in xs { xs[1] = 7 }
+  if 7 in xs { xs[2] = 8 }
+  return [ys, xs]`, "[[0, 2, 3], [0, 7, 8]]"},
+	{"an in test of a keyed list keeps the entry read before", "[String]", `
+  var ks: [Item] keyed by k = [{ k: "k{i}" } for i in 0..20]
+  ks["k1"] = { k: "k1", n: 1 }
+  let e = ks["k1"]
+  if e in ks { ks["k1"] = { k: "k1", n: 2 } }
+  let f = ks["k1"]
+  let has = f in ks
+  return ["{e.n}", "{f.n}", "{has}"]`, `["1", "2", "true"]`},
+	{"the map on the left of in is held by the list it is tested against", "[String]", `
+  var m: {Int: Int} = {}
+  m[1] = 1
+  let ms = [m]
+  let had = m in ms
+  m[1] = 9
+  return ["{ms[0]}", "{m}", "{had}"]`, `["{1: 1}", "{1: 9}", "true"]`},
+	{"a lambda created before an in test keeps the map it captured", "[Int]", `
+  var m: {Int: Int} = {}
+  m[1] = 1
+  let g: fn(Int) -> Int = k => m[k]
+  if 1 in m { m[1] = 5 }
+  return [g(1), m[1]]`, "[1, 5]"},
+	{"an in test inside a lambda reads the map it captured", "[String]", `
+  var m: {Int: Int} = {}
+  m[1] = 1
+  let g: fn(Int) -> Bool = k => k in m
+  m[2] = 2
+  m[1] = 9
+  let now = 2 in m
+  return ["{g(2)}", "{now}", "{g(1)}"]`, `["false", "true", "true"]`},
 }
 
 // ownedPrelude declares what ownedCases call: records, a table, a function returning its
