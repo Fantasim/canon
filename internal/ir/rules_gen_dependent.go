@@ -162,7 +162,7 @@ func readsField(e *Emit, fields []*Field, f *Field) bool {
 
 // unreadDependent reports a dependent type in t, a literal union's base included, or a dependent map: a map's key or value is the loader's limit (CODEGEN.md §5.9, DECISIONS 312), except where the mode's decoder refuses every map (MapField's).
 func unreadDependent(e *Emit, t *TypeRef) bool {
-	return (e.Mode == ModeData || !decodedHolds(t, isMap)) && typeHolds(t, func(x *TypeRef) bool { return isApp(x) || x.Kind == types.DepMap })
+	return (readsMaps(e) || !decodedHolds(t, isMap)) && typeHolds(t, func(x *TypeRef) bool { return isApp(x) || x.Kind == types.DepMap })
 }
 
 // DiscFields are the fields a loader, or a baked literal, reads from fields to app's discriminant, in order: the argument's then the match's wire path, through earlier fields of records held by value, none optional (check's E3806) or a ref (a WIRE.md §5.9 load-time resolution CODEGEN.md does not write), ending at a field of the discriminant's type; nil for any other argument, a record parameter's (§5.7) or a dependent map binder's (§4.2) included (TYPES.md §11.1, §11.2).

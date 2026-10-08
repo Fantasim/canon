@@ -14,7 +14,7 @@ type goImportUse struct {
 	pkgs map[string]bool
 }
 
-// importUse walks what gen/go writes (CODEGEN.md §2.8): enums need strconv, enums and containers iter, the baked data sync, a -0.0 literal math (decision 202), each type its kind's package, translated bodies their helpers; data mode's loaders rt, encoding/json, fmt, strings and slices, its snapshot sync/atomic; another package's class built or forwarded, its package and what it names (DECISIONS 323).
+// importUse walks what gen/go writes (CODEGEN.md §2.8): enums need strconv, enums and containers iter, the baked data sync, a -0.0 literal math (decision 202), each type its kind's package, translated bodies their helpers; data mode's loaders and types mode's decoders rt, encoding/json, fmt, strings and slices, types mode's unicode/utf8 too, data mode's snapshot sync/atomic; another package's class built or forwarded, its package and what it names (DECISIONS 323).
 func (pl *GoNamePlan) importUse() *goImportUse {
 	u := &goImportUse{own: pl.p.Name, std: map[string]bool{}, pkgs: map[string]bool{}}
 	u.std[goMath] = pl.writesNegZero()
@@ -36,6 +36,7 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 			u.std[goAtomic] = u.std[goAtomic] || v.Reload
 		}
 	}
+	pl.typesImports(u)
 	for _, fn := range pl.p.Fns {
 		u.fn(fn, false)
 	}
@@ -46,6 +47,14 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 		u.foreignClass(row.Record, row.Record.Pkg)
 	}
 	return u
+}
+
+// typesImports marks what types mode's public decoders and their helpers write, when the package has a class to decode (CODEGEN.md §5.13).
+func (pl *GoNamePlan) typesImports(u *goImportUse) {
+	if pl.e.Mode == ModeTypes && len(pl.data.decoded) > 0 {
+		u.mark(goDataImports...)
+		u.mark(goUTF8)
+	}
 }
 
 // foreignClass marks what building another package's class through its hook, or forwarding its methods from a row, writes: that package, and what its stored fields, fns and branches name, its lists, maps and keyed lists aside, which are that package's rt (CODEGEN.md §2.8, §5.9, §5.14).

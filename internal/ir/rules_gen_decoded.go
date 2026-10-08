@@ -46,10 +46,10 @@ func (s *stage) checkDecodedType(u *unit, es *emitSite, site typeSite) {
 	}
 }
 
-// unreadMap accepts a map e's loader cannot read: any in a types-mode decoder (nlohmann::json keeps no key order, CODEGEN.md §5.13), or in a data-mode loader one whose key is none WIRE.md §5.8 gives a wire key; a dependent key or value is DependentType's (unreadDependent).
+// unreadMap accepts a map e's loader cannot read: any where its decoders read no map (readsMaps), else one whose key is none WIRE.md §5.8 gives a wire key; a dependent key or value is DependentType's (unreadDependent).
 func unreadMap(e *Emit) func(*TypeRef) bool {
 	return func(t *TypeRef) bool {
-		return isMap(t) && (e.Mode != ModeData || t.Kind == types.Map && !readableKey(t.Key) && !isApp(t.Key))
+		return isMap(t) && (!readsMaps(e) || t.Kind == types.Map && !readableKey(t.Key) && !isApp(t.Key))
 	}
 }
 

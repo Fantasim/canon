@@ -210,7 +210,7 @@ func typePkg(t ir.Type) string {
 	return ""
 }
 
-// importPkg imports another Canon package's go emit (CODEGEN.md §2.8).
+// importPkg imports another Canon package's go emit, under its alias `<name>pkg` when its name is a Go predeclared identifier (CODEGEN.md §2.8, §3.4).
 func (g *gen) importPkg(pkg string) string {
 	for _, ref := range g.p.Imports {
 		if ref.Name != pkg {
@@ -218,7 +218,7 @@ func (g *gen) importPkg(pkg string) string {
 		}
 		for _, e := range ref.Emits {
 			if e.Target == ir.TargetGo {
-				return g.use(e.GoImport, e.GoPackage)
+				return g.use(e.GoImport, ir.GoImportName(e.GoPackage))
 			}
 		}
 	}

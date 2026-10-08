@@ -50,6 +50,13 @@ const (
 	caseNoVariantFormat  = "a case %s without its variant"
 )
 
+// What types mode finds malformed (ErrMalformed: stage E refuses it first, CODEGEN.md §2.2, §5.13).
+const (
+	typesStoredFnFormat = "%s: a precomputed or lookup export fn, in types mode, which has no data to read"
+	typesComputedFormat = "%s: a computed default, in types mode, which has no data to read"
+	typesInputFormat    = "%s: an input field, in types mode, which writes no LoadInputs"
+)
+
 // The causes of the dependent-type refusals, each ErrMalformed: a caller tells them apart with errors.Is (go.md §3).
 var (
 	errDependentNoDisc   = fmt.Errorf("%w", ErrMalformed)

@@ -114,11 +114,12 @@ func (pl *GoNamePlan) declareSnapshot(top *nameScope) {
 	pl.declare(top, names.Var, pl.p.Name, nil)
 }
 
-// declareDecoders declares the shared JSON helpers, jsonRowID with a table, then decode<T> of each decoded class in declaration order (CODEGEN.md §6.1; log-2026-09-24 "Loader parity").
+// declareDecoders declares types mode's public decoders, the shared JSON helpers, jsonRowID with a table, then decode<T> of each decoded class in declaration order (CODEGEN.md §5.13, §6.1; log-2026-09-24 "Loader parity").
 func (pl *GoNamePlan) declareDecoders(top *nameScope) {
 	if len(pl.data.decoded) == 0 {
 		return
 	}
+	pl.declarePublicDecoders(top)
 	for _, h := range goJSONHelpers {
 		pl.declare(top, h, pl.p.Name, nil)
 	}
@@ -138,6 +139,26 @@ func (pl *GoNamePlan) declareDecoders(top *nameScope) {
 		}
 	}
 	pl.declareDependentDecoders(top)
+}
+
+// PublicDecoder is a record's or variant's types-mode decoder, Decode<T> (CODEGEN.md §5.13).
+func (pl *GoNamePlan) PublicDecoder(t Type) string { return goPublicDecode + pl.TypeName(t) }
+
+// declarePublicDecoders declares, in types mode, Decode<T> of each record and variant in declaration order, then the helper they call, and jsonDuration when a decoder reads a source-wire Duration (CODEGEN.md §5.13).
+func (pl *GoNamePlan) declarePublicDecoders(top *nameScope) {
+	if pl.e.Mode != ModeTypes {
+		return
+	}
+	for _, t := range pl.p.Types {
+		switch t.(type) {
+		case *Record, *Variant:
+			pl.declareFrom(top, t.QName(), t, derivation{t, func() string { return pl.PublicDecoder(t) }})
+		}
+	}
+	pl.declare(top, goJSONDocument, pl.p.Name, nil)
+	if pl.ReadsDurations() {
+		pl.declare(top, goJSONDuration, pl.p.Name, nil)
+	}
 }
 
 // classes are the package's records, and each variant followed by its cases with fields, in declaration order.

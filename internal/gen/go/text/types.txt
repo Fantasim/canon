@@ -1,0 +1,287 @@
+{{define "publicDecoder"}}func {{.Name}}({{.L.Raw}} []byte) (*{{.Type}}, error) {
+	{{.L.R}}, {{.L.Err}} := jsonDocument({{.Quoted}}, {{.L.Raw}})
+	if {{.L.Err}} != nil {
+		return nil, {{.L.Err}}
+	}
+	{{.L.Out}} := &{{.Type}}{}
+	if {{.L.Err}} := {{.Func}}({{.Quoted}}, "$.", {{.L.R}}, {{.L.Out}}); {{.L.Err}} != nil {
+		return nil, {{.L.Err}}
+	}
+	return {{.L.Out}}, nil
+}
+
+{{end}}
+{{define "jsonDocument"}}// jsonDocument is raw without a UTF-8 byte order mark, which must then be one JSON value read as
+// a source file is: UTF-8, no escaped unpaired surrogate, no object holding a key twice, nothing
+// nested deeper than 512 arrays and objects. The first finding is the error, at its path.
+func jsonDocument({{.L.Name}} string, {{.L.Raw}} []byte) ({{.JSON}}.RawMessage, error) {
+	if len({{.L.Raw}}) >= 3 && string({{.L.Raw}}[:3]) == "\xef\xbb\xbf" {
+		{{.L.Raw}} = {{.L.Raw}}[3:]
+	}
+	if !{{.JSON}}.Valid({{.L.Raw}}) {
+		return nil, {{.FMT}}.Errorf("%s: $: invalid JSON", {{.L.Name}})
+	}
+	// level is one open array or object: an object's keys so far, decoded (a set past 32 of them), and
+	// its current key as written; an array's current index.
+	type level struct {
+		object  bool
+		keys    [][]byte
+		keySet  map[string]bool
+		key     []byte
+		index   int
+		wantKey bool
+	}
+	// seen reports key among an object's keys so far, and adds it.
+	seen := func(open *level, key []byte) bool {
+		if open.keySet != nil {
+			if open.keySet[string(key)] {
+				return true
+			}
+			open.keySet[string(key)] = true
+			return false
+		}
+		for _, earlier := range open.keys {
+			if string(earlier) == string(key) {
+				return true
+			}
+		}
+		if open.keys = append(open.keys, key); len(open.keys) > 32 {
+			open.keySet = map[string]bool{}
+			for _, earlier := range open.keys {
+				open.keySet[string(earlier)] = true
+			}
+		}
+		return false
+	}
+	var levels []level
+	pathHere := func() string {
+		var where {{.Strings}}.Builder
+		where.WriteString("$")
+		for _, open := range levels {
+			switch {
+			case !open.object:
+				{{.FMT}}.Fprintf(&where, "[%d]", open.index)
+			case open.key != nil:
+				where.WriteString(".")
+				where.Write(open.key)
+			}
+		}
+		return where.String()
+	}
+	hexValue := func(digits []byte) (code rune) {
+		for _, digit := range digits {
+			switch {
+			case digit <= '9':
+				code = code<<4 | rune(digit-'0')
+			case digit >= 'a':
+				code = code<<4 | rune(digit-'a'+10)
+			default:
+				code = code<<4 | rune(digit-'A'+10)
+			}
+		}
+		return code
+	}
+	pairedSurrogates := func(text []byte) bool {
+		for at := 0; at < len(text); at++ {
+			if text[at] != '\\' {
+				continue
+			}
+			at++
+			if text[at] != 'u' {
+				continue
+			}
+			switch code := hexValue(text[at+1 : at+5]); {
+			case code >= 0xdc00 && code <= 0xdfff:
+				return false
+			case code >= 0xd800 && code <= 0xdbff:
+				if at+10 >= len(text) || text[at+5] != '\\' || text[at+6] != 'u' {
+					return false
+				}
+				if low := hexValue(text[at+7 : at+11]); low < 0xdc00 || low > 0xdfff {
+					return false
+				}
+				at += 10
+			default:
+				at += 4
+			}
+		}
+		return true
+	}
+	for at := 0; at < len({{.L.Raw}}); at++ {
+		switch {{.L.Raw}}[at] {
+		case '{', '[':
+			if len(levels) >= 512 {
+				return nil, {{.FMT}}.Errorf("%s: %s: nested deeper than 512 levels", {{.L.Name}}, pathHere())
+			}
+			open := level{object: {{.L.Raw}}[at] == '{', wantKey: {{.L.Raw}}[at] == '{'}
+			if len(levels) < cap(levels) { // reuse the key list of the last level closed here
+				open.keys = levels[:len(levels)+1][len(levels)].keys[:0]
+			}
+			levels = append(levels, open)
+		case '}', ']':
+			levels = levels[:len(levels)-1]
+		case ',':
+			if top := &levels[len(levels)-1]; top.object {
+				top.wantKey = true
+			} else {
+				top.index++
+			}
+		case '"':
+			end, escaped := at+1, false
+			for {{.L.Raw}}[end] != '"' {
+				if {{.L.Raw}}[end] == '\\' {
+					end, escaped = end+1, true
+				}
+				end++
+			}
+			text := {{.L.Raw}}[at+1 : end]
+			if len(levels) > 0 && levels[len(levels)-1].wantKey {
+				top := &levels[len(levels)-1]
+				top.key, top.wantKey = text, false
+				key := text
+				if escaped {
+					var decoded string
+					_ = {{.JSON}}.Unmarshal({{.L.Raw}}[at:end+1], &decoded)
+					key = []byte(decoded)
+				}
+				if seen(top, key) {
+					return nil, {{.FMT}}.Errorf("%s: %s: repeated key", {{.L.Name}}, pathHere())
+				}
+			}
+			if !{{.UTF8}}.Valid(text) {
+				return nil, {{.FMT}}.Errorf("%s: %s: not UTF-8", {{.L.Name}}, pathHere())
+			}
+			if escaped && !pairedSurrogates(text) {
+				return nil, {{.FMT}}.Errorf("%s: %s: unpaired surrogate", {{.L.Name}}, pathHere())
+			}
+			at = end
+		}
+	}
+	return {{.L.Raw}}, nil
+}
+
+{{end}}
+{{define "jsonDuration"}}// jsonDuration reads a source-wire Duration of unit milliseconds per unit at path+key: any number
+// token whose exact value is a whole number of milliseconds within the Duration range, decided
+// from its digits in time linear in the token.
+func jsonDuration({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Raw}} {{.JSON}}.RawMessage, {{.L.Unit}} int64) (int64, error) {
+	switch {
+	case string({{.L.Raw}}) == "null":
+		return 0, {{.FMT}}.Errorf("%s: %s%s: null", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	case len({{.L.Raw}}) == 0 || {{.L.Raw}}[0] != '-' && ({{.L.Raw}}[0] < '0' || {{.L.Raw}}[0] > '9'):
+		return 0, {{.FMT}}.Errorf("%s: %s%s: expected a number", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	outOfRange := func() error {
+		return {{.FMT}}.Errorf("%s: %s%s: expected a duration within the Duration range", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	notWhole := func() error {
+		return {{.FMT}}.Errorf("%s: %s%s: expected a whole number of milliseconds", {{.L.Name}}, {{.L.Path}}, {{.L.Key}})
+	}
+	negative := {{.L.Raw}}[0] == '-'
+	number := {{.L.Raw}}
+	if negative {
+		number = number[1:]
+	}
+	mantissa, exponent := number, []byte(nil)
+	for at, char := range number {
+		if char == 'e' || char == 'E' {
+			mantissa, exponent = number[:at], number[at+1:]
+			break
+		}
+	}
+	integral, fraction := mantissa, []byte(nil)
+	for at, char := range mantissa {
+		if char == '.' {
+			integral, fraction = mantissa[:at], mantissa[at+1:]
+			break
+		}
+	}
+	// The value is digits × 10^scale units: the mantissa without its point, leading or trailing zeros.
+	digits := append(append(make([]byte, 0, len(integral)+len(fraction)), integral...), fraction...)
+	for len(digits) > 0 && digits[0] == '0' {
+		digits = digits[1:]
+	}
+	scale := -int64(len(fraction))
+	for len(digits) > 0 && digits[len(digits)-1] == '0' {
+		digits, scale = digits[:len(digits)-1], scale+1
+	}
+	if len(digits) == 0 {
+		return 0, nil
+	}
+	exponentNegative := len(exponent) > 0 && exponent[0] == '-'
+	if len(exponent) > 0 && (exponent[0] == '-' || exponent[0] == '+') {
+		exponent = exponent[1:]
+	}
+	for len(exponent) > 0 && exponent[0] == '0' {
+		exponent = exponent[1:]
+	}
+	if len(exponent) > 15 { // beyond any count of digits: the value is huge or tiny
+		if exponentNegative {
+			return 0, notWhole()
+		}
+		return 0, outOfRange()
+	}
+	shift := int64(0)
+	for _, char := range exponent {
+		shift = shift*10 + int64(char-'0')
+	}
+	if exponentNegative {
+		shift = -shift
+	}
+	scale += shift
+	if int64(len(digits))-1+scale >= 13 { // at least 10^13 ms: past the range, ±9223372036854 ms
+		return 0, outOfRange()
+	}
+	// product is digits × unit in decimal; its last -scale digits are the fraction of a millisecond.
+	product := make([]byte, len(digits)+20)
+	start, carry := len(product), uint64(0)
+	for at := len(digits) - 1; at >= 0; at-- {
+		step := uint64(digits[at]-'0')*uint64({{.L.Unit}}) + carry
+		start--
+		product[start], carry = byte('0'+step%10), step/10
+	}
+	for ; carry > 0; carry /= 10 {
+		start--
+		product[start] = byte('0' + carry%10)
+	}
+	product = product[start:]
+	whole, part := product, []byte(nil)
+	switch {
+	case scale < 0 && -scale >= int64(len(product)):
+		whole, part = nil, product
+	case scale < 0:
+		whole, part = product[:int64(len(product))+scale], product[int64(len(product))+scale:]
+	}
+	for len(whole) > 0 && whole[0] == '0' {
+		whole = whole[1:]
+	}
+	zeros := int64(0) // the trailing zeros a positive scale adds
+	if scale > 0 {
+		zeros = scale
+	}
+	if int64(len(whole))+zeros > 13 {
+		return 0, outOfRange()
+	}
+	millis := int64(0)
+	for _, char := range whole {
+		millis = millis*10 + int64(char-'0')
+	}
+	for ; zeros > 0; zeros-- {
+		millis *= 10
+	}
+	fractional := false
+	for _, char := range part {
+		fractional = fractional || char != '0'
+	}
+	switch {
+	case millis > 9223372036854 || millis == 9223372036854 && fractional:
+		return 0, outOfRange()
+	case fractional:
+		return 0, notWhole()
+	case negative:
+		return -millis, nil
+	}
+	return millis, nil
+}
+
+{{end}}

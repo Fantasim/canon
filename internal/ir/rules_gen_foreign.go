@@ -18,6 +18,7 @@ func init() {
 	foreignReadJudges[TargetGo][ModeData] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeRefUnions, judgeInlineFolds, judgeLookupParams}
 	foreignReadJudges[TargetCpp][ModeData] = []foreignJudge{judgeMaps, judgeDependents, judgeInlineFolds, judgeLookupParams}
 	foreignReadJudges[TargetCpp][ModeTypes] = []foreignJudge{judgeMaps, judgeDependents, judgeCppDefaults}
+	foreignReadJudges[TargetGo][ModeTypes] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeRefUnions, judgeGoDefaults}
 	ts := []foreignJudge{judgeTSFields, judgeLookupParams}
 	foreignReadJudges[TargetTS][ModeData], foreignReadJudges[TargetTS][ModeTypes] = ts, ts
 }
@@ -236,13 +237,7 @@ func judgeLookupParams(_ *stage, u *unit, e *Emit, c any) (diag.Kind, bool) {
 
 // judgeCppDefaults is cppDefault at each field of c: a types-mode decoder writes an absent key's default.
 func judgeCppDefaults(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
-	fields, _ := classBody(c)
-	for _, f := range fields {
-		if kind, bad := cppDefault(e, fields, f); bad {
-			return kind, true
-		}
-	}
-	return 0, false
+	return firstDefault(e, c, cppDefault)
 }
 
 // judgeTSFields is tsField at each field of c, then tsUnreadType at each stored fn's result its reader reads.

@@ -11,10 +11,34 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// decoders writes the loaders' helpers, then a decoder per class a value holds, dependent types last (CODEGEN.md §5.6, §6.1).
+// decoders writes types mode's public decoders and the loaders' helpers, then a decoder per class a value holds, dependent types last (CODEGEN.md §5.6, §5.13, §6.1).
 func (g *gen) decoders() {
 	outer := g.body
 	g.body = bytes.Buffer{}
+	wrote := g.classDecoders()
+	for _, t := range g.p.Types {
+		if x, ok := t.(*ir.Dependent); ok && g.names.Decoded(x) {
+			wrote = true
+			g.decodeDependent(x)
+		}
+	}
+	if g.readers() {
+		wrote = true
+	}
+	decoders := g.body
+	g.body = outer
+	if !wrote {
+		return
+	}
+	if g.isTypes() {
+		g.publicDecoders()
+	}
+	g.helpers()
+	g.body.Write(decoders.Bytes())
+}
+
+// classDecoders writes decode<T> of each decoded record, variant and case, in declaration order, and reports whether it wrote one.
+func (g *gen) classDecoders() bool {
 	wrote := false
 	for _, t := range g.p.Types {
 		switch x := t.(type) {
@@ -31,22 +55,7 @@ func (g *gen) decoders() {
 			}
 		}
 	}
-	for _, t := range g.p.Types {
-		if x, ok := t.(*ir.Dependent); ok && g.names.Decoded(x) {
-			wrote = true
-			g.decodeDependent(x)
-		}
-	}
-	if g.readers() {
-		wrote = true
-	}
-	decoders := g.body
-	g.body = outer
-	if !wrote {
-		return
-	}
-	g.helpers()
-	g.body.Write(decoders.Bytes())
+	return wrote
 }
 
 // decodeFunc and resolveFunc are the plan's names for a class, refusing one the plan never named.
@@ -112,7 +121,7 @@ func (g *gen) decodeBody(b *body) {
 	g.inlineFolds(b)
 	lc := g.lc
 	g.printf(funcOpenFormat, g.decodeFunc(b.key), lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, b.goName)
-	g.openObject(g.expectedKeys(b))
+	g.openObject(g.bodyKeys(b))
 	g.readFields(b)
 	g.printf(returnNil)
 }
@@ -187,21 +196,28 @@ func (g *gen) slotLeaf(owner *body, s *slot) (leaf, []byte) {
 	return l, nil
 }
 
-// readKey reads key of obj, the object at at, into the slot; optional: absent, null or the marker is none (WIRE.md §5.4).
+// readKey reads key of obj, the object at at, into the slot; optional: absent, null or the marker is none; in types mode an absent key takes the field's default (WIRE.md §5.4, CODEGEN.md §5.13).
 func (g *gen) readKey(owner *body, s *slot, obj string, at location, key string) {
 	lc := g.lc
 	l, marker := g.slotLeaf(owner, s)
 	r, loc, quoted := g.temp(tempRaw), at.key(key), strconv.Quote(key)
+	lead := g.absentDefault(s, obj, quoted)
 	if !s.Optional {
+		if lead != "" {
+			g.printf(elseLine)
+		}
 		g.printf(needFormat, r, lc.Err, g.helper(helperNeed), lc.Name, g.locExpr(at), obj, quoted)
 		g.storeRead(s, l, r, loc)
+		if lead != "" {
+			g.printf(closeBrace)
+		}
 		return
 	}
 	cond := ""
 	if marker != nil {
 		cond = g.markerTest(r, marker)
 	}
-	g.printf(mayFormat, r, g.helper(helperMay), obj, quoted, cond)
+	g.printf(lead+mayFormat, r, g.helper(helperMay), obj, quoted, cond)
 	g.storeRead(s, l, r, loc)
 	g.printf(closeBrace)
 }

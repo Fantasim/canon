@@ -1,0 +1,7 @@
+@sovcommon/gotypes/go/gotypes/gotypes.gen.go sovcommon/gotypes/go/gotypes/gotypes.gen.go
+@sovcommon/gotypes/go/gotypes/rt/rt.go sovcommon/gotypes/go/gotypes/rt/rt.go
+features/gotypes/canon.outputs gotypes/canon.outputs
+features/gotypes/out/go/gotypes/gotypes.gen.go gotypes/out/go/gotypes/gotypes.gen.go
+features/gotypes/out/go/gotypes/rt/rt.go gotypes/out/go/gotypes/rt/rt.go
+features/gotypes/out/text/items.json gotypes/out/text/items.json
+features/gotypes/canon.lock gotypes/canon.lock

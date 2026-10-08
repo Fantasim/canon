@@ -11,7 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// readPath reads a field down its key path; an absent object leaves the field missing (WIRE.md §5.5.3).
+// readPath reads a field down its key path; an absent object leaves the field missing, or in types mode takes its default (WIRE.md §5.5.3, CODEGEN.md §5.13).
 func (g *gen) readPath(owner *body, s *slot) {
 	f, lc := s.src, g.lc
 	obj, last := lc.Obj, len(f.WirePath)-1
@@ -25,8 +25,13 @@ func (g *gen) readPath(owner *body, s *slot) {
 		obj, levels = o, append(levels, next)
 	}
 	g.readKey(owner, s, obj, levels[last], f.WirePath[last])
+	def := g.fieldDefault(s)
 	for i := last - 1; i >= 0; i-- {
-		if !s.Optional {
+		switch {
+		case def != nil:
+			g.printf(elseLine)
+			g.writeDefault(s, def)
+		case !s.Optional:
 			g.printf(elseReturnFormat, g.missing(levels[i], strconv.Quote(strings.Join(f.WirePath[i:], dot))))
 		}
 		g.printf(closeBrace)
@@ -294,8 +299,12 @@ func (g *gen) objectKeys(b *body) []string {
 }
 
 // inlineFolds refuses an inline variant a key of which equals another key of its parent but
-// for ASCII letter case: its case decoder reads the parent's object, as gen/cpp refuses it.
+// for ASCII letter case: its case decoder reads the parent's object, as gen/cpp refuses it; a
+// types-mode decoder checks no key, so none folds.
 func (g *gen) inlineFolds(b *body) {
+	if g.isTypes() {
+		return
+	}
 	all := append(g.objectKeys(b), g.objectExtras(b)...)
 	for _, s := range b.slots {
 		v, ok := s.T.Named.(*ir.Variant)

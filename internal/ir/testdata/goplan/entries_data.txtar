@@ -28,6 +28,6 @@ Tier: ID Rank Retired id rank retired
 Tiers: All At Find Len rows
 b.tierFor(): n
 conformance imports: math rt testing
-locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag v values vr want
+locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag unit v values vr want
 package: LoadTiers MakeEntry_Tier Make_Tier TestTierForConformance Tier TierFor TierID Tiers TiersSchema canonCatch decodeTier fmt iter json jsonCell jsonInt jsonKeys jsonMay jsonNeed jsonObject jsonRead jsonRowID jsonSame jsonSlot loadTiers rt slices strings
 0 errors, 0 warnings in 1 package (…)

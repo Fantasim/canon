@@ -1,0 +1,498 @@
+CODEGEN.md §2.1, §2.2, §2.8, §2.9, §5.13, WIRE.md §8.5: a project of go types-mode emits that stage E passes builds, each emit written as two copies under roots with different go_module paths; package a's @text fns render JSON files, which its public decoders read back (gen/go/a/roundtrip_test.go): a none marker, an absent optional, a `T? = d` holding none written null, enums by wire value and by code, maps keyed by enums, records nested and of another package, a keyed list of full rows, a nested table with a retired entry, pairs, bits, `int`, a path, an inline variant, a dependent field, a load.defines ref, units, sized integers, defaults of every constant kind (records and variants of its own package and another's included); then every §5.13 failure kind with its JSON path; WIRE.md §3.1-§3.2's byte rules (UTF-8, repeated keys, unpaired surrogates, nesting deeper than 512); jsonDuration against exact arithmetic and in linear time; fields named like imports (utf8, json); and a benchmark.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+    other: "other"
+  }
+  go_module {
+    gen: "example.com/gen"
+    other: "example.com/other"
+  }
+}
+-- a/kinds.h --
+#define K_A 1
+#define K_B 2
+-- b/b.canon --
+/// B.
+package b
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+  /// Down.
+  y: Int = 7
+}
+
+emit go { out: ["@gen/go/b", "@other/go/b"], mode: types }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Point }
+
+local let kinds = load.defines("kinds.h", prefix: "K_")
+
+/// A flag.
+enum Flag @codes(UInt8) { red = 1, blue = 2 }
+
+/// A rarity.
+enum Rarity { common, rare, series_1 = "series-1" }
+
+/// An element, written as its code.
+enum Element @codes(UInt8) @json(codes) { fire = 1, water = 2 }
+
+/// A kind.
+enum K { one, two }
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// The amount.
+  amount: Int
+}
+
+/// A shape.
+variant Shape @json(tag: "kind") {
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+  /// Nothing.
+  empty
+}
+
+/// A member.
+record Member {
+  /// Its title.
+  title: String
+  /// A field named like an import, stored as utf8_ (CODEGEN.md §3.4).
+  utf8: Int = 8
+  /// Another, stored as json_.
+  json: Int = 9
+}
+
+/// A node of a chain.
+record Node {
+  /// The next node.
+  next: Node?
+}
+
+/// A thing.
+record Thing {
+  /// Its id.
+  id: String
+  /// Where.
+  at: Point
+  /// Its size.
+  size: Int = 3
+  /// Its shape.
+  shape: Shape @json(inline)
+  /// A wait.
+  wait: Duration? = 2m @json("waitMin", unit: m)
+  /// A cooldown.
+  cooldown: Duration = 2s @json("cooldownSec", unit: s)
+  /// A cost.
+  cost: Int = 0 @json(path: "legacy.cost")
+  /// A label.
+  label: String? @json(none: "=")
+  /// A nickname.
+  nick: String?
+  /// Its bonuses.
+  stats: [Bonus](..=2) = [] @json(pairs: ["s{i}", "a{i}"])
+  /// Its flags.
+  flags: [Flag] = [red] @json(bits)
+  /// A kind.
+  k: K
+  /// A payload.
+  p: P(k)?
+  /// Its rarity.
+  rarity: Rarity = rare
+  /// Its element.
+  element: Element
+  /// Counts by element.
+  byElement: {Element: Int} = {}
+  /// Counts by rarity.
+  byRarity: {Rarity: Int}
+  /// A ratio.
+  ratio: Float32 = 0.5
+  /// A small number.
+  small: Int8 = 1
+  /// Where it was.
+  trail: [Point] = []
+  /// A home, or none.
+  home: Point? = { x: 1 }
+  /// Its kind.
+  sort: ref kinds = K_B
+  /// Tradable.
+  tradable: Bool = false @json(int)
+  /// Its members.
+  members: table Member = {}
+  /// A bonus of its own package, by default.
+  best: Bonus = { stat: 9, amount: 1 }
+  /// Another shape, by default a box.
+  alt: Shape = box { side: 2 }
+
+  /// Size times n.
+  export fn times(self, n: Int) -> Int { return size * n }
+}
+
+test "times multiplies the size" {
+  let t: Thing = { id: "t", at: { x: 1 }, shape: empty, k: one, element: fire, byRarity: {} }
+  expect t.times(2) == 6
+}
+
+/// The things.
+record Things {
+  /// Every thing.
+  all: [Thing] keyed by id
+  /// The note.
+  note: String? = "hi"
+}
+
+/// The things file.
+@text("things.json")
+export fn things() -> Things {
+  return {
+    all: [
+      {
+        id: "a", at: { x: 1, y: 2 }, shape: box { side: 4 }, k: one, p: 5, element: fire, nick: "ace",
+        byRarity: { series_1: 2, common: 1 }, byElement: { water: 3 }, cost: 9, rarity: series_1,
+        members: { ann { title: "Ann" }, retired bob { title: "Bob" } }
+      },
+      {
+        id: "b", at: { x: 3 }, shape: empty, k: two, p: "word", element: water, byRarity: {}, label: "L",
+        wait: none, stats: [{ stat: 1, amount: 2 }, { stat: 3, amount: 4 }], flags: [blue, red], tradable: true,
+        cooldown: 3s, small: -128, ratio: 0.25, home: none, sort: K_A, trail: [{ x: 5, y: 6 }]
+      },
+    ]
+    note: none
+  }
+}
+
+/// A shape file.
+@text("shape.json")
+export fn shapeFile() -> Shape { return box { side: 9 } }
+
+emit go { out: ["@gen/go/a", "@other/go/a"], mode: types }
+emit text { out: "text" }
+-- gen/go/a/roundtrip_test.go --
+package a
+
+import (
+	"fmt"
+	"math/big"
+	"math/rand/v2"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"example.com/gen/go/b"
+)
+
+// words is xs as fmt.Println spaces them.
+func words(xs ...any) string { return strings.TrimSuffix(fmt.Sprintln(xs...), "\n") }
+
+func readText(t testing.TB, name string) []byte {
+	t.Helper()
+	raw, err := os.ReadFile("../../../a/text/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
+}
+
+// CODEGEN.md §5.13, WIRE.md §8.5: the file a @text fn renders decodes back to its value.
+func TestRoundTrip(t *testing.T) {
+	v, err := DecodeThings(readText(t, "things.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, ok := v.Note(); ok || n != "" {
+		t.Errorf("note: %q %v, want none (written null over its default)", n, ok)
+	}
+	if v.All().Len() != 2 {
+		t.Fatalf("%d things, want 2", v.All().Len())
+	}
+	a, _ := v.All().Find("a")
+	checkA(t, a)
+	bb, _ := v.All().Find("b")
+	checkB(t, bb)
+	s, err := DecodeShape(readText(t, "shape.json"))
+	if box, ok := s.AsBox(); err != nil || !ok || box.Side() != 9 {
+		t.Errorf("shape.json: %v %v", s, err)
+	}
+}
+
+func checkA(t *testing.T, a *Thing) {
+	t.Helper()
+	at := a.At()
+	w, wok := a.Wait()
+	label, lok := a.Label()
+	nick, nok := a.Nick()
+	p, _ := a.P().AsOne()
+	box, _ := a.Shape().AsBox()
+	got := words(at.X(), at.Y(), a.Size(), box.Side(), w, wok, a.Cooldown(), a.Cost(), label, lok, nick, nok, a.Stats().Len(),
+		a.Flags().Len(), a.K(), p, a.Rarity(), a.Element(), a.Ratio(), a.Small(), a.Trail().Len(), a.Home().Y(), a.SortID(), a.SortValue(), a.Tradable())
+	want := "1 2 3 4 2m0s true 2s 9  false ace true 0 1 one 5 series_1 fire 0.5 1 0 7 K_B 2 false"
+	if got != want {
+		t.Errorf("a: got  %s\nwant %s", got, want)
+	}
+	if r, ok := a.ByRarity().Get(RaritySeries1); !ok || r != 2 || a.ByRarity().Len() != 2 {
+		t.Errorf("a.byRarity: %v %v", r, ok)
+	}
+	if e, ok := a.ByElement().Get(ElementWater); !ok || e != 3 {
+		t.Errorf("a.byElement: %v %v", e, ok)
+	}
+	m := a.Members()
+	bob, ok := m.Find("bob")
+	if m.Len() != 2 || !ok || !bob.Retired() || bob.Title() != "Bob" || m.At(0).ID() != "ann" || m.At(0).Retired() || bob.Utf8() != 8 || bob.JSON() != 9 {
+		t.Errorf("a.members: %d %v", m.Len(), ok)
+	}
+}
+
+func checkB(t *testing.T, x *Thing) {
+	t.Helper()
+	w, wok := x.Wait()
+	label, lok := x.Label()
+	_, nok := x.Nick()
+	p, _ := x.P().AsTwo()
+	stat := x.Stats().At(1)
+	got := words(x.At().Y(), x.Shape().Kind(), w, wok, x.Cooldown(), label, lok, nok, x.Stats().Len(), stat.Stat(), stat.Amount(),
+		x.Flags().At(0), x.Flags().At(1), p, x.Element(), x.ByRarity().Len(), x.Ratio(), x.Small(), x.Home() == nil, x.SortID(), x.SortValue(), x.Tradable(), x.Trail().At(0).X())
+	want := "7 empty 0s false 3s L true false 2 3 4 red blue word water 0 0.25 -128 true K_A 1 true 5"
+	if got != want {
+		t.Errorf("b: got  %s\nwant %s", got, want)
+	}
+}
+
+// CODEGEN.md §5.13, WIRE.md §5.4, §5.5.3, §5.1, §3.1: absent keys take their defaults, a missing path object too, unknown keys are ignored, any number token the type accepts is read, a byte order mark is skipped.
+func TestSourceWire(t *testing.T) {
+	doc := "\xef\xbb\xbf" + `{"id": "z", "at": {"x": 1, "zzz": true}, "kind": "empty", "k": "one", "element": 2, "byRarity": {}, "unknown": [1],
+		"waitMin": 1.5, "cooldownSec": 2.5e-1, "small": -0, "ratio": 1e-1}`
+	x, err := DecodeThing([]byte(doc))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, _ := x.Wait()
+	l, lok := x.Label()
+	got := words(x.At().Y(), x.Size(), w, x.Cooldown(), x.Cost(), l, lok, x.Stats().Len(), x.Flags().At(0), x.Rarity(), x.Ratio(), x.Small(), x.Home().X(), x.Home().Y(), x.SortID(), x.SortValue(), x.Members().Len(), x.Tradable())
+	want := "7 3 1m30s 250ms 0  false 0 red rare 0.1 0 1 7 K_B 2 0 false"
+	if got != want {
+		t.Errorf("got  %s\nwant %s", got, want)
+	}
+	if w, _ := x.Wait(); w != 90*time.Second {
+		t.Errorf("wait %v", w)
+	}
+	if box, ok := x.Alt().AsBox(); x.Best().Stat() != 9 || x.Best().Amount() != 1 || !ok || box.Side() != 2 {
+		t.Errorf("record and variant defaults: %v %v", x.Best(), x.Alt())
+	}
+	pt, err := b.DecodePoint([]byte(`{"x": 4}`))
+	if err != nil || pt.Y() != 7 {
+		t.Errorf("b.DecodePoint: %v %v", pt, err)
+	}
+}
+
+// CODEGEN.md §5.13: every failure kind returns no value and an error naming the JSON path of the first failure.
+func TestInvalidInput(t *testing.T) {
+	const row = `"at": {"x": 1}, "kind": "empty", "k": "one", "element": 1, "byRarity": {}`
+	cases := []struct{ name, doc, want string }{
+		{"invalid JSON", `{"id": `, `Thing: $: invalid JSON`},
+		{"trailing content", `{} {}`, `Thing: $: invalid JSON`},
+		{"not UTF-8", "{\"id\": \"\xff\"}", `Thing: $.id: not UTF-8`},
+		{"wrong kind", `{"id": 1, ` + row + `}`, `Thing: $.id: expected a string`},
+		{"wrong kind of document", `[]`, `Thing: $: expected an object`},
+		{"missing key", `{"id": "z", "at": {"x": 1}, "kind": "empty", "element": 1, "byRarity": {}}`, `Thing: $.k: missing`},
+		{"missing key, nested", `{"id": "z", "at": {}, "kind": "empty", "k": "one", "element": 1, "byRarity": {}}`, `Thing: $.at.x: missing`},
+		{"null where required", `{"id": null, ` + row + `}`, `Thing: $.id: null`},
+		{"unknown member", `{"id": "z", ` + row + `, "rarity": "series_1"}`, `Thing: $.rarity: unknown value series_1`},
+		{"unknown code", `{"id": "z", "at": {"x": 1}, "kind": "empty", "k": "one", "element": 3, "byRarity": {}}`, `Thing: $.element: unknown value 3`},
+		{"unknown map key", `{"id": "z", "at": {"x": 1}, "kind": "empty", "k": "one", "element": 1, "byRarity": {"epic": 1}}`, `Thing: $.byRarity.epic: unknown value epic`},
+		{"unknown case tag", `{"id": "z", "at": {"x": 1}, "kind": "ball", "k": "one", "element": 1, "byRarity": {}}`, `Thing: $.kind: unknown case ball`},
+		{"missing tag", `{"id": "z", "at": {"x": 1}, "k": "one", "element": 1, "byRarity": {}}`, `Thing: $.kind: missing`},
+		{"sized integer range", `{"id": "z", ` + row + `, "small": 128}`, `Thing: $.small: expected an integer from -128 to 127`},
+		{"fraction for an integer", `{"id": "z", ` + row + `, "size": 2.0}`, `Thing: $.size: expected an integer`},
+		{"fraction in a path", `{"id": "z", ` + row + `, "legacy": {"cost": 1.5}}`, `Thing: $.legacy.cost: expected an integer`},
+		{"path object not an object", `{"id": "z", ` + row + `, "legacy": 3}`, `Thing: $.legacy: expected an object`},
+		{"Duration range", `{"id": "z", ` + row + `, "cooldownSec": 9223372037}`, `Thing: $.cooldownSec: expected a duration within the Duration range`},
+		{"Duration range, exponent", `{"id": "z", ` + row + `, "cooldownSec": 1e400}`, `Thing: $.cooldownSec: expected a duration within the Duration range`},
+		{"Duration not whole", `{"id": "z", ` + row + `, "cooldownSec": 0.0005}`, `Thing: $.cooldownSec: expected a whole number of milliseconds`},
+		{"Duration tiny", `{"id": "z", ` + row + `, "cooldownSec": 1e-400}`, `Thing: $.cooldownSec: expected a whole number of milliseconds`},
+		{"Duration as a string", `{"id": "z", ` + row + `, "cooldownSec": "2"}`, `Thing: $.cooldownSec: expected a number`},
+		{"incomplete pairs slot", `{"id": "z", ` + row + `, "s0": 1}`, `Thing: $.s0: incomplete pairs slot`},
+		{"pairs slot after an empty one", `{"id": "z", ` + row + `, "s1": 1, "a1": 2}`, `Thing: $.s1: pairs slot after an empty one`},
+		{"null in a pairs slot", `{"id": "z", ` + row + `, "s0": null, "a0": 2}`, `Thing: $.s0: null in a pairs slot`},
+		{"unknown bits", `{"id": "z", ` + row + `, "flags": 4}`, `Thing: $.flags: unknown bits 0x4`},
+		{"int Bool", `{"id": "z", ` + row + `, "tradable": true}`, `Thing: $.tradable: expected an integer from 0 to 1`},
+		{"dependent branch", `{"id": "z", ` + row + `, "p": "word"}`, `Thing: $.p: expected an integer`},
+		{"define", `{"id": "z", ` + row + `, "sort": "K_C"}`, `Thing: $.sort: define K_C is not in this program's Kinds table`},
+		{"element of a list", `{"id": "z", ` + row + `, "trail": [{"x": 1}, {"x": "2"}]}`, `Thing: $.trail[1].x: expected an integer`},
+		{"retired not true", `{"id": "z", ` + row + `, "members": {"ann": {"$retired": false, "title": "A"}}}`, `Thing: $.members.ann.$retired: expected true`},
+		{"repeated key", `{"id": "a", "id": "b", ` + row + `}`, `Thing: $.id: repeated key`},
+		{"repeated map key", `{"id": "z", ` + row + `, "byElement": {"1": 1, "1": 2}}`, `Thing: $.byElement.1: repeated key`},
+		{"repeated escaped key", `{"id": "z", ` + row + `, "members": {"ann": {"title": "A", "\u0074itle": "B"}}}`, `Thing: $.members.ann.\u0074itle: repeated key`},
+		{"unpaired surrogate", `{"id": "\ud800", ` + row + `}`, `Thing: $.id: unpaired surrogate`},
+		{"unpaired low surrogate", `{"id": "z", ` + row + `, "trail": [{"x": 1}, {"x": 2, "\udc00": 1}]}`, `Thing: $.trail[1].\udc00: unpaired surrogate`},
+		{"not UTF-8 in a list", "{\"id\": \"z\", \"trail\": [{\"x\": 1, \"note\": \"\xc3\"}]}", `Thing: $.trail[0].note: not UTF-8`},
+	}
+	for _, c := range cases {
+		v, err := DecodeThing([]byte(c.doc))
+		if v != nil || err == nil || err.Error() != c.want {
+			t.Errorf("%s: got %v, %v; want nil, %s", c.name, v, err, c.want)
+		}
+	}
+	if _, err := DecodeThings([]byte(`{"all": [{"id": "a", ` + row + `}, {"id": "b", ` + row + `, "size": "x"}]}`)); err == nil || err.Error() != `Things: $.all[1].size: expected an integer` {
+		t.Errorf("a row's path: %v", err)
+	}
+	if _, err := DecodeThings([]byte(`{"all": [{"id": "a", ` + row + `}, {"id": "a", ` + row + `}]}`)); err == nil || !strings.Contains(err.Error(), `$.all[1].id: duplicate id "a"`) {
+		t.Errorf("a duplicate key: %v", err)
+	}
+	if _, err := DecodeThings([]byte(`{"all": [], "note": "a", "byRarity": {"rare": 1, "rare": 2}, "note": "b"}`)); err == nil || err.Error() != `Things: $.byRarity.rare: repeated key` {
+		t.Errorf("the first repeated key: %v", err)
+	}
+}
+
+// chain is a Node document nested n deep.
+func chain(n int) []byte {
+	return []byte(strings.Repeat(`{"next": `, n-1) + "{}" + strings.Repeat("}", n-1))
+}
+
+// WIRE.md §3.1, §3.2 (CODEGEN.md §5.13): a document is read as a source file is; nesting is capped at 512, so a deep chain is refused before any decoder runs, and 512 levels decode.
+func TestDocumentRules(t *testing.T) {
+	if _, err := DecodeNode(chain(512)); err != nil {
+		t.Errorf("512 levels: %v", err)
+	}
+	want := "Node: $" + strings.Repeat(".next", 512) + ": nested deeper than 512 levels"
+	for _, n := range []int{513, 2000} {
+		start := time.Now()
+		if _, err := DecodeNode(chain(n)); err == nil || err.Error() != want {
+			t.Errorf("%d levels: %v", n, err)
+		}
+		if d := time.Since(start); d > time.Second {
+			t.Errorf("%d levels refused in %v", n, d)
+		}
+	}
+	var many strings.Builder // past 32 keys an object's keys are a set
+	for i := range 40 {
+		fmt.Fprintf(&many, `"k%d": %d, `, i, i)
+	}
+	if _, err := jsonDocument("N", []byte(`{"o": {`+many.String()+`"k5": 0}}`)); err == nil || err.Error() != "N: $.o.k5: repeated key" {
+		t.Errorf("a repeated key past 32: %v", err)
+	}
+	if _, err := jsonDocument("N", []byte(`[{"a": 1, "b": 2}, {"b": 1, "a": 2}]`)); err != nil {
+		t.Errorf("one key list per object: %v", err)
+	}
+	for _, doc := range []string{`{"a": "\ud83d\ude00", "b": "\\ud800", "c": "é"}`, "\xef\xbb\xbf{}"} {
+		if _, err := jsonDocument("N", []byte(doc)); err != nil {
+			t.Errorf("%s: %v", doc, err)
+		}
+	}
+}
+
+// referenceMillis is jsonDuration's result computed with math/big, in the test only: the exact value, out of range past ±9223372036854 ms, else not whole.
+func referenceMillis(number string, unit int64) (int64, string) {
+	r, _ := new(big.Rat).SetString(number)
+	r.Mul(r, new(big.Rat).SetInt64(unit))
+	if new(big.Rat).Abs(r).Cmp(new(big.Rat).SetInt64(9223372036854)) > 0 {
+		return 0, "Duration range"
+	}
+	if !r.IsInt() {
+		return 0, "whole number"
+	}
+	return r.Num().Int64(), ""
+}
+
+// randomNumber is a JSON number token: a sign, an integer part, a fraction, an exponent, each drawn at random.
+func randomNumber(r *rand.Rand) string {
+	var b strings.Builder
+	if r.IntN(3) == 0 {
+		b.WriteString("-")
+	}
+	if r.IntN(4) == 0 {
+		b.WriteString("0")
+	} else {
+		b.WriteByte(byte('1' + r.IntN(9)))
+		for range r.IntN(18) {
+			b.WriteByte(byte('0' + r.IntN(10)))
+		}
+	}
+	if r.IntN(2) == 0 {
+		b.WriteString(".")
+		for range 1 + r.IntN(12) {
+			b.WriteByte(byte('0' + r.IntN(10)))
+		}
+	}
+	if r.IntN(2) == 0 {
+		fmt.Fprintf(&b, "%s%s%d", []string{"e", "E"}[r.IntN(2)], []string{"", "+", "-"}[r.IntN(3)], r.IntN(25))
+	}
+	return b.String()
+}
+
+// WIRE.md §5.1, §5.13: jsonDuration agrees with exact arithmetic on every number token, for every unit.
+func TestDurationAgreesWithExactArithmetic(t *testing.T) {
+	r := rand.New(rand.NewPCG(1, 2))
+	fixed := []string{"0", "-0", "-0.0", "1.5", "0.0005", "8e3", "8000.0", "9223372036854", "9223372036855", "9223372036.854",
+		"9223372036.8545", "1e13", "1e400", "1e-400", "0.001", "106751.99116730064", "1E2", "-9223372036.854"}
+	for _, unit := range []int64{1, 1000, 60000, 3600000, 86400000} {
+		numbers := fixed
+		for range 50000 {
+			numbers = append(numbers, randomNumber(r))
+		}
+		for _, number := range numbers {
+			want, wantErr := referenceMillis(number, unit)
+			got, err := jsonDuration("N", "$.", "k", []byte(number), unit)
+			if (err == nil) != (wantErr == "") || err != nil && !strings.Contains(err.Error(), wantErr) || got != want {
+				t.Fatalf("%s × %d: got %d, %v; want %d, %s", number, unit, got, err, want, wantErr)
+			}
+		}
+	}
+}
+
+// WIRE.md §5.1: a number with a million-digit exponent or mantissa is refused in linear time.
+func TestDurationLinear(t *testing.T) {
+	digits := strings.Repeat("9", 1_000_000)
+	for _, number := range []string{"1e" + digits, "1e-" + digits, "1." + digits, digits + "e-999990", "0." + strings.Repeat("0", 1_000_000) + "1", digits} {
+		start := time.Now()
+		if _, err := jsonDuration("N", "$.", "k", []byte(number), 1000); err == nil || time.Since(start) > time.Second {
+			t.Errorf("%d bytes: %v in %v", len(number), err, time.Since(start))
+		}
+	}
+}
+
+// bigThings is a Things document of n full rows, about 750 bytes each.
+func bigThings(n int) []byte {
+	var sb strings.Builder
+	sb.WriteString(`{"all": [`)
+	for i := range n {
+		if i > 0 {
+			sb.WriteString(",")
+		}
+		fmt.Fprintf(&sb, `{"id": "t%d", "at": {"x": %d, "y": 2}, "size": 3, "kind": "box", "side": 4, "waitMin": 2, "cooldownSec": 1.5,
+			"legacy": {"cost": %d}, "label": "=", "nick": "name %d", "s0": 1, "a0": 2, "s1": 3, "a1": 4, "flags": 3, "k": "two", "p": "word",
+			"rarity": "series-1", "element": 2, "byElement": {"1": 1, "2": 2}, "byRarity": {"common": 1, "rare": 2, "series-1": 3},
+			"ratio": 0.25, "small": -5, "trail": [{"x": 1, "y": 2}, {"x": 3, "y": 4}], "home": {"x": 1, "y": 2}, "sort": "K_A", "tradable": 1,
+			"members": {"ann": {"title": "Ann"}, "bob": {"$retired": true, "title": "Bob"}}}`, i, i, i, i)
+	}
+	sb.WriteString(`], "note": "n"}`)
+	return []byte(sb.String())
+}
+
+// CODEGEN.md §5.13: decoding a file of full rows is linear, a few passes of encoding/json over it.
+func BenchmarkDecodeThings(b *testing.B) {
+	raw := bigThings(8500)
+	b.SetBytes(int64(len(raw)))
+	b.ReportAllocs()
+	for b.Loop() {
+		if _, err := DecodeThings(raw); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

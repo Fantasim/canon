@@ -148,11 +148,20 @@ const (
 	regexpPkg = "regexp"
 )
 
+// Types mode (CODEGEN.md §5.13): the public decoder's template, its helpers, unicode/utf8 for the document, a Duration's unit, an absent key's default.
+const (
+	tmplPublicDecoder, helperDocument, helperDuration = "publicDecoder", "jsonDocument", "jsonDuration"
+	utf8Path, utf8Pkg                                 = "unicode/utf8", "utf8"
+	localUnit                                         = "unit"
+	durationReadFormat                                = "%[1]s, %[2]s := %[3]s(%[4]s, %[5]s, %[6]s, %[7]s, %[8]d)\nif %[2]s != nil {\nreturn %[2]s\n}\n"
+	absentOpenFormat                                  = "if _, %[1]s := %[2]s[%[3]s]; !%[1]s {\n"
+)
+
 // goStdImports classifies a generated import by its origin, not by whether its path has a dot.
 var goStdImports = map[string]bool{
 	timePkg: true, iterPkg: true, syncPkg: true, strconvPkg: true, mathPkg: true, testingPkg: true,
 	jsonPath: true, fmtPkg: true, atomicPath: true, stringsPkg: true, slicesPkg: true,
-	errorsPkg: true, regexpPkg: true,
+	errorsPkg: true, regexpPkg: true, utf8Path: true,
 }
 
 // Generated names (CODEGEN.md §3.3) and the reference layout's private names (§6.2).
@@ -413,7 +422,7 @@ var (
 	goImportNames = map[string]bool{
 		rtName: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, atomicName: true, syncPkg: true,
 		timePkg: true, strconvPkg: true, stringsPkg: true, slicesPkg: true, mathPkg: true, regexpPkg: true,
-		"embed": true, errorsPkg: true,
+		"embed": true, errorsPkg: true, utf8Pkg: true,
 	}
 )
 

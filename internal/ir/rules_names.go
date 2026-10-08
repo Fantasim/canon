@@ -38,7 +38,7 @@ func (s *stage) checkTSNames(u *unit) {
 	}
 }
 
-// checkGoNames reports the go emit's names (CODEGEN.md §3.5): E8011 for a @go(name:) that is not an exported identifier (decision 182), in every mode; in baked and data mode, from the name plan gen/go writes from (decisions 194, 203), E8011 for a derived name that is no Go identifier (decision 202) and E8005 for two names of one scope, at the item named second, or at the emit for an import or the package's own names. Embedded and types mode have no generator, hence no plan yet.
+// checkGoNames reports the go emit's names (CODEGEN.md §3.5): E8011 for a @go(name:) that is not an exported identifier (decision 182), in every mode; in a mode gen/go writes (baked, data, types), from the name plan it writes from (decisions 194, 203), E8011 for a derived name that is no Go identifier (decision 202) and E8005 for two names of one scope, at the item named second, or at the emit for an import or the package's own names. Embedded mode has no generator, hence no plan yet.
 func (s *stage) checkGoNames(u *unit) {
 	es := emitFor(u, TargetGo)
 	if es == nil {
@@ -46,7 +46,7 @@ func (s *stage) checkGoNames(u *unit) {
 	}
 	problems := goOverrideProblems(u.p)
 	report := nameReport{span: s.itemSpans(es), target: check.TargetGo}
-	if es.e.Mode == ModeBaked || es.e.Mode == ModeData {
+	if !modeRefused(es.e) {
 		pl := PlanGoNames(u.p, es.e)
 		problems = slices.DeleteFunc(pl.Problems(), s.refusedImport(u))
 		report.idOf = func(rec *Record) string { return pl.IDTypeName(rec) }

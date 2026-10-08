@@ -279,6 +279,7 @@ const (
 	goTesting  = "testing"
 	goSlices   = "slices"
 	goRegexp   = "regexp"
+	goUTF8     = "utf8" // unicode/utf8: a types-mode decoder's document is UTF-8 (WIRE.md §3.1)
 )
 
 // Names both generators' stores and loaders write (CODEGEN.md §5.11, §6.1).
@@ -352,6 +353,10 @@ const (
 	goJSONTable        = "jsonTable"
 	goJSONMap          = "jsonMap"
 	goJSONKeyPath      = "jsonKeyPath"
+	goPublicDecode     = CppDecode // types mode's public Decode<T> (CODEGEN.md §5.13)
+	goJSONDocument     = "jsonDocument"
+	goPkgSuffix        = "pkg" // the alias of an import Go-named like a predeclared identifier, maxpkg (CODEGEN.md §3.4)
+	goJSONDuration     = "jsonDuration"
 	goScopeLocals      = "locals"
 	goScopeConformance = "conformance imports"
 	goInt64Bits        = 64

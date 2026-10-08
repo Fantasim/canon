@@ -1,0 +1,97 @@
+/// Go `types` mode (CODEGEN.md §2.2, §5.13): the read-only Go types plus one public decoder,
+/// `Decode<T>(raw []byte) (*T, error)`, per public record and variant, which reads the source
+/// wire that `load` reads. A runtime that is not the compiler reads the very JSON file a `@text`
+/// fn renders (§2.9, WIRE.md §8.5) through the generated decoder of its result type:
+/// `os.ReadFile` then `gotypes.DecodeItemFile(raw)`.
+///
+/// The emit is written as two copies (§2.1), each under a root of its own with its own Go
+/// module path, so each consumer imports its own copy and its own `rt`.
+package features.gotypes
+
+/// How rare an item is.
+enum Rarity {
+  /// Found everywhere.
+  common
+  /// Found in dungeons.
+  rare
+  /// Found once a season.
+  season_1 = "season-1"
+}
+
+/// An element, written as its code.
+enum Element @codes(UInt8) @json(codes) {
+  /// Burns.
+  fire = 1
+  /// Flows.
+  water = 2
+}
+
+/// A stat an item adds.
+record Bonus {
+  /// The stat's number.
+  stat: Int
+  /// How much it adds.
+  amount: Int
+}
+
+/// An item of the catalogue.
+record Item {
+  /// Its id.
+  id: Int
+  /// Its symbol.
+  symbol: String
+  /// Its displayed name; `=` on the wire means it has none.
+  name: String? @json(none: "=")
+  /// A remark, left out of the file when it has none.
+  note: String?
+  /// How rare it is.
+  rarity: Rarity = common
+  /// Its element.
+  element: Element
+  /// Time before it can be used again.
+  cooldown: Duration = 1s @json("cooldownSec", unit: s)
+  /// How long it lasts; `none` means forever, written `null` over the default.
+  lifetime: Duration? = 1h @json("lifetimeMin", unit: m)
+  /// How many fit in one slot.
+  stack: Int16 = 1 @json(path: "limits.stack")
+  /// What it adds.
+  bonuses: [Bonus](..=3) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"])
+}
+
+/// The catalogue file the game and the services read.
+record ItemFile {
+  /// Every item, by id.
+  items: [Item] keyed by id
+  /// How many items each rarity has.
+  byRarity: {Rarity: Int}
+}
+
+/// The catalogue, rendered as JSON.
+@text("items.json")
+export fn itemFile() -> ItemFile {
+  return {
+    items: [
+      {
+        id: 1
+        symbol: "II_SWORD"
+        name: "Sword"
+        rarity: rare
+        element: fire
+        bonuses: [{ stat: 1, amount: 5 }]
+      },
+      {
+        id: 2
+        symbol: "II_WAND"
+        note: "A test item."
+        element: water
+        cooldown: 3s
+        lifetime: none
+        stack: 20
+      },
+    ]
+    byRarity: { common: 1, rare: 1, season_1: 0 }
+  }
+}
+
+emit text { out: "out/text" }
+emit go { out: ["out/go/gotypes/", "@sovcommon/gotypes/go/gotypes/"], mode: types }

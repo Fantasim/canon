@@ -66,7 +66,7 @@ func (g *gen) readInto(b *body, hook string) {
 		}
 		g.exec(tmplReaderOut, view)
 	}
-	g.openObject(g.expectedKeys(b))
+	g.openObject(g.bodyKeys(b))
 	g.readFields(b)
 	args := make([]string, len(params))
 	for i, p := range params {

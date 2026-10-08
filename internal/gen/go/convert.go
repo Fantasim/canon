@@ -41,6 +41,9 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 		g.stringWire(l.t)
 		return g.readUnion(b, l.t, raw, loc)
 	case types.Duration:
+		if g.isTypes() {
+			return g.sourceDuration(b, raw, loc, l.unit)
+		}
 		limit := durationMaxMs / l.unit.Millis()
 		return g.durationFrom(g.readInt(b, raw, loc, -limit, limit), l.unit)
 	case types.Enum:

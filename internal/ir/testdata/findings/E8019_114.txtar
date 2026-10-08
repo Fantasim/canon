@@ -1,0 +1,21 @@
+CODEGEN.md §2.2, §5.12: a go types-mode emit writes no LoadInputs, so gen/go has nothing to read an input field with: InputField at the field, as for cpp.
+-- a/a.canon --
+package a
+
+/// Settings.
+record Gen {
+  /// A key.
+  key: input String? from env "KEY"
+  /// A name.
+  name: String
+}
+
+/// The settings.
+let gen: Gen = { name: "x" }
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:6:3
+  emit go in types mode cannot generate an `input` field; emit the package in baked or data mode
+
+1 error, 0 warnings in 1 package (…)

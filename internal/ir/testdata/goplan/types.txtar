@@ -1,0 +1,99 @@
+CODEGEN.md §3.4, §5.13; decisions 182, 203: types mode's public decoders Decode<T> of every record and variant, its helpers, the decoders and readers it shares with data mode, a nested table's string ids, defaults of every constant kind, a source-wire Duration, pairs, path and inline fields, a translated case method, another package's record read through this package's reader, and the decoders' locals escaped from an imported package named `name`.
+-- names/names.canon --
+/// Names.
+package names
+
+/// A role.
+enum Role { user, admin }
+
+/// A badge.
+record Badge {
+  /// Its role.
+  role: Role
+  /// Its level.
+  level: Int = 1
+}
+
+emit go { out: "@features/names", package: "name", mode: baked }
+-- club/club.canon --
+/// Clubs.
+package club
+
+import names { Role, Badge }
+
+/// A stat bonus.
+record Bonus {
+  /// The stat.
+  stat: Int
+  /// Its value.
+  value: Int
+}
+
+/// A shape.
+variant Shape @json(tag: "shape") {
+  /// A circle.
+  circle {
+    /// Its radius.
+    radius: Int
+
+    /// Its area times n.
+    export fn scaled(self, n: Int) -> Int { return radius * n }
+  }
+  /// A dot.
+  dot
+}
+
+/// A member.
+record Member {
+  /// Its code.
+  code: Int
+  /// Its role.
+  role: Role = admin
+  /// Its badge.
+  badge: Badge?
+  /// Its bonuses.
+  bonuses: [Bonus](..=2) = [] @json(pairs: ["stat{i}", "value{i}"])
+  /// Its shape.
+  shape: Shape @json(inline)
+  /// A nested key.
+  deep: Int = 4 @json(path: "a.b")
+  /// A wait.
+  wait: Duration? = 2s @json("waitSec", unit: s)
+  /// Points by role.
+  points: {Role: Int} = {}
+  /// A field named like an import types mode writes.
+  utf8: Int = 0
+  /// Another.
+  json: Int = 0
+}
+
+/// A club.
+record Club {
+  /// Its name.
+  title: String
+  /// Its members.
+  members: table Member
+}
+
+test "scaled doubles" {
+  let c: Shape = circle { radius: 2 }
+  expect match c { circle(x) => x.scaled(2), dot => 0 } == 4
+}
+
+emit go { out: "@features/club", package: "club", mode: types }
+-- plan.txt --
+Badge: Level Role level role
+Role: String Wire
+package: Badge Make_Badge ParseRole Role RoleAdmin RoleMembers RoleUser iter strconv
+Bonus: Stat Value stat value
+Club: Members Title members title
+Member: Badge Bonuses Code Deep ID JSON Points Retired Role Shape Utf8 Wait badge bonuses code deep id json_ points retired role shape utf8_ wait wait_ok
+Shape: AsCircle Kind kind value
+ShapeCircle: Radius Scaled radius
+ShapeKind: String Wire
+TestShapeCircleScaledConformance vectors: code n radius want
+club.Shape.circle.scaled(): n radius
+conformance imports: math rt testing
+locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name_ obj ok out path r raw retired rows s tag unit v values vr want
+package: Bonus Club DecodeBonus DecodeClub DecodeMember DecodeShape MakeCase_Shape_Circle MakeEntry_Member Make_Bonus Make_Club Make_Member Make_Shape_Circle Make_Shape_Dot Member MemberID ParseShapeKind Shape ShapeCircle ShapeKind ShapeKindCircle ShapeKindDot TestShapeCircleScaledConformance canonCatch decodeBonus decodeClub decodeMember decodeShape decodeShapeCircle decode_name_Badge fmt json jsonCell jsonDocument jsonDuration jsonInt jsonKeyPath jsonKeys jsonMap jsonMay jsonNeed jsonObject jsonRead jsonSame jsonSlot jsonTable name rt shapeCircleScaled slices strconv strings time utf8
+0 errors, 0 warnings in 2 packages (…)

@@ -117,7 +117,7 @@ func modeRefused(e *Emit) bool {
 	return isCode(e.Target) && (e.Mode == ModeNone || unbuiltMode(e))
 }
 
-// unbuiltMode reports a mode its target's generator does not write yet (DECISIONS 320): go embedded and types, cpp embedded (CODEGEN.md §2.1, §2.2).
+// unbuiltMode reports a mode its target's generator does not write yet (DECISIONS 320): go and cpp embedded (CODEGEN.md §2.1, §2.2).
 func unbuiltMode(e *Emit) bool {
 	return int(e.Target) < len(unbuiltAlt) && unbuiltAlt[e.Target][e.Mode] != ModeNone
 }

@@ -17,9 +17,16 @@ func (g *gen) helper(name string) string { return name }
 // only beside a table: the reads of canon_runtime_json.h's Decoder, with the same messages.
 func (g *gen) helpers() {
 	view := struct {
-		JSON, FMT, Strings, Slices, RT string
-		L                              locals
-	}{g.use(jsonPath, jsonPkg), g.use(fmtPkg, fmtPkg), g.use(stringsPkg, stringsPkg), g.use(slicesPkg, slicesPkg), g.rt(), g.lc}
+		JSON, FMT, Strings, Slices, RT, UTF8 string
+		L                                    locals
+	}{g.use(jsonPath, jsonPkg), g.use(fmtPkg, fmtPkg), g.use(stringsPkg, stringsPkg), g.use(slicesPkg, slicesPkg), g.rt(), "", g.lc}
+	if g.isTypes() { // CODEGEN.md §5.13: the document check, and a source-wire Duration's exact read when one is read
+		view.UTF8 = g.use(utf8Path, utf8Pkg)
+		g.exec(helperDocument, view)
+	}
+	if g.isTypes() && (g.names.ReadsDurations() || g.called[helperDuration]) {
+		g.exec(helperDuration, view)
+	}
 	for _, name := range helperOrder {
 		g.exec(name, view)
 	}
@@ -53,8 +60,11 @@ func (g *gen) openObject(keys []string) {
 	g.keysCheck(lc.Obj, g.root(), keys)
 }
 
-// keysCheck fails the load on a key of obj differing from one of keys only in letter case (WIRE.md §5.5.2).
+// keysCheck fails the load on a key of obj differing from one of keys only in letter case (WIRE.md §5.5.2); a types-mode decoder ignores unknown keys (CODEGEN.md §5.13).
 func (g *gen) keysCheck(obj string, loc location, keys []string) {
+	if g.isTypes() {
+		return
+	}
 	quoted := make([]string, 0, len(keys))
 	for _, k := range slices.Compact(slices.Sorted(slices.Values(keys))) {
 		quoted = append(quoted, strconv.Quote(k))

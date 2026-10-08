@@ -22,9 +22,14 @@ func (s *stage) checkCppDecoded(u *unit, es *emitSite) {
 	}
 }
 
-// decodesClasses reports an emit whose generator decodes the package's classes from JSON: a data loader, or gen/cpp's types-mode decoders (CODEGEN.md §5.13).
+// decodesClasses reports an emit whose generator decodes the package's classes from JSON: a data loader, or gen/cpp's and gen/go's types-mode decoders (CODEGEN.md §5.13).
 func decodesClasses(e *Emit) bool {
-	return e.Mode == ModeData || e.Target == TargetCpp && e.Mode == ModeTypes
+	return e.Mode == ModeData || e.Target != TargetTS && e.Mode == ModeTypes
+}
+
+// readsMaps reports an emit whose decoders read maps, keys as WIRE.md §5.8 in file order: a data loader, or gen/go's types-mode decoders, which read the JSON text; gen/cpp's take an nlohmann::json, which keeps no key order (CODEGEN.md §5.9, §5.13).
+func readsMaps(e *Emit) bool {
+	return e.Mode == ModeData || e.Target == TargetGo && e.Mode == ModeTypes
 }
 
 // readFns are the export fns of a class whose results a decoder reads: none in types mode, where a stored fn is E8014's (CODEGEN.md §5.13).
@@ -45,15 +50,32 @@ func (s *stage) checkTypesInputs(u *unit, es *emitSite) {
 }
 
 // checkCppDefaults is E8019 where a types-mode decoder cannot write a field's constant default when its key is absent (CODEGEN.md §5.13), at each field of the package's classes (cppDefault).
-func (s *stage) checkCppDefaults(u *unit, es *emitSite) {
+func (s *stage) checkCppDefaults(u *unit, es *emitSite) { s.reportDefaults(u, es, cppDefault) }
+
+// defaultJudge is what a types-mode decoder of emit e cannot write of field f's constant default, f one of fields.
+type defaultJudge func(e *Emit, fields []*Field, f *Field) (diag.Kind, bool)
+
+// reportDefaults is E8019 at each field of the package's classes whose default judge refuses.
+func (s *stage) reportDefaults(u *unit, es *emitSite, judge defaultJudge) {
 	for _, class := range packageClasses(u.p) {
 		fields, _ := classBody(class)
 		for _, f := range fields {
-			if kind, bad := cppDefault(es.e, fields, f); bad {
+			if kind, bad := judge(es.e, fields, f); bad {
 				u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), kind)
 			}
 		}
 	}
+}
+
+// firstDefault is the first refusal of judge at a field of class c, another package's that a reader reads.
+func firstDefault(e *Emit, c any, judge defaultJudge) (diag.Kind, bool) {
+	fields, _ := classBody(c)
+	for _, f := range fields {
+		if kind, bad := judge(e, fields, f); bad {
+			return kind, true
+		}
+	}
+	return 0, false
 }
 
 // cppDefault is what a types-mode decoder cannot write of field f's constant default: `RecordDefault` for one holding a record or case value (gen/cpp's literals write none, §5.1), `DependentDefault` for a present value of a dependent type the decoder otherwise reads, whose branch only a discriminant decides (§5.6).

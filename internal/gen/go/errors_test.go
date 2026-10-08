@@ -104,7 +104,7 @@ func TestNameNotIdentifier(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.1: this generator emits go only, in baked and data mode for now.
+// CODEGEN.md §2.1, §2.2: this generator emits go only, in baked, data and types mode (embedded is DECISIONS 320's).
 func TestRefusedEmits(t *testing.T) {
 	cases := []struct {
 		name string
@@ -112,7 +112,6 @@ func TestRefusedEmits(t *testing.T) {
 		want error
 	}{
 		{"ts emit", func(e *ir.Emit) { e.Target = ir.TargetTS }, gogen.ErrTarget},
-		{"types mode, unbuilt (DECISIONS 320)", func(e *ir.Emit) { e.Mode = ir.ModeTypes }, gogen.ErrMalformed},
 		{"embedded mode, unbuilt (DECISIONS 320)", func(e *ir.Emit) { e.Mode = ir.ModeEmbedded }, gogen.ErrMalformed},
 		{"no package", func(e *ir.Emit) { e.GoPackage = "" }, gogen.ErrMalformed},
 		{"no import path", func(e *ir.Emit) { e.GoImport = "" }, gogen.ErrMalformed},

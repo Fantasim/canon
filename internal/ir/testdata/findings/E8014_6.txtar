@@ -1,0 +1,45 @@
+CODEGEN.md §5.13, §2.8: a go types-mode emit that reads a record of another package with a precomputed export fn, a lookup or a computed default is E8014, as for its own records: its reader has no data for the hook's stored results. Reported at app's field that reads Band, once per refused item.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A tier.
+enum Tier { low, high }
+
+/// A band.
+record Band {
+  /// Lowest.
+  min: Int
+  /// Highest.
+  max: Int = min + 10
+  /// Its width.
+  export fn width(self) -> Int { return self.max - self.min }
+  /// Whether a tier fits.
+  export fn fits(self, t: Tier) -> Bool { return true }
+}
+
+emit go { out: "@features/lib/go", package: "lib" }
+-- app/app.canon --
+/// The app.
+package app
+
+import lib { Band }
+
+/// A zone.
+record Zone {
+  /// Its band.
+  band: Band
+}
+
+emit go { out: "@features/app/go", package: "app", mode: types }
+-- findings.txt --
+error[E8014]  app/app.canon:9:3
+  types mode cannot emit the computed default of lib.Band.max: there is no data to read it from
+
+error[E8014]  app/app.canon:9:3
+  types mode cannot emit the lookup function of lib.Band.fits: there is no data to read it from
+
+error[E8014]  app/app.canon:9:3
+  types mode cannot emit the precomputed function of lib.Band.width: there is no data to read it from
+
+3 errors, 0 warnings in 2 packages (…)

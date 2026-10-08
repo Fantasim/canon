@@ -1,0 +1,20 @@
+CODEGEN.md §5.11, §2.2: @reload on a value of a package whose go emit is in types mode, which has no snapshot or store.
+-- a/a.canon --
+package a
+
+/// A place.
+record Place {
+  /// Its key.
+  id: String
+}
+
+/// Every place.
+@reload let places: [Place] keyed by id = [{ id: "home" }]
+
+emit go { out: "@features/a", package: "a", mode: types }
+emit json { out: "out/" }
+-- findings.txt --
+error[E8202]  a/a.canon:10:13
+  @reload on places: the go emit is in types mode, which has no file to reload
+
+1 error, 0 warnings in 1 package (…)

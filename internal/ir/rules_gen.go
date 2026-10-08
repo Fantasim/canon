@@ -25,8 +25,10 @@ func init() {
 	goCode := append(slices.Clone(common), (*stage).checkNegativeZero)
 	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkForeignTableLookups,
 		(*stage).checkGoDependentLiterals, (*stage).checkDefineKeys)
-	genRules[TargetGo][ModeData] = append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkResolvedLookups,
-		(*stage).checkGoDecodedDependents, (*stage).checkRefUnions, (*stage).checkForeignReads)
+	goDecode := append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkGoDecodedDependents, (*stage).checkRefUnions, (*stage).checkForeignReads)
+	genRules[TargetGo][ModeData] = append(slices.Clone(goDecode), (*stage).checkResolvedLookups)
+	// a go types-mode decoder reads what a data loader reads, with the source wire's constant defaults (CODEGEN.md §5.13); a types emit has no LoadInputs (§2.2).
+	genRules[TargetGo][ModeTypes] = append(slices.Clone(goDecode), (*stage).checkGoDefaults, (*stage).checkTypesInputs)
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns, other packages' records (DECISIONS 323).

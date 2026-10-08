@@ -42,23 +42,23 @@ func ParseGateID(key string) (GateID, bool) {
 type Gate struct {
 	id      GateID
 	retired bool
-	q       q.Q
-	d       d.D
+	q_      q.Q
+	d_      d.D
 }
 
 func (self *Gate) ID() GateID { return self.id }
 
 func (self *Gate) Retired() bool { return self.retired }
 
-func (self *Gate) Q() q.Q { return self.q }
+func (self *Gate) Q() q.Q { return self.q_ }
 
-func (self *Gate) D() d.D { return self.d }
+func (self *Gate) D() d.D { return self.d_ }
 
 // Make_Gate is for generated code.
-func Make_Gate(q q.Q, d d.D) Gate {
+func Make_Gate(q_ q.Q, d_ d.D) Gate {
 	return Gate{
-		q: q,
-		d: d,
+		q_: q_,
+		d_: d_,
 	}
 }
 
@@ -111,13 +111,13 @@ func buildEscapes() *escapesData {
 	d_.gates.rows = make([]Gate, 2)
 	d_.gates.rows[0] = Gate{
 		id: GateIDEast,
-		q:  q.QHigh,
-		d:  d.DNorth,
+		q_: q.QHigh,
+		d_: d.DNorth,
 	}
 	d_.gates.rows[1] = Gate{
 		id: GateIDWest,
-		q:  q.QLow,
-		d:  d.DSouth,
+		q_: q.QLow,
+		d_: d.DSouth,
 	}
 	return d_
 }

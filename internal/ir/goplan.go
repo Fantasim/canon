@@ -1,13 +1,12 @@
 package ir
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// GoNamePlan is every Go name gen/go declares for a package and its go emit, per scope (CODEGEN.md §3.3–§3.5), in baked and data mode, translated fns and their conformance test included: stage E reports E8005 and E8011 from its problems and gen/go writes every name from its lookups (decision 194); a lookup also names another package's type, member or id.
+// GoNamePlan is every Go name gen/go declares for a package and its go emit, per scope (CODEGEN.md §3.3–§3.5), in baked, data and types mode, translated fns and their conformance test included: stage E reports E8005 and E8011 from its problems and gen/go writes every name from its lookups (decision 194); a lookup also names another package's type, member or id.
 type GoNamePlan struct {
 	p       *Package
 	e       *Emit
@@ -18,7 +17,7 @@ type GoNamePlan struct {
 	namer
 	classOf  map[any]any    // each own field and export method → its *Record or *Case
 	goNameOf map[any]string // each own record, variant, case with fields and dependent type → its Go type
-	data     *goData        // data mode's layout (CODEGEN.md §5.8, §5.11); nil in baked mode
+	data     *goData        // data and types mode's layout (CODEGEN.md §5.8, §5.11, §5.13); nil in baked mode
 	pures    map[*ExportFn]*GoPure
 	pkgNames map[string]bool // the package-level names a translated body may name unqualified
 	nested   []*Record       // the records a table field of the package holds (CODEGEN.md §4.2)
@@ -79,13 +78,13 @@ func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 	}
 	for _, ref := range p.Imports {
 		for _, imp := range ref.Emits {
-			if _, seen := pl.imports[imp.GoPackage]; imp.Target == TargetGo && !seen {
-				pl.imports[imp.GoPackage] = imp.GoImport // the first copy: copies share the name (CODEGEN.md §2.1)
+			if _, seen := pl.imports[GoImportName(imp.GoPackage)]; imp.Target == TargetGo && !seen {
+				pl.imports[GoImportName(imp.GoPackage)] = imp.GoImport // the first copy: copies share the name (CODEGEN.md §2.1)
 			}
 		}
 	}
 	for _, v := range p.Values {
-		if len(e.Values) == 0 || slices.Contains(e.Values, v.Name) {
+		if emitSelects(e, v.Name) { // types mode writes no value (CODEGEN.md §2.2)
 			pl.emitted = append(pl.emitted, v)
 			pl.byValue[v.Name] = v
 		}
@@ -93,8 +92,12 @@ func PlanGoNames(p *Package, e *Emit) *GoNamePlan {
 	pl.indexClasses()
 	pl.nested = nestedRows(p)
 	pl.foreign, pl.rows = ForeignUses(p, e), ForeignRows(p, e)
-	if e.Mode == ModeData {
+	switch e.Mode {
+	case ModeData:
 		pl.data = newGoData(pl)
+	case ModeTypes:
+		pl.data = newGoTypesData(pl)
+	case ModeNone, ModeBaked, ModeEmbedded: // baked's layout; none and embedded are refused before generation
 	}
 	pl.problems = goOverrideProblems(p)
 	pl.declareAll()
@@ -202,7 +205,7 @@ func (pl *GoNamePlan) Data() GoData {
 
 // Slot is a record's or case's field as a slot: its getter is the field's exported name.
 func (pl *GoNamePlan) Slot(f *Field) GoSlot {
-	s := pl.slot(f.Type, f.Optional, goExported(f.Go, f.Name), goEffectiveStore(f.Go, f.Name))
+	s := pl.slot(f.Type, f.Optional, goExported(f.Go, f.Name), pl.ownStore(f, goEffectiveStore(f.Go, f.Name)))
 	pl.data.layout(&s, pl.classOf[f])
 	defineSlot(&s, f)
 	return s
@@ -228,14 +231,14 @@ func (pl *GoNamePlan) ValueSlot(v *Value) GoSlot {
 // MethodSlot is a precomputed export method, a getter named after the fn (CODEGEN.md §5.4).
 func (pl *GoNamePlan) MethodSlot(fn *ExportFn) GoSlot {
 	t, opt := goUnwrap(fn.Result)
-	s := pl.slot(t, opt, goExported(fn.Go, fn.Name), goEffectiveStore(fn.Go, fn.Name))
+	s := pl.slot(t, opt, goExported(fn.Go, fn.Name), pl.ownStore(fn, goEffectiveStore(fn.Go, fn.Name)))
 	pl.data.layout(&s, pl.classOf[fn])
 	return s
 }
 
 // Finite is a stored fn read from a table: a method's is a member of its struct, a package fn's the variable <fn>Table (CODEGEN.md §5.10, decision 183).
 func (pl *GoNamePlan) Finite(fn *ExportFn) GoFinite {
-	f := GoFinite{Name: goExported(fn.Go, fn.Name), Store: goEffectiveStore(fn.Go, fn.Name)}
+	f := GoFinite{Name: goExported(fn.Go, fn.Name), Store: pl.ownStore(fn, goEffectiveStore(fn.Go, fn.Name))}
 	if pl.pkgFns[fn] {
 		f.Store = goLowerCamel(goEffective(fn.Go, fn.Name)) + goTableSuffix
 	}
@@ -332,6 +335,27 @@ func (pl *GoNamePlan) declareDefines(top *nameScope) {
 // resolvable reports a ref into an emitted value of this package: its getter returns the entry (CODEGEN.md §5.8).
 func (pl *GoNamePlan) resolvable(r *RefTarget) bool {
 	return r.Coll == types.CollLet && !r.Local && r.Pkg == pl.p.Name && pl.byValue[r.Value] != nil
+}
+
+// GoImportName is the name a generated Go file imports another Canon package's go emit under: its Go package name, or for a Go predeclared identifier `<name>pkg` (`maxpkg`), as `<gopkg>rt` is built, so that it never shadows the builtin nor meets §3.4's escape of a field `max` (CODEGEN.md §3.4). The plan's imports hold it, so a user name equal to it is escaped as any import's.
+func GoImportName(goPackage string) string {
+	if goPredeclared[goPackage] {
+		return goPackage + goPkgSuffix
+	}
+	return goPackage
+}
+
+// ownStore is the storage of item, a field or method of this package's classes, escaped again while an imported Canon package is imported under it: its make hook takes it as a parameter (CODEGEN.md §3.4, §5.14); another package's class keeps its owner's names.
+func (pl *GoNamePlan) ownStore(item any, name string) string {
+	if pl.classOf[item] == nil {
+		return name
+	}
+	for {
+		if _, clash := pl.imports[name]; !clash {
+			return name
+		}
+		name += underscore
+	}
 }
 
 // local escapes a parameter or local named like an imported Canon package (CODEGEN.md §3.4, decision 182); false when the escaped name is an import too.

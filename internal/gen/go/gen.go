@@ -43,13 +43,13 @@ type gen struct {
 	called    map[string]bool // the loader helpers the decoders written so far call
 }
 
-// Generate is the Go generator (ir.Generator): <gopkg>.gen.go, rt/rt.go verbatim, and <gopkg>_conformance_test.go when the package has a translated fn (§2.3, §6.3); p is narrowed by ir.CopyOf.
+// Generate is the Go generator (ir.Generator), in baked, data and types mode: <gopkg>.gen.go, rt/rt.go verbatim, and <gopkg>_conformance_test.go when the package has a translated fn (§2.3, §6.3); p is narrowed by ir.CopyOf.
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	if e.Target != ir.TargetGo {
 		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)
 	}
-	if e.Mode != ir.ModeBaked && e.Mode != ir.ModeData {
-		// stage E refuses the other modes first: embedded and types are E8019 `unbuilt` (DECISIONS 320), none is check's E8009.
+	if e.Mode != ir.ModeBaked && e.Mode != ir.ModeData && e.Mode != ir.ModeTypes {
+		// stage E refuses the other modes first: embedded is E8019 `unbuilt` (DECISIONS 320), none is check's E8009.
 		return nil, fmt.Errorf("%w: mode %s of %s", ErrMalformed, modeText(e.Mode), e.Out)
 	}
 	if !token.IsIdentifier(e.GoPackage) || e.GoImport == "" {
@@ -116,7 +116,10 @@ func (g *gen) printf(format string, args ...any) {
 // source is the formatted main file: every section in CODEGEN.md §2.7's order.
 func (g *gen) source() []byte {
 	sections := []func(){g.constants, g.enums, g.kindEnums, g.branchEnums, g.idEnums, g.types, g.rowTypes, g.hooks, g.defineTables, g.containers, g.values, g.fns, g.runtimeInputs}
-	if g.isData() {
+	switch {
+	case g.isTypes():
+		sections = g.typesSections()
+	case g.isData():
 		sections = g.dataSections()
 	}
 	for _, section := range sections {

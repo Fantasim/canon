@@ -1,0 +1,280 @@
+File: File FileKind=source @1:1-98:1
+  Doc: DocComment "Go `types` mode (CODEGEN.md §2.2, §5.13): the read-only Go types plus one public decoder,\n`Decode<T>(raw []byte) (*T, error)`, per public record and variant, which reads the source\nwire that `load` reads. A runtime that is not the compiler reads the very JSON file a `@text`\nfn renders (§2.9, WIRE.md §8.5) through the generated decoder of its result type:\n`os.ReadFile` then `gotypes.DecodeItemFile(raw)`.\n\nThe emit is written as two copies (§2.1), each under a root of its own with its own Go\nmodule path, so each consumer imports its own copy and its own `rt`." @1:1-8:73
+  Package: QualifiedName features.gotypes @9:9-9:25
+  Decls[0]: EnumDecl @12:1-19:2
+    Doc: DocComment "How rare an item is." @11:1-11:25
+    Name: Ident Rarity @12:6-12:12
+    Members[0]: EnumMember @14:3-14:9
+      Doc: DocComment "Found everywhere." @13:3-13:24
+      Name: Ident common @14:3-14:9
+    Members[1]: EnumMember @16:3-16:7
+      Doc: DocComment "Found in dungeons." @15:3-15:25
+      Name: Ident rare @16:3-16:7
+    Members[2]: EnumMember @18:3-18:24
+      Doc: DocComment "Found once a season." @17:3-17:27
+      Name: Ident season_1 @18:3-18:11
+      Value: StringLit @18:14-18:24
+        Parts[0]: text "season-1"
+  Decls[1]: EnumDecl @22:1-27:2
+    Doc: DocComment "An element, written as its code." @21:1-21:37
+    Name: Ident Element @22:6-22:13
+    Annotations[0]: Annotation @22:14-22:27
+      Name: Ident codes @22:15-22:20
+      Args[0]: AnnotationArg @22:21-22:26
+        Value: QualifiedName UInt8 @22:21-22:26
+    Annotations[1]: Annotation @22:28-22:40
+      Name: Ident json @22:29-22:33
+      Args[0]: AnnotationArg @22:34-22:39
+        Value: QualifiedName codes @22:34-22:39
+    Members[0]: EnumMember @24:3-24:11
+      Doc: DocComment "Burns." @23:3-23:13
+      Name: Ident fire @24:3-24:7
+      Value: IntLit Value=1 @24:10-24:11
+    Members[1]: EnumMember @26:3-26:12
+      Doc: DocComment "Flows." @25:3-25:13
+      Name: Ident water @26:3-26:8
+      Value: IntLit Value=2 @26:11-26:12
+  Decls[2]: RecordDecl @30:1-35:2
+    Doc: DocComment "A stat an item adds." @29:1-29:25
+    Name: Ident Bonus @30:8-30:13
+    Body: RecordBody @30:14-35:2
+      Items[0]: FieldDecl @32:3-32:12
+        Doc: DocComment "The stat's number." @31:3-31:25
+        Name: Ident stat @32:3-32:7
+        Type: NamedType @32:9-32:12
+          Name: QualifiedName Int @32:9-32:12
+      Items[1]: FieldDecl @34:3-34:14
+        Doc: DocComment "How much it adds." @33:3-33:24
+        Name: Ident amount @34:3-34:9
+        Type: NamedType @34:11-34:14
+          Name: QualifiedName Int @34:11-34:14
+  Decls[3]: RecordDecl @38:1-59:2
+    Doc: DocComment "An item of the catalogue." @37:1-37:30
+    Name: Ident Item @38:8-38:12
+    Body: RecordBody @38:13-59:2
+      Items[0]: FieldDecl @40:3-40:10
+        Doc: DocComment "Its id." @39:3-39:14
+        Name: Ident id @40:3-40:5
+        Type: NamedType @40:7-40:10
+          Name: QualifiedName Int @40:7-40:10
+      Items[1]: FieldDecl @42:3-42:17
+        Doc: DocComment "Its symbol." @41:3-41:18
+        Name: Ident symbol @42:3-42:9
+        Type: NamedType @42:11-42:17
+          Name: QualifiedName String @42:11-42:17
+      Items[2]: FieldDecl @44:3-44:33
+        Doc: DocComment "Its displayed name; `=` on the wire means it has none." @43:3-43:61
+        Name: Ident name @44:3-44:7
+        Type: OptionalType @44:9-44:16
+          Elem: NamedType @44:9-44:15
+            Name: QualifiedName String @44:9-44:15
+        Annotations[0]: Annotation @44:17-44:33
+          Name: Ident json @44:18-44:22
+          Args[0]: AnnotationArg @44:23-44:32
+            Name: Ident none @44:23-44:27
+            Value: StringLit @44:29-44:32
+              Parts[0]: text "="
+      Items[3]: FieldDecl @46:3-46:16
+        Doc: DocComment "A remark, left out of the file when it has none." @45:3-45:55
+        Name: Ident note @46:3-46:7
+        Type: OptionalType @46:9-46:16
+          Elem: NamedType @46:9-46:15
+            Name: QualifiedName String @46:9-46:15
+      Items[4]: FieldDecl @48:3-48:26
+        Doc: DocComment "How rare it is." @47:3-47:22
+        Name: Ident rarity @48:3-48:9
+        Type: NamedType @48:11-48:17
+          Name: QualifiedName Rarity @48:11-48:17
+        Default: IdentExpr common @48:20-48:26
+      Items[5]: FieldDecl @50:3-50:19
+        Doc: DocComment "Its element." @49:3-49:19
+        Name: Ident element @50:3-50:10
+        Type: NamedType @50:12-50:19
+          Name: QualifiedName Element @50:12-50:19
+      Items[6]: FieldDecl @52:3-52:56
+        Doc: DocComment "Time before it can be used again." @51:3-51:40
+        Name: Ident cooldown @52:3-52:11
+        Type: NamedType @52:13-52:21
+          Name: QualifiedName Duration @52:13-52:21
+        Default: DurationLit Millis=1000 @52:24-52:26
+        Annotations[0]: Annotation @52:27-52:56
+          Name: Ident json @52:28-52:32
+          Args[0]: AnnotationArg @52:33-52:46
+            Value: StringLit @52:33-52:46
+              Parts[0]: text "cooldownSec"
+          Args[1]: AnnotationArg @52:48-52:55
+            Name: Ident unit @52:48-52:52
+            Value: QualifiedName s @52:54-52:55
+      Items[7]: FieldDecl @54:3-54:57
+        Doc: DocComment "How long it lasts; `none` means forever, written `null` over the default." @53:3-53:80
+        Name: Ident lifetime @54:3-54:11
+        Type: OptionalType @54:13-54:22
+          Elem: NamedType @54:13-54:21
+            Name: QualifiedName Duration @54:13-54:21
+        Default: DurationLit Millis=3600000 @54:25-54:27
+        Annotations[0]: Annotation @54:28-54:57
+          Name: Ident json @54:29-54:33
+          Args[0]: AnnotationArg @54:34-54:47
+            Value: StringLit @54:34-54:47
+              Parts[0]: text "lifetimeMin"
+          Args[1]: AnnotationArg @54:49-54:56
+            Name: Ident unit @54:49-54:53
+            Value: QualifiedName m @54:55-54:56
+      Items[8]: FieldDecl @56:3-56:47
+        Doc: DocComment "How many fit in one slot." @55:3-55:32
+        Name: Ident stack @56:3-56:8
+        Type: NamedType @56:10-56:15
+          Name: QualifiedName Int16 @56:10-56:15
+        Default: IntLit Value=1 @56:18-56:19
+        Annotations[0]: Annotation @56:20-56:47
+          Name: Ident json @56:21-56:25
+          Args[0]: AnnotationArg @56:26-56:46
+            Name: Ident path @56:26-56:30
+            Value: StringLit @56:32-56:46
+              Parts[0]: text "limits.stack"
+      Items[9]: FieldDecl @58:3-58:82
+        Doc: DocComment "What it adds." @57:3-57:20
+        Name: Ident bonuses @58:3-58:10
+        Type: ListType @58:12-58:25
+          Elem: NamedType @58:13-58:18
+            Name: QualifiedName Bonus @58:13-58:18
+          Args: TypeArgs @58:19-58:25
+            Args[0]: RangeExpr Op=..= @58:20-58:24
+              Hi: IntLit Value=3 @58:23-58:24
+        Default: ListLit @58:28-58:30
+        Annotations[0]: Annotation @58:31-58:82
+          Name: Ident json @58:32-58:36
+          Args[0]: AnnotationArg @58:37-58:81
+            Name: Ident pairs @58:37-58:42
+            Value: AnnotationList @58:44-58:81
+              Items[0]: StringLit @58:45-58:61
+                Parts[0]: text "dwDestParam"
+                Parts[1]: Interp @58:58-58:59
+                  X: IdentExpr i @58:58-58:59
+              Items[1]: StringLit @58:63-58:80
+                Parts[0]: text "nAdjParamVal"
+                Parts[1]: Interp @58:77-58:78
+                  X: IdentExpr i @58:77-58:78
+  Decls[4]: RecordDecl @62:1-67:2
+    Doc: DocComment "The catalogue file the game and the services read." @61:1-61:55
+    Name: Ident ItemFile @62:8-62:16
+    Body: RecordBody @62:17-67:2
+      Items[0]: FieldDecl @64:3-64:28
+        Doc: DocComment "Every item, by id." @63:3-63:25
+        Name: Ident items @64:3-64:8
+        Type: KeyedType @64:10-64:28
+          List: ListType @64:10-64:16
+            Elem: NamedType @64:11-64:15
+              Name: QualifiedName Item @64:11-64:15
+          Key: Ident id @64:26-64:28
+      Items[1]: FieldDecl @66:3-66:26
+        Doc: DocComment "How many items each rarity has." @65:3-65:38
+        Name: Ident byRarity @66:3-66:11
+        Type: MapType @66:13-66:26
+          Key: NamedType @66:14-66:20
+            Name: QualifiedName Rarity @66:14-66:20
+          Value: NamedType @66:22-66:25
+            Name: QualifiedName Int @66:22-66:25
+  Decls[5]: FnDecl @70:1-94:2
+    Doc: DocComment "The catalogue, rendered as JSON." @69:1-69:37
+    Annotations[0]: Annotation @70:1-70:20
+      Name: Ident text @70:2-70:6
+      Args[0]: AnnotationArg @70:7-70:19
+        Value: StringLit @70:7-70:19
+          Parts[0]: text "items.json"
+    Mods: Modifiers Export="export" @71:1-71:7
+    Name: Ident itemFile @71:11-71:19
+    Result: NamedType @71:25-71:33
+      Name: QualifiedName ItemFile @71:25-71:33
+    Body: Block @71:34-94:2
+      Stmts[0]: ReturnStmt @72:3-93:4
+        Value: BraceLit @72:10-93:4
+          Items[0]: FieldItem @73:5-91:6
+            Name: Ident items @73:5-73:10
+            Value: ListLit @73:12-91:6
+              Elems[0]: BraceLit @74:7-81:8
+                Items[0]: FieldItem @75:9-75:14
+                  Name: Ident id @75:9-75:11
+                  Value: IntLit Value=1 @75:13-75:14
+                Items[1]: FieldItem @76:9-76:27
+                  Name: Ident symbol @76:9-76:15
+                  Value: StringLit @76:17-76:27
+                    Parts[0]: text "II_SWORD"
+                Items[2]: FieldItem @77:9-77:22
+                  Name: Ident name @77:9-77:13
+                  Value: StringLit @77:15-77:22
+                    Parts[0]: text "Sword"
+                Items[3]: FieldItem @78:9-78:21
+                  Name: Ident rarity @78:9-78:15
+                  Value: IdentExpr rare @78:17-78:21
+                Items[4]: FieldItem @79:9-79:22
+                  Name: Ident element @79:9-79:16
+                  Value: IdentExpr fire @79:18-79:22
+                Items[5]: FieldItem @80:9-80:42
+                  Name: Ident bonuses @80:9-80:16
+                  Value: ListLit @80:18-80:42
+                    Elems[0]: BraceLit @80:19-80:41
+                      Items[0]: FieldItem @80:21-80:28
+                        Name: Ident stat @80:21-80:25
+                        Value: IntLit Value=1 @80:27-80:28
+                      Items[1]: FieldItem @80:30-80:39
+                        Name: Ident amount @80:30-80:36
+                        Value: IntLit Value=5 @80:38-80:39
+              Elems[1]: BraceLit @82:7-90:8
+                Items[0]: FieldItem @83:9-83:14
+                  Name: Ident id @83:9-83:11
+                  Value: IntLit Value=2 @83:13-83:14
+                Items[1]: FieldItem @84:9-84:26
+                  Name: Ident symbol @84:9-84:15
+                  Value: StringLit @84:17-84:26
+                    Parts[0]: text "II_WAND"
+                Items[2]: FieldItem @85:9-85:29
+                  Name: Ident note @85:9-85:13
+                  Value: StringLit @85:15-85:29
+                    Parts[0]: text "A test item."
+                Items[3]: FieldItem @86:9-86:23
+                  Name: Ident element @86:9-86:16
+                  Value: IdentExpr water @86:18-86:23
+                Items[4]: FieldItem @87:9-87:21
+                  Name: Ident cooldown @87:9-87:17
+                  Value: DurationLit Millis=3000 @87:19-87:21
+                Items[5]: FieldItem @88:9-88:23
+                  Name: Ident lifetime @88:9-88:17
+                  Value: NoneLit @88:19-88:23
+                Items[6]: FieldItem @89:9-89:18
+                  Name: Ident stack @89:9-89:14
+                  Value: IntLit Value=20 @89:16-89:18
+          Items[1]: FieldItem @92:5-92:50
+            Name: Ident byRarity @92:5-92:13
+            Value: BraceLit @92:15-92:50
+              Items[0]: FieldItem @92:17-92:26
+                Name: Ident common @92:17-92:23
+                Value: IntLit Value=1 @92:25-92:26
+              Items[1]: FieldItem @92:28-92:35
+                Name: Ident rare @92:28-92:32
+                Value: IntLit Value=1 @92:34-92:35
+              Items[2]: FieldItem @92:37-92:48
+                Name: Ident season_1 @92:37-92:45
+                Value: IntLit Value=0 @92:47-92:48
+  Decls[6]: EmitDecl @96:1-96:30
+    Target: Ident text @96:6-96:10
+    Options: BraceLit @96:11-96:30
+      Items[0]: FieldItem @96:13-96:28
+        Name: Ident out @96:13-96:16
+        Value: StringLit @96:18-96:28
+          Parts[0]: text "out/text"
+  Decls[7]: EmitDecl @97:1-97:84
+    Target: Ident go @97:6-97:8
+    Options: BraceLit @97:9-97:84
+      Items[0]: FieldItem @97:11-97:69
+        Name: Ident out @97:11-97:14
+        Value: ListLit @97:16-97:69
+          Elems[0]: StringLit @97:17-97:34
+            Parts[0]: text "out/go/gotypes/"
+          Elems[1]: StringLit @97:36-97:68
+            Parts[0]: text "@sovcommon/gotypes/go/gotypes/"
+      Items[1]: FieldItem @97:71-97:82
+        Name: Ident mode @97:71-97:75
+        Value: IdentExpr types @97:77-97:82
+== findings
+0 errors, 0 warnings in 1 package (…)

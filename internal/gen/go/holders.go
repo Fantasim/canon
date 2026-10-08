@@ -5,8 +5,11 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// isData reports a data-mode emit (CODEGEN.md §2.2).
-func (g *gen) isData() bool { return g.e.Mode == ir.ModeData }
+// isData reports a data- or types-mode emit: classes decoded from JSON, table ids strings, refs keys unless a load resolves them (CODEGEN.md §2.2, §5.3, §5.13).
+func (g *gen) isData() bool { return g.e.Mode == ir.ModeData || g.isTypes() }
+
+// isTypes reports a types-mode emit: public decoders of the source wire, no value (CODEGEN.md §5.13).
+func (g *gen) isTypes() bool { return g.e.Mode == ir.ModeTypes }
 
 // indexVariants maps each case with fields to its variant (WIRE.md §5.6, CODEGEN.md §5.5).
 func (g *gen) indexVariants() {

@@ -52,6 +52,15 @@ func newGoData(pl *GoNamePlan) *goData {
 	return d
 }
 
+// newGoTypesData decodes every record, variant and case of the package and the dependent types they hold, for its public decoders (CODEGEN.md §5.13); no value holds a class, so no ref resolves.
+func newGoTypesData(pl *GoNamePlan) *goData {
+	d := &goData{pl: pl, holders: map[any][]*Value{}, decoded: map[any]bool{}}
+	for _, class := range packageClasses(pl.p) {
+		d.decode(class)
+	}
+	return d
+}
+
 // goRootClass is the record of a value's rows (a table or keyed list) or of the value itself.
 func goRootClass(v *Value) any {
 	t := v.Type

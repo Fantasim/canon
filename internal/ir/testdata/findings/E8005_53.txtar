@@ -1,0 +1,22 @@
+CODEGEN.md §5.13, §3.5: a go types-mode emit has the name plan gen/go writes from, so its public decoder Decode<T> of record Item meets the record named DecodeItem: E8005, reported at the item named second in the plan's order (the decoders come after the types).
+-- a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// Its id.
+  id: Int
+}
+
+/// A record whose name is Item's decoder.
+record DecodeItem {
+  /// Its id.
+  id: Int
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  go: DecodeItem is generated for both a.DecodeItem and a.Item
+
+1 error, 0 warnings in 1 package (…)

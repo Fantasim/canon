@@ -1,0 +1,32 @@
+CODEGEN.md §2.2, §5.13: go types mode has no data for a stored export fn (precomputed or with finite parameters) or a computed default, on its own records: E8014 at each, as for cpp and ts.
+-- a/a.canon --
+package a
+
+/// A tier.
+enum Tier { low, high }
+
+/// A band.
+record Band {
+  /// Lowest.
+  min: Int
+  /// Highest.
+  max: Int = min + 10
+
+  /// Its width.
+  export fn width(self) -> Int { return self.max - self.min }
+  /// Whether a tier fits.
+  export fn fits(self, t: Tier) -> Bool { return true }
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8014]  a/a.canon:11:3
+  types mode cannot emit the computed default of Band.max: there is no data to read it from
+
+error[E8014]  a/a.canon:14:13
+  types mode cannot emit the precomputed function of Band.width: there is no data to read it from
+
+error[E8014]  a/a.canon:16:13
+  types mode cannot emit the lookup function of Band.fits: there is no data to read it from
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,123 @@
+CODEGEN.md §3.4, §2.8, §5.14: a Canon package whose Go name is a Go predeclared identifier (`max`, `len`) is imported under the alias `<name>pkg` (`maxpkg`, `lenpkg`), so it shadows no builtin the generated file calls and meets no field `max` (stored `max_`): a types-mode and a baked package each reading max's record (with a Duration: jsonDuration), holding a field `max` that a translated method reads and a field `maxpkg` (stored `maxpkg_`, the alias being an import), and a data-mode package reading len's record; all build, vet and pass their conformance tests.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- max/max.canon --
+/// Max.
+package max
+
+/// A limit.
+record Limit {
+  /// How long.
+  wait: Duration = 2s @json("waitSec", unit: s)
+  /// Its tags.
+  tags: [String] = []
+}
+
+emit go { out: "@gen/go/max", mode: types }
+-- a/a.canon --
+/// A.
+package a
+
+import max { Limit }
+
+/// A rule.
+record Rule {
+  /// Its limit.
+  limit: Limit
+  /// Its own wait.
+  pause: Duration = 1s @json("pauseSec", unit: s)
+  /// Counts.
+  counts: {String: Int} = {}
+  /// A field named like the package.
+  max: Int = 1
+  /// A field named like the package's alias.
+  maxpkg: Int = 2
+
+  /// Twice max, plus n.
+  export fn twice(self, n: Int) -> Int {
+    let len = n * 2
+    return len + max * 2 + maxpkg
+  }
+}
+
+test "twice" {
+  let r: Rule = { limit: {} }
+  expect r.twice(2) == 8
+}
+
+emit go { out: "@gen/go/a", mode: types }
+-- b/b.canon --
+/// B, baked.
+package b
+
+import max { Limit }
+
+/// A rule.
+record Rule {
+  /// Its limit.
+  limit: Limit
+  /// Its own wait.
+  pause: Duration = 1s @json("pauseSec", unit: s)
+  /// Counts.
+  counts: {String: Int} = {}
+  /// A field named like the package.
+  max: Int = 1
+  /// A field named like the package's alias.
+  maxpkg: Int = 2
+
+  /// Twice max, plus n.
+  export fn twice(self, n: Int) -> Int {
+    let len = n * 2
+    return len + max * 2 + maxpkg
+  }
+}
+
+test "twice" {
+  let r: Rule = { limit: {} }
+  expect r.twice(2) == 8
+}
+
+/// A rule.
+let rule: Rule = { limit: { tags: ["x"] }, max: 3 }
+
+emit go { out: "@gen/go/b", mode: baked }
+-- len/len.canon --
+/// Len.
+package len
+
+/// A span.
+record Span {
+  /// Its size.
+  size: Int
+  /// Its parts.
+  parts: [Int]
+}
+
+emit go { out: "@gen/go/len", mode: baked }
+-- d/d.canon --
+/// D.
+package d
+
+import len { Span }
+
+/// A ruler.
+record Ruler {
+  /// Its spans.
+  spans: [Span]
+  /// Names by key.
+  names: {String: String}
+}
+
+/// The ruler.
+let ruler: Ruler = { spans: [{ size: 2, parts: [1, 1] }], names: { "a": "b" } }
+
+emit go { out: "@gen/go/d", mode: data }
+emit json { out: "out/" }

@@ -108,9 +108,9 @@ var wayOf = map[diag.Kind]diag.Kind{
 	diag.KindVariantKindConstant: diag.KindWayVariantKindConstant, diag.KindVariantMethod: diag.KindWayVariantMethod,
 }
 
-// unbuiltAlt is, for each mode a target's generator does not write yet, the mode an E8019 `unbuilt` finding offers instead (DECISIONS 320; owed for v0.2): baked, the one mode that always holds (CODEGEN.md §2.2: a types package may hold values a data file cannot, E8015); ModeNone for a mode that is built.
+// unbuiltAlt is, for each mode a target's generator does not write yet, the mode an E8019 `unbuilt` finding offers instead (DECISIONS 320; owed for v0.2): baked, the one mode that always holds (CODEGEN.md §2.2); ModeNone for a mode that is built.
 var unbuiltAlt = [...][ModeTypes + 1]Mode{
-	TargetGo:  {ModeEmbedded: ModeBaked, ModeTypes: ModeBaked},
+	TargetGo:  {ModeEmbedded: ModeBaked},
 	TargetCpp: {ModeEmbedded: ModeBaked},
 }
 
@@ -133,7 +133,7 @@ var goPredeclared = nameSet("any", "append", "bool", "byte", "cap", "clear", "cl
 
 // goImportNames are the package names generated Go files import (CODEGEN.md §3.4).
 var goImportNames = nameSet(goRT, goJSON, goFmt, goIter, "os", goFilepath, goAtomic, goSync,
-	goTime, goErrors, goStrconv, goStrings, goMath, goRegexp, "embed", goSlices)
+	goTime, goErrors, goStrconv, goStrings, goMath, goRegexp, "embed", goSlices, goUTF8)
 
 // cppOwnNames are the namespaces generated C++ declares itself, beside check's (CODEGEN.md §3.4).
 var cppOwnNames = nameSet(cppDetail, cppConformance)
@@ -175,7 +175,7 @@ var inputKinds = map[types.Kind]string{
 var (
 	goStdImports = []string{
 		goRT, goTime, goIter, goSync, goStrconv, goMath, goJSON, goFmt,
-		goStrings, goSlices, goAtomic, goErrors, goRegexp, goTesting,
+		goStrings, goSlices, goAtomic, goErrors, goRegexp, goTesting, goUTF8,
 	}
 	goDataImports  = []string{goRT, goJSON, goFmt, goStrings, goSlices}
 	goStoreMembers = []string{"current", storeCurrent, storeReload}
@@ -188,7 +188,7 @@ var (
 		"name", "path", "raw", goOut, "obj", "err", "f", GoRows, goValues,
 		"keys", "i", GoIDStore, GoRetiredStore, "dir", "s", "ctx", "tag", "c", "key", "k", "r",
 		"ok", "bad", goWant, "dst", "n", "lo", "hi", "v", "kr", "vr", "hasK", "hasV", "first",
-		"empty", "marker", "a", "m", "af", "mf", "at", "disc",
+		"empty", "marker", "a", "m", "af", "mf", "at", "disc", "unit",
 	}
 	goVectorOwn        = []string{goWant, "code"}
 	goCheckedOps       = map[Op]bool{OpAdd: true, OpSub: true, OpMul: true, OpDiv: true, OpMod: true}

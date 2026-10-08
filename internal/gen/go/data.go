@@ -21,12 +21,14 @@ var (
 	conformanceText string
 	//go:embed text/hooks.txt
 	hooksText string
+	//go:embed text/types.txt
+	typesText string
 )
 
 // dataTemplates are the fixed code shapes: data mode's table container, loaders, snapshot and
 // store; a translated fn's method and pure function; the conformance file's helpers and tests;
-// make hooks, rows and readers.
-var dataTemplates = parseTemplates(dataText, translatedText, conformanceText, hooksText)
+// make hooks, rows and readers; types mode's public decoders and helpers.
+var dataTemplates = parseTemplates(dataText, translatedText, conformanceText, hooksText, typesText)
 
 // parseTemplates parses texts of `define`s into one set.
 func parseTemplates(texts ...string) *template.Template {

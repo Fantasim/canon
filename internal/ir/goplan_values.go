@@ -112,6 +112,6 @@ func (pl *GoNamePlan) declareUsed(sc *nameScope, u *goImportUse) {
 		}
 		e := ref.Emits[i]
 		seen[e.GoImport] = true
-		pl.declare(sc, e.GoPackage, e.GoImport, nil)
+		pl.declare(sc, GoImportName(e.GoPackage), e.GoImport, nil)
 	}
 }

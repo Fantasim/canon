@@ -1,0 +1,36 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "symbol": "II_SWORD",
+      "name": "Sword",
+      "rarity": "rare",
+      "element": 1,
+      "cooldownSec": 1,
+      "lifetimeMin": 60,
+      "limits": {
+        "stack": 1
+      },
+      "dwDestParam0": 1,
+      "nAdjParamVal0": 5
+    },
+    {
+      "id": 2,
+      "symbol": "II_WAND",
+      "name": "=",
+      "note": "A test item.",
+      "rarity": "common",
+      "element": 2,
+      "cooldownSec": 3,
+      "lifetimeMin": null,
+      "limits": {
+        "stack": 20
+      }
+    }
+  ],
+  "byRarity": {
+    "common": 1,
+    "rare": 1,
+    "season-1": 0
+  }
+}

@@ -82,3 +82,45 @@ func (d *goData) keyChecked(t TypeRef, class any) bool {
 		t = *t.Elem
 	}
 }
+
+// ReadsDurations reports what a types-mode decoder reads holding a Duration, which it reads through jsonDuration (WIRE.md §5.1, CODEGEN.md §5.13): a class its decoders or readers read, a pair record they read slot by slot, a dependent type's branch.
+func (pl *GoNamePlan) ReadsDurations() bool {
+	read := pl.readClasses()
+	for _, t := range pl.p.Types {
+		if d, ok := t.(*Dependent); ok && pl.Decoded(d) {
+			read = append(read, d)
+		}
+	}
+	return slices.ContainsFunc(read, func(class any) bool {
+		return classHoldsDuration(class) || slices.ContainsFunc(pairRecords(class), classHoldsDuration)
+	})
+}
+
+// classHoldsDuration reports a record, case or dependent type holding a Duration in a field, stored result or branch.
+func classHoldsDuration(class any) bool {
+	isDuration := func(t TypeRef) bool { return t.Kind == types.Duration }
+	d, ok := class.(*Dependent)
+	if !ok {
+		return classHolds(class, isDuration)
+	}
+	found := false
+	for _, b := range d.Branches {
+		walkTypeRef(b.Type, func(t TypeRef) { found = found || isDuration(t) })
+	}
+	return found
+}
+
+// pairRecords are the element records of class's pairs fields, read slot by slot (WIRE.md §5.14).
+func pairRecords(class any) []any {
+	fields, _ := classBody(class)
+	var out []any
+	for _, f := range fields {
+		if f.Pairs == nil || f.Type.Elem == nil {
+			continue
+		}
+		if rec, ok := f.Type.Elem.Named.(*Record); ok {
+			out = append(out, rec)
+		}
+	}
+	return out
+}

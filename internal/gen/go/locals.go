@@ -15,7 +15,7 @@ import (
 type locals struct {
 	Name, Path, Raw, Out, Obj, Err, F, Rows, Values, Keys, I, ID, Retired, Dir, S, Ctx, Tag, C          string
 	Key, K, R, OK, Bad, Want, Dst, N, Lo, Hi, V, Kr, Vr, HasK, HasV, First, Empty, Marker, A, M, Af, Mf string
-	At                                                                                                  string
+	At, Unit                                                                                            string
 }
 
 // newLocals reads data mode's fixed loader locals off the plan (CODEGEN.md §3.4, decision 182).
@@ -32,17 +32,17 @@ func (g *gen) newLocals() locals {
 		Hi: n(localHi), V: n(tempValue), Kr: n(localKr), Vr: n(localVr), HasK: n(localHasK),
 		HasV: n(localHasV), First: n(localFirst), Empty: n(tempEmpty), Marker: n(localMarker),
 		A: n(localA), M: n(tempMember), Af: n(localAf), Mf: n(localMf),
-		At: n(localAt),
+		At: n(localAt), Unit: n(localUnit),
 	}
 }
 
-// importedNames are the Go package names of the imported Canon packages' go emits.
+// importedNames are the names the imported Canon packages' go emits are imported under (ir.GoImportName).
 func importedNames(p *ir.Package) map[string]bool {
 	out := map[string]bool{}
 	for _, ref := range p.Imports {
 		for _, e := range ref.Emits {
 			if e.Target == ir.TargetGo {
-				out[e.GoPackage] = true
+				out[ir.GoImportName(e.GoPackage)] = true
 			}
 		}
 	}
