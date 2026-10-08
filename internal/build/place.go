@@ -82,7 +82,11 @@ func (r *run) collisions(outputs []*output) []*output {
 	kept := outputs[:0:0]
 	for _, o := range outputs {
 		key := strings.ToLower(o.Abs)
-		if rel, clash := reserved[key]; clash && !o.listing && !o.remove {
+		if o.remove { // a deletion is no output: a path differing in case from an output is another file (CODEGEN.md §2.9, DECISIONS 336)
+			kept = append(kept, o)
+			continue
+		}
+		if rel, clash := reserved[key]; clash && !o.listing {
 			diag.E8152.At(o.at, rel, o.Path).Report(r.bags[o.Package])
 			continue
 		}

@@ -1,4 +1,4 @@
-CODEGEN.md §2.9, DECISIONS 294, 308: a `@text` result of `String?` is E8021 position through an alias or a refinement too: neither verbatim text nor JSON says what none writes.
+CODEGEN.md §2.9, DECISIONS 336: a `@text` result of `String?` through an alias or a refinement is well placed too; only the fn with a parameter, whose result is such an optional, is E8021 position.
 -- a/a.canon --
 package a
 
@@ -13,12 +13,13 @@ export fn v() -> MaybeSql { return "x" }
 @text("w.sql")
 export fn w() -> String(1..)? { return "x" }
 
+/// Doc.
+@text("z.sql")
+export fn z(n: Int) -> MaybeSql { return "x" }
+
 emit text { out: "@generated/sql" }
 -- findings.txt --
-error[E8021]  a/a.canon:7:1
+error[E8021]  a/a.canon:15:1
   @text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form
 
-error[E8021]  a/a.canon:11:1
-  @text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form
-
-2 errors, 0 warnings in 1 package (…)
+1 error, 0 warnings in 1 package (…)

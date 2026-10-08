@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -33,6 +34,15 @@ func (osFS) Rename(oldname, newname string) error {
 		return wrapIO(err)
 	}
 	return wrapIO(syncDir(filepath.Dir(target)))
+}
+
+// OpenRead opens name for reading as a stream, so that a large file is hashed without being held (CODEGEN.md §2.9, DECISIONS 336).
+func (osFS) OpenRead(name string) (io.ReadCloser, error) {
+	f, err := os.Open(filepath.FromSlash(name))
+	if err != nil {
+		return nil, wrapIO(err)
+	}
+	return f, nil
 }
 
 func (osFS) Remove(name string) error { return wrapIO(os.Remove(filepath.FromSlash(name))) }

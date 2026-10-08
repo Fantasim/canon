@@ -2,6 +2,7 @@ package ir
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -10,14 +11,17 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// TextFiles are the `@text` files of an accepted cp (p.TextFns: kept out of p.Fns, DECISIONS 300), in source order, each its fn's String value verbatim, or any other value as JSON (CODEGEN.md §2.9).
+// TextFiles are the `@text` files of an accepted cp (p.TextFns: kept out of p.Fns, DECISIONS 300), in source order, each its fn's String value verbatim, or any other value as JSON; an optional result that is none has no file (CODEGEN.md §2.9, DECISIONS 336).
 func TextFiles(cp *check.Package, p *Package) ([]File, error) {
 	var out []File
 	for _, f := range sourceFiles(cp) {
 		for _, fd := range textFns(f) {
-			content, err := textContent(p, fd.Name.Name)
+			content, written, err := textContent(p, fd.Name.Name)
 			if err != nil {
 				return nil, err
+			}
+			if !written {
+				continue
 			}
 			out = append(out, File{Path: textName(annotation(fd.Annotations, syntax.AnnText)), Content: content})
 		}
@@ -46,28 +50,32 @@ func textName(a *syntax.Annotation) string {
 	return ""
 }
 
-// textContent is the bytes of the precomputed value of p's export fn name: a String verbatim, any other result as JSON (WIRE.md §8.5, DECISIONS 308). A value stage E refused has no file: wire.Text's error is returned, never a panic.
-func textContent(p *Package, name string) ([]byte, error) {
-	for _, fn := range p.TextFns {
-		if fn.Name != name {
-			continue
-		}
-		if fn.Value == nil {
-			break
-		}
-		if isText(fn.Result) {
-			if s, ok := fn.Value.(*value.Str); ok {
-				return []byte(s.V), nil
-			}
-			break
-		}
-		b, err := wire.Text(fn.Value)
-		if err != nil {
-			return nil, fmt.Errorf(fmtTextWire, ErrInternal, p.Name, name, err)
-		}
-		return b, nil
+// textContent is the bytes of the precomputed value of p's export fn name: a String verbatim, any other result as JSON (WIRE.md §8.5, DECISIONS 308); written is false for an optional result that is none, which has no file (DECISIONS 336). A value stage E refused has no file: wire.Text's error is returned, never a panic.
+func textContent(p *Package, name string) (content []byte, written bool, err error) {
+	i := slices.IndexFunc(p.TextFns, func(fn *ExportFn) bool { return fn.Name == name })
+	if i < 0 || p.TextFns[i].Value == nil {
+		return nil, false, fmt.Errorf(fmtNoText, ErrInternal, p.Name, name)
 	}
-	return nil, fmt.Errorf(fmtNoText, ErrInternal, p.Name, name)
+	fn := p.TextFns[i]
+	result := fn.Result
+	if result.Kind == types.Optional && result.Elem != nil {
+		if _, none := fn.Value.(*value.None); none {
+			return nil, false, nil
+		}
+		result = *result.Elem
+	}
+	if isText(result) {
+		s, ok := fn.Value.(*value.Str)
+		if !ok {
+			return nil, false, fmt.Errorf(fmtNoText, ErrInternal, p.Name, name)
+		}
+		return []byte(s.V), true, nil
+	}
+	b, err := wire.Text(fn.Value)
+	if err != nil {
+		return nil, false, fmt.Errorf(fmtTextWire, ErrInternal, p.Name, name, err)
+	}
+	return b, true, nil
 }
 
 // isText reports a `@text` result type written verbatim: String, an alias or refinement of it, or a literal union of strings (DECISIONS 308).

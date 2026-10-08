@@ -110,7 +110,7 @@ type output struct {
 	old     []byte // the file's content before the build
 	existed bool
 	listing bool   // a package's canon.outputs (CODEGEN.md §2.9)
-	remove  bool   // a legacy `.canon-text` the build deletes, written nowhere (CODEGEN.md §2.9)
+	remove  bool   // a file the build deletes, written nowhere: a legacy `.canon-text`, a text file the package no longer writes (CODEGEN.md §2.9)
 	under   string // the optional root absent on this machine it goes under: skipped (CODEGEN.md §2.4)
 }
 
@@ -131,12 +131,16 @@ func (r *run) emit(ctx context.Context, opt BuildOptions, failed bool) ([]*outpu
 			out = append(out, placed...)
 		}
 	}
-	out = append(out, r.listings(out)...)
+	out = append(out, r.listings(out, opt, failed)...)
 	if failed || len(opt.Targets) > 0 && !slices.Contains(opt.Targets, ir.TargetText) {
 		return out, nil
 	}
 	stale, err := r.staleListings()
-	return append(out, stale...), err
+	if err != nil {
+		return nil, err
+	}
+	files, err := r.staleFiles(opt, out)
+	return append(append(out, files...), stale...), err
 }
 
 // skipped reports an emit the build does not run: a target not selected, a code or data

@@ -34,4 +34,5 @@ CREATE TABLE t (id INT);
 0 errors, 0 warnings in 1 package (…)
 text:
   stale @out/sql/.canon-text
+  stale a/canon.outputs
 [stderr]

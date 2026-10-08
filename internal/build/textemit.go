@@ -1,6 +1,8 @@
 package build
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -40,26 +42,23 @@ func (r *run) packageDir(name string) (string, bool) {
 	return r.ir[i].Dir, true
 }
 
-// listings are the `canon.outputs` of the packages whose text files outputs holds, in package order (CODEGEN.md §2.9, DECISIONS 326).
-func (r *run) listings(outputs []*output) []*output {
-	var order []string
-	names := map[string][]string{}
-	first := map[string]*output{}
+// listings are the `canon.outputs` of the packages with an `emit text` this build runs, in package order, each naming the text files outputs holds for it: a package whose every optional file is none still has its list (CODEGEN.md §2.9, DECISIONS 326, 336).
+func (r *run) listings(outputs []*output, opt BuildOptions, failed bool) []*output {
+	names := map[string][]listEntry{}
 	for _, o := range outputs {
-		if o.Target != ir.TargetText {
+		if o.Target == ir.TargetText {
+			names[o.Package] = append(names[o.Package], listEntry{sum: sumHex(o.Content), path: o.Path})
+		}
+	}
+	var out []*output
+	for _, p := range r.ir {
+		i := slices.IndexFunc(p.Emits, func(e *ir.Emit) bool { return e.Target == ir.TargetText && !skipped(e, opt.Targets, failed) })
+		if i < 0 {
 			continue
 		}
-		if _, seen := first[o.Package]; !seen {
-			order, first[o.Package] = append(order, o.Package), o
-		}
-		names[o.Package] = append(names[o.Package], o.Path)
-	}
-	out := make([]*output, 0, len(order))
-	for _, pkg := range order {
-		dir, _ := r.packageDir(pkg) // found: pkg is the package of an output of r.ir
-		rel := path.Join(packageRel(pkg), outputsName)
-		out = append(out, &output{at: first[pkg].at, listing: true, Output: Output{
-			Path: rel, Abs: project.Join(r.p.dir, rel), Target: ir.TargetText, Package: pkg, Content: listingOf(dir, names[pkg]),
+		rel := path.Join(packageRel(p.Name), outputsName)
+		out = append(out, &output{at: r.emitSpan(p, p.Emits[i]), listing: true, Output: Output{
+			Path: rel, Abs: project.Join(r.p.dir, rel), Target: ir.TargetText, Package: p.Name, Content: listingOf(p.Dir, names[p.Name]),
 		}})
 	}
 	return out
@@ -111,14 +110,25 @@ func (r *run) hasTextEmit(name string) bool {
 	})
 }
 
-// listingOf is a `canon.outputs`: the marker naming dir, then the file names in byte order, each once (CODEGEN.md §2.9).
-func listingOf(dir string, names []string) []byte {
-	names = slices.Clone(names)
-	slices.Sort(names)
+// listEntry is a line of a `canon.outputs`: the SHA-256 of the file's bytes in lower-case hex, empty in a list written before DECISIONS 336, and its display path.
+type listEntry struct {
+	sum, path string
+}
+
+// sumHex is the SHA-256 of data in lower-case hex.
+func sumHex(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+// listingOf is a `canon.outputs`: the marker naming dir, then a line per file, `<sha256 hex>  <display path>`, in byte order of the path, each once (CODEGEN.md §2.9, DECISIONS 336).
+func listingOf(dir string, entries []listEntry) []byte {
+	entries = slices.Clone(entries)
+	slices.SortFunc(entries, func(a, b listEntry) int { return strings.Compare(a.path, b.path) })
 	var b strings.Builder
 	fmt.Fprintf(&b, textMarkerFormat, dir)
-	for _, n := range slices.Compact(names) {
-		b.WriteString(n + lineEnd)
+	for _, e := range slices.CompactFunc(entries, func(a, b listEntry) bool { return a.path == b.path }) {
+		b.WriteString(e.sum + listSumSep + e.path + lineEnd)
 	}
 	return []byte(b.String())
 }
@@ -126,14 +136,14 @@ func listingOf(dir string, names []string) []byte {
 // ownership is what a build knows of who owns the text files of its packages (CODEGEN.md §2.9).
 type ownership struct {
 	r      *run
-	listed map[string]map[string]bool // package -> the display paths its canon.outputs names, read when first needed
-	legacy map[string]map[string]bool // package -> the display paths its own legacy `.canon-text` lists
-	gone   []*output                  // the legacy `.canon-text` files the build deletes
+	listed map[string]map[string]string // package -> the display paths its canon.outputs names, each with its recorded SHA-256, read when first needed
+	legacy map[string]map[string]bool   // package -> the display paths its own legacy `.canon-text` lists
+	gone   []*output                    // the legacy `.canon-text` files the build deletes
 }
 
 // owners reads the legacy manifests of the text outputs' directories (CODEGEN.md §2.9 Migration); a manifest that cannot be read is an error.
 func (r *run) owners(outputs []*output) (*ownership, error) {
-	own := &ownership{r: r, listed: map[string]map[string]bool{}, legacy: map[string]map[string]bool{}}
+	own := &ownership{r: r, listed: map[string]map[string]string{}, legacy: map[string]map[string]bool{}}
 	seen := map[string]bool{}
 	for _, o := range outputs {
 		dir := project.DirOf(o.Abs)
@@ -194,7 +204,7 @@ func (r *run) leftover(abs, display string, marked func([]byte) bool) (*output, 
 	data, err := r.p.fs.ReadFile(aside)
 	shown := path.Join(path.Dir(display), path.Base(aside))
 	switch {
-	case errors.Is(err, fs.ErrNotExist):
+	case cannotExist(err):
 		return nil, nil
 	case err != nil:
 		return nil, displayError(shown, err)
@@ -215,35 +225,69 @@ func (own *ownership) owned(o *output, old []byte) (bool, error) {
 		return true, nil
 	}
 	names, err := own.names(o.Package)
-	return names[o.Path], err
+	_, listed := names[o.Path]
+	return listed, err
 }
 
 // names are the display paths package pkg's marked `canon.outputs` names; none when it has no such file.
-func (own *ownership) names(pkg string) (map[string]bool, error) {
+func (own *ownership) names(pkg string) (map[string]string, error) {
 	if names, ok := own.listed[pkg]; ok {
 		return names, nil
 	}
+	names, err := own.r.listedNames(pkg, isMarkedListing)
+	if err == nil {
+		own.listed[pkg] = names
+	}
+	return names, err
+}
+
+// isMarkedListing accepts a `canon.outputs` whose first line is the marker of any package: ownership to overwrite (CODEGEN.md §2.9).
+func isMarkedListing(content []byte) bool { return firstLineMatches(content, textMarker) }
+
+// namesDir accepts a `canon.outputs` whose first line is the marker naming package pkg's own directory, exactly: the only list whose files a build removes (CODEGEN.md §2.9, DECISIONS 336).
+func namesDir(pkg string) func([]byte) bool {
+	marker := strings.TrimSuffix(fmt.Sprintf(textMarkerFormat, packageRel(pkg)), lineEnd)
+	return func(content []byte) bool { return firstLineIs(content, marker) }
+}
+
+// listedNames reads the display paths package pkg's `canon.outputs` names, each with the SHA-256 its line records ("" for a list of the older form), as the previous build wrote it, when accepts takes its content; none when it has no such file.
+func (r *run) listedNames(pkg string, accepts func([]byte) bool) (map[string]string, error) {
 	rel := path.Join(packageRel(pkg), outputsName)
-	data, err := own.r.p.fs.ReadFile(project.Join(own.r.p.dir, rel))
-	names := map[string]bool{}
+	data, err := r.p.fs.ReadFile(project.Join(r.p.dir, rel))
+	names := map[string]string{}
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 	case err != nil:
 		return nil, displayError(rel, err)
-	case firstLineMatches(data, textMarker):
-		for _, n := range textNames(data) {
-			names[n] = true
+	case accepts(data):
+		for _, e := range listEntries(data) {
+			names[e.path] = e.sum
 		}
 	}
-	own.listed[pkg] = names
 	return names, nil
 }
 
-// textNames are the lines of a `canon.outputs` or legacy `.canon-text` after its marker line.
-func textNames(listing []byte) []string {
+// listEntries are the lines of a `canon.outputs` or legacy `.canon-text` after its marker line: a line `<sha256 hex>  <path>` has its sum, any other line is a bare path; empty lines are left out.
+func listEntries(listing []byte) []listEntry {
 	lines := strings.Split(string(listing), lineEnd)
-	for i, l := range lines {
-		lines[i] = strings.TrimSuffix(l, carriageReturn)
+	var out []listEntry
+	for _, l := range lines[1:] {
+		l = strings.TrimSuffix(l, carriageReturn)
+		switch m := listLine.FindStringSubmatch(l); {
+		case m != nil:
+			out = append(out, listEntry{sum: m[1], path: m[listPathGroup]})
+		case l != "":
+			out = append(out, listEntry{path: l})
+		}
 	}
-	return lines[1:]
+	return out
+}
+
+// textNames are the paths of listEntries.
+func textNames(listing []byte) []string {
+	var out []string
+	for _, e := range listEntries(listing) {
+		out = append(out, e.path)
+	}
+	return out
 }

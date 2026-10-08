@@ -43,4 +43,5 @@ SELECT 1;
 0 errors, 0 warnings in 1 package (…)
 text:
   stale @out/sql/Schema.sql
+  stale a/canon.outputs
 [stderr]

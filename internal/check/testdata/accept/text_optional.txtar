@@ -1,0 +1,26 @@
+CODEGEN.md §2.9, DECISIONS 336: an optional @text result (String?, an alias or refinement of it, and any T?) is a maybe-file, well placed.
+-- a/a.canon --
+package a
+
+/// Maybe SQL.
+type MaybeSql = String?
+
+/// A row.
+record Row {
+  /// Id.
+  id: Int
+}
+
+/// Doc.
+@text("v.sql")
+export fn v() -> String? { return "x" }
+
+/// Doc.
+@text("w.sql")
+export fn w() -> MaybeSql { return none }
+
+/// Doc.
+@text("r.json")
+export fn r() -> Row? { return none }
+
+emit text { out: "@generated/sql" }

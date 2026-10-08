@@ -82,7 +82,7 @@ func (c *checker) textFile(s textSite) (string, bool) {
 	if !ok || !isExpr || !interpolationFree(x) {
 		return "", false
 	}
-	if !validTextName(file) {
+	if !ValidTextName(file) {
 		c.report(s.env, diag.E8021.AtFile(s.env.span(v), writtenText(s.env.file, v)))
 		return "", false
 	}
@@ -97,12 +97,9 @@ func textShape(d *syntax.FnDecl) bool {
 	return len(d.Params) == 0 && !d.Self.Valid()
 }
 
-// TextPlaced reports a `@text` well placed at d, whose signature is sig: a public package-level export fn with no parameter and a result in no error and not `String?` (CODEGEN.md §2.9). A misplaced one is E8021 `position` and the fn stays API.
+// TextPlaced reports a `@text` well placed at d, whose signature is sig: a public package-level export fn with no parameter and a result in no error; an optional result is a maybe-file (CODEGEN.md §2.9, DECISIONS 336). A misplaced one is E8021 `position` and the fn stays API.
 func TextPlaced(d *syntax.FnDecl, sig *types.FuncType) bool {
-	if !textShape(d) || sig == nil || sig.Result == nil || isErrorTyped(sig.Result) {
-		return false
-	}
-	return !optionalString(sig.Result)
+	return textShape(d) && sig != nil && sig.Result != nil && !isErrorTyped(sig.Result)
 }
 
 // textPlaced is TextPlaced at a site; known is false when the fn's result type is in error, which has its own finding.
@@ -122,12 +119,6 @@ func (c *checker) textPlaced(s textSite) (placed, known bool) {
 	return TextPlaced(d, sig), true
 }
 
-// optionalString reports `String?`, through aliases and refinements: no file form says what none writes.
-func optionalString(t types.Type) bool {
-	o, ok := t.Base().(*types.OptionalType)
-	return ok && o.Elem.Base().Kind() == types.String
-}
-
 // textFn reports o a well-placed `@text` fn: a file, not API (CODEGEN.md §2.9, DECISIONS 300).
 func (c *checker) textFn(o *object) bool {
 	d, isFn := o.decl.(*syntax.FnDecl)
@@ -142,8 +133,8 @@ func (c *checker) textFn(o *object) bool {
 	return placed && known
 }
 
-// validTextName reports a portable `@text` file name (CODEGEN.md §2.9, DECISIONS 297).
-func validTextName(name string) bool {
+// ValidTextName reports a portable `@text` file name (CODEGEN.md §2.9, DECISIONS 297); a build removes a stale text file only if its name passes (DECISIONS 336).
+func ValidTextName(name string) bool {
 	switch {
 	case name == "" || name == dot || name == parentDir:
 		return false
