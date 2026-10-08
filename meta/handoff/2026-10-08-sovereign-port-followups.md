@@ -32,3 +32,16 @@ flag is invisible to it), **reads lines inside `#if 0` / `#ifdef NOTDEF` as defi
 ignores `#undef`. Sovereign worked around it with `load.text` + a line reader. Wanted at least:
 valueless defines kept (value none/true), and either honour `#if 0` or report lines inside a
 conditional block as conditional.
+
+## 4. `canon edit` on a large data package exceeds 4 GB (performance)
+
+Package `model` holds a 167k-line data file (`mdlDynaData.canon`). A 36-op `canon edit` on it hit
+a 4 GB memory cap and swapped for 12+ minutes (it wrote nothing); a 7-op edit on a small package
+took 7 s. Sovereign changed those 36 cells by hand instead. Wanted: edit memory proportional to
+the edited values, or the on-disk cache you listed as owed.
+
+## 5. Undo rewrites a number literal (fidelity)
+
+A `canon edit` commit then its undo on package `character` turned `pvpPowerMul: 1.0` into
+`pvpPowerMul: 1` in `skills.canon`. The runtime file is byte-identical, but the source file
+shows a diff after a round trip. Wanted: undo restores the source spelling.
