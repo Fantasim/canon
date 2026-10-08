@@ -9,7 +9,7 @@ import (
 )
 
 // catalogueMessages is the count ERRORS.md states (518 messages).
-const catalogueMessages = 520
+const catalogueMessages = 531
 
 // sampleFiles holds the files the sample spans point into: sampleExpr covers "a\n\tb".
 var sampleFiles = MemFiles{

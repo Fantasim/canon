@@ -24,6 +24,8 @@ E1009 root: go_module: "resource.vocab.items" is not a declared root
 E1009 path: go_module: the module path of root "resource.vocab.items" is empty or contains a space
 E1009 optionalRoot: optional_roots: "resource.vocab.items" is not a declared root
 E1009 optionalDuplicate: optional_roots: "resource.vocab.items" is listed twice
+E1009 consumerRoot: consumer_roots: "resource.vocab.items" is not a declared root
+E1009 consumerDuplicate: consumer_roots: "resource.vocab.items" is listed twice
 E1010 -: "canon" must be "MAJOR.MINOR", found "0.9"
 E1011 outside: a project declaration is only allowed in project.canon
 E1011 inside: project.canon may only contain the project declaration
@@ -433,6 +435,12 @@ E8009 outRoot: @resource/Server/Item/propItem.json and @resource/Server/Item/pro
 E8009 outPackage: entries of out of emit go end in different names: give package
 E8009 outForm: entries of out of emit json mix .json files and directories: use one form for all
 E8009 textEmpty: emit text writes nothing: no export fn of this package has @text
+E8009 openMode: open of emit go needs mode types, not resource.vocab.items
+E8009 open: open of emit go: resource.vocab.items is not a public enum of this package
+E8009 openTwice: open of emit go: resource.vocab.items is listed twice
+E8009 openEmpty: open of emit go is an empty list: omit open to keep every enum closed
+E8009 openOrdered: open of emit go: resource.vocab.items is ordered, and an open enum cannot compare its members
+E8009 outConsumer: @resource/Server/Item/propItem.json in out of emit resource.vocab.items lies under the consumer root resource.vocab.items: a text file is owned only through canon.outputs, which never lists a consumer root
 E8010 -: ordered enum resource.vocab.items has codes that do not increase in declaration order
 E8011 override: 0.9 is not a valid resource.vocab.items identifier for @resource.vocab.items(name:)
 E8011 unexported: 0.9 is not exported: an @go(name:) override starts with an upper-case letter
@@ -457,6 +465,9 @@ E8022 -: @resource/Server/Item/propItem.json reaches @resource/Server/Item/propI
 E8023 one: build --check cannot compare 1 output under root @resource.vocab.items: "0.9" is not present on this machine; check the repository out there (CI needs every root its outputs go to)
 E8023 many: build --check cannot compare -42 outputs under root @resource.vocab.items: "0.9" is not present on this machine; check the repository out there (CI needs every root its outputs go to)
 E8025 -: @resource/Server/Item/propItem.json would reach @resource/Server/Item/propItem.json by a relative path climbing above the project's parent directories, which differ per checkout: emit resource.vocab.items a copy under the same root
+E8026 -: @resource/Server/Item/propItem.json is read by this load and written by emit resource.vocab.items of resource.vocab.items: an output is never an input of its own build
+E8027 -: refusing to write @resource/Server/Item/propItem.json: @resource/Server/Item/propItem.json is a symbolic link, and a build never writes through one
+E8028 -: build --only-root resource.vocab.items would change @resource/Server/Item/propItem.json: run canon build in the project first; --only-root never writes the project
 E8101 field: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
 E8101 result: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; resource.vocab.items is precomputed for TypeScript and cannot be bigint
 E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items

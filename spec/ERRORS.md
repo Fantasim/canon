@@ -159,6 +159,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Null` | null | `E7110` |
 | `Number` | a number | `E7110` |
 | `Object` | an object | `E7110` |
+| `OpenEnum` | an enum its package's Go emit opens | `E8019` |
 | `OptionalElementList` | a list of optional elements | `E8019` |
 | `OptionalMapValue` | a map with optional values | `E8019` |
 | `OutPaths` | a constant string or a list of constant strings | `E8009` |
@@ -221,6 +222,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `WayLegacyStruct` | not before M6: use the generated class meanwhile | `E8019` |
 | `WayMapField` | hold the entries in a keyed list | `E8019` |
 | `WayNeverDependent` | give it a branch that is not Never, or remove it | `E8019` |
+| `WayOpenEnum` | emit this package in types mode too, or take the enum out of open | `E8019` |
 | `WayOptionalElementList` | wrap each element in a record with an optional field | `E8019` |
 | `WayOptionalMapValue` | leave absent entries out of the map | `E8019` |
 | `WayRecordConstant` | make it a let | `E8019` |
@@ -391,7 +393,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 316 codes: 292 errors, 21 warnings and 3 run-time codes, with 520 messages.
+The catalogue holds 319 codes: 295 errors, 21 warnings and 3 run-time codes, with 531 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -410,7 +412,7 @@ Owner: GRAMMAR.md.
 | E1006 | error | project | GRAMMAR.md §7.1 | a project value of the wrong kind or out of range |
 | E1007 | error | project | GRAMMAR.md §7.1 | invalid root name or path (absolute, empty, `\`) |
 | E1008 | error | project | GRAMMAR.md §7.1 | invalid or duplicate language code in `languages` |
-| E1009 | error | project | GRAMMAR.md §7.1 | a `go_module` key or an `optional_roots` name is not a declared root, an `optional_roots` name is listed twice, or a `go_module` module path is empty or invalid |
+| E1009 | error | project | GRAMMAR.md §7.1 | a `go_module` key or an `optional_roots` or `consumer_roots` name is not a declared root, an `optional_roots` or `consumer_roots` name is listed twice, or a `go_module` module path is empty or invalid (DECISIONS 343) |
 | E1010 | error | project | GRAMMAR.md §7.1 | `canon` is not `"MAJOR.MINOR"` |
 | E1011 | error | syntax | GRAMMAR.md §5.2 | a `project` declaration outside `project.canon` and `project.local.canon`, or anything else inside them |
 | E1012 | error | project | GRAMMAR.md §7.1 | `studio` names a package that does not exist |
@@ -445,6 +447,8 @@ Owner: GRAMMAR.md.
 | E1009 | path | name:Name | `go_module: the module path of root "{name}" is empty or contains a space` |
 | E1009 | optionalRoot | name:Name | `optional_roots: "{name}" is not a declared root` |
 | E1009 | optionalDuplicate | name:Name | `optional_roots: "{name}" is listed twice` |
+| E1009 | consumerRoot | name:Name | `consumer_roots: "{name}" is not a declared root` |
+| E1009 | consumerDuplicate | name:Name | `consumer_roots: "{name}" is listed twice` |
 | E1010 | - | value:Text | `"canon" must be "MAJOR.MINOR", found "{value}"` |
 | E1011 | outside | - | `a project declaration is only allowed in project.canon` |
 | E1011 | inside | - | `project.canon may only contain the project declaration` |
@@ -1215,7 +1219,7 @@ Owner: CODEGEN.md, WIRE.md.
 | W8006 | warning | ir | CODEGEN.md §3.5 | a generated C++ name is a common platform macro |
 | E8007 | error | ir | CODEGEN.md §2.8 | a Go output under no root mapped by `go_module` |
 | E8008 | error | ir | CODEGEN.md §2.3 | two Go emits write into one directory |
-| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories) |
+| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343) |
 | E8010 | error | ir | CODEGEN.md §5.2 | an `ordered` enum whose codes do not increase |
 | E8011 | error | ir | CODEGEN.md §3.5 | an override or a derived name that is not a usable identifier in the target |
 | E8012 | error | ir | CODEGEN.md §4.4 | an emitted type or value with no representation in generated code |
@@ -1230,6 +1234,9 @@ Owner: CODEGEN.md, WIRE.md.
 | E8023 | error | build | CODEGEN.md §2.4 | `build --check` with outputs under an optional root absent on this machine (DECISIONS 332) |
 | W8024 | warning | build | CODEGEN.md §2.4 | outputs under an optional root absent on this machine were skipped; one per root (DECISIONS 332) |
 | E8025 | error | ir | CODEGEN.md §2.8 | a relative include or import that would climb above the project's parent directories, wrong on every checkout (DECISIONS 332) |
+| E8026 | error | check | CODEGEN.md §2.4 | a file a load of the project reads that an emit of the same build writes (DECISIONS 341) |
+| E8027 | error | build | CODEGEN.md §2.4 | an output path with a symbolic link below its root's directory (DECISIONS 342) |
+| E8028 | error | build | CODEGEN.md §2.4 | `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (DECISIONS 343) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
 | E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field or `@text` result part (not a whole unit, equals the `none` marker, repeated bits member; DECISIONS 308) |
 | E8103 | error | ir | CODEGEN.md §7.8.1 | a string or list longer than its fixed-size legacy C++ array |
@@ -1277,6 +1284,12 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | outPackage | - | `entries of out of emit go end in different names: give package` |
 | E8009 | outForm | - | `entries of out of emit json mix .json files and directories: use one form for all` |
 | E8009 | textEmpty | - | `emit text writes nothing: no export fn of this package has @text` |
+| E8009 | openMode | mode:Name | `open of emit go needs mode types, not {mode}` |
+| E8009 | open | name:Name | `open of emit go: {name} is not a public enum of this package` |
+| E8009 | openTwice | name:Name | `open of emit go: {name} is listed twice` |
+| E8009 | openEmpty | - | `open of emit go is an empty list: omit open to keep every enum closed` |
+| E8009 | openOrdered | name:Name | `open of emit go: {name} is ordered, and an open enum cannot compare its members` |
+| E8009 | outConsumer | target:Name, path:Path, root:Name | `{path} in out of emit {target} lies under the consumer root {root}: a text file is owned only through canon.outputs, which never lists a consumer root` |
 | E8010 | - | enum:Name | `ordered enum {enum} has codes that do not increase in declaration order` |
 | E8011 | override | name:Text, target:Name | `{name} is not a valid {target} identifier for @{target}(name:)` |
 | E8011 | unexported | name:Text | `{name} is not exported: an @go(name:) override starts with an upper-case letter` |
@@ -1303,6 +1316,9 @@ Owner: CODEGEN.md, WIRE.md.
 | W8024 | one | root:Name, path:Text | `1 output skipped: root @{root} ("{path}") is optional and not present on this machine; clone it or point to it in project.local.canon to write it` |
 | W8024 | many | n:Int, root:Name, path:Text | `{n} outputs skipped: root @{root} ("{path}") is optional and not present on this machine; clone it or point to it in project.local.canon to write them` |
 | E8025 | - | out:Path, other:Path, pkg:Name | `{out} would reach {other} by a relative path climbing above the project's parent directories, which differ per checkout: emit {pkg} a copy under the same root` |
+| E8026 | - | path:Path, target:Name, pkg:Name | `{path} is read by this load and written by emit {target} of {pkg}: an output is never an input of its own build` |
+| E8027 | - | path:Path, link:Path | `refusing to write {path}: {link} is a symbolic link, and a build never writes through one` |
+| E8028 | - | root:Name, path:Path | `build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |
 | E8102 | unit | value:Value, field:Name, unit:Name | `{value} has no wire form for {field}: not a whole number of {unit}` |

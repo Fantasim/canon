@@ -3312,3 +3312,68 @@ round 2", "PS1 review", "PS2 round 2"):
      unsound, log-2026-10-08).
      Reason: merging N maps first-wins needed a `var` loop or `groupBy` and `[0]` (Sovereign's
      ui.servernames, handoff 2026-10-08-sovereign-port-followups item 2).
+
+339. **Open enums in Go `types` mode (CODEGEN.md §2.1, §5.2, §5.13; ERRORS.md E8009, E8019).**
+     `emit go { mode: types, open: [Dst, ItemId] }`. `open` is a `go` option: a non-empty list of
+     bare words, each the name of a public enum the package declares, listed once. On another
+     target it is an unknown option (`E8003`); on a `go` emit in another mode `E8009` `openMode`;
+     a name that is not a public enum of the package `E8009` `open`; a name listed twice `E8009`
+     `openTwice`; an empty list `E8009` `openEmpty`; an `ordered` enum `E8009` `openOrdered` (a
+     string type would compare wrongly). An opened enum is emitted as `type E string` holding the
+     wire value: one constant per member, retired ones included (`EFoo E = "wire"`), `Wire()
+     string`, `String() string` (the Canon name of a known member, else the wire), `Known() bool`,
+     `ParseE(wire string) (E, bool)` (the member and `true`, or `E(wire)` and `false`) and
+     `EMembers() iter.Seq[E]`; with `@codes`, `Code() (uintN, bool)` and `EFromCode(code) (E,
+     bool)`. A decoder reads a field, element or map key of an opened enum from any JSON string
+     and keeps it as is (a wrong JSON kind still fails); an unknown member that decides a
+     dependent type still fails, since no branch is known. Another package's `go` emit that
+     references an opened enum must be in `types` mode too: `E8019` `mode` with `OpenEnum` and
+     `WayOpenEnum` otherwise. C++ and TypeScript decoders stay closed (owed if asked). Reason:
+     Sovereign's monitoring hot-reloads live data that ships before the service; a new member
+     made the whole file undecodable, while unknown keys were already ignored (handoff
+     2026-10-08-sovereign-go-open-ids-consumer-roots item 1). Per enum, not `open: all`: an
+     agent cannot drop enum safety project-wide by one word (orchestrator).
+
+340. **A `types`-mode decoder for a `@text` result that is not a record (CODEGEN.md §5.13).** In Go
+     `types` mode, each public `@text` export fn whose result (its non-optional type, for a
+     maybe-file) is a map, a list or a keyed list gets `func Decode<Fn>File(raw []byte) (<T>,
+     error)`, `<Fn>` the fn's generated UpperCamel name and `<T>` the Go type of its result, with
+     every rule of §5.13 (byte rules, the JSON path of the first failure, no partial value). A
+     name it meets is `E8005` as usual. C++ and TypeScript: owed if asked. Reason: a top-level
+     `{TextId: TextEntry}` file had no public decoder (handoff item 3).
+
+341. **An output is never an input of its own build (CODEGEN.md §2.4; WIRE.md §2.2; ERRORS.md
+     E8026).** A file that a `load` of the project reads (`load`, `load.text`, `load.defines`, a
+     `load.dir` or glob match) and that an emit of the same build writes (any target, any copy,
+     an output skipped under an absent optional root or a consumer root included) is `E8026` at
+     the load, naming the path and the emit. Paths are compared by real path where the disk has
+     them, lexically otherwise. `canon check` reports it as `canon build` does. Reason: a `@text`
+     fn copying a hand-written file over itself made Canon "own" an unvalidated file (handoff
+     item 4b); an output fed back into its own build is stale by one build anyway.
+
+342. **A build never writes through a symbolic link (CODEGEN.md §2.4; API.md §2.2; ERRORS.md
+     E8027; amends API.md §2.2's "the link's target is written" for builds).** Before anything is
+     written, no component of an output path below its owning root's directory (the project
+     directory for an output inside the project), the file itself included, may be a symbolic
+     link; the root's own directory and what is above it may. A violation is `E8027` naming the
+     output and the link, and nothing is written; `build --check` reports it too, and removing a
+     stale owned file follows the same rule. Edits already never traverse a link (API.md N11).
+     Reason: a committed symlinked directory let `canon build` write outside the project (handoff
+     item 4c).
+
+343. **Consumer-built roots (SPEC §3.1; GRAMMAR.md §7.1; CLI.md §3.4; API.md B1; CODEGEN.md §2.4,
+     §2.9; ERRORS.md E1009, E8009, E8028).** `project.canon` takes `consumer_roots: [admin]`
+     (default `[]`); a name that is not a declared root or is listed twice is `E1009`
+     `consumerRoot`/`consumerDuplicate`. A consumer root is optional too (never `E1013`; a load
+     under it follows 332). Its outputs (judged by location, as §2.4 does) are generated and
+     validated by `check` as always, but `canon build` never writes them, `build --check` never
+     compares them (no `E8023`, no `W8024`), and `canon.outputs` does not list them. A `text` emit
+     copy under a consumer root is `E8009` `outConsumer` (a text file is owned only through
+     `canon.outputs`). `canon build --only-root <name>` (`BuildOptions.OnlyRoot`) names a consumer
+     root (a usage error otherwise, exit 2; with `--adopt` too) and writes exactly the outputs
+     under it, with §2.4's ownership rules, and nothing else: no other root, no `canon.lock`, no
+     `canon.outputs`, no cache; with `--check` it compares that root only. A project that does not
+     check writes nothing (exit 1). When the build would change `canon.lock` or a `canon.outputs`,
+     `--only-root` is `E8028` and writes nothing: the project is read-only to it. Reason: services
+     generate their Go at their own build (Louis, 2026-10-08); the gate needed scratch folders
+     and services a "nonexistent root" trick (handoff item 2).
