@@ -3369,6 +3369,11 @@ round 2", "PS1 review", "PS2 round 2"):
      stale owned file follows the same rule. Edits already never traverse a link (API.md N11).
      Reason: a committed symlinked directory let `canon build` write outside the project (handoff
      item 4c).
+     Settled while building (2026-10-09): an output inside the project is judged from the project
+     directory even when its root lies inside the project (a committed link there is the escape);
+     a link name matches whatever its letter case (case-insensitive disks); a Windows junction or
+     other reparse point is a link; a component that cannot be listed or inspected refuses the
+     build (fail closed, the I/O error reported). The lock's own writes are not outputs.
 
 343. **Consumer-built roots (SPEC §3.1; GRAMMAR.md §7.1; CLI.md §3.4; API.md B1; CODEGEN.md §2.4,
      §2.9; ERRORS.md E1009, E8009, E8028).** `project.canon` takes `consumer_roots: [admin]`
