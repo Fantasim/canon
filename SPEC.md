@@ -305,6 +305,7 @@ unknown key is `E1002`.
 | `canon` | `String`, `"MAJOR.MINOR"` | required | language version this project is written for |
 | `roots` | `{identifier: String}` | `{}` | named roots; paths are relative to the project directory and may point outside it. A root is required unless `optional_roots` lists it; this machine may place it elsewhere (below) |
 | `optional_roots` | `[root name]` | `[]` | the declared roots that may be absent on a machine (below); each names a declared root, once (`E1009`) |
+| `consumer_roots` | `[root name]` | `[]` | the declared roots whose outputs their consumer builds (below); each names a declared root, once (`E1009`) |
 | `languages` | `[identifier](1..)` | `[en]` | the first one is the source language (§17); codes match `[a-z]{2,3}(_[A-Z][a-z]{3})?(_[A-Z]{2})?` |
 | `studio` | package name, optional | `none` | package holding the studio vocabulary (§16.11); it must exist (`E1012`) |
 | `budget` | `Int(1..)` | `100_000_000` | evaluation steps per package and invocation (§11.6) |
@@ -353,6 +354,11 @@ unknown key is `E1002`.
   `canon` creates the directories an output needs below a present root, never a root's own
   directory outside the project nor one above it. Which roots are optional is the project's
   decision.
+- **Consumer roots** (DECISIONS 343). A root listed in `consumer_roots` is optional too, and its
+  outputs are built by its consumer: `check` generates and validates them, but `canon build`
+  never writes them, `build --check` never compares them, and `canon.outputs` never lists them.
+  The consumer's build runs `canon build --only-root <name>`, which writes exactly that root's
+  outputs and nothing else (§14.1, CODEGEN.md §2.4).
 - Wherever this machine places the roots, generated files are the same bytes: import paths and
   relative includes are computed from `project.canon` alone (CODEGEN.md §2.8, DECISIONS 108). A
   relative include between two roots that this machine places otherwise is `E8022`.

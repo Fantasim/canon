@@ -77,7 +77,7 @@ in [§12](#12-diagnostics).
 
 | Target | `out` | Modes | Default mode | Other options |
 |---|---|---|---|---|
-| `go` | directory (one Go package) | `baked`, `embedded`, `data`, `types` | `baked` | `package` (default: last element of `out`, the same for every entry of a list) |
+| `go` | directory (one Go package) | `baked`, `embedded`, `data`, `types` | `baked` | `package` (default: last element of `out`, the same for every entry of a list); `open` (`types` mode, [§5.2](#52-enums)) |
 | `cpp` | directory | `baked`, `embedded`, `data`, `types` | `baked` | `namespace` (default: package path with `.` → `::`) |
 | `ts` | file ending in `.ts` | `baked`, `embedded`, `data`, `types` | `baked` | none |
 | `json` | WIRE.md | — | — | `values` |
@@ -118,6 +118,10 @@ in [§12](#12-diagnostics).
   stage E (EVALUATION.md §1), which builds the IR of every emit and validates it without writing:
   `canon check` reports them exactly as `canon build` does (CLI.md §3.3). `E8001` needs the output
   file system and is reported in phase 8 (emit) only, like WIRE.md's `E8152`.
+- `open` (Go, DECISIONS 339) is a non-empty list of bare words, each a public enum the package
+  declares, listed once; it needs `mode: types` (`E8009` `openMode`) and refuses an `ordered` enum
+  (`E8009` `openOrdered`), a name that is not such an enum (`E8009` `open`), a name listed twice
+  (`E8009` `openTwice`) and an empty list (`E8009` `openEmpty`). Open enums: §5.2.
 - `values` (default: every public value, in declaration order) selects the values emitted. An
   explicit `values: []` is refused (`E8009` `valuesEmpty`): omit `values` to mean every value
   (DECISIONS 319). Every emit always contains **every public type, enum, constant and export
@@ -217,6 +221,27 @@ such a root is refused like any path that is not an output of the build. `canon`
 directories an output needs inside the project and below a present root. It never creates a
 root's own directory outside the project, nor a directory above it: if such a root vanishes
 during a build, the write fails and is rolled back.
+
+**Consumer roots** (DECISIONS 343). An output under a root of `consumer_roots` (SPEC §3.1), judged
+by location as above, is generated and validated by `check` like any other, but `canon build`
+neither writes nor counts it, `build --check` never compares it (no `E8023`, no `W8024`), and
+`canon.outputs` (§2.9) never lists it; a `text` emit copy under a consumer root is `E8009`
+`outConsumer`. `canon build --only-root <root>` writes exactly the outputs under that consumer
+root, with this section's ownership rules, and nothing else: no other root, no `canon.lock`, no
+`canon.outputs`, no cache. A build that would change a `canon.lock` or a `canon.outputs` is
+`E8028` and writes nothing.
+
+**No output through a link** (DECISIONS 342). Before anything is written, no component of an
+output path below its owning root's directory (the project directory for an output inside the
+project), the file itself included, may be a symbolic link; the root's own directory and what is
+above it may. A violation is `E8027` naming the output and the link, and nothing is written;
+`build --check` reports it too, and removing a stale owned file follows the same rule.
+
+**No output as an input** (DECISIONS 341). A file that a `load` of the project reads (`load`,
+`load.text`, `load.defines`, a `load.dir` or glob match) and that an emit of the same build writes
+(any target, any copy, a skipped output included) is `E8026` at the load, naming the path and the
+emit, compared by real path where the disk has it and lexically otherwise. `canon check` reports
+it as `canon build` does.
 
 The one way to take over a hand-written file is the `--adopt` flag: `canon convert --adopt` for a
 JSON source that becomes the emitted data file (IMPLEMENTATION-PLAN.md §8.3), and
@@ -926,6 +951,25 @@ Rules (GO-05, CPP-04, WIR-04):
 - Retired members stay in every target (SPEC §12), with the doc line `Retired.` added. The kind
   member of a retired variant case gets the same line (§5.5).
 
+**Open enums** (Go `types` mode, DECISIONS 339). An enum listed in the emit's `open` keeps its
+wire value, so a decoder accepts a member this build does not know:
+
+```go
+type Dst string                          // the wire value
+const DstHp Dst = "DST_HP"               // one per member, retired ones included
+func (self Dst) Wire() string
+func (self Dst) String() string          // the Canon name of a known member, else the wire
+func (self Dst) Known() bool
+func ParseDst(wire string) (Dst, bool)   // the member and true, or Dst(wire) and false
+func DstMembers() iter.Seq[Dst]
+// with @codes: func (self Dst) Code() (uint16, bool); func DstFromCode(code uint16) (Dst, bool)
+```
+
+A decoder reads a field, element or map key of an open enum from any JSON string (a wrong JSON
+kind still fails); an unknown member that decides a dependent type fails, since no branch is
+known. Another package's `go` emit that references an open enum must be in `types` mode too
+(`E8019` `OpenEnum`). C++ and TypeScript enums stay closed.
+
 ### 5.3 Table ids
 
 The keys of a public `table` value (EMT-04):
@@ -1481,8 +1525,11 @@ export function decodeEventConfig(json: unknown): EventConfig;
   `nil` and an `error`; C++ `std::nullopt` with `error` set; TS throws an `Error`. It never returns
   a partly filled value. A Go decoder, handed raw bytes, also applies WIRE.md §3.1/§3.2's byte
   rules (UTF-8 and BOM, a repeated key, an unpaired surrogate, depth 512); the C++ decoder leaves
-  them to the caller's parser. Only a public record or variant has a public decoder: a runtime
-  reads a `@text` file through its result type only when that is one. What it can represent it accepts without checking refinements, refs, keys
+  them to the caller's parser. Only a public record or variant has a public decoder, and in Go
+  a public `@text` fn whose result (its non-optional type, for a maybe-file) is a map, a list or
+  a keyed list: `func Decode<Fn>File(raw []byte) (<T>, error)`, `<T>` the Go type of the result
+  (DECISIONS 340). Otherwise a runtime reads a `@text` file through its result type only when
+  that is a record or variant. What it can represent it accepts without checking refinements, refs, keys
   or checks: the file is the one `canon check` validated (WIRE.md §5.13).
 - Defaults must be constant; a computed default (one that reads other fields, or the instance through
   its type's arguments, DECISIONS 282) in a type emitted in `types` mode is `E8014`, as
@@ -3523,6 +3570,9 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8023 | error | `build --check` with outputs under an optional root absent on this machine (§2.4) |
 | W8024 | warning | outputs under an optional root absent on this machine skipped; one per root (§2.4) |
 | E8025 | error | a relative include or import that would climb above the project's parent directories, wrong on every checkout (§2.8) |
+| E8026 | error | a file a load of the project reads that an emit of the same build writes (§2.4) |
+| E8027 | error | an output path with a symbolic link below its root's directory (§2.4) |
+| E8028 | error | `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (§2.4) |
 | E8101 | error | emitted Int outside ±(2⁵³−1) (SPEC §15.4) |
 | E8103 | error | string or list longer than a fixed-size C++ array |
 | E8104 | error | package with inputs has a TS emit |

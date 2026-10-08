@@ -177,7 +177,8 @@ on the project directory's volume.
 The OS `WriteFile` stages the content in a temporary file of the target's directory (a hidden
 name holding the target's base name, so `Recover` can clear leftovers, §10.3), syncs it and
 renames it over the target. When the target is a symbolic link, the link's target is written; the
-link is never replaced. A writer that stages to a fixed temporary name first removes whatever
+link is never replaced. A build never reaches that case: it refuses an output with a link below its
+root first (`E8027`, B4, DECISIONS 342). A writer that stages to a fixed temporary name first removes whatever
 entry sits there (a link itself, never its target), so a planted link cannot redirect the bytes.
 On Windows it cannot replace a file another process holds open. Two optional FS capabilities:
 `SyncDir(dir string) error`, which makes an edit's renames durable (§10.3), and
@@ -1625,6 +1626,7 @@ type BuildOptions struct {
     Targets  []Target   // go cpp ts json view text; none = all
     Check    bool       // write nothing; report what would change (CLI --check)
     Adopt    []string   // outputs the build may take over without a marker (CLI --adopt, B2)
+    OnlyRoot string     // a consumer root: write only its outputs, nothing else (CLI --only-root, B3)
 }
 type BuildResult struct {
     Check   *CheckResult
@@ -1654,6 +1656,15 @@ type LockChange struct { Package string; File string; Lines []string }
   §8.3). Its `Status` is then `adopted` (GEN-05). Any other unmarked output is `E8001`.
   `BuildOptions.Adopt` takes only those two kinds: a JSON output without its `$schema` is `E8001`
   even when listed.
+- **B3.** `OnlyRoot` names a root of `consumer_roots` (SPEC §3.1, DECISIONS 343); another name, or
+  `OnlyRoot` with `Adopt`, is refused with `*ValueError` (wraps `ErrBadValue`). The build writes
+  exactly the outputs under that root and nothing else (no other root, no `canon.lock`, no
+  `canon.outputs`, no cache); one that would change a `canon.lock` or a `canon.outputs` is
+  `E8028` and writes nothing. Without `OnlyRoot`, outputs under a consumer root are neither
+  written nor compared, and are not in `Outputs`.
+- **B4.** A build never writes through a symbolic link below an output's root (`E8027`, CODEGEN.md
+  §2.4, DECISIONS 342), and refuses an output that a load of the project reads (`E8026`,
+  DECISIONS 341).
 
 ### 13.2 Test and lock check
 

@@ -1089,6 +1089,7 @@ pValue          = stringLit | INT | qualifiedIdent
 | `canon` | string `"MAJOR.MINOR"` | required (`E1004`) | must match `^[0-9]+\.[0-9]+$` (`E1010`); an unsupported version is `E1001` (NFR-03: same major, known minor) |
 | `roots` | map name → path string | `{}` | names are `IDENT`s, unique (`E1005`); paths are non-empty, relative to the project directory, `/`-separated, not absolute, no `\` (`E1007`). Roots may point outside the project directory. A required root outside the project whose directory does not exist on this machine is `E1013` (DECISIONS 332). Path resolution inside roots: SPEC §3.1 and GEN-04; a root's place on this machine: §7.2 |
 | `optional_roots` | list of root names | `[]` | the roots that may be absent on a machine (SPEC §3.1, DECISIONS 332), written as identifiers (`[source, client]`). Not a list of identifiers: `E1006`. Each must be a declared root and listed once (`E1009`). A root inside the project may be listed: it matters only once this machine places it outside (§7.2) |
+| `consumer_roots` | list of root names | `[]` | the roots whose outputs their consumer builds (SPEC §3.1, DECISIONS 343), written as identifiers (`[admin]`). Not a list of identifiers: `E1006`. Each must be a declared root and listed once (`E1009`). A consumer root is optional too |
 | `languages` | list of language codes, at least one | `[en]` | each matches `^[a-z]{2,3}(_[A-Z][a-z]{3})?(_[A-Z]{2})?$`, written as an identifier (`en`, `pt_BR`); no duplicates (`E1008`). The first is the source language |
 | `studio` | package path | none | the package holding the studio vocabulary (SPEC §16.11); it must exist (`E1012`) |
 | `budget` | integer ≥ 1 | `100_000_000` | evaluation steps (EVALUATION.md); out of range `E1006` |
@@ -1354,7 +1355,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1006 | error | a project value of the wrong kind or out of range |
 | E1007 | error | bad root name or path (absolute, empty, `\`) |
 | E1008 | error | `languages` item |
-| E1009 | error | a `go_module` key or an `optional_roots` name is not a declared root, an `optional_roots` name is listed twice, or an empty/invalid module path |
+| E1009 | error | a `go_module` key or an `optional_roots` or `consumer_roots` name is not a declared root, such a name is listed twice, or an empty/invalid module path |
 | E1010 | error | malformed version |
 | E1011 | error | misplaced `project` or extra content (`project.canon`, `project.local.canon`) |
 | E1012 | error | `studio` names a missing package |

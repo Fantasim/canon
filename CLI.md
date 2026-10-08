@@ -235,7 +235,7 @@ Exit: 0, 1, 2, 3, 4.
 
 ```
 canon build [packages…] [--layer …] [--target go|cpp|ts|json|view|text]… [--check] [--watch]
-            [--adopt <path>]…
+            [--adopt <path>]… [--only-root <root>]
 ```
 
 Runs `check`; if there is no error in any loaded package, selected or imported, writes every
@@ -251,6 +251,7 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
 | `--check` | write nothing; exit 1 if any output or lock would change (conformance tests included), or if an output goes to an optional root absent on this machine (`E8023`). For CI |
 | `--watch` | rebuild on every change; used by a local server and by the studio |
 | `--adopt <path>` | take over the hand-written file at `path`, which the build would otherwise refuse to overwrite (`E8001`): the header of a legacy C++ struct moving to `access: both` (SPEC §15.3), or a file of an `emit text` (CODEGEN.md §2.9, DECISIONS 294). Only those can be adopted: a JSON output without a `$schema` is `E8001` even when listed. The build prints `adopting <path>`; from then on the header carries the marker, and a text file is named in its package's `canon.outputs` (DECISIONS 326). Under `--check` nothing is adopted: the output is reported and counted as stale. A path under an optional root absent on this machine is refused like any path that is not an output of the build (DECISIONS 332). Repeatable |
+| `--only-root <root>` | write only the outputs under this consumer root (SPEC §3.1, DECISIONS 343), with the ownership rules of CODEGEN.md §2.4, and nothing else: no other root, no `canon.lock`, no `canon.outputs`, no cache. A root not in `consumer_roots`, or `--adopt` beside it, is a usage error (exit 2). A build that would change a `canon.lock` or a `canon.outputs` is `E8028` and writes nothing. With `--check`, compares that root only |
 
 - Outputs are written atomically: into a temporary file, then renamed. A failed build leaves every
   previous output untouched.
