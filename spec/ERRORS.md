@@ -1225,7 +1225,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8017 | error | ir | CODEGEN.md §5.6 | a dependent-type branch that is not a scalar, String, enum or ref |
 | E8019 | error | ir | EVALUATION.md §1 | an emit whose generator cannot produce a construct valid Canon allows, or a mode not built yet (DECISIONS 320); the message names the way out (DECISIONS 305) |
 | E8020 | error | ir | CODEGEN.md §5.1 | a Go constant of -0.0, which Go constants cannot hold |
-| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text` (a `String?` result included), an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) |
+| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text`, an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300, 336) |
 | E8022 | error | build | CODEGEN.md §2.8 | a relative include or import crossing two roots this machine places otherwise than `project.canon` does (DECISIONS 332) |
 | E8023 | error | build | CODEGEN.md §2.4 | `build --check` with outputs under an optional root absent on this machine (DECISIONS 332) |
 | W8024 | warning | build | CODEGEN.md §2.4 | outputs under an optional root absent on this machine were skipped; one per root (DECISIONS 332) |

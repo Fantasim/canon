@@ -2572,7 +2572,7 @@ identity). Methods that return a list return a plain list.
 ### 20.4 Maps, tables and ranges
 
 **Maps:** `m[k]`, `len()`, `isEmpty()`, `keys() -> [K]`, `values() -> [V]`, `get(k) -> V?`,
-`contains(k)`, `map(f)` (values), `filter(pred)`, `all(pred)`, `any(pred)`, `count(pred)`; map
+`contains(k)`, `map(f)` (values), `filter(pred)`, `all(pred)`, `any(pred)`, `count(pred)`, `union(b)` (first wins); map
 predicates take `(k, v)`.
 
 **Tables and keyed lists** add key access to the list methods: `xs[k]` and `xs.k` (the entry with

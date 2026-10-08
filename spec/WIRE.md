@@ -1105,7 +1105,8 @@ The file is a text output, not a data file.
   written": a record or variant field whose value is `none` and whose declared default is `none`
   (`T?` with no default, or `= none`) has no key. A field with `@json(none: X)` is written as
   `X`; a field `T? = d` holding `none` is written `null` (absent would decode as `d`). `none` as a
-  list element, a map value or the whole value is `null`, as in §5.4. Data files (§8.1) keep §5.4
+  list element or a map value is `null`, as in §5.4; `none` as the whole value of an optional
+  result writes no file (CODEGEN.md §2.9, DECISIONS 336). Data files (§8.1) keep §5.4
   unchanged.
 - No `$schema`, `$id`, `$<fn>` or `$fns` key is written: there is no document (§8.2), no marker
   (§8.4) and no fingerprint.
@@ -1170,7 +1171,7 @@ emit text { out: "out" }
 }
 ```
 
-`limit.json` is `null` then one LF, five bytes (§5.4: `none` is `null`).
+`limit.json` is not written: the result is optional and `none` (CODEGEN.md §2.9, DECISIONS 336).
 
 With a field `note: String?` added to `Badge` and left `none`, `badge.json` is unchanged: the
 absent field has no key. In an `emit json` data file the same value carries `"note": null`.

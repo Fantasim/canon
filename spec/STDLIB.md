@@ -318,6 +318,7 @@ A key where an element is expected is `E3026`, whose message names `hasKey`. A k
 | `any(pred: fn(K, V) -> Bool) -> Bool` | stops at the first `true` | `false` | | visited |
 | `all(pred: fn(K, V) -> Bool) -> Bool` | stops at the first `false` | `true` | | visited |
 | `count(pred: fn(K, V) -> Bool) -> Int` | number of entries satisfying `pred` | `0` | | n |
+| `union(b: {K: V}) -> {K: V}` | the receiver's entries, then the entries of `b` whose key is not in the receiver, in `b` order (first wins; DECISIONS 338). Not on a map whose value type depends on its key (`E3804`) | `b` | | n + len(b) |
 
 Map predicates take two parameters `(k, v)` (STD-01). `for k, v in m` iterates in insertion
 order. Key equality is TYPES.md §7.5 (refs by key).

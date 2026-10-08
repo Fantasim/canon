@@ -6963,7 +6963,7 @@ func (codeE8020) At(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[264], 0, span, name)
 }
 
-// E8021: a misplaced `@text` (a `String?` result included), an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300) (CODEGEN.md §2.9).
+// E8021: a misplaced `@text`, an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300, 336) (CODEGEN.md §2.9).
 var E8021 codeE8021
 
 type codeE8021 struct{}

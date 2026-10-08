@@ -1093,7 +1093,9 @@ inside the same edit and reports it, so every client behaves the same.
 
 - **E22.** `Undo` is a list of ops that, applied with `Base` set to the result's `Revision`,
   restores every value the edit changed (including cascades), whatever E23's order would give
-  (DECISIONS 257, 273). It restores values, not text: comments of removed items and a deleted entry
+  (DECISIONS 257, 273). It restores values, not text, but for one literal: a value written in
+  source as one literal token (a number, string, bool, duration or enum member) comes back as that
+  token's source text, so `1.0` stays `1.0` (DECISIONS 337). Comments of removed items and a deleted entry
   file's doc comment are not restored, a recreated entry file may lie at any path its `@files`
   template gives for its key, whatever its templated fields, and a defaulted parent the Undo empties
   may remain written as `{}`. For every edit with an `EditLayer` (W11), active or not, the Undo
@@ -1315,7 +1317,8 @@ comments, and a trailing comment on its last line.
 ### 9.3 Printing values
 
 - **M7.** Values are printed with contextual names (SPEC §6.2): bare enum members, case names and
-  keys. Durations use their canonical text (LEX-04). Fields equal to their defaults are omitted in
+  keys. Durations use their canonical text (LEX-04); a number or string token an op's `Source`
+  spells is written as spelled (`0x1F`, `1.0`; DECISIONS 337). Fields equal to their defaults are omitted in
   newly printed records (E6 applied recursively to new values); fields of an existing literal are
   kept unless the op sets them to their default. Strings are printed with `{` and `}` escaped as
   `\{` and `\}` (GRAMMAR.md §2.6), so a string holding a brace is never read as interpolation.

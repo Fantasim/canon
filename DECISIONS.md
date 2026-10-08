@@ -2769,7 +2769,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `.sql` files and `catalog.json` format 1, computed by build-time export fns (ADR L-0111 d.1.3,
      d.1.8); a JSON `$fns` extractor would live outside Canon and need an emitted value
      (log-2026-10-04).
-     [amended by 300, 308, 326]
+     [amended by 300, 308, 326, 336]
 
 295. **`TargetText` in the API (API.md §13.1 B1b; WIRE.md §10).** `canon.Target` gains `TargetText`
      (`"text"`), the target of DECISIONS 294: `BuildOptions.Targets` may select it, `Output.Target`
@@ -2792,6 +2792,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `variant` stays `E1118` (no prefix annotation there). A text file no longer written is left
      on disk and leaves the listing. `--adopt` and `BuildOptions.Adopt` take a text file as well as
      a legacy header. Reason: TX review, log-2026-10-04.
+     [amended by 336]
 
 298. **Define-table branches of dependent types are written (CODEGEN.md §5.6, §5.8).** A dependent
      type's branch that is a ref into a `load.defines` table gets the key accessor of every ref
@@ -2909,7 +2910,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `$` keys, no step cost); the stage-E walk skips values stage B verified, as 283's does, and
      names the field (not a path) in E8102; these checks apply only where `emit text` writes the
      file.
-     [amended by 327]
+     [amended by 327, 336]
 
 ## 2026-10-05 — Emberfall showcase findings (meta/handoff/2026-10-05-showcase-issues-prompt.md)
 
@@ -3135,6 +3136,7 @@ round 2", "PS1 review", "PS2 round 2"):
      options and "omit a field equal to its default" are cosmetics of a legacy format, options an
      agent can get wrong with no check catching it. The port verifies its files by the data its
      loaders read, not byte for byte (Louis, 2026-10-07: Canon does not bend to wrong things).
+     [amended by 336]
 
 328. **One budget per package (EVALUATION.md §12.2; amends 104, 244).** `project.budget` is the
      budget of each package for one invocation or API re-check, not of the whole project. A step
@@ -3251,3 +3253,62 @@ round 2", "PS1 review", "PS2 round 2"):
      outside, step 1 may find a member or static key named `it`. In a union, any later alternative
      that is not a (parenthesised) string literal is a type (`E3028`): `"x"?`, `["x"]`.
      Reason: the reviews of the A1 fix (2026-10-07) found each silently wrong or cryptic.
+
+335. **Go `types` mode is built (CODEGEN.md §2.2, §5.13; amends 320).** `emit go { mode: types }`
+     emits the read-only types, enums, constants, string table ids, make hooks and translated
+     functions, and one public decoder `Decode<X>(raw []byte) (*X, error)` per public record and
+     variant, with §5.13's rules (source decode rules of WIRE.md, unknown keys ignored, no
+     `$schema`, the JSON path of the first failure, never a partly filled value). It is no longer
+     `E8019 unbuilt`; Go `embedded` and C++ `embedded` still are. A service reads a `@text` JSON
+     file through the decoder of the fn's result record (`@text` fns stay files, not API, 300).
+     Reason: Sovereign's Go services read the files the game reads through generated Go
+     (handoff 2026-10-08-sovereign-go-types-mode; log-2026-10-08).
+
+336. **An optional `@text` result is a maybe-file (CODEGEN.md §2.9; ERRORS.md E8021; amends 308).**
+     A `@text` fn whose result type is optional (`String?` included) writes no file when it
+     returns `none`, and the file is not listed in `canon.outputs`; a value is written as the
+     inner type's would be (`String?` verbatim, any other `T?` as JSON of `T`). `String?` is no
+     longer `E8021 position`. A text file the package's previous `canon.outputs` lists and this
+     build does not write (a `none` result, a renamed or removed `@text` fn or `emit text`) is removed: ownership
+     proves Canon wrote it, so removing it is as safe as overwriting it. The removal is reported
+     like the `.canon-text` migration's (a `written` output with empty content, `stale` under
+     `--check`, part of the all-or-nothing write); a copy under an absent root stays listed and is
+     kept; nothing unlisted is ever touched. A listed path is removed only where a text file could
+     be: the own-directory marker, never a run input, a portable `@text` name, no output of any
+     emit or listing of another package, no canon marker or `$schema` in its first bytes; a
+     case-only rename removes the old name only on a case-sensitive file system (review, log).
+     Proof of authorship (amends 326): each `canon.outputs` line is `<sha256 of the bytes>  <path>`
+     (the `sha256sum` layout), and a stale path is removed only when its current bytes still hash
+     to its line's value, so a hand-written or hand-edited file is never removed; a line without a
+     hash (a list from 0.1.2) never removes. Ownership for overwriting stays by path. Louis's call (log-2026-10-08). Reason: a file gated by a feature flag
+     (Sovereign's `Sys_*.h`) had no way out but writing `null` (handoff
+     2026-10-08-sovereign-port-followups item 1).
+
+337. **An Undo keeps a literal's spelling (API.md §8.7 E22; amends 257, 273).** When an edit
+     replaces or removes a value written in source as one literal token (a number, string, bool,
+     duration or enum member), the Undo op that restores it carries that token's source text, so
+     `1.0` comes back `1.0`, not the canonical `1`. Its write side: a `Source`'s number and
+     string tokens are written as spelled (FORMATTER.md §10 keeps them), a Duration in its
+     canonical text (M7); so `canon edit` with `"source": "0x1F"` writes `0x1F`. Scalars keep their
+     spelling at any depth; only a value that is itself a literal token at its position does: a
+     value reached through a name, or computed from a literal (an index, a match arm), is restored
+     canonically, and so is the key of a removed map entry (an `AddEntry` path key is a value, E25). Everything
+     else in E22 is unchanged: an Undo restores values, not comments or layout. Reason: a commit then its undo
+     left a source diff (handoff 2026-10-08-sovereign-port-followups item 5).
+
+338. **Maps have `union` (STDLIB.md §6).** `a.union(b)` is `a`'s entries, then the entries of `b`
+     whose key is not in `a`, in `b` order, cost n + len(b): the list `union`'s meaning (§4.2), so
+     the first map wins and `b.union(a)` is the last-wins merge. One method, no option. Like every
+     collection method it runs at build time only (CONFORMANCE.md §2.2, `E9001` in a translated
+     fn). On a map whose type mentions a key binder (a dependent map `{x in c: T(x)}`, its static view,
+     or a map holding one), `union` is `E3804` (TYPES.md §11.4), as indexing is. More generally, a
+     literal typed against a dependent value's static view (`P(*)`, or a record applied to a
+     binder) outside a dependent field, its list, or a declaration of the dependent type is
+     `E3804` (op "a literal"): it crashed `canon check` before, in `==`, lists, `if` branches. To
+     merge two dependent maps today, write the merged map into the declared field, or fill a
+     `var` of the declared type with `m[k] = v`. Maps keyed by
+     a dependent key type keep `union`. Keeping the dependent type through static typing, so a
+     literal could be checked per key, is owed for v0.2 (two reviews found the partial reading
+     unsound, log-2026-10-08).
+     Reason: merging N maps first-wins needed a `var` loop or `groupBy` and `[0]` (Sovereign's
+     ui.servernames, handoff 2026-10-08-sovereign-port-followups item 2).

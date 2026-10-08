@@ -1021,7 +1021,9 @@ P(k) | "none"` is `P(*) | "none"`. A `DepUnion` supports only:
 - when every branch is an enum, the enum value members `.name`, `.index`, `.wire`, `.retired`,
   and `.code` when every branch has `@codes` (`E3003` otherwise) (§8.1, DECISIONS 306).
 
-Anything else (any other field access, arithmetic, passing it as a `ref items`) is `E3804`. There
+Anything else (any other field access, arithmetic, passing it as a `ref items`) is `E3804`; so
+is a literal typed against a dependent value's static view (`P(*)`, or a record applied to a
+binder) outside a dependent field, its list, or a declaration of the dependent type (DECISIONS 338). There
 is no branch narrowing in this version, enum branches included: `match` on the discriminating
 field (`e.param`), not on the dependent value.
 
@@ -1044,8 +1046,9 @@ unequal, with no finding.
 
 `{k in c: T(k)}` is a map keyed by `ref c`, where `c` names a collection (§10.2). The value type
 `T(k)` may use the binder `k`. Statically the map is `{ref c: DepUnion}` if `T(k)` depends on
-`k`, else `{ref c: T}`. Its literal keys are resolved against `ref c`. Each value is checked at
-evaluation against `T` applied to its key (§11.6). A map whose **key** type is a dependent
+`k`, else `{ref c: T}`. Its literal keys are resolved against `ref c`, and they alone bind `k`: a map nested in a value,
+whatever its key type, never rebinds it (DECISIONS 338). Each value is checked at
+evaluation against `T` applied to its key (§11.6). On a map whose type mentions a key binder, `union` is `E3804` (§11.4, DECISIONS 338). A map whose **key** type is a dependent
 type (`{SpecificKey(e): …}`) has `DepUnion` keys.
 
 ### 11.6 Evaluation of dependent types (DEP-02)
