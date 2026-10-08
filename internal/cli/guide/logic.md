@@ -125,7 +125,7 @@ enum, a variant, a `Bool`, or an optional of one (`none` pattern). No literal pa
 | strings | `len()` (bytes) `isEmpty()` `contains` `startsWith` `endsWith` `split(sep)` `trim()` `lower()` `upper()` `replace(a, b)` `matches(/re/)` `find(s)` `s[a..b]` |
 | lists, tables, keyed lists | `len` `isEmpty` `first()` `last()` `first(pred)` `get` `contains` `indexOf` `map` `filter` `flatMap` `flatten` `any` `all` `count` `sum` `min` `max` `minBy` `maxBy` `sortBy` `reverse` `groupBy` `unique` `isUnique` `enumerate` `pairs` `zip` `join(sep)` `intersect` `union` `diff` `toMap(kf, vf)` |
 | tables, keyed lists | `t[k]` `t.k` `get(k)` `hasKey(k)` `find(k)` `at(i)` `keys()` `values()`; tables: `active()` (not retired) |
-| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `contains(k)` (a key, same as `k in m`) `map` `filter` `all` `any` `count` (predicates take `(k, v)`) |
+| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `contains(k)` (a key, same as `k in m`) `map` `filter` `all` `any` `count` (predicates take `(k, v)`) `union(b)` (`a`'s entries, then `b`'s new keys: first wins; `b.union(a)` is last-wins; not on a dependent map: E3804) |
 | ranges | `r.start` `r.end` `r.len()` `r.isEmpty()` `r.contains(x)` |
 | graphs | `reachable(from: x, next: f)` `cycles(xs, next: f)` `topoSort(xs, next: f)` |
 | optional results | `first` `last` `get` `find` `min` `max` `minBy` `maxBy` return `T?` |

@@ -118,3 +118,30 @@ canon explain 'app:config.server.port' --layer staging
 ```
 
 The edit writes `app/staging.layer.canon`, created when missing.
+
+## Share feature flags with C++
+
+Keep the flags in Canon and render the header the C++ build includes: one source of truth, and
+no header to parse back (`load.defines` reads constants, not `#if` blocks). A file of a system
+that is off is a `@text` fn returning `none` (`canon guide emit`).
+
+```canon flags/flags.canon
+/// Feature flags shared with the C++ build.
+package flags
+
+/// The arena system.
+const ARENA = true
+
+/// The header C++ includes: one `#define` per system that is on.
+@text("Sys_Features.h")
+export fn header() -> String {
+  return "#pragma once\n{if ARENA { "#define SYS_ARENA\n" } else { "" }}"
+}
+
+emit text { out: "include" }
+```
+
+```text out/flags/include/Sys_Features.h
+#pragma once
+#define SYS_ARENA
+```
