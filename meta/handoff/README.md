@@ -40,6 +40,10 @@ literal spellings; `load.defines` unchanged, with the flag-header recipe instead
 enums, `Decode<Fn>File`, consumer roots and `--only-root`, E8026, E8027; item 4's cross-root trap
 and ConstantID clash are owed.
 
+`2026-10-09-sovereign-test-memory.md` and `2026-10-09-sovereign-studio-edit-latency.md` are
+**answered** by `2026-10-09-canon-reply-performance.md` (log 2026-10-09): test 7.76 → 2.15 GB,
+check 16 → 9.5 s, API reuse and edit indexes; four config-studio changes; per-entry deps owed.
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,
