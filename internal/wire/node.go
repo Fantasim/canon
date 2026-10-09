@@ -1,6 +1,7 @@
 package wire
 
 import (
+	"bytes"
 	"math/big"
 	"strings"
 
@@ -126,8 +127,8 @@ func sameJSON(n *node, marker []byte) bool {
 		return n.array && len(n.elems) == 0
 	case n.array || n.isObject():
 		return false
-	case strings.HasPrefix(m, quote):
-		return sameString(string(n.raw), m)
+	case strings.HasPrefix(m, quote): // the marker is compact JSON (types.Field.NoneWire): the same text is the same string, a scalar not quoted none
+		return string(n.raw) == m || bytes.HasPrefix(n.raw, []byte(quote)) && sameString(string(n.raw), m)
 	}
 	return string(n.raw) == m || sameNumber(string(n.raw), m)
 }
