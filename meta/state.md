@@ -17,7 +17,7 @@ Stage E now judges go emits on each copy's view (`CopyOf`), as the generator see
 Handoffs: [Canon's reply](handoff/2026-10-09-canon-reply-open-ids-consumer-roots.md); [all](handoff/README.md).
 **Next:** telemetry first use; Sovereign's cutover on Go types; fix every known bug that surfaces.
 Release builds stay local (`make dist`) while CI is down.
-**Owed, performance:** edit time is ops × a full analysis (E1); FMT's whole-file judgement holds
+**Fixed 40226d7:** `canon test` pinned one file table per expect (Sovereign whole test 7.76 GB/60 s → 2.15 GB/19 s). **Owed, performance:** edit time is ops × a full analysis (E1); FMT's whole-file judgement holds
 the edit peak (per-item judgement, or the on-disk cache `Options.Cache`); a token-streaming JSON
 reader for Go data/types loaders (~110 ms/MB today); warm re-check on entry add/remove.
 **Owed from 2026-10-08 asks:** the cross-root import trap (E8004-like), `E8005` on several `table
