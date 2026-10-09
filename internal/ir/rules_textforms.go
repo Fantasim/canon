@@ -10,16 +10,17 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// textWalk is stage E's walk of one `@text` result written as JSON: each part with no wire form, and each map's keys that share a text (WIRE.md §5.1, §5.8; DECISIONS 283, 308). stored holds the composites of the lets of every package, which stage B verified.
+// textWalk is stage E's walk of one `@text` result written as JSON: each part with no wire form, and each map's keys that share a text (WIRE.md §5.1, §5.8; DECISIONS 283, 308). stored holds the composites of the lets of every package, which stage B verified, shared by the whole stage and never written; seen the records and maps the package's walks already met.
 type textWalk struct {
 	u      *unit
 	at     source.Span
 	stored map[value.Value]bool
+	seen   map[value.Value]bool
 }
 
 // checkTextResults is E8151, E8102 and E3317 on the `@text` fns of a package with `emit text` whose result is not text (WIRE.md §5.9, §8.5; CODEGEN.md §2.9; DECISIONS 308).
 func (s *stage) checkTextResults(u *unit, _ *emitSite) {
-	var stored map[value.Value]bool
+	var seen map[value.Value]bool
 	for _, site := range u.fns {
 		if !site.text || isText(site.fn.Result) {
 			continue
@@ -28,21 +29,24 @@ func (s *stage) checkTextResults(u *unit, _ *emitSite) {
 			u.report(refusedResult(site, what))
 			continue
 		}
-		if stored == nil {
-			stored = s.letComposites()
+		if seen == nil {
+			seen = map[value.Value]bool{}
 		}
-		w := &textWalk{u: u, at: site.span(), stored: stored}
+		w := &textWalk{u: u, at: site.span(), stored: s.letComposites(), seen: seen}
 		w.value(site.fn.Value)
 	}
 }
 
-// letComposites are the records, lists, maps and tables held by the values of the lets of every package, public or local: stage B verified them where they are written, so a `@text` result returning an imported let repeats no finding.
+// letComposites are the records, lists, maps and tables held by the values of the lets of every package, public or local: stage B verified them where they are written, so a `@text` result returning an imported let repeats no finding. The set is the same for every package, so the stage collects it once, at the first `@text` result walked.
 func (s *stage) letComposites() map[value.Value]bool {
-	out := map[value.Value]bool{}
-	for _, u := range s.order {
-		s.unitComposites(u, out)
+	if s.lets != nil {
+		return s.lets
 	}
-	return out
+	s.lets = map[value.Value]bool{}
+	for _, u := range s.order {
+		s.unitComposites(u, s.lets)
+	}
+	return s.lets
 }
 
 // unitComposites adds the composites of u's lets to out.
@@ -99,19 +103,19 @@ func refusedResult(site *fnSite, what types.Type) *diag.Builder {
 
 // value walks v, skipping what stage B verified, and each composite once.
 func (w *textWalk) value(v value.Value) {
-	if v == nil || w.stored[v] {
+	if v == nil || w.stored[v] || w.seen[v] {
 		return
 	}
 	switch x := v.(type) {
 	case *value.Record:
-		w.stored[v] = true
+		w.seen[v] = true
 		w.record(x)
 	case *value.List:
 		for _, e := range x.Elems {
 			w.value(e)
 		}
 	case *value.Map:
-		w.stored[v] = true
+		w.seen[v] = true
 		w.mapping(x)
 	case *value.Table:
 		for _, e := range x.Entries {

@@ -82,6 +82,7 @@ type stage struct {
 	cyclic        map[*ExportFn]bool         // cyclicFn's verdicts (DECISIONS 284)
 	cycleReported map[cycleReport]bool
 	owners        map[ownerKey]func(Type, *Case) bool // each owner's Written of its hooks, per target (hookWritten)
+	lets          map[value.Value]bool                // the composites of every let, collected once (letComposites)
 }
 
 // unit is one checked package on its way to IR; firstUse is the first type of each imported
