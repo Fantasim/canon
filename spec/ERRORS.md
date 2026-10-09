@@ -394,7 +394,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 319 codes: 295 errors, 21 warnings and 3 run-time codes, with 532 messages.
+The catalogue holds 319 codes: 295 errors, 21 warnings and 3 run-time codes, with 533 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1238,7 +1238,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8025 | error | ir | CODEGEN.md §2.8 | a relative include or import that would climb above the project's parent directories, wrong on every checkout (DECISIONS 332) |
 | E8026 | error | build | CODEGEN.md §2.4 | a file a load of the project reads that an emit of the same build writes (DECISIONS 341) |
 | E8027 | error | build | CODEGEN.md §2.4 | an output path with a symbolic link below its root's directory (DECISIONS 342) |
-| E8028 | error | build | CODEGEN.md §2.4 | `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (DECISIONS 343) |
+| E8028 | error | build | CODEGEN.md §2.4 | `build --only-root` when the build would change `canon.lock` or a `canon.outputs`, or write an output outside the named root's directory (DECISIONS 343) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
 | E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field or `@text` result part (not a whole unit, equals the `none` marker, repeated bits member; DECISIONS 308) |
 | E8103 | error | ir | CODEGEN.md §7.8.1 | a string or list longer than its fixed-size legacy C++ array |
@@ -1320,7 +1320,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8025 | - | out:Path, other:Path, pkg:Name | `{out} would reach {other} by a relative path climbing above the project's parent directories, which differ per checkout: emit {pkg} a copy under the same root` |
 | E8026 | - | path:Path, target:Name, pkg:Name | `{path} is read by this load and written by emit {target} of {pkg}: an output is never an input of its own build` |
 | E8027 | - | path:Path, link:Path | `refusing to write {path}: {link} is a symbolic link, and a build never writes through one` |
-| E8028 | - | root:Name, path:Path | `build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project` |
+| E8028 | change | root:Name, path:Path | `build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project` |
+| E8028 | outside | root:Name, path:Path, other:Name | `build --only-root {root} would write {path} outside @{root}: this machine places @{other} elsewhere; place it inside @{root} as project.canon does` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |
 | E8102 | unit | value:Value, field:Name, unit:Name | `{value} has no wire form for {field}: not a whole number of {unit}` |

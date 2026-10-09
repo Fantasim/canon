@@ -2343,7 +2343,8 @@ var Registry = []Def{
 	{
 		Code: "E8028", Severity: Error, Package: "build",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "root", Type: ArgTypeName}, {Name: "path", Type: ArgTypePath}}, Template: "build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project"},
+			{Name: "change", Args: []Arg{{Name: "root", Type: ArgTypeName}, {Name: "path", Type: ArgTypePath}}, Template: "build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project"},
+			{Name: "outside", Args: []Arg{{Name: "root", Type: ArgTypeName}, {Name: "path", Type: ArgTypePath}, {Name: "other", Type: ArgTypeName}}, Template: "build --only-root {root} would write {path} outside @{root}: this machine places @{other} elsewhere; place it inside @{root} as project.canon does"},
 		},
 	},
 	{
@@ -7142,7 +7143,7 @@ func (codeE8027) At(span source.Span, path string, link string) *Builder {
 	return newBuilder(&Registry[270], 0, span, path, link)
 }
 
-// E8028: `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (DECISIONS 343) (CODEGEN.md §2.4).
+// E8028: `build --only-root` when the build would change `canon.lock` or a `canon.outputs`, or write an output outside the named root's directory (DECISIONS 343) (CODEGEN.md §2.4).
 var E8028 codeE8028
 
 type codeE8028 struct{}
@@ -7150,9 +7151,14 @@ type codeE8028 struct{}
 // Def is the registry entry of E8028.
 func (codeE8028) Def() *Def { return &Registry[271] }
 
-// At reports: build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project
-func (codeE8028) At(span source.Span, root string, path string) *Builder {
+// AtChange reports: build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project
+func (codeE8028) AtChange(span source.Span, root string, path string) *Builder {
 	return newBuilder(&Registry[271], 0, span, root, path)
+}
+
+// AtOutside reports: build --only-root {root} would write {path} outside @{root}: this machine places @{other} elsewhere; place it inside @{root} as project.canon does
+func (codeE8028) AtOutside(span source.Span, root string, path string, other string) *Builder {
+	return newBuilder(&Registry[271], 1, span, root, path, other)
 }
 
 // E8101: an emitted integer outside the TypeScript safe range without `@ts(bigint)` (CODEGEN.md §4.1).

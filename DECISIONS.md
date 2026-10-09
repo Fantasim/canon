@@ -3400,3 +3400,6 @@ round 2", "PS1 review", "PS2 round 2"):
      under a consumer root either; `--only-root` whose root is absent and cannot be created (its
      parent missing) is `E1013`, never a silent success; an empty `--only-root` is a usage error.
      Journal recovery at `Open` (API.md N11) is unchanged: a checkout has no journal.
+     An output `--only-root` keeps (declared under the root) whose path this machine places outside
+     the named root's directory (a nested root placed elsewhere) is `E8028` `outside`, nothing
+     written.

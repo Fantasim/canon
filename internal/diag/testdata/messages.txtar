@@ -468,7 +468,8 @@ E8023 many: build --check cannot compare -42 outputs under root @resource.vocab.
 E8025 -: @resource/Server/Item/propItem.json would reach @resource/Server/Item/propItem.json by a relative path climbing above the project's parent directories, which differ per checkout: emit resource.vocab.items a copy under the same root
 E8026 -: @resource/Server/Item/propItem.json is read by this load and written by emit resource.vocab.items of resource.vocab.items: an output is never an input of its own build
 E8027 -: refusing to write @resource/Server/Item/propItem.json: @resource/Server/Item/propItem.json is a symbolic link, and a build never writes through one
-E8028 -: build --only-root resource.vocab.items would change @resource/Server/Item/propItem.json: run canon build in the project first; --only-root never writes the project
+E8028 change: build --only-root resource.vocab.items would change @resource/Server/Item/propItem.json: run canon build in the project first; --only-root never writes the project
+E8028 outside: build --only-root resource.vocab.items would write @resource/Server/Item/propItem.json outside @resource.vocab.items: this machine places @resource.vocab.items elsewhere; place it inside @resource.vocab.items as project.canon does
 E8101 field: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
 E8101 result: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; resource.vocab.items is precomputed for TypeScript and cannot be bigint
 E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items
