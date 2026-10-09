@@ -26,7 +26,15 @@ func Walk(v Visitor, n Node) {
 // Inspect traverses the tree in source order, calling f for each node, and for nil after a
 // node's children; the children of a node for which f returns false are skipped.
 func Inspect(n Node, f func(Node) bool) {
-	Walk(inspector(f), n)
+	var yield func(Node) bool
+	yield = func(c Node) bool {
+		if f(c) {
+			c.children(yield)
+			f(nil)
+		}
+		return true
+	}
+	yield(n)
 }
 
 // Children yields the direct children of n in source order.
@@ -34,15 +42,6 @@ func Children(n Node) iter.Seq[Node] {
 	return func(yield func(Node) bool) {
 		n.children(yield)
 	}
-}
-
-type inspector func(Node) bool
-
-func (f inspector) Visit(n Node) Visitor {
-	if f(n) {
-		return f
-	}
-	return nil
 }
 
 // visit yields each non-nil node of ns, a typed nil in an interface field included, and
