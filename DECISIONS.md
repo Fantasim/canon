@@ -3347,7 +3347,10 @@ round 2", "PS1 review", "PS2 round 2"):
      name it meets is `E8005` as usual. A result holding a type with no public Go type (a local
      record) gets no decoder, as a private record gets none, and so does a result no Go reader can
      hold (optional list elements or map values, a table, a case, a dependent value, a ref union):
-     never a refusal, since the fn itself is valid. A decoder's error names `<Fn>File`. C++ and
+     never a refusal, since the fn itself is valid. A decoder's error names `<Fn>File`. A package
+     reached only through a decoded result is imported for it (and never counts as a use for
+     `E8004`); when the owner's Go emit is in `data` mode, a class holding a ref may get no decoder
+     where the owner's plan would allow one (the importer cannot see the owner's values; owed). C++ and
      TypeScript: owed if asked. Reason: a top-level
      `{TextId: TextEntry}` file had no public decoder (handoff item 3).
 
