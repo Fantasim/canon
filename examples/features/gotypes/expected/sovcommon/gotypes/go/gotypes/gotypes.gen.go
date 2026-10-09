@@ -17,15 +17,15 @@ import (
 )
 
 // Rarity: How rare an item is.
-type Rarity uint8
+type Rarity string
 
 const (
 	// RarityCommon: Found everywhere.
-	RarityCommon Rarity = 0
+	RarityCommon Rarity = "common"
 	// RarityRare: Found in dungeons.
-	RarityRare Rarity = 1
+	RarityRare Rarity = "rare"
 	// RaritySeason1: Found once a season.
-	RaritySeason1 Rarity = 2
+	RaritySeason1 Rarity = "season-1"
 )
 
 func (self Rarity) String() string {
@@ -37,31 +37,22 @@ func (self Rarity) String() string {
 	case RaritySeason1:
 		return "season_1"
 	}
-	return "Rarity(" + strconv.FormatInt(int64(self), 10) + ")"
+	return string(self)
 }
 
-func (self Rarity) Wire() string {
+func (self Rarity) Wire() string { return string(self) }
+
+func (self Rarity) Known() bool {
 	switch self {
-	case RarityCommon:
-		return "common"
-	case RarityRare:
-		return "rare"
-	case RaritySeason1:
-		return "season-1"
+	case RarityCommon, RarityRare, RaritySeason1:
+		return true
 	}
-	return "Rarity(" + strconv.FormatInt(int64(self), 10) + ")"
+	return false
 }
 
 func ParseRarity(wire string) (Rarity, bool) {
-	switch wire {
-	case "common":
-		return RarityCommon, true
-	case "rare":
-		return RarityRare, true
-	case "season-1":
-		return RaritySeason1, true
-	}
-	return 0, false
+	self := Rarity(wire)
+	return self, self.Known()
 }
 
 func RarityMembers() iter.Seq[Rarity] {
@@ -75,13 +66,13 @@ func RarityMembers() iter.Seq[Rarity] {
 }
 
 // Element: An element, written as its code.
-type Element uint8
+type Element string
 
 const (
 	// ElementFire: Burns.
-	ElementFire Element = 1
+	ElementFire Element = "fire"
 	// ElementWater: Flows.
-	ElementWater Element = 2
+	ElementWater Element = "water"
 )
 
 func (self Element) String() string {
@@ -91,27 +82,22 @@ func (self Element) String() string {
 	case ElementWater:
 		return "water"
 	}
-	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
+	return string(self)
 }
 
-func (self Element) Wire() string {
+func (self Element) Wire() string { return string(self) }
+
+func (self Element) Known() bool {
 	switch self {
-	case ElementFire:
-		return "fire"
-	case ElementWater:
-		return "water"
+	case ElementFire, ElementWater:
+		return true
 	}
-	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
+	return false
 }
 
 func ParseElement(wire string) (Element, bool) {
-	switch wire {
-	case "fire":
-		return ElementFire, true
-	case "water":
-		return ElementWater, true
-	}
-	return 0, false
+	self := Element(wire)
+	return self, self.Known()
 }
 
 func ElementMembers() iter.Seq[Element] {
@@ -124,16 +110,24 @@ func ElementMembers() iter.Seq[Element] {
 	}
 }
 
-func (self Element) Code() uint8 { return uint8(self) }
-
-func ElementFromCode(code uint8) (Element, bool) {
-	switch v := Element(code); v {
+func (self Element) Code() (uint8, bool) {
+	switch self {
 	case ElementFire:
-		return v, true
+		return 1, true
 	case ElementWater:
-		return v, true
+		return 2, true
 	}
 	return 0, false
+}
+
+func ElementFromCode(code uint8) (Element, bool) {
+	switch code {
+	case 1:
+		return ElementFire, true
+	case 2:
+		return ElementWater, true
+	}
+	return "", false
 }
 
 // Bonus: A stat an item adds.
@@ -276,6 +270,37 @@ func DecodeItemFile(raw []byte) (*ItemFile, error) {
 		return nil, err
 	}
 	return out, nil
+}
+
+func DecodeRaritiesFile(raw []byte) (rt.Map[Rarity, int64], error) {
+	var out rt.Map[Rarity, int64]
+	r, err := jsonDocument("RaritiesFile", raw)
+	if err != nil {
+		return out, err
+	}
+	err = func(name, path string) error {
+		k1, r2, v3, err := jsonMap(name, path+".", r, false)
+		if err != nil {
+			return err
+		}
+		k4 := make([]Rarity, len(k1))
+		v5 := make([]int64, len(k1))
+		for j6 := range k1 {
+			kp7 := jsonKeyPath(path+".", k1[j6])
+			var v8 string
+			if err := jsonRead(name, kp7, "", r2[j6], &v8); err != nil {
+				return err
+			}
+			n9, err := jsonInt(name, kp7, "", v3[j6], -9223372036854775808, 9223372036854775807)
+			if err != nil {
+				return err
+			}
+			k4[j6], v5[j6] = Rarity(v8), n9
+		}
+		out = rt.MakeMap(k4, v5)
+		return nil
+	}("RaritiesFile", "$")
+	return out, err
 }
 
 // jsonDocument is raw without a UTF-8 byte order mark, which must then be one JSON value read as
@@ -826,93 +851,89 @@ func decodeItem(name, path string, raw json.RawMessage, out *Item) error {
 		if err := jsonRead(name, path, "rarity", r9, &v11); err != nil {
 			return err
 		}
-		v12, ok13 := ParseRarity(v11)
-		if !ok13 {
-			return fmt.Errorf("%s: %srarity: unknown value %s", name, path, v11)
-		}
-		out.rarity = v12
+		out.rarity = Rarity(v11)
 	}
-	r14, err := jsonNeed(name, path, obj, "element")
+	r12, err := jsonNeed(name, path, obj, "element")
 	if err != nil {
 		return err
 	}
-	n15, err := jsonInt(name, path, "element", r14, 0, 255)
+	n13, err := jsonInt(name, path, "element", r12, 0, 255)
 	if err != nil {
 		return err
 	}
-	v16, ok17 := ElementFromCode(uint8(n15))
-	if !ok17 {
-		return fmt.Errorf("%s: %selement: unknown value %d", name, path, n15)
+	v14, ok15 := ElementFromCode(uint8(n13))
+	if !ok15 {
+		return fmt.Errorf("%s: %selement: unknown value %d", name, path, n13)
 	}
-	out.element = v16
-	if _, ok19 := obj["cooldownSec"]; !ok19 {
+	out.element = v14
+	if _, ok17 := obj["cooldownSec"]; !ok17 {
 		out.cooldown = 1000 * time.Millisecond
 	} else {
-		r18, err := jsonNeed(name, path, obj, "cooldownSec")
+		r16, err := jsonNeed(name, path, obj, "cooldownSec")
 		if err != nil {
 			return err
 		}
-		n20, err := jsonDuration(name, path, "cooldownSec", r18, 1000)
+		n18, err := jsonDuration(name, path, "cooldownSec", r16, 1000)
 		if err != nil {
 			return err
 		}
-		out.cooldown = rt.DurationFromMs(n20)
+		out.cooldown = rt.DurationFromMs(n18)
 	}
-	if _, ok22 := obj["lifetimeMin"]; !ok22 {
+	if _, ok20 := obj["lifetimeMin"]; !ok20 {
 		out.lifetime, out.lifetime_ok = 3600000*time.Millisecond, true
-	} else if r21 := jsonMay(obj, "lifetimeMin"); r21 != nil {
-		n23, err := jsonDuration(name, path, "lifetimeMin", r21, 60000)
+	} else if r19 := jsonMay(obj, "lifetimeMin"); r19 != nil {
+		n21, err := jsonDuration(name, path, "lifetimeMin", r19, 60000)
 		if err != nil {
 			return err
 		}
-		out.lifetime, out.lifetime_ok = rt.DurationFromMs(n23), true
+		out.lifetime, out.lifetime_ok = rt.DurationFromMs(n21), true
 	}
-	if r24, ok25 := obj["limits"]; ok25 {
-		o26, err := jsonObject(name, path+"limits.", r24)
+	if r22, ok23 := obj["limits"]; ok23 {
+		o24, err := jsonObject(name, path+"limits.", r22)
 		if err != nil {
 			return err
 		}
-		if _, ok28 := o26["stack"]; !ok28 {
+		if _, ok26 := o24["stack"]; !ok26 {
 			out.stack = 1
 		} else {
-			r27, err := jsonNeed(name, path+"limits.", o26, "stack")
+			r25, err := jsonNeed(name, path+"limits.", o24, "stack")
 			if err != nil {
 				return err
 			}
-			n29, err := jsonInt(name, path, "limits.stack", r27, -32768, 32767)
+			n27, err := jsonInt(name, path, "limits.stack", r25, -32768, 32767)
 			if err != nil {
 				return err
 			}
-			out.stack = int16(n29)
+			out.stack = int16(n27)
 		}
 	} else {
 		out.stack = 1
 	}
-	var v30 []*Bonus
-	empty31 := false
-	for j32, k33 := range [...]string{"dwDestParam0", "dwDestParam1", "dwDestParam2"} {
-		k34 := [...]string{"nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"}[j32]
-		r35, r36, err := jsonSlot(name, path, obj, k33, k34, &empty31)
+	var v28 []*Bonus
+	empty29 := false
+	for j30, k31 := range [...]string{"dwDestParam0", "dwDestParam1", "dwDestParam2"} {
+		k32 := [...]string{"nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"}[j30]
+		r33, r34, err := jsonSlot(name, path, obj, k31, k32, &empty29)
 		if err != nil {
 			return err
 		}
-		if r35 == nil {
+		if r33 == nil {
 			continue
 		}
-		x37 := &Bonus{}
-		n38, err := jsonInt(name, path, k33, r35, -9223372036854775808, 9223372036854775807)
+		x35 := &Bonus{}
+		n36, err := jsonInt(name, path, k31, r33, -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
 		}
-		x37.stat = n38
-		n39, err := jsonInt(name, path, k34, r36, -9223372036854775808, 9223372036854775807)
+		x35.stat = n36
+		n37, err := jsonInt(name, path, k32, r34, -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
 		}
-		x37.amount = n39
-		v30 = append(v30, x37)
+		x35.amount = n37
+		v28 = append(v28, x35)
 	}
-	out.bonuses = rt.MakeList(v30)
+	out.bonuses = rt.MakeList(v28)
 	return nil
 }
 
@@ -957,15 +978,11 @@ func decodeItemFile(name, path string, raw json.RawMessage, out *ItemFile) error
 		if err := jsonRead(name, kp17, "", r12[j16], &v18); err != nil {
 			return err
 		}
-		v19, ok20 := ParseRarity(v18)
-		if !ok20 {
-			return fmt.Errorf("%s: %s: unknown value %s", name, kp17, v18)
-		}
-		n21, err := jsonInt(name, kp17, "", v13[j16], -9223372036854775808, 9223372036854775807)
+		n19, err := jsonInt(name, kp17, "", v13[j16], -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
 		}
-		k14[j16], v15[j16] = v19, n21
+		k14[j16], v15[j16] = Rarity(v18), n19
 	}
 	out.byRarity = rt.MakeMap(k14, v15)
 	return nil

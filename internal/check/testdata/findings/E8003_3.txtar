@@ -1,0 +1,18 @@
+DECISIONS 339, CODEGEN.md §2.1: `open` is a go option; on a cpp or ts emit it is an unknown option.
+-- a/a.canon --
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+emit cpp { out: "@sovcommon/a", mode: types, open: [Dst] }
+
+emit ts { out: "@sovcommon/a.ts", mode: types, open: [Dst] }
+-- findings.txt --
+error[E8003]  a/a.canon:6:46
+  unknown option open for emit cpp
+
+error[E8003]  a/a.canon:8:48
+  unknown option open for emit ts
+
+2 errors, 0 warnings in 1 package (…)

@@ -56,7 +56,7 @@ func selectedNames(u *unit, e *Emit) []string {
 	return out
 }
 
-// imports are the packages whose types or collections the IR names directly, by name (EMT-06, CODEGEN.md §2.8): another package's type is referenced, never entered; then those only its code emits reach (reachImports).
+// imports are the packages whose types or collections the IR names directly, by name (EMT-06, CODEGEN.md §2.8): another package's type is referenced, never entered; then those only its code emits reach (reachImports), then those only a decoded @text result reaches (textImports).
 func (s *stage) imports(u *unit) []*PackageRef {
 	u.firstUse = map[string]string{}
 	use := func(pkg, name string) {
@@ -80,6 +80,7 @@ func (s *stage) imports(u *unit) []*PackageRef {
 		}
 	}
 	out = append(out, s.reachImports(u)...)
+	out = append(out, s.textImports(u, out)...)
 	slices.SortFunc(out, func(a, b *PackageRef) int { return cmp.Compare(a.Name, b.Name) })
 	return out
 }

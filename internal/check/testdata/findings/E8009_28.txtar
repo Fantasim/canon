@@ -1,0 +1,23 @@
+DECISIONS 339, CODEGEN.md §2.1: an empty `open` is refused (`openEmpty`): omit it to keep every enum closed; a value that is no list is `kind`.
+-- a/a.canon --
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+emit go { out: "@sovcommon/a", mode: types, open: [] }
+-- b/b.canon --
+package b
+
+/// A destination.
+enum Dst { str, sta }
+
+emit go { out: "@sovcommon/b", mode: types, open: Dst }
+-- findings.txt --
+error[E8009]  a/a.canon:6:51
+  open of emit go is an empty list: omit open to keep every enum closed
+
+error[E8009]  b/b.canon:6:51
+  option open of emit go must be a list of enum names
+
+2 errors, 0 warnings in 2 packages (…)

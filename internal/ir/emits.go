@@ -83,7 +83,7 @@ func copies(base *emitSite) []*emitSite {
 	sites := make([]*emitSite, len(base.outs))
 	for i, o := range base.outs {
 		e := *base.e
-		e.Out, e.Values = o.text, slices.Clone(base.e.Values)
+		e.Out, e.Values, e.Open = o.text, slices.Clone(base.e.Values), slices.Clone(base.e.Open)
 		site := *base
 		site.e, site.outSpan, site.index = &e, o.span, i
 		sites[i] = &site
@@ -122,7 +122,7 @@ func unbuiltMode(e *Emit) bool {
 	return int(e.Target) < len(unbuiltAlt) && unbuiltAlt[e.Target][e.Mode] != ModeNone
 }
 
-// readOptions types the options check validated (E8003, E8009): out, mode (ModeNone when check refused it), values, package, namespace; an absent `values` and an explicit `values: []` both read as nil, so selectedNames expands either to every public value (decision 127).
+// readOptions types the options check validated (E8003, E8009): out, mode (ModeNone when check refused it), values, package, namespace, a go emit's open (only a go emit has it: E8003 elsewhere); an absent `values` and an explicit `values: []` both read as nil, so selectedNames expands either to every public value (decision 127).
 func (s *stage) readOptions(u *unit, es *emitSite) {
 	e := es.e
 	if e.Target == TargetGo || e.Target == TargetCpp || e.Target == TargetTS {
@@ -143,6 +143,8 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 			}
 		case check.OptValues:
 			e.Values = valueNames(fi.Value)
+		case check.OptOpen:
+			e.Open = valueNames(fi.Value)
 		case check.OptPackage:
 			e.GoPackage = constString(fi.Value)
 			es.named = true

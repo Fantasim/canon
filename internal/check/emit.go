@@ -68,6 +68,8 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 			values = c.emitValues(env, fi, target)
 		case OptOut:
 			out = c.emitOut(env, fi, target)
+		case OptOpen:
+			c.emitOpen(env, e, fi)
 		default:
 			c.emitString(env, fi, target)
 		}

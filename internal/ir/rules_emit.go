@@ -111,7 +111,7 @@ func (s *stage) checkImports(u *unit, es *emitSite) {
 func (s *stage) checkImportedGoRoots(u *unit, es *emitSite) {
 	for _, imp := range u.p.Imports {
 		dep := s.units[imp.Name]
-		if dep == nil || dep.selected {
+		if dep == nil || dep.selected || u.textOnly[imp.Name] {
 			continue
 		}
 		for _, d := range dep.emits {

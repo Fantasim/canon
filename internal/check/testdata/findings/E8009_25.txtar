@@ -1,0 +1,23 @@
+DECISIONS 339, CODEGEN.md §2.1: `open` of a go emit needs mode types; the default mode baked and a written data mode are both refused (`openMode`).
+-- a/a.canon --
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+emit go { out: "@sovcommon/a", open: [Dst] }
+-- b/b.canon --
+package b
+
+/// A destination.
+enum Dst { str, sta }
+
+emit go { out: "@sovcommon/b", mode: data, open: [Dst] }
+-- findings.txt --
+error[E8009]  a/a.canon:6:32
+  open of emit go needs mode types, not baked
+
+error[E8009]  b/b.canon:6:44
+  open of emit go needs mode types, not data
+
+2 errors, 0 warnings in 2 packages (…)

@@ -53,8 +53,8 @@ func (g *gen) keyTextExpr(t ir.TypeRef, expr string) string {
 
 // enumKeyText is an enum key's file text: its code in decimal under @json(codes), else its wire value.
 func (g *gen) enumKeyText(t ir.TypeRef, expr string) string {
-	if ir.NumericMapKey(t) {
-		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), goInt64+lparen+expr+dot+ir.GoCode+callSuffix+rparen)
+	if e, ok := t.Named.(*ir.Enum); ok && ir.NumericMapKey(t) {
+		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), g.codeInt64(e, expr))
 	}
 	return expr + dot + ir.GoWire + callSuffix
 }

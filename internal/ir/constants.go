@@ -227,6 +227,7 @@ const (
 	GoString       = "String"
 	GoWire         = "Wire"
 	GoCode         = "Code"
+	GoKnown        = "Known" // an opened enum's Known method (DECISIONS 339)
 	GoLen          = "Len"
 	GoAt           = "At"
 	GoAll          = "All"
@@ -354,6 +355,7 @@ const (
 	goJSONMap          = "jsonMap"
 	goJSONKeyPath      = "jsonKeyPath"
 	goPublicDecode     = CppDecode // types mode's public Decode<T> (CODEGEN.md §5.13)
+	goTextFileSuffix   = "File"    // a @text fn's types-mode Decode<Fn>File (DECISIONS 340)
 	goJSONDocument     = "jsonDocument"
 	goPkgSuffix        = "pkg" // the alias of an import Go-named like a predeclared identifier, maxpkg (CODEGEN.md §3.4)
 	goJSONDuration     = "jsonDuration"

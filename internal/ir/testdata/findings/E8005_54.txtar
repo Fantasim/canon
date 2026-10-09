@@ -1,0 +1,25 @@
+DECISIONS 340, CODEGEN.md §3.5: a go types emit declares Decode<Fn>File of a @text fn of a map or list after the records' decoders; the record RaritiesFile's Decode<T> is already DecodeRaritiesFile, so fn rarities meets it: E8005 at the fn.
+-- a/a.canon --
+/// A.
+package a
+
+/// A rarity.
+enum Rarity { common, rare }
+
+/// The rarities file, as a record.
+record RaritiesFile {
+  /// The counts.
+  counts: {Rarity: Int}
+}
+
+/// How many of each rarity.
+@text("rarities.json")
+export fn rarities() -> {Rarity: Int} { return { common: 1, rare: 2 } }
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit text { out: "out/a" }
+-- findings.txt --
+error[E8005]  a/a.canon:15:11
+  go: DecodeRaritiesFile is generated for both a.RaritiesFile and a.rarities
+
+1 error, 0 warnings in 1 package (…)

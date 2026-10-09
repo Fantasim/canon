@@ -1,0 +1,22 @@
+TYPES.md §2 (`Kind` is not writable), DECISIONS 340: a variant's kind cannot be named as a type, so no @text fn's result, which is always written, holds one and Decode<Fn>File never meets it: `Shape.kind` reads as a case named kind.
+-- a/a.canon --
+/// A.
+package a
+
+/// A shape.
+variant Shape @json(tag: "kind") {
+  /// A box.
+  box
+}
+
+/// Kinds.
+@text("kinds.json")
+export fn kinds() -> [Shape.kind] { return [] }
+
+emit go { out: "@sovcommon/a", mode: types }
+emit text { out: "out/a" }
+-- findings.txt --
+error[E3003]  a/a.canon:12:29
+  a.Shape has no case kind
+
+1 error, 0 warnings in 1 package (…)

@@ -8,20 +8,28 @@ import (
 
 // decodedSites are what a loader reads of a class: each field's type (a pairs field's pair record fields, read slot by slot) and each stored fn's result.
 func (s *stage) decodedSites(fields []*Field, fns []*ExportFn) []typeSite {
+	return readSites(fields, fns, func(item any) source.Span { return s.itemSpan(item, source.Span{}) })
+}
+
+// readSites are decodedSites, each at the span at gives its field or fn; judges that need no span pass noSpan.
+func readSites(fields []*Field, fns []*ExportFn, at func(any) source.Span) []typeSite {
 	var out []typeSite
 	for _, f := range fields {
 		if f.Input != nil || f.Optional && f.Type.Kind == types.Never {
 			continue
 		}
-		out = append(out, readFieldSites(f, s.itemSpan(f, source.Span{}))...)
+		out = append(out, readFieldSites(f, at(f))...)
 	}
 	for _, fn := range fns {
 		if fn.Kind != FnTranslated {
-			out = append(out, typeSite{t: &fn.Result, span: s.itemSpan(fn, source.Span{})})
+			out = append(out, typeSite{t: &fn.Result, span: at(fn)})
 		}
 	}
 	return out
 }
+
+// noSpan locates nothing: a judge asks only whether a type is read.
+func noSpan(any) source.Span { return source.Span{} }
 
 // readFieldSites are what a loader reads of field f: its type, or the fields of its pair record, read slot by slot.
 func readFieldSites(f *Field, span source.Span) []typeSite {

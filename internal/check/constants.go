@@ -317,6 +317,7 @@ const (
 	OptPackage   = "package"
 	OptNamespace = "namespace"
 	OptValues    = methodValues
+	OptOpen      = "open"
 	ModeBaked    = "baked"
 	ModeEmbedded = "embedded"
 	ModeData     = "data"
@@ -327,7 +328,7 @@ var codeModes = []string{ModeBaked, ModeEmbedded, ModeData, ModeTypes}
 
 // emitSpecs are the targets of CODEGEN.md §2.1 with their options and modes.
 var emitSpecs = map[string]emitSpec{
-	TargetGo:   {options: []string{OptOut, OptMode, OptPackage, OptValues}, modes: codeModes},
+	TargetGo:   {options: []string{OptOut, OptMode, OptPackage, OptValues, OptOpen}, modes: codeModes},
 	TargetCpp:  {options: []string{OptOut, OptMode, OptNamespace, OptValues}, modes: codeModes},
 	TargetTS:   {options: []string{OptOut, OptMode, OptValues}, modes: codeModes},
 	TargetJSON: {options: []string{OptOut, OptValues}},
@@ -485,11 +486,6 @@ const (
 
 	elidedLiteral sourceText = "{ … }"
 )
-
-// literalCodes are the lexer's findings inside a literal token (DECISIONS 215).
-var literalCodes = []interface{ Def() *diag.Def }{
-	diag.E1101, diag.E1102, diag.E1107, diag.E1109, diag.E1110, diag.E1111, diag.E1112, diag.E1113, diag.E1114, diag.E1122, diag.E1124,
-}
 
 // The forms of a let's value that the checker reads as written (TYPES.md §4.1, §9.3, §10.2).
 const (

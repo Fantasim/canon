@@ -73,6 +73,25 @@ func (g *gen) publicDecoders() {
 	}
 }
 
+// textDecoders writes Decode<Fn>File of each decoded @text fn, in source order: the document's byte rules, then its result read from the root as a field of that type is, returning no value unless all of it decodes (DECISIONS 340, CODEGEN.md §5.13).
+func (g *gen) textDecoders() {
+	for _, fn := range g.names.TextDecoders() {
+		g.textDecoder(fn)
+	}
+}
+
+func (g *gen) textDecoder(fn *ir.ExportFn) {
+	defer g.enter(g.p.Name + dot + fn.Name)()
+	g.temps = 0
+	t := ir.TextResult(fn)
+	var b strings.Builder
+	x := g.readValue(&b, leaf{t: t}, g.lc.R, g.root())
+	g.exec(tmplTextDecoder, struct {
+		Name, Type, Quoted, Body, Value string
+		L                               locals
+	}{g.names.TextDecoder(fn), g.goType(t), strconv.Quote(g.names.TextFile(fn)), b.String(), x, g.lc})
+}
+
 // bodyKeys are the keys a decoder of b checks its object's against (expectedKeys); in types mode, which checks none (CODEGEN.md §5.13: unknown keys are ignored), the wire keys its fields read from that object, so that an object no field reads is never bound.
 func (g *gen) bodyKeys(b *body) []string {
 	if !g.isTypes() {

@@ -101,6 +101,7 @@ var wayOf = map[diag.Kind]diag.Kind{
 	diag.KindInputField: diag.KindWayInputField, diag.KindLegacyStruct: diag.KindWayLegacyStruct,
 	diag.KindMapField: diag.KindWayMapField, diag.KindNeverDependent: diag.KindWayNeverDependent,
 	diag.KindOptionalElementList: diag.KindWayOptionalElementList, diag.KindOptionalMapValue: diag.KindWayOptionalMapValue,
+	diag.KindOpenEnum:       diag.KindWayOpenEnum,
 	diag.KindRecordConstant: diag.KindWayRecordConstant, diag.KindRecordDefault: diag.KindWayRecordDefault, diag.KindRecordCycleThroughMethod: diag.KindWayRecordCycleThroughMethod,
 	diag.KindRecordFieldCycle: diag.KindWayRecordFieldCycle, diag.KindRecursiveVariantCase: diag.KindWayRecursiveVariantCase,
 	diag.KindRefUnion: diag.KindWayRefUnion, diag.KindResolvedLookupResult: diag.KindWayResolvedLookupResult,
@@ -196,9 +197,13 @@ var (
 	goIDEnumMethods    = []string{GoString}
 	goEnumMethods      = append(slices.Clone(goIDEnumMethods), GoWire)
 	goCodesEnumMethods = append(slices.Clone(goEnumMethods), GoCode)
+	goOpenEnumMethods  = append(slices.Clone(goEnumMethods), GoKnown) // DECISIONS 339
+	goOpenCodesMethods = append(slices.Clone(goOpenEnumMethods), GoCode)
 	goContainerMembers = []string{GoRows, GoLen, GoAt, GoAll, GoFind}
-	goPointerKinds     = kindSet(types.Record, types.Variant, types.Case, types.TypeApp) // nil marks absent (CODEGEN.md §4.3)
-	goStdOfKind        = map[types.Kind]string{
+	textKinds          = kindSet(types.Bool, types.Int, types.Float, types.String, types.LitUnion, types.Duration, // what Decode<Fn>File reads (DECISIONS 340)
+		types.Enum, types.Ref, types.Record, types.Variant, types.List, types.Map)
+	goPointerKinds = kindSet(types.Record, types.Variant, types.Case, types.TypeApp) // nil marks absent (CODEGEN.md §4.3)
+	goStdOfKind    = map[types.Kind]string{
 		types.List: goRT, types.Map: goRT, types.DepMap: goRT, types.Duration: goTime,
 	}
 )

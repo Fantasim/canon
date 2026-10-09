@@ -108,7 +108,7 @@ func HeldApp(t TypeRef) *TypeRef {
 
 // checkGoDecodedDependents is E8019 where gen/go's data loader cannot read a dependent value of a class it decodes (the plan's Decoded; CODEGEN.md §5.6; log-2026-09-25 "gen/go review round 1 calls").
 func (s *stage) checkGoDecodedDependents(u *unit, es *emitSite) {
-	pl := PlanGoNames(u.p, es.e)
+	pl := PlanGoNames(s.view(u, es), es.e)
 	for _, class := range packageClasses(u.p) {
 		if pl.Decoded(class) {
 			s.reportDecodedDependents(u, es, class)

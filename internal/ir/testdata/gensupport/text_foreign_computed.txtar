@@ -1,0 +1,28 @@
+DECISIONS 340: a's @text fn returns a list of b.Item, whose computed default a types-mode reader has no data for (E8014 for any reader that reads it): the fn gets no Decode<Fn>File, so nothing reads Item and the project stays clean, as it was before text decoders existed.
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// The base.
+  base: Int
+  /// Twice the base.
+  price: Int = base * 2
+}
+
+emit go { out: "@features/b/go", package: "b" }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item }
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ base: 2 }] }
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit text { out: "out/a" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

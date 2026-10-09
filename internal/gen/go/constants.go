@@ -151,6 +151,8 @@ const (
 // Types mode (CODEGEN.md §5.13): the public decoder's template, its helpers, unicode/utf8 for the document, a Duration's unit, an absent key's default.
 const (
 	tmplPublicDecoder, helperDocument, helperDuration = "publicDecoder", "jsonDocument", "jsonDuration"
+	tmplTextDecoder, tmplOpenEnum, tmplOpenCodes      = "textDecoder", "openEnum", "openCodes" // DECISIONS 339, 340
+	openCodeFormat                                    = "func(v %[1]s) int64 {\ncode, _ := v.%[2]s()\nreturn int64(code)\n}(%[3]s)"
 	utf8Path, utf8Pkg                                 = "unicode/utf8", "utf8"
 	localUnit                                         = "unit"
 	durationReadFormat                                = "%[1]s, %[2]s := %[3]s(%[4]s, %[5]s, %[6]s, %[7]s, %[8]d)\nif %[2]s != nil {\nreturn %[2]s\n}\n"
@@ -272,8 +274,10 @@ const (
 		"return %[8]s\n}\n%[4]s[%[6]s] = %[1]s[%[6]s].%[12]s\n}\n"
 	dupCheckFormat = "if %[1]s, %[2]s, %[3]s := %[4]s" + firstDupCall + "%[5]s); %[3]s {\n" +
 		"return %[4]s" + dupRowCall + "%[6]s, %[7]s, %[8]s, %[9]s, %[10]s)\n}\n"
-	bitsFormat = "var %[1]s []%[2]s\nfor _, %[3]s := range [...]%[2]s{%[4]s} {\nif %[5]s&uint64(%[3]s) != 0 {\n" +
-		"%[1]s = append(%[1]s, %[3]s)\n}\n}\n"
+	bitsOpen          = "var %[1]s []%[2]s\nfor _, %[3]s := range [...]%[2]s{%[4]s} {\n"
+	bitsTail          = "%[1]s = append(%[1]s, %[3]s)\n}\n}\n"
+	bitsFormat        = bitsOpen + "if %[5]s&uint64(%[3]s) != 0 {\n" + bitsTail
+	openBitsFormat    = bitsOpen + "if %[6]s, _ := %[3]s.%[7]s(); %[5]s&uint64(%[6]s) != 0 {\n" + bitsTail // an opened enum's code (DECISIONS 339)
 	switchTagFormat   = "switch %s {\n"
 	caseFormat        = "case %s:\n"
 	kindOnlyFormat    = "*%[1]s = %[2]s{%[3]s: %[4]s}\n"

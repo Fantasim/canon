@@ -25,7 +25,7 @@ func init() {
 
 // foreignReaches calls visit with each class of another package each root of emit es reaches (foreignRoots, the walk ForeignUses makes), with the root's span, in root order, then in first-reach order: a root is a value, constant, export fn or, in types mode, a field or dependent type of u, so a finding on another package's class sits at the site of this package that builds it. readOnly keeps the roots readers read.
 func (s *stage) foreignReaches(u *unit, es *emitSite, readOnly bool, visit func(at source.Span, use *ForeignUse, c any)) {
-	for _, r := range foreignRoots(u.p, es.e) {
+	for _, r := range foreignRoots(s.view(u, es), es.e) {
 		if readOnly && !r.read {
 			continue
 		}
@@ -186,9 +186,9 @@ func (s *stage) checkLegacyStructs(u *unit, es *emitSite) {
 }
 
 // judgeMaps is `MapField` for a map the emit's loader cannot read in what it reads of c (checkDecodedType).
-func judgeMaps(s *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
+func judgeMaps(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
 	fields, fns := classBody(c)
-	bad := slices.ContainsFunc(s.decodedSites(fields, readFns(e, fns)), func(site typeSite) bool { return typeHolds(site.t, unreadMap(e)) })
+	bad := slices.ContainsFunc(readSites(fields, readFns(e, fns), noSpan), func(site typeSite) bool { return typeHolds(site.t, unreadMap(e)) })
 	return diag.KindMapField, bad
 }
 
@@ -205,18 +205,18 @@ func judgeDependents(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
 }
 
 // judgeCaseReads is `CaseField` for a case used as a type in what gen/go's data loader reads of c (checkCaseFields).
-func judgeCaseReads(s *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
+func judgeCaseReads(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
 	fields, fns := classBody(c)
-	bad := slices.ContainsFunc(s.decodedSites(fields, readFns(e, fns)), func(site typeSite) bool {
+	bad := slices.ContainsFunc(readSites(fields, readFns(e, fns), noSpan), func(site typeSite) bool {
 		return typeHolds(site.t, func(t *TypeRef) bool { return t.Kind == types.Case })
 	})
 	return diag.KindCaseField, bad
 }
 
 // judgeRefUnions is `RefUnion` for a literal union over a ref in what gen/go's data loader reads of c (checkRefUnions).
-func judgeRefUnions(s *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
+func judgeRefUnions(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
 	fields, fns := classBody(c)
-	bad := slices.ContainsFunc(s.decodedSites(fields, readFns(e, fns)), func(site typeSite) bool { return typeHolds(site.t, isRefUnion) })
+	bad := slices.ContainsFunc(readSites(fields, readFns(e, fns), noSpan), func(site typeSite) bool { return typeHolds(site.t, isRefUnion) })
 	return diag.KindRefUnion, bad
 }
 

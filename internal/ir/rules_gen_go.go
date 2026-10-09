@@ -32,7 +32,7 @@ func noIDEnum(p *Package, t Target, ref TypeRef) bool {
 
 // checkGoDecoded is E8019 for what gen/go's data loaders and types-mode decoders cannot read in a class they decode (the plan's Decoded; CODEGEN.md §5.9, §5.13): a map (MapField), and in data mode an inline key folding onto another (InlineFoldedKey): a types-mode decoder checks no key, so none folds. A pairs field's element record of another package is read slot by slot into its hook's two parameters: check's E3316 leaves a pair record two scalar fields and no stored fn (WIRE.md §4.1), so nothing more is refused here.
 func (s *stage) checkGoDecoded(u *unit, es *emitSite) {
-	pl := PlanGoNames(u.p, es.e)
+	pl := PlanGoNames(s.view(u, es), es.e)
 	shape := objectShape{extras: s.objectExtras(u, u.values)}
 	for _, class := range packageClasses(u.p) {
 		if !pl.Decoded(class) {
@@ -69,7 +69,7 @@ func judgeGoDefaults(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
 
 // checkResolvedLookups is E8019 `ResolvedLookupResult`: gen/go's data resolver has no walk for a lookup's cells holding a ref resolved at load (CODEGEN.md §5.8).
 func (s *stage) checkResolvedLookups(u *unit, es *emitSite) {
-	pl := PlanGoNames(u.p, es.e)
+	pl := PlanGoNames(s.view(u, es), es.e)
 	for _, t := range u.p.Types {
 		for _, class := range resolvedClasses(pl, t) {
 			_, fns := classBody(class)

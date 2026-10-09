@@ -1,0 +1,13 @@
+DECISIONS 339, CODEGEN.md §2.1, §5.2: an `ordered` enum cannot be opened (`openOrdered`): its Go string type would compare members by text, not in declaration order.
+-- a/a.canon --
+package a
+
+/// A tier.
+enum Tier ordered { low, high }
+
+emit go { out: "@sovcommon/a", mode: types, open: [Tier] }
+-- findings.txt --
+error[E8009]  a/a.canon:6:52
+  open of emit go: Tier is ordered, and an open enum cannot compare its members
+
+1 error, 0 warnings in 1 package (…)

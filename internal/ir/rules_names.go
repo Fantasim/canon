@@ -47,7 +47,7 @@ func (s *stage) checkGoNames(u *unit) {
 	problems := goOverrideProblems(u.p)
 	report := nameReport{span: s.itemSpans(es), target: check.TargetGo}
 	if !modeRefused(es.e) {
-		pl := PlanGoNames(u.p, es.e)
+		pl := PlanGoNames(s.view(u, es), es.e)
 		problems = slices.DeleteFunc(pl.Problems(), s.refusedImport(u))
 		report.idOf = func(rec *Record) string { return pl.IDTypeName(rec) }
 	}

@@ -124,7 +124,7 @@ func (s *stage) readSpans(u *unit, es *emitSite, bad func(*TypeRef) bool) map[so
 	}
 	var pl *GoNamePlan
 	if es.e.Target == TargetGo {
-		pl = PlanGoNames(u.p, es.e)
+		pl = PlanGoNames(s.view(u, es), es.e)
 	}
 	for _, class := range packageClasses(u.p) {
 		if pl != nil && !pl.Decoded(class) {

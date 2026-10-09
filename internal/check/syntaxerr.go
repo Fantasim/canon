@@ -10,6 +10,11 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
+// literalCodes are the lexer's findings inside a literal token (DECISIONS 215).
+var literalCodes = []interface{ Def() *diag.Def }{
+	diag.E1101, diag.E1102, diag.E1107, diag.E1109, diag.E1110, diag.E1111, diag.E1112, diag.E1113, diag.E1114, diag.E1122, diag.E1124,
+}
+
 // syntaxErrors breaks each declaration holding a lexer or parser error from its creation
 // (newObject), before anything is folded or evaluated, and marks each literal token holding a
 // lexer error.

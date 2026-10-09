@@ -61,7 +61,7 @@ type foreignRoot struct {
 	owners []any
 }
 
-// foreignRoots are emit e's roots in ForeignUses' order: the selected values (written in baked mode, read otherwise), a types-mode emit's classes, field by field and stored fn by stored fn, then its dependent types; the constants, a baked emit's stored package fns' results, the translated bodies.
+// foreignRoots are emit e's roots in ForeignUses' order: the selected values (written in baked mode, read otherwise), a types-mode emit's classes, field by field and stored fn by stored fn, then its dependent types and, in go, its decoded @text results; the constants, a baked emit's stored package fns' results, the translated bodies.
 func foreignRoots(p *Package, e *Emit) []foreignRoot {
 	var out []foreignRoot
 	for _, v := range p.Values {
@@ -70,7 +70,7 @@ func foreignRoots(p *Package, e *Emit) []foreignRoot {
 		}
 	}
 	if e.Mode == ModeTypes {
-		out = append(out, typesRoots(p)...)
+		out = append(append(out, typesRoots(p)...), textRoots(p, e)...)
 	}
 	for _, c := range p.Consts {
 		out = append(out, foreignRoot{item: c, t: c.Type})
@@ -103,6 +103,18 @@ func typesRoots(p *Package) []foreignRoot {
 		if d, ok := t.(*Dependent); ok {
 			out = append(out, foreignRoot{item: d, read: true, dep: d})
 		}
+	}
+	return out
+}
+
+// textRoots are the results of the decoded @text fns a go types-mode emit reads through Decode<Fn>File, in source order (DECISIONS 340); none for another emit.
+func textRoots(p *Package, e *Emit) []foreignRoot {
+	var out []foreignRoot
+	if e.Target != TargetGo || e.Mode != ModeTypes {
+		return nil
+	}
+	for _, fn := range TextDecoded(p, e) {
+		out = append(out, foreignRoot{item: fn, t: TextResult(fn), read: true})
 	}
 	return out
 }

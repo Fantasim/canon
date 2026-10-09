@@ -11,7 +11,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// decoders writes types mode's public decoders and the loaders' helpers, then a decoder per class a value holds, dependent types last (CODEGEN.md §5.6, §5.13, §6.1).
+// decoders writes types mode's public decoders, Decode<Fn>File included (DECISIONS 340), and the loaders' helpers, then a decoder per class a value holds, dependent types last (CODEGEN.md §5.6, §5.13, §6.1).
 func (g *gen) decoders() {
 	outer := g.body
 	g.body = bytes.Buffer{}
@@ -27,11 +27,12 @@ func (g *gen) decoders() {
 	}
 	decoders := g.body
 	g.body = outer
-	if !wrote {
+	if !wrote && len(g.names.TextDecoders()) == 0 {
 		return
 	}
 	if g.isTypes() {
 		g.publicDecoders()
+		g.textDecoders()
 	}
 	g.helpers()
 	g.body.Write(decoders.Bytes())

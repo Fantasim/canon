@@ -6,11 +6,10 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// HasMaps reports a decoded class holding a map in a field or stored result, this package's or another's this emit's readers read: a data-mode decoder then reads it in file order through jsonMap (WIRE.md §5.8, CODEGEN.md §2.8, §5.9; DECISIONS 312; log-2026-10-06 "U2 (gen/go) done" 5).
+// HasMaps reports a decoded class holding a map in a field or stored result, this package's or another's this emit's readers read, or a decoded @text fn's result holding one (DECISIONS 340): a data-mode decoder then reads it in file order through jsonMap (WIRE.md §5.8, CODEGEN.md §2.8, §5.9; DECISIONS 312; log-2026-10-06 "U2 (gen/go) done" 5).
 func (pl *GoNamePlan) HasMaps() bool {
-	return slices.ContainsFunc(pl.readClasses(), func(class any) bool {
-		return classHolds(class, func(t TypeRef) bool { return t.Kind == types.Map })
-	})
+	isMap := func(t TypeRef) bool { return t.Kind == types.Map }
+	return pl.textHolds(isMap) || slices.ContainsFunc(pl.readClasses(), func(class any) bool { return classHolds(class, isMap) })
 }
 
 // readClasses are the classes data mode's decoders read: this package's decoded ones, then the other packages' its readers read.
@@ -83,7 +82,7 @@ func (d *goData) keyChecked(t TypeRef, class any) bool {
 	}
 }
 
-// ReadsDurations reports what a types-mode decoder reads holding a Duration, which it reads through jsonDuration (WIRE.md §5.1, CODEGEN.md §5.13): a class its decoders or readers read, a pair record they read slot by slot, a dependent type's branch.
+// ReadsDurations reports what a types-mode decoder reads holding a Duration, which it reads through jsonDuration (WIRE.md §5.1, CODEGEN.md §5.13): a class its decoders or readers read, a pair record they read slot by slot, a dependent type's branch, a decoded @text fn's result (DECISIONS 340).
 func (pl *GoNamePlan) ReadsDurations() bool {
 	read := pl.readClasses()
 	for _, t := range pl.p.Types {
@@ -91,7 +90,7 @@ func (pl *GoNamePlan) ReadsDurations() bool {
 			read = append(read, d)
 		}
 	}
-	return slices.ContainsFunc(read, func(class any) bool {
+	return pl.textHolds(func(t TypeRef) bool { return t.Kind == types.Duration }) || slices.ContainsFunc(read, func(class any) bool {
 		return classHoldsDuration(class) || slices.ContainsFunc(pairRecords(class), classHoldsDuration)
 	})
 }

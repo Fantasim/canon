@@ -1,0 +1,436 @@
+DECISIONS 339, 340, CODEGEN.md §5.2, §5.13: package b's go types emit opens four enums; its @text fns render JSON files that its public decoders read back (gen/go/b/open_test.go), a record's file and, through Decode<Fn>File, a map's, a list's, a keyed list's (one keyed by an opened enum) and a maybe-file's, while a result no Go reader holds, another package's record with a computed default (package d) or one whose data-mode owner resolves its ref and writes no make hook (package e) included, gets no decoder and no finding; a member the enum lacks decodes and is kept as is in a field, an optional field, a list element, a map key, a keyed list's key and in another package's reader (package c), while a wrong JSON kind, a code no member has, an unknown member deciding a dependent type and one in a literal union (which stays closed) still fail; each failure returns no value and the JSON path, named after <Fn>File.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// A destination.
+enum Dst { str = "DST_STR", sta = "DST_STA", retired old = "DST_OLD" }
+
+/// An element, by code.
+enum Element @codes(UInt8) { fire = 1, water = 2 }
+
+/// A grade, written as its code.
+enum Grade @codes(UInt8) @json(codes) { low = 1, high = 2 }
+
+/// A kind deciding a payload.
+enum K { one, two }
+
+/// A kind left closed.
+enum Closed { a, b }
+
+/// A payload.
+type P(k: K) = match k { one => Int, two => String }
+
+/// A bonus.
+record Bonus {
+  /// Its destination.
+  dst: Dst
+  /// How much.
+  amount: Int = 0
+}
+
+/// A row keyed by its grade.
+record Graded {
+  /// Its grade.
+  grade: Grade
+  /// Its label.
+  label: String
+}
+
+/// An item.
+record Item {
+  /// Its id.
+  id: Int
+  /// Its destination.
+  dst: Dst
+  /// Its element.
+  element: Element = fire
+  /// Its grade.
+  grade: Grade = low
+  /// More destinations.
+  dsts: [Dst] = []
+  /// Amounts by destination.
+  byDst: {Dst: Int} = {}
+  /// Its flags.
+  flags: [Element] = [] @json(bits)
+  /// A closed kind.
+  closed: Closed = a
+  /// A kind.
+  k: K
+  /// Its payload.
+  p: P(k)
+  /// A destination, or none.
+  maybe: Dst?
+  /// A destination or "none": a literal union over an opened enum stays closed.
+  target: Dst | "none" = "none"
+}
+
+/// A slot keyed by its destination.
+record Slot {
+  /// Its destination.
+  dst: Dst
+  /// How many.
+  n: Int
+}
+
+local record Hidden {
+  /// A number.
+  n: Int
+}
+
+/// The item file.
+record ItemFile {
+  /// The items.
+  items: [Item] keyed by id
+}
+
+/// The item file.
+@text("items.json")
+export fn itemFile() -> ItemFile {
+  return {
+    items: [
+      { id: 1, dst: str, element: water, grade: high, dsts: [sta, str], byDst: { str: 4 }, flags: [fire, water], closed: b, k: one, p: 7, maybe: sta, target: str },
+      { id: 2, dst: sta, k: two, p: "word" },
+    ]
+  }
+}
+
+/// Bonuses by destination.
+@text("bonuses.json")
+export fn bonuses() -> {Dst: Bonus} {
+  return { str: { dst: sta, amount: 3 }, sta: { dst: str } }
+}
+
+/// Destinations.
+@text("dsts.json")
+export fn dsts() -> [Dst] { return [str, sta] }
+
+/// Graded rows.
+@text("graded.json")
+export fn graded() -> [Graded] keyed by grade {
+  return [{ grade: high, label: "H" }, { grade: low, label: "L" }]
+}
+
+/// Slots, keyed by an opened enum.
+@text("slots.json")
+export fn slots() -> [Slot] keyed by dst {
+  return [{ dst: str, n: 1 }, { dst: sta, n: 2 }]
+}
+
+/// Holes: no Go reader holds optional elements, so no decoder and no finding (DECISIONS 340).
+@text("holes.json")
+export fn holes() -> [Int?] { return [1, none] }
+
+/// Gaps: nor optional map values.
+@text("gaps.json")
+export fn gaps() -> {String: Int?} { return { "a": none } }
+
+/// Grids: nor a table outside a field.
+@text("grids.json")
+export fn grids() -> [table Bonus] { return [] }
+
+/// Nothing: nor a type with no representation (CODEGEN.md §4.4).
+@text("never.json")
+export fn nothing() -> [Never] { return [] }
+
+/// Hidden rows: nor a local record.
+@text("hidden.json")
+export fn hidden() -> [Hidden] { return [{ n: 1 }] }
+
+/// Waits, a file only when there are some.
+@text("waits.json")
+export fn waits() -> {String: Duration}? {
+  return { "a": 2s }
+}
+
+emit go { out: "@gen/go/b", mode: types, open: [Dst, Element, Grade, K] }
+emit text { out: "text" }
+-- c/c.canon --
+/// C.
+package c
+
+import b { Dst, Bonus }
+import d { Priced }
+import e { Linked, Flat }
+
+/// A use.
+record Use {
+  /// Where.
+  dst: Dst
+  /// Its bonus.
+  bonus: Bonus
+}
+
+/// The uses.
+@text("uses.json")
+export fn uses() -> [Use] {
+  return [{ dst: str, bonus: { dst: sta } }]
+}
+
+/// Bonuses of package b: a foreign record a types-mode reader reads, so it has a decoder.
+@text("bonuses.json")
+export fn bonuses() -> [Bonus] { return [{ dst: str, amount: 1 }] }
+
+/// Prices of package d: d.Priced has a computed default, which a types-mode reader has no data for, so no decoder and no finding (DECISIONS 340).
+@text("priced.json")
+export fn priced() -> [Priced] { return [{ base: 2 }] }
+
+/// Links of package e: e's data loader resolves Linked.next into its selected value links, so e writes no make hook for Linked and a reader could not build one: no decoder and no finding (DECISIONS 340, CODEGEN.md §5.14).
+@text("links.json")
+export fn links() -> [Linked] { return [{ label: "x" }] }
+
+/// Flats of package e: Flat holds no ref, e writes its hook, so it has a decoder, though only this result reaches e (DECISIONS 340: the result's packages are imported for it).
+@text("flats.json")
+export fn flats() -> [Flat] { return [{ n: 1 }] }
+
+emit go { out: "@gen/go/c", mode: types }
+emit text { out: "text" }
+-- d/d.canon --
+/// D.
+package d
+
+/// A price.
+record Priced {
+  /// The base.
+  base: Int
+  /// Twice the base.
+  price: Int = base * 2
+}
+
+emit go { out: "@gen/go/d" }
+-- e/e.canon --
+/// E.
+package e
+
+/// A link.
+record Linked {
+  /// Its label.
+  label: String
+  /// The next link.
+  next: ref links?
+}
+
+/// A flat record.
+record Flat {
+  /// A number.
+  n: Int
+}
+
+/// The links.
+let links: table Linked = {
+  a { label: "a" }
+  b { label: "b", next: a }
+}
+
+emit go { out: "@gen/go/e", mode: data }
+emit json { out: "data/e/" }
+-- gen/go/b/open_test.go --
+package b
+
+import (
+	"os"
+	"strings"
+	"testing"
+	"time"
+)
+
+func readText(t *testing.T, name string) string {
+	t.Helper()
+	raw, err := os.ReadFile("../../../b/text/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
+}
+
+// swap is text with old replaced once, failing the test when text does not hold old.
+func swap(t *testing.T, text, old, new string) []byte {
+	t.Helper()
+	if !strings.Contains(text, old) {
+		t.Fatalf("no %s in %s", old, text)
+	}
+	return []byte(strings.Replace(text, old, new, 1))
+}
+
+// failsAt requires err to name the JSON path at.
+func failsAt(t *testing.T, err error, at string) {
+	t.Helper()
+	if err == nil || !strings.Contains(err.Error(), at) {
+		t.Errorf("error %v, want one at %s", err, at)
+	}
+}
+
+// DECISIONS 339: an opened enum is a string holding the wire value, its retired members included; Parse<E> and Known tell a known member, String names it, Code and <E>FromCode fail for an unknown one.
+func TestOpenEnumShape(t *testing.T) {
+	if DstStr != "DST_STR" || DstStr.Wire() != "DST_STR" || DstStr.String() != "str" || !DstOld.Known() || DstOld.String() != "old" {
+		t.Errorf("members: %q %q %q %v", DstStr, DstStr.Wire(), DstStr.String(), DstOld.Known())
+	}
+	x := Dst("DST_NEW_NOT_IN_ENUM")
+	if x.Known() || x.String() != "DST_NEW_NOT_IN_ENUM" || x.Wire() != "DST_NEW_NOT_IN_ENUM" {
+		t.Errorf("unknown member: %v %q %q", x.Known(), x.String(), x.Wire())
+	}
+	if v, ok := ParseDst("DST_STA"); !ok || v != DstSta {
+		t.Errorf("ParseDst(DST_STA) = %q %v", v, ok)
+	}
+	if v, ok := ParseDst("DST_X"); ok || v != Dst("DST_X") {
+		t.Errorf("ParseDst(DST_X) = %q %v", v, ok)
+	}
+	var all []Dst
+	for m := range DstMembers() {
+		all = append(all, m)
+	}
+	if len(all) != 3 || all[2] != DstOld {
+		t.Errorf("DstMembers: %v", all)
+	}
+	if c, ok := ElementWater.Code(); !ok || c != 2 {
+		t.Errorf("ElementWater.Code() = %d %v", c, ok)
+	}
+	if c, ok := Element("nope").Code(); ok || c != 0 {
+		t.Errorf("unknown Code() = %d %v", c, ok)
+	}
+	if e, ok := ElementFromCode(1); !ok || e != ElementFire {
+		t.Errorf("ElementFromCode(1) = %q %v", e, ok)
+	}
+	if e, ok := ElementFromCode(9); ok || e != "" {
+		t.Errorf("ElementFromCode(9) = %q %v", e, ok)
+	}
+}
+
+// CODEGEN.md §5.13, WIRE.md §8.5: every file the @text fns render decodes back to its value.
+func TestRoundTrip(t *testing.T) {
+	f, err := DecodeItemFile([]byte(readText(t, "items.json")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	one, _ := f.Items().Find(1)
+	n, _ := one.ByDst().Get(DstStr)
+	p, _ := one.P().AsOne()
+	if one.Dst() != DstStr || one.Element() != ElementWater || one.Grade() != GradeHigh || one.Dsts().Len() != 2 || n != 4 || one.Flags().Len() != 2 || one.Closed() != ClosedB || p != 7 {
+		t.Errorf("item 1: %v", one)
+	}
+	b, err := DecodeBonusesFile([]byte(readText(t, "bonuses.json")))
+	if bs, ok := b.Get(DstStr); err != nil || !ok || bs.Dst() != DstSta || bs.Amount() != 3 || b.Len() != 2 {
+		t.Errorf("bonuses.json: %v %v", b, err)
+	}
+	d, err := DecodeDstsFile([]byte(readText(t, "dsts.json")))
+	if err != nil || d.Len() != 2 || d.At(0) != DstStr {
+		t.Errorf("dsts.json: %v %v", d, err)
+	}
+	g, err := DecodeGradedFile([]byte(readText(t, "graded.json")))
+	if r, ok := g.Find(GradeLow); err != nil || !ok || r.Label() != "L" {
+		t.Errorf("graded.json: %v %v", g, err)
+	}
+	w, err := DecodeWaitsFile([]byte(readText(t, "waits.json")))
+	if a, ok := w.Get("a"); err != nil || !ok || a != 2*time.Second {
+		t.Errorf("waits.json: %v %v", w, err)
+	}
+}
+
+// DECISIONS 339 acceptance: a file with a member its enum lacks, in a field, a list element and a map key, decodes and keeps it as is.
+func TestUnknownMemberDecodes(t *testing.T) {
+	text := readText(t, "items.json")
+	probe := swap(t, text, `"dst": "DST_STR"`, `"dst": "DST_NEW_NOT_IN_ENUM"`)
+	probe = swap(t, string(probe), `"DST_STA",`, `"DST_LIST_NEW",`) // the first element of item 1's dsts
+	probe = swap(t, string(probe), `"DST_STR": 4`, `"DST_KEY_NEW": 4`)
+	probe = swap(t, string(probe), `"maybe": "DST_STA"`, `"maybe": "DST_MAYBE_NEW"`)
+	f, err := DecodeItemFile(probe)
+	if err != nil {
+		t.Fatal(err)
+	}
+	one, _ := f.Items().Find(1)
+	n, ok := one.ByDst().Get(Dst("DST_KEY_NEW"))
+	if one.Dst() != Dst("DST_NEW_NOT_IN_ENUM") || one.Dst().Known() || one.Dsts().At(0) != Dst("DST_LIST_NEW") || !ok || n != 4 {
+		t.Errorf("item 1: %q %q %d %v", one.Dst(), one.Dsts().At(0), n, ok)
+	}
+	if m, ok := one.Maybe(); !ok || m != Dst("DST_MAYBE_NEW") {
+		t.Errorf("item 1 maybe: %q %v", m, ok)
+	}
+	s, err := DecodeSlotsFile([]byte(`[{"dst": "DST_SLOT_NEW", "n": 3}, {"dst": "DST_STR", "n": 1}]`))
+	if r, ok := s.Find(Dst("DST_SLOT_NEW")); err != nil || !ok || r.N() != 3 || s.Len() != 2 {
+		t.Errorf("slots: %v %v", s, err)
+	}
+	_, err = DecodeSlotsFile([]byte(`[{"dst": "DST_SLOT_NEW", "n": 3}, {"dst": "DST_SLOT_NEW", "n": 1}]`))
+	failsAt(t, err, "$[1].dst")
+	b, err := DecodeBonusesFile([]byte(`{"DST_ZZ": {"dst": "DST_YY"}}`))
+	if bs, ok := b.Get(Dst("DST_ZZ")); err != nil || !ok || bs.Dst() != Dst("DST_YY") || bs.Amount() != 0 {
+		t.Errorf("bonuses: %v %v", b, err)
+	}
+	d, err := DecodeDstsFile([]byte(`["DST_A", "DST_STR"]`))
+	if err != nil || d.At(0) != Dst("DST_A") || d.At(1) != DstStr {
+		t.Errorf("dsts: %v %v", d, err)
+	}
+}
+
+// DECISIONS 339, CODEGEN.md §5.13: what an opened enum cannot hold still fails, with no value and the JSON path: a wrong JSON kind, a code no member has, an unknown member that decides a dependent type, a code in a bits mask.
+func TestStillFails(t *testing.T) {
+	text := readText(t, "items.json")
+	cases := []struct {
+		old, new, at string
+	}{
+		{`"dst": "DST_STR"`, `"dst": 5`, "$.items[0].dst"},
+		{`"grade": 2`, `"grade": 9`, "$.items[0].grade"},
+		{`"k": "one"`, `"k": "three"`, "$.items[0].p"},
+		{`"flags": 3`, `"flags": 4`, "$.items[0].flags"},
+		{`"target": "DST_STR"`, `"target": "DST_UNION_NEW"`, "$.items[0].target"},
+	}
+	for _, c := range cases {
+		f, err := DecodeItemFile(swap(t, text, c.old, c.new))
+		failsAt(t, err, c.at)
+		if f != nil {
+			t.Errorf("%s: a value beside the error", c.new)
+		}
+	}
+}
+
+// DECISIONS 340, CODEGEN.md §5.13: Decode<Fn>File applies every rule of the public decoders: the path of the first failure, no partial value, WIRE.md §3.1-§3.2's byte rules.
+func TestFileDecoderFailures(t *testing.T) {
+	b, err := DecodeBonusesFile([]byte(`{"DST_STR": {"dst": "DST_STA"}, "DST_STA": {"dst": 5}}`))
+	failsAt(t, err, "BonusesFile: $.DST_STA.dst")
+	if b.Len() != 0 {
+		t.Errorf("a partial map: %d entries", b.Len())
+	}
+	_, err = DecodeBonusesFile([]byte(`{"DST_STR": {"dst": "x"}, "DST_STR": {"dst": "y"}}`))
+	failsAt(t, err, "repeated key")
+	_, err = DecodeBonusesFile([]byte(`[]`))
+	failsAt(t, err, "$")
+	d, err := DecodeDstsFile([]byte(`["DST_STR", 3]`))
+	failsAt(t, err, "$[1]")
+	if d.Len() != 0 {
+		t.Errorf("a partial list: %d elements", d.Len())
+	}
+	_, err = DecodeGradedFile([]byte(`[{"grade": 1, "label": "a"}, {"grade": 1, "label": "b"}]`))
+	failsAt(t, err, "$[1].grade")
+	_, err = DecodeWaitsFile([]byte(`{"a": 1.5}`))
+	failsAt(t, err, "$.a")
+	_, err = DecodeDstsFile([]byte("\xef\xbb\xbf[\"\xff\"]"))
+	failsAt(t, err, "not UTF-8")
+}
+-- gen/go/c/open_test.go --
+package c
+
+import (
+	"testing"
+
+	"example.com/gen/go/b"
+)
+
+// DECISIONS 339, CODEGEN.md §2.8: another package's types-mode reader of b's records keeps an unknown member of b's opened enum as is.
+func TestForeignOpenEnum(t *testing.T) {
+	u, err := DecodeUsesFile([]byte(`[{"dst": "DST_Q", "bonus": {"dst": "DST_R"}}]`))
+	if err != nil || u.Len() != 1 || u.At(0).Dst() != b.Dst("DST_Q") || u.At(0).Bonus().Dst() != b.Dst("DST_R") {
+		t.Errorf("uses: %v %v", u, err)
+	}
+	if _, err := DecodeUsesFile([]byte(`[{"dst": 1, "bonus": {"dst": "DST_R"}}]`)); err == nil {
+		t.Error("a number for an opened enum decodes")
+	}
+}

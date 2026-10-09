@@ -97,8 +97,9 @@ type unit struct {
 	consts       []*constSite
 	firstUse     map[string]string
 	reach        map[string]string
-	cppNames     []cppShared   // the names its data-mode cpp header declares in namespaces other packages share
-	variantCalls []source.Span // translated calls of a variant-level export fn (E8019 VariantMethod)
+	textOnly     map[string]bool // the packages only a @text result of its go types emit reaches (textImports), never a use E8004 or E8007 judges
+	cppNames     []cppShared     // the names its data-mode cpp header declares in namespaces other packages share
+	variantCalls []source.Span   // translated calls of a variant-level export fn (E8019 VariantMethod)
 }
 
 // constSite is a public const with its IR and declaration.

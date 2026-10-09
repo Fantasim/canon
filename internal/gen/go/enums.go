@@ -19,6 +19,8 @@ type enumSpec struct {
 	parseArg string   // parameter of Parse<E>: wire or key
 	members  bool     // <E>Members()
 	codes    string   // the @codes Go type: Code() and <E>FromCode
+	open     bool     // an opened enum, whose values are its wire values (DECISIONS 339)
+	numbers  []string // an opened enum's codes, in member order
 }
 
 // enumConst is one member: its constant, its value and its doc.
@@ -37,16 +39,22 @@ func (g *gen) enums() {
 
 func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 	defer g.enter(e.QName())()
-	s := &enumSpec{name: g.goName(e), doc: e.Doc, parseArg: wireArg, members: true}
+	s := &enumSpec{name: g.goName(e), doc: e.Doc, parseArg: wireArg, members: true, open: ir.OpenEnum(g.p, g.e, e)}
 	s.under = smallestUint(len(e.Members))
 	if e.Codes != nil {
 		s.codes = g.goType(*e.Codes)
 		s.under = s.codes
 	}
+	if s.open {
+		s.under = goString
+	}
 	for i, m := range e.Members {
 		v := strconv.Itoa(i)
 		if e.Codes != nil {
 			v = strconv.FormatInt(m.Code, decimal)
+		}
+		if s.open {
+			s.numbers, v = append(s.numbers, v), strconv.Quote(m.Wire)
 		}
 		s.consts = append(s.consts, enumConst{g.names.MemberName(e, m), v, withRetired(m.Doc, m.Retired)})
 		s.names = append(s.names, m.Name)
@@ -132,6 +140,10 @@ func (g *gen) writeEnum(s *enumSpec) {
 		g.printf(enumConstFormat, c.name, s.name, c.value)
 	}
 	g.printf(closeParenFormat)
+	if s.open {
+		g.writeOpen(s)
+		return
+	}
 	g.writeSwitch(ir.GoString, s, s.names)
 	if s.wires != nil {
 		g.writeSwitch(ir.GoWire, s, s.wires)

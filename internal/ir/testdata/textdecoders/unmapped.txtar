@@ -1,0 +1,32 @@
+DECISIONS 340, CODEGEN.md §2.8: b's go emit writes under @source, which go_module does not map (b's own E8007; E8007 for an ordinary use too). a reaches b.Item only through a @text result: no decoder, no import, and a adds no finding of its own.
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+emit go { out: "@source/b/go", package: "b" }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item }
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ n: 1 }] }
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit text { out: "out/a" }
+-- plan.txt --
+== a @features/a/go: decoders []
+locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag unit v values vr want
+package: 
+error[E8007]  b/b.canon:10:16
+  Go output @source/b/go is under no root listed in go_module: map its root in project.canon go_module
+
+1 error, 0 warnings in 2 packages (…)

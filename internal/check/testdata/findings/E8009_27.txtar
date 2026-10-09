@@ -1,0 +1,13 @@
+DECISIONS 339, CODEGEN.md §2.1: an enum listed twice in `open` is `openTwice`, at the later name.
+-- a/a.canon --
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+emit go { out: "@sovcommon/a", mode: types, open: [Dst, Dst] }
+-- findings.txt --
+error[E8009]  a/a.canon:6:57
+  open of emit go: Dst is listed twice
+
+1 error, 0 warnings in 1 package (…)

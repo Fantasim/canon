@@ -4,6 +4,14 @@
 /// fn renders (§2.9, WIRE.md §8.5) through the generated decoder of its result type:
 /// `os.ReadFile` then `gotypes.DecodeItemFile(raw)`.
 ///
+/// A `@text` fn whose result is a map, a list or a keyed list gets
+/// `Decode<Fn>File(raw []byte) (T, error)` instead (DECISIONS 340): `DecodeRaritiesFile`.
+///
+/// `open` (DECISIONS 339) lists the enums a consumer must keep reading when the file holds a
+/// member it does not know yet: each is a `string` type of wire values with `Known()`, and its
+/// decoders keep any string. `Element` is opened too, but its file holds codes: a code no member
+/// has still fails.
+///
 /// The emit is written as two copies (§2.1), each under a root of its own with its own Go
 /// module path, so each consumer imports its own copy and its own `rt`.
 package features.gotypes
@@ -93,5 +101,15 @@ export fn itemFile() -> ItemFile {
   }
 }
 
+/// How many items each rarity has, as a file of its own.
+@text("rarities.json")
+export fn rarities() -> {Rarity: Int} {
+  return { common: 1, rare: 1, season_1: 0 }
+}
+
 emit text { out: "out/text" }
-emit go { out: ["out/go/gotypes/", "@sovcommon/gotypes/go/gotypes/"], mode: types }
+emit go {
+  out: ["out/go/gotypes/", "@sovcommon/gotypes/go/gotypes/"]
+  mode: types
+  open: [Rarity, Element]
+}

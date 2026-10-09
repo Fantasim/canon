@@ -4,237 +4,272 @@
 4:0-87 "/// fn renders (§2.9, WIRE.md §8.5) through the generated decoder of its result type:" comment.line.documentation.canon
 5:0-53 "/// `os.ReadFile` then `gotypes.DecodeItemFile(raw)`." comment.line.documentation.canon
 6:0-3 "///" comment.line.documentation.canon
-7:0-91 "/// The emit is written as two copies (§2.1), each under a root of its own with its own Go" comment.line.documentation.canon
-8:0-72 "/// module path, so each consumer imports its own copy and its own `rt`." comment.line.documentation.canon
-9:0-7 "package" keyword.other.canon
-9:8-24 "features.gotypes" entity.name.namespace.canon
-11:0-24 "/// How rare an item is." comment.line.documentation.canon
-12:0-4 "enum" storage.type.canon
-12:5-11 "Rarity" entity.name.type.canon
-13:0-23 "  /// Found everywhere." comment.line.documentation.canon
-15:0-24 "  /// Found in dungeons." comment.line.documentation.canon
-17:0-26 "  /// Found once a season." comment.line.documentation.canon
-18:11-12 "=" keyword.operator.canon
-18:13-23 "\"season-1\"" string.quoted.double.canon
-21:0-36 "/// An element, written as its code." comment.line.documentation.canon
-22:0-4 "enum" storage.type.canon
-22:5-12 "Element" entity.name.type.canon
-22:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
-22:14-19 "codes" meta.annotation.canon entity.name.function.decorator.canon
-22:19-26 "(UInt8)" meta.annotation.canon
-22:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
-22:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
-22:32-39 "(codes)" meta.annotation.canon
-23:0-12 "  /// Burns." comment.line.documentation.canon
-24:7-8 "=" keyword.operator.canon
-24:9-10 "1" constant.numeric.integer.canon
-25:0-12 "  /// Flows." comment.line.documentation.canon
-26:8-9 "=" keyword.operator.canon
-26:10-11 "2" constant.numeric.integer.canon
-29:0-24 "/// A stat an item adds." comment.line.documentation.canon
-30:0-6 "record" storage.type.canon
-30:7-12 "Bonus" entity.name.type.canon
-31:0-24 "  /// The stat's number." comment.line.documentation.canon
-32:2-6 "stat" variable.other.property.canon
-32:6-7 ":" punctuation.separator.key.canon
-32:8-11 "Int" entity.name.type.canon
-33:0-23 "  /// How much it adds." comment.line.documentation.canon
-34:2-8 "amount" variable.other.property.canon
-34:8-9 ":" punctuation.separator.key.canon
-34:10-13 "Int" entity.name.type.canon
-37:0-29 "/// An item of the catalogue." comment.line.documentation.canon
+7:0-67 "/// A `@text` fn whose result is a map, a list or a keyed list gets" comment.line.documentation.canon
+8:0-90 "/// `Decode<Fn>File(raw []byte) (T, error)` instead (DECISIONS 340): `DecodeRaritiesFile`." comment.line.documentation.canon
+9:0-3 "///" comment.line.documentation.canon
+10:0-93 "/// `open` (DECISIONS 339) lists the enums a consumer must keep reading when the file holds a" comment.line.documentation.canon
+11:0-95 "/// member it does not know yet: each is a `string` type of wire values with `Known()`, and its" comment.line.documentation.canon
+12:0-97 "/// decoders keep any string. `Element` is opened too, but its file holds codes: a code no member" comment.line.documentation.canon
+13:0-20 "/// has still fails." comment.line.documentation.canon
+14:0-3 "///" comment.line.documentation.canon
+15:0-91 "/// The emit is written as two copies (§2.1), each under a root of its own with its own Go" comment.line.documentation.canon
+16:0-72 "/// module path, so each consumer imports its own copy and its own `rt`." comment.line.documentation.canon
+17:0-7 "package" keyword.other.canon
+17:8-24 "features.gotypes" entity.name.namespace.canon
+19:0-24 "/// How rare an item is." comment.line.documentation.canon
+20:0-4 "enum" storage.type.canon
+20:5-11 "Rarity" entity.name.type.canon
+21:0-23 "  /// Found everywhere." comment.line.documentation.canon
+23:0-24 "  /// Found in dungeons." comment.line.documentation.canon
+25:0-26 "  /// Found once a season." comment.line.documentation.canon
+26:11-12 "=" keyword.operator.canon
+26:13-23 "\"season-1\"" string.quoted.double.canon
+29:0-36 "/// An element, written as its code." comment.line.documentation.canon
+30:0-4 "enum" storage.type.canon
+30:5-12 "Element" entity.name.type.canon
+30:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
+30:14-19 "codes" meta.annotation.canon entity.name.function.decorator.canon
+30:19-26 "(UInt8)" meta.annotation.canon
+30:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
+30:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
+30:32-39 "(codes)" meta.annotation.canon
+31:0-12 "  /// Burns." comment.line.documentation.canon
+32:7-8 "=" keyword.operator.canon
+32:9-10 "1" constant.numeric.integer.canon
+33:0-12 "  /// Flows." comment.line.documentation.canon
+34:8-9 "=" keyword.operator.canon
+34:10-11 "2" constant.numeric.integer.canon
+37:0-24 "/// A stat an item adds." comment.line.documentation.canon
 38:0-6 "record" storage.type.canon
-38:7-11 "Item" entity.name.type.canon
-39:0-13 "  /// Its id." comment.line.documentation.canon
-40:2-4 "id" variable.other.property.canon
-40:4-5 ":" punctuation.separator.key.canon
-40:6-9 "Int" entity.name.type.canon
-41:0-17 "  /// Its symbol." comment.line.documentation.canon
-42:2-8 "symbol" variable.other.property.canon
+38:7-12 "Bonus" entity.name.type.canon
+39:0-24 "  /// The stat's number." comment.line.documentation.canon
+40:2-6 "stat" variable.other.property.canon
+40:6-7 ":" punctuation.separator.key.canon
+40:8-11 "Int" entity.name.type.canon
+41:0-23 "  /// How much it adds." comment.line.documentation.canon
+42:2-8 "amount" variable.other.property.canon
 42:8-9 ":" punctuation.separator.key.canon
-42:10-16 "String" entity.name.type.canon
-43:0-60 "  /// Its displayed name; `=` on the wire means it has none." comment.line.documentation.canon
-44:2-6 "name" variable.other.property.canon
-44:6-7 ":" punctuation.separator.key.canon
-44:8-14 "String" entity.name.type.canon
-44:14-15 "?" keyword.operator.canon
-44:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
-44:17-21 "json" meta.annotation.canon entity.name.function.decorator.canon
-44:21-22 "(" meta.annotation.canon
-44:22-26 "none" meta.annotation.canon variable.parameter.canon
-44:26-27 ":" meta.annotation.canon punctuation.separator.key.canon
-44:27-28 " " meta.annotation.canon
-44:28-31 "\"=\"" meta.annotation.canon string.quoted.double.canon
-44:31-32 ")" meta.annotation.canon
-45:0-54 "  /// A remark, left out of the file when it has none." comment.line.documentation.canon
-46:2-6 "note" variable.other.property.canon
-46:6-7 ":" punctuation.separator.key.canon
-46:8-14 "String" entity.name.type.canon
-46:14-15 "?" keyword.operator.canon
-47:0-21 "  /// How rare it is." comment.line.documentation.canon
-48:2-8 "rarity" variable.other.property.canon
-48:8-9 ":" punctuation.separator.key.canon
-48:10-16 "Rarity" entity.name.type.canon
-48:17-18 "=" keyword.operator.canon
-49:0-18 "  /// Its element." comment.line.documentation.canon
-50:2-9 "element" variable.other.property.canon
-50:9-10 ":" punctuation.separator.key.canon
-50:11-18 "Element" entity.name.type.canon
-51:0-39 "  /// Time before it can be used again." comment.line.documentation.canon
-52:2-10 "cooldown" variable.other.property.canon
-52:10-11 ":" punctuation.separator.key.canon
-52:12-20 "Duration" entity.name.type.canon
-52:21-22 "=" keyword.operator.canon
-52:23-25 "1s" constant.numeric.duration.canon
-52:26-27 "@" meta.annotation.canon punctuation.definition.annotation.canon
-52:27-31 "json" meta.annotation.canon entity.name.function.decorator.canon
-52:31-32 "(" meta.annotation.canon
-52:32-45 "\"cooldownSec\"" meta.annotation.canon string.quoted.double.canon
-52:45-47 ", " meta.annotation.canon
-52:47-51 "unit" meta.annotation.canon variable.parameter.canon
-52:51-52 ":" meta.annotation.canon punctuation.separator.key.canon
-52:52-55 " s)" meta.annotation.canon
-53:0-79 "  /// How long it lasts; `none` means forever, written `null` over the default." comment.line.documentation.canon
-54:2-10 "lifetime" variable.other.property.canon
-54:10-11 ":" punctuation.separator.key.canon
-54:12-20 "Duration" entity.name.type.canon
-54:20-21 "?" keyword.operator.canon
-54:22-23 "=" keyword.operator.canon
-54:24-26 "1h" constant.numeric.duration.canon
-54:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
-54:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
-54:32-33 "(" meta.annotation.canon
-54:33-46 "\"lifetimeMin\"" meta.annotation.canon string.quoted.double.canon
-54:46-48 ", " meta.annotation.canon
-54:48-52 "unit" meta.annotation.canon variable.parameter.canon
-54:52-53 ":" meta.annotation.canon punctuation.separator.key.canon
-54:53-56 " m)" meta.annotation.canon
-55:0-31 "  /// How many fit in one slot." comment.line.documentation.canon
-56:2-7 "stack" variable.other.property.canon
-56:7-8 ":" punctuation.separator.key.canon
-56:9-14 "Int16" entity.name.type.canon
-56:15-16 "=" keyword.operator.canon
-56:17-18 "1" constant.numeric.integer.canon
-56:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
-56:20-24 "json" meta.annotation.canon entity.name.function.decorator.canon
-56:24-25 "(" meta.annotation.canon
-56:25-29 "path" meta.annotation.canon variable.parameter.canon
-56:29-30 ":" meta.annotation.canon punctuation.separator.key.canon
-56:30-31 " " meta.annotation.canon
-56:31-45 "\"limits.stack\"" meta.annotation.canon string.quoted.double.canon
-56:45-46 ")" meta.annotation.canon
-57:0-19 "  /// What it adds." comment.line.documentation.canon
-58:2-9 "bonuses" variable.other.property.canon
+42:10-13 "Int" entity.name.type.canon
+45:0-29 "/// An item of the catalogue." comment.line.documentation.canon
+46:0-6 "record" storage.type.canon
+46:7-11 "Item" entity.name.type.canon
+47:0-13 "  /// Its id." comment.line.documentation.canon
+48:2-4 "id" variable.other.property.canon
+48:4-5 ":" punctuation.separator.key.canon
+48:6-9 "Int" entity.name.type.canon
+49:0-17 "  /// Its symbol." comment.line.documentation.canon
+50:2-8 "symbol" variable.other.property.canon
+50:8-9 ":" punctuation.separator.key.canon
+50:10-16 "String" entity.name.type.canon
+51:0-60 "  /// Its displayed name; `=` on the wire means it has none." comment.line.documentation.canon
+52:2-6 "name" variable.other.property.canon
+52:6-7 ":" punctuation.separator.key.canon
+52:8-14 "String" entity.name.type.canon
+52:14-15 "?" keyword.operator.canon
+52:16-17 "@" meta.annotation.canon punctuation.definition.annotation.canon
+52:17-21 "json" meta.annotation.canon entity.name.function.decorator.canon
+52:21-22 "(" meta.annotation.canon
+52:22-26 "none" meta.annotation.canon variable.parameter.canon
+52:26-27 ":" meta.annotation.canon punctuation.separator.key.canon
+52:27-28 " " meta.annotation.canon
+52:28-31 "\"=\"" meta.annotation.canon string.quoted.double.canon
+52:31-32 ")" meta.annotation.canon
+53:0-54 "  /// A remark, left out of the file when it has none." comment.line.documentation.canon
+54:2-6 "note" variable.other.property.canon
+54:6-7 ":" punctuation.separator.key.canon
+54:8-14 "String" entity.name.type.canon
+54:14-15 "?" keyword.operator.canon
+55:0-21 "  /// How rare it is." comment.line.documentation.canon
+56:2-8 "rarity" variable.other.property.canon
+56:8-9 ":" punctuation.separator.key.canon
+56:10-16 "Rarity" entity.name.type.canon
+56:17-18 "=" keyword.operator.canon
+57:0-18 "  /// Its element." comment.line.documentation.canon
+58:2-9 "element" variable.other.property.canon
 58:9-10 ":" punctuation.separator.key.canon
-58:12-17 "Bonus" entity.name.type.canon
-58:19-22 "..=" keyword.operator.canon
-58:22-23 "3" constant.numeric.integer.canon
-58:25-26 "=" keyword.operator.canon
-58:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
-58:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
-58:35-36 "(" meta.annotation.canon
-58:36-41 "pairs" meta.annotation.canon variable.parameter.canon
-58:41-42 ":" meta.annotation.canon punctuation.separator.key.canon
-58:42-44 " [" meta.annotation.canon
-58:44-56 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
-58:56-57 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-58:57-58 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
-58:58-59 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-58:59-60 "\"" meta.annotation.canon string.quoted.double.canon
-58:60-62 ", " meta.annotation.canon
-58:62-75 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
-58:75-76 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-58:76-77 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
-58:77-78 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
-58:78-79 "\"" meta.annotation.canon string.quoted.double.canon
-58:79-81 "])" meta.annotation.canon
-61:0-54 "/// The catalogue file the game and the services read." comment.line.documentation.canon
-62:0-6 "record" storage.type.canon
-62:7-15 "ItemFile" entity.name.type.canon
-63:0-24 "  /// Every item, by id." comment.line.documentation.canon
-64:2-7 "items" variable.other.property.canon
+58:11-18 "Element" entity.name.type.canon
+59:0-39 "  /// Time before it can be used again." comment.line.documentation.canon
+60:2-10 "cooldown" variable.other.property.canon
+60:10-11 ":" punctuation.separator.key.canon
+60:12-20 "Duration" entity.name.type.canon
+60:21-22 "=" keyword.operator.canon
+60:23-25 "1s" constant.numeric.duration.canon
+60:26-27 "@" meta.annotation.canon punctuation.definition.annotation.canon
+60:27-31 "json" meta.annotation.canon entity.name.function.decorator.canon
+60:31-32 "(" meta.annotation.canon
+60:32-45 "\"cooldownSec\"" meta.annotation.canon string.quoted.double.canon
+60:45-47 ", " meta.annotation.canon
+60:47-51 "unit" meta.annotation.canon variable.parameter.canon
+60:51-52 ":" meta.annotation.canon punctuation.separator.key.canon
+60:52-55 " s)" meta.annotation.canon
+61:0-79 "  /// How long it lasts; `none` means forever, written `null` over the default." comment.line.documentation.canon
+62:2-10 "lifetime" variable.other.property.canon
+62:10-11 ":" punctuation.separator.key.canon
+62:12-20 "Duration" entity.name.type.canon
+62:20-21 "?" keyword.operator.canon
+62:22-23 "=" keyword.operator.canon
+62:24-26 "1h" constant.numeric.duration.canon
+62:27-28 "@" meta.annotation.canon punctuation.definition.annotation.canon
+62:28-32 "json" meta.annotation.canon entity.name.function.decorator.canon
+62:32-33 "(" meta.annotation.canon
+62:33-46 "\"lifetimeMin\"" meta.annotation.canon string.quoted.double.canon
+62:46-48 ", " meta.annotation.canon
+62:48-52 "unit" meta.annotation.canon variable.parameter.canon
+62:52-53 ":" meta.annotation.canon punctuation.separator.key.canon
+62:53-56 " m)" meta.annotation.canon
+63:0-31 "  /// How many fit in one slot." comment.line.documentation.canon
+64:2-7 "stack" variable.other.property.canon
 64:7-8 ":" punctuation.separator.key.canon
-64:10-14 "Item" entity.name.type.canon
-65:0-37 "  /// How many items each rarity has." comment.line.documentation.canon
-66:2-10 "byRarity" variable.other.property.canon
-66:10-11 ":" punctuation.separator.key.canon
-66:13-19 "Rarity" variable.other.property.canon
-66:19-20 ":" punctuation.separator.key.canon
-66:21-24 "Int" entity.name.type.canon
-69:0-36 "/// The catalogue, rendered as JSON." comment.line.documentation.canon
-70:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
-70:1-5 "text" meta.annotation.canon entity.name.function.decorator.canon
-70:5-6 "(" meta.annotation.canon
-70:6-18 "\"items.json\"" meta.annotation.canon string.quoted.double.canon
-70:18-19 ")" meta.annotation.canon
-71:0-6 "export" storage.modifier.canon
-71:7-9 "fn" storage.type.function.canon
-71:10-18 "itemFile" entity.name.function.canon
-71:21-23 "->" keyword.operator.canon
-71:24-32 "ItemFile" entity.name.type.canon
-72:2-8 "return" keyword.control.canon
-73:4-9 "items" variable.other.property.canon
-73:9-10 ":" punctuation.separator.key.canon
-75:8-10 "id" variable.other.property.canon
-75:10-11 ":" punctuation.separator.key.canon
-75:12-13 "1" constant.numeric.integer.canon
-76:8-14 "symbol" variable.other.property.canon
-76:14-15 ":" punctuation.separator.key.canon
-76:16-26 "\"II_SWORD\"" string.quoted.double.canon
-77:8-12 "name" variable.other.property.canon
-77:12-13 ":" punctuation.separator.key.canon
-77:14-21 "\"Sword\"" string.quoted.double.canon
-78:8-14 "rarity" variable.other.property.canon
-78:14-15 ":" punctuation.separator.key.canon
-79:8-15 "element" variable.other.property.canon
-79:15-16 ":" punctuation.separator.key.canon
-80:8-15 "bonuses" variable.other.property.canon
-80:15-16 ":" punctuation.separator.key.canon
-80:20-24 "stat" variable.other.property.canon
-80:24-25 ":" punctuation.separator.key.canon
-80:26-27 "1" constant.numeric.integer.canon
-80:29-35 "amount" variable.other.property.canon
-80:35-36 ":" punctuation.separator.key.canon
-80:37-38 "5" constant.numeric.integer.canon
+64:9-14 "Int16" entity.name.type.canon
+64:15-16 "=" keyword.operator.canon
+64:17-18 "1" constant.numeric.integer.canon
+64:19-20 "@" meta.annotation.canon punctuation.definition.annotation.canon
+64:20-24 "json" meta.annotation.canon entity.name.function.decorator.canon
+64:24-25 "(" meta.annotation.canon
+64:25-29 "path" meta.annotation.canon variable.parameter.canon
+64:29-30 ":" meta.annotation.canon punctuation.separator.key.canon
+64:30-31 " " meta.annotation.canon
+64:31-45 "\"limits.stack\"" meta.annotation.canon string.quoted.double.canon
+64:45-46 ")" meta.annotation.canon
+65:0-19 "  /// What it adds." comment.line.documentation.canon
+66:2-9 "bonuses" variable.other.property.canon
+66:9-10 ":" punctuation.separator.key.canon
+66:12-17 "Bonus" entity.name.type.canon
+66:19-22 "..=" keyword.operator.canon
+66:22-23 "3" constant.numeric.integer.canon
+66:25-26 "=" keyword.operator.canon
+66:30-31 "@" meta.annotation.canon punctuation.definition.annotation.canon
+66:31-35 "json" meta.annotation.canon entity.name.function.decorator.canon
+66:35-36 "(" meta.annotation.canon
+66:36-41 "pairs" meta.annotation.canon variable.parameter.canon
+66:41-42 ":" meta.annotation.canon punctuation.separator.key.canon
+66:42-44 " [" meta.annotation.canon
+66:44-56 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
+66:56-57 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+66:57-58 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+66:58-59 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+66:59-60 "\"" meta.annotation.canon string.quoted.double.canon
+66:60-62 ", " meta.annotation.canon
+66:62-75 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
+66:75-76 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+66:76-77 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+66:77-78 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+66:78-79 "\"" meta.annotation.canon string.quoted.double.canon
+66:79-81 "])" meta.annotation.canon
+69:0-54 "/// The catalogue file the game and the services read." comment.line.documentation.canon
+70:0-6 "record" storage.type.canon
+70:7-15 "ItemFile" entity.name.type.canon
+71:0-24 "  /// Every item, by id." comment.line.documentation.canon
+72:2-7 "items" variable.other.property.canon
+72:7-8 ":" punctuation.separator.key.canon
+72:10-14 "Item" entity.name.type.canon
+73:0-37 "  /// How many items each rarity has." comment.line.documentation.canon
+74:2-10 "byRarity" variable.other.property.canon
+74:10-11 ":" punctuation.separator.key.canon
+74:13-19 "Rarity" variable.other.property.canon
+74:19-20 ":" punctuation.separator.key.canon
+74:21-24 "Int" entity.name.type.canon
+77:0-36 "/// The catalogue, rendered as JSON." comment.line.documentation.canon
+78:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+78:1-5 "text" meta.annotation.canon entity.name.function.decorator.canon
+78:5-6 "(" meta.annotation.canon
+78:6-18 "\"items.json\"" meta.annotation.canon string.quoted.double.canon
+78:18-19 ")" meta.annotation.canon
+79:0-6 "export" storage.modifier.canon
+79:7-9 "fn" storage.type.function.canon
+79:10-18 "itemFile" entity.name.function.canon
+79:21-23 "->" keyword.operator.canon
+79:24-32 "ItemFile" entity.name.type.canon
+80:2-8 "return" keyword.control.canon
+81:4-9 "items" variable.other.property.canon
+81:9-10 ":" punctuation.separator.key.canon
 83:8-10 "id" variable.other.property.canon
 83:10-11 ":" punctuation.separator.key.canon
-83:12-13 "2" constant.numeric.integer.canon
+83:12-13 "1" constant.numeric.integer.canon
 84:8-14 "symbol" variable.other.property.canon
 84:14-15 ":" punctuation.separator.key.canon
-84:16-25 "\"II_WAND\"" string.quoted.double.canon
-85:8-12 "note" variable.other.property.canon
+84:16-26 "\"II_SWORD\"" string.quoted.double.canon
+85:8-12 "name" variable.other.property.canon
 85:12-13 ":" punctuation.separator.key.canon
-85:14-28 "\"A test item.\"" string.quoted.double.canon
-86:8-15 "element" variable.other.property.canon
-86:15-16 ":" punctuation.separator.key.canon
-87:8-16 "cooldown" variable.other.property.canon
-87:16-17 ":" punctuation.separator.key.canon
-87:18-20 "3s" constant.numeric.duration.canon
-88:8-16 "lifetime" variable.other.property.canon
-88:16-17 ":" punctuation.separator.key.canon
-88:18-22 "none" constant.language.canon
-89:8-13 "stack" variable.other.property.canon
-89:13-14 ":" punctuation.separator.key.canon
-89:15-17 "20" constant.numeric.integer.canon
-92:4-12 "byRarity" variable.other.property.canon
-92:12-13 ":" punctuation.separator.key.canon
-92:16-22 "common" variable.other.property.canon
-92:22-23 ":" punctuation.separator.key.canon
-92:24-25 "1" constant.numeric.integer.canon
-92:27-31 "rare" variable.other.property.canon
-92:31-32 ":" punctuation.separator.key.canon
-92:33-34 "1" constant.numeric.integer.canon
-92:36-44 "season_1" variable.other.property.canon
-92:44-45 ":" punctuation.separator.key.canon
-92:46-47 "0" constant.numeric.integer.canon
-96:0-4 "emit" keyword.other.canon
-96:12-15 "out" variable.other.property.canon
-96:15-16 ":" punctuation.separator.key.canon
-96:17-27 "\"out/text\"" string.quoted.double.canon
-97:0-4 "emit" keyword.other.canon
-97:10-13 "out" variable.other.property.canon
+85:14-21 "\"Sword\"" string.quoted.double.canon
+86:8-14 "rarity" variable.other.property.canon
+86:14-15 ":" punctuation.separator.key.canon
+87:8-15 "element" variable.other.property.canon
+87:15-16 ":" punctuation.separator.key.canon
+88:8-15 "bonuses" variable.other.property.canon
+88:15-16 ":" punctuation.separator.key.canon
+88:20-24 "stat" variable.other.property.canon
+88:24-25 ":" punctuation.separator.key.canon
+88:26-27 "1" constant.numeric.integer.canon
+88:29-35 "amount" variable.other.property.canon
+88:35-36 ":" punctuation.separator.key.canon
+88:37-38 "5" constant.numeric.integer.canon
+91:8-10 "id" variable.other.property.canon
+91:10-11 ":" punctuation.separator.key.canon
+91:12-13 "2" constant.numeric.integer.canon
+92:8-14 "symbol" variable.other.property.canon
+92:14-15 ":" punctuation.separator.key.canon
+92:16-25 "\"II_WAND\"" string.quoted.double.canon
+93:8-12 "note" variable.other.property.canon
+93:12-13 ":" punctuation.separator.key.canon
+93:14-28 "\"A test item.\"" string.quoted.double.canon
+94:8-15 "element" variable.other.property.canon
+94:15-16 ":" punctuation.separator.key.canon
+95:8-16 "cooldown" variable.other.property.canon
+95:16-17 ":" punctuation.separator.key.canon
+95:18-20 "3s" constant.numeric.duration.canon
+96:8-16 "lifetime" variable.other.property.canon
+96:16-17 ":" punctuation.separator.key.canon
+96:18-22 "none" constant.language.canon
+97:8-13 "stack" variable.other.property.canon
 97:13-14 ":" punctuation.separator.key.canon
-97:16-33 "\"out/go/gotypes/\"" string.quoted.double.canon
-97:35-67 "\"@sovcommon/gotypes/go/gotypes/\"" string.quoted.double.canon
-97:70-74 "mode" variable.other.property.canon
-97:74-75 ":" punctuation.separator.key.canon
+97:15-17 "20" constant.numeric.integer.canon
+100:4-12 "byRarity" variable.other.property.canon
+100:12-13 ":" punctuation.separator.key.canon
+100:16-22 "common" variable.other.property.canon
+100:22-23 ":" punctuation.separator.key.canon
+100:24-25 "1" constant.numeric.integer.canon
+100:27-31 "rare" variable.other.property.canon
+100:31-32 ":" punctuation.separator.key.canon
+100:33-34 "1" constant.numeric.integer.canon
+100:36-44 "season_1" variable.other.property.canon
+100:44-45 ":" punctuation.separator.key.canon
+100:46-47 "0" constant.numeric.integer.canon
+104:0-57 "/// How many items each rarity has, as a file of its own." comment.line.documentation.canon
+105:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+105:1-5 "text" meta.annotation.canon entity.name.function.decorator.canon
+105:5-6 "(" meta.annotation.canon
+105:6-21 "\"rarities.json\"" meta.annotation.canon string.quoted.double.canon
+105:21-22 ")" meta.annotation.canon
+106:0-6 "export" storage.modifier.canon
+106:7-9 "fn" storage.type.function.canon
+106:10-18 "rarities" entity.name.function.canon
+106:21-23 "->" keyword.operator.canon
+106:25-31 "Rarity" variable.other.property.canon
+106:31-32 ":" punctuation.separator.key.canon
+106:33-36 "Int" entity.name.type.canon
+107:2-8 "return" keyword.control.canon
+107:11-17 "common" variable.other.property.canon
+107:17-18 ":" punctuation.separator.key.canon
+107:19-20 "1" constant.numeric.integer.canon
+107:22-26 "rare" variable.other.property.canon
+107:26-27 ":" punctuation.separator.key.canon
+107:28-29 "1" constant.numeric.integer.canon
+107:31-39 "season_1" variable.other.property.canon
+107:39-40 ":" punctuation.separator.key.canon
+107:41-42 "0" constant.numeric.integer.canon
+110:0-4 "emit" keyword.other.canon
+110:12-15 "out" variable.other.property.canon
+110:15-16 ":" punctuation.separator.key.canon
+110:17-27 "\"out/text\"" string.quoted.double.canon
+111:0-4 "emit" keyword.other.canon
+112:2-5 "out" variable.other.property.canon
+112:5-6 ":" punctuation.separator.key.canon
+112:8-25 "\"out/go/gotypes/\"" string.quoted.double.canon
+112:27-59 "\"@sovcommon/gotypes/go/gotypes/\"" string.quoted.double.canon
+113:2-6 "mode" variable.other.property.canon
+113:6-7 ":" punctuation.separator.key.canon
+114:2-6 "open" variable.other.property.canon
+114:6-7 ":" punctuation.separator.key.canon
+114:9-15 "Rarity" entity.name.type.canon
+114:17-24 "Element" entity.name.type.canon

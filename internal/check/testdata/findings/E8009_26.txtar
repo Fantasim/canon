@@ -1,0 +1,40 @@
+DECISIONS 339, CODEGEN.md §2.1: each name of `open` is a public enum the package declares (`open`): not a record, a local enum, an unknown name or another package's enum; an element that is no bare word is `kind`.
+-- a/a.canon --
+package a
+
+import b { Far }
+
+/// A thing.
+record Thing {
+  /// Its size.
+  n: Int
+}
+
+local enum Hidden { x, y }
+
+/// A destination.
+enum Dst { str, sta }
+
+emit go { out: "@sovcommon/a", mode: types, open: [Thing, Hidden, Missing, Far, "Dst", Dst] }
+-- b/b.canon --
+package b
+
+/// Far away.
+enum Far { one, two }
+-- findings.txt --
+error[E8009]  a/a.canon:16:52
+  open of emit go: Thing is not a public enum of this package
+
+error[E8009]  a/a.canon:16:59
+  open of emit go: Hidden is not a public enum of this package
+
+error[E8009]  a/a.canon:16:67
+  open of emit go: Missing is not a public enum of this package
+
+error[E8009]  a/a.canon:16:76
+  open of emit go: Far is not a public enum of this package
+
+error[E8009]  a/a.canon:16:81
+  option open of emit go must be a list of enum names
+
+5 errors, 0 warnings in 2 packages (…)

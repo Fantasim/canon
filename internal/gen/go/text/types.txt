@@ -11,6 +11,67 @@
 }
 
 {{end}}
+{{define "textDecoder"}}func {{.Name}}({{.L.Raw}} []byte) ({{.Type}}, error) {
+	var {{.L.Out}} {{.Type}}
+	{{.L.R}}, {{.L.Err}} := jsonDocument({{.Quoted}}, {{.L.Raw}})
+	if {{.L.Err}} != nil {
+		return {{.L.Out}}, {{.L.Err}}
+	}
+	{{.L.Err}} = func({{.L.Name}}, {{.L.Path}} string) error {
+		{{.Body}}{{.L.Out}} = {{.Value}}
+		return nil
+	}({{.Quoted}}, "$")
+	return {{.L.Out}}, {{.L.Err}}
+}
+
+{{end}}
+{{define "openEnum"}}func (self {{.Name}}) {{.String}}() string {
+	switch self {
+{{- range .Members}}
+	case {{.Const}}:
+		return {{.Text}}
+{{- end}}
+	}
+	return string(self)
+}
+
+func (self {{.Name}}) {{.Wire}}() string { return string(self) }
+
+func (self {{.Name}}) {{.Known}}() bool {
+	switch self {
+	case {{.Consts}}:
+		return true
+	}
+	return false
+}
+
+func {{.Parse}}({{.Arg}} string) ({{.Name}}, bool) {
+	self := {{.Name}}({{.Arg}})
+	return self, self.{{.Known}}()
+}
+
+{{end}}
+{{define "openCodes"}}func (self {{.Name}}) {{.Code}}() ({{.Codes}}, bool) {
+	switch self {
+{{- range .Members}}
+	case {{.Const}}:
+		return {{.Number}}, true
+{{- end}}
+	}
+	return 0, false
+}
+
+func {{.FromCode}}(code {{.Codes}}) ({{.Name}}, bool) {
+	switch code {
+{{- range .Members}}
+	case {{.Number}}:
+		return {{.Const}}, true
+{{- end}}
+	}
+	return "", false
+}
+
+{{end}}
 {{define "jsonDocument"}}// jsonDocument is raw without a UTF-8 byte order mark, which must then be one JSON value read as
 // a source file is: UTF-8, no escaped unpaired surrogate, no object holding a key twice, nothing
 // nested deeper than 512 arrays and objects. The first finding is the error, at its path.

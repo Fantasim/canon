@@ -129,7 +129,7 @@ func (g *gen) durationFrom(src string, unit types.Unit) string {
 	return g.ownRT() + durationFromMs + src + rparen
 }
 
-// readEnum reads a member's wire string, or its code with @json(codes), and parses it (WIRE.md §5.3).
+// readEnum reads a member's wire string, or its code with @json(codes), and parses it (WIRE.md §5.3); an opened enum keeps any string, while a code no member has still fails: there is no wire value to keep (DECISIONS 339).
 func (g *gen) readEnum(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
 	e, ok := t.Named.(*ir.Enum)
 	if !ok {
@@ -139,6 +139,9 @@ func (g *gen) readEnum(b *strings.Builder, t ir.TypeRef, raw string, loc locatio
 	name := g.goName(e)
 	if !e.JSONCodes || e.Codes == nil {
 		s := g.readPlain(b, goString, raw, loc)
+		if ir.OpenEnum(g.p, g.e, e) { // any string, kept as is (DECISIONS 339)
+			return g.typeName(e) + lparen + s + rparen
+		}
 		return g.parsed(b, g.qualify(e.Pkg, g.names.ParseName(name))+lparen+s+rparen, loc, unknownValueText, s)
 	}
 	n := g.readCount(b, *e.Codes, raw, loc)
@@ -303,7 +306,7 @@ func (g *gen) enumKeyToken(t ir.TypeRef, expr string) string {
 		return expr
 	}
 	if e.JSONCodes && e.Codes != nil {
-		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), goInt64+lparen+expr+dot+ir.GoCode+callSuffix+rparen)
+		return fmt.Sprintf(formatIntFormat, g.use(strconvPkg, strconvPkg), g.codeInt64(e, expr))
 	}
 	return g.ownRT() + wireTokenCall + expr + dot + ir.GoWire + callSuffix + rparen
 }
@@ -346,8 +349,20 @@ func (g *gen) readBits(b *strings.Builder, t ir.TypeRef, raw string, loc locatio
 		names[i] = g.qualify(e.Pkg, g.names.MemberName(e, m))
 	}
 	v, m := g.temp(tempValue), g.temp(tempMember)
-	fmt.Fprintf(b, bitsFormat, v, g.typeName(e), m, strings.Join(names, listSep), mask)
+	if ir.OpenEnum(g.p, g.e, e) {
+		fmt.Fprintf(b, openBitsFormat, v, g.typeName(e), m, strings.Join(names, listSep), mask, g.temp(tempInt), ir.GoCode)
+	} else {
+		fmt.Fprintf(b, bitsFormat, v, g.typeName(e), m, strings.Join(names, listSep), mask)
+	}
 	return g.rt() + makeList + v + rparen
+}
+
+// codeInt64 is the code of expr, a value of a @codes enum, as an int64: an opened enum's Code also reports whether it is known, which a value read by code always is (DECISIONS 339).
+func (g *gen) codeInt64(e *ir.Enum, expr string) string {
+	if !ir.OpenEnum(g.p, g.e, e) {
+		return goInt64 + lparen + expr + dot + ir.GoCode + callSuffix + rparen
+	}
+	return fmt.Sprintf(openCodeFormat, g.typeName(e), ir.GoCode, expr)
 }
 
 func (g *gen) uint64Of(x string) string { return goUint64 + lparen + x + rparen }
