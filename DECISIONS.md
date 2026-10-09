@@ -3394,4 +3394,9 @@ round 2", "PS1 review", "PS2 round 2"):
      Settled while building (2026-10-09): `consumer_roots` that is not a list is `E1006`
      `consumerRoots`; `--only-root` creates the named root's own directory when its parent exists
      (the consumer named it; its generated directory is git-ignored); E8028 holds under `--check`
-     too; a root may be both optional and consumer.
+     too; a root may be both optional and consumer. Review (same day): "under a consumer root" is
+     judged by the roots' declared places (`project.canon`), never this machine's, so
+     `canon.outputs` stays the same bytes everywhere (108); a plain build never removes a file
+     under a consumer root either; `--only-root` whose root is absent and cannot be created (its
+     parent missing) is `E1013`, never a silent success; an empty `--only-root` is a usage error.
+     Journal recovery at `Open` (API.md N11) is unchanged: a checkout has no journal.
