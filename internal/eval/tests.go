@@ -216,13 +216,10 @@ func anyFinding(fs []diag.Finding, sev diag.Severity, match func(diag.Finding) b
 	return false
 }
 
-// files resolves the spans of the program's files, for a capture's bag.
+// files resolves the spans of the program's files, for a capture's bag: the index's one table,
+// never copied, so a bag a memo keeps pins no file table of its own.
 func (e *Evaluator) files() diag.Files {
-	fs := fileSet{}
-	for f := range e.index.pkg { //canon:unordered a lookup table
-		fs[f.Src.ID] = f.Src
-	}
-	return fs
+	return e.index.srcs
 }
 
 // fileSet is the diag.Files of the parsed files, by id.

@@ -17,6 +17,7 @@ type index struct {
 	broken  map[syntax.Node]bool
 	written *writtenIndex
 	files   []*syntax.File // walked for file and owner on the first lookup (fileOf)
+	srcs    fileSet        // the files' sources by id, one table every bag shares (files); add extends it
 	walked  bool
 }
 
@@ -28,6 +29,7 @@ func emptyIndex() *index {
 		entries: map[check.Object][]check.Object{},
 		decls:   map[syntax.Node]check.Object{},
 		broken:  map[syntax.Node]bool{},
+		srcs:    fileSet{},
 	}
 }
 
@@ -36,6 +38,7 @@ func buildIndex(prog *check.Program) *index {
 	for _, pkg := range prog.Packages {
 		for _, f := range pkg.Files {
 			x.pkg[f] = pkg.Path
+			x.srcs[f.Src.ID] = f.Src
 			x.files = append(x.files, f)
 		}
 		x.addDecls(pkg, prog.Info)
@@ -131,6 +134,7 @@ func (x *index) add(f *syntax.File, pkg string) {
 		return
 	}
 	x.pkg[f], x.walked = pkg, false
+	x.srcs[f.Src.ID] = f.Src
 	x.files = append(x.files, f)
 }
 
