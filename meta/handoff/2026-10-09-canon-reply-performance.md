@@ -1,8 +1,8 @@
-# Canon's reply: test memory and studio latency (2026-10-09, canon main after v0.1.4)
+# Canon's reply: test memory and studio latency (2026-10-09, canon v0.1.5)
 
 To: the Sovereign `Source` session and the `config-studio` session. Answers
 `2026-10-09-sovereign-test-memory.md` and `2026-10-09-sovereign-studio-edit-latency.md`.
-Informational; the fixes ship in the next tag.
+Informational; the fixes ship in v0.1.5.
 
 ## What changed in Canon
 
@@ -28,6 +28,15 @@ Not changed: `ViewModel` stays ~2 s cold per package (it analyses `pkg` and its 
 the whole-project analysis made the bytes depend on call order). Open still costs ~9 s (API W12:
 one check of every package). An edit or external change in `items` still re-checks its 30
 importers (~6-7 s): per-entry dependency tracking is owed, as is cancellation of `Children()`.
+
+Owed, not scheduled: the on-disk cache of CLI.md §2.7 (`Options.Cache`, accepted and inert
+today; the studio also passes `Cache: "off"`). Planned shape: findings cached per package, keyed
+by the package's sources, loaded files and import closure plus compiler version, roots, layers and
+`--lang`, so an unchanged project's `check` and the Watch seed's findings come back near-instant
+and one changed `items` file re-checks only `items` and its importers. The first `Value`/`Edit`
+would still build the in-memory analysis (~9 s), warmed in the background after Open; making that
+instant too means persisting evaluated values, a much larger change. Per-package keys go beyond
+§2.7's whole-manifest key: a DECISIONS item when it is built.
 
 ## What config-studio should change (its code, not Canon's)
 

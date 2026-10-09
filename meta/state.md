@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-10-09. **v0.1.4** + perf pass (untagged) (Sovereign's 2026-10-08 asks) on main; v0.1.3 to v0.1.0 are
+Updated: 2026-10-09. **v0.1.5** (perf pass) (Sovereign's 2026-10-08 asks) on main; v0.1.3 to v0.1.0 are
 out; `main` is the only branch. DECISIONS 304-343:
 [log-2026-10-06](decisions/log-2026-10-06.md), [log-2026-10-08](decisions/log-2026-10-08.md),
 [ADR-0018](decisions/0018-frame-owned-collections.md),
@@ -17,7 +17,7 @@ Stage E now judges go emits on each copy's view (`CopyOf`), as the generator see
 Handoffs: [Canon's reply](handoff/2026-10-09-canon-reply-open-ids-consumer-roots.md); [all](handoff/README.md).
 **Next:** telemetry first use; Sovereign's cutover on Go types; fix every known bug that surfaces.
 Release builds stay local (`make dist`) while CI is down.
-**Perf pass 2026-10-09** ([log](decisions/log-2026-10-09.md)), on Sovereign: test 7.76 GB/60 s → 2.15 GB/19 s; check 16 → 9.5 s; first studio value 6.8 → 0.01 s; deep `items` value ∞ → 6 s. **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers), stage-E memo; edit time is ops × a full analysis (E1); FMT's whole-file judgement holds
+**Perf pass 2026-10-09** ([log](decisions/log-2026-10-09.md)), on Sovereign: test 7.76 GB/60 s → 2.15 GB/19 s; check 16 → 9.5 s; first studio value 6.8 → 0.01 s; deep `items` value ∞ → 6 s. **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers), stage-E memo; the §2.7 on-disk cache, per package (Open/check instant when unchanged; [reply](handoff/2026-10-09-canon-reply-performance.md)); edit time is ops × a full analysis (E1); FMT's whole-file judgement holds
 the edit peak (per-item judgement, or the on-disk cache `Options.Cache`); a token-streaming JSON
 reader for Go data/types loaders (~110 ms/MB today); warm re-check on entry add/remove.
 **Owed from 2026-10-08 asks:** the cross-root import trap (E8004-like), `E8005` on several `table
