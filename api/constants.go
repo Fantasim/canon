@@ -263,6 +263,13 @@ const (
 	expectedPattern  = "an RE2 regular expression"
 )
 
+// What a refused BuildOptions.OnlyRoot expected and got (DECISIONS 343).
+const (
+	expectedConsumerRoot = "a consumer root of the project (consumer_roots)"
+	expectedNoAdopt      = "OnlyRoot without Adopt (--only-root without --adopt)"
+	fmtAdoptGot          = "Adopt %q"
+)
+
 // What ViewModel.Decode reads: pointers, struct tags, a neutral text reference's one member (J9).
 const (
 	pointerSep    = "/"

@@ -1,0 +1,47 @@
+CLI.md §3.4 --only-root (DECISIONS 343): the lock up to date, --only-root admin writes exactly the copy under the consumer root @admin, listed as usual; not the copy under @out.
+-- dir --
+p
+-- args --
+build
+--only-root
+admin
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "admin"
+  }
+  consumer_roots: [admin]
+}
+-- p/a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+
+emit json { out: ["@out/", "@admin/json/"] }
+-- p/a/canon.lock --
+# canon.lock v1
+table  a.tiers  low
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+json:
+  @admin/json/tiers.json
+[stderr]
+[file p/admin/json/tiers.json]
+{
+  "$schema": "a.Tier@86740929",
+  "rows": [
+    {"$id": "low", "weight": 1}
+  ]
+}

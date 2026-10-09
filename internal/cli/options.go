@@ -27,6 +27,7 @@ type options struct {
 	diff        bool
 	jsonSources bool
 	adopt       []string
+	onlyRoot    string
 	layers      []string
 	run         string
 	verbose     bool
@@ -75,6 +76,7 @@ func buildFlags(fs *flag.FlagSet, o *options) {
 	fs.Func(flagTarget, usageTarget, o.addTarget)
 	fs.BoolVar(&o.checkFlag, flagCheck, o.checkFlag, usageCheck)
 	fs.Func(flagAdopt, usageAdopt, o.addAdopt)
+	fs.Func(flagOnlyRoot, usageOnlyRoot, o.setOnlyRoot)
 }
 
 // testFlags are canon test's own flags (CLI.md §3.5), on top of the global ones.
@@ -139,6 +141,15 @@ func (o *options) addTarget(v string) error {
 // addAdopt records one --adopt path, taken as given (CLI.md §3.4).
 func (o *options) addAdopt(v string) error {
 	o.adopt = append(o.adopt, v)
+	return nil
+}
+
+// setOnlyRoot records --only-root, refusing an empty name, which would build everything (DECISIONS 343).
+func (o *options) setOnlyRoot(v string) error {
+	if v == "" {
+		return fmt.Errorf(fmtQuoted, v, errNoRootName)
+	}
+	o.onlyRoot = v
 	return nil
 }
 

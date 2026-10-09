@@ -32,6 +32,7 @@ type BuildOptions struct {
 	Targets  []Target
 	Check    bool // write nothing; report what would change (CLI --check)
 	Adopt    []string
+	OnlyRoot string // a consumer root: write only the outputs under it, nothing of the project (CLI --only-root, B1c)
 }
 
 // Output is one emitted file.
@@ -69,11 +70,11 @@ func (p *Project) Build(ctx context.Context, o BuildOptions) (res *BuildResult, 
 		}
 		return nil, err
 	}
-	opts := build.BuildOptions{Packages: o.Packages, Targets: targets, Adopt: o.Adopt, Check: o.Check}
+	opts := build.BuildOptions{Packages: o.Packages, Targets: targets, Adopt: o.Adopt, Check: o.Check, OnlyRoot: o.OnlyRoot}
 	start := time.Now()
 	s, r, err := p.runBuild(ctx, opts)
 	if err != nil {
-		return nil, err
+		return nil, onlyRootError(err, o)
 	}
 	rev, err := p.revision(context.WithoutCancel(ctx), s) // a done ctx never drops a write's result (S10)
 	if err != nil {
@@ -92,7 +93,7 @@ func (p *Project) runBuild(ctx context.Context, opts build.BuildOptions) (*works
 		if err != nil {
 			return nil, nil, err
 		}
-		key := workspace.Key(workspace.OpBuild, opts.Packages, append([]string{targetKey(opts.Targets)}, opts.Adopt...)...)
+		key := workspace.Key(workspace.OpBuild, opts.Packages, append([]string{targetKey(opts.Targets), opts.OnlyRoot}, opts.Adopt...)...)
 		r, err := share(ctx, s, key, func(ctx context.Context) (*build.BuildResult, error) { return s.Build().Build(ctx, opts) })
 		return s, r, err
 	}
@@ -106,6 +107,18 @@ func (p *Project) runBuild(ctx context.Context, opts build.BuildOptions) (*works
 		return nil, nil, apiError(err)
 	}
 	return next, r, nil
+}
+
+// onlyRootError is a refused OnlyRoot as *ValueError (rule V1, DECISIONS 343): a root that is not
+// a consumer root of the project, or one given with Adopt; any other error as it is.
+func onlyRootError(err error, o BuildOptions) error {
+	switch {
+	case errors.Is(err, build.ErrNotConsumerRoot):
+		return &ValueError{Op: -1, Expected: expectedConsumerRoot, Got: fmt.Sprintf(fmtQuoted, o.OnlyRoot)}
+	case errors.Is(err, build.ErrOnlyRootAdopt):
+		return &ValueError{Op: -1, Expected: expectedNoAdopt, Got: fmt.Sprintf(fmtAdoptGot, o.Adopt)}
+	}
+	return err
 }
 
 // targetKey is the selected targets as one part of a shared build's key.

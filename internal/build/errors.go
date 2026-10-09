@@ -12,6 +12,9 @@ var (
 	ErrNotSelected = errors.New("a view model of a package the analysis did not select")
 	// ErrReadOnly is a build that must write through a file system without WriteFS's methods.
 	ErrReadOnly = errors.New("the project's file system cannot be written")
+	// ErrNotConsumerRoot and ErrOnlyRootAdopt refuse a BuildOptions.OnlyRoot (DECISIONS 343).
+	ErrNotConsumerRoot = errors.New("--only-root names no consumer root of the project")
+	ErrOnlyRootAdopt   = errors.New("--only-root cannot adopt a file")
 
 	errNoProgram   = errors.New("the checker returned no program")
 	errLinkLoop    = errors.New("too many levels of symbolic links")

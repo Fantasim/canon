@@ -45,7 +45,7 @@ func Place(p *Project, dir string, pl Placement, bag *diag.Bag) (*Layout, bool) 
 		if l.present(pl.FS, r.Name) {
 			continue
 		}
-		if r.Optional {
+		if r.mayBeAbsent() {
 			l.absent[r.Name] = true
 			continue
 		}

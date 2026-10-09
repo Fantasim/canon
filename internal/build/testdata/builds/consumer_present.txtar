@@ -1,0 +1,27 @@
+DECISIONS 343: a consumer root present on this machine changes nothing: a plain build still never writes under it; the Go copy under @admin is left out, the one under @out written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+  go_module {
+    out: "example.com/out"
+    admin: "example.com/admin"
+  }
+}
+-- ../admin/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit go { out: ["@out/go/a", "@admin/go/a"] }
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @out/go/a/a.gen.go 0
+output @out/go/a/rt/rt.go 0

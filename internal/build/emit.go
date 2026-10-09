@@ -22,6 +22,7 @@ type BuildOptions struct {
 	Targets  []ir.Target // emit only these (CLI.md §3.4 --target); none emits every target
 	Adopt    []string    // display paths of unmarked C++ headers the build may take over (API.md B2)
 	Check    bool        // write nothing; report what would change as stale (CLI.md §3.4 --check)
+	OnlyRoot string      // a consumer root: write only the outputs under it, nothing of the project (CLI.md §3.4 --only-root, DECISIONS 343)
 }
 
 // Status is what a build does with one output file (API.md §13.1).
@@ -62,6 +63,9 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 	if err != nil {
 		return nil, err
 	}
+	if err := r.validOnly(opt); err != nil {
+		return nil, err
+	}
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
 	}
@@ -77,6 +81,9 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error) {
 	out := &BuildResult{Result: *r.result()}
 	failed := out.Summary.Errors
+	if failed > 0 && opt.OnlyRoot != "" { // a project that does not check gives its consumers nothing (DECISIONS 343)
+		return out, r.localized(ctx, &out.Result)
+	}
 	outputs, err := r.emit(ctx, opt, failed > 0)
 	if err = interrupted(ctx, err); err != nil {
 		return nil, err
@@ -97,6 +104,9 @@ func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error)
 			return nil, err
 		}
 	}
+	if opt.OnlyRoot != "" {
+		return r.commitRoot(ctx, opt, out, outputs, locks)
+	}
 	if err := r.commit(opt.Check, out, outputs, locks); err != nil {
 		return nil, err
 	}
@@ -106,12 +116,13 @@ func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error)
 // output is an Output with the location of the emit that writes it, for its findings.
 type output struct {
 	Output
-	at      source.Span
-	old     []byte // the file's content before the build
-	existed bool
-	listing bool   // a package's canon.outputs (CODEGEN.md §2.9)
-	remove  bool   // a file the build deletes, written nowhere: a legacy `.canon-text`, a text file the package no longer writes (CODEGEN.md §2.9)
-	under   string // the optional root absent on this machine it goes under: skipped (CODEGEN.md §2.4)
+	at       source.Span
+	old      []byte // the file's content before the build
+	existed  bool
+	listing  bool   // a package's canon.outputs (CODEGEN.md §2.9)
+	remove   bool   // a file the build deletes, written nowhere: a legacy `.canon-text`, a text file the package no longer writes (CODEGEN.md §2.9)
+	under    string // the optional root absent on this machine it goes under: skipped (CODEGEN.md §2.4)
+	consumer string // the consumer root it lies under: a plain build never writes it (DECISIONS 343)
 }
 
 // emit runs the generator of every emit (each copy in list order, CODEGEN.md §2.8) of the selected packages whose target opt selects, in package then source order, always on p narrowed by ir.CopyOf; after an error, only the views run.
@@ -203,10 +214,10 @@ func (r *run) outputs(p *ir.Package, e *ir.Emit, files []ir.File) ([]*output, er
 	if e.FileName != "" {
 		display, abs = path.Dir(display), project.DirOf(abs)
 	}
-	span, under := r.emitSpan(p, e), r.absentAt(abs)
+	span, under, consumer := r.emitSpan(p, e), r.absentAt(abs), r.consumerOf(display)
 	out := make([]*output, len(files))
 	for i, f := range files {
-		out[i] = &output{at: span, under: under, Output: Output{
+		out[i] = &output{at: span, under: under, consumer: consumer, Output: Output{
 			Path: path.Join(display, f.Path), Abs: project.Join(abs, f.Path), Target: e.Target, Package: p.Name, Content: f.Content,
 		}}
 	}

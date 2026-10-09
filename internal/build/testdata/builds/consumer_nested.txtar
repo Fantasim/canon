@@ -1,0 +1,22 @@
+DECISIONS 343, CODEGEN.md §2.4: the consumer root @admin lies inside @svc; the copy written through @svc's path into it is a consumer output by location, never written by a plain build; the copy under @svc alone is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    svc: "../svc"
+    admin: "../svc/admin"
+  }
+  consumer_roots: [admin]
+}
+-- ../svc/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@svc/json/", "@svc/admin/json/"] }
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @svc/json/v.json 0

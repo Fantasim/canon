@@ -1,0 +1,28 @@
+DECISIONS 343, CODEGEN.md §2.9: --only-root when the build would write a canon.outputs (a text emit elsewhere, never listed yet): E8028 naming it, and nothing is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- ../admin/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// The note.
+@text("note.txt")
+export fn note() -> String { return "hi" }
+
+emit text { out: "@out/" }
+emit json { out: "@admin/json/" }
+-- only-root --
+admin
+-- findings.txt --
+error[E8028]  project.canon:5:5
+  build --only-root admin would change a/canon.outputs: run canon build in the project first; --only-root never writes the project
+
+1 error, 0 warnings in 1 package (…)

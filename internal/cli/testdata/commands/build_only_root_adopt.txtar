@@ -1,0 +1,31 @@
+CLI.md §3.4 --only-root, §2.5 (DECISIONS 343): --only-root with --adopt is a usage error, exit 2; nothing is written.
+-- dir --
+p
+-- args --
+build
+--only-root
+admin
+--adopt
+@admin/json/v.json
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "admin"
+  }
+  consumer_roots: [admin]
+}
+-- p/a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@out/", "@admin/json/"] }
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: value does not fit the type: expected OnlyRoot without Adopt (--only-root without --adopt), got Adopt ["@admin/json/v.json"]

@@ -1,0 +1,38 @@
+DECISIONS 343, CLI.md §3.4 --only-root: the build writes exactly the outputs under the consumer root @admin: not the copy under @out, and not the lock of the stable table, already up to date.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+  go_module {
+    out: "example.com/out"
+    admin: "example.com/admin"
+  }
+}
+-- ../admin/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+
+emit go { out: ["@out/go/a", "@admin/go/a"] }
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  low
+-- only-root --
+admin
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @admin/go/a/a.gen.go 0
+output @admin/go/a/rt/rt.go 0

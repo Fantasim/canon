@@ -1,0 +1,21 @@
+DECISIONS 343, CODEGEN.md §2.4: the copy under the consumer root @admin, absent here, is generated and validated but never written by a plain build, with no W8024; the copy under @out is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@out/", "@admin/json/"] }
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @out/v.json 0

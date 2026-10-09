@@ -37,9 +37,10 @@ const (
 	keyBudget    = "budget"
 	keyGoModule  = "go_module"
 	keyOptional  = "optional_roots"
+	keyConsumer  = "consumer_roots" // DECISIONS 343
 )
 
-// keyRules reads each key; go_module and optional_roots wait for the roots, keys coming in any order (GRAMMAR.md §7.1).
+// keyRules reads each key; go_module, optional_roots and consumer_roots wait for the roots, keys coming in any order (GRAMMAR.md §7.1).
 var keyRules = map[string]func(*schema, *syntax.ProjectEntry){
 	keyCanon:     (*schema).canon,
 	keyRoots:     (*schema).roots,
@@ -48,6 +49,7 @@ var keyRules = map[string]func(*schema, *syntax.ProjectEntry){
 	keyBudget:    (*schema).budget,
 	keyGoModule:  (*schema).deferGoModule,
 	keyOptional:  (*schema).deferOptional,
+	keyConsumer:  (*schema).deferConsumer,
 }
 
 // The origins of a root's directory (origin).

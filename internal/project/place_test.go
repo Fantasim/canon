@@ -69,6 +69,21 @@ func TestPlacePresence(t *testing.T) {
 	}
 }
 
+// DECISIONS 343: a consumer root is optional too: absent, it is Absent and never E1013.
+func TestPlaceConsumerAbsent(t *testing.T) {
+	fsys := memFS{fstest.MapFS{"p/project.canon": {}}}
+	p := project.New("acme", project.Version{Minor: 1})
+	p.Roots = []project.Root{{Name: "admin", Path: "../admin", Consumer: true}}
+	bag := diag.NewBag(nil, "")
+	l, ok := project.Place(p, "/p", project.Placement{FS: fsys}, bag)
+	if !ok || !l.Absent("admin") || bag.ErrorCount() != 0 {
+		t.Errorf("ok %v, Absent(admin) %v, findings %v", ok, l.Absent("admin"), bag.Findings())
+	}
+	if !p.Consumer("admin") || p.Consumer("none") {
+		t.Error("admin is a consumer root, none is no root")
+	}
+}
+
 // DECISIONS 332: a root whose directory is a symbolic link to a directory is present; a link to a
 // file, or a dangling one, is not.
 func TestPlaceSymlink(t *testing.T) {

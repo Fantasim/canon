@@ -1,0 +1,25 @@
+DECISIONS 343, CLI.md §3.4 --only-root --check: compares the outputs under @admin only; the copy under @out, missing, is not reported.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- ../admin/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@out/", "@admin/json/"] }
+-- only-root --
+admin
+-- check --
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @admin/json/v.json 3

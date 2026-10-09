@@ -44,7 +44,7 @@ func runBuild(inv *invocation) int {
 // build is one run of Build over the selected packages, an unknown selector reported as typed.
 func (inv *invocation) build(p *canon.Project, selectors []string) (*canon.BuildResult, error) {
 	res, err := p.Build(inv.ctx, canon.BuildOptions{
-		Packages: selectors, Targets: inv.opt.targets, Check: inv.opt.checkFlag, Adopt: inv.opt.adopt,
+		Packages: selectors, Targets: inv.opt.targets, Check: inv.opt.checkFlag, Adopt: inv.opt.adopt, OnlyRoot: inv.opt.onlyRoot,
 	})
 	if errors.Is(err, canon.ErrUnknownPackage) {
 		err = inv.asTyped(p, selectors, err)

@@ -52,7 +52,8 @@ shell when they contain `[`: `canon explain 'potions[0]'`.
 Commit `canon.lock`, each package's `canon.outputs` and generated files; do not commit
 `project.local.canon` (your machine's root paths, `canon guide syntax`). CI runs `canon fmt
 --check`, `canon check`, `canon test` and `canon build --check`, with every root its outputs go
-to checked out (`E8023` otherwise).
+to checked out (`E8023` otherwise), consumer roots excepted: a service builds its copy with
+`canon build --only-root <name> --root <name>=<dir>`, which never writes the project.
 
 ## check: findings
 

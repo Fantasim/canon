@@ -1,0 +1,14 @@
+GRAMMAR.md §7.1 (DECISIONS 343): consumer_roots is a root name, not a list of root names.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  consumer_roots: admin
+}
+-- findings.txt --
+error[E1006]  project.canon:6:19
+  "consumer_roots" must be a list of root names
+
+1 error, 0 warnings in 1 package (…)

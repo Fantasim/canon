@@ -46,7 +46,7 @@ func (r *run) packageDir(name string) (string, bool) {
 func (r *run) listings(outputs []*output, opt BuildOptions, failed bool) []*output {
 	names := map[string][]listEntry{}
 	for _, o := range outputs {
-		if o.Target == ir.TargetText {
+		if o.Target == ir.TargetText && o.consumer == "" { // canon.outputs never lists a consumer root (DECISIONS 343)
 			names[o.Package] = append(names[o.Package], listEntry{sum: sumHex(o.Content), path: o.Path})
 		}
 	}

@@ -1,0 +1,24 @@
+DECISIONS 343, CODEGEN.md §2.4: --only-root admin, @admin nested inside @svc and absent, its parent present: the copy written through @svc's path into @admin is the root's, created and written; the copy under @svc alone is not.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    svc: "../svc"
+    admin: "../svc/admin"
+  }
+  consumer_roots: [admin]
+}
+-- ../svc/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@svc/json/", "@svc/admin/json/"] }
+-- only-root --
+admin
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @svc/admin/json/v.json 0

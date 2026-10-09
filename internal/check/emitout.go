@@ -87,18 +87,7 @@ func outputDir(abs, out, target string) string {
 
 // OwningRoot is the root owning an output in dir, project-relative: dir's closest root, lexically, the first declared of two alike; "" for the project (CODEGEN.md §2.8, DECISIONS 269).
 func OwningRoot(p *project.Project, dir string) string {
-	best, bestLen, bestAt := "", -1, source.Pos(0)
-	for _, r := range p.Roots {
-		rootDir := path.Clean(r.Path)
-		if _, under := Within(dir, rootDir); !under {
-			continue
-		}
-		closer := len(rootDir) > bestLen
-		if closer || len(rootDir) == bestLen && r.Span.Start < bestAt {
-			best, bestLen, bestAt = r.Name, len(rootDir), r.Span.Start
-		}
-	}
-	return best
+	return closestRoot(p, dir, func(project.Root) bool { return true })
 }
 
 // RootLabel is an owning root as findings name it: its name, or `project <name>` for the project (DECISIONS 269).

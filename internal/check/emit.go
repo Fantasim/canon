@@ -74,6 +74,7 @@ func (c *checker) checkEmit(env *env, e *syntax.EmitDecl, seen map[string]bool) 
 	}
 	c.emitFileMode(env, e, target, out, values)
 	c.emitRoots(env, target, out)
+	c.emitConsumer(env, target, out)
 	switch {
 	case target == TargetGo && !hasOption(e, OptPackage):
 		c.defaultGoPackage(env, e, out)

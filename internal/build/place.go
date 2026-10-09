@@ -17,9 +17,9 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// place finds collisions, drops the outputs under an absent optional root, then finds files an output may not overwrite (CODEGEN.md §2.4, API.md B2); the legacy text manifests the build deletes come last (CODEGEN.md §2.9).
+// place finds collisions, keeps what a plain or --only-root build writes (DECISIONS 343), drops the outputs under an absent optional root, then finds files an output may not overwrite (CODEGEN.md §2.4, API.md B2); the legacy text manifests the build deletes come last (CODEGEN.md §2.9).
 func (r *run) place(outputs []*output, opt BuildOptions) ([]*output, error) {
-	outputs = r.skipAbsent(r.collisions(outputs), opt.Check)
+	outputs = r.skipAbsent(r.makeRoot(consumers(r.collisions(outputs), opt.OnlyRoot), opt.OnlyRoot), opt.Check)
 	own, err := r.owners(outputs)
 	if err != nil {
 		return nil, err

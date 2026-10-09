@@ -1,0 +1,23 @@
+DECISIONS 343: --only-root admin, the consumer root's directory absent but its parent present: the build creates it and writes its outputs there, with no W8024.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../svc/admin"
+  }
+  consumer_roots: [admin]
+}
+-- ../svc/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@admin/json/" }
+-- only-root --
+admin
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @admin/json/v.json 0

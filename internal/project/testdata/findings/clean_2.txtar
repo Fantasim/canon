@@ -1,0 +1,13 @@
+SPEC §3.1 (DECISIONS 343): a consumer root is optional too: absent on this machine, it is no E1013, and the project opens.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+    src: "../src"
+  }
+  consumer_roots: [admin]
+  optional_roots: [src]
+}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

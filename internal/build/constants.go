@@ -173,3 +173,9 @@ var conventionPatterns = map[diag.Kind]string{
 	diag.KindUpperCamel: patternUpperCamel, diag.KindLowerCamel: patternLowerCamel,
 	diag.KindUpperSnake: patternUpperSnake, diag.KindLowerSnake: patternLowerSnake,
 }
+
+// Consumer roots: a refused --only-root's root; the project directory where roots sit as declared.
+const (
+	fmtOnlyRoot    = "%w: %q"
+	declaredAnchor = listingMark
+)

@@ -1,0 +1,25 @@
+DECISIONS 343: a project that does not check gives --only-root nothing, not even the view model under the consumer root, which a plain build writes despite errors.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- ../admin/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = "one"
+
+emit view { out: "@admin/view/a.json" }
+-- only-root --
+admin
+-- build.txt --
+error[E3002]  a/a.canon:5:14
+  expected Int, found String
+
+1 error, 0 warnings in 1 package (…)

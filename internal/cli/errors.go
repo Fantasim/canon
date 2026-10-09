@@ -19,6 +19,7 @@ var (
 	errBadLock        = errors.New("want: canon lock check [packages...]")
 	errBadMax         = errors.New("want a count of 0 or more")
 	errBadTarget      = errors.New("want go, cpp, ts, json, view or text")
+	errNoRootName     = errors.New("want the name of a consumer root")
 	errBadName        = errors.New("not an identifier; give the project name with --name")
 	errBadPackage     = errors.New("each segment must be a lowerCamel identifier")
 	errExists         = errors.New("already exists")

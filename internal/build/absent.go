@@ -72,11 +72,12 @@ func (r *run) placedAs(root string) (source.Span, string) {
 type dirBounds struct {
 	project string
 	roots   []string // the directories of the roots placed outside the project
+	made    string   // a root's own directory it may create all the same: --only-root's, else ""
 }
 
 // bounds is this machine's dirBounds, the roots placed as the run's layout places them.
 func (r *run) bounds() *dirBounds {
-	b := &dirBounds{project: r.s.layout.Dir}
+	b := &dirBounds{project: r.s.layout.Dir, made: r.rootMade}
 	for _, dir := range r.s.layout.RootDirs() {
 		if _, in := under(b.project, dir); !in {
 			b.roots = append(b.roots, dir)
@@ -88,7 +89,7 @@ func (r *run) bounds() *dirBounds {
 // allows reports a directory the build may create: inside the project, or strictly below a
 // root outside it and no such root's own directory.
 func (b *dirBounds) allows(dir string) bool {
-	if _, in := under(b.project, dir); in {
+	if _, in := under(b.project, dir); in || dir == b.made && dir != "" {
 		return true
 	}
 	if slices.Contains(b.roots, dir) {

@@ -1,0 +1,17 @@
+GRAMMAR.md §7.1 (DECISIONS 343): consumer_roots names a root project.canon does not declare, and a root twice; it may come before roots.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  consumer_roots: [admin, client, admin]
+  roots {
+    admin: "../admin"
+  }
+}
+-- findings.txt --
+error[E1009]  project.canon:3:27
+  consumer_roots: "client" is not a declared root
+
+error[E1009]  project.canon:3:35
+  consumer_roots: "admin" is listed twice
+
+2 errors, 0 warnings in 1 package (…)

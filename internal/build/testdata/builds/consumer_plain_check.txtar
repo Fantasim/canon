@@ -1,0 +1,22 @@
+DECISIONS 343, CLI.md §3.4 --check: build --check never compares the copy under the consumer root @admin, absent here: no E8023; only the copy under @out is compared.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@out/", "@admin/json/"] }
+-- check --
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @out/v.json 3

@@ -23,6 +23,8 @@ import (
 // run is one pass of phases 1 to 7 over a snapshot (EVALUATION.md §1).
 type run struct {
 	p         *Project
+	rootMade  string          // the consumer root's directory --only-root may create (DECISIONS 343)
+	declared  *project.Layout // the roots where project.canon places them, made on first use
 	s         *snapshot
 	selected  []*project.Unit
 	loaded    []*project.Unit  // the selected packages and their imports

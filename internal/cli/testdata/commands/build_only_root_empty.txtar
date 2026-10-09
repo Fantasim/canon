@@ -1,13 +1,31 @@
-CLI.md §3.4: --target accepts only go, cpp, ts, json, view or text.
+CLI.md §3.4 --only-root, §2.5 (DECISIONS 343): an empty --only-root is a usage error, exit 2, never a plain build; nothing is written.
+-- dir --
+p
 -- args --
 build
---target
-foo
+--only-root=
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "admin"
+  }
+  consumer_roots: [admin]
+}
+-- p/a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: ["@out/", "@admin/json/"] }
 -- want --
 [exit 2]
 [stdout]
 [stderr]
-canon: invalid value "foo" for flag -target: "foo": want go, cpp, ts, json, view or text
+canon: invalid value "" for flag -only-root: "": want the name of a consumer root
 usage: canon <command> [arguments] [flags]
 
 commands:

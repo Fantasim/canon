@@ -97,7 +97,7 @@ func (j *staleJudge) stale(pkg, name, sum string) (*output, error) {
 		return nil, err
 	}
 	j.written[strings.ToLower(at.Abs)] = at.Abs
-	return &output{remove: true, Output: Output{Path: name, Abs: at.Abs, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}, nil
+	return &output{remove: true, consumer: r.consumerOf(name), Output: Output{Path: name, Abs: at.Abs, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}, nil
 }
 
 // asideOf is the removal of the set-aside name of at an earlier removal left, when the line recorded a sum and the aside's bytes still hash to it; nil when there is none, or the line has no sum.
@@ -120,7 +120,7 @@ func (r *run) asideOf(pkg string, at project.Path, sum string) (*output, error) 
 	case err != nil:
 		return nil, displayError(shown, err)
 	}
-	return &output{remove: true, Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}, nil
+	return &output{remove: true, consumer: r.consumerOf(at.Display), Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}, nil
 }
 
 // writtenHere reports the path abs one of this build's outputs, or one that differs from an output in case only and may be the same file: it is another file only where the output's name resolves to nothing yet (a case-sensitive file system, so a rename leaves the old name), or where the directory listing holds both exact names (CODEGEN.md §2.9, DECISIONS 336).

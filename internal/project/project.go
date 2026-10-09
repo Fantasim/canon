@@ -25,13 +25,25 @@ type Version struct {
 	Major, Minor int
 }
 
-// Root is a named root: its name, its path as written, relative to the project directory, and
-// whether optional_roots lists it (DECISIONS 332).
+// Root is a named root: its name, its path as written, relative to the project directory,
+// and whether optional_roots and consumer_roots list it.
 type Root struct {
 	Name     string
 	Path     string
 	Span     source.Span
 	Optional bool
+	Consumer bool
+}
+
+// mayBeAbsent reports an optional or consumer root, which a machine may lack (DECISIONS 343).
+func (r Root) mayBeAbsent() bool {
+	return r.Optional || r.Consumer
+}
+
+// Consumer reports name a declared consumer root (DECISIONS 343).
+func (p *Project) Consumer(name string) bool {
+	r, ok := p.Root(name)
+	return ok && r.Consumer
 }
 
 // Package is a package path the project names, with the span that names it; Path "" is none.

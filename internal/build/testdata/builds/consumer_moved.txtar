@@ -1,0 +1,35 @@
+DECISIONS 343, 108: "under a consumer root" is judged where project.canon places the roots: project.local.canon moves @out inside this machine's @admin directory, yet @out's text and json copies are written and canon.outputs lists the text file as on every machine; the @admin copy is not written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- project.local.canon --
+project acme {
+  roots {
+    out: "../admin/out"
+  }
+}
+-- ../admin/out/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+/// The note.
+@text("note.txt")
+export fn note() -> String { return "hi" }
+
+emit json { out: ["@out/", "@admin/json/"] }
+emit text { out: "@out/notes" }
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @out/notes/note.txt 0
+output @out/v.json 0
+output a/canon.outputs 0

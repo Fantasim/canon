@@ -1,0 +1,26 @@
+DECISIONS 343, CODEGEN.md §2.9: a text emit copy under the consumer root @admin is E8009 outConsumer, judged by location: @sub lies inside @admin, so its copy is refused; the copy under @out is not.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    admin: "../admin"
+    sub: "../admin/sub"
+  }
+  consumer_roots: [admin]
+  optional_roots: [sub]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The note.
+@text("note.txt")
+export fn note() -> String { return "hi" }
+
+emit text { out: ["@out/", "@sub/notes/"] }
+-- findings.txt --
+error[E8009]  a/a.canon:8:28
+  @sub/notes/ in out of emit text lies under the consumer root admin: a text file is owned only through canon.outputs, which never lists a consumer root
+
+1 error, 0 warnings in 1 package (…)

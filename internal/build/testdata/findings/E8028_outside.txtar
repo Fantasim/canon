@@ -1,0 +1,33 @@
+DECISIONS 343: @sub lies inside the consumer root @admin as project.canon places it, but project.local.canon places it elsewhere on this machine: --only-root admin would write its copy outside @admin, so E8028 outside, and nothing is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../svc/admin"
+    sub: "../svc/admin/sub"
+  }
+  consumer_roots: [admin]
+}
+-- project.local.canon --
+project acme {
+  roots {
+    sub: "../elsewhere"
+  }
+}
+-- ../svc/admin/README --
+-- ../elsewhere/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@sub/json/" }
+-- only-root --
+admin
+-- findings.txt --
+error[E8028]  a/a.canon:7:18
+  build --only-root admin would write @sub/json/v.json outside @admin: this machine places @sub elsewhere; place it inside @admin as project.canon does
+
+1 error, 0 warnings in 1 package (…)

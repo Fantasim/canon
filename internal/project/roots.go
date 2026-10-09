@@ -72,30 +72,59 @@ func isAbsolute(path string) bool {
 	return strings.HasPrefix(path, sep) || strings.HasPrefix(path, backslash) || drivePattern.MatchString(path)
 }
 
+// rootList is how a list of root names is refused: a value that is not one (E1006), a name not
+// declared or listed twice (E1009); optional_roots and consumer_roots alike.
+type rootList struct {
+	kind      func(source.Span) *diag.Builder
+	undefined func(source.Span, string) *diag.Builder
+	twice     func(source.Span, string) *diag.Builder
+}
+
+// optionalList is optional_roots (DECISIONS 332); consumerList is consumer_roots (DECISIONS 343).
+var (
+	optionalList = rootList{kind: diag.E1006.AtOptionalRoots, undefined: diag.E1009.AtOptionalRoot, twice: diag.E1009.AtOptionalDuplicate}
+	consumerList = rootList{kind: diag.E1006.AtConsumerRoots, undefined: diag.E1009.AtConsumerRoot, twice: diag.E1009.AtConsumerDuplicate}
+)
+
 // optionalRoots is a list of declared root names, each once (GRAMMAR.md §7.1: E1006, E1009).
 func (s *schema) optionalRoots(e *syntax.ProjectEntry) {
+	listed := s.rootNames(e, optionalList)
+	for i := range s.p.Roots {
+		s.p.Roots[i].Optional = listed[s.p.Roots[i].Name]
+	}
+}
+
+// consumerRoots is a list of declared root names, each once: the roots the project's consumers
+// build, each optional too (DECISIONS 343: E1006, E1009).
+func (s *schema) consumerRoots(e *syntax.ProjectEntry) {
+	listed := s.rootNames(e, consumerList)
+	for i := range s.p.Roots {
+		s.p.Roots[i].Consumer = listed[s.p.Roots[i].Name]
+	}
+}
+
+// rootNames is the set of declared root names the list e holds, refused as rl says.
+func (s *schema) rootNames(e *syntax.ProjectEntry, rl rootList) map[string]bool {
+	listed := map[string]bool{}
 	l, ok := e.Value.(*syntax.ProjectList)
 	if !ok {
-		s.fail(diag.E1006.AtOptionalRoots(s.span(e.Value)))
-		return
+		s.fail(rl.kind(s.span(e.Value)))
+		return listed
 	}
-	listed := map[string]bool{}
 	for _, item := range l.Items {
 		q, ok := item.(*syntax.QualifiedName)
 		span := s.span(item)
 		switch {
 		case isBad(item):
 		case !ok || len(q.Parts) != 1:
-			s.fail(diag.E1006.AtOptionalRoots(span))
+			s.fail(rl.kind(span))
 		case !s.named[qualified(q)]:
-			s.fail(diag.E1009.AtOptionalRoot(span, qualified(q)))
+			s.fail(rl.undefined(span, qualified(q)))
 		case listed[qualified(q)]:
-			s.fail(diag.E1009.AtOptionalDuplicate(span, qualified(q)))
+			s.fail(rl.twice(span, qualified(q)))
 		default:
 			listed[qualified(q)] = true
 		}
 	}
-	for i := range s.p.Roots {
-		s.p.Roots[i].Optional = listed[s.p.Roots[i].Name]
-	}
+	return listed
 }

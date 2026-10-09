@@ -34,6 +34,9 @@ func Load(src *source.File, bag *diag.Bag) (*Project, error) {
 	if s.optional != nil {
 		s.optionalRoots(s.optional)
 	}
+	if s.consumer != nil {
+		s.consumerRoots(s.consumer)
+	}
 	if !s.seen[keyCanon] {
 		s.fail(diag.E1004.At(f.Span(d.Name)))
 	}
@@ -57,6 +60,7 @@ type schema struct {
 	unsupported bool
 	goModule    *syntax.ProjectEntry
 	optional    *syntax.ProjectEntry
+	consumer    *syntax.ProjectEntry
 }
 
 func (s *schema) fail(b *diag.Builder) {
@@ -168,6 +172,8 @@ func (s *schema) budget(e *syntax.ProjectEntry) {
 func (s *schema) deferGoModule(e *syntax.ProjectEntry) { s.goModule = e }
 
 func (s *schema) deferOptional(e *syntax.ProjectEntry) { s.optional = e }
+
+func (s *schema) deferConsumer(e *syntax.ProjectEntry) { s.consumer = e }
 
 // goModules maps declared roots to Go module paths (GRAMMAR.md §7.1, E1005, E1006, E1009).
 func (s *schema) goModules(e *syntax.ProjectEntry) {

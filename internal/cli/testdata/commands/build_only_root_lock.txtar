@@ -1,0 +1,37 @@
+CLI.md §3.4 --only-root (DECISIONS 343): the build would add a line to canon.lock, so --only-root is E8028, exit 1, and writes nothing, not even the consumer root's outputs.
+-- dir --
+p
+-- args --
+build
+--only-root
+admin
+-- p/project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "admin"
+  }
+  consumer_roots: [admin]
+}
+-- p/a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+
+emit json { out: "@admin/json/" }
+-- want --
+[exit 1]
+[stdout]
+error[E8028]  project.canon:4:5
+  build --only-root admin would change a/canon.lock: run canon build in the project first; --only-root never writes the project
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

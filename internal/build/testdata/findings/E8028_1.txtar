@@ -1,0 +1,34 @@
+DECISIONS 343, CODEGEN.md §2.4: --only-root when the build would add a line to canon.lock: E8028 at the root's declaration, and nothing is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+  go_module {
+    admin: "example.com/admin"
+  }
+}
+-- ../admin/README --
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low {} }
+
+emit go { out: "@admin/go/a" }
+-- only-root --
+admin
+-- findings.txt --
+error[E8028]  project.canon:4:5
+  build --only-root admin would change a/canon.lock: run canon build in the project first; --only-root never writes the project
+
+1 error, 0 warnings in 1 package (…)

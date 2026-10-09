@@ -53,6 +53,13 @@ directory exists (a root at or inside the project always is).
   output into it is skipped, still generated and checked, and one `W8024` per root says so
   (`--max-warnings 0` makes it fail). `canon build --check` with such an output is `E8023`: CI
   needs every root its outputs go to. `--adopt` of a path under it is refused.
+- `consumer_roots: [admin]` lists roots the project's consumers build themselves (DECISIONS
+  343; not a root, or twice: `E1009`). Such a root is optional too. Its outputs are checked as
+  always, but `canon build` never writes them and `--check` never compares them (no `W8024`, no
+  `E8023`); a `text` copy under it is `E8009`. The consumer runs `canon build --only-root admin
+  --root admin=<dir>`: it writes the outputs under that root (creating `<dir>` if its parent
+  exists, else `E1013`) and nothing else (`--adopt` or an empty name is a usage error),
+  and is `E8028` when `canon.lock` or a `canon.outputs` would change.
 - `canon` creates directories below a present root only, never a root's own directory outside
   the project. A relative C++ include or TypeScript import between two roots placed differently
   than `project.canon` places them is `E8022`; one climbing above the project's parents is
