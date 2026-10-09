@@ -1,0 +1,26 @@
+CODEGEN.md §2.4 (DECISIONS 342, settled 2026-10-09): an output inside the project is judged from the project directory, even when its root lies inside the project: a committed link there, as the root's own directory `res`, is E8027 naming it.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    res: "res"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Note.
+@text("note.txt")
+export fn note() -> String { return "n\n" }
+
+emit text { out: "@res/notes" }
+-- ../Resource/notes/keep.txt --
+keep
+-- links --
+res ../Resource
+-- findings.txt --
+error[E8027]  a/a.canon:8:18
+  refusing to write @res/notes/note.txt: @res is a symbolic link, and a build never writes through one
+
+1 error, 0 warnings in 1 package (…)

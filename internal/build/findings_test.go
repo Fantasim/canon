@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"path"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
@@ -22,6 +24,7 @@ const (
 	checkOnly    = "check-only" // present: the case is analysed, never built
 	checkMode    = "check"      // present: the case is built with --check (CLI.md §3.4)
 	onlyRootFile = "only-root"  // the consumer root the case is built for (CLI.md §3.4 --only-root, DECISIONS 343)
+	linksFile    = "links"      // one symbolic link a line: its name under /p, a space, its text
 )
 
 // archiveFS is a case's files as a project under /p, its expected output and options left out.
@@ -30,11 +33,21 @@ func archiveFS(a *txtar.Archive) mapFS {
 	for _, f := range a.Files {
 		switch f.Name {
 		case findingsFile, buildFile, layersFile, adoptFile, selectFile, checkOnly, checkMode, onlyRootFile:
+		case linksFile:
+			addLinks(fsys, string(f.Data))
 		default:
 			fsys[path.Join("p", f.Name)] = file(string(f.Data)) // "../x" is beside the project (SPEC §3.1)
 		}
 	}
 	return fsys
+}
+
+// addLinks adds the symbolic links of a links file to fsys.
+func addLinks(fsys mapFS, text string) {
+	for line := range strings.Lines(text) {
+		name, target, _ := strings.Cut(strings.TrimSpace(line), " ")
+		fsys[path.Join("p", name)] = &fstest.MapFile{Data: []byte(target), Mode: fs.ModeSymlink}
+	}
 }
 
 func fields(a *txtar.Archive, name string) []string {

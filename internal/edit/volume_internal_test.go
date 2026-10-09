@@ -68,3 +68,14 @@ func TestOverlayOnUNCVolume(t *testing.T) {
 		t.Errorf("EvalSymlinks(%q) = %q, %v", shareFile, real, err)
 	}
 }
+
+// API.md §2.2: a volume's root an overlay holds new files under, which its base cannot stat, resolves to itself: EvalSymlinks ends there instead of asking its own parent forever.
+func TestOverlayEvalSymlinksVolumeRoot(t *testing.T) {
+	o := &overlayFS{base: shareBase{}, files: map[string][]byte{"/new/x.canon": []byte("x\n")}}
+	if real, err := o.EvalSymlinks("/"); err != nil || real != "/" {
+		t.Errorf("EvalSymlinks(/) = %q, %v", real, err)
+	}
+	if real, err := o.EvalSymlinks("/new/x.canon"); err != nil || real != "/new/x.canon" {
+		t.Errorf("EvalSymlinks(/new/x.canon) = %q, %v", real, err)
+	}
+}

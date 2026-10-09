@@ -127,6 +127,9 @@ func (r *run) stages(ctx context.Context) error {
 	if err := r.stageE(ctx); err != nil {
 		return err
 	}
+	if err := r.feedback(ctx); err != nil { // DECISIONS 341
+		return err
+	}
 	r.reportStableAmendments()
 	r.host.loader.FinishDefines() // once every stage has forced its loads (WIRE.md §6.8)
 	if err := ctx.Err(); err != nil {

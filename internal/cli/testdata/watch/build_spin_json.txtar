@@ -1,12 +1,13 @@
-IMPLEMENTATION-PLAN.md §8.1, meta/decisions/log-2026-09-29.md "M4 U6-r": in JSON the build that
-is not answered again ends with a `cycle` line whose `settled` is false.
+IMPLEMENTATION-PLAN.md §8.1, meta/decisions/log-2026-09-29.md "M4 U6-r", DECISIONS 341: in JSON, a
+project reading its own output is refused with E8026 at the first build, nothing is written and no
+cycle follows. (The `cycle` line whose `settled` is false is TestWatchUnsettledJSON's.)
 -- args --
 build
 --watch
 --format
 json
 -- cycles --
-3
+1
 -- project.canon --
 project acme {
   canon: "0.1"
@@ -41,14 +42,7 @@ emit json { out: "@out/" }
 -- want --
 [exit 130]
 [stdout]
-{"output":{"path":"@out/cfg.json","target":"json","package":"a","status":"written"}}
-{"output":{"path":"@out/prev.json","target":"json","package":"a","status":"written"}}
-{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":2,"stale":0}}
-{"cycle":{"revision":"r1:9c302545a3631df571d32bbb804200f651d7a91d93eee2c3ce2e77df9a5356fc","files":["@out/cfg.json"],"packages":["a"]}}
-{"output":{"path":"@out/cfg.json","target":"json","package":"a","status":"written"}}
-{"output":{"path":"@out/prev.json","target":"json","package":"a","status":"written"}}
-{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":2,"stale":0}}
-{"cycle":{"revision":"r1:9c302545a3631df571d32bbb804200f651d7a91d93eee2c3ce2e77df9a5356fc","files":["@out/cfg.json"],"packages":["a"],"settled":false}}
-{"summary":{"errors":0,"warnings":0,"packages":1,"ms":0,"written":2,"stale":0}}
+{"severity":"error","code":"E8026","file":"a/a.canon","line":11,"col":17,"endLine":11,"endCol":51,"package":"a","message":"@out/cfg.json is read by this load and written by emit json of a: an output is never an input of its own build"}
+{"summary":{"errors":1,"warnings":0,"packages":1,"ms":0,"written":0,"stale":0}}
 [stderr]
 canon: interrupted

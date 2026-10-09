@@ -1,0 +1,21 @@
+CODEGEN.md §2.4 (DECISIONS 342): `canon build --check` reports an output through a symbolic link as `canon build` does; the link here is the output file itself, inside the project.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "out/" }
+-- links --
+a/out/v.json ../../../secret.json
+-- check --
+-- findings.txt --
+error[E8027]  a/a.canon:7:18
+  refusing to write a/out/v.json: a/out/v.json is a symbolic link, and a build never writes through one
+
+1 error, 0 warnings in 1 package (…)

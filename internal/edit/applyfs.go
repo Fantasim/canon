@@ -193,14 +193,18 @@ func (o *overlayFS) holds(dir string) bool {
 	return false
 }
 
-// EvalSymlinks resolves a new file's directory through the base, the file itself being no link.
+// EvalSymlinks resolves a new file's directory through the base, the file itself being no link; a volume's root ends the walk.
 func (o *overlayFS) EvalSymlinks(name string) (string, error) {
 	if data, ok := o.files[name]; !ok || data == nil {
 		if _, err := o.base.Stat(name); err == nil || !o.holds(name) {
 			return project.EvalSymlinks(o.base, name)
 		}
 	}
-	dir, err := o.EvalSymlinks(project.DirOf(name))
+	parent := project.DirOf(name)
+	if parent == name { // a volume's root the base cannot resolve is its own real path
+		return name, nil
+	}
+	dir, err := o.EvalSymlinks(parent)
 	if err != nil {
 		return "", err
 	}

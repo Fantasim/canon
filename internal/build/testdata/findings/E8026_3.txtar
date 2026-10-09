@@ -1,0 +1,29 @@
+CODEGEN.md §2.4, §2.9 (DECISIONS 341): a load of a text file an earlier build wrote is refused at the load; a load of a hand-written file of the same output directory is not.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Note.
+@text("note.txt")
+export fn note() -> String { return "n\n" }
+
+/// Kept.
+let kept: String = load.text("gen/hand.txt")
+
+/// Fed.
+let fed: String = load.text("gen/note.txt")
+
+emit text { out: "gen" }
+-- a/gen/hand.txt --
+hand
+-- a/gen/note.txt --
+n
+-- findings.txt --
+error[E8026]  a/a.canon:12:19
+  a/gen/note.txt is read by this load and written by emit text of a: an output is never an input of its own build
+
+1 error, 0 warnings in 1 package (…)

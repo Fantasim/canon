@@ -1,0 +1,28 @@
+DECISIONS 341, 343: an output under a consumer root, which canon build never writes, still counts: a load of it is E8026 under check.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+/// Fed.
+let fed: String = load.text("@admin/json/v.json")
+
+emit json { out: "@admin/json/" }
+-- ../admin/json/v.json --
+{"v": 1}
+-- check-only --
+-- findings.txt --
+error[E8026]  a/a.canon:8:19
+  @admin/json/v.json is read by this load and written by emit json of a: an output is never an input of its own build
+
+1 error, 0 warnings in 1 package (…)

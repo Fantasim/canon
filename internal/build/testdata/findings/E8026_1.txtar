@@ -1,0 +1,25 @@
+CODEGEN.md §2.4, WIRE.md §2.2 (DECISIONS 341): a `@text` fn copying a hand-written file over itself is refused at its load under `canon check`: an output is never an input of its own build.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "../Resource"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Evil.
+@text("evil.json")
+export fn evil() -> String { return load.text("@resource/Server/System/evil.json") }
+
+emit text { out: "@resource/Server/System" }
+-- ../Resource/Server/System/evil.json --
+{"hand": "written"}
+-- check-only --
+-- findings.txt --
+error[E8026]  a/a.canon:6:37
+  @resource/Server/System/evil.json is read by this load and written by emit text of a: an output is never an input of its own build
+
+1 error, 0 warnings in 1 package (…)

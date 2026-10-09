@@ -1,6 +1,7 @@
-CLI.md §3.4, meta/decisions/log-2026-09-29.md "M4 U6-r": package b reads the output of package a. The
-rebuild a change causes writes that output, which wakes the watch once more: one rebuild answers
-it (a cycle listing no change), and then the watch is quiet: exactly three summaries in all.
+CLI.md §3.4, meta/decisions/log-2026-09-29.md "M4 U6-r", DECISIONS 341: a build's own write wakes the
+watch once more: here the canon.lock the build reads and rewrites when a stable table gains a row
+(a package reading its own output, the loop this case once used, is E8026). One rebuild answers it
+(a cycle listing no change), and then the watch is quiet: exactly three summaries in all.
 -- args --
 build
 --watch
@@ -17,54 +18,46 @@ project acme {
 /// A.
 package a
 
-/// Cfg.
-record Cfg {
+/// Tier.
+record Tier {
   /// Weight.
   weight: Int = 1
 }
 
-/// Config.
-let cfg: Cfg = { weight: 3 }
+/// Tiers.
+let tiers: stable table Tier = { low {} }
 
 emit json { out: "@out/" }
--- b/b.canon --
-/// B.
-package b
-
-import a { Cfg }
-
-/// Copy.
-let copy: Cfg = load("@out/cfg.json", at: "value")
--- out/cfg.json --
-{
-  "$schema": "a.Cfg@0df3c93b",
-  "value": {
-    "weight": 3
-  }
-}
+-- a/canon.lock --
+# canon.lock v1
+table  a.tiers  low
 -- step1/a/a.canon --
 /// A.
 package a
 
-/// Cfg.
-record Cfg {
+/// Tier.
+record Tier {
   /// Weight.
   weight: Int = 1
 }
 
-/// Config.
-let cfg: Cfg = { weight: 4 }
+/// Tiers.
+let tiers: stable table Tier = { low {}, high {} }
 
 emit json { out: "@out/" }
 -- want --
 [exit 130]
 [stdout]
-0 errors, 0 warnings in 2 packages (…)
--- 1 files changed, 2 packages re-checked
-0 errors, 0 warnings in 2 packages (…)
+0 errors, 0 warnings in 1 package (…)
 json:
-  @out/cfg.json
+  @out/tiers.json
 -- 1 files changed, 1 packages re-checked
-0 errors, 0 warnings in 2 packages (…)
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/tiers.json
+lock:
+  a/canon.lock
+-- 1 files changed, 1 packages re-checked
+0 errors, 0 warnings in 1 package (…)
 [stderr]
 canon: interrupted

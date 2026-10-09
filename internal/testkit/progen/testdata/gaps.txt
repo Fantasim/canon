@@ -10,6 +10,8 @@ E7009 a load under an optional root absent on this machine (DECISIONS 332): the 
 E8019 each E8019 construct is a generator gap; an operator would break once the generator implements it
 E8022 a fact of the machine: two roots placed relative to each other otherwise than project.canon does (CODEGEN.md §2.8), which no generated program carries; internal/build's E8022_*.txtar produce it
 E8023 build --check with an output under an absent optional root (CODEGEN.md §2.4), a fact of the machine; internal/build's E8023_*.txtar produce it
+E8026 a load reading a file an emit of the same build writes (CODEGEN.md §2.4, DECISIONS 341), which a generated program's loads never name; internal/build's E8026_*.txtar produce it
+E8027 a symbolic link below an output's root (CODEGEN.md §2.4, DECISIONS 342), a fact of the machine; internal/build's E8027_*.txtar produce it
 E8028 build --only-root only (DECISIONS 343), which the harness never runs: it builds with no OnlyRoot; internal/build's E8028_*.txtar and internal/cli's build_only_root_lock.txtar produce it
 W6006 reported by canon lock check only (LOCK.md §8), which neither check nor build runs
 W8024 an output under an absent optional root (CODEGEN.md §2.4), a fact of the machine; internal/build's W8024_*.txtar produce it

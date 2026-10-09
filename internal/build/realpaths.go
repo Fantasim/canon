@@ -54,12 +54,13 @@ func (r *realPaths) dir(name string) string {
 	if real, ok := r.dirs[name]; ok {
 		return real
 	}
+	if project.DirOf(name) == name { // a volume's root is its own real path, asked of no file system
+		return name
+	}
 	r.dirs[name] = name // a loop of dangling links ends here
 	real, err := project.EvalSymlinks(r.fs, name)
-	if parent := project.DirOf(name); err != nil && parent != name {
-		real = r.missingDir(parent, path.Base(name))
-	} else if err != nil {
-		real = name
+	if err != nil {
+		real = r.missingDir(project.DirOf(name), path.Base(name))
 	}
 	r.dirs[name] = real
 	return real

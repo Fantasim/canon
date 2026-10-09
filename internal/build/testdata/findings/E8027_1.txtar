@@ -1,0 +1,26 @@
+CODEGEN.md §2.4, API.md §2.2 (DECISIONS 342): a committed symbolic link to a directory outside the project, below the root's directory, is refused: E8027 names the output and the link, and nothing is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "../Resource"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Pwned.
+@text("pwned.txt")
+export fn pwned() -> String { return "pwned\n" }
+
+emit text { out: "@resource/Server/Evil.png" }
+-- ../Resource/Server/keep.txt --
+keep
+-- links --
+../Resource/Server/Evil.png ../../Elsewhere
+-- findings.txt --
+error[E8027]  a/a.canon:8:18
+  refusing to write @resource/Server/Evil.png/pwned.txt: @resource/Server/Evil.png is a symbolic link, and a build never writes through one
+
+1 error, 0 warnings in 1 package (…)

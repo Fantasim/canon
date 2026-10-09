@@ -1,11 +1,12 @@
-CLI.md §3.4, meta/decisions/log-2026-09-29.md "M4 U6-r": package a computes its output from its own
-previous output, so every build changes what it reads. The rebuild answering the first build's
-writes runs once; the writes of that one are not answered: one line, then the watch waits.
+CLI.md §3.4, meta/decisions/log-2026-09-29.md "M4 U6-r", DECISIONS 341: package a computes its output
+from its own previous output. That self-feeding project can no longer spin a watch: the load of its
+own output is E8026, the build writes nothing, and the watch waits for a change from outside. (The
+unsettled line a self-feeding build once printed is TestWatchOwnWritesRunOnce's.)
 -- args --
 build
 --watch
 -- cycles --
-3
+1
 -- project.canon --
 project acme {
   canon: "0.1"
@@ -40,15 +41,9 @@ emit json { out: "@out/" }
 -- want --
 [exit 130]
 [stdout]
-0 errors, 0 warnings in 1 package (…)
-json:
-  @out/cfg.json
-  @out/prev.json
--- 1 files changed, 1 packages re-checked
-0 errors, 0 warnings in 1 package (…)
-json:
-  @out/cfg.json
-  @out/prev.json
--- outputs did not settle; waiting for a change
+error[E8026]  a/a.canon:11:17
+  @out/cfg.json is read by this load and written by emit json of a: an output is never an input of its own build
+
+1 error, 0 warnings in 1 package (…)
 [stderr]
 canon: interrupted

@@ -1,0 +1,27 @@
+DECISIONS 342, 343: canon build --only-root obeys the link rule: a link below the consumer root's directory is E8027, and nothing is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  consumer_roots: [admin]
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@admin/json/" }
+-- ../admin/README --
+-- links --
+../admin/json ../../elsewhere
+-- only-root --
+admin
+-- findings.txt --
+error[E8027]  a/a.canon:7:18
+  refusing to write @admin/json/v.json: @admin/json is a symbolic link, and a build never writes through one
+
+1 error, 0 warnings in 1 package (…)

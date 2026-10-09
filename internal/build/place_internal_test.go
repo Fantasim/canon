@@ -70,10 +70,16 @@ var errReadDenied = &fs.PathError{Op: "open", Path: "/o/v.json", Err: fs.ErrPerm
 
 func (failingRead) ReadFile(string) ([]byte, error) { return nil, errReadDenied }
 
+// placeSnapshot is a snapshot of a project at /o with no root, which place's link check reads (DECISIONS 342).
+func placeSnapshot() *snapshot {
+	layout, _ := project.NewLayout(&project.Project{}, "/o", nil, diag.NewBag(nil, ""))
+	return &snapshot{layout: layout}
+}
+
 // DECISIONS 201: a read error on an existing output names the display path, not r.p.fs's
 // absolute one.
 func TestPlaceReadErrorNamesDisplayPath(t *testing.T) {
-	r := &run{p: &Project{fs: failingRead{}}, s: &snapshot{}}
+	r := &run{p: &Project{fs: failingRead{roFS{}}}, s: placeSnapshot()}
 	_, err := r.place([]*output{{Output: Output{Path: "@out/v.json", Abs: "/o/v.json", Package: "a"}}}, BuildOptions{})
 	if !errors.Is(err, fs.ErrPermission) {
 		t.Fatalf("place: %v", err)
@@ -95,7 +101,7 @@ func (listingDenied) ReadFile(name string) ([]byte, error) {
 
 // CODEGEN.md §2.9, DECISIONS 201, 326: a canon.outputs that exists but cannot be read is an I/O error naming its display path, never E8001.
 func TestPlaceListingReadError(t *testing.T) {
-	r := &run{p: &Project{fs: listingDenied{}}, s: &snapshot{}}
+	r := &run{p: &Project{fs: listingDenied{roFS{}}}, s: placeSnapshot()}
 	o := &output{Output: Output{Path: "@out/sql/a.sql", Abs: "/o/sql/a.sql", Package: "a", Target: ir.TargetText, Content: []byte("new")}}
 	_, err := r.place([]*output{o}, BuildOptions{})
 	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "a/canon.outputs") {

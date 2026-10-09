@@ -128,6 +128,21 @@ func TestWatchOwnWritesRunOnce(t *testing.T) {
 	}
 }
 
+// IMPLEMENTATION-PLAN.md §8.1, log-2026-09-29.md "M4 U6-r2", DECISIONS 341
+func TestWatchUnsettledJSON(t *testing.T) {
+	w, out, _ := newWatcher(context.Background(), cleanState("@out/x"), func() (*cycleState, error) { return cleanState("@out/x"), nil })
+	w.inv.opt.format = formatJSON
+	own := canon.Event{Files: []string{"@out/x"}}
+	for _, ev := range []canon.Event{own, own, own} {
+		if err := w.handle(ev); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := out.String(); strings.Count(got, `"settled":false`) != 1 || !strings.HasSuffix(strings.TrimSpace(got), "}}") || !strings.Contains(got, `"summary"`) {
+		t.Errorf("stdout %q", got)
+	}
+}
+
 // meta/decisions/log-2026-09-29.md "M4 U6-r" 7: events waiting together are one, their files and packages merged in order.
 func TestWatchQueuedEventsMerge(t *testing.T) {
 	events := make(chan canon.Event, 3)

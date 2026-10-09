@@ -5,14 +5,17 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/diag"
 )
 
 const (
 	windows  = "windows"
+	rule342  = "CODEGEN.md §2.4, DECISIONS 342: "
 	sqlDir   = "p/out/sql"
 	showFlag = "SHOW = true"
 	hideFlag = "SHOW = false"
@@ -23,6 +26,9 @@ type removeTree struct {
 	t   *testing.T
 	tmp string
 }
+
+// optionalBothNames are the files optionalSource writes with SHOW true.
+var optionalBothNames = []string{"r.json", "s.sql", "t.sql"}
 
 func newRemoveTree(t *testing.T) *removeTree {
 	t.Helper()
@@ -90,7 +96,12 @@ func dirNames(t *testing.T, dir string) []string {
 	return out
 }
 
-// DECISIONS 336: a listed path that is a symbolic link to a file loses the link; the file it led to is untouched.
+// refusedThroughLink reports a build refused with E8027 and nothing written: res holds the finding and every file is as it was (DECISIONS 342).
+func refusedThroughLink(res *build.BuildResult, err error) bool {
+	return err == nil && slices.Contains(codes(res.List), diag.E8027.Def().Code) && len(res.Outputs) == 0 && len(res.Locks) == 0
+}
+
+// DECISIONS 342 (amending 336): removing a listed path that is a symbolic link to a file is E8027; the link and the file it leads to are untouched.
 func TestTextRemovalSymlinkToFile(t *testing.T) {
 	if runtime.GOOS == windows {
 		t.Skip("symlinks need elevated privilege on windows")
@@ -108,15 +119,15 @@ func TestTextRemovalSymlinkToFile(t *testing.T) {
 		t.Skipf("no symbolic links here: %v", err)
 	}
 	rt.hide()
-	if _, err := rt.build(false); err != nil {
-		t.Fatal(err)
+	if res, err := rt.build(false); !refusedThroughLink(res, err) {
+		t.Fatalf("%snot refused: %v, %v", rule342, err, res)
 	}
-	if got, err := os.ReadFile(target); err != nil || string(got) != optionalText || exists(link) {
-		t.Errorf("%slink %v, target %q, %v", rule336, exists(link), got, err)
+	if got, err := os.ReadFile(target); err != nil || string(got) != optionalText || !exists(link) {
+		t.Errorf("%slink %v, target %q, %v", rule342, exists(link), got, err)
 	}
 }
 
-// DECISIONS 336: a listed path whose directory is a symbolic link is removed through the link, where a write through it would land; the link itself and the other files stay.
+// DECISIONS 342 (amending 336): removing a listed path whose directory is a symbolic link is E8027, as a write through it is; the link and every file it leads to stay.
 func TestTextRemovalThroughDirectoryLink(t *testing.T) {
 	if runtime.GOOS == windows {
 		t.Skip("symlinks need elevated privilege on windows")
@@ -130,11 +141,11 @@ func TestTextRemovalThroughDirectoryLink(t *testing.T) {
 		t.Skipf("no symbolic links here: %v", err)
 	}
 	rt.hide()
-	if _, err := rt.build(false); err != nil {
-		t.Fatal(err)
+	if res, err := rt.build(false); !refusedThroughLink(res, err) {
+		t.Fatalf("%snot refused: %v, %v", rule342, err, res)
 	}
-	if exists(filepath.Join(real, "s.sql")) || !exists(filepath.Join(real, "t.sql")) || !exists(rt.path(sqlDir)) {
-		t.Errorf("%sreal directory: %v", rule336, dirNames(t, real))
+	if names := dirNames(t, real); !slices.Equal(names, optionalBothNames) || !exists(rt.path(sqlDir)) {
+		t.Errorf("%sreal directory: %v", rule342, names)
 	}
 }
 

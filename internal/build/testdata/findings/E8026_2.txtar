@@ -1,0 +1,32 @@
+CODEGEN.md §2.4, WIRE.md §6.5 (DECISIONS 341): a `load.dir` glob matching a data file an emit of the same build writes is refused at the load under `canon build`, and nothing is written.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "out/" }
+-- b/b.canon --
+/// B.
+package b
+
+/// R.
+record R {
+  /// The value.
+  v: Int
+}
+
+/// All.
+let all: [R] = load.dir("../a/out/*.json")
+-- a/out/v.json --
+{"v": 1}
+-- findings.txt --
+error[E8026]  b/b.canon:11:16
+  a/out/v.json is read by this load and written by emit json of a: an output is never an input of its own build
+
+1 error, 0 warnings in 2 packages (…)
