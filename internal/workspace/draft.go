@@ -62,7 +62,7 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 	if err := edit.RenameRequest(c.Ops, true, c.EditLayer); err != nil { // a draft is no lone request (API.md E31)
 		return nil, err
 	}
-	plan, err := s.apply(ctx, base, c, false)
+	plan, err := s.apply(ctx, base, nil, c, false)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +81,10 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 	return &Drafted{Plan: plan, Owners: owners, Snapshot: after, Analysis: a}, nil
 }
 
-// apply is c computed in memory against s, whose analysis is base (API.md E1).
-func (s *Snapshot) apply(ctx context.Context, base *build.Analysis, c Changes, allowErrors bool) (*edit.Plan, error) {
-	env := edit.Env{Project: s.b, EditLayer: c.EditLayer, Host: c.Host, Verdicts: &s.p.verdicts}
+// apply is c computed in memory against s, whose analysis is base, each operation's state
+// analyzed again over scope, nil for base's selection (API.md E1, E17a).
+func (s *Snapshot) apply(ctx context.Context, base *build.Analysis, scope []string, c Changes, allowErrors bool) (*edit.Plan, error) {
+	env := edit.Env{Project: s.b, EditLayer: c.EditLayer, Host: c.Host, Verdicts: &s.p.verdicts, Scope: scope}
 	return edit.Apply(ctx, env, edit.NewSnapshot(base), edit.Request{Ops: c.Ops, AllowErrors: allowErrors})
 }
 

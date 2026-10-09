@@ -23,6 +23,7 @@ type Env struct {
 	EditLayer string
 	Host      func(*build.Analysis) wire.Host
 	Verdicts  Verdicts
+	Scope     []string // the packages each state is analyzed again over (E17a); nil: base's selection
 }
 
 // Request is an edit's operations, applied in order to the state the previous ones left (API.md
@@ -161,7 +162,10 @@ type NameEdit struct {
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
 	h := env.Host(base.a)
 	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, held: map[string]bool{}, marks: newSymMarks(), spelled: spellings{}}
-	a.selected = base.a.Selected() // each op is analyzed again over the base's selection, an edit's scope (API.md E1, E17a)
+	a.selected = env.Scope // each op is analyzed again over the edit's scope (API.md E1, E17a)
+	if a.selected == nil {
+		a.selected = base.a.Selected()
+	}
 	return a
 }
 

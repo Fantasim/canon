@@ -8,19 +8,22 @@ import (
 	"github.com/fantasim/canonlang/internal/source"
 )
 
-// scoped is the analysis of an edit's scope (API.md E17a, DECISIONS 330): the packages its ops
-// name, found from the parsed sources, with every package importing one for a Rename or a
-// RenameName; their imports and the studio come with them. Every other package is parsed only.
-func (s *Snapshot) scoped(ctx context.Context, ops []edit.Operation) (*build.Analysis, error) {
+// scoped is the analysis of an edit's scope and the scope (API.md E17a, DECISIONS 330): the
+// packages its ops name, found from the parsed sources, with every package importing one for a
+// Rename or a RenameName; their imports and the studio come with them, the rest parsed only.
+func (s *Snapshot) scoped(ctx context.Context, ops []edit.Operation, base string) (*build.Analysis, []string, error) {
 	st, err := s.static(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	pkgs, importers := edit.Scope(st.Units, ops)
 	if importers {
 		pkgs = importing(st.Units, pkgs...)
+	} else if all := s.wholeScope(pkgs, base); all != nil {
+		return all, pkgs, nil
 	}
-	return AnalyzeOnly(ctx, s, pkgs)
+	a, err := AnalyzeOnly(ctx, s, pkgs)
+	return a, pkgs, err
 }
 
 // noOps is an edit without operations: it analyses no package and writes nothing; its base is

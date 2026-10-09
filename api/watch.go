@@ -78,10 +78,11 @@ func (w *watching) seed(ctx context.Context, s *workspace.Snapshot) error {
 	return nil
 }
 
-// learnAll checks names together and learns what each reads; when that fails, it checks each on
-// its own, so one package that cannot be checked leaves the others' reads known.
+// learnAll checks names, every package, together and learns what each reads; when that fails, it
+// checks each on its own, so one package that cannot be checked leaves the others' reads known.
+// Together is the every-package analysis Value and Evaluate read (V13), kept for them.
 func (w *watching) learnAll(ctx context.Context, s *workspace.Snapshot, names []string) error {
-	a, err := analyze(ctx, s, names)
+	a, err := analyze(ctx, s, nil)
 	if ending(ctx, err) {
 		return errEnding(ctx, err)
 	}
@@ -175,7 +176,7 @@ func (w *watching) recheck(ctx context.Context, s *workspace.Snapshot, units *bu
 	if len(live) == 0 {
 		return nil
 	}
-	a, err := analyze(ctx, s, live)
+	a, err := recheckOf(ctx, s, live)
 	if err != nil {
 		for _, pkg := range live {
 			delete(w.reads, pkg)
@@ -186,6 +187,15 @@ func (w *watching) recheck(ctx context.Context, s *workspace.Snapshot, units *bu
 	ev.Findings, ev.Summary = fromDiag(res.Files, res.List), summaryOf(res.Summary)
 	w.learn(a, live)
 	return nil
+}
+
+// recheckOf is the analysis of live on s: the one an edit's re-check of exactly live kept on the
+// snapshot it published (API.md E18, W15), else computed.
+func recheckOf(ctx context.Context, s *workspace.Snapshot, live []string) (*build.Analysis, error) {
+	if a := workspace.KeptSelection(s, live); a != nil {
+		return a, nil
+	}
+	return analyze(ctx, s, live)
 }
 
 // removed is live and every package seen before that no longer exists, sorted; the packages of

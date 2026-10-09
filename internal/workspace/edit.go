@@ -69,11 +69,11 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if len(req.Ops) == 0 {
 		return s.noOps(ctx, req.Base)
 	}
-	a, err := s.scoped(ctx, req.Ops)
+	a, scope, err := s.scoped(ctx, req.Ops, req.Base)
 	if err != nil {
 		return nil, err
 	}
-	plan, err := s.apply(ctx, a, req.Changes, req.AllowErrors)
+	plan, err := s.apply(ctx, a, scope, req.Changes, req.AllowErrors)
 	if err != nil {
 		return nil, err
 	}

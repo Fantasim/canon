@@ -73,6 +73,9 @@ func (p *Project) FS() project.FS { return p.fs }
 // Dir is the project directory, absolute and '/'-separated.
 func (p *Project) Dir() string { return p.dir }
 
+// Layered reports an active layer (Options.Layers).
+func (p *Project) Layered() bool { return len(p.opt.Layers) > 0 }
+
 // Inputs is the read set every call has (API.md S3): project.canon, the place of
 // project.local.canon, each source the scan lists and every place a canon.lock can be; the
 // caller drops those that do not exist. A listing that fails ends the list with its error.
