@@ -90,7 +90,7 @@ func (e *Evaluator) Savepoint() (end func(undo bool)) {
 		return func(bool) {}
 	}
 	r := ld.r
-	sp := &savepoint{outer: ld.save, steps: e.steps, spent: e.spent[r.charge], free: r.freeSteps}
+	sp := &savepoint{outer: ld.save, steps: e.steps, spent: e.spentOn(r.charge), free: r.freeSteps}
 	ld.save = sp
 	return func(undo bool) {
 		ld.save = sp.outer

@@ -85,7 +85,8 @@ func TestPartsServed(t *testing.T) {
 	rec := partsRecord()
 	done(partsSrc, rec, true, true)
 	serve := func(steps int64, failed bool) (*value.Record, bool, bool) {
-		e.steps, e.spent[r.charge], e.per[r.charge.pkg], r.failed = steps, steps, steps, failed
+		t := e.tallyOf(r.charge)
+		e.steps, t.spent, *t.per, r.failed = steps, steps, steps, failed
 		p.kept, p.now = map[any]*memoEntry{partsSrc: p.now[partsSrc]}, map[any]*memoEntry{}
 		return p.Kept(partsSrc)
 	}

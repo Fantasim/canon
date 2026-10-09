@@ -42,7 +42,7 @@ func (e *Evaluator) RunTraced(ctx context.Context, c *syntax.CheckDecl, self val
 	if u == nil || u.trace != nil {
 		return r.check(c), nil
 	}
-	start, marks := e.spent[r.charge], e.marksGen()
+	start, marks := e.spentOn(r.charge), e.marksGen()
 	tr := &entryTrace{run: r, lap: start, depth0: e.depth, implicit0: e.implicit, bugs: len(e.bugs), retagged: e.gens.retagged}
 	u.trace = tr
 	out := r.check(c)
@@ -51,7 +51,7 @@ func (e *Evaluator) RunTraced(ctx context.Context, c *syntax.CheckDecl, self val
 		e.marksGen() != marks || e.gens.retagged != tr.retagged || !tr.unchanged(e) {
 		return out, nil
 	}
-	return out, &CheckTrace{charge: r.charge, steps: e.spent[r.charge] - start, reads: tr.reads, need: tr.need, files: tr.files, found: tr.found, out: out}
+	return out, &CheckTrace{charge: r.charge, steps: e.spentOn(r.charge) - start, reads: tr.reads, need: tr.need, files: tr.files, found: tr.found, out: out}
 }
 
 // ReplayChecks replays traces in order, each value they read forced and unchanged, their code

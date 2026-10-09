@@ -157,7 +157,7 @@ func (r *run) remaining() int {
 		return int(max(r.ev.budget-r.freeSteps, 0))
 	}
 	e := r.ev
-	return int(max(e.budget-e.per[e.key(r.charge.pkg)], 0))
+	return int(max(e.budget-e.perOf(r.charge.pkg), 0))
 }
 
 // budgetOut is E4401, among the findings of the run's package, whose evaluation alone stops (EVALUATION.md §12.2).
@@ -170,7 +170,7 @@ func (r *run) budgetOut(at source.Span) {
 		return
 	}
 	heavy := e.heaviest(pkg)
-	b := r.withStack(diag.E4401.At(at, e.budget, qualify(pkg, heavy.declPkg(), heavy.name), e.spent[heavy])).Path(r.findingPath())
+	b := r.withStack(diag.E4401.At(at, e.budget, qualify(pkg, heavy.declPkg(), heavy.name), e.spentOn(heavy))).Path(r.findingPath())
 	e.out[pkg] = b
 	e.noteOut(r, b)
 	e.reported = append(e.reported, pkg)

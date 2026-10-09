@@ -114,7 +114,7 @@ func (r *run) replayLoad(lm LoadMemo, k loadKey, site *loadSite) (value.Value, b
 	if !same {
 		return nil, false
 	}
-	start, failed := e.spent[r.charge], r.failed
+	start, failed := e.spentOn(r.charge), r.failed
 	e.loading = site
 	infos, out, said := r.replayReads(&le.en)
 	e.loading = nil

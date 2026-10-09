@@ -17,7 +17,7 @@ func (r *run) replayEntry(k memoKey) (rec *value.Record, hit bool) {
 	if en == nil || !e.canReplay(en) {
 		return nil, false
 	}
-	start := e.spent[r.charge]
+	start := e.spentOn(r.charge)
 	infos, out, said := r.replayReads(en)
 	var tab []value.Value
 	if out == replayOn {

@@ -10,7 +10,7 @@ type Charge struct {
 func (e *Evaluator) Charged() []Charge {
 	out := make([]Charge, 0, len(e.order))
 	for _, c := range e.order {
-		out = append(out, Charge{Pkg: c.pkg, Name: c.name, Steps: e.spent[c]})
+		out = append(out, Charge{Pkg: c.pkg, Name: c.name, Steps: e.spentOn(c)})
 	}
 	return out
 }

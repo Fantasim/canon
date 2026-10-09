@@ -103,7 +103,7 @@ func (p *Parts) Kept(src any) (*value.Record, bool, bool) {
 func (p *Parts) Start() (done func(src any, rec *value.Record, retired, pure bool)) {
 	r, tr := p.r, p.tr
 	e := r.ev
-	at, steps, spent := e.partState(r, tr), e.steps, e.spent[r.charge]
+	at, steps, spent := e.partState(r, tr), e.steps, e.spentOn(r.charge)
 	files, need := tr.files, tr.need
 	tr.files, tr.need = nil, 0
 	return func(src any, rec *value.Record, retired, pure bool) {
@@ -113,7 +113,7 @@ func (p *Parts) Start() (done func(src any, rec *value.Record, retired, pure boo
 			tr.code(f)
 		}
 		p.made++
-		n := e.spent[r.charge] - spent
+		n := e.spentOn(r.charge) - spent
 		if !pure || rec == nil || e.partState(r, tr) != at || e.steps-steps != n {
 			p.whole = false
 			return

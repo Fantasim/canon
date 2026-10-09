@@ -54,7 +54,7 @@ func (r *run) plain() bool {
 // startTrace starts recording the entry of key k, after its first step.
 func (r *run) startTrace(k memoKey) *entryTrace {
 	e := r.ev
-	tr := &entryTrace{run: r, key: k, lap: e.spent[r.charge], depth0: e.depth, implicit0: e.implicit, bugs: len(e.bugs), retagged: e.gens.retagged}
+	tr := &entryTrace{run: r, key: k, lap: e.spentOn(r.charge), depth0: e.depth, implicit0: e.implicit, bugs: len(e.bugs), retagged: e.gens.retagged}
 	e.memo.trace = tr
 	return tr
 }
@@ -114,7 +114,7 @@ func (tr *entryTrace) unchanged(e *Evaluator) bool {
 
 // steps is the steps charged to the entry since the last read.
 func (tr *entryTrace) steps(e *Evaluator) int64 {
-	n := e.spent[tr.run.charge] - tr.lap
+	n := e.spentOn(tr.run.charge) - tr.lap
 	tr.lap += n
 	return n
 }
