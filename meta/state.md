@@ -1,25 +1,27 @@
 # State — Canon compiler
 
-Updated: 2026-10-08. **v0.1.3** (Sovereign's 2026-10-08 handoffs) on main; v0.1.2, v0.1.1 and
-v0.1.0 are out; `main` is the only branch. DECISIONS 304-338:
+Updated: 2026-10-09. **v0.1.4** (Sovereign's 2026-10-08 asks) on main; v0.1.3 to v0.1.0 are
+out; `main` is the only branch. DECISIONS 304-343:
 [log-2026-10-06](decisions/log-2026-10-06.md), [log-2026-10-08](decisions/log-2026-10-08.md),
 [ADR-0018](decisions/0018-frame-owned-collections.md),
 [ADR-0019](decisions/0019-edit-memory-adopted-verdicts.md). M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-**v0.1.3, then telemetry as first real use.** Shipped: 335 Go `types` mode (`Decode<X>(raw)`,
-WIRE byte rules, `<name>pkg` imports); 336 an optional `@text` result is a maybe-file, and a
-stale owned file is removed when its bytes still hash to its `canon.outputs` line; 337 a Source
-and its Undo keep a literal's spelling; 338 map `union`, with one binder rule for check and eval
-(fixes internal errors on dependent literals). Fixes: `in` keeps a var's ownership (a 40x
-loop); edit memory per op (ADR-0019); edit-layer Undo verification by value.
-Handoffs: [Canon's reply](handoff/2026-10-08-canon-reply-go-types-followups.md); [all](handoff/README.md).
+**v0.1.4, then telemetry as first real use.** Shipped: 339 open enums in Go `types` mode
+(`open: [E]`, a string type keeping the wire); 340 `Decode<Fn>File` for a map/list `@text`
+result (skipped, never refused, when it cannot be written); 341 `E8026` an output its own build
+reads; 342 `E8027` no write through a symbolic link (fail closed); 343 `consumer_roots` and
+`canon build --only-root` (`E8028`). Fix: `overlayFS.EvalSymlinks("/")` recursed forever (edit).
+Stage E now judges go emits on each copy's view (`CopyOf`), as the generator sees them.
+Handoffs: [Canon's reply](handoff/2026-10-09-canon-reply-open-ids-consumer-roots.md); [all](handoff/README.md).
 **Next:** telemetry first use; Sovereign's cutover on Go types; fix every known bug that surfaces.
 Release builds stay local (`make dist`) while CI is down.
 **Owed, performance:** edit time is ops × a full analysis (E1); FMT's whole-file judgement holds
 the edit peak (per-item judgement, or the on-disk cache `Options.Cache`); a token-streaming JSON
 reader for Go data/types loaders (~110 ms/MB today); warm re-check on entry add/remove.
+**Owed from 2026-10-08 asks:** the cross-root import trap (E8004-like), `E8005` on several `table
+Constant` lets, `ownerHooks` exact for data-mode owners, C++/TS open enums and text decoders.
 **Owed for v0.2:** dependent types kept through static typing (lifts E3804 on dependent-map
 `union`/literals); an amend path into a dependent map (E1905 today); Go and C++ `embedded`;
 legacy structs (M6); entry isolation (321); input defaults (321); E3305 duplicated on nested

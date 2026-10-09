@@ -35,6 +35,11 @@ and what Canon still owes (warm entry add/remove re-check, the on-disk cache).
 335-338, ADR-0019): Go types mode, maybe-files, the map-write fix and map `union`, edit memory,
 literal spellings; `load.defines` unchanged, with the flag-header recipe instead.
 
+`2026-10-08-sovereign-go-open-ids-consumer-roots.md` is **answered** by
+`2026-10-09-canon-reply-open-ids-consumer-roots.md`, shipped in v0.1.4 (DECISIONS 339-343): open
+enums, `Decode<Fn>File`, consumer roots and `--only-root`, E8026, E8027; item 4's cross-root trap
+and ConstantID clash are owed.
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,
