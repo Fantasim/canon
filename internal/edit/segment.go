@@ -80,7 +80,7 @@ func plainIndex(l *value.List, lt *types.ListType, seg Seg) (read, error) {
 }
 
 // readTable is `.k`, `[k]` (a word or a JSON string) or `[#n]` on a table (§6.2).
-func readTable(t *value.Table, ct types.Type, seg Seg) (read, error) {
+func readTable(t *value.Table, ct types.Type, seg Seg, keys *tableKeys) (read, error) {
 	elem := tableElem(ct, t)
 	if seg.Kind == SegPos {
 		return atPosition(t.Entries, elem, seg.Pos, func(i int) Seg { return entrySeg(t.Entries[i].Ident.Key) })
@@ -92,12 +92,12 @@ func readTable(t *value.Table, ct types.Type, seg Seg) (read, error) {
 		}
 		name = seg.Key.Text
 	}
-	for _, e := range t.Entries {
-		if !e.Ident.Key.IsInt && e.Ident.Key.S == name {
-			return read{v: e, typ: elem, seg: entrySeg(e.Ident.Key)}, nil
-		}
+	i, ok := keys.find(t, name)
+	if !ok {
+		return read{}, ErrNoPath
 	}
-	return read{}, ErrNoPath
+	e := t.Entries[i]
+	return read{v: e, typ: elem, seg: entrySeg(e.Ident.Key)}, nil
 }
 
 // tableElem is the static entry type of a table: the container's, else the value's own.

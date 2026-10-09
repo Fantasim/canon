@@ -33,7 +33,7 @@ func Resolve(s *Snapshot, p Path) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, err
 	}
-	w := walk{cur: v, typ: root.obj.Type()}
+	w := walk{cur: v, typ: root.obj.Type(), keys: &s.keys}
 	for i, seg := range p.Segs {
 		if err := w.next(seg); err != nil {
 			return Resolved{}, &PathError{Seg: i, Err: err}
@@ -67,11 +67,13 @@ func resolveMember(root rootRef, p Path) (Resolved, error) {
 	return Resolved{}, &PathError{Seg: 0, Err: ErrNoPath}
 }
 
-// walk is a resolution in progress: the value reached and its static type.
+// walk is a resolution in progress: the value reached and its static type, and the key indexes
+// of the tables it reads (nil: scanned).
 type walk struct {
 	cur   value.Value
 	typ   types.Type
 	steps []Step
+	keys  *tableKeys
 }
 
 // read is one segment read in a container: the value there, its static type, the canonical segment.
@@ -94,7 +96,7 @@ func (w *walk) next(seg Seg) error {
 	case *value.List:
 		r, err = readList(x, ct, seg)
 	case *value.Table:
-		r, err = readTable(x, ct, seg)
+		r, err = readTable(x, ct, seg, w.keys)
 	case *value.Map:
 		r, err = readMap(x, ct, seg)
 	default:

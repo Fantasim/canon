@@ -67,7 +67,7 @@ func (j *judge) jsonStep(c cursor, v value.Value) cursor {
 	case value.ProvDefault:
 		return c.to(stAbsent)
 	case value.ProvLiteral:
-		if it, ok := matchItem(c, v); ok {
+		if it, ok := j.matchItem(c, v); ok {
 			return j.itemCursor(c, it, v) // an `entry` declared beside the loaded collection (W2)
 		}
 	case value.ProvCSV, value.ProvDefines, value.ProvText:
@@ -91,7 +91,7 @@ func (j *judge) canonStep(c cursor, i int) cursor {
 		}
 		return c.to(stAbsent)
 	}
-	if it, ok := matchItem(c, st.Value); ok {
+	if it, ok := j.matchItem(c, st.Value); ok {
 		return j.itemCursor(c, it, st.Value)
 	}
 	if it, ok := itemAt(c, parent, st.Value); ok {
@@ -117,18 +117,22 @@ func (j *judge) itemCursor(c cursor, it item, v value.Value) cursor {
 	return cursor{state: stTree, mode: ModeCanon, node: it.node, file: it.file, span: p.Span, layer: c.layer}
 }
 
-// matchItem is the item of the current literal (or root entry) whose node v's provenance names.
-func matchItem(c cursor, v value.Value) (item, bool) {
+// matchItem is the item of the current literal (or root entry) whose node v's provenance names;
+// a cursor's entries are those of its judge's root (rootCursor).
+func (j *judge) matchItem(c cursor, v value.Value) (item, bool) {
 	p := provOf(v)
 	if p == nil || p.Kind != value.ProvLiteral || c.file == nil && len(c.entries) == 0 {
 		return item{}, false
 	}
-	for _, it := range append(items(c.node, c.file), c.entries...) {
+	for _, it := range items(c.node, c.file) {
 		if it.file.Span(it.node) == p.Span {
 			return it, true
 		}
 	}
-	return item{}, false
+	if len(c.entries) == 0 {
+		return item{}, false
+	}
+	return j.s.entryAt(j.res.root.obj, p.Span)
 }
 
 // itemAt is the item at v's position in its list or map literal.

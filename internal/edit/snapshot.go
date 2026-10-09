@@ -20,6 +20,8 @@ type Snapshot struct {
 	pkgs   []*check.Package
 	byPath map[string]*check.Package
 	files  map[source.FileID]*syntax.File
+	index  declIndex
+	keys   tableKeys
 }
 
 // NewSnapshot is the snapshot of a; a's packages are the ones a path may name.
@@ -65,14 +67,12 @@ func (r rootRef) qualified() string {
 // every loaded package (P6); none is ErrNoPath, several ErrAmbiguousPath.
 func (s *Snapshot) lookup(p Path) (rootRef, error) {
 	var found []rootRef
-	for _, pkg := range s.pkgs {
-		if p.Package != "" && pkg.Path != p.Package {
+	for _, r := range s.decls().roots[p.Root] {
+		if p.Package != "" && r.pkg.Path != p.Package {
 			continue
 		}
-		for _, obj := range pkg.Decls {
-			if r, ok := rootOf(pkg, obj, p.Root); ok && (p.Package != "" || public(obj)) {
-				found = append(found, r)
-			}
+		if p.Package != "" || public(r.obj) {
+			found = append(found, r)
 		}
 	}
 	switch len(found) {

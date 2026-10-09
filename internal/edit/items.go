@@ -1,7 +1,8 @@
 package edit
 
 import (
-	"github.com/fantasim/canonlang/internal/check"
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -100,16 +101,7 @@ func hasSpread(n syntax.Node) bool {
 // entryDecls are the `entry` declarations of a root's collection, in the order evaluation
 // appends them (W2).
 func (s *Snapshot) entryDecls(r rootRef) []item {
-	var out []item
-	for _, pkg := range s.pkgs {
-		for _, obj := range pkg.Decls {
-			d, ok := obj.Decl().(*syntax.EntryDecl)
-			if ok && obj.Kind() == check.ObjEntry && s.info.NameUses[d.Table] == r.obj {
-				out = append(out, item{d, obj.File()})
-			}
-		}
-	}
-	return out
+	return slices.Clip(s.decls().entries[r.obj])
 }
 
 // filesLet reports a let with `@files`: its entries live in files, ordered by their paths, even
