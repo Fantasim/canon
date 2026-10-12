@@ -120,7 +120,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `DefineTable` | define table | `E1627` |
 | `DependentDefault` | a default holding a dependent value, read by a decoder | `E8019` |
 | `DependentOutsideField` | a dependent value outside a record field (in a map, a literal union, or a value or result of its own) | `E8019` |
-| `DependentType` | a dependent value decided through a ref, an optional or a record parameter | `E8019` |
+| `DependentType` | a dependent value decided through an optional, a record parameter or a ref into a `@reload` value | `E8019` |
 | `Emit` | emit | `E1133` |
 | `Entry` | entry | `E1133`, `E6002` |
 | `Enum` | enum | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3027`, `E6001` |
@@ -214,7 +214,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `WayDefineKey` | take an enum parameter instead | `E8019` |
 | `WayDependentDefault` | drop the default, or make the field optional | `E8019` |
 | `WayDependentOutsideField` | hold the value in a record field beside its discriminant | `E8019` |
-| `WayDependentType` | not before v0.2: decide it by an enum field of the same record meanwhile | `E8019` |
+| `WayDependentType` | decide it by an enum field of the same record, or by a ref into a value that is not `@reload` | `E8019` |
 | `WayFieldlessCaseExportFn` | give the case a field | `E8019` |
 | `WayForeignResolvedRef` | emit the owning package in baked mode, or keep the record inside the owner's value | `E8019` |
 | `WayForeignTableLookupParam` | emit the table's package in baked mode, or take an enum parameter | `E8019` |
@@ -1216,7 +1216,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8001 | error | build | CODEGEN.md §2.4 | refuses to overwrite a file that `canon` did not generate |
 | E8002 | error | check | CODEGEN.md §2.1 | two emits of one target in one package |
 | E8003 | error | check | CODEGEN.md §2.1 | unknown emit target or emit option |
-| E8004 | error | ir | CODEGEN.md §2.8 | a type of a package that has no emit for the same target, or no copy this copy can use |
+| E8004 | error | ir | CODEGEN.md §2.8 | a type of a package that has no emit for the same target, or no copy this copy can use (none under its root among several, or its only copy under another consumer root) |
 | E8005 | error | ir | CODEGEN.md §3.5 | two generated names collide in one scope (two packages a Go emit reaches included) |
 | W8006 | warning | ir | CODEGEN.md §3.5 | a generated C++ name is a common platform macro |
 | E8007 | error | ir | CODEGEN.md §2.8 | a Go output under no root mapped by `go_module` |
@@ -1265,7 +1265,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8003 | option | option:Name, target:Name | `unknown option {option} for emit {target}` |
 | E8004 | noEmit | typ:Name, pkg:Name, target:Name | `{typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit` |
 | E8004 | noCopy | typ:Name, pkg:Name, target:Name, root:Name | `{typ} of package {pkg} is used by this {target} copy under root {root}, but {pkg} has several {target} copies and none under {root}` |
-| E8005 | both | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}` |
+| E8004 | consumerCopy | typ:Name, pkg:Name, target:Name, root:Name, other:Name | `{typ} of package {pkg} is used by this {target} copy under root {root}, but the only {target} copy of {pkg} is under consumer root {other}, which builds alone: give the {target} emit of {pkg} a copy under {root}` |
+| E8005 | both | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; rename one of them with @{target}(name:)` |
 | E8005 | reached | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option` |
 | E8005 | idType | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list` |
 | W8006 | - | name:Name, item:Name | `C++ name {name} (from {item}) is a macro in common platform headers` |

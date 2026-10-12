@@ -149,6 +149,10 @@ in [§12](#12-diagnostics).
 In `data` and `embedded` mode, an emitted value must be a table, a keyed list or a record
 (`E8015`); wrap anything else in a record.
 
+`types` mode writes no `let` value, so a number code needs at compile time is a `const`, and a
+table entry that also carries it reads the const (a const reads no `let`, SPEC §4.1; DECISIONS
+349).
+
 Two modes are not built in v0.1 (DECISIONS 320, 335): Go `embedded` and C++ `embedded`. An emit
 in one is `E8019` `unbuilt` at stage E, naming `baked` as the mode to use instead. Every other construct a generator cannot write is
 `E8019` with its kind and its way out (ERRORS.md §1.4, DECISIONS 305).
@@ -396,8 +400,10 @@ and `noUnusedLocals` refuse an unused import).
   declared root is owned by the project itself, written `project <name>` in findings
   (`project acme { … }` gives `project acme`; DECISIONS 269, 270). Two entries of one emit's `out` may not share an
   owning root (`E8009`). A copy of package P owned by R (a root, or the project) uses, for each
-  imported package Q, Q's copy owned by R, or Q's only copy when Q has one; otherwise `E8004`. The
-  rules below then apply between the two copies.
+  imported package Q, Q's copy owned by R, or Q's only copy when Q has one and that copy is under
+  no consumer root other than R (each consumer root builds alone, DECISIONS 343); otherwise
+  `E8004` (`noCopy`, `consumerCopy`; DECISIONS 347). The rules below then apply between the two
+  copies.
 
 `project.canon`'s `go_module` key (GRAMMAR.md §7.1) maps a root name to the Go import path of
 the root's directory. From `examples/project.canon`:
@@ -979,6 +985,11 @@ The keys of a public `table` value (EMT-04):
 | `baked`, `embedded` | `type StatusID uint8` + constants `StatusIDOpen…` in entry order, `String()` (the key), `ParseStatusID(key) (StatusID, bool)` | `enum class StatusId : uint8_t { open, taken, … }`, inline `ToWire(StatusId)`, `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdIndex: Readonly<Record<StatusId, number>>` |
 | `data`, `types` | `type StatusID string` | `std::string` (getter `const std::string&`, lookups take `std::string_view`) | `export type StatusId = string` |
 
+In `data` and `types` mode the id type is declared once per name: tables of one package whose id
+types are named alike (two tables of one record, or of two records named alike) share that one
+string type, never `E8005`. In `baked` and `embedded` mode each id type enumerates its own table's
+keys, and two such tables are `E8005` `idType` (§3.5; DECISIONS 348).
+
 Keyed lists have no id type: their key is the key field, with the field's own type. Retired
 entries keep their id (LCK-05) and are flagged by the **retired getter** of their record: Go
 `Retired() bool`, C++ `bool GetRetired() const`, TS `retired` (LOCK.md §7; optional on the
@@ -1128,13 +1139,20 @@ The wire is untagged; loaders pick the branch from the discriminant through a st
 generated from the `match` (the discriminant is read first). Dependent maps and keys follow
 §4.2 (DEP-04). A loader reads the discriminant down the argument's then the match's path from what
 it has already decoded: earlier required fields of the class, then fields of records held by
-value, none a `ref` or optional; a `Bool` discriminant's cases are `false` and `true`. A list of
+value, none optional; a `Bool` discriminant's cases are `false` and `true`. A path that crosses a
+`ref` is decided at build time: the ref's targets are known, so the generator writes a private
+table from the ref's key to the branch, computed from the build's values (the rest of the path and
+the `match`; a `none` met on the path selects the `Never` branch), named Go `branches<T><F>`
+(unexported), C++ `detail::k<T><F>Branches`, TS `branches<T><F>` (not exported), `T` the record
+and `F` the field in UpperCamel; a loader reads the key and looks the branch up, and a key the
+table lacks refuses the value with `no branch for this value` (DECISIONS 350). A list of
 dependent values shares its field's discriminant. A discriminant member no branch covers (a `Never` arm, WIRE.md §5.9) refuses
 the value with the loader text `no branch for this value` at its pointer, in every loader. Baked Go writes a dependent value (a field's, or
 its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
 typed as `As<Branch>` returns it. What a generator does not write is E8019 at stage E:
-`DependentType` for a discriminant read through a `ref` or a record parameter, or an optional
-discriminant (TYPES.md §11.1, DECISIONS 307; owed for v0.2, DECISIONS 320);
+`DependentType` for a discriminant read through a record parameter or through a ref into a
+`@reload` value (a reload may add keys), or an optional discriminant (TYPES.md §11.1, DECISIONS
+307, 350);
 `DependentOutsideField` for a dependent value in a map or in a literal union a loader reads, or
 outside a record field; `NeverDependent` for a dependent type every arm of which is `Never`; and,
 in a `types` decoder (C++, Go and TS), `DependentDefault` for a default holding a dependent value. Another package's dependent type is read or

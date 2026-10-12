@@ -3448,3 +3448,52 @@ round 2", "PS1 review", "PS2 round 2"):
      machine bounds links as WIRE.md §6.5 does. Reason: an editor could not preview the assets of
      a relocated root without re-implementing root placement (config-studio findings 2026-10-09
      §2).
+
+347. **A copy never uses another consumer root's copy (CODEGEN.md §2.8; ERRORS.md E8004
+     `consumerCopy`; extends 229 and 343).** A copy of package P owned by R uses, for each imported
+     Q, Q's copy owned by R, or Q's only copy when that copy is under no consumer root other than
+     R; otherwise `E8004` (`noCopy` when Q has several copies and none under R, `consumerCopy` when
+     Q's only copy lies under another consumer root), in every code target, whether or not P has
+     several copies. A package reached only through a decoded `@text` result (340) whose only copy
+     is such gives that result no decoder (never a finding). Not judged by Go module graphs, and
+     not refused when Q's only copy is under an ordinary root: a shared library root is
+     legitimate. Reason: a consumer root is written only by its own `--only-root` build (343), so a
+     copy importing another consumer root's copy imports code no build of it writes (handoff
+     2026-10-08-sovereign-go-open-ids-consumer-roots §4, "cross-root import trap").
+
+348. **`data` and `types` mode share one string id type per name (CODEGEN.md §5.3; ERRORS.md
+     E8005 `both`).** In `data` and `types` mode a table's id type is its key string (Go `type XID
+     string`, TS `type XId = string`, C++ `std::string`), so tables of one package whose id types
+     are named alike (two tables of one record, or of a record and another package's record named
+     alike) share one declaration and are never `E8005`. In `baked` and `embedded` mode each id
+     type enumerates its own table's keys and the pair stays `E8005` `idType` ("hold one of them in
+     a keyed list"). No generated name changes: only programs refused today start compiling.
+     Naming the id type after the table on a collision was refused: adding a second table would
+     rename the first one's type. E8005 `both` now names its way out too, a `@<target>(name:)`
+     override on one item (§3.5); `reached` and `idType` already had theirs (ERRORS.md, since
+     2026-10-05), so F3's "E8005 names its way out" is closed by this text. Reason: a package
+     holding two tables of one record could not emit types (website H-14 #4; Sovereign's port,
+     several `table Constant` lets).
+
+349. **A value code needs at compile time is a `const` (CODEGEN.md §2.2; SPEC §4.1).** `types`
+     mode writes no `let` value (§2.2); a number a reader needs in code is declared `const`, and a
+     table entry that also carries it reads the const (the reverse is impossible: a const reads no
+     `let`). Clarification, no change: a finding would be wrong, since a types emit beside unemitted
+     lets is the normal case, and a types-mode decoder for table values stays out (340). Reason:
+     the 2026-10-08 port noted a table-held constant missing from types-mode Go.
+
+350. **A dependent value decided through a ref is generated (CODEGEN.md §5.6; ERRORS.md
+     `DependentType`, `WayDependentType`; amends 320 and 307's refusal).** When a dependent field's
+     discriminant path crosses a `ref`, its branch is a build-time function of the ref's key:
+     generated code holds a private key→branch table computed from the build's values (the rest
+     of the path and the `match`; a `none` met on the path selects the `Never` branch, 307), and a
+     loader reads the key and looks the branch up; baked code writes the branch the evaluator
+     decided. A key the table lacks refuses the value with the loader text `no branch for this
+     value`, as an unknown member does (339). Every decoding mode (`data`, `types`, `embedded`)
+     and every code target (Go, C++, TypeScript), so `check` stays uniform; the table is computed
+     once in `ir`. Still `E8019` `DependentType`: a record parameter, an optional discriminant of
+     the record itself, and a ref into a `@reload` value (a reload may add keys the binary's table
+     lacks). Resolving through the loaded target at run time was refused: it changes host and
+     loader APIs and cannot work in `types` mode, which holds no values. Reason: a file keying its
+     payload by a looked-up kind could not be decoded in any target (website H-14 #4; handoff
+     2026-10-08 §4).
