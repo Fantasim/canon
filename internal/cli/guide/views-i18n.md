@@ -118,6 +118,109 @@ both bounds), `color`, `text` (read-only). Rules: one view per target (`E1607`),
 package (`E1603`); unknown field `E1602`; a name placed twice `E1605`; `view Variant.case { }`
 lays out one case; `check ... at field` pins a finding to a field.
 
+## Controls and their JSON
+
+Every field of a view has a resolved `control` in the view model, at
+`views.<qualified type>.fields.<field>.control` (VIEWMODEL.md §12.4, §12.5). The compiler picks it
+from the type (§4.3) unless `control:` or `widget:` says otherwise; the studio renders what is
+written and never decides again. Members are present only where they apply: an absent member is
+absent, never `null`. `kind` is one of the closed list of VIEWMODEL §12.5, and
+`spec/viewmodel.schema.json` validates the whole file. Four controls carry the collections of
+plain values and maps:
+
+```canon shop/loot.canon
+package shop
+
+/// Damage elements.
+enum Element { fire, ice, poison }
+
+/// An effect on an item.
+record Perk {
+  /// Shown name.
+  name: String(1..)
+  /// Strength.
+  power: Int(0..=9) = 1
+}
+
+/// What a chest holds.
+record Loot {
+  /// Words people search for.
+  tags: [String] = []
+  /// Up to four ranks, filled from the first; the first is required.
+  ranks: [Int(0..)](1..=4) = [1]
+  /// Resistance per element; an element without a value has none.
+  resist: {Element: Int(0..=100)} = {}
+  /// Effects by name.
+  perks: {String: Perk} = {}
+}
+
+view Perk {
+  title "{name}"
+  singular "perk"
+}
+
+/// All loot.
+@menu(items, icon: gem)
+let loot: table Loot = {
+  chest {
+    tags: ["gold"]
+    ranks: [2, 3]
+    resist: { fire: 10 }
+    perks: { "sharp": { name: "Sharp" } }
+  }
+}
+```
+
+| Control | Chosen for (VIEWMODEL §4.3) | Meaning (§7.5, §7.6) |
+|---|---|---|
+| `tags` (C25) | `[S]`, `S` a scalar, with no other rule | the elements as tags: each edited with `element`, reordered, removed; "Add" appends |
+| `positional` (C24) | `[S]` whose length has an upper bound `n` of at most 6 | `count` inputs in a row, labelled `1`..`count` (or by the field's `step`); filled from the first, the first `minCount` required |
+| `enumRow` (C28) | `{E: S}`, `E` an enum, `S` a scalar | one input per active member of `source`, in member order; an empty input means the key is absent |
+| `cards` (C29) | `{K: R}`, `R` a record or variant | one collapsible card per entry, in map order, titled by the value view's `title` with `{key}` |
+
+`tags`: `element` is the control of one element, `orderable` is `true`.
+
+```json view/shop.Loot.tags
+{"kind": "tags", "element": {"kind": "input"}, "orderable": true}
+```
+
+`positional`: `element` as above; `count` is the length bound (1 to 6); `minCount` is the lower
+length bound and is absent when it is 0.
+
+```json view/shop.Loot.ranks
+{"kind": "positional", "element": {"kind": "number", "min": 0}, "count": 4, "minCount": 1}
+```
+
+`enumRow`: `source` is `{"enum": "<qualified enum>"}` (the keys); `value` is the control of every
+input. It has no `keyControl`: the keys are the members.
+
+```json view/shop.Loot.resist
+{"kind": "enumRow", "source": {"enum": "shop.Element"}, "value": {"kind": "number", "min": 0, "max": 100}}
+```
+
+`cards` on a map `{K: R}` that is not dependent: `value` is the control of an entry's value
+(`section`, `card` or `variant`); `of` is the qualified name of a record or variant value (it is
+also present for a `match` type function, VIEWMODEL §12.5); `keyControl` is the control of the
+key, asked first by "Add" (`input` for a `String` key; `segmented`, `select` or `search` over
+`source` for an enum key, by the thresholds of VIEWMODEL §4.2); `singular` is the text reference
+of the value view's `singular`, when it has one. Keys are read-only once written: they change
+through a rename.
+
+```json view/shop.Loot.perks
+{"kind": "cards", "of": "shop.Perk", "singular": "shop:Perk.singular", "keyControl": {"kind": "input"}, "value": {"kind": "section", "of": "shop.Perk"}}
+```
+
+- A dependent map `{k in c: T(k)}` is `cards` too, with `keyFixed: true`, a `source` naming the
+  collection of its keys, and `value` the control of `T(k)` (`dependent` for a type function) (VIEWMODEL §6.5, D10,
+  §12.5): "Add" offers the active keys of `c` not yet present, and a key cannot be renamed (API.md E13).
+- Every other member of a control is in VIEWMODEL §12.5. Read the member, not the type: a studio
+  that switches on `kind` and reads `element`, `count`, `minCount`, `source`, `keyControl`,
+  `value`, `of` and `orderable` as above is correct for these four.
+- A map that matches no rule above (`{K: V}` with a non-enum key and a scalar value) is `map`,
+  with `keyControl` and `value`; a list of lists, maps or optionals is `list`.
+- A list of enums is `checkboxes` or `chips` and a list of refs is `chips` (C20 to C22), not
+  `tags`. A `widget:` replaces any control and keeps the default one as `fallback` (C41).
+
 ## Translations
 
 Texts (docs, labels, check messages) are written in the first of `languages`; others go in

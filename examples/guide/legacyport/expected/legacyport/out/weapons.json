@@ -1,0 +1,7 @@
+{
+  "$schema": "guide.legacyport.Weapon@5610252a",
+  "rows": [
+    {"$id": "bow", "dwID": 1, "szName": "Bow", "szIcon": "bow.svg", "dwCost": 150, "bTwoHanded": 1, "dwCooldownSec": 0, "dwFlag": 0, "dwDestParam0": "DST_DEX", "nAdjParamVal0": 3, "dwDestParam1": "DST_STA", "nAdjParamVal1": 1, "dwKind": "bow", "dwRange": 8},
+    {"$id": "axe", "dwID": 2, "szName": "Axe", "szIcon": "axe.svg", "dwCost": 120, "bTwoHanded": 1, "dwCooldownSec": 8, "dwFlag": 5, "dwDestParam0": "DST_STR", "nAdjParamVal0": 5, "dwKind": "sword", "dwReach": 2}
+  ]
+}

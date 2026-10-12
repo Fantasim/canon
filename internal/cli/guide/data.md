@@ -163,11 +163,19 @@ level,exp_to_next
 | `@json(unit: s)` on a `Duration` | number in `ms` `s` `m` `h` `d` (default integer ms) |
 | `@json(codes)` on a `@codes` enum | the wire holds the code number |
 | `@json(int)` on a `Bool`; `@json(bits)` on `[E]` | legacy: wire `0`/`1`; one integer OR-ing member codes |
+| `@json(pairs: ["dwStat{i}", "nVal{i}"])` on `[R]` | legacy: slot `i` is the keys `dwStat{i}` and `nVal{i}` (`dwStat0` and `nVal0`, `dwStat1` and `nVal1`, ...); `R` has two fields, the list a finite upper length bound `(..=6)` |
 
 Renaming a Canon field never changes data: the wire name stays in `@json` (`canon rename` adds
 it when needed).
 
+Keep legacy shapes (prefixed names, 0/1 integers, bitmasks, numbered columns, flat tags) out of
+the model: `canon guide wire` has each form with an example and its errors, `canon guide port`
+a whole legacy file ported, `canon guide stable` and `canon guide assets` the ids and files.
+
 ## Stable ids and canon.lock
+
+`canon guide stable` has what each stable form is for, a complete example, the generated id and
+lookup, and the usual mistakes.
 
 - `stable table T`, `@codes(UInt8)` enums and `@stable` fields (on a stable table's element)
   are permanent: never removed (`E6001`), renamed (`E6001`), reused or un-retired (`E6002`).

@@ -1,6 +1,6 @@
 # Recipes
 
-Run against the project of `canon guide data` (or `layers`); request files are in `req/`.
+Run against the project of `canon guide data` (or `layers`, `port`); request files are in `req/`.
 
 ## Add an entry
 
@@ -99,6 +99,39 @@ canon edit req/fix.json
 `--json-sources` normalizes loaded JSON once, before `canon edit` writes it. A wrong rule is
 fixed in the type: wire names (`@json("...")`), `T?` with `@json(none: ...)`, a default,
 `partial: true` for keys the type does not model.
+
+## Port a legacy file
+
+Clean names in Canon, the legacy names on the wire (`canon guide port` has the whole project).
+
+1. Read the file and list its odd shapes: prefixed names, `0`/`1` flags, bitmasks, numbered
+   columns, a tag with flat fields, file names, ids saved elsewhere, wrappers.
+2. Write the types with clean names. Put each legacy key in `@json` (`canon guide wire`):
+   `@json("szName")`, `Bool @json(int)`, `Duration @json(unit: s)`, `[Flag] @json(bits)`,
+   `@json(pairs: [...])`, a variant `@json(inline)`; names of files are an `asset`; saved ids a
+   `stable table` with a `@stable` field.
+3. Read the file as it is: `let rows: stable table Row = load("data/file.json")`.
+4. `canon check` until clean. Each finding names the file and the key: a missing flag is a new
+   `Flag` member, a bad number is a data fix with `canon edit`. Never loosen the type to fit a
+   bad row.
+5. Write what stays irregular with a `local record` and a `@text` function, then `canon build`.
+6. Commit `canon.lock`; check it with `canon lock check`.
+
+```sh port
+canon check
+canon explain guide.legacyport:weapons.axe.bonuses
+canon edit req/port-axe-price.json
+canon build
+canon lock check
+```
+
+```json req/port-axe-price.json
+{"ops": [{"op": "set", "path": "guide.legacyport:weapons.axe.price", "value": 130}]}
+```
+
+The edit rewrites `dwCost` in `data/weapons.json` and nothing else (an edit of a stable entry not
+yet locked, or a new or retired one, also writes its lock lines): the legacy file stays in its legacy names (`canon guide cli`,
+edit).
 
 ## Add a translation
 

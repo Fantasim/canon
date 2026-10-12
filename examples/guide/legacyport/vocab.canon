@@ -1,0 +1,20 @@
+/// A legacy weapon file, ported: clean names in the model, the file's own names on the wire.
+/// `canon guide port` walks through it.
+package guide.legacyport
+
+/// The stats a weapon can raise. The file holds the legacy define of each.
+enum Stat {
+  strength = "DST_STR"
+  dexterity = "DST_DEX"
+  stamina = "DST_STA"
+}
+
+/// Item flags. The file holds one integer: the OR of the codes of the flags set.
+enum Flag @codes(UInt32) {
+  binds = 1
+  undestroyable = 2
+  equipBind = 4
+}
+
+/// An icon file under icons/. A missing file or a wrong letter case is `E3701`.
+type Icon = asset("icons", ext: [svg])

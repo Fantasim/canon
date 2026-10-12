@@ -1,0 +1,43 @@
+File: File FileKind=source @1:1-21:1
+  Doc: DocComment "A legacy weapon file, ported: clean names in the model, the file's own names on the wire.\n`canon guide port` walks through it." @1:1-2:41
+  Package: QualifiedName guide.legacyport @3:9-3:25
+  Decls[0]: EnumDecl @6:1-10:2
+    Doc: DocComment "The stats a weapon can raise. The file holds the legacy define of each." @5:1-5:76
+    Name: Ident Stat @6:6-6:10
+    Members[0]: EnumMember @7:3-7:23
+      Name: Ident strength @7:3-7:11
+      Value: StringLit @7:14-7:23
+        Parts[0]: text "DST_STR"
+    Members[1]: EnumMember @8:3-8:24
+      Name: Ident dexterity @8:3-8:12
+      Value: StringLit @8:15-8:24
+        Parts[0]: text "DST_DEX"
+    Members[2]: EnumMember @9:3-9:22
+      Name: Ident stamina @9:3-9:10
+      Value: StringLit @9:13-9:22
+        Parts[0]: text "DST_STA"
+  Decls[1]: EnumDecl @13:1-17:2
+    Doc: DocComment "Item flags. The file holds one integer: the OR of the codes of the flags set." @12:1-12:82
+    Name: Ident Flag @13:6-13:10
+    Annotations[0]: Annotation @13:11-13:25
+      Name: Ident codes @13:12-13:17
+      Args[0]: AnnotationArg @13:18-13:24
+        Value: QualifiedName UInt32 @13:18-13:24
+    Members[0]: EnumMember @14:3-14:12
+      Name: Ident binds @14:3-14:8
+      Value: IntLit Value=1 @14:11-14:12
+    Members[1]: EnumMember @15:3-15:20
+      Name: Ident undestroyable @15:3-15:16
+      Value: IntLit Value=2 @15:19-15:20
+    Members[2]: EnumMember @16:3-16:16
+      Name: Ident equipBind @16:3-16:12
+      Value: IntLit Value=4 @16:15-16:16
+  Decls[2]: TypeDecl @20:1-20:39
+    Doc: DocComment "An icon file under icons/. A missing file or a wrong letter case is `E3701`." @19:1-19:81
+    Name: Ident Icon @20:6-20:10
+    Type: AssetType @20:13-20:39
+      Dir: StringLit @20:19-20:26
+        Parts[0]: text "icons"
+      Exts[0]: Ident svg @20:34-20:37
+== findings
+0 errors, 0 warnings in 1 package (…)

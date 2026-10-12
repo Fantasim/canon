@@ -1,0 +1,50 @@
+1:0-7 "package" keyword.other.canon
+1:8-24 "guide.legacyport" entity.name.namespace.canon
+3:0-44 "/// A stat a weapon raises, and by how much." comment.line.documentation.canon
+4:0-6 "record" storage.type.canon
+4:7-12 "Bonus" entity.name.type.canon
+5:0-22 "  /// The stat raised." comment.line.documentation.canon
+6:2-6 "stat" variable.other.property.canon
+6:6-7 ":" punctuation.separator.key.canon
+6:8-12 "Stat" entity.name.type.canon
+7:0-15 "  /// How much." comment.line.documentation.canon
+8:2-8 "amount" variable.other.property.canon
+8:8-9 ":" punctuation.separator.key.canon
+8:10-13 "Int" entity.name.type.canon
+11:0-88 "/// What a weapon is. The tag and the fields of the case sit in the weapon's own object." comment.line.documentation.canon
+12:0-7 "variant" storage.type.canon
+12:8-12 "Kind" entity.name.type.canon
+12:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
+12:14-18 "json" meta.annotation.canon entity.name.function.decorator.canon
+12:18-19 "(" meta.annotation.canon
+12:19-22 "tag" meta.annotation.canon variable.parameter.canon
+12:22-23 ":" meta.annotation.canon punctuation.separator.key.canon
+12:23-24 " " meta.annotation.canon
+12:24-32 "\"dwKind\"" meta.annotation.canon string.quoted.double.canon
+12:32-33 ")" meta.annotation.canon
+13:0-14 "  /// A blade." comment.line.documentation.canon
+15:0-23 "    /// Reach in tiles." comment.line.documentation.canon
+16:4-9 "reach" variable.other.property.canon
+16:9-10 ":" punctuation.separator.key.canon
+16:11-14 "Int" entity.name.type.canon
+16:15-16 "1" constant.numeric.integer.canon
+16:16-18 ".." keyword.operator.canon
+16:20-21 "=" keyword.operator.canon
+16:22-23 "1" constant.numeric.integer.canon
+16:24-25 "@" meta.annotation.canon punctuation.definition.annotation.canon
+16:25-29 "json" meta.annotation.canon entity.name.function.decorator.canon
+16:29-30 "(" meta.annotation.canon
+16:30-39 "\"dwReach\"" meta.annotation.canon string.quoted.double.canon
+16:39-40 ")" meta.annotation.canon
+18:0-20 "  /// Shoots arrows." comment.line.documentation.canon
+20:0-23 "    /// Range in tiles." comment.line.documentation.canon
+21:4-9 "range" variable.other.property.canon
+21:9-10 ":" punctuation.separator.key.canon
+21:11-14 "Int" entity.name.type.canon
+21:15-16 "1" constant.numeric.integer.canon
+21:16-18 ".." keyword.operator.canon
+21:20-21 "@" meta.annotation.canon punctuation.definition.annotation.canon
+21:21-25 "json" meta.annotation.canon entity.name.function.decorator.canon
+21:25-26 "(" meta.annotation.canon
+21:26-35 "\"dwRange\"" meta.annotation.canon string.quoted.double.canon
+21:35-36 ")" meta.annotation.canon

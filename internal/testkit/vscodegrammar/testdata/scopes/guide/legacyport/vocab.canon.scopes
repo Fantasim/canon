@@ -1,0 +1,33 @@
+1:0-93 "/// A legacy weapon file, ported: clean names in the model, the file's own names on the wire." comment.line.documentation.canon
+2:0-40 "/// `canon guide port` walks through it." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-24 "guide.legacyport" entity.name.namespace.canon
+5:0-75 "/// The stats a weapon can raise. The file holds the legacy define of each." comment.line.documentation.canon
+6:0-4 "enum" storage.type.canon
+6:5-9 "Stat" entity.name.type.canon
+7:11-12 "=" keyword.operator.canon
+7:13-22 "\"DST_STR\"" string.quoted.double.canon
+8:12-13 "=" keyword.operator.canon
+8:14-23 "\"DST_DEX\"" string.quoted.double.canon
+9:10-11 "=" keyword.operator.canon
+9:12-21 "\"DST_STA\"" string.quoted.double.canon
+12:0-81 "/// Item flags. The file holds one integer: the OR of the codes of the flags set." comment.line.documentation.canon
+13:0-4 "enum" storage.type.canon
+13:5-9 "Flag" entity.name.type.canon
+13:10-11 "@" meta.annotation.canon punctuation.definition.annotation.canon
+13:11-16 "codes" meta.annotation.canon entity.name.function.decorator.canon
+13:16-24 "(UInt32)" meta.annotation.canon
+14:8-9 "=" keyword.operator.canon
+14:10-11 "1" constant.numeric.integer.canon
+15:16-17 "=" keyword.operator.canon
+15:18-19 "2" constant.numeric.integer.canon
+16:12-13 "=" keyword.operator.canon
+16:14-15 "4" constant.numeric.integer.canon
+19:0-80 "/// An icon file under icons/. A missing file or a wrong letter case is `E3701`." comment.line.documentation.canon
+20:0-4 "type" storage.type.canon
+20:5-9 "Icon" entity.name.type.canon
+20:10-11 "=" keyword.operator.canon
+20:12-17 "asset" storage.modifier.canon
+20:18-25 "\"icons\"" string.quoted.double.canon
+20:27-30 "ext" variable.other.property.canon
+20:30-31 ":" punctuation.separator.key.canon

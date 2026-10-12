@@ -23,6 +23,7 @@ var exampleTargets = map[string][]canon.Target{
 	"features.embedded":  {canon.TargetTS},
 	"features.textemit":  {canon.TargetGo, canon.TargetCpp, canon.TargetTS, canon.TargetJSON, canon.TargetText},
 	"features.gotypes":   {canon.TargetGo, canon.TargetText},
+	"guide.legacyport":   {canon.TargetJSON, canon.TargetText},
 	"resource.farm":      {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 	"resource.events":    {canon.TargetGo, canon.TargetJSON, canon.TargetView},
 	"resource.vocab":     {canon.TargetCpp, canon.TargetView},

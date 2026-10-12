@@ -6,4 +6,4 @@ nope
 [exit 2]
 [stdout]
 [stderr]
-canon: guide: "nope": unknown topic; the topics are: cli, data, emit, errors, index, layers, logic, recipes, syntax, types, views-i18n
+canon: guide: "nope": unknown topic; the topics are: assets, cli, data, emit, errors, index, layers, logic, port, recipes, stable, syntax, types, views-i18n, wire

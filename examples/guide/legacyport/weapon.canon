@@ -1,0 +1,26 @@
+package guide.legacyport
+
+/// A weapon: clean names here, the legacy name of each key in `@json`.
+record Weapon {
+  /// The number stored in saves. It never changes.
+  code: Int(1..) @stable @json("dwID")
+  /// Shown name.
+  name: String(1..) @json("szName")
+  /// Icon file.
+  icon: Icon @json("szIcon")
+  /// Price in gold.
+  price: Int(0..) = 0 @json("dwCost")
+  /// Needs both hands. 0 or 1 on the wire.
+  twoHanded: Bool = false @json("bTwoHanded", int)
+  /// Wait between two uses. Whole seconds on the wire.
+  cooldown: Duration = 0s @json("dwCooldownSec", unit: s)
+  /// Property flags. One bitmask on the wire.
+  flags: [Flag] where it.isUnique() = [] @json("dwFlag", bits)
+  /// Up to three stat bonuses. Numbered parallel keys on the wire.
+  bonuses: [Bonus](..=3) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"])
+  /// What it is. The tag and the case fields are flat in the weapon's object.
+  kind: Kind @json(inline)
+}
+
+/// Every weapon, read from the legacy file as it is. The keys are permanent.
+let weapons: stable table Weapon = load("data/weapons.json")

@@ -1,0 +1,60 @@
+1:0-7 "package" keyword.other.canon
+1:8-24 "guide.legacyport" entity.name.namespace.canon
+3:0-90 "/// What the legacy reader wants around the rows: a version and a count it allocates from." comment.line.documentation.canon
+4:0-5 "local" storage.modifier.canon
+4:6-12 "record" storage.type.canon
+4:13-23 "LegacyFile" entity.name.type.canon
+5:0-39 "  /// Format version the reader checks." comment.line.documentation.canon
+6:2-9 "version" variable.other.property.canon
+6:9-10 ":" punctuation.separator.key.canon
+6:11-14 "Int" entity.name.type.canon
+6:15-16 "@" meta.annotation.canon punctuation.definition.annotation.canon
+6:16-20 "json" meta.annotation.canon entity.name.function.decorator.canon
+6:20-21 "(" meta.annotation.canon
+6:21-31 "\"nVersion\"" meta.annotation.canon string.quoted.double.canon
+6:31-32 ")" meta.annotation.canon
+7:0-27 "  /// How many rows follow." comment.line.documentation.canon
+8:2-7 "count" variable.other.property.canon
+8:7-8 ":" punctuation.separator.key.canon
+8:9-12 "Int" entity.name.type.canon
+8:13-14 "@" meta.annotation.canon punctuation.definition.annotation.canon
+8:14-18 "json" meta.annotation.canon entity.name.function.decorator.canon
+8:18-19 "(" meta.annotation.canon
+8:19-27 "\"nCount\"" meta.annotation.canon string.quoted.double.canon
+8:27-28 ")" meta.annotation.canon
+9:0-55 "  /// The rows, spelled as the legacy file spells them." comment.line.documentation.canon
+10:2-9 "weapons" variable.other.property.canon
+10:9-10 ":" punctuation.separator.key.canon
+10:11-16 "table" storage.type.canon
+10:17-23 "Weapon" entity.name.type.canon
+13:0-50 "/// The legacy file, written from the clean model." comment.line.documentation.canon
+14:0-1 "@" meta.annotation.canon punctuation.definition.annotation.canon
+14:1-5 "text" meta.annotation.canon entity.name.function.decorator.canon
+14:5-6 "(" meta.annotation.canon
+14:6-27 "\"weapons.legacy.json\"" meta.annotation.canon string.quoted.double.canon
+14:27-28 ")" meta.annotation.canon
+15:0-6 "export" storage.modifier.canon
+15:7-9 "fn" storage.type.function.canon
+15:10-20 "legacyFile" entity.name.function.canon
+15:23-25 "->" keyword.operator.canon
+15:26-36 "LegacyFile" entity.name.type.canon
+16:2-8 "return" keyword.control.canon
+16:11-18 "version" variable.other.property.canon
+16:18-19 ":" punctuation.separator.key.canon
+16:20-21 "3" constant.numeric.integer.canon
+16:23-28 "count" variable.other.property.canon
+16:28-29 ":" punctuation.separator.key.canon
+16:37-38 "." punctuation.accessor.canon
+16:38-41 "len" variable.other.property.canon
+16:45-52 "weapons" variable.other.property.canon
+16:52-53 ":" punctuation.separator.key.canon
+19:0-4 "emit" keyword.other.canon
+19:12-15 "out" variable.other.property.canon
+19:15-16 ":" punctuation.separator.key.canon
+19:17-35 "\"out/weapons.json\"" string.quoted.double.canon
+19:37-43 "values" variable.other.property.canon
+19:43-44 ":" punctuation.separator.key.canon
+20:0-4 "emit" keyword.other.canon
+20:12-15 "out" variable.other.property.canon
+20:15-16 ":" punctuation.separator.key.canon
+20:17-22 "\"out\"" string.quoted.double.canon

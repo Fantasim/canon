@@ -1,0 +1,8 @@
+# canon.lock v1
+enum   guide.legacyport.Flag  1  binds
+enum   guide.legacyport.Flag  2  undestroyable
+enum   guide.legacyport.Flag  4  equipBind
+field  guide.legacyport.weapons.code  1  bow
+field  guide.legacyport.weapons.code  2  axe
+table  guide.legacyport.weapons  axe
+table  guide.legacyport.weapons  bow

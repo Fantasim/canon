@@ -1,0 +1,23 @@
+package guide.legacyport
+
+/// A stat a weapon raises, and by how much.
+record Bonus {
+  /// The stat raised.
+  stat: Stat
+  /// How much.
+  amount: Int
+}
+
+/// What a weapon is. The tag and the fields of the case sit in the weapon's own object.
+variant Kind @json(tag: "dwKind") {
+  /// A blade.
+  sword {
+    /// Reach in tiles.
+    reach: Int(1..) = 1 @json("dwReach")
+  }
+  /// Shoots arrows.
+  bow {
+    /// Range in tiles.
+    range: Int(1..) @json("dwRange")
+  }
+}

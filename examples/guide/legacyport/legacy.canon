@@ -1,0 +1,20 @@
+package guide.legacyport
+
+/// What the legacy reader wants around the rows: a version and a count it allocates from.
+local record LegacyFile {
+  /// Format version the reader checks.
+  version: Int @json("nVersion")
+  /// How many rows follow.
+  count: Int @json("nCount")
+  /// The rows, spelled as the legacy file spells them.
+  weapons: table Weapon
+}
+
+/// The legacy file, written from the clean model.
+@text("weapons.legacy.json")
+export fn legacyFile() -> LegacyFile {
+  return { version: 3, count: weapons.len(), weapons: weapons }
+}
+
+emit json { out: "out/weapons.json", values: [weapons] }
+emit text { out: "out" }

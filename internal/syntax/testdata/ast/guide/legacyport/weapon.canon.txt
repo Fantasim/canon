@@ -1,0 +1,147 @@
+File: File FileKind=source @1:1-27:1
+  Package: QualifiedName guide.legacyport @1:9-1:25
+  Decls[0]: RecordDecl @4:1-23:2
+    Doc: DocComment "A weapon: clean names here, the legacy name of each key in `@json`." @3:1-3:72
+    Name: Ident Weapon @4:8-4:14
+    Body: RecordBody @4:15-23:2
+      Items[0]: FieldDecl @6:3-6:39
+        Doc: DocComment "The number stored in saves. It never changes." @5:3-5:52
+        Name: Ident code @6:3-6:7
+        Type: NamedType @6:9-6:17
+          Name: QualifiedName Int @6:9-6:12
+          Args: TypeArgs @6:12-6:17
+            Args[0]: RangeExpr Op=.. @6:13-6:16
+              Lo: IntLit Value=1 @6:13-6:14
+        Annotations[0]: Annotation @6:18-6:25
+          Name: Ident stable @6:19-6:25
+        Annotations[1]: Annotation @6:26-6:39
+          Name: Ident json @6:27-6:31
+          Args[0]: AnnotationArg @6:32-6:38
+            Value: StringLit @6:32-6:38
+              Parts[0]: text "dwID"
+      Items[1]: FieldDecl @8:3-8:36
+        Doc: DocComment "Shown name." @7:3-7:18
+        Name: Ident name @8:3-8:7
+        Type: NamedType @8:9-8:20
+          Name: QualifiedName String @8:9-8:15
+          Args: TypeArgs @8:15-8:20
+            Args[0]: RangeExpr Op=.. @8:16-8:19
+              Lo: IntLit Value=1 @8:16-8:17
+        Annotations[0]: Annotation @8:21-8:36
+          Name: Ident json @8:22-8:26
+          Args[0]: AnnotationArg @8:27-8:35
+            Value: StringLit @8:27-8:35
+              Parts[0]: text "szName"
+      Items[2]: FieldDecl @10:3-10:29
+        Doc: DocComment "Icon file." @9:3-9:17
+        Name: Ident icon @10:3-10:7
+        Type: NamedType @10:9-10:13
+          Name: QualifiedName Icon @10:9-10:13
+        Annotations[0]: Annotation @10:14-10:29
+          Name: Ident json @10:15-10:19
+          Args[0]: AnnotationArg @10:20-10:28
+            Value: StringLit @10:20-10:28
+              Parts[0]: text "szIcon"
+      Items[3]: FieldDecl @12:3-12:38
+        Doc: DocComment "Price in gold." @11:3-11:21
+        Name: Ident price @12:3-12:8
+        Type: NamedType @12:10-12:18
+          Name: QualifiedName Int @12:10-12:13
+          Args: TypeArgs @12:13-12:18
+            Args[0]: RangeExpr Op=.. @12:14-12:17
+              Lo: IntLit Value=0 @12:14-12:15
+        Default: IntLit Value=0 @12:21-12:22
+        Annotations[0]: Annotation @12:23-12:38
+          Name: Ident json @12:24-12:28
+          Args[0]: AnnotationArg @12:29-12:37
+            Value: StringLit @12:29-12:37
+              Parts[0]: text "dwCost"
+      Items[4]: FieldDecl @14:3-14:51
+        Doc: DocComment "Needs both hands. 0 or 1 on the wire." @13:3-13:44
+        Name: Ident twoHanded @14:3-14:12
+        Type: NamedType @14:14-14:18
+          Name: QualifiedName Bool @14:14-14:18
+        Default: BoolLit @14:21-14:26
+        Annotations[0]: Annotation @14:27-14:51
+          Name: Ident json @14:28-14:32
+          Args[0]: AnnotationArg @14:33-14:45
+            Value: StringLit @14:33-14:45
+              Parts[0]: text "bTwoHanded"
+          Args[1]: AnnotationArg @14:47-14:50
+            Value: QualifiedName int @14:47-14:50
+      Items[5]: FieldDecl @16:3-16:58
+        Doc: DocComment "Wait between two uses. Whole seconds on the wire." @15:3-15:56
+        Name: Ident cooldown @16:3-16:11
+        Type: NamedType @16:13-16:21
+          Name: QualifiedName Duration @16:13-16:21
+        Default: DurationLit Millis=0 @16:24-16:26
+        Annotations[0]: Annotation @16:27-16:58
+          Name: Ident json @16:28-16:32
+          Args[0]: AnnotationArg @16:33-16:48
+            Value: StringLit @16:33-16:48
+              Parts[0]: text "dwCooldownSec"
+          Args[1]: AnnotationArg @16:50-16:57
+            Name: Ident unit @16:50-16:54
+            Value: QualifiedName s @16:56-16:57
+      Items[6]: FieldDecl @18:3-18:63
+        Doc: DocComment "Property flags. One bitmask on the wire." @17:3-17:47
+        Name: Ident flags @18:3-18:8
+        Type: WhereType @18:10-18:36
+          Base: ListType @18:10-18:16
+            Elem: NamedType @18:11-18:15
+              Name: QualifiedName Flag @18:11-18:15
+          Pred: CallExpr @18:23-18:36
+            Fun: SelectorExpr @18:23-18:34
+              X: IdentExpr it @18:23-18:25
+              Name: Ident isUnique @18:26-18:34
+        Default: ListLit @18:39-18:41
+        Annotations[0]: Annotation @18:42-18:63
+          Name: Ident json @18:43-18:47
+          Args[0]: AnnotationArg @18:48-18:56
+            Value: StringLit @18:48-18:56
+              Parts[0]: text "dwFlag"
+          Args[1]: AnnotationArg @18:58-18:62
+            Value: QualifiedName bits @18:58-18:62
+      Items[7]: FieldDecl @20:3-20:82
+        Doc: DocComment "Up to three stat bonuses. Numbered parallel keys on the wire." @19:3-19:68
+        Name: Ident bonuses @20:3-20:10
+        Type: ListType @20:12-20:25
+          Elem: NamedType @20:13-20:18
+            Name: QualifiedName Bonus @20:13-20:18
+          Args: TypeArgs @20:19-20:25
+            Args[0]: RangeExpr Op=..= @20:20-20:24
+              Hi: IntLit Value=3 @20:23-20:24
+        Default: ListLit @20:28-20:30
+        Annotations[0]: Annotation @20:31-20:82
+          Name: Ident json @20:32-20:36
+          Args[0]: AnnotationArg @20:37-20:81
+            Name: Ident pairs @20:37-20:42
+            Value: AnnotationList @20:44-20:81
+              Items[0]: StringLit @20:45-20:61
+                Parts[0]: text "dwDestParam"
+                Parts[1]: Interp @20:58-20:59
+                  X: IdentExpr i @20:58-20:59
+              Items[1]: StringLit @20:63-20:80
+                Parts[0]: text "nAdjParamVal"
+                Parts[1]: Interp @20:77-20:78
+                  X: IdentExpr i @20:77-20:78
+      Items[8]: FieldDecl @22:3-22:27
+        Doc: DocComment "What it is. The tag and the case fields are flat in the weapon's object." @21:3-21:79
+        Name: Ident kind @22:3-22:7
+        Type: NamedType @22:9-22:13
+          Name: QualifiedName Kind @22:9-22:13
+        Annotations[0]: Annotation @22:14-22:27
+          Name: Ident json @22:15-22:19
+          Args[0]: AnnotationArg @22:20-22:26
+            Value: QualifiedName inline @22:20-22:26
+  Decls[1]: LetDecl @26:1-26:61
+    Doc: DocComment "Every weapon, read from the legacy file as it is. The keys are permanent." @25:1-25:78
+    Name: Ident weapons @26:5-26:12
+    Type: TableType Stable="stable" @26:14-26:33
+      Name: QualifiedName Weapon @26:27-26:33
+    Value: LoadExpr @26:36-26:61
+      Args[0]: Arg @26:41-26:60
+        Value: StringLit @26:41-26:60
+          Parts[0]: text "data/weapons.json"
+== findings
+0 errors, 0 warnings in 1 package (…)

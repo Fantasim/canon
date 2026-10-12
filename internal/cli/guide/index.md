@@ -20,9 +20,13 @@ values that are already valid. A project is the directory holding `project.canon
 | `syntax` | files, packages, imports, comments, literals, naming, canonical layout, roots per machine (`project.local.canon`) |
 | `types` | scalars, refinements, enums, records, variants, optionals, collections, refs, dependent types |
 | `data` | `let`/`const`, tables, `entry` files, `load`, `@json` wire names, stable ids and `canon.lock` |
+| `wire` | `@json` forms in depth: names, `Bool` as 0/1, `Duration` units, bitmasks, parallel keys (`pairs`), inline variants |
+| `port` | porting a legacy file: clean names in Canon, legacy names on the wire, a whole worked project |
+| `stable` | stable tables and `@stable` fields: what, when, the lock, generated ids and lookups, mistakes |
+| `assets` | asset types: files that must exist, exact letter case, roots, the studio's picker |
 | `logic` | functions, methods, expressions, `match`, standard library, checks, tests |
 | `emit` | `emit` targets and modes, what is generated, `export fn`, text files (`emit text`, `@text`) |
-| `views-i18n` | views, the studio package, translation files |
+| `views-i18n` | views, the studio package, the JSON of the `tags` `positional` `enumRow` `cards` controls, translation files |
 | `layers` | `amend`, layer files, `--layer`, runtime `input` fields |
 | `cli` | commands, value paths, the JSON of `check`, `explain`, `refs`, `edit`, `rename` |
 | `errors` | reading a finding, common codes, edit refusals |

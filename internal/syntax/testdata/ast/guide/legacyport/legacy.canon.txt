@@ -1,0 +1,78 @@
+File: File FileKind=source @1:1-21:1
+  Package: QualifiedName guide.legacyport @1:9-1:25
+  Decls[0]: RecordDecl @4:1-11:2
+    Doc: DocComment "What the legacy reader wants around the rows: a version and a count it allocates from." @3:1-3:91
+    Mods: Modifiers Local="local" @4:1-4:6
+    Name: Ident LegacyFile @4:14-4:24
+    Body: RecordBody @4:25-11:2
+      Items[0]: FieldDecl @6:3-6:33
+        Doc: DocComment "Format version the reader checks." @5:3-5:40
+        Name: Ident version @6:3-6:10
+        Type: NamedType @6:12-6:15
+          Name: QualifiedName Int @6:12-6:15
+        Annotations[0]: Annotation @6:16-6:33
+          Name: Ident json @6:17-6:21
+          Args[0]: AnnotationArg @6:22-6:32
+            Value: StringLit @6:22-6:32
+              Parts[0]: text "nVersion"
+      Items[1]: FieldDecl @8:3-8:29
+        Doc: DocComment "How many rows follow." @7:3-7:28
+        Name: Ident count @8:3-8:8
+        Type: NamedType @8:10-8:13
+          Name: QualifiedName Int @8:10-8:13
+        Annotations[0]: Annotation @8:14-8:29
+          Name: Ident json @8:15-8:19
+          Args[0]: AnnotationArg @8:20-8:28
+            Value: StringLit @8:20-8:28
+              Parts[0]: text "nCount"
+      Items[2]: FieldDecl @10:3-10:24
+        Doc: DocComment "The rows, spelled as the legacy file spells them." @9:3-9:56
+        Name: Ident weapons @10:3-10:10
+        Type: TableType @10:12-10:24
+          Name: QualifiedName Weapon @10:18-10:24
+  Decls[1]: FnDecl @14:1-17:2
+    Doc: DocComment "The legacy file, written from the clean model." @13:1-13:51
+    Annotations[0]: Annotation @14:1-14:29
+      Name: Ident text @14:2-14:6
+      Args[0]: AnnotationArg @14:7-14:28
+        Value: StringLit @14:7-14:28
+          Parts[0]: text "weapons.legacy.json"
+    Mods: Modifiers Export="export" @15:1-15:7
+    Name: Ident legacyFile @15:11-15:21
+    Result: NamedType @15:27-15:37
+      Name: QualifiedName LegacyFile @15:27-15:37
+    Body: Block @15:38-17:2
+      Stmts[0]: ReturnStmt @16:3-16:64
+        Value: BraceLit @16:10-16:64
+          Items[0]: FieldItem @16:12-16:22
+            Name: Ident version @16:12-16:19
+            Value: IntLit Value=3 @16:21-16:22
+          Items[1]: FieldItem @16:24-16:44
+            Name: Ident count @16:24-16:29
+            Value: CallExpr @16:31-16:44
+              Fun: SelectorExpr @16:31-16:42
+                X: IdentExpr weapons @16:31-16:38
+                Name: Ident len @16:39-16:42
+          Items[2]: FieldItem @16:46-16:62
+            Name: Ident weapons @16:46-16:53
+            Value: IdentExpr weapons @16:55-16:62
+  Decls[2]: EmitDecl @19:1-19:57
+    Target: Ident json @19:6-19:10
+    Options: BraceLit @19:11-19:57
+      Items[0]: FieldItem @19:13-19:36
+        Name: Ident out @19:13-19:16
+        Value: StringLit @19:18-19:36
+          Parts[0]: text "out/weapons.json"
+      Items[1]: FieldItem @19:38-19:55
+        Name: Ident values @19:38-19:44
+        Value: ListLit @19:46-19:55
+          Elems[0]: IdentExpr weapons @19:47-19:54
+  Decls[3]: EmitDecl @20:1-20:25
+    Target: Ident text @20:6-20:10
+    Options: BraceLit @20:11-20:25
+      Items[0]: FieldItem @20:13-20:23
+        Name: Ident out @20:13-20:16
+        Value: StringLit @20:18-20:23
+          Parts[0]: text "out"
+== findings
+0 errors, 0 warnings in 1 package (…)

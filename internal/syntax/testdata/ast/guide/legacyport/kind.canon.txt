@@ -1,0 +1,62 @@
+File: File FileKind=source @1:1-24:1
+  Package: QualifiedName guide.legacyport @1:9-1:25
+  Decls[0]: RecordDecl @4:1-9:2
+    Doc: DocComment "A stat a weapon raises, and by how much." @3:1-3:45
+    Name: Ident Bonus @4:8-4:13
+    Body: RecordBody @4:14-9:2
+      Items[0]: FieldDecl @6:3-6:13
+        Doc: DocComment "The stat raised." @5:3-5:23
+        Name: Ident stat @6:3-6:7
+        Type: NamedType @6:9-6:13
+          Name: QualifiedName Stat @6:9-6:13
+      Items[1]: FieldDecl @8:3-8:14
+        Doc: DocComment "How much." @7:3-7:16
+        Name: Ident amount @8:3-8:9
+        Type: NamedType @8:11-8:14
+          Name: QualifiedName Int @8:11-8:14
+  Decls[1]: VariantDecl @12:1-23:2
+    Doc: DocComment "What a weapon is. The tag and the fields of the case sit in the weapon's own object." @11:1-11:89
+    Name: Ident Kind @12:9-12:13
+    Annotations[0]: Annotation @12:14-12:34
+      Name: Ident json @12:15-12:19
+      Args[0]: AnnotationArg @12:20-12:33
+        Name: Ident tag @12:20-12:23
+        Value: StringLit @12:25-12:33
+          Parts[0]: text "dwKind"
+    Items[0]: VariantCase @14:3-17:4
+      Doc: DocComment "A blade." @13:3-13:15
+      Name: Ident sword @14:3-14:8
+      Body: RecordBody @14:9-17:4
+        Items[0]: FieldDecl @16:5-16:41
+          Doc: DocComment "Reach in tiles." @15:5-15:24
+          Name: Ident reach @16:5-16:10
+          Type: NamedType @16:12-16:20
+            Name: QualifiedName Int @16:12-16:15
+            Args: TypeArgs @16:15-16:20
+              Args[0]: RangeExpr Op=.. @16:16-16:19
+                Lo: IntLit Value=1 @16:16-16:17
+          Default: IntLit Value=1 @16:23-16:24
+          Annotations[0]: Annotation @16:25-16:41
+            Name: Ident json @16:26-16:30
+            Args[0]: AnnotationArg @16:31-16:40
+              Value: StringLit @16:31-16:40
+                Parts[0]: text "dwReach"
+    Items[1]: VariantCase @19:3-22:4
+      Doc: DocComment "Shoots arrows." @18:3-18:21
+      Name: Ident bow @19:3-19:6
+      Body: RecordBody @19:7-22:4
+        Items[0]: FieldDecl @21:5-21:37
+          Doc: DocComment "Range in tiles." @20:5-20:24
+          Name: Ident range @21:5-21:10
+          Type: NamedType @21:12-21:20
+            Name: QualifiedName Int @21:12-21:15
+            Args: TypeArgs @21:15-21:20
+              Args[0]: RangeExpr Op=.. @21:16-21:19
+                Lo: IntLit Value=1 @21:16-21:17
+          Annotations[0]: Annotation @21:21-21:37
+            Name: Ident json @21:22-21:26
+            Args[0]: AnnotationArg @21:27-21:36
+              Value: StringLit @21:27-21:36
+                Parts[0]: text "dwRange"
+== findings
+0 errors, 0 warnings in 1 package (…)

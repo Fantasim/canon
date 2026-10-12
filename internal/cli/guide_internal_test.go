@@ -25,8 +25,9 @@ const (
 	projectFile    = "project.canon"
 	defaultProject = "project guide {\n  canon: \"0.1\"\n  languages: [en, fr]\n}\n"
 	looseFile      = "guide.canon"
-	reqDir         = "req/" // recipes' request files, written into every project a recipe runs in
-	outDir         = "out/" // `text out/<path>`: the exact bytes `canon build` writes at <path>
+	reqDir         = "req/"  // recipes' request files, written into every project a recipe runs in
+	outDir         = "out/"  // `text out/<path>`: the exact bytes `canon build` writes at <path>
+	viewDir        = "view/" // `json view/<type>.<field>`: that field's control in the built view model
 	warnsMark      = "warns="
 	codeSep        = ","
 )
@@ -42,6 +43,11 @@ type guideFence struct {
 }
 
 func (f guideFence) String() string { return f.topic + guideExt + ":" + strconv.Itoa(f.line) }
+
+// derived reports that the fence is a request, an expected output or an expected control, not a file of the topic's project.
+func (f guideFence) derived() bool {
+	return slices.ContainsFunc([]string{reqDir, outDir, viewDir}, func(dir string) bool { return strings.HasPrefix(f.arg, dir) })
+}
 
 // guideTexts is every embedded topic's text, by topic.
 func guideTexts(t *testing.T) map[string]string {
@@ -166,7 +172,7 @@ func guideProjects(t *testing.T) map[string]map[string]string {
 	t.Helper()
 	out := map[string]map[string]string{}
 	for _, f := range allFences(t) {
-		if f.arg == "" || f.arg == fragment || f.lang == "sh" || strings.HasPrefix(f.arg, reqDir) || strings.HasPrefix(f.arg, outDir) {
+		if f.arg == "" || f.arg == fragment || f.lang == "sh" || f.derived() {
 			continue
 		}
 		if out[f.topic] == nil {
