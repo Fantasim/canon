@@ -23,7 +23,7 @@ func (c *checker) mapLit(env *env, e *syntax.BraceLit, key, value, t types.Type)
 			c.expr(ve, it.Value, value)
 		default:
 			c.report(env, diag.E3320.At(env.span(it), itemKind(it), diag.KindMap))
-			c.itemsAlone(env, []syntax.BraceItem{it})
+			c.itemsInError(env, []syntax.BraceItem{it})
 		}
 	}
 	c.duplicateKeys(env, e.Items)
@@ -177,7 +177,7 @@ func (c *checker) mapComp(env *env, e *syntax.BraceLit, want types.Type) types.T
 	inner := c.clauses(env, e.Clauses)
 	item, ok := e.Items[0].(*syntax.MapItem)
 	if !ok {
-		c.itemsAlone(inner, e.Items)
+		c.itemsInError(inner, e.Items)
 		return types.ErrorType
 	}
 	switch w := unwrap(want).(type) {

@@ -1,0 +1,14 @@
+TYPES.md §5.2, §1: a field item in a table literal is E3320, once: the misplaced item has no expected type, so a literal it holds is not judged again (no E3305).
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local let t: table R = { x { a: 1 }, y: { b: {} } }
+-- findings.txt --
+error[E3320]  a/a.canon:7:38
+  field items are not allowed in table literals
+
+1 error, 0 warnings in 1 package (…)

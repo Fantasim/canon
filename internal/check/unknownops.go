@@ -7,6 +7,13 @@ import (
 
 // bothDependent is E2102 at the bare names of two context-dependent operands, else E3008 (TYPES.md §5.1, DECISIONS 333).
 func (c *checker) bothDependent(env *env, e *syntax.BinaryExpr) {
+	if !c.namedOperands(env, e) {
+		c.report(env, diag.E3008.At(env.span(e)))
+	}
+}
+
+// namedOperands types the operands of e holding a bare name and reports whether there was one (TYPES.md §5.1).
+func (c *checker) namedOperands(env *env, e *syntax.BinaryExpr) bool {
 	found := false
 	for _, x := range [...]syntax.Expr{e.X, e.Y} {
 		if namesSome(x) {
@@ -14,9 +21,7 @@ func (c *checker) bothDependent(env *env, e *syntax.BinaryExpr) {
 			found = true
 		}
 	}
-	if !found {
-		c.report(env, diag.E3008.At(env.span(e)))
-	}
+	return found
 }
 
 // namesSome reports a bare name in a context-dependent operand (TYPES.md §5.1).

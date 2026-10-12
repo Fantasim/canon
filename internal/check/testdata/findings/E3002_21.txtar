@@ -1,0 +1,10 @@
+TYPES.md §5.2, §1: a brace literal against a type it cannot be (E3002) has the error type, so a literal nested in its items is not judged again (no E3305).
+-- a/a.canon --
+package a
+
+local let n: Int = { a: {}, b: { c: {} } }
+-- findings.txt --
+error[E3002]  a/a.canon:3:20
+  expected Int, found { a: {}, b: { c: {} } }
+
+1 error, 0 warnings in 1 package (…)

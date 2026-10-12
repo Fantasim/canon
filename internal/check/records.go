@@ -29,7 +29,7 @@ func (c *checker) recordLit(env *env, e *syntax.BraceLit, t types.Type) types.Ty
 			c.fieldItem(env, it, t, fields, given)
 		default:
 			c.report(env, diag.E3320.At(env.span(it), itemKind(it), diag.KindRecord))
-			c.itemsAlone(env, []syntax.BraceItem{it})
+			c.itemsInError(env, []syntax.BraceItem{it})
 		}
 	}
 	if !spread {

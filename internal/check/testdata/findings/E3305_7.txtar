@@ -1,0 +1,32 @@
+TYPES.md §5.2, §1: each undecided literal that is its own root reports its own E3305 (two list elements; a literal led by a spread of a non-record, its nested `{}` silent); a literal led by a spread that is already an error reports nothing more. An undecided literal's items are checked against the error type, so a bare name in them may be a contextual name of the missing type and is not judged (§4.1).
+-- a/a.canon --
+package a
+
+local fn xs() -> [Int] { return [1] }
+
+local let two = [{ a: 1 }, { b: {} }]
+
+local let named = { e: warning }
+
+local fn f() -> Int {
+  let r = { ...xs(), c: {} }
+  let s = { ...nope, d: {} }
+  return 1
+}
+-- findings.txt --
+error[E3305]  a/a.canon:5:18
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:5:28
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:7:19
+  cannot tell what this { … } is; give it a type
+
+error[E3305]  a/a.canon:10:11
+  cannot tell what this { … } is; give it a type
+
+error[E2102]  a/a.canon:11:16
+  unknown name nope
+
+5 errors, 0 warnings in 1 package (…)

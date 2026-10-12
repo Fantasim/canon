@@ -1,0 +1,46 @@
+TYPES.md §1, §5.2, DECISIONS 364: the items of a brace literal against a type it cannot be (E3002) are checked against the error type, which hides only what depends on the missing expected type (a bare name, `none`, `{}`); every finding any expected type would give is still reported.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local fn f(x: Int) -> Int { return x }
+
+local let r0: R = { a: 1 }
+
+local let n: Int = {
+  a: f(1, 2),
+  b: nofn(1),
+  c: r0.zz,
+  d: R { a: "x" },
+  e: nope == 1,
+  g: 1 + nope,
+  h: warning,
+  i: none,
+  j: {},
+}
+-- findings.txt --
+error[E3002]  a/a.canon:11:20
+  expected Int, found { … }
+
+error[E3004]  a/a.canon:12:11
+  too many arguments in call to f
+
+error[E2102]  a/a.canon:13:6
+  unknown name nofn
+
+error[E3003]  a/a.canon:14:9
+  a.R has no field zz
+
+error[E3002]  a/a.canon:15:13
+  expected Int, found String
+
+error[E2102]  a/a.canon:16:6
+  unknown name nope
+
+error[E2102]  a/a.canon:17:10
+  unknown name nope
+
+7 errors, 0 warnings in 1 package (…)

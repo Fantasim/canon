@@ -1,0 +1,15 @@
+GRAMMAR.md §5.11, TYPES.md §1, §5.2: a comprehension whose item is neither named nor keyed is E1136, once: the malformed literal has the error type, so the literal its item spreads is not judged (no E3305); the same literal standing alone is its own E3305.
+-- a/a.canon --
+package a
+
+local let m = { ...{ a: {} } for x in [1] }
+
+local let n = { a: {} }
+-- findings.txt --
+error[E1136]  a/a.canon:3:17
+  a comprehension literal has exactly one item
+
+error[E3305]  a/a.canon:5:15
+  cannot tell what this { … } is; give it a type
+
+2 errors, 0 warnings in 1 package (…)

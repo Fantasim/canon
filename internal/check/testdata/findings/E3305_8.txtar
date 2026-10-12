@@ -1,0 +1,84 @@
+TYPES.md §1, §5.1, §5.2, DECISIONS 364: the items of an undecided literal are checked against the error type, which hides only what depends on the missing expected type (a bare name that could be a member or a key, `none`, `[]`, a lambda, arithmetic of literals); every finding any expected type would give is still reported: an arity error, an unknown function, an unknown member, a typed literal's own field, an unknown name compared or in arithmetic, two literals compared. Under a declared type that does not resolve the same holds.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local fn f(x: Int) -> Int { return x }
+
+local let r0: R = { a: 1 }
+
+local let reported = {
+  a: f(1, 2),
+  b: nofn(1),
+  c: r0.zz,
+  d: R { a: "x" },
+  e: nope == 1,
+  g: 1 + nope,
+  h: 2 * 3.5 + other,
+  i: 1 == 2,
+  j: [none != gone],
+}
+
+local let silent = { a: warning, b: none, c: [], d: x => 1, e: 1 + 2 }
+
+local let declared: Nope = { k: lost < 1 }
+
+local let bare: Nope = gone2 == 1
+
+local let listed: [Nope] = [gone3 == 1]
+-- findings.txt --
+error[E3305]  a/a.canon:11:22
+  cannot tell what this { … } is; give it a type
+
+error[E3004]  a/a.canon:12:11
+  too many arguments in call to f
+
+error[E2102]  a/a.canon:13:6
+  unknown name nofn
+
+error[E3003]  a/a.canon:14:9
+  a.R has no field zz
+
+error[E3002]  a/a.canon:15:13
+  expected Int, found String
+
+error[E2102]  a/a.canon:16:6
+  unknown name nope
+
+error[E2102]  a/a.canon:17:10
+  unknown name nope
+
+error[E2102]  a/a.canon:18:16
+  unknown name other
+
+error[E3008]  a/a.canon:19:6
+  cannot infer the type of this expression; add a type
+
+error[E2102]  a/a.canon:20:15
+  unknown name gone
+
+error[E3305]  a/a.canon:23:20
+  cannot tell what this { … } is; give it a type
+
+error[E2102]  a/a.canon:25:21
+  unknown name Nope
+
+error[E2102]  a/a.canon:25:33
+  unknown name lost (did you mean Float?)
+
+error[E2102]  a/a.canon:27:17
+  unknown name Nope
+
+error[E2102]  a/a.canon:27:24
+  unknown name gone2
+
+error[E2102]  a/a.canon:29:20
+  unknown name Nope
+
+error[E2102]  a/a.canon:29:29
+  unknown name gone3
+
+17 errors, 0 warnings in 1 package (…)

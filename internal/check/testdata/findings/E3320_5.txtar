@@ -1,0 +1,67 @@
+TYPES.md §1, §5.2, DECISIONS 364: a misplaced item is checked against the error type, which hides only what depends on the missing expected type (a bare name, `none`); every finding any expected type would give is still reported beside E3320.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int
+}
+
+local fn f(x: Int) -> Int { return x }
+
+local let r0: R = { a: 1 }
+
+local let r: R = {
+  a: 1,
+  "b": f(1, 2),
+  "c": nofn(1),
+  "d": r0.zz,
+  "e": R { a: "x" },
+  "g": nope == 1,
+  "h": 1 + nope,
+  "i": warning,
+  "j": none,
+}
+-- findings.txt --
+error[E3320]  a/a.canon:13:3
+  map items are not allowed in record literals
+
+error[E3004]  a/a.canon:13:13
+  too many arguments in call to f
+
+error[E3320]  a/a.canon:14:3
+  map items are not allowed in record literals
+
+error[E2102]  a/a.canon:14:8
+  unknown name nofn
+
+error[E3320]  a/a.canon:15:3
+  map items are not allowed in record literals
+
+error[E3003]  a/a.canon:15:11
+  a.R has no field zz
+
+error[E3320]  a/a.canon:16:3
+  map items are not allowed in record literals
+
+error[E3002]  a/a.canon:16:15
+  expected Int, found String
+
+error[E3320]  a/a.canon:17:3
+  map items are not allowed in record literals
+
+error[E2102]  a/a.canon:17:8
+  unknown name nope
+
+error[E3320]  a/a.canon:18:3
+  map items are not allowed in record literals
+
+error[E2102]  a/a.canon:18:12
+  unknown name nope
+
+error[E3320]  a/a.canon:19:3
+  map items are not allowed in record literals
+
+error[E3320]  a/a.canon:20:3
+  map items are not allowed in record literals
+
+14 errors, 0 warnings in 1 package (…)

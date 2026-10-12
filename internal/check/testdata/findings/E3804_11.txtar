@@ -84,7 +84,4 @@ error[E3804]  a/a.canon:62:30
 error[E3305]  a/a.canon:62:53
   cannot tell what this { … } is; give it a type
 
-error[E3305]  a/a.canon:62:58
-  cannot tell what this { … } is; give it a type
-
-8 errors, 0 warnings in 1 package (…)
+7 errors, 0 warnings in 1 package (…)

@@ -70,7 +70,8 @@ func (c *checker) binary(env *env, e *syntax.BinaryExpr, want types.Type) types.
 	default:
 	}
 	both := c.contextDependent(env, e.X) && c.contextDependent(env, e.Y)
-	if both && unknownContext(want) {
+	if both && unknownContext(want) && allArith[e.Op] { // a comparison is Bool: want never reaches its operands
+		c.namedOperands(env, e)
 		return types.ErrorType
 	}
 	if w := exprType(want); both && w != nil && allArith[e.Op] {

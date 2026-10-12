@@ -28,16 +28,14 @@ func (c *checker) braceLit(env *env, e *syntax.BraceLit, want types.Type) types.
 		return c.untypedBrace(env, e)
 	}
 	c.info.Literals[e] = LitError
-	if want.Kind() == types.Error {
-		c.itemsInError(env, e.Items)
-		return types.ErrorType
+	c.itemsInError(env, e.Items)
+	if want.Kind() != types.Error {
+		c.report(env, diag.E3002.At(env.span(e), want, env.literalText(e)))
 	}
-	c.itemsAlone(env, e.Items)
-	c.report(env, diag.E3002.At(env.span(e), want, env.literalText(e)))
 	return types.ErrorType
 }
 
-// itemsInError checks each item of a brace literal of the error type against it (TYPES.md §1).
+// itemsInError checks each item of a brace literal in error, or a misplaced item, against the error type (TYPES.md §1).
 func (c *checker) itemsInError(env *env, items []syntax.BraceItem) {
 	for _, it := range items {
 		switch it := it.(type) {
@@ -65,7 +63,7 @@ func braceBranch(fn *types.TypeFunc) types.Type {
 
 // untypedBrace is a brace literal without an expected type: a record typed by its leading
 // spread, a map of strings when every key is a string literal, else E3305 (a spread of a
-// non-record included).
+// non-record included), its items then checked against the error type.
 func (c *checker) untypedBrace(env *env, e *syntax.BraceLit) types.Type {
 	if len(e.Items) > 0 {
 		if sp, ok := e.Items[0].(*syntax.SpreadItem); ok {
@@ -78,7 +76,7 @@ func (c *checker) untypedBrace(env *env, e *syntax.BraceLit) types.Type {
 			if t.Kind() != types.Error {
 				c.report(env, diag.E3305.At(env.span(e)))
 			}
-			c.itemsAlone(env, e.Items[1:])
+			c.itemsInError(env, e.Items[1:])
 			return types.ErrorType
 		}
 		if c.allStringKeys(e.Items) {
@@ -89,7 +87,7 @@ func (c *checker) untypedBrace(env *env, e *syntax.BraceLit) types.Type {
 		return emptyMap
 	}
 	c.info.Literals[e] = LitError
-	c.itemsAlone(env, e.Items)
+	c.itemsInError(env, e.Items)
 	c.report(env, diag.E3305.At(env.span(e)))
 	return types.ErrorType
 }
@@ -125,30 +123,6 @@ func (c *checker) stringMap(env *env, e *syntax.BraceLit) types.Type {
 	return &types.MapType{Key: types.StringType, Value: v}
 }
 
-// itemsUntyped types the items of a literal of unknown type: against an expected error type (TYPES.md §1), else alone.
-func (c *checker) itemsUntyped(env *env, items []syntax.BraceItem, want types.Type) {
-	if unknownContext(want) {
-		c.itemsInError(env, items)
-		return
-	}
-	c.itemsAlone(env, items)
-}
-
-// itemsAlone types the values of items that fit no classification.
-func (c *checker) itemsAlone(env *env, items []syntax.BraceItem) {
-	for _, it := range items {
-		switch it := it.(type) {
-		case *syntax.FieldItem:
-			c.synth(env, it.Value)
-		case *syntax.MapItem:
-			c.synth(env, it.Key)
-			c.synth(env, it.Value)
-		case *syntax.SpreadItem:
-			c.synth(env, it.X)
-		}
-	}
-}
-
 // itemKind is the Kind an item prints as in E3320.
 func itemKind(it syntax.BraceItem) diag.Kind {
 	switch it.(type) {
@@ -170,7 +144,7 @@ func (c *checker) tableLit(env *env, e *syntax.BraceLit, t *types.TableType) typ
 		ent, ok := it.(*syntax.EntryItem)
 		if !ok {
 			c.report(env, diag.E3320.At(env.span(it), itemKind(it), diag.KindTable))
-			c.itemsAlone(env, []syntax.BraceItem{it})
+			c.itemsInError(env, []syntax.BraceItem{it})
 			continue
 		}
 		c.entryItem(env, ent, t)
@@ -210,7 +184,7 @@ func (c *checker) typedLit(env *env, e *syntax.TypedLit, want types.Type) types.
 	t := c.literalType(env, e.Type, want)
 	if t == nil {
 		c.info.Literals[e.Lit] = LitError
-		c.itemsUntyped(env, e.Lit.Items, want)
+		c.itemsInError(env, e.Lit.Items)
 		c.info.Types[e.Lit] = types.ErrorType
 		return types.ErrorType
 	}
@@ -221,7 +195,7 @@ func (c *checker) typedLit(env *env, e *syntax.TypedLit, want types.Type) types.
 	}
 	c.report(env, diag.E3002.At(env.span(e.Type), t, env.literalText(e)))
 	c.info.Literals[e.Lit] = LitError
-	c.itemsAlone(env, e.Lit.Items)
+	c.itemsInError(env, e.Lit.Items)
 	c.info.Types[e.Lit] = types.ErrorType
 	return types.ErrorType
 }

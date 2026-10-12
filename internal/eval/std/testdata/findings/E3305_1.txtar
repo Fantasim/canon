@@ -56,19 +56,10 @@ local let member: Bool = m in [{ a: {} }]
 error[E3305]  a/a.canon:48:49
   cannot tell what this { … } is; give it a type
 
-error[E3305]  a/a.canon:48:54
-  cannot tell what this { … } is; give it a type
-
 error[E3305]  a/a.canon:50:24
-  cannot tell what this { … } is; give it a type
-
-error[E3305]  a/a.canon:50:29
   cannot tell what this { … } is; give it a type
 
 error[E3305]  a/a.canon:52:32
   cannot tell what this { … } is; give it a type
 
-error[E3305]  a/a.canon:52:37
-  cannot tell what this { … } is; give it a type
-
-6 errors, 0 warnings in 1 package (…)
+3 errors, 0 warnings in 1 package (…)

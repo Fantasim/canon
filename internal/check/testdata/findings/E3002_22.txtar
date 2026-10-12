@@ -1,0 +1,23 @@
+TYPES.md §5.2, §1: a typed literal naming a type that is not a record (E3002), or a type that does not exist, has the error type, so a literal nested in its items is not judged again (no E3305); an unknown name compared there is still E2102 (DECISIONS 364).
+-- a/a.canon --
+package a
+
+local let n = Int { a: {} }
+
+local let u = Nope { a: {} }
+
+local let w = Int { k: none == lost }
+-- findings.txt --
+error[E3002]  a/a.canon:3:15
+  expected Int, found Int { a: {} }
+
+error[E2102]  a/a.canon:5:15
+  unknown name Nope
+
+error[E3002]  a/a.canon:7:15
+  expected Int, found Int { k: none == lost }
+
+error[E2102]  a/a.canon:7:32
+  unknown name lost (did you mean Float?)
+
+4 errors, 0 warnings in 1 package (…)
