@@ -15,6 +15,7 @@ E1006 budget: "budget" must be an integer of at least 1
 E1006 goModule: "go_module" must be a map of root names to module path strings
 E1006 optionalRoots: "optional_roots" must be a list of root names
 E1006 consumerRoots: "consumer_roots" must be a list of root names
+E1006 compiler: "compiler" must be a compiler version "X.Y.Z" (with an optional "-suffix")
 E1007 name: invalid root name "resource.vocab.items": a root name is an identifier
 E1007 empty: invalid root "resource.vocab.items": the path is empty
 E1007 absolute: invalid root "resource.vocab.items": the path is absolute
@@ -42,7 +43,8 @@ E1014 path: root "resource.vocab.items" in project.local.canon must be a path st
 E1014 root: "resource.vocab.items" in project.local.canon is not a root of project.canon (roots: go, cpp): this file can only move a declared root
 E1014 duplicate: "resource.vocab.items" is given twice in project.local.canon
 E1014 empty: root "resource.vocab.items" in project.local.canon has an empty path
-E1101 -: invalid format spec "0.9": expected [+][,][.N] with N at most 20
+E1015 -: the project pins canon 0.9; this is canon 0.9: install canon 0.9, or change "compiler" in project.canon
+E1101 -: invalid format spec "0.9": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
 E1102 -: multiline string indentation mixes tabs and spaces
 E1103 -: a type takes one refinement; use "where" for more
 E1104 annotation: unknown annotation @resource.vocab.items
@@ -416,7 +418,8 @@ E8003 target: unknown emit target resource.vocab.items: expected go, cpp, ts, js
 E8003 option: unknown option resource.vocab.items for emit resource.vocab.items
 E8004 noEmit: resource.vocab.items of package resource.vocab.items is used by this resource.vocab.items emit, but resource.vocab.items has no resource.vocab.items emit
 E8004 noCopy: resource.vocab.items of package resource.vocab.items is used by this resource.vocab.items copy under root resource.vocab.items, but resource.vocab.items has several resource.vocab.items copies and none under resource.vocab.items
-E8005 both: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items
+E8004 consumerCopy: package resource.vocab.items is used by this resource.vocab.items copy under root resource.vocab.items, but its only resource.vocab.items copy is under consumer root resource.vocab.items, which builds alone: give the resource.vocab.items emit of resource.vocab.items a copy under resource.vocab.items
+E8005 both: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; rename one of them with @resource.vocab.items(name:)
 E8005 reached: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; give one of their emits a distinct package option
 E8005 idType: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; hold one of them in a keyed list
 E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module: map its root in project.canon go_module
@@ -436,11 +439,11 @@ E8009 outRoot: @resource/Server/Item/propItem.json and @resource/Server/Item/pro
 E8009 outPackage: entries of out of emit go end in different names: give package
 E8009 outForm: entries of out of emit json mix .json files and directories: use one form for all
 E8009 textEmpty: emit text writes nothing: no export fn of this package has @text
-E8009 openMode: open of emit go needs mode types, not resource.vocab.items
-E8009 open: open of emit go: resource.vocab.items is not a public enum of this package
-E8009 openTwice: open of emit go: resource.vocab.items is listed twice
-E8009 openEmpty: open of emit go is an empty list: omit open to keep every enum closed
-E8009 openOrdered: open of emit go: resource.vocab.items is ordered, and an open enum cannot compare its members
+E8009 openMode: open of emit resource.vocab.items needs mode types, not resource.vocab.items
+E8009 open: open of emit resource.vocab.items: resource.vocab.items is not a public enum of this package
+E8009 openTwice: open of emit resource.vocab.items: resource.vocab.items is listed twice
+E8009 openEmpty: open of emit resource.vocab.items is an empty list: omit open to keep every enum closed
+E8009 openOrdered: open of emit resource.vocab.items: resource.vocab.items is ordered, and an open enum cannot compare its members
 E8009 outConsumer: @resource/Server/Item/propItem.json in out of emit resource.vocab.items lies under the consumer root resource.vocab.items: a text file is owned only through canon.outputs, which never lists a consumer root
 E8010 -: ordered enum resource.vocab.items has codes that do not increase in declaration order
 E8011 override: 0.9 is not a valid resource.vocab.items identifier for @resource.vocab.items(name:)
@@ -470,6 +473,7 @@ E8026 -: @resource/Server/Item/propItem.json is read by this load and written by
 E8027 -: refusing to write @resource/Server/Item/propItem.json: @resource/Server/Item/propItem.json is a symbolic link, and a build never writes through one
 E8028 change: build --only-root resource.vocab.items would change @resource/Server/Item/propItem.json: run canon build in the project first; --only-root never writes the project
 E8028 outside: build --only-root resource.vocab.items would write @resource/Server/Item/propItem.json outside @resource.vocab.items: this machine places @resource.vocab.items elsewhere; place it inside @resource.vocab.items as project.canon does
+E8029 -: @resource/Server/Item/propItem.json carries the generated marker of resource.vocab.items, but no emit of this build writes it: delete it
 E8101 field: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; add @ts(bigint) to resource.vocab.items
 E8101 result: "II_SYS_SYS_SCR_FARM3" does not fit a TypeScript number; resource.vocab.items is precomputed for TypeScript and cannot be bigint
 E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: not a whole number of resource.vocab.items
@@ -509,6 +513,7 @@ E9009 depth: conformance vector -42 of resource.vocab.items exceeds the call-dep
 W1001 -: doc comment is not attached to anything
 W1002 -: enum resource.vocab.items has no doc comment
 W1003 -: const name "resource.vocab.items" should be const
+W1016 -: the project pins canon 0.9; this dev build of canon is not checked against the pin
 W1604 -: field resource.vocab.items of resource.vocab.items hides the view name resource.vocab.items: {resource.vocab.items} reads the field
 W1640 -: value resource.vocab.items has no menu: the studio lists it under "No menu"
 W1641 -: required field resource.vocab.items is hidden: new values cannot be completed in the studio
@@ -536,3 +541,4 @@ W7115 statFailed: symbolic link @resource/Server/Item/propItem.json cannot be re
 W8006 -: C++ name resource.vocab.items (from resource.vocab.items) is a macro in common platform headers
 W8024 one: 1 output skipped: root @resource.vocab.items ("0.9") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
 W8024 many: -42 outputs skipped: root @resource.vocab.items ("0.9") is optional and not present on this machine; clone it or point to it in project.local.canon to write them
+W8030 -: @resource/Server/Item/propItem.json carries the generated marker of resource.vocab.items, but no emit of this build writes it: delete it
