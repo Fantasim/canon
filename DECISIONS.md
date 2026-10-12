@@ -3552,7 +3552,11 @@ round 2", "PS1 review", "PS2 round 2"):
      Settled while building (2026-10-12): a root-level orphan's findings carry `Package` `"."`; a
      directory holding a package and package-less files, selected as `./b`, selects both (never
      `ErrMixedDirectory`: an orphan is no declared package); an edit's re-check sees no orphan
-     bag; `canon test` counts a selected orphan bag among its static errors. 354: a library
+     bag; `canon test` counts a selected orphan bag among its static errors. Review (same day):
+     a package-less file in an existing package's directory is selected by its own path too;
+     `.` and `./` select the root directory's package-less files, a bare `...` stays an unknown
+     package; every command taking selectors (`fmt` included) accepts these; an orphan bag's
+     findings sort among packages by the bag's name (F2). 354: a library
      embedding canon at a release tag reports that tag as its compiler version.
 
 354. **An exact compiler pin (GRAMMAR.md §7.1; CLI.md §3.14; ERRORS.md E1006 `compiler`, E1015,

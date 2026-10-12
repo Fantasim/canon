@@ -76,8 +76,10 @@ formatted or tested.
 A file with no parseable `package` line belongs to the package its directory names (`a/b` is
 `a.b`), whether or not that package exists; one at the project root belongs to the root. Its
 findings are reported by every command that selects all packages and by a selector that would
-select that name (`a.b`, `a...`, `./a/b`, the file's own path), which is then not an unknown
-package; no other package-scoped command sees them (DECISIONS 353).
+select that name (`a.b`, `a...`, `./a/b`, the file's own path, `.` or `./` for the root), which is
+then not an unknown package, in every command that takes selectors (`fmt` included); no other
+package-scoped command sees them, and a bare `...` stays an unknown package. Their findings sort
+among the packages' by the bag's name (DECISIONS 353).
 
 ### 2.3 Global flags
 
