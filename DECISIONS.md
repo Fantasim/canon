@@ -3663,3 +3663,15 @@ round 2", "PS1 review", "PS2 round 2"):
      hook" from it, so a decoded result is denied a decoder exactly when the owner writes no hook
      (340's owed note closed). Reason: parity owed by 340 (F14); the conservative reading denied a
      decoder to records held by another value.
+
+364. **What the error type silences inside a literal in error (TYPES.md §1; ERRORS.md E3305,
+     E3002, E3320).** The items of a literal in error (`E3305`, `E3002`) and a misplaced item
+     (`E3320`) are checked against the error type, so a nested literal no longer repeats its outer
+     literal's finding. They report nothing that depends on the missing expected type (a bare name
+     or symbol that could be a member or a key, an empty or `none` literal, a lambda), and
+     everything that would be reported under any expected type (a call, a field access, a nested
+     typed literal, an unknown name as an operand of a comparison or an arithmetic operator);
+     nothing else is silenced (log-2026-09-28 "cascade scope"). Call arguments of a receiver in
+     error stay checked alone (338's `argsInError` was reverted for hiding independent errors).
+     Reason: `E3305` was reported twice on an untyped map literal nested in an `if`, a list or an
+     `in`-list, and the same repeat held for `E3002` and `E3320` (F7, log-2026-10-08).

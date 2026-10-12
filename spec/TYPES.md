@@ -57,7 +57,12 @@ to no name (§4.1) is recorded as a **symbolic key**. Its existence is checked a
 A declaration with a static error is **broken**. So is every declaration whose body names a
 broken declaration. Broken values are never evaluated (EVALUATION.md §1), which keeps one
 error from cascading. After an error the checker gives the expression the *error type*, which
-is assignable to and from every type and produces no further diagnostics.
+is assignable to and from every type and produces no further diagnostics. A sub-expression
+checked against the error type (an item of a literal in error, a misplaced item) reports nothing
+that depends on the missing expected type (a bare name or symbol that could be a member or a key,
+an empty or `none` literal, a lambda), and everything that would be reported under any expected
+type (a call, a field access, a nested typed literal, an unknown name as an operand of a
+comparison or an arithmetic operator); nothing else is silenced (DECISIONS 364).
 
 ---
 
