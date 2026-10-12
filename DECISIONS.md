@@ -3434,8 +3434,10 @@ round 2", "PS1 review", "PS2 round 2"):
      `EditResult.Findings`, a `*RejectedError`'s findings and `EditResult.Eval`. As in R3a only
      named-check messages are rendered again from the kept analysis: the finding set, the counts and
      every refusal are unchanged, nothing is kept per language and nothing echoes it. R6's findings
-     follow the call's language (or `Options.Lang`) whichever source explains them: a cause
-     evaluation's findings were left in the source language before (a bug, fixed here). `Refs`,
+     follow the call's language (or `Options.Lang`) whichever source explains them, an `Edit`
+     op's `ErrNoValue` refusal (E19) and an `Evaluate` draft's refusal (281) included; a cause
+     evaluation's findings now pass through the localiser too, a forward guarantee, since no
+     named-check finding can poison a root today (EVALUATION §7.1; I18N K8). `Refs`,
      `ViewModel` (text keys), `Build`, `Test` and `LockCheck` stay on `Options.Lang`. Reason: an
      editor showing several languages opened one project per language, about 2 GB and 10 s each on
      a large project, only to translate messages (config-studio findings 2026-10-09 §4).
