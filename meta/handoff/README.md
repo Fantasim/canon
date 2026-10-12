@@ -3,7 +3,7 @@
 What this project needs from someone or somewhere it may not change itself. A handoff is a file
 here, `<PREFIX>-<n>-slug.md`, written so it can be pasted into a session of the receiver as is:
 what is needed, why, the exact acceptance, and the paths involved. It is deleted once applied
-(git keeps it). No handoff needing action is open.
+(git keeps it). Two handoffs needing action are open (2026-10-12, at the end of the list below).
 
 `2026-09-24-GEN-01-pipeline-diff.md` is on record here as **informational** (DECISIONS 190: the
 M2 pipeline-regeneration diff Louis may want to read); the orchestrator already reviewed it and
@@ -43,6 +43,20 @@ and ConstantID clash are owed.
 `2026-10-09-sovereign-test-memory.md` and `2026-10-09-sovereign-studio-edit-latency.md` are
 **answered** by `2026-10-09-canon-reply-performance.md` (log 2026-10-09): test 7.76 → 2.15 GB,
 check 16 → 9.5 s, API reuse and edit indexes; four config-studio changes; per-entry deps owed.
+
+Two handoffs came out of the 2026-10-12 review of Resource `Config/`, Canon's first large real use:
+
+- `2026-10-12-canon-next-versions.md` is **to Louis, open**. It is the roadmap proposal:
+  - v0.1.6: owed fixes, including the `canon lsp` leak, the guide and spec hygiene;
+  - v0.2: M6 legacy C++, one declaration per id, `canon lint`, wire forms, testable package checks, robustness;
+  - v0.3;
+  - the refused list, with the decision that refuses each item.
+  The ordering call is his.
+- `2026-10-12-canon-to-sovereign-resource-structure.md` is **to the Source session, open**. It is a stepped cleanup of Resource's Canon structure:
+  - bugs and the converter-revert hazard;
+  - structure the agents chose;
+  - phase-1 debt that touches no Source line;
+  - phase 2, which it asks Sovereign to write as ADR L-0125.
 
 ## To Louis (`L-*`)
 
