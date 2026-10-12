@@ -3549,6 +3549,11 @@ round 2", "PS1 review", "PS2 round 2"):
      `E1012` and the `E7003` override. A stray file that has a `package` line already goes to its
      own package (unchanged). Reason: one stray file made `canon check a` fail for every package of
      the project, and the file itself could not be selected (2026-10-12 repro).
+     Settled while building (2026-10-12): a root-level orphan's findings carry `Package` `"."`; a
+     directory holding a package and package-less files, selected as `./b`, selects both (never
+     `ErrMixedDirectory`: an orphan is no declared package); an edit's re-check sees no orphan
+     bag; `canon test` counts a selected orphan bag among its static errors. 354: a library
+     embedding canon at a release tag reports that tag as its compiler version.
 
 354. **An exact compiler pin (GRAMMAR.md §7.1; CLI.md §3.14; ERRORS.md E1006 `compiler`, E1015,
      W1016; amends 276).** `project.canon` takes `compiler: "X.Y.Z[-suffix]"`, optional (absent:
