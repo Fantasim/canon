@@ -10,7 +10,7 @@ import (
 // emitOpen is `open: [E, …]` of a go emit: in types mode only, a non-empty list of the package's public enums, each listed once and none ordered (E8009, DECISIONS 339).
 func (c *checker) emitOpen(env *env, e *syntax.EmitDecl, fi *syntax.FieldItem) {
 	if mode, known := emitModeWord(e); known && mode != ModeTypes {
-		c.report(env, diag.E8009.AtOpenMode(env.span(fi.Name), mode))
+		c.report(env, diag.E8009.AtOpenMode(env.span(fi.Name), TargetGo, mode))
 	}
 	list, ok := fi.Value.(*syntax.ListLit)
 	if !ok {
@@ -18,7 +18,7 @@ func (c *checker) emitOpen(env *env, e *syntax.EmitDecl, fi *syntax.FieldItem) {
 		return
 	}
 	if len(list.Elems) == 0 { // omit open to keep every enum closed
-		c.report(env, diag.E8009.AtOpenEmpty(env.span(list)))
+		c.report(env, diag.E8009.AtOpenEmpty(env.span(list), TargetGo))
 		return
 	}
 	seen := map[string]bool{}
@@ -41,11 +41,11 @@ func (c *checker) openName(env *env, x syntax.Expr, option string, seen map[stri
 	}
 	switch {
 	case !isEnum:
-		c.report(env, diag.E8009.AtOpen(env.span(id), id.Name))
+		c.report(env, diag.E8009.AtOpen(env.span(id), TargetGo, id.Name))
 	case seen[id.Name]:
-		c.report(env, diag.E8009.AtOpenTwice(env.span(id), id.Name))
+		c.report(env, diag.E8009.AtOpenTwice(env.span(id), TargetGo, id.Name))
 	case d.Ordered.Valid(): // a string type would compare its members wrongly
-		c.report(env, diag.E8009.AtOpenOrdered(env.span(id), id.Name))
+		c.report(env, diag.E8009.AtOpenOrdered(env.span(id), TargetGo, id.Name))
 	}
 	seen[id.Name] = true
 }

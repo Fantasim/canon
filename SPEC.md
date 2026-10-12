@@ -239,8 +239,8 @@ String escapes: `\n \t \r \\ \" \{ \} \u{1F600}`.
   `.matches(`. Everywhere else `/` divides.
 - **Interpolation** lexes a full expression inside `{…}`, including nested strings and brackets,
   up to the matching `}`, on one line and without comments (`E1112`). A format spec is a `:` at
-  bracket depth 0 followed by `[+][,][.N]`, with `N` at most 20, and `}`; anything else is
-  `E1101`.
+  bracket depth 0 followed by `[+][0][W][,][.N][x|X]`, with `W` 1–99 and `N` at most 20, and
+  `}`; anything else is `E1101`.
 - **Multiline strings** mixing tabs and spaces in the stripped prefix are `E1102`; escapes and
   interpolation work as in ordinary strings.
 
@@ -250,7 +250,8 @@ ECMAScript `Number::toString` (integral values without `.0`), durations as canon
 members by name, refs by key, `none` as `none`, lists as `[a, b]`, maps as `{k: v}`, records as
 `Type{f: v}`. A format spec may follow a colon: `{heal:,}` (groups of 3 with `,`), `{ratio:.2}`
 (fixed decimals, rounded half away from zero from the exact binary value), `{delta:+}` (always
-signed, `+0` for zero); specs apply to numbers only. Details:
+signed, `+0` for zero), `{id:08x}` (hexadecimal, zero-padded to 8), `{n:5}` (padded with spaces
+to 5); specs apply to numbers only. Details:
 [spec/GRAMMAR.md](spec/GRAMMAR.md) §2 (lexing), [spec/STDLIB.md](spec/STDLIB.md) §9 (the text form
 and format specs).
 

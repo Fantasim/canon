@@ -294,6 +294,9 @@ Encode `false` → `0`, `true` → `1`. Decode: only the integer tokens `0` and 
   | the `none:` marker (JSON-equal) | `none` | `none` | n/a | n/a |
   | another value | decoded as `T` | decoded as `T` | decoded as `T` | decoded as `T` |
 
+- An `@json(inline)` field (§5.6) has no key, so "key absent" never applies to it: decoding reads
+  the tag from the parent, and a missing tag is `E7112`, default or not. Its default serves Canon
+  literals only; `emit json` always writes the tag (DECISIONS 360).
 - `null` anywhere a non-optional value is expected (list element, map value, top-level value) is
   `E3315`.
 - JSON equality for the marker: same kind; numbers equal by exact value; strings equal after
@@ -393,8 +396,9 @@ JSON source produces no finding (TYPES.md decides whether a Canon literal settin
   (TYPES.md).
 - **`@json(inline)`**: the field has no key of its own. Encode writes, at the field's position in
   the parent, the tag member, the case's fields, and the case's `$` keys. Decode reads the tag and
-  the selected case's fields from the parent object. A parent key is claimed if it is a parent
-  field, the tag, or a field of the selected case.
+  the selected case's fields from the parent object; a missing tag is `E7112`, whatever the
+  field's default (§5.4, DECISIONS 360). A parent key is claimed if it is a parent field, the tag,
+  or a field of the selected case.
 
 `Event` from `resource/events/event.canon` (`kind: EventKind @json(inline)`, tag `"type"`), the
 `sample` value, encoded compactly (§7.4):

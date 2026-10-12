@@ -3586,3 +3586,78 @@ round 2", "PS1 review", "PS2 round 2"):
      nothing changes. Reason: renaming `@text("S.sql")` to `"s.sql"` with new content was `E8001`
      on macOS and Windows, and with the same content left the old spelling on disk (owed by 326,
      log-2026-10-08).
+
+358. **Hex, width and padding in format specs (STDLIB.md §9.5; GRAMMAR.md §2.6; SPEC §2;
+     ERRORS.md E1101, E4503).** A spec is `[+][0][W][,][.N][x|X]`: `W` a width 1–99, `0` zero
+     padding (only before a width), `x`/`X` lower- or uppercase hexadecimal of an `Int`, with no
+     prefix (`"0x{n:08x}"`: the prefix is template text). `x` with `,` or `.N`, `0` with `,`, a
+     `0` with no width and a width of 0 are `E1101` (static, in the lexer); `x` on a `Float` is
+     `E4503`. Steps: the digits (hex magnitude, or §9.5's `.N`/canonical form), `,`, the sign (`-`,
+     or `+` with `+`), then padding to `W` bytes, the sign counted: zeros after the sign with `0`,
+     else spaces on the left. A negative hex value is `-` and its magnitude (`{-255:x}` is `-ff`),
+     never a two's complement. No `#`, no alignment, no width on strings: one form. The syntax
+     node `FormatSpec` gains `Zero`, `Width` and `Hex` (additive, IMPLEMENTATION-PLAN §4 review
+     rule). Reason: any text emit writing ids or masks (a define header, a hex table) needed a
+     hand-written hex writer per project (handoff 2026-10-12 F18).
+
+359. **Sequences have `duplicates` (STDLIB.md §4.2, §1.3).** `xs.duplicates() -> [T]` on any
+     sequence of an `Eq` type: the elements occurring more than once, each listed once as its
+     first occurrence, in first-seen order (`unique`'s order: `[a, b, b, a]` gives `[a, b]`), so
+     `xs.duplicates()` is `xs.unique()` without the singletons. Typed as `unique` is (a builtin's
+     `T` binds from its receiver; SPEC §22's "no generics" is about user code). Cost n plus
+     §1.3's equality pairs. One method, no option. Reason: a check naming repeated keys needed a
+     loop per element type, and `groupBy` takes `Key` types only (F18).
+
+360. **An inline variant is always read from its tag (WIRE.md §5.4, §5.6).** An `@json(inline)`
+     field has no key, so §5.4's "key absent" never applies to it: decoding reads the tag from the
+     parent, and a missing tag is `E7112`, default or not. Its default serves Canon literals only;
+     `emit json` always writes the tag. `load`, the Go, C++ and TypeScript decoders already do
+     this; a `types`-mode C++ default holding a variant stays `E8019`. "Tag absent means the
+     default" was refused: it needs an ambiguity rule for a case key present without its tag and
+     loosens the strictest reading (25-27). Reason: WIRE §5.4 was silent (log-2026-10-08).
+
+361. **Every generated decoder that reads text refuses a repeated key (CODEGEN.md §5.13, §7.5;
+     WIRE.md §3.2).** C++ `types` mode adds `static std::optional<T> T::Parse(std::string_view
+     text, std::string& error)` beside `Decode`: WIRE §3.1/§3.2's byte rules (UTF-8 and BOM, a
+     repeated key, depth 512) through `canon::json::ParseTextFile`, then the decode, keeping file
+     order. A repeated key fails with `duplicate key` at its path in every runtime (Go's types
+     decoders said "repeated key"; aligned). `Decode(const nlohmann::json&)` and TypeScript
+     `decode<T>(json)` take an already-parsed value and cannot see a repeated key (the parser kept
+     the last): `Parse`/`parse<T>` are the exact forms. Go decoders and every `data` loader already
+     refused. Reason: `load` refuses a repeated key (`E7104`) while a C++ runtime took the last
+     (log-2026-10-08).
+
+362. **Open enums in C++ and TypeScript `types` mode (CODEGEN.md §2.1, §5.2; ERRORS.md E8009,
+     E8019 `OpenEnum`; extends 339).** `open` is an option of the `go`, `cpp` and `ts` emits, each
+     emit's own list, and every rule of 339 holds per target: `types` mode only and the `E8009`
+     variants (which now name the target); numeric wires, literal unions and a dependent type's
+     discriminant stay closed; another package's emit of the same target that references an enum
+     this target opens is `E8019` `OpenEnum` unless in `types` mode. C++: an opened enum is a class
+     holding its wire (`explicit E(std::string)`, empty by default), one `static const E` per
+     member, retired ones included, spelled as the closed enumerators (`E::m`); `==`, `!=` and `<`
+     by wire bytes (a lookup order, not declaration order); `std::hash<E>`; `k<E>Members` `const`;
+     free functions `ToWire`, `ToName` (the Canon name of a known member, else the wire),
+     `IsKnown`, `<E>FromWire` (the known member or `nullopt`), with `@codes` `ToCode`
+     (`std::optional`) and `<E>FromCode`; an enumerator named like its enum or `wire_` is `E8005`;
+     `LookupKey<K>` is `const K&` for a class key (`rt_v1`, additive). TypeScript: `<E>Known` is the
+     closed union and `E = <E>Known | (string & {})` (no brand: decoders build values, and a brand
+     would need a cast helper at every construction); `<E>Members`, `<E>Names`, `<E>Index`,
+     `<E>Codes` are keyed by `<E>Known`; `is<E>Known(v)` and `<e>Name(v)` are added. `ir.Emit.Open`
+     serves the three targets (comment only). Reason: parity owed by 339 (F14); a C++ or TS
+     consumer of live data meets the same new members a Go one does.
+
+363. **C++ and TypeScript decoders of a `@text` result that is not a record; owner hooks read from
+     the owner's plan (CODEGEN.md §5.13, §5.14, §7.5, §8.1; extends 340).** In `types` mode, each
+     `@text` fn that gets Go's `Decode<Fn>File` (340) gets, in C++, `std::optional<T>
+     Decode<Fn>File(std::string_view text, std::string& error)` in the package namespace, and in
+     TypeScript `decode<Fn>File(json: unknown): T` and `parse<Fn>File(text: string): T`, with 340's
+     rules (the same readable results for every target, never a refusal, `E8005` on a name it
+     meets, imports that are no `E8004` use, errors naming `<Fn>File`). The C++ decoder parses the
+     text itself (`ParseTextFile`, 361), so a map keeps file order; a map inside a record stays
+     `E8019` `MapField` in C++ `types` mode and such a result gets no decoder. `ir.Emit` gains
+     `NoHook []string` (additive, IMPLEMENTATION-PLAN §4.5 review rule): the records and cases
+     (`V.Case`) whose make hook a `data`-mode `go` or `cpp` emit does not write, filled by stage E
+     from the owner's own plan and copied by `CopyOf`; an importer decides "the owner writes this
+     hook" from it, so a decoded result is denied a decoder exactly when the owner writes no hook
+     (340's owed note closed). Reason: parity owed by 340 (F14); the conservative reading denied a
+     decoder to records held by another value.

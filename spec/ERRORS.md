@@ -160,7 +160,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Null` | null | `E7110` |
 | `Number` | a number | `E7110` |
 | `Object` | an object | `E7110` |
-| `OpenEnum` | an enum its package's Go emit opens | `E8019` |
+| `OpenEnum` | an enum its package's emit of this target opens | `E8019` |
 | `OptionalElementList` | a list of optional elements | `E8019` |
 | `OptionalMapValue` | a map with optional values | `E8019` |
 | `OutPaths` | a constant string or a list of constant strings | `E8009` |
@@ -478,7 +478,7 @@ Owner: GRAMMAR.md.
 
 | Code | Severity | Package | Owner | Meaning |
 |---|---|---|---|---|
-| E1101 | error | syntax | GRAMMAR.md §2.6 | invalid format spec in an interpolation (`[+][,][.N]`, N ≤ 20) |
+| E1101 | error | syntax | GRAMMAR.md §2.6 | invalid format spec in an interpolation (`[+][0][W][,][.N][xX]`, W ≤ 99, N ≤ 20) |
 | E1102 | error | syntax | GRAMMAR.md §2.6 | multiline string indentation mixes tabs and spaces |
 | E1103 | error | syntax | GRAMMAR.md §5.9 | a type takes a second refinement; use `where` |
 | E1104 | error | syntax | GRAMMAR.md §8.2 | unknown annotation or annotation argument |
@@ -518,7 +518,7 @@ Owner: GRAMMAR.md.
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
-| E1101 | - | spec:Text | `invalid format spec "{spec}": expected [+][,][.N] with N at most 20` |
+| E1101 | - | spec:Text | `invalid format spec "{spec}": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20` |
 | E1102 | - | - | `multiline string indentation mixes tabs and spaces` |
 | E1103 | - | - | `a type takes one refinement; use "where" for more` |
 | E1104 | annotation | name:Name | `unknown annotation @{name}` |
@@ -1294,11 +1294,11 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | outPackage | - | `entries of out of emit go end in different names: give package` |
 | E8009 | outForm | - | `entries of out of emit json mix .json files and directories: use one form for all` |
 | E8009 | textEmpty | - | `emit text writes nothing: no export fn of this package has @text` |
-| E8009 | openMode | mode:Name | `open of emit go needs mode types, not {mode}` |
-| E8009 | open | name:Name | `open of emit go: {name} is not a public enum of this package` |
-| E8009 | openTwice | name:Name | `open of emit go: {name} is listed twice` |
-| E8009 | openEmpty | - | `open of emit go is an empty list: omit open to keep every enum closed` |
-| E8009 | openOrdered | name:Name | `open of emit go: {name} is ordered, and an open enum cannot compare its members` |
+| E8009 | openMode | target:Name, mode:Name | `open of emit {target} needs mode types, not {mode}` |
+| E8009 | open | target:Name, name:Name | `open of emit {target}: {name} is not a public enum of this package` |
+| E8009 | openTwice | target:Name, name:Name | `open of emit {target}: {name} is listed twice` |
+| E8009 | openEmpty | target:Name | `open of emit {target} is an empty list: omit open to keep every enum closed` |
+| E8009 | openOrdered | target:Name, name:Name | `open of emit {target}: {name} is ordered, and an open enum cannot compare its members` |
 | E8009 | outConsumer | target:Name, path:Path, root:Name | `{path} in out of emit {target} lies under the consumer root {root}: a text file is owned only through canon.outputs, which never lists a consumer root` |
 | E8010 | - | enum:Name | `ordered enum {enum} has codes that do not increase in declaration order` |
 | E8011 | override | name:Text, target:Name | `{name} is not a valid {target} identifier for @{target}(name:)` |

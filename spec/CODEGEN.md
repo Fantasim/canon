@@ -78,8 +78,8 @@ in [§12](#12-diagnostics).
 | Target | `out` | Modes | Default mode | Other options |
 |---|---|---|---|---|
 | `go` | directory (one Go package) | `baked`, `embedded`, `data`, `types` | `baked` | `package` (default: last element of `out`, the same for every entry of a list); `open` (`types` mode, [§5.2](#52-enums)) |
-| `cpp` | directory | `baked`, `embedded`, `data`, `types` | `baked` | `namespace` (default: package path with `.` → `::`) |
-| `ts` | file ending in `.ts` | `baked`, `embedded`, `data`, `types` | `baked` | none |
+| `cpp` | directory | `baked`, `embedded`, `data`, `types` | `baked` | `namespace` (default: package path with `.` → `::`); `open` (`types` mode, [§5.2](#52-enums)) |
+| `ts` | file ending in `.ts` | `baked`, `embedded`, `data`, `types` | `baked` | `open` (`types` mode, [§5.2](#52-enums)) |
 | `json` | WIRE.md | — | — | `values` |
 | `view` | VIEWMODEL.md | — | — | — |
 | `text` | directory | — | — | none ([§2.9](#29-text-files), DECISIONS 294) |
@@ -119,7 +119,8 @@ in [§12](#12-diagnostics).
   `canon check` reports them exactly as `canon build` does (CLI.md §3.3). `E8001` needs the output
   file system and is reported in phase 8 (emit) only. WIRE.md's `E8152` is found by `check` too,
   from the placed emits after stage E (DECISIONS 355).
-- `open` (Go, DECISIONS 339) is a non-empty list of bare words, each a public enum the package
+- `open` (Go, C++ and TypeScript, each emit its own list; DECISIONS 339, 362) is a non-empty list
+  of bare words, each a public enum the package
   declares, listed once; it needs `mode: types` (`E8009` `openMode`) and refuses an `ordered` enum
   (`E8009` `openOrdered`), a name that is not such an enum (`E8009` `open`), a name listed twice
   (`E8009` `openTwice`) and an empty list (`E8009` `openEmpty`). Open enums: §5.2.
@@ -969,8 +970,8 @@ Rules (GO-05, CPP-04, WIR-04):
 - Retired members stay in every target (SPEC §12), with the doc line `Retired.` added. The kind
   member of a retired variant case gets the same line (§5.5).
 
-**Open enums** (Go `types` mode, DECISIONS 339). An enum listed in the emit's `open` keeps its
-wire value, so a decoder accepts a member this build does not know:
+**Open enums** (`types` mode, DECISIONS 339 for Go, 362 for C++ and TypeScript). An enum listed in
+the emit's `open` keeps its wire value, so a decoder accepts a member this build does not know:
 
 ```go
 type Dst string                          // the wire value
@@ -983,10 +984,39 @@ func DstMembers() iter.Seq[Dst]
 // with @codes: func (self Dst) Code() (uint16, bool); func DstFromCode(code uint16) (Dst, bool)
 ```
 
-A decoder reads a field, element or map key of an open enum from any JSON string (a wrong JSON
-kind still fails); an unknown member that decides a dependent type fails, since no branch is
-known. Another package's `go` emit that references an open enum must be in `types` mode too
-(`E8019` `OpenEnum`). C++ and TypeScript enums stay closed.
+```cpp
+class Dst {                                       // in the package namespace
+public:
+    Dst() = default;                              // the empty wire: unknown
+    explicit Dst(std::string wire);
+    static const Dst hp;                          // one per member, retired ones included, spelled as E::m
+    friend bool operator==(const Dst&, const Dst&) noexcept;   // and !=, by wire bytes
+    friend bool operator<(const Dst&, const Dst&) noexcept;    // wire byte order: for lookups, not declaration order
+};
+inline const std::array<Dst, N> kDstMembers;      // const, not constexpr
+std::string_view ToWire(const Dst& v);
+std::string_view ToName(const Dst& v);            // the Canon name of a known member, else the wire
+bool IsKnown(const Dst& v);
+std::optional<Dst> DstFromWire(std::string_view wire);   // the known member, else nullopt
+// with @codes: std::optional<uint16_t> ToCode(const Dst& v); std::optional<Dst> DstFromCode(uint16_t code)
+// after the namespace: template <> struct std::hash<ns::Dst> (the wire's hash)
+```
+
+```ts
+export type DstKnown = "DST_HP" | "DST_MP";       // the closed union
+export type Dst = DstKnown | (string & {});       // any wire; editors still complete the known ones
+// DstMembers, DstNames, DstIndex, DstCodes are keyed by DstKnown
+export function isDstKnown(v: Dst): v is DstKnown;
+export function dstName(v: Dst): string;          // the Canon name of a known member, else the wire
+```
+
+A decoder reads a field, element, map key or keyed-list key of an open enum from any JSON string
+(a wrong JSON kind still fails); a numeric wire (`@json(codes)`, a bits mask) and a literal union
+over its members stay closed, and an unknown member that decides a dependent type fails, since no
+branch is known. Another package's emit of the same target that references an enum this target's
+emit opens must be in `types` mode too (`E8019` `OpenEnum`). In C++ the free functions avoid
+member names that could collide with enumerators; an enumerator named like its enum or `wire_`
+is `E8005`. The runtime's `LookupKey<K>` is `const K&` for a class key (§7.4).
 
 ### 5.3 Table ids
 
@@ -1534,15 +1564,18 @@ func DecodeEventConfig(raw []byte) (*EventConfig, error)
 
 ```cpp
 static std::optional<EventConfig> EventConfig::Decode(const nlohmann::json& v, std::string& error);
+static std::optional<EventConfig> EventConfig::Parse(std::string_view text, std::string& error);
 ```
 
 ```ts
 export function decodeEventConfig(json: unknown): EventConfig;
 ```
 
-- The C++ decoder takes an already-parsed `nlohmann::json`, whose objects are ordered by key: a
+- The C++ `Decode` takes an already-parsed `nlohmann::json`, whose objects are ordered by key: a
   nested table it decodes holds its entries in key byte order, not file order (the `data`-mode
-  loader, which reads the text, keeps file order; DECISIONS 290).
+  loader, which reads the text, keeps file order; DECISIONS 290). `Parse` reads the text itself
+  (`canon::json::ParseTextFile`, §7.5): file order, exact number tokens and the byte rules below
+  (DECISIONS 361).
 - A decoder reads the JSON that the `load` reads at that position (after `at:`), with WIRE.md's
   decode rules for sources: absent means the default, `null` or the `@json(none:)` value means
   `none`, units, `path`, `pairs`, tags and `inline` are applied. Unknown keys are ignored (the file
@@ -1553,12 +1586,18 @@ export function decodeEventConfig(json: unknown): EventConfig;
   number of milliseconds, a fraction for an integer), an incomplete or non-contiguous `pairs`
   slot. It then returns **no value** and an error naming the JSON path of the first failure: Go
   `nil` and an `error`; C++ `std::nullopt` with `error` set; TS throws an `Error`. It never returns
-  a partly filled value. A Go decoder, handed raw bytes, also applies WIRE.md §3.1/§3.2's byte
-  rules (UTF-8 and BOM, a repeated key, an unpaired surrogate, depth 512); the C++ decoder leaves
-  them to the caller's parser. Only a public record or variant has a public decoder, and in Go
-  a public `@text` fn whose result (its non-optional type, for a maybe-file) is a map, a list or
-  a keyed list: `func Decode<Fn>File(raw []byte) (<T>, error)`, `<T>` the Go type of the result
-  (DECISIONS 340). Otherwise a runtime reads a `@text` file through its result type only when
+  a partly filled value. A decoder that reads text (Go's, C++ `Parse`, TS `parse<T>`) also
+  applies WIRE.md §3.1/§3.2's byte rules (UTF-8 and BOM, a repeated key, an unpaired surrogate,
+  depth 512), a repeated key failing with `duplicate key` at its path in every target; C++
+  `Decode` and TS `decode<T>`, handed a parsed value, cannot see a repeated key (the parser kept
+  the last): `Parse` and `parse<T>` are the exact forms (DECISIONS 361). Only a public record or
+  variant has a public decoder, and a public `@text` fn whose result (its non-optional type, for a
+  maybe-file) is a map, a list or a keyed list: Go `func Decode<Fn>File(raw []byte) (<T>,
+  error)`; C++ `std::optional<T> Decode<Fn>File(std::string_view text, std::string& error)` in
+  the package namespace, which parses the text with `ParseTextFile` (file order, byte rules); TS
+  `decode<Fn>File(json: unknown): T` and `parse<Fn>File(text: string): T`; `<T>` the target's type
+  of the result, `<Fn>` the fn's name in the target (DECISIONS 340, 363). A map inside a record
+  stays `E8019` `MapField` in C++ `types` mode, and a result holding one gets no decoder. Otherwise a runtime reads a `@text` file through its result type only when
   that is a record or variant. What it can represent it accepts without checking refinements, refs, keys
   or checks: the file is the one `canon check` validated (WIRE.md §5.13).
 - Defaults must be constant; a computed default (one that reads other fields, or the instance through
@@ -1632,7 +1671,10 @@ generated code, not public API ([§1.3](#13-stability)), like a default-construc
   `data` or `types` emit, a record with a ref its `data` loader resolves inside its own values has
   no hook written (its name stays reserved); another package's use of it, directly or through a
   record that reaches it, is `E8019` `ForeignResolvedRef`, whose message names the way out (§2.8).
-  Its entry hook is still written: only a use stage E refuses could call it.
+  Its entry hook is still written: only a use stage E refuses could call it. Whether the owner
+  writes a hook is read from the owner's own plan, carried in its IR emit (`NoHook`, stage E), so
+  an importer's decoded `@text` result (§5.13) is denied a decoder exactly when the hook is not
+  written (DECISIONS 363).
 - **Rows.** Only entry and row hooks take `id` and `retired`; a record's never does: a package fills its own rows' id and retired flag
   itself (`detail::<P>Access`, its loaders), and another package holds this package's records in
   its own row type ([§5.9](#59-values-containers-and-accessors)), so it never builds this
@@ -2751,7 +2793,10 @@ private:
 Written next to `canon_runtime.h` when the emit is in `embedded`, `data` or `types` mode. Requires
 nlohmann/json ≥ 3.9 on the include path as `<nlohmann/json.hpp>`. Nothing in it throws: parsing
 uses `allow_exceptions=false` and every typed read checks the JSON type first, so it also builds
-with exceptions disabled.
+with exceptions disabled. `ParseTextFile(name, text, doc, error, tokens, orders)` is the data
+loader's `ParseDataFile` without the `$schema` and envelope checks, accepting any top-level value
+and applying the same byte rules; `types`-mode `Parse` and `Decode<Fn>File` read through it
+(§5.13, DECISIONS 361, 363). Both are additive to `rt_v1`.
 
 ```cpp
 // GENERATED by canon: C++ runtime rt_v1 (JSON). DO NOT EDIT.
@@ -3304,7 +3349,8 @@ applies).
   a `@ts(bigint)` integer past 2^53 is refused, integer-like map keys come in JavaScript's order,
   and number tokens are judged by value (DECISIONS 278).
 - `types` mode exports `parse<T>(text)` beside `decode<T>(json)` for every type it decodes, with
-  the same exactness (DECISIONS 278).
+  the same exactness (DECISIONS 278), and `parse<Fn>File`/`decode<Fn>File` per decoded `@text`
+  fn (§5.13, DECISIONS 363).
 - Decoders use private helpers (`dec…`), written after the export fns, only those a file uses;
   §8.2's block is the shared runtime, and these are the decoders' own (DECISIONS 278).
 

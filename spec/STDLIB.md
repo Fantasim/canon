@@ -64,7 +64,7 @@ charges comparisons only (§4.5).
 
 Two charges add to the listed cost, never replace it (EVALUATION.md §12.1):
 
-- **Equality.** Every equality a built-in runs (`contains`, `indexOf`, `unique`, `isUnique`,
+- **Equality.** Every equality a built-in runs (`contains`, `indexOf`, `unique`, `duplicates`, `isUnique`,
   `intersect`, `union`, `diff`, key lookups) costs one step per pair of values compared, scalar
   pairs included: `xs.contains(x)` over n elements costs its visits plus n pairs. Sets and maps
   find a value through a hash index, never a scan, so a lookup compares only genuine hash
@@ -220,6 +220,7 @@ slice.
 | `reverse() -> [T]` | elements in reverse order | `[]` | | n |
 | `sortBy<K: Ord>(f: fn(T) -> K) -> [T]` | elements in ascending order of `f`, **stable** | `[]` | | 1 per key comparison (§4.5) |
 | `unique() -> [T]` | first occurrence of each distinct element, in order | `[]` | | n |
+| `duplicates() -> [T]` | the elements occurring more than once, each once, as its first occurrence, in `unique`'s order (`[a, b, b, a]` gives `[a, b]`; DECISIONS 359) | `[]` | | n |
 | `enumerate() -> [Pair(Int, T)]` | `(0, x0)`, `(1, x1)`, … | `[]` | | n |
 | `pairs() -> [Pair(T, T)]` | every `(xs[i], xs[j])` with `i < j`, ordered by `i` then `j` | `[]` | | 1 per pair |
 | `zip<U>(other: Seq(U)) -> [Pair(T, U)]` | `(xs[i], other[i])` for each `i` | `[]` | `E4105` if the lengths differ | n |
@@ -440,15 +441,20 @@ is written raw.
 `{x:spec}` in a string template (grammar in GRAMMAR.md, LEX-02):
 
 ```
-spec = [ "+" ] [ "," ] [ "." digits ]          digits: 0 to 20
+spec  = [ "+" ] [ [ "0" ] width ] [ "," ] [ "." digits ] [ "x" | "X" ]
+width = 1 to 99          digits: 0 to 20
 ```
 
-A spec is allowed only on `Int` (any width) and `Float` (any width) expressions; on any other
-type it is `E4503` (static). The spec's syntax, including the limit of 20 digits after `.`, is
+A spec is allowed only on `Int` (any width) and `Float` (any width) expressions, and `x`/`X` on
+`Int` only; on any other type it is `E4503` (static). `x` or `X` with `,` or `.N`, `0` with `,`, a
+`0` with no width after it and a width of 0 are syntax errors (`E1101`; DECISIONS 358). The spec's syntax, including the limit of 20 digits after `.`, is
 GRAMMAR.md's (`E1101`, GRAMMAR.md §2.6). Translated functions allow no spec (SPEC §9.4,
 CONFORMANCE.md §2.2). The steps, in order:
 
-1. **`.N`**: an `Int` is printed in decimal followed by `.` and `N` zeros (no `.` when `N = 0`).
+1. **`x`, `X`**: the magnitude of the `Int` in lowercase or uppercase hexadecimal, with no prefix
+   and no leading zeros (`0` for zero); a prefix is template text (`"0x{n:08x}"`). A negative value
+   is its sign and its magnitude (`{-255:x}` is `-ff`), never a two's complement. Otherwise:
+   **`.N`**: an `Int` is printed in decimal followed by `.` and `N` zeros (no `.` when `N = 0`).
    A `Float` is rounded to `N` decimals from its **exact binary value**, ties away from zero, and
    printed in fixed notation with exactly `N` decimals (never an exponent). Without `.N`, the
    canonical form is used (§9.2).
@@ -456,6 +462,10 @@ CONFORMANCE.md §2.2). The steps, in order:
    effect on a canonical form that uses an exponent.
 3. **`+`**: prefixes `+` to a value that is not negative. A result whose digits are all zero is
    printed without `-` (`-0.001` with `.2` is `0.00`), so `+` gives `+0`, `+0.00`.
+4. **width `W`**: a text shorter than `W` bytes (its sign included) is padded to `W`: with `0`,
+   by zeros between the sign and the digits; otherwise by spaces on the left. A longer text is
+   never cut. There is no alignment option and no width on strings: a column of names is padded
+   by a function.
 
 | Value | Spec | Text |
 |---|---|---|
@@ -467,6 +477,13 @@ CONFORMANCE.md §2.2). The steps, in order:
 | `5` | `+` | `+5` |
 | `0` | `+` | `+0` |
 | `-3` | `+` | `-3` |
+| `255` | `08x` | `000000ff` |
+| `87` | `02X` | `57` |
+| `-255` | `x` | `-ff` |
+| `-5` | `04` | `-005` |
+| `42` | `5` | `   42` |
+| `3` | `+03` | `+03` |
+| `1234567` | `12,` | `   1,234,567` |
 
 ---
 

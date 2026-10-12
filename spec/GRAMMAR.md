@@ -187,10 +187,12 @@ the view model. For a value of `v` milliseconds:
 - The lexer pushes an interpolation mode and lexes ordinary tokens (including nested strings,
   which may interpolate in turn) while tracking `(` `[` `{` depth, until it meets, at depth 0, a
   `}` (end) or a `:` (format spec).
-- A `:` at depth 0 starts a **format spec**, which must match `\+?,?(\.[0-9]{1,2})?` and be
-  non-empty, followed directly by `}`. The number after `.` is at most 20. Anything else is
-  `E1101`. The spec components are: `+` always signed, `,` thousands separator, `.N` fixed
-  decimals (their meaning: STDLIB.md).
+- A `:` at depth 0 starts a **format spec**, which must match
+  `\+?(0?[1-9][0-9]?)?,?(\.[0-9]{1,2})?[xX]?` and be non-empty, followed directly by `}`. The
+  number after `.` is at most 20; `x`/`X` takes neither `,` nor `.N`, and `0` takes no `,`.
+  Anything else is `E1101`. The spec components are: `+` always signed, `0` zero padding, a width
+  1–99, `,` thousands separator, `.N` fixed decimals, `x`/`X` hexadecimal (their meaning:
+  STDLIB.md §9.5; DECISIONS 358).
 - A `:` inside brackets belongs to the expression: `{f(x, n: 1)}`, `{ {a: 1}.a }` are valid.
 - An empty interpolation `{}`, a newline inside an interpolation, a comment inside an
   interpolation, or end of input before the closing `}` is `E1112`.
@@ -202,7 +204,10 @@ the view model. For a value of `v` milliseconds:
 "{heal:,} HP"            // spec ","
 "{ratio:.2}"             // spec ".2"
 "{delta:+}"              // spec "+"
-"{a:x}"                  // E1101
+"{id:08x}"               // spec "08x": zero-padded to 8, hexadecimal
+"{n:5}"                  // spec "5": padded with spaces to 5
+"{a:y}"                  // E1101
+"{a:,x}"                 // E1101
 ```
 
 **Raw strings** `r"…"`: `r` immediately followed by `"`. No escapes, no interpolation; `{`, `}` and

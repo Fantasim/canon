@@ -419,7 +419,7 @@ var kindWords = [...]string{
 	"null",
 	"a number",
 	"an object",
-	"an enum its package's Go emit opens",
+	"an enum its package's emit of this target opens",
 	"a list of optional elements",
 	"a map with optional values",
 	"a constant string or a list of constant strings",
@@ -641,7 +641,7 @@ var Registry = []Def{
 	{
 		Code: "E1101", Severity: Error, Package: "syntax",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "spec", Type: ArgTypeText}}, Template: "invalid format spec \"{spec}\": expected [+][,][.N] with N at most 20"},
+			{Args: []Arg{{Name: "spec", Type: ArgTypeText}}, Template: "invalid format spec \"{spec}\": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20"},
 		},
 	},
 	{
@@ -2239,11 +2239,11 @@ var Registry = []Def{
 			{Name: "outPackage", Template: "entries of out of emit go end in different names: give package"},
 			{Name: "outForm", Template: "entries of out of emit json mix .json files and directories: use one form for all"},
 			{Name: "textEmpty", Template: "emit text writes nothing: no export fn of this package has @text"},
-			{Name: "openMode", Args: []Arg{{Name: "mode", Type: ArgTypeName}}, Template: "open of emit go needs mode types, not {mode}"},
-			{Name: "open", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "open of emit go: {name} is not a public enum of this package"},
-			{Name: "openTwice", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "open of emit go: {name} is listed twice"},
-			{Name: "openEmpty", Template: "open of emit go is an empty list: omit open to keep every enum closed"},
-			{Name: "openOrdered", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "open of emit go: {name} is ordered, and an open enum cannot compare its members"},
+			{Name: "openMode", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "mode", Type: ArgTypeName}}, Template: "open of emit {target} needs mode types, not {mode}"},
+			{Name: "open", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}}, Template: "open of emit {target}: {name} is not a public enum of this package"},
+			{Name: "openTwice", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}}, Template: "open of emit {target}: {name} is listed twice"},
+			{Name: "openEmpty", Args: []Arg{{Name: "target", Type: ArgTypeName}}, Template: "open of emit {target} is an empty list: omit open to keep every enum closed"},
+			{Name: "openOrdered", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}}, Template: "open of emit {target}: {name} is ordered, and an open enum cannot compare its members"},
 			{Name: "outConsumer", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "path", Type: ArgTypePath}, {Name: "root", Type: ArgTypeName}}, Template: "{path} in out of emit {target} lies under the consumer root {root}: a text file is owned only through canon.outputs, which never lists a consumer root"},
 		},
 	},
@@ -3011,7 +3011,7 @@ func (codeE1015) At(span source.Span, want string, have string) *Builder {
 	return newBuilder(&Registry[14], 0, span, want, have)
 }
 
-// E1101: invalid format spec in an interpolation (`[+][,][.N]`, N ≤ 20) (GRAMMAR.md §2.6).
+// E1101: invalid format spec in an interpolation (`[+][0][W][,][.N][xX]`, W ≤ 99, N ≤ 20) (GRAMMAR.md §2.6).
 var E1101 codeE1101
 
 type codeE1101 struct{}
@@ -3019,7 +3019,7 @@ type codeE1101 struct{}
 // Def is the registry entry of E1101.
 func (codeE1101) Def() *Def { return &Registry[15] }
 
-// At reports: invalid format spec "{spec}": expected [+][,][.N] with N at most 20
+// At reports: invalid format spec "{spec}": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
 func (codeE1101) At(span source.Span, spec string) *Builder {
 	return newBuilder(&Registry[15], 0, span, spec)
 }
@@ -6912,29 +6912,29 @@ func (codeE8009) AtTextEmpty(span source.Span) *Builder {
 	return newBuilder(&Registry[256], 14, span)
 }
 
-// AtOpenMode reports: open of emit go needs mode types, not {mode}
-func (codeE8009) AtOpenMode(span source.Span, mode string) *Builder {
-	return newBuilder(&Registry[256], 15, span, mode)
+// AtOpenMode reports: open of emit {target} needs mode types, not {mode}
+func (codeE8009) AtOpenMode(span source.Span, target string, mode string) *Builder {
+	return newBuilder(&Registry[256], 15, span, target, mode)
 }
 
-// AtOpen reports: open of emit go: {name} is not a public enum of this package
-func (codeE8009) AtOpen(span source.Span, name string) *Builder {
-	return newBuilder(&Registry[256], 16, span, name)
+// AtOpen reports: open of emit {target}: {name} is not a public enum of this package
+func (codeE8009) AtOpen(span source.Span, target string, name string) *Builder {
+	return newBuilder(&Registry[256], 16, span, target, name)
 }
 
-// AtOpenTwice reports: open of emit go: {name} is listed twice
-func (codeE8009) AtOpenTwice(span source.Span, name string) *Builder {
-	return newBuilder(&Registry[256], 17, span, name)
+// AtOpenTwice reports: open of emit {target}: {name} is listed twice
+func (codeE8009) AtOpenTwice(span source.Span, target string, name string) *Builder {
+	return newBuilder(&Registry[256], 17, span, target, name)
 }
 
-// AtOpenEmpty reports: open of emit go is an empty list: omit open to keep every enum closed
-func (codeE8009) AtOpenEmpty(span source.Span) *Builder {
-	return newBuilder(&Registry[256], 18, span)
+// AtOpenEmpty reports: open of emit {target} is an empty list: omit open to keep every enum closed
+func (codeE8009) AtOpenEmpty(span source.Span, target string) *Builder {
+	return newBuilder(&Registry[256], 18, span, target)
 }
 
-// AtOpenOrdered reports: open of emit go: {name} is ordered, and an open enum cannot compare its members
-func (codeE8009) AtOpenOrdered(span source.Span, name string) *Builder {
-	return newBuilder(&Registry[256], 19, span, name)
+// AtOpenOrdered reports: open of emit {target}: {name} is ordered, and an open enum cannot compare its members
+func (codeE8009) AtOpenOrdered(span source.Span, target string, name string) *Builder {
+	return newBuilder(&Registry[256], 19, span, target, name)
 }
 
 // AtOutConsumer reports: {path} in out of emit {target} lies under the consumer root {root}: a text file is owned only through canon.outputs, which never lists a consumer root
