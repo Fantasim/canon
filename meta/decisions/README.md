@@ -36,3 +36,6 @@ the narration.
 | [0015](0015-past-types-name-retired-members.md) | `past E`: a type whose slots may name retired members |
 | [0016](0016-past-ergonomics-implementation.md) | How `past`, poisoned-value edits, let-path refs and `@text` JSON are built |
 | [0017](0017-shared-records-make-hooks.md) | Shared records across packages: make hooks, own readers, honest refusals |
+| [0018](0018-frame-owned-collections.md) | Frame-owned collections: in-place element assignment without aliasing |
+| [0019](0019-edit-memory-adopted-verdicts.md) | Edit memory: no analysis kept per op, layout verdicts carried across ops |
+| [0020](0020-api-016-overlay-ctx-call-lang-roots.md) | API 0.1.6: overlays take a context, a per-call language, placed roots |
