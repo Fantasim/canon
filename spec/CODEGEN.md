@@ -1597,7 +1597,11 @@ export function decodeEventConfig(json: unknown): EventConfig;
   applies WIRE.md §3.1/§3.2's byte rules (UTF-8 and BOM, a repeated key, an unpaired surrogate,
   depth 512), a repeated key failing with `duplicate key` at its path in every target; C++
   `Decode` and TS `decode<T>`, handed a parsed value, cannot see a repeated key (the parser kept
-  the last): `Parse` and `parse<T>` are the exact forms (DECISIONS 361). Only a public record or
+  the last): `Parse` and `parse<T>` are the exact forms (DECISIONS 361). Every failure of a
+  `types`-mode decoder, a byte rule's included, names a `$`-rooted path (`$.events[1].levelMax`,
+  `$[0]`, `$` for the top level); a syntax error, which has no path, names its 0-based byte offset
+  (`<T>: invalid JSON at byte 17`), in every target. `data`-mode loaders keep their own form
+  (§5.10). Only a public record or
   variant has a public decoder, and a public `@text` fn whose result (its non-optional type, for a
   maybe-file) is a map, a list or a keyed list: Go `func Decode<Fn>File(raw []byte) (<T>,
   error)`; C++ `std::optional<T> Decode<Fn>File(std::string_view text, std::string& error)` in

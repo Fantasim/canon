@@ -3640,6 +3640,11 @@ round 2", "PS1 review", "PS2 round 2"):
      the last): `Parse`/`parse<T>` are the exact forms. Go decoders and every `data` loader already
      refused. Reason: `load` refuses a repeated key (`E7104`) while a C++ runtime took the last
      (log-2026-10-08).
+     Review (2026-10-12): every failure of a `types`-mode decoder, a byte rule's included, names
+     a `$`-rooted path, and a syntax error its 0-based byte offset (`invalid JSON at byte N`), in
+     Go, C++ and TypeScript alike (C++ `StrictCheck` gave `a.b`, TS `offset N`); `data` loaders
+     are unchanged. `Parse` is a reserved member name of every C++ class in the name plan, as
+     `Decode` is (`E8005`).
 
 362. **Open enums in C++ and TypeScript `types` mode (CODEGEN.md §2.1, §5.2; ERRORS.md E8009,
      E8019 `OpenEnum`; extends 339).** `open` is an option of the `go`, `cpp` and `ts` emits, each
