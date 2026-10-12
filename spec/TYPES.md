@@ -1220,7 +1220,9 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 - `asset(root, ext: [a, b])` is `String` with an asset refinement. `root` is a string literal
   without interpolation in the `load` path syntax (`"@resource/Icon/Item"`), so the directories a
   package lists are known from its sources (DECISIONS 330), `ext` a list of symbols (bare
-  extensions, without the dot). Bad arguments, an interpolated root included, are `E3704`. The
+  extensions, without the dot). A root that is not a string literal, or an `ext` that is not a
+  bracketed list, does not parse (GRAMMAR.md §5, `E1116`); bad arguments that parse, an
+  interpolated root included, are `E3704` (DECISIONS 367). The
   root is listed by its real path, links resolved, as `load.dir` does (WIRE.md §6.5).
 - A value is a path relative to the root, with `/` separators and no empty segment, `.`, `..`,
   leading `/` or `\` (`E3703`).

@@ -3722,3 +3722,12 @@ round 2", "PS1 review", "PS2 round 2"):
      form, ended in an internal error, and a repeated bits member too (config-studio findings
      2026-10-09 §1; guide unit). Every refusal is a catalogue finding or a Go error, never an
      internal error.
+
+367. **`asset()` arguments: syntax first (TYPES.md §13.4; GRAMMAR.md §5).** `asset(root, ext:
+     [...])` takes a string literal root and a bracketed `ext` list by its grammar: anything else
+     (a constant name, an expression, `ext: svg`) is `E1116`, and `E3704` covers the arguments that
+     parse (an interpolated root, a bad load path, a missing or empty `ext`). A constant root was
+     refused: the directories a package lists must be known from its sources (330), and widening
+     the frozen `AssetType` node for a better code is not worth a §4.1 change. Reason: TYPES §13.4
+     said "bad arguments are `E3704`" while the grammar made some of them syntax errors (guide
+     unit, 2026-10-12).
