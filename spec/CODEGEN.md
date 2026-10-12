@@ -1601,7 +1601,7 @@ export function decodeEventConfig(json: unknown): EventConfig;
   `types`-mode decoder, a byte rule's included, names a `$`-rooted path (`$.events[1].levelMax`,
   `$[0]`, `$` for the top level); a syntax error, which has no path, names its 0-based byte offset
   (`<T>: invalid JSON at byte 17`), in every target. `data`-mode loaders keep their own form
-  (§5.10). Only a public record or
+  (they read files, not values). Only a public record or
   variant has a public decoder, and a public `@text` fn whose result (its non-optional type, for a
   maybe-file) is a map, a list or a keyed list: Go `func Decode<Fn>File(raw []byte) (<T>,
   error)`; C++ `std::optional<T> Decode<Fn>File(std::string_view text, std::string& error)` in
