@@ -533,8 +533,8 @@ Methods, all cheap, never re-evaluating:
 - **R6a.** `Value(ctx, path)` is `ValueWith(ctx, ValueRequest{Path: path})`. `ValueWith` takes a
   per-call language as R3a does: the findings an `ErrNoValue` wraps (R6), whichever source explains
   it, are in `Lang` when a translation exists, from the value and from every `Child` of it (R4).
-  Only named-check messages are rendered again from the kept analysis; nothing echoes the language
-  (DECISIONS 345).
+  Only named-check messages are rendered again from the kept analysis, and R6's order is kept (the
+  cause first); nothing echoes the language (DECISIONS 345).
 
 `Origin` records where a value comes from (EVL-07):
 

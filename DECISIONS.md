@@ -3437,7 +3437,8 @@ round 2", "PS1 review", "PS2 round 2"):
      follow the call's language (or `Options.Lang`) whichever source explains them, an `Edit`
      op's `ErrNoValue` refusal (E19) and an `Evaluate` draft's refusal (281) included; a cause
      evaluation's findings now pass through the localiser too, a forward guarantee, since no
-     named-check finding can poison a root today (EVALUATION §7.1; I18N K8). `Refs`,
+     named-check finding can poison a root today (EVALUATION §7.1; I18N K8). Localising never
+     reorders R6's findings: the cause stays first. `Refs`,
      `ViewModel` (text keys), `Build`, `Test` and `LockCheck` stay on `Options.Lang`. Reason: an
      editor showing several languages opened one project per language, about 2 GB and 10 s each on
      a large project, only to translate messages (config-studio findings 2026-10-09 §4).
@@ -3452,7 +3453,9 @@ round 2", "PS1 review", "PS2 round 2"):
      editor reads `assets` key `@name/rest` at `Dir/rest`. Canon never reads an asset for the
      caller and adds no `AssetFile` (a file picker needs the directory anyway); a name not taken
      from a checked value follows TYPES.md §13.4's path rule, and a reader serving files off the
-     machine bounds links as WIRE.md §6.5 does. Reason: an editor could not preview the assets of
+     machine bounds links as WIRE.md §6.5 does. Additive, except that `ProjectInfo`, now holding
+     a slice, is no longer comparable with `==` nor usable as a map key (named in the release
+     notes). Reason: an editor could not preview the assets of
      a relocated root without re-implementing root placement (config-studio findings 2026-10-09
      §2).
 
