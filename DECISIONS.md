@@ -3731,3 +3731,18 @@ round 2", "PS1 review", "PS2 round 2"):
      the frozen `AssetType` node for a better code is not worth a §4.1 change. Reason: TYPES §13.4
      said "bad arguments are `E3704`" while the grammar made some of them syntax errors (guide
      unit, 2026-10-12).
+
+368. **The language server holds a project while one of its files is open (CLI.md §4;
+     IMPLEMENTATION-PLAN §8.4).** A project (one per `project.canon` above an opened file) lives
+     while at least one of its files is open in the editor; its findings, unopened files included,
+     are published and kept current meanwhile. When its last open file closes, the server releases
+     the project (its snapshot, kept analysis, caches and memo) and publishes empty findings for
+     every file it had reported; opening a file of it again opens it anew. After 5 s with no
+     change following a pass, the server returns freed memory to the operating system once
+     (`debug.FreeOSMemory`, reachable only through `canon lsp`). Keeping a closed project's disk
+     findings published was refused: they go stale while agents edit the disk, and the project's
+     memory was the leak. Measured (2026-10-12, synthetic 80 packages / 4,962 files / 690k lines):
+     one project's live heap after hundreds of edits stays ≤ 1.05 × the first full check's, idle
+     RSS ≤ 1.1 × (peaks ~1.8 × during a pass); visiting projects in turn holds one, not all
+     (before: +673 MiB live per project visited). Reason: `canon lsp` grew from 13 MB to 6 GB
+     over a working day (Scripts handoff 2026-10-12, F1).

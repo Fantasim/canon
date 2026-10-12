@@ -699,7 +699,7 @@ findings are converted from their UTF-8 byte columns.
 
 | Feature | Behaviour |
 |---|---|
-| diagnostics | every finding, as you type, including findings located in `load`ed JSON files, published even for files the editor has not opened |
+| diagnostics | every finding, as you type, including findings located in `load`ed JSON files, published even for files the editor has not opened, for as long as one file of the project is open; when its last open file closes, the project is released and its findings are cleared (DECISIONS 368) |
 | hover | type, doc comment, default, and for values the computed value |
 | go to definition | from a use to its declaration; from a `ref` value to the entry, including into JSON |
 | find references | same as `canon refs` |
