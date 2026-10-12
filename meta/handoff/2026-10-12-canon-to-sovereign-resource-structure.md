@@ -173,7 +173,7 @@ Keep each rule id in the test that proves it, rather than in a check message.
 
 **Do.**
 - Gather them in the pure helper package of S1, one tested copy each.
-- `duplicates` and `duplicateInts` are a Canon gap (no generics), not a mistake: Canon N10 adds a `duplicates()` builtin.
+- `duplicates` and `duplicateInts` are a Canon gap (no generics), not a mistake: Canon v0.1.6 adds a `duplicates()` builtin (F18), plus hex and width in format specs.
 
 ### S7. Honest headers
 
@@ -239,6 +239,6 @@ Do this before the services write more code against the generated getters. Admin
 - N1 legacy C++ structs.
 - N2 one declaration per id.
 - N3 `canon lint`.
-- N4 the wider `pairs`, record `inline` and per-field `codes`.
+- N4 the wider `pairs` and record `inline`; per-field `codes` comes earlier, in v0.1.6 (F20).
 - N5 testable package checks.
 - N7 native package moves, which retire most of `canon.lock.moves`.

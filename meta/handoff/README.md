@@ -47,8 +47,9 @@ check 16 → 9.5 s, API reuse and edit indexes; four config-studio changes; per-
 Two handoffs came out of the 2026-10-12 review of Resource `Config/`, Canon's first large real use:
 
 - `2026-10-12-canon-next-versions.md` is **to Louis, open**. It is the roadmap proposal:
-  - v0.1.6: owed fixes, including the `canon lsp` leak, the guide and spec hygiene;
-  - v0.2: M6 legacy C++, one declaration per id, `canon lint`, wire forms, testable package checks, robustness;
+  - a generality rule: Resource is the evidence, not the scope;
+  - v0.1.6 (F1-F22): every known bug (the `canon lsp` leak first), the parity owed to consumers, robustness for parallel agents, two editor-API additions, format specs, the guide and spec hygiene;
+  - v0.2: M6 legacy C++, one declaration per id, `canon lint`, wire forms, testable package checks;
   - v0.3;
   - the refused list, with the decision that refuses each item.
   The ordering call is his.
