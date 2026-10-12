@@ -19,12 +19,22 @@ func (r *run) localized(ctx context.Context, res *Result) error {
 	return r.translate(ctx, res.Files, res.List, r.p.opt.Lang)
 }
 
-// translate puts each named one-line check's finding of list in lang where translated, rendered
-// as the view model's messages are, then sorts list again; the rest stays in the source language,
-// and the bags, which the view model reads, are untouched (I18N.md B5, K8, T2, T4; DECISIONS 281).
+// translate puts each named one-line check's finding of list in lang (restate), then sorts list
+// again (I18N.md B5, K8, T2, T4; DECISIONS 281).
 func (r *run) translate(ctx context.Context, files diag.Files, list []diag.Finding, lang string) error {
+	translated, err := r.restate(ctx, list, lang)
+	if translated {
+		resort(files, list)
+	}
+	return err
+}
+
+// restate puts each named one-line check's finding of list in lang where translated, rendered as
+// the view model's messages are, in place, the order kept; the rest stays in the source language,
+// and the bags, which the view model reads, are untouched. It reports a message changed.
+func (r *run) restate(ctx context.Context, list []diag.Finding, lang string) (bool, error) {
 	if len(list) == 0 || lang == "" || lang == r.s.proj.SourceLanguage() || len(r.failed.runs) == 0 {
-		return nil
+		return false, nil
 	}
 	var tr *render.Renderer // made on the first finding of a named check: the rest pay nothing
 	restore := func() error { return nil }
@@ -44,11 +54,7 @@ func (r *run) translate(ctx context.Context, files diag.Files, list []diag.Findi
 			translated = translated || list[i].Message != f.Message
 		}
 	}
-	err := restore()
-	if translated {
-		resort(files, list)
-	}
-	return interrupted(ctx, err)
+	return translated, interrupted(ctx, restore())
 }
 
 // messageRenderer renders check messages as views.Build does, reading values aside into scratch.

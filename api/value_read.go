@@ -22,11 +22,26 @@ type snapshot struct {
 	layers    []string // Options.Layers, whose amendments may explain a root the checker broke
 	types     *typeEncoder
 	ctx       context.Context // the Value call's: a cause still to compute runs under it (API.md S11)
+	lang      string          // the call's language of R6's findings, "" for Options.Lang (R6a)
 }
 
-// Value returns the final value at path (rules R4-R6, API.md §6).
-func (p *Project) Value(ctx context.Context, path string) (v *Value, err error) {
+// ValueRequest asks for a Value with a language of its own (API.md R6a, DECISIONS 345).
+type ValueRequest struct {
+	Path string
+	Lang string // "" is Options.Lang
+}
+
+// Value returns the final value at path (rules R4-R6, API.md §6): ValueWith with no Lang (R6a).
+func (p *Project) Value(ctx context.Context, path string) (*Value, error) {
+	return p.ValueWith(ctx, ValueRequest{Path: path})
+}
+
+// ValueWith is Value with the findings an ErrNoValue wraps, from the value and every Child of it,
+// in r.Lang, else Options.Lang: only named-check messages are rendered again, from the kept
+// analysis, and nothing echoes the language (rules R4, R6, R6a; DECISIONS 345).
+func (p *Project) ValueWith(ctx context.Context, r ValueRequest) (v *Value, err error) {
 	defer recoverInternal(&err)
+	path := r.Path
 	ws, err := p.read(ctx)
 	if err != nil {
 		return nil, err
@@ -43,7 +58,7 @@ func (p *Project) Value(ctx context.Context, path string) (v *Value, err error) 
 	if _, err := p.revision(ctx, ws); err != nil {
 		return nil, err
 	}
-	s := &snapshot{a: a, s: edit.NewSnapshot(a), editLayer: p.editLayer, layers: p.layers, types: newTypeEncoder(ctx, a), ctx: ctx}
+	s := &snapshot{a: a, s: edit.NewSnapshot(a), editLayer: p.editLayer, layers: p.layers, types: newTypeEncoder(ctx, a), ctx: ctx, lang: r.Lang}
 	v, err = s.resolve(path, parsed)
 	s.ctx = context.WithoutCancel(ctx) // a later Child never inherits this call's cancellation
 	return v, err

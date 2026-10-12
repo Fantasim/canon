@@ -57,7 +57,7 @@ func lockRefused(t *testing.T, dir string, present bool) {
 		t.Fatal(err)
 	}
 	defer func() { _ = p.Close() }()
-	if err := p.SetOverlay(lockLinkName, []byte(lockLinkBuffer)); err != nil {
+	if err := p.SetOverlay(context.Background(), lockLinkName, []byte(lockLinkBuffer)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := p.Edit(context.Background(), canon.Edit{Ops: []canon.Op{addSecond}}); !errors.Is(err, canon.ErrOverlay) {

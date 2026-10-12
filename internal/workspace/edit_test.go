@@ -89,7 +89,7 @@ func TestEditRefused(t *testing.T) {
 	if !errors.As(err, &ne) || !slices.Equal(ne.Files, []string{"a/a.json"}) {
 		t.Errorf("API.md M9: %v", err)
 	}
-	if err := p.SetOverlay("b/b.canon", []byte(srcB)); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "b/b.canon", []byte(srcB)); err != nil {
 		t.Fatal(err)
 	}
 	_, err = p.Edit(context.Background(), workspace.EditRequest{Changes: twoFiles(), Normalize: true})

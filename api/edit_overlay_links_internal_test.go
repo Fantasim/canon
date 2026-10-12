@@ -36,7 +36,7 @@ func TestEditRefusesOverlaidLink(t *testing.T) {
 	}
 	defer func() { _ = p.Close() }()
 	ctx := context.Background()
-	if err := p.SetOverlay("a/data.json", []byte(overlayLinkBuf)); err != nil {
+	if err := p.SetOverlay(context.Background(), "a/data.json", []byte(overlayLinkBuf)); err != nil {
 		t.Fatal(err)
 	}
 	if res, err := p.Check(ctx); err != nil || len(res.Findings) != 0 {

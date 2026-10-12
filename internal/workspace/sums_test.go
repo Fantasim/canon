@@ -88,10 +88,10 @@ func TestSumsTwinEqualsCold(t *testing.T) {
 			return nil
 		}, false},
 		{"overlay on r3", func(p *workspace.Project) error {
-			return p.SetOverlay("t/rows/r3.json", []byte("{\"id\": \"r3\", \"n\": 3333}\n"))
+			return p.SetOverlayContext(context.Background(), "t/rows/r3.json", []byte("{\"id\": \"r3\", \"n\": 3333}\n"))
 		}, true},
 		{"r2 changed under the overlay", disk("{\"id\": \"r2\", \"n\": 2}\n"), true},
-		{"overlay cleared", func(p *workspace.Project) error { return p.ClearOverlay("t/rows/r3.json") }, false},
+		{"overlay cleared", func(p *workspace.Project) error { return p.ClearOverlayContext(context.Background(), "t/rows/r3.json") }, false},
 	} {
 		if err := st.do(p); err != nil {
 			t.Fatal(err)

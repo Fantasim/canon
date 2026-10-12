@@ -12,13 +12,15 @@ import (
 )
 
 // EditRequest is an edit (API.md E17-E21): its changes, the revision its client read, whether it
-// may write errors, writes nothing, or may normalize files not in canonical layout.
+// may write errors, writes nothing, or may normalize files not in canonical layout, and the
+// language of its re-check's named-check messages, "" for Options.Lang (DECISIONS 345).
 type EditRequest struct {
 	Changes
 	Base        string
 	AllowErrors bool
 	DryRun      bool
 	Normalize   bool
+	Lang        string
 }
 
 // EditOutcome is an edit computed on Before: its plan; every file it writes, lock lines included
@@ -85,7 +87,7 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 		return nil, err
 	}
 	out := &EditOutcome{Plan: plan, Changes: slices.Clone(plan.Changes), Before: s, After: s.planned(plan.Changes, aliases), aliases: aliases}
-	if err := out.recheck(ctx, a, owners); err != nil {
+	if err := out.recheck(ctx, a, owners, req.Lang); err != nil {
 		return nil, err
 	}
 	if err := s.staleConsulted(ctx, req.Base, out); err != nil {
@@ -200,10 +202,10 @@ func (s *Snapshot) noOverlay(a *build.Analysis, changes []edit.Change) error {
 	return nil
 }
 
-// recheck re-checks on After the owners and their importers, with their imports alone, and adds
-// the lock lines the edit requires (API.md E17, E17a, E18, E20); Covers needs an every-package
-// analysis a call kept on Before, the edit's own base being its scope's.
-func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []string) error {
+// recheck re-checks on After the owners and their importers, with their imports alone, in lang,
+// and adds the lock lines the edit requires (API.md E17, E17a, E18, E20, R6a); Covers needs an
+// every-package analysis a call kept on Before, the edit's own base being its scope's.
+func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []string, lang string) error {
 	pkgs := importing(a.Units(), owners...)
 	switch {
 	case len(pkgs) == 0 && len(o.Changes) > 0: // a file no package owns is never written unchecked
@@ -216,7 +218,10 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 	if err != nil {
 		return err
 	}
-	o.Checked, o.checked, o.rechecked = checked.Own(), checked, pkgs
+	if o.Checked, err = checked.OwnIn(ctx, lang); err != nil {
+		return err
+	}
+	o.checked, o.rechecked = checked, pkgs
 	if all := o.Before.keptAnalysis(Key(OpAnalyze, nil), true); all != nil && build.Covers(all, checked) {
 		o.After.cover(pkgs) // the packages outside pkgs read none of the files written (owners)
 	}

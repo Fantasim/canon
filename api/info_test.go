@@ -3,6 +3,7 @@ package canon_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	canon "github.com/fantasim/canonlang/api"
@@ -20,7 +21,7 @@ func TestInfo(t *testing.T) {
 	for _, c := range cases {
 		p, _ := openLaw(t, map[string]string{"project.canon": c.project})
 		got, err := p.Info(context.Background())
-		if err != nil || got != c.want {
+		if err != nil || !reflect.DeepEqual(got, c.want) {
 			t.Errorf("API.md §5.5 %s: Info = %+v, %v, want %+v", c.name, got, err, c.want)
 		}
 	}
@@ -47,7 +48,7 @@ func TestInfoFailsLikePackages(t *testing.T) {
 	for _, c := range cases {
 		p, opts := openLaw(t, map[string]string{"project.canon": good})
 		if c.overlay != "" {
-			if err := p.SetOverlay("project.canon", []byte(c.overlay)); err != nil {
+			if err := p.SetOverlay(context.Background(), "project.canon", []byte(c.overlay)); err != nil {
 				t.Fatal(err)
 			}
 		} else if err := opts.FS.(interface{ Remove(string) error }).Remove("/law/project.canon"); err != nil {

@@ -68,16 +68,6 @@ func (p *Project) Packages(ctx context.Context) (*Units, error) {
 	return &Units{Units: s.units, Revision: s.revision()}, nil
 }
 
-// Info is project.canon read and checked, as every call reads it (API.md §5.5): the failures Packages reports for it.
-func (p *Project) Info() (*project.Project, error) {
-	s := &snapshot{p: p, set: &source.FileSet{}, bags: map[string]*diag.Bag{}}
-	s.own = diag.NewBag(s.set, "")
-	if err := p.readOwn(s); err != nil {
-		return nil, err
-	}
-	return s.proj, nil
-}
-
 // Revision is the revision of the static read set on disk now, whether project.canon checks or
 // not (no load path resolves then); a file, or the file set's listing, that cannot be read is
 // marked so (API.md S1, S3).

@@ -53,7 +53,7 @@ func TestEditApplies(t *testing.T) {
 func TestEditOverlay(t *testing.T) {
 	p, m := openEdit(t, nil)
 	before := read(t, m, "a/a.canon")
-	if err := p.SetOverlay("a/a.canon", []byte(before)); err != nil {
+	if err := p.SetOverlay(context.Background(), "a/a.canon", []byte(before)); err != nil {
 		t.Fatal(err)
 	}
 	_, err := p.Edit(context.Background(), editPort(""))
@@ -64,7 +64,7 @@ func TestEditOverlay(t *testing.T) {
 	if read(t, m, "a/a.canon") != before {
 		t.Error("API.md S12: the file was written")
 	}
-	if err := p.ClearOverlay("a/a.canon"); err != nil {
+	if err := p.ClearOverlay(context.Background(), "a/a.canon"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := p.Edit(context.Background(), editPort("")); err != nil {

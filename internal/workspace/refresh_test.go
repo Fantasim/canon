@@ -167,10 +167,10 @@ func TestOverlay(t *testing.T) {
 	var events []workspace.Event
 	defer p.Subscribe(func(e workspace.Event) { events = append(events, e) })()
 	rev := revision(t, read(t, p))
-	if err := p.SetOverlay("b/b.canon", []byte(srcB+"\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "b/b.canon", []byte(srcB+"\n")); err != nil {
 		t.Fatal(err)
 	}
-	if err := p.SetOverlay("/law/e/e.canon", []byte("/// E.\npackage e\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "/law/e/e.canon", []byte("/// E.\npackage e\n")); err != nil {
 		t.Fatal(err)
 	}
 	s := read(t, p)
@@ -183,7 +183,7 @@ func TestOverlay(t *testing.T) {
 		t.Error("an overlay was written")
 	}
 	for _, file := range []string{"b/b.canon", "/law/e/e.canon", "b/b.canon"} {
-		if err := p.ClearOverlay(file); err != nil {
+		if err := p.ClearOverlayContext(context.Background(), file); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -194,7 +194,7 @@ func TestOverlay(t *testing.T) {
 	if got := causesOf(events); !slices.Equal(got, causes) || !slices.Equal(events[0].Files, []string{"b/b.canon"}) {
 		t.Errorf("events %v, want %v (a clear of nothing publishes nothing)", got, causes)
 	}
-	if err := p.SetOverlay("../out.canon", nil); err == nil {
+	if err := p.SetOverlayContext(context.Background(), "../out.canon", nil); err == nil {
 		t.Error("an overlay outside the project was accepted")
 	}
 }

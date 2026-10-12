@@ -42,7 +42,7 @@ func TestViewModelKeptPerSnapshot(t *testing.T) {
 		t.Errorf("API.md S8: two calls on one snapshot do not share the kept bytes: %v %v", err1, err2)
 	}
 	first, _ := p.ViewModel(ctx, "a")
-	if err := p.SetOverlay("a/a.canon", append(bytes.Clone(sharedLaw["/law/a/a.canon"]), []byte("\n/// Z.\nlet z: Int = 1\n")...)); err != nil {
+	if err := p.SetOverlay(context.Background(), "a/a.canon", append(bytes.Clone(sharedLaw["/law/a/a.canon"]), []byte("\n/// Z.\nlet z: Int = 1\n")...)); err != nil {
 		t.Fatal(err)
 	}
 	s2, err := p.read(ctx)

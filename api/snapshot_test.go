@@ -53,7 +53,7 @@ func TestOverlays(t *testing.T) {
 	p, opts := openLaw(t, loadLaw)
 	ctx := context.Background()
 	before := p.Revision()
-	if err := p.SetOverlay("b/b.canon", []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
+	if err := p.SetOverlay(context.Background(), "b/b.canon", []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
 		t.Fatal(err)
 	}
 	res, err := p.Check(ctx, "b")
@@ -63,18 +63,18 @@ func TestOverlays(t *testing.T) {
 	if disk, _ := opts.FS.ReadFile("/law/b/b.canon"); string(disk) != loadLaw["b/b.canon"] {
 		t.Error("an overlay was written")
 	}
-	if err := p.ClearOverlay("/law/b/b.canon"); err != nil {
+	if err := p.ClearOverlay(context.Background(), "/law/b/b.canon"); err != nil {
 		t.Fatal(err)
 	}
 	if res, err := p.Check(ctx, "b"); err != nil || res.HasErrors() || p.Revision() != before {
 		t.Errorf("Check after ClearOverlay: %v, %+v", err, res)
 	}
 	var perr *canon.PathError
-	if err := p.SetOverlay("../x.canon", nil); !errors.Is(err, canon.ErrBadPath) || !errors.As(err, &perr) || perr.Path != "../x.canon" {
+	if err := p.SetOverlay(context.Background(), "../x.canon", nil); !errors.Is(err, canon.ErrBadPath) || !errors.As(err, &perr) || perr.Path != "../x.canon" {
 		t.Errorf("an overlay outside the project: %v", err)
 	}
 	_ = p.Close()
-	if err := p.SetOverlay("b/b.canon", nil); !errors.Is(err, canon.ErrClosed) {
+	if err := p.SetOverlay(context.Background(), "b/b.canon", nil); !errors.Is(err, canon.ErrClosed) {
 		t.Errorf("SetOverlay after Close: %v (O6)", err)
 	}
 }
@@ -86,20 +86,20 @@ func TestOverlayBackslash(t *testing.T) {
 	}
 	p, _ := openLaw(t, loadLaw)
 	before := p.Revision()
-	if err := p.SetOverlay(`b\b.canon`, []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
+	if err := p.SetOverlay(context.Background(), `b\b.canon`, []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
 		t.Fatal(err)
 	}
 	if res, err := p.Check(context.Background(), "b"); err != nil || !res.HasErrors() {
 		t.Errorf("Check with a backslash overlay: %v, %+v", err, res)
 	}
-	if err := p.ClearOverlay(`\law\b\b.canon`); err != nil || p.Revision() != before {
+	if err := p.ClearOverlay(context.Background(), `\law\b\b.canon`); err != nil || p.Revision() != before {
 		t.Errorf("ClearOverlay: %v, revision %s, want %s", err, p.Revision(), before)
 	}
 	lower := strings.ToLower(p.Root()[:1]) + p.Root()[1:] + "/b/b.canon" // "d:/law/b/b.canon"
-	if err := p.SetOverlay(lower, []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
+	if err := p.SetOverlay(context.Background(), lower, []byte("/// B.\npackage b\n\nconst = 1\n")); err != nil {
 		t.Fatal(err)
 	}
-	if err := p.ClearOverlay("b/b.canon"); err != nil || p.Revision() != before {
+	if err := p.ClearOverlay(context.Background(), "b/b.canon"); err != nil || p.Revision() != before {
 		t.Errorf("ClearOverlay after a lower-case drive: %v, revision %s, want %s", err, p.Revision(), before)
 	}
 }
@@ -109,7 +109,7 @@ func TestOverlayBackslash(t *testing.T) {
 func TestValueAcrossRevisions(t *testing.T) {
 	p, opts := openLaw(t, loadLaw)
 	held := mustValue(t, p, "b:N")
-	if err := p.SetOverlay("b/b.canon", []byte("/// B.\npackage b\n\n/// N.\nconst N = 2\n")); err != nil {
+	if err := p.SetOverlay(context.Background(), "b/b.canon", []byte("/// B.\npackage b\n\n/// N.\nconst N = 2\n")); err != nil {
 		t.Fatal(err)
 	}
 	if v := mustValue(t, p, "b:N"); v.Text != "2" || held.Text != "1" {

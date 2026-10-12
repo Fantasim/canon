@@ -93,8 +93,8 @@ func TestListingAsFull(t *testing.T) {
 		{"lock added", func() { write(t, fsys, "/law/a/canon.lock", "canon-lock v1\n") }},
 		{"link retargeted", func() { fsys.link("/law/data", "/law/a") }},
 		{"loaded file changed", func() { write(t, fsys, "/law/data/c.json", "[4]\n") }},
-		{"overlay", func() { _ = p.SetOverlay("a/a.json", []byte("[8]\n")) }},
-		{"overlay cleared", func() { _ = p.ClearOverlay("a/a.json") }},
+		{"overlay", func() { _ = p.SetOverlayContext(context.Background(), "a/a.json", []byte("[8]\n")) }},
+		{"overlay cleared", func() { _ = p.ClearOverlayContext(context.Background(), "a/a.json") }},
 		{"second edit", func() { afterEdit(t, "second edit's After", fsys, commit(t, p, setB(3)).After) }},
 		{"project changed", func() { write(t, fsys, "/law/project.canon", lawProject+"\n") }},
 	}

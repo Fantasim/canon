@@ -120,13 +120,13 @@ func TestWatchOwnChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 	events, _ := watch(t, p, nil)
-	if err := p.SetOverlay("a/a.canon", append(tierPackage("a"), '\n')); err != nil {
+	if err := p.SetOverlay(context.Background(), "a/a.canon", append(tierPackage("a"), '\n')); err != nil {
 		t.Fatal(err)
 	}
 	if ev := nextEvent(t, events); ev.Cause != canon.CauseOverlay || !slices.Equal(ev.Files, []string{"a/a.canon"}) || !slices.Equal(ev.Packages, []string{"a"}) {
 		t.Errorf("overlay event: %+v", ev)
 	}
-	if err := p.ClearOverlay("a/a.canon"); err != nil {
+	if err := p.ClearOverlay(context.Background(), "a/a.canon"); err != nil {
 		t.Fatal(err)
 	}
 	if ev := nextEvent(t, events); ev.Cause != canon.CauseOverlay {

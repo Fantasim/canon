@@ -131,21 +131,29 @@ type PackageInfo struct {
 	Layers  []string
 }
 
-// ProjectInfo describes the project (API.md §5.5, DECISIONS 313).
+// ProjectInfo describes the project (API.md §5.5, DECISIONS 313, 346).
 type ProjectInfo struct {
-	Name string
-	Doc  string // the project doc comment's text (GRAMMAR.md §2.2), in the source language
+	Name  string
+	Doc   string     // the project doc comment's text (GRAMMAR.md §2.2), in the source language
+	Roots []RootInfo // every declared root, sorted by Name (DECISIONS 346)
 }
 
-// Info is the project's name and doc, a shared read that fails as Packages does (API.md §5.5, S8).
+// RootInfo is a declared root as this machine places it (API.md §5.5, DECISIONS 332, 343, 346).
+type RootInfo struct {
+	Name   string // as project.canon declares it
+	Dir    string // its directory, an FS name (§2.2): Options.Roots over project.local.canon over project.canon, links not resolved
+	Absent bool   // an optional or consumer root this machine lacks; Dir still says where it is expected
+}
+
+// Info is the project's name, doc and placed roots, a shared read that fails as Packages does (API.md §5.5, S8).
 func (p *Project) Info(ctx context.Context) (info ProjectInfo, err error) {
 	defer recoverInternal(&err)
 	s, err := p.read(ctx)
 	if err != nil {
 		return ProjectInfo{}, err
 	}
-	proj, err := share(ctx, s, workspace.Key(workspace.OpInfo, nil), func(context.Context) (*project.Project, error) {
-		return s.Build().Info()
+	facts, err := share(ctx, s, workspace.Key(workspace.OpInfo, nil), func(context.Context) (*build.Facts, error) {
+		return s.Build().Facts()
 	})
 	if err != nil {
 		return ProjectInfo{}, err
@@ -153,7 +161,11 @@ func (p *Project) Info(ctx context.Context) (info ProjectInfo, err error) {
 	if _, err := p.revision(ctx, s); err != nil {
 		return ProjectInfo{}, err
 	}
-	return ProjectInfo{Name: proj.Name, Doc: proj.Doc}, nil
+	info = ProjectInfo{Name: facts.Project.Name, Doc: facts.Project.Doc}
+	for _, r := range facts.Roots { // the facts may be shared with another call (S8): the result holds its own slice
+		info.Roots = append(info.Roots, RootInfo{Name: r.Name, Dir: r.Dir, Absent: r.Absent})
+	}
+	return info, nil
 }
 
 // Packages lists every package of the project, sorted by name.
@@ -209,16 +221,17 @@ func (p *Project) refresh() (rev Revision, ok bool) {
 	return rev, err == nil
 }
 
-// SetOverlay replaces a display or absolute path's content in memory, a writer (API.md §3.4).
-func (p *Project) SetOverlay(file string, content []byte) (err error) {
+// SetOverlay replaces a display or absolute path's content in memory, a writer waiting for the
+// write lock only until ctx is done, then ctx.Err() with the overlays unchanged (API.md S9, S11).
+func (p *Project) SetOverlay(ctx context.Context, file string, content []byte) (err error) {
 	defer recoverInternal(&err)
-	return overlayError(file, p.workspace().SetOverlay(file, content))
+	return overlayError(file, p.workspace().SetOverlayContext(ctx, file, content))
 }
 
-// ClearOverlay removes the overlay of file, if any (API.md §3.4).
-func (p *Project) ClearOverlay(file string) (err error) {
+// ClearOverlay removes the overlay of file, if any, a writer as SetOverlay is (API.md S9, S11).
+func (p *Project) ClearOverlay(ctx context.Context, file string) (err error) {
 	defer recoverInternal(&err)
-	return overlayError(file, p.workspace().ClearOverlay(file))
+	return overlayError(file, p.workspace().ClearOverlayContext(ctx, file))
 }
 
 // overlayError is an overlay's failure as the API reports it, a bad file ErrBadPath (API.md §15).

@@ -263,10 +263,10 @@ func ExampleProject_SetOverlay() {
 	}
 	defer p.Close()
 	before := p.Revision()
-	if err := p.SetOverlay("teamboard/taxonomy.canon", []byte("package teamboard\n")); err != nil {
+	if err := p.SetOverlay(context.Background(), "teamboard/taxonomy.canon", []byte("package teamboard\n")); err != nil {
 		return
 	}
-	defer func() { _ = p.ClearOverlay("teamboard/taxonomy.canon") }()
+	defer func() { _ = p.ClearOverlay(context.Background(), "teamboard/taxonomy.canon") }()
 	fmt.Println(before != p.Revision())
 	// Output: true
 }

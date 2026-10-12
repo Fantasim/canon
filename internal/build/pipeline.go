@@ -370,17 +370,27 @@ func (r *run) reportStableAmendments() {
 // and the project's own, what an edit's re-check reports (API.md E18).
 func (a *Analysis) Own() *Result {
 	r := a.r
-	keep := map[string]bool{"": true}
 	bags := make([]*diag.Bag, len(r.selected))
 	for i, u := range r.selected {
-		keep[u.Name], bags[i] = true, r.s.bag(u.Name)
+		bags[i] = r.s.bag(u.Name)
 	}
 	res := a.res
 	out := &Result{Packages: slices.Clone(res.Packages), Revision: res.Revision}
 	out.Findings = Findings{Files: res.Files, Summary: collect(r.s.set, r.s.own, bags...).Summary}
-	for _, f := range res.List {
+	out.List = a.ownOf(res.List)
+	return out
+}
+
+// ownOf is the findings of list that Own keeps: the selected packages' and the project's own.
+func (a *Analysis) ownOf(list []diag.Finding) []diag.Finding {
+	keep := map[string]bool{"": true}
+	for _, u := range a.r.selected {
+		keep[u.Name] = true
+	}
+	var out []diag.Finding
+	for _, f := range list {
 		if keep[f.Package] {
-			out.List = append(out.List, f)
+			out = append(out, f)
 		}
 	}
 	return out

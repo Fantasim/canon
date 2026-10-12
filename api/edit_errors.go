@@ -29,10 +29,10 @@ var internalSentinels = [...]error{
 	edit.ErrChanges,
 }
 
-// editError is an edit's or a draft's failure as the API reports it (rules X1, X2, S11):
-// a refusal with its op's index and path as given, an overlay (S12), a layout (M9), a stale base
-// or file (S5, N9), a state forbidding writes (ErrProject), a compiler bug; else as it is.
-func (p *Project) editError(ctx context.Context, err error) error {
+// editError is an edit's or a draft's failure as the API reports it (rules X1, X2, S11): a refusal
+// with its op's index and path as given, its findings in lang (R6a), an overlay (S12), a layout
+// (M9), a stale base or file (S5, N9), a state forbidding writes (ErrProject), a compiler bug.
+func (p *Project) editError(ctx context.Context, err error, lang string) error {
 	var (
 		oe *edit.OpError
 		ov *workspace.OverlayError
@@ -44,17 +44,26 @@ func (p *Project) editError(ctx context.Context, err error) error {
 	case ctx.Err() != nil:
 		return ctx.Err()
 	case errors.As(err, &oe):
-		return p.opError(ctx, oe.Index, oe.Path, oe.Err)
+		return p.opError(ctx, refused{op: oe.Index, path: oe.Path, lang: lang}, oe.Err)
 	case errors.As(err, &ov):
 		return &PathError{Op: -1, Path: ov.File, Err: ErrOverlay}
 	case errors.As(err, &nc):
 		return &NotCanonicalError{Files: slices.Clone(nc.Files)}
 	}
-	return p.opError(ctx, -1, "", err)
+	return p.opError(ctx, refused{op: -1, lang: lang}, err)
 }
 
-// opError is edit's refusal of operation op, at path as given (-1 and "" for none), as the API's.
-func (p *Project) opError(ctx context.Context, op int, path string, err error) error {
+// refused is the operation a refusal is about: its index and path as given (-1 and "" for none),
+// and the language of the findings it carries, "" for Options.Lang (R6a, DECISIONS 345).
+type refused struct {
+	op   int
+	path string
+	lang string
+}
+
+// opError is edit's refusal of the operation at, as the API's.
+func (p *Project) opError(ctx context.Context, at refused, err error) error {
+	op, path := at.op, at.path
 	var (
 		pe *edit.PathError
 		ve *edit.ValueError
@@ -66,7 +75,7 @@ func (p *Project) opError(ctx context.Context, op int, path string, err error) e
 	case errors.As(err, &me):
 		return nameError(op, path, me)
 	case errors.As(err, &pe):
-		return p.pathError(ctx, op, path, err, pe)
+		return p.pathError(ctx, at, err, pe)
 	case errors.Is(err, edit.ErrBadPath):
 		return withOp(syntaxError(path, err, 0), op)
 	case errors.As(err, &ve):
@@ -106,16 +115,16 @@ func sentinelError(op int, path string, err error) error {
 	return apiError(err)
 }
 
-// pathError is a path edit could not resolve, as Value reports it (rules R5, R6), with op's index;
-// a value that was not computed is explained by the analysis Apply read it in, never by reading
-// the project again (log-2026-09-29 M4 U5b-r).
-func (p *Project) pathError(ctx context.Context, op int, path string, err error, pe *edit.PathError) error {
-	parsed, perr := edit.Parse(path)
+// pathError is a path edit could not resolve, as Value reports it (rules R5, R6, R6a), with the
+// op's index; a value that was not computed is explained by the analysis Apply read it in, never
+// by reading the project again (log-2026-09-29 M4 U5b-r).
+func (p *Project) pathError(ctx context.Context, at refused, err error, pe *edit.PathError) error {
+	parsed, perr := edit.Parse(at.path)
 	if perr != nil {
 		return internalError(perr)
 	}
-	s := &snapshot{a: pe.At, editLayer: p.editLayer, layers: p.layers, ctx: ctx}
-	return withOp(s.resolveError(path, parsed, err), op)
+	s := &snapshot{a: pe.At, editLayer: p.editLayer, layers: p.layers, ctx: ctx, lang: at.lang}
+	return withOp(s.resolveError(at.path, parsed, err), at.op)
 }
 
 // notEditableDetail names what makes a value not editable: the references a rename cannot

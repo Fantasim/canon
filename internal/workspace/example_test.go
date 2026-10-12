@@ -36,7 +36,7 @@ func Example() {
 	}
 	base, _ := s.Revision(ctx)
 	fmt.Println(a.Result().Summary.Errors, len(a.Reads("x")))
-	_ = p.SetOverlay("x/x.canon", []byte("/// X.\npackage x\n\n/// N.\nconst N = 2\n"))
+	_ = p.SetOverlayContext(context.Background(), "x/x.canon", []byte("/// X.\npackage x\n\n/// N.\nconst N = 2\n"))
 	now, _ := p.Read(ctx)
 	var stale *workspace.StaleError
 	isStale := errors.As(now.Stale(base, a.Reads("x")), &stale)

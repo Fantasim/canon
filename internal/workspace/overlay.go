@@ -14,13 +14,8 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// SetOverlay replaces file's content in every read and in the revision, a writer (API.md §3.4).
-func (p *Project) SetOverlay(file string, content []byte) error {
-	return p.SetOverlayContext(context.Background(), file, content)
-}
-
-// SetOverlayContext is SetOverlay waiting for the write lock only until ctx is done, then
-// returning ctx.Err() (API.md S9, S11).
+// SetOverlayContext replaces file's content in every read and in the revision, a writer waiting
+// for the write lock only until ctx is done, then returning ctx.Err(), the overlays unchanged (S11).
 func (p *Project) SetOverlayContext(ctx context.Context, file string, content []byte) error {
 	return p.overlay(ctx, file, func(over map[string][]byte, abs string) bool {
 		if old, ok := over[abs]; ok && slices.Equal(old, content) {
@@ -31,12 +26,7 @@ func (p *Project) SetOverlayContext(ctx context.Context, file string, content []
 	})
 }
 
-// ClearOverlay removes file's overlay, if it has one (API.md §3.4). It is a writer (S9).
-func (p *Project) ClearOverlay(file string) error {
-	return p.ClearOverlayContext(context.Background(), file)
-}
-
-// ClearOverlayContext is ClearOverlay waiting for the write lock only until ctx is done (S11).
+// ClearOverlayContext removes file's overlay, if it has one, a writer as SetOverlayContext is (API.md S9, S11).
 func (p *Project) ClearOverlayContext(ctx context.Context, file string) error {
 	return p.overlay(ctx, file, func(over map[string][]byte, abs string) bool {
 		_, ok := over[abs]

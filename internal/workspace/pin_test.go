@@ -92,7 +92,7 @@ func TestWritePinsEachFileOnce(t *testing.T) {
 func TestWritePinsUnderOverlays(t *testing.T) {
 	fsys := outputsFS()
 	p := open(t, fsys)
-	if err := p.SetOverlay("/law/a/a.canon", []byte(srcA+"// overlay\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "/law/a/a.canon", []byte(srcA+"// overlay\n")); err != nil {
 		t.Fatal(err)
 	}
 	older := read(t, p)

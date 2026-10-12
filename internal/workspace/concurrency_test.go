@@ -362,7 +362,7 @@ func TestClose(t *testing.T) {
 	ctx := context.Background()
 	_, rerr := p.Read(ctx)
 	_, werr := p.Write(ctx, workspace.CauseEdit, func(context.Context, *workspace.Snapshot) error { return nil })
-	for _, err := range []error{rerr, werr, p.SetOverlay("a/a.canon", nil), p.ClearOverlay("a/a.canon")} {
+	for _, err := range []error{rerr, werr, p.SetOverlayContext(context.Background(), "a/a.canon", nil), p.ClearOverlayContext(context.Background(), "a/a.canon")} {
 		if !errors.Is(err, workspace.ErrClosed) {
 			t.Errorf("after Close: %v", err)
 		}

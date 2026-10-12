@@ -185,7 +185,7 @@ func TestRecheckUnowned(t *testing.T) {
 		t.Fatal(err)
 	}
 	o := &EditOutcome{Plan: &edit.Plan{}, Changes: []edit.Change{{Kind: edit.ChangeModified, Path: "x/x.canon"}}, Before: s}
-	if err := o.recheck(context.Background(), a, o.Plan.Touched); !errors.Is(err, edit.ErrInternal) {
+	if err := o.recheck(context.Background(), a, o.Plan.Touched, ""); !errors.Is(err, edit.ErrInternal) {
 		t.Errorf("recheck: %v", err)
 	}
 }

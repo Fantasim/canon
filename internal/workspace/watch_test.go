@@ -204,7 +204,7 @@ func TestWatchRevisionOrder(t *testing.T) {
 	}
 	settle("/law/a/a.json", "[5]\n")
 	first := next(t, changes)
-	if err := p.SetOverlay("b/b.canon", []byte(srcB+"\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "b/b.canon", []byte(srcB+"\n")); err != nil {
 		t.Fatal(err)
 	}
 	settle("/law/data/c.json", "[6]\n")
@@ -274,7 +274,7 @@ func TestWatchOwnWrites(t *testing.T) {
 	if c.Cause != workspace.CauseEdit || !slices.Equal(shown(c), []string{"b/b.canon"}) {
 		t.Errorf("the writer's change: %s %v", c.Cause, shown(c))
 	}
-	if err := p.SetOverlay("a/a.canon", []byte(srcA+"\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "a/a.canon", []byte(srcA+"\n")); err != nil {
 		t.Fatal(err)
 	}
 	if c := next(t, changes); c.Cause != workspace.CauseOverlay || !slices.Equal(shown(c), []string{"a/a.canon"}) {

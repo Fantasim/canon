@@ -1,6 +1,7 @@
 package canon
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,7 @@ type Edit struct {
 	DryRun      bool     `json:"dryRun,omitempty"`
 	Normalize   bool     `json:"normalize,omitempty"`
 	Evaluate    []string `json:"evaluate,omitempty"`
+	Lang        string   `json:"lang,omitempty"` // language of Findings, a refusal's findings and Eval; "" is Options.Lang (DECISIONS 345)
 }
 
 // FileChange is one file an edit wrote, or with DryRun would write.
@@ -65,17 +67,17 @@ func (p *Project) Edit(ctx context.Context, e Edit) (res *EditResult, err error)
 	}
 	req := workspace.EditRequest{
 		Changes: workspace.Changes{Ops: ops, EditLayer: p.editLayer, Host: editHost},
-		Base:    string(e.Base), AllowErrors: e.AllowErrors, DryRun: e.DryRun, Normalize: e.Normalize,
+		Base:    string(e.Base), AllowErrors: e.AllowErrors, DryRun: e.DryRun, Normalize: e.Normalize, Lang: e.Lang,
 	}
 	out, err := p.workspace().Edit(ctx, req)
 	if err != nil && !errors.Is(err, workspace.ErrRejected) {
-		return nil, p.editError(ctx, err)
+		return nil, p.editError(ctx, err, e.Lang)
 	}
 	res, rerr := p.editResult(ctx, out, e.DryRun)
 	if rerr != nil {
 		return nil, rerr
 	}
-	res.Eval, rerr = p.editEval(ctx, out, e.Evaluate, res.Revision)
+	res.Eval, rerr = p.editEval(ctx, out, e, res.Revision)
 	switch {
 	case err != nil:
 		return res, &RejectedError{Findings: errorFindings(res.Findings)}
@@ -137,14 +139,15 @@ func errorFindings(fs []Finding) []Finding {
 	return slices.DeleteFunc(slices.Clone(fs), func(f Finding) bool { return f.Severity != SeverityError })
 }
 
-// editEval evaluates each of paths on the sources after the edit (rule V14): the snapshot
-// published, or the edit made in memory when nothing was written; rev is the result's revision.
-func (p *Project) editEval(ctx context.Context, out *workspace.EditOutcome, paths []string, rev Revision) (map[string]*EvalResult, error) {
+// editEval evaluates each of e's Evaluate paths on the sources after the edit (rule V14), in
+// e's language (DECISIONS 345): the snapshot published, or the edit made in memory when nothing
+// was written; rev is the result's revision.
+func (p *Project) editEval(ctx context.Context, out *workspace.EditOutcome, e Edit, rev Revision) (map[string]*EvalResult, error) {
 	evals := map[string]*EvalResult{}
-	if len(paths) == 0 {
+	if len(e.Evaluate) == 0 {
 		return evals, nil
 	}
-	for _, path := range paths {
+	for _, path := range e.Evaluate {
 		parsed, err := edit.Parse(path)
 		if err != nil {
 			return evals, syntaxError(path, err, 0)
@@ -153,7 +156,7 @@ func (p *Project) editEval(ctx context.Context, out *workspace.EditOutcome, path
 		if err != nil {
 			return evals, err
 		}
-		r, err := p.evaluateOn(ctx, evalOn{s: out.After, a: a, lang: p.lang}, path)
+		r, err := p.evaluateOn(ctx, evalOn{s: out.After, a: a, lang: cmp.Or(e.Lang, p.lang)}, path)
 		if err != nil {
 			return evals, err
 		}

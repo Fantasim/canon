@@ -72,21 +72,21 @@ var editRefusals = []struct {
 func TestEditErrorMapping(t *testing.T) {
 	p := &Project{}
 	for _, c := range editRefusals {
-		got := p.editError(context.Background(), c.err)
+		got := p.editError(context.Background(), c.err, "")
 		if !errors.Is(got, c.want) || got.Error() != c.text {
 			t.Errorf("%v: %v, want %v %q", c.err, got, c.want, c.text)
 		}
 	}
 	var ne *NotEditableError
-	if err := p.editError(context.Background(), editRefusals[1].err); !errors.As(err, &ne) || ne.Origin != "a:y" || ne.Reason != ReasonComputed {
+	if err := p.editError(context.Background(), editRefusals[1].err, ""); !errors.As(err, &ne) || ne.Origin != "a:y" || ne.Reason != ReasonComputed {
 		t.Errorf("API.md W5: %+v", ne)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := p.editError(ctx, edit.ErrJournal); !errors.Is(err, ErrProject) {
+	if err := p.editError(ctx, edit.ErrJournal, ""); !errors.Is(err, ErrProject) {
 		t.Errorf("log-2026-09-29 M4 U5b-r: a journal under a cancelled ctx: %v", err)
 	}
-	if err := p.editError(ctx, edit.ErrKeyExists); !errors.Is(err, context.Canceled) {
+	if err := p.editError(ctx, edit.ErrKeyExists, ""); !errors.Is(err, context.Canceled) {
 		t.Errorf("API.md S11: %v", err)
 	}
 }

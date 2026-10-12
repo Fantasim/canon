@@ -10,9 +10,10 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// cause explains why root has no value, from evaluation, else from the checker that broke it (rule R6).
+// cause explains why root has no value, from evaluation, else from the checker that broke it,
+// either way in the call's language (rules R6, R6a; DECISIONS 345).
 func (s *snapshot) cause(root eval.Root) ([]Finding, error) {
-	c, err := s.a.Cause(s.ctx, root)
+	c, err := s.a.CauseIn(s.ctx, root, s.lang)
 	if err != nil || len(c) > 0 {
 		return fromDiag(s.a.Files(), c), err
 	}
@@ -20,7 +21,11 @@ func (s *snapshot) cause(root eval.Root) ([]Finding, error) {
 	if obj == nil {
 		return nil, nil
 	}
-	return fromDiag(s.a.Files(), s.brokenBy(obj, map[check.Object]bool{})), nil
+	broken, err := s.a.InOrder(s.ctx, s.brokenBy(s.a.Source(), obj, map[check.Object]bool{}), s.lang)
+	if err != nil {
+		return nil, err
+	}
+	return fromDiag(s.a.Files(), broken), nil
 }
 
 // object is the let or const root names.
@@ -38,13 +43,13 @@ func (s *snapshot) object(root eval.Root) check.Object {
 	return nil
 }
 
-// brokenBy is the errors inside obj's declaration and its active layers' amendments; with none
-// there, those of the broken declarations it names, the dependency that broke it.
-func (s *snapshot) brokenBy(obj check.Object, seen map[check.Object]bool) []diag.Finding {
+// brokenBy is the errors of list inside obj's declaration and its active layers' amendments;
+// with none there, those of the broken declarations it names, the dependency that broke it.
+func (s *snapshot) brokenBy(list []diag.Finding, obj check.Object, seen map[check.Object]bool) []diag.Finding {
 	seen[obj] = true
 	nodes := s.sources(obj)
 	var own []diag.Finding
-	for _, f := range s.a.Result().List {
+	for _, f := range list {
 		if f.Severity == diag.Error && slices.ContainsFunc(nodes, func(n located) bool { return n.holds(f.Span) }) {
 			own = append(own, f)
 		}
@@ -55,7 +60,7 @@ func (s *snapshot) brokenBy(obj check.Object, seen map[check.Object]bool) []diag
 	var out []diag.Finding
 	for _, d := range s.brokenNames(nodes) {
 		if !seen[d] {
-			out = append(out, s.brokenBy(d, seen)...)
+			out = append(out, s.brokenBy(list, d, seen)...)
 		}
 	}
 	return out

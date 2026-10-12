@@ -125,7 +125,7 @@ func (p *Project) Evaluate(ctx context.Context, r EvalRequest) (res *EvalResult,
 	if len(r.Draft) > 0 {
 		d, err := workspace.Draft(ctx, s, a, workspace.Changes{Ops: operations(r.Draft), EditLayer: p.editLayer, Host: editHost})
 		if err != nil {
-			return nil, p.editError(ctx, err)
+			return nil, p.editError(ctx, err, r.Lang)
 		}
 		on.s, on.a, on.touched, on.dropped = d.Snapshot, d.Analysis, d.Owners, d.Plan.Dropped
 	}
@@ -174,7 +174,7 @@ func (p *Project) evaluateOn(ctx context.Context, on evalOn, path string) (*Eval
 	if err != nil {
 		return nil, syntaxError(path, err, 0)
 	}
-	snap := &snapshot{a: on.a, s: edit.NewSnapshot(on.a), editLayer: p.editLayer, layers: p.layers, ctx: ctx}
+	snap := &snapshot{a: on.a, s: edit.NewSnapshot(on.a), editLayer: p.editLayer, layers: p.layers, ctx: ctx, lang: on.lang}
 	at, err := snap.evalTarget(path, parsed)
 	if err != nil {
 		return nil, err

@@ -18,7 +18,7 @@ func TestPublishedOrder(t *testing.T) {
 	}
 	m.put("/law/a/a.canon", []byte(srcA+"\n"))
 	changed := read(t, p)
-	if err := p.SetOverlay("b/b.canon", []byte(srcB+"\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "b/b.canon", []byte(srcB+"\n")); err != nil {
 		t.Fatal(err)
 	}
 	overlaid := read(t, p)

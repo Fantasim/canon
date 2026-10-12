@@ -101,23 +101,23 @@ func TestOverlayOnUNCVolume(t *testing.T) {
 	onVolumes(t)
 	p := openUNC(t, newMemFS(uncFiles()))
 	rev := revision(t, read(t, p))
-	if err := p.SetOverlay("b/b.canon", []byte(srcB+"\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "b/b.canon", []byte(srcB+"\n")); err != nil {
 		t.Fatal(err)
 	}
 	if revision(t, read(t, p)) == rev {
 		t.Error("an overlay on the share left the revision")
 	}
-	if err := p.SetOverlay("e/e.canon", []byte("/// E.\npackage e\n")); err != nil {
+	if err := p.SetOverlayContext(context.Background(), "e/e.canon", []byte("/// E.\npackage e\n")); err != nil {
 		t.Fatal(err)
 	}
 	units, err := read(t, p).Build().Packages(context.Background())
 	if err != nil || len(units.Units) != 4 {
 		t.Errorf("a new package by overlay: %v, %d units", err, len(units.Units))
 	}
-	if err := p.ClearOverlay(uncRoot + "/e/e.canon"); err != nil {
+	if err := p.ClearOverlayContext(context.Background(), uncRoot+"/e/e.canon"); err != nil {
 		t.Fatal(err)
 	}
-	if err := p.ClearOverlay(uncRoot + "/b/b.canon"); err != nil {
+	if err := p.ClearOverlayContext(context.Background(), uncRoot+"/b/b.canon"); err != nil {
 		t.Fatal(err)
 	}
 	if revision(t, read(t, p)) != rev {
