@@ -264,17 +264,20 @@ func (p *Project) Revision() Revision
   file-system root, and the journal's directory with its ancestors (N10); it equals a fresh read of
   the disk the edit left, except external changes made during the write, which the next refresh (S1)
   sees; a watcher being restarted counts as active (DECISIONS 254).
-- **S11.** Every method takes a `context.Context`. Cancelling it makes the call return
+- **S11.** Every method but `Root`, `Close` and `Revision` (which never wait for the write lock)
+  takes a `context.Context` (DECISIONS 344). Cancelling it makes the call return
   `ctx.Err()` promptly; a cancelled `Edit` writes nothing, or, if cancellation arrives after the
   first rename, completes (§10.3).
 
 ### 3.4 Overlays
 
 ```go
-func (p *Project) SetOverlay(file string, content []byte) error
-func (p *Project) ClearOverlay(file string) error
+func (p *Project) SetOverlay(ctx context.Context, file string, content []byte) error
+func (p *Project) ClearOverlay(ctx context.Context, file string) error
 ```
 
+As writers (S9), they wait for the write lock only until `ctx` is done, then return `ctx.Err()`
+with the overlays unchanged (S11, DECISIONS 344).
 An overlay replaces a file's content in memory without writing it; the language server uses it for
 unsaved buffers. `file` is a display path or an absolute path (on Windows, §2.2's rule applies);
 a path outside the project is a `*PathError` wrapping `ErrBadPath`. Overlays are keyed by the
@@ -301,7 +304,7 @@ type Finding struct {
     Pointer  string     // RFC 6901 pointer when File is a loaded JSON file, else ""
     Package  string     // package the finding belongs to
     Path     string     // canonical value path (§6.5), "" when not about a value
-    Message  string     // in Options.Lang when a translation exists (I18N.md)
+    Message  string     // in the call's language (a request's Lang, R3a), else Options.Lang, when a translation exists (I18N.md)
     Check    string     // name of the check or warn that produced it, "" if unnamed or not a check
     Layer    string     // layer whose amendment produced the value, "" if none
     Related  []Related  // other locations, in the order the producer adds them
@@ -474,6 +477,12 @@ func (r *CheckResult) HasErrors() bool
 
 ```go
 func (p *Project) Value(ctx context.Context, path string) (*Value, error)
+func (p *Project) ValueWith(ctx context.Context, r ValueRequest) (*Value, error)
+
+type ValueRequest struct {
+    Path string
+    Lang string   // "" is Options.Lang (R6a)
+}
 ```
 
 `Value` returns the final value at `path` (after layers), its type and where it comes from. It
@@ -519,6 +528,11 @@ Methods, all cheap, never re-evaluating:
   the checker's findings in the root's declaration and in its active layers' amendments, else those
   of the checker-broken declarations it depends on. A root left unevaluated because its package's
   budget was spent has that package's `E4401` as its cause (DECISIONS 328).
+- **R6a.** `Value(ctx, path)` is `ValueWith(ctx, ValueRequest{Path: path})`. `ValueWith` takes a
+  per-call language as R3a does: the findings an `ErrNoValue` wraps (R6), whichever source explains
+  it, are in `Lang` when a translation exists, from the value and from every `Child` of it (R4).
+  Only named-check messages are rendered again from the kept analysis; nothing echoes the language
+  (DECISIONS 345).
 
 `Origin` records where a value comes from (EVL-07):
 
@@ -620,9 +634,16 @@ func (p *Project) Root() string
 func (p *Project) Info(ctx context.Context) (ProjectInfo, error)
 func (p *Project) Packages(ctx context.Context) ([]PackageInfo, error)   // sorted by Name
 type ProjectInfo struct {
-    Name string
-    Doc  string    // the project doc comment's text (GRAMMAR.md §2.2), source language
-}                  // Info fails like Packages: an invalid project.canon is a *ProjectError
+    Name  string
+    Doc   string     // the project doc comment's text (GRAMMAR.md §2.2), source language
+    Roots []RootInfo // every declared root, sorted by Name (DECISIONS 346)
+}                    // Info fails like Packages: an invalid project.canon is a *ProjectError
+type RootInfo struct {
+    Name   string    // as project.canon declares it
+    Dir    string    // its directory on this machine, an FS name (§2.2): Options.Roots over
+                     // project.local.canon over project.canon (DECISIONS 332)
+    Absent bool      // an optional or consumer root this machine lacks (DECISIONS 332, 343)
+}
 type PackageInfo struct {
     Name    string
     Dir     string    // display path
@@ -832,6 +853,7 @@ type Edit struct {
     DryRun      bool      // compute everything, write nothing
     Normalize   bool      // allow writing files that are not in canonical layout (§9.4)
     Evaluate    []string  // paths to evaluate after the edit (§11), returned in Eval
+    Lang        string    // language of Findings, a refusal's findings and Eval; "" is Options.Lang (DECISIONS 345)
 }
 
 type EditResult struct {
@@ -1163,7 +1185,7 @@ inside the same edit and reports it, so every client behaves the same.
 ### 8.8 JSON form of an edit
 
 The studio's web client sends edits as JSON. `Edit` has this form through its struct tags
-(`base`, `ops`, then `allowErrors`, `dryRun`, `normalize` and `evaluate`, each omitted when
+(`base`, `ops`, then `allowErrors`, `dryRun`, `normalize`, `evaluate` and `lang`, each omitted when
 false or empty), and `Op` implements `json.Marshaler` and `json.Unmarshaler` (E24–E26); `Edit`
 implements `json.Unmarshaler` too, and JSON of either that does not decode is `ErrBadOp` (§15):
 

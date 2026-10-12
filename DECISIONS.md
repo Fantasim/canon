@@ -2693,6 +2693,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      applied in a step that holds no ctx"). Known gap kept: API.md S11 (every method takes a ctx)
      against §3.4's `SetOverlay`/`ClearOverlay` (frozen `api/canon.go`); internal callers use the
      ctx-taking workspace writers. Reason: LX review, log-2026-10-03.
+     [settled by 344]
 
 286. **`E1107` sits at the string's opening quote (GRAMMAR.md §2.6).** An unterminated plain,
      multiline or raw string is `E1107` at its opening quote (the `r` of a raw string), wherever it
@@ -3235,6 +3236,7 @@ round 2", "PS1 review", "PS2 round 2"):
      no hint; O3 was never implemented; and `--root`, needed on every command, could not reach the
      editor or the studio. `optional_roots` instead of a per-root map: no parser or frozen syntax
      change, one spelling (orchestrator).
+     [completed by 346]
 
 333. **An unknown name beside a literal is an unknown name (TYPES.md §5.1).** When both operands of
      a comparison or arithmetic operator are context-dependent and one holds a bare name, that
@@ -3406,3 +3408,43 @@ round 2", "PS1 review", "PS2 round 2"):
      An output `--only-root` keeps (declared under the root) whose path this machine places outside
      the named root's directory (a nested root placed elsewhere) is `E8028` `outside`, nothing
      written.
+
+344. **Overlays take a context (API.md S11, S9, §3.4; settles the gap 285 kept; breaking, under
+     IMPLEMENTATION-PLAN §4's review rule).** `SetOverlay(ctx context.Context, file string,
+     content []byte) error` and `ClearOverlay(ctx context.Context, file string) error`. As writers
+     (S9) they wait for the write lock only until `ctx` is done, then return `ctx.Err()` with the
+     overlays unchanged; an applied overlay is published whole (S10). S11's "every method" excepts
+     `Root`, `Close` and `Revision`, which never wait for the write lock. No ctx-less twin (one
+     spelling). It ships in 0.1.6 although API.md §1.2 promises breaks in minor releases only: no
+     caller outside this repository uses either method (searched 2026-10-12: the language server
+     already called the workspace's ctx-taking writers), and the release notes name the break.
+     Reason: an overlay waited, uncancellable, behind an `Edit` or a writing `Build`.
+
+345. **A per-call language for `Value` and `Edit` (API.md §4.1, §5.2 R6a, §8.1, §8.8; extends
+     313 and 281; additive, under IMPLEMENTATION-PLAN §4's review rule).** `func (p *Project)
+     ValueWith(ctx context.Context, r ValueRequest) (*Value, error)` with `ValueRequest{Path, Lang
+     string}`; `Value(ctx, path)` is `ValueWith` with no `Lang`. `Edit` gains `Lang string` (JSON
+     `lang`, omitted when empty). `""` means `Options.Lang`. The language applies to the findings
+     an `ErrNoValue` wraps (R6), from the value and from every `Child` of it (R4), to
+     `EditResult.Findings`, a `*RejectedError`'s findings and `EditResult.Eval`. As in R3a only
+     named-check messages are rendered again from the kept analysis: the finding set, the counts and
+     every refusal are unchanged, nothing is kept per language and nothing echoes it. R6's findings
+     follow the call's language (or `Options.Lang`) whichever source explains them: a cause
+     evaluation's findings were left in the source language before (a bug, fixed here). `Refs`,
+     `ViewModel` (text keys), `Build`, `Test` and `LockCheck` stay on `Options.Lang`. Reason: an
+     editor showing several languages opened one project per language, about 2 GB and 10 s each on
+     a large project, only to translate messages (config-studio findings 2026-10-09 §4).
+
+346. **Placed roots in `ProjectInfo` (API.md §5.5; VIEWMODEL.md §12.9; completes the mechanism
+     191 and 332 deferred; additive, under IMPLEMENTATION-PLAN §4's review rule).**
+     `ProjectInfo.Roots []RootInfo`, every declared root sorted by name, `RootInfo{Name, Dir
+     string; Absent bool}`: `Dir` is the root's directory on this machine as the snapshot places
+     it (`Options.Roots` over `project.local.canon` over `project.canon`), an FS name (§2.2), not
+     resolved through links; `Absent` is true for an optional or consumer root this machine lacks
+     (332, 343), whose `Dir` still says where it is expected. The view model is unchanged (108): an
+     editor reads `assets` key `@name/rest` at `Dir/rest`. Canon never reads an asset for the
+     caller and adds no `AssetFile` (a file picker needs the directory anyway); a name not taken
+     from a checked value follows TYPES.md §13.4's path rule, and a reader serving files off the
+     machine bounds links as WIRE.md §6.5 does. Reason: an editor could not preview the assets of
+     a relocated root without re-implementing root placement (config-studio findings 2026-10-09
+     §2).

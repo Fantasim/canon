@@ -1193,8 +1193,8 @@ Titles in rows are already disambiguated (S9).
   `check` does. Files are matched exactly and case-sensitively (DECISIONS 19). The studio lists
   the asset root on its own machine for the file picker, and reads thumbnails from it: `dir` for
   an unrooted root; for a rooted one, the studio places it on its machine through the project's
-  roots (`project.local.canon` included), by a mechanism to be specified with the studio
-  (DECISIONS 191).
+  roots (`project.local.canon` included), read from `ProjectInfo.Roots` (API.md §5.5, DECISIONS
+  346): `@name/rest` is `Dir/rest`.
 - `units` maps unit names to `{suffix, scale, thousands, decimals}` copied from the studio
   package's `units` table; `suffix` is a text reference (`"studio:units.hp.suffix"`), absent when
   the suffix is empty.
