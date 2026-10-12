@@ -105,7 +105,9 @@ xOk bool)` in Go, `std::optional<T>` in C++, `T | null` in TS.
 2. the declared parameter's sized type (`E3201`; for a `Duration`, the range ±9 223 372 036 854 ms
    of TYPES.md §7.2, also `E3201`), then its range refinement (`E3204`), the order in which
    EVALUATION.md §4.3 checks a stored value. Values read from `self` are not checked: they were
-   validated at build time.
+   validated at build time. An enum a `types` emit opens is the exception (a decoder keeps a member
+   the build does not know), so a translated function never takes or reads one (`E8019`
+   `OpenEnumFn`, DECISIONS 365).
 
 The order is per parameter: one parameter passes steps 1 and 2 before the next is checked. The Go,
 C++ and TypeScript translations and the evaluator's TS mode (§4) all follow it (DECISIONS 311).

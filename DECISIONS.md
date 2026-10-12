@@ -3683,3 +3683,17 @@ round 2", "PS1 review", "PS2 round 2"):
      error stay checked alone (338's `argsInError` was reverted for hiding independent errors).
      Reason: `E3305` was reported twice on an untyped map literal nested in an `if`, a list or an
      `in`-list, and the same repeat held for `E3002` and `E3320` (F7, log-2026-10-08).
+
+365. **A translated function never takes or reads an opened enum (CODEGEN.md §5.2;
+     CONFORMANCE.md §2.3; ERRORS.md E8019 `OpenEnumFn`, `WayOpenEnumFn`; extends 339, 362).** In a
+     package whose `go`, `cpp` or `ts` emit opens an enum, a translated function whose parameter
+     type holds that enum, or whose body reads a value of it from `self` (directly or inside what it
+     reads), is `E8019` `OpenEnumFn` at stage E for that emit; the way out decides on the member's
+     known check in hand-written code, or takes the enum out of `open`. A function that reads
+     other fields of the same record is unaffected. Reason: a decoder keeps a member the build does
+     not know, so an author's if-chain silently sends it to the last branch (pinned by a test,
+     2026-10-12), and the evaluator, which never holds such a member, cannot prove any answer for
+     it: conformance would no longer hold. A defined runtime failure was refused (a code the
+     evaluator can never produce cannot be conformance-tested), and a wildcard rule is moot while
+     `match` is outside the translated subset (CONFORMANCE §2.2); if `match` joins it, a `match`
+     over an opened enum needs the same refusal.

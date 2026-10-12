@@ -1018,6 +1018,13 @@ emit opens must be in `types` mode too (`E8019` `OpenEnum`). In C++ the free fun
 member names that could collide with enumerators; an enumerator named like its enum or `wire_`
 is `E8005`. The runtime's `LookupKey<K>` is `const K&` for a class key (§7.4).
 
+A translated function (CONFORMANCE.md §2) of a package whose emit opens an enum never takes a
+parameter of that enum, nor reads a value of it from `self` (directly or inside a list, map or
+record it reads): the evaluator holds no value for a member the source lacks, so no vector could
+prove the function's answer, and an unknown member would silently take the last branch of an
+if-chain. Such a function is `E8019` `OpenEnumFn` at stage E, in every target that opens the enum
+(DECISIONS 365).
+
 ### 5.3 Table ids
 
 The keys of a public `table` value (EMT-04):

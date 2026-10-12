@@ -124,6 +124,7 @@ const (
 	KindNumber
 	KindObject
 	KindOpenEnum
+	KindOpenEnumFn
 	KindOptionalElementList
 	KindOptionalMapValue
 	KindOutPaths
@@ -187,6 +188,7 @@ const (
 	KindWayMapField
 	KindWayNeverDependent
 	KindWayOpenEnum
+	KindWayOpenEnumFn
 	KindWayOptionalElementList
 	KindWayOptionalMapValue
 	KindWayRecordConstant
@@ -282,6 +284,7 @@ var kindNames = [...]string{
 	"Number",
 	"Object",
 	"OpenEnum",
+	"OpenEnumFn",
 	"OptionalElementList",
 	"OptionalMapValue",
 	"OutPaths",
@@ -345,6 +348,7 @@ var kindNames = [...]string{
 	"WayMapField",
 	"WayNeverDependent",
 	"WayOpenEnum",
+	"WayOpenEnumFn",
 	"WayOptionalElementList",
 	"WayOptionalMapValue",
 	"WayRecordConstant",
@@ -420,6 +424,7 @@ var kindWords = [...]string{
 	"a number",
 	"an object",
 	"an enum its package's emit of this target opens",
+	"a translated function that takes or reads an enum its package's emit of this target opens",
 	"a list of optional elements",
 	"a map with optional values",
 	"a constant string or a list of constant strings",
@@ -483,6 +488,7 @@ var kindWords = [...]string{
 	"hold the entries in a keyed list",
 	"give it a branch that is not Never, or remove it",
 	"emit this package in types mode too, or take the enum out of open",
+	"decide on the member's Known check in your own code, or take the enum out of open",
 	"wrap each element in a record with an optional field",
 	"leave absent entries out of the map",
 	"make it a let",

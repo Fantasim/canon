@@ -161,6 +161,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Number` | a number | `E7110` |
 | `Object` | an object | `E7110` |
 | `OpenEnum` | an enum its package's emit of this target opens | `E8019` |
+| `OpenEnumFn` | a translated function that takes or reads an enum its package's emit of this target opens | `E8019` |
 | `OptionalElementList` | a list of optional elements | `E8019` |
 | `OptionalMapValue` | a map with optional values | `E8019` |
 | `OutPaths` | a constant string or a list of constant strings | `E8009` |
@@ -224,6 +225,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `WayMapField` | hold the entries in a keyed list | `E8019` |
 | `WayNeverDependent` | give it a branch that is not Never, or remove it | `E8019` |
 | `WayOpenEnum` | emit this package in types mode too, or take the enum out of open | `E8019` |
+| `WayOpenEnumFn` | decide on the member's Known check in your own code, or take the enum out of open | `E8019` |
 | `WayOptionalElementList` | wrap each element in a record with an optional field | `E8019` |
 | `WayOptionalMapValue` | leave absent entries out of the map | `E8019` |
 | `WayRecordConstant` | make it a let | `E8019` |
