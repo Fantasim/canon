@@ -36,8 +36,8 @@ This replaces SPEC §11.2.
 | 8 | Emit (not in this document): code, data and `canon.lock` only if there is no error finding; `emit view` even with errors (VIEWMODEL.md J4, API.md B1) | files |
 
 - `canon check` runs phases 1–7. `canon build` runs 1–8. So `check` and `build` report the same
-  findings (CLI.md §3.3), except `E8001` and `E8152`, which need the output files and are reported
-  in phase 8 only. `canon test` runs 1–2, then the
+  findings (CLI.md §3.3), except `E8001`, which needs the output files and is reported in phase 8
+  only (`E8152` is found by both, DECISIONS 355). `canon test` runs 1–2, then the
   tests (§10).
 - `canon check` and `canon build` both compute the conformance vectors in phase 7, so both report
   `E9008` and `E9009`. Computing them runs the tests of a package with a translated function, only
@@ -563,7 +563,10 @@ A subject that reads a poisoned top-level value makes the `expect` fail, naming 
 
 - An identifier after `fails`/`warns` that matches `^[EW][0-9]{4}$` is a code; any other
   identifier is a check name and must be the name of some named check declared on a type
-  reachable from `v`'s static type, or in the package (`E5004`).
+  reachable from `v`'s static type (through fields, elements, map keys and values, variant cases
+  and their own checks, and a dependent field's branches); a name that matches only a package
+  check is `E5004`, since package checks never run for a subject (§10.2). `E5004` is static:
+  `canon check` and `canon test` report it (log-2026-10-06).
 - Matching counts dynamic `E3xxx`, `E4xxx` and `E5xxx`/`W5xxx` findings (CHK-05).
 
 ### 10.4 Failures

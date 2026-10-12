@@ -43,6 +43,7 @@ this file first.
    the existing items by `canon infer`, permissive by design so the first build passes, then
    tightened in small reviewed steps. The data files do not change: the wire stays flat. The
    studio shows a kind's commonly used fields first and the rare ones under "More".
+   [amended by 188]
 
 8. **Documentation is expected.** A public type or field without a `///` doc comment is a
    warning. Descriptions from the existing JSON Schemas and overlays are imported during
@@ -228,6 +229,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 37. **Emit rules are checked by `canon check`** (stage E builds and validates every emit's IR;
     only `E8001`/`E8152` wait for the write), emit options are a typed built-in schema, and an
     unknown emit target is `E8003`. Reason: `check` and `build` must report the same findings.
+    [amended by 355]
 
 38. **`ItemElement` gets clean member names with legacy wire values** (`NONE = "_NONE"`…) rather
     than `@cpp(name:)` overrides. Reason: DECISIONS 3, and one fix for every target.
@@ -1086,6 +1088,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     with a bag of its own and again into its package's bag only when it has findings. Reason:
     bags are per package (F7), a package is known only once its files are parsed, and no finding
     is ever moved between bags.
+     [amended by 353]
 
 141. **Project-file details GRAMMAR §7.1 leaves open.** A root name and a `go_module` key must be
     written as an `IDENT` (a string or a reserved word is `E1007` name, resp. `E1009` root); a
@@ -2012,6 +2015,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      residual risks. Reason: log-2026-09-29 M4 (journal file name, U4c, U4c-r, U4c rounds 2 and 3,
      "Journal threat model", U4c final, U5b, U5b-r, U8-r, U8 re-review): §10.3 and O5 were silent
      on a foreign or hostile journal.
+     [amended by 351]
 
 231. **What the journal cannot recover is not editable (API.md §7.2, N2, N3).** Reason `format` also
      covers a JSON source whose file extension is not `.json` and a value whose defining file has a
@@ -2576,6 +2580,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      binary, matched to its version: a short index, then one topic per subject, written for
      agents (token-efficient, no prose a `--help` or an error message already gives). Reason:
      Louis, 2026-10-02.
+     [amended by 354]
 
 277. **After M5: TypeScript first, the module path stays, the gaps M5 surfaced (API.md E23, E28;
      CLI.md §2.4; GRAMMAR.md §8 `@files`; IMPLEMENTATION-PLAN §11).** M6's TypeScript target is built
@@ -3497,3 +3502,87 @@ round 2", "PS1 review", "PS2 round 2"):
      loader APIs and cannot work in `types` mode, which holds no values. Reason: a file keying its
      payload by a looked-up kind could not be decoded in any target (website H-14 #4; handoff
      2026-10-08 §4).
+
+351. **Unique staging names (API.md §2.2, N10; CLI.md §3.4, §3.6; CODEGEN.md §2.9; amends 230).**
+     Every file a run of `canon build` or `canon fmt` writes or sets aside is staged under
+     `.<base>.<token>.canon-tmp`, `<token>` 13 base32 characters drawn once per run (one token per
+     run, so a run's leftovers are one set); an edit stages under `.<base>.<j>.canon-edit`, `<j>`
+     the first 16 hex characters of its journal's name, so `Recover` derives its stages from the
+     journal alone (the journal format is unchanged; recovery also clears the 0.1.5 fixed names).
+     A writer still first removes whatever entry sits at its staging name (ADR-0010). A build
+     sweeps a set-aside leftover of any token, or of the 0.1.5 fixed name, under the same marker or
+     hash test as before. Reason: two builds of one package shared `.<base>.canon-tmp`; one's
+     rename consumed the other's stage and its rollback deleted the outputs the first had written
+     (2026-10-12 repro: 80 of 80 concurrent first builds lost both outputs).
+
+352. **An advisory writer lock per package (API.md S9, N9; CLI.md §3.4, §3.6, §3.15).** `canon
+     build` takes `.canon/writers/<package>` exclusively for each selected package and shared for
+     each other loaded package; `canon fmt` exclusively for each package it rewrites; an edit (API
+     `Edit`, `canon edit`, `canon rename`) exclusively for the package of each file it writes,
+     created packages included. Locks are taken in name order, all or none, so writers never
+     deadlock; they are released by the operating system when the process ends (`flock` on Unix,
+     `CreateFile` share modes on Windows; standard library only, no new dependency), so a lock is
+     never stale; the files hold one informational line (`host pid`) and are never deleted (an
+     unlink races a waiter). A writer waits, honouring its context (polling about every 100 ms,
+     never stuck in a system call), and the CLI says once on standard error whom it waits for; no
+     timeout and no knob (319, 327). Under the locks a build re-reads its sources' hashes (a
+     difference redoes the run once, then is a stale error) and an edit runs N9; an edit whose
+     plan needs a package outside the held set releases, takes the full sorted set and plans
+     again. `build --check`, `fmt --check`, `--only-root` (which writes no project file, 343),
+     `check`, `test` and every reader take none. The in-process write lock (S9) is kept. On a
+     platform with neither primitive the lock is skipped (advisory). An unwritable `.canon/`
+     refuses the write (an I/O error, fail closed). Reason: several agents write one project;
+     351 stops the corruption, the lock stops lost updates.
+
+353. **A file with no package line counts against its own directory (CLI.md §2.2; amends
+     140).** Its findings go to the bag of the package its directory names (`a/b` → `a.b`),
+     whether or not that package exists; a file at the project root goes to a root bag. Such a bag
+     is reported by every command that selects all packages and by a selector that would select
+     that name (`a.b`, `a...`, `./a/b`, the file's path), which no longer fails as an unknown
+     package; it counts as no package in `Summary.Packages`, and no other package-scoped command
+     sees it. The project's own bag keeps `project.canon`'s and `project.local.canon`'s findings,
+     `E1012` and the `E7003` override. A stray file that has a `package` line already goes to its
+     own package (unchanged). Reason: one stray file made `canon check a` fail for every package of
+     the project, and the file itself could not be selected (2026-10-12 repro).
+
+354. **An exact compiler pin (GRAMMAR.md §7.1; CLI.md §3.14; ERRORS.md E1006 `compiler`, E1015,
+     W1016; amends 276).** `project.canon` takes `compiler: "X.Y.Z[-suffix]"`, optional (absent:
+     no pin), never in `project.local.canon` (`E1014`); not a string of that form is `E1006`
+     `compiler`. A separate key: `canon:` stays the language version (`E1010`, `E1001`). A compiler
+     whose version differs is `E1015` in the project's own bag, reported by every command that
+     opens the project (`Open` still succeeds, unlike `E1001`, so an editor shows why). The
+     compiler version is the link-time one (`make dist`), else the module version of a `go
+     install` at a release tag, else `dev`, never a made-up `0.1.0`; a `dev` compiler against a
+     pin gives `W1016` instead, so the compiler's own developers can work in pinned projects.
+     `canon version` prints `dev` for such a build; the build manifest uses the same string.
+     Reason: agents with different `canon` binaries rewrite each other's outputs; a pin makes the
+     mismatch a finding. A local build reported itself as 0.1.0 (2026-10-12).
+
+355. **`canon check` reports `E8152` (CODEGEN.md §2.1; WIRE.md §8.1; EVALUATION.md §1; extends 37
+     and 320).** Two outputs with one path (letter case aside) and an output on a `canon.lock` or
+     `canon.outputs` path are found after stage E from the placed emits of the selected packages,
+     every target whatever `--target`, without the output file system: only emits sharing a
+     directory (Go's `<out>/rt` counted), or writing where a package keeps its `canon.lock` or
+     `canon.outputs`, are generated for their file names, and only in a run without error.
+     `check` and `build` report it alike; only `E8001` waits for the write. Reason: `check` passed
+     a project whose `build` refused it (2026-10-12 repro).
+
+356. **A generated file no emit writes (CODEGEN.md §2.4; CLI.md §3.4; ERRORS.md E8029, W8030).**
+     In each directory an emit of the selected packages writes into (not recursive), a regular,
+     non-hidden file carrying a §2.4 marker (a `.json`'s `$schema` included) that no emit of the
+     build writes, whose marker names a selected package or no package of the project (a runtime
+     file: when no emit writes into that directory), is `E8029` under `build --check` and `W8030`
+     in a plain build, as `E8023`/`W8024` pair (332). Canon never deletes it: a marker is
+     forgeable, and 336 removes only what `canon.outputs` hashes. Text files carry no marker and
+     stay 336's. Reason: a stale `*.gen.go` left by a renamed package, or a planted one, passed a
+     consumer's gate (Sovereign security-gate H8).
+
+357. **A case-only rename of a text file (CODEGEN.md §2.9; amends 326, 336).** On a file system
+     where the declared name and a listed name differing only in case are one file (the
+     directory lists only the old spelling), the package's `canon.outputs` line for the old
+     spelling grants ownership of the new, and the build gives the file its declared spelling even
+     when its bytes are unchanged (set aside under the run's staging name, then the new file
+     renamed in); `--check` reports the old spelling as stale. On a case-sensitive file system
+     nothing changes. Reason: renaming `@text("S.sql")` to `"s.sql"` with new content was `E8001`
+     on macOS and Windows, and with the same content left the old spelling on disk (owed by 326,
+     log-2026-10-08).

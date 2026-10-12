@@ -1087,6 +1087,7 @@ pValue          = stringLit | INT | qualifiedIdent
 | Key | Type | Default | Rules |
 |---|---|---|---|
 | `canon` | string `"MAJOR.MINOR"` | required (`E1004`) | must match `^[0-9]+\.[0-9]+$` (`E1010`); an unsupported version is `E1001` (NFR-03: same major, known minor) |
+| `compiler` | string `"X.Y.Z[-suffix]"` | none (no pin) | the exact compiler version the project is built with (DECISIONS 354). Not a string of that form (`^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$`): `E1006` `compiler`. A compiler of another version: `E1015`; a `dev` compiler (CLI.md §3.14): `W1016`. Not allowed in `project.local.canon` (`E1014`) |
 | `roots` | map name → path string | `{}` | names are `IDENT`s, unique (`E1005`); paths are non-empty, relative to the project directory, `/`-separated, not absolute, no `\` (`E1007`). Roots may point outside the project directory. A required root outside the project whose directory does not exist on this machine is `E1013` (DECISIONS 332). Path resolution inside roots: SPEC §3.1 and GEN-04; a root's place on this machine: §7.2 |
 | `optional_roots` | list of root names | `[]` | the roots that may be absent on a machine (SPEC §3.1, DECISIONS 332), written as identifiers (`[source, client]`). Not a list of identifiers: `E1006`. Each must be a declared root and listed once (`E1009`). A root inside the project may be listed: it matters only once this machine places it outside (§7.2) |
 | `consumer_roots` | list of root names | `[]` | the roots whose outputs their consumer builds (SPEC §3.1, DECISIONS 343), written as identifiers (`[admin]`). Not a list of identifiers: `E1006` `consumerRoots`. Each must be a declared root and listed once (`E1009`). A consumer root is optional too |
@@ -1361,6 +1362,8 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1012 | error | `studio` names a missing package |
 | E1013 | error | a required root outside the project whose directory does not exist on this machine (§7.1) |
 | E1014 | error | `project.local.canon` holds something other than a `roots` map moving declared roots to path strings, or names another project (§7.2) |
+| E1015 | error | `project.canon` pins another compiler version (`compiler`, §7.1) |
+| W1016 | warning | a `dev` compiler cannot honour the project's `compiler` pin (§7.1) |
 | E1101 | error | depth-0 `:` in an interpolation not followed by a valid spec and `}` |
 | E1102 | error | indentation prefix of a multiline string |
 | E1103 | error | a second `typeArgs` |

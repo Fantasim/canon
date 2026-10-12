@@ -73,6 +73,12 @@ Commands that take packages accept, in any combination:
 Imports of the selected packages are always loaded; only the selected packages are emitted,
 formatted or tested.
 
+A file with no parseable `package` line belongs to the package its directory names (`a/b` is
+`a.b`), whether or not that package exists; one at the project root belongs to the root. Its
+findings are reported by every command that selects all packages and by a selector that would
+select that name (`a.b`, `a...`, `./a/b`, the file's own path), which is then not an unknown
+package; no other package-scoped command sees them (DECISIONS 353).
+
 ### 2.3 Global flags
 
 | Flag | Meaning |
@@ -312,6 +318,13 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
 
 Exit: 0, 1, 2, 3, 4.
 
+A build that writes waits for any other writer of its selected packages, in this or another
+process, and says once on standard error whom it waits for: it takes `.canon/writers/<package>`
+exclusively for each selected package and shared for each other loaded package (DECISIONS 352).
+`--check` and `--only-root` take no lock. Every file it writes or sets aside is staged under a name
+unique to the run (DECISIONS 351). `--check` also reports a file with a generated marker that no
+emit writes (`E8029`; a plain build warns, `W8030`; CODEGEN.md §2.4, DECISIONS 356).
+
 ### 3.5 `canon test`
 
 ```
@@ -401,6 +414,9 @@ naming conventions; `canon check` does (`W1003`).
 - With no path, `fmt` also formats `project.local.canon` when it exists (FORMATTER.md §9.3).
   `fmt` opens the project as every command does, so a required root that does not exist stops it
   (`E1013`, exit 2).
+
+`canon fmt` (without `--check`) takes the writer lock of each package it rewrites and stages its
+files under names unique to the run, as `canon build` does (DECISIONS 351, 352).
 
 ### 3.7 `canon explain`
 
@@ -570,6 +586,11 @@ language 0.1
 formats canon-fp v1, canon-vm/1, canon.lock v1
 ```
 
+The compiler version is the one set at link time by `make dist`, else the module version of a
+`go install` at a release tag, else `dev` (never a made-up release number; DECISIONS 354). A
+project's `compiler:` pin (GRAMMAR.md §7.1) is compared with it: another version is `E1015`, `dev`
+is `W1016`.
+
 
 ### 3.15 `canon edit`
 
@@ -610,6 +631,9 @@ as JSON lines and the summary. Any other API error prints its text (API.md X1) o
 exits as API.md §15 says. A request whose top level is not a JSON object is `ErrBadOp`.
 
 Exit: 0, 1, 2, 3.
+
+An edit takes the writer lock of the package of every file it writes (DECISIONS 352) and runs
+API.md N9 under it.
 
 ### 3.16 `canon rename`
 

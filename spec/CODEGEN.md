@@ -117,7 +117,8 @@ in [§12](#12-diagnostics).
 - **When emit rules are checked.** Every code of this document's §12 except `E8001` is found in
   stage E (EVALUATION.md §1), which builds the IR of every emit and validates it without writing:
   `canon check` reports them exactly as `canon build` does (CLI.md §3.3). `E8001` needs the output
-  file system and is reported in phase 8 (emit) only, like WIRE.md's `E8152`.
+  file system and is reported in phase 8 (emit) only. WIRE.md's `E8152` is found by `check` too,
+  from the placed emits after stage E (DECISIONS 355).
 - `open` (Go, DECISIONS 339) is a non-empty list of bare words, each a public enum the package
   declares, listed once; it needs `mode: types` (`E8009` `openMode`) and refuses an `ordered` enum
   (`E8009` `openOrdered`), a name that is not such an enum (`E8009` `open`), a name listed twice
@@ -251,6 +252,15 @@ The one way to take over a hand-written file is the `--adopt` flag: `canon conve
 JSON source that becomes the emitted data file (IMPLEMENTATION-PLAN.md §8.3), and
 `canon build --adopt <path>` for a file of a `text` emit (§2.9) or the header of an `access: both` struct
 ([§7.8.3](#783-access-both)); the output is then reported `adopted` (API.md B2).
+
+**Stray generated files** (DECISIONS 356). In each directory an emit of the selected packages
+writes into (each copy's `out`, a file-mode `out`'s directory, Go's `<out>/rt`; not recursive), a
+regular, non-hidden file that carries a marker of this section (a `.json`'s top-level `"$schema"`
+included) and that no emit of the build writes (any target, whatever `--target`) is `E8029` under
+`build --check` and `W8030` in a plain build, when its marker names a selected package or no
+package of the project (a runtime file: when no emit of the build writes into its directory).
+`canon` never deletes it: a marker proves nothing (a text file is removed only on `canon.outputs`'
+hash, §2.9). Text files carry no marker and stay §2.9's.
 
 ### 2.5 File headers and fixed comments
 
@@ -581,7 +591,9 @@ emit text { out: "@source/Tools/telemetry" }
   first-line marker of §2.4 (any target's) or, for a `.json`, a top-level `"$schema"` in its first bytes, a regular file, and current bytes that still
   hash to its line's value (a line without a hash, from 0.1.2, never removes). Any other path only
   drops out of the list. A case-only rename removes the old name only where it is another file
-  than the one written (a case-sensitive file system). A copy under an absent root stays listed (§2.4) and is kept; a file that is
+  than the one written (a case-sensitive file system); where it is the same file, the old line
+  grants ownership of the new spelling and the file is given the declared spelling, even when its
+  bytes are unchanged (DECISIONS 357). A copy under an absent root stays listed (§2.4) and is kept; a file that is
   not listed is never touched. The removal is reported like the migration's below. A package
   with no `emit text` whose `canon.outputs` carries the marker has it removed, so a stale list
   never grants ownership later. An output whose path is a `canon.lock` or a
@@ -3591,6 +3603,8 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8026 | error | a file a load of the project reads that an emit of the same build writes (§2.4) |
 | E8027 | error | an output path with a symbolic link below its root's directory (§2.4) |
 | E8028 | error | `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (§2.4) |
+| E8029 | error | `build --check`: a file with a generated marker that no emit writes (§2.4) |
+| W8030 | warning | a plain build: a file with a generated marker that no emit writes (§2.4) |
 | E8101 | error | emitted Int outside ±(2⁵³−1) (SPEC §15.4) |
 | E8103 | error | string or list longer than a fixed-size C++ array |
 | E8104 | error | package with inputs has a TS emit |

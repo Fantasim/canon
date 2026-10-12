@@ -888,7 +888,8 @@ emit json { out: "<path>", values: [v1, v2, …] }
   carries the marker of §8.4 and the fingerprint check. A non-Canon consumer reads `value` or
   `rows` (`plan.value.combos` for the sweep plan's Lua).
 - Two outputs of the build (any target, any package) with the same path, or with paths that differ
-  only in letter case, are `E8152` (they would overwrite each other on Windows and macOS). The
+  only in letter case, are `E8152` (they would overwrite each other on Windows and macOS);
+  `canon check` reports it as `canon build` does (DECISIONS 355). The
   runtime helper files of CODEGEN.md §2.3, written with identical content by several emits into one
   directory, are not a collision. (Two Go emits writing different files into one directory are
   CODEGEN.md's `E8008`.)

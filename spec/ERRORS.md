@@ -394,7 +394,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 319 codes: 295 errors, 21 warnings and 3 run-time codes, with 533 messages.
+The catalogue holds 323 codes: 297 errors, 23 warnings and 3 run-time codes, with 539 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -419,6 +419,8 @@ Owner: GRAMMAR.md.
 | E1012 | error | project | GRAMMAR.md §7.1 | `studio` names a package that does not exist |
 | E1013 | error | project | GRAMMAR.md §7.1 | a required root outside the project whose directory does not exist on this machine (DECISIONS 332) |
 | E1014 | error | project | GRAMMAR.md §7.2 | `project.local.canon` holds something other than a `roots` map moving declared roots to path strings, or names another project (DECISIONS 332) |
+| E1015 | error | project | GRAMMAR.md §7.1 | `project.canon` pins another compiler version (DECISIONS 354) |
+| W1016 | warning | project | GRAMMAR.md §7.1 | a `dev` compiler cannot honour the project's compiler pin (DECISIONS 354) |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -439,6 +441,7 @@ Owner: GRAMMAR.md.
 | E1006 | goModule | - | `"go_module" must be a map of root names to module path strings` |
 | E1006 | optionalRoots | - | `"optional_roots" must be a list of root names` |
 | E1006 | consumerRoots | - | `"consumer_roots" must be a list of root names` |
+| E1006 | compiler | - | `"compiler" must be a compiler version "X.Y.Z" (with an optional "-suffix")` |
 | E1007 | name | name:Name | `invalid root name "{name}": a root name is an identifier` |
 | E1007 | empty | name:Name | `invalid root "{name}": the path is empty` |
 | E1007 | absolute | name:Name | `invalid root "{name}": the path is absolute` |
@@ -466,6 +469,8 @@ Owner: GRAMMAR.md.
 | E1014 | root | name:Name, roots:Names | `"{name}" in project.local.canon is not a root of project.canon (roots: {roots}): this file can only move a declared root` |
 | E1014 | duplicate | key:Name | `"{key}" is given twice in project.local.canon` |
 | E1014 | empty | name:Name | `root "{name}" in project.local.canon has an empty path` |
+| E1015 | - | want:Text, have:Text | `the project pins canon {want}; this is canon {have}: install canon {want}, or change "compiler" in project.canon` |
+| W1016 | - | want:Text | `the project pins canon {want}; this dev build of canon is not checked against the pin` |
 
 ## E11xx: Lexer and parser
 
@@ -1239,6 +1244,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8026 | error | build | CODEGEN.md §2.4 | a file a load of the project reads that an emit of the same build writes (DECISIONS 341) |
 | E8027 | error | build | CODEGEN.md §2.4 | an output path with a symbolic link below its root's directory (DECISIONS 342) |
 | E8028 | error | build | CODEGEN.md §2.4 | `build --only-root` when the build would change `canon.lock` or a `canon.outputs`, or write an output outside the named root's directory (DECISIONS 343) |
+| E8029 | error | build | CODEGEN.md §2.4 | `build --check`: a file with a generated marker that no emit writes (DECISIONS 356) |
+| W8030 | warning | build | CODEGEN.md §2.4 | a file with a generated marker that no emit writes, found by a plain build (DECISIONS 356) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
 | E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field or `@text` result part (not a whole unit, equals the `none` marker, repeated bits member; DECISIONS 308) |
 | E8103 | error | ir | CODEGEN.md §7.8.1 | a string or list longer than its fixed-size legacy C++ array |
@@ -1265,7 +1272,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8003 | option | option:Name, target:Name | `unknown option {option} for emit {target}` |
 | E8004 | noEmit | typ:Name, pkg:Name, target:Name | `{typ} of package {pkg} is used by this {target} emit, but {pkg} has no {target} emit` |
 | E8004 | noCopy | typ:Name, pkg:Name, target:Name, root:Name | `{typ} of package {pkg} is used by this {target} copy under root {root}, but {pkg} has several {target} copies and none under {root}` |
-| E8004 | consumerCopy | typ:Name, pkg:Name, target:Name, root:Name, other:Name | `{typ} of package {pkg} is used by this {target} copy under root {root}, but the only {target} copy of {pkg} is under consumer root {other}, which builds alone: give the {target} emit of {pkg} a copy under {root}` |
+| E8004 | consumerCopy | pkg:Name, target:Name, root:Name, other:Name | `package {pkg} is used by this {target} copy under root {root}, but its only {target} copy is under consumer root {other}, which builds alone: give the {target} emit of {pkg} a copy under {root}` |
 | E8005 | both | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; rename one of them with @{target}(name:)` |
 | E8005 | reached | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option` |
 | E8005 | idType | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list` |
@@ -1323,6 +1330,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8027 | - | path:Path, link:Path | `refusing to write {path}: {link} is a symbolic link, and a build never writes through one` |
 | E8028 | change | root:Name, path:Path | `build --only-root {root} would change {path}: run canon build in the project first; --only-root never writes the project` |
 | E8028 | outside | root:Name, path:Path, other:Name | `build --only-root {root} would write {path} outside @{root}: this machine places @{other} elsewhere; place it inside @{root} as project.canon does` |
+| E8029 | - | path:Path, pkg:Name | `{path} carries the generated marker of {pkg}, but no emit of this build writes it: delete it` |
+| W8030 | - | path:Path, pkg:Name | `{path} carries the generated marker of {pkg}, but no emit of this build writes it: delete it` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |
 | E8102 | unit | value:Value, field:Name, unit:Name | `{value} has no wire form for {field}: not a whole number of {unit}` |

@@ -178,8 +178,9 @@ The OS `WriteFile` stages the content in a temporary file of the target's direct
 name holding the target's base name, so `Recover` can clear leftovers, §10.3), syncs it and
 renames it over the target. When the target is a symbolic link, the link's target is written; the
 link is never replaced. A build never reaches that case: it refuses an output with a link below its
-root first (`E8027`, B1d, DECISIONS 342). A writer that stages to a fixed temporary name first removes whatever
-entry sits there (a link itself, never its target), so a planted link cannot redirect the bytes.
+root first (`E8027`, B1d, DECISIONS 342). A writer stages to a name unique to its run (DECISIONS
+351) and first removes whatever entry sits there (a link itself, never its target), so a planted
+link cannot redirect the bytes.
 On Windows it cannot replace a file another process holds open. Two optional FS capabilities:
 `SyncDir(dir string) error`, which makes an edit's renames durable (§10.3), and
 `OSBacked() bool`, through which an embedder's FS opts into OS change notifications (§12).
@@ -255,7 +256,8 @@ func (p *Project) Revision() Revision
   snapshot and package; a new snapshot invalidates it (DECISIONS 313).
 - **S9.** There is one writer at a time: `Edit`, `Build` that writes, `SetOverlay` and
   `ClearOverlay` take the project's write lock. A writer never blocks readers; readers that
-  started before the writer finished keep their snapshot.
+  started before the writer finished keep their snapshot. Across processes, `Edit` and a `Build`
+  that writes also take the package writer locks of DECISIONS 352.
 - **S10.** A writer publishes its new snapshot atomically when it returns. The revision in its
   result is that snapshot's. `Revision()` is monotonic: it only moves to a snapshot at least as new
   as the last one published, so a read that finishes late never rolls it back. Without an active `Watch`, the snapshot an `Edit`
@@ -1417,7 +1419,8 @@ comments, and a trailing comment on its last line.
 
 ### 10.3 Atomicity and crash safety
 
-- **N9.** Before writing, every file to be written or deleted is re-read and its hash compared with
+- **N9.** Before writing, under the package writer locks (DECISIONS 352), every file to be written
+  or deleted is re-read and its hash compared with
   the snapshot. A difference is `*StaleError` (wraps `ErrStale`) listing the files: someone changed
   them while the edit ran (API-05).
 - **N10.** The edit writes a journal `.canon/journal/<hex>.json`, `<hex>` being the new revision
