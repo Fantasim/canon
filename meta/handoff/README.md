@@ -59,6 +59,8 @@ Two handoffs came out of the 2026-10-12 review of Resource `Config/`, Canon's fi
   - phase-1 debt that touches no Source line;
   - phase 2, which it asks Sovereign to write as ADR L-0125.
 
+`2026-10-12-v016-start-prompt.md` is the prompt that starts the v0.1.6 session: F1-F19 (stretch F20-F22) of the next-versions handoff, spec first, one wave of units per package, then the release.
+
 ## To Louis (`L-*`)
 
 For anything on CLAUDE.md's "Forbidden without asking Louis" list: a spec change (DECISIONS.md,
