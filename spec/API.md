@@ -900,14 +900,15 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 | `Obj{...}` | record fields by Canon name | a record, a case's fields, a table entry |
 | `Map(KV{k, v}...)` | map, in the given order | `{K: V}` |
 | `FromJSON(raw)` | the wire form | any type: decoded by WIRE.md's rules for that type and the destination field's `@json` forms (`unit`, `int`, `bits`, `none`) |
-| `Source(text)` | a Canon literal | any type: parsed as a Canon expression that contains only literals (no names but contextual ones, SPEC §6.2), typed against the expected type |
+| `Source(text)` | a Canon literal | any type: parsed as a Canon expression that contains only literals (no names but contextual ones, SPEC §6.2, and an enum member or case qualified by its type, `T.n` or `p.T.n` with `p` the package's path or last segment, as GRAMMAR.md LEX-08 (c) writes a reserved word; DECISIONS 366), typed against the expected type |
 
 - **V1.** A value that does not fit the expected type is `*ValueError` (wraps `ErrBadValue`) naming
   the op, the path, the expected type and what was given. Nothing is written. So is a value holding
   invalid UTF-8 (a `Str`, a key, a literal; GRAMMAR.md §1). Bound for a JSON source, a value with no
   wire form is a `ValueError` too: a `Duration` that is not a whole number of its field's
   `@json(unit:)`, an `@json(pairs:)` list past its slot bound or with an element missing a required
-  field (WIRE.md §5.14); bound for a `.canon` source, the same value is left to the re-check
+  field (WIRE.md §5.14), a `@json(bits)` list holding a member twice (WIRE.md §5.3; DECISIONS
+  366); bound for a `.canon` source, the same value is left to the re-check
   (`E8102`, `E3302`). A dependent symbol the op's literal gives is resolved to what it names in its
   record's computed branch, computed exactly as the decoder computes it (WIRE.md §5.9, DEP-02;
   defaults from the record's parameters); a symbol it introduces into a `Never` branch, or that
@@ -1217,7 +1218,9 @@ implements `json.Unmarshaler` too, and JSON of either that does not decode is `E
   key type is read against its computed branch (a bare name stays symbolic, TYPES.md §11.4,
   §11.5); on a `Never` or uncomputable branch it is kept as data.
 - **E26.** Marshalling writes `source` for every `Lit` except `FromJSON`, which is written as
-  `value`. `Source` text produced by the API is canonical (FORMATTER.md), single-line.
+  `value`. `Source` text produced by the API is canonical (FORMATTER.md), single-line. A
+  `Member(name)` or `Case(name)` named by a reserved word that cannot be read bare (LEX-08) has no
+  `Source` text, since the lit does not know its type: `ErrNoText` (DECISIONS 366).
 
 ### 8.9 Renaming a Canon name
 
@@ -1342,7 +1345,10 @@ comments, and a trailing comment on its last line.
 ### 9.3 Printing values
 
 - **M7.** Values are printed with contextual names (SPEC §6.2): bare enum members, case names and
-  keys. Durations use their canonical text (LEX-04); a number or string token an op's `Source`
+  keys; a member or case named by a reserved word the grammar does not read bare in its position is
+  qualified as the target file names its type (`Icon.return`, `v.Icon.return`; LEX-08 (c)), and a
+  ref to such a key is written as a string (`"if"`); with no name for the type's package in the
+  file, the qualified text is left to the re-check (`E2102`; DECISIONS 366). Durations use their canonical text (LEX-04); a number or string token an op's `Source`
   spells is written as spelled (`0x1F`, `1.0`; DECISIONS 337). Fields equal to their defaults are omitted in
   newly printed records (E6 applied recursively to new values); fields of an existing literal are
   kept unless the op sets them to their default. Strings are printed with `{` and `}` escaped as

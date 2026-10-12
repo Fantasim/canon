@@ -3706,3 +3706,19 @@ round 2", "PS1 review", "PS2 round 2"):
      evaluator can never produce cannot be conformance-tested), and a wildcard rule is moot while
      `match` is outside the translated subset (CONFORMANCE §2.2); if `match` joins it, a `match`
      over an opened enum needs the same refusal.
+
+366. **Edits write reserved-word members (API.md §8.2, V1, E26, M7; GRAMMAR.md LEX-08).** An edit
+     writes an enum member or variant case named by a reserved word in every position: bare where
+     the grammar reads it bare (a brace item's key, a table key, a map key, after a `.`), else
+     qualified as the target file names the type (`T.if`, `v.T.if`, `alias.T.if`; layer and new
+     entry files use the type's package), a typed literal as `Shape.while { … }`, and a ref to such
+     a key as a string (`"if"`, SPEC §6.2). A `Source` accepts `T.n` and `p.T.n` (`p` the package's
+     path or last segment; no import alias, a Source has no file scope) wherever the type is
+     expected. A `Member`/`Case` lit named by a non-nameable reserved word has no Source text
+     (`ErrNoText`). When the target file binds no name for the type's package, the qualified text
+     is written and the re-check refuses it (`E2102`): an edit never adds an import. For a JSON
+     source, an edit leaving a `@json(bits)` list with a member twice is a `ValueError` (no wire
+     form, as for `pairs`). Reason: an edit of a reserved-word member, from the wire or source
+     form, ended in an internal error, and a repeated bits member too (config-studio findings
+     2026-10-09 §1; guide unit). Every refusal is a catalogue finding or a Go error, never an
+     internal error.
