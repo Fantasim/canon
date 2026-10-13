@@ -3536,9 +3536,9 @@ round 2", "PS1 review", "PS2 round 2"):
      unlink races a waiter). A writer waits, honouring its context (polling about every 100 ms,
      never stuck in a system call), and the CLI says once on standard error whom it waits for; no
      timeout and no knob (319, 327). Under the locks a build re-reads its sources' hashes (a
-     difference redoes the run once, then is a stale error) and an edit runs N9; an edit whose
-     plan needs a package outside the held set releases, takes the full sorted set and plans
-     again. `build --check`, `fmt --check`, `--only-root` (which writes no project file, 343),
+     difference redoes the run once, then is a stale error) and an edit runs N9: an edit plans
+     first, then takes the locks of the packages its final change set writes (created ones
+     included) and runs N9 under them, so a writer that ran meanwhile makes it `*StaleError`. `build --check`, `fmt --check`, `--only-root` (which writes no project file, 343),
      `check`, `test` and every reader take none. The in-process write lock (S9) is kept. On a
      platform with neither primitive the lock is skipped (advisory). An unwritable `.canon/`
      refuses the write (an I/O error, fail closed). Reason: several agents write one project;
