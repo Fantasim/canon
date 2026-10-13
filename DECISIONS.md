@@ -3752,7 +3752,10 @@ round 2", "PS1 review", "PS2 round 2"):
      expected, a dependent field's branch included, so every Undo an edit returns applies; a
      Source string literal names the key of a ref into an enum-keyed collection (`"if"`), as the
      printer writes it; an expression map key (`Word.check: 2`) stays an expression key when
-     renamed (qualified). Known limit, logged: a layer file and a new entry file have no imports
+     renamed (qualified). A dependent field's symbol is qualified through the branch the
+     record's discriminant selects, computed as the decoder computes it, and a qualifier naming
+     another branch's type is refused; when no branch can be computed, a non-nameable symbol is a
+     `ValueError`. Known limit, logged: a layer file and a new entry file have no imports
      (GRAMMAR §5.2, N5), so another package's non-nameable member written there is `E2102`
      until layers can name members by their full path.
 
