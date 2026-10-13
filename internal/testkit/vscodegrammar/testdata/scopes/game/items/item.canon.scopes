@@ -24,30 +24,36 @@
 19:17-21 "load" keyword.other.canon
 19:21-22 "." punctuation.accessor.canon
 19:22-29 "defines" variable.other.property.canon
+19:29-30 "(" punctuation.section.parens.begin.canon
 19:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
 19:69-75 "prefix" variable.other.property.canon
 19:75-76 ":" punctuation.separator.key.canon
 19:77-83 "\"JOB_\"" string.quoted.double.canon
+19:83-84 ")" punctuation.section.parens.end.canon
 20:0-5 "local" storage.modifier.canon
 20:6-9 "let" storage.type.canon
 20:21-22 "=" keyword.operator.canon
 20:23-27 "load" keyword.other.canon
 20:27-28 "." punctuation.accessor.canon
 20:28-35 "defines" variable.other.property.canon
+20:35-36 "(" punctuation.section.parens.begin.canon
 20:36-79 "\"@resource/Server/Define/defineAttribute.h\"" string.quoted.double.canon
 20:81-87 "prefix" variable.other.property.canon
 20:87-88 ":" punctuation.separator.key.canon
 20:89-95 "\"DST_\"" string.quoted.double.canon
+20:95-96 ")" punctuation.section.parens.end.canon
 21:0-5 "local" storage.modifier.canon
 21:6-9 "let" storage.type.canon
 21:17-18 "=" keyword.operator.canon
 21:19-23 "load" keyword.other.canon
 21:23-24 "." punctuation.accessor.canon
 21:24-31 "defines" variable.other.property.canon
+21:31-32 "(" punctuation.section.parens.begin.canon
 21:32-71 "\"@resource/Server/Define/defineSound.h\"" string.quoted.double.canon
 21:73-79 "prefix" variable.other.property.canon
 21:79-80 ":" punctuation.separator.key.canon
 21:81-87 "\"SND_\"" string.quoted.double.canon
+21:87-88 ")" punctuation.section.parens.end.canon
 22:0-81 "/// IDS_* key -> English display name (\"IDS_PROPITEM_TXT_003930\" -> \"Angel Axe\")." comment.line.documentation.canon
 23:0-5 "local" storage.modifier.canon
 23:6-9 "let" storage.type.canon
@@ -340,6 +346,8 @@
 142:28-34 "return" keyword.control.canon
 142:40-41 "." punctuation.accessor.canon
 142:41-44 "get" variable.other.property.canon
+142:44-45 "(" punctuation.section.parens.begin.canon
+142:52-53 ")" punctuation.section.parens.end.canon
 142:54-56 "??" keyword.operator.canon
 145:0-86 "/// The item's main kind (dwItemKind1). Each case holds the fields its items use, so a" comment.line.documentation.canon
 146:0-42 "/// material cannot carry an attack speed." comment.line.documentation.canon
@@ -492,13 +500,13 @@
 174:46-48 " [" meta.annotation.canon
 174:48-60 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
 174:60-61 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-174:61-62 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+174:61-62 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 174:62-63 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 174:63-64 "\"" meta.annotation.canon string.quoted.double.canon
 174:64-66 ", " meta.annotation.canon
 174:66-79 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
 174:79-80 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-174:80-81 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+174:80-81 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 174:81-82 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 174:82-83 "\"" meta.annotation.canon string.quoted.double.canon
 174:83-85 "])" meta.annotation.canon
@@ -532,11 +540,11 @@
 180:33-37 "else" keyword.control.canon
 180:38-50 "\"attackMin (" string.quoted.double.canon
 180:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-180:51-60 "attackMin" string.quoted.double.canon meta.interpolation.canon
+180:51-60 "attackMin" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 180:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 180:61-83 ") is above attackMax (" string.quoted.double.canon
 180:83-84 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-180:84-93 "attackMax" string.quoted.double.canon meta.interpolation.canon
+180:84-93 "attackMax" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 180:93-94 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 180:94-96 ")\"" string.quoted.double.canon
 182:0-84 "  /// What a player carries and uses up: materials, food, gems, jewels... 868 items." comment.line.documentation.canon
@@ -625,13 +633,13 @@
 208:49-51 " [" meta.annotation.canon
 208:51-63 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
 208:63-64 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-208:64-65 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+208:64-65 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 208:65-66 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 208:66-67 "\"" meta.annotation.canon string.quoted.double.canon
 208:67-69 ", " meta.annotation.canon
 208:69-82 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
 208:82-83 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-208:83-84 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+208:83-84 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 208:84-85 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 208:85-86 "\"" meta.annotation.canon string.quoted.double.canon
 208:86-88 "])" meta.annotation.canon
@@ -658,11 +666,11 @@
 219:6-7 "(" meta.annotation.canon
 219:7-16 "\"entries/" meta.annotation.canon string.quoted.double.canon
 219:16-17 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-219:17-21 "kind" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+219:17-21 "kind" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 219:21-22 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 219:22-23 "/" meta.annotation.canon string.quoted.double.canon
 219:23-24 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-219:24-26 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+219:24-26 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 219:26-27 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 219:27-34 ".canon\"" meta.annotation.canon string.quoted.double.canon
 219:34-35 ")" meta.annotation.canon

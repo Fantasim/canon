@@ -318,6 +318,7 @@
 165:14-21 "members" variable.other.property.canon
 165:21-22 "." punctuation.accessor.canon
 165:22-25 "map" variable.other.property.canon
+165:25-26 "(" punctuation.section.parens.begin.canon
 165:28-30 "=>" keyword.operator.canon
 165:31-36 "Label" entity.name.type.canon
 165:39-43 "code" variable.other.property.canon
@@ -332,6 +333,7 @@
 165:76-77 ":" punctuation.separator.key.canon
 165:79-80 "." punctuation.accessor.canon
 165:80-87 "retired" variable.other.property.canon
+165:89-90 ")" punctuation.section.parens.end.canon
 166:2-8 "return" keyword.control.canon
 166:11-15 "name" variable.other.property.canon
 166:15-16 ":" punctuation.separator.key.canon
@@ -342,8 +344,10 @@
 166:43-44 ":" punctuation.separator.key.canon
 166:51-52 "." punctuation.accessor.canon
 166:52-58 "sortBy" variable.other.property.canon
+166:58-59 "(" punctuation.section.parens.begin.canon
 166:59-60 "." punctuation.accessor.canon
 166:60-64 "code" variable.other.property.canon
+166:64-65 ")" punctuation.section.parens.end.canon
 169:0-44 "/// The live member names of vocabulary `v`." comment.line.documentation.canon
 170:0-2 "fn" storage.type.function.canon
 170:3-12 "liveNames" entity.name.function.canon
@@ -357,6 +361,9 @@
 171:12-16 "name" variable.other.property.canon
 171:17-20 "for" keyword.control.canon
 171:23-25 "in" keyword.operator.word.canon
+171:26-32 "enumOf" entity.name.function.call.canon
+171:32-33 "(" punctuation.section.parens.begin.canon
+171:34-35 ")" punctuation.section.parens.end.canon
 171:35-36 "." punctuation.accessor.canon
 171:36-42 "labels" variable.other.property.canon
 171:43-45 "if" keyword.control.canon

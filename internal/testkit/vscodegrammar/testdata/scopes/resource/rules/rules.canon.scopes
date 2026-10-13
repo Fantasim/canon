@@ -18,10 +18,12 @@
 15:17-21 "load" keyword.other.canon
 15:21-22 "." punctuation.accessor.canon
 15:22-29 "defines" variable.other.property.canon
+15:29-30 "(" punctuation.section.parens.begin.canon
 15:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
 15:69-75 "prefix" variable.other.property.canon
 15:75-76 ":" punctuation.separator.key.canon
 15:77-83 "\"JOB_\"" string.quoted.double.canon
+15:83-84 ")" punctuation.section.parens.end.canon
 17:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
 18:0-41 "// guildtalenttree.cycle  (Lua: 54 lines)" comment.line.double-slash.canon
 19:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
@@ -60,29 +62,37 @@
 33:2-7 "check" keyword.other.canon
 33:13-14 "." punctuation.accessor.canon
 33:14-17 "any" variable.other.property.canon
+33:17-18 "(" punctuation.section.parens.begin.canon
 33:20-22 "=>" keyword.operator.canon
 33:24-25 "." punctuation.accessor.canon
 33:25-31 "parent" variable.other.property.canon
 33:32-34 "==" keyword.operator.canon
 33:35-39 "none" constant.language.canon
+33:39-40 ")" punctuation.section.parens.end.canon
 33:41-45 "else" keyword.control.canon
 33:46-68 "\"the tree has no root\"" string.quoted.double.canon
 35:2-7 "check" keyword.other.canon
 36:4-7 "for" keyword.control.canon
 36:10-12 "in" keyword.operator.word.canon
+36:13-19 "cycles" entity.name.function.call.canon
+36:19-20 "(" punctuation.section.parens.begin.canon
 36:27-31 "next" variable.other.property.canon
 36:31-32 ":" punctuation.separator.key.canon
 36:33-34 "." punctuation.accessor.canon
 36:34-40 "parent" variable.other.property.canon
+36:40-41 ")" punctuation.section.parens.end.canon
+37:6-10 "fail" entity.name.function.call.canon
+37:10-11 "(" punctuation.section.parens.begin.canon
 38:9-10 "." punctuation.accessor.canon
 38:10-16 "parent" variable.other.property.canon
 39:8-14 "\"node " string.quoted.double.canon
 39:14-15 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-39:15-16 "n" string.quoted.double.canon meta.interpolation.canon
-39:16-17 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-39:17-19 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+39:15-16 "n" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+39:16-17 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+39:17-19 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 39:19-20 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 39:20-95 " belongs to a parent cycle: the branch would be permanently locked in game\"" string.quoted.double.canon
+40:6-7 ")" punctuation.section.parens.end.canon
 45:0-90 "// `partial`: the rule reads only `id` and `parent`; the nodes' other keys (buffId, price," comment.line.double-slash.canon
 46:0-75 "// minGuildLevel, x, y) belong to the talent-tree domain, not to this rule." comment.line.double-slash.canon
 47:0-5 "local" storage.modifier.canon
@@ -161,8 +171,12 @@
 86:15-16 "=" keyword.operator.canon
 86:21-22 "." punctuation.accessor.canon
 86:22-28 "values" variable.other.property.canon
+86:28-29 "(" punctuation.section.parens.begin.canon
+86:29-30 ")" punctuation.section.parens.end.canon
 86:30-31 "." punctuation.accessor.canon
 86:31-36 "first" variable.other.property.canon
+86:36-37 "(" punctuation.section.parens.begin.canon
+86:37-38 ")" punctuation.section.parens.end.canon
 87:4-6 "if" keyword.control.canon
 87:14-16 "!=" keyword.operator.canon
 87:17-21 "none" constant.language.canon
@@ -170,31 +184,47 @@
 88:19-21 "in" keyword.operator.word.canon
 88:28-29 "." punctuation.accessor.canon
 88:29-37 "compared" variable.other.property.canon
+88:37-38 "(" punctuation.section.parens.begin.canon
+88:38-39 ")" punctuation.section.parens.end.canon
 88:39-40 "." punctuation.accessor.canon
 88:40-44 "keys" variable.other.property.canon
+88:44-45 "(" punctuation.section.parens.begin.canon
+88:45-46 ")" punctuation.section.parens.end.canon
 89:8-11 "let" storage.type.canon
 89:18-19 "=" keyword.operator.canon
 89:22-26 "name" variable.other.property.canon
 89:26-27 ":" punctuation.separator.key.canon
 89:31-32 "." punctuation.accessor.canon
 89:32-40 "compared" variable.other.property.canon
+89:40-41 "(" punctuation.section.parens.begin.canon
+89:41-42 ")" punctuation.section.parens.end.canon
 89:52-53 "." punctuation.accessor.canon
 89:53-56 "map" variable.other.property.canon
+89:56-57 "(" punctuation.section.parens.begin.canon
 89:57-58 "." punctuation.accessor.canon
 89:58-60 "id" variable.other.property.canon
+89:60-61 ")" punctuation.section.parens.end.canon
 89:62-65 "for" keyword.control.canon
 89:76-78 "in" keyword.operator.word.canon
 90:8-11 "for" keyword.control.canon
 90:15-17 "in" keyword.operator.word.canon
 90:23-24 "." punctuation.accessor.canon
 90:24-30 "values" variable.other.property.canon
+90:30-31 "(" punctuation.section.parens.begin.canon
+90:31-32 ")" punctuation.section.parens.end.canon
 90:32-33 "." punctuation.accessor.canon
 90:33-40 "flatten" variable.other.property.canon
+90:40-41 "(" punctuation.section.parens.begin.canon
+90:41-42 ")" punctuation.section.parens.end.canon
 90:42-43 "." punctuation.accessor.canon
 90:43-49 "unique" variable.other.property.canon
+90:49-50 "(" punctuation.section.parens.begin.canon
+90:50-51 ")" punctuation.section.parens.end.canon
 90:51-52 "." punctuation.accessor.canon
 90:52-58 "sortBy" variable.other.property.canon
+90:58-59 "(" punctuation.section.parens.begin.canon
 90:61-63 "=>" keyword.operator.canon
+90:65-66 ")" punctuation.section.parens.end.canon
 91:10-13 "let" storage.type.canon
 91:22-23 "=" keyword.operator.canon
 91:30-33 "for" keyword.control.canon
@@ -203,33 +233,42 @@
 91:56-59 "not" keyword.operator.word.canon
 91:63-64 "." punctuation.accessor.canon
 91:64-72 "contains" variable.other.property.canon
+91:72-73 "(" punctuation.section.parens.begin.canon
+91:75-76 ")" punctuation.section.parens.end.canon
 92:10-12 "if" keyword.control.canon
 92:13-16 "not" keyword.operator.word.canon
 92:24-25 "." punctuation.accessor.canon
 92:25-32 "isEmpty" variable.other.property.canon
+92:32-33 "(" punctuation.section.parens.begin.canon
+92:33-34 ")" punctuation.section.parens.end.canon
+93:12-16 "fail" entity.name.function.call.canon
+93:16-17 "(" punctuation.section.parens.begin.canon
 94:27-28 "0" constant.numeric.integer.canon
 94:30-31 "." punctuation.accessor.canon
 94:31-39 "compared" variable.other.property.canon
+94:39-40 "(" punctuation.section.parens.begin.canon
+94:40-41 ")" punctuation.section.parens.end.canon
 95:14-15 "\"" string.quoted.double.canon
 95:15-16 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-95:16-24 "category" string.quoted.double.canon meta.interpolation.canon
+95:16-24 "category" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 95:24-25 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 95:25-34 ": set id " string.quoted.double.canon
 95:34-35 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-95:35-37 "id" string.quoted.double.canon meta.interpolation.canon
+95:35-37 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 95:37-38 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 95:38-55 " is missing from " string.quoted.double.canon
 95:55-56 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-95:56-63 "missing" string.quoted.double.canon meta.interpolation.canon
-95:63-64 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-95:64-68 "join" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-95:68-69 "(" string.quoted.double.canon meta.interpolation.canon
-95:69-73 "\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon
-95:73-74 ")" string.quoted.double.canon meta.interpolation.canon
+95:56-63 "missing" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+95:63-64 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+95:64-68 "join" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+95:68-69 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+95:69-73 "\", \"" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon string.quoted.double.canon
+95:73-74 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 95:74-75 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 95:75-78 "; \"" string.quoted.double.canon
 95:79-80 "+" keyword.operator.canon
 96:16-89 "\"the loader refuses the whole file until every job declares the same ids\"" string.quoted.double.canon
+97:12-13 ")" punctuation.section.parens.end.canon
 105:0-5 "local" storage.modifier.canon
 105:6-9 "let" storage.type.canon
 105:10-19 "jobChange" variable.other.property.canon
@@ -261,10 +300,12 @@
 120:21-25 "load" keyword.other.canon
 120:25-26 "." punctuation.accessor.canon
 120:26-33 "defines" variable.other.property.canon
+120:33-34 "(" punctuation.section.parens.begin.canon
 120:34-71 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
 120:73-79 "prefix" variable.other.property.canon
 120:79-80 ":" punctuation.separator.key.canon
 120:81-89 "\"JTYPE_\"" string.quoted.double.canon
+120:89-90 ")" punctuation.section.parens.end.canon
 122:0-5 "local" storage.modifier.canon
 122:6-12 "record" storage.type.canon
 122:13-18 "Skill" entity.name.type.canon
@@ -285,43 +326,53 @@
 131:18-20 "in" keyword.operator.word.canon
 131:27-28 "." punctuation.accessor.canon
 131:28-34 "filter" variable.other.property.canon
+131:34-35 "(" punctuation.section.parens.begin.canon
 131:37-39 "=>" keyword.operator.canon
 131:41-42 "." punctuation.accessor.canon
 131:42-46 "tier" variable.other.property.canon
 131:47-49 "!=" keyword.operator.canon
 131:59-71 "JTYPE_COMMON" constant.other.canon
+131:71-72 ")" punctuation.section.parens.end.canon
 131:72-73 "." punctuation.accessor.canon
 131:73-80 "groupBy" variable.other.property.canon
+131:80-81 "(" punctuation.section.parens.begin.canon
 131:81-82 "." punctuation.accessor.canon
 131:82-90 "jobIndex" variable.other.property.canon
+131:90-91 ")" punctuation.section.parens.end.canon
 132:6-8 "if" keyword.control.canon
 132:13-14 "." punctuation.accessor.canon
 132:14-17 "len" variable.other.property.canon
+132:17-18 "(" punctuation.section.parens.begin.canon
+132:18-19 ")" punctuation.section.parens.end.canon
 132:20-21 ">" keyword.operator.canon
 132:22-37 "JOB_SKILL_SLOTS" constant.other.canon
+133:8-12 "fail" entity.name.function.call.canon
+133:12-13 "(" punctuation.section.parens.begin.canon
 134:15-30 "JOB_SKILL_SLOTS" constant.other.canon
 134:31-32 "." punctuation.accessor.canon
 134:32-40 "jobIndex" variable.other.property.canon
 135:10-11 "\"" string.quoted.double.canon
 135:11-12 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-135:12-16 "rows" string.quoted.double.canon meta.interpolation.canon
-135:16-17 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-135:17-20 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-135:20-22 "()" string.quoted.double.canon meta.interpolation.canon
+135:12-16 "rows" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+135:16-17 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+135:17-20 "len" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+135:20-21 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+135:21-22 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 135:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 135:23-38 " skills target " string.quoted.double.canon
 135:38-39 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-135:39-42 "job" string.quoted.double.canon meta.interpolation.canon
-135:42-43 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-135:43-45 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+135:39-42 "job" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+135:42-43 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+135:43-45 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 135:45-46 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 135:46-66 "; m_aJobSkill holds " string.quoted.double.canon
 135:66-67 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-135:67-82 "JOB_SKILL_SLOTS" string.quoted.double.canon meta.interpolation.canon constant.other.canon
+135:67-82 "JOB_SKILL_SLOTS" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon constant.other.canon
 135:82-83 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 135:83-94 " per job, \"" string.quoted.double.canon
 135:95-96 "+" keyword.operator.canon
 136:12-50 "\"so the loader refuses the whole file\"" string.quoted.double.canon
+137:8-9 ")" punctuation.section.parens.end.canon
 143:0-5 "local" storage.modifier.canon
 143:6-9 "let" storage.type.canon
 143:10-16 "skills" variable.other.property.canon
@@ -349,6 +400,8 @@
 152:21-26 "where" keyword.control.canon
 152:29-30 "." punctuation.accessor.canon
 152:30-33 "len" variable.other.property.canon
+152:33-34 "(" punctuation.section.parens.begin.canon
+152:34-35 ")" punctuation.section.parens.end.canon
 152:36-38 "==" keyword.operator.canon
 152:39-40 "2" constant.numeric.integer.canon
 152:41-44 "and" keyword.operator.word.canon
@@ -412,11 +465,14 @@
 168:15-16 "=" keyword.operator.canon
 168:22-23 "." punctuation.accessor.canon
 168:23-28 "first" variable.other.property.canon
+168:28-29 "(" punctuation.section.parens.begin.canon
 168:31-33 "=>" keyword.operator.canon
 168:35-36 "." punctuation.accessor.canon
 168:36-42 "covers" variable.other.property.canon
+168:42-43 "(" punctuation.section.parens.begin.canon
 168:46-47 "." punctuation.accessor.canon
 168:47-52 "floor" variable.other.property.canon
+168:52-54 "))" punctuation.section.parens.end.canon
 169:6-79 "// No covering tier at all is the coverage check's finding, not this one." comment.line.double-slash.canon
 170:6-69 "// `tier != none` narrows `tier` for the rest of the condition." comment.line.double-slash.canon
 171:6-8 "if" keyword.control.canon
@@ -436,17 +492,22 @@
 173:19-25 "totems" variable.other.property.canon
 173:25-26 "." punctuation.accessor.canon
 173:26-33 "isEmpty" variable.other.property.canon
+173:33-34 "(" punctuation.section.parens.begin.canon
+173:34-35 ")" punctuation.section.parens.end.canon
+174:12-16 "fail" entity.name.function.call.canon
+174:16-17 "(" punctuation.section.parens.begin.canon
 175:15-16 "." punctuation.accessor.canon
 175:16-22 "totems" variable.other.property.canon
 176:14-21 "\"floor " string.quoted.double.canon
 176:21-22 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-176:22-25 "row" string.quoted.double.canon meta.interpolation.canon
-176:25-26 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-176:26-31 "floor" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+176:22-25 "row" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+176:25-26 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+176:26-31 "floor" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 176:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 176:32-97 ": totems are configured but the covering tier has totems=false; \"" string.quoted.double.canon
 176:98-99 "+" keyword.operator.canon
 177:16-51 "\"the loader refuses the whole file\"" string.quoted.double.canon
+178:12-13 ")" punctuation.section.parens.end.canon
 186:0-5 "local" storage.modifier.canon
 186:6-9 "let" storage.type.canon
 186:10-15 "tower" variable.other.property.canon

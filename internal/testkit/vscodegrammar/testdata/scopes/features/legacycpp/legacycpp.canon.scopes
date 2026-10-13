@@ -13,10 +13,12 @@
 10:18-22 "load" keyword.other.canon
 10:22-23 "." punctuation.accessor.canon
 10:23-30 "defines" variable.other.property.canon
+10:30-31 "(" punctuation.section.parens.begin.canon
 10:31-69 "\"@resource/Server/Define/defineitem.h\"" string.quoted.double.canon
 10:71-77 "prefix" variable.other.property.canon
 10:77-78 ":" punctuation.separator.key.canon
 10:79-84 "\"II_\"" string.quoted.double.canon
+10:84-85 ")" punctuation.section.parens.end.canon
 12:0-83 "/// The main kind. `@cpp(defines:)` also emits `#define IK1_WEAPON 1`... for legacy" comment.line.documentation.canon
 13:0-85 "/// code, so the IK1 block of defineItemkind.h can be deleted once this is generated." comment.line.documentation.canon
 14:0-4 "enum" storage.type.canon

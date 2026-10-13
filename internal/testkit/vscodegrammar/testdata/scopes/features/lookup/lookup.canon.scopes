@@ -50,12 +50,21 @@
 31:0-4 "test" keyword.other.canon
 31:5-33 "\"masters upgrade everything\"" string.quoted.double.canon
 32:2-8 "expect" keyword.other.canon
+32:9-19 "canUpgrade" entity.name.function.call.canon
+32:19-20 "(" punctuation.section.parens.begin.canon
+32:36-37 ")" punctuation.section.parens.end.canon
 32:38-40 "==" keyword.operator.canon
 32:41-45 "true" constant.language.canon
 33:2-8 "expect" keyword.other.canon
+33:9-19 "canUpgrade" entity.name.function.call.canon
+33:19-20 "(" punctuation.section.parens.begin.canon
+33:34-35 ")" punctuation.section.parens.end.canon
 33:36-38 "==" keyword.operator.canon
 33:39-44 "false" constant.language.canon
 34:2-8 "expect" keyword.other.canon
+34:9-20 "upgradeCost" entity.name.function.call.canon
+34:20-21 "(" punctuation.section.parens.begin.canon
+34:27-28 ")" punctuation.section.parens.end.canon
 34:29-31 "==" keyword.operator.canon
 34:32-39 "500_000" constant.numeric.integer.canon
 37:0-4 "emit" keyword.other.canon

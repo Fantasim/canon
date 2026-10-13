@@ -37,7 +37,7 @@
 40:5-14 "ModelType" entity.name.type.canon
 41:8-9 "\"" string.quoted.double.canon
 41:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-41:10-18 "typeName" string.quoted.double.canon meta.interpolation.canon
+41:10-18 "typeName" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 41:18-19 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 41:19-20 "\"" string.quoted.double.canon
 42:11-20 "\"a model\"" string.quoted.double.canon
@@ -68,7 +68,7 @@
 69:5-10 "Level" entity.name.type.canon
 70:8-15 "\"Level " string.quoted.double.canon
 70:15-16 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-70:16-21 "level" string.quoted.double.canon meta.interpolation.canon
+70:16-21 "level" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 70:21-22 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 70:22-23 "\"" string.quoted.double.canon
 71:11-20 "\"a level\"" string.quoted.double.canon
@@ -91,11 +91,11 @@
 86:5-13 "ItemCost" entity.name.type.canon
 87:8-9 "\"" string.quoted.double.canon
 87:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-87:10-15 "count" string.quoted.double.canon meta.interpolation.canon
+87:10-15 "count" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 87:15-16 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 87:16-20 " × " string.quoted.double.canon
 87:20-21 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-87:21-25 "item" string.quoted.double.canon meta.interpolation.canon
+87:21-25 "item" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 87:25-26 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 87:26-27 "\"" string.quoted.double.canon
 88:11-20 "\"an item\"" string.quoted.double.canon
@@ -105,11 +105,11 @@
 93:5-10 "Bonus" entity.name.type.canon
 94:8-9 "\"" string.quoted.double.canon
 94:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-94:10-19 "attribute" string.quoted.double.canon meta.interpolation.canon
+94:10-19 "attribute" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 94:19-20 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 94:20-22 " (" string.quoted.double.canon
 94:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-94:23-28 "value" string.quoted.double.canon meta.interpolation.canon
+94:23-28 "value" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 94:28-29 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 94:29-31 ")\"" string.quoted.double.canon
 95:11-20 "\"a bonus\"" string.quoted.double.canon

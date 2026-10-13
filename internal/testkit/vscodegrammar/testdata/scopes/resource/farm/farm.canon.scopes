@@ -19,20 +19,24 @@
 15:18-22 "load" keyword.other.canon
 15:22-23 "." punctuation.accessor.canon
 15:23-30 "defines" variable.other.property.canon
+15:30-31 "(" punctuation.section.parens.begin.canon
 15:31-69 "\"@resource/Server/Define/defineText.h\"" string.quoted.double.canon
 15:71-77 "prefix" variable.other.property.canon
 15:77-78 ":" punctuation.separator.key.canon
 15:79-85 "\"TID_\"" string.quoted.double.canon
+15:85-86 ")" punctuation.section.parens.end.canon
 16:0-5 "local" storage.modifier.canon
 16:6-9 "let" storage.type.canon
 16:21-22 "=" keyword.operator.canon
 16:23-27 "load" keyword.other.canon
 16:27-28 "." punctuation.accessor.canon
 16:28-35 "defines" variable.other.property.canon
+16:35-36 "(" punctuation.section.parens.begin.canon
 16:36-79 "\"@resource/Server/Define/defineAttribute.h\"" string.quoted.double.canon
 16:81-87 "prefix" variable.other.property.canon
 16:87-88 ":" punctuation.separator.key.canon
 16:89-95 "\"DST_\"" string.quoted.double.canon
+16:95-96 ")" punctuation.section.parens.end.canon
 18:0-57 "/// FARM_MAX_MODELS, a compiled constant (not a setting)." comment.line.documentation.canon
 19:0-5 "const" storage.type.canon
 19:6-21 "FARM_MAX_MODELS" constant.other.canon
@@ -278,27 +282,32 @@
 109:36-38 "<=" keyword.operator.canon
 109:45-46 "." punctuation.accessor.canon
 109:46-49 "len" variable.other.property.canon
+109:49-50 "(" punctuation.section.parens.begin.canon
+109:50-51 ")" punctuation.section.parens.end.canon
 110:4-8 "else" keyword.control.canon
 110:9-22 "\"maxLevel is " string.quoted.double.canon
 110:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-110:23-31 "maxLevel" string.quoted.double.canon meta.interpolation.canon
+110:23-31 "maxLevel" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 110:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 110:32-42 " but only " string.quoted.double.canon
 110:42-43 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-110:43-49 "levels" string.quoted.double.canon meta.interpolation.canon
-110:49-50 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-110:50-53 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-110:53-55 "()" string.quoted.double.canon meta.interpolation.canon
+110:43-49 "levels" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+110:49-50 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+110:50-53 "len" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+110:53-54 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+110:54-55 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 110:55-56 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 110:56-77 " levels exist: level " string.quoted.double.canon
 110:77-78 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-110:78-84 "levels" string.quoted.double.canon meta.interpolation.canon
-110:84-85 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-110:85-88 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-110:88-91 "() " string.quoted.double.canon meta.interpolation.canon
-110:91-92 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
-110:92-93 " " string.quoted.double.canon meta.interpolation.canon
-110:93-94 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+110:78-84 "levels" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+110:84-85 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+110:85-88 "len" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+110:88-89 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+110:89-90 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
+110:90-91 " " string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+110:91-92 "+" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon keyword.operator.canon
+110:92-93 " " string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+110:93-94 "1" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon constant.numeric.integer.canon
 110:94-95 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 110:95-149 " and above are unreachable (GetLevel returns nullptr)\"" string.quoted.double.canon
 111:2-6 "warn" keyword.other.canon
@@ -306,14 +315,19 @@
 111:21-22 ":" punctuation.separator.key.canon
 111:29-30 "." punctuation.accessor.canon
 111:30-39 "enumerate" variable.other.property.canon
+111:39-40 "(" punctuation.section.parens.begin.canon
+111:40-41 ")" punctuation.section.parens.end.canon
 111:41-42 "." punctuation.accessor.canon
 111:42-45 "all" variable.other.property.canon
+111:45-47 "((" punctuation.section.parens.begin.canon
+111:51-52 ")" punctuation.section.parens.end.canon
 111:53-55 "=>" keyword.operator.canon
 111:57-58 "." punctuation.accessor.canon
 111:58-63 "level" variable.other.property.canon
 111:64-66 "==" keyword.operator.canon
 111:69-70 "+" keyword.operator.canon
 111:71-72 "1" constant.numeric.integer.canon
+111:72-73 ")" punctuation.section.parens.end.canon
 112:4-8 "else" keyword.control.canon
 112:9-84 "\"a `level` value does not match its position; the loader uses the position\"" string.quoted.double.canon
 115:0-19 "/// The whole file." comment.line.documentation.canon

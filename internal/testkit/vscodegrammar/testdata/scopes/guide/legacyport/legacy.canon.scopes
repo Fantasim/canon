@@ -46,6 +46,8 @@
 16:28-29 ":" punctuation.separator.key.canon
 16:37-38 "." punctuation.accessor.canon
 16:38-41 "len" variable.other.property.canon
+16:41-42 "(" punctuation.section.parens.begin.canon
+16:42-43 ")" punctuation.section.parens.end.canon
 16:45-52 "weapons" variable.other.property.canon
 16:52-53 ":" punctuation.separator.key.canon
 19:0-4 "emit" keyword.other.canon

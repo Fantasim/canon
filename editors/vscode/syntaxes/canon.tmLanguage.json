@@ -83,6 +83,7 @@
         },
         {
           "name": "meta.interpolation.canon",
+          "contentName": "meta.embedded.line.canon",
           "begin": "\\{",
           "end": "(?:(:)([^}\\n]*))?(\\})|$",
           "beginCaptures": {
@@ -119,11 +120,19 @@
       "begin": "(\\()(?:\\s*(/\\*(?:[^*]|\\*+[^*/])*\\*+/(?:\\s*/\\*(?:[^*]|\\*+[^*/])*\\*+/)*)?\\s*(/(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/*\\\\\\[\\n])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/\\\\\\[\\n])*/))?",
       "end": "\\)",
       "beginCaptures": {
+        "1": {
+          "name": "punctuation.section.parens.begin.canon"
+        },
         "2": {
           "name": "comment.block.canon"
         },
         "3": {
           "name": "string.regexp.canon"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.parens.end.canon"
         }
       },
       "patterns": [
@@ -135,6 +144,79 @@
         },
         {
           "include": "#expression-core"
+        }
+      ]
+    },
+    "match-arm": {
+      "match": "\\b[a-z_][A-Za-z0-9_]*\\s*\\(\\s*[a-z_][A-Za-z0-9_]*\\s*\\)\\s*(=>)",
+      "captures": {
+        "1": {
+          "name": "keyword.operator.canon"
+        }
+      }
+    },
+    "call": {
+      "begin": "\\b([a-z_][A-Za-z0-9_]*)\\s*(\\()(?:\\s*(/\\*(?:[^*]|\\*+[^*/])*\\*+/(?:\\s*/\\*(?:[^*]|\\*+[^*/])*\\*+/)*)?\\s*(/(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/*\\\\\\[\\n])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/\\\\\\[\\n])*/))?",
+      "end": "\\)",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.name.function.call.canon"
+        },
+        "2": {
+          "name": "punctuation.section.parens.begin.canon"
+        },
+        "3": {
+          "name": "comment.block.canon"
+        },
+        "4": {
+          "name": "string.regexp.canon"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.parens.end.canon"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#paren-group"
+        },
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "method-call": {
+      "begin": "(\\?\\.|\\.)([a-z_][A-Za-z0-9_]*)\\s*(\\()(?:\\s*(/\\*(?:[^*]|\\*+[^*/])*\\*+/(?:\\s*/\\*(?:[^*]|\\*+[^*/])*\\*+/)*)?\\s*(/(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/*\\\\\\[\\n])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^/\\\\\\[\\n])*/))?",
+      "end": "\\)",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.accessor.canon"
+        },
+        "2": {
+          "name": "variable.other.property.canon"
+        },
+        "3": {
+          "name": "punctuation.section.parens.begin.canon"
+        },
+        "4": {
+          "name": "comment.block.canon"
+        },
+        "5": {
+          "name": "string.regexp.canon"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.parens.end.canon"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#paren-group"
+        },
+        {
+          "include": "#expression"
         }
       ]
     },
@@ -211,6 +293,9 @@
           "include": "#declarations"
         },
         {
+          "include": "#method-call"
+        },
+        {
           "match": "(\\?\\.|\\.)([a-z_][A-Za-z0-9_]*)",
           "captures": {
             "1": {
@@ -226,6 +311,12 @@
         },
         {
           "include": "#keywords"
+        },
+        {
+          "include": "#match-arm"
+        },
+        {
+          "include": "#call"
         },
         {
           "name": "constant.other.canon",

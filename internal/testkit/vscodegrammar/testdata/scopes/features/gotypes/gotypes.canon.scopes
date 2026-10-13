@@ -146,13 +146,13 @@
 66:42-44 " [" meta.annotation.canon
 66:44-56 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
 66:56-57 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-66:57-58 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+66:57-58 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 66:58-59 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 66:59-60 "\"" meta.annotation.canon string.quoted.double.canon
 66:60-62 ", " meta.annotation.canon
 66:62-75 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
 66:75-76 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-66:76-77 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+66:76-77 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 66:77-78 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 66:78-79 "\"" meta.annotation.canon string.quoted.double.canon
 66:79-81 "])" meta.annotation.canon

@@ -33,7 +33,7 @@
 15:28-32 "else" keyword.control.canon
 15:33-34 "\"" string.quoted.double.canon
 15:34-35 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-15:35-39 "item" string.quoted.double.canon meta.interpolation.canon
+15:35-39 "item" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 15:39-40 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 15:40-61 " is sold for 0 penya\"" string.quoted.double.canon
 16:2-6 "warn" keyword.other.canon
@@ -43,13 +43,13 @@
 17:4-8 "else" keyword.control.canon
 17:9-17 "\"buying " string.quoted.double.canon
 17:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-17:18-22 "item" string.quoted.double.canon meta.interpolation.canon
+17:18-22 "item" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 17:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 17:23-50 " and selling it back earns " string.quoted.double.canon
 17:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-17:51-59 "buyback " string.quoted.double.canon meta.interpolation.canon
-17:59-60 "-" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
-17:60-66 " price" string.quoted.double.canon meta.interpolation.canon
+17:51-59 "buyback " string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+17:59-60 "-" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon keyword.operator.canon
+17:60-66 " price" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 17:66-67 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 17:67-84 " penya each time\"" string.quoted.double.canon
 20:0-4 "test" keyword.other.canon

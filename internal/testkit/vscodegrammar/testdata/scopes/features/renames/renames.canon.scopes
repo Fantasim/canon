@@ -79,11 +79,11 @@
 47:29-35 "return" keyword.control.canon
 47:36-37 "\"" string.quoted.double.canon
 47:37-38 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-47:38-42 "name" string.quoted.double.canon meta.interpolation.canon
+47:38-42 "name" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 47:42-43 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 47:43-45 " (" string.quoted.double.canon
 47:45-46 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-47:46-51 "level" string.quoted.double.canon meta.interpolation.canon
+47:46-51 "level" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 47:51-52 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 47:52-54 ")\"" string.quoted.double.canon
 50:0-82 "/// The missions: the first here, the others in their own files, placed by rarity." comment.line.documentation.canon
@@ -92,11 +92,11 @@
 51:6-7 "(" meta.annotation.canon
 51:7-14 "\"store/" meta.annotation.canon string.quoted.double.canon
 51:14-15 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-51:15-21 "rarity" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+51:15-21 "rarity" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 51:21-22 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 51:22-23 "/" meta.annotation.canon string.quoted.double.canon
 51:23-24 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-51:24-26 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+51:24-26 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 51:26-27 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 51:27-34 ".canon\"" meta.annotation.canon string.quoted.double.canon
 51:34-35 ")" meta.annotation.canon
@@ -275,21 +275,30 @@
 120:17-19 "10" constant.numeric.integer.canon
 120:20-21 "+" keyword.operator.canon
 120:28-29 "+" keyword.operator.canon
+120:30-35 "bonus" entity.name.function.call.canon
+120:35-36 "(" punctuation.section.parens.begin.canon
+120:41-42 ")" punctuation.section.parens.end.canon
 123:0-4 "test" keyword.other.canon
 123:5-30 "\"xp grows with the level\"" string.quoted.double.canon
 124:2-8 "expect" keyword.other.canon
+124:9-14 "xpFor" entity.name.function.call.canon
+124:14-15 "(" punctuation.section.parens.begin.canon
 124:15-20 "level" variable.other.property.canon
 124:20-21 ":" punctuation.separator.key.canon
 124:22-23 "2" constant.numeric.integer.canon
 124:25-30 "extra" variable.other.property.canon
 124:30-31 ":" punctuation.separator.key.canon
 124:32-33 "5" constant.numeric.integer.canon
+124:33-34 ")" punctuation.section.parens.end.canon
 124:35-37 "==" keyword.operator.canon
 124:38-40 "26" constant.numeric.integer.canon
 125:2-8 "expect" keyword.other.canon
+125:9-14 "xpFor" entity.name.function.call.canon
+125:14-15 "(" punctuation.section.parens.begin.canon
 125:15-20 "level" variable.other.property.canon
 125:20-21 ":" punctuation.separator.key.canon
 125:22-24 "12" constant.numeric.integer.canon
+125:24-25 ")" punctuation.section.parens.end.canon
 125:26-28 "==" keyword.operator.canon
 125:29-32 "122" constant.numeric.integer.canon
 128:0-4 "emit" keyword.other.canon

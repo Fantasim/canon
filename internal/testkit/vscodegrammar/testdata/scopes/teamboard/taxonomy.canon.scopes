@@ -132,20 +132,28 @@
 78:2-7 "check" keyword.other.canon
 78:12-13 "." punctuation.accessor.canon
 78:13-21 "isUnique" variable.other.property.canon
+78:21-22 "(" punctuation.section.parens.begin.canon
+78:22-23 ")" punctuation.section.parens.end.canon
 78:24-28 "else" keyword.control.canon
 78:29-59 "\"a transition is listed twice\"" string.quoted.double.canon
 79:2-7 "check" keyword.other.canon
 79:8-11 "not" keyword.operator.word.canon
 79:16-17 "." punctuation.accessor.canon
 79:17-25 "contains" variable.other.property.canon
+79:25-26 "(" punctuation.section.parens.begin.canon
 79:26-30 "self" variable.language.canon
+79:30-31 ")" punctuation.section.parens.end.canon
 79:32-36 "else" keyword.control.canon
 79:37-75 "\"a status cannot transition to itself\"" string.quoted.double.canon
 80:2-7 "check" keyword.other.canon
 80:16-17 "." punctuation.accessor.canon
 80:17-26 "intersect" variable.other.property.canon
+80:26-27 "(" punctuation.section.parens.begin.canon
+80:35-36 ")" punctuation.section.parens.end.canon
 80:36-37 "." punctuation.accessor.canon
 80:37-44 "isEmpty" variable.other.property.canon
+80:44-45 "(" punctuation.section.parens.begin.canon
+80:45-46 ")" punctuation.section.parens.end.canon
 80:47-51 "else" keyword.control.canon
 80:52-91 "\"a field is both required and optional\"" string.quoted.double.canon
 83:0-79 "/// Set by a triager only. The reporter's single signal is the `blocking` flag." comment.line.documentation.canon
@@ -216,13 +224,17 @@
 116:2-7 "check" keyword.other.canon
 116:16-17 "." punctuation.accessor.canon
 116:17-25 "isUnique" variable.other.property.canon
+116:25-26 "(" punctuation.section.parens.begin.canon
+116:26-27 ")" punctuation.section.parens.end.canon
 116:28-32 "else" keyword.control.canon
 116:33-70 "\"an area is listed twice in routesTo\"" string.quoted.double.canon
 117:2-7 "check" keyword.other.canon
 117:8-11 "not" keyword.operator.word.canon
 117:20-21 "." punctuation.accessor.canon
 117:21-29 "contains" variable.other.property.canon
+117:29-30 "(" punctuation.section.parens.begin.canon
 117:30-34 "self" variable.language.canon
+117:34-35 ")" punctuation.section.parens.end.canon
 117:36-40 "else" keyword.control.canon
 117:41-73 "\"an area cannot route to itself\"" string.quoted.double.canon
 120:0-58 "/// One fixed column of the deck: a named set of statuses." comment.line.documentation.canon
@@ -259,6 +271,8 @@
 133:8-11 "not" keyword.operator.word.canon
 133:20-21 "." punctuation.accessor.canon
 133:21-28 "isEmpty" variable.other.property.canon
+133:28-29 "(" punctuation.section.parens.begin.canon
+133:29-30 ")" punctuation.section.parens.end.canon
 133:31-35 "else" keyword.control.canon
 133:36-72 "\"a column holds at least one status\"" string.quoted.double.canon
 136:0-78 "/// The deck: fixed columns, in order. Nobody adds, removes or edits a column." comment.line.documentation.canon
@@ -278,11 +292,15 @@
 143:8-11 "not" keyword.operator.word.canon
 143:19-20 "." punctuation.accessor.canon
 143:20-27 "isEmpty" variable.other.property.canon
+143:27-28 "(" punctuation.section.parens.begin.canon
+143:28-29 ")" punctuation.section.parens.end.canon
 143:30-34 "else" keyword.control.canon
 143:35-56 "\"at least one layout\"" string.quoted.double.canon
 144:2-7 "check" keyword.other.canon
 144:15-16 "." punctuation.accessor.canon
 144:16-24 "isUnique" variable.other.property.canon
+144:24-25 "(" punctuation.section.parens.begin.canon
+144:25-26 ")" punctuation.section.parens.end.canon
 144:27-31 "else" keyword.control.canon
 144:32-60 "\"a layout is declared twice\"" string.quoted.double.canon
 147:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
@@ -701,8 +719,12 @@
 325:30-31 "=" keyword.operator.canon
 325:39-40 "." punctuation.accessor.canon
 325:40-46 "active" variable.other.property.canon
+325:46-47 "(" punctuation.section.parens.begin.canon
+325:47-48 ")" punctuation.section.parens.end.canon
 325:48-49 "." punctuation.accessor.canon
 325:49-54 "first" variable.other.property.canon
+325:54-55 "(" punctuation.section.parens.begin.canon
+325:55-56 ")" punctuation.section.parens.end.canon
 325:56-57 "!" keyword.operator.canon
 325:57-58 "." punctuation.accessor.canon
 325:58-66 "statuses" variable.other.property.canon
@@ -717,10 +739,14 @@
 329:34-35 "=" keyword.operator.canon
 329:46-47 "." punctuation.accessor.canon
 329:47-53 "active" variable.other.property.canon
+329:53-54 "(" punctuation.section.parens.begin.canon
+329:54-55 ")" punctuation.section.parens.end.canon
 329:55-56 "." punctuation.accessor.canon
 329:56-61 "first" variable.other.property.canon
+329:61-62 "(" punctuation.section.parens.begin.canon
 329:62-63 "." punctuation.accessor.canon
 329:63-70 "default" variable.other.property.canon
+329:70-71 ")" punctuation.section.parens.end.canon
 329:71-72 "!" keyword.operator.canon
 331:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
 332:0-24 "// Rules about this data" comment.line.double-slash.canon
@@ -730,65 +756,88 @@
 336:8-10 "in" keyword.operator.word.canon
 336:19-20 "." punctuation.accessor.canon
 336:20-26 "active" variable.other.property.canon
+336:26-27 "(" punctuation.section.parens.begin.canon
+336:27-28 ")" punctuation.section.parens.end.canon
 337:4-7 "let" storage.type.canon
 337:15-16 "=" keyword.operator.canon
 337:24-25 "." punctuation.accessor.canon
 337:25-31 "active" variable.other.property.canon
+337:31-32 "(" punctuation.section.parens.begin.canon
+337:32-33 ")" punctuation.section.parens.end.canon
 337:33-34 "." punctuation.accessor.canon
 337:34-40 "filter" variable.other.property.canon
+337:40-41 "(" punctuation.section.parens.begin.canon
 337:43-45 "=>" keyword.operator.canon
 337:47-48 "." punctuation.accessor.canon
 337:48-56 "statuses" variable.other.property.canon
 337:56-57 "." punctuation.accessor.canon
 337:57-65 "contains" variable.other.property.canon
+337:65-66 "(" punctuation.section.parens.begin.canon
+337:67-69 "))" punctuation.section.parens.end.canon
 338:4-6 "if" keyword.control.canon
 338:13-14 "." punctuation.accessor.canon
 338:14-21 "isEmpty" variable.other.property.canon
+338:21-22 "(" punctuation.section.parens.begin.canon
+338:22-23 ")" punctuation.section.parens.end.canon
+339:6-10 "fail" entity.name.function.call.canon
+339:10-11 "(" punctuation.section.parens.begin.canon
 339:14-22 "\"status " string.quoted.double.canon
 339:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-339:23-24 "s" string.quoted.double.canon meta.interpolation.canon
-339:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-339:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+339:23-24 "s" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+339:24-25 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+339:25-27 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 339:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 339:28-58 " is not claimed by any column\"" string.quoted.double.canon
+339:58-59 ")" punctuation.section.parens.end.canon
 340:6-10 "else" keyword.control.canon
 340:11-13 "if" keyword.control.canon
 340:20-21 "." punctuation.accessor.canon
 340:21-24 "len" variable.other.property.canon
+340:24-25 "(" punctuation.section.parens.begin.canon
+340:25-26 ")" punctuation.section.parens.end.canon
 340:27-28 ">" keyword.operator.canon
 340:29-30 "1" constant.numeric.integer.canon
+341:6-10 "fail" entity.name.function.call.canon
+341:10-11 "(" punctuation.section.parens.begin.canon
 341:14-22 "\"status " string.quoted.double.canon
 341:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-341:23-24 "s" string.quoted.double.canon meta.interpolation.canon
-341:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-341:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+341:23-24 "s" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+341:24-25 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+341:25-27 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 341:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 341:28-60 " is claimed by several columns: " string.quoted.double.canon
 341:60-61 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-341:61-67 "owners" string.quoted.double.canon meta.interpolation.canon
-341:67-68 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-341:68-71 "map" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-341:71-72 "(" string.quoted.double.canon meta.interpolation.canon
-341:72-73 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-341:73-75 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-341:75-76 ")" string.quoted.double.canon meta.interpolation.canon
-341:76-77 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-341:77-81 "join" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-341:81-82 "(" string.quoted.double.canon meta.interpolation.canon
-341:82-86 "\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon
-341:86-87 ")" string.quoted.double.canon meta.interpolation.canon
+341:61-67 "owners" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+341:67-68 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+341:68-71 "map" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+341:71-72 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+341:72-73 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+341:73-75 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+341:75-76 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
+341:76-77 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+341:77-81 "join" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+341:81-82 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+341:82-86 "\", \"" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon string.quoted.double.canon
+341:86-87 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 341:87-88 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 341:88-89 "\"" string.quoted.double.canon
+341:89-90 ")" punctuation.section.parens.end.canon
 346:0-5 "check" keyword.other.canon
 346:13-14 "." punctuation.accessor.canon
 346:14-20 "active" variable.other.property.canon
+346:20-21 "(" punctuation.section.parens.begin.canon
+346:21-22 ")" punctuation.section.parens.end.canon
 346:22-23 "." punctuation.accessor.canon
 346:23-28 "first" variable.other.property.canon
+346:28-29 "(" punctuation.section.parens.begin.canon
+346:29-30 ")" punctuation.section.parens.end.canon
 346:30-31 "!" keyword.operator.canon
 346:31-32 "." punctuation.accessor.canon
 346:32-40 "statuses" variable.other.property.canon
 346:40-41 "." punctuation.accessor.canon
 346:41-44 "len" variable.other.property.canon
+346:44-45 "(" punctuation.section.parens.begin.canon
+346:45-46 ")" punctuation.section.parens.end.canon
 346:47-49 "==" keyword.operator.canon
 346:50-51 "1" constant.numeric.integer.canon
 347:2-6 "else" keyword.control.canon
@@ -796,10 +845,14 @@
 349:0-5 "check" keyword.other.canon
 349:16-17 "." punctuation.accessor.canon
 349:17-23 "active" variable.other.property.canon
+349:23-24 "(" punctuation.section.parens.begin.canon
+349:24-25 ")" punctuation.section.parens.end.canon
 349:25-26 "." punctuation.accessor.canon
 349:26-31 "count" variable.other.property.canon
+349:31-32 "(" punctuation.section.parens.begin.canon
 349:32-33 "." punctuation.accessor.canon
 349:33-40 "default" variable.other.property.canon
+349:40-41 ")" punctuation.section.parens.end.canon
 349:42-44 "==" keyword.operator.canon
 349:45-46 "1" constant.numeric.integer.canon
 349:47-51 "else" keyword.control.canon
@@ -810,14 +863,18 @@
 351:21-22 "<" keyword.operator.canon
 351:30-31 "." punctuation.accessor.canon
 351:31-37 "active" variable.other.property.canon
+351:37-38 "(" punctuation.section.parens.begin.canon
+351:38-39 ")" punctuation.section.parens.end.canon
 351:39-40 "." punctuation.accessor.canon
 351:40-43 "len" variable.other.property.canon
+351:43-44 "(" punctuation.section.parens.begin.canon
+351:44-45 ")" punctuation.section.parens.end.canon
 352:2-6 "else" keyword.control.canon
 352:7-19 "\"maxHidden (" string.quoted.double.canon
 352:19-20 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-352:20-24 "deck" string.quoted.double.canon meta.interpolation.canon
-352:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-352:25-34 "maxHidden" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+352:20-24 "deck" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+352:24-25 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+352:25-34 "maxHidden" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 352:34-35 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 352:35-77 ") must be less than the number of columns\"" string.quoted.double.canon
 354:0-5 "check" keyword.other.canon
@@ -825,23 +882,32 @@
 355:8-10 "in" keyword.operator.word.canon
 355:21-22 "." punctuation.accessor.canon
 355:22-28 "active" variable.other.property.canon
+355:28-29 "(" punctuation.section.parens.begin.canon
+355:29-30 ")" punctuation.section.parens.end.canon
 356:4-6 "if" keyword.control.canon
 356:7-10 "not" keyword.operator.word.canon
 356:16-17 "." punctuation.accessor.canon
 356:17-23 "active" variable.other.property.canon
+356:23-24 "(" punctuation.section.parens.begin.canon
+356:24-25 ")" punctuation.section.parens.end.canon
 356:25-26 "." punctuation.accessor.canon
 356:26-29 "any" variable.other.property.canon
+356:29-30 "(" punctuation.section.parens.begin.canon
 356:32-34 "=>" keyword.operator.canon
 356:36-37 "." punctuation.accessor.canon
 356:37-42 "group" variable.other.property.canon
 356:43-45 "==" keyword.operator.canon
+356:47-48 ")" punctuation.section.parens.end.canon
+357:6-10 "fail" entity.name.function.call.canon
+357:10-11 "(" punctuation.section.parens.begin.canon
 357:14-26 "\"area group " string.quoted.double.canon
 357:26-27 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-357:27-28 "g" string.quoted.double.canon meta.interpolation.canon
-357:28-29 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-357:29-31 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+357:27-28 "g" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+357:28-29 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+357:29-31 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 357:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 357:32-53 " is named by no area\"" string.quoted.double.canon
+357:53-54 ")" punctuation.section.parens.end.canon
 362:0-55 "/// The service code branches on these two flags by id." comment.line.documentation.canon
 363:0-5 "check" keyword.other.canon
 363:6-9 "not" keyword.operator.word.canon
@@ -861,39 +927,51 @@
 367:0-5 "check" keyword.other.canon
 368:2-5 "let" storage.type.canon
 368:11-12 "=" keyword.operator.canon
+368:13-22 "reachable" entity.name.function.call.canon
+368:22-23 "(" punctuation.section.parens.begin.canon
 368:23-27 "from" variable.other.property.canon
 368:27-28 ":" punctuation.separator.key.canon
 368:44-48 "next" variable.other.property.canon
 368:48-49 ":" punctuation.separator.key.canon
 368:50-51 "." punctuation.accessor.canon
 368:51-55 "next" variable.other.property.canon
+368:55-56 ")" punctuation.section.parens.end.canon
 369:2-5 "for" keyword.control.canon
 369:8-10 "in" keyword.operator.word.canon
 369:19-20 "." punctuation.accessor.canon
 369:20-26 "active" variable.other.property.canon
+369:26-27 "(" punctuation.section.parens.begin.canon
+369:27-28 ")" punctuation.section.parens.end.canon
 370:4-6 "if" keyword.control.canon
 370:7-10 "not" keyword.operator.word.canon
 370:15-16 "." punctuation.accessor.canon
 370:16-24 "contains" variable.other.property.canon
+370:24-25 "(" punctuation.section.parens.begin.canon
+370:26-27 ")" punctuation.section.parens.end.canon
+371:6-10 "fail" entity.name.function.call.canon
+371:10-11 "(" punctuation.section.parens.begin.canon
 371:14-22 "\"status " string.quoted.double.canon
 371:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-371:23-24 "s" string.quoted.double.canon meta.interpolation.canon
-371:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-371:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+371:23-24 "s" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+371:24-25 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+371:25-27 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 371:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 371:28-55 " can never be reached from " string.quoted.double.canon
 371:55-56 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-371:56-69 "initialStatus" string.quoted.double.canon meta.interpolation.canon
-371:69-70 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-371:70-72 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+371:56-69 "initialStatus" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+371:69-70 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+371:70-72 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 371:72-73 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 371:73-74 "\"" string.quoted.double.canon
+371:74-75 ")" punctuation.section.parens.end.canon
 376:0-81 "/// New: a status without a way out, other than a terminal one, would trap posts." comment.line.documentation.canon
 377:0-5 "check" keyword.other.canon
 378:2-5 "for" keyword.control.canon
 378:8-10 "in" keyword.operator.word.canon
 378:19-20 "." punctuation.accessor.canon
 378:20-26 "active" variable.other.property.canon
+378:26-27 "(" punctuation.section.parens.begin.canon
+378:27-28 ")" punctuation.section.parens.end.canon
 379:4-6 "if" keyword.control.canon
 379:7-10 "not" keyword.operator.word.canon
 379:12-13 "." punctuation.accessor.canon
@@ -903,13 +981,18 @@
 379:28-32 "next" variable.other.property.canon
 379:32-33 "." punctuation.accessor.canon
 379:33-40 "isEmpty" variable.other.property.canon
+379:40-41 "(" punctuation.section.parens.begin.canon
+379:41-42 ")" punctuation.section.parens.end.canon
+380:6-10 "fail" entity.name.function.call.canon
+380:10-11 "(" punctuation.section.parens.begin.canon
 380:14-22 "\"status " string.quoted.double.canon
 380:22-23 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-380:23-24 "s" string.quoted.double.canon meta.interpolation.canon
-380:24-25 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-380:25-27 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+380:23-24 "s" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+380:24-25 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+380:25-27 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 380:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 380:28-68 " is not terminal but has no next status\"" string.quoted.double.canon
+380:68-69 ")" punctuation.section.parens.end.canon
 385:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
 386:0-79 "// Methods for the services (today: accessors.go and areas.go, written by hand)" comment.line.double-slash.canon
 387:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
@@ -934,6 +1017,8 @@
 392:80-84 "next" variable.other.property.canon
 392:84-85 "." punctuation.accessor.canon
 392:85-93 "contains" variable.other.property.canon
+392:93-94 "(" punctuation.section.parens.begin.canon
+392:96-97 ")" punctuation.section.parens.end.canon
 394:0-85 "/// sovcommon's ColumnOf. `none` for a status no active column claims (only a retired" comment.line.documentation.canon
 395:0-71 "/// status can be in that case), like the `(Column, bool)` it replaces." comment.line.documentation.canon
 396:0-6 "export" storage.modifier.canon
@@ -950,13 +1035,18 @@
 397:2-8 "return" keyword.control.canon
 397:16-17 "." punctuation.accessor.canon
 397:17-23 "active" variable.other.property.canon
+397:23-24 "(" punctuation.section.parens.begin.canon
+397:24-25 ")" punctuation.section.parens.end.canon
 397:25-26 "." punctuation.accessor.canon
 397:26-31 "first" variable.other.property.canon
+397:31-32 "(" punctuation.section.parens.begin.canon
 397:34-36 "=>" keyword.operator.canon
 397:38-39 "." punctuation.accessor.canon
 397:39-47 "statuses" variable.other.property.canon
 397:47-48 "." punctuation.accessor.canon
 397:48-56 "contains" variable.other.property.canon
+397:56-57 "(" punctuation.section.parens.begin.canon
+397:58-60 "))" punctuation.section.parens.end.canon
 400:0-66 "/// sovcommon's AreasVisibleTo: minRole gates viewing and posting." comment.line.documentation.canon
 401:0-6 "export" storage.modifier.canon
 401:7-9 "fn" storage.type.function.canon
@@ -972,6 +1062,8 @@
 402:18-20 "in" keyword.operator.word.canon
 402:26-27 "." punctuation.accessor.canon
 402:27-33 "active" variable.other.property.canon
+402:33-34 "(" punctuation.section.parens.begin.canon
+402:34-35 ")" punctuation.section.parens.end.canon
 402:36-38 "if" keyword.control.canon
 402:44-46 ">=" keyword.operator.canon
 402:48-49 "." punctuation.accessor.canon
@@ -1003,23 +1095,35 @@
 416:11-12 ":" punctuation.separator.key.canon
 416:16-21 "areas" variable.other.property.canon
 416:21-22 ":" punctuation.separator.key.canon
+416:23-37 "areasVisibleTo" entity.name.function.call.canon
+416:37-38 "(" punctuation.section.parens.begin.canon
+416:42-43 ")" punctuation.section.parens.end.canon
 416:43-44 "." punctuation.accessor.canon
 416:44-50 "filter" variable.other.property.canon
+416:50-51 "(" punctuation.section.parens.begin.canon
 416:53-55 "=>" keyword.operator.canon
 416:57-58 "." punctuation.accessor.canon
 416:58-63 "group" variable.other.property.canon
 416:64-66 "==" keyword.operator.canon
+416:68-69 ")" punctuation.section.parens.end.canon
 417:4-7 "for" keyword.control.canon
 417:10-12 "in" keyword.operator.word.canon
 417:23-24 "." punctuation.accessor.canon
 417:24-30 "active" variable.other.property.canon
+417:30-31 "(" punctuation.section.parens.begin.canon
+417:31-32 ")" punctuation.section.parens.end.canon
 418:4-6 "if" keyword.control.canon
+418:7-21 "areasVisibleTo" entity.name.function.call.canon
+418:21-22 "(" punctuation.section.parens.begin.canon
+418:26-27 ")" punctuation.section.parens.end.canon
 418:27-28 "." punctuation.accessor.canon
 418:28-31 "any" variable.other.property.canon
+418:31-32 "(" punctuation.section.parens.begin.canon
 418:34-36 "=>" keyword.operator.canon
 418:38-39 "." punctuation.accessor.canon
 418:39-44 "group" variable.other.property.canon
 418:45-47 "==" keyword.operator.canon
+418:49-50 ")" punctuation.section.parens.end.canon
 422:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
 423:0-9 "// Output" comment.line.double-slash.canon
 424:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon

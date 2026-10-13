@@ -34,11 +34,11 @@
 23:6-7 "(" meta.annotation.canon
 23:7-14 "\"items/" meta.annotation.canon string.quoted.double.canon
 23:14-15 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-23:15-19 "kind" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+23:15-19 "kind" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 23:19-20 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 23:20-21 "/" meta.annotation.canon string.quoted.double.canon
 23:21-22 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-23:22-24 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+23:22-24 "id" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 23:24-25 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 23:25-32 ".canon\"" meta.annotation.canon string.quoted.double.canon
 23:32-33 ")" meta.annotation.canon

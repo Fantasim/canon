@@ -25,7 +25,7 @@ var lexicalCases = []struct {
 	{"2.6 bad escape", `"a\x"`, `invalid.illegal.escape.canon`},
 	{"2.6 interpolation", `"{heal:,} HP"`, `"heal" string.quoted.double.canon meta.interpolation.canon`},
 	{"2.6 format spec", `"{heal:,} HP"`, `"," string.quoted.double.canon meta.interpolation.canon constant.other.format-spec.canon`},
-	{"2.6 nested string", `"{a.join(", ")}"`, `"\", \"" string.quoted.double.canon meta.interpolation.canon string.quoted.double.canon`},
+	{"2.6 nested string", `"{a.join(", ")}"`, `"\", \"" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon string.quoted.double.canon`},
 	{"2.6 raw string", `r"C:\{x}"`, `"r\"C:\\{x}\"" string.quoted.double.raw.canon`},
 	{"2.7 regex after paren", `String(/^II_[/]+$/)`, `string.regexp.canon`},
 	{"2.7 regex after comma", `f(a, /x/)`, `"/x/" string.regexp.canon`},

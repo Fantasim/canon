@@ -18,37 +18,45 @@
 16:21-25 "load" keyword.other.canon
 16:25-26 "." punctuation.accessor.canon
 16:26-33 "defines" variable.other.property.canon
+16:33-34 "(" punctuation.section.parens.begin.canon
 16:34-71 "\"@resource/Server/Define/defineObj.h\"" string.quoted.double.canon
 16:73-79 "prefix" variable.other.property.canon
 16:79-80 ":" punctuation.separator.key.canon
 16:81-86 "\"MI_\"" string.quoted.double.canon
+16:86-87 ")" punctuation.section.parens.end.canon
 17:0-5 "local" storage.modifier.canon
 17:6-9 "let" storage.type.canon
 17:17-18 "=" keyword.operator.canon
 17:19-23 "load" keyword.other.canon
 17:23-24 "." punctuation.accessor.canon
 17:24-31 "defines" variable.other.property.canon
+17:31-32 "(" punctuation.section.parens.begin.canon
 17:32-71 "\"@resource/Server/Define/defineWorld.h\"" string.quoted.double.canon
 17:73-79 "prefix" variable.other.property.canon
 17:79-80 ":" punctuation.separator.key.canon
 17:81-86 "\"WI_\"" string.quoted.double.canon
+17:86-87 ")" punctuation.section.parens.end.canon
 18:0-5 "local" storage.modifier.canon
 18:6-9 "let" storage.type.canon
 18:23-24 "=" keyword.operator.canon
 18:25-29 "load" keyword.other.canon
 18:29-30 "." punctuation.accessor.canon
 18:30-37 "defines" variable.other.property.canon
+18:37-38 "(" punctuation.section.parens.begin.canon
 18:38-83 "\"@resource/Server/Define/defineUpgradeType.h\"" string.quoted.double.canon
+18:83-84 ")" punctuation.section.parens.end.canon
 19:0-5 "local" storage.modifier.canon
 19:6-9 "let" storage.type.canon
 19:15-16 "=" keyword.operator.canon
 19:17-21 "load" keyword.other.canon
 19:21-22 "." punctuation.accessor.canon
 19:22-29 "defines" variable.other.property.canon
+19:29-30 "(" punctuation.section.parens.begin.canon
 19:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
 19:69-75 "prefix" variable.other.property.canon
 19:75-76 ":" punctuation.separator.key.canon
 19:77-83 "\"JOB_\"" string.quoted.double.canon
+19:83-84 ")" punctuation.section.parens.end.canon
 20:0-81 "/// IDS_* key -> English display name (\"IDS_PROPITEM_TXT_003930\" -> \"Angel Axe\")." comment.line.documentation.canon
 21:0-5 "local" storage.modifier.canon
 21:6-9 "let" storage.type.canon
@@ -288,6 +296,8 @@
 98:28-34 "return" keyword.control.canon
 98:40-41 "." punctuation.accessor.canon
 98:41-44 "get" variable.other.property.canon
+98:44-45 "(" punctuation.section.parens.begin.canon
+98:52-53 ")" punctuation.section.parens.end.canon
 98:54-56 "??" keyword.operator.canon
 101:0-88 "/// Every item, keyed by its define. `ref items` stores the define and checks it exists." comment.line.documentation.canon
 102:0-3 "let" storage.type.canon
@@ -310,14 +320,19 @@
 108:5-9 "Item" entity.name.type.canon
 109:8-9 "\"" string.quoted.double.canon
 109:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-109:10-16 "name()" string.quoted.double.canon meta.interpolation.canon
+109:10-14 "name" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon entity.name.function.call.canon
+109:14-15 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+109:15-16 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 109:16-17 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 109:17-18 "\"" string.quoted.double.canon
 110:11-12 "\"" string.quoted.double.canon
 110:12-13 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-110:13-15 "id" string.quoted.double.canon meta.interpolation.canon
+110:13-15 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 110:15-16 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 110:16-17 "\"" string.quoted.double.canon
+112:11-15 "name" entity.name.function.call.canon
+112:15-16 "(" punctuation.section.parens.begin.canon
+112:16-17 ")" punctuation.section.parens.end.canon
 115:17-20 "120" constant.numeric.integer.canon
 115:26-29 "140" constant.numeric.integer.canon
 115:37-39 "70" constant.numeric.integer.canon
@@ -628,12 +643,12 @@
 193:5-14 "EventType" entity.name.type.canon
 194:8-9 "\"" string.quoted.double.canon
 194:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-194:10-17 "display" string.quoted.double.canon meta.interpolation.canon
+194:10-17 "display" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 194:17-18 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 194:18-19 "\"" string.quoted.double.canon
 195:11-12 "\"" string.quoted.double.canon
 195:12-13 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-195:13-15 "id" string.quoted.double.canon meta.interpolation.canon
+195:13-15 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 195:15-16 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 195:16-17 "\"" string.quoted.double.canon
 198:17-19 "80" constant.numeric.integer.canon

@@ -52,6 +52,8 @@
 28:0-5 "check" keyword.other.canon
 28:12-13 "." punctuation.accessor.canon
 28:13-16 "len" variable.other.property.canon
+28:16-17 "(" punctuation.section.parens.begin.canon
+28:17-18 ")" punctuation.section.parens.end.canon
 28:19-21 "==" keyword.operator.canon
 28:22-23 "5" constant.numeric.integer.canon
 28:24-28 "else" keyword.control.canon

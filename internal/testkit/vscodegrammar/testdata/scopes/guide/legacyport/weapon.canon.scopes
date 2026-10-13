@@ -81,6 +81,8 @@
 18:16-21 "where" keyword.control.canon
 18:24-25 "." punctuation.accessor.canon
 18:25-33 "isUnique" variable.other.property.canon
+18:33-34 "(" punctuation.section.parens.begin.canon
+18:34-35 ")" punctuation.section.parens.end.canon
 18:36-37 "=" keyword.operator.canon
 18:41-42 "@" meta.annotation.canon punctuation.definition.annotation.canon
 18:42-46 "json" meta.annotation.canon entity.name.function.decorator.canon
@@ -102,13 +104,13 @@
 20:42-44 " [" meta.annotation.canon
 20:44-56 "\"dwDestParam" meta.annotation.canon string.quoted.double.canon
 20:56-57 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-20:57-58 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+20:57-58 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 20:58-59 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 20:59-60 "\"" meta.annotation.canon string.quoted.double.canon
 20:60-62 ", " meta.annotation.canon
 20:62-75 "\"nAdjParamVal" meta.annotation.canon string.quoted.double.canon
 20:75-76 "{" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-20:76-77 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon
+20:76-77 "i" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 20:77-78 "}" meta.annotation.canon string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 20:78-79 "\"" meta.annotation.canon string.quoted.double.canon
 20:79-81 "])" meta.annotation.canon

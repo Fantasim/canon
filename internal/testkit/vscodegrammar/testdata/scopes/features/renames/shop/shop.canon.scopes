@@ -44,12 +44,15 @@
 21:49-50 "1" constant.numeric.integer.canon
 21:52-57 "worth" variable.other.property.canon
 21:57-58 ":" punctuation.separator.key.canon
+21:59-64 "xpFor" entity.name.function.call.canon
+21:64-65 "(" punctuation.section.parens.begin.canon
 21:65-70 "level" variable.other.property.canon
 21:70-71 ":" punctuation.separator.key.canon
 21:72-73 "1" constant.numeric.integer.canon
 21:75-80 "extra" variable.other.property.canon
 21:80-81 ":" punctuation.separator.key.canon
 21:82-83 "5" constant.numeric.integer.canon
+21:83-84 ")" punctuation.section.parens.end.canon
 24:0-58 "/// The label of the starter quest, as the shop prints it." comment.line.documentation.canon
 25:0-3 "let" storage.type.canon
 25:4-16 "starterLabel" variable.other.property.canon
@@ -60,6 +63,8 @@
 25:36-41 "intro" variable.other.property.canon
 25:41-42 "." punctuation.accessor.canon
 25:42-47 "label" variable.other.property.canon
+25:47-48 "(" punctuation.section.parens.begin.canon
+25:48-49 ")" punctuation.section.parens.end.canon
 27:0-34 "/// The highest level of the shop." comment.line.documentation.canon
 28:0-3 "let" storage.type.canon
 28:4-11 "ceiling" variable.other.property.canon

@@ -155,7 +155,7 @@
 47:6-11 "title" variable.other.property.canon
 47:12-20 "\"Palier " string.quoted.double.canon
 47:20-21 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-47:21-26 "level" string.quoted.double.canon meta.interpolation.canon
+47:21-26 "level" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 47:26-27 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 47:27-28 "\"" string.quoted.double.canon
 48:0-5 "Level" entity.name.type.canon
@@ -246,24 +246,27 @@
 69:16-34 "unreachable_levels" variable.other.property.canon
 69:35-50 "\"maxLevel vaut " string.quoted.double.canon
 69:50-51 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-69:51-59 "maxLevel" string.quoted.double.canon meta.interpolation.canon
+69:51-59 "maxLevel" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 69:59-60 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 69:60-72 " mais seuls " string.quoted.double.canon
 69:72-73 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-69:73-79 "levels" string.quoted.double.canon meta.interpolation.canon
-69:79-80 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-69:80-83 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-69:83-85 "()" string.quoted.double.canon meta.interpolation.canon
+69:73-79 "levels" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+69:79-80 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+69:80-83 "len" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+69:83-84 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+69:84-85 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 69:85-86 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 69:86-116 " paliers existent : le niveau " string.quoted.double.canon
 69:116-117 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-69:117-123 "levels" string.quoted.double.canon meta.interpolation.canon
-69:123-124 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-69:124-127 "len" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-69:127-130 "() " string.quoted.double.canon meta.interpolation.canon
-69:130-131 "+" string.quoted.double.canon meta.interpolation.canon keyword.operator.canon
-69:131-132 " " string.quoted.double.canon meta.interpolation.canon
-69:132-133 "1" string.quoted.double.canon meta.interpolation.canon constant.numeric.integer.canon
+69:117-123 "levels" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+69:123-124 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+69:124-127 "len" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+69:127-128 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+69:128-129 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
+69:129-130 " " string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+69:130-131 "+" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon keyword.operator.canon
+69:131-132 " " string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+69:132-133 "1" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon constant.numeric.integer.canon
 69:133-134 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 69:134-194 " et au-delà sont inatteignables (GetLevel renvoie nullptr)\"" string.quoted.double.canon
 70:0-9 "ModelType" entity.name.type.canon

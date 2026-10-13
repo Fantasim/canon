@@ -191,34 +191,43 @@
 76:2-7 "check" keyword.other.canon
 76:23-24 "." punctuation.accessor.canon
 76:24-27 "sum" variable.other.property.canon
+76:27-28 "(" punctuation.section.parens.begin.canon
+76:28-29 ")" punctuation.section.parens.end.canon
 76:30-32 "==" keyword.operator.canon
 76:33-36 "100" constant.numeric.integer.canon
 77:4-8 "else" keyword.control.canon
 77:9-38 "\"task_slot_weights add up to " string.quoted.double.canon
 77:38-39 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-77:39-54 "taskSlotWeights" string.quoted.double.canon meta.interpolation.canon
-77:54-55 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-77:55-58 "sum" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-77:58-60 "()" string.quoted.double.canon meta.interpolation.canon
+77:39-54 "taskSlotWeights" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+77:54-55 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+77:55-58 "sum" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+77:58-59 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+77:59-60 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 77:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 77:61-71 ", not 100\"" string.quoted.double.canon
 78:2-7 "check" keyword.other.canon
 78:19-20 "." punctuation.accessor.canon
 78:20-26 "values" variable.other.property.canon
+78:26-27 "(" punctuation.section.parens.begin.canon
+78:27-28 ")" punctuation.section.parens.end.canon
 78:28-29 "." punctuation.accessor.canon
 78:29-32 "sum" variable.other.property.canon
+78:32-33 "(" punctuation.section.parens.begin.canon
+78:33-34 ")" punctuation.section.parens.end.canon
 78:35-37 "==" keyword.operator.canon
 78:38-41 "100" constant.numeric.integer.canon
 79:4-8 "else" keyword.control.canon
 79:9-33 "\"task_weights add up to " string.quoted.double.canon
 79:33-34 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-79:34-45 "taskWeights" string.quoted.double.canon meta.interpolation.canon
-79:45-46 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-79:46-52 "values" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-79:52-54 "()" string.quoted.double.canon meta.interpolation.canon
-79:54-55 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-79:55-58 "sum" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
-79:58-60 "()" string.quoted.double.canon meta.interpolation.canon
+79:34-45 "taskWeights" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+79:45-46 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+79:46-52 "values" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+79:52-53 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+79:53-54 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
+79:54-55 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+79:55-58 "sum" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+79:58-59 "(" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.begin.canon
+79:59-60 ")" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.section.parens.end.canon
 79:60-61 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 79:61-71 ", not 100\"" string.quoted.double.canon
 82:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
@@ -331,11 +340,11 @@
 125:19-23 "else" keyword.control.canon
 125:24-30 "\"min (" string.quoted.double.canon
 125:30-31 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-125:31-34 "min" string.quoted.double.canon meta.interpolation.canon
+125:31-34 "min" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 125:34-35 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 125:35-51 ") is above max (" string.quoted.double.canon
 125:51-52 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-125:52-55 "max" string.quoted.double.canon meta.interpolation.canon
+125:52-55 "max" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 125:55-56 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 125:56-58 ")\"" string.quoted.double.canon
 128:0-43 "/// Who may be given a task about an event." comment.line.documentation.canon
@@ -484,32 +493,42 @@
 184:9-12 "not" keyword.operator.word.canon
 184:23-24 "." punctuation.accessor.canon
 184:24-32 "isUnique" variable.other.property.canon
+184:32-33 "(" punctuation.section.parens.begin.canon
+184:33-34 ")" punctuation.section.parens.end.canon
+185:8-12 "fail" entity.name.function.call.canon
+185:12-13 "(" punctuation.section.parens.begin.canon
 185:19-38 "\"two amplifiers of " string.quoted.double.canon
 185:38-39 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-185:39-40 "e" string.quoted.double.canon meta.interpolation.canon
-185:40-41 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-185:41-43 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+185:39-40 "e" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+185:40-41 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+185:41-43 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 185:43-44 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 185:44-95 " share a priority: the loader discards all of them\"" string.quoted.double.canon
+185:95-96 ")" punctuation.section.parens.end.canon
 188:4-7 "for" keyword.control.canon
 188:10-12 "in" keyword.operator.word.canon
 189:6-8 "if" keyword.control.canon
 189:9-12 "not" keyword.operator.word.canon
 189:19-20 "." punctuation.accessor.canon
 189:20-26 "values" variable.other.property.canon
+189:26-27 "(" punctuation.section.parens.begin.canon
+189:27-28 ")" punctuation.section.parens.end.canon
 189:28-29 "." punctuation.accessor.canon
 189:29-32 "any" variable.other.property.canon
+189:32-33 "(" punctuation.section.parens.begin.canon
 189:35-37 "=>" keyword.operator.canon
 189:39-40 "." punctuation.accessor.canon
 189:40-51 "taskWeights" variable.other.property.canon
 189:51-52 "." punctuation.accessor.canon
 189:52-60 "contains" variable.other.property.canon
+189:60-61 "(" punctuation.section.parens.begin.canon
+189:62-64 "))" punctuation.section.parens.end.canon
 190:8-12 "warn" keyword.other.canon
 190:16-17 "\"" string.quoted.double.canon
 190:17-18 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-190:18-19 "e" string.quoted.double.canon meta.interpolation.canon
-190:19-20 "." string.quoted.double.canon meta.interpolation.canon punctuation.accessor.canon
-190:20-22 "id" string.quoted.double.canon meta.interpolation.canon variable.other.property.canon
+190:18-19 "e" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+190:19-20 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+190:20-22 "id" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
 190:22-23 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 190:23-88 " is in no style's task_weights, so listing it here has no effect\"" string.quoted.double.canon
 196:0-60 "/// Server/Quest/adventure_quest_config.json, read in place." comment.line.documentation.canon
@@ -537,7 +556,7 @@
 216:5-10 "Style" entity.name.type.canon
 217:8-9 "\"" string.quoted.double.canon
 217:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-217:10-13 "key" string.quoted.double.canon meta.interpolation.canon
+217:10-13 "key" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 217:13-14 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 217:14-15 "\"" string.quoted.double.canon
 218:15-23 "\"Timing\"" string.quoted.double.canon

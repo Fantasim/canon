@@ -18,37 +18,45 @@
 16:17-21 "load" keyword.other.canon
 16:21-22 "." punctuation.accessor.canon
 16:22-29 "defines" variable.other.property.canon
+16:29-30 "(" punctuation.section.parens.begin.canon
 16:30-67 "\"@resource/Server/Define/defineJob.h\"" string.quoted.double.canon
+16:67-68 ")" punctuation.section.parens.end.canon
 17:0-5 "local" storage.modifier.canon
 17:6-9 "let" storage.type.canon
 17:17-18 "=" keyword.operator.canon
 17:19-23 "load" keyword.other.canon
 17:23-24 "." punctuation.accessor.canon
 17:24-31 "defines" variable.other.property.canon
+17:31-32 "(" punctuation.section.parens.begin.canon
 17:32-71 "\"@resource/Server/Define/defineSkill.h\"" string.quoted.double.canon
 17:73-79 "prefix" variable.other.property.canon
 17:79-80 ":" punctuation.separator.key.canon
 17:81-86 "\"SI_\"" string.quoted.double.canon
+17:86-87 ")" punctuation.section.parens.end.canon
 18:0-5 "local" storage.modifier.canon
 18:6-9 "let" storage.type.canon
 18:16-17 "=" keyword.operator.canon
 18:18-22 "load" keyword.other.canon
 18:22-23 "." punctuation.accessor.canon
 18:23-30 "defines" variable.other.property.canon
+18:30-31 "(" punctuation.section.parens.begin.canon
 18:31-69 "\"@resource/Server/Define/defineitem.h\"" string.quoted.double.canon
 18:71-77 "prefix" variable.other.property.canon
 18:77-78 ":" punctuation.separator.key.canon
 18:79-84 "\"II_\"" string.quoted.double.canon
+18:84-85 ")" punctuation.section.parens.end.canon
 19:0-5 "local" storage.modifier.canon
 19:6-9 "let" storage.type.canon
 19:15-16 "=" keyword.operator.canon
 19:17-21 "load" keyword.other.canon
 19:21-22 "." punctuation.accessor.canon
 19:22-29 "defines" variable.other.property.canon
+19:29-30 "(" punctuation.section.parens.begin.canon
 19:30-67 "\"@resource/Server/Define/defineObj.h\"" string.quoted.double.canon
 19:69-75 "prefix" variable.other.property.canon
 19:75-76 ":" punctuation.separator.key.canon
 19:77-82 "\"MI_\"" string.quoted.double.canon
+19:82-83 ")" punctuation.section.parens.end.canon
 21:0-47 "/// A row of skills.json, as the plan reads it." comment.line.documentation.canon
 22:0-5 "local" storage.modifier.canon
 22:6-12 "record" storage.type.canon
@@ -221,11 +229,13 @@
 52:28-29 "=" keyword.operator.canon
 52:38-39 "." punctuation.accessor.canon
 52:39-45 "filter" variable.other.property.canon
+52:45-46 "(" punctuation.section.parens.begin.canon
 52:48-50 "=>" keyword.operator.canon
 52:52-53 "." punctuation.accessor.canon
 52:53-58 "kind1" variable.other.property.canon
 52:59-61 "==" keyword.operator.canon
 52:62-74 "\"IK1_WEAPON\"" string.quoted.double.canon
+52:74-75 ")" punctuation.section.parens.end.canon
 53:0-5 "local" storage.modifier.canon
 53:6-9 "let" storage.type.canon
 53:10-17 "etcJobs" variable.other.property.canon
@@ -454,10 +464,12 @@
 143:35-41 "return" keyword.control.canon
 143:49-50 "." punctuation.accessor.canon
 143:50-55 "first" variable.other.property.canon
+143:55-56 "(" punctuation.section.parens.begin.canon
 143:58-60 "=>" keyword.operator.canon
 143:62-63 "." punctuation.accessor.canon
 143:63-65 "id" variable.other.property.canon
 143:66-68 "==" keyword.operator.canon
+143:72-73 ")" punctuation.section.parens.end.canon
 143:73-74 "!" keyword.operator.canon
 145:0-83 "/// The job and every job it was promoted from, ending with vagrant. etc.json gives" comment.line.documentation.canon
 146:0-60 "/// JOB_VAGRANT itself as its own base, which ends the walk." comment.line.documentation.canon
@@ -472,10 +484,12 @@
 148:11-12 "=" keyword.operator.canon
 148:20-21 "." punctuation.accessor.canon
 148:21-26 "first" variable.other.property.canon
+148:26-27 "(" punctuation.section.parens.begin.canon
 148:29-31 "=>" keyword.operator.canon
 148:33-34 "." punctuation.accessor.canon
 148:34-36 "id" variable.other.property.canon
 148:37-39 "==" keyword.operator.canon
+148:43-44 ")" punctuation.section.parens.end.canon
 148:44-46 "?." punctuation.accessor.canon
 148:46-53 "jobBase" variable.other.property.canon
 149:2-4 "if" keyword.control.canon
@@ -485,10 +499,15 @@
 149:27-29 "!=" keyword.operator.canon
 149:36-42 "return" keyword.control.canon
 149:49-50 "+" keyword.operator.canon
+149:51-58 "lineage" entity.name.function.call.canon
+149:58-59 "(" punctuation.section.parens.begin.canon
+149:63-64 ")" punctuation.section.parens.end.canon
 150:2-8 "return" keyword.control.canon
 150:15-28 "\"JOB_VAGRANT\"" string.quoted.double.canon
 150:29-30 "." punctuation.accessor.canon
 150:30-36 "unique" variable.other.property.canon
+150:36-37 "(" punctuation.section.parens.begin.canon
+150:37-38 ")" punctuation.section.parens.end.canon
 153:0-92 "/// Best equippable weapon of `kind` at `level`: highest level requirement the level allows." comment.line.documentation.canon
 154:0-2 "fn" storage.type.function.canon
 154:3-13 "pickWeapon" entity.name.function.canon
@@ -507,6 +526,7 @@
 155:2-8 "return" keyword.control.canon
 156:4-5 "." punctuation.accessor.canon
 156:5-11 "filter" variable.other.property.canon
+156:11-12 "(" punctuation.section.parens.begin.canon
 157:8-10 "=>" keyword.operator.canon
 157:12-13 "." punctuation.accessor.canon
 157:13-18 "kind3" variable.other.property.canon
@@ -529,18 +549,23 @@
 160:23-32 "\"SEX_ANY\"" string.quoted.double.canon
 160:34-36 "\"\"" string.quoted.double.canon
 160:38-41 "and" keyword.operator.word.canon
+161:8-9 "(" punctuation.section.parens.begin.canon
 161:10-11 "." punctuation.accessor.canon
 161:11-16 "limit" variable.other.property.canon
 161:17-19 "??" keyword.operator.canon
 161:20-21 "1" constant.numeric.integer.canon
+161:21-22 ")" punctuation.section.parens.end.canon
 161:23-25 "<=" keyword.operator.canon
+162:4-5 ")" punctuation.section.parens.end.canon
 163:4-5 "." punctuation.accessor.canon
 163:5-10 "maxBy" variable.other.property.canon
+163:10-11 "(" punctuation.section.parens.begin.canon
 163:13-15 "=>" keyword.operator.canon
 163:17-18 "." punctuation.accessor.canon
 163:18-23 "limit" variable.other.property.canon
 163:24-26 "??" keyword.operator.canon
 163:27-28 "1" constant.numeric.integer.canon
+163:28-29 ")" punctuation.section.parens.end.canon
 166:0-85 "/// Whether a skill's dwLinkKind accepts a weapon of `kind`: no link kind accepts any" comment.line.documentation.canon
 167:0-68 "/// weapon, a family accepts its members, anything else only itself." comment.line.documentation.canon
 168:0-2 "fn" storage.type.function.canon
@@ -562,6 +587,8 @@
 169:36-49 "LINK_FAMILIES" constant.other.canon
 169:49-50 "." punctuation.accessor.canon
 169:50-53 "get" variable.other.property.canon
+169:53-54 "(" punctuation.section.parens.begin.canon
+169:58-59 ")" punctuation.section.parens.end.canon
 169:60-62 "??" keyword.operator.canon
 170:2-8 "return" keyword.control.canon
 170:9-13 "true" constant.language.canon
@@ -591,11 +618,13 @@
 179:10-12 "in" keyword.operator.word.canon
 179:19-20 "." punctuation.accessor.canon
 179:20-26 "sortBy" variable.other.property.canon
+179:26-27 "(" punctuation.section.parens.begin.canon
 179:29-31 "=>" keyword.operator.canon
 179:33-34 "." punctuation.accessor.canon
 179:34-45 "unlockLevel" variable.other.property.canon
 179:46-48 "??" keyword.operator.canon
 179:49-50 "0" constant.numeric.integer.canon
+179:50-51 ")" punctuation.section.parens.end.canon
 180:4-6 "if" keyword.control.canon
 180:8-9 "." punctuation.accessor.canon
 180:9-13 "tier" variable.other.property.canon
@@ -617,8 +646,11 @@
 183:15-17 "in" keyword.operator.word.canon
 183:18-32 "ATTACK_TARGETS" constant.other.canon
 183:33-36 "and" keyword.operator.word.canon
+184:6-17 "linkAccepts" entity.name.function.call.canon
+184:17-18 "(" punctuation.section.parens.begin.canon
 184:19-20 "." punctuation.accessor.canon
 184:20-26 "weapon" variable.other.property.canon
+184:32-33 ")" punctuation.section.parens.end.canon
 184:34-37 "and" keyword.operator.word.canon
 185:8-9 "." punctuation.accessor.canon
 185:9-15 "handed" variable.other.property.canon
@@ -647,6 +679,8 @@
 187:64-66 "in" keyword.operator.word.canon
 187:72-73 "." punctuation.accessor.canon
 187:73-82 "enumerate" variable.other.property.canon
+187:82-83 "(" punctuation.section.parens.begin.canon
+187:83-84 ")" punctuation.section.parens.end.canon
 190:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
 191:0-11 "// The plan" comment.line.double-slash.canon
 192:0-78 "// ---------------------------------------------------------------------------" comment.line.double-slash.canon
@@ -710,15 +744,15 @@
 226:4-8 "else" keyword.control.canon
 226:9-13 "\"no " string.quoted.double.canon
 226:13-14 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-226:14-24 "weaponKind" string.quoted.double.canon meta.interpolation.canon
+226:14-24 "weaponKind" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 226:24-25 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 226:25-53 " weapon equippable at level " string.quoted.double.canon
 226:53-54 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-226:54-59 "level" string.quoted.double.canon meta.interpolation.canon
+226:54-59 "level" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 226:59-60 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 226:60-65 " for " string.quoted.double.canon
 226:65-66 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-226:66-69 "job" string.quoted.double.canon meta.interpolation.canon
+226:66-69 "job" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 226:69-70 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 226:70-99 ": the block runs bare-handed\"" string.quoted.double.canon
 229:0-49 "/// The whole plan, as parity_sweep.lua reads it." comment.line.documentation.canon
@@ -762,13 +796,19 @@
 243:31-37 "levels" variable.other.property.canon
 243:37-38 "." punctuation.accessor.canon
 243:38-45 "isEmpty" variable.other.property.canon
+243:45-46 "(" punctuation.section.parens.begin.canon
+243:46-47 ")" punctuation.section.parens.end.canon
 244:11-12 "+" keyword.operator.canon
 244:14-15 "1" constant.numeric.integer.canon
 244:17-18 "." punctuation.accessor.canon
 244:18-24 "unique" variable.other.property.canon
+244:24-25 "(" punctuation.section.parens.begin.canon
+244:25-26 ")" punctuation.section.parens.end.canon
 244:26-27 "." punctuation.accessor.canon
 244:27-33 "sortBy" variable.other.property.canon
+244:33-34 "(" punctuation.section.parens.begin.canon
 244:36-38 "=>" keyword.operator.canon
+244:40-41 ")" punctuation.section.parens.end.canon
 245:2-6 "else" keyword.control.canon
 246:10-11 "." punctuation.accessor.canon
 246:11-17 "levels" variable.other.property.canon
@@ -808,6 +848,9 @@
 257:9-10 ":" punctuation.separator.key.canon
 258:6-14 "jobToken" variable.other.property.canon
 258:14-15 ":" punctuation.separator.key.canon
+258:25-31 "etcJob" entity.name.function.call.canon
+258:31-32 "(" punctuation.section.parens.begin.canon
+258:35-36 ")" punctuation.section.parens.end.canon
 258:36-37 "." punctuation.accessor.canon
 258:37-41 "name" variable.other.property.canon
 259:6-11 "level" variable.other.property.canon
@@ -840,15 +883,26 @@
 264:25-33 "profiles" variable.other.property.canon
 265:6-12 "skills" variable.other.property.canon
 265:12-13 ":" punctuation.separator.key.canon
+265:14-20 "roster" entity.name.function.call.canon
+265:20-21 "(" punctuation.section.parens.begin.canon
+265:21-28 "lineage" entity.name.function.call.canon
+265:28-29 "(" punctuation.section.parens.begin.canon
+265:32-33 ")" punctuation.section.parens.end.canon
+265:49-50 ")" punctuation.section.parens.end.canon
 267:4-7 "for" keyword.control.canon
 267:14-16 "in" keyword.operator.word.canon
 268:4-7 "for" keyword.control.canon
 268:12-14 "in" keyword.operator.word.canon
+268:15-21 "jobsAt" entity.name.function.call.canon
+268:21-22 "(" punctuation.section.parens.begin.canon
+268:27-28 ")" punctuation.section.parens.end.canon
 269:4-6 "if" keyword.control.canon
 269:15-16 "." punctuation.accessor.canon
 269:16-24 "onlyJobs" variable.other.property.canon
 269:24-25 "." punctuation.accessor.canon
 269:25-32 "isEmpty" variable.other.property.canon
+269:32-33 "(" punctuation.section.parens.begin.canon
+269:33-34 ")" punctuation.section.parens.end.canon
 269:35-37 "or" keyword.operator.word.canon
 269:42-44 "in" keyword.operator.word.canon
 269:53-54 "." punctuation.accessor.canon
@@ -857,24 +911,38 @@
 270:13-14 "=" keyword.operator.canon
 270:22-23 "." punctuation.accessor.canon
 270:23-26 "get" variable.other.property.canon
+270:26-27 "(" punctuation.section.parens.begin.canon
+270:30-31 ")" punctuation.section.parens.end.canon
 270:32-34 "??" keyword.operator.canon
 270:35-48 "FALLBACK_KIND" constant.other.canon
 270:48-49 "." punctuation.accessor.canon
 270:49-52 "get" variable.other.property.canon
+270:52-53 "(" punctuation.section.parens.begin.canon
+270:56-57 ")" punctuation.section.parens.end.canon
 270:58-60 "??" keyword.operator.canon
 270:61-70 "\"IK3_SWD\"" string.quoted.double.canon
 271:4-7 "let" storage.type.canon
 271:10-11 "=" keyword.operator.canon
+271:12-22 "pickWeapon" entity.name.function.call.canon
+271:22-23 "(" punctuation.section.parens.begin.canon
+271:36-43 "lineage" entity.name.function.call.canon
+271:43-44 "(" punctuation.section.parens.begin.canon
+271:47-49 "))" punctuation.section.parens.end.canon
 275:0-5 "check" keyword.other.canon
 276:2-5 "for" keyword.control.canon
 276:12-14 "in" keyword.operator.word.canon
 277:4-6 "if" keyword.control.canon
+277:7-13 "jobsAt" entity.name.function.call.canon
+277:13-14 "(" punctuation.section.parens.begin.canon
+277:19-20 ")" punctuation.section.parens.end.canon
 277:20-21 "." punctuation.accessor.canon
 277:21-28 "isEmpty" variable.other.property.canon
+277:28-29 "(" punctuation.section.parens.begin.canon
+277:29-30 ")" punctuation.section.parens.end.canon
 278:6-10 "warn" keyword.other.canon
 278:18-25 "\"level " string.quoted.double.canon
 278:25-26 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-278:26-31 "level" string.quoted.double.canon meta.interpolation.canon
+278:26-31 "level" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 278:31-32 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 278:32-96 " is above MAX_GENERAL_LEVEL: unreachable via /setlevel, dropped\"" string.quoted.double.canon
 283:0-4 "emit" keyword.other.canon

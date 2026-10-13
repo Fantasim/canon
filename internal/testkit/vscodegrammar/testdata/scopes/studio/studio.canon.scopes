@@ -86,35 +86,50 @@
 63:0-87 "/// A week-long timeline; windows are bars, dragged to move or resize. Wrapping windows" comment.line.documentation.canon
 64:0-59 "/// are drawn across midnight and across the week boundary." comment.line.documentation.canon
 65:0-6 "widget" keyword.other.canon
+65:7-22 "weekly_timeline" entity.name.function.call.canon
+65:22-23 "(" punctuation.section.parens.begin.canon
 65:23-28 "value" variable.other.property.canon
 65:28-29 ":" punctuation.separator.key.canon
 65:31-37 "Window" entity.name.type.canon
+65:38-39 ")" punctuation.section.parens.end.canon
 67:0-82 "/// An ordered list where position has meaning (level 1, 2, 3...): numbered steps," comment.line.documentation.canon
 68:0-85 "/// drag to reorder, with the position shown as the step's name (`step:` renames it)." comment.line.documentation.canon
 69:0-6 "widget" keyword.other.canon
+69:7-20 "ordered_steps" entity.name.function.call.canon
+69:20-21 "(" punctuation.section.parens.begin.canon
 69:21-26 "value" variable.other.property.canon
 69:26-27 ":" punctuation.separator.key.canon
+69:31-32 ")" punctuation.section.parens.end.canon
 71:0-85 "/// A weight shown with its share of the list it belongs to (\"225 000 = 22.5 %\"). The" comment.line.documentation.canon
 72:0-86 "/// studio passes the same field of every element of the enclosing list as `siblings`." comment.line.documentation.canon
 73:0-6 "widget" keyword.other.canon
+73:7-19 "weight_share" entity.name.function.call.canon
+73:19-20 "(" punctuation.section.parens.begin.canon
 73:20-25 "value" variable.other.property.canon
 73:25-26 ":" punctuation.separator.key.canon
 73:27-30 "Int" entity.name.type.canon
 73:32-40 "siblings" variable.other.property.canon
 73:40-41 ":" punctuation.separator.key.canon
 73:43-46 "Int" entity.name.type.canon
+73:47-48 ")" punctuation.section.parens.end.canon
 75:0-82 "/// Grid editor for [magnitude, cumulative probability] pairs, showing the implied" comment.line.documentation.canon
 76:0-60 "/// per-step probability and the remainder to 1 000 000 000." comment.line.documentation.canon
 77:0-6 "widget" keyword.other.canon
+77:7-25 "probability_ladder" entity.name.function.call.canon
+77:25-26 "(" punctuation.section.parens.begin.canon
 77:26-31 "value" variable.other.property.canon
 77:31-32 ":" punctuation.separator.key.canon
 77:35-38 "Int" entity.name.type.canon
+77:40-41 ")" punctuation.section.parens.end.canon
 79:0-88 "/// One \"HH:MM\" input for a time of day, instead of two bare numbers. The default editor" comment.line.documentation.canon
 80:0-88 "/// of every TimeOfDay field, in every package; a view can still choose another control." comment.line.documentation.canon
 81:0-6 "widget" keyword.other.canon
+81:7-18 "time_of_day" entity.name.function.call.canon
+81:18-19 "(" punctuation.section.parens.begin.canon
 81:19-24 "value" variable.other.property.canon
 81:24-25 ":" punctuation.separator.key.canon
 81:26-35 "TimeOfDay" entity.name.type.canon
+81:35-36 ")" punctuation.section.parens.end.canon
 83:0-84 "// Every package's view model refers to this vocabulary (menus, icons, tones, units," comment.line.double-slash.canon
 84:0-48 "// widgets); the studio reads it once from here." comment.line.double-slash.canon
 85:0-4 "emit" keyword.other.canon

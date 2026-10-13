@@ -310,6 +310,8 @@
 146:12-13 ":" punctuation.separator.key.canon
 146:15-16 "." punctuation.accessor.canon
 146:16-24 "nullable" variable.other.property.canon
+146:24-25 "(" punctuation.section.parens.begin.canon
+146:25-26 ")" punctuation.section.parens.end.canon
 147:4-9 "since" variable.other.property.canon
 147:9-10 ":" punctuation.separator.key.canon
 147:12-13 "." punctuation.accessor.canon
@@ -328,8 +330,11 @@
 149:19-25 "values" variable.other.property.canon
 149:26-28 "!=" keyword.operator.canon
 149:29-33 "none" constant.language.canon
+149:36-42 "enumOf" entity.name.function.call.canon
+149:42-43 "(" punctuation.section.parens.begin.canon
 149:44-45 "." punctuation.accessor.canon
 149:45-51 "values" variable.other.property.canon
+149:51-52 ")" punctuation.section.parens.end.canon
 149:52-53 "." punctuation.accessor.canon
 149:53-57 "name" variable.other.property.canon
 149:60-64 "else" keyword.control.canon
@@ -356,8 +361,11 @@
 157:15-27 "CatalogKinds" entity.name.type.canon
 158:6-12 "column" variable.other.property.canon
 158:12-13 ":" punctuation.separator.key.canon
+158:14-22 "columnOf" entity.name.function.call.canon
+158:22-23 "(" punctuation.section.parens.begin.canon
 158:28-29 "." punctuation.accessor.canon
 158:29-31 "of" variable.other.property.canon
+158:31-32 ")" punctuation.section.parens.end.canon
 158:32-33 "." punctuation.accessor.canon
 158:33-37 "name" variable.other.property.canon
 159:6-12 "values" variable.other.property.canon
@@ -381,6 +389,9 @@
 166:2-8 "return" keyword.control.canon
 167:4-9 "kinds" variable.other.property.canon
 167:9-10 ":" punctuation.separator.key.canon
+167:11-19 "kindsDoc" entity.name.function.call.canon
+167:19-20 "(" punctuation.section.parens.begin.canon
+167:25-26 ")" punctuation.section.parens.end.canon
 168:4-12 "currency" variable.other.property.canon
 168:12-13 ":" punctuation.separator.key.canon
 168:15-16 "." punctuation.accessor.canon
@@ -424,6 +435,9 @@
 176:20-22 "?." punctuation.accessor.canon
 176:22-26 "name" variable.other.property.canon
 176:27-29 "??" keyword.operator.canon
+176:30-42 "playerColumn" entity.name.function.call.canon
+176:42-43 "(" punctuation.section.parens.begin.canon
+176:43-44 ")" punctuation.section.parens.end.canon
 177:4-16 "counterparty" variable.other.property.canon
 177:16-17 ":" punctuation.separator.key.canon
 177:19-20 "." punctuation.accessor.canon
@@ -456,6 +470,9 @@
 186:29-41 "CatalogEvent" entity.name.type.canon
 187:2-5 "let" storage.type.canon
 187:9-10 "=" keyword.operator.canon
+187:11-18 "eventOf" entity.name.function.call.canon
+187:18-19 "(" punctuation.section.parens.begin.canon
+187:20-21 ")" punctuation.section.parens.end.canon
 188:2-4 "if" keyword.control.canon
 188:8-10 "==" keyword.operator.canon
 188:11-15 "none" constant.language.canon
@@ -469,6 +486,9 @@
 188:54-58 "code" variable.other.property.canon
 188:60-69 "tableName" variable.other.property.canon
 188:69-70 ":" punctuation.separator.key.canon
+188:71-78 "tableOf" entity.name.function.call.canon
+188:78-79 "(" punctuation.section.parens.begin.canon
+188:80-81 ")" punctuation.section.parens.end.canon
 189:2-8 "return" keyword.control.canon
 189:9-21 "CatalogEvent" entity.name.type.canon
 189:21-22 "." punctuation.accessor.canon
@@ -479,6 +499,9 @@
 190:10-14 "code" variable.other.property.canon
 191:4-13 "tableName" variable.other.property.canon
 191:13-14 ":" punctuation.separator.key.canon
+191:15-22 "tableOf" entity.name.function.call.canon
+191:22-23 "(" punctuation.section.parens.begin.canon
+191:24-25 ")" punctuation.section.parens.end.canon
 192:4-11 "version" variable.other.property.canon
 192:11-12 ":" punctuation.separator.key.canon
 192:15-16 "." punctuation.accessor.canon
@@ -501,23 +524,37 @@
 196:16-23 "enqueue" variable.other.property.canon
 197:4-17 "hasInstanceId" variable.other.property.canon
 197:17-18 ":" punctuation.separator.key.canon
+197:19-32 "hasInstanceId" entity.name.function.call.canon
+197:32-33 "(" punctuation.section.parens.begin.canon
+197:34-35 ")" punctuation.section.parens.end.canon
 198:4-12 "wireSize" variable.other.property.canon
 198:12-13 ":" punctuation.separator.key.canon
+198:14-22 "wireSize" entity.name.function.call.canon
+198:22-23 "(" punctuation.section.parens.begin.canon
+198:24-25 ")" punctuation.section.parens.end.canon
 199:4-15 "description" variable.other.property.canon
 199:15-16 ":" punctuation.separator.key.canon
 199:19-20 "." punctuation.accessor.canon
 199:20-31 "description" variable.other.property.canon
 200:4-11 "columns" variable.other.property.canon
 200:11-12 ":" punctuation.separator.key.canon
+200:14-23 "columnDoc" entity.name.function.call.canon
+200:23-24 "(" punctuation.section.parens.begin.canon
+200:29-30 ")" punctuation.section.parens.end.canon
 200:31-34 "for" keyword.control.canon
 200:37-39 "in" keyword.operator.word.canon
 200:53-54 "." punctuation.accessor.canon
 200:54-60 "values" variable.other.property.canon
+200:60-61 "(" punctuation.section.parens.begin.canon
+200:61-62 ")" punctuation.section.parens.end.canon
 200:63-64 "+" keyword.operator.canon
 200:67-68 "." punctuation.accessor.canon
 200:68-75 "columns" variable.other.property.canon
 201:4-10 "ledger" variable.other.property.canon
 201:10-11 ":" punctuation.separator.key.canon
+201:13-20 "roleDoc" entity.name.function.call.canon
+201:20-21 "(" punctuation.section.parens.begin.canon
+201:26-27 ")" punctuation.section.parens.end.canon
 201:28-31 "for" keyword.control.canon
 201:34-36 "in" keyword.operator.word.canon
 201:39-40 "." punctuation.accessor.canon
@@ -532,6 +569,9 @@
 206:29-40 "CatalogEnum" entity.name.type.canon
 207:2-5 "let" storage.type.canon
 207:11-12 "=" keyword.operator.canon
+207:13-19 "enumOf" entity.name.function.call.canon
+207:19-20 "(" punctuation.section.parens.begin.canon
+207:21-22 ")" punctuation.section.parens.end.canon
 208:2-8 "return" keyword.control.canon
 208:11-15 "name" variable.other.property.canon
 208:15-16 ":" punctuation.separator.key.canon
@@ -541,7 +581,7 @@
 208:36-37 ":" punctuation.separator.key.canon
 208:38-44 "\"enum_" string.quoted.double.canon
 208:44-45 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-208:45-46 "v" string.quoted.double.canon meta.interpolation.canon
+208:45-46 "v" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 208:46-47 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 208:47-48 "\"" string.quoted.double.canon
 208:50-56 "values" variable.other.property.canon
@@ -580,6 +620,9 @@
 217:56-58 "in" keyword.operator.word.canon
 218:4-10 "events" variable.other.property.canon
 218:10-11 ":" punctuation.separator.key.canon
+218:13-21 "eventDoc" entity.name.function.call.canon
+218:21-22 "(" punctuation.section.parens.begin.canon
+218:23-24 ")" punctuation.section.parens.end.canon
 218:25-28 "for" keyword.control.canon
 218:31-33 "in" keyword.operator.word.canon
 218:34-43 "EventType" entity.name.type.canon
@@ -587,9 +630,17 @@
 218:44-51 "members" variable.other.property.canon
 218:51-52 "." punctuation.accessor.canon
 218:52-58 "sortBy" variable.other.property.canon
+218:58-59 "(" punctuation.section.parens.begin.canon
 218:59-60 "." punctuation.accessor.canon
 218:60-64 "code" variable.other.property.canon
+218:64-65 ")" punctuation.section.parens.end.canon
 219:4-9 "enums" variable.other.property.canon
 219:9-10 ":" punctuation.separator.key.canon
+219:12-19 "enumDoc" entity.name.function.call.canon
+219:19-20 "(" punctuation.section.parens.begin.canon
+219:21-22 ")" punctuation.section.parens.end.canon
 219:23-26 "for" keyword.control.canon
 219:29-31 "in" keyword.operator.word.canon
+219:32-48 "usedVocabularies" entity.name.function.call.canon
+219:48-49 "(" punctuation.section.parens.begin.canon
+219:49-50 ")" punctuation.section.parens.end.canon

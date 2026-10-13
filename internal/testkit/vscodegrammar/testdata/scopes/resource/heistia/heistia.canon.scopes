@@ -146,10 +146,14 @@
 62:2-6 "warn" keyword.other.canon
 62:12-13 "." punctuation.accessor.canon
 62:13-16 "map" variable.other.property.canon
+62:16-17 "(" punctuation.section.parens.begin.canon
 62:17-18 "." punctuation.accessor.canon
 62:18-29 "description" variable.other.property.canon
+62:29-30 ")" punctuation.section.parens.end.canon
 62:30-31 "." punctuation.accessor.canon
 62:31-39 "isUnique" variable.other.property.canon
+62:39-40 "(" punctuation.section.parens.begin.canon
+62:40-41 ")" punctuation.section.parens.end.canon
 62:42-46 "else" keyword.control.canon
 62:47-84 "\"two tasks have the same description\"" string.quoted.double.canon
 65:0-53 "/// Server/System/heistia_config.json, read in place." comment.line.documentation.canon
@@ -170,7 +174,7 @@
 75:5-9 "Task" entity.name.type.canon
 76:8-9 "\"" string.quoted.double.canon
 76:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-76:10-21 "description" string.quoted.double.canon meta.interpolation.canon
+76:10-21 "description" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 76:21-22 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 76:22-23 "\"" string.quoted.double.canon
 77:22-25 "240" constant.numeric.integer.canon
@@ -187,11 +191,11 @@
 87:5-11 "Reward" entity.name.type.canon
 88:8-9 "\"" string.quoted.double.canon
 88:9-10 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-88:10-18 "quantity" string.quoted.double.canon meta.interpolation.canon
+88:10-18 "quantity" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 88:18-19 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 88:19-23 " × " string.quoted.double.canon
 88:23-24 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-88:24-28 "item" string.quoted.double.canon meta.interpolation.canon
+88:24-28 "item" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 88:28-29 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 88:29-30 "\"" string.quoted.double.canon
 89:7-13 "\"Item\"" string.quoted.double.canon
@@ -211,7 +215,7 @@
 98:45-46 ":" punctuation.separator.key.canon
 98:47-55 "\"Winner " string.quoted.double.canon
 98:55-56 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-98:56-61 "index" string.quoted.double.canon meta.interpolation.canon
+98:56-61 "index" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 98:61-62 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 98:62-63 "\"" string.quoted.double.canon
 100:14-21 "\"Buffs\"" string.quoted.double.canon

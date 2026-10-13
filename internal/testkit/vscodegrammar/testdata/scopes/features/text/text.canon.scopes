@@ -16,7 +16,9 @@
 10:32-36 "load" keyword.other.canon
 10:36-37 "." punctuation.accessor.canon
 10:37-41 "text" variable.other.property.canon
+10:41-42 "(" punctuation.section.parens.begin.canon
 10:42-73 "\"@resource/Server/resource.txt\"" string.quoted.double.canon
+10:73-74 ")" punctuation.section.parens.end.canon
 12:0-78 "/// Every `file \"…\"` line of the packing list, in order, without the quotes." comment.line.documentation.canon
 13:0-3 "let" storage.type.canon
 13:4-15 "packedFiles" variable.other.property.canon
@@ -25,31 +27,43 @@
 13:26-27 "=" keyword.operator.canon
 14:6-7 "." punctuation.accessor.canon
 14:7-11 "trim" variable.other.property.canon
+14:11-12 "(" punctuation.section.parens.begin.canon
+14:12-13 ")" punctuation.section.parens.end.canon
 14:13-14 "." punctuation.accessor.canon
 14:14-21 "replace" variable.other.property.canon
+14:21-22 "(" punctuation.section.parens.begin.canon
 14:22-29 "\"file \"" string.quoted.double.canon
 14:31-33 "\"\"" string.quoted.double.canon
+14:33-34 ")" punctuation.section.parens.end.canon
 14:34-35 "." punctuation.accessor.canon
 14:35-42 "replace" variable.other.property.canon
+14:42-43 "(" punctuation.section.parens.begin.canon
 14:43-44 "\"" string.quoted.double.canon
 14:44-46 "\\\"" string.quoted.double.canon constant.character.escape.canon
 14:46-47 "\"" string.quoted.double.canon
 14:49-51 "\"\"" string.quoted.double.canon
+14:51-52 ")" punctuation.section.parens.end.canon
 15:2-5 "for" keyword.control.canon
 15:11-13 "in" keyword.operator.word.canon
 15:25-26 "." punctuation.accessor.canon
 15:26-31 "split" variable.other.property.canon
+15:31-32 "(" punctuation.section.parens.begin.canon
 15:32-33 "\"" string.quoted.double.canon
 15:33-35 "\\n" string.quoted.double.canon constant.character.escape.canon
 15:35-36 "\"" string.quoted.double.canon
+15:36-37 ")" punctuation.section.parens.end.canon
 16:2-4 "if" keyword.control.canon
 16:9-10 "." punctuation.accessor.canon
 16:10-14 "trim" variable.other.property.canon
+16:14-15 "(" punctuation.section.parens.begin.canon
+16:15-16 ")" punctuation.section.parens.end.canon
 16:16-17 "." punctuation.accessor.canon
 16:17-27 "startsWith" variable.other.property.canon
+16:27-28 "(" punctuation.section.parens.begin.canon
 16:28-34 "\"file " string.quoted.double.canon
 16:34-36 "\\\"" string.quoted.double.canon constant.character.escape.canon
 16:36-37 "\"" string.quoted.double.canon
+16:37-38 ")" punctuation.section.parens.end.canon
 19:0-74 "/// Files other examples of this project read, which the client needs too." comment.line.documentation.canon
 20:0-5 "const" storage.type.canon
 20:6-20 "MUST_BE_PACKED" constant.other.canon
@@ -61,14 +75,18 @@
 23:11-13 "in" keyword.operator.word.canon
 23:25-26 "." punctuation.accessor.canon
 23:26-35 "enumerate" variable.other.property.canon
+23:35-36 "(" punctuation.section.parens.begin.canon
+23:36-37 ")" punctuation.section.parens.end.canon
 24:4-6 "if" keyword.control.canon
 24:19-21 ".." keyword.operator.canon
 24:23-24 "." punctuation.accessor.canon
 24:24-32 "contains" variable.other.property.canon
+24:32-33 "(" punctuation.section.parens.begin.canon
+24:34-35 ")" punctuation.section.parens.end.canon
 24:38-42 "warn" keyword.other.canon
 24:46-47 "\"" string.quoted.double.canon
 24:47-48 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-24:48-49 "f" string.quoted.double.canon meta.interpolation.canon
+24:48-49 "f" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 24:49-50 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 24:50-67 " is packed twice\"" string.quoted.double.canon
 26:2-5 "for" keyword.control.canon
@@ -78,8 +96,13 @@
 27:7-10 "not" keyword.operator.word.canon
 27:22-23 "." punctuation.accessor.canon
 27:23-31 "contains" variable.other.property.canon
+27:31-32 "(" punctuation.section.parens.begin.canon
+27:33-34 ")" punctuation.section.parens.end.canon
+28:6-10 "fail" entity.name.function.call.canon
+28:10-11 "(" punctuation.section.parens.begin.canon
 28:24-25 "\"" string.quoted.double.canon
 28:25-26 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
-28:26-27 "f" string.quoted.double.canon meta.interpolation.canon
+28:26-27 "f" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
 28:27-28 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
 28:28-88 " is missing from resource.txt: the client never receives it\"" string.quoted.double.canon
+28:88-89 ")" punctuation.section.parens.end.canon

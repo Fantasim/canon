@@ -18,11 +18,13 @@
 8:52-58 "ledger" variable.other.property.canon
 8:58-59 "." punctuation.accessor.canon
 8:59-65 "filter" variable.other.property.canon
+8:65-66 "(" punctuation.section.parens.begin.canon
 8:68-70 "=>" keyword.operator.canon
 8:72-73 "." punctuation.accessor.canon
 8:73-78 "token" variable.other.property.canon
 8:79-81 "!=" keyword.operator.canon
 8:82-96 "\"farm_harvest\"" string.quoted.double.canon
+8:96-97 ")" punctuation.section.parens.end.canon
 9:2-8 "expect" keyword.other.canon
 9:22-76 "\"grant_kind FARM_HARVEST is covered by no ledger role\"" string.quoted.double.canon
 12:0-4 "test" keyword.other.canon
@@ -70,12 +72,14 @@
 28:46-52 "ledger" variable.other.property.canon
 28:52-53 "." punctuation.accessor.canon
 28:53-56 "map" variable.other.property.canon
+28:56-57 "(" punctuation.section.parens.begin.canon
 28:59-61 "=>" keyword.operator.canon
 28:62-66 "Role" entity.name.type.canon
 28:69-72 "..." keyword.operator.canon
 28:75-87 "untilVersion" variable.other.property.canon
 28:87-88 ":" punctuation.separator.key.canon
 28:89-93 "none" constant.language.canon
+28:95-96 ")" punctuation.section.parens.end.canon
 29:2-8 "expect" keyword.other.canon
 29:22-85 "\"the role reads cost, retired in 2: bound it with untilVersion\"" string.quoted.double.canon
 32:0-4 "test" keyword.other.canon
@@ -94,6 +98,7 @@
 36:17-23 "ledger" variable.other.property.canon
 36:23-24 "." punctuation.accessor.canon
 36:24-27 "map" variable.other.property.canon
+36:27-28 "(" punctuation.section.parens.begin.canon
 36:30-32 "=>" keyword.operator.canon
 36:33-37 "Role" entity.name.type.canon
 36:40-43 "..." keyword.operator.canon
@@ -104,17 +109,30 @@
 36:75-80 "kinds" variable.other.property.canon
 36:80-81 ":" punctuation.separator.key.canon
 36:83-90 "UNKNOWN" constant.other.canon
+36:95-96 ")" punctuation.section.parens.end.canon
 38:2-8 "expect" keyword.other.canon
 38:22-64 "\"no column of this table holds grant_kind\"" string.quoted.double.canon
 41:0-4 "test" keyword.other.canon
 41:5-38 "\"the lookups agree with the data\"" string.quoted.double.canon
 42:2-8 "expect" keyword.other.canon
+42:9-18 "versionOf" entity.name.function.call.canon
+42:18-19 "(" punctuation.section.parens.begin.canon
+42:30-31 ")" punctuation.section.parens.end.canon
 42:32-34 "==" keyword.operator.canon
 42:35-36 "2" constant.numeric.integer.canon
 43:2-8 "expect" keyword.other.canon
+43:9-17 "wireSize" entity.name.function.call.canon
+43:17-18 "(" punctuation.section.parens.begin.canon
+43:29-30 ")" punctuation.section.parens.end.canon
 43:31-33 "==" keyword.operator.canon
 43:34-36 "37" constant.numeric.integer.canon
 44:2-8 "expect" keyword.other.canon
+44:9-18 "isRetired" entity.name.function.call.canon
+44:18-19 "(" punctuation.section.parens.begin.canon
+44:36-37 ")" punctuation.section.parens.end.canon
 45:2-8 "expect" keyword.other.canon
+45:9-18 "versionOf" entity.name.function.call.canon
+45:18-19 "(" punctuation.section.parens.begin.canon
+45:37-38 ")" punctuation.section.parens.end.canon
 45:39-41 "==" keyword.operator.canon
 45:42-43 "0" constant.numeric.integer.canon
