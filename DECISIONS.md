@@ -3807,11 +3807,13 @@ round 2", "PS1 review", "PS2 round 2"):
 370. **TypeScript lists of composites are typed element by element (CODEGEN.md §8.1, §8.2).** A
      generated TypeScript array literal whose elements are object literals, tuples or arrays (a
      table's or keyed list's rows, a `table` field, a list of records or of lists, a map's entries,
-     a ref branch table, a conformance file's vectors) is written `canonList<T>(($r) => [$r(e1), $r(e2), …])` with `T` the declared element type
+     a ref branch table) is written `canonList<T>(($r) => [$r(e1), $r(e2), …])` with `T` the declared element type
      (`readonly [K, V]` for a map entry, `ReadonlyArray<X>` for a list): each element is checked against `T` on its own (excess
      properties and wrong types still fail), and the array's type is `T` instead of the union of
      every element's literal type. An empty one stays `[]`; a list of scalars is unchanged.
      Reason: tsc's subtype reduction over that union fails with TS2590 ("union type too complex")
      from about a thousand elements whose fields hold literal-union types: Resource's `ai`
      `moverTexts` (3,256 rows) and 3,000-entry lists and maps in every shape failed on tsc 5.9
-     and 7 (v0.1.5 and v0.1.6 alike; website H-14 #6, 2026-10-13).
+     and 7 (v0.1.5 and v0.1.6 alike; website H-14 #6, 2026-10-13). A conformance file's
+     vectors stay plain: it carries no helper block (CONFORMANCE.md §7.2) and its vectors are the
+     package's own tests, never data tables.
