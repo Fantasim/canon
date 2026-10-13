@@ -3604,7 +3604,9 @@ round 2", "PS1 review", "PS2 round 2"):
      directory (Go's `<out>/rt` counted), or writing where a package keeps its `canon.lock` or
      `canon.outputs`, are generated for their file names, and only in a run without error.
      `check` and `build` report it alike; only `E8001` waits for the write. Reason: `check` passed
-     a project whose `build` refused it (2026-10-12 repro).
+     a project whose `build` refused it (2026-10-12 repro). *Refined (2026-10-13):* a `json` emit
+     is planned for its names, never encoded, on every check and edit re-check (also for E8026's
+     overlap test, 341); encoding a whole data document per keystroke doubled edit latency.
 
 356. **A generated file no emit writes (CODEGEN.md §2.4; CLI.md §3.4; ERRORS.md E8029, W8030).**
      In each directory an emit of the selected packages writes into (not recursive), a regular,
