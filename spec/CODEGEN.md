@@ -1608,7 +1608,11 @@ export function decodeEventConfig(json: unknown): EventConfig;
   target. The failure reported is the first in document order, whichever its kind (a syntax
   error, a repeated key, nesting past 512, invalid UTF-8, an unpaired surrogate): a repeated key
   before a later syntax error is the repeated key; nesting past 512 is the depth rule at the
-  513th level, whatever depth the runtime's own parser allows. `data`-mode loaders keep their own form
+  513th level, whatever depth the runtime's own parser allows. A failure's place is the byte at
+  which it becomes certain (an invalid UTF-8 byte at itself, an unpaired surrogate where no pair
+  can follow), even inside a string a later syntax error leaves unclosed; a repeated key is
+  placed at its closing quote, since an unclosed key may still differ (`{"a": "\xff` is
+  `$.a: not UTF-8`; `{"a":1,"a` is a syntax error). `data`-mode loaders keep their own form
   (they read files, not values). Only a public record or
   variant has a public decoder, and a public `@text` fn whose result (its non-optional type, for a
   maybe-file) is a map, a list or a keyed list: Go `func Decode<Fn>File(raw []byte) (<T>,
