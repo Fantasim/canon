@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -66,7 +65,7 @@ func (g *gen) branchTable(bt ir.NamedBranches) string {
 // branchKey is a key of a ref as TypeScript holds it: an enum member's wire, a number or a bigint, else the string (CODEGEN.md §4.1).
 func (g *gen) branchKey(ref ir.TypeRef, big bool, k value.Key) string {
 	if !k.IsInt {
-		if e, ok := keyEnum(ref); ok {
+		if e, ok := ir.RefKeyEnum(ref); ok {
 			if i := slices.IndexFunc(e.Members, func(m *ir.EnumMember) bool { return m.Name == k.S }); i >= 0 {
 				return quote(e.Members[i].Wire)
 			}
@@ -78,15 +77,6 @@ func (g *gen) branchKey(ref ir.TypeRef, big bool, k value.Key) string {
 		return strconv.FormatInt(k.I, decimal) + bigSuffix
 	}
 	return strconv.FormatInt(k.I, decimal)
-}
-
-// keyEnum is the enum keying a ref into a keyed list keyed by one.
-func keyEnum(ref ir.TypeRef) (*ir.Enum, bool) {
-	if ref.Key == nil || ref.Key.Kind != types.Enum {
-		return nil, false
-	}
-	e, ok := ref.Key.Named.(*ir.Enum)
-	return e, ok
 }
 
 // refBranch is the branch the record of o selects for its field f through f's build-time table (CODEGEN.md §5.6, DECISIONS 350); -1 when it holds no key the table knows, which a checked value never does.

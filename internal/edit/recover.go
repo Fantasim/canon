@@ -349,7 +349,7 @@ func (r *undoer) restoreOne(f undoFile) error {
 	if err := r.fsys.MkdirAll(project.DirOf(f.abs)); err != nil {
 		return err
 	}
-	return replace(r.fsys, f.abs, r.token, f.Old, f.Mode)
+	return build.ReplaceStaged(r.fsys, f.abs, stageName(f.abs, r.token), f.Old, modeOf(f.Mode))
 }
 
 // clear removes, deepest first, each directory the commit created with all it holds, which

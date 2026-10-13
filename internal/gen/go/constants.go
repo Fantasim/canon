@@ -15,7 +15,6 @@ const (
 	genSuffix = ".gen.go"
 	rtPath    = "rt/rt.go"
 	rtDir     = "/rt"
-	rtName    = "rt"
 )
 
 // The marker and the one-line package doc that replace the old multi-line package doc and T1.
@@ -424,7 +423,7 @@ var (
 	scalarKinds  = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true}
 	// goImportNames are the packages a generated file may import, which a local never takes (CODEGEN.md §3.4).
 	goImportNames = map[string]bool{
-		rtName: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, atomicName: true, syncPkg: true,
+		ir.GoRT: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, atomicName: true, syncPkg: true,
 		timePkg: true, strconvPkg: true, stringsPkg: true, slicesPkg: true, mathPkg: true, regexpPkg: true,
 		"embed": true, errorsPkg: true, utf8Pkg: true,
 	}

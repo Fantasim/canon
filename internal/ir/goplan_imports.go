@@ -85,7 +85,7 @@ func (u *goImportUse) foreignRef(t *TypeRef) {
 	if t == nil {
 		return
 	}
-	if std := goStdOfKind[t.Kind]; std != "" && std != goRT {
+	if std := goStdOfKind[t.Kind]; std != "" && std != GoRT {
 		u.std[std] = true
 	}
 	u.markPkg(t)
@@ -121,7 +121,7 @@ func (u *goImportUse) body(fields []*Field, fns []*ExportFn) {
 	for _, f := range fields {
 		if !f.Optional || f.Type.Kind != types.Never {
 			u.ref(&f.Type)
-			walkTypeRef(f.Type, func(t TypeRef) { u.std[goRT] = u.std[goRT] || t.Kind == types.Table }) // a table field is an rt.KeyedList (CODEGEN.md §4.2)
+			walkTypeRef(f.Type, func(t TypeRef) { u.std[GoRT] = u.std[GoRT] || t.Kind == types.Table }) // a table field is an rt.KeyedList (CODEGEN.md §4.2)
 		}
 	}
 	for _, fn := range fns {

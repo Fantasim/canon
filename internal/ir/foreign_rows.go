@@ -101,5 +101,5 @@ func rtKind(t TypeRef) bool {
 	if t.Kind == types.Optional && t.Elem != nil {
 		t = *t.Elem
 	}
-	return goStdOfKind[t.Kind] == goRT || t.Kind == types.Table
+	return goStdOfKind[t.Kind] == GoRT || t.Kind == types.Table
 }

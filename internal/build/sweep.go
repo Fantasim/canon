@@ -32,26 +32,6 @@ func (r *run) sweepDead(opt BuildOptions, outputs []*output) {
 	}
 }
 
-// deadStage reports name a stage of the file base another run left: its staging name with a
-// token not this run's, or the temporary file the OS WriteFile wrote that name through.
-func (r *run) deadStage(name, base string) bool {
-	own := tempPrefix + base + tempSep + r.writes().token + tempSuffix
-	if stagedOf(name, base) {
-		return name != own && name != tempPrefix+base+tempSuffix // 0.1.5's name is the set-aside sweeps' only
-	}
-	inner, ok := strings.CutPrefix(name, tempPrefix)
-	if !ok || len(inner) < len(tempSep)+tokenLen+len(tempSuffix) {
-		return false
-	}
-	inner = inner[:len(inner)-len(tempSep)-tokenLen-len(tempSuffix)]
-	return stagedOf(name, inner) && stagedOf(inner, base) && inner != tempPrefix+base+tempSuffix
-}
-
-// stageName reports a staging or set-aside name, never a file an emit writes.
-func stageName(base string) bool {
-	return strings.HasPrefix(base, tempPrefix) && strings.HasSuffix(base, tempSuffix)
-}
-
 // unheldWriter reports a package the run holds no lock on whose emits may write into abs's
 // directory: its build may be live.
 func (r *run) unheldWriter(abs string) bool {

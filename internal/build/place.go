@@ -122,14 +122,18 @@ func marked(o Output, content []byte) bool {
 
 // firstLineMatches reports content whose first line, a final `\r` aside, matches marker (CODEGEN.md §2.4, §2.9).
 func firstLineMatches(content []byte, marker *regexp.Regexp) bool {
-	line, _, _ := bytes.Cut(content, []byte(lineEnd))
-	return marker.Match(bytes.TrimSuffix(line, []byte(carriageReturn)))
+	return marker.Match(firstLine(content))
 }
 
 // firstLineIs reports content whose first line, a final `\r` aside, is line.
 func firstLineIs(content []byte, line string) bool {
-	first, _, _ := bytes.Cut(content, []byte(lineEnd))
-	return string(bytes.TrimSuffix(first, []byte(carriageReturn))) == line
+	return string(firstLine(content)) == line
+}
+
+// firstLine is content's first line, without its `\n` and a final `\r`.
+func firstLine(content []byte) []byte {
+	line, _, _ := bytes.Cut(content, []byte(lineEnd))
+	return bytes.TrimSuffix(line, []byte(carriageReturn))
 }
 
 // jsonMarked reports a JSON object whose first member is a canon $schema (WIRE.md §8.4).

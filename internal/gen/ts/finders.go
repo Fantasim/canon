@@ -15,7 +15,7 @@ func (g *gen) finders(rec *ir.Record, row string) (typ, readers string) {
 		if !f.Stable {
 			continue
 		}
-		name := findByPrefix + upperCamel(f.Name)
+		name := ir.TSFinderName(f)
 		if first, dup := seen[name]; dup {
 			g.failf(errCollision, collisionFormat, first.Name, f.Name, name)
 			continue

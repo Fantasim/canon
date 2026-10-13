@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 )
@@ -180,5 +181,18 @@ func TestOppositeOrdersInProcess(t *testing.T) {
 		if err := <-done; err != nil {
 			t.Errorf("%s%v", rule, err)
 		}
+	}
+}
+
+// DECISIONS 352: the exclusive requests of packages leave out a file of no package's "", and
+// Acquire holds a package asked twice once, in name order.
+func TestExclusiveOf(t *testing.T) {
+	reqs := ExclusiveOf(pkgB, "", pkgA, pkgB)
+	if !slices.Equal(reqs, []Request{ex(pkgB), ex(pkgA), ex(pkgB)}) || ExclusiveOf("") != nil {
+		t.Fatalf("%s%v", rule, reqs)
+	}
+	h := acquire(t, t.TempDir(), reqs...)
+	if !slices.Equal(h.reqs, []Request{ex(pkgA), ex(pkgB)}) || NoRelease() != nil {
+		t.Errorf("%sholds %v", rule, h.reqs)
 	}
 }

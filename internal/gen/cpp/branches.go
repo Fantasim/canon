@@ -31,7 +31,7 @@ func (g *gen) leafDisc(fields []*ir.Field, f *ir.Field, app ir.TypeRef) (string,
 
 // openRefKey reports a ref whose key is an enum the emit opens: its branch table is keyed by the wire, in wire byte order, not by the class (CODEGEN.md §5.6, DECISIONS 362).
 func (g *gen) openRefKey(ref ir.TypeRef) bool {
-	e, ok := refEnumKey(ref)
+	e, ok := ir.RefKeyEnum(ref)
 	return ok && g.open(e)
 }
 
@@ -117,7 +117,7 @@ type branchEntry struct {
 // branchEntries are t's keys, ranked as the lookup's `<` compares the ref's key: strings by bytes and integers by value (the IR's order), an enum class by its enumerator's value, its @codes code or else its member index (CODEGEN.md §5.2).
 func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
 	out := make([]branchEntry, len(t.Keys))
-	e, isEnum := refEnumKey(ref)
+	e, isEnum := ir.RefKeyEnum(ref)
 	byWire := isEnum && g.open(e)
 	for i, k := range t.Keys {
 		out[i] = branchEntry{key: quote(k.S), branch: t.Branches[i], rank: int64(i)}
@@ -153,18 +153,9 @@ func enumeratorValue(e *ir.Enum, m int) int64 {
 	return int64(m)
 }
 
-// refEnumKey is the enum keying a ref into a keyed list keyed by an enum.
-func refEnumKey(ref ir.TypeRef) (*ir.Enum, bool) {
-	if ref.Key == nil || ref.Key.Kind != types.Enum {
-		return nil, false
-	}
-	e, ok := ref.Key.Named.(*ir.Enum)
-	return e, ok
-}
-
 // branchKeyType is a table's key type: std::string_view for a string key, else the key's own.
 func (g *gen) branchKeyType(ref ir.TypeRef) string {
-	if e, ok := refEnumKey(ref); ok && !g.open(e) {
+	if e, ok := ir.RefKeyEnum(ref); ok && !g.open(e) {
 		return g.qualifiedOwn(e)
 	}
 	if ref.Key != nil && ref.Key.Kind == types.Int {
@@ -173,13 +164,12 @@ func (g *gen) branchKeyType(ref ir.TypeRef) string {
 	return cppStringView
 }
 
-// recordBranch is the dependent type of field f and the branch the record value r selects for its value v: through its build-time table when a ref decides it (DECISIONS 350), else down ir.DiscFields' path. An empty list needs none: its discriminant may select a Never arm, whose list holds nothing (DECISIONS 307).
+// recordBranch is the dependent type of field f and the branch the record value r selects for its value v: through its build-time table when a ref decides it (DECISIONS 350), else down ir.DiscFields' path. An empty list needs none (ir.EmptyListDependent, DECISIONS 307).
 func (g *gen) recordBranch(fields []*ir.Field, f *ir.Field, r *value.Record, v value.Value) (*ir.Dependent, int) {
-	app := *ir.HeldApp(f.Type)
-	if l, isList := v.(*value.List); isList && len(l.Elems) == 0 {
-		d, _ := app.Named.(*ir.Dependent)
+	if d, ok := ir.EmptyListDependent(f.Type, v); ok {
 		return d, 0
 	}
+	app := *ir.HeldApp(f.Type)
 	if f.Branches == nil {
 		return g.bakedBranch(fields, app, r)
 	}

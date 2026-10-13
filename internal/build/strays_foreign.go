@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -60,7 +61,7 @@ func (r *run) emittersInto(dirs map[string]bool) ([]string, map[string]bool) {
 func reach(dirs, reached map[string]bool, outs []string) bool {
 	found := false
 	for _, at := range outs {
-		for _, d := range []string{at, project.DirOf(at), project.Join(at, goRuntimeDir)} {
+		for _, d := range []string{at, project.DirOf(at), project.Join(at, ir.GoRT)} {
 			if dirs[d] {
 				reached[d], found = true, true
 			}

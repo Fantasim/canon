@@ -74,7 +74,7 @@ func (pl *GoNamePlan) RTImports() []GoRTImport {
 	var out []GoRTImport
 	for _, ref := range pl.p.Imports {
 		if e := ownerEmit(pl.p, ref.Name, TargetGo); need[ref.Name] && e != nil {
-			out = append(out, GoRTImport{Pkg: ref.Name, Name: e.GoPackage + goRT, Path: e.GoImport + pathSep + goRT})
+			out = append(out, GoRTImport{Pkg: ref.Name, Name: e.GoPackage + GoRT, Path: e.GoImport + pathSep + GoRT})
 		}
 	}
 	return out

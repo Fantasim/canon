@@ -12,14 +12,14 @@ import (
 func (u *goImportUse) translated(fn *ExportFn, method bool) {
 	for _, p := range fn.Params {
 		u.pureSig(p.Type, method)
-		u.std[goRT] = u.std[goRT] || p.Type.Kind == types.Float || goChecksWidth(p.Type) || u.bound(p.Range)
+		u.std[GoRT] = u.std[GoRT] || p.Type.Kind == types.Float || goChecksWidth(p.Type) || u.bound(p.Range)
 	}
 	u.pureSig(fn.Result, method)
 	f32 := fn.Result.Kind == types.Float && fn.Result.Bits == goFloat32Bits
-	u.std[goRT] = u.std[goRT] || goChecksWidth(fn.Result) || f32 || u.bound(fn.ResultRange)
+	u.std[GoRT] = u.std[GoRT] || goChecksWidth(fn.Result) || f32 || u.bound(fn.ResultRange)
 	for _, r := range fn.Reads {
 		u.pkgRef(&r.Type)
-		u.std[goRT] = u.std[goRT] || method && r.Type.Kind == types.Duration
+		u.std[GoRT] = u.std[GoRT] || method && r.Type.Kind == types.Duration
 	}
 	u.pexpr(fn.Body)
 }
@@ -28,7 +28,7 @@ func (u *goImportUse) translated(fn *ExportFn, method bool) {
 func (u *goImportUse) pureSig(t TypeRef, method bool) {
 	u.pkgRef(&t)
 	if method && t.Kind == types.Duration {
-		u.mark(goTime, goRT)
+		u.mark(goTime, GoRT)
 	}
 }
 
@@ -77,13 +77,13 @@ func (u *goImportUse) node(n PExpr) {
 		f, isFloat := x.V.(*value.Float)
 		u.std[goMath] = u.std[goMath] || isFloat && negZero(f.V)
 	case *Unary:
-		u.std[goRT] = u.std[goRT] || x.Op == OpNeg
+		u.std[GoRT] = u.std[GoRT] || x.Op == OpNeg
 	case *Binary:
-		u.std[goRT] = u.std[goRT] || goCheckedOps[x.Op]
+		u.std[GoRT] = u.std[GoRT] || goCheckedOps[x.Op]
 	case *Call:
-		u.std[goRT] = u.std[goRT] || !nativeCall(x)
+		u.std[GoRT] = u.std[GoRT] || !nativeCall(x)
 	case *CallFn:
-		u.std[goRT] = u.std[goRT] || x.Fn != nil && x.Fn.Kind == FnLookup && x.Fn.Result.Kind == types.Duration
+		u.std[GoRT] = u.std[GoRT] || x.Fn != nil && x.Fn.Kind == FnLookup && x.Fn.Result.Kind == types.Duration
 		u.pkgRef(&x.T)
 	case *Template:
 		u.std[goStrconv] = u.std[goStrconv] || slices.ContainsFunc(x.Parts, func(p TemplatePart) bool {

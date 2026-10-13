@@ -340,38 +340,21 @@ func straightOne(r linkResolver, s spot) error {
 	return nil
 }
 
-// replace writes data over abs through its stage of token; after a failure no stage is left.
-func replace(fsys build.WriteFS, abs, token string, data []byte, mode *uint32) error {
-	tmp := stageName(abs, token)
-	if err := stage(fsys, tmp, data, mode); err != nil {
-		_ = fsys.Remove(tmp) // what a failed stage left, if anything
-		return err
-	}
-	if err := fsys.Rename(tmp, abs); err != nil {
-		_ = fsys.Remove(tmp) // the rename failed: the target is untouched
-		return err
+// chmod gives name the permissions mode, when known and the FS sets them.
+func chmod(fsys build.WriteFS, name string, mode *uint32) error {
+	if perm := modeOf(mode); perm != nil {
+		return build.SetPerm(fsys, name, *perm)
 	}
 	return nil
 }
 
-// stage writes data to tmp, first removing whatever entry sits there, a link itself (DECISIONS 351).
-func stage(fsys build.WriteFS, tmp string, data []byte, mode *uint32) error {
-	if err := fsys.Remove(tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
-	}
-	if err := fsys.WriteFile(tmp, data); err != nil {
-		return err
-	}
-	return chmod(fsys, tmp, mode)
-}
-
-// chmod gives name the permissions mode, when known and the FS sets them.
-func chmod(fsys build.WriteFS, name string, mode *uint32) error {
-	m, ok := fsys.(build.ModeFS)
-	if !ok || mode == nil {
+// modeOf is a journal's permissions as a file's, nil when unknown.
+func modeOf(mode *uint32) *fs.FileMode {
+	if mode == nil {
 		return nil
 	}
-	return m.Chmod(name, fs.FileMode(*mode).Perm())
+	perm := fs.FileMode(*mode).Perm()
+	return &perm
 }
 
 // stageName is the file the commit of token writes abs's new content to before renaming it over

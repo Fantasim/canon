@@ -170,7 +170,7 @@ func (g *gen) rt() string {
 
 // ownRT is this package's rt: the helpers a loader calls, whatever class it reads.
 func (g *gen) ownRT() string {
-	return g.use(g.e.GoImport+rtDir, rtName)
+	return g.use(g.e.GoImport+rtDir, ir.GoRT)
 }
 
 // withRT makes pkg's rt the current one until the returned func restores the previous one.

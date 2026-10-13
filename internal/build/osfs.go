@@ -165,7 +165,7 @@ func tempName(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(filepath.Dir(name), tempPrefix+filepath.Base(name)+tempSep+random+tempSuffix), nil
+	return filepath.Join(filepath.Dir(name), stageBase(filepath.Base(name), random)), nil
 }
 
 // fill writes data to f, gives it the mode of the file it replaces, syncs and closes it.

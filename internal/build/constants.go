@@ -186,7 +186,6 @@ const (
 	fmtStale      = "%v: %s"
 	listJoin      = ", "
 	schemaTypeSep = "@"
-	goRuntimeDir  = "rt"
 )
 
 var (

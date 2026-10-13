@@ -371,22 +371,20 @@ func buildCommit() string {
 
 // commitOf is the compiler's VCS revision in info, "" when unknown (rule T3).
 func commitOf(info *debug.BuildInfo) string {
-	if info.Main.Path == modulePath {
-		settings := map[string]string{}
-		for _, s := range info.Settings {
-			settings[s.Key] = s.Value
-		}
-		if settings[vcsModifiedKey] == trueText {
-			return ""
-		}
-		return settings[vcsRevisionKey]
+	switch m := build.CanonModule(info); {
+	case m == nil:
+		return ""
+	case m != &info.Main:
+		return pseudoRevision(m.Version)
 	}
-	for _, dep := range info.Deps {
-		if dep.Path == modulePath && dep.Replace == nil {
-			return pseudoRevision(dep.Version)
-		}
+	settings := map[string]string{}
+	for _, s := range info.Settings {
+		settings[s.Key] = s.Value
 	}
-	return ""
+	if settings[vcsModifiedKey] == trueText {
+		return ""
+	}
+	return settings[vcsRevisionKey]
 }
 
 // pseudoRevision is the revision prefix a Go pseudo-version ends with

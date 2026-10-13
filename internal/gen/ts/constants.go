@@ -202,7 +202,6 @@ const (
 	frozenConstFormat    = "const %[1]s: %[2]s = %[3]s<%[2]s>(%[4]s);\n"
 	getterFormat         = "export function %s(): %s {\n  return %s;\n}\n"
 	tableFormat          = "export const %[1]s: CanonTable<%[2]s, %[3]s>%[7]s = canonTable(%[4]s<ReadonlyArray<%[3]s>>([%[5]s]), ($e) => $e.%[6]s%[8]s);\n"
-	findByPrefix         = "findBy"
 	findSigFormat        = "%s(%s: %s): %s | null"
 	findReadFormat       = "%s: %s"
 	findersTypeFormat    = " & { %s }"

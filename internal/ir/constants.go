@@ -266,9 +266,9 @@ const (
 	goParamsSuffix     = "()"
 )
 
-// The standard packages generated Go imports, by the name code uses (CODEGEN.md §2.8).
+// The standard packages generated Go imports, by the name code uses; GoRT names the runtime's directory too (CODEGEN.md §2.3, §2.8).
 const (
-	goRT       = "rt"
+	GoRT       = "rt"
 	goTime     = "time"
 	goIter     = "iter"
 	goSync     = "sync"

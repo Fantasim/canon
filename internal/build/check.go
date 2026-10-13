@@ -285,7 +285,7 @@ func imported(all, selected []*project.Unit) []*project.Unit {
 	out := slices.Clone(selected)
 	for i := 0; i < len(out); i++ {
 		for _, name := range out[i].Imports {
-			j := slices.IndexFunc(all, func(u *project.Unit) bool { return u.Name == name })
+			j := project.UnitIndex(all, name)
 			if j >= 0 && !slices.Contains(out, all[j]) {
 				out = append(out, all[j])
 			}
@@ -301,7 +301,7 @@ func withStudio(all, loaded []*project.Unit, studio string) []*project.Unit {
 	if studio == "" || !slices.ContainsFunc(loaded, usesStudio) {
 		return loaded
 	}
-	i := slices.IndexFunc(all, func(u *project.Unit) bool { return u.Name == studio })
+	i := project.UnitIndex(all, studio)
 	if i < 0 || slices.Contains(loaded, all[i]) {
 		return loaded
 	}

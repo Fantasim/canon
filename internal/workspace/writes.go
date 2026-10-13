@@ -135,10 +135,7 @@ func (s *snapFS) SyncDir(abs string) error {
 // Chmod sets abs's permissions where the file system under the snapshot can; elsewhere a file
 // keeps the mode its write gave it.
 func (s *snapFS) Chmod(abs string, mode fs.FileMode) error {
-	if m, ok := s.base.(build.ModeFS); ok {
-		return m.Chmod(abs, mode)
-	}
-	return nil
+	return build.SetPerm(s.base, abs, mode)
 }
 
 // Readlink is the text of the link abs on the disk under the snapshot (build.LinkReader), read

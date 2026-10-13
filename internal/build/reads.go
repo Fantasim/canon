@@ -211,7 +211,7 @@ func (a *Analysis) Consulted(pkg string) []Read {
 // package the snapshot lacks.
 func (a *Analysis) closure(pkg string) []string {
 	units := a.r.s.units
-	i := slices.IndexFunc(units, func(u *project.Unit) bool { return u.Name == pkg })
+	i := project.UnitIndex(units, pkg)
 	if i < 0 {
 		return nil
 	}

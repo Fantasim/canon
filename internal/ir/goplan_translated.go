@@ -206,7 +206,7 @@ func byOrder(a, b *ExportFn) int { return cmp.Compare(a.Order, b.Order) }
 
 // declareConformanceImports declares what the conformance file imports: rt and testing, fmt for canonShow, math for an int64 limit or a float (CONFORMANCE.md §5, §7.2), and each Canon package an input's or result's enum or key belongs to.
 func (pl *GoNamePlan) declareConformanceImports(fns []*ExportFn, show bool) {
-	u := &goImportUse{own: pl.p.Name, std: map[string]bool{goRT: true, goTesting: true, goFmt: show}, pkgs: map[string]bool{}}
+	u := &goImportUse{own: pl.p.Name, std: map[string]bool{GoRT: true, goTesting: true, goFmt: show}, pkgs: map[string]bool{}}
 	for _, fn := range fns {
 		u.std[goMath] = u.std[goMath] || fn.Result.Kind == types.Float || slices.ContainsFunc(fn.Params, conformanceMath)
 		for _, r := range fn.Reads {

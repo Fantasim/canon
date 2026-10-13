@@ -25,6 +25,11 @@ type Unit struct {
 	Loose   []string       // paths of the package-less files of its directory (DECISIONS 353)
 }
 
+// UnitIndex is the index of the package named name in units, -1 for none.
+func UnitIndex(units []*Unit, name string) int {
+	return slices.IndexFunc(units, func(u *Unit) bool { return u.Name == name })
+}
+
 type sha256Sum = [sha256.Size]byte
 
 // FileSum is the SHA-256 of a file as read, by display path (API.md S3).

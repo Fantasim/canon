@@ -19,9 +19,6 @@ type freshViewer interface {
 	Fresh() project.FS
 }
 
-// noRelease releases no lock.
-func noRelease() error { return nil }
-
 // locking reports a build that takes the writer locks: one that writes, on the OS's file system.
 func (r *run) locking(opt BuildOptions) bool {
 	return LocksWriters(r.p.disk) && !opt.Check && opt.OnlyRoot == ""
@@ -32,7 +29,7 @@ func (r *run) locking(opt BuildOptions) bool {
 // waiting as long as ctx lets it. --check and --only-root take none (DECISIONS 343, 352).
 func (r *run) lockWriters(ctx context.Context, opt BuildOptions) (func() error, error) {
 	if !r.locking(opt) {
-		return noRelease, nil
+		return writelock.NoRelease, nil
 	}
 	var reqs []writelock.Request
 	for _, u := range r.loaded {

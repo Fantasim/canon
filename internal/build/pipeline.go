@@ -266,12 +266,12 @@ func (r *run) selectedNames() []string {
 
 // selects reports a selected package.
 func (r *run) selects(pkg string) bool {
-	return slices.ContainsFunc(r.selected, func(u *project.Unit) bool { return u.Name == pkg })
+	return project.UnitIndex(r.selected, pkg) >= 0
 }
 
 // loads reports a package the run loaded: a selected one, an import of one, or the studio's.
 func (r *run) loads(pkg string) bool {
-	return slices.ContainsFunc(r.loaded, func(u *project.Unit) bool { return u.Name == pkg })
+	return project.UnitIndex(r.loaded, pkg) >= 0
 }
 
 // stageB verifies what stage A evaluated, then the codes, then compares the locks (LOCK.md §4.5).

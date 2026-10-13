@@ -373,7 +373,7 @@ func (c *commit) stageAll(ctx context.Context) error {
 			return fmt.Errorf(fmtFileErr, t.display, err)
 		}
 		c.made = append(c.made, fresh...)
-		if err := stage(c.fsys, stageName(t.abs, c.token), t.data, t.mode); err != nil {
+		if err := build.WriteStaged(c.fsys, stageName(t.abs, c.token), t.data, modeOf(t.mode)); err != nil {
 			return fmt.Errorf(fmtFileErr, t.display, err)
 		}
 	}

@@ -22,6 +22,21 @@ type Request struct {
 	Mode    Mode
 }
 
+// ExclusiveOf are the exclusive requests of pkgs, "" (a file of no package, no package's to
+// lock) left out; Acquire sorts them and takes each package once (DECISIONS 352).
+func ExclusiveOf(pkgs ...string) []Request {
+	var reqs []Request
+	for _, p := range pkgs {
+		if p != "" {
+			reqs = append(reqs, Request{Package: p, Mode: Exclusive})
+		}
+	}
+	return reqs
+}
+
+// NoRelease is the release of a writer that took no lock: it frees nothing.
+func NoRelease() error { return nil }
+
 // Wait is what a writer about to wait is told: the package, and the line of its lock file, a
 // holder's "host pid" ("" when it cannot be read).
 type Wait struct {

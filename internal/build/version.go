@@ -22,19 +22,28 @@ func moduleRelease() string {
 	return releaseOf(info)
 }
 
-// releaseOf is the version, without its "v", of the canon module in info when it is a release tag: the main module, else a dependency that is not replaced.
+// releaseOf is the version, without its "v", of the canon module in info when it is a release tag.
 func releaseOf(info *debug.BuildInfo) string {
 	version := ""
-	if info.Main.Path == ModulePath {
-		version = info.Main.Version
-	}
-	for _, dep := range info.Deps {
-		if dep.Path == ModulePath && dep.Replace == nil {
-			version = dep.Version
-		}
+	if m := CanonModule(info); m != nil {
+		version = m.Version
 	}
 	if tag, ok := strings.CutPrefix(version, tagPrefix); ok && project.IsCompilerVersion(tag) {
 		return tag
 	}
 	return ""
+}
+
+// CanonModule is the canon module in info: the main module (&info.Main) when canon is it, else
+// the dependency on it that is not replaced; nil for neither.
+func CanonModule(info *debug.BuildInfo) *debug.Module {
+	if info.Main.Path == ModulePath {
+		return &info.Main
+	}
+	for _, dep := range info.Deps {
+		if dep.Path == ModulePath && dep.Replace == nil {
+			return dep
+		}
+	}
+	return nil
 }

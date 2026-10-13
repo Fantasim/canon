@@ -80,7 +80,7 @@ func (pl *GoNamePlan) declareNonEmpty(sc *nameScope, origin string, item any, na
 func (u *goImportUse) inputImports(fields []*Field) {
 	for _, f := range fields {
 		if f.Input != nil {
-			u.mark(goRT, goErrors)
+			u.mark(GoRT, goErrors)
 		}
 		if f.Input != nil && len(f.Patterns) > 0 {
 			u.mark(goRegexp)

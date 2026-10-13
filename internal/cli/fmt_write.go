@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"maps"
 	"path/filepath"
-	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
@@ -47,22 +45,15 @@ func (r *fmtRun) write() error {
 }
 
 // writers are the exclusive writer locks of the packages the changes rewrite: a source's package
-// line, a JSON source's readers; project.canon and a file of no package take none.
+// line, a JSON source's readers; project.canon and a file of no package take none. Acquire
+// orders them and takes each package once.
 func (r *fmtRun) writers() []writelock.Request {
-	names := map[string]bool{}
+	var pkgs []string
 	for _, c := range r.changes {
-		for _, pkg := range c.readers {
-			names[pkg] = true
-		}
-		if pkg := packageLine(c); pkg != "" {
-			names[pkg] = true
-		}
+		pkgs = append(pkgs, c.readers...)
+		pkgs = append(pkgs, packageLine(c))
 	}
-	reqs := make([]writelock.Request, 0, len(names))
-	for _, name := range slices.Sorted(maps.Keys(names)) {
-		reqs = append(reqs, writelock.Request{Package: name, Mode: writelock.Exclusive})
-	}
-	return reqs
+	return writelock.ExclusiveOf(pkgs...)
 }
 
 // packageLine is the package a changed .canon source names, read from the bytes fmt formatted;

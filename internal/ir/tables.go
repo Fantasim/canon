@@ -133,7 +133,7 @@ var goPredeclared = nameSet("any", "append", "bool", "byte", "cap", "clear", "cl
 	boolTrue, "uint", "uint8", "uint16", "uint32", "uint64", "uintptr")
 
 // goImportNames are the package names generated Go files import (CODEGEN.md §3.4).
-var goImportNames = nameSet(goRT, goJSON, goFmt, goIter, "os", goFilepath, goAtomic, goSync,
+var goImportNames = nameSet(GoRT, goJSON, goFmt, goIter, "os", goFilepath, goAtomic, goSync,
 	goTime, goErrors, goStrconv, goStrings, goMath, goRegexp, "embed", goSlices, goUTF8)
 
 // cppOwnNames are the namespaces generated C++ declares itself, beside check's (CODEGEN.md §3.4).
@@ -175,10 +175,10 @@ var inputKinds = map[types.Kind]string{
 // The fixed Go names and imports of generated code (CODEGEN.md §2.8, §5.2–§5.11, §6.2).
 var (
 	goStdImports = []string{
-		goRT, goTime, goIter, goSync, goStrconv, goMath, goJSON, goFmt,
+		GoRT, goTime, goIter, goSync, goStrconv, goMath, goJSON, goFmt,
 		goStrings, goSlices, goAtomic, goErrors, goRegexp, goTesting, goUTF8,
 	}
-	goDataImports  = []string{goRT, goJSON, goFmt, goStrings, goSlices}
+	goDataImports  = []string{GoRT, goJSON, goFmt, goStrings, goSlices}
 	goStoreMembers = []string{"current", storeCurrent, storeReload}
 	// log-2026-09-24 "Loader parity".
 	goJSONHelpers = []string{
@@ -204,6 +204,6 @@ var (
 		types.Enum, types.Ref, types.Record, types.Variant, types.List, types.Map)
 	goPointerKinds = kindSet(types.Record, types.Variant, types.Case, types.TypeApp) // nil marks absent (CODEGEN.md §4.3)
 	goStdOfKind    = map[types.Kind]string{
-		types.List: goRT, types.Map: goRT, types.DepMap: goRT, types.Duration: goTime,
+		types.List: GoRT, types.Map: GoRT, types.DepMap: GoRT, types.Duration: goTime,
 	}
 )

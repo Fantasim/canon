@@ -3,7 +3,9 @@ package build
 import (
 	"crypto/rand"
 	"encoding/base32"
+	"errors"
 	"fmt"
+	"io/fs"
 	"path"
 	"slices"
 	"strings"
@@ -27,18 +29,38 @@ func NewStaging() (Staging, error) {
 // WriteAtomic replaces the existing file abs with data through a staged file beside it, the
 // file's permissions kept; after a failure the file is as it was and no staged file is left.
 func (s Staging) WriteAtomic(fsys WriteFS, abs string, data []byte) error {
-	w := &writer{fsys: fsys, token: s.token}
-	c := change{abs: abs, data: data, existed: true}
-	if err := w.stage(c); err != nil {
-		w.removeStages([]change{c})
-		w.removeDirs()
+	perm, err := permOf(fsys, abs)
+	if err != nil {
 		return err
 	}
-	if err := fsys.Rename(w.stageOf(abs), abs); err != nil {
-		w.removeStages([]change{c})
+	return ReplaceStaged(fsys, abs, stagedAs(abs, s.token), data, perm)
+}
+
+// ReplaceStaged writes data over abs through WriteStaged's tmp, then renames tmp over abs; after a failure abs is as it was and tmp is gone (API.md N11).
+func ReplaceStaged(fsys WriteFS, abs, tmp string, data []byte, perm *fs.FileMode) error {
+	if err := WriteStaged(fsys, tmp, data, perm); err != nil {
+		_ = fsys.Remove(tmp) // what a failed stage left, if anything
+		return err
+	}
+	if err := fsys.Rename(tmp, abs); err != nil {
+		_ = fsys.Remove(tmp) // the rename failed: abs is untouched
 		return err
 	}
 	return nil
+}
+
+// WriteStaged writes data to tmp, first removing any entry there, a link itself, never written through (ADR-0010), then sets perm unless nil.
+func WriteStaged(fsys WriteFS, tmp string, data []byte, perm *fs.FileMode) error {
+	if err := fsys.Remove(tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+	if err := fsys.WriteFile(tmp, data); err != nil {
+		return err
+	}
+	if perm == nil {
+		return nil
+	}
+	return SetPerm(fsys, tmp, *perm)
 }
 
 // newToken is a run's random token: tokenBytes random bytes in base32, without padding.
@@ -52,8 +74,14 @@ func newToken() (string, error) {
 
 // stagedAs is the name abs is staged or set aside under by the run of token, in abs's directory.
 func stagedAs(abs, token string) string {
-	return project.Join(project.DirOf(abs), tempPrefix+path.Base(abs)+tempSep+token+tempSuffix)
+	return project.Join(project.DirOf(abs), stageBase(path.Base(abs), token))
 }
+
+// stageBase is the file base's staging name under token, the OS WriteFile's temporary files' too (DECISIONS 351).
+func stageBase(base, token string) string { return tempPrefix + base + tempSep + token + tempSuffix }
+
+// fixedStage is 0.1.5's staging name of the file base, .<base>.canon-tmp, which a build still sweeps.
+func fixedStage(base string) string { return tempPrefix + base + tempSuffix }
 
 // StagedOf is stagedOf for an edit's recovery, which knows a write's leftovers by it (DECISIONS 351).
 func StagedOf(name, base string) bool { return stagedOf(name, base) }
@@ -61,13 +89,35 @@ func StagedOf(name, base string) bool { return stagedOf(name, base) }
 // stagedOf reports name, a directory entry, a staging name of the file base: the name of any
 // run's token, or 0.1.5's fixed one, which a build still sweeps (DECISIONS 351).
 func stagedOf(name, base string) bool {
-	if name == tempPrefix+base+tempSuffix {
+	if name == fixedStage(base) {
 		return true
 	}
 	rest, prefixed := strings.CutPrefix(name, tempPrefix+base+tempSep)
 	token, suffixed := strings.CutSuffix(rest, tempSuffix)
 	return prefixed && suffixed && len(token) == tokenLen && strings.Trim(token, tokenAlphabet) == ""
 }
+
+// deadStage reports name a stage of the file base another run left: its staging name with a
+// token not this run's, or the temporary file the OS WriteFile wrote that name through.
+func (r *run) deadStage(name, base string) bool {
+	if stagedOf(name, base) {
+		return name != stageBase(base, r.writes().token) && name != fixedStage(base) // 0.1.5's name is the set-aside sweeps' only
+	}
+	inner, ok := strings.CutPrefix(name, tempPrefix)
+	if !ok || len(inner) < len(tempSep)+tokenLen+len(tempSuffix) {
+		return false
+	}
+	inner = inner[:len(inner)-len(tempSep)-tokenLen-len(tempSuffix)]
+	return stagedOf(name, inner) && stagedOf(inner, base) && inner != fixedStage(base)
+}
+
+// stageName reports a staging or set-aside name, never a file an emit writes.
+func stageName(base string) bool {
+	return strings.HasPrefix(base, tempPrefix) && strings.HasSuffix(base, tempSuffix)
+}
+
+// hidden reports a hidden name, a staged file's among others: never a stray (DECISIONS 356).
+func hidden(base string) bool { return strings.HasPrefix(base, tempPrefix) }
 
 // stagedBeside are the staging names of the file abs that its directory lists, of any run, in
 // byte order; none when the directory cannot exist.

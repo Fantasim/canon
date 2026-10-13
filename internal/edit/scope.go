@@ -139,7 +139,7 @@ func isTypeDecl(d syntax.Decl) bool {
 func importedBy(units []*project.Unit, pkg string) []string {
 	out := []string{pkg}
 	for i := 0; i < len(out); i++ {
-		j := slices.IndexFunc(units, func(u *project.Unit) bool { return u.Name == out[i] })
+		j := project.UnitIndex(units, out[i])
 		if j < 0 {
 			continue
 		}

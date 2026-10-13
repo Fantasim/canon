@@ -88,6 +88,28 @@ func RefBranch(fields []*Field, f *Field, r *value.Record) (int, bool) {
 	return f.Branches.branch(ref.Key)
 }
 
+// EmptyListDependent is the dependent type t holds when v, a value of t, is an empty list, which
+// needs no branch: its discriminant may select a Never arm, whose list holds nothing (DECISIONS
+// 307); false for any other value.
+func EmptyListDependent(t TypeRef, v value.Value) (*Dependent, bool) {
+	l, isList := v.(*value.List)
+	app := HeldApp(t)
+	if !isList || len(l.Elems) != 0 || app == nil {
+		return nil, false
+	}
+	d, ok := app.Named.(*Dependent)
+	return d, ok
+}
+
+// RefKeyEnum is the enum keying ref, a ref into a keyed list keyed by one; false for any other key.
+func RefKeyEnum(ref TypeRef) (*Enum, bool) {
+	if ref.Key == nil || ref.Key.Kind != types.Enum {
+		return nil, false
+	}
+	e, ok := ref.Key.Named.(*Enum)
+	return e, ok
+}
+
 // recordField is the value of the field named name of the record value v, nil for none.
 func recordField(v value.Value, name string) value.Value {
 	r, ok := v.(*value.Record)

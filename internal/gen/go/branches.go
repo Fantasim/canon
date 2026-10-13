@@ -79,21 +79,15 @@ func (g *gen) branchTable(bt ir.NamedBranches) {
 	g.printf(closeBrace)
 }
 
-// recordBranch is the dependent type of slot s and the branch the record value r selects for its value v: through its build-time table when a ref decides it, else down ir.DiscFields' path (CODEGEN.md §5.6). An empty list needs none: its discriminant may select a Never arm, whose list holds nothing (DECISIONS 307).
+// recordBranch is the dependent type of slot s and the branch the record value r selects for its value v: through its build-time table when a ref decides it, else down ir.DiscFields' path (CODEGEN.md §5.6). An empty list needs none (ir.EmptyListDependent, DECISIONS 307).
 func (g *gen) recordBranch(owner *body, s *slot, r *value.Record, v value.Value) (*ir.Dependent, int) {
-	if d, ok := ir.HeldApp(s.T).Named.(*ir.Dependent); ok && emptyList(v) {
+	if d, ok := ir.EmptyListDependent(s.T, v); ok {
 		return d, 0
 	}
 	if s.src != nil && s.src.Branches != nil {
 		return g.refBranch(owner, s.src, r)
 	}
 	return g.bakedBranch(owner, r, *ir.HeldApp(s.T))
-}
-
-// emptyList reports a list value without elements.
-func emptyList(v value.Value) bool {
-	l, ok := v.(*value.List)
-	return ok && len(l.Elems) == 0
 }
 
 // refBranch is the dependent type of field f and the branch the record value r selects through f's build-time table (CODEGEN.md §5.6, DECISIONS 350); nil when r holds no key the table knows, which a checked value never does.

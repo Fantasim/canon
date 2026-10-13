@@ -88,7 +88,7 @@ func (r *run) sharing() []*placedEmit {
 func emitDirs(pe *placedEmit) []string {
 	dir := strings.ToLower(pe.dir)
 	if pe.e.Target == ir.TargetGo {
-		return []string{dir, project.Join(dir, goRuntimeDir)}
+		return []string{dir, project.Join(dir, ir.GoRT)}
 	}
 	return []string{dir}
 }

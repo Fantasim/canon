@@ -1,7 +1,6 @@
 package build
 
 import (
-	"bytes"
 	"cmp"
 	"context"
 	"io/fs"
@@ -100,7 +99,7 @@ func (r *run) emitStrayDirs(p *ir.Package, e *ir.Emit, only string) []strayDir {
 	}
 	dirs := []strayDir{{abs: abs, display: display, at: r.emitSpan(p, e), pkg: p.Name}}
 	if e.Target == ir.TargetGo {
-		dirs = append(dirs, strayDir{abs: project.Join(abs, goRuntimeDir), display: path.Join(display, goRuntimeDir), at: dirs[0].at, pkg: p.Name})
+		dirs = append(dirs, strayDir{abs: project.Join(abs, ir.GoRT), display: path.Join(display, ir.GoRT), at: dirs[0].at, pkg: p.Name})
 	}
 	return dirs
 }
@@ -119,7 +118,7 @@ func (r *run) straysIn(d strayDir, written map[string]bool, filled bool) ([]stra
 	slices.SortFunc(entries, func(a, b fs.DirEntry) int { return cmp.Compare(a.Name(), b.Name()) })
 	for _, e := range entries {
 		abs := project.Join(d.abs, e.Name())
-		if !e.Type().IsRegular() || strings.HasPrefix(e.Name(), tempPrefix) || written[strings.ToLower(abs)] { // a hidden name, like a staged file's
+		if !e.Type().IsRegular() || hidden(e.Name()) || written[strings.ToLower(abs)] {
 			continue
 		}
 		m, ok, err := r.markerOf(abs)
@@ -145,7 +144,7 @@ func (r *run) flagged(m marker, filled bool) bool {
 
 // inProject reports a package of the project, selected or not.
 func (r *run) inProject(pkg string) bool {
-	return slices.ContainsFunc(r.s.units, func(u *project.Unit) bool { return u.Name == pkg })
+	return project.UnitIndex(r.s.units, pkg) >= 0
 }
 
 // markerOf is what the generated-file marker of the file abs names: the package of a code
@@ -164,8 +163,7 @@ func (r *run) markerOf(abs string) (marker, bool, error) {
 	if err != nil {
 		return marker{}, false, ignoreGone(err)
 	}
-	line, _, _ := bytes.Cut(head, []byte(lineEnd))
-	line = bytes.TrimSuffix(line, []byte(carriageReturn))
+	line := firstLine(head)
 	if m := markerDir.FindSubmatch(line); m != nil {
 		return marker{name: dotted(string(m[1]))}, true, nil
 	}

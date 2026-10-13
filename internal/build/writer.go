@@ -109,7 +109,7 @@ func (w *writer) stage(c change) error {
 // stageFile writes data under abs's staging name, with the mode of the file abs when it exists.
 func (w *writer) stageFile(abs string, data []byte, existed bool) error {
 	tmp := w.stageOf(abs)
-	if err := writeTemp(w.fsys, tmp, data); err != nil {
+	if err := WriteStaged(w.fsys, tmp, data, nil); err != nil {
 		return err
 	}
 	if !existed {
@@ -120,15 +120,33 @@ func (w *writer) stageFile(abs string, data []byte, existed bool) error {
 
 // keepMode gives tmp the permissions of the file abs, where the file system sets them (handoff 2026-10-07 A2).
 func keepMode(fsys WriteFS, tmp, abs string) error {
-	chmod, ok := fsys.(ModeFS)
-	if !ok {
-		return nil
+	perm, err := permOf(fsys, abs)
+	if err != nil || perm == nil {
+		return err
+	}
+	return SetPerm(fsys, tmp, *perm)
+}
+
+// permOf is the permissions of the file abs where fsys sets them, nil elsewhere.
+func permOf(fsys WriteFS, abs string) (*fs.FileMode, error) {
+	if _, ok := fsys.(ModeFS); !ok {
+		return nil, nil
 	}
 	info, err := fsys.Stat(abs)
 	if err != nil {
-		return fmt.Errorf(fmtWrap, err)
+		return nil, fmt.Errorf(fmtWrap, err)
 	}
-	return chmod.Chmod(tmp, info.Mode().Perm())
+	perm := info.Mode().Perm()
+	return &perm, nil
+}
+
+// SetPerm gives name the permissions perm where fsys sets them; elsewhere a file keeps the mode
+// its write gave it.
+func SetPerm(fsys project.FS, name string, perm fs.FileMode) error {
+	if m, ok := fsys.(ModeFS); ok {
+		return m.Chmod(name, perm)
+	}
+	return nil
 }
 
 // mkdirs makes dir's missing directories top-down, recording each; a forbidden one fails first (CODEGEN.md §2.4).
@@ -222,7 +240,7 @@ func (w *writer) restoreOne(c change) error {
 // unspell puts a respelled file back under its spelling on disk, with its previous content.
 func (w *writer) unspell(c change) error {
 	tmp := w.stageOf(c.respell)
-	if err := writeTemp(w.fsys, tmp, c.old); err != nil {
+	if err := WriteStaged(w.fsys, tmp, c.old, nil); err != nil {
 		return err
 	}
 	if err := keepMode(w.fsys, tmp, c.abs); err != nil {
@@ -232,12 +250,4 @@ func (w *writer) unspell(c change) error {
 		return err
 	}
 	return w.fsys.Rename(tmp, c.respell)
-}
-
-// writeTemp removes whatever sits at a staging name, never writing through it (ADR-0010).
-func writeTemp(fsys WriteFS, tmp string, data []byte) error {
-	if err := fsys.Remove(tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
-	}
-	return fsys.WriteFile(tmp, data)
 }
