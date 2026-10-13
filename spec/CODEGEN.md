@@ -1600,7 +1600,9 @@ export function decodeEventConfig(json: unknown): EventConfig;
   the last): `Parse` and `parse<T>` are the exact forms (DECISIONS 361). Every failure of a
   `types`-mode decoder, a byte rule's included, names a `$`-rooted path (`$.events[1].levelMax`,
   `$[0]`, `$` for the top level); a syntax error, which has no path, names its 0-based byte offset
-  (`<T>: invalid JSON at byte 17`), in every target. `data`-mode loaders keep their own form
+  (`<T>: invalid JSON at byte 17`): the first byte that cannot continue a JSON document (a BOM
+  counted), or the input's length when it ends too early (`{"d": ` is byte 6), the same in every
+  target. `data`-mode loaders keep their own form
   (they read files, not values). Only a public record or
   variant has a public decoder, and a public `@text` fn whose result (its non-optional type, for a
   maybe-file) is a map, a list or a keyed list: Go `func Decode<Fn>File(raw []byte) (<T>,
