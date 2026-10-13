@@ -1616,6 +1616,8 @@ export function decodeEventConfig(json: unknown): EventConfig;
   placed at its closing quote, since an unclosed key may still differ (`{"a": "\xff` is
   `$.a: not UTF-8`; `{"a":1,"a` is a syntax error); a `\u` escape counts once its four hex digits
   are read, so one cut short is a syntax error at the input's length (`{"a": "\udc` is byte 11).
+  Within one string, invalid UTF-8 and an unpaired surrogate are ordered by the byte where each
+  becomes certain too (`{"a": "\udc00\xff"}` is `$.a: unpaired surrogate`).
   A number token valid by JSON is never a syntax error, whatever its size (`1e400`): under a field
   it is read or refused at its path as that field's type decides (a value out of a `Float64`'s
   range is `number out of range`), and under a key the decoder ignores it is accepted unread. Invalid UTF-8 inside a string names its
