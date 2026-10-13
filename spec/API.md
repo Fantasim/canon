@@ -1219,8 +1219,8 @@ implements `json.Unmarshaler` too, and JSON of either that does not decode is `E
   §11.5); on a `Never` or uncomputable branch it is kept as data.
 - **E26.** Marshalling writes `source` for every `Lit` except `FromJSON`, which is written as
   `value`. `Source` text produced by the API is canonical (FORMATTER.md), single-line. A
-  `Member(name)` or `Case(name)` named by a reserved word that cannot be read bare (LEX-08) has no
-  `Source` text, since the lit does not know its type: `ErrNoText` (DECISIONS 366).
+  `Member(name)` or `Case(name)` named by a reserved word that is not nameable (LEX-08) has no
+  `Source` text whatever its position, since the lit knows neither its type nor its place: `ErrNoText` (DECISIONS 366).
 
 ### 8.9 Renaming a Canon name
 
