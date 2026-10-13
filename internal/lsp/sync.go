@@ -79,7 +79,9 @@ func (s *server) didChange(params json.RawMessage) error {
 	return nil
 }
 
-// didClose drops the buffer: the file is read from the disk again, its findings still published.
+// didClose drops the buffer. Another buffer keeping its project open, the file is read from the
+// disk again, its findings still published; the last one closed, the project is released and its
+// findings cleared, so that no project visited is kept (DECISIONS 368).
 func (s *server) didClose(params json.RawMessage) error {
 	var p openParams
 	if err := decode(params, &p); err != nil {
@@ -92,12 +94,33 @@ func (s *server) didClose(params json.RawMessage) error {
 	s.mu.Lock()
 	doc := s.docs[abs]
 	delete(s.docs, abs)
+	released := s.release(doc)
 	s.mu.Unlock()
 	if doc == nil {
 		return nil
 	}
-	s.synced(abs, doc.root)
+	s.synced(abs, doc.root) // a released project's root is then recomputed as a closed loose key: cleared
+	if released != nil {
+		released.close() // after synced cancelled the pass, which so never reports the close
+	}
 	return nil
+}
+
+// release forgets the project of doc when doc was its last open buffer, and returns it, to be
+// closed; nil otherwise. s.mu is held.
+func (s *server) release(doc *document) *workspaceProject {
+	if doc == nil || doc.root == "" {
+		return nil
+	}
+	//canon:unordered a search for any buffer of the project
+	for _, open := range s.docs {
+		if open.root == doc.root {
+			return nil
+		}
+	}
+	p := s.projects[doc.root]
+	delete(s.projects, doc.root)
+	return p
 }
 
 // didChangeWatched recomputes every project, a file changed on the disk; one that could not

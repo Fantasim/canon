@@ -8,6 +8,10 @@ import (
 // debounce is how long a document stays quiet before diagnostics are recomputed (IMPLEMENTATION-PLAN §8.4 Sync).
 const debounce = 150 * time.Millisecond
 
+// scavengeAfter is how long the server stays quiet after a pass before it returns the memory
+// the pass freed to the OS (DECISIONS 368).
+const scavengeAfter = 5 * time.Second
+
 // Framing (LSP 3.17 base protocol).
 const (
 	headerLength  = "Content-Length"

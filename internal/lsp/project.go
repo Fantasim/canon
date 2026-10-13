@@ -25,6 +25,7 @@ type workspaceProject struct {
 	mu     sync.Mutex
 	ws     *workspace.Project // nil until it opens
 	failed error              // why the last open failed: a *build.OpenError carries findings
+	closed bool               // released (DECISIONS 368): an open finishing after it keeps nothing
 }
 
 // projectHooks are a test's: called as the project opens, and as the pass syncs it.
@@ -95,7 +96,10 @@ func (p *workspaceProject) open(docs map[string][]byte) bool {
 	fsys.release()
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if err != nil {
+	switch {
+	case p.closed:
+		return false
+	case err != nil:
 		p.failed = err
 		return false
 	}
@@ -175,10 +179,11 @@ func openFailed(err error, root string) (map[string][]diagnostic, error) {
 	return nil, err
 }
 
-// close closes the project's workspace, if open.
+// close closes the project's workspace, if open; one opening meanwhile is not kept (DECISIONS 368).
 func (p *workspaceProject) close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	p.closed = true
 	if p.ws != nil {
 		p.ws.Close()
 	}

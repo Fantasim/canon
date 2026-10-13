@@ -1,0 +1,67 @@
+A project lives while one of its buffers is open (DECISIONS 368, CLI.md §4): a buffer closed while
+another stays open is checked from the disk again; the last one closed releases the project and
+clears its findings; a buffer opened again opens it anew.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// N.
+let n: Int = "x"
+-- proj/b/b.canon --
+/// B.
+package b
+
+/// M.
+let m: Int = 1
+-- edits/broken.canon --
+/// B.
+package b
+
+/// M.
+let m: Bool = 1
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+open proj/b/b.canon
+wait
+change proj/b/b.canon edits/broken.canon
+wait
+close proj/b/b.canon
+wait
+close proj/a/a.canon
+wait
+open proj/b/b.canon
+wait
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> open proj/b/b.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+> change proj/b/b.canon edits/broken.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/b/b.canon","diagnostics":[{"range":{"start":{"line":4,"character":14},"end":{"line":4,"character":15}},"severity":1,"code":"E3002","source":"canon","message":"expected Bool, found Int"}]}}
+> close proj/b/b.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/b/b.canon","diagnostics":[]}}
+> close proj/a/a.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[]}}
+> open proj/b/b.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

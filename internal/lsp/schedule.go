@@ -9,19 +9,27 @@ import (
 	"github.com/fantasim/canonlang/internal/workspace/safego"
 )
 
-// schedule runs a pass once no change came for the debounce, until ctx ends; a pass that
-// fails or panics is logged and the next one runs.
+// schedule runs a pass once no change came for the debounce, until ctx ends; a pass that fails
+// or panics is logged and the next one runs. A pass followed by quiet gives the memory it freed
+// back to the OS: an idle server holds what it keeps, not its peak (DECISIONS 368).
 func (s *server) schedule(ctx context.Context) error {
-	timer := time.NewTimer(s.cfg.debounce)
+	timer, idle := time.NewTimer(s.cfg.debounce), time.NewTimer(s.cfg.quiet)
 	timer.Stop()
+	idle.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-s.kick:
+			idle.Stop()
 			timer.Reset(s.cfg.debounce)
 		case <-timer.C:
 			s.logged(s.pass(ctx))
+			if s.cfg.scavenge != nil {
+				idle.Reset(s.cfg.quiet)
+			}
+		case <-idle.C:
+			s.cfg.scavenge()
 		}
 	}
 }

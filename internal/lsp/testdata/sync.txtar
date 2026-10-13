@@ -1,6 +1,7 @@
 Full-document sync (IMPLEMENTATION-PLAN §8.4 Sync): each buffer is an overlay of its project;
-diagnostics follow the buffer, an empty list clears a file that no longer has findings, and a
-closed buffer is checked from the disk again. Changes inside the debounce give one publication.
+diagnostics follow the buffer, an empty list clears a file that no longer has findings, and the
+project's last buffer closed releases it, its findings cleared (DECISIONS 368, CLI.md §4;
+release.txtar). Changes inside the debounce give one publication.
 -- proj/project.canon --
 project acme {
   canon: "0.1"
@@ -61,7 +62,7 @@ send {"jsonrpc":"2.0","method":"exit"}
 < {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":14},"end":{"line":4,"character":15}},"severity":1,"code":"E3002","source":"canon","message":"expected Bool, found Int"}]}}
 > close proj/a/a.canon
 > wait
-< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":4,"character":13},"end":{"line":4,"character":16}},"severity":1,"code":"E3002","source":"canon","message":"expected Int, found String"}]}}
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[]}}
 > send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
 < {"jsonrpc":"2.0","id":9,"result":null}
 > send {"jsonrpc":"2.0","method":"exit"}

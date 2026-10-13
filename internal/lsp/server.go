@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -17,14 +18,16 @@ import (
 // returns nil after shutdown then exit (or end of input), ErrNoShutdown when they came without
 // shutdown, else the error that stopped it.
 func Serve(ctx context.Context, in io.Reader, out io.Writer) error {
-	return serve(ctx, in, out, config{debounce: debounce})
+	return serve(ctx, in, out, config{debounce: debounce, quiet: scavengeAfter, scavenge: debug.FreeOSMemory})
 }
 
-// config is what tests vary: the debounce, a hook told after each pass published, one called as
-// a pass starts computing, one as a project opens, one as the pass syncs a project, and one as a
-// background request starts.
+// config is what tests vary: the debounce, the quiet after a pass before scavenge gives freed
+// memory back (never when nil), and hooks: after a pass published, as one computes, as a project
+// opens, as the pass syncs one, and as a background request starts.
 type config struct {
 	debounce  time.Duration
+	quiet     time.Duration
+	scavenge  func()
 	passed    func()
 	computing func(ctx context.Context)
 	opening   func()
