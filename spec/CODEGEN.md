@@ -1312,7 +1312,10 @@ Every TypeScript table holds `CanonRow<T, K>`, `K` its id type: a container is
 `CanonTable<K, CanonRow<T, K>>`, a `table` field `ReadonlyArray<CanonRow<T, K>>` (§4.2), own or
 foreign record alike; a keyed list's container is `CanonTable<K, T>` ([§8.2](#82-helper-block)).
 
-A `@stable` field `f` gets `FindBy` + UpperCamel(f). `Find` on a keyed list takes the key field's
+A `@stable` field `f` gets `FindBy` + UpperCamel(f) in Go and C++, and in TypeScript a method
+`findBy` + UpperCamel(f) of the container (`(value: <f's TS type>) => Row | null`, an index built
+once by `canonTable`'s `by` argument, §8.2; DECISIONS 369); two lookups of one name are `E8005`.
+`Find` on a keyed list takes the key field's
 type (`string`/`std::string_view`, `int64`/`int64_t`). In Go, `FindBy<F>` reads a
 `map[<type>]int` index from the value to the entry's position, built once, never a scan.
 C++ `Get(id)` with an id outside the id enum calls `std::abort()`, as every lookup does
@@ -3492,10 +3495,22 @@ export interface CanonTable<K, T> {
 /** A row of a table: its record, with this table's id and retired flag present. */
 export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
 
-function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
+/** A table or keyed list: entries in source order, lookup by key. */
+export interface CanonTable<K, T> {
+  readonly length: number;
+  readonly all: ReadonlyArray<T>;
+  at(i: number): T;
+  find(key: K): T | null;
+}
+
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
+/** A table or keyed list, and a lookup per @stable field (`by`: the method name to the field's property): each an index built once, never a scan (CODEGEN.md §5.9). */
+function canonTable<K, T, B extends Record<string, keyof T> = {}>(rows: ReadonlyArray<T>, keyOf: (row: T) => K, by?: B): CanonTable<K, T> & { readonly [P in keyof B]: (value: T[B[P]]) => T | null } {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
-  return Object.freeze({
+  const table: CanonTable<K, T> = {
     length: rows.length,
     all: rows,
     at: (i: number): T => rows[i],
@@ -3503,7 +3518,17 @@ function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTa
       const i = index.get(key);
       return i === undefined ? null : rows[i];
     },
-  });
+  };
+  const lookups: Record<string, (value: unknown) => T | null> = {};
+  for (const [name, prop] of Object.entries((by ?? {}) as Record<string, keyof T>)) {
+    const at = new Map<unknown, number>();
+    rows.forEach((row, i) => at.set(row[prop], i));
+    lookups[name] = (value: unknown): T | null => {
+      const i = at.get(value);
+      return i === undefined ? null : rows[i];
+    };
+  }
+  return Object.freeze({ ...table, ...lookups }) as CanonTable<K, T> & { readonly [P in keyof B]: (value: T[B[P]]) => T | null };
 }
 
 /** Deep-freezes plain objects and arrays (CanonMaps are already read-only). */

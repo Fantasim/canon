@@ -3782,3 +3782,13 @@ round 2", "PS1 review", "PS2 round 2"):
      RSS ≤ 1.1 × (peaks ~1.8 × during a pass); visiting projects in turn holds one, not all
      (before: +673 MiB live per project visited). Reason: `canon lsp` grew from 13 MB to 6 GB
      over a working day (Scripts handoff 2026-10-12, F1).
+
+369. **TypeScript lookups by a `@stable` field (CODEGEN.md §5.9, §8.2).** A `@stable` field `f` of
+     a table's or keyed list's record gives the TypeScript container a method `findBy` +
+     UpperCamel(f) (the Canon field's name, as Go and C++; a `@ts(name:)` override renames the
+     row property, not the method), typed `(value: <f's TS type>) => Row | null`: an index built
+     once by `canonTable(rows, keyOf, by)`, never a scan; a miss is `null`, a retired row is found.
+     The data-mode `decode<V>`/`parse<V>` return the same container type. Two `@stable` fields
+     whose methods share a name are `E8005` (the TS name plan declares them). A record with no
+     `@stable` field generates the same code as before. Reason: CODEGEN §5.9 gave every target a
+     `FindBy<F>` but TypeScript had none (guide review, 2026-10-12).
