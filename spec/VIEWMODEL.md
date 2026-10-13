@@ -717,7 +717,9 @@ the selected row (SPEC §16.9).
   for an enum key its label (default: its Canon name) with the wire value as subtitle when it
   differs from the Canon name; for a ref key the target's title. "Add" offers, for an enum key,
   the active members not yet present; for any other key, the key control. Cards apply to every
-  map of records, not only `{Enum: Record}`.
+  map of records, not only `{Enum: Record}`. The JSON's `keyControl` is the key's control by these
+  rules (an enum key: C4's `segmented`, `select` or `search` over `{"enum": …}`); a client filters
+  its choices to the members not yet present.
 - **T23.** `map` (C30): a two-column table, key and value, with the key and value controls.
 
 ### 7.7 Steps
