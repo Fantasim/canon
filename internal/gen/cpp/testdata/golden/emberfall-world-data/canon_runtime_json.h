@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <chrono>
 #include <clocale>
 #include <cmath>
@@ -256,15 +257,20 @@ using Float32Tokens = std::map<const Json*, std::string>;
 /// entries in (WIRE.md §5.7). An object absent here is read in its own order.
 using KeyOrders = std::map<const Json*, std::vector<std::string>>;
 
-/// A SAX pass over a data file before it is parsed: the file is one object, no object holds a
-/// key twice (nlohmann would keep the last), and nothing nests deeper than kMaxNesting. It stops
-/// at the first finding and names its path ("rows[3].id: duplicate key").
+/// A SAX pass over a data file before it is parsed: the file is one object (any value, for a
+/// `ParseTextFile`), no object holds a key twice (nlohmann would keep the last), and nothing nests
+/// deeper than kMaxNesting. It stops at the first finding and names its path ("rows[3].id:
+/// duplicate key").
 class StrictCheck {
 public:
     StrictCheck() = default;
     /// With `keepOrders`, the pass also records the key order of every object whose keys are not
     /// in byte order (TakeOrders).
     explicit StrictCheck(bool keepOrders) : keepOrders_(keepOrders) {}
+    /// With `anyRoot`, the top-level value may be any JSON value, not only an object; `root` starts
+    /// the path of a finding ("$" gives "$.events[1].id: duplicate key").
+    StrictCheck(bool keepOrders, bool anyRoot, std::string root)
+        : keepOrders_(keepOrders), anyRoot_(anyRoot), root_(std::move(root)) {}
 
     bool null() { return Value(); }
     bool boolean(bool) { return Value(); }
@@ -296,7 +302,16 @@ public:
         if (f.keys.insert(name).second) return true;
         return Refuse("duplicate key");
     }
-    bool parse_error(size_t, const std::string&, const Json::exception&) { return false; }
+    bool parse_error(size_t position, const std::string&, const Json::exception&) {
+        syntax_ = true;
+        position_ = position;
+        return false;
+    }
+
+    /// True when the text is not JSON; Offset is then the 0-based offset of the byte where nlohmann
+    /// stopped (the last byte it read).
+    bool SyntaxError() const noexcept { return syntax_; }
+    size_t Offset() const noexcept { return position_ > 0 ? position_ - 1 : 0; }
 
     /// Empty unless the pass found a duplicate key or a nesting too deep.
     const std::string& Error() const noexcept { return error_; }
@@ -318,13 +333,13 @@ private:
     };
 
     bool Value() {
-        if (frames_.empty()) return false;
+        if (frames_.empty()) return anyRoot_;
         if (!frames_.back().object) ++frames_.back().next;
         return true;
     }
 
     bool Open(bool object) {
-        if (frames_.empty() && !object) return false;
+        if (frames_.empty() && !object && !anyRoot_) return false;
         if (!frames_.empty() && !Value()) return false;
         if (frames_.size() >= kMaxNesting) {
             return Refuse("nested deeper than " + std::to_string(kMaxNesting) + " levels");
@@ -360,6 +375,7 @@ private:
 
     /// The path of the value being read, then what is wrong with it.
     bool Refuse(const std::string& what) {
+        error_ = root_;
         for (const Frame& f : frames_) {
             if (f.object) {
                 if (!error_.empty()) error_ += '.';
@@ -375,11 +391,182 @@ private:
     std::string Pointer() const { return Pointer(frames_.size()); }
 
     bool keepOrders_ = false;
+    bool anyRoot_ = false;
+    bool syntax_ = false;
+    size_t position_ = 0;
+    std::string root_;
     std::vector<Frame> frames_;
     std::string error_;
     std::vector<std::pair<std::string, std::string>> midpoints_;
     std::vector<std::pair<std::string, std::vector<std::string>>> orders_;
 };
+
+namespace detail {
+
+/// The Float32 tokens and key orders `check` recorded, keyed by the nodes of `doc` they belong to.
+inline void TakeSidecars(StrictCheck& check, const Json& doc, Float32Tokens& tokens, KeyOrders* orders) {
+    tokens.clear();
+    for (auto& m : check.TakeMidpoints()) {
+        const Json::json_pointer at(m.first);
+        if (doc.contains(at)) tokens.emplace(&doc[at], std::move(m.second));
+    }
+    if (orders == nullptr) return;
+    orders->clear();
+    for (auto& o : check.TakeOrders()) {
+        const Json::json_pointer at(o.first);
+        if (doc.contains(at)) orders->emplace(&doc[at], std::move(o.second));
+    }
+}
+
+}  // namespace detail
+
+namespace detail {
+
+/// RFC 8259's grammar over a text, to name where a syntax error is: the 0-based offset of the
+/// first byte that cannot continue a JSON document (a leading BOM counted), `size()` when the text
+/// ends too early, `npos` when it is syntactically valid. Bytes of a string are not checked beyond
+/// control characters and escapes (nlohmann refuses invalid UTF-8 and lone surrogates).
+class SyntaxScan {
+public:
+    explicit SyntaxScan(std::string_view text) : s_(text) {}
+
+    size_t Offset() {
+        if (s_.substr(0, 3) == "\xEF\xBB\xBF") i_ = 3;
+        Space();
+        if (!Value(0)) return i_;
+        Space();
+        return i_ == s_.size() ? std::string_view::npos : i_;
+    }
+
+private:
+    bool At(char c) const { return i_ < s_.size() && s_[i_] == c; }
+
+    void Space() {
+        while (i_ < s_.size() && (s_[i_] == ' ' || s_[i_] == '\t' || s_[i_] == '\n' || s_[i_] == '\r')) ++i_;
+    }
+
+    bool Digits() {
+        const size_t from = i_;
+        while (i_ < s_.size() && s_[i_] >= '0' && s_[i_] <= '9') ++i_;
+        return i_ > from;
+    }
+
+    bool Word(std::string_view word) {
+        for (const char c : word) {
+            if (!At(c)) return false;
+            ++i_;
+        }
+        return true;
+    }
+
+    bool Number() {
+        if (At('-')) ++i_;
+        if (At('0')) {
+            ++i_;
+        } else if (!Digits()) {
+            return false;
+        }
+        if (At('.') && (++i_, !Digits())) return false;
+        if (At('e') || At('E')) {
+            ++i_;
+            if (At('+') || At('-')) ++i_;
+            if (!Digits()) return false;
+        }
+        return true;
+    }
+
+    bool Escape() {
+        if (i_ >= s_.size()) return false;
+        if (s_[i_] != 'u') {
+            if (std::string_view("\"\\/bfnrt").find(s_[i_]) == std::string_view::npos) return false;
+            return ++i_, true;
+        }
+        ++i_;
+        for (int n = 0; n < 4; ++n, ++i_) {
+            if (i_ >= s_.size() || !std::isxdigit(static_cast<unsigned char>(s_[i_]))) return false;
+        }
+        return true;
+    }
+
+    bool String() {
+        ++i_;
+        while (i_ < s_.size()) {
+            const char c = s_[i_++];
+            if (c == '"') return true;
+            if (static_cast<unsigned char>(c) < 0x20) return --i_, false;
+            if (c == '\\' && !Escape()) return false;
+        }
+        return false;
+    }
+
+    /// The members of an object or items of an array, up to its closing `close`; `i_` is past the opener.
+    bool Items(char close, int depth) {
+        Space();
+        if (At(close)) return ++i_, true;
+        for (;;) {
+            if (close == '}') {
+                if (!At('"') || !String()) return false;
+                Space();
+                if (!At(':')) return false;
+                ++i_;
+                Space();
+            }
+            if (!Value(depth + 1)) return false;
+            Space();
+            if (At(close)) return ++i_, true;
+            if (!At(',')) return false;
+            ++i_;
+            Space();
+        }
+    }
+
+    bool Value(int depth) {
+        if (i_ >= s_.size() || depth > static_cast<int>(kMaxNesting)) return false;
+        switch (s_[i_]) {
+            case '{': return ++i_, Items('}', depth);
+            case '[': return ++i_, Items(']', depth);
+            case '"': return String();
+            case 't': return Word("true");
+            case 'f': return Word("false");
+            case 'n': return Word("null");
+            default: return Number();
+        }
+    }
+
+    std::string_view s_;
+    size_t i_ = 0;
+};
+
+}  // namespace detail
+
+/// Parses a JSON text (WIRE.md §3.1, §3.2): any top-level value, the same byte rules as
+/// ParseDataFile (UTF-8 and a leading BOM, no repeated key, nothing nested deeper than
+/// kMaxNesting), without the `$schema` and envelope checks. `name` is used in messages; a repeated
+/// key is "<name>: $.a.b: duplicate key" and a syntax error "<name>: invalid JSON at byte N", the
+/// first byte that cannot continue a JSON document (a BOM counted), or the length of a text that
+/// ends too early (CODEGEN.md §5.13). `tokens` and `orders` (when not null) receive the
+/// Float32Tokens and KeyOrders of `doc`, for a `Decoder` reading it in file order.
+inline bool ParseTextFile(const std::string& name, std::string_view text, Json& doc, std::string& error,
+                          Float32Tokens& tokens, KeyOrders* orders) {
+    StrictCheck check(orders != nullptr, /*anyRoot=*/true, "$");
+    const bool strict = Json::sax_parse(text.begin(), text.end(), &check);
+    if (!check.Error().empty()) {
+        error = name + ": " + check.Error();
+        return false;
+    }
+    if (strict) doc = Json::parse(text.begin(), text.end(), nullptr, /*allow_exceptions=*/false);
+    if (!strict || doc.is_discarded()) {
+        error = name + ": invalid JSON at byte " + std::to_string(std::min(detail::SyntaxScan(text).Offset(), check.Offset()));
+        return false;
+    }
+    detail::TakeSidecars(check, doc, tokens, orders);
+    return true;
+}
+
+inline bool ParseTextFile(const std::string& name, std::string_view text, Json& doc, std::string& error,
+                          Float32Tokens& tokens, KeyOrders& orders) {
+    return ParseTextFile(name, text, doc, error, tokens, &orders);
+}
 
 /// Parses a data file written by `canon build` and checks its "$schema" against the
 /// fingerprint compiled into this binary. `name` is used in messages (a path, or
@@ -415,19 +602,7 @@ inline bool ParseDataFile(const std::string& name, const std::string& text, std:
                 ". Rebuild the data or deploy the matching binary";
         return false;
     }
-    tokens.clear();
-    const Json& parsed = doc;
-    for (auto& m : check.TakeMidpoints()) {
-        const Json::json_pointer at(m.first);
-        if (parsed.contains(at)) tokens.emplace(&parsed[at], std::move(m.second));
-    }
-    if (orders != nullptr) {
-        orders->clear();
-        for (auto& o : check.TakeOrders()) {
-            const Json::json_pointer at(o.first);
-            if (parsed.contains(at)) orders->emplace(&parsed[at], std::move(o.second));
-        }
-    }
+    detail::TakeSidecars(check, doc, tokens, orders);
     return true;
 }
 

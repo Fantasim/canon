@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 
 #include "canon_runtime_json.h"
 
@@ -47,11 +48,37 @@ std::optional<TimeOfDay> TimeOfDay::Decode(const nlohmann::json& v, std::string&
     return std::nullopt;
 }
 
+std::optional<TimeOfDay> TimeOfDay::Parse(std::string_view text, std::string& error) {
+    nlohmann::json doc;
+    canon::json::Float32Tokens tokens;
+    canon::json::KeyOrders orders;
+    if (!canon::json::ParseTextFile("TimeOfDay", text, doc, error, tokens, orders)) return std::nullopt;
+    canon::json::Decoder dec("TimeOfDay", tokens, orders);
+    dec.Push("$");
+    std::optional<TimeOfDay> out;
+    if (detail::Decode(doc, dec, out.emplace())) return out;
+    error = dec.Error();
+    return std::nullopt;
+}
+
 std::optional<Window> Window::Decode(const nlohmann::json& v, std::string& error) {
     canon::json::Decoder dec("Window");
     dec.Push("$");
     std::optional<Window> out;
     if (detail::Decode(v, dec, out.emplace())) return out;
+    error = dec.Error();
+    return std::nullopt;
+}
+
+std::optional<Window> Window::Parse(std::string_view text, std::string& error) {
+    nlohmann::json doc;
+    canon::json::Float32Tokens tokens;
+    canon::json::KeyOrders orders;
+    if (!canon::json::ParseTextFile("Window", text, doc, error, tokens, orders)) return std::nullopt;
+    canon::json::Decoder dec("Window", tokens, orders);
+    dec.Push("$");
+    std::optional<Window> out;
+    if (detail::Decode(doc, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
 }

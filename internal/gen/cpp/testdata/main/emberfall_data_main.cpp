@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     error.clear();
     Check(game::world::Bands::Load(std::string(argv[2]) + "/bands.json", error) == nullptr, "a key naming no entry is refused");
     std::printf("bad: %s\n", error.c_str());
-    for (const char* file : {"/zones.json", "/cells.json", "/pairs.json"}) {
+    for (const char* file : {"/zones.json", "/cells.json", "/pairs.json", "/best.json"}) {
         error.clear();
         Check(game::world::Zones::Load(std::string(argv[2]) + file, error) == nullptr, std::string("a key naming no entry is refused: ") + file);
         std::printf("bad: %s\n", error.c_str());

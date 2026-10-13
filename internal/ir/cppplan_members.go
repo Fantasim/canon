@@ -100,10 +100,11 @@ func (pl *CppNamePlan) DefinesName(d *DefineTable) string {
 	return cppConstPrefix + DefineTableName(d) + cppDefinesSuffix
 }
 
-// declarePublicDecode declares a record's or variant's static Decode in types mode (CODEGEN.md §5.13, §7.2).
+// declarePublicDecode declares a record's or variant's static Decode and Parse in types mode (CODEGEN.md §5.13, §7.2).
 func (pl *CppNamePlan) declarePublicDecode(sc *nameScope, origin string, item any) {
 	if pl.e.Mode == ModeTypes {
 		pl.declare(sc, CppDecode, origin, item)
+		pl.declare(sc, CppParse, origin, item)
 	}
 }
 

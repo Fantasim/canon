@@ -7,3 +7,16 @@ std::optional<%[1]s> %[1]s::%[2]s(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<%[1]s> %[1]s::%[5]s(std::string_view text, std::string& error) {
+    nlohmann::json doc;
+    canon::json::Float32Tokens tokens;
+    canon::json::KeyOrders orders;
+    if (!canon::json::ParseTextFile(%[3]s, text, doc, error, tokens, orders)) return std::nullopt;
+    canon::json::Decoder dec(%[3]s, tokens, orders);
+    dec.Push(%[4]s);
+    std::optional<%[1]s> out;
+    if (detail::%[2]s(doc, dec, out.emplace())) return out;
+    error = dec.Error();
+    return std::nullopt;
+}
+

@@ -1,8 +1,10 @@
 package cppgen_test
 
 import (
+	"cmp"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -13,9 +15,42 @@ import (
 var eventConfigFixture = filepath.Join("..", "..", "..", "examples", "_fixtures", "resource", "Server", "Event", "EventConfig.json")
 
 // typesFile is one file the types driver decodes: an edit of the fixture (from → to, "" for none)
-// or, for Extras, its own text; and the lines it prints.
+// or, for Extras, its own text; and the lines it prints, through Decode and through Parse (the
+// same unless parse says otherwise, DECISIONS 361; parseOnly: the file is not valid JSON to Decode).
 type typesFile struct {
-	name, arg, from, to, text, want string
+	name, arg, from, to, text, want, parse string
+	parseOnly                              bool
+}
+
+// nestedExtras is an Extras file holding an unknown key under `arrays` arrays (WIRE.md §3.1: depth 512, the object counted).
+func nestedExtras(arrays int) string {
+	return `{"zz": ` + strings.Repeat("[", arrays) + strings.Repeat("]", arrays) + `}`
+}
+
+// parseFiles are the files only Parse sees as a text: WIRE.md §3.1's byte rules and §3.2's repeated key, a duplicate refused at its path (DECISIONS 361; CODEGEN.md §5.13).
+var parseFiles = []typesFile{
+	{name: "dupnested.json", arg: "c", from: `"levelMax": 60`, to: `"levelMax": 60, "levelMax": 61`, parseOnly: true,
+		parse: "dupnested.json: error EventConfig: $.events[1].levelMax: duplicate key\n"},
+	{name: "duproot.json", arg: "x", text: `{"mode": "auto", "mode": "auto"}`, parseOnly: true, parse: "duproot.json: error Extras: $.mode: duplicate key\n"},
+	{name: "dupescaped.json", arg: "x", text: `{"mode": "auto", "m\u006fde": "auto"}`, parseOnly: true, parse: "dupescaped.json: error Extras: $.mode: duplicate key\n"},
+	{name: "dupcase.json", arg: "x", text: `{"mode": "auto", "MODE": "auto"}`, parseOnly: true, parse: "dupcase.json: reqMp=7 label=x mode=auto"},
+	{name: "bom.json", arg: "x", text: "\xef\xbb\xbf" + `{"mode": "auto"}`, parseOnly: true, parse: "bom.json: reqMp=7 label=x mode=auto"},
+	{name: "utf8.json", arg: "x", text: "{\"label\": \"\xff\"}", parseOnly: true, parse: "utf8.json: error Extras: invalid JSON at byte 11\n"},
+	{name: "utf16.json", arg: "x", text: "\xff\xfe{\x00}\x00", parseOnly: true, parse: "utf16.json: error Extras: invalid JSON at byte 0\n"},
+	{name: "surrogate.json", arg: "x", text: `{"label": "\ud800"}`, parseOnly: true, parse: "surrogate.json: error Extras: invalid JSON at byte 17\n"},
+	{name: "trailing.json", arg: "x", text: `{"mode": "auto"} 1`, parseOnly: true, parse: "trailing.json: error Extras: invalid JSON at byte 17\n"},
+	{name: "at6a.json", arg: "x", text: `{"d": `, parseOnly: true, parse: "at6a.json: error Extras: invalid JSON at byte 6\n"},
+	{name: "at6b.json", arg: "x", text: `{"d": x}`, parseOnly: true, parse: "at6b.json: error Extras: invalid JSON at byte 6\n"},
+	{name: "at3a.json", arg: "x", text: `{} {}`, parseOnly: true, parse: "at3a.json: error Extras: invalid JSON at byte 3\n"},
+	{name: "at3b.json", arg: "x", text: `{} 123`, parseOnly: true, parse: "at3b.json: error Extras: invalid JSON at byte 3\n"},
+	{name: "at9.json", arg: "x", text: `{"a": tru}`, parseOnly: true, parse: "at9.json: error Extras: invalid JSON at byte 9\n"},
+	{name: "at11.json", arg: "x", text: `{"d":"hp"} x`, parseOnly: true, parse: "at11.json: error Extras: invalid JSON at byte 11\n"},
+	{name: "at8.json", arg: "x", text: "\xef\xbb\xbf" + `{"d" 1}`, parseOnly: true, parse: "at8.json: error Extras: invalid JSON at byte 8\n"},
+	{name: "at1.json", arg: "x", text: `[,`, parseOnly: true, parse: "at1.json: error Extras: invalid JSON at byte 1\n"},
+	{name: "empty.txt", arg: "x", text: ``, parseOnly: true, parse: "empty.txt: error Extras: invalid JSON at byte 0\n"},
+	{name: "scalar.json", arg: "x", text: `7`, parseOnly: true, parse: "scalar.json: error Extras: $: expected an object\n"},
+	{name: "depth512.json", arg: "x", text: nestedExtras(511), parseOnly: true, parse: "depth512.json: reqMp=7 label=x mode=authoritative"},
+	{name: "depth513.json", arg: "x", text: nestedExtras(512), parseOnly: true, parse: "nested deeper than 512 levels"},
 }
 
 // typesFiles: the fixture, broken copies, then Extras' absent keys, markers and fractions (CODEGEN.md §5.13).
@@ -55,7 +90,8 @@ var typesFiles = []typesFile{
 	{name: "step.json", arg: "x", text: `{"legacy": null}`, want: "step.json: error Extras: $.legacy: null\n"},
 	{name: "exact.json", arg: "x", text: `{"ratio": 16777217}`, want: "exact.json: reqMp=7 label=x mode=authoritative delay=1500 ratio=1.67772e+07\n"},
 	{name: "midpoint.json", arg: "x", text: `{"ratio": 16777217.0}`,
-		want: "midpoint.json: error Extras: $.ratio: expected a Float32: the number lies halfway between two Float32 values\n"},
+		want:  "midpoint.json: error Extras: $.ratio: expected a Float32: the number lies halfway between two Float32 values\n",
+		parse: "midpoint.json: reqMp=7 label=x mode=authoritative delay=1500 ratio=1.67772e+07\n"},
 	{name: "pick.json", arg: "x", text: `{"mode": "bogus"}`, want: "pick.json: error Extras: $.mode: unknown value bogus\n"},
 	{name: "picks.json", arg: "p", text: `{"a": "auto", "n0": 1, "m0": "authoritative", "n1": 2, "m1": "auto"}`,
 		want: "picks.json: a=auto slots= 1=authoritative 2=auto\n"},
@@ -82,26 +118,50 @@ func TestTypesDecodeCompilesAndRuns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	files := append(slices.Clone(typesFiles), parseFiles...)
 	args := []string{dir}
-	for _, f := range typesFiles {
-		body := []byte(f.text)
-		if f.text == "" {
-			if f.from != "" && !strings.Contains(string(fixture), f.from) {
-				t.Fatalf("%s: the fixture has no %s", f.name, f.from)
-			}
-			body = []byte(strings.Replace(string(fixture), f.from, f.to, 1))
-		}
-		if err := os.WriteFile(filepath.Join(dir, f.name), body, 0o644); err != nil {
+	for _, f := range files {
+		if err := os.WriteFile(filepath.Join(dir, f.name), typesBody(t, string(fixture), f), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		args = append(args, f.arg+":"+f.name)
+		if !f.parseOnly {
+			args = append(args, f.arg+":"+f.name)
+		}
+		args = append(args, strings.ToUpper(f.arg)+":"+f.name)
 	}
 	sources := []string{"out/time/time.gen.cpp", "out/events/events.gen.cpp", "main.cpp"}
 	for _, out := range buildAndRun(t, dir, sources, args...) {
-		for _, f := range typesFiles {
-			if !strings.Contains(out, f.want) {
-				t.Errorf("%s: output lacks %q:\n%s", f.name, f.want, out)
+		sections := typesSections(out)
+		for _, f := range files {
+			wantParse := cmp.Or(f.parse, f.want)
+			if got := sections[strings.ToUpper(f.arg)+":"+f.name]; !strings.Contains(got, wantParse) {
+				t.Errorf("Parse %s: output lacks %q:\n%s", f.name, wantParse, got)
+			}
+			if got := sections[f.arg+":"+f.name]; !f.parseOnly && !strings.Contains(got, f.want) {
+				t.Errorf("Decode %s: output lacks %q:\n%s", f.name, f.want, got)
 			}
 		}
 	}
+}
+
+// typesSections splits the driver's output into what it printed per argument ("== c:name" and "== C:name" headers).
+func typesSections(out string) map[string]string {
+	sections := map[string]string{}
+	for _, part := range strings.Split(out, "== ")[1:] {
+		head, body, _ := strings.Cut(part, "\n")
+		sections[head] = body
+	}
+	return sections
+}
+
+// typesBody is the text of f: the fixture edited, or its own.
+func typesBody(t *testing.T, fixture string, f typesFile) []byte {
+	t.Helper()
+	if f.text != "" || f.arg != "c" {
+		return []byte(f.text)
+	}
+	if !strings.Contains(fixture, f.from) {
+		t.Fatalf("%s: the fixture has no %s", f.name, f.from)
+	}
+	return []byte(strings.Replace(fixture, f.from, f.to, 1))
 }

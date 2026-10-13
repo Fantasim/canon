@@ -61,14 +61,14 @@ func TestEmberfallDataCompilesAndRuns(t *testing.T) {
 	dir := t.TempDir()
 	sources := emberTree(t, dir, ir.ModeData, "emberfall_data_main.cpp")
 	data := filepath.Join("testdata", "main", "emberfall")
-	for _, f := range []string{"zones.json", "bands.json", "start.json", "bad/bands.json", "bad/zones.json", "bad/cells.json", "bad/pairs.json", "camp.json"} {
+	for _, f := range []string{"zones.json", "bands.json", "start.json", "bad/bands.json", "bad/zones.json", "bad/cells.json", "bad/pairs.json", "bad/best.json", "camp.json"} {
 		copyFile(t, filepath.Join(data, filepath.FromSlash(f)), filepath.Join(dir, "files", filepath.FromSlash(f)), same)
 	}
 	files := filepath.Join(dir, "files")
 	for _, out := range buildAndRun(t, dir, sources, files, filepath.Join(files, "bad")) {
 		if !strings.HasSuffix(out, "failures: 0\n") || !strings.Contains(out, "rows[0].status: no entry nowhere\n") ||
 			!strings.Contains(out, "rows[0].gear.kind: no entry zz\n") || !strings.Contains(out, "rows[0].gear.$kindFor.soft: no entry yy\n") ||
-			!strings.Contains(out, "rows[0].stat0: no entry nope\n") {
+			!strings.Contains(out, "rows[0].stat0: no entry nope\n") || !strings.Contains(out, "rows[0].gear.$best: no entry nope\n") {
 			t.Errorf("driver output:\n%s", out)
 		}
 	}

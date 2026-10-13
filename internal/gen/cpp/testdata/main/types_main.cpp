@@ -1,6 +1,8 @@
 // Decodes JSON files through the types-mode public decoders (CODEGEN.md §5.13): argv[1] is their
 // directory, then one argument per file, "c:<file>" for an EventConfig and "x:<file>" for an
-// Extras, "p:<file>" for a Picks. Prints what each decoded, or the decoder's error.
+// Extras, "p:<file>" for a Picks, through Decode; the upper-case letter ("C:", "X:", "P:") reads the
+// text through Parse instead (DECISIONS 361). Prints "== <argument>", then what each decoded, or the
+// decoder's error.
 #include "out/events/events.gen.h"
 
 #include <nlohmann/json.hpp>
@@ -19,10 +21,17 @@ using NMEvent::gen::EventKind;
 using NMEvent::gen::Extras;
 using NMEvent::gen::Picks;
 
-nlohmann::json Read(const std::string& path) {
+std::string ReadText(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
-    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    return nlohmann::json::parse(text, nullptr, /*allow_exceptions=*/false);
+    return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+}
+
+// Decode of the parsed file, or Parse of its text.
+template <typename T>
+std::optional<T> Load(const std::string& path, bool parse, std::string& error) {
+    const std::string text = ReadText(path);
+    if (parse) return T::Parse(text, error);
+    return T::Decode(nlohmann::json::parse(text, nullptr, /*allow_exceptions=*/false), error);
 }
 
 std::string Ms(std::optional<std::chrono::milliseconds> d) { return d ? std::to_string(d->count()) : "none"; }
@@ -52,9 +61,9 @@ void Kind(const EventKind& k) {
     }
 }
 
-void Config(const std::string& dir, const std::string& name) {
+void Config(const std::string& dir, const std::string& name, bool parse) {
     std::string error;
-    const std::optional<EventConfig> c = EventConfig::Decode(Read(dir + "/" + name), error);
+    const std::optional<EventConfig> c = Load<EventConfig>(dir + "/" + name, parse, error);
     if (!c) {
         std::printf("%s: error %s\n", name.c_str(), error.c_str());
         return;
@@ -74,9 +83,9 @@ void Config(const std::string& dir, const std::string& name) {
     std::printf(" find moonstone_rain: %s\n", found != nullptr ? found->GetId().c_str() : "absent");
 }
 
-void Extra(const std::string& dir, const std::string& name) {
+void Extra(const std::string& dir, const std::string& name, bool parse) {
     std::string error;
-    const std::optional<Extras> x = Extras::Decode(Read(dir + "/" + name), error);
+    const std::optional<Extras> x = Load<Extras>(dir + "/" + name, parse, error);
     if (!x) {
         std::printf("%s: error %s\n", name.c_str(), error.c_str());
         return;
@@ -86,9 +95,9 @@ void Extra(const std::string& dir, const std::string& name) {
                 label != nullptr ? label->c_str() : "none", x->GetMode().c_str(), static_cast<long long>(x->GetDelay().count()), static_cast<double>(x->GetRatio()));
 }
 
-void Pick(const std::string& dir, const std::string& name) {
+void Pick(const std::string& dir, const std::string& name, bool parse) {
     std::string error;
-    const std::optional<Picks> p = Picks::Decode(Read(dir + "/" + name), error);
+    const std::optional<Picks> p = Load<Picks>(dir + "/" + name, parse, error);
     if (!p) {
         std::printf("%s: error %s\n", name.c_str(), error.c_str());
         return;
@@ -105,9 +114,13 @@ int main(int argc, char** argv) {
     const std::string dir = argv[1];
     for (int i = 2; i < argc; ++i) {
         const std::string arg = argv[i];
-        if (arg.rfind("c:", 0) == 0) Config(dir, arg.substr(2));
-        if (arg.rfind("x:", 0) == 0) Extra(dir, arg.substr(2));
-        if (arg.rfind("p:", 0) == 0) Pick(dir, arg.substr(2));
+        const bool parse = arg.size() > 1 && arg[0] >= 'A' && arg[0] <= 'Z';
+        const char kind = parse ? static_cast<char>(arg[0] - 'A' + 'a') : arg[0];
+        if (arg.size() < 2 || arg[1] != ':') continue;
+        std::printf("== %s\n", arg.c_str());
+        if (kind == 'c') Config(dir, arg.substr(2), parse);
+        if (kind == 'x') Extra(dir, arg.substr(2), parse);
+        if (kind == 'p') Pick(dir, arg.substr(2), parse);
     }
     return 0;
 }

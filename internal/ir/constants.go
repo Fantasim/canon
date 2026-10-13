@@ -211,6 +211,7 @@ const (
 	cppVectorSuffix  = "Vector"
 	cppShow          = "Show"   // the conformance file's printer of an optional input
 	CppDecode        = "Decode" // detail's decoder overloads (CODEGEN.md §7.2), Decode<Alias>
+	CppParse         = "Parse"  // types mode's public static Parse (CODEGEN.md §5.13, DECISIONS 361)
 	CppResolve       = "Resolve"
 	CppVariantMember = "value_" // a variant's or dependent type's std::variant (§5.5, §5.6)
 	CppToName        = "ToName" // the enum helpers, one overload per enum (CODEGEN.md §5.2)

@@ -76,6 +76,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Window& out);
 class TimeOfDay {
 public:
     static std::optional<TimeOfDay> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<TimeOfDay> Parse(std::string_view text, std::string& error);
     int64_t GetHour() const { return hour_; }
     int64_t GetMinute() const { return minute_; }
 
@@ -91,6 +92,7 @@ private:
 class Window {
 public:
     static std::optional<Window> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Window> Parse(std::string_view text, std::string& error);
     Weekday GetDay() const { return day_; }
     const TimeOfDay& GetStartUtc() const { return startUtc_; }
     const TimeOfDay& GetEndUtc() const { return endUtc_; }

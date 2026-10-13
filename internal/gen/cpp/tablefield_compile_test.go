@@ -1,6 +1,7 @@
 package cppgen_test
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -56,9 +57,18 @@ var typesTableCases = []tableFileCase{
 	{"retired", `{"title": "t", "slots": {"a": {"$retired": 1, "n": 1}}}`, "error Shelf: $.slots.a.$retired: expected true"},
 	{"row", `{"title": "t", "slots": {"a": {"n": "x"}}}`, "error Shelf: $.slots.a.n: expected an integer"},
 	{"array", `{"title": "t", "slots": []}`, "error Shelf: $.slots: expected an object"},
+	{"dup", `{"title": "t", "slots": {"a": {"n": 1}, "a": {"n": 2}}}`, "slots=a:2 extra= spare=none"},
+	{"dupextra", `{"title": "t", "slots": {}, "extra": {"x": {"n": 1}, "y": {"n": 2, "n": 3}}}`, "slots= extra=x:1,y:3 spare=none"},
 }
 
-// CODEGEN.md §4.2, §5.13, WIRE.md §5.7: a types-mode table field compiles and its public decoder reads a nested table.
+// typesTableParse: what Parse prints where it differs from Decode (DECISIONS 361): the nested table in file order, and a repeated key refused at its path.
+var typesTableParse = map[string]string{
+	"order":    "slots=b:2,a:1 extra= spare=none",
+	"dup":      "error Shelf: $.slots.a: duplicate key",
+	"dupextra": "error Shelf: $.extra.y.n: duplicate key",
+}
+
+// CODEGEN.md §4.2, §5.13, WIRE.md §5.7, DECISIONS 361: a types-mode table field compiles and its public Decode reads a nested table in key order, Parse in file order.
 func TestTableFieldTypesCompilesAndRuns(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -75,7 +85,7 @@ func TestTableFieldTypesCompilesAndRuns(t *testing.T) {
 			t.Fatal(err)
 		}
 		args = append(args, c.name+".json")
-		fmt.Fprintf(&want, "%s.json: %s\n", c.name, c.want)
+		fmt.Fprintf(&want, "%s.json: %s\nparse %s.json: %s\n", c.name, c.want, c.name, cmp.Or(typesTableParse[c.name], c.want))
 	}
 	for _, got := range buildAndRun(t, dir, []string{"main.cpp", "out/tabletypes.gen.cpp"}, args...) {
 		if got != want.String() {

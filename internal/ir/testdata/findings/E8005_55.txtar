@@ -1,0 +1,25 @@
+CODEGEN.md §3.5, §5.13, DECISIONS 361: a types-mode cpp class has a static Parse beside its static Decode, and both names are reserved in the class's name plan; a record Parse would hold a member named like its class, so it is E8005 and not a header g++ refuses.
+-- a/a.canon --
+package a
+
+/// The parse.
+record Parse {
+  /// Its size.
+  n: Int
+}
+
+/// Holds one.
+record Holder {
+  /// The parse.
+  p: Parse
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "sov::a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  cpp: Parse is generated for both a.Parse and a; rename one of them with @cpp(name:)
+
+error[E8005]  a/a.canon:10:8
+  cpp: Parse is generated for both a.Parse and a.Holder; rename one of them with @cpp(name:)
+
+2 errors, 0 warnings in 1 package (…)

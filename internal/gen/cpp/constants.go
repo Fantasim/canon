@@ -170,6 +170,7 @@ const (
 const (
 	decodeOpenFormat        = "bool " + ir.CppDecode + "(const nlohmann::json& v, canon::json::Decoder& dec, %s& out) {\n"
 	publicDecodeDeclFormat  = "static std::optional<%s> " + ir.CppDecode + "(const nlohmann::json& v, std::string& error);"
+	publicParseDeclFormat   = "static std::optional<%s> " + ir.CppParse + "(std::string_view text, std::string& error);"
 	absentOpenFormat        = "if (!%s.contains(%s)) {"
 	elseLead                = "} else "
 	sourceDurationFormat    = jsonDetail + "SourceDuration(%s, dec, %s, %d, %s);"

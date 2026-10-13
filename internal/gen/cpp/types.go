@@ -33,13 +33,15 @@ func (g *gen) typesRefusals() {
 	}
 }
 
-// publicDecodeDecl declares a record's or variant's static Decode, first in its class (CODEGEN.md §5.13, §7.2).
+// publicDecodeDecl declares a record's or variant's static Decode and Parse, first in its class (CODEGEN.md §5.13, §7.2).
 func (g *gen) publicDecodeDecl(sc *scope, name string) {
 	g.fail(sc.add(ir.CppDecode, name))
+	g.fail(sc.add(ir.CppParse, name))
 	g.h.linef(1, publicDecodeDeclFormat, name)
+	g.h.linef(1, publicParseDeclFormat, name)
 }
 
-// publicDecoders define each record's and variant's static Decode, in class order (CODEGEN.md §2.7, §5.13): a decoder of its own whose paths start at `$`, and no value unless all of the JSON decodes.
+// publicDecoders define each record's and variant's static Decode and Parse, in class order (CODEGEN.md §2.7, §5.13): a decoder of its own whose paths start at `$`, and no value unless all of the JSON decodes.
 func (g *gen) publicDecoders() {
 	if !g.types() {
 		return
@@ -47,7 +49,7 @@ func (g *gen) publicDecoders() {
 	for _, c := range g.classes {
 		if c.cs == nil && c.dependent == nil && c.row == nil {
 			name := g.className(c)
-			g.c.printf(publicDecodeText, name, ir.CppDecode, quote(name), quote(dollar))
+			g.c.printf(publicDecodeText, name, ir.CppDecode, quote(name), quote(dollar), ir.CppParse)
 		}
 	}
 }

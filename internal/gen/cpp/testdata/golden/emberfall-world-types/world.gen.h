@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -44,6 +45,7 @@ private:
 class Zone {
 public:
     static std::optional<Zone> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Zone> Parse(std::string_view text, std::string& error);
     /// Its levels.
     const ::game::core::LevelRange& GetLevels() const { return levels_; }
     const std::vector<::game::core::LevelRange>& GetTrail() const { return trail_; }

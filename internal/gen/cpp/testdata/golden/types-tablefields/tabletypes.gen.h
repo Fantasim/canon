@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include <nlohmann/json_fwd.hpp>
@@ -25,6 +26,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Shelf& out);
 class Slot {
 public:
     static std::optional<Slot> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Slot> Parse(std::string_view text, std::string& error);
     const std::string& GetId() const { return id_; }
     bool GetRetired() const { return retired_; }
     int64_t GetN() const { return n_; }
@@ -43,6 +45,7 @@ private:
 class Shelf {
 public:
     static std::optional<Shelf> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Shelf> Parse(std::string_view text, std::string& error);
     const std::string& GetTitle() const { return title_; }
     const canon::KeyedList<std::string, Slot>& GetSlots() const { return slots_; }
     const canon::KeyedList<std::string, Slot>& GetExtra() const { return extra_; }

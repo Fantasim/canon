@@ -301,4 +301,17 @@ std::optional<Zone> Zone::Decode(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<Zone> Zone::Parse(std::string_view text, std::string& error) {
+    nlohmann::json doc;
+    canon::json::Float32Tokens tokens;
+    canon::json::KeyOrders orders;
+    if (!canon::json::ParseTextFile("Zone", text, doc, error, tokens, orders)) return std::nullopt;
+    canon::json::Decoder dec("Zone", tokens, orders);
+    dec.Push("$");
+    std::optional<Zone> out;
+    if (detail::Decode(doc, dec, out.emplace())) return out;
+    error = dec.Error();
+    return std::nullopt;
+}
+
 }  // namespace game::world

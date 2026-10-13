@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -96,11 +97,37 @@ std::optional<Slot> Slot::Decode(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<Slot> Slot::Parse(std::string_view text, std::string& error) {
+    nlohmann::json doc;
+    canon::json::Float32Tokens tokens;
+    canon::json::KeyOrders orders;
+    if (!canon::json::ParseTextFile("Slot", text, doc, error, tokens, orders)) return std::nullopt;
+    canon::json::Decoder dec("Slot", tokens, orders);
+    dec.Push("$");
+    std::optional<Slot> out;
+    if (detail::Decode(doc, dec, out.emplace())) return out;
+    error = dec.Error();
+    return std::nullopt;
+}
+
 std::optional<Shelf> Shelf::Decode(const nlohmann::json& v, std::string& error) {
     canon::json::Decoder dec("Shelf");
     dec.Push("$");
     std::optional<Shelf> out;
     if (detail::Decode(v, dec, out.emplace())) return out;
+    error = dec.Error();
+    return std::nullopt;
+}
+
+std::optional<Shelf> Shelf::Parse(std::string_view text, std::string& error) {
+    nlohmann::json doc;
+    canon::json::Float32Tokens tokens;
+    canon::json::KeyOrders orders;
+    if (!canon::json::ParseTextFile("Shelf", text, doc, error, tokens, orders)) return std::nullopt;
+    canon::json::Decoder dec("Shelf", tokens, orders);
+    dec.Push("$");
+    std::optional<Shelf> out;
+    if (detail::Decode(doc, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
 }
