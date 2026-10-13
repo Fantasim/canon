@@ -66,13 +66,13 @@ test("failures name the JSON path (CODEGEN.md §5.13)", () => {
   assert.throws(() => decodeSkills(5), /built from schema <none>/);
   let doc = bad();
   doc.rows[0].legacy.reqMp = "x";
-  assert.throws(() => decodeSkills(doc), /^Error: \/rows\/0\/legacy\/reqMp: expected an integer/);
+  assert.throws(() => decodeSkills(doc), /^Error: skills\.json: rows\[0\]\.legacy\.reqMp: expected an integer/);
   doc = bad();
   delete doc.rows[1].dwID;
-  assert.throws(() => decodeSkills(doc), /\/rows\/1\/dwID: expected a string/);
+  assert.throws(() => decodeSkills(doc), /rows\[1\]\.dwID: expected a string/);
   doc = bad();
   doc.rows[0].type = "nope";
-  assert.throws(() => decodeSkills(doc), /\/rows\/0\/type: unknown case/);
+  assert.throws(() => decodeSkills(doc), /rows\[0\]\.type: unknown case/);
   doc = bad();
   delete doc.rows[0].dwDestParam0;
   doc.rows[0].dwDestParam1 = "x";
@@ -80,13 +80,13 @@ test("failures name the JSON path (CODEGEN.md §5.13)", () => {
   assert.throws(() => decodeSkills(doc), /filled slot after an empty one/);
   doc = bad();
   doc.rows[0].element = 9;
-  assert.throws(() => decodeSkills(doc), /\/rows\/0\/element: unknown code/);
+  assert.throws(() => decodeSkills(doc), /rows\[0\]\.element: unknown code/);
   doc = bad();
   doc.rows[0].bTwoHanded = 2;
-  assert.throws(() => decodeSkills(doc), /\/rows\/0\/bTwoHanded: expected 0 or 1/);
+  assert.throws(() => decodeSkills(doc), /rows\[0\]\.bTwoHanded: expected 0 or 1/);
   doc = bad();
   doc.rows[0].flags = 8;
-  assert.throws(() => decodeSkills(doc), /\/rows\/0\/flags: unknown bits/);
+  assert.throws(() => decodeSkills(doc), /rows\[0\]\.flags: unknown bits/);
   doc = bad();
   doc.rows[0].cast_time = 0.0004;
   assert.throws(() => decodeSkills(doc), /not a whole number of milliseconds/);
@@ -126,9 +126,20 @@ test("parse refuses a number token of the wrong form for an Int (E7103) and keep
 test("parse is strict JSON (WIRE.md §3)", () => {
   const bad = ["", "{", "[1,]", '{"a":1,}', "01", ".5", "+1", "NaN", "{'a':1}", '{"a":1 "b":2}', "[1] 2", '"\\u00"', '"\\ud800"', '"\\x"', '"a\tb"'];
   for (const t of bad) assert.throws(() => parseObjective(t), Error, t);
-  assert.throws(() => parseObjective('{"$schema": "a.Objective@6eaf8bca", "$schema": "x"}'), /duplicate key \$schema/);
-  assert.throws(() => parseObjective("[".repeat(600)), /nesting deeper than 512/);
+  assert.throws(() => parseObjective('{"$schema": "a.Objective@6eaf8bca", "$schema": "x"}'), /^Error: objective\.json: \$schema: duplicate key$/);
+  assert.throws(() => parseObjective("[".repeat(600)), /^Error: objective\.json: (\[0\]){512}: nested deeper than 512 levels$/);
   assert.equal(parseObjective("﻿" + text("objective.json")).goal, "collect");
+});
+
+test("a data file's syntax error, invalid UTF-8 or unpaired surrogate reads as the loaders print it (CODEGEN.md §5.13, DECISIONS 361)", () => {
+  const notData = new Error("objective.json: not a canon data file (invalid JSON)");
+  for (const t of ["", '{"a": ', '{"a":"\\ud800"}', '{"a":"\\udc00', '{"a":"\ud800"}', '{"a": "\\ud800\\', "[\ud800]"]) {
+    assert.throws(() => parseObjective(t), notData, JSON.stringify(t));
+  }
+  assert.throws(() => parseObjective('{"a":{"b":1,"b":2}}'), new Error("objective.json: a.b: duplicate key"));
+  assert.throws(() => parseObjective('{"a":"\\ud800A"}'), notData);
+  const skills = parseSkills(text("skills.json").replace('"fireball"', '"fire\\ud83d\\ude00"'));
+  assert.equal(skills.find("fire\u{1f600}").id, "fire\u{1f600}");
 });
 
 test("none markers are equal by exact value, whatever the token (WIRE.md §5.4)", () => {

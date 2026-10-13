@@ -17,5 +17,5 @@ test("a decoder reads $id only in table position (CODEGEN.md §5.4)", () => {
   assert.deepEqual({ ...q.inner }, { x: 3 });
   assert.equal("id" in q.inner, false);
   assert.deepEqual(q.slots.map((s) => ({ ...s })), [{ id: "s1", retired: false, x: 4 }]);
-  assert.throws(() => parsePs(text("ps.json").replace('"$id": "p1"', '"$id": 1')), /\/rows\/0\/\$id: expected a string/);
+  assert.throws(() => parsePs(text("ps.json").replace('"$id": "p1"', '"$id": 1')), /rows\[0\]\.\$id: expected a string/);
 });

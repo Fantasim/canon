@@ -26,10 +26,11 @@ export interface CanonTable<K, T> {
 /** A row of a table: its record, with this table's id and retired flag present. */
 export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
 
-function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTable<K, T> {
+/** A table or keyed list, and a lookup per @stable field (`by`: the method name to the field's property): each an index built once, never a scan (CODEGEN.md §5.9). */
+function canonTable<K, T, B extends Record<string, keyof T> = {}>(rows: ReadonlyArray<T>, keyOf: (row: T) => K, by?: B): CanonTable<K, T> & { readonly [P in keyof B]: (value: T[B[P]]) => T | null } {
   const index = new Map<K, number>();
   rows.forEach((row, i) => index.set(keyOf(row), i));
-  return Object.freeze({
+  const table: CanonTable<K, T> = {
     length: rows.length,
     all: rows,
     at: (i: number): T => rows[i],
@@ -37,7 +38,17 @@ function canonTable<K, T>(rows: ReadonlyArray<T>, keyOf: (row: T) => K): CanonTa
       const i = index.get(key);
       return i === undefined ? null : rows[i];
     },
-  });
+  };
+  const lookups: Record<string, (value: unknown) => T | null> = {};
+  for (const [name, prop] of Object.entries((by ?? {}) as Record<string, keyof T>)) {
+    const at = new Map<unknown, number>();
+    rows.forEach((row, i) => at.set(row[prop], i));
+    lookups[name] = (value: unknown): T | null => {
+      const i = at.get(value);
+      return i === undefined ? null : rows[i];
+    };
+  }
+  return Object.freeze({ ...table, ...lookups }) as CanonTable<K, T> & { readonly [P in keyof B]: (value: T[B[P]]) => T | null };
 }
 
 /** Deep-freezes plain objects and arrays (CanonMaps are already read-only). */

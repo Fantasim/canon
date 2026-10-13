@@ -22,17 +22,17 @@ test("a types-mode decoder reads another package's classes with this file's own 
 test("a failure inside another package's class names its JSON path (CODEGEN.md §5.13)", () => {
   const code = zone();
   code.markers.gate.code = 3;
-  assert.throws(() => decodeZone(code), /^Error: \/markers\/gate\/code: expected a string$/);
+  assert.throws(() => decodeZone(code), /^Error: Zone: \$\.markers\.gate\.code: expected a string$/);
   const tone = zone();
   tone.levels.tone = "mute";
-  assert.throws(() => decodeZone(tone), /^Error: \/levels\/tone: unknown member$/);
+  assert.throws(() => decodeZone(tone), /^Error: Zone: \$\.levels\.tone: unknown member$/);
   const entry = zone();
   entry.levels.status = "nope";
-  assert.throws(() => decodeZone(entry), /^Error: \/levels\/status: no entry nope$/);
+  assert.throws(() => decodeZone(entry), /^Error: Zone: \$\.levels\.status: no entry nope$/);
   const shut = zone();
   shut.levels.status = "shut";
   assert.equal(decodeZone(shut).levels.status, "shut");
   const kind = zone();
   kind.reward = { kind: "gems" };
-  assert.throws(() => decodeZone(kind), /^Error: \/reward\/kind: unknown case$/);
+  assert.throws(() => decodeZone(kind), /^Error: Zone: \$\.reward\.kind: unknown case$/);
 });

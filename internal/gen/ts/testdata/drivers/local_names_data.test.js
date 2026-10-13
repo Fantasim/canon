@@ -14,5 +14,5 @@ test("packages named p and raw read through their imports, not the decoders' own
   assert.deepEqual({ ...h.weight }, { soft: 1, loud: 2 });
   const bad = JSON.parse(text("holders.json"));
   bad.rows[0].note.kind = "huge";
-  assert.throws(() => parseHolders(JSON.stringify(bad)), /\/rows\/0\/note\/kind: unknown member/);
+  assert.throws(() => parseHolders(JSON.stringify(bad)), /rows\[0\]\.note\.kind: unknown member/);
 });

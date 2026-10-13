@@ -19,7 +19,7 @@ test("features.ts: the data file decodes, a bigint field included", () => {
 });
 
 test("features.ts: decode sees a JSON.parse value, which cannot hold the bigint (CODEGEN.md §8.1)", () => {
-  assert.throws(() => decodeSkills(JSON.parse(text)), /\/rows\/1\/serial: integer outside the TypeScript safe range/);
+  assert.throws(() => decodeSkills(JSON.parse(text)), /rows\[1\]\.serial: integer outside the TypeScript safe range/);
 });
 
 test("features.ts: translated fns signal the evaluator's codes (CONFORMANCE.md §3, §4)", () => {

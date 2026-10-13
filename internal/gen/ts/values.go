@@ -84,7 +84,7 @@ func (g *gen) tableValue(name string, v *ir.Value) string {
 	for i, r := range tab.Entries {
 		rows[i] = g.rowLit(rec, r)
 	}
-	return g.tableDecl(name, g.rowType(rec, idName(rec)), idName(rec), rows, idProp)
+	return g.tableDecl(name, tableShape{elem: g.rowType(rec, idName(rec)), key: idName(rec), prop: idProp, rec: rec}, rows)
 }
 
 // keyedValue is a keyed list: its rows in order, found by the key field.
@@ -96,17 +96,24 @@ func (g *gen) keyedValue(name string, v *ir.Value) string {
 	for i, x := range list.Elems {
 		rows[i] = g.recordLit(rec, as[value.Record](g, x))
 	}
-	return g.tableDecl(name, g.named(rec), g.tsType(key.Type, key.BigInt), rows, fieldProp(key))
+	return g.tableDecl(name, tableShape{elem: g.named(rec), key: g.tsType(key.Type, key.BigInt), prop: fieldProp(key), rec: rec}, rows)
 }
 
-// tableDecl is `export const name: CanonTable<K, T> = canonTable(canonFreeze<ReadonlyArray<T>>([rows]), (e) => e.key);`.
-func (g *gen) tableDecl(name, elem, keyType string, rows []string, keyProp string) string {
+// tableShape is what a container's declaration needs: its element type (a row type for a table), its key type, the property holding the key, and the record whose @stable fields it finds by.
+type tableShape struct {
+	elem, key, prop string
+	rec             *ir.Record
+}
+
+// tableDecl is `export const name: CanonTable<K, T> & { findBy<F>(v): T | null } = canonTable(canonFreeze<ReadonlyArray<T>>([rows]), (e) => e.key, { findBy<F>: (e) => e.f });`, the lookups only for a record with @stable fields (CODEGEN.md §5.9).
+func (g *gen) tableDecl(name string, t tableShape, rows []string) string {
 	g.helper(canonTableName)
 	body := ""
 	if len(rows) > 0 {
 		body = newline + indent + strings.Join(rows, listEnd+indent) + listEnd
 	}
-	return fmt.Sprintf(tableFormat, name, keyType, elem, g.helper(canonFreezeName), body, keyProp)
+	finds, readers := g.finders(t.rec, t.elem)
+	return fmt.Sprintf(tableFormat, name, t.key, t.elem, g.helper(canonFreezeName), body, t.prop, finds, readers)
 }
 
 // keyField is the key field of a keyed list's element record.

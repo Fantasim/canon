@@ -15,8 +15,8 @@ test("a lookup over another package's table reads its cells by the owner's ids (
 test("a bad or missing cell fails at its path", () => {
   const bad = JSON.parse(text("zone.json"));
   bad.value.band.$next.low = "nope";
-  assert.throws(() => decodeZone(bad), /^Error: \/value\/band\/\$next\/low: no entry nope$/);
+  assert.throws(() => decodeZone(bad), /^Error: zone\.json: value\.band\.\$next\.low: no entry nope$/);
   const missing = JSON.parse(text("zone.json"));
   delete missing.value.band.$bonus.high;
-  assert.throws(() => decodeZone(missing), /^Error: \/value\/band\/\$bonus\/high: expected an integer$/);
+  assert.throws(() => decodeZone(missing), /^Error: zone\.json: value\.band\.\$bonus\.high: expected an integer$/);
 });

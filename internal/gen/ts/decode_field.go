@@ -87,7 +87,7 @@ func (g *gen) rawOf(f *ir.Field) string {
 
 // pathOf is the JSON pointer of a field's value, for messages.
 func (g *gen) pathOf(f *ir.Field) string {
-	return pathParam + plusSep + quote(pathSep+strings.Join(f.WirePath, pathSep))
+	return pathParam + plusSep + quote(dot+strings.Join(f.WirePath, dot))
 }
 
 // noneTest is the condition that raw is none: absent when the field has no default, null, or the field's none marker (WIRE.md §5.4).
@@ -178,7 +178,7 @@ func (g *gen) fnRead(rd *reading, fn *ir.ExportFn) {
 	local := g.local()
 	key := dollarKey + fn.Name
 	raw := g.getKey(objVar, key)
-	path := pathParam + plusSep + quote(pathSep+key)
+	path := pathParam + plusSep + quote(dot+key)
 	var read string
 	if len(fn.Params) == 0 {
 		read = g.dec(fn.Result, raw, path, decCtx{})

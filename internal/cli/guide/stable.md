@@ -111,11 +111,12 @@ bool GetRetired() const;
 
 // TypeScript
 export type StatusId = "draft" | "review" | "published" | "hidden" | "archived";
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>>;
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>>
+  & { findByCode(code: number): CanonRow<Status, StatusId> | null };
 ```
 
 - `FindByCode` finds retired entries too: stored data still names them. Check `Retired()`.
-  TypeScript has the rows and their `code`, no lookup function.
+  In TypeScript it is `findByCode(code)`, which returns the row or `null`.
 - The id enum value is the entry's position (literal first, then entry files by path). Adding an
   entry may change it: never persist it; persist the key or the `@stable` value.
 - In `data` and `types` modes the id type is a string (the key), and `FindByCode` works on the

@@ -14,6 +14,6 @@ test("copies: the data-mode copy reads the emitted file and imports the types-mo
   assert.deepEqual([...ToneMembers], ["red", "blue"]);
   assert.equal(decodeBadges(JSON.parse(text)).find("iron").tone, "blue");
   assert.equal(sovParse(text).length, 2);
-  assert.throws(() => parseBadges(text.replace("red", "green")), /\/rows\/0\/tone: unknown member/);
+  assert.throws(() => parseBadges(text.replace("red", "green")), /rows\[0\]\.tone: unknown member/);
   assert.throws(() => parseBadges(text.replace("Badge@", "Other@")), /built from schema/);
 });

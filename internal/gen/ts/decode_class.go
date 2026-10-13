@@ -105,7 +105,7 @@ func (g *gen) variantReader(v *ir.Variant) string {
 			cases = append(cases, g.caseReader(v, c))
 		}
 	}
-	tagPath := pathParam + plusSep + quote(pathSep+v.Tag)
+	tagPath := pathParam + plusSep + quote(dot+v.Tag)
 	body := fmt.Sprintf(variantBodyFormat, objVar, g.call(decObjectName, rawParam, pathParam), tagVar, g.call(decStringName, g.getKey(objVar, v.Tag), tagPath),
 		tagVar, strings.Join(arms, ""), g.call(decFailName, tagPath, quote(unknownCase)))
 	params := rawParam + keyValueSep + tsUnknown + listSep + pathParam + keyValueSep + tsString

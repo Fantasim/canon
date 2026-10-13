@@ -11,5 +11,5 @@ test("another package's record decodes through this file's own reader (DECISIONS
   assert.equal(badges.find("gold").weight, 2.5);
   assert.equal(decodeBadges(JSON.parse(text("badges.json"))).find("gold").weight, 2.5);
   assert.deepEqual({ ...parseBest(text("best.json")) }, { label: "best", weight: 1 });
-  assert.throws(() => parseBadges(text("badges.json").replace('"label": "gold"', '"label": 3')), /\/rows\/0\/label: expected a string/);
+  assert.throws(() => parseBadges(text("badges.json").replace('"label": "gold"', '"label": 3')), /rows\[0\]\.label: expected a string/);
 });

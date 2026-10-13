@@ -96,9 +96,9 @@ func (g *gen) reader(t ir.Type) string {
 // publicDecoder is `export function decodeT(json: unknown): T` of a types-mode emit, then `parseT(text: string)`, which reads the text with the file's own tokenizer (CODEGEN.md §5.13, §8.1, DECISIONS 278).
 func (g *gen) publicDecoder(t ir.Type) string {
 	name := g.declare(decodePrefix+typeName(t), t.QName())
-	call := fmt.Sprintf(callFormat, g.readerName(t), joinArgs([]string{jsonParam, emptyString}))
+	call := fmt.Sprintf(callFormat, g.readerName(t), joinArgs([]string{jsonParam, quote(fmt.Sprintf(rootFormat, typeName(t)))}))
 	g.use(decParseName)
-	parse := fmt.Sprintf(parseFormat, g.declare(parsePrefix+typeName(t), t.QName()), typeName(t), name)
+	parse := fmt.Sprintf(parseFormat, g.declare(parsePrefix+typeName(t), t.QName()), typeName(t), name, quote(typeName(t)), quote(dollarKey))
 	return docComment("", docOf(t)) + fmt.Sprintf(publicDecoderFormat, name, typeName(t), g.helper(canonFreezeName), call) + newline + parse
 }
 
@@ -122,39 +122,53 @@ func docOf(t ir.Type) string {
 	return ""
 }
 
-// valueDecoder is `export function decode<V>(json: unknown)` and `parse<V>(text: string)` of a data-mode value: they check the envelope and read the rows or the value, another package's record through this file's own reader; parse reads the text with the file's own tokenizer (CODEGEN.md §2.8, §8.1, WIRE.md §8.2, DECISIONS 278, 323).
+// valueDecoder is `export function decode<V>(json: unknown)` and `parse<V>(text: string)` of a data-mode value: they check the envelope and read the rows or the value, another package's record through this file's own reader; parse reads the text with the file's own tokenizer, and a failure names the file and a `$` path in it (CODEGEN.md §2.8, §5.13, §8.1, WIRE.md §8.2, DECISIONS 278, 323, 361).
 func (g *gen) valueDecoder(v *ir.Value) {
 	defer g.enter(v.Name)()
 	base := upperCamel(effective(v.TS, v.Name))
 	name := g.declare(decodePrefix+base, v.Name)
-	schema := effective(v.TS, v.Name) + schemaSuffix
-	file := quote(v.Name + ir.JSONExt)
+	label := v.Name + ir.JSONExt
 	g.use(canonEnvelopeName, decGetName)
 	var ret string
 	switch {
 	case v.Type.Kind == types.Table:
-		rec := g.recordOf(g.tableElem(v))
-		g.use(canonTableName, canonFreezeName, decListName)
-		row := g.rowType(rec, idName(rec))
-		ret = fmt.Sprintf(tableTypeFormat, idName(rec), row)
-		g.add(fmt.Sprintf(tableDecoderFormat, name, ret, schema, file, g.rowRead(rec, row), idProp))
+		ret = g.tableDecoder(v, name, label)
 	case v.Type.Kind == types.List && v.Type.KeyedBy != nil:
-		rec := g.recordOf(g.elem(v.Type).Named)
-		key := g.keyField(v.Type, rec)
-		g.use(canonTableName, canonFreezeName, decListName)
-		ret = fmt.Sprintf(tableTypeFormat, g.tsType(key.Type, key.BigInt), g.named(rec))
-		g.add(fmt.Sprintf(tableDecoderFormat, name, ret, schema, file, g.decClass(rec, lambdaRaw, lambdaPath), fieldProp(key)))
+		ret = g.keyedDecoder(v, name, label)
 	case v.Type.Kind == types.Record:
 		rec := g.recordOf(v.Type.Named)
 		g.use(canonFreezeName)
 		ret = g.named(rec)
-		g.add(fmt.Sprintf(valueDecoderFormat, name, ret, schema, file, g.decClass(rec, valueRaw, valuePath)))
+		path := quote(fmt.Sprintf(valuePathFormat, label))
+		g.add(fmt.Sprintf(valueDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.decClass(rec, valueRaw, path)))
 	default:
 		g.failf(ErrMalformed, malformedDataValue, v.Name)
 		return
 	}
 	g.use(decParseName)
-	g.add(fmt.Sprintf(parseFormat, g.declare(parsePrefix+base, v.Name), ret, name))
+	g.add(fmt.Sprintf(parseFormat, g.declare(parsePrefix+base, v.Name), ret, name, quote(label), emptyString))
+}
+
+// tableDecoder is `decode<V>` of a table; it returns the table's type, its @stable lookups included.
+func (g *gen) tableDecoder(v *ir.Value, name, label string) string {
+	rec := g.recordOf(g.tableElem(v))
+	g.use(canonTableName, canonFreezeName, decListName)
+	row := g.rowType(rec, idName(rec))
+	finds, readers := g.finders(rec, row)
+	ret := fmt.Sprintf(tableTypeFormat, idName(rec), row) + finds
+	g.add(fmt.Sprintf(tableDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.rowRead(rec, row), idProp, quote(fmt.Sprintf(rowsPathFormat, label)), readers))
+	return ret
+}
+
+// keyedDecoder is `decode<V>` of a keyed list.
+func (g *gen) keyedDecoder(v *ir.Value, name, label string) string {
+	rec := g.recordOf(g.elem(v.Type).Named)
+	key := g.keyField(v.Type, rec)
+	g.use(canonTableName, canonFreezeName, decListName)
+	finds, readers := g.finders(rec, g.named(rec))
+	ret := fmt.Sprintf(tableTypeFormat, g.tsType(key.Type, key.BigInt), g.named(rec)) + finds
+	g.add(fmt.Sprintf(tableDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.decClass(rec, lambdaRaw, lambdaPath), fieldProp(key), quote(fmt.Sprintf(rowsPathFormat, label)), readers))
+	return ret
 }
 
 // call1 is a call with its arguments joined.

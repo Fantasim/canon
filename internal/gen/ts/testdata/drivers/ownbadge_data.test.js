@@ -11,5 +11,5 @@ test("a package's own Badge and another package's Badge each read by their own r
   assert.deepEqual({ ...h.theirs }, { label: "t", weight: 1 });
   assert.deepEqual({ ...parseMine(text("mine.json")).find("gold") }, { id: "gold", retired: false, name: "Gold", rank: 0 });
   assert.deepEqual({ ...parseTheirs(text("theirs.json")).find("Silver") }, { label: "Silver", weight: 0.5 });
-  assert.throws(() => parseHolders(text("holders.json").replace('"label": "t"', '"label": 1')), /\/rows\/0\/theirs\/label: expected a string/);
+  assert.throws(() => parseHolders(text("holders.json").replace('"label": "t"', '"label": 1')), /rows\[0\]\.theirs\.label: expected a string/);
 });

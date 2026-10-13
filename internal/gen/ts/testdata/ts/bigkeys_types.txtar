@@ -128,9 +128,9 @@ function decKeys(o: Record<string, unknown>): string[] {
   return order === undefined ? Object.keys(o) : order;
 }
 
-/** Throws the failure at path. */
+/** Throws the failure at path, behind the name of what is read: `$`-rooted for a types-mode decoder (`Skill: $.events[1].level`), from the file's top for a data file (`skills.json: rows[1].level`) (CODEGEN.md §5.13, DECISIONS 361). */
 function decFail(path: string, message: string): never {
-  throw new Error((path === "" ? "/" : path) + ": " + message);
+  throw new Error(path + ": " + message);
 }
 
 function decGet(o: Record<string, unknown>, key: string): unknown {
@@ -167,7 +167,7 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
 }
 
 function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {
-  return decArray(raw, path).map((x, i) => read(x, path + "/" + i));
+  return decArray(raw, path).map((x, i) => read(x, path + "[" + i + "]"));
 }
 
 function decBigKey(k: string, path: string, lo: bigint, hi: bigint): bigint {
@@ -179,64 +179,110 @@ function decBigKey(k: string, path: string, lo: bigint, hi: bigint): bigint {
 
 function decMap<K, V>(raw: unknown, path: string, key: (k: string, p: string) => K, read: (x: unknown, p: string) => V): CanonMap<K, V> {
   const o = decObject(raw, path);
-  return new CanonMap(decKeys(o).map((k): readonly [K, V] => [key(k, path + "/" + k), canonFreeze(read(o[k], path + "/" + k))]));
+  return new CanonMap(decKeys(o).map((k): readonly [K, V] => [key(k, path + "." + k), canonFreeze(read(o[k], path + "." + k))]));
 }
 
-function decParse(text: string): unknown {
+/** Reads JSON text the way WIRE.md §3.1 to §3.3 read a file, the first failure in document order, placed where it becomes certain. A types-mode decoder (root `$`): a syntax error is `<T>: invalid JSON at byte N`, N the 0-based UTF-8 offset of the first byte that cannot continue the document (a BOM counted) or the text's length when it ends too early; a repeated key, an unpaired surrogate, a lone surrogate code unit in a string (`not UTF-8`) and nesting past 512 are named at their `$` path (`<T>: $.a[1]: …`). A data file (root ""): a syntax error, invalid UTF-8 or an unpaired surrogate is `<file>: not a canon data file (invalid JSON)`, as the loaders print it; a repeated key and nesting past 512 are named at their path (`<file>: a[1]: …`) (DECISIONS 361). */
+function decParse(text: string, label: string, root: string): unknown {
   let i = text.charCodeAt(0) === 0xfeff ? 1 : 0;
-  const number = /-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/y;
   const escapes: Record<string, string> = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
-  const fail = (message: string): never => decFail("offset " + i, message);
+  const bytes = (end: number): number => {
+    let n = 0;
+    for (const ch of text.slice(0, end)) {
+      const cp = ch.codePointAt(0) as number;
+      n += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+    }
+    return n;
+  };
+  const data = root === "";
+  const member = (path: string, k: string): string => (path === label + ": " ? path + k : path + "." + k);
+  const bad = (): never => decFail(label, data ? "not a canon data file (invalid JSON)" : "invalid JSON at byte " + bytes(i));
+  const invalid = (path: string, message: string): never => (data ? bad() : decFail(path, message));
   const ws = (): void => {
     while (i < text.length && " \t\n\r".includes(text[i])) i++;
   };
-  const hex4 = (): number => {
-    const h = text.slice(i, i + 4);
-    if (!/^[0-9a-fA-F]{4}$/.test(h)) fail("invalid \\u escape");
-    i += 4;
-    return parseInt(h, 16);
+  const digits = (): void => {
+    if (!(text[i] >= "0" && text[i] <= "9")) bad();
+    while (text[i] >= "0" && text[i] <= "9") i++;
   };
-  const unicode = (): string => {
+  const hex4 = (): number => {
+    for (let k = 0; k < 4; k++) {
+      if (!/^[0-9a-fA-F]$/.test(text[i + k] ?? "")) {
+        i += k;
+        bad();
+      }
+    }
+    i += 4;
+    return parseInt(text.slice(i - 4, i), 16);
+  };
+  const unicode = (path: string): string => {
     const u = hex4();
-    if (u >= 0xdc00 && u <= 0xdfff) fail("unpaired surrogate");
+    if (u >= 0xdc00 && u <= 0xdfff) invalid(path, "unpaired surrogate");
     if (u < 0xd800 || u > 0xdbff) return String.fromCharCode(u);
-    if (text.slice(i, i + 2) !== "\\u") fail("unpaired surrogate");
+    const next = text.slice(i, i + 2);
+    if (next.length < 2 && "\\u".startsWith(next)) {
+      i = text.length;
+      bad();
+    }
+    if (next !== "\\u") invalid(path, "unpaired surrogate");
     i += 2;
     const lo = hex4();
-    if (lo < 0xdc00 || lo > 0xdfff) fail("unpaired surrogate");
+    if (lo < 0xdc00 || lo > 0xdfff) invalid(path, "unpaired surrogate");
     return String.fromCharCode(u, lo);
   };
-  const str = (): string => {
+  const str = (path: string): string => {
     i++;
     let out = "";
     for (;;) {
-      if (i >= text.length) fail("unterminated string");
+      if (i >= text.length || text[i] < " ") bad();
       const c = text[i++];
       if (c === '"') return out;
-      if (c < " ") fail("control character in a string");
-      if (c !== "\\") {
+      if (c >= "\ud800" && c <= "\udfff") {
+        i--;
+        if (c > "\udbff" || !(text[i + 1] >= "\udc00" && text[i + 1] <= "\udfff")) invalid(path, "not UTF-8");
+        out += text.slice(i, i + 2);
+        i += 2;
+      } else if (c !== "\\") {
         out += c;
       } else if (text[i] === "u") {
         i++;
-        out += unicode();
+        out += unicode(path);
       } else if (Object.prototype.hasOwnProperty.call(escapes, text[i])) {
         out += escapes[text[i++]];
       } else {
-        fail("invalid escape");
+        bad();
       }
     }
   };
   const num = (): unknown => {
-    number.lastIndex = i;
-    const m = number.exec(text);
-    if (m === null) return fail("invalid number");
-    i += m[0].length;
-    if (m[2] !== undefined || m[3] !== undefined) return decToken(m[0]);
-    const n = Number(m[0]);
-    return Number.isSafeInteger(n) ? n : BigInt(m[0]);
+    const start = i;
+    if (text[i] === "-") i++;
+    if (text[i] === "0") i++;
+    else digits();
+    let exact = false;
+    if (text[i] === ".") {
+      i++;
+      digits();
+      exact = true;
+    }
+    if (text[i] === "e" || text[i] === "E") {
+      i++;
+      if (text[i] === "+" || text[i] === "-") i++;
+      digits();
+      exact = true;
+    }
+    const token = text.slice(start, i);
+    if (exact) return decToken(token);
+    const n = Number(token);
+    return Number.isSafeInteger(n) ? n : BigInt(token);
   };
   const word = (w: string, v: unknown): unknown => {
-    if (!text.startsWith(w, i)) fail("invalid value");
+    for (let k = 0; k < w.length; k++) {
+      if (text[i + k] !== w[k]) {
+        i += k;
+        bad();
+      }
+    }
     i += w.length;
     return v;
   };
@@ -246,84 +292,88 @@ function decParse(text: string): unknown {
       i++;
       return true;
     }
-    if (text[i] !== close) fail("expected , or " + close);
+    if (text[i] !== close) bad();
     i++;
     return false;
   };
-  const obj = (depth: number): unknown => {
+  const open = (depth: number, path: string): void => {
+    if (depth >= 512) decFail(path, "nested deeper than 512 levels");
     i++;
+    ws();
+  };
+  const obj = (depth: number, path: string): unknown => {
+    open(depth, path);
     const o: Record<string, unknown> = {};
     const order: string[] = [];
-    ws();
     if (text[i] === "}") {
       i++;
     } else {
       do {
         ws();
-        if (text[i] !== '"') fail("expected a string key");
-        const k = str();
-        if (Object.prototype.hasOwnProperty.call(o, k)) fail("duplicate key " + k);
+        if (text[i] !== '"') bad();
+        const k = str(path);
+        if (Object.prototype.hasOwnProperty.call(o, k)) decFail(member(path, k), "duplicate key");
         ws();
-        if (text[i++] !== ":") fail("expected :");
-        Object.defineProperty(o, k, { value: val(depth + 1), enumerable: true, writable: true, configurable: true });
+        if (text[i] !== ":") bad();
+        i++;
+        Object.defineProperty(o, k, { value: val(depth + 1, member(path, k)), enumerable: true, writable: true, configurable: true });
         order.push(k);
       } while (sep("}"));
     }
     Object.defineProperty(o, decOrder, { value: order });
     return o;
   };
-  const arr = (depth: number): unknown => {
-    i++;
+  const arr = (depth: number, path: string): unknown => {
+    open(depth, path);
     const a: unknown[] = [];
-    ws();
     if (text[i] === "]") {
       i++;
       return a;
     }
     do {
-      a.push(val(depth + 1));
+      a.push(val(depth + 1, path + "[" + a.length + "]"));
     } while (sep("]"));
     return a;
   };
-  const val = (depth: number): unknown => {
-    if (depth > 512) fail("nesting deeper than 512");
+  const val = (depth: number, path: string): unknown => {
     ws();
     const c = text[i];
-    if (c === "{") return obj(depth);
-    if (c === "[") return arr(depth);
-    if (c === '"') return str();
+    if (c === "{") return obj(depth, path);
+    if (c === "[") return arr(depth, path);
+    if (c === '"') return str(path);
     if (c === "t") return word("true", true);
     if (c === "f") return word("false", false);
     if (c === "n") return word("null", null);
-    return num();
+    if (c === "-" || (c >= "0" && c <= "9")) return num();
+    return bad();
   };
-  const v = val(0);
+  const v = val(0, label + ": " + root);
   ws();
-  if (i < text.length) fail("trailing content");
+  if (i < text.length) bad();
   return v;
 }
 
 function readR($raw: unknown, $path: string): R {
   const $o = decObject($raw, $path);
-  const $v1: bigint = decBig(decGet($o, "n"), $path + "/n", -9223372036854775808n, 9223372036854775807n);
+  const $v1: bigint = decBig(decGet($o, "n"), $path + ".n", -9223372036854775808n, 9223372036854775807n);
   const $r2 = decGet($o, "next");
-  const $v2: bigint | null = $r2 === undefined || $r2 === null ? null : decBig($r2, $path + "/next", -9223372036854775808n, 9223372036854775807n);
+  const $v2: bigint | null = $r2 === undefined || $r2 === null ? null : decBig($r2, $path + ".next", -9223372036854775808n, 9223372036854775807n);
   const $r3 = decGet($o, "m");
-  const $v3: ReadonlyMap<bigint, bigint> = $r3 === undefined ? new CanonMap<bigint, bigint>([]) : decMap($r3, $path + "/m", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $v3: ReadonlyMap<bigint, bigint> = $r3 === undefined ? new CanonMap<bigint, bigint>([]) : decMap($r3, $path + ".m", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
   const $r4 = decGet($o, "l");
-  const $v4: ReadonlyArray<bigint> = $r4 === undefined ? [] : decList($r4, $path + "/l", ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $v4: ReadonlyArray<bigint> = $r4 === undefined ? [] : decList($r4, $path + ".l", ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
   const $r5 = decGet($o, "mx");
-  const $v5: bigint | null = $r5 === undefined || $r5 === null || decSame($r5, "-1") ? null : decBig($r5, $path + "/mx", -9223372036854775808n, 9223372036854775807n);
+  const $v5: bigint | null = $r5 === undefined || $r5 === null || decSame($r5, "-1") ? null : decBig($r5, $path + ".mx", -9223372036854775808n, 9223372036854775807n);
   const $r6 = decGet($o, "w");
-  const $v6: ReadonlyMap<bigint, number> = $r6 === undefined ? new CanonMap<bigint, number>([]) : decMap($r6, $path + "/w", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v6: ReadonlyMap<bigint, number> = $r6 === undefined ? new CanonMap<bigint, number>([]) : decMap($r6, $path + ".w", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   return { n: $v1, next: $v2, m: $v3, l: $v4, mx: $v5, w: $v6 };
 }
 
 /** A row keyed by a bigint. */
 export function decodeR(json: unknown): R {
-  return canonFreeze(readR(json, ""));
+  return canonFreeze(readR(json, "R: $"));
 }
 
 export function parseR(text: string): R {
-  return decodeR(decParse(text));
+  return decodeR(decParse(text, "R", "$"));
 }

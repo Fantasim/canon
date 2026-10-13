@@ -11,5 +11,5 @@ test("a lookup over another package's empty table reads no cell (CODEGEN.md §5.
   assert.deepEqual({ ...band.bonus }, {});
   const bad = JSON.parse(text("zone.json"));
   bad.value.band.$bonus = [];
-  assert.throws(() => decodeZone(bad), /^Error: \/value\/band\/\$bonus: expected an object$/);
+  assert.throws(() => decodeZone(bad), /^Error: zone\.json: value\.band\.\$bonus: expected an object$/);
 });
