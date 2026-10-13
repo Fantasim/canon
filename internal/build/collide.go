@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	jsongen "github.com/fantasim/canonlang/internal/gen/json"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/project"
 )
@@ -91,4 +92,25 @@ func emitDirs(pe *placedEmit) []string {
 		return []string{dir, project.Join(dir, ir.GoRT)}
 	}
 	return []string{dir}
+}
+
+// fileNames are the files e writes, by name: a view's one file and a json emit's from its layout,
+// no content encoded (the data of every entry otherwise, on each check and edit re-check); the
+// other targets' from their generator, which the write then shares (DECISIONS 355).
+func (r *run) fileNames(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
+	if e.Target == ir.TargetView {
+		return []ir.File{{Path: e.FileName}}, nil
+	}
+	if err := complete(p); err != nil {
+		return nil, err
+	}
+	if e.Target != ir.TargetJSON {
+		return r.generate(p, e)
+	}
+	paths, err := jsongen.Paths(p, e)
+	files := make([]ir.File, len(paths))
+	for i, name := range paths {
+		files[i] = ir.File{Path: name}
+	}
+	return files, err
 }

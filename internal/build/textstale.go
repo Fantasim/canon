@@ -320,18 +320,12 @@ func (r *run) unrun(targets []ir.Target) map[string]bool {
 	return out
 }
 
-// emitPaths are the outputs of e without running its view: the files its generator makes, or the one file of a view.
+// emitPaths are the outputs of e without running its view: the files fileNames gives.
 func (r *run) emitPaths(p *ir.Package, e *ir.Emit) []*output {
 	cp := ir.CopyOf(r.s.proj, p, e)
-	files := []ir.File{{Path: e.FileName}}
-	if e.Target != ir.TargetView {
-		var err error
-		if err = complete(cp); err == nil {
-			files, err = r.generate(cp, e)
-		}
-		if err != nil {
-			return nil
-		}
+	files, err := r.fileNames(cp, e)
+	if err != nil {
+		return nil
 	}
 	out, err := r.outputs(cp, e, files)
 	if err != nil {

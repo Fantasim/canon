@@ -9,18 +9,8 @@ import (
 
 // Generate is the json generator (ir.Generator): a file per value, `$fns` in the first (WIRE.md §8); p is narrowed by ir.CopyOf.
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
-	if p == nil || e == nil || e.Target != ir.TargetJSON {
-		return nil, ErrEmit
-	}
-	values, err := selection(p, e)
+	values, paths, err := plan(p, e)
 	if err != nil {
-		return nil, err
-	}
-	paths, err := layout(e, values)
-	if err != nil {
-		return nil, err
-	}
-	if err := dataMode(p, e, values, paths); err != nil {
 		return nil, err
 	}
 	x, err := newIndex(p, values)
@@ -40,6 +30,32 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 		files[i] = ir.File{Path: paths[i], Content: content}
 	}
 	return files, nil
+}
+
+// Paths is the files Generate writes for e, in its order, without encoding them: what a check
+// of colliding outputs needs (DECISIONS 355), refused as Generate refuses e's layout.
+func Paths(p *ir.Package, e *ir.Emit) ([]string, error) {
+	_, paths, err := plan(p, e)
+	return paths, err
+}
+
+// plan is the values Generate writes for e and each one's file in Dir (WIRE.md §8, decision 127).
+func plan(p *ir.Package, e *ir.Emit) ([]*ir.Value, []string, error) {
+	if p == nil || e == nil || e.Target != ir.TargetJSON {
+		return nil, nil, ErrEmit
+	}
+	values, err := selection(p, e)
+	if err != nil {
+		return nil, nil, err
+	}
+	paths, err := layout(e, values)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := dataMode(p, e, values, paths); err != nil {
+		return nil, nil, err
+	}
+	return values, paths, nil
 }
 
 // document is v's file; its `$schema` covers fns (decision 118) and is Value.Schema (decision 128).

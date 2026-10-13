@@ -148,21 +148,14 @@ func (fb *feedback) writes(pe *placedEmit, real string) (bool, error) {
 	return pe.files[real], nil
 }
 
-// filesOf is the files pe writes: a view's one file, which a build writes even after an error;
-// any other emit's as its generator makes them, none when the run has an error, after which a
-// build writes no such file (API.md B1).
+// filesOf is the files pe writes, by name (fileNames): a view's one file, which a build writes
+// even after an error; any other emit's none when the run has an error, after which a build
+// writes no such file (API.md B1).
 func (fb *feedback) filesOf(pe *placedEmit) ([]ir.File, error) {
-	if pe.e.Target == ir.TargetView {
-		return []ir.File{{Path: pe.e.FileName}}, nil
-	}
-	if fb.failed {
+	if fb.failed && pe.e.Target != ir.TargetView {
 		return nil, nil
 	}
-	cp := ir.CopyOf(fb.r.s.proj, pe.p, pe.e)
-	if err := complete(cp); err != nil { // a run without error leaves every value set
-		return nil, err
-	}
-	return fb.r.generate(cp, pe.e)
+	return fb.r.fileNames(ir.CopyOf(fb.r.s.proj, pe.p, pe.e), pe.e)
 }
 
 // errorFree reports no error yet in the project or a loaded package: a build then emits every target.

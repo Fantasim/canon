@@ -14,14 +14,17 @@ import (
 // isStrong is the pipeline's precomputed method.
 func isStrong(p *ir.Package) *ir.ExportFn { return p.Types[0].(*ir.Record).Methods[0] }
 
-// An IR stage E or the checker refuses is an error, never a file nor a finding (decision 126).
-func TestRefusals(t *testing.T) {
-	cases := []struct {
-		name  string
-		p     func() *ir.Package
-		setup func(p *ir.Package) *ir.Emit
-		want  error
-	}{
+// refusal is one emit Generate refuses: the package, the emit made from it, the error.
+type refusal struct {
+	name  string
+	p     func() *ir.Package
+	setup func(p *ir.Package) *ir.Emit
+	want  error
+}
+
+// refusals are the emits an IR stage E or the checker refuses.
+func refusals() []refusal {
+	return []refusal{
 		{"a cpp emit", pipeline, func(p *ir.Package) *ir.Emit { return p.Emits[1] }, jsongen.ErrEmit},
 		{"no emit", pipeline, func(*ir.Package) *ir.Emit { return nil }, jsongen.ErrEmit},
 		// WIRE.md §8.1, E8150: file mode writes exactly one value, to a `.json` name (case-sensitive).
@@ -76,7 +79,11 @@ func TestRefusals(t *testing.T) {
 		{"Range value", teamboard, func(p *ir.Package) *ir.Emit { p.Values[3].Type = ir.TypeRef{Kind: types.Range}; return p.Emits[2] }, ir.ErrFingerprint},
 		{"value unlike its type", teamboard, func(p *ir.Package) *ir.Emit { p.Values[1].V = str("open"); return p.Emits[2] }, wire.ErrShape},
 	}
-	for _, c := range cases {
+}
+
+// An IR stage E or the checker refuses is an error, never a file nor a finding (decision 126).
+func TestRefusals(t *testing.T) {
+	for _, c := range refusals() {
 		t.Run(c.name, func(t *testing.T) {
 			p := c.p()
 			files, err := jsongen.Generate(p, c.setup(p))
