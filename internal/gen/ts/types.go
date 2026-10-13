@@ -82,11 +82,19 @@ func (g *gen) unionType(t ir.TypeRef) string {
 	if arm.Kind != types.Enum && arm.Kind != types.String {
 		return tsString
 	}
-	parts := []string{g.tsType(arm, false)}
+	parts := []string{g.armType(arm)}
 	for _, lit := range t.Literals {
 		parts = append(parts, quote(lit))
 	}
 	return strings.Join(parts, unionSep)
+}
+
+// armType is the type of a literal union's first arm: an enum's closed union, since the union stays closed over an opened enum (CODEGEN.md §5.2).
+func (g *gen) armType(arm ir.TypeRef) string {
+	if e, ok := arm.Named.(*ir.Enum); ok && arm.Kind == types.Enum {
+		return g.closedName(e)
+	}
+	return g.tsType(arm, false)
 }
 
 // keyType is a ref's key: its table's id type, else the key type the IR gives (CODEGEN.md §5.8); a map key is written the same way.

@@ -162,9 +162,12 @@ function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
   return raw;
 }
 
-function decFloat(raw: unknown, path: string): number {
-  const v = typeof raw === "number" ? raw : Number(decText(raw));
-  if (!Number.isFinite(v)) decFail(path, "expected a finite number");
+/** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
+function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  const text = decText(raw);
+  if (text === undefined) decFail(path, "expected a number");
+  const v = typeof raw === "number" ? raw : Number(text);
+  if (!Number.isFinite(v)) decFail(path, refusal);
   return v === 0 ? 0 : v;
 }
 
@@ -386,7 +389,7 @@ function read_base_Badge($raw: unknown, $path: string): base.Badge {
   const $o = decObject($raw, $path);
   const $v1: string = decString(decGet($o, "label"), $path + ".label");
   const $r2 = decGet($o, "weight");
-  const $v2: number = $r2 === undefined ? 1 : decFloat($r2, $path + ".weight");
+  const $v2: number = $r2 === undefined ? 1 : decFloat($r2, $path + ".weight", "expected a number");
   return { label: $v1, weight: $v2 };
 }
 === features/base/base.ts ===
@@ -466,9 +469,12 @@ function decObject(raw: unknown, path: string): Record<string, unknown> {
   return raw;
 }
 
-function decFloat(raw: unknown, path: string): number {
-  const v = typeof raw === "number" ? raw : Number(decText(raw));
-  if (!Number.isFinite(v)) decFail(path, "expected a finite number");
+/** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
+function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  const text = decText(raw);
+  if (text === undefined) decFail(path, "expected a number");
+  const v = typeof raw === "number" ? raw : Number(text);
+  if (!Number.isFinite(v)) decFail(path, refusal);
   return v === 0 ? 0 : v;
 }
 

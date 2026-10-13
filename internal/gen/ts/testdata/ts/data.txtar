@@ -471,9 +471,12 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
   return v;
 }
 
-function decFloat(raw: unknown, path: string): number {
-  const v = typeof raw === "number" ? raw : Number(decText(raw));
-  if (!Number.isFinite(v)) decFail(path, "expected a finite number");
+/** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
+function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  const text = decText(raw);
+  if (text === undefined) decFail(path, "expected a number");
+  const v = typeof raw === "number" ? raw : Number(text);
+  if (!Number.isFinite(v)) decFail(path, refusal);
   return v === 0 ? 0 : v;
 }
 
@@ -509,8 +512,8 @@ function decHalf(raw: unknown, d: number, f: number): number {
   return Math.sign(d) * (pick === top ? Infinity : pick);
 }
 
-function decF32(raw: unknown, path: string): number {
-  const d = decFloat(raw, path);
+function decF32(raw: unknown, path: string, refusal = "number out of range"): number {
+  const d = decFloat(raw, path, refusal);
   const f = Math.fround(d);
   const v = f === d || typeof raw === "number" ? f : decHalf(raw, d, f);
   if (!Number.isFinite(v)) decFail(path, "number overflows Float32");
@@ -537,9 +540,10 @@ function decDuration(raw: unknown, path: string, unit: number): number {
   return Number(d.neg ? -ms : ms);
 }
 
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
   const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, "unknown member");
+  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
   return m;
 }
 
@@ -873,11 +877,11 @@ function readSkill($raw: unknown, $path: string): Skill {
   const $r6 = decGet($o, "bTwoHanded");
   const $v6: boolean = $r6 === undefined ? false : decBit($r6, $path + ".bTwoHanded");
   const $r7 = decGet($o, "side");
-  const $v7: Side | "both" = $r7 === undefined ? "both" : decString($r7, $path + ".side") as Side | "both";
+  const $v7: Side | "both" = $r7 === undefined ? "both" : decEnum(decString($r7, $path + ".side"), $path + ".side", $union1, true);
   const $r8 = decGet($o, "cast_time");
   const $v8: number | null = $r8 === undefined || $r8 === null ? null : decDuration($r8, $path + ".cast_time", 1000);
   const $r9 = decGet($o, "weights");
-  const $v9: ReadonlyMap<Element, number> = $r9 === undefined ? new CanonMap<Element, number>([]) : decMap($r9, $path + ".weights", ($k, $p) => decCode(Number($k), $p, ElementMembers, ElementCodes), ($x, $p) => decFloat($x, $p));
+  const $v9: ReadonlyMap<Element, number> = $r9 === undefined ? new CanonMap<Element, number>([]) : decMap($r9, $path + ".weights", ($k, $p) => decCode(Number($k), $p, ElementMembers, ElementCodes), ($x, $p) => decFloat($x, $p, "expected a number"));
   const $r10 = decGet($o, "counts");
   const $v10: ReadonlyMap<number, number> = $r10 === undefined ? new CanonMap<number, number>([]) : decMap($r10, $path + ".counts", ($k, $p) => decIntKey($k, $p), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $v11: ReadonlyArray<StatBonus> = decPairs($o, $path, ["dwDestParam0", "dwDestParam1", "dwDestParam2"], ["nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"], ($a, $b, $pa, $pb) => ({ attribute: decString($a, $pa), value: decInt($b, $pb, -9223372036854776000, 9223372036854776000) }));
@@ -903,12 +907,14 @@ function readMark($raw: unknown, $path: string): Mark {
   const $o = decObject($raw, $path);
   const $v1: string = decString(decGet($o, "key"), $path + ".key");
   const $r2 = decGet($o, "half");
-  const $v2: number | null = $r2 === undefined || $r2 === null || decSame($r2, "0.5") ? null : decFloat($r2, $path + ".half");
+  const $v2: number | null = $r2 === undefined || $r2 === null || decSame($r2, "0.5") ? null : decFloat($r2, $path + ".half", "expected a number");
   const $r3 = decGet($o, "minus");
-  const $v3: number | null = $r3 === undefined || $r3 === null || decSame($r3, "-1") ? null : decFloat($r3, $path + ".minus");
+  const $v3: number | null = $r3 === undefined || $r3 === null || decSame($r3, "-1") ? null : decFloat($r3, $path + ".minus", "expected a number");
   const $r4 = decGet($o, "big");
   const $v4: bigint | null = $r4 === undefined || $r4 === null || decSame($r4, "9223372036854775807") ? null : decBig($r4, $path + ".big", -9223372036854775808n, 9223372036854775807n);
   const $r5 = decGet($o, "narrow");
-  const $v5: number = $r5 === undefined ? 0 : decF32($r5, $path + ".narrow");
+  const $v5: number = $r5 === undefined ? 0 : decF32($r5, $path + ".narrow", "expected a number");
   return { key: $v1, half: $v2, minus: $v3, big: $v4, narrow: $v5 };
 }
+
+const $union1: ReadonlyArray<Side | "both"> = [...SideMembers, "both"];

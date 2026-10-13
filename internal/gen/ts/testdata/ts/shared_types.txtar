@@ -464,9 +464,10 @@ function decString(raw: unknown, path: string): string {
   return raw;
 }
 
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
   const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, "unknown member");
+  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
   return m;
 }
 

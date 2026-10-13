@@ -164,6 +164,12 @@ test("decode sees numbers by value: a float marker matches, a bigint past 2^53 i
   assert.throws(() => decodeMarks(load("marks.json")), /integer outside the TypeScript safe range/);
 });
 
+test("a data file refuses a Float past the range as the data loaders do, `expected a number` (CODEGEN.md §5.13)", () => {
+  const huge = (key) => () => parseMarks(text("marks.json").replace(new RegExp('"' + key + '": [^,}]+'), '"' + key + '": 1e400'));
+  assert.throws(huge("half"), /^Error: marks\.json: rows\[\d+\]\.half: expected a number$/);
+  assert.throws(huge("narrow"), /^Error: marks\.json: rows\[\d+\]\.narrow: expected a number$/);
+});
+
 test("a Float32 is rounded once from the exact decimal (WIRE.md §5.1)", () => {
   const narrow = (token) => parseMarks(text("marks.json").replace(/"narrow": [0-9.e+-]+/, '"narrow": ' + token)).find("none").narrow;
   assert.equal(narrow("0.1"), Math.fround(0.1));

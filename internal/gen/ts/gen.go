@@ -35,6 +35,8 @@ type gen struct {
 	foreignDone  bool               // foreignRead is computed
 	props        map[string]bool    // the properties declared per interface
 	instances    map[*ir.ExportFn]map[*value.Record]*ir.Instance
+	unionNames   map[string]string // a literal union's allowed-strings constant, by the union's text
+	unionConsts  []string          // their declarations, in the order they were needed
 	temps        int
 	decoderStart int // where the decoders begin among the items
 }
@@ -69,7 +71,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 	g := &gen{
 		p: p, e: e, at: p.Name, names: map[string]string{}, used: map[string]bool{},
 		imports: map[string]*nsImport{},
-		entries: map[*ir.Record]bool{}, loose: map[*ir.Record]bool{}, rowSites: map[*ir.Record]int{}, variantOf: map[*ir.Case]*ir.Variant{}, decoded: map[any]bool{}, props: map[string]bool{},
+		entries: map[*ir.Record]bool{}, loose: map[*ir.Record]bool{}, rowSites: map[*ir.Record]int{}, variantOf: map[*ir.Case]*ir.Variant{}, decoded: map[any]bool{}, props: map[string]bool{}, unionNames: map[string]string{},
 		instances: map[*ir.ExportFn]map[*value.Record]*ir.Instance{},
 	}
 	for _, name := range ir.TSHelperNames() {

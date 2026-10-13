@@ -334,9 +334,12 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
   return raw === 0 ? 0 : raw;
 }
 
-function decFloat(raw: unknown, path: string): number {
-  const v = typeof raw === "number" ? raw : Number(decText(raw));
-  if (!Number.isFinite(v)) decFail(path, "expected a finite number");
+/** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
+function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  const text = decText(raw);
+  if (text === undefined) decFail(path, "expected a number");
+  const v = typeof raw === "number" ? raw : Number(text);
+  if (!Number.isFinite(v)) decFail(path, refusal);
   return v === 0 ? 0 : v;
 }
 
@@ -360,9 +363,10 @@ function decDuration(raw: unknown, path: string, unit: number): number {
   return Number(d.neg ? -ms : ms);
 }
 
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
   const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, "unknown member");
+  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
   return m;
 }
 
@@ -687,7 +691,7 @@ function readSkill($raw: unknown, $path: string): Skill {
   const $r6 = decGet($o, "bTwoHanded");
   const $v6: boolean = $r6 === undefined ? false : decBit($r6, $path + ".bTwoHanded");
   const $r7 = decGet($o, "side");
-  const $v7: Side | "both" = $r7 === undefined ? "both" : decString($r7, $path + ".side") as Side | "both";
+  const $v7: Side | "both" = $r7 === undefined ? "both" : decEnum(decString($r7, $path + ".side"), $path + ".side", $union1, true);
   const $r8 = decGet($o, "cast_time");
   const $v8: number | null = $r8 === undefined || $r8 === null ? null : decDuration($r8, $path + ".cast_time", 1000);
   const $r9 = decGet($o, "weights");
@@ -709,3 +713,5 @@ export function decodeSkill(json: unknown): Skill {
 export function parseSkill(text: string): Skill {
   return decodeSkill(decParse(text, "Skill", "$"));
 }
+
+const $union1: ReadonlyArray<Side | "both"> = [...SideMembers, "both"];

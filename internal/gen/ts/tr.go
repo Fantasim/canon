@@ -317,7 +317,12 @@ func (t *tr) interpolation(x ir.PExpr) string {
 	case types.Int:
 		return fmt.Sprintf(callFormat, stringFn, t.expr(x))
 	case types.Enum:
-		return fmt.Sprintf(indexOfFormat, t.g.namesConst(x.Type().Named), t.expr(x))
+		e, _ := x.Type().Named.(*ir.Enum)
+		if e == nil || t.g.open(e) { // E8019 OpenEnumFn refuses a translated fn that reads an opened enum (DECISIONS 365)
+			t.g.failf(ErrMalformed, malformedDecl, t.g.at)
+			return tsUndefined
+		}
+		return fmt.Sprintf(indexOfFormat, t.g.namesConst(e), t.expr(x))
 	default:
 		return t.operand(x)
 	}

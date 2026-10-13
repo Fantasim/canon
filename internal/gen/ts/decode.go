@@ -23,13 +23,8 @@ func (g *gen) decoders() {
 	for _, v := range g.emitted {
 		g.valueDecoder(v)
 	}
-	if g.isTypes() {
-		for _, t := range g.p.Types {
-			if docOwner(t) {
-				g.need(t)
-			}
-		}
-	}
+	g.needPublic()
+	texts := g.textDecoders()
 	readers := g.readers()
 	for _, t := range g.p.Types {
 		if text, ok := readers[t]; ok {
@@ -39,8 +34,26 @@ func (g *gen) decoders() {
 			}
 		}
 	}
+	for _, text := range texts {
+		g.add(text)
+	}
+	for _, c := range g.unionConsts {
+		g.add(c)
+	}
 	for _, t := range g.foreignClasses() {
 		g.add(readers[t])
+	}
+}
+
+// needPublic marks the classes of the public decoders of a types-mode emit as read.
+func (g *gen) needPublic() {
+	if !g.isTypes() {
+		return
+	}
+	for _, t := range g.p.Types {
+		if docOwner(t) {
+			g.need(t)
+		}
 	}
 }
 

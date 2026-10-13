@@ -2,6 +2,7 @@ package tsgen
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -27,14 +28,11 @@ func (g *gen) dec(t ir.TypeRef, raw, path string, c decCtx) string {
 	case types.Int:
 		return g.decInt(t, raw, path, c)
 	case types.Float:
-		if t.Bits == float32Bits {
-			return g.call(decF32Name, raw, path)
-		}
-		return g.call(decFloatName, raw, path)
+		return g.decFloat(t, raw, path)
 	case types.String:
 		return g.call(decStringName, raw, path)
 	case types.LitUnion:
-		return g.call(decStringName, raw, path) + asKw + g.tsType(t, false)
+		return g.decUnion(t, g.call(decStringName, raw, path), path)
 	case types.Duration:
 		return g.call(decDurationName, raw, path, intText(c.unit.Millis()))
 	case types.Enum:
@@ -42,6 +40,18 @@ func (g *gen) dec(t ir.TypeRef, raw, path string, c decCtx) string {
 	default:
 		return g.decComposite(t, raw, path, c)
 	}
+}
+
+// decFloat is a Float read; a data file refuses a number past the range as the data loaders do, `expected a number` (CODEGEN.md §5.13).
+func (g *gen) decFloat(t ir.TypeRef, raw, path string) string {
+	helper, args := decFloatName, []string{raw, path}
+	if t.Bits == float32Bits {
+		helper = decF32Name
+	}
+	if !g.isTypes() {
+		args = append(args, quote(expectedNumber))
+	}
+	return g.call(helper, args...)
 }
 
 // call is a call of a decoder helper.
@@ -68,7 +78,35 @@ func (g *gen) decEnum(t ir.TypeRef, raw, path string) string {
 	if e.JSONCodes {
 		return g.call(decCodeName, raw, path, g.membersConst(e), g.codesConst(e))
 	}
+	if g.open(e) {
+		return g.call(decStringName, raw, path) + asKw + g.named(e)
+	}
 	return g.call(decEnumName, raw, path, g.membersConst(e))
+}
+
+// decUnion is the string s read as a literal union `A | "lit"`: one of the literals or, when A is an enum, one of its members' wires, closed even when the enum is opened (DECISIONS 339, 362); any other string for `String | "lit"` (WIRE.md §5.9, CODEGEN.md §5.13).
+func (g *gen) decUnion(t ir.TypeRef, s, path string) string {
+	e, ok := g.elem(t).Named.(*ir.Enum)
+	if !ok {
+		return s + asKw + g.tsType(t, false)
+	}
+	allowed := []string{spreadMark + g.membersConst(e)}
+	for _, lit := range t.Literals {
+		allowed = append(allowed, quote(lit))
+	}
+	return g.call(decEnumName, s, path, g.unionConst(g.tsType(t, false), lbracket+joinArgs(allowed)+rbracket), tsTrue)
+}
+
+// unionConst is the module-level constant holding a literal union's allowed strings, one per distinct union and written once; its `$` name meets no Canon name.
+func (g *gen) unionConst(typ, allowed string) string {
+	key := typ + keyValueSep + allowed
+	if name, ok := g.unionNames[key]; ok {
+		return name
+	}
+	name := unionConstPrefix + strconv.Itoa(len(g.unionNames)+1)
+	g.unionNames[key] = name
+	g.unionConsts = append(g.unionConsts, fmt.Sprintf(unionConstFormat, name, typ, allowed))
+	return name
 }
 
 // membersConst is the Members table of an enum, imported when another package's.
@@ -198,7 +236,7 @@ func (g *gen) decMapKey(t ir.TypeRef, key, path string, big bool) string {
 	case types.String:
 		return key
 	case types.LitUnion:
-		return key + asKw + g.tsType(t, false)
+		return g.decUnion(t, key, path)
 	case types.Int:
 		if big {
 			lo, hi, _ := types.Basic{K: types.Int, Bits: t.Bits, Signed: t.Signed}.Limits()

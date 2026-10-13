@@ -125,6 +125,17 @@ test("parse<T> accepts an escaped surrogate pair, in a value and a key (WIRE.md 
   assert.equal(parseStatBonus('{"attribute": "a", "value": 1, "\\ud83d\\ude00": 2}').value, 1);
 });
 
+test("a literal union over a closed enum refuses any other string, as the Go decoder does (CODEGEN.md §5.13, WIRE.md §5.9)", () => {
+  const skill = (side) => ({ dwID: "a", type: "plain", ...(side === undefined ? {} : { side }) });
+  assert.equal(decodeSkill(skill("left")).side, "left");
+  assert.equal(decodeSkill(skill("RIGHT")).side, "RIGHT");
+  assert.equal(decodeSkill(skill("both")).side, "both");
+  assert.equal(decodeSkill(skill()).side, "both");
+  assert.throws(() => decodeSkill(skill("up")), new Error("Skill: $.side: unknown value up"));
+  assert.throws(() => decodeSkill(skill("right")), new Error("Skill: $.side: unknown value right"));
+  assert.throws(() => decodeSkill(skill(3)), new Error("Skill: $.side: expected a string"));
+});
+
 test("decode<T> names its failures behind <T>: and a $ path (CODEGEN.md §5.13, DECISIONS 361)", () => {
   assert.throws(() => decodeStatBonus(null), new Error("StatBonus: $: expected an object"));
   assert.throws(() => decodeStatBonus({ attribute: "a", value: "x" }), new Error("StatBonus: $.value: expected an integer"));

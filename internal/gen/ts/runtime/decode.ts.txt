@@ -102,9 +102,12 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
   return v;
 }
 
-function decFloat(raw: unknown, path: string): number {
-  const v = typeof raw === "number" ? raw : Number(decText(raw));
-  if (!Number.isFinite(v)) decFail(path, "expected a finite number");
+/** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
+function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  const text = decText(raw);
+  if (text === undefined) decFail(path, "expected a number");
+  const v = typeof raw === "number" ? raw : Number(text);
+  if (!Number.isFinite(v)) decFail(path, refusal);
   return v === 0 ? 0 : v;
 }
 
@@ -140,8 +143,8 @@ function decHalf(raw: unknown, d: number, f: number): number {
   return Math.sign(d) * (pick === top ? Infinity : pick);
 }
 
-function decF32(raw: unknown, path: string): number {
-  const d = decFloat(raw, path);
+function decF32(raw: unknown, path: string, refusal = "number out of range"): number {
+  const d = decFloat(raw, path, refusal);
   const f = Math.fround(d);
   const v = f === d || typeof raw === "number" ? f : decHalf(raw, d, f);
   if (!Number.isFinite(v)) decFail(path, "number overflows Float32");
@@ -168,9 +171,10 @@ function decDuration(raw: unknown, path: string, unit: number): number {
   return Number(d.neg ? -ms : ms);
 }
 
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
   const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, "unknown member");
+  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
   return m;
 }
 
