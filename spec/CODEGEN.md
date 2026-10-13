@@ -3495,17 +3495,6 @@ export interface CanonTable<K, T> {
 /** A row of a table: its record, with this table's id and retired flag present. */
 export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
 
-/** A table or keyed list: entries in source order, lookup by key. */
-export interface CanonTable<K, T> {
-  readonly length: number;
-  readonly all: ReadonlyArray<T>;
-  at(i: number): T;
-  find(key: K): T | null;
-}
-
-/** A row of a table: its record, with this table's id and retired flag present. */
-export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
-
 /** A table or keyed list, and a lookup per @stable field (`by`: the method name to the field's property): each an index built once, never a scan (CODEGEN.md §5.9). */
 function canonTable<K, T, B extends Record<string, keyof T> = {}>(rows: ReadonlyArray<T>, keyOf: (row: T) => K, by?: B): CanonTable<K, T> & { readonly [P in keyof B]: (value: T[B[P]]) => T | null } {
   const index = new Map<K, number>();
