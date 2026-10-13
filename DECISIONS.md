@@ -3470,6 +3470,9 @@ round 2", "PS1 review", "PS2 round 2"):
      legitimate. Reason: a consumer root is written only by its own `--only-root` build (343), so a
      copy importing another consumer root's copy imports code no build of it writes (handoff
      2026-10-08-sovereign-go-open-ids-consumer-roots §4, "cross-root import trap").
+     Settled while building (2026-10-13): "under a consumer root" is the closest consumer root
+     above the copy's directory, as `canon build` partitions the outputs (343): an ordinary root
+     nested inside a consumer root is built with it.
 
 348. **`data` and `types` mode share one string id type per name (CODEGEN.md §5.3; ERRORS.md
      E8005 `both`).** In `data` and `types` mode a table's id type is its key string (Go `type XID

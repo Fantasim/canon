@@ -215,7 +215,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `WayDefineKey` | take an enum parameter instead | `E8019` |
 | `WayDependentDefault` | drop the default, or make the field optional | `E8019` |
 | `WayDependentOutsideField` | hold the value in a record field beside its discriminant | `E8019` |
-| `WayDependentType` | decide it by an enum field of the same record, or by a ref into a value that is not `@reload` | `E8019` |
+| `WayDependentType` | decide it by an enum field of the same record, or by a ref into a let that is not `@reload` | `E8019` |
 | `WayFieldlessCaseExportFn` | give the case a field | `E8019` |
 | `WayForeignResolvedRef` | emit the owning package in baked mode, or keep the record inside the owner's value | `E8019` |
 | `WayForeignTableLookupParam` | emit the table's package in baked mode, or take an enum parameter | `E8019` |

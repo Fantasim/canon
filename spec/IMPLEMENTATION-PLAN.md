@@ -483,6 +483,8 @@ type Field struct {
     Default value.Value      // nil when required
     Deprecated string; Stable bool; Input *Input
     Cpp CppFieldOptions; Go, TS NameOptions
+    BigInt bool              // @ts(bigint)
+    Branches *BranchTable    // a dependent field decided through a ref: sorted keys → a discriminant value selecting the branch (DECISIONS 350, §4 review rule)
 }
 type TypeRef struct {
     Kind    types.Kind

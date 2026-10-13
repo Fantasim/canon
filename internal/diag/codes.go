@@ -478,7 +478,7 @@ var kindWords = [...]string{
 	"take an enum parameter instead",
 	"drop the default, or make the field optional",
 	"hold the value in a record field beside its discriminant",
-	"decide it by an enum field of the same record, or by a ref into a value that is not `@reload`",
+	"decide it by an enum field of the same record, or by a ref into a let that is not `@reload`",
 	"give the case a field",
 	"emit the owning package in baked mode, or keep the record inside the owner's value",
 	"emit the table's package in baked mode, or take an enum parameter",
