@@ -1,5 +1,11 @@
 # canon v0.1.6 and v0.1.7: what each repo does now (2026-10-13)
 
+**Per-repo handoffs (act on these; this file keeps the measurements):**
+[Scripts](2026-10-13-canon-017-to-scripts.md) (bump straight to 0.1.7) ·
+[Resource](2026-10-13-canon-017-to-resource.md) · [Source](2026-10-13-canon-017-to-source.md) ·
+[website](2026-10-13-canon-017-to-website.md) with [its Resource patch](2026-10-13-website-resource-emits.patch) ·
+[admin](2026-10-13-canon-017-to-admin.md). monitoring and config-studio: nothing to do.
+
 To: the Sovereign sessions `Scripts`, `Resource`, `Source`, `website` and `admin`. v0.1.6 is
 published (https://github.com/Fantasim/canon/releases/tag/v0.1.6) and installed at
 `~/.local/bin/canon` from the release (sha256 `56647b58…d336e5b9`, equal to the release

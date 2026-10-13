@@ -1,0 +1,146 @@
+diff --git a/Config/ai/emit.canon b/Config/ai/emit.canon
+--- a/Config/ai/emit.canon
++++ b/Config/ai/emit.canon
+@@ -4,3 +4,5 @@ package ai
+ emit text { out: "@resource/Server/Mover/" }
+ 
+ emit view { out: "@resource/Studio/views/ai.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/ai.ts" }
+diff --git a/Config/ai/vocab/emit.canon b/Config/ai/vocab/emit.canon
+--- a/Config/ai/vocab/emit.canon
++++ b/Config/ai/vocab/emit.canon
+@@ -14,3 +14,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/ai.vocab.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/ai.vocab.ts" }
+diff --git a/Config/balance/emit.canon b/Config/balance/emit.canon
+--- a/Config/balance/emit.canon
++++ b/Config/balance/emit.canon
+@@ -9,3 +9,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/balance.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/balance.ts" }
+diff --git a/Config/character/vocab/emit.canon b/Config/character/vocab/emit.canon
+--- a/Config/character/vocab/emit.canon
++++ b/Config/character/vocab/emit.canon
+@@ -14,3 +14,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/character.vocab.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/character.vocab.ts" }
+diff --git a/Config/content/emit.canon b/Config/content/emit.canon
+--- a/Config/content/emit.canon
++++ b/Config/content/emit.canon
+@@ -4,3 +4,9 @@ package content
+ emit text { out: "@resource/Server/System/" }
+ 
+ emit view { out: "@resource/Studio/views/content.view.json" }
++
++emit go {
++  out: "@website/internal/gen/content"
++  package: "content"
++  mode: types
++}
+diff --git a/Config/content/vocab/emit.canon b/Config/content/vocab/emit.canon
+--- a/Config/content/vocab/emit.canon
++++ b/Config/content/vocab/emit.canon
+@@ -7,7 +7,7 @@ emit cpp {
+   namespace: "sov::content"
+ }
+ emit go {
+-  out: "@monitoring/internal/platform/gen/content/vocab"
++  out: ["@monitoring/internal/platform/gen/content/vocab", "@website/internal/gen/content/vocab"]
+   package: "contentvocab"
+   mode: baked
+ }
+diff --git a/Config/engine/vocab/emit.canon b/Config/engine/vocab/emit.canon
+--- a/Config/engine/vocab/emit.canon
++++ b/Config/engine/vocab/emit.canon
+@@ -13,3 +13,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/engine.vocab.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/engine.vocab.ts" }
+diff --git a/Config/items/vocab/core/emit.canon b/Config/items/vocab/core/emit.canon
+--- a/Config/items/vocab/core/emit.canon
++++ b/Config/items/vocab/core/emit.canon
+@@ -14,3 +14,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/items.vocab.core.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/items.vocab.core.ts" }
+diff --git a/Config/items/vocab/emit.canon b/Config/items/vocab/emit.canon
+--- a/Config/items/vocab/emit.canon
++++ b/Config/items/vocab/emit.canon
+@@ -14,3 +14,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/items.vocab.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/items.vocab.ts" }
+diff --git a/Config/text/emit.canon b/Config/text/emit.canon
+--- a/Config/text/emit.canon
++++ b/Config/text/emit.canon
+@@ -13,3 +13,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/text.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/text.ts" }
+diff --git a/Config/text/vocab/emit.canon b/Config/text/vocab/emit.canon
+--- a/Config/text/vocab/emit.canon
++++ b/Config/text/vocab/emit.canon
+@@ -14,3 +14,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/text.vocab.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/text.vocab.ts" }
+diff --git a/Config/ui/vocab/emit.canon b/Config/ui/vocab/emit.canon
+--- a/Config/ui/vocab/emit.canon
++++ b/Config/ui/vocab/emit.canon
+@@ -13,3 +13,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/ui.vocab.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/ui.vocab.ts" }
+diff --git a/Config/ui/vocab/neuz/emit.canon b/Config/ui/vocab/neuz/emit.canon
+--- a/Config/ui/vocab/neuz/emit.canon
++++ b/Config/ui/vocab/neuz/emit.canon
+@@ -14,3 +14,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/ui.vocab.neuz.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/ui.vocab.neuz.ts" }
+diff --git a/Config/world/emit.canon b/Config/world/emit.canon
+--- a/Config/world/emit.canon
++++ b/Config/world/emit.canon
+@@ -4,3 +4,9 @@ package world
+ emit text { out: "@resource/Server/Map/" }
+ 
+ emit view { out: "@resource/Studio/views/world.view.json" }
++
++emit go {
++  out: "@website/internal/gen/world"
++  package: "world"
++  mode: types
++}
+diff --git a/Config/world/vocab/emit.canon b/Config/world/vocab/emit.canon
+--- a/Config/world/vocab/emit.canon
++++ b/Config/world/vocab/emit.canon
+@@ -10,3 +10,5 @@ emit go {
+ }
+ 
+ emit view { out: "@resource/Studio/views/world.vocab.view.json" }
++
++emit ts { out: "@website/web/src/lib/generated/world.vocab.ts" }
