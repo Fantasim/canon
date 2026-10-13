@@ -157,7 +157,7 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   through a handoff (`Source/` X-macros read Canon IDs/metadata; monitoring uses generated Go and
   build-time DDL). M6 and M7 follow.
 
-## Post-v0.1.0 hardening (v0.1.1, v0.1.2)
+## Post-v0.1.0 hardening (v0.1.1 to v0.1.6)
 
 Not in IMPLEMENTATION-PLAN §5-§6; recorded here so the order stays visible. DECISIONS are in
 [DECISIONS.md](../DECISIONS.md); [state.md](state.md) has the one-line summary.
@@ -165,17 +165,28 @@ Not in IMPLEMENTATION-PLAN §5-§6; recorded here so the order stays visible. DE
 - [x] **v0.1.1**: the stale `canon guide` fixed.
 - [x] **v0.1.2, the Resource port findings** (2026-10-07; handoff
   [findings](handoff/2026-10-07-sovereign-resource-port.md), answered by
-  [the reply](handoff/2026-10-07-canon-reply-resource-port.md); release in progress at the time of
-  writing): 326 text-output ownership in `<pkg>/canon.outputs`; 327 absent JSON fields left out;
+  [the reply](handoff/2026-10-07-canon-reply-resource-port.md); shipped as v0.1.2): 326 text-output ownership in `<pkg>/canon.outputs`; 327 absent JSON fields left out;
   328 one budget per package; 329 file modes follow the umask; 330 scoped edit analysis, E7008; 331
   W4001; 332 roots per machine (`optional_roots`, `project.local.canon`); 333 E2102 beside a
   literal; 334 `it` and keys. Performance: frame-owned collections
   ([ADR-0018](decisions/0018-frame-owned-collections.md)), linear reporting of findings. Bugs:
   `hasKey(it)` in a `where`, E3028, the warm re-check losing a failed fold's break.
-- [ ] **Warm re-check for an entry add/remove** (`addEntry`, `@files`): key-set dependencies in the
+- [x] **v0.1.3 to v0.1.5** (2026-10-08 and 2026-10-09 asks): 335-338 Go `types` mode, maybe-files,
+  map write fix, edit memory ([ADR-0019](decisions/0019-edit-memory-adopted-verdicts.md)) in v0.1.3;
+  339-343 open enums, `Decode<Fn>File`, consumer roots and `--only-root`, `E8026`, `E8027` in v0.1.4;
+  the 2026-10-09 performance pass in v0.1.5 ([log](decisions/log-2026-10-09.md), reply
+  [performance](handoff/2026-10-09-canon-reply-performance.md)).
+- [x] **v0.1.6, the Resource review's next versions F1-F19** ([reply](handoff/2026-10-13-canon-reply-v016.md);
+  [log-2026-10-12](decisions/log-2026-10-12.md), [log-2026-10-13](decisions/log-2026-10-13.md)): DECISIONS
+  344-369 cover the language-server leak, the editor API additions, parity of C++ and TypeScript with Go,
+  robustness for parallel writers, format specs and the guide (tag pending Louis's push).
+- [ ] **Warm re-check for an entry add/remove** (F21; `addEntry`, `@files`): key-set dependencies in the
   incremental checker (today that op re-checks its package cold, ~3-4 s on items).
 - [ ] **On-disk cache** (`Options.Cache`), the other half of the "one-value edit on items under 2 s"
   target.
+- [ ] **F20, per-field `@json(codes)`**: design drafted in [log-2026-10-12](decisions/log-2026-10-12.md); a
+  frozen-contract change (`types.Field`, `ir.Field`) with WIRE, FINGERPRINT and all three printers.
+- [ ] **F22, a streaming JSON reader for Go loaders** (data and `types`; ~110 ms/MB today).
 
 ## Feature examples owed (§7.9, QA)
 

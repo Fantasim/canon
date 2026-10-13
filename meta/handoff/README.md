@@ -3,7 +3,7 @@
 What this project needs from someone or somewhere it may not change itself. A handoff is a file
 here, `<PREFIX>-<n>-slug.md`, written so it can be pasted into a session of the receiver as is:
 what is needed, why, the exact acceptance, and the paths involved. It is deleted once applied
-(git keeps it). Two handoffs needing action are open (2026-10-12, at the end of the list below).
+(git keeps it). Two handoffs of 2026-10-12 stay open (the roadmap's §3-§4 for Louis, and the Resource structure for Source).
 
 `2026-09-24-GEN-01-pipeline-diff.md` is on record here as **informational** (DECISIONS 190: the
 M2 pipeline-regeneration diff Louis may want to read); the orchestrator already reviewed it and
@@ -46,7 +46,9 @@ check 16 → 9.5 s, API reuse and edit indexes; four config-studio changes; per-
 
 Two handoffs came out of the 2026-10-12 review of Resource `Config/`, Canon's first large real use:
 
-- `2026-10-12-canon-next-versions.md` is **to Louis, open**. It is the roadmap proposal:
+- `2026-10-12-canon-next-versions.md` is **to Louis**. Its §2 (v0.1.6, F1-F19) is **answered** by
+  `2026-10-13-canon-reply-v016.md` and shipped in v0.1.6 (DECISIONS 344-369); F20-F22 were deferred.
+  §3-§4 stay **open** for Louis. It is the roadmap proposal:
   - a generality rule: Resource is the evidence, not the scope;
   - v0.1.6 (F1-F22): every known bug (the `canon lsp` leak first), the parity owed to consumers, robustness for parallel agents, two editor-API additions, format specs, the guide and spec hygiene;
   - v0.2: M6 legacy C++, one declaration per id, `canon lint`, wire forms, testable package checks;
@@ -59,7 +61,15 @@ Two handoffs came out of the 2026-10-12 review of Resource `Config/`, Canon's fi
   - phase-1 debt that touches no Source line;
   - phase 2, which it asks Sovereign to write as ADR L-0125.
 
-`2026-10-12-v016-start-prompt.md` is the prompt that starts the v0.1.6 session: F1-F19 (stretch F20-F22) of the next-versions handoff, spec first, one wave of units per package, then the release.
+`2026-10-13-canon-reply-v016.md` is the reply to the Sovereign sessions `Source`, `Scripts`, `website` and
+`config-studio`, shipped in v0.1.6 (DECISIONS 344-369). It answers items F1-F19 of the next-versions
+handoff, the Scripts `canon lsp` memory-leak brief and the config-studio findings of 2026-10-09 (both
+outside this repository), and website H-14 #4: a per-item table, the measured bound on the language
+server's memory, upgrade notes, ports D3 and D9, and what Canon still owes. Informational for those
+sessions. Its checksums section is a placeholder until the release is built.
+
+`2026-10-12-v016-start-prompt.md` is the prompt that started the v0.1.6 session (F1-F19, stretch F20-F22,
+spec first, one wave of units per package, then the release). **Used**: the session ran; F20-F22 were deferred.
 
 ## To Louis (`L-*`)
 

@@ -1,35 +1,39 @@
 # State — Canon compiler
 
-Updated: 2026-10-12. **v0.1.5** (perf pass) (Sovereign's 2026-10-08 asks) on main; v0.1.3 to v0.1.0 are
-out; `main` is the only branch. DECISIONS 304-343:
-[log-2026-10-06](decisions/log-2026-10-06.md), [log-2026-10-08](decisions/log-2026-10-08.md),
-[ADR-0018](decisions/0018-frame-owned-collections.md),
-[ADR-0019](decisions/0019-edit-memory-adopted-verdicts.md). M5 accepted (CI run 36973712977).
+Updated: 2026-10-13. **v0.1.6** on main (tag pending Louis's push); v0.1.5 to v0.1.0 are out; `main` is
+the only branch. DECISIONS 344-369: [log-2026-10-12](decisions/log-2026-10-12.md),
+[log-2026-10-13](decisions/log-2026-10-13.md), [ADR-0020](decisions/0020-api-016-overlay-ctx-call-lang-roots.md)
+(earlier: 304-343, ADR-0018/0019, logs 10-06, 10-08, 10-09). M5 accepted (CI run 36973712977).
 
 ## Current focus
 
-**v0.1.4, then telemetry as first real use.** Shipped: 339 open enums in Go `types` mode
-(`open: [E]`, a string type keeping the wire); 340 `Decode<Fn>File` for a map/list `@text`
-result (skipped, never refused, when it cannot be written); 341 `E8026` an output its own build
-reads; 342 `E8027` no write through a symbolic link (fail closed); 343 `consumer_roots` and
-`canon build --only-root` (`E8028`). Fix: `overlayFS.EvalSymlinks("/")` recursed forever (edit).
-Stage E now judges go emits on each copy's view (`CopyOf`), as the generator sees them.
-Handoffs open: [next versions](handoff/2026-10-12-canon-next-versions.md) (order: Louis), [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md); [all](handoff/README.md).
-**Next:** telemetry first use; Sovereign's cutover on Go types; fix every known bug that surfaces.
-Release builds stay local (`make dist`) while CI is down.
-**Perf pass 2026-10-09** ([log](decisions/log-2026-10-09.md)), on Sovereign: test 7.76 GB/60 s → 2.15 GB/19 s; check 16 → 9.5 s; first studio value 6.8 → 0.01 s; deep `items` value ∞ → 6 s. **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers), stage-E memo; the §2.7 on-disk cache, per package (Open/check instant when unchanged; [reply](handoff/2026-10-09-canon-reply-performance.md)); edit time is ops × a full analysis (E1); FMT's whole-file judgement holds
-the edit peak (per-item judgement, or the on-disk cache `Options.Cache`); a token-streaming JSON
-reader for Go data/types loaders (~110 ms/MB today); warm re-check on entry add/remove.
-**Owed from 2026-10-08 asks:** the cross-root import trap (E8004-like), `E8005` on several `table
-Constant` lets, `ownerHooks` exact for data-mode owners, C++/TS open enums and text decoders.
-**Owed for v0.2:** dependent types kept through static typing (lifts E3804 on dependent-map
-`union`/literals); an amend path into a dependent map (E1905 today); Go and C++ `embedded`;
-legacy structs (M6); entry isolation (321); input defaults (321); E3305 duplicated on nested
-untyped literals. Also later: `ordered_json`, kind constants, API S11 vs §3.4, editor scope of calls
-inside interpolations. Long fuzz/progen campaigns stay deferred.
-Environment: OS watch tests in `internal/workspace` skip when inotify watches are exhausted (raise
-`fs.inotify.max_user_watches`). Cloud: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci
---prefix tools/tsc`; no systemd (memory-cap targets by hand under `ulimit -v`).
+**v0.1.6 shipped F1-F19** (the Resource review's [next versions](handoff/2026-10-12-canon-next-versions.md)
+§2; [reply](handoff/2026-10-13-canon-reply-v016.md)): LSP releases a project on its last close (368);
+`ProjectInfo.Roots`, `ValueWith`/`Edit.Lang`, overlays take a ctx (344-346, breaking, ADR-0020); F3 (347-350)
+consumer-copy `E8004`, shared string id types, dependent value through a ref; F15, F11 (351-357) unique
+staging, per-package writer locks, `compiler:` pin, package-less files, `E8152` in check, stray generated
+files, case-only text rename; F7, F8 (360, 361, 364) no repeated `E3305`, every text decoder refuses
+repeated keys and names the first failure in document order; F14 (362, 363, 365, 369) C++/TS open enums and
+`@text` decoders, exact owner hooks, `E8019`, TS `findBy<F>`; F2 (366) reserved-word members in edits; F18
+(358, 359) format specs, `duplicates()`; F4, F19, F6 guide topics; F12, F5; F9, F10: no bug. Deferred: F20
+(per-field `@json(codes)`), F21 (warm re-check), F22 (streaming JSON reader).
+**Next:** Louis publishes v0.1.6, Scripts' canon-bump moves the pin; then telemetry first use and the
+handoff's §3 (v0.2; order is Louis's). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
+[all handoffs](handoff/README.md). Release builds stay local (`make dist`) while CI is down.
+**Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
+on-disk cache (a `dev` compiler must key by commit); edit time is ops × a full analysis; FMT's whole-file
+judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
+on entry add/remove; a lighter token store (~39% of a heap).
+**Owed, small:** transient `ErrJournal` for two processes editing different packages (ADR-0010); `Recover`
+at Open takes no writer lock; `NoHook` filled for the import closure only; a case-only rename of an `out`
+directory is `E8001`; the asset kind test follows links unbounded (WIRE §6.5); a layer or new entry file
+cannot name another package's non-nameable member (`E2102`).
+**Owed for v0.2:** dependent types kept through static typing (E3804 on dependent-map `union`); an amend
+path into a dependent map (E1905); Go and C++ `embedded`; legacy structs (M6); entry isolation and input
+defaults (321); `ordered_json`, kind constants. Fuzz/progen campaigns deferred.
+Environment: `internal/workspace` OS watch tests skip when inotify watches run out (raise
+`fs.inotify.max_user_watches`). Cloud: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci --prefix
+tools/tsc`; no systemd (memory caps by hand under `ulimit -v`).
 
 ## Milestones
 
@@ -38,43 +42,39 @@ TypeScript and C++ baked done, legacy C++ not started (waits, Louis). M7 not sta
 
 ## What exists (committed)
 
-spec + DECISIONS 1-338; `syntax`, `format` (+ §13 `Rewrite`; M9 and Rewrite judge a file in its role,
-258), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every WIRE §6 form; a `load` given to a field decodes
-in its scope, 268), `check`/`types` (dependent types, views, translations, broken-view/-translation
-tracking; E1903 `variantCase`, E3015 `notConstant`/`budget` for phase 2's folds only, 263),
-`eval`/`eval/std` + `value` (layers, provenance, variant-level methods, drivers across the project;
-stage A forces the constants phase 2's folds read, 264), `verify`, `lock`, `rules`, `ir` (stage E,
-fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go` (baked, data, `types`), `gen/cpp` (data, `types`), `views`, `i18n`, `gen/view`, `conform`,
-`build`, `project`, `check.Session`, `eval.Memo`, `workspace`, `views/live`, `edit` (+ ops, typing,
-codec, Refs), `api` over workspace,
-`cli` (version/init/new/check/build/test/explain/fmt/help), `internal/testkit`, `tools/audit`.
+spec + DECISIONS 1-369; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every
+WIRE §6 form), `check`/`types` (dependent types, views, translations, broken-view tracking), `eval`/`eval/std`
++ `value` (layers, provenance, drivers across the project), `verify`, `lock`, `rules`, `ir` (stage E,
+fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go` (baked,
+data, `types`), `gen/cpp` (data, `types`), `views`, `i18n`, `gen/view`, `conform`, `build`, `project`,
+`check.Session`, `eval.Memo`, `workspace`, `views/live`, `edit` (+ ops, typing, codec, Refs), `api` over
+workspace, `cli` (version/init/new/check/build/test/explain/fmt/guide/help), `internal/testkit`, `tools/audit`.
 
 - Multi-destination emits (ME1, `051c3b7`): `examples/features/copies`. M4.1 (`5541eab`): verified
-  multi-op edits and Undos; detail in [m4-units.md](m4-units.md) and [plan.md](plan.md).
+  multi-op edits and Undos; see [m4-units.md](m4-units.md), [plan.md](plan.md).
 
 ## Open Louis-calls
 Three, none blocking, in [the M4 handoff](handoff/2026-10-01-m4-complete.md): (a) O2, skip dot-files as
-sources; (b) optional frozen-contract change to `check.Info` (layered maps); (c) a target for the
-studio's view-model refresh after an edit (240-470 ms).
+sources; (b) optional `check.Info` change (layered maps); (c) a target for the studio's view-model refresh
+after an edit (240-470 ms). Also: publish v0.1.6; the v0.2 order (handoff §3-§4).
 
 ## Operating notes
 
-- Every agent test runs under `systemd-run --user --scope -p MemoryMax=3G`. Temp dirs go to
-  `/var/tmp`, never `/tmp`.
+- Every agent test runs under `systemd-run --user --scope -p MemoryMax=3G`; temp dirs in `/var/tmp`.
 - Agents share one working tree: never `git stash`; parallel units run in worktrees, cherry-picked
   after `make check`. `GOLANGCI_LINT_CACHE` is private per worktree; the audit fails on an
   unmeasured lane. Review rules: `.claude/rules/orchestration.md`.
+- At most two agents run heavy tests (eval, `-race`, fuzz) at once (a session-local semaphore did it).
 
 ## What could not be verified
 
-NFR-01 measured on this local reference machine only, not a 4-core CI runner, and quiet only on
-`f53ba0c`. On the final code it was compared at equal load (no regression; Louis accepted it). The
-macOS/Windows link tests skip where links cannot be made. Long fuzz/progen campaigns beyond the
-stated acceptance, deferred by Louis. NFR-01 was not re-run after M4.1's Undo verification (it runs
-only for edit layers and multi-op dependent requests; the bench has neither). The 2026-10-06 wave's
-final `make check` was green on `f4f7da5`. The v0.1.2 `make check` and the "one-value edit ~2 s" figure (the reply's bench) were not re-run
-for this update. v0.1.3: Go types decoding was not run on Sovereign's real files (synthetic
-5 MB only); edit memory was measured on synthetic tables, not the real `model` package.
+NFR-01 measured on this local machine only, not a 4-core CI runner, quiet only on `f53ba0c`; at equal load
+on the final code (no regression; Louis accepted it); not re-run after M4.1's Undo verification. macOS/
+Windows link tests skip where links cannot be made. Long fuzz/progen campaigns deferred by Louis. The v0.1.2
+"one-value edit ~2 s" figure was not re-run. v0.1.3: edit memory measured on synthetic tables only.
+v0.1.6: Windows and macOS lock and rename behaviour (vet only); a real editor day on Resource for F1 (the
+bound is on a synthetic Resource-shaped project); Go types decoding on Sovereign's real files (synthetic
+only); `make check` at the release commit was not re-run for this update.
 
 ## Verify queue
 Re-run `make bench-edit` on a quiet machine or a CI-class runner when one exists.
