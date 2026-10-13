@@ -1244,7 +1244,9 @@ Not part of v0.1 (DECISIONS 188).
 ### 8.4 `canon lsp` (CLI-04)
 
 - **Transport.** LSP 3.17 over stdio. One `api.Project` per `project.canon` found above an opened
-  file; files outside any project get syntax diagnostics only.
+  file, held while one of its files is open and released, its findings cleared, when the last
+  one closes; after a quiet pass the server returns freed memory to the system once (DECISIONS
+  368). Files outside any project get syntax diagnostics only.
 - **Positions.** LSP positions are UTF-16 code units; conversion is done in `lsp` only, from the
   1-based UTF-8 byte columns of findings.
 - **Sync.** Full-document sync; each change is an overlay (API.md §3.4). Diagnostics are recomputed
