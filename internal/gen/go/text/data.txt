@@ -240,7 +240,10 @@ func jsonRead({{.L.Name}}, {{.L.Path}}, {{.L.Key}} string, {{.L.Raw}} {{.JSON}}.
 	case *bool:
 		{{.L.Want}} = "expected true or false"
 	case *float64:
-		{{.L.Want}} = "expected a number"
+		{{.L.Want}} = "expected a number"{{if .Types}}
+		if len({{.L.Raw}}) > 0 && ({{.L.Raw}}[0] == '-' || {{.L.Raw}}[0] >= '0' && {{.L.Raw}}[0] <= '9') { // a valid number token only fails by its size (CODEGEN.md §5.13)
+			{{.L.Want}} = "number out of range"
+		}{{end}}
 	case *float32:
 		{{.L.Want}} = "expected a number that fits Float32"
 	case *[]{{.JSON}}.RawMessage:

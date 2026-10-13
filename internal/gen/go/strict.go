@@ -19,7 +19,8 @@ func (g *gen) helpers() {
 	view := struct {
 		JSON, FMT, Strings, Slices, RT, UTF8 string
 		L                                    locals
-	}{g.use(jsonPath, jsonPkg), g.use(fmtPkg, fmtPkg), g.use(stringsPkg, stringsPkg), g.use(slicesPkg, slicesPkg), g.rt(), "", g.lc}
+		Types                                bool
+	}{g.use(jsonPath, jsonPkg), g.use(fmtPkg, fmtPkg), g.use(stringsPkg, stringsPkg), g.use(slicesPkg, slicesPkg), g.rt(), "", g.lc, g.isTypes()}
 	if g.isTypes() { // CODEGEN.md §5.13: the document check, and a source-wire Duration's exact read when one is read
 		view.UTF8 = g.use(utf8Path, utf8Pkg)
 		g.exec(helperDocument, view)

@@ -381,53 +381,53 @@ func jsonDocument(name string, raw []byte) (json.RawMessage, error) {
 		}
 		return code
 	}
-	// validUTF8 and pairedSurrogates answer for the text of a string: closed, all of it; cut by a syntax error,
-	// only what is certain so far (a split rune or escape may still be completed).
-	validUTF8 := func(text []byte, closed bool) bool {
-		if closed {
-			return utf8.Valid(text)
-		}
-		for len(text) > 0 {
-			code, size := utf8.DecodeRune(text)
-			if code == utf8.RuneError && size <= 1 {
-				return !utf8.FullRune(text)
-			}
-			text = text[size:]
-		}
-		return true
-	}
-	pairedSurrogates := func(text []byte, closed bool) bool {
-		for at := 0; at+1 < len(text); at++ {
+	// stringFault reads the text of a string left to right and names the first failure by the byte where it becomes
+	// certain: "" for none. A string cut by a syntax error (closed false) fails only on what is certain so far: a
+	// split rune or escape may still be completed (CODEGEN.md §5.13).
+	stringFault := func(text []byte, closed bool) string {
+		for at := 0; at < len(text); {
 			if text[at] != '\\' {
+				code, size := utf8.DecodeRune(text[at:])
+				if code == utf8.RuneError && size <= 1 {
+					if closed || utf8.FullRune(text[at:]) {
+						return "not UTF-8"
+					}
+					return ""
+				}
+				at += size
 				continue
 			}
-			at++
-			if text[at] != 'u' {
+			if at+1 >= len(text) || text[at+1] != 'u' {
+				at += 2
 				continue
 			}
-			if at+5 > len(text) {
-				return true
+			if at+6 > len(text) {
+				return ""
 			}
-			switch code := hexValue(text[at+1 : at+5]); {
-			case code >= 0xdc00 && code <= 0xdfff:
-				return false
-			case code >= 0xd800 && code <= 0xdbff:
-				rest := text[at+5:]
-				switch {
-				case len(rest) == 0 || len(rest) == 1 && rest[0] == '\\' || len(rest) > 1 && len(rest) < 6 && rest[0] == '\\' && rest[1] == 'u':
-					return !closed // the pair may still follow
-				case len(rest) < 2 || rest[0] != '\\' || rest[1] != 'u':
-					return false
-				}
-				if low := hexValue(rest[2:6]); low < 0xdc00 || low > 0xdfff {
-					return false
-				}
-				at += 10
-			default:
-				at += 4
+			code := hexValue(text[at+2 : at+6])
+			at += 6
+			if code >= 0xdc00 && code <= 0xdfff {
+				return "unpaired surrogate"
 			}
+			if code < 0xd800 || code > 0xdbff {
+				continue
+			}
+			rest := text[at:] // a high surrogate needs \u and a low one right after it
+			switch {
+			case len(rest) == 0 || len(rest) == 1 && rest[0] == '\\' || len(rest) > 1 && len(rest) < 6 && rest[0] == '\\' && rest[1] == 'u':
+				if closed {
+					return "unpaired surrogate"
+				}
+				return ""
+			case len(rest) < 2 || rest[0] != '\\' || rest[1] != 'u':
+				return "unpaired surrogate"
+			}
+			if low := hexValue(rest[2:6]); low < 0xdc00 || low > 0xdfff {
+				return "unpaired surrogate"
+			}
+			at += 6
 		}
-		return true
+		return ""
 	}
 	for at := 0; at < len(raw); at++ {
 		switch raw[at] {
@@ -458,21 +458,15 @@ func jsonDocument(name string, raw []byte) (json.RawMessage, error) {
 			}
 			if end >= len(raw) { // a syntax error cuts this string: its key is not yet known to repeat, its bytes may already fail
 				text := raw[at+1:]
-				if !validUTF8(text, false) {
-					return nil, fmt.Errorf("%s: %s: not UTF-8", name, pathHere())
-				}
-				if escaped && !pairedSurrogates(text, false) {
-					return nil, fmt.Errorf("%s: %s: unpaired surrogate", name, pathHere())
+				if fault := stringFault(text, false); fault != "" {
+					return nil, fmt.Errorf("%s: %s: %s", name, pathHere(), fault)
 				}
 				at = end
 				break
 			}
 			text := raw[at+1 : end]
-			if !validUTF8(text, true) {
-				return nil, fmt.Errorf("%s: %s: not UTF-8", name, pathHere())
-			}
-			if escaped && !pairedSurrogates(text, true) {
-				return nil, fmt.Errorf("%s: %s: unpaired surrogate", name, pathHere())
+			if fault := stringFault(text, true); fault != "" {
+				return nil, fmt.Errorf("%s: %s: %s", name, pathHere(), fault)
 			}
 			if len(levels) > 0 && levels[len(levels)-1].wantKey { // the key's decoded text names it from here on
 				top := &levels[len(levels)-1]
@@ -699,6 +693,9 @@ func jsonRead(name, path, key string, raw json.RawMessage, dst any) error {
 		want = "expected true or false"
 	case *float64:
 		want = "expected a number"
+		if len(raw) > 0 && (raw[0] == '-' || raw[0] >= '0' && raw[0] <= '9') { // a valid number token only fails by its size (CODEGEN.md §5.13)
+			want = "number out of range"
+		}
 	case *float32:
 		want = "expected a number that fits Float32"
 	case *[]json.RawMessage:

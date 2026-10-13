@@ -19,6 +19,8 @@ const (
 		"Holder: invalid JSON at byte 8\nHolder: invalid JSON at byte 14\nHolder: invalid JSON at byte 9\n" +
 		"Holder: $.ab: duplicate key\nHolder: $.x.ab: duplicate key\n" +
 		"Holder: $: not UTF-8\nHolder: $: unpaired surrogate\nHolder: $: not UTF-8\nHolder: $.x: unpaired surrogate\n" +
+		"Holder: $.a: unpaired surrogate\nHolder: $.a: unpaired surrogate\nHolder: $.a: not UTF-8\nHolder: invalid JSON at byte 11\n" +
+		"Holder: $.f: number out of range\nHolder: $.f: number out of range\n<nil>\nHolder: $: expected an object\n" +
 		"depth ok\ndepth ok\ndepth ok\ndepth ok\n" +
 		"HoldersFile: invalid JSON at byte 1\nHoldersFile: $[0].d: duplicate key\n"
 
@@ -36,7 +38,9 @@ func main() {
 		"", "\xef\xbb\xbf", "{\"a\":\xff}", "{\"a\":1,\"a\":2,", "{\"a\":1,\"a\":2} x",
 		"{\"a\": \"\xff", "{\"a\": \"\\udc00", "{\"a\": \"\\ud800 x", "{\"a\": \"\xc3", "{\"a\": \"\\ud800\\", "{\"a\":1,\"a",
 		"{\"a\\u0062\":1,\"ab\":2}", "{\"x\":{\"a\":1,\"a\\u0062\":2,\"\\u0061b\":3}}",
-		"{\"a\xff\":1}", "{\"\\ud800\":1}", "{\"a\":1,\"\xff\":2}", "{\"x\":{\"\\udc00\":1}}"} {
+		"{\"a\xff\":1}", "{\"\\ud800\":1}", "{\"a\":1,\"\xff\":2}", "{\"x\":{\"\\udc00\":1}}",
+		"{\"a\": \"\\udc00\xff\"}", "{\"a\": \"\\ud800x\xff\"}", "{\"a\": \"\xff\\udc00\"}", "{\"a\": \"\\udc",
+		"{\"d\":\"hp\",\"f\":1e400}", "{\"d\":\"hp\",\"f\":-1e400}", "{\"d\":\"hp\",\"zz\":1e400}", "1e400"} {
 		_, err := demo.DecodeHolder([]byte(text))
 		fmt.Println(err)
 	}

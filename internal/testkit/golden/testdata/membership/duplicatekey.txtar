@@ -20,6 +20,8 @@ enum Dst { hp, mp, sp }
 record Holder {
   /// Its destination.
   d: Dst
+  /// A float.
+  f: Float = 0.0
 }
 
 /// The holder file.
