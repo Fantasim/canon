@@ -125,6 +125,7 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `gen/cpp` | C++17 code, `canon_runtime.h`, legacy struct modes, C++ conformance | CODEGEN.md (C++), CONFORMANCE.md | ir, conform |
 | `gen/ts` | TypeScript code, TS conformance | CODEGEN.md (TS), CONFORMANCE.md | ir, conform |
 | `gen/view` | view-model JSON | VIEWMODEL.md, viewmodel.schema.json | views, ir, api/vm |
+| `writelock` | advisory per-package writer locks across processes: `flock` on Unix, `CreateFile` share modes on Windows, standard library only (DECISIONS 352) | API.md S9, N9; CLI §3.4, §3.6, §3.15 | — |
 | `build` | phase and stage orchestration, build manifest, cache, atomic output writes, GENERATED markers (`E8001`), `--adopt`; implements `eval.Host` with `load` and `verify` (§4.8) | EVALUATION.md §1, SPEC §14, CLI §3.4, LOD-11, GEN-05 | all of the above |
 | `edit` | paths, ops, editability, cascades, minimal writes, file placement, journal | API.md §6-§10 | format, jsonsrc, value, wire, lock, build (re-check) |
 | `workspace` | snapshots, revisions, refresh, overlays, watching, incremental invalidation | API.md §3, §12 | build, edit |

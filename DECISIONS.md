@@ -3551,7 +3551,13 @@ round 2", "PS1 review", "PS2 round 2"):
      run once, then is `*StaleError` (wraps `ErrStale`) naming the files, as N9 is for edits;
      `canon fmt` that finds a file it will change changed since it read it writes nothing and
      fails (exit 2); a project opened on an embedder's own file system (`Options.FS`) takes no
-     lock (the lock guards the OS file system only).
+     lock (the lock guards the OS file system only). Review (same day): the re-read covers the
+     directory listings and glob matches the run used too (a new data file matching a `load`
+     glob, a new source in a loaded package); `canon fmt` locks a JSON source's reading packages
+     and nothing for `project.canon`, `project.local.canon` or a package-less file; under its
+     exclusive locks a build removes the stages a dead run left (`.<base>.<token>.canon-tmp`)
+     beside outputs only the locked packages write, leaving one beside a runtime file an unlocked
+     package's emit also writes (its build may be live).
 
 353. **A file with no package line counts against its own directory (CLI.md §2.2; amends
      140).** Its findings go to the bag of the package its directory names (`a/b` → `a.b`),

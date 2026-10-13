@@ -321,7 +321,7 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
 Exit: 0, 1, 2, 3, 4.
 
 A build that writes waits for any other writer of its selected packages, in this or another
-process, and says once on standard error whom it waits for: it takes `.canon/writers/<package>`
+process, and says once on standard error whom it waits for: it takes `.canon/writers/pkg.<package>`
 exclusively for each selected package and shared for each other loaded package (DECISIONS 352).
 `--check` and `--only-root` take no lock. Every file it writes or sets aside is staged under a name
 unique to the run (DECISIONS 351). `--check` also reports a file with a generated marker that no

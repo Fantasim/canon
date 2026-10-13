@@ -1602,7 +1602,10 @@ export function decodeEventConfig(json: unknown): EventConfig;
   `$[0]`, `$` for the top level); a syntax error, which has no path, names its 0-based byte offset
   (`<T>: invalid JSON at byte 17`): the first byte that cannot continue a JSON document (a BOM
   counted), or the input's length when it ends too early (`{"d": ` is byte 6), the same in every
-  target. `data`-mode loaders keep their own form
+  target. The failure reported is the first in document order, whichever its kind (a syntax
+  error, a repeated key, nesting past 512, invalid UTF-8, an unpaired surrogate): a repeated key
+  before a later syntax error is the repeated key; nesting past 512 is the depth rule at the
+  513th level, whatever depth the runtime's own parser allows. `data`-mode loaders keep their own form
   (they read files, not values). Only a public record or
   variant has a public decoder, and a public `@text` fn whose result (its non-optional type, for a
   maybe-file) is a map, a list or a keyed list: Go `func Decode<Fn>File(raw []byte) (<T>,
