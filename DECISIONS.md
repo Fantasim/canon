@@ -3540,6 +3540,15 @@ round 2", "PS1 review", "PS2 round 2"):
      platform with neither primitive the lock is skipped (advisory). An unwritable `.canon/`
      refuses the write (an I/O error, fail closed). Reason: several agents write one project;
      351 stops the corruption, the lock stops lost updates.
+     Settled while building (2026-10-13): a lock file is `.canon/writers/pkg.<package>`, so no
+     package name maps to a Windows device name; the locks are taken after analysis and before
+     emit, and every read that judges a write happens under them; the build re-reads, through
+     the snapshot's own view (overlays included), the project files, the loaded packages'
+     sources, the `canon.lock` places above them and the loaded data files; a change redoes the
+     run once, then is `*StaleError` (wraps `ErrStale`) naming the files, as N9 is for edits;
+     `canon fmt` that finds a file it will change changed since it read it writes nothing and
+     fails (exit 2); a project opened on an embedder's own file system (`Options.FS`) takes no
+     lock (the lock guards the OS file system only).
 
 353. **A file with no package line counts against its own directory (CLI.md §2.2; amends
      140).** Its findings go to the bag of the package its directory names (`a/b` → `a.b`),
@@ -3592,6 +3601,12 @@ round 2", "PS1 review", "PS2 round 2"):
      forgeable, and 336 removes only what `canon.outputs` hashes. Text files carry no marker and
      stay 336's. Reason: a stale `*.gen.go` left by a renamed package, or a planted one, passed a
      consumer's gate (Sovereign security-gate H8).
+     Settled while building (2026-10-13): "written by an emit" is judged against every emit of
+     the project that writes into the directory, whatever the selection (a JSON file's
+     `$schema` names its type's package, not its writer's); a runtime file is a stray when no
+     file of the build lands in its directory; consumer and absent roots' directories are
+     skipped by a plain build, and `--only-root R` examines R's only; a run with errors reports
+     no stray (file names cannot be generated).
 
 357. **A case-only rename of a text file (CODEGEN.md §2.9; amends 326, 336).** On a file system
      where the declared name and a listed name differing only in case are one file (the
