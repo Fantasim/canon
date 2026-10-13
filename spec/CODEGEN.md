@@ -1199,7 +1199,9 @@ the `match`; a `none` met on the path selects the `Never` branch), named Go `bra
 and `F` the field in UpperCamel; a loader reads the key and looks the branch up, and a key the
 table lacks refuses the value with `no branch for this value` (DECISIONS 350); in C++ a table
 whose key is an opened enum (§5.2) is keyed by the wire (`std::string_view`) in wire byte order,
-so it stays `constexpr` and needs no static initialisation. A list of
+so it stays `constexpr` and needs no static initialisation. Every C++ branch table is a
+compile-time constant, usable from another file's static initialisation (an opened enum's
+branch value is held by the address of its `static const` member). A list of
 dependent values shares its field's discriminant. A discriminant member no branch covers (a `Never` arm, WIRE.md §5.9) refuses
 the value with the loader text `no branch for this value` at its pointer, in every loader. Baked Go writes a dependent value (a field's, or
 its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
