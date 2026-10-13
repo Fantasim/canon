@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -232,9 +233,10 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 	return err
 }
 
-// commit writes o's changes through s, journaled (API.md N10), named by the revision they give;
-// a panic on the way rolls back what it changed before it goes on (X2).
-func (s *Snapshot) commit(ctx context.Context, o *EditOutcome) error {
+// commit writes o's changes through s, journaled (API.md N10), named by the revision they give,
+// under the writer locks of the packages it writes (N9, DECISIONS 352); a panic on the way rolls
+// back what it changed before it goes on (X2).
+func (s *Snapshot) commit(ctx context.Context, o *EditOutcome) (err error) {
 	w, err := s.fs.writable()
 	if err != nil {
 		return err
@@ -243,6 +245,11 @@ func (s *Snapshot) commit(ctx context.Context, o *EditOutcome) error {
 	if err != nil {
 		return err
 	}
+	release, err := s.lockWriters(ctx, o)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, release()) }()
 	dir := s.b.Dir()
 	site := edit.Site{FS: through(s.fs, w), Layout: s.b, Self: self(dir)}
 	done := committing(dir)

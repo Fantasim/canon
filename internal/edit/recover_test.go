@@ -194,20 +194,46 @@ func TestRecoverRoot(t *testing.T) {
 	mustState(t, d.state(), before)
 }
 
-// log-2026-09-29 M4 U4c-r, U4c-r3: a directory the edit created goes with the edit's new files,
-// their stages and an FS's leftover named after a stage.
+// log-2026-09-29 M4 U4c-r, U4c-r3, DECISIONS 351: a directory the edit created goes with the
+// edit's new files, their stages `.<base>.<j>.canon-edit` (<j> from the journal's name), the
+// OS WriteFile's leftover of writing one, and the fixed stage name 0.1.5 used.
 func TestRecoverLeftovers(t *testing.T) {
 	d, changes := commitFixture()
 	before := d.state()
 	if err := commitIn(&faultFS{diskFS: d, dieAfterRename: 3}, changes); !errors.Is(err, errDead) {
 		t.Fatalf("err = %v", err)
 	}
-	d.files["/p/items/deep/x/..c.canon.canon-edit.canon-tmp"] = []byte("half")
+	d.files["/p/items/deep/x/..c.canon"+testStage+".ABCDEFGHIJKLM.canon-tmp"] = []byte("half")
+	d.files["/p/items/deep/x/.c.canon"+testStage] = []byte("c\n")
 	d.files["/p/items/deep/x/.c.canon.canon-edit"] = []byte("c\n")
 	if _, err := warnings(t, d); err != nil {
 		t.Fatal(err)
 	}
 	mustState(t, d.state(), before)
+}
+
+// DECISIONS 351: in a directory the edit created, only the exact stage and leftover forms are the
+// edit's: a hidden name merely holding a stage's (another token, a lowercase or short random
+// part, a prefix) is a stray, so the journal is kept and nothing is written.
+func TestRecoverLeftoverExactForms(t *testing.T) {
+	for _, stray := range []string{
+		".c.canon.cdcdcdcdcdcdcdcd.canon-edit",
+		"..c.canon" + testStage + ".abcdefghijklm.canon-tmp",
+		"..c.canon" + testStage + ".ABCDEF.canon-tmp",
+		".x.c.canon" + testStage,
+		"..c.canon" + testStage + ".ABCDEFGHIJKLM.canon-tmp.old",
+	} {
+		d, changes := commitFixture()
+		if err := commitIn(&faultFS{diskFS: d, dieAfterRename: 3}, changes); !errors.Is(err, errDead) {
+			t.Fatalf("err = %v", err)
+		}
+		d.files["/p/items/deep/x/"+stray] = []byte("not the edit's")
+		crash := d.state()
+		if _, err := warnings(t, d); !errors.Is(err, edit.ErrJournal) || !strings.Contains(err.Error(), stray) {
+			t.Errorf("%s: err %v, want ErrJournal naming it", stray, err)
+		}
+		mustState(t, d.state(), crash)
+	}
 }
 
 // log-2026-09-29 M4 U4c-r3: a legitimate crash, then a file the user adds in a directory the

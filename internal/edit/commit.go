@@ -51,6 +51,7 @@ type commit struct {
 	at      Layout
 	dir     string
 	name    string // the journal file
+	token   string // its stages' <j> (DECISIONS 351)
 	modes   bool   // the FS sets permissions
 	targets []commitFile
 	created []string
@@ -106,7 +107,7 @@ func plan(s Site, rev string, changes []Change) (*commit, error) {
 	}
 	_, modes := s.FS.(build.ModeFS)
 	j := journal{Version: journalVersion, Revision: rev, Host: s.Self.Host, PID: s.Self.PID}
-	c := &commit{fsys: s.FS, at: s.Layout, dir: s.Layout.Dir(), name: name, modes: modes, j: j}
+	c := &commit{fsys: s.FS, at: s.Layout, dir: s.Layout.Dir(), name: name, token: stageToken(name), modes: modes, j: j}
 	for _, ch := range changes {
 		if int(ch.Kind) >= len(expanders) {
 			return nil, fmt.Errorf(fmtFileErr, ch.Path, ErrChanges)
@@ -178,7 +179,7 @@ func textEnds(data []byte) []byte {
 // vet refuses a commit whose journal Recover would refuse: a place through a symbolic link or
 // hidden is ErrUnwritable, the project's state (log-2026-09-29 M4 U5b-r); any other is ErrChanges.
 func (c *commit) vet() error {
-	u, err := c.j.resolve(c.at)
+	u, err := c.j.resolve(c.at, c.token)
 	if err == nil {
 		err = straight(c.fsys, u.spots())
 	}
@@ -372,7 +373,7 @@ func (c *commit) stageAll(ctx context.Context) error {
 			return fmt.Errorf(fmtFileErr, t.display, err)
 		}
 		c.made = append(c.made, fresh...)
-		if err := stage(c.fsys, t.abs, t.data, t.mode); err != nil {
+		if err := stage(c.fsys, stageName(t.abs, c.token), t.data, t.mode); err != nil {
 			return fmt.Errorf(fmtFileErr, t.display, err)
 		}
 	}
@@ -388,7 +389,7 @@ func (c *commit) apply() error {
 			continue
 		}
 		c.done = append(c.done, i) // before the rename: an undone rename is left alone, being old
-		if err := c.fsys.Rename(stageName(t.abs), t.abs); err != nil {
+		if err := c.fsys.Rename(stageName(t.abs, c.token), t.abs); err != nil {
 			return fmt.Errorf(fmtFileErr, t.display, err)
 		}
 	}
@@ -458,7 +459,7 @@ func (c *commit) spot(abs string) spot {
 // rollback puts back what this commit changed, and only that, then removes the journal; a
 // rollback that cannot finish keeps the journal for Recover (API.md N11; log-2026-09-29 M4 U4c-r).
 func (c *commit) rollback(cause error) error {
-	u := &undo{}
+	u := &undo{token: c.token}
 	for _, d := range c.made {
 		u.created = append(u.created, c.spot(d))
 	}

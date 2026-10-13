@@ -23,6 +23,7 @@ const projectDir = "/p"
 var (
 	testRev     = "r1:" + strings.Repeat("ab", 32)
 	journalFile = projectDir + "/.canon/journal/" + strings.Repeat("ab", 32) + ".json"
+	testStage   = "." + strings.Repeat("ab", 8) + ".canon-edit" // a stage name's token and suffix (DECISIONS 351)
 )
 
 // commitFixture is a project and an edit of every kind over it: two modified files, one created
@@ -234,7 +235,7 @@ func TestCommitCancel(t *testing.T) {
 	}{
 		{"before the call", "", true, false},
 		{"while staging", opChmod, true, false},
-		{"at the last stage", "/p/items/.new.canon.canon-edit", true, false},
+		{"at the last stage", "/p/items/.new.canon" + testStage, true, false},
 		{"at the first rename", opRename, false, true},
 		{"at the last rename", "/p/items/new.canon", false, true},
 	}

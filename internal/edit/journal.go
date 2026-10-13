@@ -103,12 +103,12 @@ func (j *journal) encode() ([]byte, error) {
 }
 
 // resolve checks a journal, untrusted since Recover runs at every Open, and places what it
-// undoes; any fault refuses it whole (log-2026-09-29 M4 U4c-r, U4c-r3).
-func (j *journal) resolve(at Layout) (*undo, error) {
+// undoes, its stages those of token; any fault refuses it whole (log-2026-09-29 M4 U4c-r, U4c-r3).
+func (j *journal) resolve(at Layout, token string) (*undo, error) {
 	if j.Version != journalVersion {
 		return nil, &fault{reasonVersion, j.Revision}
 	}
-	u := &undo{}
+	u := &undo{token: token}
 	seen := map[string]bool{}
 	for _, f := range j.Files {
 		s, reason := confine(at, f.Path)
@@ -334,22 +334,25 @@ func straightOne(r linkResolver, s spot) error {
 	return nil
 }
 
-// replace writes data over abs through a stage beside it; after a failure no stage is left.
-func replace(fsys build.WriteFS, abs string, data []byte, mode *uint32) error {
-	if err := stage(fsys, abs, data, mode); err != nil {
-		_ = fsys.Remove(stageName(abs)) // what a failed stage left, if anything
+// replace writes data over abs through its stage of token; after a failure no stage is left.
+func replace(fsys build.WriteFS, abs, token string, data []byte, mode *uint32) error {
+	tmp := stageName(abs, token)
+	if err := stage(fsys, tmp, data, mode); err != nil {
+		_ = fsys.Remove(tmp) // what a failed stage left, if anything
 		return err
 	}
-	if err := fsys.Rename(stageName(abs), abs); err != nil {
-		_ = fsys.Remove(stageName(abs)) // the rename failed: the target is untouched
+	if err := fsys.Rename(tmp, abs); err != nil {
+		_ = fsys.Remove(tmp) // the rename failed: the target is untouched
 		return err
 	}
 	return nil
 }
 
-// stage writes data to abs's stage, with the permissions mode where it is known and the FS sets them.
-func stage(fsys build.WriteFS, abs string, data []byte, mode *uint32) error {
-	tmp := stageName(abs)
+// stage writes data to tmp, first removing whatever entry sits there, a link itself (DECISIONS 351).
+func stage(fsys build.WriteFS, tmp string, data []byte, mode *uint32) error {
+	if err := fsys.Remove(tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
 	if err := fsys.WriteFile(tmp, data); err != nil {
 		return err
 	}
@@ -365,9 +368,22 @@ func chmod(fsys build.WriteFS, name string, mode *uint32) error {
 	return m.Chmod(name, fs.FileMode(*mode).Perm())
 }
 
-// stageName is the file a commit writes abs's new content to before renaming it over abs.
-func stageName(abs string) string {
+// stageName is the file the commit of token writes abs's new content to before renaming it over
+// abs: `.<base>.<token>.canon-edit` (DECISIONS 351).
+func stageName(abs, token string) string {
+	return project.Join(project.DirOf(abs), stagePrefix+path.Base(abs)+stagePrefix+token+stageSuffix)
+}
+
+// fixedStageName is the stage of abs 0.1.5 wrote, `.<base>.canon-edit`, which recovery clears too.
+func fixedStageName(abs string) string {
 	return project.Join(project.DirOf(abs), stagePrefix+path.Base(abs)+stageSuffix)
+}
+
+// stageToken is the <j> of the stages of the commit whose journal is name: the first 16 hex
+// characters of its base name (DECISIONS 351), so a recovery derives them from the journal alone.
+func stageToken(name string) string {
+	sum := strings.TrimSuffix(path.Base(name), ir.JSONExt)
+	return sum[:min(len(sum), stageTokenLen)]
 }
 
 // deepestFirst orders directories so each comes before its parents: longest first, then bytes.

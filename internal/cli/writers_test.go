@@ -209,3 +209,37 @@ func TestFmtWaitsAndRefusesAChangedFile(t *testing.T) {
 		t.Errorf("%sfmt again: exit %d, stderr %q", writersRule, code, stderr.String())
 	}
 }
+
+// DECISIONS 352: canon edit and rename wait for their package's writer lock, saying whom for once.
+func TestEditAndRenameWaitAndSayWhom(t *testing.T) {
+	host, err := os.Hostname()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := fmt.Sprintf("canon: waiting for the writer lock of package a, held by %s %d\n", host, os.Getpid())
+	for _, c := range []struct {
+		name string
+		args []string
+		done string
+	}{
+		{"edit", []string{"edit", "req.json"}, "let v: Int = 3"},
+		{"rename", []string{"rename", "a:v", "w"}, "let w: Int = 1"},
+	} {
+		dir := t.TempDir()
+		write(t, filepath.Join(dir, "project.canon"), racedProject)
+		write(t, filepath.Join(dir, "a", "a.canon"), racedSource("sql", "v"))
+		write(t, filepath.Join(dir, "req.json"), `{"ops":[{"op":"set","path":"a:v","value":3}]}`)
+		held := holdLock(t, dir, "a")
+		stderr := newNoteBuffer()
+		done, stdout := runAsync(dir, stderr, append(c.args, "--project", dir)...)
+		<-stderr.first
+		if err := held.Release(); err != nil {
+			t.Fatal(err)
+		}
+		code := <-done
+		got, err := os.ReadFile(filepath.Join(dir, "a", "a.canon"))
+		if code != 0 || stderr.String() != want || err != nil || !strings.Contains(string(got), c.done) {
+			t.Errorf("%s%s: exit %d, stderr %q, stdout %s, a.canon %q (%v)", writersRule, c.name, code, stderr.String(), stdout, got, err)
+		}
+	}
+}

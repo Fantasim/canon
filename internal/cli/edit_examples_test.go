@@ -40,16 +40,22 @@ var valueRequests = map[string]valueRequest{
 	"dependent": {`{"ops":[{"op":"set","path":"features.edits:quests.slay.goal","value":"collect"}]}`, "quests.slay", true},
 }
 
-// snapshot is every file under dir by slash path.
+// writersDir holds the writer lock files, which outlive every writer (DECISIONS 352).
+const writersDir = ".canon/writers"
+
+// snapshot is every file under dir by slash path, but the writer locks.
 func snapshot(t *testing.T, dir string) map[string]string {
 	t.Helper()
 	out := map[string]string{}
 	err := filepath.WalkDir(dir, func(name string, d fs.DirEntry, err error) error {
+		rel, _ := filepath.Rel(dir, name)
+		if err == nil && d.IsDir() && filepath.ToSlash(rel) == writersDir {
+			return filepath.SkipDir // the writer locks a write leaves, never removed (DECISIONS 352)
+		}
 		if err != nil || d.IsDir() {
 			return err
 		}
 		data, rerr := os.ReadFile(name)
-		rel, _ := filepath.Rel(dir, name)
 		out[filepath.ToSlash(rel)] = string(data)
 		return rerr
 	})

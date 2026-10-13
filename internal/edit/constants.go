@@ -439,16 +439,11 @@ const (
 	journalVersion = 1
 )
 
-// A file a commit stages beside its target before the rename: hidden, never a source (API.md N10).
+// A commit's stage `.<base>.<j>.canon-edit`, <j> its journal's first 16 hex characters (API.md
+// N10, DECISIONS 351); the line ends of a written file (N12).
 const (
-	stagePrefix = "."
-	stageSuffix = ".canon-edit"
-)
-
-// Line ends of a written file (API.md N12).
-const (
-	lineEnd = "\n"
-	crlfEnd = "\r\n"
+	stagePrefix, stageSuffix, stageTokenLen = ".", ".canon-edit", 16
+	lineEnd, crlfEnd                        = "\n", "\r\n"
 )
 
 // The one line Recover logs (API.md O5): how many journals it rolled back, how many files and

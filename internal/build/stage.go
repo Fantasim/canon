@@ -55,6 +55,9 @@ func stagedAs(abs, token string) string {
 	return project.Join(project.DirOf(abs), tempPrefix+path.Base(abs)+tempSep+token+tempSuffix)
 }
 
+// StagedOf is stagedOf for an edit's recovery, which knows a write's leftovers by it (DECISIONS 351).
+func StagedOf(name, base string) bool { return stagedOf(name, base) }
+
 // stagedOf reports name, a directory entry, a staging name of the file base: the name of any
 // run's token, or 0.1.5's fixed one, which a build still sweeps (DECISIONS 351).
 func stagedOf(name, base string) bool {

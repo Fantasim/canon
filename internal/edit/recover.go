@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"maps"
 	"path"
 	"slices"
 	"strings"
@@ -93,7 +92,7 @@ func recoverOne(s Site, name string) (int, error) {
 	if j.Host != s.Self.Host {
 		return 0, &fault{reasonForeign, j.Host}
 	}
-	u, err := j.resolve(s.Layout)
+	u, err := j.resolve(s.Layout, stageToken(name))
 	if err != nil {
 		return 0, err
 	}
@@ -116,6 +115,7 @@ func removeJournal(fsys build.WriteFS, name string) error {
 type undo struct {
 	files   []undoFile
 	stages  []string
+	token   string // the stages' <j>, from the journal's name (DECISIONS 351)
 	created []spot
 	removed []undoDir
 }
@@ -145,6 +145,7 @@ func (u *undo) spots() []spot {
 // undoer runs an undo, counting what it changes and the directories whose entries changed.
 type undoer struct {
 	fsys    build.WriteFS
+	token   string
 	touched []string
 	changed int
 }
@@ -164,9 +165,10 @@ func (u *undo) run(fsys build.WriteFS) (int, error) {
 		return 0, err
 	}
 	for _, s := range u.stages {
-		_ = fsys.Remove(stageName(s)) // a stage never written is no failure
+		_ = fsys.Remove(stageName(s, u.token)) // a stage never written is no failure
+		_ = fsys.Remove(fixedStageName(s))     // and 0.1.5's fixed name, if a 0.1.5 edit left it
 	}
-	r := &undoer{fsys: fsys}
+	r := &undoer{fsys: fsys, token: u.token}
 	if err := r.recreate(u.removed); err != nil {
 		return r.changed, err
 	}
@@ -242,39 +244,35 @@ func (u *undo) own() map[string]bool {
 		}
 	}
 	for _, s := range u.stages {
-		own[stageName(s)] = true
+		own[stageName(s, u.token)], own[fixedStageName(s)] = true, true
 	}
 	return own
 }
 
 // ownEntry says whether an entry of a created directory is the edit's: one of own, a directory
-// only if own is one, or a hidden leftover whose name holds an own stage's.
+// only if own is one, or what the OS WriteFile left writing one of own's stages (DECISIONS 351).
 func ownEntry(own map[string]bool, name string, e fs.DirEntry) bool {
 	switch {
 	case e.Type()&fs.ModeSymlink != 0:
 		return false
 	case own[name]:
 		return true
-	case e.IsDir() || e.Name()[0] != hiddenMark:
+	case e.IsDir():
 		return false
 	}
-	for _, stem := range stagesIn(own, project.DirOf(name)) {
-		if strings.Contains(e.Name(), stem) {
+	return writeLeftover(own, name)
+}
+
+// writeLeftover reports name a staging name the OS WriteFile gives one of own's stages in name's
+// directory, exactly as build names it (DECISIONS 351): what writing that stage left, nothing else.
+func writeLeftover(own map[string]bool, name string) bool {
+	dir, base := project.DirOf(name), path.Base(name)
+	for stage := range own { //canon:unordered any stage that matches decides
+		if project.DirOf(stage) == dir && strings.HasSuffix(stage, stageSuffix) && build.StagedOf(base, path.Base(stage)) {
 			return true
 		}
 	}
 	return false
-}
-
-// stagesIn are the names of the stages among own that lie right in dir.
-func stagesIn(own map[string]bool, dir string) []string {
-	var out []string
-	for _, name := range slices.Sorted(maps.Keys(own)) {
-		if project.DirOf(name) == dir && strings.HasSuffix(name, stageSuffix) {
-			out = append(out, path.Base(name))
-		}
-	}
-	return out
 }
 
 // recreate makes again, parents first, each removed directory not there, with its permissions.
@@ -321,7 +319,7 @@ func (r *undoer) restoreOne(f undoFile) error {
 	if err := r.fsys.MkdirAll(project.DirOf(f.abs)); err != nil {
 		return err
 	}
-	return replace(r.fsys, f.abs, f.Old, f.Mode)
+	return replace(r.fsys, f.abs, r.token, f.Old, f.Mode)
 }
 
 // clear removes, deepest first, each directory the commit created with all it holds, which
