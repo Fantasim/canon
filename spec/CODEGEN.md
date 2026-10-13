@@ -1018,7 +1018,8 @@ over its members stay closed, and an unknown member that decides a dependent typ
 branch is known. Another package's emit of the same target that references an enum this target's
 emit opens must be in `types` mode too (`E8019` `OpenEnum`). In C++ the free functions avoid
 member names that could collide with enumerators; an enumerator named like its enum or `wire_`
-is `E8005`. The runtime's `LookupKey<K>` is `const K&` for a class key (§7.4).
+is `E8005`. The runtime's `LookupKey<K>` is `const K&` for an opened enum key only (§7.4); every
+other key keeps its form. An opened enum is returned by value by its getter, as every enum is.
 
 A translated function (CONFORMANCE.md §2) of a package whose emit opens an enum never takes a
 parameter of that enum, nor reads a value of it from `self` (directly or inside a list, map or
@@ -1196,7 +1197,9 @@ table from the ref's key to the branch, computed from the build's values (the re
 the `match`; a `none` met on the path selects the `Never` branch), named Go `branches<T><F>`
 (unexported), C++ `detail::k<T><F>Branches`, TS `branches<T><F>` (not exported), `T` the record
 and `F` the field in UpperCamel; a loader reads the key and looks the branch up, and a key the
-table lacks refuses the value with `no branch for this value` (DECISIONS 350). A list of
+table lacks refuses the value with `no branch for this value` (DECISIONS 350); in C++ a table
+whose key is an opened enum (§5.2) is keyed by the wire (`std::string_view`) in wire byte order,
+so it stays `constexpr` and needs no static initialisation. A list of
 dependent values shares its field's discriminant. A discriminant member no branch covers (a `Never` arm, WIRE.md §5.9) refuses
 the value with the loader text `no branch for this value` at its pointer, in every loader. Baked Go writes a dependent value (a field's, or
 its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
