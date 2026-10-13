@@ -1340,7 +1340,10 @@ comments, and a trailing comment on its last line.
   requires, or JSON's grammar forces, added or removed on a kept neighbour, or a byte the M5 settle
   changes there, counts as re-printing that neighbour (Insert, Remove, Move and a `Set` to the
   default alike, which is then not a one-line case; DECISIONS 255); a DECISIONS 216 comma line with
-  a trailing comment may be rewritten whole by the settle.
+  a trailing comment may be rewritten whole by the settle. A narrowing that makes the settle join an
+  enclosing item onto fewer lines (a value back beside its name, FORMATTER.md §7.2 rule A; a
+  broken list laid on one line) re-prints that item: it is held to the region rules, not the
+  one-line clause.
 
 ### 9.3 Printing values
 
