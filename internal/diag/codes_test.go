@@ -424,6 +424,7 @@ var constructed = []*Builder{
 	E8005.AtBoth(sampleSpan, sampleName, sampleName, sampleName, sampleName),
 	E8005.AtReached(sampleSpan, sampleName, sampleName, sampleName, sampleName),
 	E8005.AtIdType(sampleSpan, sampleName, sampleName, sampleName, sampleName),
+	E8005.AtFinder(sampleSpan, sampleName, sampleName, sampleName, sampleName),
 	E8007.At(sampleSpan, samplePath),
 	E8008.At(sampleSpan, samplePath, sampleName, sampleName),
 	E8009.AtMode(sampleSpan, sampleName, sampleName, sampleNames),

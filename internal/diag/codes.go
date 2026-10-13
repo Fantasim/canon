@@ -2213,6 +2213,7 @@ var Registry = []Def{
 			{Name: "both", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}; rename one of them with @{target}(name:)"},
 			{Name: "reached", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option"},
 			{Name: "idType", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list"},
+			{Name: "finder", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)"},
 		},
 	},
 	{
@@ -6807,6 +6808,11 @@ func (codeE8005) AtReached(span source.Span, target string, name string, a strin
 // AtIdType reports: {target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list
 func (codeE8005) AtIdType(span source.Span, target string, name string, a string, b string) *Builder {
 	return newBuilder(&Registry[253], 2, span, target, name, a, b)
+}
+
+// AtFinder reports: {target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)
+func (codeE8005) AtFinder(span source.Span, target string, name string, a string, b string) *Builder {
+	return newBuilder(&Registry[253], 3, span, target, name, a, b)
 }
 
 // E8007: a Go output under no root mapped by `go_module` (CODEGEN.md §2.8).
