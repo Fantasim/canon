@@ -27,6 +27,7 @@ type run struct {
 	declared  *project.Layout // the roots where project.canon places them, made on first use
 	s         *snapshot
 	selected  []*project.Unit
+	orphans   []project.Orphan // the selected orphan directories: findings only, no package (DECISIONS 353)
 	loaded    []*project.Unit  // the selected packages and their imports
 	cps       []*check.Package // the selected packages, in package order
 	bags      check.Bags
@@ -59,7 +60,7 @@ func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error)
 	if err != nil {
 		return nil, err
 	}
-	selected, err := project.Select(s.units, selectors)
+	selected, orphans, err := project.Select(s.units, s.orphan, selectors)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +68,7 @@ func (p *Project) prepare(ctx context.Context, selectors []string) (*run, error)
 	if err := p.checkLayers(s, loaded); err != nil {
 		return nil, err
 	}
-	return &run{p: p, s: s, selected: selected, loaded: loaded, bags: s.bagsOf(loaded), cached: true}, nil
+	return &run{p: p, s: s, selected: selected, orphans: orphans, loaded: loaded, bags: s.bagsOf(loaded), cached: true}, nil
 }
 
 // prepareOnly is prepare of exactly the packages pkgs names, an unknown name left out and none
@@ -377,15 +378,20 @@ func (a *Analysis) Own() *Result {
 	res := a.res
 	out := &Result{Packages: slices.Clone(res.Packages), Revision: res.Revision}
 	out.Findings = Findings{Files: res.Files, Summary: collect(r.s.set, r.s.own, bags...).Summary}
+	out.Summary = out.Summary.Merge(orphanSummary(r.orphanBags()))
 	out.List = a.ownOf(res.List)
 	return out
 }
 
-// ownOf is the findings of list that Own keeps: the selected packages' and the project's own.
+// ownOf is the findings of list that Own keeps: the selected packages', the selected orphan
+// bags' and the project's own.
 func (a *Analysis) ownOf(list []diag.Finding) []diag.Finding {
 	keep := map[string]bool{"": true}
 	for _, u := range a.r.selected {
 		keep[u.Name] = true
+	}
+	for _, o := range a.r.orphans {
+		keep[o.Name] = true
 	}
 	var out []diag.Finding
 	for _, f := range list {
@@ -406,6 +412,7 @@ func (r *run) result() *Result {
 		bags[i] = r.s.bag(u.Name)
 	}
 	res.Findings = collect(r.s.set, r.s.own, bags...)
+	res.addOrphans(r.orphanBags())
 	for _, u := range r.loaded {
 		if !slices.Contains(r.selected, u) {
 			res.addErrors(r.s.bag(u.Name))

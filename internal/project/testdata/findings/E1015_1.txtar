@@ -1,0 +1,13 @@
+GRAMMAR.md §7.1 (DECISIONS 354): a compiler of another version than the pin is E1015, at the pin.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  compiler: "0.1.5"
+}
+-- running --
+0.1.4
+-- findings.txt --
+error[E1015]  project.canon:3:13
+  the project pins canon 0.1.5; this is canon 0.1.4: install canon 0.1.5, or change "compiler" in project.canon
+
+1 error, 0 warnings in 1 package (…)

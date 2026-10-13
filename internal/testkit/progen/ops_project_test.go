@@ -18,6 +18,7 @@ func projectOperators() []operator {
 		op(diag.E1008.Def().Code, "GRAMMAR.md §7.1 (duplicate language)", onKey("languages", appendListItem("en"))),
 		op(diag.E1009.Def().Code, "GRAMMAR.md §7.1 (go_module key not a root)", onMapEntries("go_module", insertEntryBefore("nowhere", `: "example.com/x"`))),
 		op(diag.E1010.Def().Code, "GRAMMAR.md §7.1 (not MAJOR.MINOR)", onKey("canon", replaceValue(`"0.1.0"`))),
+		op(diag.W1016.Def().Code, "GRAMMAR.md §7.1 (a compiler pin an unstamped test binary cannot honour)", onKey("canon", insertPin)),
 		op(diag.E1011.Def().Code, "GRAMMAR.md §5.2 (anything else in project.canon)", projectTrailer),
 		op(diag.E1012.Def().Code, "GRAMMAR.md §7.1 (studio package missing)", onKey("studio", replaceValue("nowhere"))),
 	}
@@ -84,6 +85,12 @@ func insertEntryBefore(key, rest string) entryEdit {
 		s, _ := span(tg, e.Key)
 		return seq(0, insert(s, key), insert(s, rest+"\n"+indent(tg, s)))
 	}
+}
+
+// insertPin adds a compiler pin no unstamped binary meets before e; the finding is at its value.
+func insertPin(tg target, e *syntax.ProjectEntry) progen.Site {
+	s, _ := span(tg, e.Key)
+	return seq(2, insert(s, "compiler"), insert(s, ": "), insert(s, `"9.9.9"`), insert(s, "\n"+indent(tg, s)))
 }
 
 // deleteEntryMarkName removes e's line; the finding is at the project's name.

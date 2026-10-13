@@ -92,6 +92,9 @@ func (r *run) testNames() error {
 func (r *run) staticErrors() Result {
 	out := Result{Findings: Findings{Files: r.s.set}}
 	out.addErrors(r.s.own)
+	for _, b := range r.orphanBags() {
+		out.addErrors(b)
+	}
 	for _, u := range r.loaded {
 		out.addErrors(r.s.bag(u.Name))
 	}

@@ -1,0 +1,10 @@
+GRAMMAR.md §7.1 (DECISIONS 354): a pin equal to the running compiler is clean, a suffix included.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  compiler: "0.2.0-rc.1"
+}
+-- running --
+0.2.0-rc.1
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

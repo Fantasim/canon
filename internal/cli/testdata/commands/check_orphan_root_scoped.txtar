@@ -1,0 +1,19 @@
+CLI.md §2.2 (DECISIONS 353): a root-level file is seen only by an unscoped check and by its own path.
+-- args --
+check
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- top.canon --
+const Y = 2
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+[stderr]

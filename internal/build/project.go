@@ -121,6 +121,7 @@ func (p *Project) readProject(s *snapshot) error {
 	if s.proj, err = project.Load(src, s.own); err != nil {
 		return &OpenError{Err: err}
 	}
+	project.CheckCompiler(s.proj, Compiler(), s.own)
 	local, err := p.readLocal(s)
 	if err != nil {
 		return err
@@ -207,6 +208,42 @@ func collect(files diag.Files, own *diag.Bag, pkgs ...*diag.Bag) Findings {
 	for _, b := range pkgs {
 		out.List = append(out.List, b.Findings()...)
 		out.Summary = out.Summary.Merge(b.Summary())
+	}
+	return out
+}
+
+// orphanBags are the bags of the selected orphan directories (DECISIONS 353).
+func (r *run) orphanBags() []*diag.Bag {
+	bags := make([]*diag.Bag, len(r.orphans))
+	for i, o := range r.orphans {
+		bags[i] = r.s.bag(o.Name)
+	}
+	return bags
+}
+
+// addOrphans adds the findings and counts of orphan bags, which count as no package (DECISIONS 353).
+func (f *Findings) addOrphans(bags []*diag.Bag) {
+	for _, b := range bags {
+		found := b.Findings()
+		if len(found) == 0 {
+			continue
+		}
+		at := slices.IndexFunc(f.List, func(x diag.Finding) bool { return x.Package > found[0].Package })
+		if at < 0 {
+			at = len(f.List)
+		}
+		f.List = slices.Insert(f.List, at, found...)
+	}
+	f.Summary = f.Summary.Merge(orphanSummary(bags))
+}
+
+// orphanSummary is the counts of orphan bags, none of them a package.
+func orphanSummary(bags []*diag.Bag) diag.Summary {
+	var out diag.Summary
+	for _, b := range bags {
+		s := b.Summary()
+		s.Packages = 0
+		out = out.Merge(s)
 	}
 	return out
 }

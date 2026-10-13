@@ -4,7 +4,7 @@ version
 -- want --
 [exit 0]
 [stdout]
-canon 0.1.0 (unknown)
+canon dev (unknown)
 language 0.1
 formats canon-fp v1, canon-vm/1, canon.lock v1
 [stderr]

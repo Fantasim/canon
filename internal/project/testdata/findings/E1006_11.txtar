@@ -1,0 +1,11 @@
+GRAMMAR.md §7.1 (DECISIONS 354): compiler is "X.Y.Z[-suffix]": a v prefix is not.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  compiler: "v0.1.5"
+}
+-- findings.txt --
+error[E1006]  project.canon:3:13
+  "compiler" must be a compiler version "X.Y.Z" (with an optional "-suffix")
+
+1 error, 0 warnings in 1 package (…)

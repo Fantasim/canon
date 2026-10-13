@@ -158,6 +158,6 @@ func ExampleVersion() {
 	v := canon.Version()
 	fmt.Println(v.Compiler, v.Languages)
 	fmt.Println(v.Fingerprint, v.ViewModel, v.Lock)
-	// Output: 0.1.0 [0.1]
+	// Output: dev [0.1]
 	// canon-fp v1 canon-vm/1 canon.lock v1
 }

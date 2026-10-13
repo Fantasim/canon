@@ -10,7 +10,6 @@ import (
 	"slices"
 	"time"
 
-	canon "github.com/fantasim/canonlang/api"
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/format"
@@ -64,7 +63,7 @@ func runFmt(inv *invocation) int {
 	}
 	defer func() { _ = p.Close() }()
 	r.root = p.Root()
-	if err := r.run(p); err != nil {
+	if err := r.run(); err != nil {
 		return inv.fail(err)
 	}
 	return r.finish(start)
@@ -113,11 +112,11 @@ func (r *fmtRun) syntaxBroken(name string) bool {
 }
 
 // run reads and formats the files, then writes the changes unless --check or --diff asks not to.
-func (r *fmtRun) run(p *canon.Project) error {
+func (r *fmtRun) run() error {
 	if placed, err := r.place(); !placed || err != nil {
 		return err
 	}
-	files, err := r.files(p)
+	files, err := r.files()
 	if err != nil {
 		return err
 	}
@@ -186,17 +185,13 @@ func (r *fmtRun) local(proj *project.Project, bag *diag.Bag) (*project.Local, bo
 }
 
 // files are the files fmt visits, in path order: project.canon and every .canon file, or the selected packages' (CLI.md §2.2).
-func (r *fmtRun) files(p *canon.Project) ([]fmtFile, error) {
+func (r *fmtRun) files() ([]fmtFile, error) {
 	if len(r.inv.args) == 0 {
 		return r.allFiles()
 	}
-	pkgs, err := p.Packages(r.inv.ctx)
+	listings, err := selectable(r.inv.ctx, r.fsys, r.root)
 	if err != nil {
 		return nil, err
-	}
-	listings := make([]project.Listing, len(pkgs))
-	for i, pkg := range pkgs {
-		listings[i] = project.Listing{Name: pkg.Name, Dir: pkg.Dir, Files: pkg.Files}
 	}
 	var files []fmtFile
 	for i, sel := range r.inv.selectors(r.root) {
@@ -226,25 +221,34 @@ func (r *fmtRun) allFiles() ([]fmtFile, error) {
 }
 
 // selectFiles are the files of the packages sel selects; project.canon, project.local.canon and
-// a .canon file that declares no package select themselves.
+// a .canon file that declares no package select themselves (DECISIONS 353).
 func (r *fmtRun) selectFiles(listings []project.Listing, sel string) ([]fmtFile, error) {
 	if sel == project.FileName || sel == project.LocalFileName {
 		return []fmtFile{{display: sel, kind: syntax.FileProject}}, nil
 	}
 	matched, err := project.Match(listings, sel)
 	if err != nil {
-		if names, scanErr := project.Scan(r.fsys, r.root); scanErr == nil && slices.Contains(names, path.Clean(sel)) {
-			return []fmtFile{{display: path.Clean(sel), kind: syntax.FileSource}}, nil
-		}
 		return nil, err
 	}
 	var files []fmtFile
 	for _, i := range matched {
-		for _, name := range listings[i].Files {
+		for _, name := range fileNames(listings[i], sel) {
 			files = append(files, fmtFile{display: name, kind: syntax.FileSource})
 		}
 	}
 	return files, nil
+}
+
+// fileNames are the files of l that sel selects: a package-less file by its path alone, else a package's own, loose ones too for a name or directory.
+func fileNames(l project.Listing, sel string) []string {
+	want := path.Clean(sel)
+	if path.Ext(sel) != project.SourceExt {
+		return l.All()
+	}
+	if l.Orphan || slices.Contains(l.Loose, want) {
+		return []string{want}
+	}
+	return l.Files
 }
 
 // sortedFiles orders files by path, each once.

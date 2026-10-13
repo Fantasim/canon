@@ -1,0 +1,19 @@
+CLI.md §2.2 (DECISIONS 353): a package-less file in a directory that is no package does not fail check of another package.
+-- args --
+check
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- stray/s.canon --
+record R { a: Int
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+[stderr]

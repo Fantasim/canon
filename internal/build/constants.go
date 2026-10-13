@@ -34,10 +34,14 @@ const (
 // lineageCap is the Recheck lineages a cache generation keeps, one per set of packages checked.
 const lineageCap = 3
 
-const defaultVersion = "0.1.0"
+// ModulePath is canon's module path, tagPrefix starts a release tag's module version.
+const (
+	ModulePath = "github.com/fantasim/canonlang"
+	tagPrefix  = "v"
+)
 
-// CompilerVersion is the compiler's version (WIRE.md §10, API.md §14); a var for -ldflags -X (decision 276).
-var CompilerVersion = defaultVersion
+// CompilerVersion is set by `make dist` at link time (-ldflags -X, decision 276); "" when unstamped.
+var CompilerVersion string
 
 // The build manifest's first line, line keywords, field separator, commands and hash mark (WIRE.md §10).
 const (

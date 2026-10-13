@@ -10,6 +10,7 @@ import (
 	"time"
 
 	canon "github.com/fantasim/canonlang/api"
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/project"
 )
 
@@ -122,13 +123,9 @@ func (inv *invocation) asTyped(p *canon.Project, selectors []string, err error) 
 	if len(selectors) == 1 {
 		return typedError(err, inv.args[0])
 	}
-	pkgs, lerr := p.Packages(inv.ctx)
+	listings, lerr := selectable(inv.ctx, build.OS(), project.HostPaths().FromAPI(p.Root(), ""))
 	if lerr != nil {
 		return err
-	}
-	listings := make([]project.Listing, len(pkgs))
-	for i, pkg := range pkgs {
-		listings[i] = project.Listing{Name: pkg.Name, Dir: pkg.Dir, Files: pkg.Files}
 	}
 	for i, sel := range selectors {
 		if _, one := project.Match(listings, sel); one != nil {

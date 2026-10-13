@@ -1,0 +1,13 @@
+GRAMMAR.md §7.1 (DECISIONS 354): a dev compiler against a pin is W1016, not E1015.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  compiler: "0.1.5"
+}
+-- running --
+dev
+-- findings.txt --
+warning[W1016]  project.canon:3:13
+  the project pins canon 0.1.5; this dev build of canon is not checked against the pin
+
+0 errors, 1 warning in 1 package (…)

@@ -13,6 +13,7 @@ type Project struct {
 	Name      string
 	Doc       string // the declaration's doc comment text, "" for none (GRAMMAR.md §2.2, §9.1)
 	Canon     Version
+	Compiler  Pin // the compiler pin (Text "": none; DECISIONS 354)
 	Roots     []Root
 	Languages []string // the first is the source language (SPEC §17)
 	Studio    Package
@@ -49,6 +50,12 @@ func (p *Project) Consumer(name string) bool {
 // Package is a package path the project names, with the span that names it; Path "" is none.
 type Package struct {
 	Path string
+	Span source.Span
+}
+
+// Pin is the compiler version `compiler` states, with its span.
+type Pin struct {
+	Text string
 	Span source.Span
 }
 

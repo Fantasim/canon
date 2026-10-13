@@ -1,0 +1,19 @@
+CLI.md §2.2 (DECISIONS 353): a name that is no package and no orphan directory is still unknown.
+-- args --
+check
+strayy
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- stray/s.canon --
+record R { a: Int
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: strayy

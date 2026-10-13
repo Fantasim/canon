@@ -25,12 +25,19 @@ const dot = "."
 
 const versionSep = dot
 
+// DevVersion is an unreleased compiler's version (DECISIONS 354), RootOrphan the root's orphan bag (DECISIONS 353).
+const (
+	DevVersion = "dev"
+	RootOrphan = dot
+)
+
 // supported are the language versions this compiler reads (NFR-03).
 var supported = [...]Version{{Major: 0, Minor: 1}}
 
 // The keys of project.canon (GRAMMAR.md §7.1).
 const (
 	keyCanon     = "canon"
+	keyCompiler  = "compiler"
 	keyRoots     = "roots"
 	keyLanguages = "languages"
 	keyStudio    = "studio"
@@ -43,6 +50,7 @@ const (
 // keyRules reads each key; go_module, optional_roots and consumer_roots wait for the roots, keys coming in any order (GRAMMAR.md §7.1).
 var keyRules = map[string]func(*schema, *syntax.ProjectEntry){
 	keyCanon:     (*schema).canon,
+	keyCompiler:  (*schema).compiler,
 	keyRoots:     (*schema).roots,
 	keyLanguages: (*schema).languages,
 	keyStudio:    (*schema).studio,
@@ -68,6 +76,7 @@ var absentRoot = [...]func(source.Span, string, string) *diag.Builder{
 
 var (
 	versionPattern  = regexp.MustCompile(`^([0-9]+)\.([0-9]+)$`)
+	compilerPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$`)
 	languagePattern = regexp.MustCompile(`^[a-z]{2,3}(_[A-Z][a-z]{3})?(_[A-Z]{2})?$`)
 	drivePattern    = regexp.MustCompile(`^[A-Za-z]:`)
 )

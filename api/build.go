@@ -351,7 +351,7 @@ type VersionInfo struct {
 // Version returns the compiler's version information; Commit follows rule T3.
 func Version() VersionInfo {
 	return VersionInfo{
-		Compiler:    build.CompilerVersion,
+		Compiler:    build.Compiler(),
 		Languages:   []string{languageVersion},
 		Fingerprint: fingerprintFormat,
 		ViewModel:   views.SchemaVersion,

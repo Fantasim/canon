@@ -114,6 +114,35 @@ func (s *schema) canon(e *syntax.ProjectEntry) {
 	s.p.Canon = v
 }
 
+// compiler is `compiler: "X.Y.Z[-suffix]"`, the exact compiler version the project is built with (E1006, DECISIONS 354).
+func (s *schema) compiler(e *syntax.ProjectEntry) {
+	span := s.span(e.Value)
+	text, ok := stringOf(e.Value)
+	if !ok || !IsCompilerVersion(text) {
+		s.fail(diag.E1006.AtCompiler(span))
+		return
+	}
+	s.p.Compiler = Pin{Text: text, Span: span}
+}
+
+// IsCompilerVersion reports a compiler version, "X.Y.Z" and an optional "-suffix" (GRAMMAR.md §7.1).
+func IsCompilerVersion(text string) bool {
+	return compilerPattern.MatchString(text)
+}
+
+// CheckCompiler reports a pin the running compiler does not honour: E1015 for another version, W1016
+// for a dev build, which is not checked against it (DECISIONS 354). A project without a pin is clean.
+func CheckCompiler(p *Project, running string, bag *diag.Bag) {
+	want := p.Compiler.Text
+	switch {
+	case want == "" || want == running:
+	case running == DevVersion:
+		diag.W1016.At(p.Compiler.Span, want).Report(bag)
+	default:
+		diag.E1015.At(p.Compiler.Span, want, running).Report(bag)
+	}
+}
+
 // versionTexts are the supported versions as E1001 lists them.
 func versionTexts() []string {
 	var out []string

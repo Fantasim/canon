@@ -14,6 +14,6 @@ func Example() {
 	code := cli.Main(context.Background(), []string{"version", "--format", "json"}, env)
 	fmt.Println("exit", code)
 	// Output:
-	// {"version":{"compiler":"0.1.0","languages":["0.1"],"fingerprint":"canon-fp v1","viewModel":"canon-vm/1","lock":"canon.lock v1","commit":""}}
+	// {"version":{"compiler":"dev","languages":["0.1"],"fingerprint":"canon-fp v1","viewModel":"canon-vm/1","lock":"canon.lock v1","commit":""}}
 	// exit 0
 }

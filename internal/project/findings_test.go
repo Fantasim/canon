@@ -19,9 +19,10 @@ import (
 const (
 	projectDir   = "/p"
 	findingsFile = "findings.txt"
-	findFile     = "find"  // a directory to search from (E1003)
-	rootsFile    = "roots" // `name=dir` lines: the --root overrides (E7003)
-	pathsFile    = "paths" // `from written` lines: paths to resolve (E7001, E7003)
+	findFile     = "find"    // a directory to search from (E1003)
+	rootsFile    = "roots"   // `name=dir` lines: the --root overrides (E7003)
+	pathsFile    = "paths"   // `from written` lines: paths to resolve (E7001, E7003)
+	runningFile  = "running" // the running compiler's version, checked against the pin (E1015, W1016)
 )
 
 // memFS is an archive as a project.FS under /p: fstest.MapFS with absolute names.
@@ -86,6 +87,9 @@ func loadCase(t *testing.T, a *txtar.Archive, fsys memFS, set *source.FileSet, b
 	p, _ := project.Load(src, bag)
 	if p == nil {
 		return
+	}
+	if running, ok := archiveFile(a, runningFile); ok {
+		project.CheckCompiler(p, strings.TrimSpace(string(running)), bag)
 	}
 	layout, _ := project.Place(p, projectDir, project.Placement{Local: loadLocal(t, a, p, set, bag), Overrides: overrides(a), FS: fsys}, bag)
 	resolvePaths(t, a, layout, set, bag)

@@ -44,7 +44,7 @@ func (r *run) inputs() inputs {
 func (r *run) manifest(in inputs, command string, targets []ir.Target) []byte {
 	var b strings.Builder
 	b.WriteString(manifestHeader + lineEnd)
-	writeLine(&b, kwCompiler, CompilerVersion)
+	writeLine(&b, kwCompiler, Compiler())
 	writeLine(&b, kwLanguage, r.s.proj.Canon.String())
 	for _, layer := range r.p.opt.Layers {
 		writeLine(&b, kwLayer, layer)

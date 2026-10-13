@@ -1,0 +1,26 @@
+CLI.md §2.2 (DECISIONS 353): the unknown selector is the one named, not an orphan directory.
+-- args --
+check
+stray
+nope
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- a/loose.canon --
+const Q = 1
+-- stray/s.canon --
+record R { a: Int
+-- b/b.canon --
+const Z = 3
+-- top.canon --
+const Y = 2
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: nope

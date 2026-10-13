@@ -74,7 +74,7 @@ not matched
 -- art/d.png --
 -- manifest.txt --
 canon-manifest v1
-compiler 0.1.0
+compiler dev
 language 0.1
 layer dev
 lang en
@@ -101,7 +101,7 @@ glob 094d242ab837acaf1420f995c6bc0e4374e139c72721c9ebb235b8fe84e3effc @res/items
 list 29bfd02c81a5f76ba5efb30abf6df3d96d9d1e9b81337f0555dd81d57c265518 @res/icons
 list c0815d3dae18e75ef26bd952dd2c6cc1ff19962fd51adde4c53c8882a448fff0 @res/icons/sub
 canon-manifest v1
-compiler 0.1.0
+compiler dev
 language 0.1
 layer dev
 lang en
@@ -123,7 +123,7 @@ glob 094d242ab837acaf1420f995c6bc0e4374e139c72721c9ebb235b8fe84e3effc @res/items
 list 29bfd02c81a5f76ba5efb30abf6df3d96d9d1e9b81337f0555dd81d57c265518 @res/icons
 list c0815d3dae18e75ef26bd952dd2c6cc1ff19962fd51adde4c53c8882a448fff0 @res/icons/sub
 canon-manifest v1
-compiler 0.1.0
+compiler dev
 language 0.1
 layer dev
 lang en

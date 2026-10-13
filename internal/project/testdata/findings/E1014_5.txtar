@@ -1,0 +1,23 @@
+GRAMMAR.md §7.2 (DECISIONS 354): compiler is never in project.local.canon.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  compiler: "0.1.5"
+  roots {
+    resource: "res"
+  }
+}
+-- project.local.canon --
+project acme {
+  compiler: "0.1.5"
+  roots {
+    resource: "/home/sam/Resource"
+  }
+}
+-- running --
+0.1.5
+-- findings.txt --
+error[E1014]  project.local.canon:2:3
+  project.local.canon may only hold roots: remove "compiler"
+
+1 error, 0 warnings in 1 package (…)

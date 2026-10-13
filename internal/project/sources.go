@@ -22,6 +22,7 @@ type Unit struct {
 	Files   []*syntax.File // sources, layers and translations, in path order
 	Imports []string       // sorted, each once
 	Layers  []string       // the names of its layer files, sorted, each once
+	Loose   []string       // paths of the package-less files of its directory (DECISIONS 353)
 }
 
 type sha256Sum = [sha256.Size]byte
@@ -32,16 +33,25 @@ type FileSum struct {
 	Sum  sha256Sum
 }
 
-// Reader parses the source files of the project in Dir into Set, each file's findings going to
-// the bag BagOf gives for its package. A file without a package line joins no package: its
-// findings go to its directory's package when one exists, else to the project's own, "".
+// Orphan is the files of one directory that declare no package, in a directory that is no package
+// either: they belong to the package the directory names, or to the root (DECISIONS 353). It is
+// no Unit, and counts as no package.
+type Orphan struct {
+	Name  string   // the bag of its findings: the directory's package name, or RootOrphan
+	Dir   string   // display path of its directory, "." for the root
+	Files []string // project-relative paths, in path order
+}
+
+// Reader parses the files of Dir into Set, findings to the bag BagOf gives for the package of the file,
+// its directory's when it has no package line, RootOrphan's at the root (DECISIONS 353).
 type Reader struct {
-	FS    FS
-	Dir   string
-	Set   *source.FileSet
-	BagOf func(pkg string) *diag.Bag
-	Reuse *Reuse    // nil: parse every file; else unchanged files return their tree (NFR-02); its set is Set
-	Sums  []FileSum // every file read, in reading order
+	FS      FS
+	Dir     string
+	Set     *source.FileSet
+	BagOf   func(pkg string) *diag.Bag
+	Reuse   *Reuse    // nil: parse every file; else unchanged files return their tree (NFR-02); its set is Set
+	Sums    []FileSum // every file read, in reading order
+	Orphans []Orphan  // the directories whose package-less files have no package of their own, in name order, set by Parse
 }
 
 // Parse reads and parses the files names (Scan's) and groups them by package, in name order.
@@ -70,13 +80,7 @@ func (r *Reader) Parse(ctx context.Context, names []string) ([]*Unit, error) {
 		}
 		u.add(p.file)
 	}
-	for _, p := range orphans {
-		pkg := dirPackage(p.src.Path)
-		if units[pkg] == nil {
-			pkg = ""
-		}
-		r.report(p, pkg)
-	}
+	r.place(units, orphans)
 	r.Reuse.retain(names)
 	out := slices.SortedFunc(maps.Values(units), func(a, b *Unit) int { return cmp.Compare(a.Name, b.Name) })
 	for _, u := range out {
@@ -86,6 +90,32 @@ func (r *Reader) Parse(ctx context.Context, names []string) ([]*Unit, error) {
 		u.Layers = slices.Compact(u.Layers)
 	}
 	return out, nil
+}
+
+// place sends the findings of the package-less files to their directory's bag and lists them as Loose
+// files of the package that directory declares, else as Orphans (DECISIONS 353).
+func (r *Reader) place(units map[string]*Unit, orphans []parsedFile) {
+	r.Orphans = nil
+	for _, p := range orphans {
+		pkg := dirPackage(p.src.Path)
+		if u := units[pkg]; u != nil {
+			u.Loose = append(u.Loose, p.src.Path)
+		} else {
+			r.addOrphan(pkg, p.src.Path)
+		}
+		r.report(p, pkg)
+	}
+	slices.SortFunc(r.Orphans, func(a, b Orphan) int { return cmp.Compare(a.Name, b.Name) })
+}
+
+// addOrphan records file in the orphan directory name.
+func (r *Reader) addOrphan(name, file string) {
+	i := slices.IndexFunc(r.Orphans, func(o Orphan) bool { return o.Name == name })
+	if i < 0 {
+		r.Orphans = append(r.Orphans, Orphan{Name: name, Dir: path.Dir(file)})
+		i = len(r.Orphans) - 1
+	}
+	r.Orphans[i].Files = append(r.Orphans[i].Files, file)
 }
 
 // file reads one file and parses it into the set, unless Reuse holds the parse of that content.
@@ -165,11 +195,11 @@ func (r *Reader) report(p parsedFile, pkg string) {
 	}
 }
 
-// dirPackage is the package named by the directory of a project-relative file (SPEC §3.2).
+// dirPackage is the package a project-relative file's directory names, RootOrphan at the root (SPEC §3.2).
 func dirPackage(name string) string {
 	dir := path.Dir(name)
 	if dir == currentSeg {
-		return ""
+		return RootOrphan
 	}
 	return strings.ReplaceAll(dir, sep, nameSep)
 }

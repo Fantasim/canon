@@ -41,6 +41,7 @@ type snapshot struct {
 	local  *project.Local // project.local.canon checked; nil when there is none (DECISIONS 332)
 	names  []string
 	units  []*project.Unit
+	orphan []project.Orphan // the directories of files with no package that is theirs (DECISIONS 353)
 	sums   []project.FileSum
 	locks  map[string][]byte // every package directory's canon.lock read, by project-relative path
 	canon  [sha256.Size]byte // project.canon's SHA-256 with the placed root lines (placedKey)
@@ -200,6 +201,7 @@ func (p *Project) load(ctx context.Context) (*snapshot, error) {
 	if s.units, err = r.Parse(ctx, s.names); err != nil {
 		return nil, displayErrorIn(p.dir, err)
 	}
+	s.orphan = r.Orphans
 	s.sums = append(s.sums, r.Sums...)
 	if err := s.readLocks(p.fs, p.dir); err != nil {
 		return nil, err

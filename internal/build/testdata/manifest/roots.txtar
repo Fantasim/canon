@@ -28,7 +28,7 @@ package a
 const N = 1
 -- manifest.txt --
 canon-manifest v1
-compiler 0.1.0
+compiler dev
 language 0.1
 lang en
 command check
@@ -45,7 +45,7 @@ root web ../work/web
 file 9765678494e9e172e143b2c49a07f79dcbe28d4da847ecbb3956540d6a477f56 a/a.canon
 file b119e7d55a71c6431c8630988712ac684e2aa7bd6b63ec5e9f21384eceb804fd project.canon
 canon-manifest v1
-compiler 0.1.0
+compiler dev
 language 0.1
 lang en
 command build
@@ -57,7 +57,7 @@ root web ../work/web
 file 9765678494e9e172e143b2c49a07f79dcbe28d4da847ecbb3956540d6a477f56 a/a.canon
 file b119e7d55a71c6431c8630988712ac684e2aa7bd6b63ec5e9f21384eceb804fd project.canon
 canon-manifest v1
-compiler 0.1.0
+compiler dev
 language 0.1
 lang en
 command test

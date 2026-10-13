@@ -105,10 +105,13 @@ func TestReaderGroupsByPackage(t *testing.T) {
 	if !slices.Equal(got, want) {
 		t.Errorf("units:\n%s", strings.Join(got, "\n"))
 	}
-	for pkg, n := range map[string]int{"": 1, "game.broken": 0, "shared.ui": 1, "game.items": 0} {
+	for pkg, n := range map[string]int{"": 0, "game.broken": 1, "shared.ui": 1, "game.items": 0} {
 		if b := bags[pkg]; (b == nil && n > 0) || (b != nil && len(b.Findings()) != n) {
 			t.Errorf("bag %s: want %d findings", pkg, n)
 		}
+	}
+	if len(r.Orphans) != 1 || r.Orphans[0].Name != "game.broken" || r.Orphans[0].Dir != "game/broken" {
+		t.Errorf("orphans: %+v", r.Orphans) // DECISIONS 353
 	}
 	if len(r.Sums) != 10 {
 		t.Errorf("%d files read", len(r.Sums))
@@ -130,7 +133,7 @@ func TestSelect(t *testing.T) {
 		{[]string{"./game/items", "shared/ui/ui.canon"}, "game.items shared.ui"},
 		{[]string{"game/items/entries/IK1/axe.canon"}, "game.items"},
 	} {
-		got, err := project.Select(units, c.sel)
+		got, _, err := project.Select(units, nil, c.sel)
 		var names []string
 		for _, u := range got {
 			names = append(names, u.Name)
@@ -141,12 +144,12 @@ func TestSelect(t *testing.T) {
 	}
 	// ./game/items/entries holds files only in a subdirectory and names no package: unknown.
 	for _, sel := range []string{"game", "game/items", "./game/items/entries", "gam...", "x.canon", "./game/broken"} {
-		if _, err := project.Select(units, []string{sel}); !errors.Is(err, project.ErrUnknownPackage) {
+		if _, _, err := project.Select(units, nil, []string{sel}); !errors.Is(err, project.ErrUnknownPackage) {
 			t.Errorf("Select(%q) = %v", sel, err)
 		}
 	}
 	var ue *project.UnknownError
-	if _, err := project.Select(units, []string{"./mixed"}); !errors.Is(err, project.ErrMixedDirectory) ||
+	if _, _, err := project.Select(units, nil, []string{"./mixed"}); !errors.Is(err, project.ErrMixedDirectory) ||
 		!errors.As(err, &ue) || ue.Name != "./mixed" {
 		t.Errorf("Select(./mixed) = %v", err)
 	}
@@ -208,5 +211,83 @@ func TestFind(t *testing.T) {
 	bag := diag.NewBag(set, "")
 	if err := project.Require(fsys, "/p/mixed", bag); !errors.Is(err, project.ErrNoProject) || len(bag.Findings()) != 1 {
 		t.Errorf("Require(/p/mixed) = %v", err)
+	}
+}
+
+const orphanTree = `
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+-- a/loose.canon --
+const Q = 1
+-- stray/s.canon --
+record R { a: Int
+-- root.canon --
+const X = 1
+`
+
+// DECISIONS 353: a file with no package line counts against its own directory, whether a package
+// of that name exists or not; a root file against the root; neither is a package.
+func TestOrphans(t *testing.T) {
+	fsys := newMemFS(txtar.Parse([]byte(orphanTree)))
+	names, err := project.Scan(fsys, projectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set := &source.FileSet{}
+	bags := map[string]*diag.Bag{}
+	r := &project.Reader{FS: fsys, Dir: projectDir, Set: set, BagOf: func(pkg string) *diag.Bag {
+		if bags[pkg] == nil {
+			bags[pkg] = diag.NewBag(set, pkg)
+		}
+		return bags[pkg]
+	}}
+	units, err := r.Parse(context.Background(), names)
+	if err != nil || len(units) != 1 {
+		t.Fatalf("units %d, %v", len(units), err)
+	}
+	if len(r.Orphans) != 2 || r.Orphans[0].Name != project.RootOrphan || r.Orphans[1].Name != "stray" {
+		t.Fatalf("orphans: %+v", r.Orphans)
+	}
+	if bags[""] != nil || len(bags["stray"].Findings()) == 0 || len(bags[project.RootOrphan].Findings()) == 0 {
+		t.Errorf("bags: own %v, stray %v", bags[""], bags["stray"])
+	}
+	for _, c := range []struct {
+		sel  []string
+		want string
+	}{
+		{nil, "a . stray"},
+		{[]string{"a"}, "a"},
+		{[]string{"stray"}, "stray"},
+		{[]string{"stray..."}, "stray"},
+		{[]string{"./stray"}, "stray"},
+		{[]string{"stray/s.canon"}, "stray"},
+		{[]string{"root.canon"}, "."},
+		{[]string{"a", "stray"}, "a stray"},
+		{[]string{"a/loose.canon"}, "a"}, // a package-less file in a package's directory: selected by its path
+		{[]string{"."}, "."},
+		{[]string{"./"}, "."},
+		{[]string{"./."}, "."},
+		{[]string{"./a"}, "a"},
+	} {
+		us, os, err := project.Select(units, r.Orphans, c.sel)
+		var names []string
+		for _, u := range us {
+			names = append(names, u.Name)
+		}
+		for _, o := range os {
+			names = append(names, o.Name)
+		}
+		if err != nil || strings.Join(names, " ") != c.want {
+			t.Errorf("Select(%q) = %q, %v", c.sel, names, err)
+		}
+	}
+	for _, sel := range []string{"nope", "...", "a/nope.canon"} { // a bare ... names no package, the root's included
+		if _, _, err := project.Select(units, r.Orphans, []string{sel}); !errors.Is(err, project.ErrUnknownPackage) {
+			t.Errorf("Select(%q) = %v", sel, err)
+		}
 	}
 }

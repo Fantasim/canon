@@ -1,0 +1,9 @@
+GRAMMAR.md §7.1 (DECISIONS 354): a project without a pin is clean for a dev compiler.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- running --
+dev
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

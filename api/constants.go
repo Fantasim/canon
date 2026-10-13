@@ -3,6 +3,7 @@ package canon
 import (
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/value"
@@ -220,7 +221,7 @@ const (
 	vcsRevisionKey    = "vcs.revision"
 	vcsModifiedKey    = "vcs.modified"
 	trueText          = "true"
-	modulePath        = "github.com/fantasim/canonlang"
+	modulePath        = build.ModulePath
 )
 
 // A Go pseudo-version: its time stamp and the revision prefix after it (go help modules).
