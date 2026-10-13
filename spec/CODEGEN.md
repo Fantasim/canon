@@ -1615,7 +1615,10 @@ export function decodeEventConfig(json: unknown): EventConfig;
   can follow), even inside a string a later syntax error leaves unclosed; a repeated key is
   placed at its closing quote, since an unclosed key may still differ (`{"a": "\xff` is
   `$.a: not UTF-8`; `{"a":1,"a` is a syntax error); a `\u` escape counts once its four hex digits
-  are read, so one cut short is a syntax error at the input's length (`{"a": "\udc` is byte 11). Invalid UTF-8 inside a string names its
+  are read, so one cut short is a syntax error at the input's length (`{"a": "\udc` is byte 11).
+  A number token valid by JSON is never a syntax error, whatever its size (`1e400`): under a field
+  it is read or refused at its path as that field's type decides (a value out of a `Float64`'s
+  range is `number out of range`), and under a key the decoder ignores it is accepted unread. Invalid UTF-8 inside a string names its
   path (`not UTF-8`; for a TypeScript decoder handed a string, a lone surrogate code unit is that
   case), outside a string it is a syntax error at its byte; a failure inside a key names the
   object's path; a repeated key names the object's path and the key's decoded text
