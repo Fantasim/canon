@@ -1,0 +1,23 @@
+DECISIONS 362, 339, CODEGEN.md §2.1: an enum listed twice in a cpp or ts emit's `open` is `openTwice`, at the later name.
+-- c/c.canon --
+package c
+
+/// A destination.
+enum Dst { str, sta }
+
+emit cpp { out: "@sovcommon/c", mode: types, open: [Dst, Dst] }
+-- t/t.canon --
+package t
+
+/// A destination.
+enum Dst { str, sta }
+
+emit ts { out: "@sovcommon/t.ts", mode: types, open: [Dst, Dst] }
+-- findings.txt --
+error[E8009]  c/c.canon:6:58
+  open of emit cpp: Dst is listed twice
+
+error[E8009]  t/t.canon:6:60
+  open of emit ts: Dst is listed twice
+
+2 errors, 0 warnings in 2 packages (…)

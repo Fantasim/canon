@@ -1,0 +1,15 @@
+DECISIONS 362, 339, CODEGEN.md §2.1: `open` is an option of the go, cpp and ts emits, each emit its own list, all in types mode.
+-- a/a.canon --
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+/// A source.
+enum Src { web, app }
+
+emit go { out: "@sovcommon/a", mode: types, open: [Dst] }
+
+emit cpp { out: "@sovcommon/a", mode: types, open: [Src] }
+
+emit ts { out: "@sovcommon/a.ts", mode: types, open: [Dst, Src] }

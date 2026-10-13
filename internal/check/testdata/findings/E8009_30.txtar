@@ -1,0 +1,43 @@
+DECISIONS 362, 339, CODEGEN.md §2.1: `open` of a cpp or ts emit needs mode types; the default mode baked and a written data mode are refused (`openMode`), naming the emit's target.
+-- c/c.canon --
+package c
+
+/// A destination.
+enum Dst { str, sta }
+
+emit cpp { out: "@sovcommon/c", open: [Dst] }
+-- d/d.canon --
+package d
+
+/// A destination.
+enum Dst { str, sta }
+
+emit cpp { out: "@sovcommon/d", mode: data, open: [Dst] }
+-- t/t.canon --
+package t
+
+/// A destination.
+enum Dst { str, sta }
+
+emit ts { out: "@sovcommon/t.ts", open: [Dst] }
+-- u/u.canon --
+package u
+
+/// A destination.
+enum Dst { str, sta }
+
+emit ts { out: "@sovcommon/u.ts", mode: embedded, open: [Dst] }
+-- findings.txt --
+error[E8009]  c/c.canon:6:33
+  open of emit cpp needs mode types, not baked
+
+error[E8009]  d/d.canon:6:45
+  open of emit cpp needs mode types, not data
+
+error[E8009]  t/t.canon:6:35
+  open of emit ts needs mode types, not baked
+
+error[E8009]  u/u.canon:6:51
+  open of emit ts needs mode types, not embedded
+
+4 errors, 0 warnings in 4 packages (…)

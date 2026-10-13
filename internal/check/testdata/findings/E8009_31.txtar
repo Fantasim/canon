@@ -1,0 +1,72 @@
+DECISIONS 362, 339, CODEGEN.md §2.1: each name of a cpp or ts emit's `open` is a public enum the package declares (`open`): not a record, a local enum, an unknown name or another package's enum; an element that is no bare word is `kind`.
+-- c/c.canon --
+package c
+
+import b { Far }
+
+/// A thing.
+record Thing {
+  /// Its size.
+  n: Int
+}
+
+local enum Hidden { x, y }
+
+/// A destination.
+enum Dst { str, sta }
+
+emit cpp { out: "@sovcommon/c", mode: types, open: [Thing, Hidden, Missing, Far, "Dst", Dst] }
+-- t/t.canon --
+package t
+
+import b { Far }
+
+/// A thing.
+record Thing {
+  /// Its size.
+  n: Int
+}
+
+local enum Hidden { x, y }
+
+/// A destination.
+enum Dst { str, sta }
+
+emit ts { out: "@sovcommon/t.ts", mode: types, open: [Thing, Hidden, Missing, Far, "Dst", Dst] }
+-- b/b.canon --
+package b
+
+/// Far away.
+enum Far { one, two }
+-- findings.txt --
+error[E8009]  c/c.canon:16:53
+  open of emit cpp: Thing is not a public enum of this package
+
+error[E8009]  c/c.canon:16:60
+  open of emit cpp: Hidden is not a public enum of this package
+
+error[E8009]  c/c.canon:16:68
+  open of emit cpp: Missing is not a public enum of this package
+
+error[E8009]  c/c.canon:16:77
+  open of emit cpp: Far is not a public enum of this package
+
+error[E8009]  c/c.canon:16:82
+  option open of emit cpp must be a list of enum names
+
+error[E8009]  t/t.canon:16:55
+  open of emit ts: Thing is not a public enum of this package
+
+error[E8009]  t/t.canon:16:62
+  open of emit ts: Hidden is not a public enum of this package
+
+error[E8009]  t/t.canon:16:70
+  open of emit ts: Missing is not a public enum of this package
+
+error[E8009]  t/t.canon:16:79
+  open of emit ts: Far is not a public enum of this package
+
+error[E8009]  t/t.canon:16:84
+  option open of emit ts must be a list of enum names
+
+10 errors, 0 warnings in 3 packages (…)

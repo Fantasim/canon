@@ -1,0 +1,23 @@
+DECISIONS 362, 339, CODEGEN.md §2.1, §5.2: an `ordered` enum cannot be opened by a cpp or ts emit either (`openOrdered`).
+-- c/c.canon --
+package c
+
+/// A tier.
+enum Tier ordered { low, high }
+
+emit cpp { out: "@sovcommon/c", mode: types, open: [Tier] }
+-- t/t.canon --
+package t
+
+/// A tier.
+enum Tier ordered { low, high }
+
+emit ts { out: "@sovcommon/t.ts", mode: types, open: [Tier] }
+-- findings.txt --
+error[E8009]  c/c.canon:6:53
+  open of emit cpp: Tier is ordered, and an open enum cannot compare its members
+
+error[E8009]  t/t.canon:6:55
+  open of emit ts: Tier is ordered, and an open enum cannot compare its members
+
+2 errors, 0 warnings in 2 packages (…)

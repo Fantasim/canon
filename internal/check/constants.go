@@ -329,8 +329,8 @@ var codeModes = []string{ModeBaked, ModeEmbedded, ModeData, ModeTypes}
 // emitSpecs are the targets of CODEGEN.md §2.1 with their options and modes.
 var emitSpecs = map[string]emitSpec{
 	TargetGo:   {options: []string{OptOut, OptMode, OptPackage, OptValues, OptOpen}, modes: codeModes},
-	TargetCpp:  {options: []string{OptOut, OptMode, OptNamespace, OptValues}, modes: codeModes},
-	TargetTS:   {options: []string{OptOut, OptMode, OptValues}, modes: codeModes},
+	TargetCpp:  {options: []string{OptOut, OptMode, OptNamespace, OptValues, OptOpen}, modes: codeModes},
+	TargetTS:   {options: []string{OptOut, OptMode, OptValues, OptOpen}, modes: codeModes},
 	TargetJSON: {options: []string{OptOut, OptValues}},
 	TargetView: {options: []string{OptOut}},
 	TargetText: {options: []string{OptOut}},

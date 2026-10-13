@@ -7,31 +7,31 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// emitOpen is `open: [E, …]` of a go emit: in types mode only, a non-empty list of the package's public enums, each listed once and none ordered (E8009, DECISIONS 339).
-func (c *checker) emitOpen(env *env, e *syntax.EmitDecl, fi *syntax.FieldItem) {
-	if mode, known := emitModeWord(e); known && mode != ModeTypes {
-		c.report(env, diag.E8009.AtOpenMode(env.span(fi.Name), TargetGo, mode))
+// emitOpen is `open: [E, …]` of a go, cpp or ts emit: in types mode only, a non-empty list of the package's public enums, each listed once and none ordered (E8009, DECISIONS 339, 362).
+func (c *checker) emitOpen(env *env, e *syntax.EmitDecl, fi *syntax.FieldItem, target string) {
+	if mode, known := emitModeWord(e, target); known && mode != ModeTypes {
+		c.report(env, diag.E8009.AtOpenMode(env.span(fi.Name), target, mode))
 	}
 	list, ok := fi.Value.(*syntax.ListLit)
 	if !ok {
-		c.report(env, diag.E8009.AtKind(env.span(fi.Value), fi.Name.Name, TargetGo, diag.KindEnumNames))
+		c.report(env, diag.E8009.AtKind(env.span(fi.Value), fi.Name.Name, target, diag.KindEnumNames))
 		return
 	}
 	if len(list.Elems) == 0 { // omit open to keep every enum closed
-		c.report(env, diag.E8009.AtOpenEmpty(env.span(list), TargetGo))
+		c.report(env, diag.E8009.AtOpenEmpty(env.span(list), target))
 		return
 	}
 	seen := map[string]bool{}
 	for _, x := range list.Elems {
-		c.openName(env, x, fi.Name.Name, seen)
+		c.openName(env, x, target, seen)
 	}
 }
 
-// openName is one name of open: a word naming a public enum of the package, not listed before, not ordered (E8009 `open`, `openTwice`, `openOrdered`; DECISIONS 339).
-func (c *checker) openName(env *env, x syntax.Expr, option string, seen map[string]bool) {
+// openName is one name of open: a word naming a public enum of the package, not listed before, not ordered (E8009 `open`, `openTwice`, `openOrdered`; DECISIONS 339, 362).
+func (c *checker) openName(env *env, x syntax.Expr, target string, seen map[string]bool) {
 	id, isName := x.(*syntax.IdentExpr)
 	if !isName {
-		c.report(env, diag.E8009.AtKind(env.span(x), option, TargetGo, diag.KindEnumNames))
+		c.report(env, diag.E8009.AtKind(env.span(x), OptOpen, target, diag.KindEnumNames))
 		return
 	}
 	o := env.pkg.names[id.Name]
@@ -41,11 +41,11 @@ func (c *checker) openName(env *env, x syntax.Expr, option string, seen map[stri
 	}
 	switch {
 	case !isEnum:
-		c.report(env, diag.E8009.AtOpen(env.span(id), TargetGo, id.Name))
+		c.report(env, diag.E8009.AtOpen(env.span(id), target, id.Name))
 	case seen[id.Name]:
-		c.report(env, diag.E8009.AtOpenTwice(env.span(id), TargetGo, id.Name))
+		c.report(env, diag.E8009.AtOpenTwice(env.span(id), target, id.Name))
 	case d.Ordered.Valid(): // a string type would compare its members wrongly
-		c.report(env, diag.E8009.AtOpenOrdered(env.span(id), TargetGo, id.Name))
+		c.report(env, diag.E8009.AtOpenOrdered(env.span(id), target, id.Name))
 	}
 	seen[id.Name] = true
 }
@@ -59,14 +59,14 @@ func publicEnum(o *object) (*syntax.EnumDecl, bool) {
 	return d, ok
 }
 
-// emitModeWord is the mode a go emit is in: its written mode, else the default baked; false for a mode check refuses (E8009 `mode`).
-func emitModeWord(e *syntax.EmitDecl) (string, bool) {
+// emitModeWord is the mode an emit of target is in: its written mode, else the default baked; false for a mode check refuses (E8009 `mode`).
+func emitModeWord(e *syntax.EmitDecl, target string) (string, bool) {
 	opt := emitOption(e, OptMode)
 	if opt == nil {
 		return ModeBaked, true
 	}
 	id, ok := opt.(*syntax.IdentExpr)
-	if !ok || !slices.Contains(emitSpecs[TargetGo].modes, id.Name) {
+	if !ok || !slices.Contains(emitSpecs[target].modes, id.Name) {
 		return "", false
 	}
 	return id.Name, true

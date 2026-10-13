@@ -1,18 +1,27 @@
-DECISIONS 339, CODEGEN.md §2.1: `open` is a go option; on a cpp or ts emit it is an unknown option.
+DECISIONS 339, 362, CODEGEN.md §2.1: `open` is an option of the go, cpp and ts emits only; on a json, view or text emit it is an unknown option.
 -- a/a.canon --
 package a
 
 /// A destination.
 enum Dst { str, sta }
 
-emit cpp { out: "@sovcommon/a", mode: types, open: [Dst] }
+/// The destinations, as text.
+@text("dst.txt")
+export fn dsts() -> String { return "str" }
 
-emit ts { out: "@sovcommon/a.ts", mode: types, open: [Dst] }
+emit json { out: "@sovcommon/a", open: [Dst] }
+
+emit view { out: "@generated/a.view.json", open: [Dst] }
+
+emit text { out: "@generated/text", open: [Dst] }
 -- findings.txt --
-error[E8003]  a/a.canon:6:46
-  unknown option open for emit cpp
+error[E8003]  a/a.canon:10:34
+  unknown option open for emit json
 
-error[E8003]  a/a.canon:8:48
-  unknown option open for emit ts
+error[E8003]  a/a.canon:12:44
+  unknown option open for emit view
 
-2 errors, 0 warnings in 1 package (…)
+error[E8003]  a/a.canon:14:37
+  unknown option open for emit text
+
+3 errors, 0 warnings in 1 package (…)
