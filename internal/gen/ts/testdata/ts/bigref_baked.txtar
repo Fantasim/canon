@@ -109,6 +109,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 /** A row keyed by a plain integer. */
@@ -136,15 +141,15 @@ export interface H {
 }
 
 /** The plain-keyed rows. */
-export const ks: CanonTable<number, K> = canonTable(canonFreeze<ReadonlyArray<K>>([
-  { n: 1 },
-  { n: 2 },
-]), ($e) => $e.n);
+export const ks: CanonTable<number, K> = canonTable(canonFreeze(canonList<K>(($r) => [
+  $r({ n: 1 }),
+  $r({ n: 2 }),
+])), ($e) => $e.n);
 
 /** The bigint-keyed rows. */
-export const bs: CanonTable<bigint, B> = canonTable(canonFreeze<ReadonlyArray<B>>([
-  { n: 9007199254740993n },
-]), ($e) => $e.n);
+export const bs: CanonTable<bigint, B> = canonTable(canonFreeze(canonList<B>(($r) => [
+  $r({ n: 9007199254740993n }),
+])), ($e) => $e.n);
 
 /** The holder. */
-export const h: H = canonFreeze<H>({ m: new CanonMap<number, bigint>([[1, 9007199254740995n]]), byBig: new CanonMap<bigint, number>([[9007199254740997n, 2]]), b: 9007199254740993n, bk: new CanonMap<bigint, number>([[9007199254740993n, 1]]) });
+export const h: H = canonFreeze<H>({ m: new CanonMap<number, bigint>(canonList<readonly [number, bigint]>(($r) => [$r([1, 9007199254740995n])])), byBig: new CanonMap<bigint, number>(canonList<readonly [bigint, number]>(($r) => [$r([9007199254740997n, 2])])), b: 9007199254740993n, bk: new CanonMap<bigint, number>(canonList<readonly [bigint, number]>(($r) => [$r([9007199254740993n, 1])])) });

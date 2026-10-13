@@ -58,6 +58,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 /** What a bonus aims at. */
@@ -140,8 +145,8 @@ export interface Shelf {
 }
 
 /** Every status. */
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Status, StatusId>>>([
-  { id: "open", retired: false, label: "Open" },
-  { id: "closed", retired: false, label: "Closed" },
-  { id: "shut", retired: true, label: "Shut" },
-]), ($e) => $e.id);
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
+  $r({ id: "open", retired: false, label: "Open" }),
+  $r({ id: "closed", retired: false, label: "Closed" }),
+  $r({ id: "shut", retired: true, label: "Shut" }),
+])), ($e) => $e.id);

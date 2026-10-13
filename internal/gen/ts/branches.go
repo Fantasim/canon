@@ -59,7 +59,8 @@ func (g *gen) branchTable(bt ir.NamedBranches) string {
 		entries[i] = fmt.Sprintf(branchEntryFormat, g.branchKey(ref, field.BigInt, k), labels[arm.Members[0]])
 	}
 	name := g.declare(bt.Name, g.at)
-	return fmt.Sprintf(branchTableFormat, name, keyType, discType, keyType, discType, strings.Join(entries, ""))
+	array := g.typedArray(fmt.Sprintf(entryTypeFormat, keyType, discType), entries, blockArray)
+	return fmt.Sprintf(branchTableFormat, name, keyType, discType, keyType, discType, array)
 }
 
 // branchKey is a key of a ref as TypeScript holds it: an enum member's wire, a number or a bigint, else the string (CODEGEN.md §4.1).

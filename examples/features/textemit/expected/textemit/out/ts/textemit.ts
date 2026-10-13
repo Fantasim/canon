@@ -30,6 +30,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 /** The schema version a reader checks before it reads a row. */
@@ -44,4 +49,4 @@ export interface Column {
 }
 
 /** The columns, in table order. */
-export const columns: ReadonlyArray<Column> = canonFreeze<ReadonlyArray<Column>>([{ name: "id", sql: "BIGINT" }, { name: "kind", sql: "SMALLINT" }, { name: "at", sql: "TIMESTAMP" }]);
+export const columns: ReadonlyArray<Column> = canonFreeze<ReadonlyArray<Column>>(canonList<Column>(($r) => [$r({ name: "id", sql: "BIGINT" }), $r({ name: "kind", sql: "SMALLINT" }), $r({ name: "at", sql: "TIMESTAMP" })]));

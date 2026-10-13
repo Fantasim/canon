@@ -98,6 +98,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 export type ShapeKind =
@@ -141,7 +146,7 @@ export interface O {
 }
 
 /** The holders: one with every default, one without. */
-export const os: CanonTable<string, O> = canonTable(canonFreeze<ReadonlyArray<O>>([
-  { id: "a", p: { x: 1, double: 2 }, sh: { kind: "dot", area: 0 } },
-  { id: "b", p: { x: 4, double: 8 }, sh: { kind: "circle", r: 2 } },
-]), ($e) => $e.id);
+export const os: CanonTable<string, O> = canonTable(canonFreeze(canonList<O>(($r) => [
+  $r({ id: "a", p: { x: 1, double: 2 }, sh: { kind: "dot", area: 0 } }),
+  $r({ id: "b", p: { x: 4, double: 8 }, sh: { kind: "circle", r: 2 } }),
+])), ($e) => $e.id);

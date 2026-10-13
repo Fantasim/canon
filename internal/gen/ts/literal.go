@@ -3,7 +3,6 @@ package tsgen
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -151,27 +150,30 @@ func (g *gen) keyLit(t ir.TypeRef, k value.Key, big bool) string {
 	return quote(k.S)
 }
 
-// listLit is `[a, b]`; a freezing wrapper is the caller's.
+// listLit is `[a, b]`, or canonList<T>(($r) => [$r(a), $r(b)]) when its elements are object literals (DECISIONS 370); a freezing wrapper is the caller's.
 func (g *gen) listLit(t ir.TypeRef, elems []value.Value, big bool) string {
 	et := g.elem(t)
 	items := make([]string, len(elems))
 	for i, x := range elems {
 		items[i] = g.lit(et, x, big)
 	}
-	return lbracket + strings.Join(items, listSep) + rbracket
+	if !typedElem(et) || len(items) == 0 {
+		return inlineArray(items)
+	}
+	return g.typedArray(g.tsType(et, big), items, inlineArray)
 }
 
-// tableLit is a nested table: the rows in entry order.
+// tableLit is a nested table: the rows in entry order, each checked as a row on its own (DECISIONS 370).
 func (g *gen) tableLit(t ir.TypeRef, tab *value.Table) string {
 	rec := g.recordOf(g.elem(t).Named)
 	items := make([]string, len(tab.Entries))
 	for i, r := range tab.Entries {
 		items[i] = g.rowLit(rec, r)
 	}
-	return lbracket + strings.Join(items, listSep) + rbracket
+	return g.typedArray(g.rowType(rec, g.idTypeOf(rec)), items, inlineArray)
 }
 
-// mapLit is `new CanonMap<K, V>([[k, v], ...])`: its writes throw (CODEGEN.md §8.1); composite values are frozen one by one, since a frozen map does not freeze them.
+// mapLit is `new CanonMap<K, V>(canonList<readonly [K, V]>(($r) => [$r([k, v]), ...]))`, each entry checked on its own (DECISIONS 370): its writes throw (CODEGEN.md §8.1); composite values are frozen one by one, since a frozen map does not freeze them.
 func (g *gen) mapLit(t ir.TypeRef, m *value.Map, big bool) string {
 	if t.Key == nil {
 		g.failf(ErrMalformed, malformedNoKey, g.at)
@@ -183,7 +185,8 @@ func (g *gen) mapLit(t ir.TypeRef, m *value.Map, big bool) string {
 		items[i] = fmt.Sprintf(mapEntryFormat, g.lit(kt, m.Keys[i], big), g.freeze(vt, g.lit(vt, m.Vals[i], big), big))
 	}
 	g.helper(canonMapName)
-	return fmt.Sprintf(newMapFormat, g.keyType(kt, big), g.tsType(vt, big), strings.Join(items, listSep))
+	keyText, valText := g.keyType(kt, big), g.tsType(vt, big)
+	return fmt.Sprintf(newMapFormat, keyText, valText, g.typedArray(fmt.Sprintf(entryTypeFormat, keyText, valText), items, inlineArray))
 }
 
 // freeze wraps the literal of a composite value in canonFreeze, typed so that its strings stay literals.

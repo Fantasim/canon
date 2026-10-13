@@ -114,13 +114,18 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 /** The badges. */
-export const badges: CanonTable<string, b.Badge> = canonTable(canonFreeze<ReadonlyArray<b.Badge>>([
-  { label: "x", tags: new CanonMap<string, c.Tag>([]) },
-  { label: "y", tags: new CanonMap<string, c.Tag>([["k", canonFreeze<c.Tag>({ t: "q", big: 9007199254740993n })]]) },
-]), ($e) => $e.label);
+export const badges: CanonTable<string, b.Badge> = canonTable(canonFreeze(canonList<b.Badge>(($r) => [
+  $r({ label: "x", tags: new CanonMap<string, c.Tag>([]) }),
+  $r({ label: "y", tags: new CanonMap<string, c.Tag>(canonList<readonly [string, c.Tag]>(($r) => [$r(["k", canonFreeze<c.Tag>({ t: "q", big: 9007199254740993n })])])) }),
+])), ($e) => $e.label);
 
 /** One badge. */
 export const one: b.Badge = canonFreeze<b.Badge>({ label: "o", tags: new CanonMap<string, c.Tag>([]) });

@@ -201,6 +201,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 /** Text with escapes and non-ASCII. */
@@ -224,9 +229,9 @@ export interface Item {
 }
 
 /** The things. */
-export const allItems: CanonTable<string, Item> = canonTable(canonFreeze<ReadonlyArray<Item>>([
-  { type: 0, class: "a", delete: false },
-]), ($e) => $e.class);
+export const allItems: CanonTable<string, Item> = canonTable(canonFreeze(canonList<Item>(($r) => [
+  $r({ type: 0, class: "a", delete: false }),
+])), ($e) => $e.class);
 
 /** A reserved value name. */
 export const default_: Item = canonFreeze<Item>({ type: 0, class: "d", delete: false });

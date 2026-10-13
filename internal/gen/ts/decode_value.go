@@ -105,7 +105,7 @@ func (g *gen) unionConst(typ, allowed string) string {
 	}
 	name := unionConstPrefix + strconv.Itoa(len(g.unionNames)+1)
 	g.unionNames[key] = name
-	g.unionConsts = append(g.unionConsts, fmt.Sprintf(unionConstFormat, name, typ, allowed))
+	g.unionConsts = append(g.unionConsts, fmt.Sprintf(arrayConstFormat, name, typ, allowed))
 	return name
 }
 

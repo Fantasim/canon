@@ -22,6 +22,8 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/verify"
 )
 
 const (
@@ -57,13 +59,49 @@ func buildWorld(t *testing.T, files []txtar.File) *world {
 		parsed = append(parsed, syntax.Parse(src, syntax.FileSource, w.parse))
 	}
 	prog := check.Check(ctx, w.proj, parsed, w.bags, eval.NewFolder(w.bags, eval.Options{}))
-	ev := eval.New(prog, served{}, w.bags, eval.Options{})
+	host := &verifying{}
+	ev := eval.New(prog, host, w.bags, eval.Options{})
+	host.ev, host.verifier = ev, verify.NewShared(verify.NewIndex(prog), ev, w.bags, noAssets{})
+	ev.BeginVerification(ctx) // stage B, as build does (internal/build/pipeline.go): it converts a dependent value's symbols and checks every value
 	w.pkgs = ir.Build(ctx, ir.Input{Program: prog, Project: w.proj, Bags: w.bags, Host: irHost{ev}, Fold: eval.NewFolder(w.bags, eval.Options{})})
 	if err := conform.Fill(ctx, prog, w.pkgs, conformer{prog: prog, ev: ev}, w.bags); err != nil {
 		t.Fatal(err)
 	}
+	if host.err != nil {
+		t.Fatal(host.err)
+	}
 	return w
 }
+
+// verifying is the host build gives stage A (internal/build/hosts.go evalHost.Verify and settle are its model): it serves no file and runs stage B on every value, which converts a dependent value's symbols to the members, keys and cases its branch names (EVALUATION.md §5, TYPES.md §11.6).
+type verifying struct {
+	served
+	ev       *eval.Evaluator
+	verifier *verify.Verifier
+	err      error
+}
+
+func (h *verifying) Verify(ctx context.Context, root eval.Root, v value.Value) bool {
+	res, err := h.verifier.Check(ctx, root, v)
+	if err != nil {
+		h.err = err
+		return false
+	}
+	if res.Poisoned {
+		h.ev.Poison(root)
+	}
+	for _, u := range res.Unbound {
+		h.ev.ReportUnbound(root, u.Ref, u.Path)
+	}
+	return res.Valid
+}
+
+// noAssets finds no file and misses no root.
+type noAssets struct{}
+
+func (noAssets) Exists(string, string, string) (string, bool) { return "", false }
+
+func (noAssets) Absent(string, string) (string, bool) { return "", false }
 
 // errors are the findings of severity error, rendered; a case that must build has none.
 func (w *world) findings(t *testing.T) (all []diag.Finding, errors int) {

@@ -78,6 +78,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 export type ItemId = "one";
@@ -92,11 +97,11 @@ export interface Item {
 }
 
 /** Extra items, a table. */
-export const extra: CanonTable<ItemId, CanonRow<Item, ItemId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Item, ItemId>>>([
-  { id: "one", retired: false, sku: "one" },
-]), ($e) => $e.id);
+export const extra: CanonTable<ItemId, CanonRow<Item, ItemId>> = canonTable(canonFreeze(canonList<CanonRow<Item, ItemId>>(($r) => [
+  $r({ id: "one", retired: false, sku: "one" }),
+])), ($e) => $e.id);
 
 /** Items, a keyed list of the same record. */
-export const items: CanonTable<string, Item> = canonTable(canonFreeze<ReadonlyArray<Item>>([
-  { sku: "i1" },
-]), ($e) => $e.sku);
+export const items: CanonTable<string, Item> = canonTable(canonFreeze(canonList<Item>(($r) => [
+  $r({ sku: "i1" }),
+])), ($e) => $e.sku);

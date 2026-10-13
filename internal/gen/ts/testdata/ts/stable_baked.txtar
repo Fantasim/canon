@@ -83,6 +83,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 export type StatusId = "open" | "closed" | "stale";
@@ -101,8 +106,8 @@ export interface Status {
 }
 
 /** The statuses. */
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> & { findByCode(code: number): CanonRow<Status, StatusId> | null; findByTag(tag: string): CanonRow<Status, StatusId> | null } = canonTable(canonFreeze<ReadonlyArray<CanonRow<Status, StatusId>>>([
-  { id: "open", retired: false, code: 1, tag: "OPEN", label: "Open" },
-  { id: "closed", retired: false, code: 2, tag: "CLOSED", label: "Closed" },
-  { id: "stale", retired: true, code: 7, tag: "STALE", label: "Stale" },
-]), ($e) => $e.id, { findByCode: "code", findByTag: "tag" });
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> & { findByCode(code: number): CanonRow<Status, StatusId> | null; findByTag(tag: string): CanonRow<Status, StatusId> | null } = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
+  $r({ id: "open", retired: false, code: 1, tag: "OPEN", label: "Open" }),
+  $r({ id: "closed", retired: false, code: 2, tag: "CLOSED", label: "Closed" }),
+  $r({ id: "stale", retired: true, code: 7, tag: "STALE", label: "Stale" }),
+])), ($e) => $e.id, { findByCode: "code", findByTag: "tag" });

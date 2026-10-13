@@ -59,6 +59,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 export type ZoneId = "forest" | "marsh";
@@ -85,24 +90,24 @@ export interface Zone {
 }
 
 /** Every zone. */
-export const zones: CanonTable<ZoneId, CanonRow<Zone, ZoneId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Zone, ZoneId>>>([
-  { id: "forest", retired: false, levels: { min: 1, max: 5, status: "open", width: 4 }, reward: { kind: "coins", amount: 3 }, effect: { aim: "gold", bonus: { branch: "gold", value: 2 } }, markers: [{ id: "gate", retired: false, code: "g" }, { id: "well", retired: true, code: "w" }] },
-  { id: "marsh", retired: false, levels: { min: 4, max: 9, status: "closed", width: 5 }, reward: { kind: "nothing" }, effect: { aim: "mood", bonus: { branch: "mood", value: "grim" } }, markers: [] },
-]), ($e) => $e.id);
+export const zones: CanonTable<ZoneId, CanonRow<Zone, ZoneId>> = canonTable(canonFreeze(canonList<CanonRow<Zone, ZoneId>>(($r) => [
+  $r({ id: "forest", retired: false, levels: { min: 1, max: 5, status: "open", width: 4 }, reward: { kind: "coins", amount: 3 }, effect: { aim: "gold", bonus: { branch: "gold", value: 2 } }, markers: canonList<CanonRow<features_shared_core.Marker, string>>(($r) => [$r({ id: "gate", retired: false, code: "g" }), $r({ id: "well", retired: true, code: "w" })]) }),
+  $r({ id: "marsh", retired: false, levels: { min: 4, max: 9, status: "closed", width: 5 }, reward: { kind: "nothing" }, effect: { aim: "mood", bonus: { branch: "mood", value: "grim" } }, markers: [] }),
+])), ($e) => $e.id);
 
 /** Level bands: core's LevelRange as this package's table. */
-export const bands: CanonTable<LevelRangeId, CanonRow<features_shared_core.LevelRange, LevelRangeId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<features_shared_core.LevelRange, LevelRangeId>>>([
-  { id: "low", retired: false, min: 1, max: 5, status: "open", width: 4 },
-  { id: "old", retired: true, min: 0, max: 1, status: "shut", width: 1 },
-]), ($e) => $e.id);
+export const bands: CanonTable<LevelRangeId, CanonRow<features_shared_core.LevelRange, LevelRangeId>> = canonTable(canonFreeze(canonList<CanonRow<features_shared_core.LevelRange, LevelRangeId>>(($r) => [
+  $r({ id: "low", retired: false, min: 1, max: 5, status: "open", width: 4 }),
+  $r({ id: "old", retired: true, min: 0, max: 1, status: "shut", width: 1 }),
+])), ($e) => $e.id);
 
 /** Moods of the world: core's Status, keyed by this package's own StatusID beside core's. */
-export const moods: CanonTable<StatusId, CanonRow<features_shared_core.Status, StatusId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<features_shared_core.Status, StatusId>>>([
-  { id: "calm", retired: false, label: "Calm" },
-]), ($e) => $e.id);
+export const moods: CanonTable<StatusId, CanonRow<features_shared_core.Status, StatusId>> = canonTable(canonFreeze(canonList<CanonRow<features_shared_core.Status, StatusId>>(($r) => [
+  $r({ id: "calm", retired: false, label: "Calm" }),
+])), ($e) => $e.id);
 
 /** The starting band: a plain value of core's record. */
 export const start: features_shared_core.LevelRange = canonFreeze<features_shared_core.LevelRange>({ min: 1, max: 2, status: "open", width: 1 });
 
 /** A shelf: core's record holding a table of core's own Marker. */
-export const shelf: features_shared_core.Shelf = canonFreeze<features_shared_core.Shelf>({ slots: [{ id: "top", retired: false, code: "t" }] });
+export const shelf: features_shared_core.Shelf = canonFreeze<features_shared_core.Shelf>({ slots: canonList<CanonRow<features_shared_core.Marker, string>>(($r) => [$r({ id: "top", retired: false, code: "t" })]) });

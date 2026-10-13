@@ -2,7 +2,6 @@ package tsgen
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -105,15 +104,11 @@ type tableShape struct {
 	rec             *ir.Record
 }
 
-// tableDecl is `export const name: CanonTable<K, T> & { findBy<F>(v): T | null } = canonTable(canonFreeze<ReadonlyArray<T>>([rows]), (e) => e.key, { findBy<F>: (e) => e.f });`, the lookups only for a record with @stable fields (CODEGEN.md §5.9).
+// tableDecl is `export const name: CanonTable<K, T> & { findBy<F>(v): T | null } = canonTable(canonFreeze(canonList<T>(($r) => [$r(row), ...])), (e) => e.key, { findBy<F>: (e) => e.f });`, the lookups only for a record with @stable fields (CODEGEN.md §5.9).
 func (g *gen) tableDecl(name string, t tableShape, rows []string) string {
 	g.helper(canonTableName)
-	body := ""
-	if len(rows) > 0 {
-		body = newline + indent + strings.Join(rows, listEnd+indent) + listEnd
-	}
 	finds, readers := g.finders(t.rec, t.elem)
-	return fmt.Sprintf(tableFormat, name, t.key, t.elem, g.helper(canonFreezeName), body, t.prop, finds, readers)
+	return fmt.Sprintf(tableFormat, name, t.key, t.elem, g.frozenArray(t.elem, rows, true, blockArray), t.prop, finds, readers)
 }
 
 // keyField is the key field of a keyed list's element record.

@@ -74,7 +74,7 @@ func (g *gen) fn(s fnSite) {
 // fnName is a package-level fn's name: lowerCamel(fn), or its override (CODEGEN.md §3.3).
 func fnName(fn *ir.ExportFn) string { return escape(effective(fn.TS, lowerCamel(fn.Name))) }
 
-// precomputed is `export function foo(): T { return value; }`; a composite value is frozen once, in a private constant.
+// precomputed is `export function foo(): T { return value; }`; a composite value is built once, in a private constant, frozen (a map is already read-only).
 func (g *gen) precomputed(fn *ir.ExportFn) {
 	name := g.declare(fnName(fn), fn.Name)
 	if fn.Value == nil {
@@ -84,9 +84,13 @@ func (g *gen) precomputed(fn *ir.ExportFn) {
 	typ, text := g.tsType(fn.Result, false), g.lit(fn.Result, fn.Value, false)
 	doc := docComment("", fn.Doc)
 	switch fn.Result.Kind {
-	case types.Record, types.Variant, types.Case, types.List:
+	case types.Record, types.Variant, types.Case, types.List, types.Table:
 		table := g.declare(upperSnake(fn.Name), fn.Name)
 		g.add(fmt.Sprintf(frozenConstFormat, table, typ, g.helper(canonFreezeName), text))
+		g.add(doc + fmt.Sprintf(getterFormat, name, typ, table))
+	case types.Map, types.DepMap:
+		table := g.declare(upperSnake(fn.Name), fn.Name)
+		g.add(fmt.Sprintf(privateConstFormat, table, typ, text))
 		g.add(doc + fmt.Sprintf(getterFormat, name, typ, table))
 	default:
 		g.add(doc + fmt.Sprintf(getterFormat, name, typ, text))
@@ -107,7 +111,7 @@ func (g *gen) lookup(fn *ir.ExportFn) {
 	for i, c := range tab.Cells {
 		cells[i] = g.lit(fn.Result, c, false)
 	}
-	g.add(fmt.Sprintf(tableConstFormat, table, typ, g.helper(canonFreezeName), g.cellLines(cells, tab, fn.Result)))
+	g.add(fmt.Sprintf(arrayConstFormat, table, typ, g.cellsFrozen(typ, cells, tab, fn.Result)))
 	params := make([]string, len(fn.Params))
 	index := make([]string, len(fn.Params))
 	for i, p := range fn.Params {
@@ -116,6 +120,17 @@ func (g *gen) lookup(fn *ir.ExportFn) {
 		index[i] = g.indexTerm(p.Type, pn, tab.Domains[i+1:])
 	}
 	g.add(docComment("", fn.Doc) + fmt.Sprintf(lookupFormat, name, strings.Join(params, listSep), typ, table, strings.Join(index, plusSep)))
+}
+
+// cellsFrozen is the cells deep-frozen; a composite result goes through canonList, a cell at a time (DECISIONS 370).
+func (g *gen) cellsFrozen(typ string, cells []string, tab *ir.LookupTable, result ir.TypeRef) string {
+	layout := func(items []string) string {
+		if len(items) == 0 {
+			return blockArray(items)
+		}
+		return lbracket + newline + g.cellLines(items, tab, result) + newline + rbracket
+	}
+	return g.frozenArray(typ, cells, typedElem(result), layout)
 }
 
 // cellLines lays the cells out: one per line when a cell is a composite value, else a line for each run of the innermost parameter, split in chunks of cellsPerLine.

@@ -10,7 +10,7 @@ test("rows of another package's record read by this file's own reader, with this
   const bands = parseBands(text("bands.json"));
   const low = bands.find("low");
   assert.deepEqual([low.id, low.retired, low.status, low.width], ["low", false, "open", 4]);
-  assert.deepEqual([...low.weights], [["open", 2], ["shut", 1]]);
+  assert.deepEqual([...low.weights], [["open", 2], ["held", 1]]);
   assert.deepEqual({ ...low.statusFor }, { gold: "open", mood: "shut" });
   assert.equal(bands.find("old").retired, true);
   assert.ok(Object.isFrozen(bands.find("low")));

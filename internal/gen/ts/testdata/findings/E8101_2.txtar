@@ -19,7 +19,16 @@ record B {
 }
 
 /// Rows, keyed by a number.
-let rs: [R] keyed by n = [{ n: 1, next: 9_007_199_254_740_993 }]
+let rs: [R] keyed by n = [{ n: 9_007_199_254_740_993 }]
+
+/// A link to a row.
+record L {
+  /// The row.
+  to: ref rs
+}
+
+/// A link past the safe range into a plain key.
+let link: L = { to: 9_007_199_254_740_993 }
 
 /// Rows, keyed by a bigint.
 let bs: [B] keyed by n = [{ n: 9_007_199_254_740_993, next: 9_007_199_254_740_993 }]
@@ -29,4 +38,7 @@ emit ts { out: "@features/a/a.ts" }
 error[E8101]  a/a.canon:20:5
   9007199254740993 does not fit a TypeScript number; add @ts(bigint) to n
 
-1 error, 0 warnings in 1 package (…)
+error[E8101]  a/a.canon:29:5
+  9007199254740993 does not fit a TypeScript number; add @ts(bigint) to n
+
+2 errors, 0 warnings in 1 package (…)

@@ -406,6 +406,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 export type TierId = "low" | "high";
@@ -430,7 +435,7 @@ export interface Band {
 }
 
 /** The tiers. */
-export const tiers: CanonTable<TierId, CanonRow<Tier, TierId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Tier, TierId>>>([
-  { id: "low", retired: false, rank: 1 },
-  { id: "high", retired: false, rank: 2 },
-]), ($e) => $e.id);
+export const tiers: CanonTable<TierId, CanonRow<Tier, TierId>> = canonTable(canonFreeze(canonList<CanonRow<Tier, TierId>>(($r) => [
+  $r({ id: "low", retired: false, rank: 1 }),
+  $r({ id: "high", retired: false, rank: 2 }),
+])), ($e) => $e.id);

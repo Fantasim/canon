@@ -83,13 +83,18 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 /** Points, keyed. */
-export const pts: CanonTable<number, b.Point> = canonTable(canonFreeze<ReadonlyArray<b.Point>>([
-  { x: 1 },
-  { x: 2 },
-]), ($e) => $e.x);
+export const pts: CanonTable<number, b.Point> = canonTable(canonFreeze(canonList<b.Point>(($r) => [
+  $r({ x: 1 }),
+  $r({ x: 2 }),
+])), ($e) => $e.x);
 
 /** One point. */
 export const one: b.Point = canonFreeze<b.Point>({ x: 3 });

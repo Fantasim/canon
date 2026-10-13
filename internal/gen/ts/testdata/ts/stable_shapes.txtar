@@ -87,6 +87,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 export type ItemId = "a" | "b";
@@ -105,12 +110,12 @@ export interface Item {
 }
 
 /** Items. */
-export const items: CanonTable<ItemId, CanonRow<Item, ItemId>> & { findByCode(code: number): CanonRow<Item, ItemId> | null; findBySerial(serial: bigint): CanonRow<Item, ItemId> | null } = canonTable(canonFreeze<ReadonlyArray<CanonRow<Item, ItemId>>>([
-  { id: "a", retired: false, name: "a", theCode: 1, serial: 9007199254740993n },
-  { id: "b", retired: false, name: "b", theCode: 2, serial: 5n },
-]), ($e) => $e.id, { findByCode: "theCode", findBySerial: "serial" });
+export const items: CanonTable<ItemId, CanonRow<Item, ItemId>> & { findByCode(code: number): CanonRow<Item, ItemId> | null; findBySerial(serial: bigint): CanonRow<Item, ItemId> | null } = canonTable(canonFreeze(canonList<CanonRow<Item, ItemId>>(($r) => [
+  $r({ id: "a", retired: false, name: "a", theCode: 1, serial: 9007199254740993n }),
+  $r({ id: "b", retired: false, name: "b", theCode: 2, serial: 5n }),
+])), ($e) => $e.id, { findByCode: "theCode", findBySerial: "serial" });
 
 /** Listed. */
-export const listed: CanonTable<string, Item> & { findByCode(code: number): Item | null; findBySerial(serial: bigint): Item | null } = canonTable(canonFreeze<ReadonlyArray<Item>>([
-  { name: "x", theCode: 3, serial: 7n },
-]), ($e) => $e.name, { findByCode: "theCode", findBySerial: "serial" });
+export const listed: CanonTable<string, Item> & { findByCode(code: number): Item | null; findBySerial(serial: bigint): Item | null } = canonTable(canonFreeze(canonList<Item>(($r) => [
+  $r({ name: "x", theCode: 3, serial: 7n }),
+])), ($e) => $e.name, { findByCode: "theCode", findBySerial: "serial" });

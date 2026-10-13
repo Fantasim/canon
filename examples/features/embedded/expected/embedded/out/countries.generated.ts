@@ -55,6 +55,11 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
 // ---------------------------------------------------------------------------
 
 /** A country the shop sells in. */
@@ -70,9 +75,9 @@ export interface Country {
 }
 
 /** Every country, keyed by code. */
-export const countries: CanonTable<string, Country> = canonTable(canonFreeze<ReadonlyArray<Country>>([
-  { code: "FR", name: "France", vat: 20, cards: true },
-  { code: "DE", name: "Germany", vat: 19, cards: true },
-  { code: "BE", name: "Belgium", vat: 21, cards: true },
-  { code: "CH", name: "Switzerland", vat: 8.1, cards: false },
-]), ($e) => $e.code);
+export const countries: CanonTable<string, Country> = canonTable(canonFreeze(canonList<Country>(($r) => [
+  $r({ code: "FR", name: "France", vat: 20, cards: true }),
+  $r({ code: "DE", name: "Germany", vat: 19, cards: true }),
+  $r({ code: "BE", name: "Belgium", vat: 21, cards: true }),
+  $r({ code: "CH", name: "Switzerland", vat: 8.1, cards: false }),
+])), ($e) => $e.code);

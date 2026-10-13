@@ -63,8 +63,8 @@ const (
 	zeroLit      = "0"
 	bigSuffix    = "n"
 	// branchTableFormat, branchEntryFormat and branchGetFormat write and read a build-time branch table (CODEGEN.md §5.6, DECISIONS 350).
-	branchTableFormat = "const %s: ReadonlyMap<%s, %s> = new Map<%s, %s>([\n%s]);"
-	branchEntryFormat = "  [%s, %s],\n"
+	branchTableFormat = "const %s: ReadonlyMap<%s, %s> = new Map<%s, %s>(%s);"
+	branchEntryFormat = "[%s, %s]"
 	branchGetFormat   = "%s.get(%s)!"
 	negativeZero      = "-0"
 	decimal           = 10
@@ -137,6 +137,7 @@ const (
 const (
 	canonMapName         = "CanonMap"
 	canonFreezeName      = "canonFreeze"
+	canonListName        = "canonList"
 	canonTableName       = "canonTable"
 	canonEnvelopeName    = "canonEnvelope"
 	canonIntName         = "canonInt"
@@ -182,7 +183,7 @@ const (
 const (
 	unionFormat          = "export type %s = %s;\n"
 	openUnionFormat      = "export type %s = %s | (string & {});\n"
-	unionConstFormat     = "const %s: ReadonlyArray<%s> = %s;\n"
+	arrayConstFormat     = "const %s: ReadonlyArray<%s> = %s;\n"
 	openFunctionsFormat  = "\nexport function %[1]s(v: %[2]s): v is %[3]s {\n  return Object.prototype.hasOwnProperty.call(%[4]s, v);\n}\n\nexport function %[5]s(v: %[2]s): string {\n  return %[1]s(v) ? %[4]s[v] : v;\n}\n"
 	unionOpenFormat      = "export type %s =\n"
 	unionMemberFormat    = "  | %s\n"
@@ -198,16 +199,16 @@ const (
 	bareLitFormat        = "{ kind: %s }"
 	constFormat          = "export const %s = %s;\n"
 	typedConstFormat     = "export const %s: %s = %s;\n"
+	privateConstFormat   = "const %s: %s = %s;\n"
 	freezeFormat         = "%s<%s>(%s)"
 	frozenConstFormat    = "const %[1]s: %[2]s = %[3]s<%[2]s>(%[4]s);\n"
 	getterFormat         = "export function %s(): %s {\n  return %s;\n}\n"
-	tableFormat          = "export const %[1]s: CanonTable<%[2]s, %[3]s>%[7]s = canonTable(%[4]s<ReadonlyArray<%[3]s>>([%[5]s]), ($e) => $e.%[6]s%[8]s);\n"
+	tableFormat          = "export const %[1]s: CanonTable<%[2]s, %[3]s>%[6]s = canonTable(%[4]s, ($e) => $e.%[5]s%[7]s);\n"
 	findSigFormat        = "%s(%s: %s): %s | null"
 	findReadFormat       = "%s: %s"
 	findersTypeFormat    = " & { %s }"
 	findersArgFormat     = ", { %s }"
 	findSep              = "; "
-	tableConstFormat     = "const %[1]s: ReadonlyArray<%[2]s> = %[3]s<ReadonlyArray<%[2]s>>([\n%[4]s\n]);\n"
 	lookupFormat         = "export function %s(%s): %s {\n  return %s[%s];\n}\n"
 	strideFormat         = "%s * %d"
 	boolOrdinalFormat    = "(%s ? 1 : 0)"
@@ -216,7 +217,10 @@ const (
 	readonlyMapFormat    = "ReadonlyMap<%s, %s>"
 	readonlyRecordFormat = "Readonly<Record<%s, %s>>"
 	mapEntryFormat       = "[%s, %s]"
-	newMapFormat         = "new CanonMap<%s, %s>([%s])"
+	newMapFormat         = "new CanonMap<%s, %s>(%s)"
+	canonListFormat      = "%s<%s>(($r) => %s)"
+	listItemFormat       = "$r(%s)"
+	entryTypeFormat      = "readonly [%s, %s]"
 	branchValueFormat    = "{ branch: %s, value: %s }"
 )
 

@@ -96,7 +96,7 @@ func (g *gen) dependentLit(t ir.TypeRef, v value.Value, o *owner) string {
 		for i, x := range elems {
 			items[i] = g.dependentLit(g.elem(t), x, o)
 		}
-		return lbracket + strings.Join(items, listSep) + rbracket
+		return g.typedArray(g.tsType(g.elem(t), false), items, inlineArray)
 	}
 	d, ok := t.Named.(*ir.Dependent)
 	if !ok {
