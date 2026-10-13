@@ -200,11 +200,13 @@ func (pl *tsNamePlan) declareAll() {
 	}
 	for _, v := range pl.values {
 		pl.declareValue(mod, v)
+		pl.declareFinders(v)
 	}
 	for _, fn := range pl.p.Fns {
 		pl.declareFn(mod, fn)
 	}
 	pl.declareBranchTables(mod)
+	pl.declareTextDecoders(mod)
 	pl.declareMethods(mod)
 	for _, t := range pl.p.Types {
 		pl.declareProps(t)
@@ -262,6 +264,7 @@ func (pl *tsNamePlan) declareEnumTables(mod *nameScope, e *Enum, name string) {
 	if e.Codes != nil {
 		pl.declare(mod, name+tsCodesName, e.QName(), e)
 	}
+	pl.declareOpenEnum(mod, e)
 }
 
 // declareCases declares the type and the reader of each case with fields.

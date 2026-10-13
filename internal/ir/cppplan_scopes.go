@@ -35,6 +35,7 @@ func (pl *CppNamePlan) declareAll() {
 		pl.shareNS(pl.StoreName(), pl.p.Name, nil)
 	}
 	pl.declareMembers()
+	pl.declareTextDecoders()
 	pl.checkSignatures()
 	pl.declareDetail()
 	pl.declareConformance()
@@ -54,7 +55,7 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 			overloads = []string{CppToWire}
 		}
 	}
-	for _, n := range overloads {
+	for _, n := range append(overloads, pl.openOverloads()...) {
 		pl.declare(pl.ns, n, pl.p.Name, nil)
 		pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
 	}
@@ -116,6 +117,7 @@ func (pl *CppNamePlan) declareEnum(name, origin string, item any, codes bool) {
 	sc := pl.scope(name)
 	switch x := item.(type) {
 	case *Enum:
+		pl.declareOpenClass(sc, name, origin, x)
 		for _, m := range x.Members {
 			pl.declare(sc, pl.Enumerator(m), origin+qnameSep+m.Name, m)
 		}

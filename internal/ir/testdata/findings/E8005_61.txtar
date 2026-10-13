@@ -1,0 +1,44 @@
+DECISIONS 363, CODEGEN.md §2.8, §3.5: a's ts types emit reaches b only through the decoded @text result items ([b.Item]), yet its file imports b under the alias b and writes read_b_Item, both reserved: a record named b by @ts(name:) and one named read_b_Item meet them, each E8005.
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+emit ts { out: "@features/b/b.ts", mode: types }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item }
+
+/// A box.
+record Box @ts(name: "b") {
+  /// Its size.
+  size: Int
+}
+
+/// A crate.
+record Crate @ts(name: "read_b_Item") {
+  /// Its size.
+  size: Int
+}
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ n: 1 }] }
+
+emit ts { out: "@features/a/a.ts", mode: types }
+emit text { out: "out/a" }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  ts: b is generated for both b and a.Box; rename one of them with @ts(name:)
+
+error[E8005]  a/a.canon:13:8
+  ts: read_b_Item is generated for both b.Item and a.Crate; rename one of them with @ts(name:)
+
+2 errors, 0 warnings in 2 packages (…)

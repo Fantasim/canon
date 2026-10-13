@@ -1,0 +1,46 @@
+DECISIONS 365, CONFORMANCE.md §2.3: the ts types emit opens Dst, so the method count, which reads self.bonus.dst, a Dst inside the record it reads, is E8019 `OpenEnumFn`; total, which reads self.base, and Bonus.plus, which reads only self.amount, are unaffected.
+-- a/a.canon --
+/// A.
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+/// A bonus.
+record Bonus {
+  /// Where.
+  dst: Dst
+  /// How much.
+  amount: Int
+
+  /// Its amount plus k.
+  export fn plus(k: Int) -> Int { return amount + k }
+}
+
+/// A gear.
+record Gear {
+  /// Its bonus.
+  bonus: Bonus
+  /// Its base.
+  base: Int
+
+  /// k when its bonus adds strength.
+  export fn count(k: Int) -> Int { return if bonus.dst == Dst.str { k } else { 0 } }
+
+  /// Its total, plus k.
+  export fn total(k: Int) -> Int { return base + k }
+}
+
+test "count, total and plus" {
+  let g = Gear { bonus: { dst: Dst.str, amount: 1 }, base: 2 }
+  expect g.count(1) == 1
+  expect g.total(1) == 3
+  expect g.bonus.plus(1) == 2
+}
+
+emit ts { out: "@features/a/a.ts", mode: types, open: [Dst] }
+-- findings.txt --
+error[E8019]  a/a.canon:26:13
+  emit ts in types mode cannot generate a translated function that takes or reads an enum its package's emit of this target opens; decide on the member's Known check in your own code, or take the enum out of open
+
+1 error, 0 warnings in 1 package (…)

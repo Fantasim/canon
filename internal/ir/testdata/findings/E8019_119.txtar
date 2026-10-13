@@ -1,0 +1,76 @@
+DECISIONS 362, CODEGEN.md §2.8, §5.2: a cpp emit of another package that references an enum the cpp types emit of its package opens must be in types mode too: b's baked emit holds Dst, c's data emit reaches it through a's Bonus, each E8019 `OpenEnum` at the first site; d's cpp types emit and e's go data emit are not refused (a's go emit opens nothing: each emit keeps its own list).
+-- a/a.canon --
+/// A.
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+/// A bonus.
+record Bonus {
+  /// Where.
+  dst: Dst
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types, open: [Dst] }
+emit go { out: "@features/a/go", package: "a", mode: types }
+-- b/b.canon --
+/// B.
+package b
+
+import a { Dst }
+
+/// A use.
+record Use {
+  /// Where.
+  dst: Dst
+}
+
+emit cpp { out: "@features/b/cpp", namespace: "b" }
+-- c/c.canon --
+/// C.
+package c
+
+import a { Bonus }
+
+/// A holder.
+record Holder {
+  /// Its bonus.
+  bonus: Bonus
+}
+
+emit cpp { out: "@features/c/cpp", namespace: "c", mode: data }
+-- d/d.canon --
+/// D.
+package d
+
+import a { Dst }
+
+/// A reader.
+record Reader {
+  /// Where.
+  dst: Dst
+}
+
+emit cpp { out: "@features/d/cpp", namespace: "d", mode: types }
+-- e/e.canon --
+/// E.
+package e
+
+import a { Dst }
+
+/// A reader.
+record Reader {
+  /// Where.
+  dst: Dst
+}
+
+emit go { out: "@features/e/go", package: "e", mode: data }
+-- findings.txt --
+error[E8019]  b/b.canon:9:3
+  emit cpp in baked mode cannot generate an enum its package's emit of this target opens; emit this package in types mode too, or take the enum out of open
+
+error[E8019]  c/c.canon:9:3
+  emit cpp in data mode cannot generate an enum its package's emit of this target opens; emit this package in types mode too, or take the enum out of open
+
+2 errors, 0 warnings in 5 packages (…)

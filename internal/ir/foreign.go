@@ -107,12 +107,9 @@ func typesRoots(p *Package) []foreignRoot {
 	return out
 }
 
-// textRoots are the results of the decoded @text fns a go types-mode emit reads through Decode<Fn>File, in source order (DECISIONS 340); none for another emit.
+// textRoots are the results of the decoded @text fns a types-mode code emit reads through Decode<Fn>File (decode<Fn>File in TypeScript), in source order (DECISIONS 340, 363); none for another emit.
 func textRoots(p *Package, e *Emit) []foreignRoot {
 	var out []foreignRoot
-	if e.Target != TargetGo || e.Mode != ModeTypes {
-		return nil
-	}
 	for _, fn := range TextDecoded(p, e) {
 		out = append(out, foreignRoot{item: fn, t: TextResult(fn), read: true})
 	}

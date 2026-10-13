@@ -1,0 +1,29 @@
+DECISIONS 363, CODEGEN.md §3.5: a TypeScript types emit declares decodeItemsFile and parseItemsFile for the decoded @text fn items in the module, where the translated fn parseItemsFile is declared too: E8005.
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ n: 1 }] }
+
+/// Twice a number.
+export fn parseItemsFile(n: Int) -> Int { return n * 2 }
+
+test "parseItemsFile doubles" {
+  expect parseItemsFile(2) == 4
+}
+
+emit ts { out: "@features/a/a.ts", mode: types }
+emit text { out: "out/a" }
+-- findings.txt --
+error[E8005]  a/a.canon:12:11
+  ts: parseItemsFile is generated for both a.parseItemsFile and a.items; rename one of them with @ts(name:)
+
+1 error, 0 warnings in 1 package (…)

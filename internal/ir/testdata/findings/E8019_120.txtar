@@ -1,0 +1,78 @@
+DECISIONS 362, CODEGEN.md §2.8, §5.2: a ts emit of another package that references an enum the ts types emit of its package opens must be in types mode too: b's baked, c's data and f's embedded emits are each E8019 `OpenEnum` at the first site holding Dst; d's ts types emit is not refused.
+-- a/a.canon --
+/// A.
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+/// A bonus.
+record Bonus {
+  /// Where.
+  dst: Dst
+}
+
+emit ts { out: "@features/a/a.ts", mode: types, open: [Dst] }
+-- b/b.canon --
+/// B.
+package b
+
+import a { Dst }
+
+/// A use.
+record Use {
+  /// Where.
+  dst: Dst
+}
+
+emit ts { out: "@features/b/b.ts" }
+-- c/c.canon --
+/// C.
+package c
+
+import a { Bonus }
+
+/// A holder.
+record Holder {
+  /// Its bonus.
+  bonus: Bonus
+}
+
+emit ts { out: "@features/c/c.ts", mode: data }
+-- d/d.canon --
+/// D.
+package d
+
+import a { Dst }
+
+/// A reader.
+record Reader {
+  /// Where.
+  dst: Dst
+}
+
+emit ts { out: "@features/d/d.ts", mode: types }
+-- f/f.canon --
+/// F.
+package f
+
+import a { Dst }
+
+/// A reader.
+record Reader {
+  /// Where.
+  dst: Dst
+}
+
+emit ts { out: "@features/f/f.ts", mode: embedded }
+-- findings.txt --
+error[E8019]  b/b.canon:9:3
+  emit ts in baked mode cannot generate an enum its package's emit of this target opens; emit this package in types mode too, or take the enum out of open
+
+error[E8019]  c/c.canon:9:3
+  emit ts in data mode cannot generate an enum its package's emit of this target opens; emit this package in types mode too, or take the enum out of open
+
+error[E8019]  f/f.canon:9:3
+  emit ts in embedded mode cannot generate an enum its package's emit of this target opens; emit this package in types mode too, or take the enum out of open
+
+3 errors, 0 warnings in 5 packages (…)

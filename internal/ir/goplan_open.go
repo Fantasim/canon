@@ -2,13 +2,13 @@ package ir
 
 import "slices"
 
-// OpenEnum reports an enum the go types-mode emit of its package opens (DECISIONS 339): e's own `open` for an enum of p, else that of the go emit of its package as p imports it.
+// OpenEnum reports an enum the types-mode emit of e's target of its package opens (DECISIONS 339, 362): e's own `open` for an enum of p, else that of its package's emit of e's target as p imports it.
 func OpenEnum(p *Package, e *Emit, en *Enum) bool {
 	owner := e
 	if en.Pkg != p.Name {
-		owner = ownerEmit(p, en.Pkg, TargetGo)
+		owner = ownerEmit(p, en.Pkg, e.Target)
 	}
-	return owner != nil && owner.Target == TargetGo && owner.Mode == ModeTypes && slices.Contains(owner.Open, en.Name)
+	return owner != nil && owner.Target == e.Target && owner.Mode == ModeTypes && slices.Contains(owner.Open, en.Name)
 }
 
 // enumMethods are the fixed methods of an enum of the package: Known too for an opened one, Code with @codes (CODEGEN.md §5.2, DECISIONS 339).

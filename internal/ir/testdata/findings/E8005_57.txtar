@@ -1,0 +1,20 @@
+DECISIONS 362, CODEGEN.md §3.5, §5.2: a TypeScript opened enum Dst adds DstKnown, isDstKnown and dstName to the module: a record named DstKnown meets the first, E8005 at the record.
+-- a/a.canon --
+/// A.
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+/// Known destinations.
+record DstKnown {
+  /// Where.
+  dst: Dst
+}
+
+emit ts { out: "@features/a/a.ts", mode: types, open: [Dst] }
+-- findings.txt --
+error[E8005]  a/a.canon:8:8
+  ts: DstKnown is generated for both a.Dst and a.DstKnown; rename one of them with @ts(name:)
+
+1 error, 0 warnings in 1 package (…)

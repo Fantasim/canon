@@ -1,0 +1,27 @@
+DECISIONS 365, CONFORMANCE.md §2.3: the go types emit opens Dst, so the translated fn label, which takes a Dst, is E8019 `OpenEnumFn`: a decoder keeps a member the evaluator never holds. double, which takes and reads nothing of Dst, is unaffected.
+-- a/a.canon --
+/// A.
+package a
+
+/// A destination.
+enum Dst { str, sta }
+
+/// The label of a destination, n times.
+export fn label(d: Dst, n: Int) -> String {
+  return if d == Dst.str and n > 0 { "strength" } else { "stamina" }
+}
+
+/// Twice a number.
+export fn double(n: Int) -> Int { return n * 2 }
+
+test "label and double" {
+  expect label(Dst.str, 1) == "strength"
+  expect double(2) == 4
+}
+
+emit go { out: "@features/a/go", package: "a", mode: types, open: [Dst] }
+-- findings.txt --
+error[E8019]  a/a.canon:8:11
+  emit go in types mode cannot generate a translated function that takes or reads an enum its package's emit of this target opens; decide on the member's Known check in your own code, or take the enum out of open
+
+1 error, 0 warnings in 1 package (…)

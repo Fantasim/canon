@@ -1,0 +1,24 @@
+DECISIONS 369, CODEGEN.md §3.5, §5.9: the TypeScript container of a stable table gets findBy + UpperCamel(f) per @stable field; foo_bar and fooBar both give findByFooBar: E8005 at the later field.
+-- a/a.canon --
+/// A.
+package a
+
+/// A thing.
+record Thing {
+  /// One code.
+  foo_bar: Int @stable
+  /// Another code.
+  fooBar: Int @stable
+}
+
+/// The things.
+let things: stable table Thing = {
+  one { foo_bar: 1, fooBar: 2 }
+}
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8005]  a/a.canon:9:3
+  ts: findByFooBar is generated for both @stable fields a.things.foo_bar and a.things.fooBar; rename one of the fields (a lookup is named after the Canon field)
+
+1 error, 0 warnings in 1 package (…)

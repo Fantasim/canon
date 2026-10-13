@@ -48,6 +48,7 @@ func Build(ctx context.Context, in Input) []*Package {
 	s.precompute()
 	s.lookupDomains()
 	s.branchTables()
+	s.noHooks()
 	for _, u := range s.order {
 		if u.selected && len(u.emits) > 0 {
 			s.finish(u)
@@ -100,7 +101,7 @@ type unit struct {
 	consts       []*constSite
 	firstUse     map[string]string
 	reach        map[string]string
-	textOnly     map[string]bool // the packages only a @text result of its go types emit reaches (textImports), never a use E8004 or E8007 judges
+	textOnly     map[string]bool // the packages only a @text result of its types-mode code emits reaches (textImports), never a use E8004 or E8007 judges
 	cppNames     []cppShared     // the names its data-mode cpp header declares in namespaces other packages share
 	variantCalls []source.Span   // translated calls of a variant-level export fn (E8019 VariantMethod)
 }

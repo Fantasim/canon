@@ -83,7 +83,7 @@ func copies(base *emitSite) []*emitSite {
 	sites := make([]*emitSite, len(base.outs))
 	for i, o := range base.outs {
 		e := *base.e
-		e.Out, e.Values, e.Open = o.text, slices.Clone(base.e.Values), slices.Clone(base.e.Open)
+		e.Out, e.Values, e.Open, e.NoHook = o.text, slices.Clone(base.e.Values), slices.Clone(base.e.Open), slices.Clone(base.e.NoHook)
 		site := *base
 		site.e, site.outSpan, site.index = &e, o.span, i
 		sites[i] = &site

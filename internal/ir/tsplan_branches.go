@@ -21,7 +21,7 @@ func TSBranchTables(p *Package, e *Emit) []NamedBranches {
 		add(t)
 	}
 	seen := map[Type]bool{}
-	tsReached(p, func(t *TypeRef) {
+	tsFileReached(p, func(t *TypeRef) {
 		if t.Named != nil && pkgOf(t.Named) != p.Name && !seen[t.Named] {
 			seen[t.Named] = true
 			add(t.Named)

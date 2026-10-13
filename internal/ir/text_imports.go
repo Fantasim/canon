@@ -10,10 +10,10 @@ import (
 // view is u's IR as the generator of emit es sees it, each import narrowed to the copy es uses (CopyOf, CODEGEN.md §2.8): what stage E judges of es is what its generator writes.
 func (s *stage) view(u *unit, es *emitSite) *Package { return CopyOf(s.in.Project, u.p, es.e) }
 
-// textImports are the packages, not in have, that a @text result reaches when one copy of u's go types emit writes its Decode<Fn>File (DECISIONS 340), listed with their go emits. Decoders are decided first with every package a readable result reaches imported (a fixpoint of one step: a result's decodability reads only the imports of what it reaches), then only the decided results' packages stay: a result going without a decoder changes nothing in the generated code, its names included. A package found here is never a use E8004 or E8007 judges.
+// textImports are the packages, not in have, that a @text result reaches when one copy of a types-mode code emit of u writes its Decode<Fn>File (DECISIONS 340, 363), listed with their emits of the targets decoding it. Decoders are decided first with every package a readable result reaches imported (a fixpoint of one step: a result's decodability reads only the imports of what it reaches), then only the decided results' packages stay: a result going without a decoder changes nothing in the generated code, its names included. A package found here is never a use E8004 or E8007 judges.
 func (s *stage) textImports(u *unit, have []*PackageRef) []*PackageRef {
 	u.textOnly = map[string]bool{}
-	sites := slices.DeleteFunc(slices.Clone(u.emits), func(es *emitSite) bool { return es.e.Target != TargetGo || es.e.Mode != ModeTypes })
+	sites := slices.DeleteFunc(slices.Clone(u.emits), func(es *emitSite) bool { return !isCode(es.e.Target) || es.e.Mode != ModeTypes })
 	if len(sites) == 0 {
 		return nil
 	}
@@ -24,7 +24,7 @@ func (s *stage) textImports(u *unit, have []*PackageRef) []*PackageRef {
 	var tentative []*PackageRef
 	for _, pkg := range slices.Sorted(maps.Keys(textReached(u.p, readableResults(u.p)))) {
 		if dep := s.units[pkg]; dep != nil && !listed[pkg] {
-			tentative = append(tentative, &PackageRef{Name: pkg, Dir: dep.p.Dir, Emits: goEmits(dep.p.Emits)})
+			tentative = append(tentative, &PackageRef{Name: pkg, Dir: dep.p.Dir, Emits: targetEmits(dep.p.Emits, sites)})
 		}
 	}
 	decided := s.decidedReach(u, sites, append(slices.Clone(have), tentative...))
@@ -46,9 +46,11 @@ func (s *stage) decidedReach(u *unit, sites []*emitSite, imports []*PackageRef) 
 	return textReached(u.p, fns)
 }
 
-// goEmits are the go emits of emits, every copy.
-func goEmits(emits []*Emit) []*Emit {
-	return slices.DeleteFunc(slices.Clone(emits), func(e *Emit) bool { return e.Target != TargetGo })
+// targetEmits are the emits, every copy, of the targets of sites.
+func targetEmits(emits []*Emit, sites []*emitSite) []*Emit {
+	return slices.DeleteFunc(slices.Clone(emits), func(e *Emit) bool {
+		return !slices.ContainsFunc(sites, func(es *emitSite) bool { return es.e.Target == e.Target })
+	})
 }
 
 // readableResults are the @text fns of p whose result is a map or a list readable at the top of a file (textReadable).

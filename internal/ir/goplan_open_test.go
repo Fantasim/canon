@@ -7,13 +7,14 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// TestOpenEnum is DECISIONS 339: an enum is open in a go types emit whose `open` names it, its own package's or, for another package's enum, the go emit of that package as the importer sees it; never in another mode or target.
+// TestOpenEnum is DECISIONS 339 and 362: an enum is open in a types emit whose `open` names it, its own package's or, for another package's enum, that package's emit of the same target as the importer sees it, in go, cpp and ts; never in another mode, nor through another target's list.
 func TestOpenEnum(t *testing.T) {
 	own := &ir.Enum{Pkg: "a", Name: "Dst"}
 	far := &ir.Enum{Pkg: "b", Name: "Far"}
 	opened := &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeTypes, Open: []string{"Dst"}}
 	farEmit := &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeTypes, Open: []string{"Far"}}
-	p := &ir.Package{Name: "a", Imports: []*ir.PackageRef{{Name: "b", Emits: []*ir.Emit{farEmit}}}}
+	farTS := &ir.Emit{Target: ir.TargetTS, Mode: ir.ModeTypes}
+	p := &ir.Package{Name: "a", Imports: []*ir.PackageRef{{Name: "b", Emits: []*ir.Emit{farEmit, farTS}}}}
 	cases := []struct {
 		name string
 		e    *ir.Emit
@@ -23,8 +24,11 @@ func TestOpenEnum(t *testing.T) {
 		{"own, opened", opened, own, true},
 		{"own, in baked mode", &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeBaked, Open: []string{"Dst"}}, own, false},
 		{"own, not listed", &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeTypes}, own, false},
-		{"own, a cpp emit", &ir.Emit{Target: ir.TargetCpp, Mode: ir.ModeTypes, Open: []string{"Dst"}}, own, false},
+		{"own, a cpp emit", &ir.Emit{Target: ir.TargetCpp, Mode: ir.ModeTypes, Open: []string{"Dst"}}, own, true},
+		{"own, a ts emit", &ir.Emit{Target: ir.TargetTS, Mode: ir.ModeTypes, Open: []string{"Dst"}}, own, true},
 		{"another package's, opened there", &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeBaked}, far, true},
+		{"another package's, opened by its go emit only", &ir.Emit{Target: ir.TargetTS, Mode: ir.ModeData}, far, false},
+		{"another package's, no emit of the target", &ir.Emit{Target: ir.TargetCpp, Mode: ir.ModeData}, far, false},
 	}
 	for _, c := range cases {
 		if got := ir.OpenEnum(p, c.e, c.en); got != c.want {

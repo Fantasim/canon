@@ -123,6 +123,8 @@ func (r nameReport) collisionFinding(pr GoNameProblem) *diag.Builder {
 	switch {
 	case r.target == check.TargetGo && reachedPair(pr):
 		return diag.E8005.AtReached(span, r.target, pr.Name, pr.First, pr.Origin)
+	case strings.HasPrefix(pr.Scope, tsContainerScope): // two @stable fields' lookups (DECISIONS 369)
+		return diag.E8005.AtFinder(span, r.target, pr.Name, pr.First, pr.Origin)
 	case pr.Item != pr.FirstItem && r.isIDType(pr.Name, pr.Item) && r.isIDType(pr.Name, pr.FirstItem):
 		return diag.E8005.AtIdType(span, r.target, pr.Name, pr.First, pr.Origin)
 	}

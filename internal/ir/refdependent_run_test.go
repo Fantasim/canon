@@ -189,7 +189,10 @@ func refRunLoads(t *testing.T, dir string, c refRunCase) ([]byte, bool) {
 		t.Fatal(err)
 	}
 	res, err := p.Build(context.Background(), build.BuildOptions{Packages: []string{refRunLoadPkg}})
-	if err != nil || res.Summary.Errors > 0 {
+	if err != nil {
+		t.Fatal(err) // a Go error is a broken build, never `load` refusing the book
+	}
+	if res.Summary.Errors > 0 {
 		return nil, false
 	}
 	data, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(refRunLoaded)))

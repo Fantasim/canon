@@ -1,0 +1,32 @@
+DECISIONS 365, 362: b's ts types emit opens Dst, its go emit does not; a's translated fn label takes b.Dst, so a's ts types emit refuses it (E8019 `OpenEnumFn`) and a's go types emit, for which Dst stays closed, does not.
+-- b/b.canon --
+/// B.
+package b
+
+/// A destination.
+enum Dst { str, sta }
+
+emit go { out: "@features/b/go", package: "b", mode: types }
+emit ts { out: "@features/b/b.ts", mode: types, open: [Dst] }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Dst }
+
+/// The label of a destination, n times.
+export fn label(d: Dst, n: Int) -> String {
+  return if d == Dst.str and n > 0 { "strength" } else { "stamina" }
+}
+
+test "label" {
+  expect label(Dst.str, 1) == "strength"
+}
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:7:11
+  emit ts in types mode cannot generate a translated function that takes or reads an enum its package's emit of this target opens; decide on the member's Known check in your own code, or take the enum out of open
+
+1 error, 0 warnings in 2 packages (…)

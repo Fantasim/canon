@@ -179,7 +179,8 @@ type Emit struct {
 	Values    []string
 	GoPackage string
 	Namespace string
-	Open      []string // go types mode: the enums `open` names, decoded as open strings (DECISIONS 339)
+	Open      []string // types mode: the enums `open` names (DECISIONS 339, 362)
+	NoHook    []string
 }
 
 // File is one output file of a generator; Path is relative to its emit's Dir.

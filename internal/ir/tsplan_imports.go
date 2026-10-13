@@ -16,10 +16,10 @@ type TSImport struct {
 // TSImportAlias is the namespace alias of package pkg in every TypeScript file: its path's segments joined by `_` (`game.core` gives game_core), with `_` added to a reserved word (`default` gives default_, CODEGEN.md §3.4).
 func TSImportAlias(pkg string) string { return tsEscape(strings.ReplaceAll(pkg, qnameSep, underscore)) }
 
-// TSImports are the packages a ts emit of p imports, one namespace each, in the order of p.Imports: those whose types the file reaches (tsReached; CODEGEN.md §2.8, DECISIONS 279(b), 323).
+// TSImports are the packages a ts emit of p imports, one namespace each, in the order of p.Imports: those whose types the file reaches (tsReached), a decoded @text result's included (tsTextReached; CODEGEN.md §2.8, DECISIONS 279(b), 323, 363).
 func TSImports(p *Package) []TSImport {
 	reached := map[string]bool{}
-	tsReached(p, func(t *TypeRef) {
+	tsFileReached(p, func(t *TypeRef) {
 		if t.Named != nil && pkgOf(t.Named) != p.Name {
 			reached[pkgOf(t.Named)] = true
 		}
@@ -42,12 +42,31 @@ func (pl *tsNamePlan) declareImports(mod *nameScope) {
 		pl.declare(mod, imp.Alias, imp.Pkg, nil) // two packages giving one alias: E8005 at the emit (log-2026-10-06 "U1 rounds 3-5" 3)
 	}
 	named := map[Type]bool{}
-	tsReached(pl.p, func(t *TypeRef) {
+	tsFileReached(pl.p, func(t *TypeRef) {
 		if t.Named != nil && pkgOf(t.Named) != pl.p.Name && !named[t.Named] {
 			named[t.Named] = true
 			pl.declareForeignReaders(mod, t.Named)
 		}
 	})
+}
+
+// tsFileReached is tsReached, then the results of the @text fns p's ts types-mode emit decodes (tsTextReached).
+func tsFileReached(p *Package, visit func(*TypeRef)) {
+	tsReached(p, visit)
+	tsTextReached(p, visit)
+}
+
+// tsTextReached calls visit on every type the decoded @text results of p's ts types-mode emit hold, at any depth (DECISIONS 363): their readers name it. The emit's copies share mode and target; p is already the copy's view (CopyOf).
+func tsTextReached(p *Package, visit func(*TypeRef)) {
+	i := slices.IndexFunc(p.Emits, func(e *Emit) bool { return e.Target == TargetTS && e.Mode == ModeTypes })
+	if i < 0 {
+		return
+	}
+	w := newWalker(nil, visit)
+	for _, fn := range TextDecoded(p, p.Emits[i]) {
+		t := TextResult(fn)
+		w.ref(&t)
+	}
 }
 
 // tsReached calls visit on every type a code file of p may write a name of (DECISIONS 279(b), 323): those its declarations hold, then, followed through the fields, cases, export fns and dependent branches of every type they reach, of any package, those its literals, decoders and translated reads write.

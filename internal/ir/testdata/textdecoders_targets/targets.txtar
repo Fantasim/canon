@@ -1,0 +1,122 @@
+DECISIONS 340, 363: a's go, cpp and ts types emits decode the same readable @text results, each by its own target's names and checks: items ([b.Item]) and counts (a map outside any record) everywhere; tagged ([b.Tagged], a map inside a record) everywhere but C++, whose types-mode readers read no map in a class (MapField, though b's own cpp data emit reads it); loose ([d.Loose]) where d has an emit of the target that writes Loose's hook, d's data emits listing in NoHook the records their plan writes no hook for: links ([d.Link]), whose ref d's loader resolves inside its own value, gets no decoder in go or cpp, and none in ts, where d has no emit; nor does steps ([d.Step]), whose case hop (NoHook's Step.hop) refs the table holding it. Each ts emit lists the packages it imports: a's, b only through decoded results.
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+/// A tagged item.
+record Tagged {
+  /// Its tags.
+  tags: {String: Int}
+}
+
+emit go { out: "@features/b/go", package: "b", mode: types }
+emit cpp { out: "@features/b/cpp", namespace: "b", mode: data }
+emit ts { out: "@features/b/b.ts", mode: types }
+-- d/d.canon --
+/// D.
+package d
+
+/// A link.
+record Link {
+  /// The next link.
+  next: ref links
+}
+
+/// The links.
+let links: table Link = {
+  one { next: one }
+}
+
+/// A loose record, its ref into links.
+record Loose {
+  /// Where it points.
+  to: ref links
+}
+
+/// A flat record.
+record Flat {
+  /// Its number.
+  n: Int
+}
+
+/// A step.
+variant Step @json(tag: "kind") {
+  /// To another path.
+  hop {
+    /// The path.
+    to: ref paths
+  }
+  /// Nowhere.
+  rest {
+    /// How long.
+    n: Int
+  }
+}
+
+/// A path.
+record Path {
+  /// Its step.
+  step: Step
+}
+
+/// The paths.
+let paths: table Path = {
+  home { step: rest { n: 1 } }
+}
+
+emit go { out: "@features/d/go", package: "d", mode: data }
+emit cpp { out: "@features/d/cpp", namespace: "d", mode: data }
+emit json { out: "out/d/" }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item, Tagged }
+import d { Link, Loose, Step }
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ n: 1 }] }
+
+/// The tagged items.
+@text("tagged.json")
+export fn tagged() -> [Tagged] { return [{ tags: { "x": 1 } }] }
+
+/// The counts.
+@text("counts.json")
+export fn counts() -> {String: Int} { return { "x": 1 } }
+
+/// The loose records.
+@text("loose.json")
+export fn loose() -> [Loose] { return [] }
+
+/// The links.
+@text("links.json")
+export fn links() -> [Link] { return [] }
+
+/// The steps.
+@text("steps.json")
+export fn steps() -> [Step] { return [] }
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types }
+emit ts { out: "@features/a/a.ts", mode: types }
+emit text { out: "out/a" }
+-- plan.txt --
+== b @features/b/go: decoders []
+== b @features/b/cpp: nohook []
+== b @features/b/b.ts: decoders [] imports []
+== d @features/d/go: nohook [Link Step.hop]
+== d @features/d/cpp: nohook [Link Step.hop]
+== d out/d/: decoders []
+== a @features/a/go: decoders [DecodeItemsFile DecodeTaggedFile DecodeCountsFile DecodeLooseFile]
+== a @features/a/cpp: decoders [DecodeItemsFile DecodeCountsFile DecodeLooseFile]
+== a @features/a/a.ts: decoders [decodeItemsFile parseItemsFile decodeTaggedFile parseTaggedFile decodeCountsFile parseCountsFile] imports [b]
+== a out/a: decoders []
+0 errors, 0 warnings in 3 packages (…)

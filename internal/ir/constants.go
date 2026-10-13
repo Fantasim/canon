@@ -150,11 +150,9 @@ const (
 
 // Paths, separators and names stage E composes.
 const (
-	curDir = "."
-	// parentDir is the path segment above a directory.
-	parentDir = ".."
-	// severalCopies is the fewest copies an emit with a list out writes (CODEGEN.md §2.1).
-	severalCopies = 2
+	curDir        = "."
+	parentDir     = ".." // the path segment above a directory
+	severalCopies = 2    // the fewest copies an emit with a list out writes (CODEGEN.md §2.1)
 	pathSep       = "/"
 	cppScope      = "::"
 	docSep        = "\n\n" // GRAMMAR.md §9.1: package docs of several files
@@ -162,20 +160,13 @@ const (
 	boolTrue      = "true"
 )
 
-// maxCells is the largest lookup table (CODEGEN.md §5.10, E9002).
-const maxCells = 65_536
-
-// maxSafeInt is Number.MAX_SAFE_INTEGER, 2^53 - 1 (CODEGEN.md §4.1, E8101).
-const maxSafeInt = 1<<53 - 1
-
-// JSONExt ends a file-mode JSON `out` and every directory-mode file name (WIRE.md §8.1).
-const JSONExt = ".json"
-
-const underscore = "_"
-
-// pairsOpen and pairsClose delimit a `pairs:` key template's slot index, `{i}` (WIRE.md §5.14).
+// Limits and fixed spellings stage E composes.
 const (
-	pairsOpen  = "{"
+	maxCells   = 65_536    // the largest lookup table (CODEGEN.md §5.10, E9002)
+	maxSafeInt = 1<<53 - 1 // Number.MAX_SAFE_INTEGER (CODEGEN.md §4.1, E8101)
+	JSONExt    = ".json"   // a file-mode JSON out's and every directory-mode file name's end (WIRE.md §8.1)
+	underscore = "_"
+	pairsOpen  = "{" // a pairs: key template's slot index, {i} (WIRE.md §5.14)
 	pairsClose = "}"
 )
 
@@ -216,8 +207,19 @@ const (
 	CppVariantMember = "value_" // a variant's or dependent type's std::variant (§5.5, §5.6)
 	CppToName        = "ToName" // the enum helpers, one overload per enum (CODEGEN.md §5.2)
 	CppToWire        = "ToWire"
+	cppIsKnown       = "IsKnown" // an opened enum's helpers, one overload per enum (DECISIONS 362)
+	cppToCode        = "ToCode"
+	cppOpenWire      = "wire_"
 	CppMatchPattern  = "MatchPattern" // §7.7's pattern search, the input helper a loader calls by name
 	CppEnvText       = "EnvText"      // §7.7's variable reader, the input helper each LoadInputs block calls
+)
+
+// How another package's same C++ name meets a name: only overloads, TU-locals, namespaces pass.
+const (
+	meetsNever cppMeet = iota
+	meetsOverload
+	meetsLocal
+	meetsNamespace
 )
 
 // The fixed Go names the plan declares and gen/go's templates write (CODEGEN.md §5.2–§6.2).
@@ -228,7 +230,7 @@ const (
 	GoString       = "String"
 	GoWire         = "Wire"
 	GoCode         = "Code"
-	GoKnown        = "Known" // an opened enum's Known method (DECISIONS 339)
+	GoKnown        = openKnown
 	GoLen          = "Len"
 	GoAt           = "At"
 	GoAll          = "All"
@@ -312,14 +314,6 @@ const (
 	goJSONDefine         = "jsonDefine"
 	cppDefinesSuffix     = "Defines"
 	cppBranchesSuffix    = "Branches" // detail::k<T><F>Branches (CODEGEN.md §5.6, DECISIONS 350)
-)
-
-// How another package's same C++ name meets a name: only overloads, TU-locals, namespaces pass.
-const (
-	meetsNever cppMeet = iota
-	meetsOverload
-	meetsLocal
-	meetsNamespace
 )
 
 // The reasons of LoadInputs' failure lines (InputReasonText).
@@ -462,24 +456,29 @@ var (
 var tsIdentPattern = regexp.MustCompile(`^[A-Za-z_$][A-Za-z0-9_$]*$`)
 
 const (
-	tsHelperOrigin  = "the TypeScript helper block"
-	tsModuleScope   = "module"
-	tsPureMark      = "$"
-	tsIDSuffix      = "Id"
-	tsKindSuffix    = "Kind"
-	tsBranchSuffix  = "Branch"
-	tsDecodePrefix  = "decode"
-	tsParsePrefix   = "parse"
-	tsReadPrefix    = "read"
-	tsSchemaSuffix  = "Schema"
-	tsMembersName   = "Members"
-	tsNamesName     = "Names"
-	tsIndexName     = "Index"
-	tsCodesName     = "Codes"
-	tsIDProp        = "id"
-	tsCanonRowScope = "CanonRow of " // the scope of a row of another package's record (CanonRow<T, K>)
-	tsRetiredProp   = "retired"
-	tsKindProp      = "kind"
+	tsHelperOrigin   = "the TypeScript helper block"
+	tsModuleScope    = "module"
+	tsPureMark       = "$"
+	tsIDSuffix       = "Id"
+	tsKindSuffix     = "Kind"
+	tsBranchSuffix   = "Branch"
+	tsDecodePrefix   = "decode"
+	tsParsePrefix    = "parse"
+	tsReadPrefix     = "read"
+	tsSchemaSuffix   = "Schema"
+	tsMembersName    = "Members"
+	tsNamesName      = "Names"
+	tsIndexName      = "Index"
+	tsCodesName      = "Codes"
+	tsIsPrefix       = "is"    // is<E>Known of an opened enum (DECISIONS 362)
+	openKnown        = "Known" // an opened enum's known check: Go's Known method, TypeScript's <E>Known (DECISIONS 339, 362)
+	tsFindByPrefix   = "findBy"
+	tsContainerScope = "container "
+	tsNameSuffix     = "Name"
+	tsIDProp         = "id"
+	tsCanonRowScope  = "CanonRow of " // the scope of a row of another package's record (CanonRow<T, K>)
+	tsRetiredProp    = "retired"
+	tsKindProp       = "kind"
 )
 
 // The names a baked cpp emit adds (CODEGEN.md §5.3, §5.10, §7.3; decision 293).

@@ -28,20 +28,20 @@ func init() {
 	goDecode := append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkGoDecodedDependents, (*stage).checkRefUnions, (*stage).checkForeignReads)
 	genRules[TargetGo][ModeData] = append(slices.Clone(goDecode), (*stage).checkResolvedLookups, (*stage).checkForeignOpenEnums)
 	// a go types-mode decoder reads what a data loader reads, with the source wire's constant defaults (CODEGEN.md §5.13); a types emit has no LoadInputs (§2.2).
-	genRules[TargetGo][ModeTypes] = append(slices.Clone(goDecode), (*stage).checkGoDefaults, (*stage).checkTypesInputs)
+	genRules[TargetGo][ModeTypes] = append(slices.Clone(goDecode), (*stage).checkGoDefaults, (*stage).checkTypesInputs, (*stage).checkOpenEnumFns)
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns, other packages' records (DECISIONS 323).
 	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkVariantMembers}
-	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals, (*stage).checkForeignTableLookups)
+	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals, (*stage).checkForeignTableLookups, (*stage).checkForeignOpenEnums)
 	genRules[TargetTS][ModeBaked], genRules[TargetTS][ModeEmbedded] = tsBaked, tsBaked
 	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded, (*stage).checkForeignReads)
-	genRules[TargetTS][ModeData], genRules[TargetTS][ModeTypes] = tsDecode, tsDecode
-	genRules[TargetCpp][ModeData] = cppCode
+	genRules[TargetTS][ModeData], genRules[TargetTS][ModeTypes] = append(slices.Clone(tsDecode), (*stage).checkForeignOpenEnums), append(slices.Clone(tsDecode), (*stage).checkOpenEnumFns)
+	genRules[TargetCpp][ModeData] = append(slices.Clone(cppCode), (*stage).checkForeignOpenEnums)
 	// a baked cpp emit decodes nothing: it writes every value in detail::<P>Access::Build, as the friend of its own package's classes only (CODEGEN.md §5.9, §7.3).
 	genRules[TargetCpp][ModeBaked] = append(slices.Clone(common), (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions,
-		(*stage).checkLegacyStructs, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals, (*stage).checkDefineKeys)
-	genRules[TargetCpp][ModeTypes] = append(slices.Clone(cppCode), (*stage).checkCppDefaults, (*stage).checkTypesInputs)
+		(*stage).checkLegacyStructs, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals, (*stage).checkDefineKeys, (*stage).checkForeignOpenEnums)
+	genRules[TargetCpp][ModeTypes] = append(slices.Clone(cppCode), (*stage).checkCppDefaults, (*stage).checkTypesInputs, (*stage).checkOpenEnumFns)
 }
 
 // checkGenSupport is E8019 and E8020: what the emit's generator refuses, so that check fails where build would (decision 37).

@@ -4,7 +4,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 )
 
-// checkForeignOpenEnums is E8019 `OpenEnum` once per enum of another package that its go types-mode emit opens and that a go emit of u in another mode references, at the first site holding it, through the types it reaches at any depth: only a types-mode decoder reads an opened enum's unknown members (DECISIONS 339).
+// checkForeignOpenEnums is E8019 `OpenEnum` once per enum of another package that its types-mode emit of a target opens and that an emit of u of that target in another mode references, at the first site holding it, through the types it reaches at any depth: only a types-mode decoder reads an opened enum's unknown members (DECISIONS 339, 362).
 func (s *stage) checkForeignOpenEnums(u *unit, es *emitSite) {
 	reported := map[*Enum]bool{}
 	for _, site := range s.openSites(u, es) {
@@ -19,7 +19,7 @@ func (s *stage) checkForeignOpenEnums(u *unit, es *emitSite) {
 	}
 }
 
-// openSites are the types a go emit of u writes (typeSites), then each dependent type's discriminant and branches.
+// openSites are the types an emit of u writes (typeSites), then each dependent type's discriminant and branches.
 func (s *stage) openSites(u *unit, es *emitSite) []typeSite {
 	out := s.typeSites(u, es)
 	for _, t := range u.p.Types {
@@ -36,12 +36,13 @@ func (s *stage) openSites(u *unit, es *emitSite) []typeSite {
 	return out
 }
 
-// openWalk collects the opened enums of other packages a type holds, through the records, variants, cases and dependent types it reaches, each once.
+// openWalk collects the opened enums of other packages a type holds, those of p too with own, through the records, variants, cases and dependent types it reaches, each once.
 type openWalk struct {
 	p     *Package
 	e     *Emit
 	seen  map[any]bool
 	found []*Enum
+	own   bool
 }
 
 func (w *openWalk) typ(t *TypeRef) {
@@ -60,7 +61,7 @@ func (w *openWalk) typ(t *TypeRef) {
 	w.seen[t.Named] = true
 	switch x := t.Named.(type) {
 	case *Enum:
-		if x.Pkg != w.p.Name && OpenEnum(w.p, w.e, x) {
+		if (w.own || x.Pkg != w.p.Name) && OpenEnum(w.p, w.e, x) {
 			w.found = append(w.found, x)
 		}
 	case *Record:

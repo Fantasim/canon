@@ -1,0 +1,20 @@
+DECISIONS 362, CODEGEN.md §3.5, §5.2: a C++ opened enum is a class holding its wire in `wire_`, its members static members of it: an enumerator named like the enum meets the class's constructor, one named wire_ meets its storage, each E8005 at the member. Closed, neither collides.
+-- a/a.canon --
+/// A.
+package a
+
+/// A destination.
+enum Dst { Dst, sta }
+
+/// A mode.
+enum Mode { wire_, off }
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types, open: [Dst, Mode] }
+-- findings.txt --
+error[E8005]  a/a.canon:5:12
+  cpp: Dst is generated for both a.Dst and a.Dst.Dst; rename one of them with @cpp(name:)
+
+error[E8005]  a/a.canon:8:13
+  cpp: wire_ is generated for both a.Mode and a.Mode.wire_; rename one of them with @cpp(name:)
+
+2 errors, 0 warnings in 1 package (…)
