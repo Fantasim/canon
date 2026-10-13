@@ -3290,6 +3290,11 @@ round 2", "PS1 review", "PS2 round 2"):
      hash (a list from 0.1.2) never removes. Ownership for overwriting stays by path. Louis's call (log-2026-10-08). Reason: a file gated by a feature flag
      (Sovereign's `Sys_*.h`) had no way out but writing `null` (handoff
      2026-10-08-sovereign-port-followups item 1).
+     Settled (2026-10-13, v0.1.6): a build writes the package's `canon.outputs` first, as the new
+     list plus the previous list's lines it may still remove (with their hashes), then the other
+     outputs and locks, then the removals, then the final list; so a build killed at any point
+     leaves every file it renamed in listed (owned, rewritten next time) and every stale file
+     still removable, and the next plain build recovers with no `--adopt`.
 
 337. **An Undo keeps a literal's spelling (API.md §8.7 E22; amends 257, 273).** When an edit
      replaces or removes a value written in source as one literal token (a number, string, bool,
