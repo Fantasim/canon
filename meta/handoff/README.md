@@ -66,7 +66,13 @@ Two handoffs came out of the 2026-10-12 review of Resource `Config/`, Canon's fi
 handoff, the Scripts `canon lsp` memory-leak brief and the config-studio findings of 2026-10-09 (both
 outside this repository), and website H-14 #4: a per-item table, the measured bound on the language
 server's memory, upgrade notes, ports D3 and D9, and what Canon still owes. Informational for those
-sessions. Its checksums section is a placeholder until the release is built.
+sessions. It carries the release checksums.
+
+`2026-10-13-canon-016-upgrade-actions.md` tells `Scripts`, `Resource`, `Source`, `website` and `admin`
+what to do now that v0.1.6 is published and installed: canon-bump first; Source commits 12
+regenerated `canon_runtime.h`; admin commits its regenerated `admin.ts`; the website's H-14 #4
+emit lines (verified); H-14 #6 waits on a canon fix (`tsc` TS2590 on a 3,256-member id union);
+optional Resource cleanups (`duplicates()`, format specs, `compiler:` pin). Measured on copies.
 
 `2026-10-12-v016-start-prompt.md` is the prompt that started the v0.1.6 session (F1-F19, stretch F20-F22,
 spec first, one wave of units per package, then the release). **Used**: the session ran; F20-F22 were deferred.

@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-10-13. **v0.1.6** on main (tag pending Louis's push); v0.1.5 to v0.1.0 are out; `main` is
+Updated: 2026-10-13. **v0.1.6** released and installed (2026-10-13); v0.1.5 to v0.1.0 are out; `main` is
 the only branch. DECISIONS 344-369: [log-2026-10-12](decisions/log-2026-10-12.md),
 [log-2026-10-13](decisions/log-2026-10-13.md), [ADR-0020](decisions/0020-api-016-overlay-ctx-call-lang-roots.md)
 (earlier: 304-343, ADR-0018/0019, logs 10-06, 10-08, 10-09). M5 accepted (CI run 36973712977).
@@ -25,6 +25,7 @@ handoff's §3 (v0.2; order is Louis's). Open too: [Resource structure](handoff/2
 on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a dir generate for names; edit time is ops × a full analysis; FMT's whole-file
 judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
 on entry add/remove; a lighter token store (~39% of a heap).
+**Owed, next:** generated TS for a table keyed by a large literal union fails `tsc` (TS2590; Resource `ai` `moverTexts`, 3,256 ids; blocks website H-14 #6).
 **Owed, small:** transient `ErrJournal` for two processes editing different packages (ADR-0010); `Recover`
 at Open takes no writer lock; `NoHook` filled for the import closure only; a case-only rename of an `out`
 directory is `E8001`; the asset kind test follows links unbounded (WIRE §6.5); a layer or new entry file
@@ -75,6 +76,5 @@ Windows link tests skip where links cannot be made. Long fuzz/progen campaigns d
 v0.1.6: Windows and macOS lock and rename behaviour (vet only); a real editor day on Resource for F1 (the
 bound is on a synthetic Resource-shaped project); Go types decoding on Sovereign's real files (synthetic
 only); edit p95 0.32 s / evaluate 0.24 s miss 0.30 / 0.15 as v0.1.5 does (load 2-10).
-
 ## Verify queue
 Re-run `make bench-edit` on a quiet machine or a CI-class runner when one exists.
