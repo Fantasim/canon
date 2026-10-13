@@ -16,12 +16,13 @@ files, case-only text rename; F7, F8 (360, 361, 364) no repeated `E3305`, every 
 repeated keys and names the first failure in document order; F14 (362, 363, 365, 369) C++/TS open enums and
 `@text` decoders, exact owner hooks, `E8019`, TS `findBy<F>`; F2 (366) reserved-word members in edits; F18
 (358, 359) format specs, `duplicates()`; F4, F19, F6 guide topics; F12, F5; F9, F10: no bug. Deferred: F20
-(per-field `@json(codes)`), F21 (warm re-check), F22 (streaming JSON reader).
+(per-field `@json(codes)`), F21 (warm re-check), F22 (streaming JSON reader). Pre-tag: E8152's json names
+planned, not encoded (2.1× edit regression gone), M6 oracle joins, killed-build wedge (336).
 **Next:** Louis publishes v0.1.6, Scripts' canon-bump moves the pin; then telemetry first use and the
 handoff's §3 (v0.2; order is Louis's). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
 [all handoffs](handoff/README.md). Release builds stay local (`make dist`) while CI is down.
 **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
-on-disk cache (a `dev` compiler must key by commit); edit time is ops × a full analysis; FMT's whole-file
+on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a dir generate for names; edit time is ops × a full analysis; FMT's whole-file
 judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
 on entry add/remove; a lighter token store (~39% of a heap).
 **Owed, small:** transient `ErrJournal` for two processes editing different packages (ADR-0010); `Recover`
@@ -37,8 +38,7 @@ tools/tsc`; no systemd (memory caps by hand under `ulimit -v`).
 
 ## Milestones
 
-M0-M5 accepted; post-M4 done. M1.5 done (box unticked only for the unverified 3 GB cap). M6:
-TypeScript and C++ baked done, legacy C++ not started (waits, Louis). M7 not started.
+M0-M5, post-M4, M1.5 done (3 GB cap unverified). M6: TS, C++ baked done; legacy C++ waits (Louis). M7 not started.
 
 ## What exists (committed)
 
@@ -74,7 +74,7 @@ Windows link tests skip where links cannot be made. Long fuzz/progen campaigns d
 "one-value edit ~2 s" figure was not re-run. v0.1.3: edit memory measured on synthetic tables only.
 v0.1.6: Windows and macOS lock and rename behaviour (vet only); a real editor day on Resource for F1 (the
 bound is on a synthetic Resource-shaped project); Go types decoding on Sovereign's real files (synthetic
-only); `make check` at the release commit was not re-run for this update.
+only); edit p95 0.32 s / evaluate 0.24 s miss 0.30 / 0.15 as v0.1.5 does (load 2-10).
 
 ## Verify queue
 Re-run `make bench-edit` on a quiet machine or a CI-class runner when one exists.
