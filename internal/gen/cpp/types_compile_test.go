@@ -35,9 +35,9 @@ var parseFiles = []typesFile{
 	{name: "dupescaped.json", arg: "x", text: `{"mode": "auto", "m\u006fde": "auto"}`, parseOnly: true, parse: "dupescaped.json: error Extras: $.mode: duplicate key\n"},
 	{name: "dupcase.json", arg: "x", text: `{"mode": "auto", "MODE": "auto"}`, parseOnly: true, parse: "dupcase.json: reqMp=7 label=x mode=auto"},
 	{name: "bom.json", arg: "x", text: "\xef\xbb\xbf" + `{"mode": "auto"}`, parseOnly: true, parse: "bom.json: reqMp=7 label=x mode=auto"},
-	{name: "utf8.json", arg: "x", text: "{\"label\": \"\xff\"}", parseOnly: true, parse: "utf8.json: error Extras: invalid JSON at byte 11\n"},
+	{name: "utf8.json", arg: "x", text: "{\"label\": \"\xff\"}", parseOnly: true, parse: "utf8.json: error Extras: $.label: not UTF-8\n"},
 	{name: "utf16.json", arg: "x", text: "\xff\xfe{\x00}\x00", parseOnly: true, parse: "utf16.json: error Extras: invalid JSON at byte 0\n"},
-	{name: "surrogate.json", arg: "x", text: `{"label": "\ud800"}`, parseOnly: true, parse: "surrogate.json: error Extras: invalid JSON at byte 17\n"},
+	{name: "surrogate.json", arg: "x", text: `{"label": "\ud800"}`, parseOnly: true, parse: "surrogate.json: error Extras: $.label: unpaired surrogate\n"},
 	{name: "trailing.json", arg: "x", text: `{"mode": "auto"} 1`, parseOnly: true, parse: "trailing.json: error Extras: invalid JSON at byte 17\n"},
 	{name: "at6a.json", arg: "x", text: `{"d": `, parseOnly: true, parse: "at6a.json: error Extras: invalid JSON at byte 6\n"},
 	{name: "at6b.json", arg: "x", text: `{"d": x}`, parseOnly: true, parse: "at6b.json: error Extras: invalid JSON at byte 6\n"},
@@ -118,7 +118,7 @@ func TestTypesDecodeCompilesAndRuns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	files := append(slices.Clone(typesFiles), parseFiles...)
+	files := slices.Concat(typesFiles, parseFiles, documentOrderFiles)
 	args := []string{dir}
 	for _, f := range files {
 		if err := os.WriteFile(filepath.Join(dir, f.name), typesBody(t, string(fixture), f), 0o644); err != nil {

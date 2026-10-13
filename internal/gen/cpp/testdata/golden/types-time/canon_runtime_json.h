@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -423,22 +424,22 @@ inline void TakeSidecars(StrictCheck& check, const Json& doc, Float32Tokens& tok
 namespace detail {
 
 /// RFC 8259's grammar over a text, to name where a syntax error is: the 0-based offset of the
-/// first byte that cannot continue a JSON document (a leading BOM counted), `size()` when the text
-/// ends too early, `npos` when it is syntactically valid. Bytes of a string are not checked beyond
-/// control characters and escapes (nlohmann refuses invalid UTF-8 and lone surrogates).
+/// first byte that cannot continue a JSON document, `size()` when the text ends too early, `npos`
+/// when it is syntactically valid. Bytes of a string are not checked beyond control characters and
+/// escapes (TextScan answers for UTF-8 and surrogates). Iterative: any nesting is safe.
 class SyntaxScan {
 public:
     explicit SyntaxScan(std::string_view text) : s_(text) {}
 
     size_t Offset() {
-        if (s_.substr(0, 3) == "\xEF\xBB\xBF") i_ = 3;
-        Space();
-        if (!Value(0)) return i_;
+        if (!Run()) return i_;
         Space();
         return i_ == s_.size() ? std::string_view::npos : i_;
     }
 
 private:
+    enum class State { kKey, kValue, kAfter };
+
     bool At(char c) const { return i_ < s_.size() && s_[i_] == c; }
 
     void Space() {
@@ -499,32 +500,8 @@ private:
         return false;
     }
 
-    /// The members of an object or items of an array, up to its closing `close`; `i_` is past the opener.
-    bool Items(char close, int depth) {
-        Space();
-        if (At(close)) return ++i_, true;
-        for (;;) {
-            if (close == '}') {
-                if (!At('"') || !String()) return false;
-                Space();
-                if (!At(':')) return false;
-                ++i_;
-                Space();
-            }
-            if (!Value(depth + 1)) return false;
-            Space();
-            if (At(close)) return ++i_, true;
-            if (!At(',')) return false;
-            ++i_;
-            Space();
-        }
-    }
-
-    bool Value(int depth) {
-        if (i_ >= s_.size() || depth > static_cast<int>(kMaxNesting)) return false;
+    bool Scalar() {
         switch (s_[i_]) {
-            case '{': return ++i_, Items('}', depth);
-            case '[': return ++i_, Items(']', depth);
             case '"': return String();
             case 't': return Word("true");
             case 'f': return Word("false");
@@ -533,33 +510,381 @@ private:
         }
     }
 
+    /// A value starts at `i_`: a container is opened (or closed at once, when empty), a scalar read.
+    bool Start(std::vector<char>& open, State& state) {
+        if (i_ >= s_.size()) return false;
+        if (s_[i_] != '{' && s_[i_] != '[') {
+            state = State::kAfter;
+            return Scalar();
+        }
+        const char opener = s_[i_++];
+        Space();
+        if (At(opener == '{' ? '}' : ']')) {
+            ++i_;
+            state = State::kAfter;
+            return true;
+        }
+        open.push_back(opener);
+        state = opener == '{' ? State::kKey : State::kValue;
+        return true;
+    }
+
+    /// Past a value: the container's close or the next member.
+    bool After(std::vector<char>& open, State& state) {
+        if (At(open.back() == '{' ? '}' : ']')) {
+            ++i_;
+            open.pop_back();
+            return true;
+        }
+        if (!At(',')) return false;
+        ++i_;
+        state = open.back() == '{' ? State::kKey : State::kValue;
+        return true;
+    }
+
+    bool Run() {
+        std::vector<char> open;
+        State state = State::kValue;
+        for (;;) {
+            Space();
+            if (state == State::kAfter && open.empty()) return true;
+            if (state == State::kKey) {
+                if (!At('"') || !String()) return false;
+                Space();
+                if (!At(':')) return false;
+                ++i_;
+                state = State::kValue;
+            } else if (state == State::kValue ? !Start(open, state) : !After(open, state)) {
+                return false;
+            }
+        }
+    }
+
     std::string_view s_;
     size_t i_ = 0;
 };
+
+/// Strict UTF-8 (RFC 3629) at `p`: the length of the rune, 0 when invalid, -1 when the `n` bytes
+/// end inside a rune that may still be valid.
+inline int Utf8Step(const unsigned char* p, size_t n) {
+    const unsigned c = p[0];
+    if (c < 0x80) return 1;
+    size_t need = 0;
+    unsigned lo = 0x80, hi = 0xBF;
+    if (c >= 0xC2 && c <= 0xDF) {
+        need = 2;
+    } else if (c >= 0xE0 && c <= 0xEF) {
+        need = 3;
+        if (c == 0xE0) lo = 0xA0;
+        if (c == 0xED) hi = 0x9F;
+    } else if (c >= 0xF0 && c <= 0xF4) {
+        need = 4;
+        if (c == 0xF0) lo = 0x90;
+        if (c == 0xF4) hi = 0x8F;
+    } else {
+        return 0;
+    }
+    for (size_t i = 1; i < need; ++i) {
+        if (i >= n) return -1;
+        if (p[i] < (i == 1 ? lo : 0x80u) || p[i] > (i == 1 ? hi : 0xBFu)) return 0;
+    }
+    return static_cast<int>(need);
+}
+
+/// The offset in the text of a string (between its quotes) where invalid UTF-8 starts, `npos` when
+/// it is valid; unless `closed`, a rune cut at the end may still be completed.
+inline size_t Utf8Failure(std::string_view s, bool closed) {
+    for (size_t i = 0; i < s.size();) {
+        const int width = Utf8Step(reinterpret_cast<const unsigned char*>(s.data()) + i, s.size() - i);
+        if (width < 0) return closed ? i : std::string_view::npos;
+        if (width == 0) return i;
+        i += static_cast<size_t>(width);
+    }
+    return std::string_view::npos;
+}
+
+inline unsigned HexValue(std::string_view digits) {
+    unsigned code = 0;
+    for (const char d : digits) {
+        code = code << 4 | static_cast<unsigned>(d <= '9' ? d - '0' : (d | 0x20) - 'a' + 10);
+    }
+    return code;
+}
+
+/// The offset in a string's text of the byte at which an unpaired `\u` surrogate becomes certain
+/// (a low one: its last hex digit; a high one: the byte that cannot continue a pair, or the text's
+/// end when it is closed), `npos` when every surrogate is paired; unless `closed`, a pair may still
+/// follow.
+inline size_t SurrogateFailure(std::string_view t, bool closed) {
+    for (size_t at = 0; at + 1 < t.size(); ++at) {
+        if (t[at] != '\\') continue;
+        if (t[++at] != 'u') continue;
+        if (at + 5 > t.size()) return std::string_view::npos;
+        const unsigned code = HexValue(t.substr(at + 1, 4));
+        if (code >= 0xDC00 && code <= 0xDFFF) return at + 4;
+        if (code < 0xD800 || code > 0xDBFF) {
+            at += 4;
+            continue;
+        }
+        const std::string_view rest = t.substr(at + 5);
+        if (rest.empty() || (rest.size() == 1 && rest[0] == '\\') ||
+            (rest.size() > 1 && rest.size() < 6 && rest[0] == '\\' && rest[1] == 'u')) {
+            return closed ? t.size() : std::string_view::npos;
+        }
+        if (rest[0] != '\\') return at + 5;
+        if (rest[1] != 'u') return at + 6;
+        const unsigned low = HexValue(rest.substr(2, 4));
+        if (low < 0xDC00 || low > 0xDFFF) return at + 10;
+        at += 10;
+    }
+    return std::string_view::npos;
+}
+
+/// Appends the UTF-8 encoding of `code`.
+inline void AppendUtf8(std::string& out, unsigned code) {
+    if (code < 0x80) {
+        out += static_cast<char>(code);
+    } else if (code < 0x800) {
+        out += static_cast<char>(0xC0 | code >> 6);
+        out += static_cast<char>(0x80 | (code & 0x3F));
+    } else if (code < 0x10000) {
+        out += static_cast<char>(0xE0 | code >> 12);
+        out += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+        out += static_cast<char>(0x80 | (code & 0x3F));
+    } else {
+        out += static_cast<char>(0xF0 | code >> 18);
+        out += static_cast<char>(0x80 | ((code >> 12) & 0x3F));
+        out += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+        out += static_cast<char>(0x80 | (code & 0x3F));
+    }
+}
+
+/// A key's text between its quotes with its escapes decoded (UTF-8); its pairs are checked already.
+inline std::string DecodeKey(std::string_view raw) {
+    std::string out;
+    for (size_t i = 0; i < raw.size(); ++i) {
+        if (raw[i] != '\\') {
+            out += raw[i];
+            continue;
+        }
+        const char e = raw[++i];
+        if (e != 'u') {
+            const size_t at = std::string_view("bfnrt").find(e);
+            out += at == std::string_view::npos ? e : "\b\f\n\r\t"[at];
+            continue;
+        }
+        unsigned code = HexValue(raw.substr(i + 1, 4));
+        i += 4;
+        if (code >= 0xD800 && code <= 0xDBFF) {
+            code = 0x10000 + ((code - 0xD800) << 10) + (HexValue(raw.substr(i + 3, 4)) - 0xDC00);
+            i += 6;
+        }
+        AppendUtf8(out, code);
+    }
+    return out;
+}
+
+/// A number token whose double is infinite (valid by JSON, out of a Float64's range).
+inline bool OverflowsDouble(std::string_view token) {
+    if (token.size() <= 308 && token.find_first_of("eE") == std::string_view::npos) return false;
+    const std::lconv* loc = std::localeconv();
+    const char point = loc == nullptr || loc->decimal_point == nullptr ? '.' : *loc->decimal_point;
+    std::string s(token);
+    std::replace(s.begin(), s.end(), '.', point);
+    return std::isinf(std::strtod(s.c_str(), nullptr));
+}
+
+/// The pass over a JSON text before it is parsed (CODEGEN.md §5.13, DECISIONS 361): the text is
+/// the document up to its first syntax error, if any, and the pass finds the first failure in
+/// document order that is not one: nesting past kMaxNesting, invalid UTF-8 or an unpaired surrogate
+/// in a string, a repeated key. Each is placed at the byte where it becomes certain, and named by
+/// the `$`-rooted path of the value (a key's failure: the object's). It also notes the number
+/// tokens whose double is infinite, by offset and RFC 6901 pointer.
+class TextScan {
+public:
+    explicit TextScan(std::string_view text) : t_(text) {}
+
+    /// Empty when no failure; else "<path>: <what>".
+    const std::string& Error() const noexcept { return error_; }
+
+    /// The (offset, length) and the pointer of every number token out of a Float64's range.
+    const std::vector<std::pair<size_t, size_t>>& Spans() const noexcept { return spans_; }
+    const std::vector<std::string>& Pointers() const noexcept { return pointers_; }
+
+    bool Scan() {
+        for (size_t at = 0; at < t_.size(); ++at) {
+            const char c = t_[at];
+            bool ok = true;
+            if (c == '{' || c == '[') {
+                ok = Open(c == '{');
+            } else if (c == '}' || c == ']') {
+                if (!levels_.empty()) levels_.pop_back();
+            } else if (c == ',' && !levels_.empty()) {
+                Level& top = levels_.back();
+                top.hasKey = false;
+                top.wantKey = top.object;
+                if (!top.object) ++top.index;
+            } else if (c == '"') {
+                ok = Quoted(at);
+            } else if (c == '-' || (c >= '0' && c <= '9')) {
+                at = Number(at);
+            }
+            if (!ok) return false;
+        }
+        return true;
+    }
+
+private:
+    struct Level {
+        bool object = false;
+        bool wantKey = false;
+        bool hasKey = false;
+        size_t index = 0;
+        std::string key;
+        std::set<std::string> keys;
+    };
+
+    bool Refuse(const std::string& what) {
+        error_ = Path() + ": " + what;
+        return false;
+    }
+
+    bool Open(bool object) {
+        if (levels_.size() >= kMaxNesting) return Refuse("nested deeper than " + std::to_string(kMaxNesting) + " levels");
+        levels_.emplace_back();
+        levels_.back().object = object;
+        levels_.back().wantKey = object;
+        return true;
+    }
+
+    std::string Path() const {
+        std::string p = "$";
+        for (const Level& l : levels_) {
+            if (!l.object) {
+                p += '[' + std::to_string(l.index) + ']';
+            } else if (l.hasKey) {
+                p += '.' + l.key;
+            }
+        }
+        return p;
+    }
+
+    std::string Pointer() const {
+        std::string p;
+        for (const Level& l : levels_) {
+            p += '/';
+            if (!l.object) {
+                p += std::to_string(l.index);
+                continue;
+            }
+            for (const char c : l.key) p += c == '~' ? std::string("~0") : c == '/' ? std::string("~1") : std::string(1, c);
+        }
+        return p;
+    }
+
+    /// The string whose opening quote is `at`; `at` becomes its last byte (the text's end if unclosed).
+    bool Quoted(size_t& at) {
+        size_t end = at + 1;
+        bool escaped = false;
+        while (end < t_.size() && t_[end] != '"') {
+            if (t_[end] == '\\') {
+                escaped = true;
+                ++end;
+            }
+            ++end;
+        }
+        const bool closed = end < t_.size();
+        const std::string_view text = t_.substr(at + 1, closed ? end - at - 1 : std::string_view::npos);
+        at = closed ? end : t_.size();
+        const size_t badUtf8 = Utf8Failure(text, closed);
+        const size_t badPair = escaped ? SurrogateFailure(text, closed) : std::string_view::npos;
+        if (badUtf8 != std::string_view::npos || badPair != std::string_view::npos) {
+            return Refuse(badUtf8 < badPair ? "not UTF-8" : "unpaired surrogate");  // the byte that comes first
+        }
+        if (!closed || levels_.empty() || !levels_.back().wantKey) return true;
+        Level& top = levels_.back();
+        top.key = escaped ? DecodeKey(text) : std::string(text);
+        top.hasKey = true;
+        top.wantKey = false;
+        return top.keys.insert(top.key).second || Refuse("duplicate key");
+    }
+
+    /// The number token starting at `at`; the offset of its last byte.
+    size_t Number(size_t at) {
+        size_t end = at;
+        while (end < t_.size() && std::string_view("+-.0123456789eE").find(t_[end]) != std::string_view::npos) ++end;
+        if (OverflowsDouble(t_.substr(at, end - at))) {
+            spans_.emplace_back(at, end - at);
+            pointers_.push_back(Pointer());
+        }
+        return end - 1;
+    }
+
+    std::string_view t_;
+    std::vector<Level> levels_;
+    std::string error_;
+    std::vector<std::pair<size_t, size_t>> spans_;
+    std::vector<std::string> pointers_;
+};
+
+/// `text` with every span replaced by a finite stand-in number (nlohmann refuses an infinite one).
+inline std::string StandIn(std::string_view text, const std::vector<std::pair<size_t, size_t>>& spans) {
+    std::string out;
+    size_t from = 0;
+    for (const auto& s : spans) {
+        out.append(text.substr(from, s.first - from));
+        out += "1e308";
+        from = s.first + s.second;
+    }
+    out.append(text.substr(from));
+    return out;
+}
 
 }  // namespace detail
 
 /// Parses a JSON text (WIRE.md §3.1, §3.2): any top-level value, the same byte rules as
 /// ParseDataFile (UTF-8 and a leading BOM, no repeated key, nothing nested deeper than
-/// kMaxNesting), without the `$schema` and envelope checks. `name` is used in messages; a repeated
-/// key is "<name>: $.a.b: duplicate key" and a syntax error "<name>: invalid JSON at byte N", the
-/// first byte that cannot continue a JSON document (a BOM counted), or the length of a text that
-/// ends too early (CODEGEN.md §5.13). `tokens` and `orders` (when not null) receive the
-/// Float32Tokens and KeyOrders of `doc`, for a `Decoder` reading it in file order.
+/// kMaxNesting), without the `$schema` and envelope checks. `name` is used in messages. The error
+/// is the first failure in document order (CODEGEN.md §5.13): "<name>: $.a.b: duplicate key",
+/// "<name>: $.a: not UTF-8", "<name>: $.a: unpaired surrogate", "<name>: $...: nested deeper than
+/// 512 levels", or a syntax error "<name>: invalid JSON at byte N", the first byte that cannot
+/// continue a JSON document (a BOM counted), or the length of a text that ends too early. A number
+/// valid by JSON is never a syntax error: one out of a Float64's range is parsed as a stand-in and
+/// noted in `tokens` with an empty token, which a `Decoder` reading it as a Float refuses with
+/// "number out of range". `tokens` and `orders` (when not null) receive the Float32Tokens and
+/// KeyOrders of `doc`, for a `Decoder` reading it in file order.
 inline bool ParseTextFile(const std::string& name, std::string_view text, Json& doc, std::string& error,
                           Float32Tokens& tokens, KeyOrders* orders) {
-    StrictCheck check(orders != nullptr, /*anyRoot=*/true, "$");
-    const bool strict = Json::sax_parse(text.begin(), text.end(), &check);
-    if (!check.Error().empty()) {
-        error = name + ": " + check.Error();
+    const size_t bom = text.substr(0, 3) == "\xEF\xBB\xBF" ? 3 : 0;
+    const std::string_view body = text.substr(bom);
+    const size_t syntax = detail::SyntaxScan(body).Offset();
+    detail::TextScan scan(body.substr(0, std::min(syntax, body.size())));
+    if (!scan.Scan()) {
+        error = name + ": " + scan.Error();
         return false;
     }
-    if (strict) doc = Json::parse(text.begin(), text.end(), nullptr, /*allow_exceptions=*/false);
+    if (syntax != std::string_view::npos) {
+        error = name + ": invalid JSON at byte " + std::to_string(syntax + bom);
+        return false;
+    }
+    const std::string standIn = scan.Spans().empty() ? std::string() : detail::StandIn(body, scan.Spans());
+    const std::string_view source = scan.Spans().empty() ? body : std::string_view(standIn);
+    StrictCheck check(orders != nullptr, /*anyRoot=*/true, "$");
+    const bool strict = Json::sax_parse(source.begin(), source.end(), &check);
+    if (strict) doc = Json::parse(source.begin(), source.end(), nullptr, /*allow_exceptions=*/false);
     if (!strict || doc.is_discarded()) {
-        error = name + ": invalid JSON at byte " + std::to_string(std::min(detail::SyntaxScan(text).Offset(), check.Offset()));
+        // Not reached: SyntaxScan accepted the grammar, TextScan the strings, keys and depth, and
+        // the stand-ins are finite, so nlohmann takes the text. Were it to refuse, the offset
+        // below is in `source` (the stand-in text), not in `text`.
+        error = name + ": " + (check.Error().empty() ? "invalid JSON at byte " + std::to_string(check.Offset() + bom) : check.Error());
         return false;
     }
     detail::TakeSidecars(check, doc, tokens, orders);
+    const Json& parsed = doc;
+    for (const std::string& pointer : scan.Pointers()) {
+        const Json::json_pointer at(pointer);
+        if (parsed.contains(at)) tokens.emplace(&parsed[at], std::string());
+    }
     return true;
 }
 
@@ -715,9 +1040,11 @@ public:
     }
 
     /// A Float may be written as an integer token ("1" for 1.0). `-0`, `-0.0` and an underflow
-    /// to zero all read as `+0` (WIRE.md §5.1).
+    /// to zero all read as `+0` (WIRE.md §5.1). A number out of the Float64 range, which
+    /// ParseTextFile noted with an empty token, is refused: `number out of range`.
     bool AsFloat(const Json& v, std::string_view key, double& out) {
         if (!v.is_number()) return Fail(key, "expected a number"), false;
+        if (const std::string* token = Token(v); token != nullptr && token->empty()) return Fail(key, "number out of range"), false;
         out = v.get<double>();
         if (out == 0.0) out = 0.0;
         return true;
