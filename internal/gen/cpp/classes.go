@@ -257,6 +257,7 @@ func (g *gen) declareNames() {
 	for _, c := range g.p.Consts {
 		g.declare(g.pl.ConstName(c), c.Name)
 	}
+	g.declareTextNames()
 	g.declareValueNames()
 	g.declareBakedNames()
 	if g.reloads() > 0 {

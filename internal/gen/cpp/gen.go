@@ -48,6 +48,9 @@ type gen struct {
 	qualify      bool                    // this package's names written from the global namespace, as detail::<P>Make does (§5.14)
 	rowFriends   map[*ir.Record][]string // per row of another package's record, the classes whose decoders fill it (§5.9)
 	h, c         writer
+	wireTables   map[string]bool // branch tables keyed by the wire, their ref key being an opened enum (CODEGEN.md §5.6)
+	textFile     bool            // a Decode<Fn>File is being written: its map, outside a record, is read (CODEGEN.md §5.13)
+	afterNS      writer          // what follows the header's namespace: std::hash of an opened enum (CODEGEN.md §5.2)
 }
 
 // method is a translated method with the class that owns it and that class's fields.
@@ -88,7 +91,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 		p: p, emit: e, at: p.Name, last: last,
 		entries: map[*ir.Record]bool{}, loaders: map[*ir.Record]*ir.Value{}, imported: map[string]bool{},
 		pairsFriends: map[*ir.Record][]string{}, holders: map[any][]*ir.Value{}, slots: map[any][]resolved{},
-		rowFriends: map[*ir.Record][]string{}, top: newScope(e.Namespace), dst: outPrefix,
+		rowFriends: map[*ir.Record][]string{}, wireTables: map[string]bool{}, top: newScope(e.Namespace), dst: outPrefix,
 	}
 }
 
@@ -174,10 +177,10 @@ func (g *gen) translated() bool { return len(g.pkgFns)+len(g.methods) > 0 }
 
 // header is <last>.gen.h in §2.7's order after `#pragma once` (log-2026-09-24, Header guard).
 func (g *gen) header() []byte {
-	g.h = writer{}
+	g.h, g.afterNS = writer{}, writer{}
 	sections := []func(){
 		g.constants, g.schemaConstants, g.enums, g.enumConstants, g.forwards,
-		g.detailDecls, g.classDecls, g.makeStructDef, g.containers, g.accessors, g.foreignLoaderDecls, g.lateHooks,
+		g.detailDecls, g.classDecls, g.makeStructDef, g.containers, g.accessors, g.foreignLoaderDecls, g.lateHooks, g.textDeclarations,
 		g.packageFns, g.snapshot, g.inputsDecl,
 		g.conformanceDecl,
 	}
@@ -188,8 +191,9 @@ func (g *gen) header() []byte {
 	out.printf(markerFormat, g.p.Dir)
 	out.line(pragmaOnce)
 	out.blank()
-	includes(&out, g.h.String(), headerGroups(g))
+	includes(&out, g.h.String()+g.afterNS.String(), headerGroups(g))
 	g.namespaceBody(&out, g.emit.Namespace, g.h.String())
+	out.write(g.afterNS.String())
 	return out.bytes()
 }
 
@@ -212,6 +216,7 @@ func (g *gen) source() []byte {
 	} else {
 		g.readerDecls()
 		g.decoders()
+		g.textHelpers()
 		g.readers()
 		g.accessStruct()
 	}

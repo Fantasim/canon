@@ -27,7 +27,11 @@ func (g *gen) enums() {
 	for _, t := range g.p.Types {
 		if e, ok := t.(*ir.Enum); ok {
 			leave := g.enter(e.Name)
-			g.enum(g.declaredEnum(e))
+			if g.open(e) {
+				g.openEnum(g.declaredEnum(e))
+			} else {
+				g.enum(g.declaredEnum(e))
+			}
 			leave()
 		}
 	}

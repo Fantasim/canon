@@ -1106,6 +1106,16 @@ public:
         return true;
     }
 
+    /// An opened enum (CODEGEN.md §5.2, DECISIONS 362): any JSON string is a value, known or not;
+    /// a wrong JSON kind still fails.
+    template <class E>
+    bool AsOpenEnum(const Json& v, std::string_view key, E& out) {
+        std::string wire;
+        if (!AsString(v, key, wire)) return false;
+        out = E(std::move(wire));
+        return true;
+    }
+
     /// The array at `key` (or nullptr with an error).
     const Json* Array(const Json& obj, const char* key) {
         const Json* v = Required(obj, key);
@@ -1145,6 +1155,11 @@ public:
     bool Enum(const Json& obj, const char* key, std::optional<E> (*parse)(W), E& out) {
         const Json* v = Required(obj, key);
         return v != nullptr && AsEnum(*v, key, parse, out);
+    }
+    template <class E>
+    bool OpenEnum(const Json& obj, const char* key, E& out) {
+        const Json* v = Required(obj, key);
+        return v != nullptr && AsOpenEnum(*v, key, out);
     }
 
     /// The keys of object `v` in file order when they are on record (not in byte order), else nullptr.

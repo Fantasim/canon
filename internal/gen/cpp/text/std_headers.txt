@@ -9,6 +9,7 @@
 \bstd::s?n?f?printf\b <cstdio>
 \bstd::(?:abort|getenv|strtoll)\b <cstdlib>
 \bstd::memcmp\b <cstring>
+\bstd::hash\b <functional>
 \bstd::locale\b <locale>
 \bstd::(?:shared_ptr|make_shared|unique_ptr|make_unique)\b <memory>
 \bstd::(?:optional|nullopt)\b <optional>

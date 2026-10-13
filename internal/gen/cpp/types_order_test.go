@@ -18,6 +18,8 @@ var documentOrderFiles = []typesFile{
 	{name: "ord_highslash.json", arg: "x", text: "{\"a\": \"\\ud800\\n\xff\"}", parseOnly: true, parse: "ord_highslash.json: error Extras: $.a: unpaired surrogate\n"},
 	{name: "ord_utf8low.json", arg: "x", text: "{\"a\": \"\xff\\udc00\"}", parseOnly: true, parse: "ord_utf8low.json: error Extras: $.a: not UTF-8\n"},
 	{name: "ord_utf8high.json", arg: "x", text: "{\"a\": \"\xff\\ud800\"}", parseOnly: true, parse: "ord_utf8high.json: error Extras: $.a: not UTF-8\n"},
+	{name: "ord_tie.json", arg: "x", text: "{\"a\": \"\\ud800\xff\"}", parseOnly: true, parse: "ord_tie.json: error Extras: $.a: unpaired surrogate\n"},
+	{name: "ord_tieopen.json", arg: "x", text: "{\"a\": \"\\ud800\xff", parseOnly: true, parse: "ord_tieopen.json: error Extras: $.a: unpaired surrogate\n"},
 	{name: "ord_highcut.json", arg: "x", text: `{"a": "\ud800\`, parseOnly: true, parse: "ord_highcut.json: error Extras: invalid JSON at byte 14\n"},
 	{name: "ord_keycut.json", arg: "x", text: `{"a":1,"a`, parseOnly: true, parse: "ord_keycut.json: error Extras: invalid JSON at byte 9\n"},
 	{name: "ord_ucut.json", arg: "x", text: `{"a": "\udc`, parseOnly: true, parse: "ord_ucut.json: error Extras: invalid JSON at byte 11\n"},

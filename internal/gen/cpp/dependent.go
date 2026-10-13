@@ -94,8 +94,12 @@ func (g *gen) dependentDecodeDecl(d *ir.Dependent) {
 func (g *gen) dependentDecoder(d *ir.Dependent, name string) {
 	n := g.pl.Dependent(d)
 	g.c.printf(dependentOpenFormat, name, g.global(*d.Disc), g.qualifiedOwn(d))
-	g.c.linef(1, switchFormat, g.switchArg(d))
 	labels := g.discLabels(d)
+	open := g.openDisc(d)
+	if !open {
+		g.c.linef(1, switchFormat, g.switchArg(d))
+	}
+	chain := 0 // the branches written so far, an if-chain's first being its `if`
 	for i := range d.Branches {
 		var mine []string
 		for m, arm := range d.ByMember {
@@ -103,10 +107,17 @@ func (g *gen) dependentDecoder(d *ir.Dependent, name string) {
 				mine = append(mine, labels[m])
 			}
 		}
-		g.dependentCase(mine, i, d, n.DefineValue)
+		if g.dependentCase(mine, i, d, n.DefineValue, chain) {
+			chain++
+		}
 	}
-	g.c.linef(1, defaultBreak)
-	g.c.linef(1, closeBrace)
+	if open && chain > 0 {
+		g.c.linef(1, closeBrace)
+	}
+	if !open {
+		g.c.linef(1, defaultBreak)
+		g.c.linef(1, closeBrace)
+	}
 	g.c.linef(1, noBranchLine)
 	g.c.linef(1, returnFalse)
 	g.c.line(closeBrace)
@@ -136,16 +147,21 @@ func (g *gen) discLabels(d *ir.Dependent) []string {
 }
 
 // dependentCase decodes the value as branch i's type into a local, a define key's value into defineValue (DECISIONS 298), then emplaces alternative i; a reader of another package's dependent type builds it through the branch's make hook (CODEGEN.md §2.8, §5.14).
-func (g *gen) dependentCase(labels []string, i int, dep *ir.Dependent, defineValue string) {
+func (g *gen) dependentCase(labels []string, i int, dep *ir.Dependent, defineValue string, chain int) bool {
 	if len(labels) == 0 {
-		return
+		return false
 	}
 	b := dep.Branches[i]
-	last := len(labels) - 1
-	for _, l := range labels[:last] {
-		g.c.linef(1, caseLabelFormat, l)
+	open := g.openDisc(dep)
+	if open {
+		g.openBranch(labels, chain)
+	} else {
+		last := len(labels) - 1
+		for _, l := range labels[:last] {
+			g.c.linef(1, caseLabelFormat, l)
+		}
+		g.c.linef(1, caseOpenFormat, labels[last])
 	}
-	g.c.linef(1, caseOpenFormat, labels[last])
 	tmp, init := fmt.Sprintf(tempFormat, depthTwo), elemInit(b.Type)
 	if _, id := g.idEnum(b.Type); id {
 		init = initBraces
@@ -171,7 +187,29 @@ func (g *gen) dependentCase(labels []string, i int, dep *ir.Dependent, defineVal
 		g.c.linef(depthTwo, emplaceMoveFormat, i, tmp)
 	}
 	g.c.linef(depthTwo, returnOk)
-	g.c.linef(1, closeBrace)
+	if !open {
+		g.c.linef(1, closeBrace)
+	}
+	return true
+}
+
+// openDisc reports a dependent type whose discriminant is an opened enum: an unknown member falls to no branch, so its decoder is an if-chain on the members, not a switch (CODEGEN.md §5.2, §5.6).
+func (g *gen) openDisc(d *ir.Dependent) bool {
+	e, ok := d.Disc.Named.(*ir.Enum)
+	return ok && d.Disc.Kind == types.Enum && g.open(e)
+}
+
+// openBranch opens one branch of an if-chain: `if (disc == A || disc == B) {`, then `} else if (...) {` (the previous branch returns, so the else is harmless).
+func (g *gen) openBranch(labels []string, chain int) {
+	tests := make([]string, len(labels))
+	for i, l := range labels {
+		tests[i] = fmt.Sprintf(dependentEqualFormat, discParam, l)
+	}
+	format := ifOpenFormat
+	if chain > 0 {
+		format = elseIfFormat
+	}
+	g.c.linef(1, format, strings.Join(tests, dependentOrSep))
 }
 
 // global is t's storage named from the global namespace, so that Decode<Alias>'s parameters (v, key, disc, dec, out) hide no enum it names.

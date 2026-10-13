@@ -142,6 +142,9 @@ func (g *gen) keyRenderer(t ir.TypeRef) string {
 	if t.Kind != types.Enum || !ok {
 		return genericKeyRender
 	}
+	if e.JSONCodes && g.open(e) {
+		return fmt.Sprintf(openCodeKeyFormat, g.typeName(t.Named), g.storage(*e.Codes))
+	}
 	if e.JSONCodes {
 		return fmt.Sprintf(codeKeyRenderFormat, g.typeName(t.Named), g.storage(*e.Codes))
 	}

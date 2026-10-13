@@ -113,9 +113,15 @@ func (g *gen) decodeBits(depth int, src, key string, l leaf) {
 	enum := g.typeName(e)
 	g.c.linef(depth, bitsTempLine)
 	g.c.linef(depth, bitsOpenFormat, src, key, g.bitsMask(e))
-	g.c.linef(depth+1, bitsArrayFormat, enum, strings.Join(names, listSep))
-	g.c.linef(depth+1, bitsLoopFormat, enum)
-	g.c.linef(depth+depthTwo, bitsTestFormat, l.dst)
+	if g.open(e) { // a class is no constant, nor a mask: its code is ToCode's
+		g.c.linef(depth+1, openBitsArrayFormat, enum, strings.Join(names, listSep))
+		g.c.linef(depth+1, openBitsLoopFormat, enum)
+		g.c.linef(depth+depthTwo, openBitsTestFormat, l.dst)
+	} else {
+		g.c.linef(depth+1, bitsArrayFormat, enum, strings.Join(names, listSep))
+		g.c.linef(depth+1, bitsLoopFormat, enum)
+		g.c.linef(depth+depthTwo, bitsTestFormat, l.dst)
+	}
 	g.c.linef(depth+1, closeBrace)
 	g.c.linef(depth, closeBrace)
 }

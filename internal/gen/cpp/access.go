@@ -147,4 +147,5 @@ func (g *gen) outOfLine() {
 		g.c.printf(reloadDefText, g.pl.StoreName(), snap, ir.CppLoad)
 	}
 	g.publicDecoders()
+	g.textDecoders()
 }

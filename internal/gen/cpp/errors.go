@@ -127,6 +127,10 @@ const (
 	definesClose       = "}};"
 	// branchesOpenFormat opens a build-time branch table, its entries written as a define table's (CODEGEN.md §5.6, DECISIONS 350).
 	branchesOpenFormat = "constexpr std::array<std::pair<%s, %s>, %d> %s = {{" + newline
+	// branchesOpenAddressFormat opens a branch table whose branches are opened enum members, held by address.
+	branchesOpenAddressFormat = "constexpr std::array<std::pair<%s, const %s*>, %d> %s = {{" + newline
+	// branchKeyFormat is the key a branch lookup hoists, once per lookup.
+	branchKeyFormat = "key%d"
 	// branchFoundFormat is the discriminant a branch table's search found.
 	branchFoundFormat = "%s[lo%d].second"
 	// lineFormat writes a line as it is.
@@ -243,4 +247,32 @@ const (
 	entryKeyVarFormat      = "k%d"
 	entryIDOpenFormat      = "if (std::string %[1]s; dec.AsString(%[2]s, %[3]s, %[1]s)) {"
 	entryIDParseFormat     = "if (const auto entry = %[1]s(%[2]s)) %[3]s = *entry; else dec.Fail(%[4]s, \"no entry \" + %[2]s);"
+
+	// Opened enums (CODEGEN.md §5.2, DECISIONS 362) and the text decoders (§5.13, DECISIONS 363).
+	openClassOpenFormat = "class %[1]s {\n" + publicLabel + "\n    %[1]s() = default;\n    explicit %[1]s(std::string wire) : %[2]s(std::move(wire)) {}\n\n"
+	openMemberFormat    = "static const %s %s;"
+	openClassTailFormat = "    friend bool operator==(const %[1]s& a, const %[1]s& b) noexcept { return a.%[2]s == b.%[2]s; }\n" +
+		"    friend bool operator!=(const %[1]s& a, const %[1]s& b) noexcept { return a.%[2]s != b.%[2]s; }\n" +
+		"    friend bool operator<(const %[1]s& a, const %[1]s& b) noexcept { return a.%[2]s < b.%[2]s; }\n" +
+		"    friend std::string_view %[3]s(const %[1]s& v) noexcept;\n\n" + privateLabel + "\n    std::string %[2]s;\n};\n\n"
+	openDefineFormat     = "inline const %[1]s %[1]s::%[2]s{%[3]s};"
+	openToWireFormat     = "inline std::string_view " + ir.CppToWire + "(const %[1]s& v) noexcept { return v.%[2]s; }\n\n"
+	openNameOpenFormat   = "inline std::string_view " + ir.CppToName + "(const %s& v) {\n"
+	openNameTestFormat   = "if (v == %s) return %s;"
+	openNameCloseLine    = "return " + ir.CppToWire + "(v);"
+	openKnownFormat      = "inline bool " + ir.CppIsKnown + "(const %[1]s& v) { return %[2]s(" + ir.CppToWire + "(v)).has_value(); }\n\n"
+	openToCodeOpenFormat = "inline std::optional<%s> " + ir.CppToCode + "(const %s& v) {\n"
+	openToCodeTestFormat = "if (v == %s) return static_cast<%s>(%d);"
+	openHashFormat       = "\ntemplate <>\nstruct std::hash<%[1]s> {\n    size_t operator()(const %[1]s& v) const noexcept { return std::hash<std::string_view>{}(%[2]s" + ir.CppToWire + "(v)); }\n};\n"
+	openBitMemberFormat  = "static_cast<uint64_t>(*" + ir.CppToCode + "(m))"
+	openBitsTestFormat   = "if ((n & " + openBitMemberFormat + ") != 0) %s.push_back(m);"
+	openBitsArrayFormat  = "const %s bits[] = {%s};"
+	openBitsLoopFormat   = "for (const %s& m : bits) {"
+	shortOpenEnum        = "OpenEnum"
+	asOpenEnum           = "AsOpenEnum"
+	openCodeKeyFormat    = "[](const %s& e) { return canon::json::detail::KeyToken(static_cast<%s>(*" + ir.CppToCode + "(e))); }"
+	textDocFormat        = "/// Reads the text of %s's file, in file order; no value (and the error set) unless all of it decodes."
+	textDeclFormat       = "std::optional<%s> %s(std::string_view text, std::string& error);"
+	dependentEqualFormat = "%s == %s"
+	dependentOrSep       = " || "
 )

@@ -10,7 +10,7 @@ import (
 
 // decodeMap reads an object as a canon::FlatMap, its members in file order, each key as the wire key WIRE.md §5.8 gives its type; the data loader reads the file's text, so order survives (CODEGEN.md §5.9, §5.13, DECISIONS 312).
 func (g *gen) decodeMap(depth int, src, key string, l leaf) {
-	if g.types() || l.t.Key == nil || l.t.Elem == nil {
+	if g.types() && !g.textFile || l.t.Key == nil || l.t.Elem == nil {
 		g.malformed(mapFields, g.at) // E8019 MapField
 		return
 	}

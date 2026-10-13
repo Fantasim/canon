@@ -207,9 +207,9 @@ const (
 	CppVariantMember = "value_" // a variant's or dependent type's std::variant (§5.5, §5.6)
 	CppToName        = "ToName" // the enum helpers, one overload per enum (CODEGEN.md §5.2)
 	CppToWire        = "ToWire"
-	cppIsKnown       = "IsKnown" // an opened enum's helpers, one overload per enum (DECISIONS 362)
-	cppToCode        = "ToCode"
-	cppOpenWire      = "wire_"
+	CppIsKnown       = "IsKnown" // an opened enum's helpers, one overload per enum (DECISIONS 362)
+	CppToCode        = "ToCode"
+	CppOpenWire      = "wire_"
 	CppMatchPattern  = "MatchPattern" // §7.7's pattern search, the input helper a loader calls by name
 	CppEnvText       = "EnvText"      // §7.7's variable reader, the input helper each LoadInputs block calls
 )

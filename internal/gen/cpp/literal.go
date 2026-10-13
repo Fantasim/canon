@@ -222,7 +222,13 @@ func (g *gen) constant(c *ir.Const) {
 	name := g.pl.ConstName(c)
 	g.doc(0, c.Doc)
 	switch c.Type.Kind {
-	case types.Bool, types.Int, types.Float, types.Enum:
+	case types.Enum:
+		format := constexprFormat
+		if e, ok := c.Type.Named.(*ir.Enum); ok && g.open(e) { // a class holding a std::string is no constant expression
+			format = listConstFormat
+		}
+		g.h.printf(format, g.storage(c.Type), name, g.literal(c.Type, c.V))
+	case types.Bool, types.Int, types.Float:
 		g.h.printf(constexprFormat, g.storage(c.Type), name, g.literal(c.Type, c.V))
 	case types.String, types.LitUnion:
 		g.h.printf(constexprFormat, cppStringView, name, g.literal(c.Type, c.V))

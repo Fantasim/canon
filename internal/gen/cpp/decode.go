@@ -211,6 +211,8 @@ func (g *gen) shortcut(l leaf) string {
 		return shortString
 	case l.t.Kind == types.Duration && !g.types(): // types mode reads a source-wire Duration (WIRE.md §5.13)
 		return shortDuration
+	case g.openPlain(l.t) && l.enc == types.EncPlain:
+		return shortOpenEnum
 	case l.t.Kind == types.Enum && l.enc == types.EncPlain:
 		return shortEnum
 	default:
@@ -224,6 +226,9 @@ func (g *gen) shortcutExtra(l leaf) string {
 	case types.Duration:
 		return fmt.Sprintf(unitArgFormat, l.unit.Millis())
 	case types.Enum:
+		if g.openPlain(l.t) {
+			return ""
+		}
 		return g.parser(l.t) + listSep
 	default:
 		return ""
@@ -268,7 +273,11 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 	case types.Duration:
 		g.decodeDuration(depth, src, key, l)
 	case types.Enum:
-		g.c.linef(depth, decCallFormat, asEnum, src, key, g.shortcutExtra(l), l.dst)
+		as := asEnum
+		if g.openPlain(l.t) {
+			as = asOpenEnum
+		}
+		g.c.linef(depth, decCallFormat, as, src, key, g.shortcutExtra(l), l.dst)
 	case types.Ref:
 		if id, ok := g.foreignKey(l.t); ok {
 			g.decodeEntryID(depth, src, key, id, l.dst)

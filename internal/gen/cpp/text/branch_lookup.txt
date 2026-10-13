@@ -1,14 +1,15 @@
 {
+    const auto& key%[1]d = %[3]s;
     size_t lo%[1]d = 0;
     size_t hi%[1]d = %[2]s.size();
     while (lo%[1]d < hi%[1]d) {
         const size_t mid%[1]d = lo%[1]d + (hi%[1]d - lo%[1]d) / 2;
-        if (%[2]s[mid%[1]d].first < %[3]s) {
+        if (%[2]s[mid%[1]d].first < %[5]s) {
             lo%[1]d = mid%[1]d + 1;
         } else {
             hi%[1]d = mid%[1]d;
         }
     }
-    if (lo%[1]d == %[2]s.size() || !(%[2]s[lo%[1]d].first == %[3]s)) {
+    if (lo%[1]d == %[2]s.size() || !(%[2]s[lo%[1]d].first == %[5]s)) {
         %[4]s
     } else {

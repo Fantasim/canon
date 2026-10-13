@@ -19,7 +19,7 @@ func (pl *CppNamePlan) declareOpenClass(sc *nameScope, name, origin string, e *E
 		return
 	}
 	pl.declare(sc, name, origin, nil)
-	pl.declare(sc, cppOpenWire, origin, nil)
+	pl.declare(sc, CppOpenWire, origin, nil)
 }
 
 // openOverloads are the free functions every opened enum of the package adds, one overload each: IsKnown, and ToCode when one has @codes (CODEGEN.md §5.2, DECISIONS 362).
@@ -29,7 +29,7 @@ func (pl *CppNamePlan) openOverloads() []string {
 		return nil
 	}
 	if slices.ContainsFunc(open, func(e *Enum) bool { return e.Codes != nil }) {
-		return []string{cppIsKnown, cppToCode}
+		return []string{CppIsKnown, CppToCode}
 	}
-	return []string{cppIsKnown}
+	return []string{CppIsKnown}
 }

@@ -29,6 +29,12 @@ func (g *gen) leafDisc(fields []*ir.Field, f *ir.Field, app ir.TypeRef) (string,
 	return g.pathExpr(path), name
 }
 
+// openRefKey reports a ref whose key is an enum the emit opens: its branch table is keyed by the wire, in wire byte order, not by the class (CODEGEN.md §5.6, DECISIONS 362).
+func (g *gen) openRefKey(ref ir.TypeRef) bool {
+	e, ok := refEnumKey(ref)
+	return ok && g.open(e)
+}
+
 // pathExpr reads path from what the decoder has already decoded, each field through its getter, a reader's first from its local (CODEGEN.md §2.8, §5.6).
 func (g *gen) pathExpr(path []*ir.Field) string {
 	calls := []string{outVar}
@@ -45,11 +51,19 @@ func (g *gen) pathExpr(path []*ir.Field) string {
 
 // branchCall searches l's table for the ref's key l.disc and calls call with the discriminant it holds, or refuses the value at key with the text of a member no branch covers (CODEGEN.md §5.6, DECISIONS 350).
 func (g *gen) branchCall(depth int, l leaf, call func(depth int, disc string), key string) {
-	text := fmt.Sprintf(branchLookupText, depth, l.table, l.disc, fmt.Sprintf(noBranchAtFormat, key))
+	searched := fmt.Sprintf(branchKeyFormat, depth)
+	if g.wireTables[l.table] { // keyed by the wire (CODEGEN.md §5.6)
+		searched = fmt.Sprintf(helperFormat, ir.CppToWire, searched)
+	}
+	text := fmt.Sprintf(branchLookupText, depth, l.table, l.disc, fmt.Sprintf(noBranchAtFormat, key), searched)
 	for line := range strings.SplitSeq(strings.TrimSuffix(text, newline), newline) {
 		g.c.linef(depth, lineFormat, line)
 	}
-	call(depth+depthTwo, fmt.Sprintf(branchFoundFormat, l.table, depth))
+	found := fmt.Sprintf(branchFoundFormat, l.table, depth)
+	if d, ok := l.t.Named.(*ir.Dependent); ok && g.openDisc(d) { // the table holds the address of the member
+		found = derefStar + found
+	}
+	call(depth+depthTwo, found)
 	g.c.linef(depth+1, closeBrace)
 	g.c.linef(depth, closeBrace)
 }
@@ -78,25 +92,33 @@ func (g *gen) branchTable(bt ir.NamedBranches) {
 		labels = []string{strconv.FormatBool(false), strconv.FormatBool(true)} // a bool table holds bools: no narrowing from 0 and 1
 	}
 	entries := g.branchEntries(ref, bt.Field.Branches)
-	g.c.printf(branchesOpenFormat, g.branchKeyType(ref), g.global(*d.Disc), len(entries), bt.Name)
+	if g.openRefKey(ref) {
+		g.wireTables[bt.Name] = true
+	}
+	format, address := branchesOpenFormat, ""
+	if g.openDisc(d) { // an opened enum's member is a static const: the table holds its address, so it stays a constant expression
+		format, address = branchesOpenAddressFormat, addressOf
+	}
+	g.c.printf(format, g.branchKeyType(ref), g.global(*d.Disc), len(entries), bt.Name)
 	for _, e := range entries {
-		g.c.linef(1, defineEntryFormat, e.key, labels[d.Branches[e.branch].Members[0]])
+		g.c.linef(1, defineEntryFormat, e.key, address+labels[d.Branches[e.branch].Members[0]])
 	}
 	g.c.line(definesClose)
 	g.c.blank()
 }
 
-// branchEntry is one key of a table as C++ writes it, with its branch and its rank in C++'s order.
+// branchEntry is one key of a table as C++ writes it, with its branch and its rank in C++'s order; wire is the key's wire text, the order of a table keyed by the wire.
 type branchEntry struct {
-	key    string
-	branch int
-	rank   int64
+	key, wire string
+	branch    int
+	rank      int64
 }
 
 // branchEntries are t's keys, ranked as the lookup's `<` compares the ref's key: strings by bytes and integers by value (the IR's order), an enum class by its enumerator's value, its @codes code or else its member index (CODEGEN.md §5.2).
 func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
 	out := make([]branchEntry, len(t.Keys))
 	e, isEnum := refEnumKey(ref)
+	byWire := isEnum && g.open(e)
 	for i, k := range t.Keys {
 		out[i] = branchEntry{key: quote(k.S), branch: t.Branches[i], rank: int64(i)}
 		switch {
@@ -109,7 +131,15 @@ func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
 				continue
 			}
 			out[i].key, out[i].rank = g.qualifiedOwn(e)+scopeSep+g.pl.Enumerator(e.Members[m]), enumeratorValue(e, m)
+			if byWire {
+				out[i].wire = e.Members[m].Wire
+				out[i].key = quote(out[i].wire)
+			}
 		}
+	}
+	if byWire {
+		slices.SortStableFunc(out, func(a, b branchEntry) int { return cmp.Compare(a.wire, b.wire) })
+		return out
 	}
 	slices.SortStableFunc(out, func(a, b branchEntry) int { return cmp.Compare(a.rank, b.rank) })
 	return out
@@ -134,7 +164,7 @@ func refEnumKey(ref ir.TypeRef) (*ir.Enum, bool) {
 
 // branchKeyType is a table's key type: std::string_view for a string key, else the key's own.
 func (g *gen) branchKeyType(ref ir.TypeRef) string {
-	if e, ok := refEnumKey(ref); ok {
+	if e, ok := refEnumKey(ref); ok && !g.open(e) {
 		return g.qualifiedOwn(e)
 	}
 	if ref.Key != nil && ref.Key.Kind == types.Int {
