@@ -89,6 +89,7 @@ const (
 	failSnapshotText      = "error = dec.Error(), nullptr"
 	failMissingFormat     = "dec.Fail(%s, \"missing\");"
 	noBranchLine          = "dec.Fail(key, \"no branch for this value\");"
+	noBranchAtFormat      = "dec.Fail(%s, \"no branch for this value\");"
 	nullElemFormat        = "if (%s.is_null()) return dec.Fail(%s, \"null\"), false;"
 	failureTextFormat     = "%s: %s(%s) = %s [%%.*s], canon says %s [%%.*s]\n"
 )
@@ -124,9 +125,15 @@ const (
 	definesOpenFormat  = "constexpr std::array<std::pair<std::string_view, int64_t>, %d> %s = {{" + newline
 	defineEntryFormat  = "{%s, %s},"
 	definesClose       = "}};"
-	defineCallFormat   = jsonDetail + "Define(%s, %s, dec, %s, %s, %s);"
-	emplaceCall        = ".emplace()"
-	emplaceBackCall    = ".emplace_back()"
+	// branchesOpenFormat opens a build-time branch table, its entries written as a define table's (CODEGEN.md §5.6, DECISIONS 350).
+	branchesOpenFormat = "constexpr std::array<std::pair<%s, %s>, %d> %s = {{" + newline
+	// branchFoundFormat is the discriminant a branch table's search found.
+	branchFoundFormat = "%s[lo%d].second"
+	// lineFormat writes a line as it is.
+	lineFormat       = "%s"
+	defineCallFormat = jsonDetail + "Define(%s, %s, dec, %s, %s, %s);"
+	emplaceCall      = ".emplace()"
+	emplaceBackCall  = ".emplace_back()"
 )
 
 // Table fields (CODEGEN.md §4.2, §5.8; WIRE.md §5.7): a nested table is a canon::KeyedList of its rows by id, read from an object in file order.

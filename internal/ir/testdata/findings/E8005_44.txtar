@@ -19,9 +19,9 @@ let ToneMembers: Int = 1
 emit ts { out: "@features/a/a.ts" }
 -- findings.txt --
 error[E8005]  a/a.canon:11:3
-  ts: x is generated for both a.Thing.a and a.Thing.b
+  ts: x is generated for both a.Thing.a and a.Thing.b; rename one of them with @ts(name:)
 
 error[E8005]  a/a.canon:15:5
-  ts: ToneMembers is generated for both a.Tone and a.ToneMembers
+  ts: ToneMembers is generated for both a.Tone and a.ToneMembers; rename one of them with @ts(name:)
 
 2 errors, 0 warnings in 1 package (…)

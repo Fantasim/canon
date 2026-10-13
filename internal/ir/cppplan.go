@@ -17,9 +17,11 @@ type CppNamePlan struct {
 	ns      *nameScope     // the namespace's own names that other packages' headers share (§3.5)
 	nsItems map[string]any // the item each namespace name was declared for
 	shared  []cppShared
-	nested  []*Record    // the records a table field of the package holds (CODEGEN.md §4.2)
-	foreign *ForeignUse  // the other packages' classes the emit builds (CODEGEN.md §2.8)
-	rows    []ForeignRow // the other packages' records its tables hold (§5.9)
+	nested  []*Record       // the records a table field of the package holds (CODEGEN.md §4.2)
+	foreign *ForeignUse     // the other packages' classes the emit builds (CODEGEN.md §2.8)
+	rows    []ForeignRow    // the other packages' records its tables hold (§5.9)
+	tables  []NamedBranches // the build-time branch tables its decoders read, once found (BranchTables)
+	tabled  bool
 }
 
 // cppShared is a name a header declares in the emit's namespace, or in its detail or conformance namespace, a name its sources declare in an anonymous namespace there, or a segment of the namespace itself, with what declared it.

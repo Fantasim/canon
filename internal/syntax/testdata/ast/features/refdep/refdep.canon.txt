@@ -1,0 +1,215 @@
+File: File FileKind=source @1:1-93:1
+  Doc: DocComment "Go `types` mode for a package that two choices of the language used to refuse (DECISIONS 348,\n350; website handoff H-14 #4, reproduced with neutral names):\n\n- Two tables of one record, `regionNames` and `stageNames`, hold `Label` rows. In `data` and\n  `types` mode a table's id type is its key string (CODEGEN.md §5.3), so both tables share one\n  `LabelID` instead of being E8005 (and one `LabelId` in the TypeScript `data` emit).\n- A reward's `param` is a dependent value decided through a ref: `event` refs a keyed list,\n  and the event's `shape` picks the branch. The ref's targets are known at build time, so the\n  decoder holds a private table from the event key to the branch (`branchesRewardParam`), and\n  reads the key, then the branch; an event whose shape is `none_` holds no parameter.\n\nfeatures.refdep.content imports this package and emits Go types too." @1:1-12:73
+  Package: QualifiedName features.refdep @13:9-13:24
+  Decls[0]: EnumDecl @16:1-23:2
+    Doc: DocComment "The shape of an event's parameter." @15:1-15:39
+    Name: Ident Shape @16:6-16:11
+    Members[0]: EnumMember @18:3-18:8
+      Doc: DocComment "A count." @17:3-17:15
+      Name: Ident count @18:3-18:8
+    Members[1]: EnumMember @20:3-20:8
+      Doc: DocComment "A named place." @19:3-19:21
+      Name: Ident place @20:3-20:8
+    Members[2]: EnumMember @22:3-22:8
+      Doc: DocComment "No parameter." @21:3-21:20
+      Name: Ident none_ @22:3-22:8
+  Decls[1]: EnumDecl @26:1-33:2
+    Doc: DocComment "What happened." @25:1-25:19
+    Name: Ident Event @26:6-26:11
+    Members[0]: EnumMember @28:3-28:15
+      Doc: DocComment "A monster was beaten." @27:3-27:28
+      Name: Ident beat_monster @28:3-28:15
+    Members[1]: EnumMember @30:3-30:14
+      Doc: DocComment "A place was reached." @29:3-29:27
+      Name: Ident reach_place @30:3-30:14
+    Members[2]: EnumMember @32:3-32:10
+      Doc: DocComment "The day changed." @31:3-31:23
+      Name: Ident new_day @32:3-32:10
+  Decls[2]: RecordDecl @36:1-41:2
+    Doc: DocComment "An event and the shape of its parameter." @35:1-35:45
+    Name: Ident EventShape @36:8-36:18
+    Body: RecordBody @36:19-41:2
+      Items[0]: FieldDecl @38:3-38:15
+        Doc: DocComment "The event." @37:3-37:17
+        Name: Ident event @38:3-38:8
+        Type: NamedType @38:10-38:15
+          Name: QualifiedName Event @38:10-38:15
+      Items[1]: FieldDecl @40:3-40:15
+        Doc: DocComment "What its parameter holds." @39:3-39:32
+        Name: Ident shape @40:3-40:8
+        Type: NamedType @40:10-40:15
+          Name: QualifiedName Shape @40:10-40:15
+  Decls[3]: LetDecl @44:1-48:2
+    Doc: DocComment "Every event, keyed by event." @43:1-43:33
+    Name: Ident eventShapes @44:5-44:16
+    Type: KeyedType @44:18-44:45
+      List: ListType @44:18-44:30
+        Elem: NamedType @44:19-44:29
+          Name: QualifiedName EventShape @44:19-44:29
+      Key: Ident event @44:40-44:45
+    Value: ListLit @44:48-48:2
+      Elems[0]: BraceLit @45:3-45:40
+        Items[0]: FieldItem @45:5-45:24
+          Name: Ident event @45:5-45:10
+          Value: IdentExpr beat_monster @45:12-45:24
+        Items[1]: FieldItem @45:26-45:38
+          Name: Ident shape @45:26-45:31
+          Value: IdentExpr count @45:33-45:38
+      Elems[1]: BraceLit @46:3-46:39
+        Items[0]: FieldItem @46:5-46:23
+          Name: Ident event @46:5-46:10
+          Value: IdentExpr reach_place @46:12-46:23
+        Items[1]: FieldItem @46:25-46:37
+          Name: Ident shape @46:25-46:30
+          Value: IdentExpr place @46:32-46:37
+      Elems[2]: BraceLit @47:3-47:35
+        Items[0]: FieldItem @47:5-47:19
+          Name: Ident event @47:5-47:10
+          Value: IdentExpr new_day @47:12-47:19
+        Items[1]: FieldItem @47:21-47:33
+          Name: Ident shape @47:21-47:26
+          Value: IdentExpr none_ @47:28-47:33
+  Decls[4]: TypeDecl @51:1-55:2
+    Doc: DocComment "A parameter, by shape: none_ takes none." @50:1-50:45
+    Name: Ident Param @51:6-51:11
+    Params[0]: Param @51:12-51:20
+      Name: Ident s @51:12-51:13
+      Type: NamedType @51:15-51:20
+        Name: QualifiedName Shape @51:15-51:20
+    Type: MatchType @51:24-55:2
+      Scrutinee: IdentExpr s @51:30-51:31
+      Arms[0]: TypeArm @52:3-52:20
+        Patterns[0]: Pattern @52:3-52:8
+          Name: QualifiedName count @52:3-52:8
+        Type: NamedType @52:12-52:20
+          Name: QualifiedName Int @52:12-52:15
+          Args: TypeArgs @52:15-52:20
+            Args[0]: RangeExpr Op=.. @52:16-52:19
+              Lo: IntLit Value=0 @52:16-52:17
+      Arms[1]: TypeArm @53:3-53:18
+        Patterns[0]: Pattern @53:3-53:8
+          Name: QualifiedName place @53:3-53:8
+        Type: NamedType @53:12-53:18
+          Name: QualifiedName String @53:12-53:18
+      Arms[2]: TypeArm @54:3-54:17
+        Patterns[0]: Pattern @54:3-54:8
+          Name: QualifiedName none_ @54:3-54:8
+        Type: NamedType @54:12-54:17
+          Name: QualifiedName Never @54:12-54:17
+  Decls[5]: RecordDecl @58:1-65:2
+    Doc: DocComment "One reward: the points an event grants." @57:1-57:44
+    Name: Ident Reward @58:8-58:14
+    Body: RecordBody @58:15-65:2
+      Items[0]: FieldDecl @60:3-60:25
+        Doc: DocComment "The event." @59:3-59:17
+        Name: Ident event @60:3-60:8
+        Type: RefType @60:10-60:25
+          Name: QualifiedName eventShapes @60:14-60:25
+      Items[1]: FieldDecl @62:3-62:44
+        Doc: DocComment "The event's filter; none (written 0) is the wildcard." @61:3-61:60
+        Name: Ident param @62:3-62:8
+        Type: OptionalType @62:10-62:29
+          Elem: NamedType @62:10-62:28
+            Name: QualifiedName Param @62:10-62:15
+            Args: TypeArgs @62:15-62:28
+              Args[0]: SelectorExpr @62:16-62:27
+                X: IdentExpr event @62:16-62:21
+                Name: Ident shape @62:22-62:27
+        Annotations[0]: Annotation @62:30-62:44
+          Name: Ident json @62:31-62:35
+          Args[0]: AnnotationArg @62:36-62:43
+            Name: Ident none @62:36-62:40
+            Value: IntLit Value=0 @62:42-62:43
+      Items[2]: FieldDecl @64:3-64:19
+        Doc: DocComment "Points granted." @63:3-63:22
+        Name: Ident points @64:3-64:9
+        Type: NamedType @64:11-64:19
+          Name: QualifiedName Int @64:11-64:14
+          Args: TypeArgs @64:14-64:19
+            Args[0]: RangeExpr Op=.. @64:15-64:18
+              Lo: IntLit Value=1 @64:15-64:16
+  Decls[6]: RecordDecl @68:1-71:2
+    Doc: DocComment "A reward file." @67:1-67:19
+    Name: Ident RewardFile @68:8-68:18
+    Body: RecordBody @68:19-71:2
+      Items[0]: FieldDecl @70:3-70:20
+        Doc: DocComment "The rewards." @69:3-69:19
+        Name: Ident rewards @70:3-70:10
+        Type: ListType @70:12-70:20
+          Elem: NamedType @70:13-70:19
+            Name: QualifiedName Reward @70:13-70:19
+  Decls[7]: RecordDecl @74:1-77:2
+    Doc: DocComment "A displayed text." @73:1-73:22
+    Name: Ident Label @74:8-74:13
+    Body: RecordBody @74:14-77:2
+      Items[0]: FieldDecl @76:3-76:15
+        Doc: DocComment "Its text." @75:3-75:16
+        Name: Ident text @76:3-76:7
+        Type: NamedType @76:9-76:15
+          Name: QualifiedName String @76:9-76:15
+  Decls[8]: LetDecl @80:1-83:2
+    Doc: DocComment "The names of regions." @79:1-79:26
+    Name: Ident regionNames @80:5-80:16
+    Type: TableType @80:18-80:29
+      Name: QualifiedName Label @80:24-80:29
+    Value: BraceLit @80:32-83:2
+      Items[0]: EntryItem @81:3-81:26
+        Key: Ident north @81:3-81:8
+        Value: BraceLit @81:9-81:26
+          Items[0]: FieldItem @81:11-81:24
+            Name: Ident text @81:11-81:15
+            Value: StringLit @81:17-81:24
+              Parts[0]: text "North"
+      Items[1]: EntryItem @82:3-82:26
+        Key: Ident south @82:3-82:8
+        Value: BraceLit @82:9-82:26
+          Items[0]: FieldItem @82:11-82:24
+            Name: Ident text @82:11-82:15
+            Value: StringLit @82:17-82:24
+              Parts[0]: text "South"
+  Decls[9]: LetDecl @86:1-88:2
+    Doc: DocComment "The names of stages: a second table of the same record." @85:1-85:60
+    Name: Ident stageNames @86:5-86:15
+    Type: TableType @86:17-86:28
+      Name: QualifiedName Label @86:23-86:28
+    Value: BraceLit @86:31-88:2
+      Items[0]: EntryItem @87:3-87:26
+        Key: Ident first @87:3-87:8
+        Value: BraceLit @87:9-87:26
+          Items[0]: FieldItem @87:11-87:24
+            Name: Ident text @87:11-87:15
+            Value: StringLit @87:17-87:24
+              Parts[0]: text "First"
+  Decls[10]: EmitDecl @90:1-90:65
+    Target: Ident go @90:6-90:8
+    Options: BraceLit @90:9-90:65
+      Items[0]: FieldItem @90:11-90:31
+        Name: Ident out @90:11-90:14
+        Value: StringLit @90:16-90:31
+          Parts[0]: text "out/go/refdep"
+      Items[1]: FieldItem @90:33-90:50
+        Name: Ident package @90:33-90:40
+        Value: StringLit @90:42-90:50
+          Parts[0]: text "refdep"
+      Items[2]: FieldItem @90:52-90:63
+        Name: Ident mode @90:52-90:56
+        Value: IdentExpr types @90:58-90:63
+  Decls[11]: EmitDecl @91:1-91:48
+    Target: Ident ts @91:6-91:8
+    Options: BraceLit @91:9-91:48
+      Items[0]: FieldItem @91:11-91:34
+        Name: Ident out @91:11-91:14
+        Value: StringLit @91:16-91:34
+          Parts[0]: text "out/ts/refdep.ts"
+      Items[1]: FieldItem @91:36-91:46
+        Name: Ident mode @91:36-91:40
+        Value: IdentExpr data @91:42-91:46
+  Decls[12]: EmitDecl @92:1-92:31
+    Target: Ident json @92:6-92:10
+    Options: BraceLit @92:11-92:31
+      Items[0]: FieldItem @92:13-92:29
+        Name: Ident out @92:13-92:16
+        Value: StringLit @92:18-92:29
+          Parts[0]: text "out/json/"
+== findings
+0 errors, 0 warnings in 1 package (…)

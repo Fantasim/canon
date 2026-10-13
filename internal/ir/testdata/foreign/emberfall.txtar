@@ -224,16 +224,16 @@ emit cpp { out: "@features/shop/cpp", namespace: "game::shop", mode: baked }
   CanonRow reserved: true
   define tables:  (0 loaded)
 error[E8005]  game/world/world.canon:13:3
-  cpp: GetId is generated for both MarkerRow and game.core.Marker.code
+  cpp: GetId is generated for both MarkerRow and game.core.Marker.code; rename one of them with @cpp(name:)
 
 error[E8005]  game/world/world.canon:13:3
-  go: Record is generated for both MarkerRow and game.core.Marker.code
+  go: Record is generated for both MarkerRow and game.core.Marker.code; rename one of them with @go(name:)
 
 error[E8005]  game/world/world.canon:13:3
-  ts: id is generated for both CanonRow of game.core.Marker and game.core.Marker.size
+  ts: id is generated for both CanonRow of game.core.Marker and game.core.Marker.size; rename one of them with @ts(name:)
 
 error[E8005]  game/world/world.canon:13:3
-  ts: retired is generated for both CanonRow of game.core.Marker and game.core.Marker.code
+  ts: retired is generated for both CanonRow of game.core.Marker and game.core.Marker.code; rename one of them with @ts(name:)
 
 error[E8153]  game/world/world.canon:17:5
   zones is emitted in data mode but not written by emit json

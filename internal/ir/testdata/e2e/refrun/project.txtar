@@ -1,0 +1,139 @@
+DECISIONS 350 (CODEGEN.md §5.6): TestRefDependentRoundTrip's project. lib's types-mode decoders and app's data loaders read an Entry whose dependent values are decided through refs keyed by a table id, an enum with non-monotonic @codes, an Int, and a Bool discriminant, and through a ref to a ref; a none on the path and a Never arm select no branch.
+-- lib/lib.canon --
+package lib
+
+/// A shape.
+enum Shape { num, text, gone }
+
+/// A kind.
+record Kind {
+  /// Its shape, if any.
+  shape: Shape?
+}
+
+/// The kinds.
+let kinds: table Kind = {
+  count { shape: num }
+  label { shape: text }
+  old { shape: gone }
+  blank { }
+}
+
+/// More kinds, of the same record: one id type for both tables.
+let moreKinds: table Kind = {
+  extra { shape: num }
+}
+
+/// An event, its codes out of member order.
+enum Ev @codes(UInt8) { b = 5, a = 1, c = 3 }
+
+/// An event's shape.
+record EvKind {
+  /// The event.
+  ev: Ev
+  /// Its shape.
+  shape: Shape
+}
+
+/// Shapes by event.
+let evKinds: [EvKind] keyed by ev = [
+  { ev: b, shape: num },
+  { ev: a, shape: text },
+  { ev: c, shape: gone },
+]
+
+/// A number's shape.
+record NumKind {
+  /// The number.
+  n: Int
+  /// Its shape.
+  shape: Shape
+}
+
+/// Shapes by number.
+let numKinds: [NumKind] keyed by n = [
+  { n: 10, shape: text },
+  { n: 2, shape: num },
+]
+
+/// A flag.
+record Flag {
+  /// Whether it is on.
+  on: Bool
+}
+
+/// The flags.
+let flags: table Flag = {
+  yes { on: true }
+  no { on: false }
+}
+
+/// An alias of a kind.
+record Alias {
+  /// The kind it names.
+  target: ref kinds
+}
+
+/// The aliases.
+let aliases: table Alias = {
+  first { target: count }
+  second { target: label }
+}
+
+/// A payload, by shape.
+type Payload(s: Shape) = match s { num => Int, text => String, gone => Never }
+
+/// A value, by flag.
+type ByFlag(on: Bool) = match on { true => Int, false => String }
+
+/// An entry, its payloads decided through refs.
+record Entry {
+  /// Its kind.
+  kind: ref kinds
+  /// Its payload, none when its kind has no shape.
+  payload: Payload(kind.shape)?
+  /// More payloads of the same kind.
+  more: [Payload(kind.shape)]
+  /// Its event.
+  ev: ref evKinds
+  /// A payload by event.
+  byEv: Payload(ev.shape)?
+  /// Its number.
+  num: ref numKinds
+  /// A payload by number.
+  byNum: Payload(num.shape)?
+  /// Its flag.
+  flag: ref flags
+  /// A value by flag.
+  byFlag: ByFlag(flag.on)?
+  /// Its alias.
+  alias: ref aliases
+  /// A payload through the alias's kind.
+  byAlias: Payload(alias.target.shape)?
+}
+
+/// Entries.
+record Book {
+  /// The entries.
+  entries: [Entry]
+}
+
+emit go { out: "@features/lib", package: "lib", mode: types }
+emit cpp { out: "@features/libc", namespace: "lib", mode: types }
+emit ts { out: "@features/lib.ts", mode: types }
+-- app/app.canon --
+package app
+
+import lib { Book }
+
+/// The book.
+let book: Book = {
+  entries: [
+    { kind: count, payload: 3, more: [1, 2], ev: b, byEv: 7, num: 10, byNum: "t", flag: yes, byFlag: 4, alias: second, byAlias: "s" },
+  ]
+}
+
+emit go { out: "@features/app", package: "app", mode: data }
+emit cpp { out: "@features/appc", namespace: "app", mode: data }
+emit ts { out: "@features/app.ts", mode: data }
+emit json { out: "out/app/" }

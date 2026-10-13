@@ -20,6 +20,6 @@ emit go { out: "@features/a/go", package: "a", mode: types }
 emit text { out: "out/a" }
 -- findings.txt --
 error[E8005]  a/a.canon:15:11
-  go: DecodeRaritiesFile is generated for both a.RaritiesFile and a.rarities
+  go: DecodeRaritiesFile is generated for both a.RaritiesFile and a.rarities; rename one of them with @go(name:)
 
 1 error, 0 warnings in 1 package (…)

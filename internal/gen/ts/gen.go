@@ -28,10 +28,12 @@ type gen struct {
 	variantOf    map[*ir.Case]*ir.Variant
 	pures        []*pureFn // translated fns written, in declaration order: the conformance file tests them
 	decoded      map[any]bool
-	needed       []ir.Type       // the classes of other packages the readers read, in the order they were needed
-	foreignRead  []any           // ir.ForeignUses' Read, computed once
-	foreignDone  bool            // foreignRead is computed
-	props        map[string]bool // the properties declared per interface
+	branches     []ir.NamedBranches // the build-time branch tables the readers read, in first-read order (DECISIONS 350)
+	tables       []ir.NamedBranches // every table the readers may read (ir.TSBranchTables), computed once
+	needed       []ir.Type          // the classes of other packages the readers read, in the order they were needed
+	foreignRead  []any              // ir.ForeignUses' Read, computed once
+	foreignDone  bool               // foreignRead is computed
+	props        map[string]bool    // the properties declared per interface
 	instances    map[*ir.ExportFn]map[*value.Record]*ir.Instance
 	temps        int
 	decoderStart int // where the decoders begin among the items
@@ -79,6 +81,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 	}
 	g.selectValues()
 	g.indexEntries()
+	g.tables = ir.TSBranchTables(p, e)
 	for _, t := range p.Types {
 		if v, ok := t.(*ir.Variant); ok {
 			for _, c := range v.Cases {
@@ -158,6 +161,7 @@ func (g *gen) source() string {
 	for _, section := range g.sections() {
 		section()
 	}
+	g.branchTables()
 	helperUnits, decoderUnits := g.neededUnits()
 	if len(decoderUnits) > 0 {
 		g.items = slices.Insert(g.items, g.decoderStart, joinUnits(decoderUnits))

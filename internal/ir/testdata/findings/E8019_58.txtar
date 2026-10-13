@@ -1,4 +1,4 @@
-CODEGEN.md §5.6, DECISIONS 278: a discriminant read through a ref is not one a ts loader holds: DependentType at the field, from check, not a crash of the build.
+CODEGEN.md §5.6, DECISIONS 278, 350: a ts loader decides a discriminant read through a ref by a build-time table, except through a ref into a @reload value (a reload may add keys): DependentType at the field, from check, not a crash of the build.
 -- a/a.canon --
 package a
 
@@ -18,6 +18,7 @@ record G {
 }
 
 /// The goals.
+@reload
 let gs: table G = {
   k { goal: kill }
 }
@@ -38,7 +39,7 @@ let os: [O] keyed by id = [{ id: "a", g: k, t: "wolf" }]
 emit json { out: "@features/a/data/" }
 emit ts { out: "@features/a/a.ts", mode: data }
 -- findings.txt --
-error[E8019]  a/a.canon:30:3
-  emit ts in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
+error[E8019]  a/a.canon:31:3
+  emit ts in data mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
 
 1 error, 0 warnings in 1 package (…)

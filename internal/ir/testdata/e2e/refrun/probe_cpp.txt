@@ -1,0 +1,69 @@
+// probe decodes each book file named on the command line with lib's types-mode decoder and
+// with app's data loader (the file's .data twin), printing one verdict line each
+// (TestRefDependentRoundTrip, DECISIONS 350).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "appc/app.gen.h"
+#include "libc/lib.gen.h"
+
+namespace {
+
+std::string Show(const ::lib::Payload* p) {
+    if (p == nullptr) return "none";
+    if (auto n = p->AsNum()) return "num:" + std::to_string(*n);
+    if (const std::string* s = p->AsText()) return "text:" + *s;
+    return "?";
+}
+
+std::string ShowFlag(const ::lib::ByFlag* p) {
+    if (p == nullptr) return "none";
+    if (auto n = p->AsTrue()) return "true:" + std::to_string(*n);
+    if (const std::string* s = p->AsFalse()) return "false:" + *s;
+    return "?";
+}
+
+std::string Verdict(const ::lib::Book* b, const std::string& error) {
+    if (b == nullptr) {
+        return error.find("no branch for this value") != std::string::npos ? "error no branch" : "error other";
+    }
+    std::string out = "ok ";
+    bool first = true;
+    for (const ::lib::Entry& e : b->GetEntries()) {
+        if (!first) out += "; ";
+        first = false;
+        std::string more;
+        for (const ::lib::Payload& p : e.GetMore()) {
+            if (!more.empty()) more += ",";
+            more += Show(&p);
+        }
+        out += "kind=" + e.GetKindKey() + " payload=" + Show(e.GetPayload()) + " more=[" + more + "]";
+        out += " ev=" + std::string(::lib::ToWire(e.GetEvKey())) + " byEv=" + Show(e.GetByEv());
+        out += " num=" + std::to_string(e.GetNumKey()) + " byNum=" + Show(e.GetByNum());
+        out += " flag=" + e.GetFlagKey() + " byFlag=" + ShowFlag(e.GetByFlag());
+        out += " alias=" + e.GetAliasKey() + " byAlias=" + Show(e.GetByAlias());
+    }
+    return out;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::ifstream in(argv[i]);
+        std::stringstream text;
+        text << in.rdbuf();
+        nlohmann::json doc = nlohmann::json::parse(text.str(), nullptr, false);
+        std::string error;
+        std::optional<::lib::Book> typed = ::lib::Book::Decode(doc, error);
+        std::cout << "cpp-types " << Verdict(typed ? &*typed : nullptr, error) << "\n";
+        error.clear();
+        std::shared_ptr<const ::lib::Book> data = ::app::LoadBook(std::string(argv[i]) + ".data", error);
+        std::cout << "cpp-data " << Verdict(data.get(), error) << "\n";
+    }
+    return 0;
+}

@@ -16,6 +16,7 @@ func (pl *CppNamePlan) declareDetail() {
 		pl.declareAccess(access)
 		pl.declareDecoders(sc)
 		pl.declareReaders(sc)
+		pl.declareBranchTables(sc)
 	}
 	for _, m := range pl.methods() {
 		pl.innerFrom(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })

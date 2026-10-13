@@ -1,0 +1,34 @@
+CODEGEN.md §2.8, DECISIONS 343, 347: a's cpp copy lies under the consumer root web, b's only cpp copy under the consumer root admin; each builds alone, so a's copy cannot use b's, though neither has several copies (E8004 consumerCopy, in every code target).
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "admin"
+    web: "web"
+  }
+  consumer_roots: [admin, web]
+}
+-- b/b.canon --
+package b
+
+/// A colour.
+enum Tone { red, blue }
+
+emit cpp { out: "@admin/b/", mode: types }
+-- a/a.canon --
+package a
+
+import b { Tone }
+
+/// A badge.
+record Badge {
+  /// Its colour.
+  tone: Tone
+}
+
+emit cpp { out: "@web/a/", mode: types }
+-- findings.txt --
+error[E8004]  a/a.canon:11:17
+  package b is used by this cpp copy under root web, but its only cpp copy is under consumer root admin, which builds alone: give the cpp emit of b a copy under web
+
+1 error, 0 warnings in 2 packages (…)

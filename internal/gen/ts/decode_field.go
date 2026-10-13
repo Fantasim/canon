@@ -38,7 +38,9 @@ func (g *gen) fieldRead(rd *reading, f *ir.Field) {
 func (g *gen) keyRead(rd *reading, f *ir.Field, local, r string) []string {
 	raw, path := g.rawOf(f), g.pathOf(f)
 	ctx := decCtx{unit: f.Unit, enc: f.Enc, big: f.BigInt}
-	if app := ir.HeldApp(f.Type); app != nil {
+	if app := ir.HeldApp(f.Type); app != nil && f.Branches != nil {
+		ctx.disc = g.branchDisc(rd, f, *app)
+	} else if app != nil {
 		ctx.disc = g.discExpr(rd, *app)
 	}
 	hasDefault := f.Default != nil && !f.Computed

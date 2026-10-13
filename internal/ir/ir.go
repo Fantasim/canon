@@ -73,6 +73,13 @@ type Field struct {
 	Cpp        CppFieldOptions
 	Go, TS     NameOptions
 	BigInt     bool
+	Branches   *BranchTable
+}
+
+// BranchTable maps sorted ref keys to the dependent type's branch index (CODEGEN.md §5.6, DECISIONS 350).
+type BranchTable struct {
+	Keys     []value.Key
+	Branches []int
 }
 
 // Enum is an enum type (CODEGEN.md §5.2); Codes is nil without @codes.

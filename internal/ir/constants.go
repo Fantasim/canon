@@ -311,6 +311,7 @@ const (
 	goDefineStoreSuffix  = "_value"
 	goJSONDefine         = "jsonDefine"
 	cppDefinesSuffix     = "Defines"
+	cppBranchesSuffix    = "Branches" // detail::k<T><F>Branches (CODEGEN.md §5.6, DECISIONS 350)
 )
 
 // How another package's same C++ name meets a name: only overloads, TU-locals, namespaces pass.
@@ -348,6 +349,7 @@ const (
 	goLoadPrefix       = "Load"
 	goLoadLocalPrefix  = "load"
 	goDecodePrefix     = "decode"
+	branchesPrefix     = "branches" // a build-time branch table, Go and TS (CODEGEN.md §5.6, DECISIONS 350)
 	goResolvePrefix    = "resolve"
 	goSnapshotSuffix   = "Snapshot"
 	goStoreSuffix      = "Store" // also the store variable

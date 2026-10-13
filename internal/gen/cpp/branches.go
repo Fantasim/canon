@@ -1,0 +1,163 @@
+package cppgen
+
+import (
+	"cmp"
+	_ "embed"
+	"fmt"
+	"slices"
+	"strconv"
+	"strings"
+
+	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
+)
+
+//go:embed text/branch_lookup.txt
+var branchLookupText string
+
+// leafDisc is what a decoder passes for the discriminant of field f's type application app: the discriminant, down ir.DiscFields' path, or, for a field decided through a ref, the ref's key with the table that key looks the branch up in (CODEGEN.md §5.6, DECISIONS 350); the table is "" for the first.
+func (g *gen) leafDisc(fields []*ir.Field, f *ir.Field, app ir.TypeRef) (string, string) {
+	if f.Branches == nil {
+		return g.discExpr(fields, app), ""
+	}
+	path, name := ir.DiscRefFields(fields, app), g.pl.BranchesName(f)
+	if path == nil || name == "" {
+		g.malformed(dependentBadPath, g.at)
+		return "", ""
+	}
+	return g.pathExpr(path), name
+}
+
+// pathExpr reads path from what the decoder has already decoded, each field through its getter, a reader's first from its local (CODEGEN.md §2.8, §5.6).
+func (g *gen) pathExpr(path []*ir.Field) string {
+	calls := []string{outVar}
+	if g.dst == "" {
+		m, err := g.member(path[0].Name)
+		g.fail(err)
+		calls, path = []string{m}, path[1:]
+	}
+	for _, f := range path {
+		calls = append(calls, g.getterName(f)+callSuffix)
+	}
+	return strings.Join(calls, memberAccess)
+}
+
+// branchCall searches l's table for the ref's key l.disc and calls call with the discriminant it holds, or refuses the value at key with the text of a member no branch covers (CODEGEN.md §5.6, DECISIONS 350).
+func (g *gen) branchCall(depth int, l leaf, call func(depth int, disc string), key string) {
+	text := fmt.Sprintf(branchLookupText, depth, l.table, l.disc, fmt.Sprintf(noBranchAtFormat, key))
+	for line := range strings.SplitSeq(strings.TrimSuffix(text, newline), newline) {
+		g.c.linef(depth, lineFormat, line)
+	}
+	call(depth+depthTwo, fmt.Sprintf(branchFoundFormat, l.table, depth))
+	g.c.linef(depth+1, closeBrace)
+	g.c.linef(depth, closeBrace)
+}
+
+// branchTables writes each build-time table the decoders read, in detail: the ref's keys in the order the lookup compares them, each with the first discriminant member of the arm it selects, which Decode<Alias> switches on (CODEGEN.md §5.6, DECISIONS 350).
+func (g *gen) branchTables() {
+	for _, bt := range g.pl.BranchTables() {
+		g.branchTable(bt)
+	}
+}
+
+// branchTable writes one table.
+func (g *gen) branchTable(bt ir.NamedBranches) {
+	leave := g.enter(bt.Name)
+	defer leave()
+	app := ir.HeldApp(bt.Field.Type)
+	path := ir.DiscRefFields(bt.Fields, *app)
+	d, ok := app.Named.(*ir.Dependent)
+	if path == nil || !ok {
+		g.malformed(dependentBadPath, g.at)
+		return
+	}
+	ref := path[len(path)-1].Type
+	labels := g.discLabels(d)
+	if d.Disc.Kind == types.Bool {
+		labels = []string{strconv.FormatBool(false), strconv.FormatBool(true)} // a bool table holds bools: no narrowing from 0 and 1
+	}
+	entries := g.branchEntries(ref, bt.Field.Branches)
+	g.c.printf(branchesOpenFormat, g.branchKeyType(ref), g.global(*d.Disc), len(entries), bt.Name)
+	for _, e := range entries {
+		g.c.linef(1, defineEntryFormat, e.key, labels[d.Branches[e.branch].Members[0]])
+	}
+	g.c.line(definesClose)
+	g.c.blank()
+}
+
+// branchEntry is one key of a table as C++ writes it, with its branch and its rank in C++'s order.
+type branchEntry struct {
+	key    string
+	branch int
+	rank   int64
+}
+
+// branchEntries are t's keys, ranked as the lookup's `<` compares the ref's key: strings by bytes and integers by value (the IR's order), an enum class by its enumerator's value, its @codes code or else its member index (CODEGEN.md §5.2).
+func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
+	out := make([]branchEntry, len(t.Keys))
+	e, isEnum := refEnumKey(ref)
+	for i, k := range t.Keys {
+		out[i] = branchEntry{key: quote(k.S), branch: t.Branches[i], rank: int64(i)}
+		switch {
+		case k.IsInt:
+			out[i].key = intLit(k.I)
+		case isEnum:
+			m := slices.IndexFunc(e.Members, func(m *ir.EnumMember) bool { return m.Name == k.S })
+			if m < 0 {
+				g.malformed(dependentBadPath, g.at)
+				continue
+			}
+			out[i].key, out[i].rank = g.qualifiedOwn(e)+scopeSep+g.pl.Enumerator(e.Members[m]), enumeratorValue(e, m)
+		}
+	}
+	slices.SortStableFunc(out, func(a, b branchEntry) int { return cmp.Compare(a.rank, b.rank) })
+	return out
+}
+
+// enumeratorValue is the value the C++ enum class gives member m of e: its code under @codes, else its index (enum writes them so).
+func enumeratorValue(e *ir.Enum, m int) int64 {
+	if e.Codes != nil {
+		return e.Members[m].Code
+	}
+	return int64(m)
+}
+
+// refEnumKey is the enum keying a ref into a keyed list keyed by an enum.
+func refEnumKey(ref ir.TypeRef) (*ir.Enum, bool) {
+	if ref.Key == nil || ref.Key.Kind != types.Enum {
+		return nil, false
+	}
+	e, ok := ref.Key.Named.(*ir.Enum)
+	return e, ok
+}
+
+// branchKeyType is a table's key type: std::string_view for a string key, else the key's own.
+func (g *gen) branchKeyType(ref ir.TypeRef) string {
+	if e, ok := refEnumKey(ref); ok {
+		return g.qualifiedOwn(e)
+	}
+	if ref.Key != nil && ref.Key.Kind == types.Int {
+		return g.storage(*ref.Key)
+	}
+	return cppStringView
+}
+
+// recordBranch is the dependent type of field f and the branch the record value r selects for its value v: through its build-time table when a ref decides it (DECISIONS 350), else down ir.DiscFields' path. An empty list needs none: its discriminant may select a Never arm, whose list holds nothing (DECISIONS 307).
+func (g *gen) recordBranch(fields []*ir.Field, f *ir.Field, r *value.Record, v value.Value) (*ir.Dependent, int) {
+	app := *ir.HeldApp(f.Type)
+	if l, isList := v.(*value.List); isList && len(l.Elems) == 0 {
+		d, _ := app.Named.(*ir.Dependent)
+		return d, 0
+	}
+	if f.Branches == nil {
+		return g.bakedBranch(fields, app, r)
+	}
+	d, ok := app.Named.(*ir.Dependent)
+	br, found := ir.RefBranch(fields, f, r)
+	if !ok || !found {
+		g.malformed(dependentNoBranch, g.at)
+		return nil, 0
+	}
+	return d, br
+}

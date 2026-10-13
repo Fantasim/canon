@@ -47,10 +47,10 @@ emit json { out: "out/" }
 -- a.things.json --
 [{ "a": 1, "role": "user", "rank": "low", "size": "small" }]
 -- findings.txt --
-error[E8005]  a/a.canon:22:6
-  go: name_ is generated for both example.com/features/q and a
+error[E8005]  a/a.canon:5:1
+  go: name_ is generated for both example.com/features/q and example.com/features/r; give one of their emits a distinct package option
 
 error[E8005]  a/a.canon:22:6
-  go: name_ is generated for both example.com/features/q and example.com/features/r
+  go: name_ is generated for both example.com/features/q and a; rename one of them with @go(name:)
 
 2 errors, 0 warnings in 4 packages (…)

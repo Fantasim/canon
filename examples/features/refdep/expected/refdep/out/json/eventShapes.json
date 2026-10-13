@@ -1,0 +1,8 @@
+{
+  "$schema": "features.refdep.EventShape@a77a0374",
+  "rows": [
+    {"event": "beat_monster", "shape": "count"},
+    {"event": "reach_place", "shape": "place"},
+    {"event": "new_day", "shape": "none_"}
+  ]
+}

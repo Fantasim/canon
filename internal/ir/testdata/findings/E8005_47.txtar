@@ -23,9 +23,9 @@ emit go { out: "@features/a/go", package: "a", mode: baked }
 emit cpp { out: "@features/a/cpp", namespace: "sov::a", mode: types }
 -- findings.txt --
 error[E8005]  a/a.canon:12:3
-  cpp: A_B is generated for both a.A_B and a.A.b
+  cpp: A_B is generated for both a.A_B and a.A.b; rename one of them with @cpp(name:)
 
 error[E8005]  a/a.canon:12:3
-  go: Make_A_B is generated for both a.A_B and a.A.b
+  go: Make_A_B is generated for both a.A_B and a.A.b; rename one of them with @go(name:)
 
 2 errors, 0 warnings in 1 package (…)

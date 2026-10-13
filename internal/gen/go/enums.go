@@ -107,8 +107,9 @@ func withRetired(doc string, retired bool) string {
 	return strings.TrimPrefix(doc+newline+retiredDoc, newline)
 }
 
-// idEnums writes the id enum of every public table value (CODEGEN.md §5.3).
+// idEnums writes the id enum of every public table value (CODEGEN.md §5.3); in data and types mode a string type, once per name (DECISIONS 348).
 func (g *gen) idEnums() {
+	written := map[string]bool{}
 	for _, v := range g.p.Values {
 		if v.Type.Kind != types.Table {
 			continue
@@ -118,7 +119,7 @@ func (g *gen) idEnums() {
 		case !ok:
 			continue
 		case g.isData():
-			g.printf(stringTypeFormat, g.names.IDTypeName(rec)) // CODEGEN.md §5.3: data mode keys are strings
+			g.stringID(written, g.names.IDTypeName(rec)) // CODEGEN.md §5.3: data mode keys are strings
 			continue
 		}
 		s := &enumSpec{name: g.names.IDTypeName(rec), under: smallestUint(len(v.IDs)), parseArg: keyArg}
@@ -128,7 +129,15 @@ func (g *gen) idEnums() {
 		}
 		g.writeEnum(s)
 	}
-	g.nestedIDs()
+	g.nestedIDs(written)
+}
+
+// stringID writes the string id type name unless written holds it: tables whose id types are named alike share one (CODEGEN.md §5.3, DECISIONS 348).
+func (g *gen) stringID(written map[string]bool, name string) {
+	if !written[name] {
+		written[name] = true
+		g.printf(stringTypeFormat, name)
+	}
 }
 
 // writeEnum writes the type, its constants and its methods.

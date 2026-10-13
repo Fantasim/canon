@@ -15,6 +15,6 @@ export fn twice(x: Int) -> Int { return x * 2 }
 emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
 -- findings.txt --
 error[E8005]  b/b.canon:6:6
-  cpp: TwiceVector is generated for both a.TwiceVector and b.twice
+  cpp: TwiceVector is generated for both a.TwiceVector and b.twice; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 2 packages (…)

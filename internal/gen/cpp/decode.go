@@ -19,7 +19,8 @@ type leaf struct {
 	dst      string      // the C++ lvalue
 	box      string      // the class an optional std::unique_ptr holds, or ""
 	cell     bool        // a lookup cell: absent is missing, null is none or an error (WIRE.md §5.11)
-	disc     string      // a dependent type's discriminant, read before it (CODEGEN.md §5.6)
+	disc     string      // a dependent type's discriminant, read before it (CODEGEN.md §5.6); a ref's key for a table
+	table    string      // a field decided through a ref: its branch table, which disc looks up (DECISIONS 350)
 	def      value.Value // types mode: the constant default an absent key takes (CODEGEN.md §5.13)
 }
 
@@ -126,7 +127,7 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 		l.box = g.storage(f.Type)
 	}
 	if app := ir.HeldApp(f.Type); app != nil { // its elements share the field's discriminant (CODEGEN.md §5.6)
-		l.disc = g.discExpr(fields, *app)
+		l.disc, l.table = g.leafDisc(fields, f, *app)
 	}
 	g.decodeKey(depth, obj, quote(f.WirePath[len(f.WirePath)-1]), l)
 	g.closePath(f, depth, l)
@@ -193,7 +194,7 @@ func (g *gen) decodeKey(depth int, obj, key string, l leaf) {
 		dst = fmt.Sprintf(optVarFormat, depth)
 		g.c.linef(depth+1, emplaceFormat, dst, l.dst)
 	}
-	g.decodeValue(depth+1, fmt.Sprintf(derefFormat, x), key, leaf{t: l.t, unit: l.unit, enc: l.enc, dst: dst, disc: l.disc})
+	g.decodeValue(depth+1, fmt.Sprintf(derefFormat, x), key, leaf{t: l.t, unit: l.unit, enc: l.enc, dst: dst, disc: l.disc, table: l.table})
 	g.c.linef(depth, closeBrace)
 }
 

@@ -73,8 +73,11 @@ emit json { out: "@gen/data/" }
 - Generated: `go` and `cpp` in `baked`, `data` and `types`, `ts`, `json`, `view`.
   `canon check` refuses what no generator builds, with a message naming the way out (`E8019`):
   `embedded` in Go and C++ (use `baked` or `data`); legacy C++ structs
-  (`@cpp(struct:)`); a dependent value decided through a ref, an optional or a record parameter,
-  in any go/cpp emit (decide it by an enum field of the same record; owed for v0.2).
+  (`@cpp(struct:)`); a dependent value decided through an optional, a record parameter, a ref
+  into a `@reload` value or a ref into an enclosing record's table field (decide it by an enum
+  field of the same record, or by a ref into a let that is not `@reload`). Through any other ref
+  it is generated: the ref's targets are known at build time, so the code holds a private table
+  from the ref's key to the branch, and a key it lacks fails with `no branch for this value`.
 - Shared records: a record, variant, dependent type or table of another package is usable in
   values and data in every target and mode; do not copy the type. A package reached only through
   another's types needs the same emits in its imports. Still `E8019`: a foreign record whose ref

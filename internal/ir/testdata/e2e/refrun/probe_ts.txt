@@ -1,0 +1,37 @@
+// probe decodes each book file named on the command line with lib's types-mode decoder and
+// with app's data parser (the file's .data twin), printing one verdict line each
+// (TestRefDependentRoundTrip, DECISIONS 350).
+import { readFileSync } from "node:fs";
+import * as app from "./app.js";
+import * as lib from "./lib.js";
+
+function show(p) {
+  return p === null ? "none" : p.branch + ":" + String(p.value);
+}
+
+function entry(e) {
+  return [
+    "kind=" + e.kind, "payload=" + show(e.payload), "more=[" + e.more.map(show).join(",") + "]",
+    "ev=" + e.ev, "byEv=" + show(e.byEv),
+    "num=" + String(e.num), "byNum=" + show(e.byNum),
+    "flag=" + e.flag, "byFlag=" + show(e.byFlag),
+    "alias=" + e.alias, "byAlias=" + show(e.byAlias),
+  ].join(" ");
+}
+
+function verdict(read) {
+  let b;
+  try {
+    b = read();
+  } catch (e) {
+    return String(e.message).includes("no branch for this value") ? "error no branch" : "error other";
+  }
+  return "ok " + b.entries.map(entry).join("; ");
+}
+
+for (const path of process.argv.slice(2)) {
+  const text = readFileSync(path, "utf8");
+  console.log("ts-types " + verdict(() => lib.decodeBook(JSON.parse(text))));
+  const data = readFileSync(path + ".data", "utf8");
+  console.log("ts-data " + verdict(() => app.parseBook(data)));
+}

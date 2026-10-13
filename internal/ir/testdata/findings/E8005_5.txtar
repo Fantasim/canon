@@ -13,6 +13,6 @@ record Rule {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8005]  a/a.canon:8:3
-  go: B is generated for both a.Rule.a and a.Rule.b
+  go: B is generated for both a.Rule.a and a.Rule.b; rename one of them with @go(name:)
 
 1 error, 0 warnings in 1 package (…)

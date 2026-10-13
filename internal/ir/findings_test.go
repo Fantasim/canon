@@ -39,6 +39,8 @@ func onlyItsCode(t *testing.T, glob string) {
 		for _, f := range c.Archive.Files {
 			switch f.Name {
 			case findingsFile:
+			case projectFile:
+				w.useProject(t, f.Data)
 			case selectedFile:
 				selected = strings.Fields(string(f.Data))
 			default:

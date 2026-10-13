@@ -18,7 +18,8 @@ type leaf struct {
 	unit  types.Unit
 	enc   types.Enc
 	disc  string
-	owned bool // another package's ref its hook resolves: an unknown key is `no entry` (CODEGEN.md §2.8)
+	owned bool   // another package's ref its hook resolves: an unknown key is `no entry` (CODEGEN.md §2.8)
+	table string // a field decided through a ref: its branch table, which disc, the ref's key, looks up (DECISIONS 350)
 }
 
 func (g *gen) rawType() string { return g.use(jsonPath, jsonPkg) + rawMessage }
@@ -253,7 +254,7 @@ func (g *gen) readList(b *strings.Builder, l leaf, raw string, loc location) str
 	elem := g.sub(l.t.Elem)
 	v, i, x := g.temp(tempValue), g.temp(tempIndex), g.temp(tempElem)
 	fmt.Fprintf(b, listOpenFormat, v, g.goType(elem), array, i, x)
-	e := g.readValue(b, leaf{t: elem, unit: l.unit, enc: l.enc, disc: l.disc, owned: l.owned}, x, loc.index(i))
+	e := g.readValue(b, leaf{t: elem, unit: l.unit, enc: l.enc, disc: l.disc, owned: l.owned, table: l.table}, x, loc.index(i))
 	fmt.Fprintf(b, listCloseFormat, v, i, e)
 	return g.rt() + makeList + v + rparen
 }

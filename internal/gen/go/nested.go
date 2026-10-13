@@ -113,15 +113,15 @@ func (g *gen) rowLit(rec *ir.Record, r *value.Record) (lit, key string) {
 }
 
 // nestedIDs writes the string id type of each record only a table field holds, of this package or another (CODEGEN.md §5.3: a nested table has no id constants).
-func (g *gen) nestedIDs() {
+func (g *gen) nestedIDs(written map[string]bool) {
 	for _, t := range g.p.Types {
 		if rec, ok := t.(*ir.Record); ok && g.names.NestedRow(rec) && g.tableOf[rec] == nil {
-			g.printf(stringTypeFormat, g.idType(rec))
+			g.stringID(written, g.idType(rec))
 		}
 	}
 	for _, row := range g.names.Rows() {
 		if row.Field != nil && g.tableOf[row.Record] == nil {
-			g.printf(stringTypeFormat, g.idType(row.Record))
+			g.stringID(written, g.idType(row.Record))
 		}
 	}
 }

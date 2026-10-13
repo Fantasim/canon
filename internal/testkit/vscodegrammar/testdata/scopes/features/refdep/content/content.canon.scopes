@@ -1,0 +1,29 @@
+1:0-97 "/// A package that imports features.refdep's types and emits Go types of its own (website handoff" comment.line.documentation.canon
+2:0-96 "/// H-14 #4, reproduced with neutral names): it emits once its import does (DECISIONS 348, 350)." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-31 "features.refdep.content" entity.name.namespace.canon
+5:0-6 "import" keyword.other.canon
+5:15-16 "." punctuation.accessor.canon
+5:16-22 "refdep" variable.other.property.canon
+5:25-30 "Label" entity.name.type.canon
+5:32-38 "Reward" entity.name.type.canon
+7:0-14 "/// A dungeon." comment.line.documentation.canon
+8:0-6 "record" storage.type.canon
+8:7-14 "Dungeon" entity.name.type.canon
+9:0-15 "  /// Its name." comment.line.documentation.canon
+10:2-6 "name" variable.other.property.canon
+10:6-7 ":" punctuation.separator.key.canon
+10:8-13 "Label" entity.name.type.canon
+11:0-30 "  /// What clearing it grants." comment.line.documentation.canon
+12:2-9 "rewards" variable.other.property.canon
+12:9-10 ":" punctuation.separator.key.canon
+12:12-18 "Reward" entity.name.type.canon
+15:0-4 "emit" keyword.other.canon
+15:10-13 "out" variable.other.property.canon
+15:13-14 ":" punctuation.separator.key.canon
+15:15-31 "\"out/go/content\"" string.quoted.double.canon
+15:33-40 "package" variable.other.property.canon
+15:40-41 ":" punctuation.separator.key.canon
+15:42-51 "\"content\"" string.quoted.double.canon
+15:53-57 "mode" variable.other.property.canon
+15:57-58 ":" punctuation.separator.key.canon

@@ -108,7 +108,7 @@ func withEmit(kind, before, focus, after string) func(target) []progen.Site {
 func withDirJSON(before, focus, after string) func(target) []progen.Site {
 	return func(tg target) []progen.Site {
 		for _, d := range emitsOf(tg, "json") {
-			if option(d, "values") == nil && strings.HasSuffix(optionText(tg, d, "out"), "/") {
+			if option(d, "values") == nil && strings.HasSuffix(optionText(tg, d, "out"), "/") && !dataMode(tg) { // a data mode refuses the value first (E8015)
 				return []progen.Site{appendDecl(tg, before, focus, after)}
 			}
 		}
@@ -345,7 +345,10 @@ func goRecordField(name, rest string) func(target) []progen.Site {
 		if len(emitsOf(tg, "go")) == 0 || len(emitsOf(tg, "json")) > 0 {
 			return nil
 		}
-		return recordField("", name, rest)(tg)
+		return recordFieldOf(func(tg target) func(*syntax.RecordDecl) bool {
+			elems := pairsElements(tg) // a field more breaks a pairs element's count (WIRE.md §5.14)
+			return func(r *syntax.RecordDecl) bool { return !elems[r.Name.Name] }
+		}, "", name, rest)(tg)
 	}
 }
 

@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §5.6, WIRE.md §5.9 (ir.DiscFields; gen/go dependentDiscFormat, gen/cpp dependentBadPath; log-2026-09-25 "gen/cpp round-2 review calls"): a discriminant read through a ref needs a load-time resolution CODEGEN.md does not write, so the field is DependentType, in both loaders.
+EVALUATION.md §1, CODEGEN.md §5.6, DECISIONS 350: a discriminant read through a ref is decided at build time by a key→branch table, except through a ref into a @reload value, whose reload may add keys the binary's table lacks: the field stays DependentType, in both loaders.
 -- a/a.canon --
 package a
 
@@ -12,6 +12,7 @@ record Ev {
 }
 
 /// The events.
+@reload
 let evs: table Ev = { x { k: one } }
 
 /// A payload.
@@ -38,10 +39,10 @@ emit json { out: "out/" }
 -- a.things.json --
 {"a": {"ev": "x", "p": 1}}
 -- findings.txt --
-error[E8019]  a/a.canon:23:3
-  emit cpp in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
+error[E8019]  a/a.canon:24:3
+  emit cpp in data mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
 
-error[E8019]  a/a.canon:23:3
-  emit go in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
+error[E8019]  a/a.canon:24:3
+  emit go in data mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
 
 2 errors, 0 warnings in 1 package (…)

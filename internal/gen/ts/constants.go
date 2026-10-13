@@ -62,15 +62,19 @@ const (
 	emptyString  = `""`
 	zeroLit      = "0"
 	bigSuffix    = "n"
-	negativeZero = "-0"
-	decimal      = 10
-	float32Bits  = 32
-	float64Bits  = 64
-	int64Bits    = 64
-	pairFields   = 2
-	vectorWant   = "want"
-	vectorCode   = "code"
-	vectorTail   = 2
+	// branchTableFormat, branchEntryFormat and branchGetFormat write and read a build-time branch table (CODEGEN.md §5.6, DECISIONS 350).
+	branchTableFormat = "const %s: ReadonlyMap<%s, %s> = new Map<%s, %s>([\n%s]);"
+	branchEntryFormat = "  [%s, %s],\n"
+	branchGetFormat   = "%s.get(%s)!"
+	negativeZero      = "-0"
+	decimal           = 10
+	float32Bits       = 32
+	float64Bits       = 64
+	int64Bits         = 64
+	pairFields        = 2
+	vectorWant        = "want"
+	vectorCode        = "code"
+	vectorTail        = 2
 )
 
 // Doc comments (CODEGEN.md §2.6).

@@ -25,6 +25,7 @@ func (g *gen) indexValues() {
 		switch {
 		case !ok:
 			g.failf(ErrMalformed, "table %s of no record", v.Name)
+		case g.tableOf[rec] != nil && g.isData(): // one string id type for both (CODEGEN.md §5.3, DECISIONS 348)
 		case g.tableOf[rec] != nil:
 			g.failf(errNameCollision, "%s is the id type of both %s and %s", g.idType(rec), g.tableOf[rec].Name, v.Name)
 		default:

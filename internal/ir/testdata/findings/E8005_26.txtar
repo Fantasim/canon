@@ -23,6 +23,6 @@ emit json { out: "out/" }
 { "n": 2, "tone": "loud" }
 -- findings.txt --
 error[E8005]  a/a.canon:12:13
-  cpp: Tone is generated for both a.Tone and a.Item.tone
+  cpp: Tone is generated for both a.Tone and a.Item.tone; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)

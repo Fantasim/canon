@@ -20,6 +20,6 @@ emit json { out: "out/" }
 { "tone": "soft" }
 -- findings.txt --
 error[E8005]  a/a.canon:7:8
-  cpp: ToWire is generated for both a and a.ToWire
+  cpp: ToWire is generated for both a and a.ToWire; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)

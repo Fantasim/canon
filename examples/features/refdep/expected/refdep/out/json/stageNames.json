@@ -1,0 +1,6 @@
+{
+  "$schema": "features.refdep.Label@a7607733",
+  "rows": [
+    {"$id": "first", "text": "First"}
+  ]
+}

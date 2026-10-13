@@ -198,6 +198,10 @@ func (g *gen) decodeDependent(depth int, src, key string, l leaf) {
 		g.qualifier(d.Pkg) // its header is included
 		call = g.pl.ReaderName(d)
 	}
+	if l.table != "" {
+		g.branchCall(depth, l, func(depth int, disc string) { g.c.linef(depth, dependentCallFormat, call, src, key, disc, l.dst) }, key)
+		return
+	}
 	g.c.linef(depth, dependentCallFormat, call, src, key, l.disc, l.dst)
 }
 

@@ -27,6 +27,6 @@ emit json { out: "out/" }
 {}
 -- findings.txt --
 error[E8005]  b/b.canon:12:6
-  cpp: ParseBoolLiteral is generated for both a.ParseBoolLiteral and b
+  cpp: ParseBoolLiteral is generated for both a.ParseBoolLiteral and b; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 2 packages (…)

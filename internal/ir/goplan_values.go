@@ -112,6 +112,11 @@ func (pl *GoNamePlan) declareUsed(sc *nameScope, u *goImportUse) {
 		}
 		e := ref.Emits[i]
 		seen[e.GoImport] = true
-		pl.declare(sc, GoImportName(e.GoPackage), e.GoImport, nil)
+		name := GoImportName(e.GoPackage)
+		var item any = ref // two imports named alike are E8005 `reached`, at the later import (CODEGEN.md §3.5)
+		if ok, _ := pl.ident(name); !ok {
+			item = nil // a package name that is no identifier is its owner's E8009, never this package's E8011
+		}
+		pl.declare(sc, name, e.GoImport, item)
 	}
 }

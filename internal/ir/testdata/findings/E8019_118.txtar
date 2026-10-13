@@ -1,0 +1,46 @@
+CODEGEN.md §5.6, DECISIONS 350: a discriminant read through a ref into an enclosing record's table field is not decided at build time: each Book holds its own kinds, so no build-time table knows the ref's targets; the field stays DependentType, in every decoding target.
+-- a/a.canon --
+package a
+
+/// A shape.
+enum Shape { num, text }
+
+/// A kind.
+record Kind {
+  /// Its shape.
+  shape: Shape
+}
+
+/// A payload.
+type P(s: Shape) = match s { num => Int, text => String }
+
+/// An entry.
+record Entry {
+  /// Its kind.
+  kind: ref Kind
+  /// Its payload.
+  p: P(kind.shape)
+}
+
+/// A book.
+record Book {
+  /// Its kinds.
+  kinds: table Kind
+  /// Its entries.
+  entries: [Entry]
+}
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types }
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:20:3
+  emit cpp in types mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
+
+error[E8019]  a/a.canon:20:3
+  emit go in types mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
+
+error[E8019]  a/a.canon:20:3
+  emit ts in types mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
+
+3 errors, 0 warnings in 1 package (…)

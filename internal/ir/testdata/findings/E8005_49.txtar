@@ -22,6 +22,6 @@ record Badge @ts(name: "shop_lib") {
 emit ts { out: "@features/q/q.ts", mode: baked }
 -- findings.txt --
 error[E8005]  q/q.canon:7:8
-  ts: shop_lib is generated for both shop.lib and q.Badge
+  ts: shop_lib is generated for both shop.lib and q.Badge; rename one of them with @ts(name:)
 
 1 error, 0 warnings in 2 packages (…)

@@ -139,6 +139,7 @@ func (pl *GoNamePlan) declareDecoders(top *nameScope) {
 		}
 	}
 	pl.declareDependentDecoders(top)
+	pl.declareBranchTables(top)
 }
 
 // PublicDecoder is a record's or variant's types-mode decoder, Decode<T> (CODEGEN.md §5.13).

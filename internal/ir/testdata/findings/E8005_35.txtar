@@ -28,6 +28,6 @@ record Thing {
 emit cpp { out: "@features/b", namespace: "sov::gen", mode: data }
 -- findings.txt --
 error[E8005]  b/b.canon:14:6
-  cpp: TwiceVector is generated for both a.twice and b.TwiceVector
+  cpp: TwiceVector is generated for both a.twice and b.TwiceVector; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 2 packages (…)

@@ -19,6 +19,6 @@ emit json { out: "out/" }
 [{ "a": 1 }]
 -- findings.txt --
 error[E8005]  a/a.canon:12:5
-  cpp: Things is generated for both a.things and a
+  cpp: Things is generated for both a.things and a; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)

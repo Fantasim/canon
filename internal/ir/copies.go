@@ -10,12 +10,12 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// CopyOf is p as its emit copy e sees it, each import's emits of e's target narrowed to the copy e uses (p itself when none narrows): every Generator is called on it (CODEGEN.md §2.8, DECISIONS 229).
+// CopyOf is p as its emit copy e sees it, each import's emits of e's target narrowed to the copy e uses, none when e cannot use an import's only copy (another consumer root's, DECISIONS 347); p itself when none narrows. Every Generator is called on it (CODEGEN.md §2.8, DECISIONS 229).
 func CopyOf(proj *project.Project, p *Package, e *Emit) *Package {
 	var refs []*PackageRef
 	for i, ref := range p.Imports {
-		use := copyFor(proj, ref.Emits, e)
-		if use == nil || countTarget(ref.Emits, e.Target) < severalCopies {
+		use, n := copyFor(proj, ref.Emits, e), countTarget(ref.Emits, e.Target)
+		if n == 0 || use != nil && n < severalCopies || use == nil && n >= severalCopies {
 			continue
 		}
 		if refs == nil {
@@ -32,10 +32,13 @@ func CopyOf(proj *project.Project, p *Package, e *Emit) *Package {
 	return &view
 }
 
-// copyFor is the copy of emits e uses, the only one of its target or the one under its owning root; nil when none fits (CODEGEN.md §2.8).
+// copyFor is the copy of emits e uses: the only one of its target unless it lies under a consumer root other than e's, or the one under e's owning root; nil when none fits (CODEGEN.md §2.8, DECISIONS 229, 347).
 func copyFor(proj *project.Project, emits []*Emit, e *Emit) *Emit {
 	if countTarget(emits, e.Target) == 1 {
-		return emits[slices.IndexFunc(emits, func(o *Emit) bool { return o.Target == e.Target })]
+		if only := onlyCopy(emits, e.Target); otherConsumer(proj, only, e) == "" {
+			return only
+		}
+		return nil
 	}
 	owner := check.OwningRoot(proj, e.Dir)
 	for _, o := range emits {
@@ -44,6 +47,22 @@ func copyFor(proj *project.Project, emits []*Emit, e *Emit) *Emit {
 		}
 	}
 	return nil
+}
+
+// onlyCopy is the first emit of target t in emits: its only copy when it has one.
+func onlyCopy(emits []*Emit, t Target) *Emit {
+	return emits[slices.IndexFunc(emits, func(o *Emit) bool { return o.Target == t })]
+}
+
+// otherConsumer is the consumer root copy o lies under when it is not the one e lies under, "" otherwise: each consumer root is written by its own --only-root build alone, so a copy under another one is code no build of e writes (DECISIONS 343, 347). An unplaced copy is judged by the rules that place it.
+func otherConsumer(proj *project.Project, o, e *Emit) string {
+	if o.Dir == "" || e.Dir == "" {
+		return ""
+	}
+	if c := check.ConsumerRoot(proj, o.Dir); c != check.ConsumerRoot(proj, e.Dir) {
+		return c
+	}
+	return ""
 }
 
 // countTarget is the number of emits of target t: the copies of a package's one emit of t.
@@ -57,19 +76,24 @@ func countTarget(emits []*Emit, t Target) int {
 	return n
 }
 
-// checkCopies is E8004 `noCopy`: a placed copy of a code emit finds a copy it can use in each import with several (CODEGEN.md §2.8, DECISIONS 229, 269).
+// checkCopies is E8004 at a placed copy of a code emit that finds no copy it can use in an import it uses: `noCopy` when the import has several and none under its owning root, `consumerCopy` when the import's only copy lies under another consumer root (CODEGEN.md §2.8, DECISIONS 229, 269, 347).
 func (s *stage) checkCopies(u *unit, es *emitSite) {
 	if !isCode(es.e.Target) || es.e.Dir == "" {
 		return
 	}
-	proj := s.in.Project
+	proj, target := s.in.Project, es.e.Target
+	root := check.RootLabel(proj, check.OwningRoot(proj, es.e.Dir))
 	for _, imp := range u.p.Imports {
-		first, used := u.importUse(imp.Name, es.e.Target)
-		if !used || countTarget(imp.Emits, es.e.Target) < severalCopies || copyFor(proj, imp.Emits, es.e) != nil {
-			continue
+		first, used := u.importUse(imp.Name, target)
+		n := countTarget(imp.Emits, target)
+		switch {
+		case !used || n == 0 || copyFor(proj, imp.Emits, es.e) != nil:
+		case n >= severalCopies:
+			u.report(diag.E8004.AtNoCopy(es.outSpan, first, imp.Name, targetWords[target], root))
+		default:
+			other := otherConsumer(proj, onlyCopy(imp.Emits, target), es.e)
+			u.report(diag.E8004.AtConsumerCopy(es.outSpan, imp.Name, targetWords[target], root, other))
 		}
-		root := check.RootLabel(proj, check.OwningRoot(proj, es.e.Dir))
-		u.report(diag.E8004.AtNoCopy(es.outSpan, first, imp.Name, targetWords[es.e.Target], root))
 	}
 }
 

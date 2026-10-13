@@ -17,6 +17,6 @@ record Other @go(name: "Make_Status") {
 emit go { out: "@features/a/go", package: "a", mode: baked }
 -- findings.txt --
 error[E8005]  a/a.canon:10:8
-  go: Make_Status is generated for both a.Status and a.Other
+  go: Make_Status is generated for both a.Status and a.Other; rename one of them with @go(name:)
 
 1 error, 0 warnings in 1 package (…)

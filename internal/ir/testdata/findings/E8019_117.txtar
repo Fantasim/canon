@@ -1,0 +1,33 @@
+CODEGEN.md §5.6, DECISIONS 307, 350: a discriminant read through a ref is decided at build time, but not through an optional field of the record itself: the ref ev may be absent, so the payload's discriminant is optional, which no loader reads: DependentType at the field, in go types and data mode alike.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { one, two }
+
+/// An event.
+record Ev {
+  /// Its kind.
+  k: K
+}
+
+/// The events.
+let evs: table Ev = { x { k: one } }
+
+/// A payload.
+type P(e: Ev) = match e.k { one => Int, two => String }
+
+/// A thing.
+record Thing {
+  /// Its event, maybe.
+  ev: ref evs?
+  /// Its payload.
+  p: P(ev)?
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8019]  a/a.canon:23:3
+  emit go in types mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
+
+1 error, 0 warnings in 1 package (…)

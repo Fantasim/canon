@@ -1,0 +1,92 @@
+/// Go `types` mode for a package that two choices of the language used to refuse (DECISIONS 348,
+/// 350; website handoff H-14 #4, reproduced with neutral names):
+///
+/// - Two tables of one record, `regionNames` and `stageNames`, hold `Label` rows. In `data` and
+///   `types` mode a table's id type is its key string (CODEGEN.md §5.3), so both tables share one
+///   `LabelID` instead of being E8005 (and one `LabelId` in the TypeScript `data` emit).
+/// - A reward's `param` is a dependent value decided through a ref: `event` refs a keyed list,
+///   and the event's `shape` picks the branch. The ref's targets are known at build time, so the
+///   decoder holds a private table from the event key to the branch (`branchesRewardParam`), and
+///   reads the key, then the branch; an event whose shape is `none_` holds no parameter.
+///
+/// features.refdep.content imports this package and emits Go types too.
+package features.refdep
+
+/// The shape of an event's parameter.
+enum Shape {
+  /// A count.
+  count
+  /// A named place.
+  place
+  /// No parameter.
+  none_
+}
+
+/// What happened.
+enum Event {
+  /// A monster was beaten.
+  beat_monster
+  /// A place was reached.
+  reach_place
+  /// The day changed.
+  new_day
+}
+
+/// An event and the shape of its parameter.
+record EventShape {
+  /// The event.
+  event: Event
+  /// What its parameter holds.
+  shape: Shape
+}
+
+/// Every event, keyed by event.
+let eventShapes: [EventShape] keyed by event = [
+  { event: beat_monster, shape: count },
+  { event: reach_place, shape: place },
+  { event: new_day, shape: none_ },
+]
+
+/// A parameter, by shape: none_ takes none.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// One reward: the points an event grants.
+record Reward {
+  /// The event.
+  event: ref eventShapes
+  /// The event's filter; none (written 0) is the wildcard.
+  param: Param(event.shape)? @json(none: 0)
+  /// Points granted.
+  points: Int(1..)
+}
+
+/// A reward file.
+record RewardFile {
+  /// The rewards.
+  rewards: [Reward]
+}
+
+/// A displayed text.
+record Label {
+  /// Its text.
+  text: String
+}
+
+/// The names of regions.
+let regionNames: table Label = {
+  north { text: "North" }
+  south { text: "South" }
+}
+
+/// The names of stages: a second table of the same record.
+let stageNames: table Label = {
+  first { text: "First" }
+}
+
+emit go { out: "out/go/refdep", package: "refdep", mode: types }
+emit ts { out: "out/ts/refdep.ts", mode: data }
+emit json { out: "out/json/" }

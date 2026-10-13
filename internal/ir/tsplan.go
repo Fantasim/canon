@@ -14,11 +14,12 @@ type tsNamePlan struct {
 	e       *Emit
 	values  []*Value
 	entries map[*Record]bool
+	strIDs  map[string]bool // the string id types declared in data mode, one per name (DECISIONS 348)
 }
 
 // planTSNames is the name plan of p's ts emit e.
 func planTSNames(p *Package, e *Emit) *tsNamePlan {
-	pl := &tsNamePlan{p: p, e: e, namer: newNamer(p.Name, tsValidIdent), values: tsSelected(p, e)}
+	pl := &tsNamePlan{p: p, e: e, namer: newNamer(p.Name, tsValidIdent), values: tsSelected(p, e), strIDs: map[string]bool{}}
 	pl.indexEntries()
 	pl.declareAll()
 	return pl
@@ -203,6 +204,7 @@ func (pl *tsNamePlan) declareAll() {
 	for _, fn := range pl.p.Fns {
 		pl.declareFn(mod, fn)
 	}
+	pl.declareBranchTables(mod)
 	pl.declareMethods(mod)
 	for _, t := range pl.p.Types {
 		pl.declareProps(t)
@@ -279,14 +281,18 @@ func (pl *tsNamePlan) declareRead(mod *nameScope, name, origin string, item any)
 	}
 }
 
-// declareValue declares an emitted value: its accessor, or in data mode its schema and its decode and parse functions; a table's id type and Index.
+// declareValue declares an emitted value: its accessor, or in data mode its schema and its decode and parse functions; a table's id type and Index, a data-mode string id type once per name (CODEGEN.md §5.3, DECISIONS 348).
 func (pl *tsNamePlan) declareValue(mod *nameScope, v *Value) {
 	org, eff := pl.origin(v.Name), tsEffective(v.TS, v.Name)
 	if v.Type.Kind == types.Table && v.Type.Elem != nil && v.Type.Elem.Named != nil {
 		id := tsName(v.Type.Elem.Named) + tsIDSuffix
-		pl.declare(mod, id, org, v)
-		if pl.e.Mode != ModeData {
+		switch {
+		case pl.e.Mode != ModeData:
+			pl.declare(mod, id, org, v)
 			pl.declare(mod, id+tsIndexName, org, v)
+		case !pl.strIDs[id]:
+			pl.strIDs[id] = true
+			pl.declare(mod, id, org, v)
 		}
 	}
 	if pl.e.Mode != ModeData {

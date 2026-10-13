@@ -137,22 +137,26 @@ func (g *gen) branchEnums() {
 	}
 }
 
-// idTypes writes the id type of every emitted table: the union of its keys and its Index in baked mode, string in data mode (CODEGEN.md §5.3).
+// idTypes writes the id type of every emitted table: the union of its keys and its Index in baked mode, string in data mode, once per name (CODEGEN.md §5.3, DECISIONS 348).
 func (g *gen) idTypes() {
+	written := map[string]bool{}
 	for _, v := range g.emitted {
-		if elem := g.tableElem(v); elem != nil {
+		elem := g.tableElem(v)
+		switch {
+		case elem == nil:
+		case g.isData() && !written[idName(elem)]:
+			written[idName(elem)] = true
+			g.add(fmt.Sprintf(unionFormat, g.declare(idName(elem), v.Name), tsString))
+		case !g.isData():
 			g.idType(v, elem)
 		}
 	}
 }
 
+// idType writes a baked or embedded table's id type: the union of its keys, and its Index (CODEGEN.md §5.3).
 func (g *gen) idType(v *ir.Value, elem ir.Type) {
 	defer g.enter(v.Name)()
 	name := g.declare(idName(elem), v.Name)
-	if g.isData() {
-		g.add(fmt.Sprintf(unionFormat, name, tsString))
-		return
-	}
 	members := make([]member, len(v.IDs))
 	items := make([]string, len(v.IDs))
 	for i, id := range v.IDs {

@@ -23,6 +23,8 @@ type GoNamePlan struct {
 	nested   []*Record       // the records a table field of the package holds (CODEGEN.md §4.2)
 	foreign  *ForeignUse     // the other packages' classes the emit builds (CODEGEN.md §2.8)
 	rows     []ForeignRow    // the other packages' records its tables hold (§5.9)
+	branches []NamedBranches // the build-time branch tables its decoders read, once found (BranchTables)
+	branched bool
 }
 
 // GoNameProblem is a name gen/go or gen/cpp cannot declare (CODEGEN.md §3.5, decision 182); both plans report it. Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import.

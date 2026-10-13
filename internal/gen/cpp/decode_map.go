@@ -28,7 +28,7 @@ func (g *gen) decodeMap(depth int, src, key string, l leaf) {
 	if k := vt.Kind; k != types.Record && k != types.Variant {
 		g.c.linef(body, nullElemFormat, fmt.Sprintf(mapValueExpr, d), fmt.Sprintf(mapKeyExpr, d))
 	}
-	g.decodeValue(body, fmt.Sprintf(mapValueExpr, d), fmt.Sprintf(mapKeyExpr, d), leaf{t: vt, unit: l.unit, enc: l.enc, dst: fmt.Sprintf(mapValueLocal, d), disc: l.disc})
+	g.decodeValue(body, fmt.Sprintf(mapValueExpr, d), fmt.Sprintf(mapKeyExpr, d), leaf{t: vt, unit: l.unit, enc: l.enc, dst: fmt.Sprintf(mapValueLocal, d), disc: l.disc, table: l.table})
 	g.c.linef(body, mapEmplaceFormat, d)
 	g.c.linef(inner, closeBrace)
 	g.c.linef(inner, mapFromFormat, l.dst, ks, vs, d)

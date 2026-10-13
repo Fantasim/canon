@@ -14,6 +14,7 @@ import (
 type owner struct {
 	fields []*ir.Field
 	rec    *value.Record
+	field  *ir.Field // the dependent field being written, when a ref decides it (DECISIONS 350)
 }
 
 // as is v as a *T; a value of another kind is an IR defect, reported once.

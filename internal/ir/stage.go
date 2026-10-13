@@ -47,6 +47,7 @@ func Build(ctx context.Context, in Input) []*Package {
 	}
 	s.precompute()
 	s.lookupDomains()
+	s.branchTables()
 	for _, u := range s.order {
 		if u.selected && len(u.emits) > 0 {
 			s.finish(u)
@@ -83,6 +84,7 @@ type stage struct {
 	cycleReported map[cycleReport]bool
 	owners        map[ownerKey]func(Type, *Case) bool // each owner's Written of its hooks, per target (hookWritten)
 	lets          map[value.Value]bool                // the composites of every let, collected once (letComposites)
+	targets       map[defineKey][]*value.Record       // the entries of each let a dependent field's ref path reads, by key (branchTables)
 }
 
 // unit is one checked package on its way to IR; firstUse is the first type of each imported
@@ -146,7 +148,7 @@ func newStage(ctx context.Context, in Input) *stage {
 		domainsOf: map[*ExportFn]*fnDomains{}, fieldSites: map[*Field]*fieldSite{}, depFns: map[*Dependent]*types.TypeFunc{},
 		branchTypes: map[*Branch]types.Type{}, members: map[*Variant][]source.Span{},
 		variantFns: map[*syntax.FnDecl]bool{}, cyclic: map[*ExportFn]bool{}, cycleReported: map[cycleReport]bool{},
-		owners: map[ownerKey]func(Type, *Case) bool{},
+		owners: map[ownerKey]func(Type, *Case) bool{}, targets: map[defineKey][]*value.Record{},
 	}
 	// nil overrides (decision 108) never name an undeclared root, so NewLayout's ok is always true.
 	s.layout, _ = project.NewLayout(in.Project, curDir, nil, nil)

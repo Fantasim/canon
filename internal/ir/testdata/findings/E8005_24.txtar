@@ -17,6 +17,6 @@ emit json { out: "out/" }
 {}
 -- findings.txt --
 error[E8005]  a/a.canon:4:8
-  cpp: EnvText is generated for both a and a.EnvText
+  cpp: EnvText is generated for both a and a.EnvText; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)

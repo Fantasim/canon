@@ -67,7 +67,7 @@ func (g *gen) fieldLit(f *ir.Field, v value.Value, o *owner) string {
 		return tsNull
 	}
 	if app := ir.HeldApp(f.Type); app != nil {
-		return g.dependentLit(f.Type, v, o)
+		return g.dependentLit(f.Type, v, &owner{fields: o.fields, rec: o.rec, field: f})
 	}
 	return g.lit(f.Type, v, f.BigInt)
 }
@@ -113,6 +113,9 @@ func (g *gen) dependentLit(t ir.TypeRef, v value.Value, o *owner) string {
 
 // bakedBranch is the index of the branch the record's discriminant selects, read down ir.DiscFields' path; -1 after a failure.
 func (g *gen) bakedBranch(d *ir.Dependent, app ir.TypeRef, o *owner) int {
+	if o.field != nil && o.field.Branches != nil {
+		return g.refBranch(d, o)
+	}
 	path := ir.DiscFields(o.fields, app)
 	if path == nil {
 		g.failf(ErrMalformed, malformedNoDisc, g.at)

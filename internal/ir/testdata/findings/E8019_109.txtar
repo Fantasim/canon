@@ -1,4 +1,4 @@
-CODEGEN.md §2.8, §5.6, DECISIONS 305, 320: app's go data loader reads lib's Ev with app's own reader, and Ev's payload is decided through a ref (its discriminant sits behind ref kinds), which no loader reads before v0.2: E8019 `DependentType` at app's value that reads Ev, naming the way out. lib's baked emit holds no such value, so it writes Ev.
+CODEGEN.md §2.8, §5.6, DECISIONS 305, 320, 350: app's go data loader reads lib's Ev with app's own reader, and Ev's payload is decided through a ref into kinds, a @reload value a reload may add keys to, so no build-time table decides it: E8019 `DependentType` at app's value that reads Ev, naming the way out. lib's data emit loads only kinds, which holds no Ev.
 -- lib/lib.canon --
 /// The library.
 package lib
@@ -13,6 +13,7 @@ record KindEntry {
 }
 
 /// The kinds.
+@reload
 let kinds: table KindEntry = {
   first { k: one }
 }
@@ -28,7 +29,8 @@ record Ev {
   p: P(kind.k)
 }
 
-emit go { out: "@features/lib/go", package: "lib" }
+emit go { out: "@features/lib/go", package: "lib", mode: data }
+emit json { out: "out/lib/" }
 -- app/app.canon --
 /// The app.
 package app
@@ -42,6 +44,6 @@ emit go { out: "@features/app/go", package: "app", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8019]  app/app.canon:7:5
-  emit go in data mode cannot generate a dependent value decided through a ref, an optional or a record parameter; not before v0.2: decide it by an enum field of the same record meanwhile
+  emit go in data mode cannot generate a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field; decide it by an enum field of the same record, or by a ref into a let that is not `@reload`
 
 1 error, 0 warnings in 2 packages (…)

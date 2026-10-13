@@ -1,0 +1,85 @@
+DECISIONS 350, 348 (CODEGEN.md §5.3, §5.6): a dependent value decided through a ref, a list of them sharing their field's discriminant, a none met on the path (Kind.shape) and a Never arm (gone), and two tables of one record, check and build in every target and mode: lib's types-mode decoders read the key and look the branch up in their own table, app's data loaders do so with app's tables for lib's Entry, bk's baked literals write the branch the evaluator decided; its Go vets, its C++ and its TypeScript compile. Formerly E8019 DependentType (E8019_41, E8019_58, E8019_109).
+-- lib/lib.canon --
+package lib
+
+/// A shape.
+enum Shape { num, text, gone }
+
+/// A kind.
+record Kind {
+  /// Its shape, if any.
+  shape: Shape?
+}
+
+/// The kinds.
+let kinds: table Kind = {
+  count { shape: num }
+  label { shape: text }
+  old { shape: gone }
+  blank { }
+}
+
+/// More kinds, of the same record: one id type for both tables.
+let moreKinds: table Kind = {
+  extra { shape: num }
+}
+
+/// A payload, by shape.
+type Payload(s: Shape) = match s { num => Int, text => String, gone => Never }
+
+/// An entry, its payload decided through its kind.
+record Entry {
+  /// Its kind.
+  kind: ref kinds
+  /// Its payload, none when its kind has no shape.
+  payload: Payload(kind.shape)?
+  /// More payloads of the same kind.
+  more: [Payload(kind.shape)]
+}
+
+/// Entries.
+record Book {
+  /// The entries.
+  entries: [Entry]
+}
+
+emit go { out: "@features/lib", package: "lib", mode: types }
+emit cpp { out: "@features/libc", namespace: "lib", mode: types }
+emit ts { out: "@features/lib.ts", mode: types }
+-- app/app.canon --
+package app
+
+import lib { Book }
+
+/// The book.
+let book: Book = {
+  entries: [
+    { kind: count, payload: 3, more: [1, 2] },
+    { kind: label, payload: "x", more: [] },
+    { kind: blank, more: [] }
+  ]
+}
+
+emit go { out: "@features/app", package: "app", mode: data }
+emit cpp { out: "@features/appc", namespace: "app", mode: data }
+emit ts { out: "@features/app.ts", mode: data }
+emit json { out: "out/app/" }
+-- bk/bk.canon --
+package bk
+
+import lib { Book }
+
+/// The book.
+let book: Book = {
+  entries: [
+    { kind: count, payload: 3, more: [1, 2] },
+    { kind: label, payload: "x", more: ["y"] },
+    { kind: blank, more: [] }
+  ]
+}
+
+emit go { out: "@features/bk", package: "bk" }
+emit cpp { out: "@features/bkc", namespace: "bk" }
+emit ts { out: "@features/bk.ts" }
+-- findings.txt --
+0 errors, 0 warnings in 3 packages (…)

@@ -16,6 +16,6 @@ record Spawn {
 emit cpp { out: "@features/ac", namespace: "a", mode: types }
 -- findings.txt --
 error[E8005]  a/a.canon:6:7
-  cpp: kMonstersDefines is generated for both kMonstersDefines and a.monsters
+  cpp: kMonstersDefines is generated for both kMonstersDefines and a.monsters; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)

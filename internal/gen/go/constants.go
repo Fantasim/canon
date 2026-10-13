@@ -481,3 +481,9 @@ const (
 	fixedFormat          = 'f'
 	maxInt64             = ".MaxInt64"
 )
+
+// The build-time branch table of a dependent field decided through a ref (CODEGEN.md §5.6, DECISIONS 350).
+const (
+	branchTableOpenFormat = "var %s = map[%s]%s{\n"
+	branchEntryFormat     = "%s: %s,\n"
+)

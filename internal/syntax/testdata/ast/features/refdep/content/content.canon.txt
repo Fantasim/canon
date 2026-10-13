@@ -1,0 +1,38 @@
+File: File FileKind=source @1:1-16:1
+  Doc: DocComment "A package that imports features.refdep's types and emits Go types of its own (website handoff\nH-14 #4, reproduced with neutral names): it emits once its import does (DECISIONS 348, 350)." @1:1-2:97
+  Package: QualifiedName features.refdep.content @3:9-3:32
+  Imports[0]: Import @5:1-5:41
+    Path: QualifiedName features.refdep @5:8-5:23
+    Names[0]: Ident Label @5:26-5:31
+    Names[1]: Ident Reward @5:33-5:39
+  Decls[0]: RecordDecl @8:1-13:2
+    Doc: DocComment "A dungeon." @7:1-7:15
+    Name: Ident Dungeon @8:8-8:15
+    Body: RecordBody @8:16-13:2
+      Items[0]: FieldDecl @10:3-10:14
+        Doc: DocComment "Its name." @9:3-9:16
+        Name: Ident name @10:3-10:7
+        Type: NamedType @10:9-10:14
+          Name: QualifiedName Label @10:9-10:14
+      Items[1]: FieldDecl @12:3-12:20
+        Doc: DocComment "What clearing it grants." @11:3-11:31
+        Name: Ident rewards @12:3-12:10
+        Type: ListType @12:12-12:20
+          Elem: NamedType @12:13-12:19
+            Name: QualifiedName Reward @12:13-12:19
+  Decls[1]: EmitDecl @15:1-15:67
+    Target: Ident go @15:6-15:8
+    Options: BraceLit @15:9-15:67
+      Items[0]: FieldItem @15:11-15:32
+        Name: Ident out @15:11-15:14
+        Value: StringLit @15:16-15:32
+          Parts[0]: text "out/go/content"
+      Items[1]: FieldItem @15:34-15:52
+        Name: Ident package @15:34-15:41
+        Value: StringLit @15:43-15:52
+          Parts[0]: text "content"
+      Items[2]: FieldItem @15:54-15:65
+        Name: Ident mode @15:54-15:58
+        Value: IdentExpr types @15:60-15:65
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -17,6 +17,6 @@ export fn loadInputs(n: Int) -> Int { return n * 2 }
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8005]  a/a.canon:13:11
-  go: LoadInputs is generated for both a and a.loadInputs
+  go: LoadInputs is generated for both a and a.loadInputs; rename one of them with @go(name:)
 
 1 error, 0 warnings in 1 package (…)

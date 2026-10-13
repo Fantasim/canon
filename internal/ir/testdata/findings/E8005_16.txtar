@@ -16,6 +16,6 @@ record Potion {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8005]  a/a.canon:11:13
-  go: HealFor is generated for both a.Potion.healFor and a.Potion.heal_for
+  go: HealFor is generated for both a.Potion.healFor and a.Potion.heal_for; rename one of them with @go(name:)
 
 1 error, 0 warnings in 1 package (…)

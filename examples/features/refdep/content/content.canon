@@ -1,0 +1,15 @@
+/// A package that imports features.refdep's types and emits Go types of its own (website handoff
+/// H-14 #4, reproduced with neutral names): it emits once its import does (DECISIONS 348, 350).
+package features.refdep.content
+
+import features.refdep { Label, Reward }
+
+/// A dungeon.
+record Dungeon {
+  /// Its name.
+  name: Label
+  /// What clearing it grants.
+  rewards: [Reward]
+}
+
+emit go { out: "out/go/content", package: "content", mode: types }

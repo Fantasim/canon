@@ -70,9 +70,9 @@ record Reader {
 emit cpp { out: "@features/e/cpp", namespace: "e", mode: data }
 -- findings.txt --
 error[E8019]  b/b.canon:9:3
-  emit go in baked mode cannot generate an enum its package's Go emit opens; emit this package in types mode too, or take the enum out of open
+  emit go in baked mode cannot generate an enum its package's emit of this target opens; emit this package in types mode too, or take the enum out of open
 
 error[E8019]  c/c.canon:9:3
-  emit go in data mode cannot generate an enum its package's Go emit opens; emit this package in types mode too, or take the enum out of open
+  emit go in data mode cannot generate an enum its package's emit of this target opens; emit this package in types mode too, or take the enum out of open
 
 2 errors, 0 warnings in 5 packages (…)

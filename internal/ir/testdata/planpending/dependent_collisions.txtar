@@ -35,15 +35,15 @@ detail: AAccess AMake Decode DecodeP
 problem 0 P AsAB: a.P.a_b, a.P.aB
 problem 0 a PBranch: a.P, a.PBranch
 error[E8005]  a/a.canon:7:6
-  cpp: AsAB is generated for both a.P.a_b and a.P.aB
+  cpp: AsAB is generated for both a.P.a_b and a.P.aB; rename one of them with @cpp(name:)
 
 error[E8005]  a/a.canon:7:6
-  go: PBranchAB is generated for both a.P.a_b and a.P.aB
+  go: PBranchAB is generated for both a.P.a_b and a.P.aB; rename one of them with @go(name:)
 
 error[E8005]  a/a.canon:10:8
-  cpp: PBranch is generated for both a.P and a.PBranch
+  cpp: PBranch is generated for both a.P and a.PBranch; rename one of them with @cpp(name:)
 
 error[E8005]  a/a.canon:10:8
-  go: PBranch is generated for both a.P and a.PBranch
+  go: PBranch is generated for both a.P and a.PBranch; rename one of them with @go(name:)
 
 4 errors, 0 warnings in 1 package (…)

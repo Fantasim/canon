@@ -13,7 +13,7 @@ import (
 // fillDependent writes a dependent value, or each element of a list of them, into the branch the record's own discriminant selects (CODEGEN.md §5.6).
 func (g *gen) fillDependent(a at, key string, fields []*ir.Field, f *ir.Field, r *value.Record) {
 	v := g.fieldOf(r, f.Name)
-	d, br := g.bakedBranch(fields, *ir.HeldApp(f.Type), r)
+	d, br := g.recordBranch(fields, f, r, v)
 	if d == nil {
 		return
 	}

@@ -11,6 +11,6 @@ record Thing {
 emit cpp { out: "@features/ac", namespace: "a", mode: types }
 -- findings.txt --
 error[E8005]  a/a.canon:6:3
-  cpp: Decode is generated for both a.Thing and a.Thing.code
+  cpp: Decode is generated for both a.Thing and a.Thing.code; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)

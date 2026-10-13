@@ -1,0 +1,77 @@
+// Command probe decodes each book file named on the command line with lib's types-mode decoder
+// and with app's data loader (the file's .data twin), printing one verdict line each
+// (TestRefDependentRoundTrip, DECISIONS 350).
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
+	"example.com/gen/app"
+	"example.com/gen/lib"
+)
+
+func main() {
+	for _, path := range os.Args[1:] {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			panic(err)
+		}
+		b, err := lib.DecodeBook(raw)
+		fmt.Println("go-types " + verdict(b, err))
+		b, err = app.LoadBook(path + ".data")
+		fmt.Println("go-data " + verdict(b, err))
+	}
+}
+
+func verdict(b *lib.Book, err error) string {
+	switch {
+	case err != nil && strings.Contains(err.Error(), "no branch for this value"):
+		return "error no branch"
+	case err != nil:
+		return "error other"
+	}
+	var entries []string
+	for e := range b.Entries().All() {
+		var more []string
+		for p := range e.More().All() {
+			more = append(more, show(p))
+		}
+		entries = append(entries, strings.Join([]string{
+			"kind=" + string(e.KindID()), "payload=" + show(e.Payload()), "more=[" + strings.Join(more, ",") + "]",
+			"ev=" + e.EvID().Wire(), "byEv=" + show(e.ByEv()),
+			"num=" + strconv.FormatInt(e.NumID(), 10), "byNum=" + show(e.ByNum()),
+			"flag=" + string(e.FlagID()), "byFlag=" + showFlag(e.ByFlag()),
+			"alias=" + string(e.AliasID()), "byAlias=" + show(e.ByAlias()),
+		}, " "))
+	}
+	return "ok " + strings.Join(entries, "; ")
+}
+
+func show(p *lib.Payload) string {
+	if p == nil {
+		return "none"
+	}
+	if n, ok := p.AsNum(); ok {
+		return "num:" + strconv.FormatInt(n, 10)
+	}
+	if s, ok := p.AsText(); ok {
+		return "text:" + s
+	}
+	return "?"
+}
+
+func showFlag(p *lib.ByFlag) string {
+	if p == nil {
+		return "none"
+	}
+	if n, ok := p.AsTrue(); ok {
+		return "true:" + strconv.FormatInt(n, 10)
+	}
+	if s, ok := p.AsFalse(); ok {
+		return "false:" + s
+	}
+	return "?"
+}

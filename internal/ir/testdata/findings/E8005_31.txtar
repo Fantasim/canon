@@ -33,6 +33,6 @@ emit json { out: "out/b/" }
 {}
 -- findings.txt --
 error[E8005]  b/b.canon:12:6
-  cpp: LoadInputs is generated for both a and b
+  cpp: LoadInputs is generated for both a and b; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 2 packages (…)

@@ -49,10 +49,10 @@ func (pl *GoNamePlan) HasNestedTables() bool {
 	})
 }
 
-// declareNestedIDs declares the id type of each record only a table field holds, a string in both modes: a nested table has no id constants (CODEGEN.md §5.3).
-func (pl *GoNamePlan) declareNestedIDs(top *nameScope) {
+// declareNestedIDs declares the id type of each record only a table field holds, a string in both modes: a nested table has no id constants (CODEGEN.md §5.3). In data and types mode one named like a string id type of strs is that type (DECISIONS 348).
+func (pl *GoNamePlan) declareNestedIDs(top *nameScope, strs map[string]bool) {
 	for _, rec := range pl.nested {
-		if pl.isTableValueRecord(rec) {
+		if pl.isTableValueRecord(rec) || strs[pl.IDTypeName(rec)] {
 			continue
 		}
 		pl.declareFrom(top, rec.QName(), rec, derivation{rec, func() string { return pl.IDTypeName(rec) }})

@@ -146,8 +146,7 @@ func (pl *GoNamePlan) declareAll() {
 	}
 	pl.declareEnums(top)
 	pl.declareKindEnums(top)
-	pl.declareIDEnums(top)
-	pl.declareNestedIDs(top)
+	pl.declareNestedIDs(top, pl.declareIDEnums(top))
 	for _, t := range pl.p.Types {
 		pl.declareType(top, t)
 	}
@@ -223,16 +222,21 @@ func (pl *GoNamePlan) declareMethods(goType, origin string, item any, methods []
 	}
 }
 
-// declareIDEnums declares the id type of every public table value, emitted or not (decision 124): in baked mode an enum with its members, Parse and String, in data mode a string (CODEGEN.md §5.3).
-func (pl *GoNamePlan) declareIDEnums(top *nameScope) {
+// declareIDEnums declares the id type of every public table value, emitted or not (decision 124): in baked mode an enum with its members, Parse and String; in data and types mode a string, declared once per name, so tables whose id types are named alike share it (CODEGEN.md §5.3, DECISIONS 348). It returns the string id types it declared.
+func (pl *GoNamePlan) declareIDEnums(top *nameScope) map[string]bool {
+	strs := map[string]bool{}
 	for _, v := range pl.p.Values {
 		rec := tableRecord(v)
 		if rec == nil {
 			continue
 		}
 		name := pl.IDTypeName(rec)
+		if pl.data != nil && strs[name] {
+			continue
+		}
 		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.IDTypeName(rec) }})
 		if pl.data != nil {
+			strs[name] = true
 			continue
 		}
 		for _, id := range v.IDs {
@@ -241,6 +245,7 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) {
 		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
 		pl.declareMethods(name, v.Name, v, goIDEnumMethods)
 	}
+	return strs
 }
 
 // tableRecord is the element record of a table value, or nil.

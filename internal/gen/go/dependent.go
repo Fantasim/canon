@@ -171,16 +171,7 @@ func (g *gen) dependentDisc(owner *body, app ir.TypeRef) string {
 	if path == nil {
 		return ""
 	}
-	steps := []string{g.lc.Out}
-	for i, f := range path {
-		in, ok := path[max(i-1, 0)].Type.Named.(*ir.Record)
-		if i > 0 && ok && in.Pkg != g.p.Name {
-			steps = append(steps, g.names.Slot(f).Getter+callSuffix)
-			continue
-		}
-		steps = append(steps, g.names.Slot(f).Store)
-	}
-	return strings.Join(steps, dot)
+	return g.pathExpr(path, false)
 }
 
 // discPath is ir.DiscFields of a dependent type's application from owner's fields; nil, refused as malformed, for any other.
@@ -203,16 +194,19 @@ func (g *gen) readDependentValue(b *strings.Builder, l leaf, raw string, loc loc
 		g.fail(newDetail(errDependentNested, g.at, dependentNestedFormat, g.at))
 		return raw
 	}
+	disc := l.disc
+	if l.table != "" {
+		disc = g.branchLookup(b, l, loc)
+	}
 	v := g.temp(tempValue)
-	fmt.Fprintf(b, dependentDecodeFormat, v, g.typeName(d), g.lc.Err, g.decodeFunc(d), g.lc.Name, g.locExpr(loc), raw, l.disc)
+	fmt.Fprintf(b, dependentDecodeFormat, v, g.typeName(d), g.lc.Err, g.decodeFunc(d), g.lc.Name, g.locExpr(loc), raw, disc)
 	return v
 }
 
 // assignDependent is a dependent field's storage in a baked literal: each value, the field's list elements included, in the branch its record's discriminant selects (CODEGEN.md §5.6).
 func (g *gen) assignDependent(owner *body, r *value.Record, s *slot, v value.Value) []pair {
 	return g.assignWith(s, v, func(s *slot, v value.Value) string {
-		app := ir.HeldApp(s.T)
-		d, br := g.bakedBranch(owner, r, *app)
+		d, br := g.recordBranch(owner, s, r, v)
 		if d == nil {
 			return nilLit
 		}

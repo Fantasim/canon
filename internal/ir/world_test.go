@@ -65,6 +65,18 @@ func newWorld(t *testing.T) *world {
 	return w
 }
 
+// useProject replaces the examples' project file with data: a case that needs roots of its own (consumer roots, DECISIONS 343) declares them.
+func (w *world) useProject(t *testing.T, data []byte) {
+	t.Helper()
+	src, err := w.fs.Add(projectFile, "/"+projectFile, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w.proj, err = project.Load(src, w.parse); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // add parses a .canon file, or keeps a `<pkg>.<name>.json` value.
 func (w *world) add(t *testing.T, name string, data []byte) {
 	t.Helper()

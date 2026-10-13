@@ -1,0 +1,57 @@
+DECISIONS 340, 347: b's only go copy lies under the consumer root admin. a, under the ordinary root lib, reaches b.Item only through a @text result: that copy is no copy a can use, so the result has no decoder, no import and no finding. c, under admin too, uses it: DecodeItemsFile.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    lib: "lib"
+    admin: "admin"
+  }
+  consumer_roots: [admin]
+  go_module {
+    lib: "example.com/lib"
+    admin: "example.com/admin"
+  }
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+emit go { out: "@admin/b/go", package: "b" }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item }
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ n: 1 }] }
+
+emit go { out: "@lib/a/go", package: "a", mode: types }
+emit text { out: "out/a" }
+-- c/c.canon --
+/// C.
+package c
+
+import b { Item }
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ n: 1 }] }
+
+emit go { out: "@admin/c/go", package: "c", mode: types }
+emit text { out: "out/c" }
+-- plan.txt --
+== a @lib/a/go: decoders []
+locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag unit v values vr want
+package: 
+== c @admin/c/go: decoders [DecodeItemsFile]
+locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag unit v values vr want
+package: DecodeItemsFile b decode_b_Item jsonCell jsonDocument jsonInt jsonKeys jsonMay jsonNeed jsonObject jsonRead jsonSame jsonSlot
+0 errors, 0 warnings in 3 packages (…)

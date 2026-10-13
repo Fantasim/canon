@@ -206,6 +206,7 @@ func headerGroups(g *gen) [][]string {
 func (g *gen) source() []byte {
 	g.c = writer{}
 	g.defineTables()
+	g.branchTables()
 	if g.baked() {
 		g.bakedAccess()
 	} else {

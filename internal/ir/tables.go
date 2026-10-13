@@ -101,7 +101,7 @@ var wayOf = map[diag.Kind]diag.Kind{
 	diag.KindInputField: diag.KindWayInputField, diag.KindLegacyStruct: diag.KindWayLegacyStruct,
 	diag.KindMapField: diag.KindWayMapField, diag.KindNeverDependent: diag.KindWayNeverDependent,
 	diag.KindOptionalElementList: diag.KindWayOptionalElementList, diag.KindOptionalMapValue: diag.KindWayOptionalMapValue,
-	diag.KindOpenEnum:       diag.KindWayOpenEnum,
+	diag.KindOpenEnum: diag.KindWayOpenEnum, diag.KindOpenEnumFn: diag.KindWayOpenEnumFn,
 	diag.KindRecordConstant: diag.KindWayRecordConstant, diag.KindRecordDefault: diag.KindWayRecordDefault, diag.KindRecordCycleThroughMethod: diag.KindWayRecordCycleThroughMethod,
 	diag.KindRecordFieldCycle: diag.KindWayRecordFieldCycle, diag.KindRecursiveVariantCase: diag.KindWayRecursiveVariantCase,
 	diag.KindRefUnion: diag.KindWayRefUnion, diag.KindResolvedLookupResult: diag.KindWayResolvedLookupResult,

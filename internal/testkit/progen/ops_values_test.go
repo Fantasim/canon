@@ -192,13 +192,6 @@ func spreadTable(tg target) []progen.Site {
 	return out
 }
 
-// recordField adds a documented field before+focus+after as the last item of every record.
-func recordField(before, focus, after string) func(target) []progen.Site {
-	return recordFieldOf(func(target) func(*syntax.RecordDecl) bool {
-		return func(*syntax.RecordDecl) bool { return true }
-	}, before, focus, after)
-}
-
 // fnField adds a function-typed field to a record that is no pairs element, whose count it would break (WIRE.md §4.1).
 func fnField(tg target) []progen.Site {
 	return recordFieldOf(func(tg target) func(*syntax.RecordDecl) bool {
@@ -290,7 +283,7 @@ func refsIntoTwoTables(tg target) []progen.Site {
 	var out []progen.Site
 	for _, d := range nodes[*syntax.LetDecl](tg) {
 		t, ok := d.Type.(*syntax.TableType)
-		if !ok || refs[text(tg, t.Name)] {
+		if !ok || refs[text(tg, t.Name)] || t.Stable.Valid() || t.Past.Valid() { // a ref into a stable or past table meets E3027 before E3309
 			continue
 		}
 		elem := text(tg, t.Name)

@@ -8,6 +8,6 @@ enum Tone { a @go(name: "ToneB"), b }
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8005]  a/a.canon:4:35
-  go: ToneB is generated for both a.Tone.a and a.Tone.b
+  go: ToneB is generated for both a.Tone.a and a.Tone.b; rename one of them with @go(name:)
 
 1 error, 0 warnings in 1 package (…)

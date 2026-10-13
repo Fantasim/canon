@@ -15,7 +15,11 @@ func TestTextDecoderReach(t *testing.T) {
 		t.Helper()
 		w := newWorld(t)
 		for _, f := range c.Archive.Files {
-			if f.Name != planFile {
+			switch f.Name {
+			case planFile:
+			case projectFile:
+				w.useProject(t, f.Data)
+			default:
 				w.add(t, f.Name, f.Data)
 			}
 		}

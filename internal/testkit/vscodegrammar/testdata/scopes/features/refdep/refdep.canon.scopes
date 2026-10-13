@@ -1,0 +1,155 @@
+1:0-97 "/// Go `types` mode for a package that two choices of the language used to refuse (DECISIONS 348," comment.line.documentation.canon
+2:0-65 "/// 350; website handoff H-14 #4, reproduced with neutral names):" comment.line.documentation.canon
+3:0-3 "///" comment.line.documentation.canon
+4:0-96 "/// - Two tables of one record, `regionNames` and `stageNames`, hold `Label` rows. In `data` and" comment.line.documentation.canon
+5:0-99 "///   `types` mode a table's id type is its key string (CODEGEN.md §5.3), so both tables share one" comment.line.documentation.canon
+6:0-89 "///   `LabelID` instead of being E8005 (and one `LabelId` in the TypeScript `data` emit)." comment.line.documentation.canon
+7:0-95 "/// - A reward's `param` is a dependent value decided through a ref: `event` refs a keyed list," comment.line.documentation.canon
+8:0-97 "///   and the event's `shape` picks the branch. The ref's targets are known at build time, so the" comment.line.documentation.canon
+9:0-97 "///   decoder holds a private table from the event key to the branch (`branchesRewardParam`), and" comment.line.documentation.canon
+10:0-89 "///   reads the key, then the branch; an event whose shape is `none_` holds no parameter." comment.line.documentation.canon
+11:0-3 "///" comment.line.documentation.canon
+12:0-72 "/// features.refdep.content imports this package and emits Go types too." comment.line.documentation.canon
+13:0-7 "package" keyword.other.canon
+13:8-23 "features.refdep" entity.name.namespace.canon
+15:0-38 "/// The shape of an event's parameter." comment.line.documentation.canon
+16:0-4 "enum" storage.type.canon
+16:5-10 "Shape" entity.name.type.canon
+17:0-14 "  /// A count." comment.line.documentation.canon
+19:0-20 "  /// A named place." comment.line.documentation.canon
+21:0-19 "  /// No parameter." comment.line.documentation.canon
+25:0-18 "/// What happened." comment.line.documentation.canon
+26:0-4 "enum" storage.type.canon
+26:5-10 "Event" entity.name.type.canon
+27:0-27 "  /// A monster was beaten." comment.line.documentation.canon
+29:0-26 "  /// A place was reached." comment.line.documentation.canon
+31:0-22 "  /// The day changed." comment.line.documentation.canon
+35:0-44 "/// An event and the shape of its parameter." comment.line.documentation.canon
+36:0-6 "record" storage.type.canon
+36:7-17 "EventShape" entity.name.type.canon
+37:0-16 "  /// The event." comment.line.documentation.canon
+38:2-7 "event" variable.other.property.canon
+38:7-8 ":" punctuation.separator.key.canon
+38:9-14 "Event" entity.name.type.canon
+39:0-31 "  /// What its parameter holds." comment.line.documentation.canon
+40:2-7 "shape" variable.other.property.canon
+40:7-8 ":" punctuation.separator.key.canon
+40:9-14 "Shape" entity.name.type.canon
+43:0-32 "/// Every event, keyed by event." comment.line.documentation.canon
+44:0-3 "let" storage.type.canon
+44:4-15 "eventShapes" variable.other.property.canon
+44:15-16 ":" punctuation.separator.key.canon
+44:18-28 "EventShape" entity.name.type.canon
+44:45-46 "=" keyword.operator.canon
+45:4-9 "event" variable.other.property.canon
+45:9-10 ":" punctuation.separator.key.canon
+45:25-30 "shape" variable.other.property.canon
+45:30-31 ":" punctuation.separator.key.canon
+46:4-9 "event" variable.other.property.canon
+46:9-10 ":" punctuation.separator.key.canon
+46:24-29 "shape" variable.other.property.canon
+46:29-30 ":" punctuation.separator.key.canon
+47:4-9 "event" variable.other.property.canon
+47:9-10 ":" punctuation.separator.key.canon
+47:20-25 "shape" variable.other.property.canon
+47:25-26 ":" punctuation.separator.key.canon
+50:0-44 "/// A parameter, by shape: none_ takes none." comment.line.documentation.canon
+51:0-4 "type" storage.type.canon
+51:5-10 "Param" entity.name.type.canon
+51:11-12 "s" variable.other.property.canon
+51:12-13 ":" punctuation.separator.key.canon
+51:14-19 "Shape" entity.name.type.canon
+51:21-22 "=" keyword.operator.canon
+51:23-28 "match" keyword.control.canon
+52:8-10 "=>" keyword.operator.canon
+52:11-14 "Int" entity.name.type.canon
+52:15-16 "0" constant.numeric.integer.canon
+52:16-18 ".." keyword.operator.canon
+53:8-10 "=>" keyword.operator.canon
+53:11-17 "String" entity.name.type.canon
+54:8-10 "=>" keyword.operator.canon
+54:11-16 "Never" entity.name.type.canon
+57:0-43 "/// One reward: the points an event grants." comment.line.documentation.canon
+58:0-6 "record" storage.type.canon
+58:7-13 "Reward" entity.name.type.canon
+59:0-16 "  /// The event." comment.line.documentation.canon
+60:2-7 "event" variable.other.property.canon
+60:7-8 ":" punctuation.separator.key.canon
+60:9-12 "ref" storage.modifier.canon
+61:0-59 "  /// The event's filter; none (written 0) is the wildcard." comment.line.documentation.canon
+62:2-7 "param" variable.other.property.canon
+62:7-8 ":" punctuation.separator.key.canon
+62:9-14 "Param" entity.name.type.canon
+62:20-21 "." punctuation.accessor.canon
+62:21-26 "shape" variable.other.property.canon
+62:27-28 "?" keyword.operator.canon
+62:29-30 "@" meta.annotation.canon punctuation.definition.annotation.canon
+62:30-34 "json" meta.annotation.canon entity.name.function.decorator.canon
+62:34-35 "(" meta.annotation.canon
+62:35-39 "none" meta.annotation.canon variable.parameter.canon
+62:39-40 ":" meta.annotation.canon punctuation.separator.key.canon
+62:40-41 " " meta.annotation.canon
+62:41-42 "0" meta.annotation.canon constant.numeric.integer.canon
+62:42-43 ")" meta.annotation.canon
+63:0-21 "  /// Points granted." comment.line.documentation.canon
+64:2-8 "points" variable.other.property.canon
+64:8-9 ":" punctuation.separator.key.canon
+64:10-13 "Int" entity.name.type.canon
+64:14-15 "1" constant.numeric.integer.canon
+64:15-17 ".." keyword.operator.canon
+67:0-18 "/// A reward file." comment.line.documentation.canon
+68:0-6 "record" storage.type.canon
+68:7-17 "RewardFile" entity.name.type.canon
+69:0-18 "  /// The rewards." comment.line.documentation.canon
+70:2-9 "rewards" variable.other.property.canon
+70:9-10 ":" punctuation.separator.key.canon
+70:12-18 "Reward" entity.name.type.canon
+73:0-21 "/// A displayed text." comment.line.documentation.canon
+74:0-6 "record" storage.type.canon
+74:7-12 "Label" entity.name.type.canon
+75:0-15 "  /// Its text." comment.line.documentation.canon
+76:2-6 "text" variable.other.property.canon
+76:6-7 ":" punctuation.separator.key.canon
+76:8-14 "String" entity.name.type.canon
+79:0-25 "/// The names of regions." comment.line.documentation.canon
+80:0-3 "let" storage.type.canon
+80:4-15 "regionNames" variable.other.property.canon
+80:15-16 ":" punctuation.separator.key.canon
+80:17-22 "table" storage.type.canon
+80:23-28 "Label" entity.name.type.canon
+80:29-30 "=" keyword.operator.canon
+81:10-14 "text" variable.other.property.canon
+81:14-15 ":" punctuation.separator.key.canon
+81:16-23 "\"North\"" string.quoted.double.canon
+82:10-14 "text" variable.other.property.canon
+82:14-15 ":" punctuation.separator.key.canon
+82:16-23 "\"South\"" string.quoted.double.canon
+85:0-59 "/// The names of stages: a second table of the same record." comment.line.documentation.canon
+86:0-3 "let" storage.type.canon
+86:4-14 "stageNames" variable.other.property.canon
+86:14-15 ":" punctuation.separator.key.canon
+86:16-21 "table" storage.type.canon
+86:22-27 "Label" entity.name.type.canon
+86:28-29 "=" keyword.operator.canon
+87:10-14 "text" variable.other.property.canon
+87:14-15 ":" punctuation.separator.key.canon
+87:16-23 "\"First\"" string.quoted.double.canon
+90:0-4 "emit" keyword.other.canon
+90:10-13 "out" variable.other.property.canon
+90:13-14 ":" punctuation.separator.key.canon
+90:15-30 "\"out/go/refdep\"" string.quoted.double.canon
+90:32-39 "package" variable.other.property.canon
+90:39-40 ":" punctuation.separator.key.canon
+90:41-49 "\"refdep\"" string.quoted.double.canon
+90:51-55 "mode" variable.other.property.canon
+90:55-56 ":" punctuation.separator.key.canon
+91:0-4 "emit" keyword.other.canon
+91:10-13 "out" variable.other.property.canon
+91:13-14 ":" punctuation.separator.key.canon
+91:15-33 "\"out/ts/refdep.ts\"" string.quoted.double.canon
+91:35-39 "mode" variable.other.property.canon
+91:39-40 ":" punctuation.separator.key.canon
+92:0-4 "emit" keyword.other.canon
+92:12-15 "out" variable.other.property.canon
+92:15-16 ":" punctuation.separator.key.canon
+92:17-28 "\"out/json/\"" string.quoted.double.canon

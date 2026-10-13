@@ -33,7 +33,7 @@ func (s *stage) checkTSClass(u *unit, es *emitSite, class any) {
 	}
 }
 
-// tsUnread is what gen/ts cannot read of field f of fields: a dependent value held, itself or through lists, is read with its discriminant when DiscFields finds it, of any package's dependent type (gen/ts reads as gen/go does; DECISIONS 320), else `DependentType`; a pairs slot's is refused (tsUnreadType).
+// tsUnread is what gen/ts cannot read of field f of fields: a dependent value held, itself or through lists, is read with its discriminant when DiscFields finds it or a build-time table decides it through a ref (DECISIONS 350), of any package's dependent type (gen/ts reads as gen/go does; DECISIONS 320), else `DependentType`; a pairs slot's is refused (tsUnreadType).
 func tsUnread(fields []*Field, f *Field) (diag.Kind, bool) {
 	if f.Pairs != nil {
 		for _, site := range readFieldSites(f, source.Span{}) {
@@ -44,7 +44,7 @@ func tsUnread(fields []*Field, f *Field) (diag.Kind, bool) {
 		return 0, false
 	}
 	app := HeldApp(f.Type)
-	if app != nil && DiscFields(fields, *app) == nil {
+	if app != nil && DiscFields(fields, *app) == nil && !refDecided(fields, f) {
 		return diag.KindDependentType, true
 	}
 	return tsUnreadType(&f.Type, app == nil)

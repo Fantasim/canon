@@ -1,0 +1,70 @@
+DECISIONS 348 (CODEGEN.md §5.3): in data and types mode a table's id type is its key string, declared once per name: q's two tables of its own Badge, and its table of base.Badge (a record named alike), share one BadgeID in go and ts, and check and build in every target, its Go vetting and its C++ and TypeScript compiling. In baked mode the pair stays E8005 `idType` (findings/E8005_14, E8005_51). Formerly E8005.
+-- base/base.canon --
+/// The base.
+package base
+
+/// A badge.
+record Badge {
+  /// Its label.
+  label: String
+}
+
+emit go { out: "@features/base", package: "base", mode: types }
+emit cpp { out: "@features/basec", namespace: "base", mode: types }
+emit ts { out: "@features/base.ts", mode: types }
+-- q/q.canon --
+/// Holds badges.
+package q
+
+import base as b
+
+/// Q's own badge.
+record Badge {
+  /// Its note.
+  note: String
+}
+
+/// Q's badges.
+let mine: table Badge = {
+  one { note: "n" }
+}
+
+/// More of q's badges, a second table of the same record.
+let more: table Badge = {
+  three { note: "m" }
+}
+
+/// Base's badges, held by q.
+let theirs: table b.Badge = {
+  two { label: "l" }
+}
+
+emit go { out: "@features/q", package: "q", mode: data }
+emit cpp { out: "@features/qc", namespace: "q", mode: data }
+emit ts { out: "@features/q.ts", mode: data }
+emit json { out: "out/q/" }
+-- t/t.canon --
+/// Types only.
+package t
+
+/// A tag.
+record Tag {
+  /// Its text.
+  text: String
+}
+
+/// Some tags.
+let some: table Tag = {
+  a { text: "a" }
+}
+
+/// Other tags, of the same record.
+let other: table Tag = {
+  b { text: "b" }
+}
+
+emit go { out: "@features/t", package: "t", mode: types }
+emit cpp { out: "@features/tc", namespace: "t", mode: types }
+emit ts { out: "@features/t.ts", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 3 packages (…)

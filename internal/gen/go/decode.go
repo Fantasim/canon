@@ -25,6 +25,7 @@ func (g *gen) decoders() {
 	if g.readers() {
 		wrote = true
 	}
+	g.branchTables()
 	decoders := g.body
 	g.body = outer
 	if !wrote && len(g.names.TextDecoders()) == 0 {
@@ -188,7 +189,7 @@ func (g *gen) slotLeaf(owner *body, s *slot) (leaf, []byte) {
 	if f := s.src; s.fn == nil && f != nil {
 		l.unit, l.enc = f.Unit, f.Enc
 		if app := ir.HeldApp(s.T); app != nil { // its elements share the field's discriminant
-			l.disc = g.dependentDisc(owner, *app)
+			l.disc, l.table = g.leafDisc(owner, f, *app)
 		}
 		if f.Optional {
 			return l, f.NoneWire

@@ -17,6 +17,6 @@ record DecodeItem {
 emit go { out: "@features/a", package: "a", mode: types }
 -- findings.txt --
 error[E8005]  a/a.canon:4:8
-  go: DecodeItem is generated for both a.DecodeItem and a.Item
+  go: DecodeItem is generated for both a.DecodeItem and a.Item; rename one of them with @go(name:)
 
 1 error, 0 warnings in 1 package (…)

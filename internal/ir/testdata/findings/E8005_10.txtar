@@ -19,6 +19,6 @@ emit json { out: "out/" }
 [{ "a": 1, "c": 2 }]
 -- findings.txt --
 error[E8005]  a/a.canon:8:3
-  cpp: GetA is generated for both a.Thing.a and a.Thing.A
+  cpp: GetA is generated for both a.Thing.a and a.Thing.A; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)

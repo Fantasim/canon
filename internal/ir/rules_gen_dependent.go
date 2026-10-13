@@ -38,7 +38,7 @@ func (s *stage) checkGoDependentLiterals(u *unit, es *emitSite) {
 	}
 }
 
-// literalDependent is what a literal of v, of type t, cannot write of a present dependent value: `DependentOutsideField` for one outside a record field (a value's or a result's own, a map's, a non-string value of a literal union over one; a string is written as one), `DependentType` for one of a field whose record does not hold its discriminant as DiscFields reads it (decided through a ref, an optional or a record parameter).
+// literalDependent is what a literal of v, of type t, cannot write of a present dependent value: `DependentOutsideField` for one outside a record field (a value's or a result's own, a map's, a non-string value of a literal union over one; a string is written as one), `DependentType` for one of a field whose record does not hold its discriminant as DiscFields reads it, nor a build-time table decides it through a ref (decided through an optional, a record parameter or a ref into a @reload value; DECISIONS 350).
 func literalDependent(t *TypeRef, v value.Value) (diag.Kind, bool) {
 	if decodedHolds(t, isApp) && written(v) {
 		return diag.KindDependentOutsideField, true
@@ -62,7 +62,7 @@ func literalDependent(t *TypeRef, v value.Value) (diag.Kind, bool) {
 	return diag.KindDependentType, undecided
 }
 
-// unwrittenFields reports a present value of a dependent field of the record value r, of type t, whose discriminant DiscFields does not read from the record's fields.
+// unwrittenFields reports a present value of a dependent field of the record value r, of type t, whose discriminant DiscFields does not read from the record's fields, nor a build-time table decide through a ref (DECISIONS 350).
 func unwrittenFields(t *TypeRef, r *value.Record) bool {
 	if !recordKinds[t.Kind] || t.Named == nil {
 		return false
@@ -74,7 +74,7 @@ func unwrittenFields(t *TypeRef, r *value.Record) bool {
 		if app == nil || i < 0 || i >= len(r.Fields) || !written(r.Fields[i]) {
 			continue
 		}
-		if DiscFields(fields, *app) == nil {
+		if DiscFields(fields, *app) == nil && !refDecided(fields, f) {
 			return true
 		}
 	}
@@ -138,7 +138,7 @@ func (s *stage) reportDecodedDependents(u *unit, es *emitSite, class any) {
 	}
 }
 
-// fieldDependent is what a loader cannot read of a dependent value of field f of fields: `DependentType` for one it holds, itself or through lists, whose discriminant DiscFields does not read (a ref, an optional, a record parameter), `DependentOutsideField` for one elsewhere in it (a map, a literal union, a pairs slot); a map is MapField's where the mode reads none.
+// fieldDependent is what a loader cannot read of a dependent value of field f of fields: `DependentType` for one it holds, itself or through lists, whose discriminant neither DiscFields reads nor a build-time table decides through a ref (an optional, a record parameter, a ref into a @reload value; DECISIONS 350), `DependentOutsideField` for one elsewhere in it (a map, a literal union, a pairs slot); a map is MapField's where the mode reads none.
 func fieldDependent(e *Emit, fields []*Field, f *Field) (diag.Kind, bool) {
 	if f.Input != nil || f.Optional && f.Type.Kind == types.Never || readsField(e, fields, f) {
 		return 0, false
@@ -149,13 +149,13 @@ func fieldDependent(e *Emit, fields []*Field, f *Field) (diag.Kind, bool) {
 	return diag.KindDependentOutsideField, true
 }
 
-// readsField reports that the loader reads field f of fields: no dependent type in it, or one application it holds, itself or through lists, whose discriminant DiscFields reads, of any package's dependent type (DECISIONS 320); a pairs field's slots are read without one.
+// readsField reports that the loader reads field f of fields: no dependent type in it, or one application it holds, itself or through lists, whose discriminant DiscFields reads or a build-time table decides through a ref (DECISIONS 350), of any package's dependent type (DECISIONS 320); a pairs field's slots are read without one.
 func readsField(e *Emit, fields []*Field, f *Field) bool {
 	if f.Pairs != nil {
 		return !slices.ContainsFunc(readFieldSites(f, source.Span{}), func(site typeSite) bool { return unreadDependent(e, site.t) })
 	}
 	if app := HeldApp(f.Type); app != nil {
-		return DiscFields(fields, *app) != nil
+		return DiscFields(fields, *app) != nil || refDecided(fields, f)
 	}
 	return !unreadDependent(e, &f.Type)
 }
@@ -165,32 +165,13 @@ func unreadDependent(e *Emit, t *TypeRef) bool {
 	return (readsMaps(e) || !decodedHolds(t, isMap)) && typeHolds(t, func(x *TypeRef) bool { return isApp(x) || x.Kind == types.DepMap })
 }
 
-// DiscFields are the fields a loader, or a baked literal, reads from fields to app's discriminant, in order: the argument's then the match's wire path, through earlier fields of records held by value, none optional (check's E3806) or a ref (a WIRE.md §5.9 load-time resolution CODEGEN.md does not write), ending at a field of the discriminant's type; nil for any other argument, a record parameter's (§5.7) or a dependent map binder's (§4.2) included (TYPES.md §11.1, §11.2).
+// DiscFields are the fields a loader, or a baked literal, reads from fields to app's discriminant, in order: the argument's then the match's wire path, through earlier fields of records held by value, none optional (check's E3806), ending at a field of the discriminant's type; nil for a path that crosses a ref (decided at build time instead, DiscRefFields) and for any other argument, a record parameter's (§5.7) or a dependent map binder's (§4.2) included (TYPES.md §11.1, §11.2).
 func DiscFields(fields []*Field, app TypeRef) []*Field {
-	d, ok := app.Named.(*Dependent)
-	if !ok || d.Disc == nil || d.DiscParam < 0 || d.DiscParam >= len(app.Args) || app.Args[d.DiscParam] == nil {
+	out, _, crossed := discRoute(fields, app)
+	if crossed || len(out) == 0 {
 		return nil
 	}
-	src := app.Args[d.DiscParam]
-	if src.From != types.ArgField {
-		return nil
-	}
-	segs := slices.Concat(src.WirePath, d.DiscPath)
-	var out []*Field
-	for len(segs) > 0 {
-		f := fieldAtWire(fields, segs)
-		if f == nil || f.Optional || f.Type.Kind == types.Ref {
-			return nil
-		}
-		segs, out = segs[len(f.WirePath):], append(out, f)
-		fields = nil
-		if rec, ok := f.Type.Named.(*Record); ok && f.Type.Kind == types.Record {
-			fields = rec.Fields
-		}
-	}
-	if len(out) == 0 {
-		return nil
-	}
+	d, _ := app.Named.(*Dependent)
 	if last := out[len(out)-1]; last.Type.Kind != d.Disc.Kind || last.Type.Named != d.Disc.Named {
 		return nil
 	}

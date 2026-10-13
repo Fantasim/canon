@@ -22,6 +22,6 @@ emit json { out: "out/" }
 { "n": 2 }
 -- findings.txt --
 error[E8005]  a/a.canon:10:5
-  cpp: LoadGen is generated for both a.LoadGen and a.gen
+  cpp: LoadGen is generated for both a.LoadGen and a.gen; rename one of them with @cpp(name:)
 
 1 error, 0 warnings in 1 package (…)
