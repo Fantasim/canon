@@ -1,0 +1,59 @@
+DECISIONS 366, known limit: a new entry file (API.md N1, N5) has no imports, so another package's
+non-nameable member is written qualified by that package's last segment (`v.Word.if`), which the
+re-check reports (E2102); an own-package one is `Loc.return`.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "filed", "key": "a", "value": {"word": "if", "loc": "return"}}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- v/v.canon --
+package v
+
+/// A word.
+enum Word { plain, if }
+-- p/p.canon --
+package p
+
+import v
+
+/// A local word.
+enum Loc { plain, return }
+
+/// An item.
+record Item {
+  /// Its word.
+  word: v.Word = plain
+  /// Its local word.
+  loc: Loc = plain
+}
+
+/// Filed items.
+@files("items/{id}.canon")
+let filed: table Item = {}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "created",
+      "path": "p/items/a.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:filed.a"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/items/a.canon --
+package p
+
+entry filed.a { word: v.Word.if, loc: Loc.return }

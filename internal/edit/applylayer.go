@@ -29,7 +29,7 @@ func (x *opCtx) layerSet() error {
 	if err := x.undoNewLine(); err != nil {
 		return err
 	}
-	text, err := x.a.canonText(v)
+	text, err := x.a.canonText(v, x.bareNaming())
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (x *opCtx) amendEntry(e entryParts, err error) error {
 	if err != nil {
 		return err
 	}
-	text, err := x.a.canonText(e.v)
+	text, err := x.a.canonText(e.v, x.bareNaming())
 	if err != nil {
 		return err
 	}

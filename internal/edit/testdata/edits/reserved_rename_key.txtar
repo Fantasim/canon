@@ -1,0 +1,64 @@
+GRAMMAR.md §4.3 (a): a table key may be renamed to a reserved word (API.md E11); its entry
+keeps the bare WORD, and each reference to it in value position, which cannot hold the word bare
+(§4.3 (c)), is written as a string (SPEC.md §6.2), a map key's name before `:` staying bare.
+-- options --
+pkgs: g
+-- edit.json --
+{"ops": [
+  {"op": "rename", "path": "nodes.a", "key": "if"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- g/g.canon --
+package g
+
+/// A node.
+record Node {
+  /// The nodes after it.
+  next: [ref Node] = []
+  /// Weights by node.
+  weights: {ref Node: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {}
+  b { next: [a, b], weights: { a: 1 } }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "g/g.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "rename",
+      "path": "g:nodes.if",
+      "key": "a"
+    }
+  ],
+  "touched": [
+    "g"
+  ]
+}
+-- after/g/g.canon --
+package g
+
+/// A node.
+record Node {
+  /// The nodes after it.
+  next: [ref Node] = []
+  /// Weights by node.
+  weights: {ref Node: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  if {}
+  b { next: ["if", b], weights: { if: 1 } }
+}

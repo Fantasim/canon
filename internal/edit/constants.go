@@ -170,7 +170,7 @@ const (
 	detailField                    = "no such field: "
 	detailTwice                    = "field given twice: "
 	detailNotLiteral               = "not a Canon literal"
-	detailNotContextual            = "not a contextual name"
+	detailOtherType                = "its qualifier names another type than the one expected"
 	detailRange                    = "integer out of range"
 	detailNameKey                  = "a bare name keys only an enum or a ref"
 	detailUndecoded                = "not decodable"
@@ -178,6 +178,9 @@ const (
 	detailDeep                     = "nested too deep"
 	detailSlots                    = "its JSON source has parallel key slots for at most "
 	detailSlotField                = "a slot of its JSON source writes both fields; no value for "
+	detailBitsTwice                = "its JSON source writes it as a bitmask, which holds a member once: "
+	detailNoneMarker               = "its JSON source writes none as its value: "
+	detailNoBranch                 = "a reserved word its type alone qualifies, which its record cannot compute here"
 	maxLitDepth                    = 512
 	maxUndoRounds, templateSegment = 8, `[^/.][^/]*` // an Undo's verifications; a templated field's path segment
 )

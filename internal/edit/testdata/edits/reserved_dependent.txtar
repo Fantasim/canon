@@ -1,0 +1,108 @@
+DECISIONS 366, GRAMMAR.md §4.3 (c): in a dependent field (TYPES.md §11), a Source accepts the
+qualified member of one of the field's branches (`Word.if`) as the symbol a bare name gives (API.md
+V1, DEP-02), so the Undo of a Remove restoring `param: Word.if` applies (API.md E22, E23); a wire
+value and a Source of the whole record alike write it qualified (API.md M7).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "remove", "path": "evs.a"},
+  {"op": "set", "path": "evs.b", "value": {"kind": "word", "param": "while"}},
+  {"op": "set", "path": "evs.c", "source": "{ kind: word, param: p.Word.if }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A kind.
+enum Kind { word, num }
+
+/// A word.
+enum Word { plain, if, while }
+
+/// A param.
+type Param(k: Kind) = match k {
+  word => Word
+  num => Never
+}
+
+/// An event.
+record Ev {
+  /// Its kind.
+  kind: Kind = word
+  /// Its param.
+  param: Param(kind)?
+}
+
+/// Events.
+let evs: table Ev = {
+  a { param: Word.if }
+  b { param: plain }
+  c {}
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:evs.c",
+      "source": "{}"
+    },
+    {
+      "op": "set",
+      "path": "p:evs.b",
+      "source": "{ param: plain }"
+    },
+    {
+      "op": "addEntry",
+      "path": "p:evs",
+      "key": "a",
+      "source": "{ param: Word.if }"
+    },
+    {
+      "op": "move",
+      "path": "p:evs.a",
+      "index": 0
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A kind.
+enum Kind { word, num }
+
+/// A word.
+enum Word { plain, if, while }
+
+/// A param.
+type Param(k: Kind) = match k {
+  word => Word
+  num => Never
+}
+
+/// An event.
+record Ev {
+  /// Its kind.
+  kind: Kind = word
+  /// Its param.
+  param: Param(kind)?
+}
+
+/// Events.
+let evs: table Ev = {
+  b { param: Word.while }
+  c { param: Word.if }
+}

@@ -37,6 +37,9 @@ func (fr depFrame) symbolsIn(v, was value.Value, t types.Type) (value.Value, err
 // data a JSON source wrote, the path's symbol restated or a path key is kept where its branch is
 // opaque (noted held by a strict frame); any other is resolved.
 func (fr depFrame) symbol(s *value.Symbol, was value.Value, t types.Type) (value.Value, error) {
+	if fr.pin {
+		return fr.pinned(s, t)
+	}
 	w, isSymbol := was.(*value.Symbol)
 	switch {
 	case isSymbol && w == s:

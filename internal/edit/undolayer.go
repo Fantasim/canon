@@ -190,7 +190,7 @@ func (c *undoCheck) lineTyped(path, text string) (value.Value, bool) {
 // number's digits, a multiline string) compares equal; a line no Source writes by its text.
 func (c *undoCheck) lineValue(path, text string) string {
 	if v, ok := c.lineTyped(path, text); ok {
-		if canon, err := c.a.canonText(v); err == nil {
+		if canon, err := c.a.canonText(v, naming{}); err == nil {
 			return strconv.Itoa(int(v.Type().Base().Kind())) + newline + canon
 		}
 	}

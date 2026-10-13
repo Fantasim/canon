@@ -1,0 +1,36 @@
+DECISIONS 366, API.md V1: a Source has no file scope, so an import alias (`voc.Word.if`) names no
+package there: ErrBadValue, nothing written.
+-- options --
+pkgs: game.items
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "rows.a.word", "source": "voc.Word.if"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/vocab/vocab.canon --
+package game.vocab
+
+/// A word.
+enum Word { plain, if, while }
+
+/// A row.
+record Row {
+  /// A word.
+  word: Word = plain
+}
+-- game/items/items.canon --
+package game.items
+
+import game.vocab as voc
+
+/// Rows.
+let rows: table voc.Row = {
+  a {}
+}
+-- result.json --
+{
+  "error": "op 0: value does not fit the type: expected game.vocab.Word, got voc.Word.if: its qualifier names another type than the one expected"
+}

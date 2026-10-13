@@ -1,0 +1,40 @@
+API.md V1: bound for a JSON source, a value with no wire form is a ValueError (ErrBadValue),
+nothing written: adding a member a `@json(bits)` list already holds leaves a list holding it twice,
+which no bitmask writes (WIRE.md 5.3, E8102); never an internal error.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "add", "path": "items.sword.flags", "value": "binds"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A flag.
+enum Flag @codes(UInt8) { binds = 1, equipBind = 2, rare = 4 }
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its flags.
+  flags: [Flag] where it.isUnique() = [] @json(bits)
+}
+
+/// Items.
+let items: [Item] keyed by id = load("items.json")
+-- p/items.json --
+[
+  {
+    "id": "sword",
+    "flags": 3
+  }
+]
+-- result.json --
+{
+  "error": "op 0: value does not fit the type: expected [p.Flag] where it.isUnique(), got FromJSON: its JSON source writes it as a bitmask, which holds a member once: binds"
+}

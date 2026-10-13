@@ -76,8 +76,9 @@ func (x *opCtx) pairsInverse(k int) error {
 	return nil
 }
 
-// slotsFit refuses v as the pairs list at cursor k, or as one of its elements, when no JSON
-// source writes it (API.md V1; WIRE.md 5.14; log-2026-09-29 M4 B11, B11-r). A .canon one is re-checked.
+// slotsFit refuses v as the value at cursor k when its JSON source has no wire form for it: a pairs
+// list or slot, a bits list or element, a none marker (API.md V1; WIRE.md 5.14, 5.3, 5.4; log-2026-09-29
+// M4 B11, B11-r). A .canon one is re-checked.
 func (x *opCtx) slotsFit(k int, v value.Value) error {
 	why := ""
 	switch {
@@ -85,6 +86,10 @@ func (x *opCtx) slotsFit(k int, v value.Value) error {
 		why = slotsRefusal(x.fieldAt(k), v)
 	case x.pairElem(k):
 		why = missingDetail(v)
+	case x.jsonFieldAt(k) != nil:
+		why = wireRefusal(x.jsonFieldAt(k), v)
+	case x.bitsAt(k - 1):
+		why = bitsRefusal(x.fieldAt(k-1), x.withElem(k, v))
 	}
 	if why == "" {
 		return nil

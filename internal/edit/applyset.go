@@ -153,7 +153,11 @@ func (x *opCtx) typed(lit Lit, t types.Type) (value.Value, error) {
 	}
 	ty := x.a.typer(x.res.root.pkg.Path)
 	ty.scope, ty.json = x.wireScope(), x.j.editable().Mode == ModeJSON
-	return ty.Value(x.a.ctx, lit, t)
+	v, err := ty.Value(x.a.ctx, lit, t)
+	if err != nil {
+		return nil, err
+	}
+	return x.pinSymbols(v, t)
 }
 
 // wireScope is the field whose wire rules the operation's value takes (WIRE.md 4.1): the path's

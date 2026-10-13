@@ -80,6 +80,8 @@ func (st *srcTyping) expr(e syntax.Expr, t types.Type) (value.Value, error) {
 		return st.boolLit(e, et)
 	case *syntax.IdentExpr:
 		return st.name(e, et)
+	case *syntax.SelectorExpr:
+		return st.selected(e, et)
 	case *syntax.ListLit:
 		return st.listLit(e, et)
 	case *syntax.BraceLit:
@@ -153,8 +155,21 @@ func (st *srcTyping) strLit(e syntax.Expr, t types.Type) (value.Value, error) {
 	if v, ok := strValue(s, t); ok {
 		return v, nil
 	}
-	v, ok := refValue(t, func(kt types.Type) value.Value { return textKeyValue(s, kt, false) })
+	v, ok := refValue(t, func(kt types.Type) value.Value { return strKeyValue(s, kt) })
 	return st.fits(e, t, v, ok)
+}
+
+// strKeyValue is a string literal as a ref's key of type kt: a String key, or the member of an
+// enum key it names by Canon name, as the printer writes a reserved one (DECISIONS 366).
+func strKeyValue(s string, kt types.Type) value.Value {
+	e, ok := kt.Base().(*types.EnumType)
+	if !ok {
+		return textKeyValue(s, kt, false)
+	}
+	if i := memberIndex(e, s); i >= 0 {
+		return &value.Member{Enum: e, Index: i}
+	}
+	return nil
 }
 
 // constString is a string literal's value, false when it interpolates.

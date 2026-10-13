@@ -87,7 +87,7 @@ func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (va
 	if rec, i, ok := fieldOf(old, steps); ok && nv != nil && x.a.isDefault(withField(rec, i, nv), i) {
 		nv = nil
 	}
-	d := &canonDiff{a: x.a}
+	d := &canonDiff{a: x.a, in: fileNaming(at.f)}
 	if err := d.value(old, withChange(old, steps, nv), syntax.Unparen(at.line.Value)); err != nil {
 		return err
 	}

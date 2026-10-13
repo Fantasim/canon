@@ -98,7 +98,7 @@ func (d *canonDiff) table(old, nw *value.Table, lit *syntax.BraceLit) (bool, err
 	news := make([]fresh, len(nw.Entries))
 	for i, e := range nw.Entries {
 		key := entryKey(e).Text()
-		news[i] = fresh{id: key, v: e, text: func() (string, error) { return d.a.entryText(key, e, isRetired(e)) }}
+		news[i] = fresh{id: key, v: e, text: func() (string, error) { return d.a.entryText(key, e, isRetired(e), d.in) }}
 	}
 	return d.keyed(lit.First(), olds, news)
 }
@@ -129,19 +129,9 @@ func (d *canonDiff) mapItems(old, nw *value.Map, lit *syntax.BraceLit) (bool, er
 	news := make([]fresh, len(nw.Keys))
 	for i, k := range nw.Keys {
 		v := nw.Vals[i]
-		news[i] = fresh{id: k.CanonText(), v: v, text: func() (string, error) { return d.a.mapItemText(k, v) }}
+		news[i] = fresh{id: k.CanonText(), v: v, text: func() (string, error) { return d.a.mapItemText(k, v, d.in) }}
 	}
 	return d.keyed(lit.First(), olds, news)
-}
-
-// mapItemText is `key: value` as a new item of a map literal.
-func (a *applier) mapItemText(k, v value.Value) (string, error) {
-	key, err := a.canonText(k)
-	if err != nil {
-		return "", err
-	}
-	val, err := a.canonText(v)
-	return key + colonSp + val, err
 }
 
 // list compares a keyed list element by key, a plain list of equal length position by
@@ -153,7 +143,7 @@ func (d *canonDiff) list(old, nw *value.List, n syntax.Node) (bool, error) {
 	}
 	lt, _ := old.T.Base().(*types.ListType)
 	if lt != nil && lt.KeyedBy != nil {
-		return d.keyed(lit.First(), elemsKept(old, lit, lt.KeyedBy), elemsFresh(d.a, nw, lt.KeyedBy))
+		return d.keyed(lit.First(), elemsKept(old, lit, lt.KeyedBy), elemsFresh(d, nw, lt.KeyedBy))
 	}
 	if len(nw.Elems) != len(old.Elems) {
 		return false, nil
@@ -175,10 +165,10 @@ func elemsKept(l *value.List, lit *syntax.ListLit, key *types.Field) []kept {
 	return out
 }
 
-func elemsFresh(a *applier, l *value.List, key *types.Field) []fresh {
+func elemsFresh(d *canonDiff, l *value.List, key *types.Field) []fresh {
 	out := make([]fresh, len(l.Elems))
 	for i, e := range l.Elems {
-		out[i] = fresh{id: elemID(e, key, -1-i), v: e, text: func() (string, error) { return a.canonText(e) }}
+		out[i] = fresh{id: elemID(e, key, -1-i), v: e, text: func() (string, error) { return d.a.canonText(e, d.in) }}
 	}
 	return out
 }

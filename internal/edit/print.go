@@ -14,14 +14,24 @@ import (
 // defaults. The text is laid out canonically where it is spliced (API-03).
 type canonPrinter struct {
 	a     *applier
+	in    naming // how the file the text goes into names a type
 	b     strings.Builder
 	err   error
 	notes spellings // the old value's tokens as written, for an Undo (DECISIONS 337)
 }
 
-// canonText is v as a Canon literal (API.md M7).
-func (a *applier) canonText(v value.Value) (string, error) {
-	p := &canonPrinter{a: a}
+// canonText is v as a Canon literal (API.md M7), for the file `in` names.
+func (a *applier) canonText(v value.Value, in naming) (string, error) {
+	p := &canonPrinter{a: a, in: in}
+	p.value(v)
+	return p.b.String(), p.err
+}
+
+// mapItemText is `key: value` as a new item of a map literal, for the file `in` names.
+func (a *applier) mapItemText(k, v value.Value, in naming) (string, error) {
+	p := &canonPrinter{a: a, in: in}
+	p.key(k)
+	p.b.WriteString(colonSp)
 	p.value(v)
 	return p.b.String(), p.err
 }
@@ -46,6 +56,8 @@ func (p *canonPrinter) value(v value.Value) {
 		p.b.WriteString(canonQuote(x.V))
 	case *value.Ref:
 		p.b.WriteString(refText(x.Key))
+	case *value.Member, *value.Symbol:
+		p.b.WriteString(p.nameText(x))
 	case *value.Record:
 		p.record(x)
 	case *value.List:
@@ -54,22 +66,41 @@ func (p *canonPrinter) value(v value.Value) {
 		p.mapValue(x)
 	case *value.Table:
 		p.table(x)
-	case *value.Bool, *value.Int, *value.Float, *value.Dur, *value.Member, *value.CaseKind, *value.Symbol, *value.None:
+	case *value.Bool, *value.Int, *value.Float, *value.Dur, *value.CaseKind, *value.None:
 		p.b.WriteString(v.CanonText())
 	default:
 		p.err = fmt.Errorf(fmtUnprinted, errUnprinted, v)
 	}
 }
 
-// refText is a ref's key as a contextual name: digits, a bare word, else a string (SPEC §6.2).
+// refText is a ref's key in value position: digits, a word read bare there, else a string (LEX-08).
 func refText(k value.Key) string {
 	switch {
 	case k.IsInt:
 		return strconv.FormatInt(k.I, decimalBase)
-	case isWord(k.S):
+	case valueWord(k.S):
 		return k.S
 	}
 	return canonQuote(k.S)
+}
+
+// key is a map item's key: a member or a ref's word key bare, as the WORD before `:` (LEX-08).
+func (p *canonPrinter) key(k value.Value) {
+	if text, ok := p.spelling(k); ok {
+		p.b.WriteString(text)
+		return
+	}
+	switch x := k.(type) {
+	case *value.Member:
+		p.b.WriteString(x.CanonText())
+		return
+	case *value.Ref:
+		if !x.Key.IsInt && isWord(x.Key.S) {
+			p.b.WriteString(x.Key.S)
+			return
+		}
+	}
+	p.value(k)
 }
 
 // record is `{ f: v, … }`, a case `name { … }` or its bare name when it writes no field.
@@ -77,7 +108,7 @@ func (p *canonPrinter) record(r *value.Record) {
 	c, isCase := r.T.Base().(*types.CaseType)
 	shown := p.shown(r)
 	if isCase {
-		p.b.WriteString(c.Name)
+		p.b.WriteString(p.in.caseText(c))
 		if len(shown) == 0 {
 			return
 		}
@@ -125,7 +156,7 @@ func (p *canonPrinter) mapValue(m *value.Map) {
 		if i > 0 {
 			p.b.WriteString(listSep)
 		}
-		p.value(k)
+		p.key(k)
 		p.b.WriteString(colonSp)
 		p.value(m.Vals[i])
 	}
@@ -169,8 +200,8 @@ func (p *canonPrinter) shown(r *value.Record) []int {
 }
 
 // entryText is a table entry with its key as a new item of a table literal.
-func (a *applier) entryText(key string, rec *value.Record, retired bool) (string, error) {
-	p := &canonPrinter{a: a}
+func (a *applier) entryText(key string, rec *value.Record, retired bool, in naming) (string, error) {
+	p := &canonPrinter{a: a, in: in}
 	p.entry(key, retired, rec)
 	return p.b.String(), p.err
 }

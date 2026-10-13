@@ -1,0 +1,106 @@
+DECISIONS 366: the Undo of a Remove in a JSON source restores the whole element as a Source
+(API.md E23) whose reserved-word members, case and dependent symbol are written qualified
+(`Word.if`, `Shape.while { r: 1 }`), and that Source applies (API.md E22, V1).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "remove", "path": "items.sword"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A kind.
+enum Kind { word, num }
+
+/// A word.
+enum Word { plain, if, while, check }
+
+/// A flag.
+enum Flag @codes(UInt8) { binds = 1, if = 2, rare = 4 }
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A loop.
+  while {
+    /// Its radius.
+    r: Int = 0
+  }
+}
+
+/// A param.
+type Param(k: Kind) = match k {
+  word => Word
+  num => Never
+}
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its word.
+  word: Word = plain
+  /// Its words.
+  words: [Word] = []
+  /// Counts.
+  counts: {Word: Int} = {}
+  /// Flags.
+  flags: [Flag] = [] @json(bits)
+  /// Shape.
+  shape: Shape = dot
+  /// Kind.
+  kind: Kind = word
+  /// Param.
+  param: Param(kind)?
+}
+
+/// Items.
+let items: [Item] keyed by id = load("items.json")
+-- p/items.json --
+[
+  {
+    "id": "sword",
+    "word": "if",
+    "words": [
+      "if",
+      "plain"
+    ],
+    "counts": {
+      "while": 2
+    },
+    "flags": 3,
+    "shape": {
+      "kind": "while",
+      "r": 1
+    },
+    "param": "if"
+  }
+]
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/items.json"
+    }
+  ],
+  "undo": [
+    {
+      "op": "insert",
+      "path": "p:items",
+      "index": 0,
+      "source": "{ id: \"sword\", word: Word.if, words: [Word.if, plain], counts: { while: 2 }, flags: [binds, Flag.if], shape: Shape.while { r: 1 }, param: Word.if }"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/items.json --
+[]

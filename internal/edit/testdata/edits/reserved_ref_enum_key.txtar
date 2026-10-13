@@ -1,0 +1,113 @@
+DECISIONS 366, SPEC.md §6.2: a ref into an enum-keyed collection whose key is a reserved word is
+written as a string (`"if"`), and a Source string literal names that member key (API.md V1), so
+the Undo restoring it applies (API.md E22, E23), after a Set and after a Remove of an element.
+-- options --
+pkgs: g
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "nodes.a.slot", "value": "plain"},
+  {"op": "remove", "path": "nodes.a.many[0]"},
+  {"op": "set", "path": "nodes.b.many", "source": "[\"if\", check]"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if, check, while }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: check }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// Its slot.
+  slot: (ref slots)?
+  /// Slots.
+  many: [ref slots] = []
+  /// By slot.
+  bySlot: {ref slots: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {
+    slot: "if"
+    many: ["if", check]
+    bySlot: { plain: 1, ("if"): 2 }
+  }
+  b { many: [plain] }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "g/g.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "g:nodes.b.many",
+      "source": "[plain]"
+    },
+    {
+      "op": "insert",
+      "path": "g:nodes.a.many",
+      "index": 0,
+      "source": "\"if\""
+    },
+    {
+      "op": "set",
+      "path": "g:nodes.a.slot",
+      "source": "\"if\""
+    }
+  ],
+  "touched": [
+    "g"
+  ]
+}
+-- after/g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if, check, while }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: check }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// Its slot.
+  slot: (ref slots)?
+  /// Slots.
+  many: [ref slots] = []
+  /// By slot.
+  bySlot: {ref slots: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {
+    slot: plain
+    many: [check]
+    bySlot: { plain: 1, ("if"): 2 }
+  }
+  b { many: ["if", check] }
+}

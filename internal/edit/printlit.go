@@ -13,8 +13,8 @@ import (
 )
 
 // sourceText is an operation's value as Canon literal text (API.md E26), laid out by format.Flat:
-// canonical, on one line. A FromJSON inside another value, a Float that is not finite or a Dur
-// with a fraction of a millisecond has none: ErrNoText.
+// canonical, on one line. A FromJSON inside another value, a Float that is not finite, a Dur with
+// a fraction of a millisecond, a Member or a Case its type must qualify has none: ErrNoText.
 func sourceText(l Lit) (string, error) {
 	var b strings.Builder
 	if err := writeLit(&b, l); err != nil {
@@ -45,6 +45,9 @@ func writeLit(b *strings.Builder, l Lit) error {
 	case Map:
 		return writeMap(b, x)
 	case Case:
+		if !valueWord(x.Name) {
+			return ErrNoText
+		}
 		b.WriteString(x.Name)
 		if len(x.Fields) == 0 {
 			return nil
@@ -63,7 +66,7 @@ func writeLit(b *strings.Builder, l Lit) error {
 	return nil
 }
 
-// scalarText is a scalar Lit's literal: a key as a string or digits, a member as its name.
+// scalarText is a scalar Lit's literal: a key as a string or digits, a member read bare (LEX-08).
 func scalarText(l Lit) (string, bool) {
 	switch x := l.(type) {
 	case Bool:
@@ -80,12 +83,12 @@ func scalarText(l Lit) (string, bool) {
 	case Key:
 		return canonQuote(string(x)), true
 	case PathKey:
-		if isWord(string(x)) {
+		if valueWord(string(x)) {
 			return string(x), true
 		}
 		return canonQuote(string(x)), true
 	case Member:
-		return string(x), true
+		return string(x), valueWord(string(x))
 	case None:
 		return noneWord, true
 	case Dur:

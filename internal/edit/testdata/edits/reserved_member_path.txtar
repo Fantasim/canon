@@ -1,0 +1,67 @@
+DECISIONS 366, API.md §8.2: a Source names a member's package by its whole dotted path
+(`game.vocab.Word.if`) or its last segment (`vocab.Word.while`); the file being written imports it
+as `voc`, so the member is written `voc.Word.if` (SPEC.md §3.2, API.md M7).
+-- options --
+pkgs: game.items
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "rows.a.word", "source": "game.vocab.Word.if"},
+  {"op": "set", "path": "rows.b.word", "source": "vocab.Word.while"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- game/vocab/vocab.canon --
+package game.vocab
+
+/// A word.
+enum Word { plain, if, while }
+
+/// A row.
+record Row {
+  /// A word.
+  word: Word = plain
+}
+-- game/items/items.canon --
+package game.items
+
+import game.vocab as voc
+
+/// Rows.
+let rows: table voc.Row = {
+  a {}
+  b {}
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "game/items/items.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "game.items:rows.b.word"
+    },
+    {
+      "op": "reset",
+      "path": "game.items:rows.a.word"
+    }
+  ],
+  "touched": [
+    "game.items"
+  ]
+}
+-- after/game/items/items.canon --
+package game.items
+
+import game.vocab as voc
+
+/// Rows.
+let rows: table voc.Row = {
+  a { word: voc.Word.if }
+  b { word: voc.Word.while }
+}

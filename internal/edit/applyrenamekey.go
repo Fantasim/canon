@@ -49,7 +49,7 @@ func (r *renaming) canonKey(parent value.Value, c, pc cursor) error {
 		if fi == nil {
 			return &NotEditableError{Reason: ReasonKey}
 		}
-		text, err := r.x.a.canonText(r.to)
+		text, err := r.x.a.canonText(r.to, fileNaming(c.file))
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (r *renaming) canonKey(parent value.Value, c, pc cursor) error {
 func (r *renaming) mapKey(item syntax.Node, f *syntax.File) error {
 	switch it := item.(type) {
 	case *syntax.MapItem:
-		text, err := r.x.a.canonText(r.to)
+		text, err := r.exprKeyText(it.Key, f)
 		if err != nil {
 			return err
 		}
@@ -71,6 +71,24 @@ func (r *renaming) mapKey(item syntax.Node, f *syntax.File) error {
 		return r.replace(f, it.Name, r.to.CanonText(), true)
 	}
 	return &NotEditableError{Reason: ReasonComputed}
+}
+
+// exprKeyText is the new key in the place of key, an expression map key: a string for a string,
+// never a bare word, which makes a named item (DECISIONS 366): a member qualified, a word in parentheses.
+func (r *renaming) exprKeyText(key syntax.Expr, f *syntax.File) (string, error) {
+	switch syntax.Unparen(key).(type) {
+	case *syntax.StringLit, *syntax.RawStringLit:
+		return quoted(r.to), nil // a string key stays a string (E11)
+	}
+	in := fileNaming(f)
+	text, err := r.x.a.canonText(r.to, in)
+	if err != nil || !isWord(text) || key != syntax.Unparen(key) {
+		return text, err
+	}
+	if m, ok := r.to.(*value.Member); ok {
+		return in.typeName(typeRef{m.Enum.Pkg, m.Enum.Name}) + dotSeg + text, nil
+	}
+	return callOpen + text + callClose, nil // `(word)`, the parentheses a call writes
 }
 
 // replace writes text over n; a word checks the text is one.

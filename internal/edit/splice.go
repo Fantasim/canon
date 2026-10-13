@@ -12,6 +12,7 @@ import (
 // where W7 or the collection puts it, an item removed (M2-M4).
 type canonDiff struct {
 	a   *applier
+	in  naming // how the file names an enum (GRAMMAR.md §4.3 (c))
 	out []format.Change
 }
 
@@ -55,7 +56,7 @@ func (d *canonDiff) structural(old, nw value.Value, n syntax.Node) (bool, error)
 
 // replace re-prints the whole value n states (M2): an entry's brace for an entry.
 func (d *canonDiff) replace(nw value.Value, n syntax.Node) error {
-	text, err := d.a.canonText(nw)
+	text, err := d.a.canonText(nw, d.in)
 	if err != nil {
 		return err
 	}
@@ -137,7 +138,7 @@ func (d *canonDiff) leftOut(old, nw *value.Record, i int, lit *syntax.BraceLit, 
 // insertField inserts `name: v` after the nearest present field declared before it, after
 // any spread (W7, W9).
 func (d *canonDiff) insertField(rec *value.Record, i int, v value.Value, lit *syntax.BraceLit) error {
-	text, err := d.a.canonText(v)
+	text, err := d.a.canonText(v, d.in)
 	if err != nil {
 		return err
 	}

@@ -87,7 +87,7 @@ func (x *opCtx) addTableEntry(t *value.Table) error {
 	key := e.key.CanonText()
 	grown := &value.Table{T: t.T, Entries: append(slices.Clone(t.Entries), rec), P: t.P}
 	count := len(t.Entries)
-	it := newItem{v: rec, grown: grown, key: key, at: count, count: count, text: func() (string, error) { return x.a.entryText(key, rec, false) }}
+	it := newItem{v: rec, grown: grown, key: key, at: count, count: count, text: func(in naming) (string, error) { return x.a.entryText(key, rec, false, in) }}
 	if c.files && c.mode == ModeCanon {
 		return x.literalItem(c, it)
 	}
@@ -150,7 +150,7 @@ func (x *opCtx) addMapEntry(m *value.Map) error {
 	count := len(m.Keys)
 	return x.insertItem(newItem{
 		v: e.v, grown: grown, key: wkey, at: count, count: count, fr: e.fr, t: e.t,
-		text: func() (string, error) { return x.a.mapItemText(e.key, e.v) },
+		text: func(in naming) (string, error) { return x.a.mapItemText(e.key, e.v, in) },
 	})
 }
 

@@ -1,0 +1,70 @@
+GRAMMAR.md §4.3 (c): an amendment line (API.md W11) writes a reserved-word member qualified
+through its enum, which the layer's own package declares (`Word.if`); a new line and a line the
+layer already holds alike (API.md W11a). API.md E22: the Undo, a Source `Word.if`, is typed back.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "conf.word", "value": "if"},
+  {"op": "set", "path": "conf.words", "value": ["while", "plain"]}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A word.
+enum Word { plain, if, while }
+
+/// A configuration.
+record Conf {
+  /// A word.
+  word: Word = plain
+  /// Words.
+  words: [Word] = []
+}
+
+/// Configuration.
+let conf: Conf = {}
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  words: [Word.if]
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:conf.words",
+      "source": "[Word.if]"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.word"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  words: [Word.while, plain]
+  word: Word.if
+}

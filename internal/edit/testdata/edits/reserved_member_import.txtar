@@ -1,0 +1,128 @@
+GRAMMAR.md §4.3 (c): a reserved-word member of another package's enum is written qualified the
+way the file being written names that enum (SPEC.md §3.2): `v.Word.if` under `import v`,
+`voc.Word.if` under `import v as voc`, `Word.if` under `import v { Word }`. API.md M7: a plain
+member stays bare. API.md §8.2 Source: `v.Word.if`, the package path and the enum, is accepted.
+-- options --
+pkgs: g h k
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "g:rows.a.word", "value": "if"},
+  {"op": "set", "path": "h:rows.a.word", "value": "if"},
+  {"op": "set", "path": "k:rows.a.word", "source": "v.Word.if"},
+  {"op": "set", "path": "k:rows.b.word", "value": "plain"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- v/v.canon --
+package v
+
+/// A word.
+enum Word { plain, check, if }
+
+/// A row.
+record Row {
+  /// A word.
+  word: Word = plain
+}
+-- g/g.canon --
+package g
+
+import v
+
+/// Rows.
+let rows: table v.Row = {
+  a { word: check }
+}
+-- h/h.canon --
+package h
+
+import v as voc
+
+/// Rows.
+let rows: table voc.Row = {
+  a { word: check }
+}
+-- k/k.canon --
+package k
+
+import v { Row, Word }
+
+/// Rows.
+let rows: table Row = {
+  a { word: check }
+  b { word: check }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "g/g.canon"
+    },
+    {
+      "kind": "modified",
+      "path": "h/h.canon"
+    },
+    {
+      "kind": "modified",
+      "path": "k/k.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "k:rows.b.word",
+      "source": "check"
+    },
+    {
+      "op": "set",
+      "path": "k:rows.a.word",
+      "source": "check"
+    },
+    {
+      "op": "set",
+      "path": "h:rows.a.word",
+      "source": "check"
+    },
+    {
+      "op": "set",
+      "path": "g:rows.a.word",
+      "source": "check"
+    }
+  ],
+  "touched": [
+    "g",
+    "h",
+    "k"
+  ]
+}
+-- after/g/g.canon --
+package g
+
+import v
+
+/// Rows.
+let rows: table v.Row = {
+  a { word: v.Word.if }
+}
+-- after/h/h.canon --
+package h
+
+import v as voc
+
+/// Rows.
+let rows: table voc.Row = {
+  a { word: voc.Word.if }
+}
+-- after/k/k.canon --
+package k
+
+import v { Row, Word }
+
+/// Rows.
+let rows: table Row = {
+  a { word: Word.if }
+  b {}
+}

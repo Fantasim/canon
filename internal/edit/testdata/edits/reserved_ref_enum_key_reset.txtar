@@ -1,0 +1,96 @@
+DECISIONS 366: a Reset of a ref whose enum key is a reserved word, and a Set of a map keyed by
+such refs, have Undos (API.md E23) that write the key as a string and apply (API.md E22, V1).
+-- options --
+pkgs: g
+-- edit.json --
+{"ops": [
+  {"op": "reset", "path": "nodes.a.slot"},
+  {"op": "set", "path": "nodes.a.bySlot", "source": "{ plain: 3 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if, check, while }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: check }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// Its slot.
+  slot: (ref slots)?
+  /// By slot.
+  bySlot: {ref slots: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {
+    slot: "if"
+    bySlot: { plain: 1, ("if"): 2 }
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "g/g.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "g:nodes.a.bySlot",
+      "source": "{ plain: 1, \"if\": 2 }"
+    },
+    {
+      "op": "set",
+      "path": "g:nodes.a.slot",
+      "source": "\"if\""
+    }
+  ],
+  "touched": [
+    "g"
+  ]
+}
+-- after/g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if, check, while }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: check }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// Its slot.
+  slot: (ref slots)?
+  /// By slot.
+  bySlot: {ref slots: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {
+    bySlot: { plain: 3 }
+  }
+}

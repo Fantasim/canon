@@ -9,15 +9,16 @@ import (
 	"github.com/fantasim/canonlang/internal/wire"
 )
 
-// depFrame is what a dependent type's arguments name (DEP-02): the record's fields, parameters and
-// map binders, refs and defaults read through an applier's host; a strict frame (kept non-nil)
-// refuses a name introduced into a Never branch (V1) and collects the held symbols it keeps.
+// depFrame is what a dependent type's arguments name (DEP-02): fields, parameters, map binders; a
+// strict frame (kept non-nil) refuses a name introduced into a Never branch (V1) and collects the
+// held symbols it keeps; a pinning one resolves only those a .canon text must qualify (pinned).
 type depFrame struct {
 	rec     *value.Record
 	params  map[*types.Param]value.Value
 	binders map[string]value.Value
 	a       *applier
 	kept    map[*value.Symbol]bool
+	pin     bool
 }
 
 // branch is the type app selects in fr, and the frame binding its function's parameters (DEP-02):
@@ -27,7 +28,7 @@ func (fr depFrame) branch(app *types.TypeAppType) (types.Type, depFrame, bool) {
 	if len(fn.Params) != len(app.Args) {
 		return nil, depFrame{}, false
 	}
-	inner := depFrame{params: make(map[*types.Param]value.Value, len(fn.Params)), a: fr.a, kept: fr.kept}
+	inner := depFrame{params: make(map[*types.Param]value.Value, len(fn.Params)), a: fr.a, kept: fr.kept, pin: fr.pin}
 	for i, p := range fn.Params {
 		v, ok := fr.arg(app.Args[i])
 		if !ok {
@@ -117,7 +118,7 @@ func (fr depFrame) record(v value.Value) (*value.Record, bool) {
 // enter is the frame of r's fields, t r's declared type or nil: an applied record's parameters
 // bound to its arguments read in fr.
 func (fr depFrame) enter(r *value.Record, t types.Type) depFrame {
-	in := depFrame{rec: r, a: fr.a, kept: fr.kept}
+	in := depFrame{rec: r, a: fr.a, kept: fr.kept, pin: fr.pin}
 	ar, ok := baseOf(t).(*types.AppliedRecord)
 	if !ok {
 		ar, ok = r.T.Base().(*types.AppliedRecord)
@@ -141,7 +142,7 @@ func (fr depFrame) bind(binder string, key value.Value) depFrame {
 		b = map[string]value.Value{}
 	}
 	b[binder] = key
-	return depFrame{rec: fr.rec, params: fr.params, binders: b, a: fr.a, kept: fr.kept}
+	return depFrame{rec: fr.rec, params: fr.params, binders: b, a: fr.a, kept: fr.kept, pin: fr.pin}
 }
 
 // into is fr inside c, of declared type t or nil, reading its item at seg: a record's fields, a

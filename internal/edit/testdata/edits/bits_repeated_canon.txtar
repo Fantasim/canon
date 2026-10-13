@@ -1,0 +1,68 @@
+API.md V1: bound for a .canon source, a value with no wire form is left to the re-check (E8102,
+and here the field's own `isUnique` check): adding a member a `@json(bits)` list already holds
+writes the list, never an internal error. API.md E23: its inverse removes the element.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "add", "path": "items.sword.flags", "value": "binds"},
+  {"op": "insert", "path": "items.sword.flags", "index": 0, "value": "equipBind"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A flag.
+enum Flag @codes(UInt8) { binds = 1, equipBind = 2, rare = 4 }
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its flags.
+  flags: [Flag] where it.isUnique() = [] @json(bits)
+}
+
+/// Items.
+let items: [Item] keyed by id = [{ id: "sword", flags: [binds, equipBind] }]
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:items[sword].flags[0]"
+    },
+    {
+      "op": "remove",
+      "path": "p:items[sword].flags[2]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A flag.
+enum Flag @codes(UInt8) { binds = 1, equipBind = 2, rare = 4 }
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its flags.
+  flags: [Flag] where it.isUnique() = [] @json(bits)
+}
+
+/// Items.
+let items: [Item] keyed by id = [{ id: "sword", flags: [equipBind, binds, equipBind, binds] }]

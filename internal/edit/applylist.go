@@ -59,7 +59,7 @@ func (x *opCtx) addElem(l *value.List, at int) error {
 	}
 	x.addInverse(seg)
 	grown := &value.List{T: l.T, Elems: slices.Insert(slices.Clone(l.Elems), at, v), P: l.P}
-	it := newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func() (string, error) { return x.a.canonText(v) }}
+	it := newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func(in naming) (string, error) { return x.a.canonText(v, in) }}
 	if c := x.j.last(); c.files && c.ordersLiteral(cursor{}) {
 		return x.literalItem(c, it)
 	}
@@ -82,7 +82,7 @@ type newItem struct {
 	v, grown  value.Value
 	key       string
 	at, count int
-	text      func() (string, error)
+	text      func(naming) (string, error)
 	fr        *depFrame  // the frame its symbols are read in, nil for the collection's (DEP-02)
 	t         types.Type // its declared type, nil for its own
 }
@@ -92,9 +92,13 @@ type newItem struct {
 // the item, as W7 and W8 insert a field.
 func (x *opCtx) insertItem(it newItem) error {
 	c := x.j.last()
-	switch {
-	case c.files:
+	if c.files {
 		return &NotEditableError{Reason: ReasonOrder}
+	}
+	if err := x.slotsFit(len(x.j.cur)-1, it.grown); err != nil { // no wire form (API.md V1)
+		return err
+	}
+	switch {
 	case x.pairsAt(len(x.j.cur) - 1):
 		return x.pairsOp(len(x.j.cur)-1, it.grown) // slot keys, written whole (WIRE.md 5.14)
 	case c.state == stAbsent || c.state == stSpread:
@@ -135,7 +139,7 @@ func (x *opCtx) insertItem(it newItem) error {
 }
 
 func (x *opCtx) insertCanon(c cursor, it newItem) error {
-	t, err := it.text()
+	t, err := it.text(fileNaming(c.file))
 	if err != nil {
 		return err
 	}
@@ -143,7 +147,7 @@ func (x *opCtx) insertCanon(c cursor, it newItem) error {
 	if !ok || itemCount(c.node) != it.count {
 		return &NotEditableError{Reason: ReasonComputed}
 	}
-	d := &canonDiff{a: x.a}
+	d := &canonDiff{a: x.a, in: fileNaming(c.file)}
 	d.insert(list, it.at, t)
 	x.w.addCanon(c.file.Src.Path, x.res.root.pkg.Path, d.out)
 	return nil

@@ -226,8 +226,8 @@ func (r *renaming) tokenText(n syntax.Node) (string, error) {
 		return quoted(r.to), nil
 	case *syntax.IntLit:
 		return word, nil
-	case *syntax.IdentExpr:
-		if !isWord(word) {
+	case *syntax.IdentExpr: // a reference in value position: a word read bare there, else a string (LEX-08)
+		if !valueWord(word) {
 			return quoted(r.to), nil
 		}
 	}

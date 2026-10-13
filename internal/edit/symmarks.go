@@ -9,14 +9,25 @@ import (
 )
 
 // symMarks is what the typer knew of the symbols it made: the JSON token a FromJSON value wrote
-// each decoded one with (DECISIONS 175), and the keys given as path keys (API.md E25).
+// each decoded one with (DECISIONS 175), the keys given as path keys (API.md E25), and the words a
+// Source qualified one through (`WB` of `WB.if`, DECISIONS 366).
 type symMarks struct {
 	tokens   map[*value.Symbol]json.RawMessage
 	pathKeys map[*value.Symbol]bool
+	through  map[*value.Symbol][]string
 }
 
 func newSymMarks() *symMarks {
-	return &symMarks{tokens: map[*value.Symbol]json.RawMessage{}, pathKeys: map[*value.Symbol]bool{}}
+	return &symMarks{tokens: map[*value.Symbol]json.RawMessage{}, pathKeys: map[*value.Symbol]bool{}, through: map[*value.Symbol][]string{}}
+}
+
+// qualifier is the words a Source qualified s through, false when it gave s bare.
+func (m *symMarks) qualifier(s *value.Symbol) ([]string, bool) {
+	if m == nil {
+		return nil, false
+	}
+	q, ok := m.through[s]
+	return q, ok
 }
 
 // noteTokens notes the token of every symbol of v the decoder read from f.

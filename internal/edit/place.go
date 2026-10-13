@@ -253,7 +253,7 @@ func (x *opCtx) canonEntryFile(let *syntax.LetDecl, rec *value.Record, key value
 	if lt, ok := baseOf(present(x.res.root.obj.Type())).(*types.ListType); ok && lt.KeyedBy != nil {
 		body = withField(rec, lt.KeyedBy.Index, nil)
 	}
-	text, err := x.a.entryText(let.Name.Name+string(fieldMark)+keyText, body, false)
+	text, err := x.a.entryText(let.Name.Name+string(fieldMark)+keyText, body, false, x.bareNaming())
 	if err != nil {
 		return nil, err
 	}

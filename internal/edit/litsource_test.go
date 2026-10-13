@@ -23,7 +23,6 @@ func TestTypedSource(t *testing.T) {
 		{"s", edit.Source(`r"a{b}"`), "a{b}"},
 		{"s", edit.Source(`"a{s}"`), ""}, // an interpolation is not a literal
 		{"c", edit.Source("green"), "green"},
-		{"c", edit.Source("Color.green"), ""}, // not a contextual name
 		{"c", edit.Source("blue"), ""},
 		{"o", edit.Source("none"), "none"},
 		{"o", edit.Source("(4)"), "4"},
@@ -144,11 +143,11 @@ func TestTypedFromJSONKeepsValueFindings(t *testing.T) {
 	}
 }
 
-// log-2026-09-29 M4 U4a: a string literal is a ref's key only for a String key type; an
-// enum-keyed ref takes a Member (ACCEPTED), never a string, whatever its text.
+// DECISIONS 366 (over log-2026-09-29 M4 U4a): a Source string literal names an enum-keyed ref's
+// key by its Canon name, as the printer writes a reserved one; never by wire value, never a Key (V4).
 func TestTypedStringIsNoEnumKey(t *testing.T) {
 	checkTyped(t, []typeCase{
-		{"bc", edit.Source(`"red"`), ""},
+		{"bc", edit.Source(`"red"`), "red"},
 		{"bc", edit.Source(`"GREEN"`), ""},
 		{"bc", edit.Source(`"nope"`), ""},
 		{"bc", edit.Source("red"), "red"},

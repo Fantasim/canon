@@ -1,0 +1,107 @@
+GRAMMAR.md §4.3 (a): a table key may be any reserved word (`if`); in value position (§4.3 (c))
+a ref to it, into a table or an enum-keyed collection alike, is written as a string, as SPEC.md
+§6.2 writes a key no bare name reads. As a map key, the name before `:` (§4.3 (a)), it stays
+bare. API.md §8.2: the wire form and the Source form give the same.
+-- options --
+pkgs: g
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "nodes.plain.next", "value": ["if", "plain"]},
+  {"op": "set", "path": "nodes.plain.weights", "source": "{ if: 1 }"},
+  {"op": "set", "path": "nodes.plain.slot", "value": "if"},
+  {"op": "set", "path": "nodes.if.next", "source": "[\"if\"]"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// The nodes after it.
+  next: [ref Node] = []
+  /// Weights by node.
+  weights: {ref Node: Int} = {}
+  /// Its slot.
+  slot: (ref slots)?
+}
+
+/// Nodes.
+let nodes: table Node = {
+  if {}
+  plain {}
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "g/g.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "g:nodes.if.next"
+    },
+    {
+      "op": "reset",
+      "path": "g:nodes.plain.slot"
+    },
+    {
+      "op": "reset",
+      "path": "g:nodes.plain.weights"
+    },
+    {
+      "op": "reset",
+      "path": "g:nodes.plain.next"
+    }
+  ],
+  "touched": [
+    "g"
+  ]
+}
+-- after/g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// The nodes after it.
+  next: [ref Node] = []
+  /// Weights by node.
+  weights: {ref Node: Int} = {}
+  /// Its slot.
+  slot: (ref slots)?
+}
+
+/// Nodes.
+let nodes: table Node = {
+  if { next: ["if"] }
+  plain { next: ["if", plain], weights: { if: 1 }, slot: "if" }
+}

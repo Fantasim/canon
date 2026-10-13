@@ -1,0 +1,61 @@
+GRAMMAR.md §4.3 (c): a reserved-word member is written qualified through its enum; a file that
+imports the enum's package only as `import v { Row }` binds no name for the enum (SPEC.md §3.2),
+so the member is written `v.Word.if`, as `import v` would name it, and the re-check reports the
+unbound `v` (E2102, API.md V2) instead of the edit failing inside the compiler.
+-- options --
+pkgs: k
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "k:rows.a.word", "value": "if"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- v/v.canon --
+package v
+
+/// A word.
+enum Word { plain, if }
+
+/// A row.
+record Row {
+  /// A word.
+  word: Word = plain
+}
+-- k/k.canon --
+package k
+
+import v { Row }
+
+/// Rows.
+let rows: table Row = {
+  a {}
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "k/k.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "k:rows.a.word"
+    }
+  ],
+  "touched": [
+    "k"
+  ]
+}
+-- after/k/k.canon --
+package k
+
+import v { Row }
+
+/// Rows.
+let rows: table Row = {
+  a { word: v.Word.if }
+}

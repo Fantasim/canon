@@ -1,0 +1,46 @@
+DECISIONS 366, API.md V1: a qualifier naming another branch's type than the one the record's
+discriminant selects (`WB.if` where `kind: a` selects `WA`) is ErrBadValue, nothing written.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "evs.ea.param", "source": "WB.if"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A kind.
+enum Kind { a, b }
+
+/// Words of a.
+enum WA { x, if }
+
+/// Words of b.
+enum WB { y, if }
+
+/// A param.
+type Param(k: Kind) = match k {
+  a => WA
+  b => WB
+}
+
+/// An event.
+record Ev {
+  /// Its kind.
+  kind: Kind = a
+  /// Its param.
+  param: Param(kind)?
+}
+
+/// Events.
+let evs: table Ev = {
+  ea { param: WA.if }
+}
+-- result.json --
+{
+  "error": "op 0: value does not fit the type: expected p.WA, got WB.if: its qualifier names another type than the one expected"
+}

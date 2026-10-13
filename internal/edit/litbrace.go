@@ -41,18 +41,31 @@ func (st *srcTyping) brace(e syntax.Expr, t types.Type) (value.Value, error) {
 	return nil, st.wrong(e, t, "")
 }
 
-// typedLit is `case { … }`, a case of the expected variant by its bare name (SPEC §5.5).
+// typedLit is `case { … }` or `V.case { … }`, a case of the expected variant (SPEC §5.5, LEX-08).
 func (st *srcTyping) typedLit(e syntax.Expr, t types.Type) (value.Value, error) {
 	x := e.(*syntax.TypedLit)
-	if len(x.Type.Parts) != 1 {
-		return nil, st.wrong(e, t, detailNotContextual)
+	v, err := st.typedName(e, partNames(x.Type.Parts), t)
+	if err != nil {
+		return nil, err
 	}
-	rec, ok := nameValue(x.Type.Parts[0].Name, t)
-	c, isCase := rec.(*value.Record)
-	if !ok || !isCase {
+	c, isCase := v.(*value.Record)
+	if !isCase {
 		return nil, st.wrong(e, t, "")
 	}
 	return st.recordItems(x.Lit, c.T)
+}
+
+// typedName is a typed literal's name where t is expected: bare (SPEC §6.2) or qualified.
+func (st *srcTyping) typedName(e syntax.Expr, words []string, t types.Type) (value.Value, error) {
+	if len(words) > 1 {
+		return st.qualifiedName(e, words, t)
+	}
+	if len(words) == 1 {
+		if v, ok := nameValue(words[0], t); ok {
+			return v, nil
+		}
+	}
+	return nil, st.wrong(e, t, "")
 }
 
 // recordItems is a record literal: `name: value` items only, each field at most once.

@@ -1,0 +1,128 @@
+GRAMMAR.md §4.3 (c): a member named by a reserved word that is not nameable is written qualified
+(`Word.if`); after `.` a reserved word is a name (§4.3 (b)). API.md §8.2 Source: a qualified
+member, `Word.if` or package-qualified `g.Word.match`, is accepted wherever a member of that enum
+is expected, as a scalar, in a list, as a map value and in a nested record; so is a plain member
+written qualified (`Word.plain`), and a nameable one bare (`check`). The printer (API.md M7)
+writes a member bare when the grammar reads it there, qualified otherwise.
+-- options --
+pkgs: g
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "rows.a.word", "source": "g.Word.match"},
+  {"op": "set", "path": "rows.a.words", "source": "[Word.if, Word.plain, check, g.Word.while]"},
+  {"op": "set", "path": "rows.a.named", "source": "{ \"x\": Word.return }"},
+  {"op": "set", "path": "rows.a.inner", "source": "{ w: Word.for }"},
+  {"op": "set", "path": "rows.b.word", "source": "Word.plain"},
+  {"op": "set", "path": "rows.b.counts", "source": "{ if: 1, Word.match: 2 }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, check, if, match, while, return, for }
+
+/// An inner record.
+record Inner {
+  /// A word.
+  w: Word = plain
+}
+
+/// A row.
+record Row {
+  /// A word.
+  word: Word = plain
+  /// Words.
+  words: [Word] = []
+  /// Words by name.
+  named: {String: Word} = {}
+  /// Counts by word.
+  counts: {Word: Int} = {}
+  /// An inner record.
+  inner: Inner = {}
+}
+
+/// Rows.
+let rows: table Row = {
+  a { word: Word.if }
+  b { word: check }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "g/g.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "g:rows.b.counts"
+    },
+    {
+      "op": "set",
+      "path": "g:rows.b.word",
+      "source": "check"
+    },
+    {
+      "op": "reset",
+      "path": "g:rows.a.inner"
+    },
+    {
+      "op": "reset",
+      "path": "g:rows.a.named"
+    },
+    {
+      "op": "reset",
+      "path": "g:rows.a.words"
+    },
+    {
+      "op": "set",
+      "path": "g:rows.a.word",
+      "source": "Word.if"
+    }
+  ],
+  "touched": [
+    "g"
+  ]
+}
+-- after/g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, check, if, match, while, return, for }
+
+/// An inner record.
+record Inner {
+  /// A word.
+  w: Word = plain
+}
+
+/// A row.
+record Row {
+  /// A word.
+  word: Word = plain
+  /// Words.
+  words: [Word] = []
+  /// Words by name.
+  named: {String: Word} = {}
+  /// Counts by word.
+  counts: {Word: Int} = {}
+  /// An inner record.
+  inner: Inner = {}
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    word: Word.match
+    words: [Word.if, plain, check, Word.while]
+    named: { "x": Word.return }
+    inner: { w: Word.for }
+  }
+  b { counts: { if: 1, match: 2 } }
+}

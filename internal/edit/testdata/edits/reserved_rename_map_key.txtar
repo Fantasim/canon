@@ -1,0 +1,119 @@
+DECISIONS 366, GRAMMAR.md §5.11: a map item whose key is an expression (`Word.while: 2`,
+`(check): 1`) stays a keyed item when its key is renamed (API.md E11): a member is written
+qualified (`Word.check`, `Word.if`), a ref's word key in its parentheses, a string key as a
+string (`"check"` to `"plain"`, its Undo back); a named item keeps its bare WORD (§4.3 (a)).
+-- options --
+pkgs: g
+-- edit.json --
+{"ops": [
+  {"op": "rename", "path": "nodes.a.byWord[while]", "key": "check"},
+  {"op": "rename", "path": "nodes.a.byWord[plain]", "key": "if"},
+  {"op": "rename", "path": "nodes.a.bySlot[check]", "key": "if"},
+  {"op": "rename", "path": "nodes.b.byWord[plain]", "key": "while"},
+  {"op": "rename", "path": "nodes.b.bySlot[check]", "key": "plain"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if, check, while }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: check }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// By slot.
+  bySlot: {ref slots: Int} = {}
+  /// By word.
+  byWord: {Word: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {
+    bySlot: { plain: 1, (check): 2 }
+    byWord: { Word.while: 2, Word.plain: 3 }
+  }
+  b { bySlot: { "check": 2 }, byWord: { plain: 1 } }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "g/g.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "rename",
+      "path": "g:nodes.b.bySlot[plain]",
+      "key": "check"
+    },
+    {
+      "op": "rename",
+      "path": "g:nodes.b.byWord[while]",
+      "key": "plain"
+    },
+    {
+      "op": "rename",
+      "path": "g:nodes.a.bySlot[if]",
+      "key": "check"
+    },
+    {
+      "op": "rename",
+      "path": "g:nodes.a.byWord[if]",
+      "key": "plain"
+    },
+    {
+      "op": "rename",
+      "path": "g:nodes.a.byWord[check]",
+      "key": "while"
+    }
+  ],
+  "touched": [
+    "g"
+  ]
+}
+-- after/g/g.canon --
+package g
+
+/// A word.
+enum Word { plain, if, check, while }
+
+/// A slot.
+record Slot {
+  /// Its word.
+  word: Word
+}
+
+/// Slots, keyed by word.
+let slots: [Slot] keyed by word = [{ word: plain }, { word: check }, { word: Word.if }]
+
+/// A node.
+record Node {
+  /// By slot.
+  bySlot: {ref slots: Int} = {}
+  /// By word.
+  byWord: {Word: Int} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {
+    bySlot: { plain: 1, ("if"): 2 }
+    byWord: { Word.check: 2, Word.if: 3 }
+  }
+  b { bySlot: { "plain": 2 }, byWord: { while: 1 } }
+}

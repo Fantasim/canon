@@ -9,9 +9,9 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// asWritten is scalar literal e given to dependent type t when a branch takes it (TYPES.md 11.4,
-// API.md V1): a string or integer kept as written for verification to convert, a float, Bool or
-// Duration of its own type; false for another expression, or a literal no branch takes.
+// asWritten is literal e given to dependent type t when a branch takes it (TYPES.md 11.4, API.md
+// V1): a string or integer kept as written, a float, Bool or Duration of its own type, a qualified
+// member or case as its symbol (branchSymbol); false for another expression or a literal no branch takes.
 func (st *srcTyping) asWritten(e syntax.Expr, t types.Type) (value.Value, bool) {
 	var g given
 	switch x := e.(type) {
@@ -32,6 +32,8 @@ func (st *srcTyping) asWritten(e syntax.Expr, t types.Type) (value.Value, bool) 
 		g = givenKind(&value.Bool{V: x.Value}, types.Bool)
 	case *syntax.DurationLit:
 		g = givenKind(&value.Dur{Ms: x.Millis}, types.Duration)
+	case *syntax.SelectorExpr:
+		return st.branchSymbol(x, t)
 	default:
 		return nil, false
 	}
