@@ -14,7 +14,7 @@ func seqMethods() map[string]builtin {
 		bIntersect: seqIntersect, bUnion: seqUnion, bDiff: seqDiff, bGroupBy: seqGroupBy,
 		bToMap: seqToMap, bJoin: seqJoin, bAny: seqAny, bAll: seqAll, bCount: seqCount,
 		bIsUnique: seqIsUnique, bSum: seqSum, bMin: seqMin, bMax: seqMax, bMinBy: seqMinBy,
-		bMaxBy: seqMaxBy,
+		bMaxBy: seqMaxBy, bDuplicates: seqDuplicates,
 	}
 }
 
@@ -201,6 +201,29 @@ func seqUnique(h Host, c *Call) (value.Value, bool) {
 		}
 		return ok
 	})
+	return c.list(out), ok
+}
+
+// seqDuplicates is each repeated element once, in unique's order (STDLIB.md §4.2, §1.3).
+func seqDuplicates(h Host, c *Call) (value.Value, bool) {
+	seen := newSet(h, setElem(c))
+	var firsts []value.Value
+	var repeated []bool
+	ok := eachWhile(h, Elems(c.Recv), func(_ int, x value.Value) bool {
+		i, added, ok := seen.add(x)
+		if added {
+			firsts, repeated = append(firsts, x), append(repeated, false)
+		} else if ok {
+			repeated[i] = true
+		}
+		return ok
+	})
+	var out []value.Value
+	for i, x := range firsts {
+		if repeated[i] {
+			out = append(out, x)
+		}
+	}
 	return c.list(out), ok
 }
 

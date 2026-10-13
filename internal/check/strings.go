@@ -24,15 +24,15 @@ func (c *checker) interpolation(env *env, in *syntax.Interp) {
 	case t.Kind() == types.Error:
 	case t.Base().Kind() == types.Func:
 		c.report(env, diag.E4503.AtPlain(env.span(in.X), t))
-	case in.Spec != nil && !numeric(t):
+	case in.Spec != nil && !formattable(t, in.Spec):
 		c.report(env, diag.E4503.AtSpec(env.span(in.X), t, specText(env, in.Spec)))
 	}
 }
 
-// numeric reports Int or Float of any width.
-func numeric(t types.Type) bool {
+// formattable reports Int, or Float without `x`/`X`, of any width (STDLIB.md §9.5).
+func formattable(t types.Type, spec *syntax.FormatSpec) bool {
 	k := t.Base().Kind()
-	return k == types.Int || k == types.Float
+	return k == types.Int || (k == types.Float && spec.Hex == 0)
 }
 
 // specText is a format spec as written, without its colon.

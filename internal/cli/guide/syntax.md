@@ -152,8 +152,10 @@ are written qualified (`Icon.return`). `none true false self` never name a membe
 | other | `true` `false` `none` | |
 
 Interpolation `{expr}` writes the canonical text: decimal ints, shortest floats, `1h30m`,
-members by name, refs by key, `[a, b]`, `{k: v}`, `Type{f: v}`. Format specs on numbers only:
-`{n:,}` groups thousands, `{x:.2}` fixed decimals, `{d:+}` always signed.
+members by name, refs by key, `[a, b]`, `{k: v}`, `Type{f: v}`. Format specs on numbers only,
+`[+][0][W][,][.N][x|X]`: `{n:,}` groups thousands, `{x:.2}` fixed decimals, `{d:+}` always
+signed, `{n:5}` pads with spaces to 5 bytes, `{id:08x}` zero-pads lowercase hex of an `Int` to 8
+(`X` uppercase; no prefix: write `"0x{id:08x}"`; a negative is its sign and magnitude).
 
 ## Canonical layout
 

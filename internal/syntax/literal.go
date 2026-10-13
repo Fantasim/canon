@@ -48,24 +48,6 @@ func floatParts(text string) (*big.Int, int64, bool) {
 // durationMillis is the magnitude of a DURATION token in milliseconds (GRAMMAR.md §2.5).
 func durationMillis(text string) uint64 { return classifyDuration(text).millis }
 
-// parseSpec reads a format spec, `\+?,?(\.[0-9]{1,2})?`, non-empty, N ≤ 20 (GRAMMAR.md §2.6).
-func parseSpec(spec []byte) (FormatSpec, bool) {
-	fs := FormatSpec{Decimals: NoDecimals}
-	s := string(spec)
-	fs.Plus = strings.HasPrefix(s, specPlus)
-	s = strings.TrimPrefix(s, specPlus)
-	fs.Comma = strings.HasPrefix(s, specComma)
-	s = strings.TrimPrefix(s, specComma)
-	if rest, ok := strings.CutPrefix(s, fractionDot); ok {
-		n, err := strconv.Atoi(rest)
-		if err != nil || rest == "" || len(rest) > maxSpecDigits || !isDigits([]byte(rest)) || n > maxDecimals {
-			return fs, false
-		}
-		fs.Decimals, s = n, ""
-	}
-	return fs, s == "" && len(spec) > 0
-}
-
 // validScalar reports 1 to 6 hex digits naming a Unicode scalar value.
 func validScalar(hex []byte) bool {
 	if len(hex) == 0 || len(hex) > maxHexDigits {

@@ -1,0 +1,31 @@
+GRAMMAR.md §2.6, DECISIONS 358: `x` with `,` or `.N`, `0` with `,`, a bare `0`, a width of 0 and a width of 100 are E1101; width, zero padding and hexadecimal are accepted.
+-- a/a.canon --
+package a
+
+let a = "{n:,x}"
+let b = "{n:.2x}"
+let c = "{n:05,}"
+let d = "{n:0}"
+let e = "{n:00}"
+let f = "{n:100}"
+let ok = "{n:08x} {n:02X} {n:x} {n:5} {n:+03} {n:12,} {n:99.2}"
+-- findings.txt --
+error[E1101]  a/a.canon:3:12
+  invalid format spec ",x": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
+
+error[E1101]  a/a.canon:4:12
+  invalid format spec ".2x": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
+
+error[E1101]  a/a.canon:5:12
+  invalid format spec "05,": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
+
+error[E1101]  a/a.canon:6:12
+  invalid format spec "0": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
+
+error[E1101]  a/a.canon:7:12
+  invalid format spec "00": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
+
+error[E1101]  a/a.canon:8:12
+  invalid format spec "100": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
+
+6 errors, 0 warnings in 1 package (…)

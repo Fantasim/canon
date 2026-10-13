@@ -48,8 +48,11 @@ func (r *run) interpolated(in *syntax.Interp) (string, bool) {
 		return "", false
 	}
 	if in.Spec != nil {
-		text := std.Format(v, std.Spec{Plus: in.Spec.Plus, Comma: in.Spec.Comma, Decimals: in.Spec.Decimals})
-		return text, r.spend(len(text), at)
+		f := std.Prepare(v, *in.Spec)
+		if !r.spend(f.Len(), at) {
+			return "", false
+		}
+		return f.String(), true
 	}
 	if !r.spend(value.TextLenUpTo(v, r.remaining()), at) {
 		return "", false

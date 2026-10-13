@@ -1,0 +1,25 @@
+CONFORMANCE.md §2.2, DECISIONS 358, 359: `duplicates` and a format spec with a width, zero padding or hexadecimal are outside the portable subset.
+-- a/a.canon --
+package a
+
+/// How many values repeat.
+export fn repeats(n: Int) -> Int { return [n, n].duplicates().len() }
+
+/// n in hexadecimal, zero-padded.
+export fn hexed(n: Int) -> String { return "0x{n:08x}" }
+
+/// n padded with spaces.
+export fn padded(n: Int) -> String { return "{n:5}" }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9001]  a/a.canon:4:43
+  [n, n].duplicates().len() is not allowed in translated function repeats: it is outside the portable subset
+
+error[E9001]  a/a.canon:7:48
+  n:08x is not allowed in translated function hexed: it is outside the portable subset
+
+error[E9001]  a/a.canon:10:47
+  n:5 is not allowed in translated function padded: it is outside the portable subset
+
+3 errors, 0 warnings in 1 package (…)

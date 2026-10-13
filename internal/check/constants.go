@@ -391,6 +391,7 @@ const (
 	methodReverse    = "reverse"
 	methodSortBy     = "sortBy"
 	methodUnique     = "unique"
+	methodDuplicates = "duplicates"
 	methodEnumerate  = "enumerate"
 	methodPairs      = jsonPairsName
 	methodZip        = "zip"

@@ -29,6 +29,12 @@ func evaluate(t *testing.T, a *txtar.Archive) string {
 // evaluateAll is evaluate, with the canonical text of each value forced, by pkg.name; an internal error fails.
 func evaluateAll(t *testing.T, a *txtar.Archive) (string, map[string]string) {
 	t.Helper()
+	return evaluateWith(t, a, eval.Options{})
+}
+
+// evaluateWith is evaluateAll under options opt (a step budget).
+func evaluateWith(t *testing.T, a *txtar.Archive, opt eval.Options) (string, map[string]string) {
+	t.Helper()
 	ctx := context.Background()
 	fs := &source.FileSet{}
 	parse := diag.NewBag(fs, "")
@@ -45,8 +51,8 @@ func evaluateAll(t *testing.T, a *txtar.Archive) (string, map[string]string) {
 	}
 	bags := check.Bags{}
 	proj := project.New("std", project.Version{Minor: 1})
-	prog := check.Check(ctx, proj, files, bags, eval.NewFolder(bags, eval.Options{}))
-	ev := eval.New(prog, nil, bags, eval.Options{})
+	prog := check.Check(ctx, proj, files, bags, eval.NewFolder(bags, opt))
+	ev := eval.New(prog, nil, bags, opt)
 	var all []diag.Finding
 	values := map[string]string{}
 	sum := parse.Summary()

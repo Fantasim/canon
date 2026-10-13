@@ -97,6 +97,6 @@ File: File FileKind=source @1:1-21:1
         X: IdentExpr x @20:17-20:18
 == findings
 error[E1101]  a/a.canon:20:18
-  invalid format spec "q": expected [+][,][.N] with N at most 20
+  invalid format spec "q": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
 
 1 error, 0 warnings in 1 package (…)

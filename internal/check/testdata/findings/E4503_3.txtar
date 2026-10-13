@@ -1,0 +1,15 @@
+STDLIB.md §9.5, DECISIONS 358: `x` or `X` on a Float; width and zero padding are fine on it.
+-- a/a.canon --
+package a
+
+local fn f(x: Float, n: Int) -> String {
+  return "{x:08x} {x:X} {x:08.2} {n:08X}"
+}
+-- findings.txt --
+error[E4503]  a/a.canon:4:12
+  cannot format Float with :08x
+
+error[E4503]  a/a.canon:4:20
+  cannot format Float with :X
+
+2 errors, 0 warnings in 1 package (…)

@@ -35,12 +35,15 @@ type Tok int32
 
 func (t Tok) Valid() bool { return t > NoTok }
 
-// FormatSpec is the ":spec" of an interpolation (GRAMMAR.md §2.6).
+// FormatSpec is an interpolation's ":spec" (GRAMMAR.md §2.6); a zero Width or Hex: that part absent.
 type FormatSpec struct {
 	Tok      Tok
 	Plus     bool
 	Comma    bool
 	Decimals int
+	Zero     bool
+	Width    int
+	Hex      byte
 }
 
 // Delims are the opening and closing brackets of a list; both are NoTok when it is absent.

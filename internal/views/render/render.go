@@ -131,7 +131,7 @@ func (r *Renderer) interp(in *syntax.Interp, self value.Value, m Magic, lang str
 		return "", false
 	}
 	if in.Spec != nil {
-		return std.Format(v, std.Spec{Plus: in.Spec.Plus, Comma: in.Spec.Comma, Decimals: in.Spec.Decimals}), true
+		return std.Format(v, *in.Spec), true
 	}
 	return r.text(v, in.X, self, lang), true
 }

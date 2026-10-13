@@ -97,6 +97,7 @@ var seqMethods = []bsig{
 	{name: methodReverse, result: listT(tT)},
 	{name: methodSortBy, params: []bparam{bp(paramF, fnOf(tKOrd, tT))}, result: listT(tT)},
 	{name: methodUnique, result: listT(tT)},
+	{name: methodDuplicates, result: listT(tT)},
 	{name: methodEnumerate, result: listT(&types.PairType{A: types.IntType, B: tT})},
 	{name: methodPairs, result: listT(&types.PairType{A: tT, B: tT})},
 	{name: methodZip, params: []bparam{bp(paramOther, &seqOf{elem: tU})}, result: listT(&types.PairType{A: tT, B: tU})},

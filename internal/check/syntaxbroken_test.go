@@ -53,7 +53,7 @@ var syntaxCases = []syntaxCase{
 		src:  "test \"t\" { return 1 }\n",
 		want: []diag.Code{diag.E1135.Def().Code}, broken: []string{testObject}},
 	{name: "§2.6 bad format spec in a record check breaks the record (DECISIONS 209)",
-		src:  "record R {\n  n: Int\n  check n > 0 else \"bad {n:x}\"\n}\nlet rs: [R] = [R { n: 0 }]\nlet m: Int = 3\n",
+		src:  "record R {\n  n: Int\n  check n > 0 else \"bad {n:q}\"\n}\nlet rs: [R] = [R { n: 0 }]\nlet m: Int = 3\n",
 		want: []diag.Code{diag.E1101.Def().Code}, broken: []string{"R", "rs"}, unbroken: []string{"m"}},
 	{name: "§5.10 a syntax error in a method breaks only its callers (DECISIONS 209)",
 		src: "record S {\n  n: Int\n  fn twice() -> Int {\n    break\n    return n * 2\n  }\n}\n" +

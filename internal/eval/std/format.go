@@ -5,30 +5,60 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// Spec is a format spec `{x:spec}` (STDLIB.md §9.5); Decimals is syntax.NoDecimals without `.N`.
-type Spec struct {
-	Plus, Comma bool
-	Decimals    int
+// Format writes an Int or Float with a format spec: digits, `,`, sign, padding (STDLIB.md §9.5).
+func Format(v value.Value, s syntax.FormatSpec) string { return Prepare(v, s).String() }
+
+// Formatted is a formatted number in parts: its length is known before its text is built (§1.3).
+type Formatted struct {
+	sign, digits string
+	short        int
+	zeros        bool
 }
 
-// Format writes an Int or Float with a spec (STDLIB.md §9.5).
-func Format(v value.Value, s Spec) string {
-	text := fixed(v, s.Decimals)
+// Prepare is v with s up to the padding, which String writes: the sign, the digits, `,` (§9.5).
+func Prepare(v value.Value, s syntax.FormatSpec) Formatted {
+	text := digitsOf(v, s)
 	neg := strings.HasPrefix(text, minus)
 	digits := strings.TrimPrefix(text, minus)
 	if s.Comma && !strings.ContainsAny(digits, exponent) {
 		digits = group(digits)
 	}
+	sign := ""
 	switch {
 	case neg && !allZero(digits):
-		return minus + digits
+		sign = minus
 	case s.Plus:
-		return plus + digits
+		sign = plus
 	}
-	return digits
+	return Formatted{sign: sign, digits: digits, short: max(s.Width-len(sign)-len(digits), 0), zeros: s.Zero}
+}
+
+// Len is the length in bytes of the text String writes.
+func (f Formatted) Len() int { return len(f.sign) + len(f.digits) + f.short }
+
+// String pads to the width, zeros after the sign with `0`, else spaces before (STDLIB.md §9.5 step 4).
+func (f Formatted) String() string {
+	if f.zeros {
+		return f.sign + strings.Repeat(zero, f.short) + f.digits
+	}
+	return strings.Repeat(space, f.short) + f.sign + f.digits
+}
+
+// digitsOf is an Int's sign and hex magnitude with `x`/`X`, else fixed's text (STDLIB.md §9.5 step 1).
+func digitsOf(v value.Value, s syntax.FormatSpec) string {
+	x, isInt := v.(*value.Int)
+	if s.Hex == 0 || !isInt {
+		return fixed(v, s.Decimals)
+	}
+	text := strconv.FormatInt(x.V, hexBase)
+	if s.Hex == syntax.HexUpper {
+		return strings.ToUpper(text)
+	}
+	return text
 }
 
 // fixed is the value with exactly n decimals, or its canonical form when n < 0.

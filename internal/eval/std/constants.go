@@ -35,6 +35,7 @@ const (
 	bReverse    = "reverse"
 	bSortBy     = "sortBy"
 	bUnique     = "unique"
+	bDuplicates = "duplicates"
 	bEnumerate  = "enumerate"
 	bPairs      = "pairs"
 	bZip        = "zip"
@@ -115,8 +116,10 @@ const (
 	zero            = "0"
 	zeroDigits      = "0.,"
 	exponent        = "e"
+	space           = " "
 	asciiSpace      = " \t\n\v\f\r"
 	decimalBase     = 10
+	hexBase         = 16
 	groupSize       = 3
 	halfDenominator = 2
 	upperA          = 'A'

@@ -8,6 +8,12 @@ const NoTok Tok = 0
 // NoDecimals is FormatSpec.Decimals when the spec has no ".N" part.
 const NoDecimals = -1
 
+// HexUpper is FormatSpec.Hex for an uppercase `X`; hexLower is the lowercase `x` (GRAMMAR.md §2.6).
+const (
+	HexUpper byte = 'X'
+	hexLower byte = 'x'
+)
+
 // LocalProjectFile is project.local.canon, a project file of its own E1011 variant (GRAMMAR.md §7.2).
 const LocalProjectFile = "project.local.canon"
 
@@ -367,7 +373,7 @@ const (
 
 	decimalBase, hexBase, binBase, minExpLen, maxMillisBits, maxSpecDigits, maxDecimals = 10, 16, 2, 2, 63, 2, 20
 	hexPrefix, binPrefix, digitSep, doubleSep, fractionDot, expLetters, unitLetters     = "0x", "0b", "_", "__", ".", "eE", "mshd"
-	specPlus, specComma                                                                 = "+", ","
+	specPlus, specComma, specZero                                                       = "+", ",", "0"
 )
 
 // unitsLongestFirst are the duration units as matched, with their rank (d h m s ms) in
