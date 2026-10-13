@@ -46,3 +46,11 @@ accepted: a forged journal naming this host can create new `.canon`/`.json`/`.lo
 declared root reaches; a reused pid keeps a dead writer's journal "running"; the cross-process idle
 check is not atomic; OS droppings (`.DS_Store`) in a created directory keep a journal until the user
 deletes them; symlinked package directories cannot be edited through the API.
+
+## Known limit (2026-10-13, v0.1.6)
+
+A process killed while writing its journal (before the rename into `.canon/journal/<hex>.json`)
+leaves `.canon/journal/.<hex>.json.<R>.canon-tmp`. No journal names it, so Recover cannot tell
+a dead writer from a live one still writing; it leaves the file (hidden, harmless). Every other
+leftover of an edit (its tokened stages, their OS write temps, the journal's own temps once the
+journal exists) is cleared by Recover (DECISIONS 351).
