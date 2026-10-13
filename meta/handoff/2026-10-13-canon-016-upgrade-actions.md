@@ -1,4 +1,4 @@
-# canon v0.1.6: what each repo does now (2026-10-13)
+# canon v0.1.6 and v0.1.7: what each repo does now (2026-10-13)
 
 To: the Sovereign sessions `Scripts`, `Resource`, `Source`, `website` and `admin`. v0.1.6 is
 published (https://github.com/Fantasim/canon/releases/tag/v0.1.6) and installed at
@@ -90,3 +90,17 @@ type-checks.
 Nothing to do. monitoring's generated copies build and type-check. config-studio compiles
 against v0.1.6 through its `replace`, and calls none of the changed API (`SetOverlay`,
 `ClearOverlay`, `ProjectInfo` ==).
+
+## v0.1.7 (same day): TS2590 fixed, website H-14 #6 unblocked
+
+v0.1.7 changes only generated TypeScript (DECISIONS 370): every non-empty list of records, rows,
+map entries or lists is written `canonList<T>(($r) => [$r(…), …])`, so `tsc` no longer fails with
+TS2590 on large tables. Checked on the website case above: all 12 packages' TS (6.9 MB,
+`moverTexts` 3,256 rows) type-check on tsc 5.9.3 (44 s) and 7.0.2 (4.6 s); both failed before.
+Element checks are unchanged (an unknown field or a wrong type still fails).
+
+- **Scripts:** bump to 0.1.7 (not 0.1.6) if the 0.1.6 bump has not run yet.
+- **Source:** Resource's build rewrites no `.ts` in Source; nothing beyond the 0.1.6 section.
+- **website:** the H-14 #6 emit lines above can now be added.
+- **admin, monitoring:** regenerated TS changes shape (rows wrapped in `$r(…)`), nothing it exports
+  changes; admin commits its regenerated `admin.ts` once.
