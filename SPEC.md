@@ -2568,7 +2568,7 @@ identity). Methods that return a list return a plain list.
 | `minBy(f)`, `maxBy(f)` | `T?` |
 | `sortBy(f)`, `reverse()` | stable sort |
 | `groupBy(f) -> {K: [T]}` | keys in first-seen order |
-| `unique()`, `isUnique()` | by equality |
+| `unique()`, `duplicates()`, `isUnique()` | by equality |
 | `enumerate()` | pairs `(i, x)` |
 | `pairs()` | every unordered pair `(a, b)` with `a` before `b` |
 | `zip(other)` | pairs; lists of different lengths are `E4105` |

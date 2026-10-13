@@ -464,8 +464,8 @@ CONFORMANCE.md §2.2). The steps, in order:
    printed without `-` (`-0.001` with `.2` is `0.00`), so `+` gives `+0`, `+0.00`.
 4. **width `W`**: a text shorter than `W` bytes (its sign included) is padded to `W`: with `0`,
    by zeros between the sign and the digits; otherwise by spaces on the left. A longer text is
-   never cut. There is no alignment option and no width on strings: a column of names is padded
-   by a function.
+   never cut; an exponent form pads like any other (`{1e21:08}` is `0001e+21`). There is no
+   alignment option and no width on strings: a column of names is padded by a function.
 
 | Value | Spec | Text |
 |---|---|---|

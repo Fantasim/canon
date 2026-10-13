@@ -757,7 +757,7 @@ Equality at evaluation:
 | pairs | component-wise |
 
 Evaluating an equality costs one step per pair of values compared, scalar pairs included
-(EVALUATION.md §12.1). A collection that hashes its elements (a set built by `unique`,
+(EVALUATION.md §12.1). A collection that hashes its elements (a set built by `unique`, `duplicates`,
 `isUnique`, `intersect`, `union`, `diff`) first converts each element to the call's static
 element type, so values equal by this table hash alike; for a `DepUnion` element type that is
 the container's computed element type (§11.4 "Symbols after verification").
