@@ -99,7 +99,9 @@ TS2590 on large tables. Checked on the website case above: all 12 packages' TS (
 `moverTexts` 3,256 rows) type-check on tsc 5.9.3 (44 s) and 7.0.2 (4.6 s); both failed before.
 Element checks are unchanged (an unknown field or a wrong type still fails).
 
-- **Scripts:** bump to 0.1.7 (not 0.1.6) if the 0.1.6 bump has not run yet.
+- **Scripts:** bump to 0.1.7 (not 0.1.6) if the 0.1.6 bump has not run yet. Installed from the
+  release: `~/.local/bin/canon` sha256 `e50b09d61972b8f70507781d83fae3a0b62783b77aad05f43cc77aa74f8b7b8b`
+  (equal to the release archive's binary; tag v0.1.7 = 65f7ea8b).
 - **Source:** Resource's build rewrites no `.ts` in Source; nothing beyond the 0.1.6 section.
 - **website:** the H-14 #6 emit lines above can now be added.
 - **admin, monitoring:** regenerated TS changes shape (rows wrapped in `$r(…)`), nothing it exports
