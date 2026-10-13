@@ -3396,9 +3396,10 @@ applies).
   (§5.4), and `CanonRow` makes both present, `id` of the table's own id type `K` (DECISIONS 323).
   A value of another package's type is an object literal of that package's interface, read by this
   file's own decoder helpers in `data` and `types` mode ([§2.8](#28-cross-package-references)).
-- An array literal whose elements are object literals or tuples (rows, a `table` field, a list
-  of records, a map's or branch table's entries) is `canonList<T>(($r) => [$r(e1), …])`, `T` its
-  declared element type (`readonly [K, V]` for an entry): each element type-checks against `T`
+- An array literal whose elements are object literals, tuples or arrays (rows, a `table` field,
+  a list of records or of lists, a map's or branch table's entries, conformance vectors) is
+  `canonList<T>(($r) => [$r(e1), …])`, `T` its declared element type (`readonly [K, V]` for an
+  entry, `ReadonlyArray<X>` for a list): each element type-checks against `T`
   alone, so tsc never reduces a union of thousands of literal element types (TS2590; DECISIONS
   370). An empty one stays `[]`; a list of scalars is a plain literal.
 - The file uses only erasable syntax (no `enum`, no `namespace`, no parameter properties), so it
