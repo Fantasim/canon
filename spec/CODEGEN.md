@@ -2692,10 +2692,22 @@ inline double CheckFloatArg(double v) { return CheckFloat(v); }
 // Read-only containers
 // ---------------------------------------------------------------------------
 
-/// The type a lookup takes: std::string_view for std::string keys, the key itself
-/// otherwise. Lookups never allocate.
+namespace detail {
+/// An opened enum (CODEGEN.md §5.2): a class whose generated `ToWire(const K&)`, found through its
+/// namespace, gives the wire it holds. A Duration or any other class key is not one.
+template <class K, class = void>
+struct IsOpenEnum : std::false_type {};
 template <class K>
-using LookupKey = std::conditional_t<std::is_same_v<K, std::string>, std::string_view, K>;
+struct IsOpenEnum<K, std::enable_if_t<std::is_class_v<K> &&
+                                      std::is_convertible_v<decltype(ToWire(std::declval<const K&>())), std::string_view>>>
+    : std::true_type {};
+}  // namespace detail
+
+/// The type a lookup takes: std::string_view for std::string keys, `const K&` for an opened enum
+/// key, the key itself otherwise. Lookups never allocate.
+template <class K>
+using LookupKey = std::conditional_t<std::is_same_v<K, std::string>, std::string_view,
+                                     std::conditional_t<detail::IsOpenEnum<K>::value, const K&, K>>;
 
 namespace detail {
 template <class K>
