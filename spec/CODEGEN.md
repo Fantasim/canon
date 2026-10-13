@@ -1612,7 +1612,13 @@ export function decodeEventConfig(json: unknown): EventConfig;
   which it becomes certain (an invalid UTF-8 byte at itself, an unpaired surrogate where no pair
   can follow), even inside a string a later syntax error leaves unclosed; a repeated key is
   placed at its closing quote, since an unclosed key may still differ (`{"a": "\xff` is
-  `$.a: not UTF-8`; `{"a":1,"a` is a syntax error). `data`-mode loaders keep their own form
+  `$.a: not UTF-8`; `{"a":1,"a` is a syntax error). Invalid UTF-8 inside a string names its
+  path (`not UTF-8`; for a TypeScript decoder handed a string, a lone surrogate code unit is that
+  case), outside a string it is a syntax error at its byte; a failure inside a key names the
+  object's path; a repeated key names the object's path and the key's decoded text
+  (`$.a.b`), written as is. `data`-mode loaders keep their own messages in every target:
+  a syntax error, invalid UTF-8 or an unpaired surrogate is `<file>: not a canon data file
+  (invalid JSON)`, the other failures `<file>: rows[0].x: …`. `data`-mode loaders keep their own form
   (they read files, not values). Only a public record or
   variant has a public decoder, and a public `@text` fn whose result (its non-optional type, for a
   maybe-file) is a map, a list or a keyed list: Go `func Decode<Fn>File(raw []byte) (<T>,
