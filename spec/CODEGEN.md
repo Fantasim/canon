@@ -1631,7 +1631,8 @@ export function decodeEventConfig(json: unknown): EventConfig;
   error)`; C++ `std::optional<T> Decode<Fn>File(std::string_view text, std::string& error)` in
   the package namespace, which parses the text with `ParseTextFile` (file order, byte rules); TS
   `decode<Fn>File(json: unknown): T` and `parse<Fn>File(text: string): T`; `<T>` the target's type
-  of the result, `<Fn>` the fn's name in the target (DECISIONS 340, 363). A map inside a record
+  of the result, `<Fn>` the UpperCamel of the fn's name in the target (TS `items` gives
+  `decodeItemsFile`; DECISIONS 340, 363). A map inside a record
   stays `E8019` `MapField` in C++ `types` mode, and a result holding one gets no decoder. Otherwise a runtime reads a `@text` file through its result type only when
   that is a record or variant. What it can represent it accepts without checking refinements, refs, keys
   or checks: the file is the one `canon check` validated (WIRE.md §5.13).

@@ -3789,8 +3789,8 @@ round 2", "PS1 review", "PS2 round 2"):
 369. **TypeScript lookups by a `@stable` field (CODEGEN.md §5.9, §8.2).** A `@stable` field `f` of
      a stable table's record (`@stable` lives only there, E6003; a keyed list of that record
      gets the lookups too) gives the TypeScript container a method `findBy` +
-     UpperCamel(f) (the Canon field's name, as Go and C++; a `@ts(name:)` override renames the
-     row property, not the method), typed `(value: <f's TS type>) => Row | null`: an index built
+     UpperCamel(f) (the Canon field's name; a `@ts(name:)` override renames the row property,
+     not the method, while Go and C++ name `FindBy<F>` after their own overrides), typed `(value: <f's TS type>) => Row | null`: an index built
      once by `canonTable(rows, keyOf, by)`, never a scan; a miss is `null`, a retired row is found.
      The data-mode `decode<V>`/`parse<V>` return the same container type. Two `@stable` fields
      whose methods share a name are `E8005` (the TS name plan declares them). A record with no
