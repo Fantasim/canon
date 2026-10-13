@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("Lww\x84\x84\x84\tP\x04")
+int64(3)
+string("Lw")

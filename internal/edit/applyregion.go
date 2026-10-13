@@ -118,7 +118,7 @@ func canonRegions(f *syntax.File, changes []format.Change) []region {
 		}
 		out = append(out, t.neighbours(c)...)
 	}
-	return out
+	return append(out, t.joins(changes)...)
 }
 
 // listOf is the list a change inserts into or removes from; the file for a declaration.

@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("ne\xd0\x0f\x0f")
+int64(3)
+string("ne\xd0")

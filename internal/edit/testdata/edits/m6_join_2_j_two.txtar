@@ -1,0 +1,121 @@
+API.md M5, API.md M6 (review probe zz2_j_two, 2026-10-13): what the edit writes is a fixed point and
+changes no byte outside the items it re-prints, a settle that joins an enclosing item included.
+Here: a Set narrowing a list, then an Add widening it again: each its own write.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "rows.j.tags[0]", "value": "x"}, {"op": "add", "path": "rows.j.tags", "value": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A rec.
+record R {
+  /// Long.
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine: String = ""
+  /// Label.
+  label: String = ""
+  /// Tags.
+  tags: [String] = []
+}
+
+/// A value.
+let r: R = {
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine:
+    "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+}
+
+/// Rows.
+let rows: table R = {
+  g {
+    label:
+      "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+  }
+  h {
+    label: "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh" // c
+  }
+  i {
+    tags: [
+      "tttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ] // c
+  }
+  j {
+    tags: [
+      "tttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ]
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:rows.j.tags[3]"
+    },
+    {
+      "op": "set",
+      "path": "p:rows.j.tags[0]",
+      "source": "\"tttttttttttttttttttttttttttt\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A rec.
+record R {
+  /// Long.
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine: String = ""
+  /// Label.
+  label: String = ""
+  /// Tags.
+  tags: [String] = []
+}
+
+/// A value.
+let r: R = {
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine:
+    "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+}
+
+/// Rows.
+let rows: table R = {
+  g {
+    label:
+      "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+  }
+  h {
+    label: "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh" // c
+  }
+  i {
+    tags: [
+      "tttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ] // c
+  }
+  j {
+    tags: [
+      "x",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+      "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    ]
+  }
+}

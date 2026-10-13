@@ -189,7 +189,7 @@ func applyChecked(t *testing.T, env edit.Env, a *build.Analysis, ops []edit.Oper
 
 // checkOneRun is API.md M6 for a Set of a scalar whatever its value: one run of lines, from at
 // most one line before. Its line is rewritten, removed at the default (E6), added when absent,
-// or broken when the new value passes the formatter's width.
+// or broken when the new value passes the formatter's width, or joined to the line above (M5).
 func checkOneRun(t *testing.T, plan *edit.Plan, ch edit.Change) {
 	t.Helper()
 	steps := edit.Writes(plan, ch.Path)
@@ -199,6 +199,9 @@ func checkOneRun(t *testing.T, plan *edit.Plan, ch edit.Change) {
 	}
 	last := steps[len(steps)-1]
 	before, after := lines(last.Before), lines(last.After)
+	if joined(last) { // M5 lays the item holding it on one line again: held to its regions
+		return
+	}
 	if h := lineHunks(before, after); len(h) != 1 || !oneRun(h[0], before, after) {
 		t.Errorf("%s: a Set of a scalar changed %+v, want one run from one line (API.md M6)", ch.Path, h)
 	}

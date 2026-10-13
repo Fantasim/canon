@@ -1,0 +1,115 @@
+API.md M5, API.md M6 (review probe zz2_j101, 2026-10-13): what the edit writes is a fixed point and
+changes no byte outside the items it re-prints, a settle that joins an enclosing item included.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "rows.j.tags[0]", "value": "ttttttttttttttttttttttt"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A rec.
+record R {
+  /// Long.
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine: String = ""
+  /// Label.
+  label: String = ""
+  /// Tags.
+  tags: [String] = []
+}
+
+/// A value.
+let r: R = {
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine:
+    "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+}
+
+/// Rows.
+let rows: table R = {
+  g {
+    label:
+      "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+  }
+  h {
+    label: "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh" // c
+  }
+  i {
+    tags: [
+      "tttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ] // c
+  }
+  j {
+    tags: [
+      "tttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ]
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:rows.j.tags[0]",
+      "source": "\"tttttttttttttttttttttttttttt\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A rec.
+record R {
+  /// Long.
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine: String = ""
+  /// Label.
+  label: String = ""
+  /// Tags.
+  tags: [String] = []
+}
+
+/// A value.
+let r: R = {
+  aVeryLongFieldNameUsedToForceTheValueOntoItsOwnLine:
+    "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+}
+
+/// Rows.
+let rows: table R = {
+  g {
+    label:
+      "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+  }
+  h {
+    label: "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh" // c
+  }
+  i {
+    tags: [
+      "tttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ] // c
+  }
+  j {
+    tags: [
+      "ttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ]
+  }
+}

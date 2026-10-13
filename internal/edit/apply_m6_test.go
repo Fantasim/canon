@@ -132,9 +132,13 @@ func checkSteps(t *testing.T, plan *edit.Plan, ch edit.Change, oneLine func(edit
 }
 
 // checkOneLine is API.md M6: a one-value Set of a scalar changes exactly one line, and Apply
-// re-prints no more than that line.
+// re-prints no more than that line; one whose enclosing item M5 lays on one line again (a list
+// or a break that now fits) re-prints more than its item and is held to its regions alone.
 func checkOneLine(t *testing.T, name string, w edit.Write) {
 	t.Helper()
+	if joined(w) {
+		return
+	}
 	if fault := oneLineFault(name, w); fault != "" {
 		t.Errorf("%s: %s (API.md M5, M6)", name, fault)
 	}
@@ -143,6 +147,12 @@ func checkOneLine(t *testing.T, name string, w edit.Write) {
 			t.Errorf("%s: a one-value Set re-printed lines %d to %d, want one line (API.md M6)", name, r[0]+1, r[1])
 		}
 	}
+}
+
+// joined reports w laying lines of before on one line of after: one hunk, several lines to one.
+func joined(w edit.Write) bool {
+	h := lineHunks(lines(w.Before), lines(w.After))
+	return len(h) == 1 && h[0].b1-h[0].b0 > 1 && h[0].a1-h[0].a0 == 1
 }
 
 // oneLineFault is why w breaks M6's one line, "" when it keeps it: its one line of before

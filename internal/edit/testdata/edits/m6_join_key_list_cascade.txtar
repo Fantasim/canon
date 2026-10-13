@@ -1,0 +1,85 @@
+API.md M5, API.md M6, API.md E11: renaming a table key shorter renames each ref to it, map keys
+included; a key whose value is a `[ ]` list written `key: [` with only its brackets broken
+(FORMATTER.md §7.2 rule A) lets the list lay flat once the shorter key leaves room, whether the
+key is a bare name or a string. Every byte outside the items re-printed is kept.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "rename", "path": "nodes.a_rather_long_node_key_name_number_one", "key": "a"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A node.
+record Node {
+  /// Tags by node.
+  tags: {ref Node: [String]} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a_rather_long_node_key_name_number_one {}
+  b {
+    tags: {
+      a_rather_long_node_key_name_number_one: [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      ]
+    }
+  }
+  c {
+    tags: {
+      "a_rather_long_node_key_name_number_one": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      ]
+    }
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "rename",
+      "path": "p:nodes.a",
+      "key": "a_rather_long_node_key_name_number_one"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A node.
+record Node {
+  /// Tags by node.
+  tags: {ref Node: [String]} = {}
+}
+
+/// Nodes.
+let nodes: table Node = {
+  a {}
+  b {
+    tags: {
+      a: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+    }
+  }
+  c {
+    tags: {
+      "a": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+    }
+  }
+}

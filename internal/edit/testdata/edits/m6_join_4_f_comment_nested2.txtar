@@ -1,0 +1,187 @@
+API.md M5, API.md M6 (review probe zz4_f_comment_nested2, 2026-10-13): what the edit writes is a fixed point and
+changes no byte outside the items it re-prints, a settle that joins an enclosing item included.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "rows.f.nc[0][0]", "value": "x"}, {"op": "set", "path": "rows.f.nc[0][1]", "value": "y"}, {"op": "set", "path": "rows.f.nc[0][2]", "value": "z"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A rec.
+record R {
+  /// Deep.
+  deep: [[[String]]] = []
+  /// Map of lists.
+  ml: {String: [String]} = {}
+  /// Map.
+  m: {String: String} = {}
+  /// A long field name holding a list.
+  aVeryLongFieldNameThatHoldsAListOfStringsForTesting: [String] = []
+  /// Refs.
+  refs: [ref rows] = []
+  /// Nested with comment.
+  nc: [[String]] = []
+}
+
+/// Rows.
+let rows: table R = {
+  a {
+    deep: [
+      [
+        [
+          "ttttttttttttttttttttttttttttt",
+          "uuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+          "wwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+        ],
+      ],
+      [["r"]],
+    ]
+  }
+  b {
+    ml: {
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk": [
+        "aaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbb",
+      ]
+    }
+  }
+  c {
+    m: {
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk":
+        "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+    }
+  }
+  d {
+    aVeryLongFieldNameThatHoldsAListOfStringsForTesting: [
+      "aaaaaaaaaaaaaaaaaaaa",
+      "bbbbbbbbbbbbbbbbbbbb",
+    ]
+  }
+  e {
+    refs: [
+      aLongEntryNameNumberOneForTesting,
+      aLongEntryNameNumberTwoForTesting,
+      aLongEntryNameNumberThreeForTesting,
+    ]
+  }
+  aLongEntryNameNumberOneForTesting {}
+  aLongEntryNameNumberTwoForTesting {}
+  aLongEntryNameNumberThreeForTesting {}
+  f {
+    nc: [
+      [
+        "ttttttttttttttttttttttttttttt", // c
+        "uuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+        "wwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+      ],
+      ["r"],
+    ]
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:rows.f.nc[0][2]",
+      "source": "\"wwwwwwwwwwwwwwwwwwwwwwwwwwwww\""
+    },
+    {
+      "op": "set",
+      "path": "p:rows.f.nc[0][1]",
+      "source": "\"uuuuuuuuuuuuuuuuuuuuuuuuuuuuu\""
+    },
+    {
+      "op": "set",
+      "path": "p:rows.f.nc[0][0]",
+      "source": "\"ttttttttttttttttttttttttttttt\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A rec.
+record R {
+  /// Deep.
+  deep: [[[String]]] = []
+  /// Map of lists.
+  ml: {String: [String]} = {}
+  /// Map.
+  m: {String: String} = {}
+  /// A long field name holding a list.
+  aVeryLongFieldNameThatHoldsAListOfStringsForTesting: [String] = []
+  /// Refs.
+  refs: [ref rows] = []
+  /// Nested with comment.
+  nc: [[String]] = []
+}
+
+/// Rows.
+let rows: table R = {
+  a {
+    deep: [
+      [
+        [
+          "ttttttttttttttttttttttttttttt",
+          "uuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+          "wwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+        ],
+      ],
+      [["r"]],
+    ]
+  }
+  b {
+    ml: {
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk": [
+        "aaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbb",
+      ]
+    }
+  }
+  c {
+    m: {
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk":
+        "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+    }
+  }
+  d {
+    aVeryLongFieldNameThatHoldsAListOfStringsForTesting: [
+      "aaaaaaaaaaaaaaaaaaaa",
+      "bbbbbbbbbbbbbbbbbbbb",
+    ]
+  }
+  e {
+    refs: [
+      aLongEntryNameNumberOneForTesting,
+      aLongEntryNameNumberTwoForTesting,
+      aLongEntryNameNumberThreeForTesting,
+    ]
+  }
+  aLongEntryNameNumberOneForTesting {}
+  aLongEntryNameNumberTwoForTesting {}
+  aLongEntryNameNumberThreeForTesting {}
+  f {
+    nc: [
+      [
+        "x", // c
+        "y",
+        "z",
+      ],
+      ["r"],
+    ]
+  }
+}

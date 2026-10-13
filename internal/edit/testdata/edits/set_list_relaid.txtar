@@ -1,0 +1,116 @@
+API.md M5, API.md M6: a `[ ]` list broken only because it did not fit (FORMATTER.md §7.2) gets
+narrower: a Set of an element, a key renamed in a keyed list, a field of an element reset. The
+settle lays it on one line, re-printing the list; every byte outside the items re-printed is kept.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "rows.a.tags[2]", "value": "x"},
+  {"op": "rename", "path": "rows.b.cols[a_long_column_name_two]", "key": "c"},
+  {"op": "reset", "path": "rows.c.cols[a_long_column_name_three].width"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A column.
+record Col {
+  /// Its name.
+  name: String
+  /// Its width.
+  width: Int = 1
+}
+
+/// A row.
+record Row {
+  /// Its tags.
+  tags: [String] = []
+  /// Its columns.
+  cols: [Col] keyed by name = []
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    tags: [
+      "a fairly long tag number one",
+      "a fairly long tag number two",
+      "a fairly long tag number three",
+    ]
+  }
+  b {
+    cols: [
+      { name: "a_long_column_name_one", width: 2 },
+      { name: "a_long_column_name_two", width: 3 },
+    ]
+  }
+  c {
+    cols: [
+      { name: "a_long_column_name_one", width: 2 },
+      { name: "a_long_column_name_three", width: 3 },
+    ]
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:rows.c.cols[a_long_column_name_three].width",
+      "source": "3"
+    },
+    {
+      "op": "rename",
+      "path": "p:rows.b.cols[c]",
+      "key": "a_long_column_name_two"
+    },
+    {
+      "op": "set",
+      "path": "p:rows.a.tags[2]",
+      "source": "\"a fairly long tag number three\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A column.
+record Col {
+  /// Its name.
+  name: String
+  /// Its width.
+  width: Int = 1
+}
+
+/// A row.
+record Row {
+  /// Its tags.
+  tags: [String] = []
+  /// Its columns.
+  cols: [Col] keyed by name = []
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    tags: ["a fairly long tag number one", "a fairly long tag number two", "x"]
+  }
+  b {
+    cols: [{ name: "a_long_column_name_one", width: 2 }, { name: "c", width: 3 }]
+  }
+  c {
+    cols: [{ name: "a_long_column_name_one", width: 2 }, { name: "a_long_column_name_three" }]
+  }
+}

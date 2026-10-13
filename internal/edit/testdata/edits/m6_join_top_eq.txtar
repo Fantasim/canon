@@ -1,0 +1,146 @@
+API.md M5, API.md M6 (review probe zz_top_eq, 2026-10-13): what the edit writes is a fixed point and
+changes no byte outside the items it re-prints, a settle that joins an enclosing item included.
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [{"op": "set", "path": "s", "value": "short"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A col.
+record Col {
+  /// Name.
+  name: String
+  /// Tags.
+  tags: [String] = []
+}
+
+/// A row.
+record Row {
+  /// Label.
+  label: String = ""
+  /// Tags.
+  tags: [String] = []
+  /// Cols.
+  cols: [Col] = []
+  /// Nested.
+  nest: [[String]] = []
+}
+
+/// A string.
+let s: String =
+  "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"
+
+/// A map.
+let m: {String: String} = {
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk":
+    "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    label: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" // keep me
+  }
+  c {
+    tags: [
+      "tttttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ]
+  } // tail
+  d {
+    cols: [
+      { name: "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn" },
+      { name: "oooooooooooooooooooooooooooooooooooooooo", tags: ["q"] },
+    ]
+  }
+  e {
+    nest: [
+      ["pppppppppppppppppppppppppppppppppppppppp"],
+      ["rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"],
+    ]
+  }
+  f { label: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/p.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:s",
+      "source": "\"ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss\""
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/p.canon --
+package p
+
+/// A col.
+record Col {
+  /// Name.
+  name: String
+  /// Tags.
+  tags: [String] = []
+}
+
+/// A row.
+record Row {
+  /// Label.
+  label: String = ""
+  /// Tags.
+  tags: [String] = []
+  /// Cols.
+  cols: [Col] = []
+  /// Nested.
+  nest: [[String]] = []
+}
+
+/// A string.
+let s: String = "short"
+
+/// A map.
+let m: {String: String} = {
+  "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk":
+    "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+}
+
+/// Rows.
+let rows: table Row = {
+  a {
+    label: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" // keep me
+  }
+  c {
+    tags: [
+      "tttttttttttttttttttttttttttttt",
+      "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+    ]
+  } // tail
+  d {
+    cols: [
+      { name: "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn" },
+      { name: "oooooooooooooooooooooooooooooooooooooooo", tags: ["q"] },
+    ]
+  }
+  e {
+    nest: [
+      ["pppppppppppppppppppppppppppppppppppppppp"],
+      ["rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"],
+    ]
+  }
+  f { label: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" }
+}
