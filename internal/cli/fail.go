@@ -27,6 +27,9 @@ func (inv *invocation) fail(err error) int {
 		return exitInternal
 	case errors.Is(err, canon.ErrNoValue):
 		return inv.poisoned(err)
+	case errors.Is(err, canon.ErrStale): // refused, not misused: exit 1 (API.md §15)
+		writeLine(inv.env.Stderr, msgPrefix+err.Error())
+		return exitErrors
 	}
 	writeLine(inv.env.Stderr, msgPrefix+err.Error())
 	return exitUsage

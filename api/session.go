@@ -97,22 +97,25 @@ func apiError(err error) error {
 		return internalError(err)
 	case errors.Is(err, workspace.ErrClosed):
 		return ErrClosed
-	case errors.Is(err, workspace.ErrStale), errors.Is(err, edit.ErrStale):
+	case errors.Is(err, workspace.ErrStale), errors.Is(err, edit.ErrStale), errors.Is(err, build.ErrStale):
 		return staleError(err)
 	}
 	return panicError(err)
 }
 
 // staleError is a stale base revision (workspace's) or a file changed while an edit ran (edit's)
-// as the API reports both, the same files (rules S4, S5, N9).
+// or a build's sources changed under its writer locks, as the API reports them (S4, S5, N9; DECISIONS 352).
 func staleError(err error) error {
 	var ws *workspace.StaleError
 	var es *edit.StaleError
+	var bs *build.StaleError
 	switch {
 	case errors.As(err, &ws):
 		return &StaleError{Files: slices.Clone(ws.Files)}
 	case errors.As(err, &es):
 		return &StaleError{Files: slices.Clone(es.Files)}
+	case errors.As(err, &bs): // a build's sources changed under its writer locks, twice (DECISIONS 352)
+		return &StaleError{Files: slices.Clone(bs.Files)}
 	}
 	return err
 }

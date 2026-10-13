@@ -23,10 +23,11 @@ import (
 // Numbers its numbers Canon fields read that are not canonical; both nil when no load decoded it
 // or two read different contents.
 type JSONSource struct {
-	Display string
-	Abs     string // links resolved
-	Content []byte
-	Numbers []Number // in Content order
+	Display  string
+	Abs      string // links resolved
+	Content  []byte
+	Numbers  []Number // in Content order
+	Packages []string // the packages whose loads read it, sorted: fmt's writer locks (DECISIONS 352)
 }
 
 // Number is the canonical text of the number token at [Start, End) of a JSON source's Content.
@@ -135,12 +136,12 @@ func (r *run) jsonSources(want map[string]bool, read map[string]*readFile) []JSO
 	for _, u := range r.selected {
 		for _, f := range u.Files {
 			if want[f.Src.Path] {
-				out = append(out, r.jsonFiles(f)...)
+				out = append(out, r.jsonFiles(f, u.Name)...)
 			}
 		}
 	}
 	slices.SortFunc(out, func(a, b JSONSource) int { return cmp.Or(cmp.Compare(a.Display, b.Display), cmp.Compare(a.Abs, b.Abs)) })
-	out = slices.CompactFunc(out, func(a, b JSONSource) bool { return a.Display == b.Display && a.Abs == b.Abs })
+	out = mergeReaders(out)
 	for i := range out {
 		if rf := read[r.real(out[i].Abs)]; rf != nil && !rf.mixed {
 			out[i].Content, out[i].Numbers = rf.content, rf.changed()
@@ -149,13 +150,30 @@ func (r *run) jsonSources(want map[string]bool, read map[string]*readFile) []JSO
 	return out
 }
 
-// jsonFiles is the JSON files f's load expressions read, whatever they decode to (WIRE.md §6.1, §6.5).
-func (r *run) jsonFiles(f *syntax.File) []JSONSource {
+// mergeReaders is sorted, each file once with every package that reads it, in name order.
+func mergeReaders(sorted []JSONSource) []JSONSource {
+	var out []JSONSource
+	for _, s := range sorted {
+		if n := len(out); n > 0 && out[n-1].Display == s.Display && out[n-1].Abs == s.Abs {
+			out[n-1].Packages = append(out[n-1].Packages, s.Packages...)
+			continue
+		}
+		out = append(out, s)
+	}
+	for i := range out {
+		slices.Sort(out[i].Packages)
+		out[i].Packages = slices.Compact(out[i].Packages)
+	}
+	return out
+}
+
+// jsonFiles is the JSON files f's load expressions read, whatever they decode to, f being of package pkg (WIRE.md §6.1, §6.5).
+func (r *run) jsonFiles(f *syntax.File, pkg string) []JSONSource {
 	scratch := diag.NewBag(nil, "")
 	var out []JSONSource
 	for _, at := range walkLoads(f) {
 		for _, lf := range load.JSONFiles(r.p.fs, r.s.layout, path.Dir(f.Src.Path), at.e, scratch) {
-			out = append(out, JSONSource{Display: lf.Display, Abs: lf.Abs})
+			out = append(out, JSONSource{Display: lf.Display, Abs: lf.Abs, Packages: []string{pkg}})
 		}
 	}
 	return out

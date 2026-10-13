@@ -47,9 +47,7 @@ func (r *run) staleFiles(opt BuildOptions, outputs []*output) ([]*output, error)
 			if err != nil {
 				return nil, err
 			}
-			if gone != nil {
-				out = append(out, gone)
-			}
+			out = append(out, gone...)
 		}
 	}
 	return out, nil
@@ -74,8 +72,8 @@ func (r *run) newStaleJudge(opt BuildOptions, outputs []*output) *staleJudge {
 	return j
 }
 
-// stale is the removal of the file the display path name of package pkg's previous list names with the SHA-256 sum, or of the set-aside name an earlier removal left; nil when the build keeps the path or leaves it alone. A file is removed only if its bytes are those the list recorded: a list of the older form, with no sum, removes nothing (DECISIONS 336).
-func (j *staleJudge) stale(pkg, name, sum string) (*output, error) {
+// stale is the removal of the file the display path name of package pkg's previous list names with the SHA-256 sum, or of the set-aside names earlier removals left; none when the build keeps the path or leaves it alone. A file is removed only if its bytes are those the list recorded: a list of the older form, with no sum, removes nothing (DECISIONS 336).
+func (j *staleJudge) stale(pkg, name, sum string) ([]*output, error) {
 	r := j.r
 	at, ok := r.s.layout.Resolve(name, "", source.Span{}, diag.NewBag(nil, pkg))
 	if !ok || at.Dir || j.protected[strings.ToLower(at.Abs)] || !check.ValidTextName(path.Base(at.Abs)) || j.writtenHere(at.Abs) {
@@ -84,7 +82,7 @@ func (j *staleJudge) stale(pkg, name, sum string) (*output, error) {
 	info, err := r.p.fs.Stat(at.Abs)
 	switch {
 	case cannotExist(err):
-		return r.asideOf(pkg, at, sum)
+		return r.asidesOf(pkg, at, sum)
 	case err != nil:
 		return nil, displayError(name, err)
 	case !info.Mode().IsRegular(): // a directory, a device, a pipe: not a file canon wrote
@@ -97,30 +95,53 @@ func (j *staleJudge) stale(pkg, name, sum string) (*output, error) {
 		return nil, err
 	}
 	j.written[strings.ToLower(at.Abs)] = at.Abs
-	return &output{remove: true, consumer: r.consumerOf(name), Output: Output{Path: name, Abs: at.Abs, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}, nil
+	return []*output{{remove: true, consumer: r.consumerOf(name), Output: Output{Path: name, Abs: at.Abs, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}}, nil
 }
 
-// asideOf is the removal of the set-aside name of at an earlier removal left, when the line recorded a sum and the aside's bytes still hash to it; nil when there is none, or the line has no sum.
-func (r *run) asideOf(pkg string, at project.Path, sum string) (*output, error) {
-	aside := tempOf(at.Abs)
-	shown := path.Join(path.Dir(at.Display), path.Base(aside))
-	info, err := r.p.fs.Stat(aside)
-	switch {
-	case sum == "" || cannotExist(err):
+// asidesOf are the removals of the names earlier removals set at aside under, any run's token
+// or 0.1.5's fixed name (DECISIONS 351), when the line recorded a sum and an aside's bytes still
+// hash to it; none when the line has no sum.
+func (r *run) asidesOf(pkg string, at project.Path, sum string) ([]*output, error) {
+	if sum == "" {
 		return nil, nil
+	}
+	asides, err := r.stagedBeside(at.Abs)
+	if err != nil {
+		return nil, displayError(path.Dir(at.Display), err)
+	}
+	var out []*output
+	for _, aside := range asides {
+		shown := path.Join(path.Dir(at.Display), path.Base(aside))
+		ok, err := r.hashesTo(aside, sum)
+		if err != nil {
+			return nil, displayError(shown, err)
+		}
+		if ok {
+			out = append(out, &output{remove: true, consumer: r.consumerOf(at.Display), Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Package: pkg, Status: StatusWritten}})
+		}
+	}
+	return out, nil
+}
+
+// hashesTo reports the regular file abs holding bytes whose SHA-256 is sum; a file gone meanwhile does not.
+func (r *run) hashesTo(abs, sum string) (bool, error) {
+	info, err := r.p.fs.Stat(abs)
+	switch {
+	case cannotExist(err):
+		return false, nil
 	case err != nil:
-		return nil, displayError(shown, err)
+		return false, err
 	case !info.Mode().IsRegular():
-		return nil, nil
+		return false, nil
 	}
-	got, err := r.sumOf(aside)
+	got, err := r.sumOf(abs)
 	switch {
-	case cannotExist(err) || got != sum && err == nil:
-		return nil, nil
+	case cannotExist(err):
+		return false, nil
 	case err != nil:
-		return nil, displayError(shown, err)
+		return false, err
 	}
-	return &output{remove: true, consumer: r.consumerOf(at.Display), Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}, nil
+	return got == sum, nil
 }
 
 // writtenHere reports the path abs one of this build's outputs, or one that differs from an output in case only and may be the same file: it is another file only where the output's name resolves to nothing yet (a case-sensitive file system, so a rename leaves the old name), or where the directory listing holds both exact names (CODEGEN.md §2.9, DECISIONS 336).
@@ -276,21 +297,27 @@ func (j *staleJudge) listOf(pkg string) (map[string]bool, error) {
 
 // claimedSet is the lower-cased path of every file the emits of this build's packages write that the build does not run (a target `--target` left out): generated only when a listed file needs the answer, a failure leaving its paths out.
 func (j *staleJudge) claimedSet() map[string]bool {
-	if j.claimed != nil {
-		return j.claimed
+	if j.claimed == nil {
+		j.claimed = j.r.unrun(j.opt.Targets)
 	}
-	j.claimed = map[string]bool{}
-	for _, p := range j.r.ir {
+	return j.claimed
+}
+
+// unrun is the lower-cased path of every file the emits of the run's packages write that a build
+// of targets does not run (a target `--target` left out); a failure leaves its paths out.
+func (r *run) unrun(targets []ir.Target) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range r.ir {
 		for _, e := range p.Emits {
-			if len(j.opt.Targets) == 0 || slices.Contains(j.opt.Targets, e.Target) || e.Dir == "" {
+			if len(targets) == 0 || slices.Contains(targets, e.Target) || e.Dir == "" {
 				continue
 			}
-			for _, o := range j.r.emitPaths(p, e) {
-				j.claimed[strings.ToLower(o.Abs)] = true
+			for _, o := range r.emitPaths(p, e) {
+				out[strings.ToLower(o.Abs)] = true
 			}
 		}
 	}
-	return j.claimed
+	return out
 }
 
 // emitPaths are the outputs of e without running its view: the files its generator makes, or the one file of a view.

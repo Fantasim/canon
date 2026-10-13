@@ -104,11 +104,15 @@ func run(t *testing.T, a *txtar.Archive) result {
 	return result{tmp: tmp, code: code, stdout: out.String(), stderr: errs.String()}
 }
 
-// written lists each file the command created or changed, with its content.
+// written lists each file the command created or changed, with its content; .canon/, canon's
+// own state (the writer locks hold a host and a process id, DECISIONS 352), is no output.
 func written(t *testing.T, a *txtar.Archive, tmp string) string {
 	t.Helper()
 	var out strings.Builder
 	err := filepath.WalkDir(tmp, func(name string, d fs.DirEntry, err error) error {
+		if err == nil && d.IsDir() && d.Name() == ".canon" {
+			return fs.SkipDir
+		}
 		if err != nil || d.IsDir() {
 			return err
 		}

@@ -29,17 +29,20 @@ type feedback struct {
 	r      *run
 	real   *realPaths
 	emits  []*placedEmit
-	asked  bool // failed is known
-	failed bool
+	failed bool // the run had an error after stage E: a build writes no code or data
 	found  []*diag.Builder
 	pkgs   []string // the package of each finding
 }
 
 // feedback is E8026 at each load of the run that reads a file an emit of the run writes:
-// compared by real path where the disk has it, lexically otherwise (DECISIONS 341).
-func (r *run) feedback(ctx context.Context) error {
-	fb := &feedback{r: r, real: newRealPaths(r.p.fs)}
-	fb.emits = r.placedEmits(fb.real)
+// compared by real path where the disk has it, lexically otherwise (DECISIONS 341); free is
+// whether the run had no error after stage E.
+func (r *run) feedback(ctx context.Context, free bool) error {
+	fb := &feedback{r: r, real: newRealPaths(r.p.fs), failed: !free}
+	fb.emits = r.placedEmits()
+	for _, pe := range fb.emits {
+		pe.real = fb.real.dir(pe.dir)
+	}
 	if len(fb.emits) == 0 || !fb.overlaps() {
 		return nil
 	}
@@ -86,7 +89,7 @@ func (fb *feedback) overlaps() bool {
 }
 
 // placedEmits is every emit of the run stage E placed, with its directory.
-func (r *run) placedEmits(real *realPaths) []*placedEmit {
+func (r *run) placedEmits() []*placedEmit {
 	var out []*placedEmit
 	for _, p := range r.ir {
 		for _, e := range p.Emits {
@@ -101,7 +104,7 @@ func (r *run) placedEmits(real *realPaths) []*placedEmit {
 			if e.FileName != "" {
 				dir = project.DirOf(dir)
 			}
-			out = append(out, &placedEmit{p: p, e: e, dir: dir, real: real.dir(dir)})
+			out = append(out, &placedEmit{p: p, e: e, dir: dir})
 		}
 	}
 	return out
@@ -151,9 +154,6 @@ func (fb *feedback) writes(pe *placedEmit, real string) (bool, error) {
 func (fb *feedback) filesOf(pe *placedEmit) ([]ir.File, error) {
 	if pe.e.Target == ir.TargetView {
 		return []ir.File{{Path: pe.e.FileName}}, nil
-	}
-	if !fb.asked {
-		fb.asked, fb.failed = true, !fb.r.errorFree()
 	}
 	if fb.failed {
 		return nil, nil

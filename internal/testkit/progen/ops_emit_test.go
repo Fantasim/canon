@@ -25,6 +25,8 @@ func emitOperators() []operator {
 	e8152.build = true
 	e8153 := op(diag.E8153.Def().Code, "WIRE.md §8.1 (data value not in emit json)", dropJSONEmit)
 	e8153.many, e8153.loose = true, true // one finding per public value, each at its own let
+	e8029 := op(diag.E8029.Def().Code, "CODEGEN.md §2.4 (stray generated file)", strayOutput)
+	e8029.build = true
 	return []operator{
 		e8001,
 		op(diag.E8002.Def().Code, "CODEGEN.md §2.1 (two emits of one target)", duplicateEmit),
@@ -43,6 +45,7 @@ func emitOperators() []operator {
 		op(diag.E8017.Def().Code, "CODEGEN.md §5.6 (list branch)", withEmit("go", "/// Kinds.\nenum ZzKind { one, many }\n\n/// Amounts.\ntype ", "ZzAmount", "(k: ZzKind) = match k { one => Int, many => [Int] }")),
 		op(diag.E8020.Def().Code, "CODEGEN.md §5.1 (Float constant of -0.0)", withEmit("go", "/// Zero, negative.\nconst ", "ZZ_NEG", " = -0.0")),
 		op(diag.E8021.Def().Code, "CODEGEN.md §2.9 (@text on a let)", appendSite("/// A text.\n", "@text(\"zz.sql\")", "\nlocal let zzText: String = \"x\"")),
+		e8029,
 		op(diag.E8101.Def().Code, "CODEGEN.md §4.1 (integer past the TS range)", withoutTypes("ts", withEmit("ts", "/// Big.\nlet ", "zzBig", ": Int = 9_007_199_254_740_993"))),
 		op(diag.E8104.Def().Code, "CODEGEN.md §5.12 (TS emit with inputs)", tsWithInputs),
 		op(diag.E8150.Def().Code, "WIRE.md §8.1 (file out, two values)", jsonFileTwoValues),
@@ -181,6 +184,23 @@ func unmarkedOutput(tg target) []progen.Site {
 		s, e := span(tg, f.Value)
 		file := path.Join(outRoots+root, rest, lets[0]+".json")
 		out = append(out, progen.Site{Edits: []progen.Edit{mark(tg, s, e)}, Add: map[string][]byte{file: []byte("{}\n")}})
+	}
+	return out
+}
+
+// strayOutput plants, in the directory of a json emit, a file whose $schema names the emit's own
+// package but that no emit writes: a stray generated file, E8029 under build --check (DECISIONS 356).
+func strayOutput(tg target) []progen.Site {
+	var out []progen.Site
+	for _, d := range emitsOf(tg, "json") {
+		dir := optionText(tg, d, "out")
+		root, rest, ok := strings.Cut(strings.TrimPrefix(dir, "@"), "/")
+		if !strings.HasPrefix(dir, "@") || !ok || !strings.HasSuffix(dir, "/") {
+			continue
+		}
+		s, e := span(tg, option(d, "out").Value)
+		stray := fmt.Sprintf("{\n  \"$schema\": %q,\n  \"value\": 1\n}\n", tg.pkg+".ZzStray@0123abcd")
+		out = append(out, progen.Site{Edits: []progen.Edit{mark(tg, s, e)}, Add: map[string][]byte{path.Join(outRoots+root, rest, "zzStray.json"): []byte(stray)}})
 	}
 	return out
 }

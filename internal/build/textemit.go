@@ -71,34 +71,32 @@ func (r *run) staleListings() ([]*output, error) {
 		if r.hasTextEmit(cp.Path) {
 			continue
 		}
-		o, err := r.staleListing(cp.Path)
+		gone, err := r.staleListing(cp.Path)
 		if err != nil {
 			return nil, err
 		}
-		if o != nil {
-			out = append(out, o)
-		}
+		out = append(out, gone...)
 	}
 	return out, nil
 }
 
-// staleListing is the removal of package pkg's marked `canon.outputs`, or of its set-aside name; nil when there is none.
-func (r *run) staleListing(pkg string) (*output, error) {
+// staleListing is the removal of package pkg's marked `canon.outputs`, or of the names an earlier build set it aside under; none when there is none.
+func (r *run) staleListing(pkg string) ([]*output, error) {
 	rel := path.Join(packageRel(pkg), outputsName)
 	abs := project.Join(r.p.dir, rel)
 	isMarked := func(content []byte) bool { return firstLineMatches(content, textMarker) }
 	data, err := r.p.fs.ReadFile(abs)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		gone, err := r.leftover(abs, rel, isMarked)
-		if gone != nil {
-			gone.Package = pkg
+		gone, err := r.leftovers(abs, rel, isMarked)
+		for _, o := range gone {
+			o.Package = pkg
 		}
 		return gone, err
 	case err != nil:
 		return nil, displayError(rel, err)
 	case isMarked(data):
-		return &output{remove: true, Output: Output{Path: rel, Abs: abs, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}, nil
+		return []*output{{remove: true, Output: Output{Path: rel, Abs: abs, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}}, nil
 	}
 	return nil, nil
 }
@@ -188,30 +186,36 @@ func (own *ownership) readLegacy(o *output, outputs []*output) error {
 	return nil
 }
 
-// sweep deletes what an earlier build left of the file abs: the name it was set aside under, when it holds a file the marked test accepts (CODEGEN.md §2.9).
+// sweep deletes what earlier builds left of the file abs: the names they set it aside under, each holding a file the marked test accepts (CODEGEN.md §2.9).
 func (own *ownership) sweep(o *output, abs, display string, marked func([]byte) bool) error {
-	gone, err := own.r.leftover(abs, display, marked)
-	if gone != nil {
-		gone.Package, gone.at = o.Package, o.at
-		own.gone = append(own.gone, gone)
+	gone, err := own.r.leftovers(abs, display, marked)
+	for _, g := range gone {
+		g.Package, g.at = o.Package, o.at
 	}
+	own.gone = append(own.gone, gone...)
 	return err
 }
 
-// leftover is the deletion of the set-aside name of the file abs (display), when one is there and its content passes marked; nil when there is none.
-func (r *run) leftover(abs, display string, marked func([]byte) bool) (*output, error) {
-	aside := tempOf(abs)
-	data, err := r.p.fs.ReadFile(aside)
-	shown := path.Join(path.Dir(display), path.Base(aside))
-	switch {
-	case cannotExist(err):
-		return nil, nil
-	case err != nil:
-		return nil, displayError(shown, err)
-	case !marked(data):
-		return nil, nil
+// leftovers are the deletions of the names any earlier build set the file abs (display) aside
+// under, with any run's token or 0.1.5's fixed name, whose content passes marked (DECISIONS 351).
+func (r *run) leftovers(abs, display string, marked func([]byte) bool) ([]*output, error) {
+	asides, err := r.stagedBeside(abs)
+	if err != nil {
+		return nil, displayError(path.Dir(display), err)
 	}
-	return &output{remove: true, Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Status: StatusWritten}}, nil
+	var out []*output
+	for _, aside := range asides {
+		data, err := r.p.fs.ReadFile(aside)
+		shown := path.Join(path.Dir(display), path.Base(aside))
+		switch {
+		case cannotExist(err) || err == nil && !marked(data):
+			continue
+		case err != nil:
+			return nil, displayError(shown, err)
+		}
+		out = append(out, &output{remove: true, Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Status: StatusWritten}})
+	}
+	return out, nil
 }
 
 // owned reports an output canon may overwrite: marked, or a text file its package's marked `canon.outputs` names, or a legacy manifest of it lists (CODEGEN.md §2.4, §2.9); a manifest that cannot be read is an error.

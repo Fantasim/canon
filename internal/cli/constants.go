@@ -141,6 +141,12 @@ const (
 	parentDir     = ".."
 )
 
+// The note of a writer waiting for another's lock, on standard error (DECISIONS 352).
+const (
+	fmtWaiting        = "waiting for the writer lock of package %s, held by %s"
+	fmtWaitingUnknown = "waiting for the writer lock of package %s"
+)
+
 // canon build's own text report (IMPLEMENTATION-PLAN.md §8.5).
 const (
 	fmtAdopting        = "adopting %s"

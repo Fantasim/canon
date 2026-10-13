@@ -3,6 +3,7 @@ package build
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"path"
 	"slices"
@@ -56,15 +57,28 @@ type BuildResult struct {
 	Manifest []byte // the build manifest of this build (WIRE.md §10)
 }
 
-// Build runs every phase, then writes the outputs and locks: all or nothing on a write error; a
-// crash between renames can leave a mix.
+// Build runs every phase, then writes under the package writer locks, all or nothing (a crash
+// between renames can leave a mix); a source changed meanwhile is a *StaleError, after one more
+// run unless a workspace's snapshot retries it refreshed (DECISIONS 352).
 func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, error) {
+	out, err := p.buildOnce(ctx, opt)
+	if _, viewed := p.fs.(freshViewer); errors.Is(err, ErrStale) && !viewed {
+		return p.buildOnce(ctx, opt)
+	}
+	return out, err
+}
+
+// buildOnce is one run of Build: a snapshot read, analyzed, emitted and written.
+func (p *Project) buildOnce(ctx context.Context, opt BuildOptions) (*BuildResult, error) {
 	r, err := p.prepare(ctx, opt.Packages)
 	if err != nil {
 		return nil, err
 	}
 	if err := r.validOnly(opt); err != nil {
 		return nil, err
+	}
+	if r.locking(opt) {
+		r.writes().named = r.namedByLoads(r.p.fs)
 	}
 	if err := r.analyze(ctx); err != nil {
 		return nil, err
@@ -77,16 +91,38 @@ func (p *Project) Build(ctx context.Context, opt BuildOptions) (*BuildResult, er
 	return out, nil
 }
 
-// build is Build's emit, placement and write, once the run is analyzed (CLI.md §3.4).
+// build is Build's emit, placement and write, once the run is analyzed, under the writer locks of a build that writes (CLI.md §3.4, DECISIONS 352).
 func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error) {
 	out := &BuildResult{Result: *r.result()}
 	failed := out.Summary.Errors
 	if failed > 0 && opt.OnlyRoot != "" { // a project that does not check gives its consumers nothing (DECISIONS 343)
 		return out, r.localized(ctx, &out.Result)
 	}
+	release, err := r.lockWriters(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+	out, err = r.locked(ctx, opt, out, failed)
+	if rerr := release(); rerr != nil && err == nil {
+		return nil, rerr
+	}
+	return out, err
+}
+
+// locked is build's work under the locks: the sources read again, then the emit, the stray
+// files, the placement and the write.
+func (r *run) locked(ctx context.Context, opt BuildOptions, out *BuildResult, failed int) (*BuildResult, error) {
+	if err := r.unmoved(opt); err != nil {
+		return nil, err
+	}
 	outputs, err := r.emit(ctx, opt, failed > 0)
 	if err = interrupted(ctx, err); err != nil {
 		return nil, err
+	}
+	if failed == 0 {
+		if err := r.strays(ctx, opt, outputs); err != nil {
+			return nil, err
+		}
 	}
 	if outputs, err = r.place(outputs, opt); err != nil {
 		return nil, err
@@ -110,6 +146,7 @@ func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error)
 	if err := r.commit(opt.Check, out, outputs, locks); err != nil {
 		return nil, err
 	}
+	r.sweepDead(opt, outputs)
 	return out, nil
 }
 
@@ -123,6 +160,7 @@ type output struct {
 	remove   bool   // a file the build deletes, written nowhere: a legacy `.canon-text`, a text file the package no longer writes (CODEGEN.md §2.9)
 	under    string // the optional root absent on this machine it goes under: skipped (CODEGEN.md §2.4)
 	consumer string // the consumer root it lies under: a plain build never writes it (DECISIONS 343)
+	respell  string // the same file on disk under another spelling its package listed, which takes this one (DECISIONS 357)
 }
 
 // emit runs the generator of every emit (each copy in list order, CODEGEN.md §2.8) of the selected packages whose target opt selects, in package then source order, always on p narrowed by ir.CopyOf; after an error, only the views run.
@@ -191,8 +229,20 @@ func complete(p *ir.Package) error {
 	return nil
 }
 
-// generate runs e's generator: its target's, or textFiles for a text emit (CODEGEN.md §2.9).
+// generate runs e's generator once per run: stage E's checks (DECISIONS 341, 355) and the write
+// share what it gave.
 func (r *run) generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
+	w := r.writes()
+	if g, ok := w.generated[e]; ok {
+		return g.files, g.err
+	}
+	files, err := r.generateOnce(p, e)
+	w.generated[e] = generation{files: files, err: err}
+	return files, err
+}
+
+// generateOnce runs e's generator: its target's, or textFiles for a text emit (CODEGEN.md §2.9).
+func (r *run) generateOnce(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 	gen := generators[e.Target]
 	if e.Target == ir.TargetText {
 		gen = r.textFiles

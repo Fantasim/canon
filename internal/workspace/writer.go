@@ -2,17 +2,23 @@ package workspace
 
 import (
 	"context"
+	"errors"
 	"slices"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/project"
 )
 
 // Write runs fn as the one writer on a refreshed snapshot while readers keep the current one;
 // then the disk is read again and that snapshot published and returned with fn's error, a
-// panic in fn ending the write first (API.md S9-S11).
+// panic in fn ending the write first (API.md S9-S11); a stale build runs once more (DECISIONS 352).
 func (p *Project) Write(ctx context.Context, cause Cause, fn func(context.Context, *Snapshot) error) (next *Snapshot, err error) {
-	return p.writeAs(ctx, func() wrote { return wrote{cause: cause} }, fn)
+	next, err = p.writeAs(ctx, func() wrote { return wrote{cause: cause} }, fn)
+	if errors.Is(err, build.ErrStale) {
+		next, err = p.writeAs(ctx, func() wrote { return wrote{cause: cause} }, fn)
+	}
+	return next, err
 }
 
 // wrote is what a writer did, known once it returns: why the project has a new snapshot, the

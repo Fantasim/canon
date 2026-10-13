@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+
+	"github.com/fantasim/canonlang/internal/writelock"
 )
 
 // Env is the process as a command sees it: its output streams and current directory.
@@ -79,12 +81,23 @@ func Main(ctx context.Context, args []string, env Env) int {
 	if err := o.check(); err != nil {
 		return usageError(env, fs, err)
 	}
-	inv := &invocation{ctx: ctx, env: env, opt: o, args: positional}
+	inv := &invocation{ctx: writelock.WithWaiting(ctx, waitNote(env)), env: env, opt: o, args: positional}
 	code := cmd.run(inv)
 	if ctx.Err() != nil {
 		return inv.fail(ctx.Err())
 	}
 	return code
+}
+
+// waitNote says on standard error whom a writer waits for, once per wait (DECISIONS 352).
+func waitNote(env Env) func(writelock.Wait) {
+	return func(w writelock.Wait) {
+		if w.Holder == "" {
+			writeLine(env.Stderr, msgPrefix+fmt.Sprintf(fmtWaitingUnknown, w.Package))
+			return
+		}
+		writeLine(env.Stderr, msgPrefix+fmt.Sprintf(fmtWaiting, w.Package, w.Holder))
+	}
 }
 
 // parseInterspersed parses flags anywhere among the arguments; after "--" all are arguments.

@@ -33,6 +33,7 @@ type Checker func(ctx context.Context, proj *project.Project, files []*syntax.Fi
 // reads project.canon and the file set anew (API.md S1).
 type Project struct {
 	fs    project.FS
+	disk  project.FS // the one Open was given, past any snapshot Over lays on it: writer locks and re-reads (DECISIONS 352)
 	dir   string
 	opt   Options
 	cache *Cache // nil: every call cold
@@ -64,7 +65,7 @@ func Open(fsys project.FS, dir string, opt Options) (*Project, error) {
 
 // openIn is Open with dir read as sys writes names: an FS name, its volume kept and drive upper-cased (API.md §2.2).
 func openIn(sys project.Paths, fsys project.FS, dir string, opt Options) (*Project, error) {
-	p := &Project{fs: fsys, dir: sys.FromAPI(dir, ""), opt: opt}
+	p := &Project{fs: fsys, disk: fsys, dir: sys.FromAPI(dir, ""), opt: opt}
 	if _, err := p.open(); err != nil {
 		return nil, err
 	}

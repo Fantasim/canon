@@ -43,6 +43,9 @@ func (r *run) place(outputs []*output, opt BuildOptions) ([]*output, error) {
 			return nil, displayError(o.Path, err)
 		}
 		o.old, o.existed = old, true
+		if err := r.spelling(o, own); err != nil {
+			return nil, err
+		}
 		if err := r.judge(o, opt.Adopt, own); err != nil {
 			return nil, err
 		}
@@ -50,8 +53,12 @@ func (r *run) place(outputs []*output, opt BuildOptions) ([]*output, error) {
 	return append(outputs, own.gone...), nil
 }
 
-// judge sets an existing output's status: unchanged, canon's to overwrite, adopted, or E8001; ownership is read only when the content differs (CODEGEN.md §2.4, §2.9).
+// judge sets an existing output's status: unchanged, canon's to overwrite, adopted, or E8001; ownership is read only when the content differs (CODEGEN.md §2.4, §2.9). A file to respell is written, whatever its bytes (DECISIONS 357).
 func (r *run) judge(o *output, adopt []string, own *ownership) error {
+	if o.respell != "" {
+		o.Status = StatusWritten
+		return nil
+	}
 	if bytes.Equal(o.old, o.Content) {
 		o.Status = StatusUnchanged
 		return nil
@@ -81,28 +88,12 @@ func (r *run) reserved() map[string]string {
 	return out
 }
 
-// collisions reports two outputs on one file, letter case aside, but a runtime file, and an output on a canon.lock or canon.outputs path (WIRE.md §8.1, CODEGEN.md §2.9).
+// collisions drops the clashes of outputs, reporting each E8152 stage E did not report already (WIRE.md §8.1, DECISIONS 355).
 func (r *run) collisions(outputs []*output) []*output {
-	first := map[string]*output{}
-	reserved := r.reserved()
-	kept := outputs[:0:0]
-	for _, o := range outputs {
-		key := strings.ToLower(o.Abs)
-		if o.remove { // a deletion is no output: a path differing in case from an output is another file (CODEGEN.md §2.9, DECISIONS 336)
-			kept = append(kept, o)
-			continue
-		}
-		if rel, clash := reserved[key]; clash && !o.listing {
-			diag.E8152.At(o.at, rel, o.Path).Report(r.bags[o.Package])
-			continue
-		}
-		prev, seen := first[key]
-		switch {
-		case !seen:
-			first[key] = o
-			kept = append(kept, o)
-		case prev.Abs != o.Abs || !bytes.Equal(prev.Content, o.Content) || !runtimeFile(o.Abs):
-			diag.E8152.At(o.at, prev.Path, o.Path).Report(r.bags[o.Package])
+	kept, found := r.clashes(outputs)
+	for _, c := range found {
+		if !r.writes().collided[c.key] {
+			c.b.Report(r.bags[c.pkg])
 		}
 	}
 	return kept
@@ -143,21 +134,28 @@ func firstLineIs(content []byte, line string) bool {
 
 // jsonMarked reports a JSON object whose first member is a canon $schema (WIRE.md §8.4).
 func jsonMarked(content []byte, schema *regexp.Regexp) bool {
+	_, ok := jsonSchema(content, schema)
+	return ok
+}
+
+// jsonSchema is the $schema of a JSON object whose first member is one schema matches.
+func jsonSchema(content []byte, schema *regexp.Regexp) (string, bool) {
 	content = bytes.TrimPrefix(content, []byte(jsonsrc.UTF8BOM))
 	if !json.Valid(content) {
-		return false
+		return "", false
 	}
 	dec := json.NewDecoder(bytes.NewReader(content))
+	var got string
 	want := []func(json.Token) bool{
 		func(t json.Token) bool { return t == json.Delim(objectOpen) },
 		func(t json.Token) bool { return t == wire.KeySchema },
-		func(t json.Token) bool { s, ok := t.(string); return ok && schema.MatchString(s) },
+		func(t json.Token) bool { got, _ = t.(string); return schema.MatchString(got) },
 	}
 	for _, ok := range want {
 		t, err := dec.Token()
 		if err != nil || !ok(t) {
-			return false
+			return "", false
 		}
 	}
-	return true
+	return got, true
 }

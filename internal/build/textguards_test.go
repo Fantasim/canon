@@ -118,17 +118,25 @@ func TestTextOptionalAliasNone(t *testing.T) {
 	}
 }
 
-// DECISIONS 336, CODEGEN.md §2.9: a set-aside name an earlier removal could not delete is swept when its file is gone and was listed.
+// DECISIONS 336, 351, CODEGEN.md §2.9: set-aside names of a listed file gone, any token or 0.1.5's, are swept; others stay.
 func TestTextRemovalSweepsAside(t *testing.T) {
 	fsys := textTree(optionalSource)
 	buildTree(t, fsys, build.BuildOptions{})
 	delete(fsys, "p/out/sql/s.sql")
-	fsys["p/out/sql/.s.sql.canon-tmp"] = file("SELECT 1;")
-	fsys["p/out/sql/.mine.canon-tmp"] = file("not listed")
+	swept := []string{"out/sql/.s.sql.canon-tmp", "out/sql/.s.sql.ABCDEFGHIJKLM.canon-tmp", "out/sql/.s.sql.QRSTUVWXYZ234.canon-tmp"}
+	kept := []string{"out/sql/.mine.canon-tmp", "out/sql/.s.sql.short.canon-tmp"}
+	for _, name := range append(slices.Clone(swept), kept...) {
+		fsys["p/"+name] = file("SELECT 1;")
+	}
 	fsys["p/a/a.canon"] = file(hidden(optionalSource))
 	res := buildTree(t, fsys, build.BuildOptions{})
-	if res.Summary.Errors != 0 || onFile(fsys, "out/sql/.s.sql.canon-tmp") || !onFile(fsys, "out/sql/.mine.canon-tmp") {
+	if res.Summary.Errors != 0 || slices.ContainsFunc(swept, func(n string) bool { return onFile(fsys, n) }) || !slices.ContainsFunc(kept, func(n string) bool { return onFile(fsys, n) }) {
 		t.Errorf("%saside: %v, %v", guardRuleText, codes(res.List), filesUnder(fsys, "p/out/"))
+	}
+	for _, name := range kept {
+		if !onFile(fsys, name) {
+			t.Errorf("%s%s was removed", guardRuleText, name)
+		}
 	}
 }
 

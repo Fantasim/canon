@@ -1,0 +1,20 @@
+CODEGEN.md §2.9, DECISIONS 355: canon check reports an output on the path of a package's canon.lock: the emit writes into a package directory, so its file names are generated.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The lock.
+@text("canon.lock")
+export fn lock() -> String { return "x" }
+
+emit text { out: "." }
+-- check-only --
+-- findings.txt --
+error[E8152]  a/a.canon:8:18
+  outputs collide: a/canon.lock and a/canon.lock
+
+1 error, 0 warnings in 1 package (…)

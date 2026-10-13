@@ -1,8 +1,7 @@
 package build
 
 import (
-	"crypto/rand"
-	"encoding/base32"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/writelock"
 )
 
 // OS is the operating system's file system, writable, each write atomic and synced (API.md §2.2, §10.3).
@@ -68,6 +68,11 @@ type DirSyncer interface {
 // SyncDir syncs dir's entries, so that the renames and removals in it survive a crash; nil
 // where the system cannot sync a directory, as on Windows.
 func (osFS) SyncDir(dir string) error { return wrapIO(syncDir(filepath.FromSlash(dir))) }
+
+// lockWriters takes the package writer locks of the project at dir (DECISIONS 352).
+func (osFS) lockWriters(ctx context.Context, dir string, reqs []writelock.Request) (*writelock.Held, error) {
+	return writelock.Acquire(ctx, filepath.FromSlash(dir), reqs)
+}
 
 // EvalSymlinks lets load.dir follow links through the OS file system a build reads (WIRE.md §6.5).
 func (f osFS) EvalSymlinks(name string) (string, error) { return project.EvalSymlinks(f.FS, name) }
@@ -153,11 +158,10 @@ func isLink(name string) bool {
 // tempName is a new hidden name beside name holding its whole base, so that a recovery finds
 // it, and a short random part: name's base, not the temporary part, bounds its length.
 func tempName(name string) (string, error) {
-	var b [tempRandBytes]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", fmt.Errorf(fmtWrap, err)
+	random, err := newToken()
+	if err != nil {
+		return "", err
 	}
-	random := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b[:])
 	return filepath.Join(filepath.Dir(name), tempPrefix+filepath.Base(name)+tempSep+random+tempSuffix), nil
 }
 

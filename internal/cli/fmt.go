@@ -29,6 +29,7 @@ type fmtFile struct {
 type fmtChange struct {
 	display, abs string
 	old, updated []byte
+	readers      []string // a JSON source's: the packages whose loads read it, whose writer locks fmt takes
 }
 
 // fmtRun is one canon fmt: the files it read, what it found and what it would change.

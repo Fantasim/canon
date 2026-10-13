@@ -126,18 +126,28 @@ func (f failAside) Remove(name string) error {
 	return f.mapFS.Remove(name)
 }
 
-// CODEGEN.md §2.9 Migration, DECISIONS 326: a set-aside file that cannot be deleted is an error saying the outputs are written, and the next build sweeps it.
+// asideLeft reports a file of fsys staged under prefix, a set-aside name with a run's token (DECISIONS 351).
+func asideLeft(fsys mapFS, prefix string) bool {
+	for name := range fsys { //canon:unordered an existence test
+		if strings.HasPrefix(name, prefix) && strings.HasSuffix(name, ".canon-tmp") {
+			return true
+		}
+	}
+	return false
+}
+
+// CODEGEN.md §2.9 Migration, DECISIONS 326, 351: a set-aside file that cannot be deleted is an error saying the outputs are written, and the next build sweeps it, whatever its run's token.
 func TestTextEmitAsideSweep(t *testing.T) {
 	for _, c := range []struct {
 		name, aside string
 		tree        func() mapFS
 	}{
-		{"legacy manifest", "p/out/sql/..canon-text.canon-tmp", func() mapFS {
+		{"legacy manifest", "p/out/sql/..canon-text.", func() mapFS {
 			fsys := textTree(textEmit)
 			fsys["p/out/sql/.canon-text"] = file(legacyOne)
 			return fsys
 		}},
-		{"stale canon.outputs", "p/a/.canon.outputs.canon-tmp", func() mapFS {
+		{"stale canon.outputs", "p/a/.canon.outputs.", func() mapFS {
 			fsys := textTree(textSource)
 			fsys["p/a/canon.outputs"] = file(textOutputs)
 			return fsys
@@ -152,11 +162,11 @@ func TestTextEmitAsideSweep(t *testing.T) {
 		if _, err := p.Build(context.Background(), build.BuildOptions{}); !errors.Is(err, errStuck) {
 			t.Fatalf("%s%s: %v", rule, c.name, err)
 		}
-		if _, left := fsys[c.aside]; !left {
+		if !asideLeft(fsys, c.aside) {
 			t.Fatalf("%s%s: no set-aside file among %v", rule, c.name, filesUnder(fsys, "p/"))
 		}
 		res := buildTree(t, fsys, build.BuildOptions{})
-		if _, left := fsys[c.aside]; left || res.Summary.Errors != 0 {
+		if asideLeft(fsys, c.aside) || res.Summary.Errors != 0 {
 			t.Errorf("%s%s: the next build left %v, %v", rule, c.name, filesUnder(fsys, "p/"), codes(res.List))
 		}
 	}

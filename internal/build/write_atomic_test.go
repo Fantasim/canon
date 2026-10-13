@@ -65,7 +65,7 @@ func entries(t *testing.T, dir string) int {
 // API.md N11: WriteAtomic replaces a file through a temporary file, keeping its permissions.
 func TestWriteAtomicReplaces(t *testing.T) {
 	dir, abs := oldFile(t)
-	if err := build.WriteAtomic(build.OS(), abs, []byte("new\n")); err != nil {
+	if err := stagedWrite(build.OS(), abs, []byte("new\n")); err != nil {
 		t.Fatal(err)
 	}
 	got, err := os.ReadFile(abs)
@@ -94,7 +94,7 @@ func TestWriteAtomicFailures(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dir, abs := oldFile(t)
-			if err := build.WriteAtomic(tt.fsys, abs, []byte("new\n")); !errors.Is(err, errInjected) {
+			if err := stagedWrite(tt.fsys, abs, []byte("new\n")); !errors.Is(err, errInjected) {
 				t.Fatalf("error %v", err)
 			}
 			got, err := os.ReadFile(abs)
@@ -149,26 +149,32 @@ func TestOSSyncDir(t *testing.T) {
 	}
 }
 
-// ADR-0010 (log-2026-09-29 M4 U8-r): a link planted at an output's temporary name is removed, never written through.
-func TestPlantedTempLinkRemoved(t *testing.T) {
+// stagedWrite is WriteAtomic by a run of its own (DECISIONS 351).
+func stagedWrite(fsys build.WriteFS, abs string, data []byte) error {
+	s, err := build.NewStaging()
+	if err != nil {
+		return err
+	}
+	return s.WriteAtomic(fsys, abs, data)
+}
+
+// DECISIONS 351: two runs replacing one file at once never share a staging name, so each
+// ends with one whole content and nothing left beside it.
+func TestWriteAtomicConcurrentRuns(t *testing.T) {
 	dir, abs := oldFile(t)
-	outside := filepath.Join(t.TempDir(), "target.txt")
-	if err := os.WriteFile(outside, []byte("outside\n"), 0o600); err != nil {
-		t.Fatal(err)
+	contents := [][]byte{[]byte("first\n"), []byte("second\n")}
+	errs := make(chan error, len(contents))
+	for _, c := range contents {
+		go func() { errs <- stagedWrite(build.OS(), abs, c) }()
 	}
-	if os.Symlink(outside, filepath.Join(dir, ".a.canon.canon-tmp")) != nil {
-		t.Skip("no symbolic links here")
+	for range contents {
+		if err := <-errs; err != nil {
+			t.Errorf("DECISIONS 351: %v", err)
+		}
 	}
-	if err := build.WriteAtomic(build.OS(), abs, []byte("new\n")); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := os.ReadFile(outside); err != nil || string(got) != "outside\n" {
-		t.Errorf("the link's target holds %q, %v", got, err)
-	}
-	info, err := os.Lstat(abs)
-	got, _ := os.ReadFile(abs)
-	if err != nil || !info.Mode().IsRegular() || string(got) != "new\n" || entries(t, dir) != 1 {
-		t.Errorf("output %q (%v, %v), %d entries", got, info, err, entries(t, dir))
+	got, err := os.ReadFile(abs)
+	if err != nil || !bytes.Equal(got, contents[0]) && !bytes.Equal(got, contents[1]) || entries(t, dir) != 1 {
+		t.Errorf("DECISIONS 351: file %q (%v), %d entries", got, err, entries(t, dir))
 	}
 }
 

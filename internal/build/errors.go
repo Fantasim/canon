@@ -1,6 +1,10 @@
 package build
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
 
 var (
 	// ErrUnknownLayer is a layer name no loaded package has a file for (API.md O4).
@@ -15,6 +19,8 @@ var (
 	// ErrNotConsumerRoot and ErrOnlyRootAdopt refuse a BuildOptions.OnlyRoot (DECISIONS 343).
 	ErrNotConsumerRoot = errors.New("--only-root names no consumer root of the project")
 	ErrOnlyRootAdopt   = errors.New("--only-root cannot adopt a file")
+	// ErrStale is a build whose sources changed between its snapshot and its writer locks (DECISIONS 352).
+	ErrStale = errors.New("sources changed while the build ran")
 
 	errNoProgram   = errors.New("the checker returned no program")
 	errLinkLoop    = errors.New("too many levels of symbolic links")
@@ -35,3 +41,15 @@ func (e *internalError) Unwrap() []error { return []error{ErrInternal, e.cause} 
 func internal(cause error) error {
 	return &internalError{cause: cause}
 }
+
+// StaleError is ErrStale naming the files that changed, display paths in byte order (DECISIONS 352).
+type StaleError struct {
+	Files []string
+}
+
+func (e *StaleError) Error() string {
+	return fmt.Sprintf(fmtStale, ErrStale, strings.Join(e.Files, listJoin))
+}
+
+// Unwrap is ErrStale.
+func (e *StaleError) Unwrap() error { return ErrStale }

@@ -69,6 +69,7 @@ const (
 const (
 	rootMark       = "@"
 	pathSep        = "/"
+	pathRune       = '/'
 	qnameSep       = "."
 	lockName       = "canon.lock"
 	lineEnd        = listingEnd
@@ -91,12 +92,14 @@ const (
 	sniffBytes = 4096
 )
 
-// Written files: a temporary file's name around its target's, and the modes of what is created.
+// Written files: a staged name around its target's and a run's token, and created modes (DECISIONS 351).
 const (
 	tempPrefix    = "."
 	tempSep       = "."
 	tempSuffix    = ".canon-tmp"
-	tempRandBytes = 8  // the random part of the OS WriteFile's temporary name
+	tokenBytes    = 8  // also the OS WriteFile's random part
+	tokenLen      = 13 // tokenBytes in base32
+	tokenAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 	maxLinks      = 40 // the symbolic links the OS WriteFile follows to the file it writes
 	linkOp        = "readlink"
 	opMkdir       = "mkdir" // the op of a refused directory creation (DECISIONS 332)
@@ -177,6 +180,19 @@ var conventionPatterns = map[diag.Kind]string{
 	diag.KindUpperCamel: patternUpperCamel, diag.KindLowerCamel: patternLowerCamel,
 	diag.KindUpperSnake: patternUpperSnake, diag.KindLowerSnake: patternLowerSnake,
 }
+
+// A stale build's message; what a marker names (DECISIONS 352, 356).
+const (
+	fmtStale      = "%v: %s"
+	listJoin      = ", "
+	schemaTypeSep = "@"
+	goRuntimeDir  = "rt"
+)
+
+var (
+	markerDir     = regexp.MustCompile(`^// (?:Code generated|GENERATED) by canon from (.+)/\. DO NOT EDIT\.$`)
+	markerRuntime = regexp.MustCompile(`^// (?:Code generated|GENERATED) by canon: (.+)\. DO NOT EDIT\.$`)
+)
 
 // Consumer roots: a refused --only-root's root; the project directory where roots sit as declared.
 const (

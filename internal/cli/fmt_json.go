@@ -59,7 +59,11 @@ func (r *fmtRun) formatJSON(f build.JSONSource) error {
 	if bytes.Equal(src.Content, f.Content) { // the bytes the loads read: their offsets hold
 		canonicalNumbers(root, f.Numbers)
 	}
+	before := len(r.changes)
 	r.record(f.Display, abs, data, jsonsrc.Format(root))
+	if len(r.changes) > before {
+		r.changes[before].readers = f.Packages
+	}
 	return nil
 }
 

@@ -52,6 +52,7 @@ type run struct {
 	epoch     uint64                  // the cache's epoch of the program, 0 for none (IMPLEMENTATION-PLAN §7.6)
 	memoized  bool                    // the evaluator replays the cache's memo, and so logs no cause
 	runner    *rules.Runner           // stages C and D's
+	w         *runWrites              // its staging token and what its writes read (stage.go), made on first use
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
@@ -128,7 +129,9 @@ func (r *run) stages(ctx context.Context) error {
 	if err := r.stageE(ctx); err != nil {
 		return err
 	}
-	if err := r.feedback(ctx); err != nil { // DECISIONS 341
+	free := r.errorFree()
+	r.collide(free)                               // DECISIONS 355
+	if err := r.feedback(ctx, free); err != nil { // DECISIONS 341
 		return err
 	}
 	r.reportStableAmendments()

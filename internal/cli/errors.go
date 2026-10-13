@@ -28,6 +28,8 @@ var (
 	errDenied         = errors.New("permission denied")
 	errUnreadable     = errors.New("cannot be read")
 	errUnwritable     = errors.New("cannot be written")
-	errTooLarge       = errors.New("too large")
-	errUnknownTopic   = errors.New("unknown topic; the topics are")
+	// errChangedMeanwhile is a file another writer changed while canon fmt ran (DECISIONS 352).
+	errChangedMeanwhile = errors.New("changed while canon fmt ran; nothing was written, run it again")
+	errTooLarge         = errors.New("too large")
+	errUnknownTopic     = errors.New("unknown topic; the topics are")
 )

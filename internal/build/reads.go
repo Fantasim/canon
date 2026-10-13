@@ -64,7 +64,7 @@ func strictlySorted(lines []Listed) bool {
 // Over is p reading and writing through fsys, its directory and options kept: the project as a
 // workspace snapshot sees it (API.md S1).
 func (p *Project) Over(fsys project.FS) *Project {
-	return &Project{fs: fsys, dir: p.dir, opt: p.opt, cache: p.cache}
+	return &Project{fs: fsys, disk: p.disk, dir: p.dir, opt: p.opt, cache: p.cache}
 }
 
 // FS is the file system p was opened on.
