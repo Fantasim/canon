@@ -261,7 +261,9 @@ included) and that no emit of the build writes (any target, whatever `--target`)
 `build --check` and `W8030` in a plain build, when its marker names a selected package or no
 package of the project (a runtime file: when no emit of the build writes into its directory).
 `canon` never deletes it: a marker proves nothing (a text file is removed only on `canon.outputs`'
-hash, §2.9). Text files carry no marker and stay §2.9's.
+hash, §2.9). Text files carry no marker and stay §2.9's. A dead run's staging files are removed
+by a later build only beside outputs it writes or removes under its locks (DECISIONS 351, 352):
+stages beside the old outputs of an emit that moved stay until that directory is written again.
 
 ### 2.5 File headers and fixed comments
 

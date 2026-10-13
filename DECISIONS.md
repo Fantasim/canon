@@ -3615,7 +3615,10 @@ round 2", "PS1 review", "PS2 round 2"):
      `$schema` names its type's package, not its writer's); a runtime file is a stray when no
      file of the build lands in its directory; consumer and absent roots' directories are
      skipped by a plain build, and `--only-root R` examines R's only; a run with errors reports
-     no stray (file names cannot be generated).
+     no stray (file names cannot be generated); an unselected package whose emits may write into
+     a candidate's directory is analysed once for its file names, and if it has errors no stray
+     is reported in the directories it reaches (no false positive; a full `build --check`
+     selects every package).
 
 357. **A case-only rename of a text file (CODEGEN.md §2.9; amends 326, 336).** On a file system
      where the declared name and a listed name differing only in case are one file (the
