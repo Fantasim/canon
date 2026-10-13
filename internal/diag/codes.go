@@ -6835,7 +6835,7 @@ func (codeE8008) At(span source.Span, dir string, a string, b string) *Builder {
 	return newBuilder(&Registry[255], 0, span, dir, a, b)
 }
 
-// E8009: invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343) (CODEGEN.md §2.1, §2.8).
+// E8009: invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343, 362) (CODEGEN.md §2.1, §2.8).
 var E8009 codeE8009
 
 type codeE8009 struct{}
