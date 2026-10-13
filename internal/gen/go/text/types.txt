@@ -72,15 +72,23 @@ func {{.FromCode}}(code {{.Codes}}) ({{.Name}}, bool) {
 }
 
 {{end}}
-{{define "jsonDocument"}}// jsonDocument is raw without a UTF-8 byte order mark, which must then be one JSON value read as
-// a source file is: UTF-8, no escaped unpaired surrogate, no object holding a key twice, nothing
-// nested deeper than 512 arrays and objects. The first finding is the error, at its path.
+{{define "jsonDocument"}}// jsonDocument checks a text file's bytes and returns its one JSON value (CODEGEN.md §5.13, DECISIONS 361):
+// the first failure in document order is the error, a syntax error included.
 func jsonDocument({{.L.Name}} string, {{.L.Raw}} []byte) ({{.JSON}}.RawMessage, error) {
+	bom := 0
 	if len({{.L.Raw}}) >= 3 && string({{.L.Raw}}[:3]) == "\xef\xbb\xbf" {
-		{{.L.Raw}} = {{.L.Raw}}[3:]
+		{{.L.Raw}}, bom = {{.L.Raw}}[3:], 3
 	}
+	// A syntax error cuts the text at its byte (a NUL after the text is that byte when it ends too early): what the
+	// checks below find before the cut comes first, and a string the cut splits is no key.
+	syntax := -1
 	if !{{.JSON}}.Valid({{.L.Raw}}) {
-		return nil, {{.FMT}}.Errorf("%s: $: invalid JSON", {{.L.Name}})
+		syntax = len({{.L.Raw}})
+		var probe {{.JSON}}.RawMessage
+		if found, ok := {{.JSON}}.Unmarshal(append({{.L.Raw}}[:len({{.L.Raw}}):len({{.L.Raw}})], 0), &probe).(*{{.JSON}}.SyntaxError); ok {
+			syntax = int(found.Offset) - 1
+		}
+		{{.L.Raw}} = {{.L.Raw}}[:syntax]
 	}
 	// level is one open array or object: an object's keys so far, decoded (a set past 32 of them), and
 	// its current key as written; an array's current index.
@@ -142,8 +150,23 @@ func jsonDocument({{.L.Name}} string, {{.L.Raw}} []byte) ({{.JSON}}.RawMessage, 
 		}
 		return code
 	}
-	pairedSurrogates := func(text []byte) bool {
-		for at := 0; at < len(text); at++ {
+	// validUTF8 and pairedSurrogates answer for the text of a string: closed, all of it; cut by a syntax error,
+	// only what is certain so far (a split rune or escape may still be completed).
+	validUTF8 := func(text []byte, closed bool) bool {
+		if closed {
+			return {{.UTF8}}.Valid(text)
+		}
+		for len(text) > 0 {
+			code, size := {{.UTF8}}.DecodeRune(text)
+			if code == {{.UTF8}}.RuneError && size <= 1 {
+				return !{{.UTF8}}.FullRune(text)
+			}
+			text = text[size:]
+		}
+		return true
+	}
+	pairedSurrogates := func(text []byte, closed bool) bool {
+		for at := 0; at+1 < len(text); at++ {
 			if text[at] != '\\' {
 				continue
 			}
@@ -151,14 +174,21 @@ func jsonDocument({{.L.Name}} string, {{.L.Raw}} []byte) ({{.JSON}}.RawMessage, 
 			if text[at] != 'u' {
 				continue
 			}
+			if at+5 > len(text) {
+				return true
+			}
 			switch code := hexValue(text[at+1 : at+5]); {
 			case code >= 0xdc00 && code <= 0xdfff:
 				return false
 			case code >= 0xd800 && code <= 0xdbff:
-				if at+10 >= len(text) || text[at+5] != '\\' || text[at+6] != 'u' {
+				rest := text[at+5:]
+				switch {
+				case len(rest) == 0 || len(rest) == 1 && rest[0] == '\\' || len(rest) > 1 && len(rest) < 6 && rest[0] == '\\' && rest[1] == 'u':
+					return !closed // the pair may still follow
+				case len(rest) < 2 || rest[0] != '\\' || rest[1] != 'u':
 					return false
 				}
-				if low := hexValue(text[at+7 : at+11]); low < 0xdc00 || low > 0xdfff {
+				if low := hexValue(rest[2:6]); low < 0xdc00 || low > 0xdfff {
 					return false
 				}
 				at += 10
@@ -183,40 +213,53 @@ func jsonDocument({{.L.Name}} string, {{.L.Raw}} []byte) ({{.JSON}}.RawMessage, 
 			levels = levels[:len(levels)-1]
 		case ',':
 			if top := &levels[len(levels)-1]; top.object {
-				top.wantKey = true
+				top.key, top.wantKey = nil, true
 			} else {
 				top.index++
 			}
 		case '"':
 			end, escaped := at+1, false
-			for {{.L.Raw}}[end] != '"' {
+			for end < len({{.L.Raw}}) && {{.L.Raw}}[end] != '"' {
 				if {{.L.Raw}}[end] == '\\' {
 					end, escaped = end+1, true
 				}
 				end++
 			}
+			if end >= len({{.L.Raw}}) { // a syntax error cuts this string: its key is not yet known to repeat, its bytes may already fail
+				text := {{.L.Raw}}[at+1:]
+				if !validUTF8(text, false) {
+					return nil, {{.FMT}}.Errorf("%s: %s: not UTF-8", {{.L.Name}}, pathHere())
+				}
+				if escaped && !pairedSurrogates(text, false) {
+					return nil, {{.FMT}}.Errorf("%s: %s: unpaired surrogate", {{.L.Name}}, pathHere())
+				}
+				at = end
+				break
+			}
 			text := {{.L.Raw}}[at+1 : end]
-			if len(levels) > 0 && levels[len(levels)-1].wantKey {
+			if !validUTF8(text, true) {
+				return nil, {{.FMT}}.Errorf("%s: %s: not UTF-8", {{.L.Name}}, pathHere())
+			}
+			if escaped && !pairedSurrogates(text, true) {
+				return nil, {{.FMT}}.Errorf("%s: %s: unpaired surrogate", {{.L.Name}}, pathHere())
+			}
+			if len(levels) > 0 && levels[len(levels)-1].wantKey { // the key's decoded text names it from here on
 				top := &levels[len(levels)-1]
 				top.key, top.wantKey = text, false
-				key := text
 				if escaped {
 					var decoded string
 					_ = {{.JSON}}.Unmarshal({{.L.Raw}}[at:end+1], &decoded)
-					key = []byte(decoded)
+					top.key = []byte(decoded)
 				}
-				if seen(top, key) {
-					return nil, {{.FMT}}.Errorf("%s: %s: repeated key", {{.L.Name}}, pathHere())
+				if seen(top, top.key) {
+					return nil, {{.FMT}}.Errorf("%s: %s: duplicate key", {{.L.Name}}, pathHere())
 				}
-			}
-			if !{{.UTF8}}.Valid(text) {
-				return nil, {{.FMT}}.Errorf("%s: %s: not UTF-8", {{.L.Name}}, pathHere())
-			}
-			if escaped && !pairedSurrogates(text) {
-				return nil, {{.FMT}}.Errorf("%s: %s: unpaired surrogate", {{.L.Name}}, pathHere())
 			}
 			at = end
 		}
+	}
+	if syntax >= 0 {
+		return nil, {{.FMT}}.Errorf("%s: invalid JSON at byte %d", {{.L.Name}}, syntax+bom)
 	}
 	return {{.L.Raw}}, nil
 }

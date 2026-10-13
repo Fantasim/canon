@@ -1,4 +1,4 @@
-CODEGEN.md §2.1, §2.2, §2.8, §2.9, §5.13, WIRE.md §8.5: a project of go types-mode emits that stage E passes builds, each emit written as two copies under roots with different go_module paths; package a's @text fns render JSON files, which its public decoders read back (gen/go/a/roundtrip_test.go): a none marker, an absent optional, a `T? = d` holding none written null, enums by wire value and by code, maps keyed by enums, records nested and of another package, a keyed list of full rows, a nested table with a retired entry, pairs, bits, `int`, a path, an inline variant, a dependent field, a load.defines ref, units, sized integers, defaults of every constant kind (records and variants of its own package and another's included); then every §5.13 failure kind with its JSON path; WIRE.md §3.1-§3.2's byte rules (UTF-8, repeated keys, unpaired surrogates, nesting deeper than 512); jsonDuration against exact arithmetic and in linear time; fields named like imports (utf8, json); and a benchmark.
+CODEGEN.md §2.1, §2.2, §2.8, §2.9, §5.13, WIRE.md §8.5: a project of go types-mode emits that stage E passes builds, each emit written as two copies under roots with different go_module paths; package a's @text fns render JSON files, which its public decoders read back (gen/go/a/roundtrip_test.go): a none marker, an absent optional, a `T? = d` holding none written null, enums by wire value and by code, maps keyed by enums, records nested and of another package, a keyed list of full rows, a nested table with a retired entry, pairs, bits, `int`, a path, an inline variant, a dependent field, a load.defines ref, units, sized integers, defaults of every constant kind (records and variants of its own package and another's included); then every §5.13 failure kind with its JSON path; WIRE.md §3.1-§3.2's byte rules (UTF-8, duplicate keys, unpaired surrogates, nesting deeper than 512); jsonDuration against exact arithmetic and in linear time; fields named like imports (utf8, json); and a benchmark.
 -- project.canon --
 project demo {
   canon: "0.1"
@@ -305,8 +305,8 @@ func TestSourceWire(t *testing.T) {
 func TestInvalidInput(t *testing.T) {
 	const row = `"at": {"x": 1}, "kind": "empty", "k": "one", "element": 1, "byRarity": {}`
 	cases := []struct{ name, doc, want string }{
-		{"invalid JSON", `{"id": `, `Thing: $: invalid JSON`},
-		{"trailing content", `{} {}`, `Thing: $: invalid JSON`},
+		{"invalid JSON", `{"id": `, `Thing: invalid JSON at byte 7`},
+		{"trailing content", `{} {}`, `Thing: invalid JSON at byte 3`},
 		{"not UTF-8", "{\"id\": \"\xff\"}", `Thing: $.id: not UTF-8`},
 		{"wrong kind", `{"id": 1, ` + row + `}`, `Thing: $.id: expected a string`},
 		{"wrong kind of document", `[]`, `Thing: $: expected an object`},
@@ -336,11 +336,11 @@ func TestInvalidInput(t *testing.T) {
 		{"define", `{"id": "z", ` + row + `, "sort": "K_C"}`, `Thing: $.sort: define K_C is not in this program's Kinds table`},
 		{"element of a list", `{"id": "z", ` + row + `, "trail": [{"x": 1}, {"x": "2"}]}`, `Thing: $.trail[1].x: expected an integer`},
 		{"retired not true", `{"id": "z", ` + row + `, "members": {"ann": {"$retired": false, "title": "A"}}}`, `Thing: $.members.ann.$retired: expected true`},
-		{"repeated key", `{"id": "a", "id": "b", ` + row + `}`, `Thing: $.id: repeated key`},
-		{"repeated map key", `{"id": "z", ` + row + `, "byElement": {"1": 1, "1": 2}}`, `Thing: $.byElement.1: repeated key`},
-		{"repeated escaped key", `{"id": "z", ` + row + `, "members": {"ann": {"title": "A", "\u0074itle": "B"}}}`, `Thing: $.members.ann.\u0074itle: repeated key`},
+		{"repeated key", `{"id": "a", "id": "b", ` + row + `}`, `Thing: $.id: duplicate key`},
+		{"repeated map key", `{"id": "z", ` + row + `, "byElement": {"1": 1, "1": 2}}`, `Thing: $.byElement.1: duplicate key`},
+		{"repeated escaped key", `{"id": "z", ` + row + `, "members": {"ann": {"title": "A", "\u0074itle": "B"}}}`, `Thing: $.members.ann.title: duplicate key`},
 		{"unpaired surrogate", `{"id": "\ud800", ` + row + `}`, `Thing: $.id: unpaired surrogate`},
-		{"unpaired low surrogate", `{"id": "z", ` + row + `, "trail": [{"x": 1}, {"x": 2, "\udc00": 1}]}`, `Thing: $.trail[1].\udc00: unpaired surrogate`},
+		{"unpaired low surrogate", `{"id": "z", ` + row + `, "trail": [{"x": 1}, {"x": 2, "\udc00": 1}]}`, `Thing: $.trail[1]: unpaired surrogate`},
 		{"not UTF-8 in a list", "{\"id\": \"z\", \"trail\": [{\"x\": 1, \"note\": \"\xc3\"}]}", `Thing: $.trail[0].note: not UTF-8`},
 	}
 	for _, c := range cases {
@@ -355,7 +355,7 @@ func TestInvalidInput(t *testing.T) {
 	if _, err := DecodeThings([]byte(`{"all": [{"id": "a", ` + row + `}, {"id": "a", ` + row + `}]}`)); err == nil || !strings.Contains(err.Error(), `$.all[1].id: duplicate id "a"`) {
 		t.Errorf("a duplicate key: %v", err)
 	}
-	if _, err := DecodeThings([]byte(`{"all": [], "note": "a", "byRarity": {"rare": 1, "rare": 2}, "note": "b"}`)); err == nil || err.Error() != `Things: $.byRarity.rare: repeated key` {
+	if _, err := DecodeThings([]byte(`{"all": [], "note": "a", "byRarity": {"rare": 1, "rare": 2}, "note": "b"}`)); err == nil || err.Error() != `Things: $.byRarity.rare: duplicate key` {
 		t.Errorf("the first repeated key: %v", err)
 	}
 }
@@ -384,7 +384,7 @@ func TestDocumentRules(t *testing.T) {
 	for i := range 40 {
 		fmt.Fprintf(&many, `"k%d": %d, `, i, i)
 	}
-	if _, err := jsonDocument("N", []byte(`{"o": {`+many.String()+`"k5": 0}}`)); err == nil || err.Error() != "N: $.o.k5: repeated key" {
+	if _, err := jsonDocument("N", []byte(`{"o": {`+many.String()+`"k5": 0}}`)); err == nil || err.Error() != "N: $.o.k5: duplicate key" {
 		t.Errorf("a repeated key past 32: %v", err)
 	}
 	if _, err := jsonDocument("N", []byte(`[{"a": 1, "b": 2}, {"b": 1, "a": 2}]`)); err != nil {

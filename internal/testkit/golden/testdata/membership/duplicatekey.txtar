@@ -1,0 +1,33 @@
+DECISIONS 361 (and its review of 2026-10-12), CODEGEN.md §5.13, WIRE.md §3.2: a go types-mode decoder refuses a repeated key with `duplicate key` at its JSON path, and a syntax error with `invalid JSON at byte N`, the texts every other runtime says.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- demo/demo.canon --
+/// Demo.
+package demo
+
+/// A destination.
+enum Dst { hp, mp, sp }
+
+/// A holder.
+record Holder {
+  /// Its destination.
+  d: Dst
+}
+
+/// The holder file.
+@text("holder.json")
+export fn holder() -> Holder { return { d: hp } }
+
+/// The holders file.
+@text("holders.json")
+export fn holders() -> [Holder] { return [{ d: hp }] }
+
+emit go { out: "@gen/go", package: "demo", mode: types }

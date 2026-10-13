@@ -53,7 +53,7 @@ func nestCases() []strictCase {
 			nestDrawersOld, `"drawers": {"b": {"n": 2}, "a": {"n": "x"}}`, `value.drawers.a.n: expected an integer`, "", nestFile},
 		{"nesttablenotrow", "WIRE.md §5.7 (a row that is no object)", nestValueFile,
 			nestDrawersOld, `"drawers": {"b": 1}`, `value.drawers.b: expected an object`, "", nestFile},
-		{"nesttabledup", "WIRE.md §5.7 (a repeated key is refused by the file reader)", nestValueFile,
+		{"nesttabledup", "WIRE.md §5.7 (a duplicate key is refused by the file reader)", nestValueFile,
 			nestDrawersOld, `"drawers": {"a": {"n": 1}, "a": {"n": 2}}`, `value.drawers.a: duplicate key`, "", nestFile},
 		{"nesttableempty2", "WIRE.md §5.7 (an empty object is an empty table, an absent optional table is none)", nestValueFile,
 			nestDrawersOld, `"drawers": {}`, "", strings.Replace(nestGoodDump, "drawers=b:2,a:1r", "drawers=", 1), nestFile},

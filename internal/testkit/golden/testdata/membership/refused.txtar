@@ -1,0 +1,69 @@
+CONFORMANCE.md §2.2 (a collection method, `in` on a collection and `match` are outside the portable subset: E9001), STDLIB.md §5: no target translates `x in keyedList`, nor a `match`, so a generated function never evaluates them; only stage E does, and the emits bake its answer (keyed.txtar).
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- demo/demo.canon --
+/// Demo.
+package demo
+
+/// A destination.
+enum Dst { hp, mp, sp }
+
+/// A member of the pool.
+record P {
+  /// Its pool entry.
+  m: ref pool
+  /// A number.
+  n: Int
+}
+
+/// The pool.
+let pool: table P = {
+  a { m: a, n: 1 }
+}
+
+/// The keyed list.
+let ks: [P] keyed by m = [{ m: a, n: 3 }]
+
+/// Membership of a ref, in a translated function.
+export fn probe(n: Int) -> Bool {
+  let r: ref pool = pool.a
+  return r in ks
+}
+
+/// A match in a translated function.
+export fn byMatch(d: Dst, n: Int) -> Int {
+  return match d {
+    hp => n
+    mp => n * 2
+    sp => n * 3
+  }
+}
+
+/// A holder.
+record Holder {
+  /// Its destination.
+  d: Dst
+
+  /// Weighted by match.
+  export fn weighted(self, n: Int) -> Int {
+    return match self.d {
+      hp => n
+      _ => n * 3
+    }
+  }
+}
+
+test "weighted" {
+  let h: Holder = { d: mp }
+  expect h.weighted(2) == 6
+}
+
+emit go { out: "@gen/go", package: "demo" }

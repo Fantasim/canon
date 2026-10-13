@@ -1,0 +1,151 @@
+STDLIB.md §5 "Membership", DECISIONS 314, 317, log-2026-10-05 "Showcase #1 fixed": the evaluator is the oracle for `x in xs` on a keyed list where x is a ref, and the Go, C++ and TypeScript emits carry exactly what it computed, in precomputed getters, precomputed package fns and a method on every row. The tests below state the expected answers; internal/testkit/golden/membership_test.go compares each generated runtime to the same table.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- demo/demo.canon --
+/// Demo.
+package demo
+
+/// A member of the pool.
+record P {
+  /// Its pool entry.
+  m: ref pool
+  /// A number.
+  n: Int
+
+  /// Whether the entry ref is an element of the keyed list.
+  export fn refIn(self) -> Bool { return self.m in ks }
+  /// Whether the entry itself is an element of the keyed list.
+  export fn selfIn(self) -> Bool { return self in ks }
+  /// Whether the keyed list has the entry as a key.
+  export fn keyed(self) -> Bool { return ks.hasKey(self.m) }
+}
+
+/// The pool.
+let pool: table P = {
+  a { m: a, n: 1 }
+  b { m: a, n: 3 }
+  c { m: b, n: 2 }
+}
+
+/// The keyed list.
+let ks: [P] keyed by m = [{ m: a, n: 3 }]
+
+/// A monster.
+record M {
+  /// Hit points.
+  hp: Int
+}
+
+/// The monsters.
+let ms: table M = {
+  wolf { hp: 1 }
+  bear { hp: 2 }
+}
+
+/// A spawn.
+record S {
+  /// A ref.
+  w: ref ms
+  /// A number.
+  n: Int
+}
+
+/// The spawns.
+let ss: [S] keyed by w = [{ w: wolf, n: 2 }]
+
+/// A ref to the element type, by identity.
+export fn spawnRef() -> Bool {
+  let r: ref ss = ss.at(0)
+  return r in ss
+}
+
+/// An element, by equality.
+export fn firstSpawn() -> Bool { return ss.at(0) in ss }
+
+/// The key test.
+export fn wolfKey() -> Bool {
+  let r: ref ms = ms.wolf
+  return ss.hasKey(r)
+}
+
+/// A ref element.
+export fn pooledRef() -> Bool {
+  let r: ref pool = pool.a
+  return r in ks
+}
+
+/// Same-table ref, by identity.
+export fn pooledKey() -> Bool {
+  let r: ref pool = pool.a
+  return ks.hasKey(r)
+}
+
+/// The index of an entry.
+export fn indexOfRef() -> Int? {
+  let r: ref pool = pool.a
+  return ks.indexOf(r)
+}
+
+test "a ref to the element type is an element, by identity" {
+  expect spawnRef()
+  expect firstSpawn()
+  expect not pooledRef()
+  expect indexOfRef() == none
+}
+
+test "a key is tested with hasKey" {
+  expect wolfKey()
+  expect pooledKey()
+}
+
+test "every row answers as its own method does" {
+  expect not pool.a.refIn()
+  expect not pool.a.selfIn()
+  expect pool.a.keyed()
+  expect not pool.b.refIn()
+  expect not pool.b.selfIn()
+  expect pool.b.keyed()
+  expect not pool.c.refIn()
+  expect not pool.c.selfIn()
+  expect not pool.c.keyed()
+  expect not ks.at(0).refIn()
+  expect ks.at(0).selfIn()
+  expect ks.at(0).keyed()
+}
+
+emit go { out: "@gen/go", package: "demo" }
+emit cpp { out: "@gen/cpp", namespace: "demo" }
+emit ts { out: "@gen/ts/demo.ts" }
+-- answers/answers.canon --
+/// The evaluator's answers, one line each, in the order every generated runtime prints them (membership_test.go).
+package answers
+
+import demo { pool, ks, spawnRef, firstSpawn, wolfKey, pooledRef, pooledKey, indexOfRef }
+
+/// A printed line.
+record Line {
+  /// Its text.
+  text: String
+}
+
+/// The lines.
+let lines: table Line = {
+  l00 { text: "fn spawnRef {spawnRef()}" }
+  l01 { text: "fn firstSpawn {firstSpawn()}" }
+  l02 { text: "fn wolfKey {wolfKey()}" }
+  l03 { text: "fn pooledRef {pooledRef()}" }
+  l04 { text: "fn pooledKey {pooledKey()}" }
+  l05 { text: "fn indexOfRef {if indexOfRef() == none { "none" } else { "{indexOfRef()!}" }}" }
+  l06 { text: "row pool 0 {pool.a.refIn()} {pool.a.selfIn()} {pool.a.keyed()}" }
+  l07 { text: "row pool 1 {pool.b.refIn()} {pool.b.selfIn()} {pool.b.keyed()}" }
+  l08 { text: "row pool 2 {pool.c.refIn()} {pool.c.selfIn()} {pool.c.keyed()}" }
+  l09 { text: "row ks 0 {ks.at(0).refIn()} {ks.at(0).selfIn()} {ks.at(0).keyed()}" }
+}

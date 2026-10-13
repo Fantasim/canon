@@ -400,7 +400,7 @@ func TestFileDecoderFailures(t *testing.T) {
 		t.Errorf("a partial map: %d entries", b.Len())
 	}
 	_, err = DecodeBonusesFile([]byte(`{"DST_STR": {"dst": "x"}, "DST_STR": {"dst": "y"}}`))
-	failsAt(t, err, "repeated key")
+	failsAt(t, err, "duplicate key")
 	_, err = DecodeBonusesFile([]byte(`[]`))
 	failsAt(t, err, "$")
 	d, err := DecodeDstsFile([]byte(`["DST_STR", 3]`))
