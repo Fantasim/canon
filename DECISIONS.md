@@ -3722,6 +3722,13 @@ round 2", "PS1 review", "PS2 round 2"):
      form, ended in an internal error, and a repeated bits member too (config-studio findings
      2026-10-09 §1; guide unit). Every refusal is a catalogue finding or a Go error, never an
      internal error.
+     Review (2026-10-13): a Source accepts the qualified form wherever a member or case is
+     expected, a dependent field's branch included, so every Undo an edit returns applies; a
+     Source string literal names the key of a ref into an enum-keyed collection (`"if"`), as the
+     printer writes it; an expression map key (`Word.check: 2`) stays an expression key when
+     renamed (qualified). Known limit, logged: a layer file and a new entry file have no imports
+     (GRAMMAR §5.2, N5), so another package's non-nameable member written there is `E2102`
+     until layers can name members by their full path.
 
 367. **`asset()` arguments: syntax first (TYPES.md §13.4; GRAMMAR.md §5).** `asset(root, ext:
      [...])` takes a string literal root and a bracketed `ext` list by its grammar: anything else
