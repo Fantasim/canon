@@ -34,27 +34,12 @@ type change struct {
 	existed      bool
 	remove       bool   // delete the file: renamed aside, then removed once every other write is done
 	respell      string // the spelling on disk of the file abs names, which takes abs's (DECISIONS 357)
+	late         bool   // a second write of a file the write wrote first: staged when it is replaced
 }
 
 // commit writes what changed, or, in Check mode, marks it stale and writes nothing (CLI.md §3.4).
 func (r *run) commit(check bool, out *BuildResult, outputs []*output, locks []*lockOut) error {
-	var changes, removals []change
-	for _, o := range outputs {
-		switch {
-		case o.remove:
-			removals = append(removals, change{abs: o.Abs, display: o.Path, remove: true})
-		case o.Status == StatusWritten || o.Status == StatusAdopted:
-			changes = append(changes, change{abs: o.Abs, display: o.Path, data: o.Content, old: o.old, existed: o.existed, respell: o.respell})
-		}
-		out.Outputs = append(out.Outputs, o.Output)
-	}
-	for _, l := range locks {
-		if l.Status == StatusWritten {
-			changes = append(changes, change{abs: l.Abs, display: l.Path, data: l.Content, old: l.old, existed: l.old != nil})
-		}
-		out.Locks = append(out.Locks, l.Lock)
-	}
-	changes = append(changes, removals...)
+	changes := r.ordered(out, outputs, locks)
 	sortOutputs(out.Outputs)
 	if check {
 		out.Stale = len(changes) > 0

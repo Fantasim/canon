@@ -66,6 +66,10 @@ func (w *writer) replace(c change) error {
 		return w.fsys.Rename(c.abs, w.stageOf(c.abs))
 	case c.respell != "":
 		return w.respell(c)
+	case c.late:
+		if err := w.stageFile(c.abs, c.data, true); err != nil {
+			return err
+		}
 	}
 	return w.fsys.Rename(w.stageOf(c.abs), c.abs)
 }
@@ -97,7 +101,7 @@ func (w *writer) respell(c change) error {
 // stage writes a change's staged file, its directory created, an existing file's mode kept; a
 // respelled file is staged when it is replaced.
 func (w *writer) stage(c change) error {
-	if c.remove || c.respell != "" {
+	if c.remove || c.respell != "" || c.late {
 		return nil
 	}
 	if err := w.mkdirs(project.DirOf(c.abs)); err != nil {
@@ -212,7 +216,7 @@ func (w *writer) removeStages(changes []change) {
 // failure names its display path, not the staged one (DECISIONS 201).
 func (w *writer) restore(done []change) error {
 	var errs []error
-	for _, c := range done {
+	for _, c := range slices.Backward(done) { // the last first: a file written twice gets its first content back last
 		if err := w.restoreOne(c); err != nil {
 			errs = append(errs, displayError(c.display, err))
 		}
