@@ -3396,6 +3396,11 @@ applies).
   (§5.4), and `CanonRow` makes both present, `id` of the table's own id type `K` (DECISIONS 323).
   A value of another package's type is an object literal of that package's interface, read by this
   file's own decoder helpers in `data` and `types` mode ([§2.8](#28-cross-package-references)).
+- An array literal whose elements are object literals or tuples (rows, a `table` field, a list
+  of records, a map's or branch table's entries) is `canonList<T>(($r) => [$r(e1), …])`, `T` its
+  declared element type (`readonly [K, V]` for an entry): each element type-checks against `T`
+  alone, so tsc never reduces a union of thousands of literal element types (TS2590; DECISIONS
+  370). An empty one stays `[]`; a list of scalars is a plain literal.
 - The file uses only erasable syntax (no `enum`, no `namespace`, no parameter properties), so it
   also runs under Node's type stripping.
 - `data` mode exports, per value, `parse<V>(text: string)` and `decode<V>(json: unknown)`, and
@@ -3567,6 +3572,11 @@ function canonFreeze<T>(x: T): T {
   return x;
 }
 
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
+
 /** Checks the "$schema" of a data file against the fingerprint compiled in. */
 function canonEnvelope(json: unknown, schema: string, name: string): Record<string, unknown> {
   const doc = json as Record<string, unknown> | null;
@@ -3605,10 +3615,10 @@ export interface Status {
   readonly by: Actor | null;
 }
 
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Status, StatusId>>>([
-  { id: "open", retired: false, tone: "warning", label: "Open", terminal: false, next: ["taken", "wont_do", "duplicate"], requires: [], optional: [], by: null },
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
+  $r({ id: "open", retired: false, tone: "warning", label: "Open", terminal: false, next: ["taken", "wont_do", "duplicate"], requires: [], optional: [], by: null }),
   // …
-]), ($e) => $e.id);
+])), ($e) => $e.id);
 
 /** sovcommon's CanTransition. */
 export function canTransition(from: StatusId, to: StatusId): boolean {
