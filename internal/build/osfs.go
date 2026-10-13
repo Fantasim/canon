@@ -69,6 +69,9 @@ type DirSyncer interface {
 // where the system cannot sync a directory, as on Windows.
 func (osFS) SyncDir(dir string) error { return wrapIO(syncDir(filepath.FromSlash(dir))) }
 
+// LocksWriters reports fsys one whose writers take the writer locks, for build and edit alike.
+func LocksWriters(fsys project.FS) bool { _, ok := fsys.(writersLocker); return ok }
+
 // lockWriters takes the package writer locks of the project at dir (DECISIONS 352).
 func (osFS) lockWriters(ctx context.Context, dir string, reqs []writelock.Request) (*writelock.Held, error) {
 	return writelock.Acquire(ctx, filepath.FromSlash(dir), reqs)

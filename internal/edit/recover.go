@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"maps"
 	"path"
 	"slices"
 	"strings"
@@ -103,7 +104,39 @@ func recoverOne(s Site, name string) (int, error) {
 	return n, removeJournal(s.FS, name)
 }
 
+// clearStages removes the edit's stages, 0.1.5's fixed ones, and what the OS WriteFile left
+// writing one, exactly those forms (DECISIONS 351); one never written is no failure.
+func (u *undo) clearStages(fsys build.WriteFS) {
+	bases := map[string][]string{}
+	for _, s := range u.stages {
+		for _, stage := range []string{stageName(s, u.token), fixedStageName(s)} {
+			_ = fsys.Remove(stage)
+			bases[project.DirOf(stage)] = append(bases[project.DirOf(stage)], path.Base(stage))
+		}
+	}
+	for _, dir := range slices.Sorted(maps.Keys(bases)) {
+		clearLeftovers(fsys, dir, bases[dir])
+	}
+}
+
+// clearLeftovers removes each file of dir that the OS WriteFile left writing one of bases, as
+// build names such a leftover (build.StagedOf), nothing else; a leftover kept is no failure.
+func clearLeftovers(fsys build.WriteFS, dir string, bases []string) {
+	entries, err := fsys.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		left := func(base string) bool { return build.StagedOf(e.Name(), base) }
+		if !e.IsDir() && slices.ContainsFunc(bases, left) {
+			_ = fsys.Remove(project.Join(dir, e.Name()))
+		}
+	}
+}
+
+// removeJournal removes the journal name and what writing it left beside it (API.md §2.2).
 func removeJournal(fsys build.WriteFS, name string) error {
+	clearLeftovers(fsys, project.DirOf(name), []string{path.Base(name)})
 	if err := fsys.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
@@ -164,10 +197,7 @@ func (u *undo) run(fsys build.WriteFS) (int, error) {
 	if err := u.clearable(fsys); err != nil {
 		return 0, err
 	}
-	for _, s := range u.stages {
-		_ = fsys.Remove(stageName(s, u.token)) // a stage never written is no failure
-		_ = fsys.Remove(fixedStageName(s))     // and 0.1.5's fixed name, if a 0.1.5 edit left it
-	}
+	u.clearStages(fsys)
 	r := &undoer{fsys: fsys, token: u.token}
 	if err := r.recreate(u.removed); err != nil {
 		return r.changed, err

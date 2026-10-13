@@ -281,6 +281,7 @@ func TestCommitRefused(t *testing.T) {
 		{"no prefix", strings.Repeat("ab", 32), []edit.Change{mod("a.canon")}, edit.ErrRevision},
 		{"empty hex", "r1:", []edit.Change{mod("a.canon")}, edit.ErrRevision},
 		{"upper hex", "r1:AB", []edit.Change{mod("a.canon")}, edit.ErrRevision},
+		{"short hex", "r1:ab", []edit.Change{mod("a.canon")}, edit.ErrRevision}, // DECISIONS 351: 64 hex
 		{"no scheme", ":ab", []edit.Change{mod("a.canon")}, edit.ErrRevision},
 		{"unknown kind", testRev, []edit.Change{{Kind: edit.ChangeRemovedDir + 1, Path: "a.canon"}}, edit.ErrChanges},
 		{"no place", testRev, []edit.Change{mod("@nowhere/a.json")}, edit.ErrChanges},

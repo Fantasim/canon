@@ -24,8 +24,7 @@ func noRelease() error { return nil }
 
 // locking reports a build that takes the writer locks: one that writes, on the OS's file system.
 func (r *run) locking(opt BuildOptions) bool {
-	_, ok := r.p.disk.(writersLocker)
-	return ok && !opt.Check && opt.OnlyRoot == ""
+	return LocksWriters(r.p.disk) && !opt.Check && opt.OnlyRoot == ""
 }
 
 // lockWriters takes the writer locks of a build that writes, through the file system Open was

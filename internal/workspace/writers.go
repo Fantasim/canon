@@ -5,14 +5,13 @@ import (
 	"path/filepath"
 
 	"github.com/fantasim/canonlang/internal/build"
-	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/writelock"
 )
 
 // osDisk reports s's files the operating system's, the only ones the writer locks guard: an
-// embedder's own file system takes none (DECISIONS 352), as a build decides by the same FS.
+// embedder's own file system takes none, by build's own predicate (DECISIONS 352).
 func (s *Snapshot) osDisk() bool {
-	return s.fs.base == project.FS(build.OS())
+	return build.LocksWriters(s.fs.base)
 }
 
 // lockWriters takes, on the OS's files, the writer lock of each package o writes, created ones

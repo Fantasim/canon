@@ -65,9 +65,9 @@ func TestCommitHelperProcess(t *testing.T) {
 	os.Exit(exitHelper)
 }
 
-// DECISIONS 351, API.md N10, N11, O5: a commit killed (SIGKILL) after its first rename leaves its
-// journal and its stages `.<base>.<j>.canon-edit`; Recover, deriving <j> from the journal alone,
-// puts every file back and clears the stages, and the fixed stage name 0.1.5 used too.
+// DECISIONS 351, API.md N11, O5: after a commit killed past its first rename, Recover (<j> from the
+// journal's name) restores every file and clears its stages, 0.1.5's fixed one, and the WriteFile
+// leftovers of its stages and journal, nothing else.
 func TestCommitKilledMidway(t *testing.T) {
 	dir := diskProject(t, killFiles)
 	before := diskRead(t, dir)
@@ -77,17 +77,42 @@ func TestCommitKilledMidway(t *testing.T) {
 	if _, ok := left[stage]; !ok {
 		t.Fatalf("the killed commit left %v, no %s", slices.Sorted(maps.Keys(left)), stage)
 	}
-	fixed := filepath.Join(filepath.FromSlash(dir), ".a.canon.canon-edit")
-	if err := os.WriteFile(fixed, []byte("a 0.1.5 stage\n"), filePerm); err != nil {
-		t.Fatal(err)
+	plantOS(t, dir, map[string]string{
+		".a.canon.canon-edit":                                "a 0.1.5 stage\n",
+		"." + stage + leftover:                               "half a stage", // a WriteFile of a stage killed
+		".canon/journal/." + journalHex + ".json" + leftover: "half a journal",
+	})
+	kept := map[string]string{ // like the edit's names, never its own: Recover leaves them
+		"..b.canon.cdcdcdcdcdcdcdcd.canon-edit" + leftover: "another edit's",
+		".b.canon.notes": "the user's",
+		".canon/journal/." + strings.Repeat("cd", 32) + ".json" + leftover: "another journal's",
 	}
+	plantOS(t, dir, kept)
 	site := edit.Site{FS: build.OS(), Layout: layout{dir: dir}, Self: edit.Process{Host: testHost, PID: 1, Alive: func(int) bool { return false }}}
 	if err := edit.Recover(site, nil); err != nil {
 		t.Fatal(err)
 	}
-	after := diskRead(t, dir)
-	if !maps.Equal(after, before) {
-		t.Errorf("after Recover %v, want %v", after, before)
+	want := maps.Clone(before)
+	maps.Copy(want, kept)
+	if after := diskRead(t, dir); !maps.Equal(after, want) {
+		t.Errorf("after Recover %v, want %v", slices.Sorted(maps.Keys(after)), slices.Sorted(maps.Keys(want)))
+	}
+}
+
+// leftover is what the OS WriteFile leaves of a write killed midway after the target's name.
+const leftover = ".ABCDEFGHIJKLM.canon-tmp"
+
+// journalHex is the journal name's hex of a commit at testRev.
+var journalHex = strings.Repeat("ab", 32)
+
+// plantOS writes files, by slash path relative to dir.
+func plantOS(t *testing.T, dir string, files map[string]string) {
+	t.Helper()
+	for name, text := range files { //canon:unordered each file is written alone
+		p := filepath.Join(filepath.FromSlash(dir), filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(p), dirPerm); err != nil || os.WriteFile(p, []byte(text), filePerm) != nil {
+			t.Fatal(name, err)
+		}
 	}
 }
 

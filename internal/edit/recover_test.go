@@ -117,6 +117,8 @@ func TestRecoverNothing(t *testing.T) {
 			d.mkdirs("/p/.canon/journal")
 			d.files["/p/.canon/journal/.ab.json.tmp"] = []byte("{")
 			d.files["/p/.canon/journal/AB.json"] = []byte("{")
+			d.files["/p/.canon/journal/ab.json"] = []byte("{")                           // short: no revision's hex (DECISIONS 351)
+			d.files["/p/.canon/journal/"+strings.Repeat("ab", 33)+".json"] = []byte("{") // long
 		}},
 	}
 	for _, tc := range cases {

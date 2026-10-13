@@ -68,7 +68,7 @@ func journalRefusal(sentinel, err error) error {
 // its hex part (log-2026-09-29 "Journal file name").
 func journalName(dir, rev string) (string, error) {
 	i := strings.IndexByte(rev, revisionSep)
-	if i < 1 || !isLowerHex(rev[i+1:]) {
+	if i < 1 || !isRevisionHex(rev[i+1:]) {
 		return "", fmt.Errorf(fmtFileErr, rev, ErrRevision)
 	}
 	return project.Join(dir, JournalDir, rev[i+1:]+ir.JSONExt), nil
@@ -78,7 +78,13 @@ func journalName(dir, rev string) (string, error) {
 // atomic write left.
 func isJournal(name string) bool {
 	sum, ok := strings.CutSuffix(name, ir.JSONExt)
-	return ok && isLowerHex(sum)
+	return ok && isRevisionHex(sum)
+}
+
+// isRevisionHex reports s a revision's hex: a SHA-256, exactly 64 lower-case hex characters, so a
+// journal's name always yields its stages' <j> and a short planted name is no journal (DECISIONS 351).
+func isRevisionHex(s string) bool {
+	return len(s) == hex.EncodedLen(sha256.Size) && isLowerHex(s)
 }
 
 func isLowerHex(s string) bool {
