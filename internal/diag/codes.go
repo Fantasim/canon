@@ -383,7 +383,7 @@ var kindWords = [...]string{
 	"define table",
 	"a default holding a dependent value, read by a decoder",
 	"a dependent value outside a record field (in a map, a literal union, or a value or result of its own)",
-	"a dependent value decided through an optional, a record parameter or a ref into a `@reload` value",
+	"a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field",
 	"emit",
 	"entry",
 	"enum",

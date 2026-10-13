@@ -3502,8 +3502,10 @@ round 2", "PS1 review", "PS2 round 2"):
      value`, as an unknown member does (339). Every decoding mode (`data`, `types`, `embedded`)
      and every code target (Go, C++, TypeScript), so `check` stays uniform; the table is computed
      once in `ir`. Still `E8019` `DependentType`: a record parameter, an optional discriminant of
-     the record itself, and a ref into a `@reload` value (a reload may add keys the binary's table
-     lacks). Resolving through the loaded target at run time was refused: it changes host and
+     the record itself, a ref into a `@reload` value (a reload may add keys the binary's table
+     lacks), and a ref into a table field of an enclosing record (its targets differ per
+     instance, so no build-time table exists). The table holds, per key, a discriminant value that
+     selects the branch, so every target reuses its existing branch-taking reader. Resolving through the loaded target at run time was refused: it changes host and
      loader APIs and cannot work in `types` mode, which holds no values. Reason: a file keying its
      payload by a looked-up kind could not be decoded in any target (website H-14 #4; handoff
      2026-10-08 §4).

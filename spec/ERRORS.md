@@ -120,7 +120,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `DefineTable` | define table | `E1627` |
 | `DependentDefault` | a default holding a dependent value, read by a decoder | `E8019` |
 | `DependentOutsideField` | a dependent value outside a record field (in a map, a literal union, or a value or result of its own) | `E8019` |
-| `DependentType` | a dependent value decided through an optional, a record parameter or a ref into a `@reload` value | `E8019` |
+| `DependentType` | a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field | `E8019` |
 | `Emit` | emit | `E1133` |
 | `Entry` | entry | `E1133`, `E6002` |
 | `Enum` | enum | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3027`, `E6001` |

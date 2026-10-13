@@ -1199,9 +1199,9 @@ dependent values shares its field's discriminant. A discriminant member no branc
 the value with the loader text `no branch for this value` at its pointer, in every loader. Baked Go writes a dependent value (a field's, or
 its list's elements) as `&T{branch, value}` in the branch the record's own fields select, the value
 typed as `As<Branch>` returns it. What a generator does not write is E8019 at stage E:
-`DependentType` for a discriminant read through a record parameter or through a ref into a
-`@reload` value (a reload may add keys), or an optional discriminant (TYPES.md §11.1, DECISIONS
-307, 350);
+`DependentType` for a discriminant read through a record parameter, through a ref into a
+`@reload` value (a reload may add keys) or into a table field of an enclosing record (per-instance
+targets), or an optional discriminant (TYPES.md §11.1, DECISIONS 307, 350);
 `DependentOutsideField` for a dependent value in a map or in a literal union a loader reads, or
 outside a record field; `NeverDependent` for a dependent type every arm of which is `Never`; and,
 in a `types` decoder (C++, Go and TS), `DependentDefault` for a default holding a dependent value. Another package's dependent type is read or
