@@ -2016,7 +2016,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      residual risks. Reason: log-2026-09-29 M4 (journal file name, U4c, U4c-r, U4c rounds 2 and 3,
      "Journal threat model", U4c final, U5b, U5b-r, U8-r, U8 re-review): §10.3 and O5 were silent
      on a foreign or hostile journal.
-     [amended by 351]
+     [amended by 351, 375]
 
 231. **What the journal cannot recover is not editable (API.md §7.2, N2, N3).** Reason `format` also
      covers a JSON source whose file extension is not `.json` and a value whose defining file has a
@@ -2377,6 +2377,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `check.Info` object identity. Reason: Louis, 2026-09-29
      (meta/handoff/2026-09-29-m4-start-prompt.md, "Calls already made"); log-2026-09-29 M4 "Preview
      gates", P18, P20, P15-r, P16, "NFR-01 passes", "NFR-01 on the final code".
+     [amended by 382]
 
 262. **The feature examples by their directory names; `edits` and `entries` (IMPLEMENTATION-PLAN
      §7.9).** §7.9 names each example by its directory: `retirement` and `matching`, not `retired`
@@ -3243,6 +3244,7 @@ round 2", "PS1 review", "PS2 round 2"):
      editor or the studio. `optional_roots` instead of a per-root map: no parser or frozen syntax
      change, one spelling (orchestrator).
      [completed by 346]
+     [amended by 381]
 
 333. **An unknown name beside a literal is an unknown name (TYPES.md §5.1).** When both operands of
      a comparison or arithmetic operator are context-dependent and one holds a bare name, that
@@ -3564,6 +3566,7 @@ round 2", "PS1 review", "PS2 round 2"):
      exclusive locks a build removes the stages a dead run left (`.<base>.<token>.canon-tmp`)
      beside outputs only the locked packages write, leaving one beside a runtime file an unlocked
      package's emit also writes (its build may be live).
+     [amended by 375]
 
 353. **A file with no package line counts against its own directory (CLI.md §2.2; amends
      140).** Its findings go to the bag of the package its directory names (`a/b` → `a.b`),
@@ -3637,6 +3640,7 @@ round 2", "PS1 review", "PS2 round 2"):
      nothing changes. Reason: renaming `@text("S.sql")` to `"s.sql"` with new content was `E8001`
      on macOS and Windows, and with the same content left the old spelling on disk (owed by 326,
      log-2026-10-08).
+     [amended by 377]
 
 358. **Hex, width and padding in format specs (STDLIB.md §9.5; GRAMMAR.md §2.6; SPEC §2;
      ERRORS.md E1101, E4503).** A spec is `[+][0][W][,][.N][x|X]`: `W` a width 1–99, `0` zero
@@ -3769,6 +3773,7 @@ round 2", "PS1 review", "PS2 round 2"):
      `ValueError`. Known limit, logged: a layer file and a new entry file have no imports
      (GRAMMAR §5.2, N5), so another package's non-nameable member written there is `E2102`
      until layers can name members by their full path.
+     [amended by 378]
 
 367. **`asset()` arguments: syntax first (TYPES.md §13.4; GRAMMAR.md §5).** `asset(root, ext:
      [...])` takes a string literal root and a bracketed `ext` list by its grammar: anything else
@@ -3846,3 +3851,146 @@ round 2", "PS1 review", "PS2 round 2"):
      it is attached to a value. Every finding, `explain`, view model and output is byte-identical.
      Reason: one 112-byte `Prov` per value was 26% of the live heap and 3 GB of allocation on
      Resource (log-2026-10-14). Approved by Louis as a frozen-contract change.
+
+374. **A refresh compares the change time and the file identity (API.md S1, W12).** A file or
+     listed directory is read again when its stamp changed: size and modification time and, where
+     `Stat`'s `Sys()` is the platform's `*syscall.Stat_t` (Linux, macOS, FreeBSD, NetBSD, OpenBSD,
+     DragonFly, illumos, writelock's set; build-tagged, standard library only), its change time,
+     device and inode number. The 2 s racily-clean rule counts the change time as it counts the
+     modification time. Elsewhere, and for an FS whose `Sys()` is anything else, the stamp stays size
+     and modification time: Windows' stat has neither a change time nor a file index, NTFS tunnelling
+     restores the creation time of a name re-created within 15 s and an overwrite keeps it, a file
+     index costs a handle per file per refresh, and the change time needs an API `syscall` lacks. A
+     stamp that moves with the same content (`chmod`, a hard link, an extended attribute) costs one
+     read and hash, never a snapshot, revision or re-check; nothing is persisted. Reason: a same-size
+     file replaced with its modification time kept (`cp -p`, `rsync -t`, `tar x` of an archive with
+     fixed times, `touch -r`) stayed stale in a long-running project (the studio, the language server,
+     `--watch`, repeated API calls) until another change: reads answered from the old content and
+     every `Edit` of the file failed N9 as `*StaleError`; a file made readable by `chmod` stayed
+     unreadable. One-shot CLI runs and Canon's own edits were never affected (log-2026-10-14).
+
+375. **Writer locks decide an edit journal's liveness and reach (API.md N10, N11, O5, S9; CLI.md
+     §3.2, §3.4, §3.6, §3.15; ADR-0010, ADR-0021; amends 230, 352).** A journal is version 2 and adds
+     `locks`, the sorted packages whose writer locks its writer holds exclusively from before writing
+     it until after removing it; one without (version 1, `Options.FS`, a platform without the
+     primitive, a written file of no package) covers every package and is judged by host, pid and the
+     in-process registry as before. On this host a journal with locks is its writer's exactly while
+     one is held: `Recover` at `Open` takes them without waiting, all or none, and otherwise leaves
+     it, `Open` succeeding. An edit, a build that writes, `canon fmt` and `canon new`, once holding
+     their locks, take exclusively every package of each journal of this host meeting the packages
+     they hold in either mode (freeing theirs and taking the union in name order until stable), roll
+     those back, then go on: an edit whose recovery changed a file is `*StaleError`; a build re-reads
+     (352); fmt refuses a file changed since read. Disjoint journals concern no writer. Another host's
+     journal, one without locks, an undecodable or unknown-version one, or one at the commit's own
+     name still refuses a writing `Edit`; an empty or invalid lock list refuses the journal. An edit
+     locks the readers of each JSON file it writes and the package of each `canon.lock`. Reason:
+     v0.1.8 recovered with no lock, so a
+     rollback could interleave with a live build, fmt or second recovery (lost updates, wedged
+     journals), and any journal blocked every commit (a transient `ErrJournal`, log-2026-10-13).
+
+376. **Asset lookups follow `load.dir`'s link bounds (TYPES.md §13.4; WIRE.md §6.5, §10;
+     ERRORS.md E3706).** A symbolic link met looking an asset up (the asset root's own path, a folder,
+     the file) is followed only when its target resolves inside a declared root or the project, bounds
+     resolved as `load.dir`'s, the project root's ancestors not counting. A file reached only through
+     a link outside them is `E3706`, naming the first such link; a dangling link, a loop or a chain
+     past 40 hops holds nothing: `E3701`, as before. Manifest `list` lines leave such links out.
+     Entries that are not links keep their kind (a Windows junction, listed irregular by Go, stays a
+     file name: `E3701` under it). Reason: an asset passed on a file outside every declared root and
+     the project, and its verdict depended on files the build does not declare (log-2026-10-12, F17);
+     log-2026-09-28's "no bounds check" is reversed.
+
+377. **Output paths keep their declared spelling (CODEGEN.md §2.4, §2.9; WIRE.md §8.1; ERRORS.md
+     E8152; CLI.md §3.4; extends 357).** 357 holds for every component `canon` may create of every
+     output path, directories included, every target: a directory or file the disk holds under another
+     spelling, equal but for case and the same one (its directory lists only that spelling, the
+     declared path resolves), is renamed to the declared spelling (a directory in one rename, before
+     the outputs below it, inside the all-or-nothing write), every output below is `written` (`stale`
+     under `--check`), and a `canon.outputs` line naming the file under the old spelling owns the new.
+     A file is renamed only if the build may overwrite it, else `E8001`; a directory holding sources
+     never. Judged per directory by its listing, never by probing the disk. `--only-root` renames only
+     below its root (`E8028`). Two directories the selected packages' outputs pass through, or one and
+     a package directory, equal but for case are `E8152` `dirCase` on every platform, found by `check`
+     too (355). Reason: renaming `out: "Gen"` to `"gen"` was `E8001` on macOS and Windows and left
+     `Gen` on disk for every target; `Gen` and `gen` emits wrote one directory on Windows, two on
+     Linux (log-2026-10-13).
+
+378. **Quoted words: a data name needs no name in scope (GRAMMAR.md §1, §2.3, §4.3, §5.11;
+     TYPES.md §3.3; API.md §6.4, §8.2, E26, M7; SPEC.md §2.4; ERRORS.md E1106, E1138; amends 366).** A
+     reserved word that names a member, case or key but cannot be read bare in value position is
+     written there between backticks, one token: `` leg: `in` ``. The quotable words are `and as break
+     continue else fn for if in is let load match not or return where while`; a quoted word is an
+     identifier of that name, so only step 1, a symbolic key or a dependent symbol give it a meaning,
+     else `E2102`; it needs no import, type or package name, in a source, entry or layer file alike. It
+     stands only where an expression does; quoting another word is `E1138`; a backtick that opens no
+     quoted word stays `E1106`. Qualified forms stay valid and are kept as written. Edits print every
+     member, case, `Kind` value, dependent symbol and ref word key in value position bare or quoted,
+     the same text in every file, never qualified; a renamed expression map key keeps its written
+     qualifier; an amendment path writes each key as a Canon key of its key type (`["a"]`,
+     `` [`if`] ``). A `Member` or `Case` lit named by a quotable word has `Source` text; a quotable
+     dependent symbol with no computable branch is kept symbolic, as a nameable one. Reason: owed since
+     v0.1.6 (log-2026-10-13): a layer has no imports and an edit adds none, so another package's `if`
+     member could not be written there, by edit or by hand; the printed qualifier depended on each
+     file's imports; amendment paths wrote `byWord[if]` and `weights[a]`.
+
+379. **Positions are not ids (SPEC §4.3, §15.2-§15.4; EVALUATION.md §9.2, §13.1; STDLIB.md §2.4;
+     CODEGEN.md §2.5, §2.8, §2.10, §5.3, §8.2; IMPLEMENTATION-PLAN §4.3; ERRORS.md W1912, W8031).**
+     Moving, renaming or adding an entry file changes entry order, so a position never stands for an
+     entry: its key does, and a number that must keep naming one is a `@stable` field or a `@codes`
+     code. By construction a `baked` table id is no integer: Go `struct{ position uintN }` with `var`
+     members, `String`, `MarshalText`/`UnmarshalText` (the key), `Parse<R>ID` and `Position()` (an
+     array index for one build, which generated code uses); C++ keeps `enum class` and deletes
+     `to_json`/`from_json`; TypeScript exports `<Id>Members` instead of `<Id>Index` and builds private
+     indexes with `canonIndex`. By detection, `enumerate()` and `indexOf` over entries mark the
+     position in its `Prov` (one bit, in padding); operators, templates, `Int`, `Float`, `String` and
+     `join` carry it; `positional(x)` drops it; stage E warns `W8031` where a marked value is written
+     to an output; `[#n]` amends on keyed collections warn `W1912`. Enums keep their numbers in
+     v0.1.9; Go enums without `@codes` gain `MarshalText`/`UnmarshalText`, which write the wire value
+     (their opacity, C++'s deleted nlohmann hooks for them and TypeScript's private `<E>Index` are
+     v0.2). Entry order still orders rows and iteration results; it never changes keys, fields,
+     refs, the lock or the fingerprint. Reason: N11 (handoff 2026-10-12 §4; log-2026-10-14, Louis:
+     "hard to fuck it up, like Rust"): Go's `encoding/json` and `database/sql` wrote a baked
+     `StatusID` as its position, nlohmann a C++ id enum's, and TypeScript exported `StatusIdIndex`; a
+     read-only scan of Resource and its consumers found no position persisted yet.
+
+380. **Import tiers (GRAMMAR.md §7.1; TYPES.md §3.1; SPEC §3.1, §3.2; ERRORS.md E1005 `tier`,
+     E1006 `tiers`, E1017, E1018, E2007).** `project.canon` takes `tiers`, an ordered map of tier names
+     to lists of package paths, lowest tier first (default `{}`: no tiers). A listed path places the
+     package of that name and every package below it, except one a longer listed path places; it need
+     not be a package (`services` places `services.admin`). An `import` of a package placed in a tier
+     written after the importer's is `E2007` at the import, naming both packages and tiers; the same
+     tier and every earlier tier are allowed. Only `import` lines count, each judged alone: when every
+     import goes to the same or an earlier tier, so does every chain. Once a tier is declared, a
+     package no path places, and a path that places no package, are `E1018` in the project's bag,
+     reported by every command whatever it selects (as `E1012`); an import of no package (`E2003`), or
+     from or of an unplaced package, is not judged. Tier names are identifiers (`E1017` `name`),
+     unique (`E1005` `tier`); a value is a non-empty list of dotted identifiers (`E1006` `tiers`); a
+     path is listed once over all tiers (`E1017` `duplicate`); these stop `Open` (API.md O3).
+     `project.local.canon` cannot set `tiers` (`E1014`, 332). Package `project` reports all three
+     codes; the checker and Recheck are untouched, and a `project.canon` change is never a Recheck.
+     No API change. Refused: a graph of tiers, adjacent-only layering, per-import exceptions,
+     wildcards, string patterns and an `a...` suffix, free unplaced packages. Reason: Louis,
+     2026-10-14 ("extremely important"; handoff 2026-10-12 N8): acyclicity lets an agent add an upward
+     import that is not yet a cycle; Resource's rule "pure helpers < `.vocab` (ids) < theme data <
+     `client`/`clientui` projections. Imports only go down." had no check.
+
+381. **Dot-prefixed files are not sources (API.md O2, S5, W13, §7.2; CLI.md §2.2; amends 332).**
+     The scan skips every file whose name starts with `.`, as it already skipped such directories:
+     `.hidden.canon`, an editor lock file `.#a.canon`, a macOS `._a.canon` and a file named `.canon`
+     are no package's sources. One predicate decides for the scan, the S5 listing key and the build's
+     re-read, so they never disagree. A skipped file is nobody's source: not parsed, in a read set only
+     as a file a `load` names, no event's file; a selector naming it is an unknown package (exit 2),
+     explicit arguments included; no finding names it. `load.dir` (WIRE.md §6.5's dotfile rule),
+     `@files` placement (a `.` segment is refused, API.md N2, N3), `.canon/`, the stray scan (356) and
+     asset listings keep their own rules. Reason: Louis, 2026-10-14 (M4 call (a), handoff
+     2026-10-01-m4-complete): an editor's lock file was a source, and a dangling Emacs lock
+     `a/.#a.canon` made every `canon check` exit 2.
+
+382. **A target for the studio's refresh after a committed edit (IMPLEMENTATION-PLAN §7.6; amends
+     261).** NFR-01's edit bench times, after each timed `Set`, the `Evaluate` of the edited entry and
+     then a `Value` of it; their sum is the refresh, gated at p95 ≤ 500 ms on the reference machine.
+     Whichever call first needs the new snapshot's every-package analysis pays it, so only the sum is
+     stable. The studio's full reload (a `ViewModel` per package plus `Check`) is not gated. A miss
+     never licenses a cache, a reuse or a parallel stage (log-2026-10-14, robustness first); it blocks
+     a release only as a regression: the median of two runs more than 10% above the previous
+     release's, the runs interleaved at equal start load. Reason: Louis, 2026-10-14 (M4 call
+     (c)): the refresh cost 240-470 ms (P18) and nothing gated it (261).

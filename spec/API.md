@@ -101,8 +101,11 @@ func (p *Project) Close() error
   the roots, root by root: `Options.Roots` over `project.local.canon` over `project.canon`. It
   judges which roots are present (SPEC §3.1). It then scans the file set (every `.canon` file
   under the project root except `project.canon` and `project.local.canon` at its top, skipping
-  directories whose name starts with `.`, and the directory listing needed to map packages to
-  directories). It parses no other source. Parsing, checking and
+  every directory and every file whose name starts with `.`, and the directory listing needed to
+  map packages to directories). A skipped name is nobody's source: it is not parsed, it is in a
+  read set (S3, S5) only as a file a `load` names, it is no event's file (W13), and a selector that
+  names it is an unknown package (CLI.md §2.2). No finding is given for it. It parses no other
+  source. Parsing, checking and
   loading happen on first use.
 - **O3.** These make `Open` fail with a `*ProjectError`, which wraps `ErrProject` and carries the
   findings:
@@ -122,7 +125,8 @@ func (p *Project) Close() error
 - **O5.** If `.canon/journal/` holds an unfinished edit (§10.3), `Open` rolls it back before
   anything else and logs one line at level Warn, however many journals it rolled back, whenever
   it removed a journal that decodes (even if no file needed restoring). A journal whose writer
-  still runs on this host is left alone. A journal it must keep (written on another host, a file
+  still runs on this host (N11: one of its locks is held, or, recording none, its process runs) is
+  left alone; `Open` never waits for a lock. A journal it must keep (written on another host, a file
   changed since the edit, a journal that fails N11's checks) makes `Open` fail with an error
   wrapping `ErrProject` that names the journal and the files.
 - **O6.** After `Close`, every method returns `ErrClosed`, except `Revision()`, which has no
@@ -196,9 +200,18 @@ computed from them (syntax trees, types, values, findings). Each public call run
 snapshot from start to end, so it never sees a half-applied change.
 
 - **S1.** At the start of each call, unless a `Watch` is active, the project **refreshes**: it
-  stats every file of the current read set and every directory a glob or package scan listed.
-  A file whose size or modification time changed is re-hashed; a changed hash makes a new
-  snapshot. While a `Watch` is active, the watcher keeps the snapshot fresh instead (§12).
+  stats every file of the current read set and every directory a glob or package scan listed, and
+  reads one again when its **stamp** changed. The stamp is the stat's size and modification time
+  and, where `Stat`'s `Sys()` is the platform's `*syscall.Stat_t` (Linux, macOS, FreeBSD, NetBSD,
+  OpenBSD, DragonFly, illumos), its change time, device and inode number, so a name replaced
+  keeping its size and modification time (`cp -p`, `rsync -t`, `tar x`, `touch -r`) or made
+  readable by `chmod` is read again. Elsewhere (Windows; an FS whose `Sys()` is anything else) the
+  stamp is size and modification time alone, and such a change is seen only once one of them
+  changes (DECISIONS 374). A name is also read again at every refresh while its modification time
+  is the zero time, or while it was read less than 2 s after its modification or change time,
+  since a later change within the same timestamp would not show. A changed hash or listing makes a
+  new snapshot; the same content keeps the snapshot. While a `Watch` is active, the watcher keeps
+  the snapshot fresh instead (§12).
 - **S2.** A new snapshot recomputes only what depends on the changed files. In v0 the unit is the
   package: a package whose files changed, and every package that imports it, are re-checked
   (NFR-02). Values are stored so that finer invalidation can come later without an API change.
@@ -237,7 +250,7 @@ func (p *Project) Revision() Revision
   `canon.lock` (LOCK.md §2.1), and the files its `load`s name with the directories their globs
   walk (S3), each by real path; plus the directory listings its asset checks consulted (TYPES.md
   §13.4). It includes its directory listing, restricted to the names the scan takes as sources (O2): a source file added
-  to a touched package after `Base` makes the edit stale, an editor swap file never does. A file
+  to a touched package after `Base` makes the edit stale, an editor swap or lock file never does. A file
   first read after `Base` is compared with the first content the project read for it. Since any
   source can reshape the import graph, the edit or evaluation is also stale when any scanned
   source file, `project.canon` or `project.local.canon` changed since `Base`; the unrelated files are non-source files
@@ -257,7 +270,8 @@ func (p *Project) Revision() Revision
 - **S9.** There is one writer at a time: `Edit`, `Build` that writes, `SetOverlay` and
   `ClearOverlay` take the project's write lock. A writer never blocks readers; readers that
   started before the writer finished keep their snapshot. Across processes, `Edit` and a `Build`
-  that writes also take the package writer locks of DECISIONS 352.
+  that writes also take the package writer locks of DECISIONS 352. `Open`'s recovery takes them
+  too, without waiting (O5).
 - **S10.** A writer publishes its new snapshot atomically when it returns. The revision in its
   result is that snapshot's. `Revision()` is monotonic: it only moves to a snapshot at least as new
   as the last one published, so a read that finishes late never rolls it back. Without an active `Watch`, the snapshot an `Edit`
@@ -722,7 +736,12 @@ No whitespace is allowed anywhere in a path. Reserved words are valid `word`s (L
 ### 6.4 Paths in edits of layers
 
 When `Options.EditLayer` is set (§7.5), the edit path is translated into an `amend` path
-(GRAMMAR.md). A path that has no `amend` equivalent is `ErrNotEditable` with reason `layer`.
+(GRAMMAR.md §5.7): a field or a table entry whose key is a word is `.name` (the first bare); every
+other key is a Canon key of the container's key type (for a `ref`, its target's key type): an
+integer in decimal; a `String` key, or a literal of a literal union, as a string literal printed
+as M7 prints strings (`["a"]`, `["a b"]`); any other key that is a word, bare or quoted
+(`[plain]`, `` [`if`] ``, GRAMMAR.md §2.3); anything else as a string literal. A path that has no
+`amend` equivalent is `ErrNotEditable` with reason `layer`.
 
 ### 6.5 Canonical form
 
@@ -785,7 +804,7 @@ source and where the edit goes.
 |---|---|
 | `computed` | the path leaves the source tree: a function call, comprehension, operator, `if`, `match`, identifier or method on the way (`Origin` gives the canonical path of the value's own source when that source is structural, else `""`) |
 | `layered` | an active layer amends this path or an ancestor, and `EditLayer` is not that layer (MOCKUP-GAPS 48) |
-| `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0); a JSON source whose file extension is not `.json` (`load(…, format: json)` of `x.cfg`), or a value whose defining file has a path segment starting with `.`, `.canon` files included (`Detail` names the path): the journal could not recover such writes (§10.3); below a `load` `at:` path past a `*` (whose `*`-level member is the item structural ops act on), an op when that member holds more than the selected remainder, or when the remainder's index is above 0: it would touch data outside the selection or another load's view of the file (`Detail` names the outside datum as `<display>#<pointer>`) |
+| `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0); a JSON source whose file extension is not `.json` (`load(…, format: json)` of `x.cfg`), or a value whose defining file has a path segment starting with `.` (only a loaded file can: the scan reads no `.canon` file or directory so named, O2) (`Detail` names the path): the journal could not recover such writes (§10.3); below a `load` `at:` path past a `*` (whose `*`-level member is the item structural ops act on), an op when that member holds more than the selected remainder, or when the remainder's index is above 0: it would touch data outside the selection or another load's view of the file (`Detail` names the outside datum as `<display>#<pointer>`) |
 | `input` | an `input` field (it has no value at build time) |
 | `key` | the key field of a keyed-list element, or a key of a dependent map (MOCKUP-GAPS 17); keys change only with `Rename`, and this reason never refuses a `Rename` that rewrites a keyed-list key (E11, DECISIONS 310) |
 | `pseudo` | `.id`, `.retired`, `.kind` (P3) |
@@ -900,7 +919,7 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 | `Obj{...}` | record fields by Canon name | a record, a case's fields, a table entry |
 | `Map(KV{k, v}...)` | map, in the given order | `{K: V}` |
 | `FromJSON(raw)` | the wire form | any type: decoded by WIRE.md's rules for that type and the destination field's `@json` forms (`unit`, `int`, `bits`, `none`) |
-| `Source(text)` | a Canon literal | any type: parsed as a Canon expression that contains only literals (no names but contextual ones, SPEC §6.2, and an enum member or case qualified by its type, `T.n` or `p.T.n` with `p` the package's path or last segment, as GRAMMAR.md LEX-08 (c) writes a reserved word; DECISIONS 366), typed against the expected type |
+| `Source(text)` | a Canon literal | any type: parsed as a Canon expression that contains only literals (no names but contextual ones, SPEC §6.2, bare or quoted (GRAMMAR.md §2.3), and an enum member or case qualified by its type, `T.n` or `p.T.n` with `p` the package's path or last segment; DECISIONS 366, 378), typed against the expected type |
 
 - **V1.** A value that does not fit the expected type is `*ValueError` (wraps `ErrBadValue`) naming
   the op, the path, the expected type and what was given. Nothing is written. So is a value holding
@@ -1219,8 +1238,9 @@ implements `json.Unmarshaler` too, and JSON of either that does not decode is `E
   §11.5); on a `Never` or uncomputable branch it is kept as data.
 - **E26.** Marshalling writes `source` for every `Lit` except `FromJSON`, which is written as
   `value`. `Source` text produced by the API is canonical (FORMATTER.md), single-line. A
-  `Member(name)` or `Case(name)` named by a reserved word that is not nameable (LEX-08) has no
-  `Source` text whatever its position, since the lit knows neither its type nor its place: `ErrNoText` (DECISIONS 366).
+  `Member(name)` or `Case(name)` named by a quotable word is written quoted (`` `if` ``,
+  GRAMMAR.md §2.3); one named `none`, `true`, `false` or `self`, which name no member or case, has
+  no `Source` text: `ErrNoText` (DECISIONS 378).
 
 ### 8.9 Renaming a Canon name
 
@@ -1347,11 +1367,11 @@ comments, and a trailing comment on its last line.
 
 ### 9.3 Printing values
 
-- **M7.** Values are printed with contextual names (SPEC §6.2): bare enum members, case names and
-  keys; a member or case named by a reserved word the grammar does not read bare in its position is
-  qualified as the target file names its type (`Icon.return`, `v.Icon.return`; LEX-08 (c)), and a
-  ref to such a key is written as a string (`"if"`); with no name for the type's package in the
-  file, the qualified text is left to the re-check (`E2102`; DECISIONS 366). Durations use their canonical text (LEX-04); a number or string token an op's `Source`
+- **M7.** Values are printed with contextual names (SPEC §6.2): enum members, case names (alone or
+  before their fields), `Kind` values, dependent symbols and keys bare, one named by a quotable word
+  quoted (`` `return` ``, GRAMMAR.md §2.3), the same text in every file whatever its imports; a
+  member or case is never printed qualified, and a map key is the WORD before `:` (DECISIONS 378).
+  Durations use their canonical text (LEX-04); a number or string token an op's `Source`
   spells is written as spelled (`0x1F`, `1.0`; DECISIONS 337). Fields equal to their defaults are omitted in
   newly printed records (E6 applied recursively to new values); fields of an existing literal are
   kept unless the op sets them to their default. Strings are printed with `{` and `}` escaped as
@@ -1435,8 +1455,9 @@ comments, and a trailing comment on its last line.
 - **N10.** The edit writes a journal `.canon/journal/<hex>.json`, `<hex>` being the new revision
   without its scheme prefix (`r1:`; `:` is not allowed in Windows file names), listing, for each
   file, its path, its previous content (or its absence) and mode, and the SHA-256 of its new content
-  (or its absence); the directories the edit creates and removes (N6), with their modes; and the
-  writer's host and process id. It syncs it. It then writes every new content to a temporary file in
+  (or its absence); the directories the edit creates and removes (N6), with their modes; the
+  writer's host and process id; and the packages whose writer locks it holds (DECISIONS 352, 375),
+  none where no lock is taken. It syncs it. It then writes every new content to a temporary file in
   the same directory, renames each over its target, performs deletions, removes emptied directories,
   removes the journal, and publishes the new snapshot. When the FS offers `SyncDir` (§2.2), the
   directories are synced before the first rename and before the journal is removed.
@@ -1462,21 +1483,32 @@ comments, and a trailing comment on its last line.
     resolves must equal the lexical path; a link is removed, never descended);
   - it applies modes masked to the read and write permission bits (`mode & 0o666`), and refuses
     whole a journal holding a setuid, setgid or sticky bit;
-  - it keeps, and never applies automatically, a journal written on another host (O5), and leaves
-    alone one whose writer still runs on this host; a journal written by this process counts as
-    running only while one of its commits runs there, so `Close` then `Open` recovers one a failed
-    rollback left;
+  - it keeps, and never applies automatically, a journal written on another host (O5). On this host
+    it rolls back a journal recording writer locks only holding all of them exclusively: `Recover`
+    takes them without waiting, all or none, and leaves the journal alone when one is held; a writer
+    already holding them recovers it under them. A journal recording none is left alone while its
+    writer runs on this host; one written by this process counts as running only while one of its
+    commits runs there, so `Close` then `Open` recovers one a failed rollback left;
+  - it refuses whole a journal whose lock list is not sorted unique package names, or a version-1
+    journal with one;
   - it keeps a journal that decodes but fails a check, writing nothing, and removes one that does
     not decode (only a torn write makes one, before any file changed).
 
-  While any journal is present, every `Edit` that writes is refused with an error wrapping
-  `ErrProject` that names it. `Edit` also refuses, with an error wrapping `ErrProject` naming the
+  An `Edit` that writes, once it holds its writer locks, rolls back every journal of this host whose
+  locks meet its own, holding all that journal's locks exclusively (it frees its own and takes the
+  union in name order until no further journal meets them); if that changed a file, the edit is
+  `*StaleError` naming them and writes nothing. A journal whose locks meet none of its own does not
+  concern it. A journal of another host, one recording no lock, one it could not roll back, or one
+  at its own journal's name refuses it with an error wrapping `ErrProject` that names it; on a file
+  system without writer locks any journal does. `Edit` also refuses, with an error wrapping `ErrProject` naming the
   files, a change through a symbolic link below the project or a root (a symlinked package
   directory cannot be edited through the API) and a change to a path with a segment starting with
   `.`, so no commit is made whose rollback would be refused. A renamed file keeps its mode. Residual
-  risks, accepted: a reused process id keeps a dead writer's journal "running"; the cross-process
-  idle check is not atomic; a forged same-host journal can create new `.canon`, `.json` and `.lock`
-  files, but overwriting or deleting one still needs its exact content.
+  risks, accepted: for a journal recording no lock, a reused process id keeps a dead writer's
+  journal "running"; for a journal recording no lock, the cross-process idle check is not atomic; a
+  forged same-host journal can create new `.canon`, `.json` and `.lock` files, but overwriting or
+  deleting one still needs its exact content; concurrent edits of nested packages that create or
+  remove one directory may fail or keep a journal.
 - **N12.** Written files use `\n` line endings and end with exactly one `\n` (NFR-04).
 
 ---
@@ -1618,12 +1650,12 @@ type Event struct {
   runs one check of every package, so the read set of each is known (one package at a time when they
   cannot be checked together). The watcher follows the OS's change notifications for the OS FS or an
   FS whose `OSBacked()` is true (§2.2), and falls back to polling, with one Warn line, when they
-  cannot start or later fail. Whatever the notifications deliver, any change to the read set is seen
+  cannot start or later fail. Whatever the notifications deliver, any change to the read set that changes a stamp (S1) is seen
   within the resync interval (at most 1 s): the watcher also stats the read set, watches the
   directories of link targets and retries directories it could not watch.
 - **W13.** `fn` is called on one goroutine, never concurrently with itself, in revision order. An
   event's `Files`, and what makes an event, are only read-set files and names the scan takes as
-  sources (the S5 predicate): editor swap files, `.canon/` and build outputs produce none; a listed
+  sources (the S5 predicate): editor swap and lock files, names starting with `.` (`.canon/` among them) and build outputs produce none; a listed
   directory's change counts only when a name it gains or loses is a source or matches the glob of a
   watching `load`. Events compare snapshots, so `Files` may name one written file under each display
   path that reaches it (DECISIONS 253). An event is delivered when its cause is not `external`, when

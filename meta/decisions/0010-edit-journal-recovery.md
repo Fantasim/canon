@@ -1,6 +1,6 @@
 # ADR-0010 — The edit journal: crash recovery and its threat model
 
-Date: 2026-09-29. Status: accepted (own-process liveness refined with U5b).
+Date: 2026-09-29. Status: accepted (own-process liveness refined with U5b; one edit at a time and liveness amended by ADR-0021, v0.1.9).
 
 ## Context
 
@@ -54,3 +54,13 @@ leaves `.canon/journal/.<hex>.json.<R>.canon-tmp`. No journal names it, so Recov
 a dead writer from a live one still writing; it leaves the file (hidden, harmless). Every other
 leftover of an edit (its tokened stages, their OS write temps, the journal's own temps once the
 journal exists) is cleared by Recover (DECISIONS 351).
+
+## Amendment (2026-10-14, v0.1.9; ADR-0021, DECISIONS 375)
+
+Writer locks (352) replace "One edit at a time" and, where they exist, the pid test. A journal
+(version 2) records the packages whose locks its writer holds from before writing it until after
+removing it. On this host it is its writer's while one of those locks is held: `Recover` takes
+them all without waiting before rolling it back and leaves it otherwise; a writer that holds one
+of them first recovers it, holding all of them. A journal whose locks do not meet a commit's does
+not block it. A journal recording none (version 1, an embedder's FS, a platform without the
+primitive), or one from another host, keeps every rule above.

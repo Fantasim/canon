@@ -120,6 +120,12 @@ used. They are not a kind (§13.1). `asset(root, ext: […])` is `String` with a
   `E2001`.
 - `import p` needs a package `p` in the project (`E2003`). Imports are acyclic (`E2002`,
   naming the cycle).
+- **Tiers** (DECISIONS 380). When `project.canon` declares `tiers` (GRAMMAR.md §7.1), a package
+  belongs to the tier of the path that places it and may import packages of its own tier and of the
+  tiers written before it; any other `import` is `E2007`, at its path. Only `import` lines count:
+  layer and translation files hold none, `load` reads files, and a view's use of the studio package
+  needs no import (SPEC §16.11); an explicit one is judged. An import of no package (`E2003`), or
+  from or of a package no tier places (`E1018`), is not judged.
 - `import p { A, B }` binds `A` and `B`. Each must be a public declaration of `p` (`E2004`).
   `import p` binds `p` for qualified use (`p.A`); `import p as q` binds `q` instead.
 - **Imports are per file**, as in Go: the names an `import` binds are visible only in the file
@@ -160,6 +166,13 @@ it wins, except for the ambiguity rule of §4.2.
    `abs`, `clamp`, `floor`, `ceil`, `round`, `sqrt`, `pow`, `reachable`, `cycles`, `topoSort`),
    and `fail` (GRAMMAR.md §4.2: a predeclared identifier, callable only inside a `check { }`
    block, `E1105`). `warn` and `load` are reserved words (GRAMMAR.md §4.1): syntax, not names.
+
+A quoted word (GRAMMAR.md §2.3) is an identifier whose name is the word between its backticks,
+looked up as that identifier would be. No declaration, local, parameter, field, import or package
+is named by a quotable word (`E1125`), so steps 2 to 6 never find one: it is a member, case or
+static key of the expected type (step 1, §4.1), a symbolic key of a `ref` with dynamic keys, or a
+symbol of a dependent type (§11.4); anything else is `E2102`. It needs no import: `` leg: `in` ``
+in a layer file names the member `in` of the expected enum, whatever its package.
 
 So a user declaration shadows a built-in: in `record LevelRange { min: Int, max: Int }`, `min`
 inside the body is the field. Built-in **methods** (`len`, `count`, `filter`…) are looked up
@@ -738,7 +751,7 @@ points (§6.2), reported at the value's location (EVALUATION.md §4.3):
 | `where p` | any type | `p` evaluates to `true` with `it` bound to the value | `E3206` |
 | implicit sized range (§7.2) | integer types | | `E3201` |
 | implicit finiteness | `Float`, `Float32` | | `E3202` |
-| asset (§13.4) | `String` | the file exists | `E3701`–`E3703`, `E3705` |
+| asset (§13.4) | `String` | the file exists | `E3701`–`E3703`, `E3705`, `E3706` |
 
 Rules:
 
@@ -1243,8 +1256,12 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
   package lists are known from its sources (DECISIONS 330), `ext` a list of symbols (bare
   extensions, without the dot). A root that is not a string literal, or an `ext` that is not a
   bracketed list, does not parse (GRAMMAR.md §5, `E1116`); bad arguments that parse, an
-  interpolated root included, are `E3704` (DECISIONS 367). The
-  root is listed by its real path, links resolved, as `load.dir` does (WIRE.md §6.5).
+  interpolated root included, are `E3704` (DECISIONS 367). The root is listed by its real path,
+  links resolved, and every symbolic link on the way to the file (in the root's own path, a folder
+  or the file itself) follows `load.dir`'s bounds (WIRE.md §6.5): it is followed only when its
+  target resolves inside a declared root or the project. A file reached only through a link outside
+  them is `E3706`, naming the first such link; a dangling or looping link holds nothing (`E3701`)
+  (DECISIONS 376).
 - A value is a path relative to the root, with `/` separators and no empty segment, `.`, `..`,
   leading `/` or `\` (`E3703`).
 - Its extension (after the last `.` of the last segment) must be one of `ext`, compared exactly
@@ -1358,6 +1375,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E2004 | error | selective import of a missing or `local` name |
 | E2005 | error | two imports, or an import and a declaration, bind one name |
 | E2006 | error | package line of a descendant or unrelated package |
+| E2007 | error | an import of a package of a later tier (§3.1) |
 | E2101 | error | §4.2 |
 | E2102 | error | name found by no step of §3.3 |
 | E2103 | error | §10.2 |
@@ -1436,6 +1454,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E3703 | error | evaluation |
 | E3704 | error | static |
 | E3705 | error | an asset under an optional root absent on this machine (evaluation, §13.4) |
+| E3706 | error | an asset reached only through a symbolic link outside the roots and the project (evaluation, §13.4) |
 | E3801 | error | evaluation |
 | E3802 | error | evaluation |
 | E3803 | error | §11.1, §11.2 |

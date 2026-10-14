@@ -144,8 +144,10 @@ imports only the packages its row lists or packages reachable through them
 the Consumes column (its "may import anything" is the specific rule; the rank rule still binds),
 and `cli`'s prose cell means every package listed above it. Where a package must call one listed
 below it, it declares the interface it needs and receives an implementation at construction, from
-`build` or `workspace`. There are exactly two such seams: `check.Folder` (constant folding during
-checking, §4.7) and `eval.Host` (loading and verification during evaluation, §4.8).
+`build` or `workspace`. There are exactly three such seams: `check.Folder` (constant folding during
+checking, §4.7), `eval.Host` (loading and verification during evaluation, §4.8) and
+`build.Settler` (rolling back an unfinished edit before a build writes, ADR-0021, installed by
+`workspace`).
 
 ---
 
@@ -351,6 +353,7 @@ type Identity struct { Coll *types.Collection; Key Key; Retired bool }
 type ProvKind uint8   // Literal, JSON, CSV, Defines, Text, Default, Spread, Computed, Layer (API.md Origin)
 type Prov struct {    // never written once a value holds it; values may share one (DECISIONS 373)
     Kind ProvKind
+    Position bool     // an entry position's mark (EVALUATION.md §13.1); in the padding
     Span source.Span  // literal node, JSON value's first byte..end, default expr, building expr, amendment
     Via  *Prov        // Default: the literal/object that omitted the field; Spread: original
     Ext  *ProvExt     // the rarely set fields; nil when none is set
@@ -541,7 +544,7 @@ type Emit struct {
     GoImport string                        // go: the import path of Dir (CODEGEN.md §2.8)
     Mode Mode; Values []string; GoPackage, Namespace string   // typed options (DECISIONS 80)
     Open []string                          // go, cpp, ts types: the opened enums (DECISIONS 339, 362, §4 review rule)
-    NoHook []string                        // go, cpp data: records and cases (V.Case) whose make hook this emit does not write (DECISIONS 363, §4 review rule)
+    NoHook []string                        // go, cpp data: records and cases (V.Case) whose make hook this emit does not write (DECISIONS 363); filled only for packages a selected package imports, the only ones an importer reads
 }
 ```
 
@@ -1085,6 +1088,7 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
   | warm `canon check` (unchanged manifest) | ≤ 1 s |
   | `Edit` of one entry field, re-check and write, p95 over 200 random `Set`s | ≤ 300 ms |
   | `Evaluate` of one entry after a committed edit, p95 | ≤ 150 ms |
+  | studio refresh after a committed edit (Evaluate of the entry, then a Value), p95 | ≤ 500 ms |
   | peak RSS during cold check | ≤ 1.5 GB |
   | view model per package, without search index | ≤ 5 MB |
 
@@ -1092,9 +1096,10 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
   `make check`; exceeding a target fails it, and its numbers are recorded in `meta/`. A 4-core CI
   runner (Linux x86-64, 4 cores, 16 GB) may run it, or a 1,000-entry version, as a report that never
   gates (DECISIONS 261). The edit benchmark (`bench-edit`) gates the `Edit` p95, the `Evaluate` p95,
-  cold check, cold RSS and the view-model size. It calls `Value` before each timed `Set`, as the
-  studio refreshes its view model after a committed edit (API.md V14); that refresh is outside
-  NFR-01's gated measures (DECISIONS 261). Warm `canon check` is reported, not gated, until the
+  cold check, cold RSS and the view-model size. After each timed `Set` it times the studio's
+  next reads of the new snapshot (API.md V14), the `Evaluate` above then a `Value` of the edited
+  entry; their sum is the refresh, gated at its own target (DECISIONS 382), since whichever first
+  needs the snapshot's every-package analysis pays for it. Warm `canon check` is reported, not gated, until the
   on-disk cache is turned on (`Options.Cache` is accepted and inert in M4). A gate never passes
   silently:
   - cold check and RSS are measured per project (the benchmark and each example), each against its
@@ -1172,6 +1177,7 @@ exists under `examples/features/<name>/` (the directory names, DECISIONS 262):
 | `pairs` | `@json(pairs:)`: slots, gaps (`E7117`), fingerprint | M2 | to add |
 | `ts` | TS goldens for data mode and translated functions | M6 | to add |
 | `edits` | a project used only by edit tests: defaults, spread, layered values, JSON sources, dependent fields, variants | M4 | present |
+| `tiers` | tiers in project.canon: a longer path placing a sub-package in an earlier tier, a downward import | v0.1.9 | present |
 
 ---
 

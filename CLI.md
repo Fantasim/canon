@@ -81,6 +81,8 @@ then not an unknown package, in every command that takes selectors (`fmt` includ
 package-scoped command sees them, and a bare `...` stays an unknown package. Their findings sort
 among the packages' by the bag's name (DECISIONS 353).
 
+A file whose name starts with `.` is no source (API.md O2); naming it is an unknown package, exit 2.
+
 ### 2.3 Global flags
 
 | Flag | Meaning |
@@ -220,7 +222,8 @@ canon new <package>
 ```
 
 Creates the package directory and `<last-segment>.canon` containing the `package` line and a doc
-comment placeholder.
+comment placeholder. The new file is created under its package's writer lock, after rolling back an
+unfinished edit of that package (API.md N11).
 
 ### 3.3 `canon check`
 
@@ -275,6 +278,8 @@ studio can show them; code, data and the lock are not. A build with `--layer` ne
   header or a text file, `canon convert --adopt` for a JSON source (§3.10).
 - A build with `--layer` writes the same `out` files as a plain build: do not commit outputs of a
   layered build.
+- Commit a case-only rename with `git mv`: git with `core.ignorecase` does not record one made on
+  such a disk.
 - **Absent roots** (SPEC §3.1, CODEGEN.md §2.4). An output under an optional root that is not
   present on this machine is skipped: not written, not listed, and counted in one `W8024` per root,
   which names the root. Everything else is written as usual, and `canon.outputs` keeps the lines
@@ -325,7 +330,8 @@ process, and says once on standard error whom it waits for: it takes `.canon/wri
 exclusively for each selected package and shared for each other loaded package (DECISIONS 352).
 `--check` and `--only-root` take no lock. Every file it writes or sets aside is staged under a name
 unique to the run (DECISIONS 351). `--check` also reports a file with a generated marker that no
-emit writes (`E8029`; a plain build warns, `W8030`; CODEGEN.md §2.4, DECISIONS 356).
+emit writes (`E8029`; a plain build warns, `W8030`; CODEGEN.md §2.4, DECISIONS 356). Under its
+locks it first rolls back an unfinished edit of a package it locks (API.md N11).
 
 ### 3.5 `canon test`
 
@@ -418,7 +424,8 @@ naming conventions; `canon check` does (`W1003`).
   (`E1013`, exit 2).
 
 `canon fmt` (without `--check`) takes the writer lock of each package it rewrites and stages its
-files under names unique to the run, as `canon build` does (DECISIONS 351, 352).
+files under names unique to the run, as `canon build` does (DECISIONS 351, 352). Under its locks it
+first rolls back an unfinished edit of a package it locks (API.md N11).
 
 ### 3.7 `canon explain`
 
@@ -634,8 +641,9 @@ exits as API.md §15 says. A request whose top level is not a JSON object is `Er
 
 Exit: 0, 1, 2, 3.
 
-An edit takes the writer lock of the package of every file it writes (DECISIONS 352) and runs
-API.md N9 under it.
+An edit takes the writer locks of the packages of every file it writes, a JSON file's reading
+packages included (DECISIONS 352, 375), rolls back under them an unfinished edit of those packages
+(API.md N11), and runs API.md N9 under them.
 
 ### 3.16 `canon rename`
 

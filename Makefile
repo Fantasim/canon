@@ -240,8 +240,8 @@ fuzz-edit-judge:
 
 # IMPLEMENTATION-PLAN.md §6 M4 item 4, §7.6: NFR-01 on a benchmark project of BENCH_EDIT_N
 # entries and on the examples, printed with the machine. Gated: cold check and its RSS per
-# project, Edit and Evaluate p95, view model size; the warm check is reported, not gated (log
-# M4 U7b). Opt-in, not part of `check`.
+# project, Edit, Evaluate and refresh p95, view model size; the warm check is reported, not
+# gated (log M4 U7b). Opt-in, not part of `check`.
 BENCH_EDIT_N ?= 7000
 .PHONY: bench-edit
 bench-edit:

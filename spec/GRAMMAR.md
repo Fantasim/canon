@@ -34,8 +34,9 @@ Positions in diagnostics are 1-based lines and 1-based columns counted in UTF-8 
 - `\r\n` is normalized to `\n` before lexing. A `\r` not followed by `\n` is `E1124`.
 - Outside string literals and comments, the only characters allowed are ASCII. Any other
   character, and the ASCII characters `` ` `` `#` `$` `&` `;` `^` `~` `\` `'` outside a literal, is
-  `E1106`. The one exception is the `#` of a position segment `[#n]` in an amend path (§5.7): the
-  lexer produces a `#` token there (directly after `[`), and a `#` token anywhere else is `E1106`.
+  `E1106`, with two exceptions: the `#` of a position segment `[#n]` in an amend path (§5.7), where
+  the lexer produces a `#` token (directly after `[`; a `#` token anywhere else is `E1106`), and a
+  backtick that opens a quoted word (§2.3).
 - Inside string literals and comments, the control characters U+0000–U+001F other than tab (and
   newline in multiline strings and block comments) are `E1124`.
 - Tabs and spaces are whitespace. Tabs have no width meaning for the parser.
@@ -50,6 +51,7 @@ Positions in diagnostics are 1-based lines and 1-based columns counted in UTF-8 
 |---|---|---|
 | `IDENT` | `heal` `Tone` `none_` `_other` `II_WEA_AXE_ANGEL` | §2.3; excludes reserved words and `_` |
 | keyword | `record` `check` `in` | the reserved words of §4.1, each its own token kind |
+| `QWORD` | `` `in` `` `` `return` `` | §2.3; a quoted word, one token |
 | `_` | `_` | a lone underscore is punctuation, never an identifier |
 | `INT` | `42` `1_000_000` `0x1F` `0b1010` | §2.4 |
 | `FLOAT` | `3.5` `0.15` `1e-3` `2.5e6` | §2.4 |
@@ -108,6 +110,20 @@ digit  = "0".."9"
 - A lone `_` is the `_` token (match wildcard, ignored binder, any-type).
 - In this document **`WORD`** means "an `IDENT` or any reserved word". The grammar uses `WORD` in
   the positions where reserved words are accepted as names (§4.3).
+
+```
+QWORD = "`" ( WORD | "_" ) "`"     (one token: no space, comment or line break inside)
+```
+- A **quoted word** is a reserved word between backticks: `` `in` ``. Its name is the word
+  without the backticks. It is accepted only as a `primary` (§5.11), read as an identifier of
+  that name (TYPES.md §3.3); it is never a keyword, so it can end an item and never continues a
+  line (§3.1).
+- The **quotable** words are the reserved words that are not nameable (§4.3) and may name a
+  member, case or key: `and as break continue else fn for if in is let load match not or return
+  where while`. Quoting any other word (an `IDENT`, a nameable word, `none`, `true`, `false`,
+  `self`, `_`) is `E1138`.
+- A backtick not followed, in one token, by a letter or `_`, word characters and a closing
+  backtick is `E1106` at the backtick.
 
 ### 2.4 Numbers
 
@@ -298,6 +314,7 @@ loop:
     '}' -> if INTERP and depth == 0: pop INTERP (back to STRING) else emit; depth--
     ':' -> if INTERP and depth == 0: read format spec, expect '}', pop INTERP
     '#' directly after '[' -> emit '#' (an amend-path position segment, §5.7; E1106 elsewhere)
+    '`' -> read a quoted word (§2.3): E1106 if no word and closing backtick follow, E1138 if the word is not quotable
     otherwise longest-match punctuation, or E1106
   STRING:
     read text until '"' (pop), '{{' / '}}' (literal brace), '{' (push INTERP with depth 0),
@@ -492,6 +509,7 @@ A reserved word is accepted as a name in exactly these positions:
 | (a) the target of `emit`, amend path segments | `WORD` | `emit view { … }` |
 | (b) after `.` or `?.` | `WORD` | `Icon.check`, `flags.blocking.retired` |
 | (c) value position (a `primary`), for the **nameable** words only | `nameable` | `icon: check`, `icon: package` |
+| (d) value position, the quotable words, quoted (§2.3) | `QWORD` | `` leg: `in` `` |
 
 The **nameable** words are the reserved words that can neither start nor continue an expression:
 
@@ -502,8 +520,9 @@ record ref retired stable table test translation type var variant view warn widg
 
 In value position these are read as identifiers (`icon: check` names the `Icon` member `check`).
 The other reserved words (`and as break continue else false fn for if in is let load match none
-not or return self true where while`) cannot be used bare in value position; a member with such a
-name is written qualified (`Icon.return`).
+not or return self true where while`) cannot be used bare in value position; a member, case or key
+with such a name is written quoted there (`` icon: `return` ``, §2.3), which needs no name in scope,
+or qualified (`Icon.return`, TYPES.md §4.3).
 
 Everywhere else — names of types, records, enums, variants, aliases, functions, methods, lets,
 consts, fields, parameters, locals, loop and lambda variables, imports, aliases, packages, layers,
@@ -913,7 +932,7 @@ callArgs        = ParenList( arg ) ;
 arg             = [ IDENT ":" ] expr ;
 
 primary         = literal
-                | IDENT | nameable                                 (* §4.3 (c) *)
+                | IDENT | nameable | QWORD                         (* §4.3 (c), (d) *)
                 | "self"
                 | "(" expr ")"
                 | shorthand
@@ -1100,6 +1119,7 @@ pValue          = stringLit | INT | qualifiedIdent
 | `studio` | package path | none | the package holding the studio vocabulary (SPEC §16.11); it must exist (`E1012`) |
 | `budget` | integer ≥ 1 | `100_000_000` | evaluation steps (EVALUATION.md); out of range `E1006` |
 | `go_module` | map root name → Go module path string | `{}` | EMT-06: the Go import path prefix of outputs under that root. Keys must be declared roots and values non-empty with no spaces (`E1009`); use: CODEGEN.md |
+| `tiers` | ordered map tier name → list of package paths | `{}` (none) | the allowed import directions (TYPES.md §3.1, DECISIONS 380), tiers written lowest first. Names are `IDENT`s (`E1017` `name`), unique (`E1005` `tier`). A value is a non-empty list of package paths written as dotted identifiers (`[items.vocab, header]`); another value, an empty list or another item is `E1006` `tiers`. A path is listed once over all tiers (`E1017` `duplicate`). A path **places** the package of that name and every package below it, except one a longer listed path places; it need not name a package. Once a tier is declared, a package no path places and a path that places no package are `E1018`, found after the scan like `E1012`. Not allowed in `project.local.canon` (`E1014`) |
 
 - An unknown key is `E1002`. A duplicate key is `E1005`. A value of the wrong kind is `E1006`.
 - Keys may appear in any order. Doc comments on keys are allowed and ignored by the compiler.
@@ -1357,7 +1377,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1002 | error | a key not in §7.1 |
 | E1003 | error | project search failed (exit 2) |
 | E1004 | error | `canon` key missing |
-| E1005 | error | a key or root name given twice |
+| E1005 | error | a key, root name or tier name given twice |
 | E1006 | error | a project value of the wrong kind or out of range |
 | E1007 | error | bad root name or path (absolute, empty, `\`) |
 | E1008 | error | `languages` item |
@@ -1369,12 +1389,14 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1014 | error | `project.local.canon` holds something other than a `roots` map moving declared roots to path strings, or names another project (§7.2) |
 | E1015 | error | `project.canon` pins another compiler version (`compiler`, §7.1) |
 | W1016 | warning | a `dev` compiler cannot honour the project's `compiler` pin (§7.1) |
+| E1017 | error | a tiers name that is not an identifier, or a package path listed twice (§7.1) |
+| E1018 | error | with tiers: a package no listed path places, or a path that places none (§7.1) |
 | E1101 | error | depth-0 `:` in an interpolation not followed by a valid spec and `}` |
 | E1102 | error | indentation prefix of a multiline string |
 | E1103 | error | a second `typeArgs` |
 | E1104 | error | name not in §8.3 |
 | E1105 | error | `fail`/`warn` call elsewhere (CHK-04) |
-| E1106 | error | a character no token can start with (§1), or a `#` outside an amend-path position segment |
+| E1106 | error | a character no token can start with (§1), a `#` outside an amend-path position segment, or a backtick that opens no quoted word (§2.3) |
 | E1107 | error | end of line/file inside a string, raw string or multiline string |
 | E1108 | error | `/*` without `*/` |
 | E1109 | error | unknown escape, bad `\u{…}` |
@@ -1406,6 +1428,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1135 | error | `return` in a check or test block |
 | E1136 | error | malformed comprehension |
 | E1137 | error | `keyed by` after another type |
+| E1138 | error | a quoted word that is not quotable (§2.3) |
 | W1001 | warning | §9.1 |
 | W1002 | warning | §9.1 |
 | W1003 | warning | §9.2 |

@@ -209,7 +209,8 @@ the grammar expects them. Reserved keywords cannot name declarations, fields, pa
 (`E1125`), but data may use them as names: as an enum member, variant case, table key or
 translation-key segment (`enum Icon { check, package }`), as the name before `:` in any brace
 literal (`emit go { package: "teamboard" }`), after `.` (`Icon.check`), and bare in value position
-for the words that cannot start an expression (`icon: check`). `none`, `true`, `false` and `self`
+for the words that cannot start an expression (`icon: check`), and quoted there for the others
+(`` icon: `return` ``), which needs no import. `none`, `true`, `false` and `self`
 never name a member, case or key (`E1126`). The exact positions and word lists are
 [spec/GRAMMAR.md](spec/GRAMMAR.md) §4.
 
@@ -308,6 +309,7 @@ unknown key is `E1002`.
 | `optional_roots` | `[root name]` | `[]` | the declared roots that may be absent on a machine (below); each names a declared root, once (`E1009`) |
 | `consumer_roots` | `[root name]` | `[]` | the declared roots whose outputs their consumer builds (below); each names a declared root, once (`E1009`) |
 | `languages` | `[identifier](1..)` | `[en]` | the first one is the source language (§17); codes match `[a-z]{2,3}(_[A-Z][a-z]{3})?(_[A-Z]{2})?` |
+| `tiers` | `{identifier: [package path](1..)}`, in order | `{}` | allowed import directions, lowest tier first (§3.2); `project.local.canon` cannot set it (`E1014`) |
 | `studio` | package name, optional | `none` | package holding the studio vocabulary (§16.11); it must exist (`E1012`) |
 | `budget` | `Int(1..)` | `100_000_000` | evaluation steps per package and invocation (§11.6) |
 | `go_module` | `{root name: String}` | `{}` | the Go module path of each root that receives Go code, keyed by a declared root name (`E1009`), so imports between generated packages can be derived (§14.6) |
@@ -387,6 +389,11 @@ import shared.ui // use qualified: ui.Tone
 - All files of a package share one namespace. Declaration order does not matter.
 - Imports name packages by their dotted path. Imports are acyclic (`E2002`). `canon fmt` sorts
   them by package path, and the names inside `{ }`, as bytes.
+- With `tiers` in `project.canon` (DECISIONS 380; spec/GRAMMAR.md §7.1), a listed path places its
+  package and every package below it, a longer path winning, and every package must be placed. A
+  package imports only from its own tier and the tiers listed before it (`E2007`):
+  `tiers { ids: [game.vocab], data: [game] }` lets `game.items` import `game.vocab`, never the
+  reverse.
 - A package's **public names** are its top-level declarations not marked `local`.
 
 ### 3.3 Kinds of files
@@ -483,6 +490,17 @@ entry items.II_WEA_AXE_ANGEL {
   writing it is `E3321` (`entry potions.II_POT_HEAL_L { … }`; TYPES.md §9.3).
 - Entry order: the table literal's entries first, then entry files in path order, then source
   order within a file.
+- **Positions are not ids** (DECISIONS 379). Moving, renaming or adding an entry file changes
+  entry order, so an entry's position never stands for the entry: its key does. Generated id
+  types are opaque and never convert to or from a position (CODEGEN.md §5.3), and every
+  serializer Canon generates writes the key. A number that must keep naming one entry across
+  builds is declared and locked: a `@stable` field of a `stable table`, or an enum's `@codes`
+  code (§12, LOCK.md §1); `.index` and the number Go and C++ give a member without `@codes` are
+  declaration positions (Go's text encoders write such a member's wire value, through
+  `MarshalText`). An entry position written to an output warns (`W8031`, EVALUATION.md
+  §13.1) unless written with `positional(…)`. Entry order still orders rows and what iterating
+  the table computes (`first()`, `at(i)`, ties of `sortBy`, `minBy`, `maxBy`, the order of
+  lists, maps and text built from it); it never changes an entry's key, fields or refs.
 - A duplicate key is an error naming both locations: `E3101` for a table, `E3102` for a keyed
   list (TYPES.md §9.3).
 - `retired entry t.key { … }` retires an entry (§12).
@@ -726,8 +744,9 @@ let first: ref Severity = severities.first()! // asserted: E4001 if the table is
 - Every table entry has `.id` (its key, an identifier) and `.retired` (§12).
 - Tables and keyed lists accept every list method over their entries (§20.3), and their entries
   may be declared in other files with `entry` (§4.3).
-- In generated code, the keys of a public table form an id enum (Go `ItemID`, `StatusID`; C++ and
-  TypeScript `ItemId`, `StatusId`) in `baked` and `embedded` modes. In `data` and `types` modes
+- In generated code, the keys of a public table form an id type (Go `ItemID`, `StatusID`, opaque: no
+  integer converts to or from it; C++ an `enum class` `ItemId`, `StatusId`; TypeScript the union of
+  the keys) in `baked` and `embedded` modes (§4.3: positions are not ids). In `data` and `types` modes
   ids are a distinct string type, so adding an entry changes only the data file (§14.2).
 
 Details: [spec/TYPES.md](spec/TYPES.md) §9, [spec/STDLIB.md](spec/STDLIB.md) §5.
@@ -1689,7 +1708,7 @@ runtime helper files are in [spec/CODEGEN.md](spec/CODEGEN.md), which wins on de
   errors of generated code are `*rt.EvalError` panics.
 - Table and keyed-list containers: `Len()`, `At(i)`, `All() iter.Seq[*T]`,
   `Find(key) (*T, bool)`, `FindBy<Field>(v) (*T, bool)` per `@stable` field, and in `baked` and
-  `embedded` modes `Get(id) *T` over the id enum. `FindBy<Field>` reads a map index built once,
+  `embedded` modes `Get(id) *T` over the id type. `FindBy<Field>` reads a map index built once,
   never a scan.
 - For each value `v`: `data` mode has `Load<V>(path string) (*<V>, error)` (`LoadPotions`);
   `baked` and `embedded` have `Get<V>()` (`GetStatuses()`), built once on first use through

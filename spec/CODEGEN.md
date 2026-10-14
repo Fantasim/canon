@@ -243,6 +243,19 @@ project), the file itself included, may be a symbolic link; the root's own direc
 above it may. A violation is `E8027` naming the output and the link, and nothing is written;
 `build --check` reports it too, and removing a stale owned file follows the same rule.
 
+**Declared spelling** (DECISIONS 377, extends 357). Every directory an output path passes through
+that `canon` may create (above), and the file itself, are written as `out` and the file name
+declare. Where the disk holds one under another spelling, equal but for letter case, that is the
+same one (its directory lists that spelling and not the declared one, and the declared path
+resolves), the build gives it the declared spelling, a directory by one rename before any output
+below it is written, inside the all-or-nothing write; each output below a renamed directory, and
+a renamed file, is reported `written` even when its bytes are unchanged (`stale` under
+`--check`). A file is renamed only when the build may overwrite it (its marker, or §2.9's
+`canon.outputs`), else `E8001`. A spelling the listing does not show is left as the disk has it;
+where the two spellings are two files or directories nothing is renamed. `build --only-root
+<root>` renames only below its root's directory (`E8028` otherwise). A directory holding a
+package's sources is never renamed: WIRE.md's `E8152` refuses its other spelling first.
+
 **No output as an input** (DECISIONS 341). A file that a `load` of the project reads (`load`,
 `load.text`, `load.defines`, a `load.dir` or glob match) and that an emit of the same build writes
 (any target, any copy, a skipped output included) is `E8026` at the load, naming the path and the
@@ -319,6 +332,11 @@ normative: a golden that holds other prose is wrong.
 | T12 | Go | make hook, entry hook, row hook ([§5.14](#514-make-hooks)) | `// <Name> is for generated code.` |
 | T13 | Go | row type ([§5.9](#59-values-containers-and-accessors)) | `// <Name> is a row holding a <Held>.` |
 | T14 | Go | row methods | on `ID`, `// ID is the row's key.`; on `Retired`, `// Retired reports whether the row is retired.`; on `Record`, `// Record is the row's <Held>.`; a forwarding getter carries the doc of the getter it forwards (§2.6) |
+| T15 | Go | `baked` id type | `// <Name> is the key of an entry of <value>: compare it, switch on it, look it up with Get.` / `// To store or send it, write its key (String, or MarshalText through encoding/json):` / `// its position is not an id, and changes when entry files move.` |
+| T15 | C++ | `baked` id enum | `/// The key of an entry of <value>. Store or send ToWire(id): the underlying value is` / `/// a position, not an id, and changes when entry files move.` |
+| T16 | Go | id `Position` | `// Position is the entry's place in <value> in this build, for array indexes in memory.` / `// It is not an id: it changes when entry files move.` |
+| T17 | C++ | deleted `to_json`/`from_json` | `/// nlohmann/json would write the position: write ToWire(id), read <Id>FromWire(s).` |
+| T18 | Go | `MarshalText`, `UnmarshalText` (ids; enums without `@codes`) | on an id, `// MarshalText writes the key, never the position.` and `// UnmarshalText reads a key; an unknown one is an error.`; on an enum, `// MarshalText writes the wire value, never the position.` and `// UnmarshalText reads a wire value; an unknown one is an error.` |
 
 The runtime helper files (`rt.go`, `canon_runtime.h`, `canon_runtime_json.h`, the TypeScript
 helper block) are fixed texts, reproduced in §6.3, §7.4, §7.5 and §8.2; their comments are part
@@ -458,7 +476,7 @@ go_module {
 - **TS.** Imports are relative paths from the importing file to the imported file, with `.ts`
   replaced by `.js`, always starting with `./` or `../`. Each imported package is imported once,
   as a namespace: `import type * as game_core from "../core/core.js"`, or `import * as` when the
-  file uses a value of it (a `CanonMap`, an `<E>Index` table); the alias is the package path's
+  file uses a value of it (a `CanonMap`, an enum's `<E>Index`, a table's `<Id>Members`); the alias is the package path's
   segments joined by `_`, escaped like other TS names when it is a reserved word (`new` → `new_`,
   §3.4). Every name of another package is written qualified through it
   (`game_core.LevelRange`, `sovcommon_roles.RoleIndex`), like Go and C++, so imported names never
@@ -518,7 +536,7 @@ go_module {
     `ForeignResolvedRef`, whose message names the way out: emit P in `baked` mode for that
     target, or keep the record inside P's value. TypeScript refs are keys in every mode;
     a TypeScript reader checks a key against the target's id set when the generator knows it (a
-    `baked` or `embedded` owner's id union, through its `<E>Index`) and fails with `no entry <key>`,
+    `baked` or `embedded` owner's id union, through a private index this file builds from the owner's `<Id>Members` with `canonIndex` (§8.2)) and fails with `no entry <key>`,
     as Go and C++ readers do.
   - **Tables.** A table of P's record held by Q has rows of Q's own row type and Q's own id type
     ([§5.9](#59-values-containers-and-accessors)).
@@ -593,10 +611,10 @@ emit text { out: "@source/Tools/telemetry" }
   `--target` and the selection), not listed by another package's marked `canon.outputs`, and no
   first-line marker of §2.4 (any target's) or, for a `.json`, a top-level `"$schema"` in its first bytes, a regular file, and current bytes that still
   hash to its line's value (a line without a hash, from 0.1.2, never removes). Any other path only
-  drops out of the list. A case-only rename removes the old name only where it is another file
-  than the one written (a case-sensitive file system); where it is the same file, the old line
-  grants ownership of the new spelling and the file is given the declared spelling, even when its
-  bytes are unchanged (DECISIONS 357). A copy under an absent root stays listed (§2.4) and is kept; a file that is
+  drops out of the list. A case-only rename removes the old name only where it is another file than the one written (a
+  case-sensitive file system); where it is the same file, under another spelling of its name or of a
+  directory on its path (§2.4), the old line grants ownership of the new spelling and the file is
+  given the declared spelling, even when its bytes are unchanged (DECISIONS 357, 377). A copy under an absent root stays listed (§2.4) and is kept; a file that is
   not listed is never touched. The removal is reported like the migration's below. A package
   with no `emit text` whose `canon.outputs` carries the marker has it removed, so a stale list
   never grants ownership later. An output whose path is a `canon.lock` or a
@@ -609,6 +627,18 @@ emit text { out: "@source/Tools/telemetry" }
   all-or-nothing write: a failed write leaves the file in place.
 - `canon build --check` compares the text files and `canon.outputs` like every other output; two
   outputs with one path are `E8152` (WIRE.md §8.1).
+
+### 2.10 Entry positions in outputs
+
+Stage E walks every value it precomputes for a package with an emit other than `view`: the
+emitted values, the stored results of `export fn`s (lookup cells, method instances, and the `$`
+keys and `$fns` they feed) and `@text` results, each record once, in traversal order. A value
+carrying an entry position's mark (EVALUATION.md §13.1) is `W8031`, at the marked value's site,
+or at the output's declaration when the provenance names no site, with the output's declaration
+as a related `source` note; once per site and package. `{output}` is the qualified name
+(`pkg.name`) of the emitted `let`, the `export fn` or the `@text` fn. The view model, findings and
+messages, conformance vectors and the lock are not outputs here. `W8031` stays a warning; only a
+later decision may make it an error (DECISIONS 379).
 
 ---
 
@@ -929,11 +959,17 @@ func (self Tone) String() string        // Canon name: "series_1"
 func (self Tone) Wire() string          // wire value: "series-1"
 func ParseTone(wire string) (Tone, bool)
 func ToneMembers() iter.Seq[Tone]       // declaration order, retired members included
+func (self Tone) MarshalText() ([]byte, error)      // the wire value, for encoding/json and others
+func (self *Tone) UnmarshalText(text []byte) error  // a wire value; an unknown one is an error
 
 type Element uint8                      // values are the codes: ElementFire Element = 1
 func (self Element) Code() uint8
 func ElementFromCode(code uint8) (Element, bool)
 ```
+
+An enum without `@codes` has `MarshalText` and `UnmarshalText`, so text encoders write its wire
+value, never its declaration position; one with `@codes` has neither, its value being the code
+(DECISIONS 379).
 
 **C++**
 
@@ -1034,8 +1070,12 @@ The keys of a public `table` value (EMT-04):
 
 | Mode | Go | C++ | TS |
 |---|---|---|---|
-| `baked`, `embedded` | `type StatusID uint8` + constants `StatusIDOpen…` in entry order, `String()` (the key), `ParseStatusID(key) (StatusID, bool)` | `enum class StatusId : uint8_t { open, taken, … }`, inline `ToWire(StatusId)`, `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdIndex: Readonly<Record<StatusId, number>>` |
+| `baked`, `embedded` | `type StatusID struct{ position uint8 }` (opaque: no integer converts to or from it) + `var`s `StatusIDOpen…` in entry order, `String()` and `MarshalText()` (the key), `(*StatusID).UnmarshalText` (a key; an unknown one is an error), `ParseStatusID(key) (StatusID, bool)`, `Position() int` (an array index for one build, §2.10) | `enum class StatusId : uint8_t { open, taken, … }`, inline `ToWire(StatusId)`, `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`), and deleted `to_json`/`from_json` templates for it (DECISIONS 379) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdMembers: ReadonlyArray<StatusId>` in entry order; no exported index: a file that needs one builds it privately with `canonIndex` (§8.2) |
 | `data`, `types` | `type StatusID string` | `std::string` (getter `const std::string&`, lookups take `std::string_view`) | `export type StatusId = string` |
+
+A `baked` id is opaque so that its position, which changes when entry files move, never leaves as
+an id: `encoding/json`, `xml` and `yaml` write the key; `database/sql` and `gob` refuse it (SPEC
+§4.3, DECISIONS 379).
 
 In `data` and `types` mode the id type is declared once per name: tables of one package whose id
 types are named alike (two tables of one record, or of two records named alike) share that one
@@ -1749,19 +1789,22 @@ generated code, not public API ([§1.3](#13-stability)), like a default-construc
 ### 6.2 Sample: `baked` table with lookups (teamboard, abridged)
 
 ```go
-type StatusID uint8
+type StatusID struct{ position uint8 }
 
-const (
-	StatusIDOpen  StatusID = 0
-	StatusIDTaken StatusID = 1
+var (
+	StatusIDOpen  = StatusID{0}
+	StatusIDTaken = StatusID{1}
 )
 
 func (self StatusID) String() string
+func (self StatusID) Position() int
+func (self StatusID) MarshalText() ([]byte, error)
+func (self *StatusID) UnmarshalText(text []byte) error
 func ParseStatusID(key string) (StatusID, bool)
 
 type Statuses struct{ rows []Status }
 
-func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id] }
+func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id.Position()] }
 
 type teamboardData struct {
 	statuses      Statuses
@@ -1778,7 +1821,7 @@ var canTransitionTable = [6][6]bool{ /* row = from, column = to (DECISIONS 122) 
 
 // CanTransition: sovcommon's CanTransition.
 func CanTransition(from StatusID, to StatusID) bool {
-	return canTransitionTable[from][to]
+	return canTransitionTable[from.Position()][to.Position()]
 }
 ```
 
@@ -3730,6 +3773,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8028 | error | `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (§2.4) |
 | E8029 | error | `build --check`: a file with a generated marker that no emit writes (§2.4) |
 | W8030 | warning | a plain build: a file with a generated marker that no emit writes (§2.4) |
+| W8031 | warning | an entry position written to an output (§2.10) |
 | E8101 | error | emitted Int outside ±(2⁵³−1) (SPEC §15.4) |
 | E8103 | error | string or list longer than a fixed-size C++ array |
 | E8104 | error | package with inputs has a TS emit |

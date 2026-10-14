@@ -140,6 +140,12 @@ Examples: `reachable(from: initialStatus, next: .next)` lists every status reach
 initial one. `cycles(nodes, next: .parent)` returns the talent nodes on a parent cycle, including
 a node that is its own parent.
 
+### 2.4 Positions
+
+| Signature | Result | Errors | Cost |
+|---|---|---|---|
+| `positional(x: Int) -> Int` | `x`, no longer an entry position (EVALUATION.md §13.1): a position written to an output on purpose, such as a legacy row number | | 0 |
+
 ---
 
 ## 3. Members of values

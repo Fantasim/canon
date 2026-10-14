@@ -896,7 +896,10 @@ emit json { out: "<path>", values: [v1, v2, …] }
   `canon check` reports it as `canon build` does (DECISIONS 355). The
   runtime helper files of CODEGEN.md §2.3, written with identical content by several emits into one
   directory, are not a collision. (Two Go emits writing different files into one directory are
-  CODEGEN.md's `E8008`.)
+  CODEGEN.md's `E8008`.) Two directories that outputs of the selected packages pass through (any
+  target, any copy, below the directory CODEGEN.md §2.4 lets `canon` create in), or such a
+  directory and a package's directory, whose paths differ only in letter case are `E8152` too, on
+  every platform: one directory on Windows and macOS, two elsewhere (DECISIONS 377).
 - A value whose type contains `Range`, a function type, `Pair`, a variant kind (DECISIONS 308), or
   the `Define` record of `load.defines` (a define table included: it has no `canon-fp` form,
   FINGERPRINT.md §8) is `E8151`. A `ref` into a define table is a key and is written.
@@ -1246,7 +1249,7 @@ list <sha256> <directory>          every directory listing consulted, sorted by 
   order), so adding or removing a matching file changes the manifest. The matches are those the run
   used, recorded as it loaded, never a later walk.
 - `list` hashes the sorted names (one per line, LF-terminated) of a directory whose listing was used
-  (asset existence, TYP-21), files and subfolders alike, the kind known after following links; a
+  (asset existence, TYP-21), files and subfolders alike, the kind known after following links (a link §6.5's bounds do not follow, or one that dangles or loops, is not listed); a
   subfolder's name ends with `/` (kind matters, TYPES.md §13.4). A listed folder's display is that
   of its asset spec's first reference by (package, file, offset), as for files (§2.3).
 - The cache format behind the key is opaque and versioned by the compiler. Deleting `.canon/` is

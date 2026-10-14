@@ -25,9 +25,11 @@ on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a d
 judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
 on entry add/remove.
 **Owed, small:** transient `ErrJournal` for two processes editing different packages (ADR-0010); `Recover`
-at Open takes no writer lock; `NoHook` filled for the import closure only; a case-only rename of an `out`
-directory is `E8001`; the asset kind test follows links unbounded (WIRE §6.5); a layer or new entry file
-cannot name another package's non-nameable member (`E2102`).
+at Open takes no writer lock; a case-only rename of an `out` directory is `E8001`; the asset kind test
+follows links unbounded (WIRE §6.5); a layer or new entry file cannot name another package's non-nameable
+member (`E2102`). Not in v0.1.9 ([ADR-0021](decisions/0021-v019-robustness-release.md) §9): `load.dir`
+skips a Windows junction silently (no `W7115`) and does not bound a path through one; single-file `load`, `load.text`, `load.csv`, `load.defines` read through any link; Windows refresh (re-read notified names, drop a `*StaleError`'s entries); the cache's stat table must not trust size + mtime; a `@text` output named `.canon`/`.json` over an unmarked file (unverified); enums opaque in v0.2 (Go, C++ nlohmann, TS `<E>Index`); the studio's full reload has no target; `evalAnalysis` never calls `KeptSelection`.
+**Documented limit:** `NoHook` is filled for the import closure only, the only packages read (ADR-0021 §2.5).
 **Owed for v0.2:** dependent types kept through static typing (E3804 on dependent-map `union`); an amend
 path into a dependent map (E1905); Go and C++ `embedded`; legacy structs (M6); entry isolation and input
 defaults (321); `ordered_json`, kind constants. Fuzz/progen campaigns deferred.

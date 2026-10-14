@@ -478,7 +478,7 @@ amend config {
 | `[#n]` | list, keyed list, table, map | the element or entry at position `n` (0-based, insertion or entry order), as in API paths (API.md §6.2) |
 
   A segment that fits none of these statically is `E1905`. A path through an input field is
-  `E3313`.
+  `E3313`. `[#n]` on a table, keyed list or map warns `W1912`: name the entry by key.
 - The value after `:` is checked against the static type at the path (TYPES.md §5.1).
 - Within one layer (all its files), the same path twice, or a path that is a prefix of another,
   is `E1908`.
@@ -767,6 +767,24 @@ The **value path** of a finding (SPEC §21.1) is the path from its top-level val
 value, in the syntax of CLI §2.6 and API-02 (keyed lists and tables by key). It is omitted when
 the value is not reachable from a top-level value (a temporary, a test subject).
 
+### 13.1 Entry positions
+
+An **entry position** is the `Int` that `enumerate()` pairs with an element, or that `indexOf`
+returns, when that element is an entry: a table entry, a keyed-list element or a `ref`
+(STDLIB.md §4.1, §4.2). Its provenance carries a **position mark** (DECISIONS 379). A position in
+a plain list, an enum's `.index`, a `Range` counter (`0..t.len()` included), `len()`, and a
+position in a list derived from a table by `map` carry none.
+
+The mark is carried by `+`, `-`, `*`, `/`, `%`, unary `-`, string `+`, a template with a marked
+part (format specs included), `Int(x)`, `Float(x)`, `String(x)`, `join` over a marked element,
+spreads and layer amends; a value passed along keeps it. Nothing else carries it: a `Bool`,
+`at(i)`, `len`. `positional(x)` (STDLIB.md §2.4) returns `x` without it.
+
+A marked value written to an output (CODEGEN.md §2.10) warns `W8031`. The mark belongs to the
+provenance, not the value: equality, hashing, the text form, `explain`, the API and outputs ignore
+it. It is the second line, after opaque generated ids (SPEC §4.3); its blind spots are the
+unmarked positions above.
+
 ---
 
 ## 14. Findings
@@ -807,6 +825,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1909 | error | §9.2 |
 | E1910 | error | §11.1 |
 | E1911 | error | §11.1 |
+| W1912 | warning | an amend path that selects a table, keyed-list or map entry by position (§9.2) |
 | E4001 | error | postfix `!` on `none` (hard) |
 | E4002 | error | missing key or index (hard) |
 | E4101 | error | §6.1, §6.3 (hard) |
