@@ -1120,12 +1120,14 @@ first. The scan is done (below); this section is the result.
 
 **Decision.**
 1. **Scope: entry positions, so `baked` (and `embedded`, when built) table ids, in every target.**
-   Enums are unchanged in v0.1.9: their order changes only by an edit of one declaration, which
+   Enums keep their numbers in v0.1.9: their order changes only by an edit of one declaration, which
    review sees; a persisted enum number is already `@codes` (WIRE needs `@codes` for numeric
    enums); making Go enums opaque would rewrite every enum golden and every `switch`; and no consumer
-   leak was found. The spec rule names enum declaration positions anyway (SPEC §4.3's text, below). TS `<E>Index`
-   tables of enums stay exported in v0.1.9. Rejected: enums too (churn without a found leak; §9
-   records it as a v0.2 candidate).
+   leak was found. One cheap guard applies to them now (point 16). The rest is v0.2, agreed with
+   Louis on 2026-10-14 (§9): Go enums without `@codes` opaque with `Position()`, C++'s nlohmann hooks
+   deleted for them after a read-only scan of Source, TypeScript's `<E>Index` no longer exported. The
+   spec rule names enum declaration positions anyway (SPEC §4.3's text, below). TS `<E>Index` tables
+   of enums stay exported in v0.1.9.
 2. **Go id shape:** `type <R>ID struct{ position uintN }` (unexported field; `uintN` the smallest of
    uint8/16/32 holding the count, as today). Members are `var`s, same names, in entry order.
    `String()` returns the key, switching on `self.position` with constant cases (switching on the
@@ -1212,6 +1214,24 @@ first. The scan is done (below); this section is the result.
     §4's review rule (an opus builder, spec-reviewer as the consumers' proxy, this ADR). Louis's N11
     call (log-2026-10-14, "traced through Prov") is the approval, as 371 and 373 recorded his. §4.3's
     sketch gets the field.
+16. **Go enums without `@codes` write their wire value through text encoders** (Louis, 2026-10-14).
+    Every closed Go enum without `@codes`, in every mode, gains (shown for `Tone`):
+    ```go
+    func (self Tone) MarshalText() ([]byte, error)
+    func (self *Tone) UnmarshalText(text []byte) error
+    ```
+    `MarshalText` returns `[]byte(self.Wire())` for a member, and `errors.New("Tone: no member " +
+    strconv.Itoa(int(self)))` for any other value. `UnmarshalText` sets `*self` from
+    `ParseTone(string(text))`, and returns `errors.New("Tone: no member " + strconv.Quote(string(text)))`
+    when that fails. So `encoding/json` (values and map keys), `encoding/xml` and YAML write wire names
+    instead of declaration positions. Nothing else changes: the type stays `uintN`, members stay
+    constants, explicit conversions still compile (opacity is v0.2), and `database/sql` and `gob`
+    still see the integer. Unchanged in v0.1.9: enums with `@codes` (their number is the stable code),
+    open enums (DECISIONS 339's representation; v0.2 decides them with the rest), C++ and TypeScript
+    enums. The name plan reserves `MarshalText` and `UnmarshalText` on every enum and id through the
+    shared `goIDEnumMethods` list (`internal/ir/tables.go:197-199`); `Position` stays id-only.
+    Rejected: a `driver.Valuer` (a new import in every generated package, for a path v0.2's opacity
+    closes properly).
 
 **Spec text.**
 - SPEC.md §4.3, a new bullet after "Entry order":
@@ -1221,7 +1241,8 @@ first. The scan is done (below); this section is the result.
   >   serializer Canon generates writes the key. A number that must keep naming one entry across
   >   builds is declared and locked: a `@stable` field of a `stable table`, or an enum's `@codes`
   >   code (§12, LOCK.md §1); `.index` and the number Go and C++ give a member without `@codes` are
-  >   declaration positions. An entry position written to an output warns (`W8031`, EVALUATION.md
+  >   declaration positions (Go's text encoders write such a member's wire value, through
+  >   `MarshalText`). An entry position written to an output warns (`W8031`, EVALUATION.md
   >   §13.1) unless written with `positional(…)`. Entry order still orders rows and what iterating
   >   the table computes (`first()`, `at(i)`, ties of `sortBy`, `minBy`, `maxBy`, the order of
   >   lists, maps and text built from it); it never changes an entry's key, fields or refs.
@@ -1276,6 +1297,15 @@ first. The scan is done (below); this section is the result.
   > | T15 | C++ | `baked` id enum | `/// The key of an entry of <value>. Store or send ToWire(id): the underlying value is` / `/// a position, not an id, and changes when entry files move.` |
   > | T16 | Go | id `Position` | `// Position is the entry's place in <value> in this build, for array indexes in memory.` / `// It is not an id: it changes when entry files move.` |
   > | T17 | C++ | deleted `to_json`/`from_json` | `/// nlohmann/json would write the position: write ToWire(id), read <Id>FromWire(s).` |
+  > | T18 | Go | `MarshalText`, `UnmarshalText` (ids; enums without `@codes`) | on an id, `// MarshalText writes the key, never the position.` and `// UnmarshalText reads a key; an unknown one is an error.`; on an enum, `// MarshalText writes the wire value, never the position.` and `// UnmarshalText reads a wire value; an unknown one is an error.` |
+- CODEGEN.md §5.2's Go sample gains, after `func ToneMembers() iter.Seq[Tone]`, the two lines
+  ```go
+  func (self Tone) MarshalText() ([]byte, error)      // the wire value, for encoding/json and others
+  func (self *Tone) UnmarshalText(text []byte) error  // a wire value; an unknown one is an error
+  ```
+  and, after the Go block, the sentence: "An enum without `@codes` has `MarshalText` and
+  `UnmarshalText`, so text encoders write its wire value, never its declaration position; one with
+  `@codes` has neither, its value being the code (DECISIONS 379)."
 - CODEGEN.md §8.2 gains, after `canonList`, the helper (it lands in N-TS's commit, §7.2 S3, because
   `internal/gen/ts/spec_test.go` compares §8.2 with `runtime/helpers.ts.txt` byte for byte):
   ```ts
@@ -1335,7 +1365,9 @@ first. The scan is done (below); this section is the result.
   > position in its `Prov` (one bit, in padding); operators, templates, `Int`, `Float`, `String` and
   > `join` carry it; `positional(x)` drops it; stage E warns `W8031` where a marked value is written
   > to an output; `[#n]` amends on keyed collections warn `W1912`. Enums keep their numbers in
-  > v0.1.9. Entry order still orders rows and iteration results; it never changes keys, fields,
+  > v0.1.9; Go enums without `@codes` gain `MarshalText`/`UnmarshalText`, which write the wire value
+  > (their opacity, C++'s deleted nlohmann hooks for them and TypeScript's private `<E>Index` are
+  > v0.2). Entry order still orders rows and iteration results; it never changes keys, fields,
   > refs, the lock or the fingerprint. Reason: N11 (handoff 2026-10-12 §4; log-2026-10-14, Louis:
   > "hard to fuck it up, like Rust"): Go's `encoding/json` and `database/sql` wrote a baked
   > `StatusID` as its position, nlohmann a C++ id enum's, and TypeScript exported `StatusIdIndex`; a
@@ -1354,13 +1386,13 @@ first. The scan is done (below); this section is the result.
 - `internal/check`: `builtins.go:177-199` and `constants.go` add `positional` (in N-EVAL, granted,
   so N-EVAL's tests can use it); `layers.go:132-134` reports `W1912` when `!plainList(t)` (N-CHECK).
 - `internal/ir`: new `positions.go` (the walk, records visited once, in traversal order), called after
-  `s.precompute()` in `stage.go:48`; the name plans: Go `goplan_scopes.go:226-246` reserves
-  `Position`, `MarshalText`, `UnmarshalText` on id types through a new id-only method list, kept
-  apart from `goIDEnumMethods` (from which `goEnumMethods` derives, `internal/ir/tables.go:197-199`),
-  so enums reserve nothing new; TS `tsplan.go:287-295` plans `<Id>Members` and the private foreign
-  index names. A declared name colliding with a reserved one is the existing `E8005` with its
+  `s.precompute()` in `stage.go:48`; the name plans: Go `goplan_scopes.go:226-246` adds `MarshalText`
+  and `UnmarshalText` to the shared `goIDEnumMethods` list (reserved on every enum and id; `goEnumMethods`
+  derives from it, `internal/ir/tables.go:197-199`) and `Position` to a new id-only list (enums do not
+  reserve it); TS `tsplan.go:287-295` plans `<Id>Members` and the private foreign index names. A declared name colliding with a reserved one is the existing `E8005` with its
   existing way out.
-- `internal/gen/go`: `enums.go:111-133` a new id writer; `baked.go:46` and every index and int→id site
+- `internal/gen/go`: `enums.go:111-133` a new id writer, and point 16's two methods on every enum
+  without `@codes`; `baked.go:46` and every index and int→id site
   (the Go compile in the golden tests, `golden_test.go:176-180`, lists them).
 - `internal/gen/cpp`: `idenums.go:36-57` and `:81`.
 - `internal/gen/ts`: `enums.go:183-216`, `fns.go:149-192`, `decode_value.go:306-322`,
@@ -1380,6 +1412,7 @@ first. The scan is done (below); this section is the result.
 | ir | `findings/W8031_<n>.txtar` (one per case) | `i + 1` in a json value; a `@text` join; an `indexOf` field; a map key; a stored fn result; a cross-package site | CODEGEN §2.10 |
 | ir | `W8031` accept cases | a plain list, a check-only use, `positional`, a view-only emit; 1,000 entries give one finding | CODEGEN §2.10 |
 | gen/go | `TestIDTypeOpaque` | `json.Marshal` gives `{"S":"taken","L":["open"]}` (today `{"S":1,"L":"AA=="}`); an unmarshal round trip; `"nope"` is an error; sql and gob converters error; `StatusID(1)`, `= 1`, `uint8(id)`, `id+1` fail to compile (a new run-expect-compile-failure helper) | CODEGEN §5.3 |
+| gen/go | `TestEnumMarshalText` | `json.Marshal` of a struct with a `Tone` field and of a `map[Tone]int` writes wire names (`"series-1"`); a round trip; an unknown wire value and a non-member value are errors; an `@codes` enum keeps its integer encoding (it has neither method) | CODEGEN §5.2 |
 | gen/cpp | `TestIDEnumRefusesNlohmann` | with g++ and clang++: `json j = StatusId::open;` and `get<StatusId>()` fail to compile; `ToWire`/`FromWire` compile | CODEGEN §5.3 |
 | gen/ts | `TestNoExportedIdIndex` | no golden matches `^export const \w+IdIndex` | CODEGEN §5.3 |
 | gen/ts | drivers `baked.test.js:13`, `emptytable.test.js:3-7` | assert `<Id>Members` and the absence of `<Id>Index` | CODEGEN §5.3 |
@@ -1398,6 +1431,8 @@ first. The scan is done (below); this section is the result.
   stable_baked, shared_data, shared_types).
 - Fixtures gaining `W1912`: `internal/eval/testdata/layers/{amend,order}.txtar`,
   `internal/eval/testdata/parity/fields.txtar`. No example `findings.txt` changes.
+- Go, also: every Go golden holding an enum without `@codes` gains point 16's two methods; in those
+  files nothing else may change beyond the lists above.
 - A golden diff outside these lists is a bug to explain before the unit lands.
 
 **Performance guard** (robustness first: the mark must cost nothing visible).
@@ -2054,7 +2089,9 @@ final acceptance entry of `meta/decisions/log-<date>.md`.
 8. The reply, committed after the tag: `meta/handoff/<date>-canon-reply-v019.md`, for the Sovereign
    sessions (Resource, Source, Scripts, website, admin, monitoring, config-studio):
    - what changed, per item of §1's table, with its DECISIONS number;
-   - upgrade notes: dot-prefixed `.canon` files are no sources (none is tracked in Sovereign); the
+   - upgrade notes: `encoding/json`, XML and YAML now write a Go enum without `@codes` as its wire
+     name, and read it back by name (values and map keys; the scan found no consumer encoding one);
+     dot-prefixed `.canon` files are no sources (none is tracked in Sovereign); the
      journal is version 2, and a v0.1.8 binary refuses a dead v0.1.9 journal ("unknown version") until
      v0.1.9 recovers it: do not switch binaries on a tree an interrupted edit left; edits now write
      `` `in` `` where they wrote `Leg.in` (both stay valid); case-only `out` renames now apply (commit
@@ -2102,9 +2139,11 @@ Logged in `meta/state.md` "Owed, small" by the spec sync (S1); none is fixed in 
 - **A `@text` output may carry a `.canon` or `.json` name** (CODEGEN §2.9's `E8021` has no extension
   rule): whether a build refuses to write over an unmarked such file is unverified.
 
-- **Enums** (§3 point 1): a Go enum without `@codes` is a bare `uintN` whose number is a declaration
-  position, and TypeScript exports `<E>Index` for enums. v0.2 candidates: `MarshalText` writing the
-  wire value on Go enums, private indexes in TypeScript.
+- **Enums, v0.2** (§3 points 1 and 16; agreed with Louis 2026-10-14, in the plan's v0.2): Go enums
+  without `@codes` become opaque (`struct` plus `Position()`, as ids in §3 point 2); C++ deletes the
+  nlohmann hooks for them, after a read-only scan of Source's use of nlohmann on Canon enums (Source
+  is not compiled in the release's dry run); TypeScript stops exporting `<E>Index` (private
+  `canonIndex`, as ids). Open enums are decided with them.
 - **The studio's full reload** (a `ViewModel` per package plus `Check`) has no target (§6 point 3).
 - **`evalAnalysis`** (`api/evaluate.go:145-158`) never calls `workspace.KeptSelection` (§6 point 5):
   performance, parked with the rest (robustness first).
@@ -2113,7 +2152,8 @@ Logged in `meta/state.md` "Owed, small" by the spec sync (S1); none is fixed in 
 
 - **Breaking for consumers** (each named in the reply, §8): Go `baked` table ids become structs (a
   `const` use or an integer conversion stops compiling; JSON of an id field turns from a number into
-  the key); C++ ids refuse nlohmann; TypeScript's `<Id>Index` gives way to `<Id>Members`; dot-prefixed
+  the key); JSON, XML and YAML of a Go enum without `@codes` (values and map keys) change from numbers
+  to wire names; C++ ids refuse nlohmann; TypeScript's `<Id>Index` gives way to `<Id>Members`; dot-prefixed
   `.canon` files stop being sources; the edit journal is version 2. The scan found no site in
   Sovereign that breaks (Go 0, C++ 0, TS 0 for baked ids).
 - **New language surface:** the `QWORD` token (`` `in` ``), the `tiers` project key, the `positional`
@@ -2135,7 +2175,8 @@ Logged in `meta/state.md` "Owed, small" by the spec sync (S1); none is fixed in 
   counters, lists mapped from tables); Windows and macOS lock and rename behaviour is checked by vet
   and the CI test runs when CI is back; the deleted nlohmann templates are checked on g++ and clang++,
   not MSVC.
-- **Unchanged on purpose:** enums keep their numbers (§9); performance work stays parked (per-entry
+- **Unchanged on purpose:** enums keep their numbers, only Go's text encoding of those without
+  `@codes` changes (§3 point 16; the rest is v0.2, §9); performance work stays parked (per-entry
   re-check, the on-disk cache, parallel stages); NFR-01's recorded Edit and Evaluate misses since
   v0.1.5 stay recorded, not chased.
 - **This ADR's own risk:** it was planned from reading the code; every "Today" column is a reading,

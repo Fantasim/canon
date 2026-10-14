@@ -211,6 +211,9 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 ## v0.2 (Louis, 2026-10-14)
 
 - [ ] **N5, testable package checks** (very important; first in v0.2).
+- [ ] **Enums without `@codes` as safe as ids** (Louis, 2026-10-14; [ADR-0021](decisions/0021-v019-robustness-release.md)
+  §9): Go opaque (`struct` + `Position()`); C++ deleted nlohmann hooks, after a read-only Source scan;
+  TS `<E>Index` no longer exported; open enums decided with them. v0.1.9 adds only Go's `MarshalText`.
 - [ ] M4 call (b): `check.Info` layered maps, only if easy and with no robustness risk (frozen contract).
 - [ ] `E3804` dependent types through static typing; `E1905` amend into a dependent map.
 - [ ] `ordered_json` C++ overload; kind constants; output path templates (N8).
