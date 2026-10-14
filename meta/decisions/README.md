@@ -39,3 +39,4 @@ the narration.
 | [0018](0018-frame-owned-collections.md) | Frame-owned collections: in-place element assignment without aliasing |
 | [0019](0019-edit-memory-adopted-verdicts.md) | Edit memory: no analysis kept per op, layout verdicts carried across ops |
 | [0020](0020-api-016-overlay-ctx-call-lang-roots.md) | API 0.1.6: overlays take a context, a per-call language, placed roots |
+| [0021](0021-v019-robustness-release.md) | v0.1.9, the robustness release: every decision, and how the run builds it |

@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-10-14. **v0.1.7** (TS2590 fix, DECISIONS 370) and v0.1.6 released 2026-10-13; v0.1.5 to v0.1.0 are out; `main` is
+Updated: 2026-10-14. **v0.1.8** (performance pass, 371-373) tagged and pushed 2026-10-14; v0.1.7 (TS2590, 370) to v0.1.0 out; `main` is
 the only branch. DECISIONS 344-369: [log-2026-10-12](decisions/log-2026-10-12.md),
 [log-2026-10-13](decisions/log-2026-10-13.md), [ADR-0020](decisions/0020-api-016-overlay-ctx-call-lang-roots.md)
 (earlier: 304-343, ADR-0018/0019, logs 10-06, 10-08, 10-09). M5 accepted (CI run 36973712977).
@@ -18,10 +18,9 @@ repeated keys and names the first failure in document order; F14 (362, 363, 365,
 (358, 359) format specs, `duplicates()`; F4, F19, F6 guide topics; F12, F5; F9, F10: no bug. Deferred: F20
 (per-field `@json(codes)`), F21 (warm re-check), F22 (streaming JSON reader). Pre-tag: E8152's json names
 planned, not encoded (2.1× edit regression gone), M6 oracle joins, killed-build wedge (336).
-**Next:** Louis publishes v0.1.6, Scripts' canon-bump moves the pin; then telemetry first use and the
-handoff's §3 (v0.2; order is Louis's). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
+**Next: v0.1.9, the robustness release**, decided whole in [ADR-0021](decisions/0021-v019-robustness-release.md) (DECISIONS 374-382, synced first; run as its §7 says), then v0.2 (N5 first). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
 [all handoffs](handoff/README.md). Release builds stay local (`make dist`) while CI is down.
-**Performance effort (2026-10-14, [log](decisions/log-2026-10-14.md)):** halve `check`/`build` memory and time; token store done (371, −15-17% RSS); lambda captures not copied (−20% allocs per call); Resource `tidCode` handoff sent (−35% `check`); enum by-name lookup, `Prov`, parallel packages next. **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
+**Performance effort (2026-10-14, [log](decisions/log-2026-10-14.md)):** halve `check`/`build` memory and time; token store done (371, −15-17% RSS); lambda captures not copied (−20% allocs per call); Resource `tidCode` handoff sent (−35% `check`); enum by-name lookup, `Prov`, parallel packages next. Robustness first: the stat-trust refresh fix and a safe on-disk cache are documented, not started ([log](decisions/log-2026-10-14.md)). **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
 on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a dir generate for names; edit time is ops × a full analysis; FMT's whole-file
 judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
 on entry add/remove.
@@ -42,7 +41,7 @@ M0-M5, post-M4, M1.5 done (3 GB cap unverified). M6: TS, C++ baked done; legacy 
 
 ## What exists (committed)
 
-spec + DECISIONS 1-369; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every
+spec + DECISIONS 1-373; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every
 WIRE §6 form), `check`/`types` (dependent types, views, translations, broken-view tracking), `eval`/`eval/std`
 + `value` (layers, provenance, drivers across the project), `verify`, `lock`, `rules`, `ir` (stage E,
 fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go` (baked,
@@ -54,9 +53,8 @@ workspace, `cli` (version/init/new/check/build/test/explain/fmt/guide/help), `in
   multi-op edits and Undos; see [m4-units.md](m4-units.md), [plan.md](plan.md).
 
 ## Open Louis-calls
-Three, none blocking, in [the M4 handoff](handoff/2026-10-01-m4-complete.md): (a) O2, skip dot-files as
-sources; (b) optional `check.Info` change (layered maps); (c) a target for the studio's view-model refresh
-after an edit (240-470 ms). Also: publish v0.1.6; the v0.2 order (handoff §3-§4).
+None blocking. [The M4 handoff](handoff/2026-10-01-m4-complete.md)'s (a) O2 and (c) refresh target are in
+v0.1.9 (ADR-0021), (b) `check.Info` layered maps in v0.2 (log-2026-10-14). The v0.2 order after N5 is Louis's.
 
 ## Operating notes
 

@@ -157,7 +157,7 @@ from IR fixtures" and M2's `embedded` example were accepted without these genera
   through a handoff (`Source/` X-macros read Canon IDs/metadata; monitoring uses generated Go and
   build-time DDL). M6 and M7 follow.
 
-## Post-v0.1.0 hardening (v0.1.1 to v0.1.6)
+## Post-v0.1.0 hardening (v0.1.1 to v0.1.8)
 
 Not in IMPLEMENTATION-PLAN §5-§6; recorded here so the order stays visible. DECISIONS are in
 [DECISIONS.md](../DECISIONS.md); [state.md](state.md) has the one-line summary.
@@ -180,13 +180,48 @@ Not in IMPLEMENTATION-PLAN §5-§6; recorded here so the order stays visible. DE
   [log-2026-10-12](decisions/log-2026-10-12.md), [log-2026-10-13](decisions/log-2026-10-13.md)): DECISIONS
   344-369 cover the language-server leak, the editor API additions, parity of C++ and TypeScript with Go,
   robustness for parallel writers, format specs and the guide (tag pending Louis's push).
-- [ ] **Warm re-check for an entry add/remove** (F21; `addEntry`, `@files`): key-set dependencies in the
-  incremental checker (today that op re-checks its package cold, ~3-4 s on items).
-- [ ] **On-disk cache** (`Options.Cache`), the other half of the "one-value edit on items under 2 s"
-  target.
-- [ ] **F20, per-field `@json(codes)`**: design drafted in [log-2026-10-12](decisions/log-2026-10-12.md); a
-  frozen-contract change (`types.Field`, `ir.Field`) with WIRE, FINGERPRINT and all three printers.
-- [ ] **F22, a streaming JSON reader for Go loaders** (data and `types`; ~110 ms/MB today).
+- [x] **v0.1.7**: TS2590 fix (370).
+- [x] **v0.1.8** (tagged and pushed 2026-10-14, `c33919a4`): the 2026-10-14 performance pass,
+  byte-identical only (371 token store, lambda captures, 372 `E.named`, 373 slim `Prov`).
+
+## v0.1.9 — robustness release (Louis, 2026-10-14; [log](decisions/log-2026-10-14.md))
+
+**Decided whole in [ADR-0021](decisions/0021-v019-robustness-release.md)**: every design, the exact
+spec and DECISIONS texts (374-382), 30 units with their order, tiers and tests, and the release
+steps. Run it as its §7 says; it leaves no design decision to the run. Estimate 4-5 days wall.
+
+- [ ] Refresh compares ctime + inode, not only size + mtime (API.md S1; build-tagged per platform).
+- [ ] `Recover` at Open takes the writer lock.
+- [ ] Transient `ErrJournal` for two processes editing different packages (ADR-0010).
+- [ ] The asset kind test follows links unbounded (WIRE §6.5).
+- [ ] A case-only rename of an `out` directory is `E8001`.
+- [ ] `NoHook` filled for the import closure only.
+- [ ] A layer or new entry file cannot name another package's non-nameable member (`E2102`).
+- [x] v0.1.4's owed cross-root trap and ConstantID clash: closed in v0.1.6 by 347, 348 (ADR-0021 §2.7).
+- [ ] **N11, positions are not ids** (urgent; safety by design): spec rule; opaque generated index
+  types whose serializers write the key; a warning when an entry position reaches an output, with
+  an explicit opt-in. A read-only Resource/Source scan first sizes it.
+- [ ] **Import tiers** (extremely important): allowed import directions in `project.canon`,
+  enforced by `check`.
+- [ ] M4 call (a): the scan skips dot-prefixed files (API.md O2).
+- [ ] M4 call (c): a target for the studio's view-model refresh after an edit (240-470 ms today).
+- [ ] Release gates: `make check`, stress, `fuzz-edit` 10 min, bench, Resource upgrade dry run, tag.
+
+## v0.2 (Louis, 2026-10-14)
+
+- [ ] **N5, testable package checks** (very important; first in v0.2).
+- [ ] M4 call (b): `check.Info` layered maps, only if easy and with no robustness risk (frozen contract).
+- [ ] `E3804` dependent types through static typing; `E1905` amend into a dependent map.
+- [ ] `ordered_json` C++ overload; kind constants; output path templates (N8).
+- [ ] N1 legacy C++ structs (M6), N2 one declaration per id, N3 `canon lint`: order still Louis's.
+
+## Later, deferred, passed and refused
+
+- Later, only if very secure: the on-disk cache (safe design in [log-2026-10-14](decisions/log-2026-10-14.md)).
+- Deferred: F21 warm re-check on entry add/remove; F22 streaming JSON reader; Go/C++ `embedded`.
+- Passed (robustness first): per-entry re-check, stage-E memo, per-package parallelism.
+- Refused: F20 per-field `@json(codes)` (for good), N4 new wire forms, entry isolation,
+  types-only import, N10 `jsonQuote`.
 
 ## Feature examples owed (§7.9, QA)
 

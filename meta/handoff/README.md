@@ -38,7 +38,7 @@ literal spellings; `load.defines` unchanged, with the flag-header recipe instead
 `2026-10-08-sovereign-go-open-ids-consumer-roots.md` is **answered** by
 `2026-10-09-canon-reply-open-ids-consumer-roots.md`, shipped in v0.1.4 (DECISIONS 339-343): open
 enums, `Decode<Fn>File`, consumer roots and `--only-root`, E8026, E8027; item 4's cross-root trap
-and ConstantID clash are owed.
+and ConstantID clash were closed in v0.1.6 (DECISIONS 347, 348; ADR-0021 §2.7).
 
 `2026-10-09-sovereign-test-memory.md` and `2026-10-09-sovereign-studio-edit-latency.md` are
 **answered** by `2026-10-09-canon-reply-performance.md` (log 2026-10-09): test 7.76 → 2.15 GB,
