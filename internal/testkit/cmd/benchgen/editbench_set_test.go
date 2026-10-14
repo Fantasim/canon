@@ -34,26 +34,32 @@ type setter struct {
 	fresh       *freshValues
 	edits       []time.Duration
 	evals       []time.Duration
+	refreshes   []time.Duration // Evaluate then Value of the edited entry (DECISIONS 382)
 	rejects     []time.Duration
 	present     map[string]bool
 	drawn       map[string]bool
 	accepted    map[string]int
 	notEditable int
+	badValues   int  // refused with ErrBadValue: the drawn value does not fit (a bitmask holds a member once)
 	guarded     bool // the benchmark: more than benchRejectPct rejected fails
 }
 
 // editTimes measures the view models, then benchEdits accepted Sets, each an Edit (re-check and
-// write) then an Evaluate of its entry; rejected and refused Sets are counted apart.
+// write), an Evaluate of its entry, then a Value of it (the refresh, DECISIONS 382); rejected and
+// refused Sets are counted apart.
 func editTimes(t *testing.T, p *canon.Project, r *report, target benchTarget) {
 	s := newSetter(t, p, r, target)
 	s.run(t)
-	all := len(s.edits) + len(s.rejects) + s.notEditable
+	all := len(s.edits) + len(s.rejects) + s.notEditable + s.badValues
 	r.add(fmt.Sprintf("Edit one field, p95 of %d accepted Sets", len(s.edits)), seconds(p95(s.edits), targetEdit, true))
 	r.add(fmt.Sprintf("Edit the re-check rejected, p95 of %d (%d%%)", len(s.rejects), len(s.rejects)*benchPercent/all),
 		seconds(p95(s.rejects), targetEdit, false))
 	r.add(fmt.Sprintf("Sets refused as not editable, %d (share %%)", s.notEditable),
 		measure{value: float64(s.notEditable * benchPercent / all), limit: benchRejectPct, unit: "%", gated: s.guarded})
+	r.add(fmt.Sprintf("Sets refused as a bad value, %d (share %%)", s.badValues),
+		measure{value: float64(s.badValues * benchPercent / all), limit: benchRejectPct, unit: "%", gated: false})
 	r.add("Evaluate one entry after an edit, p95", seconds(p95(s.evals), targetEval, true))
+	r.add("Refresh after an edit (Evaluate+Value), p95", seconds(p95(s.refreshes), refreshTarget, true))
 	t.Logf("accepted Sets by kind %v", s.accepted)
 	s.checkKinds(t)
 }
@@ -161,7 +167,8 @@ func scalars(v *canon.Value, into map[string][]*canon.Value) {
 	}
 }
 
-// set is one timed Edit, then, when the re-check accepted it, one timed Evaluate of its entry.
+// set is one timed Edit, then, when the re-check accepted it, one timed Evaluate of its entry
+// and a timed Value of it.
 func (s *setter) set(t *testing.T, d draft) {
 	ctx := context.Background()
 	start := time.Now()
@@ -170,6 +177,9 @@ func (s *setter) set(t *testing.T, d draft) {
 	switch {
 	case errors.Is(err, canon.ErrRejected):
 		s.rejects = append(s.rejects, took)
+		return
+	case errors.Is(err, canon.ErrBadValue):
+		s.badValues++
 		return
 	case errors.Is(err, canon.ErrNotEditable):
 		s.notEditable++ // Editable said yes for the value, the Set's op says no (a key field)
@@ -183,5 +193,11 @@ func (s *setter) set(t *testing.T, d draft) {
 	if _, err := s.p.Evaluate(ctx, canon.EvalRequest{Base: s.base, Path: d.entry}); err != nil {
 		t.Fatalf("Evaluate %s: %v", d.entry, err)
 	}
-	s.evals = append(s.evals, time.Since(start))
+	evalTook := time.Since(start)
+	s.evals = append(s.evals, evalTook)
+	start = time.Now()
+	if _, err := s.p.Value(ctx, d.entry); err != nil {
+		t.Fatalf("Value %s: %v", d.entry, err)
+	}
+	s.refreshes = append(s.refreshes, evalTook+time.Since(start))
 }

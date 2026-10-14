@@ -32,8 +32,9 @@ const (
 	targetWarm      = time.Second
 	targetEdit      = 300 * time.Millisecond
 	targetEval      = 150 * time.Millisecond
-	targetRSS       = 1_500_000_000 // bytes, 1.5 GB
-	targetVM        = 5_000_000     // bytes, 5 MB, without the search index and findings (VIEWMODEL.md J16)
+	refreshTarget   = 500 * time.Millisecond // DECISIONS 382; §8 of ADR-0021 may replace it
+	targetRSS       = 1_500_000_000          // bytes, 1.5 GB
+	targetVM        = 5_000_000              // bytes, 5 MB, without the search index and findings (VIEWMODEL.md J16)
 	vmSearch        = "search"
 	vmFindings      = "findings"
 	vmValues        = "values"
@@ -53,9 +54,8 @@ type benchTarget struct {
 	canonical bool
 }
 
-// NFR-01 (M4 acceptance item 4): cold canon check and its peak RSS per project, the p95s of an
-// Edit and of an Evaluate after it, and each package's view model, each against its target;
-// warm canon check reported; printed with the machine (log-2026-09-29 M4: the reference).
+// NFR-01 (M4 item 4): cold check and RSS, Edit, Evaluate and refresh p95s and each view model
+// against their targets, warm check reported, printed with the machine (log-2026-09-29 M4).
 func TestBenchEdit(t *testing.T) {
 	if *flagEdit <= 0 {
 		t.Skip("guarded by -benchgen.edit: run with `make bench-edit`")
