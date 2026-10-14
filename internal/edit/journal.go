@@ -18,14 +18,15 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// journal is what a commit writes before it changes any file: its writer, every file it touches
-// with its previous content (or absence) and the digest of its new one, and the directories it
-// creates and removes (API.md N10, N11, O5; log-2026-09-29 M4 U4c-r).
+// journal is what a commit writes before it changes any file: its writer and the writer locks it
+// holds exclusive, every file it touches with its previous content (or absence) and the digest of
+// its new one, and the directories it creates and removes (API.md N10, N11, O5; DECISIONS 375).
 type journal struct {
 	Version  int           `json:"version"`
 	Revision string        `json:"revision"`
 	Host     string        `json:"host"`
 	PID      int           `json:"pid"`
+	Locks    []string      `json:"locks,omitempty"`
 	Files    []journalFile `json:"files"`
 	Created  []string      `json:"created,omitempty"`
 	Removed  []removedDir  `json:"removed,omitempty"`
@@ -111,7 +112,7 @@ func (j *journal) encode() ([]byte, error) {
 // resolve checks a journal, untrusted since Recover runs at every Open, and places what it
 // undoes, its stages those of token; any fault refuses it whole (log-2026-09-29 M4 U4c-r, U4c-r3).
 func (j *journal) resolve(at Layout, token string) (*undo, error) {
-	if j.Version != journalVersion {
+	if j.Version != journalVersion && j.Version != journalVersionPID {
 		return nil, &fault{reasonVersion, j.Revision}
 	}
 	u := &undo{token: token}

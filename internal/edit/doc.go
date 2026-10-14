@@ -7,5 +7,5 @@
 // an edit in memory against a Snapshot, each operation against the state the previous ones left,
 // re-printing only the items whose value changed; it takes no lock, writes and publishes nothing:
 // its Plan is for the caller's transaction to check and commit, its Undo verified (API.md E22).
-// Journals are untrusted input; recovery and its threat model: meta/decisions/0010-edit-journal-recovery.md.
+// Journals are untrusted input (meta/decisions/0010-edit-journal-recovery.md); writer locks decide their reach (DECISIONS 375).
 package edit

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"path"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -24,11 +23,14 @@ type Layout interface {
 
 var _ Layout = (*build.Project)(nil)
 
-// Site is where a commit writes or a recovery rolls back, and the process doing it.
+// Site is where a commit writes or a recovery rolls back, the process doing it, its Locker (nil:
+// no writer locks) and the packages it holds exclusive (DECISIONS 375: J2, J12).
 type Site struct {
 	FS     build.WriteFS
 	Layout Layout
 	Self   Process
+	Locks  Locker
+	Held   []string
 }
 
 // commitFile is one file a commit writes (data) or removes, or a directory it removes once empty.
@@ -74,7 +76,7 @@ func Commit(ctx context.Context, s Site, rev string, changes []Change) error {
 	if err != nil {
 		return err
 	}
-	if err := c.idle(); err != nil {
+	if err := c.blocked(); err != nil {
 		return err
 	}
 	if err := c.check(); err != nil {
@@ -105,8 +107,12 @@ func plan(s Site, rev string, changes []Change) (*commit, error) {
 	if err != nil {
 		return nil, err
 	}
+	held, err := heldOf(s)
+	if err != nil {
+		return nil, err
+	}
 	_, modes := s.FS.(build.ModeFS)
-	j := journal{Version: journalVersion, Revision: rev, Host: s.Self.Host, PID: s.Self.PID}
+	j := journal{Version: journalVersion, Revision: rev, Host: s.Self.Host, PID: s.Self.PID, Locks: held}
 	c := &commit{fsys: s.FS, at: s.Layout, dir: s.Layout.Dir(), name: name, token: stageToken(name), modes: modes, j: j}
 	for _, ch := range changes {
 		if int(ch.Kind) >= len(expanders) {
@@ -188,19 +194,6 @@ func (c *commit) vet() error {
 		return journalRefusal(ErrUnwritable, err)
 	}
 	return journalRefusal(ErrChanges, err)
-}
-
-// idle refuses a commit while any journal is there: an edit unfinished, or still running, whose
-// rollback would undo this one (log-2026-09-29 M4 U4c-r).
-func (c *commit) idle() error {
-	names, err := journals(c.fsys, c.dir)
-	if err != nil {
-		return err
-	}
-	if len(names) > 0 {
-		return fmt.Errorf(fmtFileErr, path.Base(names[0]), ErrJournal)
-	}
-	return nil
 }
 
 // check re-reads every file and compares it with the snapshot the edit was planned on

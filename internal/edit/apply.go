@@ -34,13 +34,14 @@ type Request struct {
 }
 
 // Plan is an edit computed in memory: its files by path then the directories left empty, deepest
-// first (N6); the values cascades dropped; its Undo; the packages owning a written file (E17);
-// the files not in canonical layout before it (M9); the ids it adds or retires (E20).
+// first (N6); the values cascades dropped; its Undo; the packages owning a written file (E17), the
+// written files of no package (375); files not in canonical layout (M9); ids it adds or retires (E20).
 type Plan struct {
 	Changes      []Change
 	Dropped      []Dropped
 	Undo         []Operation
 	Touched      []string
+	Unowned      []string
 	NotCanonical []string
 	Locked       []Locked
 	NameClash    string                 // a RenameName's ambiguous occurrence, which E35 refuses after the re-check
@@ -307,18 +308,28 @@ func (a *applier) finish() *Plan {
 	}
 	p.Undo = append(p.Undo, a.cascadeUndo...)
 	p.Changes = append(p.Changes, a.removedDirs()...)
-	touched := map[string]bool{}
-	for _, c := range p.Changes {
-		for _, path := range []string{c.Path, c.OldPath} {
-			if pkg, ok := a.owners[path]; ok {
-				touched[pkg] = true
-			}
-		}
-	}
-	p.Touched = slices.Sorted(maps.Keys(touched))
+	p.Touched, p.Unowned = a.owned(p.Changes)
 	p.Locked = slices.Compact(slices.SortedFunc(slices.Values(a.locked), compareLocked))
 	slices.SortStableFunc(p.Dropped, func(x, y Dropped) int { return strings.Compare(x.Path, y.Path) })
 	return p
+}
+
+// owned are the packages owning a file the changes write (E17) and the files they write that no
+// package owns, a directory removed being no file (DECISIONS 375: J7).
+func (a *applier) owned(changes []Change) (touched, unowned []string) {
+	pkgs, files := map[string]bool{}, map[string]bool{}
+	for _, c := range changes {
+		for _, path := range []string{c.Path, c.OldPath} {
+			pkg, ok := a.owners[path]
+			switch {
+			case ok:
+				pkgs[pkg] = true
+			case path != "" && c.Kind != ChangeRemovedDir:
+				files[path] = true
+			}
+		}
+	}
+	return slices.Sorted(maps.Keys(pkgs)), slices.Sorted(maps.Keys(files))
 }
 
 // noteUndo records what verifiedUndo needs of x: its root, a Rename, and, in a request of several

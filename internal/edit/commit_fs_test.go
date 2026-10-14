@@ -33,6 +33,7 @@ type faultFS struct {
 	dieAtOp        int                                // the write the process dies in
 	dead           bool                               // no operation is applied any more
 	onOp           func(op, name string, data []byte) // sees every write before it is applied
+	onRead         func(name string)                  // runs before every read of a file
 }
 
 // write counts one write and says whether it may go ahead; torn is a WriteFile it dies in.
@@ -74,6 +75,9 @@ func (f *faultFS) isDead() bool {
 func (f *faultFS) ReadFile(name string) ([]byte, error) {
 	if f.isDead() {
 		return nil, errDead
+	}
+	if f.onRead != nil {
+		f.onRead(name)
 	}
 	return f.diskFS.ReadFile(name)
 }

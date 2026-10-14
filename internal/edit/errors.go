@@ -214,6 +214,7 @@ var (
 	ErrRevision = errors.New("invalid revision")
 	ErrJournal  = errors.New("unfinished edit journal")
 	ErrChanges  = errors.New("invalid file changes")
+	errNoHeld   = errors.New("locker holding no package")
 	// ErrUnwritable is a change through a symbolic link or a hidden path (log-2026-09-29 M4 U5b-r).
 	ErrUnwritable = errors.New("file cannot be written by an edit")
 )

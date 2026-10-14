@@ -432,11 +432,13 @@ var recheckCodes = map[diag.Code]bool{
 }
 
 // The journal of a commit: .canon/journal/<hex of the new revision>.json under the project
-// directory, the revision's scheme cut at revisionSep, no Windows name (API.md N10, S3).
+// directory, the revision's scheme cut at revisionSep, no Windows name (API.md N10, S3); every
+// commit writes version 2, version 1 (no lock list) is still read (DECISIONS 375).
 const (
-	revisionSep    = ':'
-	JournalDir     = ".canon/journal"
-	journalVersion = 1
+	revisionSep       = ':'
+	JournalDir        = ".canon/journal"
+	journalVersion    = 2
+	journalVersionPID = 1
 )
 
 // A commit's stage `.<base>.<j>.canon-edit`, <j> its journal's first 16 hex characters (API.md
@@ -472,6 +474,7 @@ const (
 	reasonHidden  = "hidden path"
 	reasonTwice   = "path named twice"
 	reasonOrphan  = "created directory above no new file"
+	reasonLocks   = "invalid lock list"
 )
 
 // What a journal may name (log-2026-09-29 M4 U4c-r3): no hidden segment, the lock beside

@@ -3,7 +3,6 @@ package edit
 import (
 	"bytes"
 	"cmp"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -26,33 +25,51 @@ type Process struct {
 	Alive func(pid int) bool
 }
 
-// running says whether j's writer runs on this host now.
+// running says whether j's writer runs on this host now: the test of a journal recording no lock.
 func (p Process) running(j *journal) bool {
 	return j.Host == p.Host && j.PID > 0 && p.Alive != nil && p.Alive(j.PID)
 }
 
-// Recover rolls back this host's unfinished edits (API.md O5); journals are untrusted input, see ADR-0010.
+// Recover rolls back this host's unfinished edits (API.md O5, N11); journals are untrusted input, see ADR-0010.
 func Recover(s Site, logger *slog.Logger) error {
 	names, err := journals(s.FS, s.Layout.Dir())
 	if err != nil || len(names) == 0 {
 		return err
 	}
-	var errs []error
-	rolled, changes := 0, 0
+	var t tally
 	for _, name := range names {
-		n, err := recoverOne(s, name)
-		if n > 0 || n == 0 && err == nil { // a decodable journal removed is an edit rolled back
-			rolled++
-			changes += n
-		}
-		if err != nil {
-			errs = append(errs, fmt.Errorf(fmtFileErr, path.Base(name), journalRefusal(ErrJournal, err)))
-		}
+		r, err := recoverOne(s, name)
+		t.add(name, r, err)
 	}
-	if rolled > 0 && logger != nil {
-		logger.Warn(msgRecovered, slog.Int(attrJournals, rolled), slog.Int(attrChanges, changes))
+	t.log(logger)
+	return errors.Join(t.errs...)
+}
+
+// tally counts the journals a recovery rolled back, the entries it changed, and the journals it
+// refused, each named (API.md O5).
+type tally struct {
+	rolled, changes int
+	errs            []error
+	removedOnly     bool // Settle: only a journal removed counts
+}
+
+// add counts one journal: r nil when it was left or skipped; a decodable journal removed is an
+// edit rolled back, whatever it changed, and so is, for Recover, one it changed files of.
+func (t *tally) add(name string, r *undoer, err error) {
+	if r != nil && (err == nil || !t.removedOnly && r.changed > 0) {
+		t.rolled++
+		t.changes += r.changed
 	}
-	return errors.Join(errs...)
+	if err != nil {
+		t.errs = append(t.errs, fmt.Errorf(fmtFileErr, path.Base(name), journalRefusal(ErrJournal, err)))
+	}
+}
+
+// log is O5's one Warn line, when a journal was rolled back.
+func (t *tally) log(logger *slog.Logger) {
+	if t.rolled > 0 && logger != nil {
+		logger.Warn(msgRecovered, slog.Int(attrJournals, t.rolled), slog.Int(attrChanges, t.changes))
+	}
 }
 
 // journals are the journal files under dir, in byte order; none when there is no journal directory.
@@ -76,32 +93,65 @@ func journals(fsys build.WriteFS, dir string) ([]string, error) {
 }
 
 // recoverOne rolls back the edit of the journal file name and removes it, unless its writer
-// still runs or it was written on another machine; it returns how many entries it changed, -1
-// when it rolled nothing back: a torn journal, a running writer (log-2026-09-29 M4 U5b).
-func recoverOne(s Site, name string) (int, error) {
-	data, err := s.FS.ReadFile(name)
-	if err != nil {
-		return 0, err
+// still runs, it was written on another machine or this site cannot take its locks; nil when it
+// rolled nothing back: gone, torn, left (API.md N11; DECISIONS 375).
+func recoverOne(s Site, name string) (*undoer, error) {
+	l, err := loadJournal(s.FS, name)
+	switch {
+	case err != nil:
+		return nil, err
+	case l.gone:
+		return nil, nil
+	case l.torn:
+		return nil, removeJournal(s.FS, name) // cut short before any file changed: WriteFile is atomic
+	case l.bad:
+		return nil, &fault{reasonLocks, strings.Join(l.j.Locks, listSep)}
+	case l.j.Host != s.Self.Host:
+		return nil, &fault{reasonForeign, l.j.Host}
+	case l.locked:
+		return recoverLocked(s, name, l.j)
+	case s.Self.running(l.j):
+		return nil, nil
 	}
-	var j journal
-	if json.Unmarshal(data, &j) != nil {
-		return -1, removeJournal(s.FS, name) // cut short before any file changed: WriteFile is atomic
+	return rollBack(s, name, l.j)
+}
+
+// recoverLocked rolls back a journal recording locks only holding them all, taken without waiting,
+// all or none; one held, or no Locker, leaves it (DECISIONS 375: J2a, J3).
+func recoverLocked(s Site, name string, j *journal) (r *undoer, err error) {
+	if s.Locks == nil {
+		return nil, nil
 	}
-	if s.Self.running(&j) {
-		return -1, nil
+	release, ok, err := s.Locks.TryLock(j.Locks)
+	if err != nil || !ok {
+		return nil, err
 	}
-	if j.Host != s.Self.Host {
-		return 0, &fault{reasonForeign, j.Host}
+	defer func() { err = errors.Join(err, release()) }()
+	return underLocks(s, name, j)
+}
+
+// underLocks reads the journal again under its locks: gone, or its locks or host changed, it is
+// left; otherwise it is rolled back (DECISIONS 375: J3).
+func underLocks(s Site, name string, j *journal) (*undoer, error) {
+	l, err := loadJournal(s.FS, name)
+	if err != nil || l.gone || !l.locked || l.j.Host != j.Host || !slices.Equal(l.j.Locks, j.Locks) {
+		return nil, err
 	}
+	return rollBack(s, name, l.j)
+}
+
+// rollBack checks the journal j of the file name, undoes its edit and removes it; the undoer is
+// what it changed, nil when the journal was refused before any write.
+func rollBack(s Site, name string, j *journal) (*undoer, error) {
 	u, err := j.resolve(s.Layout, stageToken(name))
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	n, err := u.run(s.FS)
+	r, err := u.run(s.FS)
 	if err != nil {
-		return n, err
+		return r, err
 	}
-	return n, removeJournal(s.FS, name)
+	return r, removeJournal(s.FS, name)
 }
 
 // clearStages removes the edit's stages, 0.1.5's fixed ones, and what the OS WriteFile left
@@ -175,40 +225,42 @@ func (u *undo) spots() []spot {
 	return out
 }
 
-// undoer runs an undo, counting what it changes and the directories whose entries changed.
+// undoer runs an undo, counting what it changes, the files it restores or removes, and the
+// directories whose entries changed.
 type undoer struct {
 	fsys    build.WriteFS
 	token   string
 	touched []string
+	files   []string
 	changed int
 }
 
 // run rolls back, all or none, decided before any write: no place through a symbolic link, no
 // file in neither its old nor its new state, no created directory holding what is not the
 // edit's; the touched directories are synced last (API.md N11; log-2026-09-29 M4 U4c-r3).
-func (u *undo) run(fsys build.WriteFS) (int, error) {
+func (u *undo) run(fsys build.WriteFS) (*undoer, error) {
+	r := &undoer{fsys: fsys, token: u.token}
 	if err := straight(fsys, u.spots()); err != nil {
-		return 0, err
+		return r, err
 	}
 	back, err := u.pending(fsys)
 	if err != nil {
-		return 0, err
+		return r, err
 	}
 	if err := u.clearable(fsys); err != nil {
-		return 0, err
+		return r, err
 	}
 	u.clearStages(fsys)
-	r := &undoer{fsys: fsys, token: u.token}
 	if err := r.recreate(u.removed); err != nil {
-		return r.changed, err
+		return r, err
 	}
 	if err := r.restore(back); err != nil {
-		return r.changed, err
+		return r, err
 	}
 	if err := r.clear(u.created); err != nil {
-		return r.changed, err
+		return r, err
 	}
-	return r.changed, syncDirs(fsys, r.touched)
+	return r, syncDirs(fsys, r.touched)
 }
 
 // pending are the files still in their new state; one in neither state refuses the rollback.
@@ -335,6 +387,7 @@ func (r *undoer) restore(files []undoFile) error {
 			return fmt.Errorf(fmtFileErr, f.Path, err)
 		}
 		r.touch(f.abs)
+		r.files = append(r.files, f.abs)
 	}
 	return nil
 }

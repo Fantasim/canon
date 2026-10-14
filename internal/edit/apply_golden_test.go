@@ -275,6 +275,9 @@ func checkPlan(t *testing.T, c goldenCase, a *build.Analysis, plan *edit.Plan, o
 	for name, f := range c.fsys { //canon:unordered fills a map by name
 		before[strings.TrimPrefix(name, "law/")] = f.Data
 	}
+	if len(plan.Unowned) > 0 {
+		t.Errorf("unowned %v: every file a golden edit writes has a package (ADR-0021 J7)", plan.Unowned)
+	}
 	for _, ch := range plan.Changes {
 		old := ch.Path
 		if ch.OldPath != "" {
