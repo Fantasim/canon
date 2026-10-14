@@ -1,7 +1,10 @@
 package build
 
 import (
+	"cmp"
 	"context"
+	"errors"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/writelock"
@@ -24,9 +27,9 @@ func (r *run) locking(opt BuildOptions) bool {
 	return LocksWriters(r.p.disk) && !opt.Check && opt.OnlyRoot == ""
 }
 
-// lockWriters takes the writer locks of a build that writes, through the file system Open was
-// given: each selected package exclusively, every other loaded package shared, in name order,
-// waiting as long as ctx lets it. --check and --only-root take none (DECISIONS 343, 352).
+// lockWriters takes a writing build's locks in name order (selected exclusive, other loaded shared),
+// waiting as long as ctx lets it, grows them to the journals it meets and settles those (J4).
+// --check and --only-root take none and settle nothing (DECISIONS 343, 352, 375).
 func (r *run) lockWriters(ctx context.Context, opt BuildOptions) (func() error, error) {
 	if !r.locking(opt) {
 		return writelock.NoRelease, nil
@@ -42,11 +45,61 @@ func (r *run) lockWriters(ctx context.Context, opt BuildOptions) (func() error, 
 		}
 		reqs = append(reqs, writelock.Request{Package: u.Name, Mode: mode})
 	}
-	held, err := r.p.disk.(writersLocker).lockWriters(ctx, r.p.dir, reqs)
+	held, err := r.settled(ctx, strongest(reqs))
 	if err != nil {
-		return nil, interrupted(ctx, err)
+		return nil, err
 	}
 	return held.Release, nil
+}
+
+// settled holds reqs, grown by the Settler's meeting journals until stable, then settles (ADR-0021 J4).
+func (r *run) settled(ctx context.Context, reqs []writelock.Request) (*writelock.Held, error) {
+	locker := r.p.disk.(writersLocker)
+	for {
+		held, err := locker.lockWriters(ctx, r.p.dir, reqs)
+		if err != nil {
+			return nil, interrupted(ctx, err)
+		}
+		if r.p.settle == nil {
+			return held, nil
+		}
+		want, err := r.p.settle.Meeting(reqs)
+		if err != nil {
+			return nil, errors.Join(err, held.Release())
+		}
+		next := strongest(append(slices.Clone(reqs), want...))
+		if slices.Equal(next, reqs) {
+			return r.settle(held, reqs)
+		}
+		if err := held.Release(); err != nil { // never acquire while holding: flock is per open file
+			return nil, err
+		}
+		reqs = next
+	}
+}
+
+// settle rolls back the journals held covers; the run's re-read then sees what it changed (DECISIONS 352).
+func (r *run) settle(held *writelock.Held, reqs []writelock.Request) (*writelock.Held, error) {
+	if _, err := r.p.settle.Settle(reqs); err != nil {
+		return nil, errors.Join(err, held.Release())
+	}
+	return held, nil
+}
+
+// strongest is reqs sorted by package, each package once in its strongest mode.
+func strongest(reqs []writelock.Request) []writelock.Request {
+	out := slices.Clone(reqs)
+	slices.SortFunc(out, func(a, b writelock.Request) int {
+		return cmp.Or(cmp.Compare(a.Package, b.Package), cmp.Compare(b.Mode, a.Mode))
+	})
+	return slices.CompactFunc(out, func(a, b writelock.Request) bool { return a.Package == b.Package })
+}
+
+// WithSettle is p settling through s before a build writes, as is every Over of it (ADR-0021 J10).
+func (p *Project) WithSettle(s Settler) *Project {
+	out := *p
+	out.settle = s
+	return &out
 }
 
 // fresh is what the run re-reads under its writer locks: the snapshot's own view of the disk as

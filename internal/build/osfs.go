@@ -20,6 +20,25 @@ type osFS struct {
 	project.FS
 }
 
+// OSReading is OS handing each file read whole to onRead, maybe concurrently, all else kept (ADR-0021 J10).
+func OSReading(onRead func(name string, data []byte)) WriteFS {
+	return readingFS{osFS: osFS{FS: project.OS()}, onRead: onRead}
+}
+
+type readingFS struct {
+	osFS
+	onRead func(name string, data []byte)
+}
+
+// ReadFile reads name and hands its content to onRead.
+func (f readingFS) ReadFile(name string) ([]byte, error) {
+	data, err := f.osFS.ReadFile(name)
+	if err == nil {
+		f.onRead(name, data)
+	}
+	return data, err
+}
+
 // WriteFile writes data to a new file beside name, syncs it, renames it over name and syncs the
 // directory: name holds its old content or the new, never a part. A file that existed keeps its
 // permissions.

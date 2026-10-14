@@ -14,6 +14,7 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/writelock"
 )
 
 // Options configure a project (API.md §2.1).
@@ -32,11 +33,20 @@ type Checker func(ctx context.Context, proj *project.Project, files []*syntax.Fi
 // Project is an opened project: its directory, file system and options (API.md O2). Every call
 // reads project.canon and the file set anew (API.md S1).
 type Project struct {
-	fs    project.FS
-	disk  project.FS // the one Open was given, past any snapshot Over lays on it: writer locks and re-reads (DECISIONS 352)
-	dir   string
-	opt   Options
-	cache *Cache // nil: every call cold
+	fs     project.FS
+	disk   project.FS // the one Open was given, past any snapshot Over lays on it: writer locks and re-reads (DECISIONS 352)
+	dir    string
+	opt    Options
+	cache  *Cache  // nil: every call cold
+	settle Settler // nil: a build that writes rolls back no unfinished edit
+}
+
+// Settler rolls back the unfinished edits a writing build's locks meet (IMPLEMENTATION-PLAN §3, ADR-0021 J10).
+type Settler interface {
+	// Meeting returns the requests to hold instead of held (journal packages exclusive);
+	// it returns held unchanged when nothing is missing.
+	Meeting(held []writelock.Request) ([]writelock.Request, error)
+	Settle(held []writelock.Request) (changed []string, err error)
 }
 
 // Findings are findings with the files that locate them, and their counts (API.md §4.3).
