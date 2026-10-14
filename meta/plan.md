@@ -188,24 +188,24 @@ Not in IMPLEMENTATION-PLAN §5-§6; recorded here so the order stays visible. DE
 
 **Decided whole in [ADR-0021](decisions/0021-v019-robustness-release.md)**: every design, the exact
 spec and DECISIONS texts (374-382), 30 units with their order, tiers and tests, and the release
-steps. Run it as its §7 says; it leaves no design decision to the run. Estimate 18-24 h of agent
+steps. Run it as its §7 says; it leaves no design decision to the run. **All 30 units and S1/S2 landed (`1f3d71b7`..`5413b3b2`); §8, the acceptance gates and release, is the remaining step (in progress).** Estimate 18-24 h of agent
 time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wall).
 
-- [ ] Refresh compares ctime + inode, not only size + mtime (API.md S1; build-tagged per platform).
-- [ ] `Recover` at Open takes the writer lock.
-- [ ] Transient `ErrJournal` for two processes editing different packages (ADR-0010).
-- [ ] The asset kind test follows links unbounded (WIRE §6.5).
-- [ ] A case-only rename of an `out` directory is `E8001`.
-- [ ] `NoHook` filled for the import closure only.
-- [ ] A layer or new entry file cannot name another package's non-nameable member (`E2102`).
+- [x] Refresh compares ctime + inode, not only size + mtime (API.md S1; build-tagged per platform).
+- [x] `Recover` at Open takes the writer lock.
+- [x] Transient `ErrJournal` for two processes editing different packages (ADR-0010).
+- [x] The asset kind test follows links unbounded (WIRE §6.5).
+- [x] A case-only rename of an `out` directory is `E8001`.
+- [x] `NoHook` filled for the import closure only.
+- [x] A layer or new entry file cannot name another package's non-nameable member (`E2102`).
 - [x] v0.1.4's owed cross-root trap and ConstantID clash: closed in v0.1.6 by 347, 348 (ADR-0021 §2.7).
-- [ ] **N11, positions are not ids** (urgent; safety by design): spec rule; opaque generated index
+- [x] **N11, positions are not ids** (urgent; safety by design): spec rule; opaque generated index
   types whose serializers write the key; a warning when an entry position reaches an output, with
   an explicit opt-in. A read-only Resource/Source scan first sizes it.
-- [ ] **Import tiers** (extremely important): allowed import directions in `project.canon`,
+- [x] **Import tiers** (extremely important): allowed import directions in `project.canon`,
   enforced by `check`.
-- [ ] M4 call (a): the scan skips dot-prefixed files (API.md O2).
-- [ ] M4 call (c): a target for the studio's view-model refresh after an edit (240-470 ms today).
+- [x] M4 call (a): the scan skips dot-prefixed files (API.md O2).
+- [x] M4 call (c): a target for the studio's view-model refresh after an edit (240-470 ms today).
 - [ ] Release gates: `make check`, stress, `fuzz-edit` 10 min, bench, Resource upgrade dry run, tag.
 
 ## v0.2 (Louis, 2026-10-14)

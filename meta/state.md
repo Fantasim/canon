@@ -18,16 +18,13 @@ repeated keys and names the first failure in document order; F14 (362, 363, 365,
 (358, 359) format specs, `duplicates()`; F4, F19, F6 guide topics; F12, F5; F9, F10: no bug. Deferred: F20
 (per-field `@json(codes)`), F21 (warm re-check), F22 (streaming JSON reader). Pre-tag: E8152's json names
 planned, not encoded (2.1× edit regression gone), M6 oracle joins, killed-build wedge (336).
-**Next: v0.1.9, the robustness release**, decided whole in [ADR-0021](decisions/0021-v019-robustness-release.md) (DECISIONS 374-382, synced first; run as its §7 says), then v0.2 (N5 first). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
+**v0.1.9, the robustness release** ([ADR-0021](decisions/0021-v019-robustness-release.md), DECISIONS 374-382): all 30 units and S1/S2 landed on `main` (`1f3d71b7`..`5413b3b2`, 62 commits, [status](handoff/2026-10-14-v019-status.md)). **Next, in progress: ADR-0021 §8** (acceptance gates and release: `make check`, stress, `fuzz-edit`, bench, Resource dry run, tag), then v0.2 (N5 first). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
 [all handoffs](handoff/README.md). Release builds stay local (`make dist`) while CI is down.
 **Performance effort (2026-10-14, [log](decisions/log-2026-10-14.md)):** halve `check`/`build` memory and time; token store done (371, −15-17% RSS); lambda captures not copied (−20% allocs per call); Resource `tidCode` handoff sent (−35% `check`); enum by-name lookup, `Prov`, parallel packages next. Robustness first: the stat-trust refresh fix and a safe on-disk cache are documented, not started ([log](decisions/log-2026-10-14.md)). **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
 on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a dir generate for names; edit time is ops × a full analysis; FMT's whole-file
 judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
 on entry add/remove.
-**Owed, small:** transient `ErrJournal` for two processes editing different packages (ADR-0010); `Recover`
-at Open takes no writer lock; a case-only rename of an `out` directory is `E8001`; the asset kind test
-follows links unbounded (WIRE §6.5); a layer or new entry file cannot name another package's non-nameable
-member (`E2102`). Not in v0.1.9 ([ADR-0021](decisions/0021-v019-robustness-release.md) §9): `load.dir`
+**Owed, small:** `edit`'s I/O rollback inside `Settle` returns a raw error with an absolute temp path; J7 does not lock readers of a JSON file newly created in a listed directory; `gen/go` `conformance.go`/`pure_expr.go` key refs off `g.isData()`, not the ref's package; `gen/ts` writes an undeclared own `<Id>Index` when `values:` omits the table; no cpp test of two packages sharing one namespace; progen has no mutation operators for the `tiers` key (`E1017`/`E1018`/`E2007`); a `stampMust`/`must` test helper is written twice. Not in v0.1.9 ([ADR-0021](decisions/0021-v019-robustness-release.md) §9): `load.dir`
 skips a Windows junction silently (no `W7115`) and does not bound a path through one; single-file `load`, `load.text`, `load.csv`, `load.defines` read through any link; Windows refresh (re-read notified names, drop a `*StaleError`'s entries); the cache's stat table must not trust size + mtime; a `@text` output named `.canon`/`.json` over an unmarked file (unverified); enums opaque in v0.2 (Go, C++ nlohmann, TS `<E>Index`); the studio's full reload has no target; `evalAnalysis` never calls `KeptSelection`.
 **Documented limit:** `NoHook` is filled for the import closure only, the only packages read (ADR-0021 §2.5).
 **Owed for v0.2:** dependent types kept through static typing (E3804 on dependent-map `union`); an amend
@@ -43,7 +40,7 @@ M0-M5, post-M4, M1.5 done (3 GB cap unverified). M6: TS, C++ baked done; legacy 
 
 ## What exists (committed)
 
-spec + DECISIONS 1-373; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every
+spec + DECISIONS 1-382; `syntax`, `format` (+ §13 `Rewrite`), `jsonsrc` (+ §14.2 edits), `wire`, `load` (every
 WIRE §6 form), `check`/`types` (dependent types, views, translations, broken-view tracking), `eval`/`eval/std`
 + `value` (layers, provenance, drivers across the project), `verify`, `lock`, `rules`, `ir` (stage E,
 fingerprint, name plans, pattern automaton, `ir.CopyOf`), `gen/json`, `gen/ts` (four modes), `gen/go` (baked,
@@ -55,7 +52,7 @@ workspace, `cli` (version/init/new/check/build/test/explain/fmt/guide/help), `in
   multi-op edits and Undos; see [m4-units.md](m4-units.md), [plan.md](plan.md).
 
 ## Open Louis-calls
-None blocking. [The M4 handoff](handoff/2026-10-01-m4-complete.md)'s (a) O2 and (c) refresh target are in
+None blocking. [The M4 handoff](handoff/2026-10-01-m4-complete.md)'s (a) O2 and (c) refresh target landed in
 v0.1.9 (ADR-0021), (b) `check.Info` layered maps in v0.2 (log-2026-10-14). The v0.2 order after N5 is Louis's.
 
 ## Operating notes
