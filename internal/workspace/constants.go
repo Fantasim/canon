@@ -2,7 +2,7 @@ package workspace
 
 import "time"
 
-// racyWindow: a file hashed this soon after its mtime is hashed again (API.md S1).
+// racyWindow: a file hashed this soon after its modification or change time is hashed again (API.md S1).
 const racyWindow = 2 * time.Second
 
 // verdictLimit is how many M9 verdicts a project keeps, the least recently used dropped (API.md M9).

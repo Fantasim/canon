@@ -39,6 +39,9 @@ type stamp struct {
 	class class
 	size  int64
 	mtime int64
+	ctime int64  // change time; 0 where the stat has none (sysStamp)
+	ino   uint64 // with dev, the file's identity; 0 likewise
+	dev   uint64
 	zero  bool // no modification time: the entry is read again at every refresh
 }
 
@@ -291,14 +294,18 @@ func classOf(err error) class {
 	return classUnreadable
 }
 
-// modTime is the modification time the stamp holds.
-func (st stamp) modTime() time.Time { return time.Unix(0, st.mtime) }
+// racy reports whether an entry read at at may still change within the same timestamp: it was
+// read less than racyWindow after its modification or change time (API.md S1).
+func (st stamp) racy(at time.Time) bool {
+	return at.Sub(time.Unix(0, st.mtime)) < racyWindow || at.Sub(time.Unix(0, st.ctime)) < racyWindow
+}
 
 func stampOf(info fs.FileInfo, err error) stamp {
 	if err != nil {
 		return stamp{class: classOf(err)}
 	}
-	return stamp{size: info.Size(), mtime: info.ModTime().UnixNano(), zero: info.ModTime().IsZero()}
+	ctime, ino, dev := sysStamp(info.Sys())
+	return stamp{size: info.Size(), mtime: info.ModTime().UnixNano(), ctime: ctime, ino: ino, dev: dev, zero: info.ModTime().IsZero()}
 }
 
 // statSum is a stat's content key: whether the name exists, and as a directory or a regular file.
