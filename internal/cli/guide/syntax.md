@@ -25,6 +25,12 @@ project demo {
 
   languages: [en, fr]
   budget: 100_000_000
+
+  /// Import directions, lowest tier first (see Import tiers below).
+  tiers {
+    ids: [shop.vocab]
+    data: [shop]
+  }
   go_module {
     gen: "example.com/demo/gen"
   }
@@ -64,6 +70,29 @@ directory exists (a root at or inside the project always is).
   the project. A relative C++ include or TypeScript import between two roots placed differently
   than `project.canon` places them is `E8022`; one climbing above the project's parents is
   `E8025`: emit a copy of the package under the same root.
+
+## Import tiers
+
+`tiers` in `project.canon` fixes which package may import which, so an upward import is an error
+before it is a cycle. One entry per line (a one-line map without commas is `E1117`), lowest tier
+first:
+
+```canon fragment
+tiers {
+  ids: [shop.vocab]
+  data: [shop]
+}
+```
+
+- A listed path places the package of that name and every package below it, a longer path
+  winning: `shop` places `shop.items`, while `shop.vocab` carves itself out into `ids`. A package
+  imports only from its own tier and the tiers written before it. A path need not name a package.
+- `E2007`: an import climbs `tiers`: import the same or an earlier tier, move the code down, or
+  change `tiers`. `E1018`, as soon as one tier is declared: a package no path places, or a path
+  that places none (a typo). Both are reported whatever the command selects.
+- Only `import` lines count: a layer or translation file has none, `load` reads files, and a
+  view's use of the studio package needs no import. `tiers` is not allowed in
+  `project.local.canon` (`E1014`).
 
 ## A source file
 
@@ -124,8 +153,10 @@ Reserved words cannot name declarations, fields, parameters or locals (`E1125`):
 if import in input is layer let load local match none not or package project record ref retired
 return self stable table test translation true type var variant view warn where while widget`.
 Data may use them: an enum member `check`, a table key `package`, a field name before `:` in a
-literal. Bare in a value only the words that cannot start an expression (`icon: check`); others
-are written qualified (`Icon.return`). `none true false self` never name a member, case or key
+literal. Bare in a value only the words that cannot start an expression (`icon: check`); the
+others are quoted (`` icon: `return` ``), which needs no import, or qualified (`Icon.return`).
+Only those words may be quoted: `` `check` `` or `` `kind` `` is `E1138` (write it without
+backticks). `none true false self` never name a member, case or key
 (`E1126`). A field whose wire name is reserved keeps a clean name: `kind: Kind @json("type")`.
 
 ## Separators

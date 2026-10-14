@@ -41,6 +41,9 @@ error[E3002]  shop/shop.canon:30:17
 | `E7009` `E3705` | a `load` or `asset` under an absent optional root: place the root, or check other packages |
 | `W8024` `E8023` | outputs skipped under an absent optional root (build); `build --check` refuses them: CI needs the root |
 | `E8022` `E8025` | a relative include or import between roots placed differently, or climbing above the project: emit a copy under the same root |
+| `E1138` | a quoted word that is not one of the words that need it: write it without backticks (`` `return` `` is quoted, `` `kind` `` is `kind`) |
+| `E1017` `E1018` | `tiers`: a name that is not an identifier, a path listed twice; a package no path places, or a path that places none |
+| `E2007` | an import climbs `tiers`: import the same or an earlier tier, move the code down, or change `tiers` |
 | `E1125` `E1126` | reserved word as a name: rename; keep a wire name with `@json` |
 | `E2102` | unknown name: typo (also beside a literal: `weigth < 5`), missing `import`, or a key the table does not have |
 | `E2103` `E2106` | write `ref <collection>`; a name declared twice |
@@ -60,6 +63,8 @@ error[E3002]  shop/shop.canon:30:17
 | `E3028` | a type after the first alternative of `A \| "lit"`: write a string literal, or a variant for a choice of types (`"x"?` and `["x"]` are types too) |
 | `E3027` | a name in scope used as a key but not a value of the key type: write the key as a string (`"n"`), or for an enum or union key type a member of it |
 | `W3001` | `x: T? = none`: remove the `= none` (`canon fmt` does) |
+| `W8031` | an entry position, or a number or text made from one, is written to an output: write the entry's key or a `@stable` field, or wrap it in `positional(…)` to write it on purpose |
+| `W1912` | an amend path selects an entry by position (`[#n]`): select it by key |
 | `W3002` | `E.members.first(m => m.name == s)` visits every member: write `E.named(s)` |
 | `E8001` | the build would overwrite a file it does not own: `canon build --adopt <path>` (text files, legacy C++ headers), or move it |
 | `E8021` | a misplaced `@text` or a bad file name (`canon guide emit`) |

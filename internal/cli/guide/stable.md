@@ -137,3 +137,10 @@ export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>>
 
 Retire with `canon edit` (`{"op": "retire", ...}`) so the lock and the sources change together
 (`canon guide recipes`). Delete a lock line only in a reviewed commit that means to forget an id.
+
+## Positions are not ids
+
+An entry's position (`Position()`, `[#n]`, an index) changes when entries are added or entry
+files move. Keys and `@stable` fields name entries; a position names none. A number or text made
+from one that reaches an output is `W8031`, and an amend path `[#n]` is `W1912`. Write
+`positional(…)` around the value when a position is wanted on purpose.
