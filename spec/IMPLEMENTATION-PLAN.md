@@ -158,8 +158,10 @@ completes them in the listed file.
 
 ### 4.1 Syntax tree — `internal/source/source.go`, `internal/syntax/ast.go`
 
-The parser is **lossless**: the token stream plus trivia reproduces the file byte for byte
-(after `\r\n` normalization). The formatter and the edit engine work from it (FMT-01, API-03).
+The parser is **lossless**: the token stream plus the trivia between tokens reproduces the file
+byte for byte (after `\r\n` normalization); trivia is not stored, it is read back on demand from
+the bytes between adjacent tokens (DECISIONS 371). The formatter and the edit engine work from it
+(FMT-01, API-03).
 
 ```go
 package source
@@ -188,10 +190,12 @@ type TokenKind uint16   // one per token of GRAMMAR.md: Ident, Int, Float, Durat
 type Token struct {
     Kind       TokenKind
     Start, End source.Pos
-    Leading    []Trivia  // whitespace, newlines and comments before the token
-    Trailing   []Trivia  // comments and spaces after it on the same line
 }
-type TriviaKind uint8   // Space, Newline, LineComment, BlockComment, DocComment
+// Trivia is the bytes between adjacent tokens, read back on demand (never stored): Trailing runs
+// from a token's end to the first line break, Leading from there to the next token.
+func (f *File) AppendLeading(dst []Trivia, t Tok) []Trivia   // whitespace, newlines and comments before the token
+func (f *File) AppendTrailing(dst []Trivia, t Tok) []Trivia  // comments and spaces after it on the same line
+type TriviaKind uint8   // Space, Newline, LineComment, BlockComment, DocComment, BOM
 type Trivia struct { Kind TriviaKind; Start, End source.Pos }
 
 type Tok int32          // index into File.Tokens

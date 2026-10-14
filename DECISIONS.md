@@ -436,8 +436,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     four for multiline strings), so every node of an interpolation names tokens of `File.Tokens`.
     `DOC` lines are trivia (`TriviaDocComment`), not tokens; a BOM is `TriviaBOM`; a character no
     token starts with is an `ILLEGAL` token; the separator pass's `NL` is a zero-width token with
-    no trivia. A token's `Trailing` is its spaces and comments up to the line break; the break and
-    everything up to the next token are that token's `Leading`. Line-break counts are not stored:
+    no trivia. A token's trailing trivia is its spaces and comments up to the line break; the break
+    and everything up to the next token are that token's leading trivia, read back from the bytes
+    (`File.AppendTrailing`, `File.AppendLeading`; DECISIONS 371). Line-break counts are not stored:
     they are the line numbers of the two tokens. Reason: a flat, lossless stream (§4.1, GRAMMAR §10)
     in which FORMATTER §8.1's attachment is read off the tokens.
 
@@ -1004,9 +1005,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     spans its delimiters: `STRING_HEAD` from the quote (a multiline head with the rest of its
     opening line) through the `{`, `STRING_MID` from the `}` through the next `{`, `STRING_TAIL`
     from the `}` through the closing quote; `FORMAT_SPEC` is the `:` and the spec, not the `}`; an
-    `Interp` spans its expression and its spec. A token's `Trailing` is the trivia after it up to
+    `Interp` spans its expression and its spec. A token's trailing trivia is the trivia after it up to
     the first line break (a block comment that starts on its line trails it even across lines);
-    the rest up to the next token is that token's `Leading`; the file's first token leads with
+    the rest up to the next token is that token's leading trivia; the file's first token leads with
     everything before it, a BOM included. `NL` is empty, at the border of the previous token's
     trailing and the next one's leading. A line break between two tokens is any `\n` between them,
     comments included.
@@ -3817,3 +3818,12 @@ round 2", "PS1 review", "PS2 round 2"):
      and 7 (v0.1.5 and v0.1.6 alike; website H-14 #6, 2026-10-13). A conformance file's
      vectors stay plain: it carries no helper block (CONFORMANCE.md §7.2) and its vectors are the
      package's own tests, never data tables.
+
+371. **Trivia is read back, not stored (IMPLEMENTATION-PLAN §4.1; amends 73).** `syntax.Token` is
+     `{Kind, Start, End}`; a token's leading and trailing trivia are the bytes between it and its
+     neighbours, scanned on demand by `File.AppendLeading` and `File.AppendTrailing` with exactly
+     73's split (doc comments, BOM, `NL` tokens included). Losslessness (FMT-01, API-03) is
+     unchanged. Reason: the two stored slices were 48 of a token's 64 bytes and, with their
+     backing arrays, about a quarter of the live heap on Sovereign's Resource project; peak RSS of
+     `canon check` there fell from 2.66-2.85 GB to 2.20-2.31 GB, `build --check` from 2.87-3.29 GB
+     to 2.35-2.49 GB (2026-10-14, three runs each). Approved by Louis as a frozen-contract change.

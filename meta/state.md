@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-10-13. **v0.1.7** (TS2590 fix, DECISIONS 370) and v0.1.6 released 2026-10-13; v0.1.5 to v0.1.0 are out; `main` is
+Updated: 2026-10-14. **v0.1.7** (TS2590 fix, DECISIONS 370) and v0.1.6 released 2026-10-13; v0.1.5 to v0.1.0 are out; `main` is
 the only branch. DECISIONS 344-369: [log-2026-10-12](decisions/log-2026-10-12.md),
 [log-2026-10-13](decisions/log-2026-10-13.md), [ADR-0020](decisions/0020-api-016-overlay-ctx-call-lang-roots.md)
 (earlier: 304-343, ADR-0018/0019, logs 10-06, 10-08, 10-09). M5 accepted (CI run 36973712977).
@@ -21,10 +21,10 @@ planned, not encoded (2.1× edit regression gone), M6 oracle joins, killed-build
 **Next:** Louis publishes v0.1.6, Scripts' canon-bump moves the pin; then telemetry first use and the
 handoff's §3 (v0.2; order is Louis's). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
 [all handoffs](handoff/README.md). Release builds stay local (`make dist`) while CI is down.
-**Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
+**Performance effort (2026-10-14, [log](decisions/log-2026-10-14.md)):** halve `check`/`build` memory and time; token store done (371, −15-17% RSS); lambda captures in review; Resource `tidCode` handoff, enum by-name lookup, `Prov`, parallel packages next. **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
 on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a dir generate for names; edit time is ops × a full analysis; FMT's whole-file
 judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
-on entry add/remove; a lighter token store (~39% of a heap).
+on entry add/remove.
 **Owed, small:** transient `ErrJournal` for two processes editing different packages (ADR-0010); `Recover`
 at Open takes no writer lock; `NoHook` filled for the import closure only; a case-only rename of an `out`
 directory is `E8001`; the asset kind test follows links unbounded (WIRE §6.5); a layer or new entry file
