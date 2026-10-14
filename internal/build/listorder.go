@@ -28,8 +28,8 @@ func (r *run) listingChanges(o *output) (change, *change) {
 }
 
 // ordered are the changes of a write in the order that keeps a killed build recoverable: the
-// lists of text files first, then every other output and lock, the removals, and the lists'
-// final forms last (DECISIONS 326, 336, 351).
+// lists of text files first, the directory renames, then every other output and lock, the
+// removals, and the lists' final forms last (DECISIONS 326, 336, 351, 377).
 func (r *run) ordered(out *BuildResult, outputs []*output, locks []*lockOut) []change {
 	var first, changes, removals, last []change
 	for _, o := range outputs {
@@ -54,5 +54,14 @@ func (r *run) ordered(out *BuildResult, outputs []*output, locks []*lockOut) []c
 		}
 		out.Locks = append(out.Locks, l.Lock)
 	}
-	return append(append(append(first, changes...), removals...), last...)
+	return append(append(append(append(first, r.dirChanges()...), changes...), removals...), last...)
+}
+
+// dirChanges are the directory renames, top-down, each before any output below it (DECISIONS 377).
+func (r *run) dirChanges() []change {
+	out := make([]change, len(r.renames))
+	for i, rn := range r.renames {
+		out[i] = change{abs: rn.to, display: rn.display, respell: rn.from, dir: true}
+	}
+	return out
 }

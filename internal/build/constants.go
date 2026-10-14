@@ -70,6 +70,7 @@ const (
 	rootMark       = "@"
 	pathSep        = "/"
 	pathRune       = '/'
+	parentSeg      = ".." // the path segment above a directory
 	qnameSep       = "."
 	lockName       = "canon.lock"
 	lineEnd        = listingEnd

@@ -34,6 +34,7 @@ type change struct {
 	existed      bool
 	remove       bool   // delete the file: renamed aside, then removed once every other write is done
 	respell      string // the spelling on disk of the file abs names, which takes abs's (DECISIONS 357)
+	dir          bool   // respell is a directory, renamed to abs in one rename, nothing staged (DECISIONS 377)
 	late         bool   // a second write of a file the write wrote first: staged when it is replaced
 }
 

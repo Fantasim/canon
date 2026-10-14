@@ -30,6 +30,9 @@ func (r *run) place(outputs []*output, opt BuildOptions) ([]*output, error) {
 	if linked, err := r.throughLinks(own.gone); linked || err != nil {
 		return outputs, err
 	}
+	if err := r.dirSpellings(outputs, opt.OnlyRoot); err != nil { // DECISIONS 377
+		return nil, err
+	}
 	for _, o := range outputs {
 		if o.remove {
 			continue
@@ -43,7 +46,7 @@ func (r *run) place(outputs []*output, opt BuildOptions) ([]*output, error) {
 			return nil, displayError(o.Path, err)
 		}
 		o.old, o.existed = old, true
-		if err := r.spelling(o, own); err != nil {
+		if err := r.spelling(o); err != nil {
 			return nil, err
 		}
 		if err := r.judge(o, opt.Adopt, own); err != nil {
@@ -53,14 +56,13 @@ func (r *run) place(outputs []*output, opt BuildOptions) ([]*output, error) {
 	return append(outputs, own.gone...), nil
 }
 
-// judge sets an existing output's status: unchanged, canon's to overwrite, adopted, or E8001; ownership is read only when the content differs (CODEGEN.md §2.4, §2.9). A file to respell is written, whatever its bytes (DECISIONS 357).
+// judge sets an existing output's status: unchanged, canon's to overwrite, adopted, or E8001; ownership is read only when the content differs or the file is to respell (CODEGEN.md §2.4, §2.9). A file to respell, or below a renamed directory, is written, whatever its bytes (DECISIONS 357, 377).
 func (r *run) judge(o *output, adopt []string, own *ownership) error {
-	if o.respell != "" {
-		o.Status = StatusWritten
-		return nil
-	}
-	if bytes.Equal(o.old, o.Content) {
+	if o.respell == "" && bytes.Equal(o.old, o.Content) {
 		o.Status = StatusUnchanged
+		if r.renamedAbove(o.Abs) {
+			o.Status = StatusWritten
+		}
 		return nil
 	}
 	owned, err := own.owned(o, o.old)
@@ -72,6 +74,7 @@ func (r *run) judge(o *output, adopt []string, own *ownership) error {
 	case adoptable(o, adopt):
 		o.Status = StatusAdopted
 	default:
+		o.respell = "" // DECISIONS 377: renamed only where the build may overwrite it
 		diag.E8001.At(o.at, o.Path).Report(r.bags[o.Package])
 	}
 	return nil

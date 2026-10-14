@@ -58,20 +58,18 @@ func (r *run) collide(free bool) {
 		c.b.Report(r.bags[c.pkg])
 		r.writes().collided[c.key] = true
 	}
+	r.dirCase() // DECISIONS 377: from the declared directories alone, free or not
 }
 
 // sharing is the run's placed emits whose directories another emit writes into too, or that
 // write into a directory holding a source or above one, where a package keeps its canon.lock.
 func (r *run) sharing() []*placedEmit {
 	emits := r.placedEmits()
-	count, packages := map[string]int{}, map[string]bool{}
+	count, packages := map[string]int{}, r.packageDirs()
 	for _, pe := range emits {
 		for _, d := range emitDirs(pe) {
 			count[d]++
 		}
-	}
-	for key := range r.reserved() { //canon:unordered a set
-		packages[path.Dir(key)] = true
 	}
 	var out []*placedEmit
 	for _, pe := range emits {
@@ -81,6 +79,15 @@ func (r *run) sharing() []*placedEmit {
 				break
 			}
 		}
+	}
+	return out
+}
+
+// packageDirs are the lower-cased directories holding a package's sources, or above one, where a package keeps its canon.lock (CODEGEN.md §2.9).
+func (r *run) packageDirs() map[string]bool {
+	out := map[string]bool{}
+	for key := range r.reserved() { //canon:unordered a set
+		out[path.Dir(key)] = true
 	}
 	return out
 }

@@ -37,11 +37,16 @@ func (r *run) consumerOf(display string) string {
 
 // declaredAt is the project-relative path of display where project.canon places the roots.
 func (r *run) declaredAt(display string) (string, bool) {
+	at, ok := r.declaredLayout().Resolve(display, "", source.Span{}, diag.NewBag(nil, ""))
+	return at.Abs, ok
+}
+
+// declaredLayout is the roots where project.canon places them, below the project-relative ".".
+func (r *run) declaredLayout() *project.Layout {
 	if r.declared == nil {
 		r.declared, _ = project.NewLayout(r.s.proj, declaredAnchor, nil, diag.NewBag(nil, ""))
 	}
-	at, ok := r.declared.Resolve(display, "", source.Span{}, diag.NewBag(nil, ""))
-	return at.Abs, ok
+	return r.declared
 }
 
 // outside is E8028 `outside` for each output of root that this machine places outside root's
@@ -58,6 +63,20 @@ func (r *run) outside(root string, kept []*output) bool {
 		ok = false
 	}
 	return ok
+}
+
+// mayRename reports a rename the build may make: any without --only-root, else one strictly
+// below the root's directory; another is E8028 `change` naming the directory (DECISIONS 377).
+func (r *run) mayRename(only string, rn dirRename) bool {
+	if only == "" {
+		return true
+	}
+	if rel, in := under(rootDir(r.s.layout, only), rn.to); in && rel != listingMark {
+		return true
+	}
+	declared, _ := r.s.proj.Root(only) // found: validOnly accepted the root
+	diag.E8028.AtChange(declared.Span, only, rn.display).Report(r.s.own)
+	return false
 }
 
 // makeRoot lets --only-root write into its root when this machine lacks the root's directory but

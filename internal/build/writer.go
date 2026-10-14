@@ -59,9 +59,11 @@ func (w *writer) deleteAside(changes []change) error {
 	return errors.Join(errs...)
 }
 
-// replace puts a change's staged file in its place, sets a file to delete aside (CODEGEN.md §2.9), or gives a file its declared spelling.
+// replace puts a change's staged file in its place, sets a file to delete aside (CODEGEN.md §2.9), or gives a file or a directory its declared spelling.
 func (w *writer) replace(c change) error {
 	switch {
+	case c.dir: // one rename, nothing set aside: a killed build never hides the directory (DECISIONS 377)
+		return w.fsys.Rename(c.respell, c.abs)
 	case c.remove:
 		return w.fsys.Rename(c.abs, w.stageOf(c.abs))
 	case c.respell != "":
@@ -99,7 +101,7 @@ func (w *writer) respell(c change) error {
 }
 
 // stage writes a change's staged file, its directory created, an existing file's mode kept; a
-// respelled file is staged when it is replaced.
+// respelled file is staged when it is replaced, a renamed directory never.
 func (w *writer) stage(c change) error {
 	if c.remove || c.respell != "" || c.late {
 		return nil
@@ -203,7 +205,8 @@ func (w *writer) removeDirs() {
 }
 
 // removeStages removes the files staged for changes not renamed in: this run's names only, and
-// never a respelled file's, whose staging name may hold the file itself set aside.
+// never a respelled file's, whose staging name may hold the file itself set aside, nor a
+// renamed directory's, which has none.
 func (w *writer) removeStages(changes []change) {
 	for _, c := range changes {
 		if !c.remove && c.respell == "" {
@@ -225,9 +228,11 @@ func (w *writer) restore(done []change) error {
 }
 
 // restoreOne restores one file already replaced, or removes one that did not exist before; a
-// respelled file gets its old spelling back too.
+// respelled file or directory gets its old spelling back too.
 func (w *writer) restoreOne(c change) error {
 	switch {
+	case c.dir:
+		return w.fsys.Rename(c.abs, c.respell)
 	case c.remove:
 		return w.fsys.Rename(w.stageOf(c.abs), c.abs)
 	case !c.existed:

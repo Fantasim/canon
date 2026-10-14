@@ -145,7 +145,8 @@ type runWrites struct {
 	listings  map[string][]string
 	generated map[*ir.Emit]generation
 	collided  map[string]bool
-	named     []string // what the loads named when the run began, which a build re-reads (DECISIONS 352)
+	dirCased  map[*ir.Emit]bool // the emits on either side of an E8152 dirCase: never written (DECISIONS 377)
+	named     []string          // what the loads named when the run began, which a build re-reads (DECISIONS 352)
 }
 
 // generation is what an emit's generator gave.
@@ -158,7 +159,7 @@ type generation struct {
 func (r *run) writes() *runWrites {
 	if r.w == nil {
 		token, err := newToken()
-		r.w = &runWrites{token: token, err: err, listings: map[string][]string{}, generated: map[*ir.Emit]generation{}, collided: map[string]bool{}}
+		r.w = &runWrites{token: token, err: err, listings: map[string][]string{}, generated: map[*ir.Emit]generation{}, collided: map[string]bool{}, dirCased: map[*ir.Emit]bool{}}
 	}
 	return r.w
 }

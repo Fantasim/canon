@@ -137,11 +137,12 @@ type ownership struct {
 	listed map[string]map[string]string // package -> the display paths its canon.outputs names, each with its recorded SHA-256, read when first needed
 	legacy map[string]map[string]bool   // package -> the display paths its own legacy `.canon-text` lists
 	gone   []*output                    // the legacy `.canon-text` files the build deletes
+	placed map[string]map[string]bool   // package -> the paths its canon.outputs names, placed, made when first needed (DECISIONS 377)
 }
 
 // owners reads the legacy manifests of the text outputs' directories (CODEGEN.md §2.9 Migration); a manifest that cannot be read is an error.
 func (r *run) owners(outputs []*output) (*ownership, error) {
-	own := &ownership{r: r, listed: map[string]map[string]string{}, legacy: map[string]map[string]bool{}}
+	own := &ownership{r: r, listed: map[string]map[string]string{}, legacy: map[string]map[string]bool{}, placed: map[string]map[string]bool{}}
 	seen := map[string]bool{}
 	for _, o := range outputs {
 		dir := project.DirOf(o.Abs)
@@ -229,8 +230,10 @@ func (own *ownership) owned(o *output, old []byte) (bool, error) {
 		return true, nil
 	}
 	names, err := own.names(o.Package)
-	_, listed := names[o.Path]
-	return listed, err
+	if _, listed := names[o.Path]; listed || err != nil {
+		return listed, err
+	}
+	return own.listedAt(o.Package, names, own.r.onDisk(o)), nil
 }
 
 // names are the display paths package pkg's marked `canon.outputs` names; none when it has no such file.

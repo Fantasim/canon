@@ -24,6 +24,9 @@ let v: Int = 2
 emit json { out: "@out/X/" }
 -- findings.txt --
 error[E8152]  b/b.canon:7:18
+  output directories @out/x and @out/X differ only in letter case
+
+error[E8152]  b/b.canon:7:18
   outputs collide: @out/x/v.json and @out/X/v.json
 
-1 error, 0 warnings in 2 packages (…)
+2 errors, 0 warnings in 2 packages (…)

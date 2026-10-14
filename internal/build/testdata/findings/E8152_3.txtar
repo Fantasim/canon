@@ -1,0 +1,29 @@
+WIRE.md §8.1, DECISIONS 377: two output directories whose paths differ only in letter case are E8152 dirCase, at the later emit's out.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@out/Gen/" }
+-- b/b.canon --
+/// B.
+package b
+
+/// W.
+let w: Int = 2
+
+emit json { out: "@out/gen/" }
+-- findings.txt --
+error[E8152]  b/b.canon:7:18
+  output directories @out/Gen and @out/gen differ only in letter case
+
+1 error, 0 warnings in 2 packages (…)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"maps"
+	"path"
 	"slices"
 	"strings"
 	"testing"
@@ -15,25 +16,30 @@ import (
 
 const respellRule = "DECISIONS 357, CODEGEN.md §2.9: "
 
-// caseFS is a case-insensitive file system that keeps each name's spelling, as macOS and Windows
-// do: over a mapFS whose keys are the spellings on disk, a name finds the key equal to it but for
-// case, a new file takes the spelling it is created with and a rename the new one.
+// caseFS is a case-insensitive file system keeping each name's spelling, as macOS and Windows do,
+// over a mapFS keyed by the spellings on disk: a new file or a rename takes its own spelling in
+// its directory's on disk, and a directory's rename moves every file below it (DECISIONS 377).
 type caseFS struct {
 	mapFS
 }
 
-// find is the spelling on disk of name, a file or a directory holding one; name itself for none.
+// find is the spelling on disk of name: each component that of a file or directory equal to it
+// but for case below the components found so far, its own where there is none.
 func (f caseFS) find(name string) string {
-	want := strings.TrimPrefix(name, "/")
-	for _, k := range slices.Sorted(maps.Keys(f.mapFS)) {
-		switch {
-		case strings.EqualFold(k, want):
-			return "/" + k
-		case len(k) > len(want) && strings.EqualFold(k[:len(want)+1], want+"/"):
-			return "/" + k[:len(want)]
+	keys := slices.Sorted(maps.Keys(f.mapFS))
+	got := ""
+	for _, seg := range strings.Split(strings.TrimPrefix(name, "/"), "/") {
+		next := got + seg
+		for _, k := range keys {
+			rest, ok := strings.CutPrefix(k, got)
+			if comp, _, _ := strings.Cut(rest, "/"); ok && strings.EqualFold(comp, seg) {
+				next = got + comp
+				break
+			}
 		}
+		got = next + "/"
 	}
-	return name
+	return "/" + strings.TrimSuffix(got, "/")
 }
 
 func (f caseFS) ReadFile(name string) ([]byte, error)  { return f.mapFS.ReadFile(f.find(name)) }
@@ -46,14 +52,28 @@ func (f caseFS) WriteFile(name string, data []byte) error {
 }
 func (f caseFS) Remove(name string) error { return f.mapFS.Remove(f.find(name)) }
 func (f caseFS) Rename(oldname, newname string) error {
-	from := f.find(oldname)
-	data, ok := f.mapFS[strings.TrimPrefix(from, "/")]
-	if !ok {
+	from := strings.TrimPrefix(f.find(oldname), "/")
+	to := strings.TrimPrefix(path.Join(f.find(path.Dir(newname)), path.Base(newname)), "/")
+	if data, ok := f.mapFS[from]; ok {
+		delete(f.mapFS, from)
+		delete(f.mapFS, strings.TrimPrefix(f.find(newname), "/"))
+		f.mapFS[to] = data
+		return nil
+	}
+	var below []string
+	for k := range f.mapFS { //canon:unordered each file is moved on its own
+		if strings.HasPrefix(k, from+"/") {
+			below = append(below, k)
+		}
+	}
+	if len(below) == 0 {
 		return fs.ErrNotExist
 	}
-	delete(f.mapFS, strings.TrimPrefix(from, "/"))
-	delete(f.mapFS, strings.TrimPrefix(f.find(newname), "/"))
-	f.mapFS[strings.TrimPrefix(newname, "/")] = data
+	for _, k := range below {
+		data := f.mapFS[k]
+		delete(f.mapFS, k)
+		f.mapFS[to+strings.TrimPrefix(k, from)] = data
+	}
 	return nil
 }
 

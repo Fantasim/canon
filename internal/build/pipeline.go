@@ -53,6 +53,7 @@ type run struct {
 	memoized  bool                    // the evaluator replays the cache's memo, and so logs no cause
 	runner    *rules.Runner           // stages C and D's
 	w         *runWrites              // its staging token and what its writes read (stage.go), made on first use
+	renames   []dirRename             // the directories the write gives their declared spelling, top-down (DECISIONS 377)
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.

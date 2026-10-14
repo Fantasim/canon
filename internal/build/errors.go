@@ -22,11 +22,12 @@ var (
 	// ErrStale is a build whose sources changed between its snapshot and its writer locks (DECISIONS 352).
 	ErrStale = errors.New("sources changed while the build ran")
 
-	errNoProgram   = errors.New("the checker returned no program")
-	errLinkLoop    = errors.New("too many levels of symbolic links")
-	errNoLoadSite  = errors.New("a forced load expression is in no file of the program")
-	errTwoCounts   = errors.New("the evaluator cannot spend the folder's step counter")
-	errRootMissing = errors.New("the root's directory does not exist, and canon never creates a root outside the project")
+	errNoProgram     = errors.New("the checker returned no program")
+	errLinkLoop      = errors.New("too many levels of symbolic links")
+	errNoLoadSite    = errors.New("a forced load expression is in no file of the program")
+	errTwoCounts     = errors.New("the evaluator cannot spend the folder's step counter")
+	errRootMissing   = errors.New("the root's directory does not exist, and canon never creates a root outside the project")
+	errRenameSources = errors.New("a directory holding a package's sources would be renamed")
 )
 
 // internalError is a build's ErrInternal, its text the cause's alone (API.md §15 X1).

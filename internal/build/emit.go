@@ -168,7 +168,7 @@ func (r *run) emit(ctx context.Context, opt BuildOptions, failed bool) ([]*outpu
 	var out []*output
 	for _, p := range r.ir {
 		for _, e := range p.Emits {
-			if skipped(e, opt.Targets, failed) {
+			if skipped(e, opt.Targets, failed) || r.writes().dirCased[e] {
 				continue
 			}
 			cp := ir.CopyOf(r.s.proj, p, e)
