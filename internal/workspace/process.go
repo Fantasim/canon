@@ -100,7 +100,7 @@ func LockAndSettle(ctx context.Context, b *build.Project, reqs []writelock.Reque
 		release, err := plainAcquire(ctx, b.FS(), b.Dir(), reqs)
 		return release, nil, err
 	}
-	held, reqs, err := acquireGrown(ctx, &site, b.Dir(), strongest(reqs))
+	held, reqs, err := acquireGrown(ctx, &site, b.Dir(), writelock.Normalize(reqs))
 	if err != nil {
 		return nil, nil, err
 	}

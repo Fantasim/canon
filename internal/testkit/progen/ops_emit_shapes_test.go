@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/testkit/fixture"
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 )
 
@@ -60,7 +61,7 @@ func shapesProject(t *testing.T, src string) (*progen.Project, target) {
 		t.Fatal(err)
 	}
 	p := progen.NewProject()
-	p.Set(projectFile, []byte(withoutTiers(strings.Replace(string(pc), "studio: studio\n", "", 1))))
+	p.Set(projectFile, []byte(fixture.WithoutTiers(strings.Replace(string(pc), "studio: studio\n", "", 1))))
 	p.Set(shapesDir+"zzm.canon", []byte(src))
 	tg := metaTarget(shapesDir+"zzm.canon", src)
 	tg.pkg = "features.zzm"

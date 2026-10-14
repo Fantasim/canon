@@ -4,23 +4,17 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/testkit/fixture"
 )
 
 // exampleRootsBesideEx is where examples/project.canon's outside roots lie for a project at /ex.
 var exampleRootsBesideEx = []string{"Resource", "Client", "Source", "sovcommon/web/src/lib", "balance/parity", "resourcestudio/generated"}
-
-// tiersBlock matches the `tiers { ... }` entry of examples/project.canon with its doc comment.
-var tiersBlock = regexp.MustCompile(`(?m)(^  ///.*\n)*^  tiers \{\n(?s:.*?)^  \}\n`)
-
-// withoutTiers drops the tiers entry: a copy of a package subset leaves most tier paths placing nothing (E1018).
-func withoutTiers(project string) string { return tiersBlock.ReplaceAllString(project, "") }
 
 // teamboardFS is examples/teamboard and its imports in memory under /ex, taxonomy.canon edited
 // by the replacements (old, new…), with the golden canon.lock.
@@ -33,7 +27,7 @@ func teamboardFS(t *testing.T, edits ...string) mapFS {
 			t.Fatal(err)
 		}
 		if name == "project.canon" {
-			data = []byte(withoutTiers(string(data)))
+			data = []byte(fixture.WithoutTiers(string(data)))
 		}
 		if strings.HasPrefix(name, "teamboard/") {
 			data = []byte(strings.NewReplacer(edits...).Replace(string(data)))

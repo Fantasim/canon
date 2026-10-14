@@ -200,7 +200,7 @@ func (c *commit) blocks(name string) (bool, error) {
 	if err != nil || l.gone {
 		return false, err
 	}
-	return !l.locked || l.j.Host != c.j.Host || meets(l.j.Locks, c.j.Locks), nil
+	return !l.locked || l.j.Host != c.j.Host || Meets(l.j.Locks, c.j.Locks), nil
 }
 
 // holdsAll says whether every package of locks is in held.
@@ -213,7 +213,7 @@ func holdsAll(held, locks []string) bool {
 	return true
 }
 
-// meets says whether a and b share a package.
-func meets(a, b []string) bool {
+// Meets says whether a and b share a package.
+func Meets(a, b []string) bool {
 	return slices.ContainsFunc(a, func(p string) bool { return slices.Contains(b, p) })
 }

@@ -84,7 +84,7 @@ func journals(fsys build.WriteFS, dir string) ([]string, error) {
 	}
 	var out []string
 	for _, e := range entries {
-		if e.Type().IsRegular() && isJournal(e.Name()) {
+		if e.Type().IsRegular() && IsJournal(e.Name()) {
 			out = append(out, project.Join(jdir, e.Name()))
 		}
 	}

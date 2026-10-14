@@ -181,7 +181,7 @@ func (g *gen) writeEnum(s *enumSpec) {
 func (g *gen) writeSwitch(method string, s *enumSpec, texts []string) {
 	g.printf("func (self %s) %s() string {\nswitch self {\n", s.name, method)
 	for i, c := range s.consts {
-		g.printf("case %s:\nreturn %s\n", c.name, strconv.Quote(texts[i]))
+		g.printf(idCaseFormat, c.name, strconv.Quote(texts[i]))
 	}
 	g.printf(fallbackFormat, s.name, g.use(strconvPkg, strconvPkg))
 }

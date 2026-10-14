@@ -75,9 +75,9 @@ func journalName(dir, rev string) (string, error) {
 	return project.Join(dir, JournalDir, rev[i+1:]+ir.JSONExt), nil
 }
 
-// isJournal says whether a name in the journal directory is a journal, not a file the FS's own
+// IsJournal says whether a name in the journal directory is a journal, not a file the FS's own
 // atomic write left.
-func isJournal(name string) bool {
+func IsJournal(name string) bool {
 	sum, ok := strings.CutSuffix(name, ir.JSONExt)
 	return ok && isRevisionHex(sum)
 }

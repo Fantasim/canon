@@ -152,16 +152,22 @@ func (h *Held) Release() error {
 	return errors.Join(errs...)
 }
 
-// normalized is reqs sorted by package, each package once in its strongest mode.
-func normalized(reqs []Request) ([]Request, error) {
+// Normalize is reqs sorted by package, each package once in its strongest mode; it does not
+// check the names (Valid does, and Acquire and TryAcquire).
+func Normalize(reqs []Request) []Request {
 	out := slices.Clone(reqs)
-	for _, r := range out {
+	slices.SortFunc(out, func(a, b Request) int { return cmp.Or(cmp.Compare(a.Package, b.Package), cmp.Compare(b.Mode, a.Mode)) })
+	return slices.CompactFunc(out, func(a, b Request) bool { return a.Package == b.Package })
+}
+
+// normalized is Normalize of reqs, every package name valid.
+func normalized(reqs []Request) ([]Request, error) {
+	for _, r := range reqs {
 		if err := Valid(r.Package); err != nil {
 			return nil, err
 		}
 	}
-	slices.SortFunc(out, func(a, b Request) int { return cmp.Or(cmp.Compare(a.Package, b.Package), cmp.Compare(b.Mode, a.Mode)) })
-	return slices.CompactFunc(out, func(a, b Request) bool { return a.Package == b.Package }), nil
+	return Normalize(reqs), nil
 }
 
 // writersOf is dir's .canon/writers, each level made if missing, never through a link: one that

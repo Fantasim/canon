@@ -1,7 +1,6 @@
 package build
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"slices"
@@ -45,7 +44,7 @@ func (r *run) lockWriters(ctx context.Context, opt BuildOptions) (func() error, 
 		}
 		reqs = append(reqs, writelock.Request{Package: u.Name, Mode: mode})
 	}
-	held, err := r.settled(ctx, strongest(reqs))
+	held, err := r.settled(ctx, writelock.Normalize(reqs))
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +66,7 @@ func (r *run) settled(ctx context.Context, reqs []writelock.Request) (*writelock
 		if err != nil {
 			return nil, errors.Join(err, held.Release())
 		}
-		next := strongest(append(slices.Clone(reqs), want...))
+		next := writelock.Normalize(append(slices.Clone(reqs), want...))
 		if slices.Equal(next, reqs) {
 			return r.settle(held, reqs)
 		}
@@ -84,15 +83,6 @@ func (r *run) settle(held *writelock.Held, reqs []writelock.Request) (*writelock
 		return nil, errors.Join(err, held.Release())
 	}
 	return held, nil
-}
-
-// strongest is reqs sorted by package, each package once in its strongest mode.
-func strongest(reqs []writelock.Request) []writelock.Request {
-	out := slices.Clone(reqs)
-	slices.SortFunc(out, func(a, b writelock.Request) int {
-		return cmp.Or(cmp.Compare(a.Package, b.Package), cmp.Compare(b.Mode, a.Mode))
-	})
-	return slices.CompactFunc(out, func(a, b writelock.Request) bool { return a.Package == b.Package })
 }
 
 // WithSettle is p settling through s before a build writes, as is every Over of it (ADR-0021 J10).

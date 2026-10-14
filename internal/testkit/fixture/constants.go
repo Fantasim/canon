@@ -1,5 +1,7 @@
 package fixture
 
+import "regexp"
+
 // The directory the copy leaves behind and the modes it writes with.
 const (
 	skippedDir = "expected"
@@ -24,3 +26,6 @@ const renamesProject = `project renames {
 
 // renamesSources are the example trees the copy takes, by directory under examples/.
 var renamesSources = []string{"features/renames", "studio", "sovcommon/time"}
+
+// tiersBlock matches the `tiers { ... }` entry of examples/project.canon with its doc comment.
+var tiersBlock = regexp.MustCompile(`(?m)(^  ///.*\n)*^  tiers \{\n(?s:.*?)^  \}\n`)

@@ -136,7 +136,7 @@ func (s *Snapshot) lockWriters(ctx context.Context, site *edit.Site, pkgs []stri
 		return release, nil, err
 	}
 	site.Locks = locker
-	held, reqs, err := acquireGrown(ctx, site, s.b.Dir(), strongest(reqs))
+	held, reqs, err := acquireGrown(ctx, site, s.b.Dir(), writelock.Normalize(reqs))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -186,6 +186,6 @@ func acquireGrown(ctx context.Context, site *edit.Site, dir string, reqs []write
 		if rerr := held.Release(); err != nil || rerr != nil {
 			return nil, nil, errors.Join(err, rerr)
 		}
-		reqs = strongest(next)
+		reqs = writelock.Normalize(next)
 	}
 }

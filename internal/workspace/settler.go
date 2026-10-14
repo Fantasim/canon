@@ -1,7 +1,6 @@
 package workspace
 
 import (
-	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -86,31 +85,17 @@ func meetingJournals(site edit.Site, pkgs []string) []string {
 	}
 	var out []string
 	for _, e := range entries {
-		if !e.Type().IsRegular() {
+		if !e.Type().IsRegular() || !edit.IsJournal(e.Name()) {
 			continue
 		}
 		data, err := site.FS.ReadFile(project.Join(jdir, e.Name()))
 		var head journalHead
-		if err == nil && json.Unmarshal(data, &head) == nil && head.Host == site.Self.Host && meets(head.Locks, pkgs) {
+		if err == nil && json.Unmarshal(data, &head) == nil && head.Host == site.Self.Host && edit.Meets(head.Locks, pkgs) {
 			out = append(out, e.Name())
 		}
 	}
 	slices.Sort(out)
 	return out
-}
-
-// meets says whether a and b share a package.
-func meets(a, b []string) bool {
-	return slices.ContainsFunc(a, func(p string) bool { return slices.Contains(b, p) })
-}
-
-// strongest is reqs sorted by package, each package once in its strongest mode.
-func strongest(reqs []writelock.Request) []writelock.Request {
-	out := slices.Clone(reqs)
-	slices.SortFunc(out, func(a, b writelock.Request) int {
-		return cmp.Or(cmp.Compare(a.Package, b.Package), cmp.Compare(b.Mode, a.Mode))
-	})
-	return slices.CompactFunc(out, func(a, b writelock.Request) bool { return a.Package == b.Package })
 }
 
 // exclusive are the packages reqs holds exclusive, sorted and unique.

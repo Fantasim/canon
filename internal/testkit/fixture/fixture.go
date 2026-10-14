@@ -60,3 +60,7 @@ func write(dir, rel string, data []byte) error {
 	}
 	return nil
 }
+
+// WithoutTiers is the project file text without its tiers entry: a copy of a package subset leaves
+// most tier paths placing nothing (E1018), and a mutation may import upward (E2007).
+func WithoutTiers(project string) string { return tiersBlock.ReplaceAllString(project, "") }
