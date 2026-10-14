@@ -125,7 +125,8 @@ used. They are not a kind (§13.1). `asset(root, ext: […])` is `String` with a
   tiers written before it; any other `import` is `E2007`, at its path. Only `import` lines count:
   layer and translation files hold none, `load` reads files, and a view's use of the studio package
   needs no import (SPEC §16.11); an explicit one is judged. An import of no package (`E2003`), or
-  from or of a package no tier places (`E1018`), is not judged.
+  from or of a package no tier places (`E1018`), is not judged. An analysis judges the imports of
+  every package it loads, the selected ones and those they import (log-2026-10-14).
 - `import p { A, B }` binds `A` and `B`. Each must be a public declaration of `p` (`E2004`).
   `import p` binds `p` for qualified use (`p.A`); `import p as q` binds `q` instead.
 - **Imports are per file**, as in Go: the names an `import` binds are visible only in the file

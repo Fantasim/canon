@@ -632,11 +632,14 @@ emit text { out: "@source/Tools/telemetry" }
 
 Stage E walks every value it precomputes for a package with an emit other than `view`: the
 emitted values, the stored results of `export fn`s (lookup cells, method instances, and the `$`
-keys and `$fns` they feed) and `@text` results, each record once, in traversal order. A value
+keys and `$fns` they feed), `@text` results and a TypeScript `data` emit's constant field defaults,
+each record once, in stage E's order: fns, then values, then defaults, stored method results
+breadth-first within each, none under a `@text` result (DECISIONS 308). A value
 carrying an entry position's mark (EVALUATION.md §13.1) is `W8031`, at the marked value's site,
 or at the output's declaration when the provenance names no site, with the output's declaration
 as a related `source` note; once per site and package. `{output}` is the qualified name
-(`pkg.name`) of the emitted `let`, the `export fn` or the `@text` fn. The view model, findings and
+(`pkg.name`) of the emitted `let`, the `export fn` or the `@text` fn, and `pkg.Owner.method` for a
+stored method result. The view model, findings and
 messages, conformance vectors and the lock are not outputs here. `W8031` stays a warning; only a
 later decision may make it an error (DECISIONS 379).
 
