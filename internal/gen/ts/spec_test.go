@@ -1,7 +1,10 @@
 package tsgen_test
 
 import (
+	"bytes"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -168,4 +171,35 @@ func TestHeaders(t *testing.T) {
 			t.Errorf("%s: a path, or not one final newline", f.Path)
 		}
 	}
+}
+
+// CODEGEN.md §5.3: a table's id exports its Members and no index; a file that needs positions builds a private const (DECISIONS 379).
+func TestNoExportedIdIndex(t *testing.T) {
+	members := regexp.MustCompile(`(?m)^export const (\w+Id)Members\b`)
+	files := append(generatedFiles(t), exampleFiles(t)...)
+	for _, f := range files {
+		for _, m := range members.FindAllSubmatch(f.Content, -1) {
+			if bytes.Contains(f.Content, []byte("export const "+string(m[1])+"Index")) {
+				t.Errorf("%s exports %sIndex beside its Members", f.Path, m[1])
+			}
+		}
+	}
+}
+
+// exampleFiles are the TypeScript goldens under examples/.
+func exampleFiles(t *testing.T) []output {
+	t.Helper()
+	var out []output
+	err := filepath.WalkDir(examplesDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || !strings.HasSuffix(path, ".ts") || !strings.Contains(path, expectedDir) {
+			return err
+		}
+		data, rerr := os.ReadFile(path)
+		out = append(out, output{Path: path, Content: data})
+		return rerr
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
 }

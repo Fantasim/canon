@@ -65,6 +65,13 @@ function canonFreeze<T>(x: T): T {
 function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
   return build((x) => x);
 }
+
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
 // ---------------------------------------------------------------------------
 
 /** Format version of the taxonomy (taxonomy.json's `version`). */
@@ -83,25 +90,26 @@ export const PostFieldNames: Readonly<Record<PostField, string>> = Object.freeze
 export const PostFieldIndex: Readonly<Record<PostField, number>> = Object.freeze({ assignee: 0, fixed_in: 1, reason: 2, duplicate_of: 3 });
 
 export type IntentId = "issue" | "idea";
-export const IntentIdIndex: Readonly<Record<IntentId, number>> = Object.freeze({ issue: 0, idea: 1 });
+export const IntentIdMembers: ReadonlyArray<IntentId> = Object.freeze(["issue", "idea"]);
 
 export type FlagId = "blocking" | "sensitive";
-export const FlagIdIndex: Readonly<Record<FlagId, number>> = Object.freeze({ blocking: 0, sensitive: 1 });
+export const FlagIdMembers: ReadonlyArray<FlagId> = Object.freeze(["blocking", "sensitive"]);
 
 export type StatusId = "open" | "taken" | "fixed" | "verified" | "wont_do" | "duplicate";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ open: 0, taken: 1, fixed: 2, verified: 3, wont_do: 4, duplicate: 5 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "taken", "fixed", "verified", "wont_do", "duplicate"]);
+const StatusIdIndex = canonIndex(StatusIdMembers);
 
 export type ColumnId = "unclaimed" | "taken" | "fixed" | "done";
-export const ColumnIdIndex: Readonly<Record<ColumnId, number>> = Object.freeze({ unclaimed: 0, taken: 1, fixed: 2, done: 3 });
+export const ColumnIdMembers: ReadonlyArray<ColumnId> = Object.freeze(["unclaimed", "taken", "fixed", "done"]);
 
 export type SeverityId = "low" | "normal" | "critical";
-export const SeverityIdIndex: Readonly<Record<SeverityId, number>> = Object.freeze({ low: 0, normal: 1, critical: 2 });
+export const SeverityIdMembers: ReadonlyArray<SeverityId> = Object.freeze(["low", "normal", "critical"]);
 
 export type AreaGroupId = "in_game" | "out_game" | "internal";
-export const AreaGroupIdIndex: Readonly<Record<AreaGroupId, number>> = Object.freeze({ in_game: 0, out_game: 1, internal: 2 });
+export const AreaGroupIdMembers: ReadonlyArray<AreaGroupId> = Object.freeze(["in_game", "out_game", "internal"]);
 
 export type AreaId = "game" | "balance" | "website" | "resource_studio" | "game_server" | "client" | "resource" | "sovcommon" | "admin_panel" | "analytics" | "team_board" | "internal";
-export const AreaIdIndex: Readonly<Record<AreaId, number>> = Object.freeze({ game: 0, balance: 1, website: 2, resource_studio: 3, game_server: 4, client: 5, resource: 6, sovcommon: 7, admin_panel: 8, analytics: 9, team_board: 10, internal: 11 });
+export const AreaIdMembers: ReadonlyArray<AreaId> = Object.freeze(["game", "balance", "website", "resource_studio", "game_server", "client", "resource", "sovcommon", "admin_panel", "analytics", "team_board", "internal"]);
 
 /** What kind of post this is; `minRole` gates who may post it. */
 export interface Intent {

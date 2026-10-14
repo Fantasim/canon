@@ -303,12 +303,12 @@ func (g *gen) need(t ir.Type) {
 	g.decoded[t] = true
 }
 
-// entryIndex is the Index of the id type of a table another package's baked or embedded ts emit holds, which a ref into it is checked against (`no entry <key>`, CODEGEN.md §2.8 Refs); "" when the generator does not know the ids: a table of this package (read in data or types mode, its ids are the file's), or of a data or types owner.
+// entryIndex is the private index of the id type of a table another package's baked or embedded ts emit holds, which a ref into it is checked against (`no entry <key>`, CODEGEN.md §2.8 Refs); "" when the generator does not know the ids: a table of this package (read in data or types mode, its ids are the file's), or of a data or types owner.
 func (g *gen) entryIndex(r *ir.RefTarget) string {
 	if !g.knownIDs(r) {
 		return ""
 	}
-	return g.importValue(r.Pkg, idName(r.Elem)+indexSuffix)
+	return g.foreignIDIndex(r)
 }
 
 // knownIDs reports a ref into a table another package's baked or embedded ts emit holds: its ids are that emit's id union, known when this file is generated.

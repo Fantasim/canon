@@ -151,6 +151,13 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
   return build((x) => x);
 }
 
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
+
 /** Checks the "$schema" of a data file against the fingerprint compiled in. */
 function canonEnvelope(json: unknown, schema: string, name: string): Record<string, unknown> {
   const doc = json as Record<string, unknown> | null;

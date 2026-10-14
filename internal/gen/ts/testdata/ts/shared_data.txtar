@@ -249,10 +249,10 @@ export type RewardKind =
 export type BonusBranch = "gold" | "mood";
 
 export type StatusId = "open" | "held" | "shut";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ open: 0, held: 1, shut: 2 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "held", "shut"]);
 
 export type BadgeId = "gold";
-export const BadgeIdIndex: Readonly<Record<BadgeId, number>> = Object.freeze({ gold: 0 });
+export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold"]);
 
 /** A status. */
 export interface Status {
@@ -445,6 +445,13 @@ function canonFreeze<T>(x: T): T {
   return x;
 }
 
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
+
 /** Checks the "$schema" of a data file against the fingerprint compiled in. */
 function canonEnvelope(json: unknown, schema: string, name: string): Record<string, unknown> {
   const doc = json as Record<string, unknown> | null;
@@ -455,6 +462,8 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
   return doc as Record<string, unknown>;
 }
 // ---------------------------------------------------------------------------
+
+const game_core_StatusIdIndex = canonIndex(game_core.StatusIdMembers);
 
 export type ZoneId = string;
 
@@ -867,11 +876,11 @@ function read_game_core_LevelRange($raw: unknown, $path: string): game_core.Leve
   const $r3 = decGet($o, "labels");
   const $v3: ReadonlyArray<string> = $r3 === undefined ? [] : decList($r3, $path + ".labels", ($x, $p) => decString($x, $p));
   const $v4: game_tone.Tone = decEnum(decGet($o, "tone"), $path + ".tone", game_tone.ToneMembers);
-  const $v5: game_core.StatusId = decEntry(decGet($o, "status"), $path + ".status", game_core.StatusIdIndex);
+  const $v5: game_core.StatusId = decEntry(decGet($o, "status"), $path + ".status", game_core_StatusIdIndex);
   const $r6 = decGet($o, "weights");
-  const $v6: ReadonlyMap<game_core.StatusId, number> = $r6 === undefined ? new CanonMap<game_core.StatusId, number>([]) : decMap($r6, $path + ".weights", ($k, $p) => decEntry($k, $p, game_core.StatusIdIndex), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v6: ReadonlyMap<game_core.StatusId, number> = $r6 === undefined ? new CanonMap<game_core.StatusId, number>([]) : decMap($r6, $path + ".weights", ($k, $p) => decEntry($k, $p, game_core_StatusIdIndex), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $v7: number = decInt(decGet($o, "$width"), $path + ".$width", -9223372036854776000, 9223372036854776000);
-  const $v8: Readonly<Record<game_core.Aim, game_core.StatusId>> = decKeyed<game_core.Aim, game_core.StatusId>(decGet($o, "$statusFor"), $path + ".$statusFor", game_core.AimMembers, ($k) => $k, ($x, $p) => decEntry($x, $p, game_core.StatusIdIndex));
+  const $v8: Readonly<Record<game_core.Aim, game_core.StatusId>> = decKeyed<game_core.Aim, game_core.StatusId>(decGet($o, "$statusFor"), $path + ".$statusFor", game_core.AimMembers, ($k) => $k, ($x, $p) => decEntry($x, $p, game_core_StatusIdIndex));
   return { min: $v1, max: $v2, labels: $v3, tone: $v4, status: $v5, weights: $v6, width: $v7, statusFor: $v8 };
 }
 

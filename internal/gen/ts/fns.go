@@ -146,7 +146,7 @@ func (g *gen) cellLines(cells []string, tab *ir.LookupTable, result ir.TypeRef) 
 	return strings.Join(lines, newline)
 }
 
-// indexTerm is a parameter's ordinal times the number of cells it strides over: Bool as `(x ? 1 : 0)`, an enum or a table's ids through their Index (CODEGEN.md §5.10).
+// indexTerm is a parameter's ordinal times the number of cells it strides over: Bool as `(x ? 1 : 0)`, an enum or a table's ids through an enum's Index or a table's private id index (CODEGEN.md §5.10).
 func (g *gen) indexTerm(t ir.TypeRef, param string, later [][]value.Value) string {
 	stride := 1
 	for _, d := range later {
@@ -182,13 +182,12 @@ func (g *gen) indexConst(e ir.Type) string {
 	return name
 }
 
-// idIndexConst is the Index table of a table's ids.
+// idIndexConst is the private index of a table's ids: this file's own, or the one it builds from the owner's Members.
 func (g *gen) idIndexConst(r *ir.RefTarget) string {
-	name := idName(r.Elem) + indexSuffix
 	if r.Pkg != g.p.Name {
-		return g.importValue(r.Pkg, name)
+		return g.foreignIDIndex(r)
 	}
-	return name
+	return g.ownIDIndex(idName(r.Elem))
 }
 
 // scalarResult reports a result that fits many to a line: a scalar, an enum, a ref, or an optional of one.

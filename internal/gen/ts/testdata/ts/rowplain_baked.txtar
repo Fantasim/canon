@@ -102,7 +102,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 export type PId = "p1" | "p2";
-export const PIdIndex: Readonly<Record<PId, number>> = Object.freeze({ p1: 0, p2: 1 });
+export const PIdMembers: ReadonlyArray<PId> = Object.freeze(["p1", "p2"]);
 
 /** A point. */
 export interface P {

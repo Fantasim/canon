@@ -1,4 +1,4 @@
-CODEGEN.md §2.8, §5.10, log-2026-10-06 "U5 + 320 done" G1: a data reader of another package's record whose lookups take a ref parameter into that package's baked table reads each lookup's cells over the owner's id union, in entry order (the keys of b.TierIdIndex), as Go and C++ do; a cell that is itself a ref is key-checked (`no entry`).
+CODEGEN.md §2.8, §5.10, log-2026-10-06 "U5 + 320 done" G1: a data reader of another package's record whose lookups take a ref parameter into that package's baked table reads each lookup's cells over the owner's id union, in entry order (the keys of b.TierIdMembers, through the file's private b_TierIdIndex built with canonIndex), as Go and C++ do; a cell that is itself a ref is key-checked (`no entry`).
 -- b/b.canon --
 /// Tiers and bands, baked.
 package b
@@ -79,6 +79,13 @@ function canonFreeze<T>(x: T): T {
   return x;
 }
 
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
+
 /** Checks the "$schema" of a data file against the fingerprint compiled in. */
 function canonEnvelope(json: unknown, schema: string, name: string): Record<string, unknown> {
   const doc = json as Record<string, unknown> | null;
@@ -89,6 +96,8 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
   return doc as Record<string, unknown>;
 }
 // ---------------------------------------------------------------------------
+
+const b_TierIdIndex = canonIndex(b.TierIdMembers);
 
 /** A zone. */
 export interface Zone {
@@ -342,7 +351,7 @@ function read_b_Band($raw: unknown, $path: string): b.Band {
   const $o = decObject($raw, $path);
   const $v1: number = decInt(decGet($o, "base"), $path + ".base", -9223372036854776000, 9223372036854776000);
   const $v2: Readonly<Record<b.TierId, number>> = decKeyed<b.TierId, number>(decGet($o, "$bonus"), $path + ".$bonus", ["low", "high"], ($k) => $k, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
-  const $v3: Readonly<Record<b.TierId, b.TierId>> = decKeyed<b.TierId, b.TierId>(decGet($o, "$next"), $path + ".$next", ["low", "high"], ($k) => $k, ($x, $p) => decEntry($x, $p, b.TierIdIndex));
+  const $v3: Readonly<Record<b.TierId, b.TierId>> = decKeyed<b.TierId, b.TierId>(decGet($o, "$next"), $path + ".$next", ["low", "high"], ($k) => $k, ($x, $p) => decEntry($x, $p, b_TierIdIndex));
   return { base: $v1, bonus: $v2, next: $v3 };
 }
 === features/b/b.ts ===
@@ -414,7 +423,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 export type TierId = "low" | "high";
-export const TierIdIndex: Readonly<Record<TierId, number>> = Object.freeze({ low: 0, high: 1 });
+export const TierIdMembers: ReadonlyArray<TierId> = Object.freeze(["low", "high"]);
 
 /** A tier. */
 export interface Tier {

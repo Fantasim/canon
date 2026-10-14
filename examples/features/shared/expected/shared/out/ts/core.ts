@@ -85,7 +85,7 @@ export type RewardKind =
 export type BonusBranch = "gold" | "mood";
 
 export type StatusId = "open" | "closed" | "shut";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ open: 0, closed: 1, shut: 2 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "closed", "shut"]);
 
 /** A status a zone can be in. */
 export interface Status {

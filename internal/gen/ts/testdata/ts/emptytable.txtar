@@ -1,4 +1,4 @@
-CODEGEN.md §5.3: an empty baked table's id type is the empty union, `never`, and its Index an empty object, so the module compiles.
+CODEGEN.md §5.3: an empty baked table's id type is the empty union, `never`, and its `OfferIdMembers` a `ReadonlyArray<never>`, so the module compiles.
 -- a/a.canon --
 /// A package.
 package a
@@ -78,7 +78,7 @@ function canonFreeze<T>(x: T): T {
 // ---------------------------------------------------------------------------
 
 export type OfferId = never;
-export const OfferIdIndex: Readonly<Record<OfferId, number>> = Object.freeze({});
+export const OfferIdMembers: ReadonlyArray<OfferId> = Object.freeze([]);
 
 /** An offer. */
 export interface Offer {

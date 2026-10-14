@@ -241,10 +241,10 @@ export type RewardKind =
 export type BonusBranch = "gold" | "mood";
 
 export type StatusId = "open" | "shut";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ open: 0, shut: 1 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "shut"]);
 
 export type BadgeId = "gold";
-export const BadgeIdIndex: Readonly<Record<BadgeId, number>> = Object.freeze({ gold: 0 });
+export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold"]);
 
 /** A status. */
 export interface Status {
@@ -392,7 +392,16 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
 // ---------------------------------------------------------------------------
+
+const game_core_StatusIdIndex = canonIndex(game_core.StatusIdMembers);
 
 /** A zone. */
 export interface Zone {
@@ -707,7 +716,7 @@ function read_game_core_LevelRange($raw: unknown, $path: string): game_core.Leve
   const $r3 = decGet($o, "labels");
   const $v3: ReadonlyArray<string> = $r3 === undefined ? [] : decList($r3, $path + ".labels", ($x, $p) => decString($x, $p));
   const $v4: game_tone.Tone = decEnum(decGet($o, "tone"), $path + ".tone", game_tone.ToneMembers);
-  const $v5: game_core.StatusId = decEntry(decGet($o, "status"), $path + ".status", game_core.StatusIdIndex);
+  const $v5: game_core.StatusId = decEntry(decGet($o, "status"), $path + ".status", game_core_StatusIdIndex);
   return { min: $v1, max: $v2, labels: $v3, tone: $v4, status: $v5 };
 }
 

@@ -243,10 +243,10 @@ export type RewardKind =
 export type BonusBranch = "gold" | "mood";
 
 export type StatusId = "open" | "shut";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ open: 0, shut: 1 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "shut"]);
 
 export type BadgeId = "gold";
-export const BadgeIdIndex: Readonly<Record<BadgeId, number>> = Object.freeze({ gold: 0 });
+export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold"]);
 
 /** A status. */
 export interface Status {
@@ -428,19 +428,19 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 export type ZoneId = "forest";
-export const ZoneIdIndex: Readonly<Record<ZoneId, number>> = Object.freeze({ forest: 0 });
+export const ZoneIdMembers: ReadonlyArray<ZoneId> = Object.freeze(["forest"]);
 
 export type LevelRangeId = "low" | "old";
-export const LevelRangeIdIndex: Readonly<Record<LevelRangeId, number>> = Object.freeze({ low: 0, old: 1 });
+export const LevelRangeIdMembers: ReadonlyArray<LevelRangeId> = Object.freeze(["low", "old"]);
 
 export type StatusId = "calm" | "grim";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ calm: 0, grim: 1 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["calm", "grim"]);
 
 export type BadgeId = "bronze" | "tin";
-export const BadgeIdIndex: Readonly<Record<BadgeId, number>> = Object.freeze({ bronze: 0, tin: 1 });
+export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["bronze", "tin"]);
 
 export type PerkId = "rich";
-export const PerkIdIndex: Readonly<Record<PerkId, number>> = Object.freeze({ rich: 0 });
+export const PerkIdMembers: ReadonlyArray<PerkId> = Object.freeze(["rich"]);
 
 /** A zone. */
 export interface Zone {

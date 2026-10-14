@@ -247,6 +247,13 @@ function canonFreeze<T>(x: T): T {
 function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
   return build((x) => x);
 }
+
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
 // ---------------------------------------------------------------------------
 
 /** Constants of every kind. */
@@ -308,7 +315,8 @@ export type KindKind =
 export type TargetBranch = "kill" | "collect";
 
 export type StatusId = "open" | "closed" | "stale";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ open: 0, closed: 1, stale: 2 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "closed", "stale"]);
+const StatusIdIndex = canonIndex(StatusIdMembers);
 
 /** What an objective aims at. */
 export type Target =

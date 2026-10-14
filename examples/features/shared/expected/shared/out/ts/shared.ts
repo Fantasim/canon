@@ -67,13 +67,13 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 export type ZoneId = "forest" | "marsh";
-export const ZoneIdIndex: Readonly<Record<ZoneId, number>> = Object.freeze({ forest: 0, marsh: 1 });
+export const ZoneIdMembers: ReadonlyArray<ZoneId> = Object.freeze(["forest", "marsh"]);
 
 export type LevelRangeId = "low" | "old";
-export const LevelRangeIdIndex: Readonly<Record<LevelRangeId, number>> = Object.freeze({ low: 0, old: 1 });
+export const LevelRangeIdMembers: ReadonlyArray<LevelRangeId> = Object.freeze(["low", "old"]);
 
 export type StatusId = "calm";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ calm: 0 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["calm"]);
 
 /** A zone of the world. */
 export interface Zone {

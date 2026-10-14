@@ -12,7 +12,8 @@ test("teamboard: tables find by id, keep source order and retired rows, and are 
   assert.equal(tb.statuses.at(0), tb.statuses.find("open"));
   assert.deepEqual([...tb.statuses.find("open").next], ["taken", "wont_do", "duplicate"]);
   assert.ok(Object.isFrozen(tb.statuses) && Object.isFrozen(tb.statuses.at(0)) && Object.isFrozen(tb.statuses.at(0).next));
-  assert.equal(tb.StatusIdIndex.duplicate, 5);
+  assert.equal(tb.StatusIdMembers.indexOf("duplicate"), 5);
+  assert.equal("StatusIdIndex" in tb, false);
   assert.equal(tb.areas.length, 12);
   assert.equal(tb.areas.find("game").group, "in_game");
   assert.equal(tb.deck.maxHidden, 2);

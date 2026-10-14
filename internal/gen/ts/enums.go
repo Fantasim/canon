@@ -180,7 +180,7 @@ func (g *gen) branchEnums() {
 	}
 }
 
-// idTypes writes the id type of every emitted table: the union of its keys and its Index in baked mode, string in data mode, once per name (CODEGEN.md §5.3, DECISIONS 348).
+// idTypes writes the id type of every emitted table: the union of its keys and its Members in baked mode, string in data mode, once per name (CODEGEN.md §5.3, DECISIONS 348).
 func (g *gen) idTypes() {
 	written := map[string]bool{}
 	for _, v := range g.emitted {
@@ -196,7 +196,7 @@ func (g *gen) idTypes() {
 	}
 }
 
-// idType writes a baked or embedded table's id type: the union of its keys, and its Index (CODEGEN.md §5.3).
+// idType writes a baked or embedded table's id type: the union of its keys and `<Id>Members` in entry order; no index is exported, a file that needs one builds it privately (CODEGEN.md §5.3, §8.2, DECISIONS 379).
 func (g *gen) idType(v *ir.Value, elem ir.Type) {
 	defer g.enter(v.Name)()
 	name := g.declare(idName(elem), v.Name)
@@ -204,14 +204,33 @@ func (g *gen) idType(v *ir.Value, elem ir.Type) {
 	items := make([]string, len(v.IDs))
 	for i, id := range v.IDs {
 		members[i] = member{wire: id}
-		items[i] = property(id) + keyValueSep + strconv.Itoa(i)
+		items[i] = quote(id)
 	}
+	g.declare(name+membersSuffix, v.Name)
 	g.declare(name+indexSuffix, v.Name)
-	index := emptyObject
-	if len(items) > 0 {
-		index = lbrace + space + strings.Join(items, listSep) + space + rbrace
+	g.add(g.union(name, members) + fmt.Sprintf(membersFormat, name+membersSuffix, name, strings.Join(items, listSep)))
+	g.ownIDItems[name] = len(g.items) - 1
+}
+
+// ownIDIndex is the private `<Id>Index` of this file's own table ids: the const joins the id's item the first time a lookup needs it (CODEGEN.md §5.3, §8.2).
+func (g *gen) ownIDIndex(name string) string {
+	index := name + indexSuffix
+	if at, ok := g.ownIDItems[name]; ok && !g.ownIDDone[name] {
+		g.ownIDDone[name] = true
+		g.items[at] += newline + strings.TrimSuffix(fmt.Sprintf(privateIndexFormat, index, g.helper(canonIndexName), name+membersSuffix), newline)
 	}
-	g.add(g.union(name, members) + fmt.Sprintf(indexConstFormat, name+indexSuffix, name, index))
+	return index
+}
+
+// foreignIDIndex is the private `<alias>_<Id>Index` of another package's table ids: `const ... = canonIndex(<alias>.<Id>Members)`, written once at the top of the declarations (CODEGEN.md §2.8, §5.3, DECISIONS 379).
+func (g *gen) foreignIDIndex(r *ir.RefTarget) string {
+	name := ir.TSForeignIDIndexName(r)
+	if !g.foreignIDDone[name] {
+		g.foreignIDDone[name] = true
+		members := g.importValue(r.Pkg, idName(r.Elem)+membersSuffix)
+		g.foreignIDs = append(g.foreignIDs, strings.TrimSuffix(fmt.Sprintf(privateIndexFormat, name, g.helper(canonIndexName), members), newline))
+	}
+	return name
 }
 
 // tableElem is the record a table value holds, or nil for a value that is not a table.

@@ -217,7 +217,7 @@ export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ member:
 export const RoleIndex: Readonly<Record<Role, number>> = Object.freeze({ member: 0, admin: 1 });
 
 export type BadgeId = "gold" | "iron";
-export const BadgeIdIndex: Readonly<Record<BadgeId, number>> = Object.freeze({ gold: 0, iron: 1 });
+export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold", "iron"]);
 
 /** A badge. */
 export interface Badge {
@@ -597,6 +597,13 @@ function canonFreeze<T>(x: T): T {
   return x;
 }
 
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
+
 /** Checks the "$schema" of a data file against the fingerprint compiled in. */
 function canonEnvelope(json: unknown, schema: string, name: string): Record<string, unknown> {
   const doc = json as Record<string, unknown> | null;
@@ -607,6 +614,8 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
   return doc as Record<string, unknown>;
 }
 // ---------------------------------------------------------------------------
+
+const base_BadgeIdIndex = canonIndex(base.BadgeIdMembers);
 
 /** An award. */
 export interface Award {
@@ -898,7 +907,7 @@ export function parseAwards(text: string): CanonTable<string, Award> {
 function readAward($raw: unknown, $path: string): Award {
   const $o = decObject($raw, $path);
   const $v1: string = decString(decGet($o, "code"), $path + ".code");
-  const $v2: base.BadgeId = decEntry(decGet($o, "badge"), $path + ".badge", base.BadgeIdIndex);
+  const $v2: base.BadgeId = decEntry(decGet($o, "badge"), $path + ".badge", base_BadgeIdIndex);
   const $v3: base.Tone = decEnum(decGet($o, "tone"), $path + ".tone", base.ToneMembers);
   const $r4 = decGet($o, "weights");
   const $v4: ReadonlyMap<base.Tone, number> = $r4 === undefined ? new CanonMap<base.Tone, number>([]) : decMap($r4, $path + ".weights", ($k, $p) => decEnum($k, $p, base.ToneMembers), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));

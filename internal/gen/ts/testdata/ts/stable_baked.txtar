@@ -91,7 +91,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 export type StatusId = "open" | "closed" | "stale";
-export const StatusIdIndex: Readonly<Record<StatusId, number>> = Object.freeze({ open: 0, closed: 1, stale: 2 });
+export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "closed", "stale"]);
 
 /** A status. */
 export interface Status {

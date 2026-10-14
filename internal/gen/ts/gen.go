@@ -39,6 +39,11 @@ type gen struct {
 	unionConsts  []string          // their declarations, in the order they were needed
 	temps        int
 	decoderStart int // where the decoders begin among the items
+
+	ownIDItems    map[string]int  // the item of each own table id type, by id name
+	ownIDDone     map[string]bool // own ids whose private index is written
+	foreignIDDone map[string]bool // foreign private indexes asked for
+	foreignIDs    []string        // their declarations, in the order they were needed
 }
 
 // Generate is the TypeScript generator (ir.Generator): the module of one ts emit, and its conformance file when the package has a translated fn (CODEGEN.md §2.3, §8); p is narrowed by ir.CopyOf.
@@ -71,7 +76,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 	g := &gen{
 		p: p, e: e, at: p.Name, names: map[string]string{}, used: map[string]bool{},
 		imports: map[string]*nsImport{},
-		entries: map[*ir.Record]bool{}, loose: map[*ir.Record]bool{}, rowSites: map[*ir.Record]int{}, variantOf: map[*ir.Case]*ir.Variant{}, decoded: map[any]bool{}, props: map[string]bool{}, unionNames: map[string]string{},
+		entries: map[*ir.Record]bool{}, loose: map[*ir.Record]bool{}, rowSites: map[*ir.Record]int{}, variantOf: map[*ir.Case]*ir.Variant{}, decoded: map[any]bool{}, ownIDItems: map[string]int{}, ownIDDone: map[string]bool{}, foreignIDDone: map[string]bool{}, props: map[string]bool{}, unionNames: map[string]string{},
 		instances: map[*ir.ExportFn]map[*value.Record]*ir.Instance{},
 	}
 	for _, name := range ir.TSHelperNames() {
@@ -167,6 +172,9 @@ func (g *gen) source() string {
 	helperUnits, decoderUnits := g.neededUnits()
 	if len(decoderUnits) > 0 {
 		g.items = slices.Insert(g.items, g.decoderStart, joinUnits(decoderUnits))
+	}
+	if len(g.foreignIDs) > 0 {
+		g.items = slices.Insert(g.items, 0, strings.Join(g.foreignIDs, newline))
 	}
 	var b strings.Builder
 	fmt.Fprintf(&b, markerFormat, g.p.Dir)

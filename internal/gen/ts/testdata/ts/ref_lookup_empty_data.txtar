@@ -391,7 +391,7 @@ function canonFreeze<T>(x: T): T {
 // ---------------------------------------------------------------------------
 
 export type ItemId = never;
-export const ItemIdIndex: Readonly<Record<ItemId, number>> = Object.freeze({});
+export const ItemIdMembers: ReadonlyArray<ItemId> = Object.freeze([]);
 
 /** An item. */
 export interface Item {

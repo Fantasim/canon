@@ -10,7 +10,8 @@ test("tables and keyed lists find, at and iterate in source order (CODEGEN.md §
   assert.deepEqual(a.statuses.all.map((s) => s.id), ["open", "closed", "stale"]);
   assert.equal(a.statuses.find("stale").retired, true);
   assert.equal(a.statuses.find("open").retired, false);
-  assert.deepEqual(a.StatusIdIndex, { open: 0, closed: 1, stale: 2 });
+  assert.deepEqual([...a.StatusIdMembers], ["open", "closed", "stale"]);
+  assert.equal("StatusIdIndex" in a, false);
 });
 
 test("values are deep-frozen, maps refuse writes (CODEGEN.md §8.1, TS-01)", () => {
