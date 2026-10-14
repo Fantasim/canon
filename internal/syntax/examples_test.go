@@ -128,16 +128,19 @@ func renderFindings(t *testing.T, bag *diag.Bag, files diag.Files) string {
 	return buf.String()
 }
 
-// printTokens writes a file's tokens with their trivia.
+// printTokens writes a file's tokens with their trivia, read back from the bytes between them.
 func printTokens(f *syntax.File) []byte {
 	var out bytes.Buffer
 	text := func(start, end source.Pos) { out.Write(f.Src.Content[start:end]) }
-	for _, tok := range f.Tokens {
-		for _, tr := range tok.Leading {
+	var buf []syntax.Trivia
+	for i, tok := range f.Tokens {
+		buf = f.AppendLeading(buf[:0], syntax.Tok(i))
+		for _, tr := range buf {
 			text(tr.Start, tr.End)
 		}
 		text(tok.Start, tok.End)
-		for _, tr := range tok.Trailing {
+		buf = f.AppendTrailing(buf[:0], syntax.Tok(i))
+		for _, tr := range buf {
 			text(tr.Start, tr.End)
 		}
 	}

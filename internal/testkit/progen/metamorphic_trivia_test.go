@@ -3,7 +3,6 @@ package progen_test
 import (
 	"bytes"
 	"fmt"
-	"slices"
 
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/progen"
@@ -29,12 +28,12 @@ func gaps(tg target) []gap {
 	}
 	var out []gap
 	afterDoc := false
-	for _, tok := range tg.file.Tokens {
-		afterDoc = scanTrivia(tok.Leading, afterDoc, &out)
+	for i, tok := range tg.file.Tokens {
+		afterDoc = scanTrivia(tg.file.AppendLeading(nil, syntax.Tok(i)), afterDoc, &out)
 		if tok.End > tok.Start {
 			afterDoc = false
 		}
-		afterDoc = scanTrivia(tok.Trailing, afterDoc, &out)
+		afterDoc = scanTrivia(tg.file.AppendTrailing(nil, syntax.Tok(i)), afterDoc, &out)
 	}
 	return out
 }
@@ -84,8 +83,9 @@ func spacingSites(tg target) []metaSite {
 	if tg.file == nil {
 		return out
 	}
-	for _, tok := range tg.file.Tokens {
-		for _, tr := range slices.Concat(tok.Leading, tok.Trailing) {
+	for i := range tg.file.Tokens {
+		t := syntax.Tok(i)
+		for _, tr := range tg.file.AppendTrailing(tg.file.AppendLeading(nil, t), t) {
 			if tr.Kind == syntax.TriviaSpace {
 				out = append(out, triviaSite(tg, int(tr.Start), metaSpace, "wider space"))
 			}

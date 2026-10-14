@@ -20,15 +20,13 @@ type interpFrame struct {
 	open  int
 }
 
-// lexer turns a file into the tokens of GRAMMAR.md §2, each with its trivia (DECISIONS 73).
+// lexer turns a file into the tokens of GRAMMAR.md §2; the trivia between them is not kept.
 type lexer struct {
 	src      []byte
 	file     source.FileID
 	bag      *diag.Bag
 	toks     []Token
 	pos      int
-	lead     []Trivia
-	trailing bool
 	lineText bool
 	frames   []interpFrame
 }
@@ -39,7 +37,6 @@ func lex(src *source.File, bag *diag.Bag) []Token {
 	l.toks = append(l.toks, Token{Kind: TokBOF})
 	if bytes.HasPrefix(l.src, []byte(bomText)) {
 		l.pos = len(bomText)
-		l.trivia(TriviaBOM, 0)
 		diag.E1123.At(l.span(0, l.pos)).Report(bag)
 	}
 	for l.pos < len(l.src) {
@@ -49,7 +46,7 @@ func lex(src *source.File, bag *diag.Bag) []Token {
 		diag.E1112.AtUnterminated(l.span(f.open, f.open+1)).Report(bag)
 	}
 	end := pos(len(l.src))
-	l.toks = append(l.toks, Token{Kind: TokEOF, Start: end, End: end, Leading: l.lead})
+	l.toks = append(l.toks, Token{Kind: TokEOF, Start: end, End: end})
 	return l.toks
 }
 
@@ -76,26 +73,10 @@ func (l *lexer) span(start, end int) source.Span {
 
 func (l *lexer) text(start, end int) string { return string(l.src[start:end]) }
 
-// emit ends the token that started at start, giving it the pending leading trivia.
+// emit ends the token that started at start.
 func (l *lexer) emit(k TokenKind, start int) {
-	t := Token{Kind: k, Start: pos(start), End: pos(l.pos), Leading: l.lead}
-	l.toks = append(l.toks, t)
-	l.lead = nil
-	l.trailing = true
+	l.toks = append(l.toks, Token{Kind: k, Start: pos(start), End: pos(l.pos)})
 	l.lineText = true
-}
-
-// trivia records [start, pos): on the last token's line it trails that token, from the first
-// line break on it leads the next one.
-func (l *lexer) trivia(k TriviaKind, start int) {
-	t := Trivia{Kind: k, Start: pos(start), End: pos(l.pos)}
-	if l.trailing && k != TriviaNewline {
-		last := &l.toks[len(l.toks)-1]
-		last.Trailing = append(last.Trailing, t)
-		return
-	}
-	l.trailing = false
-	l.lead = append(l.lead, t)
 }
 
 func (l *lexer) peek(off int) byte {

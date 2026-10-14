@@ -67,20 +67,13 @@ func (l *lexer) illegal() {
 	l.emit(TokIllegal, start)
 }
 
-func (l *lexer) space() {
-	start := l.pos
-	for l.pos < len(l.src) && (l.src[l.pos] == ' ' || l.src[l.pos] == '\t') {
-		l.pos++
-	}
-	l.trivia(TriviaSpace, start)
-}
+func (l *lexer) space() { l.pos = spaceEnd(l.src, l.pos) }
 
 // carriageReturn is a "\r" left by the "\r\n" normalization: E1124, kept as whitespace.
 func (l *lexer) carriageReturn() {
 	start := l.pos
 	l.pos++
 	diag.E1124.AtCr(l.span(start, l.pos)).Report(l.bag)
-	l.trivia(TriviaSpace, start)
 }
 
 func (l *lexer) newline() {
@@ -88,9 +81,7 @@ func (l *lexer) newline() {
 		l.interpNewline()
 		return
 	}
-	start := l.pos
 	l.pos++
-	l.trivia(TriviaNewline, start)
 	l.lineText = false
 }
 
@@ -175,21 +166,11 @@ func (l *lexer) lineComment() {
 	if l.inInterp() {
 		diag.E1112.AtComment(l.span(start, start+len(lineCommentText))).Report(l.bag)
 	}
-	end := bytes.IndexByte(l.src[start:], '\n')
-	if end < 0 {
-		end = len(l.src) - start
-	}
-	l.pos = start + end
+	l.pos = lineCommentEnd(l.src, start)
 	l.checkText(start, l.pos, false)
-	kind := TriviaLineComment
-	if hasPrefixAt(l.src, start, docPrefix) && !hasPrefixAt(l.src, start, ordinaryDoc) {
-		if l.lineText {
-			diag.W1001.At(l.span(start, l.pos)).Report(l.bag)
-		} else {
-			kind = TriviaDocComment
-		}
+	if l.lineText && isDocLine(l.src, start) {
+		diag.W1001.At(l.span(start, l.pos)).Report(l.bag)
 	}
-	l.trivia(kind, start)
 }
 
 func (l *lexer) blockComment() {
@@ -197,15 +178,12 @@ func (l *lexer) blockComment() {
 	if l.inInterp() {
 		diag.E1112.AtComment(l.span(start, start+len(blockOpen))).Report(l.bag)
 	}
-	end := bytes.Index(l.src[start+len(blockOpen):], []byte(blockClose))
-	if end < 0 {
+	end, closed := blockCommentEnd(l.src, start)
+	if !closed {
 		diag.E1108.At(l.span(start, start+len(blockOpen))).Report(l.bag)
-		l.pos = len(l.src)
-	} else {
-		l.pos = start + len(blockOpen) + end + len(blockClose)
 	}
+	l.pos = end
 	l.checkText(start, l.pos, true)
-	l.trivia(TriviaBlockComment, start)
 	l.lineText = true
 }
 

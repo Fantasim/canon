@@ -49,20 +49,23 @@ func keptCommas(f *syntax.File) []bool {
 	}
 	out := make([]bool, len(f.Tokens))
 	for i := range f.Tokens {
-		out[i] = guards(f, i, host, sorted[i])
+		out[i] = guards(f, syntax.Tok(i), host, sorted[i])
 	}
 	return out
 }
 
 // guards reports the comma i that DECISIONS 216 keeps; one between sorted import names is kept
 // whatever follows it.
-func guards(f *syntax.File, i int, host []bool, sorted bool) bool {
-	t := f.Tokens[i]
-	if t.Kind != syntax.TokComma || !startsLine(t) {
+func guards(f *syntax.File, i syntax.Tok, host []bool, sorted bool) bool {
+	if f.Tokens[i].Kind != syntax.TokComma {
 		return false
 	}
-	lead, blank := leading(f, t.Leading)
-	trail, _ := trailing(f, t.Trailing)
+	tr := f.AppendLeading(nil, i)
+	if !startsLine(tr) {
+		return false
+	}
+	lead, blank := leading(f, tr)
+	trail, _ := trailing(f, f.AppendTrailing(nil, i))
 	if slices.ContainsFunc(dropped(lead, trail, true)[len(lead):], becomesDoc) {
 		return true
 	}
@@ -85,8 +88,8 @@ func openDoc(notes []note) bool {
 
 // reaches reports whether a doc block moved right before token j merges with one there or
 // attaches to j.
-func reaches(f *syntax.File, j int, host []bool) bool {
-	lead, blank := leading(f, f.Tokens[j].Leading)
+func reaches(f *syntax.File, j syntax.Tok, host []bool) bool {
+	lead, blank := leading(f, f.AppendLeading(nil, j))
 	for _, n := range lead {
 		if n.blank {
 			return false
@@ -99,9 +102,9 @@ func reaches(f *syntax.File, j int, host []bool) bool {
 }
 
 // following is the first token after i that is not a separator NL.
-func following(f *syntax.File, i int) int {
+func following(f *syntax.File, i syntax.Tok) syntax.Tok {
 	j := i + 1
-	for j < len(f.Tokens)-1 && f.Tokens[j].Kind == syntax.TokNL {
+	for int(j) < len(f.Tokens)-1 && f.Tokens[j].Kind == syntax.TokNL {
 		j++
 	}
 	return j

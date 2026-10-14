@@ -15,7 +15,7 @@ func separate(src []byte, toks []Token) []Token {
 		if i > 0 && toks[i-1].Kind != TokBOF && lineBreak(src, toks[i-1], t) {
 			s.stack = dropInterps(s.stack)
 			if s.separates(i) {
-				out = append(out, nlToken(toks[i-1]))
+				out = append(out, nlToken(src, toks[i-1], t))
 			}
 		}
 		out = append(out, t)
@@ -97,12 +97,9 @@ func startsDecl(toks []Token, i int) bool {
 	return declKeyword[k] || (k == KwRetired && i+1 < len(toks) && toks[i+1].Kind == KwEntry)
 }
 
-// nlToken is the empty NL token after p, at the border of p's trailing trivia.
-func nlToken(p Token) Token {
-	at := p.End
-	if n := len(p.Trailing); n > 0 {
-		at = p.Trailing[n-1].End
-	}
+// nlToken is the empty NL token after p, before next, at the border of p's trailing trivia.
+func nlToken(src []byte, p, next Token) Token {
+	at := trailEnd(src, p, next)
 	return Token{Kind: TokNL, Start: at, End: at}
 }
 

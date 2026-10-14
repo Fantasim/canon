@@ -171,11 +171,11 @@ func samePointer(a, b reflect.Value, at string) error {
 func comments(f *syntax.File) (ordered, imports []string) {
 	lo, hi := importRange(f)
 	kept := format.KeptCommas(f)
-	for i, tok := range f.Tokens {
-		for _, tr := range tok.Leading {
+	for i := range f.Tokens {
+		for _, tr := range f.AppendLeading(nil, syntax.Tok(i)) {
 			ordered, imports = sort2(place(f, tr, i, leadOwner(f, i, kept[i])), lo, hi, ordered, imports)
 		}
-		for _, tr := range tok.Trailing {
+		for _, tr := range f.AppendTrailing(nil, syntax.Tok(i)) {
 			ordered, imports = sort2(place(f, tr, i+1, trailOwner(f, i, kept[i])), lo, hi, ordered, imports)
 		}
 	}

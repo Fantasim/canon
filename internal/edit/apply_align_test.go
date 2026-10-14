@@ -306,12 +306,12 @@ func (s *shape) canon(f *syntax.File) {
 			first, last := f.Tokens[c.First()], f.Tokens[c.Last()]
 			lo, hi := int(first.Start), int(last.End)
 			s.nodes[lo] = append(s.nodes[lo], hi)
-			for _, tr := range first.Leading {
+			for _, tr := range f.AppendLeading(nil, c.First()) {
 				if tr.Kind != syntax.TriviaSpace && tr.Kind != syntax.TriviaNewline {
 					lo = min(lo, int(tr.Start))
 				}
 			}
-			for _, tr := range last.Trailing {
+			for _, tr := range f.AppendTrailing(nil, c.Last()) {
 				if tr.Kind != syntax.TriviaSpace && tr.Kind != syntax.TriviaNewline {
 					hi = max(hi, int(tr.End))
 				}

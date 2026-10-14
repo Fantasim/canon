@@ -465,8 +465,9 @@ func commentControl(tg target) []progen.Site {
 		return nil
 	}
 	var out []progen.Site
-	for _, t := range tg.file.Tokens {
-		for _, tr := range append(append([]syntax.Trivia(nil), t.Leading...), t.Trailing...) {
+	for i := range tg.file.Tokens {
+		t := syntax.Tok(i)
+		for _, tr := range tg.file.AppendTrailing(tg.file.AppendLeading(nil, t), t) {
 			if tr.Kind == syntax.TriviaLineComment {
 				out = append(out, site(insert(int(tr.Start)+len("//"), "\x01")))
 			}

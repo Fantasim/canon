@@ -38,7 +38,7 @@ func topOf(f *syntax.File, n syntax.Node) (lo, hi int) {
 		s := f.Span(d)
 		if s.Start <= at && at < s.End {
 			lo = int(s.Start)
-			for _, tr := range f.Tokens[d.First()].Leading {
+			for _, tr := range f.AppendLeading(nil, d.First()) {
 				lo = min(lo, int(tr.Start))
 			}
 			return max(lo-1, 0), trailEnd(f, d.Last()) + len("\n\n")
@@ -51,7 +51,7 @@ func topOf(f *syntax.File, n syntax.Node) (lo, hi int) {
 func trailEnd(f *syntax.File, t syntax.Tok) int {
 	// FORMATTER.md §13 step 5
 	hi := int(f.Tokens[t].End)
-	for _, tr := range f.Tokens[t].Trailing {
+	for _, tr := range f.AppendTrailing(nil, t) {
 		if _, ok := commentOf(f, tr); ok {
 			hi = max(hi, int(tr.End))
 		}
@@ -145,8 +145,8 @@ func extraComments(before, after *syntax.File, gone []syntax.Tok) int {
 func hostedComments(f *syntax.File, gone []syntax.Tok, after bool) []string {
 	hosts, kept := format.CommentHosts(f), format.KeptCommas(f)
 	var out []string
-	for _, tok := range f.Tokens {
-		for _, tr := range slices.Concat(tok.Leading, tok.Trailing) {
+	for i := range f.Tokens {
+		for _, tr := range f.AppendTrailing(f.AppendLeading(nil, syntax.Tok(i)), syntax.Tok(i)) {
 			s, ok := commentOf(f, tr)
 			host, attached := hosts[int(tr.Start)]
 			if !ok || !attached || len(gone) > 0 && gone[0] <= host && host <= gone[1] {

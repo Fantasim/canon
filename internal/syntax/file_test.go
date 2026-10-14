@@ -9,19 +9,7 @@ import (
 
 // IMPLEMENTATION-PLAN §4.1: the tokens with their trivia reproduce the file byte for byte.
 func TestTokensAreLossless(t *testing.T) {
-	f := sampleFile()
-	var out []byte
-	text := func(start, end source.Pos) { out = append(out, f.Src.Content[start:end]...) }
-	for _, tok := range f.Tokens {
-		for _, tr := range tok.Leading {
-			text(tr.Start, tr.End)
-		}
-		text(tok.Start, tok.End)
-		for _, tr := range tok.Trailing {
-			text(tr.Start, tr.End)
-		}
-	}
-	if string(out) != sampleText {
+	if out := printTokens(sampleFile()); string(out) != sampleText {
 		t.Errorf("tokens print %q, want %q", out, sampleText)
 	}
 }
@@ -29,8 +17,7 @@ func TestTokensAreLossless(t *testing.T) {
 // FORMATTER.md §8.1: comments lead a node's first token or trail its last one.
 func TestFileComments(t *testing.T) {
 	f := sampleFile()
-	pkg := f.Tokens[f.Package.First()-1]
-	lead := pkg.Leading
+	lead := f.AppendLeading(nil, f.Package.First()-1)
 	if len(lead) == 0 || lead[0].Kind != syntax.TriviaDocComment || f.Span(f.Doc) != (source.Span{File: 1, Start: 0, End: 8}) {
 		t.Errorf("doc block not leading the package clause: %+v", lead)
 	}

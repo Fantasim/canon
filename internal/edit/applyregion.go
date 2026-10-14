@@ -223,13 +223,12 @@ func (t *canonTree) appendRegion() region {
 
 // lead is where token tok begins with its leading comments.
 func (t *canonTree) lead(tok syntax.Tok) int {
-	at := t.f.Tokens[tok]
-	for _, tr := range at.Leading {
+	for _, tr := range t.f.AppendLeading(nil, tok) {
 		if comment(tr) {
 			return int(tr.Start)
 		}
 	}
-	return int(at.Start)
+	return int(t.f.Tokens[tok].Start)
 }
 
 // around is the smallest node holding token open.

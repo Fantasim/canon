@@ -267,9 +267,16 @@ func (t *canonTree) gap(n syntax.Node) []region {
 // commentedInside reports a comment between n's first and last tokens: one before n or after
 // it on its line is no part of its brackets.
 func (t *canonTree) commentedInside(n syntax.Node) bool {
+	var tr []syntax.Trivia
 	for i := n.First(); i <= n.Last(); i++ {
-		tok := t.f.Tokens[i]
-		if i > n.First() && slices.ContainsFunc(tok.Leading, comment) || i < n.Last() && slices.ContainsFunc(tok.Trailing, comment) {
+		tr = tr[:0]
+		if i > n.First() {
+			tr = t.f.AppendLeading(tr, i)
+		}
+		if i < n.Last() {
+			tr = t.f.AppendTrailing(tr, i)
+		}
+		if slices.ContainsFunc(tr, comment) {
 			return true
 		}
 	}

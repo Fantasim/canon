@@ -38,11 +38,14 @@ func tabbed(f *syntax.File) bool {
 		}
 		return (i == 0 || src[i-1] == newlineText[0]) && bytes.Contains(src[i:at], []byte(tab))
 	}
-	return slices.ContainsFunc(f.Tokens, func(t syntax.Token) bool {
-		return indented(t.Start) || slices.ContainsFunc(t.Leading, func(tr syntax.Trivia) bool {
-			return isComment(tr) && indented(tr.Start)
-		})
-	})
+	var lead []syntax.Trivia
+	for i, t := range f.Tokens {
+		lead = f.AppendLeading(lead[:0], syntax.Tok(i))
+		if indented(t.Start) || slices.ContainsFunc(lead, func(tr syntax.Trivia) bool { return isComment(tr) && indented(tr.Start) }) {
+			return true
+		}
+	}
+	return false
 }
 
 // reparse parses content as f's file in the role of kind, not the tree's own kind: a source

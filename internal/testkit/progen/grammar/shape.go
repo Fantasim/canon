@@ -47,10 +47,9 @@ func Shape(f *syntax.File) string {
 		}
 		switch {
 		case sugared[i]:
-			sh.comments(&sh.b, f.Tokens[i].Leading, leadingTag)
-			sh.comments(&sh.b, f.Tokens[i].Trailing, trailingTag)
+			sh.around(&sh.b, syntax.Tok(i))
 		case !skip[i]:
-			sh.token(&sh.b, i)
+			sh.token(&sh.b, syntax.Tok(i))
 		}
 	}
 	sh.b.WriteString(values(f))
@@ -112,18 +111,22 @@ func (sh *shaper) importShape(imp *syntax.Import) string {
 	}
 	b.WriteString(strings.Join(names, space) + newline)
 	for i := imp.First(); i <= imp.Last(); i++ {
-		sh.comments(&b, sh.f.Tokens[i].Leading, leadingTag)
-		sh.comments(&b, sh.f.Tokens[i].Trailing, trailingTag)
+		sh.around(&b, i)
 	}
 	return b.String()
 }
 
+// around writes token t's leading then trailing comments, without the token.
+func (sh *shaper) around(b *strings.Builder, t syntax.Tok) {
+	sh.comments(b, sh.f.AppendLeading(nil, t), leadingTag)
+	sh.comments(b, sh.f.AppendTrailing(nil, t), trailingTag)
+}
+
 // token writes a token's shape between its leading and trailing comments (FORMATTER.md §8.1).
-func (sh *shaper) token(b *strings.Builder, i int) {
-	t := sh.f.Tokens[i]
-	sh.comments(b, t.Leading, leadingTag)
-	b.WriteString(tokenShape(sh.f, t))
-	sh.comments(b, t.Trailing, trailingTag)
+func (sh *shaper) token(b *strings.Builder, t syntax.Tok) {
+	sh.comments(b, sh.f.AppendLeading(nil, t), leadingTag)
+	b.WriteString(tokenShape(sh.f, sh.f.Tokens[t]))
+	sh.comments(b, sh.f.AppendTrailing(nil, t), trailingTag)
 }
 
 // tokenShape is a token's kind, and its text when the kind does not fix it; line breaks and

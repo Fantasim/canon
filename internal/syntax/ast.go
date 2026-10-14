@@ -1,10 +1,6 @@
 package syntax
 
-import (
-	"slices"
-
-	"github.com/fantasim/canonlang/internal/source"
-)
+import "github.com/fantasim/canonlang/internal/source"
 
 // NodeKind is the kind of a node; every node type has its own.
 type NodeKind uint8
@@ -174,7 +170,7 @@ func (f *File) Leading(n Node) []Trivia {
 	if n.Last() < n.First() {
 		return nil
 	}
-	return f.Tokens[n.First()].Leading
+	return f.AppendLeading(nil, n.First())
 }
 
 // Trailing is the trivia after n's last token on its line, then after the separator comma that
@@ -184,9 +180,9 @@ func (f *File) Trailing(n Node) []Trivia {
 	if last < n.First() {
 		return nil
 	}
-	own := f.Tokens[last].Trailing
+	own := f.AppendTrailing(nil, last)
 	if int(last)+1 >= len(f.Tokens) || f.Tokens[last+1].Kind != TokComma {
 		return own
 	}
-	return append(slices.Clip(own), f.Tokens[last+1].Trailing...)
+	return f.AppendTrailing(own, last+1)
 }

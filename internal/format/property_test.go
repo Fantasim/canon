@@ -119,7 +119,8 @@ func relaid(f *syntax.File) []byte {
 		if inner[i] {
 			continue
 		}
-		for _, tr := range t.Trailing {
+		trailing := f.AppendTrailing(nil, syntax.Tok(i))
+		for _, tr := range trailing {
 			if tr.Kind == syntax.TriviaSpace {
 				edits = append(edits, edit{int(tr.Start), "  \t"})
 			}
@@ -128,7 +129,7 @@ func relaid(f *syntax.File) []byte {
 		loose := len(stack) > 0 && !slices.Contains(stack, syntax.TokLBrace)
 		opens := t.Kind == syntax.TokLParen || t.Kind == syntax.TokLBrack || t.Kind == syntax.TokComma
 		endsLine := bytes.HasPrefix(bytes.TrimLeft(src[t.End:], " \t"), []byte("\n"))
-		if loose && opens && !hasComment(t.Trailing) && !endsLine {
+		if loose && opens && !hasComment(trailing) && !endsLine {
 			edits = append(edits, edit{int(t.End), "\n\t "})
 		}
 	}

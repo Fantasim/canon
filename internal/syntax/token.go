@@ -20,14 +20,12 @@ type Trivia struct {
 	Start, End source.Pos
 }
 
-// Token is one token with its trivia: Trailing runs to the first line break after it, Leading
-// holds the rest up to the token. A string part spans its quote or brace, an interpolation's
-// braces included; FORMAT_SPEC spans ":spec"; NL is empty, at the Trailing/Leading border.
+// Token is one token; its trivia is the bytes around it, which File.AppendLeading and
+// File.AppendTrailing read. A string part spans its quote or brace, an interpolation's braces
+// included; FORMAT_SPEC spans ":spec"; NL is empty, at the Trailing/Leading border.
 type Token struct {
 	Kind       TokenKind
 	Start, End source.Pos
-	Leading    []Trivia
-	Trailing   []Trivia
 }
 
 // Tok is the index of a token in File.Tokens; NoTok (0, the BOF sentinel) is none.

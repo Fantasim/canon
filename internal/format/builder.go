@@ -32,7 +32,7 @@ func newBuilder(f *syntax.File) *builder {
 	}
 	if f.Project != nil {
 		for _, e := range f.Project.Items {
-			keep := commented(f.Tokens[e.Colon]) || commented(f.Tokens[e.Value.First()])
+			keep := commented(f, e.Colon) || commented(f, e.Value.First())
 			drop[e.Colon] = drop[e.Colon] || sugared(e) && !keep
 		}
 	}
@@ -54,9 +54,9 @@ func (b *builder) inner(open, close syntax.Tok) bool {
 	return b.trailSum[close] > b.trailSum[open] || b.leadSum[close+1] > b.leadSum[open+1]
 }
 
-// commented reports a comment in a token's trivia.
-func commented(t syntax.Token) bool {
-	return slices.ContainsFunc(slices.Concat(t.Leading, t.Trailing), isComment)
+// commented reports a comment in token t's trivia.
+func commented(f *syntax.File, t syntax.Tok) bool {
+	return slices.ContainsFunc(f.AppendTrailing(f.AppendLeading(nil, t), t), isComment)
 }
 
 // isComment reports a comment trivia: a line, block or doc comment.

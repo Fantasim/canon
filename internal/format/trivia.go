@@ -30,17 +30,20 @@ func attach(f *syntax.File, drop []bool) []attached {
 	out := make([]attached, len(f.Tokens))
 	var pending []note
 	prev, carry := 0, false // carry: a blank line before a dropped token, kept for what follows it
+	var buf, trailBuf []syntax.Trivia
 	for i, t := range f.Tokens {
 		if t.Kind == syntax.TokNL || t.Kind == syntax.TokBOF {
 			continue
 		}
-		lead, blank := leading(f, t.Leading)
-		trail, moved := trailing(f, t.Trailing)
+		buf, trailBuf = f.AppendLeading(buf[:0], syntax.Tok(i)), f.AppendTrailing(trailBuf[:0], syntax.Tok(i))
+		lead, blank := leading(f, buf)
+		trail, moved := trailing(f, trailBuf)
+		own := startsLine(buf)
 		if drop[i] {
-			left := append(dropped(lead, trail, startsLine(t)), moved...)
+			left := append(dropped(lead, trail, own), moved...)
 			carry = gapAt(left, 0, carry)
 			carry = gapAt(left, len(lead), blank) || carry
-			if !startsLine(t) {
+			if !own {
 				out[prev].trail = append(out[prev].trail, trail...)
 			}
 			pending = append(pending, left...)
@@ -79,9 +82,9 @@ func dropped(lead, trail []note, own bool) []note {
 	return out
 }
 
-// startsLine reports a token whose leading trivia holds a line break.
-func startsLine(t syntax.Token) bool {
-	return slices.ContainsFunc(t.Leading, func(tr syntax.Trivia) bool { return tr.Kind == syntax.TriviaNewline })
+// startsLine reports leading trivia holding a line break: its token starts a line.
+func startsLine(lead []syntax.Trivia) bool {
+	return slices.ContainsFunc(lead, func(tr syntax.Trivia) bool { return tr.Kind == syntax.TriviaNewline })
 }
 
 // leading reads the comments of a token's leading trivia, and whether a blank line separates

@@ -1,6 +1,8 @@
 package syntax
 
 import (
+	"bytes"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 )
@@ -44,7 +46,7 @@ func docBlocks(lead []Trivia) []docBlock {
 // doc attaches the doc block directly before host, the first token of an attachable item, and
 // returns it; nil when there is none.
 func (p *parser) doc(host Tok) *DocComment {
-	lead := p.toks[host].Leading
+	lead := p.docLead(nil, host)
 	blocks := docBlocks(lead)
 	if len(blocks) == 0 || blocks[len(blocks)-1].blankAfter {
 		return nil
@@ -65,14 +67,25 @@ func (p *parser) doc(host Tok) *DocComment {
 
 // sweepDocs reports W1001 for every doc block that attached to nothing (GRAMMAR.md §9.1).
 func (p *parser) sweepDocs() {
-	for i, t := range p.toks {
-		blocks := docBlocks(t.Leading)
+	var lead []Trivia
+	for i := range p.toks {
+		lead = p.docLead(lead[:0], Tok(i))
+		blocks := docBlocks(lead)
 		for j, b := range blocks {
 			if j == len(blocks)-1 && !b.blankAfter && p.docs[Tok(i)] {
 				continue
 			}
-			sp := source.Span{File: p.src.ID, Start: t.Leading[b.first].Start, End: t.Leading[b.last].End}
+			sp := source.Span{File: p.src.ID, Start: lead[b.first].Start, End: lead[b.last].End}
 			diag.W1001.At(sp).Report(p.bag)
 		}
 	}
+}
+
+// docLead appends host's leading trivia to dst when the bytes before host hold a "///"; most
+// tokens have no doc line before them, and their trivia is not read.
+func (p *parser) docLead(dst []Trivia, host Tok) []Trivia {
+	if host <= NoTok || !bytes.Contains(p.src.Content[p.toks[host-1].End:p.toks[host].Start], []byte(docPrefix)) {
+		return dst
+	}
+	return appendLeading(dst, p.src.Content, p.toks, host)
 }

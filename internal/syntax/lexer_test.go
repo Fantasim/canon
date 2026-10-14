@@ -63,17 +63,17 @@ func TestTokenStream(t *testing.T) {
 // token at their border.
 func TestTriviaSplit(t *testing.T) {
 	f, _, _ := parseText(t, "a.canon", []byte("a = 1 /* c */ // d\n\n// e\nb = 2\n"))
-	one := f.Tokens[3]
-	nl, b := f.Tokens[4], f.Tokens[5]
+	one := f.AppendTrailing(nil, 3)
+	nl := f.Tokens[4]
 	trailing := []syntax.TriviaKind{syntax.TriviaSpace, syntax.TriviaBlockComment, syntax.TriviaSpace, syntax.TriviaLineComment}
 	leading := []syntax.TriviaKind{syntax.TriviaNewline, syntax.TriviaNewline, syntax.TriviaLineComment, syntax.TriviaNewline}
-	if got := triviaKinds(one.Trailing); !slices.Equal(got, trailing) {
+	if got := triviaKinds(one); !slices.Equal(got, trailing) {
 		t.Errorf("trailing of 1 = %v, want %v", got, trailing)
 	}
-	if got := triviaKinds(b.Leading); !slices.Equal(got, leading) {
+	if got := triviaKinds(f.AppendLeading(nil, 5)); !slices.Equal(got, leading) {
 		t.Errorf("leading of b = %v, want %v", got, leading)
 	}
-	if nl.Kind != syntax.TokNL || nl.Start != nl.End || nl.Start != one.Trailing[len(one.Trailing)-1].End {
+	if nl.Kind != syntax.TokNL || nl.Start != nl.End || nl.Start != one[len(one)-1].End {
 		t.Errorf("NL token %+v is not empty at the trailing border", nl)
 	}
 	if f.Tokens[0].Kind != syntax.TokBOF || f.First() != syntax.NoTok+1 {
