@@ -58,8 +58,27 @@ func formatted(t *testing.T, name string, b []byte) []byte {
 // hunk is a run of changed lines: before's lines b0 to b1 became after's a0 to a1.
 type hunk struct{ b0, b1, a0, a1 int }
 
-// lineHunks are the changed runs of a longest-common-subsequence line diff.
+// lineHunks are the changed runs of a longest-common-subsequence line diff, the common prefix
+// and suffix kept first: a line set to its neighbour's text is one run, not a removal and an
+// insertion around the neighbour (API.md M6; make fuzz-edit, input 0770faca453f046e).
 func lineHunks(before, after []string) []hunk {
+	p := 0
+	for p < len(before) && p < len(after) && before[p] == after[p] {
+		p++
+	}
+	s := 0
+	for s < len(before)-p && s < len(after)-p && before[len(before)-1-s] == after[len(after)-1-s] {
+		s++
+	}
+	out := lcsHunks(before[p:len(before)-s], after[p:len(after)-s])
+	for i := range out {
+		out[i].b0, out[i].b1, out[i].a0, out[i].a1 = out[i].b0+p, out[i].b1+p, out[i].a0+p, out[i].a1+p
+	}
+	return out
+}
+
+// lcsHunks are the changed runs of a longest-common-subsequence diff of before and after.
+func lcsHunks(before, after []string) []hunk {
 	n, m := len(before), len(after)
 	lcs := make([][]int, n+1)
 	for i := range lcs {
@@ -244,6 +263,20 @@ func TestOneLineAllowsOnlyAWidthBreak(t *testing.T) {
 		if (fault == "") != tc.fits {
 			t.Errorf("%q: fault %q, want one only for a needless break", tc.after, fault)
 		}
+	}
+}
+
+// API.md M6 (make fuzz-edit, input 0770faca453f046e): a line set to the text of the line after
+// it is one changed line, not a removal before that line and an insertion after it.
+func TestLineHunksSetToNeighbour(t *testing.T) {
+	before := []string{"[", "  50,", "  35,", "  15", "]"}
+	after := []string{"[", "  35,", "  35,", "  15", "]"}
+	h := lineHunks(before, after)
+	if len(h) != 1 || h[0] != (hunk{b0: 1, b1: 2, a0: 1, a1: 2}) {
+		t.Errorf("hunks %+v, want line 2 alone", h)
+	}
+	if fault := oneLineFault("p/rows.json", edit.Write{Before: []byte(strings.Join(before, "\n")), After: []byte(strings.Join(after, "\n"))}); fault != "" {
+		t.Errorf("a one-value Set of a list element: %s", fault)
 	}
 }
 

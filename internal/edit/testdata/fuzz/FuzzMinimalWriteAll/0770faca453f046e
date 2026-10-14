@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("~@we\x00")
+int64(35)
+string("~ew")
