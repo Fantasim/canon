@@ -207,6 +207,7 @@ func (p *Project) load(ctx context.Context) (*snapshot, error) {
 		return nil, err
 	}
 	project.CheckStudio(s.proj, s.units, s.own)
+	project.CheckTiers(s.proj, s.units, s.own)
 	s.noteParsed()
 	return s, nil
 }

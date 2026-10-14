@@ -1,0 +1,28 @@
+TYPES.md §3.1, GRAMMAR.md §7.1 (DECISIONS 380): a selected package importing a later tier is E2007 in the selected package; the unplaced c, not selected, is still E1018 (ADR-0021 §4 point 14).
+-- check-only --
+-- select --
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    low: [a]
+    high: [b]
+  }
+}
+-- a/a.canon --
+package a
+
+import b
+-- b/b.canon --
+package b
+-- c/c.canon --
+package c
+-- findings.txt --
+error[E2007]  a/a.canon:3:8
+  a (tier low) cannot import b (tier high): a package imports only from its own tier and the tiers listed before it in project.canon
+
+error[E1018]  project.canon:3:3
+  tiers: no tier places package c; list it, or a package path above it, in a tier
+
+2 errors, 0 warnings in 1 package (…)

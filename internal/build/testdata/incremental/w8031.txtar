@@ -1,0 +1,36 @@
+ADR-0011's gate, EVALUATION.md §13.1, CODEGEN.md §2.10, ADR-0021 §3 point 14 (DECISIONS 379): a
+position of a table entry, plus one, is emitted: W8031, the same cold and incremental, as first
+analysed and after entry edits.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its label.
+  label: String
+}
+
+/// The rows.
+let rows: table Row = {}
+
+/// Their places, from one.
+let places: [Int] = [i + 1 for i, r in rows.enumerate()]
+
+emit json { out: "out/" }
+-- a/rows/one.canon --
+package a
+
+entry rows.one {
+  label: "one"
+}
+-- a/rows/two.canon --
+package a
+
+entry rows.two {
+  label: "two"
+}

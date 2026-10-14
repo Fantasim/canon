@@ -150,6 +150,7 @@ func (r *run) check(ctx context.Context) error {
 		return err
 	}
 	r.dirConflicts()
+	project.CheckTierImports(r.s.proj, r.loaded, r.s.units, r.s.bag)
 	r.checkViews(ctx)
 	return nil
 }
