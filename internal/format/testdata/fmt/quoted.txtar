@@ -1,0 +1,48 @@
+GRAMMAR.md §2.3, DECISIONS 378: a quoted word is a leaf printed as written; the format is a
+fixed point; a broken brace list item ending in a quoted word keeps no comma (§3.1 rule 2: a QWORD is no keyword).
+-- in.canon --
+package p
+
+enum Word { plain, if, in }
+
+let a: Word = `in`
+let b: [Word] = [plain,`if`,`in`]
+let c = { `if`: 3, plain: 1 }
+let d = byWord[`if`]
+let e: [Word] = [
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb,
+  `in`,
+  cccccccccccccccccccccccccccccc,
+  `if`,
+  dddddddddddddddddddddddddddddddd,
+  `in`
+]
+let g = {
+  a: `in`,
+  b: `if`
+  c: plain
+}
+-- want --
+package p
+
+enum Word { plain, if, in }
+
+let a: Word = `in`
+let b: [Word] = [plain, `if`, `in`]
+let c = { `if`: 3, plain: 1 }
+let d = byWord[`if`]
+let e: [Word] = [
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb,
+  `in`,
+  cccccccccccccccccccccccccccccc,
+  `if`,
+  dddddddddddddddddddddddddddddddd,
+  `in`,
+]
+let g = {
+  a: `in`
+  b: `if`
+  c: plain
+}
