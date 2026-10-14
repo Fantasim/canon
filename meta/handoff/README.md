@@ -78,8 +78,9 @@ resource,source,website,admin}.md` replace it as the files to act on, and
 `2026-10-13-website-resource-emits.patch` holds the website's 15 Resource emit lines (H-14 #4, #6),
 verified to apply and check clean on Resource `3cd10875`.
 
-`2026-10-14-canon-to-resource-tidcode.md` tells Resource that its three `tidCode` name scans are
-55% of `check`'s allocation, and that a cached name-to-code map makes `check` 35% faster (measured).
+`2026-10-14-canon-to-resource-tidcode.md` tells Resource to fix its 12 `W3002` name scans (the three
+`tidCode` copies were 55% of `check`'s allocation) before the 0.1.8 pin moves.
+`2026-10-14-canon-018-upgrade.md` is v0.1.8's upgrade order for Resource, Scripts and the others.
 
 `2026-10-12-v016-start-prompt.md` is the prompt that started the v0.1.6 session (F1-F19, stretch F20-F22,
 spec first, one wave of units per package, then the release). **Used**: the session ran; F20-F22 were deferred.
