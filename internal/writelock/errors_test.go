@@ -80,3 +80,27 @@ func TestUnwritable(t *testing.T) {
 		t.Errorf("%sthe linked .canon's target got %v (%v)", errRule, list, err)
 	}
 }
+
+// DECISIONS 375, J12: no vacuous success where no primitive exists; a bad name is ErrBadPackage
+// (Valid too); no request holds nothing.
+func TestTryAcquireNoLocksAndNames(t *testing.T) {
+	dir := t.TempDir()
+	h, _, err := writelock.TryAcquire(dir, []writelock.Request{{Package: "a", Mode: writelock.Exclusive}})
+	if h != nil {
+		t.Cleanup(func() { _ = h.Release() })
+	}
+	if writelock.Lockable() == errors.Is(err, writelock.ErrNoLocks) {
+		t.Errorf("Lockable %v, error %v", writelock.Lockable(), err)
+	}
+	if _, _, err := writelock.TryAcquire(dir, []writelock.Request{{Package: ".a"}}); !errors.Is(err, writelock.ErrBadPackage) {
+		t.Errorf("a bad name: %v", err)
+	}
+	if err := writelock.Valid(".a"); !errors.Is(err, writelock.ErrBadPackage) {
+		t.Errorf("Valid: %v", err)
+	}
+	if writelock.Lockable() {
+		if h, ok, err := writelock.TryAcquire(dir, nil); h == nil || !ok || err != nil {
+			t.Errorf("no request: %v %v", ok, err)
+		}
+	}
+}

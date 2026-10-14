@@ -5,6 +5,7 @@
 // Acquire takes requests in package-name order, all or none, each polled until free or the
 // context is done; WithWaiting's function is told once whom a writer waits for. A build takes
 // its selected packages Exclusive and its other loaded ones Shared; fmt and an edit take each
-// package they write Exclusive. An edit runs API.md N9 under the locks and asks Held.Holds whether
-// a new plan's packages are held; if not, it releases, acquires the full sorted set, plans again.
+// package they write Exclusive. TryAcquire is Acquire that never waits: all or none, ok false
+// when a lock is held (by this process too: flock is per open file), ErrNoLocks where there is
+// no primitive. A journal's writer holds its locks, so a held lock is its liveness (DECISIONS 375).
 package writelock

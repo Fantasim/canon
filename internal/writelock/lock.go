@@ -88,6 +88,53 @@ func Acquire(ctx context.Context, dir string, reqs []Request) (*Held, error) {
 	return h, nil
 }
 
+// Lockable reports whether this platform has a lock primitive: where it does not, Acquire holds
+// its requests vacuously and TryAcquire is ErrNoLocks (DECISIONS 375).
+func Lockable() bool { return lockable() }
+
+// Valid is nil when pkg names a plain file of .canon/writers: ErrBadPackage otherwise.
+func Valid(pkg string) error {
+	if pkg == "" || strings.HasPrefix(pkg, hiddenMark) || strings.ContainsAny(pkg, badNameRune) {
+		return fmt.Errorf(fmtAt, ErrBadPackage, pkg)
+	}
+	return nil
+}
+
+// TryAcquire takes the locks without waiting, sorted, all or none; ok is false and nothing held
+// when one is held (this process's own too); ErrNoLocks where there is no primitive (DECISIONS 375).
+func TryAcquire(dir string, reqs []Request) (h *Held, ok bool, err error) {
+	wanted, err := normalized(reqs)
+	if err != nil {
+		return nil, false, err
+	}
+	if !lockable() {
+		return nil, false, ErrNoLocks
+	}
+	h = &Held{reqs: wanted}
+	if len(wanted) == 0 {
+		return h, true, nil
+	}
+	base, err := writersOf(dir)
+	if err != nil {
+		return nil, false, err
+	}
+	for _, req := range wanted {
+		name := filepath.Join(base, lockPrefix+req.Package)
+		f, err := tryLock(name, req.Mode)
+		if errors.Is(err, errBusy) {
+			return nil, false, h.Release()
+		}
+		if err != nil {
+			return nil, false, errors.Join(relative(dir, err), h.Release())
+		}
+		if err := stamp(f, dir); err != nil {
+			return nil, false, errors.Join(err, h.Release())
+		}
+		h.files = append(h.files, f)
+	}
+	return h, true, nil
+}
+
 // Holds reports pkg among the held locks, in mode or a stronger one.
 func (h *Held) Holds(pkg string, mode Mode) bool {
 	return slices.ContainsFunc(h.reqs, func(r Request) bool { return r.Package == pkg && r.Mode >= mode })
@@ -109,8 +156,8 @@ func (h *Held) Release() error {
 func normalized(reqs []Request) ([]Request, error) {
 	out := slices.Clone(reqs)
 	for _, r := range out {
-		if r.Package == "" || strings.HasPrefix(r.Package, hiddenMark) || strings.ContainsAny(r.Package, badNameRune) {
-			return nil, fmt.Errorf(fmtAt, ErrBadPackage, r.Package)
+		if err := Valid(r.Package); err != nil {
+			return nil, err
 		}
 	}
 	slices.SortFunc(out, func(a, b Request) int { return cmp.Or(cmp.Compare(a.Package, b.Package), cmp.Compare(b.Mode, a.Mode)) })
