@@ -60,7 +60,7 @@ func (r *run) arm(info *check.MatchInfo, pats [][]*syntax.Pattern, v value.Value
 		}
 		if ps := pats[i]; len(ps) == 1 && ps[0].Binder != nil {
 			if obj := r.ev.info.Defs[ps[0].Binder]; obj != nil {
-				r.fr.vars[obj] = v
+				r.fr.set(obj, v)
 			}
 		}
 		return i

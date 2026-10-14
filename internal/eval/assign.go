@@ -22,7 +22,7 @@ func execAssign(r *run, s syntax.Stmt) flow {
 	x := s.(*syntax.AssignStmt)
 	root, segs := assignPath(x.Target)
 	obj := r.ev.info.Uses[root]
-	cur, ok := r.fr.vars[obj]
+	cur, ok := r.fr.get(obj)
 	if root == nil || obj == nil || !ok {
 		r.bug(s)
 		return flowAbort
@@ -53,7 +53,7 @@ func execAssign(r *run, s syntax.Stmt) flow {
 // rebind binds obj to v, owned by the frame when an element assignment made v: a copy, or the
 // collection the frame already owned, updated in place (owned.go).
 func (r *run) rebind(obj check.Object, v value.Value, owned bool) {
-	r.fr.vars[obj] = v
+	r.fr.set(obj, v)
 	if owned {
 		r.fr.own(obj, v)
 		return

@@ -6,6 +6,9 @@ const DefaultBudget int64 = 100_000_000
 // maxDepth is the most live frames: calls, lambdas, field defaults and where runs (EVALUATION.md §3.3, DECISIONS 195).
 const maxDepth = 10_000
 
+// frameSlots is how many names a frame binds before it needs a map.
+const frameSlots = 4
+
 // cancelEvery is how many steps pass between two looks at the context.
 const cancelEvery = 1 << 12
 

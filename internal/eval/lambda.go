@@ -1,8 +1,6 @@
 package eval
 
 import (
-	"maps"
-
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -14,7 +12,7 @@ import (
 type closure struct {
 	lam   syntax.Expr
 	fn    check.Object
-	vars  map[check.Object]value.Value
+	caps  []varSlot // its captures, the values at creation; never changed
 	self  value.Value
 	it    value.Value
 	short value.Value
@@ -34,12 +32,16 @@ func (c *closure) CanonText() string { return "" }
 // evalLambda creates a closure: one node, the lambda creation (EVALUATION.md §12.1).
 func evalLambda(r *run, e syntax.Expr, _ *vpath) value.Value {
 	c := &closure{
-		lam: e, vars: map[check.Object]value.Value{}, self: r.fr.self, it: r.fr.it,
+		lam: e, self: r.fr.self, it: r.fr.it,
 		short: r.fr.short, file: r.fr.file, pkg: r.fr.pkg, t: r.typeOf(e), p: r.prov(e, value.ProvComputed),
 	}
-	for _, obj := range r.ev.freeNames(e) {
+	frees := r.ev.freeNames(e)
+	if len(frees) > 0 {
+		c.caps = make([]varSlot, 0, len(frees))
+	}
+	for _, obj := range frees {
 		if v, ok := r.readVar(obj, nil); ok {
-			c.vars[obj] = v
+			c.caps = append(c.caps, varSlot{obj: obj, v: v})
 		}
 	}
 	return c
@@ -68,7 +70,7 @@ func (e *Evaluator) freeNames(lam syntax.Expr) []check.Object {
 	return names
 }
 
-// invoke calls a function value (EVALUATION.md §12.1, DECISIONS 185).
+// invoke calls a function value; a lambda's frame shares its closure's captures (EVALUATION.md §12.1).
 func (r *run) invoke(fn value.Value, args []value.Value, site source.Span) value.Value {
 	c, ok := fn.(*closure)
 	if !ok {
@@ -92,13 +94,9 @@ func (r *run) invoke(fn value.Value, args []value.Value, site source.Span) value
 	if !r.enter(site) {
 		return nil
 	}
-	fr := &frame{
-		vars: make(map[check.Object]value.Value, len(c.vars)+len(args)), self: c.self, it: c.it,
-		short: c.short, file: c.file, pkg: c.pkg, call: site,
-	}
+	fr := &frame{caps: c.caps, self: c.self, it: c.it, short: c.short, file: c.file, pkg: c.pkg, call: site}
 	fr.under(r.fr)
 	r.noteCode(c.file)
-	maps.Copy(fr.vars, c.vars)
 	body := r.bindLambda(c, fr, args)
 	if body == nil {
 		r.bug(nil)
@@ -131,7 +129,7 @@ func (r *run) bindLambda(c *closure, fr *frame, args []value.Value) syntax.Expr 
 		}
 		for i, id := range lam.Params {
 			if obj := r.ev.info.Defs[id]; obj != nil {
-				fr.vars[obj] = args[i]
+				fr.set(obj, args[i])
 			}
 		}
 		return lam.Body

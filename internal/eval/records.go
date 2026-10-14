@@ -207,7 +207,7 @@ func (e *Evaluator) leftOut(f *types.Field, t types.Type, via *value.Prov) *valu
 // defaultValue evaluates f's default for rec in its implicit frame, `default` via via (EVALUATION.md §13).
 func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath, via *value.Prov) value.Value {
 	saved, dep := r.fr, r.dep
-	r.fr = (&frame{vars: map[check.Object]value.Value{}, self: rec, file: r.ev.declFile(rec.T), decl: true}).under(saved)
+	r.fr = (&frame{self: rec, file: r.ev.declFile(rec.T), decl: true}).under(saved)
 	r.fr.pkg = r.ev.index.pkg[r.fr.file]
 	r.noteCode(r.fr.file)
 	r.dep = &depCtx{rec: rec, params: r.ev.boundParams(rec), field: f.Type, scope: newFieldScope(f, f.Default), at: f.Default}

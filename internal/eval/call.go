@@ -177,7 +177,7 @@ func (r *run) calleeFrame(c fnCall) *frame {
 	if name == "" {
 		name = fnName(c.obj, c.self)
 	}
-	fr := &frame{vars: map[check.Object]value.Value{}, self: c.self, file: c.obj.File(), pkg: c.obj.Pkg(), fn: name, call: c.site}
+	fr := &frame{self: c.self, file: c.obj.File(), pkg: c.obj.Pkg(), fn: name, call: c.site}
 	fr.ts = r.fr.ts && runtimeInput(c.obj)
 	r.noteCode(fr.file)
 	return fr.under(r.fr)
@@ -231,7 +231,7 @@ func (r *run) params(d *syntax.FnDecl, ft *types.FuncType, args []value.Value) b
 			r.bug(p)
 			return false
 		}
-		r.fr.vars[obj] = v
+		r.fr.set(obj, v)
 	}
 	return true
 }

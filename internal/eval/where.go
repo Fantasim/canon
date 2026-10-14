@@ -3,7 +3,6 @@ package eval
 import (
 	"context"
 
-	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -37,7 +36,7 @@ func (r *run) where(p *types.Predicate, v value.Value) (bool, bool) {
 	file := r.ev.fileOf(p.Expr)
 	r.noteCode(file)
 	saved := r.fr
-	r.fr = (&frame{vars: map[check.Object]value.Value{}, it: v, file: file, pkg: r.ev.index.pkg[file], decl: true}).under(saved)
+	r.fr = (&frame{it: v, file: file, pkg: r.ev.index.pkg[file], decl: true}).under(saved)
 	defer func() { r.fr = saved }()
 	if !r.nest(r.span(p.Expr)) {
 		return false, false

@@ -20,7 +20,8 @@ func (f *frame) own(obj check.Object, v value.Value) {
 // owner reports that obj is bound to the collection the frame owns.
 func (f *frame) owner(obj check.Object) bool {
 	v, ok := f.owns[obj]
-	return ok && v == f.vars[obj]
+	cur, _ := f.get(obj)
+	return ok && v == cur
 }
 
 // disown records that obj's value may be held elsewhere.
@@ -54,7 +55,7 @@ func (r *run) peeked(x syntax.Expr, read func(syntax.Expr) value.Value) value.Va
 // readVar is the value obj is bound to, read at at: the frame keeps owning it only when at is
 // the peek peeked marked, a mark the read consumes.
 func (r *run) readVar(obj check.Object, at syntax.Expr) (value.Value, bool) {
-	v, ok := r.fr.vars[obj]
+	v, ok := r.fr.get(obj)
 	if at != nil && at == r.peek {
 		r.peek = nil
 		return v, ok

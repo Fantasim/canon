@@ -89,7 +89,7 @@ func (r *run) bind(id *syntax.Ident, v value.Value) bool {
 		r.bug(id)
 		return false
 	}
-	r.fr.vars[obj] = v
+	r.fr.set(obj, v)
 	return true
 }
 

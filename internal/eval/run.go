@@ -47,7 +47,10 @@ type run struct {
 
 // frame is one call frame, or a root's own frame (fn empty).
 type frame struct {
-	vars   map[check.Object]value.Value
+	slots  [frameSlots]varSlot // its first names, bound without a map (vars.go)
+	nslots int
+	vars   map[check.Object]value.Value // its names past the slots, nil until one is bound
+	caps   []varSlot                    // a lambda call's captures, the closure's, shared and read only
 	self   value.Value
 	it     value.Value
 	short  value.Value
@@ -98,7 +101,7 @@ func (e *Evaluator) newRun(ctx context.Context, c charge, file *syntax.File) *ru
 
 // rootFrame is the frame of a root evaluated in file.
 func (e *Evaluator) rootFrame(file *syntax.File) *frame {
-	return &frame{vars: map[check.Object]value.Value{}, file: file, pkg: e.index.pkg[file]}
+	return &frame{file: file, pkg: e.index.pkg[file]}
 }
 
 // step spends one step for node n; the last one is E4401 (EVALUATION.md §12.2).
@@ -304,6 +307,15 @@ func (r *run) frames() ([]diag.Frame, int) {
 	return out, r.fr.count - len(out)
 }
 
+// frameStack is frames() for the current frame; a frame with no fn lists the named frames its
+// caller lists, so it shares the stack its caller cached rather than building it again.
+func (r *run) frameStack() ([]diag.Frame, int) {
+	if f := r.fr; f.fn == "" && f.caller != nil && f.caller.cached {
+		return f.caller.stack, f.caller.more
+	}
+	return r.frames()
+}
+
 // withStack is b with the current call stack.
 func (r *run) withStack(b *diag.Builder) *diag.Builder {
 	stack, more := r.frames()
@@ -316,7 +328,7 @@ func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
 	p := &value.Prov{Kind: kind, Span: r.span(n)}
 	if f := r.fr; (f.fn != "" || f.caller != nil) && (!f.decl || kind != value.ProvLiteral) {
 		if !f.cached {
-			f.stack, f.more = r.frames()
+			f.stack, f.more = r.frameStack()
 			f.cached = true
 			r.noteCut(f)
 		}
