@@ -58,6 +58,7 @@ const (
 	fatSpaced     = " => "
 	assignOp      = " = "
 	selfWord      = "self"
+	tick          = "`"
 	orderedWord   = "ordered"
 	keyedWord     = "keyed"
 	byWord        = "by"
@@ -135,6 +136,8 @@ var (
 	wordPool = []string{"open", "taken", "fire", "IK1_WEAPON", "check", "package", "type", "record", "emit", "for", "if", "_0"}
 	// nameable are the reserved words read as names in value position (§4.3 c).
 	nameable = []string{"check", "package", "record", "type", "view", "table", "stable", "entry"}
+	// quotedWords are the quotable words (GRAMMAR §2.3): reserved, not nameable, nameable as members.
+	quotedWords = []string{"and", "as", "break", "continue", "else", "fn", "for", "if", "in", "is", "let", "load", "match", "not", "or", "return", "where", "while"}
 	// dataWords name data: none of E1126's, no modifier, no item keyword, no §3.1 rule 3 word.
 	dataWords  = []string{"open", "taken", "fire", "IK1_WEAPON", "package", "type", "_0", "series_1", "done"}
 	textRunes  = []string{"a", "Z", "0", " ", "é", "-", "_", "!", ".", "日", "?", "'", ":"}
@@ -159,7 +162,7 @@ var (
 	// docOpeners start a doc line: canon fmt spaces the second.
 	docOpeners = []string{docPrefix, docSlashes}
 	// strayBytes are the bytes a corruption inserts (GRAMMAR.md §1, §2).
-	strayBytes = []string{"\x01", "\xff", "\ufeff", "\"", `"""`, "{", "}", "\r", "#", "$", "/*", "`", "\x00", "é", "\t", "(", "[", "@"}
+	strayBytes = []string{"\x01", "\xff", "\ufeff", "\"", `"""`, "{", "}", "\r", "#", "$", "/*", tick, "\x00", "é", "\t", "(", "[", "@"}
 )
 
 // Operators by precedence level (GRAMMAR.md §5.11), and the literal words.

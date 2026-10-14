@@ -25,11 +25,13 @@ func (g *gen) stringPrimary() bool {
 	return false
 }
 
-// namePrimary is an identifier, a nameable reserved word (§4.3 c) or self.
+// namePrimary is an identifier, a nameable reserved word (§4.3 c), a quoted word (§2.3) or self.
 func (g *gen) namePrimary() bool {
 	switch {
 	case g.r.OneIn(oneIn6):
 		g.w(g.pick(nameable))
+	case g.r.OneIn(oneIn6):
+		g.w(tick, g.pick(quotedWords), tick)
 	case g.r.OneIn(oneIn6):
 		g.w(selfWord)
 	case g.r.OneIn(oneIn4):
