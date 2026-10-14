@@ -21,7 +21,7 @@ planned, not encoded (2.1× edit regression gone), M6 oracle joins, killed-build
 **Next:** Louis publishes v0.1.6, Scripts' canon-bump moves the pin; then telemetry first use and the
 handoff's §3 (v0.2; order is Louis's). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
 [all handoffs](handoff/README.md). Release builds stay local (`make dist`) while CI is down.
-**Performance effort (2026-10-14, [log](decisions/log-2026-10-14.md)):** halve `check`/`build` memory and time; token store done (371, −15-17% RSS); lambda captures in review; Resource `tidCode` handoff, enum by-name lookup, `Prov`, parallel packages next. **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
+**Performance effort (2026-10-14, [log](decisions/log-2026-10-14.md)):** halve `check`/`build` memory and time; token store done (371, −15-17% RSS); lambda captures not copied (−20% allocs per call); Resource `tidCode` handoff sent (−35% `check`); enum by-name lookup, `Prov`, parallel packages next. **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
 on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a dir generate for names; edit time is ops × a full analysis; FMT's whole-file
 judgement holds the edit peak; F22 streaming JSON reader for Go loaders (~110 ms/MB); F21 warm re-check
 on entry add/remove.
