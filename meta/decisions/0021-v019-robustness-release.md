@@ -1977,8 +1977,10 @@ N-IR-W8031 (`W8031`). A new variant of an existing code (`E8152` `dirCase`, `E10
 **S4, acceptance and release:** §8.
 
 **Estimate:** 31 delegations (the 30 units of the table and S2's DIAG go-dev) plus S1 and the
-fixup; about 4 to 5 days wall with review rounds, 6
-if a rate limit stops the agents (resume each where it stopped, as in v0.1.6).
+fixup; about 18 to 24 hours of agent time (S1 and S2 about 2 h, the units 13 to 17 h with review
+rounds, acceptance and release 3 to 5 h), so 1 to 1.5 days wall, plus any rate-limit stop (resume
+each agent where it stopped, as in v0.1.6). Calibration: v0.1.6 took about 15 h of agent time for
+12 units, 24 h wall with a 9 h rate-limit stop.
 
 ## 8. Release
 

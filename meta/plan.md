@@ -188,7 +188,8 @@ Not in IMPLEMENTATION-PLAN §5-§6; recorded here so the order stays visible. DE
 
 **Decided whole in [ADR-0021](decisions/0021-v019-robustness-release.md)**: every design, the exact
 spec and DECISIONS texts (374-382), 30 units with their order, tiers and tests, and the release
-steps. Run it as its §7 says; it leaves no design decision to the run. Estimate 4-5 days wall.
+steps. Run it as its §7 says; it leaves no design decision to the run. Estimate 18-24 h of agent
+time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wall).
 
 - [ ] Refresh compares ctime + inode, not only size + mtime (API.md S1; build-tagged per platform).
 - [ ] `Recover` at Open takes the writer lock.
