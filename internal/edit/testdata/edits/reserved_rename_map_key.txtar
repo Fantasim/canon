@@ -1,7 +1,8 @@
-DECISIONS 366, GRAMMAR.md §5.11: a map item whose key is an expression (`Word.while: 2`,
-`(check): 1`) stays a keyed item when its key is renamed (API.md E11): a member is written
-qualified (`Word.check`, `Word.if`), a ref's word key in its parentheses, a string key as a
-string (`"check"` to `"plain"`, its Undo back); a named item keeps its bare WORD (§4.3 (a)).
+DECISIONS 378, GRAMMAR.md §5.11: a map item whose key is an expression (`Word.while: 2`,
+`(check): 1`) stays a keyed item when its key is renamed (API.md E11): a qualified member keeps
+its written qualifier and only its name changes (`Word.check`, `Word.if`), a parenthesised key
+gets the new word, quoted, in its parentheses, a string key stays a string (`"check"` to
+`"plain"`, its Undo back); a named item keeps its bare WORD (§4.3 (a)).
 -- options --
 pkgs: g
 -- edit.json --
@@ -112,7 +113,7 @@ record Node {
 /// Nodes.
 let nodes: table Node = {
   a {
-    bySlot: { plain: 1, ("if"): 2 }
+    bySlot: { plain: 1, (`if`): 2 }
     byWord: { Word.check: 2, Word.if: 3 }
   }
   b { bySlot: { "plain": 2 }, byWord: { while: 1 } }

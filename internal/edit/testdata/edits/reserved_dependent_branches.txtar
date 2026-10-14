@@ -1,8 +1,8 @@
-DECISIONS 366: two branches of a dependent field share a reserved member (`WA.if`, `WB.if`); the
-symbol is qualified through the branch the record's discriminant selects, computed as the decoder
-computes it (DEP-02): an AddEntry and a Set of a record with `kind: b` write `WB.if` and keep
-it, a Remove's Undo restores `WB.if` (API.md E22, E23), and a Set changing the discriminant has
-an Undo giving the old param back.
+DECISIONS 366, 378: two branches of a dependent field share a reserved member (`WA.if`, `WB.if`);
+a Source qualifies the symbol through the branch the record's discriminant selects, computed as
+the decoder computes it (DEP-02): an AddEntry and a Set of a record with `kind: b` write it
+quoted and keep it, a Remove's Undo restores it quoted (API.md E22, E23), and a Set changing the
+discriminant has an Undo giving the old param back.
 -- options --
 pkgs: p
 -- edit.json --
@@ -66,7 +66,7 @@ let evs: table Ev = {
       "op": "addEntry",
       "path": "p:evs",
       "key": "eb",
-      "source": "{ kind: b, param: WB.if }"
+      "source": "{ kind: b, param: `if` }"
     },
     {
       "op": "move",
@@ -76,7 +76,7 @@ let evs: table Ev = {
     {
       "op": "set",
       "path": "p:evs.ea",
-      "source": "{ param: WA.if }"
+      "source": "{ param: `if` }"
     },
     {
       "op": "remove",
@@ -115,7 +115,7 @@ record Ev {
 
 /// Events.
 let evs: table Ev = {
-  ea { kind: b, param: WB.if }
+  ea { kind: b, param: `if` }
   ey {}
-  ec { kind: b, param: WB.if }
+  ec { kind: b, param: `if` }
 }

@@ -1,8 +1,8 @@
-GRAMMAR.md §4.3 (a): a variant case may be named by any reserved word; in value position (§4.3
-(c)) one that is not nameable is written qualified through its variant, alone (`Shape.if`) or as
-a typed literal (`Shape.while { r: 2 }`, GRAMMAR.md §5.12), by its wire form or its Source form
-(API.md §8.2) alike; a plain case stays bare (API.md M7). API.md E23: the inverse Source of the
-old qualified case is itself qualified.
+GRAMMAR.md §4.3 (a): a variant case may be named by any reserved word; in value position one
+that is not nameable is written quoted (§2.3, DECISIONS 378), alone (`` `if` ``) or before its
+fields as a typed literal (`` `while` { r: 2 } ``, GRAMMAR.md §5.12), by its wire form or its
+Source form (API.md §8.2) alike; a plain case stays bare (API.md M7). API.md E23: the inverse
+Source of the old qualified case is quoted.
 -- options --
 pkgs: g
 -- edit.json --
@@ -61,7 +61,7 @@ let nodes: table Node = {
     {
       "op": "set",
       "path": "g:nodes.b.shape",
-      "source": "Shape.if"
+      "source": "`if`"
     },
     {
       "op": "reset",
@@ -70,7 +70,7 @@ let nodes: table Node = {
     {
       "op": "set",
       "path": "g:nodes.a.shape",
-      "source": "Shape.while { r: 1 }"
+      "source": "`while` { r: 1 }"
     }
   ],
   "touched": [
@@ -103,6 +103,6 @@ record Node {
 
 /// Nodes.
 let nodes: table Node = {
-  a { shape: Shape.if, shapes: [Shape.while { r: 2 }, dot] }
-  b { shape: Shape.while { r: 3 }, shapes: [Shape.if, dot, Shape.while { r: 4 }] }
+  a { shape: `if`, shapes: [`while` { r: 2 }, dot] }
+  b { shape: `while` { r: 3 }, shapes: [`if`, dot, `while` { r: 4 }] }
 }

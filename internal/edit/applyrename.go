@@ -226,10 +226,11 @@ func (r *renaming) tokenText(n syntax.Node) (string, error) {
 		return quoted(r.to), nil
 	case *syntax.IntLit:
 		return word, nil
-	case *syntax.IdentExpr: // a reference in value position: a word read bare there, else a string (LEX-08)
-		if !valueWord(word) {
-			return quoted(r.to), nil
+	case *syntax.IdentExpr: // a reference in value position: a word bare or quoted, else a string (E11)
+		if text, ok := syntax.ValueText(word); ok {
+			return text, nil
 		}
+		return quoted(r.to), nil
 	}
 	if !isWord(word) {
 		return "", badTemplate(r.to)

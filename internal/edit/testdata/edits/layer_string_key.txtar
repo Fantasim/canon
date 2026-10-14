@@ -1,0 +1,68 @@
+API.md §6.4, W11 (DECISIONS 378): a key of a String-keyed map is written in an amendment path as
+a string literal, as API.md M7 prints strings: a Set of `conf.weights[a]` writes `weights["a"]`,
+never `weights[a]`, which reads as a name; an AddEntry with key `x{y` writes `["x\{y"]`, escaped
+as Canon escapes a string (GRAMMAR.md §2.6), not as JSON.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "conf.weights[a]", "value": 5},
+  {"op": "addEntry", "path": "conf.weights", "key": "x{y", "value": 1}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A configuration.
+record Conf {
+  /// Weights by name.
+  weights: {String: Int} = {}
+  /// A label.
+  label: String = ""
+}
+
+/// Configuration.
+let conf: Conf = { weights: { "a": 1 } }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  label: "dev"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:conf.weights[\"x{y\"]"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.weights[a]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  label: "dev"
+  weights["a"]: 5
+  weights["x\{y"]: 1
+}

@@ -1,6 +1,7 @@
-GRAMMAR.md §4.3 (c): an amendment line (API.md W11) writes a reserved-word member qualified
-through its enum, which the layer's own package declares (`Word.if`); a new line and a line the
-layer already holds alike (API.md W11a). API.md E22: the Undo, a Source `Word.if`, is typed back.
+GRAMMAR.md §2.3, DECISIONS 378: an amendment line (API.md W11) writes a reserved-word member
+quoted (`` `if` ``), which needs no name in scope; a new line, and a line the layer already
+holds, the old line replaced (API.md W11a). API.md E22: the Undo, the old value written quoted,
+is typed back.
 -- options --
 pkgs: p
 layers: dev
@@ -49,7 +50,7 @@ amend conf {
     {
       "op": "set",
       "path": "p:conf.words",
-      "source": "[Word.if]"
+      "source": "[`if`]"
     },
     {
       "op": "reset",
@@ -65,6 +66,6 @@ package p
 layer dev
 
 amend conf {
-  words: [Word.while, plain]
-  word: Word.if
+  words: [`while`, plain]
+  word: `if`
 }

@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/fantasim/canonlang/internal/format"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
 // sourceText is an operation's value as Canon literal text (API.md E26), laid out by format.Flat:
 // canonical, on one line. A FromJSON inside another value, a Float that is not finite, a Dur with
-// a fraction of a millisecond, a Member or a Case its type must qualify has none: ErrNoText.
+// a fraction of a millisecond, a Member or a Case with no value text has none: ErrNoText (E26).
 func sourceText(l Lit) (string, error) {
 	var b strings.Builder
 	if err := writeLit(&b, l); err != nil {
@@ -45,10 +46,11 @@ func writeLit(b *strings.Builder, l Lit) error {
 	case Map:
 		return writeMap(b, x)
 	case Case:
-		if !valueWord(x.Name) {
+		text, ok := syntax.ValueText(x.Name)
+		if !ok {
 			return ErrNoText
 		}
-		b.WriteString(x.Name)
+		b.WriteString(text)
 		if len(x.Fields) == 0 {
 			return nil
 		}
@@ -66,7 +68,7 @@ func writeLit(b *strings.Builder, l Lit) error {
 	return nil
 }
 
-// scalarText is a scalar Lit's literal: a key as a string or digits, a member read bare (LEX-08).
+// scalarText is a scalar Lit's literal: a key as a string or digits, a member bare or quoted (E26).
 func scalarText(l Lit) (string, bool) {
 	switch x := l.(type) {
 	case Bool:
@@ -83,12 +85,12 @@ func scalarText(l Lit) (string, bool) {
 	case Key:
 		return canonQuote(string(x)), true
 	case PathKey:
-		if valueWord(string(x)) {
-			return string(x), true
+		if text, ok := syntax.ValueText(string(x)); ok {
+			return text, true
 		}
 		return canonQuote(string(x)), true
 	case Member:
-		return string(x), valueWord(string(x))
+		return syntax.ValueText(string(x))
 	case None:
 		return noneWord, true
 	case Dur:

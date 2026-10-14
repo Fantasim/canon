@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/format"
@@ -87,7 +88,7 @@ func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (va
 	if rec, i, ok := fieldOf(old, steps); ok && nv != nil && x.a.isDefault(withField(rec, i, nv), i) {
 		nv = nil
 	}
-	d := &canonDiff{a: x.a, in: fileNaming(at.f)}
+	d := &canonDiff{a: x.a}
 	if err := d.value(old, withChange(old, steps, nv), syntax.Unparen(at.line.Value)); err != nil {
 		return err
 	}
@@ -167,11 +168,11 @@ func (x *opCtx) typeAt(n int) types.Type {
 	return elemType(st.Container)
 }
 
-// amendLine writes `path: text` in the edit layer file of the root's package: into its block
-// for the root, replacing the lines of the path's descendants, or in a new block, in a new file
-// when the package has none (W11, W11a).
-func (x *opCtx) amendLine(canonical, text string) error {
-	rel, ok := amendPath(canonical)
+// amendLine writes `path: text` in the edit layer file of the root's package, the path of
+// canonical, whose steps are given: into its block for the root, replacing the lines of the
+// path's descendants, or in a new block, in a new file when the package has none (W11, W11a).
+func (x *opCtx) amendLine(canonical string, steps []Step, text string) error {
+	rel, ok := amendPathText(steps)
 	if !ok {
 		return &NotEditableError{Reason: ReasonLayer}
 	}
@@ -240,14 +241,74 @@ func (x *opCtx) newLayerFile(root, item string) error {
 	return nil
 }
 
-// amendPath is a canonical path as an amend path, which starts with a name (API.md §6.4).
-func amendPath(canonical string) (string, bool) {
-	p, err := Parse(canonical)
-	if err != nil || len(p.Segs) == 0 || p.Segs[0].Kind != SegField {
+// amendPathText is the path of steps as an amend path, which starts with a name; each key is a
+// Canon key of its container's key type (API.md 6.4).
+func amendPathText(steps []Step) (string, bool) {
+	if len(steps) == 0 || steps[0].Seg.Kind != SegField {
 		return "", false
 	}
-	rest := Path{Segs: p.Segs}.String()
-	return strings.TrimPrefix(rest, string(fieldMark)), true
+	var b strings.Builder
+	for _, st := range steps {
+		if st.Seg.Kind != SegKey {
+			b.WriteString(Path{Segs: []Seg{st.Seg}}.String())
+			continue
+		}
+		b.WriteString(string(bracketOpen) + amendKeyText(st.Seg.Key, keyTypeIn(st.Container)) + bracketClose)
+	}
+	return strings.TrimPrefix(b.String(), string(fieldMark)), true
+}
+
+// amendKeyText is key lit, of type kt, as an amend key (API.md §6.4).
+func amendKeyText(lit KeyLit, kt types.Type) string {
+	if lit.Kind == KeyInt {
+		return litText(lit)
+	}
+	if lit.Kind == KeyWord && !stringKey(lit, baseKeyType(kt)) {
+		if text, ok := syntax.ValueText(lit.Text); ok {
+			return text
+		}
+	}
+	return canonQuote(lit.Text)
+}
+
+// keyTypeIn is the key type of container type ct: a table's String, a list's Int or its key
+// field's, a map's; nil for another type (API.md P9).
+func keyTypeIn(ct types.Type) types.Type {
+	switch b := baseOf(ct).(type) {
+	case *types.TableType:
+		return types.StringType
+	case *types.ListType:
+		if b.KeyedBy != nil {
+			return b.KeyedBy.Type
+		}
+		return types.IntType
+	}
+	kt, _, _ := mapTypes(ct)
+	return kt
+}
+
+// baseKeyType is kt, a ref followed to its target's key type until a type that is no ref, or a
+// ref back to a collection already passed (RES-09; DECISIONS 316).
+func baseKeyType(kt types.Type) types.Type {
+	seen := map[*types.Collection]bool{}
+	for {
+		r, isRef := baseOf(kt).(*types.RefType)
+		if !isRef || seen[r.Target] {
+			return kt
+		}
+		seen[r.Target], kt = true, refKeyType(r)
+	}
+}
+
+// stringKey reports lit a String key of kt, or a literal of kt's literal union (API.md §6.4).
+func stringKey(lit KeyLit, kt types.Type) bool {
+	switch b := baseOf(kt).(type) {
+	case types.Basic:
+		return b.K == types.String
+	case *types.LitUnionType:
+		return slices.Contains(b.Literals, lit.Text) || stringKey(lit, baseKeyType(b.Of))
+	}
+	return false
 }
 
 // lineRemoval removes amendment line from f, and its block with it when it is the block's only

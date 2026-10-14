@@ -1,6 +1,6 @@
 DECISIONS 366, API.md §8.2: a Source names a member's package by its whole dotted path
-(`game.vocab.Word.if`) or its last segment (`vocab.Word.while`); the file being written imports it
-as `voc`, so the member is written `voc.Word.if` (SPEC.md §3.2, API.md M7).
+(`game.vocab.Word.if`) or its last segment (`vocab.Word.while`); the member is written quoted,
+whatever name the file being written imports the package as (GRAMMAR.md §2.3, API.md M7).
 -- options --
 pkgs: game.items
 -- edit.json --
@@ -62,6 +62,6 @@ import game.vocab as voc
 
 /// Rows.
 let rows: table voc.Row = {
-  a { word: voc.Word.if }
-  b { word: voc.Word.while }
+  a { word: `if` }
+  b { word: `while` }
 }

@@ -41,8 +41,8 @@ func literalText(x *opCtx, it item, ty types.Type, scope *types.Field) (Source, 
 }
 
 // typedText is lit typed as a value of ty in scope's wire rules (V1), and that value as a Canon
-// literal (M7) for the file `in` names.
-func typedText(x *opCtx, lit Lit, ty types.Type, scope *types.Field, in naming) (value.Value, string, error) {
+// literal (M7).
+func typedText(x *opCtx, lit Lit, ty types.Type, scope *types.Field) (value.Value, string, error) {
 	if lit == nil {
 		return nil, "", ErrBadOp
 	}
@@ -59,7 +59,7 @@ func typedText(x *opCtx, lit Lit, ty types.Type, scope *types.Field, in naming) 
 	if err != nil {
 		return nil, "", err
 	}
-	text, err := x.a.canonText(v, in)
+	text, err := x.a.canonText(v)
 	return v, text, err
 }
 
@@ -115,7 +115,7 @@ func setFieldSource(t *srcTable, p Path) error {
 	if err != nil {
 		return err
 	}
-	_, text, err := typedText(t.x, t.x.op.Value, f.Type, f, fileNaming(t.node().file))
+	_, text, err := typedText(t.x, t.x.op.Value, f.Type, f)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func setEntrySource(t *srcTable, p Path) error {
 	if err != nil {
 		return err
 	}
-	_, text, err := typedText(t.x, t.x.op.Value, t.tt.Elem, nil, fileNaming(t.node().file))
+	_, text, err := typedText(t.x, t.x.op.Value, t.tt.Elem, nil)
 	if err != nil {
 		return err
 	}

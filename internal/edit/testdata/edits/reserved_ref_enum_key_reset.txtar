@@ -1,5 +1,6 @@
-DECISIONS 366: a Reset of a ref whose enum key is a reserved word, and a Set of a map keyed by
-such refs, have Undos (API.md E23) that write the key as a string and apply (API.md E22, V1).
+DECISIONS 366, 378: a Reset of a ref whose enum key is a reserved word, and a Set of a map keyed
+by such refs, have Undos (API.md E23) that apply (API.md E22, V1): the ref `slot` written quoted
+(`` `if` ``), the map `bySlot` keeping its key as the string `"if"` was written (DECISIONS 337).
 -- options --
 pkgs: g
 -- edit.json --
@@ -58,7 +59,7 @@ let nodes: table Node = {
     {
       "op": "set",
       "path": "g:nodes.a.slot",
-      "source": "\"if\""
+      "source": "`if`"
     }
   ],
   "touched": [

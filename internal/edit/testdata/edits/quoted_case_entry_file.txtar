@@ -1,0 +1,67 @@
+API.md N5, M7 (DECISIONS 378): a new entry file has no imports, so another package's case and
+member named by a quotable word are written quoted, never qualified: `` shape: `while` { r: 2 } ``
+and `` word: `in` ``, which need no name in scope (GRAMMAR.md §2.3, TYPES.md §3.3).
+-- options --
+pkgs: p
+-- edit.json --
+{"ops": [
+  {"op": "addEntry", "path": "filed", "key": "a", "source": "{ shape: v.Shape.while { r: 2 }, word: v.Word.in }"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- v/v.canon --
+package v
+
+/// A word.
+enum Word { plain, if, in }
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A loop.
+  while { r: Int }
+}
+-- p/p.canon --
+package p
+
+import v
+
+/// An item.
+record Item {
+  /// Its shape.
+  shape: v.Shape
+  /// Its word.
+  word: v.Word = plain
+}
+
+/// Filed items.
+@files("items/{id}.canon")
+let filed: table Item = {}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "created",
+      "path": "p/items/a.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "remove",
+      "path": "p:filed.a"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/items/a.canon --
+package p
+
+entry filed.a {
+  shape: `while` { r: 2 }
+  word: `in`
+}

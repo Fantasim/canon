@@ -59,7 +59,7 @@ func (x *opCtx) addElem(l *value.List, at int) error {
 	}
 	x.addInverse(seg)
 	grown := &value.List{T: l.T, Elems: slices.Insert(slices.Clone(l.Elems), at, v), P: l.P}
-	it := newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func(in naming) (string, error) { return x.a.canonText(v, in) }}
+	it := newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func() (string, error) { return x.a.canonText(v) }}
 	if c := x.j.last(); c.files && c.ordersLiteral(cursor{}) {
 		return x.literalItem(c, it)
 	}
@@ -82,7 +82,7 @@ type newItem struct {
 	v, grown  value.Value
 	key       string
 	at, count int
-	text      func(naming) (string, error)
+	text      func() (string, error)
 	fr        *depFrame  // the frame its symbols are read in, nil for the collection's (DEP-02)
 	t         types.Type // its declared type, nil for its own
 }
@@ -139,7 +139,7 @@ func (x *opCtx) insertItem(it newItem) error {
 }
 
 func (x *opCtx) insertCanon(c cursor, it newItem) error {
-	t, err := it.text(fileNaming(c.file))
+	t, err := it.text()
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (x *opCtx) insertCanon(c cursor, it newItem) error {
 	if !ok || itemCount(c.node) != it.count {
 		return &NotEditableError{Reason: ReasonComputed}
 	}
-	d := &canonDiff{a: x.a, in: fileNaming(c.file)}
+	d := &canonDiff{a: x.a}
 	d.insert(list, it.at, t)
 	x.w.addCanon(c.file.Src.Path, x.res.root.pkg.Path, d.out)
 	return nil

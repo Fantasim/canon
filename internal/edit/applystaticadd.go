@@ -25,7 +25,7 @@ func addSource(t *srcTable, _ Path) error {
 	case slices.ContainsFunc(t.entries, func(it item) bool { return statedKey(it.node) == key }):
 		return ErrKeyExists
 	}
-	v, _, err := typedText(x, x.op.Value, t.tt.Elem, nil, naming{})
+	v, _, err := typedText(x, x.op.Value, t.tt.Elem, nil)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func addSource(t *srcTable, _ Path) error {
 	if t.filed {
 		return x.newEntryFile(rec, kv)
 	}
-	text, err := x.a.entryText(key, rec, false, fileNaming(x.res.root.obj.File()))
+	text, err := x.a.entryText(key, rec, false)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func setRootSource(x *opCtx, cause error) error {
 	if !ok {
 		return cause
 	}
-	_, text, err := typedText(x, x.op.Value, ty, nil, fileNaming(f))
+	_, text, err := typedText(x, x.op.Value, ty, nil)
 	if err != nil {
 		return err
 	}

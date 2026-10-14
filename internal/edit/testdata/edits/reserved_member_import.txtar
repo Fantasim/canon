@@ -1,7 +1,7 @@
-GRAMMAR.md §4.3 (c): a reserved-word member of another package's enum is written qualified the
-way the file being written names that enum (SPEC.md §3.2): `v.Word.if` under `import v`,
-`voc.Word.if` under `import v as voc`, `Word.if` under `import v { Word }`. API.md M7: a plain
-member stays bare. API.md §8.2 Source: `v.Word.if`, the package path and the enum, is accepted.
+GRAMMAR.md §2.3, DECISIONS 378: a reserved-word member of another package's enum is written
+quoted, the same text whatever the file being written imports: under `import v`, `import v as
+voc` and `import v { Word }` alike. API.md M7: a plain member stays bare. API.md §8.2 Source:
+`v.Word.if`, the package path and the enum, is accepted.
 -- options --
 pkgs: g h k
 -- edit.json --
@@ -105,7 +105,7 @@ import v
 
 /// Rows.
 let rows: table v.Row = {
-  a { word: v.Word.if }
+  a { word: `if` }
 }
 -- after/h/h.canon --
 package h
@@ -114,7 +114,7 @@ import v as voc
 
 /// Rows.
 let rows: table voc.Row = {
-  a { word: voc.Word.if }
+  a { word: `if` }
 }
 -- after/k/k.canon --
 package k
@@ -123,6 +123,6 @@ import v { Row, Word }
 
 /// Rows.
 let rows: table Row = {
-  a { word: Word.if }
+  a { word: `if` }
   b {}
 }

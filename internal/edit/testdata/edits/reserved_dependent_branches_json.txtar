@@ -1,6 +1,6 @@
-DECISIONS 366: in a JSON source, the Undo of a Remove restores a dependent symbol shared by two
-branches qualified through the branch its record's `kind` selects (`WB.if`), and applies (API.md
-E22, E23); a Source giving it through that branch writes its wire value.
+DECISIONS 366, 378: in a JSON source, the Undo of a Remove restores a dependent symbol shared by
+two branches, the one its record's `kind` selects, quoted, and applies (API.md E22, E23); a
+Source giving it through that branch writes its wire value.
 -- options --
 pkgs: p
 -- edit.json --
@@ -66,13 +66,13 @@ let evs: [Ev] keyed by id = load("evs.json")
     {
       "op": "set",
       "path": "p:evs[ea]",
-      "source": "{ id: \"ea\", param: WA.if }"
+      "source": "{ id: \"ea\", param: `if` }"
     },
     {
       "op": "insert",
       "path": "p:evs",
       "index": 1,
-      "source": "{ kind: b, id: \"eb\", param: WB.if }"
+      "source": "{ kind: b, id: \"eb\", param: `if` }"
     }
   ],
   "touched": [

@@ -1,0 +1,76 @@
+API.md §6.4, W11, W11a (DECISIONS 378): a Set of a path the layer already amends, by a line
+whose key is quoted (`` byWord[`if`] ``) or a string (`weights["a"]`), updates that line in
+place: the key read back names the same path, so no second line is written.
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "conf.byWord[if]", "value": 7},
+  {"op": "set", "path": "conf.weights[a]", "value": 8}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- v/v.canon --
+package v
+
+/// A word.
+enum Word { plain, if, while }
+-- p/p.canon --
+package p
+
+import v
+
+/// A configuration.
+record Conf {
+  /// Counts by word.
+  byWord: {v.Word: Int} = {}
+  /// Weights by name.
+  weights: {String: Int} = {}
+}
+
+/// Configuration.
+let conf: Conf = { byWord: { if: 1 }, weights: { "a": 1 } }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  byWord[`if`]: 3
+  weights["a"]: 5
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "set",
+      "path": "p:conf.weights[a]",
+      "source": "5"
+    },
+    {
+      "op": "set",
+      "path": "p:conf.byWord[if]",
+      "source": "3"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  byWord[`if`]: 7
+  weights["a"]: 8
+}

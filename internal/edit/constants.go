@@ -324,6 +324,7 @@ var fitCodes = map[diag.Code]bool{
 	diag.E3202.Def().Code: true, diag.E3311.Def().Code: true, diag.E3403.Def().Code: true, diag.E3301.Def().Code: true,
 	diag.E3302.Def().Code: true, diag.E3315.Def().Code: true, diag.E3204.Def().Code: true, diag.E3205.Def().Code: true,
 	diag.E3206.Def().Code: true, diag.E3701.Def().Code: true, diag.E3702.Def().Code: true, diag.E3703.Def().Code: true,
+	diag.E3706.Def().Code: true,
 	diag.E7110.Def().Code: true, diag.E7111.Def().Code: true, diag.E7112.Def().Code: true,
 }
 

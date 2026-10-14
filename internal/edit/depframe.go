@@ -11,7 +11,7 @@ import (
 
 // depFrame is what a dependent type's arguments name (DEP-02): fields, parameters, map binders; a
 // strict frame (kept non-nil) refuses a name introduced into a Never branch (V1) and collects the
-// held symbols it keeps; a pinning one resolves only those a .canon text must qualify (pinned).
+// held symbols it keeps; a pinning one resolves those a Source qualified or with no text (pinned).
 type depFrame struct {
 	rec     *value.Record
 	params  map[*types.Param]value.Value

@@ -1,0 +1,85 @@
+API.md §6.4, W11 (DECISIONS 378): an amendment line writes each key of its path as a Canon key
+of its key type: through a map keyed by another package's enum, a reserved-word member key is
+quoted (`` byWord[`if`]: 3 ``); through a list keyed by that enum, `` rows[`while`].n: 2 ``. A
+layer file has no imports, and a quoted word needs none (GRAMMAR.md §2.3).
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "conf.byWord[if]", "value": 3},
+  {"op": "set", "path": "conf.rows[while].n", "value": 2}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- v/v.canon --
+package v
+
+/// A word.
+enum Word { plain, if, while }
+-- p/p.canon --
+package p
+
+import v
+
+/// A row.
+record Row {
+  /// Its word.
+  w: v.Word
+  /// Its count.
+  n: Int = 0
+}
+
+/// A configuration.
+record Conf {
+  /// Counts by word.
+  byWord: {v.Word: Int} = {}
+  /// Rows by word.
+  rows: [Row] keyed by w = []
+  /// A label.
+  label: String = ""
+}
+
+/// Configuration.
+let conf: Conf = { byWord: { if: 1 }, rows: [{ w: v.Word.while }] }
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  label: "dev"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "p:conf.rows[while].n"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.byWord[if]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  label: "dev"
+  byWord[`if`]: 3
+  rows[`while`].n: 2
+}

@@ -1,7 +1,6 @@
-GRAMMAR.md §4.3 (c): a reserved-word member is written qualified through its enum; a file that
-imports the enum's package only as `import v { Row }` binds no name for the enum (SPEC.md §3.2),
-so the member is written `v.Word.if`, as `import v` would name it, and the re-check reports the
-unbound `v` (E2102, API.md V2) instead of the edit failing inside the compiler.
+GRAMMAR.md §2.3, DECISIONS 378: a file that imports the enum's package only as `import v { Row }`
+binds no name for the enum (SPEC.md §3.2); a reserved-word member is written quoted
+(`` `if` ``), which needs none, and the re-check is clean (API.md V2).
 -- options --
 pkgs: k
 -- edit.json --
@@ -57,5 +56,5 @@ import v { Row }
 
 /// Rows.
 let rows: table Row = {
-  a { word: v.Word.if }
+  a { word: `if` }
 }

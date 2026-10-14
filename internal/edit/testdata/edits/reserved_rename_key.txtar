@@ -1,6 +1,6 @@
 GRAMMAR.md §4.3 (a): a table key may be renamed to a reserved word (API.md E11); its entry
-keeps the bare WORD, and each reference to it in value position, which cannot hold the word bare
-(§4.3 (c)), is written as a string (SPEC.md §6.2), a map key's name before `:` staying bare.
+keeps the bare WORD, and each reference to it in value position, which cannot hold the word bare,
+is written quoted (§2.3, DECISIONS 378), a map key's name before `:` staying bare.
 -- options --
 pkgs: g
 -- edit.json --
@@ -60,5 +60,5 @@ record Node {
 /// Nodes.
 let nodes: table Node = {
   if {}
-  b { next: ["if", b], weights: { if: 1 } }
+  b { next: [`if`, b], weights: { if: 1 } }
 }

@@ -1,0 +1,118 @@
+API.md §6.4, W11 (DECISIONS 378 point 11): an amendment path writes each key as a Canon key of
+its key type: an integer in decimal (`byNum[3]`); a ref into a String-keyed table as a string
+(`byItem["sword"]`); for a literal union, one of its literals as a string (`byLit["dflt"]`), a
+member bare or quoted (`byLit[plain]`, `` byLit[`if`] ``), and a key of a ref base as its
+target's key type does (`byOpt["sword"]`).
+-- options --
+pkgs: p
+layers: dev
+editLayer: dev
+-- edit.json --
+{"ops": [
+  {"op": "set", "path": "conf.byNum[3]", "value": 30},
+  {"op": "set", "path": "conf.byItem[sword]", "value": 1},
+  {"op": "set", "path": "conf.byLit[\"dflt\"]", "value": 2},
+  {"op": "set", "path": "conf.byLit[if]", "value": 3},
+  {"op": "set", "path": "conf.byLit[plain]", "value": 4},
+  {"op": "set", "path": "conf.byOpt[sword]", "value": 5}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- p/p.canon --
+package p
+
+/// A word.
+enum Word { plain, if }
+
+/// An item.
+record Item {
+  /// Its weight.
+  w: Int = 0
+}
+
+/// Items.
+let items: table Item = {
+  sword {}
+}
+
+/// A configuration.
+record Conf {
+  /// By number.
+  byNum: {Int: Int} = {}
+  /// By item.
+  byItem: {ref items: Int} = {}
+  /// By word or default.
+  byLit: {(Word | "dflt"): Int} = {}
+  /// By item or none.
+  byOpt: {(ref items | "none"): Int} = {}
+  /// A label.
+  label: String = ""
+}
+
+/// Configuration.
+let conf: Conf = {
+  byNum: { (3): 1 }
+  byItem: { sword: 1 }
+  byLit: { "dflt": 1, if: 1, plain: 1 }
+  byOpt: { sword: 1 }
+}
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  label: "dev"
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "p/dev.layer.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "reset",
+      "path": "p:conf.byOpt[sword]"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.byLit[plain]"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.byLit[if]"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.byLit[\"dflt\"]"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.byItem[sword]"
+    },
+    {
+      "op": "reset",
+      "path": "p:conf.byNum[3]"
+    }
+  ],
+  "touched": [
+    "p"
+  ]
+}
+-- after/p/dev.layer.canon --
+package p
+layer dev
+
+amend conf {
+  label: "dev"
+  byNum[3]: 30
+  byItem["sword"]: 1
+  byLit["dflt"]: 2
+  byLit[`if`]: 3
+  byLit[plain]: 4
+  byOpt["sword"]: 5
+}

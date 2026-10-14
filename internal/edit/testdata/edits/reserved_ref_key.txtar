@@ -1,7 +1,7 @@
-GRAMMAR.md §4.3 (a): a table key may be any reserved word (`if`); in value position (§4.3 (c))
-a ref to it, into a table or an enum-keyed collection alike, is written as a string, as SPEC.md
-§6.2 writes a key no bare name reads. As a map key, the name before `:` (§4.3 (a)), it stays
-bare. API.md §8.2: the wire form and the Source form give the same.
+GRAMMAR.md §4.3 (a): a table key may be any reserved word (`if`); in value position a ref to
+it, into a table or an enum-keyed collection alike, is written quoted (§2.3, DECISIONS 378). As a
+map key, the name before `:` (§4.3 (a)), it stays bare. API.md §8.2: the wire form and the
+Source form give the same.
 -- options --
 pkgs: g
 -- edit.json --
@@ -102,6 +102,6 @@ record Node {
 
 /// Nodes.
 let nodes: table Node = {
-  if { next: ["if"] }
-  plain { next: ["if", plain], weights: { if: 1 }, slot: "if" }
+  if { next: [`if`] }
+  plain { next: [`if`, plain], weights: { if: 1 }, slot: `if` }
 }

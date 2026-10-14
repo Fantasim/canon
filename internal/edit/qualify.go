@@ -9,97 +9,35 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// naming is how text names the type it qualifies a member or case through: as its .canon file
-// does, by package and imports. The zero naming, an op's Source, names a type alone; a file
-// without imports (a layer, a new entry file) has a package and no file.
-type naming struct {
-	pkg  string
-	file *syntax.File
-}
-
 // typeRef is a named type a qualified name goes through: an enum or a variant.
 type typeRef struct {
 	pkg, name string
 }
 
-// fileNaming is the naming of the source file f.
-func fileNaming(f *syntax.File) naming {
-	if f == nil || f.Package == nil {
-		return naming{}
-	}
-	return naming{pkg: syntax.Qualified(f.Package), file: f}
+// hasText reports a name with a value-position text, bare or quoted (GRAMMAR.md §2.3, §4.3).
+func hasText(name string) bool {
+	_, ok := syntax.ValueText(name)
+	return ok
 }
 
-// bareNaming is the naming of a layer or new entry file: the root's package, no imports.
-func (x *opCtx) bareNaming() naming {
-	return naming{pkg: x.res.root.pkg.Path}
-}
-
-// valueWord reports a name read bare in value position: an IDENT or a nameable word (LEX-08).
-func valueWord(name string) bool {
-	k := syntax.LookupWord(name)
-	return isWord(name) && (k == syntax.TokIdent || syntax.IsNameable(k))
-}
-
-// nameText is a member, or a dependent symbol the edit pinned or a bare name holds (pinned), as
-// value position writes it; a symbol no bare name holds and no branch types has none (DECISIONS 366).
+// nameText is a member, case kind, or dependent symbol the edit pinned or a name holds (pinned),
+// bare or quoted, never qualified; a symbol with no such text is a *ValueError (API.md M7).
 func (p *canonPrinter) nameText(v value.Value) string {
-	switch x := v.(type) {
-	case *value.Member:
-		return p.in.qualified(typeRef{x.Enum.Pkg, x.Enum.Name}, x.CanonText())
-	case *value.Symbol:
-		if !valueWord(x.Name) && p.err == nil {
-			p.err = &ValueError{Expected: x.T.String(), Got: x.Name, Detail: detailNoBranch}
-		}
+	if text, ok := syntax.ValueText(v.CanonText()); ok {
+		return text
+	}
+	if s, isSymbol := v.(*value.Symbol); isSymbol && p.err == nil {
+		p.err = &ValueError{Expected: s.T.String(), Got: s.Name, Detail: detailNoBranch}
 	}
 	return v.CanonText()
 }
 
-// caseText is case c's name as value position writes it, alone or before its fields.
-func (n naming) caseText(c *types.CaseType) string {
-	if c.Variant == nil {
-		return c.Name
+// caseText is case c's name as value position writes it, alone or before its fields (API.md M7).
+func caseText(c *types.CaseType) string {
+	if text, ok := syntax.ValueText(c.Name); ok {
+		return text
 	}
-	return n.qualified(typeRef{c.Variant.Pkg, c.Variant.Name}, c.Name)
-}
-
-// qualified is name, of type t, bare where the grammar reads it, else `T.name` (LEX-08).
-func (n naming) qualified(t typeRef, name string) string {
-	if valueWord(name) {
-		return name
-	}
-	return n.typeName(t) + dotSeg + name
-}
-
-// typeName is t as n's file names it: alone in its package or imported by name, else through the
-// name its import binds; with no import, through the last segment, for the re-check's E2102.
-func (n naming) typeName(t typeRef) string {
-	if n.pkg == "" || t.pkg == "" || t.pkg == n.pkg {
-		return t.name
-	}
-	if n.file != nil {
-		for _, imp := range n.file.Imports {
-			if name, ok := importedName(imp, t); ok {
-				return name
-			}
-		}
-	}
-	return lastSegment(t.pkg) + dotSeg + t.name
-}
-
-// importedName is t as imp makes it nameable, false when imp does not.
-func importedName(imp *syntax.Import, t typeRef) (string, bool) {
-	if imp.Path == nil || len(imp.Path.Parts) == 0 || syntax.Qualified(imp.Path) != t.pkg {
-		return "", false
-	}
-	if len(imp.Names) > 0 {
-		return t.name, slices.ContainsFunc(imp.Names, func(id *syntax.Ident) bool { return id.Name == t.name })
-	}
-	bound := imp.Path.Parts[len(imp.Path.Parts)-1].Name
-	if imp.Alias != nil {
-		bound = imp.Alias.Name
-	}
-	return bound + dotSeg + t.name, true
+	return c.Name
 }
 
 // lastSegment is the last segment of a dotted package path: the name `import` binds.
@@ -224,25 +162,25 @@ func namesType(qual []string, t typeRef) bool {
 	return pkg == "" || pkg == t.pkg || pkg == lastSegment(t.pkg)
 }
 
-// pinSymbols is v, of type t, typed for the value at the path, with each symbol a .canon text must
-// qualify resolved in the branch its record's discriminant selects (DECISIONS 366).
+// pinSymbols is v, of type t, typed for the value at the path, with each symbol a Source qualified,
+// or with no value text, resolved in the branch its record's discriminant selects (DECISIONS 378).
 func (x *opCtx) pinSymbols(v value.Value, t types.Type) (value.Value, error) {
 	fr := x.frameAt(len(x.res.Steps))
 	fr.kept, fr.pin = nil, true
 	return fr.symbolsIn(v, nil, t)
 }
 
-// pinned is s, of type t, resolved when a Source qualified it or no bare name holds it: what it
+// pinned is s, of type t, resolved when a Source qualified it or it has no value text: what it
 // names in the branch fr computes, whose type its qualifier must name; else s as given. Where no
-// branch can be computed, one no bare name holds is a *ValueError (DECISIONS 366).
+// branch can be computed, it is kept when it has a text, else a *ValueError (DECISIONS 378).
 func (fr depFrame) pinned(s *value.Symbol, t types.Type) (value.Value, error) {
 	qual, named := fr.a.marks.qualifier(s)
-	if s.P != nil || !named && (valueWord(s.Name) || !isWord(s.Name)) {
+	if s.P != nil || !named && (hasText(s.Name) || !isWord(s.Name)) {
 		return s, nil // data a JSON source wrote, or a name a .canon text holds as given
 	}
 	et, ok := fr.branchFor(t)
 	switch {
-	case !ok && valueWord(s.Name):
+	case !ok && hasText(s.Name):
 		return s, nil
 	case !ok:
 		return nil, &ValueError{Expected: t.String(), Got: s.Name, Detail: detailNoBranch}

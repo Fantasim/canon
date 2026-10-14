@@ -1,7 +1,7 @@
-DECISIONS 366, GRAMMAR.md §4.3 (c): in a dependent field (TYPES.md §11), a Source accepts the
-qualified member of one of the field's branches (`Word.if`) as the symbol a bare name gives (API.md
-V1, DEP-02), so the Undo of a Remove restoring `param: Word.if` applies (API.md E22, E23); a wire
-value and a Source of the whole record alike write it qualified (API.md M7).
+DECISIONS 366, 378: in a dependent field (TYPES.md §11), a Source accepts the qualified member
+of one of the field's branches (`Word.if`) as the symbol a bare name gives (API.md V1, DEP-02),
+so the Undo of a Remove restoring the param, written quoted, applies (API.md E22, E23); a wire
+value and a Source of the whole record alike write it quoted (API.md M7, GRAMMAR.md §2.3).
 -- options --
 pkgs: p
 -- edit.json --
@@ -66,7 +66,7 @@ let evs: table Ev = {
       "op": "addEntry",
       "path": "p:evs",
       "key": "a",
-      "source": "{ param: Word.if }"
+      "source": "{ param: `if` }"
     },
     {
       "op": "move",
@@ -103,6 +103,6 @@ record Ev {
 
 /// Events.
 let evs: table Ev = {
-  b { param: Word.while }
-  c { param: Word.if }
+  b { param: `while` }
+  c { param: `if` }
 }

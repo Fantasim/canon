@@ -1,9 +1,9 @@
-GRAMMAR.md §4.3 (c): an enum member named by a reserved word that cannot be used bare in value
-position is written qualified (`Word.if`); after `.` a reserved word is a name (§4.3 (b)). Each
+GRAMMAR.md §4.3, §2.3: an enum member named by a reserved word that cannot be used bare in value
+position is written quoted (DECISIONS 378); after `.` a reserved word is a name (§4.3 (b)). Each
 wire value below holds such a member, as a scalar, in a list, as a map value and in a nested
-record (API.md §8.2 FromJSON, API.md M7): the printer writes it qualified, a nameable member
+record (API.md §8.2 FromJSON, API.md M7): the printer writes it quoted, a nameable member
 (`check`) and a plain one stay bare, and a map key keeps its bare WORD (§4.3 (a)). API.md E23:
-the inverse Source of the old qualified member is itself qualified.
+the inverse Source of the old qualified member is quoted.
 -- options --
 pkgs: g
 -- edit.json --
@@ -76,7 +76,7 @@ let rows: table Row = {
     {
       "op": "set",
       "path": "g:rows.a.word",
-      "source": "Word.if"
+      "source": "`if`"
     }
   ],
   "touched": [
@@ -112,10 +112,10 @@ record Row {
 /// Rows.
 let rows: table Row = {
   a {
-    word: Word.match
-    words: [Word.if, plain, check, Word.while]
-    named: { "x": Word.return, "y": plain }
+    word: `match`
+    words: [`if`, plain, check, `while`]
+    named: { "x": `return`, "y": plain }
     counts: { if: 1, plain: 2 }
-    inner: { w: Word.for }
+    inner: { w: `for` }
   }
 }

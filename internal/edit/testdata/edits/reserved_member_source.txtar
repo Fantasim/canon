@@ -1,9 +1,9 @@
-GRAMMAR.md §4.3 (c): a member named by a reserved word that is not nameable is written qualified
-(`Word.if`); after `.` a reserved word is a name (§4.3 (b)). API.md §8.2 Source: a qualified
+GRAMMAR.md §4.3, §2.3: a member named by a reserved word that is not nameable is written quoted
+(DECISIONS 378); after `.` a reserved word is a name (§4.3 (b)). API.md §8.2 Source: a qualified
 member, `Word.if` or package-qualified `g.Word.match`, is accepted wherever a member of that enum
 is expected, as a scalar, in a list, as a map value and in a nested record; so is a plain member
 written qualified (`Word.plain`), and a nameable one bare (`check`). The printer (API.md M7)
-writes a member bare when the grammar reads it there, qualified otherwise.
+writes a member bare when the grammar reads it there, quoted otherwise.
 -- options --
 pkgs: g
 -- edit.json --
@@ -83,7 +83,7 @@ let rows: table Row = {
     {
       "op": "set",
       "path": "g:rows.a.word",
-      "source": "Word.if"
+      "source": "`if`"
     }
   ],
   "touched": [
@@ -119,10 +119,10 @@ record Row {
 /// Rows.
 let rows: table Row = {
   a {
-    word: Word.match
-    words: [Word.if, plain, check, Word.while]
-    named: { "x": Word.return }
-    inner: { w: Word.for }
+    word: `match`
+    words: [`if`, plain, check, `while`]
+    named: { "x": `return` }
+    inner: { w: `for` }
   }
   b { counts: { if: 1, match: 2 } }
 }

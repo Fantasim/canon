@@ -5,31 +5,31 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
 // canonPrinter prints a value as a Canon literal on one line, with contextual names (API.md
-// M7): bare members, cases and keys, records without the fields left or equal to their
+// M7): members, cases and keys bare or quoted, records without the fields left or equal to their
 // defaults. The text is laid out canonically where it is spliced (API-03).
 type canonPrinter struct {
 	a     *applier
-	in    naming // how the file the text goes into names a type
 	b     strings.Builder
 	err   error
 	notes spellings // the old value's tokens as written, for an Undo (DECISIONS 337)
 }
 
-// canonText is v as a Canon literal (API.md M7), for the file `in` names.
-func (a *applier) canonText(v value.Value, in naming) (string, error) {
-	p := &canonPrinter{a: a, in: in}
+// canonText is v as a Canon literal (API.md M7), the same text in every file.
+func (a *applier) canonText(v value.Value) (string, error) {
+	p := &canonPrinter{a: a}
 	p.value(v)
 	return p.b.String(), p.err
 }
 
-// mapItemText is `key: value` as a new item of a map literal, for the file `in` names.
-func (a *applier) mapItemText(k, v value.Value, in naming) (string, error) {
-	p := &canonPrinter{a: a, in: in}
+// mapItemText is `key: value` as a new item of a map literal.
+func (a *applier) mapItemText(k, v value.Value) (string, error) {
+	p := &canonPrinter{a: a}
 	p.key(k)
 	p.b.WriteString(colonSp)
 	p.value(v)
@@ -56,7 +56,7 @@ func (p *canonPrinter) value(v value.Value) {
 		p.b.WriteString(canonQuote(x.V))
 	case *value.Ref:
 		p.b.WriteString(refText(x.Key))
-	case *value.Member, *value.Symbol:
+	case *value.Member, *value.Symbol, *value.CaseKind:
 		p.b.WriteString(p.nameText(x))
 	case *value.Record:
 		p.record(x)
@@ -66,37 +66,42 @@ func (p *canonPrinter) value(v value.Value) {
 		p.mapValue(x)
 	case *value.Table:
 		p.table(x)
-	case *value.Bool, *value.Int, *value.Float, *value.Dur, *value.CaseKind, *value.None:
+	case *value.Bool, *value.Int, *value.Float, *value.Dur, *value.None:
 		p.b.WriteString(v.CanonText())
 	default:
 		p.err = fmt.Errorf(fmtUnprinted, errUnprinted, v)
 	}
 }
 
-// refText is a ref's key in value position: digits, a word read bare there, else a string (LEX-08).
+// refText is a ref's key in value position: digits, a word bare or quoted, else a string (API.md M7).
 func refText(k value.Key) string {
-	switch {
-	case k.IsInt:
+	if k.IsInt {
 		return strconv.FormatInt(k.I, decimalBase)
-	case valueWord(k.S):
-		return k.S
+	}
+	if text, ok := syntax.ValueText(k.S); ok {
+		return text
 	}
 	return canonQuote(k.S)
 }
 
-// key is a map item's key: a member or a ref's word key bare, as the WORD before `:` (LEX-08).
+// key is a map item's key: a member, case kind, symbol or ref's word key bare, the WORD before `:` (M7).
 func (p *canonPrinter) key(k value.Value) {
 	if text, ok := p.spelling(k); ok {
 		p.b.WriteString(text)
 		return
 	}
 	switch x := k.(type) {
-	case *value.Member:
+	case *value.Member, *value.CaseKind:
 		p.b.WriteString(x.CanonText())
 		return
 	case *value.Ref:
 		if !x.Key.IsInt && isWord(x.Key.S) {
 			p.b.WriteString(x.Key.S)
+			return
+		}
+	case *value.Symbol:
+		if isWord(x.Name) {
+			p.b.WriteString(x.Name)
 			return
 		}
 	}
@@ -108,7 +113,7 @@ func (p *canonPrinter) record(r *value.Record) {
 	c, isCase := r.T.Base().(*types.CaseType)
 	shown := p.shown(r)
 	if isCase {
-		p.b.WriteString(p.in.caseText(c))
+		p.b.WriteString(caseText(c))
 		if len(shown) == 0 {
 			return
 		}
@@ -200,8 +205,8 @@ func (p *canonPrinter) shown(r *value.Record) []int {
 }
 
 // entryText is a table entry with its key as a new item of a table literal.
-func (a *applier) entryText(key string, rec *value.Record, retired bool, in naming) (string, error) {
-	p := &canonPrinter{a: a, in: in}
+func (a *applier) entryText(key string, rec *value.Record, retired bool) (string, error) {
+	p := &canonPrinter{a: a}
 	p.entry(key, retired, rec)
 	return p.b.String(), p.err
 }

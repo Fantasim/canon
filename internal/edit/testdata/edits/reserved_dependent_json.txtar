@@ -1,6 +1,6 @@
-DECISIONS 366: the Undo of a Remove in a JSON source restores the whole element as a Source
-(API.md E23) whose reserved-word members, case and dependent symbol are written qualified
-(`Word.if`, `Shape.while { r: 1 }`), and that Source applies (API.md E22, V1).
+DECISIONS 366, 378: the Undo of a Remove in a JSON source restores the whole element as a Source
+(API.md E23) whose reserved-word members, case and dependent symbol are written quoted (GRAMMAR.md
+§2.3), and that Source applies (API.md E22, V1).
 -- options --
 pkgs: p
 -- edit.json --
@@ -95,7 +95,7 @@ let items: [Item] keyed by id = load("items.json")
       "op": "insert",
       "path": "p:items",
       "index": 0,
-      "source": "{ id: \"sword\", word: Word.if, words: [Word.if, plain], counts: { while: 2 }, flags: [binds, Flag.if], shape: Shape.while { r: 1 }, param: Word.if }"
+      "source": "{ id: \"sword\", word: `if`, words: [`if`, plain], counts: { while: 2 }, flags: [binds, `if`], shape: `while` { r: 1 }, param: `if` }"
     }
   ],
   "touched": [

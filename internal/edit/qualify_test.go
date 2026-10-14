@@ -47,8 +47,7 @@ type recheckCase struct {
 	want   []diag.Code
 }
 
-// GRAMMAR.md LEX-08, API.md V2: what the reserved-word goldens write checks clean once analyzed
-// again; what has no legal form is a catalogue finding of the re-check (E2102, E8102), never ErrInternal.
+// GRAMMAR.md LEX-08, §2.3, API.md V2 (DECISIONS 378): the reserved-word goldens re-check clean.
 func TestReservedMemberRecheck(t *testing.T) {
 	cases := []recheckCase{
 		{"reserved_member_json", nil},
@@ -58,8 +57,14 @@ func TestReservedMemberRecheck(t *testing.T) {
 		{"reserved_ref_key", nil},
 		{"reserved_case", nil},
 		{"reserved_rename_key", nil},
-		{"reserved_member_unbound", []diag.Code{diag.E2102.Def().Code}},
-		{"reserved_member_entry_file", []diag.Code{diag.E2102.Def().Code}},
+		{"reserved_member_unbound", nil},
+		{"reserved_member_entry_file", nil},
+		{"quoted_layer_keys", nil},
+		{"layer_string_key", nil},
+		{"quoted_case_entry_file", nil},
+		{"reserved_dependent_map_key", nil},
+		{"layer_keys", nil},
+		{"layer_keys_again", nil},
 		{"reserved_member_path", nil},
 		{"reserved_dependent", nil},
 		{"reserved_dependent_json", nil},
@@ -151,19 +156,27 @@ func TestReservedMemberRefused(t *testing.T) {
 	}
 }
 
-// GRAMMAR.md LEX-08, API.md E26: a Member or Case its type must qualify has no Source text.
+// API.md E26 (DECISIONS 378): a Member or Case named by a quotable word is written quoted; one
+// named none, true, false or self names no member or case and has no Source text.
 func TestReservedMemberSourceText(t *testing.T) {
 	for _, c := range []struct {
 		lit  edit.Lit
+		text string
 		want error
 	}{
-		{edit.Member("if"), edit.ErrNoText}, {edit.Member("return"), edit.ErrNoText},
-		{edit.Member("check"), nil}, {edit.Member("plain"), nil},
-		{edit.Case{Name: "while"}, edit.ErrNoText}, {edit.Case{Name: "dot"}, nil},
+		{edit.Member("if"), "`if`", nil}, {edit.Member("return"), "`return`", nil},
+		{edit.Member("check"), "check", nil}, {edit.Member("plain"), "plain", nil},
+		{edit.Case{Name: "while"}, "`while`", nil}, {edit.Case{Name: "dot"}, "dot", nil},
+		{edit.Member("true"), "", edit.ErrNoText}, {edit.Member("none"), "", edit.ErrNoText},
 	} {
-		_, err := edit.Operation{Kind: edit.OpSet, Path: "row.word", Value: c.lit}.MarshalJSON()
+		data, err := edit.Operation{Kind: edit.OpSet, Path: "row.word", Value: c.lit}.MarshalJSON()
 		if !errors.Is(err, c.want) {
 			t.Errorf("%#v: %v, want %v", c.lit, err, c.want)
+			continue
+		}
+		var got struct{ Source string }
+		if err == nil && (json.Unmarshal(data, &got) != nil || got.Source != c.text) {
+			t.Errorf("%#v: %s, want source %q", c.lit, data, c.text)
 		}
 	}
 }
@@ -204,16 +217,16 @@ let evs: table Ev = {
 `),
 }
 
-// DECISIONS 366, API.md V1: where no branch can be computed, a symbol no bare name holds is
-// ErrBadValue, never ErrInternal; a nameable one is kept for the re-check.
+// DECISIONS 378 point 10, API.md V1: where no branch can be computed, a quotable symbol is kept
+// symbolic for the re-check, as a nameable one is; never ErrInternal.
 func TestReservedSymbolNoBranch(t *testing.T) {
 	s := open(t, noBranchLaw, nil, "", "p")
 	cases := []struct {
 		value edit.Lit
 		want  error
 	}{
-		{edit.Source("{ param: WB.if }"), edit.ErrBadValue},
-		{edit.Obj{"param": edit.Member("if")}, edit.ErrBadValue},
+		{edit.Source("{ param: WB.if }"), nil},
+		{edit.Obj{"param": edit.Member("if")}, nil},
 		{edit.Source("{ param: y }"), nil},
 	}
 	for _, c := range cases {
@@ -250,8 +263,8 @@ let conf: Item = {}
 	"law/p/dev.layer.canon": file("package p\nlayer dev\n\namend conf {\n  loc: plain\n}\n"),
 }
 
-// DECISIONS 366 (known limit), API.md W11: a layer file names its own package's member `Loc.return`
-// and another package's by its last segment, `v.Word.if`, which the re-check reports (E2102).
+// API.md W11, M7 (DECISIONS 378): a layer file, which has no imports, names its own package's
+// member and another package's alike, quoted (loc: `return`, word: `if`); no error.
 func TestReservedMemberLayerForeign(t *testing.T) {
 	layers := []string{"dev"}
 	s := open(t, foreignLayerLaw, layers, "dev", "p")
@@ -265,7 +278,7 @@ func TestReservedMemberLayerForeign(t *testing.T) {
 	}
 	after := written(foreignLayerLaw, plan)
 	text := string(after["law/p/dev.layer.canon"].Data)
-	if !strings.Contains(text, "loc: Loc.return") || !strings.Contains(text, "word: v.Word.if") {
+	if !strings.Contains(text, "loc: `return`") || !strings.Contains(text, "word: `if`") {
 		t.Errorf("layer file:\n%s", text)
 	}
 	var got []diag.Code
@@ -274,7 +287,25 @@ func TestReservedMemberLayerForeign(t *testing.T) {
 			got = append(got, f.Code)
 		}
 	}
-	if want := []diag.Code{diag.E2102.Def().Code}; !slices.Equal(got, want) {
-		t.Errorf("after the edit: errors %v, want %v", got, want)
+	if len(got) > 0 {
+		t.Errorf("after the edit: errors %v, want none", got)
+	}
+}
+
+// API.md 8.2 (DECISIONS 378): a Source names a member quoted, alone or in a list; quoting a
+// word that needs no quotes is E1138, so ErrBadValue.
+func TestQuotedSource(t *testing.T) {
+	s := open(t, reservedLaw, nil, "", "g")
+	for _, c := range []struct {
+		path, src string
+		want      error
+	}{
+		{"row.word", "`if`", nil}, {"row.words", "[`if`, plain]", nil}, {"row.word", "`plain`", edit.ErrBadValue},
+	} {
+		op := edit.Operation{Kind: edit.OpSet, Path: c.path, Value: edit.Source(c.src)}
+		_, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{op}})
+		if !errors.Is(err, c.want) || errors.Is(err, edit.ErrInternal) {
+			t.Errorf("Set %s %s: %v, want %v", c.path, c.src, err, c.want)
+		}
 	}
 }

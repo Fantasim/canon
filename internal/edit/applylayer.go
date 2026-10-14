@@ -29,11 +29,11 @@ func (x *opCtx) layerSet() error {
 	if err := x.undoNewLine(); err != nil {
 		return err
 	}
-	text, err := x.a.canonText(v, x.bareNaming())
+	text, err := x.a.canonText(v)
 	if err != nil {
 		return err
 	}
-	return x.amendLine(x.res.Canonical, text)
+	return x.amendLine(x.res.Canonical, x.res.Steps, text)
 }
 
 // layerType is targetType, but the declared type where the edit layer is inactive: an arm the
@@ -173,13 +173,13 @@ func (x *opCtx) amendEntry(e entryParts, err error) error {
 	if err != nil {
 		return err
 	}
-	text, err := x.a.canonText(e.v, x.bareNaming())
+	text, err := x.a.canonText(e.v)
 	if err != nil {
 		return err
 	}
 	path := childPath(x.res.Canonical, e.seg)
 	x.inverse(Operation{Kind: OpRemove, Path: path})
-	return x.amendLine(path, text)
+	return x.amendLine(path, append(slices.Clip(x.res.Steps), Step{Seg: e.seg, Container: present(x.targetType())}), text)
 }
 
 // layerRemove removes an entry the edit layer itself states (log-2026-09-29 M4 U4b-r): its own
