@@ -1164,7 +1164,7 @@ variant EventKind @json(tag: "type") {
 
 | | Go | C++ | TS |
 |---|---|---|---|
-| kind enum | `type EventKindKind uint8` with `EventKindKindSpawnMonster…`, `String()`, `Wire()`, `ParseEventKindKind` | `enum class EventKindKind : uint8_t { spawn_monster, … }`, `ToName`, `ToWire`, `EventKindKindFromWire` | `type EventKindKind = "spawn_monster" \| …` |
+| kind enum | `type EventKindKind uint8` with `EventKindKindSpawnMonster…`, `String()`, `Wire()`, `MarshalText()`/`(*EventKindKind).UnmarshalText` (the wire name, DECISIONS 379), `ParseEventKindKind` | `enum class EventKindKind : uint8_t { spawn_monster, … }`, `ToName`, `ToWire`, `EventKindKindFromWire` | `type EventKindKind = "spawn_monster" \| …` |
 | case with fields | `type EventKindSpawnMonster struct`, with getters | `class EventKindSpawnMonster`, with getters | `interface EventKindSpawnMonster { readonly kind: "spawn_monster"; … }` |
 | variant | `type EventKind struct`; `Kind() EventKindKind`; `AsSpawnMonster() (*EventKindSpawnMonster, bool)` per case with fields | `class EventKind`; `EventKindKind GetKind() const`; `const EventKindSpawnMonster* AsSpawnMonster() const` per case with fields | `type EventKind = EventKindSpawnMonster \| …`; a case without fields is `{ readonly kind: "nothing" }` |
 
