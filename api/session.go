@@ -32,7 +32,7 @@ func (p *Project) workspace() *workspace.Project {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.ws == nil {
-		p.ws = workspace.New(p.b)
+		p.ws = workspace.NewWith(p.b, p.logger)
 	}
 	return p.ws
 }
