@@ -262,6 +262,9 @@ func TestWatchIgnoresOtherFiles(t *testing.T) {
 	writeLaw(t, opts.FS, "a/.a.canon.swp", "swap")
 	writeLaw(t, opts.FS, ".canon/cache/entry", "cache")
 	noEvent(t, events, "a swap file and a .canon/ write")
+	writeLaw(t, opts.FS, "a/.#a.canon", "lock")
+	writeLaw(t, opts.FS, "a/.hidden.canon", "/// H.\npackage a\n")
+	noEvent(t, events, "a lock file and a hidden source (DECISIONS 381)")
 	writeLaw(t, opts.FS, "b/.b.canon.swp", "swap")
 	writeLaw(t, opts.FS, "b/b.canon", watchLaw["b/b.canon"]+"\n")
 	if ev := nextEvent(t, events); !slices.Equal(ev.Files, []string{"b/b.canon"}) {

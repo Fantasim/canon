@@ -50,6 +50,14 @@ package lib
 package mixed
 -- mixed/b.canon --
 package shared.ui
+-- game/items/.hidden.canon --
+package game.items
+-- mixed/.#a.canon --
+package mixed
+-- .top.canon --
+package top
+-- tools/.canon --
+package tools
 -- readme.md --
 not a source
 `
@@ -77,7 +85,7 @@ func parseTree(t *testing.T) ([]*project.Unit, map[string]*diag.Bag, *project.Re
 	return units, bags, r
 }
 
-// API.md O2: the scan skips "." directories and the top project.canon, in byte order.
+// API.md O2 (DECISIONS 381): the scan skips "." directories, "." files and the top project.canon, in byte order.
 func TestScan(t *testing.T) {
 	fsys := newMemFS(txtar.Parse([]byte(tree)))
 	got, err := project.Scan(fsys, projectDir)

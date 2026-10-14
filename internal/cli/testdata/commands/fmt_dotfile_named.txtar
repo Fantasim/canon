@@ -1,0 +1,20 @@
+CLI.md §2.2, API.md O2 (DECISIONS 381): fmt naming a dot-prefixed file is an unknown package, exit 2.
+-- args --
+fmt
+a/.hidden.canon
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- a/.hidden.canon --
+package a
+const   Y = (
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: a/.hidden.canon

@@ -1,0 +1,19 @@
+API.md O2 (DECISIONS 381): fmt with no path leaves a dot-prefixed file alone.
+-- args --
+fmt
+--check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- a/.hidden.canon --
+package a
+const   Y = (
+-- want --
+[exit 0]
+[stdout]
+[stderr]

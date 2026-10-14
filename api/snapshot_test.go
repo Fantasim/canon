@@ -48,6 +48,21 @@ func TestRevisionCoversLoads(t *testing.T) {
 	}
 }
 
+// API.md O2, S5 (DECISIONS 381): a lock file or a hidden source added to a package's directory
+// does not change the revision.
+func TestRevisionIgnoresDotFiles(t *testing.T) {
+	p, opts := openLaw(t, loadLaw)
+	before := p.Revision()
+	for _, name := range []string{"/law/a/.#a.canon", "/law/a/.hidden.canon", "/law/b/._b.canon"} {
+		if err := opts.FS.WriteFile(name, []byte("/// More.\npackage a\n")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if p.Revision() != before {
+		t.Error("a dot-prefixed file changed the revision")
+	}
+}
+
 // API.md §3.4, S3: overlays are read and revised, never written; outside the project, ErrBadPath.
 func TestOverlays(t *testing.T) {
 	p, opts := openLaw(t, loadLaw)

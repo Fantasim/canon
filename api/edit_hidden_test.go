@@ -48,12 +48,11 @@ func TestEditHiddenFile(t *testing.T) {
 	}
 }
 
-// API.md W4, API.md W5 (log-2026-09-29 M4 U5b-r, U5b-r3): a value loaded from a hidden directory,
-// or declared in a hidden source, is not editable, reason format, the hidden path named, for
-// Value, a DryRun and an Edit alike.
+// API.md W4, API.md W5 (log-2026-09-29 M4 U5b-r; U5b-r3 as amended by DECISIONS 381): a value
+// loaded from a hidden directory is not editable, reason format, the hidden path named, for Value, a DryRun and an Edit alike.
 func TestEditHiddenSource(t *testing.T) {
 	p, _ := openEdit(t, hiddenLaw, map[string]string{"c/.h.canon": "/// H.\npackage c\n\n/// M.\nlet m: Int = 1\n"})
-	for _, c := range [][2]string{{"d:s[0]", "d/.data/s.json"}, {"c:m", "c/.h.canon"}} {
+	for _, c := range [][2]string{{"d:s[0]", "d/.data/s.json"}} {
 		v, err := p.Value(context.Background(), c[0])
 		if err != nil || v.Editable.Reason != canon.ReasonFormat || v.Editable.File != c[1] {
 			t.Errorf("Value %s: %+v, %v", c[0], v, err)
@@ -65,5 +64,13 @@ func TestEditHiddenSource(t *testing.T) {
 				t.Errorf("%s, DryRun %v: %v", c[0], dry, err)
 			}
 		}
+	}
+}
+
+// API.md O2, R5 (DECISIONS 381): a declaration in a dot-prefixed source is nobody's: no value.
+func TestEditHiddenSourceIsNoSource(t *testing.T) {
+	p, _ := openEdit(t, hiddenLaw, map[string]string{"c/.h.canon": "/// H.\npackage c\n\n/// M.\nlet m: Int = 1\n"})
+	if _, err := p.Value(context.Background(), "c:m"); !errors.Is(err, canon.ErrNoPath) {
+		t.Errorf("Value c:m: %v, want ErrNoPath", err)
 	}
 }

@@ -10,8 +10,8 @@ import (
 )
 
 // Scan lists every .canon file under dir, project.canon and project.local.canon at its top
-// excepted, skipping the directories whose name starts with "." (API.md O2): project-relative
-// paths, in byte order.
+// excepted, skipping the directories and the files whose name starts with "." (API.md O2,
+// DECISIONS 381): project-relative paths, in byte order.
 func Scan(fsys FS, dir string) ([]string, error) {
 	var out []string
 	if err := scanDir(fsys, dir, "", &out); err != nil {
@@ -43,7 +43,9 @@ func scanDir(fsys FS, root, rel string, out *[]string) error {
 }
 
 // IsSource reports the entry e, at the project-relative name, as a source the scan reads: a
-// .canon file other than the top project.canon and project.local.canon (API.md O2).
+// .canon file other than the top project.canon and project.local.canon, and none whose base name
+// starts with "." (API.md O2, DECISIONS 381).
 func IsSource(name string, e fs.DirEntry) bool {
-	return !e.IsDir() && path.Ext(name) == SourceExt && name != FileName && name != LocalFileName
+	return !e.IsDir() && path.Ext(name) == SourceExt && name != FileName && name != LocalFileName &&
+		!strings.HasPrefix(path.Base(name), hiddenPrefix)
 }

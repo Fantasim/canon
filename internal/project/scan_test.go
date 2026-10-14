@@ -8,9 +8,9 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 )
 
-// API.md O2 (DECISIONS 332): IsSource is the scan's own choice of source files: every .canon
-// file, dot-prefixed ones included, but the top project.canon and project.local.canon and
-// anything that is not a .canon file; elsewhere, a file of either name is a source.
+// API.md O2 (DECISIONS 381, amends 332): IsSource is the scan's own choice of source files: every
+// .canon file whose name does not start with ".", but the top project.canon and project.local.canon
+// and anything that is not a .canon file; elsewhere, a file of either name is a source.
 func TestIsSource(t *testing.T) {
 	tree := fstest.MapFS{"d": {Mode: fs.ModeDir}, "f": {}}
 	dir, _ := fs.ReadDir(tree, ".")
@@ -20,7 +20,11 @@ func TestIsSource(t *testing.T) {
 		want bool
 	}{
 		{"a/a.canon", dir[1], true},
-		{"a/.hidden.canon", dir[1], true},
+		{"a/.hidden.canon", dir[1], false},
+		{"a/.#a.canon", dir[1], false},
+		{".top.canon", dir[1], false},
+		{"a/.canon", dir[1], false},
+		{"a/x.canon", dir[1], true},
 		{"a/project.canon", dir[1], true},
 		{"project.canon", dir[1], false},
 		{"project.local.canon", dir[1], false},

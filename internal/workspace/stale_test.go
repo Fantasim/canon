@@ -91,15 +91,15 @@ func TestStaleHistory(t *testing.T) {
 }
 
 // API.md S5, O2: a name added to a touched package's directory makes it stale exactly when the
-// scan reads it as a source, dot-prefixed ones included, and the error names it; a swap file or
-// any other name the scan skips does not; a source added to a does not make c stale.
+// scan reads it as a source, and the error names it; a swap or lock file, a dot-prefixed source
+// (DECISIONS 381) or any other name the scan skips does not; a source added to a does not make c stale.
 func TestStaleAddedFile(t *testing.T) {
 	for _, c := range []struct {
 		name  string
 		stale bool
 	}{
 		{".a.canon.swp", false}, {"#a.canon#", false}, {"notes.txt", false},
-		{".hidden.canon", true}, {".#a.canon", true}, {"more.canon", true},
+		{".hidden.canon", false}, {".#a.canon", false}, {"more.canon", true},
 	} {
 		fsys := newMemFS(lawFiles())
 		p := open(t, fsys)

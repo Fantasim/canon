@@ -1,0 +1,19 @@
+API.md O2 (DECISIONS 381): a dot-prefixed file is no source, so a broken one gives no finding.
+-- args --
+check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+const X = 1
+-- a/.hidden.canon --
+package a
+const   Y = (
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+[stderr]
