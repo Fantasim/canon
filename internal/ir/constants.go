@@ -92,11 +92,6 @@ const (
 	ctxIs
 )
 
-// NoBranch marks a discriminant member whose arm is Never.
-const NoBranch = -1
-
-const qnameSep = "."
-
 // The tokens of canon-fp v1 (FINGERPRINT.md §4.2).
 const (
 	fpHeader      = "canon-fp v1\n"
@@ -150,18 +145,21 @@ const (
 
 // Paths, separators and names stage E composes.
 const (
-	curDir        = "."
-	parentDir     = ".." // the path segment above a directory
-	severalCopies = 2    // the fewest copies an emit with a list out writes (CODEGEN.md §2.1)
-	pathSep       = "/"
-	cppScope      = "::"
-	docSep        = "\n\n" // GRAMMAR.md §9.1: package docs of several files
-	boolFalse     = "false"
-	boolTrue      = "true"
+	curDir         = "."
+	qnameSep       = "."
+	parentDir      = ".." // the path segment above a directory
+	severalCopies  = 2    // the fewest copies an emit with a list out writes (CODEGEN.md §2.1)
+	pathSep        = "/"
+	cppScope       = "::"
+	docSep         = "\n\n" // GRAMMAR.md §9.1: package docs of several files
+	boolFalse      = "false"
+	boolTrue       = "true"
+	cppReservedRun = "__"
 )
 
 // Limits and fixed spellings stage E composes.
 const (
+	NoBranch   = -1        // marks a discriminant member whose arm is Never
 	maxCells   = 65_536    // the largest lookup table (CODEGEN.md §5.10, E9002)
 	maxSafeInt = 1<<53 - 1 // Number.MAX_SAFE_INTEGER (CODEGEN.md §4.1, E8101)
 	JSONExt    = ".json"   // a file-mode JSON out's and every directory-mode file name's end (WIRE.md §8.1)
@@ -180,9 +178,7 @@ const (
 // identPattern is a plain identifier: a letter or `_`, then letters, digits or `_` (E8011).
 var identPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
-// A C++ name reserved to the implementation holds `__` or starts `_[A-Z]` (CODEGEN.md §3.4).
-const cppReservedRun = "__"
-
+// A C++ name reserved to the implementation starts `_[A-Z]` or holds cppReservedRun (CODEGEN.md §3.4).
 var cppReservedStart = regexp.MustCompile(`^_[A-Z]`)
 
 // Generated C++ names gen/cpp declares (CODEGEN.md §3.3, §5, §7.2, CONFORMANCE.md §7.2).
@@ -224,23 +220,26 @@ const (
 
 // The fixed Go names the plan declares and gen/go's templates write (CODEGEN.md §5.2–§6.2).
 const (
-	GoID           = "ID" // the ID method, and the suffix of an id type and a key getter
-	GoRetired      = "Retired"
-	GoKind         = "Kind" // the Kind method, and the suffix of a kind enum
-	GoString       = "String"
-	GoWire         = "Wire"
-	GoCode         = "Code"
-	GoKnown        = openKnown
-	GoLen          = "Len"
-	GoAt           = "At"
-	GoAll          = "All"
-	GoFind         = "Find"
-	GoGet          = "Get" // a table container's Get, and the prefix of an accessor
-	GoRows         = "rows"
-	GoIDStore      = "id"
-	GoRetiredStore = "retired"
-	GoKindStore    = "kind"
-	GoCaseStore    = "value"
+	GoID            = "ID" // the ID method, and the suffix of an id type and a key getter
+	GoRetired       = "Retired"
+	GoKind          = "Kind" // the Kind method, and the suffix of a kind enum
+	GoString        = "String"
+	GoWire          = "Wire"
+	goMarshalText   = "MarshalText" // CODEGEN.md §5.2, §5.3 (DECISIONS 379)
+	goUnmarshalText = "UnmarshalText"
+	goPosition      = "Position"
+	GoCode          = "Code"
+	GoKnown         = openKnown
+	GoLen           = "Len"
+	GoAt            = "At"
+	GoAll           = "All"
+	GoFind          = "Find"
+	GoGet           = "Get" // a table container's Get, and the prefix of an accessor
+	GoRows          = "rows"
+	GoIDStore       = "id"
+	GoRetiredStore  = "retired"
+	GoKindStore     = "kind"
+	GoCaseStore     = "value"
 )
 
 // Generated Go names and the reference layout's own names (CODEGEN.md §3.3, §5.2–§6.2).

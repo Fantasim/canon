@@ -194,8 +194,10 @@ var (
 	goVectorOwn        = []string{goWant, "code"}
 	goCheckedOps       = map[Op]bool{OpAdd: true, OpSub: true, OpMul: true, OpDiv: true, OpMod: true}
 	goVariantMembers   = []string{GoKindStore, GoCaseStore, GoKind}
-	goIDEnumMethods    = []string{GoString}
-	goEnumMethods      = append(slices.Clone(goIDEnumMethods), GoWire)
+	goIDEnumMethods    = []string{GoString, goMarshalText, goUnmarshalText} // CODEGEN.md §5.2, §5.3 (DECISIONS 379)
+	goIDMethods        = append(slices.Clone(goIDEnumMethods), goPosition)
+	goEnumMethods      = []string{GoString, GoWire}                    // @codes and open enums keep these (DECISIONS 194, 379)
+	goTextEnumMethods  = append(slices.Clone(goIDEnumMethods), GoWire) // a closed enum without @codes, a kind enum
 	goCodesEnumMethods = append(slices.Clone(goEnumMethods), GoCode)
 	goOpenEnumMethods  = append(slices.Clone(goEnumMethods), GoKnown) // DECISIONS 339
 	goOpenCodesMethods = append(slices.Clone(goOpenEnumMethods), GoCode)

@@ -284,15 +284,16 @@ func (pl *tsNamePlan) declareRead(mod *nameScope, name, origin string, item any)
 	}
 }
 
-// declareValue declares an emitted value: its accessor, or in data mode its schema and its decode and parse functions; a table's id type and Index, a data-mode string id type once per name (CODEGEN.md §5.3, DECISIONS 348).
+// declareValue declares an emitted value: its accessor, or in data mode its schema and its decode and parse functions; a table's id type, Members and private Index, a data-mode string id type once per name (CODEGEN.md §5.3, DECISIONS 348).
 func (pl *tsNamePlan) declareValue(mod *nameScope, v *Value) {
 	org, eff := pl.origin(v.Name), tsEffective(v.TS, v.Name)
 	if v.Type.Kind == types.Table && v.Type.Elem != nil && v.Type.Elem.Named != nil {
 		id := tsName(v.Type.Elem.Named) + tsIDSuffix
 		switch {
-		case pl.e.Mode != ModeData:
+		case pl.e.Mode != ModeData: // Members and the private Index are reserved unconditionally, a safe over-reservation (ADR-0021 §3 point 5)
 			pl.declare(mod, id, org, v)
-			pl.declare(mod, id+tsIndexName, org, v)
+			pl.declare(mod, id+tsMembersName, org, v) // CODEGEN.md §5.3
+			pl.declare(mod, id+tsIndexName, org, v)   // the file's private canonIndex const
 		case !pl.strIDs[id]:
 			pl.strIDs[id] = true
 			pl.declare(mod, id, org, v)

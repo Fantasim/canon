@@ -18,7 +18,7 @@ emit go { out: "@features/a", package: "a" }
 emit cpp { out: "@features/ac", namespace: "a", mode: data }
 -- plan.txt --
 == go a
-K: String Wire
+K: MarshalText String UnmarshalText Wire
 P: AsAB Branch branch value
 PBranch: N n
 package: K KC KMembers KOne KTwo Make_PBranch Make_P_AB P PBranch PBranchAB ParseK iter strconv

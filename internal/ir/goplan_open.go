@@ -22,7 +22,7 @@ func (pl *GoNamePlan) enumMethods(e *Enum) []string {
 	case e.Codes != nil:
 		return goCodesEnumMethods
 	}
-	return goEnumMethods
+	return goTextEnumMethods
 }
 
 // TextResult is what a @text fn's file holds: its result, without a maybe-file's `?` (CODEGEN.md §2.9).

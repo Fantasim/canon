@@ -41,13 +41,34 @@ func (pl *tsNamePlan) declareImports(mod *nameScope) {
 	for _, imp := range TSImports(pl.p) {
 		pl.declare(mod, imp.Alias, imp.Pkg, nil) // two packages giving one alias: E8005 at the emit (log-2026-10-06 "U1 rounds 3-5" 3)
 	}
-	named := map[Type]bool{}
+	named, indexed := map[Type]bool{}, map[string]bool{}
 	tsFileReached(pl.p, func(t *TypeRef) {
+		pl.declareForeignIndex(mod, t.Ref, indexed)
 		if t.Named != nil && pkgOf(t.Named) != pl.p.Name && !named[t.Named] {
 			named[t.Named] = true
 			pl.declareForeignReaders(mod, t.Named)
 		}
 	})
+}
+
+// TSForeignIDIndexName is the private index of another package's table ids a ts file builds with canonIndex, <alias>_<Id>Index (CODEGEN.md §5.3, DECISIONS 379).
+func TSForeignIDIndexName(r *RefTarget) string {
+	return TSImportAlias(r.Pkg) + underscore + tsName(r.Elem) + tsIDSuffix + tsIndexName
+}
+
+// declareForeignIndex declares TSForeignIDIndexName once for a ref into a baked or embedded owner's table, the only ids that have Members.
+func (pl *tsNamePlan) declareForeignIndex(mod *nameScope, r *RefTarget, seen map[string]bool) {
+	if r == nil || r.Pkg == pl.p.Name || !tsTableRef(r) {
+		return
+	}
+	owner := tsEmitOf(pl.p, r.Pkg)
+	if owner == nil || owner.Mode == ModeData || owner.Mode == ModeTypes {
+		return
+	}
+	if name := TSForeignIDIndexName(r); !seen[name] {
+		seen[name] = true
+		pl.declare(mod, name, r.Pkg+qnameSep+r.Value, nil)
+	}
 }
 
 // tsFileReached is tsReached, then the results of the @text fns p's ts types-mode emit decodes (tsTextReached).

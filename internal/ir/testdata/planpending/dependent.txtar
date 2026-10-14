@@ -41,7 +41,7 @@ emit json { out: "out/" }
 { "a": { "k": "one", "p": 1 } }
 -- plan.txt --
 == go a
-K: String Wire
+K: MarshalText String UnmarshalText Wire
 P: AsOne AsText AsTwo Branch branch value
 Tag: ID Label Retired id label retired
 Tags: All At Find Len rows

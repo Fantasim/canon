@@ -32,3 +32,6 @@ func EmitDefineRefs(p *Package, e *Emit) []string {
 	}
 	return out
 }
+
+// TSNameProblems is how many problems the TypeScript plan of p's ts emit e found.
+func TSNameProblems(p *Package, e *Emit) int { return len(planTSNames(p, e).problems) }

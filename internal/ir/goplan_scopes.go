@@ -210,7 +210,7 @@ func (pl *GoNamePlan) declareKindEnums(top *nameScope) {
 			pl.declareFrom(top, origin+qnameSep+c.Name, c, derivation{v, func() string { return pl.KindMemberName(v, c) }})
 		}
 		pl.declare(top, pl.ParseName(kind), origin, v)
-		pl.declareMethods(kind, origin, v, goEnumMethods)
+		pl.declareMethods(kind, origin, v, goTextEnumMethods)
 	}
 }
 
@@ -243,7 +243,7 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) map[string]bool {
 			pl.declareFrom(top, v.Name+qnameSep+id, v, derivation{rec, func() string { return pl.IDMemberName(rec, id) }})
 		}
 		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
-		pl.declareMethods(name, v.Name, v, goIDEnumMethods)
+		pl.declareMethods(name, v.Name, v, goIDMethods)
 	}
 	return strs
 }
