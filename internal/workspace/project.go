@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"slices"
 	"sync"
 	"time"
@@ -25,6 +26,7 @@ type Event struct {
 // Project holds the current snapshot, the revisions produced, the overlays and the writer (S7).
 type Project struct {
 	tmpl    *build.Project // the opened build, pointed at each snapshot's file system
+	logger  *slog.Logger   // O5's Warn when an edit rolls back another's journal (J11)
 	now     func() time.Time
 	closing chan struct{} // closed by Close (O6)
 	write   chan struct{} // the one writer's lock (S9)
@@ -50,10 +52,15 @@ type subscriber struct {
 	fn func(Event)
 }
 
-// New is a project over b, the build Open returned; its first snapshot has read nothing yet.
-// Its snapshots' builds share one build.Cache, the NFR-02 memo.
-func New(b *build.Project) *Project {
-	p := &Project{tmpl: b.WithCache(build.NewCache()), now: time.Now, closing: make(chan struct{}), write: make(chan struct{}, 1), calls: map[*call]bool{}}
+// New is NewWith(b, nil).
+func New(b *build.Project) *Project { return NewWith(b, nil) }
+
+// NewWith is a project over b, the build Open returned, logging O5's Warn on logger; its first
+// snapshot has read nothing yet. Its snapshots' builds share one build.Cache, the NFR-02 memo,
+// and on the OS's files settle the journals they meet before writing (DECISIONS 375: J10, J11).
+func NewWith(b *build.Project, logger *slog.Logger) *Project {
+	tmpl := withSettle(b, logger).WithCache(build.NewCache())
+	p := &Project{tmpl: tmpl, logger: logger, now: time.Now, closing: make(chan struct{}), write: make(chan struct{}, 1), calls: map[*call]bool{}}
 	fs := newSnapFS(b.FS(), nil, p.now)
 	fs.root = b.Dir()
 	p.cur = p.snapshot(fs)

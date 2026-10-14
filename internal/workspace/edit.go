@@ -36,6 +36,8 @@ type EditOutcome struct {
 	After   *Snapshot
 	aliases map[string]string // the other names packages read a written file by (owners)
 
+	wroteLocks []build.Lock // the canon.lock files it writes (E20), whose packages it locks (J7)
+
 	checked   *build.Analysis // the re-check's analysis, and the packages it re-checked (E18, E35)
 	rechecked []string
 }
@@ -103,7 +105,7 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if req.DryRun || len(out.Changes) == 0 {
 		return out, nil
 	}
-	if err := s.commit(ctx, out); err != nil {
+	if err := s.commit(ctx, out, out.writers(a)); err != nil {
 		return nil, err
 	}
 	out.Applied = true
@@ -234,9 +236,9 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 }
 
 // commit writes o's changes through s, journaled (API.md N10), named by the revision they give,
-// under the writer locks of the packages it writes (N9, DECISIONS 352); a panic on the way rolls
-// back what it changed before it goes on (X2).
-func (s *Snapshot) commit(ctx context.Context, o *EditOutcome) (err error) {
+// under the writer locks of pkgs, after rolling back the journals they meet (N9, N11; DECISIONS
+// 352, 375); a panic on the way rolls back what it changed before it goes on (X2).
+func (s *Snapshot) commit(ctx context.Context, o *EditOutcome, pkgs []string) (err error) {
 	w, err := s.fs.writable()
 	if err != nil {
 		return err
@@ -245,21 +247,41 @@ func (s *Snapshot) commit(ctx context.Context, o *EditOutcome) (err error) {
 	if err != nil {
 		return err
 	}
-	release, err := s.lockWriters(ctx, o)
+	dir := s.b.Dir()
+	site := edit.Site{FS: through(s.fs, w), Layout: s.b, Self: self(dir)}
+	release, reqs, err := s.lockWriters(ctx, &site, pkgs, len(o.Plan.Unowned) > 0)
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Join(err, release()) }()
-	dir := s.b.Dir()
-	site := edit.Site{FS: through(s.fs, w), Layout: s.b, Self: self(dir)}
-	done := committing(dir)
+	if err := s.settleFirst(site, reqs); err != nil {
+		return err
+	}
+	return commitOwn(ctx, site, rev, o.Changes)
+}
+
+// commitOwn commits changes on site as one of this process's commits in its directory; a panic
+// rolls back what it changed before it goes on (API.md X2).
+func commitOwn(ctx context.Context, site edit.Site, rev string, changes []edit.Change) error {
+	done := committing(site.Layout.Dir())
 	defer done()
 	defer func() {
 		if r := recover(); r != nil {
 			done()
-			_ = edit.Recover(site, nil) // what it cannot roll back waits for the next Open (O5)
+			ownBack(site)
 			panic(r)
 		}
 	}()
-	return edit.Commit(ctx, site, rev, o.Changes)
+	return edit.Commit(ctx, site, rev, changes)
+}
+
+// ownBack rolls back a commit that panicked, still under its locks: its own journal only, through
+// Settle (DECISIONS 375: J8); a commit recording no lock, by pid as before. What it cannot roll
+// back waits for the next Open (O5).
+func ownBack(site edit.Site) {
+	if site.Locks != nil {
+		_, _ = edit.Settle(site, nil)
+		return
+	}
+	_ = edit.Recover(site, nil)
 }

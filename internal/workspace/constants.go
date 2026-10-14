@@ -72,10 +72,11 @@ const (
 
 // Error texts (API.md X1).
 const (
-	fmtBadPath = "%w: %s"
-	fmtWrap    = "%w: %w"
-	textSep    = ": "
-	listSep    = ", "
+	fmtBadPath  = "%w: %s"
+	fmtWrap     = "%w: %w"
+	fmtWrapList = "%w: %w: %s"
+	textSep     = ": "
+	listSep     = ", "
 )
 
 // A path inside another starts with one of these (API.md P8).

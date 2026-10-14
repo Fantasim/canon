@@ -25,6 +25,7 @@ func (o *EditOutcome) ownLocks(after *build.Analysis) (bool, error) {
 		if err := o.lockChange(after, l); err != nil {
 			return false, err
 		}
+		o.wroteLocks = append(o.wroteLocks, l)
 	}
 	return true, nil
 }

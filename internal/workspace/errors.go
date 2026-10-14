@@ -19,6 +19,7 @@ var (
 	errWatch        = errors.New("cannot watch the project's files")
 	errUnowned      = errors.New("changed files that no package owns")
 	errNoLinks      = errors.New("the file system under the snapshot reads no link")
+	errMeeting      = errors.New("an unfinished edit of a package it locks is still there")
 )
 
 // StaleError is ErrStale with the display paths of the files that changed, in byte order; none

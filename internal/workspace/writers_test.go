@@ -42,10 +42,10 @@ func setOps(n int, paths ...string) workspace.EditRequest {
 	return workspace.EditRequest{Changes: workspace.Changes{Host: build.EditHost, Ops: ops}}
 }
 
-// holdWriters takes pkg's writer lock as another writer, a build, would; the test releases it.
-func holdWriters(t *testing.T, dir, pkg string) *writelock.Held {
+// holdWriters takes pkgs' writer locks as another writer, a build, would; the test releases them.
+func holdWriters(t *testing.T, dir string, pkgs ...string) *writelock.Held {
 	t.Helper()
-	held, err := writelock.Acquire(context.Background(), filepath.FromSlash(dir), []writelock.Request{{Package: pkg, Mode: writelock.Exclusive}})
+	held, err := writelock.Acquire(context.Background(), filepath.FromSlash(dir), writelock.ExclusiveOf(pkgs...))
 	if err != nil {
 		t.Fatal(err)
 	}
