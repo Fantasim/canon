@@ -1,0 +1,99 @@
+TYPES.md §3.3, §11.4, GRAMMAR.md §2.3, §4.3, DECISIONS 378 (Q-CHECK): a quoted word is an identifier of that name, so a data name written between backticks needs no name in scope. Package p's source imports only `Row`; p never names Word, Shape or Mode, and neither does its import-less entry file or its layer file, yet they write another package's `if`, `while`, `in` and `return` as a value, a list element, a typed literal, a dependent symbol, a ref key, a keyed map key, an amend key and an interpolation (a typed literal of the imported Row gives it its type).
+-- v/v.canon --
+package v
+
+/// Words.
+enum Word { plain, if, while, in }
+
+/// Shapes.
+variant Shape {
+  /// A dot.
+  dot
+  /// A ring.
+  while {
+    /// Radius.
+    r: Int
+  }
+}
+
+/// Modes.
+enum Mode { fast, return }
+
+/// A symbol set chosen by the word.
+type Sym(w: Word) = match w {
+  plain => Int
+  if => Mode
+  while => Mode,
+  in => Int
+}
+
+/// A row.
+record Row {
+  /// The word.
+  word: Word
+  /// More words.
+  words: [Word] = []
+  /// The shape.
+  shape: Shape = dot
+  /// Counts by word.
+  byWord: {Word: Int} = {}
+  /// A dependent symbol.
+  sym: Sym(word) = 0
+  /// A reference into the targets.
+  pick: ref targets
+  /// A label.
+  label: String = ""
+}
+
+/// A target.
+record Target {
+  /// A count.
+  n: Int
+}
+
+/// Targets.
+let targets: table Target = {
+  if { n: 1 }
+  plain { n: 2 }
+}
+
+-- p/p.canon --
+package p
+
+import v { Row }
+
+local let items: table Row = {
+  a {
+    word: `in`
+    words: [`if`, `while`]
+    shape: `while` { r: 2 }
+    byWord: { `in`: 1, plain: 2 }
+    sym: 1
+    pick: `if`
+  }
+  b {
+    word: `if`
+    sym: `return`
+    pick: plain
+    label: "{Row { word: `in`, pick: plain }.word}"
+  }
+}
+-- p/entry.canon --
+package p
+
+entry items.extra {
+  word: `while`
+  shape: `while` { r: 3 }
+  sym: `return`
+  pick: `if`
+}
+-- p/dev.layer.canon --
+package p
+layer dev
+
+amend items {
+  a.word: `while`
+  a.words: [`in`]
+  a.byWord[`if`]: 3
+  a.sym: `return`
+}
