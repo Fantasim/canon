@@ -654,6 +654,7 @@ The following cost exactly one step each time they are evaluated or executed:
 | invocation | each entry into the body of a user function, method or lambda (in addition to the call node) |
 | built-in | the cost listed in STDLIB.md, in addition to the call node and to the lambdas it invokes |
 | type function | each evaluation of a type application in verification (§5), plus its argument and scrutinee paths as nodes: once per record for a type written at a field (an application inside its container type included), whatever its container holds, once per element for one a computed type nests, so a nested empty container costs nothing (DECISIONS 265) |
+| enum lookup by name | each evaluation of `E.named(s)` (TYPES.md §4.3): 1 for the application, plus its argument nodes, whatever the enum's size (DECISIONS 372) |
 | type function in value position | each evaluation of `F(a…).members` or `F(a…).typeName` (TYPES.md §4.3): 1 for the application, plus its argument nodes, plus 1 + the length of the scrutinee path (nothing for a plain body, which has none; charged even when a `none` argument makes it compute `Never`, DECISIONS 307), plus one step per member listed (`.typeName` lists none) (DECISIONS 306) |
 
 A shorthand lambda (`.f`, `.m(args)`, `.compared()[k]`) is one lambda-creation node; each

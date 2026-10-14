@@ -3827,3 +3827,22 @@ round 2", "PS1 review", "PS2 round 2"):
      backing arrays, about a quarter of the live heap on Sovereign's Resource project; peak RSS of
      `canon check` there fell from 2.66-2.85 GB to 2.20-2.31 GB, `build --check` from 2.87-3.29 GB
      to 2.35-2.49 GB (2026-10-14, three runs each). Approved by Louis as a frozen-contract change.
+
+372. **Enum lookup by name: `E.named(s)` and `W3002` (STDLIB.md §3; TYPES.md §4.3; EVALUATION.md
+     §12.1; ERRORS.md E2105, W3002).** `E.named(s)` is the member of enum `E` whose Canon name is
+     `s`, retired members included, else `none`; one step whatever the enum's size. `named` joins
+     `members` and `typeName` as reserved on enums. A `first`, `any` or `filter` over `E.members`
+     whose predicate compares `.name` with a `String` independent of the member warns `W3002`,
+     naming `E.named`. Reflection (`E.members`, `E.named`, `E.typeName`) always sees every member,
+     in a constant folded before the enum's declaration too.
+     Reason: Resource's `tidCode` scanned a 9,455-member enum per field per row, 55% of `check`'s
+     allocation and a third of its time (log-2026-10-14); with no direct lookup the scan was the
+     obvious code, and an agent writes it again. The warning makes the fast form the one found.
+
+373. **Provenance is slim and shared (IMPLEMENTATION-PLAN §4.3).** `value.Prov` keeps its kind,
+     span and the provenance it came through (`Via`) inline; its rarely set fields (JSON pointer,
+     layer, call stack and frames left out) sit behind one pointer, nil in the common case. Values born
+     at the same site with the same origin may share one `*Prov`; a `Prov` is never written after
+     it is attached to a value. Every finding, `explain`, view model and output is byte-identical.
+     Reason: one 112-byte `Prov` per value was 26% of the live heap and 3 GB of allocation on
+     Resource (log-2026-10-14). Approved by Louis as a frozen-contract change.

@@ -396,7 +396,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 323 codes: 297 errors, 23 warnings and 3 run-time codes, with 540 messages.
+The catalogue holds 324 codes: 297 errors, 24 warnings and 3 run-time codes, with 541 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -753,7 +753,7 @@ Owner: TYPES.md.
 | E2102 | error | check | TYPES.md §3.3 | unknown name |
 | E2103 | error | check | TYPES.md §10.2 | `ref T` finds no collection of `T`, or several |
 | E2104 | error | check | TYPES.md §3.6 | a field and a method with the same name |
-| E2105 | error | check | TYPES.md §3.6 | a reserved member name: `id`/`retired` on a table element, `kind` on a case, `members` or `typeName` on an enum (DECISIONS 299, 306) |
+| E2105 | error | check | TYPES.md §3.6 | a reserved member name: `id`/`retired` on a table element, `kind` on a case, `members`, `typeName` or `named` on an enum (DECISIONS 299, 306, 372) |
 | E2106 | error | check | TYPES.md §3.2 | a name declared twice in one namespace |
 | E2107 | error | check | TYPES.md §3.4 | a name declared twice in one block |
 | E2108 | error | check | TYPES.md §3.4 | `self` outside a record, case or variant body |
@@ -777,7 +777,7 @@ Owner: TYPES.md.
 | E2104 | - | record:Name, name:Name | `{record} has a field and a method named {name}` |
 | E2105 | entry | name:Name | `{name} is reserved on table entries` |
 | E2105 | case | name:Name | `{name} is reserved on variant cases` |
-| E2105 | enum | name:Name | `{name} is reserved on enums: E.members and E.typeName are built in` |
+| E2105 | enum | name:Name | `{name} is reserved on enums: E.members, E.typeName and E.named are built in` |
 | E2106 | - | name:Name, first:Loc | `{name} is declared twice (first at {first})` |
 | E2107 | - | name:Name | `{name} is already declared in this block` |
 | E2108 | - | - | `self is only valid in a record, case or variant body` |
@@ -795,6 +795,7 @@ Owner: TYPES.md, WIRE.md.
 | E3001 | error | check | TYPES.md §15 | a public top-level `let` without a type annotation |
 | W3001 | warning | check | TYPES.md §15 | an optional field written with `= none`, which is already its default (DECISIONS 319) |
 | E3002 | error | check | TYPES.md §6.2 | a value of one type where another is expected |
+| W3002 | warning | check | TYPES.md §4.3 | a scan of `E.members` by name that `E.named` reads directly (DECISIONS 372) |
 | E3003 | error | check | TYPES.md §3.5 | unknown field, method or member (including a case field on an un-narrowed variant) |
 | E3004 | error | check | TYPES.md §12.2 | too many, missing or unknown arguments in a call |
 | E3005 | error | check | TYPES.md §12.2 | calling something that is not a function |
@@ -884,6 +885,7 @@ Owner: TYPES.md, WIRE.md.
 | E3001 | - | name:Name | `public value {name} needs a type annotation` |
 | W3001 | - | field:Name | `{field} is optional: none is already its default; remove = none` |
 | E3002 | - | expected:Type, found:Type | `expected {expected}, found {found}` |
+| W3002 | - | enum:Name, expr:Expr | `this visits every member of {enum}: use {enum}.named({expr})` |
 | E3003 | - | typ:Type, kind:Kind, name:Name | `{typ} has no {kind} {name}` |
 | E3004 | many | fn:Name | `too many arguments in call to {fn}` |
 | E3004 | missing | param:Name, fn:Name | `missing argument {param} in call to {fn}` |

@@ -60,8 +60,13 @@ func (c *checker) qualifiedValue(env *env, s *syntax.SelectorExpr, q *object) ty
 	}
 	switch t := c.typeOfName(env, q, nil).(type) {
 	case *types.EnumType:
+		c.completeEnum(c.typeObjects[t], t) // TYPES.md §4.3: reflection sees every member
 		if r := c.enumReflection(s, t); r != nil {
 			return r
+		}
+		if s.Name.Name == namedMember { // TYPES.md §12.3: a built-in is called, never a value
+			c.report(env, diag.E3016.At(env.span(s.Name), diag.KindBuiltin, namedMember))
+			return types.ErrorType
 		}
 		if m := c.memberObject(t, s.Name.Name); m != nil {
 			c.info.NameUses[s.Name] = m

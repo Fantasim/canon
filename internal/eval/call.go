@@ -271,10 +271,13 @@ func caseMethodName(ct *types.CaseType, obj check.Object) string {
 
 // callBuiltin calls a built-in function, conversion or method through the standard library.
 func (r *run) callBuiltin(x *syntax.CallExpr, callee *check.Callee) value.Value {
+	s, isMethod := x.Fun.(*syntax.SelectorExpr)
+	if isMethod && callee.Builtin == memberNamed && r.typeName(s.X) != nil {
+		return r.enumNamed(x, s) // the call node was the application's one step (EVALUATION.md §12.1)
+	}
 	if !r.step(x.Fun) {
 		return nil
 	}
-	s, isMethod := x.Fun.(*syntax.SelectorExpr)
 	if !isMethod {
 		if callee.Builtin == failStmt || callee.Builtin == warnStmt {
 			return r.failWarn(x, callee.Builtin == warnStmt)

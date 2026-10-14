@@ -270,6 +270,9 @@ func argPosition(n int) string { return hash + strconv.Itoa(n) }
 // callMethod is `x.m(args)`: a function of a package (`pkg.f(…)`), a user method of the
 // receiver's record or case, or a built-in method (STDLIB.md); `x?.m(…)` unwraps x.
 func (c *checker) callMethod(env *env, x *syntax.CallExpr, s *syntax.SelectorExpr, want types.Type) (types.Type, bool) {
+	if c.typeFuncNamed(env, x, s) {
+		return types.ErrorType, false
+	}
 	if q := c.qualifier(env, s.X); q != nil {
 		return c.callQualified(env, x, s, q), false
 	}
@@ -338,7 +341,11 @@ func (c *checker) methodOn(env *env, x *syntax.CallExpr, s *syntax.SelectorExpr,
 		sel.Obj = bo
 		c.info.NameUses[s.Name] = bo
 	}
-	return c.builtinMethod(env, x, s, recv, want)
+	res := c.builtinMethod(env, x, s, recv, want)
+	if res.Kind() != types.Error {
+		c.scanByName(env, x, s) // TYPES.md §4.3, W3002
+	}
+	return res
 }
 
 // userMethod is the method name of a record or case, or nil.
@@ -377,6 +384,9 @@ func (c *checker) bodyOf(r *types.RecordType) *recordCtx {
 
 // callQualified is `pkg.f(args)`, or a conversion or type written qualified (E3005).
 func (c *checker) callQualified(env *env, x *syntax.CallExpr, s *syntax.SelectorExpr, q *object) types.Type {
+	if e := c.enumQualifier(env, q); e != nil && s.Name.Name == namedMember {
+		return c.enumNamed(env, x, s, e)
+	}
 	if q.kind != ObjPackage {
 		c.report(env, diag.E3005.At(env.span(s), nameType(q)))
 		c.argsAlone(env, x)

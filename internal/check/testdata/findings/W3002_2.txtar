@@ -1,0 +1,50 @@
+TYPES.md §4.3, DECISIONS 372: W3002 only where `E.named(x)` reads the same member: not when x names the parameter, not on `.wire` or under `or`/`not`, not on `.all` (true only when every member has that name), `.count` or `.map`, not when x is a `String?`, not on a list that is not `E.members` (a local, a type function's `F(a…).members`), not on a predicate that is not a lambda; one scan by name still warns.
+-- a/a.canon --
+package a
+
+local enum Kind { coin, gem }
+
+local record Ev {
+  kind: Kind
+}
+
+local let evs: table Ev = {
+  one { kind: coin }
+}
+
+local type F(e: Ev) = match e.kind {
+  coin => Kind
+  _ => Kind
+}
+
+local fn byName(m: Kind) -> Bool {
+  return m.name == "coin"
+}
+
+local fn quiet(name: String, maybe: String?) -> [Bool] {
+  let ms = Kind.members
+  return [
+    Kind.members.any(m => m.name == m.wire),
+    Kind.members.any(m => m.wire == name),
+    Kind.members.any(m => m.name == name or m.retired),
+    Kind.members.any(m => not (m.name == name)),
+    Kind.members.count(m => m.name == name) > 0,
+    ms.any(m => m.name == name),
+    F(evs.one).members.any(m => m.name == name),
+    Kind.members.any(byName),
+    Kind.members.map(m => m.name == name).len() > 0,
+    Kind.members.any(m => "{m.name}" == name),
+    Kind.members.any(m => m.name == "{m.index}"),
+    Kind.members.all(m => m.name == name),
+    Kind.members.any(m => m.name == maybe),
+  ]
+}
+
+local fn loud(name: String) -> Bool {
+  return Kind.members.any(m => m.name == name)
+}
+-- findings.txt --
+warning[W3002]  a/a.canon:42:10
+  this visits every member of Kind: use Kind.named(name)
+
+0 errors, 1 warning in 1 package (…)

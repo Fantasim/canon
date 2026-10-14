@@ -1,0 +1,32 @@
+STDLIB.md §3, TYPES.md §4.3, §15, DECISIONS 372: `E.named(s)` is an `E?` for a String argument, positional or named `s`, qualified `pkg.E.named` too; it chains with `?.` and `??`, reads in a function and in a const; a scan of `E.members` that does not compare `.name` with an expression free of the member warns nothing.
+-- b/b.canon --
+package b
+
+/// A tier.
+enum Tier { low, high }
+-- a/a.canon --
+package a
+
+import b
+
+local enum Kind { coin, gem, retired old }
+
+local let hit: Kind? = Kind.named("coin")
+local let byName: Kind? = Kind.named(s: "gem")
+local let tier: b.Tier? = b.Tier.named("low")
+local let index: Int = Kind.named("gem")?.index ?? 0
+local let found: Kind = Kind.named("coin") ?? gem
+
+local const OLD = Kind.named("old")
+
+local fn lookup(name: String) -> Kind? {
+  return Kind.named(name)
+}
+
+local fn isRetired(name: String) -> Bool {
+  return Kind.named(name)?.retired ?? false
+}
+
+local fn byWire(wire: String) -> Kind? {
+  return Kind.members.first(m => m.wire == wire)
+}

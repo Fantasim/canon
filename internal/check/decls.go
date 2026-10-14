@@ -1,6 +1,8 @@
 package check
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -205,7 +207,7 @@ func ownerPkg(t types.Type) string {
 	}
 }
 
-// completeEnum fills an enum's members; `members` and `typeName` are reserved (E2105, TYPES.md §3.6).
+// completeEnum fills an enum's members; `members`, `typeName` and `named` are reserved (E2105, TYPES.md §3.6).
 func (c *checker) completeEnum(o *object, e *types.EnumType) {
 	if o.state != stateNone {
 		return
@@ -220,7 +222,7 @@ func (c *checker) completeEnum(o *object, e *types.EnumType) {
 		mo := c.newObject(ObjMember, m.Name.Name, env.pkg, m, env.file)
 		mo.typ, mo.member, mo.owner = e, mem, e
 		c.info.Defs[m.Name] = mo
-		if m.Name.Name == membersMember || m.Name.Name == typeNameMember {
+		if slices.Contains(reservedOnEnums, m.Name.Name) {
 			c.report(env, diag.E2105.AtEnum(env.span(m.Name), m.Name.Name))
 		}
 		if first, dup := seen[m.Name.Name]; dup {

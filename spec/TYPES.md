@@ -207,8 +207,9 @@ So the table entry `units.count` is the entry, and `units.count(pred)` is the me
   holding a variant is fine: `e.kind.kind`.
 - Enum members, variant cases and table keys may be any identifier, including reserved words
   where GRAMMAR.md allows them. They never clash with declarations: they live in their type or
-  collection, not in the package namespace. Some names are reserved per kind (`E2105`): `members`
-  and `typeName` on an enum (`E.members`, `E.typeName`; DECISIONS 299, 306), as `id`/`retired` on
+  collection, not in the package namespace. Some names are reserved per kind (`E2105`): `members`,
+  `typeName` and `named` on an enum (`E.members`, `E.typeName`, `E.named`; DECISIONS 299, 306,
+  372), as `id`/`retired` on
   table elements and `kind` on cases.
 
 ### 3.7 Public signatures
@@ -282,6 +283,7 @@ the `Icon` member, although `let columns` exists.
 ### 4.3 Qualified forms
 
 `Enum.member`, `Enum.members` (STDLIB.md §3, DECISIONS 299), `Enum.typeName` (DECISIONS 306),
+`Enum.named(s)` (DECISIONS 372),
 `Variant.case`, `pkg.Name`, `alias.Name`, `pkg.Enum.member` and `table.key` (value position) are
 always accepted and never ambiguous.
 
@@ -296,6 +298,25 @@ enum: not `Never`, not an optional.
   `F(a…)` in value position stays `E3005` (§12.2).
 - Evaluation selects the arm as §11.6 does and returns that enum's `E.members` or its name
   (`E.typeName`). EVALUATION.md §12.1 gives the cost.
+
+**Lookup by name** (DECISIONS 372). `E.named(s)`, with `E` naming an enum (qualified forms
+included) and `s` a `String`, has the type `E?`: the member whose `.name` is `s`, retired members
+included, else `none`. A wrong argument count or type is `E3806`; `F(a…).named` is `E3804`; a bare
+`E.named` not called is `E3016` (§12.3). It costs 1 step for the call plus its argument's nodes;
+the callee `E.named` is not charged (EVALUATION.md §12.1).
+
+**A scan by name is a warning** (`W3002`, DECISIONS 372). `E.members.first(p)`, `.any(p)` or
+`.filter(p)`, with `E` naming an enum (qualified forms included) and `p` a
+one-parameter lambda whose body is, or has as an `and` operand (nested, parenthesised), `m.name ==
+x` or `x == m.name` (`m` the parameter, `x` a `String`, not optional, not naming it), warns once
+at the call:
+`E.named(x)` reads the same member without visiting every other. A shorthand cannot express the
+comparison (GRAMMAR.md §5.11); `.all` (true only when every member has that name), a list held in
+a local, `F(a…).members`, `.wire`, and a comparison under `or` or `not` do not warn.
+
+**Enum reflection sees every member** (DECISIONS 372). `E.members`, `E.named` and `E.typeName`
+read the enum's complete member list wherever they appear, a constant folded during declaration
+checking included, whatever the order of declarations in the file or project.
 
 ---
 
@@ -1341,7 +1362,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E2102 | error | name found by no step of §3.3 |
 | E2103 | error | §10.2 |
 | E2104 | error | §3.6 |
-| E2105 | error | field or method `id`/`retired` on a table element, `kind` on a case, member `members` or `typeName` on an enum |
+| E2105 | error | field or method `id`/`retired` on a table element, `kind` on a case, member `members`, `typeName` or `named` on an enum |
 | E2106 | error | duplicate declaration, field, member, case, method or parameter |
 | E2107 | error | redeclaration in one block |
 | E2108 | error | `self` outside a record, case or variant body |
@@ -1361,7 +1382,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E3012 | error | §9.1 |
 | E3013 | error | §9.3 |
 | E3015 | error | §15, §7.4 |
-| E3016 | error | §12.3 |
+| E3016 | error | §4.3, §12.3 |
 | E3017 | error | §12.7 |
 | E3018 | error | §12.7 |
 | E3019 | error | bare `return` in a function (§12.1) |
@@ -1422,6 +1443,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E3805 | error | §11.1 |
 | E3806 | error | §4.3, §11.1 |
 | W3001 | warning | §15 |
+| W3002 | warning | §4.3 |
 | E3026 | error | §5.1 (STDLIB.md §5) |
 | E3027 | error | §4.1 |
 | E3028 | error | §13.2 |

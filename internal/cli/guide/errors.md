@@ -60,6 +60,7 @@ error[E3002]  shop/shop.canon:30:17
 | `E3028` | a type after the first alternative of `A \| "lit"`: write a string literal, or a variant for a choice of types (`"x"?` and `["x"]` are types too) |
 | `E3027` | a name in scope used as a key but not a value of the key type: write the key as a string (`"n"`), or for an enum or union key type a member of it |
 | `W3001` | `x: T? = none`: remove the `= none` (`canon fmt` does) |
+| `W3002` | `E.members.first(m => m.name == s)` visits every member: write `E.named(s)` |
 | `E8001` | the build would overwrite a file it does not own: `canon build --adopt <path>` (text files, legacy C++ headers), or move it |
 | `E8021` | a misplaced `@text` or a bad file name (`canon guide emit`) |
 | `E8019` | the emit asks for what no generator builds: the message names the way out |

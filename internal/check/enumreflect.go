@@ -64,9 +64,13 @@ func (c *checker) typeFuncReflection(env *env, s *syntax.SelectorExpr, x *syntax
 		return types.ErrorType
 	}
 	name := s.Name.Name
-	if _, enums := enumBranches(fn); !enums || name != membersMember && name != typeNameMember {
+	branches, enums := enumBranches(fn)
+	if !enums || name != membersMember && name != typeNameMember {
 		c.report(env, diag.E3804.At(env.span(s.Name), dot+name, fn.Name))
 		return types.ErrorType
+	}
+	for _, e := range branches { // TYPES.md §4.3: reflection sees every member
+		c.completeEnum(c.typeObjects[e], e)
 	}
 	reflected := c.enumReflection(s, staticView(dep))
 	if !argsOK {

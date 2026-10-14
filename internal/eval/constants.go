@@ -93,6 +93,7 @@ const (
 	memberStart    = "start"
 	memberMembers  = "members" // E.members, on an enum type (DECISIONS 299)
 	memberTypeName = "typeName"
+	memberNamed    = "named"
 	keyMagic       = "key"
 )
 

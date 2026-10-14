@@ -167,8 +167,10 @@ forms included, TYPES.md §4.3), is the `[E]` of every member in declaration ord
 included (`.retired` tells them apart). It is a constant and costs one step per member. Computing
 with a retired member read this way is allowed; a value that still holds one when it is stored is
 `E3506`, as a written retired member is. `E.typeName` is a `String`, the enum's declared name,
-unqualified (`"FarmEventKind"`, DECISIONS 306). `members` and `typeName` are therefore reserved
-member names on enums (`E2105`).
+unqualified (`"FarmEventKind"`, DECISIONS 306). `E.named(s: String) -> E?` is the member whose
+Canon name (`.name`) is `s`, exactly and case-sensitively, retired members included; `none` when no
+member has that name (DECISIONS 372). It costs one step whatever the enum's size. `members`,
+`typeName` and `named` are therefore reserved member names on enums (`E2105`).
 
 **Through a type function** (DECISIONS 306). In value position, `F(a…).members` and
 `F(a…).typeName`, where every branch of the type function `F` is an enum, are the `E.members`
@@ -176,7 +178,7 @@ member names on enums (`E2105`).
 rules and EVALUATION.md §12.1 the cost. A value typed `F(*)` has the enum value members above
 (TYPES.md §11.4), `.code` only when every branch has `@codes`. Arguments are positional (a named
 argument is `E3806`); a type function with a plain body types `.members` as its expansion (§11.4).
-Only the bare form reflects: `(F(a)).members` is `E3005`. `.typeName` is the enum's declared name,
+Only the bare form reflects: `(F(a)).members` is `E3005`. `F(a…).named` is `E3804`: name the enum. `.typeName` is the enum's declared name,
 through an alias branch too. `E.typeName` is a constant like `E.members`; `F(a…).members` and `F(a…).typeName` are constant
 when their arguments are (TYPES.md §15).
 

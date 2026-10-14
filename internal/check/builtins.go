@@ -208,7 +208,7 @@ var builtinTypes = map[string]types.Type{
 }
 
 // builtinMembers are the members read after `.` (STDLIB.md §3); an object each, for NameUses.
-var builtinMembers = []string{idMember, retiredMember, kindMember, nameMember, indexMember, wireMember, codeMember, startMember, endMember, membersMember, typeNameMember}
+var builtinMembers = []string{idMember, retiredMember, kindMember, nameMember, indexMember, wireMember, codeMember, startMember, endMember, membersMember, typeNameMember, namedMember}
 
 // newUniverse makes step 6's objects: built-in types, free functions, fail and warn.
 func (c *checker) newUniverse() map[string]*object {

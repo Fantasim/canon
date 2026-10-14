@@ -1,0 +1,27 @@
+TYPES.md §4.3, STDLIB.md §3, DECISIONS 372: `F(a…).named(s)` and `F(a…).named` are E3804: name the enum.
+-- a/a.canon --
+package a
+
+local enum Kind { coin, gem }
+
+local enum Coin { copper, silver }
+
+local record Ev {
+  kind: Kind
+}
+
+local type F(e: Ev) = match e.kind {
+  coin => Coin
+  _ => Kind
+}
+
+local let called = F(Ev { kind: coin }).named("copper")
+local let bare = F(Ev { kind: coin }).named
+-- findings.txt --
+error[E3804]  a/a.canon:16:41
+  .named is not available on a dependent value (F(*))
+
+error[E3804]  a/a.canon:17:39
+  .named is not available on a dependent value (F(*))
+
+2 errors, 0 warnings in 1 package (…)

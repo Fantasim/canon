@@ -1,0 +1,23 @@
+TYPES.md §4.3, §12.3, DECISIONS 372: `E.named` without its argument, qualified `pkg.E.named` too, is a built-in used as a value.
+-- b/b.canon --
+package b
+
+/// A tier.
+enum Tier { low, high }
+-- a/a.canon --
+package a
+
+import b
+
+local enum E { a, b }
+
+local let f = E.named
+local let g = b.Tier.named
+-- findings.txt --
+error[E3016]  a/a.canon:7:17
+  built-in named cannot be used as a value; write a lambda
+
+error[E3016]  a/a.canon:8:22
+  built-in named cannot be used as a value; write a lambda
+
+2 errors, 0 warnings in 2 packages (…)

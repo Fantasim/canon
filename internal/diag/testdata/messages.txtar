@@ -185,7 +185,7 @@ E2103 several: ref resource.vocab.items: several collections of resource.vocab.i
 E2104 -: resource.vocab.items has a field and a method named resource.vocab.items
 E2105 entry: resource.vocab.items is reserved on table entries
 E2105 case: resource.vocab.items is reserved on variant cases
-E2105 enum: resource.vocab.items is reserved on enums: E.members and E.typeName are built in
+E2105 enum: resource.vocab.items is reserved on enums: E.members, E.typeName and E.named are built in
 E2106 -: resource.vocab.items is declared twice (first at @resource/Server/System/farm_config.json:1)
 E2107 -: resource.vocab.items is already declared in this block
 E2108 -: self is only valid in a record, case or variant body
@@ -522,6 +522,7 @@ W1642 -: deprecated field resource.vocab.items is named in group resource.vocab.
 W1701 one: 1 text of package resource.vocab.items has no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
 W1701 many: -42 texts of package resource.vocab.items have no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
 W3001 -: resource.vocab.items is optional: none is already its default; remove = none
+W3002 -: this visits every member of resource.vocab.items: use resource.vocab.items.named(a b)
 W3301 plain: resource.vocab.items is deprecated
 W3301 reason: resource.vocab.items is deprecated: 0.9
 W3401 -: a b is never none: resource.vocab.items has no effect

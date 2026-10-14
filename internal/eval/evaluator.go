@@ -45,6 +45,7 @@ type Evaluator struct {
 	rebuilt    map[value.Value]value.Value // a container an amendment copied to change a descendant, to the one it copies (history.go)
 	keyed      map[value.Value]map[value.Key]*value.Record
 	regexps    map[string]*regexp.Regexp
+	enumNames  map[*types.EnumType]map[string]int
 	frees      map[syntax.Node][]check.Object
 	colls      map[collKey]*types.Collection
 	fieldColls map[*types.Field]*types.Collection

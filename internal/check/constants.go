@@ -244,6 +244,7 @@ const (
 	endMember      = "end"
 	membersMember  = "members"  // E.members, on an enum type (DECISIONS 299)
 	typeNameMember = "typeName" // E.typeName, on an enum type (DECISIONS 306)
+	namedMember    = "named"    // E.named(s), on an enum type (DECISIONS 372)
 	defaultTag     = kindMember
 )
 

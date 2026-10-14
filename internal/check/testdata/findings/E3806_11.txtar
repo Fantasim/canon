@@ -1,0 +1,30 @@
+TYPES.md §4.3, STDLIB.md §1.1, DECISIONS 372: `E.named(s)` takes one String: no argument, two, an argument of another type, an optional String or an argument named other than `s` is E3806; `E.named(s: x)` is accepted.
+-- a/a.canon --
+package a
+
+local enum E { a, b }
+
+local let none_: E? = E.named()
+local let two: E? = E.named("a", "b")
+local let int: E? = E.named(3)
+local let maybe: String? = "a"
+local let opt: E? = E.named(maybe)
+local let wrongName: E? = E.named(x: "a")
+local let byName: E? = E.named(s: "a")
+-- findings.txt --
+error[E3806]  a/a.canon:5:23
+  E.named takes 1 arguments of types String
+
+error[E3806]  a/a.canon:6:21
+  E.named takes 1 arguments of types String
+
+error[E3806]  a/a.canon:7:29
+  E.named takes 1 arguments of types String
+
+error[E3806]  a/a.canon:9:29
+  E.named takes 1 arguments of types String
+
+error[E3806]  a/a.canon:10:27
+  E.named takes 1 arguments of types String
+
+5 errors, 0 warnings in 1 package (…)

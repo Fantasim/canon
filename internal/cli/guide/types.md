@@ -104,7 +104,9 @@ let weights: {Element: Int} = { FIRE: 2, WATER: 1 }
 - Enum members: `Day.Mon`, or bare (`Mon`) where the type is expected; `.name`, `.index`,
   `.wire`, `.retired`, and `.code` with `@codes`; `E.typeName` is its unqualified name;
   `E.members` lists them in declaration order (retired ones included, `.retired` tells them
-  apart; `members` and `typeName` are reserved on enums, `E2105`). A retired member stays for `match`; using it is `E3506` outside a `past` slot (see History).
+  apart). `E.named(s)` is the `E?` whose `.name` is `s` (case-sensitive, retired included, else
+  `none`), one step whatever the size: scanning `E.members` by name is `W3002`. `members`,
+  `typeName` and `named` are reserved on enums (`E2105`). A retired member stays for `match`; using it is `E3506` outside a `past` slot (see History).
 - Variant literal: `gold { amount: 10 }`, `Reward.gold { ... }`; a case whose fields all have
   defaults may be bare (`item` needs `name`: `E3302`). `v.kind` is the case; `v is gold` tests
   it. Case fields are readable only on a narrowed value: `match`, `if v is gold { v.amount }`

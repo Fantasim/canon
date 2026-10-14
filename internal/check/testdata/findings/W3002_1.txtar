@@ -1,0 +1,56 @@
+TYPES.md §4.3, DECISIONS 372: a scan of `E.members` by name warns W3002 once at the call, naming `E.named` with the compared expression: `.first`, `.any` and `.filter` with a one-parameter lambda whose body is `m.name == x`, `x == m.name`, or has it as an `and` operand (a chain and parentheses included), x a String; the suggestion drops x's parentheses; the enum named qualified too.
+-- b/b.canon --
+package b
+
+/// A tier.
+enum Tier { low, high }
+-- a/a.canon --
+package a
+
+import b
+
+local enum Kind { coin, gem, retired old }
+
+local fn first(name: String) -> Kind? {
+  return Kind.members.first(m => m.name == name)
+}
+
+local fn any(name: String) -> Bool {
+  return Kind.members.any(k => name == k.name)
+}
+
+local fn parens(s: String) -> Bool {
+  return Kind.members.any(m => (m.name) == (s))
+}
+
+local fn live(name: String) -> [Kind] {
+  return Kind.members.filter(m => m.name == name and not m.retired)
+}
+
+local fn chained(name: String) -> Kind? {
+  return Kind.members.first(m => not m.retired and (m.index > 0 and (m.name == "{name}s")))
+}
+
+local fn tier(name: String) -> b.Tier? {
+  return b.Tier.members.first(t => t.name == name.lower())
+}
+-- findings.txt --
+warning[W3002]  a/a.canon:8:10
+  this visits every member of Kind: use Kind.named(name)
+
+warning[W3002]  a/a.canon:12:10
+  this visits every member of Kind: use Kind.named(name)
+
+warning[W3002]  a/a.canon:16:10
+  this visits every member of Kind: use Kind.named(s)
+
+warning[W3002]  a/a.canon:20:10
+  this visits every member of Kind: use Kind.named(name)
+
+warning[W3002]  a/a.canon:24:10
+  this visits every member of Kind: use Kind.named("{name}s")
+
+warning[W3002]  a/a.canon:28:10
+  this visits every member of b.Tier: use b.Tier.named(name.lower())
+
+0 errors, 6 warnings in 2 packages (…)
