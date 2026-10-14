@@ -1,0 +1,49 @@
+DECISIONS 373: values born in one frame share the ProvExt of its stack, defaults need none, and
+the spreads a top-level lambda runs start from one site Prov; a spread and a layer give their
+values a new provenance and leave the shared one as it was.
+-- a/a.canon --
+/// A.
+package a
+
+/// Point.
+record Pt {
+  /// X.
+  x: Int = 1
+  /// Y.
+  y: Int = 2
+  /// Note.
+  note: String?
+}
+
+/// Makes a point in its frame.
+fn mk(n: Int) -> Pt {
+  return { x: n + 1, y: n + 2 }
+}
+
+/// Copies a point by a spread in its frame.
+fn moved(p: Pt) -> Pt {
+  return { ...p, y: 9 }
+}
+
+/// Made.
+let a: Pt = mk(1)
+
+/// Moved.
+let b: Pt = moved(a)
+
+/// Defaults only.
+let c: Pt = {}
+
+/// Spread by a top-level lambda, at one site.
+let d: [Pt] = [1, 2].map(n => { ...c, y: n })
+-- a/dev.canon --
+package a
+layer dev
+
+amend a {
+  x: 40
+}
+
+amend c {
+  x: 41
+}

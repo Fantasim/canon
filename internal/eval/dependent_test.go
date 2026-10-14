@@ -97,7 +97,7 @@ func TestDecodeHostFindings(t *testing.T) {
 	span := source.Span{File: 1, Start: 3, End: 7}
 	var evs, perR *types.Collection
 	loaded := func(c *types.Collection, key string) *value.Ref {
-		return &value.Ref{T: &types.RefType{Target: c}, Key: value.Key{S: key}, P: &value.Prov{Kind: value.ProvJSON, Span: span, Pointer: "/0/ev"}}
+		return &value.Ref{T: &types.RefType{Target: c}, Key: value.Key{S: key}, P: &value.Prov{Kind: value.ProvJSON, Span: span, Ext: &value.ProvExt{Pointer: "/0/ev"}}}
 	}
 	var oks []bool
 	serve := func(ev *eval.Evaluator, _ *syntax.LoadExpr, _ types.Type) (value.Value, bool) {

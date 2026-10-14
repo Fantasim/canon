@@ -3,8 +3,6 @@ package value
 import (
 	"strconv"
 
-	"github.com/fantasim/canonlang/internal/diag"
-	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
@@ -14,21 +12,6 @@ type Value interface {
 	Type() types.Type
 	Prov() *Prov
 	CanonText() string // canonical text form (STD-06); satisfies diag.ValueArg
-}
-
-// ProvKind is where a value comes from (EVL-07; API.md OriginKind).
-type ProvKind uint8
-
-// Prov is the provenance of a value (EVL-07). Via is the omitting literal of a default or
-// the copied value's provenance; Stack holds diag.MaxStackFrames frames, innermost first.
-type Prov struct {
-	Kind       ProvKind
-	Span       source.Span
-	Pointer    string
-	Layer      string
-	Via        *Prov
-	Stack      []diag.Frame
-	MoreFrames int
 }
 
 // Key is an entry's or a ref's key: a string (an enum member's name) or an integer.

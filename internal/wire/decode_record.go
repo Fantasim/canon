@@ -209,9 +209,13 @@ func (r *run) present(n *jsonsrc.Node, f *types.Field, fr *frame) value.Value {
 	return r.value(Selection{Node: n}, f.Type, fieldScope(f, fr))
 }
 
-// absent is a field without key: its default, none, or E3302 at the object (WIRE.md §5.4).
+// absent is a field without key: its default via the object, none, or E3302 (WIRE.md §5.4; DECISIONS 373).
 func (r *run) absent(n *jsonsrc.Node, f *types.Field, i int, rv *value.Record, fr *frame) bool {
-	v, required := r.fill(f, rv, fr, prov(n))
+	via := rv.P // rv.P is prov(o.n) for every caller today; the test below guards that invariant
+	if via == nil || via.Kind != value.ProvJSON || via.Span != n.Span {
+		via = prov(n)
+	}
+	v, required := r.fill(f, rv, fr, via)
 	if required {
 		return r.soft(diag.E3302.At(n.Span, rv.T, f.Name), n) // kept: the field stays nil, not Set
 	}

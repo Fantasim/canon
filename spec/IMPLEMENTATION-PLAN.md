@@ -349,14 +349,25 @@ type Key struct { S string; I int64; IsInt bool }
 type Identity struct { Coll *types.Collection; Key Key; Retired bool }
 
 type ProvKind uint8   // Literal, JSON, CSV, Defines, Text, Default, Spread, Computed, Layer (API.md Origin)
-type Prov struct {
-    Kind    ProvKind
-    Span    source.Span   // literal node, JSON value's first byte..end, default expr, building expr, amendment
-    Pointer string        // RFC 6901 for loaded JSON
-    Layer   string
-    Via     *Prov         // Default: the literal/object that omitted the field; Spread: original
-    Stack   []diag.Frame  // Computed: ≤ 16 frames (EVL-07)
+type Prov struct {    // never written once a value holds it; values may share one (DECISIONS 373)
+    Kind ProvKind
+    Span source.Span  // literal node, JSON value's first byte..end, default expr, building expr, amendment
+    Via  *Prov        // Default: the literal/object that omitted the field; Spread: original
+    Ext  *ProvExt     // the rarely set fields; nil when none is set
 }
+type ProvExt struct {
+    Pointer    string        // RFC 6901 for loaded JSON
+    Layer      string
+    Stack      []diag.Frame  // Computed: ≤ 16 frames (EVL-07)
+    MoreFrames int           // frames cut from Stack
+}
+func NewProvExt(x ProvExt) *ProvExt  // nil when x sets nothing
+func (p *Prov) Pointer() string; Layer() string; Stack() []diag.Frame; MoreFrames() int  // zero without Ext; nil-safe
+
+// Values born at one site with one origin may share a *Prov or *ProvExt: a frame's values share
+// its stack's ProvExt, and the values a default or a top-level lambda builds at one site without
+// via or stack share one Prov. A rewrite (spread, layer, default) builds a new Prov and never
+// writes a shared one.
 
 func Equal(a, b Value) bool             // TYPES.md §7.5 equality (TYP-08)
 func Text(v Value) string               // v.CanonText()

@@ -238,11 +238,11 @@ func (w *fpWalk) prov(p *value.Prov) {
 	for ; p != nil; p = p.Via {
 		write(w, p.Kind)
 		write(w, p.Span)
-		write(w, p.Pointer)
-		write(w, p.Layer)
-		write(w, p.MoreFrames)
-		write(w, len(p.Stack))
-		for _, f := range p.Stack {
+		write(w, p.Pointer())
+		write(w, p.Layer())
+		write(w, p.MoreFrames())
+		write(w, len(p.Stack()))
+		for _, f := range p.Stack() {
 			write(w, f)
 		}
 	}

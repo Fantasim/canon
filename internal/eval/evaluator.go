@@ -66,6 +66,7 @@ type Evaluator struct {
 	deps       map[types.Type]bool                            // whether a type holds a dependent type (stageb.go)
 	verified   map[*value.Record]any                          // what stage B made of each instance; a vector reads its parent's, finished first (stageb.go)
 	cuts       map[*diag.Frame]diag.Frame                     // a cut provenance stack's outermost frame, by its first (outermost.go)
+	siteProvs  map[siteKey]*value.Prov                        // one shared Prov per (kind, span) for defaults and top-level lambdas (reprov.go; DECISIONS 373)
 
 	parent    *Evaluator                // a vector's evaluator reads its parent's settled values (vector.go)
 	vec       *vectorState              // set on a vector's evaluator only

@@ -94,17 +94,34 @@ func TestCanonText(t *testing.T) {
 // EVL-07: provenance carries its origin, the omitting literal of a default and a bounded stack.
 func TestProv(t *testing.T) {
 	def := &value.Prov{Kind: value.ProvDefault, Via: lit}
-	computed := &value.Prov{Kind: value.ProvComputed, Stack: []diag.Frame{{Fn: "healFor"}}, MoreFrames: 3}
-	loaded := &value.Prov{Kind: value.ProvJSON, Pointer: "/modelTypes/3"}
+	computed := &value.Prov{Kind: value.ProvComputed, Ext: &value.ProvExt{Stack: []diag.Frame{{Fn: "healFor"}}, MoreFrames: 3}}
+	loaded := &value.Prov{Kind: value.ProvJSON, Ext: &value.ProvExt{Pointer: "/modelTypes/3"}}
 	kinds := []value.ProvKind{value.ProvLiteral, value.ProvJSON, value.ProvCSV, value.ProvDefines, value.ProvText, value.ProvDefault, value.ProvSpread, value.ProvComputed, value.ProvLayer}
 	for i, k := range kinds {
 		if int(k) != i {
 			t.Errorf("provenance kinds follow API.md OriginKind order")
 		}
 	}
-	layered := &value.Prov{Kind: value.ProvLayer, Layer: "local", Via: &value.Prov{Kind: value.ProvSpread}}
-	if def.Via != lit || len(computed.Stack) > diag.MaxStackFrames || loaded.Pointer == "" || layered.Layer != "local" {
+	layered := &value.Prov{Kind: value.ProvLayer, Via: &value.Prov{Kind: value.ProvSpread}, Ext: &value.ProvExt{Layer: "local"}}
+	if def.Via != lit || len(computed.Stack()) > diag.MaxStackFrames || computed.MoreFrames() != 3 || loaded.Pointer() == "" || layered.Layer() != "local" {
 		t.Errorf("provenance fields")
+	}
+}
+
+// DECISIONS 373: a provenance's rarely set fields sit behind one pointer, nil when none is set;
+// the accessors read them as zero then, and on a nil provenance.
+func TestProvExt(t *testing.T) {
+	if value.NewProvExt(value.ProvExt{Stack: []diag.Frame{}}) != nil || lit.Ext != nil {
+		t.Errorf("an empty ProvExt is nil")
+	}
+	var none *value.Prov
+	for _, p := range []*value.Prov{none, lit} {
+		if p.Pointer() != "" || p.Layer() != "" || p.Stack() != nil || p.MoreFrames() != 0 {
+			t.Errorf("%v: a provenance without ProvExt reads zero fields", p)
+		}
+	}
+	if x := value.NewProvExt(value.ProvExt{Layer: "dev"}); x == nil || x.Layer != "dev" {
+		t.Errorf("NewProvExt keeps a set field")
 	}
 }
 

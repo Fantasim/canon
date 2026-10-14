@@ -62,7 +62,7 @@ func (x *opCtx) jsonAt(v value.Value) (*jsonsrc.Node, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	n := root.Find(p.Pointer)
+	n := root.Find(p.Pointer())
 	if n == nil {
 		return nil, "", errNoTree
 	}

@@ -161,13 +161,13 @@ func (r *run) settleField(b *building, j int) bool {
 	return r.fill(b.rec, j, b.at)
 }
 
-// spreadCopy is a field a spread copies (EVALUATION.md §4.2, §13).
+// spreadCopy is a field a spread copies at p (EVALUATION.md §4.2, §13); p, maybe shared, is left as is (DECISIONS 373).
 func (e *Evaluator) spreadCopy(v value.Value, p *value.Prov) value.Value {
 	if v == nil {
 		return nil
 	}
-	p.Via = v.Prov()
-	return e.reprov(v, p, false)
+	copied := &value.Prov{Kind: p.Kind, Span: p.Span, Via: v.Prov(), Ext: p.Ext}
+	return e.reprov(v, copied, false)
 }
 
 // defaults fills the fields no item gave (TYPES.md §15).

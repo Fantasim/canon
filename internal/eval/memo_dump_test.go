@@ -115,7 +115,7 @@ func (d *deepDump) args(rec *value.Record) string {
 func provText(p *value.Prov) string {
 	var sb strings.Builder
 	for ; p != nil; p = p.Via {
-		fmt.Fprintf(&sb, "<%d %v %q %q %v+%d>", p.Kind, p.Span, p.Pointer, p.Layer, p.Stack, p.MoreFrames)
+		fmt.Fprintf(&sb, "<%d %v %q %q %v+%d>", p.Kind, p.Span, p.Pointer(), p.Layer(), p.Stack(), p.MoreFrames())
 	}
 	return sb.String()
 }

@@ -109,5 +109,5 @@ func provText(p *value.Prov) string {
 	if p == nil {
 		return "-"
 	}
-	return fmt.Sprintf("{%d %d-%d %s %s via %s}", p.Kind, p.Span.Start, p.Span.End, p.Pointer, p.Layer, provText(p.Via))
+	return fmt.Sprintf("{%d %d-%d %s %s via %s}", p.Kind, p.Span.Start, p.Span.End, p.Pointer(), p.Layer(), provText(p.Via))
 }

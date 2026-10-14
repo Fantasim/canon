@@ -62,7 +62,7 @@ func (j *judge) findBeside() (string, error) {
 	stars := map[string][]atStep{}
 	markStars(stars, root, steps)
 	for _, ptr := range slices.Sorted(maps.Keys(stars)) {
-		if ptr != p.Pointer && !strings.HasPrefix(ptr, p.Pointer+pointerSep) {
+		if ptr != p.Pointer() && !strings.HasPrefix(ptr, p.Pointer()+pointerSep) {
 			continue
 		}
 		if o := unbuildable(root.Find(ptr), restOf(stars[ptr])); o != nil {

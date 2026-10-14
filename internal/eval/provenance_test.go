@@ -215,18 +215,18 @@ func (b *build) provText(p *value.Prov) string {
 	}
 	loc := b.prog.fs.Locate(p.Span)
 	s := fmt.Sprintf("%s %s:%d:%d-%d:%d", provKinds[p.Kind], loc.Path, loc.Line, loc.Col, loc.EndLine, loc.EndCol)
-	if p.Pointer != "" {
-		s += " pointer " + p.Pointer
+	if p.Pointer() != "" {
+		s += " pointer " + p.Pointer()
 	}
-	if p.Layer != "" {
-		s += " layer " + p.Layer
+	if p.Layer() != "" {
+		s += " layer " + p.Layer()
 	}
-	for _, f := range p.Stack {
+	for _, f := range p.Stack() {
 		at := b.prog.fs.Locate(f.Span)
 		s += fmt.Sprintf(" in %s (%s:%d)", f.Fn, at.Path, at.Line)
 	}
-	if p.MoreFrames > 0 {
-		s += fmt.Sprintf(" (%d more frames)", p.MoreFrames)
+	if p.MoreFrames() > 0 {
+		s += fmt.Sprintf(" (%d more frames)", p.MoreFrames())
 	}
 	if p.Via != nil {
 		s += " via (" + b.provText(p.Via) + ")"

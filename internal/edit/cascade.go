@@ -149,7 +149,7 @@ func (x *opCtx) touchedAt(path string, rec value.Value, decl []*types.Field, cha
 func (a *applier) touchedAt(path string, rec value.Value, decl []*types.Field, changed []string) touched {
 	t := touched{path: path, decl: decl, fields: changed}
 	if p := provOf(rec); p != nil && p.Kind == value.ProvJSON {
-		t.file, t.ptr = a.snap.display(p.Span.File), p.Pointer
+		t.file, t.ptr = a.snap.display(p.Span.File), p.Pointer()
 	}
 	return t
 }

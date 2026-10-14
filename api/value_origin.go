@@ -67,8 +67,8 @@ func (s *snapshot) originOf(v value.Value) Origin {
 // provOrigin is one provenance located in the snapshot's files, Via's value unknown.
 func (s *snapshot) provOrigin(p *value.Prov) Origin {
 	files := s.a.Files()
-	o := Origin{Kind: originKinds[p.Kind], Span: locate(files, p.Span), Pointer: p.Pointer, Layer: p.Layer, MoreFrames: p.MoreFrames}
-	for _, fr := range p.Stack {
+	o := Origin{Kind: originKinds[p.Kind], Span: locate(files, p.Span), Pointer: p.Pointer(), Layer: p.Layer(), MoreFrames: p.MoreFrames()}
+	for _, fr := range p.Stack() {
 		o.Stack = append(o.Stack, Frame{Fn: fr.Fn, Span: locate(files, fr.Span)})
 	}
 	if p.Via != nil {

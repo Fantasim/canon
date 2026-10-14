@@ -52,7 +52,7 @@ func (r *run) refSpan(ref *value.Ref, at syntax.Node) source.Span {
 // refFail reports a hard dereference error; one located at a loaded ref carries its pointer.
 func (r *run) refFail(b *diag.Builder, ref *value.Ref, at syntax.Node) {
 	if p := origin(ref.P); at == nil && p != nil {
-		b.Pointer(p.Pointer)
+		b.Pointer(p.Pointer())
 	}
 	r.fail(b)
 }

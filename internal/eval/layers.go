@@ -105,7 +105,7 @@ func (r *run) rhs(m *amending) value.Value {
 	if v == nil {
 		return nil
 	}
-	return r.ev.reprov(v, &value.Prov{Kind: value.ProvLayer, Span: r.span(m.a.Value), Layer: m.layer}, true)
+	return r.ev.reprov(v, &value.Prov{Kind: value.ProvLayer, Span: r.span(m.a.Value), Ext: &value.ProvExt{Layer: m.layer}}, true)
 }
 
 // pathText is an amendment's path as written, for E1905.

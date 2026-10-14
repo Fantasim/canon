@@ -234,7 +234,7 @@ func TestCSVCellProvenancePointerWithHeader(t *testing.T) {
 	for i, row := range v.(*value.List).Elems {
 		fields := row.(*value.Record).Fields
 		for j, f := range fields {
-			if got := f.Prov().Pointer; got != want[i][j] {
+			if got := f.Prov().Pointer(); got != want[i][j] {
 				t.Errorf("row %d field %d pointer = %q, want %q", i, j, got, want[i][j])
 			}
 		}
@@ -252,7 +252,7 @@ func TestCSVCellProvenancePointerNoHeader(t *testing.T) {
 	for i, row := range v.(*value.List).Elems {
 		elems := row.(*value.List).Elems
 		for j, c := range elems {
-			if got := c.Prov().Pointer; got != want[i][j] {
+			if got := c.Prov().Pointer(); got != want[i][j] {
 				t.Errorf("row %d cell %d pointer = %q, want %q", i, j, got, want[i][j])
 			}
 		}

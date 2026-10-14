@@ -257,11 +257,11 @@ func keyAt(m *jsonsrc.Member) site {
 }
 
 func (s site) prov() *value.Prov {
-	p := &value.Prov{Kind: s.kind, Span: s.span, Pointer: s.pointer}
+	ptr := s.pointer
 	if s.node != nil {
-		p.Pointer = s.node.Pointer()
+		ptr = s.node.Pointer()
 	}
-	return p
+	return &value.Prov{Kind: s.kind, Span: s.span, Ext: value.NewProvExt(value.ProvExt{Pointer: ptr})}
 }
 
 // prov is the provenance of the JSON value n.

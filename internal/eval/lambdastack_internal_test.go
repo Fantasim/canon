@@ -60,10 +60,10 @@ func TestLambdaValueStack(t *testing.T) {
 		f := CallFrame(fn, nil, nil)
 		for _, e := range l.Elems[1:] {
 			p := e.Prov()
-			if len(p.Stack) != c.len || p.MoreFrames != c.more || !slices.Equal(p.Stack, in.Stack) {
-				t.Errorf("%s: %s has %d frames (%d more), want %d (%d more), its fn's %v", c.fn, e.CanonText(), len(p.Stack), p.MoreFrames, c.len, c.more, in.Stack)
+			if len(p.Stack()) != c.len || p.MoreFrames() != c.more || !slices.Equal(p.Stack(), in.Stack()) {
+				t.Errorf("%s: %s has %d frames (%d more), want %d (%d more), its fn's %v", c.fn, e.CanonText(), len(p.Stack()), p.MoreFrames(), c.len, c.more, in.Stack())
 			}
-			if got := ev.Hides(p.Stack, &f); got != c.hiddenCall {
+			if got := ev.Hides(p.Stack(), &f); got != c.hiddenCall {
 				t.Errorf("%s: %s hides the call frame: %t, want %t", c.fn, e.CanonText(), got, c.hiddenCall)
 			}
 		}

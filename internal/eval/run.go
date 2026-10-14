@@ -65,6 +65,7 @@ type frame struct {
 	ret    value.Value
 	stack  []diag.Frame
 	more   int
+	ext    *value.ProvExt // its stack and more as the values it builds carry them, nil for none (DECISIONS 373)
 	cached bool
 	decl   bool                         // an implicit frame: a field default or a where run (DECISIONS 210)
 	ts     bool                         // a translated fn's frame in a TS-mode vector (CONFORMANCE.md §4)
@@ -253,8 +254,8 @@ func (r *run) soft(b *diag.Builder, v value.Value, at *vpath) {
 	var stack []diag.Frame
 	more := 0
 	if p := origin(v.Prov()); p != nil {
-		b.Pointer(p.Pointer).Layer(p.Layer)
-		stack, more = p.Stack, p.MoreFrames
+		b.Pointer(p.Pointer()).Layer(p.Layer())
+		stack, more = p.Stack(), p.MoreFrames()
 	}
 	stack, more = Outermost(stack, more, r.outer, r.ev.Hides(stack, r.outer))
 	r.emit(b.Stack(stack).MoreFrames(more).Path(at.String()))
@@ -299,21 +300,32 @@ func (r *run) qualified(pkg, name string) string {
 }
 
 // frames is the call stack, innermost first, cut to diag.MaxStackFrames, and the count cut (EVALUATION.md §13).
-func (r *run) frames() ([]diag.Frame, int) {
-	out := make([]diag.Frame, 0, min(r.fr.count, diag.MaxStackFrames))
-	for f := r.fr.named; f != nil && len(out) < diag.MaxStackFrames; f = f.above() {
+func (r *run) frames() ([]diag.Frame, int) { return framesOf(r.fr) }
+
+// framesOf is frames() for frame fr.
+func framesOf(fr *frame) ([]diag.Frame, int) {
+	out := make([]diag.Frame, 0, min(fr.count, diag.MaxStackFrames))
+	for f := fr.named; f != nil && len(out) < diag.MaxStackFrames; f = f.above() {
 		out = append(out, diag.Frame{Fn: f.fn, Span: f.call})
 	}
-	return out, r.fr.count - len(out)
+	return out, fr.count - len(out)
 }
 
-// frameStack is frames() for the current frame; a frame with no fn lists the named frames its
-// caller lists, so it shares the stack its caller cached rather than building it again.
-func (r *run) frameStack() ([]diag.Frame, int) {
-	if f := r.fr; f.fn == "" && f.caller != nil && f.caller.cached {
-		return f.caller.stack, f.caller.more
+// cacheStack keeps framesOf(f) and the ProvExt holding it; a frame with no fn lists the named
+// frames its caller lists, so it shares what its caller caches, a lambda's every call the same
+// stack (DECISIONS 373).
+func (r *run) cacheStack(f *frame) {
+	if f.fn == "" && f.caller != nil {
+		if !f.caller.cached {
+			r.cacheStack(f.caller)
+		}
+		f.stack, f.more, f.ext = f.caller.stack, f.caller.more, f.caller.ext
+	} else {
+		f.stack, f.more = framesOf(f)
+		f.ext = value.NewProvExt(value.ProvExt{Stack: f.stack, MoreFrames: f.more})
 	}
-	return r.frames()
+	f.cached = true
+	r.noteCut(f)
 }
 
 // withStack is b with the current call stack.
@@ -323,19 +335,22 @@ func (r *run) withStack(b *diag.Builder) *diag.Builder {
 	return b.Stack(stack).MoreFrames(more)
 }
 
-// prov is the provenance of a value node n builds; a literal in a default stays one (EVALUATION.md §13).
+// prov is the provenance of a value node n builds, a literal in a default one, shared by site (EVALUATION.md §13; DECISIONS 373).
 func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
-	p := &value.Prov{Kind: kind, Span: r.span(n)}
-	if f := r.fr; (f.fn != "" || f.caller != nil) && (!f.decl || kind != value.ProvLiteral) {
-		if !f.cached {
-			f.stack, f.more = r.frameStack()
-			f.cached = true
-			r.noteCut(f)
-		}
-		p.Stack, p.MoreFrames = f.stack, f.more
-		if kind == value.ProvLiteral {
-			p.Kind = value.ProvComputed
-		}
+	f := r.fr
+	switch {
+	case f.fn == "" && f.caller == nil:
+		return &value.Prov{Kind: kind, Span: r.span(n)}
+	case f.decl && kind == value.ProvLiteral:
+		return r.ev.siteProv(kind, r.span(n))
+	case !f.cached:
+		r.cacheStack(f)
 	}
-	return p
+	if kind == value.ProvLiteral {
+		kind = value.ProvComputed
+	}
+	if f.ext == nil {
+		return r.ev.siteProv(kind, r.span(n))
+	}
+	return &value.Prov{Kind: kind, Span: r.span(n), Ext: f.ext}
 }

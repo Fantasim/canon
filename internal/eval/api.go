@@ -75,8 +75,8 @@ func (e *Evaluator) unbound(root Root, ref *value.Ref, path string, outer *diag.
 	var stack []diag.Frame
 	more := 0
 	if p := origin(ref.Prov()); p != nil {
-		b.Pointer(p.Pointer).Layer(p.Layer)
-		stack, more = p.Stack, p.MoreFrames
+		b.Pointer(p.Pointer()).Layer(p.Layer())
+		stack, more = p.Stack(), p.MoreFrames()
 	}
 	stack, more = Outermost(stack, more, outer, e.Hides(stack, outer))
 	return b.Stack(stack).MoreFrames(more)

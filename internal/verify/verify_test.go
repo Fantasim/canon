@@ -236,7 +236,7 @@ func TestListAt(t *testing.T) {
 
 // EVALUATION.md §13: a spread copy is reported at the value it was copied from.
 func TestSiteOfSpread(t *testing.T) {
-	orig := &value.Prov{Kind: value.ProvJSON, Pointer: "/a/0", Layer: "dev"}
+	orig := &value.Prov{Kind: value.ProvJSON, Ext: &value.ProvExt{Pointer: "/a/0", Layer: "dev"}}
 	v := &value.Int{V: 1, P: &value.Prov{Kind: value.ProvSpread, Via: orig}}
 	if s := verify.SiteOf(v); s.Span != orig.Span {
 		t.Errorf("site %v", s)

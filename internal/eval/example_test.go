@@ -96,7 +96,7 @@ amend config {
 	for _, v := range ev.History(port) {
 		loc := fs.Locate(v.Prov().Span)
 		line := fmt.Sprintf("%s %s:%d", v.CanonText(), loc.Path, loc.Line)
-		if layer := v.Prov().Layer; layer != "" {
+		if layer := v.Prov().Layer(); layer != "" {
 			line += " layer " + layer
 		}
 		fmt.Println(line)

@@ -30,8 +30,8 @@ func (s Site) ReportUnder(b *diag.Builder, f diag.Frame, bag *diag.Bag, h Hider)
 	var stack []diag.Frame
 	more := 0
 	if p := s.prov; p != nil {
-		b.Pointer(p.Pointer).Layer(p.Layer)
-		stack, more = p.Stack, p.MoreFrames
+		b.Pointer(p.Pointer()).Layer(p.Layer())
+		stack, more = p.Stack(), p.MoreFrames()
 	}
 	stack, more = eval.Outermost(stack, more, &f, h != nil && h.Hides(stack, &f))
 	b.Path("").Stack(stack).MoreFrames(more).Report(bag)

@@ -1,6 +1,9 @@
 package eval
 
-import "github.com/fantasim/canonlang/internal/value"
+import (
+	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/value"
+)
 
 // reprov is v with a new origin p, without v's history; a composite copied only when composites (EVALUATION.md §4.2).
 func (e *Evaluator) reprov(v value.Value, p *value.Prov, composites bool) value.Value {
@@ -54,6 +57,27 @@ func reprovComposite(v value.Value, p *value.Prov) value.Value {
 		return &value.Pair{T: x.T, A: x.A, B: x.B, P: p}
 	}
 	return v
+}
+
+// siteKey is a provenance without Via or ProvExt: all it holds.
+type siteKey struct {
+	kind value.ProvKind
+	span source.Span
+}
+
+// siteProv is the one Prov of kind at span without ProvExt, shared by the values a default or a
+// lambda builds there run after run (DECISIONS 373).
+func (e *Evaluator) siteProv(kind value.ProvKind, span source.Span) *value.Prov {
+	k := siteKey{kind: kind, span: span}
+	if p, ok := e.siteProvs[k]; ok {
+		return p
+	}
+	if e.siteProvs == nil {
+		e.siteProvs = map[siteKey]*value.Prov{}
+	}
+	p := &value.Prov{Kind: kind, Span: span}
+	e.siteProvs[k] = p
+	return p
 }
 
 // carry gives a value rebuilt from another, the same value passed along, its invalid mark and history (EVALUATION.md §13).

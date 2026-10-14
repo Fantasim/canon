@@ -12,7 +12,7 @@ import (
 func Example() {
 	potion := &types.RecordType{Pkg: "pipeline", Name: "Potion", Fields: []*types.Field{{Name: "heal"}, {Name: "cooldown", Index: 1}}}
 	potions := &types.Collection{Kind: types.CollLet, Pkg: "pipeline", Name: "potions", Elem: potion}
-	at := &value.Prov{Kind: value.ProvJSON, Span: source.Span{File: 2, Start: 0, End: 41}, Pointer: "/heal"}
+	at := &value.Prov{Kind: value.ProvJSON, Span: source.Span{File: 2, Start: 0, End: 41}, Ext: &value.ProvExt{Pointer: "/heal"}}
 	heal := &value.Record{
 		T:      potion,
 		Fields: []value.Value{&value.Int{V: 500, T: types.IntType, P: at}, &value.Dur{Ms: 8000}},
@@ -20,7 +20,7 @@ func Example() {
 	}
 	ref := &value.Ref{T: &types.RefType{Target: potions}, Key: value.Key{S: "II_POT_HEAL_L"}}
 	fmt.Println(heal.CanonText())
-	fmt.Println(ref.CanonText(), value.Equal(ref, heal), heal.Fields[0].Prov().Pointer)
+	fmt.Println(ref.CanonText(), value.Equal(ref, heal), heal.Fields[0].Prov().Pointer())
 	// Output:
 	// Potion{heal: 500, cooldown: 8s}
 	// II_POT_HEAL_L true /heal

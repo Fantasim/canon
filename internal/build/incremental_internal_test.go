@@ -281,11 +281,11 @@ func (d *deepDump) ident(id *value.Identity) string {
 func (d *deepDump) prov(p *value.Prov) string {
 	var sb strings.Builder
 	for ; p != nil; p = p.Via {
-		fmt.Fprintf(&sb, "<%d %s-%d %q %q", p.Kind, d.loc(p.Span.File, p.Span.Start), p.Span.End, p.Pointer, p.Layer)
-		for _, fr := range p.Stack {
+		fmt.Fprintf(&sb, "<%d %s-%d %q %q", p.Kind, d.loc(p.Span.File, p.Span.Start), p.Span.End, p.Pointer(), p.Layer())
+		for _, fr := range p.Stack() {
 			fmt.Fprintf(&sb, " %s@%s", fr.Fn, d.loc(fr.Span.File, fr.Span.Start))
 		}
-		fmt.Fprintf(&sb, "+%d>", p.MoreFrames)
+		fmt.Fprintf(&sb, "+%d>", p.MoreFrames())
 	}
 	return sb.String()
 }

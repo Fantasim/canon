@@ -36,7 +36,7 @@ func staleSpans(a *Analysis) []string {
 	for _, v := range selectedValues(a) {
 		for p := v.Prov(); p != nil; p = p.Via {
 			note("provenance of "+v.CanonText(), p.Span.File)
-			for _, fr := range p.Stack {
+			for _, fr := range p.Stack() {
 				note("a frame of "+v.CanonText(), fr.Span.File)
 			}
 		}

@@ -127,7 +127,7 @@ func TestP3PseudoFields(t *testing.T) {
 	})
 	checkCanon(t, lawFixture(t, nil, "a"), []canonCase{{"a:shape.kind", "a:shape.kind", "circle"}})
 	r := resolve(t, examples(t, nil, "pipeline"), "pipeline:potions[II_POT_HEAL_L].id")
-	if p := r.Target.Prov(); p == nil || p.Kind != value.ProvJSON || p.Pointer != "/dwID" {
+	if p := r.Target.Prov(); p == nil || p.Kind != value.ProvJSON || p.Pointer() != "/dwID" {
 		t.Errorf("potions[II_POT_HEAL_L].id is %+v, want the field read from /dwID", p)
 	}
 	checkErrs(t, lawFixture(t, nil, "a"), []errCase{{"a:items[a].retired", edit.ErrNoPath, 1}, {"a:base.kind", edit.ErrNoPath, 0}})

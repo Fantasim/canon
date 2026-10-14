@@ -157,7 +157,7 @@ func (fx *fixture) computed(text string, within ...string) *value.Prov {
 func (fx *fixture) inCall(text, fn, call string, within ...string) *value.Prov {
 	fx.t.Helper()
 	p := fx.computed(text)
-	p.Stack = []diag.Frame{{Fn: fn, Span: fx.at(call, within...)}}
+	p.Ext = &value.ProvExt{Stack: []diag.Frame{{Fn: fn, Span: fx.at(call, within...)}}}
 	return p
 }
 

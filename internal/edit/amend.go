@@ -11,14 +11,14 @@ import (
 // editable inside its amendment (W11a).
 func (j *judge) layerStep(i int) cursor {
 	p := j.res.Steps[i].Value.Prov()
-	if p.Layer != j.layer {
-		return cursor{state: stLayered, layer: p.Layer}
+	if p.Layer() != j.layer {
+		return cursor{state: stLayered, layer: p.Layer()}
 	}
 	it, ok := j.s.amendment(j.res.root, p)
 	if !ok {
 		return cursor{state: stComputed}
 	}
-	return j.rhsCursor(it, p.Layer)
+	return j.rhsCursor(it, p.Layer())
 }
 
 // rhsCursor is an amendment's right-hand side: a literal is a source tree, a load of JSON reads
@@ -39,7 +39,7 @@ func (j *judge) rhsCursor(it item, layer string) cursor {
 
 // amendment is the right-hand side of the amendment p records, in the root's package.
 func (s *Snapshot) amendment(r rootRef, p *value.Prov) (item, bool) {
-	for _, f := range layerFiles(r.pkg, p.Layer) {
+	for _, f := range layerFiles(r.pkg, p.Layer()) {
 		for _, b := range f.Amends {
 			if it, ok := amendedAt(f, b, p); ok {
 				return it, true

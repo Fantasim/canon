@@ -33,7 +33,7 @@ func (s Site) Report(b *diag.Builder, at *Path, bag *diag.Bag) {
 func (s Site) reportAt(b *diag.Builder, path string, bag *diag.Bag) {
 	b.Path(path)
 	if p := s.prov; p != nil {
-		b.Pointer(p.Pointer).Layer(p.Layer).Stack(p.Stack).MoreFrames(p.MoreFrames)
+		b.Pointer(p.Pointer()).Layer(p.Layer()).Stack(p.Stack()).MoreFrames(p.MoreFrames())
 	}
 	b.Report(bag)
 }
