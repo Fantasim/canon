@@ -82,6 +82,7 @@ const (
 	bReachable  = "reachable"
 	bCycles     = "cycles"
 	bTopoSort   = "topoSort"
+	bPositional = "positional"
 )
 
 // The parameter names of STDLIB.md, for arguments given by name.

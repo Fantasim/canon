@@ -1,0 +1,122 @@
+EVALUATION.md §13.1, DECISIONS 379: the Int that enumerate() pairs with an entry, or that indexOf
+returns for one, carries a position mark; operators, templates, Int, Float, String, join, spreads
+and layer amends carry it; Bools, at(i), len, abs, min, max, clamp and positional(x) do not. Every
+`m*` root holds marked values only, every `u*` root unmarked ones; the `b*` roots pin §13.1's
+blind spots (a composite under String or a template, a join's separator, a string method).
+-- a/a.canon --
+package a
+
+/// M.
+record M {
+  /// HP.
+  hp: Int
+}
+
+let ms: table M = {
+  wolf { hp: 1 }
+  bear { hp: 2 }
+  boar { hp: 3 }
+}
+
+/// Q.
+record Q {
+  /// Name.
+  name: String
+  /// V.
+  v: Int
+}
+
+let qs: [Q] keyed by name = [{ name: "a", v: 1 }, { name: "b", v: 2 }]
+
+let plain: [Int] = [10, 20, 30]
+
+/// R.
+record R {
+  /// N.
+  n: Int
+}
+
+let mTable: [Int] = [i for i, m in ms.enumerate()]
+let mFiltered: [Int] = [i for i, m in ms.filter(m => m.hp > 1).enumerate()]
+let mKeys: [Int] = [i for i, k in ms.keys().enumerate()]
+let mKeyed: [Int] = [i for i, q in qs.enumerate()]
+let mIndexOf: Int? = ms.indexOf(ms.bear)
+let mKeysIndexOf: Int? = ms.keys().indexOf(ms.bear)
+
+let uPlain: [Int] = [i for i, x in plain.enumerate()]
+let uPlainIndexOf: Int? = plain.indexOf(20)
+let uMapped: [Int] = [i for i, n in ms.map(m => m.hp).enumerate()]
+let uRange: [Int] = [i for i in 0..ms.len()]
+
+let i1: Int = mTable[1]
+let s1: String = "{i1}"
+
+let mAdd: Int = i1 + 1
+let mAddRight: Int = 1 + i1
+let mSub: Int = i1 - 1
+let mMul: Int = i1 * 2
+let mDiv: Int = i1 / 1
+let mMod: Int = i1 % 2
+let mNeg: Int = -i1
+let mTemplate: String = "row {i1}"
+let mSpec: String = "{i1:03}"
+let mStrPlus: String = "row " + s1
+let mStrPlusRight: String = s1 + " row"
+let mInt: Int = Int(i1)
+let mFloat: Float = Float(i1)
+let mString: String = String(i1)
+let mJoin: String = ["a", s1].join(",")
+let mPassed: Int = i1
+let mRec: R = { n: i1 }
+let mSpread: R = { ...mRec }
+let mLayered: R = { n: 0 }
+
+/// Adds one in a frame.
+fn plusOne(k: Int) -> Int {
+  return k + 1
+}
+
+let mInFn: Int = plusOne(i1)
+
+/// Enumerates entries in a frame.
+fn rows(least: Int) -> [Int] {
+  return [i for i, m in ms.filter(m => m.hp >= least).enumerate()]
+}
+
+let mFnEnumerate: [Int] = rows(0)
+
+/// D.
+record D {
+  /// Idx.
+  idx: Int
+  /// N, defaulted from an earlier field.
+  n: Int = idx
+}
+
+let mDefault: D = { idx: i1 }
+
+let uBool: Bool = i1 > 0
+let uAt: Int = ms.at(i1).hp
+let uIndex: Int = plain[i1]
+let uLen: Int = mTable.len()
+let uPositional: Int = positional(i1)
+let uPositionalSum: Int = positional(i1) + 1
+let uFloor: Int = floor(Float(i1))
+let uPositionalNamed: Int = positional(x: i1)
+let uAbs: Int = abs(i1)
+let uAbsNeg: Int = abs(-i1)
+let uMin: Int = min(i1, 9)
+let uMax: Int = max(i1, 0)
+let uClamp: Int = clamp(i1, 0, 9)
+
+let bStringList: String = String([i1])
+let bTemplateList: String = "{[i1]}"
+let bJoinSeparator: String = ["a", "b"].join(s1)
+let bTrim: String = "{i1}".trim()
+-- a/dev.canon --
+package a
+layer dev
+
+amend mLayered {
+  n: i1
+}

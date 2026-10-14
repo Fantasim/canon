@@ -18,6 +18,7 @@ func evalString(r *run, e syntax.Expr, _ *vpath) value.Value {
 		kind = value.ProvComputed
 	}
 	var b strings.Builder
+	position := false
 	for _, part := range x.Parts {
 		if part.Interp == nil {
 			if kind == value.ProvComputed && !r.spend(len(part.Text), func() source.Span { return r.span(e) }) {
@@ -26,38 +27,39 @@ func evalString(r *run, e syntax.Expr, _ *vpath) value.Value {
 			b.WriteString(part.Text)
 			continue
 		}
-		text, ok := r.interpolated(part.Interp)
+		text, marked, ok := r.interpolated(part.Interp)
 		if !ok {
 			return nil
 		}
+		position = position || marked
 		b.WriteString(text)
 	}
-	v := &value.Str{V: b.String(), T: types.StringType, P: r.prov(e, kind)}
+	v := &value.Str{V: b.String(), T: types.StringType, P: r.provMarked(e, kind, position)}
 	if kind == value.ProvLiteral {
 		return r.literal(v)
 	}
 	return v
 }
 
-// interpolated is the text of one interpolated value, its values visited and its bytes
-// charged before it is made.
-func (r *run) interpolated(in *syntax.Interp) (string, bool) {
+// interpolated is the text of one interpolated value, charged before it is made, and whether the value is marked.
+func (r *run) interpolated(in *syntax.Interp) (string, bool, bool) {
 	v := r.eval(in.X)
 	at := func() source.Span { return r.span(in) }
 	if v == nil || !r.spend(std.VisitedUpTo(v, r.remaining()), at) {
-		return "", false
+		return "", false, false
 	}
+	marked := value.IsPosition(v)
 	if in.Spec != nil {
 		f := std.Prepare(v, *in.Spec)
 		if !r.spend(f.Len(), at) {
-			return "", false
+			return "", false, false
 		}
-		return f.String(), true
+		return f.String(), marked, true
 	}
 	if !r.spend(value.TextLenUpTo(v, r.remaining()), at) {
-		return "", false
+		return "", false, false
 	}
-	return v.CanonText(), true
+	return v.CanonText(), marked, true
 }
 
 // templateText is a template's source without its own delimiters (EVALUATION.md §8.4).

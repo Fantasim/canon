@@ -12,10 +12,11 @@ type ProvKind uint8
 // copied value's provenance; the rarely set fields sit behind Ext, nil in the common case. A
 // Prov is never written once a value holds it, so values born at one site may share it (DECISIONS 373).
 type Prov struct {
-	Kind ProvKind
-	Span source.Span
-	Via  *Prov
-	Ext  *ProvExt
+	Kind     ProvKind
+	Position bool // an entry position's mark, in the padding (EVALUATION.md §13.1)
+	Span     source.Span
+	Via      *Prov
+	Ext      *ProvExt
 }
 
 // ProvExt is a provenance's rarely set fields (DECISIONS 373). Stack holds diag.MaxStackFrames
@@ -69,4 +70,25 @@ func (p *Prov) MoreFrames() int {
 		return 0
 	}
 	return p.Ext.MoreFrames
+}
+
+// IsPosition reports a marked Int, Float, Duration or String (EVALUATION.md §13.1).
+func IsPosition(v Value) bool {
+	switch v.(type) {
+	case *Int, *Float, *Dur, *Str:
+		p := v.Prov()
+		return p != nil && p.Position
+	}
+	return false
+}
+
+// IsEntry reports a table entry, a keyed-list element or a ref (EVALUATION.md §13.1).
+func IsEntry(v Value) bool {
+	switch x := v.(type) {
+	case *Record:
+		return x.Ident != nil
+	case *Ref:
+		return true
+	}
+	return false
 }

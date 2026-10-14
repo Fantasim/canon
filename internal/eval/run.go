@@ -337,12 +337,17 @@ func (r *run) withStack(b *diag.Builder) *diag.Builder {
 
 // prov is the provenance of a value node n builds, a literal in a default one, shared by site (EVALUATION.md §13; DECISIONS 373).
 func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
+	return r.provMarked(n, kind, false)
+}
+
+// provMarked is prov, carrying an entry position's mark when position (EVALUATION.md §13.1).
+func (r *run) provMarked(n syntax.Node, kind value.ProvKind, position bool) *value.Prov {
 	f := r.fr
 	switch {
-	case f.fn == "" && f.caller == nil:
+	case f.fn == "" && f.caller == nil && !position:
 		return &value.Prov{Kind: kind, Span: r.span(n)}
-	case f.decl && kind == value.ProvLiteral:
-		return r.ev.siteProv(kind, r.span(n))
+	case f.fn == "" && f.caller == nil, f.decl && kind == value.ProvLiteral:
+		return r.ev.sharedProv(siteKey{kind: kind, position: position, span: r.span(n)})
 	case !f.cached:
 		r.cacheStack(f)
 	}
@@ -350,7 +355,7 @@ func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
 		kind = value.ProvComputed
 	}
 	if f.ext == nil {
-		return r.ev.siteProv(kind, r.span(n))
+		return r.ev.sharedProv(siteKey{kind: kind, position: position, span: r.span(n)})
 	}
-	return &value.Prov{Kind: kind, Span: r.span(n), Ext: f.ext}
+	return &value.Prov{Kind: kind, Position: position, Span: r.span(n), Ext: f.ext}
 }

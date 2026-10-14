@@ -237,6 +237,7 @@ func (w *fpWalk) record(v *value.Record) {
 func (w *fpWalk) prov(p *value.Prov) {
 	for ; p != nil; p = p.Via {
 		write(w, p.Kind)
+		write(w, p.Position)
 		write(w, p.Span)
 		write(w, p.Pointer())
 		write(w, p.Layer())

@@ -97,7 +97,11 @@ func position(h Host, c *Call) (int, bool) {
 
 func seqIndexOf(h Host, c *Call) (value.Value, bool) {
 	i, ok := position(h, c)
-	return c.orNone(c.intv(int64(i)), i >= 0), ok
+	if i < 0 {
+		return c.none(), ok
+	}
+	ints := entryInts{h: h, c: c}
+	return ints.at(i, elemAt(c.Recv, i)), ok
 }
 
 func seqMap(h Host, c *Call) (value.Value, bool) {
@@ -243,7 +247,8 @@ func seqEnumerate(h Host, c *Call) (value.Value, bool) {
 	xs := Elems(c.Recv)
 	pt := elemType(c.Result)
 	out := make([]value.Value, len(xs))
-	ok := each(h, xs, func(i int, x value.Value) { out[i] = pairOf(pt, c.intv(int64(i)), x, c.Prov) })
+	ints := entryInts{h: h, c: c}
+	ok := each(h, xs, func(i int, x value.Value) { out[i] = pairOf(pt, ints.at(i, x), x, c.Prov) })
 	return c.list(out), ok
 }
 

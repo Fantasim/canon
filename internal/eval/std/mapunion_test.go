@@ -170,6 +170,8 @@ func (h *countingHost) Equal(a, b value.Value) (bool, bool) {
 
 func (h *countingHost) Coerce(v value.Value, _ types.Type) (value.Value, bool) { return v, true }
 
+func (h *countingHost) Position(p *value.Prov) *value.Prov { return p }
+
 // TYPES.md §11.4, DECISIONS 338: a dependent value's literal where evaluation binds its arguments evaluates, no finding.
 func TestDependentLiterals(t *testing.T) {
 	a, err := txtar.ParseFile("testdata/dependent_literals.txtar")

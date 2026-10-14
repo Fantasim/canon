@@ -361,20 +361,21 @@ const (
 
 // Built-in free functions (STDLIB.md §2, §10).
 const (
-	fnAbs       = "abs"
-	fnMin       = methodMin
-	fnMax       = methodMax
-	fnClamp     = "clamp"
-	fnFloor     = "floor"
-	fnCeil      = "ceil"
-	fnRound     = "round"
-	fnSqrt      = "sqrt"
-	fnPow       = "pow"
-	fnReachable = "reachable"
-	fnCycles    = "cycles"
-	fnTopoSort  = "topoSort"
-	fnFail      = "fail"
-	fnWarn      = "warn"
+	fnAbs        = "abs"
+	fnMin        = methodMin
+	fnMax        = methodMax
+	fnClamp      = "clamp"
+	fnFloor      = "floor"
+	fnCeil       = "ceil"
+	fnRound      = "round"
+	fnSqrt       = "sqrt"
+	fnPow        = "pow"
+	fnReachable  = "reachable"
+	fnCycles     = "cycles"
+	fnTopoSort   = "topoSort"
+	fnPositional = "positional"
+	fnFail       = "fail"
+	fnWarn       = "warn"
 )
 
 // Built-in methods (STDLIB.md §4 to §7, §10).

@@ -13,7 +13,7 @@ var freeFunctions = map[string]builtin{
 	bInt: convInt, bFloat: convFloat, bString: convString, bAbs: mathAbs, bMin: mathMin,
 	bMax: mathMax, bClamp: mathClamp, bFloor: mathFloor, bCeil: mathCeil, bRound: mathRound,
 	bSqrt: mathSqrt, bPow: mathPow, bReachable: graphReachable, bCycles: graphCycles,
-	bTopoSort: graphTopoSort,
+	bTopoSort: graphTopoSort, bPositional: positional,
 }
 
 // convInt is Int(x): a Float truncated (E4103), an integer of any width as Int.
@@ -25,6 +25,15 @@ func convInt(h Host, c *Call) (value.Value, bool) {
 		return &value.Int{V: x.V, T: types.IntType, P: c.Prov}, true
 	}
 	return nil, false
+}
+
+// positional is positional(x): x unmarked, at no step (STDLIB.md §2.4).
+func positional(_ Host, c *Call) (value.Value, bool) {
+	x, ok := c.arg(0).(*value.Int)
+	if !ok {
+		return nil, false
+	}
+	return &value.Int{V: x.V, T: types.IntType, P: c.Prov}, true
 }
 
 // convFloat is Float(x): exact up to 2^53, else nearest-even, as Go's conversion rounds.
@@ -86,16 +95,16 @@ func mathAbs(h Host, c *Call) (value.Value, bool) {
 	if f, ok := x.(*value.Float); ok {
 		return &value.Float{V: math.Abs(f.V), T: types.FloatType, P: c.Prov}, true
 	}
-	return x, true
+	return unmarked(c, x), true
 }
 
 // mathMin and mathMax return the first of equal arguments (STDLIB.md §2.2).
 func mathMin(_ Host, c *Call) (value.Value, bool) {
-	return pick(c.Args, before), true
+	return unmarked(c, pick(c.Args, before)), true
 }
 
 func mathMax(_ Host, c *Call) (value.Value, bool) {
-	return pick(c.Args, func(a, b value.Value) bool { return before(b, a) }), true
+	return unmarked(c, pick(c.Args, func(a, b value.Value) bool { return before(b, a) })), true
 }
 
 func pick(xs []value.Value, better func(a, b value.Value) bool) value.Value {
@@ -116,7 +125,7 @@ func mathClamp(h Host, c *Call) (value.Value, bool) {
 		return nil, false
 	}
 	low := pick([]value.Value{x, lo}, func(a, b value.Value) bool { return before(b, a) })
-	return pick([]value.Value{low, hi}, before), true
+	return unmarked(c, pick([]value.Value{low, hi}, before)), true
 }
 
 func mathFloor(h Host, c *Call) (value.Value, bool) {

@@ -5,8 +5,11 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// reprov is v with a new origin p, without v's history; a composite copied only when composites (EVALUATION.md §4.2).
+// reprov is v with a new origin p, without v's history but with its position mark; a composite copied only when composites (EVALUATION.md §4.2, §13.1).
 func (e *Evaluator) reprov(v value.Value, p *value.Prov, composites bool) value.Value {
+	if value.IsPosition(v) {
+		p = e.positionProv(p)
+	}
 	out := reprovValue(v, p, composites)
 	if rec, ok := v.(*value.Record); ok {
 		if cp, isRec := out.(*value.Record); isRec {
@@ -61,23 +64,36 @@ func reprovComposite(v value.Value, p *value.Prov) value.Value {
 
 // siteKey is a provenance without Via or ProvExt: all it holds.
 type siteKey struct {
-	kind value.ProvKind
-	span source.Span
+	kind     value.ProvKind
+	position bool
+	span     source.Span
 }
 
-// siteProv is the one Prov of kind at span without ProvExt, shared by the values a default or a
-// lambda builds there run after run (DECISIONS 373).
-func (e *Evaluator) siteProv(kind value.ProvKind, span source.Span) *value.Prov {
-	k := siteKey{kind: kind, span: span}
+// sharedProv is the one Prov k describes, shared by the values a default or a lambda builds at
+// its site run after run (DECISIONS 373).
+func (e *Evaluator) sharedProv(k siteKey) *value.Prov {
 	if p, ok := e.siteProvs[k]; ok {
 		return p
 	}
 	if e.siteProvs == nil {
 		e.siteProvs = map[siteKey]*value.Prov{}
 	}
-	p := &value.Prov{Kind: kind, Span: span}
+	p := &value.Prov{Kind: k.kind, Position: k.position, Span: k.span}
 	e.siteProvs[k] = p
 	return p
+}
+
+// positionProv is p's marked twin, shared when p has no Via or Ext, else a copy; p is never written (DECISIONS 379).
+func (e *Evaluator) positionProv(p *value.Prov) *value.Prov {
+	if p == nil || p.Position {
+		return p
+	}
+	if p.Via != nil || p.Ext != nil {
+		twin := *p
+		twin.Position = true
+		return &twin
+	}
+	return e.sharedProv(siteKey{kind: p.Kind, position: true, span: p.Span})
 }
 
 // carry gives a value rebuilt from another, the same value passed along, its invalid mark and history (EVALUATION.md §13).

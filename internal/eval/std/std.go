@@ -31,6 +31,8 @@ type Host interface {
 	Key(m *value.Map, k value.Value) value.Value
 	// Coerce converts a value to type t as a storage point does (TYPES.md §6.2).
 	Coerce(v value.Value, t types.Type) (value.Value, bool)
+	// Position is p's twin carrying an entry position's mark; p is never written (EVALUATION.md §13.1).
+	Position(p *value.Prov) *value.Prov
 }
 
 // Call is one call of a built-in: its name, the row of its signature table that matched

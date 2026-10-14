@@ -173,7 +173,7 @@ var rangeMethods = []bsig{
 	{name: methodContains, params: []bparam{bp(paramX, types.IntType)}, result: types.BoolType},
 }
 
-// freeFunctions are STDLIB.md §2 and §10: conversions, math, graphs, fail and warn.
+// freeFunctions are STDLIB.md §2 and §10: conversions, math, graphs, positions, fail and warn.
 var freeFunctions = []bsig{
 	{name: typeInt, params: []bparam{bp(paramX, types.FloatType)}, result: types.IntType},
 	{name: typeInt, params: []bparam{bp(paramX, types.IntType)}, result: types.IntType},
@@ -195,6 +195,7 @@ var freeFunctions = []bsig{
 	{name: fnCycles, params: []bparam{bp(paramXs, &seqOf{elem: tEq}), bp(paramNext, fnOf(opt(tEq), tEq))}, result: listT(tEq)},
 	{name: fnTopoSort, params: []bparam{bp(paramXs, &seqOf{elem: tEq}), bp(paramNext, fnOf(listT(tEq), tEq))}, result: listT(tEq)},
 	{name: fnTopoSort, params: []bparam{bp(paramXs, &seqOf{elem: tEq}), bp(paramNext, fnOf(opt(tEq), tEq))}, result: listT(tEq)},
+	{name: fnPositional, params: []bparam{bp(paramX, types.IntType)}, result: types.IntType},
 	{name: fnFail, params: []bparam{bp(paramAt, types.AnyType), bp(paramMessage, types.StringType)}, result: types.NoneType},
 	{name: fnWarn, params: []bparam{bp(paramAt, types.AnyType), bp(paramMessage, types.StringType)}, result: types.NoneType},
 }

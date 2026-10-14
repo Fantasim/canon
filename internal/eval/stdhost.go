@@ -58,6 +58,11 @@ func (h *stdHost) Key(m *value.Map, k value.Value) value.Value {
 	return h.r.keyFor(m, k)
 }
 
+// Position is p's marked twin (EVALUATION.md §13.1, DECISIONS 379).
+func (h *stdHost) Position(p *value.Prov) *value.Prov {
+	return h.r.ev.positionProv(p)
+}
+
 func (h *stdHost) Remaining() int {
 	return h.r.remaining()
 }

@@ -323,7 +323,8 @@ func (r *run) runStd(fn func(std.Host, *std.Call) (value.Value, bool), x *syntax
 	r.site = r.span(x)
 	c := &std.Call{
 		Name: callee.Builtin, Overload: callee.Overload, Recv: recv, Args: args,
-		Result: r.typeOf(x), Prov: r.prov(x, value.ProvComputed),
+		Result: r.typeOf(x),
 	}
+	c.Prov = r.provMarked(x, value.ProvComputed, std.CarriesPosition(c))
 	return r.std(fn(r.host(), c))
 }

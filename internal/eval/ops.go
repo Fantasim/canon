@@ -28,7 +28,7 @@ func evalUnary(r *run, e syntax.Expr, _ *vpath) value.Value {
 		return &value.Bool{V: !b.V, P: r.prov(e, value.ProvComputed)}
 	}
 	r.site = r.span(e)
-	neg := r.std(std.Neg(r.host(), v, r.prov(e, value.ProvComputed)))
+	neg := r.std(std.Neg(r.host(), v, r.provMarked(e, value.ProvComputed, value.IsPosition(v))))
 	if _, isLit := x.X.(*syntax.IntLit); isLit {
 		return r.literal(neg) // a literal token with a leading - (TYPES.md §5.3)
 	}
@@ -97,7 +97,8 @@ func (r *run) logic(x *syntax.BinaryExpr) value.Value {
 
 // binop applies a binary operator; t types a list concatenation (TYPES.md §7.1, §7.5).
 func (r *run) binop(op syntax.TokenKind, a, b value.Value, n syntax.Node, t types.Type) value.Value {
-	p := r.prov(n, value.ProvComputed)
+	marked := !comparisons[op] && (value.IsPosition(a) || value.IsPosition(b)) // EVALUATION.md §13.1
+	p := r.provMarked(n, value.ProvComputed, marked)
 	at := func() source.Span { return r.span(n) }
 	if op == syntax.TokEq || op == syntax.TokNe {
 		eq, ok := r.equal(a, b, at)
