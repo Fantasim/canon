@@ -4,6 +4,7 @@
 package base
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -57,6 +58,25 @@ func ToneMembers() iter.Seq[Tone] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Tone) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseTone(wire); !ok {
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Tone) UnmarshalText(text []byte) error {
+	v, ok := ParseTone(string(text))
+	if !ok {
+		return errors.New("Tone: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 type baseData struct {

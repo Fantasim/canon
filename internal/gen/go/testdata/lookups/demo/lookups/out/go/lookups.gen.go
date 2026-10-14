@@ -4,6 +4,7 @@
 package lookups
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -11,21 +12,47 @@ import (
 	"example.com/data/demo/lookups/out/go/rt"
 )
 
-type StatusID uint8
+// StatusID is the key of an entry of statuses: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type StatusID struct{ position uint8 }
 
-const (
-	StatusIDA StatusID = 0
-	StatusIDB StatusID = 1
+var (
+	StatusIDA = StatusID{0}
+	StatusIDB = StatusID{1}
 )
 
 func (self StatusID) String() string {
-	switch self {
-	case StatusIDA:
+	switch self.position {
+	case 0:
 		return "a"
-	case StatusIDB:
+	case 1:
 		return "b"
 	}
-	return "StatusID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in statuses in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self StatusID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self StatusID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseStatusID(key); !ok {
+		return nil, errors.New("StatusID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *StatusID) UnmarshalText(text []byte) error {
+	v, ok := ParseStatusID(string(text))
+	if !ok {
+		return errors.New("StatusID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseStatusID(key string) (StatusID, bool) {
@@ -35,21 +62,47 @@ func ParseStatusID(key string) (StatusID, bool) {
 	case "b":
 		return StatusIDB, true
 	}
-	return 0, false
+	return StatusID{}, false
 }
 
-type OtherID uint8
+// OtherID is the key of an entry of others: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type OtherID struct{ position uint8 }
 
-const (
-	OtherIDX OtherID = 0
+var (
+	OtherIDX = OtherID{0}
 )
 
 func (self OtherID) String() string {
-	switch self {
-	case OtherIDX:
+	switch self.position {
+	case 0:
 		return "x"
 	}
-	return "OtherID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "OtherID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in others in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self OtherID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self OtherID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseOtherID(key); !ok {
+		return nil, errors.New("OtherID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *OtherID) UnmarshalText(text []byte) error {
+	v, ok := ParseOtherID(string(text))
+	if !ok {
+		return errors.New("OtherID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseOtherID(key string) (OtherID, bool) {
@@ -57,7 +110,7 @@ func ParseOtherID(key string) (OtherID, bool) {
 	case "x":
 		return OtherIDX, true
 	}
-	return 0, false
+	return OtherID{}, false
 }
 
 type Status struct {
@@ -90,7 +143,7 @@ func (self *Status) NextID(loud bool) (StatusID, bool) {
 		loud_i = 1
 	}
 	if self.next[loud_i] == nil {
-		return 0, false
+		return StatusID{}, false
 	}
 	return self.next[loud_i].id, true
 }
@@ -205,10 +258,10 @@ func (self *Statuses) Find(key string) (*Status, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id] }
+func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id.Position()] }
 
 type lookupsData struct {
 	statuses Statuses

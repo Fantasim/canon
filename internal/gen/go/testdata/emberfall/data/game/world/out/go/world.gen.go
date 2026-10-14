@@ -1062,12 +1062,13 @@ func decode_core_LevelRange(name, path string, raw json.RawMessage, dst *core.Le
 			}
 		}
 	}
+	ids108 := [...]core.StatusID{core.StatusIDOpen, core.StatusIDClosed}
 	for j106, k107 := range [...]string{"open", "closed"} {
 		if out.ranksFor_ok[j106] {
-			v108, _ := dst.RanksFor(core.StatusID(j106))
-			for j109 := range out.ranksFor[j106].Len() {
-				if v108.At(j109) == nil {
-					return fmt.Errorf("%s: %s$ranksFor.%s[%d]: no entry %v", name, path, k107, j109, out.ranksFor[j106].At(j109))
+			v109, _ := dst.RanksFor(ids108[j106])
+			for j110 := range out.ranksFor[j106].Len() {
+				if v109.At(j110) == nil {
+					return fmt.Errorf("%s: %s$ranksFor.%s[%d]: no entry %v", name, path, k107, j110, out.ranksFor[j106].At(j110))
 				}
 			}
 		}

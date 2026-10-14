@@ -203,11 +203,11 @@ func (g *gen) hookZero(s *slot, m member) string {
 	}
 }
 
-// zeroKeyOf is the zero of a ref's key: "" for a string id or key, 0 for an id enum or a number.
+// zeroKeyOf is the zero of a ref's key: "" for a string id or key, the zero struct of an opaque id, 0 for a number.
 func (g *gen) zeroKeyOf(t ir.TypeRef) string {
 	switch {
 	case isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg):
-		return zeroLit
+		return g.keyType(t) + emptyBraces
 	case isTableRef(t.Ref), isFieldRef(t.Ref):
 		return emptyString
 	case t.Key != nil && (t.Key.Kind == types.String || t.Key.Kind == types.LitUnion):

@@ -4,6 +4,7 @@
 package base
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -56,21 +57,66 @@ func RoleMembers() iter.Seq[Role] {
 	}
 }
 
-type RankID uint8
+// MarshalText writes the wire value, never the position.
+func (self Role) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseRole(wire); !ok {
+		return nil, errors.New("Role: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
 
-const (
-	RankIDLow  RankID = 0
-	RankIDHigh RankID = 1
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Role) UnmarshalText(text []byte) error {
+	v, ok := ParseRole(string(text))
+	if !ok {
+		return errors.New("Role: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+// RankID is the key of an entry of ranks: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type RankID struct{ position uint8 }
+
+var (
+	RankIDLow  = RankID{0}
+	RankIDHigh = RankID{1}
 )
 
 func (self RankID) String() string {
-	switch self {
-	case RankIDLow:
+	switch self.position {
+	case 0:
 		return "low"
-	case RankIDHigh:
+	case 1:
 		return "high"
 	}
-	return "RankID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "RankID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in ranks in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self RankID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self RankID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseRankID(key); !ok {
+		return nil, errors.New("RankID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *RankID) UnmarshalText(text []byte) error {
+	v, ok := ParseRankID(string(text))
+	if !ok {
+		return errors.New("RankID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseRankID(key string) (RankID, bool) {
@@ -80,7 +126,7 @@ func ParseRankID(key string) (RankID, bool) {
 	case "high":
 		return RankIDHigh, true
 	}
-	return 0, false
+	return RankID{}, false
 }
 
 type Rank struct {
@@ -135,10 +181,10 @@ func (self *Ranks) Find(key string) (*Rank, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Ranks) Get(id RankID) *Rank { return &self.rows[id] }
+func (self *Ranks) Get(id RankID) *Rank { return &self.rows[id.Position()] }
 
 type baseData struct {
 	ranks Ranks

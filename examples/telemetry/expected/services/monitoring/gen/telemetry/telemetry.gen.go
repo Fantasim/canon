@@ -4,6 +4,7 @@
 package telemetry
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -400,6 +401,25 @@ func EnqueueMembers() iter.Seq[Enqueue] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Enqueue) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseEnqueue(wire); !ok {
+		return nil, errors.New("Enqueue: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Enqueue) UnmarshalText(text []byte) error {
+	v, ok := ParseEnqueue(string(text))
+	if !ok {
+		return errors.New("Enqueue: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 // SqlType: A lake column type (DuckDB). The name is the SQL spelling.
 type SqlType uint8
 
@@ -497,6 +517,25 @@ func SqlTypeMembers() iter.Seq[SqlType] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self SqlType) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseSqlType(wire); !ok {
+		return nil, errors.New("SqlType: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *SqlType) UnmarshalText(text []byte) error {
+	v, ok := ParseSqlType(string(text))
+	if !ok {
+		return errors.New("SqlType: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 // FieldKind: How a column travels on the wire and lands in the lake.
 type FieldKind uint8
 
@@ -563,6 +602,25 @@ func FieldKindMembers() iter.Seq[FieldKind] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self FieldKind) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseFieldKind(wire); !ok {
+		return nil, errors.New("FieldKind: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *FieldKind) UnmarshalText(text []byte) error {
+	v, ok := ParseFieldKind(string(text))
+	if !ok {
+		return errors.New("FieldKind: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 // Currency: What a ledger leg moves. gold, item, and the point tokens are reconciled against the
 // database snapshot; `none` documents a table that moves nothing.
 type Currency uint8
@@ -617,6 +675,25 @@ func CurrencyMembers() iter.Seq[Currency] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Currency) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseCurrency(wire); !ok {
+		return nil, errors.New("Currency: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Currency) UnmarshalText(text []byte) error {
+	v, ok := ParseCurrency(string(text))
+	if !ok {
+		return errors.New("Currency: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 // Bucket: The direction of a leg, from the player's point of view.
@@ -681,6 +758,25 @@ func BucketMembers() iter.Seq[Bucket] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Bucket) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseBucket(wire); !ok {
+		return nil, errors.New("Bucket: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Bucket) UnmarshalText(text []byte) error {
+	v, ok := ParseBucket(string(text))
+	if !ok {
+		return errors.New("Bucket: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 // Leg: Which side of a single-row transfer a leg reads.
 type Leg uint8
 
@@ -727,6 +823,25 @@ func LegMembers() iter.Seq[Leg] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Leg) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseLeg(wire); !ok {
+		return nil, errors.New("Leg: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Leg) UnmarshalText(text []byte) error {
+	v, ok := ParseLeg(string(text))
+	if !ok {
+		return errors.New("Leg: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 // FarmEventKind: What happened in a farm. All ten kinds are WorldServer hooks with one FarmManager caller.
@@ -1623,6 +1738,25 @@ func VocabularyMembers() iter.Seq[Vocabulary] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Vocabulary) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseVocabulary(wire); !ok {
+		return nil, errors.New("Vocabulary: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Vocabulary) UnmarshalText(text []byte) error {
+	v, ok := ParseVocabulary(string(text))
+	if !ok {
+		return errors.New("Vocabulary: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type RowsKind uint8
 
 const (
@@ -1659,6 +1793,25 @@ func ParseRowsKind(wire string) (RowsKind, bool) {
 		return RowsKindSome, true
 	}
 	return 0, false
+}
+
+// MarshalText writes the wire value, never the position.
+func (self RowsKind) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseRowsKind(wire); !ok {
+		return nil, errors.New("RowsKind: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *RowsKind) UnmarshalText(text []byte) error {
+	v, ok := ParseRowsKind(string(text))
+	if !ok {
+		return errors.New("RowsKind: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 type MemberBranch uint8

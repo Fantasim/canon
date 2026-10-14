@@ -4,6 +4,7 @@
 package teamboard
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -71,6 +72,25 @@ func ActorMembers() iter.Seq[Actor] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Actor) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseActor(wire); !ok {
+		return nil, errors.New("Actor: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Actor) UnmarshalText(text []byte) error {
+	v, ok := ParseActor(string(text))
+	if !ok {
+		return errors.New("Actor: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 // PostField: Inputs a status transition may collect.
 type PostField uint8
 
@@ -133,21 +153,66 @@ func PostFieldMembers() iter.Seq[PostField] {
 	}
 }
 
-type IntentID uint8
+// MarshalText writes the wire value, never the position.
+func (self PostField) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParsePostField(wire); !ok {
+		return nil, errors.New("PostField: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
 
-const (
-	IntentIDIssue IntentID = 0
-	IntentIDIdea  IntentID = 1
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *PostField) UnmarshalText(text []byte) error {
+	v, ok := ParsePostField(string(text))
+	if !ok {
+		return errors.New("PostField: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+// IntentID is the key of an entry of intents: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type IntentID struct{ position uint8 }
+
+var (
+	IntentIDIssue = IntentID{0}
+	IntentIDIdea  = IntentID{1}
 )
 
 func (self IntentID) String() string {
-	switch self {
-	case IntentIDIssue:
+	switch self.position {
+	case 0:
 		return "issue"
-	case IntentIDIdea:
+	case 1:
 		return "idea"
 	}
-	return "IntentID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "IntentID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in intents in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self IntentID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self IntentID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseIntentID(key); !ok {
+		return nil, errors.New("IntentID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *IntentID) UnmarshalText(text []byte) error {
+	v, ok := ParseIntentID(string(text))
+	if !ok {
+		return errors.New("IntentID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseIntentID(key string) (IntentID, bool) {
@@ -157,24 +222,50 @@ func ParseIntentID(key string) (IntentID, bool) {
 	case "idea":
 		return IntentIDIdea, true
 	}
-	return 0, false
+	return IntentID{}, false
 }
 
-type FlagID uint8
+// FlagID is the key of an entry of flags: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type FlagID struct{ position uint8 }
 
-const (
-	FlagIDBlocking  FlagID = 0
-	FlagIDSensitive FlagID = 1
+var (
+	FlagIDBlocking  = FlagID{0}
+	FlagIDSensitive = FlagID{1}
 )
 
 func (self FlagID) String() string {
-	switch self {
-	case FlagIDBlocking:
+	switch self.position {
+	case 0:
 		return "blocking"
-	case FlagIDSensitive:
+	case 1:
 		return "sensitive"
 	}
-	return "FlagID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "FlagID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in flags in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self FlagID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self FlagID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseFlagID(key); !ok {
+		return nil, errors.New("FlagID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *FlagID) UnmarshalText(text []byte) error {
+	v, ok := ParseFlagID(string(text))
+	if !ok {
+		return errors.New("FlagID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseFlagID(key string) (FlagID, bool) {
@@ -184,36 +275,62 @@ func ParseFlagID(key string) (FlagID, bool) {
 	case "sensitive":
 		return FlagIDSensitive, true
 	}
-	return 0, false
+	return FlagID{}, false
 }
 
-type StatusID uint8
+// StatusID is the key of an entry of statuses: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type StatusID struct{ position uint8 }
 
-const (
-	StatusIDOpen      StatusID = 0
-	StatusIDTaken     StatusID = 1
-	StatusIDFixed     StatusID = 2
-	StatusIDVerified  StatusID = 3
-	StatusIDWontDo    StatusID = 4
-	StatusIDDuplicate StatusID = 5
+var (
+	StatusIDOpen      = StatusID{0}
+	StatusIDTaken     = StatusID{1}
+	StatusIDFixed     = StatusID{2}
+	StatusIDVerified  = StatusID{3}
+	StatusIDWontDo    = StatusID{4}
+	StatusIDDuplicate = StatusID{5}
 )
 
 func (self StatusID) String() string {
-	switch self {
-	case StatusIDOpen:
+	switch self.position {
+	case 0:
 		return "open"
-	case StatusIDTaken:
+	case 1:
 		return "taken"
-	case StatusIDFixed:
+	case 2:
 		return "fixed"
-	case StatusIDVerified:
+	case 3:
 		return "verified"
-	case StatusIDWontDo:
+	case 4:
 		return "wont_do"
-	case StatusIDDuplicate:
+	case 5:
 		return "duplicate"
 	}
-	return "StatusID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in statuses in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self StatusID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self StatusID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseStatusID(key); !ok {
+		return nil, errors.New("StatusID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *StatusID) UnmarshalText(text []byte) error {
+	v, ok := ParseStatusID(string(text))
+	if !ok {
+		return errors.New("StatusID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseStatusID(key string) (StatusID, bool) {
@@ -231,30 +348,56 @@ func ParseStatusID(key string) (StatusID, bool) {
 	case "duplicate":
 		return StatusIDDuplicate, true
 	}
-	return 0, false
+	return StatusID{}, false
 }
 
-type ColumnID uint8
+// ColumnID is the key of an entry of columns: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type ColumnID struct{ position uint8 }
 
-const (
-	ColumnIDUnclaimed ColumnID = 0
-	ColumnIDTaken     ColumnID = 1
-	ColumnIDFixed     ColumnID = 2
-	ColumnIDDone      ColumnID = 3
+var (
+	ColumnIDUnclaimed = ColumnID{0}
+	ColumnIDTaken     = ColumnID{1}
+	ColumnIDFixed     = ColumnID{2}
+	ColumnIDDone      = ColumnID{3}
 )
 
 func (self ColumnID) String() string {
-	switch self {
-	case ColumnIDUnclaimed:
+	switch self.position {
+	case 0:
 		return "unclaimed"
-	case ColumnIDTaken:
+	case 1:
 		return "taken"
-	case ColumnIDFixed:
+	case 2:
 		return "fixed"
-	case ColumnIDDone:
+	case 3:
 		return "done"
 	}
-	return "ColumnID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ColumnID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in columns in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self ColumnID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self ColumnID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseColumnID(key); !ok {
+		return nil, errors.New("ColumnID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *ColumnID) UnmarshalText(text []byte) error {
+	v, ok := ParseColumnID(string(text))
+	if !ok {
+		return errors.New("ColumnID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseColumnID(key string) (ColumnID, bool) {
@@ -268,27 +411,53 @@ func ParseColumnID(key string) (ColumnID, bool) {
 	case "done":
 		return ColumnIDDone, true
 	}
-	return 0, false
+	return ColumnID{}, false
 }
 
-type SeverityID uint8
+// SeverityID is the key of an entry of severities: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type SeverityID struct{ position uint8 }
 
-const (
-	SeverityIDLow      SeverityID = 0
-	SeverityIDNormal   SeverityID = 1
-	SeverityIDCritical SeverityID = 2
+var (
+	SeverityIDLow      = SeverityID{0}
+	SeverityIDNormal   = SeverityID{1}
+	SeverityIDCritical = SeverityID{2}
 )
 
 func (self SeverityID) String() string {
-	switch self {
-	case SeverityIDLow:
+	switch self.position {
+	case 0:
 		return "low"
-	case SeverityIDNormal:
+	case 1:
 		return "normal"
-	case SeverityIDCritical:
+	case 2:
 		return "critical"
 	}
-	return "SeverityID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "SeverityID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in severities in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self SeverityID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self SeverityID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseSeverityID(key); !ok {
+		return nil, errors.New("SeverityID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *SeverityID) UnmarshalText(text []byte) error {
+	v, ok := ParseSeverityID(string(text))
+	if !ok {
+		return errors.New("SeverityID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseSeverityID(key string) (SeverityID, bool) {
@@ -300,27 +469,53 @@ func ParseSeverityID(key string) (SeverityID, bool) {
 	case "critical":
 		return SeverityIDCritical, true
 	}
-	return 0, false
+	return SeverityID{}, false
 }
 
-type AreaGroupID uint8
+// AreaGroupID is the key of an entry of areaGroups: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type AreaGroupID struct{ position uint8 }
 
-const (
-	AreaGroupIDInGame   AreaGroupID = 0
-	AreaGroupIDOutGame  AreaGroupID = 1
-	AreaGroupIDInternal AreaGroupID = 2
+var (
+	AreaGroupIDInGame   = AreaGroupID{0}
+	AreaGroupIDOutGame  = AreaGroupID{1}
+	AreaGroupIDInternal = AreaGroupID{2}
 )
 
 func (self AreaGroupID) String() string {
-	switch self {
-	case AreaGroupIDInGame:
+	switch self.position {
+	case 0:
 		return "in_game"
-	case AreaGroupIDOutGame:
+	case 1:
 		return "out_game"
-	case AreaGroupIDInternal:
+	case 2:
 		return "internal"
 	}
-	return "AreaGroupID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "AreaGroupID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in areaGroups in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self AreaGroupID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self AreaGroupID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseAreaGroupID(key); !ok {
+		return nil, errors.New("AreaGroupID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *AreaGroupID) UnmarshalText(text []byte) error {
+	v, ok := ParseAreaGroupID(string(text))
+	if !ok {
+		return errors.New("AreaGroupID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseAreaGroupID(key string) (AreaGroupID, bool) {
@@ -332,54 +527,80 @@ func ParseAreaGroupID(key string) (AreaGroupID, bool) {
 	case "internal":
 		return AreaGroupIDInternal, true
 	}
-	return 0, false
+	return AreaGroupID{}, false
 }
 
-type AreaID uint8
+// AreaID is the key of an entry of areas: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type AreaID struct{ position uint8 }
 
-const (
-	AreaIDGame           AreaID = 0
-	AreaIDBalance        AreaID = 1
-	AreaIDWebsite        AreaID = 2
-	AreaIDResourceStudio AreaID = 3
-	AreaIDGameServer     AreaID = 4
-	AreaIDClient         AreaID = 5
-	AreaIDResource       AreaID = 6
-	AreaIDSovcommon      AreaID = 7
-	AreaIDAdminPanel     AreaID = 8
-	AreaIDAnalytics      AreaID = 9
-	AreaIDTeamBoard      AreaID = 10
-	AreaIDInternal       AreaID = 11
+var (
+	AreaIDGame           = AreaID{0}
+	AreaIDBalance        = AreaID{1}
+	AreaIDWebsite        = AreaID{2}
+	AreaIDResourceStudio = AreaID{3}
+	AreaIDGameServer     = AreaID{4}
+	AreaIDClient         = AreaID{5}
+	AreaIDResource       = AreaID{6}
+	AreaIDSovcommon      = AreaID{7}
+	AreaIDAdminPanel     = AreaID{8}
+	AreaIDAnalytics      = AreaID{9}
+	AreaIDTeamBoard      = AreaID{10}
+	AreaIDInternal       = AreaID{11}
 )
 
 func (self AreaID) String() string {
-	switch self {
-	case AreaIDGame:
+	switch self.position {
+	case 0:
 		return "game"
-	case AreaIDBalance:
+	case 1:
 		return "balance"
-	case AreaIDWebsite:
+	case 2:
 		return "website"
-	case AreaIDResourceStudio:
+	case 3:
 		return "resource_studio"
-	case AreaIDGameServer:
+	case 4:
 		return "game_server"
-	case AreaIDClient:
+	case 5:
 		return "client"
-	case AreaIDResource:
+	case 6:
 		return "resource"
-	case AreaIDSovcommon:
+	case 7:
 		return "sovcommon"
-	case AreaIDAdminPanel:
+	case 8:
 		return "admin_panel"
-	case AreaIDAnalytics:
+	case 9:
 		return "analytics"
-	case AreaIDTeamBoard:
+	case 10:
 		return "team_board"
-	case AreaIDInternal:
+	case 11:
 		return "internal"
 	}
-	return "AreaID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "AreaID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in areas in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self AreaID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self AreaID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseAreaID(key); !ok {
+		return nil, errors.New("AreaID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *AreaID) UnmarshalText(text []byte) error {
+	v, ok := ParseAreaID(string(text))
+	if !ok {
+		return errors.New("AreaID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseAreaID(key string) (AreaID, bool) {
@@ -409,7 +630,7 @@ func ParseAreaID(key string) (AreaID, bool) {
 	case "internal":
 		return AreaIDInternal, true
 	}
-	return 0, false
+	return AreaID{}, false
 }
 
 // Intent: What kind of post this is; `minRole` gates who may post it.
@@ -855,10 +1076,10 @@ func (self *Intents) Find(key string) (*Intent, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Intents) Get(id IntentID) *Intent { return &self.rows[id] }
+func (self *Intents) Get(id IntentID) *Intent { return &self.rows[id.Position()] }
 
 // Flags: The reporter's booleans.
 type Flags struct {
@@ -888,10 +1109,10 @@ func (self *Flags) Find(key string) (*Flag, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Flags) Get(id FlagID) *Flag { return &self.rows[id] }
+func (self *Flags) Get(id FlagID) *Flag { return &self.rows[id.Position()] }
 
 // Statuses: The post lifecycle.
 type Statuses struct {
@@ -921,10 +1142,10 @@ func (self *Statuses) Find(key string) (*Status, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id] }
+func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id.Position()] }
 
 // Columns: The deck's columns, left to right.
 type Columns struct {
@@ -954,10 +1175,10 @@ func (self *Columns) Find(key string) (*Column, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Columns) Get(id ColumnID) *Column { return &self.rows[id] }
+func (self *Columns) Get(id ColumnID) *Column { return &self.rows[id.Position()] }
 
 // Severities: How bad a triaged post is.
 type Severities struct {
@@ -987,10 +1208,10 @@ func (self *Severities) Find(key string) (*Severity, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Severities) Get(id SeverityID) *Severity { return &self.rows[id] }
+func (self *Severities) Get(id SeverityID) *Severity { return &self.rows[id.Position()] }
 
 // AreaGroups: The headers of the area picker.
 type AreaGroups struct {
@@ -1020,10 +1241,10 @@ func (self *AreaGroups) Find(key string) (*AreaGroup, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *AreaGroups) Get(id AreaGroupID) *AreaGroup { return &self.rows[id] }
+func (self *AreaGroups) Get(id AreaGroupID) *AreaGroup { return &self.rows[id.Position()] }
 
 // Areas: Where a post was seen.
 type Areas struct {
@@ -1053,10 +1274,10 @@ func (self *Areas) Find(key string) (*Area, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Areas) Get(id AreaID) *Area { return &self.rows[id] }
+func (self *Areas) Get(id AreaID) *Area { return &self.rows[id.Position()] }
 
 type teamboardData struct {
 	intents         Intents
@@ -1437,7 +1658,7 @@ var canTransitionTable = [6][6]bool{
 
 // CanTransition: sovcommon's CanTransition.
 func CanTransition(from StatusID, to StatusID) bool {
-	return canTransitionTable[from][to]
+	return canTransitionTable[from.Position()][to.Position()]
 }
 
 var columnOfTable = sync.OnceValue(func() *[6]*Column {
@@ -1455,7 +1676,7 @@ var columnOfTable = sync.OnceValue(func() *[6]*Column {
 // ColumnOf: sovcommon's ColumnOf. `none` for a status no active column claims (only a retired
 // status can be in that case), like the `(Column, bool)` it replaces.
 func ColumnOf(s StatusID) *Column {
-	return columnOfTable()[s]
+	return columnOfTable()[s.Position()]
 }
 
 var areasVisibleToTable = sync.OnceValue(func() *[6]rt.List[*Area] {

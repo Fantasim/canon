@@ -232,6 +232,8 @@ func (g *gen) zeroOf(t ir.TypeRef) string {
 		return g.floatVector(0)
 	case t.Kind == types.String, t.Kind == types.LitUnion:
 		return emptyString
+	case t.Kind == types.Ref && isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg):
+		return g.keyType(t) + emptyBraces // an opaque id's zero struct, never an untyped 0 (CODEGEN.md §5.3)
 	case t.Kind == types.Ref && isTableRef(t.Ref) && g.isData():
 		return emptyString
 	case t.Kind == types.Ref && !isTableRef(t.Ref) && t.Key != nil:

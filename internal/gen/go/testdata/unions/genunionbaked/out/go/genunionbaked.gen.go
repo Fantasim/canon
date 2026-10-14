@@ -4,6 +4,7 @@
 package genunionbaked
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -56,21 +57,66 @@ func StatusMembers() iter.Seq[Status] {
 	}
 }
 
-type ItemID uint8
+// MarshalText writes the wire value, never the position.
+func (self Status) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseStatus(wire); !ok {
+		return nil, errors.New("Status: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
 
-const (
-	ItemIDA ItemID = 0
-	ItemIDB ItemID = 1
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Status) UnmarshalText(text []byte) error {
+	v, ok := ParseStatus(string(text))
+	if !ok {
+		return errors.New("Status: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+// ItemID is the key of an entry of items: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type ItemID struct{ position uint8 }
+
+var (
+	ItemIDA = ItemID{0}
+	ItemIDB = ItemID{1}
 )
 
 func (self ItemID) String() string {
-	switch self {
-	case ItemIDA:
+	switch self.position {
+	case 0:
 		return "a"
-	case ItemIDB:
+	case 1:
 		return "b"
 	}
-	return "ItemID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ItemID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in items in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self ItemID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self ItemID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseItemID(key); !ok {
+		return nil, errors.New("ItemID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *ItemID) UnmarshalText(text []byte) error {
+	v, ok := ParseItemID(string(text))
+	if !ok {
+		return errors.New("ItemID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseItemID(key string) (ItemID, bool) {
@@ -80,7 +126,7 @@ func ParseItemID(key string) (ItemID, bool) {
 	case "b":
 		return ItemIDB, true
 	}
-	return 0, false
+	return ItemID{}, false
 }
 
 type Item struct {
@@ -135,10 +181,10 @@ func (self *Items) Find(key string) (*Item, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Items) Get(id ItemID) *Item { return &self.rows[id] }
+func (self *Items) Get(id ItemID) *Item { return &self.rows[id.Position()] }
 
 type genunionbakedData struct {
 	items Items

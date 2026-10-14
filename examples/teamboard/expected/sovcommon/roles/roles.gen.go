@@ -4,6 +4,7 @@
 package roles
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 )
@@ -87,4 +88,23 @@ func RoleMembers() iter.Seq[Role] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Role) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseRole(wire); !ok {
+		return nil, errors.New("Role: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Role) UnmarshalText(text []byte) error {
+	v, ok := ParseRole(string(text))
+	if !ok {
+		return errors.New("Role: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }

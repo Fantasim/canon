@@ -5,6 +5,7 @@ package genuniondata
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"iter"
 	"slices"
@@ -63,6 +64,25 @@ func StatusMembers() iter.Seq[Status] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Status) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseStatus(wire); !ok {
+		return nil, errors.New("Status: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Status) UnmarshalText(text []byte) error {
+	v, ok := ParseStatus(string(text))
+	if !ok {
+		return errors.New("Status: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 type ItemID string

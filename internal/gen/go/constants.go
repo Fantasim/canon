@@ -34,6 +34,16 @@ const (
 	notFoundTail     = "}\nreturn 0, false\n}\n\n"
 )
 
+// The opaque id (CODEGEN.md §5.3, T15; DECISIONS 379): its type with the fixed comment, its vars and the not-found tail of its Parse.
+const (
+	idsDeclFormat, idCaseFormat = "%s := [...]%s{%s}\n", "case %s:\nreturn %s\n"
+	idDocFormat                 = "// %[1]s is the key of an entry of %[2]s: compare it, switch on it, look it up with Get.\n" +
+		"// To store or send it, write its key (String, or MarshalText through encoding/json):\n" +
+		"// its position is not an id, and changes when entry files move.\n"
+	idHeaderFormat, idVarFormat      = "type %s struct{ position %s }\n\n", "%s = %s{%s}\n"
+	positionMethod, idNotFoundFormat = "Position", "}\nreturn %s{}, false\n}\n\n"
+)
+
 // Make hooks and rows of other packages' records (CODEGEN.md §5.9, §5.14; DECISIONS 323): templates, the row's own names, and the lines resolving a hook's refs.
 const (
 	tmplHook, tmplRow, tmplReader, tmplReaderOut = "hook", "row", "reader", "readerOut"
@@ -231,6 +241,7 @@ const (
 	tempIndex   = "j"
 	tempElem    = "x"
 	tempKey     = "k"
+	tempIDs     = "ids"
 	tempMember  = "m"
 	tempRaw     = "r"
 	tempObject  = "o"

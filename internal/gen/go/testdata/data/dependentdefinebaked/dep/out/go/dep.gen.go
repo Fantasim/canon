@@ -4,6 +4,7 @@
 package dep
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -63,6 +64,25 @@ func KMembers() iter.Seq[K] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self K) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseK(wire); !ok {
+		return nil, errors.New("K: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *K) UnmarshalText(text []byte) error {
+	v, ok := ParseK(string(text))
+	if !ok {
+		return errors.New("K: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type PBranch uint8
 
 const (
@@ -70,21 +90,47 @@ const (
 	PBranchTwo PBranch = 1
 )
 
-type ThingID uint8
+// ThingID is the key of an entry of things: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type ThingID struct{ position uint8 }
 
-const (
-	ThingIDA ThingID = 0
-	ThingIDB ThingID = 1
+var (
+	ThingIDA = ThingID{0}
+	ThingIDB = ThingID{1}
 )
 
 func (self ThingID) String() string {
-	switch self {
-	case ThingIDA:
+	switch self.position {
+	case 0:
 		return "a"
-	case ThingIDB:
+	case 1:
 		return "b"
 	}
-	return "ThingID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ThingID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in things in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self ThingID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self ThingID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseThingID(key); !ok {
+		return nil, errors.New("ThingID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *ThingID) UnmarshalText(text []byte) error {
+	v, ok := ParseThingID(string(text))
+	if !ok {
+		return errors.New("ThingID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseThingID(key string) (ThingID, bool) {
@@ -94,7 +140,7 @@ func ParseThingID(key string) (ThingID, bool) {
 	case "b":
 		return ThingIDB, true
 	}
-	return 0, false
+	return ThingID{}, false
 }
 
 type P struct {
@@ -209,10 +255,10 @@ func (self *Things) Find(key string) (*Thing, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Things) Get(id ThingID) *Thing { return &self.rows[id] }
+func (self *Things) Get(id ThingID) *Thing { return &self.rows[id.Position()] }
 
 type depData struct {
 	things Things

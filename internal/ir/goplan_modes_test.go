@@ -63,7 +63,6 @@ func compareModes(t *testing.T, p *ir.Package, e *ir.Emit) {
 	}
 	want := goPlanned(p, ir.PlanGoNames(p, e))
 	got := declaredNames(t, goFile(t, files))
-	dropPendingGo(got, want)
 	imports := map[string]bool{}
 	for _, f := range files {
 		if strings.HasSuffix(f.Path, conformanceSuffix) {

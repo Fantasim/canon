@@ -4,6 +4,7 @@
 package core
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -59,6 +60,25 @@ func AimMembers() iter.Seq[Aim] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Aim) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseAim(wire); !ok {
+		return nil, errors.New("Aim: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Aim) UnmarshalText(text []byte) error {
+	v, ok := ParseAim(string(text))
+	if !ok {
+		return errors.New("Aim: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 // Mood: A mood.
 type Mood uint8
 
@@ -107,6 +127,25 @@ func MoodMembers() iter.Seq[Mood] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Mood) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseMood(wire); !ok {
+		return nil, errors.New("Mood: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Mood) UnmarshalText(text []byte) error {
+	v, ok := ParseMood(string(text))
+	if !ok {
+		return errors.New("Mood: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type RewardKind uint8
 
 const (
@@ -145,6 +184,25 @@ func ParseRewardKind(wire string) (RewardKind, bool) {
 	return 0, false
 }
 
+// MarshalText writes the wire value, never the position.
+func (self RewardKind) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseRewardKind(wire); !ok {
+		return nil, errors.New("RewardKind: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *RewardKind) UnmarshalText(text []byte) error {
+	v, ok := ParseRewardKind(string(text))
+	if !ok {
+		return errors.New("RewardKind: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type BonusBranch uint8
 
 const (
@@ -152,24 +210,50 @@ const (
 	BonusBranchMood BonusBranch = 1
 )
 
-type StatusID uint8
+// StatusID is the key of an entry of statuses: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type StatusID struct{ position uint8 }
 
-const (
-	StatusIDOpen   StatusID = 0
-	StatusIDClosed StatusID = 1
-	StatusIDShut   StatusID = 2
+var (
+	StatusIDOpen   = StatusID{0}
+	StatusIDClosed = StatusID{1}
+	StatusIDShut   = StatusID{2}
 )
 
 func (self StatusID) String() string {
-	switch self {
-	case StatusIDOpen:
+	switch self.position {
+	case 0:
 		return "open"
-	case StatusIDClosed:
+	case 1:
 		return "closed"
-	case StatusIDShut:
+	case 2:
 		return "shut"
 	}
-	return "StatusID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in statuses in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self StatusID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self StatusID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseStatusID(key); !ok {
+		return nil, errors.New("StatusID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *StatusID) UnmarshalText(text []byte) error {
+	v, ok := ParseStatusID(string(text))
+	if !ok {
+		return errors.New("StatusID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseStatusID(key string) (StatusID, bool) {
@@ -181,7 +265,7 @@ func ParseStatusID(key string) (StatusID, bool) {
 	case "shut":
 		return StatusIDShut, true
 	}
-	return 0, false
+	return StatusID{}, false
 }
 
 type MarkerID string
@@ -420,10 +504,10 @@ func (self *Statuses) Find(key string) (*Status, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id] }
+func (self *Statuses) Get(id StatusID) *Status { return &self.rows[id.Position()] }
 
 type coreData struct {
 	statuses Statuses

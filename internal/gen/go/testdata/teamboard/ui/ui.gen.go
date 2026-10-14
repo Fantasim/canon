@@ -4,6 +4,7 @@
 package ui
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 )
@@ -129,6 +130,25 @@ func ToneMembers() iter.Seq[Tone] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Tone) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseTone(wire); !ok {
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Tone) UnmarshalText(text []byte) error {
+	v, ok := ParseTone(string(text))
+	if !ok {
+		return errors.New("Tone: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 // Icon: Icons sovcommon exports (icons.ts). An icon that is not listed here is a type
@@ -297,4 +317,23 @@ func IconMembers() iter.Seq[Icon] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Icon) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseIcon(wire); !ok {
+		return nil, errors.New("Icon: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Icon) UnmarshalText(text []byte) error {
+	v, ok := ParseIcon(string(text))
+	if !ok {
+		return errors.New("Icon: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }

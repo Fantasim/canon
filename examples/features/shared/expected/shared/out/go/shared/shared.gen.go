@@ -4,6 +4,7 @@
 package shared
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -13,21 +14,47 @@ import (
 	"example.com/features/shared/out/go/shared/rt"
 )
 
-type ZoneID uint8
+// ZoneID is the key of an entry of zones: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type ZoneID struct{ position uint8 }
 
-const (
-	ZoneIDForest ZoneID = 0
-	ZoneIDMarsh  ZoneID = 1
+var (
+	ZoneIDForest = ZoneID{0}
+	ZoneIDMarsh  = ZoneID{1}
 )
 
 func (self ZoneID) String() string {
-	switch self {
-	case ZoneIDForest:
+	switch self.position {
+	case 0:
 		return "forest"
-	case ZoneIDMarsh:
+	case 1:
 		return "marsh"
 	}
-	return "ZoneID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ZoneID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in zones in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self ZoneID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self ZoneID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseZoneID(key); !ok {
+		return nil, errors.New("ZoneID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *ZoneID) UnmarshalText(text []byte) error {
+	v, ok := ParseZoneID(string(text))
+	if !ok {
+		return errors.New("ZoneID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseZoneID(key string) (ZoneID, bool) {
@@ -37,24 +64,50 @@ func ParseZoneID(key string) (ZoneID, bool) {
 	case "marsh":
 		return ZoneIDMarsh, true
 	}
-	return 0, false
+	return ZoneID{}, false
 }
 
-type LevelRangeID uint8
+// LevelRangeID is the key of an entry of bands: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type LevelRangeID struct{ position uint8 }
 
-const (
-	LevelRangeIDLow LevelRangeID = 0
-	LevelRangeIDOld LevelRangeID = 1
+var (
+	LevelRangeIDLow = LevelRangeID{0}
+	LevelRangeIDOld = LevelRangeID{1}
 )
 
 func (self LevelRangeID) String() string {
-	switch self {
-	case LevelRangeIDLow:
+	switch self.position {
+	case 0:
 		return "low"
-	case LevelRangeIDOld:
+	case 1:
 		return "old"
 	}
-	return "LevelRangeID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "LevelRangeID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in bands in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self LevelRangeID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self LevelRangeID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseLevelRangeID(key); !ok {
+		return nil, errors.New("LevelRangeID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *LevelRangeID) UnmarshalText(text []byte) error {
+	v, ok := ParseLevelRangeID(string(text))
+	if !ok {
+		return errors.New("LevelRangeID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseLevelRangeID(key string) (LevelRangeID, bool) {
@@ -64,21 +117,47 @@ func ParseLevelRangeID(key string) (LevelRangeID, bool) {
 	case "old":
 		return LevelRangeIDOld, true
 	}
-	return 0, false
+	return LevelRangeID{}, false
 }
 
-type StatusID uint8
+// StatusID is the key of an entry of moods: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type StatusID struct{ position uint8 }
 
-const (
-	StatusIDCalm StatusID = 0
+var (
+	StatusIDCalm = StatusID{0}
 )
 
 func (self StatusID) String() string {
-	switch self {
-	case StatusIDCalm:
+	switch self.position {
+	case 0:
 		return "calm"
 	}
-	return "StatusID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in moods in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self StatusID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self StatusID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseStatusID(key); !ok {
+		return nil, errors.New("StatusID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *StatusID) UnmarshalText(text []byte) error {
+	v, ok := ParseStatusID(string(text))
+	if !ok {
+		return errors.New("StatusID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseStatusID(key string) (StatusID, bool) {
@@ -86,7 +165,7 @@ func ParseStatusID(key string) (StatusID, bool) {
 	case "calm":
 		return StatusIDCalm, true
 	}
-	return 0, false
+	return StatusID{}, false
 }
 
 type MarkerID string
@@ -256,10 +335,10 @@ func (self *Zones) Find(key string) (*Zone, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Zones) Get(id ZoneID) *Zone { return &self.rows[id] }
+func (self *Zones) Get(id ZoneID) *Zone { return &self.rows[id.Position()] }
 
 // Bands: Level bands: core's LevelRange as this package's table.
 type Bands struct {
@@ -289,10 +368,10 @@ func (self *Bands) Find(key string) (*LevelRangeRow, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Bands) Get(id LevelRangeID) *LevelRangeRow { return &self.rows[id] }
+func (self *Bands) Get(id LevelRangeID) *LevelRangeRow { return &self.rows[id.Position()] }
 
 // Moods of the world: core's Status, keyed by this package's own StatusID beside core's.
 type Moods struct {
@@ -322,10 +401,10 @@ func (self *Moods) Find(key string) (*StatusRow, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Moods) Get(id StatusID) *StatusRow { return &self.rows[id] }
+func (self *Moods) Get(id StatusID) *StatusRow { return &self.rows[id.Position()] }
 
 type sharedData struct {
 	zones Zones

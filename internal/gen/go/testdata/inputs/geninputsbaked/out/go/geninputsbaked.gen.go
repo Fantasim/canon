@@ -68,6 +68,25 @@ func ModeMembers() iter.Seq[Mode] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Mode) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseMode(wire); !ok {
+		return nil, errors.New("Mode: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Mode) UnmarshalText(text []byte) error {
+	v, ok := ParseMode(string(text))
+	if !ok {
+		return errors.New("Mode: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type Gen struct {
 }
 

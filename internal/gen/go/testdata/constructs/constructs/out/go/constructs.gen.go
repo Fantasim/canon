@@ -4,6 +4,7 @@
 package constructs
 
 import (
+	"errors"
 	"iter"
 	"math"
 	"strconv"
@@ -163,6 +164,25 @@ func GradeMembers() iter.Seq[Grade] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Grade) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseGrade(wire); !ok {
+		return nil, errors.New("Grade: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Grade) UnmarshalText(text []byte) error {
+	v, ok := ParseGrade(string(text))
+	if !ok {
+		return errors.New("Grade: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type Feeling uint8
 
 const (
@@ -210,6 +230,25 @@ func FeelingMembers() iter.Seq[Feeling] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Feeling) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseFeeling(wire); !ok {
+		return nil, errors.New("Feeling: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Feeling) UnmarshalText(text []byte) error {
+	v, ok := ParseFeeling(string(text))
+	if !ok {
+		return errors.New("Feeling: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type ShapeKind uint8
 
 const (
@@ -254,21 +293,66 @@ func ParseShapeKind(wire string) (ShapeKind, bool) {
 	return 0, false
 }
 
-type RuneID uint8
+// MarshalText writes the wire value, never the position.
+func (self ShapeKind) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseShapeKind(wire); !ok {
+		return nil, errors.New("ShapeKind: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
 
-const (
-	RuneIDAlpha RuneID = 0
-	RuneIDBeta2 RuneID = 1
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *ShapeKind) UnmarshalText(text []byte) error {
+	v, ok := ParseShapeKind(string(text))
+	if !ok {
+		return errors.New("ShapeKind: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+// RuneID is the key of an entry of runes: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type RuneID struct{ position uint8 }
+
+var (
+	RuneIDAlpha = RuneID{0}
+	RuneIDBeta2 = RuneID{1}
 )
 
 func (self RuneID) String() string {
-	switch self {
-	case RuneIDAlpha:
+	switch self.position {
+	case 0:
 		return "alpha"
-	case RuneIDBeta2:
+	case 1:
 		return "beta_2"
 	}
-	return "RuneID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "RuneID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in runes in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self RuneID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self RuneID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseRuneID(key); !ok {
+		return nil, errors.New("RuneID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *RuneID) UnmarshalText(text []byte) error {
+	v, ok := ParseRuneID(string(text))
+	if !ok {
+		return errors.New("RuneID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseRuneID(key string) (RuneID, bool) {
@@ -278,7 +362,7 @@ func ParseRuneID(key string) (RuneID, bool) {
 	case "beta_2":
 		return RuneIDBeta2, true
 	}
-	return 0, false
+	return RuneID{}, false
 }
 
 // Potion: A potion.
@@ -565,10 +649,10 @@ func (self *Runes) Find(key string) (*Rune, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Runes) Get(id RuneID) *Rune { return &self.rows[id] }
+func (self *Runes) Get(id RuneID) *Rune { return &self.rows[id.Position()] }
 
 var runesCodeIndex = sync.OnceValue(func() map[uint16]int {
 	rows := GetRunes().rows
@@ -747,7 +831,7 @@ func GetMaybeRune() *Rune { return constructsValues().maybeRune }
 
 func GetMaybeRuneID() (RuneID, bool) {
 	if constructsValues().maybeRune == nil {
-		return 0, false
+		return RuneID{}, false
 	}
 	return constructsValues().maybeRune.id, true
 }
@@ -811,7 +895,7 @@ var bonusOfTable = [2]struct {
 }{{v: 7, ok: true}, {}}
 
 func BonusOf(r RuneID) (int64, bool) {
-	return bonusOfTable[r].v, bonusOfTable[r].ok
+	return bonusOfTable[r.Position()].v, bonusOfTable[r.Position()].ok
 }
 
 var answerTable int64 = 42

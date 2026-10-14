@@ -4,6 +4,7 @@
 package escapes
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -12,21 +13,47 @@ import (
 	q "example.com/features/q/out/go"
 )
 
-type GateID uint8
+// GateID is the key of an entry of gates: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type GateID struct{ position uint8 }
 
-const (
-	GateIDEast GateID = 0
-	GateIDWest GateID = 1
+var (
+	GateIDEast = GateID{0}
+	GateIDWest = GateID{1}
 )
 
 func (self GateID) String() string {
-	switch self {
-	case GateIDEast:
+	switch self.position {
+	case 0:
 		return "east"
-	case GateIDWest:
+	case 1:
 		return "west"
 	}
-	return "GateID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "GateID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in gates in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self GateID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self GateID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseGateID(key); !ok {
+		return nil, errors.New("GateID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *GateID) UnmarshalText(text []byte) error {
+	v, ok := ParseGateID(string(text))
+	if !ok {
+		return errors.New("GateID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseGateID(key string) (GateID, bool) {
@@ -36,7 +63,7 @@ func ParseGateID(key string) (GateID, bool) {
 	case "west":
 		return GateIDWest, true
 	}
-	return 0, false
+	return GateID{}, false
 }
 
 type Gate struct {
@@ -95,10 +122,10 @@ func (self *Gates) Find(key string) (*Gate, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Gates) Get(id GateID) *Gate { return &self.rows[id] }
+func (self *Gates) Get(id GateID) *Gate { return &self.rows[id.Position()] }
 
 type escapesData struct {
 	gates Gates

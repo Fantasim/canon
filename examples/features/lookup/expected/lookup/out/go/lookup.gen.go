@@ -4,6 +4,7 @@
 package lookup
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 )
@@ -61,6 +62,25 @@ func GradeMembers() iter.Seq[Grade] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Grade) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseGrade(wire); !ok {
+		return nil, errors.New("Grade: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Grade) UnmarshalText(text []byte) error {
+	v, ok := ParseGrade(string(text))
+	if !ok {
+		return errors.New("Grade: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 // Tier: Job tiers, lowest first.
@@ -130,6 +150,25 @@ func TierMembers() iter.Seq[Tier] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Tier) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseTier(wire); !ok {
+		return nil, errors.New("Tier: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Tier) UnmarshalText(text []byte) error {
+	v, ok := ParseTier(string(text))
+	if !ok {
+		return errors.New("Tier: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 var canUpgradeTable = [3][5]bool{

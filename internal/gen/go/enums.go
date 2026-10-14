@@ -21,6 +21,9 @@ type enumSpec struct {
 	codes    string   // the @codes Go type: Code() and <E>FromCode
 	open     bool     // an opened enum, whose values are its wire values (DECISIONS 339)
 	numbers  []string // an opened enum's codes, in member order
+	value    string   // an id enum: the table value its keys name (CODEGEN.md §5.3)
+	id       bool     // an opaque id struct (a baked table's id), not an integer enum
+	text     bool     // MarshalText and UnmarshalText of the wire value (§5.2, DECISIONS 379)
 }
 
 // enumConst is one member: its constant, its value and its doc.
@@ -48,6 +51,7 @@ func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 	if s.open {
 		s.under = goString
 	}
+	s.text = !s.open && e.Codes == nil
 	for i, m := range e.Members {
 		v := strconv.Itoa(i)
 		if e.Codes != nil {
@@ -81,7 +85,7 @@ func (g *gen) kindEnums() {
 		if !ok {
 			continue
 		}
-		s := &enumSpec{name: g.names.KindName(v), under: smallestUint(len(v.Cases)), parseArg: wireArg}
+		s := &enumSpec{name: g.names.KindName(v), under: smallestUint(len(v.Cases)), parseArg: wireArg, text: true}
 		for i, c := range v.Cases {
 			s.consts = append(s.consts, enumConst{name: g.names.KindMemberName(v, c), value: strconv.Itoa(i), doc: kindMemberDoc(c)})
 			s.names = append(s.names, c.Name)
@@ -122,7 +126,7 @@ func (g *gen) idEnums() {
 			g.stringID(written, g.names.IDTypeName(rec)) // CODEGEN.md §5.3: data mode keys are strings
 			continue
 		}
-		s := &enumSpec{name: g.names.IDTypeName(rec), under: smallestUint(len(v.IDs)), parseArg: keyArg}
+		s := &enumSpec{name: g.names.IDTypeName(rec), under: smallestUint(len(v.IDs)), parseArg: keyArg, id: true, value: v.Name}
 		for i, id := range v.IDs {
 			s.consts = append(s.consts, enumConst{name: g.names.IDMemberName(rec, id), value: strconv.Itoa(i)})
 			s.names = append(s.names, id)
@@ -142,6 +146,10 @@ func (g *gen) stringID(written map[string]bool, name string) {
 
 // writeEnum writes the type, its constants and its methods.
 func (g *gen) writeEnum(s *enumSpec) {
+	if s.id {
+		g.writeID(s)
+		return
+	}
 	g.body.WriteString(docFor(s.name, s.doc))
 	g.printf(enumHeaderFormat, s.name, s.under)
 	for _, c := range s.consts {
@@ -164,6 +172,9 @@ func (g *gen) writeEnum(s *enumSpec) {
 	if s.codes != "" {
 		g.writeCodes(s)
 	}
+	if s.text {
+		g.printf(enumTextFormat, s.name, g.names.ParseName(s.name), g.use(strconvPkg, strconvPkg), g.use(errorsPkg, errorsPkg))
+	}
 }
 
 // writeSwitch writes String or Wire: a switch on the member, then the Go-style E(n) fallback.
@@ -184,6 +195,10 @@ func (g *gen) writeParse(s *enumSpec) {
 			text = s.wires[i]
 		}
 		g.printf("case %s:\nreturn %s, true\n", strconv.Quote(text), c.name)
+	}
+	if s.id {
+		g.printf(idNotFoundFormat, s.name)
+		return
 	}
 	g.printf(notFoundTail)
 }

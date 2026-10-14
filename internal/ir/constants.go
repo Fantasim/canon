@@ -228,6 +228,7 @@ const (
 	goMarshalText   = "MarshalText" // CODEGEN.md §5.2, §5.3 (DECISIONS 379)
 	goUnmarshalText = "UnmarshalText"
 	goPosition      = "Position"
+	goPositionField = "position" // the baked id struct's field (CODEGEN.md §5.3)
 	GoCode          = "Code"
 	GoKnown         = openKnown
 	GoLen           = "Len"

@@ -5,6 +5,7 @@ package dep
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"iter"
 	"slices"
@@ -70,6 +71,25 @@ func KMembers() iter.Seq[K] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self K) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseK(wire); !ok {
+		return nil, errors.New("K: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *K) UnmarshalText(text []byte) error {
+	v, ok := ParseK(string(text))
+	if !ok {
+		return errors.New("K: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 type PBranch uint8

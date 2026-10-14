@@ -244,6 +244,7 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) map[string]bool {
 		}
 		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
 		pl.declareMethods(name, v.Name, v, goIDMethods)
+		pl.declare(pl.scope(name), goPositionField, v.Name, v)
 	}
 	return strs
 }

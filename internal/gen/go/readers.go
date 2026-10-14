@@ -8,6 +8,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // readerView is the shape of text/hooks.txt's reader and readerOut: a reader's signature, and the local struct its fields are read into.
@@ -143,10 +144,11 @@ func (g *gen) ownerCellCheck(f *finiteMethod, recv string) {
 		c.present = lc.Out + dot + f.res.OKStore
 	}
 	args := make([]string, len(f.fn.Params))
-	for n, p := range f.fn.Params {
+	for n := range f.fn.Params {
 		i, k := g.temp(tempIndex), g.temp(tempKey)
+		ids := g.hoistIDs(f.fn, n)
 		g.printf(domainLoopFormat, i, k, strings.Join(g.domainKeys(f.fn, n), listSep))
-		args[n] = g.domainValue(p.Type, i)
+		args[n] = g.domainValue(f.fn, n, i, ids)
 		c.keys, c.loc = c.keys+lbracket+i+rbracket, c.loc.dot().arg(k)
 		if c.present != "" {
 			c.present += lbracket + i + rbracket
@@ -157,10 +159,26 @@ func (g *gen) ownerCellCheck(f *finiteMethod, recv string) {
 	g.body.WriteString(strings.Repeat(closeBrace, len(f.fn.Params)))
 }
 
-// domainValue is the value at index i of a finite parameter's domain, in domain order (CODEGEN.md §5.10): false then true, or an enum's members.
-func (g *gen) domainValue(t ir.TypeRef, i string) string {
-	if t.Kind == types.Ref { // an id enum's value is its entry's position (CODEGEN.md §5.3)
-		return g.keyType(t) + lparen + i + rparen
+// hoistIDs writes a table-ref parameter's ids, in entry order, into a local before its loop, so a cell reads one by index instead of rebuilding the array; "" for any other parameter (CODEGEN.md §5.3, §5.10).
+func (g *gen) hoistIDs(fn *ir.ExportFn, n int) string {
+	t := fn.Params[n].Type
+	if t.Kind != types.Ref {
+		return ""
+	}
+	members := g.refDomain(fn, n)
+	for j, key := range members {
+		members[j] = g.keyLit(t, value.Key{S: key})
+	}
+	ids := g.temp(tempIDs)
+	g.printf(idsDeclFormat, ids, g.keyType(t), strings.Join(members, listSep))
+	return ids
+}
+
+// domainValue is the value at index i of finite parameter n of fn's domain, in domain order (CODEGEN.md §5.10): false then true, an enum's members, or entry i of the hoisted ids.
+func (g *gen) domainValue(fn *ir.ExportFn, n int, i, ids string) string {
+	t := fn.Params[n].Type
+	if t.Kind == types.Ref { // an id's vars in entry order, never an integer converted (CODEGEN.md §5.3)
+		return ids + lbracket + i + rbracket
 	}
 	if t.Kind == types.Bool {
 		return fmt.Sprintf(domainValueFormat, goBool, strconv.FormatBool(false)+listSep+strconv.FormatBool(true), i)

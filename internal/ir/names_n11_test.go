@@ -7,23 +7,6 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// n11PendingGo are the planned Go methods N-GO has yet to write (ADR-0021 §3): the Go plan comparisons let the plan hold them before gen/go does, and N-GO deletes this list.
-var n11PendingGo = []string{"MarshalText", "UnmarshalText", "Position"}
-
-// dropPendingGo removes from the planned scopes the n11PendingGo names gen/go has not written into the same scope (the Go comparisons only).
-func dropPendingGo(got, want map[string]map[string]bool) {
-	for scope, names := range want { //canon:unordered each scope is treated alone
-		if got[scope] == nil {
-			continue
-		}
-		for _, n := range n11PendingGo {
-			if !got[scope][n] {
-				delete(names, n)
-			}
-		}
-	}
-}
-
 // n11Package is a package with an enum, a record and a public table of it.
 func n11Package() *ir.Package {
 	status := &ir.Record{Pkg: "p", Name: "Status"}
@@ -34,13 +17,25 @@ func n11Package() *ir.Package {
 
 // TestGoPlanReservesIDMethods is CODEGEN.md §5.2, §5.3 and T18 (DECISIONS 379): a baked id reserves String, MarshalText, UnmarshalText and Position, an enum the first three and not Position.
 func TestGoPlanReservesIDMethods(t *testing.T) {
-	scopes := ir.GoScopeNames(ir.PlanGoNames(n11Package(), &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeBaked}))
+	p := n11Package()
+	codes := ir.TypeRef{Kind: types.Int, Bits: 8}
+	p.Types = append(p.Types,
+		&ir.Enum{Pkg: "p", Name: "Coded", Codes: &codes, Members: []*ir.EnumMember{{Name: "a", Wire: "a", Code: 1}}},
+		&ir.Enum{Pkg: "p", Name: "Opened", Members: []*ir.EnumMember{{Name: "a", Wire: "a"}}})
+	scopes := ir.GoScopeNames(ir.PlanGoNames(p, &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeBaked}))
+	for scope, names := range ir.GoScopeNames(ir.PlanGoNames(p, &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeTypes, Open: []string{"Opened"}})) { //canon:unordered each scope is copied alone
+		if scope == "Opened" {
+			scopes[scope] = names
+		}
+	}
 	for _, c := range []struct {
 		scope string
 		want  map[string]bool
 	}{
 		{"StatusID", map[string]bool{"String": true, "MarshalText": true, "UnmarshalText": true, "Position": true}},
 		{"Tone", map[string]bool{"String": true, "Wire": true, "MarshalText": true, "UnmarshalText": true, "Position": false}},
+		{"Coded", map[string]bool{"String": true, "Wire": true, "Code": true, "MarshalText": false, "UnmarshalText": false}},
+		{"Opened", map[string]bool{"String": true, "Wire": true, "Known": true, "MarshalText": false, "UnmarshalText": false}},
 	} {
 		for name, want := range c.want { //canon:unordered each name is checked on its own
 			if got := scopes[c.scope][name]; got != want {

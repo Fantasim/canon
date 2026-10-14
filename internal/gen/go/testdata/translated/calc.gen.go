@@ -4,6 +4,7 @@
 package calc
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -60,6 +61,25 @@ func ToneMembers() iter.Seq[Tone] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Tone) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseTone(wire); !ok {
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Tone) UnmarshalText(text []byte) error {
+	v, ok := ParseTone(string(text))
+	if !ok {
+		return errors.New("Tone: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type ShapeKind uint8
 
 const (
@@ -98,21 +118,66 @@ func ParseShapeKind(wire string) (ShapeKind, bool) {
 	return 0, false
 }
 
-type SizeID uint8
+// MarshalText writes the wire value, never the position.
+func (self ShapeKind) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseShapeKind(wire); !ok {
+		return nil, errors.New("ShapeKind: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
 
-const (
-	SizeIDSmall SizeID = 0
-	SizeIDLarge SizeID = 1
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *ShapeKind) UnmarshalText(text []byte) error {
+	v, ok := ParseShapeKind(string(text))
+	if !ok {
+		return errors.New("ShapeKind: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+// SizeID is the key of an entry of sizes: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type SizeID struct{ position uint8 }
+
+var (
+	SizeIDSmall = SizeID{0}
+	SizeIDLarge = SizeID{1}
 )
 
 func (self SizeID) String() string {
-	switch self {
-	case SizeIDSmall:
+	switch self.position {
+	case 0:
 		return "small"
-	case SizeIDLarge:
+	case 1:
 		return "large"
 	}
-	return "SizeID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "SizeID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in sizes in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self SizeID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self SizeID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseSizeID(key); !ok {
+		return nil, errors.New("SizeID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *SizeID) UnmarshalText(text []byte) error {
+	v, ok := ParseSizeID(string(text))
+	if !ok {
+		return errors.New("SizeID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseSizeID(key string) (SizeID, bool) {
@@ -122,7 +187,7 @@ func ParseSizeID(key string) (SizeID, bool) {
 	case "large":
 		return SizeIDLarge, true
 	}
-	return 0, false
+	return SizeID{}, false
 }
 
 // Shape: A shape.
@@ -406,10 +471,10 @@ func (self *Sizes) Find(key string) (*Size, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Sizes) Get(id SizeID) *Size { return &self.rows[id] }
+func (self *Sizes) Get(id SizeID) *Size { return &self.rows[id.Position()] }
 
 type calcData struct {
 	sizes Sizes
@@ -784,6 +849,11 @@ func Volume(t Tone, n int64) int64 {
 // SizeFor: Translated sizeFor.
 func SizeFor(n int64) SizeID {
 	return Pick(n > 5).id
+}
+
+// SizeChecked: Translated sizeChecked.
+func SizeChecked(n int64) SizeID {
+	return Pick(Incr(n) > 5).id
 }
 
 // Greet: Translated greet.

@@ -779,6 +779,24 @@ func TestSizeForConformance(t *testing.T) {
 	}
 }
 
+func TestSizeCheckedConformance(t *testing.T) {
+	vectors := []struct {
+		n    int64
+		want SizeID
+		code string // expected error code; empty when want is expected
+	}{
+		{7, SizeIDLarge, ""},
+		{math.MaxInt64, SizeID{}, "E4101"},
+	}
+	for _, v := range vectors {
+		got, code := canonCatch(func() SizeID { return SizeChecked(v.n) })
+		if code != v.code || (v.code == "" && got != v.want) {
+			t.Errorf("sizeChecked(n=%d) = %v [%s], canon says %v [%s]",
+				v.n, got, code, v.want, v.code)
+		}
+	}
+}
+
 func TestGreetConformance(t *testing.T) {
 	vectors := []struct {
 		s    string

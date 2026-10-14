@@ -4,6 +4,7 @@
 package dependent
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -73,6 +74,25 @@ func GoalMembers() iter.Seq[Goal] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Goal) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseGoal(wire); !ok {
+		return nil, errors.New("Goal: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Goal) UnmarshalText(text []byte) error {
+	v, ok := ParseGoal(string(text))
+	if !ok {
+		return errors.New("Goal: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 type TargetBranch uint8
 
 const (
@@ -88,24 +108,50 @@ const (
 	RewardBranchTrue  RewardBranch = 1
 )
 
-type ObjectiveID uint8
+// ObjectiveID is the key of an entry of objectives: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type ObjectiveID struct{ position uint8 }
 
-const (
-	ObjectiveIDSlay    ObjectiveID = 0
-	ObjectiveIDGather  ObjectiveID = 1
-	ObjectiveIDExplore ObjectiveID = 2
+var (
+	ObjectiveIDSlay    = ObjectiveID{0}
+	ObjectiveIDGather  = ObjectiveID{1}
+	ObjectiveIDExplore = ObjectiveID{2}
 )
 
 func (self ObjectiveID) String() string {
-	switch self {
-	case ObjectiveIDSlay:
+	switch self.position {
+	case 0:
 		return "slay"
-	case ObjectiveIDGather:
+	case 1:
 		return "gather"
-	case ObjectiveIDExplore:
+	case 2:
 		return "explore"
 	}
-	return "ObjectiveID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ObjectiveID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in objectives in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self ObjectiveID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self ObjectiveID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseObjectiveID(key); !ok {
+		return nil, errors.New("ObjectiveID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *ObjectiveID) UnmarshalText(text []byte) error {
+	v, ok := ParseObjectiveID(string(text))
+	if !ok {
+		return errors.New("ObjectiveID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseObjectiveID(key string) (ObjectiveID, bool) {
@@ -117,7 +163,7 @@ func ParseObjectiveID(key string) (ObjectiveID, bool) {
 	case "explore":
 		return ObjectiveIDExplore, true
 	}
-	return 0, false
+	return ObjectiveID{}, false
 }
 
 // Target: What an objective aims at, by goal: a monster, a number of items, a level. Visiting a
@@ -312,10 +358,10 @@ func (self *Objectives) Find(key string) (*Objective, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Objectives) Get(id ObjectiveID) *Objective { return &self.rows[id] }
+func (self *Objectives) Get(id ObjectiveID) *Objective { return &self.rows[id.Position()] }
 
 type dependentData struct {
 	objectives Objectives

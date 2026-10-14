@@ -310,6 +310,11 @@ func (c *calc) stmtFns() []spec {
 			vecs: []vec{ok(nil, &value.Ref{Key: value.Key{S: "large"}}, num(7)), ok(nil, &value.Ref{Key: value.Key{S: "small"}}, num(1))},
 		},
 		{
+			name: "sizeChecked", params: params(intT, "n"), result: c.sizeRef,
+			body: call(c.pick, c.sizeRef, bin(ir.OpGt, boolT, call(c.incr, intT, x), lit(intT, num(5)))),
+			vecs: []vec{ok(nil, &value.Ref{Key: value.Key{S: "large"}}, num(7)), fails(nil, eOverflow, num(math.MaxInt64))},
+		},
+		{
 			name: "greet", params: []*ir.Param{{Name: "s", Type: strT}, {Name: "t", Type: c.toneT}}, result: strT,
 			body: &ir.Template{T: strT, Parts: []ir.TemplatePart{{Text: "hi ", X: prm(0, strT)}, {Text: " ", X: prm(1, c.toneT)}}},
 			vecs: []vec{ok(nil, str(`hi "x" loud`), str(`"x"`), &value.Member{Index: 1})},

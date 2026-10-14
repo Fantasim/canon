@@ -4,6 +4,7 @@
 package keys
 
 import (
+	"errors"
 	"iter"
 	"strconv"
 	"sync"
@@ -11,21 +12,47 @@ import (
 	"example.com/features/keys/out/go/rt"
 )
 
-type StatusID uint8
+// StatusID is the key of an entry of statuses: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type StatusID struct{ position uint8 }
 
-const (
-	StatusIDOpen   StatusID = 0
-	StatusIDClosed StatusID = 1
+var (
+	StatusIDOpen   = StatusID{0}
+	StatusIDClosed = StatusID{1}
 )
 
 func (self StatusID) String() string {
-	switch self {
-	case StatusIDOpen:
+	switch self.position {
+	case 0:
 		return "open"
-	case StatusIDClosed:
+	case 1:
 		return "closed"
 	}
-	return "StatusID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in statuses in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self StatusID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self StatusID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParseStatusID(key); !ok {
+		return nil, errors.New("StatusID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *StatusID) UnmarshalText(text []byte) error {
+	v, ok := ParseStatusID(string(text))
+	if !ok {
+		return errors.New("StatusID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParseStatusID(key string) (StatusID, bool) {
@@ -35,24 +62,50 @@ func ParseStatusID(key string) (StatusID, bool) {
 	case "closed":
 		return StatusIDClosed, true
 	}
-	return 0, false
+	return StatusID{}, false
 }
 
-type PostID uint8
+// PostID is the key of an entry of posts: compare it, switch on it, look it up with Get.
+// To store or send it, write its key (String, or MarshalText through encoding/json):
+// its position is not an id, and changes when entry files move.
+type PostID struct{ position uint8 }
 
-const (
-	PostIDHello PostID = 0
-	PostIDBye   PostID = 1
+var (
+	PostIDHello = PostID{0}
+	PostIDBye   = PostID{1}
 )
 
 func (self PostID) String() string {
-	switch self {
-	case PostIDHello:
+	switch self.position {
+	case 0:
 		return "hello"
-	case PostIDBye:
+	case 1:
 		return "bye"
 	}
-	return "PostID(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "PostID(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in posts in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self PostID) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self PostID) MarshalText() ([]byte, error) {
+	key := self.String()
+	if _, ok := ParsePostID(key); !ok {
+		return nil, errors.New("PostID: no entry " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *PostID) UnmarshalText(text []byte) error {
+	v, ok := ParsePostID(string(text))
+	if !ok {
+		return errors.New("PostID: no entry " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 func ParsePostID(key string) (PostID, bool) {
@@ -62,7 +115,7 @@ func ParsePostID(key string) (PostID, bool) {
 	case "bye":
 		return PostIDBye, true
 	}
-	return 0, false
+	return PostID{}, false
 }
 
 // Status: A status.
@@ -108,7 +161,7 @@ func (self *Post) Reply() *Post { return self.reply }
 
 func (self *Post) ReplyID() (PostID, bool) {
 	if self.reply == nil {
-		return 0, false
+		return PostID{}, false
 	}
 	return self.reply.id, true
 }
@@ -176,10 +229,10 @@ func (self *Posts) Find(key string) (*Post, bool) {
 	if !ok {
 		return nil, false
 	}
-	return &self.rows[id], true
+	return &self.rows[id.Position()], true
 }
 
-func (self *Posts) Get(id PostID) *Post { return &self.rows[id] }
+func (self *Posts) Get(id PostID) *Post { return &self.rows[id.Position()] }
 
 type keysData struct {
 	posts    Posts
@@ -222,11 +275,11 @@ var statusOfTable = [2]struct {
 
 // StatusOf: The status of a post.
 func StatusOf(p PostID) (StatusID, bool) {
-	return statusOfTable[p].v, statusOfTable[p].ok
+	return statusOfTable[p.Position()].v, statusOfTable[p.Position()].ok
 }
 
 var isOpenTable = [2]bool{true, false}
 
 func IsOpen(s StatusID) bool {
-	return isOpenTable[s]
+	return isOpenTable[s.Position()]
 }

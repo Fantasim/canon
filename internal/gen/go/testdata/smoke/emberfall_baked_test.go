@@ -1,6 +1,7 @@
 package world_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	core "example.com/data/game/core/out/go"
@@ -105,5 +106,8 @@ func TestEmberfallHooks(t *testing.T) {
 	}
 	if r := core.Make_Reward_Nothing(); (&r).Kind() != core.RewardKindNothing {
 		t.Error("case hook")
+	}
+	if b, err := json.Marshal(core.RewardKindNothing); err != nil || string(b) != `"nothing"` {
+		t.Errorf("kind enum json = %s, %v", b, err) // CODEGEN.md §5.5, DECISIONS 379
 	}
 }

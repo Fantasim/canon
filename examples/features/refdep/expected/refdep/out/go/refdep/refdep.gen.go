@@ -5,6 +5,7 @@ package refdep
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"iter"
 	"slices"
@@ -73,6 +74,25 @@ func ShapeMembers() iter.Seq[Shape] {
 	}
 }
 
+// MarshalText writes the wire value, never the position.
+func (self Shape) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseShape(wire); !ok {
+		return nil, errors.New("Shape: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Shape) UnmarshalText(text []byte) error {
+	v, ok := ParseShape(string(text))
+	if !ok {
+		return errors.New("Shape: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
 // Event: What happened.
 type Event uint8
 
@@ -129,6 +149,25 @@ func EventMembers() iter.Seq[Event] {
 			}
 		}
 	}
+}
+
+// MarshalText writes the wire value, never the position.
+func (self Event) MarshalText() ([]byte, error) {
+	wire := self.Wire()
+	if _, ok := ParseEvent(wire); !ok {
+		return nil, errors.New("Event: no member " + strconv.Itoa(int(self)))
+	}
+	return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *Event) UnmarshalText(text []byte) error {
+	v, ok := ParseEvent(string(text))
+	if !ok {
+		return errors.New("Event: no member " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
 }
 
 type ParamBranch uint8

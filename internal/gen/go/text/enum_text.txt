@@ -1,0 +1,19 @@
+// MarshalText writes the wire value, never the position.
+func (self %[1]s) MarshalText() ([]byte, error) {
+wire := self.Wire()
+if _, ok := %[2]s(wire); !ok {
+return nil, %[4]s.New("%[1]s: no member " + %[3]s.Itoa(int(self)))
+}
+return []byte(wire), nil
+}
+
+// UnmarshalText reads a wire value; an unknown one is an error.
+func (self *%[1]s) UnmarshalText(text []byte) error {
+v, ok := %[2]s(string(text))
+if !ok {
+return %[4]s.New("%[1]s: no member " + %[3]s.Quote(string(text)))
+}
+*self = v
+return nil
+}
+

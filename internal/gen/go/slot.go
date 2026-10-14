@@ -161,6 +161,9 @@ func (g *gen) targetKey(r *ir.RefTarget) string {
 func ifNilFormat(entry, zero string) string { return fmt.Sprintf(ifNilFormatText, entry, zero) }
 
 func (g *gen) zeroKey(t ir.TypeRef) string {
+	if isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg) {
+		return g.keyType(t) + emptyBraces
+	}
 	if !isTableRef(t.Ref) && t.Key != nil && t.Key.Kind == types.String {
 		return emptyString
 	}

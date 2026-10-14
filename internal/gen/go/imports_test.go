@@ -21,7 +21,7 @@ func TestImportGroupingByOrigin(t *testing.T) {
 		t.Fatalf("Generate: %v", err)
 	}
 	src := string(files[1].Content)
-	if !strings.Contains(src, "import (\n\t\"iter\"\n\t\"strconv\"\n\n\tq \"localmodule\"\n)") {
-		t.Errorf("localmodule (no dot) should be grouped with the others, not with iter and strconv:\n%s", src)
+	if !strings.Contains(src, "import (\n\t\"errors\"\n\t\"iter\"\n\t\"strconv\"\n\n\tq \"localmodule\"\n)") {
+		t.Errorf("localmodule (no dot) should be grouped with the others, not with errors, iter and strconv:\n%s", src)
 	}
 }

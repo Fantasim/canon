@@ -14,6 +14,10 @@ var (
 	membersFormat string
 	//go:embed text/codes.txt
 	codesFormat string
+	//go:embed text/enum_text.txt
+	enumTextFormat string
+	//go:embed text/id.txt
+	idFormat string
 	//go:embed text/variant.txt
 	variantFormat string
 	//go:embed text/as_case.txt

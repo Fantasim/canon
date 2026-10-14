@@ -24,9 +24,7 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 	for _, t := range pl.p.Types {
 		u.named(t)
 	}
-	for _, v := range pl.p.Values {
-		u.std[goStrconv] = u.std[goStrconv] || pl.data == nil && tableRecord(v) != nil
-	}
+	pl.textImports(u)
 	for _, v := range pl.emitted {
 		u.ref(&v.Type)
 		u.std[goIter] = u.std[goIter] || IsContainer(v)
@@ -253,4 +251,27 @@ func ownInstances(p *Package) map[*value.Record][]*Instance {
 		}
 	}
 	return out
+}
+
+// writesTextErrors reports a type gen/go gives MarshalText and UnmarshalText, which build errors: a kind enum, a closed enum without @codes (CODEGEN.md §5.2, §5.5; DECISIONS 379).
+func (pl *GoNamePlan) writesTextErrors(t Type) bool {
+	switch x := t.(type) {
+	case *Variant:
+		return true
+	case *Enum:
+		return x.Codes == nil && !OpenEnum(pl.p, pl.e, x)
+	}
+	return false
+}
+
+// textImports marks strconv and errors for the text methods and Parse of ids and enums (CODEGEN.md §5.2, §5.3).
+func (pl *GoNamePlan) textImports(u *goImportUse) {
+	for _, t := range pl.p.Types {
+		u.std[goErrors] = u.std[goErrors] || pl.writesTextErrors(t)
+	}
+	for _, v := range pl.p.Values {
+		baked := pl.data == nil && tableRecord(v) != nil
+		u.std[goStrconv] = u.std[goStrconv] || baked
+		u.std[goErrors] = u.std[goErrors] || baked
+	}
 }

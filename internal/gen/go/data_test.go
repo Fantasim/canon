@@ -62,6 +62,17 @@ func TestDataShopGolden(t *testing.T) {
 // runData vets and tests with -race a module of the files, the smoke test and the data files (IMPLEMENTATION-PLAN.md §6 M2 items 3, 5).
 func runData(t *testing.T, files map[string][]byte, pkgDir, smoke string, data map[string][]byte) {
 	t.Helper()
+	dir := writeModule(t, files, pkgDir, smoke, data)
+	if out := run(t, dir, exec.Command("gofmt", "-s", "-l", ".")); len(out) > 0 {
+		t.Errorf("gofmt -s would change:\n%s", out)
+	}
+	run(t, dir, exec.Command("go", "vet", "./..."))
+	run(t, dir, exec.Command("go", "test", "-race", "-count=1", "./..."))
+}
+
+// writeModule writes the files, the smoke test (when given) and the data files into a temporary module and returns its directory.
+func writeModule(t *testing.T, files map[string][]byte, pkgDir, smoke string, data map[string][]byte) string {
+	t.Helper()
 	if testing.Short() {
 		t.Skip("compiles generated code")
 	}
@@ -79,19 +90,17 @@ func runData(t *testing.T, files map[string][]byte, pkgDir, smoke string, data m
 	for _, p := range sortedPaths(files) {
 		write(p, files[p])
 	}
-	src, err := os.ReadFile(smoke)
-	if err != nil {
-		t.Fatal(err)
+	if smoke != "" {
+		src, err := os.ReadFile(smoke)
+		if err != nil {
+			t.Fatal(err)
+		}
+		write(pkgDir+"/smoke_test.go", src)
 	}
-	write(pkgDir+"/smoke_test.go", src)
 	for _, p := range sortedPaths(data) {
 		write(pkgDir+"/testdata/"+p, data[p])
 	}
-	if out := run(t, dir, exec.Command("gofmt", "-s", "-l", ".")); len(out) > 0 {
-		t.Errorf("gofmt -s would change:\n%s", out)
-	}
-	run(t, dir, exec.Command("go", "vet", "./..."))
-	run(t, dir, exec.Command("go", "test", "-race", "-count=1", "./..."))
+	return dir
 }
 
 // goVersion is the installed Go's language version: generated Go targets the current Go only (decision 205).

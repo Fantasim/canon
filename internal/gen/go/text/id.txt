@@ -1,0 +1,29 @@
+func (self %[1]s) String() string {
+switch self.position {
+%[2]s}
+return "%[1]s(" + %[3]s.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the entry's place in %[4]s in this build, for array indexes in memory.
+// It is not an id: it changes when entry files move.
+func (self %[1]s) Position() int { return int(self.position) }
+
+// MarshalText writes the key, never the position.
+func (self %[1]s) MarshalText() ([]byte, error) {
+key := self.String()
+if _, ok := %[5]s(key); !ok {
+return nil, %[6]s.New("%[1]s: no entry " + %[3]s.Itoa(int(self.position)))
+}
+return []byte(key), nil
+}
+
+// UnmarshalText reads a key; an unknown one is an error.
+func (self *%[1]s) UnmarshalText(text []byte) error {
+v, ok := %[5]s(string(text))
+if !ok {
+return %[6]s.New("%[1]s: no entry " + %[3]s.Quote(string(text)))
+}
+*self = v
+return nil
+}
+

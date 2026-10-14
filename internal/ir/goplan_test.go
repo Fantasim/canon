@@ -80,7 +80,6 @@ func comparePlan(t *testing.T, what string, p *ir.Package, e *ir.Emit) {
 	}
 	got := declaredNames(t, goFile(t, files))
 	want := goPlanned(p, pl)
-	dropPendingGo(got, want)
 	for goName, scope := range structScopes(p, pl) { //canon:unordered each struct compared alone
 		sameNames(t, what+" "+goName, got[goName], want[scope])
 		delete(got, goName)
