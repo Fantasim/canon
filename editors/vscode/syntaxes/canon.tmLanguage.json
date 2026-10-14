@@ -264,6 +264,20 @@
         }
       ]
     },
+    "quoted-word": {
+      "match": "(`)([A-Za-z_][A-Za-z0-9_]*)(`)",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.quoted-word.canon"
+        },
+        "2": {
+          "name": "variable.other.enummember.canon"
+        },
+        "3": {
+          "name": "punctuation.definition.quoted-word.canon"
+        }
+      }
+    },
     "expression-core": {
       "patterns": [
         {
@@ -308,6 +322,9 @@
         },
         {
           "include": "#past"
+        },
+        {
+          "include": "#quoted-word"
         },
         {
           "include": "#keywords"

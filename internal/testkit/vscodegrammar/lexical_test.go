@@ -33,6 +33,8 @@ var lexicalCases = []struct {
 	{"2.7 comment after paren", "f(/* c */ 1)", `"/* c */" comment.block.canon`},
 	{"5.8 annotation", `@json("w", unit: s)`, `"json" meta.annotation.canon entity.name.function.decorator.canon`},
 	{"4.3 member named like a keyword", "Icon.check", `"check" variable.other.property.canon`},
+	{"2.3 quoted word is an enum member", "leg: Leg.`in`", `"in" variable.other.enummember.canon`},
+	{"2.3 quoted word backtick", "x: `return`", `"` + "`" + `" punctuation.definition.quoted-word.canon`},
 	{"4.2 past before a type name", "x: past GrantKind", `"past" storage.modifier.canon`},
 	{"4.2 past before a list type", "x: past [E]", `"past" storage.modifier.canon`},
 	{"4.2 past before ref", "x: past ref items", `"past" storage.modifier.canon`},
