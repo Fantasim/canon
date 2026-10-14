@@ -18,3 +18,6 @@ E8028 build --only-root only (DECISIONS 343), which the harness never runs: it b
 W6006 reported by canon lock check only (LOCK.md §8), which neither check nor build runs
 W8024 an output under an absent optional root (CODEGEN.md §2.4), a fact of the machine; internal/build's W8024_*.txtar produce it
 W8030 a plain build only (DECISIONS 356), which the harness never runs: it builds with Check, where the same stray is E8029, which has an operator; internal/build's W8030_*.txtar produce it
+E1017 no mutation operator edits the project's tiers key yet (GRAMMAR.md §7.1, DECISIONS 380); internal/project's E1017_*.txtar produce it
+E1018 no mutation operator edits the project's tiers key yet (GRAMMAR.md §7.1, DECISIONS 380); internal/project's E1018_*.txtar produce it
+E2007 no mutation operator edits the project's tiers key or adds an import that climbs it yet (TYPES.md §3.1, DECISIONS 380); internal/project's E2007_*.txtar produce it

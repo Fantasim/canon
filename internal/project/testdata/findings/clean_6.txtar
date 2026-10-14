@@ -1,0 +1,14 @@
+GRAMMAR.md §7.1 (DECISIONS 380): tiers {} declares no tier, so an "upward" import and an unlisted package give nothing.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {}
+}
+-- a/a.canon --
+package a
+-- a/vocab/vocab.canon --
+package a.vocab
+
+import a
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

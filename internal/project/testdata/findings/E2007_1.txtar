@@ -1,0 +1,41 @@
+TYPES.md §3.1 (DECISIONS 380): the carve-out a.vocab (ids) cannot import a (data); same-tier and two-tiers-down imports are clean; two upward lines give two findings.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    base: [util]
+    ids: [a.vocab, b.vocab]
+    data: [a, b]
+  }
+}
+-- util/util.canon --
+package util
+-- a/vocab/vocab.canon --
+package a.vocab
+
+import b.vocab
+import a
+-- a/vocab/more.canon --
+package a.vocab
+
+import b
+-- a/a.canon --
+package a
+
+import util
+import b
+import a.vocab
+-- b/b.canon --
+package b
+-- b/vocab/vocab.canon --
+package b.vocab
+
+import util
+-- findings.txt --
+error[E2007]  a/vocab/more.canon:3:8
+  a.vocab (tier ids) cannot import b (tier data): a package imports only from its own tier and the tiers listed before it in project.canon
+
+error[E2007]  a/vocab/vocab.canon:4:8
+  a.vocab (tier ids) cannot import a (tier data): a package imports only from its own tier and the tiers listed before it in project.canon
+
+2 errors, 0 warnings in 1 package (…)

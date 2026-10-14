@@ -1,0 +1,26 @@
+GRAMMAR.md §7.1, TYPES.md §3.1 (DECISIONS 380): a path that is no package places those below it; a three-level carve-out wins over shorter paths; a path never places a package whose name only starts with it.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    ids: [services.game.vocab]
+    mid: [services.game]
+    top: [services]
+  }
+}
+-- services/admin/admin.canon --
+package services.admin
+
+import services.game
+-- services/game/game.canon --
+package services.game
+
+import services.game.vocab
+-- services/game/vocab/vocab.canon --
+package services.game.vocab
+-- services/gamex/gamex.canon --
+package services.gamex
+
+import services.admin
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

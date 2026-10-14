@@ -45,6 +45,7 @@ const (
 	keyGoModule  = "go_module"
 	keyOptional  = "optional_roots"
 	keyConsumer  = "consumer_roots" // DECISIONS 343
+	keyTiers     = "tiers"          // DECISIONS 380
 )
 
 // keyRules reads each key; go_module, optional_roots and consumer_roots wait for the roots, keys coming in any order (GRAMMAR.md §7.1).
@@ -58,6 +59,7 @@ var keyRules = map[string]func(*schema, *syntax.ProjectEntry){
 	keyGoModule:  (*schema).deferGoModule,
 	keyOptional:  (*schema).deferOptional,
 	keyConsumer:  (*schema).deferConsumer,
+	keyTiers:     (*schema).tiers,
 }
 
 // The origins of a root's directory (origin).

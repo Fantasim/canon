@@ -1,0 +1,19 @@
+GRAMMAR.md §7.2 (DECISIONS 380): tiers is never in project.local.canon.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+}
+-- project.local.canon --
+project acme {
+  tiers {
+    ids: [a]
+  }
+}
+-- findings.txt --
+error[E1014]  project.local.canon:2:3
+  project.local.canon may only hold roots: remove "tiers"
+
+1 error, 0 warnings in 1 package (…)

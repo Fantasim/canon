@@ -1,0 +1,29 @@
+GRAMMAR.md §7.1, TYPES.md §3.1 (DECISIONS 380): a package no path places is E1018 at the key; an import from or of it is not judged (no E2007).
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    ids: [a.vocab]
+    data: [a]
+  }
+}
+-- a/a.canon --
+package a
+-- a/vocab/vocab.canon --
+package a.vocab
+
+import zeta
+-- tools/tools.canon --
+package tools
+
+import a
+-- zeta/zeta.canon --
+package zeta
+-- findings.txt --
+error[E1018]  project.canon:3:3
+  tiers: no tier places package tools; list it, or a package path above it, in a tier
+
+error[E1018]  project.canon:3:3
+  tiers: no tier places package zeta; list it, or a package path above it, in a tier
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,11 @@
+GRAMMAR.md §7.1 (DECISIONS 380): tiers given as a list, not a map.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers: [a, b]
+}
+-- findings.txt --
+error[E1006]  project.canon:3:10
+  "tiers" must be a map of tier names to non-empty lists of package paths
+
+1 error, 0 warnings in 1 package (…)

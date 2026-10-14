@@ -1,0 +1,21 @@
+GRAMMAR.md §7.1 (DECISIONS 380): a typo path places no package; a path whose packages longer paths all place places none.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    ids: [a.vocab, a.vocab.x]
+    data: [a, itmes]
+  }
+}
+-- a/a.canon --
+package a
+-- a/vocab/x/x.canon --
+package a.vocab.x
+-- findings.txt --
+error[E1018]  project.canon:4:11
+  tiers: a.vocab places no package; remove it or correct it
+
+error[E1018]  project.canon:5:15
+  tiers: itmes places no package; remove it or correct it
+
+2 errors, 0 warnings in 1 package (…)

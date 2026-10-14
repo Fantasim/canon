@@ -1,0 +1,21 @@
+GRAMMAR.md §7.1 (DECISIONS 380): a tier value that is not a list, an empty list, a string item.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    ids: a.vocab
+    empty: []
+    data: [a, "b"]
+  }
+}
+-- findings.txt --
+error[E1006]  project.canon:4:10
+  "tiers" must be a map of tier names to non-empty lists of package paths
+
+error[E1006]  project.canon:5:12
+  "tiers" must be a map of tier names to non-empty lists of package paths
+
+error[E1006]  project.canon:6:15
+  "tiers" must be a map of tier names to non-empty lists of package paths
+
+3 errors, 0 warnings in 1 package (…)

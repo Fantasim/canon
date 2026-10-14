@@ -103,6 +103,8 @@ func loadCase(t *testing.T, a *txtar.Archive, fsys memFS, set *source.FileSet, b
 		t.Fatal(err)
 	}
 	project.CheckStudio(p, units, bag)
+	project.CheckTiers(p, units, bag)
+	project.CheckTierImports(p, units, units, func(string) *diag.Bag { return bag })
 }
 
 // loadLocal checks the archive's project.local.canon, nil when it has none (GRAMMAR.md §7.2).

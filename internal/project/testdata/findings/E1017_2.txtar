@@ -1,0 +1,17 @@
+GRAMMAR.md §7.1 (DECISIONS 380): a path listed in two tiers, and twice in one tier.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    ids: [a.vocab, b]
+    data: [a, a.vocab, a]
+  }
+}
+-- findings.txt --
+error[E1017]  project.canon:5:15
+  tiers: a.vocab is listed twice (first at project.canon:4)
+
+error[E1017]  project.canon:5:24
+  tiers: a is listed twice (first at project.canon:5)
+
+2 errors, 0 warnings in 1 package (…)

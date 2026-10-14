@@ -19,6 +19,7 @@ type Project struct {
 	Studio    Package
 	Budget    int64 // 0 when not declared: the evaluator's default applies (IMPLEMENTATION-PLAN §12.4)
 	GoModules []GoModule
+	Tiers     Tiers
 }
 
 // Version is the language version `canon` states, "MAJOR.MINOR" (GRAMMAR.md §7.1).

@@ -1,0 +1,17 @@
+GRAMMAR.md §7.1 (DECISIONS 380): a tier name written as a string, and a reserved word.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  tiers {
+    "ids": [a.vocab]
+    type: [a]
+  }
+}
+-- findings.txt --
+error[E1017]  project.canon:4:5
+  invalid tier name "ids": a tier name is an identifier
+
+error[E1017]  project.canon:5:5
+  invalid tier name "type": a tier name is an identifier
+
+2 errors, 0 warnings in 1 package (…)
