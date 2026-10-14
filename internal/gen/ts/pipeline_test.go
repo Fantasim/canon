@@ -99,7 +99,9 @@ func (h *verifying) Verify(ctx context.Context, root eval.Root, v value.Value) b
 // noAssets finds no file and misses no root.
 type noAssets struct{}
 
-func (noAssets) Exists(string, string, string) (string, bool) { return "", false }
+func (noAssets) Exists(string, string, string) (string, bool, string) {
+	return "", false, ""
+}
 
 func (noAssets) Absent(string, string) (string, bool) { return "", false }
 

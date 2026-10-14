@@ -63,7 +63,7 @@ func TestAssetsAbsentRoot(t *testing.T) {
 	if len(log.asked) != 0 {
 		t.Errorf("Absent asked the file system for %v", log.asked)
 	}
-	if _, found := a.Exists("@here/Icon", "items", "a.png"); !found {
+	if _, found, _ := a.Exists("@here/Icon", "items", "a.png"); !found {
 		t.Error("a present optional root is listed as any root is")
 	}
 }

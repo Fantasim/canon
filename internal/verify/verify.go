@@ -31,8 +31,8 @@ type dependents interface {
 
 // Assets tells whether a file exists under an asset root, matched byte for byte (TYPES.md §13.4).
 type Assets interface {
-	// Exists looks name up under root, written in a file of directory from (WIRE.md §2.2, §2.3).
-	Exists(root, from, name string) (display string, found bool)
+	// Exists looks name up under root, written in a file of directory from (WIRE.md §2.2, §2.3); link names the first link out of bounds that held the file back (§13.4).
+	Exists(root, from, name string) (display string, found bool, link string)
 	// Absent names the optional root of root that this machine lacks.
 	Absent(root, from string) (name string, absent bool)
 }

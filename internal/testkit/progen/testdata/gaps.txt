@@ -8,6 +8,7 @@ E1014 reported for project.local.canon (GRAMMAR.md §7.2), which no generated pr
 E1015 the harness's compiler is an unstamped dev build, which meets any pin with W1016 (DECISIONS 354); internal/project's E1015_*.txtar and internal/build's TestCompilerPin produce it
 E1138 a quote of a word that is not quotable (GRAMMAR.md §2.3, DECISIONS 378) is a refusal the generator never writes; internal/syntax's E1138_*.txtar produce it
 E3705 an asset under an optional root absent on this machine (DECISIONS 332): the harness places every root through Options.Roots and lists none optional; internal/verify's E3705_1.txtar produces it
+E3706 an asset reached only through a symbolic link outside the roots and the project (TYPES.md §13.4, DECISIONS 376), a fact of the machine; internal/verify's E3706_*.txtar produce it
 E7009 a load under an optional root absent on this machine (DECISIONS 332): the harness lists no root optional; internal/load's E7009_*.txtar and internal/build's E7009_1.txtar produce it
 E8019 each E8019 construct is a generator gap; an operator would break once the generator implements it
 E8022 a fact of the machine: two roots placed relative to each other otherwise than project.canon does (CODEGEN.md §2.8), which no generated program carries; internal/build's E8022_*.txtar produce it

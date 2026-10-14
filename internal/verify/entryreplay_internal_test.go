@@ -14,7 +14,9 @@ const (
 // flipAssets is an Assets whose root can turn absent.
 type flipAssets struct{ absent bool }
 
-func (f *flipAssets) Exists(root, _, name string) (string, bool) { return root, name == replayName }
+func (f *flipAssets) Exists(root, _, name string) (string, bool, string) {
+	return root, name == replayName, ""
+}
 
 func (f *flipAssets) Absent(string, string) (string, bool) { return "client", f.absent }
 

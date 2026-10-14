@@ -1,0 +1,50 @@
+TYPES.md §13.4, WIRE.md §6.5 (DECISIONS 376): a symbolic link met looking an asset up (a file, a folder) is
+followed only when its target lies inside the project or a declared root; a file reached only through a
+link outside them is E3706 naming the first such link, not E3701, whether or not the target holds the file.
+-- proj/items/items.canon --
+/// Items.
+package items
+
+/// Item.
+record Item {
+  /// Icon.
+  icon: asset("@assets", ext: [png])
+}
+
+/// Items.
+let items: stable table Item = {
+  sword { icon: "sword.png" }
+  bow { icon: "icons/bow.png" }
+  axe { icon: "icons/missing.png" }
+  staff { icon: "staff.png" }
+}
+-- proj/project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    assets: "assets"
+  }
+}
+-- proj/assets/staff.png --
+staff
+-- outside/sword.png --
+sword
+-- outside/icons/bow.png --
+bow
+-- links --
+proj/assets/sword.png outside/sword.png
+proj/assets/icons outside/icons
+-- findings.txt --
+error[E3706]  items/items.canon:12:17
+  items.sword.icon: asset sword.png is reached through symbolic link @assets/sword.png, which points outside the roots and the project
+  expected by items/items.canon:7 (icon: asset("@assets", ext: [png]))
+
+error[E3706]  items/items.canon:13:15
+  items.bow.icon: asset icons/bow.png is reached through symbolic link @assets/icons, which points outside the roots and the project
+  expected by items/items.canon:7 (icon: asset("@assets", ext: [png]))
+
+error[E3706]  items/items.canon:14:15
+  items.axe.icon: asset icons/missing.png is reached through symbolic link @assets/icons, which points outside the roots and the project
+  expected by items/items.canon:7 (icon: asset("@assets", ext: [png]))
+
+3 errors, 0 warnings in 1 package (…)

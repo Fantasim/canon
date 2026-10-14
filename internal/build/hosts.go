@@ -300,8 +300,9 @@ type assets struct {
 
 // dirListing is one directory's own file and subdirectory names, listed once.
 type dirListing struct {
-	files map[string]bool
-	subs  map[string]bool
+	files   map[string]bool
+	subs    map[string]bool
+	blocked map[string]bool // links leading outside the bounds, held in neither (TYPES.md §13.4)
 }
 
 // Absent names the optional root an asset root lies under when this machine lacks it, never listing it (DECISIONS 332).
@@ -313,21 +314,26 @@ func (a *assets) Absent(root, from string) (string, bool) {
 	return dir.Root, true
 }
 
-// Exists walks name under root one listed folder at a time (WIRE.md §2.2, TYPES.md §13.4).
-func (a *assets) Exists(root, from, name string) (string, bool) {
+// Exists walks name under root one folder at a time, link the first outside link met (TYPES.md §13.4, DECISIONS 376).
+func (a *assets) Exists(root, from, name string) (display string, found bool, link string) {
 	dir, ok := a.places.root(a.fs, a.layout, root, from)
 	if !ok {
-		return root, false
+		return root, false, ""
+	}
+	if blocked := a.places.blockedRoot(root, from); blocked != "" {
+		return dir.Display, false, blocked
 	}
 	at, rest := dir, name
 	for {
 		seg, more, nested := strings.Cut(rest, pathSep)
 		l := a.listAt(at, root, from)
-		if !nested {
-			return dir.Display, l.files[seg]
-		}
-		if !l.subs[seg] {
-			return dir.Display, false
+		switch {
+		case l.blocked[seg]:
+			return dir.Display, false, path.Join(at.Display, seg)
+		case !nested:
+			return dir.Display, l.files[seg], ""
+		case !l.subs[seg]:
+			return dir.Display, false, ""
 		}
 		at, rest = a.places.folder(at, seg), more
 	}
@@ -345,30 +351,39 @@ func (a *assets) list(dir string) dirListing {
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		a.host.errs = append(a.host.errs, displayErrorIn(a.layout.Dir, err))
 	}
-	l := dirListing{files: map[string]bool{}, subs: map[string]bool{}}
+	l := dirListing{files: map[string]bool{}, subs: map[string]bool{}, blocked: map[string]bool{}}
 	for _, e := range entries {
-		if isDir, ok := a.kind(dir, e); ok {
-			if isDir {
-				l.subs[e.Name()] = true
-			} else {
-				l.files[e.Name()] = true
-			}
+		isDir, ok, blocked := a.kind(dir, e)
+		switch {
+		case blocked:
+			l.blocked[e.Name()] = true
+		case !ok:
+		case isDir:
+			l.subs[e.Name()] = true
+		default:
+			l.files[e.Name()] = true
 		}
 	}
 	a.dirs[dir] = l
 	return l
 }
 
-// kind is whether e is a directory or a file: its own type for anything but a symbolic link,
-// which is followed to its target; a broken or looping link is neither, so a name under it is
-// silently not found, as a listing of it was before this walk existed.
-func (a *assets) kind(dir string, e fs.DirEntry) (isDir, ok bool) {
+// kind is e's kind, a link followed inside the bounds, blocked outside, absent if broken (TYPES.md §13.4, DECISIONS 376).
+func (a *assets) kind(dir string, e fs.DirEntry) (isDir, ok, blocked bool) {
 	if e.Type()&fs.ModeSymlink == 0 {
-		return e.IsDir(), true
+		return e.IsDir(), true, false
 	}
-	info, err := a.fs.Stat(project.Join(dir, e.Name()))
+	child := project.Join(dir, e.Name())
+	target, err := project.EvalSymlinks(a.fs, child)
 	if err != nil {
-		return false, false
+		return false, false, false
 	}
-	return info.IsDir(), true
+	if !a.places.bound(a.fs, a.layout).Within(target) {
+		return false, false, true
+	}
+	info, err := a.fs.Stat(target)
+	if err != nil {
+		return false, false, false
+	}
+	return info.IsDir(), true, false
 }

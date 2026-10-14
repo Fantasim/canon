@@ -86,18 +86,18 @@ func TestAssetPlacesKeptPerRun(t *testing.T) {
 		t.Fatal("layout")
 	}
 	a := &assets{fs: ciFS(tree), layout: layout, host: &evalHost{}, dirs: map[string]dirListing{}}
-	if _, found := a.Exists(benchAssetRoot, benchAssetFrom, placesNested); !found {
+	if _, found, _ := a.Exists(benchAssetRoot, benchAssetFrom, placesNested); !found {
 		t.Fatal("not found before the placing is kept")
 	}
 	a.layout = nil
-	if display, found := a.Exists(benchAssetRoot, benchAssetFrom, placesNested); !found || display != benchAssetRoot {
+	if display, found, _ := a.Exists(benchAssetRoot, benchAssetFrom, placesNested); !found || display != benchAssetRoot {
 		t.Errorf("with the root kept: %q, %t; want %q, true", display, found, benchAssetRoot)
 	}
 	//canon:unordered one folder is kept
 	for k, f := range a.places.folders {
 		a.places.folders[k] = project.Path{Display: path.Join(path.Dir(f.Display), placesOther), Abs: path.Join(path.Dir(f.Abs), placesOther)}
 	}
-	if _, found := a.Exists(benchAssetRoot, benchAssetFrom, placesNested); found {
+	if _, found, _ := a.Exists(benchAssetRoot, benchAssetFrom, placesNested); found {
 		t.Error("the kept folder was not the one walked into")
 	}
 }

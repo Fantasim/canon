@@ -134,12 +134,13 @@ func (r *run) namedByLoads(fsys project.FS) []string {
 // run used.
 func (r *run) movedListings(view project.FS) []string {
 	var moved []string
+	bounds := load.LinkBounds(view, r.s.layout)
 	for _, h := range r.manifestHosts() {
 		if h.assets == nil {
 			continue
 		}
 		for _, abs := range slices.Sorted(maps.Keys(h.assets.dirs)) {
-			if len(symmetric(listingNames(h.assets.dirs[abs]), listedNow(view, abs))) > 0 {
+			if len(symmetric(listingNames(h.assets.dirs[abs]), listedNow(view, bounds, abs))) > 0 {
 				moved = append(moved, relativeTo(r.p.dir, abs, pathRune))
 			}
 		}
@@ -148,12 +149,15 @@ func (r *run) movedListings(view project.FS) []string {
 }
 
 // listedNow are the names of dir in view an asset check lists: a link only when it leads to
-// something; none for a directory gone, as the run listed none.
-func listedNow(view project.FS, dir string) []string {
+// something inside bounds; none for a directory gone, as the run listed none.
+func listedNow(view project.FS, bounds load.Bounds, dir string) []string {
 	entries, _ := view.ReadDir(dir) // a listing that fails lists nothing, as list does
 	var out []string
 	for _, e := range entries {
 		if e.Type()&fs.ModeSymlink != 0 {
+			if target, err := project.EvalSymlinks(view, project.Join(dir, e.Name())); err != nil || !bounds.Within(target) {
+				continue
+			}
 			if _, err := view.Stat(project.Join(dir, e.Name())); err != nil {
 				continue
 			}

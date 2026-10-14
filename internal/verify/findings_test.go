@@ -2,8 +2,11 @@ package verify_test
 
 import (
 	"math"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -15,7 +18,12 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-const findingsFile = "findings.txt"
+const (
+	findingsFile = "findings.txt"
+	linksFile    = "links"
+	// linkedProject is the directory of a linkedCase archive holding the project, its siblings being outside it.
+	linkedProject = "proj"
+)
 
 // cases builds the values of each findings case, by case name, and verifies them.
 var cases = map[string]func(fx *fixture){
@@ -32,6 +40,7 @@ var cases = map[string]func(fx *fixture){
 	"E3701_1":  assetCase(`sword.png`, `Shield.png`),
 	"E3701_2":  builtCase,
 	"E3705_1":  builtCase,
+	"E3706_1":  linkedCase,
 	"E3702_1":  assetCase(`sword.png`, `shield.jpg`),
 	"E3703_1":  assetCase(`../sword.png`, `Icon//shield.png`),
 	"E3201_1":  builtCase,
@@ -108,6 +117,27 @@ func TestFindings(t *testing.T) {
 			t.Errorf("case %s has no testdata/findings/%s.txtar", name, name)
 		}
 	}
+}
+
+// TYPES.md §13.4, DECISIONS 376: the case is written to disk, its `links` pairs made symbolic links, and checked.
+func linkedCase(fx *fixture) {
+	fx.t.Helper()
+	if runtime.GOOS == "windows" {
+		fx.t.Skip("symlinks need elevated privilege on windows")
+	}
+	dir := writeArchive(fx.t, fx.archive)
+	for _, f := range fx.archive.Files {
+		if f.Name != linksFile {
+			continue
+		}
+		for _, line := range strings.Split(strings.TrimSpace(string(f.Data)), "\n") {
+			link, target, _ := strings.Cut(line, " ")
+			if err := os.Symlink(filepath.Join(dir, filepath.FromSlash(target)), filepath.Join(dir, filepath.FromSlash(link))); err != nil {
+				fx.t.Fatal(err)
+			}
+		}
+	}
+	fx.out = rendered(fx.t, checked(fx.t, filepath.Join(dir, linkedProject)))
 }
 
 // TYPES.md §9.1: a keyed list's keys are unique.

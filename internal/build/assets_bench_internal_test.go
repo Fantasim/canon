@@ -32,7 +32,7 @@ func BenchmarkAssetExists(b *testing.B) {
 	a := &assets{fs: ciFS(tree), layout: layout, host: &evalHost{}, dirs: map[string]dirListing{}}
 	hit := benchAssetDir + "/" + benchAssetStem + strconv.Itoa(benchAssetNames-1) + benchAssetExt
 	miss := benchAssetDir + "/" + benchAssetStem + strconv.Itoa(benchAssetNames) + benchAssetExt
-	if _, found := a.Exists(benchAssetRoot, benchAssetFrom, hit); !found {
+	if _, found, _ := a.Exists(benchAssetRoot, benchAssetFrom, hit); !found {
 		b.Fatal("hit not found")
 	}
 	b.ReportAllocs()

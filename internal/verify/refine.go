@@ -139,12 +139,16 @@ type lookup struct {
 	display string
 	found   bool
 	absent  bool
+	link    string // the first symbolic link outside the roots and the project the file is reached through
 }
 
-// missing is the finding of a file not found: E3705 under an absent root, else E3701 (TYPES.md §13.4).
+// missing is the finding of a file not found: E3705 under an absent root, E3706 through an outside link, else E3701 (TYPES.md §13.4).
 func (l lookup) missing(span source.Span, name string) *diag.Builder {
 	if l.absent {
 		return diag.E3705.At(span, name, l.display)
+	}
+	if l.link != "" {
+		return diag.E3706.At(span, name, l.link)
 	}
 	return diag.E3701.At(span, name, l.display)
 }
@@ -157,7 +161,7 @@ func (w *walker) findAsset(a *types.AssetSpec, name string) lookup {
 		if root, absent := w.assets.Absent(a.Root, from); absent {
 			look = lookup{display: root, absent: true}
 		} else {
-			look.display, look.found = w.assets.Exists(a.Root, from, name)
+			look.display, look.found, look.link = w.assets.Exists(a.Root, from, name)
 		}
 	}
 	w.noteAsset(a, name, look)

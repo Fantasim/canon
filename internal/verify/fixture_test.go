@@ -64,8 +64,8 @@ func (e *evaluator) Where(_ context.Context, _ *types.Predicate, _ value.Value, 
 // assets is a fixture listing of rooted asset roots, displayed as written: root -> exact paths.
 type assets map[string][]string
 
-func (a assets) Exists(root, _, p string) (string, bool) {
-	return root, slices.Contains(a[root], p)
+func (a assets) Exists(root, _, p string) (string, bool, string) {
+	return root, slices.Contains(a[root], p), ""
 }
 
 // Absent: a fixture listing has no optional root absent from its machine.

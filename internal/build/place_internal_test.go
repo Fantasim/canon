@@ -166,10 +166,10 @@ func TestAssetExistsRootAlreadyMarked(t *testing.T) {
 	}
 	mfs := memDirFS{dir: "/p/res/Icon", names: []string{"Item.dds"}}
 	a := &assets{fs: mfs, layout: layout, host: &evalHost{}, dirs: map[string]dirListing{}}
-	if display, found := a.Exists("@resource/Icon", "items", "Item.dds"); !found || display != "@resource/Icon" {
+	if display, found, _ := a.Exists("@resource/Icon", "items", "Item.dds"); !found || display != "@resource/Icon" {
 		t.Errorf("Exists = %q, %v; want @resource/Icon, true for a root already carrying its own @", display, found)
 	}
-	if _, found := a.Exists("@resource/Icon", "items", "Missing.dds"); found {
+	if _, found, _ := a.Exists("@resource/Icon", "items", "Missing.dds"); found {
 		t.Error("Exists: true for a name not listed")
 	}
 }

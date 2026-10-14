@@ -92,7 +92,7 @@ func TestAssetExistsFolderCase(t *testing.T) {
 		{"folder case mismatch", "icons/x.png", false},
 		{"file case mismatch", "Icons/X.png", false},
 	} {
-		if _, found := a.Exists("@assets", "items", c.path); found != c.found {
+		if _, found, _ := a.Exists("@assets", "items", c.path); found != c.found {
 			t.Errorf("%s: Exists(%q) = %v, want %v", c.name, c.path, found, c.found)
 		}
 	}
@@ -122,7 +122,7 @@ func TestAssetExistsSymlinks(t *testing.T) {
 		{"asset under a symlinked folder", "linkdir/x.png"},
 		{"symlinked file", "linkfile.png"},
 	} {
-		if _, found := a.Exists("@assets", "items", c.path); !found {
+		if _, found, _ := a.Exists("@assets", "items", c.path); !found {
 			t.Errorf("%s: Exists(%q) = false, want true", c.name, c.path)
 		}
 	}

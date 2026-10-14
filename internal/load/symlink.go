@@ -44,6 +44,22 @@ func (l *Loader) walkBounds() []string {
 	return dirs
 }
 
+// Bounds is where a followed symbolic link's target must resolve: the project directory and every declared root, each resolved (WIRE.md §6.5).
+type Bounds []string
+
+// LinkBounds is load.dir's bounds for layout, resolved through fsys (WIRE.md §6.5).
+func LinkBounds(fsys project.FS, layout *project.Layout) Bounds {
+	return (&Loader{FS: fsys, Layout: layout}).walkBounds()
+}
+
+// Within is whether real, a resolved '/'-separated path, is one of the bounds or under one.
+func (b Bounds) Within(real string) bool { return within(real, b) }
+
+// FirstLinked is the written prefix of base up to its first symbolic link, base.Display when the base itself is that link (WIRE.md §6.5).
+func FirstLinked(fsys project.FS, layout *project.Layout, base project.Path) string {
+	return (&Loader{FS: fsys, Layout: layout}).firstLinkedSegment(base)
+}
+
 // realOr is name resolved through the project's FS, or name itself when that FS cannot resolve
 // it: a bound or base that does not exist holds no link target, and one without links is itself.
 func (l *Loader) realOr(name string) string {
