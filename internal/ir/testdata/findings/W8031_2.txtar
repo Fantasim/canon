@@ -1,0 +1,27 @@
+CODEGEN.md §2.10, EVALUATION.md §13.1, DECISIONS 379: a field of a table entry whose leaf the fixture's marks.txt marks as an entry position (EVALUATION.md §13.1; in a build, `indexOf`) is W8031, once, for that entry only.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// Its place.
+  pos: Int
+}
+
+/// The rows.
+let rows: table Row = {
+  first { pos: 3 }
+  second { pos: 4 }
+}
+
+emit json { out: "out/" }
+-- a.rows.json --
+{ "first": { "pos": 3 }, "second": { "pos": 4 } }
+-- marks.txt --
+a.rows 4
+-- findings.txt --
+warning[W8031]  a.rows.json:1:45
+  a number or text made from an entry position is written to a.rows; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
+  expected by a/a.canon:10 (rows)
+
+0 errors, 1 warning in 1 package (…)

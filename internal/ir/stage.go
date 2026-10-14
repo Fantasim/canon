@@ -46,6 +46,7 @@ func Build(ctx context.Context, in Input) []*Package {
 		}
 	}
 	s.precompute()
+	s.checkPositions()
 	s.lookupDomains()
 	s.branchTables()
 	s.noHooks()

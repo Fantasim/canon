@@ -45,6 +45,8 @@ type world struct {
 	values map[string][]byte
 	cache  map[string]value.Value
 	calls  func(fn check.Object, recv value.Value, args []value.Value) (value.Value, bool)
+	site   *source.Span        // when set, every marked leaf gets this site: the zero span is none (marks.txt tests the fallback and the dedup)
+	marks  map[string][]string // pkg.name to the leaf texts that carry the position mark (EVALUATION.md §13.1)
 }
 
 func newWorld(t *testing.T) *world {
@@ -147,6 +149,7 @@ func (w *world) Value(ctx context.Context, pkg, name string) (value.Value, bool)
 	}
 	v, ok := w.decode(ctx, pkg, root, obj.Type())
 	if ok {
+		w.mark(key, v)
 		w.cache[key] = v
 	}
 	return v, ok
@@ -203,7 +206,11 @@ func (w *world) fixtureCalls(fn check.Object, _ value.Value, args []value.Value)
 	key := strings.Join(texts, " ")
 	for _, m := range root.Members {
 		if m.Key == key {
-			return w.decode(context.Background(), fn.Pkg(), m.Value, sig.Result)
+			v, ok := w.decode(context.Background(), fn.Pkg(), m.Value, sig.Result)
+			if ok {
+				w.mark(fn.Pkg()+"."+fn.Name(), v)
+			}
+			return v, ok
 		}
 	}
 	return nil, false
@@ -248,7 +255,7 @@ func (w *world) findings(t *testing.T) string {
 }
 
 // folder folds the literals, constants, members and lists field defaults and bounds use.
-// It never folds a record or map literal; the real folder's side is eval's TestFoldInstanceDependentDefault.
+// It folds a record literal of foldable fields (a ts data emit's default walk reads them, W8031_7) and never a map literal; the real folder's side is eval's TestFoldInstanceDependentDefault.
 type folder struct{}
 
 func (folder) Fold(_ context.Context, _ check.Object, e syntax.Expr, info *check.Info) (value.Value, bool) {
@@ -282,6 +289,8 @@ func fold(e syntax.Expr, info *check.Info) (value.Value, bool) {
 		return foldString(x, t)
 	case *syntax.ListLit:
 		return foldList(x, info)
+	case *syntax.BraceLit:
+		return foldRecord(x, info)
 	}
 	return nil, false
 }

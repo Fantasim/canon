@@ -1,0 +1,29 @@
+CODEGEN.md §2.10, EVALUATION.md §13.1, DECISIONS 379: a stored export fn result holding an entry position is W8031, named after the fn, at the leaf.
+-- a/a.canon --
+package a
+
+/// A box.
+record Box {
+  /// N.
+  n: Int
+
+  /// Its place.
+  export fn place(self) -> Int { return 6 }
+}
+
+/// A box.
+let box: Box = { n: 1 }
+
+emit json { out: "out/" }
+-- a.box.json --
+{ "n": 1 }
+-- a.place.calls.json --
+{ "": 6 }
+-- marks.txt --
+a.place 6
+-- findings.txt --
+warning[W8031]  a.place.calls.json:1:7
+  a number or text made from an entry position is written to a.Box.place; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
+  expected by a/a.canon:9 (place)
+
+0 errors, 1 warning in 1 package (…)

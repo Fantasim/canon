@@ -1,0 +1,26 @@
+CODEGEN.md §2.10, EVALUATION.md §13.1, DECISIONS 379: an emitted value holding a leaf that the fixture's marks.txt marks as an entry position (EVALUATION.md §13.1; in a build, `i + 1` of a json value) is W8031, at the marked leaf, with the output's declaration as the related note.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// Its place.
+  n: Int
+  /// Its label.
+  label: String
+}
+
+/// The rows.
+let rows: [Row] = []
+
+emit json { out: "out/" }
+-- a.rows.json --
+[{ "n": 8, "label": "x" }]
+-- marks.txt --
+a.rows 8
+-- findings.txt --
+warning[W8031]  a.rows.json:1:9
+  a number or text made from an entry position is written to a.rows; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
+  expected by a/a.canon:12 (rows)
+
+0 errors, 1 warning in 1 package (…)

@@ -1,0 +1,18 @@
+CODEGEN.md §2.10, EVALUATION.md §13.1, DECISIONS 379: a map key holding an entry position is W8031.
+-- a/a.canon --
+package a
+
+/// The names by place.
+let names: {Int: String} = {}
+
+emit json { out: "out/" }
+-- a.names.json --
+{ "5": "x" }
+-- marks.txt --
+a.names 5
+-- findings.txt --
+warning[W8031]  a.names.json:1:3
+  a number or text made from an entry position is written to a.names; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
+  expected by a/a.canon:4 (names)
+
+0 errors, 1 warning in 1 package (…)

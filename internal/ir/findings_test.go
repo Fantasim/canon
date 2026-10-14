@@ -13,6 +13,7 @@ import (
 const (
 	findingsFile = "findings.txt"
 	selectedFile = "selected.txt" // the packages a case builds, space-separated; all when absent
+	marksFile    = "marks.txt"    // lines `pkg.name text`: the leaves of that value or fn result with that text carry the position mark
 )
 
 // reFindingCode is a rendered finding's code (diag.Render's `error[Exxxx]`/`warning[Wxxxx]`),
@@ -43,6 +44,8 @@ func onlyItsCode(t *testing.T, glob string) {
 				w.useProject(t, f.Data)
 			case selectedFile:
 				selected = strings.Fields(string(f.Data))
+			case marksFile:
+				w.markLines(string(f.Data))
 			default:
 				w.add(t, f.Name, f.Data)
 			}

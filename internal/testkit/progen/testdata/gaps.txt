@@ -23,3 +23,4 @@ E1017 no mutation operator edits the project's tiers key yet (GRAMMAR.md §7.1, 
 E1018 no mutation operator edits the project's tiers key yet (GRAMMAR.md §7.1, DECISIONS 380); internal/project's E1018_*.txtar produce it
 E2007 no mutation operator edits the project's tiers key or adds an import that climbs it yet (TYPES.md §3.1, DECISIONS 380); internal/project's E2007_*.txtar produce it
 W1912 no mutation operator rewrites an amend segment as [#n] on a table, keyed list or map yet (EVALUATION.md §9.2, DECISIONS 379); internal/check's W1912_*.txtar produce it
+W8031 no generated program writes an entry position: only enumerate or indexOf over a table, keyed list or ref makes one (EVALUATION.md §13.1), which no operator emits; internal/ir's W8031_*.txtar produce it

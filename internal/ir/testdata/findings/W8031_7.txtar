@@ -1,0 +1,30 @@
+CODEGEN.md §2.10, DECISIONS 278, EVALUATION.md §13.1: a ts data emit writes a record's constant field default with its stored method results (precompute.go), so a marked result of the default's receiver is W8031, named after the method, at the leaf.
+-- a/a.canon --
+package a
+
+/// Inner.
+record Inner {
+  /// N.
+  n: Int
+
+  /// Its place.
+  export fn place(self) -> Int { return 4 }
+}
+
+/// Outer.
+record Outer {
+  /// Its inner.
+  inner: Inner = { n: 1 }
+}
+
+emit ts { out: "@features/a/a.ts", mode: data }
+-- a.place.calls.json --
+{ "": 4 }
+-- marks.txt --
+a.place 4
+-- findings.txt --
+warning[W8031]  a.place.calls.json:1:7
+  a number or text made from an entry position is written to a.Inner.place; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
+  expected by a/a.canon:9 (place)
+
+0 errors, 1 warning in 1 package (…)

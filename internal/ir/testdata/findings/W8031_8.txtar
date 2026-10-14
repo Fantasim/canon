@@ -1,0 +1,44 @@
+CODEGEN.md §2.10, EVALUATION.md §13.1, DECISIONS 379: the same marked leaf (the same site, two Instances) written by two emitting packages is reported once in each: the dedup is per site and package.
+-- a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// N.
+  n: Int
+
+  /// Its place.
+  export fn place(self) -> Int { return 2 }
+}
+
+/// An item.
+let item: Item = { n: 1 }
+
+emit json { out: "out/a/" }
+-- b/b.canon --
+package b
+
+import a { Item }
+
+/// An item.
+let item: Item = { n: 1 }
+
+emit json { out: "out/b/" }
+-- a.item.json --
+{ "n": 1 }
+-- b.item.json --
+{ "n": 1 }
+-- a.place.calls.json --
+{ "": 2 }
+-- marks.txt --
+a.place 2
+-- findings.txt --
+warning[W8031]  a.place.calls.json:1:7
+  a number or text made from an entry position is written to a.Item.place; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
+  expected by a/a.canon:9 (place)
+
+warning[W8031]  a.place.calls.json:1:7
+  a number or text made from an entry position is written to a.Item.place; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
+  expected by a/a.canon:9 (place)
+
+0 errors, 2 warnings in 2 packages (…)
