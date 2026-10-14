@@ -1,0 +1,31 @@
+EVALUATION.md §9.2, DECISIONS 379: `[#n]` on a table warns W1912 at the segment, naming the path up to it; the same table's entry selected by key is silent, and `[#n]` on a plain list is accepted.
+-- a/a.canon --
+package a
+
+local record Tier {
+  rate: Int
+}
+
+local record Cfg {
+  tiers: table Tier
+  xs: [Int]
+}
+
+local let cfg: Cfg = {
+  tiers: { low { rate: 1 }, high { rate: 2 } }
+  xs: [1, 2]
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  tiers[#0].rate: 3
+  tiers.high.rate: 4
+  xs[#1]: 5
+}
+-- findings.txt --
+warning[W1912]  a/dev.layer.canon:5:8
+  amend path tiers[#0] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+0 errors, 1 warning in 1 package (…)

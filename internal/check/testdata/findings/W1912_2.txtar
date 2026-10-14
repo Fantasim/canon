@@ -1,0 +1,39 @@
+EVALUATION.md §9.2, DECISIONS 379: `[#n]` on a keyed list warns W1912, for the whole entry and through it to a field; the entry selected by key `[k]` is silent.
+-- a/a.canon --
+package a
+
+local record Item {
+  id: Int
+  n: Int = 0
+}
+
+local record Box {
+  items: [Item] keyed by id
+}
+
+local let box: Box = {
+  items: [{ id: 3 }, { id: 7 }]
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend box {
+  items[#0].n: 1
+  items[#1]: { id: 7, n: 2 }
+}
+-- a/prod.layer.canon --
+package a
+layer prod
+
+amend box {
+  items[7].n: 3
+}
+-- findings.txt --
+warning[W1912]  a/dev.layer.canon:5:8
+  amend path items[#0] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+warning[W1912]  a/dev.layer.canon:6:8
+  amend path items[#1] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+0 errors, 2 warnings in 1 package (…)

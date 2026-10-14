@@ -131,7 +131,7 @@ func (c *checker) amendSegment(env *env, w *amendWalk, seg *syntax.AmendSegment)
 		w.fields = append(w.fields, seg.Name.Name)
 	case seg.Position != nil:
 		c.info.Types[seg.Position] = types.IntType
-		next, ok = atPosition(t)
+		next, ok = c.atPosition(env, w, t, seg)
 	default:
 		next, ok = c.amendKey(env, w, t, seg.Key)
 	}
@@ -187,8 +187,17 @@ func (c *checker) caseField(env *env, v *types.VariantType, n *syntax.Ident, pat
 	return nil, false
 }
 
-// atPosition is `[#n]`: any list, keyed list, table or map, by position.
-func atPosition(t types.Type) (types.Type, bool) {
+// atPosition is `[#n]` on any list, keyed list, table or map; W1912 off a plain list (EVALUATION.md §9.2).
+func (c *checker) atPosition(env *env, w *amendWalk, t types.Type, seg *syntax.AmendSegment) (types.Type, bool) {
+	next, ok := elemAtPosition(t)
+	if ok && !plainList(t) {
+		c.warn(env, diag.W1912.At(env.span(seg), w.path()))
+	}
+	return next, ok
+}
+
+// elemAtPosition is the element or entry type `[#n]` reaches.
+func elemAtPosition(t types.Type) (types.Type, bool) {
 	switch x := t.Base().(type) {
 	case *types.ListType:
 		return x.Elem, true

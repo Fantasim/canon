@@ -85,4 +85,10 @@ amend box {
 -- dump.txt --
 a.box = Box{port: 1, xs: [10, 2, 30], items: [Item{id: 3, n: 0}, Item{id: 7, n: 5}], named: [Named{name: "a", n: 9}, Named{name: "b", n: 6}], m: {"a": 1, "b": 20}, colors: {red: 1, green: 2}, shape: circle{r: 4}}
 
-0 errors, 0 warnings in 1 package (…)
+warning[W1912]  a/dev.canon:10:4
+  amend path m[#1] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+warning[W1912]  a/dev.canon:12:8
+  amend path named[#0] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+0 errors, 2 warnings in 1 package (…)

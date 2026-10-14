@@ -54,4 +54,7 @@ amend config {
 -- dump.txt --
 a.config = Config{server: Server{port: 9000, host: "box", url: "http://box:9000"}, limits: {"a": 1, "b": 2}, tiers: {low: Tier{weight: 3}, high: Tier{weight: 5}}}
 
-0 errors, 0 warnings in 1 package (…)
+warning[W1912]  a/louis.canon:7:8
+  amend path tiers[#0] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+0 errors, 1 warning in 1 package (…)

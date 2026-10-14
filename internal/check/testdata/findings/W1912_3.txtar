@@ -1,0 +1,32 @@
+EVALUATION.md §9.2, DECISIONS 379: `[#n]` on a map warns W1912, also through an optional field; `[#n]` into a plain list of lists is accepted at both segments.
+-- a/a.canon --
+package a
+
+local record Cfg {
+  m: {String: Int}
+  opt: {String: Int}?
+  xs: [[Int]]
+}
+
+local let cfg: Cfg = {
+  m: { "a": 1, "b": 2 }
+  opt: { "c": 3 }
+  xs: [[1], [2]]
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  m[#1]: 20
+  opt[#0]: 30
+  xs[#0][#0]: 4
+}
+-- findings.txt --
+warning[W1912]  a/dev.layer.canon:5:4
+  amend path m[#1] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+warning[W1912]  a/dev.layer.canon:6:6
+  amend path opt[#0] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+0 errors, 2 warnings in 1 package (…)
