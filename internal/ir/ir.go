@@ -146,7 +146,6 @@ type Branch struct {
 	Type    TypeRef
 }
 
-// Const is a public constant.
 type Const struct {
 	Name, Doc   string
 	Type        TypeRef
@@ -180,7 +179,7 @@ type Emit struct {
 	GoPackage string
 	Namespace string
 	Open      []string // types mode: the enums `open` names (DECISIONS 339, 362)
-	NoHook    []string
+	NoHook    []string // go, cpp data: records and cases (V.Case) whose make hook this emit does not write (DECISIONS 363); filled only for packages a selected package imports, the only ones an importer reads
 }
 
 // File is one output file of a generator; Path is relative to its emit's Dir.
