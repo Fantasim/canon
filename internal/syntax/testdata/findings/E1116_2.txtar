@@ -1,0 +1,16 @@
+GRAMMAR.md §2.3: a quoted word is a primary only; in a WORD position (after a dot, in a pattern) it is E1116.
+-- a/a.canon --
+package a
+
+let x = a.`in`
+let y = match x {
+  `in` => 1
+}
+-- findings.txt --
+error[E1116]  a/a.canon:3:11
+  expected WORD; found `in`
+
+error[E1116]  a/a.canon:5:3
+  expected WORD; found `in`
+
+2 errors, 0 warnings in 1 package (…)

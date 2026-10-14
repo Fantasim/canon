@@ -31,6 +31,10 @@ var nameable = tokenSet(KwAmend, KwAsset, KwCheck, KwConst, KwEmit, KwEntry, KwE
 	KwExport, KwImport, KwInput, KwLayer, KwLocal, KwPackage, KwProject, KwRecord, KwRef, KwRetired,
 	KwStable, KwTable, KwTest, KwTranslation, KwType, KwVar, KwVariant, KwView, KwWarn, KwWidget)
 
+// quotable are the words a QWORD may spell (GRAMMAR.md §2.3).
+var quotable = tokenSet(KwAnd, KwAs, KwBreak, KwContinue, KwElse, KwFn, KwFor, KwIf, KwIn, KwIs,
+	KwLet, KwLoad, KwMatch, KwNot, KwOr, KwReturn, KwWhere, KwWhile)
+
 // The token sets the parser decides on. stopToken are the tokens a missing operand never
 // consumes; topSyncKind the tokens that, first on their line, resume a broken file.
 var (
@@ -43,7 +47,7 @@ var (
 	isModifier    = tokenSet(KwLocal, KwExport, KwRetired)
 	stopToken     = tokenSet(TokNL, TokEOF, TokComma, TokRParen, TokRBrack, TokRBrace, TokLBrace,
 		TokColon, TokAssign, TokFatArrow, TokArrow, KwElse, TokAt)
-	startsItemTok = tokenSet(TokIdent, TokInt, TokFloat, TokDuration, TokString, TokStringHead,
+	startsItemTok = tokenSet(TokIdent, TokQWord, TokInt, TokFloat, TokDuration, TokString, TokStringHead,
 		TokMLString, TokMLStringHead, TokRaw, TokRawML, TokAt, TokEllipsis, TokLParen, TokLBrack,
 		TokMinus, TokDot, TokUnderscore)
 	topSyncKind = tokenSet(KwLet, KwLocal, KwConst, KwType, KwEnum, KwRecord, KwVariant, KwFn,

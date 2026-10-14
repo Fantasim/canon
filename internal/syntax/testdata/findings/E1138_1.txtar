@@ -1,0 +1,34 @@
+GRAMMAR.md §2.3: a quoted word that is not quotable is E1138 and reads as a bad expression.
+-- a/a.canon --
+package a
+
+let a = `check`
+let b = `plain`
+let c = `none`
+let d = `true`
+let e = `_`
+let f = `check` { r: 2 }
+let g = [`check` { r: 2 }]
+-- findings.txt --
+error[E1138]  a/a.canon:3:9
+  "check" is written without backticks
+
+error[E1138]  a/a.canon:4:9
+  "plain" is written without backticks
+
+error[E1138]  a/a.canon:5:9
+  "none" is written without backticks
+
+error[E1138]  a/a.canon:6:9
+  "true" is written without backticks
+
+error[E1138]  a/a.canon:7:9
+  "_" is written without backticks
+
+error[E1138]  a/a.canon:8:9
+  "check" is written without backticks
+
+error[E1138]  a/a.canon:9:10
+  "check" is written without backticks
+
+7 errors, 0 warnings in 1 package (…)

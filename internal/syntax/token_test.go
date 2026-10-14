@@ -34,7 +34,7 @@ var punctuation = []syntax.TokenKind{
 // The token classes of GRAMMAR.md §2.1 (DOC is trivia), with the lexer's own kinds.
 var classes = map[syntax.TokenKind]string{
 	syntax.TokInvalid: "INVALID", syntax.TokBOF: "BOF", syntax.TokEOF: "EOF", syntax.TokNL: "NL", syntax.TokIllegal: "ILLEGAL",
-	syntax.TokIdent: "IDENT", syntax.TokInt: "INT", syntax.TokFloat: "FLOAT", syntax.TokDuration: "DURATION",
+	syntax.TokIdent: "IDENT", syntax.TokQWord: "QWORD", syntax.TokInt: "INT", syntax.TokFloat: "FLOAT", syntax.TokDuration: "DURATION",
 	syntax.TokString: "STRING", syntax.TokStringHead: "STRING_HEAD", syntax.TokStringMid: "STRING_MID",
 	syntax.TokStringTail: "STRING_TAIL", syntax.TokMLString: "MLSTRING",
 	syntax.TokMLStringHead: "MLSTRING_HEAD", syntax.TokMLStringMid: "MLSTRING_MID",
@@ -80,5 +80,37 @@ func TestTokenKindsPartition(t *testing.T) {
 	}
 	if got := syntax.TokenKindCount.String(); got != syntax.TokInvalid.String() {
 		t.Errorf("out-of-range token kind prints %q", got)
+	}
+}
+
+// TestQuotableWords proves GRAMMAR.md §2.3 and LEX-08.
+func TestQuotableWords(t *testing.T) {
+	never := []syntax.TokenKind{syntax.KwNone, syntax.KwTrue, syntax.KwFalse, syntax.KwSelf}
+	for _, k := range keywords {
+		want := !syntax.IsNameable(k) && !slices.Contains(never, k)
+		if got := syntax.IsQuotable(k); got != want {
+			t.Errorf("IsQuotable(%s) = %v, want %v", k, got, want)
+		}
+		text, ok := syntax.ValueText(k.String())
+		if ok != (want || syntax.IsNameable(k)) || (want && text != "`"+k.String()+"`") {
+			t.Errorf("ValueText(%s) = %q, %v", k, text, ok)
+		}
+		src := "package a\nlet x = `" + k.String() + "`\n"
+		tree, bag, _ := parseText(t, "a.canon", []byte(src))
+		if got := slices.ContainsFunc(tree.Tokens, func(tk syntax.Token) bool { return tk.Kind == syntax.TokQWord }); !got {
+			t.Errorf("`%s` is no QWORD", k)
+		}
+		if got := len(bag.Findings()) > 0; got == want {
+			t.Errorf("`%s`: findings = %v, want %v", k, got, !want)
+		}
+	}
+}
+
+// GRAMMAR.md §2.3: ValueText is false for text that is no word.
+func TestValueTextRefusesNonWords(t *testing.T) {
+	for _, w := range []string{"", "a b", "9x", "é", "_", "none", "self"} {
+		if text, ok := syntax.ValueText(w); ok {
+			t.Errorf("ValueText(%q) = %q, true", w, text)
+		}
 	}
 }

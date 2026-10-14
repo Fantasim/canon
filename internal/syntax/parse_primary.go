@@ -25,6 +25,7 @@ func init() {
 			primaryTable[k] = (*parser).numberExpr
 		}
 	}
+	primaryTable[TokQWord] = (*parser).quotedExpr
 	primaryTable[TokRegex], primaryTable[KwTrue], primaryTable[KwFalse] = (*parser).regexExpr, (*parser).boolExpr, (*parser).boolExpr
 	primaryTable[KwNone], primaryTable[KwSelf], primaryTable[TokLParen] = (*parser).noneExpr, (*parser).selfExpr, (*parser).parenExpr
 	primaryTable[TokDot], primaryTable[TokLBrack], primaryTable[TokLBrace] = (*parser).shorthand, (*parser).listLit, (*parser).braceExpr
@@ -70,6 +71,21 @@ func (p *parser) primary() Expr {
 func (p *parser) identExpr() Expr {
 	t := p.next()
 	return &IdentExpr{Bounds: Bounds{From: t, To: t}, Name: p.text(t)}
+}
+
+// quotedExpr reads a QWORD (GRAMMAR.md §2.3, §5.11); E1138 was the lexer's.
+func (p *parser) quotedExpr() Expr {
+	start := p.pos
+	t := p.next()
+	text := p.text(t)
+	word := text[1 : len(text)-1]
+	if !IsQuotable(LookupWord(word)) {
+		if p.at(TokLBrace) && !p.header && p.sameLine(p.pos-1, p.pos) {
+			p.braceLit()
+		}
+		return p.badExpr(start)
+	}
+	return &IdentExpr{Bounds: Bounds{From: t, To: t}, Name: word}
 }
 
 func (p *parser) stringExpr() Expr {

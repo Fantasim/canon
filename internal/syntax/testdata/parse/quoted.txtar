@@ -1,0 +1,99 @@
+GRAMMAR.md §2.3, §3.1, §5.11: a quoted word is one primary: a value, a list element, a keyed item key, a typed-literal name, an argument, an index and an interpolation; it ends an item with no comma.
+-- a/a.canon --
+package a
+
+let value = `in`
+let list = [`if`, plain, `while`]
+let keyed = { `in`: 1, `return`: 2 }
+let typed = `while` { r: 2 }
+let call = f(`for`, k: `else`)
+let index = m[`if`]
+let text = "leg {`in`}"
+let lines = {
+  leg: `in`
+  other: 1
+  last: `return`
+}
+let word = Leg.in
+let next = {
+  `in`: 1
+  `is`: 2
+}
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-20:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: LetDecl @3:1-3:17
+    Name: Ident value @3:5-3:10
+    Value: IdentExpr in @3:13-3:17
+  Decls[1]: LetDecl @4:1-4:34
+    Name: Ident list @4:5-4:9
+    Value: ListLit @4:12-4:34
+      Elems[0]: IdentExpr if @4:13-4:17
+      Elems[1]: IdentExpr plain @4:19-4:24
+      Elems[2]: IdentExpr while @4:26-4:33
+  Decls[2]: LetDecl @5:1-5:37
+    Name: Ident keyed @5:5-5:10
+    Value: BraceLit @5:13-5:37
+      Items[0]: MapItem @5:15-5:22
+        Key: IdentExpr in @5:15-5:19
+        Value: IntLit Value=1 @5:21-5:22
+      Items[1]: MapItem @5:24-5:35
+        Key: IdentExpr return @5:24-5:32
+        Value: IntLit Value=2 @5:34-5:35
+  Decls[3]: LetDecl @6:1-6:29
+    Name: Ident typed @6:5-6:10
+    Value: TypedLit @6:13-6:29
+      Type: QualifiedName while @6:13-6:20
+      Lit: BraceLit @6:21-6:29
+        Items[0]: FieldItem @6:23-6:27
+          Name: Ident r @6:23-6:24
+          Value: IntLit Value=2 @6:26-6:27
+  Decls[4]: LetDecl @7:1-7:31
+    Name: Ident call @7:5-7:9
+    Value: CallExpr @7:12-7:31
+      Fun: IdentExpr f @7:12-7:13
+      Args[0]: Arg @7:14-7:19
+        Value: IdentExpr for @7:14-7:19
+      Args[1]: Arg @7:21-7:30
+        Name: Ident k @7:21-7:22
+        Value: IdentExpr else @7:24-7:30
+  Decls[5]: LetDecl @8:1-8:20
+    Name: Ident index @8:5-8:10
+    Value: IndexExpr @8:13-8:20
+      X: IdentExpr m @8:13-8:14
+      Index: IdentExpr if @8:15-8:19
+  Decls[6]: LetDecl @9:1-9:24
+    Name: Ident text @9:5-9:9
+    Value: StringLit @9:12-9:24
+      Parts[0]: text "leg "
+      Parts[1]: Interp @9:18-9:22
+        X: IdentExpr in @9:18-9:22
+  Decls[7]: LetDecl @10:1-14:2
+    Name: Ident lines @10:5-10:10
+    Value: BraceLit @10:13-14:2
+      Items[0]: FieldItem @11:3-11:12
+        Name: Ident leg @11:3-11:6
+        Value: IdentExpr in @11:8-11:12
+      Items[1]: FieldItem @12:3-12:11
+        Name: Ident other @12:3-12:8
+        Value: IntLit Value=1 @12:10-12:11
+      Items[2]: FieldItem @13:3-13:17
+        Name: Ident last @13:3-13:7
+        Value: IdentExpr return @13:9-13:17
+  Decls[8]: LetDecl @15:1-15:18
+    Name: Ident word @15:5-15:9
+    Value: SelectorExpr @15:12-15:18
+      X: IdentExpr Leg @15:12-15:15
+      Name: Ident in @15:16-15:18
+  Decls[9]: LetDecl @16:1-19:2
+    Name: Ident next @16:5-16:9
+    Value: BraceLit @16:12-19:2
+      Items[0]: MapItem @17:3-17:10
+        Key: IdentExpr in @17:3-17:7
+        Value: IntLit Value=1 @17:9-17:10
+      Items[1]: MapItem @18:3-18:10
+        Key: IdentExpr is @18:3-18:7
+        Value: IntLit Value=2 @18:9-18:10
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -43,6 +43,7 @@ func init() {
 	codeTable[' '], codeTable['\t'] = (*lexer).space, (*lexer).space
 	codeTable['\r'], codeTable['\n'] = (*lexer).carriageReturn, (*lexer).newline
 	codeTable['"'], codeTable['/'] = (*lexer).quote, (*lexer).slash
+	codeTable[backtick] = (*lexer).quotedWord
 	codeTable['#'], codeTable['}'], codeTable[':'] = (*lexer).hash, (*lexer).rbrace, (*lexer).colon
 }
 
@@ -59,6 +60,50 @@ func LookupWord(word string) TokenKind {
 
 // IsNameable reports a reserved word read as a name in value position (GRAMMAR.md §4.3 (c)).
 func IsNameable(k TokenKind) bool { return k < TokenKindCount && nameable[k] }
+
+// IsQuotable reports a reserved word that a quoted word may spell (GRAMMAR.md §2.3).
+func IsQuotable(k TokenKind) bool { return k < TokenKindCount && quotable[k] }
+
+// ValueText is the value-position text of a data name (GRAMMAR.md §4.3, §2.3).
+func ValueText(word string) (string, bool) {
+	if !isWordText(word) {
+		return "", false
+	}
+	switch k := LookupWord(word); {
+	case k == TokIdent || IsNameable(k):
+		return word, true
+	case IsQuotable(k):
+		return quoteWord(word), true
+	default:
+		return "", false
+	}
+}
+
+// isWordText reports letter-or-underscore then word bytes (GRAMMAR.md §2.3).
+func isWordText(s string) bool {
+	return s != "" && !isDigit(s[0]) && !slices.ContainsFunc([]byte(s), func(c byte) bool { return !isWordByte(c) })
+}
+
+func quoteWord(word string) string { return string(backtick) + word + string(backtick) }
+
+// quotedWord reads a QWORD (GRAMMAR.md §2.3, §2.9).
+func (l *lexer) quotedWord() {
+	start, end := l.pos, l.pos+1
+	if end < len(l.src) && !isDigit(l.src[end]) {
+		for end < len(l.src) && isWordByte(l.src[end]) {
+			end++
+		}
+	}
+	if end == start+1 || end >= len(l.src) || l.src[end] != backtick {
+		l.illegal()
+		return
+	}
+	l.pos = end + 1
+	if word := l.text(start+1, end); !IsQuotable(LookupWord(word)) {
+		diag.E1138.At(l.span(start, l.pos), word).Report(l.bag)
+	}
+	l.emit(TokQWord, start)
+}
 
 func (l *lexer) illegal() {
 	start := l.pos

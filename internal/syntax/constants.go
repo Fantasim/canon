@@ -28,6 +28,7 @@ const (
 	TokNL
 	TokIllegal
 	TokIdent
+	TokQWord
 	TokInt
 	TokFloat
 	TokDuration
@@ -136,7 +137,7 @@ const (
 
 // tokenNames spells each token kind: the class name, or the exact text of a fixed token.
 var tokenNames = [TokenKindCount]string{
-	TokInvalid: "INVALID", TokBOF: "BOF", TokEOF: "EOF", TokNL: "NL", TokIllegal: "ILLEGAL", TokIdent: "IDENT",
+	TokInvalid: "INVALID", TokBOF: "BOF", TokEOF: "EOF", TokNL: "NL", TokIllegal: "ILLEGAL", TokIdent: "IDENT", TokQWord: "QWORD",
 	TokInt: "INT", TokFloat: "FLOAT", TokDuration: "DURATION", TokString: "STRING",
 	TokStringHead: "STRING_HEAD", TokStringMid: "STRING_MID", TokStringTail: "STRING_TAIL",
 	TokMLString: "MLSTRING", TokMLStringHead: "MLSTRING_HEAD", TokMLStringMid: "MLSTRING_MID",
@@ -357,11 +358,11 @@ var kindNames = [NodeKindCount]string{
 
 // Lexer texts and widths (GRAMMAR.md §2).
 const (
-	utf8Self, asciiLowerBit, pairWidth, maxHexDigits, runeBits, boolCount, nlShare = utf8.RuneSelf, 0x20, 2, 6, 32, 2, 4
-	bomText, tripleQuote, quoteText, rawPrefix, blankChars, spaceText, lf          = "\xEF\xBB\xBF", `"""`, `"`, "r", " \t", " ", "\n"
-	docPrefix, ordinaryDoc, lineCommentText, blockOpen, blockClose                 = "///", "////", "//", "/*", "*/"
-	slashText, openBraceText, closeBraceText                                       = "/", "{", "}"
-	unicodeOpen                                                                    = 3
+	backtick, utf8Self, asciiLowerBit, pairWidth, maxHexDigits, runeBits, boolCount, nlShare = '`', utf8.RuneSelf, 0x20, 2, 6, 32, 2, 4
+	bomText, tripleQuote, quoteText, rawPrefix, blankChars, spaceText, lf                    = "\xEF\xBB\xBF", `"""`, `"`, "r", " \t", " ", "\n"
+	docPrefix, ordinaryDoc, lineCommentText, blockOpen, blockClose                           = "///", "////", "//", "/*", "*/"
+	slashText, openBraceText, closeBraceText                                                 = "/", "{", "}"
+	unicodeOpen                                                                              = 3
 )
 
 // Classes of a byte of string text, the index of stringByte.

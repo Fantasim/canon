@@ -1,0 +1,38 @@
+GRAMMAR.md §1, §2.3: a backtick that opens no quoted word is E1106 at the backtick.
+-- a/a.canon --
+package a
+
+let a = `
+let b = `in
+let c = ``
+let d = `a b`
+let e = `9x`
+-- findings.txt --
+error[E1106]  a/a.canon:3:9
+  unexpected character `
+
+error[E1106]  a/a.canon:4:9
+  unexpected character `
+
+error[E1106]  a/a.canon:5:9
+  unexpected character `
+
+error[E1106]  a/a.canon:5:10
+  unexpected character `
+
+error[E1106]  a/a.canon:6:9
+  unexpected character `
+
+error[E1106]  a/a.canon:6:13
+  unexpected character `
+
+error[E1106]  a/a.canon:7:9
+  unexpected character `
+
+error[E1110]  a/a.canon:7:10
+  invalid number literal "9x"
+
+error[E1106]  a/a.canon:7:12
+  unexpected character `
+
+9 errors, 0 warnings in 1 package (…)
