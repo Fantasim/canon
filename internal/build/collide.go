@@ -30,7 +30,7 @@ func (r *run) clashes(outputs []*output) ([]*output, []clash) {
 			continue
 		}
 		if rel, clashes := reserved[key]; clashes && !o.listing {
-			found = append(found, clash{key: key, pkg: o.Package, b: diag.E8152.At(o.at, rel, o.Path)})
+			found = append(found, clash{key: key, pkg: o.Package, b: diag.E8152.AtFile(o.at, rel, o.Path)})
 			continue
 		}
 		prev, seen := first[key]
@@ -39,7 +39,7 @@ func (r *run) clashes(outputs []*output) ([]*output, []clash) {
 			first[key] = o
 			kept = append(kept, o)
 		case prev.Abs != o.Abs || !bytes.Equal(prev.Content, o.Content) || !runtimeFile(o.Abs):
-			found = append(found, clash{key: key, pkg: o.Package, b: diag.E8152.At(o.at, prev.Path, o.Path)})
+			found = append(found, clash{key: key, pkg: o.Package, b: diag.E8152.AtFile(o.at, prev.Path, o.Path)})
 		}
 	}
 	return kept, found

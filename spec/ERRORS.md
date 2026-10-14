@@ -396,7 +396,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 324 codes: 297 errors, 24 warnings and 3 run-time codes, with 541 messages.
+The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 553 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -411,7 +411,7 @@ Owner: GRAMMAR.md.
 | E1003 | error | project | GRAMMAR.md §7.1 | no `project.canon` in the directory or its parents (exit 2) |
 | W1003 | warning | build | GRAMMAR.md §9.2 | a declared name breaks its naming convention |
 | E1004 | error | project | GRAMMAR.md §7.1 | `project.canon` does not declare `canon` |
-| E1005 | error | project | GRAMMAR.md §7.1 | a project key or root name given twice |
+| E1005 | error | project | GRAMMAR.md §7.1 | a project key, root name or tier name given twice |
 | E1006 | error | project | GRAMMAR.md §7.1 | a project value of the wrong kind or out of range |
 | E1007 | error | project | GRAMMAR.md §7.1 | invalid root name or path (absolute, empty, `\`) |
 | E1008 | error | project | GRAMMAR.md §7.1 | invalid or duplicate language code in `languages` |
@@ -423,6 +423,8 @@ Owner: GRAMMAR.md.
 | E1014 | error | project | GRAMMAR.md §7.2 | `project.local.canon` holds something other than a `roots` map moving declared roots to path strings, or names another project (DECISIONS 332) |
 | E1015 | error | project | GRAMMAR.md §7.1 | `project.canon` pins another compiler version (DECISIONS 354) |
 | W1016 | warning | project | GRAMMAR.md §7.1 | a `dev` compiler cannot honour the project's compiler pin (DECISIONS 354) |
+| E1017 | error | project | GRAMMAR.md §7.1 | a `tiers` name that is not an identifier, or a package path listed twice in `tiers` (DECISIONS 380) |
+| E1018 | error | project | GRAMMAR.md §7.1 | with `tiers` declared, a package no listed path places, or a listed path that places no package (DECISIONS 380) |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -435,6 +437,7 @@ Owner: GRAMMAR.md.
 | E1004 | - | - | `project.canon must declare "canon"` |
 | E1005 | key | key:Name | `duplicate key "{key}" in project.canon` |
 | E1005 | root | name:Name | `duplicate root "{name}" in project.canon` |
+| E1005 | tier | name:Name | `duplicate tier "{name}" in project.canon` |
 | E1006 | canon | - | `"canon" must be a string` |
 | E1006 | roots | - | `"roots" must be a map of root names to path strings` |
 | E1006 | languages | - | `"languages" must be a non-empty list of language codes` |
@@ -444,6 +447,7 @@ Owner: GRAMMAR.md.
 | E1006 | optionalRoots | - | `"optional_roots" must be a list of root names` |
 | E1006 | consumerRoots | - | `"consumer_roots" must be a list of root names` |
 | E1006 | compiler | - | `"compiler" must be a compiler version "X.Y.Z" (with an optional "-suffix")` |
+| E1006 | tiers | - | `"tiers" must be a map of tier names to non-empty lists of package paths` |
 | E1007 | name | name:Name | `invalid root name "{name}": a root name is an identifier` |
 | E1007 | empty | name:Name | `invalid root "{name}": the path is empty` |
 | E1007 | absolute | name:Name | `invalid root "{name}": the path is absolute` |
@@ -473,6 +477,10 @@ Owner: GRAMMAR.md.
 | E1014 | empty | name:Name | `root "{name}" in project.local.canon has an empty path` |
 | E1015 | - | want:Text, have:Text | `the project pins canon {want}; this is canon {have}: install canon {want}, or change "compiler" in project.canon` |
 | W1016 | - | want:Text | `the project pins canon {want}; this dev build of canon is not checked against the pin` |
+| E1017 | name | name:Name | `invalid tier name "{name}": a tier name is an identifier` |
+| E1017 | duplicate | path:Name, first:Loc | `tiers: {path} is listed twice (first at {first})` |
+| E1018 | unplaced | pkg:Name | `tiers: no tier places package {pkg}; list it, or a package path above it, in a tier` |
+| E1018 | unused | path:Name | `tiers: {path} places no package; remove it or correct it` |
 
 ## E11xx: Lexer and parser
 
@@ -485,7 +493,7 @@ Owner: GRAMMAR.md.
 | E1103 | error | syntax | GRAMMAR.md §5.9 | a type takes a second refinement; use `where` |
 | E1104 | error | syntax | GRAMMAR.md §8.2 | unknown annotation or annotation argument |
 | E1105 | error | syntax | GRAMMAR.md §5.10 | `fail` or `warn` called outside a `check { }` block |
-| E1106 | error | syntax | GRAMMAR.md §1 | a character no token can start with, or a `#` outside an amend-path position segment |
+| E1106 | error | syntax | GRAMMAR.md §1 | a character no token can start with, a `#` outside an amend-path position segment, or a backtick that opens no quoted word |
 | E1107 | error | syntax | GRAMMAR.md §2.6 | unterminated string |
 | E1108 | error | syntax | GRAMMAR.md §2.2 | unterminated block comment |
 | E1109 | error | syntax | GRAMMAR.md §2.6 | invalid escape sequence |
@@ -517,6 +525,7 @@ Owner: GRAMMAR.md.
 | E1135 | error | syntax | GRAMMAR.md §5.10 | `return` outside a function |
 | E1136 | error | syntax | GRAMMAR.md §5.11 | a comprehension brace literal without exactly one item |
 | E1137 | error | syntax | GRAMMAR.md §5.9 | `keyed by` after a type that is not a list |
+| E1138 | error | syntax | GRAMMAR.md §2.3 | a quoted word that is not quotable (an identifier, a nameable word, `none`, `true`, `false`, `self` or `_`) |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -583,6 +592,7 @@ Owner: GRAMMAR.md.
 | E1135 | - | - | `return outside a function` |
 | E1136 | - | - | `a comprehension literal has exactly one item` |
 | E1137 | - | - | `"keyed by" applies to a list type` |
+| E1138 | - | word:Name | `"{word}" is written without backticks` |
 
 ## E16xx, W16xx: Views
 
@@ -699,7 +709,7 @@ Owner: I18N.md.
 | E1706 | - | lang:Name | `{lang} is the source language: its texts are the sources, not a translation file` |
 | E1707 | - | key:Name | `{key} is plain text: its translation cannot interpolate (write {{{{ for a brace)` |
 
-## E19xx: Layers and runtime inputs
+## E19xx, W19xx: Layers and runtime inputs
 
 Owner: EVALUATION.md.
 
@@ -716,6 +726,7 @@ Owner: EVALUATION.md.
 | E1909 | error | check | EVALUATION.md §9.2 | a layer amends a value of another package |
 | E1910 | error | check | EVALUATION.md §11.1 | an input type that cannot be read or checked at runtime |
 | E1911 | error | check | EVALUATION.md §11.1 | invalid environment variable name |
+| W1912 | warning | check | EVALUATION.md §9.2 | an amend path that selects a table, keyed-list or map entry by position (`[#n]`) instead of by key (DECISIONS 379) |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -736,6 +747,7 @@ Owner: EVALUATION.md.
 | E1909 | - | name:Name | `amend {name}: layers amend values of their own package only` |
 | E1910 | - | field:Name, typ:Type | `input {field}: type {typ} cannot be read or checked at run time` |
 | E1911 | - | name:Text | `{name} is not a valid environment variable name` |
+| W1912 | - | path:Name | `amend path {path} selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key` |
 
 ## E2xxx: Packages and names
 
@@ -749,6 +761,7 @@ Owner: TYPES.md.
 | E2004 | error | check | TYPES.md §3.1 | selective import of a missing or `local` name |
 | E2005 | error | check | TYPES.md §3.1 | one name bound twice in one file by imports, or by an import and a declaration of the package |
 | E2006 | error | check | TYPES.md §3.1 | a file declares a package that is not its directory's or an ancestor's |
+| E2007 | error | project | TYPES.md §3.1 | an import of a package `tiers` places in a later tier than the importing package's (DECISIONS 380) |
 | E2101 | error | check | TYPES.md §4.2 | a contextual name is ambiguous with a local, parameter or field |
 | E2102 | error | check | TYPES.md §3.3 | unknown name |
 | E2103 | error | check | TYPES.md §10.2 | `ref T` finds no collection of `T`, or several |
@@ -769,6 +782,7 @@ Owner: TYPES.md.
 | E2004 | - | pkg:Name, name:Name | `{pkg} has no public {name}` |
 | E2005 | - | name:Name, first:Loc | `{name} is bound twice in this file (first at {first})` |
 | E2006 | - | dir:Path, pkg:Name | `a file in {dir} declares package {pkg}, which is neither that directory's package nor an ancestor of it` |
+| E2007 | - | pkg:Name, tier:Name, imported:Name, importedTier:Name | `{pkg} (tier {tier}) cannot import {imported} (tier {importedTier}): a package imports only from its own tier and the tiers listed before it in project.canon` |
 | E2101 | - | name:Name, qualified:Name, kind:Kind | `{name} is ambiguous: {qualified} or the {kind} {name}; write it qualified` |
 | E2102 | plain | name:Name | `unknown name {name}` |
 | E2102 | hint | name:Name, hint:Name | `unknown name {name} (did you mean {hint}?)` |
@@ -873,6 +887,7 @@ Owner: TYPES.md, WIRE.md.
 | E3703 | error | verify | TYPES.md §13.4 | an asset path that is not a clean relative path |
 | E3704 | error | check | TYPES.md §13.4 | invalid `asset(…)` type arguments |
 | E3705 | error | verify | TYPES.md §13.4 | an asset under an optional root absent on this machine (DECISIONS 332) |
+| E3706 | error | verify | TYPES.md §13.4 | an asset reached only through a symbolic link outside the roots and the project (DECISIONS 376) |
 | E3801 | error | verify | TYPES.md §11.6 | a non-optional field whose computed type is `Never` |
 | E3802 | error | verify | TYPES.md §11.6 | a value that does not match its computed dependent type |
 | E3803 | error | check | TYPES.md §11.2 | a type-function argument or scrutinee that is not a path rooted at a parameter |
@@ -995,6 +1010,7 @@ Owner: TYPES.md, WIRE.md.
 | E3704 | ext | ext:Text | `invalid asset(…): "{ext}" is not a bare extension` |
 | E3704 | missing | - | `invalid asset(…): it needs a root and ext` |
 | E3705 | - | path:Text, root:Name | `asset {path} cannot be checked: root @{root} is optional and not present on this machine; clone it or point to it in project.local.canon` |
+| E3706 | - | path:Text, link:Path | `asset {path} is reached through symbolic link {link}, which points outside the roots and the project` |
 | E3801 | - | field:Name, dep:Expr | `{field} has type {dep} = Never: this value cannot be built` |
 | E3802 | - | dep:Expr, typ:Type | `value does not match {dep} = {typ}` |
 | E3803 | argument | - | `a type-function argument must be a path rooted at a parameter` |
@@ -1247,9 +1263,10 @@ Owner: CODEGEN.md, WIRE.md.
 | E8025 | error | ir | CODEGEN.md §2.8 | a relative include or import that would climb above the project's parent directories, wrong on every checkout (DECISIONS 332) |
 | E8026 | error | build | CODEGEN.md §2.4 | a file a load of the project reads that an emit of the same build writes (DECISIONS 341) |
 | E8027 | error | build | CODEGEN.md §2.4 | an output path with a symbolic link below its root's directory (DECISIONS 342) |
-| E8028 | error | build | CODEGEN.md §2.4 | `build --only-root` when the build would change `canon.lock` or a `canon.outputs`, or write an output outside the named root's directory (DECISIONS 343) |
+| E8028 | error | build | CODEGEN.md §2.4 | `build --only-root` when the build would change `canon.lock` or a `canon.outputs`, write an output outside the named root's directory, or rename a directory outside it (DECISIONS 343, 377) |
 | E8029 | error | build | CODEGEN.md §2.4 | `build --check`: a file with a generated marker that no emit writes (DECISIONS 356) |
 | W8030 | warning | build | CODEGEN.md §2.4 | a file with a generated marker that no emit writes, found by a plain build (DECISIONS 356) |
+| W8031 | warning | ir | CODEGEN.md §2.10 | an entry position, or a number or text made from one, written to an output: an emitted value, a stored export fn result or a `@text` file (DECISIONS 379) |
 | E8101 | error | ir | CODEGEN.md §4.1 | an emitted integer outside the TypeScript safe range without `@ts(bigint)` |
 | E8102 | error | wire | WIRE.md §5.1 | a value with no wire form for its field or `@text` result part (not a whole unit, equals the `none` marker, repeated bits member; DECISIONS 308) |
 | E8103 | error | ir | CODEGEN.md §7.8.1 | a string or list longer than its fixed-size legacy C++ array |
@@ -1260,7 +1277,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8109 | error | ir | CODEGEN.md §7.8 | invalid `@cpp(struct:)` mapping (missing header, bad access, unmappable field) |
 | E8150 | error | check | WIRE.md §8.1 | `emit json` file mode with other than one value |
 | E8151 | error | ir | WIRE.md §5.9 | a value with no wire form (`Range`, function, `Pair`, variant kind) emitted to JSON or written by a `@text` fn (DECISIONS 308) |
-| E8152 | error | build | WIRE.md §8.1 | two outputs of a build with the same path, or paths differing only in letter case |
+| E8152 | error | build | WIRE.md §8.1 | two outputs of a build with the same path, or paths differing only in letter case, or output directories, or one and a package directory, differing only in letter case |
 | E8153 | error | ir | WIRE.md §8.1 | a `data`-mode or `@reload` value not written by the package's `emit json` as `<value>.json` |
 | E8201 | error | ir | CODEGEN.md §5.11 | `@reload` on data mapped to a legacy struct in `fields` or `both` mode |
 | E8202 | error | ir | CODEGEN.md §5.11 | `@reload` on a value emitted in a mode that has no file to reload |
@@ -1337,6 +1354,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8028 | outside | root:Name, path:Path, other:Name | `build --only-root {root} would write {path} outside @{root}: this machine places @{other} elsewhere; place it inside @{root} as project.canon does` |
 | E8029 | - | path:Path, pkg:Name | `{path} carries the generated marker of {pkg}, but no emit of this build writes it: delete it` |
 | W8030 | - | path:Path, pkg:Name | `{path} carries the generated marker of {pkg}, but no emit of this build writes it: delete it` |
+| W8031 | - | output:Name | `a number or text made from an entry position is written to {output}; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose` |
 | E8101 | field | value:Value, field:Name | `{value} does not fit a TypeScript number; add @ts(bigint) to {field}` |
 | E8101 | result | value:Value, fn:Name | `{value} does not fit a TypeScript number; {fn} is precomputed for TypeScript and cannot be bigint` |
 | E8102 | unit | value:Value, field:Name, unit:Name | `{value} has no wire form for {field}: not a whole number of {unit}` |
@@ -1353,7 +1371,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8150 | - | out:Text, n:Int | `emit json out "{out}" is a file but values has {n} elements` |
 | E8151 | type | value:Name, typ:Type | `value {value} of type {typ} has no wire form` |
 | E8151 | define | value:Name | `value {value} is a load.defines table or record, which has no wire form` |
-| E8152 | - | a:Path, b:Path | `outputs collide: {a} and {b}` |
+| E8152 | file | a:Path, b:Path | `outputs collide: {a} and {b}` |
+| E8152 | dirCase | a:Path, b:Path | `output directories {a} and {b} differ only in letter case` |
 | E8153 | notWritten | value:Name | `{value} is emitted in data mode but not written by emit json` |
 | E8153 | fileName | value:Name | `{value} is emitted in data mode but its file must be {value}.json` |
 | E8153 | directory | value:Name | `{value} is emitted in data mode but @reload files must share a directory` |

@@ -7,6 +7,7 @@ E1003 -: no project.canon found in @resource/Server/Item/propItem.json or its pa
 E1004 -: project.canon must declare "canon"
 E1005 key: duplicate key "resource.vocab.items" in project.canon
 E1005 root: duplicate root "resource.vocab.items" in project.canon
+E1005 tier: duplicate tier "resource.vocab.items" in project.canon
 E1006 canon: "canon" must be a string
 E1006 roots: "roots" must be a map of root names to path strings
 E1006 languages: "languages" must be a non-empty list of language codes
@@ -16,6 +17,7 @@ E1006 goModule: "go_module" must be a map of root names to module path strings
 E1006 optionalRoots: "optional_roots" must be a list of root names
 E1006 consumerRoots: "consumer_roots" must be a list of root names
 E1006 compiler: "compiler" must be a compiler version "X.Y.Z" (with an optional "-suffix")
+E1006 tiers: "tiers" must be a map of tier names to non-empty lists of package paths
 E1007 name: invalid root name "resource.vocab.items": a root name is an identifier
 E1007 empty: invalid root "resource.vocab.items": the path is empty
 E1007 absolute: invalid root "resource.vocab.items": the path is absolute
@@ -44,6 +46,10 @@ E1014 root: "resource.vocab.items" in project.local.canon is not a root of proje
 E1014 duplicate: "resource.vocab.items" is given twice in project.local.canon
 E1014 empty: root "resource.vocab.items" in project.local.canon has an empty path
 E1015 -: the project pins canon 0.9; this is canon 0.9: install canon 0.9, or change "compiler" in project.canon
+E1017 name: invalid tier name "resource.vocab.items": a tier name is an identifier
+E1017 duplicate: tiers: resource.vocab.items is listed twice (first at @resource/Server/System/farm_config.json:1)
+E1018 unplaced: tiers: no tier places package resource.vocab.items; list it, or a package path above it, in a tier
+E1018 unused: tiers: resource.vocab.items places no package; remove it or correct it
 E1101 -: invalid format spec "0.9": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
 E1102 -: multiline string indentation mixes tabs and spaces
 E1103 -: a type takes one refinement; use "where" for more
@@ -107,6 +113,7 @@ E1134 -: resource.vocab.items outside a loop
 E1135 -: return outside a function
 E1136 -: a comprehension literal has exactly one item
 E1137 -: "keyed by" applies to a list type
+E1138 -: "resource.vocab.items" is written without backticks
 E1601 -: control resource.vocab.items does not accept Int (field resource.vocab.items)
 E1602 -: resource.vocab.items has no field, method, case or member named resource.vocab.items
 E1603 -: a view of resource.vocab.items must be declared in package resource.vocab.items
@@ -177,6 +184,7 @@ E2003 -: unknown package resource.vocab.items
 E2004 -: resource.vocab.items has no public resource.vocab.items
 E2005 -: resource.vocab.items is bound twice in this file (first at @resource/Server/System/farm_config.json:1)
 E2006 -: a file in @resource/Server/Item/propItem.json declares package resource.vocab.items, which is neither that directory's package nor an ancestor of it
+E2007 -: resource.vocab.items (tier resource.vocab.items) cannot import resource.vocab.items (tier resource.vocab.items): a package imports only from its own tier and the tiers listed before it in project.canon
 E2101 -: resource.vocab.items is ambiguous: resource.vocab.items or the field resource.vocab.items; write it qualified
 E2102 plain: unknown name resource.vocab.items
 E2102 hint: unknown name resource.vocab.items (did you mean resource.vocab.items?)
@@ -300,6 +308,7 @@ E3704 root: invalid asset(…): "0.9" is not a load path
 E3704 ext: invalid asset(…): "0.9" is not a bare extension
 E3704 missing: invalid asset(…): it needs a root and ext
 E3705 -: asset 0.9 cannot be checked: root @resource.vocab.items is optional and not present on this machine; clone it or point to it in project.local.canon
+E3706 -: asset 0.9 is reached through symbolic link @resource/Server/Item/propItem.json, which points outside the roots and the project
 E3801 -: resource.vocab.items has type a b = Never: this value cannot be built
 E3802 -: value does not match a b = Int
 E3803 argument: a type-function argument must be a path rooted at a parameter
@@ -491,7 +500,8 @@ E8109 field: @cpp(struct:) on resource.vocab.items: field resource.vocab.items c
 E8150 -: emit json out "0.9" is a file but values has -42 elements
 E8151 type: value resource.vocab.items of type Int has no wire form
 E8151 define: value resource.vocab.items is a load.defines table or record, which has no wire form
-E8152 -: outputs collide: @resource/Server/Item/propItem.json and @resource/Server/Item/propItem.json
+E8152 file: outputs collide: @resource/Server/Item/propItem.json and @resource/Server/Item/propItem.json
+E8152 dirCase: output directories @resource/Server/Item/propItem.json and @resource/Server/Item/propItem.json differ only in letter case
 E8153 notWritten: resource.vocab.items is emitted in data mode but not written by emit json
 E8153 fileName: resource.vocab.items is emitted in data mode but its file must be resource.vocab.items.json
 E8153 directory: resource.vocab.items is emitted in data mode but @reload files must share a directory
@@ -521,6 +531,7 @@ W1641 -: required field resource.vocab.items is hidden: new values cannot be com
 W1642 -: deprecated field resource.vocab.items is named in group resource.vocab.items; it is shown under "Unused fields"
 W1701 one: 1 text of package resource.vocab.items has no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
 W1701 many: -42 texts of package resource.vocab.items have no resource.vocab.items translation (canon i18n status resource.vocab.items --lang resource.vocab.items --list)
+W1912 -: amend path resource.vocab.items selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
 W3001 -: resource.vocab.items is optional: none is already its default; remove = none
 W3002 -: this visits every member of resource.vocab.items: use resource.vocab.items.named(a b)
 W3301 plain: resource.vocab.items is deprecated
@@ -544,3 +555,4 @@ W8006 -: C++ name resource.vocab.items (from resource.vocab.items) is a macro in
 W8024 one: 1 output skipped: root @resource.vocab.items ("0.9") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
 W8024 many: -42 outputs skipped: root @resource.vocab.items ("0.9") is optional and not present on this machine; clone it or point to it in project.local.canon to write them
 W8030 -: @resource/Server/Item/propItem.json carries the generated marker of resource.vocab.items, but no emit of this build writes it: delete it
+W8031 -: a number or text made from an entry position is written to resource.vocab.items; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
