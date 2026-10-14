@@ -64,6 +64,24 @@ func buildCanon(t *testing.T) string {
 	return bin
 }
 
+// errorMarker starts each error finding line of an expected/findings.txt.
+const errorMarker = "error["
+
+// expectsError is whether the example in dir records an error in its own findings golden: a test
+// of a refusal, not a project to measure.
+func expectsError(dir string) bool {
+	data, err := os.ReadFile(filepath.Join(dir, goldenDir, "findings.txt"))
+	if err != nil {
+		return false
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(line, errorMarker) {
+			return true
+		}
+	}
+	return false
+}
+
 // examplesCopy is examples/ copied without its goldens, every root redirected.
 func examplesCopy(t *testing.T) benchTarget {
 	t.Helper()
@@ -77,7 +95,7 @@ func examplesCopy(t *testing.T) benchTarget {
 			return err
 		}
 		if d.IsDir() {
-			if d.Name() == goldenDir {
+			if d.Name() == goldenDir || expectsError(path) {
 				return filepath.SkipDir
 			}
 			return os.MkdirAll(filepath.Join(dir, rel), dirPerm)
@@ -95,6 +113,9 @@ func examplesCopy(t *testing.T) benchTarget {
 	out := t.TempDir()
 	for _, name := range exampleOutRoots {
 		roots[name] = filepath.Join(out, name)
+		if err := os.MkdirAll(roots[name], dirPerm); err != nil {
+			t.Fatal(err)
+		}
 	}
 	return benchTarget{name: "examples", dir: dir, roots: roots}
 }
