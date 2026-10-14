@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"path/filepath"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/workspace"
 	"github.com/fantasim/canonlang/internal/writelock"
 )
 
@@ -19,11 +19,15 @@ func (r *fmtRun) write() error {
 	if len(r.changes) == 0 {
 		return nil
 	}
-	held, err := writelock.Acquire(r.inv.ctx, filepath.FromSlash(r.root), r.writers())
+	b, err := r.openBuild()
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
-	defer func() { _ = held.Release() }() // closing the lock files: the writes are done or refused
+	release, _, err := workspace.LockAndSettle(r.inv.ctx, b, r.writers(), nil) // an unfinished edit's torn files then fail unchanged
+	if err != nil {
+		return fmt.Errorf(fmtWrap, err)
+	}
+	defer func() { _ = release() }() // closing the lock files: the writes are done or refused
 	for _, c := range r.changes {
 		if err := r.unchanged(c); err != nil {
 			return err

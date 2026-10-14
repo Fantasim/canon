@@ -3,6 +3,9 @@ package cli_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -14,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/cli"
+	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/writelock"
 )
 
@@ -207,6 +211,99 @@ func TestFmtWaitsAndRefusesAChangedFile(t *testing.T) {
 	stderr = newNoteBuffer()
 	if code := cli.Main(context.Background(), []string{"fmt", "--project", dir}, cli.Env{Stdout: &bytes.Buffer{}, Stderr: stderr, Dir: dir}); code != 0 || stderr.String() != "" {
 		t.Errorf("%sfmt again: exit %d, stderr %q", writersRule, code, stderr.String())
+	}
+}
+
+const settleRule = "DECISIONS 375, CLI.md §3.2, §3.6, API.md N11: "
+
+// tornEdit is the file a dead edit left (torn; old when it existed) under the locks of pkgs.
+type tornEdit struct {
+	rel, old, torn string
+	existed        bool
+	pkgs           []string
+}
+
+// deadJournal is, in the project at dir, a dead edit's journal recording the locks of pkgs, which
+// restores rel to old; rel now holds torn. It names its commit by a revision of 64 'd'.
+func deadJournal(t *testing.T, dir string, e tornEdit) string {
+	t.Helper()
+	rel, old, torn, existed, pkgs := e.rel, e.old, e.torn, e.existed, e.pkgs
+	host, err := os.Hostname()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256([]byte(torn))
+	file := map[string]any{"path": rel, "existed": existed, "new": hex.EncodeToString(sum[:])}
+	if existed {
+		file["old"] = []byte(old)
+	}
+	data, err := json.Marshal(map[string]any{"version": 2, "revision": "sha256:" + strings.Repeat("d", 64), "host": host, "pid": 1, "locks": pkgs, "files": []any{file}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(dir, rel), torn)
+	name := filepath.Join(dir, filepath.FromSlash(edit.JournalDir), strings.Repeat("d", 64)+".json")
+	write(t, name, string(data))
+	return name
+}
+
+// absent says whether the file name does not exist.
+func absent(name string) bool {
+	_, err := os.Stat(name)
+	return errors.Is(err, os.ErrNotExist)
+}
+
+// DECISIONS 375, CLI.md §3.6: fmt rolls back a dead edit's journal under its lock, so the torn file is refused, not formatted over.
+func TestFmtRecoversAbandonedJournal(t *testing.T) {
+	dir := t.TempDir()
+	const old, torn = "package   a\n", "package   a\n// torn\n"
+	write(t, filepath.Join(dir, "project.canon"), racedProject)
+	journal := deadJournal(t, dir, tornEdit{"a/a.canon", old, torn, true, []string{"a"}})
+	held := holdLock(t, dir, "a")
+	stderr := newNoteBuffer()
+	done, _ := runAsync(dir, stderr, "fmt", "--project", dir)
+	<-stderr.first
+	if err := held.Release(); err != nil {
+		t.Fatal(err)
+	}
+	code := <-done
+	got, err := os.ReadFile(filepath.Join(dir, "a", "a.canon"))
+	if code != 2 || !strings.Contains(stderr.String(), "a/a.canon: changed while canon fmt ran") || err != nil || string(got) != old || !absent(journal) {
+		t.Errorf("%sexit %d, stderr %q, a.canon %q (%v), journal gone %v", settleRule, code, stderr.String(), got, err, absent(journal))
+	}
+}
+
+// DECISIONS 375, CLI.md §3.2: new rolls back an unfinished edit that created its file, then creates it.
+func TestNewSettles(t *testing.T) {
+	dir := t.TempDir()
+	write(t, filepath.Join(dir, "project.canon"), racedProject)
+	target := filepath.Join(dir, "a", "b", "b.canon")
+	journal := deadJournal(t, dir, tornEdit{"a/b/b.canon", "", "torn\n", false, []string{"a.b"}})
+	held := holdLock(t, dir, "a.b")
+	stderr := newNoteBuffer()
+	done, _ := runAsync(dir, stderr, "new", "a.b", "--project", dir)
+	<-stderr.first
+	if err := held.Release(); err != nil {
+		t.Fatal(err)
+	}
+	code := <-done
+	got, err := os.ReadFile(target)
+	if code != 0 || err != nil || strings.Contains(string(got), "torn") || !absent(journal) {
+		t.Errorf("%sexit %d, stderr %q, b.canon %q (%v), journal gone %v", settleRule, code, stderr.String(), got, err, absent(journal))
+	}
+}
+
+// DECISIONS 375, API.md N11: explain's file system keeps its writer locks, so its Open rolls back a dead journal.
+func TestExplainKeepsLocks(t *testing.T) {
+	dir := t.TempDir()
+	const old, torn = "/// A.\npackage a\n\n/// V.\nlet v: Int = 1\n", "/// A.\npackage a\n\n/// V.\nlet v: Int = 2\n"
+	write(t, filepath.Join(dir, "project.canon"), racedProject)
+	journal := deadJournal(t, dir, tornEdit{"a/a.canon", old, torn, true, []string{"a"}})
+	var stdout bytes.Buffer
+	code := cli.Main(context.Background(), []string{"explain", "a:v", "--project", dir}, cli.Env{Stdout: &stdout, Stderr: &bytes.Buffer{}, Dir: dir})
+	got, err := os.ReadFile(filepath.Join(dir, "a", "a.canon"))
+	if code != 0 || err != nil || string(got) != old || !absent(journal) {
+		t.Errorf("%sexit %d, a.canon %q (%v), journal gone %v", settleRule, code, got, err, absent(journal))
 	}
 }
 

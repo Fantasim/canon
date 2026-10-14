@@ -47,7 +47,7 @@ func TestFmtProjectBrokenOnUNCVolume(t *testing.T) {
 func TestExplainSourceOnUNCVolume(t *testing.T) {
 	hostVolumes(t)
 	const text = "/// A.\npackage a\n\nconst N = 1\n"
-	fsys := &sourceFS{WriteFS: diskOf{}, read: map[string][]byte{shareRoot + "/a/a.canon": []byte(text)}}
+	fsys := &readSet{read: map[string][]byte{shareRoot + "/a/a.canon": []byte(text)}}
 	s := &sources{fs: fsys, root: shareRoot, set: source.FileSet{}, files: map[string]*syntax.File{}}
 	if s.file("a/a.canon") == nil {
 		t.Error("a source of a project on the share was not found")

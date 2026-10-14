@@ -9,7 +9,10 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/workspace"
+	"github.com/fantasim/canonlang/internal/writelock"
 )
 
 // runInit is `canon init [--name <project>]`, never replacing a project.canon (CLI.md §3.1).
@@ -56,6 +59,11 @@ func runNew(inv *invocation) int {
 	if err := p.Close(); err != nil {
 		return inv.fail(err)
 	}
+	release, err := lockNew(inv, root, name)
+	if err != nil {
+		return inv.fail(err)
+	}
+	defer func() { _ = release() }() // the file is created or refused
 	segs := strings.Split(name, dotSep)
 	dir := strings.Join(segs, pathSep)
 	err = inDir(filepath.FromSlash(root), func(r *os.Root) error {
@@ -68,6 +76,19 @@ func runNew(inv *invocation) int {
 		return inv.fail(err)
 	}
 	return exitOK
+}
+
+// lockNew takes the new package's writer lock and rolls back its unfinished edit (CLI.md §3.2, DECISIONS 375).
+func lockNew(inv *invocation, root, pkg string) (func() error, error) {
+	b, err := build.Open(build.OS(), root, build.Options{Roots: project.HostPaths().RootsFromAPI(inv.opt.roots, root)})
+	if err != nil {
+		return nil, fmt.Errorf(fmtWrap, err)
+	}
+	release, _, err := workspace.LockAndSettle(inv.ctx, b, writelock.ExclusiveOf(pkg), nil)
+	if err != nil {
+		return nil, fmt.Errorf(fmtWrap, err)
+	}
+	return release, nil
 }
 
 // inDir runs write with the files of dir, which it cannot leave.

@@ -6,43 +6,29 @@ import (
 	"sync"
 
 	canon "github.com/fantasim/canonlang/api"
-	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// sourceFS is the OS file system that keeps each file the compiler read, so explain quotes the
-// sources of the analysis it explains, never a later copy of them.
-type sourceFS struct {
-	build.WriteFS
+// readSet keeps each file the compiler read through build.OSReading, so explain quotes what it explained (DECISIONS 375).
+type readSet struct {
 	mu   sync.Mutex
 	read map[string][]byte
 }
 
-func newSourceFS() *sourceFS {
-	return &sourceFS{WriteFS: build.OS(), read: map[string][]byte{}}
-}
+func newReadSet() *readSet { return &readSet{read: map[string][]byte{}} }
 
-// ReadFile reads name and keeps its content.
-func (f *sourceFS) ReadFile(name string) ([]byte, error) {
-	data, err := f.WriteFS.ReadFile(name)
-	if err == nil {
-		f.mu.Lock()
-		f.read[name] = data
-		f.mu.Unlock()
-	}
-	return data, err
-}
-
-// EvalSymlinks keeps load.dir following links as through the OS file system (WIRE.md §6.5).
-func (f *sourceFS) EvalSymlinks(name string) (string, error) {
-	return project.EvalSymlinks(f.WriteFS, name)
+// keep notes the content read of name.
+func (f *readSet) keep(name string, data []byte) {
+	f.mu.Lock()
+	f.read[name] = data
+	f.mu.Unlock()
 }
 
 // content is what the compiler read of name, nil when it read nothing there.
-func (f *sourceFS) content(name string) []byte {
+func (f *readSet) content(name string) []byte {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.read[name]
@@ -50,7 +36,7 @@ func (f *sourceFS) content(name string) []byte {
 
 // sources parses, once each, the project sources an explanation quotes.
 type sources struct {
-	fs    *sourceFS
+	fs    *readSet
 	root  string
 	set   source.FileSet
 	files map[string]*syntax.File

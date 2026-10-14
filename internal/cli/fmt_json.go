@@ -18,7 +18,7 @@ func (r *fmtRun) formatJSONSources() error {
 	if len(r.sources) == 0 {
 		return nil
 	}
-	p, err := build.Open(r.fsys, r.root, build.Options{Roots: project.HostPaths().RootsFromAPI(r.inv.opt.roots, r.root)})
+	p, err := r.openBuild()
 	if err != nil {
 		return fmt.Errorf(fmtWrap, err)
 	}
@@ -35,6 +35,11 @@ func (r *fmtRun) formatJSONSources() error {
 		}
 	}
 	return nil
+}
+
+// openBuild is the project's layout and file system, as fmt reads and locks it.
+func (r *fmtRun) openBuild() (*build.Project, error) {
+	return build.Open(r.fsys, r.root, build.Options{Roots: project.HostPaths().RootsFromAPI(r.inv.opt.roots, r.root)})
 }
 
 // formatJSON notes a JSON source's canonical layout; one that does not parse stays. FORMATTER.md §16

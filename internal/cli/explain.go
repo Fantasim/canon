@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	canon "github.com/fantasim/canonlang/api"
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
@@ -15,8 +16,8 @@ func runExplain(inv *invocation) int {
 	if len(inv.args) != 1 {
 		return inv.fail(fmt.Errorf(fmtArgs, cmdExplain, errOneArg))
 	}
-	fsys := newSourceFS()
-	p, err := inv.openProjectFS(fsys)
+	reads := newReadSet()
+	p, err := inv.openProjectFS(build.OSReading(reads.keep))
 	if err != nil {
 		return inv.fail(err)
 	}
@@ -34,7 +35,7 @@ func runExplain(inv *invocation) int {
 		return inv.explainJSON(parts, v)
 	}
 	x := &explainer{w: inv.env.Stdout, qualifier: qualifier(v.Path, inv.args[0]), parts: parts}
-	x.src = &sources{fs: fsys, root: p.Root(), files: map[string]*syntax.File{}}
+	x.src = &sources{fs: reads, root: p.Root(), files: map[string]*syntax.File{}}
 	if err := x.text(v, inv.opt.depth); err != nil {
 		return inv.fail(err)
 	}
