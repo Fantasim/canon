@@ -143,6 +143,17 @@ func (pl *CppNamePlan) resolvesBaked(r *RefTarget) bool {
 	return i >= 0 && IsContainer(pl.values[i])
 }
 
+// declareJSONHooks declares the deleted nlohmann hooks to_json and from_json that gen/cpp writes for the id enums, shared as overloads by the packages emitted into one namespace (CODEGEN.md §3.5, §5.3; DECISIONS 379).
+func (pl *CppNamePlan) declareJSONHooks() {
+	if !pl.tablesOwnToWire() {
+		return
+	}
+	for _, n := range cppJSONHooks {
+		pl.declare(pl.ns, n, pl.p.Name, nil)
+		pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
+	}
+}
+
 // tablesOwnToWire reports a baked package with a public table and no enum or variant: its id enums still overload ToWire (CODEGEN.md §5.3).
 func (pl *CppNamePlan) tablesOwnToWire() bool {
 	return pl.baked() && slices.ContainsFunc(pl.p.Values, func(v *Value) bool { return tableRecord(v) != nil })

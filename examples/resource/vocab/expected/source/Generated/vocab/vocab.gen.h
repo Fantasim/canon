@@ -332,6 +332,8 @@ enum class ParamBranch : uint8_t {
     game_mode,
 };
 
+/// The key of an entry of eventTypes. Store or send ToWire(id): the underlying value is
+/// a position, not an id, and changes when entry files move.
 enum class EventTypeId : uint8_t {
     COMBAT_KILL_MONSTER,
     COMBAT_KILL_GIANT,
@@ -396,6 +398,10 @@ inline std::string_view ToWire(EventTypeId v) {
 }
 
 std::optional<EventTypeId> EventTypeIdFromWire(std::string_view key);
+
+/// nlohmann/json would write the position: write ToWire(id), read EventTypeIdFromWire(s).
+template <typename J> void to_json(J&, EventTypeId) = delete;
+template <typename J> void from_json(const J&, EventTypeId&) = delete;
 
 class Item;
 class EventType;

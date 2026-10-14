@@ -15,6 +15,8 @@
 
 namespace e::b {
 
+/// The key of an entry of items. Store or send ToWire(id): the underlying value is
+/// a position, not an id, and changes when entry files move.
 enum class ItemId : uint8_t {
 };
 
@@ -25,6 +27,10 @@ inline std::string_view ToWire(ItemId v) {
 }
 
 std::optional<ItemId> ItemIdFromWire(std::string_view key);
+
+/// nlohmann/json would write the position: write ToWire(id), read ItemIdFromWire(s).
+template <typename J> void to_json(J&, ItemId) = delete;
+template <typename J> void from_json(const J&, ItemId&) = delete;
 
 class Item;
 class Band;

@@ -17,6 +17,8 @@
 
 namespace game::world {
 
+/// The key of an entry of zones. Store or send ToWire(id): the underlying value is
+/// a position, not an id, and changes when entry files move.
 enum class ZoneId : uint8_t {
     forest,
 };
@@ -30,6 +32,12 @@ inline std::string_view ToWire(ZoneId v) {
 
 std::optional<ZoneId> ZoneIdFromWire(std::string_view key);
 
+/// nlohmann/json would write the position: write ToWire(id), read ZoneIdFromWire(s).
+template <typename J> void to_json(J&, ZoneId) = delete;
+template <typename J> void from_json(const J&, ZoneId&) = delete;
+
+/// The key of an entry of bands. Store or send ToWire(id): the underlying value is
+/// a position, not an id, and changes when entry files move.
 enum class LevelRangeId : uint8_t {
     low,
     high,
@@ -44,6 +52,10 @@ inline std::string_view ToWire(LevelRangeId v) {
 }
 
 std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key);
+
+/// nlohmann/json would write the position: write ToWire(id), read LevelRangeIdFromWire(s).
+template <typename J> void to_json(J&, LevelRangeId) = delete;
+template <typename J> void from_json(const J&, LevelRangeId&) = delete;
 
 /// The first tone.
 inline constexpr ::game::tone::Tone START_TONE = ::game::tone::Tone::loud;

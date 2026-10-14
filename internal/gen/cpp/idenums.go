@@ -2,6 +2,7 @@ package cppgen
 
 import (
 	_ "embed"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -43,14 +44,20 @@ func (g *gen) idEnums() {
 		for _, id := range it.v.IDs {
 			s.members = append(s.members, enumMember{name: g.pl.IDMember(id), wire: id})
 		}
+		g.doc(0, fmt.Sprintf(idEnumDocFormat, it.v.Name))
 		g.h.printf(enumOpenFormat, s.name, s.underlying)
 		for _, m := range s.members {
 			g.h.linef(1, enumMemberFormat, m.name)
 		}
 		g.h.line(closeClass)
 		g.h.blank()
+		fromWire := g.pl.EnumHelpers(s.name).FromWire
 		g.nameSwitch(s, ir.CppToWire, func(m enumMember) string { return m.wire })
-		g.h.printf(idFromWireDeclFormat, s.name, g.pl.EnumHelpers(s.name).FromWire)
+		g.h.printf(idFromWireDeclFormat, s.name, fromWire)
+		g.h.blank()
+		g.doc(0, fmt.Sprintf(idJSONDocFormat, fromWire))
+		g.h.linef(0, idToJSONDeleted, s.name)
+		g.h.linef(0, idFromJSONDeleted, s.name)
 		g.h.blank()
 		leave()
 	}
@@ -87,9 +94,20 @@ func (g *gen) declareBakedNames() {
 		g.declare(name, it.v.Name)
 		g.declare(g.pl.EnumHelpers(name).FromWire, it.v.Name)
 	}
+	g.declareJSONHooks()
 	for _, v := range g.values {
 		for _, r := range g.valueReaders(v) {
 			g.declare(r.name, v.Name)
 		}
 	}
+}
+
+// declareJSONHooks reserves the names of the deleted nlohmann hooks while a baked table has an id enum (CODEGEN.md §5.3; DECISIONS 379).
+func (g *gen) declareJSONHooks() {
+	tables := g.idTables()
+	if len(tables) == 0 {
+		return
+	}
+	g.declare(toJSONName, tables[0].v.Name)
+	g.declare(fromJSONName, tables[0].v.Name)
 }

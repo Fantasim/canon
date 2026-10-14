@@ -168,6 +168,6 @@ StatusId: closed open taken
 Statuses: All At Find Get Len rows_
 Tone: loud old quiet
 conformance: Capture DoubledVector RunBoardConformance g_code kDoubled
-demo::board: Column ColumnId ColumnIdFromWire ColumnOf Columns DelayOf Doubled Element ElementFromCode ElementFromWire GetColumns GetInitialStatus GetInitialStatusKey GetLimit GetStatuses GetTags Greeting IsOpen LabelOf MaybeColumn NextOf Point Primes Reward RewardCoins RewardKind RewardKindFromWire Status StatusId StatusIdFromWire Statuses ToName ToWire Tone ToneFromWire ToneOf VersionOf kElementMembers kRewardKindMembers kToneMembers
+demo::board: Column ColumnId ColumnIdFromWire ColumnOf Columns DelayOf Doubled Element ElementFromCode ElementFromWire GetColumns GetInitialStatus GetInitialStatusKey GetLimit GetStatuses GetTags Greeting IsOpen LabelOf MaybeColumn NextOf Point Primes Reward RewardCoins RewardKind RewardKindFromWire Status StatusId StatusIdFromWire Statuses ToName ToWire Tone ToneFromWire ToneOf VersionOf from_json kElementMembers kRewardKindMembers kToneMembers to_json
 detail: BoardAccess BoardMake kColumnOfCells kDelayOfCells kGreetingCells kIsOpenCells kLabelOfCells kToneOfCells kVersionOfCells
 0 errors, 0 warnings in 1 package (…)

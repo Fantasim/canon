@@ -124,6 +124,8 @@ inline std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
     return std::nullopt;
 }
 
+/// The key of an entry of columns. Store or send ToWire(id): the underlying value is
+/// a position, not an id, and changes when entry files move.
 enum class ColumnId : uint8_t {
     todo,
     done,
@@ -139,6 +141,12 @@ inline std::string_view ToWire(ColumnId v) {
 
 std::optional<ColumnId> ColumnIdFromWire(std::string_view key);
 
+/// nlohmann/json would write the position: write ToWire(id), read ColumnIdFromWire(s).
+template <typename J> void to_json(J&, ColumnId) = delete;
+template <typename J> void from_json(const J&, ColumnId&) = delete;
+
+/// The key of an entry of statuses. Store or send ToWire(id): the underlying value is
+/// a position, not an id, and changes when entry files move.
 enum class StatusId : uint8_t {
     open,
     taken,
@@ -155,6 +163,10 @@ inline std::string_view ToWire(StatusId v) {
 }
 
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
+
+/// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).
+template <typename J> void to_json(J&, StatusId) = delete;
+template <typename J> void from_json(const J&, StatusId&) = delete;
 
 class Column;
 class Point;

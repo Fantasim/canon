@@ -1,0 +1,27 @@
+CODEGEN.md §3.5, §5.3, DECISIONS 37, 379: a baked package with a table reserves to_json and from_json, the deleted nlohmann hooks of its id enums, so a @cpp(name:) equal to one is E8005 and not a header g++ refuses.
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// Named like the hook.
+record Other @cpp(name: "to_json") {
+  /// Its value.
+  v: Int
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:15:8
+  cpp: to_json is generated for both a and a.Other; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

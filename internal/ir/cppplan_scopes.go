@@ -59,6 +59,7 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 		pl.declare(pl.ns, n, pl.p.Name, nil)
 		pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
 	}
+	pl.declareJSONHooks()
 	pl.declareDependents()
 	for _, c := range pl.classes() {
 		pl.shareNSFrom(pl.classOrigin(c), c, derivation{pl.classFrom(c), func() string { return pl.className(c) }})

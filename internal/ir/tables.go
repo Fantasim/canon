@@ -145,6 +145,7 @@ var (
 	cppContainerMembers = []string{GoLen, GoAt, GoAll, GoFind, "rows_"}      // §5.9
 	cppConformanceOwn   = []string{"g_code", "Capture"}                      // CONFORMANCE.md §7.2
 	cppStoreMembers     = []string{storeCurrent, storeReload, "current_"}    // §5.11
+	cppJSONHooks        = []string{"to_json", "from_json"}                   // §5.3
 	cppEnumOverloads    = []string{CppToName, CppToWire}                     // §5.2
 	cppAccessMembers    = []string{cppDataStruct, cppBuild, GoGet}           // §7.3: a baked emit's access struct
 )

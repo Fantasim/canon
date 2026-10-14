@@ -37,6 +37,8 @@ const (
 	reservedRun          = "__"
 	qnameSep             = "."
 	scopeSep             = "::"
+	toJSONName           = "to_json"
+	fromJSONName         = "from_json"
 	pathSep              = "/"
 	dollar               = "$"
 	openBrace            = "{"

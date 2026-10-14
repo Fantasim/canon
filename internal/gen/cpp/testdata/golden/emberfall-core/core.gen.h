@@ -52,6 +52,8 @@ enum class ParamBranch : uint8_t {
     loud,
 };
 
+/// The key of an entry of statuses. Store or send ToWire(id): the underlying value is
+/// a position, not an id, and changes when entry files move.
 enum class StatusId : uint8_t {
     open,
     closed,
@@ -66,6 +68,10 @@ inline std::string_view ToWire(StatusId v) {
 }
 
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
+
+/// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).
+template <typename J> void to_json(J&, StatusId) = delete;
+template <typename J> void from_json(const J&, StatusId&) = delete;
 
 class Status;
 class LevelRange;
