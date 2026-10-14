@@ -65,3 +65,24 @@
 39:4-12 "features" variable.other.property.canon
 39:12-13 ":" punctuation.separator.key.canon
 39:14-36 "\"example.com/features\"" string.quoted.double.canon
+42:0-101 "  /// Allowed import directions, lowest tier first (TYPES §3.1): a package imports only from its own" comment.line.documentation.canon
+43:0-95 "  /// tier and the tiers listed before it, and a longer path wins, so `features.tiers.ids` sits" comment.line.documentation.canon
+44:0-35 "  /// below the rest of `features`." comment.line.documentation.canon
+46:0-38 "    /// Helpers every package may use." comment.line.documentation.canon
+47:4-10 "shared" variable.other.property.canon
+47:10-11 ":" punctuation.separator.key.canon
+48:0-30 "    /// The studio view model." comment.line.documentation.canon
+49:4-10 "studio" variable.other.property.canon
+49:10-11 ":" punctuation.separator.key.canon
+50:0-50 "    /// Identifier vocabularies, imported by data." comment.line.documentation.canon
+51:4-7 "ids" variable.other.property.canon
+51:7-8 ":" punctuation.separator.key.canon
+51:18-19 "." punctuation.accessor.canon
+51:19-24 "tiers" variable.other.property.canon
+51:24-25 "." punctuation.accessor.canon
+51:25-28 "ids" variable.other.property.canon
+51:38-39 "." punctuation.accessor.canon
+51:39-44 "vocab" variable.other.property.canon
+52:0-22 "    /// Data packages." comment.line.documentation.canon
+53:4-8 "data" variable.other.property.canon
+53:8-9 ":" punctuation.separator.key.canon

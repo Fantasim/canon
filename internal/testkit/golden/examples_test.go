@@ -252,6 +252,9 @@ func compareManifest(t *testing.T, expected, proj string, roots map[string]strin
 	}
 	listed := map[string]bool{}
 	for _, line := range strings.Split(strings.TrimSuffix(string(data), "\n"), "\n") {
+		if line == "" {
+			continue // an example with no outputs lists nothing
+		}
 		display, golden, ok := strings.Cut(line, " ")
 		if !ok {
 			t.Fatalf("MANIFEST: malformed line %q", line)

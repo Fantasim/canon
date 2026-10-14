@@ -1,0 +1,39 @@
+1:0-102 "/// Import tiers (GRAMMAR §7.1, TYPES §3.1; DECISIONS 380): project.canon lists `features.tiers.ids`" comment.line.documentation.canon
+2:0-99 "/// in the ids tier and `features` in the data tier, so this package may import the ids package and" comment.line.documentation.canon
+3:0-46 "/// the ids package may never import this one." comment.line.documentation.canon
+4:0-7 "package" keyword.other.canon
+4:8-22 "features.tiers" entity.name.namespace.canon
+6:0-6 "import" keyword.other.canon
+6:15-16 "." punctuation.accessor.canon
+6:16-21 "tiers" variable.other.property.canon
+6:21-22 "." punctuation.accessor.canon
+6:22-25 "ids" variable.other.property.canon
+6:28-34 "Rarity" entity.name.type.canon
+8:0-18 "/// A collectible." comment.line.documentation.canon
+9:0-6 "record" storage.type.canon
+9:7-12 "Charm" entity.name.type.canon
+10:0-21 "  /// How rare it is." comment.line.documentation.canon
+11:2-8 "rarity" variable.other.property.canon
+11:8-9 ":" punctuation.separator.key.canon
+11:10-16 "Rarity" entity.name.type.canon
+12:0-23 "  /// What it is worth." comment.line.documentation.canon
+13:2-7 "worth" variable.other.property.canon
+13:7-8 ":" punctuation.separator.key.canon
+13:9-12 "Int" entity.name.type.canon
+16:0-16 "/// Every charm." comment.line.documentation.canon
+17:0-3 "let" storage.type.canon
+17:4-10 "charms" variable.other.property.canon
+17:10-11 ":" punctuation.separator.key.canon
+17:12-17 "table" storage.type.canon
+17:18-23 "Charm" entity.name.type.canon
+17:24-25 "=" keyword.operator.canon
+18:11-17 "rarity" variable.other.property.canon
+18:17-18 ":" punctuation.separator.key.canon
+18:27-32 "worth" variable.other.property.canon
+18:32-33 ":" punctuation.separator.key.canon
+18:34-35 "1" constant.numeric.integer.canon
+19:9-15 "rarity" variable.other.property.canon
+19:15-16 ":" punctuation.separator.key.canon
+19:28-33 "worth" variable.other.property.canon
+19:33-34 ":" punctuation.separator.key.canon
+19:35-37 "40" constant.numeric.integer.canon

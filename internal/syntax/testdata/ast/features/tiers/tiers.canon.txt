@@ -1,0 +1,46 @@
+File: File FileKind=source @1:1-21:1
+  Doc: DocComment "Import tiers (GRAMMAR §7.1, TYPES §3.1; DECISIONS 380): project.canon lists `features.tiers.ids`\nin the ids tier and `features` in the data tier, so this package may import the ids package and\nthe ids package may never import this one." @1:1-3:47
+  Package: QualifiedName features.tiers @4:9-4:23
+  Imports[0]: Import @6:1-6:37
+    Path: QualifiedName features.tiers.ids @6:8-6:26
+    Names[0]: Ident Rarity @6:29-6:35
+  Decls[0]: RecordDecl @9:1-14:2
+    Doc: DocComment "A collectible." @8:1-8:19
+    Name: Ident Charm @9:8-9:13
+    Body: RecordBody @9:14-14:2
+      Items[0]: FieldDecl @11:3-11:17
+        Doc: DocComment "How rare it is." @10:3-10:22
+        Name: Ident rarity @11:3-11:9
+        Type: NamedType @11:11-11:17
+          Name: QualifiedName Rarity @11:11-11:17
+      Items[1]: FieldDecl @13:3-13:13
+        Doc: DocComment "What it is worth." @12:3-12:24
+        Name: Ident worth @13:3-13:8
+        Type: NamedType @13:10-13:13
+          Name: QualifiedName Int @13:10-13:13
+  Decls[1]: LetDecl @17:1-20:2
+    Doc: DocComment "Every charm." @16:1-16:17
+    Name: Ident charms @17:5-17:11
+    Type: TableType @17:13-17:24
+      Name: QualifiedName Charm @17:19-17:24
+    Value: BraceLit @17:27-20:2
+      Items[0]: EntryItem @18:3-18:38
+        Key: Ident clover @18:3-18:9
+        Value: BraceLit @18:10-18:38
+          Items[0]: FieldItem @18:12-18:26
+            Name: Ident rarity @18:12-18:18
+            Value: IdentExpr common @18:20-18:26
+          Items[1]: FieldItem @18:28-18:36
+            Name: Ident worth @18:28-18:33
+            Value: IntLit Value=1 @18:35-18:36
+      Items[1]: EntryItem @19:3-19:40
+        Key: Ident star @19:3-19:7
+        Value: BraceLit @19:8-19:40
+          Items[0]: FieldItem @19:10-19:27
+            Name: Ident rarity @19:10-19:16
+            Value: IdentExpr legendary @19:18-19:27
+          Items[1]: FieldItem @19:29-19:38
+            Name: Ident worth @19:29-19:34
+            Value: IntLit Value=40 @19:36-19:38
+== findings
+0 errors, 0 warnings in 1 package (…)

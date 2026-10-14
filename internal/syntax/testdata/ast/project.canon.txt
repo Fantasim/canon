@@ -1,5 +1,5 @@
-File: File FileKind=project @1:1-42:1
-  Project: ProjectDecl @6:1-41:2
+File: File FileKind=project @1:1-56:1
+  Project: ProjectDecl @6:1-55:2
     Doc: DocComment "The law repository of Sovereign. In the real setup this directory is its own\nrepository; here it is `services/configlang/examples/`.\n\nTests do not read the real repositories: the harness opens this project with every\nroot redirected (see _fixtures/README.md)." @1:1-5:47
     Name: Ident sovereign @6:9-6:18
     Items[0]: ProjectEntry Colon=":" @7:3-7:15
@@ -81,5 +81,38 @@ File: File FileKind=project @1:1-42:1
           Key: Ident features @39:5-39:13
           Value: StringLit @39:15-39:37
             Parts[0]: text "example.com/features"
+    Items[6]: ProjectEntry @45:3-54:4
+      Doc: DocComment "Allowed import directions, lowest tier first (TYPES §3.1): a package imports only from its own\ntier and the tiers listed before it, and a longer path wins, so `features.tiers.ids` sits\nbelow the rest of `features`." @42:3-44:36
+      Key: Ident tiers @45:3-45:8
+      Value: ProjectMap @45:9-54:4
+        Entries[0]: ProjectEntry Colon=":" @47:5-47:24
+          Doc: DocComment "Helpers every package may use." @46:5-46:39
+          Key: Ident shared @47:5-47:11
+          Value: ProjectList @47:13-47:24
+            Items[0]: QualifiedName sovcommon @47:14-47:23
+        Entries[1]: ProjectEntry Colon=":" @49:5-49:21
+          Doc: DocComment "The studio view model." @48:5-48:31
+          Key: Ident studio @49:5-49:11
+          Value: ProjectList @49:13-49:21
+            Items[0]: QualifiedName studio @49:14-49:20
+        Entries[2]: ProjectEntry Colon=":" @51:5-51:46
+          Doc: DocComment "Identifier vocabularies, imported by data." @50:5-50:51
+          Key: Ident ids @51:5-51:8
+          Value: ProjectList @51:10-51:46
+            Items[0]: QualifiedName features.tiers.ids @51:11-51:29
+            Items[1]: QualifiedName resource.vocab @51:31-51:45
+        Entries[3]: ProjectEntry Colon=":" @53:5-53:94
+          Doc: DocComment "Data packages." @52:5-52:23
+          Key: Ident data @53:5-53:9
+          Value: ProjectList @53:11-53:94
+            Items[0]: QualifiedName balance @53:12-53:19
+            Items[1]: QualifiedName features @53:21-53:29
+            Items[2]: QualifiedName game @53:31-53:35
+            Items[3]: QualifiedName guide @53:37-53:42
+            Items[4]: QualifiedName pipeline @53:44-53:52
+            Items[5]: QualifiedName resource @53:54-53:62
+            Items[6]: QualifiedName service @53:64-53:71
+            Items[7]: QualifiedName teamboard @53:73-53:82
+            Items[8]: QualifiedName telemetry @53:84-53:93
 == findings
 0 errors, 0 warnings in 1 package (…)

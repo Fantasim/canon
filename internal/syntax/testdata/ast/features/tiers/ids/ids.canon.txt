@@ -1,0 +1,17 @@
+File: File FileKind=source @1:1-13:1
+  Doc: DocComment "The ids tier of the tiers example: vocabulary every data package below may import (DECISIONS 380)." @1:1-1:103
+  Package: QualifiedName features.tiers.ids @2:9-2:27
+  Decls[0]: EnumDecl @5:1-12:2
+    Doc: DocComment "How rare an item is." @4:1-4:25
+    Name: Ident Rarity @5:6-5:12
+    Members[0]: EnumMember @7:3-7:9
+      Doc: DocComment "Found everywhere." @6:3-6:24
+      Name: Ident common @7:3-7:9
+    Members[1]: EnumMember @9:3-9:7
+      Doc: DocComment "Found sometimes." @8:3-8:23
+      Name: Ident rare @9:3-9:7
+    Members[2]: EnumMember @11:3-11:12
+      Doc: DocComment "Found almost never." @10:3-10:26
+      Name: Ident legendary @11:3-11:12
+== findings
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,9 @@
+1:0-102 "/// The ids tier of the tiers example: vocabulary every data package below may import (DECISIONS 380)." comment.line.documentation.canon
+2:0-7 "package" keyword.other.canon
+2:8-26 "features.tiers.ids" entity.name.namespace.canon
+4:0-24 "/// How rare an item is." comment.line.documentation.canon
+5:0-4 "enum" storage.type.canon
+5:5-11 "Rarity" entity.name.type.canon
+6:0-23 "  /// Found everywhere." comment.line.documentation.canon
+8:0-22 "  /// Found sometimes." comment.line.documentation.canon
+10:0-25 "  /// Found almost never." comment.line.documentation.canon

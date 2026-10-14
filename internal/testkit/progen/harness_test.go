@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -166,6 +167,12 @@ func examples(t testing.TB) *corpus {
 	return corpusVal
 }
 
+// tiersBlock matches the `tiers { ... }` entry of examples/project.canon with its doc comment.
+var tiersBlock = regexp.MustCompile(`(?m)(^  ///.*\n)*^  tiers \{\n(?s:.*?)^  \}\n`)
+
+// withoutTiers drops the tiers entry: mutations add packages no tier places (E1018) and one imports upward (E2007).
+func withoutTiers(project string) string { return tiersBlock.ReplaceAllString(project, "") }
+
 func loadCorpus() (*corpus, error) {
 	p, err := progen.LoadDir(examplesDir, expectedDir)
 	if err != nil {
@@ -175,7 +182,7 @@ func loadCorpus() (*corpus, error) {
 	if !strings.Contains(string(pc), examplesBudget) {
 		return nil, fmt.Errorf("examples/%s no longer sets %q: the harness lowers that budget", projectFile, examplesBudget)
 	}
-	p.Set(projectFile, []byte(strings.Replace(string(pc), examplesBudget, harnessBudget, 1)))
+	p.Set(projectFile, []byte(withoutTiers(strings.Replace(string(pc), examplesBudget, harnessBudget, 1))))
 	locks, err := addLocks(p)
 	if err != nil {
 		return nil, err

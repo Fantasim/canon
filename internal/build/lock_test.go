@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -15,6 +16,12 @@ import (
 // exampleRootsBesideEx is where examples/project.canon's outside roots lie for a project at /ex.
 var exampleRootsBesideEx = []string{"Resource", "Client", "Source", "sovcommon/web/src/lib", "balance/parity", "resourcestudio/generated"}
 
+// tiersBlock matches the `tiers { ... }` entry of examples/project.canon with its doc comment.
+var tiersBlock = regexp.MustCompile(`(?m)(^  ///.*\n)*^  tiers \{\n(?s:.*?)^  \}\n`)
+
+// withoutTiers drops the tiers entry: a copy of a package subset leaves most tier paths placing nothing (E1018).
+func withoutTiers(project string) string { return tiersBlock.ReplaceAllString(project, "") }
+
 // teamboardFS is examples/teamboard and its imports in memory under /ex, taxonomy.canon edited
 // by the replacements (old, new…), with the golden canon.lock.
 func teamboardFS(t *testing.T, edits ...string) mapFS {
@@ -24,6 +31,9 @@ func teamboardFS(t *testing.T, edits ...string) mapFS {
 		data, err := os.ReadFile(filepath.Join(examplesDir, name))
 		if err != nil {
 			t.Fatal(err)
+		}
+		if name == "project.canon" {
+			data = []byte(withoutTiers(string(data)))
 		}
 		if strings.HasPrefix(name, "teamboard/") {
 			data = []byte(strings.NewReplacer(edits...).Replace(string(data)))

@@ -1,0 +1,20 @@
+/// Import tiers (GRAMMAR §7.1, TYPES §3.1; DECISIONS 380): project.canon lists `features.tiers.ids`
+/// in the ids tier and `features` in the data tier, so this package may import the ids package and
+/// the ids package may never import this one.
+package features.tiers
+
+import features.tiers.ids { Rarity }
+
+/// A collectible.
+record Charm {
+  /// How rare it is.
+  rarity: Rarity
+  /// What it is worth.
+  worth: Int
+}
+
+/// Every charm.
+let charms: table Charm = {
+  clover { rarity: common, worth: 1 }
+  star { rarity: legendary, worth: 40 }
+}

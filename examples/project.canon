@@ -38,4 +38,18 @@ project sovereign {
     pipeline_go: "example.com/potions"
     features: "example.com/features"
   }
+
+  /// Allowed import directions, lowest tier first (TYPES §3.1): a package imports only from its own
+  /// tier and the tiers listed before it, and a longer path wins, so `features.tiers.ids` sits
+  /// below the rest of `features`.
+  tiers {
+    /// Helpers every package may use.
+    shared: [sovcommon]
+    /// The studio view model.
+    studio: [studio]
+    /// Identifier vocabularies, imported by data.
+    ids: [features.tiers.ids, resource.vocab]
+    /// Data packages.
+    data: [balance, features, game, guide, pipeline, resource, service, teamboard, telemetry]
+  }
 }

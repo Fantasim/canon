@@ -1,0 +1,12 @@
+/// The ids tier of the tiers example: vocabulary every data package below may import (DECISIONS 380).
+package features.tiers.ids
+
+/// How rare an item is.
+enum Rarity {
+  /// Found everywhere.
+  common
+  /// Found sometimes.
+  rare
+  /// Found almost never.
+  legendary
+}

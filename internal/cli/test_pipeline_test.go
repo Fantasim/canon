@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -35,6 +36,9 @@ func runIn(t *testing.T, dir string, args ...string) (int, string) {
 	return code, normalize(stdout.String(), dir)
 }
 
+// tiersBlock matches the `tiers { ... }` entry of examples/project.canon with its doc comment.
+var tiersBlock = regexp.MustCompile(`(?m)(^  ///.*\n)*^  tiers \{\n(?s:.*?)^  \}\n`)
+
 // brokenCopy copies project.canon and the packages pipeline reads, healFor broken to `return heal`.
 func brokenCopy(t *testing.T) string {
 	t.Helper()
@@ -53,7 +57,8 @@ func brokenCopy(t *testing.T) string {
 		if err != nil {
 			t.Fatal(err)
 		}
-		text := strings.Replace(string(data), "{ return min(heal, max(missingHp, 0)) }", "{ return heal }", 1)
+		text := tiersBlock.ReplaceAllString(string(data), "") // a package subset leaves tier paths placing nothing (E1018)
+		text = strings.Replace(text, "{ return min(heal, max(missingHp, 0)) }", "{ return heal }", 1)
 		if err := os.WriteFile(filepath.Join(dst, name), []byte(text), 0o600); err != nil {
 			t.Fatal(err)
 		}
