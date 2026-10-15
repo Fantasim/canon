@@ -81,6 +81,9 @@ verified to apply and check clean on Resource `3cd10875`.
 `2026-10-14-canon-to-resource-tidcode.md` tells Resource to fix its 12 `W3002` name scans (the three
 `tidCode` copies were 55% of `check`'s allocation) before the 0.1.8 pin moves.
 `2026-10-14-canon-018-upgrade.md` is v0.1.8's upgrade order for Resource, Scripts and the others.
+`2026-10-15-canon-reply-v019.md` is v0.1.9's reply for the Sovereign sessions (what changed, upgrade notes,
+N11 migration, Resource's recommended `tiers`, bench numbers, checksums); `2026-10-14-v019-status.md`
+is the run's status record.
 
 `2026-10-12-v016-start-prompt.md` is the prompt that started the v0.1.6 session (F1-F19, stretch F20-F22,
 spec first, one wave of units per package, then the release). **Used**: the session ran; F20-F22 were deferred.

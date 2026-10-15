@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-10-14. **v0.1.8** (performance pass, 371-373) tagged and pushed 2026-10-14; v0.1.7 (TS2590, 370) to v0.1.0 out; `main` is
+Updated: 2026-10-15. **v0.1.9** (robustness, 374-382) tagged locally 2026-10-15 at `458f0ab2`, `make dist` built, not pushed; v0.1.8 (performance, 371-373) out; v0.1.7 (TS2590, 370) to v0.1.0 out; `main` is
 the only branch. DECISIONS 344-369: [log-2026-10-12](decisions/log-2026-10-12.md),
 [log-2026-10-13](decisions/log-2026-10-13.md), [ADR-0020](decisions/0020-api-016-overlay-ctx-call-lang-roots.md)
 (earlier: 304-343, ADR-0018/0019, logs 10-06, 10-08, 10-09). M5 accepted (CI run 36973712977).
@@ -18,7 +18,7 @@ repeated keys and names the first failure in document order; F14 (362, 363, 365,
 (358, 359) format specs, `duplicates()`; F4, F19, F6 guide topics; F12, F5; F9, F10: no bug. Deferred: F20
 (per-field `@json(codes)`), F21 (warm re-check), F22 (streaming JSON reader). Pre-tag: E8152's json names
 planned, not encoded (2.1× edit regression gone), M6 oracle joins, killed-build wedge (336).
-**v0.1.9, the robustness release** ([ADR-0021](decisions/0021-v019-robustness-release.md), DECISIONS 374-382): all 30 units and S1/S2 landed on `main` (`1f3d71b7`..`5413b3b2`, 62 commits, [status](handoff/2026-10-14-v019-status.md)). **Next, in progress: ADR-0021 §8** (acceptance gates and release: `make check`, stress, `fuzz-edit`, bench, Resource dry run, tag), then v0.2 (N5 first). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
+**v0.1.9, the robustness release** ([ADR-0021](decisions/0021-v019-robustness-release.md), DECISIONS 374-382): all 30 units and S1/S2 landed on `main` (`1f3d71b7`..`5413b3b2`, 62 commits, [status](handoff/2026-10-14-v019-status.md)). §8 accepted ([log-2026-10-15](decisions/log-2026-10-15.md)), [reply](handoff/2026-10-15-canon-reply-v019.md). **Waiting on Louis:** push `main` and `v0.1.9`, `gh release create`, Scripts' canon-bump. **Next: v0.2** (N5 first). Open too: [Resource structure](handoff/2026-10-12-canon-to-sovereign-resource-structure.md);
 [all handoffs](handoff/README.md). Release builds stay local (`make dist`) while CI is down.
 **Performance effort (2026-10-14, [log](decisions/log-2026-10-14.md)):** halve `check`/`build` memory and time; token store done (371, −15-17% RSS); lambda captures not copied (−20% allocs per call); Resource `tidCode` handoff sent (−35% `check`); enum by-name lookup, `Prov`, parallel packages next. Robustness first: the stat-trust refresh fix and a safe on-disk cache are documented, not started ([log](decisions/log-2026-10-14.md)). **Owed, performance:** per-entry deps (an `items` edit re-checks 30 importers); stage-E memo; the §2.7
 on-disk cache (a `dev` compiler must key by commit); go/cpp/ts emits sharing a dir generate for names; edit time is ops × a full analysis; FMT's whole-file

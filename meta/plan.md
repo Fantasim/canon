@@ -206,7 +206,7 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
   enforced by `check`.
 - [x] M4 call (a): the scan skips dot-prefixed files (API.md O2).
 - [x] M4 call (c): a target for the studio's view-model refresh after an edit (240-470 ms today).
-- [ ] Release gates: `make check`, stress, `fuzz-edit` 10 min, bench, Resource upgrade dry run, tag.
+- [x] Release gates: `make check`, stress, `fuzz-edit` 10 min, bench, Resource upgrade dry run, tag (v0.1.9 local, 2026-10-15; push and publish are Louis's).
 
 ## v0.2 (Louis, 2026-10-14)
 
