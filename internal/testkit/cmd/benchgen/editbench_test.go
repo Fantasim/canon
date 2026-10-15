@@ -32,9 +32,9 @@ const (
 	targetWarm      = time.Second
 	targetEdit      = 300 * time.Millisecond
 	targetEval      = 150 * time.Millisecond
-	refreshTarget   = 500 * time.Millisecond // DECISIONS 382; §8 of ADR-0021 may replace it
-	targetRSS       = 1_500_000_000          // bytes, 1.5 GB
-	targetVM        = 5_000_000              // bytes, 5 MB, without the search index and findings (VIEWMODEL.md J16)
+	refreshTarget   = 1050 * time.Millisecond // DECISIONS 382
+	targetRSS       = 1_500_000_000           // bytes, 1.5 GB
+	targetVM        = 5_000_000               // bytes, 5 MB, without the search index and findings (VIEWMODEL.md J16)
 	vmSearch        = "search"
 	vmFindings      = "findings"
 	vmValues        = "values"

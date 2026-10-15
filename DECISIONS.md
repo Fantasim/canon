@@ -3987,7 +3987,8 @@ round 2", "PS1 review", "PS2 round 2"):
 
 382. **A target for the studio's refresh after a committed edit (IMPLEMENTATION-PLAN §7.6; amends
      261).** NFR-01's edit bench times, after each timed `Set`, the `Evaluate` of the edited entry and
-     then a `Value` of it; their sum is the refresh, gated at p95 ≤ 500 ms on the reference machine.
+     then a `Value` of it; their sum is the refresh, gated at p95 ≤ 1050 ms on the reference machine
+     (v0.1.8's A/B baseline, 806 ms, × 1.25 rounded up to 50 ms; ADR-0021 §6 point 2).
      Whichever call first needs the new snapshot's every-package analysis pays it, so only the sum is
      stable. The studio's full reload (a `ViewModel` per package plus `Check`) is not gated. A miss
      never licenses a cache, a reuse or a parallel stage (log-2026-10-14, robustness first); it blocks

@@ -1088,7 +1088,7 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
   | warm `canon check` (unchanged manifest) | ≤ 1 s |
   | `Edit` of one entry field, re-check and write, p95 over 200 random `Set`s | ≤ 300 ms |
   | `Evaluate` of one entry after a committed edit, p95 | ≤ 150 ms |
-  | studio refresh after a committed edit (Evaluate of the entry, then a Value), p95 | ≤ 500 ms |
+  | studio refresh after a committed edit (Evaluate of the entry, then a Value), p95 | ≤ 1050 ms |
   | peak RSS during cold check | ≤ 1.5 GB |
   | view model per package, without search index | ≤ 5 MB |
 
