@@ -13,7 +13,6 @@ const (
 	pragmaOnce          = "#pragma once"
 	definesSuffix       = ".defines.gen.h"
 	defineFormat        = "#define %s %d"
-	wordBoundary        = `\b`
 	pushMacroFormat     = "#pragma push_macro(\"%s\")\n#undef %s\n"
 	popMacroFormat      = "#pragma pop_macro(\"%s\")\n"
 	includeFormat       = "#include %s\n"
@@ -37,6 +36,8 @@ const (
 	reservedRun          = "__"
 	qnameSep             = "."
 	scopeSep             = "::"
+	asciiWord            = "_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	byteValues           = 256
 	toJSONName           = "to_json"
 	fromJSONName         = "from_json"
 	pathSep              = "/"

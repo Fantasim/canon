@@ -2,7 +2,6 @@ package cppgen
 
 import (
 	_ "embed"
-	"regexp"
 	"slices"
 	"strings"
 
@@ -51,21 +50,62 @@ func defineName(prefix string, m *ir.EnumMember) string {
 	return prefix + m.Name
 }
 
-// clashes are the macros spelled like an enumerator the text names (CODEGEN.md §7.9).
+// clashes are the macros spelled like an enumerator the text names (CODEGEN.md §7.9), each once, in enum then member order.
 func (g *gen) clashes(text string) []string {
 	var out []string
+	var named map[string]bool
+	seen := map[string]bool{}
 	for _, e := range append(g.ownEnums(), g.foreignEnums...) {
+		if e.CppDefines == "" {
+			continue
+		}
+		if named == nil {
+			named = qualifiedPairs(text)
+		}
 		_, enum := g.named(e)
 		for _, m := range e.Members {
 			macro := defineName(e.CppDefines, m)
-			used := regexp.MustCompile(wordBoundary + regexp.QuoteMeta(enum+scopeSep+macro) + wordBoundary)
-			if e.CppDefines != "" && macro == g.pl.Enumerator(m) && used.MatchString(text) && !slices.Contains(out, macro) {
+			if macro == g.pl.Enumerator(m) && named[enum+scopeSep+macro] && !seen[macro] {
+				seen[macro] = true
 				out = append(out, macro)
 			}
 		}
 	}
 	return out
 }
+
+// qualifiedPairs is every `A::B` of whole ASCII words in text, the names `\bA::B\b` matches (CODEGEN.md §7.9), in one pass.
+func qualifiedPairs(text string) map[string]bool {
+	out := map[string]bool{}
+	for i := 0; i < len(text); {
+		if !wordByte[text[i]] {
+			i++
+			continue
+		}
+		end := wordEnd(text, i)
+		if next := end + len(scopeSep); strings.HasPrefix(text[end:], scopeSep) && wordEnd(text, next) > next {
+			out[text[i:wordEnd(text, next)]] = true
+		}
+		i = end
+	}
+	return out
+}
+
+// wordEnd is the index after the run of word bytes of text that starts at from.
+func wordEnd(text string, from int) int {
+	for from < len(text) && wordByte[text[from]] {
+		from++
+	}
+	return from
+}
+
+// wordByte marks the bytes of a word, the class a regular expression's \b is made of.
+var wordByte = func() (table [byteValues]bool) {
+	for i := range len(asciiWord) {
+		table[asciiWord[i]] = true
+	}
+	return table
+}()
 
 // namespaceBody writes text inside the namespace, wrapped against the macros it clashes with.
 func (g *gen) namespaceBody(out *writer, ns, text string) {
