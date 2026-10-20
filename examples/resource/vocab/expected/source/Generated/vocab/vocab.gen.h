@@ -27,47 +27,30 @@ enum class Element : uint8_t {
 
 inline constexpr std::array<Element, 5> kElementMembers = {Element::FIRE, Element::WATER, Element::ELECTRICITY, Element::WIND, Element::EARTH};
 
-inline std::string_view ToName(Element v) {
-    switch (v) {
-    case Element::FIRE: return "FIRE";
-    case Element::WATER: return "WATER";
-    case Element::ELECTRICITY: return "ELECTRICITY";
-    case Element::WIND: return "WIND";
-    case Element::EARTH: return "EARTH";
+namespace detail {
+inline constexpr std::array<uint8_t, 5> kElementCodes = {1, 2, 3, 4, 5};
+inline constexpr std::array<uint32_t, 5> kElementCodeOrdinals = {0, 1, 2, 3, 4};
+inline constexpr size_t ElementOrdinal(Element v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kElementCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kElementCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kElementCodes.size() && kElementCodes[lo] == code) return kElementCodeOrdinals[lo];
+    return kElementCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Element v) {
-    switch (v) {
-    case Element::FIRE: return "FIRE";
-    case Element::WATER: return "WATER";
-    case Element::ELECTRICITY: return "ELECTRICITY";
-    case Element::WIND: return "WIND";
-    case Element::EARTH: return "EARTH";
-    }
-    return {};
-}
-
-inline std::optional<Element> ElementFromWire(std::string_view wire) {
-    if (wire == "FIRE") return Element::FIRE;
-    if (wire == "WATER") return Element::WATER;
-    if (wire == "ELECTRICITY") return Element::ELECTRICITY;
-    if (wire == "WIND") return Element::WIND;
-    if (wire == "EARTH") return Element::EARTH;
-    return std::nullopt;
-}
-
-inline std::optional<Element> ElementFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return Element::FIRE;
-    case 2: return Element::WATER;
-    case 3: return Element::ELECTRICITY;
-    case 4: return Element::WIND;
-    case 5: return Element::EARTH;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Element v);
+std::string_view ToWire(Element v);
+std::optional<Element> ElementFromWire(std::string_view wire);
+std::optional<Element> ElementFromCode(uint8_t code);
 
 /// Progression stages (Vocab/gameStage.json).
 enum class Stage : uint16_t {
@@ -78,39 +61,30 @@ enum class Stage : uint16_t {
 
 inline constexpr std::array<Stage, 3> kStageMembers = {Stage::Stage_1, Stage::Stage_2, Stage::Stage_3};
 
-inline std::string_view ToName(Stage v) {
-    switch (v) {
-    case Stage::Stage_1: return "Stage_1";
-    case Stage::Stage_2: return "Stage_2";
-    case Stage::Stage_3: return "Stage_3";
+namespace detail {
+inline constexpr std::array<uint16_t, 3> kStageCodes = {100, 101, 102};
+inline constexpr std::array<uint32_t, 3> kStageCodeOrdinals = {0, 1, 2};
+inline constexpr size_t StageOrdinal(Stage v) {
+    const uint16_t code = static_cast<uint16_t>(v);
+    size_t lo = 0;
+    size_t hi = kStageCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kStageCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kStageCodes.size() && kStageCodes[lo] == code) return kStageCodeOrdinals[lo];
+    return kStageCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Stage v) {
-    switch (v) {
-    case Stage::Stage_1: return "Stage_1";
-    case Stage::Stage_2: return "Stage_2";
-    case Stage::Stage_3: return "Stage_3";
-    }
-    return {};
-}
-
-inline std::optional<Stage> StageFromWire(std::string_view wire) {
-    if (wire == "Stage_1") return Stage::Stage_1;
-    if (wire == "Stage_2") return Stage::Stage_2;
-    if (wire == "Stage_3") return Stage::Stage_3;
-    return std::nullopt;
-}
-
-inline std::optional<Stage> StageFromCode(uint16_t code) {
-    switch (code) {
-    case 100: return Stage::Stage_1;
-    case 101: return Stage::Stage_2;
-    case 102: return Stage::Stage_3;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Stage v);
+std::string_view ToWire(Stage v);
+std::optional<Stage> StageFromWire(std::string_view wire);
+std::optional<Stage> StageFromCode(uint16_t code);
 
 /// Adventure quest styles (Vocab/adventureQuest.json).
 enum class QuestStyle : uint8_t {
@@ -124,51 +98,30 @@ enum class QuestStyle : uint8_t {
 
 inline constexpr std::array<QuestStyle, 6> kQuestStyleMembers = {QuestStyle::daily, QuestStyle::weekly, QuestStyle::forever, QuestStyle::season_pass, QuestStyle::pvp, QuestStyle::azure};
 
-inline std::string_view ToName(QuestStyle v) {
-    switch (v) {
-    case QuestStyle::daily: return "daily";
-    case QuestStyle::weekly: return "weekly";
-    case QuestStyle::forever: return "forever";
-    case QuestStyle::season_pass: return "season_pass";
-    case QuestStyle::pvp: return "pvp";
-    case QuestStyle::azure: return "azure";
+namespace detail {
+inline constexpr std::array<uint8_t, 6> kQuestStyleCodes = {1, 2, 3, 4, 5, 6};
+inline constexpr std::array<uint32_t, 6> kQuestStyleCodeOrdinals = {0, 1, 2, 3, 4, 5};
+inline constexpr size_t QuestStyleOrdinal(QuestStyle v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kQuestStyleCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kQuestStyleCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kQuestStyleCodes.size() && kQuestStyleCodes[lo] == code) return kQuestStyleCodeOrdinals[lo];
+    return kQuestStyleCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(QuestStyle v) {
-    switch (v) {
-    case QuestStyle::daily: return "daily";
-    case QuestStyle::weekly: return "weekly";
-    case QuestStyle::forever: return "forever";
-    case QuestStyle::season_pass: return "season_pass";
-    case QuestStyle::pvp: return "pvp";
-    case QuestStyle::azure: return "azure";
-    }
-    return {};
-}
-
-inline std::optional<QuestStyle> QuestStyleFromWire(std::string_view wire) {
-    if (wire == "daily") return QuestStyle::daily;
-    if (wire == "weekly") return QuestStyle::weekly;
-    if (wire == "forever") return QuestStyle::forever;
-    if (wire == "season_pass") return QuestStyle::season_pass;
-    if (wire == "pvp") return QuestStyle::pvp;
-    if (wire == "azure") return QuestStyle::azure;
-    return std::nullopt;
-}
-
-inline std::optional<QuestStyle> QuestStyleFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return QuestStyle::daily;
-    case 2: return QuestStyle::weekly;
-    case 3: return QuestStyle::forever;
-    case 4: return QuestStyle::season_pass;
-    case 5: return QuestStyle::pvp;
-    case 6: return QuestStyle::azure;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(QuestStyle v);
+std::string_view ToWire(QuestStyle v);
+std::optional<QuestStyle> QuestStyleFromWire(std::string_view wire);
+std::optional<QuestStyle> QuestStyleFromCode(uint8_t code);
 
 /// What an adventure quest style pays out.
 enum class RewardType : uint8_t {
@@ -178,35 +131,30 @@ enum class RewardType : uint8_t {
 
 inline constexpr std::array<RewardType, 2> kRewardTypeMembers = {RewardType::activity_points, RewardType::season_pass_exp};
 
-inline std::string_view ToName(RewardType v) {
-    switch (v) {
-    case RewardType::activity_points: return "activity_points";
-    case RewardType::season_pass_exp: return "season_pass_exp";
+namespace detail {
+inline constexpr std::array<uint8_t, 2> kRewardTypeCodes = {1, 2};
+inline constexpr std::array<uint32_t, 2> kRewardTypeCodeOrdinals = {0, 1};
+inline constexpr size_t RewardTypeOrdinal(RewardType v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kRewardTypeCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kRewardTypeCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kRewardTypeCodes.size() && kRewardTypeCodes[lo] == code) return kRewardTypeCodeOrdinals[lo];
+    return kRewardTypeCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(RewardType v) {
-    switch (v) {
-    case RewardType::activity_points: return "activity_points";
-    case RewardType::season_pass_exp: return "season_pass_exp";
-    }
-    return {};
-}
-
-inline std::optional<RewardType> RewardTypeFromWire(std::string_view wire) {
-    if (wire == "activity_points") return RewardType::activity_points;
-    if (wire == "season_pass_exp") return RewardType::season_pass_exp;
-    return std::nullopt;
-}
-
-inline std::optional<RewardType> RewardTypeFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return RewardType::activity_points;
-    case 2: return RewardType::season_pass_exp;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(RewardType v);
+std::string_view ToWire(RewardType v);
+std::optional<RewardType> RewardTypeFromWire(std::string_view wire);
+std::optional<RewardType> RewardTypeFromCode(uint8_t code);
 
 /// An item's main kind (dwItemKind1). Declared in defineItemkind.h's order, so `.index`
 /// equals the IK1_* value.
@@ -223,45 +171,9 @@ enum class ItemKind1 : uint8_t {
 
 inline constexpr std::array<ItemKind1, 8> kItemKind1Members = {ItemKind1::IK1_GOLD, ItemKind1::IK1_WEAPON, ItemKind1::IK1_ARMOR, ItemKind1::IK1_GENERAL, ItemKind1::IK1_RIDE, ItemKind1::IK1_SYSTEM, ItemKind1::IK1_CHARGED, ItemKind1::IK1_HOUSING};
 
-inline std::string_view ToName(ItemKind1 v) {
-    switch (v) {
-    case ItemKind1::IK1_GOLD: return "IK1_GOLD";
-    case ItemKind1::IK1_WEAPON: return "IK1_WEAPON";
-    case ItemKind1::IK1_ARMOR: return "IK1_ARMOR";
-    case ItemKind1::IK1_GENERAL: return "IK1_GENERAL";
-    case ItemKind1::IK1_RIDE: return "IK1_RIDE";
-    case ItemKind1::IK1_SYSTEM: return "IK1_SYSTEM";
-    case ItemKind1::IK1_CHARGED: return "IK1_CHARGED";
-    case ItemKind1::IK1_HOUSING: return "IK1_HOUSING";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(ItemKind1 v) {
-    switch (v) {
-    case ItemKind1::IK1_GOLD: return "IK1_GOLD";
-    case ItemKind1::IK1_WEAPON: return "IK1_WEAPON";
-    case ItemKind1::IK1_ARMOR: return "IK1_ARMOR";
-    case ItemKind1::IK1_GENERAL: return "IK1_GENERAL";
-    case ItemKind1::IK1_RIDE: return "IK1_RIDE";
-    case ItemKind1::IK1_SYSTEM: return "IK1_SYSTEM";
-    case ItemKind1::IK1_CHARGED: return "IK1_CHARGED";
-    case ItemKind1::IK1_HOUSING: return "IK1_HOUSING";
-    }
-    return {};
-}
-
-inline std::optional<ItemKind1> ItemKind1FromWire(std::string_view wire) {
-    if (wire == "IK1_GOLD") return ItemKind1::IK1_GOLD;
-    if (wire == "IK1_WEAPON") return ItemKind1::IK1_WEAPON;
-    if (wire == "IK1_ARMOR") return ItemKind1::IK1_ARMOR;
-    if (wire == "IK1_GENERAL") return ItemKind1::IK1_GENERAL;
-    if (wire == "IK1_RIDE") return ItemKind1::IK1_RIDE;
-    if (wire == "IK1_SYSTEM") return ItemKind1::IK1_SYSTEM;
-    if (wire == "IK1_CHARGED") return ItemKind1::IK1_CHARGED;
-    if (wire == "IK1_HOUSING") return ItemKind1::IK1_HOUSING;
-    return std::nullopt;
-}
+std::string_view ToName(ItemKind1 v);
+std::string_view ToWire(ItemKind1 v);
+std::optional<ItemKind1> ItemKind1FromWire(std::string_view wire);
 
 /// Which kind of parameter an event's filter takes (eventType.json's `param`; an entry
 /// without one takes none).
@@ -279,48 +191,9 @@ enum class ParamKind : uint8_t {
 
 inline constexpr std::array<ParamKind, 9> kParamKindMembers = {ParamKind::none_, ParamKind::monster, ParamKind::item, ParamKind::dungeon, ParamKind::element, ParamKind::stat, ParamKind::upgrade_type, ParamKind::game_mode, ParamKind::quest_style};
 
-inline std::string_view ToName(ParamKind v) {
-    switch (v) {
-    case ParamKind::none_: return "none_";
-    case ParamKind::monster: return "monster";
-    case ParamKind::item: return "item";
-    case ParamKind::dungeon: return "dungeon";
-    case ParamKind::element: return "element";
-    case ParamKind::stat: return "stat";
-    case ParamKind::upgrade_type: return "upgrade_type";
-    case ParamKind::game_mode: return "game_mode";
-    case ParamKind::quest_style: return "quest_style";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(ParamKind v) {
-    switch (v) {
-    case ParamKind::none_: return "none_";
-    case ParamKind::monster: return "monster";
-    case ParamKind::item: return "item";
-    case ParamKind::dungeon: return "dungeon";
-    case ParamKind::element: return "element";
-    case ParamKind::stat: return "stat";
-    case ParamKind::upgrade_type: return "upgradeType";
-    case ParamKind::game_mode: return "gameMode";
-    case ParamKind::quest_style: return "questStyle";
-    }
-    return {};
-}
-
-inline std::optional<ParamKind> ParamKindFromWire(std::string_view wire) {
-    if (wire == "none_") return ParamKind::none_;
-    if (wire == "monster") return ParamKind::monster;
-    if (wire == "item") return ParamKind::item;
-    if (wire == "dungeon") return ParamKind::dungeon;
-    if (wire == "element") return ParamKind::element;
-    if (wire == "stat") return ParamKind::stat;
-    if (wire == "upgradeType") return ParamKind::upgrade_type;
-    if (wire == "gameMode") return ParamKind::game_mode;
-    if (wire == "questStyle") return ParamKind::quest_style;
-    return std::nullopt;
-}
+std::string_view ToName(ParamKind v);
+std::string_view ToWire(ParamKind v);
+std::optional<ParamKind> ParamKindFromWire(std::string_view wire);
 
 enum class ParamBranch : uint8_t {
     monster,
@@ -364,39 +237,7 @@ enum class EventTypeId : uint8_t {
     MISC_STATS_SNAPSHOT,
 };
 
-inline std::string_view ToWire(EventTypeId v) {
-    switch (v) {
-    case EventTypeId::COMBAT_KILL_MONSTER: return "COMBAT_KILL_MONSTER";
-    case EventTypeId::COMBAT_KILL_GIANT: return "COMBAT_KILL_GIANT";
-    case EventTypeId::COMBAT_KILL_BOSS: return "COMBAT_KILL_BOSS";
-    case EventTypeId::COMBAT_KILL_WORLD_BOSS: return "COMBAT_KILL_WORLD_BOSS";
-    case EventTypeId::COMBAT_KILL_BY_ELEMENT: return "COMBAT_KILL_BY_ELEMENT";
-    case EventTypeId::COMBAT_DAMAGE_PVE: return "COMBAT_DAMAGE_PVE";
-    case EventTypeId::COMBAT_DAMAGE_PVP_EVENT: return "COMBAT_DAMAGE_PVP_EVENT";
-    case EventTypeId::COMBAT_KILL_FFA: return "COMBAT_KILL_FFA";
-    case EventTypeId::COMBAT_KILL_GUILD_SIEGE: return "COMBAT_KILL_GUILD_SIEGE";
-    case EventTypeId::COMBAT_KILL_TDM: return "COMBAT_KILL_TDM";
-    case EventTypeId::COMBAT_GAME_MODE_START: return "COMBAT_GAME_MODE_START";
-    case EventTypeId::ECONOMY_DROP_PENYAS: return "ECONOMY_DROP_PENYAS";
-    case EventTypeId::ECONOMY_DROP_ITEM: return "ECONOMY_DROP_ITEM";
-    case EventTypeId::ECONOMY_SPEND_VOTE_POINTS: return "ECONOMY_SPEND_VOTE_POINTS";
-    case EventTypeId::ECONOMY_CONSUME_ITEM: return "ECONOMY_CONSUME_ITEM";
-    case EventTypeId::PROGRESSION_COLLECT_MONSTER: return "PROGRESSION_COLLECT_MONSTER";
-    case EventTypeId::PROGRESSION_COLLECT_ITEM: return "PROGRESSION_COLLECT_ITEM";
-    case EventTypeId::PROGRESSION_CARD_DRAWN: return "PROGRESSION_CARD_DRAWN";
-    case EventTypeId::CONTENT_COMPLETE_DUNGEON: return "CONTENT_COMPLETE_DUNGEON";
-    case EventTypeId::CONTENT_COMPLETE_ADVENTURE_QUEST: return "CONTENT_COMPLETE_ADVENTURE_QUEST";
-    case EventTypeId::CONTENT_WHEEL_OF_FORTUNE: return "CONTENT_WHEEL_OF_FORTUNE";
-    case EventTypeId::CONTENT_LOTTERY_BUY_TICKETS: return "CONTENT_LOTTERY_BUY_TICKETS";
-    case EventTypeId::ITEMS_CRAFTED: return "ITEMS_CRAFTED";
-    case EventTypeId::ITEMS_RECYCLED: return "ITEMS_RECYCLED";
-    case EventTypeId::ITEMS_PERFORM_UPGRADE: return "ITEMS_PERFORM_UPGRADE";
-    case EventTypeId::MISC_ACTIVE_PLAYTIME: return "MISC_ACTIVE_PLAYTIME";
-    case EventTypeId::MISC_STATS_SNAPSHOT: return "MISC_STATS_SNAPSHOT";
-    }
-    return {};
-}
-
+std::string_view ToWire(EventTypeId v);
 std::optional<EventTypeId> EventTypeIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read EventTypeIdFromWire(s).

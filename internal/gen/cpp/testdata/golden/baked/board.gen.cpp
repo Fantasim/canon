@@ -197,6 +197,112 @@ BoardAccess::Data BoardAccess::Build() {
 
 }  // namespace detail
 
+std::string_view ToName(Tone v) {
+    static constexpr std::array<std::string_view, 3> kNames = {"quiet", "loud", "old"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(Tone v) {
+    static constexpr std::array<std::string_view, 3> kWires = {"quiet", "loud", "old"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<Tone> ToneFromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 3> kKeys = {"loud", "old", "quiet"};
+    static constexpr std::array<Tone, 3> kValues = {Tone::loud, Tone::old, Tone::quiet};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
+
+std::string_view ToName(Element v) {
+    static constexpr std::array<std::string_view, 3> kNames = {"FIRE", "WATER", "EARTH"};
+    const size_t i = detail::ElementOrdinal(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(Element v) {
+    static constexpr std::array<std::string_view, 3> kWires = {"FIRE", "WATER", "EARTH"};
+    const size_t i = detail::ElementOrdinal(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<Element> ElementFromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 3> kKeys = {"EARTH", "FIRE", "WATER"};
+    static constexpr std::array<Element, 3> kValues = {Element::EARTH, Element::FIRE, Element::WATER};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
+
+std::optional<Element> ElementFromCode(uint8_t code) {
+    const size_t i = detail::ElementOrdinal(static_cast<Element>(code));
+    if (i >= kElementMembers.size()) return std::nullopt;
+    return kElementMembers[i];
+}
+
+std::string_view ToName(RewardKind v) {
+    static constexpr std::array<std::string_view, 2> kNames = {"coins", "nothing"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(RewardKind v) {
+    static constexpr std::array<std::string_view, 2> kWires = {"coins", "nothing"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 2> kKeys = {"coins", "nothing"};
+    static constexpr std::array<RewardKind, 2> kValues = {RewardKind::coins, RewardKind::nothing};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
+
+std::string_view ToWire(ColumnId v) {
+    static constexpr std::array<std::string_view, 2> kWires = {"todo", "done"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
 std::optional<ColumnId> ColumnIdFromWire(std::string_view key) {
     static constexpr std::array<std::string_view, 2> kKeys = {"done", "todo"};
     static constexpr std::array<ColumnId, 2> kIds = {ColumnId::done, ColumnId::todo};
@@ -212,6 +318,13 @@ std::optional<ColumnId> ColumnIdFromWire(std::string_view key) {
     }
     if (lo < kKeys.size() && kKeys[lo] == key) return kIds[lo];
     return std::nullopt;
+}
+
+std::string_view ToWire(StatusId v) {
+    static constexpr std::array<std::string_view, 3> kWires = {"open", "taken", "closed"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
 }
 
 std::optional<StatusId> StatusIdFromWire(std::string_view key) {

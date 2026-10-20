@@ -23,13 +23,7 @@ enum class ZoneId : uint8_t {
     forest,
 };
 
-inline std::string_view ToWire(ZoneId v) {
-    switch (v) {
-    case ZoneId::forest: return "forest";
-    }
-    return {};
-}
-
+std::string_view ToWire(ZoneId v);
 std::optional<ZoneId> ZoneIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read ZoneIdFromWire(s).
@@ -43,14 +37,7 @@ enum class LevelRangeId : uint8_t {
     high,
 };
 
-inline std::string_view ToWire(LevelRangeId v) {
-    switch (v) {
-    case LevelRangeId::low: return "low";
-    case LevelRangeId::high: return "high";
-    }
-    return {};
-}
-
+std::string_view ToWire(LevelRangeId v);
 std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read LevelRangeIdFromWire(s).

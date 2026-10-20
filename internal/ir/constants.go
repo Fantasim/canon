@@ -186,6 +186,12 @@ const (
 	cppAsPrefix      = "As"
 	cppConstPrefix   = "k"
 	cppFromWire      = "FromWire"
+	cppCodes         = "Codes" // a closed @codes enum's detail::k<E>Codes, k<E>CodeOrdinals, <E>Ordinal (CODEGEN.md §5.2)
+	cppCodeOrdinals  = "CodeOrdinals"
+	cppOrdinal       = "Ordinal"
+	cppWires         = "Wires" // an opened enum's detail::k<E>Wires, k<E>WireNames, k<E>WireCodes of its .gen.cpp (§5.2)
+	cppWireNames     = "WireNames"
+	cppWireCodes     = "WireCodes"
 	cppKey           = "Key"
 	cppKeys          = "Keys"
 	CppLoad          = "Load" // static Load of records, containers, the snapshot; detail's Load<V>

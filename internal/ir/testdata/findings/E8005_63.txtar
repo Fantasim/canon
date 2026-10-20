@@ -1,0 +1,19 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 383: a closed @codes enum's detail::<E>Ordinal, detail::k<E>Codes and detail::k<E>CodeOrdinals go through the C++ name plan, so a record named like the ordinal (which detail's name would hide) is E8005, not a header g++ misreads.
+-- a/a.canon --
+package a
+
+/// An element.
+enum Element @codes(UInt8) { FIRE = 1, WATER = 2 }
+
+/// Named like the ordinal.
+record ElementOrdinal {
+  /// Its value.
+  v: Int
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  cpp: ElementOrdinal is generated for both a.ElementOrdinal and a.Element; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

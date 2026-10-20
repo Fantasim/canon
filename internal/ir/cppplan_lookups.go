@@ -16,9 +16,11 @@ type CppVector struct {
 	Struct, Table string
 }
 
-// CppEnumHelpers are an enum's k<E>Members, <E>FromWire and, with @codes, <E>FromCode (CODEGEN.md §5.2).
+// CppEnumHelpers are an enum's k<E>Members, <E>FromWire and, with @codes, <E>FromCode; a closed @codes enum's detail::k<E>Codes, detail::k<E>CodeOrdinals and detail::<E>Ordinal; an opened enum's detail::k<E>Wires, k<E>WireNames and, with @codes, k<E>WireCodes (CODEGEN.md §5.2, DECISIONS 383).
 type CppEnumHelpers struct {
-	Members, FromWire, FromCode string
+	Members, FromWire, FromCode  string
+	Codes, CodeOrdinals, Ordinal string
+	Wires, WireNames, WireCodes  string
 }
 
 // FindBy is the lookup and indexes of @stable field f (CODEGEN.md §5.9).
@@ -51,7 +53,37 @@ func (pl *CppNamePlan) Vector(owner string, fn *ExportFn) CppVector {
 
 // EnumHelpers are the helpers of the enum or kind enum named enum (CODEGEN.md §5.2, §5.5).
 func (pl *CppNamePlan) EnumHelpers(enum string) CppEnumHelpers {
-	return CppEnumHelpers{Members: cppConstPrefix + enum + goMembersSuffix, FromWire: enum + cppFromWire, FromCode: enum + goFromCodeSuffix}
+	return CppEnumHelpers{
+		Members: cppConstPrefix + enum + goMembersSuffix, FromWire: enum + cppFromWire, FromCode: enum + goFromCodeSuffix,
+		Codes: cppConstPrefix + enum + cppCodes, CodeOrdinals: cppConstPrefix + enum + cppCodeOrdinals, Ordinal: enum + cppOrdinal,
+		Wires: cppConstPrefix + enum + cppWires, WireNames: cppConstPrefix + enum + cppWireNames, WireCodes: cppConstPrefix + enum + cppWireCodes,
+	}
+}
+
+// declareWireTables declares, in detail, each opened enum's sorted wires and their parallel names and codes, which the .gen.cpp holds in an unnamed namespace, local to it as the conformance file's helpers are (CODEGEN.md §5.2, DECISIONS 383).
+func (pl *CppNamePlan) declareWireTables(detail *nameScope) {
+	for _, e := range pl.OpenEnums() {
+		h := pl.EnumHelpers(pl.TypeName(e))
+		names := []string{h.Wires, h.WireNames}
+		if e.Codes != nil {
+			names = append(names, h.WireCodes)
+		}
+		for _, n := range names {
+			pl.localInner(detail, n, e.QName(), e, meetsLocal)
+		}
+	}
+}
+
+// declareOrdinals declares, in detail, each closed @codes enum's k<E>Codes, k<E>CodeOrdinals and <E>Ordinal, which the header defines (CODEGEN.md §5.2, §7.1; DECISIONS 383).
+func (pl *CppNamePlan) declareOrdinals(detail *nameScope) {
+	for _, t := range pl.p.Types {
+		if e, ok := t.(*Enum); ok && e.Codes != nil && !OpenEnum(pl.p, pl.e, e) {
+			h := pl.EnumHelpers(pl.TypeName(e))
+			for _, n := range []string{h.Codes, h.CodeOrdinals, h.Ordinal} {
+				pl.shareInner(detail, n, e.QName(), e)
+			}
+		}
+	}
 }
 
 // AccessName is detail's access struct, <P>Access (CODEGEN.md §3.3, §7.6).

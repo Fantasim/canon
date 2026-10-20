@@ -26,42 +26,9 @@ enum class Weekday : uint8_t {
 
 inline constexpr std::array<Weekday, 7> kWeekdayMembers = {Weekday::Sun, Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat};
 
-inline std::string_view ToName(Weekday v) {
-    switch (v) {
-    case Weekday::Sun: return "Sun";
-    case Weekday::Mon: return "Mon";
-    case Weekday::Tue: return "Tue";
-    case Weekday::Wed: return "Wed";
-    case Weekday::Thu: return "Thu";
-    case Weekday::Fri: return "Fri";
-    case Weekday::Sat: return "Sat";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Weekday v) {
-    switch (v) {
-    case Weekday::Sun: return "Sun";
-    case Weekday::Mon: return "Mon";
-    case Weekday::Tue: return "Tue";
-    case Weekday::Wed: return "Wed";
-    case Weekday::Thu: return "Thu";
-    case Weekday::Fri: return "Fri";
-    case Weekday::Sat: return "Sat";
-    }
-    return {};
-}
-
-inline std::optional<Weekday> WeekdayFromWire(std::string_view wire) {
-    if (wire == "Sun") return Weekday::Sun;
-    if (wire == "Mon") return Weekday::Mon;
-    if (wire == "Tue") return Weekday::Tue;
-    if (wire == "Wed") return Weekday::Wed;
-    if (wire == "Thu") return Weekday::Thu;
-    if (wire == "Fri") return Weekday::Fri;
-    if (wire == "Sat") return Weekday::Sat;
-    return std::nullopt;
-}
+std::string_view ToName(Weekday v);
+std::string_view ToWire(Weekday v);
+std::optional<Weekday> WeekdayFromWire(std::string_view wire);
 
 class TimeOfDay;
 class Window;

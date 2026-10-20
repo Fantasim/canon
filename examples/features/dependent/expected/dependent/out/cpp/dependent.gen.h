@@ -32,33 +32,9 @@ enum class Goal : uint8_t {
 
 inline constexpr std::array<Goal, 4> kGoalMembers = {Goal::kill, Goal::collect, Goal::reach_level, Goal::visit};
 
-inline std::string_view ToName(Goal v) {
-    switch (v) {
-    case Goal::kill: return "kill";
-    case Goal::collect: return "collect";
-    case Goal::reach_level: return "reach_level";
-    case Goal::visit: return "visit";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Goal v) {
-    switch (v) {
-    case Goal::kill: return "kill";
-    case Goal::collect: return "collect";
-    case Goal::reach_level: return "reach_level";
-    case Goal::visit: return "visit";
-    }
-    return {};
-}
-
-inline std::optional<Goal> GoalFromWire(std::string_view wire) {
-    if (wire == "kill") return Goal::kill;
-    if (wire == "collect") return Goal::collect;
-    if (wire == "reach_level") return Goal::reach_level;
-    if (wire == "visit") return Goal::visit;
-    return std::nullopt;
-}
+std::string_view ToName(Goal v);
+std::string_view ToWire(Goal v);
+std::optional<Goal> GoalFromWire(std::string_view wire);
 
 enum class TargetBranch : uint8_t {
     kill,

@@ -27,30 +27,9 @@ enum class Tone : uint8_t {
 
 inline constexpr std::array<Tone, 3> kToneMembers = {Tone::quiet, Tone::loud, Tone::old};
 
-inline std::string_view ToName(Tone v) {
-    switch (v) {
-    case Tone::quiet: return "quiet";
-    case Tone::loud: return "loud";
-    case Tone::old: return "old";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Tone v) {
-    switch (v) {
-    case Tone::quiet: return "quiet";
-    case Tone::loud: return "loud";
-    case Tone::old: return "old";
-    }
-    return {};
-}
-
-inline std::optional<Tone> ToneFromWire(std::string_view wire) {
-    if (wire == "quiet") return Tone::quiet;
-    if (wire == "loud") return Tone::loud;
-    if (wire == "old") return Tone::old;
-    return std::nullopt;
-}
+std::string_view ToName(Tone v);
+std::string_view ToWire(Tone v);
+std::optional<Tone> ToneFromWire(std::string_view wire);
 
 enum class Element : uint8_t {
     FIRE = 1,
@@ -61,39 +40,30 @@ enum class Element : uint8_t {
 
 inline constexpr std::array<Element, 3> kElementMembers = {Element::FIRE, Element::WATER, Element::EARTH};
 
-inline std::string_view ToName(Element v) {
-    switch (v) {
-    case Element::FIRE: return "FIRE";
-    case Element::WATER: return "WATER";
-    case Element::EARTH: return "EARTH";
+namespace detail {
+inline constexpr std::array<uint8_t, 3> kElementCodes = {1, 2, 3};
+inline constexpr std::array<uint32_t, 3> kElementCodeOrdinals = {0, 1, 2};
+inline constexpr size_t ElementOrdinal(Element v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kElementCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kElementCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kElementCodes.size() && kElementCodes[lo] == code) return kElementCodeOrdinals[lo];
+    return kElementCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Element v) {
-    switch (v) {
-    case Element::FIRE: return "FIRE";
-    case Element::WATER: return "WATER";
-    case Element::EARTH: return "EARTH";
-    }
-    return {};
-}
-
-inline std::optional<Element> ElementFromWire(std::string_view wire) {
-    if (wire == "FIRE") return Element::FIRE;
-    if (wire == "WATER") return Element::WATER;
-    if (wire == "EARTH") return Element::EARTH;
-    return std::nullopt;
-}
-
-inline std::optional<Element> ElementFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return Element::FIRE;
-    case 2: return Element::WATER;
-    case 3: return Element::EARTH;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Element v);
+std::string_view ToWire(Element v);
+std::optional<Element> ElementFromWire(std::string_view wire);
+std::optional<Element> ElementFromCode(uint8_t code);
 
 enum class RewardKind : uint8_t {
     coins,
@@ -102,27 +72,9 @@ enum class RewardKind : uint8_t {
 
 inline constexpr std::array<RewardKind, 2> kRewardKindMembers = {RewardKind::coins, RewardKind::nothing};
 
-inline std::string_view ToName(RewardKind v) {
-    switch (v) {
-    case RewardKind::coins: return "coins";
-    case RewardKind::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(RewardKind v) {
-    switch (v) {
-    case RewardKind::coins: return "coins";
-    case RewardKind::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
-    if (wire == "coins") return RewardKind::coins;
-    if (wire == "nothing") return RewardKind::nothing;
-    return std::nullopt;
-}
+std::string_view ToName(RewardKind v);
+std::string_view ToWire(RewardKind v);
+std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 /// The key of an entry of columns. Store or send ToWire(id): the underlying value is
 /// a position, not an id, and changes when entry files move.
@@ -131,14 +83,7 @@ enum class ColumnId : uint8_t {
     done,
 };
 
-inline std::string_view ToWire(ColumnId v) {
-    switch (v) {
-    case ColumnId::todo: return "todo";
-    case ColumnId::done: return "done";
-    }
-    return {};
-}
-
+std::string_view ToWire(ColumnId v);
 std::optional<ColumnId> ColumnIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read ColumnIdFromWire(s).
@@ -153,15 +98,7 @@ enum class StatusId : uint8_t {
     closed,
 };
 
-inline std::string_view ToWire(StatusId v) {
-    switch (v) {
-    case StatusId::open: return "open";
-    case StatusId::taken: return "taken";
-    case StatusId::closed: return "closed";
-    }
-    return {};
-}
-
+std::string_view ToWire(StatusId v);
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).
@@ -544,13 +481,8 @@ inline constexpr std::array<int64_t, 3> kVersionOfCells = {1, 2, 2};
 
 /// The version an element was added in.
 inline constexpr int64_t VersionOf(Element e) {
-    size_t i0 = 0;
-    switch (e) {
-    case Element::FIRE: i0 = 0; break;
-    case Element::WATER: i0 = 1; break;
-    case Element::EARTH: i0 = 2; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::ElementOrdinal(e);
+    if (i0 >= 3) std::abort();
     return detail::kVersionOfCells[i0];
 }
 
@@ -581,13 +513,8 @@ inline constexpr std::array<Tone, 3> kToneOfCells = {Tone::loud, Tone::quiet, To
 }  // namespace detail
 
 inline constexpr Tone ToneOf(Element e) {
-    size_t i0 = 0;
-    switch (e) {
-    case Element::FIRE: i0 = 0; break;
-    case Element::WATER: i0 = 1; break;
-    case Element::EARTH: i0 = 2; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::ElementOrdinal(e);
+    if (i0 >= 3) std::abort();
     return detail::kToneOfCells[i0];
 }
 

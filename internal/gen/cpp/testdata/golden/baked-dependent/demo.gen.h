@@ -21,27 +21,9 @@ enum class Kind : uint8_t {
 
 inline constexpr std::array<Kind, 2> kKindMembers = {Kind::spawn, Kind::despawn};
 
-inline std::string_view ToName(Kind v) {
-    switch (v) {
-    case Kind::spawn: return "spawn";
-    case Kind::despawn: return "despawn";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Kind v) {
-    switch (v) {
-    case Kind::spawn: return "spawn";
-    case Kind::despawn: return "despawn";
-    }
-    return {};
-}
-
-inline std::optional<Kind> KindFromWire(std::string_view wire) {
-    if (wire == "spawn") return Kind::spawn;
-    if (wire == "despawn") return Kind::despawn;
-    return std::nullopt;
-}
+std::string_view ToName(Kind v);
+std::string_view ToWire(Kind v);
+std::optional<Kind> KindFromWire(std::string_view wire);
 
 enum class Kind3 : uint8_t {
     a,
@@ -53,36 +35,9 @@ enum class Kind3 : uint8_t {
 
 inline constexpr std::array<Kind3, 5> kKind3Members = {Kind3::a, Kind3::b, Kind3::c, Kind3::d, Kind3::e};
 
-inline std::string_view ToName(Kind3 v) {
-    switch (v) {
-    case Kind3::a: return "a";
-    case Kind3::b: return "b";
-    case Kind3::c: return "c";
-    case Kind3::d: return "d";
-    case Kind3::e: return "e";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Kind3 v) {
-    switch (v) {
-    case Kind3::a: return "a";
-    case Kind3::b: return "b";
-    case Kind3::c: return "c";
-    case Kind3::d: return "d";
-    case Kind3::e: return "e";
-    }
-    return {};
-}
-
-inline std::optional<Kind3> Kind3FromWire(std::string_view wire) {
-    if (wire == "a") return Kind3::a;
-    if (wire == "b") return Kind3::b;
-    if (wire == "c") return Kind3::c;
-    if (wire == "d") return Kind3::d;
-    if (wire == "e") return Kind3::e;
-    return std::nullopt;
-}
+std::string_view ToName(Kind3 v);
+std::string_view ToWire(Kind3 v);
+std::optional<Kind3> Kind3FromWire(std::string_view wire);
 
 enum class PayloadBranch : uint8_t {
     false_,

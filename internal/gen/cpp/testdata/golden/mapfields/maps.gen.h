@@ -30,27 +30,9 @@ enum class Element : uint8_t {
 
 inline constexpr std::array<Element, 2> kElementMembers = {Element::fire, Element::water};
 
-inline std::string_view ToName(Element v) {
-    switch (v) {
-    case Element::fire: return "fire";
-    case Element::water: return "water";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Element v) {
-    switch (v) {
-    case Element::fire: return "fire";
-    case Element::water: return "water";
-    }
-    return {};
-}
-
-inline std::optional<Element> ElementFromWire(std::string_view wire) {
-    if (wire == "fire") return Element::fire;
-    if (wire == "water") return Element::water;
-    return std::nullopt;
-}
+std::string_view ToName(Element v);
+std::string_view ToWire(Element v);
+std::optional<Element> ElementFromWire(std::string_view wire);
 
 /// A rank.
 enum class Rank : uint8_t {
@@ -60,35 +42,30 @@ enum class Rank : uint8_t {
 
 inline constexpr std::array<Rank, 2> kRankMembers = {Rank::low, Rank::high};
 
-inline std::string_view ToName(Rank v) {
-    switch (v) {
-    case Rank::low: return "low";
-    case Rank::high: return "high";
+namespace detail {
+inline constexpr std::array<uint8_t, 2> kRankCodes = {1, 200};
+inline constexpr std::array<uint32_t, 2> kRankCodeOrdinals = {0, 1};
+inline constexpr size_t RankOrdinal(Rank v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kRankCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kRankCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kRankCodes.size() && kRankCodes[lo] == code) return kRankCodeOrdinals[lo];
+    return kRankCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Rank v) {
-    switch (v) {
-    case Rank::low: return "low";
-    case Rank::high: return "high";
-    }
-    return {};
-}
-
-inline std::optional<Rank> RankFromWire(std::string_view wire) {
-    if (wire == "low") return Rank::low;
-    if (wire == "high") return Rank::high;
-    return std::nullopt;
-}
-
-inline std::optional<Rank> RankFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return Rank::low;
-    case 200: return Rank::high;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Rank v);
+std::string_view ToWire(Rank v);
+std::optional<Rank> RankFromWire(std::string_view wire);
+std::optional<Rank> RankFromCode(uint8_t code);
 
 /// A tone.
 enum class Tone : uint8_t {
@@ -98,27 +75,9 @@ enum class Tone : uint8_t {
 
 inline constexpr std::array<Tone, 2> kToneMembers = {Tone::plain, Tone::series_1};
 
-inline std::string_view ToName(Tone v) {
-    switch (v) {
-    case Tone::plain: return "plain";
-    case Tone::series_1: return "series_1";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Tone v) {
-    switch (v) {
-    case Tone::plain: return "plain";
-    case Tone::series_1: return "series-1";
-    }
-    return {};
-}
-
-inline std::optional<Tone> ToneFromWire(std::string_view wire) {
-    if (wire == "plain") return Tone::plain;
-    if (wire == "series-1") return Tone::series_1;
-    return std::nullopt;
-}
+std::string_view ToName(Tone v);
+std::string_view ToWire(Tone v);
+std::optional<Tone> ToneFromWire(std::string_view wire);
 
 class Slot;
 class Board;

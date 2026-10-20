@@ -1,7 +1,6 @@
 package cppgen
 
 import (
-	_ "embed"
 	"fmt"
 	"slices"
 	"strings"
@@ -9,9 +8,6 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
 )
-
-//go:embed text/id_from_wire.txt
-var idFromWireText string
 
 // idTable is a public table value with its row record: it has an id enum (CODEGEN.md §5.3).
 type idTable struct {
@@ -33,7 +29,7 @@ func (g *gen) idTables() []idTable {
 	return out
 }
 
-// idEnums write each table's id enum after the branch enums: its keys in entry order, retired ones included, an inline ToWire, and <Rec>IdFromWire, which the source defines (CODEGEN.md §2.7, §5.3, §7.3).
+// idEnums write each table's id enum after the branch enums: its keys in entry order, retired ones included, and the declarations of ToWire and <Rec>IdFromWire, which the source defines (CODEGEN.md §2.7, §5.3, §7.1, §7.3; DECISIONS 383).
 func (g *gen) idEnums() {
 	if !g.baked() {
 		return
@@ -52,8 +48,8 @@ func (g *gen) idEnums() {
 		g.h.line(closeClass)
 		g.h.blank()
 		fromWire := g.pl.EnumHelpers(s.name).FromWire
-		g.nameSwitch(s, ir.CppToWire, func(m enumMember) string { return m.wire })
-		g.h.printf(idFromWireDeclFormat, s.name, fromWire)
+		g.h.printf(declFormat, fmt.Sprintf(nameSigFormat, ir.CppToWire, s.name))
+		g.h.printf(declFormat, fmt.Sprintf(idFromWireSigFormat, s.name, fromWire))
 		g.h.blank()
 		g.doc(0, fmt.Sprintf(idJSONDocFormat, fromWire))
 		g.h.linef(0, idToJSONDeleted, s.name)
@@ -63,10 +59,16 @@ func (g *gen) idEnums() {
 	}
 }
 
-// idFromWires define each <Rec>IdFromWire: a binary search of the keys sorted by their bytes (CODEGEN.md §5.3).
+// idFromWires define each id enum's ToWire, an array of its keys by position, then <Rec>IdFromWire, a binary search of the keys sorted by their bytes (CODEGEN.md §5.3, §7.1; DECISIONS 383).
 func (g *gen) idFromWires() {
 	for _, it := range g.idTables() {
 		name := g.pl.IDName(it.rec)
+		wires := make([]string, len(it.v.IDs))
+		for i, k := range it.v.IDs {
+			wires[i] = quote(k)
+		}
+		pos := fmt.Sprintf(staticCastFormat, cppSize, enumArg)
+		g.c.printf(byOrdinalText, fmt.Sprintf(nameSigFormat, ir.CppToWire, name), len(wires), wiresTable, indentBlock(braced(wires)), pos)
 		keys := slices.Clone(it.v.IDs)
 		slices.Sort(keys)
 		quoted := make([]string, len(keys))
@@ -75,7 +77,10 @@ func (g *gen) idFromWires() {
 			quoted[i] = quote(k)
 			ids[i] = name + scopeSep + g.pl.IDMember(k)
 		}
-		g.c.printf(idFromWireText, name, g.pl.EnumHelpers(name).FromWire, len(keys), indentBlock(braced(quoted)), indentBlock(braced(ids)))
+		g.c.write(search{
+			sig: fmt.Sprintf(idFromWireSigFormat, name, g.pl.EnumHelpers(name).FromWire), prelude: table(cppStringView, keysTable, quoted) + table(name, idsTable, ids),
+			keys: keysTable, key: keyParam, hit: fmt.Sprintf(indexFormat, idsTable, loVar), miss: cppNullopt,
+		}.text())
 	}
 }
 

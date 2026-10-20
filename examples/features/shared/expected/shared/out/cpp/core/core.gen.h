@@ -24,27 +24,9 @@ enum class Aim : uint8_t {
 
 inline constexpr std::array<Aim, 2> kAimMembers = {Aim::gold, Aim::mood};
 
-inline std::string_view ToName(Aim v) {
-    switch (v) {
-    case Aim::gold: return "gold";
-    case Aim::mood: return "mood";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Aim v) {
-    switch (v) {
-    case Aim::gold: return "gold";
-    case Aim::mood: return "mood";
-    }
-    return {};
-}
-
-inline std::optional<Aim> AimFromWire(std::string_view wire) {
-    if (wire == "gold") return Aim::gold;
-    if (wire == "mood") return Aim::mood;
-    return std::nullopt;
-}
+std::string_view ToName(Aim v);
+std::string_view ToWire(Aim v);
+std::optional<Aim> AimFromWire(std::string_view wire);
 
 /// A mood.
 enum class Mood : uint8_t {
@@ -54,27 +36,9 @@ enum class Mood : uint8_t {
 
 inline constexpr std::array<Mood, 2> kMoodMembers = {Mood::calm, Mood::grim};
 
-inline std::string_view ToName(Mood v) {
-    switch (v) {
-    case Mood::calm: return "calm";
-    case Mood::grim: return "grim";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Mood v) {
-    switch (v) {
-    case Mood::calm: return "calm";
-    case Mood::grim: return "grim";
-    }
-    return {};
-}
-
-inline std::optional<Mood> MoodFromWire(std::string_view wire) {
-    if (wire == "calm") return Mood::calm;
-    if (wire == "grim") return Mood::grim;
-    return std::nullopt;
-}
+std::string_view ToName(Mood v);
+std::string_view ToWire(Mood v);
+std::optional<Mood> MoodFromWire(std::string_view wire);
 
 enum class RewardKind : uint8_t {
     coins,
@@ -84,27 +48,9 @@ enum class RewardKind : uint8_t {
 
 inline constexpr std::array<RewardKind, 2> kRewardKindMembers = {RewardKind::coins, RewardKind::nothing};
 
-inline std::string_view ToName(RewardKind v) {
-    switch (v) {
-    case RewardKind::coins: return "coins";
-    case RewardKind::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(RewardKind v) {
-    switch (v) {
-    case RewardKind::coins: return "coins";
-    case RewardKind::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
-    if (wire == "coins") return RewardKind::coins;
-    if (wire == "nothing") return RewardKind::nothing;
-    return std::nullopt;
-}
+std::string_view ToName(RewardKind v);
+std::string_view ToWire(RewardKind v);
+std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 enum class BonusBranch : uint8_t {
     gold,
@@ -119,15 +65,7 @@ enum class StatusId : uint8_t {
     shut,
 };
 
-inline std::string_view ToWire(StatusId v) {
-    switch (v) {
-    case StatusId::open: return "open";
-    case StatusId::closed: return "closed";
-    case StatusId::shut: return "shut";
-    }
-    return {};
-}
-
+std::string_view ToWire(StatusId v);
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).

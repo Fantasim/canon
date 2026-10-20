@@ -263,6 +263,13 @@ WorldAccess::Data WorldAccess::Build() {
 
 }  // namespace detail
 
+std::string_view ToWire(ZoneId v) {
+    static constexpr std::array<std::string_view, 1> kWires = {"forest"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
 std::optional<ZoneId> ZoneIdFromWire(std::string_view key) {
     static constexpr std::array<std::string_view, 1> kKeys = {"forest"};
     static constexpr std::array<ZoneId, 1> kIds = {ZoneId::forest};
@@ -278,6 +285,13 @@ std::optional<ZoneId> ZoneIdFromWire(std::string_view key) {
     }
     if (lo < kKeys.size() && kKeys[lo] == key) return kIds[lo];
     return std::nullopt;
+}
+
+std::string_view ToWire(LevelRangeId v) {
+    static constexpr std::array<std::string_view, 2> kWires = {"low", "high"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
 }
 
 std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key) {

@@ -16,7 +16,7 @@ func (g *gen) openPlain(t ir.TypeRef) bool {
 	return ok && t.Kind == types.Enum && !e.JSONCodes && g.open(e)
 }
 
-// openEnum writes an opened enum as a class holding its wire, one static const per member (retired ones too), ==, != and < by wire bytes, then k<E>Members, ToWire, ToName, <E>FromWire, IsKnown and, with @codes, ToCode and <E>FromCode; std::hash follows the namespace (CODEGEN.md §5.2, DECISIONS 362).
+// openEnum writes an opened enum as a class holding its wire, one static const per member (retired ones too), ==, != and < by wire bytes, then k<E>Members, the inline ToWire and the declarations of ToName, IsKnown, <E>FromWire and, with @codes, ToCode and <E>FromCode, which the .gen.cpp defines; std::hash follows the namespace (CODEGEN.md §5.2, DECISIONS 362, 383).
 func (g *gen) openEnum(s enumSpec) {
 	wire := ir.CppOpenWire
 	g.doc(0, s.doc)
@@ -28,12 +28,16 @@ func (g *gen) openEnum(s enumSpec) {
 		}
 		g.h.linef(1, openMemberFormat, s.name, m.name)
 	}
-	g.h.blank()
+	if len(s.members) > 0 {
+		g.h.blank()
+	}
 	g.h.printf(openClassTailFormat, s.name, wire, ir.CppToWire)
 	for _, m := range s.members {
 		g.h.linef(0, openDefineFormat, s.name, m.name, quote(m.wire))
 	}
-	g.h.blank()
+	if len(s.members) > 0 {
+		g.h.blank()
+	}
 	qualified := make([]string, len(s.members))
 	for i, m := range s.members {
 		qualified[i] = s.name + scopeSep + m.name
@@ -41,35 +45,9 @@ func (g *gen) openEnum(s enumSpec) {
 	g.h.printf(listConstFormat, fmt.Sprintf(arrayFormat, s.name, len(s.members)), g.pl.EnumHelpers(s.name).Members, braced(qualified))
 	g.h.blank()
 	g.h.printf(openToWireFormat, s.name, wire)
-	g.openToName(s)
-	g.fromWire(s)
-	g.h.printf(openKnownFormat, s.name, g.pl.EnumHelpers(s.name).FromWire)
-	if s.codes != nil {
-		g.openToCode(s)
-		g.fromCode(s)
+	for _, sig := range g.signatures(s, true).all() {
+		g.h.printf(declFormat, sig)
 	}
+	g.h.blank()
 	g.afterNS.printf(openHashFormat, g.emit.Namespace+scopeSep+s.name, g.emit.Namespace+scopeSep)
-}
-
-// openToName is ToName: the Canon name of a known member, else the wire.
-func (g *gen) openToName(s enumSpec) {
-	g.h.printf(openNameOpenFormat, s.name)
-	for _, m := range s.members {
-		g.h.linef(1, openNameTestFormat, s.name+scopeSep+m.name, quote(m.canon))
-	}
-	g.h.linef(1, openNameCloseLine)
-	g.h.line(closeBrace)
-	g.h.blank()
-}
-
-// openToCode is ToCode: the code of a known member, else nothing.
-func (g *gen) openToCode(s enumSpec) {
-	code := intType(*s.codes)
-	g.h.printf(openToCodeOpenFormat, code, s.name)
-	for _, m := range s.members {
-		g.h.linef(1, openToCodeTestFormat, s.name+scopeSep+m.name, code, m.code)
-	}
-	g.h.linef(1, returnNullopt)
-	g.h.line(closeBrace)
-	g.h.blank()
 }

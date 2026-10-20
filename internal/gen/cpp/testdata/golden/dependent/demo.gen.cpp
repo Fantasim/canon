@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -151,6 +152,68 @@ struct DemoAccess {
 };
 
 }  // namespace detail
+
+std::string_view ToName(Kind v) {
+    static constexpr std::array<std::string_view, 2> kNames = {"spawn", "despawn"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(Kind v) {
+    static constexpr std::array<std::string_view, 2> kWires = {"spawn", "despawn"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<Kind> KindFromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 2> kKeys = {"despawn", "spawn"};
+    static constexpr std::array<Kind, 2> kValues = {Kind::despawn, Kind::spawn};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
+
+std::string_view ToName(Kind3 v) {
+    static constexpr std::array<std::string_view, 5> kNames = {"a", "b", "c", "d", "e"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(Kind3 v) {
+    static constexpr std::array<std::string_view, 5> kWires = {"a", "b", "c", "d", "e"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<Kind3> Kind3FromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 5> kKeys = {"a", "b", "c", "d", "e"};
+    static constexpr std::array<Kind3, 5> kValues = {Kind3::a, Kind3::b, Kind3::c, Kind3::d, Kind3::e};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
 
 std::shared_ptr<const Event> Event::Load(const std::string& path, std::string& error) {
     auto out = std::make_shared<Event>();

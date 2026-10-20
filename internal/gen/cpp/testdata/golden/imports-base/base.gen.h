@@ -23,30 +23,9 @@ enum class Color : uint8_t {
 
 inline constexpr std::array<Color, 3> kColorMembers = {Color::red, Color::green, Color::blue};
 
-inline std::string_view ToName(Color v) {
-    switch (v) {
-    case Color::red: return "red";
-    case Color::green: return "green";
-    case Color::blue: return "blue";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Color v) {
-    switch (v) {
-    case Color::red: return "red";
-    case Color::green: return "green";
-    case Color::blue: return "blue";
-    }
-    return {};
-}
-
-inline std::optional<Color> ColorFromWire(std::string_view wire) {
-    if (wire == "red") return Color::red;
-    if (wire == "green") return Color::green;
-    if (wire == "blue") return Color::blue;
-    return std::nullopt;
-}
+std::string_view ToName(Color v);
+std::string_view ToWire(Color v);
+std::optional<Color> ColorFromWire(std::string_view wire);
 
 enum class PaintKind : uint8_t {
     solid,
@@ -55,27 +34,9 @@ enum class PaintKind : uint8_t {
 
 inline constexpr std::array<PaintKind, 2> kPaintKindMembers = {PaintKind::solid, PaintKind::clear};
 
-inline std::string_view ToName(PaintKind v) {
-    switch (v) {
-    case PaintKind::solid: return "solid";
-    case PaintKind::clear: return "clear";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(PaintKind v) {
-    switch (v) {
-    case PaintKind::solid: return "solid";
-    case PaintKind::clear: return "clear";
-    }
-    return {};
-}
-
-inline std::optional<PaintKind> PaintKindFromWire(std::string_view wire) {
-    if (wire == "solid") return PaintKind::solid;
-    if (wire == "clear") return PaintKind::clear;
-    return std::nullopt;
-}
+std::string_view ToName(PaintKind v);
+std::string_view ToWire(PaintKind v);
+std::optional<PaintKind> PaintKindFromWire(std::string_view wire);
 
 enum class ShadeBranch : uint8_t {
     red,

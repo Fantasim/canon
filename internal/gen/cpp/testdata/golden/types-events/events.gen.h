@@ -25,27 +25,9 @@ enum class RollMode : uint8_t {
 
 inline constexpr std::array<RollMode, 2> kRollModeMembers = {RollMode::authoritative, RollMode::local_budget};
 
-inline std::string_view ToName(RollMode v) {
-    switch (v) {
-    case RollMode::authoritative: return "authoritative";
-    case RollMode::local_budget: return "local_budget";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(RollMode v) {
-    switch (v) {
-    case RollMode::authoritative: return "authoritative";
-    case RollMode::local_budget: return "local_budget";
-    }
-    return {};
-}
-
-inline std::optional<RollMode> RollModeFromWire(std::string_view wire) {
-    if (wire == "authoritative") return RollMode::authoritative;
-    if (wire == "local_budget") return RollMode::local_budget;
-    return std::nullopt;
-}
+std::string_view ToName(RollMode v);
+std::string_view ToWire(RollMode v);
+std::optional<RollMode> RollModeFromWire(std::string_view wire);
 
 enum class EventKindKind : uint8_t {
     spawn_monster,
@@ -55,30 +37,9 @@ enum class EventKindKind : uint8_t {
 
 inline constexpr std::array<EventKindKind, 3> kEventKindKindMembers = {EventKindKind::spawn_monster, EventKindKind::spawn_item, EventKindKind::monster_drop_inject};
 
-inline std::string_view ToName(EventKindKind v) {
-    switch (v) {
-    case EventKindKind::spawn_monster: return "spawn_monster";
-    case EventKindKind::spawn_item: return "spawn_item";
-    case EventKindKind::monster_drop_inject: return "monster_drop_inject";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(EventKindKind v) {
-    switch (v) {
-    case EventKindKind::spawn_monster: return "spawn_monster";
-    case EventKindKind::spawn_item: return "spawn_item";
-    case EventKindKind::monster_drop_inject: return "monster_drop_inject";
-    }
-    return {};
-}
-
-inline std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire) {
-    if (wire == "spawn_monster") return EventKindKind::spawn_monster;
-    if (wire == "spawn_item") return EventKindKind::spawn_item;
-    if (wire == "monster_drop_inject") return EventKindKind::monster_drop_inject;
-    return std::nullopt;
-}
+std::string_view ToName(EventKindKind v);
+std::string_view ToWire(EventKindKind v);
+std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire);
 
 class Rect;
 class EventKind;

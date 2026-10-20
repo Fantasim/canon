@@ -20,27 +20,9 @@ enum class Tone : uint8_t {
 
 inline constexpr std::array<Tone, 2> kToneMembers = {Tone::red, Tone::blue};
 
-inline std::string_view ToName(Tone v) {
-    switch (v) {
-    case Tone::red: return "red";
-    case Tone::blue: return "blue";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Tone v) {
-    switch (v) {
-    case Tone::red: return "red";
-    case Tone::blue: return "blue";
-    }
-    return {};
-}
-
-inline std::optional<Tone> ToneFromWire(std::string_view wire) {
-    if (wire == "red") return Tone::red;
-    if (wire == "blue") return Tone::blue;
-    return std::nullopt;
-}
+std::string_view ToName(Tone v);
+std::string_view ToWire(Tone v);
+std::optional<Tone> ToneFromWire(std::string_view wire);
 
 namespace detail {
 struct BaseAccess;

@@ -300,6 +300,72 @@ struct EventsAccess {
 
 }  // namespace detail
 
+std::string_view ToName(RollMode v) {
+    static constexpr std::array<std::string_view, 2> kNames = {"authoritative", "local_budget"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(RollMode v) {
+    static constexpr std::array<std::string_view, 2> kWires = {"authoritative", "local_budget"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<RollMode> RollModeFromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 2> kKeys = {"authoritative", "local_budget"};
+    static constexpr std::array<RollMode, 2> kValues = {RollMode::authoritative, RollMode::local_budget};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
+
+std::string_view ToName(EventKindKind v) {
+    static constexpr std::array<std::string_view, 3> kNames = {"spawn_monster", "spawn_item", "monster_drop_inject"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(EventKindKind v) {
+    static constexpr std::array<std::string_view, 3> kWires = {"spawn_monster", "spawn_item", "monster_drop_inject"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 3> kKeys = {"monster_drop_inject", "spawn_item", "spawn_monster"};
+    static constexpr std::array<EventKindKind, 3> kValues = {
+        EventKindKind::monster_drop_inject,
+        EventKindKind::spawn_item,
+        EventKindKind::spawn_monster,
+    };
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
+
 std::optional<Rect> Rect::Decode(const nlohmann::json& v, std::string& error) {
     canon::json::Decoder dec("Rect");
     dec.Push("$");

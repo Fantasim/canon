@@ -122,6 +122,7 @@ func (g *gen) snapshotLoader(walks []class) {
 
 // outOfLine defines the members the header only declares, in class order (CODEGEN.md §2.7).
 func (g *gen) outOfLine() {
+	g.enumDefinitions()
 	if g.baked() {
 		g.bakedDefinitions()
 		return

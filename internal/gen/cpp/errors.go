@@ -209,7 +209,6 @@ const (
 	cellsFormat           = "inline constexpr std::array<%s, %d> %s = %s;\n"
 	constexprPrefix       = "inline constexpr "
 	maybeUnused           = "[[maybe_unused]] "
-	idFromWireDeclFormat  = "std::optional<%s> %s(std::string_view key);\n"
 	idEnumDocFormat       = "The key of an entry of %s. Store or send ToWire(id): the underlying value is\na position, not an id, and changes when entry files move."
 	idJSONDocFormat       = "nlohmann/json would write the position: write ToWire(id), read %s(s)."
 	idToJSONDeleted       = "template <typename J> void to_json(J&, %s) = delete;"
@@ -261,12 +260,6 @@ const (
 		"    friend std::string_view %[3]s(const %[1]s& v) noexcept;\n\n" + privateLabel + "\n    std::string %[2]s;\n};\n\n"
 	openDefineFormat     = "inline const %[1]s %[1]s::%[2]s{%[3]s};"
 	openToWireFormat     = "inline std::string_view " + ir.CppToWire + "(const %[1]s& v) noexcept { return v.%[2]s; }\n\n"
-	openNameOpenFormat   = "inline std::string_view " + ir.CppToName + "(const %s& v) {\n"
-	openNameTestFormat   = "if (v == %s) return %s;"
-	openNameCloseLine    = "return " + ir.CppToWire + "(v);"
-	openKnownFormat      = "inline bool " + ir.CppIsKnown + "(const %[1]s& v) { return %[2]s(" + ir.CppToWire + "(v)).has_value(); }\n\n"
-	openToCodeOpenFormat = "inline std::optional<%s> " + ir.CppToCode + "(const %s& v) {\n"
-	openToCodeTestFormat = "if (v == %s) return static_cast<%s>(%d);"
 	openHashFormat       = "\ntemplate <>\nstruct std::hash<%[1]s> {\n    size_t operator()(const %[1]s& v) const noexcept { return std::hash<std::string_view>{}(%[2]s" + ir.CppToWire + "(v)); }\n};\n"
 	openBitMemberFormat  = "static_cast<uint64_t>(*" + ir.CppToCode + "(m))"
 	openBitsTestFormat   = "if ((n & " + openBitMemberFormat + ") != 0) %s.push_back(m);"
@@ -279,4 +272,21 @@ const (
 	textDeclFormat       = "std::optional<%s> %s(std::string_view text, std::string& error);"
 	dependentEqualFormat = "%s == %s"
 	dependentOrSep       = " || "
+)
+
+// The formats of the enum helpers the .gen.cpp defines as tables, and of a @codes enum's ordinal (CODEGEN.md §5.2, §5.3; DECISIONS 383).
+const (
+	nameSigFormat       = "std::string_view %s(%s v)"
+	fromWireSigFormat   = "std::optional<%s> %s(std::string_view wire)"
+	fromCodeSigFormat   = "std::optional<%s> %s(%s code)"
+	ordinalSigFormat    = "inline constexpr size_t %s(%s v)"
+	openNameSigFormat   = "std::string_view " + ir.CppToName + "(const %s& v)"
+	openKnownSigFormat  = "bool " + ir.CppIsKnown + "(const %s& v)"
+	openToCodeSigFormat = "std::optional<%s> " + ir.CppToCode + "(const %s& v)"
+	idFromWireSigFormat = "std::optional<%s> %s(std::string_view key)"
+	tableLineFormat     = indentUnit + "static constexpr std::array<%s, %d> %s = %s;\n"
+	wireKeyLineFormat   = indentUnit + "const std::string_view key = %s(v);\n"
+	codeLineFormat      = indentUnit + "const %[1]s code = static_cast<%[1]s>(v);\n"
+	sizeCallFormat      = "%s.size()"
+	localTableFormat    = "constexpr std::array<%s, %d> %s = %s;\n"
 )

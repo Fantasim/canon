@@ -124,18 +124,19 @@ const (
 const (
 	enumOpenFormat     = "enum class %s : %s {\n"
 	enumMemberFormat   = "%s,"
-	enumCodeFormat     = "%s = %d,"
+	enumCodeFormat     = "%s = %s,"
 	membersArrayFormat = "inline constexpr std::array<%s, %d> %s = {%s};\n"
-	nameFuncOpenFormat = "inline std::string_view %s(%s v) {\n"
 	switchFormat       = "switch (%s) {"
 	enumArg            = "v"
 	codeField          = "code"
-	caseReturnFormat   = "case %s: return %s;"
-	returnEmpty        = "return {};"
-	fromWireOpenFormat = "inline std::optional<%s> %s(std::string_view wire) {\n"
-	fromCodeOpenFormat = "inline std::optional<%s> %s(%s code) {\n"
-	wireTestFormat     = "if (wire == %s) return %s;"
-	returnNullopt      = "return std::nullopt;"
+	cppSize            = "size_t"
+	keysTable          = "kKeys" // the static constexpr locals of the helpers the .gen.cpp defines (DECISIONS 383)
+	valuesTable        = "kValues"
+	namesTable         = "kNames"
+	wiresTable         = "kWires"
+	idsTable           = "kIds"
+	wireParam          = "wire"
+	loVar              = "lo"
 )
 
 // Classes and getters (CODEGEN.md §3.3, §5.4, §5.5, §7.2).
@@ -397,9 +398,7 @@ const (
 	cppNullopt         = "std::nullopt"
 	ordinalFormat      = "const size_t %s = static_cast<size_t>(%s);"
 	ordinalCheckFormat = "if (%s >= %d) std::abort();"
-	ordinalVarDecl     = "size_t %s = 0;"
-	ordinalCaseFormat  = "case %s: %s = %d; break;"
-	abortDefault       = "default: std::abort();"
+	ordinalCallFormat  = "const size_t %s = %s(%s);"
 	emptyCheckFormat   = "if (static_cast<int64_t>(%s) >= 0) std::abort();" // not an unsigned >= 0: -Wtype-limits
 	getterOpenFormat   = "%s %s(%s) const {"
 	initNull           = " = nullptr"

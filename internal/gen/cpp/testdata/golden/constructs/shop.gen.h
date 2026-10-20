@@ -68,33 +68,9 @@ enum class Tone : uint8_t {
 
 inline constexpr std::array<Tone, 4> kToneMembers = {Tone::warning, Tone::info, Tone::series_1, Tone::legacy};
 
-inline std::string_view ToName(Tone v) {
-    switch (v) {
-    case Tone::warning: return "warning";
-    case Tone::info: return "info";
-    case Tone::series_1: return "series_1";
-    case Tone::legacy: return "legacy";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Tone v) {
-    switch (v) {
-    case Tone::warning: return "warning";
-    case Tone::info: return "info";
-    case Tone::series_1: return "series-1";
-    case Tone::legacy: return "legacy";
-    }
-    return {};
-}
-
-inline std::optional<Tone> ToneFromWire(std::string_view wire) {
-    if (wire == "warning") return Tone::warning;
-    if (wire == "info") return Tone::info;
-    if (wire == "series-1") return Tone::series_1;
-    if (wire == "legacy") return Tone::legacy;
-    return std::nullopt;
-}
+std::string_view ToName(Tone v);
+std::string_view ToWire(Tone v);
+std::optional<Tone> ToneFromWire(std::string_view wire);
 
 enum class Element : uint16_t {
     FIRE = 1,
@@ -103,35 +79,30 @@ enum class Element : uint16_t {
 
 inline constexpr std::array<Element, 2> kElementMembers = {Element::FIRE, Element::WATER};
 
-inline std::string_view ToName(Element v) {
-    switch (v) {
-    case Element::FIRE: return "FIRE";
-    case Element::WATER: return "WATER";
+namespace detail {
+inline constexpr std::array<uint16_t, 2> kElementCodes = {1, 300};
+inline constexpr std::array<uint32_t, 2> kElementCodeOrdinals = {0, 1};
+inline constexpr size_t ElementOrdinal(Element v) {
+    const uint16_t code = static_cast<uint16_t>(v);
+    size_t lo = 0;
+    size_t hi = kElementCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kElementCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kElementCodes.size() && kElementCodes[lo] == code) return kElementCodeOrdinals[lo];
+    return kElementCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Element v) {
-    switch (v) {
-    case Element::FIRE: return "FIRE";
-    case Element::WATER: return "WATER";
-    }
-    return {};
-}
-
-inline std::optional<Element> ElementFromWire(std::string_view wire) {
-    if (wire == "FIRE") return Element::FIRE;
-    if (wire == "WATER") return Element::WATER;
-    return std::nullopt;
-}
-
-inline std::optional<Element> ElementFromCode(uint16_t code) {
-    switch (code) {
-    case 1: return Element::FIRE;
-    case 300: return Element::WATER;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Element v);
+std::string_view ToWire(Element v);
+std::optional<Element> ElementFromWire(std::string_view wire);
+std::optional<Element> ElementFromCode(uint16_t code);
 
 enum class Kind1 : uint32_t {
     IK1_WEAPON = 1,
@@ -140,35 +111,30 @@ enum class Kind1 : uint32_t {
 
 inline constexpr std::array<Kind1, 2> kKind1Members = {Kind1::IK1_WEAPON, Kind1::GENERAL};
 
-inline std::string_view ToName(Kind1 v) {
-    switch (v) {
-    case Kind1::IK1_WEAPON: return "IK1_WEAPON";
-    case Kind1::GENERAL: return "GENERAL";
+namespace detail {
+inline constexpr std::array<uint32_t, 2> kKind1Codes = {1, 4};
+inline constexpr std::array<uint32_t, 2> kKind1CodeOrdinals = {0, 1};
+inline constexpr size_t Kind1Ordinal(Kind1 v) {
+    const uint32_t code = static_cast<uint32_t>(v);
+    size_t lo = 0;
+    size_t hi = kKind1Codes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKind1Codes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kKind1Codes.size() && kKind1Codes[lo] == code) return kKind1CodeOrdinals[lo];
+    return kKind1Codes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Kind1 v) {
-    switch (v) {
-    case Kind1::IK1_WEAPON: return "IK1_WEAPON";
-    case Kind1::GENERAL: return "GENERAL";
-    }
-    return {};
-}
-
-inline std::optional<Kind1> Kind1FromWire(std::string_view wire) {
-    if (wire == "IK1_WEAPON") return Kind1::IK1_WEAPON;
-    if (wire == "GENERAL") return Kind1::GENERAL;
-    return std::nullopt;
-}
-
-inline std::optional<Kind1> Kind1FromCode(uint32_t code) {
-    switch (code) {
-    case 1: return Kind1::IK1_WEAPON;
-    case 4: return Kind1::GENERAL;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Kind1 v);
+std::string_view ToWire(Kind1 v);
+std::optional<Kind1> Kind1FromWire(std::string_view wire);
+std::optional<Kind1> Kind1FromCode(uint32_t code);
 
 enum class Flag : uint8_t {
     a = 1,
@@ -178,39 +144,30 @@ enum class Flag : uint8_t {
 
 inline constexpr std::array<Flag, 3> kFlagMembers = {Flag::a, Flag::c, Flag::b};
 
-inline std::string_view ToName(Flag v) {
-    switch (v) {
-    case Flag::a: return "a";
-    case Flag::c: return "c";
-    case Flag::b: return "b";
+namespace detail {
+inline constexpr std::array<uint8_t, 3> kFlagCodes = {1, 2, 4};
+inline constexpr std::array<uint32_t, 3> kFlagCodeOrdinals = {0, 2, 1};
+inline constexpr size_t FlagOrdinal(Flag v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kFlagCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kFlagCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kFlagCodes.size() && kFlagCodes[lo] == code) return kFlagCodeOrdinals[lo];
+    return kFlagCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Flag v) {
-    switch (v) {
-    case Flag::a: return "a";
-    case Flag::c: return "c";
-    case Flag::b: return "b";
-    }
-    return {};
-}
-
-inline std::optional<Flag> FlagFromWire(std::string_view wire) {
-    if (wire == "a") return Flag::a;
-    if (wire == "c") return Flag::c;
-    if (wire == "b") return Flag::b;
-    return std::nullopt;
-}
-
-inline std::optional<Flag> FlagFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return Flag::a;
-    case 4: return Flag::c;
-    case 2: return Flag::b;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Flag v);
+std::string_view ToWire(Flag v);
+std::optional<Flag> FlagFromWire(std::string_view wire);
+std::optional<Flag> FlagFromCode(uint8_t code);
 
 enum class RewardKind : uint8_t {
     item,
@@ -221,30 +178,9 @@ enum class RewardKind : uint8_t {
 
 inline constexpr std::array<RewardKind, 3> kRewardKindMembers = {RewardKind::item, RewardKind::Coins, RewardKind::nothing};
 
-inline std::string_view ToName(RewardKind v) {
-    switch (v) {
-    case RewardKind::item: return "item";
-    case RewardKind::Coins: return "gold";
-    case RewardKind::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(RewardKind v) {
-    switch (v) {
-    case RewardKind::item: return "item";
-    case RewardKind::Coins: return "gold";
-    case RewardKind::nothing: return "none";
-    }
-    return {};
-}
-
-inline std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
-    if (wire == "item") return RewardKind::item;
-    if (wire == "gold") return RewardKind::Coins;
-    if (wire == "none") return RewardKind::nothing;
-    return std::nullopt;
-}
+std::string_view ToName(RewardKind v);
+std::string_view ToWire(RewardKind v);
+std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 enum class BadgeKind : uint8_t {
     star,
@@ -253,27 +189,9 @@ enum class BadgeKind : uint8_t {
 
 inline constexpr std::array<BadgeKind, 2> kBadgeKindMembers = {BadgeKind::star, BadgeKind::plain};
 
-inline std::string_view ToName(BadgeKind v) {
-    switch (v) {
-    case BadgeKind::star: return "star";
-    case BadgeKind::plain: return "plain";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(BadgeKind v) {
-    switch (v) {
-    case BadgeKind::star: return "star";
-    case BadgeKind::plain: return "plain";
-    }
-    return {};
-}
-
-inline std::optional<BadgeKind> BadgeKindFromWire(std::string_view wire) {
-    if (wire == "star") return BadgeKind::star;
-    if (wire == "plain") return BadgeKind::plain;
-    return std::nullopt;
-}
+std::string_view ToName(BadgeKind v);
+std::string_view ToWire(BadgeKind v);
+std::optional<BadgeKind> BadgeKindFromWire(std::string_view wire);
 
 inline constexpr Tone DEFAULT_TONE = Tone::info;
 
@@ -483,12 +401,8 @@ public:
     }
 
     const std::string* LabelIn(Element delete_) const {
-        size_t i0 = 0;
-        switch (delete_) {
-        case Element::FIRE: i0 = 0; break;
-        case Element::WATER: i0 = 1; break;
-        default: std::abort();
-        }
+        const size_t i0 = detail::ElementOrdinal(delete_);
+        if (i0 >= 2) std::abort();
         return labelIn_[i0] ? &*labelIn_[i0] : nullptr;
     }
 

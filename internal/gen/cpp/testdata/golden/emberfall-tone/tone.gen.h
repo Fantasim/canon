@@ -18,27 +18,9 @@ enum class Tone : uint8_t {
 
 inline constexpr std::array<Tone, 2> kToneMembers = {Tone::soft, Tone::loud};
 
-inline std::string_view ToName(Tone v) {
-    switch (v) {
-    case Tone::soft: return "soft";
-    case Tone::loud: return "loud";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Tone v) {
-    switch (v) {
-    case Tone::soft: return "soft";
-    case Tone::loud: return "loud";
-    }
-    return {};
-}
-
-inline std::optional<Tone> ToneFromWire(std::string_view wire) {
-    if (wire == "soft") return Tone::soft;
-    if (wire == "loud") return Tone::loud;
-    return std::nullopt;
-}
+std::string_view ToName(Tone v);
+std::string_view ToWire(Tone v);
+std::optional<Tone> ToneFromWire(std::string_view wire);
 
 class Chime;
 

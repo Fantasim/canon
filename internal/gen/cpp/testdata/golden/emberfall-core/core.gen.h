@@ -25,27 +25,9 @@ enum class RewardKind : uint8_t {
 
 inline constexpr std::array<RewardKind, 2> kRewardKindMembers = {RewardKind::coins, RewardKind::nothing};
 
-inline std::string_view ToName(RewardKind v) {
-    switch (v) {
-    case RewardKind::coins: return "coins";
-    case RewardKind::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(RewardKind v) {
-    switch (v) {
-    case RewardKind::coins: return "coins";
-    case RewardKind::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
-    if (wire == "coins") return RewardKind::coins;
-    if (wire == "nothing") return RewardKind::nothing;
-    return std::nullopt;
-}
+std::string_view ToName(RewardKind v);
+std::string_view ToWire(RewardKind v);
+std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 enum class ParamBranch : uint8_t {
     soft,
@@ -59,14 +41,7 @@ enum class StatusId : uint8_t {
     closed,
 };
 
-inline std::string_view ToWire(StatusId v) {
-    switch (v) {
-    case StatusId::open: return "open";
-    case StatusId::closed: return "closed";
-    }
-    return {};
-}
-
+std::string_view ToWire(StatusId v);
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).

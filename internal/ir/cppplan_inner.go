@@ -4,11 +4,13 @@ import (
 	"slices"
 )
 
-// declareDetail declares detail's access struct with its loaders and resolvers (a baked emit's Data, Build, Get and constexpr cells), the make struct (§5.14), the decoders when a class is decoded and the readers of other packages' classes (§2.8), each dependent type's Decode<Alias>, each translated method's pure function <Class>_<fn> (CODEGEN.md §2.7 step 4, §3.3, §5.6, §7.6), and the input namespace (§7.7).
+// declareDetail declares detail's access struct with its loaders and resolvers (a baked emit's Data, Build, Get and constexpr cells), the @codes enums' ordinals and the opened enums' wire tables (§5.2), the make struct (§5.14), the decoders when a class is decoded and the readers of other packages' classes (§2.8), each dependent type's Decode<Alias>, each translated method's pure function <Class>_<fn> (CODEGEN.md §2.7 step 4, §3.3, §5.6, §7.6), and the input namespace (§7.7).
 func (pl *CppNamePlan) declareDetail() {
 	sc := pl.scope(cppDetail)
 	access := pl.AccessName()
 	pl.shareInner(sc, access, pl.p.Name, nil)
+	pl.declareOrdinals(sc)
+	pl.declareWireTables(sc)
 	pl.declareMake(sc)
 	if pl.baked() {
 		pl.declareBakedDetail(sc, pl.accessScope(access))

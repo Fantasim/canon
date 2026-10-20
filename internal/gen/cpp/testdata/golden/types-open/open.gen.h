@@ -47,21 +47,9 @@ inline const std::array<Dst, 3> kDstMembers = {Dst::hp, Dst::mp, Dst::old};
 
 inline std::string_view ToWire(const Dst& v) noexcept { return v.wire_; }
 
-inline std::string_view ToName(const Dst& v) {
-    if (v == Dst::hp) return "hp";
-    if (v == Dst::mp) return "mp";
-    if (v == Dst::old) return "old";
-    return ToWire(v);
-}
-
-inline std::optional<Dst> DstFromWire(std::string_view wire) {
-    if (wire == "DST_HP") return Dst::hp;
-    if (wire == "DST_MP") return Dst::mp;
-    if (wire == "DST_OLD") return Dst::old;
-    return std::nullopt;
-}
-
-inline bool IsKnown(const Dst& v) { return DstFromWire(ToWire(v)).has_value(); }
+std::string_view ToName(const Dst& v);
+bool IsKnown(const Dst& v);
+std::optional<Dst> DstFromWire(std::string_view wire);
 
 class Stat {
 public:
@@ -89,37 +77,11 @@ inline const std::array<Stat, 3> kStatMembers = {Stat::atk, Stat::def, Stat::spd
 
 inline std::string_view ToWire(const Stat& v) noexcept { return v.wire_; }
 
-inline std::string_view ToName(const Stat& v) {
-    if (v == Stat::atk) return "atk";
-    if (v == Stat::def) return "def";
-    if (v == Stat::spd) return "spd";
-    return ToWire(v);
-}
-
-inline std::optional<Stat> StatFromWire(std::string_view wire) {
-    if (wire == "ATK") return Stat::atk;
-    if (wire == "DEF") return Stat::def;
-    if (wire == "SPD") return Stat::spd;
-    return std::nullopt;
-}
-
-inline bool IsKnown(const Stat& v) { return StatFromWire(ToWire(v)).has_value(); }
-
-inline std::optional<uint16_t> ToCode(const Stat& v) {
-    if (v == Stat::atk) return static_cast<uint16_t>(1);
-    if (v == Stat::def) return static_cast<uint16_t>(2);
-    if (v == Stat::spd) return static_cast<uint16_t>(4);
-    return std::nullopt;
-}
-
-inline std::optional<Stat> StatFromCode(uint16_t code) {
-    switch (code) {
-    case 1: return Stat::atk;
-    case 2: return Stat::def;
-    case 4: return Stat::spd;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(const Stat& v);
+bool IsKnown(const Stat& v);
+std::optional<Stat> StatFromWire(std::string_view wire);
+std::optional<uint16_t> ToCode(const Stat& v);
+std::optional<Stat> StatFromCode(uint16_t code);
 
 class Rank {
 public:
@@ -145,33 +107,11 @@ inline const std::array<Rank, 2> kRankMembers = {Rank::low, Rank::high};
 
 inline std::string_view ToWire(const Rank& v) noexcept { return v.wire_; }
 
-inline std::string_view ToName(const Rank& v) {
-    if (v == Rank::low) return "low";
-    if (v == Rank::high) return "high";
-    return ToWire(v);
-}
-
-inline std::optional<Rank> RankFromWire(std::string_view wire) {
-    if (wire == "low") return Rank::low;
-    if (wire == "high") return Rank::high;
-    return std::nullopt;
-}
-
-inline bool IsKnown(const Rank& v) { return RankFromWire(ToWire(v)).has_value(); }
-
-inline std::optional<uint8_t> ToCode(const Rank& v) {
-    if (v == Rank::low) return static_cast<uint8_t>(1);
-    if (v == Rank::high) return static_cast<uint8_t>(200);
-    return std::nullopt;
-}
-
-inline std::optional<Rank> RankFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return Rank::low;
-    case 200: return Rank::high;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(const Rank& v);
+bool IsKnown(const Rank& v);
+std::optional<Rank> RankFromWire(std::string_view wire);
+std::optional<uint8_t> ToCode(const Rank& v);
+std::optional<Rank> RankFromCode(uint8_t code);
 
 enum class ShadeBranch : uint8_t {
     hp,

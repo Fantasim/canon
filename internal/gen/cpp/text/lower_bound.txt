@@ -1,0 +1,15 @@
+%[1]s {
+%[2]s    size_t lo = 0;
+    size_t hi = %[3]s.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (%[3]s[mid] < %[4]s) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < %[3]s.size() && %[3]s[lo] == %[4]s) return %[5]s;
+    return %[6]s;
+}
+

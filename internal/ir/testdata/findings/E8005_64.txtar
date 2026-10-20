@@ -1,0 +1,19 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 383: an opened enum's sorted wires, detail::k<E>Wires in its .gen.cpp's unnamed namespace, go through the C++ name plan as a name local to that file, so a record renamed like them (which detail's name would hide) is E8005.
+-- a/a.canon --
+package a
+
+/// A destination.
+enum Dst { hp = "DST_HP", mp = "DST_MP" }
+
+/// Named like the wire table.
+record Other @cpp(name: "kDstWires") {
+  /// Its value.
+  v: Int
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types, open: [Dst] }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  cpp: kDstWires is generated for both a.Other and a.Dst; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

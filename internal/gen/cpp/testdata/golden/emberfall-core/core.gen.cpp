@@ -59,6 +59,44 @@ CoreAccess::Data CoreAccess::Build() {
 
 }  // namespace detail
 
+std::string_view ToName(RewardKind v) {
+    static constexpr std::array<std::string_view, 2> kNames = {"coins", "nothing"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kNames.size()) return {};
+    return kNames[i];
+}
+
+std::string_view ToWire(RewardKind v) {
+    static constexpr std::array<std::string_view, 2> kWires = {"coins", "nothing"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
+std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
+    static constexpr std::array<std::string_view, 2> kKeys = {"coins", "nothing"};
+    static constexpr std::array<RewardKind, 2> kValues = {RewardKind::coins, RewardKind::nothing};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    return std::nullopt;
+}
+
+std::string_view ToWire(StatusId v) {
+    static constexpr std::array<std::string_view, 2> kWires = {"open", "closed"};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
 std::optional<StatusId> StatusIdFromWire(std::string_view key) {
     static constexpr std::array<std::string_view, 2> kKeys = {"closed", "open"};
     static constexpr std::array<StatusId, 2> kIds = {StatusId::closed, StatusId::open};

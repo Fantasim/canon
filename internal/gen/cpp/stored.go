@@ -107,8 +107,7 @@ func (g *gen) lookupAccess(fn *ir.ExportFn, doms []domain) access {
 	}
 }
 
-// ordinalLines compute an argument's position in its domain: a Bool's value, an enum's or a
-// table id's index, a @codes enum's member by a switch over its codes.
+// ordinalLines compute an argument's position in its domain, aborting on a value that is no member (CODEGEN.md §5.2, §5.10).
 func (g *gen) ordinalLines(d domain, arg, ord string) []string {
 	switch {
 	case d.enum == nil && !d.id:
@@ -118,11 +117,7 @@ func (g *gen) ordinalLines(d domain, arg, ord string) []string {
 	case d.id || d.enum.Codes == nil:
 		return []string{fmt.Sprintf(ordinalFormat, ord, arg), fmt.Sprintf(ordinalCheckFormat, ord, len(d.keys))}
 	}
-	lines := []string{fmt.Sprintf(ordinalVarDecl, ord), fmt.Sprintf(switchFormat, arg)}
-	for i, m := range d.enum.Members {
-		lines = append(lines, fmt.Sprintf(ordinalCaseFormat, g.typeName(d.enum)+scopeSep+g.pl.Enumerator(m), ord, i))
-	}
-	return append(lines, abortDefault, closeBrace)
+	return []string{fmt.Sprintf(ordinalCallFormat, ord, g.enumHelpers(d.enum).Ordinal, arg), fmt.Sprintf(ordinalCheckFormat, ord, len(d.keys))}
 }
 
 // freeName is name, with `_` added until no parameter of fn is called so.

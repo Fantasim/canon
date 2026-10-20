@@ -20,12 +20,7 @@ namespace e::b {
 enum class ItemId : uint8_t {
 };
 
-inline std::string_view ToWire(ItemId v) {
-    switch (v) {
-    }
-    return {};
-}
-
+std::string_view ToWire(ItemId v);
 std::optional<ItemId> ItemIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read ItemIdFromWire(s).

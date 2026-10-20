@@ -71,6 +71,114 @@ struct RefdepAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kShapeWires = {"count", "none", "place"};
+constexpr std::array<std::string_view, 3> kShapeWireNames = {"count", "none_", "place"};
+}  // namespace
+}  // namespace detail
+
+std::string_view ToName(const Shape& v) {
+    const std::string_view key = ToWire(v);
+    size_t lo = 0;
+    size_t hi = detail::kShapeWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kShapeWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kShapeWires.size() && detail::kShapeWires[lo] == key) return detail::kShapeWireNames[lo];
+    return key;
+}
+
+bool IsKnown(const Shape& v) {
+    const std::string_view key = ToWire(v);
+    size_t lo = 0;
+    size_t hi = detail::kShapeWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kShapeWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kShapeWires.size() && detail::kShapeWires[lo] == key) return true;
+    return false;
+}
+
+std::optional<Shape> ShapeFromWire(std::string_view wire) {
+    size_t lo = 0;
+    size_t hi = detail::kShapeWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kShapeWires[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kShapeWires.size() && detail::kShapeWires[lo] == wire) return Shape(std::string(wire));
+    return std::nullopt;
+}
+
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kEventWires = {"e_beat", "e_day", "e_reach"};
+constexpr std::array<std::string_view, 3> kEventWireNames = {"beat_monster", "new_day", "reach_place"};
+}  // namespace
+}  // namespace detail
+
+std::string_view ToName(const Event& v) {
+    const std::string_view key = ToWire(v);
+    size_t lo = 0;
+    size_t hi = detail::kEventWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kEventWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return detail::kEventWireNames[lo];
+    return key;
+}
+
+bool IsKnown(const Event& v) {
+    const std::string_view key = ToWire(v);
+    size_t lo = 0;
+    size_t hi = detail::kEventWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kEventWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return true;
+    return false;
+}
+
+std::optional<Event> EventFromWire(std::string_view wire) {
+    size_t lo = 0;
+    size_t hi = detail::kEventWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kEventWires[mid] < wire) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == wire) return Event(std::string(wire));
+    return std::nullopt;
+}
+
 std::optional<Reward> Reward::Decode(const nlohmann::json& v, std::string& error) {
     canon::json::Decoder dec("Reward");
     dec.Push("$");

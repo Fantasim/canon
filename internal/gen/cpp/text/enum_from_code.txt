@@ -1,0 +1,6 @@
+%[1]s {
+    const size_t i = %[2]s(static_cast<%[3]s>(code));
+    if (i >= %[4]s.size()) return std::nullopt;
+    return %[4]s[i];
+}
+

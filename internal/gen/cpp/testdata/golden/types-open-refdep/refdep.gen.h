@@ -25,30 +25,9 @@ enum class Shape : uint8_t {
 
 inline constexpr std::array<Shape, 3> kShapeMembers = {Shape::count, Shape::place, Shape::none_};
 
-inline std::string_view ToName(Shape v) {
-    switch (v) {
-    case Shape::count: return "count";
-    case Shape::place: return "place";
-    case Shape::none_: return "none_";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Shape v) {
-    switch (v) {
-    case Shape::count: return "count";
-    case Shape::place: return "place";
-    case Shape::none_: return "none";
-    }
-    return {};
-}
-
-inline std::optional<Shape> ShapeFromWire(std::string_view wire) {
-    if (wire == "count") return Shape::count;
-    if (wire == "place") return Shape::place;
-    if (wire == "none") return Shape::none_;
-    return std::nullopt;
-}
+std::string_view ToName(Shape v);
+std::string_view ToWire(Shape v);
+std::optional<Shape> ShapeFromWire(std::string_view wire);
 
 class Event {
 public:
@@ -76,21 +55,9 @@ inline const std::array<Event, 3> kEventMembers = {Event::reach_place, Event::be
 
 inline std::string_view ToWire(const Event& v) noexcept { return v.wire_; }
 
-inline std::string_view ToName(const Event& v) {
-    if (v == Event::reach_place) return "reach_place";
-    if (v == Event::beat_monster) return "beat_monster";
-    if (v == Event::new_day) return "new_day";
-    return ToWire(v);
-}
-
-inline std::optional<Event> EventFromWire(std::string_view wire) {
-    if (wire == "e_reach") return Event::reach_place;
-    if (wire == "e_beat") return Event::beat_monster;
-    if (wire == "e_day") return Event::new_day;
-    return std::nullopt;
-}
-
-inline bool IsKnown(const Event& v) { return EventFromWire(ToWire(v)).has_value(); }
+std::string_view ToName(const Event& v);
+bool IsKnown(const Event& v);
+std::optional<Event> EventFromWire(std::string_view wire);
 
 enum class ParamBranch : uint8_t {
     count,

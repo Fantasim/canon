@@ -3,6 +3,7 @@
 
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -23,30 +24,9 @@ enum class Color : uint8_t {
 
 inline constexpr std::array<Color, 3> kColorMembers = {Color::red, Color::green, Color::blue};
 
-inline std::string_view ToName(Color v) {
-    switch (v) {
-    case Color::red: return "red";
-    case Color::green: return "green";
-    case Color::blue: return "blue";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Color v) {
-    switch (v) {
-    case Color::red: return "red";
-    case Color::green: return "green";
-    case Color::blue: return "blue";
-    }
-    return {};
-}
-
-inline std::optional<Color> ColorFromWire(std::string_view wire) {
-    if (wire == "red") return Color::red;
-    if (wire == "green") return Color::green;
-    if (wire == "blue") return Color::blue;
-    return std::nullopt;
-}
+std::string_view ToName(Color v);
+std::string_view ToWire(Color v);
+std::optional<Color> ColorFromWire(std::string_view wire);
 
 enum class Tier : uint8_t {
     low = 1,
@@ -56,39 +36,30 @@ enum class Tier : uint8_t {
 
 inline constexpr std::array<Tier, 3> kTierMembers = {Tier::low, Tier::mid, Tier::high};
 
-inline std::string_view ToName(Tier v) {
-    switch (v) {
-    case Tier::low: return "low";
-    case Tier::mid: return "mid";
-    case Tier::high: return "high";
+namespace detail {
+inline constexpr std::array<uint8_t, 3> kTierCodes = {1, 2, 3};
+inline constexpr std::array<uint32_t, 3> kTierCodeOrdinals = {0, 1, 2};
+inline constexpr size_t TierOrdinal(Tier v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kTierCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kTierCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kTierCodes.size() && kTierCodes[lo] == code) return kTierCodeOrdinals[lo];
+    return kTierCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Tier v) {
-    switch (v) {
-    case Tier::low: return "low";
-    case Tier::mid: return "mid";
-    case Tier::high: return "high";
-    }
-    return {};
-}
-
-inline std::optional<Tier> TierFromWire(std::string_view wire) {
-    if (wire == "low") return Tier::low;
-    if (wire == "mid") return Tier::mid;
-    if (wire == "high") return Tier::high;
-    return std::nullopt;
-}
-
-inline std::optional<Tier> TierFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return Tier::low;
-    case 2: return Tier::mid;
-    case 3: return Tier::high;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Tier v);
+std::string_view ToWire(Tier v);
+std::optional<Tier> TierFromWire(std::string_view wire);
+std::optional<Tier> TierFromCode(uint8_t code);
 
 class Config;
 

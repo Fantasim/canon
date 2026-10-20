@@ -52,63 +52,30 @@ enum class EventType : uint8_t {
 
 inline constexpr std::array<EventType, 9> kEventTypeMembers = {EventType::item_created, EventType::mail_item_received, EventType::item_consumed, EventType::penya_drops, EventType::trade_penya, EventType::server_lifecycle, EventType::farm_events, EventType::sovereign_events, EventType::world_boss_spawns};
 
-inline std::string_view ToName(EventType v) {
-    switch (v) {
-    case EventType::item_created: return "item_created";
-    case EventType::mail_item_received: return "mail_item_received";
-    case EventType::item_consumed: return "item_consumed";
-    case EventType::penya_drops: return "penya_drops";
-    case EventType::trade_penya: return "trade_penya";
-    case EventType::server_lifecycle: return "server_lifecycle";
-    case EventType::farm_events: return "farm_events";
-    case EventType::sovereign_events: return "sovereign_events";
-    case EventType::world_boss_spawns: return "world_boss_spawns";
+namespace detail {
+inline constexpr std::array<uint8_t, 9> kEventTypeCodes = {11, 20, 31, 70, 71, 110, 151, 152, 156};
+inline constexpr std::array<uint32_t, 9> kEventTypeCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+inline constexpr size_t EventTypeOrdinal(EventType v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kEventTypeCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kEventTypeCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kEventTypeCodes.size() && kEventTypeCodes[lo] == code) return kEventTypeCodeOrdinals[lo];
+    return kEventTypeCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(EventType v) {
-    switch (v) {
-    case EventType::item_created: return "item_created";
-    case EventType::mail_item_received: return "mail_item_received";
-    case EventType::item_consumed: return "item_consumed";
-    case EventType::penya_drops: return "penya_drops";
-    case EventType::trade_penya: return "trade_penya";
-    case EventType::server_lifecycle: return "server_lifecycle";
-    case EventType::farm_events: return "farm_events";
-    case EventType::sovereign_events: return "sovereign_events";
-    case EventType::world_boss_spawns: return "world_boss_spawns";
-    }
-    return {};
-}
-
-inline std::optional<EventType> EventTypeFromWire(std::string_view wire) {
-    if (wire == "item_created") return EventType::item_created;
-    if (wire == "mail_item_received") return EventType::mail_item_received;
-    if (wire == "item_consumed") return EventType::item_consumed;
-    if (wire == "penya_drops") return EventType::penya_drops;
-    if (wire == "trade_penya") return EventType::trade_penya;
-    if (wire == "server_lifecycle") return EventType::server_lifecycle;
-    if (wire == "farm_events") return EventType::farm_events;
-    if (wire == "sovereign_events") return EventType::sovereign_events;
-    if (wire == "world_boss_spawns") return EventType::world_boss_spawns;
-    return std::nullopt;
-}
-
-inline std::optional<EventType> EventTypeFromCode(uint8_t code) {
-    switch (code) {
-    case 11: return EventType::item_created;
-    case 20: return EventType::mail_item_received;
-    case 31: return EventType::item_consumed;
-    case 70: return EventType::penya_drops;
-    case 71: return EventType::trade_penya;
-    case 110: return EventType::server_lifecycle;
-    case 151: return EventType::farm_events;
-    case 152: return EventType::sovereign_events;
-    case 156: return EventType::world_boss_spawns;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(EventType v);
+std::string_view ToWire(EventType v);
+std::optional<EventType> EventTypeFromWire(std::string_view wire);
+std::optional<EventType> EventTypeFromCode(uint8_t code);
 
 /// A ring's drop and WARN policy, carried per event. It does not size the ring.
 enum class Tier : uint8_t {
@@ -124,47 +91,30 @@ enum class Tier : uint8_t {
 
 inline constexpr std::array<Tier, 5> kTierMembers = {Tier::HOT, Tier::WARM, Tier::COOL, Tier::TINY, Tier::READONLY};
 
-inline std::string_view ToName(Tier v) {
-    switch (v) {
-    case Tier::HOT: return "HOT";
-    case Tier::WARM: return "WARM";
-    case Tier::COOL: return "COOL";
-    case Tier::TINY: return "TINY";
-    case Tier::READONLY: return "READONLY";
+namespace detail {
+inline constexpr std::array<uint8_t, 5> kTierCodes = {0, 1, 2, 3, 4};
+inline constexpr std::array<uint32_t, 5> kTierCodeOrdinals = {0, 1, 2, 3, 4};
+inline constexpr size_t TierOrdinal(Tier v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kTierCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kTierCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kTierCodes.size() && kTierCodes[lo] == code) return kTierCodeOrdinals[lo];
+    return kTierCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Tier v) {
-    switch (v) {
-    case Tier::HOT: return "HOT";
-    case Tier::WARM: return "WARM";
-    case Tier::COOL: return "COOL";
-    case Tier::TINY: return "TINY";
-    case Tier::READONLY: return "READONLY";
-    }
-    return {};
-}
-
-inline std::optional<Tier> TierFromWire(std::string_view wire) {
-    if (wire == "HOT") return Tier::HOT;
-    if (wire == "WARM") return Tier::WARM;
-    if (wire == "COOL") return Tier::COOL;
-    if (wire == "TINY") return Tier::TINY;
-    if (wire == "READONLY") return Tier::READONLY;
-    return std::nullopt;
-}
-
-inline std::optional<Tier> TierFromCode(uint8_t code) {
-    switch (code) {
-    case 0: return Tier::HOT;
-    case 1: return Tier::WARM;
-    case 2: return Tier::COOL;
-    case 3: return Tier::TINY;
-    case 4: return Tier::READONLY;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Tier v);
+std::string_view ToWire(Tier v);
+std::optional<Tier> TierFromWire(std::string_view wire);
+std::optional<Tier> TierFromCode(uint8_t code);
 
 /// A process that owns telemetry rings. The code is the top byte of a producer_id.
 enum class Producer : uint8_t {
@@ -179,55 +129,30 @@ enum class Producer : uint8_t {
 
 inline constexpr std::array<Producer, 7> kProducerMembers = {Producer::WorldServer, Producer::CoreServer, Producer::DatabaseServer, Producer::LoginServer, Producer::CacheServer, Producer::DataIngester, Producer::ItemTool};
 
-inline std::string_view ToName(Producer v) {
-    switch (v) {
-    case Producer::WorldServer: return "WorldServer";
-    case Producer::CoreServer: return "CoreServer";
-    case Producer::DatabaseServer: return "DatabaseServer";
-    case Producer::LoginServer: return "LoginServer";
-    case Producer::CacheServer: return "CacheServer";
-    case Producer::DataIngester: return "DataIngester";
-    case Producer::ItemTool: return "ItemTool";
+namespace detail {
+inline constexpr std::array<uint8_t, 7> kProducerCodes = {1, 2, 3, 4, 5, 6, 7};
+inline constexpr std::array<uint32_t, 7> kProducerCodeOrdinals = {0, 1, 2, 3, 4, 5, 6};
+inline constexpr size_t ProducerOrdinal(Producer v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kProducerCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kProducerCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kProducerCodes.size() && kProducerCodes[lo] == code) return kProducerCodeOrdinals[lo];
+    return kProducerCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(Producer v) {
-    switch (v) {
-    case Producer::WorldServer: return "WorldServer";
-    case Producer::CoreServer: return "CoreServer";
-    case Producer::DatabaseServer: return "DatabaseServer";
-    case Producer::LoginServer: return "LoginServer";
-    case Producer::CacheServer: return "CacheServer";
-    case Producer::DataIngester: return "DataIngester";
-    case Producer::ItemTool: return "ItemTool";
-    }
-    return {};
-}
-
-inline std::optional<Producer> ProducerFromWire(std::string_view wire) {
-    if (wire == "WorldServer") return Producer::WorldServer;
-    if (wire == "CoreServer") return Producer::CoreServer;
-    if (wire == "DatabaseServer") return Producer::DatabaseServer;
-    if (wire == "LoginServer") return Producer::LoginServer;
-    if (wire == "CacheServer") return Producer::CacheServer;
-    if (wire == "DataIngester") return Producer::DataIngester;
-    if (wire == "ItemTool") return Producer::ItemTool;
-    return std::nullopt;
-}
-
-inline std::optional<Producer> ProducerFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return Producer::WorldServer;
-    case 2: return Producer::CoreServer;
-    case 3: return Producer::DatabaseServer;
-    case 4: return Producer::LoginServer;
-    case 5: return Producer::CacheServer;
-    case 6: return Producer::DataIngester;
-    case 7: return Producer::ItemTool;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(Producer v);
+std::string_view ToWire(Producer v);
+std::optional<Producer> ProducerFromWire(std::string_view wire);
+std::optional<Producer> ProducerFromCode(uint8_t code);
 
 /// How the client enqueues an event.
 enum class Enqueue : uint8_t {
@@ -239,27 +164,9 @@ enum class Enqueue : uint8_t {
 
 inline constexpr std::array<Enqueue, 2> kEnqueueMembers = {Enqueue::generated, Enqueue::internal};
 
-inline std::string_view ToName(Enqueue v) {
-    switch (v) {
-    case Enqueue::generated: return "generated";
-    case Enqueue::internal: return "internal";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Enqueue v) {
-    switch (v) {
-    case Enqueue::generated: return "generated";
-    case Enqueue::internal: return "internal";
-    }
-    return {};
-}
-
-inline std::optional<Enqueue> EnqueueFromWire(std::string_view wire) {
-    if (wire == "generated") return Enqueue::generated;
-    if (wire == "internal") return Enqueue::internal;
-    return std::nullopt;
-}
+std::string_view ToName(Enqueue v);
+std::string_view ToWire(Enqueue v);
+std::optional<Enqueue> EnqueueFromWire(std::string_view wire);
 
 /// A lake column type (DuckDB). The name is the SQL spelling.
 enum class SqlType : uint8_t {
@@ -276,48 +183,9 @@ enum class SqlType : uint8_t {
 
 inline constexpr std::array<SqlType, 9> kSqlTypeMembers = {SqlType::UTINYINT, SqlType::USMALLINT, SqlType::UINTEGER, SqlType::UBIGINT, SqlType::TINYINT, SqlType::SMALLINT, SqlType::INTEGER, SqlType::BIGINT, SqlType::FLOAT};
 
-inline std::string_view ToName(SqlType v) {
-    switch (v) {
-    case SqlType::UTINYINT: return "UTINYINT";
-    case SqlType::USMALLINT: return "USMALLINT";
-    case SqlType::UINTEGER: return "UINTEGER";
-    case SqlType::UBIGINT: return "UBIGINT";
-    case SqlType::TINYINT: return "TINYINT";
-    case SqlType::SMALLINT: return "SMALLINT";
-    case SqlType::INTEGER: return "INTEGER";
-    case SqlType::BIGINT: return "BIGINT";
-    case SqlType::FLOAT: return "FLOAT";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(SqlType v) {
-    switch (v) {
-    case SqlType::UTINYINT: return "UTINYINT";
-    case SqlType::USMALLINT: return "USMALLINT";
-    case SqlType::UINTEGER: return "UINTEGER";
-    case SqlType::UBIGINT: return "UBIGINT";
-    case SqlType::TINYINT: return "TINYINT";
-    case SqlType::SMALLINT: return "SMALLINT";
-    case SqlType::INTEGER: return "INTEGER";
-    case SqlType::BIGINT: return "BIGINT";
-    case SqlType::FLOAT: return "FLOAT";
-    }
-    return {};
-}
-
-inline std::optional<SqlType> SqlTypeFromWire(std::string_view wire) {
-    if (wire == "UTINYINT") return SqlType::UTINYINT;
-    if (wire == "USMALLINT") return SqlType::USMALLINT;
-    if (wire == "UINTEGER") return SqlType::UINTEGER;
-    if (wire == "UBIGINT") return SqlType::UBIGINT;
-    if (wire == "TINYINT") return SqlType::TINYINT;
-    if (wire == "SMALLINT") return SqlType::SMALLINT;
-    if (wire == "INTEGER") return SqlType::INTEGER;
-    if (wire == "BIGINT") return SqlType::BIGINT;
-    if (wire == "FLOAT") return SqlType::FLOAT;
-    return std::nullopt;
-}
+std::string_view ToName(SqlType v);
+std::string_view ToWire(SqlType v);
+std::optional<SqlType> SqlTypeFromWire(std::string_view wire);
 
 /// How a column travels on the wire and lands in the lake.
 enum class FieldKind : uint8_t {
@@ -333,33 +201,9 @@ enum class FieldKind : uint8_t {
 
 inline constexpr std::array<FieldKind, 4> kFieldKindMembers = {FieldKind::ts, FieldKind::id, FieldKind::scalar, FieldKind::enum8};
 
-inline std::string_view ToName(FieldKind v) {
-    switch (v) {
-    case FieldKind::ts: return "ts";
-    case FieldKind::id: return "id";
-    case FieldKind::scalar: return "scalar";
-    case FieldKind::enum8: return "enum8";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(FieldKind v) {
-    switch (v) {
-    case FieldKind::ts: return "ts";
-    case FieldKind::id: return "id";
-    case FieldKind::scalar: return "scalar";
-    case FieldKind::enum8: return "enum8";
-    }
-    return {};
-}
-
-inline std::optional<FieldKind> FieldKindFromWire(std::string_view wire) {
-    if (wire == "ts") return FieldKind::ts;
-    if (wire == "id") return FieldKind::id;
-    if (wire == "scalar") return FieldKind::scalar;
-    if (wire == "enum8") return FieldKind::enum8;
-    return std::nullopt;
-}
+std::string_view ToName(FieldKind v);
+std::string_view ToWire(FieldKind v);
+std::optional<FieldKind> FieldKindFromWire(std::string_view wire);
 
 /// What a ledger leg moves. gold, item, and the point tokens are reconciled against the
 /// database snapshot; `none` documents a table that moves nothing.
@@ -371,30 +215,9 @@ enum class Currency : uint8_t {
 
 inline constexpr std::array<Currency, 3> kCurrencyMembers = {Currency::gold, Currency::item, Currency::nothing};
 
-inline std::string_view ToName(Currency v) {
-    switch (v) {
-    case Currency::gold: return "gold";
-    case Currency::item: return "item";
-    case Currency::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Currency v) {
-    switch (v) {
-    case Currency::gold: return "gold";
-    case Currency::item: return "item";
-    case Currency::nothing: return "none";
-    }
-    return {};
-}
-
-inline std::optional<Currency> CurrencyFromWire(std::string_view wire) {
-    if (wire == "gold") return Currency::gold;
-    if (wire == "item") return Currency::item;
-    if (wire == "none") return Currency::nothing;
-    return std::nullopt;
-}
+std::string_view ToName(Currency v);
+std::string_view ToWire(Currency v);
+std::optional<Currency> CurrencyFromWire(std::string_view wire);
 
 /// The direction of a leg, from the player's point of view.
 enum class Bucket : uint8_t {
@@ -406,33 +229,9 @@ enum class Bucket : uint8_t {
 
 inline constexpr std::array<Bucket, 4> kBucketMembers = {Bucket::mint, Bucket::sink, Bucket::transfer, Bucket::nothing};
 
-inline std::string_view ToName(Bucket v) {
-    switch (v) {
-    case Bucket::mint: return "mint";
-    case Bucket::sink: return "sink";
-    case Bucket::transfer: return "transfer";
-    case Bucket::nothing: return "nothing";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Bucket v) {
-    switch (v) {
-    case Bucket::mint: return "mint";
-    case Bucket::sink: return "sink";
-    case Bucket::transfer: return "transfer";
-    case Bucket::nothing: return "none";
-    }
-    return {};
-}
-
-inline std::optional<Bucket> BucketFromWire(std::string_view wire) {
-    if (wire == "mint") return Bucket::mint;
-    if (wire == "sink") return Bucket::sink;
-    if (wire == "transfer") return Bucket::transfer;
-    if (wire == "none") return Bucket::nothing;
-    return std::nullopt;
-}
+std::string_view ToName(Bucket v);
+std::string_view ToWire(Bucket v);
+std::optional<Bucket> BucketFromWire(std::string_view wire);
 
 /// Which side of a single-row transfer a leg reads.
 enum class Leg : uint8_t {
@@ -442,27 +241,9 @@ enum class Leg : uint8_t {
 
 inline constexpr std::array<Leg, 2> kLegMembers = {Leg::out, Leg::in};
 
-inline std::string_view ToName(Leg v) {
-    switch (v) {
-    case Leg::out: return "out";
-    case Leg::in: return "in";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Leg v) {
-    switch (v) {
-    case Leg::out: return "out";
-    case Leg::in: return "in";
-    }
-    return {};
-}
-
-inline std::optional<Leg> LegFromWire(std::string_view wire) {
-    if (wire == "out") return Leg::out;
-    if (wire == "in") return Leg::in;
-    return std::nullopt;
-}
+std::string_view ToName(Leg v);
+std::string_view ToWire(Leg v);
+std::optional<Leg> LegFromWire(std::string_view wire);
 
 /// What happened in a farm. All ten kinds are WorldServer hooks with one FarmManager caller.
 enum class FarmEventKind : uint8_t {
@@ -490,67 +271,30 @@ enum class FarmEventKind : uint8_t {
 
 inline constexpr std::array<FarmEventKind, 10> kFarmEventKindMembers = {FarmEventKind::Purchase, FarmEventKind::ClaimBatch, FarmEventKind::ClaimSlot, FarmEventKind::LevelUp, FarmEventKind::SetupModel, FarmEventKind::RemoveModel, FarmEventKind::UnlockModel, FarmEventKind::EnterOwn, FarmEventKind::VisitOther, FarmEventKind::Leave};
 
-inline std::string_view ToName(FarmEventKind v) {
-    switch (v) {
-    case FarmEventKind::Purchase: return "Purchase";
-    case FarmEventKind::ClaimBatch: return "ClaimBatch";
-    case FarmEventKind::ClaimSlot: return "ClaimSlot";
-    case FarmEventKind::LevelUp: return "LevelUp";
-    case FarmEventKind::SetupModel: return "SetupModel";
-    case FarmEventKind::RemoveModel: return "RemoveModel";
-    case FarmEventKind::UnlockModel: return "UnlockModel";
-    case FarmEventKind::EnterOwn: return "EnterOwn";
-    case FarmEventKind::VisitOther: return "VisitOther";
-    case FarmEventKind::Leave: return "Leave";
+namespace detail {
+inline constexpr std::array<uint8_t, 10> kFarmEventKindCodes = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+inline constexpr std::array<uint32_t, 10> kFarmEventKindCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+inline constexpr size_t FarmEventKindOrdinal(FarmEventKind v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kFarmEventKindCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kFarmEventKindCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kFarmEventKindCodes.size() && kFarmEventKindCodes[lo] == code) return kFarmEventKindCodeOrdinals[lo];
+    return kFarmEventKindCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(FarmEventKind v) {
-    switch (v) {
-    case FarmEventKind::Purchase: return "Purchase";
-    case FarmEventKind::ClaimBatch: return "ClaimBatch";
-    case FarmEventKind::ClaimSlot: return "ClaimSlot";
-    case FarmEventKind::LevelUp: return "LevelUp";
-    case FarmEventKind::SetupModel: return "SetupModel";
-    case FarmEventKind::RemoveModel: return "RemoveModel";
-    case FarmEventKind::UnlockModel: return "UnlockModel";
-    case FarmEventKind::EnterOwn: return "EnterOwn";
-    case FarmEventKind::VisitOther: return "VisitOther";
-    case FarmEventKind::Leave: return "Leave";
-    }
-    return {};
-}
-
-inline std::optional<FarmEventKind> FarmEventKindFromWire(std::string_view wire) {
-    if (wire == "Purchase") return FarmEventKind::Purchase;
-    if (wire == "ClaimBatch") return FarmEventKind::ClaimBatch;
-    if (wire == "ClaimSlot") return FarmEventKind::ClaimSlot;
-    if (wire == "LevelUp") return FarmEventKind::LevelUp;
-    if (wire == "SetupModel") return FarmEventKind::SetupModel;
-    if (wire == "RemoveModel") return FarmEventKind::RemoveModel;
-    if (wire == "UnlockModel") return FarmEventKind::UnlockModel;
-    if (wire == "EnterOwn") return FarmEventKind::EnterOwn;
-    if (wire == "VisitOther") return FarmEventKind::VisitOther;
-    if (wire == "Leave") return FarmEventKind::Leave;
-    return std::nullopt;
-}
-
-inline std::optional<FarmEventKind> FarmEventKindFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return FarmEventKind::Purchase;
-    case 2: return FarmEventKind::ClaimBatch;
-    case 3: return FarmEventKind::ClaimSlot;
-    case 4: return FarmEventKind::LevelUp;
-    case 5: return FarmEventKind::SetupModel;
-    case 6: return FarmEventKind::RemoveModel;
-    case 7: return FarmEventKind::UnlockModel;
-    case 8: return FarmEventKind::EnterOwn;
-    case 9: return FarmEventKind::VisitOther;
-    case 10: return FarmEventKind::Leave;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(FarmEventKind v);
+std::string_view ToWire(FarmEventKind v);
+std::optional<FarmEventKind> FarmEventKindFromWire(std::string_view wire);
+std::optional<FarmEventKind> FarmEventKindFromCode(uint8_t code);
 
 /// One fact of a reign, CoreServer only (SovereignManager).
 enum class SovereignEventKind : uint8_t {
@@ -566,43 +310,30 @@ enum class SovereignEventKind : uint8_t {
 
 inline constexpr std::array<SovereignEventKind, 4> kSovereignEventKindMembers = {SovereignEventKind::RoleAssigned, SovereignEventKind::DoctrineSet, SovereignEventKind::PowerTriggered, SovereignEventKind::RewardGranted};
 
-inline std::string_view ToName(SovereignEventKind v) {
-    switch (v) {
-    case SovereignEventKind::RoleAssigned: return "RoleAssigned";
-    case SovereignEventKind::DoctrineSet: return "DoctrineSet";
-    case SovereignEventKind::PowerTriggered: return "PowerTriggered";
-    case SovereignEventKind::RewardGranted: return "RewardGranted";
+namespace detail {
+inline constexpr std::array<uint8_t, 4> kSovereignEventKindCodes = {1, 2, 3, 4};
+inline constexpr std::array<uint32_t, 4> kSovereignEventKindCodeOrdinals = {0, 1, 2, 3};
+inline constexpr size_t SovereignEventKindOrdinal(SovereignEventKind v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kSovereignEventKindCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kSovereignEventKindCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kSovereignEventKindCodes.size() && kSovereignEventKindCodes[lo] == code) return kSovereignEventKindCodeOrdinals[lo];
+    return kSovereignEventKindCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(SovereignEventKind v) {
-    switch (v) {
-    case SovereignEventKind::RoleAssigned: return "RoleAssigned";
-    case SovereignEventKind::DoctrineSet: return "DoctrineSet";
-    case SovereignEventKind::PowerTriggered: return "PowerTriggered";
-    case SovereignEventKind::RewardGranted: return "RewardGranted";
-    }
-    return {};
-}
-
-inline std::optional<SovereignEventKind> SovereignEventKindFromWire(std::string_view wire) {
-    if (wire == "RoleAssigned") return SovereignEventKind::RoleAssigned;
-    if (wire == "DoctrineSet") return SovereignEventKind::DoctrineSet;
-    if (wire == "PowerTriggered") return SovereignEventKind::PowerTriggered;
-    if (wire == "RewardGranted") return SovereignEventKind::RewardGranted;
-    return std::nullopt;
-}
-
-inline std::optional<SovereignEventKind> SovereignEventKindFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return SovereignEventKind::RoleAssigned;
-    case 2: return SovereignEventKind::DoctrineSet;
-    case 3: return SovereignEventKind::PowerTriggered;
-    case 4: return SovereignEventKind::RewardGranted;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(SovereignEventKind v);
+std::string_view ToWire(SovereignEventKind v);
+std::optional<SovereignEventKind> SovereignEventKindFromWire(std::string_view wire);
+std::optional<SovereignEventKind> SovereignEventKindFromCode(uint8_t code);
 
 /// Which seat. A mirror of Sovereign::SovereignRole, mapped by an explicit switch.
 enum class SovereignRole : uint8_t {
@@ -617,51 +348,30 @@ enum class SovereignRole : uint8_t {
 
 inline constexpr std::array<SovereignRole, 6> kSovereignRoleMembers = {SovereignRole::None, SovereignRole::Sovereign, SovereignRole::MinisterMilitary, SovereignRole::MinisterEconomy, SovereignRole::MinisterEnvironment, SovereignRole::MinisterCraftsmanship};
 
-inline std::string_view ToName(SovereignRole v) {
-    switch (v) {
-    case SovereignRole::None: return "None";
-    case SovereignRole::Sovereign: return "Sovereign";
-    case SovereignRole::MinisterMilitary: return "MinisterMilitary";
-    case SovereignRole::MinisterEconomy: return "MinisterEconomy";
-    case SovereignRole::MinisterEnvironment: return "MinisterEnvironment";
-    case SovereignRole::MinisterCraftsmanship: return "MinisterCraftsmanship";
+namespace detail {
+inline constexpr std::array<uint8_t, 6> kSovereignRoleCodes = {0, 1, 2, 3, 4, 5};
+inline constexpr std::array<uint32_t, 6> kSovereignRoleCodeOrdinals = {0, 1, 2, 3, 4, 5};
+inline constexpr size_t SovereignRoleOrdinal(SovereignRole v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kSovereignRoleCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kSovereignRoleCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kSovereignRoleCodes.size() && kSovereignRoleCodes[lo] == code) return kSovereignRoleCodeOrdinals[lo];
+    return kSovereignRoleCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(SovereignRole v) {
-    switch (v) {
-    case SovereignRole::None: return "None";
-    case SovereignRole::Sovereign: return "Sovereign";
-    case SovereignRole::MinisterMilitary: return "MinisterMilitary";
-    case SovereignRole::MinisterEconomy: return "MinisterEconomy";
-    case SovereignRole::MinisterEnvironment: return "MinisterEnvironment";
-    case SovereignRole::MinisterCraftsmanship: return "MinisterCraftsmanship";
-    }
-    return {};
-}
-
-inline std::optional<SovereignRole> SovereignRoleFromWire(std::string_view wire) {
-    if (wire == "None") return SovereignRole::None;
-    if (wire == "Sovereign") return SovereignRole::Sovereign;
-    if (wire == "MinisterMilitary") return SovereignRole::MinisterMilitary;
-    if (wire == "MinisterEconomy") return SovereignRole::MinisterEconomy;
-    if (wire == "MinisterEnvironment") return SovereignRole::MinisterEnvironment;
-    if (wire == "MinisterCraftsmanship") return SovereignRole::MinisterCraftsmanship;
-    return std::nullopt;
-}
-
-inline std::optional<SovereignRole> SovereignRoleFromCode(uint8_t code) {
-    switch (code) {
-    case 0: return SovereignRole::None;
-    case 1: return SovereignRole::Sovereign;
-    case 2: return SovereignRole::MinisterMilitary;
-    case 3: return SovereignRole::MinisterEconomy;
-    case 4: return SovereignRole::MinisterEnvironment;
-    case 5: return SovereignRole::MinisterCraftsmanship;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(SovereignRole v);
+std::string_view ToWire(SovereignRole v);
+std::optional<SovereignRole> SovereignRoleFromWire(std::string_view wire);
+std::optional<SovereignRole> SovereignRoleFromCode(uint8_t code);
 
 /// Which doctrine the sovereign picked. A mirror of Sovereign::DoctrineType.
 enum class SovereignDoctrine : uint8_t {
@@ -678,59 +388,30 @@ enum class SovereignDoctrine : uint8_t {
 
 inline constexpr std::array<SovereignDoctrine, 8> kSovereignDoctrineMembers = {SovereignDoctrine::None, SovereignDoctrine::Mythic, SovereignDoctrine::Military, SovereignDoctrine::Merchant, SovereignDoctrine::Progressive, SovereignDoctrine::Chancellor, SovereignDoctrine::Craftsmanship, SovereignDoctrine::Familiar};
 
-inline std::string_view ToName(SovereignDoctrine v) {
-    switch (v) {
-    case SovereignDoctrine::None: return "None";
-    case SovereignDoctrine::Mythic: return "Mythic";
-    case SovereignDoctrine::Military: return "Military";
-    case SovereignDoctrine::Merchant: return "Merchant";
-    case SovereignDoctrine::Progressive: return "Progressive";
-    case SovereignDoctrine::Chancellor: return "Chancellor";
-    case SovereignDoctrine::Craftsmanship: return "Craftsmanship";
-    case SovereignDoctrine::Familiar: return "Familiar";
+namespace detail {
+inline constexpr std::array<uint8_t, 8> kSovereignDoctrineCodes = {0, 1, 2, 3, 4, 5, 6, 7};
+inline constexpr std::array<uint32_t, 8> kSovereignDoctrineCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7};
+inline constexpr size_t SovereignDoctrineOrdinal(SovereignDoctrine v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kSovereignDoctrineCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kSovereignDoctrineCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kSovereignDoctrineCodes.size() && kSovereignDoctrineCodes[lo] == code) return kSovereignDoctrineCodeOrdinals[lo];
+    return kSovereignDoctrineCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(SovereignDoctrine v) {
-    switch (v) {
-    case SovereignDoctrine::None: return "None";
-    case SovereignDoctrine::Mythic: return "Mythic";
-    case SovereignDoctrine::Military: return "Military";
-    case SovereignDoctrine::Merchant: return "Merchant";
-    case SovereignDoctrine::Progressive: return "Progressive";
-    case SovereignDoctrine::Chancellor: return "Chancellor";
-    case SovereignDoctrine::Craftsmanship: return "Craftsmanship";
-    case SovereignDoctrine::Familiar: return "Familiar";
-    }
-    return {};
-}
-
-inline std::optional<SovereignDoctrine> SovereignDoctrineFromWire(std::string_view wire) {
-    if (wire == "None") return SovereignDoctrine::None;
-    if (wire == "Mythic") return SovereignDoctrine::Mythic;
-    if (wire == "Military") return SovereignDoctrine::Military;
-    if (wire == "Merchant") return SovereignDoctrine::Merchant;
-    if (wire == "Progressive") return SovereignDoctrine::Progressive;
-    if (wire == "Chancellor") return SovereignDoctrine::Chancellor;
-    if (wire == "Craftsmanship") return SovereignDoctrine::Craftsmanship;
-    if (wire == "Familiar") return SovereignDoctrine::Familiar;
-    return std::nullopt;
-}
-
-inline std::optional<SovereignDoctrine> SovereignDoctrineFromCode(uint8_t code) {
-    switch (code) {
-    case 0: return SovereignDoctrine::None;
-    case 1: return SovereignDoctrine::Mythic;
-    case 2: return SovereignDoctrine::Military;
-    case 3: return SovereignDoctrine::Merchant;
-    case 4: return SovereignDoctrine::Progressive;
-    case 5: return SovereignDoctrine::Chancellor;
-    case 6: return SovereignDoctrine::Craftsmanship;
-    case 7: return SovereignDoctrine::Familiar;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(SovereignDoctrine v);
+std::string_view ToWire(SovereignDoctrine v);
+std::optional<SovereignDoctrine> SovereignDoctrineFromWire(std::string_view wire);
+std::optional<SovereignDoctrine> SovereignDoctrineFromCode(uint8_t code);
 
 /// Which power was used. Not a 1:1 mirror of Sovereign::SovereignPowerKind: it adds the
 /// minister buff slots, separate quotas.
@@ -752,63 +433,30 @@ enum class SovereignPower : uint8_t {
 
 inline constexpr std::array<SovereignPower, 9> kSovereignPowerMembers = {SovereignPower::None, SovereignPower::MinisterBuffPrimary, SovereignPower::MinisterBuffSecondary, SovereignPower::WorldBossSpawn, SovereignPower::HiddenBonds, SovereignPower::Heistia, SovereignPower::AzuriaAuction, SovereignPower::MinisterBuffTertiary, SovereignPower::CustomDrop};
 
-inline std::string_view ToName(SovereignPower v) {
-    switch (v) {
-    case SovereignPower::None: return "None";
-    case SovereignPower::MinisterBuffPrimary: return "MinisterBuffPrimary";
-    case SovereignPower::MinisterBuffSecondary: return "MinisterBuffSecondary";
-    case SovereignPower::WorldBossSpawn: return "WorldBossSpawn";
-    case SovereignPower::HiddenBonds: return "HiddenBonds";
-    case SovereignPower::Heistia: return "Heistia";
-    case SovereignPower::AzuriaAuction: return "AzuriaAuction";
-    case SovereignPower::MinisterBuffTertiary: return "MinisterBuffTertiary";
-    case SovereignPower::CustomDrop: return "CustomDrop";
+namespace detail {
+inline constexpr std::array<uint8_t, 9> kSovereignPowerCodes = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+inline constexpr std::array<uint32_t, 9> kSovereignPowerCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+inline constexpr size_t SovereignPowerOrdinal(SovereignPower v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kSovereignPowerCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kSovereignPowerCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kSovereignPowerCodes.size() && kSovereignPowerCodes[lo] == code) return kSovereignPowerCodeOrdinals[lo];
+    return kSovereignPowerCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(SovereignPower v) {
-    switch (v) {
-    case SovereignPower::None: return "None";
-    case SovereignPower::MinisterBuffPrimary: return "MinisterBuffPrimary";
-    case SovereignPower::MinisterBuffSecondary: return "MinisterBuffSecondary";
-    case SovereignPower::WorldBossSpawn: return "WorldBossSpawn";
-    case SovereignPower::HiddenBonds: return "HiddenBonds";
-    case SovereignPower::Heistia: return "Heistia";
-    case SovereignPower::AzuriaAuction: return "AzuriaAuction";
-    case SovereignPower::MinisterBuffTertiary: return "MinisterBuffTertiary";
-    case SovereignPower::CustomDrop: return "CustomDrop";
-    }
-    return {};
-}
-
-inline std::optional<SovereignPower> SovereignPowerFromWire(std::string_view wire) {
-    if (wire == "None") return SovereignPower::None;
-    if (wire == "MinisterBuffPrimary") return SovereignPower::MinisterBuffPrimary;
-    if (wire == "MinisterBuffSecondary") return SovereignPower::MinisterBuffSecondary;
-    if (wire == "WorldBossSpawn") return SovereignPower::WorldBossSpawn;
-    if (wire == "HiddenBonds") return SovereignPower::HiddenBonds;
-    if (wire == "Heistia") return SovereignPower::Heistia;
-    if (wire == "AzuriaAuction") return SovereignPower::AzuriaAuction;
-    if (wire == "MinisterBuffTertiary") return SovereignPower::MinisterBuffTertiary;
-    if (wire == "CustomDrop") return SovereignPower::CustomDrop;
-    return std::nullopt;
-}
-
-inline std::optional<SovereignPower> SovereignPowerFromCode(uint8_t code) {
-    switch (code) {
-    case 0: return SovereignPower::None;
-    case 1: return SovereignPower::MinisterBuffPrimary;
-    case 2: return SovereignPower::MinisterBuffSecondary;
-    case 3: return SovereignPower::WorldBossSpawn;
-    case 4: return SovereignPower::HiddenBonds;
-    case 5: return SovereignPower::Heistia;
-    case 6: return SovereignPower::AzuriaAuction;
-    case 7: return SovereignPower::MinisterBuffTertiary;
-    case 8: return SovereignPower::CustomDrop;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(SovereignPower v);
+std::string_view ToWire(SovereignPower v);
+std::optional<SovereignPower> SovereignPowerFromWire(std::string_view wire);
+std::optional<SovereignPower> SovereignPowerFromCode(uint8_t code);
 
 /// A producer's boot or clean stop. A Start with no Stop before a later boot is a crash.
 enum class LifecycleKind : uint8_t {
@@ -818,35 +466,30 @@ enum class LifecycleKind : uint8_t {
 
 inline constexpr std::array<LifecycleKind, 2> kLifecycleKindMembers = {LifecycleKind::Start, LifecycleKind::Stop};
 
-inline std::string_view ToName(LifecycleKind v) {
-    switch (v) {
-    case LifecycleKind::Start: return "Start";
-    case LifecycleKind::Stop: return "Stop";
+namespace detail {
+inline constexpr std::array<uint8_t, 2> kLifecycleKindCodes = {1, 2};
+inline constexpr std::array<uint32_t, 2> kLifecycleKindCodeOrdinals = {0, 1};
+inline constexpr size_t LifecycleKindOrdinal(LifecycleKind v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kLifecycleKindCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kLifecycleKindCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kLifecycleKindCodes.size() && kLifecycleKindCodes[lo] == code) return kLifecycleKindCodeOrdinals[lo];
+    return kLifecycleKindCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(LifecycleKind v) {
-    switch (v) {
-    case LifecycleKind::Start: return "Start";
-    case LifecycleKind::Stop: return "Stop";
-    }
-    return {};
-}
-
-inline std::optional<LifecycleKind> LifecycleKindFromWire(std::string_view wire) {
-    if (wire == "Start") return LifecycleKind::Start;
-    if (wire == "Stop") return LifecycleKind::Stop;
-    return std::nullopt;
-}
-
-inline std::optional<LifecycleKind> LifecycleKindFromCode(uint8_t code) {
-    switch (code) {
-    case 1: return LifecycleKind::Start;
-    case 2: return LifecycleKind::Stop;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(LifecycleKind v);
+std::string_view ToWire(LifecycleKind v);
+std::optional<LifecycleKind> LifecycleKindFromWire(std::string_view wire);
+std::optional<LifecycleKind> LifecycleKindFromCode(uint8_t code);
 
 /// Why an item was minted: one value per SendSystemItem / SendMail caller family
 /// (trimmed: 14 of 62).
@@ -886,83 +529,30 @@ enum class GrantKind : uint8_t {
 
 inline constexpr std::array<GrantKind, 14> kGrantKindMembers = {GrantKind::UNKNOWN, GrantKind::BUYBACK_DELIVERY, GrantKind::BUFF_REWARD, GrantKind::LEVEL_UP_GIFT, GrantKind::BOSS_REWARD_MAIL, GrantKind::WORLD_BOSS_REWARD_MAIL, GrantKind::EVENT_REWARD, GrantKind::MAIL_RETURN, GrantKind::PERIN_OVERFLOW, GrantKind::PLAYER_MAIL, GrantKind::FARM_HARVEST, GrantKind::STARTER_ITEM, GrantKind::GUILD_DISBAND_BANK, GrantKind::AUCTION_ESCROW_RECOVERY};
 
-inline std::string_view ToName(GrantKind v) {
-    switch (v) {
-    case GrantKind::UNKNOWN: return "UNKNOWN";
-    case GrantKind::BUYBACK_DELIVERY: return "BUYBACK_DELIVERY";
-    case GrantKind::BUFF_REWARD: return "BUFF_REWARD";
-    case GrantKind::LEVEL_UP_GIFT: return "LEVEL_UP_GIFT";
-    case GrantKind::BOSS_REWARD_MAIL: return "BOSS_REWARD_MAIL";
-    case GrantKind::WORLD_BOSS_REWARD_MAIL: return "WORLD_BOSS_REWARD_MAIL";
-    case GrantKind::EVENT_REWARD: return "EVENT_REWARD";
-    case GrantKind::MAIL_RETURN: return "MAIL_RETURN";
-    case GrantKind::PERIN_OVERFLOW: return "PERIN_OVERFLOW";
-    case GrantKind::PLAYER_MAIL: return "PLAYER_MAIL";
-    case GrantKind::FARM_HARVEST: return "FARM_HARVEST";
-    case GrantKind::STARTER_ITEM: return "STARTER_ITEM";
-    case GrantKind::GUILD_DISBAND_BANK: return "GUILD_DISBAND_BANK";
-    case GrantKind::AUCTION_ESCROW_RECOVERY: return "AUCTION_ESCROW_RECOVERY";
+namespace detail {
+inline constexpr std::array<uint8_t, 14> kGrantKindCodes = {0, 1, 2, 3, 14, 15, 16, 22, 23, 27, 35, 47, 48, 59};
+inline constexpr std::array<uint32_t, 14> kGrantKindCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+inline constexpr size_t GrantKindOrdinal(GrantKind v) {
+    const uint8_t code = static_cast<uint8_t>(v);
+    size_t lo = 0;
+    size_t hi = kGrantKindCodes.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kGrantKindCodes[mid] < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
-    return {};
+    if (lo < kGrantKindCodes.size() && kGrantKindCodes[lo] == code) return kGrantKindCodeOrdinals[lo];
+    return kGrantKindCodes.size();
 }
+}  // namespace detail
 
-inline std::string_view ToWire(GrantKind v) {
-    switch (v) {
-    case GrantKind::UNKNOWN: return "UNKNOWN";
-    case GrantKind::BUYBACK_DELIVERY: return "BUYBACK_DELIVERY";
-    case GrantKind::BUFF_REWARD: return "BUFF_REWARD";
-    case GrantKind::LEVEL_UP_GIFT: return "LEVEL_UP_GIFT";
-    case GrantKind::BOSS_REWARD_MAIL: return "BOSS_REWARD_MAIL";
-    case GrantKind::WORLD_BOSS_REWARD_MAIL: return "WORLD_BOSS_REWARD_MAIL";
-    case GrantKind::EVENT_REWARD: return "EVENT_REWARD";
-    case GrantKind::MAIL_RETURN: return "MAIL_RETURN";
-    case GrantKind::PERIN_OVERFLOW: return "PERIN_OVERFLOW";
-    case GrantKind::PLAYER_MAIL: return "PLAYER_MAIL";
-    case GrantKind::FARM_HARVEST: return "FARM_HARVEST";
-    case GrantKind::STARTER_ITEM: return "STARTER_ITEM";
-    case GrantKind::GUILD_DISBAND_BANK: return "GUILD_DISBAND_BANK";
-    case GrantKind::AUCTION_ESCROW_RECOVERY: return "AUCTION_ESCROW_RECOVERY";
-    }
-    return {};
-}
-
-inline std::optional<GrantKind> GrantKindFromWire(std::string_view wire) {
-    if (wire == "UNKNOWN") return GrantKind::UNKNOWN;
-    if (wire == "BUYBACK_DELIVERY") return GrantKind::BUYBACK_DELIVERY;
-    if (wire == "BUFF_REWARD") return GrantKind::BUFF_REWARD;
-    if (wire == "LEVEL_UP_GIFT") return GrantKind::LEVEL_UP_GIFT;
-    if (wire == "BOSS_REWARD_MAIL") return GrantKind::BOSS_REWARD_MAIL;
-    if (wire == "WORLD_BOSS_REWARD_MAIL") return GrantKind::WORLD_BOSS_REWARD_MAIL;
-    if (wire == "EVENT_REWARD") return GrantKind::EVENT_REWARD;
-    if (wire == "MAIL_RETURN") return GrantKind::MAIL_RETURN;
-    if (wire == "PERIN_OVERFLOW") return GrantKind::PERIN_OVERFLOW;
-    if (wire == "PLAYER_MAIL") return GrantKind::PLAYER_MAIL;
-    if (wire == "FARM_HARVEST") return GrantKind::FARM_HARVEST;
-    if (wire == "STARTER_ITEM") return GrantKind::STARTER_ITEM;
-    if (wire == "GUILD_DISBAND_BANK") return GrantKind::GUILD_DISBAND_BANK;
-    if (wire == "AUCTION_ESCROW_RECOVERY") return GrantKind::AUCTION_ESCROW_RECOVERY;
-    return std::nullopt;
-}
-
-inline std::optional<GrantKind> GrantKindFromCode(uint8_t code) {
-    switch (code) {
-    case 0: return GrantKind::UNKNOWN;
-    case 1: return GrantKind::BUYBACK_DELIVERY;
-    case 2: return GrantKind::BUFF_REWARD;
-    case 3: return GrantKind::LEVEL_UP_GIFT;
-    case 14: return GrantKind::BOSS_REWARD_MAIL;
-    case 15: return GrantKind::WORLD_BOSS_REWARD_MAIL;
-    case 16: return GrantKind::EVENT_REWARD;
-    case 22: return GrantKind::MAIL_RETURN;
-    case 23: return GrantKind::PERIN_OVERFLOW;
-    case 27: return GrantKind::PLAYER_MAIL;
-    case 35: return GrantKind::FARM_HARVEST;
-    case 47: return GrantKind::STARTER_ITEM;
-    case 48: return GrantKind::GUILD_DISBAND_BANK;
-    case 59: return GrantKind::AUCTION_ESCROW_RECOVERY;
-    }
-    return std::nullopt;
-}
+std::string_view ToName(GrantKind v);
+std::string_view ToWire(GrantKind v);
+std::optional<GrantKind> GrantKindFromWire(std::string_view wire);
+std::optional<GrantKind> GrantKindFromCode(uint8_t code);
 
 /// The telemetry enums a column can hold. The member name is the lake's lookup view
 /// (`enum_<name>`).
@@ -978,42 +568,9 @@ enum class Vocabulary : uint8_t {
 
 inline constexpr std::array<Vocabulary, 7> kVocabularyMembers = {Vocabulary::farm_event_kind, Vocabulary::sovereign_event_kind, Vocabulary::sovereign_role, Vocabulary::sovereign_doctrine, Vocabulary::sovereign_power, Vocabulary::lifecycle_kind, Vocabulary::grant_kind};
 
-inline std::string_view ToName(Vocabulary v) {
-    switch (v) {
-    case Vocabulary::farm_event_kind: return "farm_event_kind";
-    case Vocabulary::sovereign_event_kind: return "sovereign_event_kind";
-    case Vocabulary::sovereign_role: return "sovereign_role";
-    case Vocabulary::sovereign_doctrine: return "sovereign_doctrine";
-    case Vocabulary::sovereign_power: return "sovereign_power";
-    case Vocabulary::lifecycle_kind: return "lifecycle_kind";
-    case Vocabulary::grant_kind: return "grant_kind";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(Vocabulary v) {
-    switch (v) {
-    case Vocabulary::farm_event_kind: return "farm_event_kind";
-    case Vocabulary::sovereign_event_kind: return "sovereign_event_kind";
-    case Vocabulary::sovereign_role: return "sovereign_role";
-    case Vocabulary::sovereign_doctrine: return "sovereign_doctrine";
-    case Vocabulary::sovereign_power: return "sovereign_power";
-    case Vocabulary::lifecycle_kind: return "lifecycle_kind";
-    case Vocabulary::grant_kind: return "grant_kind";
-    }
-    return {};
-}
-
-inline std::optional<Vocabulary> VocabularyFromWire(std::string_view wire) {
-    if (wire == "farm_event_kind") return Vocabulary::farm_event_kind;
-    if (wire == "sovereign_event_kind") return Vocabulary::sovereign_event_kind;
-    if (wire == "sovereign_role") return Vocabulary::sovereign_role;
-    if (wire == "sovereign_doctrine") return Vocabulary::sovereign_doctrine;
-    if (wire == "sovereign_power") return Vocabulary::sovereign_power;
-    if (wire == "lifecycle_kind") return Vocabulary::lifecycle_kind;
-    if (wire == "grant_kind") return Vocabulary::grant_kind;
-    return std::nullopt;
-}
+std::string_view ToName(Vocabulary v);
+std::string_view ToWire(Vocabulary v);
+std::optional<Vocabulary> VocabularyFromWire(std::string_view wire);
 
 enum class RowsKind : uint8_t {
     /// Every row.
@@ -1023,27 +580,9 @@ enum class RowsKind : uint8_t {
 
 inline constexpr std::array<RowsKind, 2> kRowsKindMembers = {RowsKind::every, RowsKind::some};
 
-inline std::string_view ToName(RowsKind v) {
-    switch (v) {
-    case RowsKind::every: return "every";
-    case RowsKind::some: return "some";
-    }
-    return {};
-}
-
-inline std::string_view ToWire(RowsKind v) {
-    switch (v) {
-    case RowsKind::every: return "every";
-    case RowsKind::some: return "some";
-    }
-    return {};
-}
-
-inline std::optional<RowsKind> RowsKindFromWire(std::string_view wire) {
-    if (wire == "every") return RowsKind::every;
-    if (wire == "some") return RowsKind::some;
-    return std::nullopt;
-}
+std::string_view ToName(RowsKind v);
+std::string_view ToWire(RowsKind v);
+std::optional<RowsKind> RowsKindFromWire(std::string_view wire);
 
 enum class MemberBranch : uint8_t {
     farm_event_kind,
@@ -1430,19 +969,8 @@ inline constexpr std::array<bool, 9> kIsRetiredCells = {false, true, false, fals
 
 /// Whether `e` is a tombstone: an id no producer may send again.
 inline constexpr bool IsRetired(EventType e) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
     return detail::kIsRetiredCells[i0];
 }
 
@@ -1452,19 +980,8 @@ inline constexpr std::array<uint8_t, 9> kVersionOfCells = {5, 0, 3, 2, 2, 1, 2, 
 
 /// The current layout version of `e` (the wire version byte); 0 for a retired type.
 inline constexpr uint8_t VersionOf(EventType e) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
     return detail::kVersionOfCells[i0];
 }
 
@@ -1484,19 +1001,8 @@ inline constexpr std::array<Tier, 9> kTierOfCells = {
 
 /// The ring tier of `e`; a retired type is READONLY (nothing writes it).
 inline constexpr Tier TierOf(EventType e) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
     return detail::kTierOfCells[i0];
 }
 
@@ -1517,19 +1023,8 @@ inline constexpr std::array<std::string_view, 9> kTableOfCells = {
 /// The lake table of `e`, retired types included (their tables stay readable); for tombstone
 /// 20, whose table is not recorded, the event's name.
 inline constexpr std::string_view TableOf(EventType e) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
     return detail::kTableOfCells[i0];
 }
 
@@ -1539,19 +1034,8 @@ inline constexpr std::array<bool, 9> kHasInstanceIdCells = {true, false, true, f
 
 /// Whether `e`'s current layout has the item_instance_id column.
 inline constexpr bool HasInstanceId(EventType e) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
     return detail::kHasInstanceIdCells[i0];
 }
 
@@ -1561,19 +1045,8 @@ inline constexpr std::array<int64_t, 9> kWireSizeCells = {38, 0, 24, 24, 36, 13,
 
 /// The packed size of `e`'s current struct: header plus live body columns.
 inline constexpr int64_t WireSize(EventType e) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
     return detail::kWireSizeCells[i0];
 }
 
@@ -1647,30 +1120,10 @@ inline constexpr std::array<bool, 63> kEmitsCells = {
 
 /// Whether producer `p` owns a ring for `e`.
 inline constexpr bool Emits(EventType e, Producer p) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
-    size_t i1 = 0;
-    switch (p) {
-    case Producer::WorldServer: i1 = 0; break;
-    case Producer::CoreServer: i1 = 1; break;
-    case Producer::DatabaseServer: i1 = 2; break;
-    case Producer::LoginServer: i1 = 3; break;
-    case Producer::CacheServer: i1 = 4; break;
-    case Producer::DataIngester: i1 = 5; break;
-    case Producer::ItemTool: i1 = 6; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
+    const size_t i1 = detail::ProducerOrdinal(p);
+    if (i1 >= 7) std::abort();
     return detail::kEmitsCells[i0 * 7 + i1];
 }
 
@@ -1690,19 +1143,8 @@ inline constexpr std::array<std::string_view, 9> kCreateTableSqlCells = {
 
 /// The CREATE TABLE of `e`'s current layout; empty for a retired type.
 inline constexpr std::string_view CreateTableSql(EventType e) {
-    size_t i0 = 0;
-    switch (e) {
-    case EventType::item_created: i0 = 0; break;
-    case EventType::mail_item_received: i0 = 1; break;
-    case EventType::item_consumed: i0 = 2; break;
-    case EventType::penya_drops: i0 = 3; break;
-    case EventType::trade_penya: i0 = 4; break;
-    case EventType::server_lifecycle: i0 = 5; break;
-    case EventType::farm_events: i0 = 6; break;
-    case EventType::sovereign_events: i0 = 7; break;
-    case EventType::world_boss_spawns: i0 = 8; break;
-    default: std::abort();
-    }
+    const size_t i0 = detail::EventTypeOrdinal(e);
+    if (i0 >= 9) std::abort();
     return detail::kCreateTableSqlCells[i0];
 }
 

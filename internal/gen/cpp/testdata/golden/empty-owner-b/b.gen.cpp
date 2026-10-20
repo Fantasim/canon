@@ -32,6 +32,13 @@ BAccess::Data BAccess::Build() {
 
 }  // namespace detail
 
+std::string_view ToWire(ItemId v) {
+    static constexpr std::array<std::string_view, 0> kWires = {};
+    const size_t i = static_cast<size_t>(v);
+    if (i >= kWires.size()) return {};
+    return kWires[i];
+}
+
 std::optional<ItemId> ItemIdFromWire(std::string_view key) {
     static constexpr std::array<std::string_view, 0> kKeys = {};
     static constexpr std::array<ItemId, 0> kIds = {};
