@@ -601,3 +601,187 @@ Only after CLEANUP is reviewed and S2 is committed. Each step's command, load an
   Sovereign-shaped: each is the target's idiom for a construct the language already had.
 - `E8011` grows a variant. A project with a C++ name that is a standard macro now fails `check`
   instead of failing the C++ compiler.
+
+## 12. Addendum, 2026-10-20: `@cpp(defines:)` completed (DECISIONS 389-391)
+
+**Source.** A second Sovereign handoff, [2026-10-20-sovereign-cpp-defines-parity.md](../handoff/2026-10-20-sovereign-cpp-defines-parity.md),
+came from applying the reply's §1 to Sovereign's 11 vocab packages. Its asks 1, 2 and 4 are bugs
+or broken guarantees of `@cpp(defines:)`. Its ask 3 is the feature's missing half: a named number
+that is not an enum member. Its asks 6 and 7 are §13 and §2.
+
+Research, read-only, at `main` `b1881137`:
+- **No presence flag.** `ir.Enum.CppDefines` is a `string` (`internal/ir/named.go:36`, `ir.go:92`),
+  so `""` reads as "absent". `ownEnums` and `clashes` drop it (`internal/gen/cpp/defines.go:39,
+  62`), and nothing reports it.
+- **No validation.** The prefix is only checked to be a constant string (`annot_values.go:14`),
+  so `"*"` writes `#define *CONT_NODATA 0`. Nothing checks the define names or duplicates
+  between enums.
+- **Narrow wrap.** `clashes` wraps a macro only when the define name equals the enum's own
+  enumerator spelled `Enum::NAME`. These are never wrapped:
+  - table id enumerators;
+  - constants;
+  - members of other enums;
+  - members whose define was given a prefix;
+  - members renamed with `@cpp(name:)`.
+- **Narrow site.** `@cpp(defines:)` is accepted on an enum header only
+  (`annot_catalog.go:68`). The parser already reads annotations on `const`
+  (`parse_decl.go:94`).
+
+### 12.1 Presence, prefix and names (DECISIONS 389)
+
+**Decision.**
+1. **Presence decides.** The IR records presence (`CppDefines *string`, or a flag beside it).
+   `@cpp(defines: "")` writes every member under its own name. That is the existing prefix rule:
+   every name starts with `""`.
+2. **Define names are validated in the IR.** A define name, prefix included, that is not an
+   identifier (`[A-Za-z_][A-Za-z0-9_]*`) is `E8011` `derived`. A C++ keyword is `E8011`
+   `reserved`. A C++ standard-library macro (388's table) is `E8011` `macro`.
+   - Each is reported once per declaration, at its first bad name, so `"*"` is caught at the
+     first member.
+   - The `_`-uppercase and `__` shapes stay allowed for a define name. A define names a legacy
+     macro, and keeping it exactly is the feature's purpose; the generator never declares it as a
+     C++ identifier.
+3. **Duplicates.** Two equal define names in one package's defines file are `E8005` `both`
+   (target `cpp`), at the later declaration in source order.
+4. **Retired members stay** in the file, as today. Legacy code may still name them, and their
+   numbers are never reused. A `withRetired`-style option is declined.
+
+### 12.2 `@cpp(defines:)` on a constant (DECISIONS 390)
+
+**Decision.**
+1. **The site.** `@cpp(defines: "P")` is also accepted on a `const`. The GRAMMAR §8.3 row gains
+   `TL` (`const`).
+2. **The line.** The constant writes one line, `#define <name> <value>`, into its package's
+   `<last>.defines.gen.h`. `<name>` follows the prefix rule on the constant's Canon name (`""`
+   keeps it) and is validated as in 12.1.
+3. **The value, by type:**
+   - an integer type: decimal, with no suffix (a C++ integer literal takes the type that holds
+     it, so `100000000` needs no `L`);
+   - an enum member: the member's define value (its code with `@codes`, else its index);
+   - `Bool`: `1` or `0`;
+   - `String`: a C string literal, escaped as the generator escapes string constants.
+   - Any other type is `E8012` with the new variant `cppDefine`.
+4. **Order.** Lines follow the package's declaration order (§2.7). Enum blocks and constant lines
+   interleave by their position in the source.
+5. **What this covers.** An alias or an expression define is a constant:
+   - `@cpp(defines: "") const DIS_MULTY = SkillGroup.DIS_SUPPORT` writes `#define DIS_MULTY 12`;
+   - `const JOB_ALL = MAX_JOB` writes the number.
+6. **Declined.**
+   - Table keys as defines: a table key's identity is its key, its position is no id (N11), and
+     a named number is a `const`.
+   - A defines entry that writes another macro's name instead of a number: the number is equal,
+     and Canon writes values, not text.
+
+### 12.3 `push_macro` covers every define a file can meet (DECISIONS 391)
+
+**Decision.**
+- **The set.** It holds the define names written by the defines file of the file's own package,
+  and of every package whose names the file writes (§2.8: the packages it reads).
+- **The wrap.** A generated header, source or conformance file wraps every identifier token it
+  writes that is in this set. The tokens are matched by the identifier itself, not by the
+  `Enum::NAME` form, so table id enumerators, constants, renamed members and other enums'
+  members are covered.
+- **The region.** It covers every part of the file that names one, including the region after
+  the namespace (`std::hash` specialisations).
+- **The cost.** The scan tokenizes the file's text once and looks up a set. It stays linear and
+  deterministic: the names are pushed in sorted order.
+
+**What stays out.** A name a hand-written legacy header defines and no Canon defines file writes
+cannot be known to Canon. A TU must include the generated defines header in place of that legacy
+header, which is the feature's purpose.
+
+**Spec text** (CODEGEN.md §7.9, replacing the section's body after its heading):
+
+> `@cpp(defines: "P")` on an enum or a `const` writes `<last>.defines.gen.h` (DECISIONS 389-391):
+>
+> ```cpp
+> // GENERATED by canon from game/items/. DO NOT EDIT.
+> #pragma once
+> #define IK1_WEAPON 1
+> #define IK1_GENERAL 4
+> #define MAX_ITEM_KIND3 133
+> ```
+>
+> - A define name is the member's or constant's name if it starts with the prefix, else prefix +
+>   name; `""` keeps every name. It must be an identifier (`E8011` `derived`), not a C++ keyword
+>   (`E8011` `reserved`) nor a C++ standard-library macro (`E8011` `macro`, §3.4); the `_`-uppercase
+>   and `__` shapes are allowed, a define naming a legacy macro. Two equal define names in one file
+>   are `E8005`.
+> - A member's value is its code with `@codes`, else its index, in decimal (CPP-03); retired
+>   members are written. A constant's value is decimal for an integer, the member's value for an
+>   enum member, `1`/`0` for a `Bool`, a C string literal for a `String`; any other type is
+>   `E8012` `cppDefine`. Lines follow declaration order (§2.7).
+> - The defines live in their own header because a macro and an identifier with the same name
+>   cannot meet: a translation unit that sees `#define IK1_WEAPON 1` cannot spell
+>   `ItemKind1::IK1_WEAPON`. Legacy code includes `<last>.defines.gen.h`; new code uses the enum.
+> - Every generated header, source and conformance file wraps each identifier it writes that a
+>   defines file of its package, or of a package it reads (§2.8), defines, in
+>   `#pragma push_macro("N")` / `#undef N` … `#pragma pop_macro("N")` (names in sorted order),
+>   over every region naming one, so a defines header or a legacy header with the same macros
+>   included earlier cannot break generated code.
+
+**Spec text** (GRAMMAR.md §8.3): the `@cpp(defines: "P")` row's position becomes
+`TH` (enum), `TL` (`const`).
+
+**ERRORS.md** (committed by the orchestrator in DEFINES' worktree, as §8.2's rule says): add
+`| E8012 | cppDefine | name:Name, what:Type | `{name} cannot be a #define: {what} has no C++ literal` |`
+after `E8012 define`, and update the count sentence.
+
+**DECISIONS text:**
+
+> 389. **`@cpp(defines:)`: presence decides, names are validated (CODEGEN.md §7.9).**
+>      `@cpp(defines: "")` writes every member under its own name; a define name that is no
+>      identifier is `E8011` `derived`, a keyword `reserved`, a standard-library macro `macro`;
+>      `_`-uppercase and `__` shapes are allowed (a define names a legacy macro); two equal define
+>      names in one file are `E8005`. Reason: `""` wrote nothing silently and `"*"` wrote
+>      `#define *CONT_NODATA 0` (Sovereign, 2026-10-20).
+>
+> 390. **`@cpp(defines:)` on a `const` (GRAMMAR.md §8.3; CODEGEN.md §7.9).** A constant writes
+>      `#define <name> <value>` into its package's defines header: integers in decimal, an enum
+>      member's define value, `Bool` as `1`/`0`, `String` as a C literal; another type is `E8012`
+>      `cppDefine`. Aliases and expression defines are constants. Table keys are not defines (a
+>      position is no id; a named number is a `const`). Reason: a define header holds named
+>      numbers that are not enum members.
+>
+> 391. **`push_macro` covers every define a generated file can meet (CODEGEN.md §7.9).** Each
+>      generated C++ file wraps every identifier it writes that a defines file of its package or
+>      of a package it reads defines, matched by token, over every region naming one. Reason: the
+>      wrap covered only an enum's own members spelled as their define, so table ids, constants and
+>      renamed members broke a TU including the defines (Sovereign: 6 of 7 packages).
+
+**Tests.**
+- Findings txtars:
+  - `""` writes every member;
+  - `"*"` is `E8011` `derived`;
+  - a define name `class` is `reserved`, and one named `EOF` is `macro`;
+  - `_NONE` is clean;
+  - duplicate define names across two enums and across an enum and a constant are `E8005`;
+  - a `Float` constant is `E8012` `cppDefine`.
+- Goldens: a defines file mixing enum members and constants of every allowed kind, in
+  declaration order.
+- One compile-and-run case (cxxbuild harness): a TU includes the package's defines header (and,
+  separately, a hand-written legacy header with the same macros) before the generated headers of
+  that package and of an importer. The package uses:
+  - a table id enumerator equal to a define;
+  - a constant equal to a define;
+  - a renamed member whose define keeps the legacy name;
+  - a member of an enum without `@cpp(defines:)` equal to another enum's define.
+
+  It compiles and runs, and the macros keep their values after the generated headers.
+
+### 12.4 Unit and order
+
+| Unit | Model | Packages | Builds |
+|---|---|---|---|
+| DEFINES | sonnet (golden- and compile-checked; opus after two failed reviews) | `internal/syntax` (the site set), `internal/ir` (presence, validation, constants' defines), `internal/gen/cpp` (`defines.go`, the wrap) | 12.1-12.3 |
+
+DEFINES runs in wave 2, after HELPERS and TYPES land, because all three edit `internal/gen/cpp`.
+It runs beside GO.
+
+The Sovereign C++ farm (§9 step 5) adds a pass condition (f):
+- for each of the 11 vocab packages, `*.defines.gen.h` holds every name the farm's own
+  annotations ask for;
+- a TU including the legacy define header and the package's `.gen.h` compiles.
+
+Table keys and aliases are measured as Sovereign-side remodelling (constants), not as Canon
+gaps.
