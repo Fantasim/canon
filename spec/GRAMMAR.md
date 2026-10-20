@@ -1248,7 +1248,7 @@ mutually exclusive arguments is `E1119`. An unknown annotation name or an unknow
 | `@reload` | none | `TL` (`let`) | CODEGEN.md (SPEC §15.5) |
 | `@files("tpl")` | positional `template`; scope: `id` (the key), the entry's fields `{f}` and nested paths `{f.g}` through records, the current case of variants and a dependent field's branches (any branch's fields); a variant-typed segment stands for its case's wire name; a name outside that scope, or a field no case or branch declares, is the checker's unknown-name finding at the first name outside the scope (`x` in `{id.x}`; DECISIONS 277, 280) | `TL` (`let` of a table or keyed list) | API.md N2 (API-03) |
 | `@menu(m, icon: i, label: "l")` | positional `studio{Menu}`, optional named `icon: studio{Icon}` and `label: string` | `TL` (`let`) | VIEWMODEL.md G23 (VIEW-03) |
-| `@cpp(defines: "P")` | `string` | `TH` (enum), `TL` (`const`) | CODEGEN.md §7.9 (CPP-03; DECISIONS 389-391) |
+| `@cpp(defines: "P")` | `string` | `TH` (enum), `TL` (`const`); never on a `local` declaration (`E1118`) | CODEGEN.md §7.9 (CPP-03; DECISIONS 389-391) |
 | `@cpp(struct: "S", header: "h", access: a)` | `string`, `string`, `symbol{fields, both, getters}` | `TH` (record) | CODEGEN.md (CPP-01) |
 | `@cpp(field: "m", type: "T")` | `string`, `string` | `FD` | CODEGEN.md §7.8 |
 | `@cpp(value: N)` | `int` | `VC` (case of a variant held by a legacy struct) | CODEGEN.md §7.8 |

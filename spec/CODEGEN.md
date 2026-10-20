@@ -3471,10 +3471,11 @@ applies).
 ```
 
 - A define name is the member's or constant's name if it starts with the prefix, else prefix +
-  name; `""` keeps every name. It must be an identifier (`E8011` `derived`), not a C++ keyword
-  (`E8011` `reserved`) nor a C++ standard-library macro (`E8011` `macro`, §3.4); the `_`-uppercase
-  and `__` shapes are allowed, a define naming a legacy macro. Two equal define names in one file
-  are `E8005`.
+  name; `""` keeps every name. It must be an identifier (`E8011` `derived`); not a name §3.4 reserves (C++ keywords, alternative
+  tokens, `detail`, `conformance`, `canon`, `std`, `nlohmann`) nor an identifier `canon_runtime.h` or
+  `canon_runtime_json.h` uses, since those headers cannot be wrapped (`E8011` `reserved`); nor a C++
+  standard-library macro (`E8011` `macro`, §3.4). The `_`-uppercase and `__` shapes are allowed, a
+  define naming a legacy macro. Two equal define names in one file are `E8005` `define`.
 - A member's value is its code with `@codes`, else its index, in decimal (CPP-03); retired
   members are written. A constant's value is decimal for an integer, the member's value for an
   enum member, `1`/`0` for a `Bool`, a C string literal for a `String`; any other type is

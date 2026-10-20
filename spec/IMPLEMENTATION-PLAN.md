@@ -514,7 +514,8 @@ type TypeRef struct {
     Ref     *RefTarget       // collection, same-value or by-key (CG-03), define value
 }
 type Pairs struct { Keys [2]string; Slots int }
-type Enum struct { Pkg, Name, Doc string; Members []EnumMember; Codes int; CppDefines string; JSONCodes bool }
+type Enum struct { Pkg, Name, Doc string; Members []EnumMember; Codes int; CppDefines string; HasCppDefines bool; Order int; JSONCodes bool } // HasCppDefines: @cpp(defines:) present, "" included; Order: position among the package's declarations (DECISIONS 389, 390; §4 review rule)
+// Const gains CppDefines string, HasCppDefines bool, Order int; PackageRef gains CppDefines []string (the define names an import's defines file writes); RefTarget gains Go NameOptions beside Cpp (DECISIONS 387, 390, 391; §4 review rule)
 type EnumMember struct { Name, Wire, Doc string; Index int; Code int64; Retired bool }
 type Variant struct { Pkg, Name, Doc, Tag string; Cases []*Case }
 type Case struct { Name, Wire, Doc string; Fields []*Field; Retired bool }
