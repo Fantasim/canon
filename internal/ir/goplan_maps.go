@@ -37,7 +37,7 @@ func classHolds(class any, is func(TypeRef) bool) bool {
 	return found
 }
 
-// MapKeyTarget is the value the ref keys of map t resolve into at load, in class (WIRE.md §5.8, DECISIONS 312): nil when t's key is no ref, or its target is none class's holders all resolve a ref into (CODEGEN.md §5.8), where the key is read unchecked.
+// MapKeyTarget is the value the ref keys of map t resolve into at load, in class (WIRE.md §5.8, DECISIONS 312, 387): nil when t's key is no ref, or its target is none class's holders all resolve a ref into (CODEGEN.md §5.8), where the key is read unchecked; a literal union over a ref is keyed by its ref arm's target.
 func (pl *GoNamePlan) MapKeyTarget(t TypeRef, class any) *Value {
 	if pl.data == nil {
 		return nil
@@ -45,8 +45,74 @@ func (pl *GoNamePlan) MapKeyTarget(t TypeRef, class any) *Value {
 	return pl.data.mapKeyTarget(t, class)
 }
 
+// UnionRef is the ref arm of a literal union over a string-keyed ref, nil for any other type: the union is its string in every mode (CODEGEN.md §4.1, §5.13; DECISIONS 387).
+func UnionRef(t TypeRef) *TypeRef {
+	if t.Kind == types.LitUnion && t.Elem != nil && t.Elem.Kind == types.Ref && t.Elem.Ref != nil && StringWire(t.Elem) {
+		return t.Elem
+	}
+	return nil
+}
+
+// UnionTarget is the value a data loader checks the keys of union t against in class: where a plain ref of its ref arm resolves at load (CODEGEN.md §5.8; DECISIONS 387); nil for another type, or where the key is read unchecked.
+func (pl *GoNamePlan) UnionTarget(t TypeRef, class any) *Value {
+	if pl.data == nil {
+		return nil
+	}
+	return pl.data.unionTarget(t, class)
+}
+
+func (d *goData) unionTarget(t TypeRef, class any) *Value {
+	if r := UnionRef(t); r != nil {
+		return d.resolvesTo(r.Ref, class)
+	}
+	return nil
+}
+
+// ElemRefTarget is the value ref r, a present element of a list of optional refs, resolves into at load in class: where a plain ref of it does, so a data loader checks it (CODEGEN.md §5.8; DECISIONS 385); nil elsewhere, the key read unchecked.
+func (pl *GoNamePlan) ElemRefTarget(r TypeRef, class any) *Value {
+	if pl.data == nil {
+		return nil
+	}
+	return pl.data.elemRefTarget(r, class)
+}
+
+func (d *goData) elemRefTarget(r TypeRef, class any) *Value {
+	if r.Kind != types.Ref || r.Ref == nil {
+		return nil
+	}
+	return d.resolvesTo(r.Ref, class)
+}
+
+// LeafChecked reports a field's, stored result's or lookup cell's type t, a union or optional ref a data loader checks in class exactly where it checks a plain ref (CODEGEN.md §5.8, DECISIONS 385, 387): a union, or a list one level deep of unions, optional unions or optional refs; never under a map value or at a second list level, where a plain ref is a key only.
+func (pl *GoNamePlan) LeafChecked(t TypeRef, class any) bool {
+	return pl.data != nil && pl.data.leafChecked(t, class)
+}
+
+func (d *goData) leafChecked(t TypeRef, class any) bool {
+	if t.Kind == types.Optional && t.Elem != nil { // a stored result's own optional
+		t = *t.Elem
+	}
+	if d.unionTarget(t, class) != nil {
+		return true
+	}
+	if t.Kind != types.List || t.Elem == nil {
+		return false
+	}
+	e := *t.Elem
+	if e.Kind == types.Optional && e.Elem != nil {
+		return d.unionTarget(*e.Elem, class) != nil || d.elemRefTarget(*e.Elem, class) != nil
+	}
+	return d.unionTarget(e, class) != nil
+}
+
 func (d *goData) mapKeyTarget(t TypeRef, class any) *Value {
-	if t.Kind != types.Map || t.Key == nil || t.Key.Kind != types.Ref || t.Key.Ref == nil {
+	if t.Kind != types.Map || t.Key == nil {
+		return nil
+	}
+	if t.Key.Kind == types.LitUnion {
+		return d.unionTarget(*t.Key, class)
+	}
+	if t.Key.Kind != types.Ref || t.Key.Ref == nil {
 		return nil
 	}
 	return d.resolvesTo(t.Key.Ref, class)
@@ -69,8 +135,11 @@ func (d *goData) checksKeys(key any) bool {
 	return false
 }
 
-// keyChecked reports a map, t itself or one its list, optional or map elements are, with ref keys resolved at load in class.
+// keyChecked reports a map, t itself or one its list, optional or map elements are, with ref keys resolved at load in class, or a type whose unions and optional refs it checks (leafChecked).
 func (d *goData) keyChecked(t TypeRef, class any) bool {
+	if d.leafChecked(t, class) {
+		return true
+	}
 	for {
 		if d.mapKeyTarget(t, class) != nil {
 			return true

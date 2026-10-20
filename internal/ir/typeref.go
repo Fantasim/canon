@@ -35,6 +35,7 @@ type RefTarget struct {
 	Local  bool
 	BigInt bool        // the key field is @ts(bigint): TypeScript keys the ref as a bigint (DECISIONS 278)
 	Cpp    NameOptions // the target let's @cpp(name:), which names its accessor in its owner's emit (CODEGEN.md §3.3, §5.9)
+	Go     NameOptions // the target let's @go(name:), which names its accessor in its owner's go emit (CODEGEN.md §3.3, §5.9)
 }
 
 // Source is where a type argument is read from (FINGERPRINT.md §4.4).

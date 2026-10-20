@@ -15,10 +15,10 @@ type foreignJudge func(s *stage, u *unit, e *Emit, c any) (diag.Kind, bool)
 var foreignReadJudges [targetCount][ModeTypes + 1][]foreignJudge
 
 func init() {
-	foreignReadJudges[TargetGo][ModeData] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeRefUnions, judgeInlineFolds, judgeLookupParams}
+	foreignReadJudges[TargetGo][ModeData] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeInlineFolds, judgeLookupParams}
 	foreignReadJudges[TargetCpp][ModeData] = []foreignJudge{judgeMaps, judgeDependents, judgeInlineFolds, judgeLookupParams}
 	foreignReadJudges[TargetCpp][ModeTypes] = []foreignJudge{judgeMaps, judgeDependents, judgeCppDefaults}
-	foreignReadJudges[TargetGo][ModeTypes] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeRefUnions, judgeGoDefaults}
+	foreignReadJudges[TargetGo][ModeTypes] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeGoDefaults}
 	ts := []foreignJudge{judgeTSFields, judgeLookupParams}
 	foreignReadJudges[TargetTS][ModeData], foreignReadJudges[TargetTS][ModeTypes] = ts, ts
 }
@@ -211,13 +211,6 @@ func judgeCaseReads(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
 		return typeHolds(site.t, func(t *TypeRef) bool { return t.Kind == types.Case })
 	})
 	return diag.KindCaseField, bad
-}
-
-// judgeRefUnions is `RefUnion` for a literal union over a ref in what gen/go's data loader reads of c (checkRefUnions).
-func judgeRefUnions(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
-	fields, fns := classBody(c)
-	bad := slices.ContainsFunc(readSites(fields, readFns(e, fns), noSpan), func(site typeSite) bool { return typeHolds(site.t, isRefUnion) })
-	return diag.KindRefUnion, bad
 }
 
 // judgeInlineFolds is `InlineFoldedKey` for an inline key of c folding onto another key of its object (checkInlineFolds), with a case's tag and a row's `$id` and `$retired` among them; gen/cpp lists inline case keys deep.

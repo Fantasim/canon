@@ -135,6 +135,10 @@ func (l KeyedList[K, T]) Find(k K) (*T, bool) {
 	return &l.rows[i], true
 }
 
+// Ptr is for generated code: a pointer to a copy of v, the form a present optional list
+// element or map value takes (nil is none).
+func Ptr[T any](v T) *T { return &v }
+
 // ---------------------------------------------------------------------------
 // Evaluation errors (DECISIONS 19): translated code panics with *EvalError.
 // ---------------------------------------------------------------------------

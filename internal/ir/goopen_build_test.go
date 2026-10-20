@@ -35,12 +35,12 @@ func TestGoOpenEnumsBuild(t *testing.T) {
 	writeGoMod(t, gen, e2eGoModule)
 	runIn(t, gen, exec.Command("go", "vet", "./..."))
 	runIn(t, gen, exec.Command("go", "test", "-race", "-count=1", "./..."))
-	checkTextDecoders(t, filepath.Join(gen, "go", "b", "b.gen.go"), []string{"DecodeHolesFile", "DecodeGapsFile", "DecodeGridsFile", "DecodeNothingFile", "DecodeHiddenFile"},
-		[]string{"DecodeBonusesFile", "DecodeDstsFile", "DecodeGradedFile", "DecodeSlotsFile", "DecodeWaitsFile"})
+	checkTextDecoders(t, filepath.Join(gen, "go", "b", "b.gen.go"), []string{"DecodeGridsFile", "DecodeNothingFile", "DecodeHiddenFile"},
+		[]string{"DecodeBonusesFile", "DecodeDstsFile", "DecodeGradedFile", "DecodeSlotsFile", "DecodeWaitsFile", "DecodeHolesFile", "DecodeGapsFile"})
 	checkTextDecoders(t, filepath.Join(gen, "go", "c", "c.gen.go"), []string{"DecodePricedFile", "DecodeLinksFile"}, []string{"DecodeUsesFile", "DecodeBonusesFile", "DecodeFlatsFile"})
 }
 
-// checkTextDecoders is DECISIONS 340: a @text fn whose result no Go reader holds (optional elements or map values, a table, a Never, a local record, another package's record with a computed default or without a make hook) gets no Decode<Fn>File and no finding, beside the ones that do.
+// checkTextDecoders is DECISIONS 340: a @text fn whose result no Go reader holds (a table, a Never, a local record, another package's record with a computed default or without a make hook) gets no Decode<Fn>File and no finding, beside the ones that do.
 func checkTextDecoders(t *testing.T, file string, absent, present []string) {
 	t.Helper()
 	src, err := os.ReadFile(file)

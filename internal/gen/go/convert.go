@@ -40,7 +40,7 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 		return g.readPlain(b, goString, raw, loc)
 	case types.LitUnion:
 		g.stringWire(l.t)
-		return g.readUnion(b, l.t, raw, loc)
+		return g.readUnion(b, l, raw, loc)
 	case types.Duration:
 		if g.isTypes() {
 			return g.sourceDuration(b, raw, loc, l.unit)
@@ -61,6 +61,8 @@ func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) st
 		return g.readMap(b, l, raw, loc)
 	case types.TypeApp:
 		return g.readDependentValue(b, l, raw, loc)
+	case types.Optional:
+		return g.readOptional(b, l, raw, loc)
 	default:
 		g.failKind(l.t.Kind)
 		return raw
@@ -157,10 +159,16 @@ func (g *gen) parsed(b *strings.Builder, call string, loc location, what, value 
 	return v
 }
 
-// readUnion reads a literal union's string; one over an enum must be a literal or a member's wire value, else unknown (WIRE.md §5.9, CODEGEN.md §5.13).
-func (g *gen) readUnion(b *strings.Builder, t ir.TypeRef, raw string, loc location) string {
+// readUnion reads a literal union's string; one over an enum must be a literal or a member's wire value, else unknown (WIRE.md §5.9, CODEGEN.md §5.13); one over a ref is checked by unionIDCheck against an id enum its reader parses, and in another package's class by unionOwnerCheck against the owner's keyed list (DECISIONS 387).
+func (g *gen) readUnion(b *strings.Builder, l leaf, raw string, loc location) string {
+	t := l.t
 	v := g.readPlain(b, goString, raw, loc)
 	if t.Elem == nil {
+		return v
+	}
+	if r := ir.UnionRef(t); r != nil {
+		g.unionIDCheck(b, l, *r, v, loc)
+		g.unionOwnerCheck(b, l, *r, v, loc)
 		return v
 	}
 	e, ok := t.Elem.Named.(*ir.Enum)
@@ -189,7 +197,9 @@ func (g *gen) readRef(b *strings.Builder, l leaf, raw string, loc location) stri
 		if t.Key == nil {
 			return raw
 		}
-		return g.readValue(b, leaf{t: *t.Key}, raw, loc)
+		x := g.readValue(b, leaf{t: *t.Key}, raw, loc)
+		g.foreignKeyCheck(b, l, t, x, loc)
+		return x
 	}
 	if g.enumIDs(t.Ref.Pkg) {
 		text := unknownValueText
@@ -230,8 +240,6 @@ func (g *gen) stringWire(t ir.TypeRef) {
 		g.fail(newDetail(ErrMalformed, g.at, unionMalformedFormat, g.at))
 	case t.Elem.Kind == types.TypeApp:
 		g.fail(newDetail(errDependentUnion, g.at, dependentUnionFormat, g.at)) // E8019 DependentType
-	default:
-		g.fail(newDetail(ErrMalformed, g.at, unionFormat, g.at)) // E8019 RefUnion
 	}
 }
 

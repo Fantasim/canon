@@ -1,0 +1,60 @@
+DECISIONS 340, 363, 385, 387 (CODEGEN.md §4.1, §4.2, §5.13): checks and builds, its Go vetting, its C++ and its TypeScript compiling; a's go, cpp and ts types emits decode @text results holding optional list elements, optional map values and a literal union over a ref (b.Item a record of another package), each target's Decode<Fn>File reading nil, std::nullopt or null at its position.
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+emit go { out: "@features/b/go", package: "b", mode: types }
+emit cpp { out: "@features/b/cpp", namespace: "b", mode: data }
+emit ts { out: "@features/b/b.ts", mode: types }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Item }
+
+/// A mood.
+enum Mood { calm, angry }
+
+/// A colour.
+record Colour {
+  /// Its name.
+  name: String
+}
+
+/// The colours.
+let colours: table Colour = {
+  red { name: "Red" }
+}
+
+/// The numbers.
+@text("ints.json")
+export fn ints() -> [Int?] { return [1, none] }
+
+/// The counts.
+@text("counts.json")
+export fn counts() -> {String: Int?} { return { "a": none, "b": 2 } }
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item?] { return [{ n: 1 }, none] }
+
+/// The picks.
+@text("picks.json")
+export fn picks() -> [ref colours | "auto"] { return [red, "auto"] }
+
+/// The items by mood.
+@text("moods.json")
+export fn moods() -> {Mood: Item?} { return { calm: none, angry: { n: 2 } } }
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types }
+emit ts { out: "@features/a/a.ts", mode: types }
+emit text { out: "out/a" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

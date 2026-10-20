@@ -19,8 +19,10 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 		return strconv.FormatInt(as[value.Int](g, v).V, decimal)
 	case types.Float:
 		return g.floatLit(as[value.Float](g, v).V, t.Bits)
-	case types.String, types.LitUnion:
+	case types.String:
 		return strconv.Quote(as[value.Str](g, v).V)
+	case types.LitUnion:
+		return g.unionExpr(t, v)
 	case types.Duration:
 		return g.durationLit(as[value.Dur](g, v).Ms)
 	case types.Enum:
@@ -39,6 +41,8 @@ func (g *gen) expr(t ir.TypeRef, v value.Value) string {
 		return g.mapExpr(t, as[value.Map](g, v))
 	case types.Ref:
 		return g.keyLit(t, as[value.Ref](g, v).Key)
+	case types.Optional:
+		return g.optionalExpr(t, v)
 	case types.TypeApp: // a field's value is assignDependent's; stage E refuses any other (E8019 DependentType)
 		g.fail(newDetail(errDependentNested, g.at, dependentNestedFormat, g.at))
 		return zeroLit

@@ -21,15 +21,13 @@ func init() {
 		(*stage).checkFieldlessCaseFns, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkKindConstants,
 		(*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkForeignBuilt,
 	}
-	// gen/cpp holds optional list elements and map values in every mode (DECISIONS 385); gen/go does not yet.
-	goCode := append(slices.Clone(common), (*stage).checkNegativeZero, (*stage).checkOptionalElements, (*stage).checkOptionalMapValues)
+	goCode := append(slices.Clone(common), (*stage).checkNegativeZero)
 	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkForeignTableLookups,
 		(*stage).checkGoDependentLiterals, (*stage).checkDefineKeys, (*stage).checkForeignOpenEnums)
-	goDecode := append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkGoDecodedDependents, (*stage).checkRefUnions, (*stage).checkForeignReads)
+	goDecode := append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkGoDecodedDependents, (*stage).checkForeignReads)
 	genRules[TargetGo][ModeData] = append(slices.Clone(goDecode), (*stage).checkResolvedLookups, (*stage).checkForeignOpenEnums)
 	// a go types-mode decoder reads what a data loader reads, with the source wire's constant defaults (CODEGEN.md §5.13); a types emit has no LoadInputs (§2.2).
 	genRules[TargetGo][ModeTypes] = append(slices.Clone(goDecode), (*stage).checkGoDefaults, (*stage).checkTypesInputs, (*stage).checkOpenEnumFns)
-	// gen/cpp holds a literal union over a ref as its string in every mode (DECISIONS 387); gen/go's data loader reads none yet (checkRefUnions).
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns, other packages' records (DECISIONS 323).

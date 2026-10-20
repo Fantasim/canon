@@ -35,19 +35,6 @@ func (s *stage) typeSites(u *unit, es *emitSite) []typeSite {
 	return out
 }
 
-// reportTypeSites is E8019 kind at every type site holding a type bad accepts; below is set for the sites whose own top type another rule judges.
-func (s *stage) reportTypeSites(u *unit, es *emitSite, kind diag.Kind, bad func(*TypeRef) bool, below func(typeSite) bool) {
-	for _, site := range s.typeSites(u, es) {
-		held := typeHolds(site.t, bad)
-		if below != nil && below(site) {
-			held = typeHolds(site.t.Elem, bad) || typeHolds(site.t.Key, bad)
-		}
-		if held {
-			u.reportGenConstruct(es, site.span, kind)
-		}
-	}
-}
-
 // typeHolds reports t, or its element, key or map value, that bad accepts; a named type's body is judged at its declaration.
 func typeHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
 	if t == nil {
@@ -55,25 +42,6 @@ func typeHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
 	}
 	return bad(t) || typeHolds(t.Elem, bad) || typeHolds(t.Key, bad)
 }
-
-// checkOptionalElements is E8019 `OptionalElementList`: gen/go has no type for a list of optional elements yet (CODEGEN.md §4.2; gen/cpp's is std::vector<std::optional<T>>, DECISIONS 385).
-func (s *stage) checkOptionalElements(u *unit, es *emitSite) {
-	s.reportTypeSites(u, es, diag.KindOptionalElementList, func(t *TypeRef) bool {
-		return t.Kind == types.List && optionalElem(t)
-	}, nil)
-}
-
-// checkOptionalMapValues is E8019 `OptionalMapValue`: gen/go has no type for a map of optional values yet (CODEGEN.md §4.2; gen/cpp's is canon::FlatMap<K, std::optional<V>>, DECISIONS 385); a map a loader cannot read is MapField alone.
-func (s *stage) checkOptionalMapValues(u *unit, es *emitSite) {
-	read := s.readSpans(u, es, unreadMap(es.e))
-	for _, site := range s.typeSites(u, es) {
-		if !read[site.span] && typeHolds(site.t, func(t *TypeRef) bool { return isMap(t) && optionalElem(t) }) {
-			u.reportGenConstruct(es, site.span, diag.KindOptionalMapValue)
-		}
-	}
-}
-
-func optionalElem(t *TypeRef) bool { return t.Elem != nil && t.Elem.Kind == types.Optional }
 
 // checkTableFields is E8019 `TableField` where gen/go or gen/cpp writes no `table T` (CODEGEN.md §4.2, §5.3): a field holds a table of any record, its package's own or another package's (whose rows are the holder's row type, §5.9, DECISIONS 323), in every mode, but not of an own record where the mode gives that record an id enum, whose members are the keys of a public table value, which a nested table's keys are not, nor in Go of another package's record that a table value of this package gives an id enum (log-2026-10-06 "U5 review FAIL" 3; gen/cpp keys such rows by String); a table anywhere else than a field or a value's top (a fn's parameter or result, a constant, nested in a value's type) has no type. gen/ts writes every table (§4.2, log-2026-10-06 "ERRORS batch for U5/320 done"), so it has no rule.
 func (s *stage) checkTableFields(u *unit, es *emitSite) {

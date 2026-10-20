@@ -1,0 +1,18 @@
+Decision 37, clean: DECISIONS 385, CODEGEN.md §4.2: gen/go holds a list of optional elements as rt.List[*T], wherever it is written (a field, a constant), writing a present scalar through rt.Ptr.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: [Int?]
+}
+
+/// Some cells.
+const some = [1, none]
+
+emit go { out: "@features/a", package: "a" }
+-- a.some.json --
+[1, null]
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

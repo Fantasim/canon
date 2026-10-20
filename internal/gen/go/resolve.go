@@ -71,7 +71,7 @@ func (g *gen) resolveBody(b *body) {
 		case s.Ref != nil:
 		case s.src != nil && s.src.Pairs != nil:
 			g.walkPairs(&out, s, snapshot)
-		case g.valueWalks(s.T):
+		case g.valueWalks(s.T) || g.names.LeafChecked(s.T, g.walkClass):
 			g.walkSlot(&out, s)
 		}
 	}
@@ -81,7 +81,7 @@ func (g *gen) resolveBody(b *body) {
 		}
 		if g.typeWalks(f.res.T) {
 			g.fail(newDetail(ErrMalformed, f.origin, lookupRefFormat, f.origin)) // E8019 ResolvedLookupResult
-		} else if g.valueWalks(f.res.T) {
+		} else if g.valueWalks(f.res.T) || g.names.LeafChecked(f.res.T, g.walkClass) {
 			g.walkCells(&out, f)
 		}
 	}
@@ -164,7 +164,10 @@ func (g *gen) walkCells(b *strings.Builder, f *finiteMethod) {
 		fmt.Fprintf(b, ifOpenFormat, dst+pairOK)
 		dst += pairValue
 	}
-	g.walkValue(b, f.res.T, dst, loc, false)
+	if g.valueWalks(f.res.T) {
+		g.walkValue(b, f.res.T, dst, loc, false)
+	}
+	g.walkChecked(b, f.res.T, dst, loc)
 	if f.pair {
 		b.WriteString(closeBrace)
 	}
@@ -197,7 +200,18 @@ func (g *gen) resolveRef(b *strings.Builder, c refCell, find string, loc locatio
 // its parent's path.
 func (g *gen) walkSlot(b *strings.Builder, s *slot) {
 	inline := s.src != nil && s.src.Inline
-	g.walkValue(b, s.T, g.lc.Out+dot+s.Store, g.keyLoc(messageKey(s)), inline)
+	present := s.needsOK() && s.T.Kind == types.LitUnion // an optional union is its string and its presence flag
+	if present {
+		fmt.Fprintf(b, ifOpenFormat, g.lc.Out+dot+s.OKStore)
+	}
+	expr, loc := g.lc.Out+dot+s.Store, g.keyLoc(messageKey(s))
+	if g.valueWalks(s.T) {
+		g.walkValue(b, s.T, expr, loc, inline)
+	}
+	g.walkChecked(b, s.T, expr, loc)
+	if present {
+		b.WriteString(closeBrace)
+	}
 }
 
 // walkValue resolves the classes a value holds: directly, or through a list's elements.
@@ -218,6 +232,13 @@ func (g *gen) walkValue(b *strings.Builder, t ir.TypeRef, expr string, loc locat
 		g.walkMap(b, t, expr, loc)
 		return
 	}
+	if t.Kind == types.Optional {
+		g.walkOptional(b, t, expr, loc, inline)
+		return
+	}
+	if t.Kind == types.LitUnion || t.Kind == types.Ref { // a key: checked at a field's top only (walkChecked)
+		return
+	}
 	prefix := g.locExpr(loc.dot())
 	if inline {
 		prefix = lc.Path
@@ -235,13 +256,17 @@ func (g *gen) walkPairs(b *strings.Builder, s *slot, snapshot bool) {
 	i, e := g.temp(tempIndex), g.temp(tempElem)
 	fmt.Fprintf(b, pairsWalkFormat, i, g.lc.Out+dot+s.Store, e)
 	for k, es := range eb.slots[:pairFields] {
-		target := g.slotTarget(es)
-		if target == nil {
+		target, union := g.slotTarget(es), g.names.UnionTarget(es.T, rec)
+		if target == nil && union == nil {
 			continue
 		}
 		key := g.temp(tempKey)
 		fmt.Fprintf(b, slotKeyFormat, key, strings.Join(g.slotKeys(s.src.Pairs.Keys[k], s.src.Pairs.Slots), listSep), i)
 		loc := g.root().arg(key)
+		if target == nil {
+			g.pairUnion(b, es, e, union, loc)
+			continue
+		}
 		c := refCell{keys: e + dot + es.KeyStore, dst: e + dot + es.Store, list: es.List, elem: g.entryType(es.Ref)}
 		if es.Optional {
 			c.ok = e + dot + es.OKStore
@@ -249,4 +274,14 @@ func (g *gen) walkPairs(b *strings.Builder, s *slot, snapshot bool) {
 		g.resolveRef(b, c, g.findIn(target, snapshot), loc)
 	}
 	b.WriteString(closeBrace)
+}
+
+// pairUnion checks the union a pairs element's slot es holds, e its element, against the table its ref arm resolves into, a literal accepted, a failure named by its slot key (CODEGEN.md §5.8, §5.14; DECISIONS 387).
+func (g *gen) pairUnion(b *strings.Builder, es *slot, e string, target *ir.Value, loc location) {
+	val := e + dot + es.Store
+	if es.needsOK() {
+		fmt.Fprintf(b, ifOpenFormat, e+dot+es.OKStore)
+		defer b.WriteString(closeBrace)
+	}
+	g.unionCheck(b, es.T, g.findIn(target, g.walkSnap), val, g.errAt(loc, noEntryText, val))
 }

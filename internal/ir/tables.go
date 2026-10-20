@@ -204,7 +204,7 @@ var (
 	goOpenCodesMethods = append(slices.Clone(goOpenEnumMethods), GoCode)
 	goContainerMembers = []string{GoRows, GoLen, GoAt, GoAll, GoFind}
 	textKinds          = kindSet(types.Bool, types.Int, types.Float, types.String, types.LitUnion, types.Duration, // what Decode<Fn>File reads (DECISIONS 340)
-		types.Enum, types.Ref, types.Record, types.Variant, types.List, types.Map)
+		types.Enum, types.Ref, types.Record, types.Variant, types.List, types.Map, types.Optional)
 	goPointerKinds = kindSet(types.Record, types.Variant, types.Case, types.TypeApp) // nil marks absent (CODEGEN.md §4.3)
 	goStdOfKind    = map[types.Kind]string{
 		types.List: GoRT, types.Map: GoRT, types.DepMap: GoRT, types.Duration: goTime,

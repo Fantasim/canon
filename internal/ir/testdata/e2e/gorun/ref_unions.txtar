@@ -1,0 +1,395 @@
+DECISIONS 387, CODEGEN.md §4.1, §5.8, §5.13, WIRE.md §5.8, §5.9: the same Exchange and Paint in a baked (ub), a data (ud) and a types (ut) go emit hold `ref exchanges | "PENYA"` and `ref paints | "none"` (a keyed list keyed by an enum whose wire is not its name) as a Go string: the ref arm and the literal arm, optional, through an alias, in a list, in a list of optionals and as a map key. ub writes them; ud's loader accepts a literal or checks the key where a plain ref is checked (the refs resolve into the holding container; an enum key is read with its Parse), with the ref check's text, and checks each present element of a list of optional refs (DECISIONS 385); ut's decoders read them unchecked. probe_test.go reads each back.
+-- ub/ub.canon --
+/// UB.
+package ub
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// What is given.
+  give: ref exchanges | "PENYA"
+  /// What may be taken.
+  take: Pick?
+  /// Through the alias.
+  alias: Pick
+  /// Every pick.
+  all: [Pick]
+  /// Counts by pick.
+  counts: {Pick: Int}
+  /// Picks that may be missing.
+  maybe: [Pick?] = []
+  /// Exchanges that may be missing.
+  refs: [(ref exchanges)?] = []
+}
+
+/// A colour.
+enum Colour { red, green = "GREEN" }
+
+/// A paint.
+record Paint {
+  /// Its colour.
+  c: Colour
+  /// A pick.
+  p: ref paints | "none"
+  /// Picks.
+  ps: [ref paints | "none"] = []
+  /// By pick.
+  by: {ref paints | "none": Int} = {}
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { give: b, take: "PENYA", alias: "PENYA", all: [a, "PENYA"], counts: { b: 1, "PENYA": 2 }, maybe: [none, b, "PENYA"], refs: [b, none] }
+  b { give: "PENYA", alias: a, all: [], counts: {} }
+}
+
+/// The paints.
+let paints: [Paint] keyed by c = [{ c: red, p: green, ps: [red, "none"], by: { green: 1, "none": 2 } }, { c: green, p: "none" }]
+
+emit go { out: "@features/ub", package: "ub" }
+-- ud/ud.canon --
+/// UD.
+package ud
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// What is given.
+  give: ref exchanges | "PENYA"
+  /// What may be taken.
+  take: Pick?
+  /// Through the alias.
+  alias: Pick
+  /// Every pick.
+  all: [Pick]
+  /// Counts by pick.
+  counts: {Pick: Int}
+  /// Picks that may be missing.
+  maybe: [Pick?] = []
+  /// Exchanges that may be missing.
+  refs: [(ref exchanges)?] = []
+}
+
+/// A colour.
+enum Colour { red, green = "GREEN" }
+
+/// A paint.
+record Paint {
+  /// Its colour.
+  c: Colour
+  /// A pick.
+  p: ref paints | "none"
+  /// Picks.
+  ps: [ref paints | "none"] = []
+  /// By pick.
+  by: {ref paints | "none": Int} = {}
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { give: b, take: "PENYA", alias: "PENYA", all: [a, "PENYA"], counts: { b: 1, "PENYA": 2 }, maybe: [none, b, "PENYA"], refs: [b, none] }
+  b { give: "PENYA", alias: a, all: [], counts: {} }
+}
+
+/// The paints.
+let paints: [Paint] keyed by c = [{ c: red, p: green, ps: [red, "none"], by: { green: 1, "none": 2 } }, { c: green, p: "none" }]
+
+emit go { out: "@features/ud", package: "ud", mode: data }
+emit json { out: "out/" }
+-- ut/ut.canon --
+/// UT.
+package ut
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// What is given.
+  give: ref exchanges | "PENYA"
+  /// What may be taken.
+  take: Pick?
+  /// Through the alias.
+  alias: Pick
+  /// Every pick.
+  all: [Pick]
+  /// Counts by pick.
+  counts: {Pick: Int}
+  /// Picks that may be missing.
+  maybe: [Pick?] = []
+  /// Exchanges that may be missing.
+  refs: [(ref exchanges)?] = []
+}
+
+/// A colour.
+enum Colour { red, green = "GREEN" }
+
+/// A paint.
+record Paint {
+  /// Its colour.
+  c: Colour
+  /// A pick.
+  p: ref paints | "none"
+  /// Picks.
+  ps: [ref paints | "none"] = []
+  /// By pick.
+  by: {ref paints | "none": Int} = {}
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { give: "PENYA", alias: "PENYA", all: [], counts: {} }
+}
+
+/// The paints.
+let paints: [Paint] keyed by c = [{ c: red, p: "none" }]
+
+emit go { out: "@features/ut", package: "ut", mode: types }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"fmt"
+	"iter"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+
+	"example.com/gen/ub"
+	"example.com/gen/ud"
+	"example.com/gen/ut"
+)
+
+const (
+	// bakedRows and bakedPaints are the containers ub bakes and ud's json emit writes, as the show functions print them.
+	bakedRows   = "give=b take=PENYA alias=PENYA all=[a,PENYA] counts={b=1,PENYA=2} maybe=[none,b,PENYA] refs=[b,none]; give=PENYA take=none alias=a all=[] counts={} maybe=[] refs=[]"
+	bakedPaints = "c=red p=GREEN ps=[red,none] by={GREEN=1,none=2}; c=GREEN p=none ps=[] by={}"
+	dataRows    = "../../ud/out/exchanges.json"
+	dataPaints  = "../../ud/out/paints.json"
+	// rowA, rowB, paintA and paintB are the rows of those files, each first row's keys replaced where a case gives them.
+	rowA   = `{"$id": "a", "give": "b", "take": "PENYA", "alias": "PENYA", "all": ["a", "PENYA"], "counts": {"b": 1, "PENYA": 2}, "maybe": [null, "b", "PENYA"], "refs": ["b", null]}`
+	rowB   = `{"$id": "b", "give": "PENYA", "take": null, "alias": "a", "all": [], "counts": {}, "maybe": [], "refs": []}`
+	paintA = `{"c": "red", "p": "GREEN", "ps": ["red", "none"], "by": {"GREEN": 1, "none": 2}}`
+	paintB = `{"c": "GREEN", "p": "none", "ps": [], "by": {}}`
+)
+
+func opt(p *string) string {
+	if p == nil {
+		return "none"
+	}
+	return *p
+}
+
+func list(s iter.Seq[string]) string {
+	var parts []string
+	for v := range s {
+		parts = append(parts, v)
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
+func optList(s iter.Seq[*string]) string {
+	var parts []string
+	for p := range s {
+		parts = append(parts, opt(p))
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
+func counts(s iter.Seq2[string, int64]) string {
+	var parts []string
+	for k, n := range s {
+		parts = append(parts, k+"="+strconv.FormatInt(n, 10))
+	}
+	return "{" + strings.Join(parts, ",") + "}"
+}
+
+// show prints an exchange from its getters' results, refs as the keys they hold.
+func show(give string, take string, takeOK bool, alias string, all iter.Seq[string], by iter.Seq2[string, int64], maybe iter.Seq[*string], refs []*string) string {
+	var takeP *string
+	if takeOK {
+		takeP = &take
+	}
+	var keys []string
+	for _, r := range refs {
+		keys = append(keys, opt(r))
+	}
+	return "give=" + give + " take=" + opt(takeP) + " alias=" + alias + " all=" + list(all) + " counts=" + counts(by) + " maybe=" + optList(maybe) + " refs=[" + strings.Join(keys, ",") + "]"
+}
+
+func showPaint(c, p string, ps iter.Seq[string], by iter.Seq2[string, int64]) string {
+	return "c=" + c + " p=" + p + " ps=" + list(ps) + " by=" + counts(by)
+}
+
+func ptrOf(s string) *string { return &s }
+
+func showUb(e *ub.Exchange) string {
+	take, ok := e.Take()
+	var refs []*string
+	for r := range e.Refs().All() {
+		if r == nil {
+			refs = append(refs, nil)
+		} else {
+			refs = append(refs, ptrOf(fmt.Sprint(*r)))
+		}
+	}
+	return show(e.Give(), take, ok, e.Alias(), e.All().All(), e.Counts().All(), e.Maybe().All(), refs)
+}
+
+func showPaintUb(p *ub.Paint) string {
+	return showPaint(p.C().Wire(), p.P(), p.Ps().All(), p.By().All())
+}
+
+func showUd(e *ud.Exchange) string {
+	take, ok := e.Take()
+	var refs []*string
+	for r := range e.Refs().All() {
+		if r == nil {
+			refs = append(refs, nil)
+		} else {
+			refs = append(refs, ptrOf(fmt.Sprint(*r)))
+		}
+	}
+	return show(e.Give(), take, ok, e.Alias(), e.All().All(), e.Counts().All(), e.Maybe().All(), refs)
+}
+
+func showPaintUd(p *ud.Paint) string {
+	return showPaint(p.C().Wire(), p.P(), p.Ps().All(), p.By().All())
+}
+
+func showUt(e *ut.Exchange) string {
+	take, ok := e.Take()
+	var refs []*string
+	for r := range e.Refs().All() {
+		if r == nil {
+			refs = append(refs, nil)
+		} else {
+			refs = append(refs, ptrOf(fmt.Sprint(*r)))
+		}
+	}
+	return show(e.Give(), take, ok, e.Alias(), e.All().All(), e.Counts().All(), e.Maybe().All(), refs)
+}
+
+func showPaintUt(p *ut.Paint) string {
+	return showPaint(p.C().Wire(), p.P(), p.Ps().All(), p.By().All())
+}
+
+// rows joins the rows of a table as the show functions print them.
+func rows(n int, at func(int) string) string {
+	var parts []string
+	for i := range n {
+		parts = append(parts, at(i))
+	}
+	return strings.Join(parts, "; ")
+}
+
+// DECISIONS 387, CODEGEN.md §4.1: a baked emit writes a literal union over a ref as its string, the ref arm's key as the wire writes it.
+func TestBaked(t *testing.T) {
+	if got := rows(ub.GetExchanges().Len(), func(i int) string { return showUb(ub.GetExchanges().At(i)) }); got != bakedRows {
+		t.Errorf("exchanges = %s\nwant        %s", got, bakedRows)
+	}
+	if got := rows(ub.GetPaints().Len(), func(i int) string { return showPaintUb(ub.GetPaints().At(i)) }); got != bakedPaints {
+		t.Errorf("paints = %s\nwant     %s", got, bakedPaints)
+	}
+}
+
+// dataCase is a data file whose first row names, at one position, a key no entry has, and the error the loader gives.
+type dataCase struct{ name, from, to, want string }
+
+// exchangeCases: refused with the ref check's text where a plain ref is checked (CODEGEN.md §5.8, DECISIONS 312, 387), and at each present element of a list of optional unions or refs (DECISIONS 385).
+var exchangeCases = []dataCase{
+	{"give", `"give": "b"`, `"give": "zz"`, "rows[0].give: no entry zz"},
+	{"take", `"take": "PENYA"`, `"take": "zz"`, "rows[0].take: no entry zz"},
+	{"alias", `"alias": "PENYA"`, `"alias": "zz"`, "rows[0].alias: no entry zz"},
+	{"all", `"all": ["a", "PENYA"]`, `"all": ["a", "zz"]`, "rows[0].all[1]: no entry zz"},
+	{"counts", `"counts": {"b": 1`, `"counts": {"zz": 1`, "rows[0].counts.zz: no entry zz"},
+	{"maybe", `"maybe": [null, "b", "PENYA"]`, `"maybe": [null, "zz", "PENYA"]`, "rows[0].maybe[1]: no entry zz"},
+	{"refs", `"refs": ["b", null]`, `"refs": ["zz", null]`, "rows[0].refs[0]: no entry zz"},
+}
+
+// paintCases: a union over a keyed list keyed by an enum reads its key with the enum's Parse, so a member's name that is not its wire names no entry (DECISIONS 387).
+var paintCases = []dataCase{
+	{"paint_p", `"p": "GREEN"`, `"p": "green"`, "rows[0].p: no entry green"},
+	{"paint_ps", `"ps": ["red", "none"]`, `"ps": ["zz", "none"]`, "rows[0].ps[0]: no entry zz"},
+	{"paint_by", `"by": {"GREEN": 1`, `"by": {"zz": 1`, "rows[0].by.zz: no entry zz"},
+}
+
+func schemaOf(t *testing.T, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(regexp.MustCompile(`"\$schema": "([^"]*)"`).FindSubmatch(raw)[1])
+}
+
+// write writes a data file of two rows under schema, the first with from replaced by to, and returns its path.
+func write(t *testing.T, schema, a, b string, c dataCase) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), c.name+".json")
+	doc := `{"$schema": "` + schema + `", "rows": [` + strings.Replace(a, c.from, c.to, 1) + ", " + b + "]}"
+	if err := os.WriteFile(path, []byte(doc), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// DECISIONS 387, CODEGEN.md §4.1, §5.8: a data loader accepts a literal, or checks the key where a plain ref is checked, with the ref check's text; the files its json emit wrote load whole.
+func TestData(t *testing.T) {
+	ex, err := ud.LoadExchanges(dataRows)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := rows(ex.Len(), func(i int) string { return showUd(ex.At(i)) }); got != bakedRows {
+		t.Errorf("exchanges = %s\nwant        %s", got, bakedRows)
+	}
+	pa, err := ud.LoadPaints(dataPaints)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := rows(pa.Len(), func(i int) string { return showPaintUd(pa.At(i)) }); got != bakedPaints {
+		t.Errorf("paints = %s\nwant     %s", got, bakedPaints)
+	}
+	for _, c := range exchangeCases {
+		path := write(t, schemaOf(t, dataRows), rowA, rowB, c)
+		if _, err := ud.LoadExchanges(path); err == nil || err.Error() != path+": "+c.want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, c.want)
+		}
+	}
+	for _, c := range paintCases {
+		path := write(t, schemaOf(t, dataPaints), paintA, paintB, c)
+		if _, err := ud.LoadPaints(path); err == nil || err.Error() != path+": "+c.want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, c.want)
+		}
+	}
+}
+
+// DECISIONS 387, CODEGEN.md §5.13: a types-mode decoder reads a union's key unchecked.
+func TestTypes(t *testing.T) {
+	ex, err := ut.DecodeExchange([]byte(`{"give": "zz", "take": "a", "alias": "PENYA", "all": ["PENYA", "q"], "counts": {"z": 1, "PENYA": 2}, "maybe": ["zz", null], "refs": [null, "q"]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "give=zz take=a alias=PENYA all=[PENYA,q] counts={z=1,PENYA=2} maybe=[zz,none] refs=[none,q]"
+	if got := showUt(ex); got != want {
+		t.Errorf("exchange = %s\nwant       %s", got, want)
+	}
+	pa, err := ut.DecodePaint([]byte(`{"c": "red", "p": "zz", "ps": ["q"], "by": {"x": 1, "none": 2}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPaint := "c=red p=zz ps=[q] by={x=1,none=2}"
+	if got := showPaintUt(pa); got != wantPaint {
+		t.Errorf("paint = %s\nwant    %s", got, wantPaint)
+	}
+	if _, err := ut.DecodeExchange([]byte(`{"give": 1, "alias": "a", "all": [], "counts": {}}`)); err == nil || err.Error() != "Exchange: $.give: expected a string" {
+		t.Errorf("give: got %v", err)
+	}
+}

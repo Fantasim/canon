@@ -28,13 +28,13 @@ func textDecodable(p *Package, e *Emit, fn *ExportFn) bool {
 	return !slices.ContainsFunc(w.out, func(c any) bool { return !foreignReadable(p, e, use, c) })
 }
 
-// textReadable reports every part of t, through its elements and keys, a public type a Go reader holds at the top of a file: a scalar, an enum, a ref, a public record or variant, a list, or a map of a readable key; never optional below the top. A local type has no Go type; optional elements or map values, a table, a case, a dependent value, a union not written as a string (a ref union), an unreadable map key or a type of CODEGEN.md §4.4 have no Go reader outside a record.
+// textReadable reports every part of t, through its elements and keys, a public type a reader holds at the top of a file: a scalar, an enum, a ref, a public record or variant, a list, a map of a readable key, an optional element or map value (nil, std::nullopt, null: CODEGEN.md §4.2, DECISIONS 385), or a union over a string, an enum or a string-keyed ref (§4.1, DECISIONS 387). A local type has no Go type; a table, a case, a dependent value, a union not written as a string, an unreadable map key or a type of CODEGEN.md §4.4 have no reader outside a record.
 func textReadable(p *Package, t TypeRef) bool {
 	readable := true
 	walkTypeRef(t, func(x TypeRef) {
 		local := x.Named != nil && pkgOf(x.Named) == p.Name && !slices.Contains(p.Types, x.Named)
 		badMap := x.Kind == types.Map && !readableKey(x.Key)
-		badUnion := x.Kind == types.LitUnion && x.Elem != nil && x.Elem.Kind != types.String && (x.Elem.Kind != types.Enum || !StringWire(x.Elem))
+		badUnion := x.Kind == types.LitUnion && x.Elem != nil && x.Elem.Kind != types.String && (x.Elem.Kind != types.Enum && x.Elem.Kind != types.Ref || !StringWire(x.Elem))
 		if local || badMap || badUnion || !textKinds[x.Kind] {
 			readable = false
 		}

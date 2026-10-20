@@ -1,0 +1,58 @@
+CODEGEN.md §5.8, DECISIONS 312, 385, 387: the same Exchange as gorun/unchecked_keys.txtar in a cpp data emit: a data loader checks a union over a ref or an optional ref exactly where it checks a plain ref (a field's top, a list one level deep, a map key) and reads one under a map value or at a second list level unchecked, as a plain ref there is a key only. probe.cpp prints, per argument, `ok` for the exchanges ud loads from a data file (`data:<file>`) or the loader's error.
+-- ud/ud.canon --
+/// UD.
+package ud
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// Its number.
+  n: Int
+  /// A pick, checked.
+  p: Pick = "PENYA"
+  /// Picks, checked one level deep.
+  l: [Pick] = []
+  /// Optional picks, checked one level deep.
+  lo: [Pick?] = []
+  /// Optional refs, checked one level deep.
+  lr: [(ref exchanges)?] = []
+  /// Picks by name: a map value.
+  mv: {String: Pick} = {}
+  /// Optional picks by name.
+  mu: {String: Pick?} = {}
+  /// Optional refs by name.
+  mr: {String: (ref exchanges)?} = {}
+  /// Lists of picks by name: a nested list.
+  ml: {String: [Pick]} = {}
+  /// Rows of picks.
+  nl: [[Pick]] = []
+  /// Rows of optional refs.
+  nr: [[(ref exchanges)?]] = []
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { n: 1 }
+  b { n: 2, p: a, l: [a, "PENYA"], lo: [none, a], lr: [a, none], mv: { "k": a }, mu: { "k": a }, mr: { "k": a }, ml: { "k": [a] }, nl: [[a]], nr: [[a, none]] }
+}
+
+emit cpp { out: "@features/ud", namespace: "ud", mode: data }
+emit json { out: "out/" }
+-- probe.cpp --
+// probe loads the exchanges of a data file (`data:<file>`) and prints `ok` or the loader's error.
+#include <iostream>
+#include <string>
+
+#include "ud/ud.gen.h"
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        std::string error;
+        const auto table = ::ud::Exchanges::Load(arg.substr(5), error);
+        std::cout << arg << ": " << (table ? "ok" : "error " + error) << "\n";
+    }
+    return 0;
+}

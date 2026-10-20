@@ -41,7 +41,7 @@ func TestOpenEnum(t *testing.T) {
 	}
 }
 
-// TestTextDecoded is DECISIONS 340: a @text fn whose result, without a maybe-file's `?`, is a map, a list or a keyed list of public types has a Decode<Fn>File; a String or record file, a list of a local record, of optional elements or of Never has none, and is never refused.
+// TestTextDecoded is DECISIONS 340: a @text fn whose result, without a maybe-file's `?`, is a map, a list or a keyed list of public types has a Decode<Fn>File; a list of optional elements has one too (DECISIONS 385); a String or record file, a list of a local record or of Never has none, and is never refused.
 func TestTextDecoded(t *testing.T) {
 	public := &ir.Record{Pkg: "a", Name: "Point"}
 	local := &ir.Record{Pkg: "a", Name: "Hidden"}
@@ -59,7 +59,7 @@ func TestTextDecoded(t *testing.T) {
 	}
 	p := &ir.Package{Name: "a", Types: []ir.Type{public}, TextFns: fns}
 	got := ir.TextDecoded(p, &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeTypes})
-	if len(got) != 2 || got[0].Name != "points" || got[1].Name != "counts" {
+	if len(got) != 3 || got[0].Name != "points" || got[1].Name != "counts" || got[2].Name != "holes" {
 		t.Fatalf("decoded: %v", got)
 	}
 	if r := ir.TextResult(got[1]); r.Kind != types.Map {

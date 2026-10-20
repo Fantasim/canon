@@ -42,20 +42,20 @@ func (g *gen) typeWalks(t ir.TypeRef) bool {
 	switch {
 	case t.Kind == types.Record, t.Kind == types.Variant:
 		return g.names.NeedsWalk(t.Named)
-	case (t.Kind == types.List || t.Kind == types.Table || t.Kind == types.Map) && t.Elem != nil:
+	case (t.Kind == types.List || t.Kind == types.Table || t.Kind == types.Map || t.Kind == types.Optional) && t.Elem != nil:
 		return g.typeWalks(*t.Elem)
 	}
 	return false
 }
 
-// valueWalks reports a type a resolver walks: one holding, by value, a class it resolves, or a map whose ref keys it checks (WIRE.md §5.8).
+// valueWalks reports a type a resolver walks: one holding, by value, a class it resolves, or a map whose ref keys it checks (WIRE.md §5.8); the unions and optional refs of a field's top are walkChecked's.
 func (g *gen) valueWalks(t ir.TypeRef) bool {
 	switch {
 	case t.Kind == types.Record, t.Kind == types.Variant:
 		return g.names.NeedsWalk(t.Named)
 	case t.Kind == types.Map && g.names.MapKeyTarget(t, g.walkClass) != nil:
 		return true
-	case (t.Kind == types.List || t.Kind == types.Table || t.Kind == types.Map) && t.Elem != nil:
+	case (t.Kind == types.List || t.Kind == types.Table || t.Kind == types.Map || t.Kind == types.Optional) && t.Elem != nil:
 		return g.valueWalks(*t.Elem)
 	}
 	return false

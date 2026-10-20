@@ -1,0 +1,142 @@
+DECISIONS 387, 323 (CODEGEN.md §2.8, §4.1, §5.13) built and run: lib's Offer holds `ref items | "PENYA"`, optional, in a list and as a map key; bk bakes an Offer through lib's make hook, dt's data loader reads one with its own reader (a key that is no literal checked against lib's id enum with the plain ref's text for another package's class), ty's types decoder reads it unchecked. probe_test.go reads each back.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// An item.
+record Item {
+  /// Its weight.
+  w: Int
+}
+
+/// The items.
+let items: table Item = {
+  sword { w: 3 }
+}
+
+/// An offer.
+record Offer {
+  /// What is given.
+  give: ref items | "PENYA"
+  /// What may be taken.
+  take: (ref items | "PENYA")?
+  /// Every pick.
+  all: [ref items | "PENYA"] = []
+  /// Counts by pick.
+  counts: {ref items | "PENYA": Int} = {}
+}
+
+emit go { out: "@features/lib", package: "lib" }
+-- bk/bk.canon --
+/// Baked.
+package bk
+
+import lib { Offer }
+
+/// The offer.
+let offer: Offer = { give: sword, take: "PENYA", all: [sword, "PENYA"], counts: { "PENYA": 1, sword: 2 } }
+
+emit go { out: "@features/bk", package: "bk" }
+-- dt/dt.canon --
+/// Data.
+package dt
+
+import lib { Offer }
+
+/// The offer.
+let offer: Offer = { give: "PENYA" }
+
+emit go { out: "@features/dt", package: "dt", mode: data }
+emit json { out: "out/" }
+-- ty/ty.canon --
+/// Types.
+package ty
+
+import lib { Offer }
+
+/// A shop.
+record Shop {
+  /// Its offer.
+  offer: Offer
+}
+
+emit go { out: "@features/ty", package: "ty", mode: types }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"example.com/gen/bk"
+	"example.com/gen/dt"
+	"example.com/gen/ty"
+)
+
+const dataPath = "../../dt/out/offer.json"
+
+// DECISIONS 387, 323 (CODEGEN.md §2.8, §4.1): bk bakes lib's Offer through lib's make hook, a union over lib's baked table as its string, the ref arm's key as the wire writes it.
+func TestBaked(t *testing.T) {
+	o := bk.GetOffer()
+	take, ok := o.Take()
+	if o.Give() != "sword" || !ok || take != "PENYA" {
+		t.Errorf("give = %q, take = %q, %v", o.Give(), take, ok)
+	}
+	var all []string
+	for v := range o.All().All() {
+		all = append(all, v)
+	}
+	if strings.Join(all, ",") != "sword,PENYA" {
+		t.Errorf("all = %v", all)
+	}
+}
+
+// DECISIONS 387, 323: dt's loader reads lib's Offer with its own reader, a key that is no literal checked against lib's id enum with the plain ref's text for another package's class (`no entry`); a literal passes.
+func TestData(t *testing.T) {
+	good, err := dt.LoadOffer(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if good.Give() != "PENYA" {
+		t.Errorf("give = %q", good.Give())
+	}
+	raw, err := os.ReadFile(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema := regexp.MustCompile(`"\$schema": "([^"]*)"`).FindSubmatch(raw)[1]
+	cases := []struct{ name, body, want string }{
+		{"ok", `{"give": "sword", "take": "PENYA", "all": ["sword", "PENYA"], "counts": {"sword": 1, "PENYA": 2}}`, ""},
+		{"give", `{"give": "zz"}`, "value.give: no entry zz"},
+		{"take", `{"give": "PENYA", "take": "zz"}`, "value.take: no entry zz"},
+		{"all", `{"give": "PENYA", "all": ["sword", "zz"]}`, "value.all[1]: no entry zz"},
+		{"counts", `{"give": "PENYA", "all": [], "counts": {"zz": 1}}`, "value.counts.zz: no entry zz"},
+	}
+	for _, c := range cases {
+		path := filepath.Join(t.TempDir(), c.name+".json")
+		if err := os.WriteFile(path, []byte(`{"$schema": "`+string(schema)+`", "value": `+c.body+"}"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		_, err := dt.LoadOffer(path)
+		switch {
+		case c.want == "" && err != nil:
+			t.Errorf("%s: %v", c.name, err)
+		case c.want != "" && (err == nil || err.Error() != path+": "+c.want):
+			t.Errorf("%s: got %v, want %s", c.name, err, c.want)
+		}
+	}
+}
+
+// DECISIONS 387, CODEGEN.md §5.13: ty's decoder reads lib's Offer with its own reader, a union's key unchecked.
+func TestTypes(t *testing.T) {
+	shop, err := ty.DecodeShop([]byte(`{"offer": {"give": "zz", "take": "q", "all": ["a"], "counts": {"b": 1}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o := shop.Offer(); o.Give() != "zz" {
+		t.Errorf("give = %q", o.Give())
+	}
+}

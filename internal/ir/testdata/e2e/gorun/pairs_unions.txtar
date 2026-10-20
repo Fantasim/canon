@@ -1,0 +1,87 @@
+CODEGEN.md §5.8, §5.14, WIRE.md §5.14, DECISIONS 387: a union over a ref in the element record of a `@json(pairs:)` field is checked by a go data loader like a plain ref there (a pairs element's refs resolving into the table that holds it): a literal passes, a key naming no item is `no entry <key>` at its slot key (`s1`, `p0`). probe_test.go loads the file the json emit wrote, then the same file with a bad key at each slot.
+-- a/a.canon --
+/// A.
+package a
+
+/// A bonus.
+record Bonus {
+  /// The item, or none.
+  s: ref items | "none"
+  /// The amount.
+  a: Int
+}
+
+/// A plain bonus.
+record Plain {
+  /// The item.
+  s: ref items
+  /// The amount.
+  a: Int
+}
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String
+  /// Its bonuses.
+  stats: [Bonus](..=2) = [] @json(pairs: ["s{i}", "a{i}"])
+  /// Its plain bonuses.
+  plains: [Plain](..=2) = [] @json(pairs: ["p{i}", "b{i}"])
+}
+
+/// The items.
+let items: table Item = {
+  sword { name: "Sword", stats: [{ s: "none", a: 1 }, { s: axe, a: 2 }], plains: [{ s: axe, a: 3 }] }
+  axe { name: "Axe" }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"example.com/gen/a"
+)
+
+const dataPath = "../../a/out/items.json"
+
+// DECISIONS 387, CODEGEN.md §5.8: the file the json emit wrote loads, the literal arm and the keys naming an item passing.
+func TestGood(t *testing.T) {
+	items, err := a.LoadItems(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sword := items.At(0)
+	if sword.Stats().Len() != 2 || sword.Stats().At(0).S() != "none" || sword.Stats().At(1).S() != "axe" {
+		t.Errorf("stats = %v", sword.Stats())
+	}
+}
+
+// DECISIONS 387, CODEGEN.md §5.8, WIRE.md §5.14: a union key in a pairs element naming no item is refused, as a plain ref's key is, at its slot key.
+func TestBad(t *testing.T) {
+	raw, err := os.ReadFile(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ name, from, to, want string }{
+		{"union", `"s1": "axe"`, `"s1": "zz"`, "rows[0].s1: no entry zz"},
+		{"plain", `"p0": "axe"`, `"p0": "zz"`, "rows[0].p0: no entry zz"},
+	} {
+		if !strings.Contains(string(raw), c.from) {
+			t.Fatalf("%s: no %s in the data file", c.name, c.from)
+		}
+		path := filepath.Join(t.TempDir(), c.name+".json")
+		if err := os.WriteFile(path, []byte(strings.Replace(string(raw), c.from, c.to, 1)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := a.LoadItems(path); err == nil || err.Error() != path+": "+c.want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, c.want)
+		}
+	}
+}

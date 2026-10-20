@@ -80,8 +80,18 @@ func (g *gen) walkMap(b *strings.Builder, t ir.TypeRef, expr string, loc locatio
 		g.walkValue(&body, g.sub(t.Elem), elem, heldAt(w.KP), false)
 	}
 	if target := g.names.MapKeyTarget(t, g.walkClass); target != nil {
-		w.Check = fmt.Sprintf(keyCheckFormat, g.temp(tempOK), g.findIn(target, g.walkSnap), k, g.errAt(heldAt(w.KP), noEntryText, w.Text))
+		w.Check = g.mapKeyCheck(t, target, k, g.errAt(heldAt(w.KP), noEntryText, w.Text))
 	}
 	w.Body = body.String()
 	g.execTo(b, tmplMapWalk, w)
+}
+
+// mapKeyCheck refuses a map key k that names no entry of target, failing with fail: a plain ref's key is looked up as it is, a union over a ref's string only when it is no literal (DECISIONS 387).
+func (g *gen) mapKeyCheck(t ir.TypeRef, target *ir.Value, k, fail string) string {
+	if key := g.sub(t.Key); key.Kind == types.LitUnion {
+		var b strings.Builder
+		g.unionCheck(&b, key, g.findIn(target, g.walkSnap), k, fail)
+		return b.String()
+	}
+	return fmt.Sprintf(keyCheckFormat, g.temp(tempOK), g.findIn(target, g.walkSnap), k, fail)
 }

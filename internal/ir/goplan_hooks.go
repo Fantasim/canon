@@ -84,6 +84,16 @@ func (pl *GoNamePlan) hookSlots(fields []*Field, fns []*ExportFn, pkg string) []
 	return out
 }
 
+// OwnerChecks reports a ref r of a class of another package pkg into pkg's keyed list that pkg's baked or embedded emit holds: its owner's hook resolves it, so a reader refuses a key naming no entry of the list in every position (CODEGEN.md §2.8 Refs, §5.8); a table's ids are an enum its reader parses (DECISIONS 387).
+func (pl *GoNamePlan) OwnerChecks(r TypeRef, pkg string) bool {
+	return r.Kind == types.Ref && r.Ref != nil && r.Ref.Keyed && ownerResolves(pl.p, pkg, TargetGo, r.Ref)
+}
+
+// OwnerAccessor is the accessor of the owner's value r targets in its go emit, Get<V> or that value's @go(name:), named as the owner's own plan names it (AccessorName; CODEGEN.md §3.3, §5.9).
+func (pl *GoNamePlan) OwnerAccessor(r *RefTarget) string {
+	return pl.AccessorName(&Value{Name: r.Value, Go: r.Go})
+}
+
 // ownerSlot is a field's slot as its package pkg lays it out: this package's own (Slot), else resolved only where pkg's hook fills the entry (ownerResolves) and a key with its presence otherwise (CODEGEN.md §5.8, §5.14).
 func (pl *GoNamePlan) ownerSlot(f *Field, pkg string) GoSlot {
 	if pkg == pl.p.Name {

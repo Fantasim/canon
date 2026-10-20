@@ -41,7 +41,6 @@ const (
 	lookupParamFormat    = "%s: a finite parameter that is not an enum or a Bool, in data mode (CODEGEN.md §5.10)"
 	lookupRefFormat      = "%s: a finite-parameter method whose result holds a ref resolved at load, in data mode"
 	dataValueFormat      = "data value %s that is not a table, a keyed list or a record (CODEGEN.md §2.2)"
-	unionFormat          = "%s: a literal union over a ref"
 	unionMalformedFormat = "%s: a literal union whose other arm is not string-wired"
 	inlineFormat         = "%s: an optional or non-variant @json(inline) field, in data mode"
 	foldFormat           = "%s: an inline variant key equal to another key of its parent but for letter case, in data mode"
@@ -76,6 +75,10 @@ const (
 	andSep           = " && "
 	unionCheckFormat = "if %s {\nreturn %s\n}\n"
 	keyCheckFormat   = "if _, %[1]s := %[2]s(%[3]s); !%[1]s {\nreturn %[4]s\n}\n"
+	parsedKeyFormat  = "%[1]s, %[2]s := %[3]s(%[4]s)\n"
+	findAgainFormat  = "if %[1]s {\n_, %[1]s = %[2]s(%[3]s)\n}\n"
+	findKeyFormat    = "_, %[1]s := %[2]s(%[3]s)\n"
+	failUnlessFormat = "if !%s {\nreturn %s\n}\n"
 )
 
 // Dependent types (CODEGEN.md §5.6): what stage E refuses first (E8019 DependentType; E8012 for a define ref), so meeting one is ErrMalformed, each its own text (decision 194).
@@ -115,3 +118,11 @@ var kindNames = [...]string{
 	types.DepUnion: "dependent union", types.Define: "define", types.Any: "Any", types.None: "None",
 	types.Error: "error",
 }
+
+// Optional list elements and map values (CODEGEN.md §4.2, DECISIONS 385): `*T`, nil for none, a present scalar through rt.Ptr.
+const (
+	ptrFormat          = "%s.Ptr[%s](%s)"
+	optionalOpenFormat = "var %[1]s %[2]s\nif string(%[3]s) != \"null\" {\n"
+	ifNotNilFormat     = "if %s != nil {\n"
+	derefFormat        = "(*%s)"
+)

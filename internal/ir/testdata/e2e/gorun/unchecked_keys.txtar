@@ -1,0 +1,117 @@
+CODEGEN.md §5.8, DECISIONS 312, 385, 387: in a class of its own package a data loader checks a union over a ref or an optional ref exactly where it checks a plain ref: a field's top, a list one level deep and a map key. Under a map value or at a second list level a plain ref is a key only, so a union or optional ref there is read unchecked, whatever key it holds (cpprun/unchecked_keys.txtar: C++ accepts the same files). probe_test.go loads the file the json emit wrote, then the same file with a key naming no exchange at each such position (loading without error), and at the checked ones (refused with `no entry zz`).
+-- ud/ud.canon --
+/// UD.
+package ud
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// Its number.
+  n: Int
+  /// A pick, checked.
+  p: Pick = "PENYA"
+  /// Picks, checked one level deep.
+  l: [Pick] = []
+  /// Optional picks, checked one level deep.
+  lo: [Pick?] = []
+  /// Optional refs, checked one level deep.
+  lr: [(ref exchanges)?] = []
+  /// Picks by name: a map value.
+  mv: {String: Pick} = {}
+  /// Optional picks by name.
+  mu: {String: Pick?} = {}
+  /// Optional refs by name.
+  mr: {String: (ref exchanges)?} = {}
+  /// Lists of picks by name: a nested list.
+  ml: {String: [Pick]} = {}
+  /// Rows of picks.
+  nl: [[Pick]] = []
+  /// Rows of optional refs.
+  nr: [[(ref exchanges)?]] = []
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { n: 1 }
+  b { n: 2, p: a, l: [a, "PENYA"], lo: [none, a], lr: [a, none], mv: { "k": a }, mu: { "k": a }, mr: { "k": a }, ml: { "k": [a] }, nl: [[a]], nr: [[a, none]] }
+}
+
+emit go { out: "@features/ud", package: "ud", mode: data }
+emit json { out: "out/" }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"example.com/gen/ud"
+)
+
+const dataPath = "../../ud/out/exchanges.json"
+
+// keyCase replaces, in the file, a position holding the key a by one holding zz.
+type keyCase struct{ name, from, to string }
+
+// unchecked: the positions where a plain ref is a key only.
+var unchecked = []keyCase{
+	{"mv", `"mv": {"k": "a"}`, `"mv": {"k": "zz"}`},
+	{"mu", `"mu": {"k": "a"}`, `"mu": {"k": "zz"}`},
+	{"mr", `"mr": {"k": "a"}`, `"mr": {"k": "zz"}`},
+	{"ml", `"ml": {"k": ["a"]}`, `"ml": {"k": ["zz"]}`},
+	{"nl", `"nl": [["a"]]`, `"nl": [["zz"]]`},
+	{"nr", `"nr": [["a", null]]`, `"nr": [["zz", null]]`},
+}
+
+// checked: the positions where a plain ref is resolved, and the path the error names.
+var checked = []struct{ keyCase; at string }{
+	{keyCase{"p", `"p": "a"`, `"p": "zz"`}, "p"},
+	{keyCase{"l", `"l": ["a", "PENYA"]`, `"l": ["a", "zz"]`}, "l[1]"},
+	{keyCase{"lo", `"lo": [null, "a"]`, `"lo": [null, "zz"]`}, "lo[1]"},
+	{keyCase{"lr", `"lr": ["a", null]`, `"lr": ["zz", null]`}, "lr[0]"},
+}
+
+func write(t *testing.T, schema string, c keyCase, rows []string) string {
+	t.Helper()
+	body := `{"$schema": "` + schema + `", "rows": [` + strings.Join(rows, ", ") + "]}"
+	path := filepath.Join(t.TempDir(), c.name+".json")
+	if err := os.WriteFile(path, []byte(strings.Replace(body, c.from, c.to, 1)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// CODEGEN.md §5.8, DECISIONS 312, 387: a union or optional ref under a map value or at a second list level is read unchecked, as a plain ref there; one at a field's top or one list level deep is checked.
+func TestKeys(t *testing.T) {
+	if _, err := ud.LoadExchanges(dataPath); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema := string(regexp.MustCompile(`"\$schema": "([^"]*)"`).FindSubmatch(raw)[1])
+	rowA := `{"$id": "a", "n": 1, "p": "PENYA", "l": [], "lo": [], "lr": [], "mv": {}, "mu": {}, "mr": {}, "ml": {}, "nl": [], "nr": []}`
+	rowB := `{"$id": "b", "n": 2, "p": "a", "l": ["a", "PENYA"], "lo": [null, "a"], "lr": ["a", null], "mv": {"k": "a"}, "mu": {"k": "a"}, "mr": {"k": "a"}, "ml": {"k": ["a"]}, "nl": [["a"]], "nr": [["a", null]]}`
+	rows := []string{rowA, rowB}
+	if _, err := ud.LoadExchanges(write(t, schema, keyCase{name: "good"}, rows)); err != nil {
+		t.Fatalf("the rows used here do not load: %v", err)
+	}
+	for _, c := range unchecked {
+		if _, err := ud.LoadExchanges(write(t, schema, c, rows)); err != nil {
+			t.Errorf("%s: a key naming no exchange was refused: %v", c.name, err)
+		}
+	}
+	for _, c := range checked {
+		path := write(t, schema, c.keyCase, rows)
+		want := path + ": rows[1]." + c.at + ": no entry zz"
+		if _, err := ud.LoadExchanges(path); err == nil || err.Error() != want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, want)
+		}
+	}
+}

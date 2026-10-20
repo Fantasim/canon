@@ -127,11 +127,11 @@ export fn slots() -> [Slot] keyed by dst {
   return [{ dst: str, n: 1 }, { dst: sta, n: 2 }]
 }
 
-/// Holes: no Go reader holds optional elements, so no decoder and no finding (DECISIONS 340).
+/// Holes: optional elements, null being nil (DECISIONS 340, 385).
 @text("holes.json")
 export fn holes() -> [Int?] { return [1, none] }
 
-/// Gaps: nor optional map values.
+/// Gaps: optional map values.
 @text("gaps.json")
 export fn gaps() -> {String: Int?} { return { "a": none } }
 

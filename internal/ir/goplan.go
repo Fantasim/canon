@@ -288,7 +288,7 @@ func slotWith(t TypeRef, opt bool, getter, store string, resolves func(*RefTarge
 	s.Resolved = s.Ref != nil && resolves(s.Ref)
 	s.Main = s.Ref == nil || s.Resolved
 	s.Key = s.Ref != nil && (!s.Resolved || s.List)
-	pointer := s.Ref == nil && goPointerKinds[t.Kind] || s.Ref != nil && !s.List
+	pointer := s.Ref == nil && GoPointerKind(t.Kind) || s.Ref != nil && !s.List
 	s.OK = opt && (!s.Main || s.Key || !pointer)
 	s.Getter, s.Store, s.OKStore = getter, store, store+goOKStoreSuffix
 	s.KeyGetter, s.KeyStore = getter+GoID, store+goKeyStoreSuffix
@@ -368,3 +368,6 @@ func (pl *GoNamePlan) local(name string) (string, bool) {
 	_, clash := pl.imports[name+underscore]
 	return name + underscore, !clash
 }
+
+// GoPointerKind reports a kind whose Go type is a pointer to its own type, nil marking absent: a record, variant, case or dependent type, whose optional list element or map value is that same pointer (CODEGEN.md §4.2, §4.3; DECISIONS 385).
+func GoPointerKind(k types.Kind) bool { return goPointerKinds[k] }

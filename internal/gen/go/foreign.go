@@ -191,12 +191,12 @@ func (g *gen) hookZero(s *slot, m member) string {
 	case s.Ref != nil:
 		return g.zeroKeyOf(s.refType())
 	}
-	switch s.T.Kind {
-	case types.String, types.LitUnion:
+	switch k := s.T.Kind; {
+	case k == types.String, k == types.LitUnion:
 		return emptyString
-	case types.Record, types.Variant, types.Case, types.TypeApp:
+	case ir.GoPointerKind(k):
 		return nilLit
-	case types.List, types.Map, types.DepMap, types.Table:
+	case k == types.List, k == types.Map, k == types.DepMap, k == types.Table:
 		return m.typ + emptyBraces
 	default: // a number, a Duration, an enum: an untyped 0
 		return zeroLit

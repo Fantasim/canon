@@ -1,0 +1,326 @@
+DECISIONS 385, CODEGEN.md §4.2, WIRE.md §5.4: the same Sheet in a baked (ob), a data (od) and a types (ot) go emit holds [Int?], [String?], [Cell?], {String: Int?}, {Mood: Cell?}, [Mood?] and [Duration?] as rt.List[*T] and rt.Map[K, *V], nil being none: ob's literals (a scalar through rt.Ptr), od's loader and ot's decoder give nil where the value is none or null and a pointer to the element elsewhere, ot also decodes the @text results [Int?], {String: Int?} and [Cell?] from the files its text emit renders; probe_test.go reads each back.
+-- ob/ob.canon --
+/// OB.
+package ob
+
+/// A mood.
+enum Mood { calm, angry }
+
+/// A cell.
+record Cell {
+  /// Its value.
+  n: Int
+}
+
+/// A sheet.
+record Sheet {
+  /// Numbers.
+  ints: [Int?]
+  /// Words.
+  words: [String?]
+  /// Cells.
+  cells: [Cell?]
+  /// Counts by name.
+  counts: {String: Int?}
+  /// Cells by mood.
+  byMood: {Mood: Cell?}
+  /// Moods.
+  moods: [Mood?] = [none, angry]
+  /// Waits.
+  waits: [Duration?] = [5s, none]
+}
+
+/// Some numbers.
+const SOME = [1, none]
+
+/// The sheet.
+let sheet: Sheet = {
+  ints: [1, none, 3]
+  words: [none, "w"]
+  cells: [{ n: 4 }, none]
+  counts: { "a": none, "b": 2 }
+  byMood: { calm: none, angry: { n: 5 } }
+}
+
+emit go { out: "@features/ob", package: "ob" }
+-- od/od.canon --
+/// OD.
+package od
+
+/// A mood.
+enum Mood { calm, angry }
+
+/// A cell.
+record Cell {
+  /// Its value.
+  n: Int
+}
+
+/// A sheet.
+record Sheet {
+  /// Numbers.
+  ints: [Int?]
+  /// Words.
+  words: [String?]
+  /// Cells.
+  cells: [Cell?]
+  /// Counts by name.
+  counts: {String: Int?}
+  /// Cells by mood.
+  byMood: {Mood: Cell?}
+  /// Moods.
+  moods: [Mood?] = [none, angry]
+  /// Waits.
+  waits: [Duration?] = [5s, none]
+}
+
+/// The sheet.
+let sheet: Sheet = {
+  ints: [1, none, 3]
+  words: [none, "w"]
+  cells: [{ n: 4 }, none]
+  counts: { "a": none, "b": 2 }
+  byMood: { calm: none, angry: { n: 5 } }
+}
+
+emit go { out: "@features/od", package: "od", mode: data }
+emit json { out: "out/" }
+-- ot/ot.canon --
+/// OT.
+package ot
+
+/// A mood.
+enum Mood { calm, angry }
+
+/// A cell.
+record Cell {
+  /// Its value.
+  n: Int
+}
+
+/// A sheet.
+record Sheet {
+  /// Numbers.
+  ints: [Int?]
+  /// Words.
+  words: [String?]
+  /// Cells.
+  cells: [Cell?]
+  /// Counts by name.
+  counts: {String: Int?}
+  /// Cells by mood.
+  byMood: {Mood: Cell?}
+  /// Moods.
+  moods: [Mood?] = [none, angry]
+  /// Waits.
+  waits: [Duration?] = [5s, none]
+}
+
+/// The numbers file.
+@text("ints.json")
+export fn ints() -> [Int?] { return [1, none] }
+
+/// The counts file.
+@text("counts.json")
+export fn counts() -> {String: Int?} { return { "a": none, "b": 2 } }
+
+/// The cells file.
+@text("cells.json")
+export fn cellList() -> [Cell?] { return [none, { n: 7 }] }
+
+emit go { out: "@features/ot", package: "ot", mode: types }
+emit text { out: "out/" }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"iter"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"example.com/gen/ob"
+	"example.com/gen/od"
+	"example.com/gen/ot"
+)
+
+const (
+	// sheetWant is the sheet ob bakes and od's json emit writes, as show prints it.
+	sheetWant = "ints=[1,none,3] words=[none,w] cells=[n4,none] counts={a=none,b=2} byMood={calm=none,angry=n5} moods=[none,angry] waits=[5000ms,none]"
+	dataPath  = "../../od/out/sheet.json"
+	emptyKeys = `"ints": [], "words": [], "cells": [], "counts": {}, "byMood": {}`
+	nulls     = "ints=[none] words=[none] cells=[none] counts={a=none} byMood={calm=none} moods=[none] waits=[none]"
+	nothing   = "ints=[] words=[] cells=[] counts={} byMood={} moods=[] waits=[]"
+)
+
+func opt[T any](p *T, f func(T) string) string {
+	if p == nil {
+		return "none"
+	}
+	return f(*p)
+}
+
+func seq[T any](s iter.Seq[*T], f func(T) string) string {
+	var parts []string
+	for p := range s {
+		parts = append(parts, opt(p, f))
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
+func seqMap[K comparable, V any](s iter.Seq2[K, *V], k func(K) string, f func(V) string) string {
+	var parts []string
+	for key, p := range s {
+		parts = append(parts, k(key)+"="+opt(p, f))
+	}
+	return "{" + strings.Join(parts, ",") + "}"
+}
+
+func i64(n int64) string        { return strconv.FormatInt(n, 10) }
+func str(s string) string       { return s }
+func ms(d time.Duration) string { return strconv.FormatInt(d.Milliseconds(), 10) + "ms" }
+func cell(n int64) string       { return "n" + strconv.FormatInt(n, 10) }
+
+func showBaked(s *ob.Sheet) string {
+	mood := func(m ob.Mood) string { return m.Wire() }
+	return "ints=" + seq(s.Ints().All(), i64) + " words=" + seq(s.Words().All(), str) +
+		" cells=" + seq(s.Cells().All(), func(c ob.Cell) string { return cell(c.N()) }) +
+		" counts=" + seqMap(s.Counts().All(), str, i64) +
+		" byMood=" + seqMap(s.ByMood().All(), mood, func(c ob.Cell) string { return cell(c.N()) }) +
+		" moods=" + seq(s.Moods().All(), mood) + " waits=" + seq(s.Waits().All(), ms)
+}
+
+func showData(s *od.Sheet) string {
+	mood := func(m od.Mood) string { return m.Wire() }
+	return "ints=" + seq(s.Ints().All(), i64) + " words=" + seq(s.Words().All(), str) +
+		" cells=" + seq(s.Cells().All(), func(c od.Cell) string { return cell(c.N()) }) +
+		" counts=" + seqMap(s.Counts().All(), str, i64) +
+		" byMood=" + seqMap(s.ByMood().All(), mood, func(c od.Cell) string { return cell(c.N()) }) +
+		" moods=" + seq(s.Moods().All(), mood) + " waits=" + seq(s.Waits().All(), ms)
+}
+
+func showTypes(s *ot.Sheet) string {
+	mood := func(m ot.Mood) string { return m.Wire() }
+	return "ints=" + seq(s.Ints().All(), i64) + " words=" + seq(s.Words().All(), str) +
+		" cells=" + seq(s.Cells().All(), func(c ot.Cell) string { return cell(c.N()) }) +
+		" counts=" + seqMap(s.Counts().All(), str, i64) +
+		" byMood=" + seqMap(s.ByMood().All(), mood, func(c ot.Cell) string { return cell(c.N()) }) +
+		" moods=" + seq(s.Moods().All(), mood) + " waits=" + seq(s.Waits().All(), ms)
+}
+
+// DECISIONS 385, CODEGEN.md §4.2: a baked emit writes none as nil and a present scalar through rt.Ptr; a constant list does too.
+func TestBaked(t *testing.T) {
+	if got := showBaked(ob.GetSheet()); got != sheetWant {
+		t.Errorf("sheet = %s\nwant    %s", got, sheetWant)
+	}
+	if got := seq(ob.Some().All(), i64); got != "[1,none]" {
+		t.Errorf("Some = %s", got)
+	}
+}
+
+// valueCase is a value of the sheet in a data or types file, and what show prints for it, or the error, through od's loader and ot's decoder.
+type valueCase struct{ name, body, data, types string }
+
+var cases = []valueCase{
+	{"full", `{"ints": [null, 2], "words": ["x", null], "cells": [null, {"n": 3}], "counts": {"z": 1, "a": null}, "byMood": {"calm": {"n": 6}, "angry": null}, "moods": ["calm", null], "waits": [null, 250]}`,
+		"ints=[none,2] words=[x,none] cells=[none,n3] counts={z=1,a=none} byMood={calm=n6,angry=none} moods=[calm,none] waits=[none,250ms]",
+		"ints=[none,2] words=[x,none] cells=[none,n3] counts={z=1,a=none} byMood={calm=n6,angry=none} moods=[calm,none] waits=[none,250ms]"},
+	{"nulls", `{"ints": [null], "words": [null], "cells": [null], "counts": {"a": null}, "byMood": {"calm": null}, "moods": [null], "waits": [null]}`, nulls, nulls},
+	{"empty", `{"ints": [], "words": [], "cells": [], "counts": {}, "byMood": {}, "moods": [], "waits": []}`, nothing, nothing},
+	{"absent", "{" + emptyKeys + "}", "value.moods: missing", "ints=[] words=[] cells=[] counts={} byMood={} moods=[none,angry] waits=[5000ms,none]"},
+	{"elem", `{"ints": [null, "x"], "words": [], "cells": [], "counts": {}, "byMood": {}, "moods": [], "waits": []}`,
+		"value.ints[1]: expected an integer", "Sheet: $.ints[1]: expected an integer"},
+	{"cell", `{"ints": [], "words": [], "cells": [{}], "counts": {}, "byMood": {}, "moods": [], "waits": []}`,
+		"value.cells[0].n: missing", "Sheet: $.cells[0].n: missing"},
+	{"mood", `{"ints": [], "words": [], "cells": [], "counts": {}, "byMood": {}, "moods": ["sad"], "waits": []}`,
+		"value.moods[0]: unknown value sad", "Sheet: $.moods[0]: unknown value sad"},
+	{"value", `{"ints": [], "words": [], "cells": [], "counts": {"a": "x"}, "byMood": {}, "moods": [], "waits": []}`,
+		"value.counts.a: expected an integer", "Sheet: $.counts.a: expected an integer"},
+	{"wait", `{"ints": [], "words": [], "cells": [], "counts": {}, "byMood": {}, "moods": [], "waits": [0.5]}`,
+		"value.waits[0]: expected an integer from -9223372036854 to 9223372036854", "Sheet: $.waits[0]: expected a whole number of milliseconds"},
+	{"list", `{"ints": null, "words": [], "cells": [], "counts": {}, "byMood": {}, "moods": [], "waits": []}`,
+		"value.ints: null", "Sheet: $.ints: null"},
+}
+
+// DECISIONS 385, WIRE.md §5.4: a data loader reads JSON null inside a list or map as nil, in file order, and refuses what is no element at its path.
+func TestData(t *testing.T) {
+	good, err := od.LoadSheet(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := showData(good); got != sheetWant {
+		t.Errorf("sheet = %s\nwant    %s", got, sheetWant)
+	}
+	raw, err := os.ReadFile(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema := regexp.MustCompile(`"\$schema": "([^"]*)"`).FindSubmatch(raw)[1]
+	for _, c := range cases {
+		path := filepath.Join(t.TempDir(), c.name+".json")
+		doc := `{"$schema": "` + string(schema) + `", "value": ` + c.body + "}"
+		if err := os.WriteFile(path, []byte(doc), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		var got string
+		if s, err := od.LoadSheet(path); err != nil {
+			got = strings.TrimPrefix(err.Error(), path+": ")
+		} else {
+			got = showData(s)
+		}
+		if got != c.data {
+			t.Errorf("%s: got %s\nwant %s", c.name, got, c.data)
+		}
+	}
+}
+
+// DECISIONS 385, 340, CODEGEN.md §5.13: Decode<Fn>File reads a @text result holding optional elements or map values, the files the text emit renders, null as nil.
+func TestTextFiles(t *testing.T) {
+	read := func(name string) []byte {
+		raw, err := os.ReadFile("../../ot/out/" + name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return raw
+	}
+	ints, err := ot.DecodeIntsFile(read("ints.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := seq(ints.All(), i64); got != "[1,none]" {
+		t.Errorf("ints = %s", got)
+	}
+	counts, err := ot.DecodeCountsFile(read("counts.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := seqMap(counts.All(), str, i64); got != "{a=none,b=2}" {
+		t.Errorf("counts = %s", got)
+	}
+	cells, err := ot.DecodeCellListFile(read("cells.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := seq(cells.All(), func(c ot.Cell) string { return cell(c.N()) }); got != "[none,n7]" {
+		t.Errorf("cells = %s", got)
+	}
+}
+
+// DECISIONS 385, WIRE.md §5.4, CODEGEN.md §5.13: a types-mode decoder reads null inside a list or map as nil, takes the defaults of absent keys, and refuses what is no element at its path.
+func TestTypes(t *testing.T) {
+	for _, c := range cases {
+		var got string
+		if s, err := ot.DecodeSheet([]byte(c.body)); err != nil {
+			got = err.Error()
+		} else {
+			got = showTypes(s)
+		}
+		if got != c.types {
+			t.Errorf("%s: got %s\nwant %s", c.name, got, c.types)
+		}
+	}
+}

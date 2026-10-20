@@ -60,9 +60,6 @@ func dataRefusals() map[string]func(*ir.Package) {
 		"a dependent map field": func(p *ir.Package) {
 			addField(p, wired("m", "m", "", ir.TypeRef{Kind: types.DepMap, Key: &strT, Elem: &intT})) // E8019 DependentType: a parameter bound per key (DECISIONS 312)
 		},
-		"a list of optionals": func(p *ir.Package) {
-			addField(p, wired("o", "o", "", listT(optT(intT))))
-		},
 		"a non-string literal union": func(p *ir.Package) {
 			addField(p, wired("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &intT, Literals: []string{"none"}}))
 		},
@@ -77,9 +74,6 @@ func dataRefusals() map[string]func(*ir.Package) {
 			addField(p, &ir.Field{Name: "v", Type: typed(v, types.Variant), Inline: true})
 		},
 		"a table-typed field": func(p *ir.Package) { addField(p, wired("t", "t", "", ir.TypeRef{Kind: types.Table, Elem: &intT})) },
-		"a union over a string-keyed ref": func(p *ir.Package) {
-			addField(p, wired("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &strT}, Literals: []string{"none"}}))
-		},
 	}
 }
 

@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2, §5.6, DECISIONS 312: a dependent map of optional values in a data loader's class is both DependentOutsideField (the loader cannot bind its parameter) and OptionalMapValue (gen/go types none yet, DECISIONS 385); each is reported once at the field.
+EVALUATION.md §1, CODEGEN.md §4.2, §5.6, DECISIONS 312, 385: a dependent map of optional values in a data loader's class is DependentOutsideField alone (the loader cannot bind its parameter), reported once at the field; gen/go holds optional map values.
 -- a/a.canon --
 package a
 
@@ -34,7 +34,4 @@ emit json { out: "out/" }
 error[E8019]  a/a.canon:23:3
   emit go in data mode cannot generate a dependent value outside a record field (in a map, a literal union, or a value or result of its own); hold the value in a record field beside its discriminant
 
-error[E8019]  a/a.canon:23:3
-  emit go in data mode cannot generate a map with optional values; leave absent entries out of the map
-
-2 errors, 0 warnings in 1 package (…)
+1 error, 0 warnings in 1 package (…)

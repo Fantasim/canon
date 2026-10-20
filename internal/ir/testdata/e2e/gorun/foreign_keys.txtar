@@ -1,0 +1,210 @@
+CODEGEN.md §2.8 (Refs: every position), §5.8, DECISIONS 385, 387, mirroring cpprun/foreign_keys.txtar: lib (baked) owns a keyed list of shelves, keyed by a String, without an id enum, and an Offer holding refs into it in every position: plain, a union with a literal, optional, in a list, as a map key and value, in a nested list, as optional elements. dt's data reader and ty's types reader of Offer refuse a plain ref naming no shelf wherever it sits, with the loader text `no entry <key>`; dt also checks the unions' keys, accepting the literal; ty reads unions unchecked (CODEGEN.md §5.13). probe_test.go builds the offer each reads and shows it.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A shelf.
+record Shelf {
+  /// Its key.
+  k: String
+}
+
+/// The shelves.
+let shelves: [Shelf] keyed by k = [{ k: "a" }, { k: "b" }]
+
+/// A shelf, or none of them.
+type Spot = ref shelves | "x"
+
+/// An offer.
+record Offer {
+  /// A shelf.
+  s: ref shelves
+  /// A spot.
+  u: Spot
+  /// A spot, if any.
+  uo: Spot?
+  /// Spots.
+  ul: [Spot] = []
+  /// Counts by spot.
+  uk: {Spot: Int} = {}
+  /// Shelves that may be missing.
+  os: [(ref shelves)?] = []
+  /// Spots that may be missing.
+  ou: [Spot?] = []
+  /// Shelves by name.
+  mv: {String: ref shelves} = {}
+  /// Counts by shelf.
+  mk: {ref shelves: Int} = {}
+  /// Rows of shelves.
+  nl: [[ref shelves]] = []
+  /// Shelves.
+  pl: [ref shelves] = []
+}
+
+emit go { out: "@features/lib", package: "lib" }
+-- dt/dt.canon --
+/// Data.
+package dt
+
+import lib { Offer }
+
+/// The offer.
+let offer: Offer = { s: "a", u: "x", uo: "b", ul: ["a", "x"], uk: { "a": 1, "x": 2 }, os: [none, "b"], ou: [none, "x", "a"], mv: { "m": "a" }, mk: { "b": 3 }, nl: [["a"], []], pl: ["b"] }
+
+emit go { out: "@features/dt", package: "dt", mode: data }
+emit json { out: "out/" }
+-- ty/ty.canon --
+/// Types.
+package ty
+
+import lib { Offer }
+
+/// A book.
+record Book {
+  /// Its offer.
+  offer: Offer
+}
+
+emit go { out: "@features/ty", package: "ty", mode: types }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"iter"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"testing"
+
+	"example.com/gen/dt"
+	"example.com/gen/lib"
+	"example.com/gen/lib/rt"
+	"example.com/gen/ty"
+)
+
+const (
+	dataPath = "../../dt/out/offer.json"
+	// offer is an Offer whose every key names a shelf or is the literal, and shown how show prints it.
+	offer = `{"s": "a", "u": "x", "uo": "b", "ul": ["a", "x"], "uk": {"a": 1, "x": 2}, "os": [null, "b"], "ou": [null, "x", "a"], "mv": {"m": "a"}, "mk": {"b": 3}, "nl": [["a"], []], "pl": ["b"]}`
+	shown = "s=a u=x uo=b ul=[a,x] uk={a=1,x=2} os=[none,b] ou=[none,x,a] mv={m=a} mk={b=3} nl=[[a],[]] pl=[b]"
+	// unions are offer's unions each naming no shelf, which a types reader reads unchecked, and unionsShown how show prints them.
+	unions      = `{"s": "a", "u": "zz", "uo": "zz", "ul": ["zz"], "uk": {"zz": 1}, "os": [], "ou": ["zz"], "mv": {}, "mk": {}, "nl": [], "pl": []}`
+	unionsShown = "s=a u=zz uo=zz ul=[zz] uk={zz=1} os=[] ou=[zz] mv={} mk={} nl=[] pl=[]"
+)
+
+func join[T any](s iter.Seq[T], f func(T) string) string {
+	var parts []string
+	for v := range s {
+		parts = append(parts, f(v))
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
+func str(s string) string { return s }
+
+func opt(p *string) string {
+	if p == nil {
+		return "none"
+	}
+	return *p
+}
+
+// show prints an Offer of lib, which both readers build through lib's make hook.
+func show(o *lib.Offer) string {
+	uo, ok := o.Uo()
+	if !ok {
+		uo = "none"
+	}
+	var uk, mv, mk []string
+	for k, n := range o.Uk().All() {
+		uk = append(uk, k+"="+strconv.FormatInt(n, 10))
+	}
+	for k, v := range o.Mv().All() {
+		mv = append(mv, k+"="+v)
+	}
+	for k, n := range o.Mk().All() {
+		mk = append(mk, k+"="+strconv.FormatInt(n, 10))
+	}
+	return "s=" + o.SID() + " u=" + o.U() + " uo=" + uo + " ul=" + join(o.Ul().All(), str) +
+		" uk={" + strings.Join(uk, ",") + "} os=" + join(o.Os().All(), opt) + " ou=" + join(o.Ou().All(), opt) +
+		" mv={" + strings.Join(mv, ",") + "} mk={" + strings.Join(mk, ",") + "} nl=" +
+		join(o.Nl().All(), func(l rt.List[string]) string { return join(l.All(), str) }) +
+		" pl=" + join(o.PlIDs().All(), str)
+}
+
+// foreignKeyCase is offer with one position naming no shelf, from to to, and where the error names it.
+type foreignKeyCase struct {
+	name, from, to, at string
+	union              bool // a union's key, which only a data reader checks (CODEGEN.md §5.13)
+}
+
+// cases: every position of CODEGEN.md §2.8's Refs, plain refs and unions (DECISIONS 387), optional elements included (DECISIONS 385).
+var cases = []foreignKeyCase{
+	{"s", `"s": "a"`, `"s": "zz"`, "s", false},
+	{"u", `"u": "x"`, `"u": "zz"`, "u", true},
+	{"uo", `"uo": "b"`, `"uo": "zz"`, "uo", true},
+	{"ul", `"ul": ["a", "x"]`, `"ul": ["a", "zz"]`, "ul[1]", true},
+	{"uk", `"uk": {"a": 1`, `"uk": {"zz": 1`, "uk.zz", true},
+	{"os", `"os": [null, "b"]`, `"os": [null, "zz"]`, "os[1]", false},
+	{"ou", `"ou": [null, "x", "a"]`, `"ou": [null, "x", "zz"]`, "ou[2]", true},
+	{"mv", `"mv": {"m": "a"}`, `"mv": {"m": "zz"}`, "mv.m", false},
+	{"mk", `"mk": {"b": 3}`, `"mk": {"zz": 3}`, "mk.zz", false},
+	{"nl", `"nl": [["a"], []]`, `"nl": [[], ["zz"]]`, "nl[1][0]", false},
+	{"pl", `"pl": ["b"]`, `"pl": ["zz"]`, "pl[0]", false},
+}
+
+// CODEGEN.md §2.8 (Refs), DECISIONS 387: dt's data reader of lib's Offer builds it through lib's hook and refuses, wherever it sits, a ref naming no shelf of lib's keyed list, and a union's key that is no literal, with the loader text `no entry <key>`.
+func TestData(t *testing.T) {
+	good, err := dt.LoadOffer(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := show(good); got != shown {
+		t.Errorf("offer = %s\nwant    %s", got, shown)
+	}
+	raw, err := os.ReadFile(dataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	head := `{"$schema": "` + string(regexp.MustCompile(`"\$schema": "([^"]*)"`).FindSubmatch(raw)[1]) + `", "value": `
+	for _, c := range cases {
+		path := filepath.Join(t.TempDir(), c.name+".json")
+		if err := os.WriteFile(path, []byte(head+strings.Replace(offer, c.from, c.to, 1)+"}"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		want := path + ": value." + c.at + ": no entry zz"
+		if _, err := dt.LoadOffer(path); err == nil || err.Error() != want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, want)
+		}
+	}
+}
+
+// CODEGEN.md §2.8, §5.8, §5.13: ty's decoder of lib's Offer refuses a plain ref naming no shelf wherever it sits, as a data reader does, and reads a union's key unchecked.
+func TestTypes(t *testing.T) {
+	book, err := ty.DecodeBook([]byte(`{"offer": ` + offer + "}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := show(book.Offer()); got != shown {
+		t.Errorf("offer = %s\nwant    %s", got, shown)
+	}
+	book, err = ty.DecodeBook([]byte(`{"offer": ` + unions + "}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := show(book.Offer()); got != unionsShown {
+		t.Errorf("unions = %s\nwant   %s", got, unionsShown)
+	}
+	for _, c := range cases {
+		_, err := ty.DecodeBook([]byte(`{"offer": ` + strings.Replace(offer, c.from, c.to, 1) + "}"))
+		want := "Book: $.offer." + c.at + ": no entry zz"
+		switch {
+		case c.union && err != nil:
+			t.Errorf("%s: a union's key was checked: %v", c.name, err)
+		case !c.union && (err == nil || err.Error() != want):
+			t.Errorf("%s: got %v\nwant %s", c.name, err, want)
+		}
+	}
+}

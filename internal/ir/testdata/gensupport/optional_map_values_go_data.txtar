@@ -1,0 +1,27 @@
+Decision 37, clean: DECISIONS 385, CODEGEN.md §4.2, DECISIONS 312: gen/go holds a map of optional values as rt.Map[K, *V], read by a data loader or not, null being nil.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: {String: Int?}
+}
+
+/// Held by no value.
+record Loose {
+  /// The cells.
+  cells: {String: Int?}
+}
+
+/// The rows.
+let rows: table Row = {
+  one { cells: {"a": 1} }
+}
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.rows.json --
+{"one": {"cells": {"a": 1}}}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

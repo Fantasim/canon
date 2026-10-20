@@ -1,0 +1,13 @@
+Decision 37, clean: DECISIONS 385, CODEGEN.md §4.2: gen/go holds a map of optional values as rt.Map[K, *V] in baked mode.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: {String: Int?}
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)
