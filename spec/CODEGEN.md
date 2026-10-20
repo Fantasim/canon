@@ -1319,7 +1319,9 @@ Go `*T` (nil), C++ `const T*`; for `[ref T]`, Go `rt.List[*T]`, C++ `const std::
 Refs inside maps (keys or values) and inside nested lists are keys only. A `[ref T?]` element and a
 literal union over a ref (`ref T | "x"`) are keys only too, but a `data` loader checks each present
 one where it checks a plain ref, and a reader of another package's class checks every nested ref in
-any mode, since the owner's make hook resolves it (§2.8; DECISIONS 385, 387); a union over a `load.defines` ref is not looked
+any mode, since the owner's make hook resolves it, except a literal union, which a `types` reader
+reads unchecked (§2.8, §5.13; DECISIONS 385, 387); in a class's own loader, a union or a present optional
+ref is checked exactly where a plain ref is: never under a map value or a second list level; a union over a `load.defines` ref is not looked
 up at load (no define table is emitted for it, as for a define ref in a map).
 
 The **key type** is the target collection's id type in the target package's emit for the same
