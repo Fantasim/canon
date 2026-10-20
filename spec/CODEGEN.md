@@ -374,7 +374,8 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
   decoded class holds, then the readers of other packages' classes, [§2.8](#28-cross-package-references),
   in the order the IR's foreign uses list them, then in the order first needed).
 - **C++ declares before use**, so a header refines that order: (1) constants, then the schema
-  constants (T2); (2) enums, as above; (3) a forward declaration `class <T>;` of every class of
+  constants (T2); (2) enums, as above, each closed `@codes` enum followed by its `namespace detail {
+  k<E>Codes, k<E>CodeOrdinals, <E>Ordinal }` block (§5.2); (3) a forward declaration `class <T>;` of every class of
   the header, in declaration order; (4) `namespace detail {`: `struct <P>Access;`, `struct
   <P>Make;`, the decoder declarations (one per class of the package decoded from JSON,
   declaration order), then the pure translated functions (T3, declaration order), `}  //
@@ -385,8 +386,10 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
   the inline definitions of the hooks that fill resolved refs (declared in `<P>Make`, defined
   here since they read the value accessors), package-level export fns, snapshot and store, inputs; (6) `namespace conformance {` with the entry point declaration
   (T10), when the package has translated functions. The `.gen.cpp` holds, inside `namespace
-  detail`, the decoder definitions then the `<P>Access` definition, then the out-of-line member
-  definitions in class order. The readers of other packages' classes (§2.8) are in the `.gen.cpp`
+  detail`, the decoder definitions then the `<P>Access` definition; then, in the package namespace,
+  the enum helper definitions (§5.2; enums in the order of (2), an opened enum's one sorted wire
+  table in an unnamed namespace before its helpers), each table's id-enum `ToWire` and
+  `<Rec>IdFromWire` (§5.3), then the out-of-line member definitions in class order (DECISIONS 383). The readers of other packages' classes (§2.8) are in the `.gen.cpp`
   only, in an unnamed namespace inside `namespace detail` (internal linkage): declared before the
   decoder definitions, which call them, and defined between the decoder definitions and the
   `<P>Access` definition.
