@@ -785,3 +785,27 @@ The Sovereign C++ farm (§9 step 5) adds a pass condition (f):
 
 Table keys and aliases are measured as Sovereign-side remodelling (constants), not as Canon
 gaps.
+
+## 13. Addendum, 2026-10-20: whole-project `check` was quadratic in define-carrying enums (a bug fix, no DECISIONS item)
+
+**Facts** (a CPU profile of Sovereign's branch `louis/canon-w0b`, 108 packages, 58 C++ emits):
+- **The slowdown.** A whole-project `canon check` took 7m48s, against 15 s before the C++ emits.
+- **Where the time went.** 92% was in `(*gen).clashes` (`internal/gen/cpp/defines.go:55-68`).
+  For each member of every enum in scope, it compiled `\b<Enum>::<MACRO>\b` and ran it over the
+  whole generated file, once per file. That is O(members × text): `text.vocab` alone took 129 s.
+- **Why only whole-project checks.** They reach the generator through the collide stage
+  (DECISIONS 355), which generates every emit sharing an output directory. A single-package check
+  never generates.
+- **The prototype fix** takes the run back to 16.7 s, with all 158 outputs byte-identical. It
+  scans the text once for its `A::B` pairs and looks up a set.
+- **Versions.** v0.1.9 and `main` behave the same.
+
+**Decision.** Unit PERF (sonnet) lands the linear scan now, behaviour unchanged, with:
+- an equivalence test against the regexp;
+- a 20,000-member scale guard;
+- unchanged goldens.
+
+DEFINES (§12.3) builds on it: its token-set wrap must stay one pass over the text.
+
+**Release check** (§9): the Sovereign C++ farm records a whole-project `check` and `build`
+time. Neither may exceed 2× the time without the C++ emits.
