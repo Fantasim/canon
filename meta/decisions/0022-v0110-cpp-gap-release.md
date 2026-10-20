@@ -16,7 +16,12 @@ the asks that need no Canon change are answered in [the reply](../handoff/2026-1
 - **Fallback, gaps, questions:** ADR-0021 §0 applies word for word (strictest reading, log it,
   never widen the scope; a real gap stops its unit only; only a philosophy question goes to Louis).
 - **Scope guard.** Sovereign's asks 1, 3 (members), 5 (root decoders) and 7 need no Canon change
-  (the reply). Nothing here touches Go or TypeScript output, except where a section says so.
+  (the reply). TypeScript output is untouched.
+- **Generality rule** (Louis, 2026-10-20: "not tailored for Sovereign but beneficial for Canon").
+  Sovereign's report chose which gaps to close; it never bounds a fix. A construct this ADR lifts
+  is lifted in every target and every mode where `canon check` accepts it, so no target refuses
+  what another emits. Where a section first lifted C++ `types` only (385, 387), it was widened on
+  that rule.
 
 ## 1. Context and scope
 
@@ -29,9 +34,9 @@ and `text/vocab.gen.cpp` longer.
 |---|---|---|---|---|
 | 1 | Enum helpers are member chains inline in the header | 2 | 383 | HELPERS |
 | 2 | C++ `types` decoders refuse maps (94 of the 110) | 3 | 384 | TYPES |
-| 3 | C++ refuses lists of optional elements and maps of optional values | 4 | 385 | TYPES |
+| 3 | Go and C++ refuse lists of optional elements and maps of optional values | 4 | 385 | TYPES, GO |
 | 4 | C++ `types` refuses a record or variant default | 5 | 386 | TYPES |
-| 5 | C++ refuses a literal union over a ref | 6 | 387 | TYPES |
+| 5 | Go and C++ refuse a literal union over a ref | 6 | 387 | TYPES, GO |
 | 6 | A C++ name that is a standard-library macro breaks the build silently | 7 | 388 | MACRO |
 | 7 | Release | 9 | none | orchestrator |
 
@@ -228,7 +233,7 @@ with:
 - `Decode` byte order against `Parse` file order;
 - a non-canonical integer key refused at its path.
 
-## 4. C++ holds optional elements and optional map values (DECISIONS 385)
+## 4. Go and C++ hold optional elements and optional map values (DECISIONS 385)
 
 **Facts.**
 - `checkOptionalElements` and `checkOptionalMapValues` (`rules_gen_types.go:59-74`) are in `common`
@@ -247,33 +252,40 @@ with:
   - `data` and `types` decode `null` (or the field's `@json(none:)` value where WIRE §5 applies it)
     as `std::nullopt`;
   - a nested optional inside them follows the same rule.
-- **IR.** The two rules leave `common` and apply to Go emits only.
-- **Unchanged.** Go keeps both refusals (owed, §10).
+- **Go, every mode.** `[T?]` is `rt.List[*T]` and `{K: V?}` is `rt.Map[K, *V]`, `nil` being
+  `none`, with `*T` the pointer to the element's own Go type (`*int64`, `*string`, an enum `*E`,
+  a record or variant `*R`, so `[R?]` has `[R]`'s Go type and only `nil` differs). `baked` writes
+  a scalar element through `rt.Ptr`, a generic `func Ptr[T any](v T) *T` added to the generated
+  `rt` package; decoders read `null` as `nil`. This is Go's idiom for a nullable element and needs
+  no new container.
+- **IR.** `checkOptionalElements` and `checkOptionalMapValues` are deleted; the `OptionalElementList`
+  and `OptionalMapValue` kinds retire as `MapField`'s does (§3), with their `Way…` rows.
 
 **Spec text** (CODEGEN.md §4.2, two rows after `[R]`):
 
-> | `[T?]` | `E8019` `OptionalElementList` | `const std::vector<std::optional<T>>&` | `ReadonlyArray<T \| null>` |
-> | `{K: V?}` | `E8019` `OptionalMapValue` | `const canon::FlatMap<K, std::optional<V>>&` | `ReadonlyMap<K, V \| null>` |
+> | `[T?]` | `rt.List[*T]` | `const std::vector<std::optional<T>>&` | `ReadonlyArray<T \| null>` |
+> | `{K: V?}` | `rt.Map[K, *V]` | `const canon::FlatMap<K, std::optional<V>>&` | `ReadonlyMap<K, V \| null>` |
 
 and after the table's paragraphs:
 
-> An optional list element or map value is `std::optional<T>` in C++ whatever `T` (a record or
-> variant by value, as `[R]`'s elements), `none` being `std::nullopt` in every mode (WIRE.md:
-> `null` inside a list or map); Go refuses both (`E8019`), TypeScript writes `T | null`
-> (DECISIONS 385).
+> An optional list element or map value is, in every mode, `*T` in Go (`nil` is `none`; a record
+> element keeps `[R]`'s `*R`; `baked` writes a scalar through `rt.Ptr`), `std::optional<T>` in
+> C++ whatever `T` (a record or variant by value, as `[R]`'s elements), and `T | null` in
+> TypeScript; JSON `null` inside a list or map is `none` (WIRE.md; DECISIONS 385).
 
 **DECISIONS text:**
 
-> 385. **C++ holds optional list elements and map values (CODEGEN.md §4.2).** `[T?]` is
->      `std::vector<std::optional<T>>` and `{K: V?}` is `canon::FlatMap<K, std::optional<V>>`
->      in every C++ mode: baked literals write `std::nullopt`, decoders read `null` as it.
->      `E8019` `OptionalElementList` and `OptionalMapValue` stay for Go only. Reason: Sovereign's
->      skill tables hold `[Cell?]`; C++ has an exact type for it, Go's parity is owed.
+> 385. **Every target holds optional list elements and map values (CODEGEN.md §4.2).** `[T?]` is
+>      Go `rt.List[*T]` and C++ `std::vector<std::optional<T>>`; `{K: V?}` is Go `rt.Map[K, *V]`
+>      and C++ `canon::FlatMap<K, std::optional<V>>`, in every mode; `none` is `nil` /
+>      `std::nullopt`; Go `baked` writes scalars through `rt.Ptr`. `E8019` `OptionalElementList`
+>      and `OptionalMapValue` retire. Reason: `check` accepted a construct two generators refused
+>      (TypeScript wrote it); Sovereign's skill tables (`[Cell?]`) met it first.
 
-**Tests.** `E8019_15` (C++ `data`) becomes a clean case, and the Go cases stay. A compile-and-run
-case covers:
+**Tests.** `E8019_14`, `_15`, `_28`, `_36`, `_99` and `_101` become clean cases (moved to
+`gensupport/`). In C++ (compile and run) and in Go (build and run), one fixture covers:
 - `[Int?]`, `[String?]`, `[Rec?]`, `{String: Int?}` and `{Enum: Rec?}`;
-- baked literals, `data` loading and `types` `Parse`/`Decode`;
+- baked literals, `data` loading and `types` decoding (C++ `Parse` and `Decode`);
 - a `null` and a present value at each position.
 
 ## 5. C++ `types` builds record and variant defaults (DECISIONS 386)
@@ -329,7 +341,7 @@ case covers:
   - an absent intermediate object;
   - two decodes sharing the static, the first mutated after copy, the second unchanged.
 
-## 6. C++ `types` holds a literal union over a ref (DECISIONS 387)
+## 6. Go and C++ hold a literal union over a ref (DECISIONS 387)
 
 **Facts.**
 - `checkRefUnions` (`internal/ir/rules_defines.go:22-35`) refuses, for C++, every type site in every
@@ -341,28 +353,35 @@ case covers:
   `type ResTextKey = ref resTexts | ""` (used at `ui/layout.canon:53, 55, 77, 79`).
 
 **Decision.**
-- In a C++ `types` emit, a literal union over a string-keyed ref is a `std::string`, by §4.1's row.
-  It is decoded with `AsString`, and neither the ref nor the literal is checked: `types` mode
-  checks no ref (§5.13), and the file is the one `canon check` validated.
-- The same holds as a map key, through an alias, optional, or in a list.
-- **Unchanged:** `baked` and `data` C++ emits keep `RefUnion` (each would need a check), and so
-  do Go emits (owed, §10).
+- A literal union over a string-keyed ref is its string in every mode of both targets, by §4.1's
+  row: Go `string`, C++ `std::string` (getter `const std::string&`). The same holds as a map key,
+  through an alias, optional, or in a list.
+- **`baked`:** writes the evaluated string. `canon check` already validated it, and a ref inside a
+  union is no id enum, since the value may be a literal.
+- **`data`:** the loader accepts the value when it equals one of the literals, else resolves it as
+  a key of the ref's table, exactly where and how a plain ref is checked (CODEGEN §5.8). An
+  unknown key fails with the ref check's own error text, the same in Go and C++ (DECISIONS 312).
+- **`types`:** decoded as a string, checked against nothing: `types` mode checks no ref (§5.13).
+- **IR.** `checkRefUnions` and Go's `judgeRefUnions` are deleted; `RefUnion` retires as
+  `MapField`'s does (§3).
 
 **Spec text** (CODEGEN.md §5.13, appended to "Refs are keys; table ids are strings."):
 
-> A literal union over a ref (`ref items | "PENYA"`) is its string in a C++ `types` decoder, read
-> unchecked like every ref there, as TypeScript reads it (DECISIONS 387); C++ `baked` and `data`
-> emits and Go keep `E8019` `RefUnion`.
+> A literal union over a ref (`ref items | "PENYA"`) is its string in every mode and target
+> (§4.1): read unchecked, like every ref here; a `data` loader accepts one of the literals or
+> checks the key as a plain ref (§5.8) (DECISIONS 387).
 
 **DECISIONS text:**
 
-> 387. **C++ `types` holds a literal union over a ref (CODEGEN.md §4.1, §5.13).** Stored and decoded
->      as its string, unchecked, as every ref in `types` mode; C++ `baked`/`data` and Go keep
->      `E8019` `RefUnion`. Reason: Sovereign's exchange (`ref items | "PENYA"`) and layout
->      (`ref resTexts | ""`) records; TypeScript already reads it so.
+> 387. **Every target holds a literal union over a ref (CODEGEN.md §4.1, §5.8, §5.13).** Stored as
+>      its string in Go and C++, every mode: `baked` writes it, a `data` loader accepts a literal
+>      or checks the key as a plain ref (same error text), a `types` decoder reads it unchecked.
+>      `E8019` `RefUnion` retires. Reason: `check` accepted a construct two generators refused
+>      (TypeScript wrote it); Sovereign's exchange (`ref items | "PENYA"`) met it first.
 
-**Tests.** `E8019_51` (C++ `types`) becomes a clean case, and `E8019_50` (C++ and Go `data`)
-stays. `dependent_refusals_test.go:91-92` changes accordingly. A compile-and-run case covers:
+**Tests.** `E8019_50` and `_51` become clean cases; `dependent_refusals_test.go:91-92` changes
+accordingly. In C++ (compile and run) and Go (build and run), in `baked`, `data` and `types`, one
+fixture covers the cases below; `data` adds an unknown key refused with the ref check's text:
 - the ref arm and the literal arm;
 - an optional union;
 - an alias;
@@ -488,7 +507,17 @@ Each prompt cites its § of this ADR, CODEGEN.md's sections, DOCTRINE §3-§5 an
 `.claude/rules/go.md`. VERIFY is `GOTOOLCHAIN=local make check` and the package tests under the
 memory cap.
 
-**Integration.** Cherry-pick in this order: MACRO, then HELPERS, then TYPES. A conflict in a golden
+TYPES lifts §4's and §6's IR rules for C++ emits only; the Go side of those rules stays until
+GO, which lifts it and deletes the rules, so every commit keeps `check` and the generators in
+agreement.
+
+**Wave 2**, after TYPES lands:
+
+| Unit | Model | Packages | Builds |
+|---|---|---|---|
+| GO | sonnet (a `gen/go` backend, golden- and run-checked; opus after two failed reviews) | `internal/gen/go` (storage, `rt` text, baked, decoders, data checks); `internal/ir` (the Go side of §4's and §6's rules) | §4 and §6, Go side |
+
+**Integration.** Cherry-pick in this order: MACRO, then HELPERS, then TYPES; GO after. A conflict in a golden
 is resolved by regenerating with `-update` on the merged tree and reading the diff, never by
 picking a side. A conflict in `internal/ir` name-plan code is a ≤ 20-line orchestrator fixup, or
 goes back to the later unit. Run `make check` before every `cherry-pick --continue`.
@@ -497,7 +526,8 @@ goes back to the later unit. Run `make check` before every `cherry-pick --contin
 
 **CLEANUP** (sonnet, after the three land):
 - remove helpers invented twice (`dup-in-repo`);
-- remove the `MapField`/`RecordDefault` reporting code if TYPES proved it unreachable;
+- remove the reporting code of the retired kinds (`MapField`, `RecordDefault` if proved
+  unreachable; `OptionalElementList`, `OptionalMapValue`, `RefUnion`), with their ERRORS.md rows;
 - update `canon guide` topics and examples that name the lifted refusals or their ways out (grep
   `MapField`, `WayMapField`, `RecordDefault`, `RefUnion`, `OptionalElementList` under
   `internal/guide` and `examples/guide`).
@@ -535,8 +565,10 @@ Only after CLEANUP is reviewed and S2 is committed. Each step's command, load an
      - The script also adds Sovereign's own annotations, the ones the reply tells it to write: the
        reserved members' and macro constants' `@cpp(name:)`. `world.clientworld` goes to `types`.
    - **Pass conditions:**
-     - (a) `canon build` reports no `E8019` of kind `MapField`, `RecordDefault`, `RefUnion`, or of
-       `OptionalElementList`/`OptionalMapValue` in a C++ emit.
+     - (a) `canon build` reports no `E8019` of kind `MapField`, `RecordDefault`, `RefUnion`,
+       `OptionalElementList` or `OptionalMapValue`. A second run of the farm with `emit go`
+       added to the same packages (same modes) reports none either, and every Go output builds
+       (`go vet`).
      - (b) Every other C++ finding is listed with its cause. A Canon defect blocks the tag; a
        Sovereign-side cause goes into the reply.
      - (c) Every generated `.gen.cpp` passes `g++ -std=c++17 -fsyntax-only` with nlohmann.
@@ -550,9 +582,6 @@ Only after CLEANUP is reviewed and S2 is committed. Each step's command, load an
 
 ## 10. Owed, not in v0.1.10
 
-- **Go parity:** `[T?]`, `{K: V?}` and a literal union over a ref in Go `types` (and `data`)
-  decoders. Go still refuses them (385, 387).
-- **C++ `baked`/`data` literal union over a ref:** it needs a check of the ref arm.
 - **`Decode<Fn>File` naming:** a fn named `…File` gives `…FileFile`. Renaming is public API in three
   targets, so it is left for v0.2.
 - **An `ordered_json` overload of C++ `Decode`** (DECISIONS 290's later item). Until then `Decode`
@@ -567,7 +596,8 @@ Only after CLEANUP is reviewed and S2 is committed. Each step's command, load an
 
 - Generated C++ headers stop growing with enum size. A program that uses enum helpers must link the
   enum package's `.gen.cpp`, which every build already did for id enums and decoders.
-- C++ `types` reaches parity with Go and TypeScript `types` for maps, record defaults and ref
-  unions, and passes them on `[T?]`/`{K: V?}`. Go is now the target that refuses more.
+- Five `E8019` kinds retire: for maps, record defaults, optional elements and map values, and ref
+  unions, every target emits what `check` accepts, in every mode. No feature is C++-only or
+  Sovereign-shaped: each is the target's idiom for a construct the language already had.
 - `E8011` grows a variant. A project with a C++ name that is a standard macro now fails `check`
   instead of failing the C++ compiler.

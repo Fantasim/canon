@@ -212,7 +212,8 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 
 - [ ] S1 spec sync (DECISIONS 383-388).
 - [ ] HELPERS: enum helpers as tables in the `.gen.cpp`, `detail::<E>Ordinal` (383).
-- [ ] TYPES: C++ `types` maps (384), `[T?]`/`{K: V?}` in C++ (385), record defaults (386), ref unions (387).
+- [ ] TYPES: C++ `types` maps (384), `[T?]`/`{K: V?}` (385), record defaults (386), ref unions (387), C++ side.
+- [ ] GO (wave 2): `[T?]`/`{K: V?}` and ref unions in every Go mode (385, 387).
 - [ ] MACRO: standard-library macro names are `E8011` `macro`, `W8006` additions (388).
 - [ ] CLEANUP, S2, release gates (ADR-0022 §9: Resource dry run, Sovereign C++ farm), tag (local).
 
