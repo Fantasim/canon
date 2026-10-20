@@ -1316,7 +1316,10 @@ returns the entry itself (CG-03, RES-03). A field `f: ref T` gets:
 
 Resolved getters return what a record getter returns (Go `*T`, C++ `const T&`); for `ref T?`,
 Go `*T` (nil), C++ `const T*`; for `[ref T]`, Go `rt.List[*T]`, C++ `const std::vector<const T*>&`.
-Refs inside maps (keys or values) and inside nested lists are keys only.
+Refs inside maps (keys or values) and inside nested lists are keys only. A `[ref T?]` element and a
+literal union over a ref (`ref T | "x"`) are keys only too, but a `data` loader checks each present
+one where it checks a plain ref (DECISIONS 385, 387); a union over a `load.defines` ref is not looked
+up at load (no define table is emitted for it, as for a define ref in a map).
 
 The **key type** is the target collection's id type in the target package's emit for the same
 target ([§5.3](#53-table-ids)), the key field's type for a keyed list, the field's `<id type>` for a
@@ -2462,6 +2465,9 @@ func InputError(name, reason string) error {
   `bool detail::Decode(const nlohmann::json& v, canon::json::Decoder& dec, T& out);`, declared in
   the header and befriended by `T`; another package never calls it: it reads `T` with its own
   reader and builds it through `<P>Make` (§2.8, DECISIONS 323).
+  A `types`-mode decoder that builds a record or variant default (§5.13, DECISIONS 386) is also
+  befriended by every class of the package whose members that default writes, as a `pairs`
+  parent's decoder is by its slot record.
 - A row of another package's record (§5.9) is a class of the holding package, derived publicly
   from that record's class, with its own `id_` and `retired_`.
 - In `types` mode, the public `static std::optional<T> T::Decode(const nlohmann::json&,
