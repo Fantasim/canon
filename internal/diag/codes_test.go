@@ -465,6 +465,7 @@ var constructed = []*Builder{
 	E8011.AtMacro(sampleSpan, sampleText, sampleName),
 	E8012.AtType(sampleSpan, sampleName, sampleType),
 	E8012.AtDefine(sampleSpan, sampleName),
+	E8012.AtCppDefine(sampleSpan, sampleName, sampleType),
 	E8013.AtPackage(sampleSpan, sampleName, KindBakedMode),
 	E8013.AtRefParam(sampleSpan, sampleName, KindBakedMode),
 	E8014.At(sampleSpan, KindComputedDefault, sampleName),

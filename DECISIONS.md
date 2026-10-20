@@ -4043,3 +4043,23 @@ round 2", "PS1 review", "PS2 round 2"):
      names, POSIX `NAME_MAX`/`PATH_MAX` and glibc's `M_*` constants. Reason: a constant
      `UINT32_MAX` broke the generated header with no finding (Sovereign, 2026-10-20); a name that
      can never compile is an error (25), a name that may is a warning.
+
+389. **`@cpp(defines:)`: presence decides, names are validated (CODEGEN.md §7.9).**
+     `@cpp(defines: "")` writes every member under its own name; a define name that is no
+     identifier is `E8011` `derived`, a keyword `reserved`, a standard-library macro `macro`;
+     `_`-uppercase and `__` shapes are allowed (a define names a legacy macro); two equal define
+     names in one file are `E8005`. Reason: `""` wrote nothing silently and `"*"` wrote
+     `#define *CONT_NODATA 0` (Sovereign, 2026-10-20).
+
+390. **`@cpp(defines:)` on a `const` (GRAMMAR.md §8.3; CODEGEN.md §7.9).** A constant writes
+     `#define <name> <value>` into its package's defines header: integers in decimal, an enum
+     member's define value, `Bool` as `1`/`0`, `String` as a C literal; another type is `E8012`
+     `cppDefine`. Aliases and expression defines are constants. Table keys are not defines (a
+     position is no id; a named number is a `const`). Reason: a define header holds named
+     numbers that are not enum members.
+
+391. **`push_macro` covers every define a generated file can meet (CODEGEN.md §7.9).** Each
+     generated C++ file wraps every identifier it writes that a defines file of its package or
+     of a package it reads defines, matched by token, over every region naming one. Reason: the
+     wrap covered only an enum's own members spelled as their define, so table ids, constants and
+     renamed members broke a TU including the defines (Sovereign: 6 of 7 packages).

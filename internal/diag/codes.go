@@ -2309,6 +2309,7 @@ var Registry = []Def{
 		Variants: []Variant{
 			{Name: "type", Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "what", Type: ArgTypeType}}, Template: "{typ} cannot be emitted: {what} has no representation in generated code"},
 			{Name: "define", Args: []Arg{{Name: "typ", Type: ArgTypeName}}, Template: "{typ} cannot be emitted: a load.defines table or record has no representation in generated code"},
+			{Name: "cppDefine", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "what", Type: ArgTypeType}}, Template: "{name} cannot be a #define: {what} has no C++ literal"},
 		},
 	},
 	{
@@ -7155,6 +7156,11 @@ func (codeE8012) AtType(span source.Span, typ string, what TypeArg) *Builder {
 // AtDefine reports: {typ} cannot be emitted: a load.defines table or record has no representation in generated code
 func (codeE8012) AtDefine(span source.Span, typ string) *Builder {
 	return newBuilder(&Registry[264], 1, span, typ)
+}
+
+// AtCppDefine reports: {name} cannot be a #define: {what} has no C++ literal
+func (codeE8012) AtCppDefine(span source.Span, name string, what TypeArg) *Builder {
+	return newBuilder(&Registry[264], 2, span, name, what)
 }
 
 // E8013: an export fn that `data` mode cannot hold; the message names the mode that builds it (CODEGEN.md §5.10).

@@ -396,7 +396,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 554 messages.
+The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 555 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1330,6 +1330,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8011 | macro | name:Text, origin:Name | `{name}, the C++ name derived for {origin}, is a macro of the C++ standard library` |
 | E8012 | type | typ:Name, what:Type | `{typ} cannot be emitted: {what} has no representation in generated code` |
 | E8012 | define | typ:Name | `{typ} cannot be emitted: a load.defines table or record has no representation in generated code` |
+| E8012 | cppDefine | name:Name, what:Type | `{name} cannot be a #define: {what} has no C++ literal` |
 | E8013 | package | fn:Name, modes:Kind | `{fn} needs {modes} mode: data files cannot hold package functions` |
 | E8013 | refParam | fn:Name, modes:Kind | `{fn} needs {modes} mode: data files cannot hold a method with a ref parameter` |
 | E8014 | - | what:Kind, typ:Name | `types mode cannot emit the {what} of {typ}: there is no data to read it from` |

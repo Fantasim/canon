@@ -463,6 +463,7 @@ E8011 reserved: 0.9, the C++ name derived for resource.vocab.items, is a keyword
 E8011 macro: 0.9, the C++ name derived for resource.vocab.items, is a macro of the C++ standard library
 E8012 type: resource.vocab.items cannot be emitted: Int has no representation in generated code
 E8012 define: resource.vocab.items cannot be emitted: a load.defines table or record has no representation in generated code
+E8012 cppDefine: resource.vocab.items cannot be a #define: Int has no C++ literal
 E8013 package: resource.vocab.items needs baked mode: data files cannot hold package functions
 E8013 refParam: resource.vocab.items needs baked mode: data files cannot hold a method with a ref parameter
 E8014 -: types mode cannot emit the computed default of resource.vocab.items: there is no data to read it from
