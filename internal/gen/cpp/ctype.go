@@ -119,7 +119,7 @@ func (g *gen) optionalStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(optionalFormat, g.storage(*t.Elem))
 }
 
-// refStorage is a ref's key, a table's id enum in a baked emit (CODEGEN.md §5.3, §5.8); a define ref's value has members of its own (define_refs.go).
+// refStorage is a ref's key, a table's id enum where idEnum gives one (CODEGEN.md §5.3, §5.8); a define ref's value has members of its own (define_refs.go).
 func (g *gen) refStorage(t ir.TypeRef) string {
 	if id, ok := g.idEnum(t); ok {
 		return id
@@ -144,7 +144,7 @@ func (g *gen) byValue(t ir.TypeRef) bool {
 	}
 }
 
-// idEnum is the id enum keying a ref of a baked emit, the table value's package's, qualified when imported (CODEGEN.md §5.3, §5.8); in another package's class, as its owner lays it out (§5.14).
+// idEnum is the id enum keying a ref: a table of this package in a baked emit, a table of another package whose cpp emit is baked in any emit of this one (CODEGEN.md §5.3, §5.8, DECISIONS 312), qualified when imported; in another package's class, as its owner lays it out (§5.14).
 func (g *gen) idEnum(t ir.TypeRef) (string, bool) {
 	if g.view != "" && g.view != g.p.Name {
 		return g.viewIDEnum(t)
@@ -157,10 +157,10 @@ func (g *gen) idEnum(t ir.TypeRef) (string, bool) {
 	return g.qualifier(t.Ref.Pkg) + g.pl.IDName(rec), true
 }
 
-// viewIDEnum is idEnum as package g.view's emit plans it, as ir's IDTable does: g.view's emit is baked, and the table's package is g.view or one whose cpp emit is baked or embedded (CODEGEN.md §5.3; gen/cpp writes no embedded emit, DECISIONS 320).
+// viewIDEnum is idEnum as package g.view's emit plans it, as ir's IDTable does: the table's package is g.view or another one whose cpp emit is baked or embedded (CODEGEN.md §5.3; gen/cpp writes no embedded emit, DECISIONS 320).
 func (g *gen) viewIDEnum(t ir.TypeRef) (string, bool) {
 	r := t.Ref
-	if t.Kind != types.Ref || r == nil || r.Coll != types.CollLet || r.Local || r.Keyed || !g.viewBaked() || !g.enumIDs(r.Pkg) {
+	if t.Kind != types.Ref || r == nil || r.Coll != types.CollLet || r.Local || r.Keyed || !g.enumIDs(r.Pkg) {
 		return "", false
 	}
 	rec, ok := r.Elem.(*ir.Record)
@@ -168,12 +168,6 @@ func (g *gen) viewIDEnum(t ir.TypeRef) (string, bool) {
 		return "", false
 	}
 	return g.qualifier(r.Pkg) + g.pl.IDName(rec), true
-}
-
-// viewBaked reports that g.view's cpp emit is baked: ir's IDTable keys its own refs by id enums then only.
-func (g *gen) viewBaked() bool {
-	e := g.importEmit(g.view)
-	return e != nil && e.Mode == ir.ModeBaked
 }
 
 // enumIDs reports a package whose cpp emit keys its tables by id enums: this one when baked, an import whose emit is baked or embedded (CODEGEN.md §2.2).

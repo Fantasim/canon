@@ -1,7 +1,6 @@
 package ir
 
 import (
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 )
@@ -47,27 +46,10 @@ func readFieldSites(f *Field, span source.Span) []typeSite {
 	return out
 }
 
-// checkDecodedType is E8019 `MapField` for a map a loader cannot read: gen/go's and gen/cpp's data loaders and types-mode decoders read maps, keys as WIRE.md §5.8 (CODEGEN.md §5.9, DECISIONS 312, 384); a map that holds a dependent key or value is DependentType's.
-func (s *stage) checkDecodedType(u *unit, es *emitSite, site typeSite) {
-	if typeHolds(site.t, unreadMap(es.e)) {
-		u.reportGenConstruct(es, site.span, diag.KindMapField)
-	}
-}
-
-// unreadMap accepts a map e's loader cannot read: any where its decoders read no map (readsMaps), else one whose key is none WIRE.md §5.8 gives a wire key; a dependent key or value is DependentType's (unreadDependent).
-func unreadMap(e *Emit) func(*TypeRef) bool {
-	return func(t *TypeRef) bool {
-		return isMap(t) && (!readsMaps(e) || t.Kind == types.Map && !readableKey(t.Key) && !isApp(t.Key))
-	}
-}
-
 // readableKey is a map key a data loader reads: its wire key is the text WIRE.md §5.8 gives, a String, an integer, an enum, a ref or a literal union.
 func readableKey(k *TypeRef) bool {
 	return k != nil && (k.Kind == types.String || k.Kind == types.Int || k.Kind == types.Enum || k.Kind == types.Ref || k.Kind == types.LitUnion)
 }
-
-// isMap is a map type, a dependent map included (CODEGEN.md §4.2).
-func isMap(t *TypeRef) bool { return t.Kind == types.Map || t.Kind == types.DepMap }
 
 // decodedHolds reports what a loader reads of t, t itself or its elements through lists and optionals, that bad accepts; a record or variant is its own decoder's.
 func decodedHolds(t *TypeRef, bad func(*TypeRef) bool) bool {

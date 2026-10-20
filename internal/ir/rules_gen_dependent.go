@@ -123,24 +123,24 @@ func (s *stage) checkCppDependents(u *unit, es *emitSite) {
 	}
 }
 
-// reportDecodedDependents is decodedDependent at each field and stored fn of class whose dependent value the loader cannot read; a map is MapField's.
+// reportDecodedDependents is decodedDependent at each field and stored fn of class whose dependent value the loader cannot read.
 func (s *stage) reportDecodedDependents(u *unit, es *emitSite, class any) {
 	fields, fns := classBody(class)
 	for _, f := range fields {
-		if kind, bad := fieldDependent(es.e, fields, f); bad {
+		if kind, bad := fieldDependent(fields, f); bad {
 			u.reportGenConstruct(es, s.itemSpan(f, source.Span{}), kind)
 		}
 	}
 	for _, fn := range readFns(es.e, fns) {
-		if fn.Kind != FnTranslated && unreadDependent(es.e, &fn.Result) {
+		if fn.Kind != FnTranslated && unreadDependent(&fn.Result) {
 			u.reportGenConstruct(es, s.itemSpan(fn, source.Span{}), diag.KindDependentOutsideField)
 		}
 	}
 }
 
-// fieldDependent is what a loader cannot read of a dependent value of field f of fields: `DependentType` for one it holds, itself or through lists, whose discriminant neither DiscFields reads nor a build-time table decides through a ref (an optional, a record parameter, a ref into a @reload value; DECISIONS 350), `DependentOutsideField` for one elsewhere in it (a map, a literal union, a pairs slot); a map is MapField's where the mode reads none.
-func fieldDependent(e *Emit, fields []*Field, f *Field) (diag.Kind, bool) {
-	if f.Input != nil || f.Optional && f.Type.Kind == types.Never || readsField(e, fields, f) {
+// fieldDependent is what a loader cannot read of a dependent value of field f of fields: `DependentType` for one it holds, itself or through lists, whose discriminant neither DiscFields reads nor a build-time table decides through a ref (an optional, a record parameter, a ref into a @reload value; DECISIONS 350), `DependentOutsideField` for one elsewhere in it (a map, a literal union, a pairs slot).
+func fieldDependent(fields []*Field, f *Field) (diag.Kind, bool) {
+	if f.Input != nil || f.Optional && f.Type.Kind == types.Never || readsField(fields, f) {
 		return 0, false
 	}
 	if f.Pairs == nil && HeldApp(f.Type) != nil {
@@ -150,19 +150,19 @@ func fieldDependent(e *Emit, fields []*Field, f *Field) (diag.Kind, bool) {
 }
 
 // readsField reports that the loader reads field f of fields: no dependent type in it, or one application it holds, itself or through lists, whose discriminant DiscFields reads or a build-time table decides through a ref (DECISIONS 350), of any package's dependent type (DECISIONS 320); a pairs field's slots are read without one.
-func readsField(e *Emit, fields []*Field, f *Field) bool {
+func readsField(fields []*Field, f *Field) bool {
 	if f.Pairs != nil {
-		return !slices.ContainsFunc(readFieldSites(f, source.Span{}), func(site typeSite) bool { return unreadDependent(e, site.t) })
+		return !slices.ContainsFunc(readFieldSites(f, source.Span{}), func(site typeSite) bool { return unreadDependent(site.t) })
 	}
 	if app := HeldApp(f.Type); app != nil {
 		return DiscFields(fields, *app) != nil || refDecided(fields, f)
 	}
-	return !unreadDependent(e, &f.Type)
+	return !unreadDependent(&f.Type)
 }
 
-// unreadDependent reports a dependent type in t, a literal union's base included, or a dependent map: a map's key or value is the loader's limit (CODEGEN.md §5.9, DECISIONS 312), except where the mode's decoder refuses every map (MapField's).
-func unreadDependent(e *Emit, t *TypeRef) bool {
-	return (readsMaps(e) || !decodedHolds(t, isMap)) && typeHolds(t, func(x *TypeRef) bool { return isApp(x) || x.Kind == types.DepMap })
+// unreadDependent reports a dependent type in t, a literal union's base included, or a dependent map: a map's key or value is the loader's limit (CODEGEN.md §5.9, DECISIONS 312).
+func unreadDependent(t *TypeRef) bool {
+	return typeHolds(t, func(x *TypeRef) bool { return isApp(x) || x.Kind == types.DepMap })
 }
 
 // DiscFields are the fields a loader, or a baked literal, reads from fields to app's discriminant, in order: the argument's then the match's wire path, through earlier fields of records held by value, none optional (check's E3806), ending at a field of the discriminant's type; nil for a path that crosses a ref (decided at build time instead, DiscRefFields) and for any other argument, a record parameter's (§5.7) or a dependent map binder's (§4.2) included (TYPES.md §11.1, §11.2).

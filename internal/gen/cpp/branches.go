@@ -125,7 +125,7 @@ func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
 		case k.IsInt:
 			out[i].key = intLit(k.I)
 		case isEnum:
-			m := memberIndex(e, k.S)
+			m := ir.MemberIndex(e, k.S)
 			if m < 0 {
 				g.malformed(dependentBadPath, g.at)
 				continue

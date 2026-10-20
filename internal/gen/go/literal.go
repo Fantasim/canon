@@ -118,11 +118,7 @@ func (g *gen) keyLit(t ir.TypeRef, k value.Key) string {
 // memberIndex is the index of the enum member named name, or -1.
 func memberIndex(named ir.Type, name string) int {
 	if e, ok := named.(*ir.Enum); ok {
-		for i, m := range e.Members {
-			if m.Name == name {
-				return i
-			}
-		}
+		return ir.MemberIndex(e, name)
 	}
 	return -1
 }

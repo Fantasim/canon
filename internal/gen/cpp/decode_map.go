@@ -26,8 +26,8 @@ func (g *gen) decodeMap(depth int, src, key string, l leaf) {
 	g.c.linef(depth, mapReadFormat, src, d)
 	g.c.linef(inner, mapEntriesFormat, ks, vs, d)
 	g.c.linef(inner, mapLoopFormat, d)
-	g.c.linef(body, localFormat, ks, fmt.Sprintf(mapKeyLocal, d), elemInit(kt))
-	g.c.linef(body, localFormat, vs, fmt.Sprintf(mapValueLocal, d), elemInit(vt))
+	g.c.linef(body, localFormat, ks, fmt.Sprintf(mapKeyLocal, d), g.elemInit(kt))
+	g.c.linef(body, localFormat, vs, fmt.Sprintf(mapValueLocal, d), g.elemInit(vt))
 	g.mapKey(body, d, kt)
 	if nullRefused(vt) {
 		g.c.linef(body, nullElemFormat, fmt.Sprintf(mapValueExpr, d), fmt.Sprintf(mapKeyExpr, d))

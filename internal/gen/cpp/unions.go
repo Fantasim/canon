@@ -8,17 +8,9 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// unionRef is the ref arm of a literal union over a string-keyed ref, nil for any other type: the union is its string in every mode (CODEGEN.md §4.1, §5.13; DECISIONS 387).
-func unionRef(t ir.TypeRef) *ir.TypeRef {
-	if t.Kind == types.LitUnion && t.Elem != nil && t.Elem.Kind == types.Ref && ir.StringWire(t.Elem) {
-		return t.Elem
-	}
-	return nil
-}
-
 // unionTarget is the value a data loader checks the keys of union t against in class c: where a plain ref of its ref arm resolves at load (CODEGEN.md §5.8); nil elsewhere, the key read unchecked as that ref's.
 func (g *gen) unionTarget(t ir.TypeRef, c class) *ir.Value {
-	if r := unionRef(t); r != nil {
+	if r := ir.UnionRef(t); r != nil {
 		return g.resolvedTarget(*r, c)
 	}
 	return nil
@@ -59,7 +51,7 @@ func literalGuard(t ir.TypeRef, k string) string {
 
 // missing is the condition that key k of t, a ref's key or a union's text, names no entry find looks it up in: a union's literal is accepted as it is, and its text keyed by an enum is read with the enum's FromWire first, which init declares (DECISIONS 387).
 func (g *gen) missing(t ir.TypeRef, find, k string) (init, cond string) {
-	r := unionRef(t)
+	r := ir.UnionRef(t)
 	if r == nil {
 		return "", find + k + nullCompare
 	}
@@ -94,14 +86,18 @@ func (g *gen) foreignRefCheck(depth int, t, r ir.TypeRef, k, key string) {
 	g.c.linef(depth, checkFailFormat, init, cond, key, fmt.Sprintf(g.leafText(t), k))
 }
 
-// foreignUnionCheck refuses, in a data loader's reader of another package's class, a union key that is none of its literals and names no entry of its ref arm's target, as that ref's own check does: FromWire for a table keyed by an id enum, else the owner's container (CODEGEN.md §2.8, §5.3; DECISIONS 387); a types-mode decoder checks no key (§5.13).
+// foreignUnionCheck refuses, in a data loader, a union key that is none of its literals and names no entry of its ref arm's target, as that ref's own check does: FromWire for a table keyed by an id enum, `unknown value <key>` in a class of this package, as Go's own loader says, else in another package's class the owner's container (CODEGEN.md §2.8, §5.3, §5.8; DECISIONS 312, 387); a types-mode decoder checks no key (§5.13).
 func (g *gen) foreignUnionCheck(depth int, t ir.TypeRef, k, key string) {
-	r := unionRef(t)
+	r := ir.UnionRef(t)
 	if r == nil || g.types() {
 		return
 	}
-	if id, ok := g.foreignKey(*r); ok {
-		g.c.linef(depth, unionEntryFormat, literalGuard(t, k), g.pl.EnumHelpers(id).FromWire, k, key, k)
+	if id, ok := g.idEnum(*r); ok {
+		format := unionEntryFormat
+		if g.ownClass() {
+			format = unionOwnEntryFormat
+		}
+		g.c.linef(depth, format, literalGuard(t, k), g.pl.EnumHelpers(id).FromWire, k, key, k)
 		return
 	}
 	g.foreignRefCheck(depth, t, *r, k, key)

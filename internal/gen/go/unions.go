@@ -14,20 +14,10 @@ import (
 func (g *gen) unionExpr(t ir.TypeRef, v value.Value) string {
 	if r, ok := v.(*value.Ref); ok {
 		if arm := ir.UnionRef(t); arm != nil {
-			return strconv.Quote(keyWire(*arm, r.Key))
+			return strconv.Quote(ir.KeyWire(*arm, r.Key))
 		}
 	}
 	return strconv.Quote(as[value.Str](g, v).V)
-}
-
-// keyWire is the wire text of key k of a string-keyed ref r: an enum key's member wire, else the key itself (WIRE.md §5.9).
-func keyWire(r ir.TypeRef, k value.Key) string {
-	if e, ok := ir.RefKeyEnum(r); ok {
-		if i := memberIndex(e, k.S); i >= 0 {
-			return e.Members[i].Wire
-		}
-	}
-	return k.S
 }
 
 // literalGuard is the condition that s is none of union t's literals: a literal is accepted as it is (DECISIONS 387).

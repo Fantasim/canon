@@ -210,7 +210,7 @@ func (g *gen) shortcut(l leaf) string {
 		return shortInt
 	case l.t.Kind == types.Float && l.t.Bits != float32Bits:
 		return shortFloat
-	case l.t.Kind == types.String, l.t.Kind == types.LitUnion && g.stringWire(l.t) && g.unionEnum(l.t) == nil && unionRef(l.t) == nil:
+	case l.t.Kind == types.String, l.t.Kind == types.LitUnion && g.stringWire(l.t) && g.unionEnum(l.t) == nil && ir.UnionRef(l.t) == nil:
 		return shortString
 	case l.t.Kind == types.Duration && !g.types(): // types mode reads a source-wire Duration (WIRE.md §5.13)
 		return shortDuration
@@ -257,7 +257,7 @@ func (g *gen) stringWire(t ir.TypeRef) bool {
 		return false
 	}
 	e, isEnum := t.Elem.Named.(*ir.Enum)
-	return t.Elem.Kind == types.String || isEnum && !e.JSONCodes || unionRef(t) != nil
+	return t.Elem.Kind == types.String || isEnum && !e.JSONCodes || ir.UnionRef(t) != nil
 }
 
 // decodeValue reads the JSON value src into l.dst (WIRE.md §5).
@@ -278,7 +278,7 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 		}
 		g.c.linef(depth, decCallFormat, as, src, key, g.shortcutExtra(l), l.dst)
 	case types.Ref:
-		if id, ok := g.foreignKey(l.t); ok {
+		if id, ok := g.idEnum(l.t); ok {
 			g.decodeEntryID(depth, src, key, id, l.dst)
 			return
 		}

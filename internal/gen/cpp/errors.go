@@ -248,6 +248,7 @@ const (
 	entryKeyVarFormat      = "k%d"
 	entryIDOpenFormat      = "if (std::string %[1]s; dec.AsString(%[2]s, %[3]s, %[1]s)) {"
 	entryIDParseFormat     = "if (const auto entry = %[1]s(%[2]s)) %[3]s = *entry; else dec.Fail(%[4]s, \"no entry \" + %[2]s);"
+	ownIDParseFormat       = "if (const auto entry = %[1]s(%[2]s)) %[3]s = *entry; else dec.Fail(%[4]s, \"unknown value \" + %[2]s);"
 
 	// Opened enums (CODEGEN.md §5.2, DECISIONS 362) and the text decoders (§5.13, DECISIONS 363).
 	openClassOpenFormat = "class %[1]s {\n" + publicLabel + "\n    %[1]s() = default;\n    explicit %[1]s(std::string wire) : %[2]s(std::move(wire)) {}\n\n"
@@ -306,7 +307,8 @@ const (
 
 // Literal unions over a ref (CODEGEN.md §4.1, §5.8; DECISIONS 387).
 const (
-	unionEntryFormat = "if (%s!%s(%s)) dec.Fail(%s, \"no entry \" + %s);"
+	unionEntryFormat    = "if (%s!%s(%s)) dec.Fail(%s, \"no entry \" + %s);"
+	unionOwnEntryFormat = "if (%s!%s(%s)) dec.Fail(%s, \"unknown value \" + %s);"
 	// checkReturnFormat and checkFailFormat refuse a key naming no entry, in a Resolve and in a reader: an if-init, then the condition.
 	checkReturnFormat    = "if (%s%s) return dec.Fail(%s, \"no entry \" + %s), false;"
 	checkFailFormat      = "if (%s%s) dec.Fail(%s, \"no entry \" + %s);"

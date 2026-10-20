@@ -165,11 +165,8 @@ func (g *gen) dependentCase(labels []string, i int, dep *ir.Dependent, defineVal
 		}
 		g.c.linef(1, caseOpenFormat, labels[last])
 	}
-	tmp, init := fmt.Sprintf(tempFormat, depthTwo), elemInit(b.Type)
-	if _, id := g.idEnum(b.Type); id {
-		init = initBraces
-	}
-	g.c.linef(depthTwo, localFormat, g.global(b.Type), tmp, init)
+	tmp := fmt.Sprintf(tempFormat, depthTwo)
+	g.c.linef(depthTwo, localFormat, g.global(b.Type), tmp, g.elemInit(b.Type))
 	g.decodeValue(depthTwo, sourceVar, keyParam, leaf{t: b.Type, dst: tmp, nested: true})
 	reader := dep.Pkg != g.p.Name
 	args := []string{fmt.Sprintf(moveFormat, tmp)}

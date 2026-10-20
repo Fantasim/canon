@@ -133,8 +133,11 @@ func (g *gen) containerSpec(v *ir.Value) containerSpec {
 	return s
 }
 
-// keyRenderer is the C++ lambda CheckUnique renders a duplicate key's token with: generic KeyToken for String, an integer or a ref, else an enum's wire string or, under @json(codes), its code (WIRE.md §5.3, §7.2, §7.3).
+// keyRenderer is the C++ lambda CheckUnique renders a duplicate key's token with: generic KeyToken for String, an integer or a ref, else an enum's wire string or, under @json(codes), its code; a ref held as its table's id enum renders that enum's wire string (WIRE.md §5.3, §7.2, §7.3; CODEGEN.md §5.8).
 func (g *gen) keyRenderer(t ir.TypeRef) string {
+	if id, ok := g.idEnum(t); ok {
+		return fmt.Sprintf(wireKeyRenderFormat, id)
+	}
 	for t.Kind == types.Ref && t.Key != nil {
 		t = *t.Key
 	}

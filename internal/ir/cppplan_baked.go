@@ -39,13 +39,13 @@ func (pl *CppNamePlan) CellsName(fn *ExportFn) string {
 	return cppConstPrefix + pl.FnName(fn) + cppCellsSuffix
 }
 
-// IDTable is the table value whose id enum keys a ref of this emit, or nil when the key is not an enum: a ref into a public table value, of this package or of one whose cpp emit is baked or embedded (CODEGEN.md §5.3, §5.8).
+// IDTable is the table value whose id enum keys a ref of this emit, or nil when the key is not an enum: a ref into a public table value, of this package in a baked emit, or of another one whose cpp emit is baked or embedded in any mode (CODEGEN.md §5.3, §5.8; DECISIONS 312).
 func (pl *CppNamePlan) IDTable(t TypeRef) *Value {
 	r := t.Ref
-	if !pl.baked() || t.Kind != types.Ref || r == nil || r.Coll != types.CollLet || r.Local || r.Keyed {
+	if t.Kind != types.Ref || r == nil || r.Coll != types.CollLet || r.Local || r.Keyed {
 		return nil
 	}
-	if r.Pkg != pl.p.Name && !enumIDs(pl.p, r.Pkg) {
+	if r.Pkg == pl.p.Name && !pl.baked() || r.Pkg != pl.p.Name && !enumIDs(pl.p, r.Pkg) {
 		return nil
 	}
 	rec, ok := r.Elem.(*Record)

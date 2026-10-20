@@ -30,17 +30,13 @@ func noIDEnum(p *Package, t Target, ref TypeRef) bool {
 	return e == nil || e.Mode != ModeBaked && e.Mode != ModeEmbedded
 }
 
-// checkGoDecoded is E8019 for what gen/go's data loaders and types-mode decoders cannot read in a class they decode (the plan's Decoded; CODEGEN.md §5.9, §5.13): a map (MapField), and in data mode an inline key folding onto another (InlineFoldedKey): a types-mode decoder checks no key, so none folds. A pairs field's element record of another package is read slot by slot into its hook's two parameters: check's E3316 leaves a pair record two scalar fields and no stored fn (WIRE.md §4.1), so nothing more is refused here.
+// checkGoDecoded is E8019 `InlineFoldedKey` for what gen/go's data loader cannot read in a class it decodes (the plan's Decoded; CODEGEN.md §5.9): an inline key folding onto another; a types-mode decoder checks no key, so none folds (§5.13). A pairs field's element record of another package is read slot by slot into its hook's two parameters: check's E3316 leaves a pair record two scalar fields and no stored fn (WIRE.md §4.1), so nothing more is refused here.
 func (s *stage) checkGoDecoded(u *unit, es *emitSite) {
 	pl := PlanGoNames(s.view(u, es), es.e)
 	shape := objectShape{extras: s.objectExtras(u, u.values)}
 	for _, class := range packageClasses(u.p) {
 		if !pl.Decoded(class) {
 			continue
-		}
-		fields, fns := classBody(class)
-		for _, site := range s.decodedSites(fields, readFns(es.e, fns)) {
-			s.checkDecodedType(u, es, site)
 		}
 		if es.e.Mode == ModeData {
 			s.checkInlineFolds(u, es, class, shape)
@@ -56,7 +52,7 @@ func goTypesDefault(e *Emit, fields []*Field, f *Field) (diag.Kind, bool) {
 	switch {
 	case f.Input != nil || !written(f.Default):
 		return 0, false
-	case typeHolds(&f.Type, isApp) && readsField(e, fields, f):
+	case typeHolds(&f.Type, isApp) && readsField(fields, f):
 		return diag.KindDependentDefault, true
 	}
 	return literalDependent(&f.Type, f.Default)

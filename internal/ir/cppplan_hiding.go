@@ -134,9 +134,9 @@ func (pl *CppNamePlan) checkSignatures() {
 	}
 }
 
-// checkSignature is E8005 at a parameter of fn named like a type its signature names (CODEGEN.md §3.5).
+// checkSignature is E8005 at a parameter of fn named like a type its signature names (CODEGEN.md §3.5), but at one E8011 already reported (checkParamIdents): its name is no identifier, whatever it collides with.
 func (pl *CppNamePlan) checkSignature(origin string, fn *ExportFn) {
-	pl.checkParamIdents(origin, fn)
+	unusable := pl.checkParamIdents(origin, fn)
 	named := pl.signatureTypes(fn)
 	params := &nameScope{what: origin + goParamsSuffix}
 	for _, r := range fn.Reads {
@@ -145,20 +145,23 @@ func (pl *CppNamePlan) checkSignature(origin string, fn *ExportFn) {
 		}
 	}
 	for _, p := range fn.Params {
-		if first, ok := named[cppVerbatim(p.Name)]; ok {
+		if first, ok := named[cppVerbatim(p.Name)]; ok && !unusable[p.Name] {
 			pl.collide(params, cppVerbatim(p.Name), first, origin+qnameSep+p.Name, p)
 		}
 	}
 }
 
-// checkParamIdents is E8011 at a parameter of a lookup or precomputed fn whose verbatim C++ name is no usable identifier: a keyword, a reserved name or a standard macro (CODEGEN.md §3.4, DECISIONS 388); a translated fn's are the conformance fields'.
-func (pl *CppNamePlan) checkParamIdents(origin string, fn *ExportFn) {
+// checkParamIdents is E8011 at a parameter of a lookup or precomputed fn whose verbatim C++ name is no usable identifier: a keyword, a reserved name or a standard macro (CODEGEN.md §3.4, DECISIONS 388); a translated fn's are the conformance fields'. It returns the names it reported.
+func (pl *CppNamePlan) checkParamIdents(origin string, fn *ExportFn) map[string]bool {
+	reported := map[string]bool{}
 	if fn.Kind == FnTranslated {
-		return
+		return reported
 	}
 	for _, p := range fn.Params {
 		if ok, reserved := cppValidIdent(cppVerbatim(p.Name)); !ok {
+			reported[p.Name] = true
 			pl.problems = append(pl.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: origin + goParamsSuffix, Name: cppVerbatim(p.Name), Origin: origin + qnameSep + p.Name, Item: p, Reserved: reserved})
 		}
 	}
+	return reported
 }

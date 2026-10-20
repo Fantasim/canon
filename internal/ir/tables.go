@@ -99,13 +99,12 @@ var wayOf = map[diag.Kind]diag.Kind{
 	diag.KindForeignResolvedRef:      diag.KindWayForeignResolvedRef,
 	diag.KindForeignTableLookupParam: diag.KindWayForeignTableLookupParam, diag.KindInlineFoldedKey: diag.KindWayInlineFoldedKey,
 	diag.KindInputField: diag.KindWayInputField, diag.KindLegacyStruct: diag.KindWayLegacyStruct,
-	diag.KindMapField: diag.KindWayMapField, diag.KindNeverDependent: diag.KindWayNeverDependent,
-	diag.KindOptionalElementList: diag.KindWayOptionalElementList, diag.KindOptionalMapValue: diag.KindWayOptionalMapValue,
-	diag.KindOpenEnum: diag.KindWayOpenEnum, diag.KindOpenEnumFn: diag.KindWayOpenEnumFn,
-	diag.KindRecordConstant: diag.KindWayRecordConstant, diag.KindRecordDefault: diag.KindWayRecordDefault, diag.KindRecordCycleThroughMethod: diag.KindWayRecordCycleThroughMethod,
+	diag.KindNeverDependent: diag.KindWayNeverDependent,
+	diag.KindOpenEnum:       diag.KindWayOpenEnum, diag.KindOpenEnumFn: diag.KindWayOpenEnumFn,
+	diag.KindRecordConstant: diag.KindWayRecordConstant, diag.KindRecordCycleThroughMethod: diag.KindWayRecordCycleThroughMethod,
 	diag.KindRecordFieldCycle: diag.KindWayRecordFieldCycle, diag.KindRecursiveVariantCase: diag.KindWayRecursiveVariantCase,
-	diag.KindRefUnion: diag.KindWayRefUnion, diag.KindResolvedLookupResult: diag.KindWayResolvedLookupResult,
-	diag.KindSelfReadNotAPath: diag.KindWaySelfReadNotAPath, diag.KindTableField: diag.KindWayTableField,
+	diag.KindResolvedLookupResult: diag.KindWayResolvedLookupResult,
+	diag.KindSelfReadNotAPath:     diag.KindWaySelfReadNotAPath, diag.KindTableField: diag.KindWayTableField,
 	diag.KindVariantKindConstant: diag.KindWayVariantKindConstant, diag.KindVariantMethod: diag.KindWayVariantMethod,
 }
 

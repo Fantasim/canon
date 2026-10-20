@@ -1,0 +1,274 @@
+CODEGEN.md §5.8 (key type), §5.3, §2.8, DECISIONS 312, 387: a plain ref of a class of this package into another package's baked table is held as the owner's id enum, as Go's `lib.ItemID`, and the loader checks it through the enum's FromWire: dt's data loader and ty's types decoder refuse a key naming no item in every position (a field, an optional, a list, a nested list, a map key and value, an optional element, a dependent branch, a stored fn result, a keyed list's key, a literal union over the ref) with the text `unknown value <key>`, Go's; a keyed list keyed by it refuses a duplicate with Go's text. qr's data loader reads dt's Slot and bk's baked Bag as their owners hold them, the owner's id enum, and refuses a key naming no item with `no entry <key>`. bb bakes a Slot through dt's make hook with ids, tz's types decoder builds a default Pick of ty. probe.cpp prints the slot dt loads from a data file (`data:<file>`), the holder qr loads (`holder:<file>`), the filled slot bb bakes (`baked`), the wrapper tz decodes (`wrap:<file>`), or the pick of a types file of ty's Pick through Decode and Parse.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// An item.
+record Item {
+  /// Its rank.
+  rank: Int
+}
+
+/// The items.
+let items: table Item = {
+  sword { rank: 1 }
+  shield { rank: 2 }
+}
+
+emit cpp { out: "@features/lib", namespace: "lib" }
+-- dt/dt.canon --
+/// Data.
+package dt
+
+import lib { items }
+
+/// A kind.
+enum Kind { plain, pick }
+
+/// A payload: a number, or an item.
+type Payload(k: Kind) = match k { plain => Int, pick => ref items }
+
+/// A row.
+record Row {
+  /// Its kind.
+  k: Kind
+  /// Its payload.
+  v: Payload(k)
+}
+
+/// An entry.
+record Entry {
+  /// Its item.
+  item: ref items
+  /// Its count.
+  n: Int = 0
+}
+
+/// A slot.
+record Slot {
+  /// Its item.
+  item: ref items
+  /// Optional item.
+  maybe: ref items?
+  /// Items.
+  many: [ref items] = []
+  /// Rows of items.
+  rows: [[ref items]] = []
+  /// Items by name.
+  byName: {String: ref items} = {}
+  /// Counts by item.
+  counts: {ref items: Int} = {}
+  /// Items that may be missing.
+  optional: [(ref items)?] = []
+  /// A fallback.
+  fallback: ref items = "shield"
+  /// An item or a word.
+  u: ref items | "x" = "x"
+  /// An item or a word, if any.
+  ou: (ref items | "x")?
+  /// Items or words.
+  ul: [ref items | "x"] = []
+  /// Entries by item.
+  entries: [Entry] keyed by item = []
+  /// Payloads.
+  vs: [Row] = []
+  /// The item it names.
+  export fn best(self) -> ref items { return self.item }
+}
+
+/// The slot.
+let slot: Slot = { item: "sword", maybe: "shield", many: ["sword"], rows: [["sword"], []], byName: { "a": "shield" }, counts: { "sword": 2 }, optional: [none, "shield"], u: "sword", ou: "x", ul: ["x", "shield"], entries: [{ item: "sword", n: 1 }, { item: "shield" }], vs: [{ k: plain, v: 1 }, { k: pick, v: "shield" }] }
+
+emit cpp { out: "@features/dt", namespace: "dt", mode: data }
+emit json { out: "out/" }
+-- bk/bk.canon --
+/// The bank.
+package bk
+
+import lib { items }
+
+/// A row of a bag.
+record Row {
+  /// Its item.
+  item: ref items
+  /// Its count.
+  n: Int = 0
+}
+
+/// A bag.
+record Bag {
+  /// Its rows.
+  rows: [Row] keyed by item = []
+}
+
+/// The bag.
+let bag: Bag = { rows: [{ item: "sword", n: 1 }] }
+
+emit cpp { out: "@features/bk", namespace: "bk" }
+-- qr/qr.canon --
+/// Holder.
+package qr
+
+import bk { Bag }
+import dt { Slot }
+
+/// A holder.
+record Holder {
+  /// Its slot.
+  slot: Slot
+  /// Its bag.
+  bag: Bag
+}
+
+/// The holder.
+let holder: Holder = { slot: { item: "sword", maybe: "shield", many: ["sword"], rows: [["sword"], []], byName: { "a": "shield" }, counts: { "sword": 2 }, optional: [none, "shield"], u: "sword", ou: "x", ul: ["x", "shield"], entries: [{ item: "sword", n: 1 }, { item: "shield" }], vs: [{ k: plain, v: 1 }, { k: pick, v: "shield" }] }, bag: { rows: [{ item: "shield", n: 2 }] } }
+
+emit cpp { out: "@features/qr", namespace: "qr", mode: data }
+emit json { out: "out/" }
+-- bb/bb.canon --
+/// A baked filler of dt's Slot.
+package bb
+
+import dt { Slot }
+
+/// A filled slot.
+let filled: Slot = { item: "shield", maybe: "sword", many: ["sword"], u: "shield", ul: ["x"] }
+
+emit cpp { out: "@features/bb", namespace: "bb" }
+-- ty/ty.canon --
+/// Types.
+package ty
+
+import lib { items }
+
+/// A pick.
+record Pick {
+  /// Its item.
+  item: ref items
+  /// Items.
+  many: [ref items] = []
+}
+
+emit cpp { out: "@features/ty", namespace: "ty", mode: types }
+-- tz/tz.canon --
+/// A types-mode wrapper of ty's Pick.
+package tz
+
+import ty { Pick }
+
+/// A wrapper.
+record Wrap {
+  /// Its pick.
+  p: Pick = { item: "sword" }
+}
+
+emit cpp { out: "@features/tz", namespace: "tz", mode: types }
+-- probe.cpp --
+// probe prints the slot dt loads from a data file (`data:<file>`), the holder qr loads (`holder:<file>`), the filled slot bb bakes
+// (`baked`), the wrapper tz decodes (`wrap:<file>`), or the pick of a types file of ty's Pick through Decode and Parse
+// (CODEGEN.md §5.8, DECISIONS 312).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "bb/bb.gen.h"
+#include "bk/bk.gen.h"
+#include "dt/dt.gen.h"
+#include "qr/qr.gen.h"
+#include "ty/ty.gen.h"
+#include "tz/tz.gen.h"
+
+namespace {
+
+std::string K(::lib::ItemId v) { return std::string(::lib::ToWire(v)); }
+std::string K(const std::string& v) { return v; }
+std::string K(int64_t v) { return std::to_string(v); }
+
+std::string K(const ::dt::Row& r) {
+    const auto plain = r.GetV().AsPlain();
+    return std::string(::dt::ToWire(r.GetK())) + ":" + (plain ? std::to_string(*plain) : K(*r.GetV().AsPick()));
+}
+
+std::string K(const ::dt::Entry& e) { return K(e.GetItemKey()) + ":" + std::to_string(e.GetN()); }
+std::string K(const ::bk::Row& e) { return K(e.GetItemKey()) + ":" + std::to_string(e.GetN()); }
+
+template <class T>
+std::string K(const std::optional<T>& v) { return v ? K(*v) : "none"; }
+
+template <class T>
+std::string K(const std::vector<T>& l) {
+    std::string out;
+    for (const auto& e : l) out += (out.empty() ? "" : ",") + K(e);
+    return "[" + out + "]";
+}
+
+template <class K1, class V>
+std::string K(const ::canon::FlatMap<K1, V>& m) {
+    std::string out;
+    for (const auto& e : m) out += (out.empty() ? "" : ",") + K(e.first) + "=" + K(e.second);
+    return "{" + out + "}";
+}
+
+template <class K1, class V>
+std::string K(const ::canon::KeyedList<K1, V>& l) {
+    std::string out;
+    for (const auto& e : l) out += (out.empty() ? "" : ",") + K(e);
+    return "[" + out + "]";
+}
+
+std::string Show(const ::dt::Slot& s) {
+    const std::string* ou = s.GetOu();
+    return "item=" + K(s.GetItemKey()) + " maybe=" + K(s.GetMaybeKey()) + " many=" + K(s.GetManyKeys()) + " rows=" + K(s.GetRows()) +
+           " byName=" + K(s.GetByName()) + " counts=" + K(s.GetCounts()) + " optional=" + K(s.GetOptional()) +
+           " fallback=" + K(s.GetFallbackKey()) + " u=" + s.GetU() + " ou=" + (ou ? *ou : "none") + " ul=" + K(s.GetUl()) +
+           " entries=" + K(s.GetEntries()) + " vs=" + K(s.GetVs()) + " best=" + K(s.BestKey());
+}
+
+std::string Show(const ::qr::Holder& h) { return Show(h.GetSlot()) + " bag=" + K(h.GetBag().GetRows()); }
+
+std::string Show(const ::ty::Pick& p) { return "item=" + K(p.GetItemKey()) + " many=" + K(p.GetManyKeys()); }
+
+std::string Show(const ::tz::Wrap& w) { return "p=" + K(w.GetP().GetItemKey()); }
+
+template <class T>
+std::string Types(const std::string& text) {
+    std::string error;
+    const auto d = T::Decode(nlohmann::json::parse(text, nullptr, false), error);
+    std::string out = "decode " + (d ? Show(*d) : "error " + error);
+    error.clear();
+    const auto p = T::Parse(text, error);
+    return out + " | parse " + (p ? Show(*p) : "error " + error);
+}
+
+std::string Slurp(const std::string& path) {
+    std::ifstream in(path);
+    std::stringstream text;
+    text << in.rdbuf();
+    return text.str();
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        std::string error;
+        if (arg == "baked") {
+            std::cout << arg << ": " << Show(::bb::GetFilled()) << "\n";
+        } else if (arg.rfind("data:", 0) == 0) {
+            const auto slot = ::dt::Slot::Load(arg.substr(5), error);
+            std::cout << arg << ": " << (slot ? Show(*slot) : "error " + error) << "\n";
+        } else if (arg.rfind("holder:", 0) == 0) {
+            const auto holder = ::qr::Holder::Load(arg.substr(7), error);
+            std::cout << arg << ": " << (holder ? Show(*holder) : "error " + error) << "\n";
+        } else if (arg.rfind("wrap:", 0) == 0) {
+            std::cout << arg << ": " << Types<::tz::Wrap>(Slurp(arg.substr(5))) << "\n";
+        } else {
+            std::cout << arg << ": " << Types<::ty::Pick>(Slurp(arg)) << "\n";
+        }
+    }
+    return 0;
+}

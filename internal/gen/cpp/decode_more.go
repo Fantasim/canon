@@ -33,7 +33,7 @@ func (g *gen) decodeList(depth int, src, key string, l leaf) {
 	if nullRefused(*l.t.Elem) {
 		g.c.linef(body, nullElemFormat, fmt.Sprintf(indexFormat, src, i), elemKey(key, i))
 	}
-	g.c.linef(body, localFormat, elem, e, elemInit(*l.t.Elem))
+	g.c.linef(body, localFormat, elem, e, g.elemInit(*l.t.Elem))
 	g.decodeValue(body, fmt.Sprintf(indexFormat, src, i), elemKey(key, i), leaf{t: *l.t.Elem, unit: l.unit, enc: l.enc, dst: e, disc: l.disc, table: l.table, nested: l.nested || l.t.Elem.Kind != types.Ref})
 	if kf != nil {
 		g.c.linef(body, pushBackKeyFormat, keys, e, g.getterName(kf))
@@ -54,9 +54,9 @@ func nullRefused(t ir.TypeRef) bool {
 	return t.Kind != types.Record && t.Kind != types.Variant && t.Kind != types.Optional
 }
 
-// elemInit value-initializes a scalar element; a class element is default-constructed.
-func elemInit(t ir.TypeRef) string {
-	if scalarInit(t, false) != "" {
+// elemInit value-initializes a scalar element, a ref held as its table's id enum included; a class element is default-constructed.
+func (g *gen) elemInit(t ir.TypeRef) string {
+	if g.idKeyed(t) || scalarInit(t, false) != "" {
 		return initBraces
 	}
 	return ""

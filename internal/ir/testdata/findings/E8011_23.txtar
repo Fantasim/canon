@@ -1,0 +1,19 @@
+CODEGEN.md §3.4, §3.5, DECISIONS 388: a parameter that is a standard macro and also the name of a type its signature uses is reported as E8011 at the parameter, and not again as E8005 at the same span (the enum's own name is E8011 too).
+-- a/a.canon --
+package a
+
+/// A choice.
+enum NULL { one, two }
+
+/// Picks a weight.
+export fn pick(NULL: NULL) -> Int { return 1 }
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8011]  a/a.canon:4:6
+  NULL, the C++ name derived for a.NULL, is a macro of the C++ standard library
+
+error[E8011]  a/a.canon:7:16
+  NULL, the C++ name derived for a.pick.NULL, is a macro of the C++ standard library
+
+2 errors, 0 warnings in 1 package (…)

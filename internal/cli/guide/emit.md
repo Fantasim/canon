@@ -83,6 +83,9 @@ emit json { out: "@gen/data/" }
   another's types needs the same emits in its imports. Still `E8019`: a foreign record whose ref
   the owner's loader resolves, and a lookup over a foreign table without an id enum. The
   generated make hooks (Go `Make_<T>`, C++ `detail::<P>Make`) are for generated code, not API.
+- A `ref` into another package's table is typed with that package's id for the target: its id
+  enum when that package emits `baked`, a string otherwise. A Go or C++ loader or decoder of the
+  holding package refuses a key that names no id of an enum (`unknown value <key>`).
 
 ## Modes
 

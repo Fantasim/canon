@@ -110,6 +110,21 @@ func RefKeyEnum(ref TypeRef) (*Enum, bool) {
 	return e, ok
 }
 
+// MemberIndex is the index of e's member named name, -1 for none.
+func MemberIndex(e *Enum, name string) int {
+	return slices.IndexFunc(e.Members, func(m *EnumMember) bool { return m.Name == name })
+}
+
+// KeyWire is the wire text of key k of a string-keyed ref r: an enum key's member wire, else the key itself (WIRE.md §5.9; DECISIONS 387).
+func KeyWire(r TypeRef, k value.Key) string {
+	if e, ok := RefKeyEnum(r); ok {
+		if i := MemberIndex(e, k.S); i >= 0 {
+			return e.Members[i].Wire
+		}
+	}
+	return k.S
+}
+
 // recordField is the value of the field named name of the record value v, nil for none.
 func recordField(v value.Value, name string) value.Value {
 	r, ok := v.(*value.Record)

@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"math"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -120,20 +119,12 @@ func (g *gen) unionLit(t ir.TypeRef, v value.Value) string {
 			return quote(e.Members[x.Index].Wire)
 		}
 	case *value.Ref:
-		if r := unionRef(t); r != nil {
-			return quote(keyWire(*r, x.Key))
+		if r := ir.UnionRef(t); r != nil {
+			return quote(ir.KeyWire(*r, x.Key))
 		}
 	}
 	g.malformed(fmt.Sprintf(valueFormat, v), g.at)
 	return cppInvalid
-}
-
-// keyWire is the wire text of key k of a string-keyed ref r: an enum key's member wire, else the key itself (WIRE.md §5.9; DECISIONS 387).
-func keyWire(r ir.TypeRef, k value.Key) string {
-	if e, i := keyMember(r, k); i >= 0 {
-		return e.Members[i].Wire
-	}
-	return k.S
 }
 
 // keyMember is the enum keying ref r and the index of key k's member in it; -1 for a key of no enum or naming no member.
@@ -142,12 +133,7 @@ func keyMember(r ir.TypeRef, k value.Key) (*ir.Enum, int) {
 	if !ok {
 		return nil, -1
 	}
-	return e, memberIndex(e, k.S)
-}
-
-// memberIndex is the index of e's member named name, -1 for none.
-func memberIndex(e *ir.Enum, name string) int {
-	return slices.IndexFunc(e.Members, func(m *ir.EnumMember) bool { return m.Name == name })
+	return e, ir.MemberIndex(e, k.S)
 }
 
 // refLit is a ref's key as its storage holds it: a table id's or an enum key's member, by name, else the key itself (CODEGEN.md §5.3, §5.8).

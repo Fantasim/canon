@@ -42,7 +42,7 @@ func textReadable(p *Package, t TypeRef) bool {
 	return readable
 }
 
-// foreignReadable reports class c of another package read by e's readers with no finding: no stored fn or computed default (checkForeignTypesMode's E8014), nothing foreignReadJudges refuse (checkForeignReads, a map in C++ types mode included), and a make hook its owner writes (checkForeignBuilt's ForeignResolvedRef).
+// foreignReadable reports class c of another package read by e's readers with no finding: no stored fn or computed default (checkForeignTypesMode's E8014), nothing foreignReadJudges refuse (checkForeignReads), and a make hook its owner writes (checkForeignBuilt's ForeignResolvedRef).
 func foreignReadable(p *Package, e *Emit, use *ForeignUse, c any) bool {
 	if slices.ContainsFunc(classAndCases(c), typesData) {
 		return false

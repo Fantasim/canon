@@ -15,10 +15,10 @@ type foreignJudge func(s *stage, u *unit, e *Emit, c any) (diag.Kind, bool)
 var foreignReadJudges [targetCount][ModeTypes + 1][]foreignJudge
 
 func init() {
-	foreignReadJudges[TargetGo][ModeData] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeInlineFolds, judgeLookupParams}
-	foreignReadJudges[TargetCpp][ModeData] = []foreignJudge{judgeMaps, judgeDependents, judgeInlineFolds, judgeLookupParams}
-	foreignReadJudges[TargetCpp][ModeTypes] = []foreignJudge{judgeMaps, judgeDependents, judgeCppDefaults}
-	foreignReadJudges[TargetGo][ModeTypes] = []foreignJudge{judgeMaps, judgeDependents, judgeCaseReads, judgeGoDefaults}
+	foreignReadJudges[TargetGo][ModeData] = []foreignJudge{judgeDependents, judgeCaseReads, judgeInlineFolds, judgeLookupParams}
+	foreignReadJudges[TargetCpp][ModeData] = []foreignJudge{judgeDependents, judgeInlineFolds, judgeLookupParams}
+	foreignReadJudges[TargetCpp][ModeTypes] = []foreignJudge{judgeDependents, judgeCppDefaults}
+	foreignReadJudges[TargetGo][ModeTypes] = []foreignJudge{judgeDependents, judgeCaseReads, judgeGoDefaults}
 	ts := []foreignJudge{judgeTSFields, judgeLookupParams}
 	foreignReadJudges[TargetTS][ModeData], foreignReadJudges[TargetTS][ModeTypes] = ts, ts
 }
@@ -185,22 +185,15 @@ func (s *stage) checkLegacyStructs(u *unit, es *emitSite) {
 	}
 }
 
-// judgeMaps is `MapField` for a map the emit's loader cannot read in what it reads of c (checkDecodedType).
-func judgeMaps(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
-	fields, fns := classBody(c)
-	bad := slices.ContainsFunc(readSites(fields, readFns(e, fns), noSpan), func(site typeSite) bool { return typeHolds(site.t, unreadMap(e)) })
-	return diag.KindMapField, bad
-}
-
 // judgeDependents is fieldDependent at each field of c, then `DependentOutsideField` for a stored fn's dependent result (reportDecodedDependents).
 func judgeDependents(_ *stage, _ *unit, e *Emit, c any) (diag.Kind, bool) {
 	fields, fns := classBody(c)
 	for _, f := range fields {
-		if kind, bad := fieldDependent(e, fields, f); bad {
+		if kind, bad := fieldDependent(fields, f); bad {
 			return kind, true
 		}
 	}
-	unread := slices.ContainsFunc(readFns(e, fns), func(fn *ExportFn) bool { return fn.Kind != FnTranslated && unreadDependent(e, &fn.Result) })
+	unread := slices.ContainsFunc(readFns(e, fns), func(fn *ExportFn) bool { return fn.Kind != FnTranslated && unreadDependent(&fn.Result) })
 	return diag.KindDependentOutsideField, unread
 }
 

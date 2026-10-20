@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/types"
 )
 
 // readerDecls declare this package's reader of each class of another package its loaders or decoders read, before the decoders calling them, in an unnamed namespace: two packages of one namespace may read one class (CODEGEN.md §2.7, §2.8; log-2026-10-06 "U3 review FAIL"). A reader no decoder calls, a case's, is maybe unused.
@@ -235,18 +234,17 @@ func (g *gen) keyChecks(depth int, find, key, wire string, s slot) {
 	}
 }
 
-// decodeEntryID reads a key into a table of another package, held as its owner's id enum: a key naming no entry is `no entry <key>` (CODEGEN.md §2.8, §5.3).
+// decodeEntryID reads a key into a table of another package, held as its owner's id enum: a key naming no entry is `no entry <key>` in another package's class (CODEGEN.md §2.8, §5.3), `unknown value <key>` in the class of this package, as Go's own loader says (§5.8; DECISIONS 312).
 func (g *gen) decodeEntryID(depth int, src, key, id, dst string) {
 	k := fmt.Sprintf(entryKeyVarFormat, depth)
+	format := entryIDParseFormat
+	if g.ownClass() {
+		format = ownIDParseFormat
+	}
 	g.c.linef(depth, entryIDOpenFormat, k, src, key)
-	g.c.linef(depth+1, entryIDParseFormat, g.pl.EnumHelpers(id).FromWire, k, dst, key)
+	g.c.linef(depth+1, format, g.pl.EnumHelpers(id).FromWire, k, dst, key)
 	g.c.linef(depth, closeBrace)
 }
 
-// foreignKey reports a ref of another package's class held as an id enum: its reader parses the key with the enum's FromWire.
-func (g *gen) foreignKey(t ir.TypeRef) (string, bool) {
-	if g.view == "" || g.view == g.p.Name || t.Kind != types.Ref {
-		return "", false
-	}
-	return g.idEnum(t)
-}
+// ownClass reports that the class being written is one of this package's, not another package's read through its owner's layout.
+func (g *gen) ownClass() bool { return g.view == "" || g.view == g.p.Name }

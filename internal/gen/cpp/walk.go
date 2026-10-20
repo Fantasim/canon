@@ -267,7 +267,7 @@ func (g *gen) walkValue(depth int, t ir.TypeRef, optional bool, expr, key string
 		g.c.linef(depth, loop, n, n, expr, n)
 		g.walkValue(depth+1, *t.Elem, false, elem, elemKey(key, n))
 		g.c.linef(depth, closeBrace)
-	case unionRef(t) != nil || t.Kind == types.Ref: // a key no slot resolves, reached by elemsChecked only (DECISIONS 387)
+	case ir.UnionRef(t) != nil || t.Kind == types.Ref: // a key no slot resolves, reached by elemsChecked only (DECISIONS 387)
 		if target := g.leafTarget(t, g.walking); target != nil {
 			g.leafCheck(depth, t, target, expr, key)
 		}
