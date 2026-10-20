@@ -2301,6 +2301,7 @@ var Registry = []Def{
 			{Name: "unexported", Args: []Arg{{Name: "name", Type: ArgTypeText}}, Template: "{name} is not exported: an @go(name:) override starts with an upper-case letter"},
 			{Name: "derived", Args: []Arg{{Name: "name", Type: ArgTypeText}, {Name: "origin", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "{name}, the {target} name derived for {origin}, is not a valid identifier"},
 			{Name: "reserved", Args: []Arg{{Name: "name", Type: ArgTypeText}, {Name: "origin", Type: ArgTypeName}}, Template: "{name}, the C++ name derived for {origin}, is a keyword or a reserved name"},
+			{Name: "macro", Args: []Arg{{Name: "name", Type: ArgTypeText}, {Name: "origin", Type: ArgTypeName}}, Template: "{name}, the C++ name derived for {origin}, is a macro of the C++ standard library"},
 		},
 	},
 	{
@@ -7131,6 +7132,11 @@ func (codeE8011) AtDerived(span source.Span, name string, origin string, target 
 // AtReserved reports: {name}, the C++ name derived for {origin}, is a keyword or a reserved name
 func (codeE8011) AtReserved(span source.Span, name string, origin string) *Builder {
 	return newBuilder(&Registry[263], 3, span, name, origin)
+}
+
+// AtMacro reports: {name}, the C++ name derived for {origin}, is a macro of the C++ standard library
+func (codeE8011) AtMacro(span source.Span, name string, origin string) *Builder {
+	return newBuilder(&Registry[263], 4, span, name, origin)
 }
 
 // E8012: an emitted type or value with no representation in generated code (CODEGEN.md §4.4).

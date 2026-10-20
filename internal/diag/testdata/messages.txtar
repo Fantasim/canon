@@ -460,6 +460,7 @@ E8011 override: 0.9 is not a valid resource.vocab.items identifier for @resource
 E8011 unexported: 0.9 is not exported: an @go(name:) override starts with an upper-case letter
 E8011 derived: 0.9, the resource.vocab.items name derived for resource.vocab.items, is not a valid identifier
 E8011 reserved: 0.9, the C++ name derived for resource.vocab.items, is a keyword or a reserved name
+E8011 macro: 0.9, the C++ name derived for resource.vocab.items, is a macro of the C++ standard library
 E8012 type: resource.vocab.items cannot be emitted: Int has no representation in generated code
 E8012 define: resource.vocab.items cannot be emitted: a load.defines table or record has no representation in generated code
 E8013 package: resource.vocab.items needs baked mode: data files cannot hold package functions

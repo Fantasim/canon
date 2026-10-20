@@ -2961,7 +2961,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      a discriminant read through a ref or optional (307's cases). `E8018` stays: a baked emit has
      no decoders by design (§2.2). Reason: Emberfall had to reshape its data model around them,
      against "elegance over legacy".
-     [amended by 320, 323]
+     [amended by 320, 323, 384]
 
 313. **API additions from Emberfall (API.md §5.5, §11, S8; additive under IMPLEMENTATION-PLAN §4's
      review rule).** `func (p *Project) Info(ctx context.Context) (ProjectInfo, error)` with
@@ -3670,6 +3670,7 @@ round 2", "PS1 review", "PS2 round 2"):
      this; a `types`-mode C++ default holding a variant stays `E8019`. "Tag absent means the
      default" was refused: it needs an ambiguity rule for a case key present without its tag and
      loosens the strictest reading (25-27). Reason: WIRE §5.4 was silent (log-2026-10-08).
+     [amended by 386]
 
 361. **Every generated decoder that reads text refuses a repeated key (CODEGEN.md §5.13, §7.5;
      WIRE.md §3.2).** C++ `types` mode adds `static std::optional<T> T::Parse(std::string_view
@@ -3721,6 +3722,7 @@ round 2", "PS1 review", "PS2 round 2"):
      hook" from it, so a decoded result is denied a decoder exactly when the owner writes no hook
      (340's owed note closed). Reason: parity owed by 340 (F14); the conservative reading denied a
      decoder to records held by another value.
+     [amended by 384]
 
 364. **What the error type silences inside a literal in error (TYPES.md §1; ERRORS.md E3305,
      E3002, E3320).** The items of a literal in error (`E3305`, `E3002`) and a misplaced item
@@ -3995,3 +3997,49 @@ round 2", "PS1 review", "PS2 round 2"):
      a release only as a regression: the median of two runs more than 10% above the previous
      release's, the runs interleaved at equal start load. Reason: Louis, 2026-10-14 (M4 call
      (c)): the refresh cost 240-470 ms (P18) and nothing gated it (261).
+
+383. **C++ enum helpers are tables in the `.gen.cpp` (CODEGEN.md §5.2, §5.10, §7.1).**
+     `ToName`, `ToWire`, `<E>FromWire`, `<E>FromCode` and an open enum's `ToName`, `IsKnown` and
+     `ToCode` are declared in the header and defined in the `.gen.cpp`, each reading arrays:
+     names and wires by ordinal, a lower-bound binary search over the wires sorted by bytes
+     (stable, so the first declared of equal wires wins) or over the codes. A `@codes` enum's
+     ordinal is `detail::<E>Ordinal`, an `inline constexpr` binary search of
+     `detail::k<E>Codes`, which lookup getters and constexpr lookups call instead of inlining a
+     switch. Reason: Sovereign's `ItemId` (7,306 members) made a 137 s `.gen.cpp` at -O2 and
+     charged every TU including the header; table ids already worked this way (§5.3).
+
+384. **C++ `types` decoders read maps (CODEGEN.md §5.9, §5.13; amends 312, 363).** A map in a
+     class a C++ `types` emit decodes is read as the `data` loader reads it (WIRE.md §5.8 keys),
+     refs unchecked as everywhere in `types` mode; `Parse` and `Decode<Fn>File` keep file order,
+     `Decode` of a parsed `nlohmann::json` holds key byte order, as nested tables (290). A `@text`
+     result holding such a map gets its decoder. `E8019` `MapField` is no longer reported by C++
+     `types`. Reason: 361's `KeyOrders` removed the refusal's cause; Sovereign's every-package C++
+     emit met 94 such refusals.
+
+385. **Every target holds optional list elements and map values (CODEGEN.md §4.2).** `[T?]` is
+     Go `rt.List[*T]` and C++ `std::vector<std::optional<T>>`; `{K: V?}` is Go `rt.Map[K, *V]`
+     and C++ `canon::FlatMap<K, std::optional<V>>`, in every mode; `none` is `nil` /
+     `std::nullopt`; Go `baked` writes scalars through `rt.Ptr`. `E8019` `OptionalElementList`
+     and `OptionalMapValue` retire. Reason: `check` accepted a construct two generators refused
+     (TypeScript wrote it); Sovereign's skill tables (`[Cell?]`) met it first.
+
+386. **C++ `types` decoders build record and variant defaults (CODEGEN.md §5.13; amends 360).**
+     A field default holding a record, variant, non-empty table, or list or map of them is built
+     once into a function-local `static const` by the `baked` filler's statements and copied
+     where the key is absent; `E8019` `RecordDefault` is no longer reported. 360's "a
+     `types`-mode C++ default holding a variant stays `E8019`" is withdrawn. Reason: Go and
+     TypeScript already decode them; Sovereign's monster and card tables default records.
+
+387. **Every target holds a literal union over a ref (CODEGEN.md §4.1, §5.8, §5.13).** Stored as
+     its string in Go and C++, every mode: `baked` writes it, a `data` loader accepts a literal
+     or checks the key as a plain ref (same error text), a `types` decoder reads it unchecked.
+     `E8019` `RefUnion` retires. Reason: `check` accepted a construct two generators refused
+     (TypeScript wrote it); Sovereign's exchange (`ref items | "PENYA"`) met it first.
+
+388. **A C++ name that is a standard-library macro is `E8011` (CODEGEN.md §3.4, §3.5).** A
+     generated C++ name, overrides included, equal to a macro of the C++17 synopses of the
+     headers generated code includes (`<atomic> <cerrno> <cfloat> <clocale> <cmath> <cstddef>
+     <cstdint> <cstdio> <cstdlib> <cstring>`) is `E8011` `macro`; `W8006` gains `<climits>`'s
+     names, POSIX `NAME_MAX`/`PATH_MAX` and glibc's `M_*` constants. Reason: a constant
+     `UINT32_MAX` broke the generated header with no finding (Sovereign, 2026-10-20); a name that
+     can never compile is an error (25), a name that may is a warning.

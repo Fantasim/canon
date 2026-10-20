@@ -396,7 +396,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 553 messages.
+The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 554 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1327,6 +1327,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8011 | unexported | name:Text | `{name} is not exported: an @go(name:) override starts with an upper-case letter` |
 | E8011 | derived | name:Text, origin:Name, target:Name | `{name}, the {target} name derived for {origin}, is not a valid identifier` |
 | E8011 | reserved | name:Text, origin:Name | `{name}, the C++ name derived for {origin}, is a keyword or a reserved name` |
+| E8011 | macro | name:Text, origin:Name | `{name}, the C++ name derived for {origin}, is a macro of the C++ standard library` |
 | E8012 | type | typ:Name, what:Type | `{typ} cannot be emitted: {what} has no representation in generated code` |
 | E8012 | define | typ:Name | `{typ} cannot be emitted: a load.defines table or record has no representation in generated code` |
 | E8013 | package | fn:Name, modes:Kind | `{fn} needs {modes} mode: data files cannot hold package functions` |

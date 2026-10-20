@@ -738,8 +738,12 @@ local a `$` suffix, below):
 - **C++** verbatim positions (enumerators, id members, constants, parameters): C++20 keywords,
   the alternative tokens (`and and_eq bitand bitor compl not not_eq or or_eq xor xor_eq`), and
   `detail`, `conformance`, `canon`, `std`, `nlohmann`. Private members are `f_` and never collide.
-  A name starting with `_` followed by an uppercase letter, or containing `__`, is `E8011`
-  (a reserved name, not a collision).
+  A name starting with `_` followed by an uppercase letter, or containing `__`, is `E8011` (a
+  reserved name, not a collision). A C++ name equal to a macro of the C++17 headers generated code
+  includes is `E8011` too, in every position, overrides included: those headers are always included
+  (§7.1, §7.4, §7.5), so the name can never compile; rename it with `@cpp(name:)` (DECISIONS 388).
+  The names are the macros of the C++17 synopses of `<atomic>`, `<cerrno>`, `<cfloat>`, `<clocale>`,
+  `<cmath>`, `<cstddef>`, `<cstdint>`, `<cstdio>`, `<cstdlib>` and `<cstring>`.
 - **TS** top-level bindings and parameters: the ES2020 reserved words (`await break case catch
   class const continue debugger default delete do else enum export extends false finally for
   function if import in instanceof new null return super switch this throw true try typeof var
@@ -833,7 +837,11 @@ ABSOLUTE RELATIVE TRANSPARENT OPAQUE CALLBACK WINAPI PASCAL CDECL EXPORT DOMAIN 
 NO_ERROR IGNORE INFINITE BOOL BYTE WORD DWORD INT UINT LONG major minor unix linux i386`, and the
 Win32 A/W names `GetObject GetMessage GetClassName GetCommandLine GetCurrentTime GetUserName
 GetFileAttributes GetProp SetProp CreateWindow CreateFile DeleteFile CopyFile MoveFile LoadImage
-LoadString DrawText SendMessage PostMessage RegisterClass`. Generated code itself writes
+LoadString DrawText SendMessage PostMessage RegisterClass`; `<climits>`'s `CHAR_BIT SCHAR_MIN
+SCHAR_MAX UCHAR_MAX CHAR_MIN CHAR_MAX MB_LEN_MAX SHRT_MIN SHRT_MAX USHRT_MAX INT_MIN INT_MAX
+UINT_MAX LONG_MIN LONG_MAX ULONG_MAX LLONG_MIN LLONG_MAX ULLONG_MAX`, POSIX `NAME_MAX PATH_MAX`, and
+glibc's `M_E M_LOG2E M_LOG10E M_LN2 M_LN10 M_PI M_PI_2 M_PI_4 M_1_PI M_2_PI M_2_SQRTPI M_SQRT2
+M_SQRT1_2`. Generated code itself writes
 `(std::min)(a, b)` and `(std::max)(a, b)`, so function-like macros cannot break it.
 
 ---
@@ -877,6 +885,8 @@ E8014) has no `E8101` (DECISIONS 279).
 | dependent type `D(…)` | `*D` | `const D&` | `D` |
 | `[T]` (scalar or enum) | `rt.List[T]` | `const std::vector<T>&` | `ReadonlyArray<T>` |
 | `[R]` (record or variant) | `rt.List[*R]` | `const std::vector<R>&` | `ReadonlyArray<R>` |
+| `[T?]` | `rt.List[*T]` | `const std::vector<std::optional<T>>&` | `ReadonlyArray<T \| null>` |
+| `{K: V?}` | `rt.Map[K, *V]` | `const canon::FlatMap<K, std::optional<V>>&` | `ReadonlyMap<K, V \| null>` |
 | `[T] keyed by f` | `rt.KeyedList[K, R]` | `const canon::KeyedList<K, R>&` | `ReadonlyArray<R>` |
 | `table T` (as a field) | `rt.KeyedList[<id type>, T]` | `const canon::KeyedList<<id type>, T>&` | `ReadonlyArray<CanonRow<T, <id type>>>` |
 | `{K: V}` | `rt.Map[K, E]` | `const canon::FlatMap<K, V>&` | `ReadonlyMap<K, V>` |
@@ -898,6 +908,11 @@ Only loaders and decoders know the slot keys: they read slot 0 to `N − 1` and 
 empty one (WIRE.md's rules, which `canon build` already enforced). A `pairs` field cannot map onto
 a legacy struct in this version (`E8109`, [§7.8](#78-legacy-structs)). A pairs element record has no stored
 export fns (`E3316`, WIRE.md §4.1), so another package's pairs record needs no refusal of its own.
+
+An optional list element or map value is, in every mode, `*T` in Go (`nil` is `none`; a record
+element keeps `[R]`'s `*R`; `baked` writes a scalar through `rt.Ptr`), `std::optional<T>` in
+C++ whatever `T` (a record or variant by value, as `[R]`'s elements), and `T | null` in
+TypeScript; JSON `null` inside a list or map is `none` (WIRE.md; DECISIONS 385).
 
 ### 4.3 Optional values
 
@@ -987,9 +1002,20 @@ enum class Element : uint8_t { FIRE = 1, WATER = 2 };  // the underlying value i
 std::optional<Element> ElementFromCode(uint8_t code);  // static_cast<uint8_t>(e) is the code
 ```
 
-`ToName`, `ToWire` and `<E>FromWire` are `inline` in the header. `ToName`/`ToWire` are overloads
-in the package namespace; `FromWire` carries the enum name because C++ cannot overload on the
-return type (this replaces SPEC §15.3's `FromWire`).
+`ToName`, `ToWire`, `<E>FromWire` and `<E>FromCode` are declared in the header and defined in the
+`.gen.cpp`, so a header costs the same whatever the size of its enums (DECISIONS 383); a program
+using them links the enum package's `.gen.cpp` (§2.3: always written). `ToName`/`ToWire` are
+overloads in the package namespace; `FromWire` carries the enum name because C++ cannot overload
+on the return type (this replaces SPEC §15.3's `FromWire`). Each definition reads tables, never a
+chain or a switch over the members: `ToName` and `ToWire` index arrays in declaration order by the
+member's ordinal; `<E>FromWire` binary-searches the wires sorted by their bytes (equal wires keep
+declaration order, so the first declared wins), as `<Rec>IdFromWire` does (§5.3); `<E>FromCode`
+binary-searches the codes. A value that is no member gives `""` or `std::nullopt`. A member's
+ordinal is its declaration position: `static_cast<std::size_t>(v)` without `@codes`; with them,
+`detail::<E>Ordinal(v)`, an `inline constexpr` function of the header searching
+`detail::k<E>Codes` (the codes, ascending) and returning the matching
+`detail::k<E>CodeOrdinals` entry, or the member count for a value that is no member. A variant's
+kind enum (§5.5) follows the same rules.
 
 **TS**
 
@@ -1042,6 +1068,10 @@ std::optional<Dst> DstFromWire(std::string_view wire);   // the known member, el
 // with @codes: std::optional<uint16_t> ToCode(const Dst& v); std::optional<Dst> DstFromCode(uint16_t code)
 // after the namespace: template <> struct std::hash<ns::Dst> (the wire's hash)
 ```
+
+`ToWire` and the `std::hash` specialisation are inline in the header; `ToName`, `IsKnown`,
+`<E>FromWire`, `ToCode` and `<E>FromCode` are defined in the `.gen.cpp` as binary searches over the
+member wires sorted by bytes (the codes for `<E>FromCode`), with parallel arrays (DECISIONS 383).
 
 ```ts
 export type DstKnown = "DST_HP" | "DST_MP";       // the closed union
@@ -1443,8 +1473,8 @@ package's `K`. Keyed lists have no row type: their elements are P's type itself.
   package's own reader and built through its owner's make hook (§2.8). Go and C++ loaders read map fields, keys as
   WIRE.md §5.8 (String, integer, enum, ref, literal union), in file order, a ref key checked where a
   ref value is (§5.8), with the same error texts in both (DECISIONS 312). A dependent key or value in a
-  map is `E8019` `DependentOutsideField` (§5.6); a C++ `types`-mode decoder still refuses maps
-  (`E8019` `MapField`; §5.13: its JSON keeps no key order). `@reload` values have no public per-value
+  map is `E8019` `DependentOutsideField` (§5.6); `types`-mode decoders read them too, in every
+  target (§5.13, DECISIONS 384). `@reload` values have no public per-value
   loader: they load through their snapshot ([§5.11](#511-reloadable-values-snapshot-and-store)).
 
 ### 5.10 Exported functions
@@ -1502,7 +1532,8 @@ export function areasVisibleTo(role: sovcommon_roles.Role): ReadonlyArray<AreaId
   `Duration`, an enum, or a non-optional `ref` into a table, i.e. its id) is defined in the header
   as an `inline constexpr` function. Its cells are `detail::k<Fn>Cells`, an `inline constexpr
   std::array` in the domain order above, indexed by the parameters' ordinals (an enum's ordinal is
-  its declaration position, never its code, computed by a `constexpr` function); `String` results are
+  its declaration position, never its code: `static_cast<std::size_t>(e)` without `@codes`,
+  `detail::<E>Ordinal(e)` with them, §5.2); `String` results are
   `std::string_view`, `Duration` results `std::chrono::milliseconds`. Every other export fn, any
   optional, list or record result, and every `embedded` emit keep §7.1's split. A string literal
   union result counts as `String`; a `ref` result into a table that has no id enum in this emit
@@ -1514,7 +1545,7 @@ export function areasVisibleTo(role: sovcommon_roles.Role): ReadonlyArray<AreaId
   namespace detail {
   inline constexpr std::array<std::int64_t, 3> kVersionOfCells = {1, 2, 2};
   }
-  inline constexpr std::int64_t VersionOf(EventType e) { return detail::kVersionOfCells[detail::Ordinal(e)]; }
+  inline constexpr std::int64_t VersionOf(EventType e) { return detail::kVersionOfCells[static_cast<std::size_t>(e)]; }
   ```
 
 **Translated** (at least one runtime parameter): the body is emitted once as a **pure function**
@@ -1632,7 +1663,8 @@ export function decodeEventConfig(json: unknown): EventConfig;
 ```
 
 - The C++ `Decode` takes an already-parsed `nlohmann::json`, whose objects are ordered by key: a
-  nested table it decodes holds its entries in key byte order, not file order (the `data`-mode
+  nested table or a map it decodes holds its entries in key byte order, not file order (the
+  `data`-mode
   loader, which reads the text, keeps file order; DECISIONS 290). `Parse` reads the text itself
   (`canon::json::ParseTextFile`, §7.5): file order, exact number tokens and the byte rules below
   (DECISIONS 361).
@@ -1683,16 +1715,22 @@ export function decodeEventConfig(json: unknown): EventConfig;
   the package namespace, which parses the text with `ParseTextFile` (file order, byte rules); TS
   `decode<Fn>File(json: unknown): T` and `parse<Fn>File(text: string): T`; `<T>` the target's type
   of the result, `<Fn>` the UpperCamel of the fn's name in the target (TS `items` gives
-  `decodeItemsFile`; DECISIONS 340, 363). A map inside a record
-  stays `E8019` `MapField` in C++ `types` mode, and a result holding one gets no decoder. Otherwise a runtime reads a `@text` file through its result type only when
+  `decodeItemsFile`; DECISIONS 340, 363). A runtime reads a `@text` file through its result type
+  only when
   that is a record or variant. What it can represent it accepts without checking refinements, refs, keys
   or checks: the file is the one `canon check` validated (WIRE.md §5.13).
 - Defaults must be constant; a computed default (one that reads other fields, or the instance through
   its type's arguments, DECISIONS 282) in a type emitted in `types` mode is `E8014`, as
   are precomputed export fns and finite-parameter methods (there is no precomputed data to read).
   A `types` emit that reads a record of another package with a precomputed export fn is `E8014`
-  too, as for its own: its reader has no data for the hook's stored result (§2.8, §5.14).
-- Refs are keys; table ids are strings.
+  too, as for its own: its reader has no data for the hook's stored result (§2.8, §5.14). In C++, a
+  default holding a record, a variant, a non-empty table, or a list or map of them is built once, on
+  first use, into a function-local `static const` by the statements a `baked` emit fills its data
+  with (another package's record through its make hook, §5.14), and copied into each decoded value
+  whose key is absent (DECISIONS 386).
+- Refs are keys; table ids are strings. A literal union over a ref (`ref items | "PENYA"`) is its
+  string in every mode and target (§4.1): read unchecked, like every ref here; a `data` loader
+  accepts one of the literals or checks the key as a plain ref (§5.8) (DECISIONS 387).
 - Public decoders are API for runtimes only: another package's generated code never calls them,
   it reads this package's classes with its own readers ([§2.8](#28-cross-package-references)).
 
@@ -2401,10 +2439,11 @@ func InputError(name, reason string) error {
   translation unit.
 - Everything is in the emit's `namespace` (C++17 nested form `namespace sov::gen {`). Internals are
   in `<namespace>::detail`; conformance entry points in `<namespace>::conformance`.
-- The header declares; `.gen.cpp` defines loaders, accessors, lookup tables, baked data, id-enum
-  lookups and `detail::<P>Access`. Getters, the helpers of declared enums, pure translated
-  functions and `baked` lookups with a constexpr scalar result (§5.10, DECISIONS 293) are inline in
-  the header.
+- The header declares; `.gen.cpp` defines loaders, accessors, lookup tables, baked data, enum and
+  id-enum lookups (`ToName`, `ToWire`, `FromWire`, `FromCode` and an open enum's `IsKnown` and
+  `ToCode`) and `detail::<P>Access`. Getters, `k<E>Members`, `detail::<E>Ordinal` and its two
+  arrays, an open enum's `ToWire`, pure translated functions and `baked` lookups with a constexpr
+  scalar result (§5.10, DECISIONS 293) are inline in the header.
 - Generated C++ never throws and never catches. It builds with exceptions disabled.
 
 ### 7.2 Classes

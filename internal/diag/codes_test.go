@@ -462,6 +462,7 @@ var constructed = []*Builder{
 	E8011.AtUnexported(sampleSpan, sampleText),
 	E8011.AtDerived(sampleSpan, sampleText, sampleName, sampleName),
 	E8011.AtReserved(sampleSpan, sampleText, sampleName),
+	E8011.AtMacro(sampleSpan, sampleText, sampleName),
 	E8012.AtType(sampleSpan, sampleName, sampleType),
 	E8012.AtDefine(sampleSpan, sampleName),
 	E8013.AtPackage(sampleSpan, sampleName, KindBakedMode),
