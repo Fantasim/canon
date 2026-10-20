@@ -48,6 +48,16 @@ parity script compares the two sets.
    renders with `withRetired: false`, giving +62 `II_` and +140 `TID_` names. This is harmless for
    C++. An option to match the text emit would make the parity diff exact.
 
+6. **Whole-project check/build time after the emits.** Once the 11 vocab packages emit baked
+   C++ and 31 data packages emit `types` (branch `louis/canon-w0b`), a whole-project `canon check`
+   rose from about 12 s to about 408 s, and `canon build` takes about 8m17s. The Resource gate now
+   runs for about 40 minutes. Each package checked alone takes 11 s or less, so the time is spent
+   at whole-project level.
+7. **Ask 2 of the first handoff (out-of-line lookups) now blocks the first real loader.**
+   `engine.gen.cpp` (package `engine`, 456/308 lines) includes the big vocab headers. It compiles
+   in seconds at -O0, but at -O2 it was still running after more than 10 minutes. Please keep this
+   at the top of v0.1.10.
+
 ## Accept when
 
 For each of the 11 packages, the set of NAME/VALUE pairs in `*.defines.gen.h` equals the rendered
