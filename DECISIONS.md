@@ -4005,7 +4005,7 @@ round 2", "PS1 review", "PS2 round 2"):
      (stable, so the first declared of equal wires wins) or over the codes. A `@codes` enum's
      ordinal is `detail::<E>Ordinal`, an `inline constexpr` binary search of
      `detail::k<E>Codes`, which lookup getters and constexpr lookups call instead of inlining a
-     switch. Reason: Sovereign's `ItemId` (7,306 members) made a 137 s `.gen.cpp` at -O2 and
+     switch. A table's id enum defines its `ToWire` in the `.gen.cpp` too, as an array by position. Reason: Sovereign's `ItemId` (7,306 members) made a 137 s `.gen.cpp` at -O2 and
      charged every TU including the header; table ids already worked this way (§5.3).
 
 384. **C++ `types` decoders read maps (CODEGEN.md §5.9, §5.13; amends 312, 363).** A map in a
