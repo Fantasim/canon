@@ -2,7 +2,6 @@ package cppgen
 
 import (
 	_ "embed"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -68,7 +67,7 @@ func (g *gen) absentDefault(depth int, obj, key string, l leaf) string {
 		return ""
 	}
 	g.c.linef(depth, absentOpenFormat, obj, key)
-	g.c.linef(depth+1, assignFormat, l.dst, g.defaultLit(l.t, l.def))
+	g.assignDefault(depth+1, l)
 	return elseLead
 }
 
@@ -120,14 +119,11 @@ func (g *gen) unionMembership(depth int, key, dst string, t ir.TypeRef) {
 	if e == nil {
 		return
 	}
-	var conds []string
-	for _, w := range t.Literals {
-		conds = append(conds, fmt.Sprintf(differsFormat, dst, quote(w)))
+	wires := make([]string, len(e.Members))
+	for i, m := range e.Members {
+		wires[i] = m.Wire
 	}
-	for _, m := range e.Members {
-		conds = append(conds, fmt.Sprintf(differsFormat, dst, quote(m.Wire)))
-	}
-	g.c.linef(depth, unionCheckFormat, strings.Join(conds, andSep), key, dst)
+	g.c.linef(depth, unionCheckFormat, strings.Join(append(differs(dst, t.Literals), differs(dst, wires)...), andSep), key, dst)
 }
 
 // unionEnum is the enum arm of a union whose membership a loader checks, so which no read shortcut takes; nil otherwise.

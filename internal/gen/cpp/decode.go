@@ -22,6 +22,8 @@ type leaf struct {
 	disc     string      // a dependent type's discriminant, read before it (CODEGEN.md §5.6); a ref's key for a table
 	table    string      // a field decided through a ref: its branch table, which disc looks up (DECISIONS 350)
 	def      value.Value // types mode: the constant default an absent key takes (CODEGEN.md §5.13)
+	kept     string      // the static const a default holding a record or variant is built into (DECISIONS 386)
+	nested   bool        // below a field's value and its list's elements: no hook member's key check reaches it (CODEGEN.md §2.8)
 }
 
 // decoders are the detail::Decode and Decode<Alias> definitions, in declaration order (CODEGEN.md §2.7, §5.6, §7.6).
@@ -121,8 +123,9 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 		g.fail(fmt.Errorf("%w: field %s without a wire path", ErrMalformed, f.Name))
 		return
 	}
-	obj, depth := g.openPath(f, fields)
 	l := leaf{t: f.Type, optional: f.Optional, none: f.NoneWire, unit: f.Unit, enc: f.Enc, dst: g.dst + m, def: g.fieldDefault(f)}
+	l.kept = g.builtDefault(l, m)
+	obj, depth := g.openPath(f, fields)
 	if g.boxed[f] {
 		l.box = g.storage(f.Type)
 	}
@@ -157,7 +160,7 @@ func (g *gen) closePath(f *ir.Field, depth int, l leaf) {
 		switch {
 		case l.def != nil:
 			g.c.linef(depth, elseOpen)
-			g.c.linef(depth+1, assignFormat, l.dst, g.defaultLit(l.t, l.def))
+			g.assignDefault(depth+1, l)
 		case !f.Optional:
 			g.c.linef(depth, elseOpen)
 			g.c.linef(depth+1, failMissingFormat, quote(strings.Join(f.WirePath[i:], qnameSep)))
@@ -194,7 +197,7 @@ func (g *gen) decodeKey(depth int, obj, key string, l leaf) {
 		dst = fmt.Sprintf(optVarFormat, depth)
 		g.c.linef(depth+1, emplaceFormat, dst, l.dst)
 	}
-	g.decodeValue(depth+1, fmt.Sprintf(derefFormat, x), key, leaf{t: l.t, unit: l.unit, enc: l.enc, dst: dst, disc: l.disc, table: l.table})
+	g.decodeValue(depth+1, fmt.Sprintf(derefFormat, x), key, leaf{t: l.t, unit: l.unit, enc: l.enc, dst: dst, disc: l.disc, table: l.table, nested: l.nested})
 	g.c.linef(depth, closeBrace)
 }
 
@@ -207,7 +210,7 @@ func (g *gen) shortcut(l leaf) string {
 		return shortInt
 	case l.t.Kind == types.Float && l.t.Bits != float32Bits:
 		return shortFloat
-	case l.t.Kind == types.String, l.t.Kind == types.LitUnion && g.stringWire(l.t) && g.unionEnum(l.t) == nil:
+	case l.t.Kind == types.String, l.t.Kind == types.LitUnion && g.stringWire(l.t) && g.unionEnum(l.t) == nil && unionRef(l.t) == nil:
 		return shortString
 	case l.t.Kind == types.Duration && !g.types(): // types mode reads a source-wire Duration (WIRE.md §5.13)
 		return shortDuration
@@ -248,13 +251,13 @@ func (g *gen) parser(t ir.TypeRef) string {
 	return addressOf + g.enumHelpers(e).FromWire
 }
 
-// stringWire reports a literal union whose wire is always a JSON string.
+// stringWire reports a literal union whose wire is always a JSON string: over a String, an enum without @json(codes), or a string-keyed ref (DECISIONS 387).
 func (g *gen) stringWire(t ir.TypeRef) bool {
 	if t.Elem == nil {
 		return false
 	}
 	e, isEnum := t.Elem.Named.(*ir.Enum)
-	return t.Elem.Kind == types.String || isEnum && !e.JSONCodes
+	return t.Elem.Kind == types.String || isEnum && !e.JSONCodes || unionRef(t) != nil
 }
 
 // decodeValue reads the JSON value src into l.dst (WIRE.md §5).
@@ -265,11 +268,7 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 	case types.String:
 		g.c.linef(depth, decCallFormat, asString, src, key, "", l.dst)
 	case types.LitUnion:
-		if !g.stringWire(l.t) {
-			g.refuseUnion(l.t)
-		}
-		g.c.linef(depth, decCallFormat, asString, src, key, "", l.dst)
-		g.unionMembership(depth, key, l.dst, l.t)
+		g.decodeUnion(depth, src, key, l)
 	case types.Duration:
 		g.decodeDuration(depth, src, key, l)
 	case types.Enum:
@@ -284,6 +283,9 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 			return
 		}
 		g.decodeValue(depth, src, key, leaf{t: *l.t.Key, dst: l.dst})
+		if l.nested {
+			g.foreignRefCheck(depth, l.t, l.t, l.dst, key)
+		}
 	case types.Record, types.Variant:
 		g.decodeObject(depth, src, key, l)
 	case types.TypeApp:
@@ -298,9 +300,34 @@ func (g *gen) decodeValue(depth int, src, key string, l leaf) {
 		g.decodeNested(depth, src, key, l)
 	case types.Map:
 		g.decodeMap(depth, src, key, l)
+	case types.Optional:
+		g.decodeOptional(depth, src, key, l)
 	default:
 		g.refuseKind(l.t.Kind, g.at)
 	}
+}
+
+// decodeUnion reads a literal union's wire text, then checks it is a literal or a member of its enum, or, read by a data loader from another package's class, the key of an entry (CODEGEN.md §4.1, §5.13; DECISIONS 387).
+func (g *gen) decodeUnion(depth int, src, key string, l leaf) {
+	if !g.stringWire(l.t) {
+		g.refuseUnion(l.t)
+	}
+	g.c.linef(depth, decCallFormat, asString, src, key, "", l.dst)
+	g.unionMembership(depth, key, l.dst, l.t)
+	g.foreignUnionCheck(depth, l.t, l.dst, key)
+}
+
+// decodeOptional reads an optional list element or map value: `null` is none, anything else its element (CODEGEN.md §4.2, WIRE.md §5.4; DECISIONS 385).
+func (g *gen) decodeOptional(depth int, src, key string, l leaf) {
+	if l.t.Elem == nil {
+		g.malformed(noElem, g.at)
+		return
+	}
+	dst := fmt.Sprintf(optVarFormat, depth)
+	g.c.linef(depth, notNullOpenFormat, src)
+	g.c.linef(depth+1, emplaceFormat, dst, l.dst)
+	g.decodeValue(depth+1, src, key, leaf{t: *l.t.Elem, unit: l.unit, enc: l.enc, dst: dst, disc: l.disc, table: l.table, nested: true})
+	g.c.linef(depth, closeBrace)
 }
 
 // decodeNumber reads Bool, integers and floats; a narrower type goes through an int64 or a double.

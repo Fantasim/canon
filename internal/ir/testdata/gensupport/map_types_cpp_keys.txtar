@@ -1,0 +1,18 @@
+Decision 37, clean: DECISIONS 384, CODEGEN.md §5.9, §5.13: gen/cpp's types-mode decoder reads every class of the package and every map in it, held by a value or not, a literal-union key and a nested map in a list included, keys as WIRE.md §5.8.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum Kind { a, b }
+
+/// A row.
+record Row {
+  /// The cells.
+  cells: {Kind | "all": Int}
+  /// The rows of cells.
+  deep: [{String: {Int: String}}] = []
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,31 @@
+DECISIONS 386 (CODEGEN.md §5.13): checks and builds through internal/build, whose folder folds the record defaults, its C++ compiling; formerly e2e/refused, E8019 RecordDefault at each field whose default holds a record value: a record and a list of records are built by the baked filler's statements, an empty list written as a literal.
+-- project.canon --
+project demo {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int
+}
+
+/// A marker.
+record Marker {
+  /// Where it is.
+  at: Point = { x: 1 }
+  /// Where they are.
+  all: [Point] = [{ x: 2 }]
+  /// Where it was.
+  trail: [Point] = []
+}
+
+emit cpp { out: "@gen/cpp/a", namespace: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

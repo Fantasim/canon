@@ -8,7 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// checkCppDecoded is E8019 `MapField` and, in data mode, `InlineFoldedKey`: gen/cpp decodes every class of the package (CODEGEN.md §7.6); a types-mode decoder ignores unknown keys (§5.13), so no key of its parent folds onto an inline case's.
+// checkCppDecoded is E8019 `MapField` for a map key without a wire key (checkDecodedType; every map gen/cpp reads in both modes, DECISIONS 384) and, in data mode, `InlineFoldedKey`: gen/cpp decodes every class of the package (CODEGEN.md §7.6); a types-mode decoder ignores unknown keys (§5.13), so no key of its parent folds onto an inline case's.
 func (s *stage) checkCppDecoded(u *unit, es *emitSite) {
 	shape := objectShape{extras: s.objectExtras(u, selectedValues(u, es.e)), deep: true}
 	for _, class := range packageClasses(u.p) {
@@ -27,9 +27,9 @@ func decodesClasses(e *Emit) bool {
 	return e.Mode == ModeData || e.Target != TargetTS && e.Mode == ModeTypes
 }
 
-// readsMaps reports an emit whose decoders read maps, keys as WIRE.md §5.8 in file order: a data loader, or gen/go's types-mode decoders, which read the JSON text; gen/cpp's take an nlohmann::json, which keeps no key order (CODEGEN.md §5.9, §5.13).
+// readsMaps reports an emit whose decoders read maps, keys as WIRE.md §5.8: every decoded emit, a data loader or a types-mode decoder of any target (CODEGEN.md §5.9, §5.13; DECISIONS 384: gen/cpp's Parse keeps file order through its KeyOrders, its Decode holds key byte order, as nested tables).
 func readsMaps(e *Emit) bool {
-	return e.Mode == ModeData || e.Target == TargetGo && e.Mode == ModeTypes
+	return e.Mode == ModeData || e.Mode == ModeTypes
 }
 
 // readFns are the export fns of a class whose results a decoder reads: none in types mode, where a stored fn is E8014's (CODEGEN.md §5.13).
@@ -78,13 +78,11 @@ func firstDefault(e *Emit, c any, judge defaultJudge) (diag.Kind, bool) {
 	return 0, false
 }
 
-// cppDefault is what a types-mode decoder cannot write of field f's constant default: `RecordDefault` for one holding a record or case value (gen/cpp's literals write none, §5.1), `DependentDefault` for a present value of a dependent type the decoder otherwise reads, whose branch only a discriminant decides (§5.6).
+// cppDefault is what a types-mode decoder cannot write of field f's constant default: `DependentDefault` for a present value of a dependent type the decoder otherwise reads, whose branch only a discriminant decides (§5.6); one holding a record or case value is built by the baked filler's statements (§5.13, DECISIONS 386).
 func cppDefault(e *Emit, fields []*Field, f *Field) (diag.Kind, bool) {
 	switch {
 	case f.Input != nil || !written(f.Default):
 		return 0, false
-	case holdsRecordValue(f.Default):
-		return diag.KindRecordDefault, true
 	case typeHolds(&f.Type, isApp) && readsField(e, fields, f):
 		return diag.KindDependentDefault, true
 	}

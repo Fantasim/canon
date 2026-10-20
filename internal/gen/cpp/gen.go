@@ -49,8 +49,10 @@ type gen struct {
 	rowFriends   map[*ir.Record][]string // per row of another package's record, the classes whose decoders fill it (§5.9)
 	h, c         writer
 	wireTables   map[string]bool // branch tables keyed by the wire, their ref key being an opened enum (CODEGEN.md §5.6)
-	textFile     bool            // a Decode<Fn>File is being written: its map, outside a record, is read (CODEGEN.md §5.13)
 	afterNS      writer          // what follows the header's namespace: std::hash of an opened enum (CODEGEN.md §5.2)
+
+	// defaultFriends are, per class of this package, the classes whose types-mode decoders build a default writing its members (DECISIONS 386).
+	defaultFriends map[any][]string
 }
 
 // method is a translated method with the class that owns it and that class's fields.
@@ -92,6 +94,7 @@ func newGen(p *ir.Package, e *ir.Emit) *gen {
 		entries: map[*ir.Record]bool{}, loaders: map[*ir.Record]*ir.Value{}, imported: map[string]bool{},
 		pairsFriends: map[*ir.Record][]string{}, holders: map[any][]*ir.Value{}, slots: map[any][]resolved{},
 		rowFriends: map[*ir.Record][]string{}, wireTables: map[string]bool{}, top: newScope(e.Namespace), dst: outPrefix,
+		defaultFriends: map[any][]string{},
 	}
 }
 
@@ -141,6 +144,7 @@ func (g *gen) plan() {
 		g.pairsParents()
 	}
 	g.nestedRows()
+	g.defaultWriters()
 	g.holdersOf()
 	g.sortClasses()
 	g.collectInputs()

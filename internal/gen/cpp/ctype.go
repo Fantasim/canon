@@ -59,6 +59,8 @@ func (g *gen) storage(t ir.TypeRef) string {
 		return g.mapStorage(t)
 	case types.Table:
 		return g.tableStorage(t)
+	case types.Optional:
+		return g.optionalStorage(t)
 	default:
 		g.refuseKind(t.Kind, g.at)
 		return cppInvalid
@@ -74,16 +76,13 @@ func (g *gen) mapStorage(t ir.TypeRef) string {
 	return fmt.Sprintf(flatMapFormat, g.storage(*t.Key), g.storage(*t.Elem))
 }
 
-// refuseUnion refuses the union being written, which stage E refuses first: its first arm has no string wire form (check's E3002, TYPES.md §13.2), is a dependent type (E8019 DependentType) or a ref (E8019 RefUnion).
+// refuseUnion refuses the union being written, which stage E refuses first: its first arm has no string wire form (check's E3002, TYPES.md §13.2) or is a dependent type (E8019 DependentType).
 func (g *gen) refuseUnion(t ir.TypeRef) {
-	switch {
-	case t.Elem == nil || !ir.StringWire(t.Elem):
+	if t.Elem == nil || !ir.StringWire(t.Elem) {
 		g.malformed(unionNonString, g.at)
-	case t.Elem.Kind == types.TypeApp:
-		g.malformed(unionDependent, g.at)
-	default:
-		g.malformed(unionRef, g.at) // E8019 RefUnion
+		return
 	}
+	g.malformed(unionDependent, g.at)
 }
 
 // unionStorage is a string-literal union's wire text: always a string (CODEGEN.md §4.1).
@@ -100,9 +99,6 @@ func (g *gen) listStorage(t ir.TypeRef) string {
 		g.fail(fmt.Errorf("%w: list without an element type at %s", ErrMalformed, g.at))
 		return cppInvalid
 	}
-	if t.Elem.Kind == types.Optional {
-		g.malformed(optionalElems, g.at) // E8019 OptionalElementList
-	}
 	elem := g.storage(*t.Elem)
 	if t.KeyedBy == nil {
 		return fmt.Sprintf(vectorFormat, elem)
@@ -112,6 +108,15 @@ func (g *gen) listStorage(t ir.TypeRef) string {
 		return cppInvalid
 	}
 	return fmt.Sprintf(keyedListFormat, g.storage(key.Type), elem)
+}
+
+// optionalStorage is an optional list element or map value: std::optional of its element's storage, a record or variant by value (CODEGEN.md §4.2, DECISIONS 385).
+func (g *gen) optionalStorage(t ir.TypeRef) string {
+	if t.Elem == nil {
+		g.malformed(noElem, g.at)
+		return cppInvalid
+	}
+	return fmt.Sprintf(optionalFormat, g.storage(*t.Elem))
 }
 
 // refStorage is a ref's key, a table's id enum in a baked emit (CODEGEN.md §5.3, §5.8); a define ref's value has members of its own (define_refs.go).

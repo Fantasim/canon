@@ -1,0 +1,149 @@
+DECISIONS 386, CODEGEN.md §5.13, §5.14, WIRE.md §5.4, §5.5.3: d's cpp types-mode decoder of Marker gives each absent key its default, every one holding a record or variant built once by the baked filler's statements into a function-local static const and copied: a record (`= {}`, its own fields defaulted), an optional field's record, a variant, a list of records, a non-empty table, lib's record (through lib's make hook) and a record under an absent intermediate object; d's own reader of lib's Band builds Band's defaults (a record, a list of them, a table) through lib's hooks. probe.cpp prints, per file, what Decode and Parse give; `twice` decodes {"name": "t"}, moves the value away, and decodes it again.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A point of the library.
+record Spot {
+  /// Across.
+  x: Int = 0
+  /// Down.
+  y: Int = 0
+}
+
+/// A band of spots.
+record Band {
+  /// Its anchor.
+  at: Spot = { x: 1 }
+  /// Its spots.
+  spots: [Spot] = [{ y: 2 }]
+  /// Its spots by name.
+  named: table Spot = {
+    s { x: 3 }
+  }
+}
+
+emit cpp { out: "@features/lib", namespace: "lib", mode: types }
+-- d/d.canon --
+/// D.
+package d
+
+import lib { Band, Spot }
+
+/// A point.
+record Point {
+  /// Across.
+  x: Int = 0
+  /// Down.
+  y: Int = 0
+}
+
+/// A slot.
+record Slot {
+  /// How many.
+  n: Int = 1
+}
+
+/// A shape.
+variant Shape @json(tag: "kind") {
+  /// Round.
+  circle {
+    /// Its radius.
+    r: Int
+  }
+  /// Nothing.
+  dot
+}
+
+/// A marker.
+record Marker {
+  /// Its name.
+  name: String
+  /// Where it is.
+  at: Point = {}
+  /// Where it may be.
+  maybe: Point? = { x: 2 }
+  /// Its shape.
+  shape: Shape = circle { r: 3 }
+  /// Where they are.
+  all: [Point] = [{ x: 4 }, { y: 5 }]
+  /// Its slots.
+  slots: table Slot = {
+    a { n: 6 }
+    b {}
+  }
+  /// Its origin.
+  origin: Spot = { x: 7 }
+  /// Deep down.
+  deep: Point = { x: 8 } @json(path: "under.at")
+  /// Its band.
+  band: Band = {}
+}
+
+emit cpp { out: "@features/d", namespace: "d", mode: types }
+-- probe.cpp --
+// probe decodes each file named on the command line with Marker::Decode and Marker::Parse, and
+// for `twice` decodes {"name": "t"}, moves the value away and decodes it again (DECISIONS 386).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "d/d.gen.h"
+
+namespace {
+
+template <class P>
+std::string Pt(const P& p) { return std::to_string(p.GetX()) + ":" + std::to_string(p.GetY()); }
+
+std::string ShowShape(const ::d::Shape& s) {
+    if (const ::d::ShapeCircle* c = s.AsCircle()) return "circle" + std::to_string(c->GetR());
+    return "dot";
+}
+
+std::string ShowBand(const ::lib::Band& b) {
+    std::string spots, named;
+    for (const ::lib::Spot& s : b.GetSpots()) spots += (spots.empty() ? "" : ",") + Pt(s);
+    for (const auto& s : b.GetNamed().All()) named += (named.empty() ? "" : ",") + s.GetId() + "=" + Pt(s);
+    return Pt(b.GetAt()) + "/[" + spots + "]/[" + named + "]";
+}
+
+std::string Show(const ::d::Marker& m) {
+    std::string all, slots;
+    for (const ::d::Point& p : m.GetAll()) all += (all.empty() ? "" : ",") + Pt(p);
+    for (const ::d::Slot& s : m.GetSlots().All()) slots += (slots.empty() ? "" : ",") + s.GetId() + "=" + std::to_string(s.GetN());
+    const ::d::Point* maybe = m.GetMaybe();
+    return "name=" + m.GetName() + " at=" + Pt(m.GetAt()) + " maybe=" + (maybe ? Pt(*maybe) : "none") +
+           " shape=" + ShowShape(m.GetShape()) + " all=[" + all + "] slots=[" + slots + "] origin=" + Pt(m.GetOrigin()) +
+           " deep=" + Pt(m.GetDeep()) + " band=" + ShowBand(m.GetBand());
+}
+
+std::string Verdict(const std::optional<::d::Marker>& m, const std::string& error) {
+    return m ? Show(*m) : "error " + error;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        std::string error;
+        if (arg == "twice") {
+            std::optional<::d::Marker> first = ::d::Marker::Parse(R"({"name": "t"})", error);
+            const ::d::Marker moved = std::move(*first);
+            const std::optional<::d::Marker> second = ::d::Marker::Parse(R"({"name": "t"})", error);
+            std::cout << arg << ": moved " << Show(moved) << " | again " << Verdict(second, error) << "\n";
+            continue;
+        }
+        std::ifstream in(arg);
+        std::stringstream text;
+        text << in.rdbuf();
+        const std::string d = Verdict(::d::Marker::Decode(nlohmann::json::parse(text.str(), nullptr, false), error), error);
+        error.clear();
+        const std::string p = Verdict(::d::Marker::Parse(text.str(), error), error);
+        std::cout << arg << ": decode " << d << " | parse " << p << "\n";
+    }
+    return 0;
+}

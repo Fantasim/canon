@@ -118,7 +118,7 @@ func (g *gen) resolveBody(c class, snapshot bool) {
 	for _, f := range fields {
 		m, err := g.member(f.Name)
 		g.fail(err)
-		if !g.holdsWalk(f.Type) {
+		if !g.holdsWalk(f.Type) && !g.elemsChecked(f.Type, c) {
 			continue
 		}
 		key := quote(wireName(f))
@@ -129,14 +129,14 @@ func (g *gen) resolveBody(c class, snapshot bool) {
 	}
 }
 
-// walkResult checks the ref keys of the maps a stored fn's result holds (CODEGEN.md §5.8, DECISIONS 312), on its `$name` path, or each cell of a lookup's table on its domain keys' path.
+// walkResult checks the ref keys of the maps a stored fn's result holds (CODEGEN.md §5.8, DECISIONS 312), and a union result's keys (DECISIONS 387), on its `$name` path, or each cell of a lookup's table on its domain keys' path.
 func (g *gen) walkResult(c class, fn *ir.ExportFn) {
-	if fn.Kind == ir.FnTranslated || !g.keyChecked(fn.Result, c) {
+	t, optional := resultType(fn.Result)
+	if fn.Kind == ir.FnTranslated || !g.keyChecked(fn.Result, c) && !g.elemsChecked(t, c) {
 		return
 	}
 	m, err := g.member(fn.Name)
 	g.fail(err)
-	t, optional := resultType(fn.Result)
 	if fn.Kind != ir.FnLookup {
 		g.walkValue(depthTwo, t, optional, xPrefix+m, quote(dollar+fn.Name))
 		return
@@ -237,7 +237,7 @@ func (g *gen) holdsWalk(t ir.TypeRef) bool {
 		return g.needsWalk(t.Named)
 	case t.Kind == types.Map && g.keyTarget(t, g.walking) != nil:
 		return true
-	case (t.Kind == types.List || t.Kind == types.Table || t.Kind == types.Map) && t.Elem != nil:
+	case (t.Kind == types.List || t.Kind == types.Table || t.Kind == types.Map || t.Kind == types.Optional) && t.Elem != nil:
 		return g.holdsWalk(*t.Elem)
 	default:
 		return false
@@ -252,6 +252,8 @@ func (g *gen) walkValue(depth int, t ir.TypeRef, optional bool, expr, key string
 		g.c.linef(depth, ifOpenFormat, expr)
 		g.walkValue(depth+1, t, false, fmt.Sprintf(derefFormat, expr), key)
 		g.c.linef(depth, closeBrace)
+	case t.Kind == types.Optional && t.Elem != nil: // an optional element or map value (DECISIONS 385)
+		g.walkValue(depth, *t.Elem, true, expr, key)
 	case t.Kind == types.Table:
 		g.walkTable(depth, t, expr, key)
 	case t.Kind == types.Map:
@@ -265,6 +267,10 @@ func (g *gen) walkValue(depth int, t ir.TypeRef, optional bool, expr, key string
 		g.c.linef(depth, loop, n, n, expr, n)
 		g.walkValue(depth+1, *t.Elem, false, elem, elemKey(key, n))
 		g.c.linef(depth, closeBrace)
+	case unionRef(t) != nil || t.Kind == types.Ref: // a key no slot resolves, reached by elemsChecked only (DECISIONS 387)
+		if target := g.leafTarget(t, g.walking); target != nil {
+			g.leafCheck(depth, t, target, expr, key)
+		}
 	case key == "":
 		g.c.linef(depth, walkFormat, expr)
 	default:

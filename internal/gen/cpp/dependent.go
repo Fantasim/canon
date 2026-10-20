@@ -75,6 +75,9 @@ func (g *gen) dependentClass(d *ir.Dependent) {
 	if !g.baked() {
 		g.h.linef(1, friendDependentFormat, n.Decode, g.global(*d.Disc), g.qualifiedOwn(d))
 	}
+	for _, w := range g.defaultFriends[d] { // a decoder whose built default holds it (DECISIONS 386)
+		g.h.linef(1, friendDecodeFormat, w)
+	}
 	g.h.blank()
 	g.h.linef(1, variantMemberFormat, strings.Join(alts, listSep))
 	if n.DefineValue != "" {
@@ -167,7 +170,7 @@ func (g *gen) dependentCase(labels []string, i int, dep *ir.Dependent, defineVal
 		init = initBraces
 	}
 	g.c.linef(depthTwo, localFormat, g.global(b.Type), tmp, init)
-	g.decodeValue(depthTwo, sourceVar, keyParam, leaf{t: b.Type, dst: tmp})
+	g.decodeValue(depthTwo, sourceVar, keyParam, leaf{t: b.Type, dst: tmp, nested: true})
 	reader := dep.Pkg != g.p.Name
 	args := []string{fmt.Sprintf(moveFormat, tmp)}
 	if d := ir.DefinesOf(g.p, ir.DefineTarget(b.Type)); d != nil {

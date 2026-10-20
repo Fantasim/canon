@@ -51,6 +51,8 @@ func (g *gen) fillValue(a at, lhs string, t ir.TypeRef, optional bool, v value.V
 	case optional:
 		a.line(emplaceStmtFormat, lhs)
 		g.fillValue(a, fmt.Sprintf(derefFormat, lhs), t, false, v)
+	case t.Kind == types.Optional && t.Elem != nil: // an optional element or map value (DECISIONS 385)
+		g.fillValue(a, lhs, *t.Elem, true, v)
 	case t.Kind == types.Record:
 		g.fillOwnRecord(a, lhs, t, v)
 	case t.Kind == types.Variant:
@@ -73,6 +75,8 @@ func (g *gen) literalType(t ir.TypeRef) bool {
 	switch t.Kind {
 	case types.Bool, types.Int, types.Float, types.String, types.Duration, types.Enum, types.LitUnion, types.Ref:
 		return true
+	case types.Optional:
+		return t.Elem != nil && g.literalType(*t.Elem)
 	case types.List:
 		return t.KeyedBy == nil && t.Elem != nil && g.literalType(*t.Elem)
 	case types.Map:
@@ -238,8 +242,8 @@ func (g *gen) fillVariant(a at, lhs string, t ir.TypeRef, v value.Value) {
 	vt, ok := t.Named.(*ir.Variant)
 	r, isRecord := v.(*value.Record)
 	var ct *types.CaseType
-	if isRecord && r.T != nil {
-		ct, _ = r.T.Base().(*types.CaseType)
+	if isRecord {
+		ct = caseOf(r)
 	}
 	if !ok || ct == nil || ct.Index < 0 || ct.Index >= len(vt.Cases) {
 		g.malformed(fmt.Sprintf(valueFormat, v), g.at)
@@ -277,6 +281,9 @@ func (g *gen) fillList(a at, lhs string, t ir.TypeRef, v value.Value) {
 		a.line(resizeFormat, lhs, len(l.Elems))
 	}
 	for i, e := range l.Elems {
+		if absent(e) { // a none element stays std::nullopt (DECISIONS 385)
+			continue
+		}
 		local := rowVar(a.depth + 1)
 		a.line(openBrace)
 		a.in().line(rowAliasFormat, local, at(i))

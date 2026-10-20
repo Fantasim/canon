@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.1 (gen/cpp refuseUnion, gen/go stringWire): neither generator writes a literal union over a ref yet: gen/cpp at every type it holds, gen/go's data loader where it reads one.
+EVALUATION.md §1, CODEGEN.md §4.1 (gen/go stringWire): gen/go's data loader reads no literal union over a ref yet; gen/cpp holds it as its string (DECISIONS 387), so only the go emit is refused.
 -- a/a.canon --
 package a
 
@@ -20,9 +20,6 @@ emit cpp { out: "@features/ac", namespace: "a", mode: data }
 emit json { out: "out/" }
 -- findings.txt --
 error[E8019]  a/a.canon:8:3
-  emit cpp in data mode cannot generate a literal union over a ref; use an optional ref instead
-
-error[E8019]  a/a.canon:8:3
   emit go in data mode cannot generate a literal union over a ref; use an optional ref instead
 
-2 errors, 0 warnings in 1 package (…)
+1 error, 0 warnings in 1 package (…)

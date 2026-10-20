@@ -45,7 +45,6 @@ func refusals() []struct {
 	want error
 } {
 	tList := listOf(tInt)
-	optInt := ir.TypeRef{Kind: types.Optional, Elem: &tInt}
 	return []struct {
 		name string
 		edit func(*ir.Package, *ir.Emit)
@@ -68,8 +67,7 @@ func refusals() []struct {
 		{"methods of a fieldless case", func(p *ir.Package, _ *ir.Emit) { fieldlessMethods(p) }, cppgen.ErrMalformed},
 		// stage E never builds a dependent type without its discriminant (CODEGEN.md §5.6).
 		{"a dependent type without its discriminant", func(p *ir.Package, _ *ir.Emit) { p.Types = append(p.Types, &ir.Dependent{Pkg: "demo", Name: "D"}) }, cppgen.ErrMalformed},
-		// unreachable: stage E refuses it first (E8019 OptionalElementList).
-		{"a list of optionals", withField(field("o", "o", "", listOf(optInt))), cppgen.ErrMalformed},
+		{"an optional element without its element type", withField(field("o", "o", "", listOf(ir.TypeRef{Kind: types.Optional}))), cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (E8019 DependentType: a dependent map binds its parameter per key, DECISIONS 312).
 		{"a dependent map field", withField(field("m", "m", "", ir.TypeRef{Kind: types.DepMap, Key: &tString, Elem: &tInt})), cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (check's E3316).

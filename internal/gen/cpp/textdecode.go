@@ -23,13 +23,11 @@ func (g *gen) textHelpers() {
 	for _, fn := range g.pl.TextDecoders() {
 		leave := g.enter(g.p.Name + qnameSep + fn.Name)
 		t := ir.TextResult(fn)
-		g.textFile = true
 		g.c.printf(readerOpenFormat, g.pl.TextDecoder(fn), g.storage(t))
 		g.decodeValue(1, sourceVar, quote(dollar), leaf{t: t, dst: outVar})
 		g.c.linef(1, returnOk)
 		g.c.line(closeBrace)
 		g.c.blank()
-		g.textFile = false
 		leave()
 	}
 }

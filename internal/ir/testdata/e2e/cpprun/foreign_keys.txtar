@@ -1,0 +1,137 @@
+CODEGEN.md §2.8 (Refs: every position), DECISIONS 387, log-2026-10-20: lib (baked) owns a keyed list of shelves, keyed by a String, without an id enum, and an Offer holding refs into it in every position: plain, a union with a literal, optional, in a list, as a map key and value, in a nested list, as optional elements. dt's data reader and ty's types reader of Offer refuse a plain ref naming no shelf wherever it sits, with the loader text `no entry <key>`; dt also checks the unions' keys, accepting the literal; ty reads unions unchecked (CODEGEN.md §5.13). probe.cpp prints, per argument, the offer dt loads from a data file (`data:<file>`) or the offer of a types file of ty's Book through Decode and Parse.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A shelf.
+record Shelf {
+  /// Its key.
+  k: String
+}
+
+/// The shelves.
+let shelves: [Shelf] keyed by k = [{ k: "a" }, { k: "b" }]
+
+/// A shelf, or none of them.
+type Spot = ref shelves | "x"
+
+/// An offer.
+record Offer {
+  /// A shelf.
+  s: ref shelves
+  /// A spot.
+  u: Spot
+  /// A spot, if any.
+  uo: Spot?
+  /// Spots.
+  ul: [Spot] = []
+  /// Counts by spot.
+  uk: {Spot: Int} = {}
+  /// Shelves that may be missing.
+  os: [(ref shelves)?] = []
+  /// Spots that may be missing.
+  ou: [Spot?] = []
+  /// Shelves by name.
+  mv: {String: ref shelves} = {}
+  /// Counts by shelf.
+  mk: {ref shelves: Int} = {}
+  /// Rows of shelves.
+  nl: [[ref shelves]] = []
+  /// Shelves.
+  pl: [ref shelves] = []
+}
+
+emit cpp { out: "@features/lib", namespace: "lib" }
+-- dt/dt.canon --
+/// Data.
+package dt
+
+import lib { Offer }
+
+/// The offer.
+let offer: Offer = { s: "a", u: "x", uo: "b", ul: ["a", "x"], uk: { "a": 1, "x": 2 }, os: [none, "b"], ou: [none, "x", "a"], mv: { "m": "a" }, mk: { "b": 3 }, nl: [["a"], []], pl: ["b"] }
+
+emit cpp { out: "@features/dt", namespace: "dt", mode: data }
+emit json { out: "out/" }
+-- ty/ty.canon --
+/// Types.
+package ty
+
+import lib { Offer }
+
+/// A book.
+record Book {
+  /// Its offer.
+  offer: Offer
+}
+
+emit cpp { out: "@features/ty", namespace: "ty", mode: types }
+-- probe.cpp --
+// probe prints the offer dt loads from a data file (`data:<file>`), or the offer of a types file of
+// ty's Book through Decode and Parse (CODEGEN.md §2.8, DECISIONS 387).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "dt/dt.gen.h"
+#include "ty/ty.gen.h"
+
+namespace {
+
+std::string K(const std::string& v) { return v; }
+std::string K(int64_t v) { return std::to_string(v); }
+
+template <class T>
+std::string K(const std::optional<T>& v) { return v ? K(*v) : "none"; }
+
+template <class T>
+std::string K(const std::vector<T>& l) {
+    std::string out;
+    for (const auto& e : l) out += (out.empty() ? "" : ",") + K(e);
+    return "[" + out + "]";
+}
+
+template <class K1, class V>
+std::string K(const ::canon::FlatMap<K1, V>& m) {
+    std::string out;
+    for (const auto& e : m) out += (out.empty() ? "" : ",") + K(e.first) + "=" + K(e.second);
+    return "{" + out + "}";
+}
+
+std::string Show(const ::lib::Offer& o) {
+    const std::string* uo = o.GetUo();
+    return "s=" + o.GetSKey() + " u=" + o.GetU() + " uo=" + (uo ? *uo : "none") + " ul=" + K(o.GetUl()) + " uk=" + K(o.GetUk()) +
+           " os=" + K(o.GetOs()) + " ou=" + K(o.GetOu()) + " mv=" + K(o.GetMv()) + " mk=" + K(o.GetMk()) + " nl=" + K(o.GetNl()) +
+           " pl=" + K(o.GetPlKeys());
+}
+
+std::string Types(const std::string& text) {
+    std::string error;
+    const auto d = ::ty::Book::Decode(nlohmann::json::parse(text, nullptr, false), error);
+    std::string out = "decode " + (d ? Show(d->GetOffer()) : "error " + error);
+    error.clear();
+    const auto p = ::ty::Book::Parse(text, error);
+    return out + " | parse " + (p ? Show(p->GetOffer()) : "error " + error);
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg.rfind("data:", 0) == 0) {
+            std::string error;
+            const auto offer = ::dt::LoadOffer(arg.substr(5), error);
+            std::cout << arg << ": " << (offer ? Show(*offer) : "error " + error) << "\n";
+            continue;
+        }
+        std::ifstream in(arg);
+        std::stringstream text;
+        text << in.rdbuf();
+        std::cout << arg << ": " << Types(text.str()) << "\n";
+    }
+    return 0;
+}

@@ -1,0 +1,65 @@
+DECISIONS 387, 323 (CODEGEN.md §2.8, §4.1, §5.8, §5.13): checks and builds, its C++ compiling; formerly E8019 RefUnion: lib's Offer holds `ref items | "PENYA"`, optional, in a list and as a map key; bk bakes an Offer through lib's make hook, dt's data loader reads one with its own reader (a key that is no literal checked against lib's id enum, as a plain ref's), ty's types decoder reads it unchecked.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// An item.
+record Item {
+  /// Its weight.
+  w: Int
+}
+
+/// The items.
+let items: table Item = {
+  sword { w: 3 }
+}
+
+/// An offer.
+record Offer {
+  /// What is given.
+  give: ref items | "PENYA"
+  /// What may be taken.
+  take: (ref items | "PENYA")?
+  /// Every pick.
+  all: [ref items | "PENYA"] = []
+  /// Counts by pick.
+  counts: {ref items | "PENYA": Int} = {}
+}
+
+emit cpp { out: "@features/lib", namespace: "lib" }
+-- bk/bk.canon --
+/// Baked.
+package bk
+
+import lib { Offer }
+
+/// The offer.
+let offer: Offer = { give: sword, take: "PENYA", all: [sword, "PENYA"], counts: { "PENYA": 1, sword: 2 } }
+
+emit cpp { out: "@features/bk", namespace: "bk" }
+-- dt/dt.canon --
+/// Data.
+package dt
+
+import lib { Offer }
+
+/// The offer.
+let offer: Offer = { give: "PENYA" }
+
+emit cpp { out: "@features/dt", namespace: "dt", mode: data }
+emit json { out: "out/" }
+-- ty/ty.canon --
+/// Types.
+package ty
+
+import lib { Offer }
+
+/// A shop.
+record Shop {
+  /// Its offer.
+  offer: Offer
+}
+
+emit cpp { out: "@features/ty", namespace: "ty", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 4 packages (…)

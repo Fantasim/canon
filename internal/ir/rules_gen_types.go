@@ -56,14 +56,14 @@ func typeHolds(t *TypeRef, bad func(*TypeRef) bool) bool {
 	return bad(t) || typeHolds(t.Elem, bad) || typeHolds(t.Key, bad)
 }
 
-// checkOptionalElements is E8019 `OptionalElementList`: neither generator has a type for a list of optional elements (CODEGEN.md §4.2).
+// checkOptionalElements is E8019 `OptionalElementList`: gen/go has no type for a list of optional elements yet (CODEGEN.md §4.2; gen/cpp's is std::vector<std::optional<T>>, DECISIONS 385).
 func (s *stage) checkOptionalElements(u *unit, es *emitSite) {
 	s.reportTypeSites(u, es, diag.KindOptionalElementList, func(t *TypeRef) bool {
 		return t.Kind == types.List && optionalElem(t)
 	}, nil)
 }
 
-// checkOptionalMapValues is E8019 `OptionalMapValue`: neither generator has a type for a map of optional values (CODEGEN.md §4.2); a map a loader cannot read is MapField alone.
+// checkOptionalMapValues is E8019 `OptionalMapValue`: gen/go has no type for a map of optional values yet (CODEGEN.md §4.2; gen/cpp's is canon::FlatMap<K, std::optional<V>>, DECISIONS 385); a map a loader cannot read is MapField alone.
 func (s *stage) checkOptionalMapValues(u *unit, es *emitSite) {
 	read := s.readSpans(u, es, unreadMap(es.e))
 	for _, site := range s.typeSites(u, es) {

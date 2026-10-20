@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2: neither generator has a type for a map of optional values.
+EVALUATION.md §1, CODEGEN.md §4.2: gen/go has no type for a map of optional values yet; gen/cpp holds one (DECISIONS 385).
 -- a/a.canon --
 package a
 

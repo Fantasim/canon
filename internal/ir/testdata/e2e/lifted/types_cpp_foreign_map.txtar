@@ -1,0 +1,40 @@
+DECISIONS 384, 323 (CODEGEN.md §2.8, §5.13): checks and builds, its C++ compiling; formerly E8019_108, refused: app's cpp types-mode reader of lib's Band (lib baked) now reads its maps, a key that is lib's table id (held as lib's id enum) included.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// An item.
+record Item {
+  /// Its weight.
+  w: Int
+}
+
+/// The items.
+let items: table Item = {
+  sword { w: 3 }
+}
+
+/// A band.
+record Band {
+  /// Weights by name.
+  weights: {String: Int} = {}
+  /// Counts by item.
+  counts: {ref items: Int} = {}
+}
+
+emit cpp { out: "@features/lib", namespace: "lib" }
+-- app/app.canon --
+/// The app.
+package app
+
+import lib { Band }
+
+/// A zone.
+record Zone {
+  /// Its band.
+  band: Band
+}
+
+emit cpp { out: "@features/app", namespace: "app", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

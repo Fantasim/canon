@@ -47,7 +47,7 @@ func readFieldSites(f *Field, span source.Span) []typeSite {
 	return out
 }
 
-// checkDecodedType is E8019 `MapField` for a map a loader cannot read: gen/go's and gen/cpp's data loaders read maps, keys as WIRE.md §5.8 in file order (CODEGEN.md §5.9, DECISIONS 312); a map that holds a dependent key or value is DependentType's.
+// checkDecodedType is E8019 `MapField` for a map a loader cannot read: gen/go's and gen/cpp's data loaders and types-mode decoders read maps, keys as WIRE.md §5.8 (CODEGEN.md §5.9, DECISIONS 312, 384); a map that holds a dependent key or value is DependentType's.
 func (s *stage) checkDecodedType(u *unit, es *emitSite, site typeSite) {
 	if typeHolds(site.t, unreadMap(es.e)) {
 		u.reportGenConstruct(es, site.span, diag.KindMapField)

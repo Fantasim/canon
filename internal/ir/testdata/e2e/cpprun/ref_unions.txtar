@@ -1,0 +1,253 @@
+DECISIONS 387, CODEGEN.md §4.1, §5.8, §5.13, WIRE.md §5.8, §5.9: the same Exchange and Paint in a baked (ub), a data (ud) and a types (ut) cpp emit hold `ref exchanges | "PENYA"` and `ref paints | "none"` (a keyed list keyed by an enum whose wire is not its name) as their string: the ref arm and the literal arm, optional, through an alias, in a list, in a list of optionals and as a map key. ub writes them; ud's loader accepts a literal or checks the key where a plain ref is checked (the refs resolve into the holding container; an enum key is read with its FromWire), with the ref check's text, and checks each present element of a list of optional refs (log-2026-10-20); ut's Decode and Parse read them unchecked. probe.cpp prints, per argument, ub's containers (`baked`), a data file through ud's loaders (`data:<file>` for exchanges, `paints:<file>` for paints), or a types file through ut's Decode and Parse (a Paint for a name starting `p_`, else an Exchange).
+-- ub/ub.canon --
+/// UB.
+package ub
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// What is given.
+  give: ref exchanges | "PENYA"
+  /// What may be taken.
+  take: Pick?
+  /// Through the alias.
+  alias: Pick
+  /// Every pick.
+  all: [Pick]
+  /// Counts by pick.
+  counts: {Pick: Int}
+  /// Picks that may be missing.
+  maybe: [Pick?] = []
+  /// Exchanges that may be missing.
+  refs: [(ref exchanges)?] = []
+}
+
+/// A colour.
+enum Colour { red, green = "GREEN" }
+
+/// A paint.
+record Paint {
+  /// Its colour.
+  c: Colour
+  /// A pick.
+  p: ref paints | "none"
+  /// Picks.
+  ps: [ref paints | "none"] = []
+  /// By pick.
+  by: {ref paints | "none": Int} = {}
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { give: b, take: "PENYA", alias: "PENYA", all: [a, "PENYA"], counts: { b: 1, "PENYA": 2 }, maybe: [none, b, "PENYA"], refs: [b, none] }
+  b { give: "PENYA", alias: a, all: [], counts: {} }
+}
+
+/// The paints.
+let paints: [Paint] keyed by c = [{ c: red, p: green, ps: [red, "none"], by: { green: 1, "none": 2 } }, { c: green, p: "none" }]
+
+emit cpp { out: "@features/ub", namespace: "ub" }
+-- ud/ud.canon --
+/// UD.
+package ud
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// What is given.
+  give: ref exchanges | "PENYA"
+  /// What may be taken.
+  take: Pick?
+  /// Through the alias.
+  alias: Pick
+  /// Every pick.
+  all: [Pick]
+  /// Counts by pick.
+  counts: {Pick: Int}
+  /// Picks that may be missing.
+  maybe: [Pick?] = []
+  /// Exchanges that may be missing.
+  refs: [(ref exchanges)?] = []
+}
+
+/// A colour.
+enum Colour { red, green = "GREEN" }
+
+/// A paint.
+record Paint {
+  /// Its colour.
+  c: Colour
+  /// A pick.
+  p: ref paints | "none"
+  /// Picks.
+  ps: [ref paints | "none"] = []
+  /// By pick.
+  by: {ref paints | "none": Int} = {}
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { give: b, take: "PENYA", alias: "PENYA", all: [a, "PENYA"], counts: { b: 1, "PENYA": 2 }, maybe: [none, b, "PENYA"], refs: [b, none] }
+  b { give: "PENYA", alias: a, all: [], counts: {} }
+}
+
+/// The paints.
+let paints: [Paint] keyed by c = [{ c: red, p: green, ps: [red, "none"], by: { green: 1, "none": 2 } }, { c: green, p: "none" }]
+
+emit cpp { out: "@features/ud", namespace: "ud", mode: data }
+emit json { out: "out/" }
+-- ut/ut.canon --
+/// UT.
+package ut
+
+/// A pick: an exchange, or the currency.
+type Pick = ref exchanges | "PENYA"
+
+/// An exchange.
+record Exchange {
+  /// What is given.
+  give: ref exchanges | "PENYA"
+  /// What may be taken.
+  take: Pick?
+  /// Through the alias.
+  alias: Pick
+  /// Every pick.
+  all: [Pick]
+  /// Counts by pick.
+  counts: {Pick: Int}
+  /// Picks that may be missing.
+  maybe: [Pick?] = []
+  /// Exchanges that may be missing.
+  refs: [(ref exchanges)?] = []
+}
+
+/// A colour.
+enum Colour { red, green = "GREEN" }
+
+/// A paint.
+record Paint {
+  /// Its colour.
+  c: Colour
+  /// A pick.
+  p: ref paints | "none"
+  /// Picks.
+  ps: [ref paints | "none"] = []
+  /// By pick.
+  by: {ref paints | "none": Int} = {}
+}
+
+/// The exchanges.
+let exchanges: table Exchange = {
+  a { give: "PENYA", alias: "PENYA", all: [], counts: {} }
+}
+
+/// The paints.
+let paints: [Paint] keyed by c = [{ c: red, p: "none" }]
+
+emit cpp { out: "@features/ut", namespace: "ut", mode: types }
+-- probe.cpp --
+// probe prints ub's baked containers (argument `baked`), the containers ud loads from a data file
+// (`data:<file>`, `paints:<file>`), or a types file through ut's Decode and Parse (DECISIONS 387).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "ub/ub.gen.h"
+#include "ud/ud.gen.h"
+#include "ut/ut.gen.h"
+
+namespace {
+
+std::string K(const std::string& v) { return v; }
+std::string K(::ub::ExchangeId v) { return std::string(::ub::ToWire(v)); }
+std::string K(::ub::Colour v) { return std::string(::ub::ToWire(v)); }
+std::string K(::ud::Colour v) { return std::string(::ud::ToWire(v)); }
+std::string K(::ut::Colour v) { return std::string(::ut::ToWire(v)); }
+
+template <class T>
+std::string K(const std::optional<T>& v) { return v ? K(*v) : "none"; }
+
+template <class T>
+std::string List(const std::vector<T>& l) {
+    std::string out;
+    for (const auto& e : l) out += (out.empty() ? "" : ",") + K(e);
+    return "[" + out + "]";
+}
+
+template <class M>
+std::string Map(const M& m) {
+    std::string out;
+    for (const auto& e : m) out += (out.empty() ? "" : ",") + e.first + "=" + std::to_string(e.second);
+    return "{" + out + "}";
+}
+
+template <class E>
+std::string Show(const E& e) {
+    const std::string* take = e.GetTake();
+    return "give=" + e.GetGive() + " take=" + (take ? *take : "none") + " alias=" + e.GetAlias() + " all=" + List(e.GetAll()) +
+           " counts=" + Map(e.GetCounts()) + " maybe=" + List(e.GetMaybe()) + " refs=" + List(e.GetRefs());
+}
+
+template <class P>
+std::string ShowPaint(const P& p) {
+    return "c=" + K(p.GetC()) + " p=" + p.GetP() + " ps=" + List(p.GetPs()) + " by=" + Map(p.GetBy());
+}
+
+template <class T, class F>
+std::string Rows(const T& table, F show) {
+    std::string out;
+    for (size_t i = 0; i < table.Len(); ++i) out += (out.empty() ? "" : "; ") + show(table.At(i));
+    return out;
+}
+
+template <class T, class F>
+std::string Types(const std::string& text, F show) {
+    std::string error;
+    const auto d = T::Decode(nlohmann::json::parse(text, nullptr, false), error);
+    std::string out = "decode " + (d ? show(*d) : "error " + error);
+    error.clear();
+    const auto p = T::Parse(text, error);
+    return out + " | parse " + (p ? show(*p) : "error " + error);
+}
+
+template <class T, class F>
+std::string Load(const std::string& path, F show) {
+    std::string error;
+    const auto table = T::Load(path, error);
+    return table ? Rows(*table, show) : "error " + error;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    const auto exchange = [](const auto& e) { return Show(e); };
+    const auto paint = [](const auto& p) { return ShowPaint(p); };
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "baked") {
+            std::cout << arg << ": " << Rows(::ub::GetExchanges(), exchange) << " || " << Rows(::ub::GetPaints(), paint) << "\n";
+            continue;
+        }
+        if (arg.rfind("data:", 0) == 0) {
+            std::cout << arg << ": " << Load<::ud::Exchanges>(arg.substr(5), exchange) << "\n";
+            continue;
+        }
+        if (arg.rfind("paints:", 0) == 0) {
+            std::cout << arg << ": " << Load<::ud::Paints>(arg.substr(7), paint) << "\n";
+            continue;
+        }
+        std::ifstream in(arg);
+        std::stringstream text;
+        text << in.rdbuf();
+        const bool isPaint = arg.rfind("p_", 0) == 0;
+        std::cout << arg << ": " << (isPaint ? Types<::ut::Paint>(text.str(), paint) : Types<::ut::Exchange>(text.str(), exchange)) << "\n";
+    }
+    return 0;
+}

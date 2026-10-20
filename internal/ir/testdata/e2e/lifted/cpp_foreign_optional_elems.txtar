@@ -1,0 +1,58 @@
+DECISIONS 385, 323 (CODEGEN.md §2.8, §4.2, §5.14): checks and builds, its C++ compiling; formerly OptionalElementList and OptionalMapValue, refused: lib's Sheet holds [Cell?] and {String: Cell?}; bk writes a value of it through lib's make hook (a none and a present element each), dt's data loader and ty's types decoder read it with their own readers.
+-- lib/lib.canon --
+/// The library.
+package lib
+
+/// A cell.
+record Cell {
+  /// Its value.
+  n: Int
+}
+
+/// A sheet.
+record Sheet {
+  /// Cells.
+  cells: [Cell?]
+  /// Cells by name.
+  named: {String: Cell?} = {}
+  /// Numbers.
+  ints: [Int?] = [none, 1]
+}
+
+emit cpp { out: "@features/lib", namespace: "lib" }
+-- bk/bk.canon --
+/// Baked.
+package bk
+
+import lib { Sheet }
+
+/// The sheet.
+let sheet: Sheet = { cells: [none, { n: 2 }], named: { "a": { n: 1 }, "b": none } }
+
+emit cpp { out: "@features/bk", namespace: "bk" }
+-- dt/dt.canon --
+/// Data.
+package dt
+
+import lib { Sheet }
+
+/// The sheet.
+let sheet: Sheet = { cells: [{ n: 3 }, none] }
+
+emit cpp { out: "@features/dt", namespace: "dt", mode: data }
+emit json { out: "out/" }
+-- ty/ty.canon --
+/// Types.
+package ty
+
+import lib { Sheet }
+
+/// A book.
+record Book {
+  /// Its sheet.
+  sheet: Sheet
+}
+
+emit cpp { out: "@features/ty", namespace: "ty", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 4 packages (…)

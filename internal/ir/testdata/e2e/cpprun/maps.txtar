@@ -1,0 +1,122 @@
+DECISIONS 384, CODEGEN.md §5.9, §5.13, WIRE.md §5.8: m's cpp types-mode decoders read maps of every key kind (String, sized and plain integers, an enum, an enum written as its @json(codes) code, a ref, a literal union), a map of maps, maps in a list and a map of records; Parse keeps the file's order, Decode holds key byte order; refs are read unchecked; a @text result holding such a map gets Decode<Fn>File. probe.cpp prints, per file, what Decode, Parse and DecodeBoardsFile give.
+-- m/m.canon --
+/// M.
+package m
+
+/// A colour.
+enum Colour { red, green, blue = "BLUE" }
+
+/// A rank, written as its code.
+enum Rank @codes(UInt8) @json(codes) { low = 1, high = 200 }
+
+/// A shelf.
+record Shelf {
+  /// Its size.
+  n: Int
+}
+
+/// The shelves.
+let shelves: table Shelf = {
+  s1 { n: 1 }
+  s2 { n: 2 }
+}
+
+/// A board.
+record Board {
+  /// By name.
+  names: {String: Int}
+  /// By level.
+  levels: {Int: String} = {}
+  /// By a small number.
+  small: {Int8: String} = {}
+  /// By colour.
+  colours: {Colour: Int} = {}
+  /// By rank.
+  ranks: {Rank: Int} = {}
+  /// By shelf.
+  byShelf: {ref shelves: Int} = {}
+  /// By colour, or all.
+  tones: {Colour | "all": Int} = {}
+  /// Maps of maps.
+  deep: {String: {Int: String}} = {}
+  /// Maps in a list.
+  rows: [{String: Int}] = []
+  /// Shelves by name.
+  slots: {String: Shelf} = {}
+}
+
+/// The boards of a file.
+@text("boards.json")
+export fn boards() -> [Board] { return [] }
+
+emit cpp { out: "@features/m", namespace: "m", mode: types }
+emit text { out: "out/m" }
+-- probe.cpp --
+// probe decodes each file named on the command line with Board::Decode, Board::Parse and,
+// wrapped in a list, DecodeBoardsFile, printing one line per file (DECISIONS 384).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "m/m.gen.h"
+
+namespace {
+
+std::string Key(const std::string& k) { return k; }
+std::string Key(int64_t k) { return std::to_string(k); }
+std::string Key(int8_t k) { return std::to_string(static_cast<int>(k)); }
+std::string Key(::m::Colour k) { return std::string(::m::ToWire(k)); }
+std::string Key(::m::Rank k) { return std::string(::m::ToWire(k)); }
+
+std::string Val(int64_t v) { return std::to_string(v); }
+std::string Val(const std::string& v) { return v; }
+std::string Val(const ::m::Shelf& v) { return "n" + std::to_string(v.GetN()); }
+
+template <class K, class V>
+std::string Val(const ::canon::FlatMap<K, V>& m) {
+    std::string out;
+    for (const auto& e : m) {
+        if (!out.empty()) out += ",";
+        out += Key(e.first) + "=" + Val(e.second);
+    }
+    return "{" + out + "}";
+}
+
+std::string Show(const ::m::Board& b) {
+    std::string rows;
+    for (const auto& r : b.GetRows()) rows += Val(r);
+    return "names=" + Val(b.GetNames()) + " levels=" + Val(b.GetLevels()) + " small=" + Val(b.GetSmall()) +
+           " colours=" + Val(b.GetColours()) + " ranks=" + Val(b.GetRanks()) + " byShelf=" + Val(b.GetByShelf()) +
+           " tones=" + Val(b.GetTones()) + " deep=" + Val(b.GetDeep()) + " rows=[" + rows + "] slots=" + Val(b.GetSlots());
+}
+
+template <class T>
+std::string Verdict(const std::optional<T>& v, const std::string& error) {
+    return v ? Show(*v) : "error " + error;
+}
+
+std::string Verdict(const std::optional<std::vector<::m::Board>>& v, const std::string& error) {
+    return v && v->size() == 1 ? Show((*v)[0]) : "error " + error;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::ifstream in(argv[i]);
+        std::stringstream text;
+        text << in.rdbuf();
+        std::string error;
+        const auto decoded = ::m::Board::Decode(nlohmann::json::parse(text.str(), nullptr, false), error);
+        const std::string d = Verdict(decoded, error);
+        error.clear();
+        const std::string p = Verdict(::m::Board::Parse(text.str(), error), error);
+        error.clear();
+        const std::string f = Verdict(::m::DecodeBoardsFile("[" + text.str() + "]", error), error);
+        std::cout << argv[i] << ": decode " << d << " | parse " << p << " | file " << f << "\n";
+    }
+    return 0;
+}

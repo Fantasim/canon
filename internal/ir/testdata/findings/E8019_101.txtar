@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2, §5.6, DECISIONS 312: a dependent map of optional values in a data loader's class is both DependentOutsideField (the loader cannot bind its parameter) and OptionalMapValue (no generator types it); each is reported once at the field.
+EVALUATION.md §1, CODEGEN.md §4.2, §5.6, DECISIONS 312: a dependent map of optional values in a data loader's class is both DependentOutsideField (the loader cannot bind its parameter) and OptionalMapValue (gen/go types none yet, DECISIONS 385); each is reported once at the field.
 -- a/a.canon --
 package a
 

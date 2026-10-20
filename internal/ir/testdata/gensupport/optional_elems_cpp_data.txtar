@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2: gen/cpp has no type for a list of optional elements either.
+Decision 37, clean: DECISIONS 385, CODEGEN.md §4.2: gen/cpp holds a list of optional elements as std::vector<std::optional<T>>, its data loader reading null as none.
 -- a/a.canon --
 package a
 
@@ -18,7 +18,4 @@ emit json { out: "out/" }
 -- a.rows.json --
 {"one": {"cells": [1, null]}}
 -- findings.txt --
-error[E8019]  a/a.canon:6:3
-  emit cpp in data mode cannot generate a list of optional elements; wrap each element in a record with an optional field
-
-1 error, 0 warnings in 1 package (…)
+0 errors, 0 warnings in 1 package (…)

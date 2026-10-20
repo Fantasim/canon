@@ -1,0 +1,13 @@
+Decision 37, clean: DECISIONS 384, 385, CODEGEN.md §4.2, §5.13: a cpp types-mode decoder reads a map of optional values, canon::FlatMap<K, std::optional<V>>.
+-- a/a.canon --
+package a
+
+/// A table of weights.
+record Weights {
+  /// By name.
+  byName: {String: Int?}
+}
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

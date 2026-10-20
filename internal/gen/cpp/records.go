@@ -2,6 +2,7 @@ package cppgen
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -62,9 +63,9 @@ func (g *gen) recordClass(c class) {
 	for _, fn := range fns {
 		members = append(members, g.fnMember(sc, c, fields, fn)...)
 	}
-	var friends []string
+	friends := g.defaultFriends[c.key()]
 	if c.rec != nil {
-		friends = g.pairsFriends[c.rec]
+		friends = append(slices.Clone(g.pairsFriends[c.rec]), friends...)
 	}
 	g.private(name, len(members) > 0, friends...)
 	for _, m := range members {
@@ -81,16 +82,18 @@ func (g *gen) legacy(r *ir.Record) {
 	}
 }
 
-// private closes the public part and befriends the access struct and the decoder (§5.4, §7.2).
-func (g *gen) private(name string, members bool, pairsParents ...string) {
+// private closes the public part and befriends the access struct and the decoder, then the other decoders writing its members, each once (§5.4, §7.2).
+func (g *gen) private(name string, members bool, writers ...string) {
 	if !strings.HasSuffix(g.h.String(), publicLabel+newline) {
 		g.h.blank()
 	}
 	g.h.line(privateLabel)
 	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
 	g.h.linef(1, friendAccessFormat, g.pl.MakeStruct(g.p.Name))
-	for _, n := range append([]string{name}, pairsParents...) {
-		if !g.baked() {
+	var written []string
+	for _, n := range append([]string{name}, writers...) {
+		if !g.baked() && !slices.Contains(written, n) {
+			written = append(written, n)
 			g.h.linef(1, friendDecodeFormat, n)
 		}
 	}
@@ -186,7 +189,7 @@ func (g *gen) variantClass(v *ir.Variant) {
 		g.fail(sc.add(as, v.Name+qnameSep+c.Name))
 		g.h.linef(1, asGetterFormat, cs, as, i)
 	}
-	g.private(name, true)
+	g.private(name, true, g.defaultFriends[v]...)
 	g.h.linef(1, variantMemberFormat, strings.Join(alts, listSep))
 	g.h.line(closeClass)
 	g.h.blank()

@@ -98,6 +98,11 @@ func (pl *CppNamePlan) hookMembers(class any, pkg string) []CppHookMember {
 	return out
 }
 
+// OwnerChecks reports a ref r of a class of another package pkg whose owner's hook resolves it: a reader refuses a key naming no entry of r's target, in every position (CODEGEN.md §2.8 Refs; DECISIONS 387).
+func (pl *CppNamePlan) OwnerChecks(r TypeRef, pkg string) bool {
+	return r.Kind == types.Ref && ownerResolves(pl.p, pkg, TargetCpp, r.Ref)
+}
+
 // ownerResolves is Resolves for a class of package pkg: this package's own, or a ref another package's hook fills (CODEGEN.md §5.8, §5.14).
 func (pl *CppNamePlan) ownerResolves(t TypeRef, class any, pkg string) bool {
 	if pkg == pl.p.Name {
@@ -106,7 +111,7 @@ func (pl *CppNamePlan) ownerResolves(t TypeRef, class any, pkg string) bool {
 	if t.Kind == types.List && t.Elem != nil {
 		t = *t.Elem
 	}
-	return t.Kind == types.Ref && ownerResolves(pl.p, pkg, TargetCpp, t.Ref)
+	return pl.OwnerChecks(t, pkg)
 }
 
 // declareMake declares detail::<P>Make and its members, each hook of the package: a member is named after the type it builds, which it writes fully qualified, so only the struct's own name is hidden (CODEGEN.md §3.5, §5.14).

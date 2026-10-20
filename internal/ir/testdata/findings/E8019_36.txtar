@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2, DECISIONS 312: neither generator has a type for a map of optional values, so it is OptionalMapValue wherever it is, read by a data loader or not (a map a loader cannot read is MapField alone, E8019_99).
+EVALUATION.md §1, CODEGEN.md §4.2, DECISIONS 312: gen/go has no type for a map of optional values yet (gen/cpp holds one, DECISIONS 385), so it is OptionalMapValue wherever it is, read by a data loader or not.
 -- a/a.canon --
 package a
 

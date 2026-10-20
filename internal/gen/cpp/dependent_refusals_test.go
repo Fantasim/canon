@@ -88,8 +88,6 @@ func TestDependentAndInputRefusals(t *testing.T) {
 				{Name: "c", Wire: "c", Fields: []*ir.Field{input("x", "X", tString, true, nil)}},
 			}})
 		}, cppgen.ErrMalformed},
-		{"a union over a string-keyed ref, which stage E refuses (RefUnion)", "a literal union over a ref",
-			withField(field("u", "u", "", ir.TypeRef{Kind: types.LitUnion, Elem: &ir.TypeRef{Kind: types.Ref, Key: &tString}})), cppgen.ErrMalformed},
 		{"a union over a dependent type, which stage E refuses", "a literal union over a dependent type", func(p *ir.Package, e *ir.Emit) {
 			thing(p).Fields = append(thing(p).Fields, flag)
 			withDependent("u", func(d *ir.Dependent) ir.TypeRef {

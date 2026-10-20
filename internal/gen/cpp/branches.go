@@ -125,7 +125,7 @@ func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
 		case k.IsInt:
 			out[i].key = intLit(k.I)
 		case isEnum:
-			m := slices.IndexFunc(e.Members, func(m *ir.EnumMember) bool { return m.Name == k.S })
+			m := memberIndex(e, k.S)
 			if m < 0 {
 				g.malformed(dependentBadPath, g.at)
 				continue

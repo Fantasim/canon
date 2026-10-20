@@ -1,0 +1,205 @@
+DECISIONS 385, CODEGEN.md §4.2, WIRE.md §5.4: the same Sheet in a baked (ob), a data (od) and a types (ot) cpp emit holds [Int?], [String?], [Cell?], {String: Int?}, {Mood: Cell?}, [Mood?] and [Duration?] as std::vector<std::optional<T>> and canon::FlatMap<K, std::optional<V>>: ob's literals, od's loader and ot's Decode and Parse give none (std::nullopt) where the value is none or null and the element elsewhere. probe.cpp prints, per argument, the baked sheet and constant (`baked`), the data file od's json emit wrote (`data`), or a types file through Decode and Parse.
+-- ob/ob.canon --
+/// OB.
+package ob
+
+/// A mood.
+enum Mood { calm, angry }
+
+/// A cell.
+record Cell {
+  /// Its value.
+  n: Int
+}
+
+/// A sheet.
+record Sheet {
+  /// Numbers.
+  ints: [Int?]
+  /// Words.
+  words: [String?]
+  /// Cells.
+  cells: [Cell?]
+  /// Counts by name.
+  counts: {String: Int?}
+  /// Cells by mood.
+  byMood: {Mood: Cell?}
+  /// Moods.
+  moods: [Mood?] = [none, angry]
+  /// Waits.
+  waits: [Duration?] = [5s, none]
+}
+
+/// Some numbers.
+const SOME = [1, none]
+
+/// The sheet.
+let sheet: Sheet = {
+  ints: [1, none, 3]
+  words: [none, "w"]
+  cells: [{ n: 4 }, none]
+  counts: { "a": none, "b": 2 }
+  byMood: { calm: none, angry: { n: 5 } }
+}
+
+emit cpp { out: "@features/ob", namespace: "ob" }
+-- od/od.canon --
+/// OD.
+package od
+
+/// A mood.
+enum Mood { calm, angry }
+
+/// A cell.
+record Cell {
+  /// Its value.
+  n: Int
+}
+
+/// A sheet.
+record Sheet {
+  /// Numbers.
+  ints: [Int?]
+  /// Words.
+  words: [String?]
+  /// Cells.
+  cells: [Cell?]
+  /// Counts by name.
+  counts: {String: Int?}
+  /// Cells by mood.
+  byMood: {Mood: Cell?}
+  /// Moods.
+  moods: [Mood?] = [none, angry]
+  /// Waits.
+  waits: [Duration?] = [5s, none]
+}
+
+/// The sheet.
+let sheet: Sheet = {
+  ints: [1, none, 3]
+  words: [none, "w"]
+  cells: [{ n: 4 }, none]
+  counts: { "a": none, "b": 2 }
+  byMood: { calm: none, angry: { n: 5 } }
+}
+
+emit cpp { out: "@features/od", namespace: "od", mode: data }
+emit json { out: "out/" }
+-- ot/ot.canon --
+/// OT.
+package ot
+
+/// A mood.
+enum Mood { calm, angry }
+
+/// A cell.
+record Cell {
+  /// Its value.
+  n: Int
+}
+
+/// A sheet.
+record Sheet {
+  /// Numbers.
+  ints: [Int?]
+  /// Words.
+  words: [String?]
+  /// Cells.
+  cells: [Cell?]
+  /// Counts by name.
+  counts: {String: Int?}
+  /// Cells by mood.
+  byMood: {Mood: Cell?}
+  /// Moods.
+  moods: [Mood?] = [none, angry]
+  /// Waits.
+  waits: [Duration?] = [5s, none]
+}
+
+emit cpp { out: "@features/ot", namespace: "ot", mode: types }
+-- probe.cpp --
+// probe prints ob's baked sheet and constant (argument `baked`), the sheet od loads from its
+// data file (`data:<path>`), or a types file through ot's Decode and Parse (DECISIONS 385).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "ob/ob.gen.h"
+#include "od/od.gen.h"
+#include "ot/ot.gen.h"
+
+namespace {
+
+std::string Val(int64_t v) { return std::to_string(v); }
+std::string Val(const std::string& v) { return v; }
+std::string Val(std::chrono::milliseconds v) { return std::to_string(v.count()) + "ms"; }
+std::string Val(::ob::Mood v) { return std::string(::ob::ToWire(v)); }
+std::string Val(::od::Mood v) { return std::string(::od::ToWire(v)); }
+std::string Val(::ot::Mood v) { return std::string(::ot::ToWire(v)); }
+std::string Val(const ::ob::Cell& v) { return "n" + std::to_string(v.GetN()); }
+std::string Val(const ::od::Cell& v) { return "n" + std::to_string(v.GetN()); }
+std::string Val(const ::ot::Cell& v) { return "n" + std::to_string(v.GetN()); }
+
+template <class T>
+std::string Val(const std::optional<T>& v) { return v ? Val(*v) : "none"; }
+
+template <class T>
+std::string Val(const std::vector<T>& l) {
+    std::string out;
+    for (const auto& e : l) out += (out.empty() ? "" : ",") + Val(e);
+    return "[" + out + "]";
+}
+
+template <class K, class V>
+std::string Val(const ::canon::FlatMap<K, V>& m) {
+    std::string out;
+    for (const auto& e : m) out += (out.empty() ? "" : ",") + Val(e.first) + "=" + Val(e.second);
+    return "{" + out + "}";
+}
+
+template <class S>
+std::string Show(const S& s) {
+    return "ints=" + Val(s.GetInts()) + " words=" + Val(s.GetWords()) + " cells=" + Val(s.GetCells()) +
+           " counts=" + Val(s.GetCounts()) + " byMood=" + Val(s.GetByMood()) + " moods=" + Val(s.GetMoods()) +
+           " waits=" + Val(s.GetWaits());
+}
+
+template <class S>
+std::string Verdict(const S* s, const std::string& error) {
+    return s != nullptr ? Show(*s) : "error " + error;
+}
+
+std::string Types(const std::string& text) {
+    std::string error;
+    const auto d = ::ot::Sheet::Decode(nlohmann::json::parse(text, nullptr, false), error);
+    std::string out = "decode " + Verdict(d ? &*d : nullptr, error);
+    error.clear();
+    const auto p = ::ot::Sheet::Parse(text, error);
+    return out + " | parse " + Verdict(p ? &*p : nullptr, error);
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "baked") {
+            std::cout << arg << ": " << Show(::ob::GetSheet()) << " some=" << Val(::ob::SOME) << "\n";
+            continue;
+        }
+        if (arg.rfind("data:", 0) == 0) {
+            std::string error;
+            const auto sheet = ::od::Sheet::Load(arg.substr(5), error);
+            std::cout << arg << ": " << Verdict(sheet.get(), error) << "\n";
+            continue;
+        }
+        std::ifstream in(arg);
+        std::stringstream text;
+        text << in.rdbuf();
+        std::cout << arg << ": " << Types(text.str()) << "\n";
+    }
+    return 0;
+}

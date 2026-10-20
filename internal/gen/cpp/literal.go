@@ -69,8 +69,11 @@ func (g *gen) floatLit(f float64, bits int) string {
 // literal is the C++ expression of v as a member or pure parameter of type t holds it; a
 // Duration is its millisecond count, an enum member its enumerator, a ref its key.
 func (g *gen) literal(t ir.TypeRef, v value.Value) string {
-	if t.Kind == types.LitUnion {
+	switch {
+	case t.Kind == types.LitUnion:
 		return g.unionLit(t, v)
+	case t.Kind == types.Optional && t.Elem != nil && !absent(v): // an optional element or map value (DECISIONS 385)
+		return g.element(*t.Elem, v)
 	}
 	switch x := v.(type) {
 	case *value.Bool:
@@ -103,7 +106,7 @@ func (g *gen) literal(t ir.TypeRef, v value.Value) string {
 	return cppInvalid
 }
 
-// unionLit is a literal union's value as its storage holds it, the wire text: a literal, or a member of its enum (CODEGEN.md §4.1).
+// unionLit is a literal union's value as its storage holds it, the wire text: a literal, a member of its enum, or its ref's key (CODEGEN.md §4.1; DECISIONS 387).
 func (g *gen) unionLit(t ir.TypeRef, v value.Value) string {
 	var e *ir.Enum
 	if t.Elem != nil {
@@ -116,9 +119,35 @@ func (g *gen) unionLit(t ir.TypeRef, v value.Value) string {
 		if e != nil && x.Index >= 0 && x.Index < len(e.Members) {
 			return quote(e.Members[x.Index].Wire)
 		}
+	case *value.Ref:
+		if r := unionRef(t); r != nil {
+			return quote(keyWire(*r, x.Key))
+		}
 	}
 	g.malformed(fmt.Sprintf(valueFormat, v), g.at)
 	return cppInvalid
+}
+
+// keyWire is the wire text of key k of a string-keyed ref r: an enum key's member wire, else the key itself (WIRE.md §5.9; DECISIONS 387).
+func keyWire(r ir.TypeRef, k value.Key) string {
+	if e, i := keyMember(r, k); i >= 0 {
+		return e.Members[i].Wire
+	}
+	return k.S
+}
+
+// keyMember is the enum keying ref r and the index of key k's member in it; -1 for a key of no enum or naming no member.
+func keyMember(r ir.TypeRef, k value.Key) (*ir.Enum, int) {
+	e, ok := ir.RefKeyEnum(r)
+	if !ok {
+		return nil, -1
+	}
+	return e, memberIndex(e, k.S)
+}
+
+// memberIndex is the index of e's member named name, -1 for none.
+func memberIndex(e *ir.Enum, name string) int {
+	return slices.IndexFunc(e.Members, func(m *ir.EnumMember) bool { return m.Name == name })
 }
 
 // refLit is a ref's key as its storage holds it: a table id's or an enum key's member, by name, else the key itself (CODEGEN.md §5.3, §5.8).
@@ -126,13 +155,8 @@ func (g *gen) refLit(t ir.TypeRef, k value.Key) string {
 	if id, ok := g.idEnum(t); ok {
 		return id + scopeSep + g.pl.IDMember(k.S)
 	}
-	if t.Key == nil {
-		return keyLit(k)
-	}
-	if e, ok := t.Key.Named.(*ir.Enum); ok && t.Key.Kind == types.Enum {
-		if i := slices.IndexFunc(e.Members, func(m *ir.EnumMember) bool { return m.Name == k.S }); i >= 0 {
-			return g.memberLit(*t.Key, i)
-		}
+	if _, i := keyMember(t, k); i >= 0 {
+		return g.memberLit(*t.Key, i)
 	}
 	return keyLit(k)
 }
@@ -208,7 +232,7 @@ func enumTyped(t ir.TypeRef) bool {
 	switch t.Kind {
 	case types.Enum:
 		return true
-	case types.List, types.Map:
+	case types.List, types.Map, types.Optional:
 		return t.Elem != nil && enumTyped(*t.Elem) || t.Key != nil && enumTyped(*t.Key)
 	default:
 		return false

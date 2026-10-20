@@ -1,4 +1,4 @@
-EVALUATION.md §1, CODEGEN.md §4.2: neither generator has a type for a list of optional elements, wherever it is written (a field, a constant).
+EVALUATION.md §1, CODEGEN.md §4.2: gen/go has no type for a list of optional elements yet, wherever it is written (a field, a constant); gen/cpp holds one (DECISIONS 385).
 -- a/a.canon --
 package a
 

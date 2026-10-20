@@ -1,4 +1,4 @@
-DECISIONS 340, 363: a's go, cpp and ts types emits decode the same readable @text results, each by its own target's names and checks: items ([b.Item]) and counts (a map outside any record) everywhere; tagged ([b.Tagged], a map inside a record) everywhere but C++, whose types-mode readers read no map in a class (MapField, though b's own cpp data emit reads it); loose ([d.Loose]) where d has an emit of the target that writes Loose's hook, d's data emits listing in NoHook the records their plan writes no hook for: links ([d.Link]), whose ref d's loader resolves inside its own value, gets no decoder in go or cpp, and none in ts, where d has no emit; nor does steps ([d.Step]), whose case hop (NoHook's Step.hop) refs the table holding it. Each ts emit lists the packages it imports: a's, b only through decoded results.
+DECISIONS 340, 363: a's go, cpp and ts types emits decode the same readable @text results, each by its own target's names and checks: items ([b.Item]) and counts (a map outside any record) everywhere; tagged ([b.Tagged], a map inside a record) everywhere, C++ types-mode readers reading a map in a class too (DECISIONS 384); loose ([d.Loose]) where d has an emit of the target that writes Loose's hook, d's data emits listing in NoHook the records their plan writes no hook for: links ([d.Link]), whose ref d's loader resolves inside its own value, gets no decoder in go or cpp, and none in ts, where d has no emit; nor does steps ([d.Step]), whose case hop (NoHook's Step.hop) refs the table holding it. Each ts emit lists the packages it imports: a's, b only through decoded results.
 -- b/b.canon --
 /// B.
 package b
@@ -116,7 +116,7 @@ emit text { out: "out/a" }
 == d @features/d/cpp: nohook [Link Step.hop]
 == d out/d/: decoders []
 == a @features/a/go: decoders [DecodeItemsFile DecodeTaggedFile DecodeCountsFile DecodeLooseFile]
-== a @features/a/cpp: decoders [DecodeItemsFile DecodeCountsFile DecodeLooseFile]
+== a @features/a/cpp: decoders [DecodeItemsFile DecodeTaggedFile DecodeCountsFile DecodeLooseFile]
 == a @features/a/a.ts: decoders [decodeItemsFile parseItemsFile decodeTaggedFile parseTaggedFile decodeCountsFile parseCountsFile] imports [b]
 == a out/a: decoders []
 0 errors, 0 warnings in 3 packages (…)

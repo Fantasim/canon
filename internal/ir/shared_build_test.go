@@ -38,13 +38,7 @@ func TestSharedRecordsBuild(t *testing.T) {
 // sharedBuild checks and builds the project of the archive at path, a lifted case in e2eFeatures, and returns the build's findings.
 func sharedBuild(t *testing.T, path string) []byte {
 	t.Helper()
-	dir := t.TempDir()
-	writeProject(t, dir, path)
-	if _, err := os.Stat(filepath.Join(dir, e2eProjFile)); err != nil {
-		if err := os.WriteFile(filepath.Join(dir, e2eProjFile), []byte(e2eFeatures), e2eFileMode); err != nil {
-			t.Fatal(err)
-		}
-	}
+	dir := writeCase(t, path)
 	p, err := build.Open(build.OS(), filepath.ToSlash(dir), build.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -65,6 +59,19 @@ func sharedBuild(t *testing.T, path string) []byte {
 		compileWritten(t, filepath.Join(dir, e2eGenRoot))
 	}
 	return []byte(out)
+}
+
+// writeCase writes the archive at path in a new temp dir, with e2eFeatures as its project.canon when it has none, and returns the dir.
+func writeCase(t *testing.T, path string) string {
+	t.Helper()
+	dir := t.TempDir()
+	writeProject(t, dir, path)
+	if _, err := os.Stat(filepath.Join(dir, e2eProjFile)); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, e2eProjFile), []byte(e2eFeatures), e2eFileMode); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
 }
 
 // compileWritten vets the Go, and compiles the C++ and the TypeScript, a build wrote under gen, each target it wrote.

@@ -18,19 +18,20 @@ var genRules [targetCount][ModeTypes + 1][]genRule
 
 func init() {
 	common := []genRule{
-		(*stage).checkFieldlessCaseFns, (*stage).checkOptionalElements,
-		(*stage).checkOptionalMapValues, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkKindConstants,
+		(*stage).checkFieldlessCaseFns, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkKindConstants,
 		(*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkForeignBuilt,
 	}
-	goCode := append(slices.Clone(common), (*stage).checkNegativeZero)
+	// gen/cpp holds optional list elements and map values in every mode (DECISIONS 385); gen/go does not yet.
+	goCode := append(slices.Clone(common), (*stage).checkNegativeZero, (*stage).checkOptionalElements, (*stage).checkOptionalMapValues)
 	genRules[TargetGo][ModeBaked] = append(slices.Clone(goCode), (*stage).checkForeignTableLookups,
 		(*stage).checkGoDependentLiterals, (*stage).checkDefineKeys, (*stage).checkForeignOpenEnums)
 	goDecode := append(slices.Clone(goCode), (*stage).checkGoDecoded, (*stage).checkGoDecodedDependents, (*stage).checkRefUnions, (*stage).checkForeignReads)
 	genRules[TargetGo][ModeData] = append(slices.Clone(goDecode), (*stage).checkResolvedLookups, (*stage).checkForeignOpenEnums)
 	// a go types-mode decoder reads what a data loader reads, with the source wire's constant defaults (CODEGEN.md §5.13); a types emit has no LoadInputs (§2.2).
 	genRules[TargetGo][ModeTypes] = append(slices.Clone(goDecode), (*stage).checkGoDefaults, (*stage).checkTypesInputs, (*stage).checkOpenEnumFns)
+	// gen/cpp holds a literal union over a ref as its string in every mode (DECISIONS 387); gen/go's data loader reads none yet (checkRefUnions).
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
-		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
+		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns, other packages' records (DECISIONS 323).
 	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkVariantMembers}
 	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals, (*stage).checkForeignTableLookups, (*stage).checkForeignOpenEnums)
@@ -39,7 +40,7 @@ func init() {
 	genRules[TargetTS][ModeData], genRules[TargetTS][ModeTypes] = append(slices.Clone(tsDecode), (*stage).checkForeignOpenEnums), append(slices.Clone(tsDecode), (*stage).checkOpenEnumFns)
 	genRules[TargetCpp][ModeData] = append(slices.Clone(cppCode), (*stage).checkForeignOpenEnums)
 	// a baked cpp emit decodes nothing: it writes every value in detail::<P>Access::Build, as the friend of its own package's classes only (CODEGEN.md §5.9, §7.3).
-	genRules[TargetCpp][ModeBaked] = append(slices.Clone(common), (*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkRefUnions,
+	genRules[TargetCpp][ModeBaked] = append(slices.Clone(common), (*stage).checkClassCycles, (*stage).checkSelfReads,
 		(*stage).checkLegacyStructs, (*stage).checkForeignTableLookups, (*stage).checkGoDependentLiterals, (*stage).checkDefineKeys, (*stage).checkForeignOpenEnums)
 	genRules[TargetCpp][ModeTypes] = append(slices.Clone(cppCode), (*stage).checkCppDefaults, (*stage).checkTypesInputs, (*stage).checkOpenEnumFns)
 }
@@ -77,7 +78,7 @@ func (s *stage) checkFieldlessCaseFns(u *unit, es *emitSite) {
 // checkRecordConstants is E8019 `RecordConstant`: neither generator writes a constant of a record, variant or case type, nor gen/cpp one holding a record (CODEGEN.md §5.1).
 func (s *stage) checkRecordConstants(u *unit, es *emitSite) {
 	for _, c := range u.consts {
-		if recordKinds[c.c.Type.Kind] || es.e.Target == TargetCpp && holdsRecordValue(c.c.V) {
+		if recordKinds[c.c.Type.Kind] || es.e.Target == TargetCpp && HoldsRecordValue(c.c.V) {
 			u.reportGenConstruct(es, c.span(), diag.KindRecordConstant)
 		}
 	}
@@ -98,17 +99,17 @@ func holdsVariantKind(t types.Type) bool {
 	return b.Kind() == types.VariantKind || slices.ContainsFunc(subTypes(b), holdsVariantKind)
 }
 
-// holdsRecordValue reports a record or case value in v, itself or among its elements, keys and map values.
-func holdsRecordValue(v value.Value) bool {
+// HoldsRecordValue reports a record or case value in v, itself or among its elements, keys and map values: a value no single gen/cpp literal writes, which its baked filler's statements build (CODEGEN.md §5.1, §5.13; DECISIONS 386).
+func HoldsRecordValue(v value.Value) bool {
 	switch x := v.(type) {
 	case *value.Record:
 		return true
 	case *value.List:
-		return slices.ContainsFunc(x.Elems, holdsRecordValue)
+		return slices.ContainsFunc(x.Elems, HoldsRecordValue)
 	case *value.Table:
 		return len(x.Entries) > 0
 	case *value.Map:
-		return slices.ContainsFunc(x.Keys, holdsRecordValue) || slices.ContainsFunc(x.Vals, holdsRecordValue)
+		return slices.ContainsFunc(x.Keys, HoldsRecordValue) || slices.ContainsFunc(x.Vals, HoldsRecordValue)
 	default:
 		return false
 	}

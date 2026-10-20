@@ -1,0 +1,13 @@
+Decision 37, clean: DECISIONS 384, CODEGEN.md §5.13: a types-mode cpp decoder reads a map field, Parse in file order, Decode in key byte order.
+-- a/a.canon --
+package a
+
+/// A table of weights.
+record Weights {
+  /// By name.
+  byName: {String: Int}
+}
+
+emit cpp { out: "@features/ac", namespace: "a", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

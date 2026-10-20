@@ -22,7 +22,6 @@ func typesMode(edit func(*ir.Package, *ir.Emit)) func(*ir.Package, *ir.Emit) {
 // TestTypesRefusals is CODEGEN.md §2.2, §5.13: each refusal through its sentinel; what stage E refuses first is malformed.
 func TestTypesRefusals(t *testing.T) {
 	flag := field("flag", "flag", "", tBool)
-	point := &ir.Record{Pkg: "demo", Name: "Point", Fields: []*ir.Field{field("x", "x", "", tInt)}}
 	tests := []struct {
 		name, words string
 		edit        func(*ir.Package, *ir.Emit)
@@ -34,12 +33,6 @@ func TestTypesRefusals(t *testing.T) {
 			typesMode(withMethod(&ir.ExportFn{Name: "f", Kind: ir.FnPrecomputed, Result: tInt})), cppgen.ErrMalformed},
 		{"a computed default, which stage E refuses", "a computed default in types mode",
 			typesMode(withField(&ir.Field{Name: "c", WirePath: []string{"c"}, Type: tInt, Computed: true})), cppgen.ErrMalformed},
-		{"a record default, which stage E refuses (RecordConstant)", "value *value.Record", typesMode(func(p *ir.Package, _ *ir.Emit) {
-			p.Types = append(p.Types, point)
-			f := field("at", "at", "", ir.TypeRef{Kind: types.Record, Named: point})
-			f.Default = &value.Record{Fields: []value.Value{num(1)}}
-			thing(p).Fields = append(thing(p).Fields, f)
-		}), cppgen.ErrMalformed},
 		{"a dependent default, which stage E refuses (DependentType)", "a default holding a dependent value", typesMode(func(p *ir.Package, e *ir.Emit) {
 			thing(p).Fields = append(thing(p).Fields, flag)
 			withDependent("p", fromField("flag"))(p, e)
@@ -79,5 +72,29 @@ func TestTypesModeShape(t *testing.T) {
 		if !strings.Contains(header+source, want) {
 			t.Errorf("types mode lacks %q", want)
 		}
+	}
+}
+
+// CODEGEN.md §5.13, §7.2, DECISIONS 386: a record default is built once into a function-local static const by the baked filler's statements and copied where the key is absent; the record befriends the decoder writing its members.
+func TestTypesRecordDefaultBuilt(t *testing.T) {
+	p, e := small(field("a", "a", "", tInt))
+	e.Mode = ir.ModeTypes
+	point := &ir.Record{Pkg: "demo", Name: "Point", Fields: []*ir.Field{field("x", "x", "", tInt)}}
+	p.Types = append(p.Types, point)
+	f := field("at", "at", "", ir.TypeRef{Kind: types.Record, Named: point})
+	f.Default = &value.Record{T: recordType("Point", "x"), Fields: []value.Value{num(1)}}
+	thing(p).Fields = append(thing(p).Fields, f)
+	files, err := cppgen.Generate(p, e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	header, source := string(files[2].Content), string(files[3].Content)
+	for _, want := range []string{"static const Point dk_at_ = [] {", "Point db;", "db.x_ = 1;", "return db;", "}();", "out.at_ = dk_at_;"} {
+		if !strings.Contains(source, want) {
+			t.Errorf("the decoder lacks %q:\n%s", want, source)
+		}
+	}
+	if friend := "friend bool detail::Decode(const nlohmann::json&, canon::json::Decoder&, Thing&);"; strings.Count(header, friend) != 2 {
+		t.Errorf("Point and Thing must befriend Thing's decoder once each:\n%s", header)
 	}
 }

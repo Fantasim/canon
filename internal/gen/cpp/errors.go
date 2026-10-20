@@ -24,13 +24,12 @@ const (
 	nilItem            = "a nil item"
 	noElem             = "a list, optional or table without its element type"
 	noKey              = "a map or ref without its key type"
+	noMapValue         = "a map without its value type"
 	noDecl             = "a record, variant or enum kind without its declaration"
 	noKeyField         = "a keyed list without its key field"
 	defineMissing      = "a ref into a load.defines table the package's IR does not hold"
 	unionNonString     = "a literal union whose wire is not a string"
-	unionRef           = "a literal union over a ref"
 	unionDependent     = "a literal union over a dependent type"
-	optionalElems      = "a list of optional elements"
 	dataValueKind      = "a data value that is not a table, a keyed list or a record"
 	recursiveTypes     = "a type that holds itself"
 	dependentElsewhere = "a dependent type that is not a field's type or its list's elements"
@@ -51,7 +50,6 @@ const (
 	methodCalls        = "a call to another export method"
 	lookupParams       = "a finite parameter that is not an enum or a Bool"
 	unknownReads       = "a read of self that is not a path of fields"
-	mapFields          = "a map field (nlohmann::json does not keep the key order)"
 	inlineFoldKeys     = "an inline variant key equal to another key of its parent but for letter case"
 	bakedReload        = "a @reload value in baked mode"
 	bakedEntryKey      = "a container entry whose key is not its id, or a ref to no entry"
@@ -289,4 +287,30 @@ const (
 	codeLineFormat      = indentUnit + "const %[1]s code = static_cast<%[1]s>(v);\n"
 	sizeCallFormat      = "%s.size()"
 	localTableFormat    = "constexpr std::array<%s, %d> %s = %s;\n"
+)
+
+// Optional list elements and map values (CODEGEN.md §4.2, WIRE.md §5.4; DECISIONS 385).
+const (
+	notNullOpenFormat = "if (!%s.is_null()) {"
+)
+
+// Built defaults of types-mode decoders (CODEGEN.md §5.13; DECISIONS 386).
+const (
+	defaultStaticFormat  = "static const %s %s = [] {"
+	defaultLocalFormat   = "%s %s;"
+	defaultCloseLine     = "}();"
+	defaultBuilt         = "db"
+	defaultKeptFormat    = "dk_%s"
+	makeUniqueCopyFormat = "std::make_unique<%s>(%s)"
+)
+
+// Literal unions over a ref (CODEGEN.md §4.1, §5.8; DECISIONS 387).
+const (
+	unionEntryFormat = "if (%s!%s(%s)) dec.Fail(%s, \"no entry \" + %s);"
+	// checkReturnFormat and checkFailFormat refuse a key naming no entry, in a Resolve and in a reader: an if-init, then the condition.
+	checkReturnFormat    = "if (%s%s) return dec.Fail(%s, \"no entry \" + %s), false;"
+	checkFailFormat      = "if (%s%s) dec.Fail(%s, \"no entry \" + %s);"
+	nullCompare          = ") == nullptr"
+	enumKeyInitFormat    = "const auto ke = %s(%s); "
+	enumKeyMissingFormat = "(!ke || %s*ke) == nullptr)"
 )

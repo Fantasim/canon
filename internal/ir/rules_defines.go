@@ -19,11 +19,11 @@ func (s *stage) checkDefineKeys(u *unit, es *emitSite) {
 	}
 }
 
-// checkRefUnions is E8019 `RefUnion`: gen/cpp holds no literal union over a ref, and gen/go's data loader reads none, wherever the emit's code does (CODEGEN.md §4.1).
+// checkRefUnions is E8019 `RefUnion`: gen/go's data loader and types-mode decoders read no literal union over a ref yet, wherever they read one (CODEGEN.md §4.1; gen/cpp holds it as its string, DECISIONS 387).
 func (s *stage) checkRefUnions(u *unit, es *emitSite) {
 	read := s.readSpans(u, es, isRefUnion)
 	for _, site := range s.typeSites(u, es) {
-		if es.e.Target == TargetCpp && typeHolds(site.t, isRefUnion) || es.e.Target != TargetCpp && read[site.span] {
+		if read[site.span] {
 			u.reportGenConstruct(es, site.span, diag.KindRefUnion)
 		}
 	}
