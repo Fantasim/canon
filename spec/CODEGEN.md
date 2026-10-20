@@ -1109,6 +1109,9 @@ The keys of a public `table` value (EMT-04):
 | `baked`, `embedded` | `type StatusID struct{ position uint8 }` (opaque: no integer converts to or from it) + `var`s `StatusIDOpen…` in entry order, `String()` and `MarshalText()` (the key), `(*StatusID).UnmarshalText` (a key; an unknown one is an error), `ParseStatusID(key) (StatusID, bool)`, `Position() int` (an array index for one build, §2.10) | `enum class StatusId : uint8_t { open, taken, … }`, `ToWire(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 383), `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`), and deleted `to_json`/`from_json` templates for it (DECISIONS 379) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdMembers: ReadonlyArray<StatusId>` in entry order; no exported index: a file that needs one builds it privately with `canonIndex` (§8.2) |
 | `data`, `types` | `type StatusID string` | `std::string` (getter `const std::string&`, lookups take `std::string_view`) | `export type StatusId = string` |
 
+The `data`/`types` row is for the package's own tables; a ref into another package's `baked` table
+uses that table's id enum (§5.8).
+
 A `baked` id is opaque so that its position, which changes when entry files move, never leaves as
 an id: `encoding/json`, `xml` and `yaml` write the key; `database/sql` and `gob` refuse it (SPEC
 §4.3, DECISIONS 379).
@@ -1323,6 +1326,14 @@ any mode, since the owner's make hook resolves it, except a literal union, which
 reads unchecked (§2.8, §5.13; DECISIONS 385, 387); in a class's own loader, a union or a present optional
 ref is checked exactly where a plain ref is: never under a map value or a second list level; a union over a `load.defines` ref is not looked
 up at load (no define table is emitted for it, as for a define ref in a map).
+A ref of a `data` or `types` emit into another package's table whose emit for the same target is
+`baked` is held as that package's id enum (Go `lib.ItemID`, C++ `::lib::ItemId`, §5.3): storage,
+getters, make hooks, map keys, lists, optionals, dependent branches and defaults alike. Its key is
+therefore parsed wherever it is held, a map value and a second list level included (an enum
+cannot hold an unknown key), in every mode: `unknown value <key>` in the package's own classes,
+`no entry <key>` in a reader of another package's class. A literal union over such a ref stays a
+string and is checked through the id enum's `FromWire`, with the own-class text, where a union is
+checked (DECISIONS 312, 387).
 
 The **key type** is the target collection's id type in the target package's emit for the same
 target ([§5.3](#53-table-ids)), the key field's type for a keyed list, the field's `<id type>` for a
@@ -1737,7 +1748,8 @@ export function decodeEventConfig(json: unknown): EventConfig;
   first use, into a function-local `static const` by the statements a `baked` emit fills its data
   with (another package's record through its make hook, §5.14), and copied into each decoded value
   whose key is absent (DECISIONS 386).
-- Refs are keys; table ids are strings. A literal union over a ref (`ref items | "PENYA"`) is its
+- Refs are keys; table ids are strings, except a ref into another package's table that has an id
+  enum, which is that enum, so a key naming no id is `unknown value <key>` even here (§5.8). A literal union over a ref (`ref items | "PENYA"`) is its
   string in every mode and target (§4.1): read unchecked, like every ref here; a `data` loader
   accepts one of the literals or checks the key as a plain ref (§5.8) (DECISIONS 387).
 - Public decoders are API for runtimes only: another package's generated code never calls them,
