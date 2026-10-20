@@ -37,6 +37,12 @@ func argText(a *syntax.Annotation, key string) string {
 	return constString(v)
 }
 
+// definesOf is the @cpp(defines:) prefix of a declaration and whether the argument is present: "" is a prefix too (DECISIONS 389).
+func definesOf(anns []*syntax.Annotation) (prefix string, present bool) {
+	a := annotation(anns, syntax.AnnCpp)
+	return argText(a, syntax.ArgDefines), arg(a, syntax.ArgDefines) != nil
+}
+
 // argWord is a symbol argument (`access: fields`, `unit: s`).
 func argWord(a *syntax.Annotation, key string) (string, bool) {
 	q, ok := arg(a, key).(*syntax.QualifiedName)

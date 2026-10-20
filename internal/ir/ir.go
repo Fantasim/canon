@@ -31,8 +31,9 @@ type DefineTable struct {
 
 // PackageRef is an imported package this one references, with its emits (EMT-06).
 type PackageRef struct {
-	Name, Dir string
-	Emits     []*Emit
+	Name, Dir  string
+	Emits      []*Emit
+	CppDefines []string
 }
 
 // Type is a named IR type, of this package or another: *Record, *Enum, *Variant, *Dependent.
@@ -90,6 +91,8 @@ type Enum struct {
 	JSONCodes      bool
 	Ordered        bool
 	CppDefines     string
+	HasCppDefines  bool
+	Order          int // position among the package's declarations (CODEGEN.md §2.7)
 	Go, Cpp, TS    NameOptions
 }
 
@@ -147,10 +150,13 @@ type Branch struct {
 }
 
 type Const struct {
-	Name, Doc   string
-	Type        TypeRef
-	V           value.Value
-	Go, Cpp, TS NameOptions
+	Name, Doc     string
+	Type          TypeRef
+	V             value.Value
+	CppDefines    string
+	HasCppDefines bool
+	Order         int
+	Go, Cpp, TS   NameOptions
 }
 
 // Value is an emitted value, evaluated and verified; IDs are its table keys (EMT-04).

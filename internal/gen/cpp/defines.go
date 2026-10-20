@@ -2,26 +2,24 @@ package cppgen
 
 import (
 	_ "embed"
+	"fmt"
+	"maps"
+	"math"
 	"slices"
-	"strings"
+	"strconv"
 
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 //go:embed text/defines.txt
 var definesText string
 
-// definesFile is <last>.defines.gen.h, nil when no enum has @cpp(defines:) (CODEGEN.md §7.9).
+// definesFile is <last>.defines.gen.h, nil when no enum or constant has @cpp(defines:) (CODEGEN.md §7.9, DECISIONS 389, 390); ir validates the names and the types first.
 func (g *gen) definesFile() []byte {
 	var w writer
-	for _, e := range g.ownEnums() {
-		for _, m := range e.Members {
-			value := m.Code
-			if e.Codes == nil {
-				value = int64(m.Index)
-			}
-			w.linef(0, defineFormat, defineName(e.CppDefines, m), value)
-		}
+	for _, d := range ir.CppDefineLines(g.p) {
+		w.linef(0, defineFormat, d.Name, g.defineValue(d))
 	}
 	if w.String() == "" {
 		return nil
@@ -31,64 +29,89 @@ func (g *gen) definesFile() []byte {
 	return out.bytes()
 }
 
-// ownEnums are the package's enums with @cpp(defines:), in declaration order.
-func (g *gen) ownEnums() []*ir.Enum {
-	var out []*ir.Enum
-	for _, t := range g.p.Types {
-		if e, ok := t.(*ir.Enum); ok && e.CppDefines != "" {
-			out = append(out, e)
+// defineValue is a define's value: a member's code with @codes else its index, a constant's literal (CODEGEN.md §7.9).
+func (g *gen) defineValue(d ir.CppDefine) string {
+	if d.Const == nil {
+		return defineInt(enumDefine(d.Enum, d.Member))
+	}
+	leave := g.enter(d.Const.Name)
+	defer leave()
+	switch x := d.Const.V.(type) {
+	case *value.Int:
+		return defineInt(x.V)
+	case *value.Bool:
+		return defineInt(boolInt(x.V))
+	case *value.Str:
+		return quote(x.V)
+	case *value.Member:
+		if e, ok := d.Const.Type.Named.(*ir.Enum); ok && x.Index >= 0 && x.Index < len(e.Members) {
+			return defineInt(enumDefine(e, e.Members[x.Index]))
 		}
 	}
-	return out
+	g.malformed(fmt.Sprintf(valueFormat, d.Const.V), g.at) // stage E refuses any other type first (E8012 cppDefine)
+	return cppInvalid
 }
 
-// defineName is a member's macro: its name when it has the prefix, else prefix + name.
-func defineName(prefix string, m *ir.EnumMember) string {
-	if strings.HasPrefix(m.Name, prefix) {
-		return m.Name
+// enumDefine is a member's define value: its code with @codes, else its index.
+func enumDefine(e *ir.Enum, m *ir.EnumMember) int64 {
+	if e.Codes == nil {
+		return int64(m.Index)
 	}
-	return prefix + m.Name
+	return m.Code
 }
 
-// clashes are the macros spelled like an enumerator the text names (CODEGEN.md §7.9), each once, in enum then member order.
-func (g *gen) clashes(text string) []string {
-	var out []string
-	var named map[string]bool
-	seen := map[string]bool{}
-	for _, e := range append(g.ownEnums(), g.foreignEnums...) {
-		if e.CppDefines == "" {
-			continue
+// boolInt is 1 for true, else 0.
+func boolInt(b bool) int64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// defineInt is a define's integer: decimal, and the smallest int64 as an expression, since the digits of its absolute value are no int64 literal and the defines header includes nothing (CODEGEN.md §7.9).
+func defineInt(v int64) string {
+	if v == math.MinInt64 {
+		return intMinDefine
+	}
+	return strconv.FormatInt(v, decimalBase)
+}
+
+// macroSet is every macro a file of the emit can meet: the defines of the package and of the packages it reads (CODEGEN.md §7.9, DECISIONS 391), built once.
+func (g *gen) macroSet() map[string]bool {
+	if g.macros == nil {
+		g.macros = map[string]bool{}
+		for _, n := range ir.CppDefineNames(g.p) {
+			g.macros[n] = true
 		}
-		if named == nil {
-			named = qualifiedPairs(text)
-		}
-		_, enum := g.named(e)
-		for _, m := range e.Members {
-			macro := defineName(e.CppDefines, m)
-			if macro == g.pl.Enumerator(m) && named[enum+scopeSep+macro] && !seen[macro] {
-				seen[macro] = true
-				out = append(out, macro)
+		for _, ref := range g.p.Imports {
+			for _, n := range ref.CppDefines {
+				g.macros[n] = true
 			}
 		}
 	}
-	return out
+	return g.macros
 }
 
-// qualifiedPairs is every `A::B` of whole ASCII words in text, the names `\bA::B\b` matches (CODEGEN.md §7.9), in one pass.
-func qualifiedPairs(text string) map[string]bool {
-	out := map[string]bool{}
-	for i := 0; i < len(text); {
-		if !wordByte[text[i]] {
-			i++
-			continue
-		}
-		end := wordEnd(text, i)
-		if next := end + len(scopeSep); strings.HasPrefix(text[end:], scopeSep) && wordEnd(text, next) > next {
-			out[text[i:wordEnd(text, next)]] = true
-		}
-		i = end
+// macrosIn are the macros the texts name, sorted and distinct (CODEGEN.md §7.9): one pass over each text, each identifier looked up in the set.
+func macrosIn(set map[string]bool, texts ...string) []string {
+	if len(set) == 0 {
+		return nil
 	}
-	return out
+	found := map[string]bool{}
+	for _, text := range texts {
+		for i := 0; i < len(text); {
+			if !wordByte[text[i]] {
+				i++
+				continue
+			}
+			end := wordEnd(text, i)
+			if word := text[i:end]; set[word] {
+				found[word] = true
+			}
+			i = end
+		}
+	}
+	return slices.Sorted(maps.Keys(found))
 }
 
 // wordEnd is the index after the run of word bytes of text that starts at from.
@@ -107,30 +130,24 @@ var wordByte = func() (table [byteValues]bool) {
 	return table
 }()
 
-// namespaceBody writes text inside the namespace, wrapped against the macros it clashes with.
-func (g *gen) namespaceBody(out *writer, ns, text string) {
-	clash := g.clashes(text)
-	for _, m := range clash {
+// namespaceBody writes text inside the namespace, then after it, wrapped against the macros the namespace, the text or the rest names (CODEGEN.md §7.9).
+func (g *gen) namespaceBody(out *writer, ns, text, after string) {
+	wrap := macrosIn(g.macroSet(), ns, text, after)
+	for _, m := range wrap {
 		out.printf(pushMacroFormat, m, m)
 	}
-	if len(clash) > 0 {
+	if len(wrap) > 0 {
 		out.blank()
 	}
 	out.printf(namespaceOpenFormat, ns)
 	out.blank()
 	out.write(text)
 	out.printf(namespaceCloseFormat, ns)
-	if len(clash) > 0 {
+	out.write(after)
+	if len(wrap) > 0 {
 		out.blank()
 	}
-	for _, m := range clash {
+	for _, m := range wrap {
 		out.printf(popMacroFormat, m)
-	}
-}
-
-// noteEnum records an imported enum the code names, whose defines may clash too.
-func (g *gen) noteEnum(t ir.Type) {
-	if e, ok := t.(*ir.Enum); ok && e.Pkg != g.p.Name && !slices.Contains(g.foreignEnums, e) {
-		g.foreignEnums = append(g.foreignEnums, e)
 	}
 }

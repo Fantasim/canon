@@ -27,7 +27,7 @@ func pushedMacros(text string) []string {
 
 // defineEnum is an enum of pkg with @cpp(defines: "DP_") whose members are all spelled with the prefix.
 func defineEnum(pkg, name string, members ...string) *ir.Enum {
-	e := &ir.Enum{Pkg: pkg, Name: name, CppDefines: orderPrefix}
+	e := &ir.Enum{Pkg: pkg, Name: name, CppDefines: orderPrefix, HasCppDefines: true}
 	for i, m := range members {
 		e.Members = append(e.Members, &ir.EnumMember{Name: m, Wire: m, Index: i})
 	}
@@ -52,13 +52,13 @@ func orderPackages() (owner, user *ir.Package) {
 	userEmit := &ir.Emit{Target: ir.TargetCpp, Out: "out/", Dir: "dup/user/out", Mode: ir.ModeTypes, Namespace: "dup::user"}
 	user = &ir.Package{
 		Name: "dup.user", Dir: "dup/user", Types: []ir.Type{near, holder}, Emits: []*ir.Emit{userEmit},
-		Imports: []*ir.PackageRef{{Name: owner.Name, Dir: owner.Dir, Emits: owner.Emits}},
+		Imports: []*ir.PackageRef{{Name: owner.Name, Dir: owner.Dir, Emits: owner.Emits, CppDefines: ir.CppDefineNames(owner)}},
 	}
 	return owner, user
 }
 
-// CODEGEN.md §7.9: a file naming the enumerators of an own and an imported defines enum wraps each macro once, the own enum's first, then the imported one's, members in declaration order (not sorted: Near declares DP_X before DP_B); the header names only the own enum's, the source (the record defaults) both.
-func TestDefinesClashOrderOwnThenForeign(t *testing.T) {
+// CODEGEN.md §7.9, DECISIONS 391: a file naming the enumerators of an own and an imported defines enum wraps each macro once, in sorted order, own and imported alike; the header names only the own enum's, the source (the record defaults) both.
+func TestDefinesWrapOrderSorted(t *testing.T) {
 	t.Parallel()
 	_, user := orderPackages()
 	wrapped := map[string][]string{}
@@ -71,9 +71,48 @@ func TestDefinesClashOrderOwnThenForeign(t *testing.T) {
 	for _, c := range []struct {
 		path string
 		want []string
-	}{{userHeader, []string{"DP_X", "DP_B"}}, {userSource, []string{"DP_X", "DP_B", "DP_A"}}} {
+	}{{userHeader, []string{"DP_B", "DP_X"}}, {userSource, []string{"DP_A", "DP_B", "DP_X"}}} {
 		if !slices.Equal(wrapped[c.path], c.want) {
 			t.Errorf("%s wraps %v, want %v", c.path, wrapped[c.path], c.want)
+		}
+	}
+}
+
+// afterMacro is the one identifier of an opened enum's std:: specialisation that no other region of the header spells.
+const afterMacro = "hash"
+
+// CODEGEN.md §7.9, DECISIONS 391: the region after the header's namespace (the std::hash of an opened enum) is wrapped too: a macro that only that region names is saved before the namespace and restored after the region.
+func TestDefinesWrapCoversAfterNamespace(t *testing.T) {
+	t.Parallel()
+	p := openPackage()
+	// the define is the prefix `ha` and the member `sh`, so the text spells neither the macro nor a name that holds it
+	p.Types = append(p.Types, &ir.Enum{Pkg: openPkg, Name: "Spare", CppDefines: "ha", HasCppDefines: true, Members: members([]string{"sh", "sh"}, nil)})
+	var header string
+	for _, f := range generate(t, p) {
+		if f.Path == "open.gen.h" {
+			header = string(f.Content)
+		}
+	}
+	push, spec, pop := strings.Index(header, `#pragma push_macro("`+afterMacro+`")`), strings.Index(header, "struct std::"+afterMacro), strings.Index(header, `#pragma pop_macro("`+afterMacro+`")`)
+	if push < 0 || spec < 0 || pop < 0 || push > spec || spec > pop {
+		t.Errorf("push at %d, specialisation at %d, pop at %d, want them in that order", push, spec, pop)
+	}
+}
+
+// CODEGEN.md §7.9, DECISIONS 391: a define equal to a segment of the emit namespace is wrapped in every file, though no other token of the .gen.cpp spells it (the enumerator is NS, the macro LIMIT_NS).
+func TestDefinesWrapCoversNamespaceSegment(t *testing.T) {
+	t.Parallel()
+	p := definesPackage()
+	p.Emits[0].Namespace = "demo::LIMIT_NS"
+	p.Types = append(p.Types, definesEnum("Level", "LIMIT_", 12, nil, members([]string{"NS", "NS"}, nil)))
+	for _, f := range generate(t, p) {
+		if f.Path != "defs.gen.h" && f.Path != "defs.gen.cpp" {
+			continue
+		}
+		text := string(f.Content)
+		save, open := strings.Index(text, `#pragma `+"push_macro"+`("LIMIT_NS")`), strings.Index(text, "namespace demo::LIMIT_NS {")
+		if save < 0 || open < 0 || save > open {
+			t.Errorf("%s: save at %d, namespace at %d, want the save first", f.Path, save, open)
 		}
 	}
 }

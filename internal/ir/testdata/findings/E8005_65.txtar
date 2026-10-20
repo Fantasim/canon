@@ -1,0 +1,22 @@
+CODEGEN.md §7.9, DECISIONS 389: two equal define names in one defines file are E8005, reported at the later declaration; the enums share X_one.
+-- a/a.canon --
+package a
+
+/// First kinds.
+enum First @cpp(defines: "X_") {
+  /// One.
+  one
+}
+
+/// Second kinds.
+enum Second @cpp(defines: "X_") {
+  /// One again.
+  one
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8005]  a/a.canon:10:6
+  #define X_one is written for both a.First.one and a.Second.one; change one prefix, or rename one declaration
+
+1 error, 0 warnings in 1 package (…)

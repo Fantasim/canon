@@ -17,7 +17,6 @@ func (g *gen) typeName(t ir.Type) string {
 		g.malformed(fmt.Sprintf(typeFormat, t), g.at)
 		return cppInvalid
 	}
-	g.noteEnum(t)
 	return g.qualifier(pkg) + name
 }
 

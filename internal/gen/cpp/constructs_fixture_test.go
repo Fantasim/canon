@@ -89,7 +89,7 @@ func (s *shop) enums() {
 		{Name: "legacy", Wire: "legacy", Index: 3, Retired: true},
 	}}
 	wide := sized(32, false)
-	s.kind1 = &ir.Enum{Pkg: shopPkg, Name: "Kind1", Codes: &wide, CppDefines: "IK1_", Members: []*ir.EnumMember{
+	s.kind1 = &ir.Enum{Pkg: shopPkg, Name: "Kind1", Codes: &wide, CppDefines: "IK1_", HasCppDefines: true, Members: []*ir.EnumMember{
 		{Name: "IK1_WEAPON", Wire: "IK1_WEAPON", Code: 1}, {Name: "GENERAL", Wire: "GENERAL", Index: 1, Code: 4},
 	}}
 	codes := tUInt16

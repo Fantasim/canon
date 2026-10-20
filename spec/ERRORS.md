@@ -386,7 +386,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 555 messages.
+The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 556 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1288,6 +1288,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8005 | reached | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option` |
 | E8005 | idType | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list` |
 | E8005 | finder | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)` |
+| E8005 | define | name:Name, a:Name, b:Name | `#define {name} is written for both {a} and {b}; change one prefix, or rename one declaration` |
 | W8006 | - | name:Name, item:Name | `C++ name {name} (from {item}) is a macro in common platform headers` |
 | E8007 | - | out:Path | `Go output {out} is under no root listed in go_module: map its root in project.canon go_module` |
 | E8008 | - | dir:Path, a:Name, b:Name | `Go directory {dir} is written by two emits ({a}, {b})` |

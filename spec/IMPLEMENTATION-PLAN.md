@@ -118,11 +118,12 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `i18n` | key catalogue, translation files, fallback, `i18n stub`/`status` | I18N.md | check |
 | `api/vm` (package `vm`) | view-model Go structs, generated from `spec/viewmodel.schema.json`; `ViewModel.Decode` targets them (API.md §5.4) | VIEWMODEL.md, viewmodel.schema.json | — |
 | `views` | view resolution (groups, controls, labels, `when`/`show`, usage, search index) shared by `gen/view` and `Evaluate` | VIEWMODEL.md, MOCKUP-GAPS | check, eval, i18n, api/vm |
-| `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types, project, wire (E8102, DECISIONS 283) |
+| `gen/cpp/runtime` | package `cppruntime`: the texts of `canon_runtime.h` and `canon_runtime_json.h` and their identifier set (DECISIONS 389) | CODEGEN.md §2.3, §7.4, §7.5, §7.9 | — |
+| `ir` | target-neutral emit IR (§4.5 of this plan), fingerprint, emit validation (stage E), portable-subset check (`E9xxx`) | §4.5, FINGERPRINT.md, CODEGEN.md (what the IR must carry) | check, verify, value, types, project, wire (E8102, DECISIONS 283), gen/cpp/runtime (DECISIONS 389) |
 | `conform` | conformance vector selection and expected results | CONFORMANCE.md | ir, eval |
 | `gen/json` | `emit json` files | WIRE.md (emit layout) | ir, wire |
 | `gen/go` | Go code, `rt` package, Go conformance tests | CODEGEN.md (Go), CONFORMANCE.md | ir, conform |
-| `gen/cpp` | C++17 code, `canon_runtime.h`, legacy struct modes, C++ conformance | CODEGEN.md (C++), CONFORMANCE.md | ir, conform |
+| `gen/cpp` | C++17 code, `canon_runtime.h`, legacy struct modes, C++ conformance | CODEGEN.md (C++), CONFORMANCE.md | ir, conform, gen/cpp/runtime |
 | `gen/ts` | TypeScript code, TS conformance | CODEGEN.md (TS), CONFORMANCE.md | ir, conform |
 | `gen/view` | view-model JSON | VIEWMODEL.md, viewmodel.schema.json | views, ir, api/vm |
 | `writelock` | advisory per-package writer locks across processes: `flock` on Unix, `CreateFile` share modes on Windows, standard library only (DECISIONS 352) | API.md S9, N9; CLI §3.4, §3.6, §3.15 | — |

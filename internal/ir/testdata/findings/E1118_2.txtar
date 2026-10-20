@@ -1,0 +1,23 @@
+GRAMMAR.md §8.3, DECISIONS 390: @cpp(defines:) on a local constant or enum is E1118 whatever the emits are: this package has a go emit only, and no cpp emit that could write the define.
+-- a/a.canon --
+package a
+
+/// Local.
+@cpp(defines: "")
+local const A = 1
+
+/// Local.
+local enum E @cpp(defines: "E_") {
+  /// A member.
+  x
+}
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E1118]  a/a.canon:4:1
+  @cpp is not allowed on this local
+
+error[E1118]  a/a.canon:8:14
+  @cpp is not allowed on this local
+
+2 errors, 0 warnings in 1 package (…)

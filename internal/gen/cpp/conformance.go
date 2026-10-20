@@ -56,7 +56,7 @@ func (g *gen) conformance() []byte {
 	w.linef(0, includeQuotedFormat, g.last+genHeaderSuffix)
 	w.blank()
 	includes(&w, body.String(), nil)
-	g.namespaceBody(&w, g.emit.Namespace+scopeSep+conformanceNS, body.String())
+	g.namespaceBody(&w, g.emit.Namespace+scopeSep+conformanceNS, body.String(), "")
 	return w.bytes()
 }
 

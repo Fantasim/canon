@@ -72,13 +72,19 @@ func cppRunWrite(t *testing.T, dir string, files []cppRunFile) []string {
 // cppRunOutputs links the probe with every .gen.cpp under dir's gen, once per compiler found and per mode of cxx.Modes (exceptions on, then off), runs it in the cases directory on args and returns each run's output; the compile and the run share one cxx.Timeout.
 func cppRunOutputs(t *testing.T, dir string, args []string) []string {
 	t.Helper()
-	compilers, include := cxx.Toolchain(t)
 	sources := append([]string{cppRunProbe}, filesUnder(t, filepath.Join(dir, e2eGenRoot), e2eCppSuffix)...)
+	return cppRunSourcesOutputs(t, dir, sources, nil, args)
+}
+
+// cppRunSourcesOutputs is cppRunOutputs for the given sources, compiled with the extra flags.
+func cppRunSourcesOutputs(t *testing.T, dir string, sources, extra, args []string) []string {
+	t.Helper()
+	compilers, include := cxx.Toolchain(t)
 	var outs []string
 	for _, cc := range compilers {
 		for i, mode := range cxx.Modes {
 			bin := filepath.Join(dir, cppRunBin+cppRunSep+filepath.Base(cc)+strings.Repeat(cppRunSep, i+1))
-			cmd := slices.Concat(cxx.Flags, mode, []string{cppRunFlagI, include, cppRunFlagI, e2eGenRoot, cppRunFlagO, bin}, sources)
+			cmd := slices.Concat(cxx.Flags, mode, extra, []string{cppRunFlagI, include, cppRunFlagI, e2eGenRoot, cppRunFlagO, bin}, sources)
 			ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
 			runIn(t, dir, exec.CommandContext(ctx, cc, cmd...))
 			run := exec.CommandContext(ctx, bin, args...)

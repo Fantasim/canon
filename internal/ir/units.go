@@ -40,8 +40,8 @@ func exported(d *syntax.FnDecl) bool { return d.Mods != nil && d.Mods.Export.Val
 
 // assemble builds u's types, constants, values and package fns, each list in declaration order (CODEGEN.md §2.7): every public type, constant and export fn, and every public value.
 func (s *stage) assemble(u *unit) {
-	for _, obj := range u.cp.Decls {
-		s.assembleDecl(u, obj)
+	for i, obj := range u.cp.Decls {
+		s.assembleDecl(u, obj, i)
 	}
 	for _, v := range u.values {
 		u.p.Values = append(u.p.Values, v.v)
@@ -49,17 +49,20 @@ func (s *stage) assemble(u *unit) {
 }
 
 // assembleDecl adds one top-level declaration of u, if it is public (CODEGEN.md §2.7) and not broken: a broken declaration never enters the emit IR (decision 213), and everything naming it is broken too (TYPES.md §1, decision 209).
-func (s *stage) assembleDecl(u *unit, obj check.Object) {
+func (s *stage) assembleDecl(u *unit, obj check.Object, order int) {
 	if s.info.Broken[obj] {
 		return
 	}
 	switch d := obj.Decl().(type) {
 	case *syntax.RecordDecl, *syntax.EnumDecl, *syntax.VariantDecl, *syntax.TypeDecl:
 		if t := s.publicType(obj); t != nil {
+			if e, ok := t.(*Enum); ok && e.Pkg == u.p.Name {
+				e.Order = order
+			}
 			u.p.Types = append(u.p.Types, t)
 		}
 	case *syntax.ConstDecl:
-		s.assembleConst(u, obj, d)
+		s.assembleConst(u, obj, d, order)
 	case *syntax.LetDecl:
 		s.assembleLet(u, obj, d)
 	case *syntax.FnDecl:
@@ -67,11 +70,12 @@ func (s *stage) assembleDecl(u *unit, obj check.Object) {
 	}
 }
 
-func (s *stage) assembleConst(u *unit, obj check.Object, d *syntax.ConstDecl) {
+func (s *stage) assembleConst(u *unit, obj check.Object, d *syntax.ConstDecl, order int) {
 	if local(d.Mods) {
 		return
 	}
 	c := &constSite{c: s.constant(obj, d), obj: obj, decl: d}
+	c.c.Order = order
 	s.nodeSites[c.c] = declSite{file: obj.File(), node: d.Name}
 	u.consts = append(u.consts, c)
 	u.p.Consts = append(u.p.Consts, c.c)
@@ -159,6 +163,7 @@ func (s *stage) constDecl(obj check.Object, d *syntax.ConstDecl) *Const {
 	c := &Const{Name: obj.Name(), Doc: docOf(d.Doc), Type: s.ref(obj.Type())}
 	n := nameOverrides(d.Annotations)
 	c.Go, c.Cpp, c.TS = n.goName, n.cpp, n.ts
+	c.CppDefines, c.HasCppDefines = definesOf(d.Annotations)
 	return c
 }
 

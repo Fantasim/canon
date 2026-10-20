@@ -1,0 +1,16 @@
+CODEGEN.md §7.9, DECISIONS 389: a define name that is a C++ keyword is E8011 `reserved`; the member `ss` under the prefix `cla` is `class`.
+-- a/a.canon --
+package a
+
+/// Legacy kinds.
+enum Kind @cpp(defines: "cla") {
+  /// A member.
+  ss
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  class, the C++ name derived for a.Kind.ss, is a keyword or a reserved name
+
+1 error, 0 warnings in 1 package (…)

@@ -29,7 +29,7 @@ func scalePackages() (owner, user *ir.Package) {
 		name := fmt.Sprintf("BD_M%d", i)
 		members[i] = &ir.EnumMember{Name: name, Wire: name, Index: i}
 	}
-	enum := &ir.Enum{Pkg: "big.defs", Name: "Big", CppDefines: scalePrefix, Members: members}
+	enum := &ir.Enum{Pkg: "big.defs", Name: "Big", CppDefines: scalePrefix, HasCppDefines: true, Members: members}
 	emit := &ir.Emit{Target: ir.TargetCpp, Out: "out/", Dir: "big/defs/out", Mode: ir.ModeBaked, Namespace: "big::defs"}
 	owner = &ir.Package{Name: "big.defs", Dir: "big/defs", Types: []ir.Type{enum}, Emits: []*ir.Emit{emit}}
 	big := field("big", "big", "", ir.TypeRef{Kind: types.Enum, Named: enum})
@@ -38,7 +38,7 @@ func scalePackages() (owner, user *ir.Package) {
 	userEmit := &ir.Emit{Target: ir.TargetCpp, Out: "out/", Dir: "big/user/out", Mode: ir.ModeTypes, Namespace: "big::user"}
 	user = &ir.Package{
 		Name: "big.user", Dir: "big/user", Types: []ir.Type{holder}, Emits: []*ir.Emit{userEmit},
-		Imports: []*ir.PackageRef{{Name: owner.Name, Dir: owner.Dir, Emits: owner.Emits}},
+		Imports: []*ir.PackageRef{{Name: owner.Name, Dir: owner.Dir, Emits: owner.Emits, CppDefines: ir.CppDefineNames(owner)}},
 	}
 	return owner, user
 }

@@ -1,0 +1,14 @@
+CODEGEN.md §7.9, DECISIONS 390: a Float constant has no C++ literal for a #define, E8012 `cppDefine`.
+-- a/a.canon --
+package a
+
+/// A rate.
+@cpp(defines: "")
+const RATE = 1.5
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8012]  a/a.canon:5:7
+  RATE cannot be a #define: Float has no C++ literal
+
+1 error, 0 warnings in 1 package (…)

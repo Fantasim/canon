@@ -169,7 +169,6 @@ func (g *gen) kindMember(v *ir.Variant, i int) string {
 
 // enumHelpers are e's k<E>Members, <E>FromWire, <E>FromCode and detail::<E>Ordinal, qualified when e is imported (CODEGEN.md §2.8, §5.2).
 func (g *gen) enumHelpers(e *ir.Enum) ir.CppEnumHelpers {
-	g.noteEnum(e)
 	h, q := g.pl.EnumHelpers(g.pl.TypeName(e)), g.qualifier(e.Pkg)
 	return ir.CppEnumHelpers{Members: q + h.Members, FromWire: q + h.FromWire, FromCode: q + h.FromCode, Ordinal: q + detailPrefix + h.Ordinal}
 }

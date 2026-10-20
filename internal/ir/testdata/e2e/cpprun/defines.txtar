@@ -1,0 +1,108 @@
+CODEGEN.md §7.9, DECISIONS 389-391: lib's defines header (an enum and constants) and a hand-written legacy header with the same macros are included before the generated headers and sources of lib and of app, which imports it; the macros equal a segment of lib's namespace, a table id enumerator, a constant, a renamed member and a member of an enum without @cpp(defines:), and the TU compiles under -Werror and keeps every macro's value after the generated code. probe.cpp includes lib's .gen.cpp and app's .gen.cpp itself, so the generated sources see the macros too.
+-- lib/lib.canon --
+/// The library of legacy names.
+package lib
+
+/// Item kinds; the defines keep the legacy macro names.
+enum Kind @codes(UInt8) @cpp(defines: "IK_") {
+  /// A sword.
+  SWORD = 1
+  /// An axe, renamed in C++ to a name a constant defines.
+  AXE = 2 @cpp(name: "IK_ALIAS")
+}
+
+/// Elements, without defines; a member is spelled like a define of Kind.
+enum Elem {
+  /// Spelled like the define IK_SWORD.
+  IK_SWORD
+  /// Fire.
+  fire
+}
+
+/// Levels; the define LIMIT_NS is also a segment of lib's namespace, which no other token of lib.gen.cpp spells.
+enum Lvl @cpp(defines: "LIMIT_") {
+  /// A level.
+  NS
+}
+
+/// The number of slots, a macro and a C++ constant of one name.
+@cpp(defines: "")
+const MAX_SLOTS = 9
+
+/// The alias of an axe; Kind's renamed enumerator is spelled like its define.
+@cpp(defines: "")
+const IK_ALIAS = 5
+
+/// The legacy limit, INT64_MIN.
+@cpp(defines: "")
+const LOWEST = -9223372036854775808
+
+/// The legacy title.
+@cpp(defines: "")
+const TITLE = "legacy"
+
+/// A slot.
+record Slot {
+  /// How many.
+  n: Int
+  /// Its kind.
+  kind: Kind = SWORD
+  /// Its element.
+  elem: Elem = IK_SWORD
+}
+
+/// The slots; the id of the first is a define.
+let slots: table Slot = {
+  IK_AXE { n: 1, kind: AXE }
+  other { n: 2 }
+}
+
+emit cpp { out: "@features/lib", namespace: "lib::LIMIT_NS", mode: data }
+emit json { out: "out/" }
+-- app/app.canon --
+/// The importer.
+package app
+
+import lib { Kind, Elem, Slot }
+
+/// A holder spelling lib's enumerators.
+record Holder {
+  /// Its kind.
+  kind: Kind = AXE
+  /// Its element.
+  elem: Elem = IK_SWORD
+  /// Its slot.
+  slot: Slot = { n: 3 }
+}
+
+emit cpp { out: "@features/app", namespace: "app", mode: types }
+-- legacy.h --
+// The hand-written legacy header: the macros lib's defines header writes.
+#pragma once
+#define IK_SWORD 1
+#define IK_AXE 2
+#define MAX_SLOTS 9
+#define IK_ALIAS 5
+#define LOWEST (-9223372036854775807 - 1)
+#define TITLE "legacy"
+#define LIMIT_NS 0
+-- probe.cpp --
+// probe includes the macros (lib's defines header, or legacy.h when built with -DLEGACY), then the
+// generated headers and sources of lib and app, and prints what survives (CODEGEN.md §7.9).
+#ifdef LEGACY
+#include "legacy.h"
+#else
+#include "lib/lib.defines.gen.h"
+#endif
+
+#include "lib/lib.gen.h"
+#include "lib/lib.gen.cpp"
+#include "app/app.gen.h"
+#include "app/app.gen.cpp"
+
+#include <iostream>
+
+int main() {
+    std::cout << "macros " << IK_SWORD << " " << IK_AXE << " " << MAX_SLOTS << " " << IK_ALIAS << " " << TITLE << " " << (LOWEST < 0) << " " << LIMIT_NS << "\n";
+    return 0;
+}

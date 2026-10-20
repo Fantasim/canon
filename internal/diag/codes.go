@@ -2218,6 +2218,7 @@ var Registry = []Def{
 			{Name: "reached", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option"},
 			{Name: "idType", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list"},
 			{Name: "finder", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)"},
+			{Name: "define", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "#define {name} is written for both {a} and {b}; change one prefix, or rename one declaration"},
 		},
 	},
 	{
@@ -6923,6 +6924,11 @@ func (codeE8005) AtIdType(span source.Span, target string, name string, a string
 // AtFinder reports: {target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)
 func (codeE8005) AtFinder(span source.Span, target string, name string, a string, b string) *Builder {
 	return newBuilder(&Registry[258], 3, span, target, name, a, b)
+}
+
+// AtDefine reports: #define {name} is written for both {a} and {b}; change one prefix, or rename one declaration
+func (codeE8005) AtDefine(span source.Span, name string, a string, b string) *Builder {
+	return newBuilder(&Registry[258], 4, span, name, a, b)
 }
 
 // E8007: a Go output under no root mapped by `go_module` (CODEGEN.md §2.8).

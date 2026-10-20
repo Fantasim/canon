@@ -82,7 +82,25 @@ func (s *stage) imports(u *unit) []*PackageRef {
 	out = append(out, s.reachImports(u)...)
 	out = append(out, s.textImports(u, out)...)
 	slices.SortFunc(out, func(a, b *PackageRef) int { return cmp.Compare(a.Name, b.Name) })
+	for _, ref := range out {
+		ref.CppDefines = s.cppDefinesOf(ref.Name)
+	}
 	return out
+}
+
+// cppDefinesOf are the macros package name's defines header writes, from its IR when it is built, else from its declarations (DECISIONS 391); computed once.
+func (s *stage) cppDefinesOf(name string) []string {
+	if names, done := s.defineNames[name]; done {
+		return names
+	}
+	var names []string
+	if dep := s.units[name]; dep != nil && dep.selected && len(dep.emits) > 0 {
+		names = CppDefineNames(dep.p)
+	} else if dep != nil {
+		names = CppDefineNames(s.declaredOnly(dep))
+	}
+	s.defineNames[name] = names
+	return names
 }
 
 // pkgOf is the package that declares a named IR type.

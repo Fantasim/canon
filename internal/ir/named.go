@@ -33,7 +33,7 @@ func (s *stage) enum(e *types.EnumType) *Enum {
 		s.decls[out] = s.site(e.Decl.Name, e.Decl.Name)
 		n := nameOverrides(e.Decl.Annotations)
 		out.Go, out.Cpp, out.TS = n.goName, n.cpp, n.ts
-		out.CppDefines = argText(annotation(e.Decl.Annotations, syntax.AnnCpp), syntax.ArgDefines)
+		out.CppDefines, out.HasCppDefines = definesOf(e.Decl.Annotations)
 		decls = e.Decl.Members
 	}
 	for i, m := range e.Members {

@@ -65,7 +65,7 @@ var annCatalog = map[string]*annSpec{
 		{name: ArgLabel, named: true, kind: valString, sites: siteLet},
 	}},
 	AnnCpp: {args: []argSpec{
-		{name: ArgDefines, named: true, kind: valString, sites: siteEnumHeader},
+		{name: ArgDefines, named: true, kind: valString, sites: siteEnumHeader | siteConst},
 		{name: ArgStruct, named: true, kind: valString, sites: siteRecordHeader},
 		{name: ArgHeader, named: true, kind: valString, sites: siteRecordHeader},
 		{name: ArgAccess, named: true, kind: valSymbol, values: accessModes, sites: siteRecordHeader},

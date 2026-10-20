@@ -17,7 +17,7 @@ var (
 	boolRef   = ir.TypeRef{Kind: types.Bool}
 	stringRef = ir.TypeRef{Kind: types.String}
 	paramKind = &ir.Enum{Pkg: "resource.vocab", Name: "ParamKind", Members: []*ir.EnumMember{{Name: "monster", Wire: "monster"}, {Name: "none_", Wire: "none_", Index: 1}, {Name: "element", Wire: "element", Index: 2}}}
-	element   = &ir.Enum{Pkg: "resource.vocab", Name: "Element", Codes: &ir.TypeRef{Kind: types.Int, Bits: 8}, JSONCodes: true, CppDefines: "ELEM_", Members: []*ir.EnumMember{{Name: "FIRE", Wire: "FIRE", Code: 1, Retired: true, Deprecated: true}}}
+	element   = &ir.Enum{Pkg: "resource.vocab", Name: "Element", Codes: &ir.TypeRef{Kind: types.Int, Bits: 8}, JSONCodes: true, CppDefines: "ELEM_", HasCppDefines: true, Members: []*ir.EnumMember{{Name: "FIRE", Wire: "FIRE", Code: 1, Retired: true, Deprecated: true}}}
 	statuses  = &ir.RefTarget{Coll: types.CollLet, Pkg: "teamboard", Value: "statuses", Elem: &ir.Record{Pkg: "teamboard", Name: "Status"}}
 	status    = &ir.Record{Pkg: "teamboard", Name: "Status", Fields: []*ir.Field{
 		{Name: "label", WirePath: []string{"label"}, Type: stringRef},

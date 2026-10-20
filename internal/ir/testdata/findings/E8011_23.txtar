@@ -1,0 +1,18 @@
+CODEGEN.md §7.9, DECISIONS 389: a define name that is no identifier is E8011 `derived`, once per declaration at its first bad name: the prefix `*` is caught at the first member, not at every one.
+-- a/a.canon --
+package a
+
+/// Legacy kinds.
+enum Kind @cpp(defines: "*") {
+  /// First.
+  first
+  /// Weapon.
+  weapon
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  *first, the cpp name derived for a.Kind.first, is not a valid identifier
+
+1 error, 0 warnings in 1 package (…)

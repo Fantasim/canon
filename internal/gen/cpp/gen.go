@@ -1,20 +1,18 @@
 package cppgen
 
 import (
-	_ "embed"
 	"fmt"
 	"slices"
 	"strings"
 
+	cppruntime "github.com/fantasim/canonlang/internal/gen/cpp/runtime"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
 var (
-	//go:embed runtime/canon_runtime.h.txt
-	runtimeText string
-	//go:embed runtime/canon_runtime_json.h.txt
-	runtimeJSONText string
+	runtimeText     = cppruntime.Header
+	runtimeJSONText = cppruntime.JSON
 )
 
 // gen is one run of the generator over a package and one of its cpp emits.
@@ -31,7 +29,7 @@ type gen struct {
 	boxed        map[*ir.Field]bool       // optional fields held through a std::unique_ptr
 	imported     map[string]bool          // the headers of the imported packages the code uses
 	pairsFriends map[*ir.Record][]string  // the classes decoding a record from pairs: slots
-	foreignEnums []*ir.Enum               // imported enums the code names, in first-use order
+	macros       map[string]bool          // the defines a file can meet (macroSet)
 	holders      map[any][]*ir.Value      // per class, the emitted values holding it
 	slots        map[any][]resolved       // per class, the refs resolved at load
 	walking      class                    // the class whose Resolve is being written (its map keys are checked)
@@ -196,8 +194,7 @@ func (g *gen) header() []byte {
 	out.line(pragmaOnce)
 	out.blank()
 	includes(&out, g.h.String()+g.afterNS.String(), headerGroups(g))
-	g.namespaceBody(&out, g.emit.Namespace, g.h.String())
-	out.write(g.afterNS.String())
+	g.namespaceBody(&out, g.emit.Namespace, g.h.String(), g.afterNS.String())
 	return out.bytes()
 }
 
@@ -242,7 +239,7 @@ func (g *gen) source() []byte {
 		groups = [][]string{{includeRuntimeJSON}}
 	}
 	includes(&out, g.c.String(), groups)
-	g.namespaceBody(&out, g.emit.Namespace, g.c.String())
+	g.namespaceBody(&out, g.emit.Namespace, g.c.String(), "")
 	return out.bytes()
 }
 

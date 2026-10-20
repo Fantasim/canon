@@ -432,6 +432,7 @@ E8005 both: resource.vocab.items: resource.vocab.items is generated for both res
 E8005 reached: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; give one of their emits a distinct package option
 E8005 idType: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; hold one of them in a keyed list
 E8005 finder: resource.vocab.items: resource.vocab.items is generated for both @stable fields resource.vocab.items and resource.vocab.items; rename one of the fields (a lookup is named after the Canon field)
+E8005 define: #define resource.vocab.items is written for both resource.vocab.items and resource.vocab.items; change one prefix, or rename one declaration
 E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module: map its root in project.canon go_module
 E8008 -: Go directory @resource/Server/Item/propItem.json is written by two emits (resource.vocab.items, resource.vocab.items)
 E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: expected one of go, cpp

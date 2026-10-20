@@ -22,7 +22,7 @@ func CopyOf(proj *project.Project, p *Package, e *Emit) *Package {
 			refs = slices.Clone(p.Imports)
 		}
 		kept := slices.DeleteFunc(slices.Clone(ref.Emits), func(o *Emit) bool { return o.Target == e.Target && o != use })
-		refs[i] = &PackageRef{Name: ref.Name, Dir: ref.Dir, Emits: kept}
+		refs[i] = &PackageRef{Name: ref.Name, Dir: ref.Dir, Emits: kept, CppDefines: ref.CppDefines}
 	}
 	if refs == nil {
 		return p

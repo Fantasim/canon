@@ -2,12 +2,19 @@ package ir
 
 import (
 	"slices"
+	"sync"
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
+	cppruntime "github.com/fantasim/canonlang/internal/gen/cpp/runtime"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
+
+var defineKinds = []types.Kind{types.Int, types.Enum, types.Bool, types.String}
+
+// cppRuntimeNames are the runtime headers' identifiers, which a define cannot take (CODEGEN.md §7.9).
+var cppRuntimeNames = sync.OnceValue(func() map[string]bool { return nameSet(cppruntime.Identifiers()...) })
 
 // nameSet is the set of the given names.
 func nameSet(names ...string) map[string]bool {

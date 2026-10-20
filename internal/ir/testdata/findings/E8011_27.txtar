@@ -1,0 +1,16 @@
+CODEGEN.md §2.3, §7.9, DECISIONS 389: a define name that a runtime header uses cannot be wrapped (canon_runtime.h is identical in every directory), so it is E8011 `reserved`; the member `der` under the prefix `Deco` is `Decoder`, a class of canon_runtime.h.
+-- a/a.canon --
+package a
+
+/// Legacy kinds.
+enum Kind @cpp(defines: "Deco") {
+  /// A member.
+  der
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  Decoder, the C++ name derived for a.Kind.der, is a keyword or a reserved name
+
+1 error, 0 warnings in 1 package (…)
