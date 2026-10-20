@@ -111,3 +111,5 @@ package in sovcommon, M4's studio spike in resourcestudio.
 
 A handoff never carries real game data, a secret or an absolute machine path; it names files by
 their path from the receiving repository's root.
+
+`2026-10-20-canon-reply-v0110.md` is v0.1.10's reply (the C++ gap release, ADR-0022), with the farm numbers; `2026-10-20-v0110-status.md` is the run's status record.

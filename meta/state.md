@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-10-15. **v0.1.9** (robustness, 374-382) tagged locally 2026-10-15 at `458f0ab2`, `make dist` built, not pushed; v0.1.8 (performance, 371-373) out; v0.1.7 (TS2590, 370) to v0.1.0 out; `main` is
+Updated: 2026-10-20. **v0.1.10** (C++ gap release, DECISIONS 383-391, [ADR-0022](decisions/0022-v0110-cpp-gap-release.md), [log](decisions/log-2026-10-20.md), [reply](handoff/2026-10-20-canon-reply-v0110.md)) tagged, pushed and released 2026-10-20; v0.1.9 (robustness, 374-382) and earlier out; `main` is
 the only branch. DECISIONS 344-369: [log-2026-10-12](decisions/log-2026-10-12.md),
 [log-2026-10-13](decisions/log-2026-10-13.md), [ADR-0020](decisions/0020-api-016-overlay-ctx-call-lang-roots.md)
 (earlier: 304-343, ADR-0018/0019, logs 10-06, 10-08, 10-09). M5 accepted (CI run 36973712977).
