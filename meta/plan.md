@@ -208,6 +208,14 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 - [x] M4 call (c): a target for the studio's view-model refresh after an edit (240-470 ms today).
 - [x] Release gates: `make check`, stress, `fuzz-edit` 10 min, bench, Resource upgrade dry run, tag (v0.1.9 local, 2026-10-15; push and publish are Louis's).
 
+## v0.1.10 — C++ gap release (Louis, 2026-10-20; [ADR-0022](decisions/0022-v0110-cpp-gap-release.md))
+
+- [ ] S1 spec sync (DECISIONS 383-388).
+- [ ] HELPERS: enum helpers as tables in the `.gen.cpp`, `detail::<E>Ordinal` (383).
+- [ ] TYPES: C++ `types` maps (384), `[T?]`/`{K: V?}` in C++ (385), record defaults (386), ref unions (387).
+- [ ] MACRO: standard-library macro names are `E8011` `macro`, `W8006` additions (388).
+- [ ] CLEANUP, S2, release gates (ADR-0022 §9: Resource dry run, Sovereign C++ farm), tag (local).
+
 ## v0.2 (Louis, 2026-10-14)
 
 - [ ] **N5, testable package checks** (very important; first in v0.2).

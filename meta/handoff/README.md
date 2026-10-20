@@ -85,6 +85,11 @@ verified to apply and check clean on Resource `3cd10875`.
 N11 migration, Resource's recommended `tiers`, bench numbers, checksums); `2026-10-14-v019-status.md`
 is the run's status record.
 
+`2026-10-20-sovereign-cpp-vocab-and-types-gaps.md` is Sovereign's list of C++ emit gaps for "every package
+emits C++"; `2026-10-20-canon-reply-cpp-gaps.md` answers it: asks 1, 3, 5 (root decoders) and 7 need no
+Canon change (`@cpp(defines:)`, `@cpp(name:)`, `Decode<Fn>File`); the rest is v0.1.10
+([ADR-0022](../decisions/0022-v0110-cpp-gap-release.md)).
+
 `2026-10-12-v016-start-prompt.md` is the prompt that started the v0.1.6 session (F1-F19, stretch F20-F22,
 spec first, one wave of units per package, then the release). **Used**: the session ran; F20-F22 were deferred.
 
