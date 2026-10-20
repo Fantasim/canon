@@ -2,9 +2,7 @@ package ir
 
 import (
 	"regexp"
-	resyntax "regexp/syntax"
 	"strings"
-	"unicode/utf8"
 )
 
 // The emit targets of CODEGEN.md §2.1.
@@ -15,7 +13,7 @@ const (
 	TargetJSON
 	TargetView
 	TargetText
-	targetCount // the number of targets, sizing the tables indexed by Target
+	targetCount
 )
 
 // The modes of a code target; json and view emits have none.
@@ -80,7 +78,7 @@ const (
 	fnMax      = "max"
 	convFloat  = "Float"
 	convInt    = "Int"
-	minMinMax  = 2 // min and max take two or more arguments
+	minMinMax  = 2
 	clampArity = 3
 	selfPrefix = "self_" // a read named like a declared parameter (CONFORMANCE.md §2.3)
 )
@@ -400,23 +398,6 @@ const (
 	goMacroName
 )
 
-// cppMacroNames are the names common platform headers define as macros, and the Win32 A/W names (CODEGEN.md §3.5, W8006).
-var cppMacroNames = []string{
-	"min", "max", "near", "far", "IN", "OUT", "OPTIONAL", "ERROR", "DELETE", "TRUE", "FALSE", "VOID", "CONST",
-	"interface", "small", "TEXT", "ABSOLUTE", "RELATIVE", "TRANSPARENT", "OPAQUE", "CALLBACK", "WINAPI", "PASCAL",
-	"CDECL", "EXPORT", "DOMAIN", "OVERFLOW", "UNDERFLOW", "NO_ERROR", "IGNORE", "INFINITE", "BOOL", "BYTE", "WORD",
-	"DWORD", "INT", "UINT", "LONG", "major", "minor", "unix", "linux", "i386",
-	"GetObject", "GetMessage", "GetClassName", "GetCommandLine", "GetCurrentTime", "GetUserName", "GetFileAttributes",
-	"GetProp", "SetProp", "CreateWindow", "CreateFile", "DeleteFile", "CopyFile", "MoveFile", "LoadImage", "LoadString",
-	"DrawText", "SendMessage", "PostMessage", "RegisterClass",
-}
-
-// The code points of `.` (all but `\n`: the Perl flags lack DotNL) and of any, as rune pairs.
-var (
-	anyRuneNotNL = []rune{0, '\n' - 1, '\n' + 1, utf8.MaxRune}
-	anyRune      = []rune{0, utf8.MaxRune}
-)
-
 // The states of a pattern automaton (EVALUATION.md §11.3); gen/cpp writes each op as its number.
 const (
 	PatternAccept PatternOp = iota // the search matches
@@ -429,27 +410,6 @@ const (
 const (
 	PatternAtBegin PatternAt = 1 << iota // the start of the text: `^`
 	PatternAtEnd                         // its end: `$`
-)
-
-// instStates convert each instruction a reachable state can be, indexed by its op; nil is refused.
-var instStates = [...]func(*automatonBuilder, *resyntax.Inst) PatternState{
-	resyntax.InstMatch: (*automatonBuilder).accept, resyntax.InstFail: (*automatonBuilder).fail,
-	resyntax.InstAlt: (*automatonBuilder).split, resyntax.InstEmptyWidth: (*automatonBuilder).anchor,
-	resyntax.InstRune: (*automatonBuilder).runes, resyntax.InstRune1: (*automatonBuilder).rune1,
-	resyntax.InstRuneAny: (*automatonBuilder).any, resyntax.InstRuneAnyNotNL: (*automatonBuilder).anyNotNL,
-}
-
-// patternEmpty maps Go's assertions to the ones an automaton keeps; any other (multi-line anchors, word boundaries) has no state.
-var patternEmpty = []struct {
-	op uint32
-	at PatternAt
-}{{uint32(resyntax.EmptyBeginText), PatternAtBegin}, {uint32(resyntax.EmptyEndText), PatternAtEnd}}
-
-// The names of a TypeScript module that are not the package's (CODEGEN.md §3.4, §8.2): reserved words, predefined type names, and the helper units the generator may write, runtime block and decoders.
-var (
-	tsReserved   = strings.Fields("await break case catch class const continue debugger default delete do else enum export extends false finally for function if import in instanceof new null return super switch this throw true try typeof var void while with yield implements interface let package private protected public static undefined NaN Infinity arguments eval")
-	tsPredefined = strings.Fields("string number boolean symbol bigint object any unknown never void")
-	tsHelpers    = strings.Fields("CanonEvalError canonFail canonInt canonAdd canonSub canonMul canonDiv canonMod canonNeg canonAbs canonClamp canonF canonMinF canonMaxF canonClampF canonToInt canonFloor canonCeil canonRound canonDivDuration canonCheckRange canonCheckWidth canonF32 CanonMap CanonTable canonTable CanonRow canonFreeze canonList canonIndex canonEnvelope decOrder decTokenKey decToken decText decDecimal decSame decKeys decFail decEntry decGet decIsObject decObject decArray decAt decEmptyObject decEmptyArray decBool decBit decInt decBig decFloat decCompare decHalf decF32 decString decDuration decEnum decCode decBits decKeyed decList decTable decIntKey decBigKey decMap decPairs decParse")
 )
 
 // tsIdentPattern is a TypeScript identifier as generated code spells it: `$` starts a method's pure function.
@@ -498,3 +458,34 @@ const (
 	fmtNoText   = "%w: package %s: @text fn %s has no value of its result type"
 	fmtTextWire = "%w: package %s: @text fn %s: %w"
 )
+
+// cppStdMacroNames, sorted: the macros of [atomics.syn] [cerrno.syn] [cfloat.syn] [clocale.syn] [cmath.syn] [cstddef.syn] [cstdint.syn] [cstdio.syn] [cstdlib.syn] [cstring.syn] (CODEGEN.md §3.4).
+var cppStdMacroNames = strings.Fields(`
+ATOMIC_BOOL_LOCK_FREE ATOMIC_CHAR16_T_LOCK_FREE ATOMIC_CHAR32_T_LOCK_FREE ATOMIC_CHAR_LOCK_FREE
+ATOMIC_FLAG_INIT ATOMIC_INT_LOCK_FREE ATOMIC_LLONG_LOCK_FREE ATOMIC_LONG_LOCK_FREE
+ATOMIC_POINTER_LOCK_FREE ATOMIC_SHORT_LOCK_FREE ATOMIC_VAR_INIT ATOMIC_WCHAR_T_LOCK_FREE BUFSIZ
+DBL_DECIMAL_DIG DBL_DIG DBL_EPSILON DBL_HAS_SUBNORM DBL_MANT_DIG DBL_MAX DBL_MAX_10_EXP DBL_MAX_EXP
+DBL_MIN DBL_MIN_10_EXP DBL_MIN_EXP DBL_TRUE_MIN DECIMAL_DIG E2BIG EACCES EADDRINUSE EADDRNOTAVAIL
+EAFNOSUPPORT EAGAIN EALREADY EBADF EBADMSG EBUSY ECANCELED ECHILD ECONNABORTED ECONNREFUSED
+ECONNRESET EDEADLK EDESTADDRREQ EDOM EEXIST EFAULT EFBIG EHOSTUNREACH EIDRM EILSEQ EINPROGRESS
+EINTR EINVAL EIO EISCONN EISDIR ELOOP EMFILE EMLINK EMSGSIZE ENAMETOOLONG ENETDOWN ENETRESET
+ENETUNREACH ENFILE ENOBUFS ENODATA ENODEV ENOENT ENOEXEC ENOLCK ENOLINK ENOMEM ENOMSG ENOPROTOOPT
+ENOSPC ENOSR ENOSTR ENOSYS ENOTCONN ENOTDIR ENOTEMPTY ENOTRECOVERABLE ENOTSOCK ENOTSUP ENOTTY ENXIO
+EOF EOPNOTSUPP EOVERFLOW EOWNERDEAD EPERM EPIPE EPROTO EPROTONOSUPPORT EPROTOTYPE ERANGE EROFS
+ESPIPE ESRCH ETIME ETIMEDOUT ETXTBSY EWOULDBLOCK EXDEV EXIT_FAILURE EXIT_SUCCESS FILENAME_MAX
+FLT_DECIMAL_DIG FLT_DIG FLT_EPSILON FLT_EVAL_METHOD FLT_HAS_SUBNORM FLT_MANT_DIG FLT_MAX
+FLT_MAX_10_EXP FLT_MAX_EXP FLT_MIN FLT_MIN_10_EXP FLT_MIN_EXP FLT_RADIX FLT_ROUNDS FLT_TRUE_MIN
+FOPEN_MAX FP_FAST_FMA FP_FAST_FMAF FP_FAST_FMAL FP_ILOGB0 FP_ILOGBNAN FP_INFINITE FP_NAN FP_NORMAL
+FP_SUBNORMAL FP_ZERO HUGE_VAL HUGE_VALF HUGE_VALL INFINITY INT16_C INT16_MAX INT16_MIN INT32_C
+INT32_MAX INT32_MIN INT64_C INT64_MAX INT64_MIN INT8_C INT8_MAX INT8_MIN INTMAX_C INTMAX_MAX
+INTMAX_MIN INTPTR_MAX INTPTR_MIN INT_FAST16_MAX INT_FAST16_MIN INT_FAST32_MAX INT_FAST32_MIN
+INT_FAST64_MAX INT_FAST64_MIN INT_FAST8_MAX INT_FAST8_MIN INT_LEAST16_MAX INT_LEAST16_MIN
+INT_LEAST32_MAX INT_LEAST32_MIN INT_LEAST64_MAX INT_LEAST64_MIN INT_LEAST8_MAX INT_LEAST8_MIN
+LC_ALL LC_COLLATE LC_CTYPE LC_MONETARY LC_NUMERIC LC_TIME LDBL_DECIMAL_DIG LDBL_DIG LDBL_EPSILON
+LDBL_HAS_SUBNORM LDBL_MANT_DIG LDBL_MAX LDBL_MAX_10_EXP LDBL_MAX_EXP LDBL_MIN LDBL_MIN_10_EXP
+LDBL_MIN_EXP LDBL_TRUE_MIN L_tmpnam MATH_ERREXCEPT MATH_ERRNO MB_CUR_MAX NAN NULL PTRDIFF_MAX
+PTRDIFF_MIN RAND_MAX SEEK_CUR SEEK_END SEEK_SET SIG_ATOMIC_MAX SIG_ATOMIC_MIN SIZE_MAX TMP_MAX
+UINT16_C UINT16_MAX UINT32_C UINT32_MAX UINT64_C UINT64_MAX UINT8_C UINT8_MAX UINTMAX_C UINTMAX_MAX
+UINTPTR_MAX UINT_FAST16_MAX UINT_FAST32_MAX UINT_FAST64_MAX UINT_FAST8_MAX UINT_LEAST16_MAX
+UINT_LEAST32_MAX UINT_LEAST64_MAX UINT_LEAST8_MAX WCHAR_MAX WCHAR_MIN WINT_MAX WINT_MIN _IOFBF
+_IOLBF _IONBF errno math_errhandling offsetof stderr stdin stdout`)

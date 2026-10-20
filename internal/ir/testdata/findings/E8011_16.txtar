@@ -1,0 +1,16 @@
+CODEGEN.md §3.4, DECISIONS 388: a record whose name is a macro of <cstddef> is a C++ class of that name, so E8011 `macro` at the record.
+-- a/a.canon --
+package a
+
+/// A pointer value.
+record NULL {
+  /// Its size.
+  size: Int
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:4:8
+  NULL, the C++ name derived for a.NULL, is a macro of the C++ standard library
+
+1 error, 0 warnings in 1 package (…)

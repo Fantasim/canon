@@ -1,0 +1,21 @@
+CODEGEN.md §3.4, DECISIONS 388: a variant case named like a macro of <cstdio> is a kind-enum member verbatim, so E8011 `macro` at the case.
+-- a/a.canon --
+package a
+
+/// A stream.
+variant Stream {
+  /// The input.
+  stdin
+  /// The output.
+  stdout
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  stdin, the C++ name derived for a.Stream.stdin, is a macro of the C++ standard library
+
+error[E8011]  a/a.canon:8:3
+  stdout, the C++ name derived for a.Stream.stdout, is a macro of the C++ standard library
+
+2 errors, 0 warnings in 1 package (…)

@@ -88,12 +88,12 @@ func goValidOverride(name string) bool { return token.IsIdentifier(name) && toke
 // goValidIdent is the namer's identifier test for the go plan: Go has no `reserved` E8011 variant.
 func goValidIdent(name string) (ok, reserved bool) { return token.IsIdentifier(name), false }
 
-// cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves, and not reserved to the implementation, holding `__` or starting with `_` and an upper-case letter (CODEGEN.md §3.4, §3.5; log-2026-09-24 "ir name plans + support plan": E8011). reserved is set when name fails for a reserved reason (E8011 `reserved`) rather than for not being a plain identifier at all (E8011 `derived`).
+// cppValidIdent reports whether name can be declared in C++: a plain identifier that is not a keyword, an alternative token or a name generated code reserves, and not reserved to the implementation, holding `__` or starting with `_` and an upper-case letter (CODEGEN.md §3.4, §3.5; log-2026-09-24 "ir name plans + support plan": E8011), nor a macro of the C++ standard library (DECISIONS 388). reserved is set when name fails for a reserved reason or as a macro (E8011 `reserved`, `macro`) rather than for not being a plain identifier at all (E8011 `derived`).
 func cppValidIdent(name string) (ok, reserved bool) {
 	if !identPattern.MatchString(name) {
 		return false, false
 	}
-	if CppReserved(name) || strings.Contains(name, cppReservedRun) || cppReservedStart.MatchString(name) {
+	if CppReserved(name) || strings.Contains(name, cppReservedRun) || cppReservedStart.MatchString(name) || cppStdMacros[name] {
 		return false, true
 	}
 	return true, false

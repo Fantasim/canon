@@ -1,0 +1,13 @@
+CODEGEN.md §3.4, DECISIONS 388: the parameter of a package lookup fn is a verbatim C++ name too, and `errno` of <cerrno> there is E8011 `macro` at the parameter.
+-- a/a.canon --
+package a
+
+/// A weight for a switch.
+export fn pick(errno: Bool) -> Int { return if errno { 2 } else { 1 } }
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8011]  a/a.canon:4:16
+  errno, the C++ name derived for a.pick.errno, is a macro of the C++ standard library
+
+1 error, 0 warnings in 1 package (…)

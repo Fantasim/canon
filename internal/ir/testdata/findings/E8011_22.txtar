@@ -1,0 +1,13 @@
+CODEGEN.md §3.4, §7.2, DECISIONS 388: a translated fn's parameter `EOF` is a conformance vector field, so it is reported once there and not again as a parameter.
+-- a/a.canon --
+package a
+
+/// Doubles x.
+export fn twice(EOF: Int) -> Int { return EOF * 2 }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:4:11
+  EOF, the C++ name derived for a.twice.EOF, is a macro of the C++ standard library
+
+1 error, 0 warnings in 1 package (…)

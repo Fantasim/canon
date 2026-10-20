@@ -1,0 +1,13 @@
+CODEGEN.md §3.4, DECISIONS 388: an enum member named like a macro of <cstdio> is an enumerator verbatim, so E8011 `macro` at the member.
+-- a/a.canon --
+package a
+
+/// A read result.
+enum Read { EOF, ok }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8011]  a/a.canon:4:13
+  EOF, the C++ name derived for a.Read.EOF, is a macro of the C++ standard library
+
+1 error, 0 warnings in 1 package (…)

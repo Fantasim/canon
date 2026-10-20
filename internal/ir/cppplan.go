@@ -54,18 +54,6 @@ func PlanCppNames(p *Package, e *Emit) *CppNamePlan {
 // Problems are the plan's problems, in generation order.
 func (pl *CppNamePlan) Problems() []GoNameProblem { return pl.problems }
 
-// cppMacros is cppMacroNames as a set, built once.
-var cppMacros = cppMacroSet()
-
-// cppMacroSet is cppMacroNames as a set.
-func cppMacroSet() map[string]bool {
-	set := make(map[string]bool, len(cppMacroNames))
-	for _, n := range cppMacroNames {
-		set[n] = true
-	}
-	return set
-}
-
 // cppUpperCamel is C++'s UpperCamel(x) (CODEGEN.md §3.2): Cap of every word.
 func cppUpperCamel(name string) string {
 	var b strings.Builder

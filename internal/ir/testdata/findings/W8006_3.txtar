@@ -1,0 +1,28 @@
+CODEGEN.md §3.5, DECISIONS 388: <climits>, POSIX and glibc names that headers may define are W8006: INT_MAX, NAME_MAX and M_PI.
+-- a/a.canon --
+package a
+
+/// A limit.
+const INT_MAX = 1
+
+/// A tone.
+enum Tone { NAME_MAX, soft }
+
+/// A circle.
+record M_PI {
+  /// Its radius.
+  radius: Int
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+warning[W8006]  a/a.canon:4:7
+  C++ name INT_MAX (from INT_MAX) is a macro in common platform headers
+
+warning[W8006]  a/a.canon:7:13
+  C++ name NAME_MAX (from a.Tone.NAME_MAX) is a macro in common platform headers
+
+warning[W8006]  a/a.canon:10:8
+  C++ name M_PI (from a.M_PI) is a macro in common platform headers
+
+0 errors, 3 warnings in 1 package (…)

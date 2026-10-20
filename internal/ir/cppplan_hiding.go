@@ -136,6 +136,7 @@ func (pl *CppNamePlan) checkSignatures() {
 
 // checkSignature is E8005 at a parameter of fn named like a type its signature names (CODEGEN.md §3.5).
 func (pl *CppNamePlan) checkSignature(origin string, fn *ExportFn) {
+	pl.checkParamIdents(origin, fn)
 	named := pl.signatureTypes(fn)
 	params := &nameScope{what: origin + goParamsSuffix}
 	for _, r := range fn.Reads {
@@ -146,6 +147,18 @@ func (pl *CppNamePlan) checkSignature(origin string, fn *ExportFn) {
 	for _, p := range fn.Params {
 		if first, ok := named[cppVerbatim(p.Name)]; ok {
 			pl.collide(params, cppVerbatim(p.Name), first, origin+qnameSep+p.Name, p)
+		}
+	}
+}
+
+// checkParamIdents is E8011 at a parameter of a lookup or precomputed fn whose verbatim C++ name is no usable identifier: a keyword, a reserved name or a standard macro (CODEGEN.md §3.4, DECISIONS 388); a translated fn's are the conformance fields'.
+func (pl *CppNamePlan) checkParamIdents(origin string, fn *ExportFn) {
+	if fn.Kind == FnTranslated {
+		return
+	}
+	for _, p := range fn.Params {
+		if ok, reserved := cppValidIdent(cppVerbatim(p.Name)); !ok {
+			pl.problems = append(pl.problems, GoNameProblem{Kind: GoNotIdentifier, Scope: origin + goParamsSuffix, Name: cppVerbatim(p.Name), Origin: origin + qnameSep + p.Name, Item: p, Reserved: reserved})
 		}
 	}
 }

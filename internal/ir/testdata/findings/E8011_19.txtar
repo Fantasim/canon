@@ -1,0 +1,24 @@
+CODEGEN.md §3.4, DECISIONS 388: the parameter of a lookup method is a verbatim C++ name the plan never declared, and a macro of <cstdio> there is E8011 `macro` at the parameter.
+-- a/a.canon --
+package a
+
+/// A flag.
+record Flag {
+  /// Its weight.
+  weight: Int
+
+  /// Its weight for a switch.
+  export fn both(self, EOF: Bool) -> Int { return if EOF { weight * 2 } else { weight } }
+}
+
+/// The flags.
+let flags: table Flag = {
+  on { weight: 1 }
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8011]  a/a.canon:9:24
+  EOF, the C++ name derived for a.Flag.both.EOF, is a macro of the C++ standard library
+
+1 error, 0 warnings in 1 package (…)

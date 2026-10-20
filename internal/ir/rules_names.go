@@ -175,6 +175,8 @@ func nameProblemFinding(span source.Span, pr GoNameProblem, target string) *diag
 		return diag.E8011.AtOverride(span, name, target)
 	case pr.Kind == GoUnexported:
 		return diag.E8011.AtUnexported(span, name)
+	case pr.Reserved && cppStdMacros[name]: // before reserved: the more precise variant
+		return diag.E8011.AtMacro(span, name, pr.Origin)
 	case pr.Reserved:
 		return diag.E8011.AtReserved(span, name, pr.Origin)
 	default:
