@@ -149,7 +149,6 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `LowerCamel` | lowerCamel | `W1003` |
 | `LowerSnake` | lower_snake | `W1003` |
 | `Map` | map | `E3320` |
-| `MapField` | a map | `E8019` |
 | `Member` | member | `E1133`, `E1613`, `E3003`, `E3603`, `E6002` |
 | `MemberValue` | member value | `E3015` |
 | `Menu` | menu | `E1610` |
@@ -162,8 +161,6 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Object` | an object | `E7110` |
 | `OpenEnum` | an enum its package's emit of this target opens | `E8019` |
 | `OpenEnumFn` | a translated function that takes or reads an enum its package's emit of this target opens | `E8019` |
-| `OptionalElementList` | a list of optional elements | `E8019` |
-| `OptionalMapValue` | a map with optional values | `E8019` |
 | `OutPaths` | a constant string or a list of constant strings | `E8009` |
 | `Package` | package | `E3027` |
 | `PackageSegment` | package segment | `W1003`, `E1125` |
@@ -181,10 +178,8 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Record` | record | `W1002`, `W1003`, `E1125`, `E1133`, `E3027`, `E3320` |
 | `RecordConstant` | a constant of a record or variant type | `E8019` |
 | `RecordCycleThroughMethod` | a by-value cycle of records through a stored method result | `E8019` |
-| `RecordDefault` | a field default holding a record or variant | `E8019` |
 | `RecordFieldCycle` | a cycle of records through their fields | `E8019` |
 | `RecursiveVariantCase` | a variant that recurses through a case | `E8019` |
-| `RefUnion` | a literal union over a ref | `E8019` |
 | `RefinementBound` | refinement bound | `E3015` |
 | `ResolvedLookupResult` | a lookup method whose result holds a ref resolved at load | `E8019` |
 | `SelfReadNotAPath` | a read of self that is not a path of fields | `E8019` |
@@ -222,18 +217,13 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `WayInlineFoldedKey` | rename one of the two keys | `E8019` |
 | `WayInputField` | emit the package in baked or data mode | `E8019` |
 | `WayLegacyStruct` | not before M6: use the generated class meanwhile | `E8019` |
-| `WayMapField` | hold the entries in a keyed list | `E8019` |
 | `WayNeverDependent` | give it a branch that is not Never, or remove it | `E8019` |
 | `WayOpenEnum` | emit this package in types mode too, or take the enum out of open | `E8019` |
 | `WayOpenEnumFn` | decide on the member's Known check in your own code, or take the enum out of open | `E8019` |
-| `WayOptionalElementList` | wrap each element in a record with an optional field | `E8019` |
-| `WayOptionalMapValue` | leave absent entries out of the map | `E8019` |
 | `WayRecordConstant` | make it a let | `E8019` |
 | `WayRecordCycleThroughMethod` | return a ref to the record instead | `E8019` |
-| `WayRecordDefault` | drop the default and write the value in each entry | `E8019` |
 | `WayRecordFieldCycle` | make one field of the cycle optional or a ref | `E8019` |
 | `WayRecursiveVariantCase` | hold the recursion through an optional field or a ref | `E8019` |
-| `WayRefUnion` | use an optional ref instead | `E8019` |
 | `WayResolvedLookupResult` | not before v0.2: emit the package in baked mode meanwhile | `E8019` |
 | `WaySelfReadNotAPath` | read self through paths of fields (self.a.b) | `E8019` |
 | `WayTableField` | hold it in a keyed list | `E8019` |

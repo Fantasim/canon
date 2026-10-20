@@ -112,7 +112,6 @@ const (
 	KindLowerCamel
 	KindLowerSnake
 	KindMap
-	KindMapField
 	KindMember
 	KindMemberValue
 	KindMenu
@@ -125,8 +124,6 @@ const (
 	KindObject
 	KindOpenEnum
 	KindOpenEnumFn
-	KindOptionalElementList
-	KindOptionalMapValue
 	KindOutPaths
 	KindPackage
 	KindPackageSegment
@@ -144,10 +141,8 @@ const (
 	KindRecord
 	KindRecordConstant
 	KindRecordCycleThroughMethod
-	KindRecordDefault
 	KindRecordFieldCycle
 	KindRecursiveVariantCase
-	KindRefUnion
 	KindRefinementBound
 	KindResolvedLookupResult
 	KindSelfReadNotAPath
@@ -185,18 +180,13 @@ const (
 	KindWayInlineFoldedKey
 	KindWayInputField
 	KindWayLegacyStruct
-	KindWayMapField
 	KindWayNeverDependent
 	KindWayOpenEnum
 	KindWayOpenEnumFn
-	KindWayOptionalElementList
-	KindWayOptionalMapValue
 	KindWayRecordConstant
 	KindWayRecordCycleThroughMethod
-	KindWayRecordDefault
 	KindWayRecordFieldCycle
 	KindWayRecursiveVariantCase
-	KindWayRefUnion
 	KindWayResolvedLookupResult
 	KindWaySelfReadNotAPath
 	KindWayTableField
@@ -272,7 +262,6 @@ var kindNames = [...]string{
 	"LowerCamel",
 	"LowerSnake",
 	"Map",
-	"MapField",
 	"Member",
 	"MemberValue",
 	"Menu",
@@ -285,8 +274,6 @@ var kindNames = [...]string{
 	"Object",
 	"OpenEnum",
 	"OpenEnumFn",
-	"OptionalElementList",
-	"OptionalMapValue",
 	"OutPaths",
 	"Package",
 	"PackageSegment",
@@ -304,10 +291,8 @@ var kindNames = [...]string{
 	"Record",
 	"RecordConstant",
 	"RecordCycleThroughMethod",
-	"RecordDefault",
 	"RecordFieldCycle",
 	"RecursiveVariantCase",
-	"RefUnion",
 	"RefinementBound",
 	"ResolvedLookupResult",
 	"SelfReadNotAPath",
@@ -345,18 +330,13 @@ var kindNames = [...]string{
 	"WayInlineFoldedKey",
 	"WayInputField",
 	"WayLegacyStruct",
-	"WayMapField",
 	"WayNeverDependent",
 	"WayOpenEnum",
 	"WayOpenEnumFn",
-	"WayOptionalElementList",
-	"WayOptionalMapValue",
 	"WayRecordConstant",
 	"WayRecordCycleThroughMethod",
-	"WayRecordDefault",
 	"WayRecordFieldCycle",
 	"WayRecursiveVariantCase",
-	"WayRefUnion",
 	"WayResolvedLookupResult",
 	"WaySelfReadNotAPath",
 	"WayTableField",
@@ -412,7 +392,6 @@ var kindWords = [...]string{
 	"lowerCamel",
 	"lower_snake",
 	"map",
-	"a map",
 	"member",
 	"member value",
 	"menu",
@@ -425,8 +404,6 @@ var kindWords = [...]string{
 	"an object",
 	"an enum its package's emit of this target opens",
 	"a translated function that takes or reads an enum its package's emit of this target opens",
-	"a list of optional elements",
-	"a map with optional values",
 	"a constant string or a list of constant strings",
 	"package",
 	"package segment",
@@ -444,10 +421,8 @@ var kindWords = [...]string{
 	"record",
 	"a constant of a record or variant type",
 	"a by-value cycle of records through a stored method result",
-	"a field default holding a record or variant",
 	"a cycle of records through their fields",
 	"a variant that recurses through a case",
-	"a literal union over a ref",
 	"refinement bound",
 	"a lookup method whose result holds a ref resolved at load",
 	"a read of self that is not a path of fields",
@@ -485,18 +460,13 @@ var kindWords = [...]string{
 	"rename one of the two keys",
 	"emit the package in baked or data mode",
 	"not before M6: use the generated class meanwhile",
-	"hold the entries in a keyed list",
 	"give it a branch that is not Never, or remove it",
 	"emit this package in types mode too, or take the enum out of open",
 	"decide on the member's Known check in your own code, or take the enum out of open",
-	"wrap each element in a record with an optional field",
-	"leave absent entries out of the map",
 	"make it a let",
 	"return a ref to the record instead",
-	"drop the default and write the value in each entry",
 	"make one field of the cycle optional or a ref",
 	"hold the recursion through an optional field or a ref",
-	"use an optional ref instead",
 	"not before v0.2: emit the package in baked mode meanwhile",
 	"read self through paths of fields (self.a.b)",
 	"hold it in a keyed list",
