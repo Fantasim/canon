@@ -335,7 +335,7 @@ func (t *tr) template(x *ir.Template, b *block) string {
 	k := 0
 	for _, p := range x.Parts {
 		if p.Text != "" {
-			terms = append(terms, quote(p.Text))
+			terms = append(terms, stringLit(p.Text))
 		}
 		if p.X != nil {
 			terms = append(terms, stringOf(p.X.Type(), unparen(vals[k])))

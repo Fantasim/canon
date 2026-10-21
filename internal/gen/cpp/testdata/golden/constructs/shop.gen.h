@@ -215,6 +215,7 @@ class ShopStore;
 
 inline int64_t Mix(int64_t a, int64_t b, int64_t c, int64_t d);
 inline std::string Label(Tone t, int64_t n);
+inline std::string NulLabel(int64_t n);
 inline double Ratio(double a, double b);
 inline int64_t Grow(int64_t x);
 inline int64_t Half(int64_t d);
@@ -742,6 +743,10 @@ inline int64_t Mix(int64_t a, int64_t b, int64_t c, int64_t d) {
 
 inline std::string Label(Tone t, int64_t n) {
     return std::string(ToName(t)) + ":" + std::to_string(n);
+}
+
+inline std::string NulLabel(int64_t n) {
+    return std::string("a\000b:", 4) + std::to_string(n);
 }
 
 inline double Ratio(double a, double b) {

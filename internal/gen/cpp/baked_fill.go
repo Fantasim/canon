@@ -86,8 +86,16 @@ func (g *gen) literalType(t ir.TypeRef) bool {
 	}
 }
 
-// literalOf is v as one expression; a list carries its type, so that it assigns a std::optional too.
+// literalOf is v as one expression; a list carries its type, so that it assigns a std::optional too;
+// a long list or map is read from an array (DECISIONS 392).
 func (g *gen) literalOf(t ir.TypeRef, v value.Value) string {
+	held := t
+	if t.Kind == types.Optional && t.Elem != nil {
+		held = *t.Elem
+	}
+	if text, ok := g.hoistedLiteral(held, v); ok {
+		return text
+	}
 	if t.Kind == types.List {
 		return g.storage(t) + g.literal(t, v)
 	}
@@ -112,18 +120,25 @@ func (g *gen) fillOwnRecord(a at, lhs string, t ir.TypeRef, v value.Value) {
 
 // fillRecord writes a record's or case's members: a table row's id and retired flag, each field, then each stored fn's results for this receiver (CODEGEN.md §5.3, §5.4, §5.10).
 func (g *gen) fillRecord(a at, lhs string, c class, r *value.Record) {
+	g.fillRecordExcept(a, lhs, c, r, nil)
+}
+
+// fillRecordExcept is fillRecord but for the members done, which a container's column loop wrote (DECISIONS 392).
+func (g *gen) fillRecordExcept(a at, lhs string, c class, r *value.Record, done map[any]bool) {
 	fields, fns := c.shape()
-	if c.rec != nil && g.entries[c.rec] && g.rowOfTable(c.rec, r) {
+	if c.rec != nil && !done[c.rec] && g.entries[c.rec] && g.rowOfTable(c.rec, r) {
 		a.line(assignFormat, lhs+memberAccess+idMember, g.pl.IDName(c.rec)+scopeSep+g.pl.IDMember(r.Ident.Key.S))
 		if r.Ident.Retired {
 			a.line(assignFormat, lhs+memberAccess+retiredMember, strconv.FormatBool(true))
 		}
 	}
 	for _, f := range fields {
-		g.fillField(a, lhs, fields, f, r)
+		if !done[f] {
+			g.fillField(a, lhs, fields, f, r)
+		}
 	}
 	for _, fn := range fns {
-		if fn.Kind != ir.FnTranslated {
+		if fn.Kind != ir.FnTranslated && !done[fn] {
 			g.fillStored(a, lhs, fn, r)
 		}
 	}
@@ -180,7 +195,7 @@ func (g *gen) fillStored(a at, lhs string, fn *ir.ExportFn, r *value.Record) {
 func (g *gen) fillCells(a at, p place, fn *ir.ExportFn, table *ir.LookupTable) {
 	t, optional := resultType(fn.Result)
 	cells, ok := g.tableCells(fn, table)
-	if !ok {
+	if !ok || g.hoistCells(a, p.key, t, optional, cells) {
 		return
 	}
 	for i, cell := range cells {
@@ -214,6 +229,11 @@ func (g *gen) fillResolved(a at, lhs string, t ir.TypeRef, list bool, v value.Va
 		g.malformed(fmt.Sprintf(valueFormat, v), g.at)
 		return
 	}
+	storage, _ := g.refStorageOf(t, true, false)
+	if text, ok := g.hoistedEntries(storage, *t.Elem, l); ok {
+		a.line(assignFormat, lhs, text)
+		return
+	}
 	items := make([]string, len(l.Elems))
 	for i, e := range l.Elems {
 		r, isRef := e.(*value.Ref)
@@ -223,7 +243,6 @@ func (g *gen) fillResolved(a at, lhs string, t ir.TypeRef, list bool, v value.Va
 		}
 		items[i] = g.entryAddr(*t.Elem, r.Key)
 	}
-	storage, _ := g.refStorageOf(t, true, false)
 	a.line(assignFormat, lhs, storage+openBrace+strings.Join(items, listSep)+closeBrace)
 }
 
@@ -326,9 +345,10 @@ func (g *gen) fillTable(a at, lhs string, t ir.TypeRef, v value.Value) {
 			g.malformed(bakedEntryKey, g.at)
 			return
 		}
-		keys[i] = quote(r.Ident.Key.S)
+		keys[i] = stringLit(r.Ident.Key.S)
 	}
-	a.line(keyedRowsFormat, lhs, cppString, elem, elem, len(keys), strings.Join(keys, listSep))
+	key := func(i int) string { return g.strLit(tab.Entries[i].Ident.Key.S) }
+	g.keyedFrom(a, lhs, keyedSpec{ir.TypeRef{Kind: types.String}, cppString, elem}, len(keys), key)
 	for i, r := range tab.Entries {
 		local := rowVar(a.depth + 1)
 		a.line(openBrace)
@@ -358,17 +378,36 @@ func (g *gen) keyedRows(a at, lhs string, t ir.TypeRef, l *value.List) {
 	if kf == nil {
 		return
 	}
-	keys := make([]string, len(l.Elems))
+	recs := make([]*value.Record, len(l.Elems))
 	for i, e := range l.Elems {
 		r, ok := e.(*value.Record)
 		if !ok {
 			g.malformed(fmt.Sprintf(valueFormat, e), g.at)
 			return
 		}
-		keys[i] = g.element(kf.Type, g.fieldOf(r, kf.Name))
+		recs[i] = r
 	}
-	elem := g.storage(*t.Elem)
-	a.line(keyedRowsFormat, lhs, g.storage(kf.Type), elem, elem, len(l.Elems), strings.Join(keys, listSep))
+	key := func(i int) string { return g.element(kf.Type, g.fieldOf(recs[i], kf.Name)) }
+	g.keyedFrom(a, lhs, keyedSpec{kf.Type, g.storage(kf.Type), g.storage(*t.Elem)}, len(recs), key)
+}
+
+// keyedSpec is a keyed list's key type, its storage and the storage of its rows.
+type keyedSpec struct {
+	keyType   ir.TypeRef
+	key, elem string
+}
+
+// keyedFrom gives the keyed list lhs default rows and their keys, a long run of keys read from an array (DECISIONS 392).
+func (g *gen) keyedFrom(a at, lhs string, s keyedSpec, n int, key func(int) string) {
+	if from := g.hoistedKeys(s.keyType, s.key, n, key); from != "" {
+		a.line(keyedFromFormat, lhs, s.key, s.elem, s.elem, n, from)
+		return
+	}
+	keys := make([]string, n)
+	for i := range keys {
+		keys[i] = key(i)
+	}
+	a.line(keyedRowsFormat, lhs, s.key, s.elem, s.elem, n, strings.Join(keys, listSep))
 }
 
 // fnCellMembers is a stored package fn's member of Data: its result, or a lookup's cells, a resolved ref's entries instead of its keys (CODEGEN.md §5.10: a package fn has no key getter).
@@ -411,7 +450,7 @@ func (g *gen) fillFnCells(w *writer, fn *ir.ExportFn) {
 		return
 	}
 	cells, ok := g.tableCells(fn, fn.Table)
-	if !ok {
+	if !ok || g.hoistCells(at{w, 1}, m, t, optional, cells) {
 		return
 	}
 	for i, v := range cells {

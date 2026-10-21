@@ -70,9 +70,23 @@ func inOrder(n int) []int {
 	return order
 }
 
-func quotedWire(m enumMember) string  { return quote(m.wire) }
-func quotedCanon(m enumMember) string { return quote(m.canon) }
-func codeText(m enumMember) string    { return intLit(m.code) }
+func rawWire(m enumMember) string  { return m.wire }
+func rawCanon(m enumMember) string { return m.canon }
+func codeText(m enumMember) string { return intLit(m.code) }
+
+// views are a string table's items: past sizedTableMin entries each a sized std::string_view, which
+// no compiler measures in constant evaluation (clang's step limit), else literals (DECISIONS 392).
+func views(raw []string) []string {
+	out := make([]string, len(raw))
+	for i, s := range raw {
+		if len(raw) >= sizedTableMin {
+			out[i] = fmt.Sprintf(viewFormat, quote(s), len(s))
+			continue
+		}
+		out[i] = viewLit(s)
+	}
+	return out
+}
 
 // enumDefinitions define, after detail, every enum's helpers in enum order: tables, never a chain or a switch over the members (CODEGEN.md §2.7, §5.2, §7.1; DECISIONS 383).
 func (g *gen) enumDefinitions() {
@@ -95,12 +109,12 @@ func (g *gen) closedDefinitions(s enumSpec) {
 		pos = fmt.Sprintf(helperFormat, detailPrefix+h.Ordinal, enumArg)
 	}
 	all := inOrder(len(s.members))
-	g.c.printf(byOrdinalText, sigs.toName, len(s.members), namesTable, indentBlock(braced(column(s.members, all, quotedCanon))), pos)
-	g.c.printf(byOrdinalText, sigs.toWire, len(s.members), wiresTable, indentBlock(braced(column(s.members, all, quotedWire))), pos)
+	g.c.printf(byOrdinalText, sigs.toName, len(s.members), namesTable, indentBlock(braced(views(column(s.members, all, rawCanon)))), pos)
+	g.c.printf(byOrdinalText, sigs.toWire, len(s.members), wiresTable, indentBlock(braced(views(column(s.members, all, rawWire)))), pos)
 	order := byWire(s.members)
 	values := column(s.members, order, func(m enumMember) string { return s.name + scopeSep + m.name })
 	g.c.write(search{
-		sig: sigs.fromWire, prelude: table(cppStringView, keysTable, column(s.members, order, quotedWire)) + table(s.name, valuesTable, values),
+		sig: sigs.fromWire, prelude: table(cppStringView, keysTable, views(column(s.members, order, rawWire))) + table(s.name, valuesTable, values),
 		keys: keysTable, key: wireParam, hit: fmt.Sprintf(indexFormat, valuesTable, loVar), miss: cppNullopt,
 	}.text())
 	if s.codes != nil {
@@ -125,7 +139,7 @@ func (g *gen) openDefinitions(s enumSpec) {
 	g.c.write(search{sig: sigs.toCode, prelude: key, keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, detailPrefix+h.WireCodes, loVar), miss: cppNullopt}.text())
 	byCodes := byCode(s.members)
 	g.c.write(search{
-		sig: sigs.fromCode, prelude: table(intType(*s.codes), keysTable, column(s.members, byCodes, codeText)) + table(cppStringView, wiresTable, column(s.members, byCodes, quotedWire)),
+		sig: sigs.fromCode, prelude: table(intType(*s.codes), keysTable, column(s.members, byCodes, codeText)) + table(cppStringView, wiresTable, views(column(s.members, byCodes, rawWire))),
 		keys: keysTable, key: codeField,
 		hit: fmt.Sprintf(helperFormat, s.name, fmt.Sprintf(stringOfFormat, fmt.Sprintf(indexFormat, wiresTable, loVar))), miss: cppNullopt,
 	}.text())
@@ -136,8 +150,8 @@ func (g *gen) openWireTables(s enumSpec, h ir.CppEnumHelpers) {
 	order := byWire(s.members)
 	g.c.line(detailOpen)
 	g.c.line(anonOpen)
-	g.c.printf(localTableFormat, cppStringView, len(order), h.Wires, braced(column(s.members, order, quotedWire)))
-	g.c.printf(localTableFormat, cppStringView, len(order), h.WireNames, braced(column(s.members, order, quotedCanon)))
+	g.c.printf(localTableFormat, cppStringView, len(order), h.Wires, braced(views(column(s.members, order, rawWire))))
+	g.c.printf(localTableFormat, cppStringView, len(order), h.WireNames, braced(views(column(s.members, order, rawCanon))))
 	if s.codes != nil {
 		g.c.printf(localTableFormat, intType(*s.codes), len(order), h.WireCodes, braced(column(s.members, order, codeText)))
 	}

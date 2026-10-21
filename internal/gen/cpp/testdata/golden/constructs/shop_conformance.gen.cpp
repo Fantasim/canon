@@ -141,6 +141,16 @@ constexpr LabelVector kLabel[] = {
     {Tone::legacy, 0, "legacy:0", ""},
 };
 
+struct NulLabelVector {
+    int64_t n;
+    std::string_view want;
+    std::string_view code;  // expected error code; empty when `want` is expected
+};
+
+constexpr NulLabelVector kNulLabel[] = {
+    {3, std::string_view("a\000b:3", 5), ""},
+};
+
 struct RatioVector {
     double a;
     double b;
@@ -491,6 +501,18 @@ int RunShopConformance() {
                          static_cast<int>(ToName(v.t).size()), ToName(v.t).data(), static_cast<long long>(v.n),
                          static_cast<int>(got.size()), got.data(), static_cast<int>(g_code.size()), g_code.data(),
                          static_cast<int>(v.want.size()), v.want.data(),
+                         static_cast<int>(v.code.size()), v.code.data());
+            ++failures;
+        }
+    }
+    for (const NulLabelVector& v : kNulLabel) {
+        g_code = std::string_view();
+        const std::string got = NulLabel(v.n);
+        if (g_code != v.code || (v.code.empty() && got != v.want)) {
+            std::fprintf(stderr,
+                         "demo.shop: nulLabel(n=%lld) = %.*s [%.*s], canon says %.*s [%.*s]\n",
+                         static_cast<long long>(v.n), static_cast<int>(got.size()), got.data(),
+                         static_cast<int>(g_code.size()), g_code.data(), static_cast<int>(v.want.size()), v.want.data(),
                          static_cast<int>(v.code.size()), v.code.data());
             ++failures;
         }

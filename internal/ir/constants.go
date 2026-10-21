@@ -452,11 +452,11 @@ const (
 
 // The names a baked cpp emit adds (CODEGEN.md §5.3, §5.10, §7.3; decision 293).
 const (
-	cppIDSuffix    = "Id"
-	cppRefData     = "_ref"
-	cppCellsSuffix = "Cells"
-	cppDataStruct  = "Data"
-	cppBuild       = "Build"
+	cppIDSuffix                                    = "Id"
+	cppRefData                                     = "_ref"
+	cppCellsSuffix                                 = "Cells"
+	cppDataStruct, cppBuild                        = "Data", "Build"
+	CppBulkMinElems, cppBulkPrefix, cppElemsSuffix = 8, "kBulk", "Elems" // gen/cpp's fewest array elements, kBulk<N>, k<NAME>Elems (DECISIONS 392)
 	// a dependent type's define value storage (DECISIONS 298): Go's carries an interior `_`, C++'s a final one, as every generated member.
 	goDefineStore  = "define_value"
 	cppDefineValue = "defineValue_"

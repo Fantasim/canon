@@ -2,6 +2,7 @@ package cppgen
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -41,6 +42,9 @@ type gen struct {
 	pkgFns       []*ir.ExportFn          // package-level translated fns
 	methods      []*method               // translated methods, declaration order
 	bk           *bakedIndex             // a baked emit's entries and precomputed results (CODEGEN.md §5.9)
+	pool         *bulk                   // while Build is written, the arrays its long literals are read from (DECISIONS 392)
+	included     map[string]bool         // the imported headers the header includes, once written
+	strs         strForm                 // how strLit writes a string: for a std::string, a std::string_view, an array
 	dst          string                  // what a decoder fills a member through: out., or "" in a reader's locals (CODEGEN.md §2.8)
 	view         string                  // the package whose class layout storage describes; "" for this one (§5.14)
 	qualify      bool                    // this package's names written from the global namespace, as detail::<P>Make does (§5.14)
@@ -159,6 +163,7 @@ func (g *gen) types() bool { return g.emit.Mode == ir.ModeTypes }
 // files writes every output of the emit (CODEGEN.md §2.3).
 func (g *gen) files() []ir.File {
 	header := g.header()
+	g.included = maps.Clone(g.imported)
 	source := g.source()
 	out := []ir.File{{Path: runtimeFile, Content: []byte(runtimeText)}}
 	if !g.baked() {

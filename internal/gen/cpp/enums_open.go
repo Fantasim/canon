@@ -33,7 +33,7 @@ func (g *gen) openEnum(s enumSpec) {
 	}
 	g.h.printf(openClassTailFormat, s.name, wire, ir.CppToWire)
 	for _, m := range s.members {
-		g.h.linef(0, openDefineFormat, s.name, m.name, quote(m.wire))
+		g.h.linef(0, openDefineFormat, s.name, m.name, stringLit(m.wire))
 	}
 	if len(s.members) > 0 {
 		g.h.blank()

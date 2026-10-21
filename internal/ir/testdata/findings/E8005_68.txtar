@@ -1,0 +1,19 @@
+CODEGEN.md §3.5, §7.3, DECISIONS 392: a baked emit reads long literals from kBulk<N> arrays in detail's unnamed namespace; a record renamed kBulk0 is hidden by the array inside detail.
+-- a/a.canon --
+package a
+
+/// Renamed like a bulk array.
+record Point @cpp(name: "kBulk0") {
+  /// Its x.
+  x: Int
+}
+
+/// The origin.
+let origin: Point = { x: 0 }
+
+emit cpp { out: "@features/a", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  cpp: kBulk0 is generated for both a.Point and a; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

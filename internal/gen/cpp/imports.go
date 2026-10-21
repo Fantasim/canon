@@ -55,9 +55,24 @@ func (g *gen) qualifier(pkg string) string {
 		g.fail(fmt.Errorf("%w: package %s has no cpp emit", ErrMalformed, pkg))
 		return ""
 	}
-	segs := strings.Split(pkg, qnameSep)
-	g.imported[path.Join(relPath(g.emit.Dir, e.Dir), segs[len(segs)-1]+genHeaderSuffix)] = true
+	g.imported[g.headerOf(pkg, e)] = true
 	return scopeSep + e.Namespace + scopeSep
+}
+
+// headerOf is the include path of imported package pkg's header, e its cpp emit.
+func (g *gen) headerOf(pkg string, e *ir.Emit) string {
+	segs := strings.Split(pkg, qnameSep)
+	return path.Join(relPath(g.emit.Dir, e.Dir), segs[len(segs)-1]+genHeaderSuffix)
+}
+
+// headerDeclares reports a package whose names the header already declares or includes, so
+// that the .gen.cpp may name them: this one, or one the header's includes reached.
+func (g *gen) headerDeclares(pkg string) bool {
+	if pkg == g.p.Name {
+		return true
+	}
+	e := g.importEmit(pkg)
+	return e != nil && g.included[g.headerOf(pkg, e)]
 }
 
 // importEmit is the cpp emit of imported package pkg, nil without one.

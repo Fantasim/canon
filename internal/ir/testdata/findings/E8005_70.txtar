@@ -1,0 +1,19 @@
+CODEGEN.md §3.5, §5.1, DECISIONS 392: a nested list constant reads detail::k<NAME>Elems when all its levels hold 8 or more elements (3 lists and 5 integers here, though the outer list has 3), and that array inside detail hides a record renamed kGRIDElems.
+-- a/a.canon --
+package a
+
+/// Rows of integers.
+const GRID = [[], [1, 2, 3, 4, 5], []]
+
+/// Renamed like the constant's array.
+record Pair @cpp(name: "kGRIDElems") {
+  /// Its value.
+  v: Int
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  cpp: kGRIDElems is generated for both a.Pair and GRID; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

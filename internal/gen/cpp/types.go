@@ -2,6 +2,7 @@ package cppgen
 
 import (
 	_ "embed"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -119,11 +120,17 @@ func (g *gen) unionMembership(depth int, key, dst string, t ir.TypeRef) {
 	if e == nil {
 		return
 	}
-	wires := make([]string, len(e.Members))
-	for i, m := range e.Members {
-		wires[i] = m.Wire
+	conds := differs(dst, t.Literals)
+	if len(e.Members) >= bulkMinElems && g.headerDeclares(e.Pkg) { // its sorted search, not a test per wire (DECISIONS 392)
+		conds = append(conds, fmt.Sprintf(notFromWireFormat, g.enumHelpers(e).FromWire, dst))
+	} else {
+		wires := make([]string, len(e.Members))
+		for i, m := range e.Members {
+			wires[i] = m.Wire
+		}
+		conds = append(conds, differs(dst, wires)...)
 	}
-	g.c.linef(depth, unionCheckFormat, strings.Join(append(differs(dst, t.Literals), differs(dst, wires)...), andSep), key, dst)
+	g.c.linef(depth, unionCheckFormat, strings.Join(conds, andSep), key, dst)
 }
 
 // unionEnum is the enum arm of a union whose membership a loader checks, so which no read shortcut takes; nil otherwise.

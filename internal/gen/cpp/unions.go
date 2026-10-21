@@ -39,7 +39,7 @@ func (g *gen) elemsChecked(t ir.TypeRef, c class) bool {
 func differs(k string, wires []string) []string {
 	out := make([]string, len(wires))
 	for i, w := range wires {
-		out[i] = fmt.Sprintf(differsFormat, k, quote(w))
+		out[i] = fmt.Sprintf(differsFormat, k, viewLit(w))
 	}
 	return out
 }

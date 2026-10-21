@@ -63,18 +63,14 @@ func (g *gen) idEnums() {
 func (g *gen) idFromWires() {
 	for _, it := range g.idTables() {
 		name := g.pl.IDName(it.rec)
-		wires := make([]string, len(it.v.IDs))
-		for i, k := range it.v.IDs {
-			wires[i] = quote(k)
-		}
+		wires := views(it.v.IDs)
 		pos := fmt.Sprintf(staticCastFormat, cppSize, enumArg)
 		g.c.printf(byOrdinalText, fmt.Sprintf(nameSigFormat, ir.CppToWire, name), len(wires), wiresTable, indentBlock(braced(wires)), pos)
 		keys := slices.Clone(it.v.IDs)
 		slices.Sort(keys)
-		quoted := make([]string, len(keys))
+		quoted := views(keys)
 		ids := make([]string, len(keys))
 		for i, k := range keys {
-			quoted[i] = quote(k)
 			ids[i] = name + scopeSep + g.pl.IDMember(k)
 		}
 		g.c.write(search{

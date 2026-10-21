@@ -84,7 +84,7 @@ func (g *gen) decodeVariant(v *ir.Variant) {
 		if i == 0 {
 			open = ifTagFormat
 		}
-		g.c.linef(1, open, quote(c.Wire))
+		g.c.linef(1, open, viewLit(c.Wire))
 		if len(c.Fields) > 0 {
 			g.c.linef(depthTwo, emplaceDecodeFormat, i)
 		} else {
@@ -92,7 +92,7 @@ func (g *gen) decodeVariant(v *ir.Variant) {
 		}
 	}
 	g.c.linef(1, elseOpen)
-	g.c.linef(depthTwo, unknownCaseFormat, quote(v.Tag))
+	g.c.linef(depthTwo, unknownCaseFormat, viewLit(v.Tag))
 	g.c.linef(1, closeBrace)
 }
 
@@ -189,7 +189,7 @@ func (g *gen) markerTest(x string, marker []byte) string {
 		}
 		return fmt.Sprintf(markerNumberFormat, x, x, m.String())
 	case string:
-		return fmt.Sprintf(markerStringFormat, x, x, quote(m))
+		return fmt.Sprintf(markerStringFormat, x, x, viewLit(m))
 	case bool:
 		return fmt.Sprintf(markerBoolFormat, x, x, m)
 	case map[string]any:

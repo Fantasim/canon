@@ -43,9 +43,46 @@ func (g *gen) fillDependent(a at, key string, fields []*ir.Field, f *ir.Field, r
 		return
 	}
 	a.line(resizeFormat, target, len(l.Elems))
+	if g.dependentLoop(a, target, d, br, l) {
+		return
+	}
 	for i, e := range l.Elems {
 		one(fmt.Sprintf(indexFormat, target, strconv.Itoa(i)), e)
 	}
+}
+
+// dependentLoop writes a list of dependent values of branch br from arrays by one loop: the
+// values, and a define ref's values; false when they stay per element (DECISIONS 392).
+func (g *gen) dependentLoop(a at, target string, d *ir.Dependent, br int, l *value.List) bool {
+	bt := d.Branches[br].Type
+	name, ok := g.hoistElems(bt, l.Elems)
+	if !ok {
+		return false
+	}
+	elem := fmt.Sprintf(indexFormat, target, indexLocal)
+	arg := fmt.Sprintf(nestedLeafFormat, g.storage(bt), name, indexLocal)
+	args := []string{arg}
+	var defines string
+	if ir.DefinesRef(bt) {
+		items := make([]string, len(l.Elems))
+		for i, e := range l.Elems {
+			items[i] = g.defineLit(bt, e)
+		}
+		defines = fmt.Sprintf(indexFormat, g.pool.array(cppInt64, items), indexLocal)
+		args = append(args, defines)
+	}
+	a.line(countForFormat, indexLocal, indexLocal, len(l.Elems), indexLocal)
+	switch {
+	case d.Pkg != g.p.Name: // another package's: its branch hook (CODEGEN.md §5.14)
+		a.in().line(assignFormat, elem, g.makeCall(d.Pkg, g.pl.MakeBranchName(d, d.Branches[br]), args))
+	default:
+		a.in().line(emplaceBranchFormat, elem, br, arg)
+		if defines != "" {
+			a.in().line(assignFormat, elem+memberAccess+g.pl.Dependent(d).DefineValue, defines)
+		}
+	}
+	a.line(closeBrace)
+	return true
 }
 
 // defineLit is the value of the define a key e of ref type t names, from the package's define table (CODEGEN.md §5.8).
@@ -121,5 +158,10 @@ func (g *gen) fillDefineTo(a at, dst string, f *ir.Field, v value.Value) {
 	for i, e := range l.Elems {
 		items[i] = lookup(e)
 	}
-	a.line(assignFormat, dst, g.storage(defineValueType(f.Type))+openBrace+strings.Join(items, listSep)+closeBrace)
+	storage := g.storage(defineValueType(f.Type))
+	if g.hoists(len(items)) { // DECISIONS 392
+		a.line(assignFormat, dst, rangeOf(storage, g.pool.array(cppInt64, items)))
+		return
+	}
+	a.line(assignFormat, dst, storage+openBrace+strings.Join(items, listSep)+closeBrace)
 }

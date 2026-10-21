@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -13,6 +14,22 @@
 namespace Telemetry {
 
 namespace detail {
+
+namespace {
+
+constexpr std::string_view kBulk0[] = {
+    std::string_view("kind", 4),
+    std::string_view("role", 4),
+    std::string_view("doctrine", 8),
+    std::string_view("power", 5),
+    std::string_view("task_id", 7),
+    std::string_view("used", 4),
+    std::string_view("max", 3),
+    std::string_view("gold", 4),
+    std::string_view("item_count", 10),
+};
+
+}  // namespace
 
 struct TelemetryAccess {
     struct Data {
@@ -478,7 +495,7 @@ TelemetryAccess::Data TelemetryAccess::Build() {
         r2[6].second.tier_ = Tier::TINY;
         r2[6].second.producers_ = std::vector<Producer>{Producer::CoreServer};
         r2[6].second.enqueue_ = Enqueue::generated;
-        r2[6].second.columns_ = canon::KeyedList<std::string, Column>::FromRows(std::vector<Column>(9), {"kind", "role", "doctrine", "power", "task_id", "used", "max", "gold", "item_count"});
+        r2[6].second.columns_ = canon::KeyedList<std::string, Column>::FromRows(std::vector<Column>(9), std::vector<std::string>(std::begin(kBulk0), std::end(kBulk0)));
         {
             auto& r3 = const_cast<Column&>(r2[6].second.columns_.At(0));
             r3.name_ = "kind";

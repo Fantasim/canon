@@ -39,6 +39,9 @@ func (w *writer) lineAt(depth int, s string) {
 
 func (w *writer) write(s string) { w.b.WriteString(s) }
 
+// size is the bytes written so far.
+func (w *writer) size() int { return w.b.Len() }
+
 func (w *writer) String() string { return w.b.String() }
 
 func (w *writer) bytes() []byte { return []byte(w.b.String()) }

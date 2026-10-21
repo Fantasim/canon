@@ -82,7 +82,7 @@ func (g *gen) literal(t ir.TypeRef, v value.Value) string {
 	case *value.Float:
 		return g.floatLit(x.V, t.Bits)
 	case *value.Str:
-		return quote(x.V)
+		return g.strLit(x.V)
 	case *value.Dur:
 		return intLit(x.Ms)
 	case *value.Member:
@@ -113,14 +113,14 @@ func (g *gen) unionLit(t ir.TypeRef, v value.Value) string {
 	}
 	switch x := v.(type) {
 	case *value.Str:
-		return quote(x.V)
+		return g.strLit(x.V)
 	case *value.Member:
 		if e != nil && x.Index >= 0 && x.Index < len(e.Members) {
-			return quote(e.Members[x.Index].Wire)
+			return g.strLit(e.Members[x.Index].Wire)
 		}
 	case *value.Ref:
 		if r := ir.UnionRef(t); r != nil {
-			return quote(ir.KeyWire(*r, x.Key))
+			return g.strLit(ir.KeyWire(*r, x.Key))
 		}
 	}
 	g.malformed(fmt.Sprintf(valueFormat, v), g.at)
@@ -144,15 +144,59 @@ func (g *gen) refLit(t ir.TypeRef, k value.Key) string {
 	if _, i := keyMember(t, k); i >= 0 {
 		return g.memberLit(*t.Key, i)
 	}
-	return keyLit(k)
+	return g.keyLit(k)
 }
 
-func keyLit(k value.Key) string {
+func (g *gen) keyLit(k value.Key) string {
 	if k.IsInt {
 		return intLit(k.I)
 	}
-	return quote(k.S)
+	return g.strLit(k.S)
 }
+
+// strLit is a string value's literal, sized when it holds a NUL a literal's own length stops at (CODEGEN.md §3.4).
+func (g *gen) strLit(s string) string {
+	switch g.strs {
+	case viewForm:
+		return viewLit(s)
+	case arrayForm:
+		return fmt.Sprintf(viewFormat, quote(s), len(s))
+	default:
+		return stringLit(s)
+	}
+}
+
+// stringLit is s as a literal a std::string is built from at its full length.
+func stringLit(s string) string {
+	if !strings.Contains(s, nulText) {
+		return quote(s)
+	}
+	return fmt.Sprintf(sizedStringFormat, quote(s), len(s))
+}
+
+// viewLit is s as a literal a std::string_view compares or holds at its full length.
+func viewLit(s string) string {
+	if !strings.Contains(s, nulText) {
+		return quote(s)
+	}
+	return fmt.Sprintf(viewFormat, quote(s), len(s))
+}
+
+// inForm is text written with strings in form f: viewForm where a string is a std::string_view (a
+// constexpr constant or cell, a conformance vector), arrayForm in a constexpr array, every string
+// sized from its raw length, which no compiler then measures in constant evaluation.
+func (g *gen) inForm(f strForm, text func() string) string {
+	prev := g.strs
+	g.strs = f
+	defer func() { g.strs = prev }()
+	return text()
+}
+
+// inViews is text written in viewForm.
+func (g *gen) inViews(text func() string) string { return g.inForm(viewForm, text) }
+
+// arrayText is text written in arrayForm.
+func (g *gen) arrayText(text func() string) string { return g.inForm(arrayForm, text) }
 
 func (g *gen) memberLit(t ir.TypeRef, index int) string {
 	e, ok := t.Named.(*ir.Enum)
@@ -230,6 +274,10 @@ func (g *gen) constant(c *ir.Const) {
 	leave := g.enter(c.Name)
 	defer leave()
 	name := g.pl.ConstName(c)
+	var list string
+	if c.Type.Kind == types.List || c.Type.Kind == types.Map {
+		list = g.constListLit(c) // its array, if any, precedes the doc
+	}
 	g.doc(0, c.Doc)
 	switch c.Type.Kind {
 	case types.Enum:
@@ -241,11 +289,11 @@ func (g *gen) constant(c *ir.Const) {
 	case types.Bool, types.Int, types.Float:
 		g.h.printf(constexprFormat, g.storage(c.Type), name, g.literal(c.Type, c.V))
 	case types.String, types.LitUnion:
-		g.h.printf(constexprFormat, cppStringView, name, g.literal(c.Type, c.V))
+		g.h.printf(constexprFormat, cppStringView, name, g.inViews(func() string { return g.literal(c.Type, c.V) }))
 	case types.Duration:
 		g.h.printf(durationConstFormat, cppMillis, name, g.literal(c.Type, c.V))
 	case types.List, types.Map:
-		g.h.printf(listConstFormat, g.storage(c.Type), name, g.literal(c.Type, c.V))
+		g.h.printf(listConstFormat, g.storage(c.Type), name, list)
 	default:
 		g.refuseKind(c.Type.Kind, c.Name)
 	}
@@ -266,4 +314,23 @@ func (g *gen) schemaConstants() {
 		g.h.printf(constexprFormat, cppStringView, g.pl.SchemaName(v), quote(v.Schema))
 		g.h.blank()
 	}
+}
+
+// constListLit is a list or map constant's initializer: a long one built from an array of the
+// header's detail namespace, k + its name + Elems, so that no TU's initializer grows with it
+// (DECISIONS 392).
+func (g *gen) constListLit(c *ir.Const) string {
+	prev := g.pool
+	defer func() { g.pool = prev }()
+	g.pool = &bulk{open: inlineArrayOpenFormat, prefix: detailPrefix, name: func(n int) string { return g.pl.ElemsName(c, n) }}
+	text, ok := g.hoistedLiteral(c.Type, c.V)
+	if !ok {
+		return g.literal(c.Type, c.V)
+	}
+	g.h.line(detailOpen)
+	g.h.blank()
+	g.h.write(g.pool.w.String())
+	g.h.line(detailClose)
+	g.h.blank()
+	return text
 }

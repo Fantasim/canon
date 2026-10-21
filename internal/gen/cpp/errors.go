@@ -201,17 +201,49 @@ const (
 	entrySecond           = ".second"
 	fromEntriesMoveFormat = "%s::FromEntries(std::move(%s))"
 	keyedRowsFormat       = "%s = canon::KeyedList<%s, %s>::FromRows(std::vector<%s>(%d), {%s});"
-	declFormat            = "%s;\n"
-	funcLineFormat        = "%s { %s }\n"
-	funcOpenFormat        = "%s {\n"
-	cellsFormat           = "inline constexpr std::array<%s, %d> %s = %s;\n"
-	constexprPrefix       = "inline constexpr "
-	maybeUnused           = "[[maybe_unused]] "
-	idEnumDocFormat       = "The key of an entry of %s. Store or send ToWire(id): the underlying value is\na position, not an id, and changes when entry files move."
-	idJSONDocFormat       = "nlohmann/json would write the position: write ToWire(id), read %s(s)."
-	idToJSONDeleted       = "template <typename J> void to_json(J&, %s) = delete;"
-	idFromJSONDeleted     = "template <typename J> void from_json(const J&, %s&) = delete;"
-	getFormat             = "const %s& Get(%s id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }"
+	// bulkMinElems is the fewest elements read from an array, not written inline (DECISIONS 392).
+	bulkMinElems = ir.CppBulkMinElems
+	rowsField    = "rows_"
+	// bakedPartLines is the fewest lines of statements a part of Build holds (DECISIONS 392).
+	bakedPartLines        = 1000
+	partDeclFormat        = "static void %s(Data& d);"
+	partCallFormat        = "%s(d);"
+	entryAtFormat         = "&%s.rows_.At(%s)"
+	sliceFormat           = "%s(%s + %s[i], %s + %s[i + 1])"
+	notFromWireFormat     = "!%s(%s)"
+	inlineArrayOpenFormat = "inline constexpr %s %s[] = {\n"
+	viewFormat            = "std::string_view(%s, %d)"
+	sizedStringFormat     = "std::string(%s, %d)"
+	nulText               = "\x00"
+	// sizedTableMin is the fewest entries of an enum table written as sized views (DECISIONS 392).
+	sizedTableMin     = 1024
+	nestedIndexFormat = "n%d"
+	nestedOuter       = "[]"
+	nestedInner       = "[&]"
+	sliceRangeFormat  = "%s(%s + %s, %s + %s)"
+	nextBoundFormat   = "%s[%s + 1]"
+	nestedLeafFormat  = "%s(%s[%s])"
+	nestedListFormat  = "%[1]s { %[2]s v; v.reserve(%[4]s - %[3]s); for (size_t %[5]s = %[3]s; %[5]s < %[4]s; ++%[5]s) v.push_back(%[6]s); return v; }()"
+	nestedMapFormat   = "%[1]s { std::vector<%[2]s::Entry> e; e.reserve(%[4]s - %[3]s); for (size_t %[5]s = %[3]s; %[5]s < %[4]s; ++%[5]s) e.emplace_back(%[6]s, %[7]s); return %[2]s::FromEntries(std::move(e)); }()"
+	partDefFormat     = "void %s::%s(Data& d) {\n%s}\n\n"
+	rangeFormat       = "%s(std::begin(%s), std::end(%s))"
+	pairFormat        = "std::pair<%s, %s>"
+	fromArrayFormat   = "%s::FromEntries(%s)"
+	entryVectorFormat = "std::vector<%s::Entry>"
+	entriesLoopFormat = "[&d] { %s v; v.reserve(%d); for (const size_t i : %s) v.push_back(&%s.rows_.At(i)); return v; }()"
+	keyedFromFormat   = "%s = canon::KeyedList<%s, %s>::FromRows(std::vector<%s>(%d), %s);"
+	cellsCopyFormat   = "std::copy(std::begin(%s), std::end(%s), %s.begin());"
+	declFormat        = "%s;\n"
+	funcLineFormat    = "%s { %s }\n"
+	funcOpenFormat    = "%s {\n"
+	cellsFormat       = "inline constexpr std::array<%s, %d> %s = %s;\n"
+	constexprPrefix   = "inline constexpr "
+	maybeUnused       = "[[maybe_unused]] "
+	idEnumDocFormat   = "The key of an entry of %s. Store or send ToWire(id): the underlying value is\na position, not an id, and changes when entry files move."
+	idJSONDocFormat   = "nlohmann/json would write the position: write ToWire(id), read %s(s)."
+	idToJSONDeleted   = "template <typename J> void to_json(J&, %s) = delete;"
+	idFromJSONDeleted = "template <typename J> void from_json(const J&, %s&) = delete;"
+	getFormat         = "const %s& Get(%s id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }"
 	// maxInline is the widest initializer written on one line; a longer one puts one item per line.
 	maxInline = 80
 )
@@ -315,4 +347,11 @@ const (
 	nullCompare          = ") == nullptr"
 	enumKeyInitFormat    = "const auto ke = %s(%s); "
 	enumKeyMissingFormat = "(!ke || %s*ke) == nullptr)"
+)
+
+// The forms of strForm: for a std::string, a std::string_view, an element of a constexpr array.
+const (
+	stringForm strForm = iota
+	viewForm
+	arrayForm
 )

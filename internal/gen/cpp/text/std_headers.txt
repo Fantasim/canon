@@ -1,4 +1,4 @@
-\bstd::find\b <algorithm>
+\bstd::(?:find|copy)\b <algorithm>
 \bstd::array\b <array>
 \berrno\b <cerrno>
 \bDBL_MIN\b <cfloat>
@@ -10,12 +10,13 @@
 \bstd::(?:abort|getenv|strtoll)\b <cstdlib>
 \bstd::memcmp\b <cstring>
 \bstd::hash\b <functional>
+\bstd::(?:begin|end)\b <iterator>
 \bstd::locale\b <locale>
 \bstd::(?:shared_ptr|make_shared|unique_ptr|make_unique)\b <memory>
 \bstd::(?:optional|nullopt)\b <optional>
 \bstd::istringstream\b <sstream>
 \bstd::(?:string|to_string)\b <string>
 \bstd::string_view\b <string_view>
-\bstd::move\b <utility>
+\bstd::(?:move|pair)\b <utility>
 \bstd::(?:variant|monostate|get_if)\b <variant>
 \bstd::vector\b <vector>

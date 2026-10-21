@@ -120,7 +120,7 @@ func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
 	e, isEnum := ir.RefKeyEnum(ref)
 	byWire := isEnum && g.open(e)
 	for i, k := range t.Keys {
-		out[i] = branchEntry{key: quote(k.S), branch: t.Branches[i], rank: int64(i)}
+		out[i] = branchEntry{key: viewLit(k.S), branch: t.Branches[i], rank: int64(i)}
 		switch {
 		case k.IsInt:
 			out[i].key = intLit(k.I)
@@ -133,7 +133,7 @@ func (g *gen) branchEntries(ref ir.TypeRef, t *ir.BranchTable) []branchEntry {
 			out[i].key, out[i].rank = g.qualifiedOwn(e)+scopeSep+g.pl.Enumerator(e.Members[m]), enumeratorValue(e, m)
 			if byWire {
 				out[i].wire = e.Members[m].Wire
-				out[i].key = quote(out[i].wire)
+				out[i].key = viewLit(out[i].wire)
 			}
 		}
 	}

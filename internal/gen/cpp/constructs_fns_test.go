@@ -78,6 +78,11 @@ func packageFns(s *shop) []*ir.ExportFn {
 				vals(&value.Member{Index: 3}, num(0), str("legacy:0")),
 			},
 		},
+		{ // CODEGEN.md §3.4, DECISIONS 392: template text holding a NUL keeps its length
+			name: "nulLabel", params: params(tInt, "n"), result: tString,
+			body:    &ir.Template{T: tString, Parts: []ir.TemplatePart{{Text: "a\x00b:", X: param(0, tInt)}}},
+			vectors: [][]value.Value{vals(num(3), str("a\x00b:3"))},
+		},
 	}
 	specs = append(specs, floatFns()...)
 	specs = append(specs, logicFns(s)...)

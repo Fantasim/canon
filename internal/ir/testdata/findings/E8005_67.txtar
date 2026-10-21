@@ -1,0 +1,21 @@
+CODEGEN.md §3.5, §7.3, DECISIONS 392: a baked emit's Build may be cut into parts <P>Access::Build<N>; a record Build0 is the type the part Build0 would hide inside the access struct (g++: "'Build0' does not name a type"), whatever the table's size.
+-- a/a.canon --
+package a
+
+/// Named like a part of Build.
+record Build0 {
+  /// Its size.
+  n: Int
+}
+
+/// The rows.
+let rows: table Build0 = {
+  x { n: 1 }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  cpp: Build0 is generated for both a.Build0 and a; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

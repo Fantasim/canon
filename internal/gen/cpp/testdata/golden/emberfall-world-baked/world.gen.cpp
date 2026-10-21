@@ -3,7 +3,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -40,92 +39,40 @@ WorldAccess::Data WorldAccess::Build() {
     {
         auto& r2 = const_cast<Zone&>(d.zones.rows_.At(0));
         r2.id_ = ZoneId::forest;
-        {
-            int64_t b3_min_ = 0;
-            int64_t b3_max_ = 0;
-            std::vector<std::string> b3_labels_;
-            ::game::tone::Tone b3_tone_{};
-            ::game::core::StatusId b3_status_{};
-            int64_t b3_width_ = 0;
-            b3_min_ = 1;
-            b3_max_ = 5;
-            b3_labels_ = std::vector<std::string>{"a", "b"};
-            b3_tone_ = ::game::tone::Tone::soft;
-            b3_status_ = ::game::core::StatusId::open;
-            b3_width_ = 4;
-            r2.levels_ = ::game::core::detail::CoreMake::LevelRange(std::move(b3_min_), std::move(b3_max_), std::move(b3_labels_), std::move(b3_tone_), std::move(b3_status_), std::move(b3_width_));
-        }
+        r2.levels_ = ::game::core::detail::CoreMake::LevelRange(1, 5, std::vector<std::string>{"a", "b"}, ::game::tone::Tone::soft, ::game::core::StatusId::open, 4);
         r2.trail_.resize(1);
         {
             auto& r3 = r2.trail_[0];
-            {
-                int64_t b4_min_ = 0;
-                int64_t b4_max_ = 0;
-                std::vector<std::string> b4_labels_;
-                ::game::tone::Tone b4_tone_{};
-                ::game::core::StatusId b4_status_{};
-                int64_t b4_width_ = 0;
-                b4_min_ = 2;
-                b4_max_ = 4;
-                b4_labels_ = std::vector<std::string>{};
-                b4_tone_ = ::game::tone::Tone::loud;
-                b4_status_ = ::game::core::StatusId::closed;
-                b4_width_ = 2;
-                r3 = ::game::core::detail::CoreMake::LevelRange(std::move(b4_min_), std::move(b4_max_), std::move(b4_labels_), std::move(b4_tone_), std::move(b4_status_), std::move(b4_width_));
-            }
+            r3 = ::game::core::detail::CoreMake::LevelRange(2, 4, std::vector<std::string>{}, ::game::tone::Tone::loud, ::game::core::StatusId::closed, 2);
         }
         {
             std::vector<canon::FlatMap<std::string, ::game::core::LevelRange>::Entry> r3(1);
             r3[0].first = "east";
-            {
-                int64_t b4_min_ = 0;
-                int64_t b4_max_ = 0;
-                std::vector<std::string> b4_labels_;
-                ::game::tone::Tone b4_tone_{};
-                ::game::core::StatusId b4_status_{};
-                int64_t b4_width_ = 0;
-                b4_min_ = 3;
-                b4_max_ = 9;
-                b4_labels_ = std::vector<std::string>{};
-                b4_tone_ = ::game::tone::Tone::soft;
-                b4_status_ = ::game::core::StatusId::open;
-                b4_width_ = 6;
-                r3[0].second = ::game::core::detail::CoreMake::LevelRange(std::move(b4_min_), std::move(b4_max_), std::move(b4_labels_), std::move(b4_tone_), std::move(b4_status_), std::move(b4_width_));
-            }
+            r3[0].second = ::game::core::detail::CoreMake::LevelRange(3, 9, std::vector<std::string>{}, ::game::tone::Tone::soft, ::game::core::StatusId::open, 6);
             r2.byName_ = canon::FlatMap<std::string, ::game::core::LevelRange>::FromEntries(std::move(r3));
         }
-        {
-            int64_t b3_amount_ = 0;
-            b3_amount_ = 3;
-            r2.reward_ = ::game::core::detail::CoreMake::Reward_Coins(std::move(b3_amount_));
-        }
+        r2.reward_ = ::game::core::detail::CoreMake::Reward_Coins(3);
         r2.tone_ = ::game::tone::Tone::loud;
         r2.param_ = ::game::core::detail::CoreMake::Param_Loud(7);
         r2.markers_ = canon::KeyedList<std::string, MarkerRow>::FromRows(std::vector<MarkerRow>(2), {"gate", "well"});
         {
             auto& r3 = const_cast<MarkerRow&>(r2.markers_.At(0));
             {
-                std::string b4_code_;
                 std::unique_ptr<::game::core::Marker> b4_next_;
-                b4_code_ = "g";
                 b4_next_ = std::make_unique<::game::core::Marker>();
                 {
-                    std::string b5_code_;
                     std::unique_ptr<::game::core::Marker> b5_next_;
-                    b5_code_ = "n";
-                    (*b4_next_) = ::game::core::detail::CoreMake::Marker(std::move(b5_code_), std::move(b5_next_));
+                    (*b4_next_) = ::game::core::detail::CoreMake::Marker("n", std::move(b5_next_));
                 }
-                static_cast<::game::core::Marker&>(r3) = ::game::core::detail::CoreMake::Marker(std::move(b4_code_), std::move(b4_next_));
+                static_cast<::game::core::Marker&>(r3) = ::game::core::detail::CoreMake::Marker("g", std::move(b4_next_));
             }
             r3.id_ = "gate";
         }
         {
             auto& r3 = const_cast<MarkerRow&>(r2.markers_.At(1));
             {
-                std::string b4_code_;
                 std::unique_ptr<::game::core::Marker> b4_next_;
-                b4_code_ = "w";
-                static_cast<::game::core::Marker&>(r3) = ::game::core::detail::CoreMake::Marker(std::move(b4_code_), std::move(b4_next_));
+                static_cast<::game::core::Marker&>(r3) = ::game::core::detail::CoreMake::Marker("w", std::move(b4_next_));
             }
             r3.id_ = "well";
             r3.retired_ = true;
@@ -133,34 +80,18 @@ WorldAccess::Data WorldAccess::Build() {
         r2.bonuses_.resize(2);
         {
             auto& r3 = r2.bonuses_[0];
-            {
-                std::string b4_stat_;
-                int64_t b4_value_ = 0;
-                b4_stat_ = "a";
-                b4_value_ = 2;
-                r3 = ::game::core::detail::CoreMake::StatBonus(std::move(b4_stat_), std::move(b4_value_));
-            }
+            r3 = ::game::core::detail::CoreMake::StatBonus("a", 2);
         }
         {
             auto& r3 = r2.bonuses_[1];
-            {
-                std::string b4_stat_;
-                int64_t b4_value_ = 0;
-                b4_stat_ = "b";
-                b4_value_ = 1;
-                r3 = ::game::core::detail::CoreMake::StatBonus(std::move(b4_stat_), std::move(b4_value_));
-            }
+            r3 = ::game::core::detail::CoreMake::StatBonus("b", 1);
         }
         {
             canon::KeyedList<std::string, ::game::core::Item> b3_items_;
             b3_items_ = canon::KeyedList<std::string, ::game::core::Item>::FromRows(std::vector<::game::core::Item>(1), {"sword"});
             {
                 auto& r4 = const_cast<::game::core::Item&>(b3_items_.At(0));
-                {
-                    std::string b5_name_;
-                    b5_name_ = "Sword";
-                    r4 = ::game::core::detail::CoreMake::Item(std::move(b5_name_));
-                }
+                r4 = ::game::core::detail::CoreMake::Item("Sword");
                 r4 = ::game::core::detail::CoreMake::Entry_Item(std::move(r4), "sword", false);
             }
             r2.kit_ = ::game::core::detail::CoreMake::Kit(std::move(b3_items_));
@@ -170,94 +101,30 @@ WorldAccess::Data WorldAccess::Build() {
             b3_chimes_ = canon::KeyedList<std::string, ::game::core::ChimeRow>::FromRows(std::vector<::game::core::ChimeRow>(1), {"c1"});
             {
                 auto& r4 = const_cast<::game::core::ChimeRow&>(b3_chimes_.At(0));
-                {
-                    int64_t b5_pitch_ = 0;
-                    b5_pitch_ = 440;
-                    static_cast<::game::tone::Chime&>(r4) = ::game::tone::detail::ToneMake::Chime(std::move(b5_pitch_));
-                }
+                static_cast<::game::tone::Chime&>(r4) = ::game::tone::detail::ToneMake::Chime(440);
                 r4 = ::game::core::detail::CoreMake::ChimeRow(std::move(static_cast<::game::tone::Chime&>(r4)), "c1", true);
             }
             r2.bell_ = ::game::core::detail::CoreMake::Bell(std::move(b3_chimes_));
         }
         {
-            std::string b3_kind_;
-            std::string b3_best_;
             std::array<std::optional<std::string>, 2> b3_kindFor_{};
-            b3_kind_ = "a";
-            b3_best_ = "b";
             b3_kindFor_[0] = "b";
-            r2.gear_ = ::game::core::detail::CoreMake::Gear(std::move(b3_kind_), std::move(b3_best_), std::move(b3_kindFor_));
+            r2.gear_ = ::game::core::detail::CoreMake::Gear("a", "b", std::move(b3_kindFor_));
         }
-        {
-            int64_t b3_min_ = 0;
-            int64_t b3_max_ = 0;
-            std::vector<std::string> b3_labels_;
-            ::game::tone::Tone b3_tone_{};
-            ::game::core::StatusId b3_status_{};
-            int64_t b3_width_ = 0;
-            b3_min_ = 10;
-            b3_max_ = 20;
-            b3_labels_ = std::vector<std::string>{};
-            b3_tone_ = ::game::tone::Tone::loud;
-            b3_status_ = ::game::core::StatusId::closed;
-            b3_width_ = 10;
-            r2.band_ = ::game::core::detail::CoreMake::LevelRange(std::move(b3_min_), std::move(b3_max_), std::move(b3_labels_), std::move(b3_tone_), std::move(b3_status_), std::move(b3_width_));
-        }
+        r2.band_ = ::game::core::detail::CoreMake::LevelRange(10, 20, std::vector<std::string>{}, ::game::tone::Tone::loud, ::game::core::StatusId::closed, 10);
     }
     {
         auto& r2 = const_cast<LevelRangeRow&>(d.bands.rows_.At(0));
-        {
-            int64_t b3_min_ = 0;
-            int64_t b3_max_ = 0;
-            std::vector<std::string> b3_labels_;
-            ::game::tone::Tone b3_tone_{};
-            ::game::core::StatusId b3_status_{};
-            int64_t b3_width_ = 0;
-            b3_min_ = 1;
-            b3_max_ = 3;
-            b3_labels_ = std::vector<std::string>{};
-            b3_tone_ = ::game::tone::Tone::soft;
-            b3_status_ = ::game::core::StatusId::open;
-            b3_width_ = 2;
-            static_cast<::game::core::LevelRange&>(r2) = ::game::core::detail::CoreMake::LevelRange(std::move(b3_min_), std::move(b3_max_), std::move(b3_labels_), std::move(b3_tone_), std::move(b3_status_), std::move(b3_width_));
-        }
+        static_cast<::game::core::LevelRange&>(r2) = ::game::core::detail::CoreMake::LevelRange(1, 3, std::vector<std::string>{}, ::game::tone::Tone::soft, ::game::core::StatusId::open, 2);
         r2.id_ = LevelRangeId::low;
     }
     {
         auto& r2 = const_cast<LevelRangeRow&>(d.bands.rows_.At(1));
-        {
-            int64_t b3_min_ = 0;
-            int64_t b3_max_ = 0;
-            std::vector<std::string> b3_labels_;
-            ::game::tone::Tone b3_tone_{};
-            ::game::core::StatusId b3_status_{};
-            int64_t b3_width_ = 0;
-            b3_min_ = 4;
-            b3_max_ = 8;
-            b3_labels_ = std::vector<std::string>{};
-            b3_tone_ = ::game::tone::Tone::loud;
-            b3_status_ = ::game::core::StatusId::closed;
-            b3_width_ = 4;
-            static_cast<::game::core::LevelRange&>(r2) = ::game::core::detail::CoreMake::LevelRange(std::move(b3_min_), std::move(b3_max_), std::move(b3_labels_), std::move(b3_tone_), std::move(b3_status_), std::move(b3_width_));
-        }
+        static_cast<::game::core::LevelRange&>(r2) = ::game::core::detail::CoreMake::LevelRange(4, 8, std::vector<std::string>{}, ::game::tone::Tone::loud, ::game::core::StatusId::closed, 4);
         r2.id_ = LevelRangeId::high;
         r2.retired_ = true;
     }
-    {
-        int64_t b2_min_ = 0;
-        int64_t b2_max_ = 0;
-        std::vector<std::string> b2_labels_;
-        ::game::tone::Tone b2_tone_{};
-        ::game::core::StatusId b2_status_{};
-        int64_t b2_width_ = 0;
-        b2_min_ = 1;
-        b2_max_ = 2;
-        b2_labels_ = std::vector<std::string>{};
-        b2_tone_ = ::game::tone::Tone::loud;
-        b2_status_ = ::game::core::StatusId::open;
-        b2_width_ = 1;
-        d.start = ::game::core::detail::CoreMake::LevelRange(std::move(b2_min_), std::move(b2_max_), std::move(b2_labels_), std::move(b2_tone_), std::move(b2_status_), std::move(b2_width_));
-    }
+    d.start = ::game::core::detail::CoreMake::LevelRange(1, 2, std::vector<std::string>{}, ::game::tone::Tone::loud, ::game::core::StatusId::open, 1);
     return d;
 }
 

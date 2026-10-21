@@ -173,7 +173,7 @@ func (g *gen) vectorValues(s vectorSet, v *ir.Vector) (in []string, want, code s
 // vectorLit is a literal of a vector field; a variant read is its case kind.
 func (g *gen) vectorLit(t ir.TypeRef, v value.Value) string {
 	if _, none := v.(*value.None); none || t.Kind != types.Variant {
-		return g.literal(t, v)
+		return g.inViews(func() string { return g.literal(t, v) })
 	}
 	variant, ok := t.Named.(*ir.Variant)
 	index := -1

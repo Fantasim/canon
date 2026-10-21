@@ -210,7 +210,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Extras& out) {
         out.mode_ = "authoritative";
     } else if (const nlohmann::json* x1 = dec.Required(v, "mode")) {
         dec.AsString((*x1), "mode", out.mode_);
-        if (out.mode_ != "auto" && out.mode_ != "authoritative" && out.mode_ != "local_budget") dec.Fail("mode", "unknown value " + out.mode_);
+        if (out.mode_ != "auto" && !RollModeFromWire(out.mode_)) dec.Fail("mode", "unknown value " + out.mode_);
     }
     if (!v.contains("delaySec")) {
         out.delay_ = std::chrono::milliseconds{1500};
@@ -230,7 +230,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Slot& out) {
     dec.Int(v, "n", out.n_);
     if (const nlohmann::json* x1 = dec.Required(v, "mode")) {
         dec.AsString((*x1), "mode", out.mode_);
-        if (out.mode_ != "auto" && out.mode_ != "authoritative" && out.mode_ != "local_budget") dec.Fail("mode", "unknown value " + out.mode_);
+        if (out.mode_ != "auto" && !RollModeFromWire(out.mode_)) dec.Fail("mode", "unknown value " + out.mode_);
     }
     return dec.Ok();
 }
@@ -239,7 +239,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Picks& out) {
     if (!canon::json::detail::Object(v, dec)) return false;
     if (const nlohmann::json* x1 = dec.Required(v, "a")) {
         dec.AsString((*x1), "a", out.a_);
-        if (out.a_ != "auto" && out.a_ != "authoritative" && out.a_ != "local_budget") dec.Fail("a", "unknown value " + out.a_);
+        if (out.a_ != "auto" && !RollModeFromWire(out.a_)) dec.Fail("a", "unknown value " + out.a_);
     }
     {
         constexpr const char* w0[] = {"n0", "n1"};
@@ -251,7 +251,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Picks& out) {
             dec.Int(v, w0[s], e.n_);
             if (const nlohmann::json* x3 = dec.Required(v, w1[s])) {
                 dec.AsString((*x3), w1[s], e.mode_);
-                if (e.mode_ != "auto" && e.mode_ != "authoritative" && e.mode_ != "local_budget") dec.Fail(w1[s], "unknown value " + e.mode_);
+                if (e.mode_ != "auto" && !RollModeFromWire(e.mode_)) dec.Fail(w1[s], "unknown value " + e.mode_);
             }
             out.slots_.push_back(std::move(e));
         }
@@ -301,22 +301,58 @@ struct EventsAccess {
 }  // namespace detail
 
 std::string_view ToName(RollMode v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"authoritative", "local_budget"};
+    static constexpr std::array<std::string_view, 8> kNames = {
+        "authoritative",
+        "local_budget",
+        "shared",
+        "split",
+        "fixed",
+        "scaled",
+        "capped",
+        "replayed",
+    };
     const size_t i = static_cast<size_t>(v);
     if (i >= kNames.size()) return {};
     return kNames[i];
 }
 
 std::string_view ToWire(RollMode v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"authoritative", "local_budget"};
+    static constexpr std::array<std::string_view, 8> kWires = {
+        "authoritative",
+        "local_budget",
+        "shared",
+        "split",
+        "fixed",
+        "scaled",
+        "capped",
+        "replayed",
+    };
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
 }
 
 std::optional<RollMode> RollModeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"authoritative", "local_budget"};
-    static constexpr std::array<RollMode, 2> kValues = {RollMode::authoritative, RollMode::local_budget};
+    static constexpr std::array<std::string_view, 8> kKeys = {
+        "authoritative",
+        "capped",
+        "fixed",
+        "local_budget",
+        "replayed",
+        "scaled",
+        "shared",
+        "split",
+    };
+    static constexpr std::array<RollMode, 8> kValues = {
+        RollMode::authoritative,
+        RollMode::capped,
+        RollMode::fixed,
+        RollMode::local_budget,
+        RollMode::replayed,
+        RollMode::scaled,
+        RollMode::shared,
+        RollMode::split,
+    };
     size_t lo = 0;
     size_t hi = kKeys.size();
     while (lo < hi) {

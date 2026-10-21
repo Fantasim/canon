@@ -30,6 +30,9 @@ func typesEvents(time *ir.Package) *ir.Package {
 	roll := &ir.Enum{Pkg: "resource.events", Name: "RollMode", Members: []*ir.EnumMember{
 		{Name: "authoritative", Wire: "authoritative"}, {Name: "local_budget", Wire: "local_budget", Index: 1},
 	}}
+	for _, m := range []string{"shared", "split", "fixed", "scaled", "capped", "replayed"} { // 8 members: a union's check searches them (DECISIONS 392)
+		roll.Members = append(roll.Members, &ir.EnumMember{Name: m, Wire: m, Index: len(roll.Members)})
+	}
 	tRoll := ir.TypeRef{Kind: types.Enum, Named: roll}
 	rect := &ir.Record{Pkg: "resource.events", Name: "Rect"}
 	for _, side := range []string{"left", "top", "right", "bottom"} {

@@ -21,9 +21,15 @@ namespace NMEvent::gen {
 enum class RollMode : uint8_t {
     authoritative,
     local_budget,
+    shared,
+    split,
+    fixed,
+    scaled,
+    capped,
+    replayed,
 };
 
-inline constexpr std::array<RollMode, 2> kRollModeMembers = {RollMode::authoritative, RollMode::local_budget};
+inline constexpr std::array<RollMode, 8> kRollModeMembers = {RollMode::authoritative, RollMode::local_budget, RollMode::shared, RollMode::split, RollMode::fixed, RollMode::scaled, RollMode::capped, RollMode::replayed};
 
 std::string_view ToName(RollMode v);
 std::string_view ToWire(RollMode v);

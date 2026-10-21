@@ -1,9 +1,13 @@
 package ir
 
 import (
+	"maps"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // baked reports a baked emit, whose values gen/cpp builds into the program (CODEGEN.md §2.2, §5.9).
@@ -157,4 +161,76 @@ func (pl *CppNamePlan) declareJSONHooks() {
 // tablesOwnToWire reports a baked package with a public table and no enum or variant: its id enums still overload ToWire (CODEGEN.md §5.3).
 func (pl *CppNamePlan) tablesOwnToWire() bool {
 	return pl.baked() && slices.ContainsFunc(pl.p.Values, func(v *Value) bool { return tableRecord(v) != nil })
+}
+
+// CppBulkArray is a baked Build's n-th array, kBulk<N> in detail's unnamed namespace (CODEGEN.md §3.5, §7.3).
+func CppBulkArray(n int) string { return cppBulkPrefix + strconv.Itoa(n) }
+
+// CppBuildPart is <P>Access's n-th part of Build, Build<N> (CODEGEN.md §3.5, §7.3).
+func CppBuildPart(n int) string { return cppBuild + strconv.Itoa(n) }
+
+// ElemsName is a long list or map constant's n-th array in detail: k<NAME>Elems, then k<NAME>Elems<N> for a nested one's further arrays (CODEGEN.md §3.5, §5.1).
+func (pl *CppNamePlan) ElemsName(c *Const, n int) string {
+	name := cppConstPrefix + pl.ConstName(c) + cppElemsSuffix
+	if n == 0 {
+		return name
+	}
+	return name + strconv.Itoa(n)
+}
+
+// numbered reports name as prefix and a number strconv writes so: a name of CppBulkArray's or CppBuildPart's family.
+func numbered(name, prefix string) bool {
+	rest, ok := strings.CutPrefix(name, prefix)
+	n, err := strconv.Atoi(rest)
+	return ok && err == nil && n >= 0 && strconv.Itoa(n) == rest
+}
+
+// reserveBulk is E8005 for a namespace name a kBulk<N> array of detail or a Build<N> part of the access struct hides where Build names it, whatever the data's size (CODEGEN.md §3.5, DECISIONS 392).
+func (pl *CppNamePlan) reserveBulk() {
+	for _, name := range slices.Sorted(maps.Keys(pl.ns.names)) {
+		if numbered(name, cppBulkPrefix) || numbered(name, cppBuild) {
+			pl.collide(pl.ns, name, pl.ns.names[name], pl.p.Name, pl.ns.items[name]) // at the user's declaration
+		}
+	}
+}
+
+// declareElems declares each long list or map constant's detail::k<NAME>Elems, shared by the namespace's headers, and is E8005 for a namespace name of its numbered family (CODEGEN.md §5.1).
+func (pl *CppNamePlan) declareElems(detail *nameScope) {
+	for _, c := range pl.p.Consts {
+		if !bulkConst(c) {
+			continue
+		}
+		first := pl.ElemsName(c, 0)
+		pl.shareInner(detail, first, c.Name, c)
+		for _, name := range slices.Sorted(maps.Keys(pl.ns.names)) {
+			if numbered(name, first) {
+				pl.collide(pl.ns, name, pl.ns.names[name], c.Name, pl.ns.items[name])
+			}
+		}
+	}
+}
+
+// bulkConst reports a list or map constant of at least CppBulkMinElems elements across its levels.
+func bulkConst(c *Const) bool { return BulkCount(c.Type, c.V) >= CppBulkMinElems }
+
+// BulkCount is the elements of v of type t across every level of nested lists and maps: what
+// gen/cpp weighs against CppBulkMinElems before reading a literal from arrays (DECISIONS 392).
+func BulkCount(t TypeRef, v value.Value) int {
+	if t.Elem == nil || t.Kind == types.List && t.KeyedBy != nil || t.Kind != types.List && t.Kind != types.Map {
+		return 0
+	}
+	var items []value.Value
+	switch x := v.(type) {
+	case *value.List:
+		items = x.Elems
+	case *value.Map:
+		items = x.Vals
+	default:
+		return 0
+	}
+	n := len(items)
+	for _, it := range items {
+		n += BulkCount(*t.Elem, it)
+	}
+	return n
 }

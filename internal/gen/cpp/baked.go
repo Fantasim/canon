@@ -111,6 +111,8 @@ func (g *gen) bakedAccess() {
 	if members.String() == "" {
 		return
 	}
+	g.pool = bakedBulk()
+	defer func() { g.pool = nil }()
 	for _, v := range g.values {
 		if ir.IsContainer(v) {
 			leave := g.enter(v.Name)
@@ -130,7 +132,16 @@ func (g *gen) bakedAccess() {
 			leave()
 		}
 	}
-	g.c.printf(bakedAccessText, g.pl.AccessName(), members.String(), body.String())
+	if g.pool.n > 0 {
+		g.c.line(anonOpen)
+		g.c.blank()
+		g.c.write(g.pool.w.String())
+		g.c.line(anonClose)
+		g.c.blank()
+	}
+	access := g.pl.AccessName()
+	decls, calls, defs := buildParts(access, body.String())
+	g.c.printf(bakedAccessText, access, members.String(), decls, calls, defs)
 }
 
 // dataMembers are a value's members of Data: its container, record or storage, and a resolved ref's entries.
@@ -168,26 +179,44 @@ func (g *gen) refStorageOf(t ir.TypeRef, list, optional bool) (storage, init str
 func (g *gen) allocate(w *writer, v *ir.Value) {
 	s := g.containerSpec(v)
 	rows := g.rows(v)
-	keys := make([]string, len(rows))
 	kf := g.keyFieldOf(v)
-	for i, r := range rows {
-		keys[i] = g.entryKey(kf, r, v.IDs, i)
-	}
+	key := func(i int) string { return g.entryKey(kf, rows[i], v.IDs, i) }
 	data := dataPrefix + g.pl.DataMember(v.Name) + memberAccess
-	w.linef(1, allocateFormat, data, s.key, s.elem, s.elem, len(rows))
-	for _, k := range keys {
-		w.lineAt(depthTwo, k+comma)
+	keyType := ir.TypeRef{Kind: types.String} // a table's keys are its ids
+	if kf != nil {
+		keyType = kf.Type
 	}
-	w.linef(1, allocateClose)
-	for _, f := range s.stable {
-		fb := g.pl.FindBy(f)
-		vals := make([]string, len(rows))
-		for i, r := range rows {
-			vals[i] = g.element(f.Type, g.fieldOf(r, f.Name))
+	if from := g.hoistedKeys(keyType, s.key, len(rows), key); from != "" {
+		w.linef(1, keyedFromFormat, data+rowsField, s.key, s.elem, s.elem, len(rows), from)
+	} else {
+		w.linef(1, allocateFormat, data, s.key, s.elem, s.elem, len(rows))
+		for i := range rows {
+			w.lineAt(depthTwo, key(i)+comma)
 		}
-		w.linef(1, assignFormat, data+fb.Keys, openBrace+strings.Join(vals, listSep)+closeBrace)
-		w.linef(1, sortedIndexDataFormat, data+fb.Index, data+fb.Keys)
+		w.linef(1, allocateClose)
 	}
+	for _, f := range s.stable {
+		g.stableKeys(w, data, f, rows)
+	}
+}
+
+// stableKeys writes a @stable field's values in entry order and their sorted index (CODEGEN.md §5.9).
+func (g *gen) stableKeys(w *writer, data string, f *ir.Field, rows []*value.Record) {
+	fb := g.pl.FindBy(f)
+	vals := make([]value.Value, len(rows))
+	for i, r := range rows {
+		vals[i] = g.fieldOf(r, f.Name)
+	}
+	if name, ok := g.hoistElems(f.Type, vals); ok {
+		w.linef(1, assignFormat, data+fb.Keys, rangeOf(fmt.Sprintf(vectorFormat, g.storage(f.Type)), name))
+	} else {
+		items := make([]string, len(vals))
+		for i, v := range vals {
+			items[i] = g.element(f.Type, v)
+		}
+		w.linef(1, assignFormat, data+fb.Keys, openBrace+strings.Join(items, listSep)+closeBrace)
+	}
+	w.linef(1, sortedIndexDataFormat, data+fb.Index, data+fb.Keys)
 }
 
 // keyFieldOf is a keyed list's key field, nil for a table, whose keys are its ids.
@@ -202,7 +231,7 @@ func (g *gen) keyFieldOf(v *ir.Value) *ir.Field {
 func (g *gen) entryKey(kf *ir.Field, r *value.Record, ids []string, i int) string {
 	if kf == nil {
 		if i < len(ids) {
-			return quote(ids[i])
+			return g.strLit(ids[i])
 		}
 		return cppInvalid
 	}
@@ -231,15 +260,22 @@ func (g *gen) fillData(w *writer, v *ir.Value) {
 		g.malformed(fmt.Sprintf(typeFormat, v.Type.Elem.Named), v.Name)
 		return
 	}
-	for i, r := range g.rows(v) {
-		w.linef(1, openBrace)
-		w.linef(depthTwo, rowRefFormat, rowVar(depthTwo), g.rowClass(rec), data, i)
+	rows := g.rows(v)
+	done := g.fillColumns(w, v, rec, rows)
+	for i, r := range rows {
+		var block writer
+		block.linef(1, openBrace)
+		block.linef(depthTwo, rowRefFormat, rowVar(depthTwo), g.rowClass(rec), data, i)
+		head := block.size()
 		if rec.Pkg != g.p.Name {
-			g.fillRow(at{w, depthTwo}, rowVar(depthTwo), rec, r, g.rowIDLit(rec, r))
+			g.fillRow(at{&block, depthTwo}, rowVar(depthTwo), rec, r, g.rowIDLit(rec, r))
 		} else {
-			g.fillRecord(at{w, depthTwo}, rowVar(depthTwo), class{rec: rec}, r)
+			g.fillRecordExcept(at{&block, depthTwo}, rowVar(depthTwo), class{rec: rec}, r, done)
 		}
-		w.linef(1, closeBrace)
+		if block.size() > head || done == nil { // a row the columns wrote whole needs no block
+			block.linef(1, closeBrace)
+			w.write(block.String())
+		}
 	}
 }
 

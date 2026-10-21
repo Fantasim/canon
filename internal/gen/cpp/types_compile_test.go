@@ -93,6 +93,7 @@ var typesFiles = []typesFile{
 		want:  "midpoint.json: error Extras: $.ratio: expected a Float32: the number lies halfway between two Float32 values\n",
 		parse: "midpoint.json: reqMp=7 label=x mode=authoritative delay=1500 ratio=1.67772e+07\n"},
 	{name: "pick.json", arg: "x", text: `{"mode": "bogus"}`, want: "pick.json: error Extras: $.mode: unknown value bogus\n"},
+	{name: "rollmode.json", arg: "x", text: `{"mode": "replayed"}`, want: "rollmode.json: reqMp=7 label=x mode=replayed delay=1500 ratio=0.5\n"}, // RollModeFromWire (DECISIONS 392)
 	{name: "picks.json", arg: "p", text: `{"a": "auto", "n0": 1, "m0": "authoritative", "n1": 2, "m1": "auto"}`,
 		want: "picks.json: a=auto slots= 1=authoritative 2=auto\n"},
 	{name: "required.json", arg: "p", text: `{"a": "bogus"}`, want: "required.json: error Picks: $.a: unknown value bogus\n"},

@@ -12,8 +12,10 @@ func (pl *CppNamePlan) declareDetail() {
 	pl.declareOrdinals(sc)
 	pl.declareWireTables(sc)
 	pl.declareMake(sc)
+	pl.declareElems(sc)
 	if pl.baked() {
 		pl.declareBakedDetail(sc, pl.accessScope(access))
+		pl.reserveBulk()
 	} else {
 		pl.declareAccess(access)
 		pl.declareDecoders(sc)

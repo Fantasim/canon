@@ -18,8 +18,8 @@ func (g *gen) defineTables() {
 			g.c.write(maybeUnused) // a baked emit writes the table and reads no key from it (CODEGEN.md §5.8)
 		}
 		g.c.printf(definesOpenFormat, len(d.Names), g.pl.DefinesName(d))
-		for i, n := range d.Names {
-			g.c.linef(1, defineEntryFormat, quote(n), intLit(d.Values[i]))
+		for i, n := range views(d.Names) {
+			g.c.linef(1, defineEntryFormat, n, intLit(d.Values[i]))
 		}
 		g.c.line(definesClose)
 		g.c.blank()

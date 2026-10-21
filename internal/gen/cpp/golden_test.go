@@ -28,7 +28,7 @@ var fixtures = []fixture{
 	{"emberfall-tone", emberTone}, {"emberfall-core", emberCore}, {"emberfall-world-baked", emberWorld(ir.ModeBaked)},
 	{"emberfall-world-data", emberWorld(ir.ModeData)}, {"emberfall-world-types", emberWorld(ir.ModeTypes)},
 	{"emberfall-camp", emberCamp}, {"empty-owner-b", emptyOwnerB}, {"empty-owner-a", emptyOwnerA}, {"types-open", openPackageFixture}, {"types-open-refdep", openRefdepFixture}, {"types-open-refdep-shape", openRefdepShapeFixture},
-	{"enum-helpers", helpersPackage}, {"defines", definesPackage},
+	{"enum-helpers", helpersPackage}, {"defines", definesPackage}, {"baked-bulk", bulkSmallPackage}, {"baked-nul", nulPackage}, {"types-nul", nulTypesPackage}, {"baked-dependent-bulk", bakedDependentBulkPackage},
 }
 
 // generate runs the generator twice: the same bytes both times (CODEGEN.md §2.7, NFR-05).

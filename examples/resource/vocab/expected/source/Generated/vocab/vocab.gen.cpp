@@ -4,9 +4,11 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace sov::vocab {
@@ -59,6 +61,220 @@ namespace detail {
     {"WI_WORLD_RARTESIA", 4},
 }};
 
+namespace {
+
+constexpr std::string_view kBulk0[] = {
+    std::string_view("COMBAT_KILL_MONSTER", 19),
+    std::string_view("COMBAT_KILL_GIANT", 17),
+    std::string_view("COMBAT_KILL_BOSS", 16),
+    std::string_view("COMBAT_KILL_WORLD_BOSS", 22),
+    std::string_view("COMBAT_KILL_BY_ELEMENT", 22),
+    std::string_view("COMBAT_DAMAGE_PVE", 17),
+    std::string_view("COMBAT_DAMAGE_PVP_EVENT", 23),
+    std::string_view("COMBAT_KILL_FFA", 15),
+    std::string_view("COMBAT_KILL_GUILD_SIEGE", 23),
+    std::string_view("COMBAT_KILL_TDM", 15),
+    std::string_view("COMBAT_GAME_MODE_START", 22),
+    std::string_view("ECONOMY_DROP_PENYAS", 19),
+    std::string_view("ECONOMY_DROP_ITEM", 17),
+    std::string_view("ECONOMY_SPEND_VOTE_POINTS", 25),
+    std::string_view("ECONOMY_CONSUME_ITEM", 20),
+    std::string_view("PROGRESSION_COLLECT_MONSTER", 27),
+    std::string_view("PROGRESSION_COLLECT_ITEM", 24),
+    std::string_view("PROGRESSION_CARD_DRAWN", 22),
+    std::string_view("CONTENT_COMPLETE_DUNGEON", 24),
+    std::string_view("CONTENT_COMPLETE_ADVENTURE_QUEST", 32),
+    std::string_view("CONTENT_WHEEL_OF_FORTUNE", 24),
+    std::string_view("CONTENT_LOTTERY_BUY_TICKETS", 27),
+    std::string_view("ITEMS_CRAFTED", 13),
+    std::string_view("ITEMS_RECYCLED", 14),
+    std::string_view("ITEMS_PERFORM_UPGRADE", 21),
+    std::string_view("MISC_ACTIVE_PLAYTIME", 20),
+    std::string_view("MISC_STATS_SNAPSHOT", 19),
+};
+
+constexpr uint16_t kBulk1[] = {
+    0,
+    1,
+    2,
+    3,
+    5,
+    10,
+    12,
+    30,
+    31,
+    32,
+    50,
+    1000,
+    1001,
+    1031,
+    1050,
+    2030,
+    2031,
+    2090,
+    4000,
+    4010,
+    4050,
+    4080,
+    5000,
+    5001,
+    5010,
+    8000,
+    8100,
+};
+
+constexpr EventTypeId kBulk2[] = {
+    EventTypeId::COMBAT_KILL_MONSTER,
+    EventTypeId::COMBAT_KILL_GIANT,
+    EventTypeId::COMBAT_KILL_BOSS,
+    EventTypeId::COMBAT_KILL_WORLD_BOSS,
+    EventTypeId::COMBAT_KILL_BY_ELEMENT,
+    EventTypeId::COMBAT_DAMAGE_PVE,
+    EventTypeId::COMBAT_DAMAGE_PVP_EVENT,
+    EventTypeId::COMBAT_KILL_FFA,
+    EventTypeId::COMBAT_KILL_GUILD_SIEGE,
+    EventTypeId::COMBAT_KILL_TDM,
+    EventTypeId::COMBAT_GAME_MODE_START,
+    EventTypeId::ECONOMY_DROP_PENYAS,
+    EventTypeId::ECONOMY_DROP_ITEM,
+    EventTypeId::ECONOMY_SPEND_VOTE_POINTS,
+    EventTypeId::ECONOMY_CONSUME_ITEM,
+    EventTypeId::PROGRESSION_COLLECT_MONSTER,
+    EventTypeId::PROGRESSION_COLLECT_ITEM,
+    EventTypeId::PROGRESSION_CARD_DRAWN,
+    EventTypeId::CONTENT_COMPLETE_DUNGEON,
+    EventTypeId::CONTENT_COMPLETE_ADVENTURE_QUEST,
+    EventTypeId::CONTENT_WHEEL_OF_FORTUNE,
+    EventTypeId::CONTENT_LOTTERY_BUY_TICKETS,
+    EventTypeId::ITEMS_CRAFTED,
+    EventTypeId::ITEMS_RECYCLED,
+    EventTypeId::ITEMS_PERFORM_UPGRADE,
+    EventTypeId::MISC_ACTIVE_PLAYTIME,
+    EventTypeId::MISC_STATS_SNAPSHOT,
+};
+
+constexpr uint16_t kBulk3[] = {
+    0,
+    1,
+    2,
+    3,
+    5,
+    10,
+    12,
+    30,
+    31,
+    32,
+    50,
+    1000,
+    1001,
+    1031,
+    1050,
+    2030,
+    2031,
+    2090,
+    4000,
+    4010,
+    4050,
+    4080,
+    5000,
+    5001,
+    5010,
+    8000,
+    8100,
+};
+
+constexpr std::string_view kBulk4[] = {
+    std::string_view("Monster Kill", 12),
+    std::string_view("Giant Kill", 10),
+    std::string_view("Boss Kill", 9),
+    std::string_view("World Boss Kill", 15),
+    std::string_view("Elemental Kill", 14),
+    std::string_view("PvE AA Damage", 13),
+    std::string_view("PvP Event Damage", 16),
+    std::string_view("FFA Kill", 8),
+    std::string_view("Guild Siege Kill", 16),
+    std::string_view("TDM Kill", 8),
+    std::string_view("Game Mode Start", 15),
+    std::string_view("Penya Drop", 10),
+    std::string_view("Item Drop", 9),
+    std::string_view("Vote Points Spent", 17),
+    std::string_view("Item Consumed", 13),
+    std::string_view("Monster Collected", 17),
+    std::string_view("Item Collected", 14),
+    std::string_view("Cards Drawn", 11),
+    std::string_view("Dungeon Clear", 13),
+    std::string_view("Adventure Quest", 15),
+    std::string_view("Wheel of Fortune", 16),
+    std::string_view("Lottery Tickets", 15),
+    std::string_view("Item Crafted", 12),
+    std::string_view("Item Recycled", 13),
+    std::string_view("Item Upgrade", 12),
+    std::string_view("Active Playtime", 15),
+    std::string_view("Stats Snapshot", 14),
+};
+
+constexpr ParamKind kBulk5[] = {
+    ParamKind::monster,
+    ParamKind::monster,
+    ParamKind::monster,
+    ParamKind::monster,
+    ParamKind::element,
+    ParamKind::monster,
+    ParamKind::none_,
+    ParamKind::none_,
+    ParamKind::none_,
+    ParamKind::none_,
+    ParamKind::game_mode,
+    ParamKind::monster,
+    ParamKind::item,
+    ParamKind::none_,
+    ParamKind::item,
+    ParamKind::monster,
+    ParamKind::item,
+    ParamKind::none_,
+    ParamKind::dungeon,
+    ParamKind::quest_style,
+    ParamKind::none_,
+    ParamKind::none_,
+    ParamKind::item,
+    ParamKind::item,
+    ParamKind::upgrade_type,
+    ParamKind::none_,
+    ParamKind::stat,
+};
+
+constexpr std::optional<std::string_view> kBulk6[] = {
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::string_view("__CARD_COLLECTION", 17),
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+};
+
+}  // namespace
+
 struct VocabAccess {
     struct Data {
         EventTypes eventTypes;
@@ -72,226 +288,16 @@ struct VocabAccess {
 
 VocabAccess::Data VocabAccess::Build() {
     Data d;
-    d.eventTypes.rows_ = canon::KeyedList<std::string, EventType>::FromRows(std::vector<EventType>(27), {
-        "COMBAT_KILL_MONSTER",
-        "COMBAT_KILL_GIANT",
-        "COMBAT_KILL_BOSS",
-        "COMBAT_KILL_WORLD_BOSS",
-        "COMBAT_KILL_BY_ELEMENT",
-        "COMBAT_DAMAGE_PVE",
-        "COMBAT_DAMAGE_PVP_EVENT",
-        "COMBAT_KILL_FFA",
-        "COMBAT_KILL_GUILD_SIEGE",
-        "COMBAT_KILL_TDM",
-        "COMBAT_GAME_MODE_START",
-        "ECONOMY_DROP_PENYAS",
-        "ECONOMY_DROP_ITEM",
-        "ECONOMY_SPEND_VOTE_POINTS",
-        "ECONOMY_CONSUME_ITEM",
-        "PROGRESSION_COLLECT_MONSTER",
-        "PROGRESSION_COLLECT_ITEM",
-        "PROGRESSION_CARD_DRAWN",
-        "CONTENT_COMPLETE_DUNGEON",
-        "CONTENT_COMPLETE_ADVENTURE_QUEST",
-        "CONTENT_WHEEL_OF_FORTUNE",
-        "CONTENT_LOTTERY_BUY_TICKETS",
-        "ITEMS_CRAFTED",
-        "ITEMS_RECYCLED",
-        "ITEMS_PERFORM_UPGRADE",
-        "MISC_ACTIVE_PLAYTIME",
-        "MISC_STATS_SNAPSHOT",
-    });
-    d.eventTypes.byCodeKeys_ = {0, 1, 2, 3, 5, 10, 12, 30, 31, 32, 50, 1000, 1001, 1031, 1050, 2030, 2031, 2090, 4000, 4010, 4050, 4080, 5000, 5001, 5010, 8000, 8100};
+    d.eventTypes.rows_ = canon::KeyedList<std::string, EventType>::FromRows(std::vector<EventType>(27), std::vector<std::string>(std::begin(kBulk0), std::end(kBulk0)));
+    d.eventTypes.byCodeKeys_ = std::vector<uint16_t>(std::begin(kBulk1), std::end(kBulk1));
     d.eventTypes.byCode_ = canon::detail::SortedIndex(d.eventTypes.byCodeKeys_);
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(0));
-        r2.id_ = EventTypeId::COMBAT_KILL_MONSTER;
-        r2.code_ = 0;
-        r2.display_ = "Monster Kill";
-        r2.param_ = ParamKind::monster;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(1));
-        r2.id_ = EventTypeId::COMBAT_KILL_GIANT;
-        r2.code_ = 1;
-        r2.display_ = "Giant Kill";
-        r2.param_ = ParamKind::monster;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(2));
-        r2.id_ = EventTypeId::COMBAT_KILL_BOSS;
-        r2.code_ = 2;
-        r2.display_ = "Boss Kill";
-        r2.param_ = ParamKind::monster;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(3));
-        r2.id_ = EventTypeId::COMBAT_KILL_WORLD_BOSS;
-        r2.code_ = 3;
-        r2.display_ = "World Boss Kill";
-        r2.param_ = ParamKind::monster;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(4));
-        r2.id_ = EventTypeId::COMBAT_KILL_BY_ELEMENT;
-        r2.code_ = 5;
-        r2.display_ = "Elemental Kill";
-        r2.param_ = ParamKind::element;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(5));
-        r2.id_ = EventTypeId::COMBAT_DAMAGE_PVE;
-        r2.code_ = 10;
-        r2.display_ = "PvE AA Damage";
-        r2.param_ = ParamKind::monster;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(6));
-        r2.id_ = EventTypeId::COMBAT_DAMAGE_PVP_EVENT;
-        r2.code_ = 12;
-        r2.display_ = "PvP Event Damage";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(7));
-        r2.id_ = EventTypeId::COMBAT_KILL_FFA;
-        r2.code_ = 30;
-        r2.display_ = "FFA Kill";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(8));
-        r2.id_ = EventTypeId::COMBAT_KILL_GUILD_SIEGE;
-        r2.code_ = 31;
-        r2.display_ = "Guild Siege Kill";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(9));
-        r2.id_ = EventTypeId::COMBAT_KILL_TDM;
-        r2.code_ = 32;
-        r2.display_ = "TDM Kill";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(10));
-        r2.id_ = EventTypeId::COMBAT_GAME_MODE_START;
-        r2.code_ = 50;
-        r2.display_ = "Game Mode Start";
-        r2.param_ = ParamKind::game_mode;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(11));
-        r2.id_ = EventTypeId::ECONOMY_DROP_PENYAS;
-        r2.code_ = 1000;
-        r2.display_ = "Penya Drop";
-        r2.param_ = ParamKind::monster;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(12));
-        r2.id_ = EventTypeId::ECONOMY_DROP_ITEM;
-        r2.code_ = 1001;
-        r2.display_ = "Item Drop";
-        r2.param_ = ParamKind::item;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(13));
-        r2.id_ = EventTypeId::ECONOMY_SPEND_VOTE_POINTS;
-        r2.code_ = 1031;
-        r2.display_ = "Vote Points Spent";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(14));
-        r2.id_ = EventTypeId::ECONOMY_CONSUME_ITEM;
-        r2.code_ = 1050;
-        r2.display_ = "Item Consumed";
-        r2.param_ = ParamKind::item;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(15));
-        r2.id_ = EventTypeId::PROGRESSION_COLLECT_MONSTER;
-        r2.code_ = 2030;
-        r2.display_ = "Monster Collected";
-        r2.param_ = ParamKind::monster;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(16));
-        r2.id_ = EventTypeId::PROGRESSION_COLLECT_ITEM;
-        r2.code_ = 2031;
-        r2.display_ = "Item Collected";
-        r2.param_ = ParamKind::item;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(17));
-        r2.id_ = EventTypeId::PROGRESSION_CARD_DRAWN;
-        r2.code_ = 2090;
-        r2.display_ = "Cards Drawn";
-        r2.param_ = ParamKind::none_;
-        r2.flag_ = "__CARD_COLLECTION";
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(18));
-        r2.id_ = EventTypeId::CONTENT_COMPLETE_DUNGEON;
-        r2.code_ = 4000;
-        r2.display_ = "Dungeon Clear";
-        r2.param_ = ParamKind::dungeon;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(19));
-        r2.id_ = EventTypeId::CONTENT_COMPLETE_ADVENTURE_QUEST;
-        r2.code_ = 4010;
-        r2.display_ = "Adventure Quest";
-        r2.param_ = ParamKind::quest_style;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(20));
-        r2.id_ = EventTypeId::CONTENT_WHEEL_OF_FORTUNE;
-        r2.code_ = 4050;
-        r2.display_ = "Wheel of Fortune";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(21));
-        r2.id_ = EventTypeId::CONTENT_LOTTERY_BUY_TICKETS;
-        r2.code_ = 4080;
-        r2.display_ = "Lottery Tickets";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(22));
-        r2.id_ = EventTypeId::ITEMS_CRAFTED;
-        r2.code_ = 5000;
-        r2.display_ = "Item Crafted";
-        r2.param_ = ParamKind::item;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(23));
-        r2.id_ = EventTypeId::ITEMS_RECYCLED;
-        r2.code_ = 5001;
-        r2.display_ = "Item Recycled";
-        r2.param_ = ParamKind::item;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(24));
-        r2.id_ = EventTypeId::ITEMS_PERFORM_UPGRADE;
-        r2.code_ = 5010;
-        r2.display_ = "Item Upgrade";
-        r2.param_ = ParamKind::upgrade_type;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(25));
-        r2.id_ = EventTypeId::MISC_ACTIVE_PLAYTIME;
-        r2.code_ = 8000;
-        r2.display_ = "Active Playtime";
-        r2.param_ = ParamKind::none_;
-    }
-    {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(26));
-        r2.id_ = EventTypeId::MISC_STATS_SNAPSHOT;
-        r2.code_ = 8100;
-        r2.display_ = "Stats Snapshot";
-        r2.param_ = ParamKind::stat;
+    for (size_t i = 0; i < 27; ++i) {
+        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(i));
+        r2.id_ = kBulk2[i];
+        r2.code_ = kBulk3[i];
+        r2.display_ = kBulk4[i];
+        r2.param_ = kBulk5[i];
+        r2.flag_ = kBulk6[i];
     }
     return d;
 }

@@ -123,7 +123,7 @@ func (g *gen) readVariant(v *ir.Variant) {
 		if i == 0 {
 			open = ifTagFormat
 		}
-		g.c.linef(1, open, quote(cs.Wire))
+		g.c.linef(1, open, viewLit(cs.Wire))
 		h := g.written(g.pl.CaseHook(v, cs))
 		if len(cs.Fields) == 0 {
 			g.c.linef(depthTwo, assignFormat, outVar, g.makeCall(v.Pkg, h.Name, nil))
@@ -134,7 +134,7 @@ func (g *gen) readVariant(v *ir.Variant) {
 		g.c.base--
 	}
 	g.c.linef(1, elseOpen)
-	g.c.linef(depthTwo, unknownCaseFormat, quote(v.Tag))
+	g.c.linef(depthTwo, unknownCaseFormat, viewLit(v.Tag))
 	g.c.linef(1, closeBrace)
 	g.c.linef(1, returnOk)
 }

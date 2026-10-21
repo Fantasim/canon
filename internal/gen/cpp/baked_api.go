@@ -138,7 +138,7 @@ func (g *gen) constexprFn(fn *ir.ExportFn) {
 	}
 	items := make([]string, len(cells))
 	for i, c := range cells {
-		items[i] = g.element(fn.Result, c)
+		items[i] = g.inViews(func() string { return g.element(fn.Result, c) })
 	}
 	typ := g.cellType(fn.Result)
 	name := g.pl.CellsName(fn)

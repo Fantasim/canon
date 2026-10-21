@@ -143,7 +143,7 @@ func (g *gen) openPath(f *ir.Field, fields []*ir.Field) (obj string, depth int) 
 	for i, seg := range f.WirePath[:len(f.WirePath)-1] {
 		v := fmt.Sprintf(pathVarFormat, i)
 		g.c.linef(depth, stepOpenFormat, v, obj, quote(seg))
-		g.c.linef(depth+1, pushFormat, quote(seg))
+		g.c.linef(depth+1, pushFormat, stringLit(seg))
 		obj, depth = fmt.Sprintf(derefFormat, v), depth+1
 		if !g.types() {
 			g.checkKeys(depth, obj, nextSegments(fields, f.WirePath[:i+1]), false)
@@ -163,7 +163,7 @@ func (g *gen) closePath(f *ir.Field, depth int, l leaf) {
 			g.assignDefault(depth+1, l)
 		case !f.Optional:
 			g.c.linef(depth, elseOpen)
-			g.c.linef(depth+1, failMissingFormat, quote(strings.Join(f.WirePath[i:], qnameSep)))
+			g.c.linef(depth+1, failMissingFormat, viewLit(strings.Join(f.WirePath[i:], qnameSep)))
 		}
 		g.c.linef(depth, closeBrace)
 	}
