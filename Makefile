@@ -129,6 +129,20 @@ audit-tighten:
 check-real:
 	@bash tools/check-real.sh
 
+# DECISIONS 394, the release gate (required before every tag): builds the real Sovereign Canon
+# project with the compiler of this tree and compiles every generated unit on its own at the
+# consumer's flags (clang++ -O3 -g -std=c++20 -Wall -Wextra -Werror, go build, the tsc flags of
+# tools/tsc), each under a 4G memory cap. A unit that fails, goes over 1.5 GB peak RSS or 60 s
+# fails the target; it prints the sorted table (unit, peak RSS, time) and a PASS/FAIL line.
+# SOVEREIGN is the Sovereign root (Resource/, Source/, services/), read-only: the project is
+# copied into a scratch tree of the run, removed on exit (DECISIONS 29). Skips with a message
+# when the tree is absent. About 9 min on 24 cores (4 jobs); opt-in, never part of `check`.
+SOVEREIGN ?= ../..
+export SOVEREIGN
+.PHONY: realdata-compile
+realdata-compile:
+	@bash tools/realdata-compile.sh
+
 # DECISIONS 200: the generated-program suites at nightly size, under the memory cap, once per
 # seed of PROGEN_SEEDS (decision log A3: larger N, several seeds; seeds a million apart so no
 # two runs share a case); a crash is reported with its seed and the suite goes on; -progen.keep

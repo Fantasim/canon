@@ -216,6 +216,7 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 - [x] GO (wave 2): `[T?]`/`{K: V?}` and ref unions in every Go mode (385, 387).
 - [x] MACRO: standard-library macro names are `E8011` `macro`, `W8006` additions (388).
 - [x] CLEANUP, S2, release gates (ADR-0022 §9: Resource dry run, Sovereign C++ farm), tag (local).
+- [ ] **Standing release gate, required before every tag (DECISIONS 394):** `make realdata-compile` (the real Sovereign output compiled unit by unit at the consumer's flags; PASS or no tag).
 
 ## v0.2 (Louis, 2026-10-14)
 
