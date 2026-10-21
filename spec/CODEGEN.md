@@ -386,7 +386,8 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
   the inline definitions of the hooks that fill resolved refs (declared in `<P>Make`, defined
   here since they read the value accessors), package-level export fns, snapshot and store, inputs; (6) `namespace conformance {` with the entry point declaration
   (T10), when the package has translated functions. The `.gen.cpp` holds, inside `namespace
-  detail`, the decoder definitions then the `<P>Access` definition; then, in the package namespace,
+  detail`, the decoder definitions, an unnamed namespace of the `kBulk<N>` arrays `Build` reads
+  (numbered in emission order, DECISIONS 392), then the `<P>Access` definition; then, in the package namespace,
   the enum helper definitions (§5.2; enums in the order of (2), an opened enum's one sorted wire
   table in an unnamed namespace before its helpers), each table's id-enum `ToWire` and
   `<Rec>IdFromWire` (§5.3), then the out-of-line member definitions in class order (DECISIONS 383). The readers of other packages' classes (§2.8) are in the `.gen.cpp`
@@ -400,8 +401,8 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
     an included header already provides it, from this table: `std::chrono` `<chrono>`, `size_t`
     `<cstddef>`, `int64_t` and the other fixed-width integers `<cstdint>`, `std::fprintf`
     `<cstdio>`, `std::shared_ptr`/`std::make_shared` `<memory>`, `std::optional` `<optional>`,
-    `std::string`/`std::to_string` `<string>`, `std::string_view` `<string_view>`, `std::move`
-    `<utility>`, `std::vector` `<vector>`, `std::array` `<array>`, `errno`/`ERANGE` `<cerrno>`,
+    `std::string`/`std::to_string` `<string>`, `std::string_view` `<string_view>`, `std::move`/`std::pair`
+    `<utility>`, `std::begin`/`std::end` `<iterator>`, `std::copy` `<algorithm>`, `std::vector` `<vector>`, `std::array` `<array>`, `errno`/`ERANGE` `<cerrno>`,
     `DBL_MIN` `<cfloat>`, `std::fabs`/`std::isfinite` `<cmath>`, `std::getenv`/`std::strtoll`
     `<cstdlib>`, `std::locale` `<locale>`, `std::istringstream`
     `<sstream>`;
@@ -731,7 +732,7 @@ local a `$` suffix, below):
   new nil panic print println real recover rune string true uint uint8 uint16 uint32 uint64
   uintptr`), the package names the generated file imports, and `self`. The imports are the Go
   packages of imported Canon packages and, of `rt json fmt iter os filepath atomic sync time
-  errors strconv strings math regexp embed utf8`, those the generated code uses (`utf8` in a `types`-mode decoder) (`math` only where a
+  errors strconv strings slices math regexp embed utf8`, those the generated code uses (`utf8` in a `types`-mode decoder) (`math` only where a
   `-0.0` literal is written), so a Canon name equal to a standard package name is escaped only
   where that package is imported. A struct field `default` is `default_`; its getter is
   `Default()`. An escaped name that is itself an import (`q` and `q_` both imported) is `E8005`.
@@ -845,7 +846,8 @@ Every name a generator writes is in these scopes, fixed names included: the name
 `LoadInputs`, the per-package input namespace, input slots and flags (§5.12, §7.7), the make hooks
 and `detail::<P>Make` (§5.14), the rows of other packages' records (§5.9), the readers of other
 packages' classes (§2.8) and the §7.7 input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
-`Parse<Kind>Literal`, `MatchPattern`). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
+`Parse<Kind>Literal`, `MatchPattern`), Go's private enum tables `enum<Role>_<Type>` (§5.2) and
+C++'s `kBulk<N>` arrays, `detail::k<NAME>Elems` and `<P>Access::Build<N>` parts (§5.1, §7.3). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
 [basic.scope.declarative]): a class member equal to a namespace-scope type that the class body names
 (`Tone Tone() const;` changes the meaning of `Tone`), overrides included; a parameter, or a member
 of a conformance vector struct, equal to a type the same signature names (`Echo(Tone Tone, Tone
@@ -988,7 +990,7 @@ The samples are excerpts; complete generated files are in [§10](#10-goldens).
 | `String` | `const X = "…"` | `inline constexpr std::string_view X = "…";` | `export const X = "…";` |
 | `Duration` | `const X = 90000 * time.Millisecond` | `inline constexpr std::chrono::milliseconds X{90000};` | `export const X = 90000;` |
 | enum member | `const X = ToneInfo` | `inline constexpr Tone X = Tone::info;` | `export const X: Tone = "info";` |
-| list or map (TYP-14) | `func X() rt.List[int64]` | `inline const std::vector<int64_t> X = {…};` | frozen `export const` |
+| list or map (TYP-14) | `func X() rt.List[int64]` | `inline const std::vector<int64_t> X = {…};`; 8 or more elements: `inline const std::vector<T> X = std::vector<T>(std::begin(detail::kXElems), std::end(detail::kXElems));` over an `inline constexpr` array, a map `canon::FlatMap<K, V>::FromEntries(std::vector<…::Entry>(std::begin(detail::kXElems), std::end(detail::kXElems)))` over a `std::pair` array, a nested list or map a `[]` lambda over `detail::kXElems`, `kXElems1`, … (leaves, bounds, keys) (DECISIONS 392) | frozen `export const` |
 
 ### 5.2 Enums
 
@@ -1023,6 +1025,11 @@ func ElementFromCode(code uint8) (Element, bool)
 An enum without `@codes` has `MarshalText` and `UnmarshalText`, so text encoders write its wire
 value, never its declaration position; one with `@codes` has neither, its value being the code
 (DECISIONS 379).
+
+These methods read private package-level tables `enum<Role>_<Type>` (names, wires, keys sorted by
+bytes, codes sorted by value, members): an index by position, else a binary search, so no generated
+method grows with the member count; equal keys or wires resolve to the first declared member
+(DECISIONS 393).
 
 **C++**
 
@@ -1783,7 +1790,10 @@ export function decodeEventConfig(json: unknown): EventConfig;
 - Refs are keys; table ids are strings, except a ref into another package's table that has an id
   enum, which is that enum, so a key naming no id is `unknown value <key>` even here (§5.8). A literal union over a ref (`ref items | "PENYA"`) is its
   string in every mode and target (§4.1): read unchecked, like every ref here; a `data` loader
-  accepts one of the literals or checks the key as a plain ref (§5.8) (DECISIONS 387).
+  accepts one of the literals or checks the key as a plain ref (§5.8) (DECISIONS 387). In C++, a
+  literal union over an enum of 8 or more members checks membership as `x != "<lit>" && … &&
+  !<E>FromWire(x)` when the header already includes the enum's package, else one comparison per
+  wire (DECISIONS 392).
 - Public decoders are API for runtimes only: another package's generated code never calls them,
   it reads this package's classes with its own readers ([§2.8](#28-cross-package-references)).
 
@@ -2579,6 +2589,12 @@ struct VocabAccess {
 }  // namespace detail
 const EventTypes& GetEventTypes() { return detail::VocabAccess::Get().eventTypes; }
 ```
+
+`Build` compiles in bounded memory whatever the data size (DECISIONS 392): a list or map of 8 or
+more elements is copied from a `kBulk<N>` constant array (strings as sized `std::string_view`), a
+container of 8 or more of the package's own rows fills by column (one loop over per-member arrays;
+members no array holds keep per-row statements), and a body longer than about 1,000 lines is cut
+at top-level statements into `static void Build<N>(Data& d)` parts that `Build` calls in order.
 
 ### 7.4 `canon_runtime.h`
 

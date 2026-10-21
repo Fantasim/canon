@@ -4063,3 +4063,34 @@ round 2", "PS1 review", "PS2 round 2"):
      of a package it reads defines, matched by token, over every region naming one. Reason: the
      wrap covered only an enum's own members spelled as their define, so table ids, constants and
      renamed members broke a TU including the defines (Sovereign: 6 of 7 packages).
+
+392. **Generated C++ compiles in bounded memory whatever the data size (CODEGEN.md §2.7, §3.5,
+     §5.1, §5.13, §7.3).** A list or map literal of 8 or more elements is read from a constant array at
+     namespace scope (strings as sized `std::string_view`), never written inline in a function
+     body; a container of 8 or more rows of the package's own record fills by column, one loop
+     over per-member arrays; `Build()` calls `Build<N>` parts of about 1,000 lines; a long header
+     list or map constant reads a `detail::k<NAME>Elems` array, its public type unchanged; a
+     literal union over a large enum checks through `<E>FromWire`. Nested lists and maps hoist as
+     a leaf array plus bounds (and keys) arrays; their size is the elements of all levels. The names `kBulk<N>`, `Build<N>` and
+     `k<NAME>Elems[<N>]` are reserved (`E8005`). Every data string keeps its full length, an
+     embedded NUL included (values, keys, constants, template text, case wires); JSON member
+     names read through the runtime's `const char*` API do not yet. Reason: Resource's `ids.gen.cpp` (33,600 strings in
+     initializer lists in one function) went past 15 GB under `clang++ -O3 -g` (Scripts,
+     2026-10-21). A gen/cpp test compiles 11,500 strings, 7,400 rows and a 3,000-entry map at
+     `-O3 -g` under 1.5 GB.
+
+393. **Generated Go enum methods read package-level tables (CODEGEN.md §3.4, §3.5, §5.2, §6).**
+     `String`, `Wire`, `Parse<E>`, `<E>Members`, `Code`, `<E>FromCode` and `Known` index or
+     binary-search private tables `enum<Role>_<Type>` (declared in the Go name plan, so `E8005`
+     covers them) and do not grow with the member count; equal keys or wires resolve to the first
+     declared member, as in C++ (383). Reason: Resource's 11,800-member `TextId` compiled through
+     23k-line switches (1.27 GB, 22.5 s; after: 90 MB, 1.3 s). A gen/go test compiles 12,000-member
+     enums under 1 GB.
+
+394. **A release compiles the real consumer output at the consumer's flags (IMPLEMENTATION-PLAN
+     §7.5).** Before a tag, an opt-in target builds the Sovereign project and compiles every
+     generated unit separately: C++ with `clang++ -O3 -g -std=c++20 -Wall -Wextra -Werror`, Go
+     with `go build`, TypeScript with the repository's `tsc` flags, each under a memory cap; a unit
+     above 1.5 GB peak RSS or 60 s fails the gate. Reason: v0.1.10's gates compiled generated C++
+     at `-O1`/`-fsyntax-only` on small fixtures only, so a file the consumer could not compile at
+     `-O3` shipped (392).
