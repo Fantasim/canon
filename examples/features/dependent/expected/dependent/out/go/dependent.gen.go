@@ -6,6 +6,7 @@ package dependent
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -22,51 +23,38 @@ const (
 	GoalVisit      Goal = 3
 )
 
+var enumNames_Goal = [...]string{"kill", "collect", "reach_level", "visit"}
+
 func (self Goal) String() string {
-	switch self {
-	case GoalKill:
-		return "kill"
-	case GoalCollect:
-		return "collect"
-	case GoalReachLevel:
-		return "reach_level"
-	case GoalVisit:
-		return "visit"
+	if i := uint(self); i < uint(len(enumNames_Goal)) {
+		return enumNames_Goal[i]
 	}
 	return "Goal(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Goal) Wire() string {
-	switch self {
-	case GoalKill:
-		return "kill"
-	case GoalCollect:
-		return "collect"
-	case GoalReachLevel:
-		return "reach_level"
-	case GoalVisit:
-		return "visit"
+	if i := uint(self); i < uint(len(enumNames_Goal)) {
+		return enumNames_Goal[i]
 	}
 	return "Goal(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Goal = [...]string{"collect", "kill", "reach_level", "visit"}
+
+var enumFound_Goal = [...]Goal{GoalCollect, GoalKill, GoalReachLevel, GoalVisit}
+
 func ParseGoal(wire string) (Goal, bool) {
-	switch wire {
-	case "kill":
-		return GoalKill, true
-	case "collect":
-		return GoalCollect, true
-	case "reach_level":
-		return GoalReachLevel, true
-	case "visit":
-		return GoalVisit, true
+	if i, ok := slices.BinarySearch(enumKeys_Goal[:], wire); ok {
+		return enumFound_Goal[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Goal = [...]Goal{GoalKill, GoalCollect, GoalReachLevel, GoalVisit}
+
 func GoalMembers() iter.Seq[Goal] {
 	return func(yield func(Goal) bool) {
-		for _, m := range [...]Goal{GoalKill, GoalCollect, GoalReachLevel, GoalVisit} {
+		for _, m := range enumMembers_Goal[:] {
 			if !yield(m) {
 				return
 			}
@@ -119,14 +107,11 @@ var (
 	ObjectiveIDExplore = ObjectiveID{2}
 )
 
+var enumNames_ObjectiveID = [...]string{"slay", "gather", "explore"}
+
 func (self ObjectiveID) String() string {
-	switch self.position {
-	case 0:
-		return "slay"
-	case 1:
-		return "gather"
-	case 2:
-		return "explore"
+	if i := uint(self.position); i < uint(len(enumNames_ObjectiveID)) {
+		return enumNames_ObjectiveID[i]
 	}
 	return "ObjectiveID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -154,14 +139,13 @@ func (self *ObjectiveID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_ObjectiveID = [...]string{"explore", "gather", "slay"}
+
+var enumFound_ObjectiveID = [...]ObjectiveID{{2}, {1}, {0}}
+
 func ParseObjectiveID(key string) (ObjectiveID, bool) {
-	switch key {
-	case "slay":
-		return ObjectiveIDSlay, true
-	case "gather":
-		return ObjectiveIDGather, true
-	case "explore":
-		return ObjectiveIDExplore, true
+	if i, ok := slices.BinarySearch(enumKeys_ObjectiveID[:], key); ok {
+		return enumFound_ObjectiveID[i], true
 	}
 	return ObjectiveID{}, false
 }

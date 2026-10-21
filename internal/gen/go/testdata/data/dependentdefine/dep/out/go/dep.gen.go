@@ -27,45 +27,38 @@ const (
 	KThree K = 2
 )
 
+var enumNames_K = [...]string{"one", "two", "three"}
+
 func (self K) String() string {
-	switch self {
-	case KOne:
-		return "one"
-	case KTwo:
-		return "two"
-	case KThree:
-		return "three"
+	if i := uint(self); i < uint(len(enumNames_K)) {
+		return enumNames_K[i]
 	}
 	return "K(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self K) Wire() string {
-	switch self {
-	case KOne:
-		return "one"
-	case KTwo:
-		return "two"
-	case KThree:
-		return "three"
+	if i := uint(self); i < uint(len(enumNames_K)) {
+		return enumNames_K[i]
 	}
 	return "K(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_K = [...]string{"one", "three", "two"}
+
+var enumFound_K = [...]K{KOne, KThree, KTwo}
+
 func ParseK(wire string) (K, bool) {
-	switch wire {
-	case "one":
-		return KOne, true
-	case "two":
-		return KTwo, true
-	case "three":
-		return KThree, true
+	if i, ok := slices.BinarySearch(enumKeys_K[:], wire); ok {
+		return enumFound_K[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_K = [...]K{KOne, KTwo, KThree}
+
 func KMembers() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for _, m := range [...]K{KOne, KTwo, KThree} {
+		for _, m := range enumMembers_K[:] {
 			if !yield(m) {
 				return
 			}

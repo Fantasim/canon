@@ -6,6 +6,7 @@ package world
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -30,10 +31,11 @@ var (
 	ZoneIDForest = ZoneID{0}
 )
 
+var enumNames_ZoneID = [...]string{"forest"}
+
 func (self ZoneID) String() string {
-	switch self.position {
-	case 0:
-		return "forest"
+	if i := uint(self.position); i < uint(len(enumNames_ZoneID)) {
+		return enumNames_ZoneID[i]
 	}
 	return "ZoneID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -61,10 +63,13 @@ func (self *ZoneID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_ZoneID = [...]string{"forest"}
+
+var enumFound_ZoneID = [...]ZoneID{{0}}
+
 func ParseZoneID(key string) (ZoneID, bool) {
-	switch key {
-	case "forest":
-		return ZoneIDForest, true
+	if i, ok := slices.BinarySearch(enumKeys_ZoneID[:], key); ok {
+		return enumFound_ZoneID[i], true
 	}
 	return ZoneID{}, false
 }
@@ -79,12 +84,11 @@ var (
 	LevelRangeIDHigh = LevelRangeID{1}
 )
 
+var enumNames_LevelRangeID = [...]string{"low", "high"}
+
 func (self LevelRangeID) String() string {
-	switch self.position {
-	case 0:
-		return "low"
-	case 1:
-		return "high"
+	if i := uint(self.position); i < uint(len(enumNames_LevelRangeID)) {
+		return enumNames_LevelRangeID[i]
 	}
 	return "LevelRangeID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -112,12 +116,13 @@ func (self *LevelRangeID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_LevelRangeID = [...]string{"high", "low"}
+
+var enumFound_LevelRangeID = [...]LevelRangeID{{1}, {0}}
+
 func ParseLevelRangeID(key string) (LevelRangeID, bool) {
-	switch key {
-	case "low":
-		return LevelRangeIDLow, true
-	case "high":
-		return LevelRangeIDHigh, true
+	if i, ok := slices.BinarySearch(enumKeys_LevelRangeID[:], key); ok {
+		return enumFound_LevelRangeID[i], true
 	}
 	return LevelRangeID{}, false
 }

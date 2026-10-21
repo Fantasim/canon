@@ -6,6 +6,7 @@ package telemetry
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -48,81 +49,60 @@ const (
 	EventTypeWorldBossSpawns EventType = 156
 )
 
+var enumCodes_EventType = [...]EventType{
+	EventTypeItemCreated, EventTypeMailItemReceived, EventTypeItemConsumed, EventTypePenyaDrops,
+	EventTypeTradePenya, EventTypeServerLifecycle, EventTypeFarmEvents, EventTypeSovereignEvents,
+	EventTypeWorldBossSpawns,
+}
+
+var enumNames_EventType = [...]string{
+	"item_created", "mail_item_received", "item_consumed", "penya_drops",
+	"trade_penya", "server_lifecycle", "farm_events", "sovereign_events",
+	"world_boss_spawns",
+}
+
 func (self EventType) String() string {
-	switch self {
-	case EventTypeItemCreated:
-		return "item_created"
-	case EventTypeMailItemReceived:
-		return "mail_item_received"
-	case EventTypeItemConsumed:
-		return "item_consumed"
-	case EventTypePenyaDrops:
-		return "penya_drops"
-	case EventTypeTradePenya:
-		return "trade_penya"
-	case EventTypeServerLifecycle:
-		return "server_lifecycle"
-	case EventTypeFarmEvents:
-		return "farm_events"
-	case EventTypeSovereignEvents:
-		return "sovereign_events"
-	case EventTypeWorldBossSpawns:
-		return "world_boss_spawns"
+	if i, ok := slices.BinarySearch(enumCodes_EventType[:], self); ok {
+		return enumNames_EventType[i]
 	}
 	return "EventType(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self EventType) Wire() string {
-	switch self {
-	case EventTypeItemCreated:
-		return "item_created"
-	case EventTypeMailItemReceived:
-		return "mail_item_received"
-	case EventTypeItemConsumed:
-		return "item_consumed"
-	case EventTypePenyaDrops:
-		return "penya_drops"
-	case EventTypeTradePenya:
-		return "trade_penya"
-	case EventTypeServerLifecycle:
-		return "server_lifecycle"
-	case EventTypeFarmEvents:
-		return "farm_events"
-	case EventTypeSovereignEvents:
-		return "sovereign_events"
-	case EventTypeWorldBossSpawns:
-		return "world_boss_spawns"
+	if i, ok := slices.BinarySearch(enumCodes_EventType[:], self); ok {
+		return enumNames_EventType[i]
 	}
 	return "EventType(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_EventType = [...]string{
+	"farm_events", "item_consumed", "item_created", "mail_item_received",
+	"penya_drops", "server_lifecycle", "sovereign_events", "trade_penya",
+	"world_boss_spawns",
+}
+
+var enumFound_EventType = [...]EventType{
+	EventTypeFarmEvents, EventTypeItemConsumed, EventTypeItemCreated, EventTypeMailItemReceived,
+	EventTypePenyaDrops, EventTypeServerLifecycle, EventTypeSovereignEvents, EventTypeTradePenya,
+	EventTypeWorldBossSpawns,
+}
+
 func ParseEventType(wire string) (EventType, bool) {
-	switch wire {
-	case "item_created":
-		return EventTypeItemCreated, true
-	case "mail_item_received":
-		return EventTypeMailItemReceived, true
-	case "item_consumed":
-		return EventTypeItemConsumed, true
-	case "penya_drops":
-		return EventTypePenyaDrops, true
-	case "trade_penya":
-		return EventTypeTradePenya, true
-	case "server_lifecycle":
-		return EventTypeServerLifecycle, true
-	case "farm_events":
-		return EventTypeFarmEvents, true
-	case "sovereign_events":
-		return EventTypeSovereignEvents, true
-	case "world_boss_spawns":
-		return EventTypeWorldBossSpawns, true
+	if i, ok := slices.BinarySearch(enumKeys_EventType[:], wire); ok {
+		return enumFound_EventType[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_EventType = [...]EventType{
+	EventTypeItemCreated, EventTypeMailItemReceived, EventTypeItemConsumed, EventTypePenyaDrops,
+	EventTypeTradePenya, EventTypeServerLifecycle, EventTypeFarmEvents, EventTypeSovereignEvents,
+	EventTypeWorldBossSpawns,
+}
+
 func EventTypeMembers() iter.Seq[EventType] {
 	return func(yield func(EventType) bool) {
-		for _, m := range [...]EventType{EventTypeItemCreated, EventTypeMailItemReceived, EventTypeItemConsumed, EventTypePenyaDrops, EventTypeTradePenya, EventTypeServerLifecycle, EventTypeFarmEvents, EventTypeSovereignEvents, EventTypeWorldBossSpawns} {
+		for _, m := range enumMembers_EventType[:] {
 			if !yield(m) {
 				return
 			}
@@ -133,24 +113,8 @@ func EventTypeMembers() iter.Seq[EventType] {
 func (self EventType) Code() uint8 { return uint8(self) }
 
 func EventTypeFromCode(code uint8) (EventType, bool) {
-	switch v := EventType(code); v {
-	case EventTypeItemCreated:
-		return v, true
-	case EventTypeMailItemReceived:
-		return v, true
-	case EventTypeItemConsumed:
-		return v, true
-	case EventTypePenyaDrops:
-		return v, true
-	case EventTypeTradePenya:
-		return v, true
-	case EventTypeServerLifecycle:
-		return v, true
-	case EventTypeFarmEvents:
-		return v, true
-	case EventTypeSovereignEvents:
-		return v, true
-	case EventTypeWorldBossSpawns:
+	v := EventType(code)
+	if _, ok := slices.BinarySearch(enumCodes_EventType[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -170,57 +134,55 @@ const (
 	TierReadonly Tier = 4
 )
 
+var enumCodes_Tier = [...]Tier{
+	TierHot, TierWarm, TierCool, TierTiny,
+	TierReadonly,
+}
+
+var enumNames_Tier = [...]string{
+	"HOT", "WARM", "COOL", "TINY",
+	"READONLY",
+}
+
 func (self Tier) String() string {
-	switch self {
-	case TierHot:
-		return "HOT"
-	case TierWarm:
-		return "WARM"
-	case TierCool:
-		return "COOL"
-	case TierTiny:
-		return "TINY"
-	case TierReadonly:
-		return "READONLY"
+	if i, ok := slices.BinarySearch(enumCodes_Tier[:], self); ok {
+		return enumNames_Tier[i]
 	}
 	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Tier) Wire() string {
-	switch self {
-	case TierHot:
-		return "HOT"
-	case TierWarm:
-		return "WARM"
-	case TierCool:
-		return "COOL"
-	case TierTiny:
-		return "TINY"
-	case TierReadonly:
-		return "READONLY"
+	if i, ok := slices.BinarySearch(enumCodes_Tier[:], self); ok {
+		return enumNames_Tier[i]
 	}
 	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tier = [...]string{
+	"COOL", "HOT", "READONLY", "TINY",
+	"WARM",
+}
+
+var enumFound_Tier = [...]Tier{
+	TierCool, TierHot, TierReadonly, TierTiny,
+	TierWarm,
+}
+
 func ParseTier(wire string) (Tier, bool) {
-	switch wire {
-	case "HOT":
-		return TierHot, true
-	case "WARM":
-		return TierWarm, true
-	case "COOL":
-		return TierCool, true
-	case "TINY":
-		return TierTiny, true
-	case "READONLY":
-		return TierReadonly, true
+	if i, ok := slices.BinarySearch(enumKeys_Tier[:], wire); ok {
+		return enumFound_Tier[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tier = [...]Tier{
+	TierHot, TierWarm, TierCool, TierTiny,
+	TierReadonly,
+}
+
 func TierMembers() iter.Seq[Tier] {
 	return func(yield func(Tier) bool) {
-		for _, m := range [...]Tier{TierHot, TierWarm, TierCool, TierTiny, TierReadonly} {
+		for _, m := range enumMembers_Tier[:] {
 			if !yield(m) {
 				return
 			}
@@ -231,16 +193,8 @@ func TierMembers() iter.Seq[Tier] {
 func (self Tier) Code() uint8 { return uint8(self) }
 
 func TierFromCode(code uint8) (Tier, bool) {
-	switch v := Tier(code); v {
-	case TierHot:
-		return v, true
-	case TierWarm:
-		return v, true
-	case TierCool:
-		return v, true
-	case TierTiny:
-		return v, true
-	case TierReadonly:
+	v := Tier(code)
+	if _, ok := slices.BinarySearch(enumCodes_Tier[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -259,69 +213,55 @@ const (
 	ProducerItemTool       Producer = 7
 )
 
+var enumCodes_Producer = [...]Producer{
+	ProducerWorldServer, ProducerCoreServer, ProducerDatabaseServer, ProducerLoginServer,
+	ProducerCacheServer, ProducerDataIngester, ProducerItemTool,
+}
+
+var enumNames_Producer = [...]string{
+	"WorldServer", "CoreServer", "DatabaseServer", "LoginServer",
+	"CacheServer", "DataIngester", "ItemTool",
+}
+
 func (self Producer) String() string {
-	switch self {
-	case ProducerWorldServer:
-		return "WorldServer"
-	case ProducerCoreServer:
-		return "CoreServer"
-	case ProducerDatabaseServer:
-		return "DatabaseServer"
-	case ProducerLoginServer:
-		return "LoginServer"
-	case ProducerCacheServer:
-		return "CacheServer"
-	case ProducerDataIngester:
-		return "DataIngester"
-	case ProducerItemTool:
-		return "ItemTool"
+	if i, ok := slices.BinarySearch(enumCodes_Producer[:], self); ok {
+		return enumNames_Producer[i]
 	}
 	return "Producer(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Producer) Wire() string {
-	switch self {
-	case ProducerWorldServer:
-		return "WorldServer"
-	case ProducerCoreServer:
-		return "CoreServer"
-	case ProducerDatabaseServer:
-		return "DatabaseServer"
-	case ProducerLoginServer:
-		return "LoginServer"
-	case ProducerCacheServer:
-		return "CacheServer"
-	case ProducerDataIngester:
-		return "DataIngester"
-	case ProducerItemTool:
-		return "ItemTool"
+	if i, ok := slices.BinarySearch(enumCodes_Producer[:], self); ok {
+		return enumNames_Producer[i]
 	}
 	return "Producer(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Producer = [...]string{
+	"CacheServer", "CoreServer", "DataIngester", "DatabaseServer",
+	"ItemTool", "LoginServer", "WorldServer",
+}
+
+var enumFound_Producer = [...]Producer{
+	ProducerCacheServer, ProducerCoreServer, ProducerDataIngester, ProducerDatabaseServer,
+	ProducerItemTool, ProducerLoginServer, ProducerWorldServer,
+}
+
 func ParseProducer(wire string) (Producer, bool) {
-	switch wire {
-	case "WorldServer":
-		return ProducerWorldServer, true
-	case "CoreServer":
-		return ProducerCoreServer, true
-	case "DatabaseServer":
-		return ProducerDatabaseServer, true
-	case "LoginServer":
-		return ProducerLoginServer, true
-	case "CacheServer":
-		return ProducerCacheServer, true
-	case "DataIngester":
-		return ProducerDataIngester, true
-	case "ItemTool":
-		return ProducerItemTool, true
+	if i, ok := slices.BinarySearch(enumKeys_Producer[:], wire); ok {
+		return enumFound_Producer[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Producer = [...]Producer{
+	ProducerWorldServer, ProducerCoreServer, ProducerDatabaseServer, ProducerLoginServer,
+	ProducerCacheServer, ProducerDataIngester, ProducerItemTool,
+}
+
 func ProducerMembers() iter.Seq[Producer] {
 	return func(yield func(Producer) bool) {
-		for _, m := range [...]Producer{ProducerWorldServer, ProducerCoreServer, ProducerDatabaseServer, ProducerLoginServer, ProducerCacheServer, ProducerDataIngester, ProducerItemTool} {
+		for _, m := range enumMembers_Producer[:] {
 			if !yield(m) {
 				return
 			}
@@ -332,20 +272,8 @@ func ProducerMembers() iter.Seq[Producer] {
 func (self Producer) Code() uint8 { return uint8(self) }
 
 func ProducerFromCode(code uint8) (Producer, bool) {
-	switch v := Producer(code); v {
-	case ProducerWorldServer:
-		return v, true
-	case ProducerCoreServer:
-		return v, true
-	case ProducerDatabaseServer:
-		return v, true
-	case ProducerLoginServer:
-		return v, true
-	case ProducerCacheServer:
-		return v, true
-	case ProducerDataIngester:
-		return v, true
-	case ProducerItemTool:
+	v := Producer(code)
+	if _, ok := slices.BinarySearch(enumCodes_Producer[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -361,39 +289,38 @@ const (
 	EnqueueInternal Enqueue = 1
 )
 
+var enumNames_Enqueue = [...]string{"generated", "internal"}
+
 func (self Enqueue) String() string {
-	switch self {
-	case EnqueueGenerated:
-		return "generated"
-	case EnqueueInternal:
-		return "internal"
+	if i := uint(self); i < uint(len(enumNames_Enqueue)) {
+		return enumNames_Enqueue[i]
 	}
 	return "Enqueue(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Enqueue) Wire() string {
-	switch self {
-	case EnqueueGenerated:
-		return "generated"
-	case EnqueueInternal:
-		return "internal"
+	if i := uint(self); i < uint(len(enumNames_Enqueue)) {
+		return enumNames_Enqueue[i]
 	}
 	return "Enqueue(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Enqueue = [...]string{"generated", "internal"}
+
+var enumFound_Enqueue = [...]Enqueue{EnqueueGenerated, EnqueueInternal}
+
 func ParseEnqueue(wire string) (Enqueue, bool) {
-	switch wire {
-	case "generated":
-		return EnqueueGenerated, true
-	case "internal":
-		return EnqueueInternal, true
+	if i, ok := slices.BinarySearch(enumKeys_Enqueue[:], wire); ok {
+		return enumFound_Enqueue[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Enqueue = [...]Enqueue{EnqueueGenerated, EnqueueInternal}
+
 func EnqueueMembers() iter.Seq[Enqueue] {
 	return func(yield func(Enqueue) bool) {
-		for _, m := range [...]Enqueue{EnqueueGenerated, EnqueueInternal} {
+		for _, m := range enumMembers_Enqueue[:] {
 			if !yield(m) {
 				return
 			}
@@ -435,81 +362,54 @@ const (
 	SqlTypeFloat     SqlType = 8
 )
 
+var enumNames_SqlType = [...]string{
+	"UTINYINT", "USMALLINT", "UINTEGER", "UBIGINT",
+	"TINYINT", "SMALLINT", "INTEGER", "BIGINT",
+	"FLOAT",
+}
+
 func (self SqlType) String() string {
-	switch self {
-	case SqlTypeUtinyint:
-		return "UTINYINT"
-	case SqlTypeUsmallint:
-		return "USMALLINT"
-	case SqlTypeUinteger:
-		return "UINTEGER"
-	case SqlTypeUbigint:
-		return "UBIGINT"
-	case SqlTypeTinyint:
-		return "TINYINT"
-	case SqlTypeSmallint:
-		return "SMALLINT"
-	case SqlTypeInteger:
-		return "INTEGER"
-	case SqlTypeBigint:
-		return "BIGINT"
-	case SqlTypeFloat:
-		return "FLOAT"
+	if i := uint(self); i < uint(len(enumNames_SqlType)) {
+		return enumNames_SqlType[i]
 	}
 	return "SqlType(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SqlType) Wire() string {
-	switch self {
-	case SqlTypeUtinyint:
-		return "UTINYINT"
-	case SqlTypeUsmallint:
-		return "USMALLINT"
-	case SqlTypeUinteger:
-		return "UINTEGER"
-	case SqlTypeUbigint:
-		return "UBIGINT"
-	case SqlTypeTinyint:
-		return "TINYINT"
-	case SqlTypeSmallint:
-		return "SMALLINT"
-	case SqlTypeInteger:
-		return "INTEGER"
-	case SqlTypeBigint:
-		return "BIGINT"
-	case SqlTypeFloat:
-		return "FLOAT"
+	if i := uint(self); i < uint(len(enumNames_SqlType)) {
+		return enumNames_SqlType[i]
 	}
 	return "SqlType(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_SqlType = [...]string{
+	"BIGINT", "FLOAT", "INTEGER", "SMALLINT",
+	"TINYINT", "UBIGINT", "UINTEGER", "USMALLINT",
+	"UTINYINT",
+}
+
+var enumFound_SqlType = [...]SqlType{
+	SqlTypeBigint, SqlTypeFloat, SqlTypeInteger, SqlTypeSmallint,
+	SqlTypeTinyint, SqlTypeUbigint, SqlTypeUinteger, SqlTypeUsmallint,
+	SqlTypeUtinyint,
+}
+
 func ParseSqlType(wire string) (SqlType, bool) {
-	switch wire {
-	case "UTINYINT":
-		return SqlTypeUtinyint, true
-	case "USMALLINT":
-		return SqlTypeUsmallint, true
-	case "UINTEGER":
-		return SqlTypeUinteger, true
-	case "UBIGINT":
-		return SqlTypeUbigint, true
-	case "TINYINT":
-		return SqlTypeTinyint, true
-	case "SMALLINT":
-		return SqlTypeSmallint, true
-	case "INTEGER":
-		return SqlTypeInteger, true
-	case "BIGINT":
-		return SqlTypeBigint, true
-	case "FLOAT":
-		return SqlTypeFloat, true
+	if i, ok := slices.BinarySearch(enumKeys_SqlType[:], wire); ok {
+		return enumFound_SqlType[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_SqlType = [...]SqlType{
+	SqlTypeUtinyint, SqlTypeUsmallint, SqlTypeUinteger, SqlTypeUbigint,
+	SqlTypeTinyint, SqlTypeSmallint, SqlTypeInteger, SqlTypeBigint,
+	SqlTypeFloat,
+}
+
 func SqlTypeMembers() iter.Seq[SqlType] {
 	return func(yield func(SqlType) bool) {
-		for _, m := range [...]SqlType{SqlTypeUtinyint, SqlTypeUsmallint, SqlTypeUinteger, SqlTypeUbigint, SqlTypeTinyint, SqlTypeSmallint, SqlTypeInteger, SqlTypeBigint, SqlTypeFloat} {
+		for _, m := range enumMembers_SqlType[:] {
 			if !yield(m) {
 				return
 			}
@@ -550,51 +450,38 @@ const (
 	FieldKindEnum8 FieldKind = 3
 )
 
+var enumNames_FieldKind = [...]string{"ts", "id", "scalar", "enum8"}
+
 func (self FieldKind) String() string {
-	switch self {
-	case FieldKindTS:
-		return "ts"
-	case FieldKindID:
-		return "id"
-	case FieldKindScalar:
-		return "scalar"
-	case FieldKindEnum8:
-		return "enum8"
+	if i := uint(self); i < uint(len(enumNames_FieldKind)) {
+		return enumNames_FieldKind[i]
 	}
 	return "FieldKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self FieldKind) Wire() string {
-	switch self {
-	case FieldKindTS:
-		return "ts"
-	case FieldKindID:
-		return "id"
-	case FieldKindScalar:
-		return "scalar"
-	case FieldKindEnum8:
-		return "enum8"
+	if i := uint(self); i < uint(len(enumNames_FieldKind)) {
+		return enumNames_FieldKind[i]
 	}
 	return "FieldKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_FieldKind = [...]string{"enum8", "id", "scalar", "ts"}
+
+var enumFound_FieldKind = [...]FieldKind{FieldKindEnum8, FieldKindID, FieldKindScalar, FieldKindTS}
+
 func ParseFieldKind(wire string) (FieldKind, bool) {
-	switch wire {
-	case "ts":
-		return FieldKindTS, true
-	case "id":
-		return FieldKindID, true
-	case "scalar":
-		return FieldKindScalar, true
-	case "enum8":
-		return FieldKindEnum8, true
+	if i, ok := slices.BinarySearch(enumKeys_FieldKind[:], wire); ok {
+		return enumFound_FieldKind[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_FieldKind = [...]FieldKind{FieldKindTS, FieldKindID, FieldKindScalar, FieldKindEnum8}
+
 func FieldKindMembers() iter.Seq[FieldKind] {
 	return func(yield func(FieldKind) bool) {
-		for _, m := range [...]FieldKind{FieldKindTS, FieldKindID, FieldKindScalar, FieldKindEnum8} {
+		for _, m := range enumMembers_FieldKind[:] {
 			if !yield(m) {
 				return
 			}
@@ -631,45 +518,40 @@ const (
 	CurrencyNothing Currency = 2
 )
 
+var enumNames_Currency = [...]string{"gold", "item", "nothing"}
+
 func (self Currency) String() string {
-	switch self {
-	case CurrencyGold:
-		return "gold"
-	case CurrencyItem:
-		return "item"
-	case CurrencyNothing:
-		return "nothing"
+	if i := uint(self); i < uint(len(enumNames_Currency)) {
+		return enumNames_Currency[i]
 	}
 	return "Currency(" + strconv.FormatInt(int64(self), 10) + ")"
 }
+
+var enumWires_Currency = [...]string{"gold", "item", "none"}
 
 func (self Currency) Wire() string {
-	switch self {
-	case CurrencyGold:
-		return "gold"
-	case CurrencyItem:
-		return "item"
-	case CurrencyNothing:
-		return "none"
+	if i := uint(self); i < uint(len(enumWires_Currency)) {
+		return enumWires_Currency[i]
 	}
 	return "Currency(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Currency = [...]string{"gold", "item", "none"}
+
+var enumFound_Currency = [...]Currency{CurrencyGold, CurrencyItem, CurrencyNothing}
+
 func ParseCurrency(wire string) (Currency, bool) {
-	switch wire {
-	case "gold":
-		return CurrencyGold, true
-	case "item":
-		return CurrencyItem, true
-	case "none":
-		return CurrencyNothing, true
+	if i, ok := slices.BinarySearch(enumKeys_Currency[:], wire); ok {
+		return enumFound_Currency[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Currency = [...]Currency{CurrencyGold, CurrencyItem, CurrencyNothing}
+
 func CurrencyMembers() iter.Seq[Currency] {
 	return func(yield func(Currency) bool) {
-		for _, m := range [...]Currency{CurrencyGold, CurrencyItem, CurrencyNothing} {
+		for _, m := range enumMembers_Currency[:] {
 			if !yield(m) {
 				return
 			}
@@ -706,51 +588,40 @@ const (
 	BucketNothing  Bucket = 3
 )
 
+var enumNames_Bucket = [...]string{"mint", "sink", "transfer", "nothing"}
+
 func (self Bucket) String() string {
-	switch self {
-	case BucketMint:
-		return "mint"
-	case BucketSink:
-		return "sink"
-	case BucketTransfer:
-		return "transfer"
-	case BucketNothing:
-		return "nothing"
+	if i := uint(self); i < uint(len(enumNames_Bucket)) {
+		return enumNames_Bucket[i]
 	}
 	return "Bucket(" + strconv.FormatInt(int64(self), 10) + ")"
 }
+
+var enumWires_Bucket = [...]string{"mint", "sink", "transfer", "none"}
 
 func (self Bucket) Wire() string {
-	switch self {
-	case BucketMint:
-		return "mint"
-	case BucketSink:
-		return "sink"
-	case BucketTransfer:
-		return "transfer"
-	case BucketNothing:
-		return "none"
+	if i := uint(self); i < uint(len(enumWires_Bucket)) {
+		return enumWires_Bucket[i]
 	}
 	return "Bucket(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Bucket = [...]string{"mint", "none", "sink", "transfer"}
+
+var enumFound_Bucket = [...]Bucket{BucketMint, BucketNothing, BucketSink, BucketTransfer}
+
 func ParseBucket(wire string) (Bucket, bool) {
-	switch wire {
-	case "mint":
-		return BucketMint, true
-	case "sink":
-		return BucketSink, true
-	case "transfer":
-		return BucketTransfer, true
-	case "none":
-		return BucketNothing, true
+	if i, ok := slices.BinarySearch(enumKeys_Bucket[:], wire); ok {
+		return enumFound_Bucket[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Bucket = [...]Bucket{BucketMint, BucketSink, BucketTransfer, BucketNothing}
+
 func BucketMembers() iter.Seq[Bucket] {
 	return func(yield func(Bucket) bool) {
-		for _, m := range [...]Bucket{BucketMint, BucketSink, BucketTransfer, BucketNothing} {
+		for _, m := range enumMembers_Bucket[:] {
 			if !yield(m) {
 				return
 			}
@@ -785,39 +656,38 @@ const (
 	LegIn  Leg = 1
 )
 
+var enumNames_Leg = [...]string{"out", "in"}
+
 func (self Leg) String() string {
-	switch self {
-	case LegOut:
-		return "out"
-	case LegIn:
-		return "in"
+	if i := uint(self); i < uint(len(enumNames_Leg)) {
+		return enumNames_Leg[i]
 	}
 	return "Leg(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Leg) Wire() string {
-	switch self {
-	case LegOut:
-		return "out"
-	case LegIn:
-		return "in"
+	if i := uint(self); i < uint(len(enumNames_Leg)) {
+		return enumNames_Leg[i]
 	}
 	return "Leg(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Leg = [...]string{"in", "out"}
+
+var enumFound_Leg = [...]Leg{LegIn, LegOut}
+
 func ParseLeg(wire string) (Leg, bool) {
-	switch wire {
-	case "out":
-		return LegOut, true
-	case "in":
-		return LegIn, true
+	if i, ok := slices.BinarySearch(enumKeys_Leg[:], wire); ok {
+		return enumFound_Leg[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Leg = [...]Leg{LegOut, LegIn}
+
 func LegMembers() iter.Seq[Leg] {
 	return func(yield func(Leg) bool) {
-		for _, m := range [...]Leg{LegOut, LegIn} {
+		for _, m := range enumMembers_Leg[:] {
 			if !yield(m) {
 				return
 			}
@@ -870,87 +740,60 @@ const (
 	FarmEventKindLeave FarmEventKind = 10
 )
 
+var enumCodes_FarmEventKind = [...]FarmEventKind{
+	FarmEventKindPurchase, FarmEventKindClaimBatch, FarmEventKindClaimSlot, FarmEventKindLevelUp,
+	FarmEventKindSetupModel, FarmEventKindRemoveModel, FarmEventKindUnlockModel, FarmEventKindEnterOwn,
+	FarmEventKindVisitOther, FarmEventKindLeave,
+}
+
+var enumNames_FarmEventKind = [...]string{
+	"Purchase", "ClaimBatch", "ClaimSlot", "LevelUp",
+	"SetupModel", "RemoveModel", "UnlockModel", "EnterOwn",
+	"VisitOther", "Leave",
+}
+
 func (self FarmEventKind) String() string {
-	switch self {
-	case FarmEventKindPurchase:
-		return "Purchase"
-	case FarmEventKindClaimBatch:
-		return "ClaimBatch"
-	case FarmEventKindClaimSlot:
-		return "ClaimSlot"
-	case FarmEventKindLevelUp:
-		return "LevelUp"
-	case FarmEventKindSetupModel:
-		return "SetupModel"
-	case FarmEventKindRemoveModel:
-		return "RemoveModel"
-	case FarmEventKindUnlockModel:
-		return "UnlockModel"
-	case FarmEventKindEnterOwn:
-		return "EnterOwn"
-	case FarmEventKindVisitOther:
-		return "VisitOther"
-	case FarmEventKindLeave:
-		return "Leave"
+	if i, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], self); ok {
+		return enumNames_FarmEventKind[i]
 	}
 	return "FarmEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self FarmEventKind) Wire() string {
-	switch self {
-	case FarmEventKindPurchase:
-		return "Purchase"
-	case FarmEventKindClaimBatch:
-		return "ClaimBatch"
-	case FarmEventKindClaimSlot:
-		return "ClaimSlot"
-	case FarmEventKindLevelUp:
-		return "LevelUp"
-	case FarmEventKindSetupModel:
-		return "SetupModel"
-	case FarmEventKindRemoveModel:
-		return "RemoveModel"
-	case FarmEventKindUnlockModel:
-		return "UnlockModel"
-	case FarmEventKindEnterOwn:
-		return "EnterOwn"
-	case FarmEventKindVisitOther:
-		return "VisitOther"
-	case FarmEventKindLeave:
-		return "Leave"
+	if i, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], self); ok {
+		return enumNames_FarmEventKind[i]
 	}
 	return "FarmEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_FarmEventKind = [...]string{
+	"ClaimBatch", "ClaimSlot", "EnterOwn", "Leave",
+	"LevelUp", "Purchase", "RemoveModel", "SetupModel",
+	"UnlockModel", "VisitOther",
+}
+
+var enumFound_FarmEventKind = [...]FarmEventKind{
+	FarmEventKindClaimBatch, FarmEventKindClaimSlot, FarmEventKindEnterOwn, FarmEventKindLeave,
+	FarmEventKindLevelUp, FarmEventKindPurchase, FarmEventKindRemoveModel, FarmEventKindSetupModel,
+	FarmEventKindUnlockModel, FarmEventKindVisitOther,
+}
+
 func ParseFarmEventKind(wire string) (FarmEventKind, bool) {
-	switch wire {
-	case "Purchase":
-		return FarmEventKindPurchase, true
-	case "ClaimBatch":
-		return FarmEventKindClaimBatch, true
-	case "ClaimSlot":
-		return FarmEventKindClaimSlot, true
-	case "LevelUp":
-		return FarmEventKindLevelUp, true
-	case "SetupModel":
-		return FarmEventKindSetupModel, true
-	case "RemoveModel":
-		return FarmEventKindRemoveModel, true
-	case "UnlockModel":
-		return FarmEventKindUnlockModel, true
-	case "EnterOwn":
-		return FarmEventKindEnterOwn, true
-	case "VisitOther":
-		return FarmEventKindVisitOther, true
-	case "Leave":
-		return FarmEventKindLeave, true
+	if i, ok := slices.BinarySearch(enumKeys_FarmEventKind[:], wire); ok {
+		return enumFound_FarmEventKind[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_FarmEventKind = [...]FarmEventKind{
+	FarmEventKindPurchase, FarmEventKindClaimBatch, FarmEventKindClaimSlot, FarmEventKindLevelUp,
+	FarmEventKindSetupModel, FarmEventKindRemoveModel, FarmEventKindUnlockModel, FarmEventKindEnterOwn,
+	FarmEventKindVisitOther, FarmEventKindLeave,
+}
+
 func FarmEventKindMembers() iter.Seq[FarmEventKind] {
 	return func(yield func(FarmEventKind) bool) {
-		for _, m := range [...]FarmEventKind{FarmEventKindPurchase, FarmEventKindClaimBatch, FarmEventKindClaimSlot, FarmEventKindLevelUp, FarmEventKindSetupModel, FarmEventKindRemoveModel, FarmEventKindUnlockModel, FarmEventKindEnterOwn, FarmEventKindVisitOther, FarmEventKindLeave} {
+		for _, m := range enumMembers_FarmEventKind[:] {
 			if !yield(m) {
 				return
 			}
@@ -961,26 +804,8 @@ func FarmEventKindMembers() iter.Seq[FarmEventKind] {
 func (self FarmEventKind) Code() uint8 { return uint8(self) }
 
 func FarmEventKindFromCode(code uint8) (FarmEventKind, bool) {
-	switch v := FarmEventKind(code); v {
-	case FarmEventKindPurchase:
-		return v, true
-	case FarmEventKindClaimBatch:
-		return v, true
-	case FarmEventKindClaimSlot:
-		return v, true
-	case FarmEventKindLevelUp:
-		return v, true
-	case FarmEventKindSetupModel:
-		return v, true
-	case FarmEventKindRemoveModel:
-		return v, true
-	case FarmEventKindUnlockModel:
-		return v, true
-	case FarmEventKindEnterOwn:
-		return v, true
-	case FarmEventKindVisitOther:
-		return v, true
-	case FarmEventKindLeave:
+	v := FarmEventKind(code)
+	if _, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -1000,51 +825,40 @@ const (
 	SovereignEventKindRewardGranted SovereignEventKind = 4
 )
 
+var enumCodes_SovereignEventKind = [...]SovereignEventKind{SovereignEventKindRoleAssigned, SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted}
+
+var enumNames_SovereignEventKind = [...]string{"RoleAssigned", "DoctrineSet", "PowerTriggered", "RewardGranted"}
+
 func (self SovereignEventKind) String() string {
-	switch self {
-	case SovereignEventKindRoleAssigned:
-		return "RoleAssigned"
-	case SovereignEventKindDoctrineSet:
-		return "DoctrineSet"
-	case SovereignEventKindPowerTriggered:
-		return "PowerTriggered"
-	case SovereignEventKindRewardGranted:
-		return "RewardGranted"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], self); ok {
+		return enumNames_SovereignEventKind[i]
 	}
 	return "SovereignEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignEventKind) Wire() string {
-	switch self {
-	case SovereignEventKindRoleAssigned:
-		return "RoleAssigned"
-	case SovereignEventKindDoctrineSet:
-		return "DoctrineSet"
-	case SovereignEventKindPowerTriggered:
-		return "PowerTriggered"
-	case SovereignEventKindRewardGranted:
-		return "RewardGranted"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], self); ok {
+		return enumNames_SovereignEventKind[i]
 	}
 	return "SovereignEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_SovereignEventKind = [...]string{"DoctrineSet", "PowerTriggered", "RewardGranted", "RoleAssigned"}
+
+var enumFound_SovereignEventKind = [...]SovereignEventKind{SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted, SovereignEventKindRoleAssigned}
+
 func ParseSovereignEventKind(wire string) (SovereignEventKind, bool) {
-	switch wire {
-	case "RoleAssigned":
-		return SovereignEventKindRoleAssigned, true
-	case "DoctrineSet":
-		return SovereignEventKindDoctrineSet, true
-	case "PowerTriggered":
-		return SovereignEventKindPowerTriggered, true
-	case "RewardGranted":
-		return SovereignEventKindRewardGranted, true
+	if i, ok := slices.BinarySearch(enumKeys_SovereignEventKind[:], wire); ok {
+		return enumFound_SovereignEventKind[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_SovereignEventKind = [...]SovereignEventKind{SovereignEventKindRoleAssigned, SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted}
+
 func SovereignEventKindMembers() iter.Seq[SovereignEventKind] {
 	return func(yield func(SovereignEventKind) bool) {
-		for _, m := range [...]SovereignEventKind{SovereignEventKindRoleAssigned, SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted} {
+		for _, m := range enumMembers_SovereignEventKind[:] {
 			if !yield(m) {
 				return
 			}
@@ -1055,14 +869,8 @@ func SovereignEventKindMembers() iter.Seq[SovereignEventKind] {
 func (self SovereignEventKind) Code() uint8 { return uint8(self) }
 
 func SovereignEventKindFromCode(code uint8) (SovereignEventKind, bool) {
-	switch v := SovereignEventKind(code); v {
-	case SovereignEventKindRoleAssigned:
-		return v, true
-	case SovereignEventKindDoctrineSet:
-		return v, true
-	case SovereignEventKindPowerTriggered:
-		return v, true
-	case SovereignEventKindRewardGranted:
+	v := SovereignEventKind(code)
+	if _, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -1081,63 +889,55 @@ const (
 	SovereignRoleMinisterCraftsmanship SovereignRole = 5
 )
 
+var enumCodes_SovereignRole = [...]SovereignRole{
+	SovereignRoleNone, SovereignRoleSovereign, SovereignRoleMinisterMilitary, SovereignRoleMinisterEconomy,
+	SovereignRoleMinisterEnvironment, SovereignRoleMinisterCraftsmanship,
+}
+
+var enumNames_SovereignRole = [...]string{
+	"None", "Sovereign", "MinisterMilitary", "MinisterEconomy",
+	"MinisterEnvironment", "MinisterCraftsmanship",
+}
+
 func (self SovereignRole) String() string {
-	switch self {
-	case SovereignRoleNone:
-		return "None"
-	case SovereignRoleSovereign:
-		return "Sovereign"
-	case SovereignRoleMinisterMilitary:
-		return "MinisterMilitary"
-	case SovereignRoleMinisterEconomy:
-		return "MinisterEconomy"
-	case SovereignRoleMinisterEnvironment:
-		return "MinisterEnvironment"
-	case SovereignRoleMinisterCraftsmanship:
-		return "MinisterCraftsmanship"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignRole[:], self); ok {
+		return enumNames_SovereignRole[i]
 	}
 	return "SovereignRole(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignRole) Wire() string {
-	switch self {
-	case SovereignRoleNone:
-		return "None"
-	case SovereignRoleSovereign:
-		return "Sovereign"
-	case SovereignRoleMinisterMilitary:
-		return "MinisterMilitary"
-	case SovereignRoleMinisterEconomy:
-		return "MinisterEconomy"
-	case SovereignRoleMinisterEnvironment:
-		return "MinisterEnvironment"
-	case SovereignRoleMinisterCraftsmanship:
-		return "MinisterCraftsmanship"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignRole[:], self); ok {
+		return enumNames_SovereignRole[i]
 	}
 	return "SovereignRole(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_SovereignRole = [...]string{
+	"MinisterCraftsmanship", "MinisterEconomy", "MinisterEnvironment", "MinisterMilitary",
+	"None", "Sovereign",
+}
+
+var enumFound_SovereignRole = [...]SovereignRole{
+	SovereignRoleMinisterCraftsmanship, SovereignRoleMinisterEconomy, SovereignRoleMinisterEnvironment, SovereignRoleMinisterMilitary,
+	SovereignRoleNone, SovereignRoleSovereign,
+}
+
 func ParseSovereignRole(wire string) (SovereignRole, bool) {
-	switch wire {
-	case "None":
-		return SovereignRoleNone, true
-	case "Sovereign":
-		return SovereignRoleSovereign, true
-	case "MinisterMilitary":
-		return SovereignRoleMinisterMilitary, true
-	case "MinisterEconomy":
-		return SovereignRoleMinisterEconomy, true
-	case "MinisterEnvironment":
-		return SovereignRoleMinisterEnvironment, true
-	case "MinisterCraftsmanship":
-		return SovereignRoleMinisterCraftsmanship, true
+	if i, ok := slices.BinarySearch(enumKeys_SovereignRole[:], wire); ok {
+		return enumFound_SovereignRole[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_SovereignRole = [...]SovereignRole{
+	SovereignRoleNone, SovereignRoleSovereign, SovereignRoleMinisterMilitary, SovereignRoleMinisterEconomy,
+	SovereignRoleMinisterEnvironment, SovereignRoleMinisterCraftsmanship,
+}
+
 func SovereignRoleMembers() iter.Seq[SovereignRole] {
 	return func(yield func(SovereignRole) bool) {
-		for _, m := range [...]SovereignRole{SovereignRoleNone, SovereignRoleSovereign, SovereignRoleMinisterMilitary, SovereignRoleMinisterEconomy, SovereignRoleMinisterEnvironment, SovereignRoleMinisterCraftsmanship} {
+		for _, m := range enumMembers_SovereignRole[:] {
 			if !yield(m) {
 				return
 			}
@@ -1148,18 +948,8 @@ func SovereignRoleMembers() iter.Seq[SovereignRole] {
 func (self SovereignRole) Code() uint8 { return uint8(self) }
 
 func SovereignRoleFromCode(code uint8) (SovereignRole, bool) {
-	switch v := SovereignRole(code); v {
-	case SovereignRoleNone:
-		return v, true
-	case SovereignRoleSovereign:
-		return v, true
-	case SovereignRoleMinisterMilitary:
-		return v, true
-	case SovereignRoleMinisterEconomy:
-		return v, true
-	case SovereignRoleMinisterEnvironment:
-		return v, true
-	case SovereignRoleMinisterCraftsmanship:
+	v := SovereignRole(code)
+	if _, ok := slices.BinarySearch(enumCodes_SovereignRole[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -1180,75 +970,55 @@ const (
 	SovereignDoctrineFamiliar      SovereignDoctrine = 7
 )
 
+var enumCodes_SovereignDoctrine = [...]SovereignDoctrine{
+	SovereignDoctrineNone, SovereignDoctrineMythic, SovereignDoctrineMilitary, SovereignDoctrineMerchant,
+	SovereignDoctrineProgressive, SovereignDoctrineChancellor, SovereignDoctrineCraftsmanship, SovereignDoctrineFamiliar,
+}
+
+var enumNames_SovereignDoctrine = [...]string{
+	"None", "Mythic", "Military", "Merchant",
+	"Progressive", "Chancellor", "Craftsmanship", "Familiar",
+}
+
 func (self SovereignDoctrine) String() string {
-	switch self {
-	case SovereignDoctrineNone:
-		return "None"
-	case SovereignDoctrineMythic:
-		return "Mythic"
-	case SovereignDoctrineMilitary:
-		return "Military"
-	case SovereignDoctrineMerchant:
-		return "Merchant"
-	case SovereignDoctrineProgressive:
-		return "Progressive"
-	case SovereignDoctrineChancellor:
-		return "Chancellor"
-	case SovereignDoctrineCraftsmanship:
-		return "Craftsmanship"
-	case SovereignDoctrineFamiliar:
-		return "Familiar"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], self); ok {
+		return enumNames_SovereignDoctrine[i]
 	}
 	return "SovereignDoctrine(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignDoctrine) Wire() string {
-	switch self {
-	case SovereignDoctrineNone:
-		return "None"
-	case SovereignDoctrineMythic:
-		return "Mythic"
-	case SovereignDoctrineMilitary:
-		return "Military"
-	case SovereignDoctrineMerchant:
-		return "Merchant"
-	case SovereignDoctrineProgressive:
-		return "Progressive"
-	case SovereignDoctrineChancellor:
-		return "Chancellor"
-	case SovereignDoctrineCraftsmanship:
-		return "Craftsmanship"
-	case SovereignDoctrineFamiliar:
-		return "Familiar"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], self); ok {
+		return enumNames_SovereignDoctrine[i]
 	}
 	return "SovereignDoctrine(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_SovereignDoctrine = [...]string{
+	"Chancellor", "Craftsmanship", "Familiar", "Merchant",
+	"Military", "Mythic", "None", "Progressive",
+}
+
+var enumFound_SovereignDoctrine = [...]SovereignDoctrine{
+	SovereignDoctrineChancellor, SovereignDoctrineCraftsmanship, SovereignDoctrineFamiliar, SovereignDoctrineMerchant,
+	SovereignDoctrineMilitary, SovereignDoctrineMythic, SovereignDoctrineNone, SovereignDoctrineProgressive,
+}
+
 func ParseSovereignDoctrine(wire string) (SovereignDoctrine, bool) {
-	switch wire {
-	case "None":
-		return SovereignDoctrineNone, true
-	case "Mythic":
-		return SovereignDoctrineMythic, true
-	case "Military":
-		return SovereignDoctrineMilitary, true
-	case "Merchant":
-		return SovereignDoctrineMerchant, true
-	case "Progressive":
-		return SovereignDoctrineProgressive, true
-	case "Chancellor":
-		return SovereignDoctrineChancellor, true
-	case "Craftsmanship":
-		return SovereignDoctrineCraftsmanship, true
-	case "Familiar":
-		return SovereignDoctrineFamiliar, true
+	if i, ok := slices.BinarySearch(enumKeys_SovereignDoctrine[:], wire); ok {
+		return enumFound_SovereignDoctrine[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_SovereignDoctrine = [...]SovereignDoctrine{
+	SovereignDoctrineNone, SovereignDoctrineMythic, SovereignDoctrineMilitary, SovereignDoctrineMerchant,
+	SovereignDoctrineProgressive, SovereignDoctrineChancellor, SovereignDoctrineCraftsmanship, SovereignDoctrineFamiliar,
+}
+
 func SovereignDoctrineMembers() iter.Seq[SovereignDoctrine] {
 	return func(yield func(SovereignDoctrine) bool) {
-		for _, m := range [...]SovereignDoctrine{SovereignDoctrineNone, SovereignDoctrineMythic, SovereignDoctrineMilitary, SovereignDoctrineMerchant, SovereignDoctrineProgressive, SovereignDoctrineChancellor, SovereignDoctrineCraftsmanship, SovereignDoctrineFamiliar} {
+		for _, m := range enumMembers_SovereignDoctrine[:] {
 			if !yield(m) {
 				return
 			}
@@ -1259,22 +1029,8 @@ func SovereignDoctrineMembers() iter.Seq[SovereignDoctrine] {
 func (self SovereignDoctrine) Code() uint8 { return uint8(self) }
 
 func SovereignDoctrineFromCode(code uint8) (SovereignDoctrine, bool) {
-	switch v := SovereignDoctrine(code); v {
-	case SovereignDoctrineNone:
-		return v, true
-	case SovereignDoctrineMythic:
-		return v, true
-	case SovereignDoctrineMilitary:
-		return v, true
-	case SovereignDoctrineMerchant:
-		return v, true
-	case SovereignDoctrineProgressive:
-		return v, true
-	case SovereignDoctrineChancellor:
-		return v, true
-	case SovereignDoctrineCraftsmanship:
-		return v, true
-	case SovereignDoctrineFamiliar:
+	v := SovereignDoctrine(code)
+	if _, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -1300,81 +1056,60 @@ const (
 	SovereignPowerCustomDrop           SovereignPower = 8
 )
 
+var enumCodes_SovereignPower = [...]SovereignPower{
+	SovereignPowerNone, SovereignPowerMinisterBuffPrimary, SovereignPowerMinisterBuffSecondary, SovereignPowerWorldBossSpawn,
+	SovereignPowerHiddenBonds, SovereignPowerHeistia, SovereignPowerAzuriaAuction, SovereignPowerMinisterBuffTertiary,
+	SovereignPowerCustomDrop,
+}
+
+var enumNames_SovereignPower = [...]string{
+	"None", "MinisterBuffPrimary", "MinisterBuffSecondary", "WorldBossSpawn",
+	"HiddenBonds", "Heistia", "AzuriaAuction", "MinisterBuffTertiary",
+	"CustomDrop",
+}
+
 func (self SovereignPower) String() string {
-	switch self {
-	case SovereignPowerNone:
-		return "None"
-	case SovereignPowerMinisterBuffPrimary:
-		return "MinisterBuffPrimary"
-	case SovereignPowerMinisterBuffSecondary:
-		return "MinisterBuffSecondary"
-	case SovereignPowerWorldBossSpawn:
-		return "WorldBossSpawn"
-	case SovereignPowerHiddenBonds:
-		return "HiddenBonds"
-	case SovereignPowerHeistia:
-		return "Heistia"
-	case SovereignPowerAzuriaAuction:
-		return "AzuriaAuction"
-	case SovereignPowerMinisterBuffTertiary:
-		return "MinisterBuffTertiary"
-	case SovereignPowerCustomDrop:
-		return "CustomDrop"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignPower[:], self); ok {
+		return enumNames_SovereignPower[i]
 	}
 	return "SovereignPower(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignPower) Wire() string {
-	switch self {
-	case SovereignPowerNone:
-		return "None"
-	case SovereignPowerMinisterBuffPrimary:
-		return "MinisterBuffPrimary"
-	case SovereignPowerMinisterBuffSecondary:
-		return "MinisterBuffSecondary"
-	case SovereignPowerWorldBossSpawn:
-		return "WorldBossSpawn"
-	case SovereignPowerHiddenBonds:
-		return "HiddenBonds"
-	case SovereignPowerHeistia:
-		return "Heistia"
-	case SovereignPowerAzuriaAuction:
-		return "AzuriaAuction"
-	case SovereignPowerMinisterBuffTertiary:
-		return "MinisterBuffTertiary"
-	case SovereignPowerCustomDrop:
-		return "CustomDrop"
+	if i, ok := slices.BinarySearch(enumCodes_SovereignPower[:], self); ok {
+		return enumNames_SovereignPower[i]
 	}
 	return "SovereignPower(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_SovereignPower = [...]string{
+	"AzuriaAuction", "CustomDrop", "Heistia", "HiddenBonds",
+	"MinisterBuffPrimary", "MinisterBuffSecondary", "MinisterBuffTertiary", "None",
+	"WorldBossSpawn",
+}
+
+var enumFound_SovereignPower = [...]SovereignPower{
+	SovereignPowerAzuriaAuction, SovereignPowerCustomDrop, SovereignPowerHeistia, SovereignPowerHiddenBonds,
+	SovereignPowerMinisterBuffPrimary, SovereignPowerMinisterBuffSecondary, SovereignPowerMinisterBuffTertiary, SovereignPowerNone,
+	SovereignPowerWorldBossSpawn,
+}
+
 func ParseSovereignPower(wire string) (SovereignPower, bool) {
-	switch wire {
-	case "None":
-		return SovereignPowerNone, true
-	case "MinisterBuffPrimary":
-		return SovereignPowerMinisterBuffPrimary, true
-	case "MinisterBuffSecondary":
-		return SovereignPowerMinisterBuffSecondary, true
-	case "WorldBossSpawn":
-		return SovereignPowerWorldBossSpawn, true
-	case "HiddenBonds":
-		return SovereignPowerHiddenBonds, true
-	case "Heistia":
-		return SovereignPowerHeistia, true
-	case "AzuriaAuction":
-		return SovereignPowerAzuriaAuction, true
-	case "MinisterBuffTertiary":
-		return SovereignPowerMinisterBuffTertiary, true
-	case "CustomDrop":
-		return SovereignPowerCustomDrop, true
+	if i, ok := slices.BinarySearch(enumKeys_SovereignPower[:], wire); ok {
+		return enumFound_SovereignPower[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_SovereignPower = [...]SovereignPower{
+	SovereignPowerNone, SovereignPowerMinisterBuffPrimary, SovereignPowerMinisterBuffSecondary, SovereignPowerWorldBossSpawn,
+	SovereignPowerHiddenBonds, SovereignPowerHeistia, SovereignPowerAzuriaAuction, SovereignPowerMinisterBuffTertiary,
+	SovereignPowerCustomDrop,
+}
+
 func SovereignPowerMembers() iter.Seq[SovereignPower] {
 	return func(yield func(SovereignPower) bool) {
-		for _, m := range [...]SovereignPower{SovereignPowerNone, SovereignPowerMinisterBuffPrimary, SovereignPowerMinisterBuffSecondary, SovereignPowerWorldBossSpawn, SovereignPowerHiddenBonds, SovereignPowerHeistia, SovereignPowerAzuriaAuction, SovereignPowerMinisterBuffTertiary, SovereignPowerCustomDrop} {
+		for _, m := range enumMembers_SovereignPower[:] {
 			if !yield(m) {
 				return
 			}
@@ -1385,24 +1120,8 @@ func SovereignPowerMembers() iter.Seq[SovereignPower] {
 func (self SovereignPower) Code() uint8 { return uint8(self) }
 
 func SovereignPowerFromCode(code uint8) (SovereignPower, bool) {
-	switch v := SovereignPower(code); v {
-	case SovereignPowerNone:
-		return v, true
-	case SovereignPowerMinisterBuffPrimary:
-		return v, true
-	case SovereignPowerMinisterBuffSecondary:
-		return v, true
-	case SovereignPowerWorldBossSpawn:
-		return v, true
-	case SovereignPowerHiddenBonds:
-		return v, true
-	case SovereignPowerHeistia:
-		return v, true
-	case SovereignPowerAzuriaAuction:
-		return v, true
-	case SovereignPowerMinisterBuffTertiary:
-		return v, true
-	case SovereignPowerCustomDrop:
+	v := SovereignPower(code)
+	if _, ok := slices.BinarySearch(enumCodes_SovereignPower[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -1416,39 +1135,40 @@ const (
 	LifecycleKindStop  LifecycleKind = 2
 )
 
+var enumCodes_LifecycleKind = [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop}
+
+var enumNames_LifecycleKind = [...]string{"Start", "Stop"}
+
 func (self LifecycleKind) String() string {
-	switch self {
-	case LifecycleKindStart:
-		return "Start"
-	case LifecycleKindStop:
-		return "Stop"
+	if i, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], self); ok {
+		return enumNames_LifecycleKind[i]
 	}
 	return "LifecycleKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self LifecycleKind) Wire() string {
-	switch self {
-	case LifecycleKindStart:
-		return "Start"
-	case LifecycleKindStop:
-		return "Stop"
+	if i, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], self); ok {
+		return enumNames_LifecycleKind[i]
 	}
 	return "LifecycleKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_LifecycleKind = [...]string{"Start", "Stop"}
+
+var enumFound_LifecycleKind = [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop}
+
 func ParseLifecycleKind(wire string) (LifecycleKind, bool) {
-	switch wire {
-	case "Start":
-		return LifecycleKindStart, true
-	case "Stop":
-		return LifecycleKindStop, true
+	if i, ok := slices.BinarySearch(enumKeys_LifecycleKind[:], wire); ok {
+		return enumFound_LifecycleKind[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_LifecycleKind = [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop}
+
 func LifecycleKindMembers() iter.Seq[LifecycleKind] {
 	return func(yield func(LifecycleKind) bool) {
-		for _, m := range [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop} {
+		for _, m := range enumMembers_LifecycleKind[:] {
 			if !yield(m) {
 				return
 			}
@@ -1459,10 +1179,8 @@ func LifecycleKindMembers() iter.Seq[LifecycleKind] {
 func (self LifecycleKind) Code() uint8 { return uint8(self) }
 
 func LifecycleKindFromCode(code uint8) (LifecycleKind, bool) {
-	switch v := LifecycleKind(code); v {
-	case LifecycleKindStart:
-		return v, true
-	case LifecycleKindStop:
+	v := LifecycleKind(code)
+	if _, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -1506,111 +1224,65 @@ const (
 	GrantKindAuctionEscrowRecovery GrantKind = 59
 )
 
+var enumCodes_GrantKind = [...]GrantKind{
+	GrantKindUnknown, GrantKindBuybackDelivery, GrantKindBuffReward, GrantKindLevelUpGift,
+	GrantKindBossRewardMail, GrantKindWorldBossRewardMail, GrantKindEventReward, GrantKindMailReturn,
+	GrantKindPerinOverflow, GrantKindPlayerMail, GrantKindFarmHarvest, GrantKindStarterItem,
+	GrantKindGuildDisbandBank, GrantKindAuctionEscrowRecovery,
+}
+
+var enumNames_GrantKind = [...]string{
+	"UNKNOWN", "BUYBACK_DELIVERY", "BUFF_REWARD", "LEVEL_UP_GIFT",
+	"BOSS_REWARD_MAIL", "WORLD_BOSS_REWARD_MAIL", "EVENT_REWARD", "MAIL_RETURN",
+	"PERIN_OVERFLOW", "PLAYER_MAIL", "FARM_HARVEST", "STARTER_ITEM",
+	"GUILD_DISBAND_BANK", "AUCTION_ESCROW_RECOVERY",
+}
+
 func (self GrantKind) String() string {
-	switch self {
-	case GrantKindUnknown:
-		return "UNKNOWN"
-	case GrantKindBuybackDelivery:
-		return "BUYBACK_DELIVERY"
-	case GrantKindBuffReward:
-		return "BUFF_REWARD"
-	case GrantKindLevelUpGift:
-		return "LEVEL_UP_GIFT"
-	case GrantKindBossRewardMail:
-		return "BOSS_REWARD_MAIL"
-	case GrantKindWorldBossRewardMail:
-		return "WORLD_BOSS_REWARD_MAIL"
-	case GrantKindEventReward:
-		return "EVENT_REWARD"
-	case GrantKindMailReturn:
-		return "MAIL_RETURN"
-	case GrantKindPerinOverflow:
-		return "PERIN_OVERFLOW"
-	case GrantKindPlayerMail:
-		return "PLAYER_MAIL"
-	case GrantKindFarmHarvest:
-		return "FARM_HARVEST"
-	case GrantKindStarterItem:
-		return "STARTER_ITEM"
-	case GrantKindGuildDisbandBank:
-		return "GUILD_DISBAND_BANK"
-	case GrantKindAuctionEscrowRecovery:
-		return "AUCTION_ESCROW_RECOVERY"
+	if i, ok := slices.BinarySearch(enumCodes_GrantKind[:], self); ok {
+		return enumNames_GrantKind[i]
 	}
 	return "GrantKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self GrantKind) Wire() string {
-	switch self {
-	case GrantKindUnknown:
-		return "UNKNOWN"
-	case GrantKindBuybackDelivery:
-		return "BUYBACK_DELIVERY"
-	case GrantKindBuffReward:
-		return "BUFF_REWARD"
-	case GrantKindLevelUpGift:
-		return "LEVEL_UP_GIFT"
-	case GrantKindBossRewardMail:
-		return "BOSS_REWARD_MAIL"
-	case GrantKindWorldBossRewardMail:
-		return "WORLD_BOSS_REWARD_MAIL"
-	case GrantKindEventReward:
-		return "EVENT_REWARD"
-	case GrantKindMailReturn:
-		return "MAIL_RETURN"
-	case GrantKindPerinOverflow:
-		return "PERIN_OVERFLOW"
-	case GrantKindPlayerMail:
-		return "PLAYER_MAIL"
-	case GrantKindFarmHarvest:
-		return "FARM_HARVEST"
-	case GrantKindStarterItem:
-		return "STARTER_ITEM"
-	case GrantKindGuildDisbandBank:
-		return "GUILD_DISBAND_BANK"
-	case GrantKindAuctionEscrowRecovery:
-		return "AUCTION_ESCROW_RECOVERY"
+	if i, ok := slices.BinarySearch(enumCodes_GrantKind[:], self); ok {
+		return enumNames_GrantKind[i]
 	}
 	return "GrantKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_GrantKind = [...]string{
+	"AUCTION_ESCROW_RECOVERY", "BOSS_REWARD_MAIL", "BUFF_REWARD", "BUYBACK_DELIVERY",
+	"EVENT_REWARD", "FARM_HARVEST", "GUILD_DISBAND_BANK", "LEVEL_UP_GIFT",
+	"MAIL_RETURN", "PERIN_OVERFLOW", "PLAYER_MAIL", "STARTER_ITEM",
+	"UNKNOWN", "WORLD_BOSS_REWARD_MAIL",
+}
+
+var enumFound_GrantKind = [...]GrantKind{
+	GrantKindAuctionEscrowRecovery, GrantKindBossRewardMail, GrantKindBuffReward, GrantKindBuybackDelivery,
+	GrantKindEventReward, GrantKindFarmHarvest, GrantKindGuildDisbandBank, GrantKindLevelUpGift,
+	GrantKindMailReturn, GrantKindPerinOverflow, GrantKindPlayerMail, GrantKindStarterItem,
+	GrantKindUnknown, GrantKindWorldBossRewardMail,
+}
+
 func ParseGrantKind(wire string) (GrantKind, bool) {
-	switch wire {
-	case "UNKNOWN":
-		return GrantKindUnknown, true
-	case "BUYBACK_DELIVERY":
-		return GrantKindBuybackDelivery, true
-	case "BUFF_REWARD":
-		return GrantKindBuffReward, true
-	case "LEVEL_UP_GIFT":
-		return GrantKindLevelUpGift, true
-	case "BOSS_REWARD_MAIL":
-		return GrantKindBossRewardMail, true
-	case "WORLD_BOSS_REWARD_MAIL":
-		return GrantKindWorldBossRewardMail, true
-	case "EVENT_REWARD":
-		return GrantKindEventReward, true
-	case "MAIL_RETURN":
-		return GrantKindMailReturn, true
-	case "PERIN_OVERFLOW":
-		return GrantKindPerinOverflow, true
-	case "PLAYER_MAIL":
-		return GrantKindPlayerMail, true
-	case "FARM_HARVEST":
-		return GrantKindFarmHarvest, true
-	case "STARTER_ITEM":
-		return GrantKindStarterItem, true
-	case "GUILD_DISBAND_BANK":
-		return GrantKindGuildDisbandBank, true
-	case "AUCTION_ESCROW_RECOVERY":
-		return GrantKindAuctionEscrowRecovery, true
+	if i, ok := slices.BinarySearch(enumKeys_GrantKind[:], wire); ok {
+		return enumFound_GrantKind[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_GrantKind = [...]GrantKind{
+	GrantKindUnknown, GrantKindBuybackDelivery, GrantKindBuffReward, GrantKindLevelUpGift,
+	GrantKindBossRewardMail, GrantKindWorldBossRewardMail, GrantKindEventReward, GrantKindMailReturn,
+	GrantKindPerinOverflow, GrantKindPlayerMail, GrantKindFarmHarvest, GrantKindStarterItem,
+	GrantKindGuildDisbandBank, GrantKindAuctionEscrowRecovery,
+}
+
 func GrantKindMembers() iter.Seq[GrantKind] {
 	return func(yield func(GrantKind) bool) {
-		for _, m := range [...]GrantKind{GrantKindUnknown, GrantKindBuybackDelivery, GrantKindBuffReward, GrantKindLevelUpGift, GrantKindBossRewardMail, GrantKindWorldBossRewardMail, GrantKindEventReward, GrantKindMailReturn, GrantKindPerinOverflow, GrantKindPlayerMail, GrantKindFarmHarvest, GrantKindStarterItem, GrantKindGuildDisbandBank, GrantKindAuctionEscrowRecovery} {
+		for _, m := range enumMembers_GrantKind[:] {
 			if !yield(m) {
 				return
 			}
@@ -1621,34 +1293,8 @@ func GrantKindMembers() iter.Seq[GrantKind] {
 func (self GrantKind) Code() uint8 { return uint8(self) }
 
 func GrantKindFromCode(code uint8) (GrantKind, bool) {
-	switch v := GrantKind(code); v {
-	case GrantKindUnknown:
-		return v, true
-	case GrantKindBuybackDelivery:
-		return v, true
-	case GrantKindBuffReward:
-		return v, true
-	case GrantKindLevelUpGift:
-		return v, true
-	case GrantKindBossRewardMail:
-		return v, true
-	case GrantKindWorldBossRewardMail:
-		return v, true
-	case GrantKindEventReward:
-		return v, true
-	case GrantKindMailReturn:
-		return v, true
-	case GrantKindPerinOverflow:
-		return v, true
-	case GrantKindPlayerMail:
-		return v, true
-	case GrantKindFarmHarvest:
-		return v, true
-	case GrantKindStarterItem:
-		return v, true
-	case GrantKindGuildDisbandBank:
-		return v, true
-	case GrantKindAuctionEscrowRecovery:
+	v := GrantKind(code)
+	if _, ok := slices.BinarySearch(enumCodes_GrantKind[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -1668,69 +1314,50 @@ const (
 	VocabularyGrantKind          Vocabulary = 6
 )
 
+var enumNames_Vocabulary = [...]string{
+	"farm_event_kind", "sovereign_event_kind", "sovereign_role", "sovereign_doctrine",
+	"sovereign_power", "lifecycle_kind", "grant_kind",
+}
+
 func (self Vocabulary) String() string {
-	switch self {
-	case VocabularyFarmEventKind:
-		return "farm_event_kind"
-	case VocabularySovereignEventKind:
-		return "sovereign_event_kind"
-	case VocabularySovereignRole:
-		return "sovereign_role"
-	case VocabularySovereignDoctrine:
-		return "sovereign_doctrine"
-	case VocabularySovereignPower:
-		return "sovereign_power"
-	case VocabularyLifecycleKind:
-		return "lifecycle_kind"
-	case VocabularyGrantKind:
-		return "grant_kind"
+	if i := uint(self); i < uint(len(enumNames_Vocabulary)) {
+		return enumNames_Vocabulary[i]
 	}
 	return "Vocabulary(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Vocabulary) Wire() string {
-	switch self {
-	case VocabularyFarmEventKind:
-		return "farm_event_kind"
-	case VocabularySovereignEventKind:
-		return "sovereign_event_kind"
-	case VocabularySovereignRole:
-		return "sovereign_role"
-	case VocabularySovereignDoctrine:
-		return "sovereign_doctrine"
-	case VocabularySovereignPower:
-		return "sovereign_power"
-	case VocabularyLifecycleKind:
-		return "lifecycle_kind"
-	case VocabularyGrantKind:
-		return "grant_kind"
+	if i := uint(self); i < uint(len(enumNames_Vocabulary)) {
+		return enumNames_Vocabulary[i]
 	}
 	return "Vocabulary(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Vocabulary = [...]string{
+	"farm_event_kind", "grant_kind", "lifecycle_kind", "sovereign_doctrine",
+	"sovereign_event_kind", "sovereign_power", "sovereign_role",
+}
+
+var enumFound_Vocabulary = [...]Vocabulary{
+	VocabularyFarmEventKind, VocabularyGrantKind, VocabularyLifecycleKind, VocabularySovereignDoctrine,
+	VocabularySovereignEventKind, VocabularySovereignPower, VocabularySovereignRole,
+}
+
 func ParseVocabulary(wire string) (Vocabulary, bool) {
-	switch wire {
-	case "farm_event_kind":
-		return VocabularyFarmEventKind, true
-	case "sovereign_event_kind":
-		return VocabularySovereignEventKind, true
-	case "sovereign_role":
-		return VocabularySovereignRole, true
-	case "sovereign_doctrine":
-		return VocabularySovereignDoctrine, true
-	case "sovereign_power":
-		return VocabularySovereignPower, true
-	case "lifecycle_kind":
-		return VocabularyLifecycleKind, true
-	case "grant_kind":
-		return VocabularyGrantKind, true
+	if i, ok := slices.BinarySearch(enumKeys_Vocabulary[:], wire); ok {
+		return enumFound_Vocabulary[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Vocabulary = [...]Vocabulary{
+	VocabularyFarmEventKind, VocabularySovereignEventKind, VocabularySovereignRole, VocabularySovereignDoctrine,
+	VocabularySovereignPower, VocabularyLifecycleKind, VocabularyGrantKind,
+}
+
 func VocabularyMembers() iter.Seq[Vocabulary] {
 	return func(yield func(Vocabulary) bool) {
-		for _, m := range [...]Vocabulary{VocabularyFarmEventKind, VocabularySovereignEventKind, VocabularySovereignRole, VocabularySovereignDoctrine, VocabularySovereignPower, VocabularyLifecycleKind, VocabularyGrantKind} {
+		for _, m := range enumMembers_Vocabulary[:] {
 			if !yield(m) {
 				return
 			}
@@ -1765,32 +1392,29 @@ const (
 	RowsKindSome  RowsKind = 1
 )
 
+var enumNames_RowsKind = [...]string{"every", "some"}
+
 func (self RowsKind) String() string {
-	switch self {
-	case RowsKindEvery:
-		return "every"
-	case RowsKindSome:
-		return "some"
+	if i := uint(self); i < uint(len(enumNames_RowsKind)) {
+		return enumNames_RowsKind[i]
 	}
 	return "RowsKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self RowsKind) Wire() string {
-	switch self {
-	case RowsKindEvery:
-		return "every"
-	case RowsKindSome:
-		return "some"
+	if i := uint(self); i < uint(len(enumNames_RowsKind)) {
+		return enumNames_RowsKind[i]
 	}
 	return "RowsKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_RowsKind = [...]string{"every", "some"}
+
+var enumFound_RowsKind = [...]RowsKind{RowsKindEvery, RowsKindSome}
+
 func ParseRowsKind(wire string) (RowsKind, bool) {
-	switch wire {
-	case "every":
-		return RowsKindEvery, true
-	case "some":
-		return RowsKindSome, true
+	if i, ok := slices.BinarySearch(enumKeys_RowsKind[:], wire); ok {
+		return enumFound_RowsKind[i], true
 	}
 	return 0, false
 }

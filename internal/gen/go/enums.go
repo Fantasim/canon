@@ -1,6 +1,7 @@
 package gogen
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -29,6 +30,7 @@ type enumSpec struct {
 // enumConst is one member: its constant, its value and its doc.
 type enumConst struct {
 	name, value, doc string
+	code             int64 // the @codes value, 0 without
 }
 
 // enums writes every enum in declaration order.
@@ -60,7 +62,7 @@ func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 		if s.open {
 			s.numbers, v = append(s.numbers, v), strconv.Quote(m.Wire)
 		}
-		s.consts = append(s.consts, enumConst{g.names.MemberName(e, m), v, withRetired(m.Doc, m.Retired)})
+		s.consts = append(s.consts, enumConst{g.names.MemberName(e, m), v, withRetired(m.Doc, m.Retired), m.Code})
 		s.names = append(s.names, m.Name)
 		s.wires = append(s.wires, m.Wire)
 	}
@@ -161,63 +163,74 @@ func (g *gen) writeEnum(s *enumSpec) {
 		g.writeOpen(s)
 		return
 	}
-	g.writeSwitch(ir.GoString, s, s.names)
-	if s.wires != nil {
-		g.writeSwitch(ir.GoWire, s, s.wires)
+	g.writeClosed(s)
+}
+
+// writeClosed writes the methods of an integer enum: String and Wire read tables by the member's index, or by its code when the values are @codes, and Parse<E> searches the sorted keys; the enum methods do not grow with the members (DECISIONS 393).
+func (g *gen) writeClosed(s *enumSpec) {
+	v := g.enumView(s)
+	idx := s.positions()
+	if s.codes != "" {
+		g.writeTable(v.CodeKeys, s.name, pick(s.constNames(), idx))
 	}
-	g.writeParse(s)
+	g.writeText(v, v.Names, ir.GoString, pick(quoted(s.names), idx))
+	if slices.Equal(s.names, s.wires) { // no wires table: the wires are the names
+		g.textMethod(v, v.Names, ir.GoWire)
+	} else {
+		g.writeText(v, v.Wires, ir.GoWire, pick(quoted(s.wires), idx))
+	}
+	g.writeParse(s, v)
 	if s.members {
-		g.writeMembers(s)
+		g.writeMembers(s, v)
 	}
 	if s.codes != "" {
-		g.writeCodes(s)
+		g.writeCodes(s, v)
 	}
 	if s.text {
-		g.printf(enumTextFormat, s.name, g.names.ParseName(s.name), g.use(strconvPkg, strconvPkg), g.use(errorsPkg, errorsPkg))
+		g.printf(enumTextFormat, s.name, v.Parse, g.use(strconvPkg, strconvPkg), g.use(errorsPkg, errorsPkg))
 	}
 }
 
-// writeSwitch writes String or Wire: a switch on the member, then the Go-style E(n) fallback.
-func (g *gen) writeSwitch(method string, s *enumSpec, texts []string) {
-	g.printf("func (self %s) %s() string {\nswitch self {\n", s.name, method)
-	for i, c := range s.consts {
-		g.printf(idCaseFormat, c.name, strconv.Quote(texts[i]))
+// positions are the member indexes in the order the tables list them: declaration order, or by code when the values are the codes.
+func (s *enumSpec) positions() []int {
+	if s.codes != "" {
+		return s.byCode()
 	}
-	g.printf(fallbackFormat, s.name, g.use(strconvPkg, strconvPkg))
+	return identity(len(s.consts))
 }
 
-func (g *gen) writeParse(s *enumSpec) {
-	name := g.names.ParseName(s.name)
-	g.printf("func %s(%s string) (%s, bool) {\nswitch %s {\n", name, s.parseArg, s.name, s.parseArg)
-	for i, c := range s.consts {
-		text := s.names[i]
-		if s.wires != nil {
-			text = s.wires[i]
-		}
-		g.printf("case %s:\nreturn %s, true\n", strconv.Quote(text), c.name)
-	}
-	if s.id {
-		g.printf(idNotFoundFormat, s.name)
-		return
-	}
-	g.printf(notFoundTail)
+// writeText writes a table of texts and the method (String or Wire) reading it.
+func (g *gen) writeText(v enumView, table, method string, items []string) {
+	g.writeTable(table, goString, items)
+	g.textMethod(v, table, method)
 }
 
-func (g *gen) writeMembers(s *enumSpec) {
-	name := g.names.MembersName(s.name)
-	names := make([]string, len(s.consts))
-	for i, c := range s.consts {
-		names[i] = c.name
-	}
-	g.printf(membersFormat, name, g.use(iterPkg, iterPkg), s.name, strings.Join(names, listSep))
+// textMethod writes String or Wire over a table of texts, with the Go-style E(n) fallback.
+func (g *gen) textMethod(v enumView, table, method string) {
+	v.Method, v.Table, v.Strconv = method, table, g.use(strconvPkg, strconvPkg)
+	g.exec(tmplEnumText, v)
 }
 
-// writeCodes writes Code and <E>FromCode of an enum whose values are its @codes (§5.2).
-func (g *gen) writeCodes(s *enumSpec) {
-	name := g.names.FromCodeName(s.name)
-	g.printf(codesFormat, s.name, s.codes, name, ir.GoCode)
-	for _, c := range s.consts {
-		g.printf("case %s:\nreturn v, true\n", c.name)
+// writeParse writes Parse<E>: a binary search of the wires (the keys of an id) sorted by their bytes, over the members in that order.
+func (g *gen) writeParse(s *enumSpec, v enumView) {
+	texts := s.wires
+	if texts == nil {
+		texts = s.names
 	}
-	g.printf(notFoundTail)
+	idx := byText(texts)
+	g.writeTable(v.Keys, goString, quoted(pick(texts, idx)))
+	g.writeTable(v.Found, s.name, pick(s.memberRefs(), idx))
+	g.exec(tmplEnumParse, v)
+}
+
+// writeMembers writes <E>Members over the members in declaration order, a table of the package.
+func (g *gen) writeMembers(s *enumSpec, v enumView) {
+	g.writeTable(v.Members, s.name, s.constNames())
+	g.printf(membersFormat, g.names.MembersName(s.name), g.use(iterPkg, iterPkg), s.name, v.Members)
+}
+
+// writeCodes writes Code and <E>FromCode of an enum whose values are its @codes (§5.2): the codes table is searched.
+func (g *gen) writeCodes(s *enumSpec, v enumView) {
+	g.printf(codesFormat, s.name, s.codes, ir.GoCode)
+	g.exec(tmplEnumFromCode, v)
 }

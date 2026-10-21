@@ -6,6 +6,7 @@ package escapes
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -23,12 +24,11 @@ var (
 	GateIDWest = GateID{1}
 )
 
+var enumNames_GateID = [...]string{"east", "west"}
+
 func (self GateID) String() string {
-	switch self.position {
-	case 0:
-		return "east"
-	case 1:
-		return "west"
+	if i := uint(self.position); i < uint(len(enumNames_GateID)) {
+		return enumNames_GateID[i]
 	}
 	return "GateID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -56,12 +56,13 @@ func (self *GateID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_GateID = [...]string{"east", "west"}
+
+var enumFound_GateID = [...]GateID{{0}, {1}}
+
 func ParseGateID(key string) (GateID, bool) {
-	switch key {
-	case "east":
-		return GateIDEast, true
-	case "west":
-		return GateIDWest, true
+	if i, ok := slices.BinarySearch(enumKeys_GateID[:], key); ok {
+		return enumFound_GateID[i], true
 	}
 	return GateID{}, false
 }

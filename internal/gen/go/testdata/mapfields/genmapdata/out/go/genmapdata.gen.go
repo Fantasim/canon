@@ -27,39 +27,38 @@ const (
 	ElementWater Element = 1
 )
 
+var enumNames_Element = [...]string{"fire", "water"}
+
 func (self Element) String() string {
-	switch self {
-	case ElementFire:
-		return "fire"
-	case ElementWater:
-		return "water"
+	if i := uint(self); i < uint(len(enumNames_Element)) {
+		return enumNames_Element[i]
 	}
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Element) Wire() string {
-	switch self {
-	case ElementFire:
-		return "fire"
-	case ElementWater:
-		return "water"
+	if i := uint(self); i < uint(len(enumNames_Element)) {
+		return enumNames_Element[i]
 	}
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Element = [...]string{"fire", "water"}
+
+var enumFound_Element = [...]Element{ElementFire, ElementWater}
+
 func ParseElement(wire string) (Element, bool) {
-	switch wire {
-	case "fire":
-		return ElementFire, true
-	case "water":
-		return ElementWater, true
+	if i, ok := slices.BinarySearch(enumKeys_Element[:], wire); ok {
+		return enumFound_Element[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Element = [...]Element{ElementFire, ElementWater}
+
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
-		for _, m := range [...]Element{ElementFire, ElementWater} {
+		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
 				return
 			}
@@ -94,39 +93,40 @@ const (
 	RankHigh Rank = 200
 )
 
+var enumCodes_Rank = [...]Rank{RankLow, RankHigh}
+
+var enumNames_Rank = [...]string{"low", "high"}
+
 func (self Rank) String() string {
-	switch self {
-	case RankLow:
-		return "low"
-	case RankHigh:
-		return "high"
+	if i, ok := slices.BinarySearch(enumCodes_Rank[:], self); ok {
+		return enumNames_Rank[i]
 	}
 	return "Rank(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Rank) Wire() string {
-	switch self {
-	case RankLow:
-		return "low"
-	case RankHigh:
-		return "high"
+	if i, ok := slices.BinarySearch(enumCodes_Rank[:], self); ok {
+		return enumNames_Rank[i]
 	}
 	return "Rank(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Rank = [...]string{"high", "low"}
+
+var enumFound_Rank = [...]Rank{RankHigh, RankLow}
+
 func ParseRank(wire string) (Rank, bool) {
-	switch wire {
-	case "low":
-		return RankLow, true
-	case "high":
-		return RankHigh, true
+	if i, ok := slices.BinarySearch(enumKeys_Rank[:], wire); ok {
+		return enumFound_Rank[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Rank = [...]Rank{RankLow, RankHigh}
+
 func RankMembers() iter.Seq[Rank] {
 	return func(yield func(Rank) bool) {
-		for _, m := range [...]Rank{RankLow, RankHigh} {
+		for _, m := range enumMembers_Rank[:] {
 			if !yield(m) {
 				return
 			}
@@ -137,10 +137,8 @@ func RankMembers() iter.Seq[Rank] {
 func (self Rank) Code() uint8 { return uint8(self) }
 
 func RankFromCode(code uint8) (Rank, bool) {
-	switch v := Rank(code); v {
-	case RankLow:
-		return v, true
-	case RankHigh:
+	v := Rank(code)
+	if _, ok := slices.BinarySearch(enumCodes_Rank[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -154,39 +152,40 @@ const (
 	ToneSeries1 Tone = 1
 )
 
+var enumNames_Tone = [...]string{"plain", "series_1"}
+
 func (self Tone) String() string {
-	switch self {
-	case TonePlain:
-		return "plain"
-	case ToneSeries1:
-		return "series_1"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
+
+var enumWires_Tone = [...]string{"plain", "series-1"}
 
 func (self Tone) Wire() string {
-	switch self {
-	case TonePlain:
-		return "plain"
-	case ToneSeries1:
-		return "series-1"
+	if i := uint(self); i < uint(len(enumWires_Tone)) {
+		return enumWires_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tone = [...]string{"plain", "series-1"}
+
+var enumFound_Tone = [...]Tone{TonePlain, ToneSeries1}
+
 func ParseTone(wire string) (Tone, bool) {
-	switch wire {
-	case "plain":
-		return TonePlain, true
-	case "series-1":
-		return ToneSeries1, true
+	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
+		return enumFound_Tone[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tone = [...]Tone{TonePlain, ToneSeries1}
+
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
-		for _, m := range [...]Tone{TonePlain, ToneSeries1} {
+		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
 				return
 			}

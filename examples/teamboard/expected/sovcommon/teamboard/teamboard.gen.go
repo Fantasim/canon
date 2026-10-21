@@ -6,6 +6,7 @@ package teamboard
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -26,45 +27,38 @@ const (
 	ActorReporterOrTriager Actor = 2
 )
 
+var enumNames_Actor = [...]string{"reporter", "triager", "reporter_or_triager"}
+
 func (self Actor) String() string {
-	switch self {
-	case ActorReporter:
-		return "reporter"
-	case ActorTriager:
-		return "triager"
-	case ActorReporterOrTriager:
-		return "reporter_or_triager"
+	if i := uint(self); i < uint(len(enumNames_Actor)) {
+		return enumNames_Actor[i]
 	}
 	return "Actor(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Actor) Wire() string {
-	switch self {
-	case ActorReporter:
-		return "reporter"
-	case ActorTriager:
-		return "triager"
-	case ActorReporterOrTriager:
-		return "reporter_or_triager"
+	if i := uint(self); i < uint(len(enumNames_Actor)) {
+		return enumNames_Actor[i]
 	}
 	return "Actor(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Actor = [...]string{"reporter", "reporter_or_triager", "triager"}
+
+var enumFound_Actor = [...]Actor{ActorReporter, ActorReporterOrTriager, ActorTriager}
+
 func ParseActor(wire string) (Actor, bool) {
-	switch wire {
-	case "reporter":
-		return ActorReporter, true
-	case "triager":
-		return ActorTriager, true
-	case "reporter_or_triager":
-		return ActorReporterOrTriager, true
+	if i, ok := slices.BinarySearch(enumKeys_Actor[:], wire); ok {
+		return enumFound_Actor[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Actor = [...]Actor{ActorReporter, ActorTriager, ActorReporterOrTriager}
+
 func ActorMembers() iter.Seq[Actor] {
 	return func(yield func(Actor) bool) {
-		for _, m := range [...]Actor{ActorReporter, ActorTriager, ActorReporterOrTriager} {
+		for _, m := range enumMembers_Actor[:] {
 			if !yield(m) {
 				return
 			}
@@ -101,51 +95,38 @@ const (
 	PostFieldDuplicateOf PostField = 3
 )
 
+var enumNames_PostField = [...]string{"assignee", "fixed_in", "reason", "duplicate_of"}
+
 func (self PostField) String() string {
-	switch self {
-	case PostFieldAssignee:
-		return "assignee"
-	case PostFieldFixedIn:
-		return "fixed_in"
-	case PostFieldReason:
-		return "reason"
-	case PostFieldDuplicateOf:
-		return "duplicate_of"
+	if i := uint(self); i < uint(len(enumNames_PostField)) {
+		return enumNames_PostField[i]
 	}
 	return "PostField(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self PostField) Wire() string {
-	switch self {
-	case PostFieldAssignee:
-		return "assignee"
-	case PostFieldFixedIn:
-		return "fixed_in"
-	case PostFieldReason:
-		return "reason"
-	case PostFieldDuplicateOf:
-		return "duplicate_of"
+	if i := uint(self); i < uint(len(enumNames_PostField)) {
+		return enumNames_PostField[i]
 	}
 	return "PostField(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_PostField = [...]string{"assignee", "duplicate_of", "fixed_in", "reason"}
+
+var enumFound_PostField = [...]PostField{PostFieldAssignee, PostFieldDuplicateOf, PostFieldFixedIn, PostFieldReason}
+
 func ParsePostField(wire string) (PostField, bool) {
-	switch wire {
-	case "assignee":
-		return PostFieldAssignee, true
-	case "fixed_in":
-		return PostFieldFixedIn, true
-	case "reason":
-		return PostFieldReason, true
-	case "duplicate_of":
-		return PostFieldDuplicateOf, true
+	if i, ok := slices.BinarySearch(enumKeys_PostField[:], wire); ok {
+		return enumFound_PostField[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_PostField = [...]PostField{PostFieldAssignee, PostFieldFixedIn, PostFieldReason, PostFieldDuplicateOf}
+
 func PostFieldMembers() iter.Seq[PostField] {
 	return func(yield func(PostField) bool) {
-		for _, m := range [...]PostField{PostFieldAssignee, PostFieldFixedIn, PostFieldReason, PostFieldDuplicateOf} {
+		for _, m := range enumMembers_PostField[:] {
 			if !yield(m) {
 				return
 			}
@@ -182,12 +163,11 @@ var (
 	IntentIDIdea  = IntentID{1}
 )
 
+var enumNames_IntentID = [...]string{"issue", "idea"}
+
 func (self IntentID) String() string {
-	switch self.position {
-	case 0:
-		return "issue"
-	case 1:
-		return "idea"
+	if i := uint(self.position); i < uint(len(enumNames_IntentID)) {
+		return enumNames_IntentID[i]
 	}
 	return "IntentID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -215,12 +195,13 @@ func (self *IntentID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_IntentID = [...]string{"idea", "issue"}
+
+var enumFound_IntentID = [...]IntentID{{1}, {0}}
+
 func ParseIntentID(key string) (IntentID, bool) {
-	switch key {
-	case "issue":
-		return IntentIDIssue, true
-	case "idea":
-		return IntentIDIdea, true
+	if i, ok := slices.BinarySearch(enumKeys_IntentID[:], key); ok {
+		return enumFound_IntentID[i], true
 	}
 	return IntentID{}, false
 }
@@ -235,12 +216,11 @@ var (
 	FlagIDSensitive = FlagID{1}
 )
 
+var enumNames_FlagID = [...]string{"blocking", "sensitive"}
+
 func (self FlagID) String() string {
-	switch self.position {
-	case 0:
-		return "blocking"
-	case 1:
-		return "sensitive"
+	if i := uint(self.position); i < uint(len(enumNames_FlagID)) {
+		return enumNames_FlagID[i]
 	}
 	return "FlagID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -268,12 +248,13 @@ func (self *FlagID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_FlagID = [...]string{"blocking", "sensitive"}
+
+var enumFound_FlagID = [...]FlagID{{0}, {1}}
+
 func ParseFlagID(key string) (FlagID, bool) {
-	switch key {
-	case "blocking":
-		return FlagIDBlocking, true
-	case "sensitive":
-		return FlagIDSensitive, true
+	if i, ok := slices.BinarySearch(enumKeys_FlagID[:], key); ok {
+		return enumFound_FlagID[i], true
 	}
 	return FlagID{}, false
 }
@@ -292,20 +273,14 @@ var (
 	StatusIDDuplicate = StatusID{5}
 )
 
+var enumNames_StatusID = [...]string{
+	"open", "taken", "fixed", "verified",
+	"wont_do", "duplicate",
+}
+
 func (self StatusID) String() string {
-	switch self.position {
-	case 0:
-		return "open"
-	case 1:
-		return "taken"
-	case 2:
-		return "fixed"
-	case 3:
-		return "verified"
-	case 4:
-		return "wont_do"
-	case 5:
-		return "duplicate"
+	if i := uint(self.position); i < uint(len(enumNames_StatusID)) {
+		return enumNames_StatusID[i]
 	}
 	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -333,20 +308,19 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_StatusID = [...]string{
+	"duplicate", "fixed", "open", "taken",
+	"verified", "wont_do",
+}
+
+var enumFound_StatusID = [...]StatusID{
+	{5}, {2}, {0}, {1},
+	{3}, {4},
+}
+
 func ParseStatusID(key string) (StatusID, bool) {
-	switch key {
-	case "open":
-		return StatusIDOpen, true
-	case "taken":
-		return StatusIDTaken, true
-	case "fixed":
-		return StatusIDFixed, true
-	case "verified":
-		return StatusIDVerified, true
-	case "wont_do":
-		return StatusIDWontDo, true
-	case "duplicate":
-		return StatusIDDuplicate, true
+	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
+		return enumFound_StatusID[i], true
 	}
 	return StatusID{}, false
 }
@@ -363,16 +337,11 @@ var (
 	ColumnIDDone      = ColumnID{3}
 )
 
+var enumNames_ColumnID = [...]string{"unclaimed", "taken", "fixed", "done"}
+
 func (self ColumnID) String() string {
-	switch self.position {
-	case 0:
-		return "unclaimed"
-	case 1:
-		return "taken"
-	case 2:
-		return "fixed"
-	case 3:
-		return "done"
+	if i := uint(self.position); i < uint(len(enumNames_ColumnID)) {
+		return enumNames_ColumnID[i]
 	}
 	return "ColumnID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -400,16 +369,13 @@ func (self *ColumnID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_ColumnID = [...]string{"done", "fixed", "taken", "unclaimed"}
+
+var enumFound_ColumnID = [...]ColumnID{{3}, {2}, {1}, {0}}
+
 func ParseColumnID(key string) (ColumnID, bool) {
-	switch key {
-	case "unclaimed":
-		return ColumnIDUnclaimed, true
-	case "taken":
-		return ColumnIDTaken, true
-	case "fixed":
-		return ColumnIDFixed, true
-	case "done":
-		return ColumnIDDone, true
+	if i, ok := slices.BinarySearch(enumKeys_ColumnID[:], key); ok {
+		return enumFound_ColumnID[i], true
 	}
 	return ColumnID{}, false
 }
@@ -425,14 +391,11 @@ var (
 	SeverityIDCritical = SeverityID{2}
 )
 
+var enumNames_SeverityID = [...]string{"low", "normal", "critical"}
+
 func (self SeverityID) String() string {
-	switch self.position {
-	case 0:
-		return "low"
-	case 1:
-		return "normal"
-	case 2:
-		return "critical"
+	if i := uint(self.position); i < uint(len(enumNames_SeverityID)) {
+		return enumNames_SeverityID[i]
 	}
 	return "SeverityID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -460,14 +423,13 @@ func (self *SeverityID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_SeverityID = [...]string{"critical", "low", "normal"}
+
+var enumFound_SeverityID = [...]SeverityID{{2}, {0}, {1}}
+
 func ParseSeverityID(key string) (SeverityID, bool) {
-	switch key {
-	case "low":
-		return SeverityIDLow, true
-	case "normal":
-		return SeverityIDNormal, true
-	case "critical":
-		return SeverityIDCritical, true
+	if i, ok := slices.BinarySearch(enumKeys_SeverityID[:], key); ok {
+		return enumFound_SeverityID[i], true
 	}
 	return SeverityID{}, false
 }
@@ -483,14 +445,11 @@ var (
 	AreaGroupIDInternal = AreaGroupID{2}
 )
 
+var enumNames_AreaGroupID = [...]string{"in_game", "out_game", "internal"}
+
 func (self AreaGroupID) String() string {
-	switch self.position {
-	case 0:
-		return "in_game"
-	case 1:
-		return "out_game"
-	case 2:
-		return "internal"
+	if i := uint(self.position); i < uint(len(enumNames_AreaGroupID)) {
+		return enumNames_AreaGroupID[i]
 	}
 	return "AreaGroupID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -518,14 +477,13 @@ func (self *AreaGroupID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_AreaGroupID = [...]string{"in_game", "internal", "out_game"}
+
+var enumFound_AreaGroupID = [...]AreaGroupID{{0}, {2}, {1}}
+
 func ParseAreaGroupID(key string) (AreaGroupID, bool) {
-	switch key {
-	case "in_game":
-		return AreaGroupIDInGame, true
-	case "out_game":
-		return AreaGroupIDOutGame, true
-	case "internal":
-		return AreaGroupIDInternal, true
+	if i, ok := slices.BinarySearch(enumKeys_AreaGroupID[:], key); ok {
+		return enumFound_AreaGroupID[i], true
 	}
 	return AreaGroupID{}, false
 }
@@ -550,32 +508,15 @@ var (
 	AreaIDInternal       = AreaID{11}
 )
 
+var enumNames_AreaID = [...]string{
+	"game", "balance", "website", "resource_studio",
+	"game_server", "client", "resource", "sovcommon",
+	"admin_panel", "analytics", "team_board", "internal",
+}
+
 func (self AreaID) String() string {
-	switch self.position {
-	case 0:
-		return "game"
-	case 1:
-		return "balance"
-	case 2:
-		return "website"
-	case 3:
-		return "resource_studio"
-	case 4:
-		return "game_server"
-	case 5:
-		return "client"
-	case 6:
-		return "resource"
-	case 7:
-		return "sovcommon"
-	case 8:
-		return "admin_panel"
-	case 9:
-		return "analytics"
-	case 10:
-		return "team_board"
-	case 11:
-		return "internal"
+	if i := uint(self.position); i < uint(len(enumNames_AreaID)) {
+		return enumNames_AreaID[i]
 	}
 	return "AreaID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -603,32 +544,21 @@ func (self *AreaID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_AreaID = [...]string{
+	"admin_panel", "analytics", "balance", "client",
+	"game", "game_server", "internal", "resource",
+	"resource_studio", "sovcommon", "team_board", "website",
+}
+
+var enumFound_AreaID = [...]AreaID{
+	{8}, {9}, {1}, {5},
+	{0}, {4}, {11}, {6},
+	{3}, {7}, {10}, {2},
+}
+
 func ParseAreaID(key string) (AreaID, bool) {
-	switch key {
-	case "game":
-		return AreaIDGame, true
-	case "balance":
-		return AreaIDBalance, true
-	case "website":
-		return AreaIDWebsite, true
-	case "resource_studio":
-		return AreaIDResourceStudio, true
-	case "game_server":
-		return AreaIDGameServer, true
-	case "client":
-		return AreaIDClient, true
-	case "resource":
-		return AreaIDResource, true
-	case "sovcommon":
-		return AreaIDSovcommon, true
-	case "admin_panel":
-		return AreaIDAdminPanel, true
-	case "analytics":
-		return AreaIDAnalytics, true
-	case "team_board":
-		return AreaIDTeamBoard, true
-	case "internal":
-		return AreaIDInternal, true
+	if i, ok := slices.BinarySearch(enumKeys_AreaID[:], key); ok {
+		return enumFound_AreaID[i], true
 	}
 	return AreaID{}, false
 }

@@ -1,6 +1,6 @@
 func %[1]s() %[2]s.Seq[%[3]s] {
 return func(yield func(%[3]s) bool) {
-for _, m := range [...]%[3]s{%[4]s} {
+for _, m := range %[4]s[:] {
 if !yield(m) {
 return
 }

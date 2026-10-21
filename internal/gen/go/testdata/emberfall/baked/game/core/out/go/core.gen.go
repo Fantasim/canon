@@ -6,6 +6,7 @@ package core
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -19,39 +20,38 @@ const (
 	ToneLoud Tone = 1
 )
 
+var enumNames_Tone = [...]string{"soft", "loud"}
+
 func (self Tone) String() string {
-	switch self {
-	case ToneSoft:
-		return "soft"
-	case ToneLoud:
-		return "loud"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Tone) Wire() string {
-	switch self {
-	case ToneSoft:
-		return "soft"
-	case ToneLoud:
-		return "loud"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tone = [...]string{"loud", "soft"}
+
+var enumFound_Tone = [...]Tone{ToneLoud, ToneSoft}
+
 func ParseTone(wire string) (Tone, bool) {
-	switch wire {
-	case "soft":
-		return ToneSoft, true
-	case "loud":
-		return ToneLoud, true
+	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
+		return enumFound_Tone[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tone = [...]Tone{ToneSoft, ToneLoud}
+
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
-		for _, m := range [...]Tone{ToneSoft, ToneLoud} {
+		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
 				return
 			}
@@ -85,39 +85,38 @@ const (
 	KindWord Kind = 1
 )
 
+var enumNames_Kind = [...]string{"num", "word"}
+
 func (self Kind) String() string {
-	switch self {
-	case KindNum:
-		return "num"
-	case KindWord:
-		return "word"
+	if i := uint(self); i < uint(len(enumNames_Kind)) {
+		return enumNames_Kind[i]
 	}
 	return "Kind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Kind) Wire() string {
-	switch self {
-	case KindNum:
-		return "num"
-	case KindWord:
-		return "word"
+	if i := uint(self); i < uint(len(enumNames_Kind)) {
+		return enumNames_Kind[i]
 	}
 	return "Kind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Kind = [...]string{"num", "word"}
+
+var enumFound_Kind = [...]Kind{KindNum, KindWord}
+
 func ParseKind(wire string) (Kind, bool) {
-	switch wire {
-	case "num":
-		return KindNum, true
-	case "word":
-		return KindWord, true
+	if i, ok := slices.BinarySearch(enumKeys_Kind[:], wire); ok {
+		return enumFound_Kind[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Kind = [...]Kind{KindNum, KindWord}
+
 func KindMembers() iter.Seq[Kind] {
 	return func(yield func(Kind) bool) {
-		for _, m := range [...]Kind{KindNum, KindWord} {
+		for _, m := range enumMembers_Kind[:] {
 			if !yield(m) {
 				return
 			}
@@ -151,32 +150,29 @@ const (
 	RewardKindNothing RewardKind = 1
 )
 
+var enumNames_RewardKind = [...]string{"coins", "nothing"}
+
 func (self RewardKind) String() string {
-	switch self {
-	case RewardKindCoins:
-		return "coins"
-	case RewardKindNothing:
-		return "nothing"
+	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+		return enumNames_RewardKind[i]
 	}
 	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self RewardKind) Wire() string {
-	switch self {
-	case RewardKindCoins:
-		return "coins"
-	case RewardKindNothing:
-		return "nothing"
+	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+		return enumNames_RewardKind[i]
 	}
 	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_RewardKind = [...]string{"coins", "nothing"}
+
+var enumFound_RewardKind = [...]RewardKind{RewardKindCoins, RewardKindNothing}
+
 func ParseRewardKind(wire string) (RewardKind, bool) {
-	switch wire {
-	case "coins":
-		return RewardKindCoins, true
-	case "nothing":
-		return RewardKindNothing, true
+	if i, ok := slices.BinarySearch(enumKeys_RewardKind[:], wire); ok {
+		return enumFound_RewardKind[i], true
 	}
 	return 0, false
 }
@@ -217,12 +213,11 @@ var (
 	StatusIDClosed = StatusID{1}
 )
 
+var enumNames_StatusID = [...]string{"open", "closed"}
+
 func (self StatusID) String() string {
-	switch self.position {
-	case 0:
-		return "open"
-	case 1:
-		return "closed"
+	if i := uint(self.position); i < uint(len(enumNames_StatusID)) {
+		return enumNames_StatusID[i]
 	}
 	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -250,12 +245,13 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_StatusID = [...]string{"closed", "open"}
+
+var enumFound_StatusID = [...]StatusID{{1}, {0}}
+
 func ParseStatusID(key string) (StatusID, bool) {
-	switch key {
-	case "open":
-		return StatusIDOpen, true
-	case "closed":
-		return StatusIDClosed, true
+	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
+		return enumFound_StatusID[i], true
 	}
 	return StatusID{}, false
 }

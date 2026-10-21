@@ -26,22 +26,20 @@ const (
 	retiredDoc       = "Retired."
 )
 
-// Enum templates (CODEGEN.md §5.2, §5.6): the String/Wire fallback, Members and the @codes pair.
+// Enum declarations (CODEGEN.md §5.2, §5.6) and the package-level tables their methods read (§5.2, §5.3, DECISIONS 393): a table is named by the plan (ir.GoNamePlan.TableName).
 const (
-	enumHeaderFormat = "type %s %s\n\nconst (\n"
-	enumConstFormat  = "%s %s = %s\n"
-	fallbackFormat   = "}\nreturn \"%[1]s(\" + %[2]s.FormatInt(int64(self), 10) + \")\"\n}\n\n"
-	notFoundTail     = "}\nreturn 0, false\n}\n\n"
+	enumHeaderFormat, enumConstFormat            = "type %s %s\n\nconst (\n", "%s %s = %s\n"
+	tableFormat, tableRowEnd, tableOpen          = "var %s = [...]%s{%s}\n\n", ",\n", "\n"
+	tableRowItems, idLiteralFormat, idZeroFormat = 4, "{%s}", "%s{}"
 )
 
-// The opaque id (CODEGEN.md §5.3, T15; DECISIONS 379): its type with the fixed comment, its vars and the not-found tail of its Parse.
+// The opaque id (CODEGEN.md §5.3, T15; DECISIONS 379): its type with the fixed comment and its vars.
 const (
-	idsDeclFormat, idCaseFormat = "%s := [...]%s{%s}\n", "case %s:\nreturn %s\n"
-	idDocFormat                 = "// %[1]s is the key of an entry of %[2]s: compare it, switch on it, look it up with Get.\n" +
+	idsDeclFormat = "%s := [...]%s{%s}\n"
+	idDocFormat   = "// %[1]s is the key of an entry of %[2]s: compare it, switch on it, look it up with Get.\n" +
 		"// To store or send it, write its key (String, or MarshalText through encoding/json):\n" +
 		"// its position is not an id, and changes when entry files move.\n"
-	idHeaderFormat, idVarFormat      = "type %s struct{ position %s }\n\n", "%s = %s{%s}\n"
-	positionMethod, idNotFoundFormat = "Position", "}\nreturn %s{}, false\n}\n\n"
+	idHeaderFormat, idVarFormat, positionMethod = "type %s struct{ position %s }\n\n", "%s = %s{%s}\n", "Position"
 )
 
 // Make hooks and rows of other packages' records (CODEGEN.md §5.9, §5.14; DECISIONS 323): templates, the row's own names, and the lines resolving a hook's refs.
@@ -161,6 +159,7 @@ const (
 const (
 	tmplPublicDecoder, helperDocument, helperDuration = "publicDecoder", "jsonDocument", "jsonDuration"
 	tmplTextDecoder, tmplOpenEnum, tmplOpenCodes      = "textDecoder", "openEnum", "openCodes" // DECISIONS 339, 340
+	tmplEnumText, tmplEnumParse, tmplEnumFromCode     = "enumText", "enumParse", "enumFromCode"
 	openCodeFormat                                    = "func(v %[1]s) int64 {\ncode, _ := v.%[2]s()\nreturn int64(code)\n}(%[3]s)"
 	utf8Path, utf8Pkg                                 = "unicode/utf8", "utf8"
 	localUnit                                         = "unit"

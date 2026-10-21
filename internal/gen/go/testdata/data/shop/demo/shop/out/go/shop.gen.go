@@ -46,51 +46,40 @@ const (
 	ToneLegacy Tone = 3
 )
 
+var enumNames_Tone = [...]string{"warning", "info", "series_1", "legacy"}
+
 func (self Tone) String() string {
-	switch self {
-	case ToneWarning:
-		return "warning"
-	case ToneInfo:
-		return "info"
-	case ToneSeries1:
-		return "series_1"
-	case ToneLegacy:
-		return "legacy"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
+
+var enumWires_Tone = [...]string{"warning", "info", "series-1", "legacy"}
 
 func (self Tone) Wire() string {
-	switch self {
-	case ToneWarning:
-		return "warning"
-	case ToneInfo:
-		return "info"
-	case ToneSeries1:
-		return "series-1"
-	case ToneLegacy:
-		return "legacy"
+	if i := uint(self); i < uint(len(enumWires_Tone)) {
+		return enumWires_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tone = [...]string{"info", "legacy", "series-1", "warning"}
+
+var enumFound_Tone = [...]Tone{ToneInfo, ToneLegacy, ToneSeries1, ToneWarning}
+
 func ParseTone(wire string) (Tone, bool) {
-	switch wire {
-	case "warning":
-		return ToneWarning, true
-	case "info":
-		return ToneInfo, true
-	case "series-1":
-		return ToneSeries1, true
-	case "legacy":
-		return ToneLegacy, true
+	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
+		return enumFound_Tone[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tone = [...]Tone{ToneWarning, ToneInfo, ToneSeries1, ToneLegacy}
+
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
-		for _, m := range [...]Tone{ToneWarning, ToneInfo, ToneSeries1, ToneLegacy} {
+		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
 				return
 			}
@@ -124,39 +113,40 @@ const (
 	ElementWater Element = 300
 )
 
+var enumCodes_Element = [...]Element{ElementFire, ElementWater}
+
+var enumNames_Element = [...]string{"FIRE", "WATER"}
+
 func (self Element) String() string {
-	switch self {
-	case ElementFire:
-		return "FIRE"
-	case ElementWater:
-		return "WATER"
+	if i, ok := slices.BinarySearch(enumCodes_Element[:], self); ok {
+		return enumNames_Element[i]
 	}
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Element) Wire() string {
-	switch self {
-	case ElementFire:
-		return "FIRE"
-	case ElementWater:
-		return "WATER"
+	if i, ok := slices.BinarySearch(enumCodes_Element[:], self); ok {
+		return enumNames_Element[i]
 	}
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Element = [...]string{"FIRE", "WATER"}
+
+var enumFound_Element = [...]Element{ElementFire, ElementWater}
+
 func ParseElement(wire string) (Element, bool) {
-	switch wire {
-	case "FIRE":
-		return ElementFire, true
-	case "WATER":
-		return ElementWater, true
+	if i, ok := slices.BinarySearch(enumKeys_Element[:], wire); ok {
+		return enumFound_Element[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Element = [...]Element{ElementFire, ElementWater}
+
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
-		for _, m := range [...]Element{ElementFire, ElementWater} {
+		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
 				return
 			}
@@ -167,10 +157,8 @@ func ElementMembers() iter.Seq[Element] {
 func (self Element) Code() uint16 { return uint16(self) }
 
 func ElementFromCode(code uint16) (Element, bool) {
-	switch v := Element(code); v {
-	case ElementFire:
-		return v, true
-	case ElementWater:
+	v := Element(code)
+	if _, ok := slices.BinarySearch(enumCodes_Element[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -184,45 +172,40 @@ const (
 	FlagB Flag = 2
 )
 
+var enumCodes_Flag = [...]Flag{FlagA, FlagB, FlagC}
+
+var enumNames_Flag = [...]string{"a", "b", "c"}
+
 func (self Flag) String() string {
-	switch self {
-	case FlagA:
-		return "a"
-	case FlagC:
-		return "c"
-	case FlagB:
-		return "b"
+	if i, ok := slices.BinarySearch(enumCodes_Flag[:], self); ok {
+		return enumNames_Flag[i]
 	}
 	return "Flag(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Flag) Wire() string {
-	switch self {
-	case FlagA:
-		return "a"
-	case FlagC:
-		return "c"
-	case FlagB:
-		return "b"
+	if i, ok := slices.BinarySearch(enumCodes_Flag[:], self); ok {
+		return enumNames_Flag[i]
 	}
 	return "Flag(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Flag = [...]string{"a", "b", "c"}
+
+var enumFound_Flag = [...]Flag{FlagA, FlagB, FlagC}
+
 func ParseFlag(wire string) (Flag, bool) {
-	switch wire {
-	case "a":
-		return FlagA, true
-	case "c":
-		return FlagC, true
-	case "b":
-		return FlagB, true
+	if i, ok := slices.BinarySearch(enumKeys_Flag[:], wire); ok {
+		return enumFound_Flag[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Flag = [...]Flag{FlagA, FlagC, FlagB}
+
 func FlagMembers() iter.Seq[Flag] {
 	return func(yield func(Flag) bool) {
-		for _, m := range [...]Flag{FlagA, FlagC, FlagB} {
+		for _, m := range enumMembers_Flag[:] {
 			if !yield(m) {
 				return
 			}
@@ -233,12 +216,8 @@ func FlagMembers() iter.Seq[Flag] {
 func (self Flag) Code() uint8 { return uint8(self) }
 
 func FlagFromCode(code uint8) (Flag, bool) {
-	switch v := Flag(code); v {
-	case FlagA:
-		return v, true
-	case FlagC:
-		return v, true
-	case FlagB:
+	v := Flag(code)
+	if _, ok := slices.BinarySearch(enumCodes_Flag[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -253,38 +232,31 @@ const (
 	RewardKindNothing RewardKind = 2
 )
 
+var enumNames_RewardKind = [...]string{"item", "gold", "nothing"}
+
 func (self RewardKind) String() string {
-	switch self {
-	case RewardKindItem:
-		return "item"
-	case RewardKindGold:
-		return "gold"
-	case RewardKindNothing:
-		return "nothing"
+	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+		return enumNames_RewardKind[i]
 	}
 	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
+
+var enumWires_RewardKind = [...]string{"item", "gold", "none"}
 
 func (self RewardKind) Wire() string {
-	switch self {
-	case RewardKindItem:
-		return "item"
-	case RewardKindGold:
-		return "gold"
-	case RewardKindNothing:
-		return "none"
+	if i := uint(self); i < uint(len(enumWires_RewardKind)) {
+		return enumWires_RewardKind[i]
 	}
 	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_RewardKind = [...]string{"gold", "item", "none"}
+
+var enumFound_RewardKind = [...]RewardKind{RewardKindGold, RewardKindItem, RewardKindNothing}
+
 func ParseRewardKind(wire string) (RewardKind, bool) {
-	switch wire {
-	case "item":
-		return RewardKindItem, true
-	case "gold":
-		return RewardKindGold, true
-	case "none":
-		return RewardKindNothing, true
+	if i, ok := slices.BinarySearch(enumKeys_RewardKind[:], wire); ok {
+		return enumFound_RewardKind[i], true
 	}
 	return 0, false
 }
@@ -315,32 +287,29 @@ const (
 	BadgeKindPlain BadgeKind = 1
 )
 
+var enumNames_BadgeKind = [...]string{"star", "plain"}
+
 func (self BadgeKind) String() string {
-	switch self {
-	case BadgeKindStar:
-		return "star"
-	case BadgeKindPlain:
-		return "plain"
+	if i := uint(self); i < uint(len(enumNames_BadgeKind)) {
+		return enumNames_BadgeKind[i]
 	}
 	return "BadgeKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self BadgeKind) Wire() string {
-	switch self {
-	case BadgeKindStar:
-		return "star"
-	case BadgeKindPlain:
-		return "plain"
+	if i := uint(self); i < uint(len(enumNames_BadgeKind)) {
+		return enumNames_BadgeKind[i]
 	}
 	return "BadgeKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_BadgeKind = [...]string{"plain", "star"}
+
+var enumFound_BadgeKind = [...]BadgeKind{BadgeKindPlain, BadgeKindStar}
+
 func ParseBadgeKind(wire string) (BadgeKind, bool) {
-	switch wire {
-	case "star":
-		return BadgeKindStar, true
-	case "plain":
-		return BadgeKindPlain, true
+	if i, ok := slices.BinarySearch(enumKeys_BadgeKind[:], wire); ok {
+		return enumFound_BadgeKind[i], true
 	}
 	return 0, false
 }

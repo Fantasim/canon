@@ -7,6 +7,7 @@ import (
 	"errors"
 	"iter"
 	"regexp"
+	"slices"
 	"strconv"
 	"time"
 
@@ -22,45 +23,38 @@ const (
 	ModeOld Mode = 2
 )
 
+var enumNames_Mode = [...]string{"fast", "slow", "old"}
+
 func (self Mode) String() string {
-	switch self {
-	case ModeFast:
-		return "fast"
-	case ModeSlow:
-		return "slow"
-	case ModeOld:
-		return "old"
+	if i := uint(self); i < uint(len(enumNames_Mode)) {
+		return enumNames_Mode[i]
 	}
 	return "Mode(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Mode) Wire() string {
-	switch self {
-	case ModeFast:
-		return "fast"
-	case ModeSlow:
-		return "slow"
-	case ModeOld:
-		return "old"
+	if i := uint(self); i < uint(len(enumNames_Mode)) {
+		return enumNames_Mode[i]
 	}
 	return "Mode(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Mode = [...]string{"fast", "old", "slow"}
+
+var enumFound_Mode = [...]Mode{ModeFast, ModeOld, ModeSlow}
+
 func ParseMode(wire string) (Mode, bool) {
-	switch wire {
-	case "fast":
-		return ModeFast, true
-	case "slow":
-		return ModeSlow, true
-	case "old":
-		return ModeOld, true
+	if i, ok := slices.BinarySearch(enumKeys_Mode[:], wire); ok {
+		return enumFound_Mode[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Mode = [...]Mode{ModeFast, ModeSlow, ModeOld}
+
 func ModeMembers() iter.Seq[Mode] {
 	return func(yield func(Mode) bool) {
-		for _, m := range [...]Mode{ModeFast, ModeSlow, ModeOld} {
+		for _, m := range enumMembers_Mode[:] {
 			if !yield(m) {
 				return
 			}

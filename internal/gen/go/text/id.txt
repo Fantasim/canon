@@ -1,6 +1,7 @@
 func (self %[1]s) String() string {
-switch self.position {
-%[2]s}
+if i := uint(self.position); i < uint(len(%[2]s)) {
+return %[2]s[i]
+}
 return "%[1]s(" + %[3]s.FormatInt(int64(self.position), 10) + ")"
 }
 

@@ -193,6 +193,7 @@ func (pl *GoNamePlan) declareEnums(top *nameScope) {
 		if e.Codes != nil {
 			pl.declare(top, pl.FromCodeName(name), origin, e)
 		}
+		pl.declareTables(top, name, origin, e, enumTableRoles(e, OpenEnum(pl.p, pl.e, e))...)
 		pl.declareMethods(name, origin, e, pl.enumMethods(e))
 	}
 }
@@ -210,6 +211,7 @@ func (pl *GoNamePlan) declareKindEnums(top *nameScope) {
 			pl.declareFrom(top, origin+qnameSep+c.Name, c, derivation{v, func() string { return pl.KindMemberName(v, c) }})
 		}
 		pl.declare(top, pl.ParseName(kind), origin, v)
+		pl.declareTables(top, kind, origin, v, closedTableRoles(!slices.ContainsFunc(v.Cases, func(c *Case) bool { return c.Name != c.Wire }))...)
 		pl.declareMethods(kind, origin, v, goTextEnumMethods)
 	}
 }
@@ -243,6 +245,7 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) map[string]bool {
 			pl.declareFrom(top, v.Name+qnameSep+id, v, derivation{rec, func() string { return pl.IDMemberName(rec, id) }})
 		}
 		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
+		pl.declareTables(top, name, v.Name, v, GoTableNames, GoTableKeys, GoTableFound)
 		pl.declareMethods(name, v.Name, v, goIDMethods)
 		pl.declare(pl.scope(name), goPositionField, v.Name, v)
 	}

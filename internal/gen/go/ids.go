@@ -1,11 +1,5 @@
 package gogen
 
-import (
-	"fmt"
-	"strconv"
-	"strings"
-)
-
 // writeID writes a baked table's opaque id: a struct holding the entry's position, a var per key, and its methods (CODEGEN.md §5.3, DECISIONS 379).
 func (g *gen) writeID(s *enumSpec) {
 	g.printf(idDocFormat, s.name, s.value)
@@ -18,10 +12,8 @@ func (g *gen) writeID(s *enumSpec) {
 		}
 		g.printf(closeParenFormat)
 	}
-	var cases strings.Builder
-	for i, c := range s.consts {
-		fmt.Fprintf(&cases, idCaseFormat, c.value, strconv.Quote(s.names[i]))
-	}
-	g.printf(idFormat, s.name, cases.String(), g.use(strconvPkg, strconvPkg), s.value, g.names.ParseName(s.name), g.use(errorsPkg, errorsPkg))
-	g.writeParse(s)
+	v := g.enumView(s)
+	g.writeTable(v.Names, goString, quoted(s.names))
+	g.printf(idFormat, s.name, v.Names, g.use(strconvPkg, strconvPkg), s.value, v.Parse, g.use(errorsPkg, errorsPkg))
+	g.writeParse(s, v)
 }

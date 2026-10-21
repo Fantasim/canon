@@ -6,6 +6,7 @@ package genunionbaked
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 )
@@ -17,39 +18,38 @@ const (
 	StatusClosed Status = 1
 )
 
+var enumNames_Status = [...]string{"open", "closed"}
+
 func (self Status) String() string {
-	switch self {
-	case StatusOpen:
-		return "open"
-	case StatusClosed:
-		return "closed"
+	if i := uint(self); i < uint(len(enumNames_Status)) {
+		return enumNames_Status[i]
 	}
 	return "Status(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Status) Wire() string {
-	switch self {
-	case StatusOpen:
-		return "open"
-	case StatusClosed:
-		return "closed"
+	if i := uint(self); i < uint(len(enumNames_Status)) {
+		return enumNames_Status[i]
 	}
 	return "Status(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Status = [...]string{"closed", "open"}
+
+var enumFound_Status = [...]Status{StatusClosed, StatusOpen}
+
 func ParseStatus(wire string) (Status, bool) {
-	switch wire {
-	case "open":
-		return StatusOpen, true
-	case "closed":
-		return StatusClosed, true
+	if i, ok := slices.BinarySearch(enumKeys_Status[:], wire); ok {
+		return enumFound_Status[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Status = [...]Status{StatusOpen, StatusClosed}
+
 func StatusMembers() iter.Seq[Status] {
 	return func(yield func(Status) bool) {
-		for _, m := range [...]Status{StatusOpen, StatusClosed} {
+		for _, m := range enumMembers_Status[:] {
 			if !yield(m) {
 				return
 			}
@@ -86,12 +86,11 @@ var (
 	ItemIDB = ItemID{1}
 )
 
+var enumNames_ItemID = [...]string{"a", "b"}
+
 func (self ItemID) String() string {
-	switch self.position {
-	case 0:
-		return "a"
-	case 1:
-		return "b"
+	if i := uint(self.position); i < uint(len(enumNames_ItemID)) {
+		return enumNames_ItemID[i]
 	}
 	return "ItemID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -119,12 +118,13 @@ func (self *ItemID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_ItemID = [...]string{"a", "b"}
+
+var enumFound_ItemID = [...]ItemID{{0}, {1}}
+
 func ParseItemID(key string) (ItemID, bool) {
-	switch key {
-	case "a":
-		return ItemIDA, true
-	case "b":
-		return ItemIDB, true
+	if i, ok := slices.BinarySearch(enumKeys_ItemID[:], key); ok {
+		return enumFound_ItemID[i], true
 	}
 	return ItemID{}, false
 }

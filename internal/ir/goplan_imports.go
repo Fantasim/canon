@@ -102,13 +102,13 @@ func (u *goImportUse) mark(std ...string) {
 func (u *goImportUse) named(t Type) {
 	switch x := t.(type) {
 	case *Enum:
-		u.std[goStrconv], u.std[goIter] = true, true
+		u.std[goStrconv], u.std[goIter], u.std[goSlices] = true, true, true
 		u.ref(x.Codes)
 	case *Record:
 		u.body(x.Fields, x.Methods)
 		u.inputImports(x.Fields)
 	case *Variant:
-		u.std[goStrconv] = true
+		u.std[goStrconv], u.std[goSlices] = true, true
 		for _, c := range x.Cases {
 			u.body(c.Fields, c.Methods)
 		}
@@ -272,6 +272,7 @@ func (pl *GoNamePlan) textImports(u *goImportUse) {
 	for _, v := range pl.p.Values {
 		baked := pl.data == nil && tableRecord(v) != nil
 		u.std[goStrconv] = u.std[goStrconv] || baked
+		u.std[goSlices] = u.std[goSlices] || baked
 		u.std[goErrors] = u.std[goErrors] || baked
 	}
 }

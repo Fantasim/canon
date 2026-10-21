@@ -1,0 +1,122 @@
+package closed_test
+
+import (
+	"testing"
+
+	closed "example.com/large/closed"
+)
+
+var plain = []struct {
+	m          closed.Plain
+	name, wire string
+}{
+{{range .Rows}}	{closed.Plain{{.Const}}, {{q .Name}}, {{q .Wire}}},
+{{end}}}
+
+var coded = []struct {
+	m          closed.Coded
+	name, wire string
+	code       uint16
+}{
+{{range .Rows}}	{closed.Coded{{.Const}}, {{q .Name}}, {{q .Wire}}, {{.Code}}},
+{{end}}}
+
+var ids = []struct {
+	id  closed.ItemID
+	key string
+	pos int
+}{
+{{range .Rows}}	{closed.ItemID{{.KeyConst}}, {{q .Key}}, {{.Pos}}},
+{{end}}}
+
+func TestPlain(t *testing.T) {
+	for _, c := range plain {
+		if c.m.String() != c.name || c.m.Wire() != c.wire {
+			t.Errorf("%v: String %q Wire %q, want %q %q", c.m, c.m.String(), c.m.Wire(), c.name, c.wire)
+		}
+		if got, ok := closed.ParsePlain(c.wire); !ok || got != c.m {
+			t.Errorf("ParsePlain(%q) = %v, %v", c.wire, got, ok)
+		}
+		if _, ok := closed.ParsePlain(c.wire + "x"); ok {
+			t.Errorf("ParsePlain(%qx) found", c.wire)
+		}
+	}
+	for _, wire := range []string{"", "nope", "zzzzzzzz"} {
+		if got, ok := closed.ParsePlain(wire); ok || got != 0 {
+			t.Errorf("ParsePlain(%q) = %v, %v", wire, got, ok)
+		}
+	}
+	if got := closed.Plain(65535).String(); got != "Plain(65535)" {
+		t.Errorf("out of range String %q", got)
+	}
+	if got := closed.Plain({{.Count}}).Wire(); got != "Plain({{.Count}})" {
+		t.Errorf("first out of range Wire %q", got)
+	}
+	n := 0
+	for m := range closed.PlainMembers() {
+		if got, ok := closed.ParsePlain(m.Wire()); !ok || got != m || int(m) != n {
+			t.Fatalf("member %d: %v %v", n, got, ok)
+		}
+		n++
+	}
+	if n != {{.Count}} {
+		t.Errorf("PlainMembers yielded %d", n)
+	}
+}
+
+func TestCoded(t *testing.T) {
+	for _, c := range coded {
+		if c.m.String() != c.name || c.m.Wire() != c.wire || c.m.Code() != c.code {
+			t.Errorf("%v: String %q Wire %q Code %d", c.m, c.m.String(), c.m.Wire(), c.m.Code())
+		}
+		if got, ok := closed.CodedFromCode(c.code); !ok || got != c.m {
+			t.Errorf("CodedFromCode(%d) = %v, %v", c.code, got, ok)
+		}
+		if got, ok := closed.CodedFromCode(c.code + 1); ok || got != 0 {
+			t.Errorf("CodedFromCode(%d) = %v, %v", c.code+1, got, ok)
+		}
+		if got, ok := closed.ParseCoded(c.wire); !ok || got != c.m {
+			t.Errorf("ParseCoded(%q) = %v, %v", c.wire, got, ok)
+		}
+	}
+	for _, code := range []uint16{0, 1, 65535} {
+		if got, ok := closed.CodedFromCode(code); ok || got != 0 {
+			t.Errorf("CodedFromCode(%d) = %v, %v", code, got, ok)
+		}
+	}
+	if got := closed.Coded(1).String(); got != "Coded(1)" {
+		t.Errorf("out of range String %q", got)
+	}
+	if got := closed.Coded(65535).Wire(); got != "Coded(65535)" {
+		t.Errorf("out of range Wire %q", got)
+	}
+	n := 0
+	for m := range closed.CodedMembers() {
+		if got, ok := closed.CodedFromCode(m.Code()); !ok || got != m {
+			t.Fatalf("member %d: %v %v", n, got, ok)
+		}
+		n++
+	}
+	if n != {{.Count}} {
+		t.Errorf("CodedMembers yielded %d", n)
+	}
+}
+
+func TestItemID(t *testing.T) {
+	for _, c := range ids {
+		if c.id.String() != c.key || c.id.Position() != c.pos {
+			t.Errorf("%v: String %q Position %d, want %q %d", c.id, c.id.String(), c.id.Position(), c.key, c.pos)
+		}
+		if got, ok := closed.ParseItemID(c.key); !ok || got != c.id {
+			t.Errorf("ParseItemID(%q) = %v, %v", c.key, got, ok)
+		}
+	}
+	for _, key := range []string{"", "nope", "k"} {
+		if _, ok := closed.ParseItemID(key); ok {
+			t.Errorf("ParseItemID(%q) found", key)
+		}
+	}
+	if closed.GetItems().Len() != {{.Count}} {
+		t.Errorf("Items has %d rows", closed.GetItems().Len())
+	}
+}

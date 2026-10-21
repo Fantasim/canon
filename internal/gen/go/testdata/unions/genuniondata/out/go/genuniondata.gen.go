@@ -26,39 +26,38 @@ const (
 	StatusClosed Status = 1
 )
 
+var enumNames_Status = [...]string{"open", "closed"}
+
 func (self Status) String() string {
-	switch self {
-	case StatusOpen:
-		return "open"
-	case StatusClosed:
-		return "closed"
+	if i := uint(self); i < uint(len(enumNames_Status)) {
+		return enumNames_Status[i]
 	}
 	return "Status(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Status) Wire() string {
-	switch self {
-	case StatusOpen:
-		return "open"
-	case StatusClosed:
-		return "closed"
+	if i := uint(self); i < uint(len(enumNames_Status)) {
+		return enumNames_Status[i]
 	}
 	return "Status(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Status = [...]string{"closed", "open"}
+
+var enumFound_Status = [...]Status{StatusClosed, StatusOpen}
+
 func ParseStatus(wire string) (Status, bool) {
-	switch wire {
-	case "open":
-		return StatusOpen, true
-	case "closed":
-		return StatusClosed, true
+	if i, ok := slices.BinarySearch(enumKeys_Status[:], wire); ok {
+		return enumFound_Status[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Status = [...]Status{StatusOpen, StatusClosed}
+
 func StatusMembers() iter.Seq[Status] {
 	return func(yield func(Status) bool) {
-		for _, m := range [...]Status{StatusOpen, StatusClosed} {
+		for _, m := range enumMembers_Status[:] {
 			if !yield(m) {
 				return
 			}

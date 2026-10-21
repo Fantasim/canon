@@ -1,0 +1,61 @@
+{{define "enumText"}}func (self {{.Name}}) {{.Method}}() string {
+{{if .Dense}}if i := uint(self); i < uint(len({{.Table}})) {
+{{else}}if i, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], self); ok {
+{{end}}return {{.Table}}[i]
+}
+return "{{.Name}}(" + {{.Strconv}}.FormatInt(int64(self), 10) + ")"
+}
+
+{{end}}
+{{define "enumParse"}}func {{.Parse}}({{.Arg}} string) ({{.Name}}, bool) {
+if i, ok := {{.Slices}}.BinarySearch({{.Keys}}[:], {{.Arg}}); ok {
+return {{.Found}}[i], true
+}
+return {{.Zero}}, false
+}
+
+{{end}}
+{{define "enumFromCode"}}func {{.FromCode}}(code {{.Codes}}) ({{.Name}}, bool) {
+v := {{.Name}}(code)
+if _, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], v); ok {
+return v, true
+}
+return 0, false
+}
+
+{{end}}
+{{define "openEnum"}}func (self {{.Name}}) {{.String}}() string {
+if i, ok := {{.Slices}}.BinarySearch({{.Keys}}[:], self); ok {
+return {{.Names}}[i]
+}
+return string(self)
+}
+
+func (self {{.Name}}) {{.Wire}}() string { return string(self) }
+
+func (self {{.Name}}) {{.Known}}() bool {
+_, ok := {{.Slices}}.BinarySearch({{.Keys}}[:], self)
+return ok
+}
+
+func {{.Parse}}({{.Arg}} string) ({{.Name}}, bool) {
+self := {{.Name}}({{.Arg}})
+return self, self.{{.Known}}()
+}
+
+{{end}}
+{{define "openCodes"}}func (self {{.Name}}) {{.Code}}() ({{.Codes}}, bool) {
+if i, ok := {{.Slices}}.BinarySearch({{.Keys}}[:], self); ok {
+return {{.Numbers}}[i], true
+}
+return 0, false
+}
+
+func {{.FromCode}}(code {{.Codes}}) ({{.Name}}, bool) {
+if i, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], code); ok {
+return {{.ByCode}}[i], true
+}
+return "", false
+}
+
+{{end}}

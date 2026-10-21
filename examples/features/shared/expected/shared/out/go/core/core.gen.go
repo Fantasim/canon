@@ -6,6 +6,7 @@ package core
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -20,39 +21,38 @@ const (
 	AimMood Aim = 1
 )
 
+var enumNames_Aim = [...]string{"gold", "mood"}
+
 func (self Aim) String() string {
-	switch self {
-	case AimGold:
-		return "gold"
-	case AimMood:
-		return "mood"
+	if i := uint(self); i < uint(len(enumNames_Aim)) {
+		return enumNames_Aim[i]
 	}
 	return "Aim(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Aim) Wire() string {
-	switch self {
-	case AimGold:
-		return "gold"
-	case AimMood:
-		return "mood"
+	if i := uint(self); i < uint(len(enumNames_Aim)) {
+		return enumNames_Aim[i]
 	}
 	return "Aim(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Aim = [...]string{"gold", "mood"}
+
+var enumFound_Aim = [...]Aim{AimGold, AimMood}
+
 func ParseAim(wire string) (Aim, bool) {
-	switch wire {
-	case "gold":
-		return AimGold, true
-	case "mood":
-		return AimMood, true
+	if i, ok := slices.BinarySearch(enumKeys_Aim[:], wire); ok {
+		return enumFound_Aim[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Aim = [...]Aim{AimGold, AimMood}
+
 func AimMembers() iter.Seq[Aim] {
 	return func(yield func(Aim) bool) {
-		for _, m := range [...]Aim{AimGold, AimMood} {
+		for _, m := range enumMembers_Aim[:] {
 			if !yield(m) {
 				return
 			}
@@ -87,39 +87,38 @@ const (
 	MoodGrim Mood = 1
 )
 
+var enumNames_Mood = [...]string{"calm", "grim"}
+
 func (self Mood) String() string {
-	switch self {
-	case MoodCalm:
-		return "calm"
-	case MoodGrim:
-		return "grim"
+	if i := uint(self); i < uint(len(enumNames_Mood)) {
+		return enumNames_Mood[i]
 	}
 	return "Mood(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Mood) Wire() string {
-	switch self {
-	case MoodCalm:
-		return "calm"
-	case MoodGrim:
-		return "grim"
+	if i := uint(self); i < uint(len(enumNames_Mood)) {
+		return enumNames_Mood[i]
 	}
 	return "Mood(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Mood = [...]string{"calm", "grim"}
+
+var enumFound_Mood = [...]Mood{MoodCalm, MoodGrim}
+
 func ParseMood(wire string) (Mood, bool) {
-	switch wire {
-	case "calm":
-		return MoodCalm, true
-	case "grim":
-		return MoodGrim, true
+	if i, ok := slices.BinarySearch(enumKeys_Mood[:], wire); ok {
+		return enumFound_Mood[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Mood = [...]Mood{MoodCalm, MoodGrim}
+
 func MoodMembers() iter.Seq[Mood] {
 	return func(yield func(Mood) bool) {
-		for _, m := range [...]Mood{MoodCalm, MoodGrim} {
+		for _, m := range enumMembers_Mood[:] {
 			if !yield(m) {
 				return
 			}
@@ -154,32 +153,29 @@ const (
 	RewardKindNothing RewardKind = 1
 )
 
+var enumNames_RewardKind = [...]string{"coins", "nothing"}
+
 func (self RewardKind) String() string {
-	switch self {
-	case RewardKindCoins:
-		return "coins"
-	case RewardKindNothing:
-		return "nothing"
+	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+		return enumNames_RewardKind[i]
 	}
 	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self RewardKind) Wire() string {
-	switch self {
-	case RewardKindCoins:
-		return "coins"
-	case RewardKindNothing:
-		return "nothing"
+	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+		return enumNames_RewardKind[i]
 	}
 	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_RewardKind = [...]string{"coins", "nothing"}
+
+var enumFound_RewardKind = [...]RewardKind{RewardKindCoins, RewardKindNothing}
+
 func ParseRewardKind(wire string) (RewardKind, bool) {
-	switch wire {
-	case "coins":
-		return RewardKindCoins, true
-	case "nothing":
-		return RewardKindNothing, true
+	if i, ok := slices.BinarySearch(enumKeys_RewardKind[:], wire); ok {
+		return enumFound_RewardKind[i], true
 	}
 	return 0, false
 }
@@ -221,14 +217,11 @@ var (
 	StatusIDShut   = StatusID{2}
 )
 
+var enumNames_StatusID = [...]string{"open", "closed", "shut"}
+
 func (self StatusID) String() string {
-	switch self.position {
-	case 0:
-		return "open"
-	case 1:
-		return "closed"
-	case 2:
-		return "shut"
+	if i := uint(self.position); i < uint(len(enumNames_StatusID)) {
+		return enumNames_StatusID[i]
 	}
 	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -256,14 +249,13 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_StatusID = [...]string{"closed", "open", "shut"}
+
+var enumFound_StatusID = [...]StatusID{{1}, {0}, {2}}
+
 func ParseStatusID(key string) (StatusID, bool) {
-	switch key {
-	case "open":
-		return StatusIDOpen, true
-	case "closed":
-		return StatusIDClosed, true
-	case "shut":
-		return StatusIDShut, true
+	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
+		return enumFound_StatusID[i], true
 	}
 	return StatusID{}, false
 }

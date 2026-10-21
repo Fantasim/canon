@@ -6,6 +6,7 @@ package roles
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 )
 
@@ -26,63 +27,50 @@ const (
 	RoleAdmin      Role = 5
 )
 
+var enumNames_Role = [...]string{
+	"member", "gm_junior", "gm_senior", "maintainer",
+	"owner", "admin",
+}
+
 func (self Role) String() string {
-	switch self {
-	case RoleMember:
-		return "member"
-	case RoleGmJunior:
-		return "gm_junior"
-	case RoleGmSenior:
-		return "gm_senior"
-	case RoleMaintainer:
-		return "maintainer"
-	case RoleOwner:
-		return "owner"
-	case RoleAdmin:
-		return "admin"
+	if i := uint(self); i < uint(len(enumNames_Role)) {
+		return enumNames_Role[i]
 	}
 	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Role) Wire() string {
-	switch self {
-	case RoleMember:
-		return "member"
-	case RoleGmJunior:
-		return "gm_junior"
-	case RoleGmSenior:
-		return "gm_senior"
-	case RoleMaintainer:
-		return "maintainer"
-	case RoleOwner:
-		return "owner"
-	case RoleAdmin:
-		return "admin"
+	if i := uint(self); i < uint(len(enumNames_Role)) {
+		return enumNames_Role[i]
 	}
 	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Role = [...]string{
+	"admin", "gm_junior", "gm_senior", "maintainer",
+	"member", "owner",
+}
+
+var enumFound_Role = [...]Role{
+	RoleAdmin, RoleGmJunior, RoleGmSenior, RoleMaintainer,
+	RoleMember, RoleOwner,
+}
+
 func ParseRole(wire string) (Role, bool) {
-	switch wire {
-	case "member":
-		return RoleMember, true
-	case "gm_junior":
-		return RoleGmJunior, true
-	case "gm_senior":
-		return RoleGmSenior, true
-	case "maintainer":
-		return RoleMaintainer, true
-	case "owner":
-		return RoleOwner, true
-	case "admin":
-		return RoleAdmin, true
+	if i, ok := slices.BinarySearch(enumKeys_Role[:], wire); ok {
+		return enumFound_Role[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Role = [...]Role{
+	RoleMember, RoleGmJunior, RoleGmSenior, RoleMaintainer,
+	RoleOwner, RoleAdmin,
+}
+
 func RoleMembers() iter.Seq[Role] {
 	return func(yield func(Role) bool) {
-		for _, m := range [...]Role{RoleMember, RoleGmJunior, RoleGmSenior, RoleMaintainer, RoleOwner, RoleAdmin} {
+		for _, m := range enumMembers_Role[:] {
 			if !yield(m) {
 				return
 			}

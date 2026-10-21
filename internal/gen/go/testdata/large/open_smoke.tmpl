@@ -1,0 +1,58 @@
+package open_test
+
+import (
+	"testing"
+
+	open "example.com/large/open"
+)
+
+var members = []struct {
+	m          open.Open
+	name, wire string
+	code       uint16
+}{
+{{range .Rows}}	{open.Open{{.Const}}, {{q .Name}}, {{q .Wire}}, {{.Code}}},
+{{end}}}
+
+func TestOpen(t *testing.T) {
+	for _, c := range members {
+		if c.m.String() != c.name || c.m.Wire() != c.wire || !c.m.Known() {
+			t.Errorf("%v: String %q Wire %q Known %v", c.m, c.m.String(), c.m.Wire(), c.m.Known())
+		}
+		if code, ok := c.m.Code(); !ok || code != c.code {
+			t.Errorf("%v: Code %d, %v", c.m, code, ok)
+		}
+		if got, ok := open.OpenFromCode(c.code); !ok || got != c.m {
+			t.Errorf("OpenFromCode(%d) = %v, %v", c.code, got, ok)
+		}
+		if got, ok := open.ParseOpen(c.wire); !ok || got != c.m {
+			t.Errorf("ParseOpen(%q) = %v, %v", c.wire, got, ok)
+		}
+	}
+	unknown := open.Open("O_unknown")
+	if unknown.String() != "O_unknown" || unknown.Wire() != "O_unknown" || unknown.Known() {
+		t.Errorf("unknown: String %q Known %v", unknown.String(), unknown.Known())
+	}
+	if code, ok := unknown.Code(); ok || code != 0 {
+		t.Errorf("unknown Code %d, %v", code, ok)
+	}
+	if got, ok := open.ParseOpen("O_unknown"); ok || got != unknown {
+		t.Errorf("ParseOpen(unknown) = %v, %v", got, ok)
+	}
+	for _, code := range []uint16{0, 65535} {
+		if got, ok := open.OpenFromCode(code); ok || got != "" {
+			t.Errorf("OpenFromCode(%d) = %q, %v", code, got, ok)
+		}
+	}
+	n := 0
+	for m := range open.OpenMembers() {
+		code, ok := m.Code()
+		if got, found := open.OpenFromCode(code); !ok || !found || got != m || !m.Known() {
+			t.Fatalf("member %d: %v", n, m)
+		}
+		n++
+	}
+	if n != {{.Count}} {
+		t.Errorf("OpenMembers yielded %d", n)
+	}
+}

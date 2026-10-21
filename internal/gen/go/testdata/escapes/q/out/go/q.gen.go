@@ -5,6 +5,7 @@ package q
 
 import (
 	"iter"
+	"slices"
 	"strconv"
 )
 
@@ -16,39 +17,40 @@ const (
 	QHigh Q = 7
 )
 
+var enumCodes_Q = [...]Q{QLow, QHigh}
+
+var enumNames_Q = [...]string{"LOW", "HIGH"}
+
 func (self Q) String() string {
-	switch self {
-	case QLow:
-		return "LOW"
-	case QHigh:
-		return "HIGH"
+	if i, ok := slices.BinarySearch(enumCodes_Q[:], self); ok {
+		return enumNames_Q[i]
 	}
 	return "Q(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Q) Wire() string {
-	switch self {
-	case QLow:
-		return "LOW"
-	case QHigh:
-		return "HIGH"
+	if i, ok := slices.BinarySearch(enumCodes_Q[:], self); ok {
+		return enumNames_Q[i]
 	}
 	return "Q(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Q = [...]string{"HIGH", "LOW"}
+
+var enumFound_Q = [...]Q{QHigh, QLow}
+
 func ParseQ(wire string) (Q, bool) {
-	switch wire {
-	case "LOW":
-		return QLow, true
-	case "HIGH":
-		return QHigh, true
+	if i, ok := slices.BinarySearch(enumKeys_Q[:], wire); ok {
+		return enumFound_Q[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Q = [...]Q{QLow, QHigh}
+
 func QMembers() iter.Seq[Q] {
 	return func(yield func(Q) bool) {
-		for _, m := range [...]Q{QLow, QHigh} {
+		for _, m := range enumMembers_Q[:] {
 			if !yield(m) {
 				return
 			}
@@ -59,10 +61,8 @@ func QMembers() iter.Seq[Q] {
 func (self Q) Code() uint8 { return uint8(self) }
 
 func QFromCode(code uint8) (Q, bool) {
-	switch v := Q(code); v {
-	case QLow:
-		return v, true
-	case QHigh:
+	v := Q(code)
+	if _, ok := slices.BinarySearch(enumCodes_Q[:], v); ok {
 		return v, true
 	}
 	return 0, false

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"iter"
 	"math"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -49,45 +50,40 @@ const (
 	ElementEarth Element = 4
 )
 
+var enumCodes_Element = [...]Element{ElementFire, ElementWater, ElementEarth}
+
+var enumNames_Element = [...]string{"FIRE", "WATER", "EARTH"}
+
 func (self Element) String() string {
-	switch self {
-	case ElementFire:
-		return "FIRE"
-	case ElementWater:
-		return "WATER"
-	case ElementEarth:
-		return "EARTH"
+	if i, ok := slices.BinarySearch(enumCodes_Element[:], self); ok {
+		return enumNames_Element[i]
 	}
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Element) Wire() string {
-	switch self {
-	case ElementFire:
-		return "FIRE"
-	case ElementWater:
-		return "WATER"
-	case ElementEarth:
-		return "EARTH"
+	if i, ok := slices.BinarySearch(enumCodes_Element[:], self); ok {
+		return enumNames_Element[i]
 	}
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Element = [...]string{"EARTH", "FIRE", "WATER"}
+
+var enumFound_Element = [...]Element{ElementEarth, ElementFire, ElementWater}
+
 func ParseElement(wire string) (Element, bool) {
-	switch wire {
-	case "FIRE":
-		return ElementFire, true
-	case "WATER":
-		return ElementWater, true
-	case "EARTH":
-		return ElementEarth, true
+	if i, ok := slices.BinarySearch(enumKeys_Element[:], wire); ok {
+		return enumFound_Element[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Element = [...]Element{ElementFire, ElementWater, ElementEarth}
+
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
-		for _, m := range [...]Element{ElementFire, ElementWater, ElementEarth} {
+		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
 				return
 			}
@@ -98,12 +94,8 @@ func ElementMembers() iter.Seq[Element] {
 func (self Element) Code() uint8 { return uint8(self) }
 
 func ElementFromCode(code uint8) (Element, bool) {
-	switch v := Element(code); v {
-	case ElementFire:
-		return v, true
-	case ElementWater:
-		return v, true
-	case ElementEarth:
+	v := Element(code)
+	if _, ok := slices.BinarySearch(enumCodes_Element[:], v); ok {
 		return v, true
 	}
 	return 0, false
@@ -118,45 +110,40 @@ const (
 	GradeUltimate1 Grade = 2
 )
 
+var enumNames_Grade = [...]string{"normal", "unique", "ultimate_1"}
+
 func (self Grade) String() string {
-	switch self {
-	case GradeNormal:
-		return "normal"
-	case GradeUnique:
-		return "unique"
-	case GradeUltimate1:
-		return "ultimate_1"
+	if i := uint(self); i < uint(len(enumNames_Grade)) {
+		return enumNames_Grade[i]
 	}
 	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
 }
+
+var enumWires_Grade = [...]string{"normal", "unique", "ultimate-1"}
 
 func (self Grade) Wire() string {
-	switch self {
-	case GradeNormal:
-		return "normal"
-	case GradeUnique:
-		return "unique"
-	case GradeUltimate1:
-		return "ultimate-1"
+	if i := uint(self); i < uint(len(enumWires_Grade)) {
+		return enumWires_Grade[i]
 	}
 	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Grade = [...]string{"normal", "ultimate-1", "unique"}
+
+var enumFound_Grade = [...]Grade{GradeNormal, GradeUltimate1, GradeUnique}
+
 func ParseGrade(wire string) (Grade, bool) {
-	switch wire {
-	case "normal":
-		return GradeNormal, true
-	case "unique":
-		return GradeUnique, true
-	case "ultimate-1":
-		return GradeUltimate1, true
+	if i, ok := slices.BinarySearch(enumKeys_Grade[:], wire); ok {
+		return enumFound_Grade[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Grade = [...]Grade{GradeNormal, GradeUnique, GradeUltimate1}
+
 func GradeMembers() iter.Seq[Grade] {
 	return func(yield func(Grade) bool) {
-		for _, m := range [...]Grade{GradeNormal, GradeUnique, GradeUltimate1} {
+		for _, m := range enumMembers_Grade[:] {
 			if !yield(m) {
 				return
 			}
@@ -190,39 +177,38 @@ const (
 	FeelingAPIURL Feeling = 1
 )
 
+var enumNames_Feeling = [...]string{"calm", "api_url"}
+
 func (self Feeling) String() string {
-	switch self {
-	case FeelingCalm:
-		return "calm"
-	case FeelingAPIURL:
-		return "api_url"
+	if i := uint(self); i < uint(len(enumNames_Feeling)) {
+		return enumNames_Feeling[i]
 	}
 	return "Feeling(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Feeling) Wire() string {
-	switch self {
-	case FeelingCalm:
-		return "calm"
-	case FeelingAPIURL:
-		return "api_url"
+	if i := uint(self); i < uint(len(enumNames_Feeling)) {
+		return enumNames_Feeling[i]
 	}
 	return "Feeling(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Feeling = [...]string{"api_url", "calm"}
+
+var enumFound_Feeling = [...]Feeling{FeelingAPIURL, FeelingCalm}
+
 func ParseFeeling(wire string) (Feeling, bool) {
-	switch wire {
-	case "calm":
-		return FeelingCalm, true
-	case "api_url":
-		return FeelingAPIURL, true
+	if i, ok := slices.BinarySearch(enumKeys_Feeling[:], wire); ok {
+		return enumFound_Feeling[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Feeling = [...]Feeling{FeelingCalm, FeelingAPIURL}
+
 func FeelingMembers() iter.Seq[Feeling] {
 	return func(yield func(Feeling) bool) {
-		for _, m := range [...]Feeling{FeelingCalm, FeelingAPIURL} {
+		for _, m := range enumMembers_Feeling[:] {
 			if !yield(m) {
 				return
 			}
@@ -257,38 +243,29 @@ const (
 	ShapeKindNone   ShapeKind = 2
 )
 
+var enumNames_ShapeKind = [...]string{"circle", "square", "none_"}
+
 func (self ShapeKind) String() string {
-	switch self {
-	case ShapeKindCircle:
-		return "circle"
-	case ShapeKindSquare:
-		return "square"
-	case ShapeKindNone:
-		return "none_"
+	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+		return enumNames_ShapeKind[i]
 	}
 	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self ShapeKind) Wire() string {
-	switch self {
-	case ShapeKindCircle:
-		return "circle"
-	case ShapeKindSquare:
-		return "square"
-	case ShapeKindNone:
-		return "none_"
+	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+		return enumNames_ShapeKind[i]
 	}
 	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_ShapeKind = [...]string{"circle", "none_", "square"}
+
+var enumFound_ShapeKind = [...]ShapeKind{ShapeKindCircle, ShapeKindNone, ShapeKindSquare}
+
 func ParseShapeKind(wire string) (ShapeKind, bool) {
-	switch wire {
-	case "circle":
-		return ShapeKindCircle, true
-	case "square":
-		return ShapeKindSquare, true
-	case "none_":
-		return ShapeKindNone, true
+	if i, ok := slices.BinarySearch(enumKeys_ShapeKind[:], wire); ok {
+		return enumFound_ShapeKind[i], true
 	}
 	return 0, false
 }
@@ -322,12 +299,11 @@ var (
 	RuneIDBeta2 = RuneID{1}
 )
 
+var enumNames_RuneID = [...]string{"alpha", "beta_2"}
+
 func (self RuneID) String() string {
-	switch self.position {
-	case 0:
-		return "alpha"
-	case 1:
-		return "beta_2"
+	if i := uint(self.position); i < uint(len(enumNames_RuneID)) {
+		return enumNames_RuneID[i]
 	}
 	return "RuneID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -355,12 +331,13 @@ func (self *RuneID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_RuneID = [...]string{"alpha", "beta_2"}
+
+var enumFound_RuneID = [...]RuneID{{0}, {1}}
+
 func ParseRuneID(key string) (RuneID, bool) {
-	switch key {
-	case "alpha":
-		return RuneIDAlpha, true
-	case "beta_2":
-		return RuneIDBeta2, true
+	if i, ok := slices.BinarySearch(enumKeys_RuneID[:], key); ok {
+		return enumFound_RuneID[i], true
 	}
 	return RuneID{}, false
 }

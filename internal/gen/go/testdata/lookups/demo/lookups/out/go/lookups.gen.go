@@ -6,6 +6,7 @@ package lookups
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -22,12 +23,11 @@ var (
 	StatusIDB = StatusID{1}
 )
 
+var enumNames_StatusID = [...]string{"a", "b"}
+
 func (self StatusID) String() string {
-	switch self.position {
-	case 0:
-		return "a"
-	case 1:
-		return "b"
+	if i := uint(self.position); i < uint(len(enumNames_StatusID)) {
+		return enumNames_StatusID[i]
 	}
 	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -55,12 +55,13 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_StatusID = [...]string{"a", "b"}
+
+var enumFound_StatusID = [...]StatusID{{0}, {1}}
+
 func ParseStatusID(key string) (StatusID, bool) {
-	switch key {
-	case "a":
-		return StatusIDA, true
-	case "b":
-		return StatusIDB, true
+	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
+		return enumFound_StatusID[i], true
 	}
 	return StatusID{}, false
 }
@@ -74,10 +75,11 @@ var (
 	OtherIDX = OtherID{0}
 )
 
+var enumNames_OtherID = [...]string{"x"}
+
 func (self OtherID) String() string {
-	switch self.position {
-	case 0:
-		return "x"
+	if i := uint(self.position); i < uint(len(enumNames_OtherID)) {
+		return enumNames_OtherID[i]
 	}
 	return "OtherID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -105,10 +107,13 @@ func (self *OtherID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_OtherID = [...]string{"x"}
+
+var enumFound_OtherID = [...]OtherID{{0}}
+
 func ParseOtherID(key string) (OtherID, bool) {
-	switch key {
-	case "x":
-		return OtherIDX, true
+	if i, ok := slices.BinarySearch(enumKeys_OtherID[:], key); ok {
+		return enumFound_OtherID[i], true
 	}
 	return OtherID{}, false
 }

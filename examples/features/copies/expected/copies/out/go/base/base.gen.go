@@ -6,6 +6,7 @@ package base
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 )
@@ -20,39 +21,38 @@ const (
 	ToneBlue Tone = 1
 )
 
+var enumNames_Tone = [...]string{"red", "blue"}
+
 func (self Tone) String() string {
-	switch self {
-	case ToneRed:
-		return "red"
-	case ToneBlue:
-		return "blue"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Tone) Wire() string {
-	switch self {
-	case ToneRed:
-		return "red"
-	case ToneBlue:
-		return "blue"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tone = [...]string{"blue", "red"}
+
+var enumFound_Tone = [...]Tone{ToneBlue, ToneRed}
+
 func ParseTone(wire string) (Tone, bool) {
-	switch wire {
-	case "red":
-		return ToneRed, true
-	case "blue":
-		return ToneBlue, true
+	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
+		return enumFound_Tone[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tone = [...]Tone{ToneRed, ToneBlue}
+
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
-		for _, m := range [...]Tone{ToneRed, ToneBlue} {
+		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
 				return
 			}

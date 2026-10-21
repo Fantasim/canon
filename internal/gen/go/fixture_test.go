@@ -33,7 +33,7 @@ type pkgSpec struct {
 
 type emitSpec struct {
 	Out, Dir, Import, Package, Mode string
-	Values                          []string
+	Values, Open                    []string
 }
 
 type enumSpec struct {
@@ -140,12 +140,15 @@ func (w *world) buildPackage(ps *pkgSpec) *ir.Package {
 		p.Imports = append(p.Imports, &ir.PackageRef{Name: imp, Dir: w.byName[imp].Dir, Emits: w.byName[imp].Emits})
 	}
 	mode := ir.ModeBaked
-	if ps.Emit.Mode == "data" {
+	switch ps.Emit.Mode {
+	case "data":
 		mode = ir.ModeData
+	case "types":
+		mode = ir.ModeTypes
 	}
 	p.Emits = []*ir.Emit{{
 		Target: ir.TargetGo, Out: ps.Emit.Out, Dir: ps.Emit.Dir, GoImport: ps.Emit.Import,
-		Mode: mode, GoPackage: ps.Emit.Package, Values: ps.Emit.Values,
+		Mode: mode, GoPackage: ps.Emit.Package, Values: ps.Emit.Values, Open: ps.Emit.Open,
 	}}
 	for _, e := range ps.Enums {
 		p.Types = append(p.Types, w.enum(ps.Name, e))

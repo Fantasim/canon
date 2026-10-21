@@ -28,45 +28,38 @@ const (
 	ShapeNone Shape = 2
 )
 
+var enumNames_Shape = [...]string{"count", "place", "none_"}
+
 func (self Shape) String() string {
-	switch self {
-	case ShapeCount:
-		return "count"
-	case ShapePlace:
-		return "place"
-	case ShapeNone:
-		return "none_"
+	if i := uint(self); i < uint(len(enumNames_Shape)) {
+		return enumNames_Shape[i]
 	}
 	return "Shape(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Shape) Wire() string {
-	switch self {
-	case ShapeCount:
-		return "count"
-	case ShapePlace:
-		return "place"
-	case ShapeNone:
-		return "none_"
+	if i := uint(self); i < uint(len(enumNames_Shape)) {
+		return enumNames_Shape[i]
 	}
 	return "Shape(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Shape = [...]string{"count", "none_", "place"}
+
+var enumFound_Shape = [...]Shape{ShapeCount, ShapeNone, ShapePlace}
+
 func ParseShape(wire string) (Shape, bool) {
-	switch wire {
-	case "count":
-		return ShapeCount, true
-	case "place":
-		return ShapePlace, true
-	case "none_":
-		return ShapeNone, true
+	if i, ok := slices.BinarySearch(enumKeys_Shape[:], wire); ok {
+		return enumFound_Shape[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Shape = [...]Shape{ShapeCount, ShapePlace, ShapeNone}
+
 func ShapeMembers() iter.Seq[Shape] {
 	return func(yield func(Shape) bool) {
-		for _, m := range [...]Shape{ShapeCount, ShapePlace, ShapeNone} {
+		for _, m := range enumMembers_Shape[:] {
 			if !yield(m) {
 				return
 			}
@@ -105,45 +98,38 @@ const (
 	EventNewDay Event = 2
 )
 
+var enumNames_Event = [...]string{"beat_monster", "reach_place", "new_day"}
+
 func (self Event) String() string {
-	switch self {
-	case EventBeatMonster:
-		return "beat_monster"
-	case EventReachPlace:
-		return "reach_place"
-	case EventNewDay:
-		return "new_day"
+	if i := uint(self); i < uint(len(enumNames_Event)) {
+		return enumNames_Event[i]
 	}
 	return "Event(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Event) Wire() string {
-	switch self {
-	case EventBeatMonster:
-		return "beat_monster"
-	case EventReachPlace:
-		return "reach_place"
-	case EventNewDay:
-		return "new_day"
+	if i := uint(self); i < uint(len(enumNames_Event)) {
+		return enumNames_Event[i]
 	}
 	return "Event(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Event = [...]string{"beat_monster", "new_day", "reach_place"}
+
+var enumFound_Event = [...]Event{EventBeatMonster, EventNewDay, EventReachPlace}
+
 func ParseEvent(wire string) (Event, bool) {
-	switch wire {
-	case "beat_monster":
-		return EventBeatMonster, true
-	case "reach_place":
-		return EventReachPlace, true
-	case "new_day":
-		return EventNewDay, true
+	if i, ok := slices.BinarySearch(enumKeys_Event[:], wire); ok {
+		return enumFound_Event[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Event = [...]Event{EventBeatMonster, EventReachPlace, EventNewDay}
+
 func EventMembers() iter.Seq[Event] {
 	return func(yield func(Event) bool) {
-		for _, m := range [...]Event{EventBeatMonster, EventReachPlace, EventNewDay} {
+		for _, m := range enumMembers_Event[:] {
 			if !yield(m) {
 				return
 			}

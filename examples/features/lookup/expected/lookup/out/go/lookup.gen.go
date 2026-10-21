@@ -6,6 +6,7 @@ package lookup
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 )
 
@@ -18,45 +19,38 @@ const (
 	GradeUltimate Grade = 2
 )
 
+var enumNames_Grade = [...]string{"normal", "unique", "ultimate"}
+
 func (self Grade) String() string {
-	switch self {
-	case GradeNormal:
-		return "normal"
-	case GradeUnique:
-		return "unique"
-	case GradeUltimate:
-		return "ultimate"
+	if i := uint(self); i < uint(len(enumNames_Grade)) {
+		return enumNames_Grade[i]
 	}
 	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Grade) Wire() string {
-	switch self {
-	case GradeNormal:
-		return "normal"
-	case GradeUnique:
-		return "unique"
-	case GradeUltimate:
-		return "ultimate"
+	if i := uint(self); i < uint(len(enumNames_Grade)) {
+		return enumNames_Grade[i]
 	}
 	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Grade = [...]string{"normal", "ultimate", "unique"}
+
+var enumFound_Grade = [...]Grade{GradeNormal, GradeUltimate, GradeUnique}
+
 func ParseGrade(wire string) (Grade, bool) {
-	switch wire {
-	case "normal":
-		return GradeNormal, true
-	case "unique":
-		return GradeUnique, true
-	case "ultimate":
-		return GradeUltimate, true
+	if i, ok := slices.BinarySearch(enumKeys_Grade[:], wire); ok {
+		return enumFound_Grade[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Grade = [...]Grade{GradeNormal, GradeUnique, GradeUltimate}
+
 func GradeMembers() iter.Seq[Grade] {
 	return func(yield func(Grade) bool) {
-		for _, m := range [...]Grade{GradeNormal, GradeUnique, GradeUltimate} {
+		for _, m := range enumMembers_Grade[:] {
 			if !yield(m) {
 				return
 			}
@@ -94,57 +88,50 @@ const (
 	TierHero    Tier = 4
 )
 
+var enumNames_Tier = [...]string{
+	"vagrant", "expert", "pro", "master",
+	"hero",
+}
+
 func (self Tier) String() string {
-	switch self {
-	case TierVagrant:
-		return "vagrant"
-	case TierExpert:
-		return "expert"
-	case TierPro:
-		return "pro"
-	case TierMaster:
-		return "master"
-	case TierHero:
-		return "hero"
+	if i := uint(self); i < uint(len(enumNames_Tier)) {
+		return enumNames_Tier[i]
 	}
 	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Tier) Wire() string {
-	switch self {
-	case TierVagrant:
-		return "vagrant"
-	case TierExpert:
-		return "expert"
-	case TierPro:
-		return "pro"
-	case TierMaster:
-		return "master"
-	case TierHero:
-		return "hero"
+	if i := uint(self); i < uint(len(enumNames_Tier)) {
+		return enumNames_Tier[i]
 	}
 	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tier = [...]string{
+	"expert", "hero", "master", "pro",
+	"vagrant",
+}
+
+var enumFound_Tier = [...]Tier{
+	TierExpert, TierHero, TierMaster, TierPro,
+	TierVagrant,
+}
+
 func ParseTier(wire string) (Tier, bool) {
-	switch wire {
-	case "vagrant":
-		return TierVagrant, true
-	case "expert":
-		return TierExpert, true
-	case "pro":
-		return TierPro, true
-	case "master":
-		return TierMaster, true
-	case "hero":
-		return TierHero, true
+	if i, ok := slices.BinarySearch(enumKeys_Tier[:], wire); ok {
+		return enumFound_Tier[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tier = [...]Tier{
+	TierVagrant, TierExpert, TierPro, TierMaster,
+	TierHero,
+}
+
 func TierMembers() iter.Seq[Tier] {
 	return func(yield func(Tier) bool) {
-		for _, m := range [...]Tier{TierVagrant, TierExpert, TierPro, TierMaster, TierHero} {
+		for _, m := range enumMembers_Tier[:] {
 			if !yield(m) {
 				return
 			}

@@ -6,6 +6,7 @@ package keys
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 
@@ -22,12 +23,11 @@ var (
 	StatusIDClosed = StatusID{1}
 )
 
+var enumNames_StatusID = [...]string{"open", "closed"}
+
 func (self StatusID) String() string {
-	switch self.position {
-	case 0:
-		return "open"
-	case 1:
-		return "closed"
+	if i := uint(self.position); i < uint(len(enumNames_StatusID)) {
+		return enumNames_StatusID[i]
 	}
 	return "StatusID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -55,12 +55,13 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_StatusID = [...]string{"closed", "open"}
+
+var enumFound_StatusID = [...]StatusID{{1}, {0}}
+
 func ParseStatusID(key string) (StatusID, bool) {
-	switch key {
-	case "open":
-		return StatusIDOpen, true
-	case "closed":
-		return StatusIDClosed, true
+	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
+		return enumFound_StatusID[i], true
 	}
 	return StatusID{}, false
 }
@@ -75,12 +76,11 @@ var (
 	PostIDBye   = PostID{1}
 )
 
+var enumNames_PostID = [...]string{"hello", "bye"}
+
 func (self PostID) String() string {
-	switch self.position {
-	case 0:
-		return "hello"
-	case 1:
-		return "bye"
+	if i := uint(self.position); i < uint(len(enumNames_PostID)) {
+		return enumNames_PostID[i]
 	}
 	return "PostID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -108,12 +108,13 @@ func (self *PostID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_PostID = [...]string{"bye", "hello"}
+
+var enumFound_PostID = [...]PostID{{1}, {0}}
+
 func ParsePostID(key string) (PostID, bool) {
-	switch key {
-	case "hello":
-		return PostIDHello, true
-	case "bye":
-		return PostIDBye, true
+	if i, ok := slices.BinarySearch(enumKeys_PostID[:], key); ok {
+		return enumFound_PostID[i], true
 	}
 	return PostID{}, false
 }

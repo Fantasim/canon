@@ -6,6 +6,7 @@ package dep
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 )
@@ -18,45 +19,38 @@ const (
 	KThree K = 2
 )
 
+var enumNames_K = [...]string{"one", "two", "three"}
+
 func (self K) String() string {
-	switch self {
-	case KOne:
-		return "one"
-	case KTwo:
-		return "two"
-	case KThree:
-		return "three"
+	if i := uint(self); i < uint(len(enumNames_K)) {
+		return enumNames_K[i]
 	}
 	return "K(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self K) Wire() string {
-	switch self {
-	case KOne:
-		return "one"
-	case KTwo:
-		return "two"
-	case KThree:
-		return "three"
+	if i := uint(self); i < uint(len(enumNames_K)) {
+		return enumNames_K[i]
 	}
 	return "K(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_K = [...]string{"one", "three", "two"}
+
+var enumFound_K = [...]K{KOne, KThree, KTwo}
+
 func ParseK(wire string) (K, bool) {
-	switch wire {
-	case "one":
-		return KOne, true
-	case "two":
-		return KTwo, true
-	case "three":
-		return KThree, true
+	if i, ok := slices.BinarySearch(enumKeys_K[:], wire); ok {
+		return enumFound_K[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_K = [...]K{KOne, KTwo, KThree}
+
 func KMembers() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for _, m := range [...]K{KOne, KTwo, KThree} {
+		for _, m := range enumMembers_K[:] {
 			if !yield(m) {
 				return
 			}
@@ -100,12 +94,11 @@ var (
 	ThingIDB = ThingID{1}
 )
 
+var enumNames_ThingID = [...]string{"a", "b"}
+
 func (self ThingID) String() string {
-	switch self.position {
-	case 0:
-		return "a"
-	case 1:
-		return "b"
+	if i := uint(self.position); i < uint(len(enumNames_ThingID)) {
+		return enumNames_ThingID[i]
 	}
 	return "ThingID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -133,12 +126,13 @@ func (self *ThingID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_ThingID = [...]string{"a", "b"}
+
+var enumFound_ThingID = [...]ThingID{{0}, {1}}
+
 func ParseThingID(key string) (ThingID, bool) {
-	switch key {
-	case "a":
-		return ThingIDA, true
-	case "b":
-		return ThingIDB, true
+	if i, ok := slices.BinarySearch(enumKeys_ThingID[:], key); ok {
+		return enumFound_ThingID[i], true
 	}
 	return ThingID{}, false
 }

@@ -6,6 +6,7 @@ package base
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 )
@@ -17,39 +18,38 @@ const (
 	RoleAdmin  Role = 1
 )
 
+var enumNames_Role = [...]string{"viewer", "admin"}
+
 func (self Role) String() string {
-	switch self {
-	case RoleViewer:
-		return "viewer"
-	case RoleAdmin:
-		return "admin"
+	if i := uint(self); i < uint(len(enumNames_Role)) {
+		return enumNames_Role[i]
 	}
 	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Role) Wire() string {
-	switch self {
-	case RoleViewer:
-		return "viewer"
-	case RoleAdmin:
-		return "admin"
+	if i := uint(self); i < uint(len(enumNames_Role)) {
+		return enumNames_Role[i]
 	}
 	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Role = [...]string{"admin", "viewer"}
+
+var enumFound_Role = [...]Role{RoleAdmin, RoleViewer}
+
 func ParseRole(wire string) (Role, bool) {
-	switch wire {
-	case "viewer":
-		return RoleViewer, true
-	case "admin":
-		return RoleAdmin, true
+	if i, ok := slices.BinarySearch(enumKeys_Role[:], wire); ok {
+		return enumFound_Role[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Role = [...]Role{RoleViewer, RoleAdmin}
+
 func RoleMembers() iter.Seq[Role] {
 	return func(yield func(Role) bool) {
-		for _, m := range [...]Role{RoleViewer, RoleAdmin} {
+		for _, m := range enumMembers_Role[:] {
 			if !yield(m) {
 				return
 			}
@@ -86,12 +86,11 @@ var (
 	RankIDHigh = RankID{1}
 )
 
+var enumNames_RankID = [...]string{"low", "high"}
+
 func (self RankID) String() string {
-	switch self.position {
-	case 0:
-		return "low"
-	case 1:
-		return "high"
+	if i := uint(self.position); i < uint(len(enumNames_RankID)) {
+		return enumNames_RankID[i]
 	}
 	return "RankID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -119,12 +118,13 @@ func (self *RankID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_RankID = [...]string{"high", "low"}
+
+var enumFound_RankID = [...]RankID{{1}, {0}}
+
 func ParseRankID(key string) (RankID, bool) {
-	switch key {
-	case "low":
-		return RankIDLow, true
-	case "high":
-		return RankIDHigh, true
+	if i, ok := slices.BinarySearch(enumKeys_RankID[:], key); ok {
+		return enumFound_RankID[i], true
 	}
 	return RankID{}, false
 }

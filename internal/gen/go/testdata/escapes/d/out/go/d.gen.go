@@ -6,6 +6,7 @@ package d
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 )
 
@@ -16,39 +17,38 @@ const (
 	DSouth D = 1
 )
 
+var enumNames_D = [...]string{"north", "south"}
+
 func (self D) String() string {
-	switch self {
-	case DNorth:
-		return "north"
-	case DSouth:
-		return "south"
+	if i := uint(self); i < uint(len(enumNames_D)) {
+		return enumNames_D[i]
 	}
 	return "D(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self D) Wire() string {
-	switch self {
-	case DNorth:
-		return "north"
-	case DSouth:
-		return "south"
+	if i := uint(self); i < uint(len(enumNames_D)) {
+		return enumNames_D[i]
 	}
 	return "D(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_D = [...]string{"north", "south"}
+
+var enumFound_D = [...]D{DNorth, DSouth}
+
 func ParseD(wire string) (D, bool) {
-	switch wire {
-	case "north":
-		return DNorth, true
-	case "south":
-		return DSouth, true
+	if i, ok := slices.BinarySearch(enumKeys_D[:], wire); ok {
+		return enumFound_D[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_D = [...]D{DNorth, DSouth}
+
 func DMembers() iter.Seq[D] {
 	return func(yield func(D) bool) {
-		for _, m := range [...]D{DNorth, DSouth} {
+		for _, m := range enumMembers_D[:] {
 			if !yield(m) {
 				return
 			}

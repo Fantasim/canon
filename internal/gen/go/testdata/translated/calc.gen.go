@@ -6,6 +6,7 @@ package calc
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -21,39 +22,38 @@ const (
 	ToneLoud Tone = 1
 )
 
+var enumNames_Tone = [...]string{"soft", "loud"}
+
 func (self Tone) String() string {
-	switch self {
-	case ToneSoft:
-		return "soft"
-	case ToneLoud:
-		return "loud"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Tone) Wire() string {
-	switch self {
-	case ToneSoft:
-		return "soft"
-	case ToneLoud:
-		return "loud"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tone = [...]string{"loud", "soft"}
+
+var enumFound_Tone = [...]Tone{ToneLoud, ToneSoft}
+
 func ParseTone(wire string) (Tone, bool) {
-	switch wire {
-	case "soft":
-		return ToneSoft, true
-	case "loud":
-		return ToneLoud, true
+	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
+		return enumFound_Tone[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tone = [...]Tone{ToneSoft, ToneLoud}
+
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
-		for _, m := range [...]Tone{ToneSoft, ToneLoud} {
+		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
 				return
 			}
@@ -88,32 +88,29 @@ const (
 	ShapeKindDot ShapeKind = 1
 )
 
+var enumNames_ShapeKind = [...]string{"circle", "dot"}
+
 func (self ShapeKind) String() string {
-	switch self {
-	case ShapeKindCircle:
-		return "circle"
-	case ShapeKindDot:
-		return "dot"
+	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+		return enumNames_ShapeKind[i]
 	}
 	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self ShapeKind) Wire() string {
-	switch self {
-	case ShapeKindCircle:
-		return "circle"
-	case ShapeKindDot:
-		return "dot"
+	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+		return enumNames_ShapeKind[i]
 	}
 	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_ShapeKind = [...]string{"circle", "dot"}
+
+var enumFound_ShapeKind = [...]ShapeKind{ShapeKindCircle, ShapeKindDot}
+
 func ParseShapeKind(wire string) (ShapeKind, bool) {
-	switch wire {
-	case "circle":
-		return ShapeKindCircle, true
-	case "dot":
-		return ShapeKindDot, true
+	if i, ok := slices.BinarySearch(enumKeys_ShapeKind[:], wire); ok {
+		return enumFound_ShapeKind[i], true
 	}
 	return 0, false
 }
@@ -147,12 +144,11 @@ var (
 	SizeIDLarge = SizeID{1}
 )
 
+var enumNames_SizeID = [...]string{"small", "large"}
+
 func (self SizeID) String() string {
-	switch self.position {
-	case 0:
-		return "small"
-	case 1:
-		return "large"
+	if i := uint(self.position); i < uint(len(enumNames_SizeID)) {
+		return enumNames_SizeID[i]
 	}
 	return "SizeID(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
@@ -180,12 +176,13 @@ func (self *SizeID) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var enumKeys_SizeID = [...]string{"large", "small"}
+
+var enumFound_SizeID = [...]SizeID{{1}, {0}}
+
 func ParseSizeID(key string) (SizeID, bool) {
-	switch key {
-	case "small":
-		return SizeIDSmall, true
-	case "large":
-		return SizeIDLarge, true
+	if i, ok := slices.BinarySearch(enumKeys_SizeID[:], key); ok {
+		return enumFound_SizeID[i], true
 	}
 	return SizeID{}, false
 }

@@ -6,6 +6,7 @@ package ui
 import (
 	"errors"
 	"iter"
+	"slices"
 	"strconv"
 )
 
@@ -32,99 +33,60 @@ const (
 	ToneSeries6 Tone = 11
 )
 
+var enumNames_Tone = [...]string{
+	"warning", "info", "accent", "success",
+	"neutral", "danger", "series_1", "series_2",
+	"series_3", "series_4", "series_5", "series_6",
+}
+
 func (self Tone) String() string {
-	switch self {
-	case ToneWarning:
-		return "warning"
-	case ToneInfo:
-		return "info"
-	case ToneAccent:
-		return "accent"
-	case ToneSuccess:
-		return "success"
-	case ToneNeutral:
-		return "neutral"
-	case ToneDanger:
-		return "danger"
-	case ToneSeries1:
-		return "series_1"
-	case ToneSeries2:
-		return "series_2"
-	case ToneSeries3:
-		return "series_3"
-	case ToneSeries4:
-		return "series_4"
-	case ToneSeries5:
-		return "series_5"
-	case ToneSeries6:
-		return "series_6"
+	if i := uint(self); i < uint(len(enumNames_Tone)) {
+		return enumNames_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+}
+
+var enumWires_Tone = [...]string{
+	"warning", "info", "accent", "success",
+	"neutral", "danger", "series-1", "series-2",
+	"series-3", "series-4", "series-5", "series-6",
 }
 
 func (self Tone) Wire() string {
-	switch self {
-	case ToneWarning:
-		return "warning"
-	case ToneInfo:
-		return "info"
-	case ToneAccent:
-		return "accent"
-	case ToneSuccess:
-		return "success"
-	case ToneNeutral:
-		return "neutral"
-	case ToneDanger:
-		return "danger"
-	case ToneSeries1:
-		return "series-1"
-	case ToneSeries2:
-		return "series-2"
-	case ToneSeries3:
-		return "series-3"
-	case ToneSeries4:
-		return "series-4"
-	case ToneSeries5:
-		return "series-5"
-	case ToneSeries6:
-		return "series-6"
+	if i := uint(self); i < uint(len(enumWires_Tone)) {
+		return enumWires_Tone[i]
 	}
 	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Tone = [...]string{
+	"accent", "danger", "info", "neutral",
+	"series-1", "series-2", "series-3", "series-4",
+	"series-5", "series-6", "success", "warning",
+}
+
+var enumFound_Tone = [...]Tone{
+	ToneAccent, ToneDanger, ToneInfo, ToneNeutral,
+	ToneSeries1, ToneSeries2, ToneSeries3, ToneSeries4,
+	ToneSeries5, ToneSeries6, ToneSuccess, ToneWarning,
+}
+
 func ParseTone(wire string) (Tone, bool) {
-	switch wire {
-	case "warning":
-		return ToneWarning, true
-	case "info":
-		return ToneInfo, true
-	case "accent":
-		return ToneAccent, true
-	case "success":
-		return ToneSuccess, true
-	case "neutral":
-		return ToneNeutral, true
-	case "danger":
-		return ToneDanger, true
-	case "series-1":
-		return ToneSeries1, true
-	case "series-2":
-		return ToneSeries2, true
-	case "series-3":
-		return ToneSeries3, true
-	case "series-4":
-		return ToneSeries4, true
-	case "series-5":
-		return ToneSeries5, true
-	case "series-6":
-		return ToneSeries6, true
+	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
+		return enumFound_Tone[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Tone = [...]Tone{
+	ToneWarning, ToneInfo, ToneAccent, ToneSuccess,
+	ToneNeutral, ToneDanger, ToneSeries1, ToneSeries2,
+	ToneSeries3, ToneSeries4, ToneSeries5, ToneSeries6,
+}
+
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
-		for _, m := range [...]Tone{ToneWarning, ToneInfo, ToneAccent, ToneSuccess, ToneNeutral, ToneDanger, ToneSeries1, ToneSeries2, ToneSeries3, ToneSeries4, ToneSeries5, ToneSeries6} {
+		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
 				return
 			}
@@ -177,141 +139,70 @@ const (
 	IconTerminal      Icon = 18
 )
 
+var enumNames_Icon = [...]string{
+	"alert_triangle", "archive", "bar_chart", "check",
+	"columns", "database", "gamepad", "globe",
+	"hand", "inbox", "layers", "lightbulb",
+	"lock", "monitor", "package", "scale",
+	"server", "shield", "terminal",
+}
+
 func (self Icon) String() string {
-	switch self {
-	case IconAlertTriangle:
-		return "alert_triangle"
-	case IconArchive:
-		return "archive"
-	case IconBarChart:
-		return "bar_chart"
-	case IconCheck:
-		return "check"
-	case IconColumns:
-		return "columns"
-	case IconDatabase:
-		return "database"
-	case IconGamepad:
-		return "gamepad"
-	case IconGlobe:
-		return "globe"
-	case IconHand:
-		return "hand"
-	case IconInbox:
-		return "inbox"
-	case IconLayers:
-		return "layers"
-	case IconLightbulb:
-		return "lightbulb"
-	case IconLock:
-		return "lock"
-	case IconMonitor:
-		return "monitor"
-	case IconPackage:
-		return "package"
-	case IconScale:
-		return "scale"
-	case IconServer:
-		return "server"
-	case IconShield:
-		return "shield"
-	case IconTerminal:
-		return "terminal"
+	if i := uint(self); i < uint(len(enumNames_Icon)) {
+		return enumNames_Icon[i]
 	}
 	return "Icon(" + strconv.FormatInt(int64(self), 10) + ")"
+}
+
+var enumWires_Icon = [...]string{
+	"alert-triangle", "archive", "bar-chart", "check",
+	"columns", "database", "gamepad", "globe",
+	"hand", "inbox", "layers", "lightbulb",
+	"lock", "monitor", "package", "scale",
+	"server", "shield", "terminal",
 }
 
 func (self Icon) Wire() string {
-	switch self {
-	case IconAlertTriangle:
-		return "alert-triangle"
-	case IconArchive:
-		return "archive"
-	case IconBarChart:
-		return "bar-chart"
-	case IconCheck:
-		return "check"
-	case IconColumns:
-		return "columns"
-	case IconDatabase:
-		return "database"
-	case IconGamepad:
-		return "gamepad"
-	case IconGlobe:
-		return "globe"
-	case IconHand:
-		return "hand"
-	case IconInbox:
-		return "inbox"
-	case IconLayers:
-		return "layers"
-	case IconLightbulb:
-		return "lightbulb"
-	case IconLock:
-		return "lock"
-	case IconMonitor:
-		return "monitor"
-	case IconPackage:
-		return "package"
-	case IconScale:
-		return "scale"
-	case IconServer:
-		return "server"
-	case IconShield:
-		return "shield"
-	case IconTerminal:
-		return "terminal"
+	if i := uint(self); i < uint(len(enumWires_Icon)) {
+		return enumWires_Icon[i]
 	}
 	return "Icon(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
+var enumKeys_Icon = [...]string{
+	"alert-triangle", "archive", "bar-chart", "check",
+	"columns", "database", "gamepad", "globe",
+	"hand", "inbox", "layers", "lightbulb",
+	"lock", "monitor", "package", "scale",
+	"server", "shield", "terminal",
+}
+
+var enumFound_Icon = [...]Icon{
+	IconAlertTriangle, IconArchive, IconBarChart, IconCheck,
+	IconColumns, IconDatabase, IconGamepad, IconGlobe,
+	IconHand, IconInbox, IconLayers, IconLightbulb,
+	IconLock, IconMonitor, IconPackage, IconScale,
+	IconServer, IconShield, IconTerminal,
+}
+
 func ParseIcon(wire string) (Icon, bool) {
-	switch wire {
-	case "alert-triangle":
-		return IconAlertTriangle, true
-	case "archive":
-		return IconArchive, true
-	case "bar-chart":
-		return IconBarChart, true
-	case "check":
-		return IconCheck, true
-	case "columns":
-		return IconColumns, true
-	case "database":
-		return IconDatabase, true
-	case "gamepad":
-		return IconGamepad, true
-	case "globe":
-		return IconGlobe, true
-	case "hand":
-		return IconHand, true
-	case "inbox":
-		return IconInbox, true
-	case "layers":
-		return IconLayers, true
-	case "lightbulb":
-		return IconLightbulb, true
-	case "lock":
-		return IconLock, true
-	case "monitor":
-		return IconMonitor, true
-	case "package":
-		return IconPackage, true
-	case "scale":
-		return IconScale, true
-	case "server":
-		return IconServer, true
-	case "shield":
-		return IconShield, true
-	case "terminal":
-		return IconTerminal, true
+	if i, ok := slices.BinarySearch(enumKeys_Icon[:], wire); ok {
+		return enumFound_Icon[i], true
 	}
 	return 0, false
 }
 
+var enumMembers_Icon = [...]Icon{
+	IconAlertTriangle, IconArchive, IconBarChart, IconCheck,
+	IconColumns, IconDatabase, IconGamepad, IconGlobe,
+	IconHand, IconInbox, IconLayers, IconLightbulb,
+	IconLock, IconMonitor, IconPackage, IconScale,
+	IconServer, IconShield, IconTerminal,
+}
+
 func IconMembers() iter.Seq[Icon] {
 	return func(yield func(Icon) bool) {
-		for _, m := range [...]Icon{IconAlertTriangle, IconArchive, IconBarChart, IconCheck, IconColumns, IconDatabase, IconGamepad, IconGlobe, IconHand, IconInbox, IconLayers, IconLightbulb, IconLock, IconMonitor, IconPackage, IconScale, IconServer, IconShield, IconTerminal} {
+		for _, m := range enumMembers_Icon[:] {
 			if !yield(m) {
 				return
 			}

@@ -28,14 +28,13 @@ const (
 	RaritySeason1 Rarity = "season-1"
 )
 
+var enumKeys_Rarity = [...]Rarity{RarityCommon, RarityRare, RaritySeason1}
+
+var enumNames_Rarity = [...]string{"common", "rare", "season_1"}
+
 func (self Rarity) String() string {
-	switch self {
-	case RarityCommon:
-		return "common"
-	case RarityRare:
-		return "rare"
-	case RaritySeason1:
-		return "season_1"
+	if i, ok := slices.BinarySearch(enumKeys_Rarity[:], self); ok {
+		return enumNames_Rarity[i]
 	}
 	return string(self)
 }
@@ -43,11 +42,8 @@ func (self Rarity) String() string {
 func (self Rarity) Wire() string { return string(self) }
 
 func (self Rarity) Known() bool {
-	switch self {
-	case RarityCommon, RarityRare, RaritySeason1:
-		return true
-	}
-	return false
+	_, ok := slices.BinarySearch(enumKeys_Rarity[:], self)
+	return ok
 }
 
 func ParseRarity(wire string) (Rarity, bool) {
@@ -55,9 +51,11 @@ func ParseRarity(wire string) (Rarity, bool) {
 	return self, self.Known()
 }
 
+var enumMembers_Rarity = [...]Rarity{RarityCommon, RarityRare, RaritySeason1}
+
 func RarityMembers() iter.Seq[Rarity] {
 	return func(yield func(Rarity) bool) {
-		for _, m := range [...]Rarity{RarityCommon, RarityRare, RaritySeason1} {
+		for _, m := range enumMembers_Rarity[:] {
 			if !yield(m) {
 				return
 			}
@@ -75,12 +73,19 @@ const (
 	ElementWater Element = "water"
 )
 
+var enumKeys_Element = [...]Element{ElementFire, ElementWater}
+
+var enumNames_Element = [...]string{"fire", "water"}
+
+var enumNumbers_Element = [...]uint8{1, 2}
+
+var enumCodes_Element = [...]uint8{1, 2}
+
+var enumByCode_Element = [...]Element{ElementFire, ElementWater}
+
 func (self Element) String() string {
-	switch self {
-	case ElementFire:
-		return "fire"
-	case ElementWater:
-		return "water"
+	if i, ok := slices.BinarySearch(enumKeys_Element[:], self); ok {
+		return enumNames_Element[i]
 	}
 	return string(self)
 }
@@ -88,11 +93,8 @@ func (self Element) String() string {
 func (self Element) Wire() string { return string(self) }
 
 func (self Element) Known() bool {
-	switch self {
-	case ElementFire, ElementWater:
-		return true
-	}
-	return false
+	_, ok := slices.BinarySearch(enumKeys_Element[:], self)
+	return ok
 }
 
 func ParseElement(wire string) (Element, bool) {
@@ -100,9 +102,11 @@ func ParseElement(wire string) (Element, bool) {
 	return self, self.Known()
 }
 
+var enumMembers_Element = [...]Element{ElementFire, ElementWater}
+
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
-		for _, m := range [...]Element{ElementFire, ElementWater} {
+		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
 				return
 			}
@@ -111,21 +115,15 @@ func ElementMembers() iter.Seq[Element] {
 }
 
 func (self Element) Code() (uint8, bool) {
-	switch self {
-	case ElementFire:
-		return 1, true
-	case ElementWater:
-		return 2, true
+	if i, ok := slices.BinarySearch(enumKeys_Element[:], self); ok {
+		return enumNumbers_Element[i], true
 	}
 	return 0, false
 }
 
 func ElementFromCode(code uint8) (Element, bool) {
-	switch code {
-	case 1:
-		return ElementFire, true
-	case 2:
-		return ElementWater, true
+	if i, ok := slices.BinarySearch(enumCodes_Element[:], code); ok {
+		return enumByCode_Element[i], true
 	}
 	return "", false
 }
