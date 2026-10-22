@@ -663,6 +663,12 @@ std::string_view ToWire(EventType v) {
     return kWires[i];
 }
 
+bool IsRetired(EventType v) {
+    static constexpr std::array<bool, 9> kRetired = {false, true, false, false, false, false, false, false, true};
+    const size_t i = detail::EventTypeOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<EventType> EventTypeFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 9> kKeys = {
         "farm_events",
@@ -720,6 +726,12 @@ std::string_view ToWire(Tier v) {
     return kWires[i];
 }
 
+bool IsRetired(Tier v) {
+    static constexpr std::array<bool, 5> kRetired = {false, false, false, false, false};
+    const size_t i = detail::TierOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Tier> TierFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 5> kKeys = {"COOL", "HOT", "READONLY", "TINY", "WARM"};
     static constexpr std::array<Tier, 5> kValues = {Tier::COOL, Tier::HOT, Tier::READONLY, Tier::TINY, Tier::WARM};
@@ -771,6 +783,12 @@ std::string_view ToWire(Producer v) {
     const size_t i = detail::ProducerOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Producer v) {
+    static constexpr std::array<bool, 7> kRetired = {false, false, false, false, false, false, false};
+    const size_t i = detail::ProducerOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Producer> ProducerFromWire(std::string_view wire) {
@@ -826,6 +844,12 @@ std::string_view ToWire(Enqueue v) {
     return kWires[i];
 }
 
+bool IsRetired(Enqueue v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Enqueue> EnqueueFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"generated", "internal"};
     static constexpr std::array<Enqueue, 2> kValues = {Enqueue::generated, Enqueue::internal};
@@ -875,6 +899,12 @@ std::string_view ToWire(SqlType v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(SqlType v) {
+    static constexpr std::array<bool, 9> kRetired = {false, false, false, false, false, false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<SqlType> SqlTypeFromWire(std::string_view wire) {
@@ -928,6 +958,12 @@ std::string_view ToWire(FieldKind v) {
     return kWires[i];
 }
 
+bool IsRetired(FieldKind v) {
+    static constexpr std::array<bool, 4> kRetired = {false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<FieldKind> FieldKindFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 4> kKeys = {"enum8", "id", "scalar", "ts"};
     static constexpr std::array<FieldKind, 4> kValues = {FieldKind::enum8, FieldKind::id, FieldKind::scalar, FieldKind::ts};
@@ -957,6 +993,12 @@ std::string_view ToWire(Currency v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Currency v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Currency> CurrencyFromWire(std::string_view wire) {
@@ -990,6 +1032,12 @@ std::string_view ToWire(Bucket v) {
     return kWires[i];
 }
 
+bool IsRetired(Bucket v) {
+    static constexpr std::array<bool, 4> kRetired = {false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Bucket> BucketFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 4> kKeys = {"mint", "none", "sink", "transfer"};
     static constexpr std::array<Bucket, 4> kValues = {Bucket::mint, Bucket::nothing, Bucket::sink, Bucket::transfer};
@@ -1019,6 +1067,12 @@ std::string_view ToWire(Leg v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Leg v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Leg> LegFromWire(std::string_view wire) {
@@ -1072,6 +1126,12 @@ std::string_view ToWire(FarmEventKind v) {
     const size_t i = detail::FarmEventKindOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(FarmEventKind v) {
+    static constexpr std::array<bool, 10> kRetired = {false, false, false, false, false, false, false, false, false, false};
+    const size_t i = detail::FarmEventKindOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<FarmEventKind> FarmEventKindFromWire(std::string_view wire) {
@@ -1133,6 +1193,12 @@ std::string_view ToWire(SovereignEventKind v) {
     return kWires[i];
 }
 
+bool IsRetired(SovereignEventKind v) {
+    static constexpr std::array<bool, 4> kRetired = {false, false, false, false};
+    const size_t i = detail::SovereignEventKindOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<SovereignEventKind> SovereignEventKindFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 4> kKeys = {"DoctrineSet", "PowerTriggered", "RewardGranted", "RoleAssigned"};
     static constexpr std::array<SovereignEventKind, 4> kValues = {
@@ -1187,6 +1253,12 @@ std::string_view ToWire(SovereignRole v) {
     const size_t i = detail::SovereignRoleOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(SovereignRole v) {
+    static constexpr std::array<bool, 6> kRetired = {false, false, false, false, false, false};
+    const size_t i = detail::SovereignRoleOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<SovereignRole> SovereignRoleFromWire(std::string_view wire) {
@@ -1256,6 +1328,12 @@ std::string_view ToWire(SovereignDoctrine v) {
     const size_t i = detail::SovereignDoctrineOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(SovereignDoctrine v) {
+    static constexpr std::array<bool, 8> kRetired = {false, false, false, false, false, false, false, false};
+    const size_t i = detail::SovereignDoctrineOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<SovereignDoctrine> SovereignDoctrineFromWire(std::string_view wire) {
@@ -1333,6 +1411,12 @@ std::string_view ToWire(SovereignPower v) {
     return kWires[i];
 }
 
+bool IsRetired(SovereignPower v) {
+    static constexpr std::array<bool, 9> kRetired = {false, false, false, true, false, false, false, false, false};
+    const size_t i = detail::SovereignPowerOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<SovereignPower> SovereignPowerFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 9> kKeys = {
         "AzuriaAuction",
@@ -1388,6 +1472,12 @@ std::string_view ToWire(LifecycleKind v) {
     const size_t i = detail::LifecycleKindOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(LifecycleKind v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = detail::LifecycleKindOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<LifecycleKind> LifecycleKindFromWire(std::string_view wire) {
@@ -1455,6 +1545,27 @@ std::string_view ToWire(GrantKind v) {
     const size_t i = detail::GrantKindOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(GrantKind v) {
+    static constexpr std::array<bool, 14> kRetired = {
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+    };
+    const size_t i = detail::GrantKindOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<GrantKind> GrantKindFromWire(std::string_view wire) {
@@ -1540,6 +1651,12 @@ std::string_view ToWire(Vocabulary v) {
     return kWires[i];
 }
 
+bool IsRetired(Vocabulary v) {
+    static constexpr std::array<bool, 7> kRetired = {false, false, false, false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Vocabulary> VocabularyFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 7> kKeys = {
         "farm_event_kind",
@@ -1585,6 +1702,12 @@ std::string_view ToWire(RowsKind v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(RowsKind v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<RowsKind> RowsKindFromWire(std::string_view wire) {

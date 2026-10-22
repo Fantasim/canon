@@ -389,7 +389,7 @@ check {
 // ---------------------------------------------------------------------------
 
 /// Whether `e` is a tombstone: an id no producer may send again.
-export fn isRetired(e: EventType) -> Bool { return e.retired }
+export fn isTombstone(e: EventType) -> Bool { return e.retired }
 
 /// The current layout version of `e` (the wire version byte); 0 for a retired type.
 export fn versionOf(e: EventType) -> UInt8 { return eventOf(e)?.version ?? 0 }

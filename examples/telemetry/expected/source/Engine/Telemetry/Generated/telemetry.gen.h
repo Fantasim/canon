@@ -51,6 +51,7 @@ enum class EventType : uint8_t {
 };
 
 inline constexpr std::array<EventType, 9> kEventTypeMembers = {EventType::item_created, EventType::mail_item_received, EventType::item_consumed, EventType::penya_drops, EventType::trade_penya, EventType::server_lifecycle, EventType::farm_events, EventType::sovereign_events, EventType::world_boss_spawns};
+inline constexpr std::array<EventType, 7> kEventTypeLiveMembers = {EventType::item_created, EventType::item_consumed, EventType::penya_drops, EventType::trade_penya, EventType::server_lifecycle, EventType::farm_events, EventType::sovereign_events};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 9> kEventTypeCodes = {11, 20, 31, 70, 71, 110, 151, 152, 156};
@@ -74,6 +75,7 @@ inline constexpr size_t EventTypeOrdinal(EventType v) {
 
 std::string_view ToName(EventType v);
 std::string_view ToWire(EventType v);
+bool IsRetired(EventType v);
 std::optional<EventType> EventTypeFromWire(std::string_view wire);
 std::optional<EventType> EventTypeFromCode(uint8_t code);
 
@@ -90,6 +92,7 @@ enum class Tier : uint8_t {
 };
 
 inline constexpr std::array<Tier, 5> kTierMembers = {Tier::HOT, Tier::WARM, Tier::COOL, Tier::TINY, Tier::READONLY};
+inline constexpr std::array<Tier, 5> kTierLiveMembers = {Tier::HOT, Tier::WARM, Tier::COOL, Tier::TINY, Tier::READONLY};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 5> kTierCodes = {0, 1, 2, 3, 4};
@@ -113,6 +116,7 @@ inline constexpr size_t TierOrdinal(Tier v) {
 
 std::string_view ToName(Tier v);
 std::string_view ToWire(Tier v);
+bool IsRetired(Tier v);
 std::optional<Tier> TierFromWire(std::string_view wire);
 std::optional<Tier> TierFromCode(uint8_t code);
 
@@ -128,6 +132,7 @@ enum class Producer : uint8_t {
 };
 
 inline constexpr std::array<Producer, 7> kProducerMembers = {Producer::WorldServer, Producer::CoreServer, Producer::DatabaseServer, Producer::LoginServer, Producer::CacheServer, Producer::DataIngester, Producer::ItemTool};
+inline constexpr std::array<Producer, 7> kProducerLiveMembers = {Producer::WorldServer, Producer::CoreServer, Producer::DatabaseServer, Producer::LoginServer, Producer::CacheServer, Producer::DataIngester, Producer::ItemTool};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 7> kProducerCodes = {1, 2, 3, 4, 5, 6, 7};
@@ -151,6 +156,7 @@ inline constexpr size_t ProducerOrdinal(Producer v) {
 
 std::string_view ToName(Producer v);
 std::string_view ToWire(Producer v);
+bool IsRetired(Producer v);
 std::optional<Producer> ProducerFromWire(std::string_view wire);
 std::optional<Producer> ProducerFromCode(uint8_t code);
 
@@ -163,9 +169,11 @@ enum class Enqueue : uint8_t {
 };
 
 inline constexpr std::array<Enqueue, 2> kEnqueueMembers = {Enqueue::generated, Enqueue::internal};
+inline constexpr std::array<Enqueue, 2> kEnqueueLiveMembers = {Enqueue::generated, Enqueue::internal};
 
 std::string_view ToName(Enqueue v);
 std::string_view ToWire(Enqueue v);
+bool IsRetired(Enqueue v);
 std::optional<Enqueue> EnqueueFromWire(std::string_view wire);
 
 /// A lake column type (DuckDB). The name is the SQL spelling.
@@ -182,9 +190,11 @@ enum class SqlType : uint8_t {
 };
 
 inline constexpr std::array<SqlType, 9> kSqlTypeMembers = {SqlType::UTINYINT, SqlType::USMALLINT, SqlType::UINTEGER, SqlType::UBIGINT, SqlType::TINYINT, SqlType::SMALLINT, SqlType::INTEGER, SqlType::BIGINT, SqlType::FLOAT};
+inline constexpr std::array<SqlType, 9> kSqlTypeLiveMembers = {SqlType::UTINYINT, SqlType::USMALLINT, SqlType::UINTEGER, SqlType::UBIGINT, SqlType::TINYINT, SqlType::SMALLINT, SqlType::INTEGER, SqlType::BIGINT, SqlType::FLOAT};
 
 std::string_view ToName(SqlType v);
 std::string_view ToWire(SqlType v);
+bool IsRetired(SqlType v);
 std::optional<SqlType> SqlTypeFromWire(std::string_view wire);
 
 /// How a column travels on the wire and lands in the lake.
@@ -200,9 +210,11 @@ enum class FieldKind : uint8_t {
 };
 
 inline constexpr std::array<FieldKind, 4> kFieldKindMembers = {FieldKind::ts, FieldKind::id, FieldKind::scalar, FieldKind::enum8};
+inline constexpr std::array<FieldKind, 4> kFieldKindLiveMembers = {FieldKind::ts, FieldKind::id, FieldKind::scalar, FieldKind::enum8};
 
 std::string_view ToName(FieldKind v);
 std::string_view ToWire(FieldKind v);
+bool IsRetired(FieldKind v);
 std::optional<FieldKind> FieldKindFromWire(std::string_view wire);
 
 /// What a ledger leg moves. gold, item, and the point tokens are reconciled against the
@@ -214,9 +226,11 @@ enum class Currency : uint8_t {
 };
 
 inline constexpr std::array<Currency, 3> kCurrencyMembers = {Currency::gold, Currency::item, Currency::nothing};
+inline constexpr std::array<Currency, 3> kCurrencyLiveMembers = {Currency::gold, Currency::item, Currency::nothing};
 
 std::string_view ToName(Currency v);
 std::string_view ToWire(Currency v);
+bool IsRetired(Currency v);
 std::optional<Currency> CurrencyFromWire(std::string_view wire);
 
 /// The direction of a leg, from the player's point of view.
@@ -228,9 +242,11 @@ enum class Bucket : uint8_t {
 };
 
 inline constexpr std::array<Bucket, 4> kBucketMembers = {Bucket::mint, Bucket::sink, Bucket::transfer, Bucket::nothing};
+inline constexpr std::array<Bucket, 4> kBucketLiveMembers = {Bucket::mint, Bucket::sink, Bucket::transfer, Bucket::nothing};
 
 std::string_view ToName(Bucket v);
 std::string_view ToWire(Bucket v);
+bool IsRetired(Bucket v);
 std::optional<Bucket> BucketFromWire(std::string_view wire);
 
 /// Which side of a single-row transfer a leg reads.
@@ -240,9 +256,11 @@ enum class Leg : uint8_t {
 };
 
 inline constexpr std::array<Leg, 2> kLegMembers = {Leg::out, Leg::in};
+inline constexpr std::array<Leg, 2> kLegLiveMembers = {Leg::out, Leg::in};
 
 std::string_view ToName(Leg v);
 std::string_view ToWire(Leg v);
+bool IsRetired(Leg v);
 std::optional<Leg> LegFromWire(std::string_view wire);
 
 /// What happened in a farm. All ten kinds are WorldServer hooks with one FarmManager caller.
@@ -270,6 +288,7 @@ enum class FarmEventKind : uint8_t {
 };
 
 inline constexpr std::array<FarmEventKind, 10> kFarmEventKindMembers = {FarmEventKind::Purchase, FarmEventKind::ClaimBatch, FarmEventKind::ClaimSlot, FarmEventKind::LevelUp, FarmEventKind::SetupModel, FarmEventKind::RemoveModel, FarmEventKind::UnlockModel, FarmEventKind::EnterOwn, FarmEventKind::VisitOther, FarmEventKind::Leave};
+inline constexpr std::array<FarmEventKind, 10> kFarmEventKindLiveMembers = {FarmEventKind::Purchase, FarmEventKind::ClaimBatch, FarmEventKind::ClaimSlot, FarmEventKind::LevelUp, FarmEventKind::SetupModel, FarmEventKind::RemoveModel, FarmEventKind::UnlockModel, FarmEventKind::EnterOwn, FarmEventKind::VisitOther, FarmEventKind::Leave};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 10> kFarmEventKindCodes = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -293,6 +312,7 @@ inline constexpr size_t FarmEventKindOrdinal(FarmEventKind v) {
 
 std::string_view ToName(FarmEventKind v);
 std::string_view ToWire(FarmEventKind v);
+bool IsRetired(FarmEventKind v);
 std::optional<FarmEventKind> FarmEventKindFromWire(std::string_view wire);
 std::optional<FarmEventKind> FarmEventKindFromCode(uint8_t code);
 
@@ -309,6 +329,7 @@ enum class SovereignEventKind : uint8_t {
 };
 
 inline constexpr std::array<SovereignEventKind, 4> kSovereignEventKindMembers = {SovereignEventKind::RoleAssigned, SovereignEventKind::DoctrineSet, SovereignEventKind::PowerTriggered, SovereignEventKind::RewardGranted};
+inline constexpr std::array<SovereignEventKind, 4> kSovereignEventKindLiveMembers = {SovereignEventKind::RoleAssigned, SovereignEventKind::DoctrineSet, SovereignEventKind::PowerTriggered, SovereignEventKind::RewardGranted};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 4> kSovereignEventKindCodes = {1, 2, 3, 4};
@@ -332,6 +353,7 @@ inline constexpr size_t SovereignEventKindOrdinal(SovereignEventKind v) {
 
 std::string_view ToName(SovereignEventKind v);
 std::string_view ToWire(SovereignEventKind v);
+bool IsRetired(SovereignEventKind v);
 std::optional<SovereignEventKind> SovereignEventKindFromWire(std::string_view wire);
 std::optional<SovereignEventKind> SovereignEventKindFromCode(uint8_t code);
 
@@ -347,6 +369,7 @@ enum class SovereignRole : uint8_t {
 };
 
 inline constexpr std::array<SovereignRole, 6> kSovereignRoleMembers = {SovereignRole::None, SovereignRole::Sovereign, SovereignRole::MinisterMilitary, SovereignRole::MinisterEconomy, SovereignRole::MinisterEnvironment, SovereignRole::MinisterCraftsmanship};
+inline constexpr std::array<SovereignRole, 6> kSovereignRoleLiveMembers = {SovereignRole::None, SovereignRole::Sovereign, SovereignRole::MinisterMilitary, SovereignRole::MinisterEconomy, SovereignRole::MinisterEnvironment, SovereignRole::MinisterCraftsmanship};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 6> kSovereignRoleCodes = {0, 1, 2, 3, 4, 5};
@@ -370,6 +393,7 @@ inline constexpr size_t SovereignRoleOrdinal(SovereignRole v) {
 
 std::string_view ToName(SovereignRole v);
 std::string_view ToWire(SovereignRole v);
+bool IsRetired(SovereignRole v);
 std::optional<SovereignRole> SovereignRoleFromWire(std::string_view wire);
 std::optional<SovereignRole> SovereignRoleFromCode(uint8_t code);
 
@@ -387,6 +411,7 @@ enum class SovereignDoctrine : uint8_t {
 };
 
 inline constexpr std::array<SovereignDoctrine, 8> kSovereignDoctrineMembers = {SovereignDoctrine::None, SovereignDoctrine::Mythic, SovereignDoctrine::Military, SovereignDoctrine::Merchant, SovereignDoctrine::Progressive, SovereignDoctrine::Chancellor, SovereignDoctrine::Craftsmanship, SovereignDoctrine::Familiar};
+inline constexpr std::array<SovereignDoctrine, 8> kSovereignDoctrineLiveMembers = {SovereignDoctrine::None, SovereignDoctrine::Mythic, SovereignDoctrine::Military, SovereignDoctrine::Merchant, SovereignDoctrine::Progressive, SovereignDoctrine::Chancellor, SovereignDoctrine::Craftsmanship, SovereignDoctrine::Familiar};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 8> kSovereignDoctrineCodes = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -410,6 +435,7 @@ inline constexpr size_t SovereignDoctrineOrdinal(SovereignDoctrine v) {
 
 std::string_view ToName(SovereignDoctrine v);
 std::string_view ToWire(SovereignDoctrine v);
+bool IsRetired(SovereignDoctrine v);
 std::optional<SovereignDoctrine> SovereignDoctrineFromWire(std::string_view wire);
 std::optional<SovereignDoctrine> SovereignDoctrineFromCode(uint8_t code);
 
@@ -432,6 +458,7 @@ enum class SovereignPower : uint8_t {
 };
 
 inline constexpr std::array<SovereignPower, 9> kSovereignPowerMembers = {SovereignPower::None, SovereignPower::MinisterBuffPrimary, SovereignPower::MinisterBuffSecondary, SovereignPower::WorldBossSpawn, SovereignPower::HiddenBonds, SovereignPower::Heistia, SovereignPower::AzuriaAuction, SovereignPower::MinisterBuffTertiary, SovereignPower::CustomDrop};
+inline constexpr std::array<SovereignPower, 8> kSovereignPowerLiveMembers = {SovereignPower::None, SovereignPower::MinisterBuffPrimary, SovereignPower::MinisterBuffSecondary, SovereignPower::HiddenBonds, SovereignPower::Heistia, SovereignPower::AzuriaAuction, SovereignPower::MinisterBuffTertiary, SovereignPower::CustomDrop};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 9> kSovereignPowerCodes = {0, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -455,6 +482,7 @@ inline constexpr size_t SovereignPowerOrdinal(SovereignPower v) {
 
 std::string_view ToName(SovereignPower v);
 std::string_view ToWire(SovereignPower v);
+bool IsRetired(SovereignPower v);
 std::optional<SovereignPower> SovereignPowerFromWire(std::string_view wire);
 std::optional<SovereignPower> SovereignPowerFromCode(uint8_t code);
 
@@ -465,6 +493,7 @@ enum class LifecycleKind : uint8_t {
 };
 
 inline constexpr std::array<LifecycleKind, 2> kLifecycleKindMembers = {LifecycleKind::Start, LifecycleKind::Stop};
+inline constexpr std::array<LifecycleKind, 2> kLifecycleKindLiveMembers = {LifecycleKind::Start, LifecycleKind::Stop};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 2> kLifecycleKindCodes = {1, 2};
@@ -488,6 +517,7 @@ inline constexpr size_t LifecycleKindOrdinal(LifecycleKind v) {
 
 std::string_view ToName(LifecycleKind v);
 std::string_view ToWire(LifecycleKind v);
+bool IsRetired(LifecycleKind v);
 std::optional<LifecycleKind> LifecycleKindFromWire(std::string_view wire);
 std::optional<LifecycleKind> LifecycleKindFromCode(uint8_t code);
 
@@ -528,6 +558,7 @@ enum class GrantKind : uint8_t {
 };
 
 inline constexpr std::array<GrantKind, 14> kGrantKindMembers = {GrantKind::UNKNOWN, GrantKind::BUYBACK_DELIVERY, GrantKind::BUFF_REWARD, GrantKind::LEVEL_UP_GIFT, GrantKind::BOSS_REWARD_MAIL, GrantKind::WORLD_BOSS_REWARD_MAIL, GrantKind::EVENT_REWARD, GrantKind::MAIL_RETURN, GrantKind::PERIN_OVERFLOW, GrantKind::PLAYER_MAIL, GrantKind::FARM_HARVEST, GrantKind::STARTER_ITEM, GrantKind::GUILD_DISBAND_BANK, GrantKind::AUCTION_ESCROW_RECOVERY};
+inline constexpr std::array<GrantKind, 11> kGrantKindLiveMembers = {GrantKind::UNKNOWN, GrantKind::BUYBACK_DELIVERY, GrantKind::BUFF_REWARD, GrantKind::BOSS_REWARD_MAIL, GrantKind::EVENT_REWARD, GrantKind::MAIL_RETURN, GrantKind::PERIN_OVERFLOW, GrantKind::PLAYER_MAIL, GrantKind::FARM_HARVEST, GrantKind::STARTER_ITEM, GrantKind::AUCTION_ESCROW_RECOVERY};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 14> kGrantKindCodes = {0, 1, 2, 3, 14, 15, 16, 22, 23, 27, 35, 47, 48, 59};
@@ -551,6 +582,7 @@ inline constexpr size_t GrantKindOrdinal(GrantKind v) {
 
 std::string_view ToName(GrantKind v);
 std::string_view ToWire(GrantKind v);
+bool IsRetired(GrantKind v);
 std::optional<GrantKind> GrantKindFromWire(std::string_view wire);
 std::optional<GrantKind> GrantKindFromCode(uint8_t code);
 
@@ -567,9 +599,11 @@ enum class Vocabulary : uint8_t {
 };
 
 inline constexpr std::array<Vocabulary, 7> kVocabularyMembers = {Vocabulary::farm_event_kind, Vocabulary::sovereign_event_kind, Vocabulary::sovereign_role, Vocabulary::sovereign_doctrine, Vocabulary::sovereign_power, Vocabulary::lifecycle_kind, Vocabulary::grant_kind};
+inline constexpr std::array<Vocabulary, 7> kVocabularyLiveMembers = {Vocabulary::farm_event_kind, Vocabulary::sovereign_event_kind, Vocabulary::sovereign_role, Vocabulary::sovereign_doctrine, Vocabulary::sovereign_power, Vocabulary::lifecycle_kind, Vocabulary::grant_kind};
 
 std::string_view ToName(Vocabulary v);
 std::string_view ToWire(Vocabulary v);
+bool IsRetired(Vocabulary v);
 std::optional<Vocabulary> VocabularyFromWire(std::string_view wire);
 
 enum class RowsKind : uint8_t {
@@ -579,9 +613,11 @@ enum class RowsKind : uint8_t {
 };
 
 inline constexpr std::array<RowsKind, 2> kRowsKindMembers = {RowsKind::every, RowsKind::some};
+inline constexpr std::array<RowsKind, 2> kRowsKindLiveMembers = {RowsKind::every, RowsKind::some};
 
 std::string_view ToName(RowsKind v);
 std::string_view ToWire(RowsKind v);
+bool IsRetired(RowsKind v);
 std::optional<RowsKind> RowsKindFromWire(std::string_view wire);
 
 enum class MemberBranch : uint8_t {
@@ -964,14 +1000,14 @@ const HeaderColumns& GetHeaderColumns();
 const ProvenanceColumns& GetProvenanceColumns();
 
 namespace detail {
-inline constexpr std::array<bool, 9> kIsRetiredCells = {false, true, false, false, false, false, false, false, true};
+inline constexpr std::array<bool, 9> kIsTombstoneCells = {false, true, false, false, false, false, false, false, true};
 }  // namespace detail
 
 /// Whether `e` is a tombstone: an id no producer may send again.
-inline constexpr bool IsRetired(EventType e) {
+inline constexpr bool IsTombstone(EventType e) {
     const size_t i0 = detail::EventTypeOrdinal(e);
     if (i0 >= 9) std::abort();
-    return detail::kIsRetiredCells[i0];
+    return detail::kIsTombstoneCells[i0];
 }
 
 namespace detail {

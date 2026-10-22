@@ -79,6 +79,7 @@ export type Shape =
   /** No parameter. */
   | "none_";
 export const ShapeMembers: ReadonlyArray<Shape> = Object.freeze(["count", "place", "none_"]);
+export const ShapeLiveMembers: ReadonlyArray<Shape> = Object.freeze(["count", "place", "none_"]);
 export const ShapeNames: Readonly<Record<Shape, string>> = Object.freeze({ count: "count", place: "place", none_: "none_" });
 export const ShapeIndex: Readonly<Record<Shape, number>> = Object.freeze({ count: 0, place: 1, none_: 2 });
 
@@ -91,6 +92,7 @@ export type Event =
   /** The day changed. */
   | "new_day";
 export const EventMembers: ReadonlyArray<Event> = Object.freeze(["beat_monster", "reach_place", "new_day"]);
+export const EventLiveMembers: ReadonlyArray<Event> = Object.freeze(["beat_monster", "reach_place", "new_day"]);
 export const EventNames: Readonly<Record<Event, string>> = Object.freeze({ beat_monster: "beat_monster", reach_place: "reach_place", new_day: "new_day" });
 export const EventIndex: Readonly<Record<Event, number>> = Object.freeze({ beat_monster: 0, reach_place: 1, new_day: 2 });
 

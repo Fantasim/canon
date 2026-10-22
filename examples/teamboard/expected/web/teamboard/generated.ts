@@ -80,36 +80,45 @@ export const VERSION = 7;
 /** Who may set a flag or make a transition. */
 export type Actor = "reporter" | "triager" | "reporter_or_triager";
 export const ActorMembers: ReadonlyArray<Actor> = Object.freeze(["reporter", "triager", "reporter_or_triager"]);
+export const ActorLiveMembers: ReadonlyArray<Actor> = Object.freeze(["reporter", "triager", "reporter_or_triager"]);
 export const ActorNames: Readonly<Record<Actor, string>> = Object.freeze({ reporter: "reporter", triager: "triager", reporter_or_triager: "reporter_or_triager" });
 export const ActorIndex: Readonly<Record<Actor, number>> = Object.freeze({ reporter: 0, triager: 1, reporter_or_triager: 2 });
 
 /** Inputs a status transition may collect. */
 export type PostField = "assignee" | "fixed_in" | "reason" | "duplicate_of";
 export const PostFieldMembers: ReadonlyArray<PostField> = Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
+export const PostFieldLiveMembers: ReadonlyArray<PostField> = Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
 export const PostFieldNames: Readonly<Record<PostField, string>> = Object.freeze({ assignee: "assignee", fixed_in: "fixed_in", reason: "reason", duplicate_of: "duplicate_of" });
 export const PostFieldIndex: Readonly<Record<PostField, number>> = Object.freeze({ assignee: 0, fixed_in: 1, reason: 2, duplicate_of: 3 });
 
 export type IntentId = "issue" | "idea";
 export const IntentIdMembers: ReadonlyArray<IntentId> = Object.freeze(["issue", "idea"]);
+export const IntentIdLiveMembers: ReadonlyArray<IntentId> = Object.freeze(["issue", "idea"]);
 
 export type FlagId = "blocking" | "sensitive";
 export const FlagIdMembers: ReadonlyArray<FlagId> = Object.freeze(["blocking", "sensitive"]);
+export const FlagIdLiveMembers: ReadonlyArray<FlagId> = Object.freeze(["blocking", "sensitive"]);
 
 export type StatusId = "open" | "taken" | "fixed" | "verified" | "wont_do" | "duplicate";
 export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "taken", "fixed", "verified", "wont_do", "duplicate"]);
+export const StatusIdLiveMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "taken", "fixed", "verified", "wont_do", "duplicate"]);
 const StatusIdIndex = canonIndex(StatusIdMembers);
 
 export type ColumnId = "unclaimed" | "taken" | "fixed" | "done";
 export const ColumnIdMembers: ReadonlyArray<ColumnId> = Object.freeze(["unclaimed", "taken", "fixed", "done"]);
+export const ColumnIdLiveMembers: ReadonlyArray<ColumnId> = Object.freeze(["unclaimed", "taken", "fixed", "done"]);
 
 export type SeverityId = "low" | "normal" | "critical";
 export const SeverityIdMembers: ReadonlyArray<SeverityId> = Object.freeze(["low", "normal", "critical"]);
+export const SeverityIdLiveMembers: ReadonlyArray<SeverityId> = Object.freeze(["low", "normal", "critical"]);
 
 export type AreaGroupId = "in_game" | "out_game" | "internal";
 export const AreaGroupIdMembers: ReadonlyArray<AreaGroupId> = Object.freeze(["in_game", "out_game", "internal"]);
+export const AreaGroupIdLiveMembers: ReadonlyArray<AreaGroupId> = Object.freeze(["in_game", "out_game", "internal"]);
 
 export type AreaId = "game" | "balance" | "website" | "resource_studio" | "game_server" | "client" | "resource" | "sovcommon" | "admin_panel" | "analytics" | "team_board" | "internal";
 export const AreaIdMembers: ReadonlyArray<AreaId> = Object.freeze(["game", "balance", "website", "resource_studio", "game_server", "client", "resource", "sovcommon", "admin_panel", "analytics", "team_board", "internal"]);
+export const AreaIdLiveMembers: ReadonlyArray<AreaId> = Object.freeze(["game", "balance", "website", "resource_studio", "game_server", "client", "resource", "sovcommon", "admin_panel", "analytics", "team_board", "internal"]);
 
 /** What kind of post this is; `minRole` gates who may post it. */
 export interface Intent {

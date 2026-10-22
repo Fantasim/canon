@@ -202,11 +202,11 @@ File: File FileKind=source @1:1-47:1
             Args[0]: Arg @43:19-43:30
               Value: IdentExpr farm_events @43:19-43:30
           Y: IntLit Value=37 @43:35-43:37
-      Stmts[2]: ExpectStmt @44:3-44:38
-        X: CallExpr @44:10-44:38
-          Fun: IdentExpr isRetired @44:10-44:19
-          Args[0]: Arg @44:20-44:37
-            Value: IdentExpr world_boss_spawns @44:20-44:37
+      Stmts[2]: ExpectStmt @44:3-44:40
+        X: CallExpr @44:10-44:40
+          Fun: IdentExpr isTombstone @44:10-44:21
+          Args[0]: Arg @44:22-44:39
+            Value: IdentExpr world_boss_spawns @44:22-44:39
       Stmts[3]: ExpectStmt @45:3-45:44
         X: BinaryExpr Op=== @45:10-45:44
           X: CallExpr @45:10-45:39

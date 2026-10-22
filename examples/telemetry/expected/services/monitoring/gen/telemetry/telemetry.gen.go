@@ -94,6 +94,13 @@ func ParseEventType(wire string) (EventType, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self EventType) Retired() bool {
+	const flags = "010000001"
+	i, ok := slices.BinarySearch(enumCodes_EventType[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_EventType = [...]EventType{
 	EventTypeItemCreated, EventTypeMailItemReceived, EventTypeItemConsumed, EventTypePenyaDrops,
 	EventTypeTradePenya, EventTypeServerLifecycle, EventTypeFarmEvents, EventTypeSovereignEvents,
@@ -104,6 +111,18 @@ func EventTypeMembers() iter.Seq[EventType] {
 	return func(yield func(EventType) bool) {
 		for _, m := range enumMembers_EventType[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// EventTypeLiveMembers yields the members not retired, in EventTypeMembers order.
+func EventTypeLiveMembers() iter.Seq[EventType] {
+	const retired = "010000001"
+	return func(yield func(EventType) bool) {
+		for i, m := range enumMembers_EventType[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -175,6 +194,13 @@ func ParseTier(wire string) (Tier, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Tier) Retired() bool {
+	const flags = "00000"
+	i, ok := slices.BinarySearch(enumCodes_Tier[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Tier = [...]Tier{
 	TierHot, TierWarm, TierCool, TierTiny,
 	TierReadonly,
@@ -184,6 +210,18 @@ func TierMembers() iter.Seq[Tier] {
 	return func(yield func(Tier) bool) {
 		for _, m := range enumMembers_Tier[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// TierLiveMembers yields the members not retired, in TierMembers order.
+func TierLiveMembers() iter.Seq[Tier] {
+	const retired = "00000"
+	return func(yield func(Tier) bool) {
+		for i, m := range enumMembers_Tier[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -254,6 +292,13 @@ func ParseProducer(wire string) (Producer, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Producer) Retired() bool {
+	const flags = "0000000"
+	i, ok := slices.BinarySearch(enumCodes_Producer[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Producer = [...]Producer{
 	ProducerWorldServer, ProducerCoreServer, ProducerDatabaseServer, ProducerLoginServer,
 	ProducerCacheServer, ProducerDataIngester, ProducerItemTool,
@@ -263,6 +308,18 @@ func ProducerMembers() iter.Seq[Producer] {
 	return func(yield func(Producer) bool) {
 		for _, m := range enumMembers_Producer[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ProducerLiveMembers yields the members not retired, in ProducerMembers order.
+func ProducerLiveMembers() iter.Seq[Producer] {
+	const retired = "0000000"
+	return func(yield func(Producer) bool) {
+		for i, m := range enumMembers_Producer[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -316,12 +373,31 @@ func ParseEnqueue(wire string) (Enqueue, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Enqueue) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Enqueue = [...]Enqueue{EnqueueGenerated, EnqueueInternal}
 
 func EnqueueMembers() iter.Seq[Enqueue] {
 	return func(yield func(Enqueue) bool) {
 		for _, m := range enumMembers_Enqueue[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// EnqueueLiveMembers yields the members not retired, in EnqueueMembers order.
+func EnqueueLiveMembers() iter.Seq[Enqueue] {
+	const retired = "00"
+	return func(yield func(Enqueue) bool) {
+		for i, m := range enumMembers_Enqueue[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -401,6 +477,13 @@ func ParseSqlType(wire string) (SqlType, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self SqlType) Retired() bool {
+	const flags = "000000000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_SqlType = [...]SqlType{
 	SqlTypeUtinyint, SqlTypeUsmallint, SqlTypeUinteger, SqlTypeUbigint,
 	SqlTypeTinyint, SqlTypeSmallint, SqlTypeInteger, SqlTypeBigint,
@@ -411,6 +494,18 @@ func SqlTypeMembers() iter.Seq[SqlType] {
 	return func(yield func(SqlType) bool) {
 		for _, m := range enumMembers_SqlType[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// SqlTypeLiveMembers yields the members not retired, in SqlTypeMembers order.
+func SqlTypeLiveMembers() iter.Seq[SqlType] {
+	const retired = "000000000"
+	return func(yield func(SqlType) bool) {
+		for i, m := range enumMembers_SqlType[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -477,12 +572,31 @@ func ParseFieldKind(wire string) (FieldKind, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self FieldKind) Retired() bool {
+	const flags = "0000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_FieldKind = [...]FieldKind{FieldKindTS, FieldKindID, FieldKindScalar, FieldKindEnum8}
 
 func FieldKindMembers() iter.Seq[FieldKind] {
 	return func(yield func(FieldKind) bool) {
 		for _, m := range enumMembers_FieldKind[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// FieldKindLiveMembers yields the members not retired, in FieldKindMembers order.
+func FieldKindLiveMembers() iter.Seq[FieldKind] {
+	const retired = "0000"
+	return func(yield func(FieldKind) bool) {
+		for i, m := range enumMembers_FieldKind[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -547,12 +661,31 @@ func ParseCurrency(wire string) (Currency, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Currency) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Currency = [...]Currency{CurrencyGold, CurrencyItem, CurrencyNothing}
 
 func CurrencyMembers() iter.Seq[Currency] {
 	return func(yield func(Currency) bool) {
 		for _, m := range enumMembers_Currency[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// CurrencyLiveMembers yields the members not retired, in CurrencyMembers order.
+func CurrencyLiveMembers() iter.Seq[Currency] {
+	const retired = "000"
+	return func(yield func(Currency) bool) {
+		for i, m := range enumMembers_Currency[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -617,12 +750,31 @@ func ParseBucket(wire string) (Bucket, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Bucket) Retired() bool {
+	const flags = "0000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Bucket = [...]Bucket{BucketMint, BucketSink, BucketTransfer, BucketNothing}
 
 func BucketMembers() iter.Seq[Bucket] {
 	return func(yield func(Bucket) bool) {
 		for _, m := range enumMembers_Bucket[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// BucketLiveMembers yields the members not retired, in BucketMembers order.
+func BucketLiveMembers() iter.Seq[Bucket] {
+	const retired = "0000"
+	return func(yield func(Bucket) bool) {
+		for i, m := range enumMembers_Bucket[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -683,12 +835,31 @@ func ParseLeg(wire string) (Leg, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Leg) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Leg = [...]Leg{LegOut, LegIn}
 
 func LegMembers() iter.Seq[Leg] {
 	return func(yield func(Leg) bool) {
 		for _, m := range enumMembers_Leg[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// LegLiveMembers yields the members not retired, in LegMembers order.
+func LegLiveMembers() iter.Seq[Leg] {
+	const retired = "00"
+	return func(yield func(Leg) bool) {
+		for i, m := range enumMembers_Leg[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -785,6 +956,13 @@ func ParseFarmEventKind(wire string) (FarmEventKind, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self FarmEventKind) Retired() bool {
+	const flags = "0000000000"
+	i, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_FarmEventKind = [...]FarmEventKind{
 	FarmEventKindPurchase, FarmEventKindClaimBatch, FarmEventKindClaimSlot, FarmEventKindLevelUp,
 	FarmEventKindSetupModel, FarmEventKindRemoveModel, FarmEventKindUnlockModel, FarmEventKindEnterOwn,
@@ -795,6 +973,18 @@ func FarmEventKindMembers() iter.Seq[FarmEventKind] {
 	return func(yield func(FarmEventKind) bool) {
 		for _, m := range enumMembers_FarmEventKind[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// FarmEventKindLiveMembers yields the members not retired, in FarmEventKindMembers order.
+func FarmEventKindLiveMembers() iter.Seq[FarmEventKind] {
+	const retired = "0000000000"
+	return func(yield func(FarmEventKind) bool) {
+		for i, m := range enumMembers_FarmEventKind[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -854,12 +1044,31 @@ func ParseSovereignEventKind(wire string) (SovereignEventKind, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self SovereignEventKind) Retired() bool {
+	const flags = "0000"
+	i, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_SovereignEventKind = [...]SovereignEventKind{SovereignEventKindRoleAssigned, SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted}
 
 func SovereignEventKindMembers() iter.Seq[SovereignEventKind] {
 	return func(yield func(SovereignEventKind) bool) {
 		for _, m := range enumMembers_SovereignEventKind[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// SovereignEventKindLiveMembers yields the members not retired, in SovereignEventKindMembers order.
+func SovereignEventKindLiveMembers() iter.Seq[SovereignEventKind] {
+	const retired = "0000"
+	return func(yield func(SovereignEventKind) bool) {
+		for i, m := range enumMembers_SovereignEventKind[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -930,6 +1139,13 @@ func ParseSovereignRole(wire string) (SovereignRole, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self SovereignRole) Retired() bool {
+	const flags = "000000"
+	i, ok := slices.BinarySearch(enumCodes_SovereignRole[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_SovereignRole = [...]SovereignRole{
 	SovereignRoleNone, SovereignRoleSovereign, SovereignRoleMinisterMilitary, SovereignRoleMinisterEconomy,
 	SovereignRoleMinisterEnvironment, SovereignRoleMinisterCraftsmanship,
@@ -939,6 +1155,18 @@ func SovereignRoleMembers() iter.Seq[SovereignRole] {
 	return func(yield func(SovereignRole) bool) {
 		for _, m := range enumMembers_SovereignRole[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// SovereignRoleLiveMembers yields the members not retired, in SovereignRoleMembers order.
+func SovereignRoleLiveMembers() iter.Seq[SovereignRole] {
+	const retired = "000000"
+	return func(yield func(SovereignRole) bool) {
+		for i, m := range enumMembers_SovereignRole[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -1011,6 +1239,13 @@ func ParseSovereignDoctrine(wire string) (SovereignDoctrine, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self SovereignDoctrine) Retired() bool {
+	const flags = "00000000"
+	i, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_SovereignDoctrine = [...]SovereignDoctrine{
 	SovereignDoctrineNone, SovereignDoctrineMythic, SovereignDoctrineMilitary, SovereignDoctrineMerchant,
 	SovereignDoctrineProgressive, SovereignDoctrineChancellor, SovereignDoctrineCraftsmanship, SovereignDoctrineFamiliar,
@@ -1020,6 +1255,18 @@ func SovereignDoctrineMembers() iter.Seq[SovereignDoctrine] {
 	return func(yield func(SovereignDoctrine) bool) {
 		for _, m := range enumMembers_SovereignDoctrine[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// SovereignDoctrineLiveMembers yields the members not retired, in SovereignDoctrineMembers order.
+func SovereignDoctrineLiveMembers() iter.Seq[SovereignDoctrine] {
+	const retired = "00000000"
+	return func(yield func(SovereignDoctrine) bool) {
+		for i, m := range enumMembers_SovereignDoctrine[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -1101,6 +1348,13 @@ func ParseSovereignPower(wire string) (SovereignPower, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self SovereignPower) Retired() bool {
+	const flags = "000100000"
+	i, ok := slices.BinarySearch(enumCodes_SovereignPower[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_SovereignPower = [...]SovereignPower{
 	SovereignPowerNone, SovereignPowerMinisterBuffPrimary, SovereignPowerMinisterBuffSecondary, SovereignPowerWorldBossSpawn,
 	SovereignPowerHiddenBonds, SovereignPowerHeistia, SovereignPowerAzuriaAuction, SovereignPowerMinisterBuffTertiary,
@@ -1111,6 +1365,18 @@ func SovereignPowerMembers() iter.Seq[SovereignPower] {
 	return func(yield func(SovereignPower) bool) {
 		for _, m := range enumMembers_SovereignPower[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// SovereignPowerLiveMembers yields the members not retired, in SovereignPowerMembers order.
+func SovereignPowerLiveMembers() iter.Seq[SovereignPower] {
+	const retired = "000100000"
+	return func(yield func(SovereignPower) bool) {
+		for i, m := range enumMembers_SovereignPower[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -1164,12 +1430,31 @@ func ParseLifecycleKind(wire string) (LifecycleKind, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self LifecycleKind) Retired() bool {
+	const flags = "00"
+	i, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_LifecycleKind = [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop}
 
 func LifecycleKindMembers() iter.Seq[LifecycleKind] {
 	return func(yield func(LifecycleKind) bool) {
 		for _, m := range enumMembers_LifecycleKind[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// LifecycleKindLiveMembers yields the members not retired, in LifecycleKindMembers order.
+func LifecycleKindLiveMembers() iter.Seq[LifecycleKind] {
+	const retired = "00"
+	return func(yield func(LifecycleKind) bool) {
+		for i, m := range enumMembers_LifecycleKind[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -1273,6 +1558,13 @@ func ParseGrantKind(wire string) (GrantKind, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self GrantKind) Retired() bool {
+	const flags = "00010100000010"
+	i, ok := slices.BinarySearch(enumCodes_GrantKind[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_GrantKind = [...]GrantKind{
 	GrantKindUnknown, GrantKindBuybackDelivery, GrantKindBuffReward, GrantKindLevelUpGift,
 	GrantKindBossRewardMail, GrantKindWorldBossRewardMail, GrantKindEventReward, GrantKindMailReturn,
@@ -1284,6 +1576,18 @@ func GrantKindMembers() iter.Seq[GrantKind] {
 	return func(yield func(GrantKind) bool) {
 		for _, m := range enumMembers_GrantKind[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// GrantKindLiveMembers yields the members not retired, in GrantKindMembers order.
+func GrantKindLiveMembers() iter.Seq[GrantKind] {
+	const retired = "00010100000010"
+	return func(yield func(GrantKind) bool) {
+		for i, m := range enumMembers_GrantKind[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -1350,6 +1654,13 @@ func ParseVocabulary(wire string) (Vocabulary, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Vocabulary) Retired() bool {
+	const flags = "0000000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Vocabulary = [...]Vocabulary{
 	VocabularyFarmEventKind, VocabularySovereignEventKind, VocabularySovereignRole, VocabularySovereignDoctrine,
 	VocabularySovereignPower, VocabularyLifecycleKind, VocabularyGrantKind,
@@ -1359,6 +1670,18 @@ func VocabularyMembers() iter.Seq[Vocabulary] {
 	return func(yield func(Vocabulary) bool) {
 		for _, m := range enumMembers_Vocabulary[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// VocabularyLiveMembers yields the members not retired, in VocabularyMembers order.
+func VocabularyLiveMembers() iter.Seq[Vocabulary] {
+	const retired = "0000000"
+	return func(yield func(Vocabulary) bool) {
+		for i, m := range enumMembers_Vocabulary[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -1417,6 +1740,13 @@ func ParseRowsKind(wire string) (RowsKind, bool) {
 		return enumFound_RowsKind[i], true
 	}
 	return 0, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self RowsKind) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // MarshalText writes the wire value, never the position.
@@ -2613,10 +2943,10 @@ func GetHeaderColumns() *HeaderColumns { return &telemetryValues().headerColumns
 // GetProvenanceColumns: The provenance prefix of every CREATE TABLE, in order.
 func GetProvenanceColumns() *ProvenanceColumns { return &telemetryValues().provenanceColumns }
 
-var isRetiredTable = [9]bool{false, true, false, false, false, false, false, false, true}
+var isTombstoneTable = [9]bool{false, true, false, false, false, false, false, false, true}
 
-// IsRetired: Whether `e` is a tombstone: an id no producer may send again.
-func IsRetired(e EventType) bool {
+// IsTombstone: Whether `e` is a tombstone: an id no producer may send again.
+func IsTombstone(e EventType) bool {
 	e_i := -1
 	switch e {
 	case EventTypeItemCreated:
@@ -2638,7 +2968,7 @@ func IsRetired(e EventType) bool {
 	case EventTypeWorldBossSpawns:
 		e_i = 8
 	}
-	return isRetiredTable[e_i]
+	return isTombstoneTable[e_i]
 }
 
 var versionOfTable = [9]uint8{5, 0, 3, 2, 2, 1, 2, 1, 0}

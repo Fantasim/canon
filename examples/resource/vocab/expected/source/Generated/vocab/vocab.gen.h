@@ -26,6 +26,7 @@ enum class Element : uint8_t {
 };
 
 inline constexpr std::array<Element, 5> kElementMembers = {Element::FIRE, Element::WATER, Element::ELECTRICITY, Element::WIND, Element::EARTH};
+inline constexpr std::array<Element, 5> kElementLiveMembers = {Element::FIRE, Element::WATER, Element::ELECTRICITY, Element::WIND, Element::EARTH};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 5> kElementCodes = {1, 2, 3, 4, 5};
@@ -49,6 +50,7 @@ inline constexpr size_t ElementOrdinal(Element v) {
 
 std::string_view ToName(Element v);
 std::string_view ToWire(Element v);
+bool IsRetired(Element v);
 std::optional<Element> ElementFromWire(std::string_view wire);
 std::optional<Element> ElementFromCode(uint8_t code);
 
@@ -60,6 +62,7 @@ enum class Stage : uint16_t {
 };
 
 inline constexpr std::array<Stage, 3> kStageMembers = {Stage::Stage_1, Stage::Stage_2, Stage::Stage_3};
+inline constexpr std::array<Stage, 3> kStageLiveMembers = {Stage::Stage_1, Stage::Stage_2, Stage::Stage_3};
 
 namespace detail {
 inline constexpr std::array<uint16_t, 3> kStageCodes = {100, 101, 102};
@@ -83,6 +86,7 @@ inline constexpr size_t StageOrdinal(Stage v) {
 
 std::string_view ToName(Stage v);
 std::string_view ToWire(Stage v);
+bool IsRetired(Stage v);
 std::optional<Stage> StageFromWire(std::string_view wire);
 std::optional<Stage> StageFromCode(uint16_t code);
 
@@ -97,6 +101,7 @@ enum class QuestStyle : uint8_t {
 };
 
 inline constexpr std::array<QuestStyle, 6> kQuestStyleMembers = {QuestStyle::daily, QuestStyle::weekly, QuestStyle::forever, QuestStyle::season_pass, QuestStyle::pvp, QuestStyle::azure};
+inline constexpr std::array<QuestStyle, 6> kQuestStyleLiveMembers = {QuestStyle::daily, QuestStyle::weekly, QuestStyle::forever, QuestStyle::season_pass, QuestStyle::pvp, QuestStyle::azure};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 6> kQuestStyleCodes = {1, 2, 3, 4, 5, 6};
@@ -120,6 +125,7 @@ inline constexpr size_t QuestStyleOrdinal(QuestStyle v) {
 
 std::string_view ToName(QuestStyle v);
 std::string_view ToWire(QuestStyle v);
+bool IsRetired(QuestStyle v);
 std::optional<QuestStyle> QuestStyleFromWire(std::string_view wire);
 std::optional<QuestStyle> QuestStyleFromCode(uint8_t code);
 
@@ -130,6 +136,7 @@ enum class RewardType : uint8_t {
 };
 
 inline constexpr std::array<RewardType, 2> kRewardTypeMembers = {RewardType::activity_points, RewardType::season_pass_exp};
+inline constexpr std::array<RewardType, 2> kRewardTypeLiveMembers = {RewardType::activity_points, RewardType::season_pass_exp};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 2> kRewardTypeCodes = {1, 2};
@@ -153,6 +160,7 @@ inline constexpr size_t RewardTypeOrdinal(RewardType v) {
 
 std::string_view ToName(RewardType v);
 std::string_view ToWire(RewardType v);
+bool IsRetired(RewardType v);
 std::optional<RewardType> RewardTypeFromWire(std::string_view wire);
 std::optional<RewardType> RewardTypeFromCode(uint8_t code);
 
@@ -170,9 +178,11 @@ enum class ItemKind1 : uint8_t {
 };
 
 inline constexpr std::array<ItemKind1, 8> kItemKind1Members = {ItemKind1::IK1_GOLD, ItemKind1::IK1_WEAPON, ItemKind1::IK1_ARMOR, ItemKind1::IK1_GENERAL, ItemKind1::IK1_RIDE, ItemKind1::IK1_SYSTEM, ItemKind1::IK1_CHARGED, ItemKind1::IK1_HOUSING};
+inline constexpr std::array<ItemKind1, 8> kItemKind1LiveMembers = {ItemKind1::IK1_GOLD, ItemKind1::IK1_WEAPON, ItemKind1::IK1_ARMOR, ItemKind1::IK1_GENERAL, ItemKind1::IK1_RIDE, ItemKind1::IK1_SYSTEM, ItemKind1::IK1_CHARGED, ItemKind1::IK1_HOUSING};
 
 std::string_view ToName(ItemKind1 v);
 std::string_view ToWire(ItemKind1 v);
+bool IsRetired(ItemKind1 v);
 std::optional<ItemKind1> ItemKind1FromWire(std::string_view wire);
 
 /// Which kind of parameter an event's filter takes (eventType.json's `param`; an entry
@@ -190,9 +200,11 @@ enum class ParamKind : uint8_t {
 };
 
 inline constexpr std::array<ParamKind, 9> kParamKindMembers = {ParamKind::none_, ParamKind::monster, ParamKind::item, ParamKind::dungeon, ParamKind::element, ParamKind::stat, ParamKind::upgrade_type, ParamKind::game_mode, ParamKind::quest_style};
+inline constexpr std::array<ParamKind, 9> kParamKindLiveMembers = {ParamKind::none_, ParamKind::monster, ParamKind::item, ParamKind::dungeon, ParamKind::element, ParamKind::stat, ParamKind::upgrade_type, ParamKind::game_mode, ParamKind::quest_style};
 
 std::string_view ToName(ParamKind v);
 std::string_view ToWire(ParamKind v);
+bool IsRetired(ParamKind v);
 std::optional<ParamKind> ParamKindFromWire(std::string_view wire);
 
 enum class ParamBranch : uint8_t {
@@ -238,6 +250,7 @@ enum class EventTypeId : uint8_t {
 };
 
 std::string_view ToWire(EventTypeId v);
+bool IsRetired(EventTypeId v);
 std::optional<EventTypeId> EventTypeIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read EventTypeIdFromWire(s).

@@ -318,6 +318,12 @@ std::string_view ToWire(Element v) {
     return kWires[i];
 }
 
+bool IsRetired(Element v) {
+    static constexpr std::array<bool, 5> kRetired = {false, false, false, false, false};
+    const size_t i = detail::ElementOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Element> ElementFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 5> kKeys = {"EARTH", "ELECTRICITY", "FIRE", "WATER", "WIND"};
     static constexpr std::array<Element, 5> kValues = {
@@ -361,6 +367,12 @@ std::string_view ToWire(Stage v) {
     return kWires[i];
 }
 
+bool IsRetired(Stage v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    const size_t i = detail::StageOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Stage> StageFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 3> kKeys = {"Stage_1", "Stage_2", "Stage_3"};
     static constexpr std::array<Stage, 3> kValues = {Stage::Stage_1, Stage::Stage_2, Stage::Stage_3};
@@ -396,6 +408,12 @@ std::string_view ToWire(QuestStyle v) {
     const size_t i = detail::QuestStyleOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(QuestStyle v) {
+    static constexpr std::array<bool, 6> kRetired = {false, false, false, false, false, false};
+    const size_t i = detail::QuestStyleOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<QuestStyle> QuestStyleFromWire(std::string_view wire) {
@@ -440,6 +458,12 @@ std::string_view ToWire(RewardType v) {
     const size_t i = detail::RewardTypeOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(RewardType v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = detail::RewardTypeOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<RewardType> RewardTypeFromWire(std::string_view wire) {
@@ -495,6 +519,12 @@ std::string_view ToWire(ItemKind1 v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(ItemKind1 v) {
+    static constexpr std::array<bool, 8> kRetired = {false, false, false, false, false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<ItemKind1> ItemKind1FromWire(std::string_view wire) {
@@ -564,6 +594,12 @@ std::string_view ToWire(ParamKind v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(ParamKind v) {
+    static constexpr std::array<bool, 9> kRetired = {false, false, false, false, false, false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<ParamKind> ParamKindFromWire(std::string_view wire) {
@@ -636,6 +672,40 @@ std::string_view ToWire(EventTypeId v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(EventTypeId v) {
+    static constexpr std::array<bool, 27> kRetired = {
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+    };
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<EventTypeId> EventTypeIdFromWire(std::string_view key) {

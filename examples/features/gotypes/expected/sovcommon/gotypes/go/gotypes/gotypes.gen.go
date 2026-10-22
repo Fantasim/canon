@@ -51,12 +51,31 @@ func ParseRarity(wire string) (Rarity, bool) {
 	return self, self.Known()
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Rarity) Retired() bool {
+	const flags = "000"
+	i, ok := slices.BinarySearch(enumKeys_Rarity[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Rarity = [...]Rarity{RarityCommon, RarityRare, RaritySeason1}
 
 func RarityMembers() iter.Seq[Rarity] {
 	return func(yield func(Rarity) bool) {
 		for _, m := range enumMembers_Rarity[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// RarityLiveMembers yields the members not retired, in RarityMembers order.
+func RarityLiveMembers() iter.Seq[Rarity] {
+	const retired = "000"
+	return func(yield func(Rarity) bool) {
+		for i, m := range enumMembers_Rarity[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -102,12 +121,31 @@ func ParseElement(wire string) (Element, bool) {
 	return self, self.Known()
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Element) Retired() bool {
+	const flags = "00"
+	i, ok := slices.BinarySearch(enumKeys_Element[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Element = [...]Element{ElementFire, ElementWater}
 
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
 		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ElementLiveMembers yields the members not retired, in ElementMembers order.
+func ElementLiveMembers() iter.Seq[Element] {
+	const retired = "00"
+	return func(yield func(Element) bool) {
+		for i, m := range enumMembers_Element[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

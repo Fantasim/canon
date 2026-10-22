@@ -48,12 +48,31 @@ func ParseAim(wire string) (Aim, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Aim) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Aim = [...]Aim{AimGold, AimMood}
 
 func AimMembers() iter.Seq[Aim] {
 	return func(yield func(Aim) bool) {
 		for _, m := range enumMembers_Aim[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// AimLiveMembers yields the members not retired, in AimMembers order.
+func AimLiveMembers() iter.Seq[Aim] {
+	const retired = "00"
+	return func(yield func(Aim) bool) {
+		for i, m := range enumMembers_Aim[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -114,12 +133,31 @@ func ParseMood(wire string) (Mood, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Mood) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Mood = [...]Mood{MoodCalm, MoodGrim}
 
 func MoodMembers() iter.Seq[Mood] {
 	return func(yield func(Mood) bool) {
 		for _, m := range enumMembers_Mood[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// MoodLiveMembers yields the members not retired, in MoodMembers order.
+func MoodLiveMembers() iter.Seq[Mood] {
+	const retired = "00"
+	return func(yield func(Mood) bool) {
+		for i, m := range enumMembers_Mood[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -178,6 +216,13 @@ func ParseRewardKind(wire string) (RewardKind, bool) {
 		return enumFound_RewardKind[i], true
 	}
 	return 0, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self RewardKind) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // MarshalText writes the wire value, never the position.
@@ -258,6 +303,13 @@ func ParseStatusID(key string) (StatusID, bool) {
 		return enumFound_StatusID[i], true
 	}
 	return StatusID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self StatusID) Retired() bool {
+	const flags = "001"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 type MarkerID string

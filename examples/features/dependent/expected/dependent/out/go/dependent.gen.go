@@ -50,12 +50,31 @@ func ParseGoal(wire string) (Goal, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Goal) Retired() bool {
+	const flags = "0000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Goal = [...]Goal{GoalKill, GoalCollect, GoalReachLevel, GoalVisit}
 
 func GoalMembers() iter.Seq[Goal] {
 	return func(yield func(Goal) bool) {
 		for _, m := range enumMembers_Goal[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// GoalLiveMembers yields the members not retired, in GoalMembers order.
+func GoalLiveMembers() iter.Seq[Goal] {
+	const retired = "0000"
+	return func(yield func(Goal) bool) {
+		for i, m := range enumMembers_Goal[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -148,6 +167,13 @@ func ParseObjectiveID(key string) (ObjectiveID, bool) {
 		return enumFound_ObjectiveID[i], true
 	}
 	return ObjectiveID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self ObjectiveID) Retired() bool {
+	const flags = "000"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // Target: What an objective aims at, by goal: a monster, a number of items, a level. Visiting a

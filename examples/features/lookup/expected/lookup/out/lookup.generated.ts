@@ -35,12 +35,14 @@ function canonFreeze<T>(x: T): T {
 /** Upgrade grades of a weapon, lowest first. */
 export type Grade = "normal" | "unique" | "ultimate";
 export const GradeMembers: ReadonlyArray<Grade> = Object.freeze(["normal", "unique", "ultimate"]);
+export const GradeLiveMembers: ReadonlyArray<Grade> = Object.freeze(["normal", "unique", "ultimate"]);
 export const GradeNames: Readonly<Record<Grade, string>> = Object.freeze({ normal: "normal", unique: "unique", ultimate: "ultimate" });
 export const GradeIndex: Readonly<Record<Grade, number>> = Object.freeze({ normal: 0, unique: 1, ultimate: 2 });
 
 /** Job tiers, lowest first. */
 export type Tier = "vagrant" | "expert" | "pro" | "master" | "hero";
 export const TierMembers: ReadonlyArray<Tier> = Object.freeze(["vagrant", "expert", "pro", "master", "hero"]);
+export const TierLiveMembers: ReadonlyArray<Tier> = Object.freeze(["vagrant", "expert", "pro", "master", "hero"]);
 export const TierNames: Readonly<Record<Tier, string>> = Object.freeze({ vagrant: "vagrant", expert: "expert", pro: "pro", master: "master", hero: "hero" });
 export const TierIndex: Readonly<Record<Tier, number>> = Object.freeze({ vagrant: 0, expert: 1, pro: 2, master: 3, hero: 4 });
 

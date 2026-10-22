@@ -33,6 +33,7 @@ export interface CanonTable<K, T> {
  */
 export type Tone = "warning" | "info" | "accent" | "success" | "neutral" | "danger" | "series-1" | "series-2" | "series-3" | "series-4" | "series-5" | "series-6";
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "accent", "success", "neutral", "danger", "series-1", "series-2", "series-3", "series-4", "series-5", "series-6"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "accent", "success", "neutral", "danger", "series-1", "series-2", "series-3", "series-4", "series-5", "series-6"]);
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ warning: "warning", info: "info", accent: "accent", success: "success", neutral: "neutral", danger: "danger", "series-1": "series_1", "series-2": "series_2", "series-3": "series_3", "series-4": "series_4", "series-5": "series_5", "series-6": "series_6" });
 export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ warning: 0, info: 1, accent: 2, success: 3, neutral: 4, danger: 5, "series-1": 6, "series-2": 7, "series-3": 8, "series-4": 9, "series-5": 10, "series-6": 11 });
 
@@ -42,5 +43,6 @@ export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ warning
  */
 export type Icon = "alert-triangle" | "archive" | "bar-chart" | "check" | "columns" | "database" | "gamepad" | "globe" | "hand" | "inbox" | "layers" | "lightbulb" | "lock" | "monitor" | "package" | "scale" | "server" | "shield" | "terminal";
 export const IconMembers: ReadonlyArray<Icon> = Object.freeze(["alert-triangle", "archive", "bar-chart", "check", "columns", "database", "gamepad", "globe", "hand", "inbox", "layers", "lightbulb", "lock", "monitor", "package", "scale", "server", "shield", "terminal"]);
+export const IconLiveMembers: ReadonlyArray<Icon> = Object.freeze(["alert-triangle", "archive", "bar-chart", "check", "columns", "database", "gamepad", "globe", "hand", "inbox", "layers", "lightbulb", "lock", "monitor", "package", "scale", "server", "shield", "terminal"]);
 export const IconNames: Readonly<Record<Icon, string>> = Object.freeze({ "alert-triangle": "alert_triangle", archive: "archive", "bar-chart": "bar_chart", check: "check", columns: "columns", database: "database", gamepad: "gamepad", globe: "globe", hand: "hand", inbox: "inbox", layers: "layers", lightbulb: "lightbulb", lock: "lock", monitor: "monitor", package: "package", scale: "scale", server: "server", shield: "shield", terminal: "terminal" });
 export const IconIndex: Readonly<Record<Icon, number>> = Object.freeze({ "alert-triangle": 0, archive: 1, "bar-chart": 2, check: 3, columns: 4, database: 5, gamepad: 6, globe: 7, hand: 8, inbox: 9, layers: 10, lightbulb: 11, lock: 12, monitor: 13, package: 14, scale: 15, server: 16, shield: 17, terminal: 18 });

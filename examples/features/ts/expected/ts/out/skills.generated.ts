@@ -121,6 +121,7 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
 /** How rare a skill is, lowest first. */
 export type Rarity = "common" | "rare" | "epic";
 export const RarityMembers: ReadonlyArray<Rarity> = Object.freeze(["common", "rare", "epic"]);
+export const RarityLiveMembers: ReadonlyArray<Rarity> = Object.freeze(["common", "rare", "epic"]);
 export const RarityNames: Readonly<Record<Rarity, string>> = Object.freeze({ common: "common", rare: "rare", epic: "epic" });
 export const RarityIndex: Readonly<Record<Rarity, number>> = Object.freeze({ common: 0, rare: 1, epic: 2 });
 

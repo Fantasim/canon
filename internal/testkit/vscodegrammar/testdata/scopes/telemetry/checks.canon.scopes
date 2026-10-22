@@ -127,9 +127,9 @@
 43:31-33 "==" keyword.operator.canon
 43:34-36 "37" constant.numeric.integer.canon
 44:2-8 "expect" keyword.other.canon
-44:9-18 "isRetired" entity.name.function.call.canon
-44:18-19 "(" punctuation.section.parens.begin.canon
-44:36-37 ")" punctuation.section.parens.end.canon
+44:9-20 "isTombstone" entity.name.function.call.canon
+44:20-21 "(" punctuation.section.parens.begin.canon
+44:38-39 ")" punctuation.section.parens.end.canon
 45:2-8 "expect" keyword.other.canon
 45:9-18 "versionOf" entity.name.function.call.canon
 45:18-19 "(" punctuation.section.parens.begin.canon

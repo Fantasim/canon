@@ -68,6 +68,13 @@ func ParseZoneID(key string) (ZoneID, bool) {
 	return ZoneID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self ZoneID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // LevelRangeID is the key of an entry of bands: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):
 // its position is not an id, and changes when entry files move.
@@ -121,6 +128,13 @@ func ParseLevelRangeID(key string) (LevelRangeID, bool) {
 	return LevelRangeID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self LevelRangeID) Retired() bool {
+	const flags = "01"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // StatusID is the key of an entry of moods: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):
 // its position is not an id, and changes when entry files move.
@@ -171,6 +185,13 @@ func ParseStatusID(key string) (StatusID, bool) {
 		return enumFound_StatusID[i], true
 	}
 	return StatusID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self StatusID) Retired() bool {
+	const flags = "0"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 type MarkerID string

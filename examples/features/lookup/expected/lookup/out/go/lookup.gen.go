@@ -46,12 +46,31 @@ func ParseGrade(wire string) (Grade, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Grade) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Grade = [...]Grade{GradeNormal, GradeUnique, GradeUltimate}
 
 func GradeMembers() iter.Seq[Grade] {
 	return func(yield func(Grade) bool) {
 		for _, m := range enumMembers_Grade[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// GradeLiveMembers yields the members not retired, in GradeMembers order.
+func GradeLiveMembers() iter.Seq[Grade] {
+	const retired = "000"
+	return func(yield func(Grade) bool) {
+		for i, m := range enumMembers_Grade[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -124,6 +143,13 @@ func ParseTier(wire string) (Tier, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Tier) Retired() bool {
+	const flags = "00000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Tier = [...]Tier{
 	TierVagrant, TierExpert, TierPro, TierMaster,
 	TierHero,
@@ -133,6 +159,18 @@ func TierMembers() iter.Seq[Tier] {
 	return func(yield func(Tier) bool) {
 		for _, m := range enumMembers_Tier[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// TierLiveMembers yields the members not retired, in TierMembers order.
+func TierLiveMembers() iter.Seq[Tier] {
+	const retired = "00000"
+	return func(yield func(Tier) bool) {
+		for i, m := range enumMembers_Tier[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

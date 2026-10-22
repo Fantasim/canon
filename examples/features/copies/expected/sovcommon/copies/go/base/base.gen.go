@@ -48,12 +48,31 @@ func ParseTone(wire string) (Tone, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Tone) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Tone = [...]Tone{ToneRed, ToneBlue}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
 		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ToneLiveMembers yields the members not retired, in ToneMembers order.
+func ToneLiveMembers() iter.Seq[Tone] {
+	const retired = "00"
+	return func(yield func(Tone) bool) {
+		for i, m := range enumMembers_Tone[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

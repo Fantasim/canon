@@ -1082,15 +1082,15 @@
 391:0-65 "/// Whether `e` is a tombstone: an id no producer may send again." comment.line.documentation.canon
 392:0-6 "export" storage.modifier.canon
 392:7-9 "fn" storage.type.function.canon
-392:10-19 "isRetired" entity.name.function.canon
-392:20-21 "e" variable.other.property.canon
-392:21-22 ":" punctuation.separator.key.canon
-392:23-32 "EventType" entity.name.type.canon
-392:34-36 "->" keyword.operator.canon
-392:37-41 "Bool" entity.name.type.canon
-392:44-50 "return" keyword.control.canon
-392:52-53 "." punctuation.accessor.canon
-392:53-60 "retired" variable.other.property.canon
+392:10-21 "isTombstone" entity.name.function.canon
+392:22-23 "e" variable.other.property.canon
+392:23-24 ":" punctuation.separator.key.canon
+392:25-34 "EventType" entity.name.type.canon
+392:36-38 "->" keyword.operator.canon
+392:39-43 "Bool" entity.name.type.canon
+392:46-52 "return" keyword.control.canon
+392:54-55 "." punctuation.accessor.canon
+392:55-62 "retired" variable.other.property.canon
 394:0-84 "/// The current layout version of `e` (the wire version byte); 0 for a retired type." comment.line.documentation.canon
 395:0-6 "export" storage.modifier.canon
 395:7-9 "fn" storage.type.function.canon

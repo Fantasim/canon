@@ -33,9 +33,9 @@ func TestLookups(t *testing.T) {
 	} {
 		if c.e.Code() != c.code || telemetry.VersionOf(c.e) != c.version || telemetry.TierOf(c.e) != c.tier ||
 			telemetry.WireSize(c.e) != c.size || telemetry.HasInstanceID(c.e) != c.instance ||
-			telemetry.IsRetired(c.e) != c.retired || telemetry.TableOf(c.e) != c.e.String() {
+			c.e.Retired() != c.retired || telemetry.TableOf(c.e) != c.e.String() {
 			t.Errorf("%s: code %d v%d %s size %d instance %t retired %t", c.e, c.e.Code(), telemetry.VersionOf(c.e),
-				telemetry.TierOf(c.e), telemetry.WireSize(c.e), telemetry.HasInstanceID(c.e), telemetry.IsRetired(c.e))
+				telemetry.TierOf(c.e), telemetry.WireSize(c.e), telemetry.HasInstanceID(c.e), c.e.Retired())
 		}
 	}
 	if e, ok := telemetry.EventTypeFromCode(156); !ok || e != telemetry.EventTypeWorldBossSpawns {

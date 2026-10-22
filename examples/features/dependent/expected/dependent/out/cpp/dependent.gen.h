@@ -31,9 +31,11 @@ enum class Goal : uint8_t {
 };
 
 inline constexpr std::array<Goal, 4> kGoalMembers = {Goal::kill, Goal::collect, Goal::reach_level, Goal::visit};
+inline constexpr std::array<Goal, 4> kGoalLiveMembers = {Goal::kill, Goal::collect, Goal::reach_level, Goal::visit};
 
 std::string_view ToName(Goal v);
 std::string_view ToWire(Goal v);
+bool IsRetired(Goal v);
 std::optional<Goal> GoalFromWire(std::string_view wire);
 
 enum class TargetBranch : uint8_t {

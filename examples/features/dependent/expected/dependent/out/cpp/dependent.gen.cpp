@@ -142,6 +142,12 @@ std::string_view ToWire(Goal v) {
     return kWires[i];
 }
 
+bool IsRetired(Goal v) {
+    static constexpr std::array<bool, 4> kRetired = {false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Goal> GoalFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 4> kKeys = {"collect", "kill", "reach_level", "visit"};
     static constexpr std::array<Goal, 4> kValues = {Goal::collect, Goal::kill, Goal::reach_level, Goal::visit};

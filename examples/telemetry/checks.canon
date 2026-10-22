@@ -41,6 +41,6 @@ test "a role whose vocabulary no column of its table holds fails" {
 test "the lookups agree with the data" {
   expect versionOf(farm_events) == 2
   expect wireSize(farm_events) == 37
-  expect isRetired(world_boss_spawns)
+  expect isTombstone(world_boss_spawns)
   expect versionOf(mail_item_received) == 0
 }

@@ -55,12 +55,31 @@ func ParseShape(wire string) (Shape, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Shape) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Shape = [...]Shape{ShapeCount, ShapePlace, ShapeNone}
 
 func ShapeMembers() iter.Seq[Shape] {
 	return func(yield func(Shape) bool) {
 		for _, m := range enumMembers_Shape[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ShapeLiveMembers yields the members not retired, in ShapeMembers order.
+func ShapeLiveMembers() iter.Seq[Shape] {
+	const retired = "000"
+	return func(yield func(Shape) bool) {
+		for i, m := range enumMembers_Shape[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -125,12 +144,31 @@ func ParseEvent(wire string) (Event, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Event) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Event = [...]Event{EventBeatMonster, EventReachPlace, EventNewDay}
 
 func EventMembers() iter.Seq[Event] {
 	return func(yield func(Event) bool) {
 		for _, m := range enumMembers_Event[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// EventLiveMembers yields the members not retired, in EventMembers order.
+func EventLiveMembers() iter.Seq[Event] {
+	const retired = "000"
+	return func(yield func(Event) bool) {
+		for i, m := range enumMembers_Event[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

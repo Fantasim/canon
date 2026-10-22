@@ -65,6 +65,12 @@ std::string_view ToWire(Aim v) {
     return kWires[i];
 }
 
+bool IsRetired(Aim v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Aim> AimFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"gold", "mood"};
     static constexpr std::array<Aim, 2> kValues = {Aim::gold, Aim::mood};
@@ -94,6 +100,12 @@ std::string_view ToWire(Mood v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Mood v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Mood> MoodFromWire(std::string_view wire) {
@@ -127,6 +139,12 @@ std::string_view ToWire(RewardKind v) {
     return kWires[i];
 }
 
+bool IsRetired(RewardKind v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"coins", "nothing"};
     static constexpr std::array<RewardKind, 2> kValues = {RewardKind::coins, RewardKind::nothing};
@@ -149,6 +167,12 @@ std::string_view ToWire(StatusId v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(StatusId v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, true};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<StatusId> StatusIdFromWire(std::string_view key) {

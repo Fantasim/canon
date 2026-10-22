@@ -24,7 +24,7 @@ static_assert(Telemetry::HasInstanceId(EventType::item_created), "item_created h
 static_assert(!Telemetry::HasInstanceId(EventType::farm_events), "farm_events has none");
 static_assert(Telemetry::Emits(EventType::server_lifecycle, Producer::LoginServer), "the spine is everywhere");
 static_assert(!Telemetry::Emits(EventType::sovereign_events, Producer::WorldServer), "CoreServer only");
-static_assert(Telemetry::IsRetired(EventType::mail_item_received), "20 is a tombstone");
+static_assert(Telemetry::IsTombstone(EventType::mail_item_received), "20 is a tombstone");
 static_assert(Telemetry::TableOf(EventType::trade_penya) == "trade_penya", "the member names the table");
 static_assert(Telemetry::CreateTableSql(EventType::farm_events).substr(0, 39) ==
                   "CREATE TABLE IF NOT EXISTS farm_events ",

@@ -19,9 +19,11 @@ enum class Tone : uint8_t {
 };
 
 inline constexpr std::array<Tone, 2> kToneMembers = {Tone::red, Tone::blue};
+inline constexpr std::array<Tone, 2> kToneLiveMembers = {Tone::red, Tone::blue};
 
 std::string_view ToName(Tone v);
 std::string_view ToWire(Tone v);
+bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
 namespace detail {

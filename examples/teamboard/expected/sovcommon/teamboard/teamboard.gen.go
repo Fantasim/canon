@@ -54,12 +54,31 @@ func ParseActor(wire string) (Actor, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Actor) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Actor = [...]Actor{ActorReporter, ActorTriager, ActorReporterOrTriager}
 
 func ActorMembers() iter.Seq[Actor] {
 	return func(yield func(Actor) bool) {
 		for _, m := range enumMembers_Actor[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ActorLiveMembers yields the members not retired, in ActorMembers order.
+func ActorLiveMembers() iter.Seq[Actor] {
+	const retired = "000"
+	return func(yield func(Actor) bool) {
+		for i, m := range enumMembers_Actor[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -122,12 +141,31 @@ func ParsePostField(wire string) (PostField, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self PostField) Retired() bool {
+	const flags = "0000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_PostField = [...]PostField{PostFieldAssignee, PostFieldFixedIn, PostFieldReason, PostFieldDuplicateOf}
 
 func PostFieldMembers() iter.Seq[PostField] {
 	return func(yield func(PostField) bool) {
 		for _, m := range enumMembers_PostField[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// PostFieldLiveMembers yields the members not retired, in PostFieldMembers order.
+func PostFieldLiveMembers() iter.Seq[PostField] {
+	const retired = "0000"
+	return func(yield func(PostField) bool) {
+		for i, m := range enumMembers_PostField[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -206,6 +244,13 @@ func ParseIntentID(key string) (IntentID, bool) {
 	return IntentID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self IntentID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // FlagID is the key of an entry of flags: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):
 // its position is not an id, and changes when entry files move.
@@ -257,6 +302,13 @@ func ParseFlagID(key string) (FlagID, bool) {
 		return enumFound_FlagID[i], true
 	}
 	return FlagID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self FlagID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // StatusID is the key of an entry of statuses: compare it, switch on it, look it up with Get.
@@ -325,6 +377,13 @@ func ParseStatusID(key string) (StatusID, bool) {
 	return StatusID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self StatusID) Retired() bool {
+	const flags = "000000"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // ColumnID is the key of an entry of columns: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):
 // its position is not an id, and changes when entry files move.
@@ -378,6 +437,13 @@ func ParseColumnID(key string) (ColumnID, bool) {
 		return enumFound_ColumnID[i], true
 	}
 	return ColumnID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self ColumnID) Retired() bool {
+	const flags = "0000"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // SeverityID is the key of an entry of severities: compare it, switch on it, look it up with Get.
@@ -434,6 +500,13 @@ func ParseSeverityID(key string) (SeverityID, bool) {
 	return SeverityID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self SeverityID) Retired() bool {
+	const flags = "000"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // AreaGroupID is the key of an entry of areaGroups: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):
 // its position is not an id, and changes when entry files move.
@@ -486,6 +559,13 @@ func ParseAreaGroupID(key string) (AreaGroupID, bool) {
 		return enumFound_AreaGroupID[i], true
 	}
 	return AreaGroupID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self AreaGroupID) Retired() bool {
+	const flags = "000"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // AreaID is the key of an entry of areas: compare it, switch on it, look it up with Get.
@@ -561,6 +641,13 @@ func ParseAreaID(key string) (AreaID, bool) {
 		return enumFound_AreaID[i], true
 	}
 	return AreaID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self AreaID) Retired() bool {
+	const flags = "000000000000"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // Intent: What kind of post this is; `minRole` gates who may post it.

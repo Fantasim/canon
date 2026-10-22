@@ -23,9 +23,11 @@ enum class Aim : uint8_t {
 };
 
 inline constexpr std::array<Aim, 2> kAimMembers = {Aim::gold, Aim::mood};
+inline constexpr std::array<Aim, 2> kAimLiveMembers = {Aim::gold, Aim::mood};
 
 std::string_view ToName(Aim v);
 std::string_view ToWire(Aim v);
+bool IsRetired(Aim v);
 std::optional<Aim> AimFromWire(std::string_view wire);
 
 /// A mood.
@@ -35,9 +37,11 @@ enum class Mood : uint8_t {
 };
 
 inline constexpr std::array<Mood, 2> kMoodMembers = {Mood::calm, Mood::grim};
+inline constexpr std::array<Mood, 2> kMoodLiveMembers = {Mood::calm, Mood::grim};
 
 std::string_view ToName(Mood v);
 std::string_view ToWire(Mood v);
+bool IsRetired(Mood v);
 std::optional<Mood> MoodFromWire(std::string_view wire);
 
 enum class RewardKind : uint8_t {
@@ -47,9 +51,11 @@ enum class RewardKind : uint8_t {
 };
 
 inline constexpr std::array<RewardKind, 2> kRewardKindMembers = {RewardKind::coins, RewardKind::nothing};
+inline constexpr std::array<RewardKind, 2> kRewardKindLiveMembers = {RewardKind::coins, RewardKind::nothing};
 
 std::string_view ToName(RewardKind v);
 std::string_view ToWire(RewardKind v);
+bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 enum class BonusBranch : uint8_t {
@@ -66,6 +72,7 @@ enum class StatusId : uint8_t {
 };
 
 std::string_view ToWire(StatusId v);
+bool IsRetired(StatusId v);
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).
