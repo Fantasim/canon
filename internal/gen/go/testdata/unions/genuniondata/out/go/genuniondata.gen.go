@@ -53,12 +53,31 @@ func ParseStatus(wire string) (Status, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Status) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Status = [...]Status{StatusOpen, StatusClosed}
 
 func StatusMembers() iter.Seq[Status] {
 	return func(yield func(Status) bool) {
 		for _, m := range enumMembers_Status[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// StatusLiveMembers yields the members not retired, in StatusMembers order.
+func StatusLiveMembers() iter.Seq[Status] {
+	const retired = "00"
+	return func(yield func(Status) bool) {
+		for i, m := range enumMembers_Status[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

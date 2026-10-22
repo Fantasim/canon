@@ -67,6 +67,13 @@ func ParseGateID(key string) (GateID, bool) {
 	return GateID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self GateID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 type Gate struct {
 	id      GateID
 	retired bool

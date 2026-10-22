@@ -66,6 +66,13 @@ func ParseStatusID(key string) (StatusID, bool) {
 	return StatusID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self StatusID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // PostID is the key of an entry of posts: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):
 // its position is not an id, and changes when entry files move.
@@ -117,6 +124,13 @@ func ParsePostID(key string) (PostID, bool) {
 		return enumFound_PostID[i], true
 	}
 	return PostID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self PostID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // Status: A status.

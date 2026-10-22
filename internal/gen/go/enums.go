@@ -31,6 +31,7 @@ type enumSpec struct {
 type enumConst struct {
 	name, value, doc string
 	code             int64 // the @codes value, 0 without
+	retired          bool
 }
 
 // enums writes every enum in declaration order.
@@ -62,7 +63,7 @@ func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 		if s.open {
 			s.numbers, v = append(s.numbers, v), strconv.Quote(m.Wire)
 		}
-		s.consts = append(s.consts, enumConst{g.names.MemberName(e, m), v, withRetired(m.Doc, m.Retired), m.Code})
+		s.consts = append(s.consts, enumConst{g.names.MemberName(e, m), v, withRetired(m.Doc, m.Retired), m.Code, m.Retired})
 		s.names = append(s.names, m.Name)
 		s.wires = append(s.wires, m.Wire)
 	}
@@ -89,7 +90,7 @@ func (g *gen) kindEnums() {
 		}
 		s := &enumSpec{name: g.names.KindName(v), under: smallestUint(len(v.Cases)), parseArg: wireArg, text: true}
 		for i, c := range v.Cases {
-			s.consts = append(s.consts, enumConst{name: g.names.KindMemberName(v, c), value: strconv.Itoa(i), doc: kindMemberDoc(c)})
+			s.consts = append(s.consts, enumConst{name: g.names.KindMemberName(v, c), value: strconv.Itoa(i), doc: kindMemberDoc(c), retired: c.Retired})
 			s.names = append(s.names, c.Name)
 			s.wires = append(s.wires, c.Wire)
 		}
@@ -130,7 +131,7 @@ func (g *gen) idEnums() {
 		}
 		s := &enumSpec{name: g.names.IDTypeName(rec), under: smallestUint(len(v.IDs)), parseArg: keyArg, id: true, value: v.Name}
 		for i, id := range v.IDs {
-			s.consts = append(s.consts, enumConst{name: g.names.IDMemberName(rec, id), value: strconv.Itoa(i)})
+			s.consts = append(s.consts, enumConst{name: g.names.IDMemberName(rec, id), value: strconv.Itoa(i), retired: ir.EntryRetired(v, i)})
 			s.names = append(s.names, id)
 		}
 		g.writeEnum(s)
@@ -180,6 +181,7 @@ func (g *gen) writeClosed(s *enumSpec) {
 		g.writeText(v, v.Wires, ir.GoWire, pick(quoted(s.wires), idx))
 	}
 	g.writeParse(s, v)
+	g.writeClosedRetired(s, v, idx)
 	if s.members {
 		g.writeMembers(s, v)
 	}
@@ -189,6 +191,15 @@ func (g *gen) writeClosed(s *enumSpec) {
 	if s.text {
 		g.printf(enumTextFormat, s.name, v.Parse, g.use(strconvPkg, strconvPkg), g.use(errorsPkg, errorsPkg))
 	}
+}
+
+// writeClosedRetired writes Retired: by index, or with @codes searched in the sorted codes (DECISIONS 395).
+func (g *gen) writeClosedRetired(s *enumSpec, v enumView, idx []int) {
+	search := ""
+	if s.codes != "" {
+		search = v.CodeKeys
+	}
+	g.writeRetired(s, v, search, idx)
 }
 
 // positions are the member indexes in the order the tables list them: declaration order, or by code when the values are the codes.
@@ -227,6 +238,7 @@ func (g *gen) writeParse(s *enumSpec, v enumView) {
 func (g *gen) writeMembers(s *enumSpec, v enumView) {
 	g.writeTable(v.Members, s.name, s.constNames())
 	g.printf(membersFormat, g.names.MembersName(s.name), g.use(iterPkg, iterPkg), s.name, v.Members)
+	g.writeLiveMembers(s, v)
 }
 
 // writeCodes writes Code and <E>FromCode of an enum whose values are its @codes (§5.2): the codes table is searched.

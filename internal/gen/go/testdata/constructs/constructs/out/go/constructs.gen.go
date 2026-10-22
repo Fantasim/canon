@@ -79,12 +79,31 @@ func ParseElement(wire string) (Element, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Element) Retired() bool {
+	const flags = "001"
+	i, ok := slices.BinarySearch(enumCodes_Element[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Element = [...]Element{ElementFire, ElementWater, ElementEarth}
 
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
 		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ElementLiveMembers yields the members not retired, in ElementMembers order.
+func ElementLiveMembers() iter.Seq[Element] {
+	const retired = "001"
+	return func(yield func(Element) bool) {
+		for i, m := range enumMembers_Element[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -139,12 +158,31 @@ func ParseGrade(wire string) (Grade, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Grade) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Grade = [...]Grade{GradeNormal, GradeUnique, GradeUltimate1}
 
 func GradeMembers() iter.Seq[Grade] {
 	return func(yield func(Grade) bool) {
 		for _, m := range enumMembers_Grade[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// GradeLiveMembers yields the members not retired, in GradeMembers order.
+func GradeLiveMembers() iter.Seq[Grade] {
+	const retired = "000"
+	return func(yield func(Grade) bool) {
+		for i, m := range enumMembers_Grade[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -204,12 +242,31 @@ func ParseFeeling(wire string) (Feeling, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Feeling) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Feeling = [...]Feeling{FeelingCalm, FeelingAPIURL}
 
 func FeelingMembers() iter.Seq[Feeling] {
 	return func(yield func(Feeling) bool) {
 		for _, m := range enumMembers_Feeling[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// FeelingLiveMembers yields the members not retired, in FeelingMembers order.
+func FeelingLiveMembers() iter.Seq[Feeling] {
+	const retired = "00"
+	return func(yield func(Feeling) bool) {
+		for i, m := range enumMembers_Feeling[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -268,6 +325,13 @@ func ParseShapeKind(wire string) (ShapeKind, bool) {
 		return enumFound_ShapeKind[i], true
 	}
 	return 0, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self ShapeKind) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // MarshalText writes the wire value, never the position.
@@ -340,6 +404,13 @@ func ParseRuneID(key string) (RuneID, bool) {
 		return enumFound_RuneID[i], true
 	}
 	return RuneID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self RuneID) Retired() bool {
+	const flags = "01"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // Potion: A potion.

@@ -66,6 +66,13 @@ func ParseStatusID(key string) (StatusID, bool) {
 	return StatusID{}, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self StatusID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // OtherID is the key of an entry of others: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):
 // its position is not an id, and changes when entry files move.
@@ -116,6 +123,13 @@ func ParseOtherID(key string) (OtherID, bool) {
 		return enumFound_OtherID[i], true
 	}
 	return OtherID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self OtherID) Retired() bool {
+	const flags = "0"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 type Status struct {

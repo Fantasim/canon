@@ -16,4 +16,5 @@ func (g *gen) writeID(s *enumSpec) {
 	g.writeTable(v.Names, goString, quoted(s.names))
 	g.printf(idFormat, s.name, v.Names, g.use(strconvPkg, strconvPkg), s.value, v.Parse, g.use(errorsPkg, errorsPkg))
 	g.writeParse(s, v)
+	g.writeRetired(s, v, "", identity(len(s.consts)))
 }

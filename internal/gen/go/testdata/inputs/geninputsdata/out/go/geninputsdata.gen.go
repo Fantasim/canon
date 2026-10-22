@@ -50,12 +50,31 @@ func ParseMode(wire string) (Mode, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Mode) Retired() bool {
+	const flags = "001"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Mode = [...]Mode{ModeFast, ModeSlow, ModeOld}
 
 func ModeMembers() iter.Seq[Mode] {
 	return func(yield func(Mode) bool) {
 		for _, m := range enumMembers_Mode[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ModeLiveMembers yields the members not retired, in ModeMembers order.
+func ModeLiveMembers() iter.Seq[Mode] {
+	const retired = "001"
+	return func(yield func(Mode) bool) {
+		for i, m := range enumMembers_Mode[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

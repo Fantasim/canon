@@ -49,12 +49,31 @@ func ParseTone(wire string) (Tone, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Tone) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Tone = [...]Tone{ToneSoft, ToneLoud}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
 		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ToneLiveMembers yields the members not retired, in ToneMembers order.
+func ToneLiveMembers() iter.Seq[Tone] {
+	const retired = "00"
+	return func(yield func(Tone) bool) {
+		for i, m := range enumMembers_Tone[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -113,6 +132,13 @@ func ParseShapeKind(wire string) (ShapeKind, bool) {
 		return enumFound_ShapeKind[i], true
 	}
 	return 0, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self ShapeKind) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // MarshalText writes the wire value, never the position.
@@ -185,6 +211,13 @@ func ParseSizeID(key string) (SizeID, bool) {
 		return enumFound_SizeID[i], true
 	}
 	return SizeID{}, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self SizeID) Retired() bool {
+	const flags = "00"
+	i := uint(self.position)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // Shape: A shape.

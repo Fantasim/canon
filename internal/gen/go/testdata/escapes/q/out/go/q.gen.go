@@ -46,12 +46,31 @@ func ParseQ(wire string) (Q, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Q) Retired() bool {
+	const flags = "00"
+	i, ok := slices.BinarySearch(enumCodes_Q[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Q = [...]Q{QLow, QHigh}
 
 func QMembers() iter.Seq[Q] {
 	return func(yield func(Q) bool) {
 		for _, m := range enumMembers_Q[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// QLiveMembers yields the members not retired, in QMembers order.
+func QLiveMembers() iter.Seq[Q] {
+	const retired = "00"
+	return func(yield func(Q) bool) {
+		for i, m := range enumMembers_Q[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

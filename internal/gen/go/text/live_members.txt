@@ -1,0 +1,12 @@
+// %[1]s yields the members not retired, in %[5]s order.
+func %[1]s() %[2]s.Seq[%[3]s] {
+const retired = %[6]s
+return func(yield func(%[3]s) bool) {
+for i, m := range %[4]s[:] {
+if retired[i] != '%[7]c' && !yield(m) {
+return
+}
+}
+}
+}
+

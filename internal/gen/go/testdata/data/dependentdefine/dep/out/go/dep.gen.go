@@ -54,12 +54,31 @@ func ParseK(wire string) (K, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self K) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_K = [...]K{KOne, KTwo, KThree}
 
 func KMembers() iter.Seq[K] {
 	return func(yield func(K) bool) {
 		for _, m := range enumMembers_K[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// KLiveMembers yields the members not retired, in KMembers order.
+func KLiveMembers() iter.Seq[K] {
+	const retired = "000"
+	return func(yield func(K) bool) {
+		for i, m := range enumMembers_K[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

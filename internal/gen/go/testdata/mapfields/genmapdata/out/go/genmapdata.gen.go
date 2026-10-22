@@ -54,12 +54,31 @@ func ParseElement(wire string) (Element, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Element) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Element = [...]Element{ElementFire, ElementWater}
 
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
 		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ElementLiveMembers yields the members not retired, in ElementMembers order.
+func ElementLiveMembers() iter.Seq[Element] {
+	const retired = "00"
+	return func(yield func(Element) bool) {
+		for i, m := range enumMembers_Element[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -122,12 +141,31 @@ func ParseRank(wire string) (Rank, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Rank) Retired() bool {
+	const flags = "00"
+	i, ok := slices.BinarySearch(enumCodes_Rank[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Rank = [...]Rank{RankLow, RankHigh}
 
 func RankMembers() iter.Seq[Rank] {
 	return func(yield func(Rank) bool) {
 		for _, m := range enumMembers_Rank[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// RankLiveMembers yields the members not retired, in RankMembers order.
+func RankLiveMembers() iter.Seq[Rank] {
+	const retired = "00"
+	return func(yield func(Rank) bool) {
+		for i, m := range enumMembers_Rank[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -181,12 +219,31 @@ func ParseTone(wire string) (Tone, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Tone) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Tone = [...]Tone{TonePlain, ToneSeries1}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
 		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ToneLiveMembers yields the members not retired, in ToneMembers order.
+func ToneLiveMembers() iter.Seq[Tone] {
+	const retired = "00"
+	return func(yield func(Tone) bool) {
+		for i, m := range enumMembers_Tone[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}

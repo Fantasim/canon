@@ -15,22 +15,23 @@ type enumView struct {
 	Name, Method, Table, Parse, FromCode, Code, String, Wire, Known, Arg, Codes, Zero string
 	Strconv, Slices                                                                   string
 	Names, Wires, Keys, Found, CodeKeys, Members, Numbers, ByCode                     string
-	Dense                                                                             bool // the value of a member is its index
+	Retired, Flags, Value, Search, FlagRetired                                        string // Retired(): its name, the flag string, the receiver's index value, the sorted table it is searched in
+	Dense                                                                             bool   // the value of a member is its index
 }
 
 // enumView names the tables and methods of s; a table's name is the plan's (DECISIONS 393).
 func (g *gen) enumView(s *enumSpec) enumView {
 	table := func(role string) string { return g.names.TableName(role, s.name) }
-	zero := zeroLit
+	zero, value := zeroLit, selfName
 	if s.id {
-		zero = fmt.Sprintf(idZeroFormat, s.name)
+		zero, value = fmt.Sprintf(idZeroFormat, s.name), selfPosition
 	}
 	return enumView{
 		Name: s.name, Parse: g.names.ParseName(s.name), FromCode: g.names.FromCodeName(s.name), Arg: s.parseArg, Codes: s.codes, Zero: zero,
 		Slices: g.use(slicesPkg, slicesPkg),
 		Names:  table(ir.GoTableNames), Wires: table(ir.GoTableWires), Keys: table(ir.GoTableKeys), Found: table(ir.GoTableFound), CodeKeys: table(ir.GoTableCodes),
 		Members: table(ir.GoTableMembers), Numbers: table(ir.GoTableNumbers), ByCode: table(ir.GoTableByCode),
-		Dense: s.codes == "",
+		Dense: s.codes == "", Retired: ir.GoRetired, Value: value, FlagRetired: string(flagRetired),
 	}
 }
 
@@ -110,4 +111,29 @@ func (s *enumSpec) memberRefs() []string {
 		out[i] = fmt.Sprintf(idLiteralFormat, c.value)
 	}
 	return out
+}
+
+// writeRetired writes Retired: a string of flags, one byte per member in the order of the table the receiver is searched in (the sorted keys, or the codes), indexed by that position, or by the value itself when it is the index (DECISIONS 395).
+func (g *gen) writeRetired(s *enumSpec, v enumView, search string, idx []int) {
+	flags := make([]byte, len(idx))
+	for i, at := range idx {
+		flags[i] = flagLive
+		if s.consts[at].retired {
+			flags[i] = flagRetired
+		}
+	}
+	v.Flags, v.Search = strconv.Quote(string(flags)), search
+	g.exec(tmplEnumRetired, v)
+}
+
+// writeLiveMembers writes <E>LiveMembers beside <E>Members: the members not retired in declaration order: liveness is decided here, so a duplicate wire cannot hide a member.
+func (g *gen) writeLiveMembers(s *enumSpec, v enumView) {
+	live := make([]byte, len(s.consts))
+	for i, c := range s.consts {
+		live[i] = flagRetired
+		if !c.retired {
+			live[i] = flagLive
+		}
+	}
+	g.printf(liveMembersFormat, g.names.LiveMembersName(s.name), g.use(iterPkg, iterPkg), s.name, v.Members, g.names.MembersName(s.name), strconv.Quote(string(live)), flagRetired)
 }

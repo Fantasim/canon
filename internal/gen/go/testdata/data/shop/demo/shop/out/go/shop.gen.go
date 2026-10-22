@@ -75,12 +75,31 @@ func ParseTone(wire string) (Tone, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Tone) Retired() bool {
+	const flags = "0001"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 var enumMembers_Tone = [...]Tone{ToneWarning, ToneInfo, ToneSeries1, ToneLegacy}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
 		for _, m := range enumMembers_Tone[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ToneLiveMembers yields the members not retired, in ToneMembers order.
+func ToneLiveMembers() iter.Seq[Tone] {
+	const retired = "0001"
+	return func(yield func(Tone) bool) {
+		for i, m := range enumMembers_Tone[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -142,12 +161,31 @@ func ParseElement(wire string) (Element, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Element) Retired() bool {
+	const flags = "00"
+	i, ok := slices.BinarySearch(enumCodes_Element[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Element = [...]Element{ElementFire, ElementWater}
 
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
 		for _, m := range enumMembers_Element[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// ElementLiveMembers yields the members not retired, in ElementMembers order.
+func ElementLiveMembers() iter.Seq[Element] {
+	const retired = "00"
+	return func(yield func(Element) bool) {
+		for i, m := range enumMembers_Element[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -201,12 +239,31 @@ func ParseFlag(wire string) (Flag, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self Flag) Retired() bool {
+	const flags = "000"
+	i, ok := slices.BinarySearch(enumCodes_Flag[:], self)
+	return ok && flags[i] == '1'
+}
+
 var enumMembers_Flag = [...]Flag{FlagA, FlagC, FlagB}
 
 func FlagMembers() iter.Seq[Flag] {
 	return func(yield func(Flag) bool) {
 		for _, m := range enumMembers_Flag[:] {
 			if !yield(m) {
+				return
+			}
+		}
+	}
+}
+
+// FlagLiveMembers yields the members not retired, in FlagMembers order.
+func FlagLiveMembers() iter.Seq[Flag] {
+	const retired = "000"
+	return func(yield func(Flag) bool) {
+		for i, m := range enumMembers_Flag[:] {
+			if retired[i] != '1' && !yield(m) {
 				return
 			}
 		}
@@ -261,6 +318,13 @@ func ParseRewardKind(wire string) (RewardKind, bool) {
 	return 0, false
 }
 
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self RewardKind) Retired() bool {
+	const flags = "000"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
+}
+
 // MarshalText writes the wire value, never the position.
 func (self RewardKind) MarshalText() ([]byte, error) {
 	wire := self.Wire()
@@ -312,6 +376,13 @@ func ParseBadgeKind(wire string) (BadgeKind, bool) {
 		return enumFound_BadgeKind[i], true
 	}
 	return 0, false
+}
+
+// Retired reports whether the member is retired; a value that is no member is not.
+func (self BadgeKind) Retired() bool {
+	const flags = "00"
+	i := uint(self)
+	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 // MarshalText writes the wire value, never the position.

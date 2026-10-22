@@ -12,6 +12,8 @@ import (
 var (
 	//go:embed text/members.txt
 	membersFormat string
+	//go:embed text/live_members.txt
+	liveMembersFormat string
 	//go:embed text/codes.txt
 	codesFormat string
 	//go:embed text/enum_text.txt

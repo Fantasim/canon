@@ -160,6 +160,8 @@ const (
 	tmplPublicDecoder, helperDocument, helperDuration = "publicDecoder", "jsonDocument", "jsonDuration"
 	tmplTextDecoder, tmplOpenEnum, tmplOpenCodes      = "textDecoder", "openEnum", "openCodes" // DECISIONS 339, 340
 	tmplEnumText, tmplEnumParse, tmplEnumFromCode     = "enumText", "enumParse", "enumFromCode"
+	tmplEnumRetired, flagLive, flagRetired            = "enumRetired", '0', '1' // DECISIONS 395: Retired's template, a byte of its flag string
+	selfName, selfPosition                            = "self", "self.position"
 	openCodeFormat                                    = "func(v %[1]s) int64 {\ncode, _ := v.%[2]s()\nreturn int64(code)\n}(%[3]s)"
 	utf8Path, utf8Pkg                                 = "unicode/utf8", "utf8"
 	localUnit                                         = "unit"

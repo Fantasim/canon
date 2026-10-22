@@ -34,4 +34,9 @@ func TestCaseOverrideAndRetired(t *testing.T) {
 	if !regexp.MustCompile(`(?s)// ShapeKindSquare: Retired\.\n\s*ShapeKindSquare\b`).MatchString(src) {
 		t.Errorf("the retired case's kind member is missing its Retired. doc line:\n%s", src)
 	}
+	for _, want := range []string{"func (self ShapeKind) Retired() bool {", `const flags = "01"`} { // DECISIONS 395: the kind enum reads its case's retiredness
+		if !strings.Contains(src, want) {
+			t.Errorf("DECISIONS 395: generated source is missing %q:\n%s", want, src)
+		}
+	}
 }

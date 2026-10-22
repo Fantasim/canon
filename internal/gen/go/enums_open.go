@@ -18,6 +18,7 @@ func (g *gen) writeOpen(s *enumSpec) {
 		g.writeTable(v.ByCode, s.name, pick(s.constNames(), byCode))
 	}
 	g.exec(tmplOpenEnum, v)
+	g.writeRetired(s, v, v.Keys, idx)
 	g.writeMembers(s, v)
 	if s.codes != "" {
 		g.exec(tmplOpenCodes, v)
