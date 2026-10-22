@@ -65,6 +65,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 /** Sides. */
 export type Side = "left" | "right";
 export const SideMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
+export const SideLiveMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
 export const SideNames: Readonly<Record<Side, string>> = Object.freeze({ left: "left", right: "right" });
 export const SideIndex: Readonly<Record<Side, number>> = Object.freeze({ left: 0, right: 1 });
 

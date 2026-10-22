@@ -140,6 +140,7 @@ function canonFreeze<T>(x: T): T {
 /** Flags, written as one bitmask. */
 export type Flag = "tradable" | "droppable" | "soulbound";
 export const FlagMembers: ReadonlyArray<Flag> = Object.freeze(["tradable", "droppable", "soulbound"]);
+export const FlagLiveMembers: ReadonlyArray<Flag> = Object.freeze(["tradable", "droppable", "soulbound"]);
 export const FlagNames: Readonly<Record<Flag, string>> = Object.freeze({ tradable: "tradable", droppable: "droppable", soulbound: "soulbound" });
 export const FlagIndex: Readonly<Record<Flag, number>> = Object.freeze({ tradable: 0, droppable: 1, soulbound: 2 });
 export const FlagCodes: Readonly<Record<Flag, number>> = Object.freeze({ tradable: 1, droppable: 2, soulbound: 4 });
@@ -151,6 +152,7 @@ export type Element =
   /** Retired. */
   | "WIND";
 export const ElementMembers: ReadonlyArray<Element> = Object.freeze(["FIRE", "WATER", "WIND"]);
+export const ElementLiveMembers: ReadonlyArray<Element> = Object.freeze(["FIRE", "WATER"]);
 export const ElementNames: Readonly<Record<Element, string>> = Object.freeze({ FIRE: "FIRE", WATER: "WATER", WIND: "WIND" });
 export const ElementIndex: Readonly<Record<Element, number>> = Object.freeze({ FIRE: 0, WATER: 1, WIND: 2 });
 export const ElementCodes: Readonly<Record<Element, number>> = Object.freeze({ FIRE: 1, WATER: 2, WIND: 3 });
@@ -158,12 +160,14 @@ export const ElementCodes: Readonly<Record<Element, number>> = Object.freeze({ F
 /** Sides. */
 export type Side = "left" | "RIGHT";
 export const SideMembers: ReadonlyArray<Side> = Object.freeze(["left", "RIGHT"]);
+export const SideLiveMembers: ReadonlyArray<Side> = Object.freeze(["left", "RIGHT"]);
 export const SideNames: Readonly<Record<Side, string>> = Object.freeze({ left: "left", RIGHT: "right" });
 export const SideIndex: Readonly<Record<Side, number>> = Object.freeze({ left: 0, RIGHT: 1 });
 
 /** What an objective counts. */
 export type Goal = "kill" | "collect" | "visit";
 export const GoalMembers: ReadonlyArray<Goal> = Object.freeze(["kill", "collect", "visit"]);
+export const GoalLiveMembers: ReadonlyArray<Goal> = Object.freeze(["kill", "collect", "visit"]);
 export const GoalNames: Readonly<Record<Goal, string>> = Object.freeze({ kill: "kill", collect: "collect", visit: "visit" });
 export const GoalIndex: Readonly<Record<Goal, number>> = Object.freeze({ kill: 0, collect: 1, visit: 2 });
 

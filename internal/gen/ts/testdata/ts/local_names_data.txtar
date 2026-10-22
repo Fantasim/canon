@@ -468,6 +468,7 @@ export interface CanonTable<K, T> {
 /** A tone, written as its code. */
 export type Tone = "soft" | "loud";
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["soft", "loud"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["soft", "loud"]);
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ soft: "soft", loud: "loud" });
 export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ soft: 0, loud: 1 });
 export const ToneCodes: Readonly<Record<Tone, number>> = Object.freeze({ soft: 1, loud: 2 });
@@ -510,6 +511,7 @@ function canonFreeze<T>(x: T): T {
 /** A kind. */
 export type Kind = "small" | "big";
 export const KindMembers: ReadonlyArray<Kind> = Object.freeze(["small", "big"]);
+export const KindLiveMembers: ReadonlyArray<Kind> = Object.freeze(["small", "big"]);
 export const KindNames: Readonly<Record<Kind, string>> = Object.freeze({ small: "small", big: "big" });
 export const KindIndex: Readonly<Record<Kind, number>> = Object.freeze({ small: 0, big: 1 });
 

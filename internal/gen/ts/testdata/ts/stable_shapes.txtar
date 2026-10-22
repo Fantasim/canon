@@ -96,6 +96,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 
 export type ItemId = "a" | "b";
 export const ItemIdMembers: ReadonlyArray<ItemId> = Object.freeze(["a", "b"]);
+export const ItemIdLiveMembers: ReadonlyArray<ItemId> = Object.freeze(["a", "b"]);
 
 /** An item. */
 export interface Item {

@@ -230,6 +230,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 /** What a bonus aims at. */
 export type Aim = "gold" | "mood";
 export const AimMembers: ReadonlyArray<Aim> = Object.freeze(["gold", "mood"]);
+export const AimLiveMembers: ReadonlyArray<Aim> = Object.freeze(["gold", "mood"]);
 export const AimNames: Readonly<Record<Aim, string>> = Object.freeze({ gold: "gold", mood: "mood" });
 export const AimIndex: Readonly<Record<Aim, number>> = Object.freeze({ gold: 0, mood: 1 });
 
@@ -242,9 +243,11 @@ export type BonusBranch = "gold" | "mood";
 
 export type StatusId = "open" | "shut";
 export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "shut"]);
+export const StatusIdLiveMembers: ReadonlyArray<StatusId> = Object.freeze(["open"]);
 
 export type BadgeId = "gold";
 export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold"]);
+export const BadgeIdLiveMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold"]);
 
 /** A status. */
 export interface Status {
@@ -352,6 +355,7 @@ export interface CanonTable<K, T> {
 /** A tone. */
 export type Tone = "soft" | "loud";
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["soft", "loud"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["soft", "loud"]);
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ soft: "soft", loud: "loud" });
 export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ soft: 0, loud: 1 });
 === features/world/world.ts ===

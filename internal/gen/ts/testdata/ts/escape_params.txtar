@@ -203,5 +203,6 @@ export interface CanonTable<K, T> {
 /** A role, lowest first. */
 export type Role = "guest" | "member" | "admin";
 export const RoleMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
+export const RoleLiveMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
 export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ guest: "guest", member: "member", admin: "admin" });
 export const RoleIndex: Readonly<Record<Role, number>> = Object.freeze({ guest: 0, member: 1, admin: 2 });

@@ -207,17 +207,20 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 /** A colour. */
 export type Tone = "red" | "blue";
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ red: "red", blue: "blue" });
 export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ red: 0, blue: 1 });
 
 /** Roles, lowest first. */
 export type Role = "member" | "admin";
 export const RoleMembers: ReadonlyArray<Role> = Object.freeze(["member", "admin"]);
+export const RoleLiveMembers: ReadonlyArray<Role> = Object.freeze(["member", "admin"]);
 export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ member: "member", admin: "admin" });
 export const RoleIndex: Readonly<Record<Role, number>> = Object.freeze({ member: 0, admin: 1 });
 
 export type BadgeId = "gold" | "iron";
 export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold", "iron"]);
+export const BadgeIdLiveMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold", "iron"]);
 
 /** A badge. */
 export interface Badge {

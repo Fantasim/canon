@@ -123,7 +123,16 @@ func (g *gen) enumMembers(name string, e *ir.Enum) string {
 		items[i] = quote(m.Wire)
 	}
 	g.declare(name+membersSuffix, e.QName())
-	return fmt.Sprintf(membersFormat, name+membersSuffix, g.tableKey(name, e), strings.Join(items, listSep))
+	live := make([]string, 0, len(items))
+	for i, m := range e.Members {
+		if !m.Retired {
+			live = append(live, items[i])
+		}
+	}
+	liveName := g.declare(ir.TSLiveMembersName(name), e.QName())
+	key := g.tableKey(name, e)
+	return fmt.Sprintf(membersFormat, name+membersSuffix, key, strings.Join(items, listSep)) +
+		fmt.Sprintf(membersFormat, liveName, key, strings.Join(live, listSep))
 }
 
 // enumRecord is `export const <E><suffix>: Readonly<Record<E, T>> = Object.freeze({ wire: value, ... });`.
@@ -208,8 +217,22 @@ func (g *gen) idType(v *ir.Value, elem ir.Type) {
 	}
 	g.declare(name+membersSuffix, v.Name)
 	g.declare(name+indexSuffix, v.Name)
-	g.add(g.union(name, members) + fmt.Sprintf(membersFormat, name+membersSuffix, name, strings.Join(items, listSep)))
+	live := liveIDs(v)
+	liveName := g.declare(ir.TSLiveMembersName(name), v.Name)
+	g.add(g.union(name, members) + fmt.Sprintf(membersFormat, name+membersSuffix, name, strings.Join(items, listSep)) +
+		fmt.Sprintf(membersFormat, liveName, name, strings.Join(live, listSep)))
 	g.ownIDItems[name] = len(g.items) - 1
+}
+
+// liveIDs are the quoted keys of a table's entries not retired, in entry order (CODEGEN.md §5.3, DECISIONS 395).
+func liveIDs(v *ir.Value) []string {
+	out := make([]string, 0, len(v.IDs))
+	for i, id := range v.IDs {
+		if !ir.EntryRetired(v, i) {
+			out = append(out, quote(id))
+		}
+	}
+	return out
 }
 
 // ownIDIndex is the private `<Id>Index` of this file's own table ids: the const joins the id's item the first time a lookup needs it (CODEGEN.md §5.3, §8.2).

@@ -405,6 +405,7 @@ export type DstKnown = "hp" | "mp";
 /** Destinations. */
 export type Dst = DstKnown | (string & {});
 export const DstMembers: ReadonlyArray<DstKnown> = Object.freeze(["hp", "mp"]);
+export const DstLiveMembers: ReadonlyArray<DstKnown> = Object.freeze(["hp", "mp"]);
 export const DstNames: Readonly<Record<DstKnown, string>> = Object.freeze({ hp: "hp", mp: "mp" });
 export const DstIndex: Readonly<Record<DstKnown, number>> = Object.freeze({ hp: 0, mp: 1 });
 

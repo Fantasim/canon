@@ -812,6 +812,7 @@ export interface CanonTable<K, T> {
 /** Grades, lowest first. */
 export type Grade = "low" | "mid" | "high";
 export const GradeMembers: ReadonlyArray<Grade> = Object.freeze(["low", "mid", "high"]);
+export const GradeLiveMembers: ReadonlyArray<Grade> = Object.freeze(["low", "mid", "high"]);
 export const GradeNames: Readonly<Record<Grade, string>> = Object.freeze({ low: "low", mid: "mid", high: "high" });
 export const GradeIndex: Readonly<Record<Grade, number>> = Object.freeze({ low: 0, mid: 1, high: 2 });
 

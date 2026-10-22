@@ -151,6 +151,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 
 export type TierId = "low" | "high";
 export const TierIdMembers: ReadonlyArray<TierId> = Object.freeze(["low", "high"]);
+export const TierIdLiveMembers: ReadonlyArray<TierId> = Object.freeze(["low", "high"]);
 
 /** A tier. */
 export interface Tier {

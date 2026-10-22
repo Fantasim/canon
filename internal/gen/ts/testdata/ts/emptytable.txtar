@@ -79,6 +79,7 @@ function canonFreeze<T>(x: T): T {
 
 export type OfferId = never;
 export const OfferIdMembers: ReadonlyArray<OfferId> = Object.freeze([]);
+export const OfferIdLiveMembers: ReadonlyArray<OfferId> = Object.freeze([]);
 
 /** An offer. */
 export interface Offer {

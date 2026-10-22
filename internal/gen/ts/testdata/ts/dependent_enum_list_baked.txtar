@@ -70,6 +70,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 /** Moods. */
 export type Mood = "grim" | "merry";
 export const MoodMembers: ReadonlyArray<Mood> = Object.freeze(["grim", "merry"]);
+export const MoodLiveMembers: ReadonlyArray<Mood> = Object.freeze(["grim", "merry"]);
 export const MoodNames: Readonly<Record<Mood, string>> = Object.freeze({ grim: "grim", merry: "merry" });
 export const MoodIndex: Readonly<Record<Mood, number>> = Object.freeze({ grim: 0, merry: 1 });
 
