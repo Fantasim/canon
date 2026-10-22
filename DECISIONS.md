@@ -4094,3 +4094,16 @@ round 2", "PS1 review", "PS2 round 2"):
      above 1.5 GB peak RSS or 60 s fails the gate. Reason: v0.1.10's gates compiled generated C++
      at `-O1`/`-fsyntax-only` on small fixtures only, so a file the consumer could not compile at
      `-O3` shipped (392).
+
+395. **An enum tells its retired members apart in every target (CODEGEN.md §5.2, §5.3).** Beside
+     each name or wire lookup a target writes for an enum (closed or open, a variant's kind enum
+     included) or a `baked`/`embedded` table id, it writes a retired lookup: Go
+     `func (self E) Retired() bool`, C++ `bool IsRetired(E v)` (declared in the header, defined in
+     the `.gen.cpp` as a read by ordinal, DECISIONS 383); a value that is no member, or an open
+     enum's unknown wire, is not retired. Beside each members list it writes the live list, the
+     members not retired in members order: Go `<E>LiveMembers() iter.Seq[E]`, C++
+     `k<E>LiveMembers` (`inline constexpr std::array`, `inline const` for an open enum), TS
+     `<E>LiveMembers: ReadonlyArray<E>`. The new names are in each target's name plan (`E8005`).
+     Nothing else changes. Reason: retiredness reached a program only as a `Retired.` doc line, so
+     Sovereign could not build a name table that excludes retired ids without a hand-written
+     `export fn` per enum (handoff 2026-10-21-sovereign-cpp-retired).

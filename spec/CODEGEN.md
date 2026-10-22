@@ -1014,6 +1014,8 @@ func (self Tone) String() string        // Canon name: "series_1"
 func (self Tone) Wire() string          // wire value: "series-1"
 func ParseTone(wire string) (Tone, bool)
 func ToneMembers() iter.Seq[Tone]       // declaration order, retired members included
+func ToneLiveMembers() iter.Seq[Tone]   // the members not retired, in ToneMembers order (DECISIONS 395)
+func (self Tone) Retired() bool         // declared retired; false for a value that is no member
 func (self Tone) MarshalText() ([]byte, error)      // the wire value, for encoding/json and others
 func (self *Tone) UnmarshalText(text []byte) error  // a wire value; an unknown one is an error
 
@@ -1039,17 +1041,19 @@ inline constexpr std::array<Tone, 3> kToneMembers = {Tone::warning, Tone::info, 
 std::string_view ToName(Tone v);                       // "series_1"
 std::string_view ToWire(Tone v);                       // "series-1"
 std::optional<Tone> ToneFromWire(std::string_view wire);
+inline constexpr std::array<Tone, 3> kToneLiveMembers = {Tone::warning, Tone::info, Tone::series_1};  // not retired (DECISIONS 395)
+bool IsRetired(Tone v);                                // false for a value that is no member
 
 enum class Element : uint8_t { FIRE = 1, WATER = 2 };  // the underlying value is the code
 std::optional<Element> ElementFromCode(uint8_t code);  // static_cast<uint8_t>(e) is the code
 ```
 
-`ToName`, `ToWire`, `<E>FromWire` and `<E>FromCode` are declared in the header and defined in the
+`ToName`, `ToWire`, `IsRetired`, `<E>FromWire` and `<E>FromCode` are declared in the header and defined in the
 `.gen.cpp`, so a header costs the same whatever the size of its enums (DECISIONS 383); a program
 using them links the enum package's `.gen.cpp` (§2.3: always written). `ToName`/`ToWire` are
 overloads in the package namespace; `FromWire` carries the enum name because C++ cannot overload
 on the return type (this replaces SPEC §15.3's `FromWire`). Each definition reads tables, never a
-chain or a switch over the members: `ToName` and `ToWire` index arrays in declaration order by the
+chain or a switch over the members: `ToName`, `ToWire` and `IsRetired` index arrays in declaration order by the
 member's ordinal; `<E>FromWire` binary-searches the wires sorted by their bytes (equal wires keep
 declaration order, so the first declared wins), as `<Rec>IdFromWire` does (§5.3); `<E>FromCode`
 binary-searches the codes. A value that is no member gives `""` or `std::nullopt`. A member's
@@ -1064,6 +1068,7 @@ kind enum (§5.5) follows the same rules.
 ```ts
 export type Tone = "warning" | "info" | "series-1";
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "series-1"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "series-1"]);  // not retired (DECISIONS 395)
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ warning: "warning", info: "info", "series-1": "series_1" });
 export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ warning: 0, info: 1, "series-1": 2 });
 export const ElementCodes: Readonly<Record<Element, number>> = Object.freeze({ FIRE: 1, WATER: 2 });  // @codes only
@@ -1078,6 +1083,10 @@ Rules (GO-05, CPP-04, WIR-04):
   increase in declaration order is `E8010`, because generated `<` compares codes.
 - Retired members stay in every target (SPEC §12), with the doc line `Retired.` added. The kind
   member of a retired variant case gets the same line (§5.5).
+- Retiredness is readable (DECISIONS 395): Go `Retired()`, C++ `IsRetired`, and the live list
+  `<E>LiveMembers` / `k<E>LiveMembers` in every target, beside the members list. A value that is
+  no member, or an open enum's unknown wire, is not retired. The names are in the name plan
+  (`E8005`).
 
 **Open enums** (`types` mode, DECISIONS 339 for Go, 362 for C++ and TypeScript). An enum listed in
 the emit's `open` keeps its wire value, so a decoder accepts a member this build does not know:
@@ -1090,6 +1099,8 @@ func (self Dst) String() string          // the Canon name of a known member, el
 func (self Dst) Known() bool
 func ParseDst(wire string) (Dst, bool)   // the member and true, or Dst(wire) and false
 func DstMembers() iter.Seq[Dst]
+func DstLiveMembers() iter.Seq[Dst]      // DECISIONS 395
+func (self Dst) Retired() bool           // false for an unknown wire
 // with @codes: func (self Dst) Code() (uint16, bool); func DstFromCode(code uint16) (Dst, bool)
 ```
 
@@ -1103,6 +1114,8 @@ public:
     friend bool operator<(const Dst&, const Dst&) noexcept;    // wire byte order: for lookups, not declaration order
 };
 inline const std::array<Dst, N> kDstMembers;      // const, not constexpr
+inline const std::array<Dst, L> kDstLiveMembers;  // not retired (DECISIONS 395)
+bool IsRetired(const Dst& v);                     // false for an unknown wire
 std::string_view ToWire(const Dst& v);
 std::string_view ToName(const Dst& v);            // the Canon name of a known member, else the wire
 bool IsKnown(const Dst& v);
@@ -1111,14 +1124,14 @@ std::optional<Dst> DstFromWire(std::string_view wire);   // the known member, el
 // after the namespace: template <> struct std::hash<ns::Dst> (the wire's hash)
 ```
 
-`ToWire` and the `std::hash` specialisation are inline in the header; `ToName`, `IsKnown`,
+`ToWire` and the `std::hash` specialisation are inline in the header; `ToName`, `IsKnown`, `IsRetired`,
 `<E>FromWire`, `ToCode` and `<E>FromCode` are defined in the `.gen.cpp` as binary searches over the
 member wires sorted by bytes (the codes for `<E>FromCode`), with parallel arrays (DECISIONS 383).
 
 ```ts
 export type DstKnown = "DST_HP" | "DST_MP";       // the closed union
 export type Dst = DstKnown | (string & {});       // any wire; editors still complete the known ones
-// DstMembers, DstNames, DstIndex, DstCodes are keyed by DstKnown
+// DstMembers, DstLiveMembers, DstNames, DstIndex, DstCodes are keyed by DstKnown
 export function isDstKnown(v: Dst): v is DstKnown;
 export function dstName(v: Dst): string;          // the Canon name of a known member, else the wire
 ```
@@ -1145,7 +1158,7 @@ The keys of a public `table` value (EMT-04):
 
 | Mode | Go | C++ | TS |
 |---|---|---|---|
-| `baked`, `embedded` | `type StatusID struct{ position uint8 }` (opaque: no integer converts to or from it) + `var`s `StatusIDOpen…` in entry order, `String()` and `MarshalText()` (the key), `(*StatusID).UnmarshalText` (a key; an unknown one is an error), `ParseStatusID(key) (StatusID, bool)`, `Position() int` (an array index for one build, §2.10) | `enum class StatusId : uint8_t { open, taken, … }`, `ToWire(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 383), `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`), and deleted `to_json`/`from_json` templates for it (DECISIONS 379) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdMembers: ReadonlyArray<StatusId>` in entry order; no exported index: a file that needs one builds it privately with `canonIndex` (§8.2) |
+| `baked`, `embedded` | `type StatusID struct{ position uint8 }` (opaque: no integer converts to or from it) + `var`s `StatusIDOpen…` in entry order, `String()` and `MarshalText()` (the key), `(*StatusID).UnmarshalText` (a key; an unknown one is an error), `ParseStatusID(key) (StatusID, bool)`, `Retired() bool` (the entry is retired, DECISIONS 395), `Position() int` (an array index for one build, §2.10) | `enum class StatusId : uint8_t { open, taken, … }`, `ToWire(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 383), `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`), `bool IsRetired(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 395), and deleted `to_json`/`from_json` templates for it (DECISIONS 379) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdMembers: ReadonlyArray<StatusId>` in entry order and `StatusIdLiveMembers` (the entries not retired, DECISIONS 395); no exported index: a file that needs one builds it privately with `canonIndex` (§8.2) |
 | `data`, `types` | `type StatusID string` | `std::string` (getter `const std::string&`, lookups take `std::string_view`) | `export type StatusId = string` |
 
 The `data`/`types` row is for the package's own tables; a ref into another package's `baked` table
