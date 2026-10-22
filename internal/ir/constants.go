@@ -209,6 +209,7 @@ const (
 	CppToWire        = "ToWire"
 	CppIsKnown       = "IsKnown" // an opened enum's helpers, one overload per enum (DECISIONS 362)
 	CppToCode        = "ToCode"
+	CppIsRetired     = "IsRetired"
 	CppOpenWire      = "wire_"
 	CppMatchPattern  = "MatchPattern" // §7.7's pattern search, the input helper a loader calls by name
 	CppEnvText       = "EnvText"      // §7.7's variable reader, the input helper each LoadInputs block calls
@@ -252,6 +253,7 @@ const (
 	goAsPrefix         = "As"
 	goParsePrefix      = "Parse"
 	goMembersSuffix    = "Members"
+	liveMembersSuffix  = "LiveMembers"
 	goFromCodeSuffix   = "FromCode"
 	goFindByPrefix     = "FindBy"
 	goIndexSuffix      = "Index"
@@ -331,15 +333,6 @@ const (
 	InputNoMatch
 	InputNotMember
 )
-
-// inputReasons are the failure-line reasons, byte for byte in every target (CODEGEN.md §5.12).
-var inputReasons = [...]string{
-	InputNotSet:       "not set",
-	InputNotValid:     "not a valid %s",
-	InputOutsideRange: "outside its refinement range",
-	InputNoMatch:      "does not match its pattern",
-	InputNotMember:    "not a member of %s",
-}
 
 // inputFieldPlaceholder is E8302's one template placeholder, `{field}` (InputGetterFailure).
 const inputFieldPlaceholder = "{%s}"
@@ -436,6 +429,7 @@ const (
 	tsReadPrefix     = "read"
 	tsSchemaSuffix   = "Schema"
 	tsMembersName    = "Members"
+	tsLiveMembers    = liveMembersSuffix
 	tsNamesName      = "Names"
 	tsIndexName      = "Index"
 	tsCodesName      = "Codes"
@@ -468,8 +462,17 @@ const (
 	fmtTextWire = "%w: package %s: @text fn %s: %w"
 )
 
-// cppStdMacroNames, sorted: the macros of [atomics.syn] [cerrno.syn] [cfloat.syn] [clocale.syn] [cmath.syn] [cstddef.syn] [cstdint.syn] [cstdio.syn] [cstdlib.syn] [cstring.syn] (CODEGEN.md §3.4).
-var cppStdMacroNames = strings.Fields(`
+// inputReasons are the failure-line reasons, byte for byte in every target (CODEGEN.md §5.12).
+var inputReasons = [...]string{
+	InputNotSet:       "not set",
+	InputNotValid:     "not a valid %s",
+	InputOutsideRange: "outside its refinement range",
+	InputNoMatch:      "does not match its pattern",
+	InputNotMember:    "not a member of %s",
+}
+
+// cppStdMacroHead, sorted: the first macros of cppStdMacroNames, which are those of [atomics.syn] [cerrno.syn] [cfloat.syn] [clocale.syn] [cmath.syn] [cstddef.syn] [cstdint.syn] [cstdio.syn] [cstdlib.syn] [cstring.syn] (CODEGEN.md §3.4).
+var cppStdMacroHead = strings.Fields(`
 ATOMIC_BOOL_LOCK_FREE ATOMIC_CHAR16_T_LOCK_FREE ATOMIC_CHAR32_T_LOCK_FREE ATOMIC_CHAR_LOCK_FREE
 ATOMIC_FLAG_INIT ATOMIC_INT_LOCK_FREE ATOMIC_LLONG_LOCK_FREE ATOMIC_LONG_LOCK_FREE
 ATOMIC_POINTER_LOCK_FREE ATOMIC_SHORT_LOCK_FREE ATOMIC_VAR_INIT ATOMIC_WCHAR_T_LOCK_FREE BUFSIZ
@@ -491,10 +494,4 @@ INTMAX_MIN INTPTR_MAX INTPTR_MIN INT_FAST16_MAX INT_FAST16_MIN INT_FAST32_MAX IN
 INT_FAST64_MAX INT_FAST64_MIN INT_FAST8_MAX INT_FAST8_MIN INT_LEAST16_MAX INT_LEAST16_MIN
 INT_LEAST32_MAX INT_LEAST32_MIN INT_LEAST64_MAX INT_LEAST64_MIN INT_LEAST8_MAX INT_LEAST8_MIN
 LC_ALL LC_COLLATE LC_CTYPE LC_MONETARY LC_NUMERIC LC_TIME LDBL_DECIMAL_DIG LDBL_DIG LDBL_EPSILON
-LDBL_HAS_SUBNORM LDBL_MANT_DIG LDBL_MAX LDBL_MAX_10_EXP LDBL_MAX_EXP LDBL_MIN LDBL_MIN_10_EXP
-LDBL_MIN_EXP LDBL_TRUE_MIN L_tmpnam MATH_ERREXCEPT MATH_ERRNO MB_CUR_MAX NAN NULL PTRDIFF_MAX
-PTRDIFF_MIN RAND_MAX SEEK_CUR SEEK_END SEEK_SET SIG_ATOMIC_MAX SIG_ATOMIC_MIN SIZE_MAX TMP_MAX
-UINT16_C UINT16_MAX UINT32_C UINT32_MAX UINT64_C UINT64_MAX UINT8_C UINT8_MAX UINTMAX_C UINTMAX_MAX
-UINTPTR_MAX UINT_FAST16_MAX UINT_FAST32_MAX UINT_FAST64_MAX UINT_FAST8_MAX UINT_LEAST16_MAX
-UINT_LEAST32_MAX UINT_LEAST64_MAX UINT_LEAST8_MAX WCHAR_MAX WCHAR_MIN WINT_MAX WINT_MIN _IOFBF
-_IOLBF _IONBF errno math_errhandling offsetof stderr stdin stdout`)
+LDBL_HAS_SUBNORM LDBL_MANT_DIG LDBL_MAX LDBL_MAX_10_EXP LDBL_MAX_EXP LDBL_MIN LDBL_MIN_10_EXP`)

@@ -52,7 +52,7 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 	if !slices.ContainsFunc(pl.p.Types, func(t Type) bool { _, isEnum := t.(*Enum); _, isVariant := t.(*Variant); return isEnum || isVariant }) {
 		overloads = nil
 		if pl.tablesOwnToWire() {
-			overloads = []string{CppToWire}
+			overloads = []string{CppToWire, CppIsRetired}
 		}
 	}
 	for _, n := range append(overloads, pl.openOverloads()...) {
@@ -111,6 +111,7 @@ func (pl *CppNamePlan) declareEnum(name, origin string, item any, codes bool) {
 	h := pl.EnumHelpers(name)
 	pl.shareNS(name, origin, item)
 	pl.shareNS(h.Members, origin, item)
+	pl.shareNS(h.LiveMembers, origin, item)
 	pl.shareNS(h.FromWire, origin, item)
 	if codes {
 		pl.shareNS(h.FromCode, origin, item)

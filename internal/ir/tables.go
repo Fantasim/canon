@@ -152,7 +152,7 @@ var (
 	cppConformanceOwn   = []string{"g_code", "Capture"}                      // CONFORMANCE.md §7.2
 	cppStoreMembers     = []string{storeCurrent, storeReload, "current_"}    // §5.11
 	cppJSONHooks        = []string{"to_json", "from_json"}                   // §5.3
-	cppEnumOverloads    = []string{CppToName, CppToWire}                     // §5.2
+	cppEnumOverloads    = []string{CppToName, CppToWire, CppIsRetired}       // §5.2
 	cppAccessMembers    = []string{cppDataStruct, cppBuild, GoGet}           // §7.3: a baked emit's access struct
 )
 
@@ -201,9 +201,9 @@ var (
 	goVectorOwn        = []string{goWant, "code"}
 	goCheckedOps       = map[Op]bool{OpAdd: true, OpSub: true, OpMul: true, OpDiv: true, OpMod: true}
 	goVariantMembers   = []string{GoKindStore, GoCaseStore, GoKind}
-	goIDEnumMethods    = []string{GoString, goMarshalText, goUnmarshalText} // CODEGEN.md §5.2, §5.3 (DECISIONS 379)
+	goIDEnumMethods    = []string{GoString, goMarshalText, goUnmarshalText, GoRetired} // CODEGEN.md §5.2, §5.3 (DECISIONS 379)
 	goIDMethods        = append(slices.Clone(goIDEnumMethods), goPosition)
-	goEnumMethods      = []string{GoString, GoWire}                    // @codes and open enums keep these (DECISIONS 194, 379)
+	goEnumMethods      = []string{GoString, GoWire, GoRetired}         // @codes and open enums keep these (DECISIONS 194, 379)
 	goTextEnumMethods  = append(slices.Clone(goIDEnumMethods), GoWire) // a closed enum without @codes, a kind enum
 	goCodesEnumMethods = append(slices.Clone(goEnumMethods), GoCode)
 	goOpenEnumMethods  = append(slices.Clone(goEnumMethods), GoKnown) // DECISIONS 339

@@ -103,5 +103,5 @@ Tone: loud soft
 TwiceVector: code want x
 conformance: Capture ItemTimesVector RunShopConformance TwiceVector g_code kItemTimes kTwice
 detail: Decode Item_times ShopAccess ShopMake
-shop: Item Items MAX_PRICE Reward RewardGold RewardKind RewardKindFromWire Shop ShopSnapshot ShopStore Shops ToName ToWire Tone ToneFromWire Twice kItemsSchema kRewardKindMembers kShopsSchema kToneMembers
+shop: IsRetired Item Items MAX_PRICE Reward RewardGold RewardKind RewardKindFromWire Shop ShopSnapshot ShopStore Shops ToName ToWire Tone ToneFromWire Twice kItemsSchema kRewardKindLiveMembers kRewardKindMembers kShopsSchema kToneLiveMembers kToneMembers
 0 errors, 0 warnings in 1 package (…)

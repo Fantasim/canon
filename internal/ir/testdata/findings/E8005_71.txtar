@@ -1,0 +1,25 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 395: Go writes <E>LiveMembers beside <E>Members, so a record named ToneLiveMembers meets the function of the enum Tone.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { red, blue }
+
+/// Named like the live members function of Tone.
+record ToneLiveMembers {
+  /// X.
+  x: Int
+}
+
+/// The tones.
+let tones: [Tone] = [red]
+
+/// The records.
+let lives: [ToneLiveMembers] = [{ x: 1 }]
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  go: ToneLiveMembers is generated for both a.Tone and a.ToneLiveMembers; rename one of them with @go(name:)
+
+1 error, 0 warnings in 1 package (…)

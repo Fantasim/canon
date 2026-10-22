@@ -256,11 +256,15 @@ func (pl *tsNamePlan) declareType(mod *nameScope, t Type) {
 	}
 }
 
+// TSLiveMembersName is <E>LiveMembers of an enum, <Id>LiveMembers of a table's id type: the members not retired (CODEGEN.md §5.2, §5.3, DECISIONS 395).
+func TSLiveMembersName(name string) string { return name + tsLiveMembers }
+
 // declareEnumTables declares an enum's Members, Names and Index, and Codes with @codes.
 func (pl *tsNamePlan) declareEnumTables(mod *nameScope, e *Enum, name string) {
 	for _, suffix := range []string{tsMembersName, tsNamesName, tsIndexName} {
 		pl.declare(mod, name+suffix, e.QName(), e)
 	}
+	pl.declare(mod, TSLiveMembersName(name), e.QName(), e) // DECISIONS 395
 	if e.Codes != nil {
 		pl.declare(mod, name+tsCodesName, e.QName(), e)
 	}
@@ -292,8 +296,9 @@ func (pl *tsNamePlan) declareValue(mod *nameScope, v *Value) {
 		switch {
 		case pl.e.Mode != ModeData: // Members and the private Index are reserved unconditionally, a safe over-reservation (ADR-0021 §3 point 5)
 			pl.declare(mod, id, org, v)
-			pl.declare(mod, id+tsMembersName, org, v) // CODEGEN.md §5.3
-			pl.declare(mod, id+tsIndexName, org, v)   // the file's private canonIndex const
+			pl.declare(mod, id+tsMembersName, org, v)      // CODEGEN.md §5.3
+			pl.declare(mod, TSLiveMembersName(id), org, v) // DECISIONS 395
+			pl.declare(mod, id+tsIndexName, org, v)        // the file's private canonIndex const
 		case !pl.strIDs[id]:
 			pl.strIDs[id] = true
 			pl.declare(mod, id, org, v)

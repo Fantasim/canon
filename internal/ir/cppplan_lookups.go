@@ -16,9 +16,10 @@ type CppVector struct {
 	Struct, Table string
 }
 
-// CppEnumHelpers are an enum's k<E>Members, <E>FromWire and, with @codes, <E>FromCode; a closed @codes enum's detail::k<E>Codes, detail::k<E>CodeOrdinals and detail::<E>Ordinal; an opened enum's detail::k<E>Wires, k<E>WireNames and, with @codes, k<E>WireCodes (CODEGEN.md §5.2, DECISIONS 383).
+// CppEnumHelpers are an enum's k<E>Members, k<E>LiveMembers (DECISIONS 395), <E>FromWire and, with @codes, <E>FromCode; a closed @codes enum's detail::k<E>Codes, detail::k<E>CodeOrdinals and detail::<E>Ordinal; an opened enum's detail::k<E>Wires, k<E>WireNames and, with @codes, k<E>WireCodes (CODEGEN.md §5.2, DECISIONS 383).
 type CppEnumHelpers struct {
-	Members, FromWire, FromCode  string
+	Members, LiveMembers         string
+	FromWire, FromCode           string
 	Codes, CodeOrdinals, Ordinal string
 	Wires, WireNames, WireCodes  string
 }
@@ -54,7 +55,7 @@ func (pl *CppNamePlan) Vector(owner string, fn *ExportFn) CppVector {
 // EnumHelpers are the helpers of the enum or kind enum named enum (CODEGEN.md §5.2, §5.5).
 func (pl *CppNamePlan) EnumHelpers(enum string) CppEnumHelpers {
 	return CppEnumHelpers{
-		Members: cppConstPrefix + enum + goMembersSuffix, FromWire: enum + cppFromWire, FromCode: enum + goFromCodeSuffix,
+		Members: cppConstPrefix + enum + goMembersSuffix, LiveMembers: cppConstPrefix + enum + liveMembersSuffix, FromWire: enum + cppFromWire, FromCode: enum + goFromCodeSuffix,
 		Codes: cppConstPrefix + enum + cppCodes, CodeOrdinals: cppConstPrefix + enum + cppCodeOrdinals, Ordinal: enum + cppOrdinal,
 		Wires: cppConstPrefix + enum + cppWires, WireNames: cppConstPrefix + enum + cppWireNames, WireCodes: cppConstPrefix + enum + cppWireCodes,
 	}

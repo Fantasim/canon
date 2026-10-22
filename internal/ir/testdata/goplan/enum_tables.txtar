@@ -25,11 +25,11 @@ enum Empty { }
 
 emit go { out: "@features/tables", package: "tables", mode: baked }
 -- plan.txt --
-Empty: MarshalText String UnmarshalText Wire
-Same: MarshalText String UnmarshalText Wire
+Empty: MarshalText Retired String UnmarshalText Wire
+Same: MarshalText Retired String UnmarshalText Wire
 Shape: AsCircle Kind kind value
 ShapeCircle: Radius radius
-ShapeKind: MarshalText String UnmarshalText Wire
-Twin: MarshalText String UnmarshalText Wire
-package: Empty EmptyMembers MakeCase_Shape_Circle Make_Shape_Circle Make_Shape_Dot ParseEmpty ParseSame ParseShapeKind ParseTwin Same SameMembers SameP SameQ Shape ShapeCircle ShapeKind ShapeKindCircle ShapeKindDot Twin TwinA TwinB TwinMembers enumFound_Empty enumFound_Same enumFound_ShapeKind enumFound_Twin enumKeys_Empty enumKeys_Same enumKeys_ShapeKind enumKeys_Twin enumMembers_Empty enumMembers_Same enumMembers_Twin enumNames_Empty enumNames_Same enumNames_ShapeKind enumNames_Twin enumWires_ShapeKind enumWires_Twin errors iter slices strconv
+ShapeKind: MarshalText Retired String UnmarshalText Wire
+Twin: MarshalText Retired String UnmarshalText Wire
+package: Empty EmptyLiveMembers EmptyMembers MakeCase_Shape_Circle Make_Shape_Circle Make_Shape_Dot ParseEmpty ParseSame ParseShapeKind ParseTwin Same SameLiveMembers SameMembers SameP SameQ Shape ShapeCircle ShapeKind ShapeKindCircle ShapeKindDot Twin TwinA TwinB TwinLiveMembers TwinMembers enumFound_Empty enumFound_Same enumFound_ShapeKind enumFound_Twin enumKeys_Empty enumKeys_Same enumKeys_ShapeKind enumKeys_Twin enumMembers_Empty enumMembers_Same enumMembers_Twin enumNames_Empty enumNames_Same enumNames_ShapeKind enumNames_Twin enumWires_ShapeKind enumWires_Twin errors iter slices strconv
 0 errors, 0 warnings in 1 package (…)

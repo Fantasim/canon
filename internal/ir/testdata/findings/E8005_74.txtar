@@ -1,0 +1,16 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 395: C++ writes the free function IsRetired for each enum, so an export fn isRetired of the package meets the overload.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { soft, loud }
+
+/// Whether a tone is retired.
+export fn isRetired(e: Tone) -> Bool { return false }
+
+emit cpp { out: "@features/a", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:7:11
+  cpp: IsRetired is generated for both a and a.isRetired; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

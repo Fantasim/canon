@@ -1,0 +1,16 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 395: C++ writes k<E>LiveMembers beside k<E>Members, so the enum ToneLive (kToneLiveMembers) meets the live members of the enum Tone.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { red, blue }
+
+/// A tone that is live.
+enum ToneLive { on, off }
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:7:6
+  cpp: kToneLiveMembers is generated for both a.Tone and a.ToneLive; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

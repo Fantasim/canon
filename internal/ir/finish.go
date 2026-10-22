@@ -208,3 +208,9 @@ func importPath(imp *syntax.Import) string {
 	}
 	return strings.Join(parts, qnameSep)
 }
+
+// EntryRetired reports whether entry i of table value v is retired: false for a value that is no table and for an i out of range (CODEGEN.md §5.2, §5.3, DECISIONS 395).
+func EntryRetired(v *Value, i int) bool {
+	tbl, ok := v.V.(*value.Table)
+	return ok && i >= 0 && i < len(tbl.Entries) && tbl.Entries[i].Ident.Retired
+}

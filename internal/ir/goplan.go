@@ -165,6 +165,9 @@ func (pl *GoNamePlan) IDMemberName(elem Type, key string) string {
 // ParseName is Parse<E> of the enum, kind enum or id enum named enum (CODEGEN.md §5.2).
 func (pl *GoNamePlan) ParseName(enum string) string { return goParsePrefix + enum }
 
+// LiveMembersName is <E>LiveMembers of an enum, the members not retired (CODEGEN.md §5.2, DECISIONS 395).
+func (pl *GoNamePlan) LiveMembersName(enum string) string { return enum + liveMembersSuffix }
+
 // MembersName is <E>Members of an enum (CODEGEN.md §5.2).
 func (pl *GoNamePlan) MembersName(enum string) string { return enum + goMembersSuffix }
 

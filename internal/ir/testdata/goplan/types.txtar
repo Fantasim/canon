@@ -83,14 +83,14 @@ test "scaled doubles" {
 emit go { out: "@features/club", package: "club", mode: types }
 -- plan.txt --
 Badge: Level Role level role
-Role: MarshalText String UnmarshalText Wire
-package: Badge Make_Badge ParseRole Role RoleAdmin RoleMembers RoleUser enumFound_Role enumKeys_Role enumMembers_Role enumNames_Role errors iter slices strconv
+Role: MarshalText Retired String UnmarshalText Wire
+package: Badge Make_Badge ParseRole Role RoleAdmin RoleLiveMembers RoleMembers RoleUser enumFound_Role enumKeys_Role enumMembers_Role enumNames_Role errors iter slices strconv
 Bonus: Stat Value stat value
 Club: Members Title members title
 Member: Badge Bonuses Code Deep ID JSON Points Retired Role Shape Utf8 Wait badge bonuses code deep id json_ points retired role shape utf8_ wait wait_ok
 Shape: AsCircle Kind kind value
 ShapeCircle: Radius Scaled radius
-ShapeKind: MarshalText String UnmarshalText Wire
+ShapeKind: MarshalText Retired String UnmarshalText Wire
 TestShapeCircleScaledConformance vectors: code n radius want
 club.Shape.circle.scaled(): n radius
 conformance imports: math rt testing

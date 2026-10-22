@@ -24,7 +24,7 @@ emit go { out: "@features/a", package: "a" }
 -- plan.txt --
 TestTierForConformance vectors: code n want
 Tier: ID Rank Retired id rank retired
-TierID: MarshalText Position String UnmarshalText position
+TierID: MarshalText Position Retired String UnmarshalText position
 Tiers: All At Find Get Len rows
 a.tierFor(): n
 aData: tiers

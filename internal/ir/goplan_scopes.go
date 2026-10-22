@@ -190,6 +190,7 @@ func (pl *GoNamePlan) declareEnums(top *nameScope) {
 		}
 		pl.declare(top, pl.ParseName(name), origin, e)
 		pl.declare(top, pl.MembersName(name), origin, e)
+		pl.declare(top, pl.LiveMembersName(name), origin, e)
 		if e.Codes != nil {
 			pl.declare(top, pl.FromCodeName(name), origin, e)
 		}

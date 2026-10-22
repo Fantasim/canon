@@ -92,8 +92,8 @@ emit json { out: "out/" }
 -- club.settings.json --
 { "title": "s" }
 -- plan.txt --
-Role: MarshalText String UnmarshalText Wire
-package: ParseRole Role RoleAdmin RoleMembers RoleUser enumFound_Role enumKeys_Role enumMembers_Role enumNames_Role errors iter slices strconv
+Role: MarshalText Retired String UnmarshalText Wire
+package: ParseRole Role RoleAdmin RoleLiveMembers RoleMembers RoleUser enumFound_Role enumKeys_Role enumMembers_Role enumNames_Role errors iter slices strconv
 Bonus: Stat Value stat value
 Club: Captain CaptainID Title captain captain_id title
 ClubSnapshot: Club Members club members
@@ -103,7 +103,7 @@ Members: All At Find FindByCode Len membersCodeIndex rows
 Settings: Title title
 Shape: AsCircle Kind kind value
 ShapeCircle: Radius Scaled radius
-ShapeKind: MarshalText String UnmarshalText Wire
+ShapeKind: MarshalText Retired String UnmarshalText Wire
 TestShapeCircleScaledConformance vectors: code n radius want
 club.Shape.circle.scaled(): n radius
 conformance imports: math rt testing
