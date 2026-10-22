@@ -211,6 +211,12 @@ std::string_view ToWire(Tone v) {
     return kWires[i];
 }
 
+bool IsRetired(Tone v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, true};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Tone> ToneFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 3> kKeys = {"loud", "old", "quiet"};
     static constexpr std::array<Tone, 3> kValues = {Tone::loud, Tone::old, Tone::quiet};
@@ -240,6 +246,12 @@ std::string_view ToWire(Element v) {
     const size_t i = detail::ElementOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Element v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, true};
+    const size_t i = detail::ElementOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Element> ElementFromWire(std::string_view wire) {
@@ -279,6 +291,12 @@ std::string_view ToWire(RewardKind v) {
     return kWires[i];
 }
 
+bool IsRetired(RewardKind v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"coins", "nothing"};
     static constexpr std::array<RewardKind, 2> kValues = {RewardKind::coins, RewardKind::nothing};
@@ -303,6 +321,12 @@ std::string_view ToWire(ColumnId v) {
     return kWires[i];
 }
 
+bool IsRetired(ColumnId v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<ColumnId> ColumnIdFromWire(std::string_view key) {
     static constexpr std::array<std::string_view, 2> kKeys = {"done", "todo"};
     static constexpr std::array<ColumnId, 2> kIds = {ColumnId::done, ColumnId::todo};
@@ -325,6 +349,12 @@ std::string_view ToWire(StatusId v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(StatusId v) {
+    static constexpr std::array<bool, 3> kRetired = {false, true, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<StatusId> StatusIdFromWire(std::string_view key) {

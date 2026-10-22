@@ -307,19 +307,21 @@ const (
 
 // The formats of the enum helpers the .gen.cpp defines as tables, and of a @codes enum's ordinal (CODEGEN.md §5.2, §5.3; DECISIONS 383).
 const (
-	nameSigFormat       = "std::string_view %s(%s v)"
-	fromWireSigFormat   = "std::optional<%s> %s(std::string_view wire)"
-	fromCodeSigFormat   = "std::optional<%s> %s(%s code)"
-	ordinalSigFormat    = "inline constexpr size_t %s(%s v)"
-	openNameSigFormat   = "std::string_view " + ir.CppToName + "(const %s& v)"
-	openKnownSigFormat  = "bool " + ir.CppIsKnown + "(const %s& v)"
-	openToCodeSigFormat = "std::optional<%s> " + ir.CppToCode + "(const %s& v)"
-	idFromWireSigFormat = "std::optional<%s> %s(std::string_view key)"
-	tableLineFormat     = indentUnit + "static constexpr std::array<%s, %d> %s = %s;\n"
-	wireKeyLineFormat   = indentUnit + "const std::string_view key = %s(v);\n"
-	codeLineFormat      = indentUnit + "const %[1]s code = static_cast<%[1]s>(v);\n"
-	sizeCallFormat      = "%s.size()"
-	localTableFormat    = "constexpr std::array<%s, %d> %s = %s;\n"
+	nameSigFormat        = "std::string_view %s(%s v)"
+	fromWireSigFormat    = "std::optional<%s> %s(std::string_view wire)"
+	fromCodeSigFormat    = "std::optional<%s> %s(%s code)"
+	ordinalSigFormat     = "inline constexpr size_t %s(%s v)"
+	openNameSigFormat    = "std::string_view " + ir.CppToName + "(const %s& v)"
+	openKnownSigFormat   = "bool " + ir.CppIsKnown + "(const %s& v)"
+	retiredSigFormat     = "bool " + ir.CppIsRetired + "(%s v)"
+	openRetiredSigFormat = "bool " + ir.CppIsRetired + "(const %s& v)"
+	openToCodeSigFormat  = "std::optional<%s> " + ir.CppToCode + "(const %s& v)"
+	idFromWireSigFormat  = "std::optional<%s> %s(std::string_view key)"
+	tableLineFormat      = indentUnit + "static constexpr std::array<%s, %d> %s = %s;\n"
+	wireKeyLineFormat    = indentUnit + "const std::string_view key = %s(v);\n"
+	codeLineFormat       = indentUnit + "const %[1]s code = static_cast<%[1]s>(v);\n"
+	sizeCallFormat       = "%s.size()"
+	localTableFormat     = "constexpr std::array<%s, %d> %s = %s;\n"
 )
 
 // Optional list elements and map values (CODEGEN.md §4.2, WIRE.md §5.4; DECISIONS 385).

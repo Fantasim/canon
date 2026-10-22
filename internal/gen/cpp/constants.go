@@ -137,6 +137,7 @@ const (
 	namesTable         = "kNames"
 	wiresTable         = "kWires"
 	idsTable           = "kIds"
+	retiredTable       = "kRetired" // IsRetired's flags (DECISIONS 395)
 	wireParam          = "wire"
 	loVar              = "lo"
 )

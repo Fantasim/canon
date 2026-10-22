@@ -27,9 +27,11 @@ enum class Kind : uint8_t {
 };
 
 inline constexpr std::array<Kind, 2> kKindMembers = {Kind::spawn, Kind::despawn};
+inline constexpr std::array<Kind, 2> kKindLiveMembers = {Kind::spawn, Kind::despawn};
 
 std::string_view ToName(Kind v);
 std::string_view ToWire(Kind v);
+bool IsRetired(Kind v);
 std::optional<Kind> KindFromWire(std::string_view wire);
 
 enum class Kind3 : uint8_t {
@@ -41,9 +43,11 @@ enum class Kind3 : uint8_t {
 };
 
 inline constexpr std::array<Kind3, 5> kKind3Members = {Kind3::a, Kind3::b, Kind3::c, Kind3::d, Kind3::e};
+inline constexpr std::array<Kind3, 5> kKind3LiveMembers = {Kind3::a, Kind3::b, Kind3::c, Kind3::d, Kind3::e};
 
 std::string_view ToName(Kind3 v);
 std::string_view ToWire(Kind3 v);
+bool IsRetired(Kind3 v);
 std::optional<Kind3> Kind3FromWire(std::string_view wire);
 
 enum class PayloadBranch : uint8_t {

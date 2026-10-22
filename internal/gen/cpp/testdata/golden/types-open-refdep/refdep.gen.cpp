@@ -89,6 +89,12 @@ std::string_view ToWire(Shape v) {
     return kWires[i];
 }
 
+bool IsRetired(Shape v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Shape> ShapeFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 3> kKeys = {"count", "none", "place"};
     static constexpr std::array<Shape, 3> kValues = {Shape::count, Shape::none_, Shape::place};
@@ -127,6 +133,23 @@ std::string_view ToName(const Event& v) {
     }
     if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return detail::kEventWireNames[lo];
     return key;
+}
+
+bool IsRetired(const Event& v) {
+    const std::string_view key = ToWire(v);
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    size_t lo = 0;
+    size_t hi = detail::kEventWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kEventWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return kRetired[lo];
+    return false;
 }
 
 bool IsKnown(const Event& v) {

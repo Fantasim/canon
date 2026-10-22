@@ -24,6 +24,7 @@ enum class ZoneId : uint8_t {
 };
 
 std::string_view ToWire(ZoneId v);
+bool IsRetired(ZoneId v);
 std::optional<ZoneId> ZoneIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read ZoneIdFromWire(s).
@@ -38,6 +39,7 @@ enum class LevelRangeId : uint8_t {
 };
 
 std::string_view ToWire(LevelRangeId v);
+bool IsRetired(LevelRangeId v);
 std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read LevelRangeIdFromWire(s).

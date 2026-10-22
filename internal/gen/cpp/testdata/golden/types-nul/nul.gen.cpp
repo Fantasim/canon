@@ -62,6 +62,12 @@ std::string_view ToWire(PrizeKind v) {
     return kWires[i];
 }
 
+bool IsRetired(PrizeKind v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {std::string_view("a\000b", 3), "none"};
     static constexpr std::array<PrizeKind, 2> kValues = {PrizeKind::coins, PrizeKind::none};

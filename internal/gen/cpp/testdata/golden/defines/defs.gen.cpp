@@ -35,6 +35,12 @@ std::string_view ToWire(Kind v) {
     return kWires[i];
 }
 
+bool IsRetired(Kind v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, true};
+    const size_t i = detail::KindOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Kind> KindFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 3> kKeys = {"GENERAL", "IK1_WEAPON", "OLD"};
     static constexpr std::array<Kind, 3> kValues = {Kind::GENERAL, Kind::IK1_WEAPON, Kind::OLD};
@@ -72,6 +78,12 @@ std::string_view ToWire(Plain v) {
     return kWires[i];
 }
 
+bool IsRetired(Plain v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Plain> PlainFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"a", "b"};
     static constexpr std::array<Plain, 2> kValues = {Plain::A, Plain::B};
@@ -101,6 +113,12 @@ std::string_view ToWire(Extreme v) {
     const size_t i = detail::ExtremeOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Extreme v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = detail::ExtremeOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Extreme> ExtremeFromWire(std::string_view wire) {
@@ -138,6 +156,12 @@ std::string_view ToWire(Legacy v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Legacy v) {
+    static constexpr std::array<bool, 1> kRetired = {false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Legacy> LegacyFromWire(std::string_view wire) {

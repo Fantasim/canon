@@ -89,6 +89,12 @@ std::string_view ToWire(Side v) {
     return kWires[i];
 }
 
+bool IsRetired(Side v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Side> SideFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"left", "right"};
     static constexpr std::array<Side, 2> kValues = {Side::left, Side::right};
@@ -111,6 +117,12 @@ std::string_view ToWire(NoteId v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(NoteId v) {
+    static constexpr std::array<bool, 1> kRetired = {false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<NoteId> NoteIdFromWire(std::string_view key) {

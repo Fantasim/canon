@@ -94,6 +94,23 @@ std::string_view ToName(const Shape& v) {
     return key;
 }
 
+bool IsRetired(const Shape& v) {
+    const std::string_view key = ToWire(v);
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    size_t lo = 0;
+    size_t hi = detail::kShapeWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kShapeWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kShapeWires.size() && detail::kShapeWires[lo] == key) return kRetired[lo];
+    return false;
+}
+
 bool IsKnown(const Shape& v) {
     const std::string_view key = ToWire(v);
     size_t lo = 0;
@@ -146,6 +163,23 @@ std::string_view ToName(const Event& v) {
     }
     if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return detail::kEventWireNames[lo];
     return key;
+}
+
+bool IsRetired(const Event& v) {
+    const std::string_view key = ToWire(v);
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    size_t lo = 0;
+    size_t hi = detail::kEventWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kEventWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return kRetired[lo];
+    return false;
 }
 
 bool IsKnown(const Event& v) {

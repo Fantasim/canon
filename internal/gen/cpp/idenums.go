@@ -3,6 +3,7 @@ package cppgen
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -49,6 +50,7 @@ func (g *gen) idEnums() {
 		g.h.blank()
 		fromWire := g.pl.EnumHelpers(s.name).FromWire
 		g.h.printf(declFormat, fmt.Sprintf(nameSigFormat, ir.CppToWire, s.name))
+		g.h.printf(declFormat, fmt.Sprintf(retiredSigFormat, s.name))
 		g.h.printf(declFormat, fmt.Sprintf(idFromWireSigFormat, s.name, fromWire))
 		g.h.blank()
 		g.doc(0, fmt.Sprintf(idJSONDocFormat, fromWire))
@@ -66,6 +68,7 @@ func (g *gen) idFromWires() {
 		wires := views(it.v.IDs)
 		pos := fmt.Sprintf(staticCastFormat, cppSize, enumArg)
 		g.c.printf(byOrdinalText, fmt.Sprintf(nameSigFormat, ir.CppToWire, name), len(wires), wiresTable, indentBlock(braced(wires)), pos)
+		g.c.printf(retiredText, fmt.Sprintf(retiredSigFormat, name), len(wires), retiredTable, indentBlock(braced(idRetired(it.v))), pos)
 		keys := slices.Clone(it.v.IDs)
 		slices.Sort(keys)
 		quoted := views(keys)
@@ -78,6 +81,15 @@ func (g *gen) idFromWires() {
 			keys: keysTable, key: keyParam, hit: fmt.Sprintf(indexFormat, idsTable, loVar), miss: cppNullopt,
 		}.text())
 	}
+}
+
+// idRetired are the retired flags of a table's entries, in entry order (CODEGEN.md §5.3, DECISIONS 395).
+func idRetired(v *ir.Value) []string {
+	out := make([]string, len(v.IDs))
+	for i := range v.IDs {
+		out[i] = strconv.FormatBool(ir.EntryRetired(v, i))
+	}
+	return out
 }
 
 // indentBlock indents every line of a multi-line initializer after its first by one level.

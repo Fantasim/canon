@@ -332,6 +332,12 @@ std::string_view ToWire(RollMode v) {
     return kWires[i];
 }
 
+bool IsRetired(RollMode v) {
+    static constexpr std::array<bool, 8> kRetired = {false, false, false, false, false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<RollMode> RollModeFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 8> kKeys = {
         "authoritative",
@@ -379,6 +385,12 @@ std::string_view ToWire(EventKindKind v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(EventKindKind v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire) {

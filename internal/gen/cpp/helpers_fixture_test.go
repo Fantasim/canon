@@ -30,19 +30,24 @@ func helpersPackage() *ir.Package {
 	tone := &ir.Enum{Pkg: helpersPkg, Name: "Tone", Members: members([]string{"warning", "warning", "info", "info", "series_1", "s\u00e9rie-1", "old", "sz"}, nil)}
 	tone.Members[3].Retired = true
 	element := &ir.Enum{Pkg: helpersPkg, Name: "Element", Codes: &tU8, Members: members([]string{"FIRE", "FIRE", "WATER", "WATER", "EARTH", "EARTH"}, []int64{3, 1, 200})}
+	element.Members[1].Retired = true // DECISIONS 395
 	delta := &ir.Enum{Pkg: helpersPkg, Name: "Delta", Codes: &tI16, Members: members([]string{"up", "up", "down", "down", "flat", "flat"}, []int64{7, -5, 0})}
 	extreme := &ir.Enum{Pkg: helpersPkg, Name: "Extreme", Codes: &tInt, Members: members([]string{"LOW", "LOW", "MID", "MID", "HIGH", "HIGH"}, []int64{math.MinInt64, 0, math.MaxInt64})}
 	dup := &ir.Enum{Pkg: helpersPkg, Name: "Dup", Members: members([]string{"a", "x", "b", "x", "c", "w"}, nil)}
 	nothing := &ir.Enum{Pkg: helpersPkg, Name: "Nothing"}
 	none := &ir.Enum{Pkg: helpersPkg, Name: "NoCode", Codes: &tU8}
 	stat := &ir.Enum{Pkg: helpersPkg, Name: "Stat", Codes: &tU16, Members: members([]string{"atk", "ATK", "def", "SPA", "spd", "SP\u00c9", "alias", "ATK"}, []int64{4, 1, 2, 9})}
+	stat.Members[1].Retired = true // DECISIONS 395
 	blank := &ir.Enum{Pkg: helpersPkg, Name: "Blank"}
+	openDup := &ir.Enum{Pkg: helpersPkg, Name: "OpenDup", Members: members([]string{"first", "x", "second", "x", "third", "third", "fourth", "y", "fifth", "y"}, nil)}
+	openDup.Members[1].Retired, openDup.Members[3].Retired = true, true // DECISIONS 383, 395: the first declared of equal wires answers
 	shape := &ir.Variant{Pkg: helpersPkg, Name: "Shape", Tag: "kind", Cases: []*ir.Case{
 		{Name: "circle", Wire: "circle", Fields: []*ir.Field{field("r", "r", "", tInt)}}, {Name: "dot", Wire: "DOT"},
 	}}
+	shape.Cases[1].Retired = true // DECISIONS 395
 	return &ir.Package{
-		Name: helpersPkg, Dir: "demo/helpers", Types: []ir.Type{tone, element, delta, extreme, dup, nothing, none, stat, blank, shape},
-		Emits: []*ir.Emit{{Target: ir.TargetCpp, Dir: "out/helpers", Mode: ir.ModeTypes, Namespace: "demo::helpers", Open: []string{"Stat", "Blank"}}},
+		Name: helpersPkg, Dir: "demo/helpers", Types: []ir.Type{tone, element, delta, extreme, dup, nothing, none, stat, blank, openDup, shape},
+		Emits: []*ir.Emit{{Target: ir.TargetCpp, Dir: "out/helpers", Mode: ir.ModeTypes, Namespace: "demo::helpers", Open: []string{"Stat", "Blank", "OpenDup"}}},
 	}
 }
 

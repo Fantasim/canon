@@ -201,6 +201,23 @@ std::string_view ToName(const Dst& v) {
     return key;
 }
 
+bool IsRetired(const Dst& v) {
+    const std::string_view key = ToWire(v);
+    static constexpr std::array<bool, 3> kRetired = {false, false, true};
+    size_t lo = 0;
+    size_t hi = detail::kDstWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kDstWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kDstWires.size() && detail::kDstWires[lo] == key) return kRetired[lo];
+    return false;
+}
+
 bool IsKnown(const Dst& v) {
     const std::string_view key = ToWire(v);
     size_t lo = 0;
@@ -254,6 +271,23 @@ std::string_view ToName(const Stat& v) {
     }
     if (lo < detail::kStatWires.size() && detail::kStatWires[lo] == key) return detail::kStatWireNames[lo];
     return key;
+}
+
+bool IsRetired(const Stat& v) {
+    const std::string_view key = ToWire(v);
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    size_t lo = 0;
+    size_t hi = detail::kStatWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kStatWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kStatWires.size() && detail::kStatWires[lo] == key) return kRetired[lo];
+    return false;
 }
 
 bool IsKnown(const Stat& v) {
@@ -342,6 +376,23 @@ std::string_view ToName(const Rank& v) {
     }
     if (lo < detail::kRankWires.size() && detail::kRankWires[lo] == key) return detail::kRankWireNames[lo];
     return key;
+}
+
+bool IsRetired(const Rank& v) {
+    const std::string_view key = ToWire(v);
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    size_t lo = 0;
+    size_t hi = detail::kRankWires.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (detail::kRankWires[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < detail::kRankWires.size() && detail::kRankWires[lo] == key) return kRetired[lo];
+    return false;
 }
 
 bool IsKnown(const Rank& v) {

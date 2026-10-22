@@ -26,9 +26,11 @@ enum class Tone : uint8_t {
 };
 
 inline constexpr std::array<Tone, 3> kToneMembers = {Tone::quiet, Tone::loud, Tone::old};
+inline constexpr std::array<Tone, 2> kToneLiveMembers = {Tone::quiet, Tone::loud};
 
 std::string_view ToName(Tone v);
 std::string_view ToWire(Tone v);
+bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
 enum class Element : uint8_t {
@@ -39,6 +41,7 @@ enum class Element : uint8_t {
 };
 
 inline constexpr std::array<Element, 3> kElementMembers = {Element::FIRE, Element::WATER, Element::EARTH};
+inline constexpr std::array<Element, 2> kElementLiveMembers = {Element::FIRE, Element::WATER};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 3> kElementCodes = {1, 2, 3};
@@ -62,6 +65,7 @@ inline constexpr size_t ElementOrdinal(Element v) {
 
 std::string_view ToName(Element v);
 std::string_view ToWire(Element v);
+bool IsRetired(Element v);
 std::optional<Element> ElementFromWire(std::string_view wire);
 std::optional<Element> ElementFromCode(uint8_t code);
 
@@ -71,9 +75,11 @@ enum class RewardKind : uint8_t {
 };
 
 inline constexpr std::array<RewardKind, 2> kRewardKindMembers = {RewardKind::coins, RewardKind::nothing};
+inline constexpr std::array<RewardKind, 2> kRewardKindLiveMembers = {RewardKind::coins, RewardKind::nothing};
 
 std::string_view ToName(RewardKind v);
 std::string_view ToWire(RewardKind v);
+bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 /// The key of an entry of columns. Store or send ToWire(id): the underlying value is
@@ -84,6 +90,7 @@ enum class ColumnId : uint8_t {
 };
 
 std::string_view ToWire(ColumnId v);
+bool IsRetired(ColumnId v);
 std::optional<ColumnId> ColumnIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read ColumnIdFromWire(s).
@@ -99,6 +106,7 @@ enum class StatusId : uint8_t {
 };
 
 std::string_view ToWire(StatusId v);
+bool IsRetired(StatusId v);
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).

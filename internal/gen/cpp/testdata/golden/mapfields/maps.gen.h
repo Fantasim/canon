@@ -29,9 +29,11 @@ enum class Element : uint8_t {
 };
 
 inline constexpr std::array<Element, 2> kElementMembers = {Element::fire, Element::water};
+inline constexpr std::array<Element, 2> kElementLiveMembers = {Element::fire, Element::water};
 
 std::string_view ToName(Element v);
 std::string_view ToWire(Element v);
+bool IsRetired(Element v);
 std::optional<Element> ElementFromWire(std::string_view wire);
 
 /// A rank.
@@ -41,6 +43,7 @@ enum class Rank : uint8_t {
 };
 
 inline constexpr std::array<Rank, 2> kRankMembers = {Rank::low, Rank::high};
+inline constexpr std::array<Rank, 2> kRankLiveMembers = {Rank::low, Rank::high};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 2> kRankCodes = {1, 200};
@@ -64,6 +67,7 @@ inline constexpr size_t RankOrdinal(Rank v) {
 
 std::string_view ToName(Rank v);
 std::string_view ToWire(Rank v);
+bool IsRetired(Rank v);
 std::optional<Rank> RankFromWire(std::string_view wire);
 std::optional<Rank> RankFromCode(uint8_t code);
 
@@ -74,9 +78,11 @@ enum class Tone : uint8_t {
 };
 
 inline constexpr std::array<Tone, 2> kToneMembers = {Tone::plain, Tone::series_1};
+inline constexpr std::array<Tone, 2> kToneLiveMembers = {Tone::plain, Tone::series_1};
 
 std::string_view ToName(Tone v);
 std::string_view ToWire(Tone v);
+bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
 class Slot;

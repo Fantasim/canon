@@ -24,9 +24,11 @@ enum class RewardKind : uint8_t {
 };
 
 inline constexpr std::array<RewardKind, 2> kRewardKindMembers = {RewardKind::coins, RewardKind::nothing};
+inline constexpr std::array<RewardKind, 2> kRewardKindLiveMembers = {RewardKind::coins, RewardKind::nothing};
 
 std::string_view ToName(RewardKind v);
 std::string_view ToWire(RewardKind v);
+bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 enum class ParamBranch : uint8_t {
@@ -42,6 +44,7 @@ enum class StatusId : uint8_t {
 };
 
 std::string_view ToWire(StatusId v);
+bool IsRetired(StatusId v);
 std::optional<StatusId> StatusIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read StatusIdFromWire(s).

@@ -44,11 +44,13 @@ inline const Dst Dst::mp{"DST_MP"};
 inline const Dst Dst::old{"DST_OLD"};
 
 inline const std::array<Dst, 3> kDstMembers = {Dst::hp, Dst::mp, Dst::old};
+inline const std::array<Dst, 2> kDstLiveMembers = {Dst::hp, Dst::mp};
 
 inline std::string_view ToWire(const Dst& v) noexcept { return v.wire_; }
 
 std::string_view ToName(const Dst& v);
 bool IsKnown(const Dst& v);
+bool IsRetired(const Dst& v);
 std::optional<Dst> DstFromWire(std::string_view wire);
 
 class Stat {
@@ -74,11 +76,13 @@ inline const Stat Stat::def{"DEF"};
 inline const Stat Stat::spd{"SPD"};
 
 inline const std::array<Stat, 3> kStatMembers = {Stat::atk, Stat::def, Stat::spd};
+inline const std::array<Stat, 3> kStatLiveMembers = {Stat::atk, Stat::def, Stat::spd};
 
 inline std::string_view ToWire(const Stat& v) noexcept { return v.wire_; }
 
 std::string_view ToName(const Stat& v);
 bool IsKnown(const Stat& v);
+bool IsRetired(const Stat& v);
 std::optional<Stat> StatFromWire(std::string_view wire);
 std::optional<uint16_t> ToCode(const Stat& v);
 std::optional<Stat> StatFromCode(uint16_t code);
@@ -104,11 +108,13 @@ inline const Rank Rank::low{"low"};
 inline const Rank Rank::high{"high"};
 
 inline const std::array<Rank, 2> kRankMembers = {Rank::low, Rank::high};
+inline const std::array<Rank, 2> kRankLiveMembers = {Rank::low, Rank::high};
 
 inline std::string_view ToWire(const Rank& v) noexcept { return v.wire_; }
 
 std::string_view ToName(const Rank& v);
 bool IsKnown(const Rank& v);
+bool IsRetired(const Rank& v);
 std::optional<Rank> RankFromWire(std::string_view wire);
 std::optional<uint8_t> ToCode(const Rank& v);
 std::optional<Rank> RankFromCode(uint8_t code);

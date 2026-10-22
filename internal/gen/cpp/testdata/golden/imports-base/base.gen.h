@@ -22,9 +22,11 @@ enum class Color : uint8_t {
 };
 
 inline constexpr std::array<Color, 3> kColorMembers = {Color::red, Color::green, Color::blue};
+inline constexpr std::array<Color, 3> kColorLiveMembers = {Color::red, Color::green, Color::blue};
 
 std::string_view ToName(Color v);
 std::string_view ToWire(Color v);
+bool IsRetired(Color v);
 std::optional<Color> ColorFromWire(std::string_view wire);
 
 enum class PaintKind : uint8_t {
@@ -33,9 +35,11 @@ enum class PaintKind : uint8_t {
 };
 
 inline constexpr std::array<PaintKind, 2> kPaintKindMembers = {PaintKind::solid, PaintKind::clear};
+inline constexpr std::array<PaintKind, 2> kPaintKindLiveMembers = {PaintKind::solid, PaintKind::clear};
 
 std::string_view ToName(PaintKind v);
 std::string_view ToWire(PaintKind v);
+bool IsRetired(PaintKind v);
 std::optional<PaintKind> PaintKindFromWire(std::string_view wire);
 
 enum class ShadeBranch : uint8_t {

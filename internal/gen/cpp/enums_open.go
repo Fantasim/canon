@@ -43,6 +43,8 @@ func (g *gen) openEnum(s enumSpec) {
 		qualified[i] = s.name + scopeSep + m.name
 	}
 	g.h.printf(listConstFormat, fmt.Sprintf(arrayFormat, s.name, len(s.members)), g.pl.EnumHelpers(s.name).Members, braced(qualified))
+	live := liveMembers(s)
+	g.h.printf(listConstFormat, fmt.Sprintf(arrayFormat, s.name, len(live)), g.pl.EnumHelpers(s.name).LiveMembers, braced(live))
 	g.h.blank()
 	g.h.printf(openToWireFormat, s.name, wire)
 	for _, sig := range g.signatures(s, true).all() {

@@ -67,9 +67,11 @@ enum class Tone : uint8_t {
 };
 
 inline constexpr std::array<Tone, 4> kToneMembers = {Tone::warning, Tone::info, Tone::series_1, Tone::legacy};
+inline constexpr std::array<Tone, 3> kToneLiveMembers = {Tone::warning, Tone::info, Tone::series_1};
 
 std::string_view ToName(Tone v);
 std::string_view ToWire(Tone v);
+bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
 enum class Element : uint16_t {
@@ -78,6 +80,7 @@ enum class Element : uint16_t {
 };
 
 inline constexpr std::array<Element, 2> kElementMembers = {Element::FIRE, Element::WATER};
+inline constexpr std::array<Element, 2> kElementLiveMembers = {Element::FIRE, Element::WATER};
 
 namespace detail {
 inline constexpr std::array<uint16_t, 2> kElementCodes = {1, 300};
@@ -101,6 +104,7 @@ inline constexpr size_t ElementOrdinal(Element v) {
 
 std::string_view ToName(Element v);
 std::string_view ToWire(Element v);
+bool IsRetired(Element v);
 std::optional<Element> ElementFromWire(std::string_view wire);
 std::optional<Element> ElementFromCode(uint16_t code);
 
@@ -110,6 +114,7 @@ enum class Kind1 : uint32_t {
 };
 
 inline constexpr std::array<Kind1, 2> kKind1Members = {Kind1::IK1_WEAPON, Kind1::GENERAL};
+inline constexpr std::array<Kind1, 2> kKind1LiveMembers = {Kind1::IK1_WEAPON, Kind1::GENERAL};
 
 namespace detail {
 inline constexpr std::array<uint32_t, 2> kKind1Codes = {1, 4};
@@ -133,6 +138,7 @@ inline constexpr size_t Kind1Ordinal(Kind1 v) {
 
 std::string_view ToName(Kind1 v);
 std::string_view ToWire(Kind1 v);
+bool IsRetired(Kind1 v);
 std::optional<Kind1> Kind1FromWire(std::string_view wire);
 std::optional<Kind1> Kind1FromCode(uint32_t code);
 
@@ -143,6 +149,7 @@ enum class Flag : uint8_t {
 };
 
 inline constexpr std::array<Flag, 3> kFlagMembers = {Flag::a, Flag::c, Flag::b};
+inline constexpr std::array<Flag, 3> kFlagLiveMembers = {Flag::a, Flag::c, Flag::b};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 3> kFlagCodes = {1, 2, 4};
@@ -166,6 +173,7 @@ inline constexpr size_t FlagOrdinal(Flag v) {
 
 std::string_view ToName(Flag v);
 std::string_view ToWire(Flag v);
+bool IsRetired(Flag v);
 std::optional<Flag> FlagFromWire(std::string_view wire);
 std::optional<Flag> FlagFromCode(uint8_t code);
 
@@ -177,9 +185,11 @@ enum class RewardKind : uint8_t {
 };
 
 inline constexpr std::array<RewardKind, 3> kRewardKindMembers = {RewardKind::item, RewardKind::Coins, RewardKind::nothing};
+inline constexpr std::array<RewardKind, 3> kRewardKindLiveMembers = {RewardKind::item, RewardKind::Coins, RewardKind::nothing};
 
 std::string_view ToName(RewardKind v);
 std::string_view ToWire(RewardKind v);
+bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
 enum class BadgeKind : uint8_t {
@@ -188,9 +198,11 @@ enum class BadgeKind : uint8_t {
 };
 
 inline constexpr std::array<BadgeKind, 2> kBadgeKindMembers = {BadgeKind::star, BadgeKind::plain};
+inline constexpr std::array<BadgeKind, 2> kBadgeKindLiveMembers = {BadgeKind::star, BadgeKind::plain};
 
 std::string_view ToName(BadgeKind v);
 std::string_view ToWire(BadgeKind v);
+bool IsRetired(BadgeKind v);
 std::optional<BadgeKind> BadgeKindFromWire(std::string_view wire);
 
 inline constexpr Tone DEFAULT_TONE = Tone::info;

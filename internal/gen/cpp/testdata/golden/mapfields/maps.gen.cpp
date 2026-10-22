@@ -509,6 +509,12 @@ std::string_view ToWire(Element v) {
     return kWires[i];
 }
 
+bool IsRetired(Element v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Element> ElementFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"fire", "water"};
     static constexpr std::array<Element, 2> kValues = {Element::fire, Element::water};
@@ -538,6 +544,12 @@ std::string_view ToWire(Rank v) {
     const size_t i = detail::RankOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Rank v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = detail::RankOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Rank> RankFromWire(std::string_view wire) {
@@ -575,6 +587,12 @@ std::string_view ToWire(Tone v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Tone v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Tone> ToneFromWire(std::string_view wire) {

@@ -60,6 +60,12 @@ std::string_view ToWire(Kind v) {
     return kWires[i];
 }
 
+bool IsRetired(Kind v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Kind> KindFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"despawn", "spawn"};
     static constexpr std::array<Kind, 2> kValues = {Kind::despawn, Kind::spawn};
@@ -89,6 +95,12 @@ std::string_view ToWire(Kind3 v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Kind3 v) {
+    static constexpr std::array<bool, 5> kRetired = {false, false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Kind3> Kind3FromWire(std::string_view wire) {

@@ -40,11 +40,13 @@ inline const Shape Shape::place{"place"};
 inline const Shape Shape::none_{"none"};
 
 inline const std::array<Shape, 3> kShapeMembers = {Shape::count, Shape::place, Shape::none_};
+inline const std::array<Shape, 3> kShapeLiveMembers = {Shape::count, Shape::place, Shape::none_};
 
 inline std::string_view ToWire(const Shape& v) noexcept { return v.wire_; }
 
 std::string_view ToName(const Shape& v);
 bool IsKnown(const Shape& v);
+bool IsRetired(const Shape& v);
 std::optional<Shape> ShapeFromWire(std::string_view wire);
 
 class Event {
@@ -70,11 +72,13 @@ inline const Event Event::beat_monster{"e_beat"};
 inline const Event Event::new_day{"e_day"};
 
 inline const std::array<Event, 3> kEventMembers = {Event::reach_place, Event::beat_monster, Event::new_day};
+inline const std::array<Event, 3> kEventLiveMembers = {Event::reach_place, Event::beat_monster, Event::new_day};
 
 inline std::string_view ToWire(const Event& v) noexcept { return v.wire_; }
 
 std::string_view ToName(const Event& v);
 bool IsKnown(const Event& v);
+bool IsRetired(const Event& v);
 std::optional<Event> EventFromWire(std::string_view wire);
 
 enum class ParamBranch : uint8_t {

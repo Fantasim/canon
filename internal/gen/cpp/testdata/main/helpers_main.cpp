@@ -93,6 +93,20 @@ void OpenCodes() {
                 ToCode(h::Stat("ZZZ")).has_value() ? "found" : "none");
 }
 
+// Retired prints IsRetired of each member (1 retired) and of a value that is no member or an unknown wire,
+// then the live members' count and the first live one's name (DECISIONS 395).
+template <typename E, std::size_t N, typename Live>
+void Retired(const char* label, const std::array<E, N>& members, const Live& live, const E& other) {
+    std::printf("%s retired:", label);
+    for (const E& m : members) std::printf(" %d", IsRetired(m) ? 1 : 0);
+    std::printf(" | other=%d live=%zu", IsRetired(other) ? 1 : 0, live.size());
+    if (!live.empty()) {
+        std::printf(" first=");
+        Text(ToName(live[0]));
+    }
+    std::printf("\n");
+}
+
 }  // namespace
 
 int main() {
@@ -111,5 +125,18 @@ int main() {
     Open("Stat", h::kStatMembers, &h::StatFromWire);
     Open("Blank", h::kBlankMembers, &h::BlankFromWire);
     OpenCodes();
+    Retired("Tone", h::kToneMembers, h::kToneLiveMembers, static_cast<h::Tone>(255));
+    Retired("Element", h::kElementMembers, h::kElementLiveMembers, static_cast<h::Element>(77));
+    Retired("Nothing", h::kNothingMembers, h::kNothingLiveMembers, static_cast<h::Nothing>(255));
+    Retired("ShapeKind", h::kShapeKindMembers, h::kShapeKindLiveMembers, static_cast<h::ShapeKind>(255));
+    Retired("Stat", h::kStatMembers, h::kStatLiveMembers, h::Stat("ZZZ"));
+    Retired("Blank", h::kBlankMembers, h::kBlankLiveMembers, h::Blank("ZZZ"));
+    Retired("OpenDup", h::kOpenDupMembers, h::kOpenDupLiveMembers, h::OpenDup("x"));
+    std::printf("OpenDup live:");
+    for (const h::OpenDup& m : h::kOpenDupLiveMembers) {
+        std::printf(" ");
+        Text(ToWire(m));
+    }
+    std::printf("\n");
     return 0;
 }

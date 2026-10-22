@@ -21,9 +21,11 @@ enum class PrizeKind : uint8_t {
 };
 
 inline constexpr std::array<PrizeKind, 2> kPrizeKindMembers = {PrizeKind::coins, PrizeKind::none};
+inline constexpr std::array<PrizeKind, 2> kPrizeKindLiveMembers = {PrizeKind::coins, PrizeKind::none};
 
 std::string_view ToName(PrizeKind v);
 std::string_view ToWire(PrizeKind v);
+bool IsRetired(PrizeKind v);
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire);
 
 class Prize;

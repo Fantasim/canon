@@ -43,9 +43,11 @@ enum class Side : uint8_t {
 };
 
 inline constexpr std::array<Side, 2> kSideMembers = {Side::left, Side::right};
+inline constexpr std::array<Side, 2> kSideLiveMembers = {Side::left, Side::right};
 
 std::string_view ToName(Side v);
 std::string_view ToWire(Side v);
+bool IsRetired(Side v);
 std::optional<Side> SideFromWire(std::string_view wire);
 
 /// The key of an entry of notes. Store or send ToWire(id): the underlying value is
@@ -55,6 +57,7 @@ enum class NoteId : uint8_t {
 };
 
 std::string_view ToWire(NoteId v);
+bool IsRetired(NoteId v);
 std::optional<NoteId> NoteIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read NoteIdFromWire(s).

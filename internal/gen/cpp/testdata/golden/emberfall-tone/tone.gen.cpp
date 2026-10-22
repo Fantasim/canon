@@ -26,6 +26,12 @@ std::string_view ToWire(Tone v) {
     return kWires[i];
 }
 
+bool IsRetired(Tone v) {
+    static constexpr std::array<bool, 2> kRetired = {false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Tone> ToneFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 2> kKeys = {"loud", "soft"};
     static constexpr std::array<Tone, 2> kValues = {Tone::loud, Tone::soft};

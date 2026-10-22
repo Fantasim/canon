@@ -55,6 +55,12 @@ std::string_view ToWire(Weekday v) {
     return kWires[i];
 }
 
+bool IsRetired(Weekday v) {
+    static constexpr std::array<bool, 7> kRetired = {false, false, false, false, false, false, false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Weekday> WeekdayFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 7> kKeys = {"Fri", "Mon", "Sat", "Sun", "Thu", "Tue", "Wed"};
     static constexpr std::array<Weekday, 7> kValues = {

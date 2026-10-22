@@ -26,18 +26,22 @@ enum class Tone : uint8_t {
 };
 
 inline constexpr std::array<Tone, 4> kToneMembers = {Tone::warning, Tone::info, Tone::series_1, Tone::old};
+inline constexpr std::array<Tone, 3> kToneLiveMembers = {Tone::warning, Tone::info, Tone::series_1};
 
 std::string_view ToName(Tone v);
 std::string_view ToWire(Tone v);
+bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
 enum class Element : uint8_t {
     FIRE = 3,
+    /// Retired.
     WATER = 1,
     EARTH = 200,
 };
 
 inline constexpr std::array<Element, 3> kElementMembers = {Element::FIRE, Element::WATER, Element::EARTH};
+inline constexpr std::array<Element, 2> kElementLiveMembers = {Element::FIRE, Element::EARTH};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 3> kElementCodes = {1, 3, 200};
@@ -61,6 +65,7 @@ inline constexpr size_t ElementOrdinal(Element v) {
 
 std::string_view ToName(Element v);
 std::string_view ToWire(Element v);
+bool IsRetired(Element v);
 std::optional<Element> ElementFromWire(std::string_view wire);
 std::optional<Element> ElementFromCode(uint8_t code);
 
@@ -71,6 +76,7 @@ enum class Delta : int16_t {
 };
 
 inline constexpr std::array<Delta, 3> kDeltaMembers = {Delta::up, Delta::down, Delta::flat};
+inline constexpr std::array<Delta, 3> kDeltaLiveMembers = {Delta::up, Delta::down, Delta::flat};
 
 namespace detail {
 inline constexpr std::array<int16_t, 3> kDeltaCodes = {-5, 0, 7};
@@ -94,6 +100,7 @@ inline constexpr size_t DeltaOrdinal(Delta v) {
 
 std::string_view ToName(Delta v);
 std::string_view ToWire(Delta v);
+bool IsRetired(Delta v);
 std::optional<Delta> DeltaFromWire(std::string_view wire);
 std::optional<Delta> DeltaFromCode(int16_t code);
 
@@ -104,6 +111,7 @@ enum class Extreme : int64_t {
 };
 
 inline constexpr std::array<Extreme, 3> kExtremeMembers = {Extreme::LOW, Extreme::MID, Extreme::HIGH};
+inline constexpr std::array<Extreme, 3> kExtremeLiveMembers = {Extreme::LOW, Extreme::MID, Extreme::HIGH};
 
 namespace detail {
 inline constexpr std::array<int64_t, 3> kExtremeCodes = {canon::kIntMin, 0, canon::kIntMax};
@@ -127,6 +135,7 @@ inline constexpr size_t ExtremeOrdinal(Extreme v) {
 
 std::string_view ToName(Extreme v);
 std::string_view ToWire(Extreme v);
+bool IsRetired(Extreme v);
 std::optional<Extreme> ExtremeFromWire(std::string_view wire);
 std::optional<Extreme> ExtremeFromCode(int64_t code);
 
@@ -137,24 +146,29 @@ enum class Dup : uint8_t {
 };
 
 inline constexpr std::array<Dup, 3> kDupMembers = {Dup::a, Dup::b, Dup::c};
+inline constexpr std::array<Dup, 3> kDupLiveMembers = {Dup::a, Dup::b, Dup::c};
 
 std::string_view ToName(Dup v);
 std::string_view ToWire(Dup v);
+bool IsRetired(Dup v);
 std::optional<Dup> DupFromWire(std::string_view wire);
 
 enum class Nothing : uint8_t {
 };
 
 inline constexpr std::array<Nothing, 0> kNothingMembers = {};
+inline constexpr std::array<Nothing, 0> kNothingLiveMembers = {};
 
 std::string_view ToName(Nothing v);
 std::string_view ToWire(Nothing v);
+bool IsRetired(Nothing v);
 std::optional<Nothing> NothingFromWire(std::string_view wire);
 
 enum class NoCode : uint8_t {
 };
 
 inline constexpr std::array<NoCode, 0> kNoCodeMembers = {};
+inline constexpr std::array<NoCode, 0> kNoCodeLiveMembers = {};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 0> kNoCodeCodes = {};
@@ -178,6 +192,7 @@ inline constexpr size_t NoCodeOrdinal(NoCode v) {
 
 std::string_view ToName(NoCode v);
 std::string_view ToWire(NoCode v);
+bool IsRetired(NoCode v);
 std::optional<NoCode> NoCodeFromWire(std::string_view wire);
 std::optional<NoCode> NoCodeFromCode(uint8_t code);
 
@@ -187,6 +202,7 @@ public:
     explicit Stat(std::string wire) : wire_(std::move(wire)) {}
 
     static const Stat atk;
+    /// Retired.
     static const Stat def;
     static const Stat spd;
     static const Stat alias;
@@ -206,11 +222,13 @@ inline const Stat Stat::spd{"SPÉ"};
 inline const Stat Stat::alias{"ATK"};
 
 inline const std::array<Stat, 4> kStatMembers = {Stat::atk, Stat::def, Stat::spd, Stat::alias};
+inline const std::array<Stat, 3> kStatLiveMembers = {Stat::atk, Stat::spd, Stat::alias};
 
 inline std::string_view ToWire(const Stat& v) noexcept { return v.wire_; }
 
 std::string_view ToName(const Stat& v);
 bool IsKnown(const Stat& v);
+bool IsRetired(const Stat& v);
 std::optional<Stat> StatFromWire(std::string_view wire);
 std::optional<uint16_t> ToCode(const Stat& v);
 std::optional<Stat> StatFromCode(uint16_t code);
@@ -230,22 +248,65 @@ private:
 };
 
 inline const std::array<Blank, 0> kBlankMembers = {};
+inline const std::array<Blank, 0> kBlankLiveMembers = {};
 
 inline std::string_view ToWire(const Blank& v) noexcept { return v.wire_; }
 
 std::string_view ToName(const Blank& v);
 bool IsKnown(const Blank& v);
+bool IsRetired(const Blank& v);
 std::optional<Blank> BlankFromWire(std::string_view wire);
+
+class OpenDup {
+public:
+    OpenDup() = default;
+    explicit OpenDup(std::string wire) : wire_(std::move(wire)) {}
+
+    static const OpenDup first;
+    /// Retired.
+    static const OpenDup second;
+    static const OpenDup third;
+    /// Retired.
+    static const OpenDup fourth;
+    static const OpenDup fifth;
+
+    friend bool operator==(const OpenDup& a, const OpenDup& b) noexcept { return a.wire_ == b.wire_; }
+    friend bool operator!=(const OpenDup& a, const OpenDup& b) noexcept { return a.wire_ != b.wire_; }
+    friend bool operator<(const OpenDup& a, const OpenDup& b) noexcept { return a.wire_ < b.wire_; }
+    friend std::string_view ToWire(const OpenDup& v) noexcept;
+
+private:
+    std::string wire_;
+};
+
+inline const OpenDup OpenDup::first{"x"};
+inline const OpenDup OpenDup::second{"x"};
+inline const OpenDup OpenDup::third{"third"};
+inline const OpenDup OpenDup::fourth{"y"};
+inline const OpenDup OpenDup::fifth{"y"};
+
+inline const std::array<OpenDup, 5> kOpenDupMembers = {OpenDup::first, OpenDup::second, OpenDup::third, OpenDup::fourth, OpenDup::fifth};
+inline const std::array<OpenDup, 3> kOpenDupLiveMembers = {OpenDup::first, OpenDup::third, OpenDup::fifth};
+
+inline std::string_view ToWire(const OpenDup& v) noexcept { return v.wire_; }
+
+std::string_view ToName(const OpenDup& v);
+bool IsKnown(const OpenDup& v);
+bool IsRetired(const OpenDup& v);
+std::optional<OpenDup> OpenDupFromWire(std::string_view wire);
 
 enum class ShapeKind : uint8_t {
     circle,
+    /// Retired.
     dot,
 };
 
 inline constexpr std::array<ShapeKind, 2> kShapeKindMembers = {ShapeKind::circle, ShapeKind::dot};
+inline constexpr std::array<ShapeKind, 1> kShapeKindLiveMembers = {ShapeKind::circle};
 
 std::string_view ToName(ShapeKind v);
 std::string_view ToWire(ShapeKind v);
+bool IsRetired(ShapeKind v);
 std::optional<ShapeKind> ShapeKindFromWire(std::string_view wire);
 
 class Shape;
@@ -317,4 +378,9 @@ struct std::hash<demo::helpers::Stat> {
 template <>
 struct std::hash<demo::helpers::Blank> {
     size_t operator()(const demo::helpers::Blank& v) const noexcept { return std::hash<std::string_view>{}(demo::helpers::ToWire(v)); }
+};
+
+template <>
+struct std::hash<demo::helpers::OpenDup> {
+    size_t operator()(const demo::helpers::OpenDup& v) const noexcept { return std::hash<std::string_view>{}(demo::helpers::ToWire(v)); }
 };

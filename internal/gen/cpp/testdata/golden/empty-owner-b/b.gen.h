@@ -21,6 +21,7 @@ enum class ItemId : uint8_t {
 };
 
 std::string_view ToWire(ItemId v);
+bool IsRetired(ItemId v);
 std::optional<ItemId> ItemIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read ItemIdFromWire(s).

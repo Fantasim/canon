@@ -17,6 +17,7 @@ const bakedWant = "open Open col=To do next=taken, retired=0 final=0 rank=2 at=1
 	"initial=Open key=0 limit=12 tags=2 home=4 prize=7\n" +
 	"nextOf=2 maybe=Done none=0 tags=2 primes=3 version=2 doubled=8\n" +
 	"points=2 far=9 shelf=2 b=1 crew=5 name=ann pick=done\n" +
+	"retired tone=001 live=2 none=0 element=001 live=2 none=0 status=010 live=2 none=0 \n" +
 	"failures=0\n"
 
 // CODEGEN.md §5.3, §5.8–§5.10, §7.3, DECISIONS 293: it compiles, its constexpr lookups hold in static_assert and as template arguments, its data reads back.

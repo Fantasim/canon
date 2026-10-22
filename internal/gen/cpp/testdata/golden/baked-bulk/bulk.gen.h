@@ -124,9 +124,11 @@ enum class Tier : uint8_t {
 };
 
 inline constexpr std::array<Tier, 8> kTierMembers = {Tier::t0, Tier::t1, Tier::t2, Tier::t3, Tier::t4, Tier::t5, Tier::t6, Tier::t7};
+inline constexpr std::array<Tier, 8> kTierLiveMembers = {Tier::t0, Tier::t1, Tier::t2, Tier::t3, Tier::t4, Tier::t5, Tier::t6, Tier::t7};
 
 std::string_view ToName(Tier v);
 std::string_view ToWire(Tier v);
+bool IsRetired(Tier v);
 std::optional<Tier> TierFromWire(std::string_view wire);
 
 enum class PrizeKind : uint8_t {
@@ -135,9 +137,11 @@ enum class PrizeKind : uint8_t {
 };
 
 inline constexpr std::array<PrizeKind, 2> kPrizeKindMembers = {PrizeKind::coins, PrizeKind::none};
+inline constexpr std::array<PrizeKind, 2> kPrizeKindLiveMembers = {PrizeKind::coins, PrizeKind::none};
 
 std::string_view ToName(PrizeKind v);
 std::string_view ToWire(PrizeKind v);
+bool IsRetired(PrizeKind v);
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire);
 
 /// The key of an entry of items. Store or send ToWire(id): the underlying value is
@@ -154,6 +158,7 @@ enum class ItemId : uint8_t {
 };
 
 std::string_view ToWire(ItemId v);
+bool IsRetired(ItemId v);
 std::optional<ItemId> ItemIdFromWire(std::string_view key);
 
 /// nlohmann/json would write the position: write ToWire(id), read ItemIdFromWire(s).

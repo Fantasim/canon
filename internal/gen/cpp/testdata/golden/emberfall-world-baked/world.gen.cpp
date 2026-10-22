@@ -137,6 +137,12 @@ std::string_view ToWire(ZoneId v) {
     return kWires[i];
 }
 
+bool IsRetired(ZoneId v) {
+    static constexpr std::array<bool, 1> kRetired = {false};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<ZoneId> ZoneIdFromWire(std::string_view key) {
     static constexpr std::array<std::string_view, 1> kKeys = {"forest"};
     static constexpr std::array<ZoneId, 1> kIds = {ZoneId::forest};
@@ -159,6 +165,12 @@ std::string_view ToWire(LevelRangeId v) {
     const size_t i = static_cast<size_t>(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(LevelRangeId v) {
+    static constexpr std::array<bool, 2> kRetired = {false, true};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key) {

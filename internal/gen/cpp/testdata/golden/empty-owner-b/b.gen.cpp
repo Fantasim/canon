@@ -39,6 +39,12 @@ std::string_view ToWire(ItemId v) {
     return kWires[i];
 }
 
+bool IsRetired(ItemId v) {
+    static constexpr std::array<bool, 0> kRetired = {};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<ItemId> ItemIdFromWire(std::string_view key) {
     static constexpr std::array<std::string_view, 0> kKeys = {};
     static constexpr std::array<ItemId, 0> kIds = {};

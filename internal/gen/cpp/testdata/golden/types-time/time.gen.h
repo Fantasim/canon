@@ -25,9 +25,11 @@ enum class Weekday : uint8_t {
 };
 
 inline constexpr std::array<Weekday, 7> kWeekdayMembers = {Weekday::Sun, Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat};
+inline constexpr std::array<Weekday, 7> kWeekdayLiveMembers = {Weekday::Sun, Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat};
 
 std::string_view ToName(Weekday v);
 std::string_view ToWire(Weekday v);
+bool IsRetired(Weekday v);
 std::optional<Weekday> WeekdayFromWire(std::string_view wire);
 
 class TimeOfDay;

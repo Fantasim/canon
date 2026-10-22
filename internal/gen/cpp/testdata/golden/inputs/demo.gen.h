@@ -23,9 +23,11 @@ enum class Color : uint8_t {
 };
 
 inline constexpr std::array<Color, 3> kColorMembers = {Color::red, Color::green, Color::blue};
+inline constexpr std::array<Color, 2> kColorLiveMembers = {Color::red, Color::green};
 
 std::string_view ToName(Color v);
 std::string_view ToWire(Color v);
+bool IsRetired(Color v);
 std::optional<Color> ColorFromWire(std::string_view wire);
 
 enum class Tier : uint8_t {
@@ -35,6 +37,7 @@ enum class Tier : uint8_t {
 };
 
 inline constexpr std::array<Tier, 3> kTierMembers = {Tier::low, Tier::mid, Tier::high};
+inline constexpr std::array<Tier, 3> kTierLiveMembers = {Tier::low, Tier::mid, Tier::high};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 3> kTierCodes = {1, 2, 3};
@@ -58,6 +61,7 @@ inline constexpr size_t TierOrdinal(Tier v) {
 
 std::string_view ToName(Tier v);
 std::string_view ToWire(Tier v);
+bool IsRetired(Tier v);
 std::optional<Tier> TierFromWire(std::string_view wire);
 std::optional<Tier> TierFromCode(uint8_t code);
 

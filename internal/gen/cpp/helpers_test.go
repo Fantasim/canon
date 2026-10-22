@@ -51,6 +51,28 @@ func TestEnumHelpersOnlyDeclaredInHeader(t *testing.T) {
 	}
 }
 
+// DECISIONS 395, CODEGEN.md §5.2, §5.3: IsRetired is declared in the header and defined once in the .gen.cpp for every closed, opened and kind enum, and the live lists sit beside the members lists.
+func TestRetiredLookupsDeclaredAndDefined(t *testing.T) {
+	files := generate(t, helpersPackage())
+	header, source := fileOf(t, files, ".gen.h"), fileOf(t, files, ".gen.cpp")
+	for _, sig := range []string{"bool IsRetired(Tone v)", "bool IsRetired(Element v)", "bool IsRetired(ShapeKind v)", "bool IsRetired(NoCode v)", "bool IsRetired(const Stat& v)", "bool IsRetired(const Blank& v)"} {
+		if strings.Count(header, sig+";\n") != 1 || strings.Count(source, sig+" {\n") != 1 {
+			t.Errorf("%s: want one declaration in the header and one definition in the .gen.cpp", sig)
+		}
+	}
+	for _, line := range []string{
+		"inline constexpr std::array<Tone, 3> kToneLiveMembers = {Tone::warning, Tone::info, Tone::series_1};\n",
+		"inline constexpr std::array<ShapeKind, 1> kShapeKindLiveMembers = {ShapeKind::circle};\n",
+		"inline const std::array<Stat, 3> kStatLiveMembers = {Stat::atk, Stat::spd, Stat::alias};\n",
+		"inline const std::array<OpenDup, 3> kOpenDupLiveMembers = {OpenDup::first, OpenDup::third, OpenDup::fifth};\n",
+		"inline const std::array<Blank, 0> kBlankLiveMembers = {};\n",
+	} {
+		if strings.Count(header, line) != 1 {
+			t.Errorf("the header lacks %q", line)
+		}
+	}
+}
+
 // noMemberBodies fails when a header holds a per-member body: a chain over wires or values, or a switch.
 func noMemberBodies(t *testing.T, header string) {
 	t.Helper()
@@ -73,7 +95,7 @@ func TestIDEnumHelpersOnlyDeclaredInHeader(t *testing.T) {
 	}
 }
 
-// helpersWant is what helpers_main.cpp prints (DECISIONS 383): the first declared of equal wires wins, a value that is no member gives "" or none.
+// helpersWant is what helpers_main.cpp prints (DECISIONS 383, 395): the first declared of equal wires wins, a value that is no member gives "" or none.
 const helpersWant = `Tone: warning/warning/self info/info/self series_1/série-1/self old/sz/self | none=[|] unknown=none
 Element: FIRE/FIRE/self WATER/WATER/self EARTH/EARTH/self | none=[|] unknown=none
 Delta: up/up/self down/down/self flat/flat/self | none=[|] unknown=none
@@ -89,6 +111,14 @@ NoCode: | unknown=none ordinal=0
 Stat: atk/ATK/known/self def/SPA/known/self spd/SPÉ/known/self atk/ATK/known/self | ZZZ/unknown/none
 Blank: | ZZZ/unknown/none
 Stat codes: 4/self 1/self 2/self 4/self | 9=atk 77=none ZZZ=none
+Tone retired: 0 0 0 1 | other=0 live=3 first=warning
+Element retired: 0 1 0 | other=0 live=2 first=FIRE
+Nothing retired: | other=0 live=0
+ShapeKind retired: 0 1 | other=0 live=1 first=circle
+Stat retired: 0 1 0 0 | other=0 live=3 first=atk
+Blank retired: | other=0 live=0
+OpenDup retired: 0 0 0 1 1 | other=0 live=3 first=first
+OpenDup live: x third y
 `
 
 // DECISIONS 383, CODEGEN.md §5.2: every enum helper answers both ways, on non-members and empty enums, with every compiler and mode.

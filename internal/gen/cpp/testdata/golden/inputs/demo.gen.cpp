@@ -48,6 +48,12 @@ std::string_view ToWire(Color v) {
     return kWires[i];
 }
 
+bool IsRetired(Color v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, true};
+    const size_t i = static_cast<size_t>(v);
+    return i < kRetired.size() && kRetired[i];
+}
+
 std::optional<Color> ColorFromWire(std::string_view wire) {
     static constexpr std::array<std::string_view, 3> kKeys = {"blue", "green", "red"};
     static constexpr std::array<Color, 3> kValues = {Color::blue, Color::green, Color::red};
@@ -77,6 +83,12 @@ std::string_view ToWire(Tier v) {
     const size_t i = detail::TierOrdinal(v);
     if (i >= kWires.size()) return {};
     return kWires[i];
+}
+
+bool IsRetired(Tier v) {
+    static constexpr std::array<bool, 3> kRetired = {false, false, false};
+    const size_t i = detail::TierOrdinal(v);
+    return i < kRetired.size() && kRetired[i];
 }
 
 std::optional<Tier> TierFromWire(std::string_view wire) {

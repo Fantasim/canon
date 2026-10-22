@@ -1,6 +1,8 @@
 // The baked fixture: constexpr lookups in constant expressions (DECISIONS 293), the baked data,
 // its resolved refs and id enums at run time (CODEGEN.md §5.3, §5.8, §5.9, §5.10).
+#include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <string>
@@ -44,6 +46,15 @@ static_assert(Toned<b::ToneOf(b::Element::WATER)>::value == b::Tone::quiet, "an 
 static_assert(Flag<b::IsOpen(b::StatusId::closed)>::value == false, "a Bool as a template argument");
 static_assert(b::MoodOf(b::Tone::loud) == std::string_view("angry"), "a string literal union result is a std::string_view");
 
+// Flags prints IsRetired of every member, then of a value that is no member (DECISIONS 395).
+template <typename E, std::size_t N>
+void Flags(const char* label, const std::array<E, N>& members, std::size_t live) {
+    std::printf("%s=", label);
+    for (const E m : members) std::printf("%d", b::IsRetired(m) ? 1 : 0);
+    std::printf(" live=%zu", live);
+    std::printf(" none=%d ", b::IsRetired(static_cast<E>(77)) ? 1 : 0);
+}
+
 int main() {
     const b::Statuses& statuses = b::GetStatuses();
     for (const b::Status& s : statuses.All()) {
@@ -73,6 +84,11 @@ int main() {
                 static_cast<long long>(b::GetPoints().Find("far")->GetX()), shelf.GetSlots().Len(),
                 shelf.GetSlots().Find("b")->GetRetired() ? 1 : 0, static_cast<long long>(b::CrewOf(b::Tone::loud).GetSize()),
                 b::CrewName(b::Tone::quiet).c_str(), std::string(b::ToWire(b::PickColumn(0))).c_str());
+    const std::array<b::StatusId, 3> ids = {b::StatusId::open, b::StatusId::taken, b::StatusId::closed};
+    Flags("retired tone", b::kToneMembers, b::kToneLiveMembers.size());
+    Flags("element", b::kElementMembers, b::kElementLiveMembers.size());
+    Flags("status", ids, ids.size() - 1);
+    std::printf("\n");
     std::printf("failures=%d\n", b::conformance::RunBoardConformance());
     return 0;
 }

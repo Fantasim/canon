@@ -16,6 +16,8 @@ var (
 	lowerBoundText string
 	//go:embed text/enum_by_ordinal.txt
 	byOrdinalText string
+	//go:embed text/enum_retired.txt
+	retiredText string
 	//go:embed text/enum_from_code.txt
 	fromCodeText string
 )
@@ -70,9 +72,10 @@ func inOrder(n int) []int {
 	return order
 }
 
-func rawWire(m enumMember) string  { return m.wire }
-func rawCanon(m enumMember) string { return m.canon }
-func codeText(m enumMember) string { return intLit(m.code) }
+func rawWire(m enumMember) string     { return m.wire }
+func retiredFlag(m enumMember) string { return strconv.FormatBool(m.retired) }
+func rawCanon(m enumMember) string    { return m.canon }
+func codeText(m enumMember) string    { return intLit(m.code) }
 
 // views are a string table's items: past sizedTableMin entries each a sized std::string_view, which
 // no compiler measures in constant evaluation (clang's step limit), else literals (DECISIONS 392).
@@ -111,6 +114,7 @@ func (g *gen) closedDefinitions(s enumSpec) {
 	all := inOrder(len(s.members))
 	g.c.printf(byOrdinalText, sigs.toName, len(s.members), namesTable, indentBlock(braced(views(column(s.members, all, rawCanon)))), pos)
 	g.c.printf(byOrdinalText, sigs.toWire, len(s.members), wiresTable, indentBlock(braced(views(column(s.members, all, rawWire)))), pos)
+	g.c.printf(retiredText, sigs.retired, len(s.members), retiredTable, indentBlock(braced(column(s.members, all, retiredFlag))), pos)
 	order := byWire(s.members)
 	values := column(s.members, order, func(m enumMember) string { return s.name + scopeSep + m.name })
 	g.c.write(search{
@@ -128,6 +132,10 @@ func (g *gen) openDefinitions(s enumSpec) {
 	g.openWireTables(s, h)
 	wires, key := detailPrefix+h.Wires, fmt.Sprintf(wireKeyLineFormat, ir.CppToWire)
 	g.c.write(search{sig: sigs.toName, prelude: key, keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, detailPrefix+h.WireNames, loVar), miss: keyParam}.text())
+	g.c.write(search{
+		sig: sigs.retired, prelude: key + table(cppBool, retiredTable, column(s.members, byWire(s.members), retiredFlag)),
+		keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, retiredTable, loVar), miss: strconv.FormatBool(false),
+	}.text())
 	g.c.write(search{sig: sigs.known, prelude: key, keys: wires, key: keyParam, hit: strconv.FormatBool(true), miss: strconv.FormatBool(false)}.text())
 	g.c.write(search{
 		sig: sigs.fromWire, keys: wires, key: wireParam,
@@ -160,15 +168,15 @@ func (g *gen) openWireTables(s enumSpec, h ir.CppEnumHelpers) {
 	g.c.blank()
 }
 
-// helperSigs are an enum's helper signatures: ToName, ToWire (closed), IsKnown (opened), <E>FromWire, ToCode (opened, @codes) and <E>FromCode (@codes); "" for one it has not.
+// helperSigs are an enum's helper signatures: ToName, ToWire (closed), IsKnown (opened), IsRetired, <E>FromWire, ToCode (opened, @codes) and <E>FromCode (@codes); "" for one it has not.
 type helperSigs struct {
-	toName, toWire, known, fromWire, toCode, fromCode string
+	toName, toWire, known, retired, fromWire, toCode, fromCode string
 }
 
 // all are the signatures it has, in the order the header declares them and the .gen.cpp defines them (CODEGEN.md §5.2).
 func (h helperSigs) all() []string {
 	var out []string
-	for _, sig := range []string{h.toName, h.toWire, h.known, h.fromWire, h.toCode, h.fromCode} {
+	for _, sig := range []string{h.toName, h.toWire, h.known, h.retired, h.fromWire, h.toCode, h.fromCode} {
 		if sig != "" {
 			out = append(out, sig)
 		}
@@ -182,8 +190,9 @@ func (g *gen) signatures(s enumSpec, open bool) helperSigs {
 	out := helperSigs{toName: fmt.Sprintf(nameSigFormat, ir.CppToName, s.name), fromWire: fmt.Sprintf(fromWireSigFormat, s.name, h.FromWire)}
 	if open {
 		out.toName, out.known = fmt.Sprintf(openNameSigFormat, s.name), fmt.Sprintf(openKnownSigFormat, s.name)
+		out.retired = fmt.Sprintf(openRetiredSigFormat, s.name)
 	} else {
-		out.toWire = fmt.Sprintf(nameSigFormat, ir.CppToWire, s.name)
+		out.toWire, out.retired = fmt.Sprintf(nameSigFormat, ir.CppToWire, s.name), fmt.Sprintf(retiredSigFormat, s.name)
 	}
 	if s.codes != nil {
 		code := intType(*s.codes)

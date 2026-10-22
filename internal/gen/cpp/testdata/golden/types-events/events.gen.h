@@ -30,9 +30,11 @@ enum class RollMode : uint8_t {
 };
 
 inline constexpr std::array<RollMode, 8> kRollModeMembers = {RollMode::authoritative, RollMode::local_budget, RollMode::shared, RollMode::split, RollMode::fixed, RollMode::scaled, RollMode::capped, RollMode::replayed};
+inline constexpr std::array<RollMode, 8> kRollModeLiveMembers = {RollMode::authoritative, RollMode::local_budget, RollMode::shared, RollMode::split, RollMode::fixed, RollMode::scaled, RollMode::capped, RollMode::replayed};
 
 std::string_view ToName(RollMode v);
 std::string_view ToWire(RollMode v);
+bool IsRetired(RollMode v);
 std::optional<RollMode> RollModeFromWire(std::string_view wire);
 
 enum class EventKindKind : uint8_t {
@@ -42,9 +44,11 @@ enum class EventKindKind : uint8_t {
 };
 
 inline constexpr std::array<EventKindKind, 3> kEventKindKindMembers = {EventKindKind::spawn_monster, EventKindKind::spawn_item, EventKindKind::monster_drop_inject};
+inline constexpr std::array<EventKindKind, 3> kEventKindKindLiveMembers = {EventKindKind::spawn_monster, EventKindKind::spawn_item, EventKindKind::monster_drop_inject};
 
 std::string_view ToName(EventKindKind v);
 std::string_view ToWire(EventKindKind v);
+bool IsRetired(EventKindKind v);
 std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire);
 
 class Rect;

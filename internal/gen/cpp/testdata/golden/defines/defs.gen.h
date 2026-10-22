@@ -54,6 +54,7 @@ enum class Kind : uint32_t {
 };
 
 inline constexpr std::array<Kind, 3> kKindMembers = {Kind::IK1_WEAPON, Kind::GENERAL, Kind::OLD};
+inline constexpr std::array<Kind, 2> kKindLiveMembers = {Kind::IK1_WEAPON, Kind::GENERAL};
 
 namespace detail {
 inline constexpr std::array<uint32_t, 3> kKindCodes = {1, 4, 9};
@@ -77,6 +78,7 @@ inline constexpr size_t KindOrdinal(Kind v) {
 
 std::string_view ToName(Kind v);
 std::string_view ToWire(Kind v);
+bool IsRetired(Kind v);
 std::optional<Kind> KindFromWire(std::string_view wire);
 std::optional<Kind> KindFromCode(uint32_t code);
 
@@ -86,9 +88,11 @@ enum class Plain : uint8_t {
 };
 
 inline constexpr std::array<Plain, 2> kPlainMembers = {Plain::A, Plain::B};
+inline constexpr std::array<Plain, 2> kPlainLiveMembers = {Plain::A, Plain::B};
 
 std::string_view ToName(Plain v);
 std::string_view ToWire(Plain v);
+bool IsRetired(Plain v);
 std::optional<Plain> PlainFromWire(std::string_view wire);
 
 enum class Extreme : int64_t {
@@ -97,6 +101,7 @@ enum class Extreme : int64_t {
 };
 
 inline constexpr std::array<Extreme, 2> kExtremeMembers = {Extreme::LOW, Extreme::HIGH};
+inline constexpr std::array<Extreme, 2> kExtremeLiveMembers = {Extreme::LOW, Extreme::HIGH};
 
 namespace detail {
 inline constexpr std::array<int64_t, 2> kExtremeCodes = {canon::kIntMin, canon::kIntMax};
@@ -120,6 +125,7 @@ inline constexpr size_t ExtremeOrdinal(Extreme v) {
 
 std::string_view ToName(Extreme v);
 std::string_view ToWire(Extreme v);
+bool IsRetired(Extreme v);
 std::optional<Extreme> ExtremeFromWire(std::string_view wire);
 std::optional<Extreme> ExtremeFromCode(int64_t code);
 
@@ -128,9 +134,11 @@ enum class Legacy : uint8_t {
 };
 
 inline constexpr std::array<Legacy, 1> kLegacyMembers = {Legacy::NONE};
+inline constexpr std::array<Legacy, 1> kLegacyLiveMembers = {Legacy::NONE};
 
 std::string_view ToName(Legacy v);
 std::string_view ToWire(Legacy v);
+bool IsRetired(Legacy v);
 std::optional<Legacy> LegacyFromWire(std::string_view wire);
 
 inline constexpr Kind DEFAULT_KIND = Kind::GENERAL;

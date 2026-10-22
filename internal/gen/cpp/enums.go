@@ -102,7 +102,7 @@ func underlying(codes *ir.TypeRef, n int) string {
 func (g *gen) enum(s enumSpec) {
 	g.doc(0, s.doc)
 	g.h.printf(enumOpenFormat, s.name, s.underlying)
-	qualified := make([]string, len(s.members))
+	qualified, live := make([]string, len(s.members)), liveMembers(s)
 	for i, m := range s.members {
 		g.doc(1, m.doc)
 		if m.retired {
@@ -119,6 +119,7 @@ func (g *gen) enum(s enumSpec) {
 	g.h.blank()
 	h := g.pl.EnumHelpers(s.name)
 	g.h.printf(membersArrayFormat, s.name, len(s.members), h.Members, strings.Join(qualified, listSep))
+	g.h.printf(membersArrayFormat, s.name, len(live), h.LiveMembers, strings.Join(live, listSep))
 	g.h.blank()
 	if s.codes != nil {
 		g.ordinal(s)
@@ -171,4 +172,15 @@ func (g *gen) kindMember(v *ir.Variant, i int) string {
 func (g *gen) enumHelpers(e *ir.Enum) ir.CppEnumHelpers {
 	h, q := g.pl.EnumHelpers(g.pl.TypeName(e)), g.qualifier(e.Pkg)
 	return ir.CppEnumHelpers{Members: q + h.Members, FromWire: q + h.FromWire, FromCode: q + h.FromCode, Ordinal: q + detailPrefix + h.Ordinal}
+}
+
+// liveMembers are the qualified members of s not retired, in members order (CODEGEN.md §5.2, DECISIONS 395).
+func liveMembers(s enumSpec) []string {
+	var out []string
+	for _, m := range s.members {
+		if !m.retired {
+			out = append(out, s.name+scopeSep+m.name)
+		}
+	}
+	return out
 }
