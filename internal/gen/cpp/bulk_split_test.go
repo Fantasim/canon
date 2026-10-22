@@ -9,6 +9,7 @@ const (
 	// bulkMaxFnLines bounds Build and each part: twice bakedPartLines, a part ending past it.
 	bulkMaxFnLines = 2000
 	bulkAccessName = "BulkAccess::"
+	bulkSource     = "bulk.gen.cpp"
 )
 
 // DECISIONS 392, CODEGEN.md §7.3: a 7 400-row table fills its columns in one loop, its variants in parts of Build.

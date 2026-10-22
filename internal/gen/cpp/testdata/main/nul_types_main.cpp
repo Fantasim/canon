@@ -5,9 +5,9 @@
 
 #include <nlohmann/json.hpp>
 
-#include "nul.gen.h"
+#include "nulstr.gen.h"
 
-namespace n = demo::nul;
+namespace n = demo::nulstr;
 
 static void decode(const char* what, const nlohmann::json& j) {
     std::string error;

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	nulPkg  = "demo.nul"
+	nulPkg  = "demo.nulstr"
 	nulText = "a\x00b" // three bytes: a NUL a C++ literal's own length would stop at
 )
 
@@ -43,7 +43,7 @@ func nulPackage() *ir.Package {
 	side := enumOf("Side", "left", "right")
 	side.Pkg = nulPkg
 	return &ir.Package{
-		Name: nulPkg, Dir: "demo/nul", Types: []ir.Type{side, note},
+		Name: nulPkg, Dir: "demo/nulstr", Types: []ir.Type{side, note},
 		Values: []*ir.Value{
 			{Name: "notes", IDs: []string{"n0"}, Type: ir.TypeRef{Kind: types.Table, Elem: &noteElem}, V: &value.Table{Entries: []*value.Record{row}}},
 			{Name: "short", Type: listOf(tString), V: &value.List{Elems: nulStrs(2)}},
@@ -57,7 +57,7 @@ func nulPackage() *ir.Package {
 			{Name: "NUL_LONG", Type: listOf(tString), V: &value.List{Elems: nulStrs(smallN)}},
 		},
 		Fns:   []*ir.ExportFn{lookup("sideText", "", tString, []*ir.Param{{Name: "s", Type: ir.TypeRef{Kind: types.Enum, Named: side}}}, str(nulText), str("r"))},
-		Emits: []*ir.Emit{{Target: ir.TargetCpp, Out: "out/", Dir: "demo/nul/out", Mode: ir.ModeBaked, Namespace: "demo::nul"}},
+		Emits: []*ir.Emit{{Target: ir.TargetCpp, Out: "out/", Dir: "demo/nulstr/out", Mode: ir.ModeBaked, Namespace: "demo::nulstr"}},
 	}
 }
 
@@ -68,7 +68,7 @@ func nulTypesPackage() *ir.Package {
 	}}
 	holder := &ir.Record{Pkg: nulPkg, Name: "Holder", Fields: []*ir.Field{field("prize", "prize", "", ir.TypeRef{Kind: types.Variant, Named: prize})}}
 	return &ir.Package{
-		Name: nulPkg, Dir: "demo/nul", Types: []ir.Type{prize, holder},
-		Emits: []*ir.Emit{{Target: ir.TargetCpp, Out: "out/", Dir: "demo/nul/out", Mode: ir.ModeTypes, Namespace: "demo::nul"}},
+		Name: nulPkg, Dir: "demo/nulstr", Types: []ir.Type{prize, holder},
+		Emits: []*ir.Emit{{Target: ir.TargetCpp, Out: "out/", Dir: "demo/nulstr/out", Mode: ir.ModeTypes, Namespace: "demo::nulstr"}},
 	}
 }

@@ -113,7 +113,7 @@ func TestBakedNulCompilesAndRuns(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, nulPackage()), "nul_main.cpp")
-	for _, out := range buildAndRun(t, dir, []string{"nul.gen.cpp", "main.cpp"}) {
+	for _, out := range buildAndRun(t, dir, []string{"nulstr.gen.cpp", "main.cpp"}) {
 		if out != nulWant {
 			t.Errorf("got:\n%s\nwant:\n%s", out, nulWant)
 		}
@@ -128,7 +128,7 @@ func TestTypesNulCaseWireCompilesAndRuns(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	writeTree(t, dir, generate(t, nulTypesPackage()), "nul_types_main.cpp")
-	for _, out := range buildAndRun(t, dir, []string{"nul.gen.cpp", "main.cpp"}) {
+	for _, out := range buildAndRun(t, dir, []string{"nulstr.gen.cpp", "main.cpp"}) {
 		if out != nulTypesWant {
 			t.Errorf("got:\n%s\nwant:\n%s", out, nulTypesWant)
 		}

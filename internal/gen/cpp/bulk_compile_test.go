@@ -18,7 +18,6 @@ const (
 	bulkMaxRSSKB = 1536 * 1024
 	// bulkMaxLine bounds a generated line: the handoff's ids.gen.cpp had one of 340 KB.
 	bulkMaxLine = 1000
-	bulkSource  = "bulk.gen.cpp"
 )
 
 // bulkFlags are the release flags of the handoff on top of cxx.Flags: the later -O3 wins.

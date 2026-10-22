@@ -4,9 +4,9 @@
 #include <string>
 #include <string_view>
 
-#include "nul.gen.h"
+#include "nulstr.gen.h"
 
-namespace n = demo::nul;
+namespace n = demo::nulstr;
 
 // show prints what s holds: its length and whether its bytes are 'a', NUL, 'b'.
 static void show(const char* what, std::string_view s) {
