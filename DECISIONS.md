@@ -4112,7 +4112,8 @@ round 2", "PS1 review", "PS2 round 2"):
      CLI.md §3.18).** `Project.Graph(ctx, fn)` streams every node, then every edge, of the
      project. The nodes are every top-level `let` (a root) and every value `Refs` accepts as a
      target (R7, P7a): table entries, keyed-list elements and the members of declared enums,
-     each at its own identity's path only (a copy is no node). A plain-list element is no node:
+     each at its own identity's path only (a copy is no node; a collection-valued let's
+     re-adopted entries are, 315). A plain-list element is no node:
      a position is no identity. The edges are, for every target, the `value` and
      `key` refs `Refs` reports for it, each pointing at that target: names in code, views,
      checks and amendments have no referring value and are no edges. An edge's owner is the

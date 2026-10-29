@@ -702,9 +702,13 @@ type GraphEdge struct {
   accepts as a target (R7, P7a): table entries (`entry`), keyed-list elements (`element`) and
   every member of every `enum` declared in a package (`member`; a variant's `Kind(V)` is not
   one), in every package and at any depth. A value is a node only at its own identity's path
-  (TYPES.md §6.3): an entry or element reached through a copy (`let alias = items`, a field
-  holding `zones.forest`) is no node, and the refs inside a copy are edges from its nearest node
-  (R12) to the original. A plain-list element is no node. The edges are, for every target node
+  (TYPES.md §6.3): an entry or element reached through a copy (a field or let holding
+  `zones.forest`, a let holding a shared record) is no node, and the refs inside a copy are
+  edges from its nearest node (R12) to the original. A collection-valued let re-adopts its
+  entries (DECISIONS 315), so the entries of `let alias = items` are nodes of `alias`. The path
+  of an identity reached by several paths is the first that stays in its source tree (W3), else
+  the first in the walk's order (the order `Refs` walks lets and values in). A plain-list element
+  is no node. The edges are, for every target node
   T, one per `value` or `key` ref that `Refs(T)` reports, with `To` = T and `Kind` and `Span` as
   `Refs` reports them; nothing else is an edge (names in code, views, checks and amendments are
   not). Base and layered refs merge by span as in R7, so a layered value keeps its own `Path`.
