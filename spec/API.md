@@ -708,7 +708,7 @@ type GraphEdge struct {
   entries (DECISIONS 315), so the entries of `let alias = items` are nodes of `alias`; an entry
   or element of a collection that belongs to no let or field (in an optional or case field, a
   nested list, a map value) is a node where it is met, and a `load.defines` table's entries are
-  nodes under their own let only. Each identity is exactly one node. The path
+  nodes under their own let only: the let whose initializer is the `load.defines` call. Each identity is exactly one node. The path
   of an identity reached by several paths is the first that stays in its source tree (W3), else
   the first in the walk's order (the order `Refs` walks lets and values in). A plain-list element
   is no node. The edges are, for every target node
