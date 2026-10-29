@@ -4107,3 +4107,31 @@ round 2", "PS1 review", "PS2 round 2"):
      Nothing else changes. Reason: retiredness reached a program only as a `Retired.` doc line, so
      Sovereign could not build a name table that excludes retired ids without a hand-written
      `export fn` per enum (handoff 2026-10-21-sovereign-cpp-retired).
+
+396. **`canon graph` gives the whole data reference graph from one analysis (API.md §5.6;
+     CLI.md §3.18).** `Project.Graph(ctx, fn)` streams every node, then every edge, of the
+     project. The nodes are every top-level `let` (a root) and every value `Refs` accepts as a
+     target (R7, P7a): table entries, keyed-list elements and enum members. A plain-list element
+     is no node: a position is no identity. The edges are, for every target, the `value` and
+     `key` refs `Refs` reports for it, each pointing at that target: names in code, views,
+     checks and amendments have no referring value and are no edges. An edge's owner is the
+     longest prefix of its path that is a node, so always a node. There are no options: every
+     package is read, retired entries and members are included and say so, members are nodes.
+     A value that could hold a ref but cannot be computed fails the graph before anything is
+     streamed, as it fails `Refs`. `canon graph` prints the edges grouped by pattern (397) as
+     text, and the nodes and edges as JSON lines. Reason: `Refs` answers one target per
+     analysis, about 32 s per call on Resource (Sovereign's wiki handoff, 2026-10-29); a
+     where-used index, dead-entry detection, impact review and documentation generators need
+     every edge. Not taken: titles (presentation; join the view model by node id), kind,
+     member, retired and package filters (the consumer filters the stream), a partial graph
+     (it would look complete), graph queries (the consumer's).
+
+397. **A pattern names the schema location of a referring value (API.md §5.6 R13).** It is the
+     value's canonical path with every key, index and entry step written `[*]`, fields kept,
+     and the current case written `<case>` after each step that reaches a variant value. It is
+     computed from the path's steps, never from its text. Two references share a pattern
+     exactly when they sit at the same place of the same root's schema: changing a key, adding
+     an entry or reordering a list never changes one; renaming a root, a field or a case does.
+     Reason: the reviewable unit of a large graph is the schema location (a few hundred
+     patterns for hundreds of thousands of edges); without the case, two cases' fields of the
+     same name would share a pattern and a label meant for one would silently cover the other.

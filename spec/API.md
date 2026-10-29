@@ -669,6 +669,60 @@ type PackageInfo struct {
 }
 ```
 
+### 5.6 Graph (DECISIONS 396, 397)
+
+```go
+func (p *Project) Graph(ctx context.Context, fn func(GraphItem) error) error
+
+type GraphItem struct { Node *GraphNode; Edge *GraphEdge }   // exactly one is set
+type GraphNode struct {
+    ID      string    // canonical path (§6.5), package-qualified: "items:items.II_MOONSTONE"
+    Kind    NodeKind  // root | entry | element | member
+    Package string
+    Type    string    // TypeInfo.Expr of its value; for a member, its enum, qualified
+    Retired bool      // a retired table entry or enum member
+    Span              // root: the let's name; member: its name; entry, element: the
+}                     // provenance span of its record (EVALUATION.md §13), no File if none
+type GraphEdge struct {
+    From     string   // the owning node's ID (R12)
+    Path     string   // the referring value or map entry, canonical, package-qualified
+    Pattern  string   // R13
+    To       string   // the target node's ID
+    Kind     RefKind  // value | key
+    Computed bool     // code computed the value (R7)
+    Span              // as Ref.Span
+}
+```
+
+- **R11.** `Graph` reads the analysis `Refs` reads (S8), once, and calls `fn` with every node, then
+  every edge. The nodes are every top-level `let` of every package (`root`) and every value `Refs`
+  accepts as a target (R7, P7a): table entries (`entry`), keyed-list elements (`element`) and enum
+  members (`member`), in every package and at any depth. A plain-list element is no node. The
+  edges are, for every target node T, one per `value` or `key` ref that `Refs(T)` reports, with
+  `To` = T, `Kind`, `Computed` and `Span` as `Refs` reports them; nothing else is an edge (names
+  in code, views, checks and amendments are not). There are no options: retired entries and
+  members, and the edges to them, are included; layers apply as for every read (`Options.Layers`).
+- **R12.** `From` is the ID of the node whose ID is the longest prefix, by segments, of `Path`. A
+  root is a node, so every edge has one.
+- **R13.** `Pattern` is built from the steps of `Path`, never from its text: the qualified root
+  as is; a field `.f` as is; every key, index or entry step (`.key` of a table entry, `[k]`,
+  `[n]`) as `[*]`; and after each step that reaches a variant value, `<c>` for its current case
+  `c` (its Canon name). Changing a key, adding an entry or reordering a list never changes a
+  pattern; renaming a root, a field or a case does.
+- **R14.** Order: nodes in F2 order of their spans, then by `ID`; edges in R8 order, then by `To`.
+  So the edges with `To` = T are, in order, the `value` and `key` refs of `Refs(T)`. Two calls on
+  the same snapshot produce the same sequence.
+- **R15.** A let whose static type could hold a ref or an enum member but whose value cannot be
+  computed makes `Graph` fail before `fn` is first called, with the error `Refs` returns for such
+  a let (R7), so a partial graph never looks complete. An error `fn` returns stops the walk and
+  `Graph` returns it unchanged.
+
+```
+items.catalog:craftingRecipes[*].components[*].id
+events:eventConfig.events[*].kind<drop>.itemId
+items:items[*].sets[*]
+```
+
 ---
 
 ## 6. Value paths

@@ -38,6 +38,7 @@ the network.
 | `canon fmt` | rewrite sources in the canonical layout |
 | `canon explain <path>` | show a value, its type, and where each part of it comes from |
 | `canon refs <path>` | list everything that references an entry |
+| `canon graph` | every entry, element and member, and every data reference between them |
 | `canon convert <value>` | turn a `load`ed JSON source into `.canon` source, proven lossless |
 | `canon i18n stub \| status` | manage translation files |
 | `canon lock check` | verify `canon.lock` against the sources without building |
@@ -696,6 +697,54 @@ Prints the agent guide embedded in the binary (DECISIONS 276): with no topic, th
 lists the topics in one line each; with a topic, that topic. The text matches the binary's
 version. An unknown topic is a usage error that lists the topics. Exit: 0, 2.
 
+### 3.18 `canon graph`
+
+```
+canon graph
+```
+
+Lists the project's reference graph from one analysis (API.md §5.6, DECISIONS 396): the nodes
+(every top-level `let`, table entry, keyed-list element and enum member) and the edges (every
+value or map key holding a `ref` or a member, as `canon refs` reports it for its target). Every
+package is read; `--layer` applies as for every command. It takes no argument.
+
+The text form groups the edges by schema location, the small view a person or an agent reviews:
+
+```
+4113 nodes, 9820 edges in 37 groups
+  2184  value  items.catalog:craftingRecipes[*].components[*].id -> items.Item
+      items.catalog:craftingRecipes[26] -> items:items.II_GEN_MAT_MOONSTONE
+      items.catalog:craftingRecipes[27] -> items:items.II_GEN_MAT_ORICHALCUM
+      items.catalog:craftingRecipes[31] -> items:items.II_GEN_MAT_MOONSTONE
+  12  value  events:eventConfig.events[*].kind<drop>.itemId -> items.Item
+      events:eventConfig.events[minister_env_custom_drop] -> items:items.II_SYS_SYS_EVE_BOX
+```
+
+The first line is the node count, ` nodes, `, the edge count, ` edges in `, the group count and
+` groups` (`node`, `edge`, `group` when the count is 1). A group is the edges sharing a pattern
+(API.md R13), a kind and the `Type` of their target node; groups are sorted by pattern, kind,
+then type, and their counts sum to the edge count. Each group is a line: two spaces, the count,
+two spaces, the kind, two spaces, the pattern, ` -> `, the target type; then up to three example
+lines: six spaces, `from -> to` of the group's first distinct pairs in API.md R14 order. No
+column is padded.
+
+JSON: one line per node, then one per edge, in API.md R14 order, then the summary:
+
+```json
+{"node":{"id":"items:items.II_GEN_MAT_MOONSTONE","kind":"entry","package":"items","type":"items.Item","file":"items/items.canon","line":88,"col":3}}
+{"edge":{"from":"items.catalog:craftingRecipes[26]","path":"items.catalog:craftingRecipes[26].components[0].id","pattern":"items.catalog:craftingRecipes[*].components[*].id","to":"items:items.II_GEN_MAT_MOONSTONE","kind":"value","file":"items/catalog/craftingData.canon","line":407,"col":15}}
+{"summary":{"nodes":4113,"edges":9820,"groups":37}}
+```
+
+Node keys in this order: `id`, `kind` (`root`, `entry`, `element`, `member`), `package`,
+`type`, `retired`, `file`, `line`, `col`. Edge keys: `from`, `path`, `pattern`, `to`, `kind`
+(`value`, `key`), `computed`, `file`, `line`, `col`. `retired` and `computed` appear only when
+true; `file`, `line` and `col` are omitted together when there is no file. The output is
+byte-identical across runs.
+
+A value that could hold a ref but cannot be computed fails the command as it fails `canon refs`,
+naming it, and nothing is printed (API.md R15). An argument is a usage error. Exit: 0, 1, 2, 3.
+
 ---
 
 ## 4. Editor integration
@@ -762,6 +811,8 @@ vm, err := p.ViewModel(ctx, "resource.farm")
 v, err := p.Value(ctx, "resource.farm:farm.modelTypes[3]")
 // Everything that references an entry or enum member.
 refs, err := p.Refs(ctx, "items.II_GEN_MAT_MOONSTONE")
+// Every node, then every value and key reference, from one analysis (API.md §5.6).
+err = p.Graph(ctx, func(it canon.GraphItem) error { return nil })
 ```
 
 `Check` returns `(*CheckResult, error)`: the findings are in the result, and `err` is set only
@@ -947,6 +998,7 @@ An agent edits through the compiler rather than the text, so every write is chec
 canon check --format json                 # what is wrong, with value paths and related locations
 canon explain <path> --format json        # a value, its type and where each part was set
 canon refs <path>                         # what uses an entry, before removing or retiring it
+canon graph --format json                 # every entry and every data reference, from one analysis
 canon edit fix.json                       # apply value changes; prints the Undo request
 canon rename <name> <new-name>            # rename a field, type, function, let or local everywhere
 canon fmt                                 # after any hand edit of the code itself
