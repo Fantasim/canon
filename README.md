@@ -170,6 +170,7 @@ From [CLI.md](CLI.md) §1; each command has its own section in CLI.md §3.
 | `canon fmt` | rewrite sources in the canonical layout |
 | `canon explain <path>` | show a value, its type, and where each part of it comes from |
 | `canon refs <path>` | list everything that references an entry |
+| `canon graph` | every entry, element and member, and every data reference between them |
 | `canon edit` | apply one edit request (JSON) through the edit API |
 | `canon rename <name> <new>` | rename a Canon name everywhere it is used |
 | `canon lsp` | language server on stdio |

@@ -38,7 +38,7 @@ the network.
 | `canon fmt` | rewrite sources in the canonical layout |
 | `canon explain <path>` | show a value, its type, and where each part of it comes from |
 | `canon refs <path>` | list everything that references an entry |
-| `canon graph` | every entry, element and member, and every data reference between them |
+| `canon graph` | every top-level let, entry, element and member, and every data reference between them |
 | `canon convert <value>` | turn a `load`ed JSON source into `.canon` source, proven lossless |
 | `canon i18n stub \| status` | manage translation files |
 | `canon lock check` | verify `canon.lock` against the sources without building |
@@ -145,7 +145,7 @@ Optional fields are omitted when empty. Findings are sorted by file, line, colum
 message, findings without a file first. After 1,000 findings in one package, the rest are dropped
 and counted in the summary.
 
-`test`, `explain`, `refs` and `--watch` print the text layouts shown in §3. With `--format json`
+`test`, `explain`, `refs`, `graph` and `--watch` print the text layouts shown in §3. With `--format json`
 every command prints one JSON object per line, then the summary line (`explain` prints its one
 object and no summary, IMPLEMENTATION-PLAN §8.1); the object of each command
 is given with it in §3.
@@ -706,24 +706,29 @@ canon graph
 Lists the project's reference graph from one analysis (API.md §5.6, DECISIONS 396): the nodes
 (every top-level `let`, table entry, keyed-list element and enum member) and the edges (every
 value or map key holding a `ref` or a member, as `canon refs` reports it for its target). Every
-package is read; `--layer` applies as for every command. It takes no argument.
+package is read; `--layer` applies as for every command; `-q` changes nothing. It takes no
+argument. It does not require a project without findings (API.md R11): run `canon check` first
+when the graph must be of an error-free project.
 
-The text form groups the edges by schema location, the small view a person or an agent reviews:
+The text form groups the edges by schema location, the small view a person or an agent reviews
+(an excerpt: two of the groups):
 
 ```
 4113 nodes, 9820 edges in 37 groups
+  12  value  events:eventConfig.events[*].kind<drop>.itemId -> items.Item
+      events:eventConfig.events[minister_drop] -> items:items.II_SYS_SYS_EVE_BOX
+      events:eventConfig.events[moonstone_rain] -> items:items.II_GEN_MAT_MOONSTONE
+      events:eventConfig.events[summer_drop] -> items:items.II_SYS_SYS_EVE_BOX
   2184  value  items.catalog:craftingRecipes[*].components[*].id -> items.Item
       items.catalog:craftingRecipes[26] -> items:items.II_GEN_MAT_MOONSTONE
       items.catalog:craftingRecipes[27] -> items:items.II_GEN_MAT_ORICHALCUM
       items.catalog:craftingRecipes[31] -> items:items.II_GEN_MAT_MOONSTONE
-  12  value  events:eventConfig.events[*].kind<drop>.itemId -> items.Item
-      events:eventConfig.events[minister_env_custom_drop] -> items:items.II_SYS_SYS_EVE_BOX
 ```
 
 The first line is the node count, ` nodes, `, the edge count, ` edges in `, the group count and
 ` groups` (`node`, `edge`, `group` when the count is 1). A group is the edges sharing a pattern
-(API.md R13), a kind and the `Type` of their target node; groups are sorted by pattern, kind,
-then type, and their counts sum to the edge count. Each group is a line: two spaces, the count,
+(API.md R13), a kind and the `Type` of their target node; groups are sorted by pattern bytes,
+kind bytes (`key` before `value`), then type bytes, and their counts sum to the edge count. Each group is a line: two spaces, the count,
 two spaces, the kind, two spaces, the pattern, ` -> `, the target type; then up to three example
 lines: six spaces, `from -> to` of the group's first distinct pairs in API.md R14 order. No
 column is padded.
@@ -742,8 +747,9 @@ Node keys in this order: `id`, `kind` (`root`, `entry`, `element`, `member`), `p
 true; `file`, `line` and `col` are omitted together when there is no file. The output is
 byte-identical across runs.
 
-A value that could hold a ref but cannot be computed fails the command as it fails `canon refs`,
-naming it, and nothing is printed (API.md R15). An argument is a usage error. Exit: 0, 1, 2, 3.
+A let that could hold a ref, a member, an entry or an element but cannot be computed fails the
+command (API.md R15): no node, edge or summary line is printed; the findings and the error are,
+as for `canon refs`, and the exit code is 1. An argument is a usage error. Exit: 0, 1, 2, 3.
 
 ---
 

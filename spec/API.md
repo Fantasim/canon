@@ -263,7 +263,7 @@ func (p *Project) Revision() Revision
 ### 3.3 Concurrency (API-05)
 
 - **S7.** A `Project` is safe for concurrent use by any number of goroutines.
-- **S8.** Reads (`Check`, `CheckWith`, `Info`, `Value`, `Refs`, `ViewModel`, `Evaluate`, `Test`,
+- **S8.** Reads (`Check`, `CheckWith`, `Info`, `Value`, `Refs`, `Graph`, `ViewModel`, `Evaluate`, `Test`,
   `LockCheck`, `Build` with `Check: true`) run in parallel with each other and with a writer. Identical
   concurrent reads of the same snapshot share one computation. A view model (R9) is kept per
   snapshot and package; a new snapshot invalidates it (DECISIONS 313).
@@ -621,7 +621,9 @@ type Ref struct {
     static type could hold a ref to the target but that cannot be computed makes `Refs` fail,
     naming it, so a partial list never looks complete. A `let` whose type is the error type holds
     no ref value; its written names are still `code` refs.
-- **R8.** Order: F2 order of the spans. `canon refs` prints them in this order (CLI.md §3.8).
+- **R8.** Order: by span (`File` bytes, `Line`, `Col`, `EndLine`, `EndCol`), then `Kind` in the
+  order `value`, `key`, `code`, `view`, `check`, `layer`, then `Package` and `Path` bytes. `canon
+  refs` prints them in this order (CLI.md §3.8).
 
 ### 5.4 ViewModel
 
@@ -679,8 +681,9 @@ type GraphNode struct {
     ID      string    // canonical path (§6.5), package-qualified: "items:items.II_MOONSTONE"
     Kind    NodeKind  // root | entry | element | member
     Package string
-    Type    string    // TypeInfo.Expr of its value; for a member, its enum, qualified
-    Retired bool      // a retired table entry or enum member
+    Type    string    // Value(ID).Type.Expr: the type at its location (P9), computed or
+                      // not; for a member, its enum's qualified name
+    Retired bool      // a retired table entry or enum member (never a keyed element)
     Span              // root: the let's name; member: its name; entry, element: the
 }                     // provenance span of its record (EVALUATION.md §13), no File if none
 type GraphEdge struct {
@@ -689,33 +692,44 @@ type GraphEdge struct {
     Pattern  string   // R13
     To       string   // the target node's ID
     Kind     RefKind  // value | key
-    Computed bool     // code computed the value (R7)
+    Computed bool     // the value is computed in R7's sense (no key or name token states it)
     Span              // as Ref.Span
 }
 ```
 
 - **R11.** `Graph` reads the analysis `Refs` reads (S8), once, and calls `fn` with every node, then
   every edge. The nodes are every top-level `let` of every package (`root`) and every value `Refs`
-  accepts as a target (R7, P7a): table entries (`entry`), keyed-list elements (`element`) and enum
-  members (`member`), in every package and at any depth. A plain-list element is no node. The
-  edges are, for every target node T, one per `value` or `key` ref that `Refs(T)` reports, with
-  `To` = T, `Kind`, `Computed` and `Span` as `Refs` reports them; nothing else is an edge (names
-  in code, views, checks and amendments are not). There are no options: retired entries and
-  members, and the edges to them, are included; layers apply as for every read (`Options.Layers`).
+  accepts as a target (R7, P7a): table entries (`entry`), keyed-list elements (`element`) and
+  every member of every `enum` declared in a package (`member`; a variant's `Kind(V)` is not
+  one), in every package and at any depth. A value is a node only at its own identity's path
+  (TYPES.md §6.3): an entry or element reached through a copy (`let alias = items`, a field
+  holding `zones.forest`) is no node, and the refs inside a copy are edges from its nearest node
+  (R12) to the original. A plain-list element is no node. The edges are, for every target node
+  T, one per `value` or `key` ref that `Refs(T)` reports, with `To` = T and `Kind` and `Span` as
+  `Refs` reports them; nothing else is an edge (names in code, views, checks and amendments are
+  not). Base and layered refs merge by span as in R7, so a layered value keeps its own `Path`.
+  There are no options: retired entries and members, and the edges to them, are included; layers
+  apply as for every read (`Options.Layers`). The graph holds what the analysis computed: it does
+  not require a project without findings, and a ref whose key names no entry (`E3501`) is no
+  edge. Every item passed to `fn` is new; `fn` may keep it.
 - **R12.** `From` is the ID of the node whose ID is the longest prefix, by segments, of `Path`. A
   root is a node, so every edge has one.
 - **R13.** `Pattern` is built from the steps of `Path`, never from its text: the qualified root
   as is; a field `.f` as is; every key, index or entry step (`.key` of a table entry, `[k]`,
-  `[n]`) as `[*]`; and after each step that reaches a variant value, `<c>` for its current case
-  `c` (its Canon name). Changing a key, adding an entry or reordering a list never changes a
+  `[n]`) as `[*]`; and after the root and after each step but the last, when it reaches a
+  variant value, `<c>` for its current case `c` (its Canon name). A `key` edge's last step is the
+  map entry, so the case of the entry's value never enters its pattern. Changing a key, adding an entry or reordering a list never changes a
   pattern; renaming a root, a field or a case does.
-- **R14.** Order: nodes in F2 order of their spans, then by `ID`; edges in R8 order, then by `To`.
+- **R14.** Order: nodes by span as R8 orders spans (no `File` first), then by `ID` bytes; edges
+  in R8 order, then by `To` bytes.
   So the edges with `To` = T are, in order, the `value` and `key` refs of `Refs(T)`. Two calls on
   the same snapshot produce the same sequence.
-- **R15.** A let whose static type could hold a ref or an enum member but whose value cannot be
-  computed makes `Graph` fail before `fn` is first called, with the error `Refs` returns for such
-  a let (R7), so a partial graph never looks complete. An error `fn` returns stops the walk and
-  `Graph` returns it unchanged.
+- **R15.** A let whose value, or a key in it, cannot be computed while its static type could hold
+  a ref, an enum member, a table entry or a keyed-list element, and a let whose type is the error
+  type, make `Graph` fail before `fn` is first called, so a partial graph never looks complete:
+  a `*PathError` wrapping `ErrNoValue` whose `Path` is the first such let's qualified name in
+  (package, name) byte order, with R6's findings, as `Refs` builds it. An error `fn` returns stops
+  the walk and `Graph` returns it unchanged.
 
 ```
 items.catalog:craftingRecipes[*].components[*].id
@@ -814,7 +828,8 @@ canonical, so it can be compared as a string:
   word as a `T`), so the canonical form resolves to itself. The key type is the one declared at
   the path's location, computed for the instance when it is dependent (TYPES.md §11.5), never the
   stored type of a value assigned from elsewhere, so a value has exactly one path.
-- **P10.** `Value.Path` and `EvalResult.Path` carry the `package:` prefix; `Finding.Path` and
+- **P10.** `Value.Path`, `EvalResult.Path` and every path of `Graph` (`ID`, `From`, `Path`,
+  `To`, `Pattern`) carry the `package:` prefix; `Finding.Path` and
   `Ref.Path` do not (their package is a separate field).
 
 ```
