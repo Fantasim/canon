@@ -91,6 +91,16 @@ const (
 	RefLayer RefKind = "layer"
 )
 
+// NodeKind says what a node of the reference graph is (rule R11).
+type NodeKind string
+
+const (
+	NodeRoot    NodeKind = "root"
+	NodeEntry   NodeKind = "entry"
+	NodeElement NodeKind = "element"
+	NodeMember  NodeKind = "member"
+)
+
 // OpKind names an operation: the "op" string of its JSON form (rule E24).
 type OpKind string
 
@@ -193,6 +203,11 @@ var changeKinds = [...]ChangeKind{
 var refKinds = [...]RefKind{
 	edit.RefValue: RefValue, edit.RefKey: RefKey, edit.RefCode: RefCode,
 	edit.RefView: RefView, edit.RefCheck: RefCheck, edit.RefLayer: RefLayer,
+}
+
+// nodeKinds names each of edit's graph node kinds as the API does, indexed by edit's (rule R11).
+var nodeKinds = [...]NodeKind{
+	edit.NodeRoot: NodeRoot, edit.NodeEntry: NodeEntry, edit.NodeElement: NodeElement, edit.NodeMember: NodeMember,
 }
 
 // Paths as Value reads them: a lone segment's root, a segment's first bytes, error details (API.md §6.1).
