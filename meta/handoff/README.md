@@ -115,3 +115,4 @@ their path from the receiving repository's root.
 `2026-10-20-canon-reply-v0110.md` is v0.1.10's reply (the C++ gap release, ADR-0022), with the farm numbers; `2026-10-20-v0110-status.md` is the run's status record.
 
 `2026-10-21-canon-reply-v0111.md` is v0.1.11's reply (optimisable emits, DECISIONS 392-394) to Scripts' ids-gen-optimisable ask; `2026-10-21-sovereign-cpp-retired.md` (retired members in the enum API) is answered by `2026-10-22-canon-reply-v0112.md` (v0.1.12, DECISIONS 395; one required rename in Sovereign's telemetry).
+`2026-10-29-sovereign-graph-export.md` (the whole reference graph in one pass) is answered by `2026-10-29-canon-reply-v0113.md` (v0.1.13, `canon graph`, DECISIONS 396-397).
