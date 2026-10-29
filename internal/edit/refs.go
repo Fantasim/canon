@@ -157,25 +157,32 @@ func (tg *target) names(coll *types.Collection) bool {
 
 // instanceAt reports the let path coll reaching the collection instance holding the target.
 func (tg *target) instanceAt(coll *types.Collection) bool {
+	return slices.ContainsFunc(letPathEntries(tg.s, coll), func(e value.Value) bool {
+		rec, ok := e.(*value.Record)
+		return ok && rec.Ident != nil && rec.Ident.Coll == tg.ident.Coll && rec.Ident.Owner == tg.ident.Owner
+	})
+}
+
+// letPathEntries are the entries or elements of the collection a let path coll reaches
+// (DECISIONS 315, 316), none when it reaches nothing.
+func letPathEntries(s *Snapshot, coll *types.Collection) []value.Value {
 	p := Path{Package: coll.Pkg, Root: coll.Name}
 	for _, f := range coll.FieldPath {
 		p.Segs = append(p.Segs, Seg{Kind: SegField, Name: f})
 	}
-	res, err := Resolve(tg.s, p)
+	res, err := Resolve(s, p)
 	if err != nil {
-		return false
+		return nil
 	}
-	var entries []value.Value
 	switch c := res.Target.(type) {
 	case *value.List:
-		entries = c.Elems
+		return c.Elems
 	case *value.Table:
-		for _, e := range c.Entries {
-			entries = append(entries, e)
+		entries := make([]value.Value, len(c.Entries))
+		for i, e := range c.Entries {
+			entries[i] = e
 		}
+		return entries
 	}
-	return slices.ContainsFunc(entries, func(e value.Value) bool {
-		rec, ok := e.(*value.Record)
-		return ok && rec.Ident != nil && rec.Ident.Coll == tg.ident.Coll && rec.Ident.Owner == tg.ident.Owner
-	})
+	return nil
 }

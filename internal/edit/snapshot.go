@@ -138,7 +138,12 @@ func (s *Snapshot) force(r rootRef) (value.Value, error) {
 	if s.a.Bag(r.pkg.Path) == nil {
 		return nil, &PathError{Seg: rootSeg, Err: ErrNotAnalyzed}
 	}
-	return nil, &PathError{Seg: rootSeg, Err: ErrNoValue, Root: eval.Root{Pkg: r.pkg.Path, Name: r.obj.Name()}, At: s.a}
+	return nil, s.noValue(r)
+}
+
+// noValue is the error of r without a value (R6).
+func (s *Snapshot) noValue(r rootRef) error {
+	return &PathError{Seg: rootSeg, Err: ErrNoValue, Root: eval.Root{Pkg: r.pkg.Path, Name: r.obj.Name()}, At: s.a}
 }
 
 // display is the display path of a file of the snapshot, "" for none.

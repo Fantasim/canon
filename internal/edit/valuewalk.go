@@ -84,7 +84,9 @@ func (w *valueWalk) value(r rootRef, v, parent value.Value, segs []Seg, old bool
 	if old && w.seen[v] {
 		return
 	}
-	w.seen[v] = w.seen[v] || old
+	if old {
+		w.seen[v] = true // only replaced values are met twice
+	}
 	w.visits++
 	if w.done = w.visit(r, v, parent, segs); w.done {
 		return

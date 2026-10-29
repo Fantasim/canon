@@ -9,33 +9,34 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// The segment forms of API.md §6.1.
+// The segment and key forms of API.md §6.1.
 const (
-	SegField, SegKey, SegPos SegKind = 0, 1, 2
+	SegField, SegKey, SegPos   SegKind    = 0, 1, 2
+	KeyWord, KeyInt, KeyString KeyLitKind = 0, 1, 2
 )
 
-// The key forms of API.md §6.1.
+// Graph node kinds and pattern marks (API.md R11, R13), no trie position, an owner's depth.
 const (
-	KeyWord, KeyInt, KeyString KeyLitKind = 0, 1, 2
+	NodeRoot, NodeEntry, NodeElement, NodeMember NodeKind = 0, 1, 2, 3
+	patternAny, caseOpen, caseClose                       = "[*]", "<", ">"
+	noPlace, ownerUp                                      = -1, 2
 )
 
 // Path syntax (API.md §6.1).
 const (
-	fieldMark    = '.'
-	bracketOpen  = '['
-	bracketClose = "]"
-	positionMark = "#"
-	packageMark  = ":"
-	jsonQuote    = `"`
-	minus        = '-'
-	zeroDigit    = '0'
-	underscore   = "_"
-	decimalBase  = 10
-	int64Bits    = 64
+	fieldMark      = '.'
+	bracketOpen    = '['
+	bracketClose   = "]"
+	positionMark   = "#"
+	packageMark    = ":"
+	jsonQuote      = `"`
+	minus          = '-'
+	zeroDigit      = '0'
+	underscore     = "_"
+	decimalBase    = 10
+	int64Bits      = 64
+	fmtSyntaxError = "%v: %v at byte %d" // a SyntaxError's text: the sentinel, the reason, the offset
 )
-
-// fmtSyntaxError is a SyntaxError's text: the sentinel, the reason, the offset.
-const fmtSyntaxError = "%v: %v at byte %d"
 
 // The pseudo-fields of API.md P3.
 const (
