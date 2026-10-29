@@ -1,0 +1,29 @@
+CLI.md §3.18: node, edge and group are singular when the count is 1.
+-- args --
+graph
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A tone.
+enum Tone { loud }
+
+/// A message.
+record Msg {
+  /// Its tone.
+  tone: Tone = loud
+}
+
+/// The alarm.
+let alarm: Msg = { tone: loud }
+-- want --
+[exit 0]
+[stdout]
+2 nodes, 1 edge in 1 group
+  1  value  r:alarm.tone -> r.Tone
+      r:alarm -> r:Tone.loud
+[stderr]

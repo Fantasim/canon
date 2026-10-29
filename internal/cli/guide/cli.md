@@ -16,6 +16,7 @@ JSON Lines; `edit` and `rename` always do.
 | `canon fmt [paths]` | rewrite in canonical layout |
 | `canon explain <path>` | value, type, origin of every part |
 | `canon refs <path>` | every reference to an entry or enum member |
+| `canon graph` | the whole reference graph: text grouped by schema location, or JSON lines |
 | `canon edit [request.json]` | apply one edit request (stdin without a file); analyses only the packages it affects |
 | `canon rename <name> <new-name>` | rename a Canon name everywhere |
 | `canon lock check [packages]` | verify `canon.lock` against the sources without building: `E6001`..`E6005`, and `W6006` for values not locked yet |
@@ -104,6 +105,23 @@ or spread came through), `stack`, `replaced` (the origin a layer replaced).
 
 `kind`: `value` (a ref holding the key), `key` (a map key), `code`, `view`, `check`, `layer`;
 `path` only for `value` and `key`. Target: a table entry, keyed-list element or enum member.
+
+## graph
+
+```json
+{"node":{"id":"shop:items","kind":"root","package":"shop","type":"table shop.Item","file":"shop/shop.canon","line":11,"col":5}}
+{"node":{"id":"shop:items.axe","kind":"entry","package":"shop","type":"shop.Item","file":"shop/shop.canon","line":12,"col":3}}
+{"node":{"id":"shop:deals","kind":"root","package":"shop","type":"[ref shop.items]","file":"shop/shop.canon","line":16,"col":5}}
+{"edge":{"from":"shop:deals","path":"shop:deals[0]","pattern":"shop:deals[*]","to":"shop:items.axe","kind":"value","file":"shop/shop.canon","line":16,"col":27}}
+{"summary":{"nodes":3,"edges":1,"groups":1}}
+```
+
+Nodes first, in source order (every top-level `let` is a `root` node), then edges, then the
+summary; `kind` of a node: `root`, `entry`, `element`, `member`; `retired` and
+`computed` only when true; `file`, `line`, `col` together or not at all. Text: edges grouped by
+pattern, kind and target type, with up to three example pairs. No argument. A let that could hold
+a ref, member, entry or element but cannot be computed (or whose type is the error type) fails the
+command (exit 1): its findings and the error, no graph line.
 
 ## edit
 

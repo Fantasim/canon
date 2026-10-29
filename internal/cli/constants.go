@@ -27,6 +27,7 @@ const (
 	cmdExplain = "explain"
 	cmdFmt     = "fmt"
 	cmdRefs    = "refs"
+	cmdGraph   = "graph"
 	cmdEdit    = "edit"
 	cmdRename  = "rename"
 	cmdLSP     = "lsp"
@@ -103,6 +104,7 @@ commands:
   edit [request.json]   apply an edit request (JSON) from the file or stdin
   explain <path>        print a value, its type and where each part was set
   fmt [paths...]        rewrite sources in the canonical layout
+  graph                 list the reference graph: every node and edge, grouped
   guide [topic]         print the agent guide: the index, or one topic
   help                  print this usage
   init                  create project.canon in the current directory
@@ -300,3 +302,13 @@ const subLockCheck = "check"
 
 // colorModes are the words --color accepts (CLI.md §2.3).
 var colorModes = [...]string{colorAuto, colorAlways, colorNever}
+
+// canon graph's text (CLI.md §3.18): the head, a line per group and the example pairs.
+const (
+	fmtGraphHead       = "%d node%s, %d edge%s in %d group%s"
+	fmtGraphGroup      = "%d  %s  %s -> %s"
+	fmtGraphPair       = "%s -> %s"
+	graphExampleIndent = "      "
+	graphExamples      = 3
+	pluralSuffix       = "s"
+)

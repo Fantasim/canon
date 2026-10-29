@@ -1,0 +1,47 @@
+CLI.md §3.18, §2.3: --layer is accepted; a layer's amendment is a `layer` reference of `canon refs`, not a value edge, so the graph lists the written reference.
+-- args --
+graph
+--layer
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A mode.
+record Mode {
+  /// Its name.
+  label: String = ""
+}
+
+/// Modes.
+let modes: table Mode = {
+  calm {}
+  loud {}
+}
+
+/// A config.
+record Config {
+  /// The mode.
+  mode: ref modes
+}
+
+/// The config.
+let config: Config = { mode: calm }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend config {
+  mode: loud
+}
+-- want --
+[exit 0]
+[stdout]
+4 nodes, 1 edge in 1 group
+  1  value  a:config.mode -> a.Mode
+      a:config -> a:modes.calm
+[stderr]

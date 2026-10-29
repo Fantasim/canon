@@ -1,0 +1,18 @@
+CLI.md §3.18: one node, no edge, no group.
+-- args --
+graph
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A tone.
+enum Tone { loud }
+-- want --
+[exit 0]
+[stdout]
+1 node, 0 edges in 0 groups
+[stderr]

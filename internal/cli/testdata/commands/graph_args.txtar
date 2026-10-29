@@ -1,0 +1,13 @@
+CLI.md §3.18, §2.5: graph takes no argument.
+-- args --
+graph
+r:statuses
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: graph: takes no arguments

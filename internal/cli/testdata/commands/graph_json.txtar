@@ -1,0 +1,74 @@
+CLI.md §3.18, IMPLEMENTATION-PLAN.md §8.1: node lines, edge lines (retired, computed, key, member), then the summary.
+-- args --
+graph
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A tone.
+enum Tone { calm, loud }
+
+/// A status.
+record Status {
+  /// Where it goes.
+  next: [ref statuses] = []
+  /// Its tone.
+  tone: Tone = calm
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { next: [done, done, open, closed, done], tone: loud }
+  done { tone: loud }
+  retired closed {}
+}
+
+/// Mapping.
+let m: {ref statuses: ref statuses} = { open: done }
+
+/// Weights.
+let weights: {ref statuses: Int} = { open: 1, done: 2 }
+
+/// A choice.
+fn choose(b: Bool) -> ref statuses {
+  return if b { done } else { open }
+}
+
+/// A flag.
+let flag: Bool = true
+
+/// The computed pick.
+let pick: ref statuses = choose(flag)
+-- want --
+[exit 0]
+[stdout]
+{"node":{"id":"r:Tone.calm","kind":"member","package":"r","type":"r.Tone","file":"r/r.canon","line":5,"col":13}}
+{"node":{"id":"r:Tone.loud","kind":"member","package":"r","type":"r.Tone","file":"r/r.canon","line":5,"col":19}}
+{"node":{"id":"r:statuses","kind":"root","package":"r","type":"table r.Status","file":"r/r.canon","line":16,"col":5}}
+{"node":{"id":"r:statuses.open","kind":"entry","package":"r","type":"r.Status","file":"r/r.canon","line":17,"col":3}}
+{"node":{"id":"r:statuses.done","kind":"entry","package":"r","type":"r.Status","file":"r/r.canon","line":18,"col":3}}
+{"node":{"id":"r:statuses.closed","kind":"entry","package":"r","type":"r.Status","retired":true,"file":"r/r.canon","line":19,"col":3}}
+{"node":{"id":"r:m","kind":"root","package":"r","type":"{ref r.statuses: ref r.statuses}","file":"r/r.canon","line":23,"col":5}}
+{"node":{"id":"r:weights","kind":"root","package":"r","type":"{ref r.statuses: Int}","file":"r/r.canon","line":26,"col":5}}
+{"node":{"id":"r:flag","kind":"root","package":"r","type":"Bool","file":"r/r.canon","line":34,"col":5}}
+{"node":{"id":"r:pick","kind":"root","package":"r","type":"ref r.statuses","file":"r/r.canon","line":37,"col":5}}
+{"edge":{"from":"r:statuses.open","path":"r:statuses.open.next[0]","pattern":"r:statuses[*].next[*]","to":"r:statuses.done","kind":"value","file":"r/r.canon","line":17,"col":17}}
+{"edge":{"from":"r:statuses.open","path":"r:statuses.open.next[1]","pattern":"r:statuses[*].next[*]","to":"r:statuses.done","kind":"value","file":"r/r.canon","line":17,"col":23}}
+{"edge":{"from":"r:statuses.open","path":"r:statuses.open.next[2]","pattern":"r:statuses[*].next[*]","to":"r:statuses.open","kind":"value","file":"r/r.canon","line":17,"col":29}}
+{"edge":{"from":"r:statuses.open","path":"r:statuses.open.next[3]","pattern":"r:statuses[*].next[*]","to":"r:statuses.closed","kind":"value","file":"r/r.canon","line":17,"col":35}}
+{"edge":{"from":"r:statuses.open","path":"r:statuses.open.next[4]","pattern":"r:statuses[*].next[*]","to":"r:statuses.done","kind":"value","file":"r/r.canon","line":17,"col":43}}
+{"edge":{"from":"r:statuses.open","path":"r:statuses.open.tone","pattern":"r:statuses[*].tone","to":"r:Tone.loud","kind":"value","file":"r/r.canon","line":17,"col":56}}
+{"edge":{"from":"r:statuses.done","path":"r:statuses.done.tone","pattern":"r:statuses[*].tone","to":"r:Tone.loud","kind":"value","file":"r/r.canon","line":18,"col":16}}
+{"edge":{"from":"r:m","path":"r:m[open]","pattern":"r:m[*]","to":"r:statuses.open","kind":"key","file":"r/r.canon","line":23,"col":41}}
+{"edge":{"from":"r:m","path":"r:m[open]","pattern":"r:m[*]","to":"r:statuses.done","kind":"value","file":"r/r.canon","line":23,"col":47}}
+{"edge":{"from":"r:weights","path":"r:weights[open]","pattern":"r:weights[*]","to":"r:statuses.open","kind":"key","file":"r/r.canon","line":26,"col":38}}
+{"edge":{"from":"r:weights","path":"r:weights[done]","pattern":"r:weights[*]","to":"r:statuses.done","kind":"key","file":"r/r.canon","line":26,"col":47}}
+{"edge":{"from":"r:pick","path":"r:pick","pattern":"r:pick","to":"r:statuses.done","kind":"value","computed":true,"file":"r/r.canon","line":37,"col":5}}
+{"summary":{"nodes":10,"edges":12,"groups":6}}
+[stderr]

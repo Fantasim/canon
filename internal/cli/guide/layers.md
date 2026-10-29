@@ -57,7 +57,7 @@ amend config {
 - Every layer file is type-checked on every run, active or not, so a renamed field breaks a
   stale layer at once.
 - `--layer <name>` (repeatable, applied in order) on `check`, `build`, `test`, `explain`,
-  `refs`, `edit`, `rename`. An unknown name is `E1901` (exit 2). A `--layer` build writes the
+  `refs`, `graph`, `edit`, `rename`. An unknown name is `E1901` (exit 2). A `--layer` build writes the
   same `out` files and never writes `canon.lock`: never commit its outputs.
 - `canon explain config.server.port --layer staging` shows `set by  <file>:<line>  layer
   staging` before the replaced origins.

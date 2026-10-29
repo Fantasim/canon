@@ -242,12 +242,13 @@ func objectKeys() map[string]map[string]bool {
 		"undo": ownKeys(typeOf(editUndo{})), "changes": ownKeys(typeOf(editChange{})),
 		"dropped": ownKeys(typeOf(canon.Dropped{})), "explain": explain, "parts": explain,
 		"origin": origin, "via": origin, "replaced": origin,
-		"ref": ownKeys(fieldType(refLine{})), "test": ownKeys(fieldType(testLine{})),
+		"ref": ownKeys(fieldType(refLine{})), "node": ownKeys(fieldType(graphNodeLine{})),
+		"edge": ownKeys(fieldType(graphEdgeLine{})), "test": ownKeys(fieldType(testLine{})),
 		"failures": ownKeys(typeOf(failureLine{})), "findings": ownKeys(typeOf(canon.Finding{})),
 		"output": ownKeys(fieldType(outputLine{})), "lock": ownKeys(fieldType(lockLine{})),
 		"related": ownKeys(typeOf(canon.Related{})), "stack": ownKeys(typeOf(canon.Frame{})),
 		"truncated": ownKeys(typeOf(canon.Truncation{})), "version": ownKeys(typeOf(versionJSON{})),
-		"summary": ownKeys(fieldType(buildSummary{}), fieldType(testSummary{}), fieldType(refsSummary{}),
+		"summary": ownKeys(fieldType(buildSummary{}), fieldType(testSummary{}), fieldType(refsSummary{}), fieldType(graphSummary{}),
 			fieldType(fmtSummary{})),
 	}
 }

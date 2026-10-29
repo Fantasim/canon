@@ -1,0 +1,32 @@
+CLI.md §3.18, API.md R15: a let that cannot be computed fails graph under --format json; nothing of the graph is printed.
+-- args --
+graph
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A status.
+record Status {
+  /// Its weight.
+  w: Int = 1
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open {}
+}
+
+/// A pick that cannot be computed.
+let bad: ref statuses = statuses.nope
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E4002","file":"r/r.canon","line":16,"col":25,"endLine":16,"endCol":38,"package":"r","path":"bad","message":"no key nope in statuses"}
+[stderr]
+canon: r:bad: value could not be computed: root r:bad

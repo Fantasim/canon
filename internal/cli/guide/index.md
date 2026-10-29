@@ -28,7 +28,7 @@ values that are already valid. A project is the directory holding `project.canon
 | `emit` | `emit` targets and modes, what is generated, `export fn`, text files (`emit text`, `@text`) |
 | `views-i18n` | views, the studio package, the JSON of the `tags` `positional` `enumRow` `cards` controls, translation files |
 | `layers` | `amend`, layer files, `--layer`, runtime `input` fields |
-| `cli` | commands, value paths, the JSON of `check`, `explain`, `refs`, `edit`, `rename` |
+| `cli` | commands, value paths, the JSON of `check`, `explain`, `refs`, `graph`, `edit`, `rename` |
 | `errors` | reading a finding, common codes, edit refusals |
 | `recipes` | command sequences for the common tasks |
 

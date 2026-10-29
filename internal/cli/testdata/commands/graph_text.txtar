@@ -1,0 +1,66 @@
+CLI.md §3.18: groups by pattern, kind and target type; key, member and computed edges; a key and a value group under one pattern (key first); at most three examples, the first distinct pairs.
+-- args --
+graph
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- r/r.canon --
+/// R.
+package r
+
+/// A tone.
+enum Tone { calm, loud }
+
+/// A status.
+record Status {
+  /// Where it goes.
+  next: [ref statuses] = []
+  /// Its tone.
+  tone: Tone = calm
+}
+
+/// Statuses.
+let statuses: table Status = {
+  open { next: [done, done, open, closed, done], tone: loud }
+  done { tone: loud }
+  retired closed {}
+}
+
+/// Mapping.
+let m: {ref statuses: ref statuses} = { open: done }
+
+/// Weights.
+let weights: {ref statuses: Int} = { open: 1, done: 2 }
+
+/// A choice.
+fn choose(b: Bool) -> ref statuses {
+  return if b { done } else { open }
+}
+
+/// A flag.
+let flag: Bool = true
+
+/// The computed pick.
+let pick: ref statuses = choose(flag)
+-- want --
+[exit 0]
+[stdout]
+10 nodes, 12 edges in 6 groups
+  1  key  r:m[*] -> r.Status
+      r:m -> r:statuses.open
+  1  value  r:m[*] -> r.Status
+      r:m -> r:statuses.done
+  1  value  r:pick -> r.Status
+      r:pick -> r:statuses.done
+  5  value  r:statuses[*].next[*] -> r.Status
+      r:statuses.open -> r:statuses.done
+      r:statuses.open -> r:statuses.open
+      r:statuses.open -> r:statuses.closed
+  2  value  r:statuses[*].tone -> r.Tone
+      r:statuses.open -> r:Tone.loud
+      r:statuses.done -> r:Tone.loud
+  2  key  r:weights[*] -> r.Status
+      r:weights -> r:statuses.open
+      r:weights -> r:statuses.done
+[stderr]
