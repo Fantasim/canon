@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -122,8 +123,8 @@ func (nw *nodeWalk) child(c typedChild, ct types.Type) {
 }
 
 // home reports whether an entry at the walk's depth may be at home there, and the candidate it
-// lies under: a let's own collection, or a load.defines table's, under that let's root only; a
-// field's under its owner, itself a candidate when it has an identity; any other one anywhere.
+// lies under: a let's or a load.defines table's under its let's root only; a field's under its
+// owner, itself a candidate when it has an identity; any other one anywhere (API.md R11).
 func (nw *nodeWalk) home(id *value.Identity) (under int, ok bool) {
 	d := len(nw.segs)
 	under = nw.near[d-1]
@@ -131,13 +132,23 @@ func (nw *nodeWalk) home(id *value.Identity) (under int, ok bool) {
 	case c == nil:
 		return under, true
 	case c.Kind == types.CollDefines || c.Kind == types.CollLet && c.Name != "":
-		return under, d == 1 && (c.Kind == types.CollDefines || c.Pkg == nw.r.pkg.Path && c.Name == nw.r.obj.Name())
+		return under, d == 1 && nw.owns(c)
 	case c.Kind != types.CollField || id.Owner == nil:
 		return under, true
 	case d < ownerUp || nw.vals[d-ownerUp] != id.Owner:
 		return under, false
 	}
 	return under, id.Owner.Ident == nil || nw.near[d-ownerUp] != noPlace && nw.ns.cands[nw.near[d-ownerUp]].rec == id.Owner
+}
+
+// owns reports the walk's let owning c: the let c is named after, or for a load.defines table
+// no ref names, the let whose initializer is the load (API.md R11).
+func (nw *nodeWalk) owns(c *types.Collection) bool {
+	if c.Name != "" {
+		return c.Pkg == nw.r.pkg.Path && c.Name == nw.r.obj.Name()
+	}
+	_, isLoad := syntax.Unparen(initializer(nw.r.obj.Decl())).(*syntax.LoadExpr)
+	return isLoad
 }
 
 // candidate adds the entry or element at the walk's depth, in its trie position, and is its index.

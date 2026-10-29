@@ -282,7 +282,7 @@ func checkNoValue(t *testing.T, err error, want string) {
 }
 
 // graphShapes are entries of collections no let or field owns (in an optional field, a case
-// field, a nested keyed list, a map of tables) and a load.defines table copied into a map.
+// field, a nested keyed list, a map of tables) and load.defines tables copied before their let.
 const graphShapes = `
 /// A slotted thing.
 record Slotted {
@@ -308,34 +308,54 @@ let nested: [[Slot] keyed by n] = [[{ n: 5, to: b }]]
 /// Tables by name.
 let byName: {String: table Item} = { "x": { w { next: [a] } } }
 
+/// Monsters grouped, before the monsters.
+let early: {String: table Define} = { "x": mons }
+
+/// Monsters maybe, before the monsters.
+let maybe: table Define? = mons
+
 /// Monsters.
 local let mons = load.defines("m.h", prefix: "MI_")
 
-/// Monsters grouped.
-let grouped: {String: table Define} = { "x": mons }
-
 /// Refs to monsters.
 let toMons: [ref mons] = [MI_A]
+
+/// Raw defines no ref names, copied before.
+let raw2: table Define? = raw
+
+/// Raw defines.
+let raw: table Define? = load.defines("m.h", prefix: "MI_")
 `
 
-// API.md R11: an entry of a collection no let or field owns is a node where it is met, a
-// load.defines entry only under its own let; parity and completeness hold (checkParity).
+// API.md R11: an entry of a collection no let or field owns is a node where it is met; a
+// load.defines entry only under the let whose initializer is the load, named by a ref or not,
+// whatever let copies it first; parity and completeness hold (checkParity).
 func TestGraphNodesOfEveryCollection(t *testing.T) {
 	f := graphFixture(t, graphShapes, mapFS{"law/g/m.h": file("#define MI_A 1\n#define MI_B 2\n")})
 	g := mustGraph(t, f)
+	lines := graphLines(f, g)
 	var got []string
-	for _, l := range graphLines(f, g) {
+	for _, l := range lines {
 		if strings.HasPrefix(l, "N element") || strings.HasPrefix(l, "N entry") {
 			got = append(got, strings.Fields(l)[2])
 		}
 	}
-	for _, id := range []string{"g:slotted.slots[8]", "g:polys[0].at[4]", "g:nested[0][5]", "g:byName[x].w", "g:mons.MI_A", "g:mons.MI_B"} {
+	for _, id := range []string{
+		"g:slotted.slots[8]", "g:polys[0].at[4]", "g:nested[0][5]", "g:byName[x].w",
+		"g:mons.MI_A", "g:mons.MI_B", "g:raw.MI_A", "g:raw.MI_B",
+	} {
 		if !slices.Contains(got, id) {
 			t.Errorf("R11: no node %s among %v", id, got)
 		}
 	}
-	if slices.ContainsFunc(got, func(id string) bool { return strings.HasPrefix(id, "g:grouped") }) {
+	copies := []string{"g:early", "g:maybe", "g:raw2"}
+	if slices.ContainsFunc(got, func(id string) bool {
+		return slices.ContainsFunc(copies, func(c string) bool { return strings.HasPrefix(id, c) })
+	}) {
 		t.Errorf("R11: a copy of a load.defines table has nodes: %v", got)
+	}
+	if edge := "E value g:toMons g:toMons[0] g:toMons[*] g:mons.MI_A 136 MI_A"; !slices.Contains(lines, edge) {
+		t.Errorf("R11: no edge %q among %q", edge, lines)
 	}
 	checkParity(t, f, g)
 }
