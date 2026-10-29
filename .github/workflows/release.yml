@@ -47,5 +47,10 @@ jobs:
           git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
           flags=""
           case "$TAG" in *-*) flags="--prerelease" ;; esac
+          # A release made locally (make dist + gh release create) gets the CI archives as replacements.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.tar.gz dist/*.zip dist/checksums.txt --clobber
+            exit 0
+          fi
           # shellcheck disable=SC2086
           gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/checksums.txt --title "$TAG" --notes-from-tag --verify-tag $flags

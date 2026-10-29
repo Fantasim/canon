@@ -14,11 +14,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 	"text/template"
 )
@@ -259,18 +257,5 @@ func TestEnumFunctionsDoNotGrow(t *testing.T) {
 		if enumMethod.MatchString(name) && large[name] != small[name] {
 			t.Errorf("%s has %d lines at %d members and %d at %d", name, small[name], fewMembers, large[name], manyMembers)
 		}
-	}
-}
-
-// checkRSS fails when the compile of the generated packages, the largest process the build waited for, peaked above maxRSSKB (Linux reports KB).
-func checkRSS(t *testing.T, state *os.ProcessState) {
-	t.Helper()
-	usage, ok := state.SysUsage().(*syscall.Rusage)
-	if !ok || runtime.GOOS != "linux" {
-		t.Skip("no peak resident set to read")
-	}
-	t.Logf("go build peak resident set: %d KB", usage.Maxrss)
-	if usage.Maxrss > maxRSSKB {
-		t.Errorf("go build peaked at %d KB, over %d KB", usage.Maxrss, maxRSSKB)
 	}
 }
