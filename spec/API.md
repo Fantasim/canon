@@ -705,7 +705,10 @@ type GraphEdge struct {
   (TYPES.md §6.3): an entry or element reached through a copy (a field or let holding
   `zones.forest`, a let holding a shared record) is no node, and the refs inside a copy are
   edges from its nearest node (R12) to the original. A collection-valued let re-adopts its
-  entries (DECISIONS 315), so the entries of `let alias = items` are nodes of `alias`. The path
+  entries (DECISIONS 315), so the entries of `let alias = items` are nodes of `alias`; an entry
+  or element of a collection that belongs to no let or field (in an optional or case field, a
+  nested list, a map value) is a node where it is met, and a `load.defines` table's entries are
+  nodes under their own let only. Each identity is exactly one node. The path
   of an identity reached by several paths is the first that stays in its source tree (W3), else
   the first in the walk's order (the order `Refs` walks lets and values in). A plain-list element
   is no node. The edges are, for every target node
