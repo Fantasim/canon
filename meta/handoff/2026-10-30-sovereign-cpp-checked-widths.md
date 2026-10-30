@@ -2,6 +2,9 @@
 
 **From:** Sovereign Source (Louis, ADR L-0147 "Campaign-wide scope" item 4, 2026-10-30). **Canon version:** 0.1.13.
 
+**Priority: NOT SCHEDULED.** Written so the need is on record; Louis has not asked Canon to build it yet ("it's not
+urgent for now ... I won't implement that feature on Canon yet"). Do not start it until Louis schedules it.
+
 ## Why
 
 Sovereign's game servers and client load about 125 Canon-rendered files through the C++ `mode: types` decoders
