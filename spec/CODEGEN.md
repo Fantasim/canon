@@ -92,6 +92,10 @@ in [§12](#12-diagnostics).
   `.ts`, a `values` item that is not a public top-level `let` of the package or is listed twice,
   an empty `values` list (`E8009` `valuesEmpty`).
   `out` is required for every target (`E8009` `missing` without it).
+  Every segment of an `out` path, after its `@root/` prefix, uses only the portable filename
+  characters `A-Z a-z 0-9 . _ -` (`E8009` `outChars` otherwise, DECISIONS 424): the path is
+  written into generated text (a C++ `#include`, a Go import path, a TS import specifier) that takes
+  no escapes.
 - **Copies** (DECISIONS 229). For `go`, `cpp`, `ts`, `json` and `text`, `out` is a string or a non-empty
   list of strings; `view` takes one string. Each entry is a **copy** of the emit, written at that
   place as if it were the emit's only `out`. Every copy has the emit's mode and options; copies

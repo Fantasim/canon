@@ -387,7 +387,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 332 codes: 303 errors, 26 warnings and 3 run-time codes, with 567 messages.
+The catalogue holds 332 codes: 303 errors, 26 warnings and 3 run-time codes, with 568 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1246,7 +1246,7 @@ Owner: CODEGEN.md, WIRE.md.
 | W8006 | warning | ir | CODEGEN.md §3.5 | a generated C++ name is a common platform macro |
 | E8007 | error | ir | CODEGEN.md §2.8 | a Go output under no root mapped by `go_module` |
 | E8008 | error | ir | CODEGEN.md §2.3 | two Go emits write into one directory |
-| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343, 362) |
+| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` path (a character outside the portable set, DECISIONS 424) or `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343, 362) |
 | E8010 | error | ir | CODEGEN.md §5.2 | an `ordered` enum whose codes do not increase |
 | E8011 | error | ir | CODEGEN.md §3.5 | an override or a derived name that is not a usable identifier in the target |
 | E8012 | error | ir | CODEGEN.md §4.4 | an emitted type or value with no representation in generated code |
@@ -1307,6 +1307,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | package | value:Text | `invalid package "{value}" for emit go: not a Go identifier, or a Go keyword` |
 | E8009 | namespace | value:Text | `invalid namespace "{value}" for emit cpp: expected ident{{::ident}} with no C++ keyword` |
 | E8009 | tsOut | value:Text | `invalid out "{value}" for emit ts: it must end in .ts` |
+| E8009 | outChars | value:Text, target:Name | `invalid out "{value}" for emit {target}: a path segment may use only A-Z a-z 0-9 . _ -` |
 | E8009 | values | name:Name, target:Name | `values of emit {target}: {name} is not a public let of this package` |
 | E8009 | valuesTwice | name:Name, target:Name | `values of emit {target}: {name} is listed twice` |
 | E8009 | kind | option:Name, target:Name, expected:Kind | `option {option} of emit {target} must be {expected}` |

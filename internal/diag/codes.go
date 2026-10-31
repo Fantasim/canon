@@ -2257,6 +2257,7 @@ var Registry = []Def{
 			{Name: "package", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid package \"{value}\" for emit go: not a Go identifier, or a Go keyword"},
 			{Name: "namespace", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid namespace \"{value}\" for emit cpp: expected ident{{::ident}} with no C++ keyword"},
 			{Name: "tsOut", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid out \"{value}\" for emit ts: it must end in .ts"},
+			{Name: "outChars", Args: []Arg{{Name: "value", Type: ArgTypeText}, {Name: "target", Type: ArgTypeName}}, Template: "invalid out \"{value}\" for emit {target}: a path segment may use only A-Z a-z 0-9 . _ -"},
 			{Name: "values", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "values of emit {target}: {name} is not a public let of this package"},
 			{Name: "valuesTwice", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "values of emit {target}: {name} is listed twice"},
 			{Name: "kind", Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeKind}}, Template: "option {option} of emit {target} must be {expected}"},
@@ -7029,7 +7030,7 @@ func (codeE8008) At(span source.Span, dir string, a string, b string) *Builder {
 	return newBuilder(&Registry[261], 0, span, dir, a, b)
 }
 
-// E8009: invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343, 362) (CODEGEN.md §2.1, §2.8).
+// E8009: invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` path (a character outside the portable set, DECISIONS 424) or `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343, 362) (CODEGEN.md §2.1, §2.8).
 var E8009 codeE8009
 
 type codeE8009 struct{}
@@ -7057,89 +7058,94 @@ func (codeE8009) AtTsOut(span source.Span, value string) *Builder {
 	return newBuilder(&Registry[262], 3, span, value)
 }
 
+// AtOutChars reports: invalid out "{value}" for emit {target}: a path segment may use only A-Z a-z 0-9 . _ -
+func (codeE8009) AtOutChars(span source.Span, value string, target string) *Builder {
+	return newBuilder(&Registry[262], 4, span, value, target)
+}
+
 // AtValues reports: values of emit {target}: {name} is not a public let of this package
 func (codeE8009) AtValues(span source.Span, name string, target string) *Builder {
-	return newBuilder(&Registry[262], 4, span, name, target)
+	return newBuilder(&Registry[262], 5, span, name, target)
 }
 
 // AtValuesTwice reports: values of emit {target}: {name} is listed twice
 func (codeE8009) AtValuesTwice(span source.Span, name string, target string) *Builder {
-	return newBuilder(&Registry[262], 5, span, name, target)
+	return newBuilder(&Registry[262], 6, span, name, target)
 }
 
 // AtKind reports: option {option} of emit {target} must be {expected}
 func (codeE8009) AtKind(span source.Span, option string, target string, expected Kind) *Builder {
-	return newBuilder(&Registry[262], 6, span, option, target, expected)
+	return newBuilder(&Registry[262], 7, span, option, target, expected)
 }
 
 // AtMissing reports: emit {target} is missing {option}
 func (codeE8009) AtMissing(span source.Span, option string, target string) *Builder {
-	return newBuilder(&Registry[262], 7, span, option, target)
+	return newBuilder(&Registry[262], 8, span, option, target)
 }
 
 // AtReservedNamespace reports: invalid namespace "{value}" for emit cpp: canon, std and nlohmann are reserved
 func (codeE8009) AtReservedNamespace(span source.Span, value string) *Builder {
-	return newBuilder(&Registry[262], 8, span, value)
+	return newBuilder(&Registry[262], 9, span, value)
 }
 
 // AtOutEmpty reports: out of emit {target} is an empty list: give at least one path
 func (codeE8009) AtOutEmpty(span source.Span, target string) *Builder {
-	return newBuilder(&Registry[262], 9, span, target)
+	return newBuilder(&Registry[262], 10, span, target)
 }
 
 // AtValuesEmpty reports: values of emit {target} is an empty list: omit values to emit every public value
 func (codeE8009) AtValuesEmpty(span source.Span, target string) *Builder {
-	return newBuilder(&Registry[262], 10, span, target)
+	return newBuilder(&Registry[262], 11, span, target)
 }
 
 // AtOutRoot reports: {a} and {b} in out of emit {target} share the root {root}: each copy needs a root of its own
 func (codeE8009) AtOutRoot(span source.Span, a string, b string, root string, target string) *Builder {
-	return newBuilder(&Registry[262], 11, span, a, b, root, target)
+	return newBuilder(&Registry[262], 12, span, a, b, root, target)
 }
 
 // AtOutPackage reports: entries of out of emit go end in different names: give package
 func (codeE8009) AtOutPackage(span source.Span) *Builder {
-	return newBuilder(&Registry[262], 12, span)
+	return newBuilder(&Registry[262], 13, span)
 }
 
 // AtOutForm reports: entries of out of emit json mix .json files and directories: use one form for all
 func (codeE8009) AtOutForm(span source.Span) *Builder {
-	return newBuilder(&Registry[262], 13, span)
+	return newBuilder(&Registry[262], 14, span)
 }
 
 // AtTextEmpty reports: emit text writes nothing: no export fn of this package has @text
 func (codeE8009) AtTextEmpty(span source.Span) *Builder {
-	return newBuilder(&Registry[262], 14, span)
+	return newBuilder(&Registry[262], 15, span)
 }
 
 // AtOpenMode reports: open of emit {target} needs mode types, not {mode}
 func (codeE8009) AtOpenMode(span source.Span, target string, mode string) *Builder {
-	return newBuilder(&Registry[262], 15, span, target, mode)
+	return newBuilder(&Registry[262], 16, span, target, mode)
 }
 
 // AtOpen reports: open of emit {target}: {name} is not a public enum of this package
 func (codeE8009) AtOpen(span source.Span, target string, name string) *Builder {
-	return newBuilder(&Registry[262], 16, span, target, name)
+	return newBuilder(&Registry[262], 17, span, target, name)
 }
 
 // AtOpenTwice reports: open of emit {target}: {name} is listed twice
 func (codeE8009) AtOpenTwice(span source.Span, target string, name string) *Builder {
-	return newBuilder(&Registry[262], 17, span, target, name)
+	return newBuilder(&Registry[262], 18, span, target, name)
 }
 
 // AtOpenEmpty reports: open of emit {target} is an empty list: omit open to keep every enum closed
 func (codeE8009) AtOpenEmpty(span source.Span, target string) *Builder {
-	return newBuilder(&Registry[262], 18, span, target)
+	return newBuilder(&Registry[262], 19, span, target)
 }
 
 // AtOpenOrdered reports: open of emit {target}: {name} is ordered, and an open enum cannot compare its members
 func (codeE8009) AtOpenOrdered(span source.Span, target string, name string) *Builder {
-	return newBuilder(&Registry[262], 19, span, target, name)
+	return newBuilder(&Registry[262], 20, span, target, name)
 }
 
 // AtOutConsumer reports: {path} in out of emit {target} lies under the consumer root {root}: a text file is owned only through canon.outputs, which never lists a consumer root
 func (codeE8009) AtOutConsumer(span source.Span, target string, path string, root string) *Builder {
-	return newBuilder(&Registry[262], 20, span, target, path, root)
+	return newBuilder(&Registry[262], 21, span, target, path, root)
 }
 
 // E8010: an `ordered` enum whose codes do not increase (CODEGEN.md §5.2).

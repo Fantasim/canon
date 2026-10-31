@@ -448,6 +448,7 @@ E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: exp
 E8009 package: invalid package "0.9" for emit go: not a Go identifier, or a Go keyword
 E8009 namespace: invalid namespace "0.9" for emit cpp: expected ident{::ident} with no C++ keyword
 E8009 tsOut: invalid out "0.9" for emit ts: it must end in .ts
+E8009 outChars: invalid out "0.9" for emit resource.vocab.items: a path segment may use only A-Z a-z 0-9 . _ -
 E8009 values: values of emit resource.vocab.items: resource.vocab.items is not a public let of this package
 E8009 valuesTwice: values of emit resource.vocab.items: resource.vocab.items is listed twice
 E8009 kind: option resource.vocab.items of emit resource.vocab.items must be a constant string
