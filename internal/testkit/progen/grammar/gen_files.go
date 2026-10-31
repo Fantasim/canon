@@ -205,7 +205,7 @@ func (g *gen) projectList() {
 		n := g.r.Intn(maxValues + 1)
 		g.list(n, g.projectValue)
 		if n > 0 && g.r.OneIn(oneIn4) {
-			g.w(",")
+			g.w(comma)
 		}
 	})
 	g.w(closeBrack)

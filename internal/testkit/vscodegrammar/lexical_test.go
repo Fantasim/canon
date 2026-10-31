@@ -44,6 +44,37 @@ var lexicalCases = []struct {
 	{"4.2 past before asset", "x: past asset", `"past" storage.modifier.canon`},
 	{"4.2 past before match", "x: past match", `"past" storage.modifier.canon`},
 	{"9.2 type name", "x: Int", `"Int" entity.name.type.canon`},
+	{"5.2 package clause names a namespace", "package foo.bar", `"foo.bar" entity.name.namespace.canon`},
+	{"5.10 package subject keyword", "expect package { n: 2 } passes", `"package" keyword.other.canon`},
+	{"5.10 package subject target is no namespace", "expect package { n: 2 } passes", `"n" variable.other.property.canon`},
+}
+
+// lexicalAbsent pin what a scope must not mark: the outcome of `expect package` is no package name.
+var lexicalAbsent = []struct {
+	rule, src, not string
+}{
+	{"5.10 bare package subject, passes", "expect package passes", `"passes" entity.name.namespace.canon`},
+	{"5.10 bare package subject, fails name", "expect package fails uniqueIndex", `"fails" entity.name.namespace.canon`},
+	{"5.10 bare package subject, warns text", `expect package warns "text"`, `"warns" entity.name.namespace.canon`},
+	{"5.10 package subject with items", "expect package { n: 2 } fails uniqueIndex", `entity.name.namespace.canon`},
+}
+
+func TestLexicalAbsent(t *testing.T) {
+	g, err := Load(grammarPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range lexicalAbsent {
+		t.Run(c.rule, func(t *testing.T) {
+			got, err := g.Tokenize(c.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(got, c.not) {
+				t.Errorf("%s: %q has %s in:\n%s", c.rule, c.src, c.not, got)
+			}
+		})
+	}
 }
 
 func TestLexicalRules(t *testing.T) {

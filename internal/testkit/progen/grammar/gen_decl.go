@@ -111,7 +111,7 @@ func (g *gen) bodyList(f func(), trailing bool) {
 		g.w(braceSpaced)
 		g.with(0, func() { g.list(items, f) })
 		if trailing && g.r.OneIn(oneIn4) {
-			g.w(",")
+			g.w(comma)
 		}
 		g.w(spacedBrace)
 		return

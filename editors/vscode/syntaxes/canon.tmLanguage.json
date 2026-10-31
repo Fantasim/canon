@@ -453,7 +453,7 @@
           }
         },
         {
-          "match": "\\b(package)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)",
+          "match": "^\\s*(package)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)",
           "captures": {
             "1": {
               "name": "keyword.other.canon"

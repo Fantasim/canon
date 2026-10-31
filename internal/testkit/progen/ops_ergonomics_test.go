@@ -15,6 +15,7 @@ func ergonomicsOperators() []operator {
 			"local let zzKeyName: Int = 1\n\nlocal let zzE3027: Bool = zzKeyRows.hasKey(", "zzKeyName", ")")),
 		op(diag.E5004.Def().Code, "EVALUATION.md §10.3 (fails names no check)", appendSite("test \"zz e5004\" {\n  expect 1 fails ", "zzNoSuchCheck", "\n}")),
 		op(diag.E5005.Def().Code, "EVALUATION.md §10.1 (test name twice)", appendSite("test \"zz e5005\" {\n  expect true\n}\n\ntest ", `"zz e5005"`, " {\n  expect true\n}")),
+		op(diag.E5006.Def().Code, "EVALUATION.md §10.5 (a package subject substitutes a const)", appendSite("const ZZ_E5006 = 1\n\ntest \"zz e5006\" {\n  expect package { ", "ZZ_E5006", ": 2 } passes\n}")),
 		op(diag.W1003.Def().Code, "GRAMMAR.md §9.2 (const not UPPER_SNAKE)", appendSite("const ", "zzW1003", " = 7")),
 		op(diag.W8006.Def().Code, "CODEGEN.md §3.5 (enum member is a platform macro)", withEmit("cpp", "/// Kind.\nenum ZzW8006 { ", "min", ", zzBig }")),
 		op(diag.W3001.Def().Code, "TYPES.md §15 (optional field written = none)", appendSite("local record ZzW3001 {\n  /// N.\n  zzN: Int? = ", "none", "\n}")),

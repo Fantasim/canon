@@ -25,6 +25,47 @@ func TestGenerateParses(t *testing.T) {
 	}
 }
 
+// GRAMMAR.md §5.10, EVALUATION.md §10.5: `expect package` is written bare, on one line and on many.
+func TestGeneratePackageSubject(t *testing.T) {
+	var bare, one, many int
+	for seed := range uint64(seeds) {
+		src := grammar.Generate(progen.NewRand(seed), progen.NewBudget(120, 6))
+		tree, findings := grammar.Parse("gen/gen.canon", src)
+		if len(findings) > 0 {
+			t.Fatalf("seed %d: %s %s\n%s", seed, findings[0].Code, findings[0].Message, src)
+		}
+		syntax.Inspect(tree, func(n syntax.Node) bool {
+			e, ok := n.(*syntax.ExpectStmt)
+			if !ok || e.Package == nil {
+				return true
+			}
+			if e.Outcome == nil {
+				t.Errorf("seed %d: a package subject without an outcome", seed)
+			}
+			switch items := e.Package.Items; {
+			case len(items) == 0 && e.Package.Braces.Open == syntax.NoTok:
+				bare++
+			case len(items) == 0:
+				t.Errorf("seed %d: empty braces", seed)
+			case lineOf(tree, e.Package.Braces.Open) == lineOf(tree, items[0].First()):
+				one++
+			default:
+				many++
+			}
+			return true
+		})
+	}
+	if bare == 0 || one == 0 || many == 0 {
+		t.Errorf("the forms written: %d bare, %d on one line, %d on many", bare, one, many)
+	}
+}
+
+// lineOf is the line of token t.
+func lineOf(tree *syntax.File, t syntax.Tok) int {
+	line, _ := tree.Src.Position(tree.Tokens[t].Start)
+	return line
+}
+
 // GRAMMAR.md §5.2, §5.7, §7: a generated layer, translation or project file parses clean as its kind.
 func TestGenerateKinds(t *testing.T) {
 	for _, k := range grammar.Kinds() {

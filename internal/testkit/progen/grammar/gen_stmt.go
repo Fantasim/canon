@@ -132,16 +132,67 @@ func (g *gen) returnStmt() bool {
 	return true
 }
 
-// expectStmt is "expect e [fails|warns (s | name) | passes]" in a test block.
+// expectStmt is "expect e [outcome]" or "expect package [{ name: e, … }] outcome" in a test block.
 func (g *gen) expectStmt() bool {
 	if g.ctx&inTest == 0 {
 		return false
 	}
 	g.tok(syntax.KwExpect)
-	g.w(space, g.lower(), space)
+	g.w(space)
+	if g.r.OneIn(oneIn6) {
+		g.packageSubject()
+		return true
+	}
+	g.w(g.lower(), space)
 	g.tok(syntax.TokEq)
 	g.w(space)
 	g.closed(func() { g.expr(levelRange) })
+	g.outcome(false)
+	return true
+}
+
+// packageSubject is GRAMMAR.md §5.10's `package [{ … }]` with its outcome, the braces never empty.
+func (g *gen) packageSubject() {
+	g.tok(syntax.KwPackage)
+	if !g.r.OneIn(oneIn3) {
+		g.w(space)
+		g.substitutions(1 + g.r.Intn(maxItems))
+	}
+	g.outcome(true)
+}
+
+// substitutions are n items "name: e" in braces: on one line, now and then with a trailing
+// separator, or one per line.
+func (g *gen) substitutions(n int) {
+	if g.r.OneIn(oneIn2) {
+		g.bracketed(braceSpaced, spacedBrace, func() {
+			g.list(n, g.substitution)
+			if g.r.OneIn(oneIn4) {
+				g.w(comma)
+			}
+		})
+		return
+	}
+	g.w(openBrace)
+	g.depth++
+	g.with(0, func() {
+		for range n {
+			g.nl()
+			g.substitution()
+		}
+	})
+	g.depth--
+	g.nl()
+	g.w(closeBrace)
+}
+
+func (g *gen) substitution() {
+	g.w(g.lower(), colonSpace)
+	g.expr(0)
+}
+
+// outcome is " passes", " fails" with a string or " warns" with a name: one is always written when required.
+func (g *gen) outcome(required bool) {
 	switch {
 	case g.r.OneIn(oneIn4):
 		g.w(passesWord)
@@ -150,8 +201,9 @@ func (g *gen) expectStmt() bool {
 		g.constStr()
 	case g.r.OneIn(oneIn2):
 		g.w(space, warnsWord, space, g.lower())
+	case required:
+		g.w(passesWord)
 	}
-	return true
 }
 
 // simpleStmt is a call or an assignment to a name: no keyword or "{" a statement reads (§6.2).

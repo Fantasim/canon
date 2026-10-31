@@ -28,6 +28,7 @@ const (
 	newline       = "\n"
 	blankLine     = "\n\n"
 	commaSpace    = ", "
+	comma         = ","
 	colonSpace    = ": "
 	quote         = `"`
 	mlQuote       = `"""`
