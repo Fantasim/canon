@@ -442,22 +442,6 @@ const (
 		"    char text[32];\n    std::snprintf(text, sizeof text, \"%%.17g\", *v);\n    return text;\n}\n"
 )
 
-// The operators and built-ins of the portable subset (CONFORMANCE.md §3).
-var (
-	opText = map[ir.Op]string{
-		ir.OpAnd: "&&", ir.OpOr: "||", ir.OpEq: "==", ir.OpNe: "!=",
-		ir.OpLt: "<", ir.OpLe: "<=", ir.OpGt: ">", ir.OpGe: ">=",
-	}
-	opHelper = map[ir.Op]string{
-		ir.OpAdd: "canon::Add", ir.OpSub: "canon::Sub", ir.OpMul: "canon::Mul", ir.OpDiv: "canon::Div", ir.OpMod: "canon::Mod",
-	}
-	builtinHelper = map[ir.Builtin]string{
-		ir.BuiltinFloat: "canon::IntToFloat", ir.BuiltinInt: "canon::FloatToInt", ir.BuiltinMin: "canon::Min",
-		ir.BuiltinMax: "canon::Max", ir.BuiltinAbs: "canon::Abs", ir.BuiltinClamp: "canon::Clamp",
-		ir.BuiltinFloor: "canon::FloorFloat", ir.BuiltinCeil: "canon::CeilFloat", ir.BuiltinRound: "canon::RoundFloat",
-	}
-)
-
 // Resolving refs at load (CODEGEN.md §5.8, §5.9, §5.11; log-2026-09-24, gen/cpp round 3).
 const (
 	resolveOpenFormat  = "static bool " + ir.CppResolve + "(%s& x, const %s& ctx, canon::json::Decoder& dec) {"
@@ -490,3 +474,22 @@ var containerNames = []string{"Len", "At", "All", "Find", rowsField}
 
 // escapes are the bytes a C++ string literal writes with a backslash; other controls are octal.
 var escapes = map[byte]string{'"': `\"`, '\\': `\\`, '\n': `\n`, '\t': `\t`}
+
+// Refinements at run time and bound constants (CODEGEN.md §2.5 T19, §5.15).
+const (
+	rangeCheckFormat      = "if (!(%s)) dec.Fail(%s, %s);"
+	rowsValues            = "values"
+	rowsOkLine            = "if (!dec.Ok()) return error = dec.Error(), false;"
+	countFormat           = "%s.count()"
+	valueLenFormat        = "%s.Len()"
+	compareFormat         = "%s %s %s"
+	equalFormat           = "%s == %s"
+	boundDocFormat        = "/// %s of %s, from its refinement %s."
+	boundDeclFormat       = "static constexpr %s %s = %s;"
+	boundMillisFormat     = "std::chrono::milliseconds{%s}"
+	sideLower, sideUp     = "Lower bound", "Upper bound"
+	sideExclusive         = "Exclusive upper bound"
+	eachElem, eachKey     = "each element of ", "each key of "
+	eachValue             = "each value of "
+	byteLengthOf, countOf = "the byte length of ", "the element count of "
+)

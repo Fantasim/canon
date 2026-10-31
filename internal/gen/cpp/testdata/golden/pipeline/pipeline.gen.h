@@ -122,8 +122,8 @@ public:
     PipelineSnapshot& operator=(PipelineSnapshot&&) = default;
 
     /// Reads potions.json from `dir`. Returns nullptr and sets `error` if a file is
-    /// missing, is not JSON, or was built from another schema. Values are not
-    /// validated here: `canon build` already did, and filled every default.
+    /// missing, is not JSON, was built from another schema, or holds a value outside
+    /// its range or length refinement; `canon build` made every other check.
     static std::shared_ptr<const PipelineSnapshot> Load(const std::string& dir, std::string& error);
 
     /// One JSON file per potion, as today. Each file is one entry; findings point into it.

@@ -1019,8 +1019,8 @@ public:
     ShopSnapshot& operator=(ShopSnapshot&&) = default;
 
     /// Reads items.json, config.json from `dir`. Returns nullptr and sets `error` if a file is
-    /// missing, is not JSON, or was built from another schema. Values are not
-    /// validated here: `canon build` already did, and filled every default.
+    /// missing, is not JSON, was built from another schema, or holds a value outside
+    /// its range or length refinement; `canon build` made every other check.
     static std::shared_ptr<const ShopSnapshot> Load(const std::string& dir, std::string& error);
 
     /// Everything on sale.

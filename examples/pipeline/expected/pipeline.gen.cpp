@@ -2,6 +2,7 @@
 #include "pipeline.gen.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -18,8 +19,11 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Potion& out) {
     dec.String(v, "dwID", out.id_);
     dec.String(v, "szName", out.name_);
     dec.Int(v, "nHeal", out.heal_);
+    if (!(static_cast<int64_t>(out.heal_) >= 1 && static_cast<int64_t>(out.heal_) <= 100000)) dec.Fail("nHeal", "expected a value in 1..=100000");
     dec.Duration(v, "dwCooldownMs", 1, out.cooldown_);
+    if (!(out.cooldown_.count() >= 0 && out.cooldown_.count() <= 600000)) dec.Fail("dwCooldownMs", "expected a value in 0s..=10m");
     dec.Int(v, "nStack", out.stack_);
+    if (!(static_cast<int64_t>(out.stack_) >= 1 && static_cast<int64_t>(out.stack_) <= 9999)) dec.Fail("nStack", "expected a value in 1..=9999");
     dec.Bool(v, "$isStrong", out.isStrong_);
     return dec.Ok();
 }

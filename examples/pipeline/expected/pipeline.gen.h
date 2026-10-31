@@ -40,6 +40,18 @@ inline int64_t Potion_healFor(int64_t heal, int64_t missingHp) {
 /// A healing potion. Each one is a file under data/.
 class Potion {
 public:
+    /// Lower bound of heal, from its refinement 1..=100000.
+    static constexpr int64_t kHealMin = 1;
+    /// Upper bound of heal, from its refinement 1..=100000.
+    static constexpr int64_t kHealMax = 100000;
+    /// Lower bound of cooldown, from its refinement 0s..=10m.
+    static constexpr std::chrono::milliseconds kCooldownMin = std::chrono::milliseconds{0};
+    /// Upper bound of cooldown, from its refinement 0s..=10m.
+    static constexpr std::chrono::milliseconds kCooldownMax = std::chrono::milliseconds{600000};
+    /// Lower bound of stack, from its refinement 1..=9999.
+    static constexpr int64_t kStackMin = 1;
+    /// Upper bound of stack, from its refinement 1..=9999.
+    static constexpr int64_t kStackMax = 9999;
     /// The item define. Stored in inventories: never renamed.
     const std::string& GetId() const { return id_; }
     /// Text key of the displayed name.
@@ -122,8 +134,8 @@ public:
     PipelineSnapshot& operator=(PipelineSnapshot&&) = default;
 
     /// Reads potions.json from `dir`. Returns nullptr and sets `error` if a file is
-    /// missing, is not JSON, or was built from another schema. Values are not
-    /// validated here: `canon build` already did, and filled every default.
+    /// missing, is not JSON, was built from another schema, or holds a value outside
+    /// its range or length refinement; `canon build` made every other check.
     static std::shared_ptr<const PipelineSnapshot> Load(const std::string& dir, std::string& error);
 
     /// One JSON file per potion, as today. Each file is one entry; findings point into it.

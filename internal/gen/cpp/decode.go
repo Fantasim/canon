@@ -112,6 +112,7 @@ func (g *gen) decodeField(f *ir.Field, fields []*ir.Field) {
 	switch {
 	case f.Pairs != nil:
 		g.decodePairs(f, g.dst+m)
+		g.checkRefinement(1, quote(f.Name), leaf{t: f.Type, dst: g.dst + m})
 		return
 	case f.Inline && (f.Type.Kind != types.Variant || f.Optional):
 		g.malformed(inlineFields, f.Name) // check's E3316 refuses it
@@ -175,6 +176,7 @@ func (g *gen) decodeKey(depth int, obj, key string, l leaf) {
 	lead := g.absentDefault(depth, obj, key, l)
 	if short := g.shortcut(l); short != "" && !l.optional && !l.cell && lead == "" {
 		g.c.linef(depth, decCallFormat, short, obj, key, g.shortcutExtra(l), l.dst)
+		g.checkRefinement(depth, key, l)
 		return
 	}
 	x := fmt.Sprintf(jsonVarFormat, depth)
@@ -260,8 +262,14 @@ func (g *gen) stringWire(t ir.TypeRef) bool {
 	return t.Elem.Kind == types.String || isEnum && !e.JSONCodes || ir.UnionRef(t) != nil
 }
 
-// decodeValue reads the JSON value src into l.dst (WIRE.md §5).
+// decodeValue reads the JSON value src into l.dst, then checks its refinement (WIRE.md §5; CODEGEN.md §5.15).
 func (g *gen) decodeValue(depth int, src, key string, l leaf) {
+	g.decodeKind(depth, src, key, l)
+	g.checkRefinement(depth, key, l)
+}
+
+// decodeKind reads the JSON value src into l.dst as its kind's wire says (WIRE.md §5).
+func (g *gen) decodeKind(depth int, src, key string, l leaf) {
 	switch l.t.Kind {
 	case types.Bool, types.Int, types.Float:
 		g.decodeNumber(depth, src, key, l)

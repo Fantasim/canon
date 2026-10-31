@@ -952,7 +952,8 @@ inline bool ParseDataFile(const std::string& name, const std::string& text, std:
 }
 
 /// Reads JSON values into generated classes. It records the first error with the
-/// path of the value, and never validates: values were checked by `canon build`.
+/// path of the value; the generated decoders also record a value outside its range or length
+/// refinement (CODEGEN.md §5.15) and check nothing else `canon build` checked.
 class Decoder {
 public:
     explicit Decoder(std::string name) : name_(std::move(name)) {}

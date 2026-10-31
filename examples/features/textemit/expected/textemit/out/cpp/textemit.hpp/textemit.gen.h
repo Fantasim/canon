@@ -23,6 +23,8 @@ struct TextemitMake;
 /// One column of the events table.
 class Column {
 public:
+    /// Lower bound of the byte length of sql, from its refinement 1...
+    static constexpr int64_t kSqlLenMin = 1;
     /// Its SQL name.
     const std::string& GetName() const { return name_; }
     /// Its SQL type.

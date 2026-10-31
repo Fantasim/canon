@@ -83,6 +83,7 @@ func (g *gen) loader(v *ir.Value, resolve bool) {
 	} else {
 		g.c.linef(depthTwo, checkUniqueFormat, quote(s.wireKey), s.render)
 	}
+	g.rowsRange(v)
 	g.c.linef(depthTwo, fromRowsOutFormat, s.key, s.elem)
 	for _, f := range s.stable {
 		fb := g.pl.FindBy(f)

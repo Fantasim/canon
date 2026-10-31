@@ -43,6 +43,7 @@ func (g *gen) recordClass(c class) {
 	if c.rec != nil && g.types() {
 		g.publicDecodeDecl(sc, name)
 	}
+	g.boundConsts(c, fields)
 	if c.rec != nil && g.loaders[c.rec] != nil {
 		g.fail(sc.add(ir.CppLoad, g.loaders[c.rec].Name))
 		g.h.linef(1, loadDeclFormat, name)

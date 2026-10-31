@@ -22,18 +22,21 @@ bool DecodeTarget(const nlohmann::json& v, std::string_view key, ::features::dep
     case ::features::dependent::Goal::kill: {
         std::string t2;
         dec.AsString(v, key, t2);
+        if (!(static_cast<int64_t>(t2.size()) >= 1)) dec.Fail(key, "expected a byte length in 1..");
         out.value_.emplace<0>(std::move(t2));
         return dec.Ok();
     }
     case ::features::dependent::Goal::collect: {
         int64_t t2{};
         dec.AsInt(v, key, t2);
+        if (!(static_cast<int64_t>(t2) >= 1)) dec.Fail(key, "expected a value in 1..");
         out.value_.emplace<1>(std::move(t2));
         return dec.Ok();
     }
     case ::features::dependent::Goal::reach_level: {
         int64_t t2{};
         dec.AsInt(v, key, t2);
+        if (!(static_cast<int64_t>(t2) >= 1 && static_cast<int64_t>(t2) <= 300)) dec.Fail(key, "expected a value in 1..=300");
         out.value_.emplace<2>(std::move(t2));
         return dec.Ok();
     }
@@ -48,12 +51,14 @@ bool DecodeReward(const nlohmann::json& v, std::string_view key, bool disc, cano
     case 0: {
         int64_t t2{};
         dec.AsInt(v, key, t2);
+        if (!(static_cast<int64_t>(t2) >= 1)) dec.Fail(key, "expected a value in 1..");
         out.value_.emplace<0>(std::move(t2));
         return dec.Ok();
     }
     case 1: {
         std::string t2;
         dec.AsString(v, key, t2);
+        if (!(static_cast<int64_t>(t2.size()) >= 1)) dec.Fail(key, "expected a byte length in 1..");
         out.value_.emplace<1>(std::move(t2));
         return dec.Ok();
     }

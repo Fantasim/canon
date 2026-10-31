@@ -684,6 +684,10 @@ struct TelemetryMake;
 /// One column of an event table, in wire order.
 class Column {
 public:
+    /// Lower bound of since, from its refinement 2...
+    static constexpr int64_t kSinceMin = 2;
+    /// Lower bound of retiredIn, from its refinement 2...
+    static constexpr int64_t kRetiredInMin = 2;
     /// The SQL column name, also the struct field name.
     const std::string& GetName() const { return name_; }
     /// The lake type; its byte width is the wire width.
@@ -749,6 +753,8 @@ private:
 /// The rows whose `of` column holds one of `kinds`; the table has exactly one such column.
 class RowsSome {
 public:
+    /// Lower bound of the element count of kinds, from its refinement 1...
+    static constexpr int64_t kKindsLenMin = 1;
     /// The vocabulary whose column splits the rows.
     Vocabulary GetOf() const { return of_; }
     /// The members covered.
@@ -778,6 +784,12 @@ private:
 /// One ledger leg a table's rows contribute, or the statement that they move nothing.
 class Role {
 public:
+    /// Lower bound of sign, from its refinement -1..=1.
+    static constexpr int64_t kSignMin = -1;
+    /// Upper bound of sign, from its refinement -1..=1.
+    static constexpr int64_t kSignMax = 1;
+    /// Lower bound of untilVersion, from its refinement 1...
+    static constexpr int64_t kUntilVersionMin = 1;
     /// The rows it covers.
     const Rows& GetRows() const { return rows_; }
     /// What moves.
@@ -833,6 +845,10 @@ private:
 /// One telemetry table: the rows of one event type.
 class Event {
 public:
+    /// Lower bound of version, from its refinement 1...
+    static constexpr int64_t kVersionMin = 1;
+    /// Lower bound of since, from its refinement 1...
+    static constexpr int64_t kSinceMin = 1;
     /// What one row records.
     const std::string& GetDescription() const { return description_; }
     /// The current layout version: the wire version byte and the lake's event_version.

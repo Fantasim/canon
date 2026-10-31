@@ -287,6 +287,10 @@ struct VocabMake;
 /// the loader applies to every row that omits a key.
 class Item {
 public:
+    /// Lower bound of level, from its refinement 0...
+    static constexpr int64_t kLevelMin = 0;
+    /// Lower bound of stackMax, from its refinement 1...
+    static constexpr int64_t kStackMaxMin = 1;
     /// "II_GEN_MAT_MOONSTONE": what a `ref items` stores.
     const std::string& GetId() const { return id_; }
     /// Text key of the displayed name ("IDS_PROPITEM_TXT_008066"); see `name()`.
