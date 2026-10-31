@@ -1,0 +1,137 @@
+1:0-88 "/// `expect package` (SPEC §18, EVALUATION.md §10.5): a test builds its own package as" comment.line.documentation.canon
+2:0-91 "/// `canon check` does, over top-level values it substitutes, so package checks have tests." comment.line.documentation.canon
+3:0-7 "package" keyword.other.canon
+3:8-26 "features.pkgchecks" entity.name.namespace.canon
+5:0-23 "/// One crafting level." comment.line.documentation.canon
+6:0-6 "record" storage.type.canon
+6:7-12 "Level" entity.name.type.canon
+7:0-18 "  /// Level index." comment.line.documentation.canon
+8:2-7 "index" variable.other.property.canon
+8:7-8 ":" punctuation.separator.key.canon
+8:9-12 "Int" entity.name.type.canon
+8:13-14 "0" constant.numeric.integer.canon
+8:14-17 "..=" keyword.operator.canon
+8:17-19 "24" constant.numeric.integer.canon
+9:0-36 "  /// Experience needed to reach it." comment.line.documentation.canon
+10:2-5 "exp" variable.other.property.canon
+10:5-6 ":" punctuation.separator.key.canon
+10:7-10 "Int" entity.name.type.canon
+10:11-12 "0" constant.numeric.integer.canon
+10:12-14 ".." keyword.operator.canon
+13:0-23 "/// The shipped levels." comment.line.documentation.canon
+14:0-3 "let" storage.type.canon
+14:4-10 "levels" variable.other.property.canon
+14:10-11 ":" punctuation.separator.key.canon
+14:13-18 "Level" entity.name.type.canon
+14:20-21 "=" keyword.operator.canon
+14:25-30 "index" variable.other.property.canon
+14:30-31 ":" punctuation.separator.key.canon
+14:32-33 "0" constant.numeric.integer.canon
+14:35-38 "exp" variable.other.property.canon
+14:38-39 ":" punctuation.separator.key.canon
+14:40-41 "0" constant.numeric.integer.canon
+14:47-52 "index" variable.other.property.canon
+14:52-53 ":" punctuation.separator.key.canon
+14:54-55 "1" constant.numeric.integer.canon
+14:57-60 "exp" variable.other.property.canon
+14:60-61 ":" punctuation.separator.key.canon
+14:62-65 "100" constant.numeric.integer.canon
+14:71-76 "index" variable.other.property.canon
+14:76-77 ":" punctuation.separator.key.canon
+14:78-79 "2" constant.numeric.integer.canon
+14:81-84 "exp" variable.other.property.canon
+14:84-85 ":" punctuation.separator.key.canon
+14:86-89 "250" constant.numeric.integer.canon
+16:0-41 "/// The highest level a player can reach." comment.line.documentation.canon
+17:0-3 "let" storage.type.canon
+17:4-12 "maxLevel" variable.other.property.canon
+17:12-13 ":" punctuation.separator.key.canon
+17:14-17 "Int" entity.name.type.canon
+17:18-19 "0" constant.numeric.integer.canon
+17:19-22 "..=" keyword.operator.canon
+17:22-24 "24" constant.numeric.integer.canon
+17:26-27 "=" keyword.operator.canon
+17:28-29 "2" constant.numeric.integer.canon
+19:0-41 "/// How many levels ship; follows levels." comment.line.documentation.canon
+20:0-3 "let" storage.type.canon
+20:4-14 "levelCount" variable.other.property.canon
+20:14-15 ":" punctuation.separator.key.canon
+20:16-19 "Int" entity.name.type.canon
+20:20-21 "=" keyword.operator.canon
+20:28-29 "." punctuation.accessor.canon
+20:29-32 "len" variable.other.property.canon
+20:32-33 "(" punctuation.section.parens.begin.canon
+20:33-34 ")" punctuation.section.parens.end.canon
+22:0-5 "check" keyword.other.canon
+22:6-12 "enough" variable.other.property.canon
+22:12-13 ":" punctuation.separator.key.canon
+22:25-27 ">=" keyword.operator.canon
+22:28-29 "2" constant.numeric.integer.canon
+22:30-34 "else" keyword.control.canon
+22:35-61 "\"at least two levels ship\"" string.quoted.double.canon
+24:0-5 "check" keyword.other.canon
+24:6-17 "uniqueIndex" variable.other.property.canon
+24:17-18 ":" punctuation.separator.key.canon
+24:21-22 "." punctuation.accessor.canon
+24:22-27 "index" variable.other.property.canon
+24:28-31 "for" keyword.control.canon
+24:34-36 "in" keyword.operator.word.canon
+24:44-45 "." punctuation.accessor.canon
+24:45-53 "isUnique" variable.other.property.canon
+24:53-54 "(" punctuation.section.parens.begin.canon
+24:54-55 ")" punctuation.section.parens.end.canon
+24:56-60 "else" keyword.control.canon
+24:61-92 "\"a level index is listed twice\"" string.quoted.double.canon
+26:0-5 "check" keyword.other.canon
+27:2-5 "for" keyword.control.canon
+27:8-10 "in" keyword.operator.word.canon
+28:4-6 "if" keyword.control.canon
+28:8-9 "." punctuation.accessor.canon
+28:9-14 "index" variable.other.property.canon
+28:15-16 ">" keyword.operator.canon
+29:6-10 "fail" entity.name.function.call.canon
+29:10-11 "(" punctuation.section.parens.begin.canon
+29:14-21 "\"level " string.quoted.double.canon
+29:21-22 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+29:22-23 "l" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+29:23-24 "." string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon punctuation.accessor.canon
+29:24-29 "index" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon variable.other.property.canon
+29:29-30 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+29:30-49 " is above maxLevel " string.quoted.double.canon
+29:49-50 "{" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.begin.canon
+29:50-58 "maxLevel" string.quoted.double.canon meta.interpolation.canon meta.embedded.line.canon
+29:58-59 "}" string.quoted.double.canon meta.interpolation.canon punctuation.section.interpolation.end.canon
+29:59-60 "\"" string.quoted.double.canon
+29:60-61 ")" punctuation.section.parens.end.canon
+34:0-4 "test" keyword.other.canon
+34:5-67 "\"the shipped levels pass, and still pass without the last one\"" string.quoted.double.canon
+35:2-8 "expect" keyword.other.canon
+35:9-16 "package" keyword.other.canon
+36:2-8 "expect" keyword.other.canon
+36:9-16 "package" keyword.other.canon
+36:19-25 "levels" variable.other.property.canon
+36:25-26 ":" punctuation.separator.key.canon
+36:34-35 "0" constant.numeric.integer.canon
+36:35-37 ".." keyword.operator.canon
+36:37-38 "2" constant.numeric.integer.canon
+39:0-4 "test" keyword.other.canon
+39:5-57 "\"a level listed twice, or above the cap, is refused\"" string.quoted.double.canon
+40:2-8 "expect" keyword.other.canon
+40:9-16 "package" keyword.other.canon
+40:19-25 "levels" variable.other.property.canon
+40:25-26 ":" punctuation.separator.key.canon
+40:34-35 "+" keyword.operator.canon
+40:44-45 "1" constant.numeric.integer.canon
+41:2-8 "expect" keyword.other.canon
+41:9-16 "package" keyword.other.canon
+41:19-27 "maxLevel" variable.other.property.canon
+41:27-28 ":" punctuation.separator.key.canon
+41:29-30 "1" constant.numeric.integer.canon
+41:39-68 "\"level 2 is above maxLevel 1\"" string.quoted.double.canon
+42:2-8 "expect" keyword.other.canon
+42:9-16 "package" keyword.other.canon
+42:19-25 "levels" variable.other.property.canon
+42:25-26 ":" punctuation.separator.key.canon
+42:34-35 "0" constant.numeric.integer.canon
+42:35-37 ".." keyword.operator.canon
+42:37-38 "1" constant.numeric.integer.canon

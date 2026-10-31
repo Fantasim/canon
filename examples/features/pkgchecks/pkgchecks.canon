@@ -1,0 +1,43 @@
+/// `expect package` (SPEC §18, EVALUATION.md §10.5): a test builds its own package as
+/// `canon check` does, over top-level values it substitutes, so package checks have tests.
+package features.pkgchecks
+
+/// One crafting level.
+record Level {
+  /// Level index.
+  index: Int(0..=24)
+  /// Experience needed to reach it.
+  exp: Int(0..)
+}
+
+/// The shipped levels.
+let levels: [Level] = [{ index: 0, exp: 0 }, { index: 1, exp: 100 }, { index: 2, exp: 250 }]
+
+/// The highest level a player can reach.
+let maxLevel: Int(0..=24) = 2
+
+/// How many levels ship; follows levels.
+let levelCount: Int = levels.len()
+
+check enough: levelCount >= 2 else "at least two levels ship"
+
+check uniqueIndex: [l.index for l in levels].isUnique() else "a level index is listed twice"
+
+check {
+  for l in levels {
+    if l.index > maxLevel {
+      fail(l, "level {l.index} is above maxLevel {maxLevel}")
+    }
+  }
+}
+
+test "the shipped levels pass, and still pass without the last one" {
+  expect package passes
+  expect package { levels: levels[0..2] } passes
+}
+
+test "a level listed twice, or above the cap, is refused" {
+  expect package { levels: levels + [levels[1]] } fails uniqueIndex
+  expect package { maxLevel: 1 } fails "level 2 is above maxLevel 1"
+  expect package { levels: levels[0..1] } fails enough
+}

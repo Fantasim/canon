@@ -1,0 +1,174 @@
+File: File FileKind=source @1:1-44:1
+  Doc: DocComment "`expect package` (SPEC §18, EVALUATION.md §10.5): a test builds its own package as\n`canon check` does, over top-level values it substitutes, so package checks have tests." @1:1-2:92
+  Package: QualifiedName features.pkgchecks @3:9-3:27
+  Decls[0]: RecordDecl @6:1-11:2
+    Doc: DocComment "One crafting level." @5:1-5:24
+    Name: Ident Level @6:8-6:13
+    Body: RecordBody @6:14-11:2
+      Items[0]: FieldDecl @8:3-8:21
+        Doc: DocComment "Level index." @7:3-7:19
+        Name: Ident index @8:3-8:8
+        Type: NamedType @8:10-8:21
+          Name: QualifiedName Int @8:10-8:13
+          Args: TypeArgs @8:13-8:21
+            Args[0]: RangeExpr Op=..= @8:14-8:20
+              Lo: IntLit Value=0 @8:14-8:15
+              Hi: IntLit Value=24 @8:18-8:20
+      Items[1]: FieldDecl @10:3-10:16
+        Doc: DocComment "Experience needed to reach it." @9:3-9:37
+        Name: Ident exp @10:3-10:6
+        Type: NamedType @10:8-10:16
+          Name: QualifiedName Int @10:8-10:11
+          Args: TypeArgs @10:11-10:16
+            Args[0]: RangeExpr Op=.. @10:12-10:15
+              Lo: IntLit Value=0 @10:12-10:13
+  Decls[1]: LetDecl @14:1-14:93
+    Doc: DocComment "The shipped levels." @13:1-13:24
+    Name: Ident levels @14:5-14:11
+    Type: ListType @14:13-14:20
+      Elem: NamedType @14:14-14:19
+        Name: QualifiedName Level @14:14-14:19
+    Value: ListLit @14:23-14:93
+      Elems[0]: BraceLit @14:24-14:44
+        Items[0]: FieldItem @14:26-14:34
+          Name: Ident index @14:26-14:31
+          Value: IntLit Value=0 @14:33-14:34
+        Items[1]: FieldItem @14:36-14:42
+          Name: Ident exp @14:36-14:39
+          Value: IntLit Value=0 @14:41-14:42
+      Elems[1]: BraceLit @14:46-14:68
+        Items[0]: FieldItem @14:48-14:56
+          Name: Ident index @14:48-14:53
+          Value: IntLit Value=1 @14:55-14:56
+        Items[1]: FieldItem @14:58-14:66
+          Name: Ident exp @14:58-14:61
+          Value: IntLit Value=100 @14:63-14:66
+      Elems[2]: BraceLit @14:70-14:92
+        Items[0]: FieldItem @14:72-14:80
+          Name: Ident index @14:72-14:77
+          Value: IntLit Value=2 @14:79-14:80
+        Items[1]: FieldItem @14:82-14:90
+          Name: Ident exp @14:82-14:85
+          Value: IntLit Value=250 @14:87-14:90
+  Decls[2]: LetDecl @17:1-17:30
+    Doc: DocComment "The highest level a player can reach." @16:1-16:42
+    Name: Ident maxLevel @17:5-17:13
+    Type: NamedType @17:15-17:26
+      Name: QualifiedName Int @17:15-17:18
+      Args: TypeArgs @17:18-17:26
+        Args[0]: RangeExpr Op=..= @17:19-17:25
+          Lo: IntLit Value=0 @17:19-17:20
+          Hi: IntLit Value=24 @17:23-17:25
+    Value: IntLit Value=2 @17:29-17:30
+  Decls[3]: LetDecl @20:1-20:35
+    Doc: DocComment "How many levels ship; follows levels." @19:1-19:42
+    Name: Ident levelCount @20:5-20:15
+    Type: NamedType @20:17-20:20
+      Name: QualifiedName Int @20:17-20:20
+    Value: CallExpr @20:23-20:35
+      Fun: SelectorExpr @20:23-20:33
+        X: IdentExpr levels @20:23-20:29
+        Name: Ident len @20:30-20:33
+  Decls[4]: CheckDecl Keyword=check @22:1-22:62
+    Name: Ident enough @22:7-22:13
+    Cond: BinaryExpr Op=>= @22:15-22:30
+      X: IdentExpr levelCount @22:15-22:25
+      Y: IntLit Value=2 @22:29-22:30
+    Message: StringLit @22:36-22:62
+      Parts[0]: text "at least two levels ship"
+  Decls[5]: CheckDecl Keyword=check @24:1-24:93
+    Name: Ident uniqueIndex @24:7-24:18
+    Cond: CallExpr @24:20-24:56
+      Fun: SelectorExpr @24:20-24:54
+        X: ListComp @24:20-24:45
+          Elem: SelectorExpr @24:21-24:28
+            X: IdentExpr l @24:21-24:22
+            Name: Ident index @24:23-24:28
+          Clauses[0]: CompClause Keyword=for @24:29-24:44
+            Vars[0]: Ident l @24:33-24:34
+            X: IdentExpr levels @24:38-24:44
+        Name: Ident isUnique @24:46-24:54
+    Message: StringLit @24:62-24:93
+      Parts[0]: text "a level index is listed twice"
+  Decls[6]: CheckDecl Keyword=check @26:1-32:2
+    Body: Block @26:7-32:2
+      Stmts[0]: ForStmt @27:3-31:4
+        Vars[0]: Ident l @27:7-27:8
+        Iter: IdentExpr levels @27:12-27:18
+        Body: Block @27:19-31:4
+          Stmts[0]: IfStmt @28:5-30:6
+            Cond: BinaryExpr Op=> @28:8-28:26
+              X: SelectorExpr @28:8-28:15
+                X: IdentExpr l @28:8-28:9
+                Name: Ident index @28:10-28:15
+              Y: IdentExpr maxLevel @28:18-28:26
+            Then: Block @28:27-30:6
+              Stmts[0]: ExprStmt @29:7-29:62
+                X: CallExpr @29:7-29:62
+                  Fun: IdentExpr fail @29:7-29:11
+                  Args[0]: Arg @29:12-29:13
+                    Value: IdentExpr l @29:12-29:13
+                  Args[1]: Arg @29:15-29:61
+                    Value: StringLit @29:15-29:61
+                      Parts[0]: text "level "
+                      Parts[1]: Interp @29:23-29:30
+                        X: SelectorExpr @29:23-29:30
+                          X: IdentExpr l @29:23-29:24
+                          Name: Ident index @29:25-29:30
+                      Parts[2]: text " is above maxLevel "
+                      Parts[3]: Interp @29:51-29:59
+                        X: IdentExpr maxLevel @29:51-29:59
+  Decls[7]: TestDecl @34:1-37:2
+    Name: StringLit @34:6-34:68
+      Parts[0]: text "the shipped levels pass, and still pass without the last one"
+    Body: Block @34:69-37:2
+      Stmts[0]: ExpectStmt @35:3-35:24
+        Package: PackageSubject @35:10-35:17
+        Outcome: Ident passes @35:18-35:24
+      Stmts[1]: ExpectStmt @36:3-36:49
+        Package: PackageSubject @36:10-36:42
+          Items[0]: Substitution @36:20-36:40
+            Name: Ident levels @36:20-36:26
+            Value: IndexExpr @36:28-36:40
+              X: IdentExpr levels @36:28-36:34
+              Index: RangeExpr Op=.. @36:35-36:39
+                Lo: IntLit Value=0 @36:35-36:36
+                Hi: IntLit Value=2 @36:38-36:39
+        Outcome: Ident passes @36:43-36:49
+  Decls[8]: TestDecl @39:1-43:2
+    Name: StringLit @39:6-39:58
+      Parts[0]: text "a level listed twice, or above the cap, is refused"
+    Body: Block @39:59-43:2
+      Stmts[0]: ExpectStmt @40:3-40:68
+        Package: PackageSubject @40:10-40:50
+          Items[0]: Substitution @40:20-40:48
+            Name: Ident levels @40:20-40:26
+            Value: BinaryExpr Op=+ @40:28-40:48
+              X: IdentExpr levels @40:28-40:34
+              Y: ListLit @40:37-40:48
+                Elems[0]: IndexExpr @40:38-40:47
+                  X: IdentExpr levels @40:38-40:44
+                  Index: IntLit Value=1 @40:45-40:46
+        Outcome: Ident fails @40:51-40:56
+        Message: Ident uniqueIndex @40:57-40:68
+      Stmts[1]: ExpectStmt @41:3-41:69
+        Package: PackageSubject @41:10-41:33
+          Items[0]: Substitution @41:20-41:31
+            Name: Ident maxLevel @41:20-41:28
+            Value: IntLit Value=1 @41:30-41:31
+        Outcome: Ident fails @41:34-41:39
+        Message: StringLit @41:40-41:69
+          Parts[0]: text "level 2 is above maxLevel 1"
+      Stmts[2]: ExpectStmt @42:3-42:55
+        Package: PackageSubject @42:10-42:42
+          Items[0]: Substitution @42:20-42:40
+            Name: Ident levels @42:20-42:26
+            Value: IndexExpr @42:28-42:40
+              X: IdentExpr levels @42:28-42:34
+              Index: RangeExpr Op=.. @42:35-42:39
+                Lo: IntLit Value=0 @42:35-42:36
+                Hi: IntLit Value=1 @42:38-42:39
+        Outcome: Ident fails @42:43-42:48
+        Message: Ident enough @42:49-42:55
+== findings
+0 errors, 0 warnings in 1 package (…)
