@@ -40,3 +40,7 @@ the narration.
 | [0019](0019-edit-memory-adopted-verdicts.md) | Edit memory: no analysis kept per op, layout verdicts carried across ops |
 | [0020](0020-api-016-overlay-ctx-call-lang-roots.md) | API 0.1.6: overlays take a context, a per-call language, placed roots |
 | [0021](0021-v019-robustness-release.md) | v0.1.9, the robustness release: every decision, and how the run builds it |
+| [0022](0022-v0110-cpp-gap-release.md) | v0.1.10, the C++ gap release: enum helpers as tables, maps, optional elements, defaults, ref unions, macro names |
+| [0023](0023-v02-trust-release.md) | v0.2, trust: `expect package`, checked decode and bounds, opaque enums, macro and wire names, owed bugs; how the run builds it |
+| [0024](0024-v03-lean-generated-code-outline.md) | v0.3, lean generated code: the outline (completed at v0.3's start) |
+| [0025](0025-v04-formulas-outline.md) | v0.4, formulas: the outline (completed at v0.4's start) |
