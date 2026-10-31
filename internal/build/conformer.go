@@ -85,10 +85,7 @@ type subjects struct {
 }
 
 func (s subjects) Build(ctx context.Context, v value.Value, capture *diag.Bag) {
-	bags := check.Bags{}
-	for _, cp := range s.r.prog.Packages {
-		bags[cp.Path] = capture
-	}
+	bags := s.captureBags(capture)
 	root := eval.Root{Pkg: s.pkg}
 	res, err := verify.NewShared(s.r.vix, s.ev, bags, s.r.assets).Check(ctx, root, v)
 	if err != nil {

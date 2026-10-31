@@ -32,7 +32,7 @@ func archiveFS(a *txtar.Archive) mapFS {
 	fsys := mapFS{}
 	for _, f := range a.Files {
 		switch f.Name {
-		case findingsFile, buildFile, layersFile, adoptFile, selectFile, checkOnly, checkMode, onlyRootFile:
+		case findingsFile, buildFile, testsFile, layersFile, adoptFile, selectFile, checkOnly, checkMode, onlyRootFile:
 		case linksFile:
 			addLinks(fsys, string(f.Data))
 		default:

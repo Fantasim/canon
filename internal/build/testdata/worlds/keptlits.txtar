@@ -1,0 +1,65 @@
+EVALUATION.md §10.5 items 2 to 4, TYPES.md §11.5: a literal typed against a kept dependent map that
+a let of the world builds is verified in the world, through the host's VerifyLiteralsInto, into the
+capture: with n a sub node, probe's { n: 1 } is E3802 there, while the test's values are valid.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { num, sub }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+  /// Its max.
+  max: Int = 5
+}
+
+/// The nodes.
+let nodes: table Node = { a { k: sub }, n { k: num } }
+
+/// A sub node's limit.
+record Sub(e: Node) {
+  /// The limit.
+  lim: Int = e.max
+}
+
+/// What a node holds.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// A holder.
+record H {
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+/// The holders.
+let hs: [H] = [{ by: { a: {} } }]
+
+/// A comparison with a literal never stored.
+let probe: Bool = hs[0].by == { n: 1 }
+
+test "the test's values are valid" {
+  expect probe == false
+  expect package passes
+}
+
+test "a kept literal of the world" {
+  expect package { nodes: { a { k: sub }, n { k: sub } } } fails E3802
+  expect package { nodes: { a { k: sub }, n { k: sub } } } passes
+}
+-- tests.txt --
+a "the test's values are valid": passed true
+a "a kept literal of the world": passed false
+  line 49: expect package { nodes: { a { k: sub }, n { k: sub } } } passes
+    E3802 error path "[n]" check "": value does not match P(x) = a.Sub(e)
+
+0 errors, 0 warnings in 1 package (…)

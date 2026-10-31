@@ -11,12 +11,13 @@ import (
 	"github.com/fantasim/canonlang/internal/rules"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/verify"
 )
 
 // TestResult is one canon test: the selected tests in order, with their failures (API.md §13.2).
 type TestResult struct {
 	Files    diag.Files // resolves the findings' spans
-	Static   Result     // phases 1-2's error findings of the loaded packages and project.canon (ADR-0004)
+	Static   Result     // the run's error findings of the loaded packages and project.canon: phases 1-2, @codes, refused amendments (ADR-0004)
 	Tests    []TestCase
 	Revision string
 	Manifest []byte // the build manifest of this test run (WIRE.md §10)
@@ -49,6 +50,11 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	if err != nil {
 		return nil, err
 	}
+	return r.test(ctx, match)
+}
+
+// test is Test over a prepared run.
+func (r *run) test(ctx context.Context, match *regexp.Regexp) (*TestResult, error) {
 	if err := interrupted(ctx, r.check(ctx)); err != nil {
 		return nil, err
 	}
@@ -56,13 +62,16 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	if err := r.testNames(); err != nil {
 		return nil, err
 	}
-	res := &TestResult{Files: r.s.set, Static: r.staticErrors(), Revision: r.s.revision()}
-	res.Static.Revision = res.Revision
+	static := r.staticErrors() // what can break a declaration: a @codes finding cannot (brokenBy)
+	if err := r.verifyCodesBy(verify.NewShared(r.vix, r.ev, r.bags, r.assets)); err != nil {
+		return nil, err
+	}
+	res := &TestResult{Files: r.s.set, Revision: r.s.revision()}
 	r.host.logBags, r.host.causes = r.throwawayBags, map[eval.Root][]diag.Finding{}
 	r.ev.BeginVerification(ctx)
 	for _, cp := range r.prog.Packages {
 		if r.selects(cp.Path) {
-			res.Tests = append(res.Tests, r.runTests(ctx, cp, match, res.Static.List)...)
+			res.Tests = append(res.Tests, r.runTests(ctx, cp, match, static.List)...)
 		}
 	}
 	if err := ctx.Err(); err != nil {
@@ -71,6 +80,10 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	if err := r.host.failure(r.s.set, r.prog); err != nil {
 		return nil, err
 	}
+	r.reportStableAmendments()
+	r.reportRefused(r.refused)
+	res.Static = r.staticErrors()
+	res.Static.Revision = res.Revision
 	res.Manifest = r.manifest(r.inputs(), commandTest, nil)
 	return res, nil
 }

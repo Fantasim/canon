@@ -1,0 +1,43 @@
+EVALUATION.md §10.5 items 2 and 4, §10.2: another package's values are the test's, forced there;
+a world reading a's poisoned value fails its expect, naming it with its cause, and a's value read
+cleanly is shared.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// No levels.
+let xs: [Int] = []
+
+/// The first level, which does not exist.
+let first: Int = xs[0]
+
+/// A base.
+let base: Int = 10
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// Whether to read a's first level.
+let readFirst: Bool = false
+
+/// What b computes.
+let total: Int = if readFirst { a.first } else { a.base }
+
+check positive: total > 0 else "total {total} is not positive"
+
+test "a world reads a's values" {
+  expect package passes
+  expect package { readFirst: true } passes
+}
+-- tests.txt --
+b "a world reads a's values": passed false
+  line 16: expect package { readFirst: true } passes (reads poisoned a.first)
+    cause E4002 error path "first" check "": index 0 out of range for length 0
+
+0 errors, 0 warnings in 2 packages (…)

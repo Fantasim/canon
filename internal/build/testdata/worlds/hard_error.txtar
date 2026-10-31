@@ -1,0 +1,30 @@
+EVALUATION.md §10.5 items 2 and 4, §10.4: a hard error in a let of the world (E4102) is captured by
+the expect, never reported outside it: the test is not stopped and its later statements still run.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The divisor.
+let divisor: Int = 4
+
+/// The ratio, derived.
+let ratio: Int = 100 / divisor
+
+check small: ratio <= 50 else "ratio {ratio} above 50"
+
+test "a hard error in the world is the expect's" {
+  expect package { divisor: 0 } fails E4102
+  expect package { divisor: 0 } passes
+  expect package { divisor: 1 } fails small
+  expect ratio == 25
+}
+-- tests.txt --
+a "a hard error in the world is the expect's": passed false
+  line 14: expect package { divisor: 0 } passes
+    E4102 error path "ratio" check "": division by zero
+
+0 errors, 0 warnings in 1 package (…)

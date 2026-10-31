@@ -208,6 +208,16 @@ func (h *evalHost) VerifyInto(ctx context.Context, ev *eval.Evaluator, root eval
 	return h.settle(ev, root, res, err)
 }
 
+// VerifyLiteralsInto verifies a world value's kept literals through ev into bags (EVALUATION.md §10.5 item 3, TYPES.md §11.5).
+func (h *evalHost) VerifyLiteralsInto(ctx context.Context, ev *eval.Evaluator, root eval.Root, lits []eval.KeptLiteral, bags check.Bags) {
+	defer h.track(root.Pkg)()
+	vr := verify.NewShared(h.index, ev, bags, h.assets)
+	for _, l := range lits {
+		res, err := vr.CheckLiteral(ctx, root, l.Value, l.Type)
+		h.settle(ev, root, res, err)
+	}
+}
+
 // settle applies a verification's result through ev: an error is internal; a poisoned value is
 // poisoned, an unbound ref reported (E3505); true when the value is valid.
 func (h *evalHost) settle(ev *eval.Evaluator, root eval.Root, res verify.Result, err error) bool {

@@ -1,0 +1,40 @@
+EVALUATION.md §10.5 items 4 and 5, §12.2: the world spends the package's counter; E4401 inside it
+stops the test and is not captured, and the package's later tests find its budget spent.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 300
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Loops n times.
+fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// How far to loop.
+let n: Int = 2
+
+/// The loop's result.
+let looped: Int = loop(n)
+
+test "a world past the budget" {
+  expect package passes
+  expect package { n: 1000 } fails E4401
+  expect looped == 2
+}
+
+test "later" {
+  expect looped == 2
+}
+-- tests.txt --
+a "a world past the budget": passed false
+  line 7: stopped
+    E4401 error path "looped" check "": evaluation budget of 300 steps exhausted; heaviest: looped (296 steps)
+a "later": passed false
+
+0 errors, 0 warnings in 1 package (…)

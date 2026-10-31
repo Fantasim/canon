@@ -1,0 +1,30 @@
+EVALUATION.md §10.5 items 2 to 4, log-2026-10-31 N5-BUILD ruling: a repeated @codes code (E3102)
+is a declaration finding no substitution changes, so no world captures it: `fails E3102` gets no
+finding, and the run itself reports it, as canon check does.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K @codes(Int) { x = 1, y = 1 }
+
+/// One.
+let one: Int = 1
+
+test "a package with duplicate codes" {
+  expect package passes
+  expect package fails E3102
+}
+-- tests.txt --
+a "a package with duplicate codes": passed false
+  line 12: expect package fails E3102
+
+error[E3102]  a/a.canon:5:33
+  code 1 is used twice (first at a/a.canon:5)
+  expected by a/a.canon:5 (@codes(Int))
+
+1 error, 0 warnings in 1 package (…)

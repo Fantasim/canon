@@ -1,0 +1,50 @@
+EVALUATION.md §10.5 items 2 and 4, ADR-0023 §2 Forecast 8: a load is decoded afresh in each world,
+its findings captured (E7110), and a package check reading what it loaded follows a substituted let.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its count.
+  n: Int(0..)
+}
+
+/// The items, one file each.
+let items: [Item] = load.dir("data/*.json")
+
+/// More items: x.json does not decode.
+let extra: [Item] = load.dir("bad/*.json")
+
+/// How many items there are at least.
+let least: Int = 1
+
+check enough: items.len() >= least else "{items.len()} items, fewer than {least}"
+
+test "a world decodes the loads afresh" {
+  expect items.len() == 2
+  expect package fails E7110
+  expect package { least: 5 } fails enough
+}
+
+test "the capture of a world that loads" {
+  expect package { least: 5 } passes
+}
+-- a/data/a.json --
+{"n": 2}
+-- a/data/b.json --
+{"n": 3}
+-- a/bad/x.json --
+{"n": "many"}
+-- tests.txt --
+a "a world decodes the loads afresh": passed true
+a "the capture of a world that loads": passed false
+  line 28: expect package { least: 5 } passes
+    E7110 error path "" check "": expected a number for Int(0..), found a string
+    E5001 error path "" check "enough": 2 items, fewer than 5
+
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,33 @@
+EVALUATION.md §10.4, log-2026-09-24 "canon test (M2)", log-2026-10-31 N5-BUILD ruling: a broken
+test with no static error inside it fails with every phase 1-2 error (E3002), never with a @codes
+finding (E3102), which breaks no declaration; the run still reports E3102.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K @codes(Int) { x = 1, y = 1 }
+
+/// Broken.
+let bad: Int = "x"
+
+test "reads bad" {
+  expect bad == 1
+}
+-- tests.txt --
+a "reads bad": passed false
+  line 8: stopped
+    E3002 error path "" check "": expected Int, found String
+
+error[E3102]  a/a.canon:5:33
+  code 1 is used twice (first at a/a.canon:5)
+  expected by a/a.canon:5 (@codes(Int))
+
+error[E3002]  a/a.canon:8:16
+  expected Int, found String
+
+2 errors, 0 warnings in 1 package (…)

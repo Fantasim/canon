@@ -1,0 +1,50 @@
+EVALUATION.md §10.5 items 2 to 4, LOCK.md §6.1, log-2026-10-31 N5-BUILD ruling: a layer adding an
+entry to a stable table (E6004) belongs to the lock family, which no world reports: `fails E6004`
+gets no finding, with or without a substitution, and the run itself reports the refusal once.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- layers --
+knights
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Code.
+  code: Int @stable
+}
+
+/// Tiers.
+let tiers: stable table Tier = { low { code: 1 } }
+
+/// One.
+let one: Int = 1
+
+test "a layered world" {
+  expect package passes
+  expect package fails E6004
+  expect package { one: 2 } fails E6004
+}
+-- a/canon.lock --
+# canon.lock v1
+field  a.tiers.code  1  low
+table  a.tiers  low
+-- a/knights.layer.canon --
+package a
+layer knights
+
+amend tiers {
+  high: { code: 2 }
+}
+-- tests.txt --
+a "a layered world": passed false
+  line 18: expect package fails E6004
+  line 19: expect package { one: 2 } fails E6004
+
+error[E6004]  a/knights.layer.canon:5:3
+  layer knights cannot add an entry to stable table tiers
+
+1 error, 0 warnings in 1 package (…)

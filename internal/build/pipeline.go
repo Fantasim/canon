@@ -54,6 +54,7 @@ type run struct {
 	runner    *rules.Runner           // stages C and D's
 	w         *runWrites              // its staging token and what its writes read (stage.go), made on first use
 	renames   []dirRename             // the directories the write gives their declared spelling, top-down (DECISIONS 377)
+	refused   []eval.StableAmendment  // what canon test's worlds refused, reported by the run (LOCK.md §6.1)
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.
@@ -301,12 +302,17 @@ func (r *run) checkUnits(ctx context.Context) {
 
 // verifyCodes checks every @codes enum of every loaded package once (TYPES.md §8.1).
 func (r *run) verifyCodes() error {
+	return r.verifyCodesBy(r.host.verifier)
+}
+
+// verifyCodesBy is verifyCodes through vr, reporting into its bags.
+func (r *run) verifyCodesBy(vr *verify.Verifier) error {
 	for _, cp := range r.prog.Packages {
 		for _, obj := range cp.Decls {
 			if obj.Kind() != check.ObjTypeName || r.prog.Info.Broken[obj] {
 				continue
 			}
-			if _, err := r.host.verifier.Codes(obj); err != nil {
+			if _, err := vr.Codes(obj); err != nil {
 				return internal(err)
 			}
 		}
@@ -367,7 +373,12 @@ func (r *run) stageE(ctx context.Context) error {
 
 // reportStableAmendments has lock report the amendments the evaluator refused (LOCK.md §6.1).
 func (r *run) reportStableAmendments() {
-	for _, a := range r.ev.StableAmendments() {
+	r.reportRefused(r.ev.StableAmendments())
+}
+
+// reportRefused has lock report each refused amendment of as (LOCK.md §6.1).
+func (r *run) reportRefused(as []eval.StableAmendment) {
+	for _, a := range as {
 		lock.ReportLayer(lock.LayerAmendment{Layer: a.Layer, Table: a.Table, Field: a.Field, Span: a.Span}, r.s.bag(a.Pkg))
 	}
 }
