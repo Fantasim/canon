@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"cmp"
+	"context"
 	"crypto/sha256"
 	"errors"
 	"io/fs"
@@ -69,6 +70,7 @@ type snapFS struct {
 	root    string // the project directory, which names an entry as the scan does
 	mu      sync.Mutex
 	ents    map[name]*entry
+	pending map[name]*flight     // the first reads in flight, which a refresh waits for (get)
 	log     []name               // each name whose entry was stored or dropped here, in order (history)
 	up      weak.Pointer[snapFS] // the snapshot this one was forked from, whose log was upAt long then
 	upAt    int
@@ -107,24 +109,97 @@ func (s *snapFS) fork(over map[string][]byte, replaced map[name]*entry) *snapFS 
 	return next
 }
 
-// get is n's entry, read by load on first use; two first uses keep the first stored.
-func (s *snapFS) get(n name, load func(string) *entry) *entry {
-	s.mu.Lock()
-	e, ok := s.ents[n]
-	s.mu.Unlock()
-	if ok {
-		return e
+// flight is the first read of one name in flight, done closed once its last load ends.
+type flight struct {
+	done  chan struct{}
+	loads int
+}
+
+// get is n's entry, read by load on first use; a first use meeting a flight waits for its entry,
+// which a refresh waits for (settled; API.md S1, DECISIONS 421), but a link, whose read reads
+// other links, reads again, the first stored kept, so no two reads wait for each other.
+func (s *snapFS) get(n name, load func(string) *entry) (got *entry) {
+	got, f := s.board(n)
+	if f == nil {
+		return got
 	}
-	fresh := load(n.abs)
+	defer func() { got = s.land(n, f, got) }()
+	return load(n.abs)
+}
+
+// board is n's entry once stored, else the flight a load of n joins, a read of any kind but a
+// link waiting first for the flight it meets.
+func (s *snapFS) board(n name) (*entry, *flight) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if e, ok := s.ents[n]; ok {
+	for {
+		if e, ok := s.ents[n]; ok {
+			return e, nil
+		}
+		f := s.pending[n]
+		if f != nil && n.kind != kindLink {
+			s.mu.Unlock()
+			<-f.done
+			s.mu.Lock()
+			continue
+		}
+		if f == nil {
+			f = s.takeOff(n)
+		}
+		f.loads++
+		return nil, f
+	}
+}
+
+// takeOff is a new flight for n, under s.mu.
+func (s *snapFS) takeOff(n name) *flight {
+	if s.pending == nil {
+		s.pending = map[name]*flight{}
+	}
+	f := &flight{done: make(chan struct{})}
+	s.pending[n] = f
+	return f
+}
+
+// land ends a load of f, n's flight, which gave fresh, nil when it panicked: stored unless an
+// entry is, and n's entry returned; the last load closes the flight.
+func (s *snapFS) land(n name, f *flight, fresh *entry) *entry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if f.loads--; f.loads == 0 {
+		delete(s.pending, n)
+		close(f.done)
+	}
+	if e, ok := s.ents[n]; ok || fresh == nil {
 		return e
 	}
 	s.ents[n] = fresh
 	s.log = append(s.log, n)
 	s.gen++
 	return fresh
+}
+
+// settled waits until no first read is in flight on s, or returns ctx's error once it is done.
+func (s *snapFS) settled(ctx context.Context) error {
+	for f := s.anyFlight(); f != nil; f = s.anyFlight() {
+		select {
+		case <-f.done:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return nil
+}
+
+// anyFlight is one first read in flight on s, nil for none.
+func (s *snapFS) anyFlight() *flight {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	//canon:unordered settled waits for every flight, whichever comes first
+	for _, f := range s.pending {
+		return f
+	}
+	return nil
 }
 
 func (s *snapFS) ReadFile(abs string) ([]byte, error) {

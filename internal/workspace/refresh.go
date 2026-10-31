@@ -36,10 +36,13 @@ func (s *snapFS) ifStale(n name, e *entry, read func(string) *entry, forced bool
 	return read(n.abs)
 }
 
-// refresh compares every entry but the overlays with the disk, a file or listing forced read
-// again (API.md S1). It returns the next file system and the names whose content changed, or nil
+// refresh compares every entry but the overlays with the disk once no first read flies, forced
+// names read again (API.md S1): the next file system and the names whose content changed, or nil
 // and none; an entry read again with the same content replaces its old one here.
 func (s *snapFS) refresh(ctx context.Context, forced map[string]bool) (*snapFS, []name, error) {
+	if err := s.settled(ctx); err != nil {
+		return nil, nil, err
+	}
 	s.mu.Lock()
 	names := make([]name, 0, len(s.ents))
 	olds := make([]*entry, 0, len(s.ents))
@@ -55,6 +58,9 @@ func (s *snapFS) refresh(ctx context.Context, forced map[string]bool) (*snapFS, 
 
 // refreshNames is refresh over the entries of only (log-2026-09-29 M4 P18).
 func (s *snapFS) refreshNames(ctx context.Context, only []name) (*snapFS, []name, error) {
+	if err := s.settled(ctx); err != nil {
+		return nil, nil, err
+	}
 	s.mu.Lock()
 	var names []name
 	var olds []*entry
