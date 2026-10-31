@@ -499,7 +499,7 @@ requires every example to check clean, and a substitution outside its refinement
 | N5-TOOLS | `internal/lsp` (testdata), `api` (one test), `internal/testkit/vscodegrammar`, `internal/testkit/progen` (generator; may replace N5-CHECK's `gaps.txt` E5006 line with an operator; `coverage.txt` via `-update`) | sonnet | S | N5-CLI, EDIT, PROGEN-TIERS, MUST |
 | EXAMPLES | `examples/features/pkgchecks` (+ its granted AST and scope goldens) | sonnet | S | N5-CLI, N5-TOOLS |
 
-Before N5-BUILD lands, only the N5 units' own package tests (the parse, fmt, rules and check txtars)
+Before N5-BUILD lands, only the N5 units' own package tests (the parse, fmt, rules and check txtars, and N5-EVAL's eval tests)
 may write the new form; examples, progen, the cli goldens and the guide wait for it: until then, eval
 meets a nil `X`.
 
@@ -1701,7 +1701,7 @@ Nothing refuses either.
   - an `@codes` enum with equal `@json`;
   - an `@json(codes)` enum.
 - `E3316_12`: `caseWire`.
-- `E3316_13`, zero findings:
+- `E3316_13`, a pin (it passes before and after), zero findings:
   - wires that differ only in case;
   - equal wires in two different enums;
   - U+0000 in a `none:` marker, in a string value and in a map key.
@@ -1711,7 +1711,7 @@ Nothing refuses either.
 
 ### Acceptance
 
-- The new txtars fail before the change and pass after.
+- The new txtars, except the pin `E3316_13`, fail before the change and pass after.
 - With IR-PLANS' edit landed, `go test ./internal/...` stays green when the check lands; a red `goplan` test means a second fixture holds equal wires: fix the fixture (it is in `internal/ir`: §11.1's rule for an edit outside a unit's packages), never the rule.
 - `canon check` of the real copy: no new finding.
 - `make check` is green.
@@ -2009,7 +2009,7 @@ the type.
 - **New `eval/testdata/dependent/union_kept.txtar`:** the repro above, with a `dump.txt`.
 
 **Acceptance.** `depmap_kept`, `depmap_union` and `union_kept` fail at `4dfd414e` and pass after the
-change. `E3804_13` passes both before and after.
+change. `E3804_13` is a pin: it passes both before and after the change.
 
 ### 8.2 An amend path enters a dependent map (DECISIONS 409)
 
@@ -2290,7 +2290,7 @@ outside their refinements: an upgrade note, not a bug.
 
 | Unit | Exclusive packages | Tier | Size | After |
 |---|---|---|---|---|
-| DEP: §8.1, §8.2, §8.4 items 1-2 | `internal/types`, `internal/check`, `internal/eval`, `internal/eval/std` | opus | M (~200 lines code, ~450 tests) | S2 |
+| DEP: §8.1, §8.2, §8.4 items 1-2 | `internal/types`, `internal/check`, `internal/eval`, `internal/eval/std`; granted the `internal/lsp` hover goldens its change rewrites | opus | M (~200 lines code, ~450 tests) | S2 |
 | EDIT: §8.3, §8.4 items 4-7, §10.1 | `internal/edit` (+ granted: `internal/build/write.go` and its callers, for §10.1; the test files `api/edit_rollback_io_test.go` and `api/value_cause_test.go`; `api/value_cause.go` if §8.4 item 7's pin fails) | opus | M | S2 |
 | (in CHECK-OWED): §8.5 | `internal/check` | sonnet, opus review | S | N5-CHECK, IR-PLANS |
 
@@ -2665,8 +2665,9 @@ in a translated fn (findings by `-update`). It fails first: the file is absent.
 - `TestSpecNamesTheRuntime` (CPP-OWED): every `canon::<Name>` in `spec/*.md` is in `Identifiers()`.
 
 The scans skip a name followed by `*` (CODEGEN.md:3262's `rt.Parse*Literal` names a family, not one
-function). These are pins. A stale name found first is fixed by the orchestrator in GEN-GO's commit
-(builders never edit the spec), never by changing the test.
+function). These are pins. A stale name found first is fixed by the orchestrator in the commit of the unit
+whose pin finds it (GEN-GO for `rt.`, CPP-OWED for `canon::`; builders never edit the spec), never by
+changing the test.
 
 **Forecast.** Leave the TS block alone. Find stale names first
 (`grep -o 'rt\.[A-Z][A-Za-z0-9]*' spec/*.md`, skipping a name followed by `*`).
@@ -3160,9 +3161,9 @@ plan.md records it as declined. v0.3's scale bench may reopen it as performance 
 - **Long gates** run once, at the end (§12). Builders run only their own package tests.
 - **An edit outside a unit's packages.** When a unit needs a file outside its packages (a test that
   encoded an old rule, a fixture, a golden), it stops and reports. The orchestrator then grants that
-  file to the unit when no other unit holds its package (logged), or makes the edit as a ≤ 20-line
-  fixup in the unit's worktree. `main` never goes red. A granted file that no other unit writes may be
-  edited while another unit holds that package.
+  file to the unit (logged) when no other unit writes it, even while another unit holds its package,
+  or makes the edit as a ≤ 1-file, ≤ 20-line fixup in the unit's worktree (CLAUDE.md). `main` never
+  goes red.
 - **Status.** Status for Louis goes in `meta/handoff/<date>-v020-status.md`, updated at each wave
   boundary, with a two-line chat summary.
   - Before EN-GO starts, the status file states §4 Decision 9 (Go exhaustiveness) as the one call
@@ -3280,7 +3281,7 @@ One commit, `feat(diag): v0.2 codes and messages (DECISIONS 398, 403, 405, 406, 
 | EN-TS | `internal/gen/ts` | sonnet | S | GEN-TS | 4 |
 | GEN-GO | `internal/gen/go` | sonnet, opus review | S | EN-GO | 9.1, 9.5, 9.10 (Go test) |
 | CPP-RANGE | `internal/gen/cpp` (+ `runtime/*.txt` comment, text templates) | sonnet, opus review | M | IR-RANGE, EN-CPP | 3 |
-| LSP-WATCHED | `internal/lsp` | opus | S | WS-REPORTED | 10.6 |
+| LSP-WATCHED | `internal/lsp` | opus | S | WS-REPORTED, DEP | 10.6 |
 | N5-BUILD | `internal/build` | opus | M | N5-EVAL, MACRO-IR | 2 |
 | GO-RANGE | `internal/gen/go` | sonnet, opus review | M | GEN-GO, IR-RANGE | 3 |
 | TS-RANGE | `internal/gen/ts`; granted the `tsHelpers` line of `internal/ir/constants_tables.go` (+ `decIn decInBig decStrIn decCountIn`, in the commit that adds the units) | sonnet, opus review | M | EN-TS, IR-RANGE, MACRO-IR | 3 |
@@ -3307,11 +3308,11 @@ One commit, `feat(diag): v0.2 codes and messages (DECISIONS 398, 403, 405, 406, 
 | `internal/workspace` | WS-LOCKS → WS-REPORTED → MUST (tests) |
 | `internal/lsp` | DEP (hover goldens) → LSP-WATCHED → MUST (tests) → N5-TOOLS (testdata) |
 | `internal/cli` | N5-CLI → GUIDE |
-| `api` | EDIT (two test files) → N5-TOOLS (one test) |
+| `api` | EDIT (two test files; `api/value_cause.go` if its pin fails) → N5-TOOLS (one test) |
 | `internal/testkit/progen` | PROGEN-TIERS → N5-CHECK (gaps line) → N5-TOOLS |
 
-**The critical path** is N5: S1 → S2 → DEP → N5-CHECK → N5-EVAL → N5-BUILD → N5-CLI → EXAMPLES →
-GUIDE → CLEANUP → §12. Start DEP, N5-SYNTAX and IR-RANGE first.
+**The critical path** is N5: S1 → S2 → DEP → N5-CHECK → N5-EVAL → N5-BUILD → N5-CLI → N5-TOOLS →
+EXAMPLES → GUIDE → CLEANUP → §12. Start DEP, N5-SYNTAX and IR-RANGE first.
 
 **Wave plan, for the status file:**
 
@@ -3396,8 +3397,8 @@ go in the final acceptance entry of `meta/decisions/log-<date>.md`.
 - the path of a unified diff (`a/`, `b/` prefixes, paths from the Resource root), applied with
   `patch -p1 --forward --batch -d <scratch>/Resource` after the copy and before `canon build`;
 - a patch that does not apply exits 2 with the message `realdata-compile: RD_PATCH does not apply`;
-  the header's Exit line becomes "2 a needed tool is missing or RD_PATCH does not apply", and `patch`
-  joins the tool check;
+  the header's Exit line becomes "2 a needed tool is missing or RD_PATCH does not apply", and, when
+  `RD_PATCH` is set, `patch` joins the tool check;
 - absent, the behaviour is unchanged;
 - the Makefile comment of `realdata-compile` documents it.
 
@@ -3452,8 +3453,8 @@ v0.1.12 did by hand (log-2026-10-22).
    ```
 5. **Resource dry run.** Follow ADR-0021 §8 step 4, read-only on Resource and Source. Its paths read
    `canon-020` instead of `canon-019`, and its pinned binary is 0.1.13. ADR-0021's sentence "Expected
-   with the candidate: 0 errors and 0 warnings …" is replaced by the expected differences below. Two
-   more changes:
+   with the candidate: 0 errors and 0 warnings …" is replaced by the expected differences below. Its
+   changes:
    - **The badge patch.** In the farm copy, give the two `Badge` cases that collide (§5: the
      `BADGE_REQ_USE_ITEM` and `BADGE_REQ_FAERY_RANK` kinds in `Config/progression/quests/`)
      `@cpp(name: "BadgeReqUseItem")` and `@cpp(name: "BadgeReqFaeryRank")`.
