@@ -1,0 +1,42 @@
+TYPES.md §7.4, DECISIONS 412: a field's default that folds to a constant is checked as the literal it folds to, at the default, whether or not a value takes it; a constant from another package included.
+-- a/a.canon --
+package a
+
+const ZERO = 0
+
+local const NEG = -4
+
+local record R {
+  a: Int(1..) = ZERO
+  b: Int(1..) = NEG
+}
+
+local variant V {
+  one { c: Int(1..) = NEG }
+}
+-- b/b.canon --
+package b
+
+import a
+
+local record S {
+  d: Int(1..) = a.ZERO
+}
+-- findings.txt --
+error[E3204]  a/a.canon:8:17
+  0 is outside 1..
+  expected by a/a.canon:8 (a: Int(1..))
+
+error[E3204]  a/a.canon:9:17
+  -4 is outside 1..
+  expected by a/a.canon:9 (b: Int(1..))
+
+error[E3204]  a/a.canon:13:23
+  -4 is outside 1..
+  expected by a/a.canon:13 (c: Int(1..))
+
+error[E3204]  b/b.canon:6:17
+  0 is outside 1..
+  expected by b/b.canon:6 (d: Int(1..))
+
+4 errors, 0 warnings in 2 packages (…)

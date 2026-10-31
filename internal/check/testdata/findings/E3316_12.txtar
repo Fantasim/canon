@@ -1,0 +1,18 @@
+WIRE.md §4.2, §5.6, DECISIONS 406: case wire names are pairwise distinct within a variant; the later case is E3316 caseWire.
+-- a/a.canon --
+package a
+
+local variant V {
+  one @json("w") { n: Int }
+  two @json("w") { m: Int }
+  three
+  four @json("three")
+}
+-- findings.txt --
+error[E3316]  a/a.canon:5:3
+  wire "w" of case two is also the wire of case one; give one of them another wire with @json("...")
+
+error[E3316]  a/a.canon:7:3
+  wire "three" of case four is also the wire of case three; give one of them another wire with @json("...")
+
+2 errors, 0 warnings in 1 package (…)

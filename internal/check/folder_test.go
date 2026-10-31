@@ -34,11 +34,32 @@ func foldLiteral(ctx context.Context, e syntax.Expr, info *check.Info, depth int
 			return nil, false
 		}
 		return foldLiteral(ctx, o.Decl().(*syntax.ConstDecl).Value, info, depth+1)
+	case *syntax.ListLit:
+		return foldList(ctx, x, info, depth)
+	case *syntax.SelectorExpr:
+		o := info.NameUses[x.Name]
+		if o == nil || o.Kind() != check.ObjConst {
+			return nil, false
+		}
+		return foldLiteral(ctx, o.Decl().(*syntax.ConstDecl).Value, info, depth+1)
 	case *syntax.UnaryExpr:
 		return negate(x, info)
 	default:
 	}
 	return literal(e, info)
+}
+
+// foldList folds a list literal whose elements all fold.
+func foldList(ctx context.Context, x *syntax.ListLit, info *check.Info, depth int) (value.Value, bool) {
+	l := &value.List{T: info.Types[x]}
+	for _, e := range x.Elems {
+		v, ok := foldLiteral(ctx, e, info, depth+1)
+		if !ok {
+			return nil, false
+		}
+		l.Elems = append(l.Elems, v)
+	}
+	return l, true
 }
 
 // negate folds `-n` for a numeric literal n.

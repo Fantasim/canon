@@ -1,0 +1,21 @@
+TYPES.md §7.3, §7.4, DECISIONS 412: a Float32 literal or constant is compared after rounding to binary32, as stored: 0.1 as binary32 is above the double 0.1, so it is outside ..=0.1, in a default and in a let.
+-- a/a.canon --
+package a
+
+local record R {
+  x: Float32(..=0.1) = 0.1
+}
+
+local let y: Float32(..=0.1) = 0.1
+
+local let z: Float(..=0.1) = 0.1
+-- findings.txt --
+error[E3204]  a/a.canon:4:24
+  0.1 is outside ..=0.1
+  expected by a/a.canon:4 (x: Float32(..=0.1))
+
+error[E3204]  a/a.canon:7:32
+  0.1 is outside ..=0.1
+  expected by a/a.canon:7 (y: Float32(..=0.1))
+
+2 errors, 0 warnings in 1 package (…)

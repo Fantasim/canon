@@ -1,6 +1,7 @@
-IMPLEMENTATION-PLAN §7.6 (NFR-02), EVALUATION.md §12.2, DECISIONS 104: the check folds refinement
-bounds and stage E folds field defaults with the run's one folder; entry edits recheck along one
-lineage, so the folder's counter must stand where a cold check leaves it at every budget.
+IMPLEMENTATION-PLAN §7.6 (NFR-02), EVALUATION.md §12.2, DECISIONS 104, 412: the check folds refinement
+bounds and constant field defaults, and stage E folds field defaults, with the run's one folder; entry
+edits recheck along one lineage, so the folder's counter must stand where a cold check leaves it at
+every budget.
 -- project.canon --
 project acme {
   canon: "0.1"

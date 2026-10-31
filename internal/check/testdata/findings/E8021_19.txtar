@@ -1,0 +1,24 @@
+CODEGEN.md §2.9, DECISIONS 418: a @text file name whose extension is .canon is E8021 source, wherever out points.
+-- a/a.canon --
+package a
+
+/// Doc.
+@text("gen.canon")
+export fn g() -> String { return "x" }
+
+/// Doc.
+@text("ok.CANON")
+export fn h() -> String { return "x" }
+
+/// Doc.
+@text("ok.json")
+export fn j() -> String { return "x" }
+
+/// Doc.
+@text("ok.canon.txt")
+export fn k() -> String { return "x" }
+-- findings.txt --
+error[E8021]  a/a.canon:4:7
+  invalid @text file name "gen.canon": a .canon file is read as a source of the project; give it another extension
+
+1 error, 0 warnings in 1 package (…)

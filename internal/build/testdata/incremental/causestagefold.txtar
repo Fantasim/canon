@@ -1,5 +1,5 @@
-DECISIONS 264, EVALUATION.md §2.1 item 3, API.md R6: only Item's default reads b's `M`, a division by
-zero, and that default is folded in stage E, not in phase 2. So stage A never forces `M` and it has no
+DECISIONS 264, 412, EVALUATION.md §2.1 item 3, API.md R6: only Item's default reads b's `M`, a division by
+zero, and that default, a record, is folded in stage E, not in phase 2. So stage A never forces `M` and it has no
 cause; a memoized analysis's cause re-run forces phase 2's reads only, never stage E's.
 -- project.canon --
 project acme {
@@ -20,10 +20,16 @@ package a
 
 import b
 
+/// A price.
+record Price {
+  /// Its amount.
+  amount: Int
+}
+
 /// A thing sold.
 record Item {
   /// Its price.
-  price: Int = b.M
+  price: Price = { amount: b.M }
 }
 
 emit cpp { out: "out/", namespace: "acme::gen", mode: baked }

@@ -217,6 +217,7 @@ func (c *checker) completeEnum(o *object, e *types.EnumType) {
 	d := e.Decl
 	c.enumAnnotations(e, d.Annotations)
 	seen := map[string]*object{}
+	wires := map[string]*types.Member{}
 	for i, m := range d.Members {
 		mem := c.enumMember(env, e, i, m)
 		mo := c.newObject(ObjMember, m.Name.Name, env.pkg, m, env.file)
@@ -230,8 +231,44 @@ func (c *checker) completeEnum(o *object, e *types.EnumType) {
 			continue
 		}
 		seen[m.Name.Name] = mo
+		c.enumWire(env, wires, m, mem)
 		c.members[e] = append(c.members[e], mo)
 		e.Members = append(e.Members, mem)
+	}
+}
+
+// enumWire is E3316 enumWire at the later of two members on one wire, retired ones included; a wire holding a lexer error clashes with nothing (WIRE.md §4.2; DECISIONS 215, 406).
+func (c *checker) enumWire(env *env, wires map[string]*types.Member, m *syntax.EnumMember, mem *types.Member) {
+	if c.lexError(m.Value) || c.wireLexed(annotation(m.Annotations, annotJSON)) {
+		return
+	}
+	if first, dup := wires[mem.Wire]; dup {
+		c.report(env, diag.E3316.AtEnumWire(env.span(m.Name), mem.Wire, mem.Name, first.Name))
+		return
+	}
+	wires[mem.Wire] = mem
+}
+
+// wireLexed reports a positional `@json` wire holding a lexer error: what it says is unknown (DECISIONS 215).
+func (c *checker) wireLexed(j *syntax.Annotation) bool {
+	w := positional(j)
+	return w != nil && c.holdsLexError(w)
+}
+
+// caseWires is E3316 caseWire at the later of two cases on one wire (WIRE.md §4.2; DECISIONS 406).
+func (c *checker) caseWires(env *env, v *types.VariantType) {
+	wires := map[string]*object{}
+	for _, co := range c.cases[v] {
+		vc := co.decl.(*syntax.VariantCase)
+		if c.wireLexed(annotation(vc.Annotations, annotJSON)) {
+			continue
+		}
+		wire := co.typ.(*types.CaseType).Wire
+		if first, dup := wires[wire]; dup {
+			c.report(env, diag.E3316.AtCaseWire(env.span(vc.Name), wire, vc.Name.Name, first.name))
+			continue
+		}
+		wires[wire] = co
 	}
 }
 
@@ -257,7 +294,7 @@ func (c *checker) completeVariant(v *types.VariantType) {
 	defer func() { c.records-- }()
 	env := c.declEnv(o)
 	d := v.Decl
-	c.variantAnnotations(v, d.Annotations)
+	c.variantAnnotations(env, v, d.Annotations)
 	c.variantBody[v] = &recordCtx{self: v, fields: map[string]*object{}, methods: map[string]*object{}}
 	seen := map[string]*object{}
 	for _, it := range d.Items {
@@ -274,6 +311,7 @@ func (c *checker) completeVariant(v *types.VariantType) {
 		c.cases[v] = append(c.cases[v], co)
 		v.Cases = append(v.Cases, co.typ.(*types.CaseType))
 	}
+	c.caseWires(env, v)
 	for _, co := range c.cases[v] {
 		c.completeCase(env, co)
 	}
@@ -359,7 +397,7 @@ func (c *checker) caseObject(v *types.VariantType, name string) *object {
 func (c *checker) declareCase(env *env, v *types.VariantType, vc *syntax.VariantCase, index int) *object {
 	ct := &types.CaseType{Variant: v, Name: vc.Name.Name, Wire: vc.Name.Name, Index: index, Doc: docText(vc.Doc)}
 	ct.Retired = vc.Mods != nil && vc.Mods.Retired.Valid()
-	c.caseAnnotations(ct, vc)
+	c.caseAnnotations(env, ct, vc)
 	co := c.newObject(ObjCase, vc.Name.Name, env.pkg, vc, env.file)
 	co.typ, co.owner = ct, v
 	c.info.Defs[vc.Name] = co

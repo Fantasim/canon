@@ -1,10 +1,12 @@
 package check
 
 import (
+	"path"
 	"strings"
 	"unicode"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
@@ -82,6 +84,10 @@ func (c *checker) textFile(s textSite) (string, bool) {
 	if !ok || !isExpr || !interpolationFree(x) {
 		return "", false
 	}
+	if path.Ext(file) == project.SourceExt { // CODEGEN.md §2.9, DECISIONS 418
+		c.report(s.env, diag.E8021.AtSource(s.env.span(v), writtenText(s.env.file, v)))
+		return "", false
+	}
 	if !ValidTextName(file) {
 		c.report(s.env, diag.E8021.AtFile(s.env.span(v), writtenText(s.env.file, v)))
 		return "", false
@@ -137,6 +143,8 @@ func (c *checker) textFn(o *object) bool {
 func ValidTextName(name string) bool {
 	switch {
 	case name == "" || name == dot || name == parentDir:
+		return false
+	case path.Ext(name) == project.SourceExt:
 		return false
 	case strings.HasSuffix(name, dot) || strings.HasSuffix(name, spaceSep):
 		return false

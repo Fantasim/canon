@@ -102,3 +102,19 @@ func TestRecheckFailedFoldBreaksLet(t *testing.T) {
 	s = w.step(s, step{"z/z.canon", "= 5", "= 6", true})
 	w.step(s, step{"z/z.canon", "cap * 2", "cap * 3", true})
 }
+
+// failedDefault is a record whose default's fold fails on an overflow the evaluator reports, a
+// value taking it, and a let whose bound reads the failed const, with a reader.
+var failedDefault = map[string]string{
+	"f/f.canon": "package f\n\n/// The largest Int.\nlocal const MAXI = 9223372036854775807\n\n/// One past it.\nlocal const BAD = MAXI + 1\n\n" +
+		"/// A thing.\nlocal record R {\n  /// Its count.\n  a: Int = BAD\n}\n\n/// A thing.\nlocal let r: R = R {}\n",
+	"f/data.canon": "package f\n\n/// A cap.\nlocal let cap: Int(0..=BAD) = 5\n\n/// Twice the cap.\nlocal let twice: Int = cap * 2\n",
+}
+
+// TYPES.md §1, DECISIONS 150, IMPLEMENTATION-PLAN §7.6 NFR-02: a default whose fold fails breaks its record, and a bound reading the failed const its let, as cold does.
+func TestRecheckFailedDefaultBreaksRecord(t *testing.T) {
+	w := newWorld(t, failedDefault)
+	_, s, _ := w.session()
+	s = w.step(s, step{"f/data.canon", "= 5", "= 6", true})
+	w.step(s, step{"f/data.canon", "cap * 2", "cap * 3", true})
+}

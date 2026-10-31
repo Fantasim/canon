@@ -22,17 +22,33 @@ func (c *checker) fieldAnnotations(env *env, f *types.Field, fd *syntax.FieldDec
 	if j == nil {
 		return
 	}
-	if w, ok := c.annString(positional(j)); ok {
+	if w, ok := c.wireText(env, positional(j), f.Name); ok {
 		f.Wire, f.WirePath = w, []string{w}
 	}
 	c.jsonPath(env, f, j)
 	c.jsonForms(env, f, j, typeErr)
 }
 
+// wireText is a wire name written in source: annString, then E3316 nul on U+0000, the text kept as written (WIRE.md §4.2).
+func (c *checker) wireText(env *env, v syntax.AnnValue, item string) (string, bool) {
+	s, ok := c.annString(v)
+	if ok {
+		c.nulWire(env, v, s, item)
+	}
+	return s, ok
+}
+
+// nulWire is E3316 nul at v when the wire name s holds U+0000 (WIRE.md §4.2; DECISIONS 405).
+func (c *checker) nulWire(env *env, v syntax.Node, s, item string) {
+	if strings.ContainsRune(s, nulRune) {
+		c.report(env, diag.E3316.AtNul(env.span(v), item))
+	}
+}
+
 // jsonPath is `@json(path: "a.b")`: two or more non-empty segments, none starting with $.
 func (c *checker) jsonPath(env *env, f *types.Field, j *syntax.Annotation) {
 	v := named(j, jsonPath)
-	p, ok := c.annString(v)
+	p, ok := c.wireText(env, v, f.Name)
 	if !ok {
 		return
 	}
@@ -116,7 +132,7 @@ func (c *checker) untypedForms(env *env, f *types.Field, j *syntax.Annotation) {
 		f.NoneWire = noneWire(v)
 	}
 	if list, ok := named(j, jsonPairsName).(*syntax.AnnotationList); ok {
-		c.pairKeys(env, list)
+		c.pairKeys(env, f, list)
 	}
 }
 
@@ -217,7 +233,7 @@ func (c *checker) jsonPairs(env *env, f *types.Field, j *syntax.Annotation) {
 	if !ok {
 		return
 	}
-	keys, known, ok := c.pairKeys(env, list)
+	keys, known, ok := c.pairKeys(env, f, list)
 	if !ok {
 		return
 	}
@@ -237,7 +253,7 @@ func (c *checker) jsonPairs(env *env, f *types.Field, j *syntax.Annotation) {
 
 // pairKeys are the two templates of `pairs:`, each with one slot and distinct (E3316, then ok is
 // false); not known when one holds a lexer error, whose text is made up (DECISIONS 215).
-func (c *checker) pairKeys(env *env, list *syntax.AnnotationList) (keys [pairArity]string, known, ok bool) {
+func (c *checker) pairKeys(env *env, f *types.Field, list *syntax.AnnotationList) (keys [pairArity]string, known, ok bool) {
 	if len(list.Items) != pairArity {
 		c.report(env, diag.E3316.AtPairsTemplate(env.span(list), ""))
 		return keys, false, false
@@ -247,6 +263,7 @@ func (c *checker) pairKeys(env *env, list *syntax.AnnotationList) (keys [pairAri
 	}
 	for i := range keys {
 		s, isStr := c.templateText(list.Items[i])
+		c.nulWire(env, list.Items[i], s, f.Name)
 		if !isStr || strings.Count(s, pairSlot) != 1 {
 			c.report(env, diag.E3316.AtPairsTemplate(env.span(list.Items[i]), s))
 			return keys, false, false
@@ -418,7 +435,7 @@ func (c *checker) enumMember(env *env, e *types.EnumType, i int, m *syntax.EnumM
 	if why, ok := c.deprecation(m.Annotations); ok {
 		mem.Deprecated = &types.Deprecation{Why: why}
 	}
-	if w, ok := c.annString(positional(annotation(m.Annotations, annotJSON))); ok {
+	if w, ok := c.wireText(env, positional(annotation(m.Annotations, annotJSON)), m.Name.Name); ok {
 		mem.Wire = w
 	}
 	if m.Value != nil && c.lexError(m.Value) {
@@ -429,6 +446,7 @@ func (c *checker) enumMember(env *env, e *types.EnumType, i int, m *syntax.EnumM
 	case syntax.StrLit:
 		c.info.Types[v] = types.StringType
 		mem.Wire = constText(v)
+		c.nulWire(env, v, mem.Wire, mem.Name)
 		if e.Codes != nil {
 			c.report(env, diag.E3002.At(env.span(v), *e.Codes, types.StringType))
 		}
@@ -457,18 +475,18 @@ func (c *checker) memberCode(env *env, e *types.EnumType, mem *types.Member, v *
 }
 
 // variantAnnotations is `@json(tag:)` and `@json(case:)` on a variant header.
-func (c *checker) variantAnnotations(v *types.VariantType, anns []*syntax.Annotation) {
+func (c *checker) variantAnnotations(env *env, v *types.VariantType, anns []*syntax.Annotation) {
 	j := annotation(anns, annotJSON)
-	if tag, ok := c.annString(named(j, jsonTag)); ok {
+	if tag, ok := c.wireText(env, named(j, jsonTag), v.Name); ok {
 		v.Tag = tag
 	}
 	c.variantCases[v] = symbol(named(j, jsonCase))
 }
 
 // caseAnnotations is a case's `@json("w")` and `@deprecated`.
-func (c *checker) caseAnnotations(ct *types.CaseType, vc *syntax.VariantCase) {
+func (c *checker) caseAnnotations(env *env, ct *types.CaseType, vc *syntax.VariantCase) {
 	c.caseDecls[ct] = vc
-	if w, ok := c.annString(positional(annotation(vc.Annotations, annotJSON))); ok {
+	if w, ok := c.wireText(env, positional(annotation(vc.Annotations, annotJSON)), ct.Name); ok {
 		ct.Wire = w
 	}
 	if why, ok := c.deprecation(vc.Annotations); ok {

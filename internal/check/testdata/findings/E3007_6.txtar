@@ -1,0 +1,33 @@
+TYPES.md §7.1, CONFORMANCE.md §3, ADR-0023 §9.9: `%` is defined on integers only; on Float or Duration it is E3007, in a let and in a translated fn.
+-- a/a.canon --
+package a
+
+local let f: Float = 5.5 % 2.0
+
+local let d: Duration = 5s % 2s
+
+local let i: Int = 5 % 2
+
+export fn modF(a: Float, b: Float) -> Float { return a % b }
+
+export fn modD(a: Duration, b: Duration) -> Duration { return a % b }
+-- findings.txt --
+error[E3007]  a/a.canon:3:22
+  operator % is not defined for Float and Float
+
+error[E3007]  a/a.canon:5:25
+  operator % is not defined for Duration and Duration
+
+warning[W1002]  a/a.canon:9:11
+  function modF has no doc comment
+
+error[E3007]  a/a.canon:9:54
+  operator % is not defined for Float and Float
+
+warning[W1002]  a/a.canon:11:11
+  function modD has no doc comment
+
+error[E3007]  a/a.canon:11:63
+  operator % is not defined for Duration and Duration
+
+4 errors, 2 warnings in 1 package (…)

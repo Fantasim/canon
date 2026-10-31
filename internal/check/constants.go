@@ -185,6 +185,7 @@ const (
 	bits64          = 64
 	decimalBase     = 10
 	maxBit          = int64(1) << 62
+	nulRune         = rune(0)
 )
 
 // Punctuation and fixed words.

@@ -162,8 +162,14 @@ func TestSyntaxErrorIsNeverEvaluated(t *testing.T) {
 // buildOne checks package a of a one-file project through a build (build.Open, then Check).
 func buildOne(t *testing.T, text string) *build.Result {
 	t.Helper()
+	return buildUnder(t, shopProject, text)
+}
+
+// buildUnder is buildOne with proj as the project file.
+func buildUnder(t *testing.T, proj, text string) *build.Result {
+	t.Helper()
 	fsys := shopFS{
-		shopDir + "/" + projectFile: {Data: []byte(shopProject)},
+		shopDir + "/" + projectFile: {Data: []byte(proj)},
 		shopDir + "/" + builtFile:   {Data: []byte(text)},
 	}
 	p, err := build.Open(fsys, "/"+shopDir, build.Options{})

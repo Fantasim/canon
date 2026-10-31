@@ -1,6 +1,7 @@
 package check
 
 import (
+	"math"
 	"math/big"
 	"strconv"
 
@@ -88,13 +89,40 @@ func (c *checker) literalLimits(env *env, lit syntax.Expr, b types.Basic) {
 	switch l := lit.(type) {
 	case *syntax.IntLit:
 		if b.K == types.Int && !inInt64(l.Value, lo, hi) {
-			c.report(env, c.related(env, diag.E3201.At(env.span(lit), rawValue(l.Value.String()), b)))
+			c.limitFinding(env, lit, b, l.Value.String())
 		}
 	case *syntax.DurationLit:
 		if b.K == types.Duration && (l.Millis < lo || l.Millis > hi) {
-			c.report(env, c.related(env, diag.E3201.At(env.span(lit), rawValue(types.DurationText(l.Millis)), b)))
+			c.limitFinding(env, lit, b, types.DurationText(l.Millis))
 		}
 	}
+}
+
+// limitFinding is E3201 at at: text outside the sized type b.
+func (c *checker) limitFinding(env *env, at syntax.Node, b types.Basic, text string) {
+	c.report(env, c.related(env, diag.E3201.At(env.span(at), rawValue(text), b)))
+}
+
+// patternFinding is E3205 at at: the quoted text breaks r's pattern.
+func (c *checker) patternFinding(env *env, at syntax.Node, r *types.Refined, text string) {
+	c.report(env, c.related(env, diag.E3205.At(env.span(at), rawValue(text), r.Pattern.String())))
+}
+
+// rangeFinding is E3204 at at: text outside r's range.
+func (c *checker) rangeFinding(env *env, at syntax.Node, r *types.Refined, text string) {
+	c.report(env, c.related(env, diag.E3204.At(env.span(at), rawValue(text), c.boundSpans[r.Range].span())))
+}
+
+// stored is f as a value of type t is compared once stored: a Float32 rounds to binary32 unless that overflows, which storage reports as E3202 and keeps (TYPES.md §7.3, §7.4; eval/store.go).
+func stored(t types.Type, f float64) float64 {
+	b, ok := t.Base().(types.Basic)
+	if !ok || b.K != types.Float || b.Bits != types.Float32Type.Bits {
+		return f
+	}
+	if r := float64(float32(f)); !math.IsInf(r, 0) {
+		return r
+	}
+	return f
 }
 
 func inInt64(v *big.Int, lo, hi int64) bool {
@@ -107,7 +135,7 @@ func (c *checker) literalRefinement(env *env, lit syntax.Expr, r *types.Refined)
 	if r.Pattern != nil {
 		s, isStr := stringLiteral(lit)
 		if isStr && !r.Pattern.MatchString(s) {
-			c.report(env, c.related(env, diag.E3205.At(env.span(lit), rawValue(types.QuoteString(s)), r.Pattern.String())))
+			c.patternFinding(env, lit, r, types.QuoteString(s))
 			return false
 		}
 	}
@@ -115,10 +143,11 @@ func (c *checker) literalRefinement(env *env, lit syntax.Expr, r *types.Refined)
 		return true
 	}
 	v, text, ok := measure(lit, r.Of.Base().Kind())
+	v.F = stored(r.Of, v.F)
 	if !ok || inBound(v, r.Range, r.Of.Base().Kind()) {
 		return true
 	}
-	c.report(env, c.related(env, diag.E3204.At(env.span(lit), rawValue(text), c.boundSpans[r.Range].span())))
+	c.rangeFinding(env, lit, r, text)
 	return false
 }
 

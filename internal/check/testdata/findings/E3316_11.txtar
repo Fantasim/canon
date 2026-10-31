@@ -1,0 +1,35 @@
+WIRE.md §4.2, §5.3, DECISIONS 406: wires are pairwise distinct within an enum; the later member is E3316 enumWire, retired and @json(codes) enums included.
+-- a/a.canon --
+package a
+
+local enum Twin { a = "x", b = "x" }
+
+local enum Cross { p, q = "p" }
+
+local enum Old { a = "x", retired b = "x" }
+
+local enum Codes @codes(Int32) { a = 1 @json("w"), b = 2 @json("w") }
+
+local enum Wc @codes(Int32) @json(codes) { a = 1 @json("w"), b = 2 @json("w") }
+
+local enum Dup { a = "z", a = "z" }
+-- findings.txt --
+error[E3316]  a/a.canon:3:28
+  wire "x" of b is also the wire of a; give one of them another wire with = "..." (@json("...") in an enum with @codes)
+
+error[E3316]  a/a.canon:5:23
+  wire "p" of q is also the wire of p; give one of them another wire with = "..." (@json("...") in an enum with @codes)
+
+error[E3316]  a/a.canon:7:35
+  wire "x" of b is also the wire of a; give one of them another wire with = "..." (@json("...") in an enum with @codes)
+
+error[E3316]  a/a.canon:9:52
+  wire "w" of b is also the wire of a; give one of them another wire with = "..." (@json("...") in an enum with @codes)
+
+error[E3316]  a/a.canon:11:62
+  wire "w" of b is also the wire of a; give one of them another wire with = "..." (@json("...") in an enum with @codes)
+
+error[E2106]  a/a.canon:13:27
+  a is declared twice (first at a/a.canon:13)
+
+6 errors, 0 warnings in 1 package (…)

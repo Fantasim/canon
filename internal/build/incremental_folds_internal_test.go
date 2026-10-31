@@ -12,7 +12,7 @@ import (
 
 const (
 	foldsCase     = "testdata/incremental/folds.txtar"
-	foldBudgetTop = 48 // past what the folds case spends cold, in its folder as in its evaluator
+	foldBudgetTop = 64 // past what the folds case spends cold, in its folder as in its evaluator
 	foldEdits     = 4
 )
 

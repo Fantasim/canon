@@ -41,17 +41,30 @@ func (c *checker) constCycle(o *object) {
 
 // foldConst folds through the Folder; a failure it did not report is E3015 (DECISIONS 150, 263).
 func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
-	before := env.pkg.bag.ErrorCount()
-	v, ok := c.fold.Fold(c.ctx, env.owner, e, c.info)
+	v, ok, silent := c.foldReported(env, e)
 	switch {
-	case ok:
-		return v, true
-	case env.pkg.bag.ErrorCount() == before:
-		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
+	case !silent:
+	case c.readsFailed(e):
+		c.breakFolded(env.owner) // its const's fold failed with a finding, which this reader does not repeat (TYPES.md §1)
 	default:
-		c.breakFolded(env.owner)
+		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
 	}
-	return nil, false
+	return v, ok
+}
+
+// foldReported folds e, its findings in the owner's bag; a failure with one breaks the owner, silent is one without (DECISIONS 150).
+func (c *checker) foldReported(env *env, e syntax.Expr) (v value.Value, ok, silent bool) {
+	before := env.pkg.bag.ErrorCount()
+	v, ok = c.fold.Fold(c.ctx, env.owner, e, c.info)
+	if ok {
+		return v, true, false
+	}
+	c.noteSpent(env.pkg)
+	if env.pkg.bag.ErrorCount() == before {
+		return nil, false, true
+	}
+	c.breakFolded(env.owner)
+	return nil, false, false
 }
 
 // breakFolded breaks the owner of a fold that failed with a finding (DECISIONS 150); a session
@@ -75,6 +88,21 @@ func (c *checker) notConstant(env *env, e syntax.Expr) bool {
 
 // readsBroken reports e naming a declaration broken now, before propagateBroken (TYPES.md §1).
 func (c *checker) readsBroken(e syntax.Expr) bool {
+	return c.readsWhere(e, c.isBroken)
+}
+
+func (c *checker) isBroken(o *object) bool {
+	return c.info.Broken[o]
+}
+
+// readsFailed reports e naming a const whose declaration holds an error now, directly or through
+// its dependencies: an earlier fold of it failed with a finding (DECISIONS 150).
+func (c *checker) readsFailed(e syntax.Expr) bool {
+	return c.readsWhere(e, c.holdsErrorNow)
+}
+
+// readsWhere reports e naming a declaration hit holds, or one naming it through its dependencies.
+func (c *checker) readsWhere(e syntax.Expr, hit func(*object) bool) bool {
 	seen := map[*object]bool{}
 	found := false
 	syntax.Inspect(e, func(n syntax.Node) bool {
@@ -85,7 +113,7 @@ func (c *checker) readsBroken(e syntax.Expr) bool {
 		case *syntax.Ident:
 			o = c.info.NameUses[x]
 		}
-		if obj, isObj := o.(*object); isObj && c.brokenNow(obj, seen) {
+		if obj, isObj := o.(*object); isObj && c.hitNow(obj, seen, hit) {
 			found = true
 		}
 		return !found
@@ -93,14 +121,26 @@ func (c *checker) readsBroken(e syntax.Expr) bool {
 	return found
 }
 
-// brokenNow reports o broken, or naming a broken declaration through its dependencies.
-func (c *checker) brokenNow(o *object, seen map[*object]bool) bool {
-	if c.info.Broken[o] {
+// hitNow reports hit holding for o or for a declaration o names through its dependencies.
+func (c *checker) hitNow(o *object, seen map[*object]bool, hit func(*object) bool) bool {
+	if hit(o) {
 		return true
 	}
 	if seen[o] {
 		return false
 	}
 	seen[o] = true
-	return slices.ContainsFunc(c.deps[o], func(d *object) bool { return c.brokenNow(d, seen) })
+	return slices.ContainsFunc(c.deps[o], func(d *object) bool { return c.hitNow(d, seen, hit) })
+}
+
+// holdsErrorNow reports a const whose declaration holds an error of its package's bag.
+func (c *checker) holdsErrorNow(o *object) bool {
+	p := c.pkgs[o.pkg]
+	if o.kind != ObjConst || o.file == nil || p == nil {
+		return false
+	}
+	at := o.file.Span(o.decl)
+	return slices.ContainsFunc(p.bag.Findings(), func(f diag.Finding) bool {
+		return f.Severity == diag.Error && f.Span.File == at.File && at.Contains(f.Span.Start)
+	})
 }

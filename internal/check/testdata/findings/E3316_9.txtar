@@ -1,0 +1,25 @@
+WIRE.md §4.2, DECISIONS 405: a wire name written in source holds no U+0000: a field's @json("w"), a path: segment and a pairs: template are E3316 nul.
+-- a/a.canon --
+package a
+
+local record P {
+  k: String
+  v: Int
+}
+
+local record R {
+  a: Int = 0 @json("x\u{0}y")
+  b: Int = 0 @json(path: "p.q\u{0}")
+  c: [P](..=2) = [] @json(pairs: ["k{i}\u{0}", "v{i}"])
+}
+-- findings.txt --
+error[E3316]  a/a.canon:9:20
+  a wire name of a holds U+0000 (NUL): generated C++ readers compare names as C strings and would cut it; write another character
+
+error[E3316]  a/a.canon:10:26
+  a wire name of b holds U+0000 (NUL): generated C++ readers compare names as C strings and would cut it; write another character
+
+error[E3316]  a/a.canon:11:35
+  a wire name of c holds U+0000 (NUL): generated C++ readers compare names as C strings and would cut it; write another character
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,13 @@
+WIRE.md §4.2, DECISIONS 405, 406 (a pin, E3316_13 of ADR-0023 §6): wires differing only in case, equal wires in two enums, and U+0000 in a none: marker, a string value and a map key are accepted.
+-- a/a.canon --
+package a
+
+local enum A { a = "x", b = "X" }
+
+local enum B { a = "x", b = "y" }
+
+local record R {
+  n: Int? @json(none: "\u{0}")
+  s: String = "a\u{0}b"
+  m: {String: Int} = {"k\u{0}": 1}
+}

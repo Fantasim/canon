@@ -238,7 +238,9 @@ func (c *checker) fieldDefaults(o *object, body *recordCtx) {
 		env.fields = fo.field.Index
 		de := env.storing(fo)
 		de.bind = inRecord(o.typ).forField(fo.field.Type)
-		c.expr(de, d.Default, fo.field.Type)
+		before := c.reported
+		got := c.expr(de, d.Default, fo.field.Type)
+		c.foldedDefault(de, d.Default, got, fo.field.Type, before)
 		c.noneDefault(env, d, fo.field)
 	}
 }

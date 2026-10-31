@@ -2,7 +2,8 @@ DECISIONS 173, WIRE.md §5.4, EVALUATION.md §13: the defaults of loaded records
 as a literal's are (an enum member, `[]`, an expression over an earlier field, parentheses),
 through bare load, load.dir and load.csv alike, each value `default` at its default expression;
 an omitted optional without default is `default` at its field declaration. A hard error in a
-default is reported at it and poisons the load's value.
+default that reads an earlier field, so no constant phase 2 folds (DECISIONS 412), is reported at
+it and poisons the load's value.
 -- project.canon --
 project acme {
   canon: "0.1"
@@ -46,7 +47,7 @@ record Broken {
   /// Name.
   name: String
   /// Out of range.
-  pick: Int = [1][5]
+  pick: Int = [1][name.len() + 2]
 }
 
 /// One row, from JSON.
