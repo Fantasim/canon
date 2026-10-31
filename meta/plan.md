@@ -218,24 +218,81 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 - [x] CLEANUP, S2, release gates (ADR-0022 §9: Resource dry run, Sovereign C++ farm), tag (local).
 - [ ] **Standing release gate, required before every tag (DECISIONS 394):** `make realdata-compile` (the real Sovereign output compiled unit by unit at the consumer's flags; PASS or no tag).
 
-## v0.2 (Louis, 2026-10-14)
+## v0.2: trust (Louis's picks of 2026-10-14, extended 2026-10-31)
+
+Proposal: [roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md) §3, with the reasons, owners and
+sizes. Louis's four calls are in its §9. Each version is decided whole in an ADR at its start.
 
 - [ ] **N5, testable package checks** (very important; first in v0.2).
+- [ ] Decoders check range and length refinements in C++, Go and TS; bounds as constants; stable row
+  addresses written down. Refinements enter the IR (§4 review rule). Widths stay declared (GEN-02).
 - [ ] **Enums without `@codes` as safe as ids** (Louis, 2026-10-14; [ADR-0021](decisions/0021-v019-robustness-release.md)
   §9): Go opaque (`struct` + `Position()`); C++ deleted nlohmann hooks, after a read-only Source scan;
   TS `<E>Index` no longer exported; open enums decided with them. v0.1.9 adds only Go's `MarshalText`.
-- [ ] M4 call (b): `check.Info` layered maps, only if easy and with no robustness risk (frozen contract).
+- [ ] Macro names across packages ([handoff](handoff/2026-10-29-sovereign-cpp-macro-collisions.md)),
+  after a read-only Resource scan.
 - [ ] `E3804` dependent types through static typing; `E1905` amend into a dependent map.
-- [ ] `ordered_json` C++ overload; kind constants; output path templates (N8).
-- [ ] N1 legacy C++ structs (M6), N2 one declaration per id, N3 `canon lint`: order still Louis's.
+- [ ] Wire names: a NUL is refused at check; equal wires in one enum.
+- [ ] Every owed bug: state.md "Owed, small", ADR-0021 §9's list, the logs of 10-21, 10-22 and 10-29.
+- [ ] Ways out for E9001, E9006 and E8104 (DECISIONS 305); CONFORMANCE §3 against TYPES §7.1;
+  CODEGEN §6.3's drift.
+- [ ] M4 call (b): `check.Info` layered maps, only if easy and with no robustness risk (frozen contract).
+- [ ] Release gates: `make check`, `make realdata-compile`, the Resource dry run, and the long
+  fuzz and progen campaigns, run once.
+
+## v0.3: lean generated code (proposed 2026-10-31, roadmap §4)
+
+- [ ] Enum tables: `ToWire` on the name table, `FromWire` by a permutation index, dense ordinals (C++, Go).
+- [ ] A one-pass C++ JSON reader, proven by a differential fuzz against the five passes.
+- [ ] Header weight, measured first: forward-declaration headers for imports that only name enums;
+  opened enums' initialisers moved into the `.gen.cpp`.
+- [ ] Baked data as views, without heap copies.
+- [ ] TS for bundles: `/*#__PURE__*/`, `sideEffects` documented, a runtime module per directory if
+  the measured helper block is large.
+- [ ] A function-size budget in the generators' tests, and the splits it asks for.
+- [ ] Runtime copies of one version must agree (the C++ guard is keyed by version, not content).
+- [ ] `ordered_json` C++ overload; kind constants; output path templates (N8). These are Louis's v0.2
+  picks, moved here.
+- [ ] N3 `canon lint`.
+- [ ] A scale bench at 1x, 3x and 5x.
+- [ ] Stretch: C++ presence bits.
+
+## v0.4: formulas (proposed 2026-10-31, roadmap §5)
+
+- [ ] `match`, `var` and bounded `for` in translated fns.
+- [ ] Record, optional and list parameters; record results.
+- [ ] One rule for lookup versus translation (finite domains, refined Int included, under a cell
+  bound); baked tables readable by key.
+- [ ] `sqrt`; `pow` with an Int exponent.
+- [ ] Float32 arithmetic.
+- [ ] Bit-operation builtins.
+- [ ] Floats in translated templates.
+- [ ] `bigint` in translated TS.
+- [ ] The floating-point contract, verified.
+- [ ] Guide: porting a legacy formula with captured vectors.
+
+## After v0.4 (direction, not scheduled; roadmap §6)
+
+- v0.5: binary data, with N2 (one declaration per id).
+- v0.6: runtime values and messages, after Louis's call Q1.
+- Parked: N1 legacy C++ structs (Louis's call Q4), N7 package moves, M7 `convert`.
 
 ## Later, deferred, passed and refused
 
 - Later, only if very secure: the on-disk cache (safe design in [log-2026-10-14](decisions/log-2026-10-14.md)).
+  Louis's call Q3 waits on v0.3's scale bench.
 - Deferred: F21 warm re-check on entry add/remove; F22 streaming JSON reader; Go/C++ `embedded`.
 - Passed (robustness first): per-entry re-check, stage-E memo, per-package parallelism.
 - Refused: F20 per-field `@json(codes)` (for good), N4 new wire forms, entry isolation,
   types-only import, N10 `jsonQuote`.
+- Refused 2026-10-31 ([log](decisions/log-2026-10-31.md)):
+  - a `CAr`-compatible byte layout;
+  - member widths from refinements (GEN-02);
+  - per-field projections and per-field `since N`;
+  - types that change with build flags;
+  - `while` and real-exponent `pow` in translated code;
+  - compact JSON;
+  - consumer-declared pruning.
 
 ## Feature examples owed (§7.9, QA)
 
