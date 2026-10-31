@@ -384,22 +384,26 @@ func (a *assets) list(dir string) dirListing {
 	return l
 }
 
-// kind is e's kind, a link followed inside the bounds, blocked outside, absent if broken (TYPES.md §13.4, DECISIONS 376).
+// kind is e's kind, a link followed inside the bounds, blocked outside, absent if broken (TYPES.md §13.4, DECISIONS 376, 419).
 func (a *assets) kind(dir string, e fs.DirEntry) (isDir, ok, blocked bool) {
-	if e.Type()&fs.ModeSymlink == 0 {
+	l := linkOf(a.fs, a.evalSymlinks, dir, e)
+	if !l.link {
 		return e.IsDir(), true, false
 	}
-	child := project.Join(dir, e.Name())
-	target, err := project.EvalSymlinks(a.fs, child)
-	if err != nil {
+	if l.err != nil {
 		return false, false, false
 	}
-	if !a.places.bound(a.fs, a.layout).Within(target) {
+	if !a.places.bound(a.fs, a.layout).Within(l.target) {
 		return false, false, true
 	}
-	info, err := a.fs.Stat(target)
+	info, err := a.fs.Stat(l.target)
 	if err != nil {
 		return false, false, false
 	}
 	return info.IsDir(), true, false
+}
+
+// evalSymlinks is name's real path through the lookups' file system, the run's read log once it tracks them (API.md S5).
+func (a *assets) evalSymlinks(name string) (string, error) {
+	return project.EvalSymlinks(a.fs, name)
 }

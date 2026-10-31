@@ -117,7 +117,7 @@ func (osLinks) readlink(name string) (string, error) {
 	return slashed(raw, filepath.Separator), nil
 }
 
-// readLink is child's target when it is a link, a symbolic link or a junction, a device target errDeviceTarget (WIRE.md §6.5, DECISIONS 419).
+// readLink is child's target when it is a link, a symbolic link or a junction, a device target ErrDeviceTarget (WIRE.md §6.5, DECISIONS 419).
 func readLink(lr linkReader, child string) (target string, isLink bool, err error) {
 	mode, err := lr.lstat(child)
 	if err != nil {
@@ -136,7 +136,7 @@ func readLink(lr linkReader, child string) (target string, isLink bool, err erro
 		}
 	}
 	if isDevicePath(target) {
-		return "", false, errDeviceTarget
+		return "", false, ErrDeviceTarget
 	}
 	return target, true, nil
 }

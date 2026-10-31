@@ -27,7 +27,7 @@ func (r *realPaths) file(name string) string {
 }
 
 // follow is file, at most hops links deep: a dangling link leads, through its own text, to the
-// name it would be (log-2026-09-29 M4 P14-r4).
+// name it would be (log-2026-09-29 M4 P14-r4); a device target never (DECISIONS 419).
 func (r *realPaths) follow(name string, hops int) string {
 	dir := project.DirOf(name)
 	if dir == name {
@@ -35,11 +35,11 @@ func (r *realPaths) follow(name string, hops int) string {
 	}
 	base := path.Base(name)
 	if r.linked(dir)[base] {
-		real, err := project.EvalSymlinks(r.fs, name)
+		real, err := r.evalSymlinks(name)
 		if err == nil {
 			return real
 		}
-		if lr, ok := r.fs.(LinkReader); ok && hops > 0 && errors.Is(err, fs.ErrNotExist) {
+		if lr, ok := r.fs.(LinkReader); ok && hops > 0 && errors.Is(err, fs.ErrNotExist) && !errors.Is(err, project.ErrDeviceTarget) {
 			if text, err := lr.Readlink(name); err == nil {
 				return r.follow(linkTo(dir, text), hops-1)
 			}
@@ -58,18 +58,18 @@ func (r *realPaths) dir(name string) string {
 		return name
 	}
 	r.dirs[name] = name // a loop of dangling links ends here
-	real, err := project.EvalSymlinks(r.fs, name)
+	real, err := r.evalSymlinks(name)
 	if err != nil {
-		real = r.missingDir(project.DirOf(name), path.Base(name))
+		real = r.missingDir(project.DirOf(name), path.Base(name), err)
 	}
 	r.dirs[name] = real
 	return real
 }
 
-// missingDir is the real path of base in parent, which does not resolve: a dangling link's,
-// through its text, as follow does for a file; else base below parent's real path.
-func (r *realPaths) missingDir(parent, base string) string {
-	if lr, ok := r.fs.(LinkReader); ok && r.linked(parent)[base] {
+// missingDir is the real path of base in parent, which does not resolve with err: a dangling link's,
+// through its text, as follow does for a file; else, a device target's too, base below parent's real path.
+func (r *realPaths) missingDir(parent, base string, err error) string {
+	if lr, ok := r.fs.(LinkReader); ok && !errors.Is(err, project.ErrDeviceTarget) && r.linked(parent)[base] {
 		if text, err := lr.Readlink(project.Join(parent, base)); err == nil {
 			return r.dir(linkTo(parent, text))
 		}
@@ -86,7 +86,7 @@ func linkTo(dir, text string) string {
 	return project.Join(dir, text)
 }
 
-// linked is the names dir's listing shows as links.
+// linked is the names dir's listing shows as links (WIRE.md §6.5, DECISIONS 419).
 func (r *realPaths) linked(dir string) map[string]bool {
 	if set, ok := r.links[dir]; ok {
 		return set
@@ -95,11 +95,16 @@ func (r *realPaths) linked(dir string) map[string]bool {
 	list, err := r.fs.ReadDir(dir)
 	if err == nil {
 		for _, e := range list {
-			if e.Type()&fs.ModeSymlink != 0 {
+			if linkOf(r.fs, r.evalSymlinks, dir, e).link {
 				set[e.Name()] = true
 			}
 		}
 	}
 	r.links[dir] = set
 	return set
+}
+
+// evalSymlinks is name's real path through the file system the paths are resolved in.
+func (r *realPaths) evalSymlinks(name string) (string, error) {
+	return project.EvalSymlinks(r.fs, name)
 }

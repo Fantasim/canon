@@ -20,8 +20,8 @@ var (
 // ErrNoLinks is EvalSymlinks on an FS that resolves no symbolic link: the caller decides without links (WIRE.md §6.5).
 var ErrNoLinks = errors.New("the file system resolves no symbolic link")
 
-// errDeviceTarget is a link whose target is a device path: dangling, naming no path (WIRE.md §6.5, DECISIONS 419).
-var errDeviceTarget = fmt.Errorf("a link's target is a device path: %w", fs.ErrNotExist)
+// ErrDeviceTarget is a link whose target is a device path: dangling, naming no path (WIRE.md §6.5, DECISIONS 419).
+var ErrDeviceTarget = fmt.Errorf("a link's target is a device path: %w", fs.ErrNotExist)
 
 // notLinkErrs are readlink's answers for an entry that is no link, any other failure an error (DECISIONS 419).
 var notLinkErrs = [...]error{fs.ErrNotExist, syscall.EINVAL}

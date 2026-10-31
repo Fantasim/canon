@@ -2,7 +2,6 @@ package build
 
 import (
 	"crypto/sha256"
-	"io/fs"
 	"maps"
 	"path"
 	"slices"
@@ -149,13 +148,14 @@ func (r *run) movedListings(view project.FS) []string {
 }
 
 // listedNow are the names of dir in view an asset check lists: a link only when it leads to
-// something inside bounds; none for a directory gone, as the run listed none.
+// something inside bounds (DECISIONS 419); none for a directory gone, as the run listed none.
 func listedNow(view project.FS, bounds load.Bounds, dir string) []string {
 	entries, _ := view.ReadDir(dir) // a listing that fails lists nothing, as list does
+	resolve := func(name string) (string, error) { return project.EvalSymlinks(view, name) }
 	var out []string
 	for _, e := range entries {
-		if e.Type()&fs.ModeSymlink != 0 {
-			if target, err := project.EvalSymlinks(view, project.Join(dir, e.Name())); err != nil || !bounds.Within(target) {
+		if l := linkOf(view, resolve, dir, e); l.link {
+			if l.err != nil || !bounds.Within(l.target) {
 				continue
 			}
 			if _, err := view.Stat(project.Join(dir, e.Name())); err != nil {
