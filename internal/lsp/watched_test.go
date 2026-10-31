@@ -11,6 +11,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/testkit/must"
 	"golang.org/x/tools/txtar"
 )
 
@@ -54,28 +55,28 @@ func TestWatchedFilesRereadKeptStamp(t *testing.T) {
 			s := newSession(t, txtar.Parse([]byte(watchedLaw)))
 			counts := filepath.Join(s.dir, "proj", "a", "counts.json")
 			kept := time.Date(2020, time.January, 2, 3, 4, 5, 6, time.UTC)
-			must(t, os.Chtimes(counts, kept, kept))
+			must.NoError(t, os.Chtimes(counts, kept, kept))
 			done := s.startWith(config{debounce: debounce, base: keptStampFS{build.OS()}})
-			must(t, s.initialize(nil))
-			must(t, s.open([]string{"proj/a/a.canon"}))
-			must(t, s.wait(nil))
+			must.NoError(t, s.initialize(nil))
+			must.NoError(t, s.open([]string{"proj/a/a.canon"}))
+			must.NoError(t, s.wait(nil))
 			countsURI := s.uri + "/proj/a/counts.json"
 			if n := s.lastDiagnostics(countsURI); n == 0 {
 				t.Fatalf("counts.json: no diagnostics before the fix")
 			}
-			must(t, os.WriteFile(counts, s.files["fixed.json"], 0o644))
-			must(t, os.Chtimes(counts, kept, kept))
-			must(t, s.note(methodWatched, tc.params(s)))
-			must(t, s.wait(nil)) // a pass published: the projects were recomputed
+			must.NoError(t, os.WriteFile(counts, s.files["fixed.json"], 0o644))
+			must.NoError(t, os.Chtimes(counts, kept, kept))
+			must.NoError(t, s.note(methodWatched, tc.params(s)))
+			must.NoError(t, s.wait(nil)) // a pass published: the projects were recomputed
 			if n := s.lastDiagnostics(countsURI); (n == 0) != tc.fixed {
 				t.Errorf("counts.json after the notification: %d diagnostics, the fix seen = %v", n, tc.fixed)
 			}
-			must(t, s.request(map[string]any{"jsonrpc": jsonrpcV2, "id": 1, "method": methodShutdown})) // answered after the note's log
+			must.NoError(t, s.request(map[string]any{"jsonrpc": jsonrpcV2, "id": 1, "method": methodShutdown})) // answered after the note's log
 			if logs := s.logged(); logs != tc.logs {
 				t.Errorf("%d messages logged, want %d", logs, tc.logs)
 			}
-			must(t, s.note(methodExit, nil))
-			must(t, <-done)
+			must.NoError(t, s.note(methodExit, nil))
+			must.NoError(t, <-done)
 		})
 	}
 }

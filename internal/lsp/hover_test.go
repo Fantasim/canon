@@ -8,6 +8,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/fantasim/canonlang/internal/testkit/must"
 	"golang.org/x/tools/txtar"
 )
 
@@ -26,12 +27,12 @@ func TestHoverCap(t *testing.T) {
 		"/// Words.\nlet words: [String] = [" + strings.Join(words, ", ") + "]\n"
 	s := newSession(t, txtar.Parse([]byte(law)))
 	done := s.start()
-	must(t, s.initialize(nil))
-	must(t, s.open([]string{"proj/a/a.canon"}))
-	must(t, s.wait(nil)) // the pass opens the project (DECISIONS 285)
+	must.NoError(t, s.initialize(nil))
+	must.NoError(t, s.open([]string{"proj/a/a.canon"}))
+	must.NoError(t, s.wait(nil)) // the pass opens the project (DECISIONS 285)
 	for id, line := range map[int]int{1: 4, 2: 7} {
 		req := fmt.Sprintf(`{"jsonrpc":"2.0","id":%d,"method":"textDocument/hover","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":%d,"character":4}}}`, id, line)
-		must(t, s.sendLine([]string{req}))
+		must.NoError(t, s.sendLine([]string{req}))
 	}
 	cases := map[int]string{1: "[" + strings.Join(ints, ", ") + "]", 2: "[" + strings.Join(words, ", ") + "]"}
 	for id, full := range cases {
@@ -41,7 +42,7 @@ func TestHoverCap(t *testing.T) {
 			t.Errorf("hover %d shows %d bytes, cut %v; want at most %d bytes of the text, on a character, then %q", id, len(text), ok, hoverBytes, cutMark)
 		}
 	}
-	must(t, s.in.Close())
+	must.NoError(t, s.in.Close())
 	<-done
 }
 

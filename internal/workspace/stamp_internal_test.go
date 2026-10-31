@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/testkit/must"
 )
 
 const (
@@ -27,24 +28,17 @@ var stampPlatforms = []string{"linux", "android", "darwin", "ios", "freebsd", "n
 
 func stampTime() time.Time { return time.Date(stampYear, time.January, 1, 0, 0, 0, 0, time.UTC) }
 
-func stampMust(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 // stampChtimes sets abs back to the year stampYear.
 func stampChtimes(t *testing.T, abs string) {
 	t.Helper()
-	stampMust(t, os.Chtimes(abs, stampTime(), stampTime()))
+	must.NoError(t, os.Chtimes(abs, stampTime(), stampTime()))
 }
 
 // stampChange is the change time of abs.
 func stampChange(t *testing.T, abs string) int64 {
 	t.Helper()
 	info, err := os.Stat(abs)
-	stampMust(t, err)
+	must.NoError(t, err)
 	ctime, _, _ := sysStamp(info.Sys())
 	return ctime
 }
@@ -54,14 +48,14 @@ func stampChange(t *testing.T, abs string) int64 {
 func stampTick(t *testing.T, abs string) {
 	t.Helper()
 	probe := filepath.Join(t.TempDir(), "probe")
-	stampMust(t, os.WriteFile(probe, nil, 0o644))
+	must.NoError(t, os.WriteFile(probe, nil, 0o644))
 	want := stampChange(t, abs)
 	deadline := time.Now().Add(stampTickWait)
 	for stampChange(t, probe) == want {
 		if time.Now().After(deadline) {
 			t.Fatal("the change time never moved")
 		}
-		stampMust(t, os.Chtimes(probe, time.Now(), time.Now()))
+		must.NoError(t, os.Chtimes(probe, time.Now(), time.Now()))
 	}
 }
 
@@ -101,9 +95,9 @@ type stampRow struct {
 func stampFile(t *testing.T, dir string, mode os.FileMode) string {
 	t.Helper()
 	abs := filepath.Join(dir, stampTarget)
-	stampMust(t, os.WriteFile(abs, []byte(stampOld), 0o644))
+	must.NoError(t, os.WriteFile(abs, []byte(stampOld), 0o644))
 	stampChtimes(t, abs)
-	stampMust(t, os.Chmod(abs, mode))
+	must.NoError(t, os.Chmod(abs, mode))
 	return abs
 }
 
@@ -111,23 +105,23 @@ func stampPlain(t *testing.T, dir string) string { return stampFile(t, dir, 0o64
 
 var stampRows = []stampRow{
 	{"in place", kindFile, stampNew, stampPlain, func(t *testing.T, abs string) {
-		stampMust(t, os.WriteFile(abs, []byte(stampNew), 0o644))
+		must.NoError(t, os.WriteFile(abs, []byte(stampNew), 0o644))
 		stampChtimes(t, abs)
 	}},
 	{"renamed over", kindFile, stampNew, stampPlain, func(t *testing.T, abs string) {
 		tmp := abs + ".new"
-		stampMust(t, os.WriteFile(tmp, []byte(stampNew), 0o644))
+		must.NoError(t, os.WriteFile(tmp, []byte(stampNew), 0o644))
 		stampChtimes(t, tmp)
-		stampMust(t, os.Rename(tmp, abs))
+		must.NoError(t, os.Rename(tmp, abs))
 	}},
 	{"listing", kindDir, "", func(t *testing.T, dir string) string {
 		d := filepath.Join(dir, "d")
-		stampMust(t, os.Mkdir(d, 0o755))
-		stampMust(t, os.WriteFile(filepath.Join(d, "a.canon"), nil, 0o644))
+		must.NoError(t, os.Mkdir(d, 0o755))
+		must.NoError(t, os.WriteFile(filepath.Join(d, "a.canon"), nil, 0o644))
 		stampChtimes(t, d)
 		return d
 	}, func(t *testing.T, abs string) {
-		stampMust(t, os.Rename(filepath.Join(abs, "a.canon"), filepath.Join(abs, "b.canon")))
+		must.NoError(t, os.Rename(filepath.Join(abs, "a.canon"), filepath.Join(abs, "b.canon")))
 		stampChtimes(t, abs)
 	}},
 	{"made readable", kindFile, stampOld, func(t *testing.T, dir string) string {
@@ -135,7 +129,7 @@ var stampRows = []stampRow{
 			t.Skip("root reads a file of mode 000")
 		}
 		return stampFile(t, dir, 0)
-	}, func(t *testing.T, abs string) { stampMust(t, os.Chmod(abs, 0o644)) }},
+	}, func(t *testing.T, abs string) { must.NoError(t, os.Chmod(abs, 0o644)) }},
 }
 
 // API.md S1, DECISIONS 374: a name replaced keeping its size and modification time, or made
@@ -147,7 +141,7 @@ func TestRefreshChangeTime(t *testing.T) {
 	for _, row := range stampRows {
 		t.Run(row.name, func(t *testing.T) {
 			dir, err := filepath.EvalSymlinks(t.TempDir())
-			stampMust(t, err)
+			must.NoError(t, err)
 			abs := row.setup(t, dir)
 			late := func() time.Time { return time.Now().Add(stampLate) }
 			s := newSnapFS(project.OS(), nil, late)
@@ -160,7 +154,7 @@ func TestRefreshChangeTime(t *testing.T) {
 			stampTick(t, abs)
 			row.apply(t, abs)
 			next, changed, err := s.refresh(context.Background(), nil)
-			stampMust(t, err)
+			must.NoError(t, err)
 			if want := []name{{kind: row.kind, abs: abs}}; !slices.Equal(changed, want) {
 				t.Fatalf("changed = %v, want %v", changed, want)
 			}

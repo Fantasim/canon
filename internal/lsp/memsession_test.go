@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/fantasim/canonlang/internal/testkit/must"
 )
 
 // editing is an editor session: what it opens next, and its open documents, oldest first.
@@ -172,7 +174,7 @@ const (
 // DECISIONS 368: an editing session holds about what the first full check held.
 func TestEditsBounded(t *testing.T) {
 	dir, err := filepath.EvalSymlinks(t.TempDir())
-	must(t, err)
+	must.NoError(t, err)
 	writeSynth(t, dir, shapeSmall)
 	samples := editSession(t, dir, shapeSmall.candidate, sessionRun{edits: boundedEdits})
 	first, last := samples[0], samples[len(samples)-1]
@@ -189,9 +191,9 @@ func TestMemoryBench(t *testing.T) {
 	files := strings.Split(*flagMemFiles, ",")
 	pick := func(k int) string { return files[k%len(files)] }
 	dir, err := filepath.EvalSymlinks(t.TempDir())
-	must(t, err)
+	must.NoError(t, err)
 	if *flagMemDir != "" {
-		must(t, os.CopyFS(dir, os.DirFS(*flagMemDir))) // the copy alone is edited
+		must.NoError(t, os.CopyFS(dir, os.DirFS(*flagMemDir))) // the copy alone is edited
 	} else {
 		writeSynth(t, dir, shapeLarge)
 		pick = shapeLarge.candidate

@@ -10,6 +10,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/testkit/must"
 	"golang.org/x/tools/txtar"
 )
 
@@ -49,17 +50,17 @@ func TestCancelDuringPass(t *testing.T) {
 			<-ctx.Done()
 		}
 	}})
-	must(t, s.initialize(nil))
-	must(t, s.open([]string{"proj/a/a.canon"}))
+	must.NoError(t, s.initialize(nil))
+	must.NoError(t, s.open([]string{"proj/a/a.canon"}))
 	waitClosed(t, entered)
-	must(t, s.change([]string{"proj/a/a.canon", "edits/bool.canon"}))
-	must(t, s.wait(nil))
+	must.NoError(t, s.change([]string{"proj/a/a.canon", "edits/bool.canon"}))
+	must.NoError(t, s.wait(nil))
 	expectQuiet(t, s)
 	published := s.publications()
 	if len(published) != 1 || !strings.Contains(published[0], "expected Bool") {
 		t.Fatalf("publications %q, want one, of the changed text", published)
 	}
-	must(t, s.in.Close())
+	must.NoError(t, s.in.Close())
 	<-done
 }
 
@@ -75,18 +76,18 @@ func TestPanickedPassRequeues(t *testing.T) {
 			panic("seam")
 		}
 	}})
-	must(t, s.initialize(nil))
-	must(t, s.open([]string{"proj/a/a.canon"}))
+	must.NoError(t, s.initialize(nil))
+	must.NoError(t, s.open([]string{"proj/a/a.canon"}))
 	waitClosed(t, panicked)
-	must(t, s.open([]string{"loose/x.canon"}))
-	must(t, s.wait(nil))
+	must.NoError(t, s.open([]string{"loose/x.canon"}))
+	must.NoError(t, s.wait(nil))
 	published := strings.Join(s.publications(), "\n")
 	for _, want := range []string{"/proj/a/a.canon", "/loose/x.canon"} {
 		if !strings.Contains(published, want) {
 			t.Errorf("no publication for %s after the panic: %s", want, published)
 		}
 	}
-	must(t, s.in.Close())
+	must.NoError(t, s.in.Close())
 	<-done
 	if !strings.Contains(string(joined(s.rec.since(0))), "panic on a background goroutine: seam") {
 		t.Error("the panic was not logged")
@@ -99,7 +100,7 @@ func TestNoFileOnProjectCanon(t *testing.T) {
 	bag := diag.NewBag(set, "")
 	diag.E1003.At(source.Span{}, "/r").Report(bag)
 	got, err := diagnosticsOf(build.Findings{Files: set, List: bag.Findings()}, "/r")
-	must(t, err)
+	must.NoError(t, err)
 	list := got[project.Join("/r", project.FileName)]
 	if len(got) != 1 || len(list) != 1 || list[0].Range != (textRange{}) || list[0].Code != string(diag.E1003.Def().Code) {
 		t.Fatalf("got %+v", got)

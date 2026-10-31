@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	canon "github.com/fantasim/canonlang/api"
+	"github.com/fantasim/canonlang/internal/testkit/must"
 	"golang.org/x/tools/txtar"
 )
 
@@ -20,22 +21,22 @@ import (
 func TestReferencesMatchRefs(t *testing.T) {
 	// The fixture of testdata/references.txtar, its request sent once the pass opened the project.
 	data, err := os.ReadFile(filepath.Join("testdata", "references.txtar"))
-	must(t, err)
+	must.NoError(t, err)
 	s := newSession(t, txtar.Parse(data))
 	done := s.start()
-	must(t, s.initialize(nil))
-	must(t, s.open([]string{"proj/r/r.canon"}))
-	must(t, s.wait(nil))
+	must.NoError(t, s.initialize(nil))
+	must.NoError(t, s.open([]string{"proj/r/r.canon"}))
+	must.NoError(t, s.wait(nil))
 	req := `{"jsonrpc":"2.0","id":1,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/r/r.canon"},"position":{"line":21,"character":2}}}`
-	must(t, s.sendLine([]string{req}))
+	must.NoError(t, s.sendLine([]string{req}))
 	got := s.locations(t, 1)
-	must(t, s.in.Close())
+	must.NoError(t, s.in.Close())
 	<-done
 	p, err := canon.Open(filepath.Join(s.dir, "proj"), canon.Options{})
-	must(t, err)
+	must.NoError(t, err)
 	defer func() { _ = p.Close() }()
 	res, err := p.Refs(context.Background(), "statuses.done")
-	must(t, err)
+	must.NoError(t, err)
 	var want []string
 	for _, r := range res.Refs {
 		want = append(want, fmt.Sprintf("%s:%d:%d", r.File, r.Line, r.Col))
@@ -69,7 +70,7 @@ func (s *session) locations(t *testing.T, id int) []string {
 func TestProjectAboveError(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "file")
-	must(t, os.WriteFile(file, nil, 0o644))
+	must.NoError(t, os.WriteFile(file, nil, 0o644))
 	// Windows reports a path under a regular file as not found, not as ENOTDIR.
 	if runtime.GOOS != "windows" {
 		root, err := projectAbove(filepath.ToSlash(filepath.Join(file, "x.canon")))

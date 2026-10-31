@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+
+	"github.com/fantasim/canonlang/internal/testkit/must"
 )
 
 var flagMemVisit = flag.Int("lsp.memvisit", 0, "large synthetic projects the visit bench opens, edits and closes one after another (0: skip)")
@@ -22,7 +24,7 @@ func TestMemoryVisitBench(t *testing.T) {
 		t.Skip("opt-in: -lsp.memvisit <projects>")
 	}
 	base, err := filepath.EvalSymlinks(t.TempDir())
-	must(t, err)
+	must.NoError(t, err)
 	c := startMem(t, base, config{debounce: memDebounce})
 	var samples []sample
 	for k := range *flagMemVisit {

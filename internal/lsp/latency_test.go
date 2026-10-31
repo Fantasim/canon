@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/fantasim/canonlang/internal/testkit/must"
 )
 
 var flagBench = flag.Int("lsp.bench", 0, "entries of a benchmark project to measure diagnostics latency on (0: skip)")
@@ -31,13 +33,13 @@ func TestLatency(t *testing.T) {
 	s := sessionIn(t, dir)
 	done := s.start()
 	entry := firstEntry(t, dir)
-	must(t, s.initialize(nil))
+	must.NoError(t, s.initialize(nil))
 	start := time.Now()
-	must(t, s.open([]string{entry}))
-	must(t, s.wait(nil))
+	must.NoError(t, s.open([]string{entry}))
+	must.NoError(t, s.wait(nil))
 	t.Logf("first pass after open (cold check of every package): %v", time.Since(start))
 	text, err := os.ReadFile(filepath.Join(dir, entry))
-	must(t, err)
+	must.NoError(t, err)
 	broken := strings.Replace(string(text), "  tier: ", "  tier: \"x\" // ", 1)
 	var times []time.Duration
 	for i := range latencyEdits {
@@ -46,11 +48,11 @@ func TestLatency(t *testing.T) {
 			s.files["edit"] = text
 		}
 		start := time.Now()
-		must(t, s.change([]string{entry, "edit"}))
-		must(t, s.wait(nil))
+		must.NoError(t, s.change([]string{entry, "edit"}))
+		must.NoError(t, s.wait(nil))
 		times = append(times, time.Since(start))
 	}
-	must(t, s.in.Close())
+	must.NoError(t, s.in.Close())
 	<-done
 	slices.Sort(times)
 	p95 := times[len(times)*95/100-1]
@@ -64,7 +66,7 @@ func TestLatency(t *testing.T) {
 // benchProject writes a benchmark project of n entries with benchgen, seed 1.
 func benchProject(t *testing.T, n int) string {
 	dir, err := filepath.EvalSymlinks(t.TempDir())
-	must(t, err)
+	must.NoError(t, err)
 	out := filepath.Join(dir, "bench")
 	cmd := exec.Command("go", "run", "./internal/testkit/cmd/benchgen", "-seed", "1", "-n", strconv.Itoa(n), "-out", out)
 	cmd.Dir = filepath.Join("..", "..")
@@ -77,19 +79,12 @@ func benchProject(t *testing.T, n int) string {
 // firstEntry is the first entry file of the items package, relative to dir.
 func firstEntry(t *testing.T, dir string) string {
 	matches, err := filepath.Glob(filepath.Join(dir, "items", "*", "ITM_*.canon"))
-	must(t, err)
+	must.NoError(t, err)
 	if len(matches) == 0 {
 		t.Fatal("no entry file")
 	}
 	slices.Sort(matches)
 	rel, err := filepath.Rel(dir, matches[0])
-	must(t, err)
+	must.NoError(t, err)
 	return filepath.ToSlash(rel)
-}
-
-func must(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
-	}
 }

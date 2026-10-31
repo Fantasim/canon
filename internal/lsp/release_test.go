@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fantasim/canonlang/internal/testkit/must"
 	"golang.org/x/tools/txtar"
 )
 
@@ -23,7 +24,7 @@ const (
 // DECISIONS 368, CLI.md §4: projects visited in turn hold one project's memory.
 func TestProjectsReleasedOnClose(t *testing.T) {
 	base, err := filepath.EvalSymlinks(t.TempDir())
-	must(t, err)
+	must.NoError(t, err)
 	c := startMem(t, base, config{debounce: memDebounce})
 	var samples []sample
 	for k := range projectsVisited {
@@ -31,7 +32,7 @@ func TestProjectsReleasedOnClose(t *testing.T) {
 		writeSynth(t, dir, shapeSmall)
 		rel := filepath.ToSlash(filepath.Join(filepath.Base(dir), shapeSmall.candidate(0)))
 		data, err := os.ReadFile(filepath.Join(base, filepath.FromSlash(rel)))
-		must(t, err)
+		must.NoError(t, err)
 		c.open(rel, string(data))
 		c.wait()
 		samples = append(samples, measure()) // the project open: what one project holds
@@ -62,17 +63,17 @@ func TestReleaseDuringPass(t *testing.T) {
 			<-ctx.Done()
 		}
 	}, answering: func() { held.Do(func() { close(answering); <-free }) }})
-	must(t, s.initialize(nil))
-	must(t, s.open([]string{"proj/a/a.canon"}))
-	must(t, s.wait(nil))
-	must(t, s.change([]string{"proj/a/a.canon", "edits/bool.canon"}))
+	must.NoError(t, s.initialize(nil))
+	must.NoError(t, s.open([]string{"proj/a/a.canon"}))
+	must.NoError(t, s.wait(nil))
+	must.NoError(t, s.change([]string{"proj/a/a.canon", "edits/bool.canon"}))
 	waitClosed(t, computing)
-	must(t, s.send(map[string]any{"jsonrpc": "2.0", "id": 7, "method": methodHover, "params": positionParamsOf(s, "proj/a/a.canon")}))
+	must.NoError(t, s.send(map[string]any{"jsonrpc": "2.0", "id": 7, "method": methodHover, "params": positionParamsOf(s, "proj/a/a.canon")}))
 	waitClosed(t, answering)
-	must(t, s.closeDoc([]string{"proj/a/a.canon"}))
-	must(t, s.wait(nil))
+	must.NoError(t, s.closeDoc([]string{"proj/a/a.canon"}))
+	must.NoError(t, s.wait(nil))
 	freed.Do(func() { close(free) })
-	must(t, s.response([]byte("7")))
+	must.NoError(t, s.response([]byte("7")))
 	out := string(joined(s.rec.since(0)))
 	if !strings.Contains(out, fmt.Sprintf(`"id":7,"error":{"code":%d`, codeModified)) {
 		t.Errorf("the request on the released project did not answer ContentModified: %s", out)
@@ -81,7 +82,7 @@ func TestReleaseDuringPass(t *testing.T) {
 	if n := len(published); n != 2 || !strings.Contains(published[1], `"diagnostics":[]`) {
 		t.Errorf("publications %q, want the first pass's then the project's findings cleared", published)
 	}
-	must(t, s.in.Close())
+	must.NoError(t, s.in.Close())
 	<-done
 	if out := string(joined(s.rec.since(0))); strings.Contains(out, methodLog) {
 		t.Errorf("the release was logged: %s", out)
@@ -95,7 +96,7 @@ func TestReleaseDuringOpen(t *testing.T) {
 	read := func() buffers { return buffers{docs: map[string][]byte{abs: s.files["proj/a/a.canon"]}, gen: 1} }
 	var p *workspaceProject
 	p = newProject(s.dir+"/proj", projectHooks{opening: func() { p.close() }}, read)
-	must(t, p.sync(context.Background()))
+	must.NoError(t, p.sync(context.Background()))
 	if ws, _ := p.current(); ws != nil {
 		ws.Close()
 		t.Error("the open that finished after the release kept its workspace")
@@ -108,13 +109,13 @@ const scavengeQuiet = 50 * time.Millisecond
 // DECISIONS 368: after a pass and quiet, freed memory goes back to the OS, once per pass.
 func TestScavengeWhenQuiet(t *testing.T) {
 	base, err := filepath.EvalSymlinks(t.TempDir())
-	must(t, err)
+	must.NoError(t, err)
 	writeSynth(t, base, shapeSmall)
 	scavenged := make(chan struct{}, memPasses)
 	c := startMem(t, base, config{debounce: memDebounce, quiet: scavengeQuiet, scavenge: func() { scavenged <- struct{}{} }})
 	rel := shapeSmall.candidate(0)
 	data, err := os.ReadFile(filepath.Join(base, filepath.FromSlash(rel)))
-	must(t, err)
+	must.NoError(t, err)
 	c.open(rel, string(data))
 	c.wait()
 	waitScavenged(t, scavenged)
