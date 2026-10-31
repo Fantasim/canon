@@ -248,6 +248,8 @@ built for", not "which of millions of shapes is this".
 | `table` → `stable table`, add `@reload` | no |
 | change a `@json(pairs:)` template, or the list's upper length bound (the slot count) | yes |
 
+A refinement is outside the hash: a file built before a refinement narrowed keeps a matching `$schema`, and its loader refuses each value outside the narrower refinement at its path and accepts the rest (CODEGEN.md §5.15); widening one keeps every older file valid.
+
 ---
 
 ## 6. Versioning (NFR-03)

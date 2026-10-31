@@ -126,9 +126,7 @@ func (p *Project) Close() error
   anything else and logs one line at level Warn, however many journals it rolled back, whenever
   it removed a journal that decodes (even if no file needed restoring). A journal whose writer
   still runs on this host (N11: one of its locks is held, or, recording none, its process runs) is
-  left alone; `Open` never waits for a lock. A journal it must keep (written on another host, a file
-  changed since the edit, a journal that fails N11's checks) makes `Open` fail with an error
-  wrapping `ErrProject` that names the journal and the files.
+  left alone; `Open` never waits for a lock. A journal it must keep (written on another host, a file changed since the edit, a journal that fails N11's checks, a rollback the file system refuses) makes `Open` fail with an error wrapping `ErrProject` that names the journal and each file by its display path, never by an absolute or temporary name; a file-system cause keeps its operation and stays reachable through `errors.Is` and `errors.As`. A path the journal records that no root places is quoted as recorded (DECISIONS 201, 416).
 - **O6.** After `Close`, every method returns `ErrClosed`, except `Revision()`, which has no
   error and returns the revision of the newest snapshot read (S10). `Close` stops every `Watch`
   and is idempotent.
@@ -207,7 +205,7 @@ snapshot from start to end, so it never sees a half-applied change.
   keeping its size and modification time (`cp -p`, `rsync -t`, `tar x`, `touch -r`) or made
   readable by `chmod` is read again. Elsewhere (Windows; an FS whose `Sys()` is anything else) the
   stamp is size and modification time alone, and such a change is seen only once one of them
-  changes (DECISIONS 374). A name is also read again at every refresh while its modification time
+  changes (DECISIONS 374). On every platform a name reported changed is read again at the next refresh whatever its stamp, with its directory's listing: a name an OS notification of a `Watch` reports (§12), a file the language server's client reports in `workspace/didChangeWatchedFiles`, and each file a `*StaleError` of an `Edit` or a writing `Build` names (DECISIONS 421). A name is also read again at every refresh while its modification time
   is the zero time, or while it was read less than 2 s after its modification or change time,
   since a later change within the same timestamp would not show. A changed hash or listing makes a
   new snapshot; the same content keeps the snapshot. While a `Watch` is active, the watcher keeps
@@ -541,7 +539,7 @@ Methods, all cheap, never re-evaluating:
 - **R6.** A value that could not be computed (poisoned, EVALUATION.md) is `ErrNoValue`, which
   wraps the findings that explain why: the cause evaluation or verification recorded for its root
   (its own hard error or, through taint, the first poisoned value it read, in any package), else
-  the checker's findings in the root's declaration and in its active layers' amendments, else those
+  the findings in the root's declaration (the checker's, and for a constant its fold's) and in its active layers' amendments, else those
   of the checker-broken declarations it depends on. A root left unevaluated because its package's
   budget was spent has that package's `E4401` as its cause (DECISIONS 328).
 - **R6a.** `Value(ctx, path)` is `ValueWith(ctx, ValueRequest{Path: path})`. `ValueWith` takes a
@@ -613,6 +611,7 @@ type Ref struct {
     user); names in translations are `view`, names in `test` declarations `code`. A string literal
     keys a ref only for a `String` key or a literal of a literal union (TYPES.md §4.1); a member
     name keys an enum-keyed ref.
+  - A bound level-1 ref (TYPES.md §10.2) is a ref of the entry its key names in the collection its instance's field holds, whatever identity that entry carries: in `{ ...arena, boss: 1 }` the copied `mobs` keep `arena`'s identity (TYPES.md §6.3), so `boss` is a `value` ref of `arena.mobs[1]`, and R11's edge goes there (DECISIONS 410).
   - A key lookup through a per-instance collection (a keyed-list or table field) is a `code` ref
     of an element only when its receiver resolves statically to that element's instance (a `let`
     root, literal indices and keys); a dynamic receiver is not a ref (the re-check, E18, catches
@@ -932,7 +931,7 @@ source and where the edit goes.
   the path, `Set` replaces them all with the one new amendment line. An `AddEntry` into a table the
   layer already amends adds one line and keeps the others. Under an `EditLayer` that is not active
   in the session, an `AddEntry` is refused as `ErrNotEditable` with reason `layer`: no path reaches
-  the new entry to undo it (DECISIONS 273).
+  the new entry to undo it (DECISIONS 273). An amendment whose right-hand side is a `load(…)` holds no literal: a path below it is `ErrNotEditable` with reason `layer` (its JSON lies outside the layer file, and the base may read it); `Set` of the amended path itself replaces the `load` (W11).
 
 ---
 
@@ -1008,7 +1007,7 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   record's computed branch, computed exactly as the decoder computes it (WIRE.md §5.9, DEP-02;
   defaults from the record's parameters); a symbol it introduces into a `Never` branch, or that
   names nothing in a branch that can be computed, is a `ValueError`. A scalar literal given to a
-  dependent type fits when a branch takes it (TYPES.md §11.4; DECISIONS 267). Under an `EditLayer`
+  dependent type fits when a branch takes it (TYPES.md §11.4; DECISIONS 267). A list, record or map literal given to a dependent type is typed against the branch its record computes in the state the earlier ops left; where that branch cannot be computed, it is a `ValueError` (source text takes its first branch instead, DECISIONS 171). Under an `EditLayer`
   that is not active in the session, a layer `Set` is typed against the declared type at the path,
   since the session cannot see the layer's own drivers (W11, DECISIONS 273).
 - **V2.** Only the static type is checked at this point. Refinements (`Int(1..=100)`), references
@@ -1353,7 +1352,7 @@ func RenameName(name, newName string) Op
   the declaration; uses in value and type position, qualified forms and `import` lists; selector
   names, literal field names (in `let` values and entry files), named arguments, patterns,
   `keyed by`, `ref` and `entry` lines; view items; `amend` targets and segments in every layer
-  file, active or not; translation key segments, which gain or lose their kind word when the
+  file, active or not; the targets of `expect package` substitutions; translation key segments, which gain or lose their kind word when the
   segment becomes or stops being reserved (I18N.md K4); `emit … values:` names; `{f}` variables of
   `@files` templates. Comments, doc comments, string texts, file paths (an entry file stays in its
   directory, as DECISIONS 256), data files, outputs and `canon.lock` are not changed. A field
@@ -1537,8 +1536,7 @@ comments, and a trailing comment on its last line.
   the same directory, renames each over its target, performs deletions, removes emptied directories,
   removes the journal, and publishes the new snapshot. When the FS offers `SyncDir` (§2.2), the
   directories are synced before the first rename and before the journal is removed.
-- **N11.** If a step after the journal fails, every file already changed is restored from the
-  journal and the edit returns the error. If the process dies, the next `Open` restores them (O5).
+- **N11.** If a step after the journal fails, every file already changed is restored from the journal and the edit returns the error, naming files as O5 does; if that rollback fails too, the error also wraps `ErrProject` and the journal is kept. If the process dies, the next `Open` restores them (O5).
   A journal is untrusted input (`Open` runs `Recover`, and a cloned repository could ship one), so
   every rollback and recovery holds to these checks:
   - it restores or removes only files still in the new state the journal records (the digest of
@@ -1726,7 +1724,7 @@ type Event struct {
   runs one check of every package, so the read set of each is known (one package at a time when they
   cannot be checked together). The watcher follows the OS's change notifications for the OS FS or an
   FS whose `OSBacked()` is true (§2.2), and falls back to polling, with one Warn line, when they
-  cannot start or later fail. Whatever the notifications deliver, any change to the read set that changes a stamp (S1) is seen
+  cannot start or later fail. Whatever the notifications deliver, any change to the read set that changes a stamp or that a notification reports (S1) is seen
   within the resync interval (at most 1 s): the watcher also stats the read set, watches the
   directories of link targets and retries directories it could not watch.
 - **W13.** `fn` is called on one goroutine, never concurrently with itself, in revision order. An

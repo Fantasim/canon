@@ -346,6 +346,8 @@ and source order. Prints each failing `expect` with its location, the expected a
 and for `fails`/`warns` the findings that were actually produced. `fails` and `warns` match a
 message text, a check name or a code (`expect v fails E3204`, SPEC §18).
 
+`expect package { v: e, … }` runs the package's checks over substituted values (EVALUATION.md §10.5); its failures print as any other, and in JSON each captured finding carries its `path` and `check`.
+
 ```
 FAIL  resource/events/event.canon:176  overlapping windows are refused
   resource/events/event.canon:177  expect { ...sample, schedule: [at(Mon, 20, 22), at(Mon, 21, 23)] } fails "overlaps an earlier window"
@@ -642,9 +644,7 @@ exits as API.md §15 says. A request whose top level is not a JSON object is `Er
 
 Exit: 0, 1, 2, 3.
 
-An edit takes the writer locks of the packages of every file it writes, a JSON file's reading
-packages included (DECISIONS 352, 375), rolls back under them an unfinished edit of those packages
-(API.md N11), and runs API.md N9 under them.
+An edit takes the writer locks of the packages of every file it writes, of each package whose read set holds a file it writes or lists a directory it adds a name to or removes one from, and of each package whose asset root holds such a name (API.md E17; DECISIONS 352, 375, 417), rolls back under them an unfinished edit of those packages (API.md N11), and runs API.md N9 under them.
 
 ### 3.16 `canon rename`
 

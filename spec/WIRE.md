@@ -218,6 +218,8 @@ For variants and inline fields it is `E3318`, at the field or case, when:
   name, first path segment or `$` key of the parent record;
 - a record has more than one `@json(inline)` field.
 
+**Wire names of members and cases** [`E3316`]. The wire values of an enum's members (retired included: `= "w"`, `@json("w")` in an enum with `@codes`, else the name) are pairwise distinct, and so are the wire names of a variant's cases; the second is `E3316`, at its name, since decoding answers the first and a retired member's wire stays reserved as its code does (§5.3). A wire name written in source (a field's `@json("w")`, a `path:` segment, a `pairs:` template, a variant's `tag:`, a case's or an enum member's wire) holds no U+0000: generated C++ readers compare names as C strings and would cut it (`E3316`). No legitimate use exists, so no way out is needed; write another character. Values, map keys and `none:` markers may hold U+0000.
+
 ---
 
 ## 5. The wire mapping
@@ -262,7 +264,7 @@ Encode `false` → `0`, `true` → `1`. Decode: only the integer tokens `0` and 
 
 - **Wire value** (WIR-04): the member's name, or its `= "…"` string (plain enums), or its
   `@json("…")` name (`@codes` enums, where `= N` is the code). `Tone.series_1` has wire
-  `"series-1"`; `Element.FIRE` has wire `"FIRE"` and code `1`.
+  `"series-1"`; `Element.FIRE` has wire `"FIRE"` and code `1`. Wire values are unique within an enum (§4.2).
 - **Encode**: a JSON string holding the wire value. With `@json(codes)`: a JSON integer, the code.
 - **Decode**: a string equal, byte for byte, to one member's wire value, else `E7111`. The message
   names the closest member and, when the string is a Canon name whose wire differs
@@ -389,7 +391,7 @@ JSON source produces no finding (TYPES.md decides whether a Canon literal settin
   `@json(tag:)`), then the case's fields in declaration order, then the case's `$` keys. A case
   without fields is `{"kind": "nothing"}`.
 - A case's wire name is its Canon name or its `@json("…")`. `@json(case:)` on a variant converts the
-  field names of all its cases; on a case, of that case only; never the case names.
+  field names of all its cases; on a case, of that case only; never the case names. Case wire names are unique within a variant (§4.2).
 - **Decode**: the object must have the tag key [`E7112` if missing], holding a string [`E7110`]
   equal to a case's wire name [`E7112` if unknown, naming the cases]. Keys that belong to another
   case are `E3301` with a hint naming that case. A retired case decodes, then `E3506` applies
@@ -514,7 +516,7 @@ Any other `$` key in a source file is an unknown key (`E3301`, or ignored with `
 | layout | any | canonical bytes (§7) |
 
 A `types`-mode decoder (EMT-05) implements the source-wire structure rules: defaults, `none`,
-units, paths, inline variants, `int`, `bits`, `codes`. It does not re-validate refinements or refs:
+units, paths, inline variants, `int`, `bits`, `codes`. It checks range and length refinements (CODEGEN.md §5.15), as data loaders do, and no pattern, `where` or ref:
 the file it reads is the one `canon check` validated. Data-mode loaders may assume the data wire.
 
 ### 5.14 Parallel keys: `@json(pairs:)` (DECISIONS 21)
@@ -582,7 +584,7 @@ stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"]
   value of an `amend` or layer path decodes in the scope of the field the path names, as an edit's
   `FromJSON` at that path does; a path through `none` (`E1905`) gives no scope (DECISIONS 272).
 - The path must exist and be a readable regular file [`E7004`]; under an optional root absent on
-  this machine, [`E7009`] (§2.2).
+  this machine, [`E7009`] (§2.2). The path follows `load.dir`'s link bounds (§6.5): one that is or passes through a link whose target resolves outside the declared roots and the project is `E7004` (`ReadOutsideRoots`), a dangling link or a loop `E7004` (`ReadMissing`, `ReadLinkLoop`); the project root's own ancestors never count as links (DECISIONS 420).
 - The path of every `load` form is a string literal without interpolation [`E7008`, at the path,
   or at the `load` when it has no positional path], so the files
   a package reads are known from its sources alone, before any checking or evaluation, as the
@@ -651,7 +653,7 @@ Pattern syntax, per `/`-separated segment:
 - Matching is case-sensitive on every platform. Characters are Unicode code points of UTF-8 names.
 - **Dotfiles.** A name starting with `.` matches only a pattern segment that starts with a literal
   `.`. `**` never enters a directory whose name starts with `.`.
-- Only regular files match (after following links). Symbolic links are followed only when their
+- Only regular files match (after following links). A link is an entry the file system reads as one: a symbolic link, or a Windows junction or directory mount point (an entry Go lists as irregular whose target `os.Readlink` reads). Every rule of this section, of §6.1 and of TYPES.md §13.4 holds for both, and findings call both "symbolic link". A mount point whose target is a volume (`\\?\Volume{…}\`) has no path the bounds can judge and counts as dangling. Any other entry is no link and keeps its kind (DECISIONS 419). Symbolic links are followed only when their
   target resolves inside a declared root or the project; any other link is skipped with `W7115`. A
   directory link already on the current walk path is not followed again. The same bounds hold for
   a `load.dir` base directory, and a literal `load.dir` path, that is or passes through a link: outside

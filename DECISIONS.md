@@ -3088,21 +3088,21 @@ See SPEC §23: the name, several views per type, binary layouts.
 Checker and edit gaps recorded for a later ruling (log-2026-09-29 M4 U-E22-r, "M4.1 built", "M4.1
 round 2", "PS1 review", "PS2 round 2"):
 
-- `Target(sub.kind)` with `sub: Sub(goal)` gives `E3003` (TYPES §11.1).
+- ~~`Target(sub.kind)` with `sub: Sub(goal)` gives `E3003` (TYPES §11.1).~~ Ruled: 411.
 - VIEWMODEL J13/J14 do not say how the studio follows a driver path through a ref (`Target(g.goal)`,
-  and since 307 `Member(column.values)`); log-2026-10-05.
-- `E3806` on a dependent ref (TYPES §11.1): `aim: Aim(foe)` with `foe: Pick(goal)`, where `Pick` is
+  and since 307 `Member(column.values)`); log-2026-10-05. (open: a view-model format choice, ADR-0023 §8.4)
+- ~~`E3806` on a dependent ref (TYPES §11.1): `aim: Aim(foe)` with `foe: Pick(goal)`, where `Pick` is
   a ref chosen by the driver `goal`, from M4.1's builder report (log-2026-09-29 "Sync 2 review: the Undo verification gate"):
-  to confirm or rule.
-- An amend path into a dependent map (`dm["a"]`) gives `E1905`/`E2102`, although EVALUATION §9.2
-  allows `[k]` on a map and TYPES §11.5 types a dependent map as `{ref c: DepUnion}`.
-- A list or brace literal given straight to a dependent type with collection branches is refused
-  where the arm cannot be computed.
-- E15 drops a map with dependent values to its default.
-- An edit-layer amendment whose right-hand side is a `load(…)`: its JSON lies outside the layer
-  file.
-- API.md R6 gives no cause for a constant only a stage-E fold evaluated (the folder reports
-  `E4102`; a cold `Cause` is empty).
+  to confirm or rule.~~ Ruled: 411.
+- ~~An amend path into a dependent map (`dm["a"]`) gives `E1905`/`E2102`, although EVALUATION §9.2
+  allows `[k]` on a map and TYPES §11.5 types a dependent map as `{ref c: DepUnion}`.~~ Ruled: 409.
+- ~~A list or brace literal given straight to a dependent type with collection branches is refused
+  where the arm cannot be computed.~~ Ruled: 411.
+- ~~E15 drops a map with dependent values to its default.~~ Ruled: 411.
+- ~~An edit-layer amendment whose right-hand side is a `load(…)`: its JSON lies outside the layer
+  file.~~ Ruled: 411.
+- ~~API.md R6 gives no cause for a constant only a stage-E fold evaluated (the folder reports
+  `E4102`; a cold `Cause` is empty).~~ Ruled: 411.
 
 325. **Releases for Windows and macOS; notes from the tag (CLI.md §7; amends 276).** A release
      also builds windows/amd64 (`canon_<version>_windows_amd64.zip` holding `canon.exe`) and
@@ -3327,6 +3327,7 @@ round 2", "PS1 review", "PS2 round 2"):
      unsound, log-2026-10-08).
      Reason: merging N maps first-wins needed a `var` loop or `groupBy` and `[0]` (Sovereign's
      ui.servernames, handoff 2026-10-08-sovereign-port-followups item 2).
+     [amended by 408]
 
 339. **Open enums in Go `types` mode (CODEGEN.md §2.1, §5.2, §5.13; ERRORS.md E8009, E8019).**
      `emit go { mode: types, open: [Dst, ItemId] }`. `open` is a `go` option: a non-empty list of
@@ -3368,6 +3369,7 @@ round 2", "PS1 review", "PS2 round 2"):
      where the owner's plan would allow one (the importer cannot see the owner's values; owed). C++ and
      TypeScript: owed if asked. Reason: a top-level
      `{TextId: TextEntry}` file had no public decoder (handoff item 3).
+     [amended by 407]
 
 341. **An output is never an input of its own build (CODEGEN.md §2.4; WIRE.md §2.2; ERRORS.md
      E8026).** A file that a `load` of the project reads (`load`, `load.text`, `load.defines`, a
@@ -3722,7 +3724,7 @@ round 2", "PS1 review", "PS2 round 2"):
      hook" from it, so a decoded result is denied a decoder exactly when the owner writes no hook
      (340's owed note closed). Reason: parity owed by 340 (F14); the conservative reading denied a
      decoder to records held by another value.
-     [amended by 384]
+     [amended by 384, 407]
 
 364. **What the error type silences inside a literal in error (TYPES.md §1; ERRORS.md E3305,
      E3002, E3320).** The items of a literal in error (`E3305`, `E3002`) and a misplaced item
@@ -3870,6 +3872,7 @@ round 2", "PS1 review", "PS2 round 2"):
      `--watch`, repeated API calls) until another change: reads answered from the old content and
      every `Edit` of the file failed N9 as `*StaleError`; a file made readable by `chmod` stayed
      unreadable. One-shot CLI runs and Canon's own edits were never affected (log-2026-10-14).
+     [amended by 421]
 
 375. **Writer locks decide an edit journal's liveness and reach (API.md N10, N11, O5, S9; CLI.md
      §3.2, §3.4, §3.6, §3.15; ADR-0010, ADR-0021; amends 230, 352).** A journal is version 2 and adds
@@ -3889,6 +3892,7 @@ round 2", "PS1 review", "PS2 round 2"):
      v0.1.8 recovered with no lock, so a
      rollback could interleave with a live build, fmt or second recovery (lost updates, wedged
      journals), and any journal blocked every commit (a transient `ErrJournal`, log-2026-10-13).
+     [amended by 417]
 
 376. **Asset lookups follow `load.dir`'s link bounds (TYPES.md §13.4; WIRE.md §6.5, §10;
      ERRORS.md E3706).** A symbolic link met looking an asset up (the asset root's own path, a folder,
@@ -3900,6 +3904,7 @@ round 2", "PS1 review", "PS2 round 2"):
      file name: `E3701` under it). Reason: an asset passed on a file outside every declared root and
      the project, and its verdict depended on files the build does not declare (log-2026-10-12, F17);
      log-2026-09-28's "no bounds check" is reversed.
+     [amended by 419]
 
 377. **Output paths keep their declared spelling (CODEGEN.md §2.4, §2.9; WIRE.md §8.1; ERRORS.md
      E8152; CLI.md §3.4; extends 357).** 357 holds for every component `canon` may create of every
@@ -3953,6 +3958,7 @@ round 2", "PS1 review", "PS2 round 2"):
      "hard to fuck it up, like Rust"): Go's `encoding/json` and `database/sql` wrote a baked
      `StatusID` as its position, nlohmann a C++ id enum's, and TypeScript exported `StatusIdIndex`; a
      read-only scan of Resource and its consumers found no position persisted yet.
+     [amended by 402]
 
 380. **Import tiers (GRAMMAR.md §7.1; TYPES.md §3.1; SPEC §3.1, §3.2; ERRORS.md E1005 `tier`,
      E1006 `tiers`, E1017, E1018, E2007).** `project.canon` takes `tiers`, an ordered map of tier names
@@ -4007,6 +4013,7 @@ round 2", "PS1 review", "PS2 round 2"):
      `detail::k<E>Codes`, which lookup getters and constexpr lookups call instead of inlining a
      switch. A table's id enum defines its `ToWire` in the `.gen.cpp` too, as an array by position. Reason: Sovereign's `ItemId` (7,306 members) made a 137 s `.gen.cpp` at -O2 and
      charged every TU including the header; table ids already worked this way (§5.3).
+     [amended by 406]
 
 384. **C++ `types` decoders read maps (CODEGEN.md §5.9, §5.13; amends 312, 363).** A map in a
      class a C++ `types` emit decodes is read as the `data` loader reads it (WIRE.md §5.8 keys),
@@ -4063,6 +4070,7 @@ round 2", "PS1 review", "PS2 round 2"):
      of a package it reads defines, matched by token, over every region naming one. Reason: the
      wrap covered only an enum's own members spelled as their define, so table ids, constants and
      renamed members broke a TU including the defines (Sovereign: 6 of 7 packages).
+     [amended by 403, 404]
 
 392. **Generated C++ compiles in bounded memory whatever the data size (CODEGEN.md §2.7, §3.5,
      §5.1, §5.13, §7.3).** A list or map literal of 8 or more elements is read from a constant array at
@@ -4086,6 +4094,7 @@ round 2", "PS1 review", "PS2 round 2"):
      declared member, as in C++ (383). Reason: Resource's 11,800-member `TextId` compiled through
      23k-line switches (1.27 GB, 22.5 s; after: 90 MB, 1.3 s). A gen/go test compiles 12,000-member
      enums under 1 GB.
+     [amended by 406]
 
 394. **A release compiles the real consumer output at the consumer's flags (IMPLEMENTATION-PLAN
      §7.5).** Before a tag, an opt-in target builds the Sovereign project and compiles every
@@ -4140,3 +4149,209 @@ round 2", "PS1 review", "PS2 round 2"):
      Reason: the reviewable unit of a large graph is the schema location (a few hundred
      patterns for hundreds of thousands of edges); without the case, two cases' fields of the
      same name would share a pattern and a label meant for one would silently cover the other.
+
+398. **Testable package checks: `expect package` (EVALUATION.md §1, §10.1-§10.5; SPEC §10.1, §18;
+     GRAMMAR.md §5.10; CLI.md §3.5; FORMATTER.md §7.2; CONFORMANCE.md §6.1; API.md E33; ERRORS.md
+     E5004, E5006).** `expect package [{ name: value, … }]` with the unchanged outcome forms builds
+     the test's own package as stages A to D of `canon check` do, each named top-level `let` (public
+     or `local`) holding its value. A value is checked against the let's type (a static error is a
+     compile error, CHK-05) and computed in the test, reading its values and locals, before the
+     build. In the world every const and let is evaluated afresh, a substituted one without
+     initializer, entry or layer, so derived values follow; other packages' values are the test's;
+     the world's verdicts are its own; stage E, emits, vectors, the lock comparison and view checks
+     do not run. Every finding is captured; `E4401` stops the test; worlds record no conformance
+     call and are not built for vectors; the test's values do not change. `E5006` refuses another
+     declaration, another package's let or a let given twice; `E5004` checks names against the
+     package's checks. Rejected: a test naming a layer file, amend paths, a test-level header,
+     values evaluated in the world. Reason: Louis's first v0.2 pick (N5): package checks ran in no
+     test (§10.1-§10.2, E5004), so Resource tested none of its package checks and kept its rules in
+     `…Problems` functions.
+
+399. **Generated decoders refuse a value outside its range or length refinement (CODEGEN.md §5.15,
+     §5.9, §5.13; WIRE.md §5.13; SPEC §14.5, §19.3).** Every Go, C++ and TypeScript loader,
+     snapshot, `types` decoder and foreign reader checks each value it reads against the refinement
+     of its type at that position (fields, elements, keys, values, branches, stored results, rows,
+     `@text` results): integers, `Float`, `Float32` (the stored binary32 value in binary64),
+     `Duration` (ms), `String` (UTF-8 bytes), collections (element count). None and defaults are not
+     checked; patterns, `where`, refs and checks stay build-time. The failure, after the type rules
+     and a collection's elements, reads `expected a value in <R>` (or a byte length, an element
+     count), the same bytes everywhere. `ir.TypeRef` gains `Range` (§4 review rule). Reason:
+     decoders dropped what types promise (Sovereign re-checked 310 bounds by hand), and refinements
+     are outside the fingerprint, so only a check refuses data built before a narrower refinement;
+     the checks come from Canon types, so validation still lives only in Canon (DECISIONS 10).
+
+400. **Each finite side of a field's range or length refinement is a constant (CODEGEN.md §5.15,
+     §3.3).** C++ `T::k<F><Path><Min|Max|End>` (`Len…` for lengths), Go `T_<F>…`, TS `T_<F>…`; the
+     folded bound unchanged; Int: `int64_t` / untyped / `number` (`bigint` under `@ts(bigint)`;
+     unsafe TS bounds not written); Float: `double` / typed `float64` / `number`; Duration as §5.1.
+     Reserved in each plan (`E8005`). Reason: to `static_assert` hand-sized arrays against Canon
+     bounds; class scope and the `_` separator keep names of different types apart.
+
+401. **Rows of a generated value never move while their owner lives (CODEGEN.md §5.9).** As §5.9
+     "Addresses" states, pinned by one test per target. Reason: runtimes keep pointers into tables;
+     the property held but was written nowhere.
+
+402. **Enums without `@codes` are as safe as ids (SPEC §4.3, §15.2-§15.4; CODEGEN.md §2.5, §2.8,
+     §5.2, §5.5, §5.6; CONFORMANCE.md §3; amends 379).** Every generated type whose values are
+     declaration positions (a closed enum without `@codes`, a variant's kind enum, a dependent
+     type's branch enum) is built like a `baked` id. Go: `struct{ position uintN }`, `var` members,
+     its family's methods plus `Position() int` (array indexes in memory; an `ordered` enum's
+     members compare by it); a branch enum gains `String`, `Parse<B>`, `MarshalText` and
+     `UnmarshalText` over its branch names; no integer converts to or from one, `<`, arithmetic and
+     `const` do not compile, text encoders write the wire value, `database/sql` and `gob` refuse it;
+     a Canon `const` of one is a `var`; the zero value is the first member. C++ keeps `enum class`
+     and its casts and deletes `to_json`/`from_json` for each. TypeScript exports no `<E>Index` for
+     any enum, `@codes` and open ones included; a file that needs positions builds them privately
+     with `canonIndex`. `@codes` enums keep their integer, the locked code, in Go and C++; open
+     enums keep their wire. Go's `exhaustive` linter no longer sees these types: accepted. Reason:
+     Louis, 2026-10-14 (ADR-0021 §9): a declaration position left Go through conversions, `%d`,
+     `database/sql` and `gob`, C++ through nlohmann and TypeScript through 433 `<E>Index` tables; a
+     read-only scan found four Go and three TypeScript files to migrate and no C++ one.
+
+403. **A name another package writes as a `#define` is `E8005` (CODEGEN.md §3.5, §7.9; amends
+     391).** A generated C++ name equal to a define of a package the declaring package does not read
+     is `E8005` `foreignDefine`, judged from the project's declarations alone, in `check` and
+     `build`, whatever the selection. Reason: 391's guard stops at the read edge, so Sovereign's
+     `BadgeKind` compiled in one include order only; widening the guard would make output depend on
+     which packages and roots a machine holds.
+
+404. **`push_macro` guards names met in code (CODEGEN.md §7.9; amends 391).** A name met only in a
+     comment, a string or a character literal is not wrapped. Reason: 116 pairs of Sovereign's
+     output were wrapped for names no preprocessor expands there.
+
+405. **A wire name holds no NUL (WIRE.md §4.2; `E3316` `nul`).** A wire name written in source with
+     U+0000 is refused for every target. Reason: C++ readers take names as C strings and cut it
+     (log-2026-10-21, owed); a name with a NUL has no use.
+
+406. **Wires are unique within an enum and a variant (WIRE.md §4.2, §5.3, §5.6; TYPES.md §8.1;
+     `E3316` `enumWire`, `caseWire`; amends 383, 393; closes the owed items of log-2026-10-21 and
+     -22).** Reason: the later member decoded as the first. Resource has no use: 544 enums, 16
+     variants.
+
+407. **A decoded `@text` fn's `<Fn>File` never doubles `File` (CODEGEN.md §5.13; amends 340, 363).**
+     `<Fn>` is the target's UpperCamel fn name without a final `File`, so `tipFile` gives
+     `DecodeTipFile`, `decodeTipFile`, `parseTipFile` and the label `TipFile`; two fns reaching one
+     name are `E8005`. Breaking in Go, C++ and TypeScript, with no alias. Reason: `...FileFile`,
+     owed since 0.1.10 (ADR-0022 §10). Sovereign: 70 C++ names in three files, a mechanical
+     `FileFile` to `File`.
+
+408. **Kept dependent maps (TYPES.md §11.4, §11.5; STDLIB.md §6; amends 338).** A dependent map `{k
+     in c: T(k)}` whose value reads `k` and no type argument but `k` or the binder of a dependent
+     map inside it keeps its type at every read, and a literal typed against it binds `k` per key:
+     `==`, `!=` and `union` with a literal check each value against `T(key)`. `union` on it takes
+     and returns its type. A dependent map whose value reads anything else (an earlier field, a
+     parameter) still reads as its static view, and 338's `E3804` stays there: away from its
+     instance its values cannot be judged. Other map methods return no dependent map. Reason: 338's
+     owed item; the reviews' unsoundness came from rebuilding a binder from a static view, and
+     keeping the declared type rebuilds nothing (log-2026-10-08).
+
+409. **An amend path enters a dependent map (EVALUATION.md §9.2; TYPES.md §11.5).** `[k]` and `[#n]`
+     name the entries of `{x in c: T(x)}`, `k` typed against `ref c`; the value at the path is that
+     map's value at `k`: its literal binds `x` to `k` and is judged against `T(k)` at evaluation
+     (`E3802`). Reason: §9.2 allows `[k]` on a map and §11.5 makes a dependent map one; the checker
+     gave `E1905`, and `E2102` for a bare key (log-2026-09-29 "PS2 round 2").
+
+410. **A level-1 ref names the entry its instance's field holds (API.md R7, R11).** `Refs` and
+     `Graph` match a bound level-1 ref against the entry its key names in its instance's field,
+     whatever identity that entry carries; a spread-built instance holds the source's entries, so
+     its refs reach them. Reason: such a ref was listed only as `code` and had no edge
+     (log-2026-10-29 "Owed").
+
+411. **The checker items of "Still open" ruled (TYPES.md §9.4, §11.1; API.md R6, V1, W11a).** A type
+     argument reads through a field typed by an applied record. A dependent argument is `E3806`:
+     pass its driver. An optional field holding a collection holds none: no level-1 candidate,
+     `E3504` through a let path, no field identity. An op's list or brace literal for a dependent
+     type whose branch cannot be computed is a `ValueError`. E15 drops optional fields and
+     dependent-keyed maps only. Under an `EditLayer`, a path below an amendment whose right-hand
+     side is a `load(…)` is `ErrNotEditable` reason `layer`. R6's cause for a constant includes its
+     fold's findings. J13/J14 through a ref stay open, a view-model format choice. Reason: DECISIONS
+     "Still open" (log-2026-09-29, -10-05).
+
+412. **A default that folds to a constant is checked as its literal (TYPES.md §7.3, §7.4).** A
+     record or case field's default that is a constant expression is folded in phase 2 and judged
+     against the field's refinements exactly as the literal it folds to, at the default, whether or
+     not a value takes it; its findings equal the literal's in every case. The static check of a
+     `Float32` literal or constant compares the binary32 value storage keeps. Reason: `a: Int(1..) =
+     ZERO` passed `canon check` until some value took the default, and `Float32(..=0.1) = 0.1`
+     passed statically and failed only at storage (found while planning v0.2, ADR-0023 §3).
+
+413. **`values` never selects table ids (CODEGEN.md §2.1, §5.3).** Every emit but `types` declares
+     the id type of every public table of its package, selected or not: in TypeScript `<Id>`, and in
+     `baked` and `embedded` mode `<Id>Members` and `<Id>LiveMembers`. Reason: gen/ts declared ids
+     for emitted tables only, so a lookup over a table `values:` omitted, or another package's
+     TypeScript naming its id, failed `tsc` with no finding; Go and C++ always declared them.
+
+414. **`E9001`, `E9006` and `E8104` name their way out (CONFORMANCE.md §2.1, §2.2; CODEGEN.md §5.12;
+     ERRORS.md; applies 305).** `E9001` names the build (a lookup over finite parameters) or leaving
+     the logic out of translated functions; `E9006` has two messages, a declared parameter (pass the
+     values, or make the function a method) and a read through `self`, and lists `Float32`; `E8104`
+     gives its reason and the way out, a package with no TypeScript emit. Reason: three bans named
+     none (log-2026-10-31).
+
+415. **The Go and C++ JSON runtimes are the embedded files, not a spec listing (CODEGEN.md §6.3,
+     §7.5).** The spec fixes their contract (names, rules, failure texts); `canon_runtime.h` (§7.4)
+     and the TypeScript helper block (§8.2) stay verbatim and are pinned to their files by tests.
+     Reason: §6.3 had drifted by 12 functions and §7.5 held 213 of 1,466 lines; the runtimes grow
+     every version.
+
+416. **A failed rollback is a kept journal; edit errors name display paths (API.md O5, N11;
+     DECISIONS 201).** Every error an edit's commit, its rollback, `Recover` and `Settle` return
+     names what they place by display path, never an absolute or temporary name; an operating-system
+     error keeps its operation and cause and unwraps to the original. A path a journal records that
+     no root places is quoted as recorded. Any failure to roll back a journal wraps `ErrJournal`
+     (`ErrProject` at the API), so `Open` fails as for any journal it keeps. Reason: such a rollback
+     returned the raw OS error, its text an absolute temporary name with a random part, and `Open`
+     then failed with no sentinel (log-2026-10-14, J-WORKSPACE).
+
+417. **An edit locks every package whose read set its writes change (CLI.md §3.15; amends 375).**
+     Beside the packages of the files it writes, each written `canon.lock`'s package and the readers
+     of each data file it writes, an edit takes exclusively every package API.md E17 finds before
+     importers: those whose static read set holds a file it writes or removes or a listing it
+     changes, and those whose asset root holds a name it creates or removes. Reason: two edits
+     through packages listing one directory could create or remove one name under disjoint locks;
+     both passed N9, and the later rename replaced the first or overwrote a dead edit's file, whose
+     journal could then never roll back (log-2026-10-14).
+
+418. **A text output is never a source (CODEGEN.md §2.9; ERRORS.md E8021).** A `@text` file name
+     whose extension is `.canon`, compared exactly as the scan compares it, is `E8021` `source`,
+     found in phase 2 wherever `out` points, and a stale text file of such a name is never removed.
+     Every other name, `.json` included, keeps 326's ownership (`E8001` over a file its package's
+     `canon.outputs` does not name) and 341's `E8026`. Reason: written inside the project, such a
+     file was a source of the next run, so a build's output changed the program it came from;
+     `E8026` judges loads, not the scan.
+
+419. **A Windows junction is a link (WIRE.md §6.5; TYPES.md §13.4; amends 376).** Every reader of
+     the project's files counts as a link an entry that is a symbolic link, or that Go lists as
+     irregular and whose target `os.Readlink` reads (a junction, a directory mount point):
+     `load.dir`'s walk, base and literal path, single-file loads, asset lookups and real-path
+     comparisons follow it only within the bounds, edits refuse it (API.md N11), and findings report
+     it as a symbolic link. A volume mount point counts as dangling. Other irregular entries are no
+     links and keep their kind; builds already never write through any (342). Reason: on Windows
+     `load.dir` skipped a junction silently, losing every entry under it, and read a base or single
+     file through one with no bound (ADR-0021 §9); 376's "a junction stays a file name" is reversed.
+
+420. **Single-file loads follow `load.dir`'s link bounds (WIRE.md §6.1, §6.5; ERRORS.md E7004).**
+     The path of `load`, `load.text`, `load.csv` and `load.defines` is read through a link only when
+     its real path lies inside the project or a declared root, bounds resolved as `load.dir`'s, the
+     project root's ancestors not counting; otherwise `E7004` `ReadOutsideRoots`. A dangling link or
+     a loop stays `E7004` `ReadMissing`, `ReadLinkLoop`. Reason: a single file was read through a
+     link pointing anywhere on the machine, unlike `load.dir` and assets (376); the JSON sources
+     edits and `canon fmt` write already left it out.
+
+421. **A name reported changed is read again whatever its stamp (API.md S1, W12; amends 374).** At
+     the next refresh the project reads again, comparing by hash, each name an OS notification of a
+     `Watch` reports, each file a language server client reports in
+     `workspace/didChangeWatchedFiles` and each file a `*StaleError` of an `Edit` or a writing
+     `Build` names, with its directory's listing, whatever their stamp; the same content keeps the
+     snapshot. Reason: Windows' stamp is size and modification time (374), so a file replaced
+     keeping both stayed stale under a `Watch`, in the language server, and through every retried
+     `Edit` and writing `Build` (ADR-0021 §9).
+
+422. **Compiler 0.2 reads language 0.1 (SPEC §3.1; GRAMMAR.md §7.1).** The language version (`canon:
+     "MAJOR.MINOR"`) moves only when existing source changes meaning; compiler 0.2.0 accepts every
+     `canon: "0.1"` project and adds syntax (`expect package`) and refusals (`E3316`
+     `nul`/`enumWire`/`caseWire`, `E5006`, `E8005` `foreignDefine`, `E8021` `source`, `E7004`
+     `ReadOutsideRoots`) to 0.1, as the 0.1.x releases did; `canon: "0.2"` stays `E1001` until a
+     version changes the meaning of existing source. Reason: v0.2 breaks generated APIs (402, 407)
+     and refuses more, but changes no existing source's meaning; a language bump would make every
+     project edit its header for nothing.

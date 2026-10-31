@@ -50,6 +50,8 @@ conformance tests, and the test files themselves. Names, files and the pure-func
 | return type | the parameter types, and `ref T` (returned as its key) | `E9004` |
 | refinements of parameters and return | ranges on numbers and durations; sized integer types; `Float32` | `E9007` (`where`, regex, `String` length) |
 
+`E9006` names its way out: pass the values the body reads as parameters of an allowed type, or make the function a method of the record that holds them, which reads them from `self`; a ref or `@ts(bigint)` field read through `self` is passed as a parameter instead.
+
 A method with runtime inputs must be called by at least one `test` of its package, so that the
 conformance test has a receiver (`E9008`). A package-level function needs no test.
 
@@ -64,7 +66,7 @@ SPEC §9.4 lists the constructs. Precisely:
 - **Statements:** `let` (immutable), `if` / `else if` / `else`, `return`. Every path returns.
 - **Expressions:** literals of the allowed types (a duration literal is its millisecond count);
   `if … else …` expressions; `and`, `or`, `not`; `??` on an optional field of `self`.
-- **Arithmetic:** `+ - * / %` and unary `-` on integers, `Float` and `Duration` as typed by
+- **Arithmetic:** `+ - * /` and unary `-` on integers, `Float` and `Duration`, and `%` on integers, as typed by
   TYPES.md (`Duration * Int`, `Int * Duration`, `Duration / Int`, `Duration / Duration → Float`);
   every integer type computes as `Int` (TYP-03).
 - **Comparisons:** `== != < <= > >=` on numbers and durations; `==` and `!=` on `Bool`, `String`
@@ -87,6 +89,8 @@ comprehensions, collection literals, indexing, every collection, string and grap
 `load`, `fail`, `warn`, `E.members`, `F(a).members` and `F(a).typeName` (TYPES.md §4.3,
 DECISIONS 306). These are exactly the constructs whose behaviour differs across targets
 or needs a runtime library.
+
+The way out is the build: an `export fn` whose parameters are all finite (`Bool`, enums, refs into a table) is computed at build time with the whole language and ships as a lookup table, which a translated body may call (DECISIONS 305, 414). Logic that needs a construct above over runtime values stays outside translated functions.
 
 ### 2.3 The pure function
 
@@ -155,7 +159,7 @@ expected to agree with this table.
 | `-a`, `abs(a)` | | `E4101` for `INT64_MIN` | `rt.NegInt` `AbsInt` | `canon::NegInt` `AbsInt` | `canonNeg` `canonAbs` |
 | `min`, `max` (Int, Duration) | | none | builtin `min` `max` | `canon::MinInt` `MaxInt` | `Math.min` `Math.max` |
 | `clamp(x, lo, hi)` (Int, Duration) | `min(max(x, lo), hi)` | `E4108` if `lo > hi` | `rt.ClampInt` | `canon::ClampInt` | `canonClamp` |
-| `a + b`, `a - b`, `a * b`, `a / b`, `a % b` (Float) | IEEE 754 double, round to nearest; `%` is `fmod` | `E4104` if the result is NaN or infinite (`x / 0.0` included) | `rt.AddFloat` … `ModFloat` | `canon::AddFloat` … | `canonF(a + b)` … |
+| `a + b`, `a - b`, `a * b`, `a / b` (Float) | IEEE 754 double, round to nearest | `E4104` if the result is NaN or infinite (`x / 0.0` included) | `rt.AddFloat` … `DivFloat` | `canon::AddFloat` … | `canonF(a + b)` … |
 | `-a`, `abs(a)` (Float) | exact | none | `rt.NegFloat` `AbsFloat` | `canon::NegFloat` `AbsFloat` | `-a`, `Math.abs` |
 | `min`, `max` (Float) | `-0.0 < +0.0` | none | `rt.MinFloat` `MaxFloat` | `canon::MinFloat` `MaxFloat` | `canonMinF` `canonMaxF` |
 | `clamp` (Float) | `min(max(x, lo), hi)` with the rule above | `E4108` if `lo > hi` | `rt.ClampFloat` | `canon::ClampFloat` | `canonClampF` |
@@ -164,7 +168,7 @@ expected to agree with this table.
 | `floor(f)`, `ceil(f)` | | `E4103` as `Int(f)` | `rt.FloorFloat` `CeilFloat` | `canon::FloorFloat` `CeilFloat` | `canonFloor` `canonCeil` |
 | `round(f)` | half away from zero | `E4103` as `Int(f)` | `rt.RoundFloat` | `canon::RoundFloat` | `canonRound` |
 | `d1 / d2` (Duration) | `Float(d1) / Float(d2)` | `E4102` if `d2 == 0`; `E4104` | `rt.DivDuration` | `canon::DivDuration` | `canonDivDuration` |
-| comparisons | IEEE for Float (`-0.0 == 0.0`); enum order by declaration | none | native | native | native (enums through `<E>Index`) |
+| comparisons | IEEE for Float (`-0.0 == 0.0`); enum order by declaration | none | native; an `ordered` enum without `@codes` compares `Position()` | native | native (enums through the file's private `<E>Index`, CODEGEN.md §5.2) |
 | `x ?? y`, `and`, `or`, `not`, `if` | short-circuit | none | native | native | native |
 | template | concatenation; integers in decimal, enums by Canon name | none | `strconv.FormatInt`, `String()` | `std::to_string`, `ToName` | `String(n)`, `<E>Names` |
 | sized type or `Duration` range of a parameter or result | | `E3201` | `rt.CheckIntWidth` | `canon::CheckIntWidth` | `canonCheckWidth` |
@@ -180,6 +184,7 @@ Notes:
 - Durations compute in int64 milliseconds (overflow `E4101`, as for `Int`); a stored `Duration`
   is limited to ±9 223 372 036 854 ms (TYPES.md §7.2), which the entry and exit checks enforce with
   `CheckIntWidth` (§2.3).
+- `%` is defined on integers only (TYPES.md §7.1); on `Float` or `Duration` it is `E3007`, so no translation computes a float remainder.
 
 ---
 
@@ -233,7 +238,7 @@ by value (floats by bit pattern).
 ### 6.1 Receivers (methods only)
 
 The receivers are the `self` values of the calls of `F` made while running the package's `test`
-blocks, in the order the calls are evaluated, each **projected** on the paths the body reads
+blocks, outside the worlds of package subjects, which are not built here (EVALUATION.md §10.5), in the order the calls are evaluated, each **projected** on the paths the body reads
 (§2.3). Distinct projections are kept in first-seen order. None is `E9008`. `canon check` and
 `canon build` both run the tests to collect these calls, and only for that. Each package's tests
 run as `canon test <pkg>` runs them: values forced afresh, never reusing stage A's, per-package

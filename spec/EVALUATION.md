@@ -42,7 +42,7 @@ This replaces SPEC §11.2.
 - `canon check` and `canon build` both compute the conformance vectors in phase 7, so both report
   `E9008` and `E9009`. Computing them runs the tests of a package with a translated function, only
   to collect the calls the vectors need (CONFORMANCE.md §6.1). Each package's tests run as
-  `canon test <pkg>` runs them (§10): values forced afresh, never reusing stage A's, on per-package
+  `canon test <pkg>` runs them (§10), package subjects (§10.5) not built: values forced afresh, never reusing stage A's, on per-package
   counters of `project.budget` steps (§12.2), in declaration order. So the calls collected, hence
   the vectors, are what `canon test` sees, unless a counter, which also paid phase 2's constant
   folding (§12.2), runs out first; none
@@ -473,9 +473,9 @@ amend config {
 | `.f` | variant | field `f` of the current case (checked when applied) |
 | `.k` or `[k]` | table, keyed list with a `String` key | entry with key `k` |
 | `[k]` | keyed list | entry with key `k` (API-02) |
-| `[k]` | map | entry with key `k` (identifiers resolved against the key type) |
+| `[k]` | map, dependent map | entry with key `k` (identifiers resolved against the key type: `ref c` for `{x in c: T(x)}`, whose value there is that map's value at `k`, TYPES.md §11.5) |
 | `[i]` | list | element `i` (negative from the end) |
-| `[#n]` | list, keyed list, table, map | the element or entry at position `n` (0-based, insertion or entry order), as in API paths (API.md §6.2) |
+| `[#n]` | list, keyed list, table, map, dependent map | the element or entry at position `n` (0-based, insertion or entry order), as in API paths (API.md §6.2) |
 
   A segment that fits none of these statically is `E1905`. A path through an input field is
   `E3313`. `[#n]` on a table, keyed list or map warns `W1912`: name the entry by key.
@@ -528,7 +528,8 @@ rewrites the outputs each time. This is by design; the CI build runs without lay
 - Tests are type-checked in every `canon check`, but run only by `canon test`, and silently when
   conformance vectors are computed (§1).
 - Top-level values are forced on demand, verified (§5), and shared by all tests of the
-  invocation. Instance checks and package checks do not run on them in `canon test`.
+  invocation. Instance checks and package checks do not run on them in `canon test`, except in the world of a package
+  subject (§10.5).
 - The body is a block. Its statements run in order; `expect` is allowed only in test blocks
   (`E1130`, GRAMMAR.md). Tests spend their package's budget (DECISIONS 328): the tests of a package
   start on the counter phase 2's constant folding left to that package, and a value of another
@@ -545,7 +546,8 @@ rewrites the outputs each time. This is by design; the CI build runs without lay
 
 Every finding produced by these three steps is **captured** by the `expect`, not reported. So
 are soft findings produced while evaluating `v` (refinements at storage points inside
-functions). Package checks never run for a subject. Static errors are compile errors, never
+functions). Package checks never run for a
+value subject; `expect package` runs them (§10.5). Static errors are compile errors, never
 "expected" (CHK-05).
 
 A subject that reads a poisoned top-level value makes the `expect` fail, naming that value.
@@ -560,13 +562,9 @@ A subject that reads a poisoned top-level value makes the `expect` fail, naming 
 | `expect v fails name` | at least one captured error finding has `check` = `name` |
 | `expect v fails E3204` | at least one captured error finding has that code |
 | `expect v warns …` | the same, over captured **warnings** |
+| `expect package [{ … }] passes` / `fails …` / `warns …` | the same, over the findings of building the package (§10.5) |
 
-- An identifier after `fails`/`warns` that matches `^[EW][0-9]{4}$` is a code; any other
-  identifier is a check name and must be the name of some named check declared on a type
-  reachable from `v`'s static type (through fields, elements, map keys and values, variant cases
-  and their own checks, and a dependent field's branches); a name that matches only a package
-  check is `E5004`, since package checks never run for a subject (§10.2). `E5004` is static:
-  `canon check` and `canon test` report it (log-2026-10-06).
+- An identifier after `fails`/`warns` matching `^[EW][0-9]{4}$` is a code. Any other names a check: for a value subject, a named check on a type reachable from `v`'s static type (through fields, elements, map keys and values, variant cases and their own checks, and a dependent field's branches); for a package subject (§10.5), a named package check of the test's package or a named check reachable so from one of its top-level values. Otherwise `E5004`, whose message says when the name is a package check, which only `expect package` runs. `E5004` is static: `canon check` and `canon test` report it (log-2026-10-06).
 - Matching counts dynamic `E3xxx`, `E4xxx` and `E5xxx`/`W5xxx` findings (CHK-05).
 
 ### 10.4 Failures
@@ -576,6 +574,19 @@ A subject that reads a poisoned top-level value makes the `expect` fail, naming 
   stops it.
 - A test passes when every `expect` passed and no hard error occurred.
 - The output format is CLI §3.5: for `fails`/`warns`, the captured findings are listed.
+
+### 10.5 Package subjects
+```
+expect package passes
+expect package { levels: levels + [levels[1]] } fails uniqueIndex
+```
+`expect package` builds the test's own package; with `{ name: value, … }`, each `name` holds `value` while it is built. §10.3's forms judge what the build captures.
+1. **Substitutions.** `name` is a top-level `let` of the test's package, public or `local` (anything else is `E5006`, an unknown name `E2102`). `value` is checked against the let's type; a static error is a compile error (CHK-05). The values are evaluated in the test, left to right, before the build: they read the test's values (with the active layers), the substituted lets included, and its locals. A hard error or a poisoned read there is the `expect`'s, as for a value subject (§10.2), and nothing is built.
+2. **The world.** The package is built in a world of its own, as stages A to D build a selected package (§1, §2.1, §5, §8): every top-level `const` and `let`, in forced-set order. A substituted let takes its value, converted at the let's storage point in the world (§4.3), with no initializer, `entry` declaration or layer; every other let is evaluated from its initializer, entries and active layers, so values derived from a substituted one follow. A broken declaration is not evaluated (TYPES.md §1). Values of other packages are the test's, forced there if needed: none can read this package (TYPES.md §3.1). Conversions, verification and taint (§7.3) are the world's own; the test's verdict on a part of a value is not reused. An entry keeps its identity (TYPES.md §6.3): one of a record field's collection still belongs to the test's instance.
+3. **Checks.** Stage B verifies every value of the world, stage C runs the instance checks reachable from them (§8.1), stage D the package's package checks (§8.2). Stage E, emit validation, conformance vectors, the lock comparison and view checks do not run.
+4. **Capture.** Every finding the world produces is captured, with the value path a build gives it (§13). Reading a poisoned value of another package makes the `expect` fail, naming it (§10.2). `E4401` in the world stops the test (§10.4) and is not captured.
+5. **Cost.** The values are charged to the test, the world as a build is (§12.2), all on the package's counter: each package subject costs what stages A to D of the package cost.
+6. **After.** The world is discarded; the test's values do not change. A world records no call for conformance vectors, and computing them builds no package subject (§1).
 
 ---
 
@@ -842,8 +853,9 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E5002 | error | `fail(at, message)` |
 | W5002 | warning | `warn(at, message)` in a block |
 | E5003 | error | §8.3 |
-| E5004 | error | `expect … fails name` (§10.3) |
+| E5004 | error | `expect … fails name` (§10.3, §10.5) |
 | E5005 | error | §10.1 |
+| E5006 | error | a package subject's target (§10.5) |
 
 Codes defined elsewhere and used here: `E1105`, `E1130`, `E1131` (GRAMMAR.md); `E2102`, `E3xxx` (TYPES.md,
 except `E3203` and `E3315`–`E3318`, WIRE.md); `E4105`–`E4108`, `E45xx` (STDLIB.md); `E6004` and

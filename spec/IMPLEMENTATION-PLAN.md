@@ -230,7 +230,7 @@ a contract change):
 | view items | `ViewTitle` `ViewSubtitle` `ViewSingular` `ViewMenu` `ViewColumns` `ViewSearch` `ViewFilters` `ViewPreview` `ViewShow` `ViewGroup` `ViewField` |
 | types | `NamedType` (with args: refinement or parameters, decided by `check`, GRM-05) `ListType` `MapType` `DepMapType` `TableType` `RefType` `OptionalType` `KeyedType` `WhereType` `UnionType` `LiteralType` `MatchType` `AssetType` `AnyType` `FnType` |
 | expressions | `IdentExpr` `IntLit` `FloatLit` `StringLit` (parts: text, `Interp{Expr, Spec}`) `RawStringLit` `DurationLit` `RegexLit` `BoolLit` `NoneLit` `SelfExpr` `ItExpr` `ParenExpr` `UnaryExpr` `BinaryExpr` `IsExpr` `RangeExpr` `SelectorExpr` (with `Optional` for `?.`) `IndexExpr` `CallExpr` `Arg` `ForceExpr` (postfix `!`, DECISIONS 17) `LambdaExpr` `ShorthandLambda` `ListLit` `ListComp` `BraceLit` (items: `FieldItem` `MapItem` `EntryItem` `SpreadItem`; classified by `check`, GRM-10) `MapComp` `CompClause` `TypedLit` `IfExpr` `MatchExpr` `MatchArm` `Pattern` `LoadExpr` |
-| statements | `Block` `LetStmt` `VarStmt` `AssignStmt` `IfStmt` `ForStmt` `WhileStmt` `BreakStmt` `ContinueStmt` `ReturnStmt` `ExpectStmt` `MatchStmt` `ExprStmt` |
+| statements | `Block` `LetStmt` `VarStmt` `AssignStmt` `IfStmt` `ForStmt` `WhileStmt` `BreakStmt` `ContinueStmt` `ReturnStmt` `ExpectStmt` (with `Package`: `PackageSubject`, `Substitution`) `MatchStmt` `ExprStmt` |
 
 `Decl`, `Expr`, `Type`, `Stmt` and `ViewItem` are interfaces over these nodes. The parser also
 returns its findings (`E11xx`) and recovers at declaration and item boundaries so the language
@@ -513,6 +513,7 @@ type TypeRef struct {
     Bits    int; Signed bool
     KeyedBy string
     Ref     *RefTarget       // collection, same-value or by-key (CG-03), define value
+    Range *types.Bound // this level's range or length refinement; nil on a ref's key (DECISIONS 399, 400; §4 review rule)
 }
 type Pairs struct { Keys [2]string; Slots int }
 type Enum struct { Pkg, Name, Doc string; Members []EnumMember; Codes int; CppDefines string; HasCppDefines bool; Order int; JSONCodes bool } // HasCppDefines: @cpp(defines:) present, "" included; Order: position among the package's declarations (DECISIONS 389, 390; §4 review rule)
@@ -1180,6 +1181,7 @@ exists under `examples/features/<name>/` (the directory names, DECISIONS 262):
 | `ts` | TS goldens for data mode and translated functions | M6 | to add |
 | `edits` | a project used only by edit tests: defaults, spread, layered values, JSON sources, dependent fields, variants | M4 | present |
 | `tiers` | tiers in project.canon: a longer path placing a sub-package in an earlier tier, a downward import | v0.1.9 | present |
+| `pkgchecks` | expect package: substitutions, derived values, a named package check, CHK-05 | v0.2 | present |
 
 ---
 
@@ -1276,7 +1278,7 @@ Not part of v0.1 (DECISIONS 188).
 - **Sync.** Full-document sync; each change is an overlay (API.md §3.4). Diagnostics are recomputed
   for the affected packages 150 ms after the last change and published for every file with
   findings, including loaded JSON, CSV and header files that are not open; files that no longer
-  have findings get an empty list.
+  have findings get an empty list. A `workspace/didChangeWatchedFiles` notification marks each file it names to be read again at the next pass whatever its stamp (API.md S1).
 - **Features**, per CLI.md §4:
   - **hover:** canonical type text, doc comment, default, and for a let, const or table entry its
     canonical text truncated to 20 lines and 4,096 bytes, a cut ending with a `…` line.
@@ -1307,8 +1309,7 @@ Not part of v0.1 (DECISIONS 188).
   SIGTERM) cancels the context, finishes or rolls back any write, and exits with 130.
 - **`--root <name>=<dir>`** (repeatable) sets `Options.Roots` (API.md §2.1).
 - **Cache.** `.canon/cache/` holds, keyed by the build manifest hash (LOD-11), the findings of
-  `check` and the output hashes of `build`, plus a stat table `(path, size, mtime, sha256)` so an
-  unchanged file is not re-hashed. The format has a version in its first line; another version is
+  `check` and the output hashes of `build`, each with the read set its run consulted (every file with its SHA-256, every stat and listing); an entry is reused only after every one of those reads is repeated and every file re-hashed, and a read it did not record makes it a miss. No stat (size, modification or change time, file identity) stands in for a hash (DECISIONS 374). The cache is parked until v0.3's scale bench (Louis, 2026-10-31); its ADR decides the rest (log-2026-10-14, "On-disk cache"). The format has a version in its first line; another version is
   ignored and rebuilt. Deleting the directory is always safe.
 - **`canon build`** prints, after the summary, the changed outputs grouped by target, one per line,
   in byte order, then the locks that gained lines; under `--check` each is prefixed `stale `;

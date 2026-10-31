@@ -322,7 +322,7 @@ unknown key is `E1002`.
   paths always use `/`. An unknown root is `E7003`.
 - `canon` states the language version. A compiler accepts the minor versions it knows within its
   major version, refuses newer ones and other majors (`E1001`), and never silently reinterprets
-  older code.
+  older code. The compiler's version and the language version are separate (DECISIONS 354, 422): compiler 0.2 reads language 0.1, whose syntax and refusals it extends as the 0.1.x releases did.
 - **Roots on this machine** (DECISIONS 332). A root's directory is the path `project.canon` gives
   it, unless this machine places it elsewhere. `project.local.canon`, beside `project.canon` and
   git-ignored, moves declared roots for one machine:
@@ -492,12 +492,10 @@ entry items.II_WEA_AXE_ANGEL {
   order within a file.
 - **Positions are not ids** (DECISIONS 379). Moving, renaming or adding an entry file changes
   entry order, so an entry's position never stands for the entry: its key does. Generated id
-  types are opaque and never convert to or from a position (CODEGEN.md §5.3), and every
+  types, and the Go types of enums without `@codes`, of variant kinds and of dependent branches, are opaque and never convert to or from a position (CODEGEN.md §5.2, §5.3), and every
   serializer Canon generates writes the key. A number that must keep naming one entry across
   builds is declared and locked: a `@stable` field of a `stable table`, or an enum's `@codes`
-  code (§12, LOCK.md §1); `.index` and the number Go and C++ give a member without `@codes` are
-  declaration positions (Go's text encoders write such a member's wire value, through
-  `MarshalText`). An entry position written to an output warns (`W8031`, EVALUATION.md
+  code (§12, LOCK.md §1); `.index`, Go's `Position()` and a C++ enumerator's value without `@codes` are declaration positions: Go's text encoders write the wire value, nlohmann refuses such a C++ enum, and TypeScript exports no `<E>Index`. An entry position written to an output warns (`W8031`, EVALUATION.md
   §13.1) unless written with `positional(…)`. Entry order still orders rows and what iterating
   the table computes (`first()`, `at(i)`, ties of `sortBy`, `minBy`, `maxBy`, the order of
   lists, maps and text built from it); it never changes an entry's key, fields or refs.
@@ -574,8 +572,7 @@ Float where it > 0.0 and it < 1.0 // general form; `it` is the value
   an amended value and a loaded value.
 - Generated code uses the **base type**: `Int(0..=100)` is emitted as `int64_t` / `int64`, never
   narrowed from its bounds, because the fingerprint (§14.4) does not cover refinements. Narrow
-  types come only from the explicit sized types of §5.1 (`Int32`, `UInt16`, …). The check never
-  runs at runtime (§14.5), except for runtime inputs (§19.3).
+  types come only from the explicit sized types of §5.1 (`Int32`, `UInt16`, …). At runtime, generated decoders check ranges and lengths (§14.5); runtime inputs also check patterns (§19.3); `where` never runs at runtime.
 
 ### 5.3 Enums
 
@@ -1180,7 +1177,7 @@ Return types: any type for the first two kinds. A lookup table is a dense array 
 combination, retired members included; more than 65,536 cells is `E9002`, and optional
 parameters are `E9003`.
 
-A **translated** function takes only `Bool`, integer, `Float`, `String`, `Duration` and enum
+A **translated** function takes only `Bool`, integer, `Float`, `Float32`, `String`, `Duration` and enum
 parameters (a `ref`, record, list, map or variant parameter is `E9006`) and returns one of these
 or a `ref` (`E9004`); refinements of its parameters and result are limited to ranges and sized
 types (`E9007`). A translated **method** must be called by at least one `test` of its package,
@@ -1197,7 +1194,7 @@ which gives the conformance test its receivers (`E9008`).
 - calls to other exported functions of the same package.
 
 Anything else (loops, collections, string functions, non-exported calls) is `E9001`, naming the
-construct.
+construct and the way out: compute it at build time in an `export fn` over finite parameters, or keep it out of translated functions.
 
 **Same result everywhere.** Integer overflow, division by zero, rounding and conversions behave
 differently in Go, C++ and TypeScript, so a translated body never uses the target's raw operators
@@ -1249,7 +1246,7 @@ check { …statements… } // block form
   checked twice (EVALUATION.md §4.2, §8.1). Temporaries inside functions are not checked (their
   refinements are, §5.2).
 - At package level, a check runs **once**, with every value of the package and its imports in
-  scope.
+  scope, and once more in each `expect package` (§18).
 - The message is a string template over the same scope.
 - `at <field>` (one-line checks of a record or case only) reports the finding at that field's
   value instead of at the record, so the studio shows it next to the field. It is written on the
@@ -1588,10 +1585,9 @@ name or unit would otherwise load silently wrong.
 
 Details and test vectors: [spec/FINGERPRINT.md](spec/FINGERPRINT.md).
 
-### 14.5 No validation at runtime
+### 14.5 Validation at runtime
 
-Generated code contains no validation. A loader checks the fingerprint and copies fields. The
-runtime can trust the data because it can only receive data this exact schema has validated.
+Generated code checks the fingerprint (data files), the wire and every range and length refinement (CODEGEN.md §5.15); patterns, `where`, refs and checks run only in Canon. The runtime trusts the rest because it can only receive data this exact schema has validated.
 
 ### 14.6 Outputs of several packages
 
@@ -1701,9 +1697,7 @@ runtime helper files are in [spec/CODEGEN.md](spec/CODEGEN.md), which wins on de
 | variant | `Kind()`, and `As<Case>() (*<Variant><Case>, bool)` per case with fields |
 
 - Fields are unexported; getters are `Heal()`, not `GetHeal()`.
-- Enums are typed integers (the index, or the code with `@codes`) with `String()` (the Canon
-  name), `Wire()`, `Parse<Enum>(wire string) (<Enum>, bool)` and `<Enum>Members()` (declaration
-  order, retired members included); `@codes` enums add `Code()` and `<Enum>FromCode`.
+- Enums with `@codes` are typed integers holding the code, with `Code()` and `<Enum>FromCode`; every other closed enum is an opaque struct with `var` members and `Position()` (no integer converts to or from it, CODEGEN.md §5.2). Both have `String()` (the Canon name), `Wire()`, `Parse<Enum>(wire string) (<Enum>, bool)` and `<Enum>Members()` (declaration order, retired members included).
 - `rt` is a small read-only helper package emitted at `<out>/rt/rt.go` (no dependency). Runtime
   errors of generated code are `*rt.EvalError` panics.
 - Table and keyed-list containers: `Len()`, `At(i)`, `All() iter.Seq[*T]`,
@@ -1766,6 +1760,7 @@ count, or the `@codes` type. Members keep their Canon names (a reserved word get
 `std::string_view ToName(E)` and `std::string_view ToWire(E)` are overloads in the namespace;
 `std::optional<E> <E>FromWire(std::string_view)` carries the enum's name, since C++ cannot overload
 on the return type; `k<E>Members` lists the members, and `@codes` enums add `<E>FromCode`.
+nlohmann/json refuses an enum without `@codes` (deleted `to_json`/`from_json`): store `ToWire(e)`.
 `@cpp(defines: "IK1_")` also emits `#define IK1_WEAPON 1` lines for legacy code, in their own
 header `<last>.defines.gen.h`: the define is the member name if it already starts with the prefix,
 else prefix + member; its value is the code with `@codes`, else the index. Generated code guards
@@ -1826,8 +1821,8 @@ Worked `ItemProp` example: [spec/CODEGEN.md](spec/CODEGEN.md) §7.8.
   `CanonMap` values whose mutators throw (`Object.freeze` does not freeze a `Map`). Every other
   emitted value is deeply frozen, so writes fail at compile time and at runtime. A `readonly`
   property is TypeScript's getter.
-- Enums are unions of their **wire** strings, plus frozen `<E>Members`, `<E>Names` and `<E>Index`
-  (and `<E>Codes` with `@codes`). Variants are `{ readonly kind: "<case wire>", … }`; dependent
+- Enums are unions of their **wire** strings, plus frozen `<E>Members`, `<E>LiveMembers` and `<E>Names`
+  (and `<E>Codes` with `@codes`); no `<E>Index` is exported (§4.3). Variants are `{ readonly kind: "<case wire>", … }`; dependent
   unions discriminate on `branch`. Refs are key strings, resolved with the container's
   `find(key)`. An optional is `T | null`.
 - Tables and keyed lists are `CanonTable` values (`statuses.find(key)`, `at(i)`, `length`, `all`);
@@ -2449,10 +2444,12 @@ test "overlapping windows are refused" {
 | `expect v passes` | building `v` gives no error |
 | `expect v fails "text"` / `fails name` / `fails E3204` | building `v` gives an error whose message contains `text`, whose `check` field is `name`, or whose code is `E3204` |
 | `expect v warns "text"` / `warns name` / `warns W5001` | same, for a warning |
+| `expect package passes` / `expect package { v: e, … } fails …` | building the package as canon check does, each let v holding e, gives no error / such an error / such a warning |
 
 - `fails` and `warns` match the **evaluation** findings (dynamic `E3xxx`, `E4xxx`, `E5xxx` and
   `W5xxx`) of building `v` and the values reachable from it; record checks run on them (§10.1). A
   static type error in a test is a compile error, never an expected failure.
+- `expect package { v: e, … }` runs the package's checks, package checks included, over substituted values: each `e` is computed in the test, then the package is evaluated afresh with `v = e`, so values derived from `v` follow. EVALUATION.md §10.5.
 - After `fails` or `warns`, an identifier of the form `E1234` or `W1234` is a code; any other
   identifier names a check that applies to `v` (`E5004` otherwise).
 - A failing `expect` does not stop the test; later statements still run.
@@ -2532,13 +2529,12 @@ record EditorConfig {
   `canon::OnEvalError`.
 - TypeScript has no environment: a package with inputs cannot have a TypeScript emit (`E8104`).
 
-### 19.3 The only runtime validation
+### 19.3 Validation of runtime inputs
 
 For an input, `LoadInputs` checks the field's **own refinement** (the range of a sized type,
 ranges, lengths in bytes, patterns with search semantics, enum membership); `where` predicates
 are never checked at runtime. That check is generated from the type, and a pattern must use the
-subset shared by RE2 and ECMAScript regexes (`E1904`). It is the only validation that ever runs at
-runtime.
+subset shared by RE2 and ECMAScript regexes (`E1904`). Besides it, only the range and length checks of generated decoders (§14.5) run at runtime.
 
 ---
 

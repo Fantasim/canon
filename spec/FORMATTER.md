@@ -232,6 +232,7 @@ blank line in the input get an extra empty line between them in broken form. `PL
 | field declaration | `group(name ": " type [rhs("=", default)], indent(line, ann1, line, ann2 …))`; when the next item of the body starts with a declaration keyword of GRAMMAR.md §3.1 rule 4 (a method or check), each `line` before an annotation is a plain space instead | before each annotation, then rule A; never before an annotation when a method or check follows (GRAMMAR.md §3.1 rule 4 would read it as that item's prefix) |
 | one-line check | `group("check " [name ": "] cond [" at " field], indent(line, "else ", message))` | before `else`, then inside `cond` |
 | `expect` statement | `"expect " subject [" passes" \| " fails " target \| " warns " target]` | inside the subject only |
+| package subject | `"package"`, or `"package " BL(items)`, each item `name rhs(":", value)` | per item |
 | `if` statement or expression | one group for the whole chain: header, `" {"`, bodies, `"} else {"` … | per block (§6.1) |
 | `for`, `while`, `match` | header then `BL` | inside the header, per item |
 | function declaration | `"fn " name PL("(", params, ")") " -> " type " " block` | parameters, then the body |
@@ -244,7 +245,7 @@ The header of an `if`, `for`, `while` or `match` breaks like any expression; its
 lines are indented one level more than the keyword's line.
 
 An `expect` keeps its keyword, its subject and its verdict (`passes`, `fails …`, `warns …`) on one
-logical item: the verdict is never moved to a line of its own. When the subject is a brace literal
+logical item: the verdict is never moved to a line of its own. When the subject is a brace literal or a package subject with items
 that is broken (§6.1: written on several lines, or too wide), the verdict follows its closing `}`
 on the same line; the width check of §7.1 counts the verdict as part of the rest of that line:
 

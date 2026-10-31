@@ -128,6 +128,7 @@ in [§12](#12-diagnostics).
   explicit `values: []` is refused (`E8009` `valuesEmpty`): omit `values` to mean every value
   (DECISIONS 319). Every emit always contains **every public type, enum, constant and export
   fn** of the package, used or not (EMT-07). Imported types are referenced, never re-emitted.
+  `values` never selects table ids: every emit but `types` also declares the id type of every public table of the package, selected or not (§5.3), because an export fn, a field or another package's emit may name it (DECISIONS 413).
 - TypeScript `embedded` produces exactly the `baked` output (a bundle has no separate file).
 
 ### 2.2 What each mode contains
@@ -318,8 +319,8 @@ normative: a golden that holds other prose is wrong.
 | T4 | Go | snapshot type | `// <P>Snapshot holds every @reload value of package <pkg>, loaded together and` / `// never modified. A reload builds a new snapshot; readers keep the one they hold.` |
 | T5 | C++ | store class | `/// The current snapshot of package <pkg>.` / `///   auto snap = <P>Store::Current();   // hold it for one tick or request` / `///   <P>Store::Reload(dir, error);      // the old snapshot lives while someone holds it` / `/// Current() is nullptr until the first successful Reload.` |
 | T5 | Go | store type | `// <P>Store holds the current snapshot of package <pkg>.` / `//` / `//	snap := <gopkg>.Store.Current()   // keep it for one tick or request` / `//	err := <gopkg>.Store.Reload(dir)  // the old snapshot lives while someone holds it` (a tab after `//` on the two code lines) |
-| T6 | C++ | snapshot `Load` | `` /// Reads <files> from `dir`. Returns nullptr and sets `error` if a file is `` / `/// missing, is not JSON, or was built from another schema. Values are not` / `` /// validated here: `canon build` already did, and filled every default. `` |
-| T6 | Go | `Load<P>Snapshot` | `// Load<P>Snapshot reads <files> from dir. It fails if a file is missing, is` / `` // not JSON, or was built from another schema. Values are not validated here: `canon `` / `` // build` already did, and filled every default. `` |
+| T6 | C++ | snapshot `Load` | `` /// Reads <files> from `dir`. Returns nullptr and sets `error` if a file is `` / `/// missing, is not JSON, was built from another schema, or holds a value outside` / `` /// its range or length refinement; `canon build` made every other check. `` |
+| T6 | Go | `Load<P>Snapshot` | `// Load<P>Snapshot reads <files> from dir. It fails if a file is missing, is not` / `// JSON, was built from another schema, or holds a value outside its range or` / `` // length refinement; `canon build` made every other check. `` |
 | T7 | C++, TS | conformance file, right after the marker | `// Conformance vectors of package <pkg>, computed by the Canon evaluator.` |
 | T7 | Go | conformance file, after the marker and a blank line, followed by a blank line | `// Conformance vectors of package <pkg>, computed by the Canon evaluator.` |
 | T8 | C++ | container `Find` | `/// Binary search by <key>. Never allocates; nullptr when absent.` |
@@ -336,11 +337,15 @@ normative: a golden that holds other prose is wrong.
 | T15 | C++ | `baked` id enum | `/// The key of an entry of <value>. Store or send ToWire(id): the underlying value is` / `/// a position, not an id, and changes when entry files move.` |
 | T16 | Go | id `Position` | `// Position is the entry's place in <value> in this build, for array indexes in memory.` / `// It is not an id: it changes when entry files move.` |
 | T17 | C++ | deleted `to_json`/`from_json` | `/// nlohmann/json would write the position: write ToWire(id), read <Id>FromWire(s).` |
-| T18 | Go | `MarshalText`, `UnmarshalText` (ids; enums without `@codes`) | on an id, `// MarshalText writes the key, never the position.` and `// UnmarshalText reads a key; an unknown one is an error.`; on an enum, `// MarshalText writes the wire value, never the position.` and `// UnmarshalText reads a wire value; an unknown one is an error.` |
+| T18 | Go | `MarshalText`, `UnmarshalText` (ids; enums without `@codes`, kind and branch enums) | on an id, `// MarshalText writes the key, never the position.` and `// UnmarshalText reads a key; an unknown one is an error.`; on an enum, `// MarshalText writes the wire value, never the position.` and `// UnmarshalText reads a wire value; an unknown one is an error.`; on a branch enum, `// MarshalText writes the branch name, never the position.` and `// UnmarshalText reads a branch name; an unknown one is an error.` |
+| T19 | C++, Go, TS | bound constant (§5.15) | C++ `/// <Side> of <subject>, from its refinement <R>.`; Go `// <Name> is the <side> of <subject>, from its refinement <R>.`; TS `/** The <side> of <subject>, from its refinement <R>. */` — `<Side>`/`<side>` `Lower bound`, `Upper bound`, `Exclusive upper bound`; `<subject>` the field's Canon name, `each element of `/`each key of `/`each value of ` per step, prefixed `the byte length of ` or `the element count of ` for a length |
+| T20 | Go | `Position` of an enum, kind or branch enum | `// Position is the member's place in declaration order, for array indexes in memory;` / `// an ordered enum's members compare by it. It is not an id: it changes when members move.` |
+| T21 | C++ | deleted `to_json`/`from_json` of an enum, kind or branch enum | `/// nlohmann/json would write the position: write ToWire(v), read <E>FromWire(s).`; on a branch enum `/// nlohmann/json would write the position: store the discriminant.` |
 
 The runtime helper files (`rt.go`, `canon_runtime.h`, `canon_runtime_json.h`, the TypeScript
-helper block) are fixed texts, reproduced in §6.3, §7.4, §7.5 and §8.2; their comments are part
-of those texts.
+helper block) are fixed texts: §7.4 and §8.2 reproduce theirs, and §6.3 and §7.5 fix the contract of
+the embedded files, which are the text of record (DECISIONS 415); their comments are part of those
+texts.
 
 ### 2.6 Doc comments
 
@@ -480,10 +485,10 @@ go_module {
 - **TS.** Imports are relative paths from the importing file to the imported file, with `.ts`
   replaced by `.js`, always starting with `./` or `../`. Each imported package is imported once,
   as a namespace: `import type * as game_core from "../core/core.js"`, or `import * as` when the
-  file uses a value of it (a `CanonMap`, an enum's `<E>Index`, a table's `<Id>Members`); the alias is the package path's
+  file uses a value of it (a `CanonMap`, an enum's `<E>Members`, a table's `<Id>Members`); the alias is the package path's
   segments joined by `_`, escaped like other TS names when it is a reserved word (`new` → `new_`,
   §3.4). Every name of another package is written qualified through it
-  (`game_core.LevelRange`, `sovcommon_roles.RoleIndex`), like Go and C++, so imported names never
+  (`game_core.LevelRange`, `sovcommon_roles.RoleMembers`), like Go and C++, so imported names never
   enter the file's own scope; the alias is reserved by the name plan (§3.5, DECISIONS 323).
 - **Relative paths between roots** (DECISIONS 332). A C++ include and a TypeScript import of
   another package are computed from `Dir`s placed through `project.canon`'s roots (DECISIONS 108),
@@ -581,7 +586,7 @@ emit text { out: "@source/Tools/telemetry" }
   JSON of `T`). The file an earlier build wrote is then removed, like any stale text file (below).
 - `@text` on anything else (a `let`, a local or non-exported fn, a fn with a parameter), a file name that is not portable (empty, `.`, `..`, holding `/`, `\`, a control
   character or one of `<>:"|?*`, ending in a dot or a space, or a Windows device name such as
-  `CON` or `nul.txt`, matched ignoring case), and two `@text` fns of one package whose file names
+  `CON` or `nul.txt`, matched ignoring case), a file name whose extension is `.canon` (the scan would read the file as a source, API.md O2; DECISIONS 418), and two `@text` fns of one package whose file names
   are equal ignoring letter case, are `E8021`, found in phase 2. On a `record`, `enum` or `variant`,
   which take no prefix annotation, `@text` is GRAMMAR.md's `E1118` instead (DECISIONS 297).
   An `emit text` in a package with no `@text` fn is `E8009` `textEmpty`. A `@text` fn of a
@@ -718,6 +723,7 @@ export fn, `P` = UpperCamel(last segment of the package) in each target's casing
 | internal access struct | — | `detail::PAccess` | — |
 | make-hook struct | — | `detail::PMake` | — |
 | import of another package | its Go package name; `<gopkg>rt` for its `rt` (§2.8) | — (qualified `::ns::` names) | namespace alias: package path segments joined by `_` (`sovcommon_roles`), escaped (§3.4) |
+| bound constant of a field (§5.15) | `T_` + UpperCamel(f) + suffix | `k` + UpperCamel(f) + suffix, static member of `T` | `T_` + UpperCamel(f) + suffix |
 
 Parameters and locals keep their Canon names in every target (escaped, [§3.4](#34-escaping)).
 
@@ -866,7 +872,7 @@ are equal (`a.b_c` and `a_b.c`) are `E8005` at the emit. Two packages a Go emit 
 or `<gopkg>rt` alias are `E8005` at this package's import of the later one; the way out is a
 distinct `package` option on one of their emits (DECISIONS 323). C++ readers are named from the
 whole package path and have internal linkage (§2.7), and `<P>Make` is always written qualified,
-so they never meet.
+so they never meet. A generated C++ name that a package this one does not read writes as a `#define` is `E8005` (§7.9).
 
 `W8006` warns when a generated C++ identifier is a macro name that common platform headers define:
 `min max near far IN OUT OPTIONAL ERROR DELETE TRUE FALSE VOID CONST interface small TEXT
@@ -1002,36 +1008,34 @@ enum Element @codes(UInt8) { FIRE = 1, WATER = 2 }
 **Go**
 
 ```go
-type Tone uint8
+type Tone struct{ position uint8 }
 
-const (
-	ToneWarning Tone = 0
-	ToneInfo    Tone = 1
-	ToneSeries1 Tone = 2
+var (
+	ToneWarning = Tone{0}
+	ToneInfo    = Tone{1}
+	ToneSeries1 = Tone{2}
 )
 
 func (self Tone) String() string        // Canon name: "series_1"
 func (self Tone) Wire() string          // wire value: "series-1"
-func ParseTone(wire string) (Tone, bool)
+func ParseTone(wire string) (Tone, bool) // Tone{} and false for an unknown wire
 func ToneMembers() iter.Seq[Tone]       // declaration order, retired members included
 func ToneLiveMembers() iter.Seq[Tone]   // the members not retired, in ToneMembers order (DECISIONS 395)
 func (self Tone) Retired() bool         // declared retired; false for a value that is no member
 func (self Tone) MarshalText() ([]byte, error)      // the wire value, for encoding/json and others
 func (self *Tone) UnmarshalText(text []byte) error  // a wire value; an unknown one is an error
+func (self Tone) Position() int         // the declaration position, for array indexes in memory
 
 type Element uint8                      // values are the codes: ElementFire Element = 1
 func (self Element) Code() uint8
 func ElementFromCode(code uint8) (Element, bool)
 ```
 
-An enum without `@codes` has `MarshalText` and `UnmarshalText`, so text encoders write its wire
-value, never its declaration position; one with `@codes` has neither, its value being the code
-(DECISIONS 379).
+An enum without `@codes`, a variant's kind enum (§5.5) and a dependent type's branch enum (§5.6) are opaque like a `baked` id (§5.3): no integer converts to or from one, and `<`, arithmetic and `const` do not compile on it. Members are `var`s (Go has no struct constant) and a Canon `const` of such a type is a `var`; `==`, `switch` and map keys work, and the zero value is the first member. Generated code indexes with `Position()`, and an `ordered` enum's members compare by it. Text encoders write the wire value; `database/sql` and `gob` refuse the type. An enum with `@codes` keeps its integer, the declared and locked code, and has no text methods (DECISIONS 379, 402).
 
 These methods read private package-level tables `enum<Role>_<Type>` (names, wires, keys sorted by
 bytes, codes sorted by value, members): an index by position, else a binary search, so no generated
-method grows with the member count; equal keys or wires resolve to the first declared member
-(DECISIONS 393).
+method grows with the member count; keys and wires are unique (WIRE.md §4.2, TYPES.md §9.3), so each finds one member (DECISIONS 393).
 
 **C++**
 
@@ -1043,6 +1047,8 @@ std::string_view ToWire(Tone v);                       // "series-1"
 std::optional<Tone> ToneFromWire(std::string_view wire);
 inline constexpr std::array<Tone, 3> kToneLiveMembers = {Tone::warning, Tone::info, Tone::series_1};  // not retired (DECISIONS 395)
 bool IsRetired(Tone v);                                // false for a value that is no member
+template <typename J> void to_json(J&, Tone) = delete;
+template <typename J> void from_json(const J&, Tone&) = delete;
 
 enum class Element : uint8_t { FIRE = 1, WATER = 2 };  // the underlying value is the code
 std::optional<Element> ElementFromCode(uint8_t code);  // static_cast<uint8_t>(e) is the code
@@ -1054,14 +1060,15 @@ using them links the enum package's `.gen.cpp` (§2.3: always written). `ToName`
 overloads in the package namespace; `FromWire` carries the enum name because C++ cannot overload
 on the return type (this replaces SPEC §15.3's `FromWire`). Each definition reads tables, never a
 chain or a switch over the members: `ToName`, `ToWire` and `IsRetired` index arrays in declaration order by the
-member's ordinal; `<E>FromWire` binary-searches the wires sorted by their bytes (equal wires keep
-declaration order, so the first declared wins), as `<Rec>IdFromWire` does (§5.3); `<E>FromCode`
+member's ordinal; `<E>FromWire` binary-searches the wires sorted by their bytes (wires are unique, WIRE.md §4.2), as `<Rec>IdFromWire` does (§5.3); `<E>FromCode`
 binary-searches the codes. A value that is no member gives `""` or `std::nullopt`. A member's
 ordinal is its declaration position: `static_cast<std::size_t>(v)` without `@codes`; with them,
 `detail::<E>Ordinal(v)`, an `inline constexpr` function of the header searching
 `detail::k<E>Codes` (the codes, ascending) and returning the matching
 `detail::k<E>CodeOrdinals` entry, or the member count for a value that is no member. A variant's
 kind enum (§5.5) follows the same rules.
+
+The deleted pair follows every `enum class` whose values are declaration positions (an enum without `@codes`, a kind enum, a branch enum), as it follows an id enum (§5.3); enumerators, their `static_cast`s, `ToName`, `ToWire` and `<E>FromWire` are unchanged, and an `@codes` enum still converts through nlohmann as its code (DECISIONS 402).
 
 **TS**
 
@@ -1070,16 +1077,17 @@ export type Tone = "warning" | "info" | "series-1";
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "series-1"]);
 export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "series-1"]);  // not retired (DECISIONS 395)
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ warning: "warning", info: "info", "series-1": "series_1" });
-export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ warning: 0, info: 1, "series-1": 2 });
 export const ElementCodes: Readonly<Record<Element, number>> = Object.freeze({ FIRE: 1, WATER: 2 });  // @codes only
 ```
+
+No enum exports `<E>Index`, `@codes` and open ones included: a declaration position is not an id, and an `@codes` member's stable number is `<E>Codes`. A file whose lookups (§5.10) or translated comparisons (CONFORMANCE.md §3) need positions declares `const ToneIndex = canonIndex(ToneMembers);` once, after the enum, or `const <alias>_<E>Index = canonIndex(<alias>.<E>Members);` for another package's enum, beside the private id indexes (§5.3, §8.2). A program that needs the order reads `ToneMembers.indexOf(v)` (DECISIONS 402).
 
 Rules (GO-05, CPP-04, WIR-04):
 
 - The underlying type is the `@codes` type, else the smallest of `uint8`, `uint16`, `uint32` that
-  holds every index. Without `@codes`, the value is the declaration index (`.index`).
+  holds every index. Without `@codes`, the value is the declaration index (`.index`): C++'s underlying value, Go's `Position()`, a TypeScript file's private `<E>Index`.
 - With `@codes`, `<E>FromCode` exists and the value of each constant is its code.
-- `ordered` enums compare with the native operators. `ordered` with `@codes` whose codes do not
+- `ordered` enums compare with the native operators, except Go without `@codes`, which compares `Position()`s. `ordered` with `@codes` whose codes do not
   increase in declaration order is `E8010`, because generated `<` compares codes.
 - Retired members stay in every target (SPEC §12), with the doc line `Retired.` added. The kind
   member of a retired variant case gets the same line (§5.5).
@@ -1131,7 +1139,7 @@ member wires sorted by bytes (the codes for `<E>FromCode`), with parallel arrays
 ```ts
 export type DstKnown = "DST_HP" | "DST_MP";       // the closed union
 export type Dst = DstKnown | (string & {});       // any wire; editors still complete the known ones
-// DstMembers, DstLiveMembers, DstNames, DstIndex, DstCodes are keyed by DstKnown
+// DstMembers, DstLiveMembers, DstNames, DstCodes are keyed by DstKnown
 export function isDstKnown(v: Dst): v is DstKnown;
 export function dstName(v: Dst): string;          // the Canon name of a known member, else the wire
 ```
@@ -1160,6 +1168,8 @@ The keys of a public `table` value (EMT-04):
 |---|---|---|---|
 | `baked`, `embedded` | `type StatusID struct{ position uint8 }` (opaque: no integer converts to or from it) + `var`s `StatusIDOpen…` in entry order, `String()` and `MarshalText()` (the key), `(*StatusID).UnmarshalText` (a key; an unknown one is an error), `ParseStatusID(key) (StatusID, bool)`, `Retired() bool` (the entry is retired, DECISIONS 395), `Position() int` (an array index for one build, §2.10) | `enum class StatusId : uint8_t { open, taken, … }`, `ToWire(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 383), `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`), `bool IsRetired(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 395), and deleted `to_json`/`from_json` templates for it (DECISIONS 379) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdMembers: ReadonlyArray<StatusId>` in entry order and `StatusIdLiveMembers` (the entries not retired, DECISIONS 395); no exported index: a file that needs one builds it privately with `canonIndex` (§8.2) |
 | `data`, `types` | `type StatusID string` | `std::string` (getter `const std::string&`, lookups take `std::string_view`) | `export type StatusId = string` |
+
+A table that `values` leaves out still has its id type, and in `baked` and `embedded` mode its members, in every target.
 
 The `data`/`types` row is for the package's own tables; a ref into another package's `baked` table
 uses that table's id enum (§5.8).
@@ -1255,7 +1265,7 @@ variant EventKind @json(tag: "type") {
 
 | | Go | C++ | TS |
 |---|---|---|---|
-| kind enum | `type EventKindKind uint8` with `EventKindKindSpawnMonster…`, `String()`, `Wire()`, `MarshalText()`/`(*EventKindKind).UnmarshalText` (the wire name, DECISIONS 379), `ParseEventKindKind` | `enum class EventKindKind : uint8_t { spawn_monster, … }`, `ToName`, `ToWire`, `EventKindKindFromWire` | `type EventKindKind = "spawn_monster" \| …` |
+| kind enum | `type EventKindKind struct{ position uint8 }` (opaque, §5.2) with `var`s `EventKindKindSpawnMonster…`, `String()`, `Wire()`, `MarshalText()`/`(*EventKindKind).UnmarshalText` (the wire name, DECISIONS 379), `ParseEventKindKind`, `Retired()`, `Position()` | `enum class EventKindKind : uint8_t { spawn_monster, … }`, `ToName`, `ToWire`, `EventKindKindFromWire`, deleted `to_json`/`from_json` (§5.2) | `type EventKindKind = "spawn_monster" \| …` |
 | case with fields | `type EventKindSpawnMonster struct`, with getters | `class EventKindSpawnMonster`, with getters | `interface EventKindSpawnMonster { readonly kind: "spawn_monster"; … }` |
 | variant | `type EventKind struct`; `Kind() EventKindKind`; `AsSpawnMonster() (*EventKindSpawnMonster, bool)` per case with fields | `class EventKind`; `EventKindKind GetKind() const`; `const EventKindSpawnMonster* AsSpawnMonster() const` per case with fields | `type EventKind = EventKindSpawnMonster \| …`; a case without fields is `{ readonly kind: "nothing" }` |
 
@@ -1288,7 +1298,12 @@ variant EventKind @json(tag: "type") {
   is `E8017`.
 
 ```go
-type ParamBranch uint8 // ParamBranchMonster, ParamBranchItem, ParamBranchElement, ParamBranchGameMode
+type ParamBranch struct{ position uint8 } // vars ParamBranchMonster, ParamBranchItem, ParamBranchElement, ParamBranchGameMode
+func (self ParamBranch) String() string   // the branch name, as TypeScript writes it: "monster"
+func ParseParamBranch(name string) (ParamBranch, bool)
+func (self ParamBranch) MarshalText() ([]byte, error)      // the branch name
+func (self *ParamBranch) UnmarshalText(text []byte) error  // a branch name; an unknown one is an error
+func (self ParamBranch) Position() int
 type Param struct{ /* … */ }
 func (self *Param) Branch() ParamBranch
 func (self *Param) AsMonster() (string, bool)       // ref monsters: the key
@@ -1298,7 +1313,7 @@ func (self *Param) AsGameMode() (string, bool)
 ```
 
 ```cpp
-enum class ParamBranch : uint8_t { monster, item, element, game_mode };
+enum class ParamBranch : uint8_t { monster, item, element, game_mode };  // and deleted to_json/from_json (§5.2): store the discriminant
 class Param {
 public:
     ParamBranch GetBranch() const;
@@ -1481,6 +1496,8 @@ C++ `Get(id)` with an id outside the id enum calls `std::abort()`, as every look
 | `embedded` | same accessors; the data is `//go:embed <v>.json`, decoded on first use | same accessors; the data file is a `static const unsigned char[]` in `.gen.cpp`, decoded on first use | as `baked` |
 | `data` | `func LoadPotions(path string) (*Potions, error)` | `static std::shared_ptr<const Potions> Potions::Load(const std::string& path, std::string& error);` | `export function decodePotions(json: unknown): CanonTable<PotionId, CanonRow<Potion, PotionId>>` |
 
+**Addresses** (DECISIONS 401). A generated value is built once and never modified, so every row, element, entry and nested record keeps its address while its owner lives: the program for `baked` data, the `shared_ptr` or snapshot a loader returns, the value a `types` decoder returns. Every lookup of one row (`At`, `All`, `Find`, `Get`, `FindBy<F>`, a resolved getter) gives the same address. C++ containers, `canon::KeyedList` and `canon::FlatMap` keep their rows' addresses when moved (table containers are move-only); a copy of a record or decoded value has its own rows, and the original's stay valid while the original lives. A `@reload` builds a new snapshot; an old row stays valid while its snapshot is held, and code keeps ids across reloads (§5.11, DECISIONS 16). In Go a pointer into a value keeps it alive and never moves; in TypeScript `find(k) === at(i)` for one row.
+
 **Values and rows of another package's record** (DECISIONS 323). A value whose record or variant
 belongs to another package P has P's type as its container; its accessors and loaders are this
 package's, as for any value (`func LoadDeck(path string) (*cards.Deck, error)`). In C++, where a
@@ -1540,8 +1557,7 @@ package's `K`. Keyed lists have no row type: their elements are P's type itself.
   accessor (`GetInitialStatusID()` in Go, `GetInitialStatusKey()` in C++).
 - `embedded`: a decode failure is a build defect. It is signalled with `E8301` (C++
   `canon::OnEvalError`, Go panic with `*rt.EvalError`).
-- `data`: loaders read one file, check `$schema`, fill every field and never validate (SPEC
-  §14.5). Refs inside the file are resolved at load. A class of another package is read by this
+- `data`: loaders read one file, check `$schema`, fill every field and check nothing but the wire and the range and length refinements (§5.15, SPEC §14.5). Refs inside the file are resolved at load. A class of another package is read by this
   package's own reader and built through its owner's make hook (§2.8). Go and C++ loaders read map fields, keys as
   WIRE.md §5.8 (String, integer, enum, ref, literal union), in file order, a ref key checked where a
   ref value is (§5.8), with the same error texts in both (DECISIONS 312). A dependent key or value in a
@@ -1714,7 +1730,7 @@ const std::string* GetApiKey() const;       // before LoadInputs: canon::OnEvalE
   `regexp.MatchString` accepts, at any length. Go's `regexp` size limits, which `check` applies
   when it compiles the pattern, bound the table. `where` is never checked at runtime. A failed check is
   an error naming the variable.
-- A TS emit whose package declares an input field is `E8104`.
+- A TS emit whose package declares an input field is `E8104`: TypeScript has no environment to read an input from (SPEC §19.2). The way out is to keep the input fields in a package of their own that has no TS emit (DECISIONS 305, 414).
 
 ### 5.13 `types`-mode decoders
 
@@ -1748,7 +1764,7 @@ export function decodeEventConfig(json: unknown): EventConfig;
   kind, a missing required key, an unknown enum member or case tag, a number that does not fit the
   generated type (a sized integer's range, the `Duration` range, a duration that is not a whole
   number of milliseconds, a fraction for an integer), an incomplete or non-contiguous `pairs`
-  slot. It then returns **no value** and an error naming the JSON path of the first failure: Go
+  slot, a value outside its range or length refinement (§5.15). It then returns **no value** and an error naming the JSON path of the first failure: Go
   `nil` and an `error`; C++ `std::nullopt` with `error` set; TS throws an `Error`. It never returns
   a partly filled value. A decoder that reads text (Go's, C++ `Parse`, TS `parse<T>`) also
   applies WIRE.md §3.1/§3.2's byte rules (UTF-8 and BOM, a repeated key, an unpaired surrogate,
@@ -1786,11 +1802,9 @@ export function decodeEventConfig(json: unknown): EventConfig;
   error)`; C++ `std::optional<T> Decode<Fn>File(std::string_view text, std::string& error)` in
   the package namespace, which parses the text with `ParseTextFile` (file order, byte rules); TS
   `decode<Fn>File(json: unknown): T` and `parse<Fn>File(text: string): T`; `<T>` the target's type
-  of the result, `<Fn>` the UpperCamel of the fn's name in the target (TS `items` gives
-  `decodeItemsFile`; DECISIONS 340, 363). A runtime reads a `@text` file through its result type
+  of the result, `<Fn>` the UpperCamel of the fn's name in the target without a final `File` (TS `items` and `itemsFile` both give `decodeItemsFile`: two such fns in one package are `E8005`, the way out `@go(name:)`, `@cpp(name:)` or `@ts(name:)` on one of them; DECISIONS 340, 363, 407). A decoder's errors name `<Fn>File`. A runtime reads a `@text` file through its result type
   only when
-  that is a record or variant. What it can represent it accepts without checking refinements, refs, keys
-  or checks: the file is the one `canon check` validated (WIRE.md §5.13).
+  that is a record or variant. It refuses a value outside its range or length refinement (§5.15) and checks no pattern, `where`, ref, key or check: the file is the one `canon check` validated (WIRE.md §5.13).
 - Defaults must be constant; a computed default (one that reads other fields, or the instance through
   its type's arguments, DECISIONS 282) in a type emitted in `types` mode is `E8014`, as
   are precomputed export fns and finite-parameter methods (there is no precomputed data to read).
@@ -1885,6 +1899,20 @@ generated code, not public API ([§1.3](#13-stability)), like a default-construc
   field of its own records), it builds each entry with `Make_<T>`, then sets its id and retired
   flag with `MakeEntry_<T>` (C++ `Entry_<T>`), so no entry keeps a zero id.
 
+### 5.15 Refinements at run time (DECISIONS 399, 400)
+**Checks.** Every decoder this document defines (`data` loaders and snapshots, §5.9, §5.11; `types`-mode decoders, `Parse`, `parse<T>`, `Decode<Fn>File`, §5.13; TypeScript `decode<V>`/`parse<V>`, §8.1; readers of other packages' classes, §2.8) refuses a value outside the range or length refinement of its type at its position (TYPES.md §7.4, an alias chain's ranges intersected): a record or case field, a list or keyed-list element, a map key or value, a dependent branch, a literal union's base (its literals pass), a stored `$` result or lookup cell, a `@json(pairs:)` or `@json(bits)` list, the rows of a data file's top-level list or keyed list, a `@text` result. It measures an integer of any width; a `Float`; a `Float32` as the binary32 value stored, compared in binary64 with the binary64 bound (TYPES.md §7.3); a `Duration` in milliseconds after its unit; a `String` in UTF-8 bytes; a list, keyed list or map by element count. `none` and a default taken for an absent key are not checked; patterns, `where`, assets, refs and checks never run here. A refinement is judged after the value's own type rules (a width included) and, for a collection, after its elements, keys and duplicates; the first failure in decode order is reported (§5.13): `expected a value in <R>`, `expected a byte length in <R>` or `expected an element count in <R>`, `<R>` the refinement in Canon's text (`1..=120`, `0..1`, `..=8`, `1s..=1h`), the same bytes in every target (`Probe: $.tags[2]: expected a value in 0..=5`; `items.json: rows: expected an element count in ..=500`). An integer, `Duration` or length side the stored type already guarantees writes no comparison. Make hooks check nothing; `LoadInputs` keeps §5.12's checks.
+
+**Bound constants.** For every field of a record or variant case an emit writes, and every level of the field's type reached through list and keyed-list elements, map keys and map values (an optional and a literal union's base add no level; a named or dependent type ends the walk), each finite side of the level's refinement is a constant: `Min` (lower bound), `Max` (upper, `..=`), `End` (upper, `..`); a length's are `LenMin`, `LenMax`, `LenEnd`; a level below the field prefixes `Elem`, `Key` or `Value` per step, outermost first. The value is the folded bound, never shifted or clamped.
+
+| | Go | C++ | TS |
+|---|---|---|---|
+| name | `T_` + `<F>` + suffix (`Probe_LevelMin`) | `static constexpr` member `k` + `<F>` + suffix of class `T` (`Probe::kTagsLenMax`) | `export const T_` + `<F>` + suffix |
+| Int bound, length | untyped constant | `int64_t` | `number`; at a `@ts(bigint)` position a `bigint`; an Int bound of a `number` position outside ±(2^53 − 1) is not written |
+| Float bound (also of `Float32`) | `float64` | `double` | `number` |
+| Duration bound | `N * time.Millisecond` | `std::chrono::milliseconds{N}` | `number` (ms) |
+
+`T` is the record's or case type's name, `<F>` the field's getter name (C++: after `Get`; TS: UpperCamel of the property), overrides included. Go writes them in one `const ( … )` block after the type's declaration, C++ at the start of the public members after `Decode`/`Parse`, TS after the interface; in field order, then level order, `Min` first; each with T19. Compare a `Float32` value with its bounds in binary64. The name plan reserves every name, written or not (`E8005`). Aliases (§4.4), values, constants, functions and dependent branches have none.
+
 ---
 
 ## 6. Go
@@ -1947,563 +1975,7 @@ func CanTransition(from StatusID, to StatusID) bool {
 Written to `<out>/rt/rt.go` for every Go emit (CG-09), whether or not the package uses it. It is
 the only place generated Go code gets helpers from.
 
-```go
-// Code generated by canon: Go runtime rt v1. DO NOT EDIT.
-
-// Package rt is the runtime of the Go code canon generates.
-package rt
-
-import (
-	"encoding/json"
-	"fmt"
-	"iter"
-	"math"
-	"os"
-	"strconv"
-	"strings"
-	"time"
-	"unicode/utf8"
-)
-
-// Version is the version of this runtime. Generated code of one output directory
-// always uses the rt package written next to it.
-const Version = 1
-
-// ---------------------------------------------------------------------------
-// Read-only collections
-// ---------------------------------------------------------------------------
-
-// List is a read-only list. The zero value is an empty list.
-type List[T any] struct{ s []T }
-
-// MakeList is for generated code. The list keeps s: the caller must not modify it.
-func MakeList[T any](s []T) List[T] { return List[T]{s: s} }
-
-// Len returns the number of elements.
-func (l List[T]) Len() int { return len(l.s) }
-
-// At returns element i. It panics if i is out of range, like a slice.
-func (l List[T]) At(i int) T { return l.s[i] }
-
-// All yields the elements in order.
-func (l List[T]) All() iter.Seq[T] {
-	return func(yield func(T) bool) {
-		for _, v := range l.s {
-			if !yield(v) {
-				return
-			}
-		}
-	}
-}
-
-// Clone returns a new slice holding the elements, which the caller may modify.
-func (l List[T]) Clone() []T { return append([]T(nil), l.s...) }
-
-// Map is a read-only map that iterates in source order. The zero value is empty.
-type Map[K comparable, V any] struct {
-	keys  []K
-	vals  []V
-	index map[K]int
-}
-
-// MakeMap is for generated code: keys are unique, vals[i] belongs to keys[i]. The map
-// keeps both slices: the caller must not modify them.
-func MakeMap[K comparable, V any](keys []K, vals []V) Map[K, V] {
-	index := make(map[K]int, len(keys))
-	for i, k := range keys {
-		index[k] = i
-	}
-	return Map[K, V]{keys: keys, vals: vals, index: index}
-}
-
-// Len returns the number of entries.
-func (m Map[K, V]) Len() int { return len(m.keys) }
-
-// Get returns the value of k, and whether k is present.
-func (m Map[K, V]) Get(k K) (V, bool) {
-	i, ok := m.index[k]
-	if !ok {
-		var zero V
-		return zero, false
-	}
-	return m.vals[i], true
-}
-
-// All yields the entries in source order.
-func (m Map[K, V]) All() iter.Seq2[K, V] {
-	return func(yield func(K, V) bool) {
-		for i, k := range m.keys {
-			if !yield(k, m.vals[i]) {
-				return
-			}
-		}
-	}
-}
-
-// KeyedList is a read-only list of records that are unique by a key.
-type KeyedList[K comparable, T any] struct {
-	rows  []T
-	index map[K]int
-}
-
-// MakeKeyedList is for generated code: keys[i] is the key of rows[i], keys are unique.
-// The list keeps rows: the caller must not modify it.
-func MakeKeyedList[K comparable, T any](rows []T, keys []K) KeyedList[K, T] {
-	index := make(map[K]int, len(keys))
-	for i, k := range keys {
-		index[k] = i
-	}
-	return KeyedList[K, T]{rows: rows, index: index}
-}
-
-// Len returns the number of rows.
-func (l KeyedList[K, T]) Len() int { return len(l.rows) }
-
-// At returns row i. It panics if i is out of range, like a slice.
-func (l KeyedList[K, T]) At(i int) *T { return &l.rows[i] }
-
-// All yields every row in source order.
-func (l KeyedList[K, T]) All() iter.Seq[*T] {
-	return func(yield func(*T) bool) {
-		for i := range l.rows {
-			if !yield(&l.rows[i]) {
-				return
-			}
-		}
-	}
-}
-
-// Find returns the row whose key is k.
-func (l KeyedList[K, T]) Find(k K) (*T, bool) {
-	i, ok := l.index[k]
-	if !ok {
-		return nil, false
-	}
-	return &l.rows[i], true
-}
-
-// Ptr is for generated code: a pointer to a copy of v, the form a present optional list
-// element or map value takes (nil is none).
-func Ptr[T any](v T) *T { return &v }
-
-// ---------------------------------------------------------------------------
-// Evaluation errors (DECISIONS 19): translated code panics with *EvalError.
-// ---------------------------------------------------------------------------
-
-// EvalError is an error the Canon evaluator would also report, with its code.
-type EvalError struct {
-	Code    string // Canon diagnostic code, e.g. "E4101"
-	Message string
-}
-
-func (e *EvalError) Error() string { return e.Code + ": " + e.Message }
-
-// Fail panics with an *EvalError.
-func Fail(code, message string) { panic(&EvalError{Code: code, Message: message}) }
-
-// ---------------------------------------------------------------------------
-// Checked arithmetic (CONFORMANCE.md §3). Int is int64, Float is float64,
-// Duration is int64 milliseconds.
-// ---------------------------------------------------------------------------
-
-func AddInt(a, b int64) int64 {
-	if (b > 0 && a > math.MaxInt64-b) || (b < 0 && a < math.MinInt64-b) {
-		Fail("E4101", "integer overflow in +")
-	}
-	return a + b
-}
-
-func SubInt(a, b int64) int64 {
-	if (b < 0 && a > math.MaxInt64+b) || (b > 0 && a < math.MinInt64+b) {
-		Fail("E4101", "integer overflow in -")
-	}
-	return a - b
-}
-
-func MulInt(a, b int64) int64 {
-	var overflow bool
-	if a > 0 {
-		if b > 0 {
-			overflow = a > math.MaxInt64/b
-		} else {
-			overflow = b < math.MinInt64/a
-		}
-	} else if b > 0 {
-		overflow = a < math.MinInt64/b
-	} else {
-		overflow = a != 0 && b < math.MaxInt64/a
-	}
-	if overflow {
-		Fail("E4101", "integer overflow in *")
-	}
-	return a * b
-}
-
-func DivInt(a, b int64) int64 {
-	if b == 0 {
-		Fail("E4102", "integer division by zero")
-	}
-	if a == math.MinInt64 && b == -1 {
-		Fail("E4101", "integer overflow in /")
-	}
-	return a / b
-}
-
-func ModInt(a, b int64) int64 {
-	if b == 0 {
-		Fail("E4102", "integer division by zero in %")
-	}
-	if b == -1 {
-		return 0
-	}
-	return a % b
-}
-
-func NegInt(a int64) int64 {
-	if a == math.MinInt64 {
-		Fail("E4101", "integer overflow in unary -")
-	}
-	return -a
-}
-
-func AbsInt(a int64) int64 {
-	if a == math.MinInt64 {
-		Fail("E4101", "integer overflow in abs")
-	}
-	if a < 0 {
-		return -a
-	}
-	return a
-}
-
-func ClampInt(x, lo, hi int64) int64 {
-	if lo > hi {
-		Fail("E4108", "clamp with lo > hi")
-	}
-	return min(max(x, lo), hi)
-}
-
-// CheckFloat: any Float operation whose result is NaN or infinite is E4104.
-func CheckFloat(x float64) float64 {
-	if math.IsNaN(x) || math.IsInf(x, 0) {
-		Fail("E4104", "float result is not finite")
-	}
-	return x
-}
-
-func AddFloat(a, b float64) float64 { return CheckFloat(a + b) }
-func SubFloat(a, b float64) float64 { return CheckFloat(a - b) }
-func MulFloat(a, b float64) float64 { return CheckFloat(a * b) }
-func DivFloat(a, b float64) float64 { return CheckFloat(a / b) }
-func ModFloat(a, b float64) float64 { return CheckFloat(math.Mod(a, b)) }
-func NegFloat(a float64) float64    { return -a }
-func AbsFloat(a float64) float64    { return math.Abs(a) }
-
-// MinFloat and MaxFloat order -0.0 before +0.0 (IEEE 754-2019 minimum and maximum).
-func MinFloat(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	if b < a {
-		return b
-	}
-	if math.Signbit(a) {
-		return a
-	}
-	return b
-}
-
-func MaxFloat(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	if b > a {
-		return b
-	}
-	if math.Signbit(a) {
-		return b
-	}
-	return a
-}
-
-func ClampFloat(x, lo, hi float64) float64 {
-	if lo > hi {
-		Fail("E4108", "clamp with lo > hi")
-	}
-	return MinFloat(MaxFloat(x, lo), hi)
-}
-
-func IntToFloat(i int64) float64 { return float64(i) }
-
-// FloatToInt is Int(f): it truncates toward zero; E4103 when the result does not fit.
-func FloatToInt(f float64) int64 {
-	if !(f >= -9223372036854775808.0 && f < 9223372036854775808.0) {
-		Fail("E4103", "float out of the Int range")
-	}
-	return int64(f)
-}
-
-func FloorFloat(f float64) int64 { return FloatToInt(math.Floor(f)) }
-func CeilFloat(f float64) int64  { return FloatToInt(math.Ceil(f)) }
-
-// RoundFloat rounds half away from zero.
-func RoundFloat(f float64) int64 { return FloatToInt(math.Round(f)) }
-
-// DivDuration is Duration / Duration, a Float; a zero divisor is E4102.
-func DivDuration(a, b int64) float64 {
-	if b == 0 {
-		Fail("E4102", "duration division by zero")
-	}
-	return CheckFloat(float64(a) / float64(b))
-}
-
-// CheckIntRange checks the range refinement of a parameter or a return value: E3204.
-func CheckIntRange(v, lo, hi int64) int64 {
-	if v < lo || v > hi {
-		Fail("E3204", "value outside its refinement range")
-	}
-	return v
-}
-
-func CheckFloatRange(v, lo, hi float64) float64 {
-	if v < lo || v > hi {
-		Fail("E3204", "value outside its refinement range")
-	}
-	return v
-}
-
-// CheckIntWidth checks the range of a sized integer type (Int8 ... UInt64): E3201.
-func CheckIntWidth(v, lo, hi int64) int64 {
-	if v < lo || v > hi {
-		Fail("E3201", "value does not fit its sized integer type")
-	}
-	return v
-}
-
-// ToFloat32 stores a Float into a Float32, rounding to nearest-even; overflow is E3202.
-func ToFloat32(v float64) float32 {
-	if math.Abs(v) >= 3.4028235677973366e+38 {
-		Fail("E3202", "value overflows Float32")
-	}
-	return float32(v)
-}
-
-// CheckFloatArg: a Float argument that is NaN or infinite is E4104 on entry.
-func CheckFloatArg(v float64) float64 { return CheckFloat(v) }
-
-// DurationToMs converts a runtime argument to Canon's millisecond count; any
-// sub-millisecond part is truncated toward zero.
-func DurationToMs(d time.Duration) int64 { return d.Milliseconds() }
-
-// DurationFromMs converts a Canon duration to a time.Duration.
-func DurationFromMs(ms int64) time.Duration { return time.Duration(ms) * time.Millisecond }
-
-// ---------------------------------------------------------------------------
-// Data files
-// ---------------------------------------------------------------------------
-
-// DataFile is the envelope of a data file written by `canon build`.
-type DataFile struct {
-	Schema string          `json:"$schema"`
-	Rows   json.RawMessage `json:"rows"`
-	Value  json.RawMessage `json:"value"`
-}
-
-// ReadDataFile reads a data file and checks its $schema against schema.
-func ReadDataFile(path, schema string) (*DataFile, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDataFile(path, raw, schema)
-}
-
-// ParseDataFile parses a data file (name is used in messages) and checks its $schema.
-func ParseDataFile(name string, raw []byte, schema string) (*DataFile, error) {
-	var f DataFile
-	if err := json.Unmarshal(raw, &f); err != nil {
-		return nil, fmt.Errorf("%s: not a canon data file: %w", name, err)
-	}
-	if f.Schema != schema {
-		got := f.Schema
-		if got == "" {
-			got = "<none>"
-		}
-		return nil, fmt.Errorf("%s: built from schema %s, this binary expects %s. Rebuild the data or deploy the matching binary", name, got, schema)
-	}
-	return &f, nil
-}
-
-// Missing is the error of a required key absent from a data file.
-func Missing(name, path, key string) error {
-	return fmt.Errorf("%s: %s%s: missing", name, path, key)
-}
-
-// ---------------------------------------------------------------------------
-// Runtime inputs (EVALUATION.md §11.3): environment text is read as the literal of
-// the field's type.
-// ---------------------------------------------------------------------------
-
-// Env returns the variable's value. An unset or empty variable is unset.
-func Env(name string) (string, bool) {
-	v, ok := os.LookupEnv(name)
-	return v, ok && v != ""
-}
-
-func isDec(c byte) bool { return c >= '0' && c <= '9' }
-
-// allDigits reports whether s is one or more decimal digits.
-func allDigits(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i := 0; i < len(s); i++ {
-		if !isDec(s[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-// digits removes the '_' separators of a Canon decimal literal (duration parts).
-func digits(s string) (string, bool) {
-	if s == "" || !isDec(s[0]) || !isDec(s[len(s)-1]) {
-		return "", false
-	}
-	var b strings.Builder
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		switch {
-		case isDec(c):
-			b.WriteByte(c)
-		case c == '_' && isDec(s[i+1]):
-		default:
-			return "", false
-		}
-	}
-	return b.String(), true
-}
-
-// ParseIntLiteral reads an integer input: decimal digits with an optional leading '-',
-// no separator and no prefix.
-func ParseIntLiteral(s string) (int64, error) {
-	if !allDigits(strings.TrimPrefix(s, "-")) {
-		return 0, fmt.Errorf("%q is not an integer", s)
-	}
-	n, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("%q is out of the Int range", s)
-	}
-	return n, nil
-}
-
-// ParseFloatLiteral reads a Float input: -?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?, finite.
-func ParseFloatLiteral(s string) (float64, error) {
-	bad := fmt.Errorf("%q is not a number", s)
-	body := strings.TrimPrefix(s, "-")
-	mant, exp, hasExp := strings.Cut(body, "e")
-	if !hasExp {
-		mant, exp, hasExp = strings.Cut(body, "E")
-	}
-	intPart, frac, hasFrac := strings.Cut(mant, ".")
-	if !allDigits(intPart) || (hasFrac && !allDigits(frac)) {
-		return 0, bad
-	}
-	if hasExp {
-		if exp != "" && (exp[0] == '+' || exp[0] == '-') {
-			exp = exp[1:]
-		}
-		if !allDigits(exp) {
-			return 0, bad
-		}
-	}
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil || math.IsInf(f, 0) {
-		return 0, fmt.Errorf("%q is out of the Float range", s)
-	}
-	return f, nil
-}
-
-// ParseStringLiteral reads a String input: the text byte for byte, which must be UTF-8.
-func ParseStringLiteral(s string) (string, error) {
-	if !utf8.ValidString(s) {
-		return "", fmt.Errorf("%q is not valid UTF-8", s)
-	}
-	return s, nil
-}
-
-// ParseBoolLiteral reads true or false.
-func ParseBoolLiteral(s string) (bool, error) {
-	switch s {
-	case "true":
-		return true, nil
-	case "false":
-		return false, nil
-	}
-	return false, fmt.Errorf("%q is not true or false", s)
-}
-
-// ParseDurationLiteral reads a Canon duration literal: 250ms, 90s, 1h30m, -5m.
-// Units d h m s ms appear at most once each, largest first.
-func ParseDurationLiteral(s string) (time.Duration, error) {
-	bad := fmt.Errorf("%q is not a duration", s)
-	body := strings.TrimPrefix(s, "-")
-	units := []struct {
-		suffix string
-		ms     int64
-	}{{"d", 86_400_000}, {"h", 3_600_000}, {"ms", 1}, {"m", 60_000}, {"s", 1_000}}
-	order := map[string]int{"d": 0, "h": 1, "m": 2, "s": 3, "ms": 4}
-	var total int64
-	last := -1
-	for body != "" {
-		i := 0
-		for i < len(body) && (isDec(body[i]) || body[i] == '_') {
-			i++
-		}
-		d, ok := digits(body[:i])
-		if !ok {
-			return 0, bad
-		}
-		rest := body[i:]
-		matched := false
-		for _, u := range units {
-			if !strings.HasPrefix(rest, u.suffix) {
-				continue
-			}
-			if order[u.suffix] <= last {
-				return 0, bad
-			}
-			last = order[u.suffix]
-			n, err := strconv.ParseInt(d, 10, 64)
-			if err != nil || n > (math.MaxInt64-total)/u.ms {
-				return 0, fmt.Errorf("%q is out of the Duration range", s)
-			}
-			total += n * u.ms
-			body = rest[len(u.suffix):]
-			matched = true
-			break
-		}
-		if !matched {
-			return 0, bad
-		}
-	}
-	if last < 0 {
-		return 0, bad
-	}
-	if total > math.MaxInt64/int64(time.Millisecond) {
-		return 0, fmt.Errorf("%q is out of the Duration range", s)
-	}
-	if strings.HasPrefix(s, "-") {
-		total = -total
-	}
-	return DurationFromMs(total), nil
-}
-
-// InputError is the error of a runtime input that is missing or invalid.
-func InputError(name, reason string) error {
-	return fmt.Errorf("environment variable %s: %s", name, reason)
-}
-```
+Its text is the embedded file `internal/gen/go/runtime/rt.go.txt`, written byte for byte; this section fixes its contract, not a listing (DECISIONS 415). Every `rt.<Name>` this specification names is exported by it. The areas: the version `Version`; read-only collections (`List`, `Map`, `KeyedList` and their `Make…`, `Ptr`); evaluation errors (`EvalError`, `Fail`: translated code panics with `*EvalError`, DECISIONS 19); the checked arithmetic, conversions and range and width checks of CONFORMANCE.md §3; data-file parsing (`ReadDataFile`, `ParseDataFile`, WIRE.md §8); runtime inputs (`Env`, the `Parse…Literal` readers, `InputError`, §5.12).
 
 ---
 
@@ -3029,221 +2501,7 @@ and applying the same byte rules; `types`-mode `Parse` and `Decode<Fn>File` read
 (§5.13, DECISIONS 361, 363). Both are additive to `rt_v1`, as are `Decoder::AsOpenEnum` and the
 `OpenEnum` shortcut, which read an opened enum (§5.2) from any JSON string (DECISIONS 362).
 
-```cpp
-// GENERATED by canon: C++ runtime rt_v1 (JSON). DO NOT EDIT.
-#ifndef CANON_RUNTIME_JSON_RT_V1
-#define CANON_RUNTIME_JSON_RT_V1
-
-#include <chrono>
-#include <cstdint>
-#include <fstream>
-#include <iterator>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <utility>
-#include <vector>
-
-#include <nlohmann/json.hpp>
-
-#include "canon_runtime.h"
-
-namespace canon {
-inline namespace rt_v1 {
-namespace json {
-
-using Json = nlohmann::json;
-
-/// Reads the whole file. False (with `error` set) when it cannot be read.
-inline bool ReadFile(const std::string& path, std::string& out, std::string& error) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        error = "cannot open " + path;
-        return false;
-    }
-    out.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-    if (in.bad()) {
-        error = "cannot read " + path;
-        return false;
-    }
-    return true;
-}
-
-/// Parses a data file written by `canon build` and checks its "$schema" against the
-/// fingerprint compiled into this binary. `name` is used in messages (a path, or
-/// "embedded potions.json").
-inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
-                          Json& doc, std::string& error) {
-    doc = Json::parse(text, nullptr, /*allow_exceptions=*/false);
-    if (doc.is_discarded() || !doc.is_object()) {
-        error = name + ": not a canon data file (invalid JSON)";
-        return false;
-    }
-    auto it = doc.find("$schema");
-    std::string got = "<none>";
-    if (it != doc.end() && it->is_string()) got = it->get_ref<const std::string&>();
-    if (got != schema) {
-        error = name + ": built from schema " + got + ", this binary expects " + std::string(schema) +
-                ". Rebuild the data or deploy the matching binary";
-        return false;
-    }
-    return true;
-}
-
-/// Reads JSON values into generated classes. It records the first error with the
-/// path of the value, and never validates: values were checked by `canon build`.
-class Decoder {
-public:
-    explicit Decoder(std::string name) : name_(std::move(name)) {}
-
-    bool Ok() const noexcept { return error_.empty(); }
-    const std::string& Error() const noexcept { return error_; }
-
-    /// Path tracking for messages: Push("rows[3]") ... Pop().
-    void Push(std::string segment) { path_.push_back(std::move(segment)); }
-    void Pop() { path_.pop_back(); }
-
-    /// Records an error at the current path (only the first one is kept).
-    void Fail(std::string_view key, std::string_view what) {
-        if (!error_.empty()) return;
-        error_ = name_ + ": ";
-        for (size_t i = 0; i < path_.size(); ++i) {
-            if (i > 0) error_ += '.';
-            error_ += path_[i];
-        }
-        if (!key.empty()) {
-            if (!path_.empty()) error_ += '.';
-            error_ += key;
-        }
-        error_ += ": ";
-        error_ += what;
-    }
-
-    /// The value of `key`, or nullptr when the key is absent or null.
-    const Json* Optional(const Json& obj, const char* key) {
-        if (!obj.is_object()) {
-            Fail(key, "expected an object");
-            return nullptr;
-        }
-        auto it = obj.find(key);
-        if (it == obj.end() || it->is_null()) return nullptr;
-        return &*it;
-    }
-
-    /// The value of `key`; an error when it is absent or null.
-    const Json* Required(const Json& obj, const char* key) {
-        const Json* v = Optional(obj, key);
-        if (v == nullptr) Fail(key, "missing");
-        return v;
-    }
-
-    bool AsString(const Json& v, std::string_view key, std::string& out) {
-        if (!v.is_string()) return Fail(key, "expected a string"), false;
-        out = v.get_ref<const std::string&>();
-        return true;
-    }
-
-    bool AsInt(const Json& v, std::string_view key, int64_t& out) {
-        if (v.is_number_integer() && !(v.is_number_unsigned() && v.get<uint64_t>() > uint64_t(kIntMax))) {
-            out = v.get<int64_t>();
-            return true;
-        }
-        return Fail(key, "expected an integer"), false;
-    }
-
-    /// A Float may be written as an integer token ("1" for 1.0).
-    bool AsFloat(const Json& v, std::string_view key, double& out) {
-        if (!v.is_number()) return Fail(key, "expected a number"), false;
-        out = v.get<double>();
-        return true;
-    }
-
-    bool AsBool(const Json& v, std::string_view key, bool& out) {
-        if (!v.is_boolean()) return Fail(key, "expected true or false"), false;
-        out = v.get<bool>();
-        return true;
-    }
-
-    /// `unitMs` is the length of one wire unit: 1 for ms, 1000 for s, 60000 for m...
-    bool AsDuration(const Json& v, std::string_view key, int64_t unitMs, std::chrono::milliseconds& out) {
-        int64_t n = 0;
-        if (!AsInt(v, key, n)) return false;
-        out = std::chrono::milliseconds(n * unitMs);
-        return true;
-    }
-
-    /// `parse` is a generated <Enum>FromWire or <Enum>FromCode function.
-    template <class E, class W>
-    bool AsEnum(const Json& v, std::string_view key, std::optional<E> (*parse)(W), E& out) {
-        std::optional<E> e;
-        if constexpr (std::is_same_v<W, std::string_view>) {
-            if (v.is_string()) e = parse(std::string_view(v.get_ref<const std::string&>()));
-        } else {
-            int64_t n = 0;
-            if (v.is_number_integer()) {
-                n = v.get<int64_t>();
-                if (n >= int64_t(std::numeric_limits<W>::min()) && n <= int64_t(std::numeric_limits<W>::max()))
-                    e = parse(static_cast<W>(n));
-            }
-        }
-        if (!e) return Fail(key, "unknown enum value"), false;
-        out = *e;
-        return true;
-    }
-
-    /// The array at `key` (or nullptr with an error).
-    const Json* Array(const Json& obj, const char* key) {
-        const Json* v = Required(obj, key);
-        if (v != nullptr && !v->is_array()) return Fail(key, "expected an array"), nullptr;
-        return v;
-    }
-
-    /// The object at `key` (or nullptr with an error).
-    const Json* Object(const Json& obj, const char* key) {
-        const Json* v = Required(obj, key);
-        if (v != nullptr && !v->is_object()) return Fail(key, "expected an object"), nullptr;
-        return v;
-    }
-
-    // Field shortcuts: Required + As*.
-    bool String(const Json& obj, const char* key, std::string& out) {
-        const Json* v = Required(obj, key);
-        return v != nullptr && AsString(*v, key, out);
-    }
-    bool Int(const Json& obj, const char* key, int64_t& out) {
-        const Json* v = Required(obj, key);
-        return v != nullptr && AsInt(*v, key, out);
-    }
-    bool Float(const Json& obj, const char* key, double& out) {
-        const Json* v = Required(obj, key);
-        return v != nullptr && AsFloat(*v, key, out);
-    }
-    bool Bool(const Json& obj, const char* key, bool& out) {
-        const Json* v = Required(obj, key);
-        return v != nullptr && AsBool(*v, key, out);
-    }
-    bool Duration(const Json& obj, const char* key, int64_t unitMs, std::chrono::milliseconds& out) {
-        const Json* v = Required(obj, key);
-        return v != nullptr && AsDuration(*v, key, unitMs, out);
-    }
-    template <class E, class W>
-    bool Enum(const Json& obj, const char* key, std::optional<E> (*parse)(W), E& out) {
-        const Json* v = Required(obj, key);
-        return v != nullptr && AsEnum(*v, key, parse, out);
-    }
-
-private:
-    std::string name_;
-    std::vector<std::string> path_;
-    std::string error_;
-};
-
-}  // namespace json
-}  // namespace rt_v1
-}  // namespace canon
-
-#endif  // CANON_RUNTIME_JSON_RT_V1
-```
+Its text is the embedded file `internal/gen/cpp/runtime/canon_runtime_json.h.txt` (guard `CANON_RUNTIME_JSON_RT_V1`, namespace `canon::rt_v1::json`), written byte for byte; this section fixes its contract, not a listing (DECISIONS 415): the byte rules and first-failure messages of WIRE.md §8 for `ParseDataFile` and `ParseTextFile`, and a `Decoder` whose typed reads check the JSON type first and name the failing key path; the generated decoders also record a value outside its range or length refinement (§5.15) and check nothing else `canon build` checked.
 
 ### 7.6 Loader shape
 
@@ -3561,6 +2819,9 @@ applies).
   `#pragma push_macro("N")` / `#undef N` … `#pragma pop_macro("N")` (names in sorted order),
   over every region naming one, so a defines header or a legacy header with the same macros
   included earlier cannot break generated code.
+- The wrap covers the defines of the package and of the packages it reads, so that a package's output is a function of what it reads. A name that a package's generated C++ declares (any name of §3.5's plan: enumerators, kind and branch enum members, constants, table ids, members, types, namespace segments) and that a package it does not read writes as a `#define` is `E8005` `foreignDefine`: a translation unit that includes that defines header first could not compile it. The way out is `@cpp(name:)` on the declaration, or a use of a type of the defining package, which makes this one read it. A package writes defines when its first `emit cpp` is `baked`, `data` or `types`. A local or a parameter of a translated fn is no plan name: the C++ compiler reports a clash there.
+- A name met only in a comment, a string literal or a character literal is not wrapped: a macro is never expanded there.
+- A header that `emit text` renders is plain text to Canon. A project that includes one beside generated code puts `@cpp(defines: "P")` on the enums or constants whose names it defines: the wrap is by name, so it guards that header's macros as well as the defines header's.
 
 ---
 
@@ -3832,6 +3093,8 @@ Float exactness flags for C++ (`-ffp-contract=off`, `/fp:precise`, SSE2 on 32-bi
 CONFORMANCE.md §5. Generated code compiles warning-free with `-Wall -Wextra -Wpedantic` (GCC,
 Clang) and `/W4` (MSVC).
 
+The MSVC row is verified only by the golden compile on a Windows runner with `cl.exe` (IMPLEMENTATION-PLAN.md §7.8), at the goldens' size. The bulk array forms of §7.3 (DECISIONS 392) are not compiled under MSVC or clang-cl at the scale that motivated them (tens of thousands of elements); their limits there are unverified, and nothing in this repository runs `cl.exe` at that size.
+
 ---
 
 ## 10. Goldens
@@ -3910,7 +3173,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8014 | error | precomputed or finite export fn, or computed default, in `types` mode |
 | E8015 | error | other value types in `data`/`embedded` |
 | E8017 | error | §5.6 |
-| E8021 | error | misplaced `@text`, invalid file name, one name twice (§2.9) |
+| E8021 | error | misplaced `@text`, invalid file name (a `.canon` one included), one name twice (§2.9) |
 | E8022 | error | a relative include or import crossing two roots this machine places otherwise than `project.canon` does (§2.8) |
 | E8023 | error | `build --check` with outputs under an optional root absent on this machine (§2.4) |
 | W8024 | warning | outputs under an optional root absent on this machine skipped; one per root (§2.4) |

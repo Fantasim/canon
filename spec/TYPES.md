@@ -758,6 +758,7 @@ Rules:
 
 - Bounds are constant expressions (§15) of the base type (`E3015`); an integer literal is
   accepted as a `Float` bound. A range with `lo > hi` (after normalising `..=`) is `E3023`.
+- A field's default that is a constant expression (§15) is checked against the field's refinements as the literal it folds to: at the default, whether or not a value takes it. A `Float32` literal or constant is compared after rounding to binary32, as stored (§7.3) (DECISIONS 412).
 - A range refinement on `Bool`, an enum or a record, or a regex on anything but `String`, is
   `E3023`. An invalid RE2 pattern is `E1114` (GRAMMAR.md).
 - A refinement on a named type adds to the named type's own refinements: `Penya(..=1000)` with
@@ -769,6 +770,7 @@ Rules:
   predicate may call functions). `it` is never optional.
 - A literal checked against a refined type that it violates is reported statically with the
   same code (`stack: Int(1..) = 0` is a static `E3204`).
+- Generated decoders check range and length refinements when they read a value (CODEGEN.md §5.15).
 
 ### 7.5 Equality and ordering (TYP-08)
 
@@ -813,6 +815,7 @@ non-`ordered` enums, is `E3310`. Optionals are not orderable (`E3403`). Comparis
 - Members have built-in members: `.name: String` (Canon name), `.index: Int` (position from
   0, retired members included), `.wire: String` (the wire value), `.retired: Bool`, and `.code: Int`
   with `@codes` only (`E3003` otherwise). `E.members` lists them all (STDLIB.md §3, DECISIONS 299).
+- The wire values of an enum's members are pairwise distinct (WIRE.md §4.2), so `.wire` names one member.
 - `E.typeName: String` is the enum's declared name, unqualified (`"FarmEventKind"`; STDLIB.md §3,
   DECISIONS 306).
 - `ordered` makes the enum orderable (§7.5).
@@ -926,6 +929,8 @@ let sold: [past ref items] = [oldSword]       // history: allowed
 A **collection of `T`** is a table of `T` or a keyed list of `T`. Load.defines tables are
 collections of `Define`. Only collections can be referenced (§10).
 
+An optional field or let holding a table or keyed list (`[T] keyed by k?`) holds no collection of `T`: it is no level-1 candidate (§10.2), a let path through it is `E3504`, and its entries take no field identity (§6.3); API.md R11 makes them nodes where they are met.
+
 ---
 
 ## 10. References
@@ -1021,7 +1026,7 @@ RES-07). Other packages then validate against that collection.
 - An argument must be a stable path rooted at a type parameter, an **earlier** field of the
   same record, or the binder of a dependent map (§11.5). A later field, the field itself, or any
   other expression is `E3805` (for fields) or `E3803` (otherwise). An optional segment inside the
-  path (`ev.sub.k` with `sub: Sub?`) is `E3803` (DECISIONS 307). The arguments of the value forms
+  path (`ev.sub.k` with `sub: Sub?`) is `E3803` (DECISIONS 307). A path may read through a field typed by an applied record (`sub.kind` with `sub: Sub(goal)`, §11.3). An argument whose static type is a dependent value (`F(*)`) fits no parameter: `E3806`; pass the driver it is computed from (`Aim(goal)`). The arguments of the value forms
   `F(a…).members` and `F(a…).typeName` are ordinary expressions instead (§4.3).
 
 ### 11.2 Type functions
@@ -1063,7 +1068,7 @@ P(k) | "none"` is `P(*) | "none"`. A `DepUnion` supports only:
 
 Anything else (any other field access, arithmetic, passing it as a `ref items`) is `E3804`; so
 is a literal typed against a dependent value's static view (`P(*)`, or a record applied to a
-binder) outside a dependent field, its list, or a declaration of the dependent type (DECISIONS 338). There
+binder) outside a dependent field, its list, a declaration of the dependent type, or a kept dependent map (§11.5) (DECISIONS 338, 408). There
 is no branch narrowing in this version, enum branches included: `match` on the discriminating
 field (`e.param`), not on the dependent value.
 
@@ -1088,7 +1093,7 @@ unequal, with no finding.
 `T(k)` may use the binder `k`. Statically the map is `{ref c: DepUnion}` if `T(k)` depends on
 `k`, else `{ref c: T}`. Its literal keys are resolved against `ref c`, and they alone bind `k`: a map nested in a value,
 whatever its key type, never rebinds it (DECISIONS 338). Each value is checked at
-evaluation against `T` applied to its key (§11.6). On a map whose type mentions a key binder, `union` is `E3804` (§11.4, DECISIONS 338). A map whose **key** type is a dependent
+evaluation against `T` applied to its key (§11.6). A dependent map is **kept** when `T(k)` reads `k` and every type argument in it is `k` or the binder of a dependent map inside it. A read of a kept map (a name, a field, an element, a map value, a call's result) has the map's own type, not the static view, and a literal typed against it binds `k` to each of its keys: `m == { a: … }` and `m.union({ a: … })` check each value against `T` applied to its key. `union` on a kept map takes and returns its type; on another map whose type reads a key binder, it is `E3804` (§11.4; DECISIONS 338, 408). A map whose **key** type is a dependent
 type (`{SpecificKey(e): …}`) has `DepUnion` keys.
 
 ### 11.6 Evaluation of dependent types (DEP-02)
