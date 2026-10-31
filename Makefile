@@ -136,7 +136,9 @@ check-real:
 # fails the target; it prints the sorted table (unit, peak RSS, time) and a PASS/FAIL line.
 # SOVEREIGN is the Sovereign root (Resource/, Source/, services/), read-only: the project is
 # copied into a scratch tree of the run, removed on exit (DECISIONS 29). Skips with a message
-# when the tree is absent. About 9 min on 24 cores (4 jobs); opt-in, never part of `check`.
+# when the tree is absent. RD_PATCH=<diff> (a/ b/ prefixes, paths from the Resource root) is
+# applied to the scratch Resource before the build; one that does not apply exits 2.
+# About 9 min on 24 cores (4 jobs); opt-in, never part of `check`.
 SOVEREIGN ?= ../..
 export SOVEREIGN
 .PHONY: realdata-compile

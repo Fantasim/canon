@@ -18,7 +18,10 @@
 # Usage:  SOVEREIGN=../.. bash tools/realdata-compile.sh
 #   SOVEREIGN  the Sovereign root (Resource/, Source/, services/), default ../.. of this repository.
 #   RD_JOBS    parallel compiles, default min(nproc/2, 4).
-# Exit: 0 PASS, or skipped (no Sovereign tree); 1 FAIL; 2 a needed tool is missing.
+#   RD_PATCH   optional path of a unified diff (a/ b/ prefixes, paths from the Resource root),
+#              applied to the scratch copy of Resource after the copy and before `canon build`.
+# Exit: 0 PASS, or skipped (no Sovereign tree); 1 FAIL; 2 a needed tool is missing or RD_PATCH
+# does not apply.
 set -euo pipefail
 export LC_ALL=C
 
@@ -55,6 +58,17 @@ measure() {
   return "$rc"
 }
 
+# apply_patch <diff> <resource-dir>: applies the unified diff to the scratch Resource copy
+# (ADR-0023 §12 RD-PATCH); a diff that does not apply ends the run with exit 2.
+apply_patch() {
+  local diff
+  diff=$(readlink -f "$1")
+  if ! patch -p1 --forward --batch -d "$2" -i "$diff" > /dev/null 2>&1; then
+    echo "realdata-compile: RD_PATCH does not apply" >&2
+    exit 2
+  fi
+}
+
 # Worker modes, re-entered through xargs and go -toolexec.
 case "${1:-}" in
   _cxx)
@@ -82,6 +96,10 @@ case "${1:-}" in
     rc=0
     measure go "$pkg" "$tool" "$@" || rc=$?
     exit "$rc"
+    ;;
+  _patch)
+    apply_patch "$2" "$3"
+    exit 0
     ;;
   "") ;;
   *)
@@ -113,6 +131,10 @@ for tool in clang++ go node systemd-run rsync /usr/bin/time; do
     exit 2
   fi
 done
+if [ -n "${RD_PATCH:-}" ] && ! command -v patch > /dev/null; then
+  echo "realdata-compile: patch not found on PATH" >&2
+  exit 2
+fi
 for c in "${TS_COMPILERS[@]}"; do
   if [ ! -f "$ts_modules/$c/bin/tsc" ]; then
     echo "realdata-compile: $c not installed (npm ci --prefix tools/tsc)" >&2
@@ -154,6 +176,11 @@ for svc in "${SERVICES[@]}"; do
   cp "$sovereign/services/$svc/go.mod" "$proj/services/$svc/"
   if [ -f "$sovereign/services/$svc/go.sum" ]; then cp "$sovereign/services/$svc/go.sum" "$proj/services/$svc/"; fi
 done
+
+if [ -n "${RD_PATCH:-}" ]; then
+  phase "applying RD_PATCH"
+  apply_patch "$RD_PATCH" "$proj/Resource"
+fi
 
 phase "canon build"
 cd "$proj/Resource/Config"
