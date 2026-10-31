@@ -1,0 +1,31 @@
+FORMATTER.md §7.2: `expect package` prints "package", or "package " BL(items), each item
+`name: value`; a wide or multi-line subject breaks one item per line with the verdict after `}`.
+-- in.canon --
+package p
+
+test "t" {
+  expect package passes
+  expect   package   {  levels:levels+[1],  } passes
+  expect package { levels: levels + [levels[1]], other: someVeryLongFunctionName(argumentNumberOne, argumentNumberTwo) } fails uniqueIndex
+  expect package {
+    a: 1
+    // why b
+    b: 2
+  } fails "x"
+}
+-- want --
+package p
+
+test "t" {
+  expect package passes
+  expect package { levels: levels + [1] } passes
+  expect package {
+    levels: levels + [levels[1]]
+    other: someVeryLongFunctionName(argumentNumberOne, argumentNumberTwo)
+  } fails uniqueIndex
+  expect package {
+    a: 1
+    // why b
+    b: 2
+  } fails "x"
+}

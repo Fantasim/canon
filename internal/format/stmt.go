@@ -149,7 +149,11 @@ func (b *builder) returnStmt(n *syntax.ReturnStmt) *doc {
 
 // expectStmt keeps its verdict on the line of the subject's end (§7.2).
 func (b *builder) expectStmt(n *syntax.ExpectStmt) *doc {
-	ds := []*doc{b.tok(n.First()), spaceDoc, b.node(n.X)}
+	subject := func() *doc { return b.node(n.X) }
+	if n.Package != nil {
+		subject = func() *doc { return b.node(n.Package) }
+	}
+	ds := []*doc{b.tok(n.First()), spaceDoc, subject()}
 	if n.Outcome != nil {
 		ds = append(ds, spaceDoc, b.node(n.Outcome))
 	}
@@ -157,4 +161,17 @@ func (b *builder) expectStmt(n *syntax.ExpectStmt) *doc {
 		ds = append(ds, spaceDoc, b.node(n.Message))
 	}
 	return cat(ds...)
+}
+
+// packageSubject is "package", or "package " BL(items) (FORMATTER.md §7.2).
+func (b *builder) packageSubject(n *syntax.PackageSubject) *doc {
+	if len(n.Items) == 0 {
+		return b.tok(n.First())
+	}
+	return cat(b.tok(n.First()), spaceDoc, b.braceList(n.Braces.Open, n.Braces.Close, entries(b, n.Items)))
+}
+
+// substitution is "name: value" by rule A (FORMATTER.md §7.2).
+func (b *builder) substitution(n *syntax.Substitution) *doc {
+	return cat(b.node(n.Name), b.assign(b.after(n.Name.Last()), n.Value))
 }

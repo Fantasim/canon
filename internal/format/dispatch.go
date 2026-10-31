@@ -66,6 +66,7 @@ func initDecls() {
 	t[syntax.KindWhileStmt], t[syntax.KindReturnStmt] = on((*builder).whileStmt), on((*builder).returnStmt)
 	t[syntax.KindExpectStmt], t[syntax.KindMatchStmt] = on((*builder).expectStmt), on((*builder).matchStmt)
 	t[syntax.KindStmtArm] = on((*builder).stmtArm)
+	t[syntax.KindPackageSubject], t[syntax.KindSubstitution] = on((*builder).packageSubject), on((*builder).substitution)
 	t[syntax.KindExprStmt] = on(func(b *builder, n *syntax.ExprStmt) *doc { return b.node(n.X) })
 }
 
