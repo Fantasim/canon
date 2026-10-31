@@ -38,6 +38,9 @@ it twice.
     that they fail on unchanged production files. Copy the files aside and back; never `git stash`.
   - A test that does not fail means the reading was wrong. **The unit stops and reports**, and the
     orchestrator decides under the fallback below.
+  - **Except pins.** A test this ADR calls a pin passes on unchanged files by design; its section says
+    how to prove it can fail. `TestExampleTests` (§2) is proved by EXAMPLES, which adds the first
+    `tests.txt`.
 - **Fallback, for a small question this ADR does not answer.** A real design question is a gap; see
   the next rule. Otherwise, in order:
   1. A spec document that answers it wins (DOCTRINE §2).
@@ -276,8 +279,13 @@ type Substitution struct { Bounds; Name *Ident; Value Expr }
 // internal/check/substitutions.go
 func (c *checker) packageSubject(env *env, s *syntax.PackageSubject) // targets as amendBlock; c.expr(env, it.Value, c.letType(o))
 
-// internal/eval/tests.go: execExpect → execPackage(r, x) when x.Package != nil; Builder gains
+// internal/eval/tests.go: execExpect → execPackage(r, x) when x.Package != nil. Builder is UNCHANGED
+// (build's subjects implements it, build/conformer.go:87: changing it would break internal/build
+// until N5-BUILD lands). eval adds a second interface; execPackage type-asserts the test's Builder to
+// it and fails the expect with an internal error when it is not one; N5-BUILD's subjects implements it.
+type PackageBuilder interface {
 	BuildPackage(ctx context.Context, w *World, capture *diag.Bag) // EVALUATION.md §10.5
+}
 // internal/eval/world.go
 func (e *Evaluator) world(pkg string, subs map[check.Object]value.Value, capture *diag.Bag) *World
 func (w *World) Evaluator() *Evaluator
@@ -310,8 +318,7 @@ func (s subjects) BuildPackage(ctx context.Context, w *eval.World, capture *diag
     subject (§10.5)".
   - `:548`: replace "Package checks never run for a subject." with "Package checks never run for a
     value subject; `expect package` runs them (§10.5)."
-  - `:45`: after "Each package's tests run as `canon test <pkg>` runs them", add ", package subjects
-    (§10.5) not built".
+  - `:45`: after "…runs them (§10)", add ", package subjects (§10.5) not built".
   - The §10.3 table gets a new row after `:562`: `| expect package [{ … }] passes / fails … / warns
     … | the same, over the findings of building the package (§10.5) |`.
   - The bullet at `:564-569` is replaced by:
@@ -380,8 +387,8 @@ func (s subjects) BuildPackage(ctx context.Context, w *eval.World, capture *diag
 | `parse/package_subject.txtar` | syntax | bare form, one line, multi-line items; `expect Icon.package == x` stays an expression | GRAMMAR §5.10 |
 | `findings/E1116_3.txtar` | syntax | `package {}`, a missing outcome, `a.b: 1` | §5.10 |
 | `fmt/package_subject.txtar` | format | fixed point; a wide subject breaks one item per line, verdict after `}` | FORMATTER §7.2 |
-| `findings/E5006_1/_2/_3.txtar` | check | `notLet` (const, fn, record, `len`); `otherPackage` (selective import; an unimported package's let); `twice` | §10.5 |
-| `E2102_<next>`, `E3002_<next>`, `E3204_<next>.txtar` | check | unknown target; `[Item]` into a `table Item` let; `-1` into `Int(0..)` | CHK-05, DECISIONS 155 |
+| `findings/E5006_1/_2/_3.txtar` | check | `notLet` (const, fn, record, `len`); `otherPackage` (a let a selective import brings in); `twice` | §10.5 |
+| `E2102_<next>`, `E3002_<next>`, `E3204_<next>.txtar` | check | an unknown target, and an unimported package's let (a bare name, so `E2102`); `[Item]` into a `table Item` let; `-1` into `Int(0..)` | CHK-05, DECISIONS 155 |
 | `accept/package_subject.txtar` | check | local, public and untyped lets, a table literal, a test local: no finding | §10.5 |
 | `findings/E5004_2/_3.txtar` | rules | `package` variant; `packageCheck` variant | §10.3 |
 | `TestWorldCopyIsFaithful` | eval | each value kind (defaults, applied records with dependent fields, cases, keyed lists, maps, tables with retired entries, let-path and level-1 refs, one instance held twice): verifying the copy in a world gives the same findings, instance count and `value.Equal` as the original in a fresh evaluator | §10.5.2 |
@@ -461,23 +468,9 @@ test "a level listed twice, or above the cap, is refused" {
 }
 ```
 
-**The static-error example.** `examples/features/pkgchecks/static/static.canon`. Its `findings.txt`
-holds one `E3204` ("-1 is outside 0..", expected by the `cap` declaration). Its `tests.txt` shows the
-test as FAIL with that error, `0 passed, 1 failed`.
-```canon
-/// A substitution is typed like any value: a literal outside the let's refinement is a
-/// compile error, never an expected failure (CHK-05, DECISIONS 155).
-package features.pkgchecks.static
-
-/// The level cap.
-let cap: Int(0..) = 10
-
-check capBound: cap <= 100 else "cap {cap} is above 100"
-
-test "a negative cap does not compile" {
-  expect package { cap: -1 } fails E3204
-}
-```
+**The static case is not an example.** `TestExamplesCheck` (`internal/check/examples_test.go:118-130`)
+requires every example to check clean, and a substitution outside its refinement is a check-phase
+`E3204`. N5-CHECK's `E3204_<next>` txtar covers it.
 
 ### Acceptance
 
@@ -497,16 +490,18 @@ test "a negative cap does not compile" {
 | Unit | Owns | Tier, reason | Size | After |
 |---|---|---|---|---|
 | N5-SYNTAX | `internal/syntax` | **opus**: frozen AST (IMPLEMENTATION-PLAN §4.1 review rule) | S | S2 |
-| N5-RULES | `internal/rules` | sonnet | S | N5-SYNTAX |
+| N5-RULES | `internal/rules`; granted `internal/build/testdata/findings/E5004_1.txtar` | sonnet | S | N5-SYNTAX |
 | N5-FORMAT | `internal/format` | sonnet | S | N5-SYNTAX |
-| N5-CHECK | `internal/check` | sonnet, opus review (it mirrors `amendBlock`) | S | N5-RULES, DEP |
+| N5-CHECK | `internal/check`; granted `internal/testkit/progen/testdata/gaps.txt` (its E5006 line) | sonnet, opus review (it mirrors `amendBlock`) | S | N5-RULES, DEP, PROGEN-TIERS |
 | N5-EVAL | `internal/eval` | **opus**: state across evaluators, where a slip silences a check | L | N5-CHECK, DEP |
 | N5-BUILD | `internal/build` | **opus**: stages over a child evaluator, error routing | M | N5-EVAL, MACRO-IR |
 | N5-CLI | `internal/cli` (command goldens, `TestExampleTests`) | sonnet | S | N5-BUILD, N5-FORMAT |
 | N5-TOOLS | `internal/lsp` (testdata), `api` (one test), `internal/testkit/vscodegrammar`, `internal/testkit/progen` (generator; may replace N5-CHECK's `gaps.txt` E5006 line with an operator; `coverage.txt` via `-update`) | sonnet | S | N5-CLI, EDIT, PROGEN-TIERS, MUST |
-| EXAMPLES | `examples/features/pkgchecks` (+ its granted AST and scope goldens) | sonnet | S | N5-CLI |
+| EXAMPLES | `examples/features/pkgchecks` (+ its granted AST and scope goldens) | sonnet | S | N5-CLI, N5-TOOLS |
 
-Nothing may write the new form before N5-BUILD lands: until then, eval meets a nil `X`.
+Before N5-BUILD lands, only the N5 units' own package tests (the parse, fmt, rules and check txtars)
+may write the new form; examples, progen, the cli goldens and the guide wait for it: until then, eval
+meets a nil `X`.
 
 ### Forecast
 
@@ -518,8 +513,10 @@ Nothing may write the new form before N5-BUILD lands: until then, eval meets a n
    - Every reader of `ExpectStmt.X` must branch on `Package` first: `eval/tests.go:138-166`,
      `rules/tests.go:41-53`, `check/stmts_more.go:58-67`, `format/stmt.go:151-160`.
 2. **`E5004`'s variants rename its constructor** to `AtValue`, `AtPackageCheck` and `AtPackage`.
-   S2 regenerates the catalogue and points `rules/tests.go:50` at `AtValue`. `E5004_1.txtar` changes
-   on its `global` line only.
+   S2 points `rules/tests.go:50` at `AtValue`, and no golden changes (`AtValue` keeps today's text).
+   N5-RULES' `packageCheck` variant rewrites the `global` finding of both `E5004_1` goldens; it is
+   granted `internal/build/testdata/findings/E5004_1.txtar`
+   (`go test ./internal/build -run TestFindings/E5004_1 -update`; no other unit writes that file).
 3. **Do not reuse `vectorEvaluator` as is.** It shares every package's settled values and verifies at
    once (`vector.go:70`). A world instead:
    - routes its own package to fresh states;
@@ -552,6 +549,11 @@ Nothing may write the new form before N5-BUILD lands: until then, eval meets a n
     - Respect go.md §2's limits; no repeated literal; no map range reaching an output.
 14. **Goldens are written only by `-update`:** `E5004_1`, the progen coverage, the example's AST and
     scope goldens, the cli goldens, the example's findings and tests, and the guide's output.
+15. **`eval.Builder` stays unchanged.** Build's `subjects` implements it (`build/conformer.go:87`,
+    `build/tests.go:111`), so adding a method to it would break `internal/build` from N5-EVAL's
+    cherry-pick until N5-BUILD lands. `PackageBuilder` is a second interface; N5-EVAL lands with
+    `execPackage` failing the `expect` as an internal error when the Builder is not one, and N5-BUILD
+    makes `subjects` one.
 
 ## 3. Decoders check refinements, bounds become constants, row addresses are written down (DECISIONS 399, 400, 401)
 
@@ -822,9 +824,10 @@ function decCountIn<T>(v: T, path: string, lo: number, hi: number, inclusive: bo
   return v;
 }
 ```
-CODEGEN §8.2's helper block is compared byte for byte with the code (`TestHelperBlockIsTheSpecs`).
-So the §8.2 text for these four helpers is **held back from S1**: the orchestrator writes it into
-TS-RANGE's commit (§11, S1).
+The four helpers are units of `runtime/decode.ts.txt`, which no spec block mirrors
+(`TestHelperBlockIsTheSpecs` compares CODEGEN §8.2 with `runtime/helpers.ts.txt` only). CODEGEN §8.2
+does not change, and nothing is held back for them. Their names join `ir.TSHelperNames()` in the same
+commit (Forecast 26).
 
 ### Spec text
 
@@ -873,11 +876,15 @@ TS-RANGE's commit (§11, S1).
   contract text instead.
 - **WIRE §5.13** (`:517`): "It does not re-validate refinements or refs:" becomes:
   > It checks range and length refinements (CODEGEN.md §5.15), as data loaders do, and no pattern, `where` or ref:
-- **SPEC.md §14.5** ("Validation at runtime"):
+- **SPEC.md §14.5**: the heading `### 14.5 No validation at runtime` becomes
+  `### 14.5 Validation at runtime`, and its paragraph (`SPEC.md:1593-1594`) becomes:
   > Generated code checks the fingerprint (data files), the wire and every range and length refinement (CODEGEN.md §5.15); patterns, `where`, refs and checks run only in Canon. The runtime trusts the rest because it can only receive data this exact schema has validated.
-- **SPEC.md** `:577-578`:
+- **SPEC.md** `:577-578`: the sentence "The check never runs at runtime (§14.5), except for runtime
+  inputs (§19.3)." becomes:
   > At runtime, generated decoders check ranges and lengths (§14.5); runtime inputs also check patterns (§19.3); `where` never runs at runtime.
-- **SPEC.md §19.3**, last sentence:
+- **SPEC.md §19.3**: the heading `### 19.3 The only runtime validation` becomes
+  `### 19.3 Validation of runtime inputs`, and its last sentence, "It is the only validation that ever
+  runs at runtime.", becomes:
   > Besides it, only the range and length checks of generated decoders (§14.5) run at runtime.
 - **TYPES §7.4**, new rule:
   > - Generated decoders check range and length refinements when they read a value (CODEGEN.md §5.15).
@@ -981,7 +988,7 @@ No ERRORS.md rows. Decoder texts are not diagnostics, and name collisions use `E
 | IR-RANGE | `internal/ir` (TypeRef, convert, new `bounds.go`, the three plans, dump, findings) | **opus**: frozen contract, three name plans | M | S2 |
 | CPP-RANGE | `internal/gen/cpp` + `runtime/canon_runtime_json.h.txt` (comment) + `text/snapshot_load_doc.txt` + its C++ example goldens | sonnet, opus review: many paths (shortcut, pairs, union, rows) | M | IR-RANGE, EN-CPP |
 | GO-RANGE | `internal/gen/go` + `text/data.txt` + Go example goldens | sonnet, opus review | M | IR-RANGE, GEN-GO |
-| TS-RANGE | `internal/gen/ts` + `runtime/decode.ts.txt` + TS example goldens (+ the held-back §8.2 block) | sonnet, opus review | M | IR-RANGE, EN-TS |
+| TS-RANGE | `internal/gen/ts` + `runtime/decode.ts.txt` + TS example goldens; granted the `tsHelpers` line of `internal/ir/constants_tables.go` | sonnet, opus review | M | IR-RANGE, EN-TS, MACRO-IR |
 | E2E-RANGE | new test files in `internal/ir` | sonnet, opus review | M | CPP-RANGE, GO-RANGE, TS-RANGE, MACRO-IR |
 
 ### Forecast
@@ -1027,6 +1034,12 @@ No ERRORS.md rows. Decoder texts are not diagnostics, and name collisions use `E
 25. **Golden conflicts.** CPP-RANGE, GO-RANGE and TS-RANGE each regenerate example goldens in their
     own worktree. A cherry-pick conflict in `examples/**/expected` is resolved by regenerating with
     `-update` on the merged tree and reading the diff, never by picking a side (§11.3).
+26. **TS helper names.** `internal/gen/ts/errors_test.go` `TestHelperNamesAreStageEs` requires the
+    units of `helpers.ts.txt` and `decode.ts.txt` to equal `ir.TSHelperNames()`
+    (`internal/ir/constants_tables.go:33`). Add the four names to the `tsHelpers` line in the same
+    commit as the units (granted to TS-RANGE), never earlier and never later.
+27. **`internal/ir/constants.go` has 3 lines of room** (497 of 500; §9.4's cut lands later, in
+    IR-PLANS). IR-RANGE's constants go in a new `internal/ir/constants_bounds.go`.
 
 ## 4. Enums without `@codes` are as safe as ids (DECISIONS 402; amends 379)
 
@@ -1257,7 +1270,7 @@ Adding or moving a member renumbers all of these, and no finding fires.
   - `:1082`: "compare with the native operators" becomes "compare with the native operators, except
     Go without `@codes`, which compares `Position()`s".
   - `:1134`: drop `DstIndex, ` from the comment.
-- **CODEGEN §5.5** (`:1259`):
+- **CODEGEN §5.5** (`:1258`, the kind-enum row):
   - The Go cell becomes: "`type EventKindKind struct{ position uint8 }` (opaque, §5.2) with `var`s
     `EventKindKindSpawnMonster…`, `String()`, `Wire()`, `MarshalText()`/`(*EventKindKind).UnmarshalText`
     (the wire name, DECISIONS 379), `ParseEventKindKind`, `Retired()`, `Position()`".
@@ -1360,8 +1373,8 @@ Each test fails on `4dfd414e`.
 | EN-CPP | `internal/gen/cpp` | sonnet: copies the id pair | S | IR-PLANS |
 | EN-TS | `internal/gen/ts` | sonnet: copies the id index | S | IR-PLANS, GEN-TS |
 
-**Order in each generator:** EN-x runs first among the v0.2 units that own that generator, so later
-units write their tests against opaque enums. `TestExamples -update` rewrites every target's example
+**Order in each generator:** EN-GO and EN-CPP run first among their generator's v0.2 units, so later
+units write their tests against opaque enums; in gen/ts, GEN-TS (§9.2) runs first, then EN-TS. `TestExamples -update` rewrites every target's example
 goldens; §11.3's golden-conflict rule applies.
 
 ### Forecast
@@ -1568,7 +1581,7 @@ item's origin and `b` is `pkg.Enum.member` or `pkg.CONST`.
 
 | Unit | Exclusive packages | Tier | Size | After |
 |---|---|---|---|---|
-| MACRO-IR | `internal/ir`, plus the one granted line `internal/build/pipeline.go:349` | sonnet, opus review | M (140 lines, 300 test) | IR-PLANS, BUILD-LINKS |
+| MACRO-IR | `internal/ir`, plus the granted line `internal/build/pipeline.go:349` and the granted file `internal/build/testdata/findings/E8005_foreign_define_scoped.txtar` | sonnet, opus review | M (140 lines, 300 test) | IR-PLANS, BUILD-LINKS |
 | (in CPP-OWED) | `internal/gen/cpp`: `macrosIn`, and `macroSet` from `ir.CppGuardNames` | sonnet | S (45, 90 test) | MACRO-IR, CPP-RANGE |
 
 ### Forecast
@@ -1581,10 +1594,11 @@ item's origin and `b` is `pkg.Enum.member` or `pkg.CONST`.
    `internal/build`. The real-data run must show exactly two findings. Any other is a plan name the
    scan missed: stop and log.
 5. **The comment and literal skipper.**
+   - Do not write a new one. `cppruntime.scan` (`internal/gen/cpp/runtime/runtime.go:29-70`, a package
+     CPP-OWED owns) already skips comments and string and character literals: export it as one
+     function and have `macrosIn` reuse it. A second skipper would be a duplicate helper.
    - A `//` comment ends at the first newline, even after a backslash; over-wrapping is safe.
    - Digit separators and raw strings occur in none of the 238 real files.
-   - Write it as a table of byte-class handlers (go.md §2: no bare literals but 0 and 1, functions at
-     most 60 lines).
    - Keep the scale test green, and review each golden diff as removed push/undef/pop trios.
 
 ## 6. Wire names (DECISIONS 405, 406; amends 383, 393)
@@ -1698,7 +1712,7 @@ Nothing refuses either.
 ### Acceptance
 
 - The new txtars fail before the change and pass after.
-- With IR-PLANS' edit landed, `go test ./internal/...` stays green when the check lands; a red `goplan` test means a second fixture holds equal wires: fix the fixture, never the rule.
+- With IR-PLANS' edit landed, `go test ./internal/...` stays green when the check lands; a red `goplan` test means a second fixture holds equal wires: fix the fixture (it is in `internal/ir`: §11.1's rule for an edit outside a unit's packages), never the rule.
 - `canon check` of the real copy: no new finding.
 - `make check` is green.
 
@@ -2277,8 +2291,8 @@ outside their refinements: an upgrade note, not a bug.
 | Unit | Exclusive packages | Tier | Size | After |
 |---|---|---|---|---|
 | DEP: §8.1, §8.2, §8.4 items 1-2 | `internal/types`, `internal/check`, `internal/eval`, `internal/eval/std` | opus | M (~200 lines code, ~450 tests) | S2 |
-| EDIT: §8.3, §8.4 items 4-7, §10.1 | `internal/edit` (+ granted: `internal/build/write.go` and its callers, for §10.1; the test files `api/edit_rollback_io_test.go` and `api/value_cause_test.go`) | opus | M | S2 |
-| (in CHECK-OWED): §8.5 | `internal/check` | sonnet, opus review | S | N5-CHECK |
+| EDIT: §8.3, §8.4 items 4-7, §10.1 | `internal/edit` (+ granted: `internal/build/write.go` and its callers, for §10.1; the test files `api/edit_rollback_io_test.go` and `api/value_cause_test.go`; `api/value_cause.go` if §8.4 item 7's pin fails) | opus | M | S2 |
+| (in CHECK-OWED): §8.5 | `internal/check` | sonnet, opus review | S | N5-CHECK, IR-PLANS |
 
 **DEP lands as one unit.** A check-only change would accept literals that eval then builds without
 their arguments.
@@ -2301,7 +2315,8 @@ their arguments.
      - views read declared field types;
      - ir and gen treat `Map` and `DepMap` alike (`gen/go/gotype.go:34`, `gen/ts/fns.go:91`)
        `[unverified for C++]`;
-     - LSP hover now prints the kept type, so its goldens are regenerated and reviewed.
+     - LSP hover now prints the kept type. DEP is granted the `internal/lsp` hover goldens this
+       rewrites (by `-update`; the lsp queue is idle in wave A), and they are reviewed.
 5. **Goldens.** E3804_9 and E3804_10 move to accept, and E3804_11 shrinks. No example reads a
    dependent map in an expression, so `examples/` must not change. Any other golden diff is a bug.
 6. **Progen** is unaffected: no new code, and the E3804 and E1905 operators still produce their codes.
@@ -2647,12 +2662,14 @@ in a translated fn (findings by `-update`). It fails first: the file is absent.
 - `TestHeaderIsTheSpecs` (CPP-OWED, `internal/gen/cpp/runtime/runtime_test.go`, using
   `cppruntime.Header`): the first `cpp` block after "### 7.4" equals the header, as
   `TestHelperBlockIsTheSpecs` does for TS.
-- `TestSpecNamesTheRuntime`: every `canon::<Name>` in `spec/*.md` is in `Identifiers()`.
+- `TestSpecNamesTheRuntime` (CPP-OWED): every `canon::<Name>` in `spec/*.md` is in `Identifiers()`.
 
-These are red first only if a name is stale; the pin passes today.
+The scans skip a name followed by `*` (CODEGEN.md:3262's `rt.Parse*Literal` names a family, not one
+function). These are pins. A stale name found first is fixed by the orchestrator in GEN-GO's commit
+(builders never edit the spec), never by changing the test.
 
 **Forecast.** Leave the TS block alone. Find stale names first
-(`grep -o 'rt\.[A-Z][A-Za-z0-9]*' spec/*.md`) and fix the spec, never the test.
+(`grep -o 'rt\.[A-Z][A-Za-z0-9]*' spec/*.md`, skipping a name followed by `*`).
 
 ### 9.11 Progen operators for `tiers` (no DECISIONS item)
 
@@ -2995,7 +3012,8 @@ change.
   each refresh. Release §12 step 2 runs `make bench-edit`. A refresh p95 over DECISIONS 382's 500 ms,
   or a regression over 10%, is recorded, not optimised away.
 - 29 test files create links. A test that reads a single file through a link outside the bounds
-  encoded the old rule: update it and log it. Any other failure stops the unit.
+  encoded the old rule: inside `internal/load`, update it and log it; outside it, follow §11.1's rule
+  for an edit outside a unit's packages. Any other failure stops the unit.
 - The test memFS's `Stat` does not follow links, so refusals go in txtars and successful reads are
   tested on real disk.
 
@@ -3140,6 +3158,11 @@ plan.md records it as declined. v0.3's scale bench may reopen it as performance 
     only.
   - A sonnet builder that fails review twice is replaced by an opus one.
 - **Long gates** run once, at the end (§12). Builders run only their own package tests.
+- **An edit outside a unit's packages.** When a unit needs a file outside its packages (a test that
+  encoded an old rule, a fixture, a golden), it stops and reports. The orchestrator then grants that
+  file to the unit when no other unit holds its package (logged), or makes the edit as a ≤ 20-line
+  fixup in the unit's worktree. `main` never goes red. A granted file that no other unit writes may be
+  edited while another unit holds that package.
 - **Status.** Status for Louis goes in `meta/handoff/<date>-v020-status.md`, updated at each wave
   boundary, with a two-line chat summary.
   - Before EN-GO starts, the status file states §4 Decision 9 (Go exhaustiveness) as the one call
@@ -3174,8 +3197,9 @@ plan.md records it as declined. v0.3's scale bench may reopen it as performance 
     staying at 80 lines or fewer.
 - **Held back from S1.** A spec block that a test compares byte for byte with code lands in the
   commit of the unit that changes that code, written by the orchestrator. Known:
-  - CODEGEN §8.2's four new TS helpers (§3), in TS-RANGE's commit, copied from its
-    `runtime/decode.ts.txt`, so that `TestHelperBlockIsTheSpecs` passes.
+  - GRAMMAR.md `:880`'s ebnf block (§2), compared by `internal/syntax/grammar_test.go`
+    `TestEveryProductionHasANode`: it lands in N5-SYNTAX's commit, and N5-SYNTAX adds `outcome`,
+    `packageSubject` and `substitution` to that test's `productions` table.
 
   If S1's `make check` fails on another such test, hold that block back the same way, to the unit
   that changes the compared code, and log it.
@@ -3207,9 +3231,10 @@ One commit, `feat(diag): v0.2 codes and messages (DECISIONS 398, 403, 405, 406, 
       (§9.8's list) follow through their packages' `-update` (read the diff: message text only);
     - `internal/diag/render_test.go:12` takes diaggen's count;
     - adds `internal/ir/testdata/findings/E9006_5.txtar` (§9.8).
-  - names no new code in production code. E5006, `foreignDefine`, the E3316 variants, `source` and
-    `ReadOutsideRoots` stay unreported until their units: the `diag-code-untested` ratchet only
-    observes.
+  - names no new code in production code, so the `diag-code-untested` ratchet does not grow. E5006,
+    `foreignDefine`, the E3316 variants, `source` and `ReadOutsideRoots` stay unreported until their
+    units; `diag-code-unreported` only observes (`tools/audit/internal/rules/rules.go:113`), so they do
+    not fail `make check`.
 - `make check` must be green. No review: no decision is left in S2.
 
 **S3, the units.**
@@ -3231,19 +3256,19 @@ One commit, `feat(diag): v0.2 codes and messages (DECISIONS 398, 403, 405, 406, 
 
 | Unit | Packages (exclusive; granted files named) | Tier | Size | After | § |
 |---|---|---|---|---|---|
-| DEP | `internal/types`, `internal/check`, `internal/eval`, `internal/eval/std` | opus | M | S2 | 8.1, 8.2, 8.4 (1-2) |
+| DEP | `internal/types`, `internal/check`, `internal/eval`, `internal/eval/std`; granted the `internal/lsp` hover goldens its change rewrites | opus | M | S2 | 8.1, 8.2, 8.4 (1-2) |
 | N5-SYNTAX | `internal/syntax` | opus (frozen AST) | S | S2 | 2 |
 | IR-RANGE | `internal/ir` | opus (frozen IR) | M | S2 | 3 |
-| EDIT | `internal/edit`; granted `internal/build/write.go` and its callers' rename, `api/edit_rollback_io_test.go`, `api/value_cause_test.go` | opus | M | S2 | 10.1, 8.3, 8.4 (4-7) |
+| EDIT | `internal/edit`; granted `internal/build/write.go` and its callers' rename, `api/edit_rollback_io_test.go`, `api/value_cause_test.go`, and `api/value_cause.go` if §8.4 item 7's pin fails | opus | M | S2 | 10.1, 8.3, 8.4 (4-7) |
 | PROJECT-LINKS | `internal/project` | opus | S | S2 | 10.4 |
 | PROGEN-TIERS | `internal/testkit/progen`, `internal/testkit/fixture` | sonnet, opus review | M | S2 | 9.11 |
 | RD-PATCH | `tools/realdata-compile.sh`, the Makefile comment of `realdata-compile` | sonnet | XS | S2 | 12 |
-| N5-RULES | `internal/rules` | sonnet | S | N5-SYNTAX | 2 |
+| N5-RULES | `internal/rules`; granted `internal/build/testdata/findings/E5004_1.txtar` | sonnet | S | N5-SYNTAX | 2 |
 | N5-FORMAT | `internal/format` | sonnet | S | N5-SYNTAX | 2 |
 | IR-PLANS | `internal/ir` | sonnet, opus review | M | IR-RANGE | 4 (plans), 7, 9.2 (plan), 9.3, 9.4; and the `Twin` fixture of §6 |
 | LOAD-LINKS | `internal/load` | opus | M | PROJECT-LINKS | 10.4, 10.5 |
 | WS-LOCKS | `internal/workspace` | opus | S | PROJECT-LINKS | 10.2, 10.4 (`overlay.go`) |
-| N5-CHECK | `internal/check`; granted `internal/testkit/progen/testdata/gaps.txt` (its E5006 line) | sonnet, opus review | S | N5-RULES, DEP | 2 |
+| N5-CHECK | `internal/check`; granted `internal/testkit/progen/testdata/gaps.txt` (its E5006 line) | sonnet, opus review | S | N5-RULES, DEP, PROGEN-TIERS | 2 |
 | N5-EVAL | `internal/eval` | opus | L | N5-CHECK | 2 |
 | CHECK-OWED | `internal/check` | sonnet, opus review | M | N5-CHECK, IR-PLANS | 6, 8.5, 9.9, 10.3 (check) |
 | GEN-TS | `internal/gen/ts` | sonnet, opus review | M | IR-PLANS | 9.2 |
@@ -3251,20 +3276,20 @@ One commit, `feat(diag): v0.2 codes and messages (DECISIONS 398, 403, 405, 406, 
 | EN-CPP | `internal/gen/cpp` | sonnet | S | IR-PLANS | 4 |
 | WS-REPORTED | `internal/workspace` | opus | M | WS-LOCKS | 10.6 |
 | BUILD-LINKS | `internal/build` | opus | S | EDIT, CHECK-OWED, PROJECT-LINKS | 10.3 (stale), 10.4 |
-| MACRO-IR | `internal/ir`; granted `internal/build/pipeline.go:349` | sonnet, opus review | M | IR-PLANS, BUILD-LINKS | 5 |
+| MACRO-IR | `internal/ir`; granted `internal/build/pipeline.go:349` and `internal/build/testdata/findings/E8005_foreign_define_scoped.txtar` | sonnet, opus review | M | IR-PLANS, BUILD-LINKS | 5 |
 | EN-TS | `internal/gen/ts` | sonnet | S | GEN-TS | 4 |
 | GEN-GO | `internal/gen/go` | sonnet, opus review | S | EN-GO | 9.1, 9.5, 9.10 (Go test) |
 | CPP-RANGE | `internal/gen/cpp` (+ `runtime/*.txt` comment, text templates) | sonnet, opus review | M | IR-RANGE, EN-CPP | 3 |
 | LSP-WATCHED | `internal/lsp` | opus | S | WS-REPORTED | 10.6 |
 | N5-BUILD | `internal/build` | opus | M | N5-EVAL, MACRO-IR | 2 |
 | GO-RANGE | `internal/gen/go` | sonnet, opus review | M | GEN-GO, IR-RANGE | 3 |
-| TS-RANGE | `internal/gen/ts` (+ the held-back §8.2 block) | sonnet, opus review | M | EN-TS, IR-RANGE | 3 |
+| TS-RANGE | `internal/gen/ts`; granted the `tsHelpers` line of `internal/ir/constants_tables.go` (+ `decIn decInBig decStrIn decCountIn`, in the commit that adds the units) | sonnet, opus review | M | EN-TS, IR-RANGE, MACRO-IR | 3 |
 | CPP-OWED | `internal/gen/cpp`, `internal/gen/cpp/runtime` | sonnet | S | CPP-RANGE, MACRO-IR | 5 (gen side), 9.10 (C++ pins) |
 | N5-CLI | `internal/cli` (not `guide/`) | sonnet | S | N5-BUILD, N5-FORMAT | 2 |
 | MUST | `internal/testkit/must` (new); the test files of `internal/lsp` and `internal/workspace` | sonnet | XS | LSP-WATCHED, WS-REPORTED | 9.6 |
 | E2E-RANGE | `internal/ir` (new test files only) | sonnet, opus review | M | CPP-RANGE, GO-RANGE, TS-RANGE, MACRO-IR | 3 |
 | N5-TOOLS | `internal/lsp` (testdata), `api` (one test), `internal/testkit/vscodegrammar`, `internal/testkit/progen` (the form's generator) | sonnet | S | N5-CLI, EDIT, PROGEN-TIERS, MUST | 2 |
-| EXAMPLES | `examples/features/pkgchecks` (+ its granted AST and scope goldens) | sonnet | S | N5-CLI | 2 |
+| EXAMPLES | `examples/features/pkgchecks` (+ its granted AST and scope goldens) | sonnet | S | N5-CLI, N5-TOOLS | 2 |
 | GUIDE | `internal/cli/guide` and its goldens | sonnet | S | EXAMPLES and every unit in §11.4's list | 11.4 |
 | CLEANUP | as found | sonnet | S | every unit | 11.5 |
 
@@ -3272,7 +3297,7 @@ One commit, `feat(diag): v0.2 codes and messages (DECISIONS 398, 403, 405, 406, 
 
 | Package | Queue |
 |---|---|
-| `internal/ir` | IR-RANGE → IR-PLANS → MACRO-IR → E2E-RANGE |
+| `internal/ir` | IR-RANGE → IR-PLANS → MACRO-IR → TS-RANGE (its `tsHelpers` line) → E2E-RANGE |
 | `internal/check` | DEP → N5-CHECK → CHECK-OWED |
 | `internal/eval` | DEP → N5-EVAL |
 | `internal/build` | EDIT (its granted rename) → BUILD-LINKS → MACRO-IR (its granted line) → N5-BUILD |
@@ -3280,7 +3305,7 @@ One commit, `feat(diag): v0.2 codes and messages (DECISIONS 398, 403, 405, 406, 
 | `internal/gen/cpp` | EN-CPP → CPP-RANGE → CPP-OWED |
 | `internal/gen/ts` | GEN-TS → EN-TS → TS-RANGE |
 | `internal/workspace` | WS-LOCKS → WS-REPORTED → MUST (tests) |
-| `internal/lsp` | LSP-WATCHED → MUST (tests) → N5-TOOLS (testdata) |
+| `internal/lsp` | DEP (hover goldens) → LSP-WATCHED → MUST (tests) → N5-TOOLS (testdata) |
 | `internal/cli` | N5-CLI → GUIDE |
 | `api` | EDIT (two test files) → N5-TOOLS (one test) |
 | `internal/testkit/progen` | PROGEN-TIERS → N5-CHECK (gaps line) → N5-TOOLS |
@@ -3348,7 +3373,7 @@ a bug.
 
 ### 11.6 Estimate
 
-36 delegations (the table's units and S2's go-dev), plus S1. That is about 35-45 hours of agent time
+37 delegations (the table's 36 units and S2's go-dev), plus S1. That is about 35-45 hours of agent time
 (S1 and S2 about 3 h; the units 25-32 h with review rounds; acceptance and release 6-8 h). Wall time
 is about 2 to 2.5 days, plus any rate-limit stop; resume each agent where it stopped.
 
@@ -3371,11 +3396,18 @@ go in the final acceptance entry of `meta/decisions/log-<date>.md`.
 - the path of a unified diff (`a/`, `b/` prefixes, paths from the Resource root), applied with
   `patch -p1 --forward --batch -d <scratch>/Resource` after the copy and before `canon build`;
 - a patch that does not apply exits 2 with the message `realdata-compile: RD_PATCH does not apply`;
+  the header's Exit line becomes "2 a needed tool is missing or RD_PATCH does not apply", and `patch`
+  joins the tool check;
 - absent, the behaviour is unchanged;
 - the Makefile comment of `realdata-compile` documents it.
 
-Acceptance: the script without `RD_PATCH` behaves byte for byte as before (same table on the same
-tree). Reason: a release whose new refusal hits real data must still prove the rest compiles, as
+Acceptance:
+- With `RD_PATCH` unset, the diff adds no command on the existing path (checked by review).
+- The patch step, run alone on a scratch `Resource/` holding one file, applies a good diff, and exits
+  2 with that message on a diff that does not apply.
+- The full run is §12 step 6, a long gate.
+
+Reason: a release whose new refusal hits real data must still prove that the rest compiles, as
 v0.1.12 did by hand (log-2026-10-22).
 
 **Steps:**
@@ -3418,14 +3450,17 @@ v0.1.12 did by hand (log-2026-10-22).
    CGO_ENABLED=0 GOTOOLCHAIN=local go build -trimpath -ldflags "-s -w -X \
    github.com/fantasim/canonlang/internal/build.CompilerVersion=0.2.0" -o /var/tmp/canon-020-dry/canon ./cmd/canon
    ```
-5. **Resource dry run.** Follow ADR-0021 §8 step 4, read-only on Resource and Source, with two
-   changes:
+5. **Resource dry run.** Follow ADR-0021 §8 step 4, read-only on Resource and Source. Its paths read
+   `canon-020` instead of `canon-019`, and its pinned binary is 0.1.13. ADR-0021's sentence "Expected
+   with the candidate: 0 errors and 0 warnings …" is replaced by the expected differences below. Two
+   more changes:
    - **The badge patch.** In the farm copy, give the two `Badge` cases that collide (§5: the
      `BADGE_REQ_USE_ITEM` and `BADGE_REQ_FAERY_RANK` kinds in `Config/progression/quests/`)
      `@cpp(name: "BadgeReqUseItem")` and `@cpp(name: "BadgeReqFaeryRank")`.
      - Write that edit as `/var/tmp/canon-020/badge.patch`, a unified diff from the Resource root.
-     - Without the patch, the candidate must report exactly those two `E8005` `foreignDefine`, and
-       nothing else new.
+     - Both farms, pinned and candidate, get the patch.
+     - One extra `check -max-warnings 0` of the candidate on an unpatched farm must report exactly
+       those two `E8005` `foreignDefine`, and no other new code or variant.
    - **The expected differences** against the pinned 0.1.13 binary:
      - opaque enums (Go, C++, TS: §4);
      - check lines and bound constants (§3);
@@ -3434,8 +3469,9 @@ v0.1.12 did by hand (log-2026-10-22).
      - TS ids of unselected tables (§9.2);
      - T6 and the runtime comment (§3).
    - Every other diff is classified by rule, never by judgement:
-     - a finding whose code or variant this ADR introduces is real Resource data that the new rule
-       catches: an upgrade note in the reply, and the release goes on;
+     - a finding whose code or variant this ADR introduces, or a finding at a record or case field's
+       default (§8.5: `E3204`, `E3201`, `E3202`), is real Resource data that the new rule catches: an
+       upgrade note in the reply, and the release goes on;
      - anything else (another code, a changed message, an output change no section explains) is a
        bug, fixed (failing test first) before the tag.
    - **N5 on Resource** (§2 Acceptance):

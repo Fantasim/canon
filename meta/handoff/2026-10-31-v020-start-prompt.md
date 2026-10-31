@@ -49,6 +49,8 @@ RULES THAT BITE (all in ADR-0023 §11.1; repeated here because past runs broke t
 - Failing test first:
   - a unit whose first test does not fail on unchanged code STOPS and reports (the ADR's reading
     was wrong); you decide under §0's fallback and log it;
+  - except a pin: a test the ADR calls a pin passes on unchanged code by design, and its section
+    says how to prove it can fail (ADR-0023 §0);
   - prove a test fails by copying files aside and back, never with git stash.
 - A builder's better idea is logged as owed in meta/state.md, and the builder builds the ADR's
   design.
