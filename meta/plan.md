@@ -221,7 +221,9 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 ## v0.2: trust (Louis's picks of 2026-10-14, extended 2026-10-31)
 
 Proposal: [roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md) §3, with the reasons, owners and
-sizes. Louis's four calls are in its §9. Each version is decided whole in an ADR at its start.
+sizes. Louis, 2026-10-31: formulas (v0.4) before binary data (v0.5), and the on-disk cache and N1 are
+parked. Q1 (runtime values) waits for his yes (roadmap §9). Each version is decided whole in an ADR at
+its start.
 
 - [ ] **N5, testable package checks** (very important; first in v0.2).
 - [ ] Decoders check range and length refinements in C++, Go and TS; bounds as constants; stable row
@@ -274,13 +276,14 @@ sizes. Louis's four calls are in its §9. Each version is decided whole in an AD
 ## After v0.4 (direction, not scheduled; roadmap §6)
 
 - v0.5: binary data, with N2 (one declaration per id).
-- v0.6: runtime values and messages, after Louis's call Q1.
-- Parked: N1 legacy C++ structs (Louis's call Q4), N7 package moves, M7 `convert`.
+- v0.6: runtime values and messages, in Canon, as schema packages (types only; recommended in
+  roadmap §9, Q1, waiting for Louis's yes).
+- Parked: N1 legacy C++ structs (Louis, 2026-10-31), N7 package moves, M7 `convert`.
 
 ## Later, deferred, passed and refused
 
 - Later, only if very secure: the on-disk cache (safe design in [log-2026-10-14](decisions/log-2026-10-14.md)).
-  Louis's call Q3 waits on v0.3's scale bench.
+  Louis, 2026-10-31: parked until v0.3's scale bench gives numbers.
 - Deferred: F21 warm re-check on entry add/remove; F22 streaming JSON reader; Go/C++ `embedded`.
 - Passed (robustness first): per-entry re-check, stage-E memo, per-package parallelism.
 - Refused: F20 per-field `@json(codes)` (for good), N4 new wire forms, entry isolation,

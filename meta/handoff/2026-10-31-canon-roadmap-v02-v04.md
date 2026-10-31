@@ -4,7 +4,7 @@
 
 **Status: proposal. Nothing is started.** Each version is decided whole in an ADR when it starts,
 as v0.1.9 and v0.1.10 were (ADR-0021, ADR-0022), and then run. The technical calls are made here.
-The four calls that are yours are in §9.
+Your four calls are in §9. Q2 to Q4 were answered on 2026-10-31; Q1 waits for your yes.
 
 **Version numbers.** "v0.1.2 / 0.1.3 / 0.1.4" are read as **v0.2 / v0.3 / v0.4**. v0.1.13 is out,
 and v0.2 is the version [plan.md](../plan.md) already holds.
@@ -53,7 +53,7 @@ What the law already says, and this plan keeps:
 | **v0.3** | Lean generated code. No language change; every change is checked by goldens | ~15 units, mostly sonnet, about a day | 740k generated lines today, and 5-10x ahead |
 | **v0.4** | Formulas: the translated subset grows, exact on every target | ~12 units, mostly opus, about two days | the language work. It serves Sovereign's tooltip formulas (L-0148) and three Go ports that drift today |
 | v0.5 | Binary data | direction | the browser's data format and the server boot |
-| v0.6 | Runtime values and messages | direction; needs Q1 | the wire protocol (handoff L3) |
+| v0.6 | Runtime values and messages, in schema packages | direction; Q1 waits for your yes | the wire protocol (handoff L3) |
 
 Sizes are scaled from v0.1.9, where 30 units took 18-24 h of agent time.
 
@@ -83,7 +83,7 @@ type before wave E.
 
 **Moved out of v0.2:**
 - `ordered_json`, kind constants and N8 templates go to v0.3, because they shape output;
-- N1, legacy C++ structs: Q4;
+- N1, legacy C++ structs: parked (Q4);
 - N2, one declaration per id: v0.5;
 - N3, `canon lint`: v0.3.
 
@@ -146,9 +146,10 @@ one (WIRE, FINGERPRINT), and written by `canon build` for `data` mode.
 - **N2, one declaration per id,** lands with it: a table's id type carries its codes, which gives
   id-indexed arrays.
 
-**v0.6, runtime values and messages** (handoff L3, L3b), after Q1.
-- A second kind of record, for values that programs build. It gets validating builders (ranges and
-  lengths, never named checks) and encoders for the JSON and binary wires.
+**v0.6, runtime values and messages** (handoff L3, L3b), in Canon, as schema packages (§9, Q1).
+- Schema packages hold types, consts and `export fn`, never values. Their records stay immutable.
+  They are created by validating builders (ranges and lengths, never named checks), and they get
+  encoders for the JSON and binary wires.
 - Messages are variants with stable case codes (`canon.lock`). A frame is `[Message]`, and a snapshot
   batch is `[Snapshot]`.
 - The schema fingerprint is the protocol version, exchanged at the handshake. Sovereign's version
@@ -156,10 +157,11 @@ one (WIRE, FINGERPRINT), and written by `canon build` for `data` mode.
 - Acceptance is on the Sovereign side: the TS headless client.
 
 **Parked:**
-- N1, legacy C++ structs: Q4.
+- N1, legacy C++ structs (Q4, Louis 2026-10-31).
 - N7, native package moves: when the new package families start moving packages.
 - M7, `convert`.
-- The on-disk cache, per-entry re-check and parallelism: Q3, under your 2026-10-14 rule.
+- The on-disk cache, per-entry re-check and parallelism: until v0.3's scale bench gives numbers
+  (Q3), under your 2026-10-14 rule.
 
 ## 7. Every ask of the handoff, judged
 
@@ -194,7 +196,7 @@ one (WIRE, FINGERPRINT), and written by `canon build` for `data` mode.
 | L3 tagged unions, bit fields, varints and bounded arrays in binary | Keep, inside the encoding | v0.5 |
 | L3 a stream of tagged records in one frame | Reshape: a list of a variant | v0.6 |
 | L3 audience projections | Refuse as a per-field knob. One record per audience, plus a projection fn | v0.4 #2 |
-| L3b builders and encoders | Q1: DECISIONS 4 is yours | v0.6 |
+| L3b builders and encoders | Keep, for schema packages (Q1) | v0.6 |
 | L3b checked decode of refined bounds | Keep | v0.2 #2 |
 | L3b member widths from refinements | Refuse (GEN-02); declare the width | Sovereign |
 | L3b exported bounds | Keep | v0.2 #3 |
@@ -218,7 +220,7 @@ one (WIRE, FINGERPRINT), and written by `canon build` for `data` mode.
 | §8.9 per-consumer pruning | Refuse consumer-declared lists, because they drift. Use finer packages, `values:` and lighter headers | |
 | §8.10 TS hygiene | Keep | v0.3 #5; v0.4 #3, #8 |
 | §8.11 function-size budget | Keep | v0.3 #6 |
-| §8.12 incremental or cached check | Q3 | |
+| §8.12 incremental or cached check | Parked until v0.3's scale bench (Q3) | |
 
 ## 8. For the Source session
 
@@ -235,12 +237,13 @@ one (WIRE, FINGERPRINT), and written by `canon build` for `data` mode.
 4. **Versioning.** Not "since N". The schema fingerprint is the version, checked at the handshake.
    Ids and case codes come from `canon.lock` (v0.6).
 5. **Projections.** Several records plus projection fns (v0.4). There is no first-class form.
-6. **Builders and encoders.** Louis's call (DECISIONS 4). The proposal is a separate kind of record
-   for runtime values.
+6. **Builders and encoders.** In Canon, for records of schema packages, which hold types only (§9,
+   Q1, waiting for Louis's yes). Configuration records keep DECISIONS 4, and only Canon's loaders and
+   decoders fill them.
 7. **Pruning and per-entry outputs.** No consumer-declared pruning. Chunked binary tables replace
    per-entry files, and a copy may choose its mode (v0.5).
 8. **Scale.** Per-package budgets scale by splitting packages. Whole-project time and memory are
-   measured in v0.3. The on-disk cache needs Louis's go.
+   measured in v0.3. The on-disk cache stays parked until those numbers exist (Louis, Q3).
 9. **What §8 costs.**
    - Cheap: `/*#__PURE__*/`, `ToWire` on the name table, dense ordinals, the loader's duplicate key
      set, the function-size test.
@@ -270,31 +273,58 @@ one (WIRE, FINGERPRINT), and written by `canon build` for `data` mode.
   CDN manifest, the WebAssembly kernel, and the baker.
 - Captured legacy vectors can already be written as `test` blocks.
 
-## 9. Questions for Louis
+## 9. Louis's calls
 
-These are philosophy and ordering calls. Each has a recommendation.
+**Answered by Louis, 2026-10-31:**
+- **Q2, formulas before binary data: yes.** v0.4 is formulas and v0.5 binary data. Sovereign's own
+  plan (handoff §9) had binary data first. Formulas are the language work, and they serve Sovereign
+  now (L-0148, three drifting Go ports), whatever the web client decides.
+- **Q3, the on-disk cache: parked** until v0.3's scale bench gives numbers. A whole check takes 31 s
+  and 2 GB today. The safe design is already written (log-2026-10-14).
+- **Q4, N1 legacy C++ structs: parked**, because Sovereign chose generated records for every table
+  (L-0147). DECISIONS 5 stays, for any other codebase.
 
-**Q1. Runtime values (v0.6).** Today every generated value is configuration that Canon checked
+**Q1, runtime values (v0.6).** Today every generated value is configuration that Canon checked
 (DECISIONS 4, SPEC §15.1). The web client asks Canon to also describe the state and messages that
-programs build and send.
-- **Recommendation:** yes, as a separate kind of record. Such a record can be built, with ranges and
-  lengths checked, and encoded. Named checks never run at run time. Data records keep DECISIONS 4
-  unchanged, so an agent cannot mistake one kind for the other.
-- **The alternative:** Canon stays configuration only, and a separate tool generates codecs from
-  `canon graph`. That loses refinements and stable ids, and it maps the types a second time.
+programs build and send. Louis's follow-up: should this be part of Canon, or another language that
+reuses Canon's code?
 
-**Q2. Formulas (v0.4) before binary data (v0.5)?** Sovereign's own plan (handoff §9) puts binary data
-first.
-- **Recommendation:** formulas first.
-  - They are the language work you asked to come first.
-  - They serve Sovereign now (L-0148, and three Go ports that drift), whatever the web client
-    decides.
-  - Meanwhile v0.3's one-pass reader eases the server boot, and the binary design can build on the
-    record work of v0.2 and v0.3.
+**Recommendation: part of Canon, with a boundary as strict as a second language would give.**
 
-**Q3. Scale.** A whole check takes 31 s and 2 GB today, and the new families could make it minutes.
-- **Recommendation:** keep the on-disk cache parked until v0.3's scale bench shows the curve. Then
-  build the safe design that is already written (log-2026-10-14).
+Why one language:
+1. **The type system is the same.** A message is records, variants, enums, refined scalars, lists
+   and optionals, which are Canon's types. A second language would either copy that type system,
+   leaving two specs to keep identical, or import Canon's, which makes it Canon under another file
+   extension.
+2. **Messages point into configuration.** A message carries an `ItemId`, an enum member or a ref.
+   In one project, ids and case codes come from one `canon.lock`. Two languages would need a
+   cross-language import and two locks kept in step.
+3. **The formulas put first take runtime state.** L-0148's instance formulas (upgrade, rarity,
+   Azure) are functions of an item instance. A translated fn can type that parameter only if the
+   state record lives in the same type system.
+4. **Agents learn one language.** Two nearly identical languages with different rules are the worst
+   case for agent mistakes ("this works in one file kind and not the other").
+5. **The code is reused either way.** A second front end over Canon's internal packages would make
+   every frozen contract serve two languages, so a change made for one could break the other.
 
-**Q4. N1, legacy C++ structs (M6).** Sovereign has chosen generated records for every table (L-0147).
-- **Recommendation:** park N1. DECISIONS 5 stays, for any other codebase.
+What keeps configuration safe:
+- **Schema packages.** Runtime types live in packages that declare only types, consts and
+  `export fn`: no `let`, no entries, no layers, no data checks. Nothing configuration-like can live
+  there. A package's kind is declared and checked.
+- **One import direction.** A schema package may import configuration packages (enums, ids, refs);
+  a configuration package never imports a schema package. A message carries an id, never a copy of
+  a configuration record. Import tiers already enforce such directions (DECISIONS 380).
+- **Read-only, always, still holds** (DECISIONS 4). Records of both kinds have getters and no
+  setters. What changes is who creates a value:
+  - a configuration record is still filled only by Canon's loaders and decoders;
+  - a schema record may also come from a validating builder, which checks ranges and lengths as
+    v0.2's decoders do. Named checks never run at run time.
+
+  SPEC §15.1 changes for schema packages only.
+- **A companion document of its own** in `spec/`, so the configuration chapters keep their meaning.
+
+A separate tool would be right only to export Canon's types to a foreign ecosystem, such as `.proto`
+files for a gRPC peer. That is an export of Canon's types, not a new language, and nothing needs it
+now.
+
+**Status:** recommended; waiting for Louis's yes. The v0.6 ADR then fixes the syntax.

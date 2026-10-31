@@ -7,7 +7,7 @@ the only branch. DECISIONS 344-369: [log-2026-10-12](decisions/log-2026-10-12.md
 
 ## Current focus
 
-**Next (proposed 2026-10-31, nothing started):** v0.2 (trust), v0.3 (lean generated code), then v0.4 (formulas), as the [roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md) sets out after the web-client exploration ([log](decisions/log-2026-10-31.md)). Its §9 holds Louis's four calls. v0.2 also takes the owed items of logs 10-21, 10-22 and 10-29, and the open [C++ macro collisions](handoff/2026-10-29-sovereign-cpp-macro-collisions.md) ask. `make realdata-compile` is required before every tag (394).
+**Next (proposed 2026-10-31, nothing started):** v0.2 (trust), v0.3 (lean generated code), then v0.4 (formulas), as the [roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md) sets out after the web-client exploration ([log](decisions/log-2026-10-31.md)). Louis, 2026-10-31: formulas before binary data, and the on-disk cache and N1 parked. Q1 (runtime values in Canon, as schema packages) waits for his yes. v0.2 also takes the owed items of logs 10-21, 10-22 and 10-29, and the open [C++ macro collisions](handoff/2026-10-29-sovereign-cpp-macro-collisions.md) ask. `make realdata-compile` is required before every tag (394).
 **v0.1.6 shipped F1-F19** (the Resource review's [next versions](handoff/2026-10-12-canon-next-versions.md)
 §2; [reply](handoff/2026-10-13-canon-reply-v016.md)): LSP releases a project on its last close (368);
 `ProjectInfo.Roots`, `ValueWith`/`Edit.Lang`, overlays take a ctx (344-346, breaking, ADR-0020); F3 (347-350)
