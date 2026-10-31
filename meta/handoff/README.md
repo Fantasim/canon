@@ -116,3 +116,5 @@ their path from the receiving repository's root.
 
 `2026-10-21-canon-reply-v0111.md` is v0.1.11's reply (optimisable emits, DECISIONS 392-394) to Scripts' ids-gen-optimisable ask; `2026-10-21-sovereign-cpp-retired.md` (retired members in the enum API) is answered by `2026-10-22-canon-reply-v0112.md` (v0.1.12, DECISIONS 395; one required rename in Sovereign's telemetry).
 `2026-10-29-sovereign-graph-export.md` (the whole reference graph in one pass) is answered by `2026-10-29-canon-reply-v0113.md` (v0.1.13, `canon graph`, DECISIONS 396-397).
+
+`2026-10-31-sovereign-web-client-direction.md` is **exploration, NOT SCHEDULED** (Louis): Sovereign's browser-client direction (TS + Babylon Lite, Canon as the main generator) seen from Source -- capability gaps per layer (binary wire, versioning, builders/encoders, float32 and a wider translated subset, binary data, chunked outputs, TS int64) and measured costs of today's generated code (macro guards 27%, header weight, five-pass JSON loaders, record layout, duplicated runtimes), with questions for Canon to judge.
