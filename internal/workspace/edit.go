@@ -105,7 +105,7 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if req.DryRun || len(out.Changes) == 0 {
 		return out, nil
 	}
-	if err := s.commit(ctx, out, out.writers(a)); err != nil {
+	if err := s.commit(ctx, out, out.writers(a, owners)); err != nil {
 		return nil, err
 	}
 	out.Applied = true

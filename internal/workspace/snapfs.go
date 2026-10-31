@@ -161,7 +161,7 @@ func (s *snapFS) resolve(abs string) *entry {
 	if e, ok := s.overlayResolve(abs); ok {
 		return e
 	}
-	real, err := project.EvalSymlinks(s.base, abs)
+	real, err := s.diskReal(abs)
 	if errors.Is(err, fs.ErrNotExist) && len(s.over) > 0 {
 		if e, ok := s.throughLink(abs); ok {
 			return e

@@ -92,16 +92,16 @@ func TestSettlerFailsClosed(t *testing.T) {
 	}
 }
 
-// DECISIONS 375 (J7): an edit locks the package of each canon.lock it writes; a canon.lock and a
-// source are no data file, whose readers it would lock.
+// DECISIONS 375 (J7), 417: an edit locks its owners and the package of each canon.lock it writes;
+// a canon.lock and a source are no data file, whose readers it would lock.
 func TestEditWritersLocks(t *testing.T) {
 	o := &EditOutcome{
 		Plan:       &edit.Plan{Touched: []string{"b", "a", ""}},
 		Changes:    []edit.Change{{Path: "a/a.canon"}, {Path: "z/canon.lock"}},
 		wroteLocks: []build.Lock{{Package: "z", Path: "z/canon.lock"}},
 	}
-	if got := o.writers(nil); !slices.Equal(got, []string{"a", "b", "z"}) {
-		t.Errorf("DECISIONS 375, J7: writers %v, want [a b z]", got)
+	if got := o.writers(nil, []string{"c", "a"}); !slices.Equal(got, []string{"a", "b", "c", "z"}) {
+		t.Errorf("DECISIONS 375 J7, 417: writers %v, want [a b c z]", got)
 	}
 }
 

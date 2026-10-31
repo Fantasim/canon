@@ -157,12 +157,17 @@ func (s *snapFS) unresolved() []name {
 	return out
 }
 
-// linkOnDisk reports base a symbolic link in the disk's listing of dir.
+// linkOnDisk reports base a link, a junction included, in the disk's listing of dir (WIRE.md §6.5).
 func (s *snapFS) linkOnDisk(dir, base string) bool {
 	list, err := s.base.ReadDir(dir)
 	return err == nil && slices.ContainsFunc(list, func(e fs.DirEntry) bool {
-		return e.Name() == base && e.Type()&fs.ModeSymlink != 0
+		return e.Name() == base && project.LinkCandidate(s.base, e.Type()) && !project.Unlinked(s.diskReal, dir, base)
 	})
+}
+
+// diskReal is abs's real path on the disk under the snapshot, no overlay asked.
+func (s *snapFS) diskReal(abs string) (string, error) {
+	return project.EvalSymlinks(s.base, abs)
 }
 
 // holdsOverlay reports a file an overlay makes below dir.

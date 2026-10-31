@@ -40,10 +40,9 @@ func lockerFor(fsys project.FS, dir string) edit.Locker {
 	return osLocker(filepath.FromSlash(dir))
 }
 
-// writers are the packages o locks: those it touches, each written canon.lock's, and every
-// reader in a, the analysis before it, of a data file it writes (DECISIONS 375: J7).
-func (o *EditOutcome) writers(a *build.Analysis) []string {
-	pkgs := slices.Clone(o.Plan.Touched)
+// writers are the packages o locks: touched, owners, written locks' and a's data readers (CLI.md §3.15; DECISIONS 375 J7, 417).
+func (o *EditOutcome) writers(a *build.Analysis, owners []string) []string {
+	pkgs := slices.Concat(o.Plan.Touched, owners)
 	for _, l := range o.wroteLocks {
 		pkgs = append(pkgs, l.Package)
 	}
