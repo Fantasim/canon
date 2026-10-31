@@ -64,3 +64,7 @@ func write(dir, rel string, data []byte) error {
 // WithoutTiers is the project file text without its tiers entry: a copy of a package subset leaves
 // most tier paths placing nothing (E1018), and a mutation may import upward (E2007).
 func WithoutTiers(project string) string { return tiersBlock.ReplaceAllString(project, "") }
+
+// Tiers is the tiers entry of the project file text, with its doc comments: the block WithoutTiers
+// removes, or "" when the project declares none.
+func Tiers(project string) string { return tiersBlock.FindString(project) }

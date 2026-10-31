@@ -8,6 +8,13 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/fixture"
 )
 
+// Tiers is the block WithoutTiers removes.
+func ExampleTiers() {
+	project := "project p {\n  tiers {\n    a: [x]\n  }\n}\n"
+	fmt.Printf("%q %q\n", fixture.Tiers(project), fixture.WithoutTiers(project))
+	// Output: "  tiers {\n    a: [x]\n  }\n" "project p {\n}\n"
+}
+
 // The copy holds the project file and the example's sources, on disk.
 func ExampleCopyRenames() {
 	dir, err := os.MkdirTemp("", "fixture")

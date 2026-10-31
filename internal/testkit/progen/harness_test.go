@@ -141,6 +141,7 @@ type target struct {
 	file      *syntax.File
 	all       *[]target
 	project   *progen.Project // the project holding the file, which reference queries read
+	tiers     string          // the examples' tiers block, which the harness strips from the project
 }
 
 // corpus is the examples project, its clean packages and their files.
@@ -176,6 +177,7 @@ func loadCorpus() (*corpus, error) {
 	if !strings.Contains(string(pc), examplesBudget) {
 		return nil, fmt.Errorf("examples/%s no longer sets %q: the harness lowers that budget", projectFile, examplesBudget)
 	}
+	tiers := fixture.Tiers(string(pc))
 	p.Set(projectFile, []byte(fixture.WithoutTiers(strings.Replace(string(pc), examplesBudget, harnessBudget, 1))))
 	locks, err := addLocks(p)
 	if err != nil {
@@ -211,7 +213,7 @@ func loadCorpus() (*corpus, error) {
 		}
 	}
 	for i := range c.targets {
-		c.targets[i].all, c.targets[i].project = &c.targets, p
+		c.targets[i].all, c.targets[i].project, c.targets[i].tiers = &c.targets, p, tiers
 	}
 	return c, nil
 }
