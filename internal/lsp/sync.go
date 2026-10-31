@@ -49,7 +49,7 @@ func (s *server) didOpen(params json.RawMessage) error {
 	s.mu.Lock()
 	s.docs[abs] = &document{uri: p.TextDocument.URI, text: []byte(p.TextDocument.Text), root: root}
 	if root != "" && s.projects[root] == nil {
-		s.projects[root] = newProject(root, projectHooks{opening: s.cfg.opening, syncing: s.cfg.syncing}, func() buffers { return s.buffersOf(root) })
+		s.projects[root] = newProject(root, projectHooks{base: s.cfg.base, opening: s.cfg.opening, syncing: s.cfg.syncing}, func() buffers { return s.buffersOf(root) })
 	}
 	s.mu.Unlock()
 	s.synced(abs, root)
@@ -123,16 +123,31 @@ func (s *server) release(doc *document) *workspaceProject {
 	return p
 }
 
-// didChangeWatched recomputes every project, a file changed on the disk; one that could not
-// open is tried again.
-func (s *server) didChangeWatched(json.RawMessage) error {
+type watchedParams struct {
+	Changes []struct {
+		URI string `json:"uri"`
+	} `json:"changes"`
+}
+
+// didChangeWatched recomputes every project, a file changed on the disk, each file reported read
+// again whatever its stamp (API.md S1, DECISIONS 421); one that could not open is tried again.
+func (s *server) didChangeWatched(params json.RawMessage) error {
+	var p watchedParams
+	err := decode(params, &p)
+	var names []string
+	for _, c := range p.Changes {
+		if abs, ok := pathOf(c.URI); ok {
+			names = append(names, abs)
+		}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	//canon:unordered marks a set
-	for root := range s.projects {
+	for root, wp := range s.projects {
+		wp.suspect(names)
 		s.touch(root)
 	}
-	return nil
+	return err
 }
 
 // synced marks what abs's change made stale, the project at root or abs itself outside one, and

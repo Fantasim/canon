@@ -28,8 +28,10 @@ type workspaceProject struct {
 	closed bool               // released (DECISIONS 368): an open finishing after it keeps nothing
 }
 
-// projectHooks are a test's: called as the project opens, and as the pass syncs it.
+// projectHooks are a test's: the disk under the buffers (build.OS() when nil), and calls as the
+// project opens and as the pass syncs it.
 type projectHooks struct {
+	base    build.WriteFS
 	opening func()
 	syncing func(ctx context.Context)
 }
@@ -91,7 +93,11 @@ func (p *workspaceProject) open(docs map[string][]byte) bool {
 	if p.hooks.opening != nil {
 		p.hooks.opening()
 	}
-	fsys := newBufferFS(build.OS(), docs)
+	disk := p.hooks.base
+	if disk == nil {
+		disk = build.OS()
+	}
+	fsys := newBufferFS(disk, docs)
 	b, err := build.Open(fsys, p.root, build.Options{})
 	fsys.release()
 	p.mu.Lock()
@@ -142,6 +148,14 @@ func (p *workspaceProject) current() (*workspace.Project, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.ws, p.failed
+}
+
+// suspect has the workspace, once open, read names again at its next refresh whatever their
+// stamps (API.md S1); one never read is ignored. Suspect takes a leaf lock: s.mu may be held.
+func (p *workspaceProject) suspect(names []string) {
+	if ws, _ := p.current(); ws != nil && len(names) > 0 {
+		ws.Suspect(names...)
+	}
 }
 
 // checkSynced is check once the project is synced to its buffers.

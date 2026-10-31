@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/workspace/safego"
 )
 
@@ -25,6 +26,7 @@ func Serve(ctx context.Context, in io.Reader, out io.Writer) error {
 // memory back (never when nil), and hooks: after a pass published, as one computes, as a project
 // opens, as the pass syncs one, and as a background request starts.
 type config struct {
+	base      build.WriteFS // the disk projects open over, build.OS() when nil
 	debounce  time.Duration
 	quiet     time.Duration
 	scavenge  func()
