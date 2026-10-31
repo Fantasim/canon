@@ -30,9 +30,9 @@ type wrote struct {
 	planned *Snapshot
 }
 
-// writeAs is Write whose cause, files written and planned snapshot are known once fn returns: an
-// edit that wrote nothing publishes an external change, if the disk changed meanwhile; one that
-// wrote is published with its files read again, however the refresh went (W15).
+// writeAs is Write whose cause, files and planned snapshot are known once fn returns: a writer
+// that wrote nothing publishes any external change, its *StaleError's files read again (DECISIONS
+// 421); one that wrote is published with its files read again, however the refresh went (W15).
 func (p *Project) writeAs(ctx context.Context, after func() wrote, fn func(context.Context, *Snapshot) error) (next *Snapshot, err error) {
 	if err := p.lock(ctx); err != nil {
 		return nil, err
@@ -43,6 +43,7 @@ func (p *Project) writeAs(ctx context.Context, after func() wrote, fn func(conte
 		return nil, err
 	}
 	defer func() {
+		p.suspectStale(s, err)
 		next = p.end(context.WithoutCancel(ctx), s, after())
 	}()
 	return nil, fn(ctx, s)

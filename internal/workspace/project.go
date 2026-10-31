@@ -33,17 +33,18 @@ type Project struct {
 
 	refreshMu sync.Mutex // one refresh at a time; a writer's refreshes and writes among them
 
-	mu      sync.Mutex
-	cur     *Snapshot
-	seq     uint64 // snapshots published, the number of the current one (S10)
-	closed  bool
-	writing bool // a writer runs: readers take the current snapshot as it is (S9)
-	begun   int  // refreshes started, each numbered
-	done    int  // the last refresh finished: a call that took its ticket before it need not refresh (S1)
-	subs    []*subscriber
-	calls   map[*call]bool // the shared computations running, which Close cancels
-	hist    history
-	watches watchSet // the watches running and the watcher they share (API.md W16)
+	mu       sync.Mutex
+	cur      *Snapshot
+	seq      uint64 // snapshots published, the number of the current one (S10)
+	closed   bool
+	writing  bool            // a writer runs: readers take the current snapshot as it is (S9)
+	begun    int             // refreshes started, each numbered
+	done     int             // the last refresh finished: a call that took its ticket before it need not refresh (S1)
+	suspects map[string]bool // names reported changed, read again at the next refresh (S1; DECISIONS 421)
+	subs     []*subscriber
+	calls    map[*call]bool // the shared computations running, which Close cancels
+	hist     history
+	watches  watchSet // the watches running and the watcher they share (API.md W16)
 
 	verdicts verdictMemo // the fixed points M9 found, by content (log-2026-09-29 P19, PB4)
 }
@@ -162,17 +163,26 @@ func (p *Project) refresh(ctx context.Context, s *Snapshot, cause Cause) (*Snaps
 	return ns, nil
 }
 
-// recheck is fs compared with the disk (snapFS.refresh), a refresh numbered so that a call that
-// took its ticket before it need not refresh again (S1); the caller holds refreshMu.
+// recheck is fs compared with the disk, the suspects read again and kept if it fails (DECISIONS
+// 421), numbered so a call that took its ticket before need not refresh (S1); under refreshMu.
 func (p *Project) recheck(ctx context.Context, fs *snapFS) (*snapFS, []name, error) {
 	p.mu.Lock()
 	p.begun++
 	n := p.begun
+	taken := p.suspects
+	p.suspects = nil
 	p.mu.Unlock()
-	next, changed, err := fs.refresh(ctx)
+	refreshed := false
+	defer func() {
+		if !refreshed {
+			p.keepSuspects(taken)
+		}
+	}()
+	next, changed, err := fs.refresh(ctx, forcedBy(taken))
 	if err != nil {
 		return nil, nil, err
 	}
+	refreshed = true
 	p.mu.Lock()
 	p.done = n
 	p.mu.Unlock()

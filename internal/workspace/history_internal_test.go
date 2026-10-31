@@ -34,7 +34,7 @@ func TestRefreshRacilyClean(t *testing.T) {
 			t.Fatal(err)
 		}
 		fsys.MapFS["f"] = &fstest.MapFile{Data: []byte("b"), ModTime: mtime}
-		next, changed, err := s.refresh(context.Background())
+		next, changed, err := s.refresh(context.Background(), nil)
 		if err != nil || (next != nil) != c.seen || (len(changed) == 1) != c.seen {
 			t.Errorf("hashed %v after: changed %v, want seen %v", c.hashedAfter, changed, c.seen)
 		}
@@ -65,11 +65,11 @@ func TestRefreshLinks(t *testing.T) {
 			t.Fatalf("EvalSymlinks = %s, %v after %d resolutions", real, err, fsys.calls)
 		}
 	}
-	if next, _, err := s.refresh(context.Background()); next != nil || err != nil {
+	if next, _, err := s.refresh(context.Background(), nil); next != nil || err != nil {
 		t.Errorf("an unchanged link is a change: %v", err)
 	}
 	fsys.links["/l"] = "/b"
-	next, changed, err := s.refresh(context.Background())
+	next, changed, err := s.refresh(context.Background(), nil)
 	if err != nil || next == nil || len(changed) != 1 {
 		t.Fatalf("a retargeted link: %v, %v", changed, err)
 	}

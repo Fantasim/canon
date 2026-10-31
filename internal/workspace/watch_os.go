@@ -83,13 +83,15 @@ func (h *hub) closeOS() {
 	}
 }
 
-// notified notes a change the OS reported; a directory removed or renamed lost its watch, which
-// the next resync adds again, and a missing directory under the one notified is tried again.
+// notified notes a change the OS reported, its name read again whatever its stamp (DECISIONS
+// 421); a directory removed or renamed lost its watch, which the next resync adds again, and a
+// missing directory under the one notified is tried again.
 func (h *hub) notified(ev fsnotify.Event) {
 	name := project.Clean(filepath.ToSlash(ev.Name))
 	if ev.Has(fsnotify.Remove) || ev.Has(fsnotify.Rename) {
 		delete(h.dirs, name)
 	}
+	h.p.Suspect(name)
 	now := h.clk.Now()
 	h.note(now)
 	if !h.coveredBy(name) && !h.coveredBy(project.DirOf(name)) {

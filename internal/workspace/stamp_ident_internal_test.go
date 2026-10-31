@@ -54,7 +54,7 @@ func TestRefreshIdentity(t *testing.T) {
 			}
 			f.content = stampNew
 			row.apply(&f.st)
-			_, changed, err := s.refresh(context.Background())
+			_, changed, err := s.refresh(context.Background(), nil)
 			if err != nil {
 				t.Fatal(err)
 			}

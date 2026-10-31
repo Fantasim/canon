@@ -47,3 +47,23 @@ func Example() {
 	// overlay [x/x.canon]
 	// true [x/x.canon] true
 }
+
+// A name reported changed is read again at the next refresh whatever its stamp; the same content
+// keeps the snapshot and its revision (API.md S1; DECISIONS 421).
+func ExampleProject_Suspect() {
+	b, err := build.Open(newMemFS(lawFiles()), "/law", build.Options{})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	p := workspace.New(b)
+	defer p.Close()
+	ctx := context.Background()
+	s, _ := p.Read(ctx)
+	rev, _ := s.Revision(ctx)
+	p.Suspect("/law/a/a.json")
+	again, _ := p.Read(ctx)
+	now, _ := again.Revision(ctx)
+	fmt.Println(again == s, now == rev)
+	// Output: true true
+}

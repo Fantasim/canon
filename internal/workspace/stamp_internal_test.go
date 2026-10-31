@@ -159,7 +159,7 @@ func TestRefreshChangeTime(t *testing.T) {
 			}
 			stampTick(t, abs)
 			row.apply(t, abs)
-			next, changed, err := s.refresh(context.Background())
+			next, changed, err := s.refresh(context.Background(), nil)
 			stampMust(t, err)
 			if want := []name{{kind: row.kind, abs: abs}}; !slices.Equal(changed, want) {
 				t.Fatalf("changed = %v, want %v", changed, want)

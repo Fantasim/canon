@@ -10,21 +10,24 @@ import (
 )
 
 // recheck is one kind of entry compared with the disk: the entry read again, or nil when its
-// stat shows it cannot have changed (API.md S1).
-type recheck func(s *snapFS, n name, e *entry) *entry
+// stat shows it cannot have changed and it is not forced (API.md S1).
+type recheck func(s *snapFS, n name, e *entry, forced bool) *entry
 
 // rechecks is the recheck of each kind of entry, by kind.
 var rechecks = [...]recheck{
-	kindFile: func(s *snapFS, n name, e *entry) *entry { return s.ifStale(n, e, s.readFile) },
-	kindDir:  func(s *snapFS, n name, e *entry) *entry { return s.ifStale(n, e, s.readDir) },
-	kindStat: func(s *snapFS, n name, _ *entry) *entry { return s.stat(n.abs) },
-	kindLink: func(s *snapFS, n name, _ *entry) *entry { return s.resolve(n.abs) },
+	kindFile: func(s *snapFS, n name, e *entry, forced bool) *entry { return s.ifStale(n, e, s.readFile, forced) },
+	kindDir:  func(s *snapFS, n name, e *entry, forced bool) *entry { return s.ifStale(n, e, s.readDir, forced) },
+	kindStat: func(s *snapFS, n name, _ *entry, _ bool) *entry { return s.stat(n.abs) },
+	kindLink: func(s *snapFS, n name, _ *entry, _ bool) *entry { return s.resolve(n.abs) },
 }
 
-// ifStale is n read again when its stamp differs from e's, has no modification time, or e was
-// read so soon after its modification or change time that a change within the same timestamp
-// would not show.
-func (s *snapFS) ifStale(n name, e *entry, read func(string) *entry) *entry {
+// ifStale is n read again when forced, a name reported changed (DECISIONS 421), when its stamp
+// differs from e's or has no modification time, or when e was read so soon after its
+// modification or change time that a change within the same timestamp would not show.
+func (s *snapFS) ifStale(n name, e *entry, read func(string) *entry, forced bool) *entry {
+	if forced {
+		return read(n.abs)
+	}
 	st := stampOf(s.base.Stat(n.abs))
 	racy := st.class == classOK && e.stamp.racy(e.at)
 	if st == e.stamp && !st.zero && !racy {
@@ -33,10 +36,10 @@ func (s *snapFS) ifStale(n name, e *entry, read func(string) *entry) *entry {
 	return read(n.abs)
 }
 
-// refresh compares every entry but the overlays with the disk (API.md S1). It returns the
-// snapshot's next file system and the names whose content changed, or nil and none; an entry
-// read again with the same content replaces its old one here, so it is not read again next time.
-func (s *snapFS) refresh(ctx context.Context) (*snapFS, []name, error) {
+// refresh compares every entry but the overlays with the disk, a file or listing forced read
+// again (API.md S1). It returns the next file system and the names whose content changed, or nil
+// and none; an entry read again with the same content replaces its old one here.
+func (s *snapFS) refresh(ctx context.Context, forced map[string]bool) (*snapFS, []name, error) {
 	s.mu.Lock()
 	names := make([]name, 0, len(s.ents))
 	olds := make([]*entry, 0, len(s.ents))
@@ -47,7 +50,7 @@ func (s *snapFS) refresh(ctx context.Context) (*snapFS, []name, error) {
 		}
 	}
 	s.mu.Unlock()
-	return s.compare(ctx, names, olds)
+	return s.compare(ctx, names, olds, forced)
 }
 
 // refreshNames is refresh over the entries of only (log-2026-09-29 M4 P18).
@@ -61,13 +64,15 @@ func (s *snapFS) refreshNames(ctx context.Context, only []name) (*snapFS, []name
 		}
 	}
 	s.mu.Unlock()
-	return s.compare(ctx, names, olds)
+	return s.compare(ctx, names, olds, nil)
 }
 
-// compare is refresh over names, whose entries are olds.
-func (s *snapFS) compare(ctx context.Context, names []name, olds []*entry) (*snapFS, []name, error) {
+// compare is refresh over names, whose entries are olds, the names of forced read again.
+func (s *snapFS) compare(ctx context.Context, names []name, olds []*entry, forced map[string]bool) (*snapFS, []name, error) {
 	fresh := make([]*entry, len(names))
-	err := inParallel(ctx, len(names), func(i int) { fresh[i] = rechecks[names[i].kind](s, names[i], olds[i]) })
+	err := inParallel(ctx, len(names), func(i int) {
+		fresh[i] = rechecks[names[i].kind](s, names[i], olds[i], forced[names[i].abs])
+	})
 	if err != nil {
 		return nil, nil, err
 	}

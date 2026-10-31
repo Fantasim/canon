@@ -340,7 +340,7 @@ func (h *hub) pollOnce(now time.Time) error {
 	if err != nil {
 		return err
 	}
-	next, changed, err := s.fs.refresh(h.ctx)
+	next, changed, err := s.fs.refresh(h.ctx, nil)
 	if err != nil {
 		return err
 	}

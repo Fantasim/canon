@@ -109,7 +109,7 @@ func TestHistoryFromLogs(t *testing.T) {
 	add("r6", planned)
 	disk["d/e"] = &fstest.MapFile{Data: []byte("6"), ModTime: time.Unix(1, 0)}
 	disk["d/f"] = &fstest.MapFile{Data: []byte("7")}
-	next, _, err := planned.refresh(t.Context())
+	next, _, err := planned.refresh(t.Context(), nil)
 	if err != nil || next == nil {
 		t.Fatalf("refresh: %v, %v", next, err)
 	}
