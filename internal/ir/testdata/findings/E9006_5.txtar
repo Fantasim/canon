@@ -1,0 +1,19 @@
+CONFORMANCE.md §2.1, DECISIONS 414: a translated function takes no record parameter.
+-- a/a.canon --
+package a
+
+/// A point.
+record Point {
+  /// Its x.
+  x: Int
+}
+
+/// x of a point.
+export fn xOf(p: Point) -> Int { return 1 }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9006]  a/a.canon:10:15
+  parameter p of xOf has type a.Point: translated functions take Bool, integers, Float, Float32, String, Duration and enums; pass the values the body reads as parameters of those types, or make xOf a method of the record that holds them
+
+1 error, 0 warnings in 1 package (…)

@@ -11,6 +11,6 @@ export fn narrowed(n: Int) -> Int {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9001]  a/a.canon:5:3
-  let small: Int32 = n + 1 is not allowed in translated function narrowed: it is outside the portable subset
+  let small: Int32 = n + 1 is not allowed in translated function narrowed: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 1 error, 0 warnings in 1 package (…)

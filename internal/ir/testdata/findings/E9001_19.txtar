@@ -14,12 +14,12 @@ export fn padded(n: Int) -> String { return "{n:5}" }
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9001]  a/a.canon:4:43
-  [n, n].duplicates().len() is not allowed in translated function repeats: it is outside the portable subset
+  [n, n].duplicates().len() is not allowed in translated function repeats: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9001]  a/a.canon:7:48
-  n:08x is not allowed in translated function hexed: it is outside the portable subset
+  n:08x is not allowed in translated function hexed: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9001]  a/a.canon:10:47
-  n:5 is not allowed in translated function padded: it is outside the portable subset
+  n:5 is not allowed in translated function padded: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 3 errors, 0 warnings in 1 package (…)

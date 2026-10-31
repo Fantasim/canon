@@ -172,6 +172,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `ReadMissing` | no such file or directory | `E7004` |
 | `ReadNotDir` | not a directory | `E7004` |
 | `ReadNotRegular` | not a regular file | `E7004` |
+| `ReadOutsideRoots` | reached through a symbolic link outside the roots and the project | `E7004` |
 | `ReadPermission` | permission denied | `E7004` |
 | `ReadTooLarge` | too large | `E7004` |
 | `ReadUnreadable` | unreadable | `E7004` |
@@ -386,7 +387,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 331 codes: 302 errors, 26 warnings and 3 run-time codes, with 556 messages.
+The catalogue holds 332 codes: 303 errors, 26 warnings and 3 run-time codes, with 567 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -849,7 +850,7 @@ Owner: TYPES.md, WIRE.md.
 | E3313 | error | check | TYPES.md §14 | an input field read at build time |
 | E3314 | error | check | TYPES.md (STDLIB.md §4.3) | `sum()` of a list whose element type is unknown |
 | E3315 | error | wire | WIRE.md §5.4 | `null` where a non-optional value is required |
-| E3316 | error | check | WIRE.md §4.1 | an `@json` form that does not apply to the field's type, or colliding wire keys |
+| E3316 | error | check | WIRE.md §4.1, §4.2, §5.3, §5.6 | an `@json` form that does not apply to the field's type, colliding wire keys, a wire name holding U+0000, or two enum members or two cases on one wire |
 | E3317 | error | wire | WIRE.md §5.8 | two map keys that encode to the same text |
 | E3318 | error | check | WIRE.md §4.2 | an inline variant's or a tag's keys collide with the parent's |
 | E3320 | error | check | TYPES.md §5.2 | an item kind not allowed in that kind of brace literal |
@@ -967,6 +968,9 @@ Owner: TYPES.md, WIRE.md.
 | E3316 | pairsBound | field:Name | `@json(pairs:) on {field} needs a list type with a finite upper length bound` |
 | E3316 | pairsTemplate | template:Text | `@json(pairs:) template "{template}" must contain {{i}} exactly once, differ from the other one and expand to keys that start with no $ and collide with no other key` |
 | E3316 | pairsDefault | field:Name | `@json(pairs:) on {field} allows no default but []` |
+| E3316 | nul | item:Name | `a wire name of {item} holds U+0000 (NUL): generated C++ readers compare names as C strings and would cut it; write another character` |
+| E3316 | enumWire | wire:Text, member:Name, other:Name | `wire "{wire}" of {member} is also the wire of {other}; give one of them another wire with = "..." (@json("...") in an enum with @codes)` |
+| E3316 | caseWire | wire:Text, caseName:Name, other:Name | `wire "{wire}" of case {caseName} is also the wire of case {other}; give one of them another wire with @json("...")` |
 | E3317 | - | a:Value, b:Value, text:Text | `map keys {a} and {b} both encode to "{text}"` |
 | E3318 | inline | key:Name, variant:Name, field:Name | `{key} of inline variant {variant} collides with {field}` |
 | E3318 | twoInline | - | `a record may have only one @json(inline) field` |
@@ -1074,8 +1078,9 @@ Owner: EVALUATION.md.
 | E5002 | error | rules | EVALUATION.md §8.3 | `fail(at, message)` in a check block |
 | W5002 | warning | rules | EVALUATION.md §8.3 | `warn(at, message)` in a check block |
 | E5003 | error | rules | EVALUATION.md §8.3 | a check name used twice in one scope |
-| E5004 | error | rules | EVALUATION.md §10.3 | `expect … fails name` names no check that applies |
+| E5004 | error | rules | EVALUATION.md §10.3, §10.5 | `expect … fails name` names no check that runs for its subject |
 | E5005 | error | rules | EVALUATION.md §10.1 | a test name declared twice in one package |
+| E5006 | error | check | EVALUATION.md §10.5 | a package subject substitutes something other than a top-level let of the test's package, or one let twice |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -1084,8 +1089,13 @@ Owner: EVALUATION.md.
 | E5002 | - | message:Text | `{message}` |
 | W5002 | - | message:Text | `{message}` |
 | E5003 | - | name:Name, scope:Name | `check name {name} is used twice in {scope}` |
-| E5004 | - | name:Name, typ:Type | `no check named {name} applies to {typ}` |
+| E5004 | value | name:Name, typ:Type | `no check named {name} applies to {typ}` |
+| E5004 | packageCheck | name:Name, typ:Type | `no check named {name} applies to {typ}; {name} is a package check, which only expect package runs` |
+| E5004 | package | name:Name, pkg:Name | `no check named {name} runs for package {pkg}` |
 | E5005 | - | name:Text, pkg:Name | `test "{name}" is declared twice in {pkg}` |
+| E5006 | notLet | name:Name | `{name} is not a let: expect package substitutes top-level lets of its own package` |
+| E5006 | otherPackage | name:Name | `{name} is a let of another package: substitute it in a test of that package` |
+| E5006 | twice | name:Name, first:Loc | `{name} is substituted twice (first at {first})` |
 
 ## E6xxx, W6xxx: Stable ids and canon.lock
 
@@ -1232,7 +1242,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8002 | error | check | CODEGEN.md §2.1 | two emits of one target in one package |
 | E8003 | error | check | CODEGEN.md §2.1 | unknown emit target or emit option |
 | E8004 | error | ir | CODEGEN.md §2.8 | a type of a package that has no emit for the same target, or no copy this copy can use (none under its root among several, or its only copy under another consumer root) |
-| E8005 | error | ir | CODEGEN.md §3.5 | two generated names collide in one scope (two packages a Go emit reaches included) |
+| E8005 | error | ir | CODEGEN.md §3.5 | two generated names collide in one scope (two packages a Go emit reaches included), or a C++ name equals a #define of a package it does not read |
 | W8006 | warning | ir | CODEGEN.md §3.5 | a generated C++ name is a common platform macro |
 | E8007 | error | ir | CODEGEN.md §2.8 | a Go output under no root mapped by `go_module` |
 | E8008 | error | ir | CODEGEN.md §2.3 | two Go emits write into one directory |
@@ -1246,7 +1256,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8017 | error | ir | CODEGEN.md §5.6 | a dependent-type branch that is not a scalar, String, enum or ref |
 | E8019 | error | ir | EVALUATION.md §1 | an emit whose generator cannot produce a construct valid Canon allows, or a mode not built yet (DECISIONS 320); the message names the way out (DECISIONS 305) |
 | E8020 | error | ir | CODEGEN.md §5.1 | a Go constant of -0.0, which Go constants cannot hold |
-| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text`, an invalid `@text` file name, two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300, 336) |
+| E8021 | error | check | CODEGEN.md §2.9 | a misplaced `@text`, an invalid `@text` file name (a `.canon` one included), two `@text` files of one package with one name, or a call to a `@text` fn (DECISIONS 294, 300, 336, 418) |
 | E8022 | error | build | CODEGEN.md §2.8 | a relative include or import crossing two roots this machine places otherwise than `project.canon` does (DECISIONS 332) |
 | E8023 | error | build | CODEGEN.md §2.4 | `build --check` with outputs under an optional root absent on this machine (DECISIONS 332) |
 | W8024 | warning | build | CODEGEN.md §2.4 | outputs under an optional root absent on this machine were skipped; one per root (DECISIONS 332) |
@@ -1289,6 +1299,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8005 | idType | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list` |
 | E8005 | finder | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)` |
 | E8005 | define | name:Name, a:Name, b:Name | `#define {name} is written for both {a} and {b}; change one prefix, or rename one declaration` |
+| E8005 | foreignDefine | name:Name, a:Name, b:Name | `{name} is declared for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a} with @cpp(name:), or use a type of that package here` |
 | W8006 | - | name:Name, item:Name | `C++ name {name} (from {item}) is a macro in common platform headers` |
 | E8007 | - | out:Path | `Go output {out} is under no root listed in go_module: map its root in project.canon go_module` |
 | E8008 | - | dir:Path, a:Name, b:Name | `Go directory {dir} is written by two emits ({a}, {b})` |
@@ -1333,6 +1344,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8020 | - | name:Name | `constant {name} is -0.0, which a Go constant cannot hold: make it a let` |
 | E8021 | position | - | `@text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form` |
 | E8021 | file | value:Text | `invalid @text file name "{value}": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)` |
+| E8021 | source | value:Text | `invalid @text file name "{value}": a .canon file is read as a source of the project; give it another extension` |
 | E8021 | twice | value:Text, other:Name | `@text file "{value}" is also written by {other}` |
 | E8021 | called | name:Name | `{name} has @text: it is a file, not a function other declarations can call` |
 | E8022 | - | out:Path, other:Path, from:Name, to:Name | `{out} reaches {other} by a relative path computed from project.canon, but this machine places {to} elsewhere relative to {from}: place both as project.canon does (project.local.canon or --root), or the generated path would break` |
@@ -1354,7 +1366,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8102 | none | value:Value, field:Name, marker:Text | `{value} has no wire form for {field}: it equals the none marker {marker}` |
 | E8102 | bits | value:Value, field:Name, member:Name | `{value} has no wire form for {field}: {member} appears twice in a bits set` |
 | E8103 | - | member:Name, ctype:Text, capacity:Int, length:Int | `{member} ({ctype}) holds at most {capacity}; this value needs {length}` |
-| E8104 | - | field:Name | `input field {field} cannot be emitted to TypeScript` |
+| E8104 | - | field:Name | `input field {field} cannot be emitted to TypeScript: TypeScript has no environment to read it from; keep the input fields in a package of their own that has no TypeScript emit` |
 | E8106 | - | value:Value, member:Name, ctype:Text | `{value} does not fit {member} ({ctype})` |
 | E8107 | - | ctype:Text, field:Name, typ:Type | `unknown or incompatible @cpp(type: {ctype}) for {field} of type {typ}` |
 | E8108 | - | caseName:Name, variant:Name, member:Name | `case {caseName} of {variant} needs @cpp(value:) to fill {member}` |
@@ -1393,12 +1405,13 @@ Owner: CONFORMANCE.md.
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
-| E9001 | - | construct:Expr, fn:Name | `{construct} is not allowed in translated function {fn}: it is outside the portable subset` |
+| E9001 | - | construct:Expr, fn:Name | `{construct} is not allowed in translated function {fn}: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions` |
 | E9002 | - | fn:Name, n:Int | `lookup table of {fn} would have {n} cells (limit 65536)` |
 | E9003 | - | param:Name, fn:Name | `parameter {param} of export fn {fn} is optional` |
 | E9004 | - | fn:Name, typ:Type | `translated function {fn} returns {typ}: only scalars, strings, enums and refs are allowed` |
 | E9005 | - | expr:Expr, typ:Type | `{expr} has type {typ}: translated templates may only interpolate String, integer and enum values` |
-| E9006 | - | param:Name, fn:Name, typ:Type | `parameter {param} of {fn} has type {typ}: translated functions take Bool, integers, Float, String, Duration and enums` |
+| E9006 | param | param:Name, fn:Name, typ:Type | `parameter {param} of {fn} has type {typ}: translated functions take Bool, integers, Float, Float32, String, Duration and enums; pass the values the body reads as parameters of those types, or make {fn} a method of the record that holds them` |
+| E9006 | read | param:Name, fn:Name, typ:Type | `{fn} reads {param} of type {typ} through self: translated functions read Bool, integers, Float, Float32, String, Duration and enums from self, never a ref or a @ts(bigint) field; pass the value the body needs as a parameter` |
 | E9007 | param | refinement:Expr, param:Name, fn:Name | `refinement {refinement} of parameter {param} of {fn} cannot be checked at run time` |
 | E9007 | result | refinement:Expr, fn:Name | `refinement {refinement} of the result of {fn} cannot be checked at run time` |
 | E9008 | - | typ:Name, fn:Name, pkg:Name | `translated method {typ}.{fn} is called by no test of package {pkg}: add one, it gives the conformance test its receiver` |

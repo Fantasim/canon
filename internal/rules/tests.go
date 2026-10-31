@@ -47,7 +47,7 @@ func (r *Runner) expectNames(d *syntax.TestDecl, file *syntax.File, bag *diag.Ba
 			return true
 		}
 		if t := r.info.Types[x.X]; t != nil && !r.reaches(t, id.Name) {
-			diag.E5004.At(file.Span(id), id.Name, t).Report(bag)
+			diag.E5004.AtValue(file.Span(id), id.Name, t).Report(bag)
 		}
 		return true
 	})

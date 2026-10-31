@@ -277,6 +277,9 @@ E3316 bits: @json(bits) needs every code of resource.vocab.items to be a power o
 E3316 pairsBound: @json(pairs:) on resource.vocab.items needs a list type with a finite upper length bound
 E3316 pairsTemplate: @json(pairs:) template "0.9" must contain {i} exactly once, differ from the other one and expand to keys that start with no $ and collide with no other key
 E3316 pairsDefault: @json(pairs:) on resource.vocab.items allows no default but []
+E3316 nul: a wire name of resource.vocab.items holds U+0000 (NUL): generated C++ readers compare names as C strings and would cut it; write another character
+E3316 enumWire: wire "0.9" of resource.vocab.items is also the wire of resource.vocab.items; give one of them another wire with = "..." (@json("...") in an enum with @codes)
+E3316 caseWire: wire "0.9" of case resource.vocab.items is also the wire of case resource.vocab.items; give one of them another wire with @json("...")
 E3317 -: map keys "II_SYS_SYS_SCR_FARM3" and "II_SYS_SYS_SCR_FARM3" both encode to "0.9"
 E3318 inline: resource.vocab.items of inline variant resource.vocab.items collides with resource.vocab.items
 E3318 twoInline: a record may have only one @json(inline) field
@@ -344,8 +347,13 @@ E4503 spec: cannot format Int with :0.9
 E5001 -: 0.9
 E5002 -: 0.9
 E5003 -: check name resource.vocab.items is used twice in resource.vocab.items
-E5004 -: no check named resource.vocab.items applies to Int
+E5004 value: no check named resource.vocab.items applies to Int
+E5004 packageCheck: no check named resource.vocab.items applies to Int; resource.vocab.items is a package check, which only expect package runs
+E5004 package: no check named resource.vocab.items runs for package resource.vocab.items
 E5005 -: test "0.9" is declared twice in resource.vocab.items
+E5006 notLet: resource.vocab.items is not a let: expect package substitutes top-level lets of its own package
+E5006 otherPackage: resource.vocab.items is a let of another package: substitute it in a test of that package
+E5006 twice: resource.vocab.items is substituted twice (first at @resource/Server/System/farm_config.json:1)
 E6001 removed: resource.vocab.items was removed; retire it instead
 E6001 renamed: resource.vocab.items was removed; resource.vocab.items is new: renaming a stable id is not allowed.
 	Keep resource.vocab.items and retire it: retired resource.vocab.items { … }
@@ -433,6 +441,7 @@ E8005 reached: resource.vocab.items: resource.vocab.items is generated for both 
 E8005 idType: resource.vocab.items: resource.vocab.items is generated for both resource.vocab.items and resource.vocab.items; hold one of them in a keyed list
 E8005 finder: resource.vocab.items: resource.vocab.items is generated for both @stable fields resource.vocab.items and resource.vocab.items; rename one of the fields (a lookup is named after the Canon field)
 E8005 define: #define resource.vocab.items is written for both resource.vocab.items and resource.vocab.items; change one prefix, or rename one declaration
+E8005 foreignDefine: resource.vocab.items is declared for resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; rename resource.vocab.items with @cpp(name:), or use a type of that package here
 E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module: map its root in project.canon go_module
 E8008 -: Go directory @resource/Server/Item/propItem.json is written by two emits (resource.vocab.items, resource.vocab.items)
 E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: expected one of go, cpp
@@ -476,6 +485,7 @@ E8019 unbuilt: emit resource.vocab.items cannot use resource.vocab.items mode ye
 E8020 -: constant resource.vocab.items is -0.0, which a Go constant cannot hold: make it a let
 E8021 position: @text belongs on a public package-level export fn with no parameter, returning String or a value with a wire form
 E8021 file: invalid @text file name "0.9": not a portable file name (empty, . or .., a path separator, a reserved character or Windows device name, or a final dot or space)
+E8021 source: invalid @text file name "0.9": a .canon file is read as a source of the project; give it another extension
 E8021 twice: @text file "0.9" is also written by resource.vocab.items
 E8021 called: resource.vocab.items has @text: it is a file, not a function other declarations can call
 E8022 -: @resource/Server/Item/propItem.json reaches @resource/Server/Item/propItem.json by a relative path computed from project.canon, but this machine places resource.vocab.items elsewhere relative to resource.vocab.items: place both as project.canon does (project.local.canon or --root), or the generated path would break
@@ -493,7 +503,7 @@ E8102 unit: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: no
 E8102 none: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: it equals the none marker 0.9
 E8102 bits: "II_SYS_SYS_SCR_FARM3" has no wire form for resource.vocab.items: resource.vocab.items appears twice in a bits set
 E8103 -: resource.vocab.items (0.9) holds at most -42; this value needs -42
-E8104 -: input field resource.vocab.items cannot be emitted to TypeScript
+E8104 -: input field resource.vocab.items cannot be emitted to TypeScript: TypeScript has no environment to read it from; keep the input fields in a package of their own that has no TypeScript emit
 E8106 -: "II_SYS_SYS_SCR_FARM3" does not fit resource.vocab.items (0.9)
 E8107 -: unknown or incompatible @cpp(type: 0.9) for resource.vocab.items of type Int
 E8108 -: case resource.vocab.items of resource.vocab.items needs @cpp(value:) to fill resource.vocab.items
@@ -513,12 +523,13 @@ E8202 -: @reload on resource.vocab.items: the resource.vocab.items emit is in re
 E8301 -: embedded data of resource.vocab.items failed to decode: 0.9
 E8302 -: resource.vocab.items is a runtime input and LoadInputs has not been called
 E8303 -: integer outside the TypeScript safe range
-E9001 -: a b is not allowed in translated function resource.vocab.items: it is outside the portable subset
+E9001 -: a b is not allowed in translated function resource.vocab.items: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 E9002 -: lookup table of resource.vocab.items would have -42 cells (limit 65536)
 E9003 -: parameter resource.vocab.items of export fn resource.vocab.items is optional
 E9004 -: translated function resource.vocab.items returns Int: only scalars, strings, enums and refs are allowed
 E9005 -: a b has type Int: translated templates may only interpolate String, integer and enum values
-E9006 -: parameter resource.vocab.items of resource.vocab.items has type Int: translated functions take Bool, integers, Float, String, Duration and enums
+E9006 param: parameter resource.vocab.items of resource.vocab.items has type Int: translated functions take Bool, integers, Float, Float32, String, Duration and enums; pass the values the body reads as parameters of those types, or make resource.vocab.items a method of the record that holds them
+E9006 read: resource.vocab.items reads resource.vocab.items of type Int through self: translated functions read Bool, integers, Float, Float32, String, Duration and enums from self, never a ref or a @ts(bigint) field; pass the value the body needs as a parameter
 E9007 param: refinement a b of parameter resource.vocab.items of resource.vocab.items cannot be checked at run time
 E9007 result: refinement a b of the result of resource.vocab.items cannot be checked at run time
 E9008 -: translated method resource.vocab.items.resource.vocab.items is called by no test of package resource.vocab.items: add one, it gives the conformance test its receiver

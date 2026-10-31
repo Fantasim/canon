@@ -17,6 +17,6 @@ record Row {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9001]  a/a.canon:12:52
-  K.typeName is not allowed in translated function Row.label: it is outside the portable subset
+  K.typeName is not allowed in translated function Row.label: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 1 error, 0 warnings in 1 package (…)

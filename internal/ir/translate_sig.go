@@ -22,7 +22,7 @@ func (s *stage) checkTranslatedParams(u *unit, site *fnSite) bool {
 		}
 		at := file.Span(dp.Name)
 		if !scalarKinds[ty.Base().Kind()] || isAsset(ty) {
-			u.report(diag.E9006.At(at, name, site.label, p))
+			u.report(diag.E9006.AtParam(at, name, site.label, p))
 			ok = false
 			continue
 		}

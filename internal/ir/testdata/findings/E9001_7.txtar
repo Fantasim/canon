@@ -19,9 +19,9 @@ export fn padded(n: Int) -> String { return "{n:,}" }
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9001]  a/a.canon:8:10
-  match t is not allowed in translated function level: it is outside the portable subset
+  match t is not allowed in translated function level: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9001]  a/a.canon:15:47
-  n:, is not allowed in translated function padded: it is outside the portable subset
+  n:, is not allowed in translated function padded: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 2 errors, 0 warnings in 1 package (…)

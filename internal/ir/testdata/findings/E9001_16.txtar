@@ -40,6 +40,6 @@ record Row {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9001]  a/a.canon:33:13
-  F(self.ev).members is not allowed in translated function Row.count: it is outside the portable subset
+  F(self.ev).members is not allowed in translated function Row.count: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 1 error, 0 warnings in 1 package (…)

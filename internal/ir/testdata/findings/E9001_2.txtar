@@ -11,9 +11,9 @@ export fn score(name: String, n: Int) -> Int { return name.len() + twice(n) }
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9001]  a/a.canon:7:55
-  name.len() is not allowed in translated function score: it is outside the portable subset
+  name.len() is not allowed in translated function score: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9001]  a/a.canon:7:68
-  twice(n) is not allowed in translated function score: it is outside the portable subset
+  twice(n) is not allowed in translated function score: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 2 errors, 0 warnings in 1 package (…)

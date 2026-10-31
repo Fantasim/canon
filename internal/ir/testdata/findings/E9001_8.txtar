@@ -14,9 +14,9 @@ export fn capped(n: Int) -> Int { return min(n, cap()) + diff(b: n, a: 1) + diff
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9001]  a/a.canon:10:49
-  cap() is not allowed in translated function capped: it is outside the portable subset
+  cap() is not allowed in translated function capped: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9001]  a/a.canon:10:58
-  diff(b: n, a: 1) is not allowed in translated function capped: it is outside the portable subset
+  diff(b: n, a: 1) is not allowed in translated function capped: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 2 errors, 0 warnings in 1 package (…)

@@ -26,6 +26,6 @@ record Member {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E9006]  a/a.canon:21:55
-  parameter tier of Member.tierAt has type ref a.tiers: translated functions take Bool, integers, Float, String, Duration and enums
+  Member.tierAt reads tier of type ref a.tiers through self: translated functions read Bool, integers, Float, Float32, String, Duration and enums from self, never a ref or a @ts(bigint) field; pass the value the body needs as a parameter
 
 1 error, 0 warnings in 1 package (…)

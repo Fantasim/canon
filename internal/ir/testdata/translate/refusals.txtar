@@ -64,31 +64,31 @@ fn decimals file=a.canon order=5 kind=translated
 fn maybe file=a.canon order=6 kind=translated
   body none
 error[E9001]  a/a.canon:12:49
-  self.items[0] is not allowed in translated function Bag.first: it is outside the portable subset
+  self.items[0] is not allowed in translated function Bag.first: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9001]  a/a.canon:16:44
-  "{x}" < "b" is not allowed in translated function first: it is outside the portable subset
+  "{x}" < "b" is not allowed in translated function first: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9005]  a/a.canon:16:46
   x has type Float: translated templates may only interpolate String, integer and enum values
 
 error[E9001]  a/a.canon:20:3
-  let y: Int? = n is not allowed in translated function kept: it is outside the portable subset
+  let y: Int? = n is not allowed in translated function kept: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9001]  a/a.canon:25:58
-  s.startsWith("{x}") is not allowed in translated function prefixed: it is outside the portable subset
+  s.startsWith("{x}") is not allowed in translated function prefixed: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9005]  a/a.canon:25:73
   x has type Float: translated templates may only interpolate String, integer and enum values
 
 error[E9001]  a/a.canon:29:10
-  match t is not allowed in translated function named: it is outside the portable subset
+  match t is not allowed in translated function named: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9005]  a/a.canon:30:15
   x has type Float: translated templates may only interpolate String, integer and enum values
 
 error[E9001]  a/a.canon:36:51
-  x:.2 is not allowed in translated function decimals: it is outside the portable subset
+  x:.2 is not allowed in translated function decimals: it is outside the portable subset; compute it at build time, in an export fn over finite parameters that this function calls, or keep that logic out of translated functions
 
 error[E9005]  a/a.canon:36:51
   x has type Float: translated templates may only interpolate String, integer and enum values

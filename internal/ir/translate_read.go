@@ -231,7 +231,7 @@ func (t *translator) use(e syntax.Expr, pr *pendingRead, ctx readCtx) PExpr {
 // badRead is E9006 on a read the pure function cannot take as a parameter.
 func (t *translator) badRead(e syntax.Expr, pr *pendingRead) {
 	name, ty := strings.Join(pr.read.Path, underscore), pr.elem
-	t.report(t.file.Span(e), func(sp source.Span) *diag.Builder { return diag.E9006.At(sp, name, t.site.label, ty) })
+	t.report(t.file.Span(e), func(sp source.Span) *diag.Builder { return diag.E9006.AtRead(sp, name, t.site.label, ty) })
 }
 
 // register is the one pending read of a path, the first met kept with where it was met.
