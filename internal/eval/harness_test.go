@@ -148,6 +148,15 @@ func (h *host) Verify(ctx context.Context, root eval.Root, v value.Value) bool {
 	return res.Valid
 }
 
+// VerifyLiterals verifies each kept literal as a build does (TYPES.md §11.5).
+func (h *host) VerifyLiterals(ctx context.Context, root eval.Root, lits []eval.KeptLiteral) {
+	for _, l := range lits {
+		if res, err := h.verifier.CheckLiteral(ctx, root, l.Value, l.Type); err == nil && res.Poisoned {
+			h.ev.Poison(root)
+		}
+	}
+}
+
 // checks adapts the evaluator to rules.Evaluator: eval.CheckRun to rules.Run.
 type checks struct {
 	*eval.Evaluator

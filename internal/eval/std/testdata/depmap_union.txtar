@@ -1,4 +1,4 @@
-TYPES.md §11.4, DECISIONS 338: one predicate, "the value type depends on the key", refuses union: {x in nodes: P(x)} and a toMap or an optional whose values mention a key binder are E3804; a plain map, a dependent-KEY map {SK(like): Int}, a toMap of dependent values that read no key and `?.union` on a plain optional map keep it; == between a dependent map and a literal holding no record literal, an empty literal or another map is allowed.
+Evaluated: TYPES.md §11.5, STDLIB.md §6, DECISIONS 408 (amends 338): union on a kept dependent map takes and returns its type, through a field, an optional with ?.union and a toMap of such optionals; a plain map, a dependent-KEY map and a toMap of dependent values that read no key keep union; == between a dependent map and a literal, an empty literal or another map evaluates.
 -- a/a.canon --
 package a
 
@@ -94,14 +94,3 @@ local let byEvs = hs.toMap(h => h.name, h => h.byEv)
 local let byEvsUnion = byEvs.union(byEvs)
 
 local let optDep = hs[0].byEv?.union({ a: {} })
--- findings.txt --
-error[E3804]  a/a.canon:82:31
-  union is not available on a dependent value (P(*))
-
-error[E3804]  a/a.canon:92:30
-  union is not available on a dependent value (L(*))
-
-error[E3804]  a/a.canon:94:32
-  union is not available on a dependent value (L(*))
-
-3 errors, 0 warnings in 1 package (…)

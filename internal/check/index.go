@@ -83,10 +83,10 @@ func (c *checker) lookupIndex(env *env, x *syntax.IndexExpr, t types.Type) types
 		return b.Elem
 	case *types.MapType:
 		c.expr(env, x.Index, b.Key)
-		return staticView(b.Value)
+		return c.staticView(b.Value)
 	case *types.DepMapType:
 		c.expr(env, x.Index, &types.RefType{Target: b.Coll})
-		return staticView(b.Value)
+		return c.staticView(b.Value)
 	}
 	it := c.synth(env, x.Index)
 	c.report(env, diag.E3007.AtBinary(env.span(x), indexText, t, it))

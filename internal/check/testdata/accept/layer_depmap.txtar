@@ -1,0 +1,37 @@
+EVALUATION.md §9.2, TYPES.md §11.5, DECISIONS 409: an amend path enters a dependent map: by[a] and by["n"] name its entries, the key typed against ref nodes and a bare name resolved contextually; the value there is the map value at the key, its literal binding x; named[a]["k"] follows the value type below.
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local record Cfg {
+  by: {x in nodes: P(x)} = {}
+  named: {x in nodes: {String: Sub(x)}} = {}
+}
+
+local let cfg: Cfg = { by: { a: {}, n: 1 } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  by[a]: { lim: 3 }
+  by["n"]: 2
+  named[a]["k"]: {}
+}

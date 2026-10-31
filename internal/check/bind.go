@@ -39,15 +39,27 @@ func (b *bindCtx) withBinder(name string) *bindCtx {
 	return &out
 }
 
-// step is b past an amendment segment of container t to type next, a record field giving its record's (EVALUATION.md §9.2).
+// step is b past an amendment segment of t to type next: a record field's, a dependent map entry's binder bound (EVALUATION.md §9.2).
 func (b *bindCtx) step(t types.Type, seg *syntax.AmendSegment, next types.Type) *bindCtx {
-	switch t.Base().(type) {
+	switch x := t.Base().(type) {
 	case *types.RecordType, *types.AppliedRecord, *types.CaseType, *types.VariantType:
 		if seg.Name != nil {
 			return inRecord(t).forField(next)
 		}
+	case *types.DepMapType:
+		if seg.Name == nil {
+			return b.inDepMap(x)
+		}
 	}
 	return b
+}
+
+// inDepMap is b at an entry of dependent map d: its binder bound, d its field when kept (TYPES.md §11.5).
+func (b *bindCtx) inDepMap(d *types.DepMapType) *bindCtx {
+	if types.KeptDepMap(d) {
+		return b.forField(d).withBinder(d.Binder)
+	}
+	return b.withBinder(d.Binder)
 }
 
 // inRecord is the context of the fields of a record literal of type t (its parameters bound).

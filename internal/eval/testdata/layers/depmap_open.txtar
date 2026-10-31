@@ -1,0 +1,38 @@
+EVALUATION.md §9.2, TYPES.md §11.5, DECISIONS 409: an amend path enters an open dependent map ({x in nodes: Sub2(x, like)}, reading an earlier field) with today's binding: x bound to the key, like read from the instance, so bySub[a]: {} and bySub[n]: {} build Sub2(a, d) and Sub2(n, d).
+-- layers --
+dev
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub2(p: Node, q: Node) {
+  lim: Int = p.max + q.max
+}
+
+local record H {
+  like: ref nodes
+  bySub: {x in nodes: Sub2(x, like)} = {}
+}
+
+local let h: H = { like: d, bySub: { a: { lim: 1 } } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend h {
+  bySub[a]: {}
+  bySub[n]: {}
+}
+-- dump.txt --
+a.nodes = {a: Node{k: sub, max: 5}, d: Node{k: sub, max: 7}, n: Node{k: num, max: 5}}
+a.h = H{like: d, bySub: {a: Sub2{lim: 12}, n: Sub2{lim: 12}}}
+
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,35 @@
+TYPES.md §11.1, DECISIONS 411: an argument whose static type is a dependent value (foe: Pick(goal), read as Pick(*)) fits no parameter, even when every branch would: Aim(foe) is E3806; Aim(goal), its driver, is accepted.
+-- a/a.canon --
+package a
+
+local enum K { x, y }
+
+local record Goal {
+  k: K
+}
+
+local let goals: table Goal = { gx { k: x }, gy { k: y } }
+
+local let alts: table Goal = { ax { k: x } }
+
+local type Pick(g: Goal) = match g.k {
+  x => ref goals
+  y => ref alts
+}
+
+local type Aim(g: Goal) = match g.k {
+  x => Int
+  y => String
+}
+
+local record Quest {
+  goal: ref goals
+  foe: Pick(goal)
+  aim: Aim(foe)
+  byGoal: Aim(goal)
+}
+-- findings.txt --
+error[E3806]  a/a.canon:26:12
+  Aim takes 1 arguments of types a.Goal
+
+1 error, 0 warnings in 1 package (…)

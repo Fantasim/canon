@@ -19,7 +19,7 @@ func (c *checker) braceLit(env *env, e *syntax.BraceLit, want types.Type) types.
 	case *types.MapType:
 		return c.mapLit(env, e, w.Key, w.Value, w)
 	case *types.DepMapType:
-		return c.mapLit(env, e, &types.RefType{Target: w.Coll}, staticView(w.Value), w)
+		return c.mapLit(env, e, &types.RefType{Target: w.Coll}, erasedView(w.Value), w)
 	case *types.DepUnionType, *types.TypeAppType:
 		if b := braceBranch(depFunc(w)); b != nil {
 			return c.braceLit(env, e, b)

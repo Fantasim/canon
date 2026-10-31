@@ -129,9 +129,13 @@ func seqToMap(h Host, c *Call) (value.Value, bool) {
 	return m, true
 }
 
+// mapKeyType is a map's key type, `ref c` for a dependent map (DECISIONS 408).
 func mapKeyType(t types.Type) types.Type {
-	if m, ok := t.Base().(*types.MapType); ok {
+	switch m := t.Base().(type) {
+	case *types.MapType:
 		return m.Key
+	case *types.DepMapType:
+		return &types.RefType{Target: m.Coll}
 	}
 	return types.AnyType
 }

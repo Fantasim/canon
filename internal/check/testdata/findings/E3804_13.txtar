@@ -1,0 +1,35 @@
+TYPES.md §11.5, DECISIONS 408: a map reading an earlier field reads as its static view; a value of a kept map reads a free binder: literals and union stay E3804.
+-- a/a.canon --
+package a
+
+local record Node {
+  max: Int = 5
+}
+
+local let nodes: table Node = { a {}, n {} }
+
+local record Sub(e: Node, f: Node) {
+  lim: Int = e.max + f.max
+}
+
+local record H {
+  like: ref nodes
+  bySub: {x in nodes: Sub(x, like)} = {}
+  named: {x in nodes: {String: Sub(x, x)}} = {}
+}
+
+local let hs: [H] = [{ like: a }]
+local let eqOpen: Bool = hs[0].bySub == { a: {} }
+local let unionOpen = hs[0].bySub.union({ a: {} })
+local let unionValue = hs[0].named[a].union({ "k": {} })
+-- findings.txt --
+error[E3804]  a/a.canon:20:46
+  a literal is not available on a dependent value (Sub(*))
+
+error[E3804]  a/a.canon:21:35
+  union is not available on a dependent value (Sub(*))
+
+error[E3804]  a/a.canon:22:39
+  union is not available on a dependent value (Sub(*))
+
+3 errors, 0 warnings in 1 package (…)

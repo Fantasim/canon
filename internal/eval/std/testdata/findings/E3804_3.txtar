@@ -1,4 +1,4 @@
-Evaluated, no internal error: TYPES.md §11.4, DECISIONS 338: a record literal typed against a dependent value's static view (P(*), whose record branch Sub(e) needs P's argument) outside a place giving its arguments (a dependent field, its list, a declaration of the dependent type) is E3804, once, its items checked silently: a union argument (a map from a list of dependent maps, a toMap of dependent values, one whose literal sets a field a check reads), an == operand and a list literal compared (each an internal error before). union on a dependent map is E3804 once, a chained union adding nothing.
+Evaluated, no internal error: TYPES.md §11.4, DECISIONS 338, 408: a record literal typed against a dependent value's static view (P(*), whose record branch Sub(e) needs P's argument) outside a place giving its arguments (a dependent field, its list, a declaration of the dependent type, a kept dependent map) is E3804, once, its items checked silently: a union argument on a toMap of dependent values, one whose literal sets a field a check reads. A kept map {x in nodes: P(x)} read through hs.map(.by)[i], a list of them and a chained union evaluate, x bound per key.
 -- a/a.canon --
 package a
 
@@ -63,25 +63,10 @@ local let eqList: Bool = lst == [{ a: {} }]
 
 local let chained = hs[0].by.union({ d: {} }).union({ a: {} })
 -- findings.txt --
-error[E3804]  a/a.canon:52:49
-  a literal is not available on a dependent value (Sub(*))
-
 error[E3804]  a/a.canon:54:39
   a literal is not available on a dependent value (Sub(*))
 
 error[E3804]  a/a.canon:56:40
   a literal is not available on a dependent value (Sub(*))
 
-error[E3804]  a/a.canon:58:51
-  a literal is not available on a dependent value (Sub(*))
-
-error[E3804]  a/a.canon:60:39
-  a literal is not available on a dependent value (Sub(*))
-
-error[E3804]  a/a.canon:62:30
-  union is not available on a dependent value (P(*))
-
-error[E3305]  a/a.canon:62:53
-  cannot tell what this { … } is; give it a type
-
-7 errors, 0 warnings in 1 package (…)
+2 errors, 0 warnings in 1 package (…)

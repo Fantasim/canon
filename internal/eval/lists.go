@@ -127,13 +127,17 @@ func (r *run) tableLit(lit *syntax.BraceLit, at *vpath) value.Value {
 func (r *run) mapLit(lit *syntax.BraceLit, at *vpath) value.Value {
 	m := &value.Map{T: r.typeOf(lit), P: r.prov(lit, value.ProvLiteral)}
 	binder := types.MapBinder(m.T, r.dep.declared(), r.dep.bound)
+	kept := keptMap(m.T)
 	for _, it := range lit.Items {
 		k, kn, x := r.mapItem(it, mapKeyType(m.T))
 		if k == nil {
 			return nil
 		}
 		outer := r.dep
-		if binder != "" {
+		switch {
+		case kept != nil: // a kept map's values read their arguments through it (DECISIONS 408)
+			r.dep = outer.inDepMap(m.T, kept.Binder, k, x)
+		case binder != "":
 			r.dep = outer.withBinder(binder, k, x)
 		}
 		v := r.evalAt(x, at.mapKey(k, mapKeyType(m.T)))
@@ -143,7 +147,18 @@ func (r *run) mapLit(lit *syntax.BraceLit, at *vpath) value.Value {
 		}
 		r.put(m, k, v, kn, at)
 	}
+	if kept != nil {
+		r.keepLiteral(m, kept)
+	}
 	return m
+}
+
+// keptMap is t as a kept dependent map, nil for any other type (TYPES.md §11.5).
+func keptMap(t types.Type) *types.DepMapType {
+	if d, isDep := t.Base().(*types.DepMapType); isDep && types.KeptDepMap(d) {
+		return d
+	}
+	return nil
 }
 
 // mapItem is a map literal item's key, the node it is written at and its value (TYPES.md §5.2).

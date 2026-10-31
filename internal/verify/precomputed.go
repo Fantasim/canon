@@ -9,15 +9,20 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// result is a precomputed result's walk: its frame, and what the walk marked invalid.
+// result is a precomputed result's or a kept literal's walk: its frame (nil for a literal), and what the walk marked invalid.
 type result struct {
-	frame diag.Frame
+	frame *diag.Frame
 	own   map[value.Value]bool
 }
 
 // CheckAs verifies val, a precomputed result, against t under frame, charged to root (DECISIONS 324).
 func (v *Verifier) CheckAs(ctx context.Context, root eval.Root, val value.Value, t types.Type, frame diag.Frame) (Result, error) {
-	return v.check(ctx, root, val, t, &result{frame: frame, own: map[value.Value]bool{}})
+	return v.check(ctx, root, val, t, &result{frame: &frame, own: map[value.Value]bool{}})
+}
+
+// CheckLiteral verifies val, a map literal of kept dependent map type t that root's evaluation built, each value against T(key); a value another walk found invalid is not reported again (TYPES.md §11.5).
+func (v *Verifier) CheckLiteral(ctx context.Context, root eval.Root, val value.Value, t types.Type) (Result, error) {
+	return v.check(ctx, root, val, t, &result{own: map[value.Value]bool{}})
 }
 
 // Hider tells whether a frame is among those a provenance stack cut: the evaluator does.
@@ -39,9 +44,9 @@ func (s Site) ReportUnder(b *diag.Builder, f diag.Frame, bag *diag.Bag, h Hider)
 
 // reportAt reports b at s and path into the walk's bag; a precomputed result's with no path, under its frame.
 func (w *walker) reportAt(s Site, b *diag.Builder, path string) {
-	if w.result != nil {
+	if w.result != nil && w.result.frame != nil {
 		h, _ := w.ev.(Hider)
-		s.ReportUnder(b, w.result.frame, w.bag, h)
+		s.ReportUnder(b, *w.result.frame, w.bag, h)
 		return
 	}
 	s.reportAt(b, path, w.bag)

@@ -82,6 +82,7 @@ type Evaluator struct {
 	memo   *memoUse
 	gens   memoGens
 	retags retagLog
+	lits   keptLits
 
 	testPkg, checksTo string // the running test's package; the one instance checks are charged to (ChargeChecksTo)
 }
@@ -103,6 +104,7 @@ type rootState struct {
 func New(prog *check.Program, host Host, bags check.Bags, opt Options) *Evaluator {
 	e := newEvaluator(bags, opt)
 	e.prog, e.host = prog, host
+	e.lits.v, _ = host.(LiteralVerifier)
 	if prog == nil {
 		return e
 	}
@@ -127,6 +129,7 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		states:  map[check.Object]*rootState{},
 		roots:   map[Root]*rootState{},
 		invalid: map[value.Value]bool{},
+		lits:    keptLits{pending: map[value.Value][]keptEntry{}},
 		history: map[value.Value]value.Value{},
 		rebuilt: map[value.Value]value.Value{},
 		keyed:   map[value.Value]map[value.Key]*value.Record{},
@@ -217,6 +220,15 @@ func (e *Evaluator) flush(ctx context.Context) {
 		return
 	}
 	e.flushing = true
+	e.verifyQueued(ctx)
+	for ctx.Err() == nil && e.walkLiterals(ctx) {
+		e.verifyQueued(ctx) // a literal's walk may have forced more values
+	}
+	e.flushing = false
+}
+
+// verifyQueued verifies the values queued, in order.
+func (e *Evaluator) verifyQueued(ctx context.Context) {
 	for len(e.queue) > 0 && ctx.Err() == nil {
 		st := e.queue[0]
 		e.queue = e.queue[1:]
@@ -226,7 +238,6 @@ func (e *Evaluator) flush(ctx context.Context) {
 			e.stageB = nil
 		}
 	}
-	e.flushing = false
 }
 
 // MarkInvalid marks a value a soft finding is about (EVALUATION.md §7.3, DECISIONS 79).

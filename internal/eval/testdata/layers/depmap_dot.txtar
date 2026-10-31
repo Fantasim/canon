@@ -1,0 +1,44 @@
+EVALUATION.md §9.2, DECISIONS 409 (Decision 4): .k on a dependent map stays E1905, as §9.2 gives .k only to tables and keyed lists.
+-- layers --
+dev
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local record Cfg {
+  by: {x in nodes: P(x)} = {}
+}
+
+local let cfg: Cfg = { by: { a: {}, n: 1 } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  by.a: {}
+}
+-- dump.txt --
+a.nodes = {a: Node{k: sub, max: 5}, d: Node{k: sub, max: 7}, n: Node{k: num, max: 5}}
+a.cfg poisoned
+
+error[E1905]  a/dev.layer.canon:5:6
+  amend path by.a: no such field
+
+1 error, 0 warnings in 1 package (…)

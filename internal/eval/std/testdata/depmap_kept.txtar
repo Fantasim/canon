@@ -1,0 +1,64 @@
+Evaluated: TYPES.md §11.5, DECISIONS 408 (amends 338): the kept dependent maps {x in evs: L(x)} and {x in evs: {String: L(x)}} keep their type through a field, a let path, a declared let, an inferred let, rs.map(.byEv)[0] and a fn parameter: union with a literal and a literal compared with them bind x per key, at the top level and in a fn body.
+-- a/a.canon --
+package a
+
+/// Ev.
+record Ev {
+  /// Max.
+  max: Int
+}
+
+/// Evs.
+let evs: table Ev = {
+  a { max: 3 }
+  b { max: 5 }
+}
+
+/// L, of an ev.
+record L(e: Ev) {
+  /// Lim, the ev's max unless given.
+  lim: Int = e.max
+}
+
+/// R.
+record R {
+  /// By ev.
+  byEv: {x in evs: L(x)} = {}
+  /// By ev, then by name.
+  nested: {x in evs: {String: L(x)}} = {}
+}
+
+/// Rs.
+let rs: [R] = [{ byEv: { a: {} } }]
+
+local let r0: R = rs[0]
+local let declared: {x in evs: L(x)} = { a: {} }
+local let inferred = rs[0].byEv
+
+local let viaField = rs[0].byEv.union({ b: {} })
+local let eqField: Bool = rs[0].byEv == { a: {} }
+local let viaLetPath = r0.byEv.union({ b: {} })
+local let eqLetPath: Bool = r0.byEv != { a: {} }
+local let viaLet = declared.union({ b: {} })
+local let eqLet: Bool = declared == { a: {} }
+local let viaInferred = inferred.union({ b: {} })
+local let eqInferred: Bool = inferred == { a: {} }
+local let viaMapped = rs.map(.byEv)[0].union({ b: {} })
+local let eqMapped: Bool = rs.map(.byEv)[0] == { a: {} }
+
+local fn merged(m: {x in evs: L(x)}) -> Int {
+  return m.union({ b: {} }).len()
+}
+
+local fn same(m: {x in evs: L(x)}) -> Bool {
+  return m == { a: {} }
+}
+
+local fn sameNested(m: {x in evs: {String: L(x)}}) -> Bool {
+  return m == { a: { "k": {} } }
+}
+
+local let viaParam: Int = merged(rs[0].byEv)
+local let eqParam: Bool = same(rs[0].byEv)
+local let eqNested: Bool = sameNested(rs[0].nested)
+local let viaNested = rs[0].nested.union({ b: { "k": {} } })

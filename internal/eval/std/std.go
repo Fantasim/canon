@@ -76,7 +76,7 @@ func typeFamily(t types.Type) family {
 			return famKeyed
 		}
 		return famList
-	case *types.MapType:
+	case *types.MapType, *types.DepMapType:
 		return famMap
 	}
 	return famFree

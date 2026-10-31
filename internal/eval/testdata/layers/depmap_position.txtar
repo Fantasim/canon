@@ -1,0 +1,53 @@
+EVALUATION.md §9.2, DECISIONS 379, 409: [#n] on a dependent map names the entry at a position, warning W1912: by[#0]: {} binds x to d, its first key, building Sub(d); by[#1]: { lim: 2 } lands on n, whose P(n) is Int: E3802.
+-- layers --
+dev
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local record Cfg {
+  by: {x in nodes: P(x)} = {}
+}
+
+local let cfg: Cfg = { by: { d: { lim: 1 }, n: 1 } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  by[#0]: {}
+  by[#1]: { lim: 2 }
+}
+-- dump.txt --
+a.nodes = {a: Node{k: sub, max: 5}, d: Node{k: sub, max: 7}, n: Node{k: num, max: 5}}
+a.cfg = Cfg{by: {d: Sub{lim: 7}, n: Sub{lim: 2}}}
+
+warning[W1912]  a/dev.layer.canon:5:5
+  amend path by[#0] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+warning[W1912]  a/dev.layer.canon:6:5
+  amend path by[#1] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+error[E3802]  a/dev.layer.canon:6:11
+  cfg.by[n]: value does not match P(x) = Int
+  set by layer dev
+  expected by a/a.canon:22 (P(x))
+
+1 error, 2 warnings in 1 package (…)

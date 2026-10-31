@@ -235,7 +235,7 @@ func (c *checker) fieldMember(fields []*types.Field, name string) (*Selection, t
 	if f == nil {
 		return nil, nil
 	}
-	return &Selection{Kind: SelField, Obj: c.fieldObjects[f]}, staticView(f.Type)
+	return &Selection{Kind: SelField, Obj: c.fieldObjects[f]}, c.staticView(f.Type)
 }
 
 // builtinMember is the built-in member name when it is want, typed t.

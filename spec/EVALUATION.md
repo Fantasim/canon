@@ -263,6 +263,8 @@ evaluation completed. Verification walks the value (not through refs) and checks
 | stable ids, `@codes`, `@stable` values | `E6xxx`, `E3102` | per LOCK.md |
 | every value has a wire form for its field (WIRE §5.1, §5.3, §5.4; DECISIONS 283) | `E8102` | the value without one (a list or map element at its own path); a repeated bits member at its second occurrence |
 
+A map literal typed against a kept dependent map (TYPES.md §11.5) is also judged, each value against `T` applied to its key, whether or not it is stored: after every value of the pass is verified, each of its values that no verification judged at that key and type is judged once, charged to the value whose evaluation built it; its findings carry the value's path within the literal, with no root, as precomputed results do (§2.3) (DECISIONS 408).
+
 Verification findings are soft. The offending sub-value is marked invalid. Type functions
 evaluated here cost steps (§12); an evaluation error inside one is a hard error charged to the
 value being verified.

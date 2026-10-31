@@ -1,0 +1,37 @@
+TYPES.md §11.1, §11.6, DECISIONS 411: Target(sub.kind) with sub: Sub(goal) reads the applied record's field kind at evaluation: for an x goal it computes Int, so aim: "s" is E3802; for a y goal it computes String.
+-- a/a.canon --
+package a
+
+local enum K { x, y }
+
+local record Goal {
+  k: K
+}
+
+local let goals: table Goal = { gx { k: x }, gy { k: y } }
+
+local record Sub(g: Goal) {
+  kind: K = g.k
+}
+
+local type Target(k: K) = match k {
+  x => Int
+  y => String
+}
+
+local record Quest {
+  goal: ref goals
+  sub: Sub(goal)
+  aim: Target(sub.kind)
+}
+
+local let quests: [Quest] = [{ goal: gx, sub: {}, aim: "s" }, { goal: gy, sub: {}, aim: "t" }]
+-- dump.txt --
+a.goals = {gx: Goal{k: x}, gy: Goal{k: y}}
+a.quests = [Quest{goal: gx, sub: Sub{kind: x}, aim: "s"}, Quest{goal: gy, sub: Sub{kind: y}, aim: "t"}]
+
+error[E3802]  a/a.canon:26:56
+  quests[0].aim: value does not match Target(sub.kind) = Int
+  expected by a/a.canon:23 (aim: Target(sub.kind))
+
+1 error, 0 warnings in 1 package (…)

@@ -72,7 +72,7 @@ func (c *checker) typeFuncReflection(env *env, s *syntax.SelectorExpr, x *syntax
 	for _, e := range branches { // TYPES.md §4.3: reflection sees every member
 		c.completeEnum(c.typeObjects[e], e)
 	}
-	reflected := c.enumReflection(s, staticView(dep))
+	reflected := c.enumReflection(s, erasedView(dep))
 	if !argsOK {
 		return types.ErrorType
 	}

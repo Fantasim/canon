@@ -10,31 +10,33 @@ import (
 
 // keyDependent names how map e's values depend on its key, in t or e's declared type (TYPES.md §11.5).
 func (c *checker) keyDependent(e syntax.Expr, t types.Type) string {
-	if name := keyApp(t); name != "" {
+	if name := c.keyApp(t); name != "" {
 		return name
 	}
-	return keyApp(c.declared(e))
+	return c.keyApp(c.declared(e))
 }
 
-// keyApp names the first application in t that reads a dependent map's key, through optionals,
-// lists, maps, dependent maps, pairs and literal unions; "" for none.
-func keyApp(t types.Type) string {
+// keyApp names the first application in t reading a dependent map's key outside a kept one (TYPES.md §11.5); "" for none.
+func (c *checker) keyApp(t types.Type) string {
 	if t == nil {
 		return ""
 	}
 	switch x := t.Base().(type) {
 	case *types.OptionalType:
-		return keyApp(x.Elem)
+		return c.keyApp(x.Elem)
 	case *types.ListType:
-		return keyApp(x.Elem)
+		return c.keyApp(x.Elem)
 	case *types.MapType:
-		return cmp.Or(keyApp(x.Key), keyApp(x.Value))
+		return cmp.Or(c.keyApp(x.Key), c.keyApp(x.Value))
 	case *types.DepMapType:
-		return keyApp(x.Value)
+		if c.keptDepMap(x) {
+			return ""
+		}
+		return c.keyApp(x.Value)
 	case *types.PairType:
-		return cmp.Or(keyApp(x.A), keyApp(x.B))
+		return cmp.Or(c.keyApp(x.A), c.keyApp(x.B))
 	case *types.LitUnionType:
-		return keyApp(x.Of)
+		return c.keyApp(x.Of)
 	case *types.AppliedRecord:
 		return readsKey(x.Args, x.Rec.Name)
 	case *types.TypeAppType:
@@ -67,6 +69,31 @@ func (c *checker) unionOnKeyDependent(env *env, x *syntax.CallExpr, s *syntax.Se
 		c.expr(env, a.Value, types.ErrorType)
 	}
 	return true
+}
+
+// keptUnion is union on a kept dependent map: b is checked against, and the call returns, its type (STDLIB.md §6).
+func (c *checker) keptUnion(env *env, x *syntax.CallExpr, s *syntax.SelectorExpr, recv types.Type) (types.Type, bool) {
+	d, isDep := recv.Base().(*types.DepMapType)
+	if s.Name.Name != methodUnion || !isDep || !c.keptDepMap(d) {
+		return nil, false
+	}
+	if c.misplacedArgs(env, x) {
+		return types.ErrorType, true
+	}
+	b := newBinding(c.unbroken)
+	b.bind(tK, &types.RefType{Target: d.Coll})
+	b.bind(tV, c.staticView(d.Value))
+	bc := &builtinCall{x: x, fun: s, name: methodUnion, kind: CalleeBuiltin, b: b}
+	r := rowsNamed(mapMethods, methodUnion)[0]
+	if _, fits := argMap(x, r.sig); !fits {
+		c.arityError(env, bc, r.sig)
+		c.argsAlone(env, x)
+		return types.ErrorType, true
+	}
+	c.expr(env, x.Args[0].Value, recv)
+	c.info.Calls[x] = &Callee{Kind: CalleeBuiltin, Builtin: methodUnion, Overload: r.overload, TypeArgs: b.typeArgs()}
+	c.info.Types[s] = &types.FuncType{Params: []types.Type{recv}, Result: recv}
+	return recv, true
 }
 
 // declared is the type e is declared with, before its static view: a name's, a field's, or an

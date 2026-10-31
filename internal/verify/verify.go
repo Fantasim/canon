@@ -29,6 +29,11 @@ type dependents interface {
 	Verifying(ctx context.Context, root eval.Root, bag *diag.Bag) *eval.StageB
 }
 
+// judgedEntries is what an Evaluator also serves to learn the dependent map entries a walk judged (TYPES.md §11.5).
+type judgedEntries interface {
+	JudgedEntry(v value.Value, t types.Type, key value.Value)
+}
+
 // Assets tells whether a file exists under an asset root, matched byte for byte (TYPES.md §13.4).
 type Assets interface {
 	// Exists looks name up under root, written in a file of directory from (WIRE.md §2.2, §2.3); link names the first link out of bounds that held the file back (§13.4).
@@ -41,6 +46,7 @@ type Assets interface {
 type Verifier struct {
 	ev       Evaluator
 	deps     dependents
+	judged   judgedEntries
 	bags     map[string]*diag.Bag
 	assets   Assets
 	src      *sources
@@ -72,9 +78,11 @@ func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag, assets As
 // NewShared is New over an index built once, for a verifier made per call with bags of its own.
 func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag, assets Assets) *Verifier {
 	deps, _ := ev.(dependents)
+	judged, _ := ev.(judgedEntries)
 	return &Verifier{
 		ev:       ev,
 		deps:     deps,
+		judged:   judged,
 		bags:     bags,
 		assets:   assets,
 		src:      ix.src,
@@ -115,8 +123,8 @@ func (v *Verifier) check(ctx context.Context, root eval.Root, val value.Value, t
 	w := &walker{Verifier: v, ctx: ctx, bag: bag, pkg: root.Pkg, root: root, res: Result{Valid: true}, branches: map[branchKey]branchOut{}, result: res}
 	if v.deps != nil {
 		w.stage = v.deps.Verifying(ctx, root, bag)
-		if res != nil {
-			w.stage.Under(res.frame) // what the evaluator reports of a precomputed result
+		if res != nil && res.frame != nil {
+			w.stage.Under(*res.frame) // what the evaluator reports of a precomputed result
 		}
 	}
 	nv := w.walk(val, t, w.rootPath(), scope{})

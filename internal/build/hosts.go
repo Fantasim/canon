@@ -146,18 +146,34 @@ func unsupportedCause(err error) string {
 func (h *evalHost) Verify(ctx context.Context, root eval.Root, v value.Value) bool {
 	defer h.track(root.Pkg)()
 	if h.logBags != nil {
-		return h.verifyLogged(ctx, root, v)
+		return h.verifyLogged(root, func(vr *verify.Verifier) (verify.Result, error) { return vr.Check(ctx, root, v) })
 	}
 	res, err := h.verifier.Check(ctx, root, v)
 	return h.settle(h.ev, root, res, err)
 }
 
+// the build verifies the kept literals each value's evaluation built (TYPES.md §11.5)
+var _ eval.LiteralVerifier = (*evalHost)(nil)
+
+// VerifyLiterals runs stage B on each kept literal root's evaluation built, as Verify does on root (EVALUATION.md §5).
+func (h *evalHost) VerifyLiterals(ctx context.Context, root eval.Root, lits []eval.KeptLiteral) {
+	defer h.track(root.Pkg)()
+	for _, l := range lits {
+		if h.logBags != nil {
+			h.verifyLogged(root, func(vr *verify.Verifier) (verify.Result, error) { return vr.CheckLiteral(ctx, root, l.Value, l.Type) })
+			continue
+		}
+		res, err := h.verifier.CheckLiteral(ctx, root, l.Value, l.Type)
+		h.settle(h.ev, root, res, err)
+	}
+}
+
 // verifyLogged verifies into fresh bags and keeps the errors of one that poisons the value, which
 // canon test prints under a read of it (meta/decisions/log-2026-09-24.md "canon test review calls").
-func (h *evalHost) verifyLogged(ctx context.Context, root eval.Root, v value.Value) bool {
+func (h *evalHost) verifyLogged(root eval.Root, walk func(*verify.Verifier) (verify.Result, error)) bool {
 	bags := h.logBags()
 	restore := h.ev.ReportAside(bags) // a where predicate's hard error is the evaluator's (EVALUATION.md §7.1)
-	res, err := verify.NewShared(h.index, h.ev, bags, h.assets).Check(ctx, root, v)
+	res, err := walk(verify.NewShared(h.index, h.ev, bags, h.assets))
 	restore()
 	if err == nil && res.Poisoned {
 		h.causes[root] = h.errorsIn(bags)

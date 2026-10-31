@@ -1,0 +1,46 @@
+TYPES.md §11.5, EVALUATION.md §14, DECISIONS 408: each call of mk() builds its own literal: s1 stores one and its root judges it (s1[d]), t1 never stores its own, which is judged as a literal; both findings sit at the literal 3 with one message, so §14 keeps one, the least in the total order (no path before s1[d]).
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local record H {
+  by: {x in nodes: P(x)} = {}
+}
+
+local let hs: [H] = [{ by: { a: {}, n: 1 } }]
+
+local fn mk() -> {x in nodes: P(x)} {
+  return { d: 3 }
+}
+
+local let s1: {x in nodes: P(x)} = mk()
+local let t1: Int = mk().keys().len()
+-- dump.txt --
+a.nodes = {a: Node{k: sub, max: 5}, d: Node{k: sub, max: 7}, n: Node{k: num, max: 5}}
+a.hs = [H{by: {a: Sub{lim: 5}, n: 1}}]
+a.s1 = {d: 3}
+a.t1 = 1
+
+error[E3802]  a/a.canon:28:15
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:27 (P(x))
+  in mk (a/a.canon:32)
+
+1 error, 0 warnings in 1 package (…)

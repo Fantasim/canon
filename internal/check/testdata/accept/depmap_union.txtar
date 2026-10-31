@@ -1,4 +1,4 @@
-Evaluated, no internal error: TYPES.md §11.4, DECISIONS 338: one predicate, "the value type depends on the key", refuses union: {x in nodes: P(x)} and a toMap or an optional whose values mention a key binder are E3804; a plain map, a dependent-KEY map {SK(like): Int}, a toMap of dependent values that read no key and `?.union` on a plain optional map keep it; == between a dependent map and a literal holding no record literal, an empty literal or another map is allowed.
+TYPES.md §11.5, STDLIB.md §6, DECISIONS 408 (amends 338): union on a kept dependent map takes and returns its type: {x in nodes: P(x)} read through a field, an optional {x in evs: L(x)}? through `?.union`, and a toMap of such optionals; a plain map, a dependent-KEY map {SK(like): Int} and a toMap of dependent values that read no key keep union; == between a dependent map and a literal, an empty literal or another map is allowed. Its dependent keys are written qualified (Tone.soft): a symbolic key names no object for Info (dependent_test.go).
 -- a/a.canon --
 package a
 
@@ -65,7 +65,7 @@ record H {
   byEv: {x in evs: L(x)}?
 }
 
-let hs: [H] = [{ name: "h", like: c, by: { a: 1, c: soft }, ks: { soft: 1 } }]
+let hs: [H] = [{ name: "h", like: c, by: { a: 1, c: soft }, ks: { Tone.soft: 1 } }]
 
 local let plain: {String: Int} = { "a": 1 }
 
@@ -73,7 +73,7 @@ local let plainUnion: {String: Int} = plain.union({ "b": 2 })
 
 local let plainEq: Bool = plain == { "a": 1 }
 
-local let keyUnion = hs[0].ks.union({ loud: 8 })
+local let keyUnion = hs[0].ks.union({ Tone.loud: 8 })
 
 local let valueMap = hs.toMap(h => h.name, h => h.p)
 
@@ -94,14 +94,3 @@ local let byEvs = hs.toMap(h => h.name, h => h.byEv)
 local let byEvsUnion = byEvs.union(byEvs)
 
 local let optDep = hs[0].byEv?.union({ a: {} })
--- findings.txt --
-error[E3804]  a/a.canon:82:31
-  union is not available on a dependent value (P(*))
-
-error[E3804]  a/a.canon:92:30
-  union is not available on a dependent value (L(*))
-
-error[E3804]  a/a.canon:94:32
-  union is not available on a dependent value (L(*))
-
-3 errors, 0 warnings in 1 package (…)

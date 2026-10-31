@@ -1,0 +1,39 @@
+EVALUATION.md §9.2, DECISIONS 379, 409: `[#n]` on a dependent map names the entry at a position and warns W1912 only; its literal binds the map's binder.
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local record Cfg {
+  by: {x in nodes: P(x)} = {}
+}
+
+local let cfg: Cfg = { by: { a: {}, n: 1 } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  by[#0]: {}
+}
+-- findings.txt --
+warning[W1912]  a/dev.layer.canon:5:5
+  amend path by[#0] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+0 errors, 1 warning in 1 package (…)

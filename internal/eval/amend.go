@@ -120,8 +120,8 @@ func (r *run) setMapKey(mp *value.Map, t types.Type, segs []*syntax.AmendSegment
 		return nil
 	}
 	vt := types.AnyType
-	if mt, isMap := t.Base().(*types.MapType); isMap {
-		vt = mt.Value
+	if k := t.Base().Kind(); k == types.Map || k == types.DepMap { // DECISIONS 409
+		vt = mapValueType(t)
 	}
 	if i < 0 && len(segs) > 1 {
 		r.fail(diag.E1905.AtKey(r.span(seg), m.path, key))

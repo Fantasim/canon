@@ -13,6 +13,9 @@ func (c *checker) mapLit(env *env, e *syntax.BraceLit, key, value, t types.Type)
 	c.info.Literals[e] = LitMap
 	ve := env.with()
 	ve.bind = env.bind.withBinder(env.bind.mapBinder(t))
+	if d, isDep := t.Base().(*types.DepMapType); isDep && c.keptDepMap(d) { // a kept map's values read their arguments through it (DECISIONS 408)
+		ve.bind = env.bind.forField(t).withBinder(d.Binder)
+	}
 	for _, it := range e.Items {
 		switch it := it.(type) {
 		case *syntax.MapItem:
@@ -132,7 +135,7 @@ func (c *checker) scopedType(o *object) (types.Type, bool) {
 	if t == nil || t.Kind() == types.Error {
 		return nil, true
 	}
-	return staticView(t), false
+	return erasedView(t), false
 }
 
 // duplicateKeys is E3322 for a key written twice as a constant or an identifier (TYPES.md §5.2).

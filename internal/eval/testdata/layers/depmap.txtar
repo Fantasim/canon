@@ -1,0 +1,50 @@
+EVALUATION.md §9.2, §9.3, TYPES.md §11.5, DECISIONS 409: an amend path enters a dependent map: by[a] binds x to a, so { lim: 3 } builds Sub(a); by["n"] stores 2 at n; by[d]: 4 is judged against P(d) = Sub(d): E3802; named[d]["k"]: {} builds Sub(d), its lim defaulting to d's max.
+-- layers --
+dev
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local record Cfg {
+  by: {x in nodes: P(x)} = {}
+  named: {x in nodes: {String: Sub(x)}} = {}
+}
+
+local let cfg: Cfg = { by: { a: {}, n: 1 }, named: { d: {} } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  by[a]: { lim: 3 }
+  by["n"]: 2
+  by[d]: 4
+  named[d]["k"]: {}
+}
+-- dump.txt --
+a.nodes = {a: Node{k: sub, max: 5}, d: Node{k: sub, max: 7}, n: Node{k: num, max: 5}}
+a.cfg = Cfg{by: {a: Sub{lim: 3}, n: 2, d: 4}, named: {d: {"k": Sub{lim: 7}}}}
+
+error[E3802]  a/dev.layer.canon:7:10
+  cfg.by[d]: value does not match P(x) = a.Sub(e)
+  set by layer dev
+  expected by a/a.canon:22 (P(x))
+
+1 error, 0 warnings in 1 package (…)

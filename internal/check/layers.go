@@ -187,7 +187,7 @@ func (c *checker) caseField(env *env, v *types.VariantType, n *syntax.Ident, pat
 	return nil, false
 }
 
-// atPosition is `[#n]` on any list, keyed list, table or map; W1912 off a plain list (EVALUATION.md §9.2).
+// atPosition is `[#n]` on any list, keyed list, table, map or dependent map; W1912 off a plain list (EVALUATION.md §9.2).
 func (c *checker) atPosition(env *env, w *amendWalk, t types.Type, seg *syntax.AmendSegment) (types.Type, bool) {
 	next, ok := elemAtPosition(t)
 	if ok && !plainList(t) {
@@ -205,11 +205,13 @@ func elemAtPosition(t types.Type) (types.Type, bool) {
 		return x.Elem, true
 	case *types.MapType:
 		return x.Value, true
+	case *types.DepMapType:
+		return x.Value, true
 	}
 	return nil, false
 }
 
-// amendKey is `[k]` on a table, keyed list, map or list; a bare key name is a key (TYPES.md §9.3).
+// amendKey is `[k]` on a table, keyed list, map, dependent map or list; a bare key name is a key (TYPES.md §9.3).
 func (c *checker) amendKey(env *env, w *amendWalk, t types.Type, k syntax.Expr) (types.Type, bool) {
 	switch x := t.Base().(type) {
 	case *types.ListType:
@@ -224,6 +226,9 @@ func (c *checker) amendKey(env *env, w *amendWalk, t types.Type, k syntax.Expr) 
 		return x.Elem, true
 	case *types.MapType:
 		c.expr(env, k, x.Key)
+		return x.Value, true
+	case *types.DepMapType: // EVALUATION.md §9.2, DECISIONS 409
+		c.expr(env, k, &types.RefType{Target: x.Coll})
 		return x.Value, true
 	}
 	c.synth(env, k)

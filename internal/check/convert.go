@@ -203,7 +203,7 @@ func (c *checker) convert(s, want types.Type) (*Conversion, bool) {
 	case wb.Kind() == types.Any || wb.Kind() == types.DepUnion || wb.Kind() == types.TypeApp:
 		return nil, true
 	case sb.Kind() == types.DepMap && wb.Kind() != types.DepMap:
-		return c.convert(staticView(sb), want)
+		return c.convert(erasedView(sb), want)
 	case types.Identical(sb, wb):
 		return nil, true
 	case wb.Kind() == types.Optional:
@@ -304,9 +304,10 @@ func (c *checker) convertMap(s, sb, want types.Type, w *types.MapType) (*Convers
 }
 
 // convertDepMap is `{K: V} ≤` a dependent map over `ref C` when `K ≤ ref C`; each value is
-// checked at evaluation against its computed type (E3802).
+// checked at evaluation against its computed type (E3802); another dependent map converts as
+// its erased view (DECISIONS 408).
 func (c *checker) convertDepMap(s, sb, want types.Type, w *types.DepMapType) (*Conversion, bool) {
-	from, ok := sb.(*types.MapType)
+	from, ok := erasedView(sb).(*types.MapType)
 	if !ok {
 		return nil, false
 	}

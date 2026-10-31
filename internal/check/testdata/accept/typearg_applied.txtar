@@ -1,0 +1,28 @@
+TYPES.md §11.1, §11.3, DECISIONS 411: a type argument reads through a field typed by an applied record: Target(sub.kind) with sub: Sub(goal) reads Sub's own field kind.
+-- a/a.canon --
+package a
+
+local enum K { x, y }
+
+local record Goal {
+  k: K
+}
+
+local let goals: table Goal = { gx { k: x }, gy { k: y } }
+
+local record Sub(g: Goal) {
+  kind: K = g.k
+}
+
+local type Target(k: K) = match k {
+  x => Int
+  y => String
+}
+
+local record Quest {
+  goal: ref goals
+  sub: Sub(goal)
+  aim: Target(sub.kind)
+}
+
+local let quests: [Quest] = [{ goal: gx, sub: {}, aim: 3 }, { goal: gy, sub: {}, aim: "s" }]

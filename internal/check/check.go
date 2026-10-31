@@ -122,6 +122,7 @@ type checker struct {
 	reported     int                         // the errors report added so far
 	unrefined    map[syntax.Node]bool        // refinements dropped for an error (TYPES.md §1)
 	refused      map[*types.Param]types.Type // the declared type of a parameter refused by E3806, for messages
+	kept         map[*types.DepMapType]bool  // KeptDepMap by dependent map, memoized (DECISIONS 408)
 	badLits      map[syntax.Node]bool        // literal tokens holding a lexer error (DECISIONS 215)
 	unmatchable  map[syntax.Node]bool        // members and cases named by an E1126 word
 	layout       *project.Layout             // the roots as written, no --root override (DECISIONS 215)
@@ -178,6 +179,7 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		badLits:      map[syntax.Node]bool{},
 		unrefined:    map[syntax.Node]bool{},
 		refused:      map[*types.Param]types.Type{},
+		kept:         map[*types.DepMapType]bool{},
 		unmatchable:  map[syntax.Node]bool{},
 		funcDepth:    map[*object]int{},
 		views:        map[viewKey]*viewCtx{},

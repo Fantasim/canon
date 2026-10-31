@@ -20,6 +20,9 @@ func (c *checker) builtinMethod(env *env, x *syntax.CallExpr, s *syntax.Selector
 		c.argsAlone(env, x)
 		return types.ErrorType
 	}
+	if t, kept := c.keptUnion(env, x, s, recv); kept {
+		return t
+	}
 	if c.unionOnKeyDependent(env, x, s, recv) || c.misplacedArgs(env, x) {
 		return types.ErrorType
 	}
@@ -45,11 +48,11 @@ func (c *checker) methodRows(t types.Type, recvExpr syntax.Expr, name string, b 
 	switch x := t.Base().(type) {
 	case *types.MapType:
 		b.bind(tK, x.Key)
-		b.bind(tV, staticView(x.Value))
+		b.bind(tV, c.staticView(x.Value))
 		return rowsNamed(mapMethods, name)
 	case *types.DepMapType:
 		b.bind(tK, &types.RefType{Target: x.Coll})
-		b.bind(tV, staticView(x.Value))
+		b.bind(tV, c.staticView(x.Value))
 		return rowsNamed(mapMethods, name)
 	case *types.ListType:
 		b.bind(tT, x.Elem)

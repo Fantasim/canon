@@ -215,11 +215,14 @@ func rootArg(r typeArgRoot) (*types.Arg, types.Type) {
 	return &types.Arg{Source: types.ArgKey, Binder: r.binder}, &types.RefType{Target: r.coll}
 }
 
-// fieldOf is the field name of a record (or of a ref's entry), E3003 when there is none.
+// fieldOf is the field name of a record, an applied record (TYPES.md §11.1) or a ref's entry, else E3003.
 func (c *checker) fieldOf(env *env, t types.Type, name *syntax.Ident) *types.Field {
 	b := t.Base()
 	if r, ok := b.(*types.RefType); ok {
 		b = c.coll(r).Elem.Base()
+	}
+	if app, ok := b.(*types.AppliedRecord); ok {
+		b = app.Rec
 	}
 	rec, ok := b.(*types.RecordType)
 	if ok {

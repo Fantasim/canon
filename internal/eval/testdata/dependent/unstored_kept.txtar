@@ -1,0 +1,116 @@
+TYPES.md §11.5, DECISIONS 408 (Decision 3): a literal typed against a kept dependent map is judged against T(key) at evaluation, stored or not: == and != with { d: 3 } and { n: {} }, and union's argument in a fn body, are E3802 at the value, once each; a literal stored as a list element is judged once, with that root and its path; one held only by a record never stored is judged as a literal. An entry another map holds (one, moved) is judged at its own key, and a walk at another dependent type (q, Q(d) = Int) leaves it to be judged against P(d).
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local type Q(e: Node) = match e.k {
+  num => Int
+  sub => Int
+}
+
+local record H {
+  by: {x in nodes: P(x)} = {}
+}
+
+local let hs: [H] = [{ by: { a: {}, n: 1 } }]
+local let eqBad: Bool = hs[0].by == { d: 3 }
+local let neWrong: Bool = hs[0].by != { n: {} }
+
+local fn f(m: {x in nodes: P(x)}) -> Int {
+  return m.union({ d: 3, n: { lim: 2 } }).keys().len()
+}
+
+local let viaFn: Int = f(hs[0].by)
+local let lst: [{x in nodes: P(x)}] = [hs[0].by, { d: 3 }]
+
+local fn wrap(m: {x in nodes: P(x)}) -> H {
+  return { by: m }
+}
+
+local let w1: Int = wrap({ n: {} }).by.keys().len()
+local let w2: Bool = wrap({ n: {} }) == { by: {} }
+
+local let one: Bool = hs[0].by == { n: hs[0].by[a] }
+local let moved: Bool = hs[0].by == { d: hs[0].by[n] }
+local let fresh: Bool = hs[0].by == { d: 1 }
+local let hn: [H] = [{ by: { n: 1 } }]
+local let q: {x in nodes: Q(x)} = hn[0].by.union({ d: 3 })
+-- dump.txt --
+a.nodes = {a: Node{k: sub, max: 5}, d: Node{k: sub, max: 7}, n: Node{k: num, max: 5}}
+a.hs = [H{by: {a: Sub{lim: 5}, n: 1}}]
+a.eqBad = false
+a.neWrong = true
+a.viaFn = 3
+a.lst = [{a: Sub{lim: 5}, n: 1}, {d: 3}]
+a.w1 = 1
+a.w2 = false
+a.one = false
+a.moved = false
+a.fresh = false
+a.hn = [H{by: {n: 1}}]
+a.q = {n: 1, d: 3}
+
+error[E3802]  a/a.canon:30:33
+  [n]: value does not match P(x) = Int
+  expected by a/a.canon:27 (P(x))
+
+error[E3802]  a/a.canon:30:40
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:27 (P(x))
+
+error[E3802]  a/a.canon:31:42
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:27 (P(x))
+
+error[E3802]  a/a.canon:32:44
+  [n]: value does not match P(x) = Int
+  expected by a/a.canon:27 (P(x))
+
+error[E3802]  a/a.canon:35:23
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:34 (P(x))
+  in f (a/a.canon:38)
+
+error[E3802]  a/a.canon:35:29
+  [n]: value does not match P(x) = Int
+  expected by a/a.canon:34 (P(x))
+  in f (a/a.canon:38)
+
+error[E3802]  a/a.canon:39:55
+  lst[1][d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:39 (P(x))
+
+error[E3802]  a/a.canon:45:31
+  [n]: value does not match P(x) = Int
+  expected by a/a.canon:41 (P(x))
+
+error[E3802]  a/a.canon:46:32
+  [n]: value does not match P(x) = Int
+  expected by a/a.canon:41 (P(x))
+
+error[E3802]  a/a.canon:50:42
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:27 (P(x))
+
+error[E3802]  a/a.canon:52:55
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:27 (P(x))
+
+11 errors, 0 warnings in 1 package (…)

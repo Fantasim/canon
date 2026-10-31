@@ -101,7 +101,7 @@ func (c *checker) packageMember(env *env, s *syntax.SelectorExpr, q *object) typ
 	case ObjConst:
 		return c.constType(m)
 	case ObjLet:
-		return staticView(c.letType(m))
+		return c.staticView(c.letType(m))
 	case ObjFn:
 		c.textUse(env, s, m, false)
 		return m.typ

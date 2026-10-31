@@ -84,10 +84,13 @@ func (c *checker) canonKey(env *env, t types.Type, k syntax.Expr) string {
 	return openParen + env.written(k) + closeParen
 }
 
-// keyType is the key type of a map, else nil.
+// keyType is the key type of a map, `ref c` for a dependent map (DECISIONS 409), else nil.
 func keyType(t types.Type) types.Type {
-	if m, ok := t.Base().(*types.MapType); ok {
+	switch m := t.Base().(type) {
+	case *types.MapType:
 		return m.Key
+	case *types.DepMapType:
+		return &types.RefType{Target: m.Coll}
 	}
 	return nil
 }

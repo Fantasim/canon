@@ -87,16 +87,30 @@ func (c *checker) joinTypes(env *env, at syntax.Node, branches []syntax.Expr, ts
 // join2 joins two branch types with the literal rows of §6.4.
 func (c *checker) join2(a, b types.Type, before []syntax.Expr, next syntax.Expr) (types.Type, bool) {
 	switch {
-	case a == emptyList && b.Base().Kind() == types.List, a == emptyMap && b.Base().Kind() == types.Map:
+	case a == emptyList && b.Base().Kind() == types.List, a == emptyMap && anyMap(b):
 		return b, true
-	case b == emptyList && a.Base().Kind() == types.List, b == emptyMap && a.Base().Kind() == types.Map:
+	case b == emptyList && a.Base().Kind() == types.List, b == emptyMap && anyMap(a):
 		return a, true
 	case a.Base().Kind() == types.Float && isIntLiteral(next):
 		return a, true
 	case b.Base().Kind() == types.Float && allIntLiterals(before):
 		return b, true
+	case c.sameKept(a, b):
+		return a, true
 	}
-	return types.Join(staticView(c.unbroken(a)), staticView(c.unbroken(b)))
+	return types.Join(erasedView(c.unbroken(a)), erasedView(c.unbroken(b)))
+}
+
+// anyMap reports a map or a dependent map type.
+func anyMap(t types.Type) bool {
+	k := t.Base().Kind()
+	return k == types.Map || k == types.DepMap
+}
+
+// sameKept reports two identical kept dependent maps, which join to the first (DECISIONS 408).
+func (c *checker) sameKept(a, b types.Type) bool {
+	d, isDep := a.Base().(*types.DepMapType)
+	return isDep && c.keptDepMap(d) && types.Identical(a, b)
 }
 
 func allIntLiterals(es []syntax.Expr) bool {
@@ -186,9 +200,9 @@ func (c *checker) iterTypes(env *env, vars []*syntax.Ident, x syntax.Expr, t typ
 func (c *checker) pairIter(env *env, vars []*syntax.Ident, x syntax.Expr, t types.Type) []types.Type {
 	switch b := t.Base().(type) {
 	case *types.MapType:
-		return []types.Type{b.Key, staticView(b.Value)}
+		return []types.Type{b.Key, c.staticView(b.Value)}
 	case *types.DepMapType:
-		return []types.Type{&types.RefType{Target: b.Coll}, staticView(b.Value)}
+		return []types.Type{&types.RefType{Target: b.Coll}, c.staticView(b.Value)}
 	}
 	if elem, ok := seqElem(t); ok {
 		if p, isPair := elem.Base().(*types.PairType); isPair {

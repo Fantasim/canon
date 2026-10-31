@@ -1,0 +1,25 @@
+TYPES.md §11.5, §11.6, DECISIONS 265, 408: a kept dependent map's literal stored as a list element is judged once, by its root: its entries cost what they cost before kept literals were judged, the threshold HEAD's.
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub(e: Node) {
+  lim: Int = e.max
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+local let lst: [{x in nodes: P(x)}] = [{ d: {}, a: {}, n: 1 }]
+-- threshold.txt --
+threshold 34

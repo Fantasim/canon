@@ -289,7 +289,7 @@ func assignToList(f, t Type) bool {
 }
 
 func assignToMap(f, t Type) bool {
-	from, ok := f.(*MapType)
+	from, ok := mapOf(f)
 	to := t.(*MapType)
 	return ok && Assignable(from.Key, to.Key) && Assignable(from.Value, to.Value)
 }
@@ -297,8 +297,19 @@ func assignToMap(f, t Type) bool {
 // assignToDepMap is `{K: V} ≤` a dependent map over `ref C` when `K ≤ ref C`; each value is
 // checked at evaluation (E3802).
 func assignToDepMap(f, t Type) bool {
-	from, ok := f.(*MapType)
+	from, ok := mapOf(f)
 	return ok && Assignable(from.Key, &RefType{Target: t.(*DepMapType).Coll})
+}
+
+// mapOf is a map type, a dependent map read as `{ref Coll: Value}` (TYPES.md §11.5, DECISIONS 408).
+func mapOf(t Type) (*MapType, bool) {
+	switch x := t.(type) {
+	case *MapType:
+		return x, true
+	case *DepMapType:
+		return &MapType{Key: &RefType{Target: x.Coll}, Value: x.Value}, true
+	}
+	return nil, false
 }
 
 func assignToPair(f, t Type) bool {

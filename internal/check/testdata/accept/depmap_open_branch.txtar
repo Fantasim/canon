@@ -1,0 +1,28 @@
+TYPES.md §11.5, DECISIONS 338, 408: an open dependent map that is a type function's branch ({y in nodes: Sub2(y, e)}, reading the parameter e) keeps today's binding: its literal binds y per key and reads e through the field's application, no E3804.
+-- a/a.canon --
+package a
+
+local enum K { num, sub }
+
+local record Node {
+  k: K
+  max: Int = 5
+}
+
+local let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+local record Sub2(p: Node, q: Node) {
+  lim: Int = p.max + q.max
+}
+
+local type T(e: Node) = match e.k {
+  num => Int
+  sub => {y in nodes: Sub2(y, e)}
+}
+
+local record R {
+  ev: ref nodes
+  v: T(ev)
+}
+
+local let rs: [R] = [{ ev: d, v: { a: {} } }]

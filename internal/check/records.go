@@ -89,7 +89,7 @@ func (c *checker) fieldItem(env *env, it *syntax.FieldItem, t types.Type, fields
 	c.deprecatedUse(env, it.Name, fo)
 	fe := env.storing(fo)
 	fe.bind = env.bind.forField(f.Type)
-	c.expr(fe, it.Value, staticView(f.Type))
+	c.expr(fe, it.Value, erasedView(f.Type))
 }
 
 // requiredFields is E3302 for each required field the literal leaves out; a field its record

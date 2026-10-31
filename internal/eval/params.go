@@ -33,6 +33,13 @@ func (cx *depCtx) withBinder(name string, key value.Value, at syntax.Node) *depC
 	return out
 }
 
+// inDepMap is cx for the value at key of a dependent map of type t: its binder bound, t its field (TYPES.md §11.5).
+func (cx *depCtx) inDepMap(t types.Type, binder string, key value.Value, at syntax.Node) *depCtx {
+	out := cx.withBinder(binder, key, at)
+	out.field = t
+	return out
+}
+
 // forField is cx giving field f its value, written as expr.
 func (cx *depCtx) forField(f *types.Field, expr syntax.Expr) *depCtx {
 	out := *cx

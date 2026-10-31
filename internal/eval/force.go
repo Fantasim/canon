@@ -56,9 +56,11 @@ func (e *Evaluator) forceState(ctx context.Context, st *rootState, reader *run, 
 		}
 	case e.late.free && ctx.Err() != nil: // phase 8: a cancelled call leaves it to a later one
 		st.status = idle
+		e.dropLiterals(st)
 		return nil, false
 	default:
 		st.status = poisoned
+		e.dropLiterals(st)
 	}
 	e.flush(e.flushContext(ctx))
 	return st.v, st.status == done

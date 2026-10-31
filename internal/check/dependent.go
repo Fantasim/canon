@@ -8,21 +8,42 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// staticView is t with each type application expanded and each dependent map `{ref c: V}` (TYPES.md §11.3–§11.5, §13.1).
-func staticView(t types.Type) types.Type {
-	e := eraser{seen: map[*types.TypeFunc]bool{}}
+// erasedView is t with each type application expanded and each dependent map `{ref c: V}` (TYPES.md §11.3–§11.5, §13.1).
+func erasedView(t types.Type) types.Type {
+	return eraser{seen: map[*types.TypeFunc]bool{}}.view(t)
+}
+
+// staticView is the type a read of a value declared t has: its erased view, kept dependent maps whole (TYPES.md §11.5).
+func (c *checker) staticView(t types.Type) types.Type {
+	return eraser{seen: map[*types.TypeFunc]bool{}, keep: c.keptDepMap}.view(t)
+}
+
+// keptDepMap is types.KeptDepMap, once per dependent map: it runs at every read.
+func (c *checker) keptDepMap(d *types.DepMapType) bool {
+	kept, known := c.kept[d]
+	if !known {
+		kept = types.KeptDepMap(d)
+		c.kept[d] = kept
+	}
+	return kept
+}
+
+// eraser is one erasedView walk; seen stops an expansion at a type function already being
+// expanded (E3021 is its declaration's); keep, when set, names the dependent maps left whole.
+type eraser struct {
+	seen map[*types.TypeFunc]bool
+	keep func(*types.DepMapType) bool
+}
+
+// view is t erased, t itself when nothing changed.
+func (e eraser) view(t types.Type) types.Type {
 	if v, changed := e.erase(t); changed {
 		return v
 	}
 	return t
 }
 
-// eraser is one staticView walk; seen stops an expansion at a type function already being expanded (E3021 is its declaration's).
-type eraser struct {
-	seen map[*types.TypeFunc]bool
-}
-
-// erase is staticView on the components of t; unchanged, t itself is returned, aliases kept.
+// erase is erasedView on the components of t; unchanged, t itself is returned, aliases kept.
 func (e eraser) erase(t types.Type) (types.Type, bool) {
 	switch x := t.Base().(type) {
 	case *types.TypeAppType:
@@ -32,6 +53,9 @@ func (e eraser) erase(t types.Type) (types.Type, bool) {
 			return e.expand(x.Fn), true
 		}
 	case *types.DepMapType:
+		if e.keep != nil && e.keep(x) {
+			return t, false
+		}
 		v, _ := e.erase(x.Value)
 		return &types.MapType{Key: &types.RefType{Target: x.Coll}, Value: v}, true
 	case *types.OptionalType:
@@ -138,10 +162,10 @@ func (c *checker) dependentLiteral(env *env, e syntax.Expr, s, want types.Type) 
 		return false
 	}
 	if s.Kind() == types.None {
-		view := staticView(want)
+		view := erasedView(want)
 		c.report(env, diag.E3403.At(env.span(e), view, foundOptional(s, view)))
 	} else {
-		c.report(env, diag.E3002.At(env.span(e), staticView(want), s))
+		c.report(env, diag.E3002.At(env.span(e), erasedView(want), s))
 	}
 	return true
 }
@@ -248,7 +272,7 @@ func (c *checker) dependentList(env *env, e *syntax.ListLit, want types.Type) ty
 	for _, x := range e.Elems {
 		c.expr(env, x, types.ErrorType)
 	}
-	c.report(env, diag.E3002.At(env.span(e), staticView(want), env.literalText(e)))
+	c.report(env, diag.E3002.At(env.span(e), erasedView(want), env.literalText(e)))
 	return types.ErrorType
 }
 

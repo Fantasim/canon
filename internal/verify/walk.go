@@ -180,12 +180,13 @@ func (w *walker) computedType(stored, t types.Type, sc scope) types.Type {
 // mapping walks each key, then its value, a dependent map's with its binder bound (TYPES.md §11.5).
 func (w *walker) mapping(m *value.Map, t types.Type, at *Path, sc scope) value.Value {
 	var kt, vt types.Type
+	var dm *types.DepMapType
 	binder := ""
 	switch mt := underOf(t, m.T).(type) {
 	case *types.MapType:
 		kt, vt = mt.Key, mt.Value
 	case *types.DepMapType:
-		vt, binder = mt.Value, mt.Binder
+		vt, binder, dm = mt.Value, mt.Binder, mt
 	}
 	keys, vals := parts{from: m.Keys}, parts{from: m.Vals}
 	ksc := sc.part()
@@ -196,6 +197,7 @@ func (w *walker) mapping(m *value.Map, t types.Type, at *Path, sc scope) value.V
 			vsc := ksc
 			if binder != "" {
 				vsc.env = sc.env.bind(binder, keys.at(i))
+				w.judgedEntry(m.Vals[i], dm, k)
 			}
 			vals.set(i, w.walk(m.Vals[i], vt, p, vsc))
 		}
@@ -293,4 +295,11 @@ func listOf(t, stored types.Type) *types.ListType {
 func basicOf(t, stored types.Type) types.Basic {
 	b, _ := underOf(t, stored).(types.Basic)
 	return b
+}
+
+// judgedEntry tells the evaluator v, the entry at key of a dependent map of type t, is judged here against T(key) (TYPES.md §11.5).
+func (w *walker) judgedEntry(v value.Value, t *types.DepMapType, key value.Value) {
+	if w.judged != nil {
+		w.judged.JudgedEntry(v, t, key)
+	}
 }

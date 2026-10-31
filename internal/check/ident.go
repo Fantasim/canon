@@ -286,13 +286,13 @@ func (c *checker) use(env *env, e *syntax.IdentExpr, o *object) types.Type {
 	}
 	switch o.kind {
 	case ObjLocal, ObjParam:
-		return c.narrowed(env, e, staticView(o.typ))
+		return c.narrowed(env, e, c.staticView(o.typ))
 	case ObjField:
 		return c.fieldRead(env, e, o)
 	case ObjConst:
 		return c.constType(o)
 	case ObjLet:
-		return c.narrowed(env, e, staticView(c.letType(o)))
+		return c.narrowed(env, e, c.staticView(c.letType(o)))
 	case ObjFn:
 		c.textUse(env, e, o, false)
 		return o.typ
@@ -317,7 +317,7 @@ func (c *checker) fieldRead(env *env, e syntax.Expr, o *object) types.Type {
 		return types.ErrorType
 	}
 	c.deprecatedUse(env, e, o)
-	return c.narrowed(env, e, staticView(o.field.Type))
+	return c.narrowed(env, e, c.staticView(o.field.Type))
 }
 
 // deprecatedUse is W3301 for a deprecated field, member or entry named in Canon source.

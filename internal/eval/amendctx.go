@@ -65,12 +65,18 @@ func (r *run) locField(rec *value.Record, seg *syntax.AmendSegment, m *amending)
 	return rec.Fields[j], f.Type, true
 }
 
-// locMapKey is the value a segment names in map mp (an amend path never enters a dependent map, E1905).
+// locMapKey is the value a segment names in map mp, a dependent map's binder bound to its key (EVALUATION.md §9.2, DECISIONS 409).
 func (r *run) locMapKey(mp *value.Map, t types.Type, seg *syntax.AmendSegment, m *amending) (value.Value, types.Type, bool) {
 	j, key, ok := r.mapSlot(mp, seg, m)
 	if ok {
 		m.step(m.located().mapKey(key, mapKeyType(t)))
 		m.dep = m.dep.below()
+		switch d, isDep := t.Base().(*types.DepMapType); {
+		case isDep && types.KeptDepMap(d):
+			m.dep = m.dep.inDepMap(t, d.Binder, key, m.a.Value)
+		case isDep:
+			m.dep = m.dep.withBinder(d.Binder, key, m.a.Value)
+		}
 	}
 	if !ok || j < 0 {
 		return nil, nil, false

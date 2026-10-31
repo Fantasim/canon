@@ -13,6 +13,7 @@ func TestPeeks(t *testing.T) {
 	keyed := &types.ListType{Elem: types.IntType, KeyedBy: &types.Field{Name: "k"}}
 	table := &types.TableType{Elem: types.IntType}
 	m := &types.MapType{Key: types.StringType, Value: types.IntType}
+	dm := &types.DepMapType{Binder: "x", Coll: &types.Collection{Kind: types.CollLet, Name: "c"}, Value: types.IntType} // a kept map's read (DECISIONS 408)
 	for _, c := range []struct {
 		t    types.Type
 		name string
@@ -22,6 +23,7 @@ func TestPeeks(t *testing.T) {
 		{keyed, "get", true}, {keyed, "hasKey", true}, {table, "get", true}, {table, "hasKey", true},
 		{m, "len", true}, {m, "isEmpty", true}, {m, "get", true}, {m, "contains", true},
 		{list, "hasKey", false}, {m, "hasKey", false}, {types.StringType, "len", false}, {nil, "len", false},
+		{dm, "len", true}, {dm, "get", true}, {dm, "contains", true}, {dm, "keys", false},
 		{m, "keys", false}, {m, "values", false}, {m, "filter", false}, {list, "map", false},
 		{list, "reverse", false}, {list, "unique", false}, {table, "active", false}, {keyed, "sortBy", false},
 	} {

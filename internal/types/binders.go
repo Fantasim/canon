@@ -103,3 +103,61 @@ func depMapOn(t Type, coll *Collection) *DepMapType {
 	}
 	return nil
 }
+
+// KeptDepMap reports a dependent map whose type arguments are all bare binders, its own read (TYPES.md §11.5).
+func KeptDepMap(d *DepMapType) bool {
+	w := &keptWalk{binders: []string{d.Binder}}
+	w.walk(d.Value)
+	return w.reads && !w.open
+}
+
+// keptWalk is one KeptDepMap walk: the binders in scope, innermost first; reads: an argument is
+// the map's own binder, the last; open: one is anything else.
+type keptWalk struct {
+	binders []string
+	reads   bool
+	open    bool
+}
+
+// walk visits the type arguments of t through optionals, lists, maps, dependent maps, pairs,
+// literal unions and applications, never into a function body.
+func (w *keptWalk) walk(t Type) {
+	if t == nil || w.open {
+		return
+	}
+	switch x := t.Base().(type) {
+	case *OptionalType:
+		w.walk(x.Elem)
+	case *ListType:
+		w.walk(x.Elem)
+	case *MapType:
+		w.walk(x.Key)
+		w.walk(x.Value)
+	case *DepMapType:
+		w.binders = append([]string{x.Binder}, w.binders...)
+		w.walk(x.Value)
+		w.binders = w.binders[1:]
+	case *PairType:
+		w.walk(x.A)
+		w.walk(x.B)
+	case *LitUnionType:
+		w.walk(x.Of)
+	case *AppliedRecord:
+		w.args(x.Args)
+	case *TypeAppType:
+		w.args(x.Args)
+	}
+}
+
+// args classifies type arguments: a bare binder names the innermost dependent map binding it.
+func (w *keptWalk) args(args []*Arg) {
+	for _, a := range args {
+		i := slices.Index(w.binders, a.Binder)
+		switch {
+		case a.Source != ArgKey || len(a.Path) > 0 || i < 0:
+			w.open = true
+		case i == len(w.binders)-1:
+			w.reads = true
+		}
+	}
+}

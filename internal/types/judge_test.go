@@ -16,6 +16,7 @@ var (
 	layout     = &types.Alias{Pkg: "teamboard", Name: "Layout", Def: label}
 	rewardNone = &types.CaseType{Variant: reward, Name: "nothing", Wire: "nothing", Index: 1}
 	optInt     = &types.OptionalType{Elem: types.IntType}
+	keptStatus = &types.DepMapType{Binder: "x", Coll: statuses, Value: &types.AppliedRecord{Rec: status, Args: []*types.Arg{{Source: types.ArgKey, Binder: "x"}}}}
 )
 
 var otherFn = &types.TypeFunc{Pkg: "resource", Name: "Other", Body: types.IntType}
@@ -83,6 +84,9 @@ func TestAssignable(t *testing.T) {
 		{"table to keyed list", &types.TableType{Elem: eventType}, keyedEvents, false},
 		{"list to table", list(status), &types.TableType{Elem: status}, false},
 		{"maps entry-wise", &types.MapType{Key: types.StringType, Value: status}, &types.MapType{Key: types.StringType, Value: refStatus}, true},
+		{"kept dependent map to its static view (DECISIONS 408)", keptStatus, &types.MapType{Key: refStatus, Value: status}, true},
+		{"kept dependent map to another over its collection (DECISIONS 408)", keptStatus, &types.DepMapType{Binder: "y", Coll: statuses, Value: types.IntType}, true},
+		{"kept dependent map to a map keyed by another collection", keptStatus, &types.MapType{Key: refOther, Value: status}, false},
 		{"dependent value kept", types.IntType, &types.DepUnionType{Fn: paramFn}, true},
 		{"ref to a literal union over it", refStatus, &types.LitUnionType{Of: refStatus, Literals: []string{"all"}}, true},
 		{"dependent value to its own type function (§11.4)", &types.DepUnionType{Fn: paramFn}, &types.DepUnionType{Fn: paramFn}, true},
