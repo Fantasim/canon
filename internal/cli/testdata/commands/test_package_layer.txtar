@@ -1,0 +1,65 @@
+CLI.md §2.3, EVALUATION.md §10.5 items 2 and 9: --layer applies in the test and in every world;
+a value the test reads is the layered one, a let the world evaluates from its initializer is
+layered in the world, and a substituted let is final: it gets no layer.
+-- args --
+test
+--layer
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A limit.
+record Limit {
+  /// Its cap.
+  cap: Int
+}
+
+/// The first limit.
+let first: Limit = { cap: 10 }
+
+/// The second limit.
+let second: Limit = { cap: 10 }
+
+check firstHigh: first.cap >= 8 else "first cap {first.cap} is below 8"
+
+check secondHigh: second.cap >= 8 else "second cap {second.cap} is below 8"
+
+test "the test reads the layered let" {
+  expect first.cap == 5
+}
+
+test "an unsubstituted let is layered in the world, a substituted one is not" {
+  expect package fails firstHigh
+  expect package { first: { cap: 10 } } fails secondHigh
+  expect package { first: { cap: 10 }, second: { cap: 10 } } passes
+}
+
+test "the layer is not applied to a substituted let" {
+  expect package { second: { cap: 10 } } fails firstHigh
+  expect package { second: { cap: 10 } } fails secondHigh
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend first {
+  cap: 5
+}
+
+amend second {
+  cap: 5
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:30  the layer is not applied to a substituted let
+  a/a.canon:32  expect package { second: { cap: 10 } } fails secondHigh
+  got: error[E5001]  first cap 5 is below 8
+
+2 passed, 1 failed (…)
+[stderr]

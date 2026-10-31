@@ -1,0 +1,48 @@
+CLI.md §3.5, EVALUATION.md §10.5 item 4, §10.2: a world that reads a poisoned value of another
+package fails its expect, naming that value with its cause; the same package's other expects pass.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// No levels.
+let xs: [Int] = []
+
+/// The first level, which does not exist.
+let first: Int = xs[0]
+
+/// A base.
+let base: Int = 10
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// Whether to read a's first level.
+let readFirst: Bool = false
+
+/// What b computes.
+let total: Int = if readFirst { a.first } else { a.base }
+
+check positive: total > 0 else "total {total} is not positive"
+
+test "a world reads a's values" {
+  expect package passes
+  expect package { readFirst: true } passes
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  b/b.canon:14  a world reads a's values
+  b/b.canon:16  expect package { readFirst: true } passes
+  got: reads poisoned a.first
+  a/a.canon:8  error[E4002]  index 0 out of range for length 0
+
+0 passed, 1 failed (…)
+[stderr]

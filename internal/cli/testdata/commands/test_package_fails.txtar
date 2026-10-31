@@ -1,0 +1,69 @@
+CLI.md §3.5, EVALUATION.md §10.3, §10.5: fails matches a package check by name, a message by its
+text and a finding by its code; a failing passes lists the findings the world captured, one
+got: line each, and a failing fails lists `got: no finding` when nothing was produced, or what was
+produced when none of it matched.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// One crafting level.
+record Level {
+  /// Level index.
+  index: Int(0..=24)
+  /// Experience needed to reach it.
+  exp: Int(0..)
+}
+
+/// The shipped levels.
+let levels: [Level] = [
+  { index: 0, exp: 0 },
+  { index: 1, exp: 100 },
+  { index: 2, exp: 250 }
+]
+
+/// The highest level a player can reach.
+let maxLevel: Int(0..=24) = 2
+
+check uniqueIndex: [l.index for l in levels].isUnique() else "a level index is listed twice"
+
+check {
+  for l in levels {
+    if l.index > maxLevel {
+      fail(l, "level {l.index} is above maxLevel {maxLevel}")
+    }
+  }
+}
+
+test "fails matches by name, text and code" {
+  expect package { levels: levels + [levels[1]] } fails uniqueIndex
+  expect package { maxLevel: 1 } fails "level 2 is above maxLevel 1"
+  expect package { maxLevel: 1 } fails E5002
+}
+
+test "a failing passes and a failing fails" {
+  expect package { levels: levels + [levels[1]] } passes
+  expect package fails uniqueIndex
+  expect package { maxLevel: 1 } fails "not this text"
+  expect package { maxLevel: 1 } fails uniqueIndex
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:38  a failing passes and a failing fails
+  a/a.canon:39  expect package { levels: levels + [levels[1]] } passes
+  got: error[E5001]  a level index is listed twice
+  a/a.canon:40  expect package fails uniqueIndex
+  got: no finding
+  a/a.canon:41  expect package { maxLevel: 1 } fails "not this text"
+  got: error[E5002]  level 2 is above maxLevel 1
+  a/a.canon:42  expect package { maxLevel: 1 } fails uniqueIndex
+  got: error[E5002]  level 2 is above maxLevel 1
+
+1 passed, 1 failed (…)
+[stderr]

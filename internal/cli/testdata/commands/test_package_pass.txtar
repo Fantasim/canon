@@ -1,0 +1,45 @@
+CLI.md §3.5, EVALUATION.md §10.5: the bare form and a substituted one pass; -v prints their ok
+lines.
+-- args --
+test
+-v
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// One crafting level.
+record Level {
+  /// Level index.
+  index: Int(0..=24)
+  /// Experience needed to reach it.
+  exp: Int(0..)
+}
+
+/// The shipped levels.
+let levels: [Level] = [
+  { index: 0, exp: 0 },
+  { index: 1, exp: 100 },
+  { index: 2, exp: 250 }
+]
+
+check uniqueIndex: [l.index for l in levels].isUnique() else "a level index is listed twice"
+
+test "the shipped levels pass" {
+  expect package passes
+}
+
+test "and still pass without the last one" {
+  expect package { levels: levels[0..2] } passes
+}
+-- want --
+[exit 0]
+[stdout]
+ok  a/a.canon:21  the shipped levels pass
+ok  a/a.canon:25  and still pass without the last one
+
+2 passed, 0 failed (…)
+[stderr]

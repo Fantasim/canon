@@ -1,0 +1,39 @@
+CLI.md §3.5, EVALUATION.md §10.5 item 2: a let that reads the substituted one follows the
+substitution, here through a package check on the derived let; the test's own value is unchanged.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The base price.
+let base: Int(0..) = 10
+
+/// The price with tax, derived from base.
+let taxed: Int(0..) = base + base / 10
+
+check taxedCap: taxed <= 20 else "taxed price {taxed} is above 20"
+
+test "a derived let follows the substitution" {
+  expect package passes
+  expect package { base: 50 } fails taxedCap
+  expect package { base: 50 } fails "taxed price 55 is above 20"
+  expect taxed == 11
+}
+
+test "and a passing expect over it fails" {
+  expect package { base: 50 } passes
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:19  and a passing expect over it fails
+  a/a.canon:20  expect package { base: 50 } passes
+  got: error[E5001]  taxed price 55 is above 20
+
+1 passed, 1 failed (…)
+[stderr]

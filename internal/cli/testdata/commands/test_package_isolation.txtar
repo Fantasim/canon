@@ -1,0 +1,27 @@
+CLI.md §3.5, EVALUATION.md §10.5 item 6: the world is discarded after its expect and the test's
+values do not change; a later world does not see an earlier one's substitution.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// The levels.
+let levels: [Int] = [1, 2, 3]
+
+check short: levels.len() <= 3 else "more than three levels"
+
+test "a world leaves the test's values alone" {
+  expect package { levels: [1, 2, 3, 4] } fails short
+  expect levels.len() == 3
+  expect package passes
+}
+-- want --
+[exit 0]
+[stdout]
+1 passed, 0 failed (…)
+[stderr]

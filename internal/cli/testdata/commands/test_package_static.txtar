@@ -1,0 +1,44 @@
+CLI.md §3.5, EVALUATION.md §10.5 item 1, §10.4: a substitution of something that is not a let
+(E5006) or of a value outside the let's type (E3002) is a compile error: the run prints it first,
+the test does not run and fails listing both, and the other test runs.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A constant.
+const ceiling = 3
+
+/// The levels.
+let levels: [Int] = [1, 2]
+
+test "bad substitutions" {
+  expect package { ceiling: 4 } passes
+  expect package { levels: "one" } passes
+}
+
+test "fine" {
+  expect package passes
+}
+-- want --
+[exit 1]
+[stdout]
+error[E5006]  a/a.canon:11:20
+  ceiling is not a let: expect package substitutes top-level lets of its own package
+
+error[E3002]  a/a.canon:12:28
+  expected [Int], found String
+
+2 errors, 0 warnings in 1 package (…)
+
+FAIL  a/a.canon:10  bad substitutions
+  a/a.canon:11  error[E5006]  ceiling is not a let: expect package substitutes top-level lets of its own package
+  a/a.canon:12  error[E3002]  expected [Int], found String
+
+1 passed, 1 failed (…)
+[stderr]

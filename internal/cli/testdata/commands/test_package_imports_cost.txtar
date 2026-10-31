@@ -1,0 +1,46 @@
+CLI.md §3.5, EVALUATION.md §10.5 item 5, §12.2: pins test_package_imports_shared's figure: with a
+budget of 60, a.heavy alone exhausts its package's budget (it costs at least 60 steps),
+so the expect that reads it fails naming it with its cause.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 60
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Loops n times.
+fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// A value of sixty steps.
+let heavy: Int = loop(8)
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// What b reads.
+let total: Int = a.heavy + 1
+
+test "a world reads a's heavy value" {
+  expect package passes
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  b/b.canon:9  a world reads a's heavy value
+  b/b.canon:10  expect package passes
+  got: reads poisoned a.heavy
+  a/a.canon:8  error[E4401]  evaluation budget of 60 steps exhausted
+  heaviest: heavy (60 steps)
+
+0 passed, 1 failed (…)
+[stderr]

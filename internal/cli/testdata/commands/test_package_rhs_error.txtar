@@ -1,0 +1,38 @@
+CLI.md §3.5, EVALUATION.md §10.5 items 1 and 4: a hard error in a substituted value (E4002) is the
+expect's, captured as any subject's, and nothing is built: a failing passes lists it alone, with no
+finding of the world, though the package's own check would fire on its base values.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// No levels.
+let xs: [Int] = []
+
+/// The total, zero as shipped.
+let total: Int = 0
+
+check positive: total > 0 else "total {total} is not positive"
+
+test "an error in a value is captured" {
+  expect package { total: xs[5] } fails E4002
+  expect package { total: xs[5] } fails "out of range"
+}
+
+test "and nothing of the world is listed" {
+  expect package { total: xs[5] } passes
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:17  and nothing of the world is listed
+  a/a.canon:18  expect package { total: xs[5] } passes
+  got: error[E4002]  index 5 out of range for length 0
+
+1 passed, 1 failed (…)
+[stderr]

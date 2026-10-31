@@ -1,0 +1,46 @@
+CLI.md §3.5, EVALUATION.md §10.5 item 3: stage C runs the record check on an element of a
+substituted list, matched by name and listed by a failing passes with the check that fired.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// One crafting level.
+record Level {
+  /// Level index.
+  index: Int(0..=24)
+  /// Experience needed to reach it.
+  exp: Int(0..)
+
+  check rising: exp >= index * 10 else "level {index} needs at least {index * 10} exp"
+}
+
+/// The shipped levels.
+let levels: [Level] = [
+  { index: 0, exp: 0 },
+  { index: 1, exp: 100 }
+]
+
+test "a record check fires on an element of a substituted list" {
+  expect package passes
+  expect package { levels: [{ index: 3, exp: 5 }] } fails rising
+  expect package { levels: levels + [{ index: 3, exp: 5 }] } fails "level 3 needs at least 30 exp"
+}
+
+test "and a failing passes lists it" {
+  expect package { levels: levels + [{ index: 3, exp: 5 }] } passes
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:26  and a failing passes lists it
+  a/a.canon:27  expect package { levels: levels + [{ index: 3, exp: 5 }] } passes
+  got: error[E5001]  level 3 needs at least 30 exp
+
+1 passed, 1 failed (…)
+[stderr]

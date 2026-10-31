@@ -1,0 +1,98 @@
+CLI.md §3.5, EVALUATION.md §10.5 items 2 and 3: in package a, whose base is clean, a key a
+substitution removes is E3501 at a ref another let holds: a bare key is refused where it is
+stored, a string key (`spare`) only when the world verifies it (stage B). In package b, whose pending
+ref is E3501 in the test, the world judges the substituted value afresh: adding the key makes it
+valid, a warn that dereferences it fires and a read through it fails hard (E4002), which a copy
+that kept the test's invalid verdict would hide.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its price.
+  price: Int(0..)
+}
+
+/// The items.
+let items: table Item = {
+  gem { price: 3 }
+  cup { price: 1 }
+}
+
+/// A holder.
+record Holder {
+  /// Its target.
+  target: ref items
+}
+
+/// The holders.
+let holders: [Holder] = [{ target: gem }]
+
+/// A holder whose key is a string, judged when the value is verified.
+let spare: [Holder] = [{ target: "cup" }]
+
+warn pricey: holders.all(h => h.target.price < 3) else "a holder points at an item of 3 or more"
+
+test "a removed key is refused at the ref that holds it" {
+  expect package passes
+  expect package { items: { cup { price: 1 } } } fails E3501
+  expect package { items: { cup { price: 1 } } } fails "unknown key gem in items"
+  expect package { items: { gem { price: 3 } } } fails "unknown key cup in items"
+}
+
+test "a removed key listed by a failing passes" {
+  expect package { items: { cup { price: 1 } } } passes
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// An item.
+record Item {
+  /// Its price.
+  price: Int(0..)
+}
+
+/// The items.
+let items: table Item = {
+  gem { price: 3 }
+  cup { price: 1 }
+}
+
+/// A holder.
+record Holder {
+  /// Its target.
+  target: ref items
+}
+
+/// The holders.
+let holders: [Holder] = [{ target: gem }]
+
+/// A holder whose item is not shipped yet.
+let pending: [Holder] = [{ target: "gold" }]
+
+/// The pending item's price, read past its end once its ref resolves.
+let pendingPrice: Int = [pending[0].target.price][3]
+
+warn pricey: holders.all(h => h.target.price < 3) else "a holder points at an item of 3 or more"
+
+test "a ref invalid in the test is valid once the key is added" {
+  expect package { pending: pending, items: { gold { price: 9 }, gem { price: 3 } } } fails E4002
+  expect package { holders: pending, items: { gold { price: 9 }, gem { price: 3 } } } warns "3 or more"
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:37  a removed key listed by a failing passes
+  a/a.canon:38  expect package { items: { cup { price: 1 } } } passes
+  got: error[E3501]  unknown key gem in items
+
+2 passed, 1 failed (…)
+[stderr]

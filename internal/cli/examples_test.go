@@ -19,10 +19,11 @@ import (
 
 const examplesDir = "../../examples"
 
-// expectedDir and findingsFile are exampleFindings' special names (IMPLEMENTATION-PLAN §7.1/§7.2).
+// expectedDir, findingsFile and testsFile are exampleExpected's special names (IMPLEMENTATION-PLAN §7.1/§7.2/§7.9, ADR-0023 §2, DECISIONS 398).
 const (
 	expectedDir  = "expected"
 	findingsFile = "findings.txt"
+	testsFile    = "tests.txt"
 	fixturesDir  = "_fixtures"
 )
 
@@ -55,12 +56,18 @@ func exampleRootMap(t *testing.T) map[string]string {
 
 func checkExample(t *testing.T, args ...string) (int, string) {
 	t.Helper()
+	return commandExample(t, "check", args...)
+}
+
+// commandExample runs one command over examples/ with every root redirected.
+func commandExample(t *testing.T, command string, args ...string) (int, string) {
+	t.Helper()
 	dir, err := filepath.Abs(examplesDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	args = append(append([]string{"check", "--project", dir}, exampleRoots(t)...), args...)
+	args = append(append([]string{command, "--project", dir}, exampleRoots(t)...), args...)
 	code := cli.Main(context.Background(), args, cli.Env{Stdout: &stdout, Stderr: &stderr, Dir: dir})
 	if stderr.Len() > 0 {
 		t.Errorf("%q: stderr %s", args, stderr.String())
@@ -108,8 +115,8 @@ func TestExamplesParse(t *testing.T) {
 	}
 }
 
-// exampleFindings is the dot-joined name of every example with an expected/findings.txt, sorted (IMPLEMENTATION-PLAN §7.2).
-func exampleFindings(t *testing.T) []string {
+// exampleExpected is the dot-joined name of every example with an expected/<file>, sorted (IMPLEMENTATION-PLAN §7.2).
+func exampleExpected(t *testing.T, file string) []string {
 	t.Helper()
 	root, err := filepath.Abs(examplesDir)
 	if err != nil {
@@ -123,7 +130,7 @@ func exampleFindings(t *testing.T) []string {
 		if d.IsDir() && d.Name() == fixturesDir {
 			return fs.SkipDir
 		}
-		if !d.IsDir() && d.Name() == findingsFile && filepath.Base(filepath.Dir(path)) == expectedDir {
+		if !d.IsDir() && d.Name() == file && filepath.Base(filepath.Dir(path)) == expectedDir {
 			rel, relErr := filepath.Rel(root, filepath.Dir(filepath.Dir(path)))
 			if relErr != nil {
 				return relErr
@@ -153,7 +160,7 @@ func wantExit(want string) int {
 
 // `canon check <pkg>` prints exactly its findings.txt for every example (IMPLEMENTATION-PLAN §6 M3 item 1; replaces TestResourceFindings/DECISIONS 173 and TestTeamboardFindings/M1 acceptance 2).
 func TestExampleFindings(t *testing.T) {
-	for _, pkg := range exampleFindings(t) {
+	for _, pkg := range exampleExpected(t, findingsFile) {
 		t.Run(pkg, func(t *testing.T) {
 			path := filepath.Join(examplesDir, filepath.FromSlash(strings.ReplaceAll(pkg, ".", "/")), expectedDir, findingsFile)
 			want, err := os.ReadFile(path)

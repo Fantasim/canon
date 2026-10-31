@@ -1,0 +1,47 @@
+CLI.md §3.5, EVALUATION.md §10.5 items 4 and 5, §12.2: E4401 inside a world stops the test, printed
+as its stopping error and never captured by the expect; the package's later tests find the budget
+spent and run no more, each counted as failed.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 300
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Loops n times.
+fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// How far to loop.
+let n: Int = 2
+
+/// The loop's result.
+let looped: Int = loop(n)
+
+test "a world past the budget" {
+  expect package passes
+  expect package { n: 1000 } fails E4401
+  expect looped == 2
+}
+
+test "later" {
+  expect looped == 2
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:17  a world past the budget
+  a/a.canon:7  error[E4401]  evaluation budget of 300 steps exhausted
+  heaviest: looped (296 steps)
+
+FAIL  a/a.canon:23  later
+
+0 passed, 2 failed (…)
+[stderr]

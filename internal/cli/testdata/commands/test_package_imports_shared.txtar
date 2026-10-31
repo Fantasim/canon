@@ -1,0 +1,61 @@
+CLI.md §3.5, EVALUATION.md §10.5 items 2 and 5, §12.2: another package's value is the test's,
+forced once and charged to that package. With a budget of 100, a.heavy costs at least 60 steps
+(test_package_imports_cost) and, since this passes, under 100; b does about 60 steps of its own
+work, in its first world only (the second substitutes it). Read by two worlds, a.heavy gives no
+E4401: a world does not force it again and it is not charged to b, whose budget it would overrun.
+-- args --
+test
+-v
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 100
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Loops n times.
+fn loop(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// A value of sixty steps.
+let heavy: Int = loop(8)
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// Loops n times.
+fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+/// b's own work, about sixty steps.
+let own: Int = spin(8)
+
+/// What b reads.
+let total: Int = a.heavy + extra + own
+
+/// A small addend.
+let extra: Int = 1
+
+check positive: total > 0 else "total {total} is not positive"
+
+test "two worlds share a's value" {
+  expect package passes
+  expect package { own: 1 } passes
+}
+-- want --
+[exit 0]
+[stdout]
+ok  b/b.canon:24  two worlds share a's value
+
+1 passed, 0 failed (…)
+[stderr]

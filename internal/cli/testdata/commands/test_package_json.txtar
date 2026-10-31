@@ -1,0 +1,47 @@
+CLI.md §3.5, API.md F5: --format json prints a passing package expect without findings and a
+failing one with every captured finding: a package-check finding has a check and no path (CLI.md
+§2.4 omits empty fields), an instance-check finding on an element has both.
+-- args --
+test
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// One crafting level.
+record Level {
+  /// Level index.
+  index: Int(0..=24)
+  /// Experience needed to reach it.
+  exp: Int(0..)
+
+  check rising: exp >= index * 10 else "level {index} needs at least {index * 10} exp"
+}
+
+/// The shipped levels.
+let levels: [Level] = [
+  { index: 0, exp: 0 },
+  { index: 1, exp: 100 }
+]
+
+check uniqueIndex: [l.index for l in levels].isUnique() else "a level index is listed twice"
+
+test "passes" {
+  expect package passes
+}
+
+test "fails" {
+  expect package { levels: levels + [levels[1], { index: 3, exp: 5 }] } passes
+}
+-- want --
+[exit 1]
+[stdout]
+{"test":{"package":"a","name":"passes","file":"a/a.canon","line":22,"status":"pass","failures":[]}}
+{"test":{"package":"a","name":"fails","file":"a/a.canon","line":26,"status":"fail","failures":[{"file":"a/a.canon","line":27,"col":3,"expect":"expect package { levels: levels + [levels[1], { index: 3, exp: 5 }] } passes","expected":"","got":"","findings":[{"severity":"error","code":"E5001","file":"a/a.canon","line":20,"col":1,"endLine":20,"endCol":6,"package":"a","message":"a level index is listed twice","check":"uniqueIndex","related":[{"file":"a/a.canon","line":20,"col":1,"endLine":20,"endCol":93,"note":"check uniqueIndex"}]},{"severity":"error","code":"E5001","file":"a/a.canon","line":27,"col":49,"endLine":27,"endCol":69,"package":"a","path":"levels[3]","message":"level 3 needs at least 30 exp","check":"rising","related":[{"file":"a/a.canon","line":11,"col":3,"endLine":11,"endCol":87,"note":"check rising"}],"reads":["exp","index"]}]}]}}
+{"summary":{"passed":1,"failed":1,"ms":0}}
+[stderr]
