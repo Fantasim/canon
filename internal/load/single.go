@@ -42,9 +42,13 @@ func (l *Loader) refuseAbsent(display, root string, req Request) bool {
 	return true
 }
 
-// statFile is p's existence check: a directory or non-regular file (a FIFO could hang) refuses too (WIRE.md §6.1).
+// statFile is p's existence check: a link out of bounds, a directory or non-regular file (a FIFO could hang) refuses too (WIRE.md §6.1).
 func (l *Loader) statFile(p project.Path, req Request) bool {
 	if l.refuseAbsent(p.Display, p.Root, req) {
+		return false
+	}
+	if kind, refused := l.linkRefusal(p.Abs); refused {
+		diag.E7004.At(req.Span, p.Display, kind).Report(req.Bag)
 		return false
 	}
 	info, err := l.stat(p.Abs)

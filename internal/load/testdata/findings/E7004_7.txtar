@@ -1,0 +1,15 @@
+WIRE.md §6.1, §6.6 (DECISIONS 420): `load.csv` follows load.dir's link bounds; a path that is a
+link whose target resolves outside the declared roots and the project is E7004 ReadOutsideRoots.
+-- call --
+load.csv("lnk.csv")
+-- type --
+strings
+-- symlinks --
+lnk.csv ../outside/x.csv
+-- /outside/x.csv --
+a,b
+-- findings.txt --
+error[E7004]  call:1:1
+  cannot read lnk.csv: reached through a symbolic link outside the roots and the project
+
+1 error, 0 warnings in 1 package (…)

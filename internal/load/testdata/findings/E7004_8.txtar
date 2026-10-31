@@ -1,0 +1,16 @@
+WIRE.md §6.1, §6.8 (DECISIONS 420): `load.defines` follows load.dir's link bounds; a path that
+is a link whose target resolves outside the declared roots and the project is E7004
+ReadOutsideRoots.
+-- call --
+load.defines("lnk.h")
+-- type --
+defines
+-- symlinks --
+lnk.h ../outside/x.h
+-- /outside/x.h --
+#define A 1
+-- findings.txt --
+error[E7004]  call:1:1
+  cannot read lnk.h: reached through a symbolic link outside the roots and the project
+
+1 error, 0 warnings in 1 package (…)

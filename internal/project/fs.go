@@ -21,11 +21,11 @@ type linkResolver interface {
 
 // EvalSymlinks is name's real path, every link in it followed, absolute and
 // '/'-separated, when fsys has a method EvalSymlinks(name string) (string, error); an FS
-// without one resolves no link (errNoLinks).
+// without one resolves no link (ErrNoLinks).
 func EvalSymlinks(fsys FS, name string) (string, error) {
 	r, ok := fsys.(linkResolver)
 	if !ok {
-		return "", errNoLinks
+		return "", ErrNoLinks
 	}
 	return r.EvalSymlinks(name)
 }

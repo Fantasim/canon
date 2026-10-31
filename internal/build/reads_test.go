@@ -33,7 +33,7 @@ func readsFS() mapFS {
 func displaysOf(reads []build.Read) []string {
 	var out []string
 	for _, r := range reads {
-		if !r.Dir {
+		if !r.Dir && !r.Link {
 			out = append(out, r.Display)
 		}
 	}

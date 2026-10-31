@@ -584,7 +584,7 @@ stats: [StatBonus](..=6) = [] @json(pairs: ["dwDestParam{i}", "nAdjParamVal{i}"]
   value of an `amend` or layer path decodes in the scope of the field the path names, as an edit's
   `FromJSON` at that path does; a path through `none` (`E1905`) gives no scope (DECISIONS 272).
 - The path must exist and be a readable regular file [`E7004`]; under an optional root absent on
-  this machine, [`E7009`] (§2.2). The path follows `load.dir`'s link bounds (§6.5): one that is or passes through a link whose target resolves outside the declared roots and the project is `E7004` (`ReadOutsideRoots`), a dangling link or a loop `E7004` (`ReadMissing`, `ReadLinkLoop`); the project root's own ancestors never count as links (DECISIONS 420).
+  this machine, [`E7009`] (§2.2). The path follows `load.dir`'s link bounds (§6.5): one that is or passes through a link and whose real path lies outside the declared roots and the project is `E7004` (`ReadOutsideRoots`), a dangling link or a loop `E7004` (`ReadMissing`, `ReadLinkLoop`); the project root's own ancestors never count as links (DECISIONS 420).
 - The path of every `load` form is a string literal without interpolation [`E7008`, at the path,
   or at the `load` when it has no positional path], so the files
   a package reads are known from its sources alone, before any checking or evaluation, as the

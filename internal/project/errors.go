@@ -17,8 +17,8 @@ var (
 	ErrReuseSet           = errors.New("the reuse store belongs to another file set")
 )
 
-// errNoLinks is EvalSymlinks on an FS that resolves no symbolic link (WIRE.md §6.5).
-var errNoLinks = errors.New("the file system resolves no symbolic link")
+// ErrNoLinks is EvalSymlinks on an FS that resolves no symbolic link: the caller decides without links (WIRE.md §6.5).
+var ErrNoLinks = errors.New("the file system resolves no symbolic link")
 
 // errDeviceTarget is a link whose target is a device path: dangling, naming no path (WIRE.md §6.5, DECISIONS 419).
 var errDeviceTarget = fmt.Errorf("a link's target is a device path: %w", fs.ErrNotExist)

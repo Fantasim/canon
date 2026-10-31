@@ -34,8 +34,8 @@ type noLinks struct{ FS }
 
 // meta/decisions/log-2026-09-24.md "load.dir round 3": an FS without the capability resolves no link.
 func TestEvalSymlinksWithoutCapability(t *testing.T) {
-	if _, err := EvalSymlinks(noLinks{OS()}, "/"); !errors.Is(err, errNoLinks) {
-		t.Errorf("err = %v, want errNoLinks", err)
+	if _, err := EvalSymlinks(noLinks{OS()}, "/"); !errors.Is(err, ErrNoLinks) {
+		t.Errorf("err = %v, want ErrNoLinks", err)
 	}
 }
 

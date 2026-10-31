@@ -1,0 +1,15 @@
+WIRE.md §6.1, §6.7 (DECISIONS 420): `load.text` follows load.dir's link bounds; a path that is a
+link whose target resolves outside the declared roots and the project is E7004 ReadOutsideRoots.
+-- call --
+load.text("lnk.txt")
+-- type --
+text
+-- symlinks --
+lnk.txt ../outside/x.txt
+-- /outside/x.txt --
+outside
+-- findings.txt --
+error[E7004]  call:1:1
+  cannot read lnk.txt: reached through a symbolic link outside the roots and the project
+
+1 error, 0 warnings in 1 package (…)

@@ -20,13 +20,14 @@ import (
 )
 
 // The findings cases place their tree under this project directory, a file named with a
-// leading "/" outside it; symlinks lists "name target" lines, name becoming a symlink entry
-// that only the archive's own tree resolves (meta/decisions/log-2026-09-24.md "load.dir round 3").
+// leading "/" outside it; symlinks and junctions list "name target" lines, links only the
+// archive's own tree resolves (log-2026-09-24 "load.dir round 3", addJunctions).
 const (
-	projectDir   = "/p"
-	patternFile  = "pattern"
-	symlinksFile = "symlinks"
-	findingsFile = "findings.txt"
+	projectDir    = "/p"
+	patternFile   = "pattern"
+	symlinksFile  = "symlinks"
+	junctionsFile = "junctions"
+	findingsFile  = "findings.txt"
 )
 
 // memFS is an archive's tree as a project.FS under projectDir, its control files aside; it
@@ -36,13 +37,16 @@ type memFS struct{ m fstest.MapFS }
 func newMemFS(a *txtar.Archive) memFS {
 	m := fstest.MapFS{}
 	for _, f := range a.Files {
-		if f.Name == patternFile || f.Name == symlinksFile {
+		if f.Name == patternFile || f.Name == symlinksFile || f.Name == junctionsFile {
 			continue
 		}
 		m[inProject(f.Name)[1:]] = &fstest.MapFile{Data: f.Data}
 	}
 	if data, ok := archiveFile(a, symlinksFile); ok {
 		addSymlinks(m, data)
+	}
+	if data, ok := archiveFile(a, junctionsFile); ok {
+		addJunctions(m, data)
 	}
 	return memFS{m}
 }
@@ -66,6 +70,21 @@ func addSymlinks(m fstest.MapFS, data []byte) {
 	}
 }
 
+// addJunctions adds an irregular entry per line of data: "name target" a junction, a bare "name" a placeholder (DECISIONS 419).
+func addJunctions(m fstest.MapFS, data []byte) {
+	for _, line := range strings.Split(strings.TrimSuffix(string(data), "\n"), "\n") {
+		name, target, _ := strings.Cut(line, " ")
+		if name != "" {
+			m[inProject(name)[1:]] = &fstest.MapFile{Data: []byte(target), Mode: fs.ModeIrregular}
+		}
+	}
+}
+
+// isMemLink is whether f is a link of the tree: a symlink, or an irregular entry with a target.
+func isMemLink(f *fstest.MapFile) bool {
+	return f != nil && (f.Mode&fs.ModeSymlink != 0 || f.Mode&fs.ModeIrregular != 0 && len(f.Data) > 0)
+}
+
 // EvalSymlinks is name with every link of the tree followed, as the OS FS resolves them: a
 // relative target is relative to its link's directory; a missing result is fs.ErrNotExist.
 func (m memFS) EvalSymlinks(name string) (string, error) {
@@ -74,7 +93,7 @@ func (m memFS) EvalSymlinks(name string) (string, error) {
 		next := path.Join(done, todo[0])
 		todo = todo[1:]
 		f := m.m[rel(next)]
-		if f == nil || f.Mode&fs.ModeSymlink == 0 {
+		if !isMemLink(f) {
 			done = next
 			continue
 		}

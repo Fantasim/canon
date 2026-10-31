@@ -175,14 +175,16 @@ type entryKind struct {
 	ok            bool
 }
 
-// classify is entry e's kind in the directory rel resolved at real; a symlink is followed only
-// when the project's FS resolves it inside w's bounds, any other link skipped.
+// classify is entry e's kind in the directory rel resolved at real; a link is followed only inside w's bounds (WIRE.md §6.5, DECISIONS 419).
 func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
 	child := project.Join(real, e.Name())
-	if e.Type()&fs.ModeSymlink == 0 {
-		return entryKind{isFile: e.Type().IsRegular(), isDir: e.IsDir(), real: child, ok: true}
+	if !project.LinkCandidate(w.l.FS, e.Type()) {
+		return plainKind(child, e)
 	}
 	target, err := w.l.evalSymlinks(child)
+	if project.Unlinked(w.l.resolvedAs(child, target, err), real, e.Name()) {
+		return plainKind(child, e)
+	}
 	switch {
 	case err != nil:
 		w.reportSkipped(rel, e.Name(), linkCause(err))
@@ -197,4 +199,32 @@ func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
 		return entryKind{}
 	}
 	return entryKind{isFile: info.Mode().IsRegular(), isDir: info.IsDir(), real: target, ok: true}
+}
+
+// plainKind is entry e, no link, at child: its kind as the listing gives it.
+func plainKind(child string, e fs.DirEntry) entryKind {
+	return entryKind{isFile: e.Type().IsRegular(), isDir: e.IsDir(), real: child, ok: true}
+}
+
+// resolvedAs is the Loader's recorded resolver, child's resolution already made answered again.
+func (l *Loader) resolvedAs(child, target string, err error) func(string) (string, error) {
+	return func(name string) (string, error) {
+		if name == child {
+			return target, err
+		}
+		return l.evalSymlinks(name)
+	}
+}
+
+// linkRefusal is the E7004 cause load.dir's link bounds refuse a single-file path abs with; false: an FS without links, the stat decides (DECISIONS 420).
+func (l *Loader) linkRefusal(abs string) (diag.Kind, bool) {
+	real, err := l.evalSymlinks(abs)
+	switch {
+	case err == nil:
+		return diag.KindReadOutsideRoots, real != abs && !within(real, l.walkBounds())
+	case errors.Is(err, project.ErrNoLinks):
+		return 0, false
+	default:
+		return causeOf(err), true
+	}
 }

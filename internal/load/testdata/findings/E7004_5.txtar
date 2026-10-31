@@ -1,0 +1,13 @@
+WIRE.md §6.1 (DECISIONS 420): `load` follows load.dir's link bounds; a path that is a link whose
+target resolves outside the declared roots and the project is E7004 ReadOutsideRoots, unread.
+-- call --
+load("lnk.json")
+-- symlinks --
+lnk.json ../outside/x.json
+-- /outside/x.json --
+{"a": {"label": "x"}}
+-- findings.txt --
+error[E7004]  call:1:1
+  cannot read lnk.json: reached through a symbolic link outside the roots and the project
+
+1 error, 0 warnings in 1 package (…)
