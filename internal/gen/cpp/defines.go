@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 
+	cppruntime "github.com/fantasim/canonlang/internal/gen/cpp/runtime"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -76,59 +77,32 @@ func defineInt(v int64) string {
 	return strconv.FormatInt(v, decimalBase)
 }
 
-// macroSet is every macro a file of the emit can meet: the defines of the package and of the packages it reads (CODEGEN.md §7.9, DECISIONS 391), built once.
+// macroSet is every macro a file of the emit can meet: ir.CppGuardNames, the set the foreign-define rule excepts (CODEGEN.md §7.9, DECISIONS 391, 403), built once.
 func (g *gen) macroSet() map[string]bool {
 	if g.macros == nil {
 		g.macros = map[string]bool{}
-		for _, n := range ir.CppDefineNames(g.p) {
+		for _, n := range ir.CppGuardNames(g.p) {
 			g.macros[n] = true
-		}
-		for _, ref := range g.p.Imports {
-			for _, n := range ref.CppDefines {
-				g.macros[n] = true
-			}
 		}
 	}
 	return g.macros
 }
 
-// macrosIn are the macros the texts name, sorted and distinct (CODEGEN.md §7.9): one pass over each text, each identifier looked up in the set.
+// macrosIn are the macros the texts name in code, sorted and distinct: one pass over each text, comments and string and character literals skipped, each identifier looked up in the set (CODEGEN.md §7.9, DECISIONS 404).
 func macrosIn(set map[string]bool, texts ...string) []string {
 	if len(set) == 0 {
 		return nil
 	}
 	found := map[string]bool{}
 	for _, text := range texts {
-		for i := 0; i < len(text); {
-			if !wordByte[text[i]] {
-				i++
-				continue
-			}
-			end := wordEnd(text, i)
-			if word := text[i:end]; set[word] {
+		cppruntime.Scan(text, func(word string) {
+			if set[word] {
 				found[word] = true
 			}
-			i = end
-		}
+		})
 	}
 	return slices.Sorted(maps.Keys(found))
 }
-
-// wordEnd is the index after the run of word bytes of text that starts at from.
-func wordEnd(text string, from int) int {
-	for from < len(text) && wordByte[text[from]] {
-		from++
-	}
-	return from
-}
-
-// wordByte marks the bytes of a word, the class a regular expression's \b is made of.
-var wordByte = func() (table [byteValues]bool) {
-	for i := range len(asciiWord) {
-		table[asciiWord[i]] = true
-	}
-	return table
-}()
 
 // namespaceBody writes text inside the namespace, then after it, wrapped against the macros the namespace, the text or the rest names (CODEGEN.md §7.9).
 func (g *gen) namespaceBody(out *writer, ns, text, after string) {

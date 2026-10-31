@@ -1,6 +1,6 @@
 package cppruntime
 
-// Where the C++ lexer of Identifiers skips (comments, string and character literals).
+// Where Scan, the C++ lexer of Identifiers and of gen/cpp's macrosIn, skips (comments, string and character literals).
 const (
 	lineComment = "//"
 	blockOpen   = "/*"

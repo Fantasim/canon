@@ -16,7 +16,7 @@ const (
 )
 
 // tokensAlphabet are the pieces the property test glues into texts: names, separators and non-ASCII neighbours.
-var tokensAlphabet = []string{"E", "M", "M1", "_", ":", "::", " ", "\n", "(", "é", "EE", "1", ".", "<", "\"", "/*"}
+var tokensAlphabet = []string{"E", "M", "M1", "_", ":", "::", " ", "\n", "(", "é", "EE", "1", ".", "<", "\"", "/*", "*/", "//", "'", "\\"}
 
 // tokensNames are the macro names every text is asked about; "_" and "M1" test word edges.
 var tokensNames = []string{"E", "M", "M1", "EE", "_", "a", "b", "E1", "_M"}
@@ -39,12 +39,16 @@ var tokensRegexps = func() map[string]*regexp.Regexp {
 	return out
 }()
 
-// agrees fails the test unless macrosIn finds exactly the names whose \bname\b matches text, sorted.
+// tokensSkipped are the spans no preprocessor expands a macro in: a line comment, a block comment, a string and a character literal, an unterminated one running to the end (DECISIONS 404).
+var tokensSkipped = regexp.MustCompile(`//[^\n]*|/\*(?s:.*?)(?:\*/|\z)|"(?:\\(?s:.)|[^"\\])*\\?(?:"|\z)|'(?:\\(?s:.)|[^'\\])*\\?(?:'|\z)`)
+
+// agrees fails the test unless macrosIn finds exactly the names whose \bname\b matches text once its comments and literals are blanked, sorted (DECISIONS 404).
 func agrees(t *testing.T, text string) {
 	t.Helper()
 	var want []string
+	code := tokensSkipped.ReplaceAllString(text, " ")
 	for _, n := range tokensNames {
-		if tokensRegexps[n].MatchString(text) {
+		if tokensRegexps[n].MatchString(code) {
 			want = append(want, n)
 		}
 	}
@@ -67,12 +71,20 @@ var tokensCases = []struct {
 	{"global qualifier", "::ns::E::M", []string{"E", "M"}},
 	{"non-ASCII neighbour", "éE Eé", []string{"E"}},
 	{"digit neighbour", "1E E1 2M", []string{"E1"}},
-	{"in a string", `"M"`, []string{"M"}},
+	{"in a string", `"M"`, nil},
+	{"in a line comment", "// M\nE", []string{"E"}},
+	{"in a block comment", "/* M\n E */ a", []string{"a"}},
+	{"in a character literal", `'M' E`, []string{"E"}},
+	{"after an escaped quote", `"\" M" E`, []string{"E"}},
+	{"unterminated string", `E "M`, []string{"E"}},
+	{"unterminated block comment", "E /* M", []string{"E"}},
+	{"after a comment", "/* M */ M", []string{"M"}},
+	{"a comment ends at the newline", "// M \\\nE", []string{"E"}},
 	{"empty", "", nil},
 	{"one name twice", "M M M", []string{"M"}},
 }
 
-// CODEGEN.md §7.9, DECISIONS 391: macrosIn holds exactly the whole identifier tokens of the text that are in the set, sorted and distinct.
+// CODEGEN.md §7.9, DECISIONS 391, 404: macrosIn holds exactly the whole identifier tokens of the text that are in the set, sorted and distinct.
 func TestMacrosIn(t *testing.T) {
 	t.Parallel()
 	for _, c := range tokensCases {
@@ -87,7 +99,7 @@ func TestMacrosIn(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §7.9: for seeded random texts the token scan and `\bname\b` give the same answer.
+// CODEGEN.md §7.9, DECISIONS 404: for seeded random texts the token scan and `\bname\b` give the same answer.
 func TestMacrosInMatchRegexp(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(tokensSeed))
@@ -100,7 +112,7 @@ func TestMacrosInMatchRegexp(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §7.9: the same equivalence over fuzzer-chosen texts.
+// CODEGEN.md §7.9, DECISIONS 404: the same equivalence over fuzzer-chosen texts.
 func FuzzMacrosIn(f *testing.F) {
 	for _, c := range tokensCases {
 		f.Add(c.text)

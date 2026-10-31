@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// CODEGEN.md §7.9: scan keeps identifiers and skips comments, string and character literals, numbers and what follows an escape.
+// CODEGEN.md §7.9: Scan keeps identifiers and skips comments, string and character literals, numbers and what follows an escape.
 func TestScan(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct {
@@ -24,7 +24,7 @@ func TestScan(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 			found := map[string]bool{}
-			scan(c.text, found)
+			Scan(c.text, func(word string) { found[word] = true })
 			var got []string
 			for w := range found { //canon:unordered sorted below
 				got = append(got, w)

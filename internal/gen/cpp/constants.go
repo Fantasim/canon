@@ -36,8 +36,6 @@ const (
 	reservedRun          = "__"
 	qnameSep             = "."
 	scopeSep             = "::"
-	asciiWord            = "_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	byteValues           = 256
 	toJSONName           = "to_json"
 	fromJSONName         = "from_json"
 	pathSep              = "/"

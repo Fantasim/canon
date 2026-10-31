@@ -20,13 +20,14 @@ var (
 // Identifiers are the identifier tokens of Header and JSON outside comments, string and character literals, sorted and distinct: the names a macro of a translation unit that includes them would rewrite (CODEGEN.md §7.9).
 var Identifiers = sync.OnceValue(func() []string {
 	found := map[string]bool{}
-	scan(Header, found)
-	scan(JSON, found)
+	add := func(word string) { found[word] = true }
+	Scan(Header, add)
+	Scan(JSON, add)
 	return slices.Sorted(maps.Keys(found))
 })
 
-// scan adds the identifier tokens of C++ text to found.
-func scan(text string, found map[string]bool) {
+// Scan calls visit with each identifier token of C++ text outside comments, string and character literals, and numbers; a `//` comment ends at its first newline, a backslash before it included (CODEGEN.md §7.9, DECISIONS 404).
+func Scan(text string, visit func(word string)) {
 	for i := 0; i < len(text); {
 		rest := text[i:]
 		switch {
@@ -39,7 +40,7 @@ func scan(text string, found map[string]bool) {
 		case wordByte(text[i]):
 			end := i + wordLen(rest)
 			if !unicode.IsDigit(rune(text[i])) {
-				found[text[i:end]] = true
+				visit(text[i:end])
 			}
 			i = end
 		default:
