@@ -1,0 +1,31 @@
+DECISIONS 407, CODEGEN.md §5.13: a decoded @text fn's <Fn> is the target's UpperCamel name without a final File, so itemsFile and tipFile give DecodeItemsFile and DecodeTipFile (decodeItemsFile and parseTipFile in ts) and counts gives DecodeCountsFile, in go, cpp and ts types emits alike.
+-- a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+/// The items.
+@text("items.json")
+export fn itemsFile() -> [Item] { return [{ n: 1 }] }
+
+/// The tips.
+@text("tip.json")
+export fn tipFile() -> [Item] { return [{ n: 2 }] }
+
+/// The counts.
+@text("counts.json")
+export fn counts() -> {String: Int} { return { "x": 1 } }
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types }
+emit ts { out: "@features/a/a.ts", mode: types }
+-- plan.txt --
+== a @features/a/go: decoders [DecodeItemsFile DecodeTipFile DecodeCountsFile]
+== a @features/a/cpp: decoders [DecodeItemsFile DecodeTipFile DecodeCountsFile]
+== a @features/a/a.ts: decoders [decodeItemsFile parseItemsFile decodeTipFile parseTipFile decodeCountsFile parseCountsFile] imports []
+0 errors, 0 warnings in 1 package (…)

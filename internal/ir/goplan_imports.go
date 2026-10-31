@@ -253,10 +253,10 @@ func ownInstances(p *Package) map[*value.Record][]*Instance {
 	return out
 }
 
-// writesTextErrors reports a type gen/go gives MarshalText and UnmarshalText, which build errors: a kind enum, a closed enum without @codes (CODEGEN.md §5.2, §5.5; DECISIONS 379).
+// writesTextErrors reports a type gen/go gives MarshalText and UnmarshalText, which build errors: a kind enum, a closed enum without @codes, a dependent type's branch enum (CODEGEN.md §5.2, §5.5, §5.6; DECISIONS 379, 402).
 func (pl *GoNamePlan) writesTextErrors(t Type) bool {
 	switch x := t.(type) {
-	case *Variant:
+	case *Variant, *Dependent:
 		return true
 	case *Enum:
 		return x.Codes == nil && !OpenEnum(pl.p, pl.e, x)
@@ -268,6 +268,9 @@ func (pl *GoNamePlan) writesTextErrors(t Type) bool {
 func (pl *GoNamePlan) textImports(u *goImportUse) {
 	for _, t := range pl.p.Types {
 		u.std[goErrors] = u.std[goErrors] || pl.writesTextErrors(t)
+		_, branch := t.(*Dependent) // its Parse<B> and tables read strconv and slices (DECISIONS 402)
+		u.std[goStrconv] = u.std[goStrconv] || branch
+		u.std[goSlices] = u.std[goSlices] || branch
 	}
 	for _, v := range pl.p.Values {
 		baked := pl.data == nil && tableRecord(v) != nil

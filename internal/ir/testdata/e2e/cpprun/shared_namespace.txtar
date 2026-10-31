@@ -1,0 +1,163 @@
+CODEGEN.md §3.5, §7.1, DECISIONS 379: four packages emitted into one C++ namespace, sov::gen, build, link and run together. A and b are baked, each with an enum, a record, a table, a lookup over the enum and a translated fn with a test; c and d are data, with a table each and a json emit. Their names are disjoint, and the only names they meet are the overloads ToName, ToWire and IsRetired, the deleted to_json and from_json, and the detail decoders. probe.cpp includes the four headers in one translation unit, asserts that both id enums stay non-constructible into nlohmann::json and prints a's and b's ids, lookups and translated fns, then c's and d's loaded rows.
+-- a/a.canon --
+/// A.
+package a
+
+/// A tone.
+enum AlphaTone ordered { soft, loud }
+
+/// An item.
+record AlphaItem {
+  /// Its weight.
+  weight: Int
+}
+
+/// The items.
+let alphaItems: table AlphaItem = {
+  one { weight: 1 }
+  two { weight: 2 }
+}
+
+/// The volume of a tone: a table in generated code.
+export fn alphaVolume(tone: AlphaTone) -> Int {
+  return match tone {
+    soft => 1
+    loud => 5
+  }
+}
+
+/// Twice a number.
+export fn alphaTwice(n: Int) -> Int { return n * 2 }
+
+test "alpha" {
+  expect alphaVolume(loud) == 5
+  expect alphaTwice(4) == 8
+}
+
+emit cpp { out: "@features/a", namespace: "sov::gen" }
+-- b/b.canon --
+/// B.
+package b
+
+/// A mood.
+enum BetaMood ordered { calm, angry }
+
+/// A part.
+record BetaPart {
+  /// Its cost.
+  cost: Int
+}
+
+/// The parts.
+let betaParts: table BetaPart = {
+  gear { cost: 7 }
+  bolt { cost: 9 }
+}
+
+/// The heat of a mood: a table in generated code.
+export fn betaHeat(mood: BetaMood) -> Int {
+  return match mood {
+    calm => 2
+    angry => 8
+  }
+}
+
+/// Thrice a number.
+export fn betaThrice(n: Int) -> Int { return n * 3 }
+
+test "beta" {
+  expect betaHeat(angry) == 8
+  expect betaThrice(4) == 12
+}
+
+emit cpp { out: "@features/b", namespace: "sov::gen" }
+-- c/c.canon --
+/// C.
+package c
+
+/// A row.
+record GammaRow {
+  /// Its number.
+  n: Int
+}
+
+/// The rows.
+let gammaRows: table GammaRow = {
+  first { n: 3 }
+}
+
+emit cpp { out: "@features/c", namespace: "sov::gen", mode: data }
+emit json { out: "out/" }
+-- d/d.canon --
+/// D.
+package d
+
+/// A cell.
+record DeltaCell {
+  /// Its number.
+  n: Int
+}
+
+/// The cells.
+let deltaCells: table DeltaCell = {
+  second { n: 4 }
+}
+
+emit cpp { out: "@features/d", namespace: "sov::gen", mode: data }
+emit json { out: "out/" }
+-- probe.cpp --
+// probe includes the headers of a, b, c and d, four packages of one namespace, in one translation unit,
+// and prints per argument: the ids of a and b, their lookups, their translated fns, their conformance
+// runs, or the rows c and d load from the data file named after `gamma:` and `delta:`.
+#include <iostream>
+#include <string>
+#include <type_traits>
+
+#include <nlohmann/json.hpp>
+
+#include "a/a.gen.h"
+#include "b/b.gen.h"
+#include "c/c.gen.h"
+#include "d/d.gen.h"
+
+namespace g = sov::gen;
+
+static_assert(!std::is_constructible_v<nlohmann::json, g::AlphaItemId>);
+static_assert(!std::is_constructible_v<nlohmann::json, g::BetaPartId>);
+
+namespace {
+
+template <class Rows>
+std::string Load(const std::string& path) {
+    std::string error;
+    const auto rows = Rows::Load(path, error);
+    if (!rows) return "error " + error;
+    std::string out;
+    for (const auto& r : rows->All()) out += r.GetId() + ":" + std::to_string(r.GetN());
+    return out;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        std::cout << arg << ": ";
+        if (arg == "ids") {
+            std::cout << g::ToWire(g::AlphaItemId::two) << " " << g::ToWire(g::BetaPartId::bolt) << " " << g::GetAlphaItems().Get(g::AlphaItemId::two).GetWeight()
+                      << " " << g::GetBetaParts().Get(g::BetaPartId::bolt).GetCost();
+        } else if (arg == "lookups") {
+            std::cout << g::AlphaVolume(g::AlphaTone::loud) << " " << g::BetaHeat(g::BetaMood::calm);
+        } else if (arg == "translated") {
+            std::cout << g::AlphaTwice(21) << " " << g::BetaThrice(5);
+        } else if (arg == "conformance") {
+            std::cout << g::conformance::RunAConformance() << " " << g::conformance::RunBConformance();
+        } else if (arg.rfind("gamma:", 0) == 0) {
+            std::cout << Load<g::GammaRows>(arg.substr(6));
+        } else {
+            std::cout << Load<g::DeltaCells>(arg.substr(6));
+        }
+        std::cout << "\n";
+    }
+    return 0;
+}

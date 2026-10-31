@@ -1,5 +1,7 @@
 package ir
 
+import "strings"
+
 // TextDecoders are the @text fns the cpp types-mode emit writes Decode<Fn>File of, in source order; none in another mode (DECISIONS 363).
 func (pl *CppNamePlan) TextDecoders() []*ExportFn {
 	return TextDecoded(pl.p, pl.e)
@@ -7,7 +9,15 @@ func (pl *CppNamePlan) TextDecoders() []*ExportFn {
 
 // TextFile is <Fn>File, <Fn> the fn's C++ name (FnName): what Decode<Fn>File's errors name (DECISIONS 340, 363).
 func (pl *CppNamePlan) TextFile(fn *ExportFn) string {
-	return pl.FnName(fn) + goTextFileSuffix
+	return textFileName(pl.FnName(fn))
+}
+
+// textFileName is <Fn>File of an UpperCamel name: a name already ending in File does not double it (CODEGEN.md §5.13, DECISIONS 407).
+func textFileName(name string) string {
+	if strings.HasSuffix(name, goTextFileSuffix) {
+		return name
+	}
+	return name + goTextFileSuffix
 }
 
 // TextDecoder is Decode<Fn>File, in the package namespace (DECISIONS 363).
@@ -29,7 +39,7 @@ type TSTextNames struct {
 
 // TSTextFunctions are the names of fn's TypeScript decoders, <Fn> the UpperCamel of its TypeScript name.
 func TSTextFunctions(fn *ExportFn) TSTextNames {
-	file := cppUpperCamel(tsEffective(fn.TS, tsLowerCamel(fn.Name))) + goTextFileSuffix
+	file := textFileName(cppUpperCamel(tsEffective(fn.TS, tsLowerCamel(fn.Name))))
 	return TSTextNames{Decode: tsDecodePrefix + file, Parse: tsParsePrefix + file, File: file}
 }
 

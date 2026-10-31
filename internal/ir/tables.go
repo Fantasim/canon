@@ -203,8 +203,9 @@ var (
 	goVariantMembers   = []string{GoKindStore, GoCaseStore, GoKind}
 	goIDEnumMethods    = []string{GoString, goMarshalText, goUnmarshalText, GoRetired} // CODEGEN.md §5.2, §5.3 (DECISIONS 379)
 	goIDMethods        = append(slices.Clone(goIDEnumMethods), goPosition)
-	goEnumMethods      = []string{GoString, GoWire, GoRetired}         // @codes and open enums keep these (DECISIONS 194, 379)
-	goTextEnumMethods  = append(slices.Clone(goIDEnumMethods), GoWire) // a closed enum without @codes, a kind enum
+	goEnumMethods      = []string{GoString, GoWire, GoRetired}     // @codes and open enums keep these (DECISIONS 194, 379)
+	goTextEnumMethods  = append(slices.Clone(goIDMethods), GoWire) // a closed enum without @codes, a kind enum
+	goBranchMethods    = []string{GoString, goMarshalText, goUnmarshalText, goPosition}
 	goCodesEnumMethods = append(slices.Clone(goEnumMethods), GoCode)
 	goOpenEnumMethods  = append(slices.Clone(goEnumMethods), GoKnown) // DECISIONS 339
 	goOpenCodesMethods = append(slices.Clone(goOpenEnumMethods), GoCode)

@@ -198,9 +198,14 @@ func (pl *tsNamePlan) declareAll() {
 	for _, t := range pl.p.Types {
 		pl.declareType(mod, t)
 	}
-	for _, v := range pl.values {
-		pl.declareValue(mod, v)
-		pl.declareFinders(v)
+	for _, v := range pl.p.Values {
+		if pl.e.Mode != ModeTypes {
+			pl.declareTableID(mod, v) // values never selects ids (CODEGEN.md §2.1, DECISIONS 413)
+		}
+		if slices.Contains(pl.values, v) {
+			pl.declareValue(mod, v)
+			pl.declareFinders(v)
+		}
 	}
 	for _, fn := range pl.p.Fns {
 		pl.declareFn(mod, fn)
@@ -291,22 +296,27 @@ func (pl *tsNamePlan) declareRead(mod *nameScope, name, origin string, item any)
 	}
 }
 
-// declareValue declares an emitted value: its accessor, or in data mode its schema and its decode and parse functions; a table's id type, Members and private Index, a data-mode string id type once per name (CODEGEN.md §5.3, DECISIONS 348).
+// declareTableID declares the id type of a public table, selected or not: <Id>, Members, LiveMembers and the private Index, a data-mode string id type once per name (CODEGEN.md §5.3, DECISIONS 348, 413).
+func (pl *tsNamePlan) declareTableID(mod *nameScope, v *Value) {
+	if v.Type.Kind != types.Table || v.Type.Elem == nil || v.Type.Elem.Named == nil {
+		return
+	}
+	org, id := pl.origin(v.Name), tsName(v.Type.Elem.Named)+tsIDSuffix
+	switch {
+	case pl.e.Mode != ModeData: // Members and the private Index are reserved unconditionally, a safe over-reservation (ADR-0021 §3 point 5)
+		pl.declare(mod, id, org, v)
+		pl.declare(mod, id+tsMembersName, org, v)      // CODEGEN.md §5.3
+		pl.declare(mod, TSLiveMembersName(id), org, v) // DECISIONS 395
+		pl.declare(mod, id+tsIndexName, org, v)        // the file's private canonIndex const
+	case !pl.strIDs[id]:
+		pl.strIDs[id] = true
+		pl.declare(mod, id, org, v)
+	}
+}
+
+// declareValue declares an emitted value: its accessor, or in data mode its schema and its decode and parse functions (CODEGEN.md §5.9).
 func (pl *tsNamePlan) declareValue(mod *nameScope, v *Value) {
 	org, eff := pl.origin(v.Name), tsEffective(v.TS, v.Name)
-	if v.Type.Kind == types.Table && v.Type.Elem != nil && v.Type.Elem.Named != nil {
-		id := tsName(v.Type.Elem.Named) + tsIDSuffix
-		switch {
-		case pl.e.Mode != ModeData: // Members and the private Index are reserved unconditionally, a safe over-reservation (ADR-0021 §3 point 5)
-			pl.declare(mod, id, org, v)
-			pl.declare(mod, id+tsMembersName, org, v)      // CODEGEN.md §5.3
-			pl.declare(mod, TSLiveMembersName(id), org, v) // DECISIONS 395
-			pl.declare(mod, id+tsIndexName, org, v)        // the file's private canonIndex const
-		case !pl.strIDs[id]:
-			pl.strIDs[id] = true
-			pl.declare(mod, id, org, v)
-		}
-	}
 	if pl.e.Mode != ModeData {
 		pl.declare(mod, tsEscape(eff), org, v)
 		return

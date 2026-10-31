@@ -196,6 +196,9 @@ func (pl *GoNamePlan) declareEnums(top *nameScope) {
 		}
 		pl.declareTables(top, name, origin, e, enumTableRoles(e, OpenEnum(pl.p, pl.e, e))...)
 		pl.declareMethods(name, origin, e, pl.enumMethods(e))
+		if pl.writesTextErrors(e) { // an opaque enum: the struct's position (DECISIONS 402)
+			pl.declare(pl.scope(name), goPositionField, origin, e)
+		}
 	}
 }
 
@@ -214,6 +217,7 @@ func (pl *GoNamePlan) declareKindEnums(top *nameScope) {
 		pl.declare(top, pl.ParseName(kind), origin, v)
 		pl.declareTables(top, kind, origin, v, closedTableRoles(!slices.ContainsFunc(v.Cases, func(c *Case) bool { return c.Name != c.Wire }))...)
 		pl.declareMethods(kind, origin, v, goTextEnumMethods)
+		pl.declare(pl.scope(kind), goPositionField, origin, v) // DECISIONS 402
 	}
 }
 

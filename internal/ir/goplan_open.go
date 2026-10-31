@@ -36,7 +36,7 @@ func (pl *GoNamePlan) TextDecoder(fn *ExportFn) string { return goPublicDecode +
 
 // TextFile is <Fn>File, <Fn> the fn's generated UpperCamel name: what its decoder's errors name, as Decode<T>'s name <T> (DECISIONS 340).
 func (pl *GoNamePlan) TextFile(fn *ExportFn) string {
-	return goExported(fn.Go, fn.Name) + goTextFileSuffix
+	return textFileName(goExported(fn.Go, fn.Name))
 }
 
 // TextDecoders are the @text fns a types-mode emit writes Decode<Fn>File of; none in another mode.

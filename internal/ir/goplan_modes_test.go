@@ -62,7 +62,7 @@ func compareModes(t *testing.T, p *ir.Package, e *ir.Emit) {
 		t.Fatalf("%s: %v", p.Name, err) // the golden's findings say why
 	}
 	pl := ir.PlanGoNames(p, e)
-	want := goPlanned(p, pl)
+	want := goPlanned(p, e, pl)
 	got := declaredNames(t, goFile(t, files))
 	got[""] = withoutNames(got[""], goBoundNames(p, pl))
 	imports := map[string]bool{}

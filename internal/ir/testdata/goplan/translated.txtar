@@ -93,7 +93,7 @@ emit go { out: "@features/pipeline", package: "pipeline" }
 { "soft": false, "loud": true }
 -- plan.txt --
 Bonus: Grade Value grade value
-Grade: MarshalText Retired String UnmarshalText Wire
+Grade: MarshalText Position Retired String UnmarshalText Wire position
 Potion: Bonus Cooldown DamageAt Heal HealFor IsStrong Label Name Ratio Score Tone Wait bonus cooldown heal isStrong name tone
 Potions: All At Find Len rows
 TestPotionDamageAtConformance vectors: code heal level want
@@ -106,7 +106,7 @@ TestQuadConformance vectors: code want x
 TestSignConformance vectors: code n want
 TestTwiceConformance vectors: code want x
 TestVolumeConformance vectors: code n t want
-Tone: MarshalText Retired String UnmarshalText Wire
+Tone: MarshalText Position Retired String UnmarshalText Wire position
 conformance imports: fmt math rt testing
 package: Bonus GetPotions Grade GradeHigh GradeLiveMembers GradeLow GradeMembers GradeMid Loud Make_Bonus Make_Potion ParseGrade ParseTone Potion Potion_HealMax Potion_HealMin Potions Quad Sign TestPotionDamageAtConformance TestPotionHealForConformance TestPotionLabelConformance TestPotionRatioConformance TestPotionScoreConformance TestPotionWaitConformance TestQuadConformance TestSignConformance TestTwiceConformance TestVolumeConformance Tone ToneLiveMembers ToneLoud ToneMembers ToneSoft Twice Volume buildPipeline canonCatch canonShow enumFound_Grade enumFound_Tone enumKeys_Grade enumKeys_Tone enumMembers_Grade enumMembers_Tone enumNames_Grade enumNames_Tone errors iter loudTable pipelineData pipelineValues potionDamageAt potionHealFor potionLabel potionRatio potionScore potionWait rt slices strconv sync time
 pipeline.Potion.damageAt(): heal level

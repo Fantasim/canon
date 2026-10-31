@@ -42,6 +42,7 @@ func (pl *GoNamePlan) declareDependent(top *nameScope, d *Dependent) {
 	for i := range n.Branches {
 		pl.declareFrom(top, origin+qnameSep+d.Branches[i].Name, d, derivation{d, func() string { return pl.Dependent(d).Branches[i].Member }})
 	}
+	pl.declareBranchEnum(top, n.Branch, d)
 	sc := pl.scope(n.Type)
 	pl.declare(sc, n.Method, origin, d)
 	for i, b := range n.Branches {
@@ -55,6 +56,15 @@ func (pl *GoNamePlan) declareDependent(top *nameScope, d *Dependent) {
 	if n.DefineStore != "" {
 		pl.declare(sc, n.DefineStore, origin, d)
 	}
+}
+
+// declareBranchEnum declares the opaque branch enum's Parse<B>, its names, keys and found tables, and in its own scope its text methods, Position and the position field (CODEGEN.md §5.6, DECISIONS 402).
+func (pl *GoNamePlan) declareBranchEnum(top *nameScope, branch string, d *Dependent) {
+	origin := d.QName()
+	pl.declareFrom(top, origin, d, derivation{d, func() string { return pl.ParseName(pl.Dependent(d).Branch) }})
+	pl.declareTables(top, branch, origin, d, GoTableNames, GoTableKeys, GoTableFound)
+	pl.declareMethods(branch, origin, d, goBranchMethods)
+	pl.declare(pl.scope(branch), goPositionField, origin, d)
 }
 
 // heldDependents are the dependent types a decoded class's fields hold, through lists and optionals: a data loader decodes them with decode<T> (CODEGEN.md §5.6, §6.1).

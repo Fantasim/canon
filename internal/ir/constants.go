@@ -449,8 +449,9 @@ const (
 	cppDataStruct, cppBuild                        = "Data", "Build"
 	CppBulkMinElems, cppBulkPrefix, cppElemsSuffix = 8, "kBulk", "Elems" // gen/cpp's fewest array elements, kBulk<N>, k<NAME>Elems (DECISIONS 392)
 	// a dependent type's define value storage (DECISIONS 298): Go's carries an interior `_`, C++'s a final one, as every generated member.
-	goDefineStore  = "define_value"
-	cppDefineValue = "defineValue_"
+	goDefineStore                                 = "define_value"
+	cppDefineValue                                = "defineValue_"
+	macroStdHeader, macroWarnHeader, macroComment = "[std]", "[warn]", "#" // the non-name lines of text/cpp_macros.txt
 )
 
 // ErrInternal messages of a `@text` fn left without a value, or whose value has no JSON form (DECISIONS 308).

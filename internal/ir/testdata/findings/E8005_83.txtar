@@ -1,0 +1,32 @@
+CODEGEN.md §5.13, DECISIONS 407: items and itemsFile both give DecodeItemsFile (decodeItemsFile in ts), so two such @text fns in one package collide in each target, at the later fn.
+-- a/a.canon --
+package a
+
+/// An item.
+record Item {
+  /// Its number.
+  n: Int
+}
+
+/// The items.
+@text("items.json")
+export fn items() -> [Item] { return [{ n: 1 }] }
+
+/// The items again.
+@text("again.json")
+export fn itemsFile() -> [Item] { return [{ n: 2 }] }
+
+emit go { out: "@features/a/go", package: "a", mode: types }
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types }
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:15:11
+  cpp: DecodeItemsFile is generated for both a.items and a.itemsFile; rename one of them with @cpp(name:)
+
+error[E8005]  a/a.canon:15:11
+  go: DecodeItemsFile is generated for both a.items and a.itemsFile; rename one of them with @go(name:)
+
+error[E8005]  a/a.canon:15:11
+  ts: decodeItemsFile is generated for both a.items and a.itemsFile; rename one of them with @ts(name:)
+
+3 errors, 0 warnings in 1 package (…)

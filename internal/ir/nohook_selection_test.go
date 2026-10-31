@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	noHookFixture = "testdata/textdecoders_targets/*.txtar"
+	noHookFixture = "testdata/textdecoders_targets/targets.txtar"
 	noHookOwner   = "a"
 	noHookDep     = "d"
 	noHookWant    = ": Link Step.hop"

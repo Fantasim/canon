@@ -44,6 +44,7 @@ func (pl *tsNamePlan) declareImports(mod *nameScope) {
 	named, indexed := map[Type]bool{}, map[string]bool{}
 	tsFileReached(pl.p, func(t *TypeRef) {
 		pl.declareForeignIndex(mod, t.Ref, indexed)
+		pl.declareForeignEnumIndex(mod, t.Named, indexed)
 		if t.Named != nil && pkgOf(t.Named) != pl.p.Name && !named[t.Named] {
 			named[t.Named] = true
 			pl.declareForeignReaders(mod, t.Named)
@@ -54,6 +55,23 @@ func (pl *tsNamePlan) declareImports(mod *nameScope) {
 // TSForeignIDIndexName is the private index of another package's table ids a ts file builds with canonIndex, <alias>_<Id>Index (CODEGEN.md §5.3, DECISIONS 379).
 func TSForeignIDIndexName(r *RefTarget) string {
 	return TSImportAlias(r.Pkg) + underscore + tsName(r.Elem) + tsIDSuffix + tsIndexName
+}
+
+// TSForeignEnumIndexName is the private index of another package's enum a ts file builds with canonIndex, <alias>_<E>Index (CODEGEN.md §5.2, DECISIONS 402).
+func TSForeignEnumIndexName(e *Enum) string {
+	return TSImportAlias(e.Pkg) + underscore + tsName(e) + tsIndexName
+}
+
+// declareForeignEnumIndex declares TSForeignEnumIndexName once for an enum of another package that has a ts emit, a safe over-reservation like the id indexes.
+func (pl *tsNamePlan) declareForeignEnumIndex(mod *nameScope, t Type, seen map[string]bool) {
+	e, ok := t.(*Enum)
+	if !ok || e.Pkg == pl.p.Name || tsEmitOf(pl.p, e.Pkg) == nil {
+		return
+	}
+	if name := TSForeignEnumIndexName(e); !seen[name] {
+		seen[name] = true
+		pl.declare(mod, name, e.QName(), nil)
+	}
 }
 
 // declareForeignIndex declares TSForeignIDIndexName once for a ref into a baked or embedded owner's table, the only ids that have Members.

@@ -1,0 +1,29 @@
+CODEGEN.md §2.1, §5.3, DECISIONS 413: values never selects table ids, so a ts-only package whose two tables of one record are both left out by values: still declares TierId twice, E8005 at the later table, as Go and C++ do.
+-- a/a.canon --
+package a
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The first tiers.
+let first: table Tier = {
+  one { rank: 1 }
+}
+
+/// The second tiers.
+let second: table Tier = {
+  two { rank: 2 }
+}
+
+/// The only selected value.
+let kept: Tier = { rank: 3 }
+
+emit ts { out: "@features/a/a.ts", mode: baked, values: [kept] }
+-- findings.txt --
+error[E8005]  a/a.canon:15:5
+  ts: TierId is generated for both a.first and a.second; hold one of them in a keyed list
+
+1 error, 0 warnings in 1 package (…)

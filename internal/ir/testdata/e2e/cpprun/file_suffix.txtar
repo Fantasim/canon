@@ -1,0 +1,43 @@
+DECISIONS 407, CODEGEN.md §5.13: f's cpp types-mode emit decodes the @text fn tipFile with DecodeTipFile, not DecodeTipFileFile, and its errors name TipFile. probe.cpp prints, per file, what DecodeTipFile gives.
+-- f/f.canon --
+/// F.
+package f
+
+/// An entry.
+record Entry {
+  /// Its number.
+  n: Int
+}
+
+/// The entries of a file.
+@text("tip.json")
+export fn tipFile() -> [Entry] { return [] }
+
+emit cpp { out: "@features/f", namespace: "f", mode: types }
+emit text { out: "out/f" }
+-- probe.cpp --
+// probe decodes each file named on the command line with DecodeTipFile (DECISIONS 407).
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include "f/f.gen.h"
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::ifstream in(argv[i]);
+        std::stringstream text;
+        text << in.rdbuf();
+        std::string error;
+        const auto v = ::f::DecodeTipFile(text.str(), error);
+        std::cout << argv[i] << ": ";
+        if (!v) {
+            std::cout << "error " << error << "\n";
+            continue;
+        }
+        for (const auto& e : *v) std::cout << "n" << e.GetN();
+        std::cout << "\n";
+    }
+    return 0;
+}

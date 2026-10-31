@@ -15,7 +15,7 @@ func n11Package() *ir.Package {
 	return &ir.Package{Name: "p", Types: []ir.Type{tone, status}, Values: []*ir.Value{{Name: "statuses", Type: table, IDs: []string{"open"}}}}
 }
 
-// TestGoPlanReservesIDMethods is CODEGEN.md §5.2, §5.3 and T18 (DECISIONS 379): a baked id reserves String, MarshalText, UnmarshalText and Position, an enum the first three and not Position.
+// TestGoPlanReservesIDMethods is CODEGEN.md §5.2, §5.3 and T18 (DECISIONS 379): a baked id and an enum without @codes reserve String, MarshalText, UnmarshalText, Position and the field position (DECISIONS 402), an enum with @codes or an opened one none of them.
 func TestGoPlanReservesIDMethods(t *testing.T) {
 	p := n11Package()
 	codes := ir.TypeRef{Kind: types.Int, Bits: 8}
@@ -32,10 +32,10 @@ func TestGoPlanReservesIDMethods(t *testing.T) {
 		scope string
 		want  map[string]bool
 	}{
-		{"StatusID", map[string]bool{"String": true, "MarshalText": true, "UnmarshalText": true, "Position": true}},
-		{"Tone", map[string]bool{"String": true, "Wire": true, "MarshalText": true, "UnmarshalText": true, "Position": false}},
-		{"Coded", map[string]bool{"String": true, "Wire": true, "Code": true, "MarshalText": false, "UnmarshalText": false}},
-		{"Opened", map[string]bool{"String": true, "Wire": true, "Known": true, "MarshalText": false, "UnmarshalText": false}},
+		{"StatusID", map[string]bool{"String": true, "MarshalText": true, "UnmarshalText": true, "Position": true, "position": true}},
+		{"Tone", map[string]bool{"String": true, "Wire": true, "MarshalText": true, "UnmarshalText": true, "Position": true, "position": true}},
+		{"Coded", map[string]bool{"String": true, "Wire": true, "Code": true, "MarshalText": false, "UnmarshalText": false, "Position": false, "position": false}},
+		{"Opened", map[string]bool{"String": true, "Wire": true, "Known": true, "MarshalText": false, "UnmarshalText": false, "Position": false, "position": false}},
 	} {
 		for name, want := range c.want { //canon:unordered each name is checked on its own
 			if got := scopes[c.scope][name]; got != want {
