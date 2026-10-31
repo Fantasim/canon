@@ -6,6 +6,12 @@
 as v0.1.9 and v0.1.10 were (ADR-0021, ADR-0022), and then run. The technical calls are made here.
 Your four calls are in §9. Q2 to Q4 were answered on 2026-10-31; Q1 waits for your yes.
 
+**Update, same day.** v0.2 is now decided whole in
+[ADR-0023](../decisions/0023-v02-trust-release.md): 36 units, about two days. It grew past §2's
+estimate because N5 alone is ten units, and the planning probes found seven more real bugs. v0.3 and
+v0.4 have outline ADRs ([0024](../decisions/0024-v03-lean-generated-code-outline.md),
+[0025](../decisions/0025-v04-formulas-outline.md)).
+
 **Version numbers.** "v0.1.2 / 0.1.3 / 0.1.4" are read as **v0.2 / v0.3 / v0.4**. v0.1.13 is out,
 and v0.2 is the version [plan.md](../plan.md) already holds.
 

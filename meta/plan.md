@@ -220,10 +220,13 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 
 ## v0.2: trust (Louis's picks of 2026-10-14, extended 2026-10-31)
 
-Proposal: [roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md) §3, with the reasons, owners and
-sizes. Louis, 2026-10-31: formulas (v0.4) before binary data (v0.5), and the on-disk cache and N1 are
-parked. Q1 (runtime values) waits for his yes (roadmap §9). Each version is decided whole in an ADR at
-its start.
+**Decided whole in [ADR-0023](decisions/0023-v02-trust-release.md)**: DECISIONS 398-422, 36 units,
+release v0.2.0. Run it with the [start prompt](handoff/2026-10-31-v020-start-prompt.md). The why is in
+the [roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md) §3.
+
+Louis, 2026-10-31: formulas (v0.4) before binary data (v0.5); the on-disk cache and N1 parked. Two
+calls wait for his yes: Q1 (runtime values, roadmap §9) and ADR-0023 §4 Decision 9 (Go
+exhaustiveness).
 
 - [ ] **N5, testable package checks** (very important; first in v0.2).
 - [ ] Decoders check range and length refinements in C++, Go and TS; bounds as constants; stable row
@@ -238,11 +241,25 @@ its start.
 - [ ] Every owed bug: state.md "Owed, small", ADR-0021 §9's list, the logs of 10-21, 10-22 and 10-29.
 - [ ] Ways out for E9001, E9006 and E8104 (DECISIONS 305); CONFORMANCE §3 against TYPES §7.1;
   CODEGEN §6.3's drift.
-- [ ] M4 call (b): `check.Info` layered maps, only if easy and with no robustness risk (frozen contract).
-- [ ] Release gates: `make check`, `make realdata-compile`, the Resource dry run, and the long
-  fuzz and progen campaigns, run once.
+- [ ] The bugs the planning probes found (ADR-0023 §3, §8.5, §9, §10):
+  - gen/go pure refs and gen/ts ids of unselected tables;
+  - Go input enums with equal wires;
+  - TS map-key widths;
+  - folded defaults;
+  - J7 listing locks;
+  - `.canon` text outputs;
+  - Windows junctions, single-file link bounds and reported names.
+- M4 call (b), `check.Info` layered maps: declined (ADR-0023 §10.9). It is not easy (about 150
+  consumer files) and not risk-free (a shared base).
+- [ ] Release gates (ADR-0023 §12):
+  - `make check`;
+  - every fuzz target and progen-nightly;
+  - the bench A/B;
+  - the Resource dry run;
+  - `RD_PATCH=… make realdata-compile`;
+  - the consumer compile.
 
-## v0.3: lean generated code (proposed 2026-10-31, roadmap §4)
+## v0.3: lean generated code ([ADR-0024](decisions/0024-v03-lean-generated-code-outline.md), an outline completed at v0.3's start)
 
 - [ ] Enum tables: `ToWire` on the name table, `FromWire` by a permutation index, dense ordinals (C++, Go).
 - [ ] A one-pass C++ JSON reader, proven by a differential fuzz against the five passes.
@@ -259,7 +276,7 @@ its start.
 - [ ] A scale bench at 1x, 3x and 5x.
 - [ ] Stretch: C++ presence bits.
 
-## v0.4: formulas (proposed 2026-10-31, roadmap §5)
+## v0.4: formulas ([ADR-0025](decisions/0025-v04-formulas-outline.md), an outline completed at v0.4's start)
 
 - [ ] `match`, `var` and bounded `for` in translated fns.
 - [ ] Record, optional and list parameters; record results.
