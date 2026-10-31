@@ -142,7 +142,16 @@ function canonFreeze<T>(x: T): T {
   }
   return x;
 }
+
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
 // ---------------------------------------------------------------------------
+
+const p_RoleIndex = canonIndex(p.RoleMembers);
 
 /** A record whose fields are named like escaped parameters. */
 export interface Pair {
@@ -163,7 +172,7 @@ const VISIBLE: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
 
 /** Whether a role passes, given a flag. */
 export function visible(p$: p.Role, p_: boolean): boolean {
-  return VISIBLE[p.RoleIndex[p$] * 2 + (p_ ? 1 : 0)];
+  return VISIBLE[p_RoleIndex[p$] * 2 + (p_ ? 1 : 0)];
 }
 
 /** A sum of two parameters, one named with a reserved word. */
@@ -205,4 +214,3 @@ export type Role = "guest" | "member" | "admin";
 export const RoleMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
 export const RoleLiveMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
 export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ guest: "guest", member: "member", admin: "admin" });
-export const RoleIndex: Readonly<Record<Role, number>> = Object.freeze({ guest: 0, member: 1, admin: 2 });

@@ -8,7 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// A baked ts emit writes the package's module: its enums as unions with their Members, Names and Index tables.
+// A baked ts emit writes the package's module: its enums as unions with their Members and Names tables.
 func ExampleGenerate() {
 	size := &ir.Enum{Pkg: "shop", Name: "Size", Doc: "Cup sizes.", Members: []*ir.EnumMember{
 		{Name: "small", Wire: "small"}, {Name: "extra_large", Wire: "XL", Index: 1},

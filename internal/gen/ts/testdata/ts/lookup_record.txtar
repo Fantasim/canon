@@ -60,6 +60,13 @@ function canonFreeze<T>(x: T): T {
 function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
   return build((x) => x);
 }
+
+/** Each key's position, for this file's own lookups and checks: positions are not ids, so no file exports one. */
+function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Record<K, number>> {
+  const index = Object.create(null) as Record<K, number>;
+  members.forEach((m, i) => { index[m] = i; });
+  return Object.freeze(index);
+}
 // ---------------------------------------------------------------------------
 
 /** Sides. */
@@ -67,7 +74,7 @@ export type Side = "left" | "right";
 export const SideMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
 export const SideLiveMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
 export const SideNames: Readonly<Record<Side, string>> = Object.freeze({ left: "left", right: "right" });
-export const SideIndex: Readonly<Record<Side, number>> = Object.freeze({ left: 0, right: 1 });
+const SideIndex = canonIndex(SideMembers);
 
 /** A pair of numbers. */
 export interface Pair {

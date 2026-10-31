@@ -40,8 +40,8 @@ type gen struct {
 	temps        int
 	decoderStart int // where the decoders begin among the items
 
-	ownIDItems    map[string]int  // the item of each own table id type, by id name
-	ownIDDone     map[string]bool // own ids whose private index is written
+	ownIDItems    map[string]int  // the item of each own id type or enum, by name
+	ownIDDone     map[string]bool // own ids or enums whose private index is written
 	foreignIDDone map[string]bool // foreign private indexes asked for
 	foreignIDs    []string        // their declarations, in the order they were needed
 }

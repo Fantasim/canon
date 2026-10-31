@@ -175,3 +175,42 @@ func TestCasesConformance(t *testing.T) {
 	dir := t.TempDir()
 	runTests(t, tc, compile(t, tc, dir, writeCases(t, dir)...))
 }
+
+const (
+	toneModule   = "ui.generated"
+	toneSource   = "teamboard/expected/web/ui.generated.ts"
+	probeBad     = "import { ToneIndex } from \"./ui.generated.js\";\nexport const bad = ToneIndex;\n"
+	probeGood    = "import { ToneMembers } from \"./ui.generated.js\";\nexport const good: number = ToneMembers.indexOf(\"warning\");\n"
+	missingExp   = "TS2305"
+	probeBadFile = "bad.ts"
+	probeOKFile  = "good.ts"
+)
+
+// CODEGEN.md §5.2, DECISIONS 402: a generated enum exports no `<E>Index`; its position is `<E>Members.indexOf`, on every compiler.
+func TestEnumIndexNotExported(t *testing.T) {
+	tc := tsc.Find(t)
+	root, err := filepath.Abs(examplesDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(toneSource)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	module := filepath.Join(dir, toneModule+tsSuffix)
+	writeFile(t, module, body)
+	writeFile(t, filepath.Join(dir, probeBadFile), []byte(probeBad))
+	writeFile(t, filepath.Join(dir, probeOKFile), []byte(probeGood))
+	for _, c := range tc.Compilers {
+		args := func(f string) []string {
+			return append([]string{c.Script, "--noEmit"}, tsc.Args(tc.Typings, module, filepath.Join(dir, f))...)
+		}
+		if out, err := run(tc, args(probeBadFile), ""); err == nil || !strings.Contains(out, missingExp) {
+			t.Errorf("%s: importing ToneIndex: err %v, want %s\n%s", c.Name, err, missingExp, out)
+		}
+		if out, err := run(tc, args(probeOKFile), ""); err != nil {
+			t.Errorf("%s: ToneMembers.indexOf: %v\n%s", c.Name, err, out)
+		}
+	}
+}

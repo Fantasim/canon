@@ -32,4 +32,3 @@ export type Tone =
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
 export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ red: "red", blue: "blue" });
-export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ red: 0, blue: 1 });

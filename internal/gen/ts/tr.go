@@ -216,7 +216,7 @@ func (t *tr) floatOp(x *ir.Binary) string {
 	return fmt.Sprintf(callFormat, t.g.helper(canonFName), t.operand(x.X)+space+op+space+t.operand(x.Y))
 }
 
-// ordered reports a comparison of two enum values, which TypeScript compares through their Index.
+// ordered reports a comparison of two enum values, which TypeScript compares through their private index.
 func ordered(x *ir.Binary) bool {
 	switch x.Op {
 	case ir.OpLt, ir.OpLe, ir.OpGt, ir.OpGe:

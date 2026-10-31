@@ -1,8 +1,10 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import * as tb from "./teamboard/expected/web/teamboard/generated.js";
-import { RoleIndex, RoleMembers } from "./teamboard/expected/web/roles.generated.js";
-import { ToneMembers, ToneNames, IconIndex, IconMembers } from "./teamboard/expected/web/ui.generated.js";
+import * as roles from "./teamboard/expected/web/roles.generated.js";
+import { RoleMembers } from "./teamboard/expected/web/roles.generated.js";
+import * as ui from "./teamboard/expected/web/ui.generated.js";
+import { ToneMembers, ToneNames, IconMembers } from "./teamboard/expected/web/ui.generated.js";
 
 test("teamboard: tables find by id, keep source order and retired rows, and are frozen", () => {
   assert.equal(tb.statuses.length, 6);
@@ -32,7 +34,7 @@ test("teamboard: lookups by ordinal, over an imported enum and own ids (CODEGEN.
   assert.deepEqual([...tb.areasVisibleTo("member")], []);
   assert.ok(tb.areasVisibleTo("admin").length === tb.areas.length);
   for (const role of RoleMembers) {
-    for (const id of tb.areasVisibleTo(role)) assert.ok(RoleIndex[role] >= RoleIndex[tb.areas.find(id).minRole]);
+    for (const id of tb.areasVisibleTo(role)) assert.ok(RoleMembers.indexOf(role) >= RoleMembers.indexOf(tb.areas.find(id).minRole));
   }
   assert.deepEqual(tb.groupedAreasVisibleTo("gm_junior").map((s) => s.group), ["in_game", "out_game", "internal"]);
   assert.ok(Object.isFrozen(tb.areasVisibleTo("admin")));
@@ -41,9 +43,10 @@ test("teamboard: lookups by ordinal, over an imported enum and own ids (CODEGEN.
 test("ui and roles: enum tables (CODEGEN.md §5.2)", () => {
   assert.equal(ToneMembers.length, 12);
   assert.equal(ToneNames["series-1"], "series_1");
-  assert.equal(IconIndex.archive, 1);
+  assert.equal(IconMembers.indexOf("archive"), 1);
+  assert.equal("IconIndex" in ui || "ToneIndex" in ui || "RoleIndex" in roles, false);
   assert.ok(IconMembers.includes("alert-triangle"));
-  assert.ok(RoleIndex.gm_junior < RoleIndex.maintainer);
+  assert.ok(RoleMembers.indexOf("gm_junior") < RoleMembers.indexOf("maintainer"));
   assert.ok(Object.isFrozen(RoleMembers) && Object.isFrozen(ToneNames));
   for (const t of tb.statuses.all) assert.ok(ToneMembers.includes(t.tone));
 });

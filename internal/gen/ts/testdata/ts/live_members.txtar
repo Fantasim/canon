@@ -101,14 +101,12 @@ export type Tone =
 export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["calm", "loud", "soft"]);
 export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["calm", "soft"]);
 export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ calm: "calm", loud: "loud", soft: "soft" });
-export const ToneIndex: Readonly<Record<Tone, number>> = Object.freeze({ calm: 0, loud: 1, soft: 2 });
 
 /** Sides, none retired. */
 export type Side = "left" | "right";
 export const SideMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
 export const SideLiveMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
 export const SideNames: Readonly<Record<Side, string>> = Object.freeze({ left: "left", right: "right" });
-export const SideIndex: Readonly<Record<Side, number>> = Object.freeze({ left: 0, right: 1 });
 
 export type RowId = "one" | "two" | "three";
 export const RowIdMembers: ReadonlyArray<RowId> = Object.freeze(["one", "two", "three"]);

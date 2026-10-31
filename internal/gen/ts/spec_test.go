@@ -1,7 +1,6 @@
 package tsgen_test
 
 import (
-	"bytes"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -173,15 +172,13 @@ func TestHeaders(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §5.3: a table's id exports its Members and no index; a file that needs positions builds a private const (DECISIONS 379).
-func TestNoExportedIdIndex(t *testing.T) {
-	members := regexp.MustCompile(`(?m)^export const (\w+Id)Members\b`)
+// CODEGEN.md §5.2, §5.3: no enum and no table id exports an `<E>Index`; a file that needs positions builds a private const (DECISIONS 379, 402).
+func TestNoExportedIndex(t *testing.T) {
+	exported := regexp.MustCompile(`(?m)^export const \w+Index\b`)
 	files := append(generatedFiles(t), exampleFiles(t)...)
 	for _, f := range files {
-		for _, m := range members.FindAllSubmatch(f.Content, -1) {
-			if bytes.Contains(f.Content, []byte("export const "+string(m[1])+"Index")) {
-				t.Errorf("%s exports %sIndex beside its Members", f.Path, m[1])
-			}
+		if m := exported.Find(f.Content); m != nil {
+			t.Errorf("%s exports %q", f.Path, m)
 		}
 	}
 }

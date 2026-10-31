@@ -9,7 +9,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// enums writes every enum in declaration order: its union, and the Members, Names and Index tables, and Codes for `@codes` (CODEGEN.md §5.2).
+// enums writes every enum in declaration order: its union, and the Members and Names tables, and Codes for `@codes` (CODEGEN.md §5.2).
 func (g *gen) enums() {
 	for _, t := range g.p.Types {
 		if e, ok := t.(*ir.Enum); ok {
@@ -54,7 +54,7 @@ func (g *gen) enum(e *ir.Enum) {
 	}
 	b.WriteString(g.enumMembers(name, e))
 	b.WriteString(g.enumRecord(name, e, namesSuffix, tsString, func(m *ir.EnumMember, _ int) string { return quote(m.Name) }))
-	b.WriteString(g.enumRecord(name, e, indexSuffix, tsNumber, func(_ *ir.EnumMember, i int) string { return strconv.Itoa(i) }))
+	g.declare(name+indexSuffix, e.QName())
 	if e.Codes != nil {
 		b.WriteString(g.enumRecord(name, e, codesSuffix, tsNumber, func(m *ir.EnumMember, _ int) string {
 			return strconv.FormatInt(m.Code, decimal)
@@ -64,6 +64,7 @@ func (g *gen) enum(e *ir.Enum) {
 		b.WriteString(g.openFunctions(e, name))
 	}
 	g.add(b.String())
+	g.ownIDItems[name] = len(g.items) - 1
 }
 
 // openFunctions are `is<E>Known` and `<e>Name` of an opened enum (CODEGEN.md §5.2, DECISIONS 362).
@@ -145,7 +146,7 @@ func (g *gen) enumRecord(name string, e *ir.Enum, suffix, valueType string, item
 	return fmt.Sprintf(recordConstFormat, name+suffix, g.tableKey(name, e), valueType, strings.Join(items, listSep))
 }
 
-// tableKey is the type an enum's Members, Names, Index and Codes are keyed by: the enum, or `<E>Known` for an opened one.
+// tableKey is the type an enum's Members, Names and Codes are keyed by: the enum, or `<E>Known` for an opened one.
 func (g *gen) tableKey(name string, e *ir.Enum) string {
 	if g.open(e) {
 		return ir.TSOpenEnumNames(e).Known
@@ -235,7 +236,7 @@ func liveIDs(v *ir.Value) []string {
 	return out
 }
 
-// ownIDIndex is the private `<Id>Index` of this file's own table ids: the const joins the id's item the first time a lookup needs it (CODEGEN.md §5.3, §8.2).
+// ownIDIndex is the private `<Id>Index` of this file's own table ids and enums: the const joins the id's item the first time a lookup needs it (CODEGEN.md §5.3, §8.2).
 func (g *gen) ownIDIndex(name string) string {
 	index := name + indexSuffix
 	if at, ok := g.ownIDItems[name]; ok && !g.ownIDDone[name] {
@@ -247,10 +248,19 @@ func (g *gen) ownIDIndex(name string) string {
 
 // foreignIDIndex is the private `<alias>_<Id>Index` of another package's table ids: `const ... = canonIndex(<alias>.<Id>Members)`, written once at the top of the declarations (CODEGEN.md §2.8, §5.3, DECISIONS 379).
 func (g *gen) foreignIDIndex(r *ir.RefTarget) string {
-	name := ir.TSForeignIDIndexName(r)
+	return g.foreignIndex(ir.TSForeignIDIndexName(r), r.Pkg, idName(r.Elem))
+}
+
+// foreignEnumIndex is the private `<alias>_<E>Index` of another package's enum, built beside the foreign id indexes (CODEGEN.md §2.8, §5.2, DECISIONS 402).
+func (g *gen) foreignEnumIndex(e *ir.Enum) string {
+	return g.foreignIndex(ir.TSForeignEnumIndexName(e), e.Pkg, typeName(e))
+}
+
+// foreignIndex writes `const name = canonIndex(<alias>.<owner>Members)` once at the top of the declarations.
+func (g *gen) foreignIndex(name, pkg, owner string) string {
 	if !g.foreignIDDone[name] {
 		g.foreignIDDone[name] = true
-		members := g.importValue(r.Pkg, idName(r.Elem)+membersSuffix)
+		members := g.importValue(pkg, owner+membersSuffix)
 		g.foreignIDs = append(g.foreignIDs, strings.TrimSuffix(fmt.Sprintf(privateIndexFormat, name, g.helper(canonIndexName), members), newline))
 	}
 	return name

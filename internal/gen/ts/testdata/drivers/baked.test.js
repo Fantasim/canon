@@ -64,7 +64,8 @@ test("package-level fns: a precomputed value, lookups by ordinal (CODEGEN.md §5
 test("enum tables (CODEGEN.md §5.2)", () => {
   assert.deepEqual([...a.SideMembers], ["left", "RIGHT"]);
   assert.equal(a.SideNames.RIGHT, "right");
-  assert.equal(a.SideIndex.RIGHT, 1);
+  assert.equal(a.SideMembers.indexOf("RIGHT"), 1);
+  assert.equal("SideIndex" in a, false);
   assert.deepEqual({ ...a.ElementCodes }, { FIRE: 1, WATER: 2, WIND: 3 });
   assert.ok(Object.isFrozen(a.SideMembers));
 });

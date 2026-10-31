@@ -74,6 +74,8 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 }
 // ---------------------------------------------------------------------------
 
+const sovcommon_roles_RoleIndex = canonIndex(sovcommon_roles.RoleMembers);
+
 /** Format version of the taxonomy (taxonomy.json's `version`). */
 export const VERSION = 7;
 
@@ -82,14 +84,12 @@ export type Actor = "reporter" | "triager" | "reporter_or_triager";
 export const ActorMembers: ReadonlyArray<Actor> = Object.freeze(["reporter", "triager", "reporter_or_triager"]);
 export const ActorLiveMembers: ReadonlyArray<Actor> = Object.freeze(["reporter", "triager", "reporter_or_triager"]);
 export const ActorNames: Readonly<Record<Actor, string>> = Object.freeze({ reporter: "reporter", triager: "triager", reporter_or_triager: "reporter_or_triager" });
-export const ActorIndex: Readonly<Record<Actor, number>> = Object.freeze({ reporter: 0, triager: 1, reporter_or_triager: 2 });
 
 /** Inputs a status transition may collect. */
 export type PostField = "assignee" | "fixed_in" | "reason" | "duplicate_of";
 export const PostFieldMembers: ReadonlyArray<PostField> = Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
 export const PostFieldLiveMembers: ReadonlyArray<PostField> = Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
 export const PostFieldNames: Readonly<Record<PostField, string>> = Object.freeze({ assignee: "assignee", fixed_in: "fixed_in", reason: "reason", duplicate_of: "duplicate_of" });
-export const PostFieldIndex: Readonly<Record<PostField, number>> = Object.freeze({ assignee: 0, fixed_in: 1, reason: 2, duplicate_of: 3 });
 
 export type IntentId = "issue" | "idea";
 export const IntentIdMembers: ReadonlyArray<IntentId> = Object.freeze(["issue", "idea"]);
@@ -365,7 +365,7 @@ const AREAS_VISIBLE_TO: ReadonlyArray<ReadonlyArray<AreaId>> = canonFreeze(canon
 
 /** sovcommon's AreasVisibleTo: minRole gates viewing and posting. */
 export function areasVisibleTo(role: sovcommon_roles.Role): ReadonlyArray<AreaId> {
-  return AREAS_VISIBLE_TO[sovcommon_roles.RoleIndex[role]];
+  return AREAS_VISIBLE_TO[sovcommon_roles_RoleIndex[role]];
 }
 
 const GROUPED_AREAS_VISIBLE_TO: ReadonlyArray<ReadonlyArray<AreaSection>> = canonFreeze(canonList<ReadonlyArray<AreaSection>>(($r) => [
@@ -379,5 +379,5 @@ const GROUPED_AREAS_VISIBLE_TO: ReadonlyArray<ReadonlyArray<AreaSection>> = cano
 
 /** sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area. */
 export function groupedAreasVisibleTo(role: sovcommon_roles.Role): ReadonlyArray<AreaSection> {
-  return GROUPED_AREAS_VISIBLE_TO[sovcommon_roles.RoleIndex[role]];
+  return GROUPED_AREAS_VISIBLE_TO[sovcommon_roles_RoleIndex[role]];
 }

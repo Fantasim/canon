@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import * as assert from "node:assert/strict";
+import * as m from "./open_types/features/a/a.js";
 import {
-  DstMembers, DstNames, DstIndex, DstCodes, isDstKnown, dstName, toneName, isToneKnown, ToneMembers,
+  DstMembers, DstNames, DstCodes, isDstKnown, dstName, toneName, isToneKnown, ToneMembers,
   decodeRule, parseRule, decodeRulesFile, parseRulesFile, decodeTonesFile, parseTonesFile, parseNamedFile, parseMaybeFile,
 } from "./open_types/features/a/a.js";
 
@@ -10,7 +11,8 @@ const rule = (extra) => ({ dst: "DST_HP", tone: "calm", grade: 1, goal: "kill", 
 test("an opened enum keeps the closed tables and adds is<E>Known and <e>Name (CODEGEN.md §5.2, DECISIONS 362)", () => {
   assert.deepEqual([...DstMembers], ["DST_HP", "DST_MP", "DST_OLD"]);
   assert.equal(DstNames.DST_MP, "DST_MP");
-  assert.equal(DstIndex.DST_OLD, 2);
+  assert.equal(DstMembers.indexOf("DST_OLD"), 2);
+  assert.equal("DstIndex" in m, false);
   assert.equal(DstCodes.DST_OLD, 3);
   assert.equal(isDstKnown("DST_HP"), true);
   assert.equal(isDstKnown("DST_NEW"), false);

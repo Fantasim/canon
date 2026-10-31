@@ -70,14 +70,12 @@ export type Aim = "gold" | "mood";
 export const AimMembers: ReadonlyArray<Aim> = Object.freeze(["gold", "mood"]);
 export const AimLiveMembers: ReadonlyArray<Aim> = Object.freeze(["gold", "mood"]);
 export const AimNames: Readonly<Record<Aim, string>> = Object.freeze({ gold: "gold", mood: "mood" });
-export const AimIndex: Readonly<Record<Aim, number>> = Object.freeze({ gold: 0, mood: 1 });
 
 /** A mood. */
 export type Mood = "calm" | "grim";
 export const MoodMembers: ReadonlyArray<Mood> = Object.freeze(["calm", "grim"]);
 export const MoodLiveMembers: ReadonlyArray<Mood> = Object.freeze(["calm", "grim"]);
 export const MoodNames: Readonly<Record<Mood, string>> = Object.freeze({ calm: "calm", grim: "grim" });
-export const MoodIndex: Readonly<Record<Mood, number>> = Object.freeze({ calm: 0, grim: 1 });
 
 export type RewardKind =
   | "coins"

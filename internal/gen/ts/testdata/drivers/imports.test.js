@@ -3,7 +3,8 @@ import * as assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decodeAwards, parseAwards } from "./imports/features/user/user.js";
 import { badgeFor, visible } from "./imports/features/lookups/lookups.js";
-import { badges, RoleIndex } from "./imports/features/shared/base.js";
+import * as base from "./imports/features/shared/base.js";
+import { badges, RoleMembers } from "./imports/features/shared/base.js";
 
 test("an imported enum, table id and types-mode record are decoded across modules (CODEGEN.md §2.8, §5.8)", () => {
   const awards = decodeAwards(JSON.parse(readFileSync(new URL("./imports/json/awards.json", import.meta.url), "utf8")));
@@ -33,8 +34,9 @@ test("a foreign decoder's failure is reported at one JSON path, the field's join
   assert.throws(() => decodeAwards(doc), /rows\[0\]\.tone: unknown member/);
 });
 
-test("a lookup over an imported enum indexes through its Index (CODEGEN.md §5.10)", () => {
-  assert.equal(RoleIndex.admin, 1);
+test("a lookup over an imported enum indexes through a private index of its Members (CODEGEN.md §5.10)", () => {
+  assert.equal(RoleMembers.indexOf("admin"), 1);
+  assert.equal("RoleIndex" in base, false);
   assert.equal(visible("member"), false);
   assert.equal(visible("admin"), true);
   assert.equal(badgeFor("member"), "iron");
