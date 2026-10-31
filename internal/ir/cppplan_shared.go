@@ -99,9 +99,10 @@ func (s *stage) cppNamesOf(u *unit) []cppShared {
 }
 
 // cppPlanned reports a cpp emit in a mode gen/cpp writes, whose names the plan holds: baked, data or types (embedded is refused, CODEGEN.md §2.2).
-func cppPlanned(e *Emit) bool {
-	return e.Mode == ModeBaked || e.Mode == ModeData || e.Mode == ModeTypes
-}
+func cppPlanned(e *Emit) bool { return plannedMode(e.Mode) }
+
+// plannedMode reports a mode gen/cpp writes names for: baked, data or types.
+func plannedMode(m Mode) bool { return m == ModeBaked || m == ModeData || m == ModeTypes }
 
 // declaredOnly is an unselected package's public IR as declared, broken declarations left out (decision 213), with no value evaluated: what its C++ names need.
 func (s *stage) declaredOnly(u *unit) *Package {

@@ -347,7 +347,7 @@ func (r *run) stagesCD(ctx context.Context) error {
 // stageE precomputes the export fns, validates the emits, then computes the vectors, in check and build alike (EVALUATION.md §1, §2.3, DECISIONS 37).
 func (r *run) stageE(ctx context.Context) error {
 	r.ir = ir.Build(ctx, ir.Input{
-		Program: r.prog, Project: r.s.proj, Selected: r.selectedNames(), Bags: r.bags, Host: irHost{r}, Fold: r.fold,
+		Program: r.prog, Project: r.s.proj, Selected: r.selectedNames(), Bags: r.bags, Host: irHost{r}, Fold: r.fold, Units: r.s.units,
 	})
 	if err := untranslated(r.ir); err != nil {
 		return err

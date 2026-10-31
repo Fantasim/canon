@@ -71,7 +71,7 @@ func (s *stage) refusedImport(u *unit) func(GoNameProblem) bool {
 	return func(pr GoNameProblem) bool { return pr.Kind == GoNotIdentifier && pr.Item == nil && refused[pr.Origin] }
 }
 
-// checkCppNames reports a baked, data- or types-mode cpp emit's names from the name plan gen/cpp writes from (CODEGEN.md §3.5, decision 37): E8011 for a derived name C++ cannot declare, a keyword or a reserved namespace included (decision 202), E8005 for two names of one scope; the names its header shares with the other packages of its namespace wait for crossPackage. Embedded has no generator yet; overrides are checkOverrideNames'.
+// checkCppNames reports a baked, data- or types-mode cpp emit's names from the name plan gen/cpp writes from (CODEGEN.md §3.5, decision 37): E8011 for a derived name C++ cannot declare, a keyword or a reserved namespace included (decision 202), E8005 for two names of one scope, or equal to a #define of a package it does not read (checkForeignDefines); the names its header shares with the other packages of its namespace wait for crossPackage. Embedded has no generator yet; overrides are checkOverrideNames'.
 func (s *stage) checkCppNames(u *unit) {
 	es := emitFor(u, TargetCpp)
 	if es == nil || !cppPlanned(es.e) {
@@ -88,6 +88,7 @@ func (s *stage) checkCppNames(u *unit) {
 	for _, w := range pl.warnings { // W8006: never a problem, generation proceeds
 		u.report(diag.W8006.At(s.itemSpan(w.Item, es.span()), w.Name, w.Origin))
 	}
+	s.checkForeignDefines(u, es, pl)
 }
 
 // itemSpans locates a plan's item, at the emit for an import or the package's own names.

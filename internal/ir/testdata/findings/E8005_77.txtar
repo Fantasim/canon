@@ -1,0 +1,68 @@
+CODEGEN.md §3.5, §7.9, DECISIONS 403: a C++ name equal to a #define of a package this one does not read is E8005 foreignDefine, at the declaring item. Package a writes the defines alpha and beta; b spells an enumerator alpha without a read edge and reports; c reads a (a field of a.Kind), d renames the member with @cpp(name:) and e has no cpp emit, so none of them reports.
+-- a/a.canon --
+package a
+
+/// Kinds; the defines keep the names.
+enum Kind @cpp(defines: "") {
+  /// One.
+  alpha
+  /// Two.
+  beta
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// Tones.
+enum Tone {
+  /// Spelled like a's define.
+  alpha
+  /// Another.
+  gamma
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: types }
+-- c/c.canon --
+package c
+
+import a { Kind }
+
+/// A holder: its field makes c read a, whose defines it guards.
+record Holder {
+  /// Its kind.
+  kind: Kind
+}
+
+/// Hues.
+enum Hue {
+  /// Spelled like a's define.
+  alpha
+}
+
+emit cpp { out: "@features/c", namespace: "c", mode: types }
+-- d/d.canon --
+package d
+
+/// Moods.
+enum Mood {
+  /// Renamed in C++.
+  alpha @cpp(name: "alphaMood")
+}
+
+emit cpp { out: "@features/d", namespace: "d", mode: types }
+-- e/e.canon --
+package e
+
+/// Shades.
+enum Shade {
+  /// Spelled like a's define.
+  alpha
+}
+
+emit go { out: "@features/e", package: "e", mode: types }
+-- findings.txt --
+error[E8005]  b/b.canon:6:3
+  alpha is declared for b.Tone.alpha and written as a #define for a.Kind.alpha, in a package this one does not read, so its headers cannot guard it; rename b.Tone.alpha with @cpp(name:), or use a type of that package here
+
+1 error, 0 warnings in 5 packages (…)

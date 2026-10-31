@@ -45,6 +45,16 @@ func CppDefineNames(p *Package) []string {
 	return slices.Compact(out)
 }
 
+// CppGuardNames are the macros a file of p's cpp emit can meet: p's own defines and those of the packages it reads, sorted and distinct (CODEGEN.md §7.9, DECISIONS 391, 403); the foreign-define rule excepts them, and gen/cpp builds the same set itself until CPP-OWED calls this.
+func CppGuardNames(p *Package) []string {
+	out := CppDefineNames(p)
+	for _, ref := range p.Imports {
+		out = append(out, ref.CppDefines...)
+	}
+	slices.Sort(out)
+	return slices.Compact(out)
+}
+
 // defineName is a name's macro: the name when it starts with the prefix, else prefix + name (CODEGEN.md §7.9).
 func defineName(prefix, name string) string {
 	if strings.HasPrefix(name, prefix) {

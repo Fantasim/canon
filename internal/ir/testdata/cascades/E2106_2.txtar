@@ -1,0 +1,41 @@
+DECISIONS 213, 403, CODEGEN.md §7.9: a broken duplicate carrying @cpp(defines:) writes no #define, so b, which reads q through a field of q.Box, meets no foreign define for its enumerator LIMIT: the only finding is q's E2106.
+-- q/q.canon --
+package q
+
+/// The limit.
+const LIMIT = 7
+
+/// The limit again, a broken duplicate.
+@cpp(defines: "")
+const LIMIT = 9
+
+/// A box.
+record Box {
+  /// Its size.
+  n: Int
+}
+
+emit cpp { out: "@features/q", namespace: "q", mode: types }
+-- b/b.canon --
+package b
+
+import q { Box }
+
+/// A holder: its field makes b read q.
+record Holder {
+  /// Its box.
+  box: Box
+}
+
+/// Tones.
+enum Tone {
+  /// Spelled like the broken define of q.
+  LIMIT
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: types }
+-- findings.txt --
+error[E2106]  q/q.canon:8:7
+  LIMIT is declared twice (first at q/q.canon:4)
+
+1 error, 0 warnings in 2 packages (…)

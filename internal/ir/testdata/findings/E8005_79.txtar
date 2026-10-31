@@ -1,0 +1,32 @@
+CODEGEN.md §5.3, §7.9, DECISIONS 403: a const with @cpp(defines:) writes the macro LIMIT; a table id of another package, which does not read it, is the enumerator LIMIT of its id enum, E8005 foreignDefine at the table.
+-- a/a.canon --
+package a
+
+/// The limit, a macro and a C++ constant of one name.
+@cpp(defines: "")
+const LIMIT = 9
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers; the id of the first is a's macro.
+let tiers: table Tier = {
+  LIMIT { rank: 1 }
+  other { rank: 2 }
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+-- b.tiers.json --
+{ "LIMIT": { "rank": 1 }, "other": { "rank": 2 } }
+-- findings.txt --
+error[E8005]  b/b.canon:10:5
+  LIMIT is declared for b.tiers.LIMIT and written as a #define for a.LIMIT, in a package this one does not read, so its headers cannot guard it; rename b.tiers.LIMIT with @cpp(name:), or use a type of that package here
+
+1 error, 0 warnings in 2 packages (…)

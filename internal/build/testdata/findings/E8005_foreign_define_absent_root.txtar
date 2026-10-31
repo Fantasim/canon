@@ -1,0 +1,26 @@
+DECISIONS 332, 403, CODEGEN.md §7.9: the project's defines come from the packages it scans, and none is scanned under an absent optional root (nothing is there to read): b spells alpha, and the only package that could write it as a #define would live under the absent root @ext, so b is clean.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    ext: "ext"
+  }
+  optional_roots: [ext]
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Tones.
+enum Tone {
+  /// Spelled like a define that is not scanned.
+  alpha
+}
+
+emit cpp { out: "@out/b", namespace: "b", mode: types }
+-- check-only --
+-- select --
+b
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -9,9 +9,9 @@ package features.legacycpp
 
 local let items = load.defines("@resource/Server/Define/defineitem.h", prefix: "II_")
 
-/// The main kind. `@cpp(defines:)` also emits `#define IK1_WEAPON 1`... for legacy
-/// code, so the IK1 block of defineItemkind.h can be deleted once this is generated.
-enum Kind1 @codes(UInt8) @cpp(defines: "IK1_") {
+/// The main kind. `@cpp(defines:)` also emits `#define LK1_IK1_WEAPON 1`... for legacy
+/// code; LK1_ keeps them apart from the IK1_ enumerators of packages not reading this (E8005).
+enum Kind1 @codes(UInt8) @cpp(defines: "LK1_") {
   IK1_GOLD = 0
   IK1_WEAPON = 1
   IK1_ARMOR = 2

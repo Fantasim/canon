@@ -21,7 +21,7 @@ type Host interface {
 	Call(ctx context.Context, fn check.Object, recv value.Value, args []value.Value) (value.Value, bool)
 }
 
-// Input is what stage E reads: the checked program, the project's declared roots and go_module (never a --root override, decision 108), the selected packages (nil: every package of Program), the bags, the host, and the folder of constant field defaults.
+// Input is what stage E reads: the checked program, the project's declared roots and go_module (never a --root override, decision 108), the selected packages (nil: every package of Program), the bags, the host, the folder of constant field defaults, and every package the project scans (nil: Program's), whose defines the foreign-define rule reads (CODEGEN.md §7.9).
 type Input struct {
 	Program  *check.Program
 	Project  *project.Project
@@ -29,6 +29,7 @@ type Input struct {
 	Bags     check.Bags
 	Host     Host
 	Fold     check.Folder
+	Units    []*project.Unit
 }
 
 // Build runs stage E (EVALUATION.md §1 phase 7): it precomputes export fn results, builds the IR of every selected package that declares an emit, and reports every emit rule (CODEGEN.md §12 but E8001, WIRE.md §8.1 but E8152, CONFORMANCE.md §2) to the bags, writing nothing.
@@ -88,6 +89,7 @@ type stage struct {
 	lets          map[value.Value]bool                // the composites of every let, collected once (letComposites)
 	targets       map[defineKey][]*value.Record       // the entries of each let a dependent field's ref path reads, by key (branchTables)
 	defineNames   map[string][]string                 // per package, the macros its defines header writes (cppDefinesOf)
+	projDefines   map[string]defineSource             // the project's defines by macro name, scanned once (projectDefines)
 }
 
 // unit is one checked package on its way to IR; firstUse is the first type of each imported
@@ -172,9 +174,12 @@ func (u *unit) report(b *diag.Builder) {
 }
 
 // sourceFiles yields the source files of cp, in path order (layer and translation files excluded).
-func sourceFiles(cp *check.Package) []*syntax.File {
+func sourceFiles(cp *check.Package) []*syntax.File { return sourceOnly(cp.Files) }
+
+// sourceOnly keeps the source files of files, in order.
+func sourceOnly(files []*syntax.File) []*syntax.File {
 	var out []*syntax.File
-	for _, f := range cp.Files {
+	for _, f := range files {
 		if f.FileKind == syntax.FileSource {
 			out = append(out, f)
 		}

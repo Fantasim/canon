@@ -137,10 +137,7 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 		case check.OptOut:
 			es.outSpan, es.outs = es.file.Span(fi.Value), outTexts(es.file, fi.Value, e.Target)
 		case check.OptMode:
-			e.Mode, es.modeSpan = ModeNone, es.file.Span(fi.Value)
-			if id, isWord := fi.Value.(*syntax.IdentExpr); isWord {
-				e.Mode, _ = wordIndex[Mode](modeWords[:], id.Name)
-			}
+			e.Mode, es.modeSpan = modeOption(fi.Value), es.file.Span(fi.Value)
 		case check.OptValues:
 			e.Values = valueNames(fi.Value)
 		case check.OptOpen:
@@ -155,6 +152,15 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 	if e.Target == TargetCpp && e.Namespace == "" {
 		e.Namespace = strings.ReplaceAll(u.cp.Path, qnameSep, cppScope)
 	}
+}
+
+// modeOption is the mode a `mode:` option's value names, ModeNone for a value that is no mode word (check's E8009).
+func modeOption(x syntax.Expr) Mode {
+	if id, isWord := x.(*syntax.IdentExpr); isWord {
+		m, _ := wordIndex[Mode](modeWords[:], id.Name)
+		return m
+	}
+	return ModeNone
 }
 
 // constString is a string literal's text, or "" for an interpolation (E1132, E1119) or another kind.

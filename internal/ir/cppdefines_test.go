@@ -162,4 +162,7 @@ emit cpp { out: "@features/b", namespace: "b", mode: types }
 	if got, want := holder.Imports[0].CppDefines, []string{"K_A", "K_B", "MAX"}; !slices.Equal(got, want) {
 		t.Errorf("import defines %v, want %v", got, want)
 	}
+	if got, want := ir.CppGuardNames(holder), []string{"K_A", "K_B", "MAX"}; !slices.Equal(got, want) { // DECISIONS 403: b has no define of its own
+		t.Errorf("guard names %v, want %v", got, want)
+	}
 }

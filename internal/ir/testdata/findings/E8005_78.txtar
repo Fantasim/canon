@@ -1,0 +1,33 @@
+CODEGEN.md §3.5, §7.9, DECISIONS 403: the Badge shape. The cases of a variant give its kind enum members, which a define of a package the variant's package does not read (an enum with @cpp(defines:)) equals: E8005 foreignDefine at the case.
+-- a/a.canon --
+package a
+
+/// Requirements; the defines keep the legacy names.
+enum Requirement @codes(UInt8) @cpp(defines: "BADGE_REQ_") {
+  /// Uses an item.
+  USE_ITEM = 5
+  /// Reaches a faery rank.
+  FAERY_RANK = 6
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A badge.
+variant Badge {
+  /// The item case, named like a's define.
+  BADGE_REQ_USE_ITEM {
+    /// The item.
+    item: Int
+  }
+  /// The plain case.
+  plain
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: types }
+-- findings.txt --
+error[E8005]  b/b.canon:6:3
+  BADGE_REQ_USE_ITEM is declared for b.Badge.BADGE_REQ_USE_ITEM and written as a #define for a.Requirement.USE_ITEM, in a package this one does not read, so its headers cannot guard it; rename b.Badge.BADGE_REQ_USE_ITEM with @cpp(name:), or use a type of that package here
+
+1 error, 0 warnings in 2 packages (…)

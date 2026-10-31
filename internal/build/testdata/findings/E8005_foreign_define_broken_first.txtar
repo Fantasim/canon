@@ -1,0 +1,40 @@
+DECISIONS 213, 403, CODEGEN.md §7.9: a broken duplicate of b's own const LIMIT, carrying @cpp(defines:), is no define of b, so it does not stand for LIMIT: z, which b does not read, writes the #define LIMIT and b's const LIMIT is E8005 foreignDefine, beside the E2106 of the broken duplicate.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- z/z.canon --
+/// Z.
+package z
+
+/// The limit, a macro and a C++ constant of one name.
+@cpp(defines: "")
+const LIMIT = 9
+
+emit cpp { out: "@out/z", namespace: "z", mode: types }
+-- b/b.canon --
+/// B.
+package b
+
+/// The limit.
+const LIMIT = 7
+
+/// The limit again, a broken duplicate.
+@cpp(defines: "")
+const LIMIT = 8
+
+emit cpp { out: "@out/b", namespace: "b", mode: types }
+-- check-only --
+-- select --
+b
+-- findings.txt --
+error[E8005]  b/b.canon:5:7
+  LIMIT is declared for b.LIMIT and written as a #define for z.LIMIT, in a package this one does not read, so its headers cannot guard it; rename b.LIMIT with @cpp(name:), or use a type of that package here
+
+error[E2106]  b/b.canon:9:7
+  LIMIT is declared twice (first at b/b.canon:5)
+
+2 errors, 0 warnings in 1 package (…)

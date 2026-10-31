@@ -1,0 +1,89 @@
+CODEGEN.md §3.5, §7.9, DECISIONS 403: lib writes the macros SWORD, AXE and MAX_SLOTS. Two packages spell those names in their generated C++ and both ways out of E8005 foreignDefine are taken: renamed does not read lib and renames the member with @cpp(name:); reader reads lib (a field of Kind), so its headers and sources guard lib's macros. Build finds nothing; probe.cpp includes every defines header, then every generated header and source, and probe_reverse.cpp the reverse, both under -Werror, and every macro keeps its value.
+-- lib/lib.canon --
+/// The library of legacy names.
+package lib
+
+/// Item kinds; the defines keep the legacy macro names.
+enum Kind @cpp(defines: "") {
+  /// A sword.
+  SWORD
+  /// An axe.
+  AXE
+}
+
+/// The number of slots, a macro and a C++ constant of one name.
+@cpp(defines: "")
+const MAX_SLOTS = 9
+
+emit cpp { out: "@features/lib", namespace: "lib", mode: types }
+-- renamed/renamed.canon --
+/// A package that does not read lib: its enumerator is spelled like lib's macro and renamed.
+package renamed
+
+/// Weapons.
+enum Weapon {
+  /// Spelled like lib's define SWORD, renamed in C++.
+  SWORD @cpp(name: "SwordRenamed")
+  /// A plain one.
+  bow
+}
+
+emit cpp { out: "@features/renamed", namespace: "renamed", mode: types }
+-- reader/reader.canon --
+/// A package that reads lib: lib's macros are guarded in its headers and sources.
+package reader
+
+import lib { Kind }
+
+/// A holder spelling lib's macros.
+record Holder {
+  /// Its kind.
+  kind: Kind = SWORD
+  /// Its slots.
+  slots: Int = 9
+}
+
+/// Elements.
+enum Elem {
+  /// Spelled like lib's define AXE.
+  AXE
+}
+
+/// The slots, spelled like lib's define MAX_SLOTS.
+const MAX_SLOTS = 3
+
+emit cpp { out: "@features/reader", namespace: "reader", mode: types }
+-- probe.cpp --
+// probe includes the defines header of lib first, then every generated header and source (CODEGEN.md §7.9).
+#include "lib/lib.defines.gen.h"
+
+#include "lib/lib.gen.h"
+#include "renamed/renamed.gen.h"
+#include "reader/reader.gen.h"
+#include "lib/lib.gen.cpp"
+#include "renamed/renamed.gen.cpp"
+#include "reader/reader.gen.cpp"
+
+#include <iostream>
+
+int main() {
+    std::cout << "macros " << SWORD << " " << AXE << " " << MAX_SLOTS << "\n";
+    return 0;
+}
+-- probe_reverse.cpp --
+// probe_reverse includes every generated header and source first, then the defines header of lib.
+#include "lib/lib.gen.h"
+#include "renamed/renamed.gen.h"
+#include "reader/reader.gen.h"
+#include "lib/lib.gen.cpp"
+#include "renamed/renamed.gen.cpp"
+#include "reader/reader.gen.cpp"
+
+#include "lib/lib.defines.gen.h"
+
+#include <iostream>
+
+int main() {
+    std::cout << "macros " << SWORD << " " << AXE << " " << MAX_SLOTS << "\n";
+    return 0;
+}

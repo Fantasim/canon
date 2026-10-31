@@ -14,7 +14,7 @@ File: File FileKind=source @1:1-49:1
         Value: StringLit @10:80-10:85
           Parts[0]: text "II_"
   Decls[1]: EnumDecl @14:1-23:2
-    Doc: DocComment "The main kind. `@cpp(defines:)` also emits `#define IK1_WEAPON 1`... for legacy\ncode, so the IK1 block of defineItemkind.h can be deleted once this is generated." @12:1-13:86
+    Doc: DocComment "The main kind. `@cpp(defines:)` also emits `#define LK1_IK1_WEAPON 1`... for legacy\ncode; LK1_ keeps them apart from the IK1_ enumerators of packages not reading this (E8005)." @12:1-13:96
     Name: Ident Kind1 @14:6-14:11
     Annotations[0]: Annotation @14:12-14:25
       Name: Ident codes @14:13-14:18
@@ -25,7 +25,7 @@ File: File FileKind=source @1:1-49:1
       Args[0]: AnnotationArg @14:31-14:46
         Name: Ident defines @14:31-14:38
         Value: StringLit @14:40-14:46
-          Parts[0]: text "IK1_"
+          Parts[0]: text "LK1_"
     Members[0]: EnumMember @15:3-15:15
       Name: Ident IK1_GOLD @15:3-15:11
       Value: IntLit Value=0 @15:14-15:15

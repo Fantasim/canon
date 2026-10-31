@@ -89,12 +89,17 @@ func (pl *CppNamePlan) share(scope, name, origin string, item any) {
 	pl.shareAs(scope, name, origin, item, meetsNever)
 }
 
+// qualified is an origin as the plan names it in messages: qualified by the package unless it is the package or inside it.
+func (n *namer) qualified(origin string) string {
+	if origin != n.self && !strings.HasPrefix(origin, n.self+qnameSep) {
+		return n.self + qnameSep + origin
+	}
+	return origin
+}
+
 // shareAs is share for a name that meets another package's same name of kind meets legally.
 func (pl *CppNamePlan) shareAs(scope, name, origin string, item any, meets cppMeet) {
-	if origin != pl.p.Name && !strings.HasPrefix(origin, pl.p.Name+qnameSep) {
-		origin = pl.p.Name + qnameSep + origin
-	}
-	pl.shared = append(pl.shared, cppShared{scope: scope, name: name, origin: origin, item: item, meets: meets})
+	pl.shared = append(pl.shared, cppShared{scope: scope, name: name, origin: pl.qualified(origin), item: item, meets: meets})
 }
 
 // shareSegments shares each segment of the emit's namespace in its parent: a class or any other name of another package there collides with the namespace (CODEGEN.md §3.5; g++: "redeclared as different kind of entity"); a segment that is a platform macro warns (W8006).
