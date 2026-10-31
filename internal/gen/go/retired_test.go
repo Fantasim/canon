@@ -58,7 +58,6 @@ func TestRetired(t *testing.T) {
 		{"Plain a", closed.PlainA.Retired(), false},
 		{"Plain b", closed.PlainB.Retired(), true},
 		{"Plain c", closed.PlainC.Retired(), false},
-		{"Plain outside", closed.Plain(200).Retired(), false},
 		{"Coded p", closed.CodedP.Retired(), true},
 		{"Coded q", closed.CodedQ.Retired(), false},
 		{"Coded r", closed.CodedR.Retired(), false},

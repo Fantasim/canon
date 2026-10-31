@@ -167,6 +167,9 @@ func (g *gen) zeroKey(t ir.TypeRef) string {
 	if !isTableRef(t.Ref) && t.Key != nil && t.Key.Kind == types.String {
 		return emptyString
 	}
+	if t.Key != nil {
+		return g.zeroNumber(*t.Key)
+	}
 	return zeroLit
 }
 

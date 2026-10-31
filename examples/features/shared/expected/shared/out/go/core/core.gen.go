@@ -14,48 +14,48 @@ import (
 )
 
 // Aim: What a bonus aims at.
-type Aim uint8
+type Aim struct{ position uint8 }
 
-const (
-	AimGold Aim = 0
-	AimMood Aim = 1
+var (
+	AimGold = Aim{0}
+	AimMood = Aim{1}
 )
 
 var enumNames_Aim = [...]string{"gold", "mood"}
 
 func (self Aim) String() string {
-	if i := uint(self); i < uint(len(enumNames_Aim)) {
+	if i := uint(self.position); i < uint(len(enumNames_Aim)) {
 		return enumNames_Aim[i]
 	}
-	return "Aim(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Aim(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Aim) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Aim)) {
+	if i := uint(self.position); i < uint(len(enumNames_Aim)) {
 		return enumNames_Aim[i]
 	}
-	return "Aim(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Aim(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Aim = [...]string{"gold", "mood"}
 
-var enumFound_Aim = [...]Aim{AimGold, AimMood}
+var enumFound_Aim = [...]Aim{{0}, {1}}
 
 func ParseAim(wire string) (Aim, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Aim[:], wire); ok {
 		return enumFound_Aim[i], true
 	}
-	return 0, false
+	return Aim{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Aim) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Aim = [...]Aim{AimGold, AimMood}
+var enumMembers_Aim = [...]Aim{{0}, {1}}
 
 func AimMembers() iter.Seq[Aim] {
 	return func(yield func(Aim) bool) {
@@ -79,11 +79,15 @@ func AimLiveMembers() iter.Seq[Aim] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Aim) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Aim) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseAim(wire); !ok {
-		return nil, errors.New("Aim: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Aim: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -99,48 +103,48 @@ func (self *Aim) UnmarshalText(text []byte) error {
 }
 
 // Mood: A mood.
-type Mood uint8
+type Mood struct{ position uint8 }
 
-const (
-	MoodCalm Mood = 0
-	MoodGrim Mood = 1
+var (
+	MoodCalm = Mood{0}
+	MoodGrim = Mood{1}
 )
 
 var enumNames_Mood = [...]string{"calm", "grim"}
 
 func (self Mood) String() string {
-	if i := uint(self); i < uint(len(enumNames_Mood)) {
+	if i := uint(self.position); i < uint(len(enumNames_Mood)) {
 		return enumNames_Mood[i]
 	}
-	return "Mood(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Mood(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Mood) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Mood)) {
+	if i := uint(self.position); i < uint(len(enumNames_Mood)) {
 		return enumNames_Mood[i]
 	}
-	return "Mood(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Mood(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Mood = [...]string{"calm", "grim"}
 
-var enumFound_Mood = [...]Mood{MoodCalm, MoodGrim}
+var enumFound_Mood = [...]Mood{{0}, {1}}
 
 func ParseMood(wire string) (Mood, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Mood[:], wire); ok {
 		return enumFound_Mood[i], true
 	}
-	return 0, false
+	return Mood{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Mood) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Mood = [...]Mood{MoodCalm, MoodGrim}
+var enumMembers_Mood = [...]Mood{{0}, {1}}
 
 func MoodMembers() iter.Seq[Mood] {
 	return func(yield func(Mood) bool) {
@@ -164,11 +168,15 @@ func MoodLiveMembers() iter.Seq[Mood] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Mood) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Mood) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseMood(wire); !ok {
-		return nil, errors.New("Mood: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Mood: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -183,53 +191,57 @@ func (self *Mood) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type RewardKind uint8
+type RewardKind struct{ position uint8 }
 
-const (
-	RewardKindCoins RewardKind = 0
+var (
+	RewardKindCoins = RewardKind{0}
 	// RewardKindNothing: Nothing.
-	RewardKindNothing RewardKind = 1
+	RewardKindNothing = RewardKind{1}
 )
 
 var enumNames_RewardKind = [...]string{"coins", "nothing"}
 
 func (self RewardKind) String() string {
-	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_RewardKind)) {
 		return enumNames_RewardKind[i]
 	}
-	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "RewardKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self RewardKind) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_RewardKind)) {
 		return enumNames_RewardKind[i]
 	}
-	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "RewardKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_RewardKind = [...]string{"coins", "nothing"}
 
-var enumFound_RewardKind = [...]RewardKind{RewardKindCoins, RewardKindNothing}
+var enumFound_RewardKind = [...]RewardKind{{0}, {1}}
 
 func ParseRewardKind(wire string) (RewardKind, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_RewardKind[:], wire); ok {
 		return enumFound_RewardKind[i], true
 	}
-	return 0, false
+	return RewardKind{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self RewardKind) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self RewardKind) Position() int { return int(self.position) }
 
 // MarshalText writes the wire value, never the position.
 func (self RewardKind) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseRewardKind(wire); !ok {
-		return nil, errors.New("RewardKind: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("RewardKind: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -244,12 +256,55 @@ func (self *RewardKind) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type BonusBranch uint8
+type BonusBranch struct{ position uint8 }
 
-const (
-	BonusBranchGold BonusBranch = 0
-	BonusBranchMood BonusBranch = 1
+var (
+	BonusBranchGold = BonusBranch{0}
+	BonusBranchMood = BonusBranch{1}
 )
+
+var enumNames_BonusBranch = [...]string{"gold", "mood"}
+
+func (self BonusBranch) String() string {
+	if i := uint(self.position); i < uint(len(enumNames_BonusBranch)) {
+		return enumNames_BonusBranch[i]
+	}
+	return "BonusBranch(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self BonusBranch) Position() int { return int(self.position) }
+
+// MarshalText writes the branch name, never the position.
+func (self BonusBranch) MarshalText() ([]byte, error) {
+	name := self.String()
+	if _, ok := ParseBonusBranch(name); !ok {
+		return nil, errors.New("BonusBranch: no branch " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(name), nil
+}
+
+// UnmarshalText reads a branch name; an unknown one is an error.
+func (self *BonusBranch) UnmarshalText(text []byte) error {
+	v, ok := ParseBonusBranch(string(text))
+	if !ok {
+		return errors.New("BonusBranch: no branch " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+var enumKeys_BonusBranch = [...]string{"gold", "mood"}
+
+var enumFound_BonusBranch = [...]BonusBranch{{0}, {1}}
+
+func ParseBonusBranch(name string) (BonusBranch, bool) {
+	if i, ok := slices.BinarySearch(enumKeys_BonusBranch[:], name); ok {
+		return enumFound_BonusBranch[i], true
+	}
+	return BonusBranch{}, false
+}
 
 // StatusID is the key of an entry of statuses: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):

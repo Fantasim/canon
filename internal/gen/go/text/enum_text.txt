@@ -1,8 +1,12 @@
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self %[1]s) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self %[1]s) MarshalText() ([]byte, error) {
 wire := self.Wire()
 if _, ok := %[2]s(wire); !ok {
-return nil, %[4]s.New("%[1]s: no member " + %[3]s.Itoa(int(self)))
+return nil, %[4]s.New("%[1]s: no member " + %[3]s.Itoa(int(self.position)))
 }
 return []byte(wire), nil
 }
@@ -16,4 +20,3 @@ return %[4]s.New("%[1]s: no member " + %[3]s.Quote(string(text)))
 *self = v
 return nil
 }
-

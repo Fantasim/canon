@@ -239,5 +239,5 @@ func (g *gen) zeroOf(t ir.TypeRef) string {
 	case t.Kind == types.Ref && !isTableRef(t.Ref) && t.Key != nil:
 		return g.zeroOf(*t.Key)
 	}
-	return zeroLit
+	return g.zeroNumber(t)
 }

@@ -10,48 +10,48 @@ import (
 	"strconv"
 )
 
-type D uint8
+type D struct{ position uint8 }
 
-const (
-	DNorth D = 0
-	DSouth D = 1
+var (
+	DNorth = D{0}
+	DSouth = D{1}
 )
 
 var enumNames_D = [...]string{"north", "south"}
 
 func (self D) String() string {
-	if i := uint(self); i < uint(len(enumNames_D)) {
+	if i := uint(self.position); i < uint(len(enumNames_D)) {
 		return enumNames_D[i]
 	}
-	return "D(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "D(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self D) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_D)) {
+	if i := uint(self.position); i < uint(len(enumNames_D)) {
 		return enumNames_D[i]
 	}
-	return "D(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "D(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_D = [...]string{"north", "south"}
 
-var enumFound_D = [...]D{DNorth, DSouth}
+var enumFound_D = [...]D{{0}, {1}}
 
 func ParseD(wire string) (D, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_D[:], wire); ok {
 		return enumFound_D[i], true
 	}
-	return 0, false
+	return D{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self D) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_D = [...]D{DNorth, DSouth}
+var enumMembers_D = [...]D{{0}, {1}}
 
 func DMembers() iter.Seq[D] {
 	return func(yield func(D) bool) {
@@ -75,11 +75,15 @@ func DLiveMembers() iter.Seq[D] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self D) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self D) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseD(wire); !ok {
-		return nil, errors.New("D: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("D: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }

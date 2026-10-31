@@ -20,48 +20,48 @@ import (
 const BoardsSchema = "genmapdata.Board@0000000a"
 
 // Element: An element.
-type Element uint8
+type Element struct{ position uint8 }
 
-const (
-	ElementFire  Element = 0
-	ElementWater Element = 1
+var (
+	ElementFire  = Element{0}
+	ElementWater = Element{1}
 )
 
 var enumNames_Element = [...]string{"fire", "water"}
 
 func (self Element) String() string {
-	if i := uint(self); i < uint(len(enumNames_Element)) {
+	if i := uint(self.position); i < uint(len(enumNames_Element)) {
 		return enumNames_Element[i]
 	}
-	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Element(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Element) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Element)) {
+	if i := uint(self.position); i < uint(len(enumNames_Element)) {
 		return enumNames_Element[i]
 	}
-	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Element(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Element = [...]string{"fire", "water"}
 
-var enumFound_Element = [...]Element{ElementFire, ElementWater}
+var enumFound_Element = [...]Element{{0}, {1}}
 
 func ParseElement(wire string) (Element, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Element[:], wire); ok {
 		return enumFound_Element[i], true
 	}
-	return 0, false
+	return Element{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Element) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Element = [...]Element{ElementFire, ElementWater}
+var enumMembers_Element = [...]Element{{0}, {1}}
 
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
@@ -85,11 +85,15 @@ func ElementLiveMembers() iter.Seq[Element] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Element) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Element) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseElement(wire); !ok {
-		return nil, errors.New("Element: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Element: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -183,50 +187,50 @@ func RankFromCode(code uint8) (Rank, bool) {
 }
 
 // Tone: A tone.
-type Tone uint8
+type Tone struct{ position uint8 }
 
-const (
-	TonePlain   Tone = 0
-	ToneSeries1 Tone = 1
+var (
+	TonePlain   = Tone{0}
+	ToneSeries1 = Tone{1}
 )
 
 var enumNames_Tone = [...]string{"plain", "series_1"}
 
 func (self Tone) String() string {
-	if i := uint(self); i < uint(len(enumNames_Tone)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tone)) {
 		return enumNames_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumWires_Tone = [...]string{"plain", "series-1"}
 
 func (self Tone) Wire() string {
-	if i := uint(self); i < uint(len(enumWires_Tone)) {
+	if i := uint(self.position); i < uint(len(enumWires_Tone)) {
 		return enumWires_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Tone = [...]string{"plain", "series-1"}
 
-var enumFound_Tone = [...]Tone{TonePlain, ToneSeries1}
+var enumFound_Tone = [...]Tone{{0}, {1}}
 
 func ParseTone(wire string) (Tone, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
 		return enumFound_Tone[i], true
 	}
-	return 0, false
+	return Tone{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Tone) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Tone = [...]Tone{TonePlain, ToneSeries1}
+var enumMembers_Tone = [...]Tone{{0}, {1}}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
@@ -250,11 +254,15 @@ func ToneLiveMembers() iter.Seq[Tone] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Tone) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Tone) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseTone(wire); !ok {
-		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -372,7 +380,7 @@ func (self *Board) ByBoardTotals() rt.Map[BoardID, int64] { return self.byBoardT
 
 // PerTone: The counts by board, per tone.
 func (self *Board) PerTone(t Tone) rt.Map[BoardID, int64] {
-	return self.perTone[t]
+	return self.perTone[t.Position()]
 }
 
 // Make_Board is for generated code.

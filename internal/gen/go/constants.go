@@ -178,10 +178,9 @@ var goStdImports = map[string]bool{
 
 // Generated names (CODEGEN.md §3.3) and the reference layout's private names (§6.2).
 const (
-	wireArg  = "wire"
-	keyArg   = "key"
-	selfRecv = "self"
-	selfDot  = "self."
+	wireArg, keyArg, nameArg = "wire", "key", "name"
+	selfRecv                 = "self"
+	selfDot                  = "self."
 )
 
 // Number formats.
@@ -214,6 +213,7 @@ const (
 	snapshotTemplate = "snapshot"
 	stringTypeFormat = "type %s string\n\n"
 	constDeclFormat  = "const %s = %s\n\n"
+	varDeclFormat    = "var %s = %s\n\n"
 	schemaDocFormat  = "// %s is the fingerprint of the schema of %s (types, wire names,\n" +
 		"// units), not of its values. The loader refuses a file built from another schema.\n"
 	slotLetter = "i"

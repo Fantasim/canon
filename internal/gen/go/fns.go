@@ -240,7 +240,7 @@ func (g *gen) paramType(t ir.TypeRef) string {
 	return g.goType(t)
 }
 
-// paramIndex is the array index of a parameter: itself for an enum, its Position for a table id, else the
+// paramIndex is the array index of a parameter: its Position for an enum without @codes or a table id, else the
 // plan's local the prelude computes (a Bool, or an enum whose values are @codes).
 func (g *gen) paramIndex(prelude *strings.Builder, name, local string, t ir.TypeRef) string {
 	switch {
@@ -248,8 +248,10 @@ func (g *gen) paramIndex(prelude *strings.Builder, name, local string, t ir.Type
 		prelude.WriteString(fmtBoolIndex(local, name))
 	case t.Kind == types.Enum && isCodes(t.Named):
 		prelude.WriteString(g.codesIndex(local, name, t))
+	case t.Kind == types.Enum && g.opaqueEnum(t.Named):
+		return positionOf(name) // an enum without @codes indexes through Position (CODEGEN.md §5.2)
 	case t.Kind == types.Ref && g.enumIDs(t.Ref.Pkg):
-		return name + dot + positionMethod + callSuffix // an opaque id indexes through Position (CODEGEN.md §5.3)
+		return positionOf(name) // an opaque id indexes through Position (CODEGEN.md §5.3)
 	default:
 		return name
 	}

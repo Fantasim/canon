@@ -22,13 +22,7 @@ func TestShapeKind(t *testing.T) {
 			t.Errorf("ParseShapeKind(%q) = %v, %v", c.name, got, ok)
 		}
 	}
-	if got, ok := kinds.ParseShapeKind("nope"); ok || got != 0 {
+	if got, ok := kinds.ParseShapeKind("nope"); ok || got != (kinds.ShapeKind{}) {
 		t.Errorf("ParseShapeKind(nope) = %v, %v", got, ok)
-	}
-	if got := kinds.ShapeKind({{.Count}}).String(); got != "ShapeKind({{.Count}})" {
-		t.Errorf("out of range String %q", got)
-	}
-	if got := kinds.ShapeKind(65535).Wire(); got != "ShapeKind(65535)" {
-		t.Errorf("out of range Wire %q", got)
 	}
 }

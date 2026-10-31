@@ -6,39 +6,15 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// goPlanned are the plan's names by scope less the hooks it reserves but gen/go does not write: a data loader resolves one of the class's refs (GoHook.Written, log-2026-10-06 "U1 review" 3); less the bound constants (CODEGEN.md §5.15); and less the opaque enums' names that EN-GO writes (DECISIONS 402).
-func goPlanned(p *ir.Package, e *ir.Emit, pl *ir.GoNamePlan) map[string]map[string]bool {
+// goPlanned are the plan's names by scope less the hooks it reserves but gen/go does not write: a data loader resolves one of the class's refs (GoHook.Written, log-2026-10-06 "U1 review" 3); and less the bound constants (CODEGEN.md §5.15).
+func goPlanned(p *ir.Package, _ *ir.Emit, pl *ir.GoNamePlan) map[string]map[string]bool {
 	want := ir.GoScopeNames(pl)
 	pkg := maps.Clone(want["package"])
 	for _, n := range goUnwrittenHooks(p, pl) {
 		delete(pkg, n)
 	}
 	want["package"] = withoutNames(pkg, goBoundNames(p, pl))
-	for scope, names := range goOpaquePending(p, e, pl) { //canon:unordered each scope alone
-		want[scope] = withoutNames(want[scope], names)
-	}
 	return want
-}
-
-// goOpaquePending are the names the plan reserves for enums whose values are positions (DECISIONS 402) that gen/go does not write yet, by scope: Position and position of an enum without @codes and of a kind enum, a branch enum whole; removed when EN-GO lands.
-func goOpaquePending(p *ir.Package, e *ir.Emit, pl *ir.GoNamePlan) map[string][]string {
-	pending := map[string][]string{}
-	own := []string{"Position", "position"}
-	for _, t := range p.Types {
-		switch x := t.(type) {
-		case *ir.Enum:
-			if x.Codes == nil && !ir.OpenEnum(p, e, x) {
-				pending[pl.TypeName(x)] = own
-			}
-		case *ir.Variant:
-			pending[pl.KindName(x)] = own
-		case *ir.Dependent:
-			branch := pl.Dependent(x).Branch
-			pending["package"] = append(pending["package"], pl.ParseName(branch), pl.TableName(ir.GoTableNames, branch), pl.TableName(ir.GoTableKeys, branch), pl.TableName(ir.GoTableFound, branch))
-			pending[branch] = []string{"String", "MarshalText", "UnmarshalText", "Position", "position"}
-		}
-	}
-	return pending
 }
 
 // goUnwrittenHooks are the reserved Go make hooks of p's records and cases that are not written.

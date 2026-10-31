@@ -19,49 +19,49 @@ import (
 // units), not of its values. The loader refuses a file built from another schema.
 const ThingsSchema = "dep.Thing@00000001"
 
-type K uint8
+type K struct{ position uint8 }
 
-const (
-	KOne   K = 0
-	KTwo   K = 1
-	KThree K = 2
+var (
+	KOne   = K{0}
+	KTwo   = K{1}
+	KThree = K{2}
 )
 
 var enumNames_K = [...]string{"one", "two", "three"}
 
 func (self K) String() string {
-	if i := uint(self); i < uint(len(enumNames_K)) {
+	if i := uint(self.position); i < uint(len(enumNames_K)) {
 		return enumNames_K[i]
 	}
-	return "K(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "K(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self K) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_K)) {
+	if i := uint(self.position); i < uint(len(enumNames_K)) {
 		return enumNames_K[i]
 	}
-	return "K(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "K(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_K = [...]string{"one", "three", "two"}
 
-var enumFound_K = [...]K{KOne, KThree, KTwo}
+var enumFound_K = [...]K{{0}, {2}, {1}}
 
 func ParseK(wire string) (K, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_K[:], wire); ok {
 		return enumFound_K[i], true
 	}
-	return 0, false
+	return K{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self K) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_K = [...]K{KOne, KTwo, KThree}
+var enumMembers_K = [...]K{{0}, {1}, {2}}
 
 func KMembers() iter.Seq[K] {
 	return func(yield func(K) bool) {
@@ -85,11 +85,15 @@ func KLiveMembers() iter.Seq[K] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self K) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self K) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseK(wire); !ok {
-		return nil, errors.New("K: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("K: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -104,12 +108,55 @@ func (self *K) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type PBranch uint8
+type PBranch struct{ position uint8 }
 
-const (
-	PBranchOne PBranch = 0
-	PBranchTwo PBranch = 1
+var (
+	PBranchOne = PBranch{0}
+	PBranchTwo = PBranch{1}
 )
+
+var enumNames_PBranch = [...]string{"one", "two"}
+
+func (self PBranch) String() string {
+	if i := uint(self.position); i < uint(len(enumNames_PBranch)) {
+		return enumNames_PBranch[i]
+	}
+	return "PBranch(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self PBranch) Position() int { return int(self.position) }
+
+// MarshalText writes the branch name, never the position.
+func (self PBranch) MarshalText() ([]byte, error) {
+	name := self.String()
+	if _, ok := ParsePBranch(name); !ok {
+		return nil, errors.New("PBranch: no branch " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(name), nil
+}
+
+// UnmarshalText reads a branch name; an unknown one is an error.
+func (self *PBranch) UnmarshalText(text []byte) error {
+	v, ok := ParsePBranch(string(text))
+	if !ok {
+		return errors.New("PBranch: no branch " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+var enumKeys_PBranch = [...]string{"one", "two"}
+
+var enumFound_PBranch = [...]PBranch{{0}, {1}}
+
+func ParsePBranch(name string) (PBranch, bool) {
+	if i, ok := slices.BinarySearch(enumKeys_PBranch[:], name); ok {
+		return enumFound_PBranch[i], true
+	}
+	return PBranch{}, false
+}
 
 type ThingID string
 

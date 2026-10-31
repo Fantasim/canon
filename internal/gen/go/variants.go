@@ -20,6 +20,8 @@ var (
 	enumTextFormat string
 	//go:embed text/id.txt
 	idFormat string
+	//go:embed text/branch.txt
+	branchFormat string
 	//go:embed text/variant.txt
 	variantFormat string
 	//go:embed text/as_case.txt

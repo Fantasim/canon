@@ -59,10 +59,10 @@ func TestEdge(t *testing.T) {
 	if got := closed.E(7).Wire(); got != "E(7)" {
 		t.Errorf("E(7).Wire() = %q", got)
 	}
-	if closed.Z(0).String() != "Z(0)" || closed.Z(1).Wire() != "Z(1)" {
-		t.Errorf("Z: %q %q", closed.Z(0).String(), closed.Z(1).Wire())
+	if (closed.Z{}).String() != "Z(0)" {
+		t.Errorf("Z: %q", (closed.Z{}).String())
 	}
-	if got, ok := closed.ParseZ("x"); ok || got != 0 {
+	if got, ok := closed.ParseZ("x"); ok || got != (closed.Z{}) {
 		t.Errorf("ParseZ(x) = %v, %v", got, ok)
 	}
 	if got, ok := closed.ZCFromCode(0); ok || got != 0 {
@@ -71,8 +71,8 @@ func TestEdge(t *testing.T) {
 	for range closed.ZMembers() {
 		t.Error("Z has a member")
 	}
-	if _, err := closed.Z(0).MarshalText(); err == nil {
-		t.Error("Z(0).MarshalText succeeded")
+	if _, err := (closed.Z{}).MarshalText(); err == nil {
+		t.Error("Z{}.MarshalText succeeded")
 	}
 }
 `

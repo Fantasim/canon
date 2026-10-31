@@ -74,7 +74,7 @@ func TestDependentDeclarations(t *testing.T) {
 	files := generateData(t, dependentPkg())
 	src := string(files["dep/out/go/dep.gen.go"])
 	for _, want := range []string{
-		"type PBranch uint8", "PBranchOne PBranch = 0", "PBranchTwo PBranch = 1",
+		"type PBranch struct{ position uint8 }", "PBranchOne = PBranch{0}", "PBranchTwo = PBranch{1}",
 		"type P struct", "branch PBranch", "value  any",
 		"func (self *P) Branch() PBranch { return self.branch }",
 		"func (self *P) AsOne() (int64, bool)", "func (self *P) AsTwo() (string, bool)",
@@ -90,9 +90,14 @@ func TestDependentDeclarations(t *testing.T) {
 	if i, j := strings.Index(src, "type PBranch"), strings.Index(src, "type ThingID"); i < 0 || j < i {
 		t.Errorf("the branch enum PBranch must precede the id enums (CODEGEN.md §2.7)")
 	}
-	for _, unwanted := range []string{"func (self PBranch) String()", "func (self PBranch) Wire()", "func ParsePBranch("} {
+	for _, want := range []string{"func (self PBranch) String()", "func ParsePBranch(", "func (self PBranch) Position() int", "func (self PBranch) MarshalText()"} {
+		if !strings.Contains(src, want) {
+			t.Errorf("CODEGEN.md §5.6, DECISIONS 402: want %q", want)
+		}
+	}
+	for _, unwanted := range []string{"func (self PBranch) Wire()", "func (self PBranch) Retired()"} {
 		if strings.Contains(src, unwanted) {
-			t.Errorf("the branch enum has no String, Wire or Parse<…> (CODEGEN.md §5.6): found %q", unwanted)
+			t.Errorf("the branch enum has no Wire or Retired (CODEGEN.md §5.6, DECISIONS 402): found %q", unwanted)
 		}
 	}
 }

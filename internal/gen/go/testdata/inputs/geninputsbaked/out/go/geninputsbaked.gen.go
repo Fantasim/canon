@@ -14,50 +14,50 @@ import (
 	"example.com/data/geninputsbaked/out/go/rt"
 )
 
-type Mode uint8
+type Mode struct{ position uint8 }
 
-const (
-	ModeFast Mode = 0
-	ModeSlow Mode = 1
+var (
+	ModeFast = Mode{0}
+	ModeSlow = Mode{1}
 	// ModeOld: Retired.
-	ModeOld Mode = 2
+	ModeOld = Mode{2}
 )
 
 var enumNames_Mode = [...]string{"fast", "slow", "old"}
 
 func (self Mode) String() string {
-	if i := uint(self); i < uint(len(enumNames_Mode)) {
+	if i := uint(self.position); i < uint(len(enumNames_Mode)) {
 		return enumNames_Mode[i]
 	}
-	return "Mode(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Mode(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Mode) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Mode)) {
+	if i := uint(self.position); i < uint(len(enumNames_Mode)) {
 		return enumNames_Mode[i]
 	}
-	return "Mode(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Mode(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Mode = [...]string{"fast", "old", "slow"}
 
-var enumFound_Mode = [...]Mode{ModeFast, ModeOld, ModeSlow}
+var enumFound_Mode = [...]Mode{{0}, {2}, {1}}
 
 func ParseMode(wire string) (Mode, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Mode[:], wire); ok {
 		return enumFound_Mode[i], true
 	}
-	return 0, false
+	return Mode{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Mode) Retired() bool {
 	const flags = "001"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Mode = [...]Mode{ModeFast, ModeSlow, ModeOld}
+var enumMembers_Mode = [...]Mode{{0}, {1}, {2}}
 
 func ModeMembers() iter.Seq[Mode] {
 	return func(yield func(Mode) bool) {
@@ -81,11 +81,15 @@ func ModeLiveMembers() iter.Seq[Mode] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Mode) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Mode) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseMode(wire); !ok {
-		return nil, errors.New("Mode: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Mode: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -283,7 +287,7 @@ func LoadInputs() error {
 			}
 		}
 	}
-	input_Gen_mode, input_Gen_mode_OK = 0, false
+	input_Gen_mode, input_Gen_mode_OK = Mode{}, false
 	if r30, ok31 := rt.Env("GENINPUTSBAKED_MODE"); ok31 {
 		switch r30 {
 		case "fast":

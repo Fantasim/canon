@@ -24,8 +24,12 @@ type enumSpec struct {
 	numbers  []string // an opened enum's codes, in member order
 	value    string   // an id enum: the table value its keys name (CODEGEN.md §5.3)
 	id       bool     // an opaque id struct (a baked table's id), not an integer enum
-	text     bool     // MarshalText and UnmarshalText of the wire value (§5.2, DECISIONS 379)
+	text     bool     // an opaque enum or kind enum: a struct holding its position, with MarshalText and UnmarshalText of the wire value (§5.2, DECISIONS 379, 402)
+	branch   bool     // an opaque dependent-type branch enum, named by its branch (§5.6, DECISIONS 402)
 }
+
+// opaque reports a type that is a struct holding a declaration position: an id, an enum without @codes, a kind enum, a branch enum (CODEGEN.md §5.2, DECISIONS 402).
+func (s *enumSpec) opaque() bool { return s.id || s.text || s.branch }
 
 // enumConst is one member: its constant, its value and its doc.
 type enumConst struct {
@@ -149,17 +153,22 @@ func (g *gen) stringID(written map[string]bool, name string) {
 
 // writeEnum writes the type, its constants and its methods.
 func (g *gen) writeEnum(s *enumSpec) {
-	if s.id {
+	switch {
+	case s.id:
 		g.writeID(s)
 		return
+	case s.text:
+		g.body.WriteString(docFor(s.name, s.doc))
+		g.writeStruct(s)
+	default:
+		g.body.WriteString(docFor(s.name, s.doc))
+		g.printf(enumHeaderFormat, s.name, s.under)
+		for _, c := range s.consts {
+			g.body.WriteString(docFor(c.name, c.doc))
+			g.printf(enumConstFormat, c.name, s.name, c.value)
+		}
+		g.printf(closeParenFormat)
 	}
-	g.body.WriteString(docFor(s.name, s.doc))
-	g.printf(enumHeaderFormat, s.name, s.under)
-	for _, c := range s.consts {
-		g.body.WriteString(docFor(c.name, c.doc))
-		g.printf(enumConstFormat, c.name, s.name, c.value)
-	}
-	g.printf(closeParenFormat)
 	if s.open {
 		g.writeOpen(s)
 		return
@@ -167,7 +176,7 @@ func (g *gen) writeEnum(s *enumSpec) {
 	g.writeClosed(s)
 }
 
-// writeClosed writes the methods of an integer enum: String and Wire read tables by the member's index, or by its code when the values are @codes, and Parse<E> searches the sorted keys; the enum methods do not grow with the members (DECISIONS 393).
+// writeClosed writes the methods of a closed enum (an opaque struct, or an integer with @codes): String and Wire read tables by the member's index, or by its code when the values are @codes, and Parse<E> searches the sorted keys; the enum methods do not grow with the members (DECISIONS 393).
 func (g *gen) writeClosed(s *enumSpec) {
 	v := g.enumView(s)
 	idx := s.positions()
@@ -236,7 +245,7 @@ func (g *gen) writeParse(s *enumSpec, v enumView) {
 
 // writeMembers writes <E>Members over the members in declaration order, a table of the package.
 func (g *gen) writeMembers(s *enumSpec, v enumView) {
-	g.writeTable(v.Members, s.name, s.constNames())
+	g.writeTable(v.Members, s.name, s.memberRefs())
 	g.printf(membersFormat, g.names.MembersName(s.name), g.use(iterPkg, iterPkg), s.name, v.Members)
 	g.writeLiveMembers(s, v)
 }

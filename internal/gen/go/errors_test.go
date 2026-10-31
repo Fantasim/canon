@@ -305,7 +305,7 @@ func TestEnumOverrideGenerates(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := string(files[len(files)-1].Content)
-	if !regexp.MustCompile(`\tB +Tone = 0\n`).MatchString(src) || !strings.Contains(src, "\tToneB Tone = 1\n") {
+	if !regexp.MustCompile(`\tB +\= Tone\{0\}\n`).MatchString(src) || !strings.Contains(src, "\tToneB = Tone{1}\n") {
 		t.Errorf("want the constants B and ToneB:\n%s", src)
 	}
 }

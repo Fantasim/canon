@@ -167,7 +167,7 @@ func (g *gen) inputZero(t ir.TypeRef) string {
 	case types.String:
 		return emptyString
 	default:
-		return zeroLit
+		return g.zeroNumber(t)
 	}
 }
 

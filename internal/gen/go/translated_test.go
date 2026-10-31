@@ -106,3 +106,36 @@ func goTest(t *testing.T, files map[string][]byte) ([]byte, error) {
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local", "GOFLAGS=-mod=mod", "GOPROXY=off", "GOWORK=off")
 	return cmd.CombinedOutput()
 }
+
+// CONFORMANCE.md §3, CODEGEN.md §5.2 (DECISIONS 402): translated `<` on an ordered enum without @codes compares Position()s, and the generated module's vectors pass.
+func TestTranslatedOrderedEnum(t *testing.T) {
+	c := newCalc()
+	c.tone.Ordered = true
+	p := c.pkg()
+	less := spec{
+		name: "softer", params: []*ir.Param{{Name: "a", Type: c.toneT}, {Name: "b", Type: c.toneT}}, result: boolT,
+		body: bin(ir.OpLt, boolT, prm(0, c.toneT), prm(1, c.toneT)),
+		vecs: []vec{ok(nil, &value.Bool{V: true}, &value.Member{Index: 0}, &value.Member{Index: 1}), ok(nil, &value.Bool{}, &value.Member{Index: 1}, &value.Member{Index: 0})},
+	}
+	soft, loud := &value.Member{}, &value.Member{Index: 1}
+	flip := &ir.ExportFn{
+		Name: "flip", Doc: "The other tone.", Kind: ir.FnLookup, Result: c.toneT, Params: []*ir.Param{{Name: "t", Type: c.toneT}},
+		Table: &ir.LookupTable{Domains: [][]value.Value{{soft, loud}}, Cells: []value.Value{loud, soft}},
+	}
+	flipped := spec{
+		name: "flippedSofter", params: []*ir.Param{{Name: "a", Type: c.toneT}, {Name: "b", Type: c.toneT}}, result: boolT,
+		body: bin(ir.OpLt, boolT, &ir.CallFn{T: c.toneT, Fn: flip, Args: []ir.PExpr{prm(0, c.toneT)}}, prm(1, c.toneT)),
+		vecs: []vec{ok(nil, &value.Bool{V: true}, loud, loud), ok(nil, &value.Bool{}, soft, loud)},
+	}
+	p.Fns = append(p.Fns, flip, less.build(len(p.Fns)+1), flipped.build(len(p.Fns)+2))
+	files := calcFiles(t, p)
+	if src := string(files["calc.gen.go"]); !strings.Contains(src, "a.Position() < b.Position()") {
+		t.Errorf("the comparison is not over Position():\n%s", src)
+	}
+	if src := string(files["calc.gen.go"]); !strings.Contains(src, "(Flip(a)).Position() < b.Position()") {
+		t.Errorf("a non-inert operand is not parenthesized before Position():\n%s", src)
+	}
+	if out, err := goTest(t, files); err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+}

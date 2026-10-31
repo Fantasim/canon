@@ -19,49 +19,49 @@ import (
 const Version int64 = 7
 
 // Actor: Who may set a flag or make a transition.
-type Actor uint8
+type Actor struct{ position uint8 }
 
-const (
-	ActorReporter          Actor = 0
-	ActorTriager           Actor = 1
-	ActorReporterOrTriager Actor = 2
+var (
+	ActorReporter          = Actor{0}
+	ActorTriager           = Actor{1}
+	ActorReporterOrTriager = Actor{2}
 )
 
 var enumNames_Actor = [...]string{"reporter", "triager", "reporter_or_triager"}
 
 func (self Actor) String() string {
-	if i := uint(self); i < uint(len(enumNames_Actor)) {
+	if i := uint(self.position); i < uint(len(enumNames_Actor)) {
 		return enumNames_Actor[i]
 	}
-	return "Actor(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Actor(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Actor) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Actor)) {
+	if i := uint(self.position); i < uint(len(enumNames_Actor)) {
 		return enumNames_Actor[i]
 	}
-	return "Actor(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Actor(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Actor = [...]string{"reporter", "reporter_or_triager", "triager"}
 
-var enumFound_Actor = [...]Actor{ActorReporter, ActorReporterOrTriager, ActorTriager}
+var enumFound_Actor = [...]Actor{{0}, {2}, {1}}
 
 func ParseActor(wire string) (Actor, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Actor[:], wire); ok {
 		return enumFound_Actor[i], true
 	}
-	return 0, false
+	return Actor{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Actor) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Actor = [...]Actor{ActorReporter, ActorTriager, ActorReporterOrTriager}
+var enumMembers_Actor = [...]Actor{{0}, {1}, {2}}
 
 func ActorMembers() iter.Seq[Actor] {
 	return func(yield func(Actor) bool) {
@@ -85,11 +85,15 @@ func ActorLiveMembers() iter.Seq[Actor] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Actor) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Actor) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseActor(wire); !ok {
-		return nil, errors.New("Actor: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Actor: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -105,50 +109,50 @@ func (self *Actor) UnmarshalText(text []byte) error {
 }
 
 // PostField: Inputs a status transition may collect.
-type PostField uint8
+type PostField struct{ position uint8 }
 
-const (
-	PostFieldAssignee    PostField = 0
-	PostFieldFixedIn     PostField = 1
-	PostFieldReason      PostField = 2
-	PostFieldDuplicateOf PostField = 3
+var (
+	PostFieldAssignee    = PostField{0}
+	PostFieldFixedIn     = PostField{1}
+	PostFieldReason      = PostField{2}
+	PostFieldDuplicateOf = PostField{3}
 )
 
 var enumNames_PostField = [...]string{"assignee", "fixed_in", "reason", "duplicate_of"}
 
 func (self PostField) String() string {
-	if i := uint(self); i < uint(len(enumNames_PostField)) {
+	if i := uint(self.position); i < uint(len(enumNames_PostField)) {
 		return enumNames_PostField[i]
 	}
-	return "PostField(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "PostField(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self PostField) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_PostField)) {
+	if i := uint(self.position); i < uint(len(enumNames_PostField)) {
 		return enumNames_PostField[i]
 	}
-	return "PostField(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "PostField(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_PostField = [...]string{"assignee", "duplicate_of", "fixed_in", "reason"}
 
-var enumFound_PostField = [...]PostField{PostFieldAssignee, PostFieldDuplicateOf, PostFieldFixedIn, PostFieldReason}
+var enumFound_PostField = [...]PostField{{0}, {3}, {1}, {2}}
 
 func ParsePostField(wire string) (PostField, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_PostField[:], wire); ok {
 		return enumFound_PostField[i], true
 	}
-	return 0, false
+	return PostField{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self PostField) Retired() bool {
 	const flags = "0000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_PostField = [...]PostField{PostFieldAssignee, PostFieldFixedIn, PostFieldReason, PostFieldDuplicateOf}
+var enumMembers_PostField = [...]PostField{{0}, {1}, {2}, {3}}
 
 func PostFieldMembers() iter.Seq[PostField] {
 	return func(yield func(PostField) bool) {
@@ -172,11 +176,15 @@ func PostFieldLiveMembers() iter.Seq[PostField] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self PostField) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self PostField) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParsePostField(wire); !ok {
-		return nil, errors.New("PostField: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("PostField: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -1739,7 +1747,7 @@ var areasVisibleToTable = sync.OnceValue(func() *[6]rt.List[*Area] {
 
 // AreasVisibleTo: sovcommon's AreasVisibleTo: minRole gates viewing and posting.
 func AreasVisibleTo(role roles.Role) rt.List[*Area] {
-	return areasVisibleToTable()[role]
+	return areasVisibleToTable()[role.Position()]
 }
 
 var groupedAreasVisibleToTable = sync.OnceValue(func() *[6]rt.List[*AreaSection] {
@@ -1850,5 +1858,5 @@ var groupedAreasVisibleToTable = sync.OnceValue(func() *[6]rt.List[*AreaSection]
 
 // GroupedAreasVisibleTo: sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area.
 func GroupedAreasVisibleTo(role roles.Role) rt.List[*AreaSection] {
-	return groupedAreasVisibleToTable()[role]
+	return groupedAreasVisibleToTable()[role.Position()]
 }

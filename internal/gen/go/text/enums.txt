@@ -1,9 +1,9 @@
 {{define "enumText"}}func (self {{.Name}}) {{.Method}}() string {
-{{if .Dense}}if i := uint(self); i < uint(len({{.Table}})) {
+{{if .Dense}}if i := uint({{.Value}}); i < uint(len({{.Table}})) {
 {{else}}if i, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], self); ok {
 {{end}}return {{.Table}}[i]
 }
-return "{{.Name}}(" + {{.Strconv}}.FormatInt(int64(self), 10) + ")"
+return "{{.Name}}(" + {{.Strconv}}.FormatInt(int64({{.Value}}), 10) + ")"
 }
 
 {{end}}

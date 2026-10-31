@@ -11,49 +11,49 @@ import (
 )
 
 // Grade: Upgrade grades of a weapon, lowest first.
-type Grade uint8
+type Grade struct{ position uint8 }
 
-const (
-	GradeNormal   Grade = 0
-	GradeUnique   Grade = 1
-	GradeUltimate Grade = 2
+var (
+	GradeNormal   = Grade{0}
+	GradeUnique   = Grade{1}
+	GradeUltimate = Grade{2}
 )
 
 var enumNames_Grade = [...]string{"normal", "unique", "ultimate"}
 
 func (self Grade) String() string {
-	if i := uint(self); i < uint(len(enumNames_Grade)) {
+	if i := uint(self.position); i < uint(len(enumNames_Grade)) {
 		return enumNames_Grade[i]
 	}
-	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Grade(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Grade) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Grade)) {
+	if i := uint(self.position); i < uint(len(enumNames_Grade)) {
 		return enumNames_Grade[i]
 	}
-	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Grade(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Grade = [...]string{"normal", "ultimate", "unique"}
 
-var enumFound_Grade = [...]Grade{GradeNormal, GradeUltimate, GradeUnique}
+var enumFound_Grade = [...]Grade{{0}, {2}, {1}}
 
 func ParseGrade(wire string) (Grade, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Grade[:], wire); ok {
 		return enumFound_Grade[i], true
 	}
-	return 0, false
+	return Grade{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Grade) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Grade = [...]Grade{GradeNormal, GradeUnique, GradeUltimate}
+var enumMembers_Grade = [...]Grade{{0}, {1}, {2}}
 
 func GradeMembers() iter.Seq[Grade] {
 	return func(yield func(Grade) bool) {
@@ -77,11 +77,15 @@ func GradeLiveMembers() iter.Seq[Grade] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Grade) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Grade) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseGrade(wire); !ok {
-		return nil, errors.New("Grade: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Grade: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -97,14 +101,14 @@ func (self *Grade) UnmarshalText(text []byte) error {
 }
 
 // Tier: Job tiers, lowest first.
-type Tier uint8
+type Tier struct{ position uint8 }
 
-const (
-	TierVagrant Tier = 0
-	TierExpert  Tier = 1
-	TierPro     Tier = 2
-	TierMaster  Tier = 3
-	TierHero    Tier = 4
+var (
+	TierVagrant = Tier{0}
+	TierExpert  = Tier{1}
+	TierPro     = Tier{2}
+	TierMaster  = Tier{3}
+	TierHero    = Tier{4}
 )
 
 var enumNames_Tier = [...]string{
@@ -113,17 +117,17 @@ var enumNames_Tier = [...]string{
 }
 
 func (self Tier) String() string {
-	if i := uint(self); i < uint(len(enumNames_Tier)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tier)) {
 		return enumNames_Tier[i]
 	}
-	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tier(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Tier) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Tier)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tier)) {
 		return enumNames_Tier[i]
 	}
-	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tier(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Tier = [...]string{
@@ -132,27 +136,27 @@ var enumKeys_Tier = [...]string{
 }
 
 var enumFound_Tier = [...]Tier{
-	TierExpert, TierHero, TierMaster, TierPro,
-	TierVagrant,
+	{1}, {4}, {3}, {2},
+	{0},
 }
 
 func ParseTier(wire string) (Tier, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Tier[:], wire); ok {
 		return enumFound_Tier[i], true
 	}
-	return 0, false
+	return Tier{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Tier) Retired() bool {
 	const flags = "00000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_Tier = [...]Tier{
-	TierVagrant, TierExpert, TierPro, TierMaster,
-	TierHero,
+	{0}, {1}, {2}, {3},
+	{4},
 }
 
 func TierMembers() iter.Seq[Tier] {
@@ -177,11 +181,15 @@ func TierLiveMembers() iter.Seq[Tier] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Tier) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Tier) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseTier(wire); !ok {
-		return nil, errors.New("Tier: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Tier: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -205,12 +213,12 @@ var canUpgradeTable = [3][5]bool{
 // CanUpgrade: Whether a character of `tier` may upgrade a weapon of `grade`: a 3 x 5 table in
 // generated code.
 func CanUpgrade(grade Grade, tier Tier) bool {
-	return canUpgradeTable[grade][tier]
+	return canUpgradeTable[grade.Position()][tier.Position()]
 }
 
 var upgradeCostTable = [3]int64{10000, 500000, 20000000}
 
 // UpgradeCost: Penya an upgrade costs: a 3-entry table.
 func UpgradeCost(grade Grade) int64 {
-	return upgradeCostTable[grade]
+	return upgradeCostTable[grade.Position()]
 }

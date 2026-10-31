@@ -12,50 +12,50 @@ import (
 )
 
 // Tone: A colour.
-type Tone uint8
+type Tone struct{ position uint8 }
 
-const (
+var (
 	// ToneRed: Warm.
-	ToneRed Tone = 0
+	ToneRed = Tone{0}
 	// ToneBlue: Cold.
-	ToneBlue Tone = 1
+	ToneBlue = Tone{1}
 )
 
 var enumNames_Tone = [...]string{"red", "blue"}
 
 func (self Tone) String() string {
-	if i := uint(self); i < uint(len(enumNames_Tone)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tone)) {
 		return enumNames_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Tone) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Tone)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tone)) {
 		return enumNames_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Tone = [...]string{"blue", "red"}
 
-var enumFound_Tone = [...]Tone{ToneBlue, ToneRed}
+var enumFound_Tone = [...]Tone{{1}, {0}}
 
 func ParseTone(wire string) (Tone, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
 		return enumFound_Tone[i], true
 	}
-	return 0, false
+	return Tone{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Tone) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Tone = [...]Tone{ToneRed, ToneBlue}
+var enumMembers_Tone = [...]Tone{{0}, {1}}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
@@ -79,11 +79,15 @@ func ToneLiveMembers() iter.Seq[Tone] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Tone) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Tone) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseTone(wire); !ok {
-		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }

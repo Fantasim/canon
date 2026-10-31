@@ -16,7 +16,7 @@ func Example() {
 	fmt.Println(constructs.ElementFire.Code(), constructs.ElementEarth, constructs.GradeUltimate1.Wire(), constructs.FeelingAPIURL)
 	e, ok := constructs.ElementFromCode(4)
 	_, bad := constructs.ElementFromCode(3)
-	fmt.Println(e, ok, bad, constructs.Element(9), constructs.GradeUnique < constructs.GradeUltimate1)
+	fmt.Println(e, ok, bad, constructs.Element(9), constructs.GradeUnique.Position() < constructs.GradeUltimate1.Position())
 	for p := range constructs.GetPotions().All() {
 		note, hasNote := p.Note()
 		level, hasLevel := p.Level()

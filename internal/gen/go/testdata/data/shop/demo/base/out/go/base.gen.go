@@ -11,48 +11,48 @@ import (
 	"sync"
 )
 
-type Role uint8
+type Role struct{ position uint8 }
 
-const (
-	RoleViewer Role = 0
-	RoleAdmin  Role = 1
+var (
+	RoleViewer = Role{0}
+	RoleAdmin  = Role{1}
 )
 
 var enumNames_Role = [...]string{"viewer", "admin"}
 
 func (self Role) String() string {
-	if i := uint(self); i < uint(len(enumNames_Role)) {
+	if i := uint(self.position); i < uint(len(enumNames_Role)) {
 		return enumNames_Role[i]
 	}
-	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Role(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Role) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Role)) {
+	if i := uint(self.position); i < uint(len(enumNames_Role)) {
 		return enumNames_Role[i]
 	}
-	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Role(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Role = [...]string{"admin", "viewer"}
 
-var enumFound_Role = [...]Role{RoleAdmin, RoleViewer}
+var enumFound_Role = [...]Role{{1}, {0}}
 
 func ParseRole(wire string) (Role, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Role[:], wire); ok {
 		return enumFound_Role[i], true
 	}
-	return 0, false
+	return Role{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Role) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Role = [...]Role{RoleViewer, RoleAdmin}
+var enumMembers_Role = [...]Role{{0}, {1}}
 
 func RoleMembers() iter.Seq[Role] {
 	return func(yield func(Role) bool) {
@@ -76,11 +76,15 @@ func RoleLiveMembers() iter.Seq[Role] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Role) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Role) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseRole(wire); !ok {
-		return nil, errors.New("Role: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Role: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }

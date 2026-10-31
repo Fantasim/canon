@@ -122,6 +122,8 @@ func (t *tr) binary(x *ir.Binary, b *lines) string {
 	case !arithmetic && !native:
 		t.g.failf(ErrMalformed, "binary operator %d in %s", x.Op, t.g.at)
 		return nilLit
+	case !arithmetic && t.g.positionCompare(x):
+		return t.g.positionOperand(ops[0]) + space + text + space + t.g.positionOperand(ops[1])
 	case !arithmetic:
 		return nativeOperand(x.Op, x.X, ops[0], false) + space + text + space + nativeOperand(x.Op, x.Y, ops[1], true)
 	case x.Op == ir.OpDiv && xk == types.Duration && yk == types.Duration:

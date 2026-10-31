@@ -33,7 +33,7 @@ const Tick = 90000 * time.Millisecond
 
 const NoWait = 0 * time.Millisecond
 
-const DefaultGrade = GradeUnique
+var DefaultGrade = GradeUnique
 
 // Primes: Small primes.
 func Primes() rt.List[int64] { return rt.MakeList([]int64{2, 3, 5, 7}) }
@@ -121,51 +121,51 @@ func ElementFromCode(code uint8) (Element, bool) {
 }
 
 // Grade: Upgrade grades.
-type Grade uint8
+type Grade struct{ position uint8 }
 
-const (
-	GradeNormal    Grade = 0
-	GradeUnique    Grade = 1
-	GradeUltimate1 Grade = 2
+var (
+	GradeNormal    = Grade{0}
+	GradeUnique    = Grade{1}
+	GradeUltimate1 = Grade{2}
 )
 
 var enumNames_Grade = [...]string{"normal", "unique", "ultimate_1"}
 
 func (self Grade) String() string {
-	if i := uint(self); i < uint(len(enumNames_Grade)) {
+	if i := uint(self.position); i < uint(len(enumNames_Grade)) {
 		return enumNames_Grade[i]
 	}
-	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Grade(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumWires_Grade = [...]string{"normal", "unique", "ultimate-1"}
 
 func (self Grade) Wire() string {
-	if i := uint(self); i < uint(len(enumWires_Grade)) {
+	if i := uint(self.position); i < uint(len(enumWires_Grade)) {
 		return enumWires_Grade[i]
 	}
-	return "Grade(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Grade(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Grade = [...]string{"normal", "ultimate-1", "unique"}
 
-var enumFound_Grade = [...]Grade{GradeNormal, GradeUltimate1, GradeUnique}
+var enumFound_Grade = [...]Grade{{0}, {2}, {1}}
 
 func ParseGrade(wire string) (Grade, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Grade[:], wire); ok {
 		return enumFound_Grade[i], true
 	}
-	return 0, false
+	return Grade{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Grade) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Grade = [...]Grade{GradeNormal, GradeUnique, GradeUltimate1}
+var enumMembers_Grade = [...]Grade{{0}, {1}, {2}}
 
 func GradeMembers() iter.Seq[Grade] {
 	return func(yield func(Grade) bool) {
@@ -189,11 +189,15 @@ func GradeLiveMembers() iter.Seq[Grade] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Grade) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Grade) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseGrade(wire); !ok {
-		return nil, errors.New("Grade: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Grade: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -208,48 +212,48 @@ func (self *Grade) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type Feeling uint8
+type Feeling struct{ position uint8 }
 
-const (
-	FeelingCalm   Feeling = 0
-	FeelingAPIURL Feeling = 1
+var (
+	FeelingCalm   = Feeling{0}
+	FeelingAPIURL = Feeling{1}
 )
 
 var enumNames_Feeling = [...]string{"calm", "api_url"}
 
 func (self Feeling) String() string {
-	if i := uint(self); i < uint(len(enumNames_Feeling)) {
+	if i := uint(self.position); i < uint(len(enumNames_Feeling)) {
 		return enumNames_Feeling[i]
 	}
-	return "Feeling(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Feeling(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Feeling) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Feeling)) {
+	if i := uint(self.position); i < uint(len(enumNames_Feeling)) {
 		return enumNames_Feeling[i]
 	}
-	return "Feeling(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Feeling(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Feeling = [...]string{"api_url", "calm"}
 
-var enumFound_Feeling = [...]Feeling{FeelingAPIURL, FeelingCalm}
+var enumFound_Feeling = [...]Feeling{{1}, {0}}
 
 func ParseFeeling(wire string) (Feeling, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Feeling[:], wire); ok {
 		return enumFound_Feeling[i], true
 	}
-	return 0, false
+	return Feeling{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Feeling) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Feeling = [...]Feeling{FeelingCalm, FeelingAPIURL}
+var enumMembers_Feeling = [...]Feeling{{0}, {1}}
 
 func FeelingMembers() iter.Seq[Feeling] {
 	return func(yield func(Feeling) bool) {
@@ -273,11 +277,15 @@ func FeelingLiveMembers() iter.Seq[Feeling] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Feeling) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Feeling) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseFeeling(wire); !ok {
-		return nil, errors.New("Feeling: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Feeling: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -292,53 +300,57 @@ func (self *Feeling) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type ShapeKind uint8
+type ShapeKind struct{ position uint8 }
 
-const (
-	ShapeKindCircle ShapeKind = 0
-	ShapeKindSquare ShapeKind = 1
-	ShapeKindNone   ShapeKind = 2
+var (
+	ShapeKindCircle = ShapeKind{0}
+	ShapeKindSquare = ShapeKind{1}
+	ShapeKindNone   = ShapeKind{2}
 )
 
 var enumNames_ShapeKind = [...]string{"circle", "square", "none_"}
 
 func (self ShapeKind) String() string {
-	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_ShapeKind)) {
 		return enumNames_ShapeKind[i]
 	}
-	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ShapeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self ShapeKind) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_ShapeKind)) {
 		return enumNames_ShapeKind[i]
 	}
-	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ShapeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_ShapeKind = [...]string{"circle", "none_", "square"}
 
-var enumFound_ShapeKind = [...]ShapeKind{ShapeKindCircle, ShapeKindNone, ShapeKindSquare}
+var enumFound_ShapeKind = [...]ShapeKind{{0}, {2}, {1}}
 
 func ParseShapeKind(wire string) (ShapeKind, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_ShapeKind[:], wire); ok {
 		return enumFound_ShapeKind[i], true
 	}
-	return 0, false
+	return ShapeKind{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self ShapeKind) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self ShapeKind) Position() int { return int(self.position) }
 
 // MarshalText writes the wire value, never the position.
 func (self ShapeKind) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseShapeKind(wire); !ok {
-		return nil, errors.New("ShapeKind: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("ShapeKind: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -500,7 +512,7 @@ func (self *Potion) CanUse(grade Grade, night bool) bool {
 	if night {
 		night_i = 1
 	}
-	return self.canUse[grade][night_i]
+	return self.canUse[grade.Position()][night_i]
 }
 
 func (self *Potion) CostIn(e Element) (int64, bool) {
@@ -902,7 +914,7 @@ var upgradeCostTable = [3]int64{10000, 500000, 20000000}
 
 // UpgradeCost: Penya an upgrade costs.
 func UpgradeCost(grade Grade) int64 {
-	return upgradeCostTable[grade]
+	return upgradeCostTable[grade.Position()]
 }
 
 var canUpgradeTable = [3][2]bool{
@@ -916,7 +928,7 @@ func CanUpgrade(grade Grade, len_ bool) bool {
 	if len_ {
 		len__i = 1
 	}
-	return canUpgradeTable[grade][len__i]
+	return canUpgradeTable[grade.Position()][len__i]
 }
 
 var runeForTable = sync.OnceValue(func() *[3]*Rune {
@@ -976,5 +988,5 @@ var shapeOfTable = [3]*Shape{
 }
 
 func ShapeOf(grade Grade) *Shape {
-	return shapeOfTable[grade]
+	return shapeOfTable[grade.Position()]
 }

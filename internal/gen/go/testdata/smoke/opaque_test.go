@@ -17,22 +17,39 @@ type holder struct {
 	T opaque.Tone
 	M map[opaque.Tone]int
 	C opaque.Coded
+	K opaque.ShapeKind
+	B opaque.MoodBranch
 }
 
 // Smoke test of an opaque id and of the text encoders of an enum (CODEGEN.md §5.2, §5.3; DECISIONS 379).
 func TestIDTypeOpaque(t *testing.T) {
-	h := holder{S: opaque.StatusIDTaken, L: []opaque.StatusID{opaque.StatusIDOpen}, T: opaque.ToneSeries1, M: map[opaque.Tone]int{opaque.ToneSeries1: 1}, C: opaque.CodedHigh}
+	h := holder{S: opaque.StatusIDTaken, L: []opaque.StatusID{opaque.StatusIDOpen}, T: opaque.ToneSeries1, M: map[opaque.Tone]int{opaque.ToneSeries1: 1}, C: opaque.CodedHigh, K: opaque.ShapeKindFlat, B: opaque.MoodBranchSeries}
 	got, err := json.Marshal(h)
-	const want = `{"S":"taken","L":["open"],"T":"series-1","M":{"series-1":1},"C":200}`
+	const want = `{"S":"taken","L":["open"],"T":"series-1","M":{"series-1":1},"C":200,"K":"flat","B":"series"}`
 	if err != nil || string(got) != want {
 		t.Fatalf("json.Marshal = %s, %v; want %s", got, err, want)
 	}
 	var back holder
-	if err := json.Unmarshal(got, &back); err != nil || back.S != h.S || back.L[0] != h.L[0] || back.T != h.T || back.M[opaque.ToneSeries1] != 1 || back.C != h.C {
+	if err := json.Unmarshal(got, &back); err != nil || back.S != h.S || back.L[0] != h.L[0] || back.T != h.T || back.M[opaque.ToneSeries1] != 1 || back.C != h.C || back.K != h.K || back.B != h.B {
 		t.Fatalf("round trip = %+v, %v", back, err)
 	}
 	if opaque.StatusIDTaken.Position() != 1 || opaque.StatusIDTaken.String() != "taken" {
 		t.Error("Position or String")
+	}
+	if opaque.ToneSeries1.Position() != 1 || opaque.ShapeKindFlat.Position() != 1 || opaque.MoodBranchSeries.Position() != 1 {
+		t.Error("Position of an enum, kind or branch enum")
+	}
+	var mood opaque.MoodBranch
+	if err := mood.UnmarshalText([]byte("nope")); err == nil || err.Error() != `MoodBranch: no branch "nope"` {
+		t.Errorf("unknown branch: %v", err)
+	}
+	for _, v := range []any{opaque.ToneSeries1, opaque.ShapeKindFlat, opaque.MoodBranchSeries} {
+		if _, err := driver.DefaultParameterConverter.ConvertValue(v); err == nil {
+			t.Errorf("database/sql stored %T", v)
+		}
+		if err := gob.NewEncoder(&bytes.Buffer{}).Encode(v); err == nil {
+			t.Errorf("gob wrote %T", v)
+		}
 	}
 	var id opaque.StatusID
 	if err := id.UnmarshalText([]byte("nope")); err == nil || err.Error() != `StatusID: no entry "nope"` {
@@ -51,9 +68,6 @@ func TestEnumMarshalText(t *testing.T) {
 	var tone opaque.Tone
 	if err := tone.UnmarshalText([]byte("nope")); err == nil || err.Error() != `Tone: no member "nope"` {
 		t.Errorf("unknown wire value: %v", err)
-	}
-	if _, err := opaque.Tone(9).MarshalText(); err == nil || err.Error() != "Tone: no member 9" {
-		t.Errorf("non-member value: %v", err)
 	}
 	if _, ok := any(opaque.CodedHigh).(encoding.TextMarshaler); ok {
 		t.Error("an @codes enum has MarshalText")

@@ -24,7 +24,9 @@ func (g *gen) constant(c *ir.Const) {
 		g.printf("func %s() %s { return %s }\n\n", name, g.goType(c.Type), g.expr(c.Type, c.V))
 	case types.Int, types.Float:
 		g.printf("const %s %s = %s\n\n", name, g.goType(c.Type), g.constExpr(c))
-	case types.Bool, types.String, types.LitUnion, types.Duration, types.Enum:
+	case types.Enum:
+		g.printf(g.enumConstFormat(c.Type), name, g.constExpr(c)) // an opaque enum's member is a var (CODEGEN.md §5.2)
+	case types.Bool, types.String, types.LitUnion, types.Duration:
 		g.printf(constDeclFormat, name, g.constExpr(c))
 	default:
 		g.failKind(c.Type.Kind)

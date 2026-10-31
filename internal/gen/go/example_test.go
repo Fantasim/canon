@@ -25,6 +25,6 @@ func ExampleGenerate() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(files[0].Path, files[1].Path, strings.Contains(string(files[1].Content), "const DefaultSize = SizeExtraLarge"))
+	fmt.Println(files[0].Path, files[1].Path, strings.Contains(string(files[1].Content), "var DefaultSize = SizeExtraLarge"))
 	// Output: rt/rt.go shop.gen.go true
 }

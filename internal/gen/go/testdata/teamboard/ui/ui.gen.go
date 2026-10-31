@@ -16,21 +16,21 @@ import (
 //
 // Semantic tones are reserved for meaning (status, severity, flags, intent).
 // Qualitative series slots tell families apart, always together with icon + label.
-type Tone uint8
+type Tone struct{ position uint8 }
 
-const (
-	ToneWarning Tone = 0
-	ToneInfo    Tone = 1
-	ToneAccent  Tone = 2
-	ToneSuccess Tone = 3
-	ToneNeutral Tone = 4
-	ToneDanger  Tone = 5
-	ToneSeries1 Tone = 6
-	ToneSeries2 Tone = 7
-	ToneSeries3 Tone = 8
-	ToneSeries4 Tone = 9
-	ToneSeries5 Tone = 10
-	ToneSeries6 Tone = 11
+var (
+	ToneWarning = Tone{0}
+	ToneInfo    = Tone{1}
+	ToneAccent  = Tone{2}
+	ToneSuccess = Tone{3}
+	ToneNeutral = Tone{4}
+	ToneDanger  = Tone{5}
+	ToneSeries1 = Tone{6}
+	ToneSeries2 = Tone{7}
+	ToneSeries3 = Tone{8}
+	ToneSeries4 = Tone{9}
+	ToneSeries5 = Tone{10}
+	ToneSeries6 = Tone{11}
 )
 
 var enumNames_Tone = [...]string{
@@ -40,10 +40,10 @@ var enumNames_Tone = [...]string{
 }
 
 func (self Tone) String() string {
-	if i := uint(self); i < uint(len(enumNames_Tone)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tone)) {
 		return enumNames_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumWires_Tone = [...]string{
@@ -53,10 +53,10 @@ var enumWires_Tone = [...]string{
 }
 
 func (self Tone) Wire() string {
-	if i := uint(self); i < uint(len(enumWires_Tone)) {
+	if i := uint(self.position); i < uint(len(enumWires_Tone)) {
 		return enumWires_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Tone = [...]string{
@@ -66,29 +66,29 @@ var enumKeys_Tone = [...]string{
 }
 
 var enumFound_Tone = [...]Tone{
-	ToneAccent, ToneDanger, ToneInfo, ToneNeutral,
-	ToneSeries1, ToneSeries2, ToneSeries3, ToneSeries4,
-	ToneSeries5, ToneSeries6, ToneSuccess, ToneWarning,
+	{2}, {5}, {1}, {4},
+	{6}, {7}, {8}, {9},
+	{10}, {11}, {3}, {0},
 }
 
 func ParseTone(wire string) (Tone, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
 		return enumFound_Tone[i], true
 	}
-	return 0, false
+	return Tone{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Tone) Retired() bool {
 	const flags = "000000000000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_Tone = [...]Tone{
-	ToneWarning, ToneInfo, ToneAccent, ToneSuccess,
-	ToneNeutral, ToneDanger, ToneSeries1, ToneSeries2,
-	ToneSeries3, ToneSeries4, ToneSeries5, ToneSeries6,
+	{0}, {1}, {2}, {3},
+	{4}, {5}, {6}, {7},
+	{8}, {9}, {10}, {11},
 }
 
 func ToneMembers() iter.Seq[Tone] {
@@ -113,11 +113,15 @@ func ToneLiveMembers() iter.Seq[Tone] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Tone) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Tone) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseTone(wire); !ok {
-		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -134,28 +138,28 @@ func (self *Tone) UnmarshalText(text []byte) error {
 
 // Icon: Icons sovcommon exports (icons.ts). An icon that is not listed here is a type
 // error wherever it is used, so `make check` no longer has to scrape TypeScript.
-type Icon uint8
+type Icon struct{ position uint8 }
 
-const (
-	IconAlertTriangle Icon = 0
-	IconArchive       Icon = 1
-	IconBarChart      Icon = 2
-	IconCheck         Icon = 3
-	IconColumns       Icon = 4
-	IconDatabase      Icon = 5
-	IconGamepad       Icon = 6
-	IconGlobe         Icon = 7
-	IconHand          Icon = 8
-	IconInbox         Icon = 9
-	IconLayers        Icon = 10
-	IconLightbulb     Icon = 11
-	IconLock          Icon = 12
-	IconMonitor       Icon = 13
-	IconPackage       Icon = 14
-	IconScale         Icon = 15
-	IconServer        Icon = 16
-	IconShield        Icon = 17
-	IconTerminal      Icon = 18
+var (
+	IconAlertTriangle = Icon{0}
+	IconArchive       = Icon{1}
+	IconBarChart      = Icon{2}
+	IconCheck         = Icon{3}
+	IconColumns       = Icon{4}
+	IconDatabase      = Icon{5}
+	IconGamepad       = Icon{6}
+	IconGlobe         = Icon{7}
+	IconHand          = Icon{8}
+	IconInbox         = Icon{9}
+	IconLayers        = Icon{10}
+	IconLightbulb     = Icon{11}
+	IconLock          = Icon{12}
+	IconMonitor       = Icon{13}
+	IconPackage       = Icon{14}
+	IconScale         = Icon{15}
+	IconServer        = Icon{16}
+	IconShield        = Icon{17}
+	IconTerminal      = Icon{18}
 )
 
 var enumNames_Icon = [...]string{
@@ -167,10 +171,10 @@ var enumNames_Icon = [...]string{
 }
 
 func (self Icon) String() string {
-	if i := uint(self); i < uint(len(enumNames_Icon)) {
+	if i := uint(self.position); i < uint(len(enumNames_Icon)) {
 		return enumNames_Icon[i]
 	}
-	return "Icon(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Icon(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumWires_Icon = [...]string{
@@ -182,10 +186,10 @@ var enumWires_Icon = [...]string{
 }
 
 func (self Icon) Wire() string {
-	if i := uint(self); i < uint(len(enumWires_Icon)) {
+	if i := uint(self.position); i < uint(len(enumWires_Icon)) {
 		return enumWires_Icon[i]
 	}
-	return "Icon(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Icon(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Icon = [...]string{
@@ -197,33 +201,33 @@ var enumKeys_Icon = [...]string{
 }
 
 var enumFound_Icon = [...]Icon{
-	IconAlertTriangle, IconArchive, IconBarChart, IconCheck,
-	IconColumns, IconDatabase, IconGamepad, IconGlobe,
-	IconHand, IconInbox, IconLayers, IconLightbulb,
-	IconLock, IconMonitor, IconPackage, IconScale,
-	IconServer, IconShield, IconTerminal,
+	{0}, {1}, {2}, {3},
+	{4}, {5}, {6}, {7},
+	{8}, {9}, {10}, {11},
+	{12}, {13}, {14}, {15},
+	{16}, {17}, {18},
 }
 
 func ParseIcon(wire string) (Icon, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Icon[:], wire); ok {
 		return enumFound_Icon[i], true
 	}
-	return 0, false
+	return Icon{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Icon) Retired() bool {
 	const flags = "0000000000000000000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_Icon = [...]Icon{
-	IconAlertTriangle, IconArchive, IconBarChart, IconCheck,
-	IconColumns, IconDatabase, IconGamepad, IconGlobe,
-	IconHand, IconInbox, IconLayers, IconLightbulb,
-	IconLock, IconMonitor, IconPackage, IconScale,
-	IconServer, IconShield, IconTerminal,
+	{0}, {1}, {2}, {3},
+	{4}, {5}, {6}, {7},
+	{8}, {9}, {10}, {11},
+	{12}, {13}, {14}, {15},
+	{16}, {17}, {18},
 }
 
 func IconMembers() iter.Seq[Icon] {
@@ -248,11 +252,15 @@ func IconLiveMembers() iter.Seq[Icon] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Icon) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Icon) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseIcon(wire); !ok {
-		return nil, errors.New("Icon: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Icon: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }

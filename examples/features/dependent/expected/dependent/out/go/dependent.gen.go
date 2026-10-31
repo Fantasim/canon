@@ -14,50 +14,50 @@ import (
 )
 
 // Goal: What a daily objective counts.
-type Goal uint8
+type Goal struct{ position uint8 }
 
-const (
-	GoalKill       Goal = 0
-	GoalCollect    Goal = 1
-	GoalReachLevel Goal = 2
-	GoalVisit      Goal = 3
+var (
+	GoalKill       = Goal{0}
+	GoalCollect    = Goal{1}
+	GoalReachLevel = Goal{2}
+	GoalVisit      = Goal{3}
 )
 
 var enumNames_Goal = [...]string{"kill", "collect", "reach_level", "visit"}
 
 func (self Goal) String() string {
-	if i := uint(self); i < uint(len(enumNames_Goal)) {
+	if i := uint(self.position); i < uint(len(enumNames_Goal)) {
 		return enumNames_Goal[i]
 	}
-	return "Goal(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Goal(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Goal) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Goal)) {
+	if i := uint(self.position); i < uint(len(enumNames_Goal)) {
 		return enumNames_Goal[i]
 	}
-	return "Goal(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Goal(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Goal = [...]string{"collect", "kill", "reach_level", "visit"}
 
-var enumFound_Goal = [...]Goal{GoalCollect, GoalKill, GoalReachLevel, GoalVisit}
+var enumFound_Goal = [...]Goal{{1}, {0}, {2}, {3}}
 
 func ParseGoal(wire string) (Goal, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Goal[:], wire); ok {
 		return enumFound_Goal[i], true
 	}
-	return 0, false
+	return Goal{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Goal) Retired() bool {
 	const flags = "0000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Goal = [...]Goal{GoalKill, GoalCollect, GoalReachLevel, GoalVisit}
+var enumMembers_Goal = [...]Goal{{0}, {1}, {2}, {3}}
 
 func GoalMembers() iter.Seq[Goal] {
 	return func(yield func(Goal) bool) {
@@ -81,11 +81,15 @@ func GoalLiveMembers() iter.Seq[Goal] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Goal) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Goal) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseGoal(wire); !ok {
-		return nil, errors.New("Goal: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Goal: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -100,20 +104,106 @@ func (self *Goal) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type TargetBranch uint8
+type TargetBranch struct{ position uint8 }
 
-const (
-	TargetBranchKill       TargetBranch = 0
-	TargetBranchCollect    TargetBranch = 1
-	TargetBranchReachLevel TargetBranch = 2
+var (
+	TargetBranchKill       = TargetBranch{0}
+	TargetBranchCollect    = TargetBranch{1}
+	TargetBranchReachLevel = TargetBranch{2}
 )
 
-type RewardBranch uint8
+var enumNames_TargetBranch = [...]string{"kill", "collect", "reach_level"}
 
-const (
-	RewardBranchFalse RewardBranch = 0
-	RewardBranchTrue  RewardBranch = 1
+func (self TargetBranch) String() string {
+	if i := uint(self.position); i < uint(len(enumNames_TargetBranch)) {
+		return enumNames_TargetBranch[i]
+	}
+	return "TargetBranch(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self TargetBranch) Position() int { return int(self.position) }
+
+// MarshalText writes the branch name, never the position.
+func (self TargetBranch) MarshalText() ([]byte, error) {
+	name := self.String()
+	if _, ok := ParseTargetBranch(name); !ok {
+		return nil, errors.New("TargetBranch: no branch " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(name), nil
+}
+
+// UnmarshalText reads a branch name; an unknown one is an error.
+func (self *TargetBranch) UnmarshalText(text []byte) error {
+	v, ok := ParseTargetBranch(string(text))
+	if !ok {
+		return errors.New("TargetBranch: no branch " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+var enumKeys_TargetBranch = [...]string{"collect", "kill", "reach_level"}
+
+var enumFound_TargetBranch = [...]TargetBranch{{1}, {0}, {2}}
+
+func ParseTargetBranch(name string) (TargetBranch, bool) {
+	if i, ok := slices.BinarySearch(enumKeys_TargetBranch[:], name); ok {
+		return enumFound_TargetBranch[i], true
+	}
+	return TargetBranch{}, false
+}
+
+type RewardBranch struct{ position uint8 }
+
+var (
+	RewardBranchFalse = RewardBranch{0}
+	RewardBranchTrue  = RewardBranch{1}
 )
+
+var enumNames_RewardBranch = [...]string{"false", "true"}
+
+func (self RewardBranch) String() string {
+	if i := uint(self.position); i < uint(len(enumNames_RewardBranch)) {
+		return enumNames_RewardBranch[i]
+	}
+	return "RewardBranch(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self RewardBranch) Position() int { return int(self.position) }
+
+// MarshalText writes the branch name, never the position.
+func (self RewardBranch) MarshalText() ([]byte, error) {
+	name := self.String()
+	if _, ok := ParseRewardBranch(name); !ok {
+		return nil, errors.New("RewardBranch: no branch " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(name), nil
+}
+
+// UnmarshalText reads a branch name; an unknown one is an error.
+func (self *RewardBranch) UnmarshalText(text []byte) error {
+	v, ok := ParseRewardBranch(string(text))
+	if !ok {
+		return errors.New("RewardBranch: no branch " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+var enumKeys_RewardBranch = [...]string{"false", "true"}
+
+var enumFound_RewardBranch = [...]RewardBranch{{0}, {1}}
+
+func ParseRewardBranch(name string) (RewardBranch, bool) {
+	if i, ok := slices.BinarySearch(enumKeys_RewardBranch[:], name); ok {
+		return enumFound_RewardBranch[i], true
+	}
+	return RewardBranch{}, false
+}
 
 // ObjectiveID is the key of an entry of objectives: compare it, switch on it, look it up with Get.
 // To store or send it, write its key (String, or MarshalText through encoding/json):

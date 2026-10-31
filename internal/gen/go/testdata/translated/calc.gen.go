@@ -15,48 +15,48 @@ import (
 )
 
 // Tone: A tone.
-type Tone uint8
+type Tone struct{ position uint8 }
 
-const (
-	ToneSoft Tone = 0
-	ToneLoud Tone = 1
+var (
+	ToneSoft = Tone{0}
+	ToneLoud = Tone{1}
 )
 
 var enumNames_Tone = [...]string{"soft", "loud"}
 
 func (self Tone) String() string {
-	if i := uint(self); i < uint(len(enumNames_Tone)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tone)) {
 		return enumNames_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Tone) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Tone)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tone)) {
 		return enumNames_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Tone = [...]string{"loud", "soft"}
 
-var enumFound_Tone = [...]Tone{ToneLoud, ToneSoft}
+var enumFound_Tone = [...]Tone{{1}, {0}}
 
 func ParseTone(wire string) (Tone, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
 		return enumFound_Tone[i], true
 	}
-	return 0, false
+	return Tone{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Tone) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Tone = [...]Tone{ToneSoft, ToneLoud}
+var enumMembers_Tone = [...]Tone{{0}, {1}}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
@@ -80,11 +80,15 @@ func ToneLiveMembers() iter.Seq[Tone] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Tone) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Tone) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseTone(wire); !ok {
-		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -99,53 +103,57 @@ func (self *Tone) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type ShapeKind uint8
+type ShapeKind struct{ position uint8 }
 
-const (
-	ShapeKindCircle ShapeKind = 0
+var (
+	ShapeKindCircle = ShapeKind{0}
 	// ShapeKindDot: A dot.
-	ShapeKindDot ShapeKind = 1
+	ShapeKindDot = ShapeKind{1}
 )
 
 var enumNames_ShapeKind = [...]string{"circle", "dot"}
 
 func (self ShapeKind) String() string {
-	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_ShapeKind)) {
 		return enumNames_ShapeKind[i]
 	}
-	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ShapeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self ShapeKind) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_ShapeKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_ShapeKind)) {
 		return enumNames_ShapeKind[i]
 	}
-	return "ShapeKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "ShapeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_ShapeKind = [...]string{"circle", "dot"}
 
-var enumFound_ShapeKind = [...]ShapeKind{ShapeKindCircle, ShapeKindDot}
+var enumFound_ShapeKind = [...]ShapeKind{{0}, {1}}
 
 func ParseShapeKind(wire string) (ShapeKind, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_ShapeKind[:], wire); ok {
 		return enumFound_ShapeKind[i], true
 	}
-	return 0, false
+	return ShapeKind{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self ShapeKind) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self ShapeKind) Position() int { return int(self.position) }
 
 // MarshalText writes the wire value, never the position.
 func (self ShapeKind) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseShapeKind(wire); !ok {
-		return nil, errors.New("ShapeKind: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("ShapeKind: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -533,7 +541,7 @@ var loudTable = [2]bool{false, true}
 
 // Loud: Whether t is loud.
 func Loud(t Tone) bool {
-	return loudTable[t]
+	return loudTable[t.Position()]
 }
 
 var pickTable = sync.OnceValue(func() *[2]*Size {

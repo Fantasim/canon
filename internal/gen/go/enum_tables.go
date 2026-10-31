@@ -23,7 +23,7 @@ type enumView struct {
 func (g *gen) enumView(s *enumSpec) enumView {
 	table := func(role string) string { return g.names.TableName(role, s.name) }
 	zero, value := zeroLit, selfName
-	if s.id {
+	if s.opaque() {
 		zero, value = fmt.Sprintf(idZeroFormat, s.name), selfPosition
 	}
 	return enumView{
@@ -101,9 +101,9 @@ func (s *enumSpec) constNames() []string {
 	return out
 }
 
-// memberRefs is what a lookup returns for every member: its constant, or for an id the literal holding its position.
+// memberRefs is what a lookup returns for every member: its constant, or for an opaque type the literal holding its position.
 func (s *enumSpec) memberRefs() []string {
-	if !s.id {
+	if !s.opaque() {
 		return s.constNames()
 	}
 	out := make([]string, len(s.consts))

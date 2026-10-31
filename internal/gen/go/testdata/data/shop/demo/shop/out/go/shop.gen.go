@@ -35,54 +35,54 @@ const ConfigSchema = "demo.shop.Config@0000000c"
 const HomeSchema = "demo.shop.Point@0000000d"
 
 // Tone: How a message sounds.
-type Tone uint8
+type Tone struct{ position uint8 }
 
-const (
+var (
 	// ToneWarning: Loud.
-	ToneWarning Tone = 0
-	ToneInfo    Tone = 1
-	ToneSeries1 Tone = 2
+	ToneWarning = Tone{0}
+	ToneInfo    = Tone{1}
+	ToneSeries1 = Tone{2}
 	// ToneLegacy: Retired.
-	ToneLegacy Tone = 3
+	ToneLegacy = Tone{3}
 )
 
 var enumNames_Tone = [...]string{"warning", "info", "series_1", "legacy"}
 
 func (self Tone) String() string {
-	if i := uint(self); i < uint(len(enumNames_Tone)) {
+	if i := uint(self.position); i < uint(len(enumNames_Tone)) {
 		return enumNames_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumWires_Tone = [...]string{"warning", "info", "series-1", "legacy"}
 
 func (self Tone) Wire() string {
-	if i := uint(self); i < uint(len(enumWires_Tone)) {
+	if i := uint(self.position); i < uint(len(enumWires_Tone)) {
 		return enumWires_Tone[i]
 	}
-	return "Tone(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Tone = [...]string{"info", "legacy", "series-1", "warning"}
 
-var enumFound_Tone = [...]Tone{ToneInfo, ToneLegacy, ToneSeries1, ToneWarning}
+var enumFound_Tone = [...]Tone{{1}, {3}, {2}, {0}}
 
 func ParseTone(wire string) (Tone, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
 		return enumFound_Tone[i], true
 	}
-	return 0, false
+	return Tone{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Tone) Retired() bool {
 	const flags = "0001"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Tone = [...]Tone{ToneWarning, ToneInfo, ToneSeries1, ToneLegacy}
+var enumMembers_Tone = [...]Tone{{0}, {1}, {2}, {3}}
 
 func ToneMembers() iter.Seq[Tone] {
 	return func(yield func(Tone) bool) {
@@ -106,11 +106,15 @@ func ToneLiveMembers() iter.Seq[Tone] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Tone) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Tone) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseTone(wire); !ok {
-		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Tone: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -280,56 +284,60 @@ func FlagFromCode(code uint8) (Flag, bool) {
 	return 0, false
 }
 
-type RewardKind uint8
+type RewardKind struct{ position uint8 }
 
-const (
-	RewardKindItem RewardKind = 0
-	RewardKindGold RewardKind = 1
+var (
+	RewardKindItem = RewardKind{0}
+	RewardKindGold = RewardKind{1}
 	// RewardKindNothing: No reward at all.
-	RewardKindNothing RewardKind = 2
+	RewardKindNothing = RewardKind{2}
 )
 
 var enumNames_RewardKind = [...]string{"item", "gold", "nothing"}
 
 func (self RewardKind) String() string {
-	if i := uint(self); i < uint(len(enumNames_RewardKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_RewardKind)) {
 		return enumNames_RewardKind[i]
 	}
-	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "RewardKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumWires_RewardKind = [...]string{"item", "gold", "none"}
 
 func (self RewardKind) Wire() string {
-	if i := uint(self); i < uint(len(enumWires_RewardKind)) {
+	if i := uint(self.position); i < uint(len(enumWires_RewardKind)) {
 		return enumWires_RewardKind[i]
 	}
-	return "RewardKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "RewardKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_RewardKind = [...]string{"gold", "item", "none"}
 
-var enumFound_RewardKind = [...]RewardKind{RewardKindGold, RewardKindItem, RewardKindNothing}
+var enumFound_RewardKind = [...]RewardKind{{1}, {0}, {2}}
 
 func ParseRewardKind(wire string) (RewardKind, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_RewardKind[:], wire); ok {
 		return enumFound_RewardKind[i], true
 	}
-	return 0, false
+	return RewardKind{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self RewardKind) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self RewardKind) Position() int { return int(self.position) }
 
 // MarshalText writes the wire value, never the position.
 func (self RewardKind) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseRewardKind(wire); !ok {
-		return nil, errors.New("RewardKind: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("RewardKind: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -344,52 +352,56 @@ func (self *RewardKind) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type BadgeKind uint8
+type BadgeKind struct{ position uint8 }
 
-const (
-	BadgeKindStar  BadgeKind = 0
-	BadgeKindPlain BadgeKind = 1
+var (
+	BadgeKindStar  = BadgeKind{0}
+	BadgeKindPlain = BadgeKind{1}
 )
 
 var enumNames_BadgeKind = [...]string{"star", "plain"}
 
 func (self BadgeKind) String() string {
-	if i := uint(self); i < uint(len(enumNames_BadgeKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_BadgeKind)) {
 		return enumNames_BadgeKind[i]
 	}
-	return "BadgeKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "BadgeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self BadgeKind) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_BadgeKind)) {
+	if i := uint(self.position); i < uint(len(enumNames_BadgeKind)) {
 		return enumNames_BadgeKind[i]
 	}
-	return "BadgeKind(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "BadgeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_BadgeKind = [...]string{"plain", "star"}
 
-var enumFound_BadgeKind = [...]BadgeKind{BadgeKindPlain, BadgeKindStar}
+var enumFound_BadgeKind = [...]BadgeKind{{1}, {0}}
 
 func ParseBadgeKind(wire string) (BadgeKind, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_BadgeKind[:], wire); ok {
 		return enumFound_BadgeKind[i], true
 	}
-	return 0, false
+	return BadgeKind{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self BadgeKind) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self BadgeKind) Position() int { return int(self.position) }
 
 // MarshalText writes the wire value, never the position.
 func (self BadgeKind) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseBadgeKind(wire); !ok {
-		return nil, errors.New("BadgeKind: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("BadgeKind: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -568,7 +580,7 @@ func (self *Item) Score(tone Tone, loud bool) int64 {
 	if loud {
 		loud_i = 1
 	}
-	return self.score[tone][loud_i]
+	return self.score[tone.Position()][loud_i]
 }
 
 func (self *Item) LabelIn(delete_ Element) (string, bool) {
@@ -583,15 +595,15 @@ func (self *Item) LabelIn(delete_ Element) (string, bool) {
 }
 
 func (self *Item) ShelfForID(tone Tone) (string, bool) {
-	return self.shelfFor[tone].v, self.shelfFor[tone].ok
+	return self.shelfFor[tone.Position()].v, self.shelfFor[tone.Position()].ok
 }
 
 func (self *Item) PairFor(tone Tone) *Item {
-	return self.pairFor[tone]
+	return self.pairFor[tone.Position()]
 }
 
 func (self *Item) PairForID(tone Tone) (ItemID, bool) {
-	return self.pairFor_id[tone].v, self.pairFor_id[tone].ok
+	return self.pairFor_id[tone.Position()].v, self.pairFor_id[tone.Position()].ok
 }
 
 func (self *Item) Kin(loud bool) rt.List[*Item] {

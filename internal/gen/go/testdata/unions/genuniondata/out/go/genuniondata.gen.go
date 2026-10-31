@@ -19,48 +19,48 @@ import (
 // units), not of its values. The loader refuses a file built from another schema.
 const ItemsSchema = ""
 
-type Status uint8
+type Status struct{ position uint8 }
 
-const (
-	StatusOpen   Status = 0
-	StatusClosed Status = 1
+var (
+	StatusOpen   = Status{0}
+	StatusClosed = Status{1}
 )
 
 var enumNames_Status = [...]string{"open", "closed"}
 
 func (self Status) String() string {
-	if i := uint(self); i < uint(len(enumNames_Status)) {
+	if i := uint(self.position); i < uint(len(enumNames_Status)) {
 		return enumNames_Status[i]
 	}
-	return "Status(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Status(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Status) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Status)) {
+	if i := uint(self.position); i < uint(len(enumNames_Status)) {
 		return enumNames_Status[i]
 	}
-	return "Status(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Status(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Status = [...]string{"closed", "open"}
 
-var enumFound_Status = [...]Status{StatusClosed, StatusOpen}
+var enumFound_Status = [...]Status{{1}, {0}}
 
 func ParseStatus(wire string) (Status, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Status[:], wire); ok {
 		return enumFound_Status[i], true
 	}
-	return 0, false
+	return Status{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Status) Retired() bool {
 	const flags = "00"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Status = [...]Status{StatusOpen, StatusClosed}
+var enumMembers_Status = [...]Status{{0}, {1}}
 
 func StatusMembers() iter.Seq[Status] {
 	return func(yield func(Status) bool) {
@@ -84,11 +84,15 @@ func StatusLiveMembers() iter.Seq[Status] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Status) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Status) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseStatus(wire); !ok {
-		return nil, errors.New("Status: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Status: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }

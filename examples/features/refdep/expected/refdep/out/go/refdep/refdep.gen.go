@@ -17,52 +17,52 @@ import (
 )
 
 // Shape: The shape of an event's parameter.
-type Shape uint8
+type Shape struct{ position uint8 }
 
-const (
+var (
 	// ShapeCount: A count.
-	ShapeCount Shape = 0
+	ShapeCount = Shape{0}
 	// ShapePlace: A named place.
-	ShapePlace Shape = 1
+	ShapePlace = Shape{1}
 	// ShapeNone: No parameter.
-	ShapeNone Shape = 2
+	ShapeNone = Shape{2}
 )
 
 var enumNames_Shape = [...]string{"count", "place", "none_"}
 
 func (self Shape) String() string {
-	if i := uint(self); i < uint(len(enumNames_Shape)) {
+	if i := uint(self.position); i < uint(len(enumNames_Shape)) {
 		return enumNames_Shape[i]
 	}
-	return "Shape(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Shape(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Shape) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Shape)) {
+	if i := uint(self.position); i < uint(len(enumNames_Shape)) {
 		return enumNames_Shape[i]
 	}
-	return "Shape(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Shape(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Shape = [...]string{"count", "none_", "place"}
 
-var enumFound_Shape = [...]Shape{ShapeCount, ShapeNone, ShapePlace}
+var enumFound_Shape = [...]Shape{{0}, {2}, {1}}
 
 func ParseShape(wire string) (Shape, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Shape[:], wire); ok {
 		return enumFound_Shape[i], true
 	}
-	return 0, false
+	return Shape{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Shape) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Shape = [...]Shape{ShapeCount, ShapePlace, ShapeNone}
+var enumMembers_Shape = [...]Shape{{0}, {1}, {2}}
 
 func ShapeMembers() iter.Seq[Shape] {
 	return func(yield func(Shape) bool) {
@@ -86,11 +86,15 @@ func ShapeLiveMembers() iter.Seq[Shape] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Shape) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Shape) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseShape(wire); !ok {
-		return nil, errors.New("Shape: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Shape: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -106,52 +110,52 @@ func (self *Shape) UnmarshalText(text []byte) error {
 }
 
 // Event: What happened.
-type Event uint8
+type Event struct{ position uint8 }
 
-const (
+var (
 	// EventBeatMonster: A monster was beaten.
-	EventBeatMonster Event = 0
+	EventBeatMonster = Event{0}
 	// EventReachPlace: A place was reached.
-	EventReachPlace Event = 1
+	EventReachPlace = Event{1}
 	// EventNewDay: The day changed.
-	EventNewDay Event = 2
+	EventNewDay = Event{2}
 )
 
 var enumNames_Event = [...]string{"beat_monster", "reach_place", "new_day"}
 
 func (self Event) String() string {
-	if i := uint(self); i < uint(len(enumNames_Event)) {
+	if i := uint(self.position); i < uint(len(enumNames_Event)) {
 		return enumNames_Event[i]
 	}
-	return "Event(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Event(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Event) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Event)) {
+	if i := uint(self.position); i < uint(len(enumNames_Event)) {
 		return enumNames_Event[i]
 	}
-	return "Event(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Event(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Event = [...]string{"beat_monster", "new_day", "reach_place"}
 
-var enumFound_Event = [...]Event{EventBeatMonster, EventNewDay, EventReachPlace}
+var enumFound_Event = [...]Event{{0}, {2}, {1}}
 
 func ParseEvent(wire string) (Event, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Event[:], wire); ok {
 		return enumFound_Event[i], true
 	}
-	return 0, false
+	return Event{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Event) Retired() bool {
 	const flags = "000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
-var enumMembers_Event = [...]Event{EventBeatMonster, EventReachPlace, EventNewDay}
+var enumMembers_Event = [...]Event{{0}, {1}, {2}}
 
 func EventMembers() iter.Seq[Event] {
 	return func(yield func(Event) bool) {
@@ -175,11 +179,15 @@ func EventLiveMembers() iter.Seq[Event] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Event) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Event) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseEvent(wire); !ok {
-		return nil, errors.New("Event: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Event: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }
@@ -194,12 +202,55 @@ func (self *Event) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type ParamBranch uint8
+type ParamBranch struct{ position uint8 }
 
-const (
-	ParamBranchCount ParamBranch = 0
-	ParamBranchPlace ParamBranch = 1
+var (
+	ParamBranchCount = ParamBranch{0}
+	ParamBranchPlace = ParamBranch{1}
 )
+
+var enumNames_ParamBranch = [...]string{"count", "place"}
+
+func (self ParamBranch) String() string {
+	if i := uint(self.position); i < uint(len(enumNames_ParamBranch)) {
+		return enumNames_ParamBranch[i]
+	}
+	return "ParamBranch(" + strconv.FormatInt(int64(self.position), 10) + ")"
+}
+
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self ParamBranch) Position() int { return int(self.position) }
+
+// MarshalText writes the branch name, never the position.
+func (self ParamBranch) MarshalText() ([]byte, error) {
+	name := self.String()
+	if _, ok := ParseParamBranch(name); !ok {
+		return nil, errors.New("ParamBranch: no branch " + strconv.Itoa(int(self.position)))
+	}
+	return []byte(name), nil
+}
+
+// UnmarshalText reads a branch name; an unknown one is an error.
+func (self *ParamBranch) UnmarshalText(text []byte) error {
+	v, ok := ParseParamBranch(string(text))
+	if !ok {
+		return errors.New("ParamBranch: no branch " + strconv.Quote(string(text)))
+	}
+	*self = v
+	return nil
+}
+
+var enumKeys_ParamBranch = [...]string{"count", "place"}
+
+var enumFound_ParamBranch = [...]ParamBranch{{0}, {1}}
+
+func ParseParamBranch(name string) (ParamBranch, bool) {
+	if i, ok := slices.BinarySearch(enumKeys_ParamBranch[:], name); ok {
+		return enumFound_ParamBranch[i], true
+	}
+	return ParamBranch{}, false
+}
 
 type LabelID string
 

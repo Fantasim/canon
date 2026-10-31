@@ -188,5 +188,5 @@ func GateOf(d_ d.D, q_ q.Q) *Gate {
 	case q.QHigh:
 		q__i = 1
 	}
-	return gateOfTable()[d_][q__i]
+	return gateOfTable()[d_.Position()][q__i]
 }

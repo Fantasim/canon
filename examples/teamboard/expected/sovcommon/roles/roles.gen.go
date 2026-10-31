@@ -16,15 +16,15 @@ import (
 // Today this ladder is written three times (roles.go, roles.ts and the SQL CHECK
 // constraint) and kept in sync by comments. Here it is written once, and Go and TS
 // are generated from it.
-type Role uint8
+type Role struct{ position uint8 }
 
-const (
-	RoleMember     Role = 0
-	RoleGmJunior   Role = 1
-	RoleGmSenior   Role = 2
-	RoleMaintainer Role = 3
-	RoleOwner      Role = 4
-	RoleAdmin      Role = 5
+var (
+	RoleMember     = Role{0}
+	RoleGmJunior   = Role{1}
+	RoleGmSenior   = Role{2}
+	RoleMaintainer = Role{3}
+	RoleOwner      = Role{4}
+	RoleAdmin      = Role{5}
 )
 
 var enumNames_Role = [...]string{
@@ -33,17 +33,17 @@ var enumNames_Role = [...]string{
 }
 
 func (self Role) String() string {
-	if i := uint(self); i < uint(len(enumNames_Role)) {
+	if i := uint(self.position); i < uint(len(enumNames_Role)) {
 		return enumNames_Role[i]
 	}
-	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Role(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 func (self Role) Wire() string {
-	if i := uint(self); i < uint(len(enumNames_Role)) {
+	if i := uint(self.position); i < uint(len(enumNames_Role)) {
 		return enumNames_Role[i]
 	}
-	return "Role(" + strconv.FormatInt(int64(self), 10) + ")"
+	return "Role(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
 var enumKeys_Role = [...]string{
@@ -52,27 +52,27 @@ var enumKeys_Role = [...]string{
 }
 
 var enumFound_Role = [...]Role{
-	RoleAdmin, RoleGmJunior, RoleGmSenior, RoleMaintainer,
-	RoleMember, RoleOwner,
+	{5}, {1}, {2}, {3},
+	{0}, {4},
 }
 
 func ParseRole(wire string) (Role, bool) {
 	if i, ok := slices.BinarySearch(enumKeys_Role[:], wire); ok {
 		return enumFound_Role[i], true
 	}
-	return 0, false
+	return Role{}, false
 }
 
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Role) Retired() bool {
 	const flags = "000000"
-	i := uint(self)
+	i := uint(self.position)
 	return i < uint(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_Role = [...]Role{
-	RoleMember, RoleGmJunior, RoleGmSenior, RoleMaintainer,
-	RoleOwner, RoleAdmin,
+	{0}, {1}, {2}, {3},
+	{4}, {5},
 }
 
 func RoleMembers() iter.Seq[Role] {
@@ -97,11 +97,15 @@ func RoleLiveMembers() iter.Seq[Role] {
 	}
 }
 
+// Position is the member's place in declaration order, for array indexes in memory;
+// an ordered enum's members compare by it. It is not an id: it changes when members move.
+func (self Role) Position() int { return int(self.position) }
+
 // MarshalText writes the wire value, never the position.
 func (self Role) MarshalText() ([]byte, error) {
 	wire := self.Wire()
 	if _, ok := ParseRole(wire); !ok {
-		return nil, errors.New("Role: no member " + strconv.Itoa(int(self)))
+		return nil, errors.New("Role: no member " + strconv.Itoa(int(self.position)))
 	}
 	return []byte(wire), nil
 }

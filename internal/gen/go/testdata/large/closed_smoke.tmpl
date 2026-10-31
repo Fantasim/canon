@@ -42,19 +42,13 @@ func TestPlain(t *testing.T) {
 		}
 	}
 	for _, wire := range []string{"", "nope", "zzzzzzzz"} {
-		if got, ok := closed.ParsePlain(wire); ok || got != 0 {
+		if got, ok := closed.ParsePlain(wire); ok || got != (closed.Plain{}) {
 			t.Errorf("ParsePlain(%q) = %v, %v", wire, got, ok)
 		}
 	}
-	if got := closed.Plain(65535).String(); got != "Plain(65535)" {
-		t.Errorf("out of range String %q", got)
-	}
-	if got := closed.Plain({{.Count}}).Wire(); got != "Plain({{.Count}})" {
-		t.Errorf("first out of range Wire %q", got)
-	}
 	n := 0
 	for m := range closed.PlainMembers() {
-		if got, ok := closed.ParsePlain(m.Wire()); !ok || got != m || int(m) != n {
+		if got, ok := closed.ParsePlain(m.Wire()); !ok || got != m || m.Position() != n {
 			t.Fatalf("member %d: %v %v", n, got, ok)
 		}
 		n++

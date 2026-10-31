@@ -34,18 +34,19 @@ func (g *gen) dependentType(d *ir.Dependent) {
 func (g *gen) branchEnums() {
 	for _, t := range g.p.Types {
 		if d, ok := t.(*ir.Dependent); ok {
-			g.writeBranchEnum(g.names.Dependent(d))
+			g.writeBranchEnum(g.names.Dependent(d), d)
 		}
 	}
 }
 
-// writeBranchEnum writes TBranch and its members in arm order, no String, Wire or Parse<…> (CODEGEN.md §5.6).
-func (g *gen) writeBranchEnum(n ir.GoDependent) {
-	g.printf(enumHeaderFormat, n.Branch, smallestUint(len(n.Branches)))
+// writeBranchEnum writes TBranch, an opaque struct with a var per arm, in arm order, and its String, Position, text methods and Parse<B> (CODEGEN.md §5.6, DECISIONS 402).
+func (g *gen) writeBranchEnum(n ir.GoDependent, d *ir.Dependent) {
+	s := &enumSpec{name: n.Branch, under: smallestUint(len(n.Branches)), parseArg: nameArg, branch: true}
 	for i, b := range n.Branches {
-		g.printf(enumConstFormat, b.Member, n.Branch, strconv.Itoa(i))
+		s.consts = append(s.consts, enumConst{name: b.Member, value: strconv.Itoa(i)})
+		s.names = append(s.names, d.Branches[i].Name)
 	}
-	g.printf(closeParenFormat)
+	g.writeBranch(s)
 }
 
 // dependentAccessor writes As<Branch>, zero unless the value holds it, and a define branch's As<Branch>Value (CODEGEN.md §5.6, §5.8; DECISIONS 298).

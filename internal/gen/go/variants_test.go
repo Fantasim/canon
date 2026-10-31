@@ -24,8 +24,8 @@ func TestCaseOverrideAndRetired(t *testing.T) {
 	for _, want := range []string{
 		"type Round struct",                             // the case type: the override, verbatim
 		"func (self *Shape) AsRound() (*Round, bool) {", // As<Name> substitutes it for UpperCamel(c)
-		"ShapeKindRound ShapeKind = 0",                  // the kind member, likewise substituted
-		"ShapeKindSquare ShapeKind = 1",                 // an unoverridden case keeps T + UpperCamel(c)
+		"ShapeKindRound = ShapeKind{0}",                 // the kind member, likewise substituted
+		"ShapeKindSquare = ShapeKind{1}",                // an unoverridden case keeps T + UpperCamel(c)
 	} {
 		if !strings.Contains(src, want) {
 			t.Errorf("generated source is missing %q:\n%s", want, src)
