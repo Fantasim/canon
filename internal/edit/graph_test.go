@@ -359,3 +359,15 @@ func TestGraphNodesOfEveryCollection(t *testing.T) {
 	}
 	checkParity(t, f, g)
 }
+
+// API.md R11 (DECISIONS 410): a bound level-1 ref of a spread-built instance is an edge to the
+// entry its instance's field holds, arena's, stated; parity with Refs holds (checkParity).
+func TestGraphSpreadLevelOne(t *testing.T) {
+	f := spreadFixture(t)
+	g := mustGraph(t, f)
+	lines := graphLines(f, g)
+	if edge := "E value a:other a:other.boss a:other.boss a:arena.mobs[1] 13 1"; !slices.Contains(lines, edge) {
+		t.Errorf("R11: no edge %q among\n%s", edge, strings.Join(lines, "\n"))
+	}
+	checkParity(t, f, g)
+}

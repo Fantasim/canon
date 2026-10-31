@@ -82,7 +82,7 @@ var hostiles = []hostile{
 	{"created outside", setKey("created", []any{"/elsewhere"}), nil, whyOutside},
 	{"created above no new file", setKey("created", []any{"pkg"}), nil, "above no new file"},
 	{"created project", setKey("created", []any{"."}), nil, whyOutside},
-	{"created holding others", addFile(map[string]any{"path": "pkg/evil.canon", "existed": false, "new": sum("x")}, "pkg"), nil, "not the edit's: /p/pkg/pkg.canon"},
+	{"created holding others", addFile(map[string]any{"path": "pkg/evil.canon", "existed": false, "new": sum("x")}, "pkg"), nil, "not the edit's: pkg/pkg.canon"},
 	{"removed outside", setKey("removed", []any{map[string]any{"path": "../x"}}), nil, whyOutside},
 	{"removed setuid", setKey("removed", []any{map[string]any{"path": "pkg/sub", "mode": 0o4755}}), nil, whyMode},
 	{"version", setKey("version", 9), nil, "unknown version"},

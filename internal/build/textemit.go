@@ -94,7 +94,7 @@ func (r *run) staleListing(pkg string) ([]*output, error) {
 		}
 		return gone, err
 	case err != nil:
-		return nil, displayError(rel, err)
+		return nil, DisplayError(rel, err)
 	case isMarked(data):
 		return []*output{{remove: true, Output: Output{Path: rel, Abs: abs, Target: ir.TargetText, Package: pkg, Status: StatusWritten}}}, nil
 	}
@@ -171,7 +171,7 @@ func (own *ownership) readLegacy(o *output, outputs []*output) error {
 	case errors.Is(err, fs.ErrNotExist):
 		return own.sweep(o, abs, display, func(content []byte) bool { return firstLineIs(content, marker) })
 	case err != nil:
-		return displayError(display, err)
+		return DisplayError(display, err)
 	case !firstLineIs(data, marker):
 		return nil
 	}
@@ -202,7 +202,7 @@ func (own *ownership) sweep(o *output, abs, display string, marked func([]byte) 
 func (r *run) leftovers(abs, display string, marked func([]byte) bool) ([]*output, error) {
 	asides, err := r.stagedBeside(abs)
 	if err != nil {
-		return nil, displayError(path.Dir(display), err)
+		return nil, DisplayError(path.Dir(display), err)
 	}
 	var out []*output
 	for _, aside := range asides {
@@ -212,7 +212,7 @@ func (r *run) leftovers(abs, display string, marked func([]byte) bool) ([]*outpu
 		case cannotExist(err) || err == nil && !marked(data):
 			continue
 		case err != nil:
-			return nil, displayError(shown, err)
+			return nil, DisplayError(shown, err)
 		}
 		out = append(out, &output{remove: true, Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Status: StatusWritten}})
 	}
@@ -265,7 +265,7 @@ func (r *run) listedNames(pkg string, accepts func([]byte) bool) (map[string]str
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 	case err != nil:
-		return nil, displayError(rel, err)
+		return nil, DisplayError(rel, err)
 	case accepts(data):
 		for _, e := range listEntries(data) {
 			names[e.path] = e.sum

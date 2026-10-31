@@ -36,11 +36,11 @@ func (x *opCtx) layerSet() error {
 	return x.amendLine(x.res.Canonical, x.res.Steps, text)
 }
 
-// layerType is targetType, but the declared type where the edit layer is inactive: an arm the
+// layerType is setType, but the declared type where the edit layer is inactive: an arm the
 // analysis computes there is not the one the layer's lines select (W11a; log-2026-10-01 M4.1).
 func (x *opCtx) layerType() types.Type {
 	if !x.layerInactive() {
-		return x.targetType()
+		return x.setType()
 	}
 	if _, f, ok := x.field(); ok {
 		return f.Type

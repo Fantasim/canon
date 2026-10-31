@@ -27,14 +27,14 @@ type loaded struct {
 	gone, torn, locked, bad bool
 }
 
-// loadJournal reads and decodes the journal file name.
-func loadJournal(fsys build.WriteFS, name string) (loaded, error) {
+// loadJournal reads and decodes the journal file name, which an error names by at's display path.
+func loadJournal(fsys build.WriteFS, at Layout, name string) (loaded, error) {
 	data, err := fsys.ReadFile(name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return loaded{gone: true}, nil
 	}
 	if err != nil {
-		return loaded{}, err
+		return loaded{}, build.DisplayError(at.Display(name), err)
 	}
 	return decodeJournal(data), nil
 }
@@ -83,13 +83,13 @@ func heldOf(s Site) ([]string, error) {
 
 // lockJournals are the lock lists of this host's journals recording locks, in name order.
 func lockJournals(s Site) ([][]string, error) {
-	names, err := journals(s.FS, s.Layout.Dir())
+	names, err := journals(s.FS, s.Layout)
 	if err != nil {
 		return nil, err
 	}
 	var out [][]string
 	for _, name := range names {
-		l, err := loadJournal(s.FS, name)
+		l, err := loadJournal(s.FS, s.Layout, name)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +141,7 @@ func Settle(s Site, logger *slog.Logger) (changed []string, err error) {
 	if s.Locks == nil {
 		return nil, nil
 	}
-	names, err := journals(s.FS, s.Layout.Dir())
+	names, err := journals(s.FS, s.Layout)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func Settle(s Site, logger *slog.Logger) (changed []string, err error) {
 // settleOne rolls back the journal name if it is this host's and s holds all its locks; nil when
 // it is left: gone, torn, recording no lock, another host's, or not covered.
 func settleOne(s Site, name string) (*undoer, error) {
-	l, err := loadJournal(s.FS, name)
+	l, err := loadJournal(s.FS, s.Layout, name)
 	if err != nil || !l.locked || l.j.Host != s.Self.Host || !holdsAll(s.Held, l.j.Locks) {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func settleOne(s Site, name string) (*undoer, error) {
 // blocked refuses a commit on the first journal that concerns it: an edit unfinished, or still
 // running, whose rollback could undo this one (API.md N11; DECISIONS 375: J6).
 func (c *commit) blocked() error {
-	names, err := journals(c.fsys, c.dir)
+	names, err := journals(c.fsys, c.at)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (c *commit) blocks(name string) (bool, error) {
 	if name == c.name || len(c.j.Locks) == 0 {
 		return true, nil
 	}
-	l, err := loadJournal(c.fsys, name)
+	l, err := loadJournal(c.fsys, c.at, name)
 	if err != nil || l.gone {
 		return false, err
 	}

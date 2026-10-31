@@ -77,14 +77,20 @@ func (sc *graphScan) targets(v value.Value) []int {
 	return sc.buf
 }
 
-// refTargets adds the entry x names by its collection, owner and key, and through a let path the
-// entries of the instances it reaches with that key.
+// refTargets adds the entry x names by its collection, owner and key, the entry its instance's
+// field holds (DECISIONS 410), and through a let path the entries of the instances it reaches.
 func (sc *graphScan) refTargets(x *value.Ref) {
 	rt, ok := baseOf(x.T).(*types.RefType)
 	if !ok {
 		return
 	}
-	sc.add(nodeIdent{coll: rt.Target, owner: x.Owner, key: x.Key})
+	direct := nodeIdent{coll: rt.Target, owner: x.Owner, key: x.Key}
+	sc.add(direct)
+	if _, hit := sc.ns.byIdent[direct]; !hit {
+		if held := heldIdent(x); held != nil {
+			sc.add(nodeIdent{coll: held.Coll, owner: held.Owner, key: held.Key})
+		}
+	}
 	if c := rt.Target; c == nil || c.Kind != types.CollLet || len(c.FieldPath) == 0 {
 		return
 	}

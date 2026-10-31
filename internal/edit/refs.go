@@ -130,11 +130,49 @@ func (tg *target) isValue(v value.Value) bool {
 		if !ok || tg.ident == nil || x.Key != tg.ident.Key {
 			return false
 		}
-		return rt.Target == tg.ident.Coll && x.Owner == tg.ident.Owner || rt.Target != tg.ident.Coll && tg.names(rt.Target)
+		if rt.Target == tg.ident.Coll && x.Owner == tg.ident.Owner || rt.Target != tg.ident.Coll && tg.names(rt.Target) {
+			return true
+		}
+		held := heldIdent(x)
+		return held != nil && held.Coll == tg.ident.Coll && held.Owner == tg.ident.Owner
 	case *value.Member:
 		return tg.member != nil && x.Enum == tg.member.Enum && x.Index == tg.member.Index
 	}
 	return false
+}
+
+// heldIdent is the identity of the entry a bound level-1 ref names in the collection its
+// instance's field holds, whatever identity that entry carries (API.md R7; DECISIONS 410); nil
+// for another ref, or a key that names no entry there.
+func heldIdent(x *value.Ref) *value.Identity {
+	rt, ok := baseOf(x.T).(*types.RefType)
+	if !ok || rt.Target == nil || rt.Target.Kind != types.CollField || x.Owner == nil || len(rt.Target.FieldPath) == 0 {
+		return nil
+	}
+	i := fieldIndex(fieldsOf(x.Owner.T), rt.Target.FieldPath[0])
+	if i < 0 || i >= len(x.Owner.Fields) {
+		return nil
+	}
+	return keyedIdent(x.Owner.Fields[i], x.Key)
+}
+
+// keyedIdent is the identity of the element or entry keyed k in a keyed list or table, nil for none.
+func keyedIdent(v value.Value, k value.Key) *value.Identity {
+	switch c := v.(type) {
+	case *value.List:
+		for _, e := range c.Elems {
+			if rec, isRec := e.(*value.Record); isRec && rec.Ident != nil && rec.Ident.Key == k {
+				return rec.Ident
+			}
+		}
+	case *value.Table:
+		for _, rec := range c.Entries {
+			if rec.Ident != nil && rec.Ident.Key == k {
+				return rec.Ident
+			}
+		}
+	}
+	return nil
 }
 
 // names reports coll naming the target's collection: that collection, or a let path to the

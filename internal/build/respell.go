@@ -27,7 +27,7 @@ func (r *run) spelling(o *output) error {
 	dir, base := project.DirOf(o.Abs), path.Base(o.Abs)
 	names, err := r.writes().listing(r.p.fs, dir)
 	if err != nil {
-		return displayError(path.Dir(o.Path), err)
+		return DisplayError(path.Dir(o.Path), err)
 	}
 	if slices.Contains(names, base) {
 		return nil
@@ -84,7 +84,7 @@ func (pl *planner) walk(o *output) error {
 		disk, ok, err := pl.r.spelledAs(d)
 		switch {
 		case err != nil:
-			return displayError(pl.r.dirShown(o, d), err)
+			return DisplayError(pl.r.dirShown(o, d), err)
 		case !ok:
 			return nil
 		}

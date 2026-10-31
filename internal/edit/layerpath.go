@@ -1,8 +1,6 @@
 package edit
 
 import (
-	"path"
-
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/shape"
@@ -33,13 +31,13 @@ func (s *Snapshot) amends(f *syntax.File, b *syntax.AmendBlock, res resolution) 
 	return Editability{}, false
 }
 
-// inAmendment follows res's steps from step i inside an amendment: into a literal, a JSON load's file, else computed.
+// inAmendment follows res's steps from step i inside an amendment: into a literal; nothing below a load (API.md W11a); else computed.
 func (s *Snapshot) inAmendment(it item, res resolution, i int) Editability {
 	for ; i < len(res.Steps); i++ {
 		switch s.nodeForm(it.node) {
 		case shape.FormLiteral:
 		case shape.FormJSON:
-			return jsonEditability(loadDisplay(it.file, it.node))
+			return Editability{Reason: ReasonLayer}
 		default:
 			return Editability{Reason: ReasonComputed}
 		}
@@ -50,14 +48,6 @@ func (s *Snapshot) inAmendment(it item, res resolution, i int) Editability {
 		it.node = n
 	}
 	return Editability{Mode: ModeCanon, File: it.file.Src.Path, Span: it.file.Span(it.node)}
-}
-
-// jsonEditability is an edit of the JSON source at display, whose name must be `.json` (API.md W4).
-func jsonEditability(display string) Editability {
-	if display != "" && !jsonFileName(display) {
-		return Editability{Reason: ReasonFormat}
-	}
-	return Editability{Mode: ModeJSON, File: display}
 }
 
 // missingChild is step i, absent from the amendment literal it: a record field is inserted into
@@ -85,23 +75,6 @@ func (s *Snapshot) nodeForm(n syntax.Node) shape.Form {
 	}
 	e, _ := n.(syntax.Expr)
 	return shape.SourceForm(s.info, e)
-}
-
-// loadDisplay is the display path of the file a plain load reads (WIRE.md §2.3), "" for load.dir.
-func loadDisplay(f *syntax.File, n syntax.Node) string {
-	x, ok := n.(*syntax.LoadExpr)
-	if !ok || x.Method != nil || len(x.Args) == 0 || x.Args[0].Name != nil {
-		return ""
-	}
-	lit, ok := x.Args[0].Value.(*syntax.StringLit)
-	if !ok || len(lit.Parts) != 1 {
-		return ""
-	}
-	p := lit.Parts[0].Text
-	if p != "" && p[0] == rootMark {
-		return path.Clean(p)
-	}
-	return path.Join(path.Dir(f.Src.Path), p)
 }
 
 // prefixOf reports an amend path naming the first steps of res's path, and their number.

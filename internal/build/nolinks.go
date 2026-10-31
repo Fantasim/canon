@@ -26,7 +26,7 @@ func (r *run) throughLinks(outputs []*output) (bool, error) {
 	for _, o := range outputs {
 		link, ok, err := scan.firstLink(r.linkBase(o.Abs), o.Abs)
 		if err != nil {
-			return false, displayError(o.Path, err)
+			return false, DisplayError(o.Path, err)
 		}
 		if ok {
 			diag.E8027.At(o.at, o.Path, r.linkShown(o.Path, o.Abs, link)).Report(r.s.bag(o.Package))

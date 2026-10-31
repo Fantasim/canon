@@ -115,7 +115,7 @@ func (j *journal) resolve(at Layout, token string) (*undo, error) {
 	if j.Version != journalVersion && j.Version != journalVersionPID {
 		return nil, &fault{reasonVersion, j.Revision}
 	}
-	u := &undo{token: token}
+	u := &undo{token: token, at: at}
 	seen := map[string]bool{}
 	for _, f := range j.Files {
 		s, reason := confine(at, f.Path)
@@ -277,14 +277,14 @@ type linkResolver interface {
 
 // straight refuses spots with a symbolic link below their base: no component a listing shows as
 // a link, dangling or not, and, where the FS resolves links, the deepest existing part resolving
-// to itself (log-2026-09-29 M4 U4c-r3).
-func straight(fsys build.WriteFS, spots []spot) error {
+// to itself, each named by at's display path (log-2026-09-29 M4 U4c-r3; DECISIONS 416).
+func straight(fsys build.WriteFS, at Layout, spots []spot) error {
 	listings := map[string][]fs.DirEntry{}
 	r, resolves := fsys.(linkResolver)
 	for _, s := range spots {
-		err := noLinkListed(fsys, listings, s)
+		err := noLinkListed(fsys, at, listings, s)
 		if err == nil && resolves {
-			err = straightOne(r, s)
+			err = straightOne(r, at, s)
 		}
 		if err != nil {
 			return err
@@ -295,7 +295,7 @@ func straight(fsys build.WriteFS, spots []spot) error {
 
 // noLinkListed walks s down from its base, refusing it at the first component its parent's
 // listing shows as a symbolic link; listings are kept per directory.
-func noLinkListed(fsys build.WriteFS, listings map[string][]fs.DirEntry, s spot) error {
+func noLinkListed(fsys build.WriteFS, at Layout, listings map[string][]fs.DirEntry, s spot) error {
 	rel, _ := below(s.base, s.abs)
 	dir := s.base
 	for seg := range strings.SplitSeq(rel, pathSep) {
@@ -303,7 +303,7 @@ func noLinkListed(fsys build.WriteFS, listings map[string][]fs.DirEntry, s spot)
 		if !seen {
 			var err error
 			if entries, err = fsys.ReadDir(dir); err != nil && !errors.Is(err, fs.ErrNotExist) {
-				return fmt.Errorf(fmtFileErr, dir, err)
+				return build.DisplayError(at.Display(dir), err)
 			}
 			listings[dir] = entries
 		}
@@ -312,17 +312,17 @@ func noLinkListed(fsys build.WriteFS, listings map[string][]fs.DirEntry, s spot)
 			return nil
 		}
 		if entries[i].Type()&fs.ModeSymlink != 0 {
-			return &fault{reasonLink, s.abs}
+			return &fault{reasonLink, at.Display(s.abs)}
 		}
 		dir = project.Join(dir, seg)
 	}
 	return nil
 }
 
-func straightOne(r linkResolver, s spot) error {
+func straightOne(r linkResolver, at Layout, s spot) error {
 	real, err := r.EvalSymlinks(s.base)
 	if err != nil {
-		return fmt.Errorf(fmtFileErr, s.base, err)
+		return build.DisplayError(at.Display(s.base), err)
 	}
 	rel, _ := below(s.base, s.abs)
 	for p := s.abs; p != s.base && p != project.DirOf(p); p, rel = project.DirOf(p), path.Dir(rel) {
@@ -331,10 +331,10 @@ func straightOne(r linkResolver, s spot) error {
 			continue
 		}
 		if err != nil {
-			return fmt.Errorf(fmtFileErr, p, err)
+			return build.DisplayError(at.Display(p), err)
 		}
 		if got != project.Join(real, rel) {
-			return &fault{reasonLink, s.abs}
+			return &fault{reasonLink, at.Display(s.abs)}
 		}
 		return nil
 	}

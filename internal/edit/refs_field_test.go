@@ -103,3 +103,38 @@ func lineOf(src, name string) string {
 	}
 	return ""
 }
+
+// spreadLaw builds other from arena by a spread, so other.mobs holds arena's elements.
+const spreadLaw = `package a
+
+local record Mob {
+  id: Int
+}
+
+local record Arena {
+  mobs: [Mob] keyed by id
+  boss: ref Mob
+}
+
+local let arena: Arena = { mobs: [{ id: 1 }, { id: 2 }], boss: 2 }
+local let other: Arena = { ...arena, boss: 1 }
+`
+
+// spreadFixture is spreadLaw analyzed, clean.
+func spreadFixture(t *testing.T) fixture {
+	t.Helper()
+	p, err := build.Open(mapFS{"law/project.canon": file(projectCanon), "law/a/a.canon": file(spreadLaw)}, "/law", build.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return analyze(t, p, []string{"a"}, true)
+}
+
+// API.md R7 (DECISIONS 410): a bound level-1 ref is a ref of the entry its key names in the
+// collection its instance's field holds: other.boss is a value ref of arena.mobs[1], not code.
+func TestRefsSpreadLevelOne(t *testing.T) {
+	checkRefs(t, spreadFixture(t), []refsCase{
+		{"a:arena.mobs[1]", []string{"a/a.canon:13 value a:other.boss 1"}},
+		{"a:arena.mobs[2]", []string{"a/a.canon:12 value a:arena.boss 2"}},
+	})
+}

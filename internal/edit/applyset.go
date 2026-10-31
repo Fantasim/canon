@@ -14,7 +14,7 @@ func setOp(x *opCtx) error {
 	if x.a.env.EditLayer != "" {
 		return x.layerSet()
 	}
-	v, err := x.typed(x.op.Value, x.targetType())
+	v, err := x.typed(x.op.Value, x.setType())
 	if err != nil {
 		return err
 	}
@@ -94,19 +94,34 @@ func (x *opCtx) field() (*value.Record, *types.Field, bool) {
 // computes the arm the state the earlier operations left selects, else the one verification
 // found (U4a G2).
 func (x *opCtx) targetType() types.Type {
-	t, err := x.a.snap.Type(x.res.Resolved)
-	if err != nil || t == nil {
-		return x.res.Target.Type()
-	}
-	if !dependent(present(t)) {
+	t, dep := x.declaredType()
+	if !dep {
 		return t
-	}
-	if _, f, isField := x.field(); isField {
-		t = f.Type
 	}
 	if ct, computed := x.armOf(t, x.frameAt(len(x.res.Steps))); computed {
 		return ct
 	}
+	return x.heldType(t)
+}
+
+// declaredType is the type the analysis gives the path, its field's declared type when that is
+// dependent (dep); the target's own type when the analysis gives none.
+func (x *opCtx) declaredType() (t types.Type, dep bool) {
+	t, err := x.a.snap.Type(x.res.Resolved)
+	if err != nil || t == nil {
+		return x.res.Target.Type(), false
+	}
+	if !dependent(present(t)) {
+		return t, false
+	}
+	if _, f, isField := x.field(); isField {
+		t = f.Type
+	}
+	return t, true
+}
+
+// heldType is dependent t where its arm cannot be computed: the type of the value held there.
+func (x *opCtx) heldType(t types.Type) types.Type {
 	if x.res.Target == nil {
 		return t
 	}

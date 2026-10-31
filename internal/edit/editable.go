@@ -199,12 +199,8 @@ func (j *judge) editable() Editability {
 	switch {
 	case j.layer == "":
 		return Editability{Mode: c.mode, File: j.s.display(c.span.File), Span: c.span}
-	case c.layer == j.layer:
-		mode := ModeCanon
-		if c.mode == ModeJSON && j.s.files[c.span.File] == nil {
-			mode = ModeJSON // inside a JSON file the amendment loads
-		}
-		return Editability{Mode: mode, File: j.s.display(c.span.File), Span: c.span}
+	case c.layer == j.layer: // never inside a JSON file the amendment loads (layerRow)
+		return Editability{Mode: ModeCanon, File: j.s.display(c.span.File), Span: c.span}
 	}
 	if e, ok := j.s.staticAmendment(j.res, j.layer); ok {
 		return e // a computed value there comes from the amendment's expression: no structural origin
@@ -321,8 +317,15 @@ func layerRow(j *judge) Reason {
 	}
 	amendable := j.op == OpSet || j.op == OpReset || j.op == OpAddEntry || j.op == OpRemove && j.layerStates()
 	rootValue := len(j.res.Steps) == 0 && j.op != OpAddEntry // an entry added to a root table or map is an amendment (EVALUATION.md §9.3)
-	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet {
+	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet || j.belowLoad() {
 		return ReasonLayer
 	}
 	return ReasonNone
+}
+
+// belowLoad reports j's value inside the JSON file an amendment of the edit layer loads: outside
+// the layer file, and maybe read by the base (API.md W11a; DECISIONS 411).
+func (j *judge) belowLoad() bool {
+	c := j.last()
+	return c.layer == j.layer && c.mode == ModeJSON && j.s.files[c.span.File] == nil
 }

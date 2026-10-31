@@ -31,13 +31,13 @@ func (w *writer) writeAll(changes []change) error {
 		if err := w.stage(c); err != nil {
 			w.removeStages(changes[:i+1])
 			w.removeDirs()
-			return displayError(c.display, err)
+			return DisplayError(c.display, err)
 		}
 	}
 	for i, c := range changes {
 		if err := w.replace(c); err != nil {
 			w.removeStages(changes[i:])
-			err = errors.Join(displayError(c.display, err), w.restore(changes[:i]))
+			err = errors.Join(DisplayError(c.display, err), w.restore(changes[:i]))
 			w.removeDirs()
 			return err
 		}
@@ -221,7 +221,7 @@ func (w *writer) restore(done []change) error {
 	var errs []error
 	for _, c := range slices.Backward(done) { // the last first: a file written twice gets its first content back last
 		if err := w.restoreOne(c); err != nil {
-			errs = append(errs, displayError(c.display, err))
+			errs = append(errs, DisplayError(c.display, err))
 		}
 	}
 	return errors.Join(errs...)

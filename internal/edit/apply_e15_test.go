@@ -2,11 +2,66 @@ package edit_test
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/edit"
 )
+
+// valuedSrc's maps have dependent values, not dependent keys: one required with a default, one
+// optional, both holding values only the kill branch takes.
+const valuedSrc = `package d
+
+local enum Goal { kill, paint }
+
+local enum Color { red, green }
+
+local type P(g: Goal) = match g {
+  kill => Int
+  paint => Color
+}
+
+local record R {
+  goal: Goal = kill
+  vals: {String: P(goal)} = {}
+  opt: {String: P(goal)}?
+}
+
+local let r: R = { vals: { "x": 1 }, opt: { "y": 2 } }
+`
+
+// API.md E15 (DECISIONS 411): only a finding at a field's exact path drops it; a map with
+// dependent values, required or optional, keeps its value with its E3802 at the entry.
+func TestE15KeepsDependentValuedMap(t *testing.T) {
+	fsys := mapFS{"law/project.canon": file(projectCanon), "law/d/d.canon": file(valuedSrc)}
+	s := open(t, fsys, nil, "", "d")
+	if n := s.a.Result().Summary.Errors; n > 0 {
+		t.Fatalf("valuedSrc has %d errors: %v", n, s.a.Result().List)
+	}
+	op := edit.Operation{Kind: edit.OpSet, Path: "d:r.goal", Value: edit.Member("paint")}
+	plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{op}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Dropped) != 0 {
+		t.Errorf("dropped %+v, want none", plan.Dropped)
+	}
+	after := written(fsys, plan)
+	if text := string(after["law/d/d.canon"].Data); !strings.Contains(text, `vals: { "x": 1 }, opt: { "y": 2 }`) {
+		t.Errorf("after the edit:\n%s", text)
+	}
+	var at []string
+	for _, f := range open(t, after, nil, "", "d").a.Result().List {
+		if f.Code == diag.E3802.Def().Code {
+			at = append(at, f.Path)
+		}
+	}
+	if !slices.Equal(at, []string{"r.vals[x]", "r.opt[y]"}) {
+		t.Errorf("type mismatches at %v, want [r.vals[x] r.opt[y]]", at)
+	}
+}
 
 // byPickFS is depSrc's project whose tag counts one pick of its default goal's branch.
 func byPickFS() mapFS {

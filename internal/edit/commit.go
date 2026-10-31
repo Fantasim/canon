@@ -187,7 +187,7 @@ func textEnds(data []byte) []byte {
 func (c *commit) vet() error {
 	u, err := c.j.resolve(c.at, c.token)
 	if err == nil {
-		err = straight(c.fsys, u.spots())
+		err = straight(c.fsys, c.at, u.spots())
 	}
 	var f *fault
 	if errors.As(err, &f) && (f.reason == reasonLink || f.reason == reasonHidden) {
@@ -208,7 +208,7 @@ func (c *commit) check() error {
 		now, err := c.fsys.ReadFile(t.abs)
 		present := err == nil
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf(fmtFileErr, t.display, err)
+			return build.DisplayError(t.display, err)
 		}
 		if present != t.existed || !bytes.Equal(now, t.old) {
 			stale = append(stale, t.display)
@@ -263,7 +263,7 @@ func (c *commit) recordFile(t *commitFile) error {
 	if !t.existed {
 		missing, err := c.missing(project.DirOf(t.abs))
 		if err != nil {
-			return fmt.Errorf(fmtFileErr, t.display, err)
+			return build.DisplayError(t.display, err)
 		}
 		c.created = append(c.created, missing...)
 	}
@@ -278,7 +278,7 @@ func (c *commit) recordDir(t *commitFile) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf(fmtFileErr, t.display, err)
+		return build.DisplayError(t.display, err)
 	}
 	if !info.IsDir() {
 		return nil
@@ -298,7 +298,7 @@ func (c *commit) perm(abs, display string) (*uint32, error) {
 	}
 	info, err := c.fsys.Stat(abs)
 	if err != nil {
-		return nil, fmt.Errorf(fmtFileErr, display, err)
+		return nil, build.DisplayError(display, err)
 	}
 	return permOf(info), nil
 }
@@ -328,21 +328,21 @@ func (c *commit) writeJournal() error {
 	}
 	jdir := project.DirOf(c.name)
 	made, err := c.missing(jdir)
-	if err != nil {
-		return err
+	if err == nil {
+		err = c.fsys.MkdirAll(jdir)
 	}
-	if err := c.fsys.MkdirAll(jdir); err != nil {
-		return err
+	if err != nil {
+		return build.DisplayError(c.at.Display(jdir), err)
 	}
 	if err := c.fsys.WriteFile(c.name, data); err != nil {
 		_ = c.fsys.Remove(c.name) // what a failed write left, if anything: no file has changed
-		return err
+		return build.DisplayError(c.at.Display(c.name), err)
 	}
 	syncs := []string{jdir}
 	for _, d := range made {
 		syncs = append(syncs, project.DirOf(d))
 	}
-	if err := syncDirs(c.fsys, syncs); err != nil {
+	if err := syncDirs(c.fsys, c.at, syncs); err != nil {
 		return c.rollback(err)
 	}
 	return nil
@@ -363,11 +363,11 @@ func (c *commit) stageAll(ctx context.Context) error {
 			err = c.fsys.MkdirAll(project.DirOf(t.abs))
 		}
 		if err != nil {
-			return fmt.Errorf(fmtFileErr, t.display, err)
+			return build.DisplayError(t.display, err)
 		}
 		c.made = append(c.made, fresh...)
 		if err := build.WriteStaged(c.fsys, stageName(t.abs, c.token), t.data, modeOf(t.mode)); err != nil {
-			return fmt.Errorf(fmtFileErr, t.display, err)
+			return build.DisplayError(t.display, err)
 		}
 	}
 	return ctx.Err()
@@ -383,7 +383,7 @@ func (c *commit) apply() error {
 		}
 		c.done = append(c.done, i) // before the rename: an undone rename is left alone, being old
 		if err := c.fsys.Rename(stageName(t.abs, c.token), t.abs); err != nil {
-			return fmt.Errorf(fmtFileErr, t.display, err)
+			return build.DisplayError(t.display, err)
 		}
 	}
 	for i, t := range c.targets {
@@ -392,16 +392,19 @@ func (c *commit) apply() error {
 		}
 		c.done = append(c.done, i)
 		if err := c.fsys.Remove(t.abs); err != nil {
-			return fmt.Errorf(fmtFileErr, t.display, err)
+			return build.DisplayError(t.display, err)
 		}
 	}
 	if err := c.dropDirs(); err != nil {
 		return err
 	}
-	if err := syncDirs(c.fsys, c.touched()); err != nil {
+	if err := syncDirs(c.fsys, c.at, c.touched()); err != nil {
 		return err
 	}
-	return c.fsys.Remove(c.name)
+	if err := c.fsys.Remove(c.name); err != nil {
+		return build.DisplayError(c.at.Display(c.name), err)
+	}
+	return nil
 }
 
 // dropDirs removes, deepest first, each journaled directory that is empty now; one that is
@@ -425,7 +428,7 @@ func (c *commit) dropDirs() error {
 			err = c.fsys.Remove(t.abs)
 		}
 		if err != nil {
-			return fmt.Errorf(fmtFileErr, t.display, err)
+			return build.DisplayError(t.display, err)
 		}
 	}
 	return nil
@@ -450,9 +453,9 @@ func (c *commit) spot(abs string) spot {
 }
 
 // rollback puts back what this commit changed, and only that, then removes the journal; a
-// rollback that cannot finish keeps the journal for Recover (API.md N11; log-2026-09-29 M4 U4c-r).
+// rollback that cannot finish keeps the journal for Recover, an ErrJournal (API.md N11; DECISIONS 416).
 func (c *commit) rollback(cause error) error {
-	u := &undo{token: c.token}
+	u := &undo{token: c.token, at: c.at}
 	for _, d := range c.made {
 		u.created = append(u.created, c.spot(d))
 	}
@@ -473,11 +476,16 @@ func (c *commit) rollback(cause error) error {
 			u.stages = append(u.stages, t.abs)
 		}
 	}
-	if _, err := u.run(c.fsys); err != nil {
-		return errors.Join(cause, journalRefusal(ErrJournal, err))
+	_, err := u.run(c.fsys)
+	if err == nil {
+		if err = c.fsys.Remove(c.name); errors.Is(err, fs.ErrNotExist) {
+			err = nil
+		} else if err != nil {
+			err = build.DisplayError(c.at.Display(c.name), err)
+		}
 	}
-	if err := c.fsys.Remove(c.name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return errors.Join(cause, err)
+	if err != nil {
+		return errors.Join(cause, fmt.Errorf(fmtBadMember, ErrJournal, err))
 	}
 	return cause
 }

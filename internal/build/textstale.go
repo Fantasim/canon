@@ -84,7 +84,7 @@ func (j *staleJudge) stale(pkg, name, sum string) ([]*output, error) {
 	case cannotExist(err):
 		return r.asidesOf(pkg, at, sum)
 	case err != nil:
-		return nil, displayError(name, err)
+		return nil, DisplayError(name, err)
 	case !info.Mode().IsRegular(): // a directory, a device, a pipe: not a file canon wrote
 		return nil, nil
 	}
@@ -107,14 +107,14 @@ func (r *run) asidesOf(pkg string, at project.Path, sum string) ([]*output, erro
 	}
 	asides, err := r.stagedBeside(at.Abs)
 	if err != nil {
-		return nil, displayError(path.Dir(at.Display), err)
+		return nil, DisplayError(path.Dir(at.Display), err)
 	}
 	var out []*output
 	for _, aside := range asides {
 		shown := path.Join(path.Dir(at.Display), path.Base(aside))
 		ok, err := r.hashesTo(aside, sum)
 		if err != nil {
-			return nil, displayError(shown, err)
+			return nil, DisplayError(shown, err)
 		}
 		if ok {
 			out = append(out, &output{remove: true, consumer: r.consumerOf(at.Display), Output: Output{Path: shown, Abs: aside, Target: ir.TargetText, Package: pkg, Status: StatusWritten}})
@@ -187,7 +187,7 @@ func (j *staleJudge) kept(pkg, name, abs, sum string) (bool, error) {
 	case cannotExist(err):
 		return true, nil
 	case err != nil:
-		return false, displayError(name, err)
+		return false, DisplayError(name, err)
 	case generated(abs, head):
 		return true, nil
 	}
@@ -200,7 +200,7 @@ func (j *staleJudge) kept(pkg, name, abs, sum string) (bool, error) {
 	case cannotExist(err):
 		return true, nil
 	case err != nil:
-		return false, displayError(name, err)
+		return false, DisplayError(name, err)
 	}
 	return got != sum, nil
 }

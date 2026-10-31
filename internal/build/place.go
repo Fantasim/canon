@@ -43,7 +43,7 @@ func (r *run) place(outputs []*output, opt BuildOptions) ([]*output, error) {
 			o.Status = StatusWritten
 			continue
 		case err != nil:
-			return nil, displayError(o.Path, err)
+			return nil, DisplayError(o.Path, err)
 		}
 		o.old, o.existed = old, true
 		if err := r.spelling(o); err != nil {

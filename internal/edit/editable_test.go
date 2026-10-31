@@ -288,18 +288,30 @@ func TestReasonLayeredBeforeFormat(t *testing.T) {
 	})
 }
 
-// API.md W11a: the edit layer's amendment is a source: a literal is walked, a JSON load reads its
-// file, any other expression is replaced whole and nothing below it is editable.
+// API.md W11a (DECISIONS 411): the edit layer's amendment is a source: a literal is walked; below a
+// load nothing is editable (reason layer), any other expression is computed; each is replaced whole.
 func TestW11aAmendmentRightHandSide(t *testing.T) {
 	checkEdits(t, lawFixture(t, []string{"dev"}, "a"), []editCase{
 		{in: "a:holder.data.n", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: "1"},
 		{in: "a:holder.data", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: `{ id: "L", n: 1 }`},
 		{in: "a:holder.data.n", reason: edit.ReasonLayered, amends: "dev"},
-		{in: "a:other.data.n", layer: "dev", mode: edit.ModeJSON, file: "a/item.json", text: "5"},
+		{in: "a:other.data.n", layer: "dev", reason: edit.ReasonLayer},
 		{in: "a:other.data", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: `load("item.json")`},
 		{in: "a:base.sub", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: "mk()"},
 		{in: "a:base.sub.n", layer: "dev", reason: edit.ReasonComputed},
 	})
+}
+
+// API.md W11a (DECISIONS 411): a Set below the active edit layer's amendment that loads JSON is
+// ErrNotEditable with reason layer, nothing written: the base's holder reads that file too.
+func TestW11aSetBelowLoadRefused(t *testing.T) {
+	s := open(t, law, []string{"dev"}, "dev", "a")
+	op := edit.Operation{Kind: edit.OpSet, Path: "a:other.data.n", Value: edit.Int(6)}
+	plan, err := edit.Apply(t.Context(), s.env, s.snap, edit.Request{Ops: []edit.Operation{op}})
+	var ne *edit.NotEditableError
+	if !errors.As(err, &ne) || ne.Reason != edit.ReasonLayer || plan != nil {
+		t.Errorf("plan %+v, %v, want ErrNotEditable reason layer", plan, err)
+	}
 }
 
 // API.md W11a: an inactive edit layer's amendment of the path or an ancestor is found by its path.
@@ -314,7 +326,7 @@ func TestW11aInactiveEditLayer(t *testing.T) {
 	checkEdits(t, lawFixture(t, nil, "a"), []editCase{
 		{in: "a:holder.data.n", layer: "lc", reason: edit.ReasonComputed},
 		{in: "a:holder.data", layer: "lc", mode: edit.ModeCanon, file: lc, text: "mk()"},
-		{in: "a:other.data.n", layer: "lc", mode: edit.ModeJSON, file: "a/item.json"},
+		{in: "a:other.data.n", layer: "lc", reason: edit.ReasonLayer},
 		{in: "a:other.data", layer: "lc", mode: edit.ModeCanon, file: lc, text: `load("item.json")`},
 	})
 }

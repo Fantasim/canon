@@ -248,7 +248,7 @@ func TestRecoverUserFileInCreatedDir(t *testing.T) {
 	d.files["/p/items/deep/mine.canon"] = []byte("mine\n")
 	crash := d.state()
 	lines, err := warnings(t, d)
-	if !errors.Is(err, edit.ErrJournal) || !strings.Contains(err.Error(), "/p/items/deep/mine.canon") || len(lines) != 0 {
+	if !errors.Is(err, edit.ErrJournal) || !strings.Contains(err.Error(), "not the edit's: items/deep/mine.canon") || len(lines) != 0 {
 		t.Fatalf("logged %v, err %v", lines, err)
 	}
 	mustState(t, d.state(), crash)

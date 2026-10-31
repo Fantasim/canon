@@ -152,7 +152,7 @@ func (s *snapshot) readLocks(fsys project.FS, dir string) error {
 		case errors.Is(err, fs.ErrNotExist):
 			continue
 		case err != nil:
-			return displayError(name, err)
+			return DisplayError(name, err)
 		}
 		s.locks[name] = data
 		s.sums = append(s.sums, project.FileSum{Path: name, Sum: sha256.Sum256(data)})

@@ -112,7 +112,7 @@ func (r *run) straysIn(d strayDir, written map[string]bool, filled bool) ([]stra
 	case cannotExist(err):
 		return nil, nil
 	case err != nil:
-		return nil, displayError(d.display, err)
+		return nil, DisplayError(d.display, err)
 	}
 	var out []stray
 	slices.SortFunc(entries, func(a, b fs.DirEntry) int { return cmp.Compare(a.Name(), b.Name()) })
@@ -125,7 +125,7 @@ func (r *run) straysIn(d strayDir, written map[string]bool, filled bool) ([]stra
 		shown := path.Join(d.display, e.Name())
 		switch {
 		case err != nil:
-			return nil, displayError(shown, err)
+			return nil, DisplayError(shown, err)
 		case ok && r.flagged(m, filled):
 			out = append(out, stray{d: d, abs: abs, shown: shown, m: m})
 		}

@@ -94,9 +94,9 @@ func (e *displayErr) Error() string { return e.msg }
 // Unwrap is the original error.
 func (e *displayErr) Unwrap() error { return e.err }
 
-// displayError names display in place of the absolute path (or two, a rename's) a *fs.PathError
-// or *os.LinkError carries, its op and cause kept (DECISIONS 201).
-func displayError(display string, err error) error {
+// DisplayError names display in place of the absolute path (or two, a rename's) a *fs.PathError
+// or *os.LinkError carries, its op and cause kept (DECISIONS 201, 416).
+func DisplayError(display string, err error) error {
 	if pe, ok := asPathError(err); ok {
 		return &displayErr{msg: fmt.Sprintf(fmtDisplayOpCause, display, pe.Op, pe.Err), err: err}
 	}
@@ -123,7 +123,7 @@ func displayErrorIn(dir string, err error) error {
 	if !ok {
 		return err
 	}
-	return displayError(relativeTo(dir, pe.Path, filepath.Separator), err)
+	return DisplayError(relativeTo(dir, pe.Path, filepath.Separator), err)
 }
 
 // relativeTo is the '/'-separated display path of name, an OS path separated by sep, in dir:

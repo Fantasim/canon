@@ -32,7 +32,7 @@ func (p Process) running(j *journal) bool {
 
 // Recover rolls back this host's unfinished edits (API.md O5, N11); journals are untrusted input, see ADR-0010.
 func Recover(s Site, logger *slog.Logger) error {
-	names, err := journals(s.FS, s.Layout.Dir())
+	names, err := journals(s.FS, s.Layout)
 	if err != nil || len(names) == 0 {
 		return err
 	}
@@ -54,14 +54,15 @@ type tally struct {
 }
 
 // add counts one journal: r nil when it was left or skipped; a decodable journal removed is an
-// edit rolled back, whatever it changed, and so is, for Recover, one it changed files of.
+// edit rolled back, whatever it changed, and so is, for Recover, one it changed files of. Any
+// failure keeps the journal: a fault or an I/O error alike is ErrJournal (DECISIONS 416).
 func (t *tally) add(name string, r *undoer, err error) {
 	if r != nil && (err == nil || !t.removedOnly && r.changed > 0) {
 		t.rolled++
 		t.changes += r.changed
 	}
 	if err != nil {
-		t.errs = append(t.errs, fmt.Errorf(fmtFileErr, path.Base(name), journalRefusal(ErrJournal, err)))
+		t.errs = append(t.errs, fmt.Errorf(fmtFileErr, path.Base(name), fmt.Errorf(fmtBadMember, ErrJournal, err)))
 	}
 }
 
@@ -72,15 +73,15 @@ func (t *tally) log(logger *slog.Logger) {
 	}
 }
 
-// journals are the journal files under dir, in byte order; none when there is no journal directory.
-func journals(fsys build.WriteFS, dir string) ([]string, error) {
-	jdir := project.Join(dir, JournalDir)
+// journals are the journal files of at's project, in byte order; none when there is no journal directory.
+func journals(fsys build.WriteFS, at Layout) ([]string, error) {
+	jdir := project.Join(at.Dir(), JournalDir)
 	entries, err := fsys.ReadDir(jdir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf(fmtFileErr, JournalDir, err)
+		return nil, build.DisplayError(at.Display(jdir), err)
 	}
 	var out []string
 	for _, e := range entries {
@@ -96,14 +97,14 @@ func journals(fsys build.WriteFS, dir string) ([]string, error) {
 // still runs, it was written on another machine or this site cannot take its locks; nil when it
 // rolled nothing back: gone, torn, left (API.md N11; DECISIONS 375).
 func recoverOne(s Site, name string) (*undoer, error) {
-	l, err := loadJournal(s.FS, name)
+	l, err := loadJournal(s.FS, s.Layout, name)
 	switch {
 	case err != nil:
 		return nil, err
 	case l.gone:
 		return nil, nil
 	case l.torn:
-		return nil, removeJournal(s.FS, name) // cut short before any file changed: WriteFile is atomic
+		return nil, removeJournal(s.FS, s.Layout, name) // cut short before any file changed: WriteFile is atomic
 	case l.bad:
 		return nil, &fault{reasonLocks, strings.Join(l.j.Locks, listSep)}
 	case l.j.Host != s.Self.Host:
@@ -133,7 +134,7 @@ func recoverLocked(s Site, name string, j *journal) (r *undoer, err error) {
 // underLocks reads the journal again under its locks: gone, or its locks or host changed, it is
 // left; otherwise it is rolled back (DECISIONS 375: J3).
 func underLocks(s Site, name string, j *journal) (*undoer, error) {
-	l, err := loadJournal(s.FS, name)
+	l, err := loadJournal(s.FS, s.Layout, name)
 	if err != nil || l.gone || !l.locked || l.j.Host != j.Host || !slices.Equal(l.j.Locks, j.Locks) {
 		return nil, err
 	}
@@ -151,7 +152,7 @@ func rollBack(s Site, name string, j *journal) (*undoer, error) {
 	if err != nil {
 		return r, err
 	}
-	return r, removeJournal(s.FS, name)
+	return r, removeJournal(s.FS, s.Layout, name)
 }
 
 // clearStages removes the edit's stages, 0.1.5's fixed ones, and what the OS WriteFile left
@@ -185,17 +186,18 @@ func clearLeftovers(fsys build.WriteFS, dir string, bases []string) {
 }
 
 // removeJournal removes the journal name and what writing it left beside it (API.md §2.2).
-func removeJournal(fsys build.WriteFS, name string) error {
+func removeJournal(fsys build.WriteFS, at Layout, name string) error {
 	clearLeftovers(fsys, project.DirOf(name), []string{path.Base(name)})
 	if err := fsys.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
+		return build.DisplayError(at.Display(name), err)
 	}
 	return nil
 }
 
-// undo is what a rollback puts back, placed: files to return to their state before the commit,
-// the stages to clear, the directories the commit created and those it removed.
+// undo is what a rollback puts back, placed by at: files to return to their state before the
+// commit, the stages to clear, the directories the commit created and those it removed.
 type undo struct {
+	at      Layout // names what it places in errors (DECISIONS 416)
 	files   []undoFile
 	stages  []string
 	token   string // the stages' <j>, from the journal's name (DECISIONS 351)
@@ -229,6 +231,7 @@ func (u *undo) spots() []spot {
 // directories whose entries changed.
 type undoer struct {
 	fsys    build.WriteFS
+	at      Layout
 	token   string
 	touched []string
 	files   []string
@@ -239,8 +242,8 @@ type undoer struct {
 // file in neither its old nor its new state, no created directory holding what is not the
 // edit's; the touched directories are synced last (API.md N11; log-2026-09-29 M4 U4c-r3).
 func (u *undo) run(fsys build.WriteFS) (*undoer, error) {
-	r := &undoer{fsys: fsys, token: u.token}
-	if err := straight(fsys, u.spots()); err != nil {
+	r := &undoer{fsys: fsys, at: u.at, token: u.token}
+	if err := straight(fsys, u.at, u.spots()); err != nil {
 		return r, err
 	}
 	back, err := u.pending(fsys)
@@ -260,7 +263,7 @@ func (u *undo) run(fsys build.WriteFS) (*undoer, error) {
 	if err := r.clear(u.created); err != nil {
 		return r, err
 	}
-	return r, syncDirs(fsys, r.touched)
+	return r, syncDirs(fsys, u.at, r.touched)
 }
 
 // pending are the files still in their new state; one in neither state refuses the rollback.
@@ -271,14 +274,14 @@ func (u *undo) pending(fsys build.WriteFS) ([]undoFile, error) {
 		now, err := fsys.ReadFile(f.abs)
 		present := err == nil
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return nil, fmt.Errorf(fmtFileErr, f.Path, err)
+			return nil, build.DisplayError(u.at.Display(f.abs), err)
 		}
 		switch {
 		case present == f.Existed && bytes.Equal(now, f.Old):
 		case f.New == newAbsent && !present, present && f.New == digest(now):
 			back = append(back, f)
 		default:
-			changed = append(changed, f.Path)
+			changed = append(changed, u.at.Display(f.abs))
 		}
 	}
 	if len(changed) > 0 {
@@ -298,11 +301,11 @@ func (u *undo) clearable(fsys build.WriteFS) error {
 			continue
 		}
 		if err != nil {
-			return fmt.Errorf(fmtFileErr, d.abs, err)
+			return build.DisplayError(u.at.Display(d.abs), err)
 		}
 		for _, e := range entries {
 			if name := project.Join(d.abs, e.Name()); !ownEntry(own, name, e) {
-				strays = append(strays, name)
+				strays = append(strays, u.at.Display(name))
 			}
 		}
 	}
@@ -362,21 +365,26 @@ func (r *undoer) recreate(dirs []undoDir) error {
 	ordered := slices.Clone(dirs)
 	slices.SortFunc(ordered, func(a, b undoDir) int { return deepestFirst(b.abs, a.abs) })
 	for _, d := range ordered {
-		there, err := r.exists(d.abs)
-		if err != nil {
-			return err
+		if err := r.remake(d); err != nil {
+			return build.DisplayError(r.at.Display(d.abs), err)
 		}
-		if there {
-			continue
-		}
-		if err := r.fsys.MkdirAll(d.abs); err != nil {
-			return err
-		}
-		if err := chmod(r.fsys, d.abs, d.mode); err != nil {
-			return err
-		}
-		r.touch(d.abs)
 	}
+	return nil
+}
+
+// remake makes d again with its permissions, unless it is there.
+func (r *undoer) remake(d undoDir) error {
+	there, err := r.exists(d.abs)
+	if err != nil || there {
+		return err
+	}
+	if err := r.fsys.MkdirAll(d.abs); err != nil {
+		return err
+	}
+	if err := chmod(r.fsys, d.abs, d.mode); err != nil {
+		return err
+	}
+	r.touch(d.abs)
 	return nil
 }
 
@@ -384,7 +392,7 @@ func (r *undoer) recreate(dirs []undoDir) error {
 func (r *undoer) restore(files []undoFile) error {
 	for _, f := range files {
 		if err := r.restoreOne(f); err != nil {
-			return fmt.Errorf(fmtFileErr, f.Path, err)
+			return build.DisplayError(r.at.Display(f.abs), err)
 		}
 		r.touch(f.abs)
 		r.files = append(r.files, f.abs)
@@ -411,18 +419,23 @@ func (r *undoer) clear(dirs []spot) error {
 	ordered := slices.Clone(dirs)
 	slices.SortFunc(ordered, func(a, b spot) int { return deepestFirst(a.abs, b.abs) })
 	for _, d := range ordered {
-		there, err := r.exists(d.abs)
-		if err != nil {
-			return err
+		if err := r.clearOne(d); err != nil {
+			return build.DisplayError(r.at.Display(d.abs), err)
 		}
-		if !there {
-			continue
-		}
-		if err := removeAll(r.fsys, d.abs); err != nil {
-			return err
-		}
-		r.touch(d.abs)
 	}
+	return nil
+}
+
+// clearOne removes d with all it holds, if it is there.
+func (r *undoer) clearOne(d spot) error {
+	there, err := r.exists(d.abs)
+	if err != nil || !there {
+		return err
+	}
+	if err := removeAll(r.fsys, d.abs); err != nil {
+		return err
+	}
+	r.touch(d.abs)
 	return nil
 }
 
@@ -468,7 +481,7 @@ type dirSyncer interface {
 }
 
 // syncDirs makes each directory's entries durable where the FS can; one gone since needs none.
-func syncDirs(fsys build.WriteFS, dirs []string) error {
+func syncDirs(fsys build.WriteFS, at Layout, dirs []string) error {
 	s, ok := fsys.(dirSyncer)
 	if !ok {
 		return nil
@@ -477,7 +490,7 @@ func syncDirs(fsys build.WriteFS, dirs []string) error {
 	slices.Sort(ordered)
 	for _, d := range slices.Compact(ordered) {
 		if err := s.SyncDir(d); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf(fmtFileErr, d, err)
+			return build.DisplayError(at.Display(d), err)
 		}
 	}
 	return nil

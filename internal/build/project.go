@@ -123,7 +123,7 @@ func (p *Project) readProject(s *snapshot) error {
 	}
 	content, err := p.fs.ReadFile(project.Join(p.dir, project.FileName))
 	if err != nil {
-		return displayError(project.FileName, err)
+		return DisplayError(project.FileName, err)
 	}
 	src, sum, err := s.addOwn(project.FileName, content)
 	if err != nil {
@@ -154,7 +154,7 @@ func (p *Project) readLocal(s *snapshot) (*project.Local, error) {
 	case errors.Is(err, fs.ErrNotExist):
 		return nil, nil
 	case err != nil:
-		return nil, displayError(project.LocalFileName, err)
+		return nil, DisplayError(project.LocalFileName, err)
 	}
 	src, _, err := s.addOwn(project.LocalFileName, content)
 	if err != nil {
