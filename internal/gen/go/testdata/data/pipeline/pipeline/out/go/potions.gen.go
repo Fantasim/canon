@@ -101,9 +101,9 @@ type PipelineSnapshot struct {
 // Potion pointers, across ticks.
 func (self *PipelineSnapshot) Potions() *Potions { return &self.potions }
 
-// LoadPipelineSnapshot reads potions.json from dir. It fails if a file is missing, is
-// not JSON, or was built from another schema. Values are not validated here: `canon
-// build` already did, and filled every default.
+// LoadPipelineSnapshot reads potions.json from dir. It fails if a file is missing, is not
+// JSON, was built from another schema, or holds a value outside its range or
+// length refinement; `canon build` made every other check.
 func LoadPipelineSnapshot(dir string) (*PipelineSnapshot, error) {
 	s := &PipelineSnapshot{}
 	if err := loadPotions(dir+"/potions.json", &s.potions); err != nil {

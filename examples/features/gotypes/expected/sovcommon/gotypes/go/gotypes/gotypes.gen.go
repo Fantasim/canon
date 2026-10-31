@@ -195,6 +195,11 @@ type Item struct {
 	bonuses     rt.List[*Bonus]
 }
 
+const (
+	// Item_BonusesLenMax is the upper bound of the element count of bonuses, from its refinement ..=3.
+	Item_BonusesLenMax = 3
+)
+
 // ID: Its id.
 func (self *Item) ID() int64 { return self.id }
 
@@ -1009,7 +1014,11 @@ func decodeItem(name, path string, raw json.RawMessage, out *Item) error {
 		x35.amount = n37
 		v28 = append(v28, x35)
 	}
-	out.bonuses = rt.MakeList(v28)
+	v38 := rt.MakeList(v28)
+	if !(int64(v38.Len()) <= 3) {
+		return fmt.Errorf("%s: %sbonuses: expected an element count in ..=3", name, path)
+	}
+	out.bonuses = v38
 	return nil
 }
 

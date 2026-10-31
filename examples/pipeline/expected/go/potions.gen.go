@@ -29,6 +29,21 @@ type Potion struct {
 	isStrong bool
 }
 
+const (
+	// Potion_HealMin is the lower bound of heal, from its refinement 1..=100000.
+	Potion_HealMin = 1
+	// Potion_HealMax is the upper bound of heal, from its refinement 1..=100000.
+	Potion_HealMax = 100000
+	// Potion_CooldownMin is the lower bound of cooldown, from its refinement 0s..=10m.
+	Potion_CooldownMin = 0 * time.Millisecond
+	// Potion_CooldownMax is the upper bound of cooldown, from its refinement 0s..=10m.
+	Potion_CooldownMax = 600000 * time.Millisecond
+	// Potion_StackMin is the lower bound of stack, from its refinement 1..=9999.
+	Potion_StackMin = 1
+	// Potion_StackMax is the upper bound of stack, from its refinement 1..=9999.
+	Potion_StackMax = 9999
+)
+
 // ID: The item define. Stored in inventories: never renamed.
 func (self *Potion) ID() string { return self.id }
 
@@ -101,9 +116,9 @@ type PipelineSnapshot struct {
 // Potion pointers, across ticks.
 func (self *PipelineSnapshot) Potions() *Potions { return &self.potions }
 
-// LoadPipelineSnapshot reads potions.json from dir. It fails if a file is missing, is
-// not JSON, or was built from another schema. Values are not validated here: `canon
-// build` already did, and filled every default.
+// LoadPipelineSnapshot reads potions.json from dir. It fails if a file is missing, is not
+// JSON, was built from another schema, or holds a value outside its range or
+// length refinement; `canon build` made every other check.
 func LoadPipelineSnapshot(dir string) (*PipelineSnapshot, error) {
 	s := &PipelineSnapshot{}
 	if err := loadPotions(dir+"/potions.json", &s.potions); err != nil {
@@ -323,6 +338,9 @@ func decodePotion(name, path string, raw json.RawMessage, out *Potion) error {
 	if err != nil {
 		return err
 	}
+	if !(n6 >= 1 && n6 <= 100000) {
+		return fmt.Errorf("%s: %snHeal: expected a value in 1..=100000", name, path)
+	}
 	out.heal = n6
 	r7, err := jsonNeed(name, path, obj, "dwCooldownMs")
 	if err != nil {
@@ -332,25 +350,32 @@ func decodePotion(name, path string, raw json.RawMessage, out *Potion) error {
 	if err != nil {
 		return err
 	}
-	out.cooldown = rt.DurationFromMs(n8)
-	r9, err := jsonNeed(name, path, obj, "nStack")
+	v9 := rt.DurationFromMs(n8)
+	if !(v9.Milliseconds() >= 0 && v9.Milliseconds() <= 600000) {
+		return fmt.Errorf("%s: %sdwCooldownMs: expected a value in 0s..=10m", name, path)
+	}
+	out.cooldown = v9
+	r10, err := jsonNeed(name, path, obj, "nStack")
 	if err != nil {
 		return err
 	}
-	n10, err := jsonInt(name, path, "nStack", r9, -9223372036854775808, 9223372036854775807)
+	n11, err := jsonInt(name, path, "nStack", r10, -9223372036854775808, 9223372036854775807)
 	if err != nil {
 		return err
 	}
-	out.stack = n10
-	r11, err := jsonNeed(name, path, obj, "$isStrong")
+	if !(n11 >= 1 && n11 <= 9999) {
+		return fmt.Errorf("%s: %snStack: expected a value in 1..=9999", name, path)
+	}
+	out.stack = n11
+	r12, err := jsonNeed(name, path, obj, "$isStrong")
 	if err != nil {
 		return err
 	}
-	var v12 bool
-	if err := jsonRead(name, path, "$isStrong", r11, &v12); err != nil {
+	var v13 bool
+	if err := jsonRead(name, path, "$isStrong", r12, &v13); err != nil {
 		return err
 	}
-	out.isStrong = v12
+	out.isStrong = v13
 	return nil
 }
 

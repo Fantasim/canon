@@ -668,6 +668,11 @@ type Intent struct {
 	minRole roles.Role
 }
 
+const (
+	// Intent_LabelLenMin is the lower bound of the byte length of label, from its refinement 1...
+	Intent_LabelLenMin = 1
+)
+
 func (self *Intent) ID() IntentID { return self.id }
 
 func (self *Intent) Retired() bool { return self.retired }
@@ -697,6 +702,11 @@ type Flag struct {
 	viewMinRole    roles.Role
 	viewMinRole_ok bool
 }
+
+const (
+	// Flag_LabelLenMin is the lower bound of the byte length of label, from its refinement 1...
+	Flag_LabelLenMin = 1
+)
 
 func (self *Flag) ID() FlagID { return self.id }
 
@@ -735,6 +745,11 @@ type Status struct {
 	by_ok    bool
 }
 
+const (
+	// Status_LabelLenMin is the lower bound of the byte length of label, from its refinement 1...
+	Status_LabelLenMin = 1
+)
+
 func (self *Status) ID() StatusID { return self.id }
 
 func (self *Status) Retired() bool { return self.retired }
@@ -771,6 +786,11 @@ type Severity struct {
 	default_ bool
 }
 
+const (
+	// Severity_LabelLenMin is the lower bound of the byte length of label, from its refinement 1...
+	Severity_LabelLenMin = 1
+)
+
 func (self *Severity) ID() SeverityID { return self.id }
 
 func (self *Severity) Retired() bool { return self.retired }
@@ -790,6 +810,11 @@ type AreaGroup struct {
 	retired bool
 	label   string
 }
+
+const (
+	// AreaGroup_LabelLenMin is the lower bound of the byte length of label, from its refinement 1...
+	AreaGroup_LabelLenMin = 1
+)
 
 func (self *AreaGroup) ID() AreaGroupID { return self.id }
 
@@ -812,6 +837,11 @@ type Area struct {
 	routesTo     rt.List[*Area]
 	routesTo_ids rt.List[AreaID]
 }
+
+const (
+	// Area_LabelLenMin is the lower bound of the byte length of label, from its refinement 1...
+	Area_LabelLenMin = 1
+)
 
 func (self *Area) ID() AreaID { return self.id }
 
@@ -854,6 +884,11 @@ type Column struct {
 	hideable       bool
 }
 
+const (
+	// Column_LabelLenMin is the lower bound of the byte length of label, from its refinement 1...
+	Column_LabelLenMin = 1
+)
+
 func (self *Column) ID() ColumnID { return self.id }
 
 func (self *Column) Retired() bool { return self.retired }
@@ -880,6 +915,11 @@ type Deck struct {
 	layouts   rt.List[string]
 	maxHidden int64
 }
+
+const (
+	// Deck_MaxHiddenMin is the lower bound of maxHidden, from its refinement 1...
+	Deck_MaxHiddenMin = 1
+)
 
 // Layouts: The only arrangements: all in one row, or a 2x2 grid.
 func (self *Deck) Layouts() rt.List[string] { return self.layouts }

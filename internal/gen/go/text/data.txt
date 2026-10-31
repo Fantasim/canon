@@ -76,6 +76,11 @@ func (self *{{$.Name}}) {{.Method}}(key {{.Type}}) (*{{$.Elem}}, bool) {
 	if {{.L.At}}, {{.L.First}}, {{.L.OK}} := {{.RT}}.FirstDup({{.L.Keys}}); {{.L.OK}} {
 		return {{.RT}}.DupRow({{.L.Path}}, {{.FMT}}.Sprintf("rows[%d].", {{.L.At}}), {{.DupKey}}, {{.DupToken}}, {{.FMT}}.Sprintf("rows[%d]", {{.L.First}}))
 	}
+{{- if .Count}}
+	if !({{.Count}}) {
+		return {{.FMT}}.Errorf("%s: rows: {{.CountFail}}", {{.L.Path}})
+	}
+{{- end}}
 	{{.L.Out}}.{{.M.Rows}} = {{.RT}}.MakeKeyedList({{.L.Values}}, {{.L.Keys}})
 {{- range .Indexes}}
 	{{$.L.Out}}.{{.Member}} = make(map[{{.Type}}]int, len({{$.L.Values}}))
@@ -105,9 +110,9 @@ type {{.Snap}} struct {
 {{range .Values}}
 {{.Doc}}func (self *{{$.Snap}}) {{.Getter}}() *{{.Type}} { return &self.{{.Store}} }
 {{end}}
-// Load{{.Snap}} reads {{.Files}} from dir. It fails if a file is missing, is
-// not JSON, or was built from another schema. Values are not validated here: `canon
-// build` already did, and filled every default.
+// Load{{.Snap}} reads {{.Files}} from dir. It fails if a file is missing, is not
+// JSON, was built from another schema, or holds a value outside its range or
+// length refinement; `canon build` made every other check.
 func Load{{.Snap}}({{.L.Dir}} string) (*{{.Snap}}, error) {
 	{{.L.S}} := &{{.Snap}}{}
 {{- range .Values}}

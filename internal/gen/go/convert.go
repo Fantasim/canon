@@ -24,8 +24,13 @@ type leaf struct {
 
 func (g *gen) rawType() string { return g.use(jsonPath, jsonPkg) + rawMessage }
 
-// readValue reads raw, a present JSON value at loc, as the C++ loader does (WIRE.md §5, CODEGEN.md §7.5).
+// readValue reads raw, a present JSON value at loc, as the C++ loader does, then refuses it outside its range or length refinement (WIRE.md §5, CODEGEN.md §5.15, §7.5).
 func (g *gen) readValue(b *strings.Builder, l leaf, raw string, loc location) string {
+	return g.checkRange(b, l.t, g.readKind(b, l, raw, loc), loc)
+}
+
+// readKind reads raw as its kind's wire says (WIRE.md §5).
+func (g *gen) readKind(b *strings.Builder, l leaf, raw string, loc location) string {
 	switch l.t.Kind {
 	case types.Bool:
 		if l.enc == types.EncInt {

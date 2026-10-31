@@ -105,6 +105,7 @@ func (g *gen) typeDecl(b *body, doc string) {
 		g.printf("%s %s\n", m.name, m.typ)
 	}
 	g.printf("}\n\n")
+	g.boundConsts(b)
 	recv := methodRecv(b.goName)
 	if b.idType != "" {
 		g.writeGetter(recv, getter{name: ir.GoID, result: b.idType, body: returnKw + selfDot + ir.GoIDStore})

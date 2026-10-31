@@ -931,9 +931,9 @@ func (self *ShopSnapshot) Items() *Items { return &self.items }
 
 func (self *ShopSnapshot) Config() *Config { return &self.config }
 
-// LoadShopSnapshot reads items.json, config.json from dir. It fails if a file is missing, is
-// not JSON, or was built from another schema. Values are not validated here: `canon
-// build` already did, and filled every default.
+// LoadShopSnapshot reads items.json, config.json from dir. It fails if a file is missing, is not
+// JSON, was built from another schema, or holds a value outside its range or
+// length refinement; `canon build` made every other check.
 func LoadShopSnapshot(dir string) (*ShopSnapshot, error) {
 	s := &ShopSnapshot{}
 	if err := loadItems(dir+"/items.json", &s.items); err != nil {

@@ -1877,6 +1877,13 @@ type Column struct {
 	retiredIn_ok bool
 }
 
+const (
+	// Column_SinceMin is the lower bound of since, from its refinement 2...
+	Column_SinceMin = 2
+	// Column_RetiredInMin is the lower bound of retiredIn, from its refinement 2...
+	Column_RetiredInMin = 2
+)
+
 // Name: The SQL column name, also the struct field name.
 func (self *Column) Name() string { return self.name }
 
@@ -1928,6 +1935,11 @@ type RowsSome struct {
 	kinds rt.List[*Member]
 }
 
+const (
+	// RowsSome_KindsLenMin is the lower bound of the element count of kinds, from its refinement 1...
+	RowsSome_KindsLenMin = 1
+)
+
 // Of: The vocabulary whose column splits the rows.
 func (self *RowsSome) Of() Vocabulary { return self.of }
 
@@ -1960,6 +1972,15 @@ type Role struct {
 	untilVersion_ok bool
 	note            string
 }
+
+const (
+	// Role_SignMin is the lower bound of sign, from its refinement -1..=1.
+	Role_SignMin = -1
+	// Role_SignMax is the upper bound of sign, from its refinement -1..=1.
+	Role_SignMax = 1
+	// Role_UntilVersionMin is the lower bound of untilVersion, from its refinement 1...
+	Role_UntilVersionMin = 1
+)
 
 // Rows: The rows it covers.
 func (self *Role) Rows() *Rows { return self.rows }
@@ -2019,6 +2040,13 @@ type Event struct {
 	ledgerKinds_id string
 	ledgerKinds_ok bool
 }
+
+const (
+	// Event_VersionMin is the lower bound of version, from its refinement 1...
+	Event_VersionMin = 1
+	// Event_SinceMin is the lower bound of since, from its refinement 1...
+	Event_SinceMin = 1
+)
 
 // Description: What one row records.
 func (self *Event) Description() string { return self.description }

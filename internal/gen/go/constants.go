@@ -4,7 +4,6 @@ import (
 	_ "embed"
 
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/types"
 )
 
 //go:embed runtime/rt.go.txt
@@ -420,11 +419,8 @@ const (
 	durationToMs     = "DurationToMs"
 )
 
-// The rt helpers of the portable subset by operand kind, Int then Float, and Go's native operators (CONFORMANCE.md §3).
+// The rt helpers of the portable subset for the builtins, and Go's binding of its native operators (CONFORMANCE.md §3).
 var (
-	opHelper      = map[ir.Op]helperPair{ir.OpAdd: {"AddInt", "AddFloat"}, ir.OpSub: {"SubInt", "SubFloat"}, ir.OpMul: {"MulInt", "MulFloat"}, ir.OpDiv: {"DivInt", "DivFloat"}, ir.OpMod: {"ModInt", "ModFloat"}}
-	negHelper     = helperPair{"NegInt", "NegFloat"}
-	opText        = map[ir.Op]string{ir.OpEq: "==", ir.OpNe: "!=", ir.OpLt: "<", ir.OpLe: "<=", ir.OpGt: ">", ir.OpGe: ">=", ir.OpAnd: "&&", ir.OpOr: "||"}
 	builtinHelper = map[ir.Builtin]helperPair{
 		ir.BuiltinFloat: {"IntToFloat", "IntToFloat"}, ir.BuiltinInt: {"FloatToInt", "FloatToInt"}, ir.BuiltinMin: {"min", "MinFloat"},
 		ir.BuiltinMax: {"max", "MaxFloat"}, ir.BuiltinAbs: {"AbsInt", "AbsFloat"}, ir.BuiltinClamp: {"ClampInt", "ClampFloat"},
@@ -432,13 +428,6 @@ var (
 	}
 	// opPrecedence is Go's binding of the native operators, tightest last (the Go spec, Operator precedence).
 	opPrecedence = map[ir.Op]int{ir.OpOr: 1, ir.OpAnd: 2, ir.OpEq: 3, ir.OpNe: 3, ir.OpLt: 3, ir.OpLe: 3, ir.OpGt: 3, ir.OpGe: 3, ir.OpNot: 4}
-	scalarKinds  = map[types.Kind]bool{types.Bool: true, types.Int: true, types.Float: true, types.String: true, types.Duration: true, types.Enum: true}
-	// goImportNames are the packages a generated file may import, which a local never takes (CODEGEN.md §3.4).
-	goImportNames = map[string]bool{
-		ir.GoRT: true, jsonPkg: true, fmtPkg: true, iterPkg: true, "os": true, atomicName: true, syncPkg: true,
-		timePkg: true, strconvPkg: true, stringsPkg: true, slicesPkg: true, mathPkg: true, regexpPkg: true,
-		"embed": true, errorsPkg: true, utf8Pkg: true,
-	}
 )
 
 // Runtime inputs (CODEGEN.md §5.12, EVALUATION.md §11.3); closeBrace, elseLine, ifOpenFormat above close and open every block below.
@@ -497,4 +486,15 @@ const (
 const (
 	branchTableOpenFormat = "var %s = map[%s]%s{\n"
 	branchEntryFormat     = "%s: %s,\n"
+)
+
+// Refinements at run time and bound constants (CODEGEN.md §2.5 T19, §5.15).
+const (
+	boundBlockFormat                    = "const (\n%s)\n\n"
+	boundDocFormat                      = "// %s is the %s of %s, from its refinement %s.\n"
+	boundDeclFormat                     = "%s%s = %s\n"
+	lowerWord, upperWord, exclusiveWord = "lower bound", "upper bound", "exclusive upper bound"
+	eachFormat, lengthFormat            = "each %s of ", "the %s of "
+	stepElem, stepKey, stepValue        = "element", "key", "value"
+	byteLength, elemCount               = "byte length", "element count"
 )

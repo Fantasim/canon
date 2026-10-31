@@ -297,6 +297,11 @@ type Reward struct {
 	points   int64
 }
 
+const (
+	// Reward_PointsMin is the lower bound of points, from its refinement 1...
+	Reward_PointsMin = 1
+)
+
 // EventID: The event.
 func (self *Reward) EventID() Event { return self.event_id }
 
@@ -841,6 +846,9 @@ func decodeReward(name, path string, raw json.RawMessage, out *Reward) error {
 	if err != nil {
 		return err
 	}
+	if !(n10 >= 1) {
+		return fmt.Errorf("%s: %spoints: expected a value in 1..", name, path)
+	}
 	out.points = n10
 	return nil
 }
@@ -893,6 +901,9 @@ func decodeParam(name, path string, raw json.RawMessage, disc Shape, out *Param)
 		n1, err := jsonInt(name, path, "", raw, -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
+		}
+		if !(n1 >= 0) {
+			return fmt.Errorf("%s: %s: expected a value in 0..", name, path)
 		}
 		out.branch, out.value = ParamBranchCount, n1
 		return nil

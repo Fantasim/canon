@@ -484,6 +484,9 @@ func decode_refdep_Reward(name, path string, raw json.RawMessage, dst *refdep.Re
 	if err != nil {
 		return err
 	}
+	if !(n10 >= 1) {
+		return fmt.Errorf("%s: %spoints: expected a value in 1..", name, path)
+	}
 	out.points = n10
 	*dst = refdep.Make_Reward(out.event_id, out.param, out.points)
 	return nil
@@ -495,6 +498,9 @@ func decode_refdep_Param(name, path string, raw json.RawMessage, disc refdep.Sha
 		n1, err := jsonInt(name, path, "", raw, -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
+		}
+		if !(n1 >= 0) {
+			return fmt.Errorf("%s: %s: expected a value in 0..", name, path)
 		}
 		*dst = refdep.Make_Param_Count(n1)
 		return nil

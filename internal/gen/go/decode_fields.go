@@ -88,7 +88,7 @@ func (g *gen) readPairs(s *slot) {
 	}
 	g.printf(pairsCloseFormat, list, built)
 	var b strings.Builder
-	g.store(&b, s, lc.Out, g.rt()+makeList+list+rparen)
+	g.store(&b, s, lc.Out, g.checkRange(&b, s.T, g.rt()+makeList+list+rparen, g.keyLoc(f.Name)))
 	g.body.WriteString(b.String())
 }
 

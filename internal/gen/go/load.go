@@ -14,6 +14,7 @@ type loadView struct {
 	Elem, Key, KeyStore, IDStore, RetiredStore string
 	Resolve, Target                            string
 	DupKey, DupToken                           string
+	Count, CountFail                           string
 	Record, Table                              bool
 	Indexes                                    []index
 	L                                          locals
@@ -67,6 +68,7 @@ func (g *gen) rows(view *loadView, v *ir.Value, rec *ir.Record) {
 		view.DupKey = strconv.Quote(strings.Join(kf.WirePath, dot))
 		view.DupToken = g.keyTokenExpr(kf.Type, keyExpr)
 	}
+	view.Count, view.CountFail = g.rowsRange(v, view.L.Values)
 	if !v.Reload && g.names.NeedsWalk(rec) {
 		view.Resolve = g.resolveFunc(rec)
 	}

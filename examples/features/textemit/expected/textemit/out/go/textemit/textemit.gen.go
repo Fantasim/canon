@@ -18,6 +18,11 @@ type Column struct {
 	sql  string
 }
 
+const (
+	// Column_SQLLenMin is the lower bound of the byte length of sql, from its refinement 1...
+	Column_SQLLenMin = 1
+)
+
 // Name: Its SQL name.
 func (self *Column) Name() string { return self.name }
 
