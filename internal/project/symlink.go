@@ -1,15 +1,21 @@
 package project
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
-// evalSymlinksOS is name's real, absolute, '/'-separated path: osFS's own segment-by-segment walk, every link followed, so a cycle is ErrSymlinkLoop past MaxSymlinkHops, never the OS's own wording.
-func evalSymlinksOS(name string) (string, error) {
+// evalSymlinksOS is name's real, absolute, '/'-separated path on the OS's own disk (evalSymlinksWith).
+func evalSymlinksOS(name string) (string, error) { return evalSymlinksWith(osLinks{}, name) }
+
+// evalSymlinksWith is name's real path as lr reads it: a segment-by-segment walk, every link
+// followed (readLink), so a cycle is ErrSymlinkLoop past MaxSymlinkHops, never the OS's own wording.
+func evalSymlinksWith(lr linkReader, name string) (string, error) {
 	vol := volumeOf(name)
 	dest, pending, hops := vol, segmentsOf(strings.TrimPrefix(name, vol)), 0
 	for len(pending) > 0 {
@@ -20,7 +26,7 @@ func evalSymlinksOS(name string) (string, error) {
 			continue
 		}
 		child := dest + sep + seg
-		link, isLink, err := readLink(child)
+		link, isLink, err := readLink(lr, child)
 		switch {
 		case err != nil:
 			return "", err
@@ -85,20 +91,78 @@ func applyDotSegment(dest, seg string) (string, bool) {
 	}
 }
 
-// readLink is child's Lstat and, when it is a symbolic link, its raw target text, '/'-separated.
-func readLink(child string) (target string, isLink bool, err error) {
-	info, err := os.Lstat(filepath.FromSlash(child))
+// linkReader is what evalSymlinksWith reads of a disk, names and targets '/'-separated: an
+// entry's Lstat mode, and the target of a link.
+type linkReader interface {
+	lstat(name string) (fs.FileMode, error)
+	readlink(name string) (string, error)
+}
+
+// osLinks is the OS's own disk.
+type osLinks struct{}
+
+func (osLinks) lstat(name string) (fs.FileMode, error) {
+	info, err := os.Lstat(filepath.FromSlash(name))
 	if err != nil {
-		return "", false, fmt.Errorf(fmtWrap, err)
+		return 0, fmt.Errorf(fmtWrap, err)
 	}
-	if info.Mode()&fs.ModeSymlink == 0 {
+	return info.Mode(), nil
+}
+
+func (osLinks) readlink(name string) (string, error) {
+	raw, err := os.Readlink(filepath.FromSlash(name))
+	if err != nil {
+		return "", fmt.Errorf(fmtWrap, err)
+	}
+	return slashed(raw, filepath.Separator), nil
+}
+
+// readLink is child's target when it is a link, a symbolic link or a junction, a device target errDeviceTarget (WIRE.md §6.5, DECISIONS 419).
+func readLink(lr linkReader, child string) (target string, isLink bool, err error) {
+	mode, err := lr.lstat(child)
+	if err != nil {
+		return "", false, err
+	}
+	switch {
+	case mode&fs.ModeSymlink != 0:
+		if target, err = lr.readlink(child); err != nil {
+			return "", false, err
+		}
+	case mode&fs.ModeIrregular == 0:
+		return "", false, nil
+	default:
+		if target, isLink, err = irregularLink(lr, child); !isLink {
+			return "", false, err
+		}
+	}
+	if isDevicePath(target) {
+		return "", false, errDeviceTarget
+	}
+	return target, true, nil
+}
+
+// irregularLink is the target of child, an irregular entry, when lr reads one; false with no error only for a non-link (notLinkErrs), as a cloud placeholder or an app-exec link.
+func irregularLink(lr linkReader, child string) (string, bool, error) {
+	target, err := lr.readlink(child)
+	if isNotLink(err) {
 		return "", false, nil
 	}
-	raw, err := os.Readlink(filepath.FromSlash(child))
-	if err != nil {
-		return "", false, fmt.Errorf(fmtWrap, err)
+	return target, err == nil, err
+}
+
+// isNotLink reports err readlink's answer for an entry that is no link (DECISIONS 419).
+func isNotLink(err error) bool {
+	return err != nil && slices.ContainsFunc(notLinkErrs[:], func(target error) bool { return errors.Is(err, target) })
+}
+
+// isDevicePath reports target a device path, `//?/…` or `//./…`, a volume mount point's included.
+func isDevicePath(target string) bool {
+	for _, prefix := range devicePrefixes {
+		if strings.HasPrefix(target, prefix) {
+			return true
+		}
 	}
-	return slashed(raw, filepath.Separator), true, nil
+	return false
 }
 
 // followLink is the walk's state once child, dest's last segment, resolves to link: an absolute

@@ -19,7 +19,7 @@ type linkResolver interface {
 	EvalSymlinks(name string) (string, error)
 }
 
-// EvalSymlinks is name's real path, every symbolic link in it followed, absolute and
+// EvalSymlinks is name's real path, every link in it followed, absolute and
 // '/'-separated, when fsys has a method EvalSymlinks(name string) (string, error); an FS
 // without one resolves no link (errNoLinks).
 func EvalSymlinks(fsys FS, name string) (string, error) {
@@ -28,6 +28,29 @@ func EvalSymlinks(fsys FS, name string) (string, error) {
 		return "", errNoLinks
 	}
 	return r.EvalSymlinks(name)
+}
+
+// LinkCandidate reports a listing entry of type t one a reader takes as a link: a symbolic link, or an irregular entry when fsys resolves links (WIRE.md §6.5, DECISIONS 419).
+func LinkCandidate(fsys FS, t fs.FileMode) bool {
+	if t&fs.ModeSymlink != 0 {
+		return true
+	}
+	_, resolves := fsys.(linkResolver)
+	return resolves && t&fs.ModeIrregular != 0
+}
+
+// Unlinked reports dir's entry name no link by resolve, the reader's own recorded resolver: it resolves to dir's real path joined with name; false when resolving fails (DECISIONS 419).
+func Unlinked(resolve func(string) (string, error), dir, name string) bool {
+	child := Join(dir, name)
+	real, err := resolve(child)
+	if err != nil {
+		return false
+	}
+	if real == child {
+		return true
+	}
+	realDir, err := resolve(dir)
+	return err == nil && real == Join(realDir, name)
 }
 
 // summer is the optional FS capability of a file system that fixes each file's content while it

@@ -109,6 +109,9 @@ const (
 	queryHost = "?" // `//?/` and `//./` start a device path, which is no volume
 )
 
+// devicePrefixes start a device path, a link target with no path the bounds can judge (DECISIONS 419).
+var devicePrefixes = [...]string{uncPrefix + queryHost + sep, uncPrefix + dot + sep}
+
 // Texts of Go errors.
 const (
 	fmtWrap    = "%w"

@@ -1,6 +1,11 @@
 package project
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"io/fs"
+	"syscall"
+)
 
 // Errors of loading a project; language errors are findings, these say which kind stopped it.
 var (
@@ -14,6 +19,12 @@ var (
 
 // errNoLinks is EvalSymlinks on an FS that resolves no symbolic link (WIRE.md §6.5).
 var errNoLinks = errors.New("the file system resolves no symbolic link")
+
+// errDeviceTarget is a link whose target is a device path: dangling, naming no path (WIRE.md §6.5, DECISIONS 419).
+var errDeviceTarget = fmt.Errorf("a link's target is a device path: %w", fs.ErrNotExist)
+
+// notLinkErrs are readlink's answers for an entry that is no link, any other failure an error (DECISIONS 419).
+var notLinkErrs = [...]error{fs.ErrNotExist, syscall.EINVAL}
 
 // ErrSymlinkLoop is a link chain past MaxSymlinkHops; load reports it as W7115 looping.
 var ErrSymlinkLoop = errors.New("too many levels of symbolic links")

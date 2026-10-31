@@ -2,6 +2,7 @@ package project_test
 
 import (
 	"fmt"
+	"io/fs"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
@@ -64,4 +65,20 @@ func ExamplePlace() {
 	r, _ := l.Resolve("@src/a.h", "", source.Span{}, bag)
 	fmt.Println(ok, r.Abs, l.Moved("src"), l.Absent("src"), l.Absent("web"))
 	// Output: true /law/vendor/Source/a.h true false true
+}
+
+// A Windows junction lists as irregular, a link candidate; one resolving to its own place, as a cloud placeholder, is Unlinked (WIRE.md §6.5, DECISIONS 419).
+func ExampleUnlinked() {
+	real := map[string]string{"/law": "/law", "/law/junction": "/elsewhere", "/law/placeholder": "/law/placeholder"}
+	resolve := func(name string) (string, error) {
+		if r, ok := real[name]; ok {
+			return r, nil
+		}
+		return "", fs.ErrNotExist
+	}
+	fmt.Println(project.LinkCandidate(project.OS(), fs.ModeIrregular), project.LinkCandidate(project.OS(), fs.ModeDir))
+	fmt.Println(project.Unlinked(resolve, "/law", "junction"), project.Unlinked(resolve, "/law", "placeholder"), project.Unlinked(resolve, "/law", "gone"))
+	// Output:
+	// true false
+	// false true false
 }
