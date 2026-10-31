@@ -4355,3 +4355,11 @@ round 2", "PS1 review", "PS2 round 2"):
      version changes the meaning of existing source. Reason: v0.2 breaks generated APIs (402, 407)
      and refuses more, but changes no existing source's meaning; a language bump would make every
      project edit its header for nothing.
+423. **Generated C++ never lets source text change how C++ reads it (CODEGEN.md §2.6, §2.7; CG-06).**
+     A doc with a line ending in `\` (spaces and tabs after it included) is written in the block
+     form, `/**`, ` * ` + line (` *` for an empty line), ` */`, with a `\` between any adjacent `/`
+     and `*` (`*\/`, `/\*`); every other doc keeps `///`; in both forms `??/` is written `?\?/`. In
+     a C++ string or character literal, a `?` that follows a `?` is written `\?`. The standard-header
+     scan reads code and literals, never comment text. Reason: a `\` ending a `//` line splices the
+     next generated line (a getter, an enumerator) into the comment, a trigraph fails `-Wtrigraphs`
+     under `-Wall -Werror`, and a doc's form must not change a file's includes.

@@ -491,3 +491,10 @@ const (
 	eachValue             = "each value of "
 	byteLengthOf, countOf = "the byte length of ", "the element count of "
 )
+
+// Doc comments and literals that never let source text change how C++ reads them (CODEGEN.md §2.6, DECISIONS 423 pending).
+const (
+	docBlockOpen, docBlockEmpty, docBlockLineFormat, commentEnd                 = "/**", " *", " * %s", "*/"
+	lineSplice, spliceBlanks, escapedQuestion, trigraphSlash, trigraphSlashSafe = `\`, " \t", `\?`, "??/", `?\?/`
+	slashByte, starByte, questionByte                                           = '/', '*', '?'
+)

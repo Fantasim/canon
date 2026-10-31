@@ -6,6 +6,7 @@ const (
 	blockOpen   = "/*"
 	blockClose  = "*/"
 	newline     = "\n"
+	blank       = " "
 	quoteMark   = '"'
 	charMark    = '\''
 	escapeMark  = '\\'

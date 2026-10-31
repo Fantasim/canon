@@ -15,7 +15,7 @@ import (
 //go:embed text/schema_doc.txt
 var schemaDocText string
 
-// quote is a C++ string literal of s's bytes (the escapes table, other control bytes in octal).
+// quote is a C++ string literal of s's bytes (the escapes table, other control bytes in octal, a `?` after a `?` as `\?` so no trigraph forms; DECISIONS 423 pending).
 func quote(s string) string {
 	var b strings.Builder
 	b.WriteByte('"')
@@ -25,6 +25,8 @@ func quote(s string) string {
 		switch {
 		case escaped:
 			b.WriteString(esc)
+		case c == questionByte && i > 0 && s[i-1] == questionByte:
+			b.WriteString(escapedQuestion)
 		case c < ' ' || c == asciiDel:
 			fmt.Fprintf(&b, octalEscapeFormat, c)
 		default:

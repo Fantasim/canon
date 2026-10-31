@@ -160,20 +160,6 @@ func (g *gen) ordinal(s enumSpec) {
 	g.h.blank()
 }
 
-// doc writes a doc comment at depth: `/// ` + line, `///` for an empty line (CODEGEN.md §2.6).
-func (g *gen) doc(depth int, text string) {
-	if text == "" {
-		return
-	}
-	for l := range strings.SplitSeq(text, newline) {
-		if l == "" {
-			g.h.linef(depth, docEmpty)
-			continue
-		}
-		g.h.linef(depth, docLineFormat, l)
-	}
-}
-
 // kindMember is the qualified kind-enum member of case i (CODEGEN.md §3.3, §3.5).
 func (g *gen) kindMember(v *ir.Variant, i int) string {
 	return g.kindName(v) + scopeSep + g.pl.KindMember(v.Cases[i])

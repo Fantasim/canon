@@ -350,13 +350,15 @@ texts.
 ### 2.6 Doc comments
 
 Doc text is the normalized text of LEX-07 (`///` and one space stripped, lines joined with `\n`,
-trailing blank lines trimmed). It is copied **verbatim** (CG-06):
+trailing blank lines trimmed). It is copied **verbatim** (CG-06), but for the escapes the table names:
 
 | Target | Form |
 |---|---|
 | Go | `// ` + line; an empty line is `//`. The first line is prefixed with `<GoName>: ` unless it already starts with `<GoName>` followed by a space. The file is then passed through `go/format` (which turns indented doc lines into `//\t` code blocks). |
-| C++ | `/// ` + line; an empty line is `///`. |
+| C++ | `/// ` + line; an empty line is `///`. A doc with a line ending in `\` (spaces and tabs after it included) is written `/**`, ` * ` + line (` *` for an empty line), ` */`, with a `\` between any adjacent `/` and `*` (`*\/`, `/\*`). In both forms `??/` is written `?\?/` (DECISIONS 423). |
 | TS | one line: `/** text */`; several: `/**`, ` * ` + line (` *` for an empty line), ` */`. `*/` inside the text is written `*\/`. |
+
+In a C++ string or character literal, a `?` that follows a `?` is written `\?`, so no trigraph is formed (DECISIONS 423).
 
 The doc of a field goes on its getter (and on its key getter only when there is no resolved
 getter); a record's or enum's doc on the type; a member's on the constant or enumerator; a
@@ -402,7 +404,7 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
 - **C++ includes**, in three groups separated by one blank line, each sorted bytewise:
   - a `.gen.cpp` or `_conformance.gen.cpp` first includes its own header `"<last>.gen.h"`, alone
     in its group;
-  - the standard headers of every standard-library name the file's own text uses, whether or not
+  - the standard headers of every standard-library name the file's own text uses (its code and literals; comment text never counts, DECISIONS 423), whether or not
     an included header already provides it, from this table: `std::chrono` `<chrono>`, `size_t`
     `<cstddef>`, `int64_t` and the other fixed-width integers `<cstdint>`, `std::fprintf`
     `<cstdio>`, `std::shared_ptr`/`std::make_shared` `<memory>`, `std::optional` `<optional>`,

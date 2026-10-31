@@ -30,11 +30,9 @@ var Identifiers = sync.OnceValue(func() []string {
 func Scan(text string, visit func(word string)) {
 	for i := 0; i < len(text); {
 		rest := text[i:]
-		switch {
-		case strings.HasPrefix(rest, lineComment):
-			i += skipTo(rest, newline)
-		case strings.HasPrefix(rest, blockOpen):
-			i += skipTo(rest[len(blockOpen):], blockClose) + len(blockOpen)
+		switch n := commentLen(rest); {
+		case n > 0:
+			i += n
 		case text[i] == quoteMark || text[i] == charMark:
 			i += skipQuoted(rest)
 		case wordByte(text[i]):
@@ -47,6 +45,38 @@ func Scan(text string, visit func(word string)) {
 			i++
 		}
 	}
+}
+
+// Code is C++ text with each comment replaced by one blank and its string and character literals kept whole: the text a standard name is looked for in (CODEGEN.md §2.7, DECISIONS 423 pending).
+func Code(text string) string {
+	var b strings.Builder
+	for i := 0; i < len(text); {
+		rest := text[i:]
+		n := commentLen(rest)
+		switch {
+		case n > 0:
+			b.WriteString(blank)
+		case text[i] == quoteMark || text[i] == charMark:
+			n = skipQuoted(rest)
+			b.WriteString(rest[:n])
+		default:
+			n = 1
+			b.WriteByte(text[i])
+		}
+		i += n
+	}
+	return b.String()
+}
+
+// commentLen is the length of the comment that starts text (a `//` one to its first newline, a backslash before it included), 0 when text starts none.
+func commentLen(text string) int {
+	switch {
+	case strings.HasPrefix(text, lineComment):
+		return skipTo(text, newline)
+	case strings.HasPrefix(text, blockOpen):
+		return skipTo(text[len(blockOpen):], blockClose) + len(blockOpen)
+	}
+	return 0
 }
 
 // skipTo is the length of text up to and with the first end, or all of it.

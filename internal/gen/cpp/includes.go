@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"regexp"
 	"strings"
+
+	cppruntime "github.com/fantasim/canonlang/internal/gen/cpp/runtime"
 )
 
 // stdHeadersText is CODEGEN.md §2.7's table: a standard name's pattern and its header, per line, in header order.
@@ -47,18 +49,12 @@ func includes(out *writer, text string, groups [][]string) {
 	}
 }
 
-// stdIncludes are the standard headers of every standard name the code (comments aside) uses, in byte order.
+// stdIncludes are the standard headers of every standard name the code (comments of both forms aside) uses, in byte order (CODEGEN.md §2.7, DECISIONS 423 pending).
 func stdIncludes(text string) []string {
-	var code strings.Builder
-	for l := range strings.SplitSeq(text, newline) {
-		if !strings.HasPrefix(strings.TrimSpace(l), commentStart) {
-			code.WriteString(l)
-			code.WriteString(newline)
-		}
-	}
+	code := cppruntime.Code(text)
 	var out []string
 	for _, u := range stdUses {
-		if u.re.MatchString(code.String()) {
+		if u.re.MatchString(code) {
 			out = append(out, u.header)
 		}
 	}
