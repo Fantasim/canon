@@ -2,8 +2,7 @@ package ir
 
 import "github.com/fantasim/canonlang/internal/types"
 
-// TypeRef is a type as generators and the fingerprint see it (GEN-02). Named is the IR type
-// (a *Dependent for TypeApp); Elem is also a map's value and a union's base; Key a ref's key.
+// TypeRef is a type as generators and the fingerprint see it (GEN-02). Named is the IR type (a *Dependent for TypeApp); Elem is also a map's value and a union's base; Key a ref's key; Range the level's range or length refinement, alias chain intersected (TYPES.md §7.4), nil on a ref's key, read by decoders and bound constants (CODEGEN.md §5.15), by no generated type and no fingerprint (FINGERPRINT.md §5).
 type TypeRef struct {
 	Kind     types.Kind
 	Bits     int
@@ -16,6 +15,7 @@ type TypeRef struct {
 	Ref      *RefTarget
 	Literals []string
 	Args     []*Source
+	Range    *types.Bound
 }
 
 // KeyField is the key field of a keyed list.

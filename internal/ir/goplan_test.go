@@ -79,6 +79,7 @@ func comparePlan(t *testing.T, what string, p *ir.Package, e *ir.Emit) {
 		t.Errorf("%s: %+v", what, pl.Problems())
 	}
 	got := declaredNames(t, goFile(t, files))
+	got[""] = withoutNames(got[""], goBoundNames(p, pl))
 	want := goPlanned(p, pl)
 	for goName, scope := range structScopes(p, pl) { //canon:unordered each struct compared alone
 		sameNames(t, what+" "+goName, got[goName], want[scope])

@@ -18,17 +18,21 @@ func init() {
 	refOf[types.Ref], refOf[types.LitUnion], refOf[types.TypeApp] = (*stage).refRef, (*stage).unionRef, (*stage).appRef
 }
 
-// ref is t as generators and the fingerprint see it (GEN-02): aliases expanded, refinements dropped (FINGERPRINT.md §4.4).
+// ref is t as generators and the fingerprint see it (GEN-02): aliases expanded, refinements dropped (FINGERPRINT.md §4.4) but for the level's range, which only decoders and bound constants read (CODEGEN.md §5.15).
 func (s *stage) ref(t types.Type) TypeRef {
 	if t == nil {
 		return TypeRef{Kind: types.Error}
 	}
 	b := t.Base()
 	k := b.Kind()
+	r := TypeRef{Kind: k}
 	if int(k) < len(refOf) && refOf[k] != nil {
-		return refOf[k](s, b)
+		r = refOf[k](s, b)
 	}
-	return TypeRef{Kind: k}
+	if rangeRefines(k) {
+		r.Range, _ = ownRefinements(t)
+	}
+	return r
 }
 
 func (s *stage) refPtr(t types.Type) *TypeRef {
@@ -109,6 +113,7 @@ func (s *stage) collRef(c *types.Collection) TypeRef {
 	key := TypeRef{Kind: types.String}
 	if c.KeyedBy != nil {
 		key = s.ref(c.KeyedBy.Type)
+		key.Range = nil // a ref's key is never checked (CODEGEN.md §5.15)
 	}
 	target := &RefTarget{Coll: c.Kind, Pkg: c.Pkg, Path: c.FieldPath, Keyed: c.KeyedBy != nil, Local: c.Local, BigInt: bigKey(c)}
 	if c.Kind != types.CollField {

@@ -103,7 +103,7 @@ ClubAccess: LoadClub LoadMembers LoadSettings LoadSnapshot Resolve
 ClubMake: Bonus Case_Shape_Circle Club Entry_Member Member Settings Shape_Circle Shape_Dot
 ClubSnapshot: GetClub GetMembers Load club_ members_
 ClubStore: Current Reload current_
-Member: GetBonuses GetCode GetDeep GetFriend GetFriendKey GetId GetRetired GetRole GetShape bonuses_ code_ deep_ friend_ friend_ref_ id_ retired_ role_ shape_
+Member: GetBonuses GetCode GetDeep GetFriend GetFriendKey GetId GetRetired GetRole GetShape bonuses_ code_ deep_ friend_ friend_ref_ id_ kBonusesLenMax retired_ role_ shape_
 Members: All At Find FindByCode Len byCodeKeys_ byCode_ rows_
 Settings: GetTitle Load title_
 Shape: AsCircle GetKind value_

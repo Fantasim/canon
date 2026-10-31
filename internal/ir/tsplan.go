@@ -246,6 +246,8 @@ func (pl *tsNamePlan) declareType(mod *nameScope, t Type) {
 		pl.declareCases(mod, x, org)
 	case *Dependent:
 		pl.declare(mod, name+tsBranchSuffix, org, t)
+	case *Record:
+		pl.declareBounds(mod, name, org, x.Fields)
 	}
 	if _, enum := t.(*Enum); !enum {
 		pl.declareRead(mod, name, org, t)
@@ -277,6 +279,7 @@ func (pl *tsNamePlan) declareCases(mod *nameScope, v *Variant, org string) {
 		if len(c.Fields) > 0 || len(c.Methods) > 0 {
 			pl.declare(mod, tsCaseName(v, c), org+qnameSep+c.Name, c)
 			pl.declareRead(mod, tsCaseName(v, c), org+qnameSep+c.Name, c)
+			pl.declareBounds(mod, tsCaseName(v, c), org+qnameSep+c.Name, c.Fields)
 		}
 	}
 }

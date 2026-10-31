@@ -1,0 +1,18 @@
+CODEGEN.md §5.15, §3.3, §3.5, DECISIONS 400: a field's bound constants are static members of its C++ class, k + <F> + the path and side, so tags' element bounds kTagsElemMin and kTagsElemMax meet those of the field tagsElem: one E8005, at the later field.
+-- a/a.canon --
+package a
+
+/// A probe.
+record Probe {
+  /// Its tags.
+  tags: [Int(0..=5)]
+  /// Its tag element.
+  tagsElem: Int(0..=9)
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:8:3
+  cpp: kTagsElemMin is generated for both a.Probe.tags and a.Probe.tagsElem; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

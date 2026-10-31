@@ -73,6 +73,7 @@ func (pl *CppNamePlan) declareClass(c any) {
 				pl.declare(sc, member, origin+qnameSep+f.Name, f)
 			}
 		}
+		pl.declareBounds(sc, f, origin+qnameSep+f.Name)
 	}
 	for _, fn := range fns {
 		getter, resolved := pl.StoredGetter(fn)

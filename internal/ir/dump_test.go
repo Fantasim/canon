@@ -137,11 +137,19 @@ func valueText(v value.Value) string {
 	return v.CanonText()
 }
 
-// typeText is a TypeRef as text: kinds by name, named types qualified, refs with their target.
+// typeText is a TypeRef as text: kinds by name, named types qualified, refs with their target, a level's Range after it as `(<R>)` (CODEGEN.md §5.15).
 func typeText(t *ir.TypeRef) string {
 	if t == nil {
 		return "nil"
 	}
+	if t.Range != nil {
+		return levelText(t) + "(" + ir.RangeText(t) + ")"
+	}
+	return levelText(t)
+}
+
+// levelText is typeText without the level's own Range.
+func levelText(t *ir.TypeRef) string {
 	switch t.Kind {
 	case types.Enum, types.Record, types.Variant, types.TypeApp:
 		return t.Named.QName() + argsText(t.Args)

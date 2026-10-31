@@ -266,8 +266,10 @@ func tableRecord(v *Value) *Record {
 func (pl *GoNamePlan) declareType(top *nameScope, t Type) {
 	switch x := t.(type) {
 	case *Record:
+		st := goStruct{x, func() string { return pl.TypeName(x) }}
 		pl.declare(top, pl.TypeName(x), x.QName(), x)
-		pl.declareBody(x.QName(), goStruct{x, func() string { return pl.TypeName(x) }}, x.Fields, x.Methods)
+		pl.declareBounds(top, x.QName(), st, x.Fields)
+		pl.declareBody(x.QName(), st, x.Fields, x.Methods)
 	case *Variant:
 		pl.declareVariant(top, x)
 	case *Dependent:
@@ -292,6 +294,7 @@ func (pl *GoNamePlan) declareVariant(top *nameScope, v *Variant) {
 		if len(c.Fields) > 0 {
 			st := goStruct{c, func() string { return pl.CaseName(v, c) }}
 			pl.declareFrom(top, origin+qnameSep+c.Name, c, derivation{unlessOverridden(c.Go, v), st.name})
+			pl.declareBounds(top, origin+qnameSep+c.Name, st, c.Fields)
 			pl.declareBody(origin+qnameSep+c.Name, st, c.Fields, c.Methods)
 		}
 	}

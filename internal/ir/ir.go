@@ -69,7 +69,7 @@ type Field struct {
 	Deprecated bool
 	Stable     bool
 	Input      *types.Input
-	Range      *types.Bound     // an input's own refinements, checked at run time
+	Range      *types.Bound     // an input's own range refinement, equal to Type.Range; LoadInputs checks it (CODEGEN.md §5.12)
 	Patterns   []*regexp.Regexp // idem: every distinct pattern of its alias chain, innermost first in alias-chain order (TYPES.md §7.4; DECISIONS 225)
 	Cpp        CppFieldOptions
 	Go, TS     NameOptions

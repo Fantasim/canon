@@ -61,6 +61,9 @@ func compareCpp(t *testing.T, p *ir.Package, e *ir.Emit, pl *ir.CppNamePlan) {
 		}
 	}
 	want := cppPlanned(p, pl)
+	for class, names := range cppBoundNames(p, pl) { //canon:unordered each class alone
+		scan.names[class] = withoutNames(scan.names[class], names)
+	}
 	scopes := maps.Clone(scan.names)
 	maps.Copy(scopes, want)
 	for _, sc := range slices.Sorted(maps.Keys(scopes)) {

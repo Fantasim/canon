@@ -1,0 +1,18 @@
+CODEGEN.md §5.15, §3.3, §3.5, DECISIONS 400: a TypeScript bound constant is T_ + UpperCamel of the property + the path and side, in the module scope: a's @ts(name: "tagsElem") gives Probe_TagsElemMin and Probe_TagsElemMax, which tags' element bounds already are: E8005 at a.
+-- a/a.canon --
+package a
+
+/// A probe.
+record Probe {
+  /// Its tags.
+  tags: [Int(0..=9)]
+  /// A level.
+  a: Int(0..=5) @ts(name: "tagsElem")
+}
+
+emit ts { out: "@features/a/a.ts", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:8:3
+  ts: Probe_TagsElemMin is generated for both a.Probe.tags and a.Probe.a; rename one of them with @ts(name:)
+
+1 error, 0 warnings in 1 package (…)

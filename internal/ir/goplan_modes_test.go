@@ -61,8 +61,10 @@ func compareModes(t *testing.T, p *ir.Package, e *ir.Emit) {
 	if err != nil {
 		t.Fatalf("%s: %v", p.Name, err) // the golden's findings say why
 	}
-	want := goPlanned(p, ir.PlanGoNames(p, e))
+	pl := ir.PlanGoNames(p, e)
+	want := goPlanned(p, pl)
 	got := declaredNames(t, goFile(t, files))
+	got[""] = withoutNames(got[""], goBoundNames(p, pl))
 	imports := map[string]bool{}
 	for _, f := range files {
 		if strings.HasSuffix(f.Path, conformanceSuffix) {

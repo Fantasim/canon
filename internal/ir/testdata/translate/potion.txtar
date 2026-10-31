@@ -88,13 +88,13 @@ emit go { out: "@features/pipeline" }
 package pipeline dir=pipeline
 fn Potion.isStrong file=potion.canon order=0 kind=precomputed
 fn Potion.healFor file=potion.canon order=1 kind=translated
-  read 0 heal [heal] Int opt=false
-  body (min:Int read0:Int (max:Int param0:Int 0:Int))
+  read 0 heal [heal] Int(1..=100000) opt=false
+  body (min:Int read0:Int(1..=100000) (max:Int param0:Int 0:Int))
 fn Potion.damageAt file=potion.canon order=2 kind=translated
-  read 0 heal [heal] Int opt=false
-  body (/:Int (*:Int read0:Int param0:Int) 100:Int)
+  read 0 heal [heal] Int(1..=100000) opt=false
+  body (/:Int (*:Int read0:Int(1..=100000) param0:Int(1..=150)) 100:Int)
 fn Potion.score file=potion.canon order=3 kind=translated
-  read 0 self_heal [heal] Int opt=false
+  read 0 self_heal [heal] Int(1..=100000) opt=false
   read 1 tone [tone] pipeline.Tone opt=false
   read 2 bonus_value [bonus value] Int opt=true
   read 3 bonus_grade [bonus grade] pipeline.Grade opt=true
@@ -113,7 +113,7 @@ fn Potion.score file=potion.canon order=3 kind=translated
         return param1:Int
       } else none
     } else none
-    return (*:Int read0:Int 2:Int)
+    return (*:Int read0:Int(1..=100000) 2:Int)
   }
 fn Potion.label file=potion.canon order=4 kind=translated
   read 0 name [name] String opt=false
