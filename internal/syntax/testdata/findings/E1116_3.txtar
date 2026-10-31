@@ -1,0 +1,41 @@
+GRAMMAR.md §5.10, EVALUATION.md §10.5: a package subject's braces hold at least one `IDENT ":"
+expr` substitution, its `{` is on the `package` line and it needs an outcome; each is E1116,
+one per item. `package` right after `expect` is never a name. The E1117 at line 11 comes from
+recovery: the `{ … } passes` left on the next line is read as a statement of its own.
+-- a/a.canon --
+package a
+
+let levels: [Int] = [1]
+
+test "broken package subjects" {
+  expect package {} passes
+  expect package
+  expect package { levels: [2] }
+  expect package { a.b: 1 } passes
+  expect package
+  { levels: [] } passes
+  expect package.levels == [1]
+}
+-- findings.txt --
+error[E1116]  a/a.canon:6:19
+  expected IDENT; found }
+
+error[E1116]  a/a.canon:7:17
+  expected "{", "fails", "warns", "passes"; found NL
+
+error[E1116]  a/a.canon:8:33
+  expected "fails", "warns", "passes"; found NL
+
+error[E1116]  a/a.canon:9:21
+  expected ":"; found .
+
+error[E1116]  a/a.canon:10:17
+  expected "{", "fails", "warns", "passes"; found NL
+
+error[E1117]  a/a.canon:11:18
+  missing separator: put "," or a new line between items
+
+error[E1116]  a/a.canon:12:17
+  expected "{", "fails", "warns", "passes"; found .
+
+7 errors, 0 warnings in 1 package (…)

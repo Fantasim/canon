@@ -1,0 +1,103 @@
+GRAMMAR.md §5.10, EVALUATION.md §10.5: after `expect`, `package` starts a package subject, bare
+or with substitutions on one line or one per line, always followed by an outcome; `Icon.package`
+after `expect` stays an expression.
+-- a/a.canon --
+package a
+
+enum Icon {
+  package
+  file
+}
+
+let levels: [Int] = [1, 2, 3]
+let cap: Int = 2
+
+test "package subjects" {
+  expect package passes
+  expect package { levels: [1] } fails uniqueIndex
+  expect package { levels: levels + [4], cap: 3, } warns "above the cap"
+  expect package {
+    levels: []
+    cap: 0
+  } fails E3204
+  expect Icon.package == Icon.file
+  expect Icon.package passes
+}
+-- ast --
+== a/a.canon
+File: File FileKind=source @1:1-22:1
+  Package: QualifiedName a @1:9-1:10
+  Decls[0]: EnumDecl @3:1-6:2
+    Name: Ident Icon @3:6-3:10
+    Members[0]: EnumMember @4:3-4:10
+      Name: Ident package @4:3-4:10
+    Members[1]: EnumMember @5:3-5:7
+      Name: Ident file @5:3-5:7
+  Decls[1]: LetDecl @8:1-8:30
+    Name: Ident levels @8:5-8:11
+    Type: ListType @8:13-8:18
+      Elem: NamedType @8:14-8:17
+        Name: QualifiedName Int @8:14-8:17
+    Value: ListLit @8:21-8:30
+      Elems[0]: IntLit Value=1 @8:22-8:23
+      Elems[1]: IntLit Value=2 @8:25-8:26
+      Elems[2]: IntLit Value=3 @8:28-8:29
+  Decls[2]: LetDecl @9:1-9:17
+    Name: Ident cap @9:5-9:8
+    Type: NamedType @9:10-9:13
+      Name: QualifiedName Int @9:10-9:13
+    Value: IntLit Value=2 @9:16-9:17
+  Decls[3]: TestDecl @11:1-21:2
+    Name: StringLit @11:6-11:24
+      Parts[0]: text "package subjects"
+    Body: Block @11:25-21:2
+      Stmts[0]: ExpectStmt @12:3-12:24
+        Package: PackageSubject @12:10-12:17
+        Outcome: Ident passes @12:18-12:24
+      Stmts[1]: ExpectStmt @13:3-13:51
+        Package: PackageSubject @13:10-13:33
+          Items[0]: Substitution @13:20-13:31
+            Name: Ident levels @13:20-13:26
+            Value: ListLit @13:28-13:31
+              Elems[0]: IntLit Value=1 @13:29-13:30
+        Outcome: Ident fails @13:34-13:39
+        Message: Ident uniqueIndex @13:40-13:51
+      Stmts[2]: ExpectStmt @14:3-14:73
+        Package: PackageSubject @14:10-14:51
+          Items[0]: Substitution @14:20-14:40
+            Name: Ident levels @14:20-14:26
+            Value: BinaryExpr Op=+ @14:28-14:40
+              X: IdentExpr levels @14:28-14:34
+              Y: ListLit @14:37-14:40
+                Elems[0]: IntLit Value=4 @14:38-14:39
+          Items[1]: Substitution @14:42-14:48
+            Name: Ident cap @14:42-14:45
+            Value: IntLit Value=3 @14:47-14:48
+        Outcome: Ident warns @14:52-14:57
+        Message: StringLit @14:58-14:73
+          Parts[0]: text "above the cap"
+      Stmts[3]: ExpectStmt @15:3-18:16
+        Package: PackageSubject @15:10-18:4
+          Items[0]: Substitution @16:5-16:15
+            Name: Ident levels @16:5-16:11
+            Value: ListLit @16:13-16:15
+          Items[1]: Substitution @17:5-17:11
+            Name: Ident cap @17:5-17:8
+            Value: IntLit Value=0 @17:10-17:11
+        Outcome: Ident fails @18:5-18:10
+        Message: Ident E3204 @18:11-18:16
+      Stmts[4]: ExpectStmt @19:3-19:35
+        X: BinaryExpr Op=== @19:10-19:35
+          X: SelectorExpr @19:10-19:22
+            X: IdentExpr Icon @19:10-19:14
+            Name: Ident package @19:15-19:22
+          Y: SelectorExpr @19:26-19:35
+            X: IdentExpr Icon @19:26-19:30
+            Name: Ident file @19:31-19:35
+      Stmts[5]: ExpectStmt @20:3-20:29
+        X: SelectorExpr @20:10-20:22
+          X: IdentExpr Icon @20:10-20:14
+          Name: Ident package @20:15-20:22
+        Outcome: Ident passes @20:23-20:29
+== findings
+0 errors, 0 warnings in 1 package (…)

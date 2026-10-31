@@ -877,7 +877,10 @@ whileStmt       = "while" headerExpr block ;
 matchStmt       = "match" headerExpr BraceList( stmtArm ) ;
 stmtArm         = pattern { "," pattern } "=>" ( block | expr ) ;
 returnStmt      = "return" [ expr ] ;
-expectStmt      = "expect" expr [ ( "fails" | "warns" ) ( stringLit | IDENT ) | "passes" ] ;
+expectStmt      = "expect" ( packageSubject outcome | expr [ outcome ] ) ;
+outcome         = ( "fails" | "warns" ) ( stringLit | IDENT ) | "passes" ;
+packageSubject  = "package" [ BraceList( substitution ) ] ;   (* not empty: E1116 *)
+substitution    = IDENT ":" expr ;
 simpleStmt      = expr [ assignOp expr ] ;
 assignOp        = "=" | "+=" | "-=" | "*=" | "/=" ;
 binder          = IDENT | "_" ;

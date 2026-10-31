@@ -129,6 +129,7 @@ var productions = map[string][]syntax.NodeKind{
 	"letStmt": {syntax.KindLetStmt}, "varStmt": {syntax.KindVarStmt}, "ifStmt": {syntax.KindIfStmt},
 	"forStmt": {syntax.KindForStmt}, "whileStmt": {syntax.KindWhileStmt}, "matchStmt": {syntax.KindMatchStmt},
 	"stmtArm": {syntax.KindStmtArm}, "returnStmt": {syntax.KindReturnStmt}, "expectStmt": {syntax.KindExpectStmt},
+	"outcome": {syntax.KindExpectStmt}, "packageSubject": {syntax.KindPackageSubject}, "substitution": {syntax.KindSubstitution},
 	"simpleStmt": {syntax.KindExprStmt, syntax.KindAssignStmt}, "assignOp": {syntax.KindAssignStmt},
 	"binder": {syntax.KindIdent}, "expr": exprs, "lambda": {syntax.KindLambdaExpr},
 	"lambdaParams": {syntax.KindLambdaExpr, syntax.KindIdent}, "coalesce": {syntax.KindBinaryExpr},

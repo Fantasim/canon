@@ -130,10 +130,12 @@ func (*ReturnStmt) stmtNode()      {}
 
 func (n *ReturnStmt) children(yield func(Node) bool) bool { return visit(yield, n.Value) }
 
-// ExpectStmt is "expect x [fails|warns message|passes]"; Outcome is nil for a bare expect.
+// ExpectStmt is "expect x [fails|warns message|passes]" or "expect package [{ … }] outcome":
+// exactly one of X and Package is set, and Outcome is nil only for a bare expect of an X.
 type ExpectStmt struct {
 	Bounds
-	X       Expr
+	X       Expr            // nil when Package is set
+	Package *PackageSubject // EVALUATION.md §10.5
 	Outcome *Ident
 	Message NameLit
 }
@@ -142,7 +144,31 @@ func (*ExpectStmt) Kind() NodeKind { return KindExpectStmt }
 func (*ExpectStmt) stmtNode()      {}
 
 func (n *ExpectStmt) children(yield func(Node) bool) bool {
-	return visit(yield, n.X) && visit(yield, n.Outcome) && visit(yield, n.Message)
+	return visit(yield, n.X) && visit(yield, n.Package) && visit(yield, n.Outcome) && visit(yield, n.Message)
+}
+
+// PackageSubject is "package [{ items }]" after expect, Braces zero when bare (EVALUATION.md §10.5).
+type PackageSubject struct {
+	Bounds
+	Braces Delims
+	Items  []*Substitution
+}
+
+func (*PackageSubject) Kind() NodeKind { return KindPackageSubject }
+
+func (n *PackageSubject) children(yield func(Node) bool) bool { return visit(yield, n.Items...) }
+
+// Substitution is "name: value" in a package subject (EVALUATION.md §10.5).
+type Substitution struct {
+	Bounds
+	Name  *Ident
+	Value Expr
+}
+
+func (*Substitution) Kind() NodeKind { return KindSubstitution }
+
+func (n *Substitution) children(yield func(Node) bool) bool {
+	return visit(yield, n.Name) && visit(yield, n.Value)
 }
 
 // MatchStmt is "match header { arms }" at the start of a statement.

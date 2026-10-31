@@ -220,9 +220,18 @@ func stmtSamples(g *gen) []sample {
 		{&syntax.ContinueStmt{Bounds: g.b()}, 0},
 		{&syntax.ReturnStmt{Value: g.x()}, 1},
 		{&syntax.ExpectStmt{X: g.x(), Outcome: g.id(), Message: g.str()}, 3},
+		{&syntax.PackageSubject{Braces: syntax.Delims{Open: g.tok, Close: g.tok}, Items: []*syntax.Substitution{{Bounds: g.b()}, {Bounds: g.b()}}}, 2},
+		{&syntax.Substitution{Name: g.id(), Value: g.x()}, 2},
 		{&syntax.MatchStmt{Scrutinee: g.x(), Arms: []*syntax.StmtArm{{Bounds: g.b()}}}, 2},
 		{&syntax.StmtArm{Patterns: []*syntax.Pattern{g.pat()}, Block: g.block(), X: g.x()}, 3},
 		{&syntax.ExprStmt{X: g.x()}, 1},
+	}
+}
+
+// formSamples are second forms of node types in samples(), fields exclusive (EVALUATION.md §10.5).
+func formSamples(g *gen) []sample {
+	return []sample{
+		{&syntax.ExpectStmt{Package: &syntax.PackageSubject{Bounds: g.b()}, Outcome: g.id(), Message: g.str()}, 3},
 	}
 }
 

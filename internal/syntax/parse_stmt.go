@@ -169,25 +169,93 @@ func (p *parser) returnStmt() Stmt {
 	return s
 }
 
-// expectStmt is "expect" expr [ ( "fails" | "warns" ) ( stringLit | IDENT ) | "passes" ];
-// E1130 outside a test block.
+// expectStmt is "expect" ( packageSubject outcome | expr [ outcome ] ) (GRAMMAR.md §5.10).
 func (p *parser) expectStmt() Stmt {
 	t := p.next()
 	if !p.ctx.test {
 		diag.E1130.At(p.span(t, t)).Report(p.bag)
 	}
-	s := &ExpectStmt{X: p.expr()}
+	s := &ExpectStmt{}
+	var required []string
+	if p.at(KwPackage) {
+		if s.Package = p.packageSubject(); s.Package == nil {
+			return nil
+		}
+		required = outcomeNames(s.Package.Braces.Open == NoTok)
+	} else {
+		s.X = p.expr()
+	}
+	if !p.outcome(s, required) {
+		return nil
+	}
+	s.Bounds = p.from(t)
+	return s
+}
+
+// outcome reads ( "fails" | "warns" ) ( stringLit | IDENT ) | "passes" into s. When none
+// follows, it reports E1116 expecting required and returns false, unless required is empty.
+func (p *parser) outcome(s *ExpectStmt, required []string) bool {
 	switch {
 	case p.atWord(wordPasses):
 		s.Outcome = p.ref()
 	case p.atWord(wordFails) || p.atWord(wordWarns):
 		s.Outcome = p.ref()
-		if s.Message = p.expectMessage(); s.Message == nil {
+		s.Message = p.expectMessage()
+		return s.Message != nil
+	case len(required) > 0:
+		p.fail(required...)
+		return false
+	}
+	return true
+}
+
+// outcomeNames is what E1116 expects after a package subject, "{" too when bare (GRAMMAR.md §5.10).
+func outcomeNames(bare bool) []string {
+	names := []string{quoted(wordFails), quoted(wordWarns), quoted(wordPasses)}
+	if bare {
+		return append([]string{expected(TokLBrace)}, names...)
+	}
+	return names
+}
+
+// packageSubject is "package" [ BraceList( substitution ) ], never empty (EVALUATION.md §10.5).
+func (p *parser) packageSubject() *PackageSubject {
+	start := p.next()
+	s := &PackageSubject{}
+	if p.at(TokLBrace) {
+		s.Braces = p.braceList(func() bool {
+			it := p.substitution()
+			if it != nil {
+				s.Items = append(s.Items, it)
+			}
+			return it != nil
+		}, nil)
+		if s.Braces.Close == NoTok || len(s.Items) == 0 {
+			p.emptySubject(s.Braces)
 			return nil
 		}
 	}
-	s.Bounds = p.from(t)
+	s.Bounds = p.from(start)
 	return s
+}
+
+// emptySubject reports "package {}" at its "}"; braces holding only broken items already
+// have their E1116.
+func (p *parser) emptySubject(d Delims) {
+	if d.Close != NoTok && d.Close == d.Open+1 {
+		p.failAt(d.Close, identName)
+	}
+}
+
+// substitution is IDENT ":" expr.
+func (p *parser) substitution() *Substitution {
+	start := p.pos
+	name := p.ref()
+	if name == nil || p.expect(TokColon) == NoTok {
+		return nil
+	}
+	v := p.expr()
+	return &Substitution{Name: name, Value: v, Bounds: p.from(start)}
 }
 
 func (p *parser) expectMessage() NameLit {

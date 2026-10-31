@@ -92,7 +92,7 @@ func TestNodeKinds(t *testing.T) {
 
 // The walker yields every child that is set, in source order (GRAMMAR.md §10: one lossless tree).
 func TestChildrenInSourceOrder(t *testing.T) {
-	for _, s := range samples() {
+	for _, s := range append(samples(), formSamples(&gen{})...) {
 		var got []syntax.Node
 		for c := range syntax.Children(s.node) {
 			got = append(got, c)

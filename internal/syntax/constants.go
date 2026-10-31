@@ -302,6 +302,8 @@ const (
 	KindContinueStmt
 	KindReturnStmt
 	KindExpectStmt
+	KindPackageSubject
+	KindSubstitution
 	KindMatchStmt
 	KindStmtArm
 	KindExprStmt
@@ -351,7 +353,8 @@ var kindNames = [NodeKindCount]string{
 	KindLoadExpr: "LoadExpr", KindBlock: "Block", KindLetStmt: "LetStmt", KindVarStmt: "VarStmt",
 	KindAssignStmt: "AssignStmt", KindIfStmt: "IfStmt", KindForStmt: "ForStmt",
 	KindWhileStmt: "WhileStmt", KindBreakStmt: "BreakStmt", KindContinueStmt: "ContinueStmt",
-	KindReturnStmt: "ReturnStmt", KindExpectStmt: "ExpectStmt", KindMatchStmt: "MatchStmt",
+	KindReturnStmt: "ReturnStmt", KindExpectStmt: "ExpectStmt", KindPackageSubject: "PackageSubject",
+	KindSubstitution: "Substitution", KindMatchStmt: "MatchStmt",
 	KindStmtArm: "StmtArm", KindExprStmt: "ExprStmt", KindBadExpr: "BadExpr", KindBadType: "BadType",
 	KindBadStmt: "BadStmt", KindBadDecl: "BadDecl",
 }
