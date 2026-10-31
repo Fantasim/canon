@@ -343,6 +343,9 @@ export interface Skill {
   readonly resist: Readonly<Record<Element, number>>;
 }
 
+/** The upper bound of the element count of stats, from its refinement ..=3. */
+export const Skill_StatsLenMax: number = 3;
+
 /** Statuses. */
 export interface Status {
   readonly id?: StatusId;
@@ -538,6 +541,46 @@ function decDuration(raw: unknown, path: string, unit: number): number {
   const ms = num / den;
   if (ms > 9223372036854n) decFail(path, "duration out of range");
   return Number(d.neg ? -ms : ms);
+}
+
+/** A number within its range refinement (CODEGEN.md §5.15): lo inclusive, hi inclusive when `inclusive`, an open end ±Infinity. */
+function decIn(v: number, path: string, lo: number, hi: number, inclusive: boolean, range: string): number {
+  if (!(v >= lo && (inclusive ? v <= hi : v < hi))) decFail(path, "expected a value in " + range);
+  return v;
+}
+
+/** A String within its length refinement, in UTF-8 bytes (TYPES.md §7.4): s.length to 3 × s.length bytes, counted only between; a surrogate pair is 4 bytes, a lone surrogate 3 (as TextEncoder writes its replacement). A literal of a union passes. */
+function decStrIn(s: string, path: string, lo: number, hi: number, inclusive: boolean, range: string, literals: ReadonlyArray<string> = []): string {
+  let n = s.length;
+  if ((n >= lo && (inclusive ? 3 * n <= hi : 3 * n < hi)) || literals.includes(s)) return s;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 0x80) continue;
+    const pair = c >= 0xd800 && c <= 0xdbff && i + 1 < s.length && s.charCodeAt(i + 1) >= 0xdc00 && s.charCodeAt(i + 1) <= 0xdfff;
+    n += c < 0x800 ? 1 : 2;
+    if (pair) i++;
+  }
+  if (!(n >= lo && (inclusive ? n <= hi : n < hi))) decFail(path, "expected a byte length in " + range);
+  return s;
+}
+
+/** A list's, keyed list's or map's element count within its length refinement (CODEGEN.md §5.15). */
+function decCountIn<T>(v: T, path: string, lo: number, hi: number, inclusive: boolean, range: string): T {
+  const n = Array.isArray(v) ? v.length : (v as unknown as ReadonlyMap<unknown, unknown>).size;
+  if (!(n >= lo && (inclusive ? n <= hi : n < hi))) decFail(path, "expected an element count in " + range);
+  return v;
+}
+
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
 }
 
 /** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
@@ -781,7 +824,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeSkills(json: unknown): CanonTable<string, Skill> {
   const $doc = canonEnvelope(json, skillsSchema, "skills.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "skills.json: rows", ($x, $p) => readSkill($x, $p))), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "skills.json: rows", ($x, $p) => readSkill($x, $p)), "skills.json: rows", ($e) => $e.id, "dwID")), ($e) => $e.id);
 }
 
 export function parseSkills(text: string): CanonTable<string, Skill> {
@@ -790,7 +833,7 @@ export function parseSkills(text: string): CanonTable<string, Skill> {
 
 export function decodeStatuses(json: unknown): CanonTable<StatusId, CanonRow<Status, StatusId>> {
   const $doc = canonEnvelope(json, statusesSchema, "statuses.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "statuses.json: rows", ($x, $p) => readStatus($x, $p) as CanonRow<Status, StatusId>)), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "statuses.json: rows", ($x, $p) => readStatus($x, $p) as CanonRow<Status, StatusId>), "statuses.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseStatuses(text: string): CanonTable<StatusId, CanonRow<Status, StatusId>> {
@@ -808,7 +851,7 @@ export function parseObjective(text: string): Objective {
 
 export function decodeMarks(json: unknown): CanonTable<string, Mark> {
   const $doc = canonEnvelope(json, marksSchema, "marks.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "marks.json: rows", ($x, $p) => readMark($x, $p))), ($e) => $e.key);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "marks.json: rows", ($x, $p) => readMark($x, $p)), "marks.json: rows", ($e) => $e.key, "key")), ($e) => $e.key);
 }
 
 export function parseMarks(text: string): CanonTable<string, Mark> {
@@ -818,9 +861,9 @@ export function parseMarks(text: string): CanonTable<string, Mark> {
 function readTarget($raw: unknown, $path: string, $disc: Goal): Target {
   switch ($disc) {
     case "kill":
-      return { branch: "kill", value: decString($raw, $path) };
+      return { branch: "kill", value: decStrIn(decString($raw, $path), $path, 1, Infinity, true, "1..") };
     case "collect":
-      return { branch: "collect", value: decInt($raw, $path, -9223372036854776000, 9223372036854776000) };
+      return { branch: "collect", value: decIn(decInt($raw, $path, -9223372036854776000, 9223372036854776000), $path, 1, Infinity, true, "1..") };
     default:
       return decFail($path, "no branch for this value");
   }
@@ -884,7 +927,7 @@ function readSkill($raw: unknown, $path: string): Skill {
   const $v9: ReadonlyMap<Element, number> = $r9 === undefined ? new CanonMap<Element, number>([]) : decMap($r9, $path + ".weights", ($k, $p) => decCode(Number($k), $p, ElementMembers, ElementCodes), ($x, $p) => decFloat($x, $p, "expected a number"));
   const $r10 = decGet($o, "counts");
   const $v10: ReadonlyMap<number, number> = $r10 === undefined ? new CanonMap<number, number>([]) : decMap($r10, $path + ".counts", ($k, $p) => decIntKey($k, $p), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
-  const $v11: ReadonlyArray<StatBonus> = decPairs($o, $path, ["dwDestParam0", "dwDestParam1", "dwDestParam2"], ["nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"], ($a, $b, $pa, $pb) => ({ attribute: decString($a, $pa), value: decInt($b, $pb, -9223372036854776000, 9223372036854776000) }));
+  const $v11: ReadonlyArray<StatBonus> = decCountIn(decPairs($o, $path, ["dwDestParam0", "dwDestParam1", "dwDestParam2"], ["nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"], ($a, $b, $pa, $pb) => ({ attribute: decString($a, $pa), value: decInt($b, $pb, -9223372036854776000, 9223372036854776000) })), $path + ".stats", -Infinity, 3, true, "..=3");
   const $v12: Kind = readKind($o, $path);
   const $r13 = decGet($o, "goals");
   const $v13: ReadonlyArray<Objective> = $r13 === undefined ? [] : decList($r13, $path + ".goals", ($x, $p) => readObjective($x, $p));

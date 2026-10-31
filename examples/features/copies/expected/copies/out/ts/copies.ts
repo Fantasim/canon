@@ -125,6 +125,18 @@ function decString(raw: unknown, path: string): string {
   return raw;
 }
 
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
+}
+
 /** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
 function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
   const m = members.find((x) => x === raw);
@@ -309,7 +321,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeBadges(json: unknown): CanonTable<BadgeId, CanonRow<Badge, BadgeId>> {
   const $doc = canonEnvelope(json, badgesSchema, "badges.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "badges.json: rows", ($x, $p) => readBadge($x, $p) as CanonRow<Badge, BadgeId>)), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "badges.json: rows", ($x, $p) => readBadge($x, $p) as CanonRow<Badge, BadgeId>), "badges.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseBadges(text: string): CanonTable<BadgeId, CanonRow<Badge, BadgeId>> {

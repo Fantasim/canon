@@ -106,6 +106,9 @@ export interface Status {
   readonly label: string;
 }
 
+/** The lower bound of code, from its refinement 1... */
+export const Status_CodeMin: number = 1;
+
 /** The statuses. */
 export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> & { findByCode(code: number): CanonRow<Status, StatusId> | null; findByTag(tag: string): CanonRow<Status, StatusId> | null } = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
   $r({ id: "open", retired: false, code: 1, tag: "OPEN", label: "Open" }),

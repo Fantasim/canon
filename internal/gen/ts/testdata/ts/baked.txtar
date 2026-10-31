@@ -408,6 +408,9 @@ export interface Skill {
   readonly resist: Readonly<Record<Element, number>>;
 }
 
+/** The upper bound of the element count of stats, from its refinement ..=3. */
+export const Skill_StatsLenMax: number = 3;
+
 /** Statuses. */
 export interface Status {
   readonly id?: StatusId;

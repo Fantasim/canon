@@ -134,6 +134,9 @@ export interface Intent {
   readonly minRole: sovcommon_roles.Role;
 }
 
+/** The lower bound of the byte length of label, from its refinement 1... */
+export const Intent_LabelLenMin: number = 1;
+
 /** One of the reporter's booleans. */
 export interface Flag {
   readonly id?: FlagId;
@@ -151,6 +154,9 @@ export interface Flag {
   /** Who may see that the flag was set; `none` means whoever can see the post. */
   readonly viewMinRole: sovcommon_roles.Role | null;
 }
+
+/** The lower bound of the byte length of label, from its refinement 1... */
+export const Flag_LabelLenMin: number = 1;
 
 /** One point of the post lifecycle. */
 export interface Status {
@@ -172,6 +178,9 @@ export interface Status {
   readonly by: Actor | null;
 }
 
+/** The lower bound of the byte length of label, from its refinement 1... */
+export const Status_LabelLenMin: number = 1;
+
 /** Set by a triager only. The reporter's single signal is the `blocking` flag. */
 export interface Severity {
   readonly id?: SeverityId;
@@ -184,6 +193,9 @@ export interface Severity {
   readonly default: boolean;
 }
 
+/** The lower bound of the byte length of label, from its refinement 1... */
+export const Severity_LabelLenMin: number = 1;
+
 /** A header the area picker and the move-to-area menu group areas under. */
 export interface AreaGroup {
   readonly id?: AreaGroupId;
@@ -191,6 +203,9 @@ export interface AreaGroup {
   /** Header text. */
   readonly label: string;
 }
+
+/** The lower bound of the byte length of label, from its refinement 1... */
+export const AreaGroup_LabelLenMin: number = 1;
 
 /** Where the reporter stood, never which component is at fault. */
 export interface Area {
@@ -212,6 +227,9 @@ export interface Area {
   readonly routesTo: ReadonlyArray<AreaId>;
 }
 
+/** The lower bound of the byte length of label, from its refinement 1... */
+export const Area_LabelLenMin: number = 1;
+
 /** One fixed column of the deck: a named set of statuses. */
 export interface Column {
   readonly id?: ColumnId;
@@ -228,6 +246,9 @@ export interface Column {
   readonly hideable: boolean;
 }
 
+/** The lower bound of the byte length of label, from its refinement 1... */
+export const Column_LabelLenMin: number = 1;
+
 /** The deck: fixed columns, in order. Nobody adds, removes or edits a column. */
 export interface Deck {
   /** The only arrangements: all in one row, or a 2x2 grid. */
@@ -235,6 +256,9 @@ export interface Deck {
   /** How many columns may be collapsed at once, so the deck never goes fully empty. */
   readonly maxHidden: number;
 }
+
+/** The lower bound of maxHidden, from its refinement 1... */
+export const Deck_MaxHiddenMin: number = 1;
 
 /** One group header with the areas shown under it. */
 export interface AreaSection {

@@ -147,7 +147,8 @@ func (g *gen) pairsRead(f *ir.Field) string {
 		props[k] = property(fieldProp(ef)) + keyValueSep + g.dec(ef.Type, vals[k], paths[k], ctx)
 	}
 	read := fmt.Sprintf(pairsLambdaFormat, joinArgs(props))
-	return g.call(decPairsName, objVar, pathParam, keys[0], keys[1], read)
+	list := g.call(decPairsName, objVar, pathParam, keys[0], keys[1], read)
+	return g.checked(f.Type, list, pathParam+plusSep+quote(dot+f.Name), false)
 }
 
 // slotKeys are a pairs template's keys of slot 0 to n-1, quoted: `{i}` replaced by the slot in decimal.

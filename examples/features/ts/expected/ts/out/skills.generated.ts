@@ -139,12 +139,20 @@ export interface RewardItem {
   readonly count: number;
 }
 
+/** The lower bound of the byte length of define, from its refinement 1... */
+export const RewardItem_DefineLenMin: number = 1;
+/** The lower bound of count, from its refinement 1... */
+export const RewardItem_CountMin: number = 1;
+
 /** Penya. */
 export interface RewardGold {
   readonly kind: "gold";
   /** How much. */
   readonly amount: number;
 }
+
+/** The lower bound of amount, from its refinement 1... */
+export const RewardGold_AmountMin: number = 1;
 
 /** What learning a skill gives back. */
 export type Reward = RewardItem | RewardGold | { readonly kind: "nothing" };
@@ -168,6 +176,11 @@ export interface SkillEntry {
   /** The skill this one upgrades into, a ref. */
   readonly next: string | null;
 }
+
+/** The lower bound of the byte length of name, from its refinement 1... */
+export const SkillEntry_NameLenMin: number = 1;
+/** The lower bound of cost, from its refinement 0... */
+export const SkillEntry_CostMin: number = 0;
 
 export const skillsSchema = "features.ts.Skill@1f1b519a";
 
@@ -287,6 +300,39 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
 function decString(raw: unknown, path: string): string {
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
+}
+
+/** A number within its range refinement (CODEGEN.md §5.15): lo inclusive, hi inclusive when `inclusive`, an open end ±Infinity. */
+function decIn(v: number, path: string, lo: number, hi: number, inclusive: boolean, range: string): number {
+  if (!(v >= lo && (inclusive ? v <= hi : v < hi))) decFail(path, "expected a value in " + range);
+  return v;
+}
+
+/** A String within its length refinement, in UTF-8 bytes (TYPES.md §7.4): s.length to 3 × s.length bytes, counted only between; a surrogate pair is 4 bytes, a lone surrogate 3 (as TextEncoder writes its replacement). A literal of a union passes. */
+function decStrIn(s: string, path: string, lo: number, hi: number, inclusive: boolean, range: string, literals: ReadonlyArray<string> = []): string {
+  let n = s.length;
+  if ((n >= lo && (inclusive ? 3 * n <= hi : 3 * n < hi)) || literals.includes(s)) return s;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 0x80) continue;
+    const pair = c >= 0xd800 && c <= 0xdbff && i + 1 < s.length && s.charCodeAt(i + 1) >= 0xdc00 && s.charCodeAt(i + 1) <= 0xdfff;
+    n += c < 0x800 ? 1 : 2;
+    if (pair) i++;
+  }
+  if (!(n >= lo && (inclusive ? n <= hi : n < hi))) decFail(path, "expected a byte length in " + range);
+  return s;
+}
+
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
 }
 
 /** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
@@ -478,7 +524,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeSkills(json: unknown): CanonTable<string, SkillEntry> {
   const $doc = canonEnvelope(json, skillsSchema, "skills.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "skills.json: rows", ($x, $p) => readSkillEntry($x, $p))), ($e) => $e.name);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "skills.json: rows", ($x, $p) => readSkillEntry($x, $p)), "skills.json: rows", ($e) => $e.name, "name")), ($e) => $e.name);
 }
 
 export function parseSkills(text: string): CanonTable<string, SkillEntry> {
@@ -501,24 +547,24 @@ function readReward($raw: unknown, $path: string): Reward {
 }
 
 function readRewardItem($o: Record<string, unknown>, $path: string): RewardItem {
-  const $v1: string = decString(decGet($o, "define"), $path + ".define");
+  const $v1: string = decStrIn(decString(decGet($o, "define"), $path + ".define"), $path + ".define", 1, Infinity, true, "1..");
   const $r2 = decGet($o, "count");
-  const $v2: number = $r2 === undefined ? 1 : decInt($r2, $path + ".count", -9223372036854776000, 9223372036854776000);
+  const $v2: number = $r2 === undefined ? 1 : decIn(decInt($r2, $path + ".count", -9223372036854776000, 9223372036854776000), $path + ".count", 1, Infinity, true, "1..");
   return { kind: "item", define: $v1, count: $v2 };
 }
 
 function readRewardGold($o: Record<string, unknown>, $path: string): RewardGold {
-  const $v1: number = decInt(decGet($o, "amount"), $path + ".amount", -9223372036854776000, 9223372036854776000);
+  const $v1: number = decIn(decInt(decGet($o, "amount"), $path + ".amount", -9223372036854776000, 9223372036854776000), $path + ".amount", 1, Infinity, true, "1..");
   return { kind: "gold", amount: $v1 };
 }
 
 function readSkillEntry($raw: unknown, $path: string): SkillEntry {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "name"), $path + ".name");
+  const $v1: string = decStrIn(decString(decGet($o, "name"), $path + ".name"), $path + ".name", 1, Infinity, true, "1..");
   const $r2 = decGet($o, "rarity");
   const $v2: Rarity = $r2 === undefined ? "common" : decEnum($r2, $path + ".rarity", RarityMembers);
   const $r3 = decGet($o, "cost");
-  const $v3: number = $r3 === undefined ? 0 : decInt($r3, $path + ".cost", -9223372036854776000, 9223372036854776000);
+  const $v3: number = $r3 === undefined ? 0 : decIn(decInt($r3, $path + ".cost", -9223372036854776000, 9223372036854776000), $path + ".cost", 0, Infinity, true, "0..");
   const $r4 = decGet($o, "reward");
   const $v4: Reward = $r4 === undefined ? { kind: "nothing" } : readReward($r4, $path + ".reward");
   const $r5 = decGet($o, "note");

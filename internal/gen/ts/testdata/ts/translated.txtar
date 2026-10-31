@@ -897,6 +897,11 @@ export interface ShapeCircle {
   readonly r: number;
 }
 
+/** The lower bound of r, from its refinement 1..=100. */
+export const ShapeCircle_RMin: number = 1;
+/** The upper bound of r, from its refinement 1..=100. */
+export const ShapeCircle_RMax: number = 100;
+
 /** A square. */
 export interface ShapeSquare {
   readonly kind: "square";

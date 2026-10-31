@@ -48,5 +48,8 @@ export interface Column {
   readonly sql: string;
 }
 
+/** The lower bound of the byte length of sql, from its refinement 1... */
+export const Column_SqlLenMin: number = 1;
+
 /** The columns, in table order. */
 export const columns: ReadonlyArray<Column> = canonFreeze<ReadonlyArray<Column>>(canonList<Column>(($r) => [$r({ name: "id", sql: "BIGINT" }), $r({ name: "kind", sql: "SMALLINT" }), $r({ name: "at", sql: "TIMESTAMP" })]));

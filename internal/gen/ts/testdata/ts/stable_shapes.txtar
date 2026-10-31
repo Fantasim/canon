@@ -110,6 +110,13 @@ export interface Item {
   readonly serial: bigint;
 }
 
+/** The lower bound of the byte length of name, from its refinement 1... */
+export const Item_NameLenMin: number = 1;
+/** The lower bound of code, from its refinement 1... */
+export const Item_TheCodeMin: number = 1;
+/** The lower bound of serial, from its refinement 0... */
+export const Item_SerialMin: bigint = 0n;
+
 /** Items. */
 export const items: CanonTable<ItemId, CanonRow<Item, ItemId>> & { findByCode(code: number): CanonRow<Item, ItemId> | null; findBySerial(serial: bigint): CanonRow<Item, ItemId> | null } = canonTable(canonFreeze(canonList<CanonRow<Item, ItemId>>(($r) => [
   $r({ id: "a", retired: false, name: "a", theCode: 1, serial: 9007199254740993n }),

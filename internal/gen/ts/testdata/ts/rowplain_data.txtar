@@ -188,6 +188,18 @@ function decString(raw: unknown, path: string): string {
   return raw;
 }
 
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
+}
+
 function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {
   return decArray(raw, path).map((x, i) => read(x, path + "[" + i + "]"));
 }
@@ -370,7 +382,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodePs(json: unknown): CanonTable<PId, CanonRow<P, PId>> {
   const $doc = canonEnvelope(json, psSchema, "ps.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "ps.json: rows", ($x, $p) => readP($x, $p, null) as CanonRow<P, PId>)), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "ps.json: rows", ($x, $p) => readP($x, $p, null) as CanonRow<P, PId>), "ps.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parsePs(text: string): CanonTable<PId, CanonRow<P, PId>> {
@@ -388,7 +400,7 @@ export function parseSingle(text: string): P {
 
 export function decodeQs(json: unknown): CanonTable<string, Q> {
   const $doc = canonEnvelope(json, qsSchema, "qs.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "qs.json: rows", ($x, $p) => readQ($x, $p))), ($e) => $e.k);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "qs.json: rows", ($x, $p) => readQ($x, $p)), "qs.json: rows", ($e) => $e.k, "k")), ($e) => $e.k);
 }
 
 export function parseQs(text: string): CanonTable<string, Q> {

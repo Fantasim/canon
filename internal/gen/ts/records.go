@@ -33,6 +33,7 @@ func (g *gen) record(r *ir.Record) {
 	}
 	props = append(props, g.bodyProps(r.QName(), r.Fields, r.Methods)...)
 	g.add(docComment("", r.Doc) + g.interfaceText(name, props))
+	g.boundConsts(name, r.Fields)
 }
 
 // entryProps are the `id` and `retired` properties of a row record, always optional: a container's CanonRow makes them present (CODEGEN.md §5.3, §5.4, §8.1; DECISIONS 323).
@@ -144,6 +145,7 @@ func (g *gen) caseArm(v *ir.Variant, c *ir.Case) string {
 	props := []string{fmt.Sprintf(propFormat, kindProp, quote(c.Wire))}
 	props = append(props, g.bodyProps(name, c.Fields, c.Methods)...)
 	g.add(docComment("", c.Doc) + g.interfaceText(name, props))
+	g.boundConsts(name, c.Fields)
 	return name
 }
 

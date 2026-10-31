@@ -74,6 +74,13 @@ export interface Country {
   readonly cards: boolean;
 }
 
+/** The lower bound of the byte length of name, from its refinement 1... */
+export const Country_NameLenMin: number = 1;
+/** The lower bound of vat, from its refinement 0..=30. */
+export const Country_VatMin: number = 0;
+/** The upper bound of vat, from its refinement 0..=30. */
+export const Country_VatMax: number = 30;
+
 /** Every country, keyed by code. */
 export const countries: CanonTable<string, Country> = canonTable(canonFreeze(canonList<Country>(($r) => [
   $r({ code: "FR", name: "France", vat: 20, cards: true }),

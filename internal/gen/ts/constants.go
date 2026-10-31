@@ -169,6 +169,8 @@ const (
 	decGetName         = "decGet"
 	decIntKeyName      = "decIntKey"
 	decBigKeyName      = "decBigKey"
+	decInName          = "decIn"
+	decInBigName       = "decInBig"
 	decIntName         = "decInt"
 	decKeyedName       = "decKeyed"
 	decListName        = "decList"
@@ -177,7 +179,22 @@ const (
 	decPairsName       = "decPairs"
 	decSameName        = "decSame"
 	decStringName      = "decString"
+	decStrInName       = "decStrIn"
 	decTableName       = "decTable"
+	decCountInName     = "decCountIn"
+	decUniqueName      = "decUnique"
+)
+
+// Refinements at run time and bound constants (CODEGEN.md §2.5 T19, §5.15).
+const (
+	tsInfinity                          = "Infinity"
+	tsNegInfinity                       = "-Infinity"
+	boundDocFormat                      = "/** %s of %s, from its refinement %s. */\n"
+	lowerWord, upperWord, exclusiveWord = "The lower bound", "The upper bound", "The exclusive upper bound"
+	stepElem, stepKey, stepValue        = "each element of", "each key of", "each value of"
+	byteLength, elemCount               = "the byte length of", "the element count of"
+	rowsRaw                             = "decGet($doc, \"rows\")"
+	rowKeyFormat                        = "($e) => $e.%s"
 )
 
 // Declaration shapes (CODEGEN.md §5, §8.3).
@@ -276,7 +293,7 @@ const (
 	idReadFormat        = "$rowId ?? decString(decGet($o, \"$id\"), $path + \".$id\")"
 	retiredReadFormat   = "decGet($o, \"$retired\") === undefined ? false : decBool(decGet($o, \"$retired\"), $path + \".$retired\")"
 	dependentBodyFormat = "  switch ($disc) {\n%s    default:\n      return decFail($path, \"no branch for this value\");\n  }\n"
-	tableDecoderFormat  = "export function %[1]s(json: unknown): %[2]s {\n  const $doc = canonEnvelope(json, %[3]s, %[4]s);\n  return canonTable(canonFreeze(decList(decGet($doc, \"rows\"), %[7]s, ($x, $p) => %[5]s)), ($e) => $e.%[6]s%[8]s);\n}\n"
+	tableDecoderFormat  = "export function %[1]s(json: unknown): %[2]s {\n  const $doc = canonEnvelope(json, %[3]s, %[4]s);\n  return canonTable(canonFreeze(%[5]s), ($e) => $e.%[6]s%[7]s);\n}\n"
 	tableTypeFormat     = "CanonTable<%s, %s>"
 	rowTypeFormat       = "CanonRow<%s, %s>"
 	ownRowFormat        = "%[1]s" + asKw + "%[2]s"

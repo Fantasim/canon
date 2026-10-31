@@ -126,6 +126,9 @@ export interface Reward {
   readonly points: number;
 }
 
+/** The lower bound of points, from its refinement 1... */
+export const Reward_PointsMin: number = 1;
+
 /** A reward file. */
 export interface RewardFile {
   /** The rewards. */
@@ -199,6 +202,12 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 function decString(raw: unknown, path: string): string {
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
+}
+
+/** A number within its range refinement (CODEGEN.md §5.15): lo inclusive, hi inclusive when `inclusive`, an open end ±Infinity. */
+function decIn(v: number, path: string, lo: number, hi: number, inclusive: boolean, range: string): number {
+  if (!(v >= lo && (inclusive ? v <= hi : v < hi))) decFail(path, "expected a value in " + range);
+  return v;
 }
 
 /** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
@@ -402,7 +411,7 @@ export function parseEventShape(text: string): EventShape {
 function readParam($raw: unknown, $path: string, $disc: Shape): Param {
   switch ($disc) {
     case "count":
-      return { branch: "count", value: decInt($raw, $path, -9223372036854776000, 9223372036854776000) };
+      return { branch: "count", value: decIn(decInt($raw, $path, -9223372036854776000, 9223372036854776000), $path, 0, Infinity, true, "0..") };
     case "place":
       return { branch: "place", value: decString($raw, $path) };
     default:
@@ -415,7 +424,7 @@ function readReward($raw: unknown, $path: string): Reward {
   const $v1: Event = decEnum(decGet($o, "event"), $path + ".event", EventMembers);
   const $r2 = decGet($o, "param");
   const $v2: Param | null = $r2 === undefined || $r2 === null || decSame($r2, "0") ? null : readParam($r2, $path + ".param", branchesRewardParam.get($v1)!);
-  const $v3: number = decInt(decGet($o, "points"), $path + ".points", -9223372036854776000, 9223372036854776000);
+  const $v3: number = decIn(decInt(decGet($o, "points"), $path + ".points", -9223372036854776000, 9223372036854776000), $path + ".points", 1, Infinity, true, "1..");
   return { event: $v1, param: $v2, points: $v3 };
 }
 

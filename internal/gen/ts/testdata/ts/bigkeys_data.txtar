@@ -204,6 +204,18 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
   return v;
 }
 
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
+}
+
 function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {
   return decArray(raw, path).map((x, i) => read(x, path + "[" + i + "]"));
 }
@@ -393,7 +405,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeRs(json: unknown): CanonTable<bigint, R> {
   const $doc = canonEnvelope(json, rsSchema, "rs.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "rs.json: rows", ($x, $p) => readR($x, $p))), ($e) => $e.n);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "rs.json: rows", ($x, $p) => readR($x, $p)), "rs.json: rows", ($e) => $e.n, "n")), ($e) => $e.n);
 }
 
 export function parseRs(text: string): CanonTable<bigint, R> {

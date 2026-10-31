@@ -121,6 +121,9 @@ export interface Reward {
   readonly points: number;
 }
 
+/** The lower bound of points, from its refinement 1... */
+export const Reward_PointsMin: number = 1;
+
 /** A reward file. */
 export interface RewardFile {
   /** The rewards. */
@@ -181,6 +184,18 @@ function decBool(raw: unknown, path: string): boolean {
 function decString(raw: unknown, path: string): string {
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
+}
+
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
 }
 
 /** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
@@ -367,7 +382,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeEventShapes(json: unknown): CanonTable<Event, EventShape> {
   const $doc = canonEnvelope(json, eventShapesSchema, "eventShapes.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "eventShapes.json: rows", ($x, $p) => readEventShape($x, $p))), ($e) => $e.event);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "eventShapes.json: rows", ($x, $p) => readEventShape($x, $p)), "eventShapes.json: rows", ($e) => $e.event, "event")), ($e) => $e.event);
 }
 
 export function parseEventShapes(text: string): CanonTable<Event, EventShape> {
@@ -376,7 +391,7 @@ export function parseEventShapes(text: string): CanonTable<Event, EventShape> {
 
 export function decodeRegionNames(json: unknown): CanonTable<LabelId, CanonRow<Label, LabelId>> {
   const $doc = canonEnvelope(json, regionNamesSchema, "regionNames.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "regionNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>)), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "regionNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>), "regionNames.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseRegionNames(text: string): CanonTable<LabelId, CanonRow<Label, LabelId>> {
@@ -385,7 +400,7 @@ export function parseRegionNames(text: string): CanonTable<LabelId, CanonRow<Lab
 
 export function decodeStageNames(json: unknown): CanonTable<LabelId, CanonRow<Label, LabelId>> {
   const $doc = canonEnvelope(json, stageNamesSchema, "stageNames.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "stageNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>)), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "stageNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>), "stageNames.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseStageNames(text: string): CanonTable<LabelId, CanonRow<Label, LabelId>> {

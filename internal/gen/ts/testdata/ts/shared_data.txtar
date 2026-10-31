@@ -570,6 +570,18 @@ function decString(raw: unknown, path: string): string {
   return raw;
 }
 
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
+}
+
 /** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
 function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
   const m = members.find((x) => x === raw);
@@ -778,7 +790,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeZones(json: unknown): CanonTable<ZoneId, CanonRow<Zone, ZoneId>> {
   const $doc = canonEnvelope(json, zonesSchema, "zones.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "zones.json: rows", ($x, $p) => readZone($x, $p) as CanonRow<Zone, ZoneId>)), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "zones.json: rows", ($x, $p) => readZone($x, $p) as CanonRow<Zone, ZoneId>), "zones.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseZones(text: string): CanonTable<ZoneId, CanonRow<Zone, ZoneId>> {
@@ -787,10 +799,10 @@ export function parseZones(text: string): CanonTable<ZoneId, CanonRow<Zone, Zone
 
 export function decodeBands(json: unknown): CanonTable<LevelRangeId, CanonRow<game_core.LevelRange, LevelRangeId>> {
   const $doc = canonEnvelope(json, bandsSchema, "bands.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "bands.json: rows", ($x, $p) => {
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "bands.json: rows", ($x, $p) => {
     const $o = decObject($x, $p);
     return { ...read_game_core_LevelRange($o, $p), id: decString(decGet($o, "$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
-  })), ($e) => $e.id);
+  }), "bands.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseBands(text: string): CanonTable<LevelRangeId, CanonRow<game_core.LevelRange, LevelRangeId>> {
@@ -799,10 +811,10 @@ export function parseBands(text: string): CanonTable<LevelRangeId, CanonRow<game
 
 export function decodeMoods(json: unknown): CanonTable<StatusId, CanonRow<game_core.Status, StatusId>> {
   const $doc = canonEnvelope(json, moodsSchema, "moods.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "moods.json: rows", ($x, $p) => {
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "moods.json: rows", ($x, $p) => {
     const $o = decObject($x, $p);
     return { ...read_game_core_Status($o, $p), id: decString(decGet($o, "$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
-  })), ($e) => $e.id);
+  }), "moods.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseMoods(text: string): CanonTable<StatusId, CanonRow<game_core.Status, StatusId>> {
@@ -811,10 +823,10 @@ export function parseMoods(text: string): CanonTable<StatusId, CanonRow<game_cor
 
 export function decodeMedals(json: unknown): CanonTable<BadgeId, CanonRow<game_core.Badge, BadgeId>> {
   const $doc = canonEnvelope(json, medalsSchema, "medals.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "medals.json: rows", ($x, $p) => {
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "medals.json: rows", ($x, $p) => {
     const $o = decObject($x, $p);
     return { ...read_game_core_Badge($o, $p), id: decString(decGet($o, "$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
-  })), ($e) => $e.id);
+  }), "medals.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseMedals(text: string): CanonTable<BadgeId, CanonRow<game_core.Badge, BadgeId>> {
@@ -841,7 +853,7 @@ export function parseShelf(text: string): game_core.Shelf {
 
 export function decodePerks(json: unknown): CanonTable<PerkId, CanonRow<Perk, PerkId>> {
   const $doc = canonEnvelope(json, perksSchema, "perks.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "perks.json: rows", ($x, $p) => readPerk($x, $p) as CanonRow<Perk, PerkId>)), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "perks.json: rows", ($x, $p) => readPerk($x, $p) as CanonRow<Perk, PerkId>), "perks.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parsePerks(text: string): CanonTable<PerkId, CanonRow<Perk, PerkId>> {

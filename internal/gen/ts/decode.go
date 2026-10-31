@@ -165,11 +165,11 @@ func (g *gen) valueDecoder(v *ir.Value) {
 // tableDecoder is `decode<V>` of a table; it returns the table's type, its @stable lookups included.
 func (g *gen) tableDecoder(v *ir.Value, name, label string) string {
 	rec := g.recordOf(g.tableElem(v))
-	g.use(canonTableName, canonFreezeName, decListName)
+	g.use(canonTableName, canonFreezeName)
 	row := g.rowType(rec, idName(rec))
 	finds, readers := g.finders(rec, row)
 	ret := fmt.Sprintf(tableTypeFormat, idName(rec), row) + finds
-	g.add(fmt.Sprintf(tableDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.rowRead(rec, row), idProp, quote(fmt.Sprintf(rowsPathFormat, label)), readers))
+	g.add(fmt.Sprintf(tableDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.rowsRead(v, label, g.rowRead(rec, row)), idProp, readers))
 	return ret
 }
 
@@ -177,11 +177,23 @@ func (g *gen) tableDecoder(v *ir.Value, name, label string) string {
 func (g *gen) keyedDecoder(v *ir.Value, name, label string) string {
 	rec := g.recordOf(g.elem(v.Type).Named)
 	key := g.keyField(v.Type, rec)
-	g.use(canonTableName, canonFreezeName, decListName)
+	g.use(canonTableName, canonFreezeName)
 	finds, readers := g.finders(rec, g.named(rec))
 	ret := fmt.Sprintf(tableTypeFormat, g.tsType(key.Type, key.BigInt), g.named(rec)) + finds
-	g.add(fmt.Sprintf(tableDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.decClass(rec, lambdaRaw, lambdaPath), fieldProp(key), quote(fmt.Sprintf(rowsPathFormat, label)), readers))
+	g.add(fmt.Sprintf(tableDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.rowsRead(v, label, g.decClass(rec, lambdaRaw, lambdaPath)), fieldProp(key), readers))
 	return ret
+}
+
+// rowsRead is the rows of a data file's table or keyed list read one by one, `decList(decGet($doc, "rows"), "f.json: rows", ($x, $p) => row)`, held to unique keys after its rows, then a keyed list to its count refinement (WIRE.md §5.7, CODEGEN.md §5.15).
+func (g *gen) rowsRead(v *ir.Value, label, row string) string {
+	path := quote(fmt.Sprintf(rowsPathFormat, label))
+	list := g.call(decListName, rowsRaw, path, fmt.Sprintf(lambdaFormat, row))
+	if v.Type.Kind == types.Table {
+		list = g.unique(list, path, idProp, dollarKey+idProp, ir.TypeRef{Kind: types.String})
+	} else {
+		list = g.keyedUnique(v.Type, list, path)
+	}
+	return g.checked(v.Type, list, path, false)
 }
 
 // call1 is a call with its arguments joined.

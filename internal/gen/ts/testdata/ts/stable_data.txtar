@@ -110,6 +110,9 @@ export interface Status {
   readonly label: string;
 }
 
+/** The lower bound of code, from its refinement 1... */
+export const Status_CodeMin: number = 1;
+
 export const statusesSchema = "a.Status@74307057";
 
 const decOrder = Symbol.for("canon.order");
@@ -160,6 +163,24 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 function decString(raw: unknown, path: string): string {
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
+}
+
+/** A number within its range refinement (CODEGEN.md §5.15): lo inclusive, hi inclusive when `inclusive`, an open end ±Infinity. */
+function decIn(v: number, path: string, lo: number, hi: number, inclusive: boolean, range: string): number {
+  if (!(v >= lo && (inclusive ? v <= hi : v < hi))) decFail(path, "expected a value in " + range);
+  return v;
+}
+
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
 }
 
 function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {
@@ -339,7 +360,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeStatuses(json: unknown): CanonTable<StatusId, CanonRow<Status, StatusId>> & { findByCode(code: number): CanonRow<Status, StatusId> | null; findByTag(tag: string): CanonRow<Status, StatusId> | null } {
   const $doc = canonEnvelope(json, statusesSchema, "statuses.json");
-  return canonTable(canonFreeze(decList(decGet($doc, "rows"), "statuses.json: rows", ($x, $p) => readStatus($x, $p) as CanonRow<Status, StatusId>)), ($e) => $e.id, { findByCode: "code", findByTag: "tag" });
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "statuses.json: rows", ($x, $p) => readStatus($x, $p) as CanonRow<Status, StatusId>), "statuses.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id, { findByCode: "code", findByTag: "tag" });
 }
 
 export function parseStatuses(text: string): CanonTable<StatusId, CanonRow<Status, StatusId>> & { findByCode(code: number): CanonRow<Status, StatusId> | null; findByTag(tag: string): CanonRow<Status, StatusId> | null } {
@@ -350,7 +371,7 @@ function readStatus($raw: unknown, $path: string, $rowId?: string): Status {
   const $o = decObject($raw, $path);
   const $v1 = $rowId ?? decString(decGet($o, "$id"), $path + ".$id");
   const $v2 = decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + ".$retired");
-  const $v3: number = decInt(decGet($o, "code"), $path + ".code", -9223372036854776000, 9223372036854776000);
+  const $v3: number = decIn(decInt(decGet($o, "code"), $path + ".code", -9223372036854776000, 9223372036854776000), $path + ".code", 1, Infinity, true, "1..");
   const $v4: string = decString(decGet($o, "tag"), $path + ".tag");
   const $v5: string = decString(decGet($o, "label"), $path + ".label");
   return { id: $v1, retired: $v2, code: $v3, tag: $v4, label: $v5 };

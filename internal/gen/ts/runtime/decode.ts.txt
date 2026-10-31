@@ -171,6 +171,52 @@ function decDuration(raw: unknown, path: string, unit: number): number {
   return Number(d.neg ? -ms : ms);
 }
 
+/** A number within its range refinement (CODEGEN.md §5.15): lo inclusive, hi inclusive when `inclusive`, an open end ±Infinity. */
+function decIn(v: number, path: string, lo: number, hi: number, inclusive: boolean, range: string): number {
+  if (!(v >= lo && (inclusive ? v <= hi : v < hi))) decFail(path, "expected a value in " + range);
+  return v;
+}
+
+/** A bigint within its range refinement (CODEGEN.md §5.15); null is an open end. */
+function decInBig(v: bigint, path: string, lo: bigint | null, hi: bigint | null, inclusive: boolean, range: string): bigint {
+  if (!((lo === null || v >= lo) && (hi === null || (inclusive ? v <= hi : v < hi)))) decFail(path, "expected a value in " + range);
+  return v;
+}
+
+/** A String within its length refinement, in UTF-8 bytes (TYPES.md §7.4): s.length to 3 × s.length bytes, counted only between; a surrogate pair is 4 bytes, a lone surrogate 3 (as TextEncoder writes its replacement). A literal of a union passes. */
+function decStrIn(s: string, path: string, lo: number, hi: number, inclusive: boolean, range: string, literals: ReadonlyArray<string> = []): string {
+  let n = s.length;
+  if ((n >= lo && (inclusive ? 3 * n <= hi : 3 * n < hi)) || literals.includes(s)) return s;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 0x80) continue;
+    const pair = c >= 0xd800 && c <= 0xdbff && i + 1 < s.length && s.charCodeAt(i + 1) >= 0xdc00 && s.charCodeAt(i + 1) <= 0xdfff;
+    n += c < 0x800 ? 1 : 2;
+    if (pair) i++;
+  }
+  if (!(n >= lo && (inclusive ? n <= hi : n < hi))) decFail(path, "expected a byte length in " + range);
+  return s;
+}
+
+/** A list's, keyed list's or map's element count within its length refinement (CODEGEN.md §5.15). */
+function decCountIn<T>(v: T, path: string, lo: number, hi: number, inclusive: boolean, range: string): T {
+  const n = Array.isArray(v) ? v.length : (v as unknown as ReadonlyMap<unknown, unknown>).size;
+  if (!(n >= lo && (inclusive ? n <= hi : n < hi))) decFail(path, "expected an element count in " + range);
+  return v;
+}
+
+/** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
+function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, key: (row: R[number]) => K, keyPath: string, token: (k: K) => string = (k) => (typeof k === "string" ? JSON.stringify(k) : String(k))): R {
+  const seen = new Map<K, number>();
+  for (let i = 0; i < rows.length; i++) {
+    const k = key(rows[i]);
+    const first = seen.get(k);
+    if (first !== undefined) decFail(path + "[" + i + "]." + keyPath, "duplicate id " + token(k) + " (first at " + path.slice(path.indexOf(": ") + 2) + "[" + first + "])");
+    seen.set(k, i);
+  }
+  return rows;
+}
+
 /** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
 function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
   const m = members.find((x) => x === raw);

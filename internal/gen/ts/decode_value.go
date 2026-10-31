@@ -16,9 +16,14 @@ type decCtx struct {
 	disc string
 }
 
-// dec is the expression decoding raw, found at path, as a value of type t (WIRE.md §5).
+// dec is the expression decoding raw, found at path, as a value of type t, then held to t's range or length refinement (WIRE.md §5, CODEGEN.md §5.15).
 func (g *gen) dec(t ir.TypeRef, raw, path string, c decCtx) string {
 	c.big = bigAt(t, c.big)
+	return g.checked(t, g.decKind(t, raw, path, c), path, c.big)
+}
+
+// decKind is the expression decoding raw as a value of t's kind, the refinement aside.
+func (g *gen) decKind(t ir.TypeRef, raw, path string, c decCtx) string {
 	switch t.Kind {
 	case types.Bool:
 		if c.enc == types.EncInt {
@@ -199,7 +204,11 @@ func (g *gen) decList(t ir.TypeRef, raw, path string, c decCtx) string {
 		return g.call(decBitsName, raw, path, g.membersConst(e), g.codesConst(e))
 	}
 	inner := decCtx{unit: c.unit, big: c.big, disc: c.disc}
-	return g.call(decListName, raw, path, fmt.Sprintf(lambdaFormat, g.dec(et, lambdaRaw, lambdaPath, inner)))
+	list := g.call(decListName, raw, path, fmt.Sprintf(lambdaFormat, g.dec(et, lambdaRaw, lambdaPath, inner)))
+	if t.KeyedBy == nil {
+		return list
+	}
+	return g.keyedUnique(t, list, path)
 }
 
 // decNested is a nested table: an object keyed by id, each row a CanonRow: a record of this package read with its key as its id, one of another package this file's reader's record with the key and `$retired` added (WIRE.md §5.7, CODEGEN.md §4.2, §5.9).
@@ -229,9 +238,14 @@ func (g *gen) decMap(t ir.TypeRef, raw, path string, c decCtx) string {
 	return g.call(decMapName, raw, path, key, fmt.Sprintf(lambdaFormat, g.dec(g.elem(t), lambdaRaw, lambdaPath, inner)))
 }
 
-// decMapKey is a map key's text read as a key of type t; big reads an integer key as a bigint (@ts(bigint), or a ref into a bigint key field).
+// decMapKey is a map key's text read as a key of type t, then held to t's range or length refinement; big reads an integer key as a bigint (@ts(bigint), or a ref into a bigint key field).
 func (g *gen) decMapKey(t ir.TypeRef, key, path string, big bool) string {
 	big = bigAt(t, big)
+	return g.checked(t, g.readMapKey(t, key, path, big), path, big)
+}
+
+// readMapKey is a map key's text read as a key of t's kind, the refinement aside.
+func (g *gen) readMapKey(t ir.TypeRef, key, path string, big bool) string {
 	switch t.Kind {
 	case types.String:
 		return key
@@ -242,7 +256,7 @@ func (g *gen) decMapKey(t ir.TypeRef, key, path string, big bool) string {
 			lo, hi, _ := types.Basic{K: types.Int, Bits: t.Bits, Signed: t.Signed}.Limits()
 			return g.call(decBigKeyName, key, path, bigText(lo), bigText(hi))
 		}
-		return g.call(decIntKeyName, key, path)
+		return g.intKey(t, key, path)
 	case types.Enum:
 		e, _ := t.Named.(*ir.Enum)
 		if e != nil && e.JSONCodes {
@@ -255,6 +269,16 @@ func (g *gen) decMapKey(t ir.TypeRef, key, path string, big bool) string {
 		g.failf(errUnsupported, unsupportedKind, kindText(t.Kind), g.at)
 		return tsUndefined
 	}
+}
+
+// intKey is an integer map key read as a number: the key's text, then its width when the integer type is narrower than the safe integers (WIRE.md §5.8).
+func (g *gen) intKey(t ir.TypeRef, key, path string) string {
+	read := g.call(decIntKeyName, key, path)
+	lo, hi, _ := types.Basic{K: types.Int, Bits: t.Bits, Signed: t.Signed}.Limits()
+	if lo <= -maxSafeInt && hi >= maxSafeInt {
+		return read
+	}
+	return g.call(decIntName, read, path, intText(lo), intText(hi))
 }
 
 // decRefKey is a map key that is a ref: a table's id string, or the key text read as the key type, an integer as bigAt decided for the ref.
