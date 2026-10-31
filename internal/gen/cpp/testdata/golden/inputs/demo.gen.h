@@ -30,6 +30,10 @@ std::string_view ToWire(Color v);
 bool IsRetired(Color v);
 std::optional<Color> ColorFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ColorFromWire(s).
+template <typename J> void to_json(J&, Color) = delete;
+template <typename J> void from_json(const J&, Color&) = delete;
+
 enum class Tier : uint8_t {
     low = 1,
     mid = 2,

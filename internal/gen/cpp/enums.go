@@ -127,7 +127,18 @@ func (g *gen) enum(s enumSpec) {
 	for _, sig := range g.signatures(s, false).all() {
 		g.h.printf(declFormat, sig)
 	}
+	if s.codes == nil {
+		g.deletedJSON(s.name, fmt.Sprintf(enumJSONDocFormat, h.FromWire))
+	}
 	g.h.blank()
+}
+
+// deletedJSON writes the T21 comment, then the deleted to_json and from_json of a type whose values are declaration positions (CODEGEN.md §2.5, §5.2; DECISIONS 402).
+func (g *gen) deletedJSON(name, doc string) {
+	g.h.blank()
+	g.doc(0, doc)
+	g.h.linef(0, idToJSONDeleted, name)
+	g.h.linef(0, idFromJSONDeleted, name)
 }
 
 // ordinal writes, in detail, a @codes enum's codes ascending, their declaration positions, and the constexpr search from a value to its position, the member count for a value that is no member (CODEGEN.md §5.2, DECISIONS 383).

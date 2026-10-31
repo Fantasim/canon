@@ -124,6 +124,10 @@ enum class ShadeBranch : uint8_t {
     mp,
 };
 
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, ShadeBranch) = delete;
+template <typename J> void from_json(const J&, ShadeBranch&) = delete;
+
 class Entry;
 class Shade;
 class Config;

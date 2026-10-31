@@ -260,6 +260,7 @@ func (g *gen) declareNames() {
 	g.declareTextNames()
 	g.declareValueNames()
 	g.declareBakedNames()
+	g.declareJSONHooks()
 	if g.reloads() > 0 {
 		g.declare(g.pl.SnapshotName(), snapshotOrigin)
 		g.declare(g.pl.StoreName(), snapshotOrigin)

@@ -107,7 +107,6 @@ func (g *gen) declareBakedNames() {
 		g.declare(name, it.v.Name)
 		g.declare(g.pl.EnumHelpers(name).FromWire, it.v.Name)
 	}
-	g.declareJSONHooks()
 	for _, v := range g.values {
 		for _, r := range g.valueReaders(v) {
 			g.declare(r.name, v.Name)
@@ -115,12 +114,34 @@ func (g *gen) declareBakedNames() {
 	}
 }
 
-// declareJSONHooks reserves the names of the deleted nlohmann hooks while a baked table has an id enum (CODEGEN.md §5.3; DECISIONS 379).
+// declareJSONHooks reserves the names of the deleted nlohmann hooks while a baked table has an id enum or any enum, kind or branch enum has positions for values (CODEGEN.md §3.5, §5.2, §5.3; DECISIONS 379, 402).
 func (g *gen) declareJSONHooks() {
-	tables := g.idTables()
-	if len(tables) == 0 {
+	origin := g.jsonHooksOrigin()
+	if origin == "" {
 		return
 	}
-	g.declare(toJSONName, tables[0].v.Name)
-	g.declare(fromJSONName, tables[0].v.Name)
+	g.declare(toJSONName, origin)
+	g.declare(fromJSONName, origin)
+}
+
+// jsonHooksOrigin is the first item that gets the deleted pair: a baked table, else a type whose values are positions; empty when none does.
+func (g *gen) jsonHooksOrigin() string {
+	if g.baked() {
+		if tables := g.idTables(); len(tables) > 0 {
+			return tables[0].v.Name
+		}
+	}
+	for _, t := range g.p.Types {
+		switch x := t.(type) {
+		case *ir.Enum:
+			if x.Codes == nil && !g.open(x) {
+				return x.Name
+			}
+		case *ir.Variant:
+			return x.Name
+		case *ir.Dependent:
+			return x.Name
+		}
+	}
+	return ""
 }

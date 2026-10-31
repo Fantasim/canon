@@ -86,6 +86,10 @@ enum class ParamBranch : uint8_t {
     place,
 };
 
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, ParamBranch) = delete;
+template <typename J> void from_json(const J&, ParamBranch&) = delete;
+
 class Param;
 class Reward;
 

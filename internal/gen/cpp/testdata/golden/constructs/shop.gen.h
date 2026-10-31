@@ -74,6 +74,10 @@ std::string_view ToWire(Tone v);
 bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ToneFromWire(s).
+template <typename J> void to_json(J&, Tone) = delete;
+template <typename J> void from_json(const J&, Tone&) = delete;
+
 enum class Element : uint16_t {
     FIRE = 1,
     WATER = 300,
@@ -192,6 +196,10 @@ std::string_view ToWire(RewardKind v);
 bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read RewardKindFromWire(s).
+template <typename J> void to_json(J&, RewardKind) = delete;
+template <typename J> void from_json(const J&, RewardKind&) = delete;
+
 enum class BadgeKind : uint8_t {
     star,
     plain,
@@ -204,6 +212,10 @@ std::string_view ToName(BadgeKind v);
 std::string_view ToWire(BadgeKind v);
 bool IsRetired(BadgeKind v);
 std::optional<BadgeKind> BadgeKindFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read BadgeKindFromWire(s).
+template <typename J> void to_json(J&, BadgeKind) = delete;
+template <typename J> void from_json(const J&, BadgeKind&) = delete;
 
 inline constexpr Tone DEFAULT_TONE = Tone::info;
 

@@ -37,6 +37,10 @@ std::string_view ToWire(RollMode v);
 bool IsRetired(RollMode v);
 std::optional<RollMode> RollModeFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read RollModeFromWire(s).
+template <typename J> void to_json(J&, RollMode) = delete;
+template <typename J> void from_json(const J&, RollMode&) = delete;
+
 enum class EventKindKind : uint8_t {
     spawn_monster,
     spawn_item,
@@ -50,6 +54,10 @@ std::string_view ToName(EventKindKind v);
 std::string_view ToWire(EventKindKind v);
 bool IsRetired(EventKindKind v);
 std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read EventKindKindFromWire(s).
+template <typename J> void to_json(J&, EventKindKind) = delete;
+template <typename J> void from_json(const J&, EventKindKind&) = delete;
 
 class Rect;
 class EventKind;

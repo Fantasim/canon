@@ -2,10 +2,8 @@ package ir_test
 
 import (
 	"maps"
-	"slices"
 
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/types"
 )
 
 // goPlanned are the plan's names by scope less the hooks it reserves but gen/go does not write: a data loader resolves one of the class's refs (GoHook.Written, log-2026-10-06 "U1 review" 3); less the bound constants (CODEGEN.md §5.15); and less the opaque enums' names that EN-GO writes (DECISIONS 402).
@@ -70,8 +68,8 @@ func goTypeHooks(p *ir.Package, pl *ir.GoNamePlan) []ir.GoHook {
 	return hooks
 }
 
-// cppPlanned are the C++ plan's names by scope less the members of detail::<P>Make it reserves but gen/cpp does not write: a data or types-mode loader resolves one of the class's refs (CppHook.Written, log-2026-10-06 "U1 review" 3); less the bound constants (CODEGEN.md §5.15); and less the deleted to_json and from_json of a package with no baked table, which EN-CPP writes (DECISIONS 402).
-func cppPlanned(p *ir.Package, e *ir.Emit, pl *ir.CppNamePlan) map[string]map[string]bool {
+// cppPlanned are the C++ plan's names by scope less the members of detail::<P>Make it reserves but gen/cpp does not write: a data or types-mode loader resolves one of the class's refs (CppHook.Written, log-2026-10-06 "U1 review" 3); less the bound constants (CODEGEN.md §5.15).
+func cppPlanned(p *ir.Package, _ *ir.Emit, pl *ir.CppNamePlan) map[string]map[string]bool {
 	want := ir.CppScopeNames(pl)
 	hooks := pl.MakeStruct(p.Name)
 	members := maps.Clone(want[hooks])
@@ -84,9 +82,6 @@ func cppPlanned(p *ir.Package, e *ir.Emit, pl *ir.CppNamePlan) map[string]map[st
 	want[hooks] = members
 	for class, names := range cppBoundNames(p, pl) { //canon:unordered each class alone
 		want[class] = withoutNames(want[class], names)
-	}
-	if !(e.Mode == ir.ModeBaked && slices.ContainsFunc(p.Values, func(v *ir.Value) bool { return v.Type.Kind == types.Table && v.Type.Elem != nil })) {
-		want[e.Namespace] = withoutNames(want[e.Namespace], []string{"to_json", "from_json"})
 	}
 	return want
 }

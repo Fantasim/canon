@@ -46,6 +46,7 @@ func (g *gen) branchEnums() {
 			g.h.linef(1, enumMemberFormat, b.Enumerator)
 		}
 		g.h.line(closeClass)
+		g.deletedJSON(n.Branch, branchJSONDoc)
 		g.h.blank()
 	}
 }

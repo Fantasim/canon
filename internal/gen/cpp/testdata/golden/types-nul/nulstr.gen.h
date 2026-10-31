@@ -28,6 +28,10 @@ std::string_view ToWire(PrizeKind v);
 bool IsRetired(PrizeKind v);
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read PrizeKindFromWire(s).
+template <typename J> void to_json(J&, PrizeKind) = delete;
+template <typename J> void from_json(const J&, PrizeKind&) = delete;
+
 class Prize;
 class PrizeCoins;
 class Holder;

@@ -185,6 +185,10 @@ std::string_view ToWire(ItemKind1 v);
 bool IsRetired(ItemKind1 v);
 std::optional<ItemKind1> ItemKind1FromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ItemKind1FromWire(s).
+template <typename J> void to_json(J&, ItemKind1) = delete;
+template <typename J> void from_json(const J&, ItemKind1&) = delete;
+
 /// Which kind of parameter an event's filter takes (eventType.json's `param`; an entry
 /// without one takes none).
 enum class ParamKind : uint8_t {
@@ -207,6 +211,10 @@ std::string_view ToWire(ParamKind v);
 bool IsRetired(ParamKind v);
 std::optional<ParamKind> ParamKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ParamKindFromWire(s).
+template <typename J> void to_json(J&, ParamKind) = delete;
+template <typename J> void from_json(const J&, ParamKind&) = delete;
+
 enum class ParamBranch : uint8_t {
     monster,
     item,
@@ -216,6 +224,10 @@ enum class ParamBranch : uint8_t {
     upgrade_type,
     game_mode,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, ParamBranch) = delete;
+template <typename J> void from_json(const J&, ParamBranch&) = delete;
 
 /// The key of an entry of eventTypes. Store or send ToWire(id): the underlying value is
 /// a position, not an id, and changes when entry files move.

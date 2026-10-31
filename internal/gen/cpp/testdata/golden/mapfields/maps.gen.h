@@ -36,6 +36,10 @@ std::string_view ToWire(Element v);
 bool IsRetired(Element v);
 std::optional<Element> ElementFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ElementFromWire(s).
+template <typename J> void to_json(J&, Element) = delete;
+template <typename J> void from_json(const J&, Element&) = delete;
+
 /// A rank.
 enum class Rank : uint8_t {
     low = 1,
@@ -84,6 +88,10 @@ std::string_view ToName(Tone v);
 std::string_view ToWire(Tone v);
 bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read ToneFromWire(s).
+template <typename J> void to_json(J&, Tone) = delete;
+template <typename J> void from_json(const J&, Tone&) = delete;
 
 class Slot;
 class Board;

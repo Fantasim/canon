@@ -241,6 +241,8 @@ const (
 	maybeUnused       = "[[maybe_unused]] "
 	idEnumDocFormat   = "The key of an entry of %s. Store or send ToWire(id): the underlying value is\na position, not an id, and changes when entry files move."
 	idJSONDocFormat   = "nlohmann/json would write the position: write ToWire(id), read %s(s)."
+	enumJSONDocFormat = "nlohmann/json would write the position: write ToWire(v), read %s(s)."
+	branchJSONDoc     = "nlohmann/json would write the position: store the discriminant."
 	idToJSONDeleted   = "template <typename J> void to_json(J&, %s) = delete;"
 	idFromJSONDeleted = "template <typename J> void from_json(const J&, %s&) = delete;"
 	getFormat         = "const %s& Get(%s id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }"

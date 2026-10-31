@@ -32,6 +32,10 @@ std::string_view ToWire(Weekday v);
 bool IsRetired(Weekday v);
 std::optional<Weekday> WeekdayFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read WeekdayFromWire(s).
+template <typename J> void to_json(J&, Weekday) = delete;
+template <typename J> void from_json(const J&, Weekday&) = delete;
+
 class TimeOfDay;
 class Window;
 

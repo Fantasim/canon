@@ -29,6 +29,10 @@ std::string_view ToWire(Color v);
 bool IsRetired(Color v);
 std::optional<Color> ColorFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ColorFromWire(s).
+template <typename J> void to_json(J&, Color) = delete;
+template <typename J> void from_json(const J&, Color&) = delete;
+
 enum class PaintKind : uint8_t {
     solid,
     clear,
@@ -42,10 +46,18 @@ std::string_view ToWire(PaintKind v);
 bool IsRetired(PaintKind v);
 std::optional<PaintKind> PaintKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read PaintKindFromWire(s).
+template <typename J> void to_json(J&, PaintKind) = delete;
+template <typename J> void from_json(const J&, PaintKind&) = delete;
+
 enum class ShadeBranch : uint8_t {
     red,
     green,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, ShadeBranch) = delete;
+template <typename J> void from_json(const J&, ShadeBranch&) = delete;
 
 class Pt;
 class Paint;

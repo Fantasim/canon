@@ -27,6 +27,10 @@ std::string_view ToWire(Kind v);
 bool IsRetired(Kind v);
 std::optional<Kind> KindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read KindFromWire(s).
+template <typename J> void to_json(J&, Kind) = delete;
+template <typename J> void from_json(const J&, Kind&) = delete;
+
 enum class Kind3 : uint8_t {
     a,
     b,
@@ -43,10 +47,18 @@ std::string_view ToWire(Kind3 v);
 bool IsRetired(Kind3 v);
 std::optional<Kind3> Kind3FromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read Kind3FromWire(s).
+template <typename J> void to_json(J&, Kind3) = delete;
+template <typename J> void from_json(const J&, Kind3&) = delete;
+
 enum class PayloadBranch : uint8_t {
     false_,
     true_,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, PayloadBranch) = delete;
+template <typename J> void from_json(const J&, PayloadBranch&) = delete;
 
 enum class MultiBranch : uint8_t {
     a,
@@ -54,10 +66,18 @@ enum class MultiBranch : uint8_t {
     c,
 };
 
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, MultiBranch) = delete;
+template <typename J> void from_json(const J&, MultiBranch&) = delete;
+
 enum class DepthBranch : uint8_t {
     a,
     b,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, DepthBranch) = delete;
+template <typename J> void from_json(const J&, DepthBranch&) = delete;
 
 class Payload;
 class Multi;

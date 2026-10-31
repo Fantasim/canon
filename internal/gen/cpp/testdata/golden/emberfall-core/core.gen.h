@@ -31,10 +31,18 @@ std::string_view ToWire(RewardKind v);
 bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read RewardKindFromWire(s).
+template <typename J> void to_json(J&, RewardKind) = delete;
+template <typename J> void from_json(const J&, RewardKind&) = delete;
+
 enum class ParamBranch : uint8_t {
     soft,
     loud,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, ParamBranch) = delete;
+template <typename J> void from_json(const J&, ParamBranch&) = delete;
 
 /// The key of an entry of statuses. Store or send ToWire(id): the underlying value is
 /// a position, not an id, and changes when entry files move.

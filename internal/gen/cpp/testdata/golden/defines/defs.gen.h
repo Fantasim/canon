@@ -95,6 +95,10 @@ std::string_view ToWire(Plain v);
 bool IsRetired(Plain v);
 std::optional<Plain> PlainFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read PlainFromWire(s).
+template <typename J> void to_json(J&, Plain) = delete;
+template <typename J> void from_json(const J&, Plain&) = delete;
+
 enum class Extreme : int64_t {
     LOW = canon::kIntMin,
     HIGH = canon::kIntMax,
@@ -140,6 +144,10 @@ std::string_view ToName(Legacy v);
 std::string_view ToWire(Legacy v);
 bool IsRetired(Legacy v);
 std::optional<Legacy> LegacyFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read LegacyFromWire(s).
+template <typename J> void to_json(J&, Legacy) = delete;
+template <typename J> void from_json(const J&, Legacy&) = delete;
 
 inline constexpr Kind DEFAULT_KIND = Kind::GENERAL;
 

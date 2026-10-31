@@ -50,6 +50,10 @@ std::string_view ToWire(Side v);
 bool IsRetired(Side v);
 std::optional<Side> SideFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read SideFromWire(s).
+template <typename J> void to_json(J&, Side) = delete;
+template <typename J> void from_json(const J&, Side&) = delete;
+
 /// The key of an entry of notes. Store or send ToWire(id): the underlying value is
 /// a position, not an id, and changes when entry files move.
 enum class NoteId : uint8_t {

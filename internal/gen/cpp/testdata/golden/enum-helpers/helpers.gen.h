@@ -33,6 +33,10 @@ std::string_view ToWire(Tone v);
 bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ToneFromWire(s).
+template <typename J> void to_json(J&, Tone) = delete;
+template <typename J> void from_json(const J&, Tone&) = delete;
+
 enum class Element : uint8_t {
     FIRE = 3,
     /// Retired.
@@ -153,6 +157,10 @@ std::string_view ToWire(Dup v);
 bool IsRetired(Dup v);
 std::optional<Dup> DupFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read DupFromWire(s).
+template <typename J> void to_json(J&, Dup) = delete;
+template <typename J> void from_json(const J&, Dup&) = delete;
+
 enum class Nothing : uint8_t {
 };
 
@@ -163,6 +171,10 @@ std::string_view ToName(Nothing v);
 std::string_view ToWire(Nothing v);
 bool IsRetired(Nothing v);
 std::optional<Nothing> NothingFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read NothingFromWire(s).
+template <typename J> void to_json(J&, Nothing) = delete;
+template <typename J> void from_json(const J&, Nothing&) = delete;
 
 enum class NoCode : uint8_t {
 };
@@ -308,6 +320,10 @@ std::string_view ToName(ShapeKind v);
 std::string_view ToWire(ShapeKind v);
 bool IsRetired(ShapeKind v);
 std::optional<ShapeKind> ShapeKindFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read ShapeKindFromWire(s).
+template <typename J> void to_json(J&, ShapeKind) = delete;
+template <typename J> void from_json(const J&, ShapeKind&) = delete;
 
 class Shape;
 class ShapeCircle;

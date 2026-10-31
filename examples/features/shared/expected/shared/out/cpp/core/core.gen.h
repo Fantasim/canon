@@ -30,6 +30,10 @@ std::string_view ToWire(Aim v);
 bool IsRetired(Aim v);
 std::optional<Aim> AimFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read AimFromWire(s).
+template <typename J> void to_json(J&, Aim) = delete;
+template <typename J> void from_json(const J&, Aim&) = delete;
+
 /// A mood.
 enum class Mood : uint8_t {
     calm,
@@ -43,6 +47,10 @@ std::string_view ToName(Mood v);
 std::string_view ToWire(Mood v);
 bool IsRetired(Mood v);
 std::optional<Mood> MoodFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read MoodFromWire(s).
+template <typename J> void to_json(J&, Mood) = delete;
+template <typename J> void from_json(const J&, Mood&) = delete;
 
 enum class RewardKind : uint8_t {
     coins,
@@ -58,10 +66,18 @@ std::string_view ToWire(RewardKind v);
 bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read RewardKindFromWire(s).
+template <typename J> void to_json(J&, RewardKind) = delete;
+template <typename J> void from_json(const J&, RewardKind&) = delete;
+
 enum class BonusBranch : uint8_t {
     gold,
     mood,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, BonusBranch) = delete;
+template <typename J> void from_json(const J&, BonusBranch&) = delete;
 
 /// The key of an entry of statuses. Store or send ToWire(id): the underlying value is
 /// a position, not an id, and changes when entry files move.

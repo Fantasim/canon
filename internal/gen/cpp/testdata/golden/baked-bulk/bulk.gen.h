@@ -131,6 +131,10 @@ std::string_view ToWire(Tier v);
 bool IsRetired(Tier v);
 std::optional<Tier> TierFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read TierFromWire(s).
+template <typename J> void to_json(J&, Tier) = delete;
+template <typename J> void from_json(const J&, Tier&) = delete;
+
 enum class PrizeKind : uint8_t {
     coins,
     none,
@@ -143,6 +147,10 @@ std::string_view ToName(PrizeKind v);
 std::string_view ToWire(PrizeKind v);
 bool IsRetired(PrizeKind v);
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read PrizeKindFromWire(s).
+template <typename J> void to_json(J&, PrizeKind) = delete;
+template <typename J> void from_json(const J&, PrizeKind&) = delete;
 
 /// The key of an entry of items. Store or send ToWire(id): the underlying value is
 /// a position, not an id, and changes when entry files move.

@@ -176,6 +176,10 @@ std::string_view ToWire(Enqueue v);
 bool IsRetired(Enqueue v);
 std::optional<Enqueue> EnqueueFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read EnqueueFromWire(s).
+template <typename J> void to_json(J&, Enqueue) = delete;
+template <typename J> void from_json(const J&, Enqueue&) = delete;
+
 /// A lake column type (DuckDB). The name is the SQL spelling.
 enum class SqlType : uint8_t {
     UTINYINT,
@@ -197,6 +201,10 @@ std::string_view ToWire(SqlType v);
 bool IsRetired(SqlType v);
 std::optional<SqlType> SqlTypeFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read SqlTypeFromWire(s).
+template <typename J> void to_json(J&, SqlType) = delete;
+template <typename J> void from_json(const J&, SqlType&) = delete;
+
 /// How a column travels on the wire and lands in the lake.
 enum class FieldKind : uint8_t {
     /// The mandatory timestamp_ns header column.
@@ -217,6 +225,10 @@ std::string_view ToWire(FieldKind v);
 bool IsRetired(FieldKind v);
 std::optional<FieldKind> FieldKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read FieldKindFromWire(s).
+template <typename J> void to_json(J&, FieldKind) = delete;
+template <typename J> void from_json(const J&, FieldKind&) = delete;
+
 /// What a ledger leg moves. gold, item, and the point tokens are reconciled against the
 /// database snapshot; `none` documents a table that moves nothing.
 enum class Currency : uint8_t {
@@ -232,6 +244,10 @@ std::string_view ToName(Currency v);
 std::string_view ToWire(Currency v);
 bool IsRetired(Currency v);
 std::optional<Currency> CurrencyFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read CurrencyFromWire(s).
+template <typename J> void to_json(J&, Currency) = delete;
+template <typename J> void from_json(const J&, Currency&) = delete;
 
 /// The direction of a leg, from the player's point of view.
 enum class Bucket : uint8_t {
@@ -249,6 +265,10 @@ std::string_view ToWire(Bucket v);
 bool IsRetired(Bucket v);
 std::optional<Bucket> BucketFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read BucketFromWire(s).
+template <typename J> void to_json(J&, Bucket) = delete;
+template <typename J> void from_json(const J&, Bucket&) = delete;
+
 /// Which side of a single-row transfer a leg reads.
 enum class Leg : uint8_t {
     out,
@@ -262,6 +282,10 @@ std::string_view ToName(Leg v);
 std::string_view ToWire(Leg v);
 bool IsRetired(Leg v);
 std::optional<Leg> LegFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read LegFromWire(s).
+template <typename J> void to_json(J&, Leg) = delete;
+template <typename J> void from_json(const J&, Leg&) = delete;
 
 /// What happened in a farm. All ten kinds are WorldServer hooks with one FarmManager caller.
 enum class FarmEventKind : uint8_t {
@@ -606,6 +630,10 @@ std::string_view ToWire(Vocabulary v);
 bool IsRetired(Vocabulary v);
 std::optional<Vocabulary> VocabularyFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read VocabularyFromWire(s).
+template <typename J> void to_json(J&, Vocabulary) = delete;
+template <typename J> void from_json(const J&, Vocabulary&) = delete;
+
 enum class RowsKind : uint8_t {
     /// Every row.
     every,
@@ -620,6 +648,10 @@ std::string_view ToWire(RowsKind v);
 bool IsRetired(RowsKind v);
 std::optional<RowsKind> RowsKindFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read RowsKindFromWire(s).
+template <typename J> void to_json(J&, RowsKind) = delete;
+template <typename J> void from_json(const J&, RowsKind&) = delete;
+
 enum class MemberBranch : uint8_t {
     farm_event_kind,
     sovereign_event_kind,
@@ -629,6 +661,10 @@ enum class MemberBranch : uint8_t {
     lifecycle_kind,
     grant_kind,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, MemberBranch) = delete;
+template <typename J> void from_json(const J&, MemberBranch&) = delete;
 
 class Column;
 class ProvenanceColumn;

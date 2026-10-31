@@ -31,6 +31,10 @@ std::string_view ToWire(Shape v);
 bool IsRetired(Shape v);
 std::optional<Shape> ShapeFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ShapeFromWire(s).
+template <typename J> void to_json(J&, Shape) = delete;
+template <typename J> void from_json(const J&, Shape&) = delete;
+
 class Event {
 public:
     Event() = default;
@@ -67,6 +71,10 @@ enum class ParamBranch : uint8_t {
     count,
     place,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, ParamBranch) = delete;
+template <typename J> void from_json(const J&, ParamBranch&) = delete;
 
 class Param;
 class Reward;

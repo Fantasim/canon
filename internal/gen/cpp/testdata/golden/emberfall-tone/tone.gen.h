@@ -24,6 +24,10 @@ std::string_view ToWire(Tone v);
 bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ToneFromWire(s).
+template <typename J> void to_json(J&, Tone) = delete;
+template <typename J> void from_json(const J&, Tone&) = delete;
+
 class Chime;
 
 namespace detail {

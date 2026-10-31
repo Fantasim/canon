@@ -33,6 +33,10 @@ std::string_view ToWire(Tone v);
 bool IsRetired(Tone v);
 std::optional<Tone> ToneFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read ToneFromWire(s).
+template <typename J> void to_json(J&, Tone) = delete;
+template <typename J> void from_json(const J&, Tone&) = delete;
+
 enum class Element : uint8_t {
     FIRE = 1,
     WATER = 2,
@@ -81,6 +85,10 @@ std::string_view ToName(RewardKind v);
 std::string_view ToWire(RewardKind v);
 bool IsRetired(RewardKind v);
 std::optional<RewardKind> RewardKindFromWire(std::string_view wire);
+
+/// nlohmann/json would write the position: write ToWire(v), read RewardKindFromWire(s).
+template <typename J> void to_json(J&, RewardKind) = delete;
+template <typename J> void from_json(const J&, RewardKind&) = delete;
 
 /// The key of an entry of columns. Store or send ToWire(id): the underlying value is
 /// a position, not an id, and changes when entry files move.

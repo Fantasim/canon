@@ -38,16 +38,28 @@ std::string_view ToWire(Goal v);
 bool IsRetired(Goal v);
 std::optional<Goal> GoalFromWire(std::string_view wire);
 
+/// nlohmann/json would write the position: write ToWire(v), read GoalFromWire(s).
+template <typename J> void to_json(J&, Goal) = delete;
+template <typename J> void from_json(const J&, Goal&) = delete;
+
 enum class TargetBranch : uint8_t {
     kill,
     collect,
     reach_level,
 };
 
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, TargetBranch) = delete;
+template <typename J> void from_json(const J&, TargetBranch&) = delete;
+
 enum class RewardBranch : uint8_t {
     false_,
     true_,
 };
+
+/// nlohmann/json would write the position: store the discriminant.
+template <typename J> void to_json(J&, RewardBranch) = delete;
+template <typename J> void from_json(const J&, RewardBranch&) = delete;
 
 class Target;
 class Reward;
