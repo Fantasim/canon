@@ -1,0 +1,14 @@
+EVALUATION.md §10.5, DECISIONS 398, CHK-05: a literal outside a refinement in a package subject's value is a compile error (DECISIONS 155).
+-- a/a.canon --
+package a
+
+let stack: Int(0..) = 1
+
+test "outside" {
+  expect package { stack: -1 } passes
+}
+-- findings.txt --
+error[E3204]  a/a.canon:6:27
+  -1 is outside 0..
+
+1 error, 0 warnings in 1 package (…)

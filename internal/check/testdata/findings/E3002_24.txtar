@@ -1,0 +1,26 @@
+EVALUATION.md §10.5, DECISIONS 398, CHK-05: a value of a package subject is checked against its let's type: `[Item]` into a `table Item` let.
+-- a/a.canon --
+package a
+
+record Item {
+  weight: Int
+}
+
+let items: table Item = {
+  one { weight: 1 }
+}
+
+test "mismatch" {
+  expect package { items: [Item { weight: 2 }] } passes
+}
+-- findings.txt --
+warning[W1002]  a/a.canon:3:8
+  record Item has no doc comment
+
+warning[W1002]  a/a.canon:4:3
+  field weight has no doc comment
+
+error[E3002]  a/a.canon:12:27
+  expected table a.Item, found [a.Item]
+
+1 error, 2 warnings in 1 package (…)

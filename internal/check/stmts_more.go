@@ -54,13 +54,17 @@ func (c *checker) returnStmt(env *env, s *syntax.ReturnStmt) {
 	c.expr(env, s.Value, env.fn.result)
 }
 
-// expectStmt is `expect c` (c ⇐ Bool) or `expect v passes|fails|warns …` (EVALUATION.md §10.3).
+// expectStmt is `expect c`, `expect v passes|fails|warns …` (EVALUATION.md §10.3) or `expect package …` (§10.5).
 func (c *checker) expectStmt(env *env, s *syntax.ExpectStmt) {
-	if s.Outcome == nil {
+	switch {
+	case s.Package != nil: // EVALUATION.md §10.5
+		c.packageSubject(env, s.Package)
+	case s.Outcome == nil:
 		c.expr(env, s.X, types.BoolType)
 		return
+	default:
+		c.synth(env, s.X)
 	}
-	c.synth(env, s.X)
 	if m, ok := s.Message.(syntax.StrLit); ok {
 		c.info.Types[m] = types.StringType
 	}

@@ -1,0 +1,51 @@
+EVALUATION.md §10.5, DECISIONS 398, CHK-05: a package subject names a top-level let of its own package; a const, a fn, a record and a built-in (`len`) or a test local are E5006 notLet.
+-- a/a.canon --
+package a
+
+const limit = 3
+
+let levels: [Int] = [1]
+
+fn twice(x: Int) -> Int {
+  return x + x
+}
+
+record Item {
+  weight: Int
+}
+
+test "not lets" {
+  let mine = 1
+  expect package { mine: 4 } passes
+  expect package { limit: 4 } passes
+  expect package { twice: 4 } passes
+  expect package { Item: 4 } passes
+  expect package { len: 4, min: 1 } passes
+  expect package { levels: [2] } passes
+}
+-- findings.txt --
+warning[W1002]  a/a.canon:11:8
+  record Item has no doc comment
+
+warning[W1002]  a/a.canon:12:3
+  field weight has no doc comment
+
+error[E5006]  a/a.canon:17:20
+  mine is not a let: expect package substitutes top-level lets of its own package
+
+error[E5006]  a/a.canon:18:20
+  limit is not a let: expect package substitutes top-level lets of its own package
+
+error[E5006]  a/a.canon:19:20
+  twice is not a let: expect package substitutes top-level lets of its own package
+
+error[E5006]  a/a.canon:20:20
+  Item is not a let: expect package substitutes top-level lets of its own package
+
+error[E5006]  a/a.canon:21:20
+  len is not a let: expect package substitutes top-level lets of its own package
+
+error[E5006]  a/a.canon:21:28
+  min is not a let: expect package substitutes top-level lets of its own package
+
+6 errors, 2 warnings in 1 package (…)

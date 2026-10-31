@@ -1,0 +1,22 @@
+EVALUATION.md §10.5, DECISIONS 398, CHK-05: a let a selective import brings in belongs to another package: E5006 otherPackage.
+-- a/a.canon --
+package a
+
+import b { shared }
+
+let own: Int = 1
+
+test "other package" {
+  expect package { shared: 2 } passes
+  expect package { own: 2 } passes
+}
+-- b/b.canon --
+package b
+
+/// Shared.
+let shared: Int = 1
+-- findings.txt --
+error[E5006]  a/a.canon:8:20
+  shared is a let of another package: substitute it in a test of that package
+
+1 error, 0 warnings in 2 packages (…)

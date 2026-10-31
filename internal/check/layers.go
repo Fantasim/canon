@@ -49,8 +49,7 @@ func (c *checker) amendBlock(env *env, b *syntax.AmendBlock, seen amendPaths) {
 		c.report(env, diag.E1902.At(env.span(b.Target), name))
 		return
 	}
-	c.info.NameUses[b.Target] = o
-	c.dependsOn(env, o)
+	c.useLet(env, b.Target, o)
 	for _, a := range b.Items {
 		c.amendment(env, o, a, seen)
 	}

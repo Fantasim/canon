@@ -1,0 +1,28 @@
+EVALUATION.md §10.5, DECISIONS 398, CHK-05: an unknown target of a package subject is E2102, hinted with the nearest let of the test's package and never a test local (`extr` is near the local `extra`); a let of a package that is not imported is unknown too.
+-- a/a.canon --
+package a
+
+let levels: [Int] = [1]
+
+test "unknown" {
+  let extra = 1
+  expect package { levls: [2] } passes
+  expect package { extr: 1 } passes
+  expect package { hidden: 2 } passes
+}
+-- b/b.canon --
+package b
+
+/// Hidden.
+let hidden: Int = 1
+-- findings.txt --
+error[E2102]  a/a.canon:7:20
+  unknown name levls (did you mean levels?)
+
+error[E2102]  a/a.canon:8:20
+  unknown name extr
+
+error[E2102]  a/a.canon:9:20
+  unknown name hidden
+
+3 errors, 0 warnings in 2 packages (…)

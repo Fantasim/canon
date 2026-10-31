@@ -1,0 +1,30 @@
+EVALUATION.md §10.5, DECISIONS 398, CHK-05: lets of the test's package, public, local and untyped, a table literal and a test local are accepted as substitutions; a target names the let even where a test local shadows it.
+-- a/a.canon --
+package a
+
+local record Item {
+  weight: Int
+}
+
+/// Levels.
+let levels: [Int] = [1]
+
+local let stack: Int(0..) = 1
+
+local let inferred = 5
+
+local let items: table Item = {
+  one { weight: 1 }
+}
+
+test "substitutions" {
+  let extra = 7
+  expect package passes
+  expect package { levels: [2, extra], stack: 0, inferred: 6 } passes
+  expect package { items: { two { weight: 3 } } } passes
+}
+
+test "a let wins over a local of its name" {
+  let levels = [9]
+  expect package { levels: levels } passes
+}
