@@ -51,7 +51,7 @@ test "names" {
 }
 -- findings.txt --
 error[E5004]  teamboard/expects.canon:33:21
-  no check named global applies to teamboard.Slot
+  no check named global applies to teamboard.Slot; global is a package check, which only expect package runs
 
 error[E5004]  teamboard/expects.canon:34:21
   no check named missing applies to teamboard.Slot

@@ -98,7 +98,7 @@ test "names" {
 a
 -- findings.txt --
 error[E5004]  a/a.canon:74:18
-  no check named global applies to a.Slot
+  no check named global applies to a.Slot; global is a package check, which only expect package runs
 
 error[E5004]  a/a.canon:75:18
   no check named missing applies to a.Slot

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/rules"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -26,6 +27,8 @@ var cases = map[string]func(fx *fixture){
 	"E5003_2": variantNamesCase,
 	"E5001_3": literalKeyCase,
 	"E5004_1": expectNamesCase,
+	"E5004_2": packageNamesCase,
+	"E5004_3": packageCheckCase,
 	"E5005_1": testNamesCase,
 }
 
@@ -216,6 +219,25 @@ func literalKeyCase(fx *fixture) {
 
 // testNamesCase is EVALUATION.md §10.1: the second test of a name is E5005, at its name.
 func testNamesCase(*fixture) {}
+
+// packageNamesCase is EVALUATION.md §10.5: names judged for a package subject.
+func packageNamesCase(fx *fixture) {
+	slot := record("Slot", field("size", types.IntType))
+	slot.Checks = append(slot.Checks, fx.check("check fits"))
+	orphan := record("Orphan", field("size", types.IntType))
+	orphan.Checks = append(orphan.Checks, fx.check("check hidden"))
+	fx.typeName(slot)
+	fx.typeName(orphan)
+	fx.topLevel(check.ObjLet, "slot", slot)
+}
+
+// packageCheckCase is EVALUATION.md §10.3: a value subject naming a package check.
+func packageCheckCase(fx *fixture) {
+	slot := record("Slot", field("size", types.IntType))
+	slot.Checks = append(slot.Checks, fx.check("check fits"))
+	fx.typeName(slot)
+	fx.subject("slot", slot)
+}
 
 // expectNamesCase is EVALUATION.md §10.3: E5004 for a name no reachable type declares.
 func expectNamesCase(fx *fixture) {

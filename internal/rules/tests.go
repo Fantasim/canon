@@ -6,17 +6,18 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// Tests reports E5005 (EVALUATION.md §10.1) and E5004 (EVALUATION.md §10.3).
+// Tests reports E5005 (EVALUATION.md §10.1) and E5004 (EVALUATION.md §10.3, §10.5).
 func (r *Runner) Tests(pkg *check.Package) error {
 	bag, err := r.bagOf(pkg.Path)
 	if err != nil {
 		return err
 	}
-	seen := map[string]bool{}
+	seen, subj := map[string]bool{}, subjectOf(pkg)
 	for _, obj := range pkg.Decls {
 		d, ok := obj.Decl().(*syntax.TestDecl)
 		if !ok || obj.Kind() != check.ObjTest {
@@ -29,28 +30,74 @@ func (r *Runner) Tests(pkg *check.Package) error {
 			seen[name] = true
 		}
 		if !r.isBroken(obj) {
-			r.expectNames(d, file, bag)
+			r.expectNames(d, file, subj, bag)
 		}
 	}
 	return nil
 }
 
-// expectNames is E5004: only checks of types reachable from the subject count (EVALUATION.md §10.2).
-func (r *Runner) expectNames(d *syntax.TestDecl, file *syntax.File, bag *diag.Bag) {
+// subject is the test's package: its package checks and the types of its top-level values (EVALUATION.md §10.3).
+type subject struct {
+	path   string
+	checks []*syntax.CheckDecl
+	values []types.Type
+}
+
+func subjectOf(pkg *check.Package) subject {
+	s := subject{path: pkg.Path}
+	for _, obj := range pkg.Decls {
+		if c, ok := obj.Decl().(*syntax.CheckDecl); ok && obj.Kind() == check.ObjCheck {
+			s.checks = append(s.checks, c)
+		}
+		if k := obj.Kind(); (k == check.ObjConst || k == check.ObjLet) && obj.Type() != nil {
+			s.values = append(s.values, obj.Type())
+		}
+	}
+	return s
+}
+
+// expectNames is E5004 (EVALUATION.md §10.3, §10.5).
+func (r *Runner) expectNames(d *syntax.TestDecl, file *syntax.File, pkg subject, bag *diag.Bag) {
 	syntax.Inspect(d.Body, func(n syntax.Node) bool {
 		x, ok := n.(*syntax.ExpectStmt)
-		if !ok || x.Outcome == nil || r.info == nil {
+		if !ok || x.Outcome == nil {
 			return true
 		}
 		id, ok := x.Message.(*syntax.Ident)
 		if !ok || !eval.NamesCheck(x.Outcome.Name, id.Name) {
 			return true
 		}
-		if t := r.info.Types[x.X]; t != nil && !r.reaches(t, id.Name) {
-			diag.E5004.AtValue(file.Span(id), id.Name, t).Report(bag)
+		if x.Package != nil {
+			r.packageName(file.Span(id), id.Name, pkg, bag)
+		} else if t := r.infoType(x.X); t != nil {
+			r.valueName(file.Span(id), id.Name, t, pkg, bag)
 		}
 		return true
 	})
+}
+
+func (r *Runner) infoType(x syntax.Expr) types.Type {
+	if r.info == nil {
+		return nil
+	}
+	return r.info.Types[x]
+}
+
+func (r *Runner) packageName(at source.Span, name string, pkg subject, bag *diag.Bag) {
+	if hasCheck(pkg.checks, name) || slices.ContainsFunc(pkg.values, func(t types.Type) bool { return r.reaches(t, name) }) {
+		return
+	}
+	diag.E5004.AtPackage(at, name, pkg.path).Report(bag)
+}
+
+func (r *Runner) valueName(at source.Span, name string, t types.Type, pkg subject, bag *diag.Bag) {
+	switch {
+	case r.reaches(t, name):
+	case hasCheck(pkg.checks, name):
+		diag.E5004.AtPackageCheck(at, name, t).Report(bag)
+	default:
+		diag.E5004.AtValue(at, name, t).Report(bag)
+	}
 }
 
 // reaches reports a check called name on a type reachable from t, through fields, elements,

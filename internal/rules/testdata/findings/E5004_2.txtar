@@ -1,0 +1,38 @@
+EVALUATION.md §10.3, §10.5; DECISIONS 398: for `expect package`, an identifier after fails or warns that
+is no code must name a package check of the test's package or a check reachable from the static type of
+one of its top-level values; else E5004 (`package` variant) at the identifier.
+-- teamboard/expects.canon --
+package teamboard
+
+record Slot {
+  size: Int
+
+  check fits: size < 10 else "too big"
+}
+
+record Orphan {
+  size: Int
+
+  check hidden: size < 10 else "hidden"
+}
+
+let slot: Slot = { size: 1 }
+
+check global: 1 == 1 else "x"
+
+test "package names" {
+  expect package fails global
+  expect package fails fits
+  expect package { slot: { size: 2 } } warns fits
+  expect package fails hidden
+  expect package warns missing
+  expect package fails E3204
+}
+-- findings.txt --
+error[E5004]  teamboard/expects.canon:23:24
+  no check named hidden runs for package teamboard
+
+error[E5004]  teamboard/expects.canon:24:24
+  no check named missing runs for package teamboard
+
+2 errors, 0 warnings in 1 package (…)

@@ -223,6 +223,11 @@ func (fx *fixture) entry(coll *types.Collection, key string, t types.Type, field
 	}
 }
 
+// topLevel declares a top-level value of the package with its static type.
+func (fx *fixture) topLevel(kind check.ObjKind, name string, t types.Type) {
+	fx.prog.Packages[0].Decls = append(fx.prog.Packages[0].Decls, &object{kind: kind, name: name, typ: t, file: fx.file})
+}
+
 // run is a build's stages B, C and D over the fixture's values.
 func (fx *fixture) run() {
 	fx.t.Helper()

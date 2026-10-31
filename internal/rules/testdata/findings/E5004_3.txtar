@@ -1,0 +1,26 @@
+EVALUATION.md §10.3: for a value subject, naming a package check of the test's package is E5004
+(`packageCheck` variant), which says only `expect package` runs it; any other missing name is `value`.
+-- teamboard/expects.canon --
+package teamboard
+
+record Slot {
+  size: Int
+
+  check fits: size < 10 else "too big"
+}
+
+check global: 1 == 1 else "x"
+
+test "package check by value" {
+  expect slot fails global
+  expect slot fails fits
+  expect slot fails missing
+}
+-- findings.txt --
+error[E5004]  teamboard/expects.canon:12:21
+  no check named global applies to teamboard.Slot; global is a package check, which only expect package runs
+
+error[E5004]  teamboard/expects.canon:14:21
+  no check named missing applies to teamboard.Slot
+
+2 errors, 0 warnings in 1 package (…)
