@@ -8,6 +8,9 @@ import (
 // isData reports a data- or types-mode emit: classes decoded from JSON, table ids strings, refs keys unless a load resolves them (CODEGEN.md §2.2, §5.3, §5.13).
 func (g *gen) isData() bool { return g.e.Mode == ir.ModeData || g.isTypes() }
 
+// stringIDRef reports a table ref whose package's go emit gives ids a string type, whatever this emit's mode (CODEGEN.md §5.3, §5.8).
+func (g *gen) stringIDRef(r *ir.RefTarget) bool { return isTableRef(r) && !g.enumIDs(r.Pkg) }
+
 // isTypes reports a types-mode emit: public decoders of the source wire, no value (CODEGEN.md §5.13).
 func (g *gen) isTypes() bool { return g.e.Mode == ir.ModeTypes }
 

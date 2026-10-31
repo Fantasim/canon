@@ -131,7 +131,7 @@ func verb(g *gen, t ir.TypeRef) string {
 		if !isTableRef(t.Ref) && t.Key != nil {
 			return verb(g, *t.Key)
 		}
-		if g.isData() {
+		if g.stringIDRef(t.Ref) {
 			return verbQuoted
 		}
 	default:
@@ -234,7 +234,7 @@ func (g *gen) zeroOf(t ir.TypeRef) string {
 		return emptyString
 	case t.Kind == types.Ref && isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg):
 		return g.keyType(t) + emptyBraces // an opaque id's zero struct, never an untyped 0 (CODEGEN.md §5.3)
-	case t.Kind == types.Ref && isTableRef(t.Ref) && g.isData():
+	case t.Kind == types.Ref && g.stringIDRef(t.Ref):
 		return emptyString
 	case t.Kind == types.Ref && !isTableRef(t.Ref) && t.Key != nil:
 		return g.zeroOf(*t.Key)

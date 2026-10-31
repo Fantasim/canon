@@ -71,9 +71,9 @@ func (g *gen) pureLit(t ir.TypeRef, v value.Value) string {
 	}
 }
 
-// pureKey is a ref's key; a data-mode table id is its string id type (CODEGEN.md §5.3).
+// pureKey is a ref's key; a string-id table ref (stringIDRef) converts to its id type (CODEGEN.md §5.3).
 func (g *gen) pureKey(t ir.TypeRef, k value.Key) string {
-	if g.isData() && isTableRef(t.Ref) {
+	if g.stringIDRef(t.Ref) {
 		return g.keyType(t) + lparen + strconv.Quote(k.S) + rparen
 	}
 	return g.keyLit(t, k)

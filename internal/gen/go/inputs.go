@@ -296,7 +296,7 @@ func (g *gen) inputStringBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	})
 }
 
-// inputEnumBody refuses a retired member (EVALUATION.md §11.3).
+// inputEnumBody refuses a retired member; the first declared member holds a wire (EVALUATION.md §11.3, DECISIONS 383, 393).
 func (g *gen) inputEnumBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	e, ok := f.Type.Named.(*ir.Enum)
 	if !ok {
@@ -305,8 +305,11 @@ func (g *gen) inputEnumBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	}
 	value, okVar := g.inputVars(rec, f)
 	g.printf(switchTagFormat, raw)
+	seen := map[string]bool{}
 	for _, m := range e.Members {
-		if m.Retired {
+		first := !seen[m.Wire]
+		seen[m.Wire] = true
+		if m.Retired || !first {
 			continue
 		}
 		g.printf(caseFormat, strconv.Quote(m.Wire))
