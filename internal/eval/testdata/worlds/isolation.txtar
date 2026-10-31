@@ -1,0 +1,31 @@
+EVALUATION.md §10.5 item 6: the world is discarded and the test's values do not change; each world
+is built afresh, nothing shared with the one before.
+-- a/a.canon --
+/// A.
+package a
+
+/// Levels.
+let levels: [Int] = [1, 2, 3]
+
+/// Their count.
+let total: Int = levels.len()
+
+test "isolation" {
+  expect package { levels: [] } passes
+  expect levels.len() == 3
+  expect total == 3
+  expect package passes
+  expect package { levels: [7] } passes
+}
+-- outcomes.txt --
+a "isolation": failed false, stopped false, broken false
+  expect line 11: passed true
+  expect line 12: passed true
+  expect line 13: passed true
+  expect line 14: passed true
+  expect line 15: passed true
+  world 1: levels = []; total = 0;
+  world 2: levels = [1, 2, 3]; total = 3;
+  world 3: levels = [7]; total = 1;
+
+0 errors, 0 warnings in 1 package (…)

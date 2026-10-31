@@ -1,0 +1,36 @@
+EVALUATION.md §10.5 item 1: the values are evaluated in the test, left to right, before the build;
+they read the test's values, the substituted let included, and its locals. A hard error there is the
+expect's (captured, as for a value subject), the later values are not evaluated and nothing is built.
+-- a/a.canon --
+/// A.
+package a
+
+/// Levels.
+let levels: [Int] = [1, 2, 3]
+
+/// The cap.
+let cap: Int = 3
+
+check capped: levels.len() <= cap else "{levels.len()} levels above the cap {cap}"
+
+test "values read the test's values" {
+  let extra = 9
+  expect package { levels: levels + [extra], cap: levels.len() } fails capped
+  expect package { cap: 4, levels: [cap, cap] } passes
+}
+
+test "a hard error in a value builds nothing" {
+  expect package { cap: [1][5] } fails E4002
+  expect package { levels: [levels[9]], cap: [1][5] } passes
+}
+-- outcomes.txt --
+a "values read the test's values": failed false, stopped false, broken false
+  expect line 14: passed true [E5001 : 4 levels above the cap 3]
+  expect line 15: passed true
+  world 1: levels = [1, 2, 3, 9]; cap = 3;
+  world 2: levels = [3, 3]; cap = 4;
+a "a hard error in a value builds nothing": failed true, stopped false, broken false
+  expect line 19: passed true [E4002 cap: index 5 out of range for length 1]
+  expect line 20: passed false [E4002 levels[0]: index 9 out of range for length 3]
+
+0 errors, 0 warnings in 1 package (…)

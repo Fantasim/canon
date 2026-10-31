@@ -178,7 +178,12 @@ func (r *run) budgetOut(at source.Span) {
 	e.out[pkg] = b
 	e.noteOut(r, b)
 	e.reported = append(e.reported, pkg)
-	e.report(pkg, b)
+	switch {
+	case e.wld == nil:
+		e.report(pkg, b)
+	case pkg != e.testPkg: // EVALUATION.md §10.5 item 4: never captured; the test's own stops the test (noteOut)
+		e.parent.report(pkg, b)
+	}
 }
 
 // fail reports a hard error with the root's call stack and aborts the root.

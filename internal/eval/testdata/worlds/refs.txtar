@@ -1,0 +1,59 @@
+EVALUATION.md §10.5 item 2, §7.3: verification and taint are the world's own. A key the
+substitution removes is E3501 at a ref another let holds; a ref E3501 in the test, copied into a
+world whose list gains its key, is valid there: a warn that dereferences it fires, and a hard error
+after reading it is reported, as reading a value the test marked invalid would have silenced it.
+-- a/a.canon --
+/// A.
+package a
+
+/// Item.
+record Item {
+  /// Key.
+  k: String
+  /// Weight.
+  w: Int
+}
+
+/// Items, keyed by their keys, which are dynamic.
+let items: [Item] keyed by k = [{ k: "a", w: 1 }, { k: "b", w: 2 }]
+
+/// A pick.
+let pick: ref items = b
+
+/// Picks, one missing from the shipped items.
+let picks: [ref items] = [a, c]
+
+/// The second pick's weight, read past its end once the pick resolves.
+let second: Int = [picks[1].w][3]
+
+check {
+  for p in picks {
+    if p.w > 5 {
+      warn(p, "pick {p.k} weighs {p.w}")
+    }
+  }
+}
+
+test "a removed key" {
+  expect package { items: [{ k: "a", w: 1 }] } fails E3501
+}
+
+test "a key added" {
+  expect package { items: items + [{ k: "c", w: 9 }], picks: picks } warns "pick c weighs 9"
+  expect package { items: items + [{ k: "c", w: 9 }], picks: picks } fails E4002
+}
+-- outcomes.txt --
+a "a removed key": failed false, stopped false, broken false
+  expect line 33: passed true [E3501 pick: unknown key b in items] [E3501 picks[1]: unknown key c in items] [E3501 second: unknown key c in items]
+  world 1: items = [Item{k: "a", w: 1}]; pick = b; picks = [a, c]; second = poisoned;
+a "a key added": failed false, stopped false, broken false
+  expect line 37: passed true [W5002 picks[1]: pick c weighs 9] [E4002 second: index 3 out of range for length 1]
+  expect line 38: passed true [W5002 picks[1]: pick c weighs 9] [E4002 second: index 3 out of range for length 1]
+  world 1: items = [Item{k: "a", w: 1}, Item{k: "b", w: 2}, Item{k: "c", w: 9}]; pick = b; picks = [a, c]; second = poisoned;
+  world 2: items = [Item{k: "a", w: 1}, Item{k: "b", w: 2}, Item{k: "c", w: 9}]; pick = b; picks = [a, c]; second = poisoned;
+
+error[E3501]  a/a.canon:19:30
+  picks[1]: unknown key c in items
+  expected by a/a.canon:19 (ref items)
+
+1 error, 0 warnings in 1 package (…)

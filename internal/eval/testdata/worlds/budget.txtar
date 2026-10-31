@@ -1,0 +1,31 @@
+EVALUATION.md §10.5 items 4 and 5, §12.2: every world pays its package's stages A to D on the
+test's counter, so the third world spends the budget: E4401 stops the test and is never captured,
+its heaviest root summing the worlds' steps, and the package's later tests do not run.
+-- budget --
+3000
+-- a/a.canon --
+/// A.
+package a
+
+/// About a thousand steps.
+let big: Int = [n * n for n in 0..300].len()
+
+test "worlds pay their stages" {
+  expect package passes
+  expect package passes
+  expect package passes
+}
+
+test "later" {
+  expect true
+}
+-- outcomes.txt --
+a "worlds pay their stages": failed true, stopped true, broken false, stopped by E4401 at line 5 (evaluation budget of 3000 steps exhausted; heaviest: big (2997 steps))
+  expect line 8: passed true
+  expect line 9: passed true
+  world 1: big = 300;
+  world 2: big = 300;
+  world 3: big = poisoned;
+a "later": failed true, stopped true, broken false
+
+0 errors, 0 warnings in 1 package (…)

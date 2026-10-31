@@ -1,0 +1,45 @@
+EVALUATION.md §10.5 items 1 and 4, §10.2: reading a poisoned value of another package fails the
+expect, naming it: in a value, which builds nothing, or in the world, where it is the test's value,
+forced once in the test and reported there, never captured.
+-- b/b.canon --
+/// B.
+package b
+
+/// Wrong at evaluation.
+let broken: Int = [1][4]
+
+/// Fine.
+let fine: Int = 2
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// A count.
+let n: Int = 1
+
+/// Reads b's broken value once n is above 1.
+let y: Int = if n > 1 { b.broken } else { b.fine }
+
+test "a poisoned read in a value" {
+  expect package { n: b.broken } passes
+}
+
+test "a poisoned read in the world" {
+  expect package passes
+  expect package { n: 2 } passes
+}
+-- outcomes.txt --
+a "a poisoned read in a value": failed true, stopped false, broken false
+  expect line 13: passed false (reads poisoned b.broken)
+a "a poisoned read in the world": failed true, stopped false, broken false
+  expect line 17: passed true
+  expect line 18: passed false (reads poisoned b.broken)
+  world 1: n = 1; y = 2;
+  world 2: n = 2; y = poisoned;
+
+error[E4002]  b/b.canon:5:19
+  broken: index 4 out of range for length 1
+
+1 error, 0 warnings in 2 packages (…)

@@ -1,0 +1,74 @@
+EVALUATION.md §10.5 items 2-4: the world evaluates every const and let afresh, a substituted let
+taking its value converted at its storage point, so derived values follow; stage B verifies them,
+stage C runs the instance checks of a substituted list's elements, stage D the package checks; the
+forms match by check name, text and code; a let below its refinement in the world is captured.
+-- a/a.canon --
+/// A.
+package a
+
+/// One level.
+record Level {
+  /// Index.
+  index: Int(0..=24)
+  /// Experience.
+  exp: Int(0..)
+
+  check ordered: exp >= index * 10 else "level {index} needs {index * 10} exp"
+}
+
+/// The shipped levels.
+let levels: [Level] = [{ index: 0, exp: 0 }, { index: 1, exp: 100 }, { index: 2, exp: 250 }]
+
+/// The highest level.
+let maxLevel: Int(0..=24) = 2
+
+/// The step of the levels.
+const step = 1
+
+/// The indexes, derived.
+let indexes: [Int] = [l.index * step for l in levels]
+
+/// Below zero once maxLevel is 0.
+let spare: Int(0..) = maxLevel - 1
+
+check uniqueIndex: indexes.isUnique() else "a level index is listed twice"
+
+check {
+  for l in levels {
+    if l.index > maxLevel {
+      fail(l, "level {l.index} is above maxLevel {maxLevel}")
+    }
+  }
+}
+
+test "the shipped levels pass" {
+  expect package passes
+  expect package { levels: levels[0..2] } passes
+}
+
+test "derived values follow" {
+  expect package { levels: levels + [levels[1]] } fails uniqueIndex
+  expect package { maxLevel: 1 } fails "level 2 is above maxLevel 1"
+  expect package { levels: [{ index: 3, exp: 5 }], maxLevel: 3 } fails ordered
+  expect package { maxLevel: 0 } fails E3204
+  expect package { maxLevel: 0 } passes
+}
+-- outcomes.txt --
+a "the shipped levels pass": failed false, stopped false, broken false
+  expect line 40: passed true
+  expect line 41: passed true
+  world 1: levels = [Level{index: 0, exp: 0}, Level{index: 1, exp: 100}, Level{index: 2, exp: 250}]; maxLevel = 2; step = 1; indexes = [0, 1, 2]; spare = 1;
+  world 2: levels = [Level{index: 0, exp: 0}, Level{index: 1, exp: 100}]; maxLevel = 2; step = 1; indexes = [0, 1]; spare = 1;
+a "derived values follow": failed true, stopped false, broken false
+  expect line 45: passed true [E5001 : a level index is listed twice]
+  expect line 46: passed true [E5002 levels[2]: level 2 is above maxLevel 1]
+  expect line 47: passed true [E5001 levels[0]: level 3 needs 30 exp]
+  expect line 48: passed true [E5002 levels[1]: level 1 is above maxLevel 0] [E5002 levels[2]: level 2 is above maxLevel 0] [E3204 spare: -1 is outside 0..]
+  expect line 49: passed false [E5002 levels[1]: level 1 is above maxLevel 0] [E5002 levels[2]: level 2 is above maxLevel 0] [E3204 spare: -1 is outside 0..]
+  world 1: levels = [Level{index: 0, exp: 0}, Level{index: 1, exp: 100}, Level{index: 2, exp: 250}, Level{index: 1, exp: 100}]; maxLevel = 2; step = 1; indexes = [0, 1, 2, 1]; spare = 1;
+  world 2: levels = [Level{index: 0, exp: 0}, Level{index: 1, exp: 100}, Level{index: 2, exp: 250}]; maxLevel = 1; step = 1; indexes = [0, 1, 2]; spare = 0;
+  world 3: levels = [Level{index: 3, exp: 5}]; maxLevel = 3; step = 1; indexes = [3]; spare = 2;
+  world 4: levels = [Level{index: 0, exp: 0}, Level{index: 1, exp: 100}, Level{index: 2, exp: 250}]; maxLevel = 0; step = 1; indexes = [0, 1, 2]; spare = -1;
+  world 5: levels = [Level{index: 0, exp: 0}, Level{index: 1, exp: 100}, Level{index: 2, exp: 250}]; maxLevel = 0; step = 1; indexes = [0, 1, 2]; spare = -1;
+
+0 errors, 0 warnings in 1 package (…)

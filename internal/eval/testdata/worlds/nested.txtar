@@ -1,0 +1,151 @@
+EVALUATION.md §10.5 item 2, §4.3, §7.3: conversions and taint are the world's own. A substituted
+copy is converted and stored again deep, by its declared types, as its literals stored each part:
+a field outside its refinement (E3204, E3206), an entry of another list where a ref is declared, in
+a field, a list, a map or an optional (E3503), and a repeated key (E3102) are found again and marked
+in the world, so a let reading such a part is tainted and its hard error silent, exactly as in a
+fresh build: substituting each let with itself gives the bare findings.
+-- a/a.canon --
+/// A.
+package a
+
+/// Level.
+record Level {
+  /// Index.
+  index: Int(0..=24)
+}
+
+/// Item.
+record Item {
+  /// Key.
+  k: String
+  /// Weight.
+  w: Int
+}
+
+/// Holder.
+record Holder {
+  /// An item.
+  r: ref items
+}
+
+/// Box: refs in a list, a map and an optional, a Float32 and a where refinement.
+record Box {
+  /// Refs in a list field.
+  rs: [ref items]
+  /// Refs in a map field.
+  m: {String: ref items}
+  /// An optional ref.
+  o: ref items?
+  /// A positive float32.
+  f: Float32(0.0..)
+  /// Even.
+  e: Int where it % 2 == 0
+}
+
+/// Items.
+let items: [Item] keyed by k = [{ k: "a", w: 1 }]
+
+/// Others.
+let others: [Item] keyed by k = [{ k: "b", w: 2 }, { k: "c", w: 3 }, { k: "d", w: 4 }, { k: "e", w: 5 }, { k: "f", w: 6 }]
+
+/// A list of refs at the top level holding an entry of others.
+let picks: [ref items] = [other(3)]
+
+/// Each slot of a box holding an entry of others or a value outside its refinement.
+let boxes: [Box] = [{ rs: [other(4)], m: { "x": other(5) }, o: other(6), f: zeroF() - 1.5, e: zero() + 1 }]
+
+/// A level below its refinement.
+let levels: [Level] = [{ index: zero() - 1 }, { index: 3 }]
+
+/// An entry of others where an item is declared.
+let held: [Holder] = [{ r: others.first()! }]
+
+/// A key given twice.
+let dups: [Item] keyed by k = [{ k: "a", w: 1 }, { k: word(), w: 2 }]
+
+/// Reads the invalid index, then fails.
+let d1: Int = [levels[0].index].len() + [1][4]
+
+/// Reads the invalid ref, then fails.
+let d2: Int = [held[0].r].len() + [1][4]
+
+/// Reads the repeated key, then fails.
+let d3: Int = [dups.last()!.k].len() + [1][4]
+
+/// Reads the top-level list's ref, then fails.
+let d4: Int = [picks[0]].len() + [1][4]
+
+/// Reads the list field's ref, then fails.
+let d5: Int = [boxes[0].rs[0]].len() + [1][4]
+
+/// Reads the map field's ref, then fails.
+let d6: Int = [boxes[0].m["x"]].len() + [1][4]
+
+/// Reads the optional ref, then fails.
+let d7: Int = [boxes[0].o].len() + [1][4]
+
+/// Reads the Float32, then fails.
+let d8: Int = [boxes[0].f].len() + [1][4]
+
+/// Reads the odd number, then fails.
+let d9: Int = [boxes[0].e].len() + [1][4]
+
+/// The entry of others of weight w.
+local fn other(w: Int) -> Item { return others.filter(o => o.w == w).first()! }
+
+/// Zero, known only once evaluated.
+local fn zero() -> Int { return 0 }
+
+/// Zero as a Float, known only once evaluated.
+local fn zeroF() -> Float { return 0.0 }
+
+/// A key, known only once evaluated.
+local fn word() -> String { return "a" }
+
+test "fresh" {
+  expect package passes
+}
+
+test "each let substituted with itself" {
+  expect package { levels: levels, held: held, dups: dups, picks: picks, boxes: boxes } passes
+}
+-- outcomes.txt --
+a "fresh": failed true, stopped false, broken false
+  expect line 99: passed false [E3503 held[0].r: this a.Item is not an entry of items] [E3503 picks[0]: this a.Item is not an entry of items] [E3503 boxes[0].rs[0]: this a.Item is not an entry of items] [E3503 boxes[0].m[x]: this a.Item is not an entry of items] [E3503 boxes[0].o: this a.Item is not an entry of items] [E3204 boxes[0].f: -1.5 is outside 0.0..] [E3206 boxes[0].e: 1 fails where it % 2 == 0] [E3204 levels[0].index: -1 is outside 0..=24] [E3102 dups[a].k: key a is used twice (first at a/a.canon:57)]
+  world 1: items = [Item{k: "a", w: 1}]; others = [Item{k: "b", w: 2}, Item{k: "c", w: 3}, Item{k: "d", w: 4}, Item{k: "e", w: 5}, Item{k: "f", w: 6}]; picks = [Item{k: "c", w: 3}]; boxes = [Box{rs: [Item{k: "d", w: 4}], m: {"x": Item{k: "e", w: 5}}, o: Item{k: "f", w: 6}, f: -1.5, e: 1}]; levels = [Level{index: -1}, Level{index: 3}]; held = [Holder{r: Item{k: "b", w: 2}}]; dups = [Item{k: "a", w: 1}, Item{k: "a", w: 2}]; d1 = poisoned; d2 = poisoned; d3 = poisoned; d4 = poisoned; d5 = poisoned; d6 = poisoned; d7 = poisoned; d8 = poisoned; d9 = poisoned;
+a "each let substituted with itself": failed true, stopped false, broken false
+  expect line 103: passed false [E3503 held[0].r: this a.Item is not an entry of items] [E3503 picks[0]: this a.Item is not an entry of items] [E3503 boxes[0].rs[0]: this a.Item is not an entry of items] [E3503 boxes[0].m[x]: this a.Item is not an entry of items] [E3503 boxes[0].o: this a.Item is not an entry of items] [E3204 boxes[0].f: -1.5 is outside 0.0..] [E3206 boxes[0].e: 1 fails where it % 2 == 0] [E3204 levels[0].index: -1 is outside 0..=24] [E3102 dups[a].k: key a is used twice (first at a/a.canon:57)]
+  world 1: items = [Item{k: "a", w: 1}]; others = [Item{k: "b", w: 2}, Item{k: "c", w: 3}, Item{k: "d", w: 4}, Item{k: "e", w: 5}, Item{k: "f", w: 6}]; picks = [Item{k: "c", w: 3}]; boxes = [Box{rs: [Item{k: "d", w: 4}], m: {"x": Item{k: "e", w: 5}}, o: Item{k: "f", w: 6}, f: -1.5, e: 1}]; levels = [Level{index: -1}, Level{index: 3}]; held = [Holder{r: Item{k: "b", w: 2}}]; dups = [Item{k: "a", w: 1}, Item{k: "a", w: 2}]; d1 = poisoned; d2 = poisoned; d3 = poisoned; d4 = poisoned; d5 = poisoned; d6 = poisoned; d7 = poisoned; d8 = poisoned; d9 = poisoned;
+
+error[E3503]  a/a.canon:42:34
+  held[0].r: this a.Item is not an entry of items
+
+error[E3503]  a/a.canon:42:52
+  picks[0]: this a.Item is not an entry of items
+
+error[E3503]  a/a.canon:42:70
+  boxes[0].rs[0]: this a.Item is not an entry of items
+
+error[E3503]  a/a.canon:42:88
+  boxes[0].m[x]: this a.Item is not an entry of items
+
+error[E3503]  a/a.canon:42:106
+  boxes[0].o: this a.Item is not an entry of items
+
+error[E3204]  a/a.canon:48:77
+  boxes[0].f: -1.5 is outside 0.0..
+  expected by a/a.canon:33 (f: Float32(0.0..))
+
+error[E3206]  a/a.canon:48:95
+  boxes[0].e: 1 fails where it % 2 == 0
+  expected by a/a.canon:35 (e: Int where it % 2 == 0)
+
+error[E3204]  a/a.canon:51:33
+  levels[0].index: -1 is outside 0..=24
+  expected by a/a.canon:7 (index: Int(0..=24))
+
+error[E3102]  a/a.canon:96:36
+  dups[a].k: key a is used twice (first at a/a.canon:57)
+  in word (a/a.canon:57)
+
+9 errors, 0 warnings in 1 package (…)

@@ -12,7 +12,13 @@ import (
 
 // force evaluates a const or let once, read by reader at node at, which a spent budget's poison starves (EVALUATION.md §3.1).
 func (e *Evaluator) force(ctx context.Context, st *rootState, reader *run, at syntax.Node) (value.Value, bool) {
-	v, ok := e.forceState(ctx, st, reader, at)
+	var v value.Value
+	var ok bool
+	if e.foreign(st.root.Pkg) {
+		v, ok = e.forceParent(ctx, st)
+	} else {
+		v, ok = e.forceState(ctx, st, reader, at)
+	}
 	if !ok && st.starved && reader != nil {
 		reader.starved = true
 	}
@@ -96,7 +102,7 @@ func (e *Evaluator) evalRoot(ctx context.Context, st *rootState) (value.Value, b
 	case *syntax.ConstDecl:
 		v = r.eval(d.Value)
 	case *syntax.LetDecl:
-		v = r.letValue(st, d)
+		v = r.letOf(st, d)
 	}
 	st.starved = r.starved
 	return v, v != nil && !r.failed

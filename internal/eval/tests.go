@@ -99,6 +99,9 @@ func execExpect(r *run, s syntax.Stmt) flow {
 		r.bug(s)
 		return flowAbort
 	}
+	if x.Package != nil {
+		return execPackage(r, x)
+	}
 	b := r.subject(x)
 	if r.ev.halted(r.charge.pkg) {
 		r.failed = true

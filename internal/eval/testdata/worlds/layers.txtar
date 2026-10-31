@@ -1,0 +1,49 @@
+EVALUATION.md §10.5 items 1 and 2, §9.3: the values read the test's layered lets; in the world an
+unsubstituted let is layered, a substituted one is final and gets no layer.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Port.
+  port: Int = 80
+  /// Host.
+  host: String = "a"
+}
+
+/// The server.
+let server: Server = {}
+
+/// Its address, derived.
+let url: String = "{server.host}:{server.port}"
+
+/// A limit.
+let limit: Int = 1
+
+test "layers" {
+  expect server.port == 9000
+  expect package passes
+  expect package { limit: server.port } passes
+  expect package { server: { host: "b" } } passes
+}
+-- a/dev.canon --
+package a
+layer dev
+
+amend server {
+  port: 9000
+}
+-- outcomes.txt --
+a "layers": failed false, stopped false, broken false
+  expect line 22: passed true
+  expect line 23: passed true
+  expect line 24: passed true
+  expect line 25: passed true
+  world 1: server = Server{port: 9000, host: "a"}; url = a:9000; limit = 1;
+  world 2: server = Server{port: 9000, host: "a"}; url = a:9000; limit = 9000;
+  world 3: server = Server{port: 80, host: "b"}; url = b:80; limit = 1;
+
+0 errors, 0 warnings in 1 package (…)

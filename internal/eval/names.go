@@ -143,6 +143,9 @@ func (r *run) readPoisoned(pkg, name string, at syntax.Node) {
 	if !r.failed {
 		r.poisonAt, r.poisonRoot, r.poisonSpan = r.qualified(pkg, name), Root{Pkg: pkg, Name: name}, r.span(at)
 		r.ev.notePoisonedRead(r, r.poisonRoot)
+		if w := r.ev.wld; w != nil {
+			w.notePoisoned(pkg, name)
+		}
 	}
 	r.stop()
 }

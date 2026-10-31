@@ -121,20 +121,30 @@ func (r *run) keyedList(elems []value.Value, t types.Type, coll *types.Collectio
 	for i, el := range elems {
 		out[i] = el
 		rec, ok := el.(*value.Record)
-		if !ok || lt.KeyedBy.Index >= len(rec.Fields) || rec.Fields[lt.KeyedBy.Index] == nil {
+		if !ok {
 			continue
 		}
-		kv := rec.Fields[lt.KeyedBy.Index]
-		k, _ := std.KeyOf(kv)
-		if prev, dup := first[k]; dup {
-			b := diag.E3102.AtKey(located(kv, source.Span{}), kv, located(prev, source.Span{}))
-			r.soft(b, kv, at.key(k).field(lt.KeyedBy.Name))
-		} else {
-			first[k] = kv
+		if k, keyed := r.repeatedKey(first, rec, lt, at); keyed {
+			out[i] = r.ev.withIdentity(rec, &value.Identity{Coll: coll, Key: k})
 		}
-		out[i] = r.ev.withIdentity(rec, &value.Identity{Coll: coll, Key: k})
 	}
 	return &value.List{T: t, Elems: out, P: p}
+}
+
+// repeatedKey is the key of rec, an element of keyed list type lt at at, E3102 when first holds it already; false: rec has none.
+func (r *run) repeatedKey(first map[value.Key]value.Value, rec *value.Record, lt *types.ListType, at *vpath) (value.Key, bool) {
+	if lt.KeyedBy.Index >= len(rec.Fields) || rec.Fields[lt.KeyedBy.Index] == nil {
+		return value.Key{}, false
+	}
+	kv := rec.Fields[lt.KeyedBy.Index]
+	k, _ := std.KeyOf(kv)
+	if prev, dup := first[k]; dup {
+		b := diag.E3102.AtKey(located(kv, source.Span{}), kv, located(prev, source.Span{}))
+		r.soft(b, kv, at.key(k).field(lt.KeyedBy.Name))
+	} else {
+		first[k] = kv
+	}
+	return k, true
 }
 
 func isNone(v value.Value) bool {

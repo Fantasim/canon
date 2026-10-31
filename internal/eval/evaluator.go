@@ -40,10 +40,10 @@ type Evaluator struct {
 	flushing  bool
 	queue     []*rootState
 
-	invalid    map[value.Value]bool
-	history    map[value.Value]value.Value // what a layer amendment replaced with a value (history.go)
-	rebuilt    map[value.Value]value.Value // a container an amendment copied to change a descendant, to the one it copies (history.go)
-	keyed      map[value.Value]map[value.Key]*value.Record
+	invalid    map[value.Value]bool                        // verdict: a world never copies it (world_copy.go)
+	history    map[value.Value]value.Value                 // fact, copied: what a layer amendment replaced with a value (history.go)
+	rebuilt    map[value.Value]value.Value                 // fact, copied: a container an amendment copied to change a descendant, to the one it copies
+	keyed      map[value.Value]map[value.Key]*value.Record // cache: a collection value's key index, built again on a copy (refs.go)
 	regexps    map[string]*regexp.Regexp
 	enumNames  map[*types.EnumType]map[string]int
 	frees      map[syntax.Node][]check.Object
@@ -51,25 +51,26 @@ type Evaluator struct {
 	fieldColls map[*types.Field]*types.Collection
 	pathFields map[*types.Collection]*types.Collection
 	ownedBy    map[*types.RecordType]map[*types.Collection]bool
-	refTypes   map[refHold]bool // types whose values may hold a ref (prune.go)
-	clean      map[cleanKey]bool
-	origin     map[*value.Record]*value.Record // a copy of an owning instance, to the record it copies (instance.go)
+	refTypes   map[refHold]bool                // types whose values may hold a ref (prune.go)
+	clean      map[cleanKey]bool               // cache, by value: cleared after each root (refs.go)
+	origin     map[*value.Record]*value.Record // fact, copied: a copy of an owning instance, to the record it copies (instance.go)
 	sites      map[*types.Field]site
 	pkgs       map[string]*check.Package
 	stable     []StableAmendment
 	bugs       []error
 	selfReads  map[*syntax.FnDecl][]syntax.Expr
-	bound      map[*value.Record]map[*types.Param]value.Value // each applied record instance's arguments (params.go)
+	bound      map[*value.Record]map[*types.Param]value.Value // fact, copied: each applied record instance's arguments (params.go)
 	loading    *loadSite                                      // the load being decoded, and the run forcing it (decode.go)
 	reads      map[*types.Field][]int                         // the fields each default reads (Reads)
-	written    map[value.Value]bool                           // literals given to dependent fields, kept as written (stageb.go)
+	written    map[value.Value]bool                           // fact, copied: literals given to dependent fields, kept as written (stageb.go)
 	deps       map[types.Type]bool                            // whether a type holds a dependent type (stageb.go)
-	verified   map[*value.Record]any                          // what stage B made of each instance; a vector reads its parent's, finished first (stageb.go)
+	verified   map[*value.Record]any                          // verdict, never copied: what stage B made of each instance; a child reads its parent's (stageb.go)
 	cuts       map[*diag.Frame]diag.Frame                     // a cut provenance stack's outermost frame, by its first (outermost.go)
 	siteProvs  map[siteKey]*value.Prov
 
-	parent    *Evaluator                // a vector's evaluator reads its parent's settled values (vector.go)
-	vec       *vectorState              // set on a vector's evaluator only
+	parent    *Evaluator   // a vector's or a world's evaluator reads its parent's settled values (vector.go, world.go)
+	vec       *vectorState // set on a vector's evaluator only
+	wld       *World
 	aside     check.Bags                // a vector's throwaway bags while its host verifies
 	recording *recorder                 // set while TestCalls runs
 	testStops map[string]*diag.Bag      // the running test's stopping errors, by frame package, while Test runs
@@ -152,14 +153,16 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 	}
 }
 
-// state is the state of a const or let, made on first use; a vector's evaluator shares its
-// parent's settled ones and forces the others afresh (DECISIONS 204).
+// state is a const's or let's, made on first use; a vector shares its parent's settled ones (DECISIONS 204), a world another package's.
 func (e *Evaluator) state(obj check.Object) *rootState {
+	if e.foreign(obj.Pkg()) {
+		return e.parent.state(obj)
+	}
 	st := e.states[obj]
 	if st != nil {
 		return st
 	}
-	if e.parent != nil {
+	if e.parent != nil && e.wld == nil {
 		if ps := e.parent.states[obj]; ps != nil && (ps.status == done || ps.status == poisoned) {
 			return ps
 		}
@@ -171,10 +174,13 @@ func (e *Evaluator) state(obj check.Object) *rootState {
 
 // rootState is the state of a top-level value by name, nil when there is none.
 func (e *Evaluator) rootState(root Root) *rootState {
+	if e.foreign(root.Pkg) {
+		return e.parent.rootState(root)
+	}
 	if st := e.roots[root]; st != nil {
 		return st
 	}
-	if e.parent != nil {
+	if e.parent != nil && e.wld == nil {
 		if ps := e.parent.roots[root]; ps != nil {
 			return e.state(ps.obj)
 		}
@@ -193,8 +199,11 @@ func (e *Evaluator) Force(ctx context.Context, root Root) (value.Value, bool) {
 
 // Settled is root's value when its forcing completed; it never evaluates and changes nothing (EVALUATION.md §3.1).
 func (e *Evaluator) Settled(root Root) (value.Value, bool) {
+	if e.foreign(root.Pkg) {
+		return e.parent.Settled(root)
+	}
 	st := e.roots[root]
-	if st == nil && e.parent != nil && e.parent.roots[root] != nil {
+	if st == nil && e.parent != nil && e.wld == nil && e.parent.roots[root] != nil {
 		st = e.parent.roots[root]
 		if own := e.states[st.obj]; own != nil {
 			st = own // a vector's own forcing of it (DECISIONS 204)

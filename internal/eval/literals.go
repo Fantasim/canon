@@ -25,7 +25,7 @@ type KeptLiteral struct {
 type keptLits struct {
 	v       LiteralVerifier
 	recs    []keptRec
-	pending map[value.Value][]keptEntry
+	pending map[value.Value][]keptEntry // verdict to come, never copied: a world records its own literals
 	next    int
 }
 
@@ -45,10 +45,10 @@ type keptEntry struct {
 }
 
 // keepLiteral records m, a literal of kept dependent map type t, for verification; a host that
-// verifies no literal, a vector, a test or a capture records none.
+// verifies no literal, a vector, a test or a capture records none; a world records its own.
 func (r *run) keepLiteral(m *value.Map, t *types.DepMapType) {
 	e, k := r.ev, &r.ev.lits
-	if k.v == nil || r.root == nil || e.parent != nil || e.vec != nil || r.test != nil || r.sink != nil {
+	if k.v == nil || r.root == nil || e.parent != nil && e.wld == nil || e.vec != nil || r.test != nil || r.sink != nil {
 		return
 	}
 	r.voidTrace() // a replayed entry would not record it

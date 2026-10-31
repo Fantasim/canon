@@ -1,0 +1,52 @@
+EVALUATION.md §10.5 items 1 and 2, TYPES.md §11.4: a value is evaluated as its let's initializer
+is, so a literal it gives a dependent field is kept as written; its copy keeps that mark, and the
+world's verification takes the integer literal as the Float its branch computes, and refuses
+a computed integer there (E3802).
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { whole, real }
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+}
+
+/// Nodes.
+let nodes: table Node = { a { k: whole }, b { k: real } }
+
+/// P: a Float for a real node.
+type P(e: Node) = match e.k {
+  whole => Int
+  real => Float
+}
+
+/// Holder.
+record Holder {
+  /// Like.
+  like: ref nodes
+  /// P.
+  p: P(like)
+}
+
+/// X.
+let x: [Holder] = [{ like: a, p: 4 }]
+
+/// Three, computed: never kept as written.
+local fn three() -> Int { return 3 }
+
+test "a literal given in the test" {
+  expect package { x: [{ like: b, p: 3 }] } passes
+  expect package { x: [{ like: b, p: three() }] } fails E3802
+}
+-- outcomes.txt --
+a "a literal given in the test": failed false, stopped false, broken false
+  expect line 37: passed true
+  expect line 38: passed true [E3802 x[0].p: value does not match P(like) = Float]
+  world 1: nodes = {a: Node{k: whole}, b: Node{k: real}}; x = [Holder{like: b, p: 3}];
+  world 2: nodes = {a: Node{k: whole}, b: Node{k: real}}; x = [Holder{like: b, p: 3}];
+
+0 errors, 0 warnings in 1 package (…)

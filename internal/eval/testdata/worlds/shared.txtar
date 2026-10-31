@@ -1,0 +1,33 @@
+EVALUATION.md §10.5 items 2 and 5, §12.2: another package's value is the test's, forced once on its
+own counter whatever the number of worlds; each world re-evaluates only its own package.
+-- budget --
+1000
+-- b/b.canon --
+/// B.
+package b
+
+/// About six hundred steps.
+let heavy: Int = [n for n in 0..300].len()
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// Reads b's heavy value.
+let x: Int = b.heavy
+
+test "two worlds, one heavy" {
+  expect package passes
+  expect package passes
+  expect x == 300
+}
+-- outcomes.txt --
+a "two worlds, one heavy": failed false, stopped false, broken false
+  expect line 10: passed true
+  expect line 11: passed true
+  expect line 12: passed true
+  world 1: x = 300;
+  world 2: x = 300;
+
+0 errors, 0 warnings in 2 packages (…)
