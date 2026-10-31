@@ -112,13 +112,13 @@ func (g *gen) keyType(t ir.TypeRef, big bool) string {
 	return g.tsType(*t.Key, bigAt(t, big))
 }
 
-// tableID is the id type of the table a ref targets, imported when another package's; "" when the table has none in its emit (CODEGEN.md §5.3).
+// tableID is the id type of the table a ref targets, imported when another package's; "" in types mode (CODEGEN.md §5.3, DECISIONS 413).
 func (g *gen) tableID(r *ir.RefTarget) string {
 	if !isTableRef(r) || r.Elem == nil {
 		return ""
 	}
 	if r.Pkg == g.p.Name {
-		if g.tableOf(r.Elem) == nil {
+		if !g.hasTableID(r.Elem) {
 			return ""
 		}
 		return idName(r.Elem)

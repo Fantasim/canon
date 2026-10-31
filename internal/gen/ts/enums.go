@@ -189,10 +189,10 @@ func (g *gen) branchEnums() {
 	}
 }
 
-// idTypes writes the id type of every emitted table: the union of its keys and its Members in baked mode, string in data mode, once per name (CODEGEN.md §5.3, DECISIONS 348).
+// idTypes writes the id type of every public table, whatever `values` selects: the union of its keys and its Members in baked mode, string in data mode, once per name (CODEGEN.md §2.1, §5.3, DECISIONS 348, 413).
 func (g *gen) idTypes() {
 	written := map[string]bool{}
-	for _, v := range g.emitted {
+	for _, v := range g.p.Values {
 		elem := g.tableElem(v)
 		switch {
 		case elem == nil:

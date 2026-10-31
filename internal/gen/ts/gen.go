@@ -200,7 +200,20 @@ func (g *gen) sections() []func() {
 	}
 }
 
-// tableOf is the emitted table value whose rows are of record elem, nil when none: its id type exists only then.
+// hasTableID reports whether this emit declares the id type of the public table of records elem: every emit but types does, selected or not (CODEGEN.md §2.1, §5.3, DECISIONS 413).
+func (g *gen) hasTableID(elem ir.Type) bool {
+	if elem == nil || g.isTypes() {
+		return false
+	}
+	for _, v := range g.p.Values {
+		if g.tableElem(v) == elem {
+			return true
+		}
+	}
+	return false
+}
+
+// tableOf is the emitted table value whose rows are of record elem, nil when none: its rows' CanonRow and entry props follow it; id types follow hasTableID (DECISIONS 413).
 func (g *gen) tableOf(elem ir.Type) *ir.Value {
 	for _, v := range g.emitted {
 		if v.Type.Kind == types.Table && v.Type.Elem != nil && v.Type.Elem.Named == elem {

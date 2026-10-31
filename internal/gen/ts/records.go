@@ -49,7 +49,7 @@ func (g *gen) rowType(rec *ir.Record, id string) string {
 	return fmt.Sprintf(rowTypeFormat, g.named(rec), id)
 }
 
-// idTypeOf is the type of a row's id: the table's id type when this emit declares one and no other table holds the record, else string.
+// idTypeOf is the type of a row's id: the table's id type when an emitted table holds the record and no other table does, else string.
 func (g *gen) idTypeOf(r *ir.Record) string {
 	if g.tableOf(r) != nil && g.rowSites[r] == 1 {
 		return idName(r)
