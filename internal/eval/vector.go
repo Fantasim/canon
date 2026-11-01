@@ -48,8 +48,11 @@ func (e *Evaluator) Vector(ctx context.Context, c Call, m VectorMode) Outcome {
 	}
 	ve := e.vectorEvaluator(m.Steps)
 	r := ve.newRun(ctx, charge{pkg: c.Fn.Pkg(), name: c.Fn.Name()}, c.Fn.File())
-	r.fr.ts = m.TS
+	r.fr.ts, r.lits = m.TS, ve.callScope()
 	v := r.invokeFn(fnCall{obj: c.Fn, self: c.Recv, args: padded(c.Args, len(d.Params)), site: c.Fn.File().Span(d.Name)})
+	if v != nil && !r.failed { // TYPES.md §11.5: its kept literals, a first error among them its outcome
+		ve.judgeScope(r.lits, ve.hostJudge(ctx, Root{Pkg: c.Fn.Pkg(), Name: c.Fn.Name()}))
+	}
 	e.bugs = append(e.bugs, ve.bugs...)
 	return ve.vec.outcome(v, r.failed)
 }
@@ -63,7 +66,11 @@ func (e *Evaluator) vectorEvaluator(steps int64) *Evaluator {
 	v := newEvaluator(check.Bags{}, Options{Budget: steps, Layers: e.opt.Layers})
 	v.prog, v.info, v.index, v.pkgs = e.prog, e.info, e.index, e.pkgs
 	if e.host != nil {
-		v.host = &vectorHost{parent: e.host, ev: v}
+		h := &vectorHost{parent: e.host, ev: v}
+		v.host = h
+		if _, into := e.host.(literalsInto); into && e.lits.v != nil {
+			v.lits.v = h // its values' kept literals and its call's, judged as the build's are
+		}
 	}
 	v.regexps, v.frees, v.colls, v.fieldColls, v.pathFields = e.regexps, e.frees, e.interned(), e.fieldColls, e.pathFields
 	v.ownedBy, v.sites, v.selfReads = e.ownedBy, e.sites, e.selfReads

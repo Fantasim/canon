@@ -1,0 +1,58 @@
+EVALUATION.md §4.2, §8.1, §5: a let's record a keyed list holds is copied, and the copy shares its
+instance: lr's check fails once and lb's dependent field is judged once, at lr and lb, the paths stage C
+and stage B reach them by first.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Kind.
+enum Kind { sound, count }
+
+/// Tone.
+enum Tone { quiet, loud }
+
+/// Bonus by kind.
+type Bonus(k: Kind) = match k {
+  sound => Tone
+  count => Int
+}
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+  /// Its value.
+  v: Int
+  /// Its kind.
+  kind: Kind
+  /// Its bonus.
+  bonus: Bonus(kind)
+
+  check positive: v > 0 else "v {v} is not positive"
+}
+
+/// A row whose check fails.
+let lr: Row = { code: "y", v: 0, kind: count, bonus: 1 }
+
+/// A row whose bonus fits no branch.
+let lb: Row = { code: "b", v: 1, kind: count, bonus: loud }
+
+/// Keyed by code, holding lr and lb.
+let j1: [Row] keyed by code = [lr, lb]
+
+/// Keyed by code, holding lr again.
+let j2: [Row] keyed by code = j1
+-- build.txt --
+error[E5001]  a/a.canon:31:15
+  lr: v 0 is not positive
+  expected by a/a.canon:27 (check positive)
+
+error[E3802]  a/a.canon:34:54
+  lb.bonus: value does not match Bonus(kind) = Int
+  expected by a/a.canon:25 (bonus: Bonus(kind))
+
+2 errors, 0 warnings in 1 package (…)

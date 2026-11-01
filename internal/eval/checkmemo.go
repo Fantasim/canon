@@ -40,13 +40,16 @@ func (e *Evaluator) RunTraced(ctx context.Context, c *syntax.CheckDecl, self val
 	}
 	u := e.memo
 	if u == nil || u.trace != nil {
-		return r.check(c), nil
+		return r.checked(c), nil
 	}
 	start, marks := e.spentOn(r.charge), e.marksGen()
 	tr := &entryTrace{run: r, lap: start, depth0: e.depth, implicit0: e.implicit, bugs: len(e.bugs), retagged: e.gens.retagged}
 	u.trace = tr
 	out := r.check(c)
 	u.trace = nil
+	if !out.Aborted {
+		e.checkLiterals(ctx, r) // a run that recorded one left no trace (keepLiteral)
+	}
 	if tr.void || r.tainted || e.stopped() || len(e.bugs) != tr.bugs || len(out.Reports) > 0 ||
 		e.marksGen() != marks || e.gens.retagged != tr.retagged || !tr.unchanged(e) {
 		return out, nil

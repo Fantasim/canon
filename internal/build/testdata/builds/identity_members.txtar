@@ -1,0 +1,38 @@
+TYPES.md §9.3, §6.3, log-2026-11-01 "EVAL-OWED re-review FAIL": `self.id` and `self.retired` are entry
+members, which read identity, not fields: ta.old is retired with id old, its copy in ks is live with id z,
+so each check fails at ks[z] alone.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+
+  check isOld: self.id == "old" else "{code} has id {self.id}"
+
+  check isRetired: self.retired else "{code} is live"
+}
+
+/// The rows.
+let ta: table Row = {
+  retired old { code: "z" }
+}
+
+/// Keyed by code, holding the row.
+let ks: [Row] keyed by code = [ta.old]
+-- build.txt --
+error[E5001]  a/a.canon:16:3
+  ks[z]: z has id z
+  expected by a/a.canon:9 (check isOld)
+
+error[E5001]  a/a.canon:16:3
+  ks[z]: z is live
+  expected by a/a.canon:11 (check isRetired)
+
+2 errors, 0 warnings in 1 package (…)

@@ -87,20 +87,35 @@ type subjects struct {
 func (s subjects) Build(ctx context.Context, v value.Value, capture *diag.Bag) {
 	bags := s.captureBags(capture)
 	root := eval.Root{Pkg: s.pkg}
-	res, err := verify.NewShared(s.r.vix, s.ev, bags, s.r.assets).Check(ctx, root, v)
-	if err != nil {
-		s.host.errs = append(s.host.errs, internal(err))
-		return
-	}
-	for _, u := range res.Unbound {
-		s.ev.ReportUnboundInto(root, u.Ref, u.Path, capture)
-	}
-	if res.Poisoned { // a poisoned value is not instance-checked, as in stage C (EVALUATION.md §7.2)
+	valid := s.verifyInto(capture, bags, func(vr *verify.Verifier) (verify.Result, error) { return vr.Check(ctx, root, v) })
+	if !valid { // a poisoned value is not instance-checked, as in stage C (EVALUATION.md §7.2)
 		return
 	}
 	if err := rules.NewShared(s.r.rix, checks{Evaluator: s.ev}, bags).Instances(ctx, root, v); err != nil {
 		s.host.errs = append(s.host.errs, internal(err))
 	}
+}
+
+// BuildLiteral verifies a kept literal a test built into capture, as Build a subject, no instance checked (DECISIONS 408).
+func (s subjects) BuildLiteral(ctx context.Context, lit eval.KeptLiteral, capture *diag.Bag) bool {
+	root := eval.Root{Pkg: s.pkg}
+	return s.verifyInto(capture, s.captureBags(capture), func(vr *verify.Verifier) (verify.Result, error) {
+		return vr.CheckLiteral(ctx, root, lit.Value, lit.Type)
+	})
+}
+
+// verifyInto runs walk on a verifier into bags, the unbound refs' E3505 into capture; false: an
+// internal error, or a hard error poisoned what it walked.
+func (s subjects) verifyInto(capture *diag.Bag, bags check.Bags, walk func(*verify.Verifier) (verify.Result, error)) bool {
+	res, err := walk(verify.NewShared(s.r.vix, s.ev, bags, s.r.assets))
+	if err != nil {
+		s.host.errs = append(s.host.errs, internal(err))
+		return false
+	}
+	for _, u := range res.Unbound {
+		s.ev.ReportUnboundInto(eval.Root{Pkg: s.pkg}, u.Ref, u.Path, capture)
+	}
+	return !res.Poisoned
 }
 
 // untranslated is the internal error of every translated fn stage E left untranslated with no error reported (DECISIONS 196).

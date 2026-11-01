@@ -91,8 +91,11 @@ func (w *walker) evalPath(at *Path) string {
 
 // predicate re-runs a where predicate on v, a precomputed result's under its frame.
 func (w *walker) predicate(p *types.Predicate, v value.Value, at *Path) (bool, bool) {
-	if w.result != nil && w.stage != nil {
+	switch {
+	case w.result != nil && w.stage != nil:
 		return w.stage.Where(w.ctx, p, v)
+	case w.stage != nil: // its kept literals are the verified value's (TYPES.md §11.5)
+		return w.stage.WhereAt(w.ctx, p, v, w.evalPath(at))
 	}
 	return w.ev.Where(w.ctx, p, v, w.evalPath(at))
 }

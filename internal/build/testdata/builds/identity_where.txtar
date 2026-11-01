@@ -1,0 +1,50 @@
+EVALUATION.md §4.2, §5, TYPES.md §7.4, log-2026-11-01 "EVAL-OWED review FAIL": stage B's instance memo
+needs no identity: a where reading identity is the slot's, judged at each slot, so j1's element fails where
+it == j2["y"] and plain's passes, while lr's dependent field is converted once for every copy.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Kind.
+enum Kind { sound, count }
+
+/// Bonus by kind.
+type Bonus(k: Kind) = match k {
+  sound => String
+  count => Int
+}
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+  /// Its kind.
+  kind: Kind
+  /// Its bonus.
+  bonus: Bonus(kind)
+}
+
+/// j2's entry, as a where reads it.
+type InJ2 = Row where it == j2["y"]
+
+/// A row.
+let lr: Row = { code: "y", kind: count, bonus: 3 }
+
+/// Keyed by code, each element j2's entry.
+let j1: [InJ2] keyed by code = [lr]
+
+/// Keyed by code, holding lr.
+let j2: [Row] keyed by code = [lr]
+
+/// A list of lr, whose element is no entry: it equals j2's.
+let plain: [InJ2] = [lr]
+-- build.txt --
+error[E3206]  a/a.canon:27:15
+  j1[y]: Row{code: "y", kind: count, bonus: 3} fails where it == j2["y"]
+  expected by a/a.canon:24 (Row where it == j2["y"])
+
+1 error, 0 warnings in 1 package (…)

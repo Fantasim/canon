@@ -51,11 +51,23 @@ func (h *vectorHost) Verify(ctx context.Context, root Root, v value.Value) bool 
 		h.ev.vec.void, h.ev.exhausted = true, true
 		return false
 	}
+	return h.aside(func(bags check.Bags) bool { return vr.VerifyInto(ctx, h.ev, root, v, bags) })
+}
+
+// VerifyLiterals verifies kept literals as Verify does a value, through the parent's VerifyLiteralsInto (vectorEvaluator).
+func (h *vectorHost) VerifyLiterals(ctx context.Context, root Root, lits []KeptLiteral) {
+	if into, ok := h.parent.(literalsInto); ok {
+		h.aside(func(bags check.Bags) bool { into.VerifyLiteralsInto(ctx, h.ev, root, lits, bags); return true })
+	}
+}
+
+// aside runs verify into throwaway bags, keeping their first error as the vector's; verify's result.
+func (h *vectorHost) aside(verify func(check.Bags) bool) bool {
 	bags := h.throwaway()
 	valid := func() bool {
 		h.ev.aside = bags // E3505 and evaluation findings of the verification join its own
 		defer func() { h.ev.aside = nil }()
-		return vr.VerifyInto(ctx, h.ev, root, v, bags)
+		return verify(bags)
 	}()
 	h.note(bags)
 	return valid

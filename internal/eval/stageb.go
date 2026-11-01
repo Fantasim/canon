@@ -22,8 +22,8 @@ type StageB struct {
 func (e *Evaluator) Verifying(ctx context.Context, root Root, bag *diag.Bag) *StageB {
 	s := &StageB{e: e, root: root}
 	s.r = e.newRun(ctx, charge{pkg: root.Pkg, name: root.Name}, nil)
-	s.r.fr.pkg, s.r.sink, s.r.emitted = root.Pkg, bag, &s.emitted
-	s.r.free = e.late.free // phase 8's verifications spend no budget (EVALUATION.md §2.1)
+	s.r.fr.pkg, s.r.sink, s.r.emitted, s.r.stage = root.Pkg, bag, &s.emitted, s
+	s.r.free = e.late.free || e.lits.free // phase 8's verifications, and a where re-run's literal, spend no budget (EVALUATION.md §2.1)
 	return s
 }
 
@@ -34,7 +34,12 @@ func (s *StageB) Under(f diag.Frame) {
 
 // Where is Evaluator.Where with no value path, under the stage's frame.
 func (s *StageB) Where(ctx context.Context, p *types.Predicate, it value.Value) (bool, bool) {
-	return s.e.predicate(ctx, p, it, "", s.r.outer)
+	return s.e.predicate(ctx, p, it, "", s)
+}
+
+// WhereAt is Evaluator.Where for the value this stage verifies: the kept literals it builds are that value's (TYPES.md §11.5).
+func (s *StageB) WhereAt(ctx context.Context, p *types.Predicate, it value.Value, path string) (bool, bool) {
+	return s.e.predicate(ctx, p, it, path, s)
 }
 
 // Unbound reports E3505 for ref with no value path, under the stage's frame, and marks it invalid (EVALUATION.md §3.4).
@@ -103,8 +108,9 @@ func (s *StageB) Refine(v value.Value, t types.Type, rel source.Span, path strin
 
 // Verified is what verification remembered of instance rec, its conversion done once for every root reaching it (EVALUATION.md §4.2).
 func (s *StageB) Verified(rec *value.Record) (any, bool) {
+	inst := s.e.Instance(rec)
 	for e := s.e; e != nil; e = e.parent {
-		if v, ok := e.verified[rec]; ok {
+		if v, ok := e.verified[inst]; ok {
 			return v, true
 		}
 	}
@@ -113,7 +119,7 @@ func (s *StageB) Verified(rec *value.Record) (any, bool) {
 
 // Remember records what verification made of instance rec, and of its copy cp.
 func (s *StageB) Remember(rec, cp *value.Record, memo any) {
-	s.e.verified[rec] = memo
+	s.e.verified[s.e.Instance(rec)] = memo
 	s.e.verified[cp] = memo
 }
 
@@ -203,6 +209,11 @@ func (s *StageB) Moved(from, to value.Value) value.Value {
 		e.transfer(rec, cp, nil)
 	}
 	return to
+}
+
+// Shares records that cp, a copy verification made of of, the verified copy of an instance, is that instance (EVALUATION.md §4.2).
+func (s *StageB) Shares(cp, of *value.Record) {
+	s.e.origin[cp] = of
 }
 
 // Replace gives the root the value verification converted (TYPES.md §11.6); a vector keeps its parent's.

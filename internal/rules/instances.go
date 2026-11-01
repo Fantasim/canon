@@ -56,15 +56,8 @@ type traversal struct {
 // visit walks v depth-first, pre-order: an instance's checks run before its parts are visited.
 // It follows fields, elements, map keys then values, and entries, never refs.
 func (t *traversal) visit(v value.Value, dt types.Type) {
-	if rec, isRecord := v.(*value.Record); isRecord {
-		if t.seen[rec] || t.ctx.Err() != nil {
-			return
-		}
-		t.seen[rec] = true
-		if t.rec != nil {
-			t.rec.instance, t.rec.visited = t.rec.visited, t.rec.visited+1
-		}
-		t.runChecks(rec)
+	if rec, isRecord := v.(*value.Record); isRecord && !t.enter(rec) {
+		return
 	}
 	if top := t.alone && len(t.segs) == 0; top {
 		if tv, isTable := v.(*value.Table); isTable {
@@ -88,6 +81,24 @@ func (t *traversal) visit(v value.Value, dt types.Type) {
 	})
 }
 
+// enter runs rec's checks at its instance's first reach, those reading identity at the first reach
+// under each identity (log-2026-11-01); false: its parts are visited already, or never.
+func (t *traversal) enter(rec *value.Record) bool {
+	inst := t.inst(rec)
+	k := keyOf(inst, rec)
+	if t.idents[k] || t.ctx.Err() != nil {
+		return false
+	}
+	t.idents[k] = true
+	first := !t.seen[inst]
+	t.seen[inst] = true
+	if t.rec != nil {
+		t.rec.instance, t.rec.visited = t.rec.visited, t.rec.visited+1
+	}
+	t.runChecks(rec, !first)
+	return first
+}
+
 // here is the path of the value being visited.
 func (t *traversal) here() *verify.Path {
 	at := verify.Root(t.root)
@@ -97,8 +108,8 @@ func (t *traversal) here() *verify.Path {
 	return at
 }
 
-// runChecks runs an instance's checks unless invalid below or broken, variant-level first (EVALUATION.md §7.3, §8.1).
-func (t *traversal) runChecks(rec *value.Record) {
+// runChecks runs an instance's checks, only identity's under a later identity, unless invalid below or broken (EVALUATION.md §8.1).
+func (t *traversal) runChecks(rec *value.Record, identity bool) {
 	if t.ask(rec) || t.brokenType(rec.T) {
 		return
 	}
@@ -111,6 +122,9 @@ func (t *traversal) runChecks(rec *value.Record) {
 		for _, c := range checks {
 			if t.ctx.Err() != nil {
 				return
+			}
+			if identity && !t.observes(c) {
+				continue
 			}
 			run := t.run(c, rec, at)
 			t.ran()

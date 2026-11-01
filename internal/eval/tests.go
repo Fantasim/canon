@@ -50,9 +50,10 @@ type comparison struct {
 	left, right value.Value
 }
 
-// testState is the test a run executes.
+// testState is the test a run executes; lits, its builder when it verifies kept literals.
 type testState struct {
 	builder Builder
+	lits    literalBuilder
 	out     *TestRun
 }
 
@@ -73,7 +74,9 @@ func (e *Evaluator) Test(ctx context.Context, t *syntax.TestDecl, b Builder) Tes
 	defer func() { e.testStops, e.testPkg = nil, "" }()
 	r := e.newRun(ctx, charge{pkg: pkg, name: TestName(t)}, file)
 	r.test = &testState{builder: b, out: &out}
-	if r.block(t.Body) == flowAbort || r.failed {
+	r.test.lits, _ = b.(literalBuilder)
+	r.lits = r.testScope() // TYPES.md §11.5: a literal a statement builds is judged too
+	if r.block(t.Body) == flowAbort || r.failed || !r.judgeStatements() {
 		out.Failed, out.Stopped = true, true
 		out.Poisoned, out.PoisonRoot, out.PoisonSpan = r.poisonAt, r.poisonRoot, r.poisonSpan
 	}
@@ -141,16 +144,22 @@ type built struct {
 func (r *run) subject(x *syntax.ExpectStmt) built {
 	capture := diag.NewBag(r.ev.files(), r.fr.pkg)
 	capture.Truncate(math.MaxInt)
-	saved := r.sink
+	saved, outer, lits := r.sink, r.lits, r.testScope()
 	b := built{cmp: comparisonOf(x)}
-	r.sink, r.poisonAt, r.cmp = capture, "", b.cmp
+	r.sink, r.poisonAt, r.cmp, r.lits = capture, "", b.cmp, lits
 	b.v = r.eval(x.X)
 	b.aborted = r.failed
-	r.failed, r.sink, r.cmp = false, saved, nil
+	r.failed, r.sink, r.cmp, r.lits = false, saved, nil, outer
 	b.ex = Expect{Stmt: x, Poisoned: r.poisonAt, PoisonRoot: r.poisonRoot}
 	r.poisonAt, r.poisonRoot, r.poisonSpan = "", Root{}, source.Span{}
 	if !b.aborted && x.Outcome != nil && r.test.builder != nil {
-		r.test.builder.Build(r.ctx, b.v, capture)
+		func() {
+			defer r.ev.judgingIn(lits)() // its verification judges the literals it stores (TYPES.md §11.5)
+			r.test.builder.Build(r.ctx, b.v, capture)
+		}()
+	}
+	if !b.aborted {
+		r.judgeInto(lits, capture)
 	}
 	b.ex.Captured = capture.Findings()
 	return b

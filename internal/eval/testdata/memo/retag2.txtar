@@ -1,7 +1,7 @@
-EVALUATION.md §4.2, DECISIONS 79, 195: as retag.txtar, the value read forced by the entry and read
-again after it: the identities the entry set in place stay on its nodes (reviewer's probe).
+EVALUATION.md §4.1, §4.2, DECISIONS 79, 195: as retag.txtar, the value read forced by the entry and
+read again after it: the entry set no identity on its nodes, so names reads base unchanged.
 -- memo --
-stored 0 unkept 1
+stored 1 unkept 0
 -- a/a.canon --
 /// A.
 package a

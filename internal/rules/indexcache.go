@@ -14,7 +14,7 @@ type IndexCache struct {
 
 // Index is NewIndex, walking only the files c lacks; c forgets the files prog no longer holds.
 func (c *IndexCache) Index(prog *check.Program) *Index {
-	ix := &Index{files: map[*syntax.CheckDecl]*syntax.File{}, broken: map[types.Type]bool{}, shared: map[*types.VariantType][]*syntax.CheckDecl{}}
+	ix := &Index{files: map[*syntax.CheckDecl]*syntax.File{}, broken: map[types.Type]bool{}, shared: map[*types.VariantType][]*syntax.CheckDecl{}, observe: newObserving()}
 	files := c.cache()
 	files.KeepOnly(prog)
 	if prog == nil {

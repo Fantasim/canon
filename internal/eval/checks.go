@@ -29,7 +29,7 @@ func (e *Evaluator) Run(ctx context.Context, c *syntax.CheckDecl, self value.Val
 	if r == nil {
 		return CheckRun{Aborted: true}
 	}
-	return r.check(c)
+	return r.checked(c)
 }
 
 // RunUnder is Run on an instance of a precomputed result: no value path, its findings under f (EVALUATION.md §2.3).
@@ -39,7 +39,7 @@ func (e *Evaluator) RunUnder(ctx context.Context, c *syntax.CheckDecl, self valu
 		return CheckRun{Aborted: true}
 	}
 	r.outer = &f
-	return r.check(c)
+	return r.checked(c)
 }
 
 // checkRun is the run of c on self, nil when c is not run: its package's budget is spent, or c is broken.
@@ -53,8 +53,17 @@ func (e *Evaluator) checkRun(ctx context.Context, c *syntax.CheckDecl, self valu
 		return nil
 	}
 	r := e.newRun(ctx, ch, file)
-	r.fr.self, r.instPath = self, path
+	r.fr.self, r.instPath, r.lits = self, path, e.callScope()
 	return r
+}
+
+// checked is check, then the judgement of the kept literals c's run built (TYPES.md §11.5).
+func (r *run) checked(c *syntax.CheckDecl) CheckRun {
+	out := r.check(c)
+	if !out.Aborted {
+		r.ev.checkLiterals(r.ctx, r)
+	}
+	return out
 }
 
 // check evaluates check c in r (EVALUATION.md §8.4).

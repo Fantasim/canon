@@ -3,7 +3,6 @@ package eval
 import (
 	"context"
 
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -14,14 +13,17 @@ func (e *Evaluator) Where(ctx context.Context, p *types.Predicate, it value.Valu
 	return e.predicate(ctx, p, it, path, nil)
 }
 
-// predicate is Where, its hard error under outer.
-func (e *Evaluator) predicate(ctx context.Context, p *types.Predicate, it value.Value, path string, outer *diag.Frame) (bool, bool) {
+// predicate is Where for the verification s, if any: its hard error under s's frame, its kept literals s's value's.
+func (e *Evaluator) predicate(ctx context.Context, p *types.Predicate, it value.Value, path string, s *StageB) (bool, bool) {
 	if p == nil || p.Expr == nil || e.info == nil {
 		return false, false
 	}
 	file := e.fileOf(p.Expr)
 	r := e.newRun(ctx, charge{pkg: e.index.pkg[file]}, file)
-	r.free, r.outer = true, outer
+	r.free, r.stage = true, s
+	if s != nil {
+		r.outer = s.r.outer
+	}
 	r.fr.it, r.instPath = it, path
 	if !r.nest(r.span(p.Expr)) {
 		return false, false

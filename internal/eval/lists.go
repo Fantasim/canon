@@ -15,18 +15,39 @@ func evalList(r *run, e syntax.Expr, at *vpath) value.Value {
 	t := r.typeOf(e)
 	elems := make([]value.Value, len(x.Elems))
 	lt, _ := t.Base().(*types.ListType)
+	var fresh []bool
+	if lt != nil && lt.KeyedBy != nil {
+		fresh = make([]bool, len(x.Elems))
+	}
 	for i, el := range x.Elems {
 		eat := at.element(lt, i)
-		if elems[i] = r.evalAt(el, eat); elems[i] == nil {
+		if fresh == nil {
+			elems[i] = r.evalAt(el, eat)
+		} else {
+			elems[i], fresh[i] = r.freshly(func() value.Value { return r.evalAt(el, eat) })
+		}
+		if elems[i] == nil {
 			return nil
 		}
 		eat.learnFrom(elems[i])
 	}
 	p := r.prov(e, value.ProvLiteral)
-	if lt != nil && lt.KeyedBy != nil {
-		return r.keyedList(elems, t, r.hint(at), p, at)
+	if fresh != nil {
+		elems = r.keyedElems(elems, fresh, lt, r.hint(at), at)
 	}
 	return &value.List{T: t, Elems: elems, P: p}
+}
+
+// freshly is what eval returns, and whether it is the record a literal built meanwhile, which no
+// other value holds yet: a collection may give it its identity in place (withIdentity).
+func (r *run) freshly(eval func() value.Value) (value.Value, bool) {
+	saved := r.built
+	r.built = nil
+	v := eval()
+	rec, isRec := v.(*value.Record)
+	fresh := isRec && rec != nil && rec == r.built
+	r.built = saved
+	return v, fresh
 }
 
 // hint is the collection of the let whose literal is at at, nil for any other literal.

@@ -1,0 +1,157 @@
+DECISIONS 408, TYPES.md §11.5, EVALUATION.md §5, §8: a kept-map literal never stored is judged against
+T(key) where no top-level value's evaluation builds it too: in an instance check's body, in a package
+check's body, in a where predicate only stage B runs, and in the defaults of a case written bare, which
+verification fills; each E3802 once.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { num, sub }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+  /// Its max.
+  max: Int = 5
+}
+
+/// The nodes.
+let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+/// A sub node's limit.
+record Sub(e: Node) {
+  /// The limit.
+  lim: Int = e.max
+}
+
+/// What a node holds.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// A holder.
+record H {
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+/// The base holders.
+let base: [H] = [{ by: { a: {}, n: 1 } }]
+
+/// Checked against a literal in its check.
+record C {
+  /// A count.
+  n: Int
+
+  check okBy: base[0].by != { d: 3 } else "base holds d: 3"
+}
+
+/// The checked rows.
+let cs: [C] = [{ n: 1 }]
+
+check pkgBy: base[0].by != { n: {} } else "base holds an empty n"
+
+/// An Int whose where predicate builds a literal, only stage B computes it.
+type Q(e: Node) = match e.k {
+  num => Int where base[0].by != { d: 4 }
+  sub => Int
+}
+
+/// A holder by Q.
+record W {
+  /// By node.
+  by: {x in nodes: Q(x)} = {}
+}
+
+/// The where's holders.
+let ws: [W] = [{ by: { n: 1 } }]
+
+/// A sub node whose default builds a literal, built with its kept map in stage A.
+record S2(e: Node) {
+  /// The limit.
+  lim: Int = e.max
+  /// A map by node.
+  m: {x in nodes: P(x)} = {}
+  /// Whether m differs.
+  odd: Bool = m != { d: 5 }
+}
+
+/// What a node holds, by S2.
+type R(e: Node) = match e.k {
+  num => Int
+  sub => S2(e)
+}
+
+/// A holder by R.
+record V {
+  /// By node.
+  by: {x in nodes: R(x)} = {}
+}
+
+/// The default's holders.
+let vs: [V] = [{ by: { a: {} } }]
+
+/// A perk's kind.
+enum Kind2 { plain, rich }
+
+/// An effect.
+variant Effect {
+  /// A big one, whose default builds a literal: filled when verification resolves `big`.
+  big {
+    /// A map by node.
+    m: {x in nodes: P(x)} = {}
+    /// Whether m differs.
+    odd: Bool = m != { d: 6 }
+  }
+  /// A small one.
+  small {
+    /// Its size.
+    size: Int = 1
+  }
+}
+
+/// A bonus by kind.
+type Bonus2(k: Kind2) = match k {
+  plain => Int
+  rich => Effect
+}
+
+/// A perk.
+record Perk {
+  /// Its kind.
+  kind: Kind2
+  /// Its bonus.
+  bonus: Bonus2(kind)
+}
+
+/// The perks.
+let perks: [Perk] = [{ kind: rich, bonus: big }]
+-- build.txt --
+error[E3802]  a/a.canon:44:34
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:33 (P(x))
+
+error[E3802]  a/a.canon:50:33
+  [n]: value does not match P(x) = Int
+  expected by a/a.canon:33 (P(x))
+
+error[E3802]  a/a.canon:54:39
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:33 (P(x))
+
+error[E3802]  a/a.canon:74:25
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:72 (P(x))
+
+error[E3802]  a/a.canon:102:27
+  [d]: value does not match P(x) = a.Sub(e)
+  expected by a/a.canon:100 (P(x))
+
+5 errors, 0 warnings in 1 package (…)

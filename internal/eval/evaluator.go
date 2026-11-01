@@ -130,7 +130,7 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		states:  map[check.Object]*rootState{},
 		roots:   map[Root]*rootState{},
 		invalid: map[value.Value]bool{},
-		lits:    keptLits{pending: map[value.Value][]keptEntry{}},
+		lits:    keptLits{roots: litScope{pending: pendingSet{}}},
 		history: map[value.Value]value.Value{},
 		rebuilt: map[value.Value]value.Value{},
 		keyed:   map[value.Value]map[value.Key]*value.Record{},
@@ -236,8 +236,9 @@ func (e *Evaluator) flush(ctx context.Context) {
 	e.flushing = false
 }
 
-// verifyQueued verifies the values queued, in order.
+// verifyQueued verifies the values queued, in order, judging the roots' kept literals.
 func (e *Evaluator) verifyQueued(ctx context.Context) {
+	defer e.judgingIn(nil)()
 	for len(e.queue) > 0 && ctx.Err() == nil {
 		st := e.queue[0]
 		e.queue = e.queue[1:]

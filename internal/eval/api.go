@@ -22,10 +22,14 @@ func (e *Evaluator) Call(ctx context.Context, fn check.Object, recv value.Value,
 		return nil, false
 	}
 	r := e.newRun(ctx, charge{pkg: fn.Pkg(), name: fn.Name()}, fn.File())
-	r.notesCuts = true
+	r.notesCuts, r.lits = true, e.callScope()
 	f := CallFrame(fn, recv, args)
 	v := r.invokeFn(fnCall{obj: fn, self: recv, args: padded(args, len(d.Params)), site: f.Span, name: f.Fn})
-	return v, v != nil && !r.failed
+	ok = v != nil && !r.failed
+	if ok { // TYPES.md §11.5: its kept literals, charged as its result's verification is (§12.2)
+		e.judgeScope(r.lits, e.hostJudge(ctx, Root{Pkg: fn.Pkg(), Name: fn.Name()}))
+	}
+	return v, ok
 }
 
 // CallFrame is the frame Call runs fn under: fn with its receiver and inputs, at its name (EVALUATION.md §2.3).

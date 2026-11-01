@@ -38,7 +38,7 @@ func (t *traversal) elements(l *value.List, dt types.Type) {
 // and its marks and reads are the same, else visited and kept when a replay can reproduce it.
 func (t *traversal) entry(e *value.Record, dt types.Type) {
 	token, ok := t.memo.ev.EntryToken(e)
-	if !ok || t.seen[e] || t.ctx.Err() != nil || !t.owns(token) {
+	if !ok || t.seen[t.inst(e)] || t.ctx.Err() != nil || !t.owns(token) {
 		t.visit(e, dt)
 		return
 	}
@@ -81,7 +81,7 @@ func (t *traversal) replayEntry(e *value.Record, kept *entryKept) bool {
 	}
 	var instances []*value.Record
 	if len(kept.failed) > 0 {
-		instances = instancesOf(e)
+		instances = instancesOf(e, t.inst)
 		for _, f := range kept.failed {
 			if f.instance >= len(instances) {
 				return false // one token's graphs are one shape: never
@@ -135,26 +135,38 @@ func (s *signing) walk(v value.Value) {
 	})
 }
 
-// instancesOf is the instances of e in the order stage C visits them.
-func instancesOf(e value.Value) []*value.Record {
-	c := &collecting{seen: map[*value.Record]bool{}}
+// enter keeps rec at its first reach under its identity; false: its parts are walked already, or never.
+func (c *collecting) enter(rec *value.Record) bool {
+	in := c.inst(rec)
+	k := keyOf(in, rec)
+	if c.idents[k] {
+		return false
+	}
+	c.idents[k] = true
+	c.out = append(c.out, rec)
+	first := !c.seen[in]
+	c.seen[in] = true
+	return first
+}
+
+// instancesOf is the records of e in the order stage C enters them, each taken for inst's.
+func instancesOf(e value.Value, inst func(*value.Record) *value.Record) []*value.Record {
+	c := &collecting{seen: map[*value.Record]bool{}, idents: map[identKey]bool{}, inst: inst}
 	c.walk(e)
 	return c.out
 }
 
-// collecting walks a value's parts as stage C does, keeping each instance at its first reach.
+// collecting walks a value's parts as stage C does, keeping each record it enters (traversal.enter).
 type collecting struct {
-	seen map[*value.Record]bool
-	out  []*value.Record
+	seen   map[*value.Record]bool
+	idents map[identKey]bool
+	inst   func(*value.Record) *value.Record
+	out    []*value.Record
 }
 
 func (c *collecting) walk(v value.Value) {
-	if rec, ok := v.(*value.Record); ok {
-		if c.seen[rec] {
-			return
-		}
-		c.seen[rec] = true
-		c.out = append(c.out, rec)
+	if rec, ok := v.(*value.Record); ok && !c.enter(rec) {
+		return
 	}
 	eachPart(v, func(p value.Value) bool {
 		c.walk(p)

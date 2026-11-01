@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/eval/std"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -16,8 +18,16 @@ func (e *Evaluator) copiedFrom(rec, cp *value.Record) {
 	}
 }
 
-// instance is the record rec copies, through every copy: the instance rec is. The copies met
-// are then recorded as copies of it, so a chain of amendments is walked once.
+// Instance is the earliest record rec copies through copies holding its fields: its instance (EVALUATION.md §4.2).
+func (e *Evaluator) Instance(rec *value.Record) *value.Record {
+	for next := e.originOf(rec); next != nil && slices.Equal(next.Fields, rec.Fields); next = e.originOf(rec) {
+		rec = next
+	}
+	return rec
+}
+
+// instance is the record rec copies, through every copy: the instance rec is. A copy met is then
+// linked past the copies holding its fields, never past one that does not, so Instance holds.
 func (e *Evaluator) instance(rec *value.Record) *value.Record {
 	root := rec
 	for next := e.originOf(root); next != nil; next = e.originOf(root) {
@@ -25,7 +35,9 @@ func (e *Evaluator) instance(rec *value.Record) *value.Record {
 	}
 	for rec != root {
 		next := e.originOf(rec)
-		e.origin[rec] = root
+		if slices.Equal(next.Fields, rec.Fields) {
+			e.origin[rec] = e.Instance(next)
+		}
 		rec = next
 	}
 	return root

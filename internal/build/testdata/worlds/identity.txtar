@@ -1,0 +1,95 @@
+EVALUATION.md §10.5 item 6, §4.1, TYPES.md §6.3, §7.5: the test's values do not change. A world that forces
+every let, keyed lists of b's rows included, leaves b.r and b.s equal, as forcing those lets in the test does;
+in the world, rows a keyed list holds compare as before, so the package check holds.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// A row.
+record R {
+  /// Its id.
+  id: String
+  /// Its value.
+  v: Int
+}
+
+/// One row.
+let r: R = { id: "x", v: 1 }
+
+/// An equal row.
+let s: R = { id: "x", v: 1 }
+
+/// A third row.
+let u: R = { id: "u", v: 0 }
+
+/// An equal row.
+let w: R = { id: "u", v: 0 }
+
+/// u in a plain list.
+let pu: [R] = [u]
+
+/// w in a plain list.
+let pw: [R] = [w]
+
+/// A row only package c reads.
+let p: R = { id: "p", v: 2 }
+
+/// An equal row.
+let q: R = { id: "p", v: 2 }
+-- c/c.canon --
+/// C.
+package c
+
+import b
+
+/// Keyed by id, holding p.
+let k5: [b.R] keyed by id = [b.p]
+
+/// Keyed by id, holding q.
+let k6: [b.R] keyed by id = [b.q]
+-- a/a.canon --
+/// A.
+package a
+
+import b
+import c
+
+/// Keyed by id, holding r.
+let k1: [b.R] keyed by id = [b.r]
+
+/// Keyed by id, holding s.
+let k2: [b.R] keyed by id = [b.s]
+
+/// b.pu converted to a keyed list.
+let k3: [b.R] keyed by id = b.pu
+
+/// b.pw converted to a keyed list.
+let k4: [b.R] keyed by id = b.pw
+
+/// Compared after the keyed lists in forced-set order.
+let late: Bool = b.r == b.s and b.u == b.w
+
+check sameRows: late else "b's rows compare unequal"
+
+test "a world leaves the test's values" {
+  expect b.r == b.s
+  expect b.u == b.w
+  expect package passes
+  expect b.r == b.s
+  expect b.u == b.w
+}
+
+test "forcing changes no equality" {
+  expect b.p == b.q
+  expect c.k5.len() + c.k6.len() == 2
+  expect b.p == b.q
+}
+-- tests.txt --
+a "a world leaves the test's values": passed true
+a "forcing changes no equality": passed true
+
+0 errors, 0 warnings in 3 packages (…)

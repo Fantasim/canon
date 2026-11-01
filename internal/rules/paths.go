@@ -16,6 +16,11 @@ type retags interface {
 	RetaggedSince(mark int) []*value.Record
 }
 
+// instancer is what an Evaluator copying records also tells: the instance a record is (EVALUATION.md §8.1).
+type instancer interface {
+	Instance(rec *value.Record) *value.Record
+}
+
 // teller is what an Evaluator told of each false one-line check also takes: the check, its
 // instance (nil at package level) and the path its finding carries (VIEWMODEL.md J15).
 type teller interface {

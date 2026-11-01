@@ -110,9 +110,25 @@ func (w *walker) instance(r *value.Record, t types.Type, at *Path, sc scope) val
 	w.appliedArgs(r, t, at, sc)
 	if m, ok := w.stage.Verified(r); ok {
 		w.voidRec()
-		return w.replay(m.(*memo), at, sc) // the seam keeps verify's memo opaque; only remembered puts one there
+		return w.asCopy(w.replay(m.(*memo), at, sc), r) // the seam keeps verify's memo opaque; only remembered puts one there
 	}
 	return w.remembered(r, t, at, sc)
+}
+
+// asCopy is nv, the instance's verified copy, as r: r when unconverted, else nv with r's identity (EVALUATION.md §4.2).
+func (w *walker) asCopy(nv value.Value, r *value.Record) value.Value {
+	rec, ok := nv.(*value.Record)
+	switch {
+	case !ok || rec == r || rec.Ident == r.Ident:
+		return nv
+	case slices.Equal(rec.Fields, r.Fields):
+		return r
+	}
+	cp := *rec
+	cp.Ident = r.Ident
+	out := w.moved(r, &cp)
+	w.stage.Shares(&cp, rec)
+	return out
 }
 
 // fields walks each field in the record's env; a field converted makes a copy.

@@ -19,11 +19,11 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	if i < 0 {
 		return r.addEntry(cur, t, segs, m, key)
 	}
-	nv := r.next(elems[i], elementType(t), segs, m, site{})
+	nv, fresh := r.freshly(func() value.Value { return r.next(elems[i], elementType(t), segs, m, site{}) })
 	if nv == nil {
 		return nil
 	}
-	return r.copied(cur, r.ev.replaced(cur, i, nil, r.ev.withIdent(nv, elems[i])))
+	return r.copied(cur, r.ev.replaced(cur, i, nil, r.ev.withIdent(nv, elems[i], fresh)))
 }
 
 // slotOf is the element a segment names: its index, -1 for a key the collection lacks.
@@ -93,13 +93,14 @@ func (r *run) addEntry(cur value.Value, t types.Type, segs []*syntax.AmendSegmen
 	if tt.Stable {
 		return r.forbid(m, m.root.Name(), "")
 	}
-	rec, ok := r.store(m.rhs, tt.Elem, site{}, m.pathAfter(len(m.a.Path))).(*value.Record)
+	v, fresh := r.freshly(func() value.Value { return r.store(m.rhs, tt.Elem, site{}, m.pathAfter(len(m.a.Path))) })
+	rec, ok := v.(*value.Record)
 	if !ok {
 		r.bug(segs[0])
 		return nil
 	}
 	k, _ := std.KeyOf(key)
-	added := r.ev.withIdentity(rec, &value.Identity{Coll: tableColl(tbl, r.ev.letColl(m.root)), Key: k})
+	added := r.ev.withIdentity(rec, &value.Identity{Coll: tableColl(tbl, r.ev.letColl(m.root)), Key: k}, fresh)
 	entries := append(append([]*value.Record(nil), tbl.Entries...), added)
 	return r.copied(tbl, &value.Table{T: tbl.T, Entries: entries, P: tbl.P})
 }

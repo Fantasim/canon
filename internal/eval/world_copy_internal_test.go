@@ -22,7 +22,7 @@ func TestWorldCopyCarriesFacts(t *testing.T) {
 	from.written[lit], from.history[lit], from.rebuilt[list], from.origin[owner] = true, old, prev, orig
 	from.bound[owner] = map[*types.Param]value.Value{param: lit}
 	from.invalid[lit], from.verified[owner] = true, true
-	cps, ok := copyValues(from, to, []value.Value{owner})
+	cps, _, ok := copyValues(from, to, []value.Value{owner})
 	if !ok {
 		t.Fatal("no copy")
 	}

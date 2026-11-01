@@ -104,15 +104,14 @@ func (r *run) convertList(x *value.List, c *check.Conversion, e syntax.Expr, at 
 			return nil
 		}
 	}
-	if lt != nil && lt.KeyedBy != nil {
-		return r.ev.carry(x, r.keyedList(elems, c.To, nil, x.P, at))
+	if lt != nil && lt.KeyedBy != nil { // its elements are another value's: none is fresh
+		elems = r.keyedElems(elems, nil, lt, nil, at)
 	}
 	return r.ev.carry(x, &value.List{T: c.To, Elems: elems, P: x.P})
 }
 
-// keyedList gives records the identities of a keyed list, E3102 on a repeated key (TYPES.md §9.1).
-func (r *run) keyedList(elems []value.Value, t types.Type, coll *types.Collection, p *value.Prov, at *vpath) value.Value {
-	lt, _ := t.Base().(*types.ListType)
+// keyedElems gives records lt's identities, in place where fresh says, E3102 on a repeated key (TYPES.md §9.1).
+func (r *run) keyedElems(elems []value.Value, fresh []bool, lt *types.ListType, coll *types.Collection, at *vpath) []value.Value {
 	if coll == nil {
 		coll = &types.Collection{Kind: types.CollLet, Elem: lt.Elem, KeyedBy: lt.KeyedBy}
 	}
@@ -125,10 +124,10 @@ func (r *run) keyedList(elems []value.Value, t types.Type, coll *types.Collectio
 			continue
 		}
 		if k, keyed := r.repeatedKey(first, rec, lt, at); keyed {
-			out[i] = r.ev.withIdentity(rec, &value.Identity{Coll: coll, Key: k})
+			out[i] = r.ev.withIdentity(rec, &value.Identity{Coll: coll, Key: k}, i < len(fresh) && fresh[i])
 		}
 	}
-	return &value.List{T: t, Elems: out, P: p}
+	return out
 }
 
 // repeatedKey is the key of rec, an element of keyed list type lt at at, E3102 when first holds it already; false: rec has none.

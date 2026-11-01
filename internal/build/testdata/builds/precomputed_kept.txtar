@@ -1,0 +1,59 @@
+DECISIONS 408, TYPES.md §11.5, EVALUATION.md §2.3, §5: a kept-map literal a precomputed export fn builds and
+never stores is judged against T(key) as in a package fn body, once per literal, in the frame of the
+precomputation; a literal that fits is not reported.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { num, sub }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+}
+
+/// The nodes.
+let nodes: table Node = { d { k: sub }, n { k: num } }
+
+/// What a node holds.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => String
+}
+
+/// A holder.
+record H {
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+/// The holders.
+let hs: [H] = [{ by: { d: "x", n: 1 } }]
+
+/// A lookup comparing with a literal whose d holds an Int.
+export fn bad(k: K) -> Bool {
+  return hs[0].by != { d: 3 }
+}
+
+/// A lookup comparing with a literal that fits.
+export fn good(k: K) -> Bool {
+  return hs[0].by != { d: "y" }
+}
+
+emit json { out: "@out/" }
+-- build.txt --
+error[E3802]  a/a.canon:33:27
+  [d]: value does not match P(x) = String
+  expected by a/a.canon:25 (P(x))
+  in bad(num) (a/a.canon:32)
+
+1 error, 0 warnings in 1 package (…)

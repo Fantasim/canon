@@ -49,11 +49,14 @@ type Runner struct {
 	files   map[*syntax.CheckDecl]*syntax.File
 	broken  map[types.Type]bool
 	seen    map[*value.Record]bool
+	idents  map[identKey]bool
+	observe *observing
 	asking  asking
 	paths   map[value.Value]*verify.Path
 	pending []rootAt
 	retags  retags
-	teller  teller // nil: the evaluator is told nothing of false checks
+	inst    func(*value.Record) *value.Record // a record's instance (instancer)
+	teller  teller                            // nil: the evaluator is told nothing of false checks
 	memo    *memoUse
 
 	declared map[eval.Root]types.Type // each top-level value's declared type
@@ -67,6 +70,7 @@ type Index struct {
 	shared map[*types.VariantType][]*syntax.CheckDecl
 
 	declared map[eval.Root]types.Type
+	observe  *observing
 }
 
 // NewIndex indexes a checked program for its check runners: each check's file, the broken types, each variant's variant-level checks.
@@ -84,12 +88,18 @@ func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag) *Runner {
 	m, _ := ev.(marks)
 	log, _ := ev.(retags)
 	tell, _ := ev.(teller)
+	inst := func(rec *value.Record) *value.Record { return rec }
+	if in, ok := ev.(instancer); ok {
+		inst = in.Instance
+	}
 	return &Runner{
 		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken, shared: ix.shared, declared: ix.declared,
 		seen:   map[*value.Record]bool{},
+		idents: map[identKey]bool{}, observe: ix.observe,
 		asking: asking{marks: m, below: map[value.Value]bool{}},
 		paths:  map[value.Value]*verify.Path{},
 		retags: log,
+		inst:   inst,
 		teller: tell,
 	}
 }

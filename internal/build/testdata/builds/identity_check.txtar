@@ -1,0 +1,111 @@
+EVALUATION.md §4.1, §4.2, §10.5 item 6, TYPES.md §6.3, §7.5: a record a let holds keeps no identity when a
+keyed list, a converted list, a table's new entry or a var's slot takes it, so two equal rows compare equal
+whatever was forced before; each package check holds and canon check reports nothing.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- layers --
+extra
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+  /// Its value.
+  v: Int
+}
+
+/// A row.
+let lr: Row = { code: "y", v: 2 }
+
+/// An equal row.
+let ls: Row = { code: "y", v: 2 }
+
+/// Keyed by code, holding lr.
+let j1: [Row] keyed by code = [lr]
+
+/// Keyed by code, holding ls.
+let j2: [Row] keyed by code = [ls]
+
+/// Compared after j1 and j2.
+let sameLit: Bool = lr == ls
+
+/// Another row.
+let cr: Row = { code: "c", v: 3 }
+
+/// An equal row.
+let cs: Row = { code: "c", v: 3 }
+
+/// Plain lists of them.
+let pr: [Row] = [cr]
+
+/// Plain lists of them.
+let ps: [Row] = [cs]
+
+/// Converted to keyed lists.
+let c1: [Row] keyed by code = pr
+
+/// Converted to keyed lists.
+let c2: [Row] keyed by code = ps
+
+/// Compared after c1 and c2.
+let sameConv: Bool = cr == cs
+
+/// A row a layer adds.
+let ar: Row = { code: "a", v: 4 }
+
+/// An equal row.
+let as2: Row = { code: "a", v: 4 }
+
+/// Tables a layer adds them to.
+let t1: table Row = {}
+
+/// Tables a layer adds them to.
+let t2: table Row = {}
+
+/// Compared after t1 and t2.
+let sameAdd: Bool = ar == as2
+
+/// A row a var slot takes.
+let vr: Row = { code: "v", v: 5 }
+
+/// An equal row.
+let vs: Row = { code: "v", v: 5 }
+
+/// A keyed list whose entry v takes x.
+fn slot(x: Row) -> Int {
+  var xs: [Row] keyed by code = [{ code: "v", v: 0 }]
+  xs["v"] = x
+  return xs.len()
+}
+
+/// The slots taken.
+let taken: Int = slot(vr) + slot(vs)
+
+/// Compared after both slots.
+let sameVar: Bool = vr == vs
+
+check sameLiteral: sameLit else "a keyed list literal changed lr or ls"
+
+check sameConversion: sameConv else "a conversion changed cr or cs"
+
+check sameAdded: sameAdd else "a table's new entry changed ar or as2"
+
+check sameSlot: sameVar else "a var slot changed vr or vs"
+-- a/extra.layer.canon --
+package a
+layer extra
+
+amend t1 {
+  e: ar
+}
+
+amend t2 {
+  e: as2
+}
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)

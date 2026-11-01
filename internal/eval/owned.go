@@ -71,10 +71,10 @@ func (e *Evaluator) updated(v value.Value, i int, k, nv value.Value) value.Value
 	case *value.Map:
 		x.Set(i, k, nv)
 	case *value.List:
-		x.Elems[i] = e.withIdent(nv, x.Elems[i])
+		x.Elems[i] = e.withIdent(nv, x.Elems[i], false)
 		delete(e.keyed, v)
 	case *value.Table:
-		if rec, ok := e.withIdent(nv, x.Entries[i]).(*value.Record); ok {
+		if rec, ok := e.withIdent(nv, x.Entries[i], false).(*value.Record); ok {
 			x.Entries[i] = rec
 		}
 		delete(e.keyed, v)

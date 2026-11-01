@@ -57,6 +57,7 @@ func (r *run) recordLit(lit *syntax.BraceLit, loc syntax.Node, t types.Type, ide
 		return nil
 	}
 	r.ev.bindRefs(rec)
+	r.built = rec
 	return rec
 }
 

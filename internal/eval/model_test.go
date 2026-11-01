@@ -195,7 +195,7 @@ let b: R = copy(a)
 	}
 }
 
-// DECISIONS 79, 195: a record a keyed list takes is the same instance, identity added.
+// EVALUATION.md §4.1, §10.5 item 6: a let's record a keyed list takes is copied, the let keeping no identity.
 func TestKeyedListKeepsInstance(t *testing.T) {
 	b := buildFiles(t, eval.Options{}, "a/a.canon", pkgA+`/// R.
 record R {
@@ -207,12 +207,23 @@ record R {
 let a: R = { k: "x" }
 
 /// Xs.
-let xs: [R] keyed by k = [a]
+let xs: [R] keyed by k = [a, { k: "y" }]
 `)
-	a := b.values[eval.Root{Pkg: "a", Name: "a"}]
+	a, _ := b.values[eval.Root{Pkg: "a", Name: "a"}].(*value.Record)
 	xs, ok := b.values[eval.Root{Pkg: "a", Name: "xs"}].(*value.List)
-	if !ok || len(xs.Elems) != 1 || xs.Elems[0] != a {
-		t.Errorf("xs = %v, a = %p", xs, a)
+	if !ok || a == nil || len(xs.Elems) != 2 {
+		t.Fatalf("xs = %v, a = %v", xs, a)
+	}
+	first, _ := xs.Elems[0].(*value.Record)
+	second, _ := xs.Elems[1].(*value.Record)
+	if first == nil {
+		t.Fatalf("xs[0] = %v", xs.Elems[0])
+	}
+	if first == a || a.Ident != nil || first.Ident == nil || !value.Equal(first, a) || b.ev.Instance(first) != a {
+		t.Errorf("xs[0] = %p with identity %v; a = %p with identity %v", first, first.Ident, a, a.Ident)
+	}
+	if second == nil || second.Ident == nil {
+		t.Errorf("xs[1] = %v: no identity", second)
 	}
 }
 

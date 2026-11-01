@@ -249,11 +249,11 @@ func (e *Evaluator) replaced(v value.Value, i int, k, nv value.Value) value.Valu
 		return out
 	case *value.List:
 		elems := append([]value.Value(nil), x.Elems...)
-		elems[i] = e.withIdent(nv, elems[i])
+		elems[i] = e.withIdent(nv, elems[i], false)
 		return &value.List{T: x.T, Elems: elems, P: x.P}
 	case *value.Table:
 		entries := append([]*value.Record(nil), x.Entries...)
-		if rec, ok := e.withIdent(nv, x.Entries[i]).(*value.Record); ok {
+		if rec, ok := e.withIdent(nv, x.Entries[i], false).(*value.Record); ok {
 			entries[i] = rec
 		}
 		return &value.Table{T: x.T, Entries: entries, P: x.P}
@@ -261,12 +261,13 @@ func (e *Evaluator) replaced(v value.Value, i int, k, nv value.Value) value.Valu
 	return v
 }
 
-// withIdent is nv in the place of old: a record replacing an entry takes its identity.
-func (e *Evaluator) withIdent(nv, old value.Value) value.Value {
+// withIdent is nv in the place of old: a record replacing an entry takes its identity, in place
+// only when fresh (withIdentity).
+func (e *Evaluator) withIdent(nv, old value.Value, fresh bool) value.Value {
 	rec, ok := nv.(*value.Record)
 	prev, wasEntry := old.(*value.Record)
 	if !ok || !wasEntry || prev.Ident == nil || rec.Ident == prev.Ident {
 		return nv
 	}
-	return e.withIdentity(rec, prev.Ident)
+	return e.withIdentity(rec, prev.Ident, fresh)
 }

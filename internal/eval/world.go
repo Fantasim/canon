@@ -40,8 +40,9 @@ func (w *World) Order() []Root {
 }
 
 // world is the world of package pkg, each let of subs holding a copy of its value, reporting
-// into capture; nil when e's host cannot serve one or a value cannot be copied.
-func (e *Evaluator) world(pkg string, subs map[check.Object]value.Value, capture *diag.Bag) *World {
+// into capture, the literals of lits those copies hold its own; nil when e's host cannot serve one
+// or a value cannot be copied.
+func (e *Evaluator) world(pkg string, subs map[check.Object]value.Value, capture *diag.Bag, lits *litScope) *World {
 	cp := e.pkgs[pkg]
 	h := newWorldHost(e.host)
 	if cp == nil || h == nil {
@@ -49,7 +50,7 @@ func (e *Evaluator) world(pkg string, subs map[check.Object]value.Value, capture
 	}
 	w := &World{pkg: pkg}
 	ev := e.worldEvaluator(w, h, capture)
-	copies, ok := copyInto(e, ev, subs)
+	copies, nodes, ok := copyInto(e, ev, subs)
 	if !ok {
 		return nil
 	}
@@ -61,6 +62,7 @@ func (e *Evaluator) world(pkg string, subs map[check.Object]value.Value, capture
 			w.order = append(w.order, st.root)
 		}
 	}
+	w.adoptLiterals(lits, nodes)
 	return w
 }
 
@@ -164,19 +166,22 @@ type builtPackage struct {
 func (r *run) packageSubject(x *syntax.ExpectStmt) builtPackage {
 	capture := diag.NewBag(r.ev.files(), r.fr.pkg)
 	capture.Truncate(math.MaxInt)
-	subs, b := r.substitutions(x, capture)
+	lits := r.testScope()
+	subs, b := r.substitutions(x, capture, lits)
 	if !b.aborted {
-		r.buildWorld(subs, capture, &b)
+		r.buildWorld(subs, capture, &b, lits)
 	}
 	b.ex.Captured = capture.Findings()
 	return b
 }
 
 // substitutions evaluates the subject's values left to right, as a value subject is, each as
-// its let's initializer is: at its type, path and collection; the first hard error stops them.
-func (r *run) substitutions(x *syntax.ExpectStmt, capture *diag.Bag) (map[check.Object]value.Value, builtPackage) {
-	saved := r.sink
-	r.sink, r.poisonAt = capture, ""
+// its let's initializer is: at its type, path and collection, its kept literals into lits; the
+// first hard error stops them.
+func (r *run) substitutions(x *syntax.ExpectStmt, capture *diag.Bag, lits *litScope) (map[check.Object]value.Value, builtPackage) {
+	saved, outer := r.sink, r.lits
+	r.sink, r.poisonAt, r.lits = capture, "", lits
+	defer func() { r.lits = outer }()
 	subs := map[check.Object]value.Value{}
 	internal := false
 	for _, it := range x.Package.Items {
@@ -204,27 +209,32 @@ func (r *run) substitutions(x *syntax.ExpectStmt, capture *diag.Bag) (map[check.
 // substitution evaluates the value of let obj as its initializer is evaluated (root.go letValue).
 func (r *run) substitution(obj check.Object, e syntax.Expr) value.Value {
 	at := rootPath(obj.Name())
-	coll, dep := r.coll, r.dep
+	coll, dep, sub := r.coll, r.dep, r.sub
 	if c := r.ev.letColl(obj); c != nil {
 		r.coll = &collHint{c: c, at: at}
 	}
-	r.dep = &depCtx{field: obj.Type(), at: e}
+	r.dep, r.sub = &depCtx{field: obj.Type(), at: e}, obj
 	v := r.evalAt(e, at)
-	r.coll, r.dep = coll, dep
+	r.coll, r.dep, r.sub = coll, dep, sub
 	return v
 }
 
 // buildWorld builds the world of subs through the test's PackageBuilder into capture; a Builder
-// that is none, or a world e cannot make, is an internal error that fails the expect.
-func (r *run) buildWorld(subs map[check.Object]value.Value, capture *diag.Bag, b *builtPackage) {
+// that is none, or a world e cannot make, is an internal error that fails the expect. The kept
+// literals of lits no copy holds are test expressions, judged first: a hard error builds nothing.
+func (r *run) buildWorld(subs map[check.Object]value.Value, capture *diag.Bag, b *builtPackage, lits *litScope) {
 	pb, ok := r.test.builder.(PackageBuilder)
 	var w *World
 	if ok {
-		w = r.ev.world(r.charge.pkg, subs, capture)
+		w = r.ev.world(r.charge.pkg, subs, capture, lits)
 	}
 	if w == nil {
 		b.internal = true
 		r.ev.bugs = append(r.ev.bugs, fmt.Errorf(fmtWrap, errNoWorld, r.charge.name))
+		return
+	}
+	if !r.judgeInto(lits, capture) { // EVALUATION.md §10.5 item 1, TYPES.md §11.5
+		b.aborted = true
 		return
 	}
 	pb.BuildPackage(r.ctx, w, capture)

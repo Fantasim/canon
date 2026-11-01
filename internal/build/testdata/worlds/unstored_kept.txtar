@@ -1,0 +1,118 @@
+DECISIONS 408, TYPES.md §11.5, EVALUATION.md §5, §10.2, §10.5 items 1 and 4, §14: a kept-map literal a test
+builds and never stores is judged against T(key) as in a package fn body: in an expect, in a fn an expect
+calls, in an `expect c` and in a substitution value, each value's E3802 is captured. A literal a substituted
+value stores is judged in the world, at its path; one fn literal both stored and unstored gives one finding,
+the rootless one (§14), as in a package (log-2026-10-31 "DEP residue walk, W3").
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { num, sub }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+  /// Its max.
+  max: Int = 5
+}
+
+/// The nodes.
+let nodes: table Node = { a { k: sub }, d { k: sub, max: 7 }, n { k: num } }
+
+/// A sub node's limit.
+record Sub(e: Node) {
+  /// The limit.
+  lim: Int = e.max
+}
+
+/// What a node holds.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// A holder.
+record H {
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+/// The holders.
+let hs: [H] = [{ by: { a: {}, n: 1 } }]
+
+/// A comparison a substitution replaces.
+let probe: Bool = false
+
+/// Maps, stored.
+let lst: [{x in nodes: P(x)}] = []
+
+/// Whether m differs from a literal whose d holds an Int.
+fn differs(m: {x in nodes: P(x)}) -> Bool {
+  return m != { d: 3 }
+}
+
+/// A literal whose d holds an Int, built anew at each call.
+fn mk() -> {x in nodes: P(x)} {
+  return { d: 4 }
+}
+
+/// Checked against a literal in its check.
+record C {
+  /// A count.
+  n: Int
+
+  check okBy: hs[0].by != { d: 3 } else "hs holds d: 3"
+}
+
+test "a check an expect runs" {
+  let c: C = { n: 1 }
+  expect c fails E3802
+}
+
+test "an expect" {
+  expect hs[0].by != { d: 3 } fails E3802
+  expect hs[0].by != { d: {} } passes
+}
+
+test "a fn an expect calls" {
+  expect differs(hs[0].by) fails E3802
+}
+
+test "an expect c" {
+  expect hs[0].by != { n: {} }
+}
+
+test "a substitution" {
+  expect package { probe: hs[0].by != { d: 3 } } fails E3802
+  expect package { probe: hs[0].by == { d: {} } } passes
+}
+
+test "stored and unstored" {
+  let pair: [{x in nodes: P(x)}] = [hs[0].by, { d: 3 }]
+  expect pair passes
+  expect package { lst: [mk()], probe: mk().keys().len() == 1 } passes
+  expect package { lst: [{ d: 3 }] } passes
+}
+-- tests.txt --
+a "a check an expect runs": passed true
+a "an expect": passed true
+a "a fn an expect calls": passed true
+a "an expect c": passed false
+  line 78: expect hs[0].by != { n: {} }
+    E3802 error path "[n]" check "": value does not match P(x) = Int
+a "a substitution": passed true
+a "stored and unstored": passed false
+  line 88: expect pair passes
+    E3802 error path "[1][d]" check "": value does not match P(x) = a.Sub(e)
+  line 89: expect package { lst: [mk()], probe: mk().keys().len() == 1 } passes
+    E3802 error path "[d]" check "": value does not match P(x) = a.Sub(e)
+  line 90: expect package { lst: [{ d: 3 }] } passes
+    E3802 error path "lst[0][d]" check "": value does not match P(x) = a.Sub(e)
+
+0 errors, 0 warnings in 1 package (…)

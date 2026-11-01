@@ -1,0 +1,43 @@
+TYPES.md §6.3, §7.5, EVALUATION.md §4.1, log-2026-11-01 "EVAL-OWED review FAIL": identity_observed.txtar
+with j1 declared before lr: the order of declarations changes no verdict, both checks fail at j1[y] alone.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+  /// Its value.
+  v: Int
+
+  /// Whether self is j2's entry.
+  fn isJ2(self) -> Bool { return self == j2["y"] }
+
+  check inJ2: self == j2["y"] else "self is not j2's entry"
+
+  check viaFn: isJ2() else "isJ2 is false"
+}
+
+/// Keyed by code, holding lr.
+let j1: [Row] keyed by code = [lr]
+
+/// A row.
+let lr: Row = { code: "y", v: 2 }
+
+/// Keyed by code, holding lr.
+let j2: [Row] keyed by code = [lr]
+-- build.txt --
+error[E5001]  a/a.canon:23:15
+  j1[y]: isJ2 is false
+  expected by a/a.canon:16 (check viaFn)
+
+error[E5001]  a/a.canon:23:15
+  j1[y]: self is not j2's entry
+  expected by a/a.canon:14 (check inJ2)
+
+2 errors, 0 warnings in 1 package (…)

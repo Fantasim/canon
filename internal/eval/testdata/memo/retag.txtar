@@ -1,7 +1,7 @@
-EVALUATION.md §4.2, DECISIONS 79, 195: an entry puts records it read into a keyed list, which gives
-them their identity in place; a replay would not, so the entry is not kept (reviewer's probe).
+EVALUATION.md §4.1, §4.2, DECISIONS 79, 195: an entry puts records it read into a keyed list, which
+copies them with their identity: base keeps none, so a replay is the evaluation and the entry is kept.
 -- memo --
-stored 0 unkept 1
+stored 1 unkept 0
 -- a/a.canon --
 /// A.
 package a

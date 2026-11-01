@@ -43,6 +43,10 @@ type run struct {
 	outer      *diag.Frame      // a precomputation's frame its findings carry (EVALUATION.md §2.3)
 	notesCuts  bool             // a precomputation: its cut stacks keep their outermost frame (outermost.go)
 	peek       syntax.Expr      // the receiver being read as a peek, until that read (owned.go)
+	built      *value.Record    // the record the last record literal built, while an element is evaluated (lists.go freshly)
+	lits       *litScope        // the kept literals of a run evaluating no top-level value, nil for none (litscope.go)
+	sub        check.Object     // the let a substitution value is evaluated for (world.go)
+	stage      *StageB          // the verification a stage-B or where re-run serves (stageb.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).

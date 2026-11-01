@@ -19,31 +19,31 @@ type worldCopier struct {
 	stack    []value.Value
 }
 
-// copyInto copies each value of subs, one copier for all so a node two values share stays one;
-// false when one holds a node no let can hold.
-func copyInto(from, to *Evaluator, subs map[check.Object]value.Value) (map[check.Object]value.Value, bool) {
+// copyInto copies each value of subs, one copier for all so a node two values share stays one,
+// and is every node's copy; false when one holds a node no let can hold.
+func copyInto(from, to *Evaluator, subs map[check.Object]value.Value) (map[check.Object]value.Value, map[value.Value]value.Value, bool) {
 	objs := slices.SortedFunc(maps.Keys(subs), func(a, b check.Object) int { return cmp.Compare(a.Name(), b.Name()) })
 	vs := make([]value.Value, len(objs))
 	for i, obj := range objs {
 		vs[i] = subs[obj]
 	}
-	cps, ok := copyValues(from, to, vs)
+	cps, nodes, ok := copyValues(from, to, vs)
 	if !ok {
-		return nil, false
+		return nil, nil, false
 	}
 	out := make(map[check.Object]value.Value, len(subs))
 	for i, obj := range objs {
 		out[obj] = cps[i]
 	}
-	return out, true
+	return out, nodes, true
 }
 
-// copyValues is the copy of each of vs, made by one copier.
-func copyValues(from, to *Evaluator, vs []value.Value) ([]value.Value, bool) {
+// copyValues is the copy of each of vs, made by one copier, and every node's copy.
+func copyValues(from, to *Evaluator, vs []value.Value) ([]value.Value, map[value.Value]value.Value, bool) {
 	c := &worldCopier{from: from, to: to, copies: map[value.Value]value.Value{}}
 	for _, v := range vs {
 		if !c.walk(v) {
-			return nil, false
+			return nil, nil, false
 		}
 	}
 	for _, n := range c.order {
@@ -54,7 +54,7 @@ func copyValues(from, to *Evaluator, vs []value.Value) ([]value.Value, bool) {
 	for i, v := range vs {
 		out[i] = c.copies[v]
 	}
-	return out, true
+	return out, c.copies, true
 }
 
 // walk makes a copy of every node v reaches: its parts, its owners and the values its facts

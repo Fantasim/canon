@@ -214,13 +214,12 @@ func (e *Evaluator) adoptEntry(en *value.Record, c *types.Collection, owner *val
 	if en.Ident == nil || en.Ident.Coll == c && en.Ident.Owner == owner {
 		return en
 	}
-	return e.withIdentity(en, &value.Identity{Coll: c, Owner: owner, Key: en.Ident.Key, Retired: en.Ident.Retired})
+	return e.withIdentity(en, &value.Identity{Coll: c, Owner: owner, Key: en.Ident.Key, Retired: en.Ident.Retired}, false)
 }
 
-// withIdentity is rec as an element of a collection: the instance itself when it has no
-// identity yet, so it stays one instance (DECISIONS 79, 195), else a copy carrying its marks.
-func (e *Evaluator) withIdentity(rec *value.Record, id *value.Identity) *value.Record {
-	if rec.Ident == nil {
+// withIdentity is rec as an element: a fresh rec takes id in place, any other is a marked copy (EVALUATION.md §4.1).
+func (e *Evaluator) withIdentity(rec *value.Record, id *value.Identity, fresh bool) *value.Record {
+	if fresh && rec.Ident == nil {
 		rec.Ident = id
 		e.gens.retagged++
 		e.retags.note(rec)
@@ -229,7 +228,7 @@ func (e *Evaluator) withIdentity(rec *value.Record, id *value.Identity) *value.R
 	cp := *rec
 	cp.Ident = id
 	e.carry(rec, &cp)
-	e.copiedFrom(rec, &cp)
+	e.origin[&cp] = rec // the copy shares rec's instance, its checks and verification once (EVALUATION.md §4.2)
 	return &cp
 }
 
