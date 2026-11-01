@@ -160,7 +160,7 @@ function decF32(raw: unknown, path: string, refusal = "number out of range"): nu
   const d = decFloat(raw, path, refusal);
   const f = Math.fround(d);
   const v = f === d || typeof raw === "number" ? f : decHalf(raw, d, f);
-  if (!Number.isFinite(v)) decFail(path, "number overflows Float32");
+  if (!Number.isFinite(v)) decFail(path, "expected a number that fits Float32");
   return v;
 }
 
@@ -258,6 +258,7 @@ function decBits<T extends string>(raw: unknown, path: string, members: Readonly
   if (typeof raw !== "bigint" && (typeof raw !== "number" || !Number.isSafeInteger(raw))) decFail(path, "expected a non-negative integer");
   let rest = BigInt(raw);
   if (rest < 0n) decFail(path, "expected a non-negative integer");
+  if (rest > 9223372036854775807n) decFail(path, "integer out of range");
   const out: T[] = [];
   for (const m of [...members].sort((a, b) => codes[a] - codes[b])) {
     const bit = BigInt(codes[m]);
@@ -266,7 +267,7 @@ function decBits<T extends string>(raw: unknown, path: string, members: Readonly
       rest &= ~bit;
     }
   }
-  if (rest !== 0n) decFail(path, "unknown bits");
+  if (rest !== 0n) decFail(path, "unknown bits 0x" + rest.toString(16));
   return out;
 }
 

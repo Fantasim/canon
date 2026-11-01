@@ -39,12 +39,26 @@ func (g *gen) decKind(t ir.TypeRef, raw, path string, c decCtx) string {
 	case types.LitUnion:
 		return g.decUnion(t, g.call(decStringName, raw, path), path)
 	case types.Duration:
-		return g.call(decDurationName, raw, path, intText(c.unit.Millis()))
+		return g.decDuration(raw, path, c.unit)
 	case types.Enum:
 		return g.decEnum(t, raw, path)
 	default:
 		return g.decComposite(t, raw, path, c)
 	}
+}
+
+// decDuration is a Duration read in unit: any number that is a whole number of milliseconds in a types-mode decoder, an integer count of the unit in a data file (WIRE.md §5.1), refused as the data loaders refuse it, with the width of an integer (CODEGEN.md §5.13).
+func (g *gen) decDuration(raw, path string, unit types.Unit) string {
+	ms := unit.Millis()
+	if g.isTypes() {
+		return g.call(decDurationName, raw, path, intText(ms))
+	}
+	limit := types.DurationLimit / ms
+	count := g.call(decIntName, raw, path, intText(-limit), intText(limit))
+	if ms == 1 {
+		return count
+	}
+	return fmt.Sprintf(durationScaleFormat, count, intText(ms))
 }
 
 // decFloat is a Float read; a data file refuses a number past the range as the data loaders do, `expected a number` (CODEGEN.md §5.13).

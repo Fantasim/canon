@@ -1,0 +1,21 @@
+// probe checks DECISIONS 401 and CODEGEN.md §5.9 (Addresses) on generated TypeScript and prints one
+// `<check> ok` or `<check> FAIL` line each (TestStableAddressesTS): for one row, find(k) === at(i)
+// === all[i], in a baked table (bk), a baked keyed list and a decoded data file (da). It is run
+// with the data file the build wrote as its argument.
+import { readFileSync } from "node:fs";
+import * as bk from "./bk.js";
+import * as da from "./da.js";
+
+function check(name, ok) {
+  console.log(name + (ok ? " ok" : " FAIL"));
+}
+
+check("baked-find-is-at-is-all", bk.statuses.find("open") === bk.statuses.at(0) && bk.statuses.at(0) === bk.statuses.all[0]);
+check("baked-find-repeats", bk.statuses.find("taken") === bk.statuses.find("taken") && bk.statuses.find("taken") === bk.statuses.at(1));
+check("baked-all-repeats", bk.statuses.all === bk.statuses.all && bk.statuses.all[2] === bk.statuses.at(2));
+check("baked-keyed-find-is-at-is-all", bk.tasks.find("first") === bk.tasks.at(0) && bk.tasks.at(0) === bk.tasks.all[0]);
+
+const items = da.parseItems(readFileSync(process.argv[2], "utf8"));
+check("data-find-is-at-is-all", items.find("a") === items.at(0) && items.at(0) === items.all[0]);
+check("data-find-repeats", items.find("b") === items.find("b") && items.find("b") === items.all[1]);
+check("data-all-repeats", items.all === items.all);

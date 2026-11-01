@@ -532,7 +532,7 @@ function decF32(raw: unknown, path: string, refusal = "number out of range"): nu
   const d = decFloat(raw, path, refusal);
   const f = Math.fround(d);
   const v = f === d || typeof raw === "number" ? f : decHalf(raw, d, f);
-  if (!Number.isFinite(v)) decFail(path, "number overflows Float32");
+  if (!Number.isFinite(v)) decFail(path, "expected a number that fits Float32");
   return v;
 }
 
@@ -540,22 +540,6 @@ function decString(raw: unknown, path: string): string {
   if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
-}
-
-function decDuration(raw: unknown, path: string, unit: number): number {
-  if (raw === null) decFail(path, "null");
-  const d = decDecimal(decText(raw) ?? "");
-  if (d === undefined) return decFail(path, "expected a number");
-  if (d.digits === "") return 0;
-  // digits ends in no 0, and a unit holds at most 2^10 and 5^5: below 10^-64 no product is whole.
-  if (d.exp < -64n) decFail(path, "not a whole number of milliseconds");
-  if (d.exp > 20n) decFail(path, "duration out of range");
-  const num = BigInt(d.digits) * BigInt(unit) * 10n ** (d.exp > 0n ? d.exp : 0n);
-  const den = 10n ** (d.exp < 0n ? -d.exp : 0n);
-  if (num % den !== 0n) decFail(path, "not a whole number of milliseconds");
-  const ms = num / den;
-  if (ms > 9223372036854n) decFail(path, "duration out of range");
-  return Number(d.neg ? -ms : ms);
 }
 
 /** A number within its range refinement (CODEGEN.md §5.15): lo inclusive, hi inclusive when `inclusive`, an open end ±Infinity. */
@@ -617,6 +601,7 @@ function decBits<T extends string>(raw: unknown, path: string, members: Readonly
   if (typeof raw !== "bigint" && (typeof raw !== "number" || !Number.isSafeInteger(raw))) decFail(path, "expected a non-negative integer");
   let rest = BigInt(raw);
   if (rest < 0n) decFail(path, "expected a non-negative integer");
+  if (rest > 9223372036854775807n) decFail(path, "integer out of range");
   const out: T[] = [];
   for (const m of [...members].sort((a, b) => codes[a] - codes[b])) {
     const bit = BigInt(codes[m]);
@@ -625,7 +610,7 @@ function decBits<T extends string>(raw: unknown, path: string, members: Readonly
       rest &= ~bit;
     }
   }
-  if (rest !== 0n) decFail(path, "unknown bits");
+  if (rest !== 0n) decFail(path, "unknown bits 0x" + rest.toString(16));
   return out;
 }
 
@@ -948,7 +933,7 @@ function readSkill($raw: unknown, $path: string): Skill {
   const $r7 = decGet($o, "side", $path + ".side", true);
   const $v7: Side | "both" = $r7 === undefined ? "both" : decEnum(decString($r7, $path + ".side"), $path + ".side", $union1);
   const $r8 = decGet($o, "cast_time");
-  const $v8: number | null = $r8 === undefined || $r8 === null ? null : decDuration($r8, $path + ".cast_time", 1000);
+  const $v8: number | null = $r8 === undefined || $r8 === null ? null : (decInt($r8, $path + ".cast_time", -9223372036, 9223372036) * 1000);
   const $r9 = decGet($o, "weights", $path + ".weights", true);
   const $v9: ReadonlyMap<Element, number> = $r9 === undefined ? new CanonMap<Element, number>([]) : decMap($r9, $path + ".weights", ($k, $p) => decCode(decInt(decIntKey($k, $p), $p, 0, 255), $p, ElementMembers, ElementCodes), ($x, $p) => decFloat($x, $p, "expected a number"));
   const $r10 = decGet($o, "counts", $path + ".counts", true);

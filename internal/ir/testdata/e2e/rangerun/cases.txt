@@ -1,0 +1,184 @@
+# TestRangeRoundTrip's Probe cases (CODEGEN.md §5.15, §5.13): `name ~~ from ~~ to ~~ want [~~ flags]`.
+# The case's text is base.json with `from` replaced by `to` once (an empty from keeps the base).
+# want is `ok`, or `<path after the root>: <message>` as Go and C++ write it.
+# flags: `text` keeps the parsed-value readers (C++ Decode, TS decode) out, where a case holds more than one bad map entry, or an integer written `5.0` or `1e1`, or one past 2^53, whose token or exact value a parsed JavaScript value no longer has;
+# `refused` marks a text every reader accepts and `load` refuses, a Duration written in seconds with a fraction (E8102: no wire form).
+# Otherwise `load` accepts a case exactly when want is `ok`.
+# A sixth field is the want of the data loaders where it differs (WIRE.md §5.1, CODEGEN.md §5.13): a Duration read in a unit is any
+# number that is a whole number of milliseconds in a types-mode decoder, an integer count of the unit in a data file; `-` leaves flags empty.
+#
+# the base and the integer, float, Float32 and Duration positions
+base ~~  ~~  ~~ ok
+int-lo-in ~~ "n":5 ~~ "n":1 ~~ ok
+int-hi-in ~~ "n":5 ~~ "n":120 ~~ ok
+int-lo-out ~~ "n":5 ~~ "n":0 ~~ n: expected a value in 1..=120
+int-hi-out ~~ "n":5 ~~ "n":121 ~~ n: expected a value in 1..=120
+int-negative ~~ "n":5 ~~ "n":-7 ~~ n: expected a value in 1..=120
+int-minus-zero ~~ "n":5 ~~ "n":-0 ~~ n: expected a value in 1..=120
+int-dot-zero ~~ "n":5 ~~ "n":5.0 ~~ n: expected an integer ~~ text
+int-exponent ~~ "n":5 ~~ "n":1e1 ~~ n: expected an integer ~~ text
+width-first ~~ "i8":7 ~~ "i8":200 ~~ i8: expected an integer from -128 to 127
+width-first-low ~~ "i8":7 ~~ "i8":-129 ~~ i8: expected an integer from -128 to 127
+fraction-first ~~ "n":5 ~~ "n":0.5 ~~ n: expected an integer
+u8-top ~~ "u8":7 ~~ "u8":255 ~~ ok
+u8-width ~~ "u8":7 ~~ "u8":256 ~~ u8: expected an integer from 0 to 255
+u8-negative ~~ "u8":7 ~~ "u8":-1 ~~ u8: expected an integer from 0 to 255
+i8-lo-out ~~ "i8":7 ~~ "i8":-1 ~~ i8: expected a value in 0..=300
+i8-top ~~ "i8":7 ~~ "i8":127 ~~ ok
+ex-in ~~ "ex":4 ~~ "ex":-9 ~~ ok
+ex-out ~~ "ex":4 ~~ "ex":5 ~~ ex: expected a value in ..5
+float-lo-in ~~ "f":0.5 ~~ "f":0 ~~ ok
+float-hi-out ~~ "f":0.5 ~~ "f":1 ~~ f: expected a value in 0..1
+float-lo-out ~~ "f":0.5 ~~ "f":-0.25 ~~ f: expected a value in 0..1
+float-exponent ~~ "f":0.5 ~~ "f":5e-1 ~~ ok
+float-minus-zero ~~ "f":0.5 ~~ "f":-0.0 ~~ ok
+f32-overflow ~~ "f32":0.0625 ~~ "f32":1e40 ~~ f32: expected a number that fits Float32
+dur-negative ~~ "d":2000 ~~ "d":-5 ~~ d: expected a value in 1s..=1h
+f32-tenth ~~ "f32":0.0625 ~~ "f32":0.1 ~~ f32: expected a value in ..=0.1
+f32-below ~~ "f32":0.0625 ~~ "f32":0.09999 ~~ ok
+dur-lo-in ~~ "d":2000 ~~ "d":1000 ~~ ok
+dur-lo-out ~~ "d":2000 ~~ "d":999 ~~ d: expected a value in 1s..=1h
+dur-hi-in ~~ "d":2000 ~~ "d":3600000 ~~ ok
+dur-hi-out ~~ "d":2000 ~~ "d":3600001 ~~ d: expected a value in 1s..=1h
+unit-lo-in ~~ "ds":1 ~~ "ds":1 ~~ ok
+unit-hi-in ~~ "ds":1 ~~ "ds":2 ~~ ok
+unit-hi-out ~~ "ds":1 ~~ "ds":3 ~~ ds: expected a value in 1s..=2s
+unit-lo-out ~~ "ds":1 ~~ "ds":0 ~~ ds: expected a value in 1s..=2s
+unit-fraction ~~ "ds":1 ~~ "ds":1.5 ~~ ok ~~ refused ~~ ds: expected an integer from -9223372036 to 9223372036
+unit-fraction-out ~~ "ds":1 ~~ "ds":2.5 ~~ ds: expected a value in 1s..=2s ~~ - ~~ ds: expected an integer from -9223372036 to 9223372036
+#
+# strings, in UTF-8 bytes
+str-two-byte ~~ "s":"ab" ~~ "s":"éé" ~~ ok
+str-two-byte-out ~~ "s":"ab" ~~ "s":"ééé" ~~ s: expected a byte length in 1..=4
+str-four-byte ~~ "s":"ab" ~~ "s":"😀" ~~ ok
+str-four-byte-out ~~ "s":"ab" ~~ "s":"😀a" ~~ s: expected a byte length in 1..=4
+str-escaped-pair ~~ "s":"ab" ~~ "s":"😀" ~~ ok
+str-escaped-pair-out ~~ "s":"ab" ~~ "s":"😀a" ~~ s: expected a byte length in 1..=4
+str-empty ~~ "s":"ab" ~~ "s":"" ~~ s: expected a byte length in 1..=4
+#
+# lists, maps, optionals, the none marker and the literal union
+list-count-in ~~ "tags":[1,2] ~~ "tags":[1,2,3] ~~ ok
+list-count-out ~~ "tags":[1,2] ~~ "tags":[1,2,3,4] ~~ tags: expected an element count in ..=3
+list-elem-out ~~ "tags":[1,2] ~~ "tags":[6] ~~ tags[0]: expected a value in 0..=5
+list-elem-first ~~ "tags":[1,2] ~~ "tags":[1,6,1,1] ~~ tags[1]: expected a value in 0..=5
+list-elem-negative ~~ "tags":[1,2] ~~ "tags":[-1] ~~ tags[0]: expected a value in 0..=5
+map-count-in ~~ "m":{"a":1} ~~ "m":{"a":1,"b":2} ~~ ok
+map-count-out ~~ "m":{"a":1} ~~ "m":{"a":1,"b":2,"c":3} ~~ m: expected an element count in ..=2
+map-key-out ~~ "m":{"a":1} ~~ "m":{"abcd":1} ~~ m.abcd: expected a byte length in 1..=3
+map-value-out ~~ "m":{"a":1} ~~ "m":{"a":10} ~~ m.a: expected a value in 0..=9
+map-int-key-in ~~ "mi":{"50":"x"} ~~ "mi":{"100":"x"} ~~ ok
+map-int-key-out ~~ "mi":{"50":"x"} ~~ "mi":{"101":"x"} ~~ mi.101: expected a value in ..=100
+map-int-key-width ~~ "mi":{"50":"x"} ~~ "mi":{"300":"x"} ~~ mi.300: expected an integer from 0 to 255
+map-int-key-noncanonical ~~ "mi":{"50":"x"} ~~ "mi":{"050":"x"} ~~ mi.050: expected a canonical decimal integer key
+opt-elem-out ~~ "opts":[null,3] ~~ "opts":[9] ~~ opts[0]: expected a value in 0..=5
+opt-elem-none ~~ "opts":[null,3] ~~ "opts":[null,null] ~~ ok
+opt-null ~~ "opt":null ~~ "opt":null ~~ ok
+opt-absent ~~ "opt":null, ~~  ~~ ok
+opt-in ~~ "opt":null ~~ "opt":5 ~~ ok
+opt-out ~~ "opt":null ~~ "opt":9 ~~ opt: expected a value in 0..=5
+opt-negative ~~ "opt":null ~~ "opt":-1 ~~ opt: expected a value in 0..=5
+marker-none ~~ "mk":-1 ~~ "mk":-1 ~~ ok
+marker-absent ~~ "mk":-1, ~~  ~~ ok
+marker-in ~~ "mk":-1 ~~ "mk":5 ~~ ok
+marker-out ~~ "mk":-1 ~~ "mk":6 ~~ mk: expected a value in 0..=5
+marker-null ~~ "mk":-1 ~~ "mk":null ~~ ok
+mapopt-none ~~ "mo":{} ~~ "mo":{"k":null} ~~ ok
+mapopt-out ~~ "mo":{} ~~ "mo":{"k":10} ~~ mo.k: expected a value in 0..=9
+union-literal ~~ "lit":"auto" ~~ "lit":"auto" ~~ ok
+union-in ~~ "lit":"auto" ~~ "lit":"abcdefg" ~~ ok
+union-out ~~ "lit":"auto" ~~ "lit":"abc" ~~ lit: expected a byte length in 6..=8
+#
+# defaults, records, cases, pairs, bits
+default-in ~~ "dfl":3 ~~ "dfl":5 ~~ ok
+default-absent ~~ "dfl":3, ~~  ~~ ok
+default-out ~~ "dfl":3 ~~ "dfl":9 ~~ dfl: expected a value in 1..=5
+default-low ~~ "dfl":3 ~~ "dfl":0 ~~ dfl: expected a value in 1..=5
+record-field ~~ "sub":{"v":1} ~~ "sub":{"v":4} ~~ sub.v: expected a value in 0..=3
+case-field ~~ "r":1 ~~ "r":3 ~~ shape.r: expected a value in 0..=2
+case-dot ~~ "shape":{"kind":"circle","r":1} ~~ "shape":{"kind":"dot"} ~~ ok
+pairs-value ~~ "w1":2 ~~ "w1":9 ~~ w1: expected a value in 0..=3
+pairs-first-value ~~ "n0":1 ~~ "n0":4 ~~ n0: expected a value in 0..=3
+pairs-lo-out ~~ ,"n0":1,"w0":1,"n1":2,"w1":2 ~~  ~~ slots: expected an element count in 1..=2
+pairs-lo-in ~~ ,"n1":2,"w1":2 ~~  ~~ ok
+pairs-gap ~~ ,"n0":1,"w0":1 ~~  ~~ n1: pairs slot after an empty one
+pairs-incomplete ~~ ,"w1":2 ~~  ~~ n1: incomplete pairs slot
+pairs-null ~~ "w1":2 ~~ "w1":null ~~ n1: null in a pairs slot
+bits-count ~~ "flags":3 ~~ "flags":7 ~~ flags: expected an element count in 1..=2
+bits-in ~~ "flags":3 ~~ "flags":6 ~~ ok
+bits-lo-out ~~ "flags":3 ~~ "flags":0 ~~ flags: expected an element count in 1..=2
+bits-lo-in ~~ "flags":3 ~~ "flags":4 ~~ ok
+bits-negative ~~ "flags":3 ~~ "flags":-1 ~~ flags: expected an integer from 0 to 9223372036854775807
+bits-fraction ~~ "flags":3 ~~ "flags":1.5 ~~ flags: expected an integer from 0 to 9223372036854775807
+bits-string ~~ "flags":3 ~~ "flags":"x" ~~ flags: expected an integer from 0 to 9223372036854775807
+bits-unknown ~~ "flags":3 ~~ "flags":8 ~~ flags: unknown bits 0x8
+bits-2p53p1 ~~ "flags":3 ~~ "flags":9007199254740993 ~~ flags: unknown bits 0x20000000000000 ~~ text
+bits-int64-max ~~ "flags":3 ~~ "flags":9223372036854775807 ~~ flags: unknown bits 0x7ffffffffffffff8 ~~ text
+bits-2p63 ~~ "flags":3 ~~ "flags":9223372036854775808 ~~ flags: expected an integer from 0 to 9223372036854775807
+bits-null ~~ "flags":3 ~~ "flags":null ~~ flags: null
+#
+# a dependent branch
+dep-str-in ~~ "dsel":"b","dep":3 ~~ "dsel":"a","dep":"abc" ~~ ok
+dep-str-lo ~~ "dsel":"b","dep":3 ~~ "dsel":"a","dep":"a" ~~ dep: expected a byte length in 2..=3
+dep-str-hi ~~ "dsel":"b","dep":3 ~~ "dsel":"a","dep":"abcd" ~~ dep: expected a byte length in 2..=3
+dep-int-lo ~~ "dep":3 ~~ "dep":-1 ~~ dep: expected a value in 0..=5
+dep-int-hi ~~ "dep":3 ~~ "dep":6 ~~ dep: expected a value in 0..=5
+dep-int-in ~~ "dep":3 ~~ "dep":5 ~~ ok
+dep-never ~~ "dsel":"b","dep":3 ~~ "dsel":"c","dep":3 ~~ dep: no branch for this value
+#
+# a keyed list: the rows' fields, then their duplicates, then their count
+keyed-count-in ~~ "rows":[{"id":1},{"id":2}] ~~ "rows":[{"id":1},{"id":2}] ~~ ok
+keyed-count-out ~~ "rows":[{"id":1},{"id":2}] ~~ "rows":[{"id":1},{"id":2},{"id":3}] ~~ rows: expected an element count in ..=2
+keyed-elem-out ~~ "rows":[{"id":1},{"id":2}] ~~ "rows":[{"id":10},{"id":2}] ~~ rows[0].id: expected a value in 0..=9
+keyed-elem-first ~~ "rows":[{"id":1},{"id":2}] ~~ "rows":[{"id":10},{"id":2},{"id":3}] ~~ rows[0].id: expected a value in 0..=9
+keyed-dup-first ~~ "rows":[{"id":1},{"id":2}] ~~ "rows":[{"id":1},{"id":1},{"id":3}] ~~ rows[1].id: duplicate id 1 (first at rows[0])
+keyed-elem-before-dup ~~ "rows":[{"id":1},{"id":2}] ~~ "rows":[{"id":1},{"id":1},{"id":10}] ~~ rows[2].id: expected a value in 0..=9
+#
+# values down a path
+path-ok ~~ "p":{"q":1} ~~ "p":{"q":9} ~~ ok
+path-out ~~ "p":{"q":1} ~~ "p":{"q":10} ~~ p.q: expected a value in 0..=9
+path-default-out ~~ "pd":{"q":4} ~~ "pd":{"q":10} ~~ pd.q: expected a value in 0..=9
+path-default-absent ~~ ,"pd":{"q":4} ~~  ~~ ok
+path-optional-out ~~ "po":{"q":null} ~~ "po":{"q":10} ~~ po.q: expected a value in 0..=9
+path-optional-in ~~ "po":{"q":null} ~~ "po":{"q":9} ~~ ok
+path-optional-absent ~~ ,"po":{"q":null} ~~  ~~ ok
+#
+# a code-keyed map
+codes-key-in ~~ "byRank":{"1":1} ~~ "byRank":{"2":9} ~~ ok
+codes-key-unknown ~~ "byRank":{"1":1} ~~ "byRank":{"3":1} ~~ byRank.3: unknown value 3
+codes-key-width ~~ "byRank":{"1":1} ~~ "byRank":{"300":1} ~~ byRank.300: expected an integer from 0 to 255
+codes-key-noncanonical ~~ "byRank":{"1":1} ~~ "byRank":{"01":1} ~~ byRank.01: expected a canonical decimal integer key
+codes-key-name ~~ "byRank":{"1":1} ~~ "byRank":{"gold":1} ~~ byRank.gold: expected a canonical decimal integer key
+codes-value-out ~~ "byRank":{"1":1} ~~ "byRank":{"1":10} ~~ byRank.1: expected a value in 0..=9
+#
+# an absent or null value
+missing-int ~~ "n":5, ~~  ~~ n: missing
+null-int ~~ "n":5 ~~ "n":null ~~ n: null
+string-int ~~ "n":5 ~~ "n":"5" ~~ n: expected an integer
+missing-string ~~ "s":"ab", ~~  ~~ s: missing
+null-string ~~ "s":"ab" ~~ "s":null ~~ s: null
+missing-list ~~ "tags":[1,2], ~~  ~~ tags: missing
+null-list ~~ "tags":[1,2] ~~ "tags":null ~~ tags: null
+null-elem ~~ "tags":[1,2] ~~ "tags":[1,null] ~~ tags[1]: null
+null-map-value ~~ "m":{"a":1} ~~ "m":{"a":null} ~~ m.a: null
+missing-record ~~ "sub":{"v":1}, ~~  ~~ sub: missing
+null-record ~~ "sub":{"v":1} ~~ "sub":null ~~ sub: null
+empty-record ~~ "sub":{"v":1} ~~ "sub":{} ~~ sub.v: missing
+missing-selector ~~ "dsel":"b", ~~  ~~ dsel: missing
+null-default ~~ "dfl":3 ~~ "dfl":null ~~ dfl: null
+missing-path ~~ "p":{"q":1} ~~ "p":{} ~~ p.q: missing
+null-path ~~ "p":{"q":1} ~~ "p":null ~~ p: null
+missing-tag ~~ "kind":"circle","r":1 ~~ "r":1 ~~ shape.kind: missing
+unknown-tag ~~ "kind":"circle" ~~ "kind":"square" ~~ shape.kind: unknown case square
+#
+# an empty map key is a path segment (CODEGEN.md §5.13)
+map-key-empty ~~ "m":{"a":1} ~~ "m":{"":1} ~~ m.: expected a byte length in 1..=3
+map-value-empty-key ~~ "me":{"a":1} ~~ "me":{"":10} ~~ me.: expected a value in 0..=9
+map-record-empty-key ~~ "mr":{"a":{"v":1}} ~~ "mr":{"":{"v":4}} ~~ mr..v: expected a value in 0..=3
+map-list-empty-key ~~ "ml":{"a":[1]} ~~ "ml":{"":[1,6]} ~~ ml.[1]: expected a value in 0..=5
+map-keyed-dup-empty-key ~~ "mrows":{"a":[{"id":1}]} ~~ "mrows":{"":[{"id":1},{"id":1}]} ~~ mrows.[1].id: duplicate id 1 (first at mrows.[0])
+map-in-map-both-empty ~~ "mm":{"a":{"b":1}} ~~ "mm":{"":{"":10}} ~~ mm..: expected a value in 0..=9
+map-in-map-outer-empty ~~ "mm":{"a":{"b":1}} ~~ "mm":{"":{"b":10}} ~~ mm..b: expected a value in 0..=9
+map-in-map-inner-empty ~~ "mm":{"a":{"b":1}} ~~ "mm":{"a":{"":10}} ~~ mm.a.: expected a value in 0..=9
+map-int-key-empty ~~ "mi":{"50":"x"} ~~ "mi":{"":"x"} ~~ mi.: expected a canonical decimal integer key
+codes-key-empty ~~ "byRank":{"1":1} ~~ "byRank":{"":1} ~~ byRank.: expected a canonical decimal integer key
+map-int-key-after-bad-value ~~ "mi":{"50":"x"} ~~ "mi":{"1":5,"a":"x"} ~~ mi.1: expected a string ~~ text

@@ -1,0 +1,99 @@
+// probe checks DECISIONS 401 and CODEGEN.md §5.9 (Addresses) on generated C++ and prints one
+// `<check> ok` or `<check> FAIL` line each (TestStableAddressesCpp): baked rows (bk), a types-mode
+// holder, moved and copied (ty), and a reloadable snapshot (da). It runs in a directory beside the
+// project's, holding an empty reload/, and copies da/out/items.json, the data file the build
+// wrote, there before each run.
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
+
+#include "bkc/bk.gen.h"
+#include "dac/da.gen.h"
+#include "tyc/ty.gen.h"
+
+namespace {
+
+void Check(const char* name, bool ok) { std::cout << name << (ok ? " ok" : " FAIL") << "\n"; }
+
+std::string Slurp(const std::string& path) {
+    std::ifstream in(path);
+    std::stringstream text;
+    text << in.rdbuf();
+    return text.str();
+}
+
+void Baked() {
+    const ::bk::Statuses& st = ::bk::GetStatuses();
+    Check("baked-find-is-at", st.Find("open") == &st.At(0));
+    Check("baked-find-is-all", st.Find("open") == &st.All()[0]);
+    Check("baked-get-is-find", &st.Get(::bk::StatusId::taken) == st.Find("taken"));
+    Check("baked-at-repeats", &st.At(1) == &st.At(1));
+    Check("baked-all-repeats", st.All().data() == ::bk::GetStatuses().All().data());
+    Check("baked-container-repeats", &st == &::bk::GetStatuses());
+    const ::bk::Tasks& tasks = ::bk::GetTasks();
+    Check("baked-keyed-find-is-at", tasks.Find("first") == &tasks.At(0));
+    const ::bk::Task* second = tasks.Find("second");
+    Check("baked-getter-is-find", &second->GetStatus() == st.Find("open"));
+    Check("baked-getter-repeats", &second->GetStatus() == &second->GetStatus());
+    Check("baked-element-is-find", st.Find("open")->GetNext()[0] == st.Find("taken"));
+}
+
+void Types() {
+    std::string error;
+    const std::string text = R"({"items": [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}], "w": {"3": {"id": 3, "name": "c"}, "4": {"id": 4, "name": "d"}}})";
+    std::optional<::ty::Holder> h = ::ty::Holder::Parse(text, error);
+    Check("types-parse", h.has_value());
+    if (!h) return;
+    const ::ty::Item* item = h->GetItems().Find(1);
+    const ::ty::Item* entry = h->GetW().Find(3);
+    Check("types-find-is-at", item == &h->GetItems().At(0));
+    Check("types-find-is-all", item == &h->GetItems().All()[0]);
+    Check("types-find-repeats", item == h->GetItems().Find(1));
+    Check("types-map-find-is-at", entry == &h->GetW().At(0).second);
+    ::ty::Holder m = std::move(*h);
+    Check("types-moved-items-keep-address", m.GetItems().Find(1) == item);
+    Check("types-moved-map-keeps-address", m.GetW().Find(3) == entry);
+    ::ty::Holder copy = m;
+    Check("types-copy-has-own-rows", copy.GetItems().Find(1) != item && copy.GetW().Find(3) != entry);
+    Check("types-original-kept-by-copy", m.GetItems().Find(1) == item && item->GetName() == "a" && entry->GetName() == "c");
+    canon::KeyedList<int64_t, ::ty::Item> list = m.GetItems();
+    const ::ty::Item* listed = list.Find(2);
+    canon::KeyedList<int64_t, ::ty::Item> moved = std::move(list);
+    Check("types-moved-keyed-list-keeps-address", moved.Find(2) == listed);
+    canon::FlatMap<int64_t, ::ty::Item> map = m.GetW();
+    const ::ty::Item* mapped = map.Find(4);
+    canon::FlatMap<int64_t, ::ty::Item> remapped = std::move(map);
+    Check("types-moved-flat-map-keeps-address", remapped.Find(4) == mapped);
+}
+
+void Data() {
+    std::string error;
+    std::ofstream("reload/items.json") << Slurp("../da/out/items.json");
+    Check("data-first-reload", ::da::DaStore::Reload("reload", error));
+    std::shared_ptr<const ::da::DaSnapshot> old = ::da::DaStore::Current();
+    const ::da::Item* a = old->GetItems().Find("a");
+    Check("data-find-is-at", a == &old->GetItems().At(0));
+    std::string text = Slurp("reload/items.json");
+    const std::string from = "\"qty\": 1";
+    text.replace(text.find(from), from.size(), "\"qty\": 9");
+    std::ofstream("reload/items.json") << text;
+    Check("data-second-reload", ::da::DaStore::Reload("reload", error));
+    std::shared_ptr<const ::da::DaSnapshot> fresh = ::da::DaStore::Current();
+    Check("data-reload-swaps-snapshot", fresh != old);
+    Check("data-held-row-reads-old-value", a->GetName() == "a" && a->GetQty() == 1);
+    Check("data-held-snapshot-keeps-address", old->GetItems().Find("a") == a);
+    Check("data-new-snapshot-reads-new-value", fresh->GetItems().Find("a")->GetQty() == 9);
+    Check("data-new-snapshot-has-own-rows", fresh->GetItems().Find("a") != a);
+}
+
+}  // namespace
+
+int main() {
+    Baked();
+    Types();
+    Data();
+    return 0;
+}

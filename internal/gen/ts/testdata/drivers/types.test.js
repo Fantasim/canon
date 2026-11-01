@@ -84,6 +84,21 @@ test("types mode has parse<T> beside decode<T>, with parse's exactness (CODEGEN.
   assert.ok(Object.isFrozen(s));
 });
 
+test("a types-mode Duration is any number whose exact value is a whole number of milliseconds (WIRE.md §5.1, CODEGEN.md §8.1)", () => {
+  const dur = (token) => parseSkill('{"dwID": "a", "type": "plain", "counts": {}, "cast_time": ' + token + "}").castTime;
+  assert.equal(dur("1.1"), 1100);
+  assert.equal(dur("1.5e0"), 1500);
+  assert.equal(dur("2.0"), 2000);
+  assert.equal(dur("0.001"), 1);
+  assert.throws(() => dur("0.0005"), /not a whole number of milliseconds/);
+  assert.throws(() => dur("1e-4"), /not a whole number of milliseconds/);
+  assert.throws(() => dur("9223372036855"), /duration out of range/);
+  assert.equal(dur("1" + "0".repeat(70) + "e-70"), 1000);
+  assert.equal(dur("0." + "0".repeat(80) + "1e81"), 1000);
+  assert.throws(() => dur("1e-999999999"), /not a whole number of milliseconds/);
+  assert.throws(() => dur("1e999999999"), /duration out of range/);
+});
+
 test("parse<T> names a syntax error's UTF-8 byte offset, the same vectors as every target (CODEGEN.md §5.13, DECISIONS 361)", () => {
   const vectors = [
     ['{"d": ', 6], ['{"d": x}', 6], ["{} {}", 3], ["{} 123", 3], ['{"a": tru}', 9], ['{"d":"hp"} x', 11],

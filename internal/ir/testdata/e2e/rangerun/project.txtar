@@ -1,0 +1,181 @@
+CODEGEN.md §5.15, FINGERPRINT.md §5: TestRangeRoundTrip's project. lib's types-mode decoders and app's data loaders read a Probe that holds a range or length refinement at every position a decoder checks (fields, elements, map keys and values, optionals, a none marker, a literal union's base, a dependent branch, record and case fields, bits, pairs, a keyed list, values down a path), and app's keyed list of items holds a refined stored result and lookup cell.
+-- lib/lib.canon --
+package lib
+
+/// Flags, written as one bitmask.
+enum Flag @codes(UInt8) { a = 1, b = 2, c = 4 }
+
+/// Ranks, keyed by code.
+enum Rank @codes(UInt8) @json(codes) { gold = 1, silver = 2 }
+
+/// What a dependent field holds, by flag.
+type Pick(f: Flag) = match f {
+  a => String(2..=3)
+  b => Int(0..=5)
+  c => Never
+}
+
+/// A nested record.
+record Sub {
+  /// Its value.
+  v: Int(0..=3)
+}
+
+/// A slot of the pairs list.
+record Slot {
+  /// Its count.
+  n: Int(0..=3)
+  /// Its weight.
+  w: Int(0..=3)
+}
+
+/// A keyed row.
+record Row {
+  /// Its key.
+  id: Int(0..=9)
+}
+
+/// A shape.
+variant Shape @json(tag: "kind") {
+  /// A circle.
+  circle {
+    /// Its radius.
+    r: Int(0..=2)
+  }
+  /// A dot.
+  dot
+}
+
+/// Every position.
+record Probe {
+  /// A signed integer.
+  n: Int(1..=120)
+  /// An unsigned byte: both sides are implied by its width.
+  u8: UInt8(0..=255)
+  /// A signed byte whose upper bound lies above its width.
+  i8: Int8(0..=300)
+  /// An exclusive upper bound.
+  ex: Int(..5)
+  /// A float.
+  f: Float(0.0..1.0)
+  /// A Float32, judged in binary64.
+  f32: Float32(..=0.1)
+  /// A Duration read in milliseconds.
+  d: Duration(1s..=1h) @json(unit: ms)
+  /// A string, in bytes.
+  s: String(1..=4)
+  /// A list and its elements.
+  tags: [Int(0..=5)](..=3)
+  /// A map, its keys and its values.
+  m: {String(1..=3): Int(0..=9)}(..=2)
+  /// A map with an integer key.
+  mi: {UInt8(..=100): String}
+  /// A map whose key is a code.
+  byRank: {Rank: Int(0..=9)}
+  /// A map whose key has no refinement.
+  me: {String: Int(0..=9)}
+  /// A map of records.
+  mr: {String: Sub}
+  /// A map of lists.
+  ml: {String: [Int(0..=5)]}
+  /// A map of keyed lists.
+  mrows: {String: [Row] keyed by id}
+  /// A map of maps.
+  mm: {String: {String: Int(0..=9)}}
+  /// A list of optionals.
+  opts: [Int(0..=5)?]
+  /// An optional.
+  opt: Int(0..=5)?
+  /// An optional with a none marker.
+  mk: Int(0..=5)? @json(none: -1)
+  /// A literal union over a refined string.
+  lit: String(6..=8) | "auto"
+  /// A default.
+  dfl: Int(1..=5) = 3
+  /// A nested record.
+  sub: Sub
+  /// A variant.
+  shape: Shape
+  /// Flags.
+  flags: [Flag](1..=2) @json(bits)
+  /// A flag chooser.
+  dsel: Flag
+  /// A dependent value.
+  dep: Pick(dsel)
+  /// Rows.
+  rows: [Row](..=2) keyed by id
+  /// Slots.
+  slots: [Slot](1..=2) @json(pairs: ["n{i}", "w{i}"])
+  /// A Duration read in seconds.
+  ds: Duration(1s..=2s) @json(unit: s)
+  /// A required value down a path.
+  pr: Int(0..=9) @json(path: "p.q")
+  /// A defaulted value down a path.
+  pd: Int(0..=9) = 4 @json(path: "pd.q")
+  /// An optional value down a path.
+  po: Int(0..=9)? @json(path: "po.q")
+  /// A map of optional values.
+  mo: {String: Int(0..=9)?} = {}
+}
+
+/// The Probe every refinement accepts.
+let base: Probe = {
+  n: 5, u8: 7, i8: 7, ex: 4, f: 0.5, f32: 0.0625, d: 2000ms, s: "ab", tags: [1, 2], m: { "a": 1 }, mi: { 50: "x" },
+  byRank: { gold: 1 }, me: { "a": 1 }, mr: { "a": { v: 1 } }, ml: { "a": [1] }, mrows: { "a": [{ id: 1 }] }, mm: { "a": { "b": 1 } },
+  opts: [none, 3], lit: "auto", sub: { v: 1 }, shape: circle { r: 1 }, flags: [a, b], dsel: b, dep: 3,
+  rows: [{ id: 1 }, { id: 2 }], slots: [{ n: 1, w: 1 }, { n: 2, w: 2 }], ds: 1s, pr: 1
+}
+
+/// A refined list, a @text result.
+@text("caps.json")
+export fn caps() -> [Int(0..=5)](..=2) { return [1] }
+
+emit go { out: "@features/lib", package: "lib", mode: types }
+emit cpp { out: "@features/libc", namespace: "lib", mode: types }
+emit ts { out: "@features/lib.ts", mode: types }
+emit text { out: "out/lib" }
+-- app/app.canon --
+package app
+
+import lib { Probe, base }
+
+/// A tone.
+enum Tone { lo, hi }
+
+/// An item.
+record Item {
+  /// Its name, one to three bytes.
+  name: String(1..=3)
+  /// Its quantity.
+  qty: Int(0..=9)
+  /// A stored result.
+  export fn score(self) -> Int(0..=9) { return self.qty }
+  /// A lookup cell.
+  export fn rank(self, t: Tone) -> Int(1..=6) { return match t { lo => 1, hi => 2 } }
+}
+
+/// The items, at most two.
+let items: [Item](..=2) keyed by name = [
+  { name: "a", qty: 1 },
+  { name: "b", qty: 2 },
+]
+
+/// A tag.
+record Tag {
+  /// Its label.
+  label: String
+}
+
+/// The tags, a table with a retired entry.
+let tags: table Tag = {
+  a { label: "x" }
+  b { label: "y" }
+}
+
+/// The probe.
+let probe: Probe = base
+
+emit go { out: "@features/app", package: "app", mode: data }
+emit cpp { out: "@features/appc", namespace: "app", mode: data }
+emit ts { out: "@features/app.ts", mode: data }
+emit json { out: "out/app/" }

@@ -89,7 +89,7 @@ test("failures name the JSON path (CODEGEN.md §5.13)", () => {
   assert.throws(() => decodeSkills(doc), /rows\[0\]\.flags: unknown bits/);
   doc = bad();
   doc.rows[0].cast_time = 0.0004;
-  assert.throws(() => decodeSkills(doc), /not a whole number of milliseconds/);
+  assert.throws(() => decodeSkills(doc), /rows\[0\]\.cast_time: expected an integer/);
 });
 
 test("parse reads the file text exactly (CODEGEN.md §8.1, DECISIONS 278)", () => {
@@ -105,22 +105,19 @@ test("decode sees a parsed value: integer-like keys come in JavaScript's order",
   assert.deepEqual([...skills.find("fireball").counts.keys()], [1, 2, 3]);
 });
 
-test("parse refuses a number token of the wrong form for an Int (E7103) and keeps durations exact", () => {
+test("parse refuses a number token of the wrong form for an Int (E7103) and reads a Duration as an integer count of its unit (WIRE.md §5.1)", () => {
   const reqMp = (token) => parseSkills(text("skills.json").replace('"reqMp": 12', '"reqMp": ' + token));
   assert.equal(reqMp("13").find("fireball").reqMp, 13);
   for (const bad of ["2.0", "1e3", "-1.5"]) assert.throws(() => reqMp(bad), /expected an integer/, bad);
   const dur = (token) => parseSkills(text("skills.json").replace(/"cast_time": [0-9.e+-]+/, '"cast_time": ' + token)).find("fireball").castTime;
-  assert.equal(dur("1.1"), 1100);
-  assert.equal(dur("1.5e0"), 1500);
-  assert.equal(dur("2.0"), 2000);
-  assert.equal(dur("0.001"), 1);
-  assert.throws(() => dur("0.0005"), /not a whole number of milliseconds/);
-  assert.throws(() => dur("1e-4"), /not a whole number of milliseconds/);
-  assert.throws(() => dur("9223372036855"), /duration out of range/);
-  assert.equal(dur("1" + "0".repeat(70) + "e-70"), 1000);
-  assert.equal(dur("0." + "0".repeat(80) + "1e81"), 1000);
-  assert.throws(() => dur("1e-999999999"), /not a whole number of milliseconds/);
-  assert.throws(() => dur("1e999999999"), /duration out of range/);
+  assert.equal(dur("3"), 3000);
+  assert.equal(dur("0"), 0);
+  assert.equal(dur("9223372036"), 9223372036000);
+  for (const bad of ["1.1", "1.5e0", "2.0", "0.001", "0.0005", "1e-4"]) assert.throws(() => dur(bad), /expected an integer/, bad);
+  const at = "Error: skills.json: rows[0].cast_time: ";
+  for (const [bad, message] of [["9223372037", "integer out of range"], ["-9223372037", "integer out of range"], ["1e999999999", "expected an integer"]]) {
+    assert.throws(() => dur(bad), (e) => String(e) === at + message, bad);
+  }
 });
 
 test("parse is strict JSON (WIRE.md §3)", () => {
@@ -177,7 +174,7 @@ test("a Float32 is rounded once from the exact decimal (WIRE.md §5.1)", () => {
   assert.equal(narrow("1.0000000596046447753906250000000001"), 1.0000001192092896);
   assert.equal(narrow("-1.0000000596046447753906250000000001"), -1.0000001192092896);
   assert.equal(narrow("3.4028235677973366e38"), 3.4028234663852886e38);
-  assert.throws(() => narrow("3.40282356779733661637539395458142568448e38"), /overflows Float32/);
+  assert.throws(() => narrow("3.40282356779733661637539395458142568448e38"), /^Error: marks\.json: rows\[\d+\]\.narrow: expected a number that fits Float32$/);
   const doc = load("marks.json");
   assert.equal(decodeMarks({ ...doc, rows: [{ ...doc.rows[0], big: null, narrow: 1.0000000596046447753906250000000001 }] }).find("none").narrow, 1);
 });

@@ -1,0 +1,63 @@
+// probe reads each case named on the command line, `<kind>:<path>`, with the generated C++
+// readers and prints one `<reader> <verdict>` line each (TestRangeRoundTrip, CODEGEN.md §5.15):
+// a probe case with lib's Parse (the text), lib's Decode (the parsed value) and app's data loader
+// on the file's .data twin; an items or tags file with app's data loader.
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "appc/app.gen.h"
+#include "libc/lib.gen.h"
+
+namespace {
+
+std::string Slurp(const std::string& path) {
+    std::ifstream in(path);
+    std::stringstream text;
+    text << in.rdbuf();
+    return text.str();
+}
+
+void Report(const char* reader, bool ok, const std::string& error) {
+    std::string flat = error;
+    for (std::size_t at = flat.find('\n'); at != std::string::npos; at = flat.find('\n', at)) {
+        flat.replace(at, 1, "\\n");
+    }
+    std::cout << reader << " " << (ok ? std::string("ok") : "error " + flat) << "\n";
+}
+
+void Probe(const std::string& path) {
+    std::string text = Slurp(path);
+    std::string error;
+    Report("cpp-parse", ::lib::Probe::Parse(text, error).has_value(), error);
+    error.clear();
+    nlohmann::json doc = nlohmann::json::parse(text, nullptr, false);
+    Report("cpp-decode", ::lib::Probe::Decode(doc, error).has_value(), error);
+    error.clear();
+    Report("cpp-data", ::app::LoadProbe(path + ".data", error) != nullptr, error);
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        std::size_t colon = arg.find(':');
+        std::string kind = arg.substr(0, colon);
+        std::string path = arg.substr(colon + 1);
+        std::string error;
+        if (kind == "probe") {
+            Probe(path);
+        } else if (kind == "caps") {
+            Report("cpp-file", ::lib::DecodeCapsFile(Slurp(path), error).has_value(), error);
+        } else if (kind == "items") {
+            Report("cpp-data", ::app::Items::Load(path, error) != nullptr, error);
+        } else if (kind == "tags") {
+            Report("cpp-data", ::app::Tags::Load(path, error) != nullptr, error);
+        }
+    }
+    return 0;
+}

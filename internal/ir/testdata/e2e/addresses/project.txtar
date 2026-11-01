@@ -1,0 +1,80 @@
+DECISIONS 401, CODEGEN.md §5.9 (Addresses): TestStableAddresses{Cpp,Go,TS}'s project. bk bakes a table and a keyed list whose records hold refs; ty decodes a holder of a keyed list and a map; da loads a reloadable keyed list. Every row keeps its address while its owner lives, every lookup of one row gives it, and a moved container, a held snapshot and a TypeScript lookup keep or give the same row.
+-- bk/bk.canon --
+package bk
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+  /// The statuses it moves to.
+  next: [ref Status] = []
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open", next: [taken] }
+  taken { label: "Taken" }
+  done { label: "Done" }
+}
+
+/// A task.
+record Task {
+  /// Its name.
+  name: String
+  /// Its status.
+  status: ref statuses
+}
+
+/// The tasks.
+let tasks: [Task] keyed by name = [
+  { name: "first", status: done },
+  { name: "second", status: open },
+]
+
+emit go { out: "@features/bk", package: "bk", mode: baked }
+emit cpp { out: "@features/bkc", namespace: "bk", mode: baked }
+emit ts { out: "@features/bk.ts", mode: baked }
+-- ty/ty.canon --
+package ty
+
+/// An item.
+record Item {
+  /// Its key.
+  id: Int
+  /// Its name.
+  name: String
+}
+
+/// A holder.
+record Holder {
+  /// Its items.
+  items: [Item] keyed by id
+  /// Its items by number.
+  w: {Int: Item}
+}
+
+emit go { out: "@features/ty", package: "ty", mode: types }
+emit cpp { out: "@features/tyc", namespace: "ty", mode: types }
+emit ts { out: "@features/ty.ts", mode: types }
+-- da/da.canon --
+package da
+
+/// An item.
+record Item {
+  /// Its name.
+  name: String
+  /// Its quantity.
+  qty: Int
+}
+
+/// The items, reloadable.
+@reload
+let items: [Item] keyed by name = [
+  { name: "a", qty: 1 },
+  { name: "b", qty: 2 },
+]
+
+emit go { out: "@features/da", package: "da", mode: data }
+emit cpp { out: "@features/dac", namespace: "da", mode: data }
+emit ts { out: "@features/da.ts", mode: data }
+emit json { out: "out/" }

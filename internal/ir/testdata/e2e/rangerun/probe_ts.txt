@@ -1,0 +1,34 @@
+// probe reads each case named on the command line, `<kind>:<path>`, with the generated TypeScript
+// readers and prints one `<reader> <verdict>` line each (TestRangeRoundTrip, CODEGEN.md §5.15):
+// a probe case with lib's parseProbe (the text), lib's decodeProbe (the parsed value) and app's
+// data parser on the file's .data twin; an items or tags file with app's data parser.
+import { readFileSync } from "node:fs";
+import * as app from "./app.js";
+import * as lib from "./lib.js";
+
+function report(reader, read) {
+  let verdict = "ok";
+  try {
+    read();
+  } catch (e) {
+    verdict = "error " + String(e.message).replaceAll("\n", "\\n");
+  }
+  console.log(reader + " " + verdict);
+}
+
+for (const arg of process.argv.slice(2)) {
+  const colon = arg.indexOf(":");
+  const kind = arg.slice(0, colon);
+  const text = readFileSync(arg.slice(colon + 1), "utf8");
+  if (kind === "probe") {
+    report("ts-parse", () => lib.parseProbe(text));
+    report("ts-decode", () => lib.decodeProbe(JSON.parse(text)));
+    report("ts-data", () => app.parseProbe(readFileSync(arg.slice(colon + 1) + ".data", "utf8")));
+  } else if (kind === "caps") {
+    report("ts-file", () => lib.parseCapsFile(text));
+  } else if (kind === "items") {
+    report("ts-data", () => app.parseItems(text));
+  } else if (kind === "tags") {
+    report("ts-data", () => app.parseTags(text));
+  }
+}

@@ -88,6 +88,9 @@ const (
 	commentEndEscaped = "*\\/"
 )
 
+// A Duration read as an integer count of its unit, in milliseconds (WIRE.md §5.1).
+const durationScaleFormat = "(%s * %s)"
+
 // TypeScript types and literals.
 const (
 	tsNumber         = "number"

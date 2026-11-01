@@ -1,0 +1,104 @@
+// Package probe_test checks DECISIONS 401 and CODEGEN.md §5.9 (Addresses) on generated Go
+// (TestStableAddressesGo): baked rows (bk), a types-mode holder (ty) and a reloadable snapshot
+// (da). It reads the data file the build wrote at ../../da/out/items.json, and prints one
+// `<check> ok` line for each check that holds, the test failing for one that does not.
+package probe_test
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"example.com/gen/bk"
+	"example.com/gen/da"
+	"example.com/gen/ty"
+)
+
+func check(t *testing.T, name string, ok bool) {
+	t.Helper()
+	if !ok {
+		t.Error(name + " FAIL")
+		return
+	}
+	fmt.Println(name + " ok")
+}
+
+func TestBakedAddresses(t *testing.T) {
+	st := bk.GetStatuses()
+	open, _ := st.Find("open")
+	taken, _ := st.Find("taken")
+	check(t, "baked-find-is-at", open == st.At(0))
+	var all []*bk.Status
+	for row := range st.All() {
+		all = append(all, row)
+	}
+	check(t, "baked-find-is-all", all[0] == open)
+	id, _ := bk.ParseStatusID("taken")
+	check(t, "baked-get-is-find", st.Get(id) == taken)
+	check(t, "baked-accessors-repeat", st.At(1) == st.At(1) && st == bk.GetStatuses())
+	tasks := bk.GetTasks()
+	firstTask, _ := tasks.Find("first")
+	check(t, "baked-keyed-find-is-at", firstTask == tasks.At(0))
+	second, _ := tasks.Find("second")
+	check(t, "baked-getter-is-find", second.Status() == open)
+	check(t, "baked-getter-repeats", second.Status() == second.Status())
+	check(t, "baked-element-is-find", open.Next().At(0) == taken)
+	copied := open.Next()
+	check(t, "baked-copied-list-same-pointer", copied.At(0) == taken)
+}
+
+func TestTypesAddresses(t *testing.T) {
+	text := `{"items": [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}], "w": {"3": {"id": 3, "name": "c"}}}`
+	h, err := ty.DecodeHolder([]byte(text))
+	if err != nil {
+		t.Fatal(err)
+	}
+	list := h.Items()
+	one, _ := list.Find(1)
+	check(t, "types-find-is-at", one == list.At(0) && one == h.Items().At(0))
+	var all []*ty.Item
+	for row := range list.All() {
+		all = append(all, row)
+	}
+	check(t, "types-find-is-all", all[0] == one)
+	copied := list
+	got, _ := copied.Find(1)
+	check(t, "types-copied-keyed-list-same-pointer", got == one && copied.At(0) == one)
+	again := h.Items()
+	gotAgain, _ := again.Find(1)
+	check(t, "types-getter-repeats", gotAgain == one)
+}
+
+func TestReloadKeepsAddresses(t *testing.T) {
+	raw, err := os.ReadFile("../../da/out/items.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	path := filepath.Join(dir, "items.json")
+	if err := os.WriteFile(path, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := da.Store.Reload(dir); err != nil {
+		t.Fatal(err)
+	}
+	old := da.Store.Current()
+	a, _ := old.Items().Find("a")
+	check(t, "data-find-is-at", a == old.Items().At(0))
+	changed := strings.Replace(string(raw), `"qty": 1`, `"qty": 9`, 1)
+	if err := os.WriteFile(path, []byte(changed), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := da.Store.Reload(dir); err != nil {
+		t.Fatal(err)
+	}
+	fresh := da.Store.Current()
+	check(t, "data-reload-swaps-snapshot", fresh != old)
+	check(t, "data-held-row-reads-old-value", a.Name() == "a" && a.Qty() == 1)
+	again, _ := old.Items().Find("a")
+	check(t, "data-held-snapshot-keeps-address", again == a)
+	newRow, _ := fresh.Items().Find("a")
+	check(t, "data-new-snapshot-has-own-rows", newRow.Qty() == 9 && newRow != a)
+}

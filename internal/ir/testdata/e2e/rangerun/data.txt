@@ -1,0 +1,53 @@
+# TestRangeRoundTrip's data-file cases (CODEGEN.md §5.15, §5.9, WIRE.md §8.1): `name ~~ file ~~ from ~~ to ~~ want`.
+# file is items or tags, the data file Canon wrote of app's keyed list or table, `from` replaced by `to` once in its text; or caps, a @text result of lib.
+# want is `ok`, or `<path after the file>: <message>`. A stored `$` result and a lookup cell are Canon's own, so `load` has no source for them.
+#
+# the rows of a keyed list, their stored results and lookup cells
+items-base ~~ items ~~  ~~  ~~ ok
+items-three ~~ items ~~ {"name": "b", "qty": 2, "$score": 2, "$rank": {"lo": 1, "hi": 2}} ~~ {"name": "b", "qty": 2, "$score": 2, "$rank": {"lo": 1, "hi": 2}}, {"name": "c", "qty": 3, "$score": 3, "$rank": {"lo": 1, "hi": 2}} ~~ rows: expected an element count in ..=2
+items-none ~~ items ~~ {"name": "a", "qty": 1, "$score": 1, "$rank": {"lo": 1, "hi": 2}},\n    {"name": "b", "qty": 2, "$score": 2, "$rank": {"lo": 1, "hi": 2}} ~~  ~~ ok
+items-name-out ~~ items ~~ "name": "b" ~~ "name": "bcde" ~~ rows[1].name: expected a byte length in 1..=3
+items-name-empty ~~ items ~~ "name": "b" ~~ "name": "" ~~ rows[1].name: expected a byte length in 1..=3
+items-qty-out ~~ items ~~ "qty": 2 ~~ "qty": 10 ~~ rows[1].qty: expected a value in 0..=9
+items-qty-negative ~~ items ~~ "qty": 1 ~~ "qty": -1 ~~ rows[0].qty: expected a value in 0..=9
+items-dup-first ~~ items ~~ "name": "b" ~~ "name": "a" ~~ rows[1].name: duplicate id "a" (first at rows[0])
+items-score-hi ~~ items ~~ "$score": 2 ~~ "$score": 10 ~~ rows[1].$score: expected a value in 0..=9
+items-score-lo ~~ items ~~ "$score": 1 ~~ "$score": -1 ~~ rows[0].$score: expected a value in 0..=9
+items-rank-lo ~~ items ~~ "$rank": {"lo": 1, "hi": 2}}, ~~ "$rank": {"lo": 1, "hi": 0}}, ~~ rows[0].$rank.hi: expected a value in 1..=6
+items-rank-hi ~~ items ~~ "$rank": {"lo": 1, "hi": 2}}, ~~ "$rank": {"lo": 7, "hi": 2}}, ~~ rows[0].$rank.lo: expected a value in 1..=6
+items-row-before-count ~~ items ~~ {"name": "b", "qty": 2, "$score": 2, "$rank": {"lo": 1, "hi": 2}} ~~ {"name": "b", "qty": 20, "$score": 2, "$rank": {"lo": 1, "hi": 2}}, {"name": "c", "qty": 3, "$score": 3, "$rank": {"lo": 1, "hi": 2}} ~~ rows[1].qty: expected a value in 0..=9
+#
+# an absent or null member of a row, of the rows and of the envelope
+items-rows-missing ~~ items ~~ "rows": ~~ "rowz": ~~ rows: missing
+items-rows-null ~~ items ~~ "rows": [ ~~ "rows": null, "x": [ ~~ rows: null
+items-score-missing ~~ items ~~ "$score": 1, ~~  ~~ rows[0].$score: missing
+items-score-null ~~ items ~~ "$score": 1 ~~ "$score": null ~~ rows[0].$score: null
+items-rank-missing ~~ items ~~ , "$rank": {"lo": 1, "hi": 2}}, ~~ }, ~~ rows[0].$rank: missing
+items-rank-null ~~ items ~~ "$rank": {"lo": 1, "hi": 2}}, ~~ "$rank": null}, ~~ rows[0].$rank: null
+items-rank-cell-missing ~~ items ~~ "$rank": {"lo": 1, "hi": 2}}, ~~ "$rank": {"lo": 1}}, ~~ rows[0].$rank.hi: missing
+items-rank-cell-null ~~ items ~~ "$rank": {"lo": 1, "hi": 2}}, ~~ "$rank": {"lo": null, "hi": 2}}, ~~ rows[0].$rank.lo: null
+items-name-missing ~~ items ~~ "name": "a", ~~  ~~ rows[0].name: missing
+items-name-null ~~ items ~~ "name": "a" ~~ "name": null ~~ rows[0].name: null
+#
+# a table's rows: $id and $retired
+tags-base ~~ tags ~~  ~~  ~~ ok
+tags-retired ~~ tags ~~ {"$id": "a", ~~ {"$id": "a", "$retired": true, ~~ ok
+tags-retired-false ~~ tags ~~ {"$id": "a", ~~ {"$id": "a", "$retired": false, ~~ rows[0].$retired: expected true
+tags-retired-null ~~ tags ~~ {"$id": "a", ~~ {"$id": "a", "$retired": null, ~~ rows[0].$retired: expected true
+tags-retired-int ~~ tags ~~ {"$id": "a", ~~ {"$id": "a", "$retired": 1, ~~ rows[0].$retired: expected true
+tags-id-missing ~~ tags ~~ {"$id": "a", ~~ { ~~ rows[0].$id: missing
+tags-id-null ~~ tags ~~ "$id": "a" ~~ "$id": null ~~ rows[0].$id: null
+tags-id-int ~~ tags ~~ "$id": "a" ~~ "$id": 3 ~~ rows[0].$id: expected a string
+tags-id-dup ~~ tags ~~ "$id": "b" ~~ "$id": "a" ~~ rows[1].$id: duplicate id "a" (first at rows[0])
+tags-label-null ~~ tags ~~ "label": "x" ~~ "label": null ~~ rows[0].label: null
+#
+# a @text result, a list of 0..=5 integers, at most two (Decode<Fn>File, parse<Fn>File): `to` is the whole text
+caps-ok ~~ caps ~~  ~~ [0,5] ~~ ok
+caps-empty ~~ caps ~~  ~~ [] ~~ ok
+caps-count ~~ caps ~~  ~~ [1,2,3] ~~ $: expected an element count in ..=2
+caps-elem ~~ caps ~~  ~~ [1,6] ~~ $[1]: expected a value in 0..=5
+caps-low ~~ caps ~~  ~~ [-1] ~~ $[0]: expected a value in 0..=5
+caps-elem-first ~~ caps ~~  ~~ [9,1,1] ~~ $[0]: expected a value in 0..=5
+caps-width ~~ caps ~~  ~~ [1,99999999999999999999] ~~ $[1]: expected an integer
+caps-null ~~ caps ~~  ~~ [null] ~~ $[0]: null
+caps-object ~~ caps ~~  ~~ {} ~~ $: expected an array

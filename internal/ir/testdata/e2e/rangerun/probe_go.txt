@@ -1,0 +1,52 @@
+// Command probe reads each case named on the command line, `<kind>:<path>`, with the generated
+// Go readers and prints one `<reader> <verdict>` line each (TestRangeRoundTrip, CODEGEN.md §5.15):
+// a probe case with lib's types-mode DecodeProbe and with app's data loader on the file's .data
+// twin; an items or tags file with app's data loader.
+package main
+
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	"example.com/gen/app"
+	"example.com/gen/lib"
+)
+
+func main() {
+	for _, arg := range os.Args[1:] {
+		kind, path, _ := strings.Cut(arg, ":")
+		switch kind {
+		case "probe":
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				panic(err)
+			}
+			_, err = lib.DecodeProbe(raw)
+			report("go-types", err)
+			_, err = app.LoadProbe(path + ".data")
+			report("go-data", err)
+		case "caps":
+			raw, err := os.ReadFile(path)
+			if err != nil {
+				panic(err)
+			}
+			_, err = lib.DecodeCapsFile(raw)
+			report("go-file", err)
+		case "items":
+			_, err := app.LoadItems(path)
+			report("go-data", err)
+		case "tags":
+			_, err := app.LoadTags(path)
+			report("go-data", err)
+		}
+	}
+}
+
+func report(reader string, err error) {
+	if err == nil {
+		fmt.Println(reader + " ok")
+		return
+	}
+	fmt.Println(reader + " error " + strings.ReplaceAll(err.Error(), "\n", `\n`))
+}
