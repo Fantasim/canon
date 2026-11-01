@@ -40,7 +40,7 @@ add an import cycle.
 12. gen/go `rangecheck.go` uses two failure-text escaping styles (`errAt` unescaped, `rowsRange`
     escaped). Pick one, with the bytes unchanged.
 13. Drop "(pending)" from the "DECISIONS 423 (pending)" citations in gen/cpp (423 is written).
-14. `internal/build/recheckbudget_test.go:18-19`: the `priced` comment ("defaults after, as stage E
+14. `internal/check/recheckbudget_test.go:18-19`: the `priced` comment ("defaults after, as stage E
     does") predates the phase-2 default folds. Reword it.
 15. `foldedDefault` (internal/check) does not break its record when its fold fails silently by
     reading an already-failed const. Document why, since the output equals HEAD. Do not change the
@@ -50,7 +50,14 @@ add an import cycle.
 17. `internal/gen/ts/range_cases_test.go` empty-key comment: check that it is true now (EMPTY-KEY
     landed).
 18. Every `make audit` `dup-in-repo` finding the run's units added (compare against the v0.1.13
-    baseline).
+    baseline), and check `loadSyntax` (refine.go) against project `syntaxError` (paths.go): both
+    walk WIRE §2.1's `@name` grammar.
+
+## Split (2026-11-01)
+
+Part A (items 4, 5, 7, 8 and 10-15) is in the CLEANUP-A unit. Part B takes items 1, 2, 3, 6, 9,
+16, 17 and 18, after E2E-RANGE lands. Item 9's helpers are `internal/ir` test helpers
+(`hooks_pending_test.go`).
 
 ## Not CLEANUP's
 
