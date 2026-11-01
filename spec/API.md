@@ -879,18 +879,19 @@ source and where the edit goes.
 
 | Reason | When |
 |---|---|
-| `computed` | the path leaves the source tree: a function call, comprehension, operator, `if`, `match`, identifier or method on the way (`Origin` gives the canonical path of the value's own source when that source is structural, else `""`) |
-| `layered` | an active layer amends this path or an ancestor, and `EditLayer` is not that layer (MOCKUP-GAPS 48) |
+| `computed` | the path leaves the source tree: a function call, comprehension, operator, `if`, `match`, identifier or method on the way (`Origin` gives the canonical path of the value's own source when that source is structural, else `""`); under an `EditLayer`, a `Set` or `Reset` of a layer line whose Undo cannot write it back (a `load(…)`, a call such as `mk()`, a spread; DECISIONS 273). It is never given for a value the edit layer re-states with a Source: a new layer line is judged by its amendment, its value and its Undo, not by how the base computes the value (W11) |
+| `layered` | an active layer amends this path or an ancestor, and `EditLayer` is not that layer (MOCKUP-GAPS 48), whatever the stack order; only a `Set` that writes back exactly a line the edit layer held before the request (an Undo's restore) is exempt, and an op whose Undo this row would refuse is refused |
 | `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0); a JSON source whose file extension is not `.json` (`load(…, format: json)` of `x.cfg`), or a value whose defining file has a path segment starting with `.` (only a loaded file can: the scan reads no `.canon` file or directory so named, O2) (`Detail` names the path): the journal could not recover such writes (§10.3); below a `load` `at:` path past a `*` (whose `*`-level member is the item structural ops act on), an op when that member holds more than the selected remainder, or when the remainder's index is above 0: it would touch data outside the selection or another load's view of the file (`Detail` names the outside datum as `<display>#<pointer>`) |
 | `input` | an `input` field (it has no value at build time) |
 | `key` | the key field of a keyed-list element, or a key of a dependent map (MOCKUP-GAPS 17); keys change only with `Rename`, and this reason never refuses a `Rename` that rewrites a keyed-list key (E11, DECISIONS 310) |
 | `pseudo` | `.id`, `.retired`, `.kind` (P3) |
-| `order` | `Insert` or `Move` in a collection whose order comes from file paths (`load.dir`, entry files) |
+| `order` | `Insert` or `Move` in a collection whose order comes from file paths (`load.dir`, entry files), and a `Set` of such a whole collection |
 | `layer` | an operation that cannot be written as an amendment when `EditLayer` is set (§7.5) |
 | `broken` | a `RenameName` whose packages hold a broken declaration (E32) |
 
 - **W5.** An edit on a non-editable path fails with `*NotEditableError` (wraps `ErrNotEditable`)
-  carrying the op index, the path, the reason and, for `computed`, `Origin`.
+  carrying the op index, the path, the reason and, for `computed`, `Origin`. `Editable` judges one
+  path: a `Rename`'s check of its references is made per request, so `Editable` does not see it.
 - **W6.** `@deprecated` fields are editable through the API (SPEC §5.12 makes them read-only in the
   studio only). Setting one in a `.canon` source produces `W3301` (TYPES.md §16).
 
@@ -921,19 +922,23 @@ source and where the edit goes.
   layers do not touch are edited normally, even while layers are active.
 - **W11.** With `EditLayer: "x"`, `Set`, `Reset` and `AddEntry` write into the `x` layer file of
   the package that declares the value's root: `Set` adds or replaces the amendment line for that
-  path (`amend <root> { <path>: <expr> }`), `Reset` removes it, `AddEntry` adds an amendment that
+  path (`amend <root> { <path>: <expr> }`), `Reset` makes the path's value what it would be without
+  the layer (it removes the line; inside a line's literal it writes the base value, removes a map or
+  table key the base lacks, and in an entry only the layer adds gives a field its default, else
+  reason `layer`; a base value with no literal form is `computed`), `AddEntry` adds an amendment that
   creates the key (LAY-02). If the package has no `x` layer file, it is created as
   `<package dir>/<x>.layer.canon`. Every write of these ops, defaults materialized by W8 included,
   goes to the layer, never to the base. `Remove` of an entry the layer itself added removes that
-  amendment; every other op (`SetCase` included) is `ErrNotEditable` with reason `layer`. A layer
+  amendment, or the entry from the layer literal that holds it; every other op (`SetCase` included) is `ErrNotEditable` with reason `layer`. A layer
   cannot add entries to a stable table (LCK-04), which the re-check reports as a finding.
 - **W11a.** A layer may not hold a path and one of its prefixes (EVALUATION.md §9.2, `E1908`). So
   when the layer already amends an ancestor of the path, `Set` edits the value inside that
   amendment's right-hand side (a structural edit of that literal, §9); when it amends descendants of
   the path, `Set` replaces them all with the one new amendment line. An `AddEntry` into a table the
   layer already amends adds one line and keeps the others. Under an `EditLayer` that is not active
-  in the session, an `AddEntry` is refused as `ErrNotEditable` with reason `layer`: no path reaches
-  the new entry to undo it (DECISIONS 273). An amendment whose right-hand side is a `load(…)` holds no literal: a path below it is `ErrNotEditable` with reason `layer` (its JSON lies outside the layer file, and the base may read it); `Set` of the amended path itself replaces the `load` (W11).
+  in the session, an `AddEntry` that needs a new amendment line is refused as `ErrNotEditable` with
+  reason `layer`: no path reaches the new entry to undo it (DECISIONS 273); one that lands inside a
+  literal map of an existing line of that layer is a structural edit of that literal. An amendment whose right-hand side is a `load(…)` holds no literal: a path below it is `ErrNotEditable` with reason `layer` (its JSON lies outside the layer file, and the base may read it); `Set` or `Reset` of the amended path itself is `computed`: its Undo cannot write the `load` line back (DECISIONS 273).
 
 ---
 

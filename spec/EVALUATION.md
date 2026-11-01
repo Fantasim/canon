@@ -165,7 +165,9 @@ error[E4301]  resource/x/x.canon:12:20
 Every value on the cycle is poisoned (§7.2). Cycles are detected at value granularity: a table
 entry that reads another entry of the same table while the table is being built is a cycle.
 Refs between entries are not (they are keys). Cycles between constants are detected the same
-way, at type-checking time.
+way, at type-checking time. A cycle that passes through a record's field default, which no
+initializer's uses show, is reported by `check`, with the same message and a chain of consts, at
+the use that closes it from the first const in DECISIONS 187's order (DECISIONS 172).
 
 ### 3.3 Call depth
 
@@ -378,6 +380,12 @@ Reachability follows record fields, case fields, list and keyed-list elements, m
 values, and table entries. It never follows refs (the target is reached from its own
 collection). Instances created and dropped inside functions (temporaries) are not checked; their
 refinements are (§4.3).
+
+A check runs once per instance unless it observes identity: its body, or a function it passes
+`self` to, uses `self` other than as the receiver of a field selection (bare `self` in `==`, `!=`,
+as an argument or in a list), or reads `.id` or `.retired` (TYPES.md §6.3, §7.5, §9.3). Such a
+check runs once per (instance, identity), since one instance held as several entries can give it
+different verdicts; equal findings merge (§14). The test is syntactic, made once per check body.
 
 Traversal order (stage C): top-level values in forced-set order (§2.1), each walked depth-first
 pre-order: fields in declaration order, elements in order, map entries in insertion order (key,

@@ -1689,7 +1689,9 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     `E4401`, evaluation continues. `toMap` evaluates `keyF`, detects `E4502`, then `valF`. The
     heaviest root of §12.2 is the first charged on a tie. A stage-A dereference and stage B's
     verification of the same ref both report `E3501` (different locations, §14 keeps both).
-    Internal errors surface as `ErrInternal`; `withIdentity` keeps the same instance. Values
+    Internal errors surface as `ErrInternal`; `withIdentity` keeps the same instance. (Amended
+    2026-11-01: it retags in place only a fresh record nothing else holds; any other is copied, and
+    the copy shares the instance, so evaluation order never changes a result, EVALUATION §4.1.) Values
     nested deeper than the host stack allows, and shared values whose tree is exponential
     (`l = [l, l]`) under the free verification walk, are bounded only by these walks being
     iterative and charged: a code or value-size limit needs ERRORS.md and value.go (Louis-call).
