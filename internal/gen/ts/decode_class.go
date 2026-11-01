@@ -67,7 +67,7 @@ func (g *gen) objectText(rd *reading) string {
 // entryRead reads a table row's `$id` (its key when it is a nested table's) and `$retired` (WIRE.md §5.7); a loose row's reader reads them only in table position, where id is given, null for a top-level table (CODEGEN.md §5.4).
 func (g *gen) entryRead(rd *reading, loose bool) {
 	id, retired := g.local(), g.local()
-	g.use(decStringName, decGetName, decBoolName)
+	g.use(decStringName, decGetName, decFailName)
 	if !loose {
 		rd.stmts = append(rd.stmts, fmt.Sprintf(localFormat, id, idReadFormat), fmt.Sprintf(localFormat, retired, retiredReadFormat))
 		rd.props = append(rd.props, idProp+keyValueSep+id, retiredProp+keyValueSep+retired)
@@ -106,8 +106,9 @@ func (g *gen) variantReader(v *ir.Variant) string {
 		}
 	}
 	tagPath := pathParam + plusSep + quote(dot+v.Tag)
-	body := fmt.Sprintf(variantBodyFormat, objVar, g.call(decObjectName, rawParam, pathParam), tagVar, g.call(decStringName, g.getKey(objVar, v.Tag), tagPath),
-		tagVar, strings.Join(arms, ""), g.call(decFailName, tagPath, quote(unknownCase)))
+	tagRead := g.call(decStringName, g.call(decGetName, objVar, quote(v.Tag), tagPath), tagPath)
+	unknown := g.call(decFailName, tagPath, fmt.Sprintf(unknownCaseFormat, tagVar))
+	body := fmt.Sprintf(variantBodyFormat, objVar, g.call(decObjectName, rawParam, pathParam), tagVar, tagRead, tagVar, strings.Join(arms, ""), unknown)
 	params := rawParam + keyValueSep + tsUnknown + listSep + pathParam + keyValueSep + tsString
 	return strings.Join(append([]string{fmt.Sprintf(readerFormat, name, params, g.named(v), body)}, cases...), newline)
 }

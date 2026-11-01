@@ -18,5 +18,5 @@ test("parse reads bigint refs and keys past 2^53 exactly, as baked writes them (
   assert.deepEqual([...a.w], [[1n, 2]]);
   assert.equal(rs.find(1n).mx, null);
   assert.throws(() => parseRs(text.replace('"9007199254740995"', '"9223372036854775808"')), /integer out of range/);
-  assert.throws(() => parseRs(text.replace('"9007199254740995"', '"1.5"')), /expected a decimal integer key/);
+  assert.throws(() => parseRs(text.replace('"9007199254740995"', '"1.5"')), /expected a canonical decimal integer key/);
 });

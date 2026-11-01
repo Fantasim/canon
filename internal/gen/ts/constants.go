@@ -96,7 +96,6 @@ const (
 	tsBigint         = "bigint"
 	tsNull           = "null"
 	tsUndefined      = "undefined"
-	tsTrue           = "true"
 	unionConstPrefix = "$union"
 	expectedNumber   = "expected a number"
 	spreadMark       = "..."
@@ -110,7 +109,6 @@ const (
 	mathObject       = "Math"
 	mathAbs          = "abs"
 	stringFn         = "String"
-	numberFn         = "Number"
 )
 
 // Names of generated items (CODEGEN.md §3.3).
@@ -193,7 +191,7 @@ const (
 	lowerWord, upperWord, exclusiveWord = "The lower bound", "The upper bound", "The exclusive upper bound"
 	stepElem, stepKey, stepValue        = "each element of", "each key of", "each value of"
 	byteLength, elemCount               = "the byte length of", "the element count of"
-	rowsRaw                             = "decGet($doc, \"rows\")"
+	rowsRawFormat                       = "decGet($doc, \"rows\", %s)"
 	rowKeyFormat                        = "($e) => $e.%s"
 )
 
@@ -276,9 +274,10 @@ const (
 	pairPathA           = "$pa"
 	pairPathB           = "$pb"
 	dollarKey           = "$"
-	unknownCase         = "unknown case"
+	unknownCaseFormat   = "\"unknown case \" + %s"
 	defaultedFormat     = "%s === undefined ? %s : %s"
 	nullOrFormat        = "%s === null ? null : %s"
+	orNullFormat        = "(%s ?? null)"
 	lambdaFormat        = "($x, $p) => %s"
 	tableLambdaFormat   = "($x, $p, $rowId) => %s"
 	keyLambdaFormat     = "($k, $p) => %s"
@@ -290,18 +289,18 @@ const (
 	caseLabelFormat     = "    case %s:\n"
 	branchReturnFormat  = "      return %s;\n"
 	publicDecoderFormat = "export function %s(json: unknown): %s {\n  return %s(%s);\n}\n"
-	idReadFormat        = "$rowId ?? decString(decGet($o, \"$id\"), $path + \".$id\")"
-	retiredReadFormat   = "decGet($o, \"$retired\") === undefined ? false : decBool(decGet($o, \"$retired\"), $path + \".$retired\")"
+	idReadFormat        = "$rowId ?? decString(decGet($o, \"$id\", $path + \".$id\"), $path + \".$id\")"
+	retiredReadFormat   = "decGet($o, \"$retired\") === undefined ? false : (decGet($o, \"$retired\") === true || decFail($path + \".$retired\", \"expected true\"))"
 	dependentBodyFormat = "  switch ($disc) {\n%s    default:\n      return decFail($path, \"no branch for this value\");\n  }\n"
 	tableDecoderFormat  = "export function %[1]s(json: unknown): %[2]s {\n  const $doc = canonEnvelope(json, %[3]s, %[4]s);\n  return canonTable(canonFreeze(%[5]s), ($e) => $e.%[6]s%[7]s);\n}\n"
 	tableTypeFormat     = "CanonTable<%s, %s>"
 	rowTypeFormat       = "CanonRow<%s, %s>"
 	ownRowFormat        = "%[1]s" + asKw + "%[2]s"
-	foreignRowFormat    = "{\n    const $o = decObject($x, $p);\n    return { ...%s($o, $p), id: %s, retired: decGet($o, \"$retired\") === undefined ? false : decBool(decGet($o, \"$retired\"), $p + \".$retired\") };\n  }"
-	foreignRowID        = "decString(decGet($o, \"$id\"), $p + \".$id\")"
+	foreignRowFormat    = "{\n    const $o = decObject($x, $p);\n    return { ...%s($o, $p), id: %s, retired: decGet($o, \"$retired\") === undefined ? false : (decGet($o, \"$retired\") === true || decFail($p + \".$retired\", \"expected true\")) };\n  }"
+	foreignRowID        = "decString(decGet($o, \"$id\", $p + \".$id\"), $p + \".$id\")"
 	looseIDFormat       = "$rowId === undefined ? undefined : "
 	looseEntryFormat    = "...(%s === undefined ? {} : { id: %s, retired: %s })"
-	valueRaw            = "decGet($doc, \"value\")"
+	valueRawFormat      = "decGet($doc, \"value\", %s)"
 	rootFormat          = "%s: $"
 	rowsPathFormat      = "%s: rows"
 	valuePathFormat     = "%s: value"
@@ -375,3 +374,12 @@ var reservedLoop = []string{"got", "want", "code", "gotCode", "vectors", "test",
 
 // reservedWords are the names a top-level binding or a parameter may not take (CODEGEN.md §3.4): stage E's list.
 var reservedWords = ir.TSReservedWords()
+
+// need is how a field's key is read: as is, as a required one (absent is `missing`, null is `null`), or as one a default stands in for when absent (null is `null`) (WIRE.md §5.4, §5.5; CODEGEN.md §5.13).
+type need int
+
+const (
+	readPlain need = iota
+	readRequired
+	readDefaulted
+)

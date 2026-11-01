@@ -1,9 +1,13 @@
 package tsgen_test
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/fantasim/canonlang/internal/diag"
+)
 
 // rangeBase is a Probe every refinement accepts (testdata/ts/range_types.txtar).
-const rangeBase = `{"n":5,"u8":7,"i8":7,"ex":4,"f":0.5,"f32":0.0625,"d":2000,"s":"ab","tags":[1,2],"m":{"a":1},"mi":{"50":"x"},"me":{"a":1},"mr":{"a":{"v":1}},"opts":[null,3],"lit":"auto","sub":{"v":1},"shape":{"kind":"circle","r":1},"dsel":"b","dep":3,"rows":[{"id":1},{"id":2}],"flags":3,"n0":1,"w0":1,"n1":2,"w1":2,"ds":1}`
+const rangeBase = `{"n":5,"u8":7,"i8":7,"ex":4,"f":0.5,"f32":0.0625,"d":2000,"s":"ab","tags":[1,2],"m":{"a":1},"mi":{"50":"x"},"me":{"a":1},"mr":{"a":{"v":1}},"opts":[null,3],"lit":"auto","sub":{"v":1},"shape":{"kind":"circle","r":1},"dsel":"b","dep":3,"rows":[{"id":1},{"id":2}],"flags":3,"n0":1,"w0":1,"n1":2,"w1":2,"ds":1,"p":{"q":1}}`
 
 // rangeCase is rangeBase with from replaced by to, and the line the driver prints for it.
 type rangeCase struct{ name, from, to, want string }
@@ -14,6 +18,7 @@ const (
 	countIn      = "expected an element count in "
 	bytesIn      = "expected a byte length in "
 	rangeWidth   = "integer out of range"
+	rangeKey     = "expected a canonical decimal integer key"
 	rangeProbe   = "Probe"
 	rangeBounds  = "Bounds"
 	rangeItemsID = "items"
@@ -67,7 +72,7 @@ func collectionCases() []rangeCase {
 		{"marker-none", `"n":5,`, `"n":5,"mk":-1,`, rangeOK}, {"marker-out", `"n":5,`, `"n":5,"mk":6,`, probeErr("mk", valueIn+"0..=5")},
 		{"union-literal", `"lit":"auto"`, `"lit":"auto"`, rangeOK}, {"union-in", `"lit":"auto"`, `"lit":"abcdefg"`, rangeOK},
 		{"union-out", `"lit":"auto"`, `"lit":"abc"`, probeErr("lit", bytesIn+"6..=8")},
-		// CODEGEN.md §5.13: a member under key k is `<parent>.<k>`, an empty key included. Go and C++ drop the dot (`$.m`, and `$.m` for a scalar but `$.m..v` for a record); they wait for EMPTY-KEY.
+		// CODEGEN.md §5.13, log-2026-10-31: a member under key k is `<parent>.<k>`, an empty key included; the three targets agree on `$.m.`, `$.me.` and `$.mr..v`.
 		{"map-key-empty", `"m":{"a":1}`, `"m":{"":1}`, probeErr("m.", bytesIn+"1..=3")},
 		{"map-value-empty-key", `"me":{"a":1}`, `"me":{"":10}`, probeErr("me.", valueIn+"0..=9")},
 		{"map-record-empty-key", `"mr":{"a":{"v":1}}`, `"mr":{"":{"v":4}}`, probeErr("mr..v", valueIn+"0..=3")},
@@ -124,7 +129,7 @@ var textCases = []struct{ name, text, want string }{
 // rangeCases are CODEGEN.md §5.15 at every position: both sides of each bound, the order of failures, what is never checked.
 func rangeCases() []rangeCase {
 	cases := []rangeCase{{"base", "", "", rangeOK}}
-	return slices.Concat(cases, numberCases(), collectionCases(), structCases(), positionCases(), unitCases())
+	return slices.Concat(cases, numberCases(), collectionCases(), structCases(), positionCases(), unitCases(), wireCases(), nullCases())
 }
 
 // keysBase is a Keys every key is unique in (testdata/ts/range_keys.txtar).
@@ -144,6 +149,24 @@ func keysCases() []rangeCase {
 		{"nested-dup", `{"rows":[{"id":1},{"id":2}]}`, `{"rows":[{"id":1},{"id":1}]}`, keysErr("groups[0].rows[1].id", "duplicate id 1 (first at $.groups[0].rows[0])")},
 		{"map-key-colon-dup", `"byName":{"x":[{"id":1}]}`, `"byName":{"a: b":[{"id":1},{"id":1}]}`, keysErr("byName.a: b[1].id", "duplicate id 1 (first at $.byName.a: b[0])")},
 		{"reordered", `{"r":1},{"r":2}`, `{"r":2},{"r":1}`, rangeOK},
+		{"code-map-ok", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"1":1},"byMedal":{"2":1}`, rangeOK},
+		{"code-map-leading-zero", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"01":1}`, keysErr("byRank.01", rangeKey)},
+		{"code-map-minus-zero", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"-0":1}`, keysErr("byRank.-0", rangeKey)},
+		{"code-map-plus", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"+1":1}`, keysErr("byRank.+1", rangeKey)},
+		{"code-map-empty", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"":1}`, keysErr("byRank.", rangeKey)},
+		{"code-map-space", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{" 1":1}`, keysErr("byRank. 1", rangeKey)},
+		{"code-map-hex", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"0x1":1}`, keysErr("byRank.0x1", rangeKey)},
+		{"code-map-exponent", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"1e0":1}`, keysErr("byRank.1e0", rangeKey)},
+		{"code-map-unsafe", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"9007199254740993":1}`, keysErr("byRank.9007199254740993", rangeSafe())},
+		{"ref-code-map-leading-zero", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byMedal":{"01":1}`, keysErr("byMedal.01", rangeKey)},
+		{"ref-code-map-minus-zero", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byMedal":{"-0":1}`, keysErr("byMedal.-0", rangeKey)},
+		{"ref-code-map-plus", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byMedal":{"+1":1}`, keysErr("byMedal.+1", rangeKey)},
+		{"ref-code-map-empty", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byMedal":{"":1}`, keysErr("byMedal.", rangeKey)},
+		// WIRE.md §5.3, CODEGEN.md §5.13: a code no member has reads `unknown value <n>` in every target, as a field value and as a map key.
+		{"code-field-unknown", `{"r":1},{"r":2}`, `{"r":3},{"r":2}`, keysErr("medals[0].r", "unknown value 3")},
+		{"code-map-key-unknown", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"3":1}`, keysErr("byRank.3", "unknown value 3")},
+		{"code-map-key-negative-width", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byRank":{"-7":1}`, keysErr("byRank.-7", rangeWidth)},
+		{"ref-code-map-key-unknown", `"byName":{"x":[{"id":1}]}`, `"byName":{"x":[{"id":1}]},"byMedal":{"3":1}`, keysErr("byMedal.3", "unknown value 3")},
 	}
 }
 
@@ -164,5 +187,95 @@ func boundsCases() []rangeCase {
 		{"bigk-in", `"ex":4`, `"ex":4,"bigk":{"5":1}`, rangeOK}, {"bigk-out", `"ex":4`, `"ex":4,"bigk":{"6":1}`, boundsErr("bigk.6", valueIn+"0..=5")},
 		{"bytes-in", `"ex":4`, `"ex":4,"bytes":{"255":1}`, rangeOK}, {"bytes-width", `"ex":4`, `"ex":4,"bytes":{"300":1}`, boundsErr("bytes.300", rangeWidth)},
 		{"bytes-negative", `"ex":4`, `"ex":4,"bytes":{"-1":1}`, boundsErr("bytes.-1", rangeWidth)},
+		{"bytes-key-leading-zero", `"ex":4`, `"ex":4,"bytes":{"01":1}`, boundsErr("bytes.01", rangeKey)},
+		{"bytes-key-minus-zero", `"ex":4`, `"ex":4,"bytes":{"-0":1}`, boundsErr("bytes.-0", rangeKey)},
+		{"bytes-key-plus", `"ex":4`, `"ex":4,"bytes":{"+1":1}`, boundsErr("bytes.+1", rangeKey)},
+		{"bytes-key-text", `"ex":4`, `"ex":4,"bytes":{"x":1}`, boundsErr("bytes.x", rangeKey)},
+		{"bytes-key-unsafe", `"ex":4`, `"ex":4,"bytes":{"9007199254740993":1}`, boundsErr("bytes.9007199254740993", rangeSafe())},
+		{"bytes-key-unsafe-negative", `"ex":4`, `"ex":4,"bytes":{"-9007199254740993":1}`, boundsErr("bytes.-9007199254740993", rangeSafe())},
+		{"bytes-key-unsafe-noncanonical", `"ex":4`, `"ex":4,"bytes":{"09007199254740993":1}`, boundsErr("bytes.09007199254740993", rangeKey)},
+		{"bigk-key-leading-zero", `"ex":4`, `"ex":4,"bigk":{"01":1}`, boundsErr("bigk.01", rangeKey)},
+		{"bigk-key-minus-zero", `"ex":4`, `"ex":4,"bigk":{"-0":1}`, boundsErr("bigk.-0", rangeKey)},
+		{"bigk-key-text", `"ex":4`, `"ex":4,"bigk":{"x":1}`, boundsErr("bigk.x", rangeKey)},
+	}
+}
+
+// rangeSafe is E8303's message, the one TypeScript's own safe-integer limit is refused with (CODEGEN.md §8.2).
+func rangeSafe() string { return diag.E8303.Def().Variants[0].Template }
+
+const (
+	rangeMissing = "missing"
+	rangeNull    = "null"
+	rangeString  = "expected a string"
+	rangeInteger = "expected an integer"
+)
+
+// wireCases are the failures of the wire's own shape, in the bytes every target writes (CODEGEN.md §5.13, WIRE.md §5.5, §5.6): a required key absent or null, a variant tag absent, null, unknown or not a string.
+func wireCases() []rangeCase {
+	const shape, slots = `"shape":{"kind":"circle","r":1}`, `"n0":1,"w0":1,"n1":2,"w1":2`
+	return []rangeCase{
+		{"required-missing", `"n":5,`, ``, probeErr("n", rangeMissing)},
+		{"required-null", `"n":5`, `"n":null`, probeErr("n", rangeNull)},
+		{"nested-missing", `"sub":{"v":1}`, `"sub":{}`, probeErr("sub.v", rangeMissing)},
+		{"nested-null", `"sub":{"v":1}`, `"sub":{"v":null}`, probeErr("sub.v", rangeNull)},
+		{"tag-missing", shape, `"shape":{"r":1}`, probeErr("shape.kind", rangeMissing)},
+		{"tag-null", shape, `"shape":{"kind":null,"r":1}`, probeErr("shape.kind", rangeNull)},
+		{"tag-not-string", shape, `"shape":{"kind":3,"r":1}`, probeErr("shape.kind", rangeString)},
+		{"tag-unknown", shape, `"shape":{"kind":"blob","r":1}`, probeErr("shape.kind", "unknown case blob")},
+		{"case-field-missing", shape, `"shape":{"kind":"circle"}`, probeErr("shape.r", rangeMissing)},
+		// WIRE.md §5.14, CODEGEN.md §5.13: a pairs slot is refused at its first key present, as `incomplete pairs slot`, `null in a pairs slot` or `pairs slot after an empty one`.
+		{"pairs-incomplete-key", slots, `"n0":1,"w0":1,"n1":2`, probeErr("n1", "incomplete pairs slot")},
+		{"pairs-incomplete-value", slots, `"n0":1,"w0":1,"w1":2`, probeErr("w1", "incomplete pairs slot")},
+		{"pairs-null-key", slots, `"n0":1,"w0":1,"n1":null,"w1":2`, probeErr("n1", "null in a pairs slot")},
+		{"pairs-null-value", slots, `"n0":1,"w0":1,"n1":2,"w1":null`, probeErr("n1", "null in a pairs slot")},
+		{"pairs-null-alone", slots, `"n0":1,"w0":1,"n1":null`, probeErr("n1", "incomplete pairs slot")},
+		{"pairs-after-empty", slots, `"n1":2,"w1":2`, probeErr("n1", "pairs slot after an empty one")},
+		{"pairs-null-after-empty", slots, `"n1":null,"w1":2`, probeErr("n1", "null in a pairs slot")},
+	}
+}
+
+// nullCases are a null where a value is expected, `null` at its path in every target (WIRE.md §5.4, CODEGEN.md §5.13): a list element, a map value, a record, the top level, and a step of a @json(path:); an optional position reads it as none. `null-list`, `null-record` and `null-variant` pin the member-null read (decGet), not the readers' null check.
+func nullCases() []rangeCase {
+	const tail = `"ds":1`
+	return []rangeCase{
+		{"null-list-element", `"tags":[1,2]`, `"tags":[1,null]`, probeErr("tags[1]", rangeNull)},
+		{"null-list", `"tags":[1,2]`, `"tags":null`, probeErr("tags", rangeNull)},
+		{"null-map-value", `"me":{"a":1}`, `"me":{"a":null}`, probeErr("me.a", rangeNull)},
+		{"null-map-record-value", `"mr":{"a":{"v":1}}`, `"mr":{"a":null}`, probeErr("mr.a", rangeNull)},
+		{"null-record", `"sub":{"v":1}`, `"sub":null`, probeErr("sub", rangeNull)},
+		{"null-variant", `"shape":{"kind":"circle","r":1}`, `"shape":null`, probeErr("shape", rangeNull)},
+		{"null-top", rangeBase, `null`, "error " + rangeProbe + ": $: " + rangeNull},
+		{"null-optional-element", `"opts":[null,3]`, `"opts":[null,null]`, rangeOK},
+		{"null-optional-map-value", tail, tail + `,"mo":{"a":null}`, rangeOK},
+		{"null-optional-map-range", tail, tail + `,"mo":{"a":10}`, probeErr("mo.a", valueIn+"0..=9")},
+		{"path-required-absent", `,"p":{"q":1}`, ``, probeErr("p.q", rangeMissing)},
+		{"path-required-leaf-null", `"q":1`, `"q":null`, probeErr("p.q", rangeNull)},
+		{"path-required-step-null", `"p":{"q":1}`, `"p":null`, probeErr("p", rangeNull)},
+		{"path-required-step-int", `"p":{"q":1}`, `"p":3`, probeErr("p", "expected an object")},
+		{"path-required-range", `"q":1`, `"q":10`, probeErr("p.q", valueIn+"0..=9")},
+		{"path-defaulted-empty", tail, tail + `,"pd":{}`, rangeOK},
+		{"path-defaulted-leaf", tail, tail + `,"pd":{"q":3}`, rangeOK},
+		{"path-defaulted-leaf-null", tail, tail + `,"pd":{"q":null}`, probeErr("pd.q", rangeNull)},
+		{"path-defaulted-step-null", tail, tail + `,"pd":null`, probeErr("pd", rangeNull)},
+		{"path-defaulted-range", tail, tail + `,"pd":{"q":10}`, probeErr("pd.q", valueIn+"0..=9")},
+		{"path-optional-leaf-null", tail, tail + `,"po":{"q":null}`, rangeOK},
+		{"path-optional-step-null", tail, tail + `,"po":null`, probeErr("po", rangeNull)},
+		{"path-optional-range", tail, tail + `,"po":{"q":10}`, probeErr("po.q", valueIn+"0..=9")},
+	}
+}
+
+// enumCases are the enum positions of range_keys: a member by wire, a code that is no integer, and a required key absent or null (WIRE.md §5.3, CODEGEN.md §5.13).
+func enumCases() []rangeCase {
+	const slots, medals, byName = `{"side":"left"},{"side":"RIGHT"}`, `{"r":1},{"r":2}`, `"byName":{"x":[{"id":1}]}`
+	return []rangeCase{
+		{"enum-unknown-member", slots, `{"side":"mid"},{"side":"RIGHT"}`, keysErr("slots[0].side", "unknown value mid")},
+		{"enum-not-string", slots, `{"side":3},{"side":"RIGHT"}`, keysErr("slots[0].side", rangeString)},
+		{"enum-case-differs", slots, `{"side":"right"},{"side":"RIGHT"}`, keysErr("slots[0].side", "unknown value right")},
+		{"code-not-integer", medals, `{"r":"high"},{"r":2}`, keysErr("medals[0].r", rangeInteger)},
+		{"code-fraction", medals, `{"r":1.5},{"r":2}`, keysErr("medals[0].r", rangeInteger)},
+		{"code-missing", medals, `{},{"r":2}`, keysErr("medals[0].r", rangeMissing)},
+		{"code-null", medals, `{"r":null},{"r":2}`, keysErr("medals[0].r", rangeNull)},
+		{"default-null", byName, byName + `,"byRank":null`, keysErr("byRank", rangeNull)},
+		{"code-key-width", byName, byName + `,"byRank":{"300":1}`, keysErr("byRank.300", rangeWidth)},
 	}
 }

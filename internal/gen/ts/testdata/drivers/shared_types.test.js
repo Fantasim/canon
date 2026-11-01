@@ -25,7 +25,7 @@ test("a failure inside another package's class names its JSON path (CODEGEN.md Â
   assert.throws(() => decodeZone(code), /^Error: Zone: \$\.markers\.gate\.code: expected a string$/);
   const tone = zone();
   tone.levels.tone = "mute";
-  assert.throws(() => decodeZone(tone), /^Error: Zone: \$\.levels\.tone: unknown member$/);
+  assert.throws(() => decodeZone(tone), /^Error: Zone: \$\.levels\.tone: unknown value mute$/);
   const entry = zone();
   entry.levels.status = "nope";
   assert.throws(() => decodeZone(entry), /^Error: Zone: \$\.levels\.status: no entry nope$/);
@@ -34,5 +34,5 @@ test("a failure inside another package's class names its JSON path (CODEGEN.md Â
   assert.equal(decodeZone(shut).levels.status, "shut");
   const kind = zone();
   kind.reward = { kind: "gems" };
-  assert.throws(() => decodeZone(kind), /^Error: Zone: \$\.reward\.kind: unknown case$/);
+  assert.throws(() => decodeZone(kind), /^Error: Zone: \$\.reward\.kind: unknown case gems$/);
 });

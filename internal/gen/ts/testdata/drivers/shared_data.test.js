@@ -39,10 +39,18 @@ test("a failure inside another package's class names this file's JSON path (CODE
   assert.throws(() => decodeBands(bands), /^Error: bands\.json: rows\[0\]\.min: expected an integer$/);
   const noID = json("bands.json");
   delete noID.rows[1].$id;
-  assert.throws(() => decodeBands(noID), /^Error: bands\.json: rows\[1\]\.\$id: expected a string$/);
+  assert.throws(() => decodeBands(noID), /^Error: bands\.json: rows\[1\]\.\$id: missing$/);
   const zones = json("zones.json");
   zones.rows[0].markers.gate.$retired = 1;
-  assert.throws(() => decodeZones(zones), /^Error: zones\.json: rows\[0\]\.markers\.gate\.\$retired: expected a boolean$/);
+  assert.throws(() => decodeZones(zones), /^Error: zones\.json: rows\[0\]\.markers\.gate\.\$retired: expected true$/);
+  for (const bad of [null, false, "true", 0]) {
+    const nested = json("zones.json");
+    nested.rows[0].markers.gate.$retired = bad;
+    assert.throws(() => decodeZones(nested), /^Error: zones\.json: rows\[0\]\.markers\.gate\.\$retired: expected true$/);
+    const row = json("bands.json");
+    row.rows[1].$retired = bad;
+    assert.throws(() => decodeBands(row), /^Error: bands\.json: rows\[1\]\.\$retired: expected true$/);
+  }
   const entry = json("zones.json");
   entry.rows[0].levels.status = "nope";
   assert.throws(() => decodeZones(entry), /^Error: zones\.json: rows\[0\]\.levels\.status: no entry nope$/);

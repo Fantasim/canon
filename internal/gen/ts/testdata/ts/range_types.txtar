@@ -98,6 +98,14 @@ record Probe {
   slots: [Slot](1..=2) @json(pairs: ["n{i}", "w{i}"])
   /// A Duration read in seconds.
   ds: Duration(1s..=2s) @json(unit: s)
+  /// A required value down a path.
+  pr: Int(0..=9) @json(path: "p.q")
+  /// A defaulted value down a path.
+  pd: Int(0..=9) = 4 @json(path: "pd.q")
+  /// An optional value down a path.
+  po: Int(0..=9)? @json(path: "po.q")
+  /// A map of optional values.
+  mo: {String: Int(0..=9)?} = {}
 }
 
 /// A refined list, a @text result.
@@ -281,6 +289,14 @@ export interface Probe {
   readonly slots: ReadonlyArray<Slot>;
   /** A Duration read in seconds. */
   readonly ds: number;
+  /** A required value down a path. */
+  readonly pr: number;
+  /** A defaulted value down a path. */
+  readonly pd: number;
+  /** An optional value down a path. */
+  readonly po: number | null;
+  /** A map of optional values. */
+  readonly mo: ReadonlyMap<string, number | null>;
 }
 
 /** The lower bound of n, from its refinement 1..=120. */
@@ -367,6 +383,22 @@ export const Probe_SlotsLenMax: number = 2;
 export const Probe_DsMin: number = 1000;
 /** The upper bound of ds, from its refinement 1s..=2s. */
 export const Probe_DsMax: number = 2000;
+/** The lower bound of pr, from its refinement 0..=9. */
+export const Probe_PrMin: number = 0;
+/** The upper bound of pr, from its refinement 0..=9. */
+export const Probe_PrMax: number = 9;
+/** The lower bound of pd, from its refinement 0..=9. */
+export const Probe_PdMin: number = 0;
+/** The upper bound of pd, from its refinement 0..=9. */
+export const Probe_PdMax: number = 9;
+/** The lower bound of po, from its refinement 0..=9. */
+export const Probe_PoMin: number = 0;
+/** The upper bound of po, from its refinement 0..=9. */
+export const Probe_PoMax: number = 9;
+/** The lower bound of each value of mo, from its refinement 0..=9. */
+export const Probe_MoValueMin: number = 0;
+/** The upper bound of each value of mo, from its refinement 0..=9. */
+export const Probe_MoValueMax: number = 9;
 
 const decOrder = Symbol.for("canon.order");
 
@@ -411,8 +443,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -420,16 +456,31 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
+/** The value down a @json(path:); `required` (true, or false when only a default may stand in for it) reads it as decGet does with a path, the whole path being the key's. */
+function decAt(o: Record<string, unknown>, keys: ReadonlyArray<string>, path: string, required?: boolean): unknown {
+  const full = path + "." + keys.join(".");
+  let cur = o;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const next = decGet(cur, keys[i]);
+    if (next === undefined) return required === true ? decFail(full, "missing") : undefined;
+    cur = decObject(next, path + "." + keys.slice(0, i + 1).join("."));
+  }
+  return decGet(cur, keys[keys.length - 1], required === undefined ? undefined : full, required === false);
+}
+
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -439,6 +490,7 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 
 /** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
 function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  if (raw === null) decFail(path, "null");
   const text = decText(raw);
   if (text === undefined) decFail(path, "expected a number");
   const v = typeof raw === "number" ? raw : Number(text);
@@ -487,11 +539,13 @@ function decF32(raw: unknown, path: string, refusal = "number out of range"): nu
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
 
 function decDuration(raw: unknown, path: string, unit: number): number {
+  if (raw === null) decFail(path, "null");
   const d = decDecimal(decText(raw) ?? "");
   if (d === undefined) return decFail(path, "expected a number");
   if (d.digits === "") return 0;
@@ -546,14 +600,16 @@ function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, k
   return rows;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
 function decBits<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, codes: Readonly<Record<T, number>>): T[] {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "bigint" && (typeof raw !== "number" || !Number.isSafeInteger(raw))) decFail(path, "expected a non-negative integer");
   let rest = BigInt(raw);
   if (rest < 0n) decFail(path, "expected a non-negative integer");
@@ -573,10 +629,12 @@ function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) =>
   return decArray(raw, path).map((x, i) => read(x, path + "[" + i + "]"));
 }
 
+/** An integer map key, exactly `0|-?[1-9][0-9]*` (WIRE.md §5.8; the message is the bytes of every target, CODEGEN.md §5.13), then a safe integer: past it is TypeScript's own limit. */
 function decIntKey(k: string, path: string): number {
+  if (!/^(0|-?[1-9][0-9]*)$/.test(k)) decFail(path, "expected a canonical decimal integer key");
   const n = Number(k);
-  if (!/^-?(0|[1-9][0-9]*)$/.test(k) || !Number.isSafeInteger(n)) decFail(path, "expected a decimal integer key");
-  return n === 0 ? 0 : n;
+  if (!Number.isSafeInteger(n)) decFail(path, "integer outside the TypeScript safe range");
+  return n;
 }
 
 function decMap<K, V>(raw: unknown, path: string, key: (k: string, p: string) => K, read: (x: unknown, p: string) => V): CanonMap<K, V> {
@@ -594,8 +652,10 @@ function decPairs<T>(o: Record<string, unknown>, path: string, ka: ReadonlyArray
       empty = true;
       continue;
     }
-    if (a === undefined || b === undefined || a === null || b === null) decFail(path + "." + ka[i], "a pair needs both keys");
-    if (empty) decFail(path + "." + ka[i], "a filled slot after an empty one");
+    const first = path + "." + (a === undefined ? kb[i] : ka[i]);
+    if (a === undefined || b === undefined) decFail(first, "incomplete pairs slot");
+    if (a === null || b === null) decFail(first, "null in a pairs slot");
+    if (empty) decFail(first, "pairs slot after an empty one");
     out.push(read(a, b, path + "." + ka[i], path + "." + kb[i]));
   }
   return out;
@@ -785,7 +845,7 @@ function readPick($raw: unknown, $path: string, $disc: Flag): Pick {
 
 function readSub($raw: unknown, $path: string): Sub {
   const $o = decObject($raw, $path);
-  const $v1: number = decIn(decInt(decGet($o, "v"), $path + ".v", -9223372036854776000, 9223372036854776000), $path + ".v", 0, 3, true, "0..=3");
+  const $v1: number = decIn(decInt(decGet($o, "v", $path + ".v"), $path + ".v", -9223372036854776000, 9223372036854776000), $path + ".v", 0, 3, true, "0..=3");
   return { v: $v1 };
 }
 
@@ -800,8 +860,8 @@ export function parseSub(text: string): Sub {
 
 function readSlot($raw: unknown, $path: string): Slot {
   const $o = decObject($raw, $path);
-  const $v1: number = decIn(decInt(decGet($o, "n"), $path + ".n", -9223372036854776000, 9223372036854776000), $path + ".n", 0, 3, true, "0..=3");
-  const $v2: number = decIn(decInt(decGet($o, "w"), $path + ".w", -9223372036854776000, 9223372036854776000), $path + ".w", 0, 3, true, "0..=3");
+  const $v1: number = decIn(decInt(decGet($o, "n", $path + ".n"), $path + ".n", -9223372036854776000, 9223372036854776000), $path + ".n", 0, 3, true, "0..=3");
+  const $v2: number = decIn(decInt(decGet($o, "w", $path + ".w"), $path + ".w", -9223372036854776000, 9223372036854776000), $path + ".w", 0, 3, true, "0..=3");
   return { n: $v1, w: $v2 };
 }
 
@@ -816,7 +876,7 @@ export function parseSlot(text: string): Slot {
 
 function readRow($raw: unknown, $path: string): Row {
   const $o = decObject($raw, $path);
-  const $v1: number = decIn(decInt(decGet($o, "id"), $path + ".id", -9223372036854776000, 9223372036854776000), $path + ".id", 0, 9, true, "0..=9");
+  const $v1: number = decIn(decInt(decGet($o, "id", $path + ".id"), $path + ".id", -9223372036854776000, 9223372036854776000), $path + ".id", 0, 9, true, "0..=9");
   return { id: $v1 };
 }
 
@@ -831,19 +891,19 @@ export function parseRow(text: string): Row {
 
 function readShape($raw: unknown, $path: string): Shape {
   const $o = decObject($raw, $path);
-  const $tag = decString(decGet($o, "kind"), $path + ".kind");
+  const $tag = decString(decGet($o, "kind", $path + ".kind"), $path + ".kind");
   switch ($tag) {
     case "circle":
       return readShapeCircle($o, $path);
     case "dot":
       return { kind: "dot" };
     default:
-      return decFail($path + ".kind", "unknown case");
+      return decFail($path + ".kind", "unknown case " + $tag);
   }
 }
 
 function readShapeCircle($o: Record<string, unknown>, $path: string): ShapeCircle {
-  const $v1: number = decIn(decInt(decGet($o, "r"), $path + ".r", -9223372036854776000, 9223372036854776000), $path + ".r", 0, 2, true, "0..=2");
+  const $v1: number = decIn(decInt(decGet($o, "r", $path + ".r"), $path + ".r", -9223372036854776000, 9223372036854776000), $path + ".r", 0, 2, true, "0..=2");
   return { kind: "circle", r: $v1 };
 }
 
@@ -858,36 +918,43 @@ export function parseShape(text: string): Shape {
 
 function readProbe($raw: unknown, $path: string): Probe {
   const $o = decObject($raw, $path);
-  const $v1: number = decIn(decInt(decGet($o, "n"), $path + ".n", -9223372036854776000, 9223372036854776000), $path + ".n", 1, 120, true, "1..=120");
-  const $v2: number = decInt(decGet($o, "u8"), $path + ".u8", 0, 255);
-  const $v3: number = decIn(decInt(decGet($o, "i8"), $path + ".i8", -128, 127), $path + ".i8", 0, Infinity, true, "0..=300");
-  const $v4: number = decIn(decInt(decGet($o, "ex"), $path + ".ex", -9223372036854776000, 9223372036854776000), $path + ".ex", -Infinity, 5, false, "..5");
-  const $v5: number = decIn(decFloat(decGet($o, "f"), $path + ".f"), $path + ".f", 0, 1, false, "0..1");
-  const $v6: number = decIn(decF32(decGet($o, "f32"), $path + ".f32"), $path + ".f32", -Infinity, 0.1, true, "..=0.1");
-  const $v7: number = decIn(decDuration(decGet($o, "d"), $path + ".d", 1), $path + ".d", 1000, 3600000, true, "1s..=1h");
-  const $v8: string = decStrIn(decString(decGet($o, "s"), $path + ".s"), $path + ".s", 1, 4, true, "1..=4");
-  const $v9: ReadonlyArray<number> = decCountIn(decList(decGet($o, "tags"), $path + ".tags", ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5")), $path + ".tags", -Infinity, 3, true, "..=3");
-  const $v10: ReadonlyMap<string, number> = decCountIn(decMap(decGet($o, "m"), $path + ".m", ($k, $p) => decStrIn($k, $p, 1, 3, true, "1..=3"), ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9")), $path + ".m", -Infinity, 2, true, "..=2");
-  const $v11: ReadonlyMap<number, string> = decMap(decGet($o, "mi"), $path + ".mi", ($k, $p) => decIn(decInt(decIntKey($k, $p), $p, 0, 255), $p, -Infinity, 100, true, "..=100"), ($x, $p) => decString($x, $p));
-  const $v12: ReadonlyMap<string, number> = decMap(decGet($o, "me"), $path + ".me", ($k, $p) => $k, ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9"));
-  const $v13: ReadonlyMap<string, Sub> = decMap(decGet($o, "mr"), $path + ".mr", ($k, $p) => $k, ($x, $p) => readSub($x, $p));
-  const $v14: ReadonlyArray<number | null> = decList(decGet($o, "opts"), $path + ".opts", ($x, $p) => $x === null ? null : decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5"));
+  const $v1: number = decIn(decInt(decGet($o, "n", $path + ".n"), $path + ".n", -9223372036854776000, 9223372036854776000), $path + ".n", 1, 120, true, "1..=120");
+  const $v2: number = decInt(decGet($o, "u8", $path + ".u8"), $path + ".u8", 0, 255);
+  const $v3: number = decIn(decInt(decGet($o, "i8", $path + ".i8"), $path + ".i8", -128, 127), $path + ".i8", 0, Infinity, true, "0..=300");
+  const $v4: number = decIn(decInt(decGet($o, "ex", $path + ".ex"), $path + ".ex", -9223372036854776000, 9223372036854776000), $path + ".ex", -Infinity, 5, false, "..5");
+  const $v5: number = decIn(decFloat(decGet($o, "f", $path + ".f"), $path + ".f"), $path + ".f", 0, 1, false, "0..1");
+  const $v6: number = decIn(decF32(decGet($o, "f32", $path + ".f32"), $path + ".f32"), $path + ".f32", -Infinity, 0.1, true, "..=0.1");
+  const $v7: number = decIn(decDuration(decGet($o, "d", $path + ".d"), $path + ".d", 1), $path + ".d", 1000, 3600000, true, "1s..=1h");
+  const $v8: string = decStrIn(decString(decGet($o, "s", $path + ".s"), $path + ".s"), $path + ".s", 1, 4, true, "1..=4");
+  const $v9: ReadonlyArray<number> = decCountIn(decList(decGet($o, "tags", $path + ".tags"), $path + ".tags", ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5")), $path + ".tags", -Infinity, 3, true, "..=3");
+  const $v10: ReadonlyMap<string, number> = decCountIn(decMap(decGet($o, "m", $path + ".m"), $path + ".m", ($k, $p) => decStrIn($k, $p, 1, 3, true, "1..=3"), ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9")), $path + ".m", -Infinity, 2, true, "..=2");
+  const $v11: ReadonlyMap<number, string> = decMap(decGet($o, "mi", $path + ".mi"), $path + ".mi", ($k, $p) => decIn(decInt(decIntKey($k, $p), $p, 0, 255), $p, -Infinity, 100, true, "..=100"), ($x, $p) => decString($x, $p));
+  const $v12: ReadonlyMap<string, number> = decMap(decGet($o, "me", $path + ".me"), $path + ".me", ($k, $p) => $k, ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9"));
+  const $v13: ReadonlyMap<string, Sub> = decMap(decGet($o, "mr", $path + ".mr"), $path + ".mr", ($k, $p) => $k, ($x, $p) => readSub($x, $p));
+  const $v14: ReadonlyArray<number | null> = decList(decGet($o, "opts", $path + ".opts"), $path + ".opts", ($x, $p) => $x === null ? null : decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5"));
   const $r15 = decGet($o, "opt");
   const $v15: number | null = $r15 === undefined || $r15 === null ? null : decIn(decInt($r15, $path + ".opt", -9223372036854776000, 9223372036854776000), $path + ".opt", 0, 5, true, "0..=5");
   const $r16 = decGet($o, "mk");
   const $v16: number | null = $r16 === undefined || $r16 === null || decSame($r16, "-1") ? null : decIn(decInt($r16, $path + ".mk", -9223372036854776000, 9223372036854776000), $path + ".mk", 0, 5, true, "0..=5");
-  const $v17: string | "auto" = decStrIn(decString(decGet($o, "lit"), $path + ".lit") as string | "auto", $path + ".lit", 6, 8, true, "6..=8", ["auto"]);
-  const $r18 = decGet($o, "dfl");
+  const $v17: string | "auto" = decStrIn(decString(decGet($o, "lit", $path + ".lit"), $path + ".lit") as string | "auto", $path + ".lit", 6, 8, true, "6..=8", ["auto"]);
+  const $r18 = decGet($o, "dfl", $path + ".dfl", true);
   const $v18: number = $r18 === undefined ? 3 : decIn(decInt($r18, $path + ".dfl", -9223372036854776000, 9223372036854776000), $path + ".dfl", 1, 5, true, "1..=5");
-  const $v19: Sub = readSub(decGet($o, "sub"), $path + ".sub");
-  const $v20: Shape = readShape(decGet($o, "shape"), $path + ".shape");
-  const $v21: ReadonlyArray<Flag> = decCountIn(decBits(decGet($o, "flags"), $path + ".flags", FlagMembers, FlagCodes), $path + ".flags", 1, 2, true, "1..=2");
-  const $v22: Flag = decEnum(decGet($o, "dsel"), $path + ".dsel", FlagMembers);
-  const $v23: Pick = readPick(decGet($o, "dep"), $path + ".dep", $v22);
-  const $v24: ReadonlyArray<Row> = decCountIn(decUnique(decList(decGet($o, "rows"), $path + ".rows", ($x, $p) => readRow($x, $p)), $path + ".rows", ($e) => $e.id, "id"), $path + ".rows", -Infinity, 2, true, "..=2");
+  const $v19: Sub = readSub(decGet($o, "sub", $path + ".sub"), $path + ".sub");
+  const $v20: Shape = readShape(decGet($o, "shape", $path + ".shape"), $path + ".shape");
+  const $v21: ReadonlyArray<Flag> = decCountIn(decBits(decGet($o, "flags", $path + ".flags"), $path + ".flags", FlagMembers, FlagCodes), $path + ".flags", 1, 2, true, "1..=2");
+  const $v22: Flag = decEnum(decGet($o, "dsel", $path + ".dsel"), $path + ".dsel", FlagMembers);
+  const $v23: Pick = readPick(decGet($o, "dep", $path + ".dep"), $path + ".dep", $v22);
+  const $v24: ReadonlyArray<Row> = decCountIn(decUnique(decList(decGet($o, "rows", $path + ".rows"), $path + ".rows", ($x, $p) => readRow($x, $p)), $path + ".rows", ($e) => $e.id, "id"), $path + ".rows", -Infinity, 2, true, "..=2");
   const $v25: ReadonlyArray<Slot> = decCountIn(decPairs($o, $path, ["n0", "n1"], ["w0", "w1"], ($a, $b, $pa, $pb) => ({ n: decIn(decInt($a, $pa, -9223372036854776000, 9223372036854776000), $pa, 0, 3, true, "0..=3"), w: decIn(decInt($b, $pb, -9223372036854776000, 9223372036854776000), $pb, 0, 3, true, "0..=3") })), $path + ".slots", 1, 2, true, "1..=2");
-  const $v26: number = decIn(decDuration(decGet($o, "ds"), $path + ".ds", 1000), $path + ".ds", 1000, 2000, true, "1s..=2s");
-  return { n: $v1, u8: $v2, i8: $v3, ex: $v4, f: $v5, f32: $v6, d: $v7, s: $v8, tags: $v9, m: $v10, mi: $v11, me: $v12, mr: $v13, opts: $v14, opt: $v15, mk: $v16, lit: $v17, dfl: $v18, sub: $v19, shape: $v20, flags: $v21, dsel: $v22, dep: $v23, rows: $v24, slots: $v25, ds: $v26 };
+  const $v26: number = decIn(decDuration(decGet($o, "ds", $path + ".ds"), $path + ".ds", 1000), $path + ".ds", 1000, 2000, true, "1s..=2s");
+  const $v27: number = decIn(decInt(decAt($o, ["p", "q"], $path, true), $path + ".p.q", -9223372036854776000, 9223372036854776000), $path + ".p.q", 0, 9, true, "0..=9");
+  const $r28 = decAt($o, ["pd", "q"], $path, false);
+  const $v28: number = $r28 === undefined ? 4 : decIn(decInt($r28, $path + ".pd.q", -9223372036854776000, 9223372036854776000), $path + ".pd.q", 0, 9, true, "0..=9");
+  const $r29 = decAt($o, ["po", "q"], $path);
+  const $v29: number | null = $r29 === undefined || $r29 === null ? null : decIn(decInt($r29, $path + ".po.q", -9223372036854776000, 9223372036854776000), $path + ".po.q", 0, 9, true, "0..=9");
+  const $r30 = decGet($o, "mo", $path + ".mo", true);
+  const $v30: ReadonlyMap<string, number | null> = $r30 === undefined ? new CanonMap<string, number | null>([]) : decMap($r30, $path + ".mo", ($k, $p) => $k, ($x, $p) => $x === null ? null : decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9"));
+  return { n: $v1, u8: $v2, i8: $v3, ex: $v4, f: $v5, f32: $v6, d: $v7, s: $v8, tags: $v9, m: $v10, mi: $v11, me: $v12, mr: $v13, opts: $v14, opt: $v15, mk: $v16, lit: $v17, dfl: $v18, sub: $v19, shape: $v20, flags: $v21, dsel: $v22, dep: $v23, rows: $v24, slots: $v25, ds: $v26, pr: $v27, pd: $v28, po: $v29, mo: $v30 };
 }
 
 /** Every position. */

@@ -136,8 +136,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -145,14 +149,22 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
+  if (typeof raw !== "string") decFail(path, "expected a string");
+  return raw;
+}
+
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
@@ -329,7 +341,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readBadge($raw: unknown, $path: string): Badge {
   const $o = decObject($raw, $path);
-  const $v1: core.Tone = decEnum(decGet($o, "tone"), $path + ".tone", core.ToneMembers);
+  const $v1: core.Tone = decEnum(decGet($o, "tone", $path + ".tone"), $path + ".tone", core.ToneMembers);
   return { tone: $v1 };
 }
 

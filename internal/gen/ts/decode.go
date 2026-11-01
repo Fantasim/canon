@@ -153,7 +153,8 @@ func (g *gen) valueDecoder(v *ir.Value) {
 		g.use(canonFreezeName)
 		ret = g.named(rec)
 		path := quote(fmt.Sprintf(valuePathFormat, label))
-		g.add(fmt.Sprintf(valueDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), g.decClass(rec, valueRaw, path)))
+		read := g.decClass(rec, fmt.Sprintf(valueRawFormat, path), path)
+		g.add(fmt.Sprintf(valueDecoderFormat, name, ret, effective(v.TS, v.Name)+schemaSuffix, quote(label), read))
 	default:
 		g.failf(ErrMalformed, malformedDataValue, v.Name)
 		return
@@ -187,7 +188,7 @@ func (g *gen) keyedDecoder(v *ir.Value, name, label string) string {
 // rowsRead is the rows of a data file's table or keyed list read one by one, `decList(decGet($doc, "rows"), "f.json: rows", ($x, $p) => row)`, held to unique keys after its rows, then a keyed list to its count refinement (WIRE.md §5.7, CODEGEN.md §5.15).
 func (g *gen) rowsRead(v *ir.Value, label, row string) string {
 	path := quote(fmt.Sprintf(rowsPathFormat, label))
-	list := g.call(decListName, rowsRaw, path, fmt.Sprintf(lambdaFormat, row))
+	list := g.call(decListName, fmt.Sprintf(rowsRawFormat, path), path, fmt.Sprintf(lambdaFormat, row))
 	if v.Type.Kind == types.Table {
 		list = g.unique(list, path, idProp, dollarKey+idProp, ir.TypeRef{Kind: types.String})
 	} else {
@@ -224,6 +225,6 @@ func (g *gen) rowRead(rec *ir.Record, row string) string {
 // foreignRowRead is the block reading a row of another package's record: the record through this file's reader, then the row's id (id, an expression of the block) and `$retired` (WIRE.md §5.7).
 func (g *gen) foreignRowRead(rec *ir.Record, id string) string {
 	g.need(rec)
-	g.use(decObjectName, decGetName, decBoolName)
+	g.use(decObjectName, decGetName, decFailName)
 	return fmt.Sprintf(foreignRowFormat, g.readerName(rec), id)
 }

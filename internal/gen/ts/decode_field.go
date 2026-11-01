@@ -36,16 +36,23 @@ func (g *gen) fieldRead(rd *reading, f *ir.Field) {
 
 // keyRead is the statements reading a field's key: a required value, one with a default, or an optional one (WIRE.md §5.4).
 func (g *gen) keyRead(rd *reading, f *ir.Field, local, r string) []string {
-	raw, path := g.rawOf(f), g.pathOf(f)
+	hasDefault := f.Default != nil && !f.Computed
+	need := readPlain
+	if !f.Optional {
+		need = readRequired
+		if hasDefault {
+			need = readDefaulted
+		}
+	}
+	raw, path := g.rawOf(f, need), g.pathOf(f)
 	ctx := decCtx{unit: f.Unit, enc: f.Enc, big: f.BigInt}
 	if app := ir.HeldApp(f.Type); app != nil && f.Branches != nil {
 		ctx.disc = g.branchDisc(rd, f, *app)
 	} else if app != nil {
 		ctx.disc = g.discExpr(rd, *app)
 	}
-	hasDefault := f.Default != nil && !f.Computed
 	typ := g.fieldType(f)
-	if !f.Optional && !hasDefault {
+	if need == readRequired {
 		return []string{fmt.Sprintf(typedLocalFormat, local, typ, g.dec(f.Type, raw, path, ctx))}
 	}
 	read := g.dec(f.Type, r, path, ctx)
@@ -73,16 +80,27 @@ func (g *gen) defaultLit(f *ir.Field, rd *reading) string {
 	return g.fieldLit(f, f.Default, &owner{fields: rd.fields})
 }
 
-// rawOf is the key of an object a field reads: `decGet(o, "k")`, or `decAt(o, ["a", "k"], path)` down its @json(path:).
-func (g *gen) rawOf(f *ir.Field) string {
+// rawOf is the key of an object a field reads, as n says: `decGet(o, "k")`, or `decAt(o, ["a", "k"], path)` down its @json(path:); a required or defaulted one carries its path, for the failures of its absent or null key.
+func (g *gen) rawOf(f *ir.Field, n need) string {
 	if len(f.WirePath) == 1 {
-		return g.getKey(objVar, f.WirePath[0])
+		if n == readPlain {
+			return g.getKey(objVar, f.WirePath[0])
+		}
+		args := []string{objVar, quote(f.WirePath[0]), g.pathOf(f)}
+		if n == readDefaulted {
+			args = append(args, strconv.FormatBool(true))
+		}
+		return g.call(decGetName, args...)
 	}
 	keys := make([]string, len(f.WirePath))
 	for i, k := range f.WirePath {
 		keys[i] = quote(k)
 	}
-	return g.call(decAtName, objVar, lbracket+joinArgs(keys)+rbracket, pathParam)
+	args := []string{objVar, lbracket + joinArgs(keys) + rbracket, pathParam}
+	if n != readPlain {
+		args = append(args, strconv.FormatBool(n == readRequired))
+	}
+	return g.call(decAtName, args...)
 }
 
 // pathOf is the JSON pointer of a field's value, for messages.
@@ -178,8 +196,11 @@ func (g *gen) discExpr(rd *reading, app ir.TypeRef) string {
 func (g *gen) fnRead(rd *reading, fn *ir.ExportFn) {
 	local := g.local()
 	key := dollarKey + fn.Name
-	raw := g.getKey(objVar, key)
 	path := pathParam + plusSep + quote(dot+key)
+	raw := g.call(decGetName, objVar, quote(key), path)
+	if len(fn.Params) == 0 && fn.Result.Kind == types.Optional { // an optional result may be absent or null: none
+		raw = fmt.Sprintf(orNullFormat, g.getKey(objVar, key))
+	}
 	var read string
 	if len(fn.Params) == 0 {
 		read = g.dec(fn.Result, raw, path, decCtx{})
@@ -195,13 +216,18 @@ func (g *gen) finiteRead(fn *ir.ExportFn, level int, raw, path string) string {
 	p := fn.Params[level]
 	keys, wire := g.domainKeys(fn, level)
 	var inner string
-	if level+1 == len(fn.Params) {
+	last := level+1 == len(fn.Params)
+	if last {
 		inner = g.dec(fn.Result, lambdaRaw, lambdaPath, decCtx{})
 	} else {
 		inner = g.finiteRead(fn, level+1, lambdaRaw, lambdaPath)
 	}
+	args := []string{raw, path, keys, wire, fmt.Sprintf(lambdaFormat, inner)}
+	if last && fn.Result.Kind == types.Optional { // a null cell is none (WIRE.md §5.11)
+		args = append(args, strconv.FormatBool(true))
+	}
 	targs := g.domainType(p.Type) + listSep + g.levelType(fn, level+1)
-	return g.helper(decKeyedName) + fmt.Sprintf(typeArgsFormat, targs) + lparen + joinArgs([]string{raw, path, keys, wire, fmt.Sprintf(lambdaFormat, inner)}) + rparen
+	return g.helper(decKeyedName) + fmt.Sprintf(typeArgsFormat, targs) + lparen + joinArgs(args) + rparen
 }
 
 // levelType is the type of what a level of a finite fn's object holds: the result wrapped by the parameters after level.

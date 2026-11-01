@@ -31,7 +31,7 @@ test("a foreign decoder's failure is reported at one JSON path, the field's join
   assert.throws(() => decodeAwards(doc), /^Error: awards\.json: rows\[0\]\.pin: expected an object$/);
   doc.rows[0].pin = { place: "x" };
   doc.rows[0].tone = "green";
-  assert.throws(() => decodeAwards(doc), /rows\[0\]\.tone: unknown member/);
+  assert.throws(() => decodeAwards(doc), /rows\[0\]\.tone: unknown value green/);
 });
 
 test("a lookup over an imported enum indexes through a private index of its Members (CODEGEN.md §5.10)", () => {

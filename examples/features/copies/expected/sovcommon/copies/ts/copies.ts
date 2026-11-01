@@ -97,8 +97,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -106,21 +110,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
-function decBool(raw: unknown, path: string): boolean {
-  if (typeof raw !== "boolean") decFail(path, "expected a boolean");
-  return raw;
-}
-
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -137,10 +139,11 @@ function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, k
   return rows;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
@@ -321,7 +324,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeBadges(json: unknown): CanonTable<BadgeId, CanonRow<Badge, BadgeId>> {
   const $doc = canonEnvelope(json, badgesSchema, "badges.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "badges.json: rows", ($x, $p) => readBadge($x, $p) as CanonRow<Badge, BadgeId>), "badges.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "badges.json: rows"), "badges.json: rows", ($x, $p) => readBadge($x, $p) as CanonRow<Badge, BadgeId>), "badges.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseBadges(text: string): CanonTable<BadgeId, CanonRow<Badge, BadgeId>> {
@@ -330,8 +333,8 @@ export function parseBadges(text: string): CanonTable<BadgeId, CanonRow<Badge, B
 
 function readBadge($raw: unknown, $path: string, $rowId?: string): Badge {
   const $o = decObject($raw, $path);
-  const $v1 = $rowId ?? decString(decGet($o, "$id"), $path + ".$id");
-  const $v2 = decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + ".$retired");
-  const $v3: features_copies_base.Tone = decEnum(decGet($o, "tone"), $path + ".tone", features_copies_base.ToneMembers);
+  const $v1 = $rowId ?? decString(decGet($o, "$id", $path + ".$id"), $path + ".$id");
+  const $v2 = decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($path + ".$retired", "expected true"));
+  const $v3: features_copies_base.Tone = decEnum(decGet($o, "tone", $path + ".tone"), $path + ".tone", features_copies_base.ToneMembers);
   return { id: $v1, retired: $v2, tone: $v3 };
 }

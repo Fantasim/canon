@@ -204,8 +204,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -213,11 +217,13 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "number" && Number.isInteger(raw) && !Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
   const v = typeof raw === "bigint" ? raw : typeof raw === "number" && Number.isSafeInteger(raw) ? BigInt(raw) : decFail(path, "expected an integer");
   if (v < lo || v > hi) decFail(path, "integer out of range");
@@ -225,6 +231,7 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -407,8 +414,8 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readBadge($raw: unknown, $path: string): Badge {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "label"), $path + ".label");
-  const $r2 = decGet($o, "tags");
+  const $v1: string = decString(decGet($o, "label", $path + ".label"), $path + ".label");
+  const $r2 = decGet($o, "tags", $path + ".tags", true);
   const $v2: ReadonlyMap<string, c.Tag> = $r2 === undefined ? new CanonMap<string, c.Tag>([]) : decMap($r2, $path + ".tags", ($k, $p) => $k, ($x, $p) => read_c_Tag($x, $p));
   return { label: $v1, tags: $v2 };
 }
@@ -424,8 +431,8 @@ export function parseBadge(text: string): Badge {
 
 function read_c_Tag($raw: unknown, $path: string): c.Tag {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "t"), $path + ".t");
-  const $r2 = decGet($o, "big");
+  const $v1: string = decString(decGet($o, "t", $path + ".t"), $path + ".t");
+  const $r2 = decGet($o, "big", $path + ".big", true);
   const $v2: bigint = $r2 === undefined ? 0n : decBig($r2, $path + ".big", -9223372036854775808n, 9223372036854775807n);
   return { t: $v1, big: $v2 };
 }
@@ -486,8 +493,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -495,11 +506,13 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "number" && Number.isInteger(raw) && !Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
   const v = typeof raw === "bigint" ? raw : typeof raw === "number" && Number.isSafeInteger(raw) ? BigInt(raw) : decFail(path, "expected an integer");
   if (v < lo || v > hi) decFail(path, "integer out of range");
@@ -507,6 +520,7 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -684,8 +698,8 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readTag($raw: unknown, $path: string): Tag {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "t"), $path + ".t");
-  const $r2 = decGet($o, "big");
+  const $v1: string = decString(decGet($o, "t", $path + ".t"), $path + ".t");
+  const $r2 = decGet($o, "big", $path + ".big", true);
   const $v2: bigint = $r2 === undefined ? 0n : decBig($r2, $path + ".big", -9223372036854775808n, 9223372036854775807n);
   return { t: $v1, big: $v2 };
 }

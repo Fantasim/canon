@@ -107,8 +107,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -116,11 +120,13 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -128,10 +134,15 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
   return raw === 0 ? 0 : raw;
 }
 
-function decKeyed<K extends string, T>(raw: unknown, path: string, keys: ReadonlyArray<K>, wire: (k: K) => string, read: (x: unknown, p: string) => T): Record<K, T> {
+function decKeyed<K extends string, T>(raw: unknown, path: string, keys: ReadonlyArray<K>, wire: (k: K) => string, read: (x: unknown, p: string) => T, noneOk = false): Record<K, T> {
   const o = decObject(raw, path);
   const out = {} as Record<K, T>;
-  for (const k of keys) out[k] = read(decGet(o, wire(k)), path + "." + wire(k));
+  for (const k of keys) {
+    const at = path + "." + wire(k);
+    const v = decGet(o, wire(k), noneOk ? undefined : at);
+    if (v === undefined) decFail(at, "missing");
+    out[k] = read(v, at);
+  }
   return out;
 }
 
@@ -308,7 +319,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeZone(json: unknown): Zone {
   const $doc = canonEnvelope(json, zoneSchema, "zone.json");
-  return canonFreeze(readZone(decGet($doc, "value"), "zone.json: value"));
+  return canonFreeze(readZone(decGet($doc, "value", "zone.json: value"), "zone.json: value"));
 }
 
 export function parseZone(text: string): Zone {
@@ -317,14 +328,14 @@ export function parseZone(text: string): Zone {
 
 function readZone($raw: unknown, $path: string): Zone {
   const $o = decObject($raw, $path);
-  const $v1: b.Band = read_b_Band(decGet($o, "band"), $path + ".band");
+  const $v1: b.Band = read_b_Band(decGet($o, "band", $path + ".band"), $path + ".band");
   return { band: $v1 };
 }
 
 function read_b_Band($raw: unknown, $path: string): b.Band {
   const $o = decObject($raw, $path);
-  const $v1: number = decInt(decGet($o, "base"), $path + ".base", -9223372036854776000, 9223372036854776000);
-  const $v2: Readonly<Record<b.ItemId, number>> = decKeyed<b.ItemId, number>(decGet($o, "$bonus"), $path + ".$bonus", [], ($k) => $k, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v1: number = decInt(decGet($o, "base", $path + ".base"), $path + ".base", -9223372036854776000, 9223372036854776000);
+  const $v2: Readonly<Record<b.ItemId, number>> = decKeyed<b.ItemId, number>(decGet($o, "$bonus", $path + ".$bonus"), $path + ".$bonus", [], ($k) => $k, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   return { base: $v1, bonus: $v2 };
 }
 === features/b/b.ts ===

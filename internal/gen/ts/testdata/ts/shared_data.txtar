@@ -534,8 +534,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -543,21 +547,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
-function decBool(raw: unknown, path: string): boolean {
-  if (typeof raw !== "boolean") decFail(path, "expected a boolean");
-  return raw;
-}
-
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -566,6 +568,7 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -582,10 +585,11 @@ function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, k
   return rows;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
@@ -596,10 +600,15 @@ function decEntry<K extends string>(raw: unknown, path: string, index: Readonly<
   return k as K;
 }
 
-function decKeyed<K extends string, T>(raw: unknown, path: string, keys: ReadonlyArray<K>, wire: (k: K) => string, read: (x: unknown, p: string) => T): Record<K, T> {
+function decKeyed<K extends string, T>(raw: unknown, path: string, keys: ReadonlyArray<K>, wire: (k: K) => string, read: (x: unknown, p: string) => T, noneOk = false): Record<K, T> {
   const o = decObject(raw, path);
   const out = {} as Record<K, T>;
-  for (const k of keys) out[k] = read(decGet(o, wire(k)), path + "." + wire(k));
+  for (const k of keys) {
+    const at = path + "." + wire(k);
+    const v = decGet(o, wire(k), noneOk ? undefined : at);
+    if (v === undefined) decFail(at, "missing");
+    out[k] = read(v, at);
+  }
   return out;
 }
 
@@ -790,7 +799,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeZones(json: unknown): CanonTable<ZoneId, CanonRow<Zone, ZoneId>> {
   const $doc = canonEnvelope(json, zonesSchema, "zones.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "zones.json: rows", ($x, $p) => readZone($x, $p) as CanonRow<Zone, ZoneId>), "zones.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "zones.json: rows"), "zones.json: rows", ($x, $p) => readZone($x, $p) as CanonRow<Zone, ZoneId>), "zones.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseZones(text: string): CanonTable<ZoneId, CanonRow<Zone, ZoneId>> {
@@ -799,9 +808,9 @@ export function parseZones(text: string): CanonTable<ZoneId, CanonRow<Zone, Zone
 
 export function decodeBands(json: unknown): CanonTable<LevelRangeId, CanonRow<game_core.LevelRange, LevelRangeId>> {
   const $doc = canonEnvelope(json, bandsSchema, "bands.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "bands.json: rows", ($x, $p) => {
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "bands.json: rows"), "bands.json: rows", ($x, $p) => {
     const $o = decObject($x, $p);
-    return { ...read_game_core_LevelRange($o, $p), id: decString(decGet($o, "$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
+    return { ...read_game_core_LevelRange($o, $p), id: decString(decGet($o, "$id", $p + ".$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($p + ".$retired", "expected true")) };
   }), "bands.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
@@ -811,9 +820,9 @@ export function parseBands(text: string): CanonTable<LevelRangeId, CanonRow<game
 
 export function decodeMoods(json: unknown): CanonTable<StatusId, CanonRow<game_core.Status, StatusId>> {
   const $doc = canonEnvelope(json, moodsSchema, "moods.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "moods.json: rows", ($x, $p) => {
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "moods.json: rows"), "moods.json: rows", ($x, $p) => {
     const $o = decObject($x, $p);
-    return { ...read_game_core_Status($o, $p), id: decString(decGet($o, "$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
+    return { ...read_game_core_Status($o, $p), id: decString(decGet($o, "$id", $p + ".$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($p + ".$retired", "expected true")) };
   }), "moods.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
@@ -823,9 +832,9 @@ export function parseMoods(text: string): CanonTable<StatusId, CanonRow<game_cor
 
 export function decodeMedals(json: unknown): CanonTable<BadgeId, CanonRow<game_core.Badge, BadgeId>> {
   const $doc = canonEnvelope(json, medalsSchema, "medals.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "medals.json: rows", ($x, $p) => {
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "medals.json: rows"), "medals.json: rows", ($x, $p) => {
     const $o = decObject($x, $p);
-    return { ...read_game_core_Badge($o, $p), id: decString(decGet($o, "$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
+    return { ...read_game_core_Badge($o, $p), id: decString(decGet($o, "$id", $p + ".$id"), $p + ".$id"), retired: decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($p + ".$retired", "expected true")) };
   }), "medals.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
@@ -835,7 +844,7 @@ export function parseMedals(text: string): CanonTable<BadgeId, CanonRow<game_cor
 
 export function decodeStart(json: unknown): game_core.LevelRange {
   const $doc = canonEnvelope(json, startSchema, "start.json");
-  return canonFreeze(read_game_core_LevelRange(decGet($doc, "value"), "start.json: value"));
+  return canonFreeze(read_game_core_LevelRange(decGet($doc, "value", "start.json: value"), "start.json: value"));
 }
 
 export function parseStart(text: string): game_core.LevelRange {
@@ -844,7 +853,7 @@ export function parseStart(text: string): game_core.LevelRange {
 
 export function decodeShelf(json: unknown): game_core.Shelf {
   const $doc = canonEnvelope(json, shelfSchema, "shelf.json");
-  return canonFreeze(read_game_core_Shelf(decGet($doc, "value"), "shelf.json: value"));
+  return canonFreeze(read_game_core_Shelf(decGet($doc, "value", "shelf.json: value"), "shelf.json: value"));
 }
 
 export function parseShelf(text: string): game_core.Shelf {
@@ -853,7 +862,7 @@ export function parseShelf(text: string): game_core.Shelf {
 
 export function decodePerks(json: unknown): CanonTable<PerkId, CanonRow<Perk, PerkId>> {
   const $doc = canonEnvelope(json, perksSchema, "perks.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "perks.json: rows", ($x, $p) => readPerk($x, $p) as CanonRow<Perk, PerkId>), "perks.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "perks.json: rows"), "perks.json: rows", ($x, $p) => readPerk($x, $p) as CanonRow<Perk, PerkId>), "perks.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parsePerks(text: string): CanonTable<PerkId, CanonRow<Perk, PerkId>> {
@@ -862,70 +871,70 @@ export function parsePerks(text: string): CanonTable<PerkId, CanonRow<Perk, Perk
 
 function readZone($raw: unknown, $path: string, $rowId?: string): Zone {
   const $o = decObject($raw, $path);
-  const $v1 = $rowId ?? decString(decGet($o, "$id"), $path + ".$id");
-  const $v2 = decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + ".$retired");
-  const $v3: game_core.LevelRange = read_game_core_LevelRange(decGet($o, "levels"), $path + ".levels");
-  const $v4: game_core.Reward = read_game_core_Reward(decGet($o, "reward"), $path + ".reward");
-  const $v5: ReadonlyArray<CanonRow<game_core.Marker, string>> = decTable(decGet($o, "markers"), $path + ".markers", ($x, $p, $rowId) => {
+  const $v1 = $rowId ?? decString(decGet($o, "$id", $path + ".$id"), $path + ".$id");
+  const $v2 = decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($path + ".$retired", "expected true"));
+  const $v3: game_core.LevelRange = read_game_core_LevelRange(decGet($o, "levels", $path + ".levels"), $path + ".levels");
+  const $v4: game_core.Reward = read_game_core_Reward(decGet($o, "reward", $path + ".reward"), $path + ".reward");
+  const $v5: ReadonlyArray<CanonRow<game_core.Marker, string>> = decTable(decGet($o, "markers", $path + ".markers"), $path + ".markers", ($x, $p, $rowId) => {
     const $o = decObject($x, $p);
-    return { ...read_game_core_Marker($o, $p), id: $rowId, retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
+    return { ...read_game_core_Marker($o, $p), id: $rowId, retired: decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($p + ".$retired", "expected true")) };
   });
-  const $v6: game_core.Effect = read_game_core_Effect(decGet($o, "effect"), $path + ".effect");
+  const $v6: game_core.Effect = read_game_core_Effect(decGet($o, "effect", $path + ".effect"), $path + ".effect");
   return { id: $v1, retired: $v2, levels: $v3, reward: $v4, markers: $v5, effect: $v6 };
 }
 
 function readPerk($raw: unknown, $path: string, $rowId?: string): Perk {
   const $o = decObject($raw, $path);
-  const $v1 = $rowId ?? decString(decGet($o, "$id"), $path + ".$id");
-  const $v2 = decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + ".$retired");
-  const $v3: game_core.Aim = decEnum(decGet($o, "aim"), $path + ".aim", game_core.AimMembers);
-  const $v4: game_core.Bonus = read_game_core_Bonus(decGet($o, "bonus"), $path + ".bonus", $v3);
+  const $v1 = $rowId ?? decString(decGet($o, "$id", $path + ".$id"), $path + ".$id");
+  const $v2 = decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($path + ".$retired", "expected true"));
+  const $v3: game_core.Aim = decEnum(decGet($o, "aim", $path + ".aim"), $path + ".aim", game_core.AimMembers);
+  const $v4: game_core.Bonus = read_game_core_Bonus(decGet($o, "bonus", $path + ".bonus"), $path + ".bonus", $v3);
   return { id: $v1, retired: $v2, aim: $v3, bonus: $v4 };
 }
 
 function read_game_core_LevelRange($raw: unknown, $path: string): game_core.LevelRange {
   const $o = decObject($raw, $path);
-  const $v1: number = decInt(decGet($o, "min"), $path + ".min", -9223372036854776000, 9223372036854776000);
-  const $v2: number = decInt(decGet($o, "max"), $path + ".max", -9223372036854776000, 9223372036854776000);
-  const $r3 = decGet($o, "labels");
+  const $v1: number = decInt(decGet($o, "min", $path + ".min"), $path + ".min", -9223372036854776000, 9223372036854776000);
+  const $v2: number = decInt(decGet($o, "max", $path + ".max"), $path + ".max", -9223372036854776000, 9223372036854776000);
+  const $r3 = decGet($o, "labels", $path + ".labels", true);
   const $v3: ReadonlyArray<string> = $r3 === undefined ? [] : decList($r3, $path + ".labels", ($x, $p) => decString($x, $p));
-  const $v4: game_tone.Tone = decEnum(decGet($o, "tone"), $path + ".tone", game_tone.ToneMembers);
-  const $v5: game_core.StatusId = decEntry(decGet($o, "status"), $path + ".status", game_core_StatusIdIndex);
-  const $r6 = decGet($o, "weights");
+  const $v4: game_tone.Tone = decEnum(decGet($o, "tone", $path + ".tone"), $path + ".tone", game_tone.ToneMembers);
+  const $v5: game_core.StatusId = decEntry(decGet($o, "status", $path + ".status"), $path + ".status", game_core_StatusIdIndex);
+  const $r6 = decGet($o, "weights", $path + ".weights", true);
   const $v6: ReadonlyMap<game_core.StatusId, number> = $r6 === undefined ? new CanonMap<game_core.StatusId, number>([]) : decMap($r6, $path + ".weights", ($k, $p) => decEntry($k, $p, game_core_StatusIdIndex), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
-  const $v7: number = decInt(decGet($o, "$width"), $path + ".$width", -9223372036854776000, 9223372036854776000);
-  const $v8: Readonly<Record<game_core.Aim, game_core.StatusId>> = decKeyed<game_core.Aim, game_core.StatusId>(decGet($o, "$statusFor"), $path + ".$statusFor", game_core.AimMembers, ($k) => $k, ($x, $p) => decEntry($x, $p, game_core_StatusIdIndex));
+  const $v7: number = decInt(decGet($o, "$width", $path + ".$width"), $path + ".$width", -9223372036854776000, 9223372036854776000);
+  const $v8: Readonly<Record<game_core.Aim, game_core.StatusId>> = decKeyed<game_core.Aim, game_core.StatusId>(decGet($o, "$statusFor", $path + ".$statusFor"), $path + ".$statusFor", game_core.AimMembers, ($k) => $k, ($x, $p) => decEntry($x, $p, game_core_StatusIdIndex));
   return { min: $v1, max: $v2, labels: $v3, tone: $v4, status: $v5, weights: $v6, width: $v7, statusFor: $v8 };
 }
 
 function read_game_core_Reward($raw: unknown, $path: string): game_core.Reward {
   const $o = decObject($raw, $path);
-  const $tag = decString(decGet($o, "kind"), $path + ".kind");
+  const $tag = decString(decGet($o, "kind", $path + ".kind"), $path + ".kind");
   switch ($tag) {
     case "coins":
       return read_game_core_RewardCoins($o, $path);
     case "nothing":
       return { kind: "nothing" };
     default:
-      return decFail($path + ".kind", "unknown case");
+      return decFail($path + ".kind", "unknown case " + $tag);
   }
 }
 
 function read_game_core_RewardCoins($o: Record<string, unknown>, $path: string): game_core.RewardCoins {
-  const $v1: number = decInt(decGet($o, "amount"), $path + ".amount", -9223372036854776000, 9223372036854776000);
+  const $v1: number = decInt(decGet($o, "amount", $path + ".amount"), $path + ".amount", -9223372036854776000, 9223372036854776000);
   return { kind: "coins", amount: $v1 };
 }
 
 function read_game_core_Marker($raw: unknown, $path: string): game_core.Marker {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "code"), $path + ".code");
+  const $v1: string = decString(decGet($o, "code", $path + ".code"), $path + ".code");
   return { code: $v1 };
 }
 
 function read_game_core_Effect($raw: unknown, $path: string): game_core.Effect {
   const $o = decObject($raw, $path);
-  const $v1: game_core.Aim = decEnum(decGet($o, "aim"), $path + ".aim", game_core.AimMembers);
-  const $v2: game_core.Bonus = read_game_core_Bonus(decGet($o, "bonus"), $path + ".bonus", $v1);
+  const $v1: game_core.Aim = decEnum(decGet($o, "aim", $path + ".aim"), $path + ".aim", game_core.AimMembers);
+  const $v2: game_core.Bonus = read_game_core_Bonus(decGet($o, "bonus", $path + ".bonus"), $path + ".bonus", $v1);
   return { aim: $v1, bonus: $v2 };
 }
 
@@ -942,21 +951,21 @@ function read_game_core_Bonus($raw: unknown, $path: string, $disc: game_core.Aim
 
 function read_game_core_Status($raw: unknown, $path: string): game_core.Status {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "label"), $path + ".label");
+  const $v1: string = decString(decGet($o, "label", $path + ".label"), $path + ".label");
   return { label: $v1 };
 }
 
 function read_game_core_Badge($raw: unknown, $path: string): game_core.Badge {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "label"), $path + ".label");
+  const $v1: string = decString(decGet($o, "label", $path + ".label"), $path + ".label");
   return { label: $v1 };
 }
 
 function read_game_core_Shelf($raw: unknown, $path: string): game_core.Shelf {
   const $o = decObject($raw, $path);
-  const $v1: ReadonlyArray<CanonRow<game_core.Marker, string>> = decTable(decGet($o, "slots"), $path + ".slots", ($x, $p, $rowId) => {
+  const $v1: ReadonlyArray<CanonRow<game_core.Marker, string>> = decTable(decGet($o, "slots", $path + ".slots"), $path + ".slots", ($x, $p, $rowId) => {
     const $o = decObject($x, $p);
-    return { ...read_game_core_Marker($o, $p), id: $rowId, retired: decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $p + ".$retired") };
+    return { ...read_game_core_Marker($o, $p), id: $rowId, retired: decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($p + ".$retired", "expected true")) };
   });
   return { slots: $v1 };
 }

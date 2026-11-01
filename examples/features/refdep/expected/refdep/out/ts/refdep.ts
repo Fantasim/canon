@@ -158,8 +158,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -167,21 +171,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
-function decBool(raw: unknown, path: string): boolean {
-  if (typeof raw !== "boolean") decFail(path, "expected a boolean");
-  return raw;
-}
-
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -198,10 +200,11 @@ function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, k
   return rows;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
@@ -382,7 +385,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeEventShapes(json: unknown): CanonTable<Event, EventShape> {
   const $doc = canonEnvelope(json, eventShapesSchema, "eventShapes.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "eventShapes.json: rows", ($x, $p) => readEventShape($x, $p)), "eventShapes.json: rows", ($e) => $e.event, "event")), ($e) => $e.event);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "eventShapes.json: rows"), "eventShapes.json: rows", ($x, $p) => readEventShape($x, $p)), "eventShapes.json: rows", ($e) => $e.event, "event")), ($e) => $e.event);
 }
 
 export function parseEventShapes(text: string): CanonTable<Event, EventShape> {
@@ -391,7 +394,7 @@ export function parseEventShapes(text: string): CanonTable<Event, EventShape> {
 
 export function decodeRegionNames(json: unknown): CanonTable<LabelId, CanonRow<Label, LabelId>> {
   const $doc = canonEnvelope(json, regionNamesSchema, "regionNames.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "regionNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>), "regionNames.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "regionNames.json: rows"), "regionNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>), "regionNames.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseRegionNames(text: string): CanonTable<LabelId, CanonRow<Label, LabelId>> {
@@ -400,7 +403,7 @@ export function parseRegionNames(text: string): CanonTable<LabelId, CanonRow<Lab
 
 export function decodeStageNames(json: unknown): CanonTable<LabelId, CanonRow<Label, LabelId>> {
   const $doc = canonEnvelope(json, stageNamesSchema, "stageNames.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "stageNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>), "stageNames.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "stageNames.json: rows"), "stageNames.json: rows", ($x, $p) => readLabel($x, $p) as CanonRow<Label, LabelId>), "stageNames.json: rows", ($e) => $e.id, "$id")), ($e) => $e.id);
 }
 
 export function parseStageNames(text: string): CanonTable<LabelId, CanonRow<Label, LabelId>> {
@@ -409,15 +412,15 @@ export function parseStageNames(text: string): CanonTable<LabelId, CanonRow<Labe
 
 function readEventShape($raw: unknown, $path: string): EventShape {
   const $o = decObject($raw, $path);
-  const $v1: Event = decEnum(decGet($o, "event"), $path + ".event", EventMembers);
-  const $v2: Shape = decEnum(decGet($o, "shape"), $path + ".shape", ShapeMembers);
+  const $v1: Event = decEnum(decGet($o, "event", $path + ".event"), $path + ".event", EventMembers);
+  const $v2: Shape = decEnum(decGet($o, "shape", $path + ".shape"), $path + ".shape", ShapeMembers);
   return { event: $v1, shape: $v2 };
 }
 
 function readLabel($raw: unknown, $path: string, $rowId?: string): Label {
   const $o = decObject($raw, $path);
-  const $v1 = $rowId ?? decString(decGet($o, "$id"), $path + ".$id");
-  const $v2 = decGet($o, "$retired") === undefined ? false : decBool(decGet($o, "$retired"), $path + ".$retired");
-  const $v3: string = decString(decGet($o, "text"), $path + ".text");
+  const $v1 = $rowId ?? decString(decGet($o, "$id", $path + ".$id"), $path + ".$id");
+  const $v2 = decGet($o, "$retired") === undefined ? false : (decGet($o, "$retired") === true || decFail($path + ".$retired", "expected true"));
+  const $v3: string = decString(decGet($o, "text", $path + ".text"), $path + ".text");
   return { id: $v1, retired: $v2, text: $v3 };
 }

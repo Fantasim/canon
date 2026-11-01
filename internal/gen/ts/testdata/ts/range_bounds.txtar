@@ -226,8 +226,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -235,16 +239,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -253,6 +260,7 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 }
 
 function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "number" && Number.isInteger(raw) && !Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
   const v = typeof raw === "bigint" ? raw : typeof raw === "number" && Number.isSafeInteger(raw) ? BigInt(raw) : decFail(path, "expected an integer");
   if (v < lo || v > hi) decFail(path, "integer out of range");
@@ -261,6 +269,7 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
 
 /** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
 function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  if (raw === null) decFail(path, "null");
   const text = decText(raw);
   if (text === undefined) decFail(path, "expected a number");
   const v = typeof raw === "number" ? raw : Number(text);
@@ -309,11 +318,13 @@ function decF32(raw: unknown, path: string, refusal = "number out of range"): nu
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
 
 function decDuration(raw: unknown, path: string, unit: number): number {
+  if (raw === null) decFail(path, "null");
   const d = decDecimal(decText(raw) ?? "");
   if (d === undefined) return decFail(path, "expected a number");
   if (d.digits === "") return 0;
@@ -366,14 +377,17 @@ function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) =>
   return decArray(raw, path).map((x, i) => read(x, path + "[" + i + "]"));
 }
 
+/** An integer map key, exactly `0|-?[1-9][0-9]*` (WIRE.md §5.8; the message is the bytes of every target, CODEGEN.md §5.13), then a safe integer: past it is TypeScript's own limit. */
 function decIntKey(k: string, path: string): number {
+  if (!/^(0|-?[1-9][0-9]*)$/.test(k)) decFail(path, "expected a canonical decimal integer key");
   const n = Number(k);
-  if (!/^-?(0|[1-9][0-9]*)$/.test(k) || !Number.isSafeInteger(n)) decFail(path, "expected a decimal integer key");
-  return n === 0 ? 0 : n;
+  if (!Number.isSafeInteger(n)) decFail(path, "integer outside the TypeScript safe range");
+  return n;
 }
 
+/** A bigint map key, canonical as a number key is, then within lo..hi (WIRE.md §5.8). */
 function decBigKey(k: string, path: string, lo: bigint, hi: bigint): bigint {
-  if (!/^-?(0|[1-9][0-9]*)$/.test(k)) decFail(path, "expected a decimal integer key");
+  if (!/^(0|-?[1-9][0-9]*)$/.test(k)) decFail(path, "expected a canonical decimal integer key");
   const v = BigInt(k);
   if (v < lo || v > hi) decFail(path, "integer out of range");
   return v;
@@ -557,22 +571,22 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readBounds($raw: unknown, $path: string): Bounds {
   const $o = decObject($raw, $path);
-  const $v1: bigint = decInBig(decBig(decGet($o, "big"), $path + ".big", -9223372036854775808n, 9223372036854775807n), $path + ".big", 1n, 10000000000000000n, true, "1..=10000000000000000");
-  const $v2: number = decIn(decInt(decGet($o, "huge"), $path + ".huge", -9223372036854776000, 9223372036854776000), $path + ".huge", 0, 10000000000000000, true, "0..=10000000000000000");
-  const $r3 = decGet($o, "bigs");
+  const $v1: bigint = decInBig(decBig(decGet($o, "big", $path + ".big"), $path + ".big", -9223372036854775808n, 9223372036854775807n), $path + ".big", 1n, 10000000000000000n, true, "1..=10000000000000000");
+  const $v2: number = decIn(decInt(decGet($o, "huge", $path + ".huge"), $path + ".huge", -9223372036854776000, 9223372036854776000), $path + ".huge", 0, 10000000000000000, true, "0..=10000000000000000");
+  const $r3 = decGet($o, "bigs", $path + ".bigs", true);
   const $v3: ReadonlyArray<bigint> = $r3 === undefined ? [] : decList($r3, $path + ".bigs", ($x, $p) => decInBig(decBig($x, $p, -9223372036854775808n, 9223372036854775807n), $p, null, 5n, false, "..5"));
-  const $r4 = decGet($o, "bigk");
+  const $r4 = decGet($o, "bigk", $path + ".bigk", true);
   const $v4: ReadonlyMap<bigint, bigint> = $r4 === undefined ? new CanonMap<bigint, bigint>([]) : decMap($r4, $path + ".bigk", ($k, $p) => decInBig(decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), $p, 0n, 5n, true, "0..=5"), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
-  const $r5 = decGet($o, "bytes");
+  const $r5 = decGet($o, "bytes", $path + ".bytes", true);
   const $v5: ReadonlyMap<number, number> = $r5 === undefined ? new CanonMap<number, number>([]) : decMap($r5, $path + ".bytes", ($k, $p) => decInt(decIntKey($k, $p), $p, 0, 255), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
-  const $v6: number = decIn(decFloat(decGet($o, "f"), $path + ".f"), $path + ".f", -1.5, 1.5, true, "-1.5..=1.5");
-  const $v7: number = decIn(decF32(decGet($o, "f32"), $path + ".f32"), $path + ".f32", -Infinity, 0.1, true, "..=0.1");
-  const $v8: number = decIn(decDuration(decGet($o, "d"), $path + ".d", 1), $path + ".d", 1000, 3600000, true, "1s..=1h");
-  const $v9: string = decStrIn(decString(decGet($o, "s"), $path + ".s"), $path + ".s", 1, 4, true, "1..=4");
-  const $v10: ReadonlyArray<number> = decCountIn(decList(decGet($o, "tags"), $path + ".tags", ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5")), $path + ".tags", -Infinity, 3, true, "..=3");
-  const $v11: ReadonlyMap<string, number> = decMap(decGet($o, "m"), $path + ".m", ($k, $p) => decStrIn($k, $p, 1, 3, true, "1..=3"), ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9"));
-  const $v12: ReadonlyArray<number | null> = decList(decGet($o, "opts"), $path + ".opts", ($x, $p) => $x === null ? null : decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5"));
-  const $v13: number = decIn(decInt(decGet($o, "ex"), $path + ".ex", -9223372036854776000, 9223372036854776000), $path + ".ex", -Infinity, 5, false, "..5");
+  const $v6: number = decIn(decFloat(decGet($o, "f", $path + ".f"), $path + ".f"), $path + ".f", -1.5, 1.5, true, "-1.5..=1.5");
+  const $v7: number = decIn(decF32(decGet($o, "f32", $path + ".f32"), $path + ".f32"), $path + ".f32", -Infinity, 0.1, true, "..=0.1");
+  const $v8: number = decIn(decDuration(decGet($o, "d", $path + ".d"), $path + ".d", 1), $path + ".d", 1000, 3600000, true, "1s..=1h");
+  const $v9: string = decStrIn(decString(decGet($o, "s", $path + ".s"), $path + ".s"), $path + ".s", 1, 4, true, "1..=4");
+  const $v10: ReadonlyArray<number> = decCountIn(decList(decGet($o, "tags", $path + ".tags"), $path + ".tags", ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5")), $path + ".tags", -Infinity, 3, true, "..=3");
+  const $v11: ReadonlyMap<string, number> = decMap(decGet($o, "m", $path + ".m"), $path + ".m", ($k, $p) => decStrIn($k, $p, 1, 3, true, "1..=3"), ($x, $p) => decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9"));
+  const $v12: ReadonlyArray<number | null> = decList(decGet($o, "opts", $path + ".opts"), $path + ".opts", ($x, $p) => $x === null ? null : decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 5, true, "0..=5"));
+  const $v13: number = decIn(decInt(decGet($o, "ex", $path + ".ex"), $path + ".ex", -9223372036854776000, 9223372036854776000), $path + ".ex", -Infinity, 5, false, "..5");
   return { big: $v1, huge: $v2, bigs: $v3, bigk: $v4, bytes: $v5, f: $v6, f32: $v7, d: $v8, s: $v9, tags: $v10, m: $v11, opts: $v12, ex: $v13 };
 }
 
@@ -587,19 +601,19 @@ export function parseBounds(text: string): Bounds {
 
 function readShape($raw: unknown, $path: string): Shape {
   const $o = decObject($raw, $path);
-  const $tag = decString(decGet($o, "kind"), $path + ".kind");
+  const $tag = decString(decGet($o, "kind", $path + ".kind"), $path + ".kind");
   switch ($tag) {
     case "circle":
       return readShapeCircle($o, $path);
     case "dot":
       return { kind: "dot" };
     default:
-      return decFail($path + ".kind", "unknown case");
+      return decFail($path + ".kind", "unknown case " + $tag);
   }
 }
 
 function readShapeCircle($o: Record<string, unknown>, $path: string): ShapeCircle {
-  const $v1: number = decIn(decInt(decGet($o, "r"), $path + ".r", -9223372036854776000, 9223372036854776000), $path + ".r", 0, 2, true, "0..=2");
+  const $v1: number = decIn(decInt(decGet($o, "r", $path + ".r"), $path + ".r", -9223372036854776000, 9223372036854776000), $path + ".r", 0, 2, true, "0..=2");
   return { kind: "circle", r: $v1 };
 }
 

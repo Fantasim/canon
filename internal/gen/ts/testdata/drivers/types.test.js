@@ -50,17 +50,17 @@ test("none is absent, null or the marker; a default fills an absent key (WIRE.md
 test("variants and dependent values (WIRE.md §5.6, §5.9)", () => {
   assert.deepEqual({ ...decodeKind({ type: "armor", defense: 2 }) }, { kind: "armor", defense: 2 });
   assert.deepEqual({ ...decodeKind({ type: "junk" }) }, { kind: "junk" });
-  assert.throws(() => decodeKind({ type: "nope" }), /^Error: Kind: \$\.type: unknown case/);
-  assert.throws(() => decodeKind({ attack: 1 }), /\$\.type: expected a string/);
+  assert.throws(() => decodeKind({ type: "nope" }), /^Error: Kind: \$\.type: unknown case nope$/);
+  assert.throws(() => decodeKind({ attack: 1 }), /\$\.type: missing/);
   assert.deepEqual({ ...decodeObjective({ goal: "kill", target: "wolf" }).target }, { branch: "kill", value: "wolf" });
   assert.equal(decodeObjective({ goal: "visit" }).target, null);
   assert.throws(() => decodeObjective({ goal: "visit", target: 1 }), /\$\.target: no branch for this value/);
   assert.throws(() => decodeObjective({ goal: "kill", target: 1 }), /\$\.target: expected a string/);
-  assert.throws(() => decodeObjective({ goal: "nope" }), /\$\.goal: unknown member/);
+  assert.throws(() => decodeObjective({ goal: "nope" }), /\$\.goal: unknown value nope/);
 });
 
 test("anything it cannot represent fails, naming the path (CODEGEN.md §5.13)", () => {
-  assert.throws(() => decodeObjective(null), /^Error: Objective: \$: expected an object/);
+  assert.throws(() => decodeObjective(null), /^Error: Objective: \$: null$/);
   assert.throws(() => decodeObjective([]), /expected an object/);
   assert.throws(() => decodeStatBonus({ attribute: "a", value: 1.5 }), /value: expected an integer/);
   assert.throws(() => decodeStatBonus({ attribute: "a", value: 9007199254740993 }), /value: integer outside the TypeScript safe range/);
@@ -137,7 +137,7 @@ test("a literal union over a closed enum refuses any other string, as the Go dec
 });
 
 test("decode<T> names its failures behind <T>: and a $ path (CODEGEN.md §5.13, DECISIONS 361)", () => {
-  assert.throws(() => decodeStatBonus(null), new Error("StatBonus: $: expected an object"));
+  assert.throws(() => decodeStatBonus(null), new Error("StatBonus: $: null"));
   assert.throws(() => decodeStatBonus({ attribute: "a", value: "x" }), new Error("StatBonus: $.value: expected an integer"));
-  assert.throws(() => parseObjective('{"goal": "nope"}'), new Error("Objective: $.goal: unknown member"));
+  assert.throws(() => parseObjective('{"goal": "nope"}'), new Error("Objective: $.goal: unknown value nope"));
 });

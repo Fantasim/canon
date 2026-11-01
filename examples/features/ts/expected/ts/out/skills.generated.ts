@@ -264,8 +264,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -273,16 +277,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -291,6 +298,7 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 }
 
 function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "number" && Number.isInteger(raw) && !Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
   const v = typeof raw === "bigint" ? raw : typeof raw === "number" && Number.isSafeInteger(raw) ? BigInt(raw) : decFail(path, "expected an integer");
   if (v < lo || v > hi) decFail(path, "integer out of range");
@@ -298,6 +306,7 @@ function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -335,10 +344,11 @@ function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, k
   return rows;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
@@ -524,7 +534,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeSkills(json: unknown): CanonTable<string, SkillEntry> {
   const $doc = canonEnvelope(json, skillsSchema, "skills.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "skills.json: rows", ($x, $p) => readSkillEntry($x, $p)), "skills.json: rows", ($e) => $e.name, "name")), ($e) => $e.name);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "skills.json: rows"), "skills.json: rows", ($x, $p) => readSkillEntry($x, $p)), "skills.json: rows", ($e) => $e.name, "name")), ($e) => $e.name);
 }
 
 export function parseSkills(text: string): CanonTable<string, SkillEntry> {
@@ -533,7 +543,7 @@ export function parseSkills(text: string): CanonTable<string, SkillEntry> {
 
 function readReward($raw: unknown, $path: string): Reward {
   const $o = decObject($raw, $path);
-  const $tag = decString(decGet($o, "type"), $path + ".type");
+  const $tag = decString(decGet($o, "type", $path + ".type"), $path + ".type");
   switch ($tag) {
     case "item":
       return readRewardItem($o, $path);
@@ -542,36 +552,36 @@ function readReward($raw: unknown, $path: string): Reward {
     case "nothing":
       return { kind: "nothing" };
     default:
-      return decFail($path + ".type", "unknown case");
+      return decFail($path + ".type", "unknown case " + $tag);
   }
 }
 
 function readRewardItem($o: Record<string, unknown>, $path: string): RewardItem {
-  const $v1: string = decStrIn(decString(decGet($o, "define"), $path + ".define"), $path + ".define", 1, Infinity, true, "1..");
-  const $r2 = decGet($o, "count");
+  const $v1: string = decStrIn(decString(decGet($o, "define", $path + ".define"), $path + ".define"), $path + ".define", 1, Infinity, true, "1..");
+  const $r2 = decGet($o, "count", $path + ".count", true);
   const $v2: number = $r2 === undefined ? 1 : decIn(decInt($r2, $path + ".count", -9223372036854776000, 9223372036854776000), $path + ".count", 1, Infinity, true, "1..");
   return { kind: "item", define: $v1, count: $v2 };
 }
 
 function readRewardGold($o: Record<string, unknown>, $path: string): RewardGold {
-  const $v1: number = decIn(decInt(decGet($o, "amount"), $path + ".amount", -9223372036854776000, 9223372036854776000), $path + ".amount", 1, Infinity, true, "1..");
+  const $v1: number = decIn(decInt(decGet($o, "amount", $path + ".amount"), $path + ".amount", -9223372036854776000, 9223372036854776000), $path + ".amount", 1, Infinity, true, "1..");
   return { kind: "gold", amount: $v1 };
 }
 
 function readSkillEntry($raw: unknown, $path: string): SkillEntry {
   const $o = decObject($raw, $path);
-  const $v1: string = decStrIn(decString(decGet($o, "name"), $path + ".name"), $path + ".name", 1, Infinity, true, "1..");
-  const $r2 = decGet($o, "rarity");
+  const $v1: string = decStrIn(decString(decGet($o, "name", $path + ".name"), $path + ".name"), $path + ".name", 1, Infinity, true, "1..");
+  const $r2 = decGet($o, "rarity", $path + ".rarity", true);
   const $v2: Rarity = $r2 === undefined ? "common" : decEnum($r2, $path + ".rarity", RarityMembers);
-  const $r3 = decGet($o, "cost");
+  const $r3 = decGet($o, "cost", $path + ".cost", true);
   const $v3: number = $r3 === undefined ? 0 : decIn(decInt($r3, $path + ".cost", -9223372036854776000, 9223372036854776000), $path + ".cost", 0, Infinity, true, "0..");
-  const $r4 = decGet($o, "reward");
+  const $r4 = decGet($o, "reward", $path + ".reward", true);
   const $v4: Reward = $r4 === undefined ? { kind: "nothing" } : readReward($r4, $path + ".reward");
   const $r5 = decGet($o, "note");
   const $v5: string | null = $r5 === undefined || $r5 === null ? null : decString($r5, $path + ".note");
-  const $r6 = decGet($o, "weights");
+  const $r6 = decGet($o, "weights", $path + ".weights", true);
   const $v6: ReadonlyMap<string, number> = $r6 === undefined ? new CanonMap<string, number>([]) : decMap($r6, $path + ".weights", ($k, $p) => $k, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
-  const $r7 = decGet($o, "serial");
+  const $r7 = decGet($o, "serial", $path + ".serial", true);
   const $v7: bigint = $r7 === undefined ? 0n : decBig($r7, $path + ".serial", -9223372036854775808n, 9223372036854775807n);
   const $r8 = decGet($o, "next");
   const $v8: string | null = $r8 === undefined || $r8 === null ? null : decString($r8, $path + ".next");

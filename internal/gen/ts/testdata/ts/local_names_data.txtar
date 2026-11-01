@@ -178,8 +178,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -187,16 +191,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -205,6 +212,7 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -221,28 +229,42 @@ function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, k
   return rows;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
 function decCode<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, codes: Readonly<Record<T, number>>): T {
   const m = members.find((x) => codes[x] === raw);
-  if (m === undefined) decFail(path, "unknown code");
+  if (m === undefined) decFail(path, "unknown value " + String(raw));
   return m;
 }
 
-function decKeyed<K extends string, T>(raw: unknown, path: string, keys: ReadonlyArray<K>, wire: (k: K) => string, read: (x: unknown, p: string) => T): Record<K, T> {
+function decKeyed<K extends string, T>(raw: unknown, path: string, keys: ReadonlyArray<K>, wire: (k: K) => string, read: (x: unknown, p: string) => T, noneOk = false): Record<K, T> {
   const o = decObject(raw, path);
   const out = {} as Record<K, T>;
-  for (const k of keys) out[k] = read(decGet(o, wire(k)), path + "." + wire(k));
+  for (const k of keys) {
+    const at = path + "." + wire(k);
+    const v = decGet(o, wire(k), noneOk ? undefined : at);
+    if (v === undefined) decFail(at, "missing");
+    out[k] = read(v, at);
+  }
   return out;
 }
 
 function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {
   return decArray(raw, path).map((x, i) => read(x, path + "[" + i + "]"));
+}
+
+/** An integer map key, exactly `0|-?[1-9][0-9]*` (WIRE.md §5.8; the message is the bytes of every target, CODEGEN.md §5.13), then a safe integer: past it is TypeScript's own limit. */
+function decIntKey(k: string, path: string): number {
+  if (!/^(0|-?[1-9][0-9]*)$/.test(k)) decFail(path, "expected a canonical decimal integer key");
+  const n = Number(k);
+  if (!Number.isSafeInteger(n)) decFail(path, "integer outside the TypeScript safe range");
+  return n;
 }
 
 function decMap<K, V>(raw: unknown, path: string, key: (k: string, p: string) => K, read: (x: unknown, p: string) => V): CanonMap<K, V> {
@@ -423,7 +445,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeHolders(json: unknown): CanonTable<string, Holder> {
   const $doc = canonEnvelope(json, holdersSchema, "holders.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "holders.json: rows", ($x, $p) => readHolder($x, $p)), "holders.json: rows", ($e) => $e.key, "key")), ($e) => $e.key);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "holders.json: rows"), "holders.json: rows", ($x, $p) => readHolder($x, $p)), "holders.json: rows", ($e) => $e.key, "key")), ($e) => $e.key);
 }
 
 export function parseHolders(text: string): CanonTable<string, Holder> {
@@ -432,23 +454,23 @@ export function parseHolders(text: string): CanonTable<string, Holder> {
 
 function readHolder($raw: unknown, $path: string): Holder {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "key"), $path + ".key");
-  const $r2 = decGet($o, "tones");
-  const $v2: ReadonlyArray<p.Tone> = $r2 === undefined ? [] : decList($r2, $path + ".tones", ($x, $p) => decCode($x, $p, p.ToneMembers, p.ToneCodes));
-  const $r3 = decGet($o, "weights");
-  const $v3: ReadonlyMap<p.Tone, number> = $r3 === undefined ? new CanonMap<p.Tone, number>([]) : decMap($r3, $path + ".weights", ($k, $p) => decCode(Number($k), $p, p.ToneMembers, p.ToneCodes), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
-  const $v4: raw.Note = read_raw_Note(decGet($o, "note"), $path + ".note");
-  const $r5 = decGet($o, "notes");
+  const $v1: string = decString(decGet($o, "key", $path + ".key"), $path + ".key");
+  const $r2 = decGet($o, "tones", $path + ".tones", true);
+  const $v2: ReadonlyArray<p.Tone> = $r2 === undefined ? [] : decList($r2, $path + ".tones", ($x, $p) => decCode(decInt($x, $p, 0, 255), $p, p.ToneMembers, p.ToneCodes));
+  const $r3 = decGet($o, "weights", $path + ".weights", true);
+  const $v3: ReadonlyMap<p.Tone, number> = $r3 === undefined ? new CanonMap<p.Tone, number>([]) : decMap($r3, $path + ".weights", ($k, $p) => decCode(decInt(decIntKey($k, $p), $p, 0, 255), $p, p.ToneMembers, p.ToneCodes), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v4: raw.Note = read_raw_Note(decGet($o, "note", $path + ".note"), $path + ".note");
+  const $r5 = decGet($o, "notes", $path + ".notes", true);
   const $v5: ReadonlyArray<raw.Note> = $r5 === undefined ? [] : decList($r5, $path + ".notes", ($x, $p) => read_raw_Note($x, $p));
-  const $v6: Readonly<Record<p.Tone, number>> = decKeyed<p.Tone, number>(decGet($o, "$weight"), $path + ".$weight", p.ToneMembers, ($k) => String(p.ToneCodes[$k]), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v6: Readonly<Record<p.Tone, number>> = decKeyed<p.Tone, number>(decGet($o, "$weight", $path + ".$weight"), $path + ".$weight", p.ToneMembers, ($k) => String(p.ToneCodes[$k]), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   return { key: $v1, tones: $v2, weights: $v3, note: $v4, notes: $v5, weight: $v6 };
 }
 
 function read_raw_Note($raw: unknown, $path: string): raw.Note {
   const $o = decObject($raw, $path);
-  const $v1: raw.Kind = decEnum(decGet($o, "kind"), $path + ".kind", raw.KindMembers);
-  const $r2 = decGet($o, "tones");
-  const $v2: ReadonlyArray<p.Tone> = $r2 === undefined ? [] : decList($r2, $path + ".tones", ($x, $p) => decCode($x, $p, p.ToneMembers, p.ToneCodes));
+  const $v1: raw.Kind = decEnum(decGet($o, "kind", $path + ".kind"), $path + ".kind", raw.KindMembers);
+  const $r2 = decGet($o, "tones", $path + ".tones", true);
+  const $v2: ReadonlyArray<p.Tone> = $r2 === undefined ? [] : decList($r2, $path + ".tones", ($x, $p) => decCode(decInt($x, $p, 0, 255), $p, p.ToneMembers, p.ToneCodes));
   return { kind: $v1, tones: $v2 };
 }
 === features/p/p.ts ===
@@ -547,8 +569,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -556,25 +582,43 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
+  if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
+  if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
+  if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
+  if (raw < lo || raw > hi) decFail(path, "integer out of range");
+  return raw === 0 ? 0 : raw;
+}
+
+function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
+  if (typeof raw !== "string") decFail(path, "expected a string");
+  return raw;
+}
+
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
 function decCode<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, codes: Readonly<Record<T, number>>): T {
   const m = members.find((x) => codes[x] === raw);
-  if (m === undefined) decFail(path, "unknown code");
+  if (m === undefined) decFail(path, "unknown value " + String(raw));
   return m;
 }
 
@@ -755,9 +799,9 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readNote($raw: unknown, $path: string): Note {
   const $o = decObject($raw, $path);
-  const $v1: Kind = decEnum(decGet($o, "kind"), $path + ".kind", KindMembers);
-  const $r2 = decGet($o, "tones");
-  const $v2: ReadonlyArray<p.Tone> = $r2 === undefined ? [] : decList($r2, $path + ".tones", ($x, $p) => decCode($x, $p, p.ToneMembers, p.ToneCodes));
+  const $v1: Kind = decEnum(decGet($o, "kind", $path + ".kind"), $path + ".kind", KindMembers);
+  const $r2 = decGet($o, "tones", $path + ".tones", true);
+  const $v2: ReadonlyArray<p.Tone> = $r2 === undefined ? [] : decList($r2, $path + ".tones", ($x, $p) => decCode(decInt($x, $p, 0, 255), $p, p.ToneMembers, p.ToneCodes));
   return { kind: $v1, tones: $v2 };
 }
 

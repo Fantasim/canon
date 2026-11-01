@@ -46,8 +46,8 @@ test("a literal union over an opened enum stays closed: its members' wires and i
 
 test("a numeric wire and a dependent discriminant stay closed (CODEGEN.md §5.2)", () => {
   assert.equal(decodeRule(rule({ grade: 2 })).grade, "high");
-  assert.throws(() => decodeRule(rule({ grade: 9 })), new Error("Rule: $.grade: unknown code"));
-  assert.throws(() => decodeRule(rule({ grade: "high" })), new Error("Rule: $.grade: unknown code"));
+  assert.throws(() => decodeRule(rule({ grade: 9 })), new Error("Rule: $.grade: unknown value 9"));
+  assert.throws(() => decodeRule(rule({ grade: "high" })), new Error("Rule: $.grade: expected an integer"));
   assert.throws(() => decodeRule(rule({ goal: "dance" })), new Error("Rule: $.target: no branch for this value"));
   assert.equal(decodeRule(rule({ goal: "dance", target: undefined })).goal, "dance");
   assert.deepEqual({ ...decodeRule(rule()).target }, { branch: "kill", value: "wolf" });

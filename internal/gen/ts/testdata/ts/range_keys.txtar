@@ -79,6 +79,10 @@ record Keys {
   groups: [Group]
   /// Lists nested in map values.
   byName: {String: [Row] keyed by id}
+  /// A map keyed by an enum's code.
+  byRank: {Rank: Int} = {}
+  /// A map keyed by a ref into a list keyed by a code.
+  byMedal: {ref medalList: Int} = {}
 }
 
 emit ts { out: "@features/a/a.ts", mode: types }
@@ -207,6 +211,10 @@ export interface Keys {
   readonly groups: ReadonlyArray<Group>;
   /** Lists nested in map values. */
   readonly byName: ReadonlyMap<string, ReadonlyArray<Row>>;
+  /** A map keyed by an enum's code. */
+  readonly byRank: ReadonlyMap<Rank, number>;
+  /** A map keyed by a ref into a list keyed by a code. */
+  readonly byMedal: ReadonlyMap<Rank, number>;
 }
 
 const decOrder = Symbol.for("canon.order");
@@ -228,8 +236,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -237,16 +249,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -255,10 +270,17 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 }
 
 function decBig(raw: unknown, path: string, lo: bigint, hi: bigint): bigint {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "number" && Number.isInteger(raw) && !Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
   const v = typeof raw === "bigint" ? raw : typeof raw === "number" && Number.isSafeInteger(raw) ? BigInt(raw) : decFail(path, "expected an integer");
   if (v < lo || v > hi) decFail(path, "integer out of range");
   return v;
+}
+
+function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
+  if (typeof raw !== "string") decFail(path, "expected a string");
+  return raw;
 }
 
 /** The rows of a keyed list or table unique by key (WIRE.md §5.7): the first row, in order, whose key repeats an earlier one fails at its key's path (`<path>[i].<keyPath>`), naming that row at the path without its leading `<name>: `; `token` writes a key as the data wire does (a String quoted, a number or bigint in decimal). */
@@ -273,21 +295,30 @@ function decUnique<R extends ReadonlyArray<unknown>, K>(rows: R, path: string, k
   return rows;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
 function decCode<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, codes: Readonly<Record<T, number>>): T {
   const m = members.find((x) => codes[x] === raw);
-  if (m === undefined) decFail(path, "unknown code");
+  if (m === undefined) decFail(path, "unknown value " + String(raw));
   return m;
 }
 
 function decList<T>(raw: unknown, path: string, read: (x: unknown, p: string) => T): T[] {
   return decArray(raw, path).map((x, i) => read(x, path + "[" + i + "]"));
+}
+
+/** An integer map key, exactly `0|-?[1-9][0-9]*` (WIRE.md §5.8; the message is the bytes of every target, CODEGEN.md §5.13), then a safe integer: past it is TypeScript's own limit. */
+function decIntKey(k: string, path: string): number {
+  if (!/^(0|-?[1-9][0-9]*)$/.test(k)) decFail(path, "expected a canonical decimal integer key");
+  const n = Number(k);
+  if (!Number.isSafeInteger(n)) decFail(path, "integer outside the TypeScript safe range");
+  return n;
 }
 
 function decMap<K, V>(raw: unknown, path: string, key: (k: string, p: string) => K, read: (x: unknown, p: string) => V): CanonMap<K, V> {
@@ -468,7 +499,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readMedal($raw: unknown, $path: string): Medal {
   const $o = decObject($raw, $path);
-  const $v1: Rank = decCode(decGet($o, "r"), $path + ".r", RankMembers, RankCodes);
+  const $v1: Rank = decCode(decInt(decGet($o, "r", $path + ".r"), $path + ".r", 0, 255), $path + ".r", RankMembers, RankCodes);
   return { r: $v1 };
 }
 
@@ -483,7 +514,7 @@ export function parseMedal(text: string): Medal {
 
 function readEntry($raw: unknown, $path: string): Entry {
   const $o = decObject($raw, $path);
-  const $v1: Rank = decCode(decGet($o, "m"), $path + ".m", RankMembers, RankCodes);
+  const $v1: Rank = decCode(decInt(decGet($o, "m", $path + ".m"), $path + ".m", 0, 255), $path + ".m", RankMembers, RankCodes);
   return { m: $v1 };
 }
 
@@ -498,7 +529,7 @@ export function parseEntry(text: string): Entry {
 
 function readSlot($raw: unknown, $path: string): Slot {
   const $o = decObject($raw, $path);
-  const $v1: Side = decEnum(decGet($o, "side"), $path + ".side", SideMembers);
+  const $v1: Side = decEnum(decGet($o, "side", $path + ".side"), $path + ".side", SideMembers);
   return { side: $v1 };
 }
 
@@ -513,7 +544,7 @@ export function parseSlot(text: string): Slot {
 
 function readNum($raw: unknown, $path: string): Num {
   const $o = decObject($raw, $path);
-  const $v1: number = decInt(decGet($o, "n"), $path + ".n", -9223372036854776000, 9223372036854776000);
+  const $v1: number = decInt(decGet($o, "n", $path + ".n"), $path + ".n", -9223372036854776000, 9223372036854776000);
   return { n: $v1 };
 }
 
@@ -528,7 +559,7 @@ export function parseNum(text: string): Num {
 
 function readPick($raw: unknown, $path: string): Pick {
   const $o = decObject($raw, $path);
-  const $v1: number = decInt(decGet($o, "n"), $path + ".n", -9223372036854776000, 9223372036854776000);
+  const $v1: number = decInt(decGet($o, "n", $path + ".n"), $path + ".n", -9223372036854776000, 9223372036854776000);
   return { n: $v1 };
 }
 
@@ -543,7 +574,7 @@ export function parsePick(text: string): Pick {
 
 function readBig($raw: unknown, $path: string): Big {
   const $o = decObject($raw, $path);
-  const $v1: bigint = decBig(decGet($o, "b"), $path + ".b", -9223372036854775808n, 9223372036854775807n);
+  const $v1: bigint = decBig(decGet($o, "b", $path + ".b"), $path + ".b", -9223372036854775808n, 9223372036854775807n);
   return { b: $v1 };
 }
 
@@ -558,7 +589,7 @@ export function parseBig(text: string): Big {
 
 function readRow($raw: unknown, $path: string): Row {
   const $o = decObject($raw, $path);
-  const $v1: number = decInt(decGet($o, "id"), $path + ".id", -9223372036854776000, 9223372036854776000);
+  const $v1: number = decInt(decGet($o, "id", $path + ".id"), $path + ".id", -9223372036854776000, 9223372036854776000);
   return { id: $v1 };
 }
 
@@ -573,7 +604,7 @@ export function parseRow(text: string): Row {
 
 function readGroup($raw: unknown, $path: string): Group {
   const $o = decObject($raw, $path);
-  const $v1: ReadonlyArray<Row> = decUnique(decList(decGet($o, "rows"), $path + ".rows", ($x, $p) => readRow($x, $p)), $path + ".rows", ($e) => $e.id, "id");
+  const $v1: ReadonlyArray<Row> = decUnique(decList(decGet($o, "rows", $path + ".rows"), $path + ".rows", ($x, $p) => readRow($x, $p)), $path + ".rows", ($e) => $e.id, "id");
   return { rows: $v1 };
 }
 
@@ -588,14 +619,18 @@ export function parseGroup(text: string): Group {
 
 function readKeys($raw: unknown, $path: string): Keys {
   const $o = decObject($raw, $path);
-  const $v1: ReadonlyArray<Medal> = decUnique(decList(decGet($o, "medals"), $path + ".medals", ($x, $p) => readMedal($x, $p)), $path + ".medals", ($e) => $e.r, "r", ($k) => String(RankCodes[$k]));
-  const $v2: ReadonlyArray<Entry> = decUnique(decList(decGet($o, "entries"), $path + ".entries", ($x, $p) => readEntry($x, $p)), $path + ".entries", ($e) => $e.m, "m", ($k) => String(RankCodes[$k]));
-  const $v3: ReadonlyArray<Slot> = decUnique(decList(decGet($o, "slots"), $path + ".slots", ($x, $p) => readSlot($x, $p)), $path + ".slots", ($e) => $e.side, "side");
-  const $v4: ReadonlyArray<Pick> = decUnique(decList(decGet($o, "picks"), $path + ".picks", ($x, $p) => readPick($x, $p)), $path + ".picks", ($e) => $e.n, "n");
-  const $v5: ReadonlyArray<Big> = decUnique(decList(decGet($o, "bigs"), $path + ".bigs", ($x, $p) => readBig($x, $p)), $path + ".bigs", ($e) => $e.b, "b");
-  const $v6: ReadonlyArray<Group> = decList(decGet($o, "groups"), $path + ".groups", ($x, $p) => readGroup($x, $p));
-  const $v7: ReadonlyMap<string, ReadonlyArray<Row>> = decMap(decGet($o, "byName"), $path + ".byName", ($k, $p) => $k, ($x, $p) => decUnique(decList($x, $p, ($x, $p) => readRow($x, $p)), $p, ($e) => $e.id, "id"));
-  return { medals: $v1, entries: $v2, slots: $v3, picks: $v4, bigs: $v5, groups: $v6, byName: $v7 };
+  const $v1: ReadonlyArray<Medal> = decUnique(decList(decGet($o, "medals", $path + ".medals"), $path + ".medals", ($x, $p) => readMedal($x, $p)), $path + ".medals", ($e) => $e.r, "r", ($k) => String(RankCodes[$k]));
+  const $v2: ReadonlyArray<Entry> = decUnique(decList(decGet($o, "entries", $path + ".entries"), $path + ".entries", ($x, $p) => readEntry($x, $p)), $path + ".entries", ($e) => $e.m, "m", ($k) => String(RankCodes[$k]));
+  const $v3: ReadonlyArray<Slot> = decUnique(decList(decGet($o, "slots", $path + ".slots"), $path + ".slots", ($x, $p) => readSlot($x, $p)), $path + ".slots", ($e) => $e.side, "side");
+  const $v4: ReadonlyArray<Pick> = decUnique(decList(decGet($o, "picks", $path + ".picks"), $path + ".picks", ($x, $p) => readPick($x, $p)), $path + ".picks", ($e) => $e.n, "n");
+  const $v5: ReadonlyArray<Big> = decUnique(decList(decGet($o, "bigs", $path + ".bigs"), $path + ".bigs", ($x, $p) => readBig($x, $p)), $path + ".bigs", ($e) => $e.b, "b");
+  const $v6: ReadonlyArray<Group> = decList(decGet($o, "groups", $path + ".groups"), $path + ".groups", ($x, $p) => readGroup($x, $p));
+  const $v7: ReadonlyMap<string, ReadonlyArray<Row>> = decMap(decGet($o, "byName", $path + ".byName"), $path + ".byName", ($k, $p) => $k, ($x, $p) => decUnique(decList($x, $p, ($x, $p) => readRow($x, $p)), $p, ($e) => $e.id, "id"));
+  const $r8 = decGet($o, "byRank", $path + ".byRank", true);
+  const $v8: ReadonlyMap<Rank, number> = $r8 === undefined ? new CanonMap<Rank, number>([]) : decMap($r8, $path + ".byRank", ($k, $p) => decCode(decInt(decIntKey($k, $p), $p, 0, 255), $p, RankMembers, RankCodes), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $r9 = decGet($o, "byMedal", $path + ".byMedal", true);
+  const $v9: ReadonlyMap<Rank, number> = $r9 === undefined ? new CanonMap<Rank, number>([]) : decMap($r9, $path + ".byMedal", ($k, $p) => decCode(decInt(decIntKey($k, $p), $p, 0, 255), $p, RankMembers, RankCodes), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  return { medals: $v1, entries: $v2, slots: $v3, picks: $v4, bigs: $v5, groups: $v6, byName: $v7, byRank: $v8, byMedal: $v9 };
 }
 
 /** Every key type. */

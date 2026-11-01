@@ -113,8 +113,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -122,16 +126,19 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
 function decInt(raw: unknown, path: string, lo: number, hi: number): number {
+  if (raw === null) decFail(path, "null");
   if (typeof raw === "bigint") decFail(path, "integer outside the TypeScript safe range");
   if (typeof raw !== "number" || !Number.isInteger(raw)) decFail(path, "expected an integer");
   if (!Number.isSafeInteger(raw)) decFail(path, "integer outside the TypeScript safe range");
@@ -140,14 +147,16 @@ function decInt(raw: unknown, path: string, lo: number, hi: number): number {
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
 
-/** One of members; a literal union's arm refuses with the value, as the Go decoder does. */
-function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>, union = false): T {
-  const m = members.find((x) => x === raw);
-  if (m === undefined) decFail(path, union ? "unknown value " + String(raw) : "unknown member");
+/** One of members; a string no member has is refused with its value, as every target does (CODEGEN.md §5.13). */
+function decEnum<T extends string>(raw: unknown, path: string, members: ReadonlyArray<T>): T {
+  const s = decString(raw, path);
+  const m = members.find((x) => x === s);
+  if (m === undefined) decFail(path, "unknown value " + s);
   return m;
 }
 
@@ -333,10 +342,10 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readUse($raw: unknown, $path: string): Use {
   const $o = decObject($raw, $path);
-  const $v1: b.Dst = decString(decGet($o, "dst"), $path + ".dst") as b.Dst;
-  const $r2 = decGet($o, "place");
-  const $v2: b.DstKnown | "all" = $r2 === undefined ? "all" : decEnum(decString($r2, $path + ".place"), $path + ".place", $union1, true);
-  const $r3 = decGet($o, "counts");
+  const $v1: b.Dst = decString(decGet($o, "dst", $path + ".dst"), $path + ".dst") as b.Dst;
+  const $r2 = decGet($o, "place", $path + ".place", true);
+  const $v2: b.DstKnown | "all" = $r2 === undefined ? "all" : decEnum(decString($r2, $path + ".place"), $path + ".place", $union1);
+  const $r3 = decGet($o, "counts", $path + ".counts", true);
   const $v3: ReadonlyMap<b.Dst, number> = $r3 === undefined ? new CanonMap<b.Dst, number>([]) : decMap($r3, $path + ".counts", ($k, $p) => decString($k, $p) as b.Dst, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   return { dst: $v1, place: $v2, counts: $v3 };
 }
@@ -363,7 +372,7 @@ const $union1: ReadonlyArray<b.DstKnown | "all"> = [...b.DstMembers, "all"];
 
 function read_b_Item($raw: unknown, $path: string): b.Item {
   const $o = decObject($raw, $path);
-  const $v1: b.Dst = decString(decGet($o, "dst"), $path + ".dst") as b.Dst;
+  const $v1: b.Dst = decString(decGet($o, "dst", $path + ".dst"), $path + ".dst") as b.Dst;
   return { dst: $v1 };
 }
 === features/b/b.ts ===
@@ -436,8 +445,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -445,11 +458,13 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -627,7 +642,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readItem($raw: unknown, $path: string): Item {
   const $o = decObject($raw, $path);
-  const $v1: Dst = decString(decGet($o, "dst"), $path + ".dst") as Dst;
+  const $v1: Dst = decString(decGet($o, "dst", $path + ".dst"), $path + ".dst") as Dst;
   return { dst: $v1 };
 }
 

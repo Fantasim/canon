@@ -81,7 +81,7 @@ func (g *gen) decEnum(t ir.TypeRef, raw, path string) string {
 		return tsUndefined
 	}
 	if e.JSONCodes {
-		return g.call(decCodeName, raw, path, g.membersConst(e), g.codesConst(e))
+		return g.decCodeOf(e, raw, path)
 	}
 	if g.open(e) {
 		return g.call(decStringName, raw, path) + asKw + g.named(e)
@@ -99,7 +99,14 @@ func (g *gen) decUnion(t ir.TypeRef, s, path string) string {
 	for _, lit := range t.Literals {
 		allowed = append(allowed, quote(lit))
 	}
-	return g.call(decEnumName, s, path, g.unionConst(g.tsType(t, false), lbracket+joinArgs(allowed)+rbracket), tsTrue)
+	return g.call(decEnumName, s, path, g.unionConst(g.tsType(t, false), lbracket+joinArgs(allowed)+rbracket))
+}
+
+// decCodeOf is the member of e with the integer raw as its code: raw is read as an integer of the code type first, then looked up (WIRE.md §5.3, CODEGEN.md §5.13).
+func (g *gen) decCodeOf(e *ir.Enum, raw, path string) string {
+	lo, hi, _ := types.Basic{K: types.Int, Bits: e.Codes.Bits, Signed: e.Codes.Signed}.Limits()
+	read := g.call(decIntName, raw, path, intText(lo), intText(hi))
+	return g.call(decCodeName, read, path, g.membersConst(e), g.codesConst(e))
 }
 
 // unionConst is the module-level constant holding a literal union's allowed strings, one per distinct union and written once; its `$` name meets no Canon name.
@@ -260,7 +267,7 @@ func (g *gen) readMapKey(t ir.TypeRef, key, path string, big bool) string {
 	case types.Enum:
 		e, _ := t.Named.(*ir.Enum)
 		if e != nil && e.JSONCodes {
-			return g.call(decCodeName, fmt.Sprintf(callFormat, numberFn, key), path, g.membersConst(e), g.codesConst(e))
+			return g.decCodeOf(e, g.call(decIntKeyName, key, path), path)
 		}
 		return g.decEnum(t, key, path)
 	case types.Ref:

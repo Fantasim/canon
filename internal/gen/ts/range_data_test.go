@@ -43,6 +43,14 @@ func rangeDataCases(schema string) []rangeCase {
 		{"score-lo", "", itemsText(schema, itemRow("a", 1, `"$score":-1,"$rank":{"lo":1,"hi":2}`)), dataErr("rows[0].$score", valueIn+"0..=9")},
 		{"rank-lo", "", itemsText(schema, itemRow("a", 1, `"$score":1,"$rank":{"lo":1,"hi":0}`)), dataErr("rows[0].$rank.hi", valueIn+"1..=6")},
 		{"rank-hi", "", itemsText(schema, itemRow("a", 1, `"$score":1,"$rank":{"lo":7,"hi":2}`)), dataErr("rows[0].$rank.lo", valueIn+"1..=6")},
+		// CODEGEN.md §5.13, WIRE.md §5.5, §5.11: a required key absent or null, a stored `$` result absent, a lookup cell absent.
+		{"name-missing", "", itemsText(schema, `{"qty":1,`+goodTail+`}`), dataErr("rows[0].name", rangeMissing)},
+		{"qty-null", "", itemsText(schema, `{"name":"a","qty":null,`+goodTail+`}`), dataErr("rows[0].qty", rangeNull)},
+		{"score-missing", "", itemsText(schema, itemRow("a", 1, `"$rank":{"lo":1,"hi":2}`)), dataErr("rows[0].$score", rangeMissing)},
+		{"rank-cell-missing", "", itemsText(schema, itemRow("a", 1, `"$score":1,"$rank":{"lo":1}`)), dataErr("rows[0].$rank.hi", rangeMissing)},
+		{"rank-cell-null", "", itemsText(schema, itemRow("a", 1, `"$score":1,"$rank":{"lo":1,"hi":null}`)), dataErr("rows[0].$rank.hi", rangeNull)},
+		{"rows-missing", "", fmt.Sprintf(`{"$schema": %q}`, schema), dataErr("rows", rangeMissing)},
+		{"rows-null", "", fmt.Sprintf(`{"$schema": %q, "rows": null}`, schema), dataErr("rows", rangeNull)},
 	}
 }
 
@@ -61,6 +69,13 @@ func tagDupCases(schema string) []rangeCase {
 		{"tags-ok", "", tagsText(schema, tagRow(`"a"`), tagRow(`"b"`)), rangeOK},
 		{"tags-dup", "", tagsText(schema, tagRow(`"a"`), tagRow(`"b"`), tagRow(`"a"`)), err("rows[2].$id", `duplicate id "a" (first at rows[0])`)},
 		{"tags-dup-escaped", "", tagsText(schema, tagRow(`"a\t\u001b\""`), tagRow(`"a\t\u001b\""`)), err("rows[1].$id", `duplicate id "a\t\u001b\"" (first at rows[0])`)},
+		// WIRE.md §5.7, CODEGEN.md §5.13: `$retired` must be true when present, else `expected true` at its path.
+		{"tags-retired-true", "", tagsText(schema, `{"$id":"a","$retired":true,"label":"x"}`), rangeOK},
+		{"tags-retired-false", "", tagsText(schema, `{"$id":"a","$retired":false,"label":"x"}`), err("rows[0].$retired", "expected true")},
+		{"tags-retired-null", "", tagsText(schema, `{"$id":"a","$retired":null,"label":"x"}`), err("rows[0].$retired", "expected true")},
+		{"tags-retired-text", "", tagsText(schema, `{"$id":"a","$retired":"true","label":"x"}`), err("rows[0].$retired", "expected true")},
+		{"tags-id-missing", "", tagsText(schema, `{"label":"x"}`), err("rows[0].$id", rangeMissing)},
+		{"tags-id-null", "", tagsText(schema, tagRow(`null`)), err("rows[0].$id", rangeNull)},
 	}
 }
 

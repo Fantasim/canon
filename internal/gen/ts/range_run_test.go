@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -93,14 +94,14 @@ func TestTSRangeChecksRun(t *testing.T) {
 	runRange(t, []string{"range_types"}, runs)
 }
 
-// CODEGEN.md §5.15, DECISIONS 399, 400: a bigint at a @ts(bigint) position, a number bound past 2^53 and a bigint map key are checked exactly.
+// CODEGEN.md §5.15, DECISIONS 399, 400, WIRE.md §5.8, CODEGEN.md §5.13: a bigint, a bound past 2^53 and a bigint map key are checked exactly; a key not `0|-?[1-9][0-9]*` is `expected a canonical decimal integer key`.
 func TestTSRangeBoundsRun(t *testing.T) {
 	runRange(t, []string{"range_bounds"}, typesRuns(t, "range_bounds", boundsBase, "parseBounds", boundsCases()))
 }
 
 // WIRE.md §5.7, CODEGEN.md §5.15: a keyed list refuses a repeated key at every key type, the token written as the data wire writes it and the earlier row named without the decoder's name; the module type-checks with both compilers.
 func TestTSKeyedUnique(t *testing.T) {
-	runRange(t, []string{"range_keys"}, typesRuns(t, "range_keys", keysBase, "parseKeys", keysCases()))
+	runRange(t, []string{"range_keys"}, typesRuns(t, "range_keys", keysBase, "parseKeys", slices.Concat(keysCases(), enumCases())))
 }
 
 // WIRE.md §5.8, DECISIONS 399: a map key that is a sized integer is refused outside its width, `integer out of range`, as a value is; a key inside it meets its refinement next.

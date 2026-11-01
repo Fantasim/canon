@@ -144,8 +144,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -153,17 +157,20 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 function decArray(raw: unknown, path: string): ReadonlyArray<unknown> {
+  if (raw === null) decFail(path, "null");
   if (!Array.isArray(raw)) decFail(path, "expected an array");
   return raw;
 }
 
 /** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
 function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  if (raw === null) decFail(path, "null");
   const text = decText(raw);
   if (text === undefined) decFail(path, "expected a number");
   const v = typeof raw === "number" ? raw : Number(text);
@@ -172,6 +179,7 @@ function decFloat(raw: unknown, path: string, refusal = "number out of range"): 
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -365,7 +373,7 @@ function decParse(text: string, label: string, root: string): unknown {
 
 export function decodeHs(json: unknown): CanonTable<string, Holder> {
   const $doc = canonEnvelope(json, hsSchema, "hs.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "hs.json: rows", ($x, $p) => readHolder($x, $p)), "hs.json: rows", ($e) => $e.id, "id")), ($e) => $e.id);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "hs.json: rows"), "hs.json: rows", ($x, $p) => readHolder($x, $p)), "hs.json: rows", ($e) => $e.id, "id")), ($e) => $e.id);
 }
 
 export function parseHs(text: string): CanonTable<string, Holder> {
@@ -374,7 +382,7 @@ export function parseHs(text: string): CanonTable<string, Holder> {
 
 export function decodeBadges(json: unknown): CanonTable<string, base.Badge> {
   const $doc = canonEnvelope(json, badgesSchema, "badges.json");
-  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows"), "badges.json: rows", ($x, $p) => read_base_Badge($x, $p)), "badges.json: rows", ($e) => $e.label, "label")), ($e) => $e.label);
+  return canonTable(canonFreeze(decUnique(decList(decGet($doc, "rows", "badges.json: rows"), "badges.json: rows", ($x, $p) => read_base_Badge($x, $p)), "badges.json: rows", ($e) => $e.label, "label")), ($e) => $e.label);
 }
 
 export function parseBadges(text: string): CanonTable<string, base.Badge> {
@@ -383,7 +391,7 @@ export function parseBadges(text: string): CanonTable<string, base.Badge> {
 
 export function decodeBest(json: unknown): base.Badge {
   const $doc = canonEnvelope(json, bestSchema, "best.json");
-  return canonFreeze(read_base_Badge(decGet($doc, "value"), "best.json: value"));
+  return canonFreeze(read_base_Badge(decGet($doc, "value", "best.json: value"), "best.json: value"));
 }
 
 export function parseBest(text: string): base.Badge {
@@ -392,15 +400,15 @@ export function parseBest(text: string): base.Badge {
 
 function readHolder($raw: unknown, $path: string): Holder {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "id"), $path + ".id");
-  const $v2: base.Badge = read_base_Badge(decGet($o, "b"), $path + ".b");
+  const $v1: string = decString(decGet($o, "id", $path + ".id"), $path + ".id");
+  const $v2: base.Badge = read_base_Badge(decGet($o, "b", $path + ".b"), $path + ".b");
   return { id: $v1, b: $v2 };
 }
 
 function read_base_Badge($raw: unknown, $path: string): base.Badge {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "label"), $path + ".label");
-  const $r2 = decGet($o, "weight");
+  const $v1: string = decString(decGet($o, "label", $path + ".label"), $path + ".label");
+  const $r2 = decGet($o, "weight", $path + ".weight", true);
   const $v2: number = $r2 === undefined ? 1 : decFloat($r2, $path + ".weight", "expected a number");
   return { label: $v1, weight: $v2 };
 }
@@ -468,8 +476,12 @@ function decFail(path: string, message: string): never {
   throw new Error(path + ": " + message);
 }
 
-function decGet(o: Record<string, unknown>, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+/** An own key of o. With a `path`, the key is read by a field that is not optional (WIRE.md §5.5): null is `null` there and, unless `absentOk`, an absent key is `missing`, as every target writes them (CODEGEN.md §5.13). */
+function decGet(o: Record<string, unknown>, key: string, path?: string, absentOk = false): unknown {
+  const v = Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;
+  if (path !== undefined && v === undefined && !absentOk) decFail(path, "missing");
+  if (path !== undefined && v === null) decFail(path, "null");
+  return v;
 }
 
 function decIsObject(raw: unknown): raw is Record<string, unknown> {
@@ -477,12 +489,14 @@ function decIsObject(raw: unknown): raw is Record<string, unknown> {
 }
 
 function decObject(raw: unknown, path: string): Record<string, unknown> {
+  if (raw === null) decFail(path, "null");
   if (!decIsObject(raw)) decFail(path, "expected an object");
   return raw;
 }
 
 /** A Float64; a number past its range is refused with `refusal`: "number out of range" in a types-mode decoder, the data loaders' "expected a number" in a data file. */
 function decFloat(raw: unknown, path: string, refusal = "number out of range"): number {
+  if (raw === null) decFail(path, "null");
   const text = decText(raw);
   if (text === undefined) decFail(path, "expected a number");
   const v = typeof raw === "number" ? raw : Number(text);
@@ -491,6 +505,7 @@ function decFloat(raw: unknown, path: string, refusal = "number out of range"): 
 }
 
 function decString(raw: unknown, path: string): string {
+  if (raw === null) decFail(path, "null");
   if (typeof raw !== "string") decFail(path, "expected a string");
   return raw;
 }
@@ -668,8 +683,8 @@ function decParse(text: string, label: string, root: string): unknown {
 
 function readBadge($raw: unknown, $path: string): Badge {
   const $o = decObject($raw, $path);
-  const $v1: string = decString(decGet($o, "label"), $path + ".label");
-  const $r2 = decGet($o, "weight");
+  const $v1: string = decString(decGet($o, "label", $path + ".label"), $path + ".label");
+  const $r2 = decGet($o, "weight", $path + ".weight", true);
   const $v2: number = $r2 === undefined ? 1 : decFloat($r2, $path + ".weight");
   return { label: $v1, weight: $v2 };
 }
