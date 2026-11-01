@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 424: a cpp out with a character outside A-Z a-z 0-9 . _ - (here ??=, a trigraph) in a segment is E8009 outChars.
+-- a/a.canon --
+package a
+
+emit cpp { out: "@source/a??=b", namespace: "a" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:17
+  invalid out "@source/a??=b" for emit cpp: it resolves to source/a??=b, and a path segment may use only A-Z a-z 0-9 . _ -
+
+1 error, 0 warnings in 1 package (…)

@@ -2257,7 +2257,7 @@ var Registry = []Def{
 			{Name: "package", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid package \"{value}\" for emit go: not a Go identifier, or a Go keyword"},
 			{Name: "namespace", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid namespace \"{value}\" for emit cpp: expected ident{{::ident}} with no C++ keyword"},
 			{Name: "tsOut", Args: []Arg{{Name: "value", Type: ArgTypeText}}, Template: "invalid out \"{value}\" for emit ts: it must end in .ts"},
-			{Name: "outChars", Args: []Arg{{Name: "value", Type: ArgTypeText}, {Name: "target", Type: ArgTypeName}}, Template: "invalid out \"{value}\" for emit {target}: a path segment may use only A-Z a-z 0-9 . _ -"},
+			{Name: "outChars", Args: []Arg{{Name: "value", Type: ArgTypeText}, {Name: "path", Type: ArgTypePath}, {Name: "target", Type: ArgTypeName}}, Template: "invalid out \"{value}\" for emit {target}: it resolves to {path}, and a path segment may use only A-Z a-z 0-9 . _ -"},
 			{Name: "values", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "values of emit {target}: {name} is not a public let of this package"},
 			{Name: "valuesTwice", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}}, Template: "values of emit {target}: {name} is listed twice"},
 			{Name: "kind", Args: []Arg{{Name: "option", Type: ArgTypeName}, {Name: "target", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeKind}}, Template: "option {option} of emit {target} must be {expected}"},
@@ -7058,9 +7058,9 @@ func (codeE8009) AtTsOut(span source.Span, value string) *Builder {
 	return newBuilder(&Registry[262], 3, span, value)
 }
 
-// AtOutChars reports: invalid out "{value}" for emit {target}: a path segment may use only A-Z a-z 0-9 . _ -
-func (codeE8009) AtOutChars(span source.Span, value string, target string) *Builder {
-	return newBuilder(&Registry[262], 4, span, value, target)
+// AtOutChars reports: invalid out "{value}" for emit {target}: it resolves to {path}, and a path segment may use only A-Z a-z 0-9 . _ -
+func (codeE8009) AtOutChars(span source.Span, value string, path string, target string) *Builder {
+	return newBuilder(&Registry[262], 4, span, value, path, target)
 }
 
 // AtValues reports: values of emit {target}: {name} is not a public let of this package

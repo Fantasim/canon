@@ -255,10 +255,20 @@ func TestSyntaxErrorBreaksItsLayer(t *testing.T) {
 	}
 }
 
-// WIRE.md §2.1, DECISIONS 215: an out that does not resolve is the resolver's finding alone.
+// WIRE.md §2.1, DECISIONS 215, 424: an out that does not resolve is the resolver's finding alone, with no package finding and no outChars.
 func TestUnresolvedOutHasNoPackageFinding(t *testing.T) {
-	res := buildOne(t, "package a\n\nemit go { out: \"C:/gen/1b\" }\n")
-	if got, want := errorCodes(res.List), []diag.Code{diag.E7001.Def().Code}; !slices.Equal(got, want) {
-		t.Errorf("codes %v, want %v", got, want)
+	e7001 := []diag.Code{diag.E7001.Def().Code}
+	for _, tc := range []struct {
+		out  string
+		want []diag.Code
+	}{
+		{out: "/gen/1b", want: e7001},
+		{out: "C:/gen/1b", want: e7001},
+		{out: "gen\\\\1b", want: e7001},
+	} {
+		res := buildOne(t, "package a\n\nemit go { out: \""+tc.out+"\" }\n")
+		if got := errorCodes(res.List); !slices.Equal(got, tc.want) {
+			t.Errorf("out %q: codes %v, want %v", tc.out, got, tc.want)
+		}
 	}
 }

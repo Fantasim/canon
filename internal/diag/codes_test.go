@@ -450,7 +450,7 @@ var constructed = []*Builder{
 	E8009.AtPackage(sampleSpan, sampleText),
 	E8009.AtNamespace(sampleSpan, sampleText),
 	E8009.AtTsOut(sampleSpan, sampleText),
-	E8009.AtOutChars(sampleSpan, sampleText, sampleName),
+	E8009.AtOutChars(sampleSpan, sampleText, samplePath, sampleName),
 	E8009.AtValues(sampleSpan, sampleName, sampleName),
 	E8009.AtValuesTwice(sampleSpan, sampleName, sampleName),
 	E8009.AtKind(sampleSpan, sampleName, sampleName, KindConstantString),

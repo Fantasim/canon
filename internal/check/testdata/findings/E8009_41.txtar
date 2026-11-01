@@ -1,0 +1,13 @@
+CODEGEN.md §2.1, DECISIONS 424, WIRE.md §8.1: a json file entry (.json) with a bad character in its name is E8009 outChars.
+-- a/a.canon --
+package a
+
+/// One.
+let one: Int = 1
+
+emit json { out: "@generated/dir/o*ne.json" }
+-- findings.txt --
+error[E8009]  a/a.canon:6:18
+  invalid out "@generated/dir/o*ne.json" for emit json: it resolves to generated/dir/o*ne.json, and a path segment may use only A-Z a-z 0-9 . _ -
+
+1 error, 0 warnings in 1 package (…)

@@ -17,7 +17,7 @@ func (c *checker) lastElement(env *env, out string) (string, bool) {
 	if l == nil || out == "" {
 		return "", false
 	}
-	at, ok := l.Resolve(out, fileDir(env.file), source.Span{}, diag.NewBag(indexFiles(p.files), p.path))
+	at, ok := c.resolveOut(env, out, source.Span{}, scratchBag(env))
 	switch {
 	case !ok:
 		return "", false
@@ -36,17 +36,30 @@ func (c *checker) declaredLayout(p *pkgState) *project.Layout {
 	return c.layout
 }
 
-// contained is E7001 for a path of env's file leaving its root or the project (WIRE.md §2.2 rule 3).
-func (c *checker) contained(env *env, at syntax.Node, written string) bool {
+// resolveOut resolves out, written in env's file, against the declared layout, reporting into bag; false when it does not resolve or there is no layout (WIRE.md §2).
+func (c *checker) resolveOut(env *env, out string, span source.Span, bag *diag.Bag) (project.Path, bool) {
 	l := c.declaredLayout(env.pkg)
 	if l == nil {
+		return project.Path{}, false
+	}
+	return l.Resolve(out, fileDir(env.file), span, bag)
+}
+
+// scratchBag is a bag whose findings are dropped, for a resolution made only to learn whether it succeeds.
+func scratchBag(env *env) *diag.Bag {
+	return diag.NewBag(indexFiles(env.pkg.files), env.pkg.path)
+}
+
+// contained is E7001 for a path of env's file leaving its root or the project (WIRE.md §2.2 rule 3).
+func (c *checker) contained(env *env, at syntax.Node, written string) bool {
+	if c.declaredLayout(env.pkg) == nil {
 		return true
 	}
-	dir, span := fileDir(env.file), env.span(at)
-	if _, ok := l.Resolve(written, dir, span, diag.NewBag(indexFiles(env.pkg.files), env.pkg.path)); ok {
+	span := env.span(at)
+	if _, ok := c.resolveOut(env, written, span, scratchBag(env)); ok {
 		return true
 	}
-	c.emit(env, func(bag *diag.Bag) { l.Resolve(written, dir, span, bag) })
+	c.emit(env, func(bag *diag.Bag) { c.resolveOut(env, written, span, bag) })
 	c.counted(env)
 	return false
 }

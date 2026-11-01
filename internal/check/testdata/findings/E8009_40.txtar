@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 424: a ts out whose .ts file name has a bad character is E8009 outChars, the file segment included.
+-- a/a.canon --
+package a
+
+emit ts { out: "@web/a/b c.ts" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:16
+  invalid out "@web/a/b c.ts" for emit ts: it resolves to web/a/b c.ts, and a path segment may use only A-Z a-z 0-9 . _ -
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 424: in an out list only the entry with a bad character is E8009 outChars, at that entry; the good entries pass.
+-- a/a.canon --
+package a
+
+emit cpp { out: ["@source/ok-1_a.b", "@features/a b", "@sovcommon/fine"], namespace: "a" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:38
+  invalid out "@features/a b" for emit cpp: it resolves to features/a b, and a path segment may use only A-Z a-z 0-9 . _ -
+
+1 error, 0 warnings in 1 package (…)

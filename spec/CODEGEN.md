@@ -92,10 +92,11 @@ in [§12](#12-diagnostics).
   `.ts`, a `values` item that is not a public top-level `let` of the package or is listed twice,
   an empty `values` list (`E8009` `valuesEmpty`).
   `out` is required for every target (`E8009` `missing` without it).
-  Every segment of an `out` path, after its `@root/` prefix, uses only the portable filename
-  characters `A-Z a-z 0-9 . _ -` (`E8009` `outChars` otherwise, DECISIONS 424): the path is
-  written into generated text (a C++ `#include`, a Go import path, a TS import specifier) that takes
-  no escapes.
+  Every segment of the project-relative path an `out` resolves to (its root's path included; for
+  an unrooted `out`, the directory of the file that holds the emit) uses only the portable
+  filename characters `A-Z a-z 0-9 . _ -` (`E8009` `outChars` otherwise, DECISIONS 424): the path
+  is written into generated text (a C++ `#include`, a TS import specifier) that takes no escapes.
+  An `out` that does not resolve is the resolver's finding alone (DECISIONS 215).
 - **Copies** (DECISIONS 229). For `go`, `cpp`, `ts`, `json` and `text`, `out` is a string or a non-empty
   list of strings; `view` takes one string. Each entry is a **copy** of the emit, written at that
   place as if it were the emit's only `out`. Every copy has the emit's mode and options; copies
@@ -3171,7 +3172,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | W8006 | warning | §3.5 list |
 | E8007 | error | Go emit outside every mapped root |
 | E8008 | error | two Go emits write into one directory (one Go package); two outputs with one path are WIRE.md's `E8152` |
-| E8009 | error | bad mode, package, namespace, out or values; an option value of the wrong kind; an invalid `out` list: empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories (§2.1, §2.8); an `emit text` with no `@text` fn (§2.9) |
+| E8009 | error | bad mode, package, namespace, out or values; an `out` resolving to a path segment outside `A-Z a-z 0-9 . _ -` (§2.1, DECISIONS 424); an option value of the wrong kind; an invalid `out` list: empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories (§2.1, §2.8); an `emit text` with no `@text` fn (§2.9) |
 | E8010 | error | `ordered` + `@codes` out of order |
 | E8011 | error | override not an identifier, reserved, or (Go) not exported; a name derived without override that is not an identifier (§3.5) |
 | E8012 | error | `Range`, `Pair`, function type, `_`, non-optional `Never` in an emitted type or value; a `Define` record or define table in a `data` or `embedded` emit (§4.4) |

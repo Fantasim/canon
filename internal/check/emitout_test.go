@@ -1,11 +1,16 @@
 package check_test
 
 import (
+	"context"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
+	"github.com/fantasim/canonlang/internal/syntax"
 )
 
 // rootAt is a root declared at offset at of project.canon.
@@ -67,5 +72,46 @@ func TestWithin(t *testing.T) {
 		if rel, ok := check.Within(c.dir, c.root); rel != c.wantRel || ok != c.wantOK {
 			t.Errorf("Within(%q, %q) = %q, %v; want %q, %v", c.dir, c.root, rel, ok, c.wantRel, c.wantOK)
 		}
+	}
+}
+
+// CODEGEN.md §2.1, DECISIONS 424: the path an out resolves to includes its root's own path from project.canon; a bad character there is E8009 outChars, naming that path.
+func TestOutCharsRootPath(t *testing.T) {
+	p := project.New("acme", project.Version{Major: 0, Minor: 1})
+	p.Roots = []project.Root{{Name: "gen", Path: "gen"}, {Name: "odd", Path: "od\"d??="}}
+	for _, tc := range []struct{ out, resolved string }{
+		{out: "@gen/a"},
+		{out: "@odd/a", resolved: "od\"d??=/a"}, // the project-relative path the message names
+	} {
+		set := &source.FileSet{}
+		src, err := set.Add("a/a.canon", "/a/a.canon", []byte("package a\n\nemit cpp { out: \""+tc.out+"\", namespace: \"a\" }\n"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		bags := check.Bags{"a": diag.NewBag(set, "a")}
+		f := syntax.Parse(src, syntax.FileSource, bags["a"])
+		check.Check(context.Background(), p, []*syntax.File{f}, bags, literalFolder{})
+		found := bags["a"].Findings()
+		switch {
+		case tc.resolved == "" && len(found) != 0:
+			t.Errorf("out %q: findings %v, want none", tc.out, found)
+		case tc.resolved != "" && (len(found) != 1 || found[0].Code != diag.E8009.Def().Code || !strings.Contains(found[0].Message, tc.resolved)):
+			t.Errorf("out %q: findings %v, want one outChars finding naming %q", tc.out, found, tc.resolved)
+		}
+	}
+}
+
+// CODEGEN.md §2.1, DECISIONS 424: without a project nothing resolves, so an out is judged as written: a backslash is E8009 outChars.
+func TestOutCharsWithoutProject(t *testing.T) {
+	set := &source.FileSet{}
+	src, err := set.Add("a/a.canon", "/a/a.canon", []byte("package a\n\nemit cpp { out: \"gen\\\\a\", namespace: \"a\" }\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	bags := check.Bags{"a": diag.NewBag(set, "a")}
+	f := syntax.Parse(src, syntax.FileSource, bags["a"])
+	check.Check(context.Background(), nil, []*syntax.File{f}, bags, literalFolder{})
+	if got, want := errorCodes(bags["a"].Findings()), []diag.Code{diag.E8009.Def().Code}; !slices.Equal(got, want) {
+		t.Errorf("codes %v, want %v", got, want)
 	}
 }

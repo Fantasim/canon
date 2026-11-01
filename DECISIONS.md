@@ -4363,9 +4363,11 @@ round 2", "PS1 review", "PS2 round 2"):
      scan reads code and literals, never comment text. Reason: a `\` ending a `//` line splices the
      next generated line (a getter, an enumerator) into the comment, a trigraph fails `-Wtrigraphs`
      under `-Wall -Werror`, and a doc's form must not change a file's includes.
-424. **An emit's `out` path uses portable filename characters (CODEGEN.md §2.1; E8009 `outChars`).**
-     Every segment of an `out` path, after its `@root/` prefix, uses only `A-Z a-z 0-9 . _ -` (the
-     POSIX portable filename set). Reason: the path is written into generated text that takes no
-     escapes (a C++ `#include "…"` header name, a Go import path, a TS import specifier), so a `"`, a
-     `\` or a trigraph such as `??=` broke or changed every file that includes it; every real and
-     example `out` path already fits.
+424. **An emit's `out` resolves to a path of portable filename characters (CODEGEN.md §2.1; E8009 `outChars`).**
+     Every segment of the project-relative path an `out` resolves to, its root's path included (for
+     an unrooted `out`, the directory of the file that holds the emit), uses only `A-Z a-z 0-9 . _ -`
+     (the POSIX portable filename set); an `out` that does not resolve is the resolver's finding
+     alone (215). Reason: that path is written into generated text that takes no escapes (a C++
+     `#include "…"` header name, a TS import specifier), so a `"`, a `\` or a trigraph such as `??=`
+     in a written segment, a root path or a source directory broke or changed every file that
+     includes it; every real and example `out` already fits.

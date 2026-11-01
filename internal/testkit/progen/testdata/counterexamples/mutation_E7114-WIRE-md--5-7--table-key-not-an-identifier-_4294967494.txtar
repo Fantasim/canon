@@ -3,6 +3,7 @@ name E7114 WIRE.md §5.7 (table key not an identifier)
 case 197
 seed 4294967494
 born mismatch extra E8019/mode
+left E8009/outChars
 sig extra E8019/mode
 packages pipeline
 want E7114 pipeline/data/II_POT_HEAL_S.json 12 17 check

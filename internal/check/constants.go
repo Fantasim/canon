@@ -221,6 +221,7 @@ const (
 	seqText        = "Seq("
 	expMark        = "e"
 	tsSuffix       = ".ts"
+	outCharset     = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-/" // the characters of the path an out resolves to (CODEGEN.md §2.1, DECISIONS 424)
 	extForbidden   = "./\\"
 	itName         = "it"
 	selfKey        = "self"
@@ -249,9 +250,8 @@ const (
 	defaultTag     = kindMember
 )
 
-// View words, properties and studio names (VIEWMODEL.md G16), translation key segments
-// (I18N.md K4). The words are internal/syntax's (the grammar owns key syntax); check keeps
-// only its own names for them.
+// View words, properties and studio names (VIEWMODEL.md G16), translation key segments (I18N.md K4).
+// The words are internal/syntax's (the grammar owns key syntax); check keeps only its own names for them.
 const (
 	titleWord, subtitleWord, showWord, textWord, stepWord        = syntax.WordTitle, syntax.WordSubtitle, syntax.WordShow, loadText, syntax.PropStep
 	fieldSegment, methodWord, caseWord, memberWord, checkSegment = syntax.WordField, syntax.WordMethod, jsonCase, syntax.WordMember, syntax.WordCheck

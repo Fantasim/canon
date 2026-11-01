@@ -1307,7 +1307,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | package | value:Text | `invalid package "{value}" for emit go: not a Go identifier, or a Go keyword` |
 | E8009 | namespace | value:Text | `invalid namespace "{value}" for emit cpp: expected ident{{::ident}} with no C++ keyword` |
 | E8009 | tsOut | value:Text | `invalid out "{value}" for emit ts: it must end in .ts` |
-| E8009 | outChars | value:Text, target:Name | `invalid out "{value}" for emit {target}: a path segment may use only A-Z a-z 0-9 . _ -` |
+| E8009 | outChars | value:Text, path:Path, target:Name | `invalid out "{value}" for emit {target}: it resolves to {path}, and a path segment may use only A-Z a-z 0-9 . _ -` |
 | E8009 | values | name:Name, target:Name | `values of emit {target}: {name} is not a public let of this package` |
 | E8009 | valuesTwice | name:Name, target:Name | `values of emit {target}: {name} is listed twice` |
 | E8009 | kind | option:Name, target:Name, expected:Kind | `option {option} of emit {target} must be {expected}` |

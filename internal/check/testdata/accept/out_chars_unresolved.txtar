@@ -1,0 +1,17 @@
+DECISIONS 215, 424, CODEGEN.md §2.1: an out that does not resolve (a backslash, an absolute path, an undeclared root) is the resolver's finding alone (E7001, E7003, reported by build); check adds no E8009 outChars to it, however many characters are outside the portable set.
+-- a/a.canon --
+package a
+
+emit cpp { out: "@source/a\\b c", namespace: "a" }
+-- b/b.canon --
+package b
+
+emit cpp { out: "C:/gen/a b", namespace: "b" }
+-- c/c.canon --
+package c
+
+emit cpp { out: "@nowhere/a b", namespace: "c" }
+-- d/d.canon --
+package d
+
+emit cpp { out: "/gen/a b", namespace: "d" }

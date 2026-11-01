@@ -1,0 +1,17 @@
+CODEGEN.md §2.1, §2.8, DECISIONS 424: two entries of a go or cpp out list under one root, the second with a bad character, are E8009 outChars alone, with no `outRoot`: the bad entry is not judged further.
+-- a/a.canon --
+package a
+
+emit go { out: ["@features/x", "@features/y z"], package: "a" }
+-- b/b.canon --
+package b
+
+emit cpp { out: ["@features/x", "@features/y z"], namespace: "b" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:32
+  invalid out "@features/y z" for emit go: it resolves to features/y z, and a path segment may use only A-Z a-z 0-9 . _ -
+
+error[E8009]  b/b.canon:3:33
+  invalid out "@features/y z" for emit cpp: it resolves to features/y z, and a path segment may use only A-Z a-z 0-9 . _ -
+
+2 errors, 0 warnings in 2 packages (…)

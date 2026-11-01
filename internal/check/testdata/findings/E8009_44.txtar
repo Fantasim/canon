@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 424: in a go out list a bad entry is E8009 outChars alone, with no `outPackage` (different last elements) from the entries kept.
+-- a/a.canon --
+package a
+
+emit go { out: ["@features/x", "@sovcommon/a b"] }
+-- findings.txt --
+error[E8009]  a/a.canon:3:32
+  invalid out "@sovcommon/a b" for emit go: it resolves to sovcommon/a b, and a path segment may use only A-Z a-z 0-9 . _ -
+
+1 error, 0 warnings in 1 package (…)

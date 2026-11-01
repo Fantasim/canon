@@ -1,0 +1,10 @@
+CODEGEN.md §2.1, DECISIONS 424: a go out that resolves to a bad path is E8009 outChars alone, with no `invalid package` finding for its last element: the entry is not judged further.
+-- a/a.canon --
+package a
+
+emit go { out: "@features/a b" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:16
+  invalid out "@features/a b" for emit go: it resolves to features/a b, and a path segment may use only A-Z a-z 0-9 . _ -
+
+1 error, 0 warnings in 1 package (…)

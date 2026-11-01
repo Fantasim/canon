@@ -1,0 +1,15 @@
+CODEGEN.md §2.1, DECISIONS 424 (pin): out paths made only of A-Z a-z 0-9 . _ - and / pass, with or without an @root/ prefix, including . and .. segments and a trailing /.
+-- a/a.canon --
+package a
+
+emit cpp { out: "@source/a-b/c_d.e/X9", namespace: "a" }
+
+emit ts { out: "@web/a-b/c_d.e/x.ts" }
+
+emit go { out: ["out/go", "@sovcommon/a-b/c_d.e/go-1/"], package: "a" }
+-- b/b.canon --
+package b
+
+emit cpp { out: "../gen", namespace: "b" }
+
+emit go { out: "out/go", package: "b" }

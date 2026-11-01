@@ -47,24 +47,47 @@ func (c *checker) emitOut(env *env, fi *syntax.FieldItem, target string) outOpti
 	return out
 }
 
-// outPath is one out path x: a constant string, ending in .ts for a ts emit (E8009 `tsOut`).
+// outPath is one out path x: a constant string of portable characters (E8009 `outChars`), ending in .ts for a ts emit (E8009 `tsOut`); a path with other characters is not an entry.
 func (c *checker) outPath(env *env, x syntax.Expr, target string, expected diag.Kind) (string, bool) {
 	text, ok := c.constOption(env, x, OptOut, target, expected)
-	if ok && target == TargetTS && !strings.HasSuffix(text, tsSuffix) {
+	if !ok {
+		return text, false
+	}
+	if target == TargetTS && !strings.HasSuffix(text, tsSuffix) {
 		c.report(env, diag.E8009.AtTsOut(env.span(x), text))
 	}
-	return text, ok
+	if resolved, judged := c.judgedOut(env, text); judged && !portableOut(resolved) {
+		c.report(env, diag.E8009.AtOutChars(env.span(x), text, resolved, target))
+		return text, false
+	}
+	return text, true
+}
+
+// judgedOut is the project-relative path out resolves to, which outChars judges and shows; without a layout, out as written after its @root/ prefix; false when out does not resolve, the resolver's finding alone (DECISIONS 215, 424).
+func (c *checker) judgedOut(env *env, out string) (string, bool) {
+	if c.declaredLayout(env.pkg) == nil {
+		if after, rooted := strings.CutPrefix(out, rootSigil); rooted {
+			_, out, _ = strings.Cut(after, slash)
+		}
+		return out, true
+	}
+	at, ok := c.resolveOut(env, out, source.Span{}, scratchBag(env))
+	return at.Abs, ok
+}
+
+// portableOut reports a resolved path whose segments use only outCharset (CODEGEN.md §2.1, DECISIONS 424).
+func portableOut(resolved string) bool {
+	return strings.Trim(resolved, outCharset) == ""
 }
 
 // emitRoots is E8009 `outRoot` at the later of two entries owned by one root; an entry that does not resolve has its own finding (CODEGEN.md §2.8).
 func (c *checker) emitRoots(env *env, target string, out outOption) {
-	l := c.declaredLayout(env.pkg)
-	if len(out.entries) < sharingEntries || l == nil {
+	if len(out.entries) < sharingEntries || c.declaredLayout(env.pkg) == nil {
 		return
 	}
 	first := map[string]string{} // owning root → display path of its first entry
 	for _, en := range out.entries {
-		at, ok := l.Resolve(en.text, fileDir(env.file), source.Span{}, diag.NewBag(indexFiles(env.pkg.files), env.pkg.path))
+		at, ok := c.resolveOut(env, en.text, source.Span{}, scratchBag(env))
 		if !ok {
 			continue
 		}
