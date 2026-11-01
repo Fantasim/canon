@@ -1,0 +1,45 @@
+TYPES.md §9.3, §6.3, EVALUATION.md §7.1, log-2026-11-01 "NOTENTRY report": self.retired read directly,
+and self.id read through a method called bare and on self, each on pl[0], a plain list's element and no
+entry: E4003 at each selection read, the run aborted. ta's entry gets its normal verdict: live, so
+isRetired fails there alone.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+
+  /// Its key.
+  fn key(self) -> String { return self.id }
+
+  check isRetired: self.retired else "{code} is live"
+
+  check bare: key() != "" else "no key"
+
+  check onSelf: self.key() != "" else "no key"
+}
+
+/// The rows.
+let ta: table Row = { a { code: "a" } }
+
+/// Rows that are no entries.
+let pl: [Row] = [{ code: "p" }]
+-- findings.txt --
+error[E4003]  a/a.canon:10:35
+  pl[0]: .id of a value that is not an entry of a table or keyed list
+  in Row.key (a/a.canon:14)
+
+error[E4003]  a/a.canon:12:20
+  pl[0]: .retired of a value that is not an entry of a table or keyed list
+
+error[E5001]  a/a.canon:20:23
+  ta.a: a is live
+  expected by a/a.canon:12 (check isRetired)
+
+3 errors, 0 warnings in 1 package (…)

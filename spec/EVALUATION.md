@@ -843,6 +843,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | W1912 | warning | an amend path that selects a table, keyed-list or map entry by position (§9.2) |
 | E4001 | error | postfix `!` on `none` (hard) |
 | E4002 | error | missing key or index (hard) |
+| E4003 | error | `.id` or `.retired` of a record that is not an entry (hard) |
 | E4101 | error | §6.1, §6.3 (hard) |
 | E4102 | error | §6.1, §6.3 (hard) |
 | E4103 | error | `Int(f)`, `floor`, `ceil`, `round` (hard) |

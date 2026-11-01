@@ -119,15 +119,11 @@ func (r *run) builtinMember(v value.Value, name string, x syntax.Expr) value.Val
 	return nil
 }
 
-// recordMember is `.id` and `.retired` of an entry, `.kind` of a variant value.
+// recordMember is `.id` and `.retired` of an entry (entryMember), `.kind` of a variant value.
 func (r *run) recordMember(v *value.Record, name string, x syntax.Expr, p *value.Prov) value.Value {
 	switch name {
-	case memberID:
-		if v.Ident != nil {
-			return &value.Str{V: v.Ident.Key.Text(), T: types.StringType, P: p}
-		}
-	case memberRetired:
-		return &value.Bool{V: v.Ident != nil && v.Ident.Retired, P: p}
+	case memberID, memberRetired:
+		return r.entryMember(v, name, x, p)
 	case memberKind:
 		ct, ok := v.T.Base().(*types.CaseType)
 		kt, isKind := r.typeOf(x).Base().(*types.VariantKindType)
@@ -137,6 +133,19 @@ func (r *run) recordMember(v *value.Record, name string, x syntax.Expr, p *value
 	}
 	r.bug(x)
 	return nil
+}
+
+// entryMember is `.id` or `.retired` of v: E4003 at the selection when v is no entry (TYPES.md §9.3).
+func (r *run) entryMember(v *value.Record, name string, x syntax.Expr, p *value.Prov) value.Value {
+	id := v.Ident
+	if id == nil {
+		r.fail(diag.E4003.At(r.span(x), name))
+		return nil
+	}
+	if name == memberID {
+		return &value.Str{V: id.Key.Text(), T: types.StringType, P: p}
+	}
+	return &value.Bool{V: id.Retired, P: p}
 }
 
 func memberField(m *types.Member, name string, p *value.Prov) value.Value {

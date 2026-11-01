@@ -1,0 +1,44 @@
+TYPES.md §9.3, EVALUATION.md §7.1, §8.3, log-2026-11-01 "NOTENTRY report": a block check reading
+self.id, and a one-line check reading self.retired then self.id, on lr, no entry: E4003 at the first
+selection each run evaluates. A check reading neither runs on lr as before: E5001.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+
+  check {
+    if self.id == "" {
+      fail(code, "no id")
+    }
+  }
+
+  check both: self.retired or self.id != "" else "neither"
+
+  check short: code != "y" else "code y"
+}
+
+/// The rows.
+let ta: table Row = { a { code: "a" } }
+
+/// A row that is no entry.
+let lr: Row = { code: "y" }
+-- findings.txt --
+error[E4003]  a/a.canon:10:8
+  lr: .id of a value that is not an entry of a table or keyed list
+
+error[E4003]  a/a.canon:15:15
+  lr: .retired of a value that is not an entry of a table or keyed list
+
+error[E5001]  a/a.canon:24:15
+  lr: code y
+  expected by a/a.canon:17 (check short)
+
+3 errors, 0 warnings in 1 package (…)

@@ -907,7 +907,7 @@ let sold: [past ref items] = [oldSword]       // history: allowed
 - `table T` and `stable table T` require `T` to be a record type (`E3013`).
 - `stable table T` is allowed only as the whole declared type of a top-level `let` (`E6003`,
   LOCK.md), because the lock names it by value.
-- Every entry has `.id: String` (its key) and `.retired: Bool`. Reading `.id` or `.retired` of a record value that is not an entry (a plain `let`, a list element, a field, a record check's `self` on such a value) is `E4003`, an evaluation error at the selection (EVALUATION §7.1).
+- Every entry has `.id: String` (its key) and `.retired: Bool`. Reading `.id` or `.retired` of a record value that is not an entry (a plain `let`, a list element or field that holds no copy of an entry, a record check's `self` on such a value) is `E4003`, an evaluation error at the selection (EVALUATION §7.1).
 - `t.k` and `t[k]` look up by key (`k` an identifier, `String` or `ref T`); `t.at(i)` by
   position.
 - `entry t.k { … }` requires `t` to be a top-level `let` of the same package whose type is a

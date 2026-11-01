@@ -9,6 +9,12 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 )
 
+// notEntryOperator is E4003, last in the catalogue: an operator added before others moves their seeds.
+func notEntryOperator() operator {
+	return op(diag.E4003.Def().Code, "TYPES.md §9.3 (.id of a value that is no entry)", appendSite("local record ZzRow {\n  zzCode: String\n}\n\n"+
+		"local let zzRows: table ZzRow = { a { zzCode: \"a\" } }\nlocal let zzR: ZzRow = { zzCode: \"r\" }\nlocal let zzRid: String = ", "zzR.id", ""))
+}
+
 // Operators on evaluation, the standard library, checks, locks and load forms.
 func evalOperators() []operator {
 	return []operator{

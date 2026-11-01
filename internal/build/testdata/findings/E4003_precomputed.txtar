@@ -1,0 +1,44 @@
+TYPES.md §9.3, DECISIONS 324, EVALUATION.md §2.3, log-2026-11-01 "NOTENTRY report": a precomputed
+result is no entry: its check reading self.id is E4003 at the selection, under the precomputation's
+frame.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+
+  check named: self.id != "" else "no id"
+}
+
+/// The rows.
+let ta: table Row = { a { code: "a" } }
+
+/// A row's maker.
+record Maker {
+  /// Its code.
+  code: String = "m"
+
+  /// A row made by this maker.
+  export fn row(self) -> Row { return { code: code } }
+}
+
+/// The makers.
+let makers: table Maker = { m {} }
+
+emit json { out: "@out/" }
+-- findings.txt --
+error[E4003]  a/a.canon:9:16
+  .id of a value that is not an entry of a table or keyed list
+  in Maker.row() (a/a.canon:21)
+
+1 error, 0 warnings in 1 package (…)

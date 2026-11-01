@@ -1,0 +1,43 @@
+TYPES.md §9.3, EVALUATION.md §7.1, §8.4, log-2026-11-01 "NOTENTRY report": fns reading r.id, called
+from a check with a field holding no entry (idOf, on h), and with self passed bare (keyOf, on h.row),
+raise E4003 at r.id inside the fn, under its call; each run is aborted, no E5001. On ta's entry both
+checks hold.
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+
+  check viaSelf: keyOf(self) != "" else "no key"
+}
+
+/// Its id.
+fn idOf(r: Row) -> String { return r.id }
+
+/// Its key.
+fn keyOf(r: Row) -> String { return r.id }
+
+/// A holder.
+record Holder {
+  /// Its row.
+  row: Row
+
+  check viaArg: idOf(row) != "" else "no id"
+}
+
+local let ta: table Row = { a { code: "a" } }
+
+local let h: Holder = { row: { code: "y" } }
+-- findings.txt --
+error[E4003]  a/a.canon:13:36
+  h: .id of a value that is not an entry of a table or keyed list
+  in idOf (a/a.canon:23)
+
+error[E4003]  a/a.canon:16:37
+  h.row: .id of a value that is not an entry of a table or keyed list
+  in keyOf (a/a.canon:9)
+
+2 errors, 0 warnings in 1 package (…)

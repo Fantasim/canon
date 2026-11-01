@@ -1,0 +1,34 @@
+TYPES.md §9.3, EVALUATION.md §7.1, §7.2, log-2026-11-01 "NOTENTRY report": `.id` of lr, a plain let
+and no entry, is E4003 at the selection, and poisons s; t reads s and is poisoned silently. So is
+lr.retired, poisoning w. ta.a.id and ta.a.retired read as before.
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+}
+
+local let ta: table Row = { a { code: "a" } }
+
+local let lr: Row = { code: "y" }
+
+local let s: String = lr.id
+
+local let t: String = s + "!"
+
+local let u: String = ta.a.id
+
+local let v: Bool = ta.a.retired
+
+local let w: Bool = lr.retired
+-- findings.txt --
+error[E4003]  a/a.canon:14:23
+  s: .id of a value that is not an entry of a table or keyed list
+
+error[E4003]  a/a.canon:22:21
+  w: .retired of a value that is not an entry of a table or keyed list
+
+2 errors, 0 warnings in 1 package (…)

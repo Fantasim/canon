@@ -1,0 +1,36 @@
+TYPES.md §9.3, EVALUATION.md §8.1, log-2026-11-01 "EVAL-OWED review FAIL", "NOTENTRY report": lr is
+reached first as itself, no entry, then as kl's entry y. The check reading self.id is E4003 on lr, and
+gets its normal verdict at kl[y]: false, E5001. On ta's entry it holds.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its code.
+  code: String
+
+  check notY: self.id != "y" else "id y"
+}
+
+/// The rows.
+let ta: table Row = { a { code: "a" } }
+
+/// A row that is no entry.
+let lr: Row = { code: "y" }
+
+/// Keyed by code, holding lr.
+let kl: [Row] keyed by code = [lr]
+-- findings.txt --
+error[E4003]  a/a.canon:9:15
+  lr: .id of a value that is not an entry of a table or keyed list
+
+error[E5001]  a/a.canon:16:15
+  kl[y]: id y
+  expected by a/a.canon:9 (check notY)
+
+2 errors, 0 warnings in 1 package (…)
