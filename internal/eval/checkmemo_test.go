@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/check"
-	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -42,10 +41,7 @@ type rowRun struct {
 func rowsAfterB(t *testing.T, m *memoed, memo *eval.Memo, opt eval.Options) *rowRuns {
 	t.Helper()
 	ctx := context.Background()
-	b := &build{prog: m.p, bags: check.Bags{}, checked: m.prog, values: map[eval.Root]value.Value{}}
-	for _, name := range m.bags {
-		b.bags[name] = diag.NewBag(m.p.fs, name)
-	}
+	b := &build{prog: m.p, bags: m.freshBags(), checked: m.prog, values: map[eval.Root]value.Value{}}
 	h := &host{load: m.load}
 	b.ev = eval.New(b.checked, h, b.bags, opt)
 	if memo != nil {

@@ -47,6 +47,7 @@ type snapshot struct {
 	canon  [sha256.Size]byte // project.canon's SHA-256 with the placed root lines (placedKey)
 	gen    *cacheGen         // the cache generation whose set this is; nil without a cache
 	base   source.FileID     // the set's last file when the snapshot began
+	flawed map[string]bool   // the packages whose files' parse reported something (wideBags)
 }
 
 // add is a file of the snapshot's set: the cache's when it holds that content, else added.
@@ -202,6 +203,7 @@ func (p *Project) load(ctx context.Context) (*snapshot, error) {
 		return nil, displayErrorIn(p.dir, err)
 	}
 	s.orphan = r.Orphans
+	s.flawed = s.parseFlawed()
 	s.sums = append(s.sums, r.Sums...)
 	if err := s.readLocks(p.fs, p.dir); err != nil {
 		return nil, err
@@ -239,6 +241,18 @@ func (s *snapshot) bag(pkg string) *diag.Bag {
 		s.bags[pkg] = s.p.newBag(s.set, pkg)
 	}
 	return s.bags[pkg]
+}
+
+// parseFlawed are the packages whose bag holds a finding once every file is parsed: only the
+// parse's, as no check has reported yet (the summary counts what a limit dropped too).
+func (s *snapshot) parseFlawed() map[string]bool {
+	out := map[string]bool{}
+	for name, bag := range s.bags { //canon:unordered a set
+		if sum := bag.Summary(); sum.Errors+sum.Warnings > 0 {
+			out[name] = true
+		}
+	}
+	return out
 }
 
 func (s *snapshot) bagsOf(units []*project.Unit) map[string]*diag.Bag {

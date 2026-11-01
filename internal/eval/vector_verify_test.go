@@ -76,7 +76,7 @@ func (h verifyInto) VerifyInto(ctx context.Context, ev *eval.Evaluator, root eva
 func TestVectorVerifies(t *testing.T) {
 	ctx := context.Background()
 	p := parseFiles(t, []string{"flow/flow.canon"}, [][]byte{[]byte(flowSrc)})
-	own := check.Bags{flowPkg: diag.NewBag(p.fs, flowPkg)}
+	own := p.bagsFor(flowPkg)
 	prog := check.Check(ctx, exampleProject(), p.files, own, eval.NewFolder(own, eval.Options{}))
 	assertEmpty(t, own)
 	plus := progFnIn(t, prog, flowPkg, "Gate", "plus")

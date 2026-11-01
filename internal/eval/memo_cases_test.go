@@ -164,8 +164,10 @@ func TestMemoEpoch(t *testing.T) {
 	if at < 0 || err != nil {
 		t.Fatalf("%s: %d, %v", editedEntry, at, err)
 	}
-	files[at] = syntax.Parse(src, syntax.FileSource, m.p.parse)
-	next := checkOnce(t, &program{fs: m.p.fs, files: files, parse: m.p.parse}, m.opt)
+	kept := slices.DeleteFunc(slices.Clone(m.p.flawed), func(f *syntax.File) bool { return f.Src.Path == editedEntry })
+	edit := &program{fs: m.p.fs, files: files, parse: m.p.parse, flawed: kept}
+	files[at] = edit.parseOne(src)
+	next := checkOnce(t, edit, m.opt)
 	next.load = m.load
 	against(t, "edited", next, memoAt{memo: memo, epoch: 3}, replays{0, 6})
 	against(t, "edited again", next, memoAt{memo: memo, epoch: 3}, replays{6, 0})
@@ -180,4 +182,16 @@ func TestMemoSameEpochRecheck(t *testing.T) {
 	again.load = m.load
 	cold := again.evaluate(t, nil, 0)
 	same(t, "checked again", again.evaluate(t, memo.memo, memo.epoch), cold)
+}
+
+// flawedMemoSrc holds a value whose function body assigns with no target.
+const flawedMemoSrc = "package a\n\nlocal fn f() -> Int {\n  var i = 0\n  = 1\n  return i\n}\n\nlocal let x: Int = f()\n\nlocal let y: Int = 2\n"
+
+// TYPES.md §1: a memo fixture's parse findings reach its outcome, and its broken value is not evaluated.
+func TestMemoKeepsParseFindings(t *testing.T) {
+	p := parseFiles(t, []string{"a/a.canon"}, [][]byte{[]byte(flawedMemoSrc)})
+	out := checkOnce(t, p, eval.Options{}).evaluate(t, nil, 0)
+	if !strings.Contains(out.findings, string(diag.E1116.Def().Code)) || !strings.Contains(out.dump, "a.x poisoned") || !strings.Contains(out.dump, "a.y = 2") {
+		t.Errorf("findings:\n%s\nvalues:\n%s", out.findings, out.dump)
+	}
 }

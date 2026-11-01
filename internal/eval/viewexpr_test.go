@@ -48,7 +48,7 @@ func viewBuild(t *testing.T, opt eval.Options) (*build, map[string]syntax.Expr) 
 	proj := project.New("t", project.Version{Minor: 1})
 	proj.Languages = append(proj.Languages, "fr")
 	ctx := context.Background()
-	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
+	b := &build{prog: p, bags: p.bagsOf(), values: map[eval.Root]value.Value{}}
 	b.checked = check.Check(ctx, proj, p.files, b.bags, eval.NewFolder(b.bags, opt))
 	b.ev = eval.New(b.checked, &host{}, b.bags, opt)
 	for _, name := range []string{"ps", "byKey", "listed", "base"} {

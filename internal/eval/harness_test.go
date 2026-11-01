@@ -34,14 +34,17 @@ const (
 // exampleRoots are the roots examples/project.canon declares.
 var exampleRoots = []string{"client", "features", "generated", "parity", "pipeline_go", "resource", "services", "source", "sovcommon", "web"}
 
-// program is one parsed program: its files, and the parse findings.
+// program is one parsed program: its files, the parse findings no package's bag takes (a file
+// without a package line), and the files whose parse findings their package's bag takes.
 type program struct {
-	fs    *source.FileSet
-	files []*syntax.File
-	parse *diag.Bag
+	fs     *source.FileSet
+	files  []*syntax.File
+	parse  *diag.Bag
+	flawed []*syntax.File
 }
 
-// parseFiles parses named sources, in the order given.
+// parseFiles parses named sources, in the order given, as project.Reader does: a file with a
+// package line and parse findings is parsed again into its package's bag by each build (bagsOf).
 func parseFiles(t testing.TB, names []string, data [][]byte) *program {
 	t.Helper()
 	p := &program{fs: &source.FileSet{}}
@@ -51,9 +54,52 @@ func parseFiles(t testing.TB, names []string, data [][]byte) *program {
 		if err != nil {
 			t.Fatal(err)
 		}
-		p.files = append(p.files, syntax.Parse(src, syntax.FileSource, p.parse))
+		p.files = append(p.files, p.parseOne(src))
 	}
 	return p
+}
+
+// parseOne parses src, its findings kept where a build keeps them (keep).
+func (p *program) parseOne(src *source.File) *syntax.File {
+	own := diag.NewBag(p.fs, "")
+	f := syntax.Parse(src, syntax.FileSource, own)
+	if len(own.Findings()) > 0 {
+		p.keep(f)
+	}
+	return f
+}
+
+// keep puts the parse findings of f where a build does: its package's bag, else the program's.
+func (p *program) keep(f *syntax.File) {
+	if f.Package != nil {
+		p.flawed = append(p.flawed, f)
+		return
+	}
+	syntax.Parse(f.Src, syntax.FileSource, p.parse)
+}
+
+// bagsOf is each package's bag holding its files' parse findings, as a build gives check (TYPES.md §1).
+func (p *program) bagsOf() check.Bags {
+	bags := check.Bags{}
+	for _, f := range p.flawed {
+		pkg := syntax.Qualified(f.Package)
+		if bags[pkg] == nil {
+			bags[pkg] = diag.NewBag(p.fs, pkg)
+		}
+		syntax.Parse(f.Src, syntax.FileSource, bags[pkg])
+	}
+	return bags
+}
+
+// bagsFor is bagsOf with a bag for each of names, empty when its files parsed cleanly.
+func (p *program) bagsFor(names ...string) check.Bags {
+	bags := p.bagsOf()
+	for _, name := range names {
+		if bags[name] == nil {
+			bags[name] = diag.NewBag(p.fs, name)
+		}
+	}
+	return bags
 }
 
 // fromArchive parses the .canon files of a txtar archive.
@@ -182,7 +228,7 @@ func runBuild(t testing.TB, p *program, opt eval.Options, selected ...string) *b
 func runBuildWith(t testing.TB, p *program, opt eval.Options, load loader, selected ...string) *build {
 	t.Helper()
 	ctx := context.Background()
-	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
+	b := &build{prog: p, bags: p.bagsOf(), values: map[eval.Root]value.Value{}}
 	fold := eval.NewFolder(b.bags, opt)
 	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
 	b.folded = eval.FoldsOf(fold).Reads()
@@ -253,7 +299,7 @@ func (b *build) stagesCD(ctx context.Context, pkgs []*check.Package) {
 	}
 }
 
-// findings renders the parse findings and every bag's, packages by path.
+// findings renders the parse findings no package took and every bag's, packages by path.
 func (b *build) findings(t testing.TB) string {
 	t.Helper()
 	all := b.prog.parse.Findings()

@@ -9,8 +9,8 @@ import (
 
 // entrySrc is the translated fn of DECISIONS 311's report, two refined parameters, and a
 // method reading a field past TypeScript's safe range.
-const entrySrc = `/// Entry.
-package entry
+const entrySrc = `/// Gauges.
+package gauge
 
 /// a plus b.
 export fn f(a: Int(0..), b: Int(0..=5)) -> Int { return a + b }
@@ -30,8 +30,8 @@ let g: G = { big: 1_152_921_504_606_846_976 }
 
 // CONFORMANCE.md §2.3, §4, DECISIONS 311: each parameter passes representability, then its range, before the next.
 func TestVectorEntryPerParameter(t *testing.T) {
-	b := buildFiles(t, eval.Options{}, "entry/entry.canon", entrySrc)
-	f := fnObj(t, b, "entry", "", "f")
+	b := buildFiles(t, eval.Options{}, "gauge/gauge.canon", entrySrc)
+	f := fnObj(t, b, "gauge", "", "f")
 	for _, c := range []gaugeCase{
 		{"a's range before b's representability", "f", ints(-1, intMin), 0, 0, codeRange, codeRange},
 		{"a unsafe first", "f", ints(pow60, intMin), 0, 0, codeRange, codeTS},
@@ -50,8 +50,8 @@ func TestVectorEntryPerParameter(t *testing.T) {
 
 // CONFORMANCE.md §2.3, DECISIONS 311: the reads of self are the first parameters, checked before the declared ones.
 func TestVectorEntrySelfFirst(t *testing.T) {
-	b := buildFiles(t, eval.Options{}, "entry/entry.canon", entrySrc)
-	call := eval.Call{Fn: fnObj(t, b, "entry", "G", "scaled"), Recv: b.values[eval.Root{Pkg: "entry", Name: "g"}], Args: ints(-1)}
+	b := buildFiles(t, eval.Options{}, "gauge/gauge.canon", entrySrc)
+	call := eval.Call{Fn: fnObj(t, b, "gauge", "G", "scaled"), Recv: b.values[eval.Root{Pkg: "gauge", Name: "g"}], Args: ints(-1)}
 	expectOutcome(t, b.ev.Vector(context.Background(), call, eval.VectorMode{Steps: vectorCap}), 0, codeRange)
 	expectOutcome(t, b.ev.Vector(context.Background(), call, eval.VectorMode{Steps: vectorCap, TS: true}), 0, codeTS)
 	assertEmpty(t, b.bags)

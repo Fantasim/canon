@@ -83,7 +83,7 @@ type loadCase struct {
 func TestVectorLoads(t *testing.T) {
 	ctx := context.Background()
 	p := parseFiles(t, []string{"loads/loads.canon"}, [][]byte{[]byte(loadSrc)})
-	folded := check.Bags{}
+	folded := p.bagsOf()
 	prog := check.Check(ctx, exampleProject(), p.files, folded, eval.NewFolder(folded, eval.Options{}))
 	assertEmpty(t, folded)
 	for _, c := range []loadCase{{into: true}, {into: true, fail: true}, {}} {

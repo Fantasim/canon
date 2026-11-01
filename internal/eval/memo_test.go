@@ -50,22 +50,24 @@ type outcome struct {
 	loads                struct{ hits, stored, unkept int } // the same counts for loads
 }
 
-// checkOnce checks p for evaluations with opt.
+// checkOnce checks p for evaluations with opt, its parse findings in its packages' bags as a build's.
 func checkOnce(t testing.TB, p *program, opt eval.Options) *memoed {
 	t.Helper()
-	bags := check.Bags{}
+	bags := p.bagsOf()
 	prog := check.Check(context.Background(), exampleProject(), p.files, bags, eval.NewFolder(bags, opt))
 	return &memoed{p: p, prog: prog, bags: slices.Sorted(maps.Keys(bags)), opt: opt}
+}
+
+// freshBags are a bag per package of m, each holding only its files' parse findings, as findings renders them.
+func (m *memoed) freshBags() check.Bags {
+	return m.p.bagsFor(m.bags...)
 }
 
 // evaluate runs stages A to D with a new evaluator and new bags, replaying from memo in epoch
 // when memo is set.
 func (m *memoed) evaluate(t testing.TB, memo *eval.Memo, epoch uint64) outcome {
 	t.Helper()
-	b := &build{prog: m.p, bags: check.Bags{}, checked: m.prog, values: map[eval.Root]value.Value{}, order: slices.Clone(m.first)}
-	for _, name := range m.bags {
-		b.bags[name] = diag.NewBag(m.p.fs, name)
-	}
+	b := &build{prog: m.p, bags: m.freshBags(), checked: m.prog, values: map[eval.Root]value.Value{}, order: slices.Clone(m.first)}
 	h := &host{load: m.load}
 	if m.as != nil {
 		h.as = m.as(h)

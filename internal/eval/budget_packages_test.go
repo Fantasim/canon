@@ -79,7 +79,7 @@ func TestBudgetPerPackage(t *testing.T) {
 func runFirst(t *testing.T, p *program, opt eval.Options, first []eval.Root, selected ...string) *build {
 	t.Helper()
 	ctx := context.Background()
-	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}, order: first}
+	b := &build{prog: p, bags: p.bagsOf(), values: map[eval.Root]value.Value{}, order: first}
 	fold := eval.NewFolder(b.bags, opt)
 	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
 	b.folded = eval.FoldsOf(fold).Reads()

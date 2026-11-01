@@ -143,7 +143,7 @@ func forceAlone(t *testing.T, src string, budget int64, name string) (value.Valu
 	t.Helper()
 	ctx := context.Background()
 	p := parseFiles(t, []string{"a/a.canon"}, [][]byte{[]byte(src)})
-	bags := check.Bags{}
+	bags := p.bagsOf()
 	opt := eval.Options{Budget: budget}
 	ev := eval.New(check.Check(ctx, exampleProject(), p.files, bags, eval.NewFolder(bags, opt)), nil, bags, opt)
 	v, ok := ev.Force(ctx, eval.Root{Pkg: "a", Name: name})

@@ -54,7 +54,7 @@ const (
 func truncErrors(t *testing.T, keep int) (errors, budget int) {
 	t.Helper()
 	p := parseFiles(t, []string{"a/0.canon", "a/a.canon"}, [][]byte{[]byte(truncDup), []byte(truncUser)})
-	bags := check.Bags{"a": diag.NewBag(p.fs, "a")}
+	bags := p.bagsFor("a")
 	bags["a"].Truncate(keep)
 	check.Check(context.Background(), exampleProject(), p.files, bags, eval.NewFolder(bags, eval.Options{Budget: truncBudget}))
 	for _, f := range bags["a"].Findings() {
@@ -80,7 +80,7 @@ func TestBudgetFindingIgnoresTruncation(t *testing.T) {
 // DECISIONS 263: a fold cancelled with the counter unspent is notConstant, never budget.
 func TestFoldCancelledIsNotConstant(t *testing.T) {
 	p := parseFiles(t, []string{"a/a.canon"}, [][]byte{[]byte(cancelUser)})
-	bags := check.Bags{}
+	bags := p.bagsOf()
 	check.Check(context.Background(), exampleProject(), p.files, bags, cancellingFolder{eval.NewFolder(bags, eval.Options{})})
 	var got []string
 	for _, f := range bags["a"].Findings() {

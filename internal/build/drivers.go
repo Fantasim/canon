@@ -8,6 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/project"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views"
 )
@@ -69,10 +70,7 @@ func (r *run) driverReads(ctx context.Context, pkg string) (*driverReads, error)
 // their imports: packages read only for this report nothing and block nothing (driverReads).
 func (r *run) newWide(ctx context.Context) (*run, error) {
 	units := withStudio(r.s.units, imported(r.s.units, dependents(r.s.units, r.selectedNames())), r.s.proj.Studio.Path)
-	w := &run{p: r.p, s: r.s, loaded: units, bags: check.Bags{}, opt: r.opt}
-	for _, u := range units {
-		w.bags[u.Name] = diag.NewBag(r.s.set, u.Name)
-	}
+	w := &run{p: r.p, s: r.s, loaded: units, bags: r.s.wideBags(units), opt: r.opt}
 	if err := w.phase2(ctx); err != nil {
 		return nil, err
 	}
@@ -83,6 +81,21 @@ func (r *run) newWide(ctx context.Context) (*run, error) {
 	w.host.scratch = true
 	w.ev.BeginVerification(ctx)
 	return w, nil
+}
+
+// wideBags are fresh, never-reported bags for units holding their parse findings (TYPES.md §1).
+func (s *snapshot) wideBags(units []*project.Unit) check.Bags {
+	bags := check.Bags{}
+	for _, u := range units {
+		bags[u.Name] = diag.NewBag(s.set, u.Name)
+		if !s.flawed[u.Name] {
+			continue
+		}
+		for _, f := range u.Files {
+			syntax.Parse(f.Src, syntax.FileSource, bags[u.Name]) // as project.Reader parses it
+		}
+	}
+	return bags
 }
 
 // dependents are the units importing one of names, directly or not, and those named, in name order.

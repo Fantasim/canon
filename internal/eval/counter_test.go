@@ -75,7 +75,7 @@ func spend(t *testing.T, p *program, n int64) spending {
 	t.Helper()
 	ctx := context.Background()
 	opt := eval.Options{Budget: n}
-	b := &build{prog: p, bags: check.Bags{}, values: map[eval.Root]value.Value{}}
+	b := &build{prog: p, bags: p.bagsOf(), values: map[eval.Root]value.Value{}}
 	fold := eval.NewFolder(b.bags, opt)
 	b.checked = check.Check(ctx, exampleProject(), p.files, b.bags, fold)
 	out := spending{folds: eval.FoldSteps(fold)}
@@ -95,7 +95,7 @@ func spend(t *testing.T, p *program, n int64) spending {
 func TestUseFolderLate(t *testing.T) {
 	ctx := context.Background()
 	p := parseFiles(t, []string{"a/a.canon"}, [][]byte{[]byte(sumSource)})
-	bags := check.Bags{}
+	bags := p.bagsOf()
 	fold := eval.NewFolder(bags, eval.Options{})
 	prog := check.Check(ctx, exampleProject(), p.files, bags, fold)
 	ev := eval.New(prog, served{}, bags, eval.Options{})

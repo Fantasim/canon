@@ -75,7 +75,7 @@ func (h *verifying) Verify(ctx context.Context, root eval.Root, v value.Value) b
 func TestVectorReplaysRememberedFindings(t *testing.T) {
 	ctx := context.Background()
 	p := parseFiles(t, []string{"flow/flow.canon"}, [][]byte{[]byte(replaySrc)})
-	own := check.Bags{flowPkg: diag.NewBag(p.fs, flowPkg)}
+	own := p.bagsFor(flowPkg)
 	prog := check.Check(ctx, exampleProject(), p.files, own, eval.NewFolder(own, eval.Options{}))
 	assertEmpty(t, own)
 	h := &verifying{verifyInto: verifyInto{prog: prog}, own: own}

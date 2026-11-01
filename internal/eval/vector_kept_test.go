@@ -100,7 +100,7 @@ func (h *keptHost) VerifyLiteralsInto(ctx context.Context, ev *eval.Evaluator, r
 func TestVectorJudgesKeptLiterals(t *testing.T) {
 	ctx := context.Background()
 	p := parseFiles(t, []string{"kept/kept.canon"}, [][]byte{[]byte(keptVectorSrc)})
-	own := check.Bags{keptPkg: diag.NewBag(p.fs, keptPkg)}
+	own := p.bagsFor(keptPkg)
 	prog := check.Check(ctx, exampleProject(), p.files, own, eval.NewFolder(own, eval.Options{}))
 	assertEmpty(t, own)
 	h := &keptHost{prog: prog, bags: own}
