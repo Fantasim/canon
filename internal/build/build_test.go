@@ -140,3 +140,18 @@ func TestPackages(t *testing.T) {
 		t.Errorf("unknown layer: %v", err)
 	}
 }
+
+// EVALUATION.md §9.1: an analysis names the layers it applied, a copy its caller may change.
+func TestAnalysisLayers(t *testing.T) {
+	a, err := openTree(t, build.Options{Layers: []string{"knights"}}).Analyze(context.Background(), []string{"a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := a.Layers(); len(got) != 1 || got[0] != "knights" {
+		t.Fatalf("Layers() = %v, want [knights]", got)
+	}
+	a.Layers()[0] = "changed"
+	if a.Layers()[0] != "knights" {
+		t.Errorf("Layers() shares its slice with the analysis")
+	}
+}

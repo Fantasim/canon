@@ -282,13 +282,7 @@ func (x *opCtx) statedIndex() int {
 }
 
 // statedBelow is the last cursor from k down still in the source tree.
-func (x *opCtx) statedBelow(k int) int {
-	k = min(k, len(x.j.cur)-1)
-	for k > 0 && x.j.cur[k].state != stTree {
-		k--
-	}
-	return k
-}
+func (x *opCtx) statedBelow(k int) int { return x.j.statedBelow(k) }
 
 // valueAt is the value at cursor k: the root's for 0, else step k-1's.
 func (x *opCtx) valueAt(k int) value.Value {

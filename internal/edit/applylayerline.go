@@ -204,24 +204,11 @@ func (x *opCtx) amendLine(canonical string, steps []Step, text string) error {
 func (x *opCtx) descendantLines(b *syntax.AmendBlock) []format.Change {
 	var out []format.Change
 	for _, it := range b.Items {
-		if len(it.Path) > len(x.res.Steps) && x.namesPrefix(it.Path) {
+		if x.a.snap.namesBelow(it.Path, x.res) {
 			out = append(out, format.Change{Kind: format.Remove, Node: it})
 		}
 	}
 	return out
-}
-
-// namesPrefix reports an amend path whose first segments name the path's steps.
-func (x *opCtx) namesPrefix(segs []*syntax.AmendSegment) bool {
-	if len(segs) < len(x.res.Steps) {
-		return false
-	}
-	for i := range x.res.Steps {
-		if !x.a.snap.segMatches(segs[i], x.res, i) {
-			return false
-		}
-	}
-	return true
 }
 
 // newLayerFile creates <package dir>/<layer>.layer.canon holding the one amendment (W11).

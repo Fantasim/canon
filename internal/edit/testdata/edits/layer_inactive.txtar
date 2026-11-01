@@ -1,7 +1,8 @@
 API.md W11a with an edit layer that is not active: its amendment of an ancestor of the path
-is read from its text and edited inside its literal (a Set, a Reset leaving the field out, an
-AddEntry, a Remove of an entry the layer states); a path it does not amend gets its own line.
-API.md E23: each inverse restores the value the layer held, or removes the new line (Reset).
+is read from its text and edited inside its literal (a Set, a Reset writing the value the path
+has without the layer, an AddEntry, a Remove of an item the literal states); a path it does not
+amend gets its own line (log-2026-11-01 EDIT-OWED review, re-review 1). API.md E23: each inverse
+restores the value the layer held, or removes the new line (Reset).
 -- options --
 pkgs: p
 editLayer: dev
@@ -101,7 +102,7 @@ package p
 layer dev
 
 amend holder {
-  data: { n: 4 }
+  data: { id: "h", n: 4 }
 }
 
 amend conf {

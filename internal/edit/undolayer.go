@@ -48,10 +48,10 @@ func (c *undoCheck) lineRestore() ([]Operation, error) {
 	if len(readd)+len(drop) > 0 && !c.layerSeen() {
 		return nil, &NotEditableError{Reason: ReasonLayer} // an inactive layer's entries: no path reaches them (W5)
 	}
-	computed := c.computedLines()
+	computed, written := c.computedLines(), rewritten(before, after, readd)
 	var out, adds, sets []Operation
 	for _, path := range slices.Sorted(maps.Keys(after)) {
-		if _, kept := before[path]; !kept && !slices.Contains(drop, path) {
+		if _, kept := before[path]; !kept && !slices.Contains(drop, path) && !underLine(path, written) {
 			out = append(out, Operation{Kind: OpReset, Path: path})
 		}
 	}
@@ -68,13 +68,34 @@ func (c *undoCheck) lineRestore() ([]Operation, error) {
 		case slices.Contains(readd, path):
 			continue
 		}
-		sets = append(sets, c.lineWrite(path, before[path], false))
+		sets = append(sets, c.lineWrite(path, before[path], false, out))
 	}
 	for _, path := range readd {
-		adds = append(adds, c.lineWrite(path, before[path], true))
+		adds = append(adds, c.lineWrite(path, before[path], true, out))
+	}
+	if c.unseenAdd(sets) {
+		return nil, &NotEditableError{Reason: ReasonLayer} // no path of the session reaches the entry (W11a)
 	}
 	slices.SortStableFunc(sets, func(x, y Operation) int { return boolRank(c.typedByLine(x.Path)) - boolRank(c.typedByLine(y.Path)) })
 	return slices.Concat(out, adds, sets), nil
+}
+
+// rewritten are the edit layer's lines before the edit that the Undo writes again: changed or
+// gone after it, no entry put back in order.
+func rewritten(before, after map[string]string, readd []string) []string {
+	var out []string
+	for _, path := range slices.Sorted(maps.Keys(before)) {
+		if a, ok := after[path]; (!ok || flatText(a) != flatText(before[path])) && !slices.Contains(readd, path) {
+			out = append(out, path)
+		}
+	}
+	return out
+}
+
+// underLine reports path under one of lines: writing that line again replaces it (W11a), no Reset
+// of its own needed, whose Undo the layers above might refuse.
+func underLine(path string, lines []string) bool {
+	return slices.ContainsFunc(lines, func(p string) bool { return path != p && within(path, p, pathMarks, true) })
 }
 
 // entryOrder are the entry lines to add again, in their order before the edit, and those to
@@ -170,13 +191,12 @@ func (c *undoCheck) computedLines() map[string]bool {
 // typesAsSource reports text a value of the declared type at path, read in the base, an entry's
 // line by its collection's item type.
 func (c *undoCheck) typesAsSource(path, text string) bool {
-	_, ok := c.lineTyped(path, text)
-	return ok
+	return c.a.base.sourceLine(c.a.ctx, path, text)
 }
 
 // lineTyped is text typed as a Source at path, as typesAsSource reads it.
 func (c *undoCheck) lineTyped(path, text string) (value.Value, bool) {
-	t, pkg, ok := c.lineType(path)
+	t, pkg, ok := c.a.base.lineType(path)
 	if !ok {
 		return nil, false
 	}
@@ -197,46 +217,15 @@ func (c *undoCheck) lineValue(path, text string) string {
 	return flatText(text)
 }
 
-// lineType is the declared type of the value at path in the base, or of an item of the
-// collection holding it when the base has no such item, and its package.
-func (c *undoCheck) lineType(path string) (types.Type, string, bool) {
-	p, err := Parse(path)
-	if err != nil {
-		return nil, "", false
-	}
-	if res, err := c.a.base.open(p); err == nil {
-		t, err := c.a.base.Type(res.Resolved)
-		return t, res.root.pkg.Path, err == nil && t != nil
-	}
-	parent, ok := enclosing(path)
-	if !ok {
-		return nil, "", false
-	}
-	pp, _ := Parse(parent)
-	res, err := c.a.base.open(pp)
-	if err != nil {
-		return nil, "", false
-	}
-	t, err := c.a.base.Type(res.Resolved)
-	if err != nil || t == nil {
-		return nil, "", false
-	}
-	if _, vt, isMap := mapTypes(present(t)); isMap {
-		return vt, res.root.pkg.Path, true
-	}
-	et := elemType(present(t))
-	return et, res.root.pkg.Path, et != nil
-}
-
-// lineWrite writes the line at path with text again: a Set, or with add, or where the edit's
-// result has no such entry, an AddEntry of the entry the line creates.
-func (c *undoCheck) lineWrite(path, text string, add bool) Operation {
+// lineWrite writes the line at path with text again: a Set, or with add, or where the entry is
+// gone once resets have run (none without the edit layer's lines), an AddEntry of it.
+func (c *undoCheck) lineWrite(path, text string, add bool, resets []Operation) Operation {
 	lit := Source(flatText(text))
 	p, err := Parse(path)
 	if err != nil || len(p.Segs) == 0 {
 		return Operation{Kind: OpSet, Path: path, Value: lit}
 	}
-	if _, err := c.after.open(p); err == nil && !add {
+	if !add && c.stays(path, p, resets) {
 		return Operation{Kind: OpSet, Path: path, Value: lit}
 	}
 	last := p.Segs[len(p.Segs)-1]
@@ -246,6 +235,23 @@ func (c *undoCheck) lineWrite(path, text string, add bool) Operation {
 	}
 	parent, _ := enclosing(path)
 	return Operation{Kind: OpAddEntry, Path: parent, Key: PathKey(key), Value: lit}
+}
+
+// stays reports the value at path present once the Undo's resets have run: one the result holds
+// that no reset line covers, or one the value has without the edit layer's lines.
+func (c *undoCheck) stays(path string, p Path, resets []Operation) bool {
+	if c.a.base.keptWithout(p, c.a.env.EditLayer) {
+		return true
+	}
+	if _, err := c.after.open(p); err != nil {
+		return false
+	}
+	return !slices.ContainsFunc(resets, func(op Operation) bool { return within(path, op.Path, pathMarks, true) })
+}
+
+// unseenAdd reports an AddEntry among ops under an edit layer the session does not apply.
+func (c *undoCheck) unseenAdd(ops []Operation) bool {
+	return !c.a.base.layerActive(c.a.env.EditLayer) && slices.ContainsFunc(ops, func(op Operation) bool { return op.Kind == OpAddEntry })
 }
 
 // typedByLine reports the line at path setting a field whose type a value computes.
@@ -327,28 +333,7 @@ func (c *undoCheck) eachLayerLine(s *Snapshot, do func(string, *syntax.File, *sy
 			continue
 		}
 		for _, f := range layerFiles(pkg, c.a.env.EditLayer) {
-			eachLine(f, r, func(path string, it *syntax.Amendment) { do(path, f, it) })
-		}
-	}
-}
-
-// eachLine calls do with each line of f amending root r, and the path it amends as an operation
-// names it.
-func eachLine(f *syntax.File, r Path, do func(string, *syntax.Amendment)) {
-	for _, b := range f.Amends {
-		if b.Target == nil || b.Target.Name != r.Root {
-			continue
-		}
-		for _, it := range b.Items {
-			if len(it.Path) == 0 {
-				continue
-			}
-			from, to := f.Span(it.Path[0]), f.Span(it.Path[len(it.Path)-1])
-			rel := string(f.Src.Content[from.Start:to.End])
-			if !strings.HasPrefix(rel, string(bracketOpen)) {
-				rel = string(fieldMark) + rel
-			}
-			do(r.String()+rel, it)
+			s.eachLine(f, r, func(path string, it *syntax.Amendment) { do(path, f, it) })
 		}
 	}
 }
@@ -359,7 +344,7 @@ func (x *opCtx) layerInactive() bool {
 	root := Path{Package: x.res.root.pkg.Path, Root: x.res.root.obj.Name()}
 	amends, seen := false, false
 	for _, f := range layerFiles(x.res.root.pkg, x.a.env.EditLayer) {
-		eachLine(f, root, func(path string, _ *syntax.Amendment) {
+		x.a.snap.eachLine(f, root, func(path string, _ *syntax.Amendment) {
 			amends = true
 			p, err := Parse(path)
 			if err != nil {

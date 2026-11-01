@@ -169,7 +169,7 @@ func (a *applier) refReason(r Ref) Reason {
 	if err != nil {
 		return ReasonComputed
 	}
-	return a.snap.judge(res, OpSet, a.env.EditLayer).reason()
+	return a.judgeOp(res, OpSet).reason()
 }
 
 // renaming is one rename's token replacements, by .canon file, and its JSON edits.

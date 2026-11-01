@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/format"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -87,22 +88,57 @@ func (x *opCtx) layerHolds() bool {
 	return c.state == stTree && c.layer == x.a.env.EditLayer
 }
 
-// layerReset removes the path's own amendment line from the edit layer, or its field from the
-// amendment literal that holds it (W11, W11a); nothing when the layer does not set it (E8).
+// layerReset removes the path's own amendment line from the edit layer; inside the literal of a
+// line naming an ancestor, it gives the path the value it has without the layer (W11, W11a;
+// log-2026-11-01 EDIT-OWED review); nothing when the layer does not set it (E8).
 func (x *opCtx) layerReset() error {
 	f, line, n := x.a.snap.layerLine(x.res, x.a.env.EditLayer)
 	switch {
 	case line != nil && n == len(x.res.Steps):
 		return x.removeLine(staticSite{f, line, n})
-	case x.inAmendment() && x.layerHolds():
+	case line == nil && !x.inAmendment():
+		return nil
+	}
+	base, ok := x.a.snap.withoutLayer(x.res, x.a.env.EditLayer)
+	if !ok {
+		return x.dropEntry(f, line, n) // an item only the layer has (resetReason)
+	}
+	if _, err := x.a.sourceLit(base, x.scopeAt(len(x.res.Steps), true), stated{}); err != nil {
+		return &NotEditableError{Reason: ReasonComputed} // no literal states the base value
+	}
+	if x.inAmendment() {
+		x.nw = base
+		return x.activeSet(base)
+	}
+	return x.staticEdit(staticSite{f, line, n}, len(x.res.Steps), func(value.Value) (value.Value, error) { return base, nil })
+}
+
+// dropEntry takes out of the edit layer's literal an item the value lacks without the layer: an
+// entry of a table or map, as a Remove does, or a field with a default, which then applies.
+func (x *opCtx) dropEntry(f *syntax.File, line *syntax.Amendment, n int) error {
+	k := len(x.res.Steps)
+	parent := x.res.parent(k - 1)
+	switch {
+	case !dropsOut(x.res):
+		return &NotEditableError{Reason: ReasonLayer}
+	case isEntryOf(parent):
+		return x.layerRemove(parent, position(parent, x.res.Target))
+	case x.inAmendment():
 		if err := x.undoSet(); err != nil {
 			return err
 		}
 		return x.change(nil)
-	case line != nil && !x.inAmendment():
-		return x.staticEdit(staticSite{f, line, n}, len(x.res.Steps), func(value.Value) (value.Value, error) { return nil, nil })
 	}
-	return nil
+	return x.staticEdit(staticSite{f, line, n}, k, func(value.Value) (value.Value, error) { return nil, nil })
+}
+
+// isEntryOf reports parent a table or a map, whose items are entries.
+func isEntryOf(parent value.Value) bool {
+	switch parent.(type) {
+	case *value.Table, *value.Map:
+		return true
+	}
+	return false
 }
 
 // removeLine removes the path's own amendment line; its inverse sets the value it gave again.
@@ -208,7 +244,4 @@ func (x *opCtx) layerRemove(parent value.Value, pos int) error {
 }
 
 // inAmendment reports a path whose value the active edit layer's amendment states (W11a).
-func (x *opCtx) inAmendment() bool {
-	k := x.statedIndex()
-	return x.j.cur[k].state == stTree && x.j.cur[k].layer == x.a.env.EditLayer
-}
+func (x *opCtx) inAmendment() bool { return x.j.inEditLayer() }

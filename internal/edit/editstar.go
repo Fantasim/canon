@@ -15,7 +15,7 @@ import (
 // beside what the path selects: taking out, moving or adding an item would touch it, or another
 // load's view of the file (log-2026-09-29 M4 B10).
 func starRow(j *judge) Reason {
-	if j.besideData() != "" {
+	if !j.layerWrites() && j.besideData() != "" {
 		return ReasonFormat
 	}
 	return ReasonNone

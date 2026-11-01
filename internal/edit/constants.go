@@ -107,7 +107,7 @@ var steppers = [...]func(*judge, cursor, int) cursor{
 }
 
 // rows are API.md §7.2's rows in table order: the first that applies names the reason.
-var rows = [...]func(*judge) Reason{computedRow, layeredRow, formatRow, starRow, inputRow, keyRow, pseudoRow, orderRow, layerRow}
+var rows = [...]func(*judge) Reason{computedRow, layeredRow, formatRow, starRow, inputRow, keyRow, pseudoRow, orderRow, lineRow, layerRow, undoRow}
 
 // itemOps take out, move or rename an item of their target's collection (starRow).
 var itemOps = map[Op]bool{OpRemove: true, OpMove: true, OpRename: true}

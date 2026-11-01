@@ -207,6 +207,7 @@ var law = mapFS{
 	"law/a/la.layer.canon":    file("package a\nlayer la\n\namend holder {\n  data: { id: \"A\", n: 2 }\n}\n"),
 	"law/a/lb.layer.canon":    file("package a\nlayer lb\n\namend holder {\n  data.n: 3\n}\n"),
 	"law/a/lf.layer.canon":    file("package a\nlayer lf\n\namend bag {\n  xs: [5]\n  ts: [{ c: green, w: 1 }]\n  byC: { red: 3 }\n  b: { ...base, y: 1 }\n}\n\namend other {\n  data: { id: \"q\" }\n}\n"),
+	"law/a/lt.layer.canon":    file("package a\nlayer lt\n\namend holder {\n  data: Item { id: \"L\", n: 1 }\n}\n"),
 	"law/a/a/x.canon":         file("package a\n\n/// Deep.\nlet deep: Int = 1\n"),
 	"law/a/defs.h":            file("#define A 1\n#define B 2\n"),
 	"law/a/item.json":         file("{\"id\": \"z\", \"n\": 5}\n"),

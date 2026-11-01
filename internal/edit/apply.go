@@ -230,7 +230,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 	if res.root.enum != nil {
 		return a.memberOp(op, res)
 	}
-	j := a.snap.judge(res, op.Kind, a.env.EditLayer)
+	j := a.judgeOp(res, op.Kind)
 	if err := a.editable(j); err != nil {
 		return nil, err
 	}
@@ -257,11 +257,11 @@ func (a *applier) editable(j *judge) error {
 	}
 	switch reason {
 	case ReasonNone:
-		return nil
+		return amendmentRefusal(j)
 	case ReasonComputed:
-		return &NotEditableError{Reason: reason, Origin: a.snap.origin(j.res.Target)}
+		return &NotEditableError{Reason: reason, Origin: j.computedOrigin()}
 	case ReasonLayered:
-		return &NotEditableError{Reason: reason, Layer: j.last().layer}
+		return &NotEditableError{Reason: reason, Layer: j.blockedBy()}
 	case ReasonFormat:
 		return &NotEditableError{Reason: reason, File: j.formatFile()}
 	default:

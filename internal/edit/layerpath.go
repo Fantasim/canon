@@ -1,6 +1,9 @@
 package edit
 
 import (
+	"context"
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 	"github.com/fantasim/canonlang/internal/views/shape"
@@ -88,6 +91,58 @@ func (s *Snapshot) prefixOf(segs []*syntax.AmendSegment, res resolution) (int, b
 		}
 	}
 	return len(segs), true
+}
+
+// namesBelow reports an amend path longer than res's whose first segments name res's steps.
+func (s *Snapshot) namesBelow(segs []*syntax.AmendSegment, res resolution) bool {
+	if len(segs) <= len(res.Steps) {
+		return false
+	}
+	for i := range res.Steps {
+		if !s.segMatches(segs[i], res, i) {
+			return false
+		}
+	}
+	return true
+}
+
+// lineBelow reports a line of layer x below res's path for which bad holds.
+func (s *Snapshot) lineBelow(res resolution, x string, bad func(*syntax.File, *syntax.Amendment) bool) bool {
+	for _, f := range layerFiles(res.root.pkg, x) {
+		if slices.ContainsFunc(f.Amends, func(b *syntax.AmendBlock) bool { return s.blockBelow(f, b, res, bad) }) {
+			return true
+		}
+	}
+	return false
+}
+
+// blockBelow reports block b of f amending res's root with a line below its path for which bad holds.
+func (s *Snapshot) blockBelow(f *syntax.File, b *syntax.AmendBlock, res resolution, bad func(*syntax.File, *syntax.Amendment) bool) bool {
+	if b.Target == nil || b.Target.Name != res.root.obj.Name() {
+		return false
+	}
+	return slices.ContainsFunc(b.Items, func(it *syntax.Amendment) bool { return s.namesBelow(it.Path, res) && bad(f, it) })
+}
+
+// computedBelow reports a line of layer x below res's path that no Source states: a Set
+// replacing it would have to write it back (DECISIONS 273).
+func (s *Snapshot) computedBelow(ctx context.Context, res resolution, x string) bool {
+	r := res.root.at()
+	return s.lineBelow(res, x, func(f *syntax.File, it *syntax.Amendment) bool { return !s.lineSource(ctx, f, r, it) })
+}
+
+// unseenBelow reports a line of layer x below res's path naming an entry s does not show: a Set
+// replacing it would need an AddEntry no path of s reaches to undo it (API.md W11a).
+func (s *Snapshot) unseenBelow(res resolution, x string) bool {
+	r := res.root.at()
+	return s.lineBelow(res, x, func(f *syntax.File, it *syntax.Amendment) bool {
+		p, err := Parse(s.linePathOf(f, r, it.Path))
+		if err != nil {
+			return true
+		}
+		_, err = s.open(p)
+		return err != nil
+	})
 }
 
 // segMatches reports an amend segment naming step i: a word, a key, or a position (EVALUATION.md §9.2).

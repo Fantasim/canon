@@ -100,6 +100,9 @@ func (a *Analysis) Result() *Result { return a.res }
 // Program is the checked program of the loaded packages (§4.7).
 func (a *Analysis) Program() *check.Program { return a.r.prog }
 
+// Layers are the layers active in this analysis, in stack order (Options.Layers, EVALUATION.md §9.1).
+func (a *Analysis) Layers() []string { return slices.Clone(a.r.p.opt.Layers) }
+
 // Bag is pkg's own phases-1-7 findings, nil unless Analyze selected pkg (VIEWMODEL.md J15).
 func (a *Analysis) Bag(pkg string) *diag.Bag {
 	if !a.r.selects(pkg) {

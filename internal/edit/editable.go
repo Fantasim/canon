@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"strings"
@@ -51,9 +52,9 @@ func (s *Snapshot) Editable(r Resolved, op Op, editLayer string) (Editability, e
 	case ReasonNone:
 		return j.editable(), nil
 	case ReasonComputed:
-		return Editability{Reason: reason, Origin: s.origin(r.Target)}, nil
+		return Editability{Reason: reason, Origin: j.computedOrigin()}, nil
 	case ReasonLayered:
-		return Editability{Reason: reason, Layer: j.last().layer}, nil
+		return Editability{Reason: reason, Layer: j.blockedBy()}, nil
 	case ReasonFormat:
 		return Editability{Reason: reason, File: j.formatFile()}, nil
 	default:
@@ -103,19 +104,31 @@ func (c cursor) to(st state) cursor {
 // judge is one editability question: a resolution, an op, the edit layer, and the cursor
 // before each walked step (cur[0] at the root, cur[i+1] after step i).
 type judge struct {
+	ctx     context.Context // the caller's, when it has one: Source typing reads none
 	s       *Snapshot
 	res     resolution
 	op      Op
 	layer   string
 	cur     []cursor
-	special Reason // the last step's own row: input, key or pseudo
+	rows    []func(*judge) Reason // the rows reason applies: rows, threaded into an Undo's judge
+	special Reason                // the last step's own row: input, key or pseudo
+	gone    bool                  // the path's lines are out, as when an Undo writes them back (undoSetReason)
+	blocker string                // layered by an Undo's Set: the layer that blocks it (undoSetReason)
 	// starAt and starErr cache besideData once starDone
 	starDone bool
 	starAt   string
 	starErr  error
 }
 
+// judge is the editability question of op on res under editLayer, judged by rows.
 func (s *Snapshot) judge(res resolution, op Op, editLayer string) *judge {
+	j := s.walk(res, op, editLayer)
+	j.rows = rows[:]
+	return j
+}
+
+// walk is the judge of res before any row: its cursors.
+func (s *Snapshot) walk(res resolution, op Op, editLayer string) *judge {
 	j := &judge{s: s, res: res, op: op, layer: editLayer, special: specialRow(res)}
 	c := s.source(s.rootCursor(res))
 	j.cur = append(j.cur, c)
@@ -184,12 +197,21 @@ func (j *judge) last() cursor { return j.cur[len(j.cur)-1] }
 
 // reason is the first row of API.md §7.2 that applies, ReasonNone for an editable value.
 func (j *judge) reason() Reason {
-	for _, row := range rows {
+	for _, row := range j.rows {
 		if r := row(j); r != ReasonNone {
 			return r
 		}
 	}
 	return ReasonNone
+}
+
+// computedOrigin is a computed value's Origin: its own source's path when the walk left the
+// source tree, "" when an edit-layer line refuses it (lineRow), which no structure states.
+func (j *judge) computedOrigin() string {
+	if j.last().state != stComputed {
+		return ""
+	}
+	return j.s.origin(j.res.Target)
 }
 
 // editable is where the edit goes: the source node, or with an edit layer that layer's file
@@ -203,9 +225,48 @@ func (j *judge) editable() Editability {
 		return Editability{Mode: ModeCanon, File: j.s.display(c.span.File), Span: c.span}
 	}
 	if e, ok := j.s.staticAmendment(j.res, j.layer); ok {
-		return e // a computed value there comes from the amendment's expression: no structural origin
+		return j.staticVerdict(e) // a computed value there comes from the amendment's expression: no structural origin
 	}
 	return Editability{Mode: ModeCanon, File: layerFile(j.res.root.pkg, j.layer)}
+}
+
+// staticVerdict is e, as Apply reads the edit layer's line the session does not show: `computed`
+// when no Source states the line (W11a, DECISIONS 273), `layer` for a Remove of a list element
+// inside it, which a line names no entry of (API.md W11).
+func (j *judge) staticVerdict(e Editability) Editability {
+	if e.Mode == ModeNone {
+		return e
+	}
+	f, line, n := j.s.layerLine(j.res, j.layer)
+	k := len(j.res.Steps)
+	switch {
+	case line == nil:
+		return e
+	case !j.s.lineSource(j.ctx, f, j.res.root.at(), line):
+		return Editability{Reason: ReasonComputed}
+	case j.op != OpRemove || n == k:
+		return e
+	}
+	switch j.res.parent(k - 1).(type) {
+	case *value.Table, *value.Map:
+		return e
+	}
+	return Editability{Reason: ReasonLayer}
+}
+
+// statedBelow is the last cursor from k down still in the source tree.
+func (j *judge) statedBelow(k int) int {
+	k = min(k, len(j.cur)-1)
+	for k > 0 && j.cur[k].state != stTree {
+		k--
+	}
+	return k
+}
+
+// inEditLayer reports a path whose value the active edit layer's amendment states (W11a).
+func (j *judge) inEditLayer() bool {
+	c := j.cur[j.statedBelow(len(j.cur)-1)]
+	return c.state == stTree && c.layer == j.layer
 }
 
 // layerFile is the package's file of layer x, or the one W11 creates in the package's directory,
@@ -253,12 +314,31 @@ func isKeyOf(coll value.Value, f *types.Field) bool {
 
 func computedRow(j *judge) Reason { return onState(j, stComputed, ReasonComputed) }
 
-func layeredRow(j *judge) Reason { return onState(j, stLayered, ReasonLayered) }
+// layeredRow is another active layer amending the path or an ancestor, whatever the stack
+// (log-2026-11-01 EDIT-OWED round-5 review).
+func layeredRow(j *judge) Reason {
+	if j.last().state == stLayered {
+		return ReasonLayered
+	}
+	return ReasonNone
+}
+
+// blockedBy is the layer a `layered` refusal names: the one setting the value, or the one
+// blocking the Undo's Set, never the edit layer (log-2026-11-01 EDIT-OWED re-review 3).
+func (j *judge) blockedBy() string {
+	if j.blocker != "" {
+		return j.blocker
+	}
+	return j.last().layer
+}
 
 func formatRow(j *judge) Reason { return onState(j, stFormat, ReasonFormat) }
 
+// onState is r when the walk ends in st, for an edit of the base or inside the active edit
+// layer's amendment: a new line, or a line the session does not show, is judged by what it writes,
+// never by how the base gives the value (log-2026-11-01 EDIT-OWED re-review 4).
 func onState(j *judge, st state, r Reason) Reason {
-	if j.last().state == st {
+	if j.last().state == st && !j.layerWrites() {
 		return r
 	}
 	return ReasonNone
@@ -289,43 +369,15 @@ func keyRow(j *judge) Reason {
 	return ReasonNone
 }
 
-// orderRow is Insert into, or Move inside, a collection whose order comes from file paths.
+// orderRow is Insert into, or Move inside, a collection whose order comes from file paths, and a
+// base Set of such a collection whole, which no one node states (log-2026-11-01 EDIT-OWED O).
 func orderRow(j *judge) Reason {
 	n := len(j.cur) - 1
 	switch {
 	case j.op == OpInsert && !j.cur[n].ordersLiteral(cursor{}), j.op == OpMove && n > 0 && !j.cur[n-1].ordersLiteral(j.cur[n]):
 		return ReasonOrder
+	case j.op == OpSet && j.layer == "" && j.cur[n].files:
+		return ReasonOrder
 	}
 	return ReasonNone
-}
-
-// layerStates reports a value the edit layer itself states, which a Remove takes out of it
-// (log-2026-09-29 M4 U4b-r): through its active amendment, or in one of its lines.
-func (j *judge) layerStates() bool {
-	c := j.last()
-	if c.state == stTree && c.layer == j.layer {
-		return true
-	}
-	_, line, _ := j.s.layerLine(j.res, j.layer)
-	return line != nil
-}
-
-// layerRow refuses, under an edit layer, all but Set, Reset and AddEntry below a let (EVALUATION.md §9.2).
-func layerRow(j *judge) Reason {
-	if j.layer == "" {
-		return ReasonNone
-	}
-	amendable := j.op == OpSet || j.op == OpReset || j.op == OpAddEntry || j.op == OpRemove && j.layerStates()
-	rootValue := len(j.res.Steps) == 0 && j.op != OpAddEntry // an entry added to a root table or map is an amendment (EVALUATION.md §9.3)
-	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet || j.belowLoad() {
-		return ReasonLayer
-	}
-	return ReasonNone
-}
-
-// belowLoad reports j's value inside the JSON file an amendment of the edit layer loads: outside
-// the layer file, and maybe read by the base (API.md W11a; DECISIONS 411).
-func (j *judge) belowLoad() bool {
-	c := j.last()
-	return c.layer == j.layer && c.mode == ModeJSON && j.s.files[c.span.File] == nil
 }

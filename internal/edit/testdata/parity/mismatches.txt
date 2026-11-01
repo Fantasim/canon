@@ -1,0 +1,2 @@
+refuse_rename_computed: rename a:statuses.open: Editable editable, Apply computed
+refuse_rename_computed: rename a:statuses.open: Editable editable, Apply computed

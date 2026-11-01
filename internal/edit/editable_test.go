@@ -36,8 +36,8 @@ func checkEdits(t *testing.T, f fixture, cases []editCase) {
 	}
 }
 
-// API.md W1, W4: a let's literal is a .canon source tree, a load of JSON a JSON one (load.dir
-// has no one file); a load of another format is `format`, any other initializer `computed`.
+// API.md W1, W4: a let's literal is a .canon source tree, a load of JSON a JSON one (a load.dir,
+// with no one file, takes no whole Set: `order`); another format is `format`, any other `computed`.
 func TestW1SourceTrees(t *testing.T) {
 	farm := "@resource/Server/System/farm_config.json"
 	checkEdits(t, examples(t, nil, "teamboard"), []editCase{
@@ -52,7 +52,7 @@ func TestW1SourceTrees(t *testing.T) {
 		{in: "resource.farm:farm.global.visitCost", mode: edit.ModeJSON, file: farm, text: "100000"},
 		{in: "resource.farm:texts", reason: edit.ReasonFormat},
 	})
-	checkEdits(t, examples(t, nil, "pipeline"), []editCase{{in: "pipeline:potions", mode: edit.ModeJSON}})
+	checkEdits(t, examples(t, nil, "pipeline"), []editCase{{in: "pipeline:potions", reason: edit.ReasonOrder}})
 	checkEdits(t, lawFixture(t, nil, "a"), []editCase{
 		{in: "a:holder.data.n", mode: edit.ModeJSON, file: "a/item.json", text: "5"},
 		{in: "a:holder", mode: edit.ModeCanon, file: "a/a.canon", text: `{ data: load("item.json") }`},
@@ -238,7 +238,7 @@ func TestReasonOrder(t *testing.T) {
 // API.md §7.2 layer, W11: with an edit layer, every op but Set, Reset and AddEntry is refused.
 func TestReasonLayer(t *testing.T) {
 	f := lawFixture(t, []string{"dev"}, "a")
-	r := resolve(t, f, "a:items[b].n")
+	r := resolve(t, f, "a:bag.xs[1]")
 	for _, op := range []edit.Op{edit.OpAdd, edit.OpInsert, edit.OpRemove, edit.OpMove, edit.OpRename, edit.OpRetire, edit.OpUnretire, edit.OpSetCase} {
 		if e := mustEdit(t, f, r, op, "dev"); e.Reason != edit.ReasonLayer || e.Mode != edit.ModeNone {
 			t.Errorf("op %d with an edit layer: %+v", op, e)
@@ -289,15 +289,16 @@ func TestReasonLayeredBeforeFormat(t *testing.T) {
 }
 
 // API.md W11a (DECISIONS 411): the edit layer's amendment is a source: a literal is walked; below a
-// load nothing is editable (reason layer), any other expression is computed; each is replaced whole.
+// load nothing is editable (reason layer), any other expression is computed; a Set of a line no Source
+// states is computed too, as its Undo cannot write it back (DECISIONS 273).
 func TestW11aAmendmentRightHandSide(t *testing.T) {
 	checkEdits(t, lawFixture(t, []string{"dev"}, "a"), []editCase{
 		{in: "a:holder.data.n", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: "1"},
 		{in: "a:holder.data", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: `{ id: "L", n: 1 }`},
 		{in: "a:holder.data.n", reason: edit.ReasonLayered, amends: "dev"},
 		{in: "a:other.data.n", layer: "dev", reason: edit.ReasonLayer},
-		{in: "a:other.data", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: `load("item.json")`},
-		{in: "a:base.sub", layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon", text: "mk()"},
+		{in: "a:other.data", layer: "dev", reason: edit.ReasonComputed},
+		{in: "a:base.sub", layer: "dev", reason: edit.ReasonComputed},
 		{in: "a:base.sub.n", layer: "dev", reason: edit.ReasonComputed},
 	})
 }
@@ -320,14 +321,13 @@ func TestW11aInactiveEditLayer(t *testing.T) {
 		{in: "a:items[b].n", layer: "stage", mode: edit.ModeCanon, file: "a/stage.layer.canon", text: "9"},
 		{in: "a:items[a].n", layer: "stage", mode: edit.ModeCanon, file: "a/stage.layer.canon", text: "3"},
 		{in: "a:items[a]", layer: "stage", mode: edit.ModeCanon, file: "a/stage.layer.canon", text: `{ id: "a", n: 3 }`},
-		{in: "a:rows[7].label", layer: "stage", mode: edit.ModeCanon, file: "a/stage.layer.canon"},
+		{in: "a:rows[7].label", layer: "stage", reason: edit.ReasonLayer}, // §6.4: an amend path starts with a name
 	})
-	lc := "a/lc.layer.canon"
 	checkEdits(t, lawFixture(t, nil, "a"), []editCase{
 		{in: "a:holder.data.n", layer: "lc", reason: edit.ReasonComputed},
-		{in: "a:holder.data", layer: "lc", mode: edit.ModeCanon, file: lc, text: "mk()"},
+		{in: "a:holder.data", layer: "lc", reason: edit.ReasonComputed},
 		{in: "a:other.data.n", layer: "lc", reason: edit.ReasonLayer},
-		{in: "a:other.data", layer: "lc", mode: edit.ModeCanon, file: lc, text: `load("item.json")`},
+		{in: "a:other.data", layer: "lc", reason: edit.ReasonComputed},
 	})
 }
 
@@ -347,7 +347,8 @@ func TestW11aAmendPathSegments(t *testing.T) {
 }
 
 // W11a with an ancestor's amendment that lacks the child (log-2026-09-28 U4b round 3): a record
-// field is inserted, below a spread-supplied field is computed, an element, entry or key is `layer`.
+// field is inserted, an element, entry or key is `layer`; inside a line holding a spread is computed
+// (DECISIONS 273).
 func TestW11aAmendmentLacksChild(t *testing.T) {
 	lf := "a/lf.layer.canon"
 	checkEdits(t, lawFixture(t, nil, "a"), []editCase{
@@ -357,8 +358,8 @@ func TestW11aAmendmentLacksChild(t *testing.T) {
 		{in: "a:bag.ts[red].w", layer: "lf", reason: edit.ReasonLayer},
 		{in: "a:bag.byC[green]", layer: "lf", reason: edit.ReasonLayer},
 		{in: "a:other.data.n", layer: "lf", mode: edit.ModeCanon, file: lf, text: `{ id: "q" }`},
-		{in: "a:bag.b.y", layer: "lf", mode: edit.ModeCanon, file: lf, text: "1"},
-		{in: "a:bag.b.sub", layer: "lf", mode: edit.ModeCanon, file: lf, text: "{ ...base, y: 1 }"},
+		{in: "a:bag.b.y", layer: "lf", reason: edit.ReasonComputed},
+		{in: "a:bag.b.sub", layer: "lf", reason: edit.ReasonComputed},
 		{in: "a:bag.b.sub.n", layer: "lf", reason: edit.ReasonComputed},
 	})
 }
@@ -374,16 +375,18 @@ func TestStackedLayers(t *testing.T) {
 	})
 }
 
-// API.md W11: AddEntry on a root table or map is an amendment; Set or Reset of a root is not;
-// an enum member has none; a new layer file goes in the package's own directory.
+// API.md W11: AddEntry on a root table is an amendment, on a root map none (API.md 6.4: an amend
+// path starts with a name); Set or Reset of a root is not; an enum member has none; a new layer
+// file goes in the package's own directory.
 func TestW11RootsMembersAndNewFiles(t *testing.T) {
 	checkEdits(t, lawFixture(t, []string{"dev"}, "a"), []editCase{
 		{in: "a:entries", op: edit.OpAddEntry, layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon"},
-		{in: "a:byColor", op: edit.OpAddEntry, layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon"},
+		{in: "a:byColor", op: edit.OpAddEntry, layer: "dev", reason: edit.ReasonLayer},
 		{in: "a:entries", layer: "dev", reason: edit.ReasonLayer},
 		{in: "a:entries", op: edit.OpReset, layer: "dev", reason: edit.ReasonLayer},
 		{in: "a:Color.red", op: edit.OpRetire, layer: "dev", reason: edit.ReasonLayer},
-		{in: "a:items[b].n", layer: "work", mode: edit.ModeCanon, file: "a/work.layer.canon"},
+		{in: "a:bag.xs[1]", layer: "work", mode: edit.ModeCanon, file: "a/work.layer.canon"},
+		{in: "a:items[b].n", layer: "work", reason: edit.ReasonLayer},
 	})
 }
 
@@ -425,7 +428,7 @@ func TestRootLevelEditability(t *testing.T) {
 			{"resource.farm:farm", edit.ModeJSON, edit.ReasonNone}, {"resource.farm:attributes", edit.ModeNone, edit.ReasonFormat},
 			{"resource.farm:FARM_MAX_MODELS", edit.ModeCanon, edit.ReasonNone},
 		}},
-		{examples(t, nil, "pipeline"), []root{{"pipeline:potions", edit.ModeJSON, edit.ReasonNone}}},
+		{examples(t, nil, "pipeline"), []root{{"pipeline:potions", edit.ModeNone, edit.ReasonOrder}}},
 		{lawFixture(t, nil, "a"), []root{{"a:notes", edit.ModeNone, edit.ReasonFormat}, {"a:viaName", edit.ModeNone, edit.ReasonComputed}}},
 	}
 	for _, c := range cases {

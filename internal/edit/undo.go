@@ -29,10 +29,16 @@ func (a *applier) notedLit(v value.Value, scope *types.Field, notes spellings) (
 	return Source(flatText(p.b.String())), nil
 }
 
+// resetUndoes reports a Reset of the path editable: an edit layer's Reset of a field of an entry
+// only the layer has is not (resetRow), so its inverse is a Set.
+func (x *opCtx) resetUndoes() bool {
+	return x.a.env.EditLayer == "" || x.a.judgeOp(x.res, OpReset).reason() == ReasonNone
+}
+
 // undoSet is the inverse of a Set or Reset of the path (E23): Reset when the field was left to
-// its default, else Set to the old value.
+// its default and a Reset can edit it, else Set to the old value.
 func (x *opCtx) undoSet() error {
-	if rec, f, ok := x.field(); ok && !rec.Set[f.Index] && x.j.last().state == stAbsent && hasDefault(f) {
+	if rec, f, ok := x.field(); ok && !rec.Set[f.Index] && x.j.last().state == stAbsent && hasDefault(f) && x.resetUndoes() {
 		x.inverse(Operation{Kind: OpReset, Path: x.res.Canonical})
 		return nil
 	}

@@ -37,10 +37,13 @@ func (j *judge) rhsCursor(it item, layer string) cursor {
 	return c
 }
 
-// amendment is the right-hand side of the amendment p records, in the root's package.
+// amendment is the right-hand side of the amendment of root r that p records.
 func (s *Snapshot) amendment(r rootRef, p *value.Prov) (item, bool) {
 	for _, f := range layerFiles(r.pkg, p.Layer()) {
 		for _, b := range f.Amends {
+			if b.Target == nil || b.Target.Name != r.obj.Name() {
+				continue // a copy of another root's amended value: no line of r states it
+			}
 			if it, ok := amendedAt(f, b, p); ok {
 				return it, true
 			}
