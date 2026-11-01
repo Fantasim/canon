@@ -4382,3 +4382,15 @@ round 2", "PS1 review", "PS2 round 2"):
      `#include "…"` header name, a TS import specifier), so a `"`, a `\` or a trigraph such as `??=`
      in a written segment, a root path or a source directory broke or changed every file that
      includes it; every real and example `out` already fits.
+
+425. **A test subject's findings carry a path relative to the subject (EVALUATION.md §10.2, §13; API.md F1).**
+     A finding about a part of a test subject (§10.2), captured by its `expect`, has as its value
+     path the path from the subject to that part, without a root name or a leading dot (`inner[1]`,
+     `rows[1]`, `[0].n`), and none at the subject itself; a temporary's findings still carry none.
+     Reason: a subject is the only value a test judges, and "no path" hid which part of a large
+     subject failed; verify already wrote these paths, so eval, stage B and `where` now agree with it.
+426. **Every read made while a test judges its own values counts (EVALUATION.md §7.2, §10.2, §10.3).**
+     A poisoned top-level value read while a test evaluates and judges an `expect`'s subject, its
+     kept literals that nothing stores included, or an `expect c` condition, fails that `expect`,
+     naming the value; read by a statement, it fails the test (§7.2). Reason: whether a literal is
+     stored must not change a verdict; the same read gave a pass unstored and a fail stored.

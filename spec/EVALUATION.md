@@ -552,7 +552,9 @@ functions). Package checks never run for a
 value subject; `expect package` runs them (§10.5). Static errors are compile errors, never
 "expected" (CHK-05).
 
-A subject that reads a poisoned top-level value makes the `expect` fail, naming that value.
+A subject that reads a poisoned top-level value makes the `expect` fail, naming that value. Every
+read counts: while it is evaluated, verified, checked, and while its kept literals that nothing
+stores are judged; an `expect c` condition's reads count the same (DECISIONS 426).
 
 ### 10.3 `expect` forms
 
@@ -779,8 +781,10 @@ Rules:
 - An amended sub-value: the right-hand side in the layer file, with `layer` set.
 
 The **value path** of a finding (SPEC §21.1) is the path from its top-level value to the located
-value, in the syntax of CLI §2.6 and API-02 (keyed lists and tables by key). It is omitted when
-the value is not reachable from a top-level value (a temporary, a test subject).
+value, in the syntax of CLI §2.6 and API-02 (keyed lists and tables by key). A finding about a
+part of a test subject (§10.2) has the path from the subject, with no root name or leading dot
+(`inner[1]`, `[0].n`), and none at the subject itself (DECISIONS 425). It is omitted when the value
+is not reachable from a top-level value or a subject (a temporary).
 
 ### 13.1 Entry positions
 

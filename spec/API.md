@@ -342,7 +342,9 @@ type Frame   struct { Fn string; Span }
   side or a layered conversion, the amended path; in a `where` on a loaded value, the value's
   path; in a check run on an instance, the instance's path, on replay too. An element of a keyed
   list is named by its key once the key is known, before that by the list's own path. Every copy
-  of a finding carries its `Path`, the causes of R6 included.
+  of a finding carries its `Path`, the causes of R6 included. A test's captured finding about a
+  part of its subject has the path from the subject, with no root name (`inner[1]`; EVALUATION.md
+  §13, DECISIONS 425).
 - **F2.** Findings are sorted by (`File` bytes, `Line`, `Col`, `Code`, `Message`) (EVL-09).
   Findings with no file sort first, by `Code` then `Message` (EVALUATION.md §14).
 - **F3.** Codes and messages come from [ERRORS.md](ERRORS.md), the single source of diagnostics
