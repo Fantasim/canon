@@ -41,6 +41,9 @@ func (c *checker) constCycle(o *object) {
 
 // foldConst folds through the Folder; a failure it did not report is E3015 (DECISIONS 150, 263).
 func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
+	if !c.buildable(env, e) {
+		return nil, false
+	}
 	v, ok, silent := c.foldReported(env, e)
 	switch {
 	case !silent:

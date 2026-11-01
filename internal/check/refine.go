@@ -100,10 +100,13 @@ func (c *checker) checkBounds(env *env, r *syntax.RangeExpr, t types.Type) (lo, 
 		if e == nil {
 			return nil
 		}
-		before := c.reported // counting here is sound: a const typed lazily during the bound is a dependency of the bound's owner
+		before, unbuilt := c.reported, c.unbuilt // counting here is sound: a const typed lazily during the bound is a dependency of the bound's owner
 		got := c.expr(ce, e, t)
 		if t.Kind() == types.Error {
 			return nil
+		}
+		if c.unbuilt != unbuilt && c.reported == before {
+			c.report(ce, diag.E3015.AtNotConstant(ce.span(e), ce.what))
 		}
 		if c.reported != before || got.Kind() == types.Error || c.readsBroken(e) {
 			ok = false

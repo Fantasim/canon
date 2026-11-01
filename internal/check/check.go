@@ -120,6 +120,7 @@ type checker struct {
 	funcDepth    map[*object]int             // records being completed when a type function began
 	syntaxHeld   map[syntax.Node]bool        // declarations holding a syntax error (DECISIONS 214)
 	reported     int                         // the errors report added so far
+	unbuilt      int                         // the literals typed so far of a record or case whose fields are still being resolved
 	spent        map[string]bool             // the packages whose step counter a fold spent (DECISIONS 263)
 	exhausted    int                         // the E4401 findings the bags held at the last failed fold
 	unrefined    map[syntax.Node]bool        // refinements dropped for an error (TYPES.md §1)

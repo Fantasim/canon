@@ -404,8 +404,24 @@ func (c *checker) declareCase(env *env, v *types.VariantType, vc *syntax.Variant
 	return co
 }
 
-// completeCase fills a case body like a record's; `kind` is reserved on cases (E2105).
+// completeCaseType completes the case ct now if its turn has not come: the namespace has no order (TYPES.md §3.2).
+func (c *checker) completeCaseType(ct *types.CaseType) {
+	c.completeVariant(ct.Variant)
+	vo := c.typeObjects[ct.Variant]
+	for _, co := range c.cases[ct.Variant] {
+		if co.typ == ct && vo != nil {
+			c.completeCase(c.declEnv(vo), co)
+		}
+	}
+}
+
+// completeCase fills a case body like a record's, once; `kind` is reserved on cases (E2105).
 func (c *checker) completeCase(env *env, co *object) {
+	if co.state != stateNone {
+		return
+	}
+	co.state = stateResolving
+	defer func() { co.state = stateDone }()
 	ct := co.typ.(*types.CaseType)
 	body := &recordCtx{self: ct, fields: map[string]*object{}, methods: map[string]*object{}, outer: c.variantBody[ct.Variant]}
 	co.body = body

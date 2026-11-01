@@ -14,6 +14,7 @@ func (c *checker) checkPackage(p *pkgState) {
 	for _, o := range p.all {
 		c.checkDecl(o)
 	}
+	c.constCycles(p)
 	c.checkConstExposure(p)
 	c.checkListKeys(p)
 	c.checkEmits(p)
@@ -224,11 +225,13 @@ func (c *checker) wireBody(env *env, body *recordCtx) {
 	c.checkPairsDefault(env, body)
 }
 
-// fieldDefaults checks each default against its field's type, with E3010's limits (TYPES.md §15).
+// fieldDefaults checks each default against its field's type once, with E3010's limits (TYPES.md §15); a fold building the record may come first.
 func (c *checker) fieldDefaults(o *object, body *recordCtx) {
-	if body == nil {
+	if body == nil || body.defaults != stateNone {
 		return
 	}
+	body.defaults = stateResolving
+	defer func() { body.defaults = stateDone }()
 	for _, fo := range body.order {
 		d := fo.decl.(*syntax.FieldDecl)
 		if d.Default == nil || fo.field.Input != nil {

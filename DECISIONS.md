@@ -1413,7 +1413,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
 
 172. **Declaration details the part-A review settled.** A cycle between `const`s breaks them with
     no finding: `eval` finds the chain through their initializers' `Uses` and reports `E4301`
-    (EVALUATION §3.2), which `check` does not own. An amend path steps through `T?` (`none` is
+    (EVALUATION §3.2), which `check` does not own. (Amended 2026-11-01: a cycle that passes through a record's field default, which no initializer's `Uses` show, is reported by `check`, with the same message and a chain of consts, at the use that closes it from the first const in DECISIONS 187's order.) An amend path steps through `T?` (`none` is
     `E1905` when applied, §9.3) but never through a `ref` (`E1905`: §9.2 has no row); `E1908`
     compares paths of the same let; a second layer file of one name is still checked; `[k]` on a
     table or keyed list reached by record fields reads a bare `k` as a key. A dependent value is

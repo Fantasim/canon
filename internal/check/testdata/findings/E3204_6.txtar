@@ -1,0 +1,19 @@
+TYPES.md §1, §7.4, EVALUATION.md §1: a bound building a later record checks its defaults first; a default outside its refinement is the record's E3204, once, and the bound reading it breaks silently (no E3015, no E3023).
+-- a/a.canon --
+package a
+
+local let n: Int(0..(T {}).u.y) = 1
+
+local record T {
+  u: U = {}
+}
+
+local record U {
+  y: Int(1..) = 0
+}
+-- findings.txt --
+error[E3204]  a/a.canon:10:17
+  0 is outside 1..
+  expected by a/a.canon:10 (y: Int(1..))
+
+1 error, 0 warnings in 1 package (…)

@@ -16,6 +16,10 @@ func (c *checker) recordLit(env *env, e *syntax.BraceLit, t types.Type) types.Ty
 	}
 	c.info.Literals[e] = LitRecord
 	fields := recordFields(c, t)
+	if !c.bodyReady(c.literalBody(t)) {
+		c.unbuilt++ // its record is still being resolved: the constant position reading it is E3015 (foldbuilds.go)
+		return types.ErrorType
+	}
 	env = env.with()
 	env.bind = inRecord(t)
 	given := map[string]bool{}
@@ -48,7 +52,7 @@ func recordFields(c *checker, t types.Type) []*types.Field {
 		c.completeRecord(x.Rec)
 		return x.Rec.Fields
 	case *types.CaseType:
-		c.completeVariant(x.Variant)
+		c.completeCaseType(x)
 		return x.Fields
 	}
 	return nil

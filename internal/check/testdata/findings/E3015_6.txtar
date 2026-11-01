@@ -1,0 +1,13 @@
+TYPES.md §7.4, §15, DECISIONS 150: a bound building the record whose field it refines, still being resolved, is no constant yet: E3015 at the bound, and no fold runs.
+-- a/a.canon --
+package a
+
+local record T {
+  x: Int = 1
+  y: Int(0..(T {}).x) = 0
+}
+-- findings.txt --
+error[E3015]  a/a.canon:5:13
+  this refinement bound must be a constant expression
+
+1 error, 0 warnings in 1 package (…)

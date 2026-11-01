@@ -52,6 +52,8 @@ type recordCtx struct {
 	methods map[string]*object
 	order   []*object  // fields in declaration order
 	outer   *recordCtx // a case body's variant body, whose methods it has too (TYPES.md §12.1)
+
+	defaults resolveState // its field defaults: unchecked, being checked, checked; a fold may check them first
 }
 
 // fnCtx is the function whose body is checked.

@@ -184,7 +184,11 @@ func (c *checker) typedLit(env *env, e *syntax.TypedLit, want types.Type) types.
 	}
 	switch t.Base().(type) {
 	case *types.RecordType, *types.AppliedRecord, *types.CaseType:
+		unbuilt := c.unbuilt
 		c.info.Types[e.Lit] = c.recordLit(env, e.Lit, t.Base())
+		if c.unbuilt != unbuilt {
+			return types.ErrorType // a record still being resolved (foldbuilds.go)
+		}
 		return t
 	}
 	c.report(env, diag.E3002.At(env.span(e.Type), t, env.literalText(e)))

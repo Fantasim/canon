@@ -25,6 +25,7 @@ type object struct {
 	parent *object    // ObjEntry: the let whose collection holds it
 	keys   *entryKeys // ObjLet initialized by a table literal (TYPES.md §4.1)
 	body   *recordCtx
+	built  bool // ObjConst: what a fold of its value builds is checked, ready and free of cycles
 }
 
 func (o *object) Kind() ObjKind { return o.kind }

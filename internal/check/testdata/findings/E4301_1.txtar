@@ -1,0 +1,17 @@
+TYPES.md §15, EVALUATION.md §3.2, DECISIONS 187: a const whose value builds a record whose default reads the const is a cycle between values, found at type-checking time: E4301 at the use closing it.
+-- a/a.canon --
+package a
+
+/// K.
+const K = (T {}).a
+
+/// T.
+record T {
+  /// a.
+  a: Int = K
+}
+-- findings.txt --
+error[E4301]  a/a.canon:9:12
+  K: cycle between values: K -> K
+
+1 error, 0 warnings in 1 package (…)

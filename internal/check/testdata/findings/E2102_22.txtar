@@ -1,0 +1,14 @@
+TYPES.md §1, §15, EVALUATION.md §1: a bound building a later record checks its defaults first; the default's error is the record's, the bound reading it breaks silently (no E3015).
+-- a/a.canon --
+package a
+
+local let n: Int(0..(T {}).x) = 1
+
+local record T {
+  x: Int = NOPE
+}
+-- findings.txt --
+error[E2102]  a/a.canon:6:12
+  unknown name NOPE
+
+1 error, 0 warnings in 1 package (…)

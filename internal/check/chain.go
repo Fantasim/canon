@@ -189,6 +189,7 @@ func (c *checker) selectOn(t types.Type, name string) (*Selection, types.Type) {
 	case *types.AppliedRecord:
 		return c.recordMember(x.Rec, name)
 	case *types.CaseType:
+		c.completeCaseType(x)
 		if sel, st := c.fieldMember(x.Fields, name); sel != nil {
 			return sel, st
 		}
@@ -234,6 +235,10 @@ func (c *checker) fieldMember(fields []*types.Field, name string) (*Selection, t
 	f := fieldNamed(fields, name)
 	if f == nil {
 		return nil, nil
+	}
+	if f.Type == nil {
+		c.unbuilt++ // a field of a record still being resolved: the constant position reading it is E3015 (foldbuilds.go)
+		return &Selection{Kind: SelField, Obj: c.fieldObjects[f]}, types.ErrorType
 	}
 	return &Selection{Kind: SelField, Obj: c.fieldObjects[f]}, c.staticView(f.Type)
 }
