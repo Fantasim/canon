@@ -354,6 +354,7 @@ E5005 -: test "0.9" is declared twice in resource.vocab.items
 E5006 notLet: resource.vocab.items is not a let: expect package substitutes top-level lets of its own package
 E5006 otherPackage: resource.vocab.items is a let of another package: substitute it in a test of that package
 E5006 twice: resource.vocab.items is substituted twice (first at @resource/Server/System/farm_config.json:1)
+E5007 -: check resource.vocab.items reads self.resource.vocab.items, but this value is not an entry of a table or keyed list
 E6001 removed: resource.vocab.items was removed; retire it instead
 E6001 renamed: resource.vocab.items was removed; resource.vocab.items is new: renaming a stable id is not allowed.
 	Keep resource.vocab.items and retire it: retired resource.vocab.items { … }

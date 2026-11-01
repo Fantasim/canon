@@ -357,6 +357,7 @@ var constructed = []*Builder{
 	E5006.AtNotLet(sampleSpan, sampleName),
 	E5006.AtOtherPackage(sampleSpan, sampleName),
 	E5006.AtTwice(sampleSpan, sampleName, sampleLoc),
+	E5007.At(sampleSpan, sampleName, sampleName),
 	E6001.AtRemoved(sampleSpan, sampleName),
 	E6001.AtRenamed(sampleSpan, sampleName, sampleName, sampleName),
 	E6001.AtHeld(sampleSpan, sampleName, KindCode, sampleValue, sampleName),

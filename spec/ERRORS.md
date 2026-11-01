@@ -387,7 +387,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 332 codes: 303 errors, 26 warnings and 3 run-time codes, with 570 messages.
+The catalogue holds 333 codes: 304 errors, 26 warnings and 3 run-time codes, with 571 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1081,6 +1081,7 @@ Owner: EVALUATION.md.
 | E5004 | error | rules | EVALUATION.md §10.3, §10.5 | `expect … fails name` names no check that runs for its subject |
 | E5005 | error | rules | EVALUATION.md §10.1 | a test name declared twice in one package |
 | E5006 | error | check | EVALUATION.md §10.5 | a package subject substitutes something other than a top-level let of the test's package, or one let twice |
+| E5007 | error | rules | TYPES.md §9.3 | a check reads `self.id` or `self.retired` of a value that is not an entry |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -1096,6 +1097,7 @@ Owner: EVALUATION.md.
 | E5006 | notLet | name:Name | `{name} is not a let: expect package substitutes top-level lets of its own package` |
 | E5006 | otherPackage | name:Name | `{name} is a let of another package: substitute it in a test of that package` |
 | E5006 | twice | name:Name, first:Loc | `{name} is substituted twice (first at {first})` |
+| E5007 | - | check:Name, member:Name | `check {check} reads self.{member}, but this value is not an entry of a table or keyed list` |
 
 ## E6xxx, W6xxx: Stable ids and canon.lock
 
