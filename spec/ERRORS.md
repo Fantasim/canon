@@ -1023,6 +1023,7 @@ Owner: EVALUATION.md, STDLIB.md.
 | E4001 | error | eval | EVALUATION.md §7.1 | postfix `!` on `none` (the rule: TYPES.md §6.5) |
 | W4001 | warning | eval | EVALUATION.md §1 | values not evaluated or checked because their record or variant is broken (DECISIONS 209) |
 | E4002 | error | eval | EVALUATION.md §4.1 | missing key, index out of range, open range without an end, or slice out of range |
+| E4003 | error | eval | TYPES.md §9.3 | `.id` or `.retired` of a record value that is not an entry of a table or keyed list |
 | E4101 | error | eval | EVALUATION.md §6.1 | integer or duration overflow |
 | E4102 | error | eval | EVALUATION.md §6.1 | division by zero |
 | E4103 | error | eval | EVALUATION.md §6.2 | a float converted to an integer does not fit `Int` |
@@ -1048,6 +1049,7 @@ Owner: EVALUATION.md, STDLIB.md.
 | E4002 | key | key:Value, coll:Name | `no key {key} in {coll}` |
 | E4002 | open | - | `open range has no end` |
 | E4002 | slice | a:Int, b:Int | `slice {a}..{b} out of range` |
+| E4003 | - | member:Name | `.{member} of a value that is not an entry of a table or keyed list` |
 | E4101 | integer | expr:Expr | `integer overflow in {expr}` |
 | E4101 | duration | expr:Expr | `duration overflow in {expr}` |
 | E4102 | - | - | `division by zero` |
@@ -1081,7 +1083,6 @@ Owner: EVALUATION.md.
 | E5004 | error | rules | EVALUATION.md §10.3, §10.5 | `expect … fails name` names no check that runs for its subject |
 | E5005 | error | rules | EVALUATION.md §10.1 | a test name declared twice in one package |
 | E5006 | error | check | EVALUATION.md §10.5 | a package subject substitutes something other than a top-level let of the test's package, or one let twice |
-| E5007 | error | rules | TYPES.md §9.3 | a check reads `self.id` or `self.retired` of a value that is not an entry |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -1097,7 +1098,6 @@ Owner: EVALUATION.md.
 | E5006 | notLet | name:Name | `{name} is not a let: expect package substitutes top-level lets of its own package` |
 | E5006 | otherPackage | name:Name | `{name} is a let of another package: substitute it in a test of that package` |
 | E5006 | twice | name:Name, first:Loc | `{name} is substituted twice (first at {first})` |
-| E5007 | - | check:Name, member:Name | `check {check} reads self.{member}, but this value is not an entry of a table or keyed list` |
 
 ## E6xxx, W6xxx: Stable ids and canon.lock
 

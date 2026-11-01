@@ -1854,6 +1854,12 @@ var Registry = []Def{
 		},
 	},
 	{
+		Code: "E4003", Severity: Error, Package: "eval",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "member", Type: ArgTypeName}}, Template: ".{member} of a value that is not an entry of a table or keyed list"},
+		},
+	},
+	{
 		Code: "E4101", Severity: Error, Package: "eval",
 		Variants: []Variant{
 			{Name: "integer", Args: []Arg{{Name: "expr", Type: ArgTypeExpr}}, Template: "integer overflow in {expr}"},
@@ -1984,12 +1990,6 @@ var Registry = []Def{
 			{Name: "notLet", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is not a let: expect package substitutes top-level lets of its own package"},
 			{Name: "otherPackage", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "{name} is a let of another package: substitute it in a test of that package"},
 			{Name: "twice", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "first", Type: ArgTypeLoc}}, Template: "{name} is substituted twice (first at {first})"},
-		},
-	},
-	{
-		Code: "E5007", Severity: Error, Package: "rules",
-		Variants: []Variant{
-			{Args: []Arg{{Name: "check", Type: ArgTypeName}, {Name: "member", Type: ArgTypeName}}, Template: "check {check} reads self.{member}, but this value is not an entry of a table or keyed list"},
 		},
 	},
 	{
@@ -6005,22 +6005,35 @@ func (codeE4002) AtSlice(span source.Span, a int64, b int64) *Builder {
 	return newBuilder(&Registry[205], 3, span, a, b)
 }
 
+// E4003: `.id` or `.retired` of a record value that is not an entry of a table or keyed list (TYPES.md §9.3).
+var E4003 codeE4003
+
+type codeE4003 struct{}
+
+// Def is the registry entry of E4003.
+func (codeE4003) Def() *Def { return &Registry[206] }
+
+// At reports: .{member} of a value that is not an entry of a table or keyed list
+func (codeE4003) At(span source.Span, member string) *Builder {
+	return newBuilder(&Registry[206], 0, span, member)
+}
+
 // E4101: integer or duration overflow (EVALUATION.md §6.1).
 var E4101 codeE4101
 
 type codeE4101 struct{}
 
 // Def is the registry entry of E4101.
-func (codeE4101) Def() *Def { return &Registry[206] }
+func (codeE4101) Def() *Def { return &Registry[207] }
 
 // AtInteger reports: integer overflow in {expr}
 func (codeE4101) AtInteger(span source.Span, expr source.Span) *Builder {
-	return newBuilder(&Registry[206], 0, span, expr)
+	return newBuilder(&Registry[207], 0, span, expr)
 }
 
 // AtDuration reports: duration overflow in {expr}
 func (codeE4101) AtDuration(span source.Span, expr source.Span) *Builder {
-	return newBuilder(&Registry[206], 1, span, expr)
+	return newBuilder(&Registry[207], 1, span, expr)
 }
 
 // E4102: division by zero (EVALUATION.md §6.1).
@@ -6029,11 +6042,11 @@ var E4102 codeE4102
 type codeE4102 struct{}
 
 // Def is the registry entry of E4102.
-func (codeE4102) Def() *Def { return &Registry[207] }
+func (codeE4102) Def() *Def { return &Registry[208] }
 
 // At reports: division by zero
 func (codeE4102) At(span source.Span) *Builder {
-	return newBuilder(&Registry[207], 0, span)
+	return newBuilder(&Registry[208], 0, span)
 }
 
 // E4103: a float converted to an integer does not fit `Int` (EVALUATION.md §6.2).
@@ -6042,11 +6055,11 @@ var E4103 codeE4103
 type codeE4103 struct{}
 
 // Def is the registry entry of E4103.
-func (codeE4103) Def() *Def { return &Registry[208] }
+func (codeE4103) Def() *Def { return &Registry[209] }
 
 // At reports: {value} does not fit an Int
 func (codeE4103) At(span source.Span, value ValueArg) *Builder {
-	return newBuilder(&Registry[208], 0, span, value)
+	return newBuilder(&Registry[209], 0, span, value)
 }
 
 // E4104: a float operation produces NaN or an infinity (EVALUATION.md §6.2).
@@ -6055,11 +6068,11 @@ var E4104 codeE4104
 type codeE4104 struct{}
 
 // Def is the registry entry of E4104.
-func (codeE4104) Def() *Def { return &Registry[209] }
+func (codeE4104) Def() *Def { return &Registry[210] }
 
 // At reports: {expr} is not a finite number
 func (codeE4104) At(span source.Span, expr source.Span) *Builder {
-	return newBuilder(&Registry[209], 0, span, expr)
+	return newBuilder(&Registry[210], 0, span, expr)
 }
 
 // E4105: `zip` of sequences of different lengths (STDLIB.md §4.2).
@@ -6068,11 +6081,11 @@ var E4105 codeE4105
 type codeE4105 struct{}
 
 // Def is the registry entry of E4105.
-func (codeE4105) Def() *Def { return &Registry[210] }
+func (codeE4105) Def() *Def { return &Registry[211] }
 
 // At reports: zip: lengths differ ({a} and {b})
 func (codeE4105) At(span source.Span, a int64, b int64) *Builder {
-	return newBuilder(&Registry[210], 0, span, a, b)
+	return newBuilder(&Registry[211], 0, span, a, b)
 }
 
 // E4106: `split` or `replace` with an empty separator or pattern (STDLIB.md §7).
@@ -6081,16 +6094,16 @@ var E4106 codeE4106
 type codeE4106 struct{}
 
 // Def is the registry entry of E4106.
-func (codeE4106) Def() *Def { return &Registry[211] }
+func (codeE4106) Def() *Def { return &Registry[212] }
 
 // AtSeparator reports: {method}: the separator is empty
 func (codeE4106) AtSeparator(span source.Span, method string) *Builder {
-	return newBuilder(&Registry[211], 0, span, method)
+	return newBuilder(&Registry[212], 0, span, method)
 }
 
 // AtPattern reports: {method}: the pattern is empty
 func (codeE4106) AtPattern(span source.Span, method string) *Builder {
-	return newBuilder(&Registry[211], 1, span, method)
+	return newBuilder(&Registry[212], 1, span, method)
 }
 
 // E4107: a string slice bound inside a UTF-8 character (STDLIB.md §7).
@@ -6099,11 +6112,11 @@ var E4107 codeE4107
 type codeE4107 struct{}
 
 // Def is the registry entry of E4107.
-func (codeE4107) Def() *Def { return &Registry[212] }
+func (codeE4107) Def() *Def { return &Registry[213] }
 
 // At reports: slice bound {index} is inside a UTF-8 character
 func (codeE4107) At(span source.Span, index int64) *Builder {
-	return newBuilder(&Registry[212], 0, span, index)
+	return newBuilder(&Registry[213], 0, span, index)
 }
 
 // E4108: `clamp` with `lo > hi` (STDLIB.md §2.2).
@@ -6112,11 +6125,11 @@ var E4108 codeE4108
 type codeE4108 struct{}
 
 // Def is the registry entry of E4108.
-func (codeE4108) Def() *Def { return &Registry[213] }
+func (codeE4108) Def() *Def { return &Registry[214] }
 
 // At reports: clamp: lower bound {lo} is above upper bound {hi}
 func (codeE4108) At(span source.Span, lo ValueArg, hi ValueArg) *Builder {
-	return newBuilder(&Registry[213], 0, span, lo, hi)
+	return newBuilder(&Registry[214], 0, span, lo, hi)
 }
 
 // E4201: internal: write to a frozen value (a compiler bug, exit 3) (EVALUATION.md §4.5).
@@ -6125,11 +6138,11 @@ var E4201 codeE4201
 type codeE4201 struct{}
 
 // Def is the registry entry of E4201.
-func (codeE4201) Def() *Def { return &Registry[214] }
+func (codeE4201) Def() *Def { return &Registry[215] }
 
 // At reports: internal: write to a frozen value
 func (codeE4201) At(span source.Span) *Builder {
-	return newBuilder(&Registry[214], 0, span)
+	return newBuilder(&Registry[215], 0, span)
 }
 
 // E4301: a cycle between values (EVALUATION.md §3.2).
@@ -6138,11 +6151,11 @@ var E4301 codeE4301
 type codeE4301 struct{}
 
 // Def is the registry entry of E4301.
-func (codeE4301) Def() *Def { return &Registry[215] }
+func (codeE4301) Def() *Def { return &Registry[216] }
 
 // At reports: cycle between values: {cycle}
 func (codeE4301) At(span source.Span, cycle []string) *Builder {
-	return newBuilder(&Registry[215], 0, span, cycle)
+	return newBuilder(&Registry[216], 0, span, cycle)
 }
 
 // E4401: the evaluation step budget is exhausted (EVALUATION.md §12.2).
@@ -6151,11 +6164,11 @@ var E4401 codeE4401
 type codeE4401 struct{}
 
 // Def is the registry entry of E4401.
-func (codeE4401) Def() *Def { return &Registry[216] }
+func (codeE4401) Def() *Def { return &Registry[217] }
 
 // At reports: evaluation budget of {n} steps exhausted\nheaviest: {root} ({k} steps)
 func (codeE4401) At(span source.Span, n int64, root string, k int64) *Builder {
-	return newBuilder(&Registry[216], 0, span, n, root, k)
+	return newBuilder(&Registry[217], 0, span, n, root, k)
 }
 
 // E4402: call depth exceeds 10 000 (EVALUATION.md §3.3).
@@ -6164,11 +6177,11 @@ var E4402 codeE4402
 type codeE4402 struct{}
 
 // Def is the registry entry of E4402.
-func (codeE4402) Def() *Def { return &Registry[217] }
+func (codeE4402) Def() *Def { return &Registry[218] }
 
 // At reports: call depth exceeds 10000
 func (codeE4402) At(span source.Span) *Builder {
-	return newBuilder(&Registry[217], 0, span)
+	return newBuilder(&Registry[218], 0, span)
 }
 
 // E4501: `topoSort` meets a cycle (STDLIB.md §2.3).
@@ -6177,11 +6190,11 @@ var E4501 codeE4501
 type codeE4501 struct{}
 
 // Def is the registry entry of E4501.
-func (codeE4501) Def() *Def { return &Registry[218] }
+func (codeE4501) Def() *Def { return &Registry[219] }
 
 // At reports: topoSort: cycle {cycle}
 func (codeE4501) At(span source.Span, cycle []string) *Builder {
-	return newBuilder(&Registry[218], 0, span, cycle)
+	return newBuilder(&Registry[219], 0, span, cycle)
 }
 
 // E4502: `toMap` produces a key twice (STDLIB.md §4.2).
@@ -6190,11 +6203,11 @@ var E4502 codeE4502
 type codeE4502 struct{}
 
 // Def is the registry entry of E4502.
-func (codeE4502) Def() *Def { return &Registry[219] }
+func (codeE4502) Def() *Def { return &Registry[220] }
 
 // At reports: toMap: key {key} produced twice
 func (codeE4502) At(span source.Span, key ValueArg) *Builder {
-	return newBuilder(&Registry[219], 0, span, key)
+	return newBuilder(&Registry[220], 0, span, key)
 }
 
 // E4503: a value that cannot be formatted (format spec on a non-number, a function value) (STDLIB.md §9.5).
@@ -6203,16 +6216,16 @@ var E4503 codeE4503
 type codeE4503 struct{}
 
 // Def is the registry entry of E4503.
-func (codeE4503) Def() *Def { return &Registry[220] }
+func (codeE4503) Def() *Def { return &Registry[221] }
 
 // AtPlain reports: cannot format {typ}
 func (codeE4503) AtPlain(span source.Span, typ TypeArg) *Builder {
-	return newBuilder(&Registry[220], 0, span, typ)
+	return newBuilder(&Registry[221], 0, span, typ)
 }
 
 // AtSpec reports: cannot format {typ} with :{spec}
 func (codeE4503) AtSpec(span source.Span, typ TypeArg, spec string) *Builder {
-	return newBuilder(&Registry[220], 1, span, typ, spec)
+	return newBuilder(&Registry[221], 1, span, typ, spec)
 }
 
 // E5001: a one-line `check` is false (EVALUATION.md §8.3).
@@ -6221,11 +6234,11 @@ var E5001 codeE5001
 type codeE5001 struct{}
 
 // Def is the registry entry of E5001.
-func (codeE5001) Def() *Def { return &Registry[221] }
+func (codeE5001) Def() *Def { return &Registry[222] }
 
 // At reports: {message}
 func (codeE5001) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[221], 0, span, message)
+	return newBuilder(&Registry[222], 0, span, message)
 }
 
 // E5002: `fail(at, message)` in a check block (EVALUATION.md §8.3).
@@ -6234,11 +6247,11 @@ var E5002 codeE5002
 type codeE5002 struct{}
 
 // Def is the registry entry of E5002.
-func (codeE5002) Def() *Def { return &Registry[222] }
+func (codeE5002) Def() *Def { return &Registry[223] }
 
 // At reports: {message}
 func (codeE5002) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[222], 0, span, message)
+	return newBuilder(&Registry[223], 0, span, message)
 }
 
 // E5003: a check name used twice in one scope (EVALUATION.md §8.3).
@@ -6247,11 +6260,11 @@ var E5003 codeE5003
 type codeE5003 struct{}
 
 // Def is the registry entry of E5003.
-func (codeE5003) Def() *Def { return &Registry[223] }
+func (codeE5003) Def() *Def { return &Registry[224] }
 
 // At reports: check name {name} is used twice in {scope}
 func (codeE5003) At(span source.Span, name string, scope string) *Builder {
-	return newBuilder(&Registry[223], 0, span, name, scope)
+	return newBuilder(&Registry[224], 0, span, name, scope)
 }
 
 // E5004: `expect … fails name` names no check that runs for its subject (EVALUATION.md §10.3, §10.5).
@@ -6260,21 +6273,21 @@ var E5004 codeE5004
 type codeE5004 struct{}
 
 // Def is the registry entry of E5004.
-func (codeE5004) Def() *Def { return &Registry[224] }
+func (codeE5004) Def() *Def { return &Registry[225] }
 
 // AtValue reports: no check named {name} applies to {typ}
 func (codeE5004) AtValue(span source.Span, name string, typ TypeArg) *Builder {
-	return newBuilder(&Registry[224], 0, span, name, typ)
+	return newBuilder(&Registry[225], 0, span, name, typ)
 }
 
 // AtPackageCheck reports: no check named {name} applies to {typ}; {name} is a package check, which only expect package runs
 func (codeE5004) AtPackageCheck(span source.Span, name string, typ TypeArg) *Builder {
-	return newBuilder(&Registry[224], 1, span, name, typ)
+	return newBuilder(&Registry[225], 1, span, name, typ)
 }
 
 // AtPackage reports: no check named {name} runs for package {pkg}
 func (codeE5004) AtPackage(span source.Span, name string, pkg string) *Builder {
-	return newBuilder(&Registry[224], 2, span, name, pkg)
+	return newBuilder(&Registry[225], 2, span, name, pkg)
 }
 
 // E5005: a test name declared twice in one package (EVALUATION.md §10.1).
@@ -6283,11 +6296,11 @@ var E5005 codeE5005
 type codeE5005 struct{}
 
 // Def is the registry entry of E5005.
-func (codeE5005) Def() *Def { return &Registry[225] }
+func (codeE5005) Def() *Def { return &Registry[226] }
 
 // At reports: test "{name}" is declared twice in {pkg}
 func (codeE5005) At(span source.Span, name string, pkg string) *Builder {
-	return newBuilder(&Registry[225], 0, span, name, pkg)
+	return newBuilder(&Registry[226], 0, span, name, pkg)
 }
 
 // E5006: a package subject substitutes something other than a top-level let of the test's package, or one let twice (EVALUATION.md §10.5).
@@ -6296,34 +6309,21 @@ var E5006 codeE5006
 type codeE5006 struct{}
 
 // Def is the registry entry of E5006.
-func (codeE5006) Def() *Def { return &Registry[226] }
+func (codeE5006) Def() *Def { return &Registry[227] }
 
 // AtNotLet reports: {name} is not a let: expect package substitutes top-level lets of its own package
 func (codeE5006) AtNotLet(span source.Span, name string) *Builder {
-	return newBuilder(&Registry[226], 0, span, name)
+	return newBuilder(&Registry[227], 0, span, name)
 }
 
 // AtOtherPackage reports: {name} is a let of another package: substitute it in a test of that package
 func (codeE5006) AtOtherPackage(span source.Span, name string) *Builder {
-	return newBuilder(&Registry[226], 1, span, name)
+	return newBuilder(&Registry[227], 1, span, name)
 }
 
 // AtTwice reports: {name} is substituted twice (first at {first})
 func (codeE5006) AtTwice(span source.Span, name string, first source.Span) *Builder {
-	return newBuilder(&Registry[226], 2, span, name, first)
-}
-
-// E5007: a check reads `self.id` or `self.retired` of a value that is not an entry (TYPES.md §9.3).
-var E5007 codeE5007
-
-type codeE5007 struct{}
-
-// Def is the registry entry of E5007.
-func (codeE5007) Def() *Def { return &Registry[227] }
-
-// At reports: check {check} reads self.{member}, but this value is not an entry of a table or keyed list
-func (codeE5007) At(span source.Span, check string, member string) *Builder {
-	return newBuilder(&Registry[227], 0, span, check, member)
+	return newBuilder(&Registry[227], 2, span, name, first)
 }
 
 // E6001: a locked id, code or stable value was removed or renamed (LOCK.md §4.1).
