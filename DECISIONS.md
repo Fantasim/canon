@@ -4396,3 +4396,11 @@ round 2", "PS1 review", "PS2 round 2"):
      kept literals that nothing stores included, or an `expect c` condition, fails that `expect`,
      naming the value; read by a statement, it fails the test (§7.2). Reason: whether a literal is
      stored must not change a verdict; the same read gave a pass unstored and a fail stored.
+427. **An operand or index beside an error is checked against the error type (TYPES.md §1, §5.1;
+     narrows 364's example).** The context-dependent operand of `==`, `!=`, `<`, `<=`, `>`, `>=`
+     or `in`, when the other operand has the error type, and the index of a receiver in error, are
+     checked against the error type: a bare name there is silent, since it could be a member or a
+     key. An arithmetic operand stays reported, as does an index of a receiver whose key type is
+     known (an optional refused with `E3402`). Reading a deprecated field in a type argument is
+     `W3301` (TYPES §16). Reason: `progen-nightly` found an `E2102` that only the first error
+     caused, and a deprecated read the warning missed.

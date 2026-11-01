@@ -58,11 +58,13 @@ A declaration with a static error is **broken**. So is every declaration whose b
 broken declaration. Broken values are never evaluated (EVALUATION.md §1), which keeps one
 error from cascading. After an error the checker gives the expression the *error type*, which
 is assignable to and from every type and produces no further diagnostics. A sub-expression
-checked against the error type (an item of a literal in error, a misplaced item) reports nothing
-that depends on the missing expected type (a bare name or symbol that could be a member or a key,
-an empty or `none` literal, a lambda), and everything that would be reported under any expected
-type (a call, a field access, a nested typed literal, an unknown name as an operand of a
-comparison or an arithmetic operator); nothing else is silenced (DECISIONS 364).
+checked against the error type (an item of a literal in error, a misplaced item, the
+context-dependent operand of a comparison or an `in` whose other operand is in error, the index of
+a receiver in error) reports nothing that depends on the missing expected type (a bare name or
+symbol that could be a member or a key, an empty or `none` literal, a lambda), and everything that
+would be reported under any expected type (a call, a field access, a nested typed literal, an
+unknown name as an operand of an arithmetic operator, or of a comparison whose other operand has a
+type); nothing else is silenced (DECISIONS 364, 427).
 
 ---
 
@@ -1337,8 +1339,8 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
 - A `@deprecated("why")` field, member or entry is still loaded, type-checked, verified,
   emitted and fingerprinted. It has no other effect.
 - In **Canon source**, giving a deprecated field a value in a literal, using a deprecated enum
-  member, referencing a deprecated entry, or reading a deprecated field in an expression is
-  `W3301` at that use. Loaded data never triggers it (legacy files are full of such fields).
+  member, referencing a deprecated entry, or reading a deprecated field in an expression (a type
+  argument included, §11) is `W3301` at that use. Loaded data never triggers it (legacy files are full of such fields).
   Naming a deprecated field or member in a view item (a field line, group entry, column or
   filter: VIEWMODEL.md W1642 covers the group case) or in a translation key (I18N.md K9) is not a
   use; an expression inside a view (a template, `when`, `hidden`) is. A studio member named by
