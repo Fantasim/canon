@@ -1726,7 +1726,10 @@ type Event struct {
   FS whose `OSBacked()` is true (§2.2), and falls back to polling, with one Warn line, when they
   cannot start or later fail. Whatever the notifications deliver, any change to the read set that changes a stamp or that a notification reports (S1) is seen
   within the resync interval (at most 1 s): the watcher also stats the read set, watches the
-  directories of link targets and retries directories it could not watch.
+  directories of link targets and retries directories it could not watch. A name reported changed
+  by anything but the watcher's own notifications (S1: a client's `didChangeWatchedFiles`, a
+  `*StaleError`) does not wake the watcher: it is read again at the next refresh, which the next
+  writer, a changed stamp or an OS notification starts.
 - **W13.** `fn` is called on one goroutine, never concurrently with itself, in revision order. An
   event's `Files`, and what makes an event, are only read-set files and names the scan takes as
   sources (the S5 predicate): editor swap and lock files, names starting with `.` (`.canon/` among them) and build outputs produce none; a listed

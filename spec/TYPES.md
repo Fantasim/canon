@@ -1318,6 +1318,9 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
   constants is `E4301` (EVALUATION.md §3). "First needed" is per evaluator: a constant folded
   during checking and forced again in stage A is evaluated, and charged, twice, on the one counter
   of the invocation (EVALUATION.md §12.2).
+- A fold that fails without a finding in its owner's bag is `E3015` at the expression, except
+  one that reads a constant whose declaration already holds an error: its owner breaks with that
+  error as the one finding (DECISIONS 150).
 - A public top-level `let` needs a type annotation (`E3001`). A `local let` without one is
   synthesized when first needed; a cycle among such inferences is `E3008`.
 - A field default (TYP-15) may use constants, **earlier** fields of the same record, record

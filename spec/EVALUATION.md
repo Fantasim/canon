@@ -567,7 +567,7 @@ A subject that reads a poisoned top-level value makes the `expect` fail, naming 
 | `expect package [{ … }] passes` / `fails …` / `warns …` | the same, over the findings of building the package (§10.5) |
 
 - An identifier after `fails`/`warns` matching `^[EW][0-9]{4}$` is a code. Any other names a check: for a value subject, a named check on a type reachable from `v`'s static type (through fields, elements, map keys and values, variant cases and their own checks, and a dependent field's branches); for a package subject (§10.5), a named package check of the test's package or a named check reachable so from one of its top-level values. Otherwise `E5004`, whose message says when the name is a package check, which only `expect package` runs. `E5004` is static: `canon check` and `canon test` report it (log-2026-10-06).
-- Matching counts dynamic `E3xxx`, `E4xxx` and `E5xxx`/`W5xxx` findings (CHK-05).
+- Matching takes any captured code: the dynamic `E3xxx`, `E4xxx` and `E5xxx`/`W5xxx` findings (CHK-05) and, for a package subject, a world load's `E7110` (§10.5).
 
 ### 10.4 Failures
 
@@ -575,6 +575,8 @@ A subject that reads a poisoned top-level value makes the `expect` fail, naming 
 - A hard error outside an `expect` subject (in a `let`, a loop, a call) fails the test and
   stops it.
 - A test passes when every `expect` passed and no hard error occurred.
+- A test that finds its package's budget already spent (`E4401`, §12.2) does not run and fails;
+  CLI §3.5 prints its `FAIL` line alone.
 - The output format is CLI §3.5: for `fails`/`warns`, the captured findings are listed.
 
 ### 10.5 Package subjects
@@ -585,8 +587,8 @@ expect package { levels: levels + [levels[1]] } fails uniqueIndex
 `expect package` builds the test's own package; with `{ name: value, … }`, each `name` holds `value` while it is built. §10.3's forms judge what the build captures.
 1. **Substitutions.** `name` is a top-level `let` of the test's package, public or `local` (anything else, a test local included, is `E5006`, an unknown name `E2102`). `value` is checked against the let's type; a static error is a compile error (CHK-05). The values are evaluated in the test, left to right, before the build: they read the test's values (with the active layers), the substituted lets included, and its locals. A hard error or a poisoned read there is the `expect`'s, as for a value subject (§10.2), and nothing is built.
 2. **The world.** The package is built in a world of its own, as stages A to D build a selected package (§1, §2.1, §5, §8): every top-level `const` and `let`, in forced-set order. A substituted let takes its value, converted at the let's storage point in the world (§4.3), with no initializer, `entry` declaration or layer; every other let is evaluated from its initializer, entries and active layers, so values derived from a substituted one follow. A broken declaration is not evaluated (TYPES.md §1). Values of other packages are the test's, forced there if needed: none can read this package (TYPES.md §3.1). Conversions, verification and taint (§7.3) are the world's own; the test's verdict on a part of a value is not reused. An entry keeps its identity (TYPES.md §6.3): one of a record field's collection still belongs to the test's instance.
-3. **Checks.** Stage B verifies every value of the world, stage C runs the instance checks reachable from them (§8.1), stage D the package's package checks (§8.2). Stage E, emit validation, conformance vectors, the lock comparison and view checks do not run.
-4. **Capture.** Every finding the world produces is captured, with the value path a build gives it (§13). Reading a poisoned value of another package makes the `expect` fail, naming it (§10.2). `E4401` in the world stops the test (§10.4) and is not captured.
+3. **Checks.** Stage B verifies every value of the world, stage C runs the instance checks reachable from them (§8.1), stage D the package's package checks (§8.2). Stage E, emit validation, conformance vectors, the lock comparison and view checks do not run, and the world gives no `W4001`.
+4. **Capture.** The world captures what judges or poisons one of its values: stage B's verification, stages C and D, hard errors, the decode findings of its own loads (`E7110`) and kept literals, each with the value path a build gives it (§13). A hard error that taint silences (§7.3) leaves nothing captured, as for a value subject. A finding no substitution can change is the run's and is never captured: a declaration's (`E3102` for a repeated `@codes` code, `E5003`–`E5005`, `W1003`), a refused stable amendment's (`E6004`, LOCK.md §6.1), and a file read's warning that no value carries (`W7101`). `canon test` reports those errors itself, so no test passes over one; a refused amendment poisons its table in the test and in every world, and is judged when a test forces that table (§10.1). Reading a poisoned value of another package makes the `expect` fail, naming it (§10.2). `E4401` in the world stops the test (§10.4) and is not captured.
 5. **Cost.** The values are charged to the test, the world as a build is (§12.2), all on the package's counter: each package subject costs what stages A to D of the package cost.
 6. **After.** The world is discarded; the test's values do not change. A world records no call for conformance vectors, and computing them builds no package subject (§1).
 
@@ -737,7 +739,7 @@ error[E4401]  balance/parity/sweep_plan.canon:265:15
   run on their own counters. Findings already produced are kept. `E4401` is reported once per
   package and invocation; a phase-2 constant fold that fails because its package's budget is
   spent, or because it reads a constant of a package whose budget is spent, is still `E3015`,
-  variant `budget` (DECISIONS 150: no declaration breaks silently; 263).
+  variant `budget` (DECISIONS 150: an owner never breaks without a finding; 263).
   Stage E still runs after `E4401`, but a fold there that fails on a spent counter adds no
   finding: `E4401` has already failed the build. Because the order of evaluation
   (§2) is fixed, two implementations stop at the same expression.

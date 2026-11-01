@@ -1214,6 +1214,8 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     tests only (§4.7: "tests of `check` pass a fixture folder that knows only literals"). A fold
     that fails without a finding in the owner's bag is `E3015` at the expression, so no
     declaration breaks silently. Reason: the evaluator stays the one evaluator.
+    (Amended 2026-10-31: a fold that fails because it reads a const whose declaration already
+    holds an error adds no `E3015`: its owner breaks with that error as the one finding.)
 
 151. **What imports bind.** `import p` binds the last segment of `p` (SPEC §3's `import shared.ui
     // use qualified: ui.Tone`), `import p as q` binds `q`, `import p { A }` binds only `A`. Every
@@ -4166,6 +4168,9 @@ round 2", "PS1 review", "PS2 round 2"):
      values evaluated in the world. Reason: Louis's first v0.2 pick (N5): package checks ran in no
      test (§10.1-§10.2, E5004), so Resource tested none of its package checks and kept its rules in
      `…Problems` functions.
+     (Amended 2026-10-31: the world captures what judges or poisons its values; a declaration's
+     finding (`E3102` for a repeated `@codes` code, `E5003`–`E5005`, `W1003`), a refused stable
+     amendment's `E6004` and `W7101` are the run's, never captured, EVALUATION.md §10.5.)
 
 399. **Generated decoders refuse a value outside its range or length refinement (CODEGEN.md §5.15,
      §5.9, §5.13; WIRE.md §5.13; SPEC §14.5, §19.3).** Every Go, C++ and TypeScript loader,
@@ -4214,10 +4219,14 @@ round 2", "PS1 review", "PS2 round 2"):
      `build`, whatever the selection. Reason: 391's guard stops at the read edge, so Sovereign's
      `BadgeKind` compiled in one include order only; widening the guard would make output depend on
      which packages and roots a machine holds.
+     (Amended 2026-10-31: a broken declaration of a package the run type-checked never enters the
+     scan, 213; a package the run did not load is scanned as written.)
 
 404. **`push_macro` guards names met in code (CODEGEN.md §7.9; amends 391).** A name met only in a
      comment, a string or a character literal is not wrapped. Reason: 116 pairs of Sovereign's
      output were wrapped for names no preprocessor expands there.
+     (Amended 2026-10-31: "comment" is the guard scan's reading, where a `//` comment ends at its
+     first newline, so a line a trailing `\` splices into a `//` comment is still wrapped.)
 
 405. **A wire name holds no NUL (WIRE.md §4.2; `E3316` `nul`).** A wire name written in source with
      U+0000 is refused for every target. Reason: C++ readers take names as C strings and cut it
@@ -4329,6 +4338,8 @@ round 2", "PS1 review", "PS2 round 2"):
      links and keep their kind; builds already never write through any (342). Reason: on Windows
      `load.dir` skipped a junction silently, losing every entry under it, and read a base or single
      file through one with no bound (ADR-0021 §9); 376's "a junction stays a file name" is reversed.
+     (Amended 2026-10-31: the bounds govern reads; a real-path comparison follows a link to compare
+     identities, reads no file and is not bounded, WIRE.md §6.5.)
 
 420. **Single-file loads follow `load.dir`'s link bounds (WIRE.md §6.1, §6.5; ERRORS.md E7004).**
      The path of `load`, `load.text`, `load.csv` and `load.defines` is read through a link only when

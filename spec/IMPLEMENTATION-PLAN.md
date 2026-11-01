@@ -1015,6 +1015,11 @@ determinism job green (§7.5), and every new registry code tested (§7.2).
   --color never` against the fixtures: the text form of API.md §4.4, sorted per API.md F2,
   followed by the summary line with the duration replaced by `(…)`. An example that must be clean
   has only the summary line.
+- **Per example, tests.** An example may also hold `expected/tests.txt`: the stdout of `canon
+  test <package>` against the fixtures (CLI.md §3.5), the duration replaced by `(…)`, compared
+  byte for byte; the exit code is the one the file implies (1 when its summary counts a failed
+  test or it prints a static error, else 0). It is written by the CLI, as `findings.txt` is
+  (DECISIONS 398; `pkgchecks`, §7.9).
 - **Per code.** Every registry code has at least one test case:
   `internal/<pkg>/testdata/findings/<CODE>_<n>.txtar`, a txtar archive holding a minimal project
   and a `findings.txt` section. The audit rule `diag-code-untested` fails when a code the
@@ -1181,7 +1186,7 @@ exists under `examples/features/<name>/` (the directory names, DECISIONS 262):
 | `ts` | TS goldens for data mode and translated functions | M6 | to add |
 | `edits` | a project used only by edit tests: defaults, spread, layered values, JSON sources, dependent fields, variants | M4 | present |
 | `tiers` | tiers in project.canon: a longer path placing a sub-package in an earlier tier, a downward import | v0.1.9 | present |
-| `pkgchecks` | expect package: substitutions, derived values, a named package check, CHK-05 | v0.2 | present |
+| `pkgchecks` | expect package: substitutions, derived values, a named package check, CHK-05; `expected/tests.txt` (§7.2) | v0.2 | present |
 
 ---
 

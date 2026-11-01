@@ -225,8 +225,9 @@ For variants and inline fields it is `E3318`, at the field or case, when:
 ## 5. The wire mapping
 
 For every type, how a value is **encoded** (data wire, and the source wire unless §5.13 says
-otherwise) and how a JSON value is **decoded** (both wires). "JSON kind" is one of null, boolean,
-number, string, array, object. A JSON value of the wrong kind is `E7110`.
+otherwise) and how a JSON value is **decoded** (both wires; the `Duration` row of §5.1 aside: the
+data wire decodes a `Duration` as it encodes it, an integer count of the unit). "JSON kind" is
+one of null, boolean, number, string, array, object. A JSON value of the wrong kind is `E7110`.
 
 ### 5.1 Scalars
 
@@ -240,6 +241,11 @@ number, string, array, object. A JSON value of the wrong kind is `E7110`.
 | `Duration` | an **integer** count of the field's unit (default `ms`, WIR-03); a value that is not a whole number of units is `E8102` | any number token (integer or not); exact decimal × unit in ms must be a whole number of ms, else `E3203`; the result must fit the `Duration` range, ±9,223,372,036,854 ms (`E3201`, TYPES.md §7.2) |
 
 Units: `ms` = 1, `s` = 1 000, `m` = 60 000, `h` = 3 600 000, `d` = 86 400 000 ms.
+
+A data-wire loader (`data` and `embedded` mode, §5.13) reads a `Duration` as the Encode column
+writes it, an integer count of the unit: a fraction (`1.5` under `unit: s`) or a count past the
+`Duration` range is refused as an integer is (CODEGEN.md §5.13). The Decode column is the source
+wire's (`load`, `types`-mode decoders).
 
 `E8102` is reported during verification (EVALUATION.md §1, stage B, phase 4) for every evaluated
 value, not only when writing, so `canon check` finds it: a field's wire annotation is part of what
@@ -269,7 +275,8 @@ Encode `false` → `0`, `true` → `1`. Decode: only the integer tokens `0` and 
 - **Decode**: a string equal, byte for byte, to one member's wire value, else `E7111`. The message
   names the closest member and, when the string is a Canon name whose wire differs
   (`"series_1"`), says so. With `@json(codes)`: an integer token equal to a member's code, else
-  `E7111` (non-integer: `E7103`).
+  `E7111` (non-integer: `E7103`). A generated decoder writes an unknown member or code as
+  `unknown value <wire>` (`unknown value 3`), in every target (CODEGEN.md §5.13).
 - Retired members keep their wire value and code: the decoder recognises them (not `E7111`), then
   TYPES.md reports a retired member used in a value (`E3506`). Generated loaders decode them.
 
@@ -277,8 +284,10 @@ Encode `false` → `0`, `true` → `1`. Decode: only the integer tokens `0` and 
 
 - Encode: the bitwise OR of the members' codes, as a JSON integer (`[tradable, soulbound]` with
   codes 1 and 4 → `5`; `[]` → `0`). A list holding the same member twice has no encoding: `E8102`.
-- Decode: an integer token ≥ 0 (non-integer `E7103`, negative `E7110`). Every set bit must be a
-  member code, else `E7111` naming the unknown bits in hex (`0x100`). The result lists the members
+- Decode: an integer token from 0 to 2^63 − 1 (non-integer `E7103`, negative `E7110`, larger
+  `E7111`; a generated decoder refuses a larger one at the width of an integer, CODEGEN.md §5.13).
+  Every set bit must be a member code, else `E7111` naming the unknown bits in hex (`0x100`;
+  generated decoders write `unknown bits 0x100`). The result lists the members
   in ascending code order.
 - The order of a bits list is therefore not preserved by the wire. Such fields should be declared
   `where it.isUnique()`; `canon convert` compares them as sets.
@@ -436,7 +445,7 @@ A map is a JSON object whose members follow the map's insertion order. Keys:
 |---|---|
 | `String` | the string, verbatim |
 | integer types | canonical decimal (`-5`, `0`, `42`); decode requires exactly `0\|-?[1-9][0-9]*` (`-0` is not canonical), else `E7103` |
-| enum | the member's wire value; with `@json(codes)`, the code in decimal |
+| enum | the member's wire value; with `@json(codes)`, the code in canonical decimal: the key takes the integer row's form (`01`, `+1`, `-0` and `""` are `E7103`), then names a code (`E7111`) |
 | `ref` into a table or a define table | the entry key |
 | `ref` into a keyed list | the key field's wire value, as text (decimal for integer keys) |
 | literal union `A \| "lit"` | the literal, or `A`'s wire key; on decode the literal wins (TYP-09) |
@@ -445,6 +454,11 @@ A map is a JSON object whose members follow the map's insertion order. Keys:
 Two keys that encode to the same text are `E3317`, at the second key (for example a literal
 `"default"` and a ref key `default`). Decoding a key applies the same rules as decoding a value of
 the key type (`E7111` for an unknown member, `E3501` for an unknown ref key).
+
+A map is decoded entry by entry in the order the object holds them: each key, then its value. A
+generated decoder that reads the text (Go's, C++ `Parse` and data loaders, TS `parse<…>`) stops
+at its first failure, so in `{"1": <bad>, "01": 1}` it stops at the value under `1`; one handed a
+parsed value follows that value's order (CODEGEN.md §5.13, "Paths and order").
 
 A dependent map `{e in eventTypes: HourlyTarget(e)}` is an object keyed by the ref key; each value
 is decoded with the parameter bound to that key's entry.
@@ -480,7 +494,8 @@ data wire only, a value inside a stored result included (DECISIONS 284):
 
 - key `"$<canonName>"` (`"$isStrong"`), regardless of `@json(case:)`;
 - no extra parameter: the result's wire form (a `Duration` result is in `ms`; `@json` annotations
-  cannot apply to results);
+  cannot apply to results); a loader reads an optional result's key as an optional field without
+  default (§5.4): absent or `null` is `none`;
 - finite parameters: nested objects, one level per parameter in parameter order, keyed by the wire
   key (§5.8 rules) of each argument value. Domain order: enum members in declaration order,
   retired included; table or keyed-list entries in entry order, retired included; `Bool` as
@@ -509,7 +524,7 @@ Any other `$` key in a source file is an unknown key (`E3301`, or ignored with `
 
 | | Source wire (`load`, `types`-mode decoders) | Data wire (`emit json`, `data`/`embedded` loaders) |
 |---|---|---|
-| absent fields | allowed: default, `none`, or `E3302` (§5.4) | never: every field is written (except an empty `pairs:` list, §5.14) |
+| absent fields | allowed: default, `none`, or `E3302` (§5.4) | never: every field is written (except an empty `pairs:` list, §5.14); a loader still reads an absent optional `$<fn>` result as `none` (§5.11) |
 | top-level table | object keyed by id | `rows` array with `$id` |
 | `$` keys | only `$schema` (root, ignored) and `$retired` (table rows) | `$schema`, `$id`, `$retired`, `$<fn>`, `$fns` |
 | numbers | any token the type accepts (§5.1) | canonical (§7.2) |
@@ -653,7 +668,7 @@ Pattern syntax, per `/`-separated segment:
 - Matching is case-sensitive on every platform. Characters are Unicode code points of UTF-8 names.
 - **Dotfiles.** A name starting with `.` matches only a pattern segment that starts with a literal
   `.`. `**` never enters a directory whose name starts with `.`.
-- Only regular files match (after following links). A link is an entry the file system reads as one: a symbolic link, or a Windows junction or directory mount point (an entry Go lists as irregular whose target `os.Readlink` reads). Every rule of this section, of §6.1 and of TYPES.md §13.4 holds for both, and findings call both "symbolic link". A mount point whose target is a volume (`\\?\Volume{…}\`) has no path the bounds can judge and counts as dangling. Any other entry is no link and keeps its kind (DECISIONS 419). Symbolic links are followed only when their
+- Only regular files match (after following links). A link is an entry the file system reads as one: a symbolic link, or a Windows junction or directory mount point (an entry Go lists as irregular whose target `os.Readlink` reads). Every rule of this section, of §6.1 and of TYPES.md §13.4 holds for both, and findings call both "symbolic link". A mount point whose target is a volume (`\\?\Volume{…}\`) has no path the bounds can judge and counts as dangling. Any other entry is no link and keeps its kind (DECISIONS 419). The bounds below govern reads: a real-path comparison (DECISIONS 252, 253) follows a link to compare identities and reads no file, so no bound applies to it, and it never follows a volume mount point's device path. Symbolic links are followed only when their
   target resolves inside a declared root or the project; any other link is skipped with `W7115`. A
   directory link already on the current walk path is not followed again. The same bounds hold for
   a `load.dir` base directory, and a literal `load.dir` path, that is or passes through a link: outside

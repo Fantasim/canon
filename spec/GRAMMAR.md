@@ -891,7 +891,7 @@ binder          = IDENT | "_" ;
 - `return` takes an expression when the next token is not `NL`, `,` or `}`. `return` outside a
   function body is `E1135`. `break` and `continue` outside a `for` or `while` body are `E1134`.
 - `expect` outside a `test` block is `E1130`.
-- After `expect`, `package` always starts a package subject (EVALUATION.md §10.5): its `{` is on that line and it needs an outcome (`E1116`); a data symbol named `package` is written qualified there (`Icon.package`).
+- After `expect`, `package` always starts a package subject (EVALUATION.md §10.5): its `{` is on that line and it needs an outcome (`E1116`); `package {}` is `E1116`, and a subject with no substitution omits the braces (`expect package passes`); a data symbol named `package` is written qualified there (`Icon.package`).
 - A call to the builtin `fail` or `warn` that is not lexically inside a `check { }` block is
   `E1105` (CHK-04). Inside one, `warn(at, "message")` is an ordinary call statement.
 - The left side of an assignment is parsed as an expression; TYPES.md accepts only
@@ -1330,8 +1330,8 @@ Example: `const version = 7` is `W1003`; write `const VERSION = 7`, as taxonomy.
 - **Error recovery.** A syntax error never stops parsing of the file. After an error the parser
   skips to the next separator run of the innermost enclosing `{ }` list (or the next top-level
   declaration keyword at the start of a line) and resumes. At most one `E1116` is reported per
-  item. The rest of the build continues with the items that parsed (SPEC §10.3: every error is
-  reported).
+  item, the innermost item of nested lists that holds the error. The rest of the build continues
+  with the items that parsed (SPEC §10.3: every error is reported).
 
 ---
 

@@ -380,6 +380,8 @@ The layout is exact (the second failure is `pipeline`'s test with `healFor` brok
 - A hard error outside an `expect` subject, which stops the test (EVALUATION.md §10.4), is one
   more line after the failures: two spaces, `<file>:<line>` of the error, two spaces,
   `<severity>[<CODE>]  <message>`.
+- A test that does not run because its package's budget is spent (EVALUATION.md §10.4) is a
+  failing test whose block is its `FAIL` line alone.
 - A blank line after each block, then the summary `<p> passed, <f> failed (<duration>)`, with the
   duration as in API.md F15 (goldens write `(…)`).
 

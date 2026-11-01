@@ -343,7 +343,7 @@ normative: a golden that holds other prose is wrong.
 | T16 | Go | id `Position` | `// Position is the entry's place in <value> in this build, for array indexes in memory.` / `// It is not an id: it changes when entry files move.` |
 | T17 | C++ | deleted `to_json`/`from_json` | `/// nlohmann/json would write the position: write ToWire(id), read <Id>FromWire(s).` |
 | T18 | Go | `MarshalText`, `UnmarshalText` (ids; enums without `@codes`, kind and branch enums) | on an id, `// MarshalText writes the key, never the position.` and `// UnmarshalText reads a key; an unknown one is an error.`; on an enum, `// MarshalText writes the wire value, never the position.` and `// UnmarshalText reads a wire value; an unknown one is an error.`; on a branch enum, `// MarshalText writes the branch name, never the position.` and `// UnmarshalText reads a branch name; an unknown one is an error.` |
-| T19 | C++, Go, TS | bound constant (§5.15) | C++ `/// <Side> of <subject>, from its refinement <R>.`; Go `// <Name> is the <side> of <subject>, from its refinement <R>.`; TS `/** The <side> of <subject>, from its refinement <R>. */` — `<Side>`/`<side>` `Lower bound`, `Upper bound`, `Exclusive upper bound`; `<subject>` the field's Canon name, `each element of `/`each key of `/`each value of ` per step, prefixed `the byte length of ` or `the element count of ` for a length |
+| T19 | C++, Go, TS | bound constant (§5.15) | C++ `/// <Side> of <subject>, from its refinement <R>.`; Go `// <Name> is the <side> of <subject>, from its refinement <R>.`; TS `/** The <side> of <subject>, from its refinement <R>. */` — `<Side>`/`<side>` `Lower bound`, `Upper bound`, `Exclusive upper bound`; `<subject>` the field's Canon name, `each element of `/`each key of `/`each value of ` per step, the deepest step first (`each key of each element of f`), prefixed `the byte length of ` or `the element count of ` for a length; `<R>` the refinement's Canon text (§5.15), the sentence's `.` following an open end too (`from its refinement 1...`) |
 | T20 | Go | `Position` of an enum, kind or branch enum | `// Position is the member's place in declaration order, for array indexes in memory;` / `// an ordered enum's members compare by it. It is not an id: it changes when members move.` |
 | T21 | C++ | deleted `to_json`/`from_json` of an enum, kind or branch enum | `/// nlohmann/json would write the position: write ToWire(v), read <E>FromWire(s).`; on a branch enum `/// nlohmann/json would write the position: store the discriminant.` |
 
@@ -730,7 +730,7 @@ export fn, `P` = UpperCamel(last segment of the package) in each target's casing
 | internal access struct | — | `detail::PAccess` | — |
 | make-hook struct | — | `detail::PMake` | — |
 | import of another package | its Go package name; `<gopkg>rt` for its `rt` (§2.8) | — (qualified `::ns::` names) | namespace alias: package path segments joined by `_` (`sovcommon_roles`), escaped (§3.4) |
-| bound constant of a field (§5.15) | `T_` + UpperCamel(f) + suffix | `k` + UpperCamel(f) + suffix, static member of `T` | `T_` + UpperCamel(f) + suffix |
+| bound constant of a field (§5.15) | `T_` + the field getter's name, override included + suffix | `k` + the field getter's name after `Get`, override included + suffix, static member of `T` | `T_` + UpperCamel(property), override included + suffix |
 
 Parameters and locals keep their Canon names in every target (escaped, [§3.4](#34-escaping)).
 
@@ -1812,6 +1812,44 @@ export function decodeEventConfig(json: unknown): EventConfig;
   of the result, `<Fn>` the UpperCamel of the fn's name in the target without a final `File` (TS `items` and `itemsFile` both give `decodeItemsFile`: two such fns in one package are `E8005`, the way out `@go(name:)`, `@cpp(name:)` or `@ts(name:)` on one of them; DECISIONS 340, 363, 407). A decoder's errors name `<Fn>File`. A runtime reads a `@text` file through its result type
   only when
   that is a record or variant. It refuses a value outside its range or length refinement (§5.15) and checks no pattern, `where`, ref, key or check: the file is the one `canon check` validated (WIRE.md §5.13).
+- **Failure texts.** Every decoder §5.15 lists, `types`-mode decoders and `data` loaders alike,
+  writes a failure's text after its path in the same bytes in every target. The label before
+  the path is the decoded type's name (or `<Fn>File`) in a `types`-mode decoder, and in a `data`
+  loader the file's path in Go and C++, `<name>.json` in TS. One exception holds, the width of an
+  integer:
+  Go and C++ write `expected an integer from <lo> to <hi>`, or `expected an integer` where the
+  range is `Int`'s; TypeScript writes `integer out of range`, `expected an integer`, `expected a
+  non-negative integer` or, past a JavaScript number's exact range, `integer outside the
+  TypeScript safe range`. The shared texts include:
+  - `missing`: a key that must be present (a required field, a case tag, a `$<fn>` result, a
+    lookup cell, a `@json(path:)` member, a data file's `rows` and a row's `$id`) is absent, at
+    its path (`$.shape.kind: missing`);
+  - `null`: a `null` where `none` is not accepted (WIRE.md §5.4, `E3315`): a field that is not
+    optional, defaulted or not, a list element, a map value, a lookup cell, a `@json(path:)`
+    intermediate, the top level (`$.tags[1]: null`);
+  - `unknown value <wire>`: an enum string or a `@json(codes)` integer that no member has
+    (`$.byRank.3: unknown value 3`); `unknown case <tag>`: a case tag that no case has
+    (`$.shape.kind: unknown case square`);
+  - `unknown bits 0x<hex>`: the bits of a `@json(bits)` integer that no member's code holds, in
+    lowercase hex (`unknown bits 0x8`); an integer past 2^63 − 1 fails at its width (WIRE.md
+    §5.3);
+  - `expected a number that fits Float32`: a number past `Float32`'s range;
+  - `expected a canonical decimal integer key`: an integer or `@json(codes)` map key not in
+    WIRE.md §5.8's form (`01`, `-0`, `gold`, the empty key);
+  - `expected true`: a `$retired` that is not `true` (WIRE.md §5.7);
+  - `incomplete pairs slot`, `null in a pairs slot`, `pairs slot after an empty one`: at the
+    slot's first key present (WIRE.md §5.14).
+
+  A `@json(codes)` value reads its integer first: a non-integer, or one outside the code type's
+  width, fails at the width before any code is looked up. A `@json(codes)` map key is first held
+  to WIRE.md §5.8's canonical form (`$.byRank.gold: expected a canonical decimal integer key`, the
+  empty key too), then to the width, then looked up.
+- **Paths and order.** A member under key `k` is `<parent>.<k>`, the key written as is, the empty
+  key included: `$.m.` for the key or a scalar value, `$.m..v` for a field of a record value,
+  `$.m.[0]` for an element of a list value; `$.m` is the map itself. A map is decoded entry by
+  entry, each key then its value (WIRE.md §5.8). For C++ `Decode` and TS `decode<T>`, handed a
+  parsed value, "the first failure in document order" is the first in the order that value holds:
+  key byte order in C++, JavaScript's own order in TS (integer-like keys first, [§8.1](#81-file)).
 - Defaults must be constant; a computed default (one that reads other fields, or the instance through
   its type's arguments, DECISIONS 282) in a type emitted in `types` mode is `E8014`, as
   are precomputed export fns and finite-parameter methods (there is no precomputed data to read).
@@ -1907,18 +1945,18 @@ generated code, not public API ([§1.3](#13-stability)), like a default-construc
   flag with `MakeEntry_<T>` (C++ `Entry_<T>`), so no entry keeps a zero id.
 
 ### 5.15 Refinements at run time (DECISIONS 399, 400)
-**Checks.** Every decoder this document defines (`data` loaders and snapshots, §5.9, §5.11; `types`-mode decoders, `Parse`, `parse<T>`, `Decode<Fn>File`, §5.13; TypeScript `decode<V>`/`parse<V>`, §8.1; readers of other packages' classes, §2.8) refuses a value outside the range or length refinement of its type at its position (TYPES.md §7.4, an alias chain's ranges intersected): a record or case field, a list or keyed-list element, a map key or value, a dependent branch, a literal union's base (its literals pass), a stored `$` result or lookup cell, a `@json(pairs:)` or `@json(bits)` list, the rows of a data file's top-level list or keyed list, a `@text` result. It measures an integer of any width; a `Float`; a `Float32` as the binary32 value stored, compared in binary64 with the binary64 bound (TYPES.md §7.3); a `Duration` in milliseconds after its unit; a `String` in UTF-8 bytes; a list, keyed list or map by element count. `none` and a default taken for an absent key are not checked; patterns, `where`, assets, refs and checks never run here. A refinement is judged after the value's own type rules (a width included) and, for a collection, after its elements, keys and duplicates; the first failure in decode order is reported (§5.13): `expected a value in <R>`, `expected a byte length in <R>` or `expected an element count in <R>`, `<R>` the refinement in Canon's text (`1..=120`, `0..1`, `..=8`, `1s..=1h`), the same bytes in every target (`Probe: $.tags[2]: expected a value in 0..=5`; `items.json: rows: expected an element count in ..=500`). An integer, `Duration` or length side the stored type already guarantees writes no comparison. Make hooks check nothing; `LoadInputs` keeps §5.12's checks.
+**Checks.** Every decoder this document defines (`data` loaders and snapshots, §5.9, §5.11; `types`-mode decoders, `Parse`, `parse<T>`, `Decode<Fn>File`, §5.13; TypeScript `decode<V>`/`parse<V>`, §8.1; readers of other packages' classes, §2.8) refuses a value outside the range or length refinement of its type at its position (TYPES.md §7.4, an alias chain's ranges intersected): a record or case field, a list or keyed-list element, a map key or value, a dependent branch, a literal union's base (its literals pass), a stored `$` result or lookup cell, a `@json(pairs:)` or `@json(bits)` list, the rows of a data file's top-level list or keyed list, a `@text` result. It measures an integer of any width; a `Float`; a `Float32` as the binary32 value stored, compared in binary64 with the binary64 bound (TYPES.md §7.3); a `Duration` in milliseconds after its unit; a `String` in UTF-8 bytes; a list, keyed list or map by element count. `none` and a default taken for an absent key are not checked; patterns, `where`, assets, refs and checks never run here. A refinement is judged after the value's own type rules (a width included) and, for a collection, after its elements, keys and duplicates; the first failure in decode order is reported (§5.13): `expected a value in <R>`, `expected a byte length in <R>` or `expected an element count in <R>`, `<R>` the refinement in Canon's text (`1..=120`, `0..1`, `..=8`, `1s..=1h`), the same bytes in every target (`Probe: $.tags[2]: expected a value in 0..=5`; `items.json: rows: expected an element count in ..=500`); a `@json(pairs:)` list, which has no key of its own, is named by its Canon field name (`Probe: $.slots: expected an element count in 1..=2`). An integer, `Duration` or length side the stored type already guarantees writes no comparison. Make hooks check nothing; `LoadInputs` keeps §5.12's checks.
 
-**Bound constants.** For every field of a record or variant case an emit writes, and every level of the field's type reached through list and keyed-list elements, map keys and map values (an optional and a literal union's base add no level; a named or dependent type ends the walk), each finite side of the level's refinement is a constant: `Min` (lower bound), `Max` (upper, `..=`), `End` (upper, `..`); a length's are `LenMin`, `LenMax`, `LenEnd`; a level below the field prefixes `Elem`, `Key` or `Value` per step, outermost first. The value is the folded bound, never shifted or clamped.
+**Bound constants.** For every field of a record or variant case an emit writes, and every level of the field's type reached through list and keyed-list elements, map keys and map values (an optional and a literal union's base add no level; a named type or a dependent type's application, `HourlyTarget(e)`, ends the walk, while a dependent map is a map: it has its own count bounds and its value is walked), each finite side of the level's refinement is a constant: `Min` (lower bound), `Max` (upper, `..=`), `End` (upper, `..`); a length's are `LenMin`, `LenMax`, `LenEnd`; a level below the field prefixes `Elem`, `Key` or `Value` per step, outermost first. The value is the folded bound, never shifted or clamped.
 
 | | Go | C++ | TS |
 |---|---|---|---|
 | name | `T_` + `<F>` + suffix (`Probe_LevelMin`) | `static constexpr` member `k` + `<F>` + suffix of class `T` (`Probe::kTagsLenMax`) | `export const T_` + `<F>` + suffix |
 | Int bound, length | untyped constant | `int64_t` | `number`; at a `@ts(bigint)` position a `bigint`; an Int bound of a `number` position outside ±(2^53 − 1) is not written |
-| Float bound (also of `Float32`) | `float64` | `double` | `number` |
+| Float bound (also of `Float32`) | `float64`; a `-0` bound is written `0` (a Go constant has no negative zero; `>=` and `<` agree under IEEE) | `double` | `number` |
 | Duration bound | `N * time.Millisecond` | `std::chrono::milliseconds{N}` | `number` (ms) |
 
-`T` is the record's or case type's name, `<F>` the field's getter name (C++: after `Get`; TS: UpperCamel of the property), overrides included. Go writes them in one `const ( … )` block after the type's declaration, C++ at the start of the public members after `Decode`/`Parse`, TS after the interface; in field order, then level order, `Min` first; each with T19. Compare a `Float32` value with its bounds in binary64. The name plan reserves every name, written or not (`E8005`). Aliases (§4.4), values, constants, functions and dependent branches have none.
+`T` is the record's or case type's name, `<F>` the field's getter name (C++: after `Get`; TS: UpperCamel of the property), overrides included: a C++ override that starts with `Get` loses it (`@cpp(name: "Getaway")` gives `kawayMin`), and a C++ ref field's is its resolved getter's (a field `items: [ref items](..=3)` gives `kItemsLenMax`, not `kItemsKeysLenMax`). Go writes them in one `const ( … )` block after the type's declaration, C++ at the start of the public members after `Decode`/`Parse`, TS after the interface; in field order, then level order, `Min` first; each with T19. Compare a `Float32` value with its bounds in binary64. The name plan reserves every name, written or not (`E8005`). Aliases (§4.4), values, constants, functions and dependent branches have none.
 
 ---
 
@@ -2826,8 +2864,8 @@ applies).
   `#pragma push_macro("N")` / `#undef N` … `#pragma pop_macro("N")` (names in sorted order),
   over every region naming one, so a defines header or a legacy header with the same macros
   included earlier cannot break generated code.
-- The wrap covers the defines of the package and of the packages it reads, so that a package's output is a function of what it reads. A name that a package's generated C++ declares (any name of §3.5's plan: enumerators, kind and branch enum members, constants, table ids, members, types, namespace segments) and that a package it does not read writes as a `#define` is `E8005` `foreignDefine`: a translation unit that includes that defines header first could not compile it. The way out is `@cpp(name:)` on the declaration, or a use of a type of the defining package, which makes this one read it. A package writes defines when its first `emit cpp` is `baked`, `data` or `types`. A local or a parameter of a translated fn is no plan name: the C++ compiler reports a clash there.
-- A name met only in a comment, a string literal or a character literal is not wrapped: a macro is never expanded there.
+- The wrap covers the defines of the package and of the packages it reads, so that a package's output is a function of what it reads. A name that a package's generated C++ declares (any name of §3.5's plan: enumerators, kind and branch enum members, constants, table ids, members, types, namespace segments) and that a package it does not read writes as a `#define` is `E8005` `foreignDefine`: a translation unit that includes that defines header first could not compile it. The way out is `@cpp(name:)` on the declaration, or a use of a type of the defining package, which makes this one read it. It is judged from the project's declarations whatever the selection (DECISIONS 403), except that a broken declaration (TYPES.md §1) of a package the run type-checked never counts, a finding on it being a cascade (DECISIONS 213); a package the run did not load counts as written. A package writes defines when its first `emit cpp` is `baked`, `data` or `types`. A local or a parameter of a translated fn is no plan name: the C++ compiler reports a clash there.
+- A name met only in a comment, a string literal or a character literal is not wrapped: a macro is never expanded there. The guard's scan ends a `//` comment at its first newline, a `\` before it included: C++ reads the line a trailing `\` splices into the comment as comment, while the scan reads it as code, so a name on it is still wrapped (an over-wrap, which is safe; DECISIONS 404).
 - A header that `emit text` renders is plain text to Canon. A project that includes one beside generated code puts `@cpp(defines: "P")` on the enums or constants whose names it defines: the wrap is by name, so it guards that header's macros as well as the defines header's.
 
 ---
@@ -2858,10 +2896,12 @@ applies).
 - `data` mode exports, per value, `parse<V>(text: string)` and `decode<V>(json: unknown)`, and
   performs no I/O (TS-01); both throw on a `$schema` mismatch. `parse` reads the JSON text with the
   file's own tokenizer, so it reads exactly what WIRE.md writes: integers past 2^53 into
-  `@ts(bigint)` fields, map members in file order, `2.0` or `1e3` for an `Int` refused (`E7103`),
-  durations by their exact decimal. `decode` takes an already parsed value and cannot see those:
-  a `@ts(bigint)` integer past 2^53 is refused, integer-like map keys come in JavaScript's order,
-  and number tokens are judged by value (DECISIONS 278).
+  `@ts(bigint)` fields, map members in file order, `2.0` or `1e3` for an `Int` refused (`E7103`).
+  `decode` takes an already parsed value and cannot see those: a `@ts(bigint)` integer and a
+  `@json(bits)` integer past 2^53 are refused at the width of an integer, integer-like map keys
+  come in JavaScript's order, and number tokens are judged by value (DECISIONS 278). Both read a
+  `Duration` as the data wire writes it, an integer count of its unit (WIRE.md §5.1): `1.5` under
+  `unit: s` is refused at the width of an integer (§5.13).
 - `types` mode exports `parse<T>(text)` beside `decode<T>(json)` for every type it decodes, with
   the same exactness (DECISIONS 278), and `parse<Fn>File`/`decode<Fn>File` per decoded `@text`
   fn (§5.13, DECISIONS 363).

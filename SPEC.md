@@ -2444,10 +2444,11 @@ test "overlapping windows are refused" {
 | `expect v passes` | building `v` gives no error |
 | `expect v fails "text"` / `fails name` / `fails E3204` | building `v` gives an error whose message contains `text`, whose `check` field is `name`, or whose code is `E3204` |
 | `expect v warns "text"` / `warns name` / `warns W5001` | same, for a warning |
-| `expect package passes` / `expect package { v: e, … } fails …` | building the package as canon check does, each let v holding e, gives no error / such an error / such a warning |
+| `expect package passes` / `expect package { v: e, … } fails …` | building the package as canon check does, each let v holding e, captures no error / such an error / such a warning; a declaration's finding, `E6004` and `W7101` are the run's, never captured |
 
-- `fails` and `warns` match the **evaluation** findings (dynamic `E3xxx`, `E4xxx`, `E5xxx` and
-  `W5xxx`) of building `v` and the values reachable from it; record checks run on them (§10.1). A
+- `fails` and `warns` match any captured code: the **evaluation** findings (dynamic `E3xxx`,
+  `E4xxx`, `E5xxx` and `W5xxx`) of building `v` and the values reachable from it, and, for a
+  package subject, a world load's `E7110`; record checks run on them (§10.1). A
   static type error in a test is a compile error, never an expected failure.
 - `expect package { v: e, … }` runs the package's checks, package checks included, over substituted values: each `e` is computed in the test, then the package is evaluated afresh with `v = e`, so values derived from `v` follow. EVALUATION.md §10.5.
 - After `fails` or `warns`, an identifier of the form `E1234` or `W1234` is a code; any other
