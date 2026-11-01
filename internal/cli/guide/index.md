@@ -3,7 +3,8 @@
 Canon is a typed configuration language. `canon` reads `.canon` sources (and JSON, CSV, C
 headers and text through `load`), checks every value once at build time, then writes typed Go
 and C++ code, JSON data files and a studio view model. Runtimes never run Canon: they read
-values that are already valid. A project is the directory holding `project.canon`.
+values that are already valid, and generated decoders still refuse a value outside its range or
+length. A project is the directory holding `project.canon`.
 
 ## The three laws
 
@@ -24,8 +25,8 @@ values that are already valid. A project is the directory holding `project.canon
 | `port` | porting a legacy file: clean names in Canon, legacy names on the wire, a whole worked project |
 | `stable` | stable tables and `@stable` fields: what, when, the lock, generated ids and lookups, mistakes |
 | `assets` | asset types: files that must exist, exact letter case, roots, the studio's picker |
-| `logic` | functions, methods, expressions, `match`, standard library, checks, tests |
-| `emit` | `emit` targets and modes, what is generated, `export fn`, text files (`emit text`, `@text`) |
+| `logic` | functions, methods, expressions, `match`, standard library, checks, tests, `expect package` for package checks |
+| `emit` | `emit` targets and modes, what is generated, checked decoders and bound constants, opaque enums, C++ `#define`s, `export fn`, text files (`emit text`, `@text`) |
 | `views-i18n` | views, the studio package, the JSON of the `tags` `positional` `enumRow` `cards` controls, translation files |
 | `layers` | `amend`, layer files, `--layer`, runtime `input` fields |
 | `cli` | commands, value paths, the JSON of `check`, `explain`, `refs`, `graph`, `edit`, `rename` |

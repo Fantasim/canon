@@ -125,7 +125,7 @@ enum, a variant, a `Bool`, or an optional of one (`none` pattern). No literal pa
 | strings | `len()` (bytes) `isEmpty()` `contains` `startsWith` `endsWith` `split(sep)` `trim()` `lower()` `upper()` `replace(a, b)` `matches(/re/)` `find(s)` `s[a..b]` |
 | lists, tables, keyed lists | `len` `isEmpty` `first()` `last()` `first(pred)` `get` `contains` `indexOf` `map` `filter` `flatMap` `flatten` `any` `all` `count` `sum` `min` `max` `minBy` `maxBy` `sortBy` `reverse` `groupBy` `unique` `duplicates` (each repeated element once, first-seen order) `isUnique` `enumerate` `pairs` `zip` `join(sep)` `intersect` `union` `diff` `toMap(kf, vf)` |
 | tables, keyed lists | `t[k]` `t.k` `get(k)` `hasKey(k)` `find(k)` `at(i)` `keys()` `values()`; tables: `active()` (not retired) |
-| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `contains(k)` (a key, same as `k in m`) `map` `filter` `all` `any` `count` (predicates take `(k, v)`) `union(b)` (`a`'s entries, then `b`'s new keys: first wins; `b.union(a)` is last-wins; not on a dependent map: E3804) |
+| maps | `m[k]` `len` `isEmpty` `keys()` `values()` `get(k)` `contains(k)` (a key, same as `k in m`) `map` `filter` `all` `any` `count` (predicates take `(k, v)`) `union(b)` (`a`'s entries, then `b`'s new keys: first wins; `b.union(a)` is last-wins; on a kept dependent map `b` and the result have the receiver's type, on another map whose type reads a key binder it is `E3804`; `canon guide types`) |
 | ranges | `r.start` `r.end` `r.len()` `r.isEmpty()` `r.contains(x)` |
 | graphs | `reachable(from: x, next: f)` `cycles(xs, next: f)` `topoSort(xs, next: f)` |
 | optional results | `first` `last` `get` `find` `min` `max` `minBy` `maxBy` return `T?` |
@@ -164,5 +164,102 @@ charged to the package that declares the value, check or function evaluated, who
 the text, from that check, or with that code); `warns` likewise for warnings. `canon test
 [packages] [--run regex]` runs them; a failing `expect` does not stop its test. `fails` sees
 evaluation findings of `v` and its record checks, never static ones (a literal out of range is
-a compile error) nor package-level checks. A translated `export fn` method must be called by a
-test of its package (`E9008`).
+a compile error) nor package-level checks: `expect package` runs those (below). A translated
+`export fn` method must be called by a test of its package (`E9008`).
+
+## Testing package checks: `expect package`
+
+A package-level check reads top-level values, which a test cannot change, and `fails checkName`
+cannot name it for a value. `expect package` builds the test's own package as `canon check` does,
+so its checks run; `{ name: value, … }` makes each named top-level `let` hold `value` while it is
+built.
+
+```canon crafting/crafting.canon
+/// Crafting levels. `expect package` (EVALUATION.md §10.5) builds this package over values a test
+/// substitutes, so its package checks have tests.
+package crafting
+
+/// One crafting level.
+record Level {
+  /// Level index.
+  index: Int(0..=24)
+  /// Experience needed to reach it.
+  exp: Int(0..)
+}
+
+/// The shipped levels.
+let levels: [Level] = [{ index: 0, exp: 0 }, { index: 1, exp: 100 }, { index: 2, exp: 250 }]
+
+/// The highest level a player can reach.
+let maxLevel: Int(0..=24) = 2
+
+/// How many levels ship; follows levels.
+let levelCount: Int = levels.len()
+
+check enough: levelCount >= 2 else "at least two levels ship"
+
+check uniqueIndex: [l.index for l in levels].isUnique() else "a level index is listed twice"
+
+check {
+  for l in levels {
+    if l.index > maxLevel {
+      fail(l, "level {l.index} is above maxLevel {maxLevel}")
+    }
+  }
+}
+
+test "the shipped levels pass, and still pass without the last one" {
+  expect package passes
+  expect package { levels: levels[0..2] } passes
+}
+
+test "a level listed twice, or above the cap, is refused" {
+  expect package { levels: levels + [levels[1]] } fails uniqueIndex
+  expect package { maxLevel: 1 } fails "level 2 is above maxLevel 1"
+  expect package { levels: levels[0..1] } fails enough
+}
+```
+
+- The outcomes are those of a value subject: `passes`, `fails`/`warns` with a text, a check name or
+  a code. `{` is on the `package` line and an outcome is required; `package {}` is `E1116` (omit
+  the braces). After `expect`, `package` is reserved: write a data symbol of that name qualified
+  (`Icon.package`).
+- A name is a top-level `let` of the test's own package, public or `local`. A `const`, a fn, a type,
+  a built-in, a test local, a let of another package or a let given twice is `E5006`:
+  `<name> is not a let: expect package substitutes top-level lets of its own package`,
+  `<name> is a let of another package: substitute it in a test of that package`,
+  `<name> is substituted twice (first at <loc>)`. An unknown name is `E2102`.
+- Each value is checked against the let's type: a literal outside a refinement or of the wrong type
+  (`E3002`, `E3204`) is a compile error, printed first, and the test fails without running. A
+  value computed out of its range (`zero() - 1`) is not static: the `expect` captures the finding.
+  The values are computed in the test, left to right, before anything is built, from the test's
+  values (with the active layers, the substituted lets included) and its locals.
+- The world: every top-level `const` and `let` of the package is evaluated afresh. A substituted
+  let takes its value, with no initializer, `entry` declaration or layer, so values derived from
+  it follow (`levelCount` follows `levels`). Values of other packages are the test's. Values are
+  verified, instance checks and then package checks run; every finding is captured. Not run:
+  emits, conformance vectors, the lock comparison, view checks. The world is discarded after its
+  `expect`; the test's values do not change.
+- `fails name` takes a package check of this package, or a check reachable from the static type of
+  a top-level value. Otherwise `E5004`: `no check named <name> runs for package <pkg>`. For a
+  value subject, naming a package check says `… is a package check, which only expect package
+  runs`.
+- A `table` let takes table values only: `{ gem { price: 500 } }`. A typed list value is `E3002`
+  (`expected table shop.Item, found [shop.Item]`); an untyped list literal such as
+  `{ items: [{ price: 1 }] }` is `E3305` (`cannot tell what this { … } is; give it a type`); a
+  spread is `E3320` in a table literal (`spread items are not allowed in table literals`). To add
+  to a table, write all its entries.
+- An entry of a record field's collection (a `table` or keyed list inside a record) that a value
+  takes from the test keeps the test's instance as its owner, so a `ref` made from it in the world
+  can be `E3503`. Substitute the record that owns the collection, whole, instead of one entry.
+- Cost: each `expect package` costs what stages A to D of the package cost, on the package's
+  budget, and nothing is shared or cached between worlds. A loop of them multiplies it: a package
+  whose build takes tens of millions of steps allows a few worlds. The way out of `E4401` is
+  `project.budget`; `E4401` in a world stops the test and is never captured.
+- `--layer` applies in the test and in every world; a substituted value gets no layer.
+- `canon test` reports, besides its own results, the run-level findings no substitution can change:
+  `E3102` (a repeated `@codes` code) and `E6004` (a layer on a stable table, reported when a test
+  forces the amended table), and exits 1 as `canon check` does. `W7101` is not reported by
+  `canon test`. A world that reads a table poisoned by a refused stable amendment aborts silently
+  and captures nothing: `E6004` is the run's, so `expect package passes` can pass under that layer
+  and the run still fails.

@@ -64,7 +64,12 @@ emit json { out: "@gen/data/" }
 | `text` | a directory | none (`## Text files`) |
 
 - One emit per target per package (`E8002`); unknown option `E8003`; bad value `E8009`.
-- `out` is `@root/...` or relative to the file; a list of paths writes one copy per entry.
+- `out` is `@root/...` or relative to the file; a list of paths writes one copy per entry. Every
+  segment of the project-relative path an `out` resolves to uses only `A-Z a-z 0-9 . _ -`, else
+  `E8009` `outChars`. That path includes the root's own path and, for an `out` with no root, the
+  directory of the file holding the emit. An `out` that does not resolve is `E7001` alone. The
+  path is written into `#include`s, Go imports and TypeScript import specifiers, which take no
+  escapes.
 - A code target always emits every public type, enum, constant and `export fn`; `values`
   (default: every public `let`) selects values.
 - A package whose types another package's output uses must emit the same target (`E8004`).
@@ -113,8 +118,8 @@ A translated body uses only `let`, `if`/`else`, `return`, arithmetic and compari
 `Int(f)`, `min`, `max`, `abs`, `floor`, `ceil`, `round`, `clamp`, string templates over `String`,
 `Int` and enums, `and` `or` `not` `??`, fields of `self` and parameters, enum members and
 calls to other `export fn` of the package (`E9001` otherwise). Parameters: `Bool`, integers,
-`Float`, `String`, `Duration`, enums (`E9006`); a translated method must be called by a `test`
-of its package (`E9008`), which supplies the conformance vectors.
+`Float`, `Float32`, `String`, `Duration`, enums (`E9006`); a translated method must be called by a
+`test` of its package (`E9008`), which supplies the conformance vectors.
 
 ## What is written
 
@@ -125,6 +130,201 @@ of its package (`E9008`), which supplies the conformance vectors.
 - JSON data: `{"$schema", "rows": [...]}` for a list, table or keyed list (table rows start
   with `"$id"`, then `"$retired": true`), `"value"` otherwise; every field written, wire names
   applied, precomputed `export fn` results as `"$<name>"` keys, package-level ones in `"$fns"`.
+
+- Generated C++ never lets source text change how C++ reads it: a doc line ending in `\` is
+  written as a `/** */` block; in docs `??/` is written `?\?/`, and in string and character
+  literals every `?` that follows a `?` is written `\?` (DECISIONS 423).
+
+## Decoders check refinements, and bounds are constants
+
+Every decoder the generators write refuses a value outside the range or length refinement of its
+type at its position, in Go, C++ and TypeScript: `data` loaders and snapshots, `types`-mode
+decoders (`Decode`, `Parse`, `parse`, `Decode<Fn>File`), TypeScript `decode<V>` and `parse<V>`, and
+the readers of other packages' classes. Baked data has no decoder, so nothing to check.
+
+```canon limits/limits.canon
+/// Limits of a profile, written as constants in every target.
+package limits
+
+/// How loud a profile is.
+enum Tone {
+  /// Quiet.
+  warning
+  /// Normal.
+  info
+  /// Loud.
+  series_1
+}
+
+/// A profile.
+record Profile {
+  /// Display name, 1 to 24 bytes.
+  name: String(1..=24)
+  /// Tags, at most 8, each 0 to 5.
+  tags: [Int(0..=5)](..=8) = []
+  /// Level; the upper bound is exclusive.
+  level: Int(1..120) = 1
+  /// Time between two uses.
+  cooldown: Duration(1s..=1h) = 1s
+  /// How loud.
+  tone: Tone = info
+}
+
+emit go { out: "@gen/limits/go", package: "limits", mode: types }
+emit cpp { out: "@gen/limits/cpp", namespace: "limits", mode: types }
+emit ts { out: "@gen/limits/limits.ts", mode: types }
+```
+
+- Checked: a record or case field, a list or keyed-list element, a map key and value, a dependent
+  branch, the base of a literal union (its literals pass), a stored `$` result or lookup cell, a
+  `@json(pairs:)` or `@json(bits)` list, the rows of a data file's top-level list or keyed list, a
+  `@text` result. Measured: an integer of any width; a `Float`; a `Float32` as the binary32 value
+  stored, compared as binary64 with the bound; a `Duration` in milliseconds after its unit; a
+  `String` in UTF-8 bytes; a list, keyed list or map by element count.
+- Not checked: `none` and a default taken for an absent key; patterns, `where`, assets, refs and
+  checks, which run only in Canon; make hooks; `LoadInputs` keeps its own checks.
+- The message is one of `expected a value in <R>`, `expected a byte length in <R>`,
+  `expected an element count in <R>`, with `<R>` the refinement in Canon's text (`1..=120`, `0..1`,
+  `..=8`, `1s..=1h`), byte for byte the same in every target and mode:
+  `Profile: $.tags[2]: expected a value in 0..=5`,
+  `items.json: rows: expected an element count in ..=500`.
+  A refinement is judged after the value's own type rules, so `Int8(0..=5)` reading 200 keeps the
+  width message and reading 7 fails the refinement; a collection reports its elements, keys and
+  duplicates before its count (a map is decoded entry by entry, key then value); the first
+  failure in decode order is the one reported.
+- The `$schema` fingerprint does not include refinements. A data file built before a refinement
+  narrowed still loads where its values fit: the loader refuses each value outside the new
+  refinement at its path. Widening a refinement keeps every older file valid.
+- TypeScript decoders also refuse a repeated id of a keyed list or a data table, with the bytes of
+  Go and C++ (`items.json: rows[1].name: duplicate id "a" (first at rows[0])`), and a map key `-0`
+  or any non-canonical integer key (`expected a canonical decimal integer key`). A canonical key
+  outside the JS safe range reads `integer outside the TypeScript safe range` there, TypeScript's
+  documented limit.
+- A failure under an empty map key names the key as `<parent>.` in every target (`$.m.` for the
+  key or a scalar value, `$.m..v` for a field of a record value).
+
+**Bound constants.** Each finite side of a field's refinement is a constant, for every field of a
+public record or variant case an emit writes: `Min`, `Max` (for `..=`), `End` (for `..`), and for a
+length `LenMin`, `LenMax`, `LenEnd`; one level down a list or keyed-list element, a map key or a
+map value, the name gains `Elem`, `Key` or `Value` (`TagsElemMax`). The value is the bound as
+written, never shifted or clamped to the width. For `Profile` above:
+
+| | Go | C++ | TypeScript |
+|---|---|---|---|
+| `name` byte length, at most 24 | `Profile_NameLenMax` | `Profile::kNameLenMax` | `Profile_NameLenMax` |
+| each of `tags`, at most 5 | `Profile_TagsElemMax` | `Profile::kTagsElemMax` | `Profile_TagsElemMax` |
+| `level`, exclusive end | `Profile_LevelEnd` | `Profile::kLevelEnd` | `Profile_LevelEnd` |
+| `cooldown`, at least 1s | `Profile_CooldownMin` (`1000 * time.Millisecond`) | `Profile::kCooldownMin` (`std::chrono::milliseconds`) | `Profile_CooldownMin` (ms) |
+
+Integers and lengths are untyped Go constants, C++ `int64_t` and TypeScript `number` (`bigint` at a
+`@ts(bigint)` position); floats are `float64`, `double` and `number`. Aliases, values, consts, fns
+and dependent branches have none. Tie a hand-sized array to the bound, so a change of the Canon
+refinement breaks the build instead of a buffer:
+
+```c
+std::array<int64_t, limits::Profile::kTagsLenMax> tags;
+static_assert(limits::Profile::kNameLenMax <= 32, "Profile.name no longer fits the wire header");
+```
+
+- Every name is reserved whether or not it is written (`E8005`, `both`, at the field).
+- A refinement never changes the generated type (GEN-02): `Int(1..=100_000)` is `int64`. Declare a
+  width with a sized type: `UInt32(1..=100_000)` is a `uint32` in Go and `uint32_t` in C++.
+
+## Generated enums
+
+An enum without `@codes`, a variant's kind enum and a dependent type's branch enum are opaque
+wherever their values would be declaration positions. A declaration position is not an id: it
+changes when members move.
+
+```text
+// Go
+type Tone struct{ position uint8 }
+var ToneWarning = Tone{0}               // members are vars; the zero value is the first member
+func (self Tone) String() string        // Canon name
+func (self Tone) Wire() string          // wire value
+func (self Tone) Position() int         // declaration position, for array indexes in memory
+func ParseTone(wire string) (Tone, bool)
+func ToneMembers() iter.Seq[Tone]       // declaration order, retired members included
+
+// C++: enum class as before, but nlohmann/json refuses it
+template <typename J> void to_json(J&, Tone) = delete;
+template <typename J> void from_json(const J&, Tone&) = delete;
+
+// TypeScript: no ToneIndex export
+export const ToneMembers: ReadonlyArray<Tone>;
+```
+
+- Go: no integer converts to or from one, and `<`, arithmetic, `const`, `iota` and `%d` no longer
+  mean a position. `==`, `switch` with member cases and map keys work; `encoding/json` writes the
+  wire value (a branch enum writes the branch name); `database/sql` and `gob` refuse the type.
+  A Canon `const` of such a type is a Go `var`. An `ordered` enum's members compare by
+  `Position()`; use it for an array index in memory and never store it.
+- C++: store `ToWire(v)` and read `ToneFromWire(s)`; casts stay legal.
+- TypeScript: no enum exports `<E>Index`. A program that needs the order reads
+  `ToneMembers.indexOf(v)` (`-1` for a value outside the enum).
+- `@codes` enums keep their integer, the declared and locked code, in Go and C++; open enums keep
+  their wire.
+- Go's `exhaustive` linter no longer sees these types: they are not constants. Canon's `match`,
+  C++ `-Wswitch`, TypeScript string-union narrowing and the generated tables stay exhaustive. If
+  a rule says "a new enum value must break the build", give each Go `switch` a `default:` that
+  returns an error, and a test that ranges over `ToneMembers()` through the switch, so a new member
+  fails the test.
+
+## C++ names and `#define`s
+
+`@cpp(defines: "P")` on an enum or a `const` writes `<last>.defines.gen.h` for legacy code:
+`#define APP_MAIN 0`. Generated headers guard the names a package, and the packages it reads,
+define. A generated C++ name that another package, one this package does not read, writes as a
+`#define` cannot be guarded, so it is `E8005` `foreignDefine`, at the declaration, whatever the
+selection: `APP_MAIN is declared for hud.Screen.APP_MAIN and written as a #define for
+windows.Window.MAIN, in a package this one does not read, so its headers cannot guard it; rename
+hud.Screen.APP_MAIN with @cpp(name:), or use a type of that package here`.
+
+```canon windows/windows.canon
+/// Window ids shared with legacy C++ code.
+package windows
+
+/// The windows. `@cpp(defines:)` writes `APP_MAIN 0` and `APP_OPTIONS 1` into a defines header
+/// and guards every generated header against those macros.
+enum Window @cpp(defines: "APP_") {
+  /// The main window.
+  MAIN
+  /// The options window.
+  OPTIONS
+}
+
+emit cpp { out: "@gen/windows", namespace: "windows", mode: types }
+```
+
+```text out/gen/windows/windows.defines.gen.h
+// GENERATED by canon from windows/. DO NOT EDIT.
+#pragma once
+#define APP_MAIN 0
+#define APP_OPTIONS 1
+```
+
+```canon hud/hud.canon
+/// A package that does not read `windows`.
+package hud
+
+/// Screens.
+enum Screen {
+  /// Spelled like a define of `windows`; renamed in C++.
+  APP_MAIN @cpp(name: "AppMain")
+  /// Another.
+  CREDITS
+}
+
+emit cpp { out: "@gen/hud", namespace: "hud", mode: types }
+```
+
+- Ways out: `@cpp(name:)` on the declaration, as `hud` does, or use a type of the defining package
+  in this one, which makes this package read it (and so guard its defines).
+- A package writes defines when its first `emit cpp` is `baked`, `data` or `types`. A local or a
+  parameter of a translated fn is no generated name: the C++ compiler reports a clash there.
+- A name met only in a comment, a string literal or a character literal is not wrapped.
+- A header that `emit text` renders is plain text to Canon: it cannot be guarded. When it defines
+  the names of enum members, use `@cpp(defines:)` on the enum instead (`canon guide recipes`).
 
 ## Text files: `emit text` and `@text`
 
@@ -181,8 +381,10 @@ d3667e8ea17079fba34688b9c6d7f6f4261a4dd41896eebe8d5afdeea8f0cea1  @gen/text/_ver
 - `@text("<file>")` goes on a public package-level `export fn` with no parameter and a result
   that is a `String` or has a wire form (`E8021` otherwise; `E8151`, `E8102` for a part with no
   wire form). The file name has no `/` or `\` and is not `.` or `..`; two names of one package
-  equal ignoring case are `E8021`. `emit text` takes only `out` (a directory, or a list of
-  copies); with no `@text` fn in the package it is `E8009`.
+  equal ignoring case are `E8021`; so is a name ending in `.canon`, which the next run would read
+  as a source of the project: `invalid @text file name "gen.canon": a .canon file is read as a
+  source of the project; give it another extension`. `emit text` takes only `out` (a directory,
+  or a list of copies); with no `@text` fn in the package it is `E8009`.
 - A `String` result is written verbatim (UTF-8). Any other result is written as plain JSON
   (`canon guide data`, wire names): no envelope, no `$schema`; fields in declaration order under
   their wire names, a table as an object keyed by entry id, then one `\n`. A field that is
@@ -194,6 +396,12 @@ d3667e8ea17079fba34688b9c6d7f6f4261a4dd41896eebe8d5afdeea8f0cea1  @gen/text/_ver
   in `canon.outputs`: gate a file by a flag that way. The file an earlier build wrote is removed.
 - A `@text` fn is a leaf: the go, cpp, ts and json emits skip it, and nothing but a `test` may
   call it (`E8021`).
+- In `types` mode, a public `@text` fn whose result is a map, a list or a keyed list also gets a
+  decoder for its file: Go and C++ `Decode<Fn>File`, TypeScript `decode<Fn>File` and
+  `parse<Fn>File`. `<Fn>` is the fn's name in the target without a final `File`: `tipFile` gives
+  `DecodeTipFile`, never `DecodeTipFileFile`, and its errors name `TipFile`. `items` and
+  `itemsFile` in one package reach one name and are `E8005`: put `@go(name:)`, `@cpp(name:)` or
+  `@ts(name:)` on one of them.
 - Prefer a typed result to building a string: the compiler checks the value, writes the names and
   omits absent fields, so no hand-written serializer (quotes, commas, escapes) is needed. A
   `String` result is for formats Canon does not write.

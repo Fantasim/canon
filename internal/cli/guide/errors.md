@@ -55,6 +55,8 @@ error[E3002]  shop/shop.canon:30:17
 | `E3301` | unknown field: remove it, fix the wire name, or `load(..., partial: true)` |
 | `E3302` | missing field: give it, or add a default to the field |
 | `E3101` `E3102` | keys of tables, keyed lists and `@stable` values are unique |
+| `E3316` | an `@json` form on the wrong type or two fields on one wire key; `enumWire`, `caseWire`: two enum members or two cases on one wire, give one another wire (`= "..."`, `@json("...")`); `nul`: a wire name holding U+0000, write another character (`canon guide wire`) |
+| `E3320` | an item not allowed in that literal: a spread in a table literal, so an `expect package` substitution writes every entry |
 | `E3201` | out of a sized integer or `Duration` range |
 | `E3204` `E3205` `E3206` | range or length, regex, `where`: fix the value or the refinement |
 | `E3315` | `null` in a required field: make it `T?`, or fix the data |
@@ -66,8 +68,10 @@ error[E3002]  shop/shop.canon:30:17
 | `W8031` | an entry position, or a number or text made from one, is written to an output: write the entry's key or a `@stable` field, or wrap it in `positional(…)` to write it on purpose |
 | `W1912` | an amend path selects an entry by position (`[#n]`): select it by key |
 | `W3002` | `E.members.first(m => m.name == s)` visits every member: write `E.named(s)` |
+| `E8005` | two generated names collide: put `@go(name:)`, `@cpp(name:)` or `@ts(name:)` on one; `foreignDefine`: a C++ name that a package this one does not read writes as a `#define`: `@cpp(name:)` on the declaration, or use a type of that package (`canon guide emit`) |
+| `E8009` | an invalid emit option; `outChars`: a segment of the project-relative path an `out` resolves to (the root's own path, or the emitting file's directory for an unrooted `out`, included) uses a character outside `A-Z a-z 0-9 . _ -`: rename the directory (an `out` that does not resolve is `E7001` alone) |
 | `E8001` | the build would overwrite a file it does not own: `canon build --adopt <path>` (text files, legacy C++ headers), or move it |
-| `E8021` | a misplaced `@text` or a bad file name (`canon guide emit`) |
+| `E8021` | a misplaced `@text` or a bad file name (`canon guide emit`); `source`: a name ending in `.canon` would be read as a source of the project, give it another extension |
 | `E8019` | the emit asks for what no generator builds: the message names the way out |
 | `E3501` | ref to a missing key: fix the key or add the entry |
 | `E3024` | `past` on a type that is not an enum, a variant or a `ref`: `[past E]`, not `past [E]` |
@@ -76,7 +80,10 @@ error[E3002]  shop/shop.canon:30:17
 | `E4101` `E4102` | overflow, division by zero: guard the operands |
 | `E4401` | budget spent (per package): the heaviest value is named; fix the loop or raise `budget` |
 | `E5001` `E5002` | your check: fix the data, or the check |
+| `E5004` | `expect … fails name` names no check that runs for its subject; a package check is tested with `expect package`, which the message says (`canon guide logic`) |
+| `E5006` | `expect package` substitutes only a top-level `let` of the test's own package, once: a `const`, fn, type, test local or another package's let (`not a let`, `a let of another package`) or a let listed twice (`substituted twice`) is refused; an unknown name is `E2102` |
 | `E6001` `E6002` | a stable id removed or reused: put it back as `retired`, pick a new key |
+| `E6004` | a layer adds an entry to a stable table (`entry`) or changes a stable field (`field`): change the base source. `canon test` reports it when a test forces the amended table, and a repeated `@codes` code (`E3102`) always: a green `expect package passes` does not hide them (`canon guide logic`) |
 | `E7002` | `load` needs an expected type: annotate the `let` |
 | `E7008` | `load` path is not a string literal: one literal `load` per file chosen with `if`/`match`, or `load.dir` |
 | `E7103` `E7110` `E7111` `E7112` | JSON value of the wrong kind, member or case: fix the file or `@json` |

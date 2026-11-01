@@ -107,6 +107,10 @@ let weights: {Element: Int} = { FIRE: 2, WATER: 1 }
   apart). `E.named(s)` is the `E?` whose `.name` is `s` (case-sensitive, retired included, else
   `none`), one step whatever the size: scanning `E.members` by name is `W3002`. `members`,
   `typeName` and `named` are reserved on enums (`E2105`). A retired member stays for `match`; using it is `E3506` outside a `past` slot (see History).
+- Without `@codes`, `.index` is a declaration position, not an id: it changes when members move.
+  Generated code never writes it out: Go hides it behind `Position()`, nlohmann refuses the C++
+  enum, TypeScript exports no `<E>Index` (C++ casts stay legal; `canon guide emit`, Generated
+  enums). Persist `.wire` or a `@codes` code.
 - Variant literal: `gold { amount: 10 }`, `Reward.gold { ... }`; a case whose fields all have
   defaults may be bare (`item` needs `name`: `E3302`). `v.kind` is the case; `v is gold` tests
   it. Case fields are readable only on a narrowed value: `match`, `if v is gold { v.amount }`
@@ -215,3 +219,70 @@ record Objective {
 - `{e in coll: T(e)}` is a map keyed by `ref coll` whose value type depends on the key.
 - A value that does not fit its computed type is `E3802`; a required field computed as `Never`
   is `E3801`. In expressions a dependent value supports `==`, `!= none`, interpolation, `match`.
+
+### Kept dependent maps
+
+A map `{x in coll: T(x)}` is *kept* when `T` reads the key `x` and every type argument in it is `x`
+(or the binder of a dependent map inside it). A kept map has its own type wherever it is read
+(a name, a field, an element, a map value, a call's result), and a literal typed against it binds
+`x` to each of its keys, so `==`, `!=` and `union` check each value against `T` applied to its key.
+
+```canon types/depmap.canon
+package types
+
+/// What a node holds.
+enum NodeKind { num, sub }
+
+/// A node of the graph.
+record Node {
+  /// What it holds.
+  kind: NodeKind
+  /// The limit a sub-node starts with.
+  max: Int = 5
+}
+
+/// The nodes.
+let nodes: table Node = {
+  a { kind: sub }
+  d { kind: sub, max: 7 }
+  n { kind: num }
+}
+
+/// A sub-node's state, started from its node.
+record SubState(e: Node) {
+  /// Current limit.
+  lim: Int = e.max
+}
+
+/// The state of one node: a number, or a sub-state.
+type State(e: Node) = match e.kind {
+  num => Int
+  sub => SubState(e)
+}
+
+/// A snapshot: one state per node.
+record Snapshot {
+  /// State by node.
+  by: {x in nodes: State(x)} = {}
+}
+
+/// A snapshot with a sub-state for `a` and a number for `n`.
+let snaps: [Snapshot] = [{ by: { a: {}, n: 1 } }]
+
+/// `union` keeps the type: `d` is checked against `State(d)`.
+let merged: {x in nodes: State(x)} = snaps[0].by.union({ d: {}, n: 2 })
+
+test "a kept map compares and merges" {
+  expect snaps[0].by == { a: {}, n: 1 }
+  expect snaps[0].by != { a: { lim: 4 }, n: 1 }
+  expect merged.len() == 3
+}
+```
+
+- `union` on a kept map takes and returns its type; a value that does not fit `State(key)` is
+  `E3802`. Other map methods keep their signatures and return no dependent map.
+- A map whose value reads anything else (an earlier field, a parameter) is not kept: it reads as
+  its static view `{ref nodes: …}`, away from its instance its values cannot be judged, and
+  `union` or a literal against it stays `E3804`. The way out is a kept map, or a `var` loop that
+  copies the entries.
+- An amend path enters any dependent map, kept or not (`canon guide layers`).

@@ -62,6 +62,68 @@ amend config {
 - `canon explain config.server.port --layer staging` shows `set by  <file>:<line>  layer
   staging` before the replaced origins.
 
+## Amend paths into a dependent map
+
+`[key]` (and `[#n]`, which warns `W1912`) names an entry of a dependent map `{x in coll: T(x)}`
+(`canon guide types`). The key is typed against `ref coll`, so a bare name is the entry's key; the
+value at the path is that map's value at the key, and the amended literal is checked against
+`T` applied to it (`E3802` when it does not fit). `.key` on a dependent map stays `E1905`.
+
+```canon slots/slots.canon
+/// A dependent map amended by a layer.
+package slots
+
+/// What a node holds.
+enum NodeKind { num, sub }
+
+/// A node of the graph.
+record Node {
+  /// What it holds.
+  kind: NodeKind
+  /// The limit a sub-node starts with.
+  max: Int = 5
+}
+
+/// The nodes.
+let nodes: table Node = {
+  a { kind: sub }
+  n { kind: num }
+}
+
+/// A sub-node's state, started from its node.
+record SubState(e: Node) {
+  /// Current limit.
+  lim: Int = e.max
+}
+
+/// The state of one node: a number, or a sub-state.
+type State(e: Node) = match e.kind {
+  num => Int
+  sub => SubState(e)
+}
+
+/// A board: one state per node.
+record Board {
+  /// State by node.
+  by: {x in nodes: State(x)} = {}
+}
+
+/// The board of the base configuration.
+let board: Board = { by: { a: {}, n: 1 } }
+```
+
+```canon slots/dev.layer.canon
+package slots
+layer dev
+
+amend board {
+  by[a]: { lim: 3 }
+  by[n]: 2
+}
+```
+
+With `dev` active, `board.by[a]` is `SubState { lim: 3 }` and `board.by[n]` is `2`.
+
 ## Editing under layers
 
 Without `--edit-layer`, `canon edit` writes base sources, and a value an active layer sets is
@@ -81,4 +143,5 @@ read-only (`ErrNotEditable`, reason `layered`). With `--edit-layer staging` (or 
   read them (`E3313`); omitted from data files. A TypeScript emit refuses a package with
   inputs (`E8104`).
 - Unset or empty: `none` for `T?`, a load failure naming the variable otherwise. The field's own
-  refinement is the only validation that ever runs at runtime.
+  refinement is checked, patterns included; besides it, only the range and length checks of the
+  generated decoders run at runtime (`canon guide emit`).

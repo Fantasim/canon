@@ -20,7 +20,8 @@ project is in `canon guide port`.
 
 Forms combine in one annotation: `@json("bOnce", int)`, but two of `inline` `int` `bits` `unit:`
 do not. A form at a wrong position is `E1104`; a form on the wrong type is `E3316`, at the
-annotation. Two fields with one wire name are `E3316` too.
+annotation. Two fields with one wire name are `E3316` too, so are two members or two cases on one
+wire (below).
 
 ## Names, numbers and nesting
 
@@ -222,6 +223,25 @@ let marks: [Mark] = load("data/marks.json")
   inline fields.
 - Mistake: one record with every field of every kind, optional. Inline keeps the file flat and
   the model exact: a rectangle cannot carry a radius.
+
+## Unique wire names, and no NUL
+
+Decoding answers the first match, so a wire name that two things share would make the later one
+round-trip as the first. `canon check` refuses it (`E3316`, at the later name):
+
+- the wire values of an enum's members, retired ones included (`= "w"`, `@json("w")` in an enum
+  with `@codes`, else the member's name), are pairwise distinct:
+  `wire "x" of b is also the wire of a; give one of them another wire with = "..." (@json("...")
+  in an enum with @codes)`;
+- the wire names of a variant's cases are pairwise distinct:
+  `wire "x" of case b is also the wire of case a; give one of them another wire with @json("...")`;
+- a wire name written in source holds no U+0000 (a field's `@json("w")`, a `path:` segment, a
+  `pairs:` template, a `tag:`, a case's or a member's wire):
+  `a wire name of <item> holds U+0000 (NUL): generated C++ readers compare names as C strings and
+  would cut it; write another character`. There is no way out to keep it: write another character.
+  Values, map keys and `none:` markers may hold U+0000.
+
+Wires that differ only in letter case, or equal wires in two different enums, are fine.
 
 ## Checking the wire
 
