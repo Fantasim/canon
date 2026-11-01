@@ -60,7 +60,7 @@ func compareCpp(t *testing.T, p *ir.Package, e *ir.Emit, pl *ir.CppNamePlan) {
 			scan.file(string(f.Content))
 		}
 	}
-	want := cppPlanned(p, e, pl)
+	want := cppPlanned(p, pl)
 	for class, names := range cppBoundNames(p, pl) { //canon:unordered each class alone
 		scan.names[class] = withoutNames(scan.names[class], names)
 	}

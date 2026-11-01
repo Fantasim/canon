@@ -14,6 +14,13 @@ func WrittenGuard(h ir.CppHook) error {
 	return g.err
 }
 
+// DocBlockText is the block form of a doc text at depth 0, as gen/cpp writes it.
+func DocBlockText(text string) string {
+	g := &gen{}
+	g.docBlock(0, text)
+	return g.h.String()
+}
+
 // PatternData is re's kPattern table as the numbers gen/cpp writes, for the matcher's differential test.
 func PatternData(re *regexp.Regexp) ([]int, error) {
 	a, err := ir.CompilePattern(re)

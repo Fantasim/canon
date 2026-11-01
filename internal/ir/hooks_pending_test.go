@@ -7,7 +7,7 @@ import (
 )
 
 // goPlanned are the plan's names by scope less the hooks it reserves but gen/go does not write: a data loader resolves one of the class's refs (GoHook.Written, log-2026-10-06 "U1 review" 3); and less the bound constants (CODEGEN.md §5.15).
-func goPlanned(p *ir.Package, _ *ir.Emit, pl *ir.GoNamePlan) map[string]map[string]bool {
+func goPlanned(p *ir.Package, pl *ir.GoNamePlan) map[string]map[string]bool {
 	want := ir.GoScopeNames(pl)
 	pkg := maps.Clone(want["package"])
 	for _, n := range goUnwrittenHooks(p, pl) {
@@ -45,7 +45,7 @@ func goTypeHooks(p *ir.Package, pl *ir.GoNamePlan) []ir.GoHook {
 }
 
 // cppPlanned are the C++ plan's names by scope less the members of detail::<P>Make it reserves but gen/cpp does not write: a data or types-mode loader resolves one of the class's refs (CppHook.Written, log-2026-10-06 "U1 review" 3); less the bound constants (CODEGEN.md §5.15).
-func cppPlanned(p *ir.Package, _ *ir.Emit, pl *ir.CppNamePlan) map[string]map[string]bool {
+func cppPlanned(p *ir.Package, pl *ir.CppNamePlan) map[string]map[string]bool {
 	want := ir.CppScopeNames(pl)
 	hooks := pl.MakeStruct(p.Name)
 	members := maps.Clone(want[hooks])

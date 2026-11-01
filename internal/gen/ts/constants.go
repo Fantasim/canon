@@ -188,14 +188,11 @@ const (
 
 // Refinements at run time and bound constants (CODEGEN.md §2.5 T19, §5.15).
 const (
-	tsInfinity                          = "Infinity"
-	tsNegInfinity                       = "-Infinity"
-	boundDocFormat                      = "/** %s of %s, from its refinement %s. */\n"
-	lowerWord, upperWord, exclusiveWord = "The lower bound", "The upper bound", "The exclusive upper bound"
-	stepElem, stepKey, stepValue        = "each element of", "each key of", "each value of"
-	byteLength, elemCount               = "the byte length of", "the element count of"
-	rowsRawFormat                       = "decGet($doc, \"rows\", %s)"
-	rowKeyFormat                        = "($e) => $e.%s"
+	tsInfinity     = "Infinity"
+	tsNegInfinity  = "-Infinity"
+	boundDocFormat = "/** The %s of %s, from its refinement %s. */\n"
+	rowsRawFormat  = "decGet($doc, \"rows\", %s)"
+	rowKeyFormat   = "($e) => $e.%s"
 )
 
 // Declaration shapes (CODEGEN.md §5, §8.3).

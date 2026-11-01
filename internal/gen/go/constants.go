@@ -490,11 +490,7 @@ const (
 
 // Refinements at run time and bound constants (CODEGEN.md §2.5 T19, §5.15).
 const (
-	boundBlockFormat                    = "const (\n%s)\n\n"
-	boundDocFormat                      = "// %s is the %s of %s, from its refinement %s.\n"
-	boundDeclFormat                     = "%s%s = %s\n"
-	lowerWord, upperWord, exclusiveWord = "lower bound", "upper bound", "exclusive upper bound"
-	eachFormat, lengthFormat            = "each %s of ", "the %s of "
-	stepElem, stepKey, stepValue        = "element", "key", "value"
-	byteLength, elemCount               = "byte length", "element count"
+	boundBlockFormat = "const (\n%s)\n\n"
+	boundDocFormat   = "// %s is the %s of %s, from its refinement %s.\n"
+	boundDeclFormat  = "%s%s = %s\n"
 )

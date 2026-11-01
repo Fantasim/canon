@@ -475,21 +475,16 @@ var escapes = map[byte]string{'"': `\"`, '\\': `\\`, '\n': `\n`, '\t': `\t`}
 
 // Refinements at run time and bound constants (CODEGEN.md §2.5 T19, §5.15).
 const (
-	rangeCheckFormat      = "if (!(%s)) dec.Fail(%s, %s);"
-	rowsValues            = "values"
-	rowsOkLine            = "if (!dec.Ok()) return error = dec.Error(), false;"
-	countFormat           = "%s.count()"
-	valueLenFormat        = "%s.Len()"
-	compareFormat         = "%s %s %s"
-	equalFormat           = "%s == %s"
-	boundDocFormat        = "/// %s of %s, from its refinement %s."
-	boundDeclFormat       = "static constexpr %s %s = %s;"
-	boundMillisFormat     = "std::chrono::milliseconds{%s}"
-	sideLower, sideUp     = "Lower bound", "Upper bound"
-	sideExclusive         = "Exclusive upper bound"
-	eachElem, eachKey     = "each element of ", "each key of "
-	eachValue             = "each value of "
-	byteLengthOf, countOf = "the byte length of ", "the element count of "
+	rangeCheckFormat  = "if (!(%s)) dec.Fail(%s, %s);"
+	rowsValues        = "values"
+	rowsOkLine        = "if (!dec.Ok()) return error = dec.Error(), false;"
+	countFormat       = "%s.count()"
+	valueLenFormat    = "%s.Len()"
+	compareFormat     = "%s %s %s"
+	equalFormat       = "%s == %s"
+	boundDocFormat    = "/// %s of %s, from its refinement %s."
+	boundDeclFormat   = "static constexpr %s %s = %s;"
+	boundMillisFormat = "std::chrono::milliseconds{%s}"
 )
 
 // Doc comments and literals that never let source text change how C++ reads them (CODEGEN.md §2.6, DECISIONS 423).

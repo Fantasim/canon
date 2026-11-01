@@ -8,49 +8,25 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/fantasim/canonlang/internal/testkit/specfence"
 )
 
 const (
 	codegenSpec   = "../../../../spec/CODEGEN.md"
 	specGlob      = "../../../../spec/*.md"
 	headerHeading = "### 7.4"
-	cppFenceOpen  = "```cpp\n"
-	cppFenceClose = "\n```\n"
+	fenceLang     = "cpp"
 	scopeSep      = "::"
 )
 
 // canonName is a `canon::<Name>` of the specification, every `::` segment included; a name followed by `*` names a family, not one name.
 var canonName = regexp.MustCompile(`\bcanon((?:::[A-Za-z_][A-Za-z0-9_]*)+)(\*?)`)
 
-// fencedCpp is the first ```cpp block after heading in a spec document.
-func fencedCpp(t *testing.T, doc, heading string) string {
-	t.Helper()
-	data, err := os.ReadFile(doc)
-	if err != nil {
-		t.Fatal(err)
-	}
-	text := string(data)
-	i := strings.Index(text, heading)
-	if i < 0 {
-		t.Fatalf("%s has no %q", doc, heading)
-	}
-	rest := text[i:]
-	start := strings.Index(rest, cppFenceOpen)
-	if start < 0 {
-		t.Fatalf("%s: no cpp block after %q", doc, heading)
-	}
-	body := rest[start+len(cppFenceOpen):]
-	end := strings.Index(body, cppFenceClose)
-	if end < 0 {
-		t.Fatalf("%s: the cpp block after %q is not closed", doc, heading)
-	}
-	return body[:end+1]
-}
-
 // CODEGEN.md §7.4 (DECISIONS 415): canon_runtime.h is normative text; the embedded copy is the spec's, byte for byte.
 func TestHeaderIsTheSpecs(t *testing.T) {
 	t.Parallel()
-	if want := fencedCpp(t, codegenSpec, headerHeading); Header != want {
+	if want := specfence.Block(t, codegenSpec, headerHeading, fenceLang); Header != want {
 		t.Errorf("canon_runtime.h.txt differs from CODEGEN.md §7.4 (%d bytes, the spec's %d)", len(Header), len(want))
 	}
 }

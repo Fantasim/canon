@@ -485,16 +485,16 @@ const (
 
 // The words of bound constants and range texts, a bound's float width (binary64, a Float32's too), and the decoders' refinement failures, the same bytes in every target (CODEGEN.md §5.15).
 const (
-	boundElem      = "Elem"
-	boundKey       = "Key"
-	boundValue     = "Value"
-	rangeFloatBits = 64
-	boundMin       = "Min"
-	boundMax       = "Max"
-	boundEnd       = "End"
-	rangeExclusive = ".."
-	rangeInclusive = "..="
-	failValue      = "expected a value in "
-	failBytes      = "expected a byte length in "
-	failCount      = "expected an element count in "
+	boundElem                                = "Elem"
+	boundKey                                 = "Key"
+	boundValue                               = "Value"
+	rangeFloatBits                           = 64
+	boundMin, boundMax, boundEnd             = "Min", "Max", "End"
+	rangeExclusive, rangeInclusive           = "..", "..="
+	failValue                                = "expected a value in "
+	failBytes                                = "expected a byte length in "
+	failCount                                = "expected an element count in "
+	textLower, textUpper, textExclusive      = "lower bound", "upper bound", "exclusive upper bound"
+	textEachElem, textEachKey, textEachValue = "each element of ", "each key of ", "each value of "
+	boundBytesText, boundCountText           = "the byte length of ", "the element count of "
 )

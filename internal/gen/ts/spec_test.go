@@ -11,6 +11,7 @@ import (
 	"golang.org/x/tools/txtar"
 
 	"github.com/fantasim/canonlang/internal/testkit/golden"
+	"github.com/fantasim/canonlang/internal/testkit/specfence"
 )
 
 const (
@@ -19,34 +20,12 @@ const (
 	helperFile      = "runtime/helpers.ts.txt"
 	helperHeading   = "### 8.2 Helper block"
 	templateHeading = "The TS template, for the same package"
-	fenceOpen       = "```ts\n"
-	fenceClose      = "\n```\n"
+	fenceLang       = "ts"
 )
-
-// fenced is the first ```ts block after heading in a spec document.
-func fenced(t *testing.T, doc, heading string) string {
-	t.Helper()
-	data, err := os.ReadFile(doc)
-	if err != nil {
-		t.Fatal(err)
-	}
-	text := string(data)
-	i := strings.Index(text, heading)
-	if i < 0 {
-		t.Fatalf("%s has no %q", doc, heading)
-	}
-	rest := text[i:]
-	start := strings.Index(rest, fenceOpen)
-	end := strings.Index(rest[start+len(fenceOpen):], fenceClose)
-	if start < 0 || end < 0 {
-		t.Fatalf("%s: no ts block after %q", doc, heading)
-	}
-	return rest[start+len(fenceOpen) : start+len(fenceOpen)+end+1]
-}
 
 // CODEGEN.md §8.2: the helper block is normative text; the embedded copy is the spec's, byte for byte.
 func TestHelperBlockIsTheSpecs(t *testing.T) {
-	want := fenced(t, codegenSpec, helperHeading)
+	want := specfence.Block(t, codegenSpec, helperHeading, fenceLang)
 	got, err := os.ReadFile(helperFile)
 	if err != nil {
 		t.Fatal(err)
@@ -58,7 +37,7 @@ func TestHelperBlockIsTheSpecs(t *testing.T) {
 
 // CODEGEN.md §8.2: a file holds the helpers it uses, in the spec's order and with its exact text, and no others: the lines of its helper block are a subsequence of the spec's, banners included.
 func TestHelperBlockIsASubsequenceOfTheSpecs(t *testing.T) {
-	spec := strings.Split(strings.TrimSuffix(fenced(t, codegenSpec, helperHeading), "\n"), "\n")
+	spec := strings.Split(strings.TrimSuffix(specfence.Block(t, codegenSpec, helperHeading, fenceLang), "\n"), "\n")
 	for _, f := range generatedFiles(t) {
 		if strings.HasSuffix(f.Path, ".conformance.test.ts") {
 			continue
@@ -116,7 +95,7 @@ func generatedFiles(t *testing.T) []output {
 
 // CONFORMANCE.md §7.2: the TypeScript conformance file of the potion example, `damageAt` included, is the template the spec gives, vectors and all.
 func TestConformanceFileIsTheSpecsTemplate(t *testing.T) {
-	want := fenced(t, conformanceSpec, templateHeading)
+	want := specfence.Block(t, conformanceSpec, templateHeading, fenceLang)
 	cases, err := golden.Load("testdata/ts/pipeline.txtar", golden.Expected(generatedTS))
 	if err != nil {
 		t.Fatal(err)

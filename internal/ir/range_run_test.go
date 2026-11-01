@@ -89,7 +89,7 @@ var (
 	rangeRunTSReaders  = []string{"ts-parse", "ts-decode", "ts-data", "ts-file"}
 )
 
-// rangeRunWidthForms are the TypeScript decoders' forms of the one accepted difference between the targets' messages, ADR-0023 Decision 5, listed in width_forms.txt: the width of an integer. Go and C++ write it as `expected an integer from <lo> to <hi>`, and their readers are compared as written; a message of a TypeScript reader that has one of these forms is compared as rangeRunWidth, and so is the want, when it is compared with a TypeScript reader.
+// rangeRunWidthForms are the TypeScript decoders' forms of the one accepted difference between the targets' messages, ADR-0023 Decision 5, listed in width_forms.txt: the width of an integer. Go and C++ write it as `expected an integer from <lo> to <hi>`, or as the short `expected an integer` for Int's full range, and their readers are compared as written; a message of a TypeScript reader that has one of these forms is compared as rangeRunWidth, and so is the want, when it is compared with a TypeScript reader.
 func rangeRunWidthForms(t *testing.T) []*regexp.Regexp {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(rangeRunDir, rangeRunWidthFile))

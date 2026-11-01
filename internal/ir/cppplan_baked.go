@@ -149,7 +149,7 @@ func (pl *CppNamePlan) resolvesBaked(r *RefTarget) bool {
 
 // declareJSONHooks declares the deleted nlohmann hooks to_json and from_json that gen/cpp writes for the id enums and for every enum, kind and branch enum whose values are positions, shared as overloads by the packages emitted into one namespace (CODEGEN.md §3.5, §5.2, §5.3; DECISIONS 379, 402).
 func (pl *CppNamePlan) declareJSONHooks() {
-	if !pl.tablesOwnToWire() && !pl.hasPositionTypes() {
+	if pl.JSONHooksOrigin() == "" {
 		return
 	}
 	for _, n := range cppJSONHooks {
@@ -163,17 +163,26 @@ func (pl *CppNamePlan) tablesOwnToWire() bool {
 	return pl.baked() && slices.ContainsFunc(pl.p.Values, func(v *Value) bool { return tableRecord(v) != nil })
 }
 
-// hasPositionTypes reports a type whose values are declaration positions: an enum without @codes that the emit does not open, a variant's kind enum, a dependent type's branch enum (CODEGEN.md §5.2; DECISIONS 402).
-func (pl *CppNamePlan) hasPositionTypes() bool {
-	return slices.ContainsFunc(pl.p.Types, func(t Type) bool {
+// JSONHooksOrigin is the first item that gets the deleted to_json and from_json pair: a baked table, else a type whose values are declaration positions (an enum without @codes that the emit does not open, a variant's kind enum, a dependent type's branch enum); "" when none does (CODEGEN.md §5.2, §5.3; DECISIONS 379, 402).
+func (pl *CppNamePlan) JSONHooksOrigin() string {
+	if pl.baked() {
+		if i := slices.IndexFunc(pl.p.Values, func(v *Value) bool { return tableRecord(v) != nil }); i >= 0 {
+			return pl.p.Values[i].Name
+		}
+	}
+	for _, t := range pl.p.Types {
 		switch x := t.(type) {
 		case *Enum:
-			return x.Codes == nil && !OpenEnum(pl.p, pl.e, x)
-		case *Variant, *Dependent:
-			return true
+			if x.Codes == nil && !OpenEnum(pl.p, pl.e, x) {
+				return x.Name
+			}
+		case *Variant:
+			return x.Name
+		case *Dependent:
+			return x.Name
 		}
-		return false
-	})
+	}
+	return ""
 }
 
 // CppBulkArray is a baked Build's n-th array, kBulk<N> in detail's unnamed namespace (CODEGEN.md §3.5, §7.3).

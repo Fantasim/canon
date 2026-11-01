@@ -1,5 +1,6 @@
 # TestRangeRoundTrip's accepted difference between the targets' decoder messages, ADR-0023 Decision 5: the width of an integer.
-# Go and C++ refuse it as `expected an integer from <lo> to <hi>`, and their verdicts are compared as written. TypeScript refuses it as
+# Go and C++ refuse it as `expected an integer from <lo> to <hi>`, or as the short `expected an integer` where the range is Int's full range
+# (gen/go text/data.txt jsonInt; C++ IntExpected), and their verdicts are compared as written. TypeScript refuses it as
 # `integer out of range`, `expected an integer`, `expected a non-negative integer` or, past a JavaScript number's exact range,
 # `integer outside the TypeScript safe range`.
 # One regular expression per line. A message of a TypeScript reader that matches one is compared as the same width text, and so is the
