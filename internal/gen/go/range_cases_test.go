@@ -87,6 +87,8 @@ func emptyKeyCases() []rangeCase {
 		{"map-in-map-outer-empty", `"mm":{"a":{"b":1}}`, `"mm":{"":{"b":10}}`, rangeErr("mm..b", valueIn+"0..=9")},
 		{"map-in-map-inner-empty", `"mm":{"a":{"b":1}}`, `"mm":{"a":{"":10}}`, rangeErr("mm.a.", valueIn+"0..=9")},
 		{"map-int-key-empty", `"mi":{"50":"x"}`, `"mi":{"":"x"}`, rangeErr("mi.", "expected a canonical decimal integer key")},
+		// CODEGEN.md §5.13: a map decodes per entry in document order, the key then its value: the first failure is the first entry's value, not a later key.
+		{"map-int-key-after-bad-value", `"mi":{"50":"x"}`, `"mi":{"1":5,"a":"x"}`, rangeErr("mi.1", "expected a string")},
 	}
 }
 

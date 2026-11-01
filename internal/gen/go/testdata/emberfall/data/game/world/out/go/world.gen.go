@@ -464,7 +464,8 @@ func jsonKeyPath(path, key string) string {
 // jsonMap reads the map at path: an object whose members, in file order (the file reader has
 // refused a repeated key), are returned as their keys, each key as the JSON value its type
 // reads (a string, or with the flag a canonical decimal integer `0|-?[1-9][0-9]*`, WIRE.md §5.8,
-// which a range check then reads), and values.
+// which a range check then reads, nil for a key that is none: its entry fails when it is read, in
+// document order, CODEGEN.md §5.13), and values.
 func jsonMap(name, path string, raw json.RawMessage, hasK bool) ([]string, []json.RawMessage, []json.RawMessage, error) {
 	if _, err := jsonObject(name, path, raw); err != nil {
 		return nil, nil, nil, err
@@ -486,12 +487,12 @@ func jsonMap(name, path string, raw json.RawMessage, hasK bool) ([]string, []jso
 		for _, c := range v {
 			ok = ok && c >= '0' && c <= '9'
 		}
-		if hasK && !ok {
-			return nil, nil, nil, fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, jsonKeyPath(path, key))
-		}
-		kr := json.RawMessage(key)
-		if !hasK {
+		var kr json.RawMessage
+		switch {
+		case !hasK:
 			kr, _ = json.Marshal(key)
+		case ok:
+			kr = json.RawMessage(key)
 		}
 		var r json.RawMessage
 		if err := obj.Decode(&r); err != nil {

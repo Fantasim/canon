@@ -600,7 +600,8 @@ func jsonKeyPath(path, key string) string {
 // jsonMap reads the map at path: an object whose members, in file order (the file reader has
 // refused a repeated key), are returned as their keys, each key as the JSON value its type
 // reads (a string, or with the flag a canonical decimal integer `0|-?[1-9][0-9]*`, WIRE.md §5.8,
-// which a range check then reads), and values.
+// which a range check then reads, nil for a key that is none: its entry fails when it is read, in
+// document order, CODEGEN.md §5.13), and values.
 func jsonMap(name, path string, raw json.RawMessage, hasK bool) ([]string, []json.RawMessage, []json.RawMessage, error) {
 	if _, err := jsonObject(name, path, raw); err != nil {
 		return nil, nil, nil, err
@@ -622,12 +623,12 @@ func jsonMap(name, path string, raw json.RawMessage, hasK bool) ([]string, []jso
 		for _, c := range v {
 			ok = ok && c >= '0' && c <= '9'
 		}
-		if hasK && !ok {
-			return nil, nil, nil, fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, jsonKeyPath(path, key))
-		}
-		kr := json.RawMessage(key)
-		if !hasK {
+		var kr json.RawMessage
+		switch {
+		case !hasK:
 			kr, _ = json.Marshal(key)
+		case ok:
+			kr = json.RawMessage(key)
 		}
 		var r json.RawMessage
 		if err := obj.Decode(&r); err != nil {
@@ -758,6 +759,9 @@ func decodeBoard(name, path string, raw json.RawMessage, out *Board) error {
 	v28 := make([]string, len(k24))
 	for j29 := range k24 {
 		kp30 := jsonKeyPath(path+"levels.", k24[j29])
+		if r25[j29] == nil {
+			return fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, kp30)
+		}
 		n31, err := jsonInt(name, kp30, "", r25[j29], -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
@@ -856,6 +860,9 @@ func decodeBoard(name, path string, raw json.RawMessage, out *Board) error {
 	v72 := make([]int64, len(k68))
 	for j73 := range k68 {
 		kp74 := jsonKeyPath(path+"ranks.", k68[j73])
+		if r69[j73] == nil {
+			return fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, kp74)
+		}
 		n75, err := jsonInt(name, kp74, "", r69[j73], 0, 255)
 		if err != nil {
 			return err
@@ -961,6 +968,9 @@ func decodeBoard(name, path string, raw json.RawMessage, out *Board) error {
 	v114 := make([]string, len(k110))
 	for j115 := range k110 {
 		kp116 := jsonKeyPath(path+"small.", k110[j115])
+		if r111[j115] == nil {
+			return fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, kp116)
+		}
 		n117, err := jsonInt(name, kp116, "", r111[j115], -128, 127)
 		if err != nil {
 			return err
@@ -1007,6 +1017,9 @@ func decodeBoard(name, path string, raw json.RawMessage, out *Board) error {
 	v134 := make([]string, len(k130))
 	for j135 := range k130 {
 		kp136 := jsonKeyPath(path+"byNode.", k130[j135])
+		if r131[j135] == nil {
+			return fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, kp136)
+		}
 		n137, err := jsonInt(name, kp136, "", r131[j135], -9223372036854775808, 9223372036854775807)
 		if err != nil {
 			return err
@@ -1042,6 +1055,9 @@ func decodeBoard(name, path string, raw json.RawMessage, out *Board) error {
 		v152 := make([]string, len(k148))
 		for j153 := range k148 {
 			kp154 := jsonKeyPath(kp146+".", k148[j153])
+			if r149[j153] == nil {
+				return fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, kp154)
+			}
 			n155, err := jsonInt(name, kp154, "", r149[j153], -9223372036854775808, 9223372036854775807)
 			if err != nil {
 				return err
@@ -1067,6 +1083,9 @@ func decodeBoard(name, path string, raw json.RawMessage, out *Board) error {
 	v162 := make([]*Slot, len(k158))
 	for j163 := range k158 {
 		kp164 := jsonKeyPath(path+"rankSlots.", k158[j163])
+		if r159[j163] == nil {
+			return fmt.Errorf("%s: %s: expected a canonical decimal integer key", name, kp164)
+		}
 		n165, err := jsonInt(name, kp164, "", r159[j163], 0, 255)
 		if err != nil {
 			return err

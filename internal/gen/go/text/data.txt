@@ -418,7 +418,8 @@ func jsonKeyPath({{.L.Path}}, {{.L.Key}} string) string {
 {{define "jsonMap"}}// jsonMap reads the map at path: an object whose members, in file order (the file reader has
 // refused a repeated key), are returned as their keys, each key as the JSON value its type
 // reads (a string, or with the flag a canonical decimal integer `0|-?[1-9][0-9]*`, WIRE.md §5.8,
-// which a range check then reads), and values.
+// which a range check then reads, nil for a key that is none: its entry fails when it is read, in
+// document order, CODEGEN.md §5.13), and values.
 func jsonMap({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage, {{.L.HasK}} bool) ([]string, []{{.JSON}}.RawMessage, []{{.JSON}}.RawMessage, error) {
 	if _, {{.L.Err}} := jsonObject({{.L.Name}}, {{.L.Path}}, {{.L.Raw}}); {{.L.Err}} != nil {
 		return nil, nil, nil, {{.L.Err}}
@@ -440,12 +441,12 @@ func jsonMap({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage, {
 		for _, {{.L.C}} := range {{.L.V}} {
 			{{.L.OK}} = {{.L.OK}} && {{.L.C}} >= '0' && {{.L.C}} <= '9'
 		}
-		if {{.L.HasK}} && !{{.L.OK}} {
-			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: expected a canonical decimal integer key", {{.L.Name}}, jsonKeyPath({{.L.Path}}, {{.L.Key}}))
-		}
-		{{.L.Kr}} := {{.JSON}}.RawMessage({{.L.Key}})
-		if !{{.L.HasK}} {
+		var {{.L.Kr}} {{.JSON}}.RawMessage
+		switch {
+		case !{{.L.HasK}}:
 			{{.L.Kr}}, _ = {{.JSON}}.Marshal({{.L.Key}})
+		case {{.L.OK}}:
+			{{.L.Kr}} = {{.JSON}}.RawMessage({{.L.Key}})
 		}
 		var {{.L.R}} {{.JSON}}.RawMessage
 		if {{.L.Err}} := {{.L.Obj}}.Decode(&{{.L.R}}); {{.L.Err}} != nil {
@@ -465,7 +466,7 @@ return {{.Err}}
 {{.VS}} := make([]{{.VT}}, len({{.Keys}}))
 for {{.I}} := range {{.Keys}} {
 {{.KP}} := jsonKeyPath({{.Loc}}, {{.Keys}}[{{.I}}])
-{{.KCode}}{{.VCode}}{{.KS}}[{{.I}}], {{.VS}}[{{.I}}] = {{.KX}}, {{.VX}}
+{{.KeyCheck}}{{.KCode}}{{.VCode}}{{.KS}}[{{.I}}], {{.VS}}[{{.I}}] = {{.KX}}, {{.VX}}
 }
 {{end}}
 {{define "mapWalk"}}for {{.Key}}{{.Value}} := range {{.Map}}.All() {

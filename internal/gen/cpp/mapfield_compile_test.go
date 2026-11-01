@@ -49,6 +49,8 @@ var mapCases = []tableFileCase{
 	{"negzero", mapRow("b1", "small", `{"-0": "x"}`), `error good: rows[0].small.-0: expected a canonical decimal integer key`},
 	{"emptykey", mapRow("b1", "small", `{"": "x"}`), `error good: rows[0].small.: expected a canonical decimal integer key`},
 	{"emptyname", mapRow("b1", "names", `{"": 5}`), `error good: rows[0].names.: expected a string`},
+	// CODEGEN.md §5.13: a map decodes per entry in document order, the key then its value.
+	{"keyorder", mapRow("b1", "levels", `{"1": 5, "01": "x"}`), "error good: rows[0].levels.1: expected a string"},
 	{"range", mapRow("b1", "small", `{"300": "x"}`), `error good: rows[0].small.300: expected an integer from -128 to 127`},
 	{"huge", mapRow("b1", "levels", `{"99999999999999999999": "x"}`), `error good: rows[0].levels.99999999999999999999: expected an integer`},
 	{"enumkey", mapRow("b1", "power", `{"earth": 1}`), "error good: rows[0].power.earth: unknown value earth"},

@@ -75,6 +75,8 @@ const (
 	andSep           = " && "
 	unionCheckFormat = "if %s {\nreturn %s\n}\n"
 	keyCheckFormat   = "if _, %[1]s := %[2]s(%[3]s); !%[1]s {\nreturn %[4]s\n}\n"
+	keyNoneFormat    = "if %s[%s] == nil {\nreturn %s\n}\n"
+	canonicalKeyText = "expected a canonical decimal integer key"
 	parsedKeyFormat  = "%[1]s, %[2]s := %[3]s(%[4]s)\n"
 	findAgainFormat  = "if %[1]s {\n_, %[1]s = %[2]s(%[3]s)\n}\n"
 	findKeyFormat    = "_, %[1]s := %[2]s(%[3]s)\n"

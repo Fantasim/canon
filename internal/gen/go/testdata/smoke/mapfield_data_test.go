@@ -88,6 +88,7 @@ func TestMapFieldBad(t *testing.T) {
 		"negzero":    `rows[0].small.-0: expected a canonical decimal integer key`,
 		"emptykey":   `rows[0].small.: expected a canonical decimal integer key`,
 		"emptyname":  `rows[0].names.: expected a string`,
+		"keyorder":   `rows[0].levels.1: expected a string`,
 		"range":      `rows[0].small.300: expected an integer from -128 to 127`,
 		"huge":       `rows[0].levels.99999999999999999999: expected an integer`,
 		"enumkey":    `rows[0].power.earth: unknown value earth`,

@@ -10,8 +10,8 @@ import (
 
 // mapRead is the data of the mapRead template: one map the loader reads in file order.
 type mapRead struct {
-	Keys, KRaws, Vals, Err, Name, Loc, Raw, KS, VS, KT, VT, I, KP, KCode, VCode, KX, VX string
-	Numeric                                                                             bool
+	Keys, KRaws, Vals, Err, Name, Loc, Raw, KS, VS, KT, VT, I, KP, KeyCheck, KCode, VCode, KX, VX string
+	Numeric                                                                                       bool
 }
 
 // mapWalk is the data of the mapWalk template: one map the resolver walks, its key's path in KP.
@@ -29,6 +29,9 @@ func (g *gen) readMap(b *strings.Builder, l leaf, raw string, loc location) stri
 		I: g.temp(tempIndex), KP: g.temp(tempPath), Numeric: ir.NumericMapKey(key),
 	}
 	at := heldAt(m.KP)
+	if m.Numeric { // the entry's key is judged when it is read, before its value (CODEGEN.md §5.13)
+		m.KeyCheck = fmt.Sprintf(keyNoneFormat, m.KRaws, m.I, g.errAt(at, canonicalKeyText, ""))
+	}
 	var k, v strings.Builder
 	m.KX = g.readValue(&k, leaf{t: key}, m.KRaws+lbracket+m.I+rbracket, at)
 	m.VX = g.readValue(&v, leaf{t: elem, unit: l.unit, enc: l.enc, disc: l.disc}, m.Vals+lbracket+m.I+rbracket, at)
