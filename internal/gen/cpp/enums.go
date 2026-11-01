@@ -98,7 +98,7 @@ func underlying(codes *ir.TypeRef, n int) string {
 	return cppUint32
 }
 
-// enum writes the declaration, k<E>Members, a @codes enum's ordinal, then the declarations of ToName, ToWire, <E>FromWire and <E>FromCode, which the .gen.cpp defines (CODEGEN.md §5.2, DECISIONS 383).
+// enum writes the declaration, k<E>Members, a @codes enum's ordinal, then the declarations of ToName, ToWire, <E>FromWire and <E>FromCode, which the .gen.cpp defines, and for an enum without @codes the deleted to_json and from_json pair (CODEGEN.md §5.2, DECISIONS 383).
 func (g *gen) enum(s enumSpec) {
 	g.doc(0, s.doc)
 	g.h.printf(enumOpenFormat, s.name, s.underlying)

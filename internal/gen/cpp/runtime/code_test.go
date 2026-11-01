@@ -2,7 +2,7 @@ package cppruntime
 
 import "testing"
 
-// CODEGEN.md §2.7, DECISIONS 423 (pending): Code blanks every comment of both forms, a `//` comment with a trailing backslash included, and keeps string and character literals whole.
+// CODEGEN.md §2.7, DECISIONS 423: Code blanks every comment of both forms, a `//` comment with a trailing backslash included, and keeps string and character literals whole.
 func TestCode(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct{ name, text, want string }{

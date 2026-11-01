@@ -156,6 +156,34 @@ func firstBranch(fn *types.TypeFunc, fits func(types.Type) bool) types.Type {
 	return nil
 }
 
+// FirstFittingBranch is the first branch of dependent type t that fits, t itself when t is not
+// dependent or no branch fits: the branch a list or brace literal classifies against (DECISIONS 171).
+func FirstFittingBranch(t types.Type, fits func(types.Type) bool) types.Type {
+	fn := depFunc(unwrapUnion(t))
+	if fn == nil {
+		return t
+	}
+	if b := firstBranch(fn, fits); b != nil {
+		return b
+	}
+	return t
+}
+
+// IsListBranch reports a type a list literal can state (DECISIONS 171).
+func IsListBranch(t types.Type) bool {
+	_, ok := unwrap(t).(*types.ListType)
+	return ok
+}
+
+// IsBraceBranch reports a type a brace literal can state (DECISIONS 171).
+func IsBraceBranch(t types.Type) bool {
+	switch unwrap(t).(type) {
+	case *types.RecordType, *types.AppliedRecord, *types.CaseType, *types.TableType, *types.MapType, *types.DepMapType:
+		return true
+	}
+	return false
+}
+
 // dependentLiteral is E3002 (E3403 for none) for a literal no branch of a dependent type fits (TYPES.md §11.4 "Literals").
 func (c *checker) dependentLiteral(env *env, e syntax.Expr, s, want types.Type) bool {
 	if depFunc(unwrapUnion(want)) == nil || !isValueLiteral(e) || c.literalFits(e, s, want) {
@@ -262,10 +290,7 @@ func keyLiteral(e syntax.Expr, coll *types.Collection) bool {
 
 // dependentList checks a list literal against a dependent type's first list branch, E3002 without one (DECISIONS 171).
 func (c *checker) dependentList(env *env, e *syntax.ListLit, want types.Type) types.Type {
-	b := firstBranch(depFunc(unwrapUnion(want)), func(b types.Type) bool {
-		_, ok := unwrap(b).(*types.ListType)
-		return ok
-	})
+	b := firstBranch(depFunc(unwrapUnion(want)), IsListBranch)
 	if b != nil {
 		return c.listLit(env, e, b)
 	}

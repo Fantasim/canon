@@ -1,4 +1,4 @@
-// The docsplice fixture (CODEGEN.md §2.6, CG-06, DECISIONS 423 pending): docs with a line ending in a
+// The docsplice fixture (CODEGEN.md §2.6, CG-06, DECISIONS 423): docs with a line ending in a
 // backslash do not swallow the line after them, so every getter and enumerator is still declared, and
 // a `/*` or `*/` in such a doc raises no -Wcomment.
 #include <cstdio>

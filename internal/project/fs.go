@@ -53,6 +53,16 @@ func Unlinked(resolve func(string) (string, error), dir, name string) bool {
 	return err == nil && real == Join(realDir, name)
 }
 
+// ResolvedAs is resolve with child's answer already made (target, err) given again, any other name resolved afresh: the reader's recorded resolution as Unlinked asks it (DECISIONS 419).
+func ResolvedAs(resolve func(string) (string, error), child, target string, err error) func(string) (string, error) {
+	return func(name string) (string, error) {
+		if name == child {
+			return target, err
+		}
+		return resolve(name)
+	}
+}
+
 // summer is the optional FS capability of a file system that fixes each file's content while it
 // is read, as a workspace snapshot does (API.md S1): it knows the SHA-256 of a file without
 // handing out a copy of it (log-2026-09-29 P18).

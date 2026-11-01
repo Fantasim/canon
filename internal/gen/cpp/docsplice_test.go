@@ -9,7 +9,7 @@ import (
 // docSpliceWant is what the driver prints once every getter and enumerator is declared.
 const docSpliceWant = "label=x count=3 dir=src/ kind=c\nmembers=8 a=a b=b d=d e=e\n"
 
-// CODEGEN.md §2.6, CG-06, DECISIONS 423 (pending): a doc with a line ending in a backslash is written as a block comment, so C++ line splicing does not pull the next generated line into it; the header compiles under -Wall -Wextra -Werror and keeps every getter and enumerator.
+// CODEGEN.md §2.6, CG-06, DECISIONS 423: a doc with a line ending in a backslash is written as a block comment, so C++ line splicing does not pull the next generated line into it; the header compiles under -Wall -Wextra -Werror and keeps every getter and enumerator.
 func TestDocBackslashCompiles(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -21,7 +21,7 @@ func TestDocBackslashCompiles(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.6, CG-06, DECISIONS 423 (pending): in no generated file does a line end in a backslash outside a block comment, and a block comment ends only at its own ` */`.
+// CODEGEN.md §2.6, CG-06, DECISIONS 423: in no generated file does a line end in a backslash outside a block comment, and a block comment ends only at its own ` */`.
 func TestDocNoSpliceOutsideBlock(t *testing.T) {
 	t.Parallel()
 	for _, f := range generate(t, docSplicePackage()) {
@@ -51,7 +51,7 @@ func TestDocNoSpliceOutsideBlock(t *testing.T) {
 // trigraphSlash is the trigraph for a backslash, which g++ -Wtrigraphs refuses and -std=c++14 splices on.
 const trigraphSlash = "??/"
 
-// CODEGEN.md §2.6, §2.7, DECISIONS 423 (pending): the text of a block-form doc picks no standard header, as a `///` doc's never does.
+// CODEGEN.md §2.6, §2.7, DECISIONS 423: the text of a block-form doc picks no standard header, as a `///` doc's never does.
 func TestDocBlockAddsNoInclude(t *testing.T) {
 	t.Parallel()
 	for _, f := range generate(t, docSplicePackage()) {
@@ -66,7 +66,7 @@ func TestDocBlockAddsNoInclude(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.6, CG-06, DECISIONS 423 (pending): the block form is ` * ` + line (` *` for an empty line) with `*/` written `*\/`; a doc without a line ending in a backslash keeps `///`, `*/` and a backslash inside a line included.
+// CODEGEN.md §2.6, CG-06, DECISIONS 423: the block form is ` * ` + line (` *` for an empty line) with `*/` written `*\/`; a doc without a line ending in a backslash keeps `///`, `*/` and a backslash inside a line included.
 func TestDocForms(t *testing.T) {
 	t.Parallel()
 	var header string

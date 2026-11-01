@@ -97,7 +97,7 @@ func (l *Layout) Resolve(written, from string, span source.Span, bag *diag.Bag) 
 // one, starting at from, not above the project directory.
 func (l *Layout) resolve(written, from string, span source.Span) (Path, *diag.Builder) {
 	body, isDir := strings.CutSuffix(written, sep)
-	name, rest, rooted := cutRoot(body)
+	name, rest, rooted := CutRoot(body)
 	base, prefix, start := l.Dir, "", splitRest(from)
 	if rooted {
 		dir, declared := l.dirs[name]
@@ -138,7 +138,7 @@ func syntaxError(written string, span source.Span) *diag.Builder {
 		return diag.E7001.AtBackslash(span, written)
 	}
 	body, _ := strings.CutSuffix(written, sep)
-	if _, rest, rooted := cutRoot(body); rooted {
+	if _, rest, rooted := CutRoot(body); rooted {
 		if !strings.Contains(body, sep) {
 			return nil
 		}
@@ -150,8 +150,8 @@ func syntaxError(written string, span source.Span) *diag.Builder {
 	return nil
 }
 
-// cutRoot splits "@name/rest" into name and rest; "@name" alone is the root itself.
-func cutRoot(p string) (name, rest string, rooted bool) {
+// CutRoot splits "@name/rest" into name and rest; "@name" alone is the root itself.
+func CutRoot(p string) (name, rest string, rooted bool) {
 	after, rooted := strings.CutPrefix(p, rootMark)
 	if !rooted {
 		return "", p, false

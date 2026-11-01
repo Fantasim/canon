@@ -15,8 +15,8 @@ import (
 // budgetTop is past the steps the priced fixture spends cold, so its last budgets never run out.
 const budgetTop = 40
 
-// priced folds its bounds while checking and its defaults after, as stage E does; an entry file
-// earlier in path order names a const and a let declared after it.
+// priced folds its bounds and its constant defaults while checking, each default at its field
+// (DECISIONS 412); an entry file earlier in path order names a const and a let declared after it.
 var priced = map[string]string{
 	"p/p.canon": `package p
 

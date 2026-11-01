@@ -170,9 +170,8 @@ const (
 
 // goStdImports classifies a generated import by its origin, not by whether its path has a dot.
 var goStdImports = map[string]bool{
-	timePkg: true, iterPkg: true, syncPkg: true, strconvPkg: true, mathPkg: true, testingPkg: true,
-	jsonPath: true, fmtPkg: true, atomicPath: true, stringsPkg: true, slicesPkg: true,
-	errorsPkg: true, regexpPkg: true, utf8Path: true,
+	timePkg: true, iterPkg: true, syncPkg: true, strconvPkg: true, mathPkg: true, testingPkg: true, jsonPath: true,
+	fmtPkg: true, atomicPath: true, stringsPkg: true, slicesPkg: true, errorsPkg: true, regexpPkg: true, utf8Path: true,
 }
 
 // Generated names (CODEGEN.md §3.3) and the reference layout's private names (§6.2).
@@ -191,6 +190,7 @@ const (
 	maxUint16Indexes = 1 << 16
 	maxInline        = 80 // bytes of a list literal kept on one line
 	float32Bits      = 32
+	float64Bits      = 64
 )
 
 // Go types by width (CODEGEN.md §4.1).

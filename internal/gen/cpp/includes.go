@@ -49,7 +49,7 @@ func includes(out *writer, text string, groups [][]string) {
 	}
 }
 
-// stdIncludes are the standard headers of every standard name the code (comments of both forms aside) uses, in byte order (CODEGEN.md §2.7, DECISIONS 423 pending).
+// stdIncludes are the standard headers of every standard name the code (comments of both forms aside) uses, in byte order (CODEGEN.md §2.7, DECISIONS 423).
 func stdIncludes(text string) []string {
 	code := cppruntime.Code(text)
 	var out []string

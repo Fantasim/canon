@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -253,11 +254,10 @@ func (c *checker) assetRoot(env *env, at syntax.Node, root string, literal bool)
 		c.report(env, diag.E3704.AtRoot(env.span(at), root))
 		return false
 	}
-	name, rooted := strings.CutPrefix(root, rootSigil)
+	name, _, rooted := project.CutRoot(root)
 	if c.proj == nil {
 		return true
 	}
-	name, _, _ = strings.Cut(name, slash)
 	if _, declared := c.proj.Root(name); declared || !rooted {
 		return c.contained(env, at, root)
 	}
@@ -275,9 +275,8 @@ func loadSyntax(p string) bool {
 		return false
 	}
 	body := strings.TrimSuffix(p, slash)
-	if after, rooted := strings.CutPrefix(body, rootSigil); rooted {
-		name, rest, hasRest := strings.Cut(after, slash)
-		if name == "" || !hasRest {
+	if name, rest, rooted := project.CutRoot(body); rooted {
+		if name == "" || !strings.Contains(body, slash) {
 			return name != ""
 		}
 		body = rest

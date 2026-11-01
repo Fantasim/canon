@@ -182,7 +182,7 @@ func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
 		return plainKind(child, e)
 	}
 	target, err := w.l.evalSymlinks(child)
-	if project.Unlinked(w.l.resolvedAs(child, target, err), real, e.Name()) {
+	if project.Unlinked(project.ResolvedAs(w.l.evalSymlinks, child, target, err), real, e.Name()) {
 		return plainKind(child, e)
 	}
 	switch {
@@ -204,16 +204,6 @@ func (w *walker) classify(rel, real string, e fs.DirEntry) entryKind {
 // plainKind is entry e, no link, at child: its kind as the listing gives it.
 func plainKind(child string, e fs.DirEntry) entryKind {
 	return entryKind{isFile: e.Type().IsRegular(), isDir: e.IsDir(), real: child, ok: true}
-}
-
-// resolvedAs is the Loader's recorded resolver, child's resolution already made answered again.
-func (l *Loader) resolvedAs(child, target string, err error) func(string) (string, error) {
-	return func(name string) (string, error) {
-		if name == child {
-			return target, err
-		}
-		return l.evalSymlinks(name)
-	}
 }
 
 // linkRefusal is the E7004 cause load.dir's link bounds refuse a single-file path abs with; false: an FS without links, the stat decides (DECISIONS 420).

@@ -52,13 +52,7 @@ func (c *checker) itemsInError(env *env, items []syntax.BraceItem) {
 
 // braceBranch is the first branch of a type function a brace literal classifies against (DECISIONS 171).
 func braceBranch(fn *types.TypeFunc) types.Type {
-	return firstBranch(fn, func(r types.Type) bool {
-		switch unwrap(r).(type) {
-		case *types.RecordType, *types.AppliedRecord, *types.CaseType, *types.TableType, *types.MapType, *types.DepMapType:
-			return true
-		}
-		return false
-	})
+	return firstBranch(fn, IsBraceBranch)
 }
 
 // untypedBrace is a brace literal without an expected type: a record typed by its leading

@@ -15,7 +15,7 @@ import (
 //go:embed text/schema_doc.txt
 var schemaDocText string
 
-// quote is a C++ string literal of s's bytes (the escapes table, other control bytes in octal, a `?` after a `?` as `\?` so no trigraph forms; DECISIONS 423 pending).
+// quote is a C++ string literal of s's bytes (the escapes table, other control bytes in octal, a `?` after a `?` as `\?` so no trigraph forms; DECISIONS 423).
 func quote(s string) string {
 	var b strings.Builder
 	b.WriteByte('"')

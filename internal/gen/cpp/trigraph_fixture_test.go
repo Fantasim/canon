@@ -10,12 +10,12 @@ const (
 	triText = "a??=b ??/ c ???" // three trigraphs' worth: `??=`, `??/` and a run of `?`
 )
 
-// triSpec is the baked-trigraph fixture's package: every string path holds triText (CODEGEN.md §2.6, DECISIONS 423 pending).
+// triSpec is the baked-trigraph fixture's package: every string path holds triText (CODEGEN.md §2.6, DECISIONS 423).
 var triSpec = textSpec{triPkg, "demo/tri", "demo::tri", triText}
 
 func triPackage() *ir.Package { return triSpec.bakedPackage() }
 
-// triTypesPackage is a types-mode package whose field wire name and variant case wire hold triText, which its decoder compares byte for byte (CODEGEN.md §5.13, DECISIONS 423 pending).
+// triTypesPackage is a types-mode package whose field wire name and variant case wire hold triText, which its decoder compares byte for byte (CODEGEN.md §5.13, DECISIONS 423).
 func triTypesPackage() *ir.Package {
 	prize := &ir.Variant{Pkg: triPkg, Name: "Prize", Tag: "kind", Cases: []*ir.Case{
 		{Name: "coins", Wire: triText, Fields: []*ir.Field{field("amount", "amount", "", tInt)}}, {Name: "none", Wire: "none"},

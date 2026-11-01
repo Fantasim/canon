@@ -47,7 +47,7 @@ func Scan(text string, visit func(word string)) {
 	}
 }
 
-// Code is C++ text with each comment replaced by one blank and its string and character literals kept whole: the text a standard name is looked for in (CODEGEN.md §2.7, DECISIONS 423 pending).
+// Code is C++ text with each comment replaced by one blank and its string and character literals kept whole: the text a standard name is looked for in (CODEGEN.md §2.7, DECISIONS 423).
 func Code(text string) string {
 	var b strings.Builder
 	for i := 0; i < len(text); {

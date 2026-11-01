@@ -21,13 +21,7 @@ func linkOf(fsys project.FS, resolve func(string) (string, error), dir string, e
 	}
 	child := project.Join(dir, e.Name())
 	target, err := resolve(child)
-	asked := func(name string) (string, error) {
-		if name == child {
-			return target, err
-		}
-		return resolve(name)
-	}
-	if project.Unlinked(asked, dir, e.Name()) {
+	if project.Unlinked(project.ResolvedAs(resolve, child, target, err), dir, e.Name()) {
 		return entryLink{}
 	}
 	return entryLink{link: true, target: target, err: err}

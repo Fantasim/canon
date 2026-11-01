@@ -30,7 +30,7 @@ func (g *gen) idTables() []idTable {
 	return out
 }
 
-// idEnums write each table's id enum after the branch enums: its keys in entry order, retired ones included, and the declarations of ToWire and <Rec>IdFromWire, which the source defines (CODEGEN.md §2.7, §5.3, §7.1, §7.3; DECISIONS 383).
+// idEnums write each table's id enum after the branch enums: its keys in entry order, retired ones included, the declarations of ToWire and <Rec>IdFromWire, which the source defines, and the deleted to_json and from_json pair (CODEGEN.md §2.7, §5.3, §7.1, §7.3; DECISIONS 383).
 func (g *gen) idEnums() {
 	if !g.baked() {
 		return
@@ -52,10 +52,7 @@ func (g *gen) idEnums() {
 		g.h.printf(declFormat, fmt.Sprintf(nameSigFormat, ir.CppToWire, s.name))
 		g.h.printf(declFormat, fmt.Sprintf(retiredSigFormat, s.name))
 		g.h.printf(declFormat, fmt.Sprintf(idFromWireSigFormat, s.name, fromWire))
-		g.h.blank()
-		g.doc(0, fmt.Sprintf(idJSONDocFormat, fromWire))
-		g.h.linef(0, idToJSONDeleted, s.name)
-		g.h.linef(0, idFromJSONDeleted, s.name)
+		g.deletedJSON(s.name, fmt.Sprintf(idJSONDocFormat, fromWire))
 		g.h.blank()
 		leave()
 	}

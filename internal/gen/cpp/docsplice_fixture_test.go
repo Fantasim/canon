@@ -7,7 +7,7 @@ import (
 
 const docSplicePkg = "demo.docsplice"
 
-// docSplicePackage is demo.docsplice in types mode, whose record, field, enum and member docs have a line ending in a backslash, one holding `*/` and an empty line, next to docs that keep `///` (CODEGEN.md §2.6, CG-06, DECISIONS 423 pending).
+// docSplicePackage is demo.docsplice in types mode, whose record, field, enum and member docs have a line ending in a backslash, one holding `*/` and an empty line, next to docs that keep `///` (CODEGEN.md §2.6, CG-06, DECISIONS 423).
 func docSplicePackage() *ir.Package {
 	kind := &ir.Enum{Pkg: docSplicePkg, Name: "Kind", Doc: "A kind of splice \\", Members: []*ir.EnumMember{
 		{Name: "a", Wire: "a", Doc: "The first member \\"},

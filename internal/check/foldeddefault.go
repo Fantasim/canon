@@ -17,6 +17,7 @@ func (c *checker) foldedDefault(env *env, e syntax.Expr, got, want types.Type, b
 	if !c.constantDefault(e) || c.readsBroken(e) || c.spentNow(env.pkg) {
 		return
 	}
+	// A silent failure (a read of a const whose own fold failed with a finding) breaks no record: that const is broken, not this default (DECISIONS 150; log-2026-10-31, CHECK-OWED opus choice 1).
 	if v, ok, _ := c.foldReported(env, e); ok {
 		c.checkFolded(env, e, v, want)
 	}

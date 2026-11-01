@@ -202,7 +202,6 @@ const (
 	underscore   = "_"
 	hyphen       = "-"
 	dollar       = "$"
-	rootSigil    = "@"
 	rootDir      = dot      // the project directory as a display path (API.md §1.3)
 	syntaxOwner  = "syntax" // the registry owner of the lexer's and parser's codes (DECISIONS 214)
 	layoutAnchor = dot      // a stand-in project directory: a name is read from out as declared

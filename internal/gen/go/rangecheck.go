@@ -26,7 +26,7 @@ func (g *gen) checkRange(b *strings.Builder, t ir.TypeRef, x string, loc locatio
 	if len(literals) > 0 {
 		cond = strings.Join(literalTests(v, literals), orSep) + orSep + lparen + cond + rparen
 	}
-	fmt.Fprintf(b, failUnlessFormat, lparen+cond+rparen, g.errAt(loc, failure, ""))
+	fmt.Fprintf(b, failUnlessFormat, lparen+cond+rparen, g.errAt(loc, escapeVerbs(failure), ""))
 	return v
 }
 
@@ -89,12 +89,12 @@ func (g *gen) boundLit(t ir.TypeRef, l types.Limit) string {
 	return intLit(l.I)
 }
 
-// floatBound is f as a Go constant that reads back as the same binary64: the shortest literal, a negative zero as 0 (Copysign is no constant).
+// floatBound is floatLit(f, 64) except a zero: a bound is an untyped constant, and Copysign is none, so a negative zero is 0.
 func floatBound(f float64) string {
 	if f == 0 {
 		return zeroLit
 	}
-	return strconv.FormatFloat(f, floatFormat, shortest, int64Bits)
+	return shortestFloat(f, float64Bits)
 }
 
 // rowsRange is the test and the failure text for the count of a data file's rows, held in the slice values, once their duplicates are checked (CODEGEN.md §5.15); empty when the rows have no refinement to check.

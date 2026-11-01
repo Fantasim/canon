@@ -2,7 +2,7 @@ package cppgen
 
 import "strings"
 
-// doc writes a doc comment at depth (CODEGEN.md §2.6): `/// ` + line, `///` for an empty line; the block form when a line ends in a backslash, and `??/` written `?\?/` in both (DECISIONS 423, pending).
+// doc writes a doc comment at depth (CODEGEN.md §2.6): `/// ` + line, `///` for an empty line; the block form when a line ends in a backslash, and `??/` written `?\?/` in both (DECISIONS 423).
 func (g *gen) doc(depth int, text string) {
 	if text == "" {
 		return
@@ -21,7 +21,7 @@ func (g *gen) doc(depth int, text string) {
 	}
 }
 
-// docBlock writes text as `/**`, ` * ` + line (` *` for an empty line), ` */`, with a backslash between every adjacent `/` and `*`: a backslash ending a line only joins two comment lines there, and no generated line is spliced into the comment (CODEGEN.md §2.6, CG-06; DECISIONS 423, pending).
+// docBlock writes text as `/**`, ` * ` + line (` *` for an empty line), ` */`, with a backslash between every adjacent `/` and `*`: a backslash ending a line only joins two comment lines there, and no generated line is spliced into the comment (CODEGEN.md §2.6, CG-06; DECISIONS 423).
 func (g *gen) docBlock(depth int, text string) {
 	g.h.linef(depth, docBlockOpen)
 	for l := range strings.SplitSeq(splitDelimiters(text), newline) {

@@ -33,7 +33,7 @@ func discMembers(d *ir.Dependent) (int, bool) {
 	return boolMembers, d.Disc.Kind == types.Bool
 }
 
-// branchEnums are the branch enums of the dependent types, after the kind enums (CODEGEN.md §2.7, §5.6): no helpers, never on the wire.
+// branchEnums are the branch enums of the dependent types, after the kind enums (CODEGEN.md §2.7, §5.6): no helpers, never on the wire, the deleted to_json and from_json pair after each.
 func (g *gen) branchEnums() {
 	for _, t := range g.p.Types {
 		d, ok := t.(*ir.Dependent)

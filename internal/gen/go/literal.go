@@ -71,6 +71,11 @@ func (g *gen) floatLit(f float64, bits int) string {
 		}
 		return z
 	}
+	return shortestFloat(f, bits)
+}
+
+// shortestFloat is the shortest literal of f that reads back at its width.
+func shortestFloat(f float64, bits int) string {
 	return strconv.FormatFloat(f, floatFormat, shortest, bits)
 }
 

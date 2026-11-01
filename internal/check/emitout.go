@@ -66,8 +66,8 @@ func (c *checker) outPath(env *env, x syntax.Expr, target string, expected diag.
 // judgedOut is the project-relative path out resolves to, which outChars judges and shows; without a layout, out as written after its @root/ prefix; false when out does not resolve, the resolver's finding alone (DECISIONS 215, 424).
 func (c *checker) judgedOut(env *env, out string) (string, bool) {
 	if c.declaredLayout(env.pkg) == nil {
-		if after, rooted := strings.CutPrefix(out, rootSigil); rooted {
-			_, out, _ = strings.Cut(after, slash)
+		if _, rest, rooted := project.CutRoot(out); rooted {
+			out = rest
 		}
 		return out, true
 	}

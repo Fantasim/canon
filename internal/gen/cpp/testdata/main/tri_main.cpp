@@ -1,4 +1,4 @@
-// The baked-tri fixture (CODEGEN.md §2.6, DECISIONS 423 pending): a string holding `??=`, `??/` and `???`
+// The baked-tri fixture (CODEGEN.md §2.6, DECISIONS 423): a string holding `??=`, `??/` and `???`
 // compiles under -Werror (no trigraph) and keeps its bytes on every path: a field, short and long lists,
 // map keys, constants, a constexpr cell. The driver writes the text with `\?` for the same reason.
 #include <cstdio>

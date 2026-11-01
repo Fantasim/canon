@@ -1,4 +1,4 @@
-// The types-tri fixture (CODEGEN.md §5.13, DECISIONS 423 pending): a field wire name and a case wire
+// The types-tri fixture (CODEGEN.md §5.13, DECISIONS 423): a field wire name and a case wire
 // holding `??=`, `??/` and `???` compile under -Werror and are compared byte for byte.
 #include <cstdio>
 #include <string>
