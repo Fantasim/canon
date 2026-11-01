@@ -10,8 +10,10 @@ import (
 type nameScope struct {
 	what          string
 	names, hidden map[string]string
-	items         map[string]any  // the item each name was declared for, nil for a fixed name
-	hooks         map[string]bool // the names declared for make hooks (declareHook)
+	items         map[string]any         // the item each name was declared for, nil for a fixed name
+	hooks         map[string]bool        // the names declared for make hooks (declareHook)
+	ids           bool                   // a baked table's id enum: each name is a table id (E8005 foreignId)
+	notes         map[string]foreignNote // cpp: how a foreign define's E8005 names a name otherwise (noteForeign)
 }
 
 // namer is a name plan's scopes and problems; ident tells an identifier of the target, and

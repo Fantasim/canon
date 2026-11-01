@@ -15,10 +15,10 @@ func (pl *CppNamePlan) declareAll() {
 	}
 	for _, v := range pl.values {
 		if !pl.baked() {
-			pl.shareNS(pl.SchemaName(v), pl.valueOrigin(v), v)
+			pl.shareDerived(pl.SchemaName(v), v)
 		}
 		if IsContainer(v) {
-			pl.shareNS(pl.ContainerName(v), pl.valueOrigin(v), v)
+			pl.shareDerived(pl.ContainerName(v), v)
 		}
 	}
 	pl.declareForeign()
@@ -72,6 +72,16 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 // shareNS declares a namespace name that the header writes, which other packages emitted into the namespace share (§3.5).
 func (pl *CppNamePlan) shareNS(name, origin string, item any) {
 	pl.shareNSFrom(origin, item, derivation{build: func() string { return name }})
+}
+
+// shareDerived is shareNS for a name derived from value v's own name, which @cpp(name:) does not change (E8005 foreignDerived, CODEGEN.md §3.5, §7.9).
+func (pl *CppNamePlan) shareDerived(name string, v *Value) {
+	pl.noteForeign(pl.ns, name, foreignNote{derived: true}, func() { pl.shareNS(name, pl.valueOrigin(v), v) })
+}
+
+// declareDerived is declare in sc for a name derived from value v's own name (shareDerived).
+func (pl *CppNamePlan) declareDerived(sc *nameScope, name string, v *Value) {
+	pl.noteForeign(sc, name, foreignNote{derived: true}, func() { pl.declare(sc, name, pl.valueOrigin(v), v) })
 }
 
 // shareNSFrom is shareNS for a name d builds on the name of a type (declareFrom).

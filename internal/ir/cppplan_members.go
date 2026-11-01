@@ -29,7 +29,7 @@ func (pl *CppNamePlan) declareMembers() {
 	for _, v := range pl.values {
 		if v.Reload {
 			pl.declare(snap, pl.SnapshotGetter(v), pl.valueOrigin(v), v)
-			pl.declare(snap, pl.Member(v.Name), pl.valueOrigin(v), v)
+			pl.declareDerived(snap, pl.Member(v.Name), v)
 		}
 	}
 	store := pl.scope(pl.StoreName())

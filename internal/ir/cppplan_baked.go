@@ -87,16 +87,8 @@ func (pl *CppNamePlan) Constexpr(fn *ExportFn) bool {
 // declareBaked declares what a baked emit adds to the namespace (CODEGEN.md §5.3, §5.9, §5.10, §7.3): the id enum of every public table value with its members and <Rec>IdFromWire, each value's accessors, then each stored package fn.
 func (pl *CppNamePlan) declareBaked() {
 	for _, v := range pl.p.Values {
-		rec := tableRecord(v)
-		if rec == nil {
-			continue
-		}
-		origin := pl.valueOrigin(v)
-		pl.shareNSFrom(origin, v, derivation{rec, func() string { return pl.IDName(rec) }})
-		pl.shareNSFrom(origin, v, derivation{rec, func() string { return pl.IDName(rec) + cppFromWire }})
-		sc := pl.scope(pl.IDName(rec))
-		for _, id := range v.IDs {
-			pl.declare(sc, pl.IDMember(id), origin+qnameSep+id, v)
+		if rec := tableRecord(v); rec != nil {
+			pl.declareIDEnum(v, rec)
 		}
 	}
 	for _, v := range pl.values {
@@ -116,6 +108,19 @@ func (pl *CppNamePlan) declareBaked() {
 	}
 }
 
+// declareIDEnum declares table value v's id enum <Rec>Id and <Rec>IdFromWire, which a foreign define's finding names after rec, whose @cpp(name:) renames them, then the enum's members, each a table id (CODEGEN.md §3.5, §5.3, §7.9).
+func (pl *CppNamePlan) declareIDEnum(v *Value, rec *Record) {
+	origin, byRecord := pl.valueOrigin(v), foreignNote{origin: rec.QName()}
+	for _, build := range []func() string{func() string { return pl.IDName(rec) }, func() string { return pl.IDName(rec) + cppFromWire }} {
+		pl.noteForeign(pl.ns, build(), byRecord, func() { pl.shareNSFrom(origin, v, derivation{rec, build}) })
+	}
+	sc := pl.scope(pl.IDName(rec))
+	sc.ids = true
+	for _, id := range v.IDs {
+		pl.declare(sc, pl.IDMember(id), origin+qnameSep+id, v)
+	}
+}
+
 // declareBakedDetail declares detail's constexpr cells, and the access struct's Data, Build and Get with Data's members: each value, a ref value's resolved entries, each package fn stored there (CODEGEN.md §5.10, §7.3).
 func (pl *CppNamePlan) declareBakedDetail(detail, access *nameScope) {
 	for _, fn := range pl.p.Fns {
@@ -128,9 +133,9 @@ func (pl *CppNamePlan) declareBakedDetail(detail, access *nameScope) {
 	}
 	data := pl.scope(cppDataStruct)
 	for _, v := range pl.values {
-		pl.declare(data, pl.DataMember(v.Name), pl.valueOrigin(v), v)
+		pl.declareDerived(data, pl.DataMember(v.Name), v)
 		if t, _ := goUnwrap(v.Type); pl.Resolves(t, nil) {
-			pl.declare(data, pl.RefData(v.Name), pl.valueOrigin(v), v)
+			pl.declareDerived(data, pl.RefData(v.Name), v)
 		}
 	}
 	for _, fn := range pl.p.Fns {

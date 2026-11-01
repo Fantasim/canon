@@ -387,7 +387,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 332 codes: 303 errors, 26 warnings and 3 run-time codes, with 569 messages.
+The catalogue holds 332 codes: 303 errors, 26 warnings and 3 run-time codes, with 570 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -1301,6 +1301,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8005 | define | name:Name, a:Name, b:Name | `#define {name} is written for both {a} and {b}; change one prefix, or rename one declaration` |
 | E8005 | foreignDefine | name:Name, a:Name, b:Name | `{name} is declared for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a} with @cpp(name:), or use a type of that package here` |
 | E8005 | foreignId | name:Name, a:Name, b:Name | `{name} is declared for the id {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here` |
+| E8005 | foreignDerived | name:Name, a:Name, b:Name | `{name} is derived from {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a}, or use a type of that package here` |
 | W8006 | - | name:Name, item:Name | `C++ name {name} (from {item}) is a macro in common platform headers` |
 | E8007 | - | out:Path | `Go output {out} is under no root listed in go_module: map its root in project.canon go_module` |
 | E8008 | - | dir:Path, a:Name, b:Name | `Go directory {dir} is written by two emits ({a}, {b})` |

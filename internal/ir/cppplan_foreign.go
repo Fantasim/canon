@@ -49,7 +49,7 @@ func (pl *CppNamePlan) declareForeign() {
 	}
 	for _, v := range pl.values {
 		if name := pl.ForeignLoader(v); name != "" {
-			pl.shareNS(name, pl.valueOrigin(v), v)
+			pl.shareDerived(name, v)
 		}
 	}
 }

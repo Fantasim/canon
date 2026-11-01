@@ -1,0 +1,32 @@
+CODEGEN.md §7.6, §7.9, ERRORS.md E8005 (DECISIONS 403; log-2026-11-01 "E8005-ID fixes"): a's macro LoadCfg is detail::DAccess::LoadCfg, the access struct's loader of d's value cfg, named after the value whatever @cpp(name:) says: foreignDerived at the value.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like d's access loader.
+  LoadCfg
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- d/d.canon --
+package d
+
+/// A mark.
+record Mark {
+  /// Its weight.
+  weight: Int
+}
+
+/// The settings.
+let cfg: Mark = { weight: 2 }
+
+emit cpp { out: "@features/d", namespace: "d", mode: data }
+emit json { out: "out/" }
+-- d.cfg.json --
+{ "weight": 2 }
+-- findings.txt --
+error[E8005]  d/d.canon:10:5
+  LoadCfg is derived from d.cfg and written as a #define for a.Word.LoadCfg, in a package this one does not read, so its headers cannot guard it; rename d.cfg, or use a type of that package here
+
+1 error, 0 warnings in 2 packages (…)

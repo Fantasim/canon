@@ -2237,6 +2237,7 @@ var Registry = []Def{
 			{Name: "define", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "#define {name} is written for both {a} and {b}; change one prefix, or rename one declaration"},
 			{Name: "foreignDefine", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{name} is declared for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a} with @cpp(name:), or use a type of that package here"},
 			{Name: "foreignId", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{name} is declared for the id {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here"},
+			{Name: "foreignDerived", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{name} is derived from {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a}, or use a type of that package here"},
 		},
 	},
 	{
@@ -7008,6 +7009,11 @@ func (codeE8005) AtForeignDefine(span source.Span, name string, a string, b stri
 // AtForeignId reports: {name} is declared for the id {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here
 func (codeE8005) AtForeignId(span source.Span, name string, a string, b string) *Builder {
 	return newBuilder(&Registry[259], 6, span, name, a, b)
+}
+
+// AtForeignDerived reports: {name} is derived from {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a}, or use a type of that package here
+func (codeE8005) AtForeignDerived(span source.Span, name string, a string, b string) *Builder {
+	return newBuilder(&Registry[259], 7, span, name, a, b)
 }
 
 // E8007: a Go output under no root mapped by `go_module` (CODEGEN.md §2.8).

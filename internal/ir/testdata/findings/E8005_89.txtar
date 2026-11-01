@@ -1,0 +1,37 @@
+CODEGEN.md §3.5, §5.3, §7.9, ERRORS.md E8005 (DECISIONS 403; log-2026-11-01 E8005-ID review): a's macro TierIdFromWire is both b's table id TierIdFromWire and the table's <Rec>IdFromWire, two origins, so two findings at the table: foreignId for the id, foreignDefine for TierIdFromWire, which names the record b.Tier, whose @cpp(name:) renames it.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like b's table id and its id parser.
+  TierIdFromWire
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers; the id of the first is a's macro.
+let tiers: table Tier = {
+  TierIdFromWire { rank: 1 }
+  other { rank: 2 }
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+-- b.tiers.json --
+{ "TierIdFromWire": { "rank": 1 }, "other": { "rank": 2 } }
+-- findings.txt --
+error[E8005]  b/b.canon:10:5
+  TierIdFromWire is declared for b.Tier and written as a #define for a.Word.TierIdFromWire, in a package this one does not read, so its headers cannot guard it; rename b.Tier with @cpp(name:), or use a type of that package here
+
+error[E8005]  b/b.canon:10:5
+  TierIdFromWire is declared for the id b.tiers.TierIdFromWire and written as a #define for a.Word.TierIdFromWire, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here
+
+2 errors, 0 warnings in 2 packages (…)

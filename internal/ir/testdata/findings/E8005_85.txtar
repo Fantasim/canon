@@ -1,0 +1,78 @@
+CODEGEN.md §3.5, §7.9, DECISIONS 403 (CLEANUP item 16, log-2026-11-01): a message names each declaring item qualified once, whatever package names its origin spells. app reads lib only; defs writes the defines. app's constant defs and its table kinds (origins of one segment, each a package's name) are named app.defs and app.kinds; the getter app's BookRow inherits, app's reader of lib.Book and app's define table of lib's monsters keep lib's names as written.
+-- defs/defs.canon --
+package defs
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// app's constant, named like this package.
+  defs
+  /// app's row class of lib's Book.
+  BookRow
+  /// The getter BookRow inherits from lib's Book.
+  GetRank
+  /// app's reader of lib's Book.
+  Read_Lib_Book
+  /// The define table of lib's monsters.
+  kMonstersDefines
+}
+
+emit cpp { out: "@features/defs", namespace: "defs", mode: types }
+-- kinds/kinds.canon --
+package kinds
+
+/// A kind, so that kinds is a package of the project.
+enum Kind { one }
+-- lib/lib.canon --
+package lib
+
+local let monsters = load.defines("@features/lib/monsters.h")
+
+/// A book.
+record Book {
+  /// Its rank.
+  rank: Int
+  /// Its monster.
+  monster: ref monsters
+}
+
+emit cpp { out: "@features/lib", namespace: "lib", mode: types }
+-- app/app.canon --
+package app
+
+import lib { Book }
+
+/// A constant named like the package defs.
+const defs = 1
+
+/// Books, a table named like the package kinds.
+let kinds: table Book = {
+  one { rank: 1, monster: "M" }
+}
+
+emit cpp { out: "@features/app", namespace: "app", mode: data }
+emit json { out: "out/" }
+-- app.kinds.json --
+{ "one": { "rank": 1, "monster": "M" } }
+-- findings.txt --
+error[E8005]  app/app.canon:6:7
+  defs is declared for app.defs and written as a #define for defs.Word.defs, in a package this one does not read, so its headers cannot guard it; rename app.defs with @cpp(name:), or use a type of that package here
+
+error[E8005]  app/app.canon:9:5
+  BookRow is declared for app.kinds and written as a #define for defs.Word.BookRow, in a package this one does not read, so its headers cannot guard it; rename app.kinds with @cpp(name:), or use a type of that package here
+
+error[E8005]  app/app.canon:9:5
+  GetRank is declared for lib.Book.rank and written as a #define for defs.Word.GetRank, in a package this one does not read, so its headers cannot guard it; rename lib.Book.rank with @cpp(name:), or use a type of that package here
+
+error[E8005]  app/app.canon:13:6
+  Read_Lib_Book is declared for lib.Book and written as a #define for defs.Word.Read_Lib_Book, in a package this one does not read, so its headers cannot guard it; rename lib.Book with @cpp(name:), or use a type of that package here
+
+error[E8005]  app/app.canon:13:6
+  kMonstersDefines is declared for lib.monsters and written as a #define for defs.Word.kMonstersDefines, in a package this one does not read, so its headers cannot guard it; rename lib.monsters with @cpp(name:), or use a type of that package here
+
+error[E8005]  lib/lib.canon:8:3
+  GetRank is declared for lib.Book.rank and written as a #define for defs.Word.GetRank, in a package this one does not read, so its headers cannot guard it; rename lib.Book.rank with @cpp(name:), or use a type of that package here
+
+error[E8005]  lib/lib.canon:13:6
+  kMonstersDefines is declared for lib.monsters and written as a #define for defs.Word.kMonstersDefines, in a package this one does not read, so its headers cannot guard it; rename lib.monsters with @cpp(name:), or use a type of that package here
+
+7 errors, 0 warnings in 4 packages (…)

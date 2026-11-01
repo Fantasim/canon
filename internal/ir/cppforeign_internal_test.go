@@ -131,17 +131,23 @@ func TestCppGuardNames(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §3.5, §7.9, DECISIONS 403: a scope origin that starts with a package's name (an inherited getter of q's record) is named as written, one without is qualified by the plan's package, and a name of one item declared in a scope and shared in the namespace is one finding.
+// CODEGEN.md §3.5, §7.9, DECISIONS 403: a scope origin that starts with a package's name (an inherited getter of q's record) is named as written, one without is qualified by the plan's package, and a name declared in a scope and shared in the namespace is one finding: one per (name, origin), so a table id named like its table's container is two; each name of a baked table's id enum is a table id, and a scope's notes say how a finding names the rest (ERRORS.md E8005 foreignId, foreignDerived; log-2026-11-01).
 func TestDeclaredNames(t *testing.T) {
 	pl := &CppNamePlan{namer: newNamer("p", cppValidIdent)}
-	item, row := &Const{Name: "C"}, &Record{Name: "Rec"}
+	item, row, table := &Const{Name: "C"}, &Record{Name: "Rec"}, &Value{Name: "recs"}
+	derived, byRecord := foreignNote{derived: true}, foreignNote{origin: "p.Rec"}
 	scope := pl.scope("p")
-	scope.names = map[string]string{"C": "C", "GetF": "q.Rec.f", "Tone": "p.Tone", "Row": "q.Rec"}
-	scope.items = map[string]any{"C": item, "Row": row}
-	pl.shared = []cppShared{{name: "C", origin: "p.C", item: item}, {name: "Row", origin: "p.q.Rec", item: row}, {name: "p", origin: "p"}}
+	scope.names = map[string]string{"C": "C", "GetF": "q.Rec.f", "Tone": "p.Tone", "Row": "q.Rec", "Recs": "p.recs", "RecId": "p.recs"}
+	scope.items = map[string]any{"C": item, "Row": row, "Recs": table, "RecId": table}
+	scope.notes = map[string]foreignNote{"Recs": derived, "RecId": byRecord}
+	ids := pl.scope("RecId")
+	ids.ids, ids.names, ids.items = true, map[string]string{"Recs": "p.recs.Recs"}, map[string]any{"Recs": table}
+	pl.shared = []cppShared{{name: "C", origin: "p.C", item: item}, {name: "Recs", origin: "p.recs", item: table}, {name: "RecId", origin: "p.recs", item: table}, {name: "p", origin: "p"}}
 	got := foreignStage(t, nil, true).declaredNames(pl)
 	want := []declaredName{
-		{"C", "p.C", item}, {"GetF", "q.Rec.f", nil}, {"Row", "q.Rec", row}, {"Tone", "p.Tone", nil}, {"p", "p", nil},
+		{name: "C", origin: "p.C", item: item}, {name: "GetF", origin: "q.Rec.f"}, {name: "RecId", origin: "p.recs", item: table, note: byRecord},
+		{name: "Recs", origin: "p.recs", item: table, note: derived}, {name: "Row", origin: "q.Rec", item: row}, {name: "Tone", origin: "p.Tone"},
+		{name: "Recs", origin: "p.recs.Recs", item: table, id: true}, {name: "p", origin: "p"},
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("declared names %v, want %v", got, want)

@@ -443,6 +443,7 @@ E8005 finder: resource.vocab.items: resource.vocab.items is generated for both @
 E8005 define: #define resource.vocab.items is written for both resource.vocab.items and resource.vocab.items; change one prefix, or rename one declaration
 E8005 foreignDefine: resource.vocab.items is declared for resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; rename resource.vocab.items with @cpp(name:), or use a type of that package here
 E8005 foreignId: resource.vocab.items is declared for the id resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here
+E8005 foreignDerived: resource.vocab.items is derived from resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; rename resource.vocab.items, or use a type of that package here
 E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module: map its root in project.canon go_module
 E8008 -: Go directory @resource/Server/Item/propItem.json is written by two emits (resource.vocab.items, resource.vocab.items)
 E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: expected one of go, cpp

@@ -167,7 +167,7 @@ func (pl *CppNamePlan) showsOptional(methods []cppMethod, fns []*ExportFn) bool 
 func (pl *CppNamePlan) declareAccess(access string) {
 	sc := pl.accessScope(access)
 	for _, v := range pl.values {
-		pl.declare(sc, pl.AccessLoader(v), pl.valueOrigin(v), v)
+		pl.declareDerived(sc, pl.AccessLoader(v), v)
 	}
 	if pl.reloads() {
 		pl.declare(sc, pl.AccessSnapshotLoader(), pl.p.Name, nil)

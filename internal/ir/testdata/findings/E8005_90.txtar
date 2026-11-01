@@ -1,0 +1,37 @@
+CODEGEN.md §7.3, §7.9, ERRORS.md E8005 (DECISIONS 403; log-2026-11-01 E8005-ID review): a's macro tiers is both b's table id tiers and the member Data::tiers of b's access struct, two origins, so two findings at the table: foreignId for the id, foreignDerived for the Data member, named verbatim after the value whatever @cpp(name:) says.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like b's table id and its Data member.
+  tiers
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers; the id of the first is a's macro.
+let tiers: table Tier = {
+  tiers { rank: 1 }
+  other { rank: 2 }
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+-- b.tiers.json --
+{ "tiers": { "rank": 1 }, "other": { "rank": 2 } }
+-- findings.txt --
+error[E8005]  b/b.canon:10:5
+  tiers is declared for the id b.tiers.tiers and written as a #define for a.Word.tiers, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here
+
+error[E8005]  b/b.canon:10:5
+  tiers is derived from b.tiers and written as a #define for a.Word.tiers, in a package this one does not read, so its headers cannot guard it; rename b.tiers, or use a type of that package here
+
+2 errors, 0 warnings in 2 packages (…)

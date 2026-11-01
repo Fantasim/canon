@@ -110,45 +110,67 @@ func (s *stage) addDefine(name string, src defineSource) {
 	}
 }
 
-// declaredName is a name of a C++ plan with its qualified origin and the item it was declared for, nil for a fixed name.
+// declaredName is a name of a C++ plan with its qualified origin and the item it was declared for, nil for a fixed name; id marks a table id (E8005 foreignId), note how a foreign define's finding names it otherwise.
 type declaredName struct {
 	name, origin string
 	item         any
+	id           bool
+	note         foreignNote
 }
 
-// declaredNames are the names pl declares in every scope, each scope's in name order, then the names it shares in its namespaces and the segments of the namespace (CODEGEN.md §3.5), each name of an item once. A scope's origin that already starts with a package's name (an inherited getter of another package's record) is kept as written.
+// foreignNote is how E8005 names a declared name a foreign #define equals, when not as declared (CODEGEN.md §7.9): derived from a value's own name, which @cpp(name:) does not change (foreignDerived), or at another origin, the record of <Rec>Id and <Rec>IdFromWire.
+type foreignNote struct {
+	derived bool
+	origin  string // the origin the finding names, "" for the declared one
+}
+
+// hint is the origin d's foreign-define finding names.
+func (d declaredName) hint() string {
+	if d.note.origin != "" {
+		return d.note.origin
+	}
+	return d.origin
+}
+
+// noteForeign runs declare, which declares name in sc, and keeps n for name when that declaration added it: a name another item holds keeps that item's.
+func (pl *CppNamePlan) noteForeign(sc *nameScope, name string, n foreignNote, declare func()) {
+	_, taken := sc.names[name]
+	declare()
+	if _, added := sc.names[name]; !added || taken {
+		return
+	}
+	if sc.notes == nil {
+		sc.notes = map[string]foreignNote{}
+	}
+	sc.notes[name] = n
+}
+
+// declaredNames are the names pl declares in every scope, each scope's in name order, then the names it shares in its namespaces and the segments of the namespace (CODEGEN.md §3.5), each (name, origin) once: a name shared and declared in a scope is one. A scope's origin that already starts with a package's name (an inherited getter of another package's record) is kept as written.
 func (s *stage) declaredNames(pl *CppNamePlan) []declaredName {
 	var out []declaredName
 	seen := map[declaredKey]bool{}
 	add := func(d declaredName) {
-		k := declaredKey{name: d.name, item: d.item}
-		if d.item == nil {
-			k.origin = d.origin
-		}
-		if !seen[k] {
+		if k := (declaredKey{d.name, d.origin}); !seen[k] {
 			seen[k] = true
 			out = append(out, d)
 		}
 	}
 	for _, sc := range pl.scopes {
 		for _, name := range slices.Sorted(maps.Keys(sc.names)) {
-			add(declaredName{name, s.scopeOrigin(pl, sc.names[name]), sc.items[name]})
+			add(declaredName{name, s.scopeOrigin(pl, sc.names[name]), sc.items[name], sc.ids, sc.notes[name]})
 		}
 	}
 	for _, n := range pl.shared {
-		add(declaredName{n.name, n.origin, n.item})
+		add(declaredName{name: n.name, origin: n.origin, item: n.item})
 	}
 	return out
 }
 
-// declaredKey is what makes two declared names one finding: the name and its item, or its origin for a fixed name.
-type declaredKey struct {
-	name   string
-	item   any
-	origin string
-}
+// declaredKey is what makes two declared names one finding: the name and its origin as declared (CODEGEN.md §7.9).
+type declaredKey struct{ name, origin string }
 
 // scopeOrigin is a scope origin as messages name it: as written when it starts with the name of a package, else qualified by pl's.
+// The lookup cannot misname one: a scope origin is pl's own qualified name, another loaded package's (inherited getter, reader, define ref) or one segment, never looked up (E8005_85).
 func (s *stage) scopeOrigin(pl *CppNamePlan, origin string) string {
 	segs := strings.Split(origin, qnameSep)
 	for i := len(segs) - 1; i >= 1; i-- {

@@ -1,0 +1,39 @@
+CODEGEN.md §5.8, §7.3, §7.9, ERRORS.md E8005 (DECISIONS 403; log-2026-11-01 E8005-ID review): a's macro best_ref is the resolved twin Data::best_ref of b's ref value best, named after the value whatever @cpp(name:) says: foreignDerived at the value.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like b's resolved Data member.
+  best_ref
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  one { rank: 1 }
+  other { rank: 2 }
+}
+
+/// The best tier, a ref value.
+let best: ref tiers = "one"
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+-- b.tiers.json --
+{ "one": { "rank": 1 }, "other": { "rank": 2 } }
+-- b.best.json --
+"one"
+-- findings.txt --
+error[E8005]  b/b.canon:16:5
+  best_ref is derived from b.best and written as a #define for a.Word.best_ref, in a package this one does not read, so its headers cannot guard it; rename b.best, or use a type of that package here
+
+1 error, 0 warnings in 2 packages (…)
