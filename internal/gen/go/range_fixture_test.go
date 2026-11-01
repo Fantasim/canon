@@ -102,6 +102,17 @@ func rangeExtras(flag *ir.Enum, row ir.TypeRef) (fields []*ir.Field, pick *ir.De
 	return fields, pick
 }
 
+// rangeMaps are Probe's maps whose keys carry no refinement, for the paths under an empty key (CODEGEN.md §5.13): a scalar, a record, a list, a keyed list and a map as the value.
+func rangeMaps(sub, row ir.TypeRef) []*ir.Field {
+	value := within(intT, between(0, 9))
+	keyed := ir.TypeRef{Kind: types.List, Elem: &row, KeyedBy: &ir.KeyField{Name: "id", WirePath: []string{"id"}}}
+	return []*ir.Field{
+		wired("me", "me", "", mapOfT(strT, value)), wired("mr", "mr", "", mapOfT(strT, sub)),
+		wired("ml", "ml", "", mapOfT(strT, listT(within(intT, between(0, 5))))), wired("mrows", "mrows", "", mapOfT(strT, keyed)),
+		wired("mm", "mm", "", mapOfT(strT, mapOfT(strT, value))),
+	}
+}
+
 // rangeSeconds is Probe's Duration of 1s..=2s read in seconds: the bound is judged in milliseconds after the unit (CODEGEN.md §5.15).
 func rangeSeconds() *ir.Field {
 	ds := wired("ds", "ds", "", within(durT, &types.Bound{Lo: types.Limit{I: 1000}, Hi: types.Limit{I: 2000}, HasLo: true, HasHi: true, HiIncluded: true}))
@@ -121,6 +132,7 @@ func rangePackage() *ir.Package {
 	}}
 	fields := rangeFields(typed(subRec, types.Record), typed(shape, types.Variant), typed(slot, types.Record), flag)
 	extra, pick := rangeExtras(flag, typed(row, types.Record))
+	extra = append(extra, rangeMaps(typed(subRec, types.Record), typed(row, types.Record))...)
 	last := len(fields) - 2 // flags and slots stay last
 	fields = append(fields[:last:last], append(extra, fields[last:]...)...)
 	fields = append(fields, rangeSeconds())

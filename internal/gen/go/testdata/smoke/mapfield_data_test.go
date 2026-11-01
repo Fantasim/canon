@@ -86,8 +86,8 @@ func TestMapFieldBad(t *testing.T) {
 		"intkey":     `rows[0].levels.01: expected a canonical decimal integer key`,
 		"plus":       `rows[0].levels.+1: expected a canonical decimal integer key`,
 		"negzero":    `rows[0].small.-0: expected a canonical decimal integer key`,
-		"emptykey":   `rows[0].small: expected a canonical decimal integer key`,
-		"emptyname":  `rows[0].names: expected a string`,
+		"emptykey":   `rows[0].small.: expected a canonical decimal integer key`,
+		"emptyname":  `rows[0].names.: expected a string`,
 		"range":      `rows[0].small.300: expected an integer from -128 to 127`,
 		"huge":       `rows[0].levels.99999999999999999999: expected an integer`,
 		"enumkey":    `rows[0].power.earth: unknown value earth`,
@@ -108,6 +108,9 @@ func TestMapFieldBad(t *testing.T) {
 		"nohome":     `rows[0].slots.s.home: no entry nowhere`,
 		"ranknohome": `rows[0].rankSlots.200.home: no entry nowhere`,
 		"elemnohome": `rows[0].elemSlots.water.home: no entry nowhere`,
+		// CODEGEN.md §5.13, log-2026-10-31: the resolver's path under an empty key is `<parent>.` too.
+		"emptyboardkey": `rows[0].byBoard.: no entry `,
+		"emptynohome":   `rows[0].slots..home: no entry nowhere`,
 	} {
 		_, err := p.LoadBoards("testdata/bad/" + file + ".json")
 		if want = "testdata/bad/" + file + ".json: " + want; err == nil || err.Error() != want {

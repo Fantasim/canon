@@ -408,12 +408,9 @@ func jsonTable({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage)
 }
 
 {{end}}
-{{define "jsonKeyPath"}}// jsonKeyPath is the path of the member key of the object at path (which ends in a dot): an empty
-// key adds nothing to it, as the C++ loader's path does.
+{{define "jsonKeyPath"}}// jsonKeyPath is the path of the member key of the object at path (which ends in a dot), an empty
+// key included: `<parent>.<key>`, so the member under "" is `<parent>.` (CODEGEN.md §5.13).
 func jsonKeyPath({{.L.Path}}, {{.L.Key}} string) string {
-	if {{.L.Key}} == "" {
-		return {{.Strings}}.TrimSuffix({{.L.Path}}, ".")
-	}
 	return {{.L.Path}} + {{.L.Key}}
 }
 

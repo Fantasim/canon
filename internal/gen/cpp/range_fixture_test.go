@@ -85,6 +85,17 @@ func rangeExtras(flag *ir.Enum, row ir.TypeRef) (fields []*ir.Field, pick *ir.De
 	return fields, pick
 }
 
+// rangeMaps are Probe's maps whose keys carry no refinement, for the paths under an empty key (CODEGEN.md §5.13): a scalar, a record, a list, a keyed list and a map as the value.
+func rangeMaps(sub, row ir.TypeRef) []*ir.Field {
+	value := within(tInt, bound(0, 9))
+	keyed := ir.TypeRef{Kind: types.List, Elem: &row, KeyedBy: &ir.KeyField{Name: "id", WirePath: []string{"id"}}}
+	return []*ir.Field{
+		field("me", "me", "", mapOf(tString, value)), field("mr", "mr", "", mapOf(tString, sub)),
+		field("ml", "ml", "", mapOf(tString, listOf(within(tInt, bound(0, 5))))), field("mrows", "mrows", "", mapOf(tString, keyed)),
+		field("mm", "mm", "", mapOf(tString, mapOf(tString, value))),
+	}
+}
+
 // rangePackage is demo.range in types mode: Probe holds a refinement at every position the decoder checks, and a @text fn returns a refined list.
 func rangePackage() *ir.Package {
 	flag := rangeFlag()
@@ -98,6 +109,7 @@ func rangePackage() *ir.Package {
 	fields := rangeFields(
 		ir.TypeRef{Kind: types.Record, Named: subRec}, ir.TypeRef{Kind: types.Variant, Named: shape}, ir.TypeRef{Kind: types.Record, Named: slot}, flag)
 	extra, pick := rangeExtras(flag, ir.TypeRef{Kind: types.Record, Named: row})
+	extra = append(extra, rangeMaps(ir.TypeRef{Kind: types.Record, Named: subRec}, ir.TypeRef{Kind: types.Record, Named: row})...)
 	last := len(fields) - 2 // flags and slots stay last
 	fields = append(fields[:last:last], append(extra, fields[last:]...)...)
 	probe := &ir.Record{Pkg: rangePkg, Name: "Probe", Fields: fields}

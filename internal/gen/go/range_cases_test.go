@@ -3,7 +3,7 @@ package gogen_test
 import "slices"
 
 // rangeBase is a Probe every refinement accepts.
-const rangeBase = `{"n":5,"u8":7,"i8":7,"ex":4,"f":0.5,"f32":0.0625,"d":2000,"s":"ab","tags":[1,2],"m":{"a":1},"mi":{"50":"x"},"opts":[null,3],"lit":"auto","sub":{"v":1},"shape":{"kind":"circle","r":1},"dsel":"b","dep":3,"rows":[{"id":1},{"id":2}],"flags":3,"n0":1,"w0":1,"n1":2,"w1":2,"ds":1}`
+const rangeBase = `{"n":5,"u8":7,"i8":7,"ex":4,"f":0.5,"f32":0.0625,"d":2000,"s":"ab","tags":[1,2],"m":{"a":1},"mi":{"50":"x"},"opts":[null,3],"lit":"auto","sub":{"v":1},"shape":{"kind":"circle","r":1},"dsel":"b","dep":3,"rows":[{"id":1},{"id":2}],"flags":3,"n0":1,"w0":1,"n1":2,"w1":2,"ds":1,"me":{"a":1},"mr":{"a":{"v":1}},"ml":{"a":[1]},"mrows":{"a":[{"id":1}]},"mm":{"a":{"b":1}}}`
 
 // rangeCase is rangeBase with from replaced by to, and the line the driver prints for it.
 type rangeCase struct{ name, from, to, want string }
@@ -72,7 +72,21 @@ func structCases() []rangeCase {
 		{"bits-count", `"flags":3`, `"flags":7`, rangeErr("flags", countIn+"1..=2")}, {"bits-in", `"flags":3`, `"flags":6`, rangeOK},
 		{"bits-lo", `"flags":3`, `"flags":0`, rangeErr("flags", countIn+"1..=2")}, {"bits-lo-in", `"flags":3`, `"flags":4`, rangeOK},
 		{"pairs-lo", `,"n0":1,"w0":1,"n1":2,"w1":2`, ``, rangeErr("slots", countIn+"1..=2")}, {"pairs-lo-in", `,"n1":2,"w1":2`, ``, rangeOK},
-		{"map-key-empty", `"m":{"a":1}`, `"m":{"":1}`, rangeErr("m", bytesIn+"1..=3")},
+	}
+}
+
+// emptyKeyCases are CODEGEN.md §5.13, log-2026-10-31 (EMPTY-KEY): a member under map key k is `<parent>.<k>`, an empty key included. The paths are the TypeScript decoder's; the integer-key message is the canonical one, which TS-KEYMSG adopts.
+func emptyKeyCases() []rangeCase {
+	return []rangeCase{
+		{"map-key-empty", `"m":{"a":1}`, `"m":{"":1}`, rangeErr("m.", bytesIn+"1..=3")},
+		{"map-value-empty-key", `"me":{"a":1}`, `"me":{"":10}`, rangeErr("me.", valueIn+"0..=9")},
+		{"map-record-empty-key", `"mr":{"a":{"v":1}}`, `"mr":{"":{"v":4}}`, rangeErr("mr..v", valueIn+"0..=3")},
+		{"map-list-empty-key", `"ml":{"a":[1]}`, `"ml":{"":[1,6]}`, rangeErr("ml.[1]", valueIn+"0..=5")},
+		{"map-keyed-dup-empty-key", `"mrows":{"a":[{"id":1}]}`, `"mrows":{"":[{"id":1},{"id":1}]}`, "error Probe: $.mrows.[1].id: duplicate id 1 (first at $.mrows.[0])"},
+		{"map-in-map-both-empty", `"mm":{"a":{"b":1}}`, `"mm":{"":{"":10}}`, rangeErr("mm..", valueIn+"0..=9")},
+		{"map-in-map-outer-empty", `"mm":{"a":{"b":1}}`, `"mm":{"":{"b":10}}`, rangeErr("mm..b", valueIn+"0..=9")},
+		{"map-in-map-inner-empty", `"mm":{"a":{"b":1}}`, `"mm":{"a":{"":10}}`, rangeErr("mm.a.", valueIn+"0..=9")},
+		{"map-int-key-empty", `"mi":{"50":"x"}`, `"mi":{"":"x"}`, rangeErr("mi.", "expected a canonical decimal integer key")},
 	}
 }
 
@@ -113,5 +127,5 @@ var textCases = []struct{ name, text, want string }{
 // rangeCases are CODEGEN.md §5.15 at every position: both sides of each bound, the order of failures, what is never checked.
 func rangeCases() []rangeCase {
 	cases := []rangeCase{{"base", "", "", rangeOK}}
-	return slices.Concat(cases, numberCases(), collectionCases(), structCases(), positionCases(), unitCases())
+	return slices.Concat(cases, numberCases(), collectionCases(), structCases(), positionCases(), unitCases(), emptyKeyCases())
 }

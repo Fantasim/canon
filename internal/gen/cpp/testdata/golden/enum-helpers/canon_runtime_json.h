@@ -975,22 +975,33 @@ public:
     void Push(std::string segment) { path_.push_back(std::move(segment)); }
     void Pop() { path_.pop_back(); }
 
-    /// The path `key` would have at the current position, joined like Fail's message
-    /// ("rows[0].weight"), without pushing it.
-    std::string PathOf(std::string_view key) const {
+    /// The path of the current position, joined like Fail's message ("rows[0]"): "" at the top.
+    std::string PathOf() const {
         std::string p;
         for (size_t i = 0; i < path_.size(); ++i) {
             if (i > 0) p += '.';
             p += path_[i];
         }
-        if (!key.empty()) {
-            if (!p.empty()) p += '.';
-            p += key;
-        }
+        return p;
+    }
+
+    /// The path member `key` would have at the current position ("rows[0].weight"), without
+    /// pushing it: always `<parent>.<key>`, an empty key included (CODEGEN.md §5.13).
+    std::string PathOf(std::string_view key) const {
+        std::string p = PathOf();
+        if (!path_.empty()) p += '.';
+        p += key;
         return p;
     }
 
     /// Records an error at the current path (only the first one is kept).
+    void FailHere(std::string_view what) {
+        if (!error_.empty()) return;
+        error_ = name_ + ": " + PathOf() + ": ";
+        error_ += what;
+    }
+
+    /// Records an error at member `key` of the current path, an empty key included.
     void Fail(std::string_view key, std::string_view what) {
         if (!error_.empty()) return;
         error_ = name_ + ": " + PathOf(key) + ": ";
@@ -1190,7 +1201,7 @@ namespace detail {
 /// True when `v` is an object; else "null" or "expected an object" at the decoder's path.
 inline bool Object(const Json& v, Decoder& dec) {
     if (v.is_object()) return true;
-    dec.Fail(std::string_view(), v.is_null() ? "null" : "expected an object");
+    dec.FailHere(v.is_null() ? "null" : "expected an object");
     return false;
 }
 
@@ -1270,7 +1281,7 @@ inline bool Table(const Json& v, Decoder& dec, std::vector<TableEntry>& out) {
     }
     for (const std::string* key : keys) {
         if (!IsIdentifier(*key)) {
-            return dec.Fail(std::string_view(), "\"" + *key + "\" is not a valid table key (an identifier)"), false;
+            return dec.FailHere("\"" + *key + "\" is not a valid table key (an identifier)"), false;
         }
         const auto row = v.find(*key);
         const auto retired = row->is_object() ? row->find(retiredKey) : row->end();
@@ -1286,9 +1297,8 @@ inline bool Table(const Json& v, Decoder& dec, std::vector<TableEntry>& out) {
     return true;
 }
 
-/// The path of member `key` of the object at `parent`: an empty key adds nothing, as PathOf's.
+/// The path of member `key` of the object at `parent`: `<parent>.<key>`, an empty key included, as PathOf's.
 inline std::string KeyPath(std::string_view parent, std::string_view key) {
-    if (key.empty()) return std::string(parent);
     return std::string(parent) + "." + std::string(key);
 }
 

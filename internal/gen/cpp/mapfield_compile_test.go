@@ -35,7 +35,7 @@ func mapRow(id string, pairs ...string) string {
 	return b.String() + "}"
 }
 
-// mapCases: WIRE.md §5.8's map in file order (water before fire, 10 before -3), its keys of every kind (an integer, an enum, an enum by its @json(codes) code, a String, a literal union, a ref), list, record and map values, a stored fn's map, an empty map and an absent optional one, and the refusals at the place they occur, the path showing each key as the file wrote it (an empty one adds nothing).
+// mapCases: WIRE.md §5.8's map in file order (water before fire, 10 before -3), its keys of every kind (an integer, an enum, an enum by its @json(codes) code, a String, a literal union, a ref), list, record and map values, a stored fn's map, an empty map and an absent optional one, and the refusals at the place they occur, the path showing each key as the file wrote it (an empty one is `<parent>.`, CODEGEN.md §5.13, log-2026-10-31).
 var mapCases = []tableFileCase{
 	{"good", mapRow("b1", "power", `{"water": 2, "fire": 5}`, "names", `{"z": "Z", "a": "A"}`, "levels", `{"10": "ten", "-3": "minus", "2": "two"}`,
 		"groups", `{"b": [1, 2], "a": []}`, "slots", `{"y": {"n": 1, "home": "b2"}, "x": {"n": 2, "home": "b1"}}`, "extra", `{"k": 7}`,
@@ -47,8 +47,8 @@ var mapCases = []tableFileCase{
 	{"intkey", mapRow("b1", "levels", `{"01": "x"}`), `error good: rows[0].levels.01: expected a canonical decimal integer key`},
 	{"plus", mapRow("b1", "levels", `{"+1": "x"}`), `error good: rows[0].levels.+1: expected a canonical decimal integer key`},
 	{"negzero", mapRow("b1", "small", `{"-0": "x"}`), `error good: rows[0].small.-0: expected a canonical decimal integer key`},
-	{"emptykey", mapRow("b1", "small", `{"": "x"}`), `error good: rows[0].small: expected a canonical decimal integer key`},
-	{"emptyname", mapRow("b1", "names", `{"": 5}`), `error good: rows[0].names: expected a string`},
+	{"emptykey", mapRow("b1", "small", `{"": "x"}`), `error good: rows[0].small.: expected a canonical decimal integer key`},
+	{"emptyname", mapRow("b1", "names", `{"": 5}`), `error good: rows[0].names.: expected a string`},
 	{"range", mapRow("b1", "small", `{"300": "x"}`), `error good: rows[0].small.300: expected an integer from -128 to 127`},
 	{"huge", mapRow("b1", "levels", `{"99999999999999999999": "x"}`), `error good: rows[0].levels.99999999999999999999: expected an integer`},
 	{"enumkey", mapRow("b1", "power", `{"earth": 1}`), "error good: rows[0].power.earth: unknown value earth"},
@@ -69,6 +69,9 @@ var mapCases = []tableFileCase{
 	{"nohome", mapRow("b1", "slots", `{"s": {"n": 1, "home": "nowhere"}}`), "error good: rows[0].slots.s.home: no entry nowhere"},
 	{"ranknohome", mapRow("b1", "rankSlots", `{"200": {"n": 1, "home": "nowhere"}}`), "error good: rows[0].rankSlots.200.home: no entry nowhere"},
 	{"elemnohome", mapRow("b1", "elemSlots", `{"water": {"n": 1, "home": "nowhere"}}`), "error good: rows[0].elemSlots.water.home: no entry nowhere"},
+	// CODEGEN.md §5.13, log-2026-10-31: the resolver's path under an empty key is `<parent>.` too (detail::KeyPath).
+	{"emptyboardkey", mapRow("b1", "byBoard", `{"": 1}`), "error good: rows[0].byBoard.: no entry "},
+	{"emptynohome", mapRow("b1", "slots", `{"": {"n": 1, "home": "nowhere"}}`), "error good: rows[0].slots..home: no entry nowhere"},
 }
 
 // CODEGEN.md §5.9, §5.8, WIRE.md §5.8, DECISIONS 312: a data loader compiles and reads map fields in file order, keys by their wire form, and refuses what its type does not read.

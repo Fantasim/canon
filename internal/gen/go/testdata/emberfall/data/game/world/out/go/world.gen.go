@@ -455,12 +455,9 @@ func jsonSame(raw json.RawMessage, marker string) bool {
 	return json.Unmarshal(raw, &af) == nil && json.Unmarshal([]byte(marker), &mf) == nil && af == mf
 }
 
-// jsonKeyPath is the path of the member key of the object at path (which ends in a dot): an empty
-// key adds nothing to it, as the C++ loader's path does.
+// jsonKeyPath is the path of the member key of the object at path (which ends in a dot), an empty
+// key included: `<parent>.<key>`, so the member under "" is `<parent>.` (CODEGEN.md §5.13).
 func jsonKeyPath(path, key string) string {
-	if key == "" {
-		return strings.TrimSuffix(path, ".")
-	}
 	return path + key
 }
 
