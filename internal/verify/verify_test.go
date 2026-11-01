@@ -190,6 +190,10 @@ func TestPaths(t *testing.T) {
 		{root.Entry(value.Key{S: "9lives"}), `farm["9lives"]`},
 		{root.Entry(value.Key{S: "_"}), `farm["_"]`},
 		{(*verify.Path)(nil).Field("x"), ""},
+		// API.md F1 (log-2026-11-01 SUBJECT-CAPTURE round 2): an expect subject's unnamed root writes its fields bare.
+		{verify.Root("").Field("inner").Index(1), "inner[1]"},
+		{verify.Root("").Index(0).Field("n"), "[0].n"},
+		{verify.Root(""), ""},
 		// API.md P9 (log-2026-09-29 M4 U13-r): the key type declared at the map decides the quoting.
 		{root.MapKey(none, slot), `farm["none"]`},
 		{root.MapKey(other, slot), "farm[other]"},

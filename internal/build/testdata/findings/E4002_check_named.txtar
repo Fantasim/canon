@@ -1,0 +1,26 @@
+API.md §4.1 (Check), EVALUATION.md §8.1: a hard error a named record check raises in stage C of
+`canon check` (E4002) names that check; the run is aborted, no E5001.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row of samples.
+record Row {
+  /// The samples.
+  xs: [Int]
+
+  check sixth: xs[5] > 0 else "the sixth sample is not positive"
+}
+
+/// A short row.
+let row: Row = { xs: [1] }
+-- findings.txt --
+error[E4002]  a/a.canon:9:16
+  row: index 5 out of range for length 1
+
+1 error, 0 warnings in 1 package (…)

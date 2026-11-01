@@ -147,22 +147,59 @@ func (r *run) subject(x *syntax.ExpectStmt) built {
 	saved, outer, lits := r.sink, r.lits, r.testScope()
 	b := built{cmp: comparisonOf(x)}
 	r.sink, r.poisonAt, r.cmp, r.lits = capture, "", b.cmp, lits
-	b.v = r.eval(x.X)
+	b.v = r.evalAt(x.X, subjectPath()) // API.md F1: its parts' findings name them
 	b.aborted = r.failed
 	r.failed, r.sink, r.cmp, r.lits = false, saved, nil, outer
 	b.ex = Expect{Stmt: x, Poisoned: r.poisonAt, PoisonRoot: r.poisonRoot}
 	r.poisonAt, r.poisonRoot, r.poisonSpan = "", Root{}, source.Span{}
-	if !b.aborted && x.Outcome != nil && r.test.builder != nil {
+	if !b.aborted {
+		r.judgeSubject(&b, capture, lits)
+	}
+	b.ex.Captured = capture.Findings()
+	return b
+}
+
+// subjectBuild is an expect subject being built in pkg: its check runs' capture and first poisoned read (EVALUATION.md §10.2).
+type subjectBuild struct {
+	pkg        string
+	capture    *diag.Bag
+	poisonAt   string
+	poisonRoot Root
+}
+
+// notePoisoned keeps pkg.name, the first poisoned value building the subject read; nil s: no subject.
+func (s *subjectBuild) notePoisoned(pkg, name string) {
+	if s != nil && s.poisonAt == "" {
+		s.poisonAt, s.poisonRoot = qualify(s.pkg, pkg, name), Root{Pkg: pkg, Name: name}
+	}
+}
+
+// subjectRead notes a poisoned pkg.name the subject read, outside a forced value's flush (EVALUATION.md §10.2, §4.1).
+func (e *Evaluator) subjectRead(pkg, name string) {
+	if !e.flushing {
+		e.building.notePoisoned(pkg, name)
+	}
+}
+
+// reading makes the reads of the test's own values count, its check runs reporting into capture, until restore (DECISIONS 426).
+func (r *run) reading(capture *diag.Bag) (sb *subjectBuild, restore func()) {
+	sb, outer := &subjectBuild{pkg: r.fr.pkg, capture: capture}, r.ev.building
+	r.ev.building = sb
+	return sb, func() { r.ev.building = outer }
+}
+
+// judgeSubject builds b's value, then judges its unstored literals, a poisoned read b's (EVALUATION.md §10.2, DECISIONS 426).
+func (r *run) judgeSubject(b *built, capture *diag.Bag, lits *litScope) {
+	sb, restore := r.reading(capture)
+	defer restore()
+	if b.ex.Stmt.Outcome != nil && r.test.builder != nil {
 		func() {
 			defer r.ev.judgingIn(lits)() // its verification judges the literals it stores (TYPES.md §11.5)
 			r.test.builder.Build(r.ctx, b.v, capture)
 		}()
 	}
-	if !b.aborted {
-		r.judgeInto(lits, capture)
-	}
-	b.ex.Captured = capture.Findings()
-	return b
+	r.judgeInto(lits, capture)
+	b.ex.Poisoned, b.ex.PoisonRoot = sb.poisonAt, sb.poisonRoot
 }
 
 // comparisonOf is the comparison `expect c` evaluates, nil when c is not one.

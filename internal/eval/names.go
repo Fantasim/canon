@@ -146,6 +146,9 @@ func (r *run) readPoisoned(pkg, name string, at syntax.Node) {
 		if w := r.ev.wld; w != nil {
 			w.notePoisoned(pkg, name)
 		}
+		if r.root == nil { // a subject's own check, verification or where run, never a value it forces (§4.1)
+			r.ev.subjectRead(pkg, name)
+		}
 	}
 	r.stop()
 }

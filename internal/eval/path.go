@@ -15,6 +15,12 @@ type vpath struct {
 	parent *vpath
 	seg    string
 	keyed  *types.Field // a keyed-list element still to be named: its key field (API.md P1, P8)
+	bare   bool         // an expect subject's unnamed root (subjectPath)
+}
+
+// subjectPath is the root of an expect subject's paths: unnamed, its fields bare (API.md F1).
+func subjectPath() *vpath {
+	return &vpath{bare: true}
 }
 
 func rootPath(name string) *vpath {
@@ -88,12 +94,20 @@ func (p *vpath) learnFrom(el value.Value) {
 
 func (p *vpath) String() string {
 	var segs []string
-	for q := p; q != nil; q = q.parent {
+	q := p
+	for ; q != nil; q = q.parent {
 		if q.keyed != nil && q.seg == "" {
 			segs = segs[:0] // below an element whose key is not known: the list's own path
 		}
 		segs = append(segs, q.seg)
+		if q.parent == nil {
+			break
+		}
 	}
 	slices.Reverse(segs)
-	return strings.Join(segs, "")
+	s := strings.Join(segs, "")
+	if q != nil && q.bare {
+		return strings.TrimPrefix(s, dot)
+	}
+	return s
 }

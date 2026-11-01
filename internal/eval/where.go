@@ -33,13 +33,16 @@ func (e *Evaluator) predicate(ctx context.Context, p *types.Predicate, it value.
 	return holds, ok && !r.failed
 }
 
-// where runs a refinement's predicate at a storage point in its implicit frame (EVALUATION.md §12.1, DECISIONS 210).
-func (r *run) where(p *types.Predicate, v value.Value) (bool, bool) {
+// where runs a refinement's predicate at a storage point in its implicit frame, about at (EVALUATION.md §12.1, DECISIONS 210, API.md F1).
+func (r *run) where(p *types.Predicate, v value.Value, at *vpath) (bool, bool) {
 	file := r.ev.fileOf(p.Expr)
 	r.noteCode(file)
-	saved := r.fr
+	saved, cur := r.fr, r.cur
 	r.fr = (&frame{it: v, file: file, pkg: r.ev.index.pkg[file], decl: true}).under(saved)
-	defer func() { r.fr = saved }()
+	if at != nil {
+		r.cur = at
+	}
+	defer func() { r.fr, r.cur = saved, cur }()
 	if !r.nest(r.span(p.Expr)) {
 		return false, false
 	}

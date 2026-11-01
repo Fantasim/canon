@@ -1,0 +1,35 @@
+EVALUATION.md §10.2 step 3, §10.3: a false one-line instance check of a value subject (E5001) is
+captured by the expect, matched by code and by name; `passes` fails listing it (pin).
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row of samples.
+record Row {
+  /// The samples.
+  xs: [Int]
+
+  check short: xs.len() <= 2 else "{xs.len()} samples, above 2"
+}
+
+test "a false check is the subject's" {
+  expect Row { xs: [1, 2, 3] } fails E5001
+  expect Row { xs: [1, 2, 3] } fails short
+  expect Row { xs: [1] } passes
+}
+
+test "passes over a false check fails" {
+  expect Row { xs: [1, 2, 3] } passes
+  expect true
+}
+-- tests.txt --
+a "a false check is the subject's": passed true
+a "passes over a false check fails": passed false
+  line 19: expect Row { xs: [1, 2, 3] } passes
+    E5001 error path "" check "short": 3 samples, above 2
+
+0 errors, 0 warnings in 1 package (…)

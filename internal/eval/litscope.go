@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -101,16 +102,26 @@ func (r *run) judgeInto(s *litScope, capture *diag.Bag) bool {
 	return r.ev.judgeScope(s, func(l KeptLiteral) bool { return r.test.lits.BuildLiteral(r.ctx, l, capture) })
 }
 
-// judgeStatements judges the literals the test's statements built where its other soft findings go;
-// false when the package's budget ran out meanwhile.
+// judgeStatements judges the test statements' literals; false: the budget ran out, or a poisoned read (§7.2, DECISIONS 426).
 func (r *run) judgeStatements() bool {
 	e, pkg := r.ev, r.fr.pkg
 	bag := e.bags[pkg]
 	if bag == nil {
 		bag = diag.NewBag(e.files(), pkg)
 	}
-	r.judgeInto(r.lits, bag)
-	return !e.halted(pkg)
+	if r.test == nil || r.test.lits == nil {
+		return !e.halted(pkg)
+	}
+	sb, restore := r.reading(bag)
+	defer restore()
+	e.judgeScope(r.lits, func(l KeptLiteral) bool {
+		ok := r.test.lits.BuildLiteral(r.ctx, l, bag)
+		if sb.poisonAt != "" && r.poisonAt == "" {
+			r.poisonAt, r.poisonRoot, r.poisonSpan = sb.poisonAt, sb.poisonRoot, located(l.Value, source.Span{})
+		}
+		return ok
+	})
+	return r.poisonAt == "" && !e.halted(pkg)
 }
 
 // adoptLiterals makes the copy of each literal of s a substituted value holds its let's, judged where stored (EVALUATION.md §10.5).

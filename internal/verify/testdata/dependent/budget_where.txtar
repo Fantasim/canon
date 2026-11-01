@@ -32,7 +32,7 @@ record Thing {
 let things: [Thing] = [{ k: num, p: 3 }]
 -- budget.txt --
 error[E4401]  a/a.canon:15:20
-  evaluation budget of 1222 steps exhausted
+  things[0].p: evaluation budget of 1222 steps exhausted
   heaviest: things (1222 steps)
 
 1 error, 0 warnings in 1 package (…)

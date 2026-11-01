@@ -1,0 +1,70 @@
+DECISIONS 426, EVALUATION.md §10.5 item 1, §10.2 last paragraph, §4.1: a substitution value's
+kept literal that nothing stores is judged inside the expect's reads, as its own evaluation is:
+a poisoned read there fails the expect, naming limit, and no world is built, whichever test forced
+limit first. The control's world evaluates limit itself, so it captures limit's E4002 instead.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { num, sub }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+}
+
+/// The nodes.
+let nodes: table Node = { d { k: num }, n { k: num } }
+
+/// A broken limit.
+let limit: Int = [1][5]
+
+/// What a node holds.
+type P(e: Node) = match e.k {
+  num => Int where it < limit
+  sub => Int
+}
+
+/// Whether m is empty.
+fn empty(m: {x in nodes: P(x)}) -> Bool {
+  return m.len() == 0
+}
+
+/// A holder.
+record H {
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+/// A probe a substitution replaces.
+let probe: Bool = true
+
+test "an unstored literal of a substitution reads the poisoned limit" {
+  expect package { probe: empty({ d: 3 }) } passes
+}
+
+test "a substitution value reads the poisoned limit" {
+  expect package { probe: limit > 0 } passes
+}
+
+test "control: a world evaluates limit itself" {
+  expect package { probe: false } passes
+}
+-- tests.txt --
+a "an unstored literal of a substitution reads the poisoned limit": passed false
+  line 40: expect package { probe: empty({ d: 3 }) } passes (reads poisoned limit)
+    cause E4002 error path "limit" check "": index 5 out of range for length 1
+a "a substitution value reads the poisoned limit": passed false
+  line 44: expect package { probe: limit > 0 } passes (reads poisoned limit)
+    cause E4002 error path "limit" check "": index 5 out of range for length 1
+a "control: a world evaluates limit itself": passed false
+  line 48: expect package { probe: false } passes
+    E4002 error path "limit" check "": index 5 out of range for length 1
+
+0 errors, 0 warnings in 1 package (…)

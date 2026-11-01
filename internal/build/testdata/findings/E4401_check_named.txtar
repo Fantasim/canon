@@ -1,0 +1,28 @@
+API.md §4.1 (Check), EVALUATION.md §12.2: a named record check that spends its package's budget in
+stage C of `canon check` raises E4401, which names that check.
+-- check-only --
+-- project.canon --
+project acme {
+  canon: "0.1"
+  budget: 200
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row of samples.
+record Row {
+  /// The samples.
+  xs: [Int]
+
+  check heavy: [i * i for i in 0..1000].len() > 0 else "never"
+}
+
+/// A row.
+let row: Row = { xs: [1] }
+-- findings.txt --
+error[E4401]  a/a.canon:9:17
+  row: evaluation budget of 200 steps exhausted
+  heaviest: heavy (197 steps)
+
+1 error, 0 warnings in 1 package (…)

@@ -54,6 +54,12 @@ func (e *Evaluator) checkRun(ctx context.Context, c *syntax.CheckDecl, self valu
 	}
 	r := e.newRun(ctx, ch, file)
 	r.fr.self, r.instPath, r.lits = self, path, e.callScope()
+	if c.Name != nil {
+		r.checkName = c.Name.Name
+	}
+	if b := e.building; b != nil {
+		r.sink, r.subj = b.capture, true
+	}
 	return r
 }
 

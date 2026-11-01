@@ -21,6 +21,8 @@ type run struct {
 	starved    bool      // aborted by a spent budget, its package's or that of a value it read
 	free       bool      // stage B's where re-runs cost nothing (DECISIONS 148)
 	sink       *diag.Bag // captures the findings of an expect subject
+	subj       bool      // a check run of a subject (EVALUATION.md §10.2)
+	checkName  string    // a check run's check (API.md §4.1)
 	site       source.Span
 	chainNone  bool
 	at         *vpath
@@ -179,6 +181,9 @@ func (r *run) budgetOut(at source.Span) {
 	}
 	heavy := e.heaviest(pkg)
 	b := r.withStack(diag.E4401.At(at, e.budget, qualify(pkg, heavy.declPkg(), heavy.name), e.spentOn(heavy))).Path(r.findingPath())
+	if r.checkName != "" {
+		b.Check(r.checkName)
+	}
 	e.out[pkg] = b
 	e.noteOut(r, b)
 	e.reported = append(e.reported, pkg)
@@ -200,15 +205,18 @@ func (r *run) abort(b *diag.Builder) {
 	r.abortAt(b, r.findingPath())
 }
 
-// abortAt is abort with the finding about the value at path (API.md F1).
+// abortAt is abort with the finding about the value at path (API.md F1; taint, EVALUATION.md §10.5 item 4).
 func (r *run) abortAt(b *diag.Builder, path string) {
 	if r.failed {
 		return
 	}
 	r.failed = true
 	r.noteAbort()
-	if !r.tainted || r.sink != nil || r.ev.vec != nil {
+	if !r.tainted || r.sink != nil && !r.subj || r.ev.vec != nil {
 		b.Path(path)
+		if r.checkName != "" {
+			b.Check(r.checkName)
+		}
 		r.noteStop(b)
 		r.emit(b)
 	}

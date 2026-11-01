@@ -1,0 +1,38 @@
+API.md F1 and P8: a value subject has no name, so the paths of its parts start bare: the instance
+check of a nested record (stage C, through verify's paths) is about `inner` and `rows[1]`.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// An inner record.
+record Inner {
+  /// Its size.
+  n: Int
+
+  check positive: n > 0 else "size {n} is not positive"
+}
+
+/// What the tests build.
+record Outer {
+  /// The inner record.
+  inner: Inner
+  /// More inner records.
+  rows: [Inner] = []
+}
+
+test "paths of a subject's parts" {
+  expect Outer { inner: { n: 0 } } passes
+  expect Outer { inner: { n: 1 }, rows: [{ n: 1 }, { n: 0 }] } passes
+}
+-- tests.txt --
+a "paths of a subject's parts": passed false
+  line 21: expect Outer { inner: { n: 0 } } passes
+    E5001 error path "inner" check "positive": size 0 is not positive
+  line 22: expect Outer { inner: { n: 1 }, rows: [{ n: 1 }, { n: 0 }] } passes
+    E5001 error path "rows[1]" check "positive": size 0 is not positive
+
+0 errors, 0 warnings in 1 package (…)

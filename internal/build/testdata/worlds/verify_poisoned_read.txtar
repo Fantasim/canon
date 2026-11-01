@@ -1,0 +1,44 @@
+EVALUATION.md §10.2 last paragraph, §4.1: a value subject whose verification (step 2) reads a
+poisoned top-level value, a ref's target table, makes the expect fail, naming it, whichever test
+forced the table first; the table's own hard error is its cause, never captured.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A thing.
+record Thing {
+  /// Its size.
+  n: Int
+}
+
+/// The things, poisoned by a hard error in an entry.
+let things: table Thing = {
+  a { n: [1][5] }
+}
+
+/// A pick of a thing.
+record Pick {
+  /// The thing picked.
+  t: ref things
+}
+
+test "passes over a poisoned target" {
+  expect Pick { t: a } passes
+}
+
+test "fails over a poisoned target" {
+  expect Pick { t: a } fails E4002
+}
+-- tests.txt --
+a "passes over a poisoned target": passed false
+  line 22: expect Pick { t: a } passes (reads poisoned things)
+    cause E4002 error path "things.a.n" check "": index 5 out of range for length 1
+a "fails over a poisoned target": passed false
+  line 26: expect Pick { t: a } fails E4002 (reads poisoned things)
+    cause E4002 error path "things.a.n" check "": index 5 out of range for length 1
+
+0 errors, 0 warnings in 1 package (…)

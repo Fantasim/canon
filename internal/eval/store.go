@@ -131,7 +131,7 @@ func (r *run) refine(v value.Value, x *types.Refined, s site, at *vpath) value.V
 	if x.Where == nil {
 		return v
 	}
-	holds, ok := r.where(x.Where, v)
+	holds, ok := r.where(x.Where, v, at)
 	if !ok {
 		return nil
 	}

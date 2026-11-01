@@ -219,6 +219,16 @@ func (r *run) substitution(obj check.Object, e syntax.Expr) value.Value {
 	return v
 }
 
+// judgeSubstitutions judges the substitutions' unstored literals; a stop is b's (EVALUATION.md §10.5 item 1, DECISIONS 426).
+func (r *run) judgeSubstitutions(b *builtPackage, capture *diag.Bag, lits *litScope) bool {
+	sb, restore := r.reading(capture)
+	defer restore()
+	ok := r.judgeInto(lits, capture)
+	b.ex.Poisoned, b.ex.PoisonRoot = sb.poisonAt, sb.poisonRoot // a poisoned substitution built nothing to judge
+	b.aborted = !ok || sb.poisonAt != ""
+	return !b.aborted
+}
+
 // buildWorld builds the world of subs through the test's PackageBuilder into capture; a Builder
 // that is none, or a world e cannot make, is an internal error that fails the expect. The kept
 // literals of lits no copy holds are test expressions, judged first: a hard error builds nothing.
@@ -233,8 +243,7 @@ func (r *run) buildWorld(subs map[check.Object]value.Value, capture *diag.Bag, b
 		r.ev.bugs = append(r.ev.bugs, fmt.Errorf(fmtWrap, errNoWorld, r.charge.name))
 		return
 	}
-	if !r.judgeInto(lits, capture) { // EVALUATION.md §10.5 item 1, TYPES.md §11.5
-		b.aborted = true
+	if !r.judgeSubstitutions(b, capture, lits) {
 		return
 	}
 	pb.BuildPackage(r.ctx, w, capture)

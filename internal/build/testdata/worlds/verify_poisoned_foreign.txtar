@@ -1,0 +1,52 @@
+EVALUATION.md §10.5 items 2 and 4, §10.2 last paragraph, §4.1: a world whose verification (stage
+B) forces another package's poisoned table, a ref's target, makes the expect fail, naming it,
+whichever test forced the table first.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A thing.
+record Thing {
+  /// Its size.
+  n: Int
+}
+
+/// The things, poisoned by a hard error in an entry.
+let things: table Thing = {
+  x { n: [1][5] }
+}
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// A pick of a thing.
+record Pick {
+  /// The thing picked.
+  t: ref a.things
+}
+
+/// The pick.
+let pick: Pick = { t: x }
+
+test "passes over a poisoned foreign target" {
+  expect package passes
+}
+
+test "fails over a poisoned foreign target" {
+  expect package fails E4002
+}
+-- tests.txt --
+b "passes over a poisoned foreign target": passed false
+  line 16: expect package passes (reads poisoned a.things)
+    cause E4002 error path "things.x.n" check "": index 5 out of range for length 1
+b "fails over a poisoned foreign target": passed false
+  line 20: expect package fails E4002 (reads poisoned a.things)
+    cause E4002 error path "things.x.n" check "": index 5 out of range for length 1
+
+0 errors, 0 warnings in 2 packages (…)

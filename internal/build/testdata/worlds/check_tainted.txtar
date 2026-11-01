@@ -1,0 +1,37 @@
+EVALUATION.md §10.5 item 4, §7.3: a hard error that taint silences in an instance check of a
+value subject leaves nothing captured (pin): the check reads an invalid value first.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A long string.
+local let long: String = "abcdef"
+
+/// Holds a short string.
+record Holder {
+  /// Short.
+  s: String(..3)
+}
+
+/// An invalid holder.
+local let invalid: Holder = { s: long }
+
+/// A row of samples.
+record Row {
+  /// The samples.
+  xs: [Int]
+
+  check tainted: invalid.s.len() + xs[5] > 0 else "never"
+}
+
+test "a tainted check's hard error is not captured" {
+  expect Row { xs: [1] } passes
+}
+-- tests.txt --
+a "a tainted check's hard error is not captured": passed true
+
+0 errors, 0 warnings in 1 package (…)

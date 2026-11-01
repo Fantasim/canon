@@ -1,0 +1,38 @@
+EVALUATION.md §10.2 last paragraph, §4.1: an instance check of a value subject that reads a
+poisoned top-level value makes the expect fail, naming it, whichever test forced the value first;
+the value's own hard error is its cause, never captured.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A broken top-level value.
+let bad: Int = [1][5]
+
+/// A row of samples.
+record Row {
+  /// The samples.
+  xs: [Int]
+
+  check reads: xs.len() > bad else "never"
+}
+
+test "passes over a poisoned read" {
+  expect Row { xs: [1] } passes
+}
+
+test "fails over a poisoned read" {
+  expect Row { xs: [1] } fails E4002
+}
+-- tests.txt --
+a "passes over a poisoned read": passed false
+  line 16: expect Row { xs: [1] } passes (reads poisoned bad)
+    cause E4002 error path "bad" check "": index 5 out of range for length 1
+a "fails over a poisoned read": passed false
+  line 20: expect Row { xs: [1] } fails E4002 (reads poisoned bad)
+    cause E4002 error path "bad" check "": index 5 out of range for length 1
+
+0 errors, 0 warnings in 1 package (…)

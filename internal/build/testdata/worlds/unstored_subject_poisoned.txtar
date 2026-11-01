@@ -1,0 +1,59 @@
+DECISIONS 426, EVALUATION.md §10.2 last paragraph, §4.1: an expect subject's kept literal that
+nothing stores is judged inside the subject's reads: its where reads the poisoned limit, so the
+expect fails naming it, as the stored form does, whichever test forced limit first.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { num, sub }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+}
+
+/// The nodes.
+let nodes: table Node = { d { k: num }, n { k: num } }
+
+/// A broken limit.
+let limit: Int = [1][5]
+
+/// What a node holds.
+type P(e: Node) = match e.k {
+  num => Int where it < limit
+  sub => Int
+}
+
+/// Whether m is empty.
+fn empty(m: {x in nodes: P(x)}) -> Bool {
+  return m.len() == 0
+}
+
+/// A holder.
+record H {
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+test "an unstored literal of a subject reads the poisoned limit" {
+  expect empty({ d: 3 }) passes
+}
+
+test "a stored literal reads the poisoned limit" {
+  expect H { by: { d: 3 } } passes
+}
+-- tests.txt --
+a "an unstored literal of a subject reads the poisoned limit": passed false
+  line 37: expect empty({ d: 3 }) passes (reads poisoned limit)
+    cause E4002 error path "limit" check "": index 5 out of range for length 1
+a "a stored literal reads the poisoned limit": passed false
+  line 41: expect H { by: { d: 3 } } passes (reads poisoned limit)
+    cause E4002 error path "limit" check "": index 5 out of range for length 1
+
+0 errors, 0 warnings in 1 package (…)

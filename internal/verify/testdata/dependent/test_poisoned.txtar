@@ -61,5 +61,5 @@ test "a read of the poisoned box" {
 -- tests.txt --
 a read of the poisoned box passed=false
   expect ""  got "" poisoned "box"
-    cause E4102 : division by zero
+    cause E4102 box.q: division by zero
     cause E3802 box.t.p: value does not match P(k) = Int

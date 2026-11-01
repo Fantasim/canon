@@ -66,7 +66,8 @@ func (p *Path) Entry(k value.Key) *Path {
 	return p.Key(k)
 }
 
-// String is the path's canonical text; "" for no path.
+// String is the path's canonical text; "" for no path. Below an unnamed root, an expect
+// subject's, a field is written bare (API.md F1, P8).
 func (p *Path) String() string {
 	if p == nil {
 		return ""
@@ -80,6 +81,9 @@ func (p *Path) String() string {
 		sb.WriteString(segOpen[s.form])
 		sb.WriteString(s.seg)
 		sb.WriteString(segClose[s.form])
+	}
+	if root := segs[len(segs)-1]; root.form == segRoot && root.seg == "" {
+		return strings.TrimPrefix(sb.String(), dot)
 	}
 	return sb.String()
 }

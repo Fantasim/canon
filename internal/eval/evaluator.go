@@ -78,6 +78,7 @@ type Evaluator struct {
 	causes    map[*rootState]*diag.Bag  // the hard error that poisoned a value forced while tests run
 	via       map[*rootState]*rootState // a value poisoned by reading another poisoned one
 	stageB    *diag.Bag                 // a stage-B where predicate's hard errors, until Poison makes them the cause
+	building  *subjectBuild             // the expect subject a test's Builder is building (tests.go)
 	late      late                      // the view model's reads after stage E (viewexpr.go)
 
 	memo   *memoUse
@@ -194,7 +195,14 @@ func (e *Evaluator) Force(ctx context.Context, root Root) (value.Value, bool) {
 	if st == nil {
 		return nil, false
 	}
-	return e.force(ctx, st, nil, nil)
+	v, ok := e.force(ctx, st, nil, nil)
+	if !ok && st.status == poisoned { // a ref's target a subject's or a world's verification reads (EVALUATION.md §10.2, §10.5)
+		e.subjectRead(root.Pkg, root.Name)
+		if w := e.wld; w != nil {
+			w.notePoisoned(root.Pkg, root.Name)
+		}
+	}
+	return v, ok
 }
 
 // Settled is root's value when its forcing completed; it never evaluates and changes nothing (EVALUATION.md §3.1).

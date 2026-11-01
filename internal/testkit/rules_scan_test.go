@@ -40,7 +40,8 @@ var skippedTop = []string{"tools", "testdata-real", "spec", "meta", "examples"}
 
 // harnessDirs are the golden directories a harness reads; a txtar citing a rule elsewhere proves nothing.
 var harnessDirs = []string{
-	"internal/build/testdata/incremental", "internal/check/testdata/findings",
+	"internal/build/testdata/incremental", "internal/build/testdata/worlds",
+	"internal/check/testdata/findings",
 	"internal/cli/testdata/commands", "internal/cli/testdata/watch", "internal/diag/testdata/render",
 	"internal/edit/testdata/edits", "internal/eval/testdata/findings", "internal/project/testdata/findings",
 	"internal/rules/testdata/findings", "internal/verify/testdata/findings",

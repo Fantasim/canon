@@ -1,0 +1,40 @@
+EVALUATION.md §10.5 items 3 and 4, §10.3: a hard error an instance check raises in the world of a
+package subject (E4002) is captured by the expect, never reported outside it: `fails E4002`
+passes, `passes` fails listing it, and the test is not stopped.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row of samples.
+record Row {
+  /// The samples.
+  xs: [Int]
+
+  check sixth: xs[5] > 0 else "the sixth sample is not positive"
+}
+
+/// The shipped row.
+let row: Row = { xs: [1, 2, 3, 4, 5, 6] }
+
+test "a check's hard error is the world's" {
+  expect package { row: { xs: [1] } } fails E4002
+  expect package passes
+  expect package { row: { xs: [1, 2, 3, 4, 5, 0] } } fails sixth
+  expect true
+}
+
+test "passes over a check's hard error fails" {
+  expect package { row: { xs: [1] } } passes
+  expect true
+}
+-- tests.txt --
+a "a check's hard error is the world's": passed true
+a "passes over a check's hard error fails": passed false
+  line 23: expect package { row: { xs: [1] } } passes
+    E4002 error path "row" check "sixth": index 5 out of range for length 1
+
+0 errors, 0 warnings in 1 package (…)

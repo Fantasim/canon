@@ -1,0 +1,32 @@
+API.md F1, EVALUATION.md §10.2: a where predicate's hard error while a value subject is built
+takes the path of the field it refines (`xs`), and is captured.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row of samples.
+record Row {
+  /// The samples.
+  xs: [Int] where it[5] > 0
+}
+
+test "a where's hard error is the subject's" {
+  expect Row { xs: [1] } fails E4002
+  expect Row { xs: [1, 2, 3, 4, 5, 6] } passes
+}
+
+test "passes over a where's hard error fails" {
+  expect Row { xs: [1] } passes
+  expect true
+}
+-- tests.txt --
+a "a where's hard error is the subject's": passed true
+a "passes over a where's hard error fails": passed false
+  line 16: expect Row { xs: [1] } passes
+    E4002 error path "xs" check "": index 5 out of range for length 1
+
+0 errors, 0 warnings in 1 package (…)
