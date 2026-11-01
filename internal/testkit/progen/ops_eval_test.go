@@ -9,17 +9,13 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/progen"
 )
 
-// notEntryOperator is E4003, last in the catalogue: an operator added before others moves their seeds.
-func notEntryOperator() operator {
-	return op(diag.E4003.Def().Code, "TYPES.md §9.3 (.id of a value that is no entry)", appendSite("local record ZzRow {\n  zzCode: String\n}\n\n"+
-		"local let zzRows: table ZzRow = { a { zzCode: \"a\" } }\nlocal let zzR: ZzRow = { zzCode: \"r\" }\nlocal let zzRid: String = ", "zzR.id", ""))
-}
-
 // Operators on evaluation, the standard library, checks, locks and load forms.
 func evalOperators() []operator {
 	return []operator{
 		op(diag.E4001.Def().Code, "TYPES.md §6.5 (! on none)", appendSite("local let zzN: Int? = none\nlocal let zzV: Int = ", "zzN!", "")),
 		op(diag.E4002.Def().Code, "EVALUATION.md §4.1 (index out of range)", appendSite("local let zzXs: [Int] = [1, 2]\nlocal let zzY: Int = ", "zzXs[5]", "")),
+		op(diag.E4003.Def().Code, "TYPES.md §9.3 (.id of a value that is no entry)", appendSite("local record ZzRow {\n  zzCode: String\n}\n\n"+
+			"local let zzRows: table ZzRow = { a { zzCode: \"a\" } }\nlocal let zzR: ZzRow = { zzCode: \"r\" }\nlocal let zzRid: String = ", "zzR.id", "")),
 		op(diag.E4101.Def().Code, "EVALUATION.md §6.1 (integer overflow)", appendSite("local let zzBig: Int = 9223372036854775807\nlocal let zzO: Int = ", "zzBig + 1", "")),
 		op(diag.E4102.Def().Code, "EVALUATION.md §6.1 (division by zero)", appendSite("local let zzZero: Int = 0\nlocal let zzQ: Int = ", "7 / zzZero", "")),
 		op(diag.E4103.Def().Code, "EVALUATION.md §6.2 (float past Int)", appendSite("local let zzHuge: Float = 1e300\nlocal let zzI: Int = ", "Int(zzHuge)", "")),

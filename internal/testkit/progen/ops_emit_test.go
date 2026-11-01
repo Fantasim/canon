@@ -310,45 +310,6 @@ func emitValueOf(tg target, kind, name, value string) []progen.Site {
 	return out
 }
 
-// sharedGoDir points a package's go emit at the directory of an imported package's.
-func sharedGoDir(tg target) []progen.Site {
-	var out []progen.Site
-	for _, other := range importedGoEmits(tg) {
-		for _, s := range emitValueOf(tg, "go", "out", `"`+other.dir+`"`) {
-			s.Packages = []string{tg.pkg, other.pkg}
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
-// goDir is a package and the directory its go emit writes.
-type goDir struct{ pkg, dir string }
-
-// importedGoEmits are the go emit directories of the packages tg imports that sort before its own.
-func importedGoEmits(tg target) []goDir {
-	var out []goDir
-	for _, imp := range nodes[*syntax.Import](tg) {
-		for _, other := range *tg.all {
-			if other.pkg == text(tg, imp.Path) && other.pkg < tg.pkg {
-				out = append(out, goDirs(other)...)
-			}
-		}
-	}
-	return out
-}
-
-// goDirs are the directories a file's go emits write.
-func goDirs(tg target) []goDir {
-	var out []goDir
-	for _, d := range emitsOf(tg, "go") {
-		if dir := optionText(tg, d, "out"); dir != "" {
-			out = append(out, goDir{tg.pkg, dir})
-		}
-	}
-	return out
-}
-
 func badGoName(tg target) []progen.Site {
 	if len(emitsOf(tg, "go")) == 0 {
 		return nil
