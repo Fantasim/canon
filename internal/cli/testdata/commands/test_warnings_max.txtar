@@ -1,0 +1,39 @@
+CLI.md §3.5, §2.5, DECISIONS 449: canon test honours the global --max-warnings: more warnings
+than it allows is exit 4 though every test passes.
+-- args --
+test
+--max-warnings
+0
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/data/a.h --
+#define A_ONE 1
+#define FOO(x) ((x)+1)
+-- a/a.canon --
+/// A.
+package a
+
+/// The header's codes.
+local let codes = load.defines("data/a.h")
+
+/// A const named against its convention.
+const version = 7
+
+test "reads the header" {
+  expect codes.len() == 1
+}
+-- want --
+[exit 4]
+[stdout]
+warning[W1003]  a/a.canon:8:7
+  const name "version" should be UPPER_SNAKE
+
+warning[W7101]  a/data/a.h:2:1
+  1 define skipped in a/data/a.h (FOO): not a supported integer expression
+
+0 errors, 2 warnings in 1 package (…)
+
+1 passed, 0 failed (…)
+[stderr]

@@ -2,7 +2,7 @@ CLI.md §3.5, EVALUATION.md §10.4, DECISIONS 448: an error finding a test's own
 outside every expect (a refinement at a let's and at a call's storage point, a kept literal a
 statement builds) fails the test without stopping it: one line per finding after the failing
 expects, in F2 order, a repeated one once (§14), and before a stopping error's line. A warning
-there neither fails nor shows; inside an expect the finding stays the expect's.
+there neither fails nor shows in the test's report; inside an expect the finding stays the expect's.
 -- args --
 test
 -- project.canon --
@@ -85,6 +85,11 @@ test "inside an expect" {
 -- want --
 [exit 1]
 [stdout]
+warning[W3401]  a/a.canon:66:11
+  one is never none: ?? has no effect
+
+0 errors, 1 warning in 1 package (…)
+
 FAIL  a/a.canon:45  a let and a kept literal
   a/a.canon:41  error[E3204]  9 is outside 0..=5
   a/a.canon:47  error[E3802]  value does not match P(x) = Int

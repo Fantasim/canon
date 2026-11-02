@@ -1835,6 +1835,7 @@ func (p *Project) LockCheck(ctx context.Context, packages ...string) (*CheckResu
   statement, `Expected`/`Got` are canonical text forms (STD-06), `Findings` are the findings that
   were actually produced (for `fails`/`warns`).
 - **B4.** `LockCheck` evaluates only stable collections and what they depend on (LCK-03).
+- **B5.** `Check` holds the errors of phases 1–2 of every loaded package and of project.canon, and the warnings of the packages the run selects, as `canon check` reports them (R2), and the run's own findings no test captures: `E3102` for a repeated `@codes` code, `E6004` for a refused stable amendment, and `W7101` (EVALUATION.md §10.5), with their summary (ADR-0004, DECISIONS 449). `Expect` is "" for what stopped or broke the test: one finding, or a poisoned read (`Poisoned`, its causes in `Cause`).
 
 ---
 

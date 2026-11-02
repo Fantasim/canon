@@ -230,7 +230,7 @@ type TestCase struct {
 
 // TestResult is the result of Test.
 type TestResult struct {
-	Check    *CheckResult // phases 1-2's error findings of the loaded packages (ADR-0004)
+	Check    *CheckResult // phases 1-2's errors of the loaded packages, the selected ones' warnings, W7101 included (rule B5)
 	Tests    []TestCase
 	Passed   int
 	Failed   int

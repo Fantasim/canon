@@ -1,0 +1,39 @@
+CLI.md §3.5, API.md B5, DECISIONS 449: canon test prints its own static findings before the
+report, in canon check's format with its summary line and a blank line after: the warnings of
+the selected packages (W1003, which only canon check's name pass computed) and the W7101 of a
+header its test reads; warnings alone keep exit 0.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/data/a.h --
+#define A_ONE 1
+#define FOO(x) ((x)+1)
+-- a/a.canon --
+/// A.
+package a
+
+/// The header's codes.
+local let codes = load.defines("data/a.h")
+
+/// A const named against its convention.
+const version = 7
+
+test "reads the header" {
+  expect codes.len() == 1
+}
+-- want --
+[exit 0]
+[stdout]
+warning[W1003]  a/a.canon:8:7
+  const name "version" should be UPPER_SNAKE
+
+warning[W7101]  a/data/a.h:2:1
+  1 define skipped in a/data/a.h (FOO): not a supported integer expression
+
+0 errors, 2 warnings in 1 package (…)
+
+1 passed, 0 failed (…)
+[stderr]

@@ -1,0 +1,44 @@
+CLI.md §3.5, API.md B5, DECISIONS 449: stage A's W4001 (values a broken record leaves unevaluated)
+is reported by canon test as by canon check, beside the phase-2 errors that broke the record.
+-- args --
+test
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// R.
+record R {
+  /// X.
+  x: Missing
+}
+
+/// Rs.
+let rs: [R] = [{ x: 1 }]
+
+test "t" {
+  expect 1 == 1
+}
+-- want --
+[exit 1]
+[stdout]
+warning[W4001]  a/a.canon:5:8
+  1 value was not evaluated or checked because a.R is broken: fix the errors in it or in the types it names
+
+error[E2102]  a/a.canon:7:6
+  unknown name Missing
+
+error[E3008]  a/a.canon:14:10
+  cannot infer the type of this expression; add a type
+
+2 errors, 1 warning in 1 package (…)
+
+FAIL  a/a.canon:13  t
+  a/a.canon:14  error[E3008]  cannot infer the type of this expression; add a type
+
+0 passed, 1 failed (…)
+[stderr]

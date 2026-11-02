@@ -30,7 +30,7 @@ type Options struct {
 	Logger      *slog.Logger
 }
 
-// FS is the file system of a Project; WriteFile must be atomic (API.md §2.2).
+// FS is the file system of a Project; WriteFile must be atomic, and no method may call back into the Project it serves: a refresh waits for every read in flight (API.md §2.2).
 type FS interface {
 	ReadFile(name string) ([]byte, error)
 	Stat(name string) (fs.FileInfo, error)

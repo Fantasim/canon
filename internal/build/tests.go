@@ -2,6 +2,7 @@ package build
 
 import (
 	"context"
+	"math"
 	"regexp"
 	"slices"
 
@@ -17,7 +18,7 @@ import (
 // TestResult is one canon test: the selected tests in order, with their failures (API.md §13.2).
 type TestResult struct {
 	Files    diag.Files // resolves the findings' spans
-	Static   Result     // the run's error findings of the loaded packages and project.canon: phases 1-2, @codes, refused amendments (ADR-0004)
+	Static   Result     // phases 1-2's errors of the loaded packages and project.canon, @codes, refused amendments, and the selected packages' warnings, W7101 included (API.md B5)
 	Tests    []TestCase
 	Revision string
 	Manifest []byte // the build manifest of this test run (WIRE.md §10)
@@ -53,12 +54,13 @@ func (p *Project) Test(ctx context.Context, selectors []string, match *regexp.Re
 	return r.test(ctx, match)
 }
 
-// test is Test over a prepared run.
+// test is Test over a prepared run, then canon check's run of its selection, whose warnings it reports (API.md B5).
 func (r *run) test(ctx context.Context, match *regexp.Regexp) (*TestResult, error) {
 	if err := interrupted(ctx, r.check(ctx)); err != nil {
 		return nil, err
 	}
-	r.newHost(r.throwawayBags())
+	testBags := uncapped(r.throwawayBags()) // the test host's: their W7101 joins the static result (headerSkips)
+	r.newHost(testBags)
 	if err := r.testNames(); err != nil {
 		return nil, err
 	}
@@ -77,12 +79,18 @@ func (r *run) test(ctx context.Context, match *regexp.Regexp) (*TestResult, erro
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	r.host.loader.FinishDefines() // once every test has forced its loads (WIRE.md §6.8)
 	if err := r.host.failure(r.s.set, r.prog); err != nil {
 		return nil, err
 	}
 	r.reportStableAmendments()
 	r.reportRefused(r.refused)
-	res.Static = r.staticErrors()
+	parts := r.errorParts() // taken before the check run adds its findings to the snapshot's bags
+	warned, err := r.checkWarnings(ctx, r.headerSkips(testBags))
+	if err != nil {
+		return nil, err
+	}
+	res.Static = r.static(parts, warned)
 	res.Static.Revision = res.Revision
 	res.Manifest = r.manifest(r.inputs(), commandTest, nil)
 	return res, nil
@@ -103,19 +111,178 @@ func (r *run) testNames() error {
 
 // staticErrors is every error finding phases 1-2 left in project.canon and the loaded packages, the selected ones counted (ADR-0004).
 func (r *run) staticErrors() Result {
+	return r.static(r.errorParts(), nil)
+}
+
+// errorParts is the error findings and counts of project.canon's bag, the selected orphans' and the loaded packages', as they are now (ADR-0004).
+func (r *run) errorParts() map[*diag.Bag]Findings {
+	bags := append([]*diag.Bag{r.s.own}, r.orphanBags()...)
+	for _, u := range r.loaded {
+		bags = append(bags, r.s.bag(u.Name))
+	}
+	out := make(map[*diag.Bag]Findings, len(bags))
+	for _, b := range bags {
+		part := Findings{Files: r.s.set}
+		part.addErrors(b)
+		out[b] = part
+	}
+	return out
+}
+
+// static is parts, each joined by the warnings warned holds for its bag's name, the selected packages counted (API.md B5).
+func (r *run) static(parts map[*diag.Bag]Findings, warned map[string]Findings) Result {
 	out := Result{Findings: Findings{Files: r.s.set}}
-	out.addErrors(r.s.own)
-	for _, b := range r.orphanBags() {
-		out.addErrors(b)
+	out.join(warnedPart(parts[r.s.own], warned, "", diag.DefaultMaxFindings))
+	for _, o := range r.orphans {
+		out.join(warnedPart(parts[r.s.bag(o.Name)], warned, o.Name, r.p.findingLimit()))
 	}
 	for _, u := range r.loaded {
-		out.addErrors(r.s.bag(u.Name))
+		out.join(warnedPart(parts[r.s.bag(u.Name)], warned, u.Name, r.p.findingLimit()))
 	}
 	for _, u := range r.selected {
 		out.Packages = append(out.Packages, u.Name)
 	}
 	out.Summary.Packages = len(r.selected)
 	return out
+}
+
+// warnedPart is part, the errors of the bag of name, joined by the warnings warned holds for name, kept under limit.
+func warnedPart(part Findings, warned map[string]Findings, name string, limit int) Findings {
+	if w, ok := warned[name]; ok {
+		return withWarnings(part, w, limit)
+	}
+	return part
+}
+
+// join adds o's findings and counts.
+func (f *Findings) join(o Findings) {
+	f.List = append(f.List, o.List...)
+	f.Summary = f.Summary.Merge(o.Summary)
+}
+
+// checkWarnings is, by selected package, the warnings canon check's run of r's selection reports
+// on r's snapshot, with each W7101 of moved whose header that run reported none for (API.md B5).
+func (r *run) checkWarnings(ctx context.Context, moved map[string][]diag.Finding) (map[string]Findings, error) {
+	c := &run{p: r.p, s: r.s, selected: r.selected, orphans: r.orphans, loaded: r.loaded, bags: r.s.bagsOf(r.loaded), cached: true}
+	a, err := c.analyzed(ctx) // Analyze's phases 2 to 7 (CLI.md §3.3)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]Findings{}
+	for _, name := range r.warnedNames() {
+		w := warningsOf(a.Result(), name)
+		extra := c.unreported(name, moved[name])
+		w.List = append(w.List, extra...)
+		w.Summary.Warnings += len(extra)
+		out[name] = w
+	}
+	return out, nil
+}
+
+// warnedNames is whose warnings canon check reports: project.canon ("") and the selected orphans and packages (API.md R2).
+func (r *run) warnedNames() []string {
+	names := []string{""}
+	for _, o := range r.orphans {
+		names = append(names, o.Name)
+	}
+	return append(names, r.selectedNames()...)
+}
+
+// warningsOf is the warnings res reports for package pkg, counted with the ones its cap dropped (API.md F7).
+func warningsOf(res *Result, pkg string) Findings {
+	w := Findings{Files: res.Files}
+	for _, f := range res.List {
+		if f.Package == pkg && f.Severity == diag.Warning {
+			w.List = append(w.List, f)
+		}
+	}
+	w.Summary.Warnings = len(w.List)
+	for _, t := range res.Summary.Truncated {
+		if t.Package == pkg && t.Warnings > 0 {
+			w.Summary.Warnings += t.Warnings
+			w.Summary.Truncated = append(w.Summary.Truncated, diag.Truncation{Package: pkg, Warnings: t.Warnings})
+		}
+	}
+	return w
+}
+
+// unreported is moved less each W7101 whose header has one in pkg's bag, read whole (WIRE.md §6.8).
+func (r *run) unreported(pkg string, moved []diag.Finding) []diag.Finding {
+	if len(moved) == 0 {
+		return nil
+	}
+	b := r.s.bag(pkg)
+	b.Truncate(math.MaxInt)
+	defer b.Truncate(r.p.findingLimit())
+	reported := map[source.FileID]bool{}
+	for _, f := range b.Findings() {
+		if f.Code == diag.W7101.Def().Code {
+			reported[f.Span.File] = true
+		}
+	}
+	return slices.DeleteFunc(slices.Clone(moved), func(f diag.Finding) bool { return reported[f.Span.File] })
+}
+
+// headerSkips is, by selected package, the W7101 its tests' loads left in testBags (WIRE.md §6.8).
+func (r *run) headerSkips(testBags check.Bags) map[string][]diag.Finding {
+	out := map[string][]diag.Finding{}
+	for _, u := range r.selected {
+		if b := testBags[u.Name]; b != nil {
+			out[u.Name] = slices.DeleteFunc(b.Findings(), func(f diag.Finding) bool { return f.Code != diag.W7101.Def().Code })
+		}
+	}
+	return out
+}
+
+// uncapped is bags, each keeping every finding, so headerSkips misses no W7101 a cap would drop.
+func uncapped(bags check.Bags) check.Bags {
+	for _, b := range bags { //canon:unordered each bag is set alone
+		b.Truncate(math.MaxInt)
+	}
+	return bags
+}
+
+// findingLimit is how many findings a package keeps: Options.MaxFindings, else diag's default (API.md F7).
+func (p *Project) findingLimit() int {
+	if n := p.opt.MaxFindings; n > 0 {
+		return n
+	}
+	return diag.DefaultMaxFindings
+}
+
+// withWarnings is part, a package's errors, joined by w, its warnings, as its bag would keep
+// them: in F2 order, the first limit, one truncation counting both (API.md F2, F7).
+func withWarnings(part, w Findings, limit int) Findings {
+	out := Findings{Files: part.Files, List: slices.Concat(part.List, w.List), Summary: part.Summary.Merge(w.Summary)}
+	resort(out.Files, out.List)
+	var over []diag.Finding
+	if len(out.List) > limit {
+		out.List, over = out.List[:limit], out.List[limit:]
+	}
+	out.Summary.Truncated = truncation(out.Summary.Truncated, over)
+	return out
+}
+
+// truncation is one package's truncations ts as one, counting over too; none when nothing is dropped (API.md F7).
+func truncation(ts []diag.Truncation, over []diag.Finding) []diag.Truncation {
+	if len(ts)+len(over) == 0 {
+		return nil
+	}
+	var t diag.Truncation
+	for _, x := range ts {
+		t.Package, t.Errors, t.Warnings = x.Package, t.Errors+x.Errors, t.Warnings+x.Warnings
+	}
+	for _, x := range over {
+		t.Package = x.Package
+		switch x.Severity {
+		case diag.Error:
+			t.Errors++
+		case diag.Warning:
+			t.Warnings++
+		case diag.Runtime:
+		}
+	}
+	return []diag.Truncation{t}
 }
 
 // runTests runs the tests of cp that match accepts, in declaration order.

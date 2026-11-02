@@ -28,13 +28,16 @@ test "fine" {
 -- want --
 [exit 1]
 [stdout]
+warning[W1003]  a/a.canon:5:7
+  const name "ceiling" should be UPPER_SNAKE
+
 error[E5006]  a/a.canon:11:20
   ceiling is not a let: expect package substitutes top-level lets of its own package
 
 error[E3002]  a/a.canon:12:28
   expected [Int], found String
 
-2 errors, 0 warnings in 1 package (…)
+2 errors, 1 warning in 1 package (…)
 
 FAIL  a/a.canon:10  bad substitutions
   a/a.canon:11  error[E5006]  ceiling is not a let: expect package substitutes top-level lets of its own package

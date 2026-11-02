@@ -1,0 +1,38 @@
+CLI.md §3.5, IMPLEMENTATION-PLAN.md §8.1, DECISIONS 449: with --format json the static
+warnings are finding lines before the test lines, as the static errors are, in F2 order among
+them (the moved W7101 of a/data/a.h last); the test summary stays the one final summary.
+-- args --
+test
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/data/a.h --
+#define A_ONE 1
+#define FOO(x) ((x)+1)
+-- a/a.canon --
+/// A.
+package a
+
+/// The header's codes.
+local let codes = load.defines("data/a.h")
+
+/// A const named against its convention.
+const version = 7
+
+local let unused = nothing
+
+test "reads the header" {
+  expect codes.len() == 1
+}
+-- want --
+[exit 1]
+[stdout]
+{"severity":"warning","code":"W1003","file":"a/a.canon","line":8,"col":7,"endLine":8,"endCol":14,"package":"a","message":"const name \"version\" should be UPPER_SNAKE"}
+{"severity":"error","code":"E2102","file":"a/a.canon","line":10,"col":20,"endLine":10,"endCol":27,"package":"a","message":"unknown name nothing"}
+{"severity":"warning","code":"W7101","file":"a/data/a.h","line":2,"col":1,"endLine":2,"endCol":2,"package":"a","message":"1 define skipped in a/data/a.h (FOO): not a supported integer expression"}
+{"test":{"package":"a","name":"reads the header","file":"a/a.canon","line":12,"status":"pass","failures":[]}}
+{"summary":{"passed":1,"failed":0,"ms":0}}
+[stderr]

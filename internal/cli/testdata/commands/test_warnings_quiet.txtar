@@ -1,0 +1,34 @@
+CLI.md §3.5, §2.3, DECISIONS 449: under -q canon test prints error findings and the summary only,
+so warnings alone leave the static block's summary line, and --max-warnings still counts them: exit 4.
+-- args --
+test
+-q
+--max-warnings
+1
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/data/a.h --
+#define A_ONE 1
+#define FOO(x) ((x)+1)
+-- a/a.canon --
+/// A.
+package a
+
+/// The header's codes.
+local let codes = load.defines("data/a.h")
+
+/// A const named against its convention.
+const version = 7
+
+test "reads the header" {
+  expect codes.len() == 1
+}
+-- want --
+[exit 4]
+[stdout]
+0 errors, 2 warnings in 1 package (…)
+
+1 passed, 0 failed (…)
+[stderr]

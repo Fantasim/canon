@@ -63,23 +63,33 @@ func brokenCopy(t *testing.T) string {
 	return dst
 }
 
-// IMPLEMENTATION-PLAN.md M2 acceptance 4, CLI.md §3.5: `canon test pipeline` reports 1 passed.
+// pipelineFindings is canon check's expected output for pipeline, which canon test prints first (CLI.md §3.5).
+func pipelineFindings(t *testing.T) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(examplesDir, "pipeline", expectedDir, findingsFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data) + "\n"
+}
+
+// IMPLEMENTATION-PLAN.md M2 acceptance 4, CLI.md §3.5, DECISIONS 449: `canon test pipeline` reports 1 passed, after its warnings.
 func TestPipelinePasses(t *testing.T) {
 	dir, err := filepath.Abs(examplesDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	code, out := runIn(t, dir, "test", "pipeline")
-	if code != 0 || out != "1 passed, 0 failed (…)\n" {
-		t.Errorf("exit %d:\n%s", code, out)
+	if want := pipelineFindings(t) + "1 passed, 0 failed (…)\n"; code != 0 || out != want {
+		t.Errorf("exit %d:\n%s\nwant:\n%s", code, out, want)
 	}
 }
 
-// IMPLEMENTATION-PLAN.md M2 acceptance 4, CLI.md §3.5: a copy with healFor broken fails in §3.5's format.
+// IMPLEMENTATION-PLAN.md M2 acceptance 4, CLI.md §3.5, DECISIONS 449: healFor broken fails in §3.5's format, after the warnings.
 func TestPipelineBroken(t *testing.T) {
 	code, out := runIn(t, brokenCopy(t), "test", "pipeline")
-	if code != 1 || out != brokenPipeline {
-		t.Errorf("exit %d:\n%s\nwant:\n%s", code, out, brokenPipeline)
+	if want := pipelineFindings(t) + brokenPipeline; code != 1 || out != want {
+		t.Errorf("exit %d:\n%s\nwant:\n%s", code, out, want)
 	}
 }
 

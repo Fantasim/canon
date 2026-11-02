@@ -204,9 +204,7 @@ func (p *Project) ownDigests() []digest {
 
 func (p *Project) newBag(set *source.FileSet, pkg string) *diag.Bag {
 	bag := diag.NewBag(set, pkg)
-	if p.opt.MaxFindings > 0 {
-		bag.Truncate(p.opt.MaxFindings)
-	}
+	bag.Truncate(p.findingLimit())
 	return bag
 }
 

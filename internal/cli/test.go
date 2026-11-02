@@ -11,7 +11,7 @@ import (
 	canon "github.com/fantasim/canonlang/api"
 )
 
-// runTest is `canon test [packages…] [--run <regex>]`: failures, summary, exit 1 on a failure (CLI.md §3.5).
+// runTest is `canon test [packages…] [--run <regex>]`: its static findings, failures, summary; exit 1 on a failure or an error, else 4 over --max-warnings (CLI.md §3.5).
 func runTest(inv *invocation) int {
 	p, err := inv.openProject()
 	if err != nil {
@@ -29,19 +29,20 @@ func runTest(inv *invocation) int {
 	if err := inv.writeTest(res); err != nil {
 		return inv.fail(err)
 	}
-	if res.Failed > 0 || res.Check.HasErrors() {
+	if res.Failed > 0 {
 		return exitErrors
 	}
-	return exitOK
+	return inv.checkExit(res.Check.Summary)
 }
 
-// writeTest prints any static error first, in check's format (its summary in text only, JSON keeping one final summary), then the test report (ADR-0004).
+// writeTest prints its static findings first when it has any (-q: errors only, the summary kept), in check's format (its summary in text only, JSON keeping one final summary), then the test report (CLI.md §3.5, DECISIONS 449).
 func (inv *invocation) writeTest(res *canon.TestResult) error {
+	shown := inv.shown(res.Check.Findings)
 	if inv.opt.format == formatJSON {
-		return inv.writeTestJSON(res)
+		return inv.writeTestJSON(shown, res)
 	}
-	if res.Check.HasErrors() {
-		if err := inv.writeFindings(res.Check.Findings, res.Check.Summary, res.Check.Duration); err != nil {
+	if s := res.Check.Summary; s.Errors+s.Warnings > 0 {
+		if err := inv.writeFindings(shown, res.Check.Summary, res.Check.Duration); err != nil {
 			return err
 		}
 		writeLine(inv.env.Stdout, "")

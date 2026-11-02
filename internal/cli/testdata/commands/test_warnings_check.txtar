@@ -1,0 +1,63 @@
+CLI.md §3.5, API.md B5, DECISIONS 449: canon test reports every warning canon check reports for
+the selected packages, its stages' included: W1003, W3401, W5001 (a package-level warn) and
+W7101; the imported package's W3401 is not reported, as check does not report it.
+-- args --
+test
+a
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/data/a.h --
+#define A_ONE 1
+#define FOO(x) ((x)+1)
+-- a/a.canon --
+/// A.
+package a
+
+import b
+
+/// The header's codes.
+local let codes = load.defines("data/a.h")
+
+/// A const named against its convention.
+const version = 7
+
+/// Never none.
+local let never: Int = version ?? 2
+
+warn version < 4 else "version above 3"
+
+test "reads the header" {
+  expect codes.len() == 1
+  expect b.ONE == 1
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// One.
+const ONE = 1
+
+/// Never none.
+local let never: Int = ONE ?? 2
+-- want --
+[exit 0]
+[stdout]
+warning[W1003]  a/a.canon:10:7
+  const name "version" should be UPPER_SNAKE
+
+warning[W3401]  a/a.canon:13:24
+  version is never none: ?? has no effect
+
+warning[W5001]  a/a.canon:15:1
+  version above 3
+  expected by a/a.canon:15 (check)
+
+warning[W7101]  a/data/a.h:2:1
+  1 define skipped in a/data/a.h (FOO): not a supported integer expression
+
+0 errors, 4 warnings in 1 package (…)
+
+1 passed, 0 failed (…)
+[stderr]

@@ -90,6 +90,16 @@ test "a ref invalid in the test is valid once the key is added" {
 -- want --
 [exit 1]
 [stdout]
+warning[W5001]  a/a.canon:28:1
+  a holder points at an item of 3 or more
+  expected by a/a.canon:28 (check pricey)
+
+warning[W5001]  b/b.canon:31:1
+  a holder points at an item of 3 or more
+  expected by b/b.canon:31 (check pricey)
+
+0 errors, 2 warnings in 2 packages (…)
+
 FAIL  a/a.canon:37  a removed key listed by a failing passes
   a/a.canon:38  expect package { items: { cup { price: 1 } } } passes
   got: error[E3501]  unknown key gem in items

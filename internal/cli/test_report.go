@@ -52,13 +52,11 @@ type testSummary struct {
 	} `json:"summary"`
 }
 
-// writeTestJSON prints the static errors (ADR-0004), then one line per test, only the failing ones under -q, then the summary.
-func (inv *invocation) writeTestJSON(res *canon.TestResult) error {
-	if res.Check.HasErrors() {
-		for _, f := range res.Check.Findings {
-			if err := inv.writeJSONLine(f); err != nil {
-				return err
-			}
+// writeTestJSON prints the static findings shown (CLI.md §3.5), then one line per test, only the failing ones under -q, then the summary.
+func (inv *invocation) writeTestJSON(shown []canon.Finding, res *canon.TestResult) error {
+	for _, f := range shown {
+		if err := inv.writeJSONLine(f); err != nil {
+			return err
 		}
 	}
 	for _, t := range res.Tests {
