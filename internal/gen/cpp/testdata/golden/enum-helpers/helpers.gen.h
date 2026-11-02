@@ -49,7 +49,7 @@ inline constexpr std::array<Element, 2> kElementLiveMembers = {Element::FIRE, El
 
 namespace detail {
 inline constexpr std::array<uint8_t, 3> kElementCodes = {1, 3, 200};
-inline constexpr std::array<uint32_t, 3> kElementCodeOrdinals = {1, 0, 2};
+inline constexpr std::array<uint8_t, 3> kElementCodeOrdinals = {1, 0, 2};
 inline constexpr size_t ElementOrdinal(Element v) {
     const uint8_t code = static_cast<uint8_t>(v);
     size_t lo = 0;
@@ -84,7 +84,7 @@ inline constexpr std::array<Delta, 3> kDeltaLiveMembers = {Delta::up, Delta::dow
 
 namespace detail {
 inline constexpr std::array<int16_t, 3> kDeltaCodes = {-5, 0, 7};
-inline constexpr std::array<uint32_t, 3> kDeltaCodeOrdinals = {1, 2, 0};
+inline constexpr std::array<uint8_t, 3> kDeltaCodeOrdinals = {1, 2, 0};
 inline constexpr size_t DeltaOrdinal(Delta v) {
     const int16_t code = static_cast<int16_t>(v);
     size_t lo = 0;
@@ -119,7 +119,7 @@ inline constexpr std::array<Extreme, 3> kExtremeLiveMembers = {Extreme::LOW, Ext
 
 namespace detail {
 inline constexpr std::array<int64_t, 3> kExtremeCodes = {canon::kIntMin, 0, canon::kIntMax};
-inline constexpr std::array<uint32_t, 3> kExtremeCodeOrdinals = {0, 1, 2};
+inline constexpr std::array<uint8_t, 3> kExtremeCodeOrdinals = {0, 1, 2};
 inline constexpr size_t ExtremeOrdinal(Extreme v) {
     const int64_t code = static_cast<int64_t>(v);
     size_t lo = 0;
@@ -184,7 +184,7 @@ inline constexpr std::array<NoCode, 0> kNoCodeLiveMembers = {};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 0> kNoCodeCodes = {};
-inline constexpr std::array<uint32_t, 0> kNoCodeCodeOrdinals = {};
+inline constexpr std::array<uint8_t, 0> kNoCodeCodeOrdinals = {};
 inline constexpr size_t NoCodeOrdinal(NoCode v) {
     const uint8_t code = static_cast<uint8_t>(v);
     size_t lo = 0;

@@ -70,18 +70,23 @@ struct BaseAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kColorNames = {"red", "green", "blue"};
+constexpr std::array<uint8_t, 3> kColorByWire = {2, 1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Color v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"red", "green", "blue"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kColorNames.size()) return {};
+    return detail::kColorNames[i];
 }
 
 std::string_view ToWire(Color v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"red", "green", "blue"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kColorNames.size()) return {};
+    return detail::kColorNames[i];
 }
 
 bool IsRetired(Color v) {
@@ -91,34 +96,37 @@ bool IsRetired(Color v) {
 }
 
 std::optional<Color> ColorFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"blue", "green", "red"};
-    static constexpr std::array<Color, 3> kValues = {Color::blue, Color::green, Color::red};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kColorByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kColorNames[detail::kColorByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kColorByWire.size() && detail::kColorNames[detail::kColorByWire[lo]] == wire) return static_cast<Color>(detail::kColorByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kPaintKindNames = {"solid", "clear"};
+constexpr std::array<uint8_t, 2> kPaintKindByWire = {1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(PaintKind v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"solid", "clear"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kPaintKindNames.size()) return {};
+    return detail::kPaintKindNames[i];
 }
 
 std::string_view ToWire(PaintKind v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"solid", "clear"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kPaintKindNames.size()) return {};
+    return detail::kPaintKindNames[i];
 }
 
 bool IsRetired(PaintKind v) {
@@ -128,19 +136,17 @@ bool IsRetired(PaintKind v) {
 }
 
 std::optional<PaintKind> PaintKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"clear", "solid"};
-    static constexpr std::array<PaintKind, 2> kValues = {PaintKind::clear, PaintKind::solid};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kPaintKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kPaintKindNames[detail::kPaintKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kPaintKindByWire.size() && detail::kPaintKindNames[detail::kPaintKindByWire[lo]] == wire) return static_cast<PaintKind>(detail::kPaintKindByWire[lo]);
     return std::nullopt;
 }
 

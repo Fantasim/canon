@@ -219,6 +219,53 @@ let kinds: table Book = {
 emit cpp { out: "@features/p", namespace: "p", mode: data }
 emit json { out: "out/" }
 `
+	hintEnumTablesSrc = `package p
+
+/// A stat.
+enum Stat { atk = "ATK", def }
+
+/// Words with the wires as names.
+enum Plain { up, down }
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A circle.
+  circle {
+    /// Its radius.
+    r: Int
+  }
+}
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  x { rank: 1 }
+  zed { rank: 2 }
+}
+
+/// A use of everything.
+record Holder {
+  /// Its stat.
+  s: Stat
+  /// Its word.
+  q: Plain
+  /// Its shape.
+  sh: Shape
+}
+
+/// The holder.
+let holder: Holder = { s: atk, q: up, sh: dot }
+
+emit cpp { out: "@features/p", namespace: "p", mode: baked }
+emit json { out: "out/" }
+`
 	canonFile    = "p/p.canon"
 	hintPackage  = "package p\n"
 	hintImport   = "package p\n\nimport a { Word }\n\n/// Uses a type of a.\nrecord Uses {\n  /// Its word.\n  w: Word\n}\n"
@@ -283,5 +330,15 @@ var hintPrograms = []hintProgram{
 	}},
 	{files: map[string]string{canonFile: hintRowSrc, "lib/lib.canon": hintLibSrc, "p.kinds.json": `{ "one": { "rank": 1 } }`}, rows: []hintRow{
 		defineRow("BookRow", "lib.Book", "record Book {", `record Book @cpp(name: "Tome") {`),
+	}},
+	{files: map[string]string{canonFile: hintEnumTablesSrc, "p.tiers.json": `{ "x": { "rank": 1 }, "zed": { "rank": 2 } }`}, rows: []hintRow{
+		defineRow("kStatNames", "p.Stat", "enum Stat {", `enum Stat @cpp(name: "Attr") {`),
+		defineRow("kStatWires", "p.Stat", "enum Stat {", `enum Stat @cpp(name: "Attr") {`),
+		defineRow("kStatByWire", "p.Stat", "enum Stat {", `enum Stat @cpp(name: "Attr") {`),
+		defineRow("kPlainNames", "p.Plain", "enum Plain {", `enum Plain @cpp(name: "Flat") {`),
+		defineRow("kShapeKindNames", "p.Shape", "variant Shape {", `variant Shape @cpp(name: "Form") {`),
+		defineRow("kShapeKindByWire", "p.Shape", "variant Shape {", `variant Shape @cpp(name: "Form") {`),
+		defineRow("kTierIdWires", "p.Tier", "record Tier {", `record Tier @cpp(name: "Rank") {`),
+		defineRow("kTierIdByWire", "p.Tier", "record Tier {", `record Tier @cpp(name: "Rank") {`),
 	}},
 }

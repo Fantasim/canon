@@ -1,0 +1,16 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 430, 442: a closed enum's detail::k<E>Names goes through the C++ name plan, so an opened Stat, whose names differ from its wires and so hold detail::kStatWireNames, collides with the closed StatWire's detail::kStatWire + Names.
+-- a/a.canon --
+package a
+
+/// A stat, opened: a name differs from its wire.
+enum Stat { atk = "ATK" }
+
+/// Named so that its names table is the opened Stat's wire-names table.
+enum StatWire { hp }
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types, open: [Stat] }
+-- findings.txt --
+error[E8005]  a/a.canon:4:6
+  cpp: kStatWireNames is generated for both a.StatWire and a.Stat; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

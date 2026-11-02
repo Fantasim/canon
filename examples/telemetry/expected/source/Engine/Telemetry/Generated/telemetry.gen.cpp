@@ -629,38 +629,33 @@ TelemetryAccess::Data TelemetryAccess::Build() {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 9> kEventTypeNames = {
+    "item_created",
+    "mail_item_received",
+    "item_consumed",
+    "penya_drops",
+    "trade_penya",
+    "server_lifecycle",
+    "farm_events",
+    "sovereign_events",
+    "world_boss_spawns",
+};
+constexpr std::array<uint8_t, 9> kEventTypeByWire = {6, 2, 0, 1, 3, 5, 7, 4, 8};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(EventType v) {
-    static constexpr std::array<std::string_view, 9> kNames = {
-        "item_created",
-        "mail_item_received",
-        "item_consumed",
-        "penya_drops",
-        "trade_penya",
-        "server_lifecycle",
-        "farm_events",
-        "sovereign_events",
-        "world_boss_spawns",
-    };
     const size_t i = detail::EventTypeOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kEventTypeNames.size()) return {};
+    return detail::kEventTypeNames[i];
 }
 
 std::string_view ToWire(EventType v) {
-    static constexpr std::array<std::string_view, 9> kWires = {
-        "item_created",
-        "mail_item_received",
-        "item_consumed",
-        "penya_drops",
-        "trade_penya",
-        "server_lifecycle",
-        "farm_events",
-        "sovereign_events",
-        "world_boss_spawns",
-    };
     const size_t i = detail::EventTypeOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kEventTypeNames.size()) return {};
+    return detail::kEventTypeNames[i];
 }
 
 bool IsRetired(EventType v) {
@@ -670,39 +665,17 @@ bool IsRetired(EventType v) {
 }
 
 std::optional<EventType> EventTypeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 9> kKeys = {
-        "farm_events",
-        "item_consumed",
-        "item_created",
-        "mail_item_received",
-        "penya_drops",
-        "server_lifecycle",
-        "sovereign_events",
-        "trade_penya",
-        "world_boss_spawns",
-    };
-    static constexpr std::array<EventType, 9> kValues = {
-        EventType::farm_events,
-        EventType::item_consumed,
-        EventType::item_created,
-        EventType::mail_item_received,
-        EventType::penya_drops,
-        EventType::server_lifecycle,
-        EventType::sovereign_events,
-        EventType::trade_penya,
-        EventType::world_boss_spawns,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kEventTypeByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kEventTypeNames[detail::kEventTypeByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kEventTypeByWire.size() && detail::kEventTypeNames[detail::kEventTypeByWire[lo]] == wire) return kEventTypeMembers[detail::kEventTypeByWire[lo]];
     return std::nullopt;
 }
 
@@ -712,18 +685,23 @@ std::optional<EventType> EventTypeFromCode(uint8_t code) {
     return kEventTypeMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 5> kTierNames = {"HOT", "WARM", "COOL", "TINY", "READONLY"};
+constexpr std::array<uint8_t, 5> kTierByWire = {2, 0, 4, 3, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Tier v) {
-    static constexpr std::array<std::string_view, 5> kNames = {"HOT", "WARM", "COOL", "TINY", "READONLY"};
     const size_t i = detail::TierOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kTierNames.size()) return {};
+    return detail::kTierNames[i];
 }
 
 std::string_view ToWire(Tier v) {
-    static constexpr std::array<std::string_view, 5> kWires = {"HOT", "WARM", "COOL", "TINY", "READONLY"};
     const size_t i = detail::TierOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kTierNames.size()) return {};
+    return detail::kTierNames[i];
 }
 
 bool IsRetired(Tier v) {
@@ -733,19 +711,17 @@ bool IsRetired(Tier v) {
 }
 
 std::optional<Tier> TierFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 5> kKeys = {"COOL", "HOT", "READONLY", "TINY", "WARM"};
-    static constexpr std::array<Tier, 5> kValues = {Tier::COOL, Tier::HOT, Tier::READONLY, Tier::TINY, Tier::WARM};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kTierByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kTierNames[detail::kTierByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kTierByWire.size() && detail::kTierNames[detail::kTierByWire[lo]] == wire) return kTierMembers[detail::kTierByWire[lo]];
     return std::nullopt;
 }
 
@@ -755,34 +731,31 @@ std::optional<Tier> TierFromCode(uint8_t code) {
     return kTierMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 7> kProducerNames = {
+    "WorldServer",
+    "CoreServer",
+    "DatabaseServer",
+    "LoginServer",
+    "CacheServer",
+    "DataIngester",
+    "ItemTool",
+};
+constexpr std::array<uint8_t, 7> kProducerByWire = {4, 1, 5, 2, 6, 3, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Producer v) {
-    static constexpr std::array<std::string_view, 7> kNames = {
-        "WorldServer",
-        "CoreServer",
-        "DatabaseServer",
-        "LoginServer",
-        "CacheServer",
-        "DataIngester",
-        "ItemTool",
-    };
     const size_t i = detail::ProducerOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kProducerNames.size()) return {};
+    return detail::kProducerNames[i];
 }
 
 std::string_view ToWire(Producer v) {
-    static constexpr std::array<std::string_view, 7> kWires = {
-        "WorldServer",
-        "CoreServer",
-        "DatabaseServer",
-        "LoginServer",
-        "CacheServer",
-        "DataIngester",
-        "ItemTool",
-    };
     const size_t i = detail::ProducerOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kProducerNames.size()) return {};
+    return detail::kProducerNames[i];
 }
 
 bool IsRetired(Producer v) {
@@ -792,35 +765,17 @@ bool IsRetired(Producer v) {
 }
 
 std::optional<Producer> ProducerFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 7> kKeys = {
-        "CacheServer",
-        "CoreServer",
-        "DataIngester",
-        "DatabaseServer",
-        "ItemTool",
-        "LoginServer",
-        "WorldServer",
-    };
-    static constexpr std::array<Producer, 7> kValues = {
-        Producer::CacheServer,
-        Producer::CoreServer,
-        Producer::DataIngester,
-        Producer::DatabaseServer,
-        Producer::ItemTool,
-        Producer::LoginServer,
-        Producer::WorldServer,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kProducerByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kProducerNames[detail::kProducerByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kProducerByWire.size() && detail::kProducerNames[detail::kProducerByWire[lo]] == wire) return kProducerMembers[detail::kProducerByWire[lo]];
     return std::nullopt;
 }
 
@@ -830,18 +785,23 @@ std::optional<Producer> ProducerFromCode(uint8_t code) {
     return kProducerMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kEnqueueNames = {"generated", "internal"};
+constexpr std::array<uint8_t, 2> kEnqueueByWire = {0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Enqueue v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"generated", "internal"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kEnqueueNames.size()) return {};
+    return detail::kEnqueueNames[i];
 }
 
 std::string_view ToWire(Enqueue v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"generated", "internal"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kEnqueueNames.size()) return {};
+    return detail::kEnqueueNames[i];
 }
 
 bool IsRetired(Enqueue v) {
@@ -851,54 +811,47 @@ bool IsRetired(Enqueue v) {
 }
 
 std::optional<Enqueue> EnqueueFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"generated", "internal"};
-    static constexpr std::array<Enqueue, 2> kValues = {Enqueue::generated, Enqueue::internal};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kEnqueueByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kEnqueueNames[detail::kEnqueueByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kEnqueueByWire.size() && detail::kEnqueueNames[detail::kEnqueueByWire[lo]] == wire) return static_cast<Enqueue>(detail::kEnqueueByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 9> kSqlTypeNames = {
+    "UTINYINT",
+    "USMALLINT",
+    "UINTEGER",
+    "UBIGINT",
+    "TINYINT",
+    "SMALLINT",
+    "INTEGER",
+    "BIGINT",
+    "FLOAT",
+};
+constexpr std::array<uint8_t, 9> kSqlTypeByWire = {7, 8, 6, 5, 4, 3, 2, 1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(SqlType v) {
-    static constexpr std::array<std::string_view, 9> kNames = {
-        "UTINYINT",
-        "USMALLINT",
-        "UINTEGER",
-        "UBIGINT",
-        "TINYINT",
-        "SMALLINT",
-        "INTEGER",
-        "BIGINT",
-        "FLOAT",
-    };
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kSqlTypeNames.size()) return {};
+    return detail::kSqlTypeNames[i];
 }
 
 std::string_view ToWire(SqlType v) {
-    static constexpr std::array<std::string_view, 9> kWires = {
-        "UTINYINT",
-        "USMALLINT",
-        "UINTEGER",
-        "UBIGINT",
-        "TINYINT",
-        "SMALLINT",
-        "INTEGER",
-        "BIGINT",
-        "FLOAT",
-    };
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kSqlTypeNames.size()) return {};
+    return detail::kSqlTypeNames[i];
 }
 
 bool IsRetired(SqlType v) {
@@ -908,54 +861,37 @@ bool IsRetired(SqlType v) {
 }
 
 std::optional<SqlType> SqlTypeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 9> kKeys = {
-        "BIGINT",
-        "FLOAT",
-        "INTEGER",
-        "SMALLINT",
-        "TINYINT",
-        "UBIGINT",
-        "UINTEGER",
-        "USMALLINT",
-        "UTINYINT",
-    };
-    static constexpr std::array<SqlType, 9> kValues = {
-        SqlType::BIGINT,
-        SqlType::FLOAT,
-        SqlType::INTEGER,
-        SqlType::SMALLINT,
-        SqlType::TINYINT,
-        SqlType::UBIGINT,
-        SqlType::UINTEGER,
-        SqlType::USMALLINT,
-        SqlType::UTINYINT,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kSqlTypeByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kSqlTypeNames[detail::kSqlTypeByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kSqlTypeByWire.size() && detail::kSqlTypeNames[detail::kSqlTypeByWire[lo]] == wire) return static_cast<SqlType>(detail::kSqlTypeByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 4> kFieldKindNames = {"ts", "id", "scalar", "enum8"};
+constexpr std::array<uint8_t, 4> kFieldKindByWire = {3, 1, 2, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(FieldKind v) {
-    static constexpr std::array<std::string_view, 4> kNames = {"ts", "id", "scalar", "enum8"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kFieldKindNames.size()) return {};
+    return detail::kFieldKindNames[i];
 }
 
 std::string_view ToWire(FieldKind v) {
-    static constexpr std::array<std::string_view, 4> kWires = {"ts", "id", "scalar", "enum8"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kFieldKindNames.size()) return {};
+    return detail::kFieldKindNames[i];
 }
 
 bool IsRetired(FieldKind v) {
@@ -965,34 +901,38 @@ bool IsRetired(FieldKind v) {
 }
 
 std::optional<FieldKind> FieldKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 4> kKeys = {"enum8", "id", "scalar", "ts"};
-    static constexpr std::array<FieldKind, 4> kValues = {FieldKind::enum8, FieldKind::id, FieldKind::scalar, FieldKind::ts};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kFieldKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kFieldKindNames[detail::kFieldKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kFieldKindByWire.size() && detail::kFieldKindNames[detail::kFieldKindByWire[lo]] == wire) return static_cast<FieldKind>(detail::kFieldKindByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kCurrencyNames = {"gold", "item", "nothing"};
+constexpr std::array<std::string_view, 3> kCurrencyWires = {"gold", "item", "none"};
+constexpr std::array<uint8_t, 3> kCurrencyByWire = {0, 1, 2};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Currency v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"gold", "item", "nothing"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kCurrencyNames.size()) return {};
+    return detail::kCurrencyNames[i];
 }
 
 std::string_view ToWire(Currency v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"gold", "item", "none"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kCurrencyWires.size()) return {};
+    return detail::kCurrencyWires[i];
 }
 
 bool IsRetired(Currency v) {
@@ -1002,34 +942,38 @@ bool IsRetired(Currency v) {
 }
 
 std::optional<Currency> CurrencyFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"gold", "item", "none"};
-    static constexpr std::array<Currency, 3> kValues = {Currency::gold, Currency::item, Currency::nothing};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kCurrencyByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kCurrencyWires[detail::kCurrencyByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kCurrencyByWire.size() && detail::kCurrencyWires[detail::kCurrencyByWire[lo]] == wire) return static_cast<Currency>(detail::kCurrencyByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 4> kBucketNames = {"mint", "sink", "transfer", "nothing"};
+constexpr std::array<std::string_view, 4> kBucketWires = {"mint", "sink", "transfer", "none"};
+constexpr std::array<uint8_t, 4> kBucketByWire = {0, 3, 1, 2};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Bucket v) {
-    static constexpr std::array<std::string_view, 4> kNames = {"mint", "sink", "transfer", "nothing"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kBucketNames.size()) return {};
+    return detail::kBucketNames[i];
 }
 
 std::string_view ToWire(Bucket v) {
-    static constexpr std::array<std::string_view, 4> kWires = {"mint", "sink", "transfer", "none"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kBucketWires.size()) return {};
+    return detail::kBucketWires[i];
 }
 
 bool IsRetired(Bucket v) {
@@ -1039,34 +983,37 @@ bool IsRetired(Bucket v) {
 }
 
 std::optional<Bucket> BucketFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 4> kKeys = {"mint", "none", "sink", "transfer"};
-    static constexpr std::array<Bucket, 4> kValues = {Bucket::mint, Bucket::nothing, Bucket::sink, Bucket::transfer};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kBucketByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kBucketWires[detail::kBucketByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kBucketByWire.size() && detail::kBucketWires[detail::kBucketByWire[lo]] == wire) return static_cast<Bucket>(detail::kBucketByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kLegNames = {"out", "in"};
+constexpr std::array<uint8_t, 2> kLegByWire = {1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Leg v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"out", "in"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kLegNames.size()) return {};
+    return detail::kLegNames[i];
 }
 
 std::string_view ToWire(Leg v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"out", "in"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kLegNames.size()) return {};
+    return detail::kLegNames[i];
 }
 
 bool IsRetired(Leg v) {
@@ -1076,56 +1023,48 @@ bool IsRetired(Leg v) {
 }
 
 std::optional<Leg> LegFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"in", "out"};
-    static constexpr std::array<Leg, 2> kValues = {Leg::in, Leg::out};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kLegByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kLegNames[detail::kLegByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kLegByWire.size() && detail::kLegNames[detail::kLegByWire[lo]] == wire) return static_cast<Leg>(detail::kLegByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 10> kFarmEventKindNames = {
+    "Purchase",
+    "ClaimBatch",
+    "ClaimSlot",
+    "LevelUp",
+    "SetupModel",
+    "RemoveModel",
+    "UnlockModel",
+    "EnterOwn",
+    "VisitOther",
+    "Leave",
+};
+constexpr std::array<uint8_t, 10> kFarmEventKindByWire = {1, 2, 7, 9, 3, 0, 5, 4, 6, 8};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(FarmEventKind v) {
-    static constexpr std::array<std::string_view, 10> kNames = {
-        "Purchase",
-        "ClaimBatch",
-        "ClaimSlot",
-        "LevelUp",
-        "SetupModel",
-        "RemoveModel",
-        "UnlockModel",
-        "EnterOwn",
-        "VisitOther",
-        "Leave",
-    };
     const size_t i = detail::FarmEventKindOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kFarmEventKindNames.size()) return {};
+    return detail::kFarmEventKindNames[i];
 }
 
 std::string_view ToWire(FarmEventKind v) {
-    static constexpr std::array<std::string_view, 10> kWires = {
-        "Purchase",
-        "ClaimBatch",
-        "ClaimSlot",
-        "LevelUp",
-        "SetupModel",
-        "RemoveModel",
-        "UnlockModel",
-        "EnterOwn",
-        "VisitOther",
-        "Leave",
-    };
     const size_t i = detail::FarmEventKindOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kFarmEventKindNames.size()) return {};
+    return detail::kFarmEventKindNames[i];
 }
 
 bool IsRetired(FarmEventKind v) {
@@ -1135,41 +1074,17 @@ bool IsRetired(FarmEventKind v) {
 }
 
 std::optional<FarmEventKind> FarmEventKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 10> kKeys = {
-        "ClaimBatch",
-        "ClaimSlot",
-        "EnterOwn",
-        "Leave",
-        "LevelUp",
-        "Purchase",
-        "RemoveModel",
-        "SetupModel",
-        "UnlockModel",
-        "VisitOther",
-    };
-    static constexpr std::array<FarmEventKind, 10> kValues = {
-        FarmEventKind::ClaimBatch,
-        FarmEventKind::ClaimSlot,
-        FarmEventKind::EnterOwn,
-        FarmEventKind::Leave,
-        FarmEventKind::LevelUp,
-        FarmEventKind::Purchase,
-        FarmEventKind::RemoveModel,
-        FarmEventKind::SetupModel,
-        FarmEventKind::UnlockModel,
-        FarmEventKind::VisitOther,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kFarmEventKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kFarmEventKindNames[detail::kFarmEventKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kFarmEventKindByWire.size() && detail::kFarmEventKindNames[detail::kFarmEventKindByWire[lo]] == wire) return kFarmEventKindMembers[detail::kFarmEventKindByWire[lo]];
     return std::nullopt;
 }
 
@@ -1179,18 +1094,23 @@ std::optional<FarmEventKind> FarmEventKindFromCode(uint8_t code) {
     return kFarmEventKindMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 4> kSovereignEventKindNames = {"RoleAssigned", "DoctrineSet", "PowerTriggered", "RewardGranted"};
+constexpr std::array<uint8_t, 4> kSovereignEventKindByWire = {1, 2, 3, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(SovereignEventKind v) {
-    static constexpr std::array<std::string_view, 4> kNames = {"RoleAssigned", "DoctrineSet", "PowerTriggered", "RewardGranted"};
     const size_t i = detail::SovereignEventKindOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kSovereignEventKindNames.size()) return {};
+    return detail::kSovereignEventKindNames[i];
 }
 
 std::string_view ToWire(SovereignEventKind v) {
-    static constexpr std::array<std::string_view, 4> kWires = {"RoleAssigned", "DoctrineSet", "PowerTriggered", "RewardGranted"};
     const size_t i = detail::SovereignEventKindOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kSovereignEventKindNames.size()) return {};
+    return detail::kSovereignEventKindNames[i];
 }
 
 bool IsRetired(SovereignEventKind v) {
@@ -1200,24 +1120,17 @@ bool IsRetired(SovereignEventKind v) {
 }
 
 std::optional<SovereignEventKind> SovereignEventKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 4> kKeys = {"DoctrineSet", "PowerTriggered", "RewardGranted", "RoleAssigned"};
-    static constexpr std::array<SovereignEventKind, 4> kValues = {
-        SovereignEventKind::DoctrineSet,
-        SovereignEventKind::PowerTriggered,
-        SovereignEventKind::RewardGranted,
-        SovereignEventKind::RoleAssigned,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kSovereignEventKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kSovereignEventKindNames[detail::kSovereignEventKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kSovereignEventKindByWire.size() && detail::kSovereignEventKindNames[detail::kSovereignEventKindByWire[lo]] == wire) return kSovereignEventKindMembers[detail::kSovereignEventKindByWire[lo]];
     return std::nullopt;
 }
 
@@ -1227,32 +1140,30 @@ std::optional<SovereignEventKind> SovereignEventKindFromCode(uint8_t code) {
     return kSovereignEventKindMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 6> kSovereignRoleNames = {
+    "None",
+    "Sovereign",
+    "MinisterMilitary",
+    "MinisterEconomy",
+    "MinisterEnvironment",
+    "MinisterCraftsmanship",
+};
+constexpr std::array<uint8_t, 6> kSovereignRoleByWire = {5, 3, 4, 2, 0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(SovereignRole v) {
-    static constexpr std::array<std::string_view, 6> kNames = {
-        "None",
-        "Sovereign",
-        "MinisterMilitary",
-        "MinisterEconomy",
-        "MinisterEnvironment",
-        "MinisterCraftsmanship",
-    };
     const size_t i = detail::SovereignRoleOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kSovereignRoleNames.size()) return {};
+    return detail::kSovereignRoleNames[i];
 }
 
 std::string_view ToWire(SovereignRole v) {
-    static constexpr std::array<std::string_view, 6> kWires = {
-        "None",
-        "Sovereign",
-        "MinisterMilitary",
-        "MinisterEconomy",
-        "MinisterEnvironment",
-        "MinisterCraftsmanship",
-    };
     const size_t i = detail::SovereignRoleOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kSovereignRoleNames.size()) return {};
+    return detail::kSovereignRoleNames[i];
 }
 
 bool IsRetired(SovereignRole v) {
@@ -1262,33 +1173,17 @@ bool IsRetired(SovereignRole v) {
 }
 
 std::optional<SovereignRole> SovereignRoleFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 6> kKeys = {
-        "MinisterCraftsmanship",
-        "MinisterEconomy",
-        "MinisterEnvironment",
-        "MinisterMilitary",
-        "None",
-        "Sovereign",
-    };
-    static constexpr std::array<SovereignRole, 6> kValues = {
-        SovereignRole::MinisterCraftsmanship,
-        SovereignRole::MinisterEconomy,
-        SovereignRole::MinisterEnvironment,
-        SovereignRole::MinisterMilitary,
-        SovereignRole::None,
-        SovereignRole::Sovereign,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kSovereignRoleByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kSovereignRoleNames[detail::kSovereignRoleByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kSovereignRoleByWire.size() && detail::kSovereignRoleNames[detail::kSovereignRoleByWire[lo]] == wire) return kSovereignRoleMembers[detail::kSovereignRoleByWire[lo]];
     return std::nullopt;
 }
 
@@ -1298,36 +1193,32 @@ std::optional<SovereignRole> SovereignRoleFromCode(uint8_t code) {
     return kSovereignRoleMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 8> kSovereignDoctrineNames = {
+    "None",
+    "Mythic",
+    "Military",
+    "Merchant",
+    "Progressive",
+    "Chancellor",
+    "Craftsmanship",
+    "Familiar",
+};
+constexpr std::array<uint8_t, 8> kSovereignDoctrineByWire = {5, 6, 7, 3, 2, 1, 0, 4};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(SovereignDoctrine v) {
-    static constexpr std::array<std::string_view, 8> kNames = {
-        "None",
-        "Mythic",
-        "Military",
-        "Merchant",
-        "Progressive",
-        "Chancellor",
-        "Craftsmanship",
-        "Familiar",
-    };
     const size_t i = detail::SovereignDoctrineOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kSovereignDoctrineNames.size()) return {};
+    return detail::kSovereignDoctrineNames[i];
 }
 
 std::string_view ToWire(SovereignDoctrine v) {
-    static constexpr std::array<std::string_view, 8> kWires = {
-        "None",
-        "Mythic",
-        "Military",
-        "Merchant",
-        "Progressive",
-        "Chancellor",
-        "Craftsmanship",
-        "Familiar",
-    };
     const size_t i = detail::SovereignDoctrineOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kSovereignDoctrineNames.size()) return {};
+    return detail::kSovereignDoctrineNames[i];
 }
 
 bool IsRetired(SovereignDoctrine v) {
@@ -1337,37 +1228,17 @@ bool IsRetired(SovereignDoctrine v) {
 }
 
 std::optional<SovereignDoctrine> SovereignDoctrineFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 8> kKeys = {
-        "Chancellor",
-        "Craftsmanship",
-        "Familiar",
-        "Merchant",
-        "Military",
-        "Mythic",
-        "None",
-        "Progressive",
-    };
-    static constexpr std::array<SovereignDoctrine, 8> kValues = {
-        SovereignDoctrine::Chancellor,
-        SovereignDoctrine::Craftsmanship,
-        SovereignDoctrine::Familiar,
-        SovereignDoctrine::Merchant,
-        SovereignDoctrine::Military,
-        SovereignDoctrine::Mythic,
-        SovereignDoctrine::None,
-        SovereignDoctrine::Progressive,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kSovereignDoctrineByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kSovereignDoctrineNames[detail::kSovereignDoctrineByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kSovereignDoctrineByWire.size() && detail::kSovereignDoctrineNames[detail::kSovereignDoctrineByWire[lo]] == wire) return kSovereignDoctrineMembers[detail::kSovereignDoctrineByWire[lo]];
     return std::nullopt;
 }
 
@@ -1377,38 +1248,33 @@ std::optional<SovereignDoctrine> SovereignDoctrineFromCode(uint8_t code) {
     return kSovereignDoctrineMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 9> kSovereignPowerNames = {
+    "None",
+    "MinisterBuffPrimary",
+    "MinisterBuffSecondary",
+    "WorldBossSpawn",
+    "HiddenBonds",
+    "Heistia",
+    "AzuriaAuction",
+    "MinisterBuffTertiary",
+    "CustomDrop",
+};
+constexpr std::array<uint8_t, 9> kSovereignPowerByWire = {6, 8, 5, 4, 1, 2, 7, 0, 3};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(SovereignPower v) {
-    static constexpr std::array<std::string_view, 9> kNames = {
-        "None",
-        "MinisterBuffPrimary",
-        "MinisterBuffSecondary",
-        "WorldBossSpawn",
-        "HiddenBonds",
-        "Heistia",
-        "AzuriaAuction",
-        "MinisterBuffTertiary",
-        "CustomDrop",
-    };
     const size_t i = detail::SovereignPowerOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kSovereignPowerNames.size()) return {};
+    return detail::kSovereignPowerNames[i];
 }
 
 std::string_view ToWire(SovereignPower v) {
-    static constexpr std::array<std::string_view, 9> kWires = {
-        "None",
-        "MinisterBuffPrimary",
-        "MinisterBuffSecondary",
-        "WorldBossSpawn",
-        "HiddenBonds",
-        "Heistia",
-        "AzuriaAuction",
-        "MinisterBuffTertiary",
-        "CustomDrop",
-    };
     const size_t i = detail::SovereignPowerOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kSovereignPowerNames.size()) return {};
+    return detail::kSovereignPowerNames[i];
 }
 
 bool IsRetired(SovereignPower v) {
@@ -1418,39 +1284,17 @@ bool IsRetired(SovereignPower v) {
 }
 
 std::optional<SovereignPower> SovereignPowerFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 9> kKeys = {
-        "AzuriaAuction",
-        "CustomDrop",
-        "Heistia",
-        "HiddenBonds",
-        "MinisterBuffPrimary",
-        "MinisterBuffSecondary",
-        "MinisterBuffTertiary",
-        "None",
-        "WorldBossSpawn",
-    };
-    static constexpr std::array<SovereignPower, 9> kValues = {
-        SovereignPower::AzuriaAuction,
-        SovereignPower::CustomDrop,
-        SovereignPower::Heistia,
-        SovereignPower::HiddenBonds,
-        SovereignPower::MinisterBuffPrimary,
-        SovereignPower::MinisterBuffSecondary,
-        SovereignPower::MinisterBuffTertiary,
-        SovereignPower::None,
-        SovereignPower::WorldBossSpawn,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kSovereignPowerByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kSovereignPowerNames[detail::kSovereignPowerByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kSovereignPowerByWire.size() && detail::kSovereignPowerNames[detail::kSovereignPowerByWire[lo]] == wire) return kSovereignPowerMembers[detail::kSovereignPowerByWire[lo]];
     return std::nullopt;
 }
 
@@ -1460,18 +1304,23 @@ std::optional<SovereignPower> SovereignPowerFromCode(uint8_t code) {
     return kSovereignPowerMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kLifecycleKindNames = {"Start", "Stop"};
+constexpr std::array<uint8_t, 2> kLifecycleKindByWire = {0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(LifecycleKind v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"Start", "Stop"};
     const size_t i = detail::LifecycleKindOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kLifecycleKindNames.size()) return {};
+    return detail::kLifecycleKindNames[i];
 }
 
 std::string_view ToWire(LifecycleKind v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"Start", "Stop"};
     const size_t i = detail::LifecycleKindOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kLifecycleKindNames.size()) return {};
+    return detail::kLifecycleKindNames[i];
 }
 
 bool IsRetired(LifecycleKind v) {
@@ -1481,19 +1330,17 @@ bool IsRetired(LifecycleKind v) {
 }
 
 std::optional<LifecycleKind> LifecycleKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"Start", "Stop"};
-    static constexpr std::array<LifecycleKind, 2> kValues = {LifecycleKind::Start, LifecycleKind::Stop};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kLifecycleKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kLifecycleKindNames[detail::kLifecycleKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kLifecycleKindByWire.size() && detail::kLifecycleKindNames[detail::kLifecycleKindByWire[lo]] == wire) return kLifecycleKindMembers[detail::kLifecycleKindByWire[lo]];
     return std::nullopt;
 }
 
@@ -1503,48 +1350,38 @@ std::optional<LifecycleKind> LifecycleKindFromCode(uint8_t code) {
     return kLifecycleKindMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 14> kGrantKindNames = {
+    "UNKNOWN",
+    "BUYBACK_DELIVERY",
+    "BUFF_REWARD",
+    "LEVEL_UP_GIFT",
+    "BOSS_REWARD_MAIL",
+    "WORLD_BOSS_REWARD_MAIL",
+    "EVENT_REWARD",
+    "MAIL_RETURN",
+    "PERIN_OVERFLOW",
+    "PLAYER_MAIL",
+    "FARM_HARVEST",
+    "STARTER_ITEM",
+    "GUILD_DISBAND_BANK",
+    "AUCTION_ESCROW_RECOVERY",
+};
+constexpr std::array<uint8_t, 14> kGrantKindByWire = {13, 4, 2, 1, 6, 10, 12, 3, 7, 8, 9, 11, 0, 5};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(GrantKind v) {
-    static constexpr std::array<std::string_view, 14> kNames = {
-        "UNKNOWN",
-        "BUYBACK_DELIVERY",
-        "BUFF_REWARD",
-        "LEVEL_UP_GIFT",
-        "BOSS_REWARD_MAIL",
-        "WORLD_BOSS_REWARD_MAIL",
-        "EVENT_REWARD",
-        "MAIL_RETURN",
-        "PERIN_OVERFLOW",
-        "PLAYER_MAIL",
-        "FARM_HARVEST",
-        "STARTER_ITEM",
-        "GUILD_DISBAND_BANK",
-        "AUCTION_ESCROW_RECOVERY",
-    };
     const size_t i = detail::GrantKindOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kGrantKindNames.size()) return {};
+    return detail::kGrantKindNames[i];
 }
 
 std::string_view ToWire(GrantKind v) {
-    static constexpr std::array<std::string_view, 14> kWires = {
-        "UNKNOWN",
-        "BUYBACK_DELIVERY",
-        "BUFF_REWARD",
-        "LEVEL_UP_GIFT",
-        "BOSS_REWARD_MAIL",
-        "WORLD_BOSS_REWARD_MAIL",
-        "EVENT_REWARD",
-        "MAIL_RETURN",
-        "PERIN_OVERFLOW",
-        "PLAYER_MAIL",
-        "FARM_HARVEST",
-        "STARTER_ITEM",
-        "GUILD_DISBAND_BANK",
-        "AUCTION_ESCROW_RECOVERY",
-    };
     const size_t i = detail::GrantKindOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kGrantKindNames.size()) return {};
+    return detail::kGrantKindNames[i];
 }
 
 bool IsRetired(GrantKind v) {
@@ -1569,49 +1406,17 @@ bool IsRetired(GrantKind v) {
 }
 
 std::optional<GrantKind> GrantKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 14> kKeys = {
-        "AUCTION_ESCROW_RECOVERY",
-        "BOSS_REWARD_MAIL",
-        "BUFF_REWARD",
-        "BUYBACK_DELIVERY",
-        "EVENT_REWARD",
-        "FARM_HARVEST",
-        "GUILD_DISBAND_BANK",
-        "LEVEL_UP_GIFT",
-        "MAIL_RETURN",
-        "PERIN_OVERFLOW",
-        "PLAYER_MAIL",
-        "STARTER_ITEM",
-        "UNKNOWN",
-        "WORLD_BOSS_REWARD_MAIL",
-    };
-    static constexpr std::array<GrantKind, 14> kValues = {
-        GrantKind::AUCTION_ESCROW_RECOVERY,
-        GrantKind::BOSS_REWARD_MAIL,
-        GrantKind::BUFF_REWARD,
-        GrantKind::BUYBACK_DELIVERY,
-        GrantKind::EVENT_REWARD,
-        GrantKind::FARM_HARVEST,
-        GrantKind::GUILD_DISBAND_BANK,
-        GrantKind::LEVEL_UP_GIFT,
-        GrantKind::MAIL_RETURN,
-        GrantKind::PERIN_OVERFLOW,
-        GrantKind::PLAYER_MAIL,
-        GrantKind::STARTER_ITEM,
-        GrantKind::UNKNOWN,
-        GrantKind::WORLD_BOSS_REWARD_MAIL,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kGrantKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kGrantKindNames[detail::kGrantKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kGrantKindByWire.size() && detail::kGrantKindNames[detail::kGrantKindByWire[lo]] == wire) return kGrantKindMembers[detail::kGrantKindByWire[lo]];
     return std::nullopt;
 }
 
@@ -1621,34 +1426,31 @@ std::optional<GrantKind> GrantKindFromCode(uint8_t code) {
     return kGrantKindMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 7> kVocabularyNames = {
+    "farm_event_kind",
+    "sovereign_event_kind",
+    "sovereign_role",
+    "sovereign_doctrine",
+    "sovereign_power",
+    "lifecycle_kind",
+    "grant_kind",
+};
+constexpr std::array<uint8_t, 7> kVocabularyByWire = {0, 6, 5, 3, 1, 4, 2};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Vocabulary v) {
-    static constexpr std::array<std::string_view, 7> kNames = {
-        "farm_event_kind",
-        "sovereign_event_kind",
-        "sovereign_role",
-        "sovereign_doctrine",
-        "sovereign_power",
-        "lifecycle_kind",
-        "grant_kind",
-    };
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kVocabularyNames.size()) return {};
+    return detail::kVocabularyNames[i];
 }
 
 std::string_view ToWire(Vocabulary v) {
-    static constexpr std::array<std::string_view, 7> kWires = {
-        "farm_event_kind",
-        "sovereign_event_kind",
-        "sovereign_role",
-        "sovereign_doctrine",
-        "sovereign_power",
-        "lifecycle_kind",
-        "grant_kind",
-    };
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kVocabularyNames.size()) return {};
+    return detail::kVocabularyNames[i];
 }
 
 bool IsRetired(Vocabulary v) {
@@ -1658,50 +1460,37 @@ bool IsRetired(Vocabulary v) {
 }
 
 std::optional<Vocabulary> VocabularyFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 7> kKeys = {
-        "farm_event_kind",
-        "grant_kind",
-        "lifecycle_kind",
-        "sovereign_doctrine",
-        "sovereign_event_kind",
-        "sovereign_power",
-        "sovereign_role",
-    };
-    static constexpr std::array<Vocabulary, 7> kValues = {
-        Vocabulary::farm_event_kind,
-        Vocabulary::grant_kind,
-        Vocabulary::lifecycle_kind,
-        Vocabulary::sovereign_doctrine,
-        Vocabulary::sovereign_event_kind,
-        Vocabulary::sovereign_power,
-        Vocabulary::sovereign_role,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kVocabularyByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kVocabularyNames[detail::kVocabularyByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kVocabularyByWire.size() && detail::kVocabularyNames[detail::kVocabularyByWire[lo]] == wire) return static_cast<Vocabulary>(detail::kVocabularyByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kRowsKindNames = {"every", "some"};
+constexpr std::array<uint8_t, 2> kRowsKindByWire = {0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(RowsKind v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"every", "some"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kRowsKindNames.size()) return {};
+    return detail::kRowsKindNames[i];
 }
 
 std::string_view ToWire(RowsKind v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"every", "some"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kRowsKindNames.size()) return {};
+    return detail::kRowsKindNames[i];
 }
 
 bool IsRetired(RowsKind v) {
@@ -1711,19 +1500,17 @@ bool IsRetired(RowsKind v) {
 }
 
 std::optional<RowsKind> RowsKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"every", "some"};
-    static constexpr std::array<RowsKind, 2> kValues = {RowsKind::every, RowsKind::some};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kRowsKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kRowsKindNames[detail::kRowsKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kRowsKindByWire.size() && detail::kRowsKindNames[detail::kRowsKindByWire[lo]] == wire) return static_cast<RowsKind>(detail::kRowsKindByWire[lo]);
     return std::nullopt;
 }
 

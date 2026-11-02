@@ -75,18 +75,24 @@ struct RefdepAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kShapeNames = {"count", "place", "none_"};
+constexpr std::array<std::string_view, 3> kShapeWires = {"count", "place", "none"};
+constexpr std::array<uint8_t, 3> kShapeByWire = {0, 2, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Shape v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"count", "place", "none_"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kShapeNames.size()) return {};
+    return detail::kShapeNames[i];
 }
 
 std::string_view ToWire(Shape v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"count", "place", "none"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kShapeWires.size()) return {};
+    return detail::kShapeWires[i];
 }
 
 bool IsRetired(Shape v) {
@@ -96,19 +102,17 @@ bool IsRetired(Shape v) {
 }
 
 std::optional<Shape> ShapeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"count", "none", "place"};
-    static constexpr std::array<Shape, 3> kValues = {Shape::count, Shape::none_, Shape::place};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kShapeByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kShapeWires[detail::kShapeByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kShapeByWire.size() && detail::kShapeWires[detail::kShapeByWire[lo]] == wire) return static_cast<Shape>(detail::kShapeByWire[lo]);
     return std::nullopt;
 }
 

@@ -2,7 +2,6 @@ package cppgen
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -37,10 +36,7 @@ func (g *gen) idEnums() {
 	}
 	for _, it := range g.idTables() {
 		leave := g.enter(it.v.Name)
-		s := enumSpec{name: g.pl.IDName(it.rec), underlying: underlying(nil, len(it.v.IDs))}
-		for _, id := range it.v.IDs {
-			s.members = append(s.members, enumMember{name: g.pl.IDMember(id), wire: id})
-		}
+		s := g.idSpec(it)
 		g.doc(0, fmt.Sprintf(idEnumDocFormat, it.v.Name))
 		g.h.printf(enumOpenFormat, s.name, s.underlying)
 		for _, m := range s.members {
@@ -58,25 +54,27 @@ func (g *gen) idEnums() {
 	}
 }
 
-// idFromWires define each id enum's ToWire, an array of its keys by position, then <Rec>IdFromWire, a binary search of the keys sorted by their bytes (CODEGEN.md §5.3, §7.1; DECISIONS 383).
+// idSpec is the id enum of a table: its keys in entry order, retired ones included (CODEGEN.md §5.3).
+func (g *gen) idSpec(it idTable) enumSpec {
+	s := enumSpec{name: g.pl.IDName(it.rec), underlying: underlying(nil, len(it.v.IDs)), id: true}
+	for _, id := range it.v.IDs {
+		s.members = append(s.members, enumMember{name: g.pl.IDMember(id), wire: id})
+	}
+	return s
+}
+
+// idFromWires define each id enum's tables, its ToWire, an array of its keys by position, then <Rec>IdFromWire, a binary search of the positions sorted by key (CODEGEN.md §5.3, §7.1; DECISIONS 383, 430).
 func (g *gen) idFromWires() {
 	for _, it := range g.idTables() {
-		name := g.pl.IDName(it.rec)
-		wires := views(it.v.IDs)
+		s := g.idSpec(it)
+		h := g.pl.EnumHelpers(s.name)
+		g.enumTables(s)
 		pos := fmt.Sprintf(staticCastFormat, cppSize, enumArg)
-		g.c.printf(byOrdinalText, fmt.Sprintf(nameSigFormat, ir.CppToWire, name), len(wires), wiresTable, indentBlock(braced(wires)), pos)
-		g.c.printf(retiredText, fmt.Sprintf(retiredSigFormat, name), len(wires), retiredTable, indentBlock(braced(idRetired(it.v))), pos)
-		keys := slices.Clone(it.v.IDs)
-		slices.Sort(keys)
-		quoted := views(keys)
-		ids := make([]string, len(keys))
-		for i, k := range keys {
-			ids[i] = name + scopeSep + g.pl.IDMember(k)
-		}
-		g.c.write(search{
-			sig: fmt.Sprintf(idFromWireSigFormat, name, g.pl.EnumHelpers(name).FromWire), prelude: table(cppStringView, keysTable, quoted) + table(name, idsTable, ids),
-			keys: keysTable, key: keyParam, hit: fmt.Sprintf(indexFormat, idsTable, loVar), miss: cppNullopt,
-		}.text())
+		wires, order := detailPrefix+h.Wires, detailPrefix+h.ByWire
+		g.c.printf(byOrdinalText, fmt.Sprintf(nameSigFormat, ir.CppToWire, s.name), pos, wires)
+		g.c.printf(retiredText, fmt.Sprintf(retiredSigFormat, s.name), len(s.members), retiredTable, indentBlock(braced(idRetired(it.v))), pos)
+		hit := fmt.Sprintf(staticCastFormat, s.name, fmt.Sprintf(indexFormat, order, loVar))
+		g.c.write(byWireSearch(fmt.Sprintf(idFromWireSigFormat, s.name, h.FromWire), keyParam, wires, order, hit))
 	}
 }
 

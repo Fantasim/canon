@@ -7,12 +7,16 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 )
 
-// enumSpec is an enum as the header writes it: a declared enum or a variant's kind enum.
+// enumSpec is an enum as the header writes it: a declared enum, a variant's kind enum or a table's id enum. The same ir predicates as the name plan's decide its tables: plainWires when no wire differs from its name, dense with the first code when its codes are dense in declaration order (CODEGEN.md §5.2, DECISIONS 430).
 type enumSpec struct {
 	name, doc  string
 	underlying string
 	members    []enumMember
 	codes      *ir.TypeRef
+	first      int64
+	plainWires bool
+	dense      bool
+	id         bool
 }
 
 // enumMember is an enumerator: its C++ name, its Canon name (ToName), its wire, its code.
@@ -61,7 +65,8 @@ func (g *gen) enums() {
 }
 
 func (g *gen) declaredEnum(e *ir.Enum) enumSpec {
-	s := enumSpec{name: g.typeName(e), doc: e.Doc, codes: e.Codes}
+	s := enumSpec{name: g.typeName(e), doc: e.Doc, codes: e.Codes, plainWires: ir.EnumWiresAreNames(e)}
+	s.first, s.dense = ir.DenseCodes(e)
 	for _, m := range e.Members {
 		s.members = append(s.members, enumMember{
 			name: g.pl.Enumerator(m), canon: m.Name, wire: m.Wire, doc: m.Doc, code: m.Code, retired: m.Retired,
@@ -73,7 +78,7 @@ func (g *gen) declaredEnum(e *ir.Enum) enumSpec {
 
 // kindEnum is a variant's kind enum; a fieldless case's doc goes on its member (decision 198).
 func (g *gen) kindEnum(v *ir.Variant) enumSpec {
-	s := enumSpec{name: g.kindName(v)}
+	s := enumSpec{name: g.kindName(v), plainWires: ir.CaseWiresAreNames(v)}
 	for _, c := range v.Cases {
 		doc := ""
 		if len(c.Fields) == 0 {
@@ -141,23 +146,29 @@ func (g *gen) deletedJSON(name, doc string) {
 	g.h.linef(0, idFromJSONDeleted, name)
 }
 
-// ordinal writes, in detail, a @codes enum's codes ascending, their declaration positions, and the constexpr search from a value to its position, the member count for a value that is no member (CODEGEN.md §5.2, DECISIONS 383).
+// ordinal writes, in detail, a @codes enum's constexpr function from a value to its position, the member count for a value that is no member: with codes dense in declaration order the subtraction of the first code, else a search of the codes ascending (CODEGEN.md §5.2, DECISIONS 383, 430).
 func (g *gen) ordinal(s enumSpec) {
 	h, code := g.pl.EnumHelpers(s.name), intType(*s.codes)
-	order := byCode(s.members)
-	codes, positions := make([]string, len(order)), make([]string, len(order))
-	for i, at := range order {
-		codes[i], positions[i] = intLit(s.members[at].code), fmt.Sprint(at)
-	}
 	g.h.line(detailOpen)
+	if s.dense {
+		g.h.printf(denseOrdinalText, h.Ordinal, s.name, code, intLit(s.first), len(s.members))
+	} else {
+		g.sparseOrdinal(s, h, code)
+	}
+	g.h.line(detailClose)
+	g.h.blank()
+}
+
+// sparseOrdinal writes a @codes enum's codes ascending, their declaration positions in the smallest unsigned type, and the search of them (DECISIONS 383, 430).
+func (g *gen) sparseOrdinal(s enumSpec, h ir.CppEnumHelpers, code string) {
+	order := byCode(s.members)
+	codes := column(s.members, order, codeText)
 	g.h.printf(cellsFormat, code, len(order), h.Codes, braced(codes))
-	g.h.printf(cellsFormat, cppUint32, len(order), h.CodeOrdinals, braced(positions))
+	g.h.printf(cellsFormat, underlying(nil, len(order)), len(order), h.CodeOrdinals, braced(intTexts(order)))
 	g.h.write(strings.TrimSuffix(search{
 		sig: fmt.Sprintf(ordinalSigFormat, h.Ordinal, s.name), prelude: fmt.Sprintf(codeLineFormat, code),
 		keys: h.Codes, key: codeField, hit: fmt.Sprintf(indexFormat, h.CodeOrdinals, loVar), miss: fmt.Sprintf(sizeCallFormat, h.Codes),
 	}.text(), newline))
-	g.h.line(detailClose)
-	g.h.blank()
 }
 
 // kindMember is the qualified kind-enum member of case i (CODEGEN.md §3.3, §3.5).

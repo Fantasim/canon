@@ -328,6 +328,15 @@ const (
 	localTableFormat     = "constexpr std::array<%s, %d> %s = %s;\n"
 )
 
+// The tables an enum's helpers read, written once, and the searches over them (CODEGEN.md §5.2, §5.3; DECISIONS 430).
+const (
+	wireAtTable         = "kWireAt" // an opened enum's FromCode: the places of its members' wires in k<E>Wires, in code order
+	midVar              = "mid"
+	indexHole           = "%s"
+	byWireAtFormat      = "%s[%s[%%s]]" // a wire through the positions sorted by wire
+	openPlainNameFormat = "%s {\n" + indentUnit + "return %s(" + enumArg + ");\n}\n\n"
+)
+
 // Optional list elements and map values (CODEGEN.md §4.2, WIRE.md §5.4; DECISIONS 385).
 const (
 	notNullOpenFormat = "if (!%s.is_null()) {"

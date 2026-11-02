@@ -133,18 +133,23 @@ struct DependentAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 4> kGoalNames = {"kill", "collect", "reach_level", "visit"};
+constexpr std::array<uint8_t, 4> kGoalByWire = {1, 0, 2, 3};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Goal v) {
-    static constexpr std::array<std::string_view, 4> kNames = {"kill", "collect", "reach_level", "visit"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kGoalNames.size()) return {};
+    return detail::kGoalNames[i];
 }
 
 std::string_view ToWire(Goal v) {
-    static constexpr std::array<std::string_view, 4> kWires = {"kill", "collect", "reach_level", "visit"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kGoalNames.size()) return {};
+    return detail::kGoalNames[i];
 }
 
 bool IsRetired(Goal v) {
@@ -154,19 +159,17 @@ bool IsRetired(Goal v) {
 }
 
 std::optional<Goal> GoalFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 4> kKeys = {"collect", "kill", "reach_level", "visit"};
-    static constexpr std::array<Goal, 4> kValues = {Goal::collect, Goal::kill, Goal::reach_level, Goal::visit};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kGoalByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kGoalNames[detail::kGoalByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kGoalByWire.size() && detail::kGoalNames[detail::kGoalByWire[lo]] == wire) return static_cast<Goal>(detail::kGoalByWire[lo]);
     return std::nullopt;
 }
 

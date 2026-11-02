@@ -9,9 +9,6 @@
 
 #include "canon_runtime_json.h"
 
-#pragma push_macro("IK1_WEAPON")
-#undef IK1_WEAPON
-
 namespace demo::defs {
 
 namespace detail {
@@ -21,18 +18,23 @@ struct DefsAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kKindNames = {"IK1_WEAPON", "GENERAL", "OLD"};
+constexpr std::array<uint8_t, 3> kKindByWire = {1, 0, 2};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Kind v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"IK1_WEAPON", "GENERAL", "OLD"};
     const size_t i = detail::KindOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kKindNames.size()) return {};
+    return detail::kKindNames[i];
 }
 
 std::string_view ToWire(Kind v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"IK1_WEAPON", "GENERAL", "OLD"};
     const size_t i = detail::KindOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kKindNames.size()) return {};
+    return detail::kKindNames[i];
 }
 
 bool IsRetired(Kind v) {
@@ -42,19 +44,17 @@ bool IsRetired(Kind v) {
 }
 
 std::optional<Kind> KindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"GENERAL", "IK1_WEAPON", "OLD"};
-    static constexpr std::array<Kind, 3> kValues = {Kind::GENERAL, Kind::IK1_WEAPON, Kind::OLD};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kKindNames[detail::kKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kKindByWire.size() && detail::kKindNames[detail::kKindByWire[lo]] == wire) return kKindMembers[detail::kKindByWire[lo]];
     return std::nullopt;
 }
 
@@ -64,18 +64,24 @@ std::optional<Kind> KindFromCode(uint32_t code) {
     return kKindMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kPlainNames = {"A", "B"};
+constexpr std::array<std::string_view, 2> kPlainWires = {"a", "b"};
+constexpr std::array<uint8_t, 2> kPlainByWire = {0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Plain v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"A", "B"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kPlainNames.size()) return {};
+    return detail::kPlainNames[i];
 }
 
 std::string_view ToWire(Plain v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"a", "b"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kPlainWires.size()) return {};
+    return detail::kPlainWires[i];
 }
 
 bool IsRetired(Plain v) {
@@ -85,34 +91,37 @@ bool IsRetired(Plain v) {
 }
 
 std::optional<Plain> PlainFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"a", "b"};
-    static constexpr std::array<Plain, 2> kValues = {Plain::A, Plain::B};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kPlainByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kPlainWires[detail::kPlainByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kPlainByWire.size() && detail::kPlainWires[detail::kPlainByWire[lo]] == wire) return static_cast<Plain>(detail::kPlainByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kExtremeNames = {"LOW", "HIGH"};
+constexpr std::array<uint8_t, 2> kExtremeByWire = {1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Extreme v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"LOW", "HIGH"};
     const size_t i = detail::ExtremeOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kExtremeNames.size()) return {};
+    return detail::kExtremeNames[i];
 }
 
 std::string_view ToWire(Extreme v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"LOW", "HIGH"};
     const size_t i = detail::ExtremeOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kExtremeNames.size()) return {};
+    return detail::kExtremeNames[i];
 }
 
 bool IsRetired(Extreme v) {
@@ -122,19 +131,17 @@ bool IsRetired(Extreme v) {
 }
 
 std::optional<Extreme> ExtremeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"HIGH", "LOW"};
-    static constexpr std::array<Extreme, 2> kValues = {Extreme::HIGH, Extreme::LOW};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kExtremeByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kExtremeNames[detail::kExtremeByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kExtremeByWire.size() && detail::kExtremeNames[detail::kExtremeByWire[lo]] == wire) return kExtremeMembers[detail::kExtremeByWire[lo]];
     return std::nullopt;
 }
 
@@ -144,18 +151,23 @@ std::optional<Extreme> ExtremeFromCode(int64_t code) {
     return kExtremeMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 1> kLegacyNames = {"NONE"};
+constexpr std::array<uint8_t, 1> kLegacyByWire = {0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Legacy v) {
-    static constexpr std::array<std::string_view, 1> kNames = {"NONE"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kLegacyNames.size()) return {};
+    return detail::kLegacyNames[i];
 }
 
 std::string_view ToWire(Legacy v) {
-    static constexpr std::array<std::string_view, 1> kWires = {"NONE"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kLegacyNames.size()) return {};
+    return detail::kLegacyNames[i];
 }
 
 bool IsRetired(Legacy v) {
@@ -165,22 +177,18 @@ bool IsRetired(Legacy v) {
 }
 
 std::optional<Legacy> LegacyFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 1> kKeys = {"NONE"};
-    static constexpr std::array<Legacy, 1> kValues = {Legacy::NONE};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kLegacyByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kLegacyNames[detail::kLegacyByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kLegacyByWire.size() && detail::kLegacyNames[detail::kLegacyByWire[lo]] == wire) return static_cast<Legacy>(detail::kLegacyByWire[lo]);
     return std::nullopt;
 }
 
 }  // namespace demo::defs
-
-#pragma pop_macro("IK1_WEAPON")

@@ -339,7 +339,7 @@ std::optional<uint16_t> ToCode(const Stat& v) {
 
 std::optional<Stat> StatFromCode(uint16_t code) {
     static constexpr std::array<uint16_t, 3> kKeys = {1, 2, 4};
-    static constexpr std::array<std::string_view, 3> kWires = {"ATK", "DEF", "SPD"};
+    static constexpr std::array<uint8_t, 3> kWireAt = {0, 1, 2};
     size_t lo = 0;
     size_t hi = kKeys.size();
     while (lo < hi) {
@@ -350,32 +350,19 @@ std::optional<Stat> StatFromCode(uint16_t code) {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == code) return Stat(std::string(kWires[lo]));
+    if (lo < kKeys.size() && kKeys[lo] == code) return Stat(std::string(detail::kStatWires[kWireAt[lo]]));
     return std::nullopt;
 }
 
 namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kRankWires = {"high", "low"};
-constexpr std::array<std::string_view, 2> kRankWireNames = {"high", "low"};
 constexpr std::array<uint8_t, 2> kRankWireCodes = {200, 1};
 }  // namespace
 }  // namespace detail
 
 std::string_view ToName(const Rank& v) {
-    const std::string_view key = ToWire(v);
-    size_t lo = 0;
-    size_t hi = detail::kRankWires.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (detail::kRankWires[mid] < key) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < detail::kRankWires.size() && detail::kRankWires[lo] == key) return detail::kRankWireNames[lo];
-    return key;
+    return ToWire(v);
 }
 
 bool IsRetired(const Rank& v) {
@@ -444,7 +431,7 @@ std::optional<uint8_t> ToCode(const Rank& v) {
 
 std::optional<Rank> RankFromCode(uint8_t code) {
     static constexpr std::array<uint8_t, 2> kKeys = {1, 200};
-    static constexpr std::array<std::string_view, 2> kWires = {"low", "high"};
+    static constexpr std::array<uint8_t, 2> kWireAt = {1, 0};
     size_t lo = 0;
     size_t hi = kKeys.size();
     while (lo < hi) {
@@ -455,7 +442,7 @@ std::optional<Rank> RankFromCode(uint8_t code) {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == code) return Rank(std::string(kWires[lo]));
+    if (lo < kKeys.size() && kKeys[lo] == code) return Rank(std::string(detail::kRankWires[kWireAt[lo]]));
     return std::nullopt;
 }
 

@@ -16,12 +16,13 @@ type CppVector struct {
 	Struct, Table string
 }
 
-// CppEnumHelpers are an enum's k<E>Members, k<E>LiveMembers (DECISIONS 395), <E>FromWire and, with @codes, <E>FromCode; a closed @codes enum's detail::k<E>Codes, detail::k<E>CodeOrdinals and detail::<E>Ordinal; an opened enum's detail::k<E>Wires, k<E>WireNames and, with @codes, k<E>WireCodes (CODEGEN.md §5.2, DECISIONS 383).
+// CppEnumHelpers are an enum's k<E>Members, k<E>LiveMembers (DECISIONS 395), <E>FromWire and, with @codes, <E>FromCode; a closed @codes enum's detail::k<E>Codes and detail::k<E>CodeOrdinals (not when its codes are dense) and detail::<E>Ordinal; the .gen.cpp's detail::k<E>Names, k<E>Wires (only when a wire differs from its name, always for an id enum) and k<E>ByWire of a closed enum, a kind enum and an id enum; an opened enum's detail::k<E>Wires, k<E>WireNames (only when a name differs from its wire) and, with @codes, k<E>WireCodes (CODEGEN.md §5.2, DECISIONS 383, 430).
 type CppEnumHelpers struct {
 	Members, LiveMembers         string
 	FromWire, FromCode           string
 	Codes, CodeOrdinals, Ordinal string
 	Wires, WireNames, WireCodes  string
+	Names, ByWire                string
 }
 
 // FindBy is the lookup and indexes of @stable field f (CODEGEN.md §5.9).
@@ -58,14 +59,18 @@ func (pl *CppNamePlan) EnumHelpers(enum string) CppEnumHelpers {
 		Members: cppConstPrefix + enum + goMembersSuffix, LiveMembers: cppConstPrefix + enum + liveMembersSuffix, FromWire: enum + cppFromWire, FromCode: enum + goFromCodeSuffix,
 		Codes: cppConstPrefix + enum + cppCodes, CodeOrdinals: cppConstPrefix + enum + cppCodeOrdinals, Ordinal: enum + cppOrdinal,
 		Wires: cppConstPrefix + enum + cppWires, WireNames: cppConstPrefix + enum + cppWireNames, WireCodes: cppConstPrefix + enum + cppWireCodes,
+		Names: cppConstPrefix + enum + cppNames, ByWire: cppConstPrefix + enum + cppByWire,
 	}
 }
 
-// declareWireTables declares, in detail, each opened enum's sorted wires and their parallel names and codes, which the .gen.cpp holds in an unnamed namespace, local to it as the conformance file's helpers are (CODEGEN.md §5.2, DECISIONS 383).
+// declareWireTables declares, in detail, each opened enum's sorted wires and their parallel codes and, only when a name differs from its wire, names, which the .gen.cpp holds in an unnamed namespace, local to it as the conformance file's helpers are (CODEGEN.md §5.2, DECISIONS 383, 430).
 func (pl *CppNamePlan) declareWireTables(detail *nameScope) {
 	for _, e := range pl.OpenEnums() {
 		h := pl.EnumHelpers(pl.TypeName(e))
-		names := []string{h.Wires, h.WireNames}
+		names := []string{h.Wires}
+		if !EnumWiresAreNames(e) {
+			names = append(names, h.WireNames)
+		}
 		if e.Codes != nil {
 			names = append(names, h.WireCodes)
 		}
@@ -75,15 +80,56 @@ func (pl *CppNamePlan) declareWireTables(detail *nameScope) {
 	}
 }
 
-// declareOrdinals declares, in detail, each closed @codes enum's k<E>Codes, k<E>CodeOrdinals and <E>Ordinal, which the header defines (CODEGEN.md §5.2, §7.1; DECISIONS 383).
+// declareOrdinals declares, in detail, each closed @codes enum's <E>Ordinal, which the header defines, and, unless its codes are dense, its k<E>Codes and k<E>CodeOrdinals (CODEGEN.md §5.2, §7.1; DECISIONS 383, 430).
 func (pl *CppNamePlan) declareOrdinals(detail *nameScope) {
 	for _, t := range pl.p.Types {
 		if e, ok := t.(*Enum); ok && e.Codes != nil && !OpenEnum(pl.p, pl.e, e) {
 			h := pl.EnumHelpers(pl.TypeName(e))
-			for _, n := range []string{h.Codes, h.CodeOrdinals, h.Ordinal} {
+			names := []string{h.Ordinal}
+			if _, dense := DenseCodes(e); !dense {
+				names = append(names, h.Codes, h.CodeOrdinals)
+			}
+			for _, n := range names {
 				pl.shareInner(detail, n, e.QName(), e)
 			}
 		}
+	}
+}
+
+// declareEnumTables declares, in detail, the tables the .gen.cpp holds before the helpers of each closed enum, kind enum and table id enum, in an unnamed namespace local to it: k<E>Names (not for an id enum), k<E>Wires (only when a wire differs from its name, always for an id enum) and k<E>ByWire (CODEGEN.md §5.2, §5.3; DECISIONS 430). An id enum's finding names its record, as the enum's own does (declareIDEnum).
+func (pl *CppNamePlan) declareEnumTables(detail *nameScope) {
+	for _, t := range pl.p.Types {
+		switch x := t.(type) {
+		case *Enum:
+			if !OpenEnum(pl.p, pl.e, x) {
+				pl.declareTables(detail, pl.TypeName(x), x.QName(), x, EnumWiresAreNames(x))
+			}
+		case *Variant:
+			pl.declareTables(detail, pl.KindName(x), x.QName(), x, CaseWiresAreNames(x))
+		}
+	}
+	if !pl.baked() {
+		return
+	}
+	for _, v := range pl.p.Values {
+		if rec := tableRecord(v); rec != nil {
+			h, byRecord := pl.EnumHelpers(pl.IDName(rec)), foreignNote{origin: rec.QName()}
+			for _, n := range []string{h.Wires, h.ByWire} {
+				pl.noteForeign(detail, n, byRecord, func() { pl.localInner(detail, n, pl.valueOrigin(v), v, meetsLocal) })
+			}
+		}
+	}
+}
+
+// declareTables declares enum name's k<E>Names, its k<E>Wires unless the wires are the names, and its k<E>ByWire.
+func (pl *CppNamePlan) declareTables(detail *nameScope, name, origin string, item any, wiresAreNames bool) {
+	h := pl.EnumHelpers(name)
+	names := []string{h.Names, h.ByWire}
+	if !wiresAreNames {
+		names = append(names, h.Wires)
+	}
+	for _, n := range names {
+		pl.localInner(detail, n, origin, item, meetsLocal)
 	}
 }
 

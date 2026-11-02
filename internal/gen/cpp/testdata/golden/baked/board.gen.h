@@ -48,22 +48,10 @@ inline constexpr std::array<Element, 3> kElementMembers = {Element::FIRE, Elemen
 inline constexpr std::array<Element, 2> kElementLiveMembers = {Element::FIRE, Element::WATER};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 3> kElementCodes = {1, 2, 3};
-inline constexpr std::array<uint32_t, 3> kElementCodeOrdinals = {0, 1, 2};
 inline constexpr size_t ElementOrdinal(Element v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kElementCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kElementCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kElementCodes.size() && kElementCodes[lo] == code) return kElementCodeOrdinals[lo];
-    return kElementCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 3 ? static_cast<size_t>(i) : 3;
 }
 }  // namespace detail
 

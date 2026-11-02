@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -48,18 +49,24 @@ struct NulstrAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kPrizeKindNames = {"coins", "none"};
+constexpr std::array<std::string_view, 2> kPrizeKindWires = {std::string_view("a\000b", 3), "none"};
+constexpr std::array<uint8_t, 2> kPrizeKindByWire = {0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(PrizeKind v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"coins", "none"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kPrizeKindNames.size()) return {};
+    return detail::kPrizeKindNames[i];
 }
 
 std::string_view ToWire(PrizeKind v) {
-    static constexpr std::array<std::string_view, 2> kWires = {std::string_view("a\000b", 3), "none"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kPrizeKindWires.size()) return {};
+    return detail::kPrizeKindWires[i];
 }
 
 bool IsRetired(PrizeKind v) {
@@ -69,19 +76,17 @@ bool IsRetired(PrizeKind v) {
 }
 
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {std::string_view("a\000b", 3), "none"};
-    static constexpr std::array<PrizeKind, 2> kValues = {PrizeKind::coins, PrizeKind::none};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kPrizeKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kPrizeKindWires[detail::kPrizeKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kPrizeKindByWire.size() && detail::kPrizeKindWires[detail::kPrizeKindByWire[lo]] == wire) return static_cast<PrizeKind>(detail::kPrizeKindByWire[lo]);
     return std::nullopt;
 }
 

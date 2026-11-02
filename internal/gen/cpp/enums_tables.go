@@ -20,17 +20,24 @@ var (
 	retiredText string
 	//go:embed text/enum_from_code.txt
 	fromCodeText string
+	//go:embed text/enum_dense_ordinal.txt
+	denseOrdinalText string
 )
 
 // search is a lower-bound binary search over sorted keys: the function's signature, the lines
-// before the search (its tables, its key), the keys, the key, what a hit and a miss return.
+// before the search (its tables, its key), the keys (whose size bounds it), the format of the
+// key at an index (the keys' own element when empty), the key, what a hit and a miss return.
 type search struct {
-	sig, prelude, keys, key, hit, miss string
+	sig, prelude, keys, at, key, hit, miss string
 }
 
 // text is the search as a function definition of lower_bound.txt.
 func (s search) text() string {
-	return fmt.Sprintf(lowerBoundText, s.sig, s.prelude, s.keys, s.key, s.hit, s.miss)
+	at := s.at
+	if at == "" {
+		at = fmt.Sprintf(indexFormat, s.keys, indexHole)
+	}
+	return fmt.Sprintf(lowerBoundText, s.sig, s.prelude, s.keys, s.key, s.hit, s.miss, fmt.Sprintf(at, midVar), fmt.Sprintf(at, loVar))
 }
 
 // table is a static constexpr local array of a function the .gen.cpp defines, one item per line past maxInline.
@@ -104,34 +111,75 @@ func (g *gen) enumDefinitions() {
 	}
 }
 
-// closedDefinitions are ToName and ToWire indexing arrays by ordinal, <E>FromWire searching the wires, <E>FromCode searching the codes through detail::<E>Ordinal (CODEGEN.md §5.2).
+// closedDefinitions are a closed enum's or a kind enum's tables, ToName and ToWire indexing them by ordinal, <E>FromWire searching the positions sorted by wire, <E>FromCode searching the codes through detail::<E>Ordinal (CODEGEN.md §5.2, DECISIONS 430).
 func (g *gen) closedDefinitions(s enumSpec) {
 	sigs, h := g.signatures(s, false), g.pl.EnumHelpers(s.name)
+	g.enumTables(s)
 	pos := fmt.Sprintf(staticCastFormat, cppSize, enumArg)
 	if s.codes != nil {
 		pos = fmt.Sprintf(helperFormat, detailPrefix+h.Ordinal, enumArg)
 	}
-	all := inOrder(len(s.members))
-	g.c.printf(byOrdinalText, sigs.toName, len(s.members), namesTable, indentBlock(braced(views(column(s.members, all, rawCanon)))), pos)
-	g.c.printf(byOrdinalText, sigs.toWire, len(s.members), wiresTable, indentBlock(braced(views(column(s.members, all, rawWire)))), pos)
-	g.c.printf(retiredText, sigs.retired, len(s.members), retiredTable, indentBlock(braced(column(s.members, all, retiredFlag))), pos)
-	order := byWire(s.members)
-	values := column(s.members, order, func(m enumMember) string { return s.name + scopeSep + m.name })
-	g.c.write(search{
-		sig: sigs.fromWire, prelude: table(cppStringView, keysTable, views(column(s.members, order, rawWire))) + table(s.name, valuesTable, values),
-		keys: keysTable, key: wireParam, hit: fmt.Sprintf(indexFormat, valuesTable, loVar), miss: cppNullopt,
-	}.text())
+	names, wires := detailPrefix+h.Names, detailPrefix+h.Wires
+	if s.plainWires {
+		wires = names
+	}
+	g.c.printf(byOrdinalText, sigs.toName, pos, names)
+	g.c.printf(byOrdinalText, sigs.toWire, pos, wires)
+	g.c.printf(retiredText, sigs.retired, len(s.members), retiredTable, indentBlock(braced(column(s.members, inOrder(len(s.members)), retiredFlag))), pos)
+	order := detailPrefix + h.ByWire
+	hit := fmt.Sprintf(staticCastFormat, s.name, fmt.Sprintf(indexFormat, order, loVar))
+	if s.codes != nil {
+		hit = fmt.Sprintf(indexFormat, h.Members, fmt.Sprintf(indexFormat, order, loVar))
+	}
+	g.c.write(byWireSearch(sigs.fromWire, wireParam, wires, order, hit))
 	if s.codes != nil {
 		g.c.printf(fromCodeText, sigs.fromCode, detailPrefix+h.Ordinal, s.name, h.Members)
 	}
 }
 
-// openDefinitions are an opened enum's ToName, IsKnown, <E>FromWire and, with @codes, ToCode and <E>FromCode: searches of its wires sorted by bytes, held once with their parallel names and codes in an unnamed namespace, or of its codes (CODEGEN.md §5.2, DECISIONS 383).
+// byWireSearch is the search of the positions order (sorted by wire) for the wire key among wires, what a hit returns, and no value otherwise (CODEGEN.md §5.2, §5.3; DECISIONS 430).
+func byWireSearch(sig, key, wires, order, hit string) string {
+	return search{
+		sig: sig, keys: order, at: fmt.Sprintf(byWireAtFormat, wires, order), key: key, hit: hit, miss: cppNullopt,
+	}.text()
+}
+
+// enumTables write a closed enum's, a kind enum's or an id enum's names (not an id enum's), its wires unless they are its names, and its positions sorted by wire, once in the .gen.cpp: in detail's unnamed namespace, local to this file (CODEGEN.md §5.2, §5.3; DECISIONS 430).
+func (g *gen) enumTables(s enumSpec) {
+	h, all := g.pl.EnumHelpers(s.name), inOrder(len(s.members))
+	g.c.line(detailOpen)
+	g.c.line(anonOpen)
+	if !s.id {
+		g.c.printf(localTableFormat, cppStringView, len(all), h.Names, braced(views(column(s.members, all, rawCanon))))
+	}
+	if !s.plainWires {
+		g.c.printf(localTableFormat, cppStringView, len(all), h.Wires, braced(views(column(s.members, all, rawWire))))
+	}
+	g.c.printf(localTableFormat, underlying(nil, len(all)), len(all), h.ByWire, braced(intTexts(byWire(s.members))))
+	g.c.line(anonClose)
+	g.c.line(detailClose)
+	g.c.blank()
+}
+
+// wireRanks are the places of the members in the order of their wires: rank[member] is the member's index in order.
+func wireRanks(order []int) []int {
+	rank := make([]int, len(order))
+	for place, member := range order {
+		rank[member] = place
+	}
+	return rank
+}
+
+// openDefinitions are an opened enum's ToName, IsKnown, <E>FromWire and, with @codes, ToCode and <E>FromCode: searches of its wires sorted by bytes, held once with their parallel names (only when one differs from its wire) and codes in an unnamed namespace, or of its codes; ToName is ToWire when every name is its wire (CODEGEN.md §5.2, DECISIONS 383, 430).
 func (g *gen) openDefinitions(s enumSpec) {
 	sigs, h := g.signatures(s, true), g.pl.EnumHelpers(s.name)
 	g.openWireTables(s, h)
 	wires, key := detailPrefix+h.Wires, fmt.Sprintf(wireKeyLineFormat, ir.CppToWire)
-	g.c.write(search{sig: sigs.toName, prelude: key, keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, detailPrefix+h.WireNames, loVar), miss: keyParam}.text())
+	if s.plainWires {
+		g.c.printf(openPlainNameFormat, sigs.toName, ir.CppToWire)
+	} else {
+		g.c.write(search{sig: sigs.toName, prelude: key, keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, detailPrefix+h.WireNames, loVar), miss: keyParam}.text())
+	}
 	g.c.write(search{
 		sig: sigs.retired, prelude: key + table(cppBool, retiredTable, column(s.members, byWire(s.members), retiredFlag)),
 		keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, retiredTable, loVar), miss: strconv.FormatBool(false),
@@ -145,21 +193,32 @@ func (g *gen) openDefinitions(s enumSpec) {
 		return
 	}
 	g.c.write(search{sig: sigs.toCode, prelude: key, keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, detailPrefix+h.WireCodes, loVar), miss: cppNullopt}.text())
-	byCodes := byCode(s.members)
+	g.openFromCode(s, sigs.fromCode, h)
+}
+
+// openFromCode is an opened enum's <E>FromCode: a search of its codes ascending, beside the places of their members' wires in k<E>Wires, which it reads (DECISIONS 383, 430).
+func (g *gen) openFromCode(s enumSpec, sig string, h ir.CppEnumHelpers) {
+	byCodes, rank := byCode(s.members), wireRanks(byWire(s.members))
+	places := make([]int, len(byCodes))
+	for i, at := range byCodes {
+		places[i] = rank[at]
+	}
+	wire := fmt.Sprintf(indexFormat, detailPrefix+h.Wires, fmt.Sprintf(indexFormat, wireAtTable, loVar))
 	g.c.write(search{
-		sig: sigs.fromCode, prelude: table(intType(*s.codes), keysTable, column(s.members, byCodes, codeText)) + table(cppStringView, wiresTable, views(column(s.members, byCodes, rawWire))),
-		keys: keysTable, key: codeField,
-		hit: fmt.Sprintf(helperFormat, s.name, fmt.Sprintf(stringOfFormat, fmt.Sprintf(indexFormat, wiresTable, loVar))), miss: cppNullopt,
+		sig: sig, prelude: table(intType(*s.codes), keysTable, column(s.members, byCodes, codeText)) + table(underlying(nil, len(places)), wireAtTable, intTexts(places)),
+		keys: keysTable, key: codeField, hit: fmt.Sprintf(helperFormat, s.name, fmt.Sprintf(stringOfFormat, wire)), miss: cppNullopt,
 	}.text())
 }
 
-// openWireTables write an opened enum's wires sorted by bytes, with their names and codes, once in the .gen.cpp: in detail's unnamed namespace, local to this file (CODEGEN.md §5.2).
+// openWireTables write an opened enum's wires sorted by bytes, with their names (only when one differs from its wire) and codes, once in the .gen.cpp: in detail's unnamed namespace, local to this file (CODEGEN.md §5.2).
 func (g *gen) openWireTables(s enumSpec, h ir.CppEnumHelpers) {
 	order := byWire(s.members)
 	g.c.line(detailOpen)
 	g.c.line(anonOpen)
 	g.c.printf(localTableFormat, cppStringView, len(order), h.Wires, braced(views(column(s.members, order, rawWire))))
-	g.c.printf(localTableFormat, cppStringView, len(order), h.WireNames, braced(views(column(s.members, order, rawCanon))))
+	if !s.plainWires {
+		g.c.printf(localTableFormat, cppStringView, len(order), h.WireNames, braced(views(column(s.members, order, rawCanon))))
+	}
 	if s.codes != nil {
 		g.c.printf(localTableFormat, intType(*s.codes), len(order), h.WireCodes, braced(column(s.members, order, codeText)))
 	}

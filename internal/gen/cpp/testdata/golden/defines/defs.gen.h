@@ -58,7 +58,7 @@ inline constexpr std::array<Kind, 2> kKindLiveMembers = {Kind::IK1_WEAPON, Kind:
 
 namespace detail {
 inline constexpr std::array<uint32_t, 3> kKindCodes = {1, 4, 9};
-inline constexpr std::array<uint32_t, 3> kKindCodeOrdinals = {0, 1, 2};
+inline constexpr std::array<uint8_t, 3> kKindCodeOrdinals = {0, 1, 2};
 inline constexpr size_t KindOrdinal(Kind v) {
     const uint32_t code = static_cast<uint32_t>(v);
     size_t lo = 0;
@@ -109,7 +109,7 @@ inline constexpr std::array<Extreme, 2> kExtremeLiveMembers = {Extreme::LOW, Ext
 
 namespace detail {
 inline constexpr std::array<int64_t, 2> kExtremeCodes = {canon::kIntMin, canon::kIntMax};
-inline constexpr std::array<uint32_t, 2> kExtremeCodeOrdinals = {0, 1};
+inline constexpr std::array<uint8_t, 2> kExtremeCodeOrdinals = {0, 1};
 inline constexpr size_t ExtremeOrdinal(Extreme v) {
     const int64_t code = static_cast<int64_t>(v);
     size_t lo = 0;

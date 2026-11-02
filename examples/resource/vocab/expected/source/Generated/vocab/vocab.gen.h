@@ -29,22 +29,10 @@ inline constexpr std::array<Element, 5> kElementMembers = {Element::FIRE, Elemen
 inline constexpr std::array<Element, 5> kElementLiveMembers = {Element::FIRE, Element::WATER, Element::ELECTRICITY, Element::WIND, Element::EARTH};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 5> kElementCodes = {1, 2, 3, 4, 5};
-inline constexpr std::array<uint32_t, 5> kElementCodeOrdinals = {0, 1, 2, 3, 4};
 inline constexpr size_t ElementOrdinal(Element v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kElementCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kElementCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kElementCodes.size() && kElementCodes[lo] == code) return kElementCodeOrdinals[lo];
-    return kElementCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 5 ? static_cast<size_t>(i) : 5;
 }
 }  // namespace detail
 
@@ -65,22 +53,10 @@ inline constexpr std::array<Stage, 3> kStageMembers = {Stage::Stage_1, Stage::St
 inline constexpr std::array<Stage, 3> kStageLiveMembers = {Stage::Stage_1, Stage::Stage_2, Stage::Stage_3};
 
 namespace detail {
-inline constexpr std::array<uint16_t, 3> kStageCodes = {100, 101, 102};
-inline constexpr std::array<uint32_t, 3> kStageCodeOrdinals = {0, 1, 2};
 inline constexpr size_t StageOrdinal(Stage v) {
     const uint16_t code = static_cast<uint16_t>(v);
-    size_t lo = 0;
-    size_t hi = kStageCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kStageCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kStageCodes.size() && kStageCodes[lo] == code) return kStageCodeOrdinals[lo];
-    return kStageCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(100);
+    return i < 3 ? static_cast<size_t>(i) : 3;
 }
 }  // namespace detail
 
@@ -104,22 +80,10 @@ inline constexpr std::array<QuestStyle, 6> kQuestStyleMembers = {QuestStyle::dai
 inline constexpr std::array<QuestStyle, 6> kQuestStyleLiveMembers = {QuestStyle::daily, QuestStyle::weekly, QuestStyle::forever, QuestStyle::season_pass, QuestStyle::pvp, QuestStyle::azure};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 6> kQuestStyleCodes = {1, 2, 3, 4, 5, 6};
-inline constexpr std::array<uint32_t, 6> kQuestStyleCodeOrdinals = {0, 1, 2, 3, 4, 5};
 inline constexpr size_t QuestStyleOrdinal(QuestStyle v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kQuestStyleCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kQuestStyleCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kQuestStyleCodes.size() && kQuestStyleCodes[lo] == code) return kQuestStyleCodeOrdinals[lo];
-    return kQuestStyleCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 6 ? static_cast<size_t>(i) : 6;
 }
 }  // namespace detail
 
@@ -139,22 +103,10 @@ inline constexpr std::array<RewardType, 2> kRewardTypeMembers = {RewardType::act
 inline constexpr std::array<RewardType, 2> kRewardTypeLiveMembers = {RewardType::activity_points, RewardType::season_pass_exp};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 2> kRewardTypeCodes = {1, 2};
-inline constexpr std::array<uint32_t, 2> kRewardTypeCodeOrdinals = {0, 1};
 inline constexpr size_t RewardTypeOrdinal(RewardType v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kRewardTypeCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kRewardTypeCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kRewardTypeCodes.size() && kRewardTypeCodes[lo] == code) return kRewardTypeCodeOrdinals[lo];
-    return kRewardTypeCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 2 ? static_cast<size_t>(i) : 2;
 }
 }  // namespace detail
 

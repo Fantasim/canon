@@ -130,11 +130,7 @@ const (
 	enumArg            = "v"
 	codeField          = "code"
 	cppSize            = "size_t"
-	keysTable          = "kKeys" // the static constexpr locals of the helpers the .gen.cpp defines (DECISIONS 383)
-	valuesTable        = "kValues"
-	namesTable         = "kNames"
-	wiresTable         = "kWires"
-	idsTable           = "kIds"
+	keysTable          = "kKeys"    // the static constexpr locals of the helpers the .gen.cpp defines: an opened enum's sorted codes (DECISIONS 383, 430)
 	retiredTable       = "kRetired" // IsRetired's flags (DECISIONS 395)
 	wireParam          = "wire"
 	loVar              = "lo"

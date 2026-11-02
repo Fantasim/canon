@@ -39,18 +39,24 @@ struct HelpersAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 4> kToneNames = {"warning", "info", "series_1", "old"};
+constexpr std::array<std::string_view, 4> kToneWires = {"warning", "info", "série-1", "sz"};
+constexpr std::array<uint8_t, 4> kToneByWire = {1, 3, 2, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Tone v) {
-    static constexpr std::array<std::string_view, 4> kNames = {"warning", "info", "series_1", "old"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kToneNames.size()) return {};
+    return detail::kToneNames[i];
 }
 
 std::string_view ToWire(Tone v) {
-    static constexpr std::array<std::string_view, 4> kWires = {"warning", "info", "série-1", "sz"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kToneWires.size()) return {};
+    return detail::kToneWires[i];
 }
 
 bool IsRetired(Tone v) {
@@ -60,34 +66,37 @@ bool IsRetired(Tone v) {
 }
 
 std::optional<Tone> ToneFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 4> kKeys = {"info", "sz", "série-1", "warning"};
-    static constexpr std::array<Tone, 4> kValues = {Tone::info, Tone::old, Tone::series_1, Tone::warning};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kToneByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kToneWires[detail::kToneByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kToneByWire.size() && detail::kToneWires[detail::kToneByWire[lo]] == wire) return static_cast<Tone>(detail::kToneByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kElementNames = {"FIRE", "WATER", "EARTH"};
+constexpr std::array<uint8_t, 3> kElementByWire = {2, 0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Element v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"FIRE", "WATER", "EARTH"};
     const size_t i = detail::ElementOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kElementNames.size()) return {};
+    return detail::kElementNames[i];
 }
 
 std::string_view ToWire(Element v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"FIRE", "WATER", "EARTH"};
     const size_t i = detail::ElementOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kElementNames.size()) return {};
+    return detail::kElementNames[i];
 }
 
 bool IsRetired(Element v) {
@@ -97,19 +106,17 @@ bool IsRetired(Element v) {
 }
 
 std::optional<Element> ElementFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"EARTH", "FIRE", "WATER"};
-    static constexpr std::array<Element, 3> kValues = {Element::EARTH, Element::FIRE, Element::WATER};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kElementByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kElementNames[detail::kElementByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kElementByWire.size() && detail::kElementNames[detail::kElementByWire[lo]] == wire) return kElementMembers[detail::kElementByWire[lo]];
     return std::nullopt;
 }
 
@@ -119,18 +126,23 @@ std::optional<Element> ElementFromCode(uint8_t code) {
     return kElementMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kDeltaNames = {"up", "down", "flat"};
+constexpr std::array<uint8_t, 3> kDeltaByWire = {1, 2, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Delta v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"up", "down", "flat"};
     const size_t i = detail::DeltaOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kDeltaNames.size()) return {};
+    return detail::kDeltaNames[i];
 }
 
 std::string_view ToWire(Delta v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"up", "down", "flat"};
     const size_t i = detail::DeltaOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kDeltaNames.size()) return {};
+    return detail::kDeltaNames[i];
 }
 
 bool IsRetired(Delta v) {
@@ -140,19 +152,17 @@ bool IsRetired(Delta v) {
 }
 
 std::optional<Delta> DeltaFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"down", "flat", "up"};
-    static constexpr std::array<Delta, 3> kValues = {Delta::down, Delta::flat, Delta::up};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kDeltaByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kDeltaNames[detail::kDeltaByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kDeltaByWire.size() && detail::kDeltaNames[detail::kDeltaByWire[lo]] == wire) return kDeltaMembers[detail::kDeltaByWire[lo]];
     return std::nullopt;
 }
 
@@ -162,18 +172,23 @@ std::optional<Delta> DeltaFromCode(int16_t code) {
     return kDeltaMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kExtremeNames = {"LOW", "MID", "HIGH"};
+constexpr std::array<uint8_t, 3> kExtremeByWire = {2, 0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Extreme v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"LOW", "MID", "HIGH"};
     const size_t i = detail::ExtremeOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kExtremeNames.size()) return {};
+    return detail::kExtremeNames[i];
 }
 
 std::string_view ToWire(Extreme v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"LOW", "MID", "HIGH"};
     const size_t i = detail::ExtremeOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kExtremeNames.size()) return {};
+    return detail::kExtremeNames[i];
 }
 
 bool IsRetired(Extreme v) {
@@ -183,19 +198,17 @@ bool IsRetired(Extreme v) {
 }
 
 std::optional<Extreme> ExtremeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"HIGH", "LOW", "MID"};
-    static constexpr std::array<Extreme, 3> kValues = {Extreme::HIGH, Extreme::LOW, Extreme::MID};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kExtremeByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kExtremeNames[detail::kExtremeByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kExtremeByWire.size() && detail::kExtremeNames[detail::kExtremeByWire[lo]] == wire) return kExtremeMembers[detail::kExtremeByWire[lo]];
     return std::nullopt;
 }
 
@@ -205,18 +218,24 @@ std::optional<Extreme> ExtremeFromCode(int64_t code) {
     return kExtremeMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kDupNames = {"a", "b", "c"};
+constexpr std::array<std::string_view, 3> kDupWires = {"x", "x", "w"};
+constexpr std::array<uint8_t, 3> kDupByWire = {2, 0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Dup v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"a", "b", "c"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kDupNames.size()) return {};
+    return detail::kDupNames[i];
 }
 
 std::string_view ToWire(Dup v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"x", "x", "w"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kDupWires.size()) return {};
+    return detail::kDupWires[i];
 }
 
 bool IsRetired(Dup v) {
@@ -226,34 +245,37 @@ bool IsRetired(Dup v) {
 }
 
 std::optional<Dup> DupFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"w", "x", "x"};
-    static constexpr std::array<Dup, 3> kValues = {Dup::c, Dup::a, Dup::b};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kDupByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kDupWires[detail::kDupByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kDupByWire.size() && detail::kDupWires[detail::kDupByWire[lo]] == wire) return static_cast<Dup>(detail::kDupByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 0> kNothingNames = {};
+constexpr std::array<uint8_t, 0> kNothingByWire = {};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Nothing v) {
-    static constexpr std::array<std::string_view, 0> kNames = {};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kNothingNames.size()) return {};
+    return detail::kNothingNames[i];
 }
 
 std::string_view ToWire(Nothing v) {
-    static constexpr std::array<std::string_view, 0> kWires = {};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kNothingNames.size()) return {};
+    return detail::kNothingNames[i];
 }
 
 bool IsRetired(Nothing v) {
@@ -263,34 +285,37 @@ bool IsRetired(Nothing v) {
 }
 
 std::optional<Nothing> NothingFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 0> kKeys = {};
-    static constexpr std::array<Nothing, 0> kValues = {};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kNothingByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kNothingNames[detail::kNothingByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kNothingByWire.size() && detail::kNothingNames[detail::kNothingByWire[lo]] == wire) return static_cast<Nothing>(detail::kNothingByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 0> kNoCodeNames = {};
+constexpr std::array<uint8_t, 0> kNoCodeByWire = {};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(NoCode v) {
-    static constexpr std::array<std::string_view, 0> kNames = {};
     const size_t i = detail::NoCodeOrdinal(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kNoCodeNames.size()) return {};
+    return detail::kNoCodeNames[i];
 }
 
 std::string_view ToWire(NoCode v) {
-    static constexpr std::array<std::string_view, 0> kWires = {};
     const size_t i = detail::NoCodeOrdinal(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kNoCodeNames.size()) return {};
+    return detail::kNoCodeNames[i];
 }
 
 bool IsRetired(NoCode v) {
@@ -300,19 +325,17 @@ bool IsRetired(NoCode v) {
 }
 
 std::optional<NoCode> NoCodeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 0> kKeys = {};
-    static constexpr std::array<NoCode, 0> kValues = {};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kNoCodeByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kNoCodeNames[detail::kNoCodeByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kNoCodeByWire.size() && detail::kNoCodeNames[detail::kNoCodeByWire[lo]] == wire) return kNoCodeMembers[detail::kNoCodeByWire[lo]];
     return std::nullopt;
 }
 
@@ -412,7 +435,7 @@ std::optional<uint16_t> ToCode(const Stat& v) {
 
 std::optional<Stat> StatFromCode(uint16_t code) {
     static constexpr std::array<uint16_t, 4> kKeys = {1, 2, 4, 9};
-    static constexpr std::array<std::string_view, 4> kWires = {"SPA", "SPÉ", "ATK", "ATK"};
+    static constexpr std::array<uint8_t, 4> kWireAt = {2, 3, 0, 1};
     size_t lo = 0;
     size_t hi = kKeys.size();
     while (lo < hi) {
@@ -423,31 +446,18 @@ std::optional<Stat> StatFromCode(uint16_t code) {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == code) return Stat(std::string(kWires[lo]));
+    if (lo < kKeys.size() && kKeys[lo] == code) return Stat(std::string(detail::kStatWires[kWireAt[lo]]));
     return std::nullopt;
 }
 
 namespace detail {
 namespace {
 constexpr std::array<std::string_view, 0> kBlankWires = {};
-constexpr std::array<std::string_view, 0> kBlankWireNames = {};
 }  // namespace
 }  // namespace detail
 
 std::string_view ToName(const Blank& v) {
-    const std::string_view key = ToWire(v);
-    size_t lo = 0;
-    size_t hi = detail::kBlankWires.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (detail::kBlankWires[mid] < key) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < detail::kBlankWires.size() && detail::kBlankWires[lo] == key) return detail::kBlankWireNames[lo];
-    return key;
+    return ToWire(v);
 }
 
 bool IsRetired(const Blank& v) {
@@ -569,18 +579,24 @@ std::optional<OpenDup> OpenDupFromWire(std::string_view wire) {
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kShapeKindNames = {"circle", "dot"};
+constexpr std::array<std::string_view, 2> kShapeKindWires = {"circle", "DOT"};
+constexpr std::array<uint8_t, 2> kShapeKindByWire = {1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(ShapeKind v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"circle", "dot"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kShapeKindNames.size()) return {};
+    return detail::kShapeKindNames[i];
 }
 
 std::string_view ToWire(ShapeKind v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"circle", "DOT"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kShapeKindWires.size()) return {};
+    return detail::kShapeKindWires[i];
 }
 
 bool IsRetired(ShapeKind v) {
@@ -590,19 +606,17 @@ bool IsRetired(ShapeKind v) {
 }
 
 std::optional<ShapeKind> ShapeKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"DOT", "circle"};
-    static constexpr std::array<ShapeKind, 2> kValues = {ShapeKind::dot, ShapeKind::circle};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kShapeKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kShapeKindWires[detail::kShapeKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kShapeKindByWire.size() && detail::kShapeKindWires[detail::kShapeKindByWire[lo]] == wire) return static_cast<ShapeKind>(detail::kShapeKindByWire[lo]);
     return std::nullopt;
 }
 

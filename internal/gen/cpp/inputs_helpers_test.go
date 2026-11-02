@@ -17,7 +17,7 @@ import (
 // helperDef is a §7.7 helper's definition line in a .gen.cpp, after the anonymous namespace opens.
 var helperDef = regexp.MustCompile(`(?m)^bool (\w+)\(`)
 
-const anonymous = "\nnamespace {\n"
+const anonymous = "\n\nnamespace {\n" // the file's own unnamed namespace, not the one inside detail that holds an enum's tables (DECISIONS 430)
 
 // oneInput is a package whose only input field has type t.
 func oneInput(pkg string, t ir.TypeRef, extra ...ir.Type) *ir.Package {

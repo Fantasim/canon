@@ -46,18 +46,23 @@ DemoAccess::Data DemoAccess::Build() {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kKindNames = {"spawn", "despawn"};
+constexpr std::array<uint8_t, 2> kKindByWire = {1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Kind v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"spawn", "despawn"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kKindNames.size()) return {};
+    return detail::kKindNames[i];
 }
 
 std::string_view ToWire(Kind v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"spawn", "despawn"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kKindNames.size()) return {};
+    return detail::kKindNames[i];
 }
 
 bool IsRetired(Kind v) {
@@ -67,34 +72,37 @@ bool IsRetired(Kind v) {
 }
 
 std::optional<Kind> KindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"despawn", "spawn"};
-    static constexpr std::array<Kind, 2> kValues = {Kind::despawn, Kind::spawn};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kKindNames[detail::kKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kKindByWire.size() && detail::kKindNames[detail::kKindByWire[lo]] == wire) return static_cast<Kind>(detail::kKindByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 5> kKind3Names = {"a", "b", "c", "d", "e"};
+constexpr std::array<uint8_t, 5> kKind3ByWire = {0, 1, 2, 3, 4};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Kind3 v) {
-    static constexpr std::array<std::string_view, 5> kNames = {"a", "b", "c", "d", "e"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kKind3Names.size()) return {};
+    return detail::kKind3Names[i];
 }
 
 std::string_view ToWire(Kind3 v) {
-    static constexpr std::array<std::string_view, 5> kWires = {"a", "b", "c", "d", "e"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kKind3Names.size()) return {};
+    return detail::kKind3Names[i];
 }
 
 bool IsRetired(Kind3 v) {
@@ -104,19 +112,17 @@ bool IsRetired(Kind3 v) {
 }
 
 std::optional<Kind3> Kind3FromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 5> kKeys = {"a", "b", "c", "d", "e"};
-    static constexpr std::array<Kind3, 5> kValues = {Kind3::a, Kind3::b, Kind3::c, Kind3::d, Kind3::e};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kKind3ByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kKind3Names[detail::kKind3ByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kKind3ByWire.size() && detail::kKind3Names[detail::kKind3ByWire[lo]] == wire) return static_cast<Kind3>(detail::kKind3ByWire[lo]);
     return std::nullopt;
 }
 

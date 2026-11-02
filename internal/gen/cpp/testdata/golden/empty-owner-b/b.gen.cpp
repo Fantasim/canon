@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -32,11 +33,17 @@ BAccess::Data BAccess::Build() {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 0> kItemIdWires = {};
+constexpr std::array<uint8_t, 0> kItemIdByWire = {};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToWire(ItemId v) {
-    static constexpr std::array<std::string_view, 0> kWires = {};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kItemIdWires.size()) return {};
+    return detail::kItemIdWires[i];
 }
 
 bool IsRetired(ItemId v) {
@@ -46,19 +53,17 @@ bool IsRetired(ItemId v) {
 }
 
 std::optional<ItemId> ItemIdFromWire(std::string_view key) {
-    static constexpr std::array<std::string_view, 0> kKeys = {};
-    static constexpr std::array<ItemId, 0> kIds = {};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kItemIdByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kItemIdWires[detail::kItemIdByWire[mid]] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return kIds[lo];
+    if (lo < detail::kItemIdByWire.size() && detail::kItemIdWires[detail::kItemIdByWire[lo]] == key) return static_cast<ItemId>(detail::kItemIdByWire[lo]);
     return std::nullopt;
 }
 

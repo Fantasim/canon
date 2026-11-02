@@ -55,7 +55,7 @@ inline constexpr std::array<EventType, 7> kEventTypeLiveMembers = {EventType::it
 
 namespace detail {
 inline constexpr std::array<uint8_t, 9> kEventTypeCodes = {11, 20, 31, 70, 71, 110, 151, 152, 156};
-inline constexpr std::array<uint32_t, 9> kEventTypeCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+inline constexpr std::array<uint8_t, 9> kEventTypeCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 inline constexpr size_t EventTypeOrdinal(EventType v) {
     const uint8_t code = static_cast<uint8_t>(v);
     size_t lo = 0;
@@ -95,22 +95,10 @@ inline constexpr std::array<Tier, 5> kTierMembers = {Tier::HOT, Tier::WARM, Tier
 inline constexpr std::array<Tier, 5> kTierLiveMembers = {Tier::HOT, Tier::WARM, Tier::COOL, Tier::TINY, Tier::READONLY};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 5> kTierCodes = {0, 1, 2, 3, 4};
-inline constexpr std::array<uint32_t, 5> kTierCodeOrdinals = {0, 1, 2, 3, 4};
 inline constexpr size_t TierOrdinal(Tier v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kTierCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kTierCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kTierCodes.size() && kTierCodes[lo] == code) return kTierCodeOrdinals[lo];
-    return kTierCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(0);
+    return i < 5 ? static_cast<size_t>(i) : 5;
 }
 }  // namespace detail
 
@@ -135,22 +123,10 @@ inline constexpr std::array<Producer, 7> kProducerMembers = {Producer::WorldServ
 inline constexpr std::array<Producer, 7> kProducerLiveMembers = {Producer::WorldServer, Producer::CoreServer, Producer::DatabaseServer, Producer::LoginServer, Producer::CacheServer, Producer::DataIngester, Producer::ItemTool};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 7> kProducerCodes = {1, 2, 3, 4, 5, 6, 7};
-inline constexpr std::array<uint32_t, 7> kProducerCodeOrdinals = {0, 1, 2, 3, 4, 5, 6};
 inline constexpr size_t ProducerOrdinal(Producer v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kProducerCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kProducerCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kProducerCodes.size() && kProducerCodes[lo] == code) return kProducerCodeOrdinals[lo];
-    return kProducerCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 7 ? static_cast<size_t>(i) : 7;
 }
 }  // namespace detail
 
@@ -315,22 +291,10 @@ inline constexpr std::array<FarmEventKind, 10> kFarmEventKindMembers = {FarmEven
 inline constexpr std::array<FarmEventKind, 10> kFarmEventKindLiveMembers = {FarmEventKind::Purchase, FarmEventKind::ClaimBatch, FarmEventKind::ClaimSlot, FarmEventKind::LevelUp, FarmEventKind::SetupModel, FarmEventKind::RemoveModel, FarmEventKind::UnlockModel, FarmEventKind::EnterOwn, FarmEventKind::VisitOther, FarmEventKind::Leave};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 10> kFarmEventKindCodes = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-inline constexpr std::array<uint32_t, 10> kFarmEventKindCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 inline constexpr size_t FarmEventKindOrdinal(FarmEventKind v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kFarmEventKindCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kFarmEventKindCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kFarmEventKindCodes.size() && kFarmEventKindCodes[lo] == code) return kFarmEventKindCodeOrdinals[lo];
-    return kFarmEventKindCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 10 ? static_cast<size_t>(i) : 10;
 }
 }  // namespace detail
 
@@ -356,22 +320,10 @@ inline constexpr std::array<SovereignEventKind, 4> kSovereignEventKindMembers = 
 inline constexpr std::array<SovereignEventKind, 4> kSovereignEventKindLiveMembers = {SovereignEventKind::RoleAssigned, SovereignEventKind::DoctrineSet, SovereignEventKind::PowerTriggered, SovereignEventKind::RewardGranted};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 4> kSovereignEventKindCodes = {1, 2, 3, 4};
-inline constexpr std::array<uint32_t, 4> kSovereignEventKindCodeOrdinals = {0, 1, 2, 3};
 inline constexpr size_t SovereignEventKindOrdinal(SovereignEventKind v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kSovereignEventKindCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kSovereignEventKindCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kSovereignEventKindCodes.size() && kSovereignEventKindCodes[lo] == code) return kSovereignEventKindCodeOrdinals[lo];
-    return kSovereignEventKindCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 4 ? static_cast<size_t>(i) : 4;
 }
 }  // namespace detail
 
@@ -396,22 +348,10 @@ inline constexpr std::array<SovereignRole, 6> kSovereignRoleMembers = {Sovereign
 inline constexpr std::array<SovereignRole, 6> kSovereignRoleLiveMembers = {SovereignRole::None, SovereignRole::Sovereign, SovereignRole::MinisterMilitary, SovereignRole::MinisterEconomy, SovereignRole::MinisterEnvironment, SovereignRole::MinisterCraftsmanship};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 6> kSovereignRoleCodes = {0, 1, 2, 3, 4, 5};
-inline constexpr std::array<uint32_t, 6> kSovereignRoleCodeOrdinals = {0, 1, 2, 3, 4, 5};
 inline constexpr size_t SovereignRoleOrdinal(SovereignRole v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kSovereignRoleCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kSovereignRoleCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kSovereignRoleCodes.size() && kSovereignRoleCodes[lo] == code) return kSovereignRoleCodeOrdinals[lo];
-    return kSovereignRoleCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(0);
+    return i < 6 ? static_cast<size_t>(i) : 6;
 }
 }  // namespace detail
 
@@ -438,22 +378,10 @@ inline constexpr std::array<SovereignDoctrine, 8> kSovereignDoctrineMembers = {S
 inline constexpr std::array<SovereignDoctrine, 8> kSovereignDoctrineLiveMembers = {SovereignDoctrine::None, SovereignDoctrine::Mythic, SovereignDoctrine::Military, SovereignDoctrine::Merchant, SovereignDoctrine::Progressive, SovereignDoctrine::Chancellor, SovereignDoctrine::Craftsmanship, SovereignDoctrine::Familiar};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 8> kSovereignDoctrineCodes = {0, 1, 2, 3, 4, 5, 6, 7};
-inline constexpr std::array<uint32_t, 8> kSovereignDoctrineCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7};
 inline constexpr size_t SovereignDoctrineOrdinal(SovereignDoctrine v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kSovereignDoctrineCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kSovereignDoctrineCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kSovereignDoctrineCodes.size() && kSovereignDoctrineCodes[lo] == code) return kSovereignDoctrineCodeOrdinals[lo];
-    return kSovereignDoctrineCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(0);
+    return i < 8 ? static_cast<size_t>(i) : 8;
 }
 }  // namespace detail
 
@@ -485,22 +413,10 @@ inline constexpr std::array<SovereignPower, 9> kSovereignPowerMembers = {Soverei
 inline constexpr std::array<SovereignPower, 8> kSovereignPowerLiveMembers = {SovereignPower::None, SovereignPower::MinisterBuffPrimary, SovereignPower::MinisterBuffSecondary, SovereignPower::HiddenBonds, SovereignPower::Heistia, SovereignPower::AzuriaAuction, SovereignPower::MinisterBuffTertiary, SovereignPower::CustomDrop};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 9> kSovereignPowerCodes = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-inline constexpr std::array<uint32_t, 9> kSovereignPowerCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 inline constexpr size_t SovereignPowerOrdinal(SovereignPower v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kSovereignPowerCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kSovereignPowerCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kSovereignPowerCodes.size() && kSovereignPowerCodes[lo] == code) return kSovereignPowerCodeOrdinals[lo];
-    return kSovereignPowerCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(0);
+    return i < 9 ? static_cast<size_t>(i) : 9;
 }
 }  // namespace detail
 
@@ -520,22 +436,10 @@ inline constexpr std::array<LifecycleKind, 2> kLifecycleKindMembers = {Lifecycle
 inline constexpr std::array<LifecycleKind, 2> kLifecycleKindLiveMembers = {LifecycleKind::Start, LifecycleKind::Stop};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 2> kLifecycleKindCodes = {1, 2};
-inline constexpr std::array<uint32_t, 2> kLifecycleKindCodeOrdinals = {0, 1};
 inline constexpr size_t LifecycleKindOrdinal(LifecycleKind v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kLifecycleKindCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kLifecycleKindCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kLifecycleKindCodes.size() && kLifecycleKindCodes[lo] == code) return kLifecycleKindCodeOrdinals[lo];
-    return kLifecycleKindCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 2 ? static_cast<size_t>(i) : 2;
 }
 }  // namespace detail
 
@@ -586,7 +490,7 @@ inline constexpr std::array<GrantKind, 11> kGrantKindLiveMembers = {GrantKind::U
 
 namespace detail {
 inline constexpr std::array<uint8_t, 14> kGrantKindCodes = {0, 1, 2, 3, 14, 15, 16, 22, 23, 27, 35, 47, 48, 59};
-inline constexpr std::array<uint32_t, 14> kGrantKindCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+inline constexpr std::array<uint8_t, 14> kGrantKindCodeOrdinals = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
 inline constexpr size_t GrantKindOrdinal(GrantKind v) {
     const uint8_t code = static_cast<uint8_t>(v);
     size_t lo = 0;

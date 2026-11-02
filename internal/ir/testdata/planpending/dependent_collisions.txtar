@@ -31,7 +31,7 @@ K: c one two
 P: AsAB GetBranch value_
 PBranch: GetN aB a_b n_
 a: IsRetired K KFromWire P PBranch ToName ToWire from_json kKLiveMembers kKMembers to_json
-detail: AAccess AMake Decode DecodeP
+detail: AAccess AMake Decode DecodeP kKByWire kKNames
 problem 0 P AsAB: a.P.a_b, a.P.aB
 problem 0 a PBranch: a.P, a.PBranch
 error[E8005]  a/a.canon:7:6

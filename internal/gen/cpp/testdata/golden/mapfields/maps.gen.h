@@ -51,7 +51,7 @@ inline constexpr std::array<Rank, 2> kRankLiveMembers = {Rank::low, Rank::high};
 
 namespace detail {
 inline constexpr std::array<uint8_t, 2> kRankCodes = {1, 200};
-inline constexpr std::array<uint32_t, 2> kRankCodeOrdinals = {0, 1};
+inline constexpr std::array<uint8_t, 2> kRankCodeOrdinals = {0, 1};
 inline constexpr size_t RankOrdinal(Rank v) {
     const uint8_t code = static_cast<uint8_t>(v);
     size_t lo = 0;

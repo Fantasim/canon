@@ -88,7 +88,7 @@ inline constexpr std::array<Element, 2> kElementLiveMembers = {Element::FIRE, El
 
 namespace detail {
 inline constexpr std::array<uint16_t, 2> kElementCodes = {1, 300};
-inline constexpr std::array<uint32_t, 2> kElementCodeOrdinals = {0, 1};
+inline constexpr std::array<uint8_t, 2> kElementCodeOrdinals = {0, 1};
 inline constexpr size_t ElementOrdinal(Element v) {
     const uint16_t code = static_cast<uint16_t>(v);
     size_t lo = 0;
@@ -122,7 +122,7 @@ inline constexpr std::array<Kind1, 2> kKind1LiveMembers = {Kind1::IK1_WEAPON, Ki
 
 namespace detail {
 inline constexpr std::array<uint32_t, 2> kKind1Codes = {1, 4};
-inline constexpr std::array<uint32_t, 2> kKind1CodeOrdinals = {0, 1};
+inline constexpr std::array<uint8_t, 2> kKind1CodeOrdinals = {0, 1};
 inline constexpr size_t Kind1Ordinal(Kind1 v) {
     const uint32_t code = static_cast<uint32_t>(v);
     size_t lo = 0;
@@ -157,7 +157,7 @@ inline constexpr std::array<Flag, 3> kFlagLiveMembers = {Flag::a, Flag::c, Flag:
 
 namespace detail {
 inline constexpr std::array<uint8_t, 3> kFlagCodes = {1, 2, 4};
-inline constexpr std::array<uint32_t, 3> kFlagCodeOrdinals = {0, 2, 1};
+inline constexpr std::array<uint8_t, 3> kFlagCodeOrdinals = {0, 2, 1};
 inline constexpr size_t FlagOrdinal(Flag v) {
     const uint8_t code = static_cast<uint8_t>(v);
     size_t lo = 0;

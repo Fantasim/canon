@@ -23,3 +23,5 @@ const (
 	fmtPatternParse = "%w: %w"
 	fmtPatternInst  = "%w: instruction %v has no automaton state"
 )
+
+const cppNames, cppByWire = "Names", "ByWire" // an enum's .gen.cpp tables k<E>Names and k<E>ByWire (CODEGEN.md §5.2)

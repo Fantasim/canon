@@ -75,18 +75,23 @@ TriAccess::Data TriAccess::Build() {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kSideNames = {"left", "right"};
+constexpr std::array<uint8_t, 2> kSideByWire = {0, 1};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(Side v) {
-    static constexpr std::array<std::string_view, 2> kNames = {"left", "right"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kSideNames.size()) return {};
+    return detail::kSideNames[i];
 }
 
 std::string_view ToWire(Side v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"left", "right"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kSideNames.size()) return {};
+    return detail::kSideNames[i];
 }
 
 bool IsRetired(Side v) {
@@ -96,27 +101,31 @@ bool IsRetired(Side v) {
 }
 
 std::optional<Side> SideFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"left", "right"};
-    static constexpr std::array<Side, 2> kValues = {Side::left, Side::right};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kSideByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kSideNames[detail::kSideByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kSideByWire.size() && detail::kSideNames[detail::kSideByWire[lo]] == wire) return static_cast<Side>(detail::kSideByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 1> kNoteIdWires = {"n0"};
+constexpr std::array<uint8_t, 1> kNoteIdByWire = {0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToWire(NoteId v) {
-    static constexpr std::array<std::string_view, 1> kWires = {"n0"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kNoteIdWires.size()) return {};
+    return detail::kNoteIdWires[i];
 }
 
 bool IsRetired(NoteId v) {
@@ -126,19 +135,17 @@ bool IsRetired(NoteId v) {
 }
 
 std::optional<NoteId> NoteIdFromWire(std::string_view key) {
-    static constexpr std::array<std::string_view, 1> kKeys = {"n0"};
-    static constexpr std::array<NoteId, 1> kIds = {NoteId::n0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kNoteIdByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kNoteIdWires[detail::kNoteIdByWire[mid]] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return kIds[lo];
+    if (lo < detail::kNoteIdByWire.size() && detail::kNoteIdWires[detail::kNoteIdByWire[lo]] == key) return static_cast<NoteId>(detail::kNoteIdByWire[lo]);
     return std::nullopt;
 }
 

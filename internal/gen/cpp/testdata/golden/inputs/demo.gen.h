@@ -44,22 +44,10 @@ inline constexpr std::array<Tier, 3> kTierMembers = {Tier::low, Tier::mid, Tier:
 inline constexpr std::array<Tier, 3> kTierLiveMembers = {Tier::low, Tier::mid, Tier::high};
 
 namespace detail {
-inline constexpr std::array<uint8_t, 3> kTierCodes = {1, 2, 3};
-inline constexpr std::array<uint32_t, 3> kTierCodeOrdinals = {0, 1, 2};
 inline constexpr size_t TierOrdinal(Tier v) {
     const uint8_t code = static_cast<uint8_t>(v);
-    size_t lo = 0;
-    size_t hi = kTierCodes.size();
-    while (lo < hi) {
-        const size_t mid = lo + (hi - lo) / 2;
-        if (kTierCodes[mid] < code) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    if (lo < kTierCodes.size() && kTierCodes[lo] == code) return kTierCodeOrdinals[lo];
-    return kTierCodes.size();
+    const uint64_t i = static_cast<uint64_t>(code) - static_cast<uint64_t>(1);
+    return i < 3 ? static_cast<size_t>(i) : 3;
 }
 }  // namespace detail
 

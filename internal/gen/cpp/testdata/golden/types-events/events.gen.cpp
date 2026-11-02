@@ -300,36 +300,32 @@ struct EventsAccess {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 8> kRollModeNames = {
+    "authoritative",
+    "local_budget",
+    "shared",
+    "split",
+    "fixed",
+    "scaled",
+    "capped",
+    "replayed",
+};
+constexpr std::array<uint8_t, 8> kRollModeByWire = {0, 6, 4, 1, 7, 5, 2, 3};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(RollMode v) {
-    static constexpr std::array<std::string_view, 8> kNames = {
-        "authoritative",
-        "local_budget",
-        "shared",
-        "split",
-        "fixed",
-        "scaled",
-        "capped",
-        "replayed",
-    };
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kRollModeNames.size()) return {};
+    return detail::kRollModeNames[i];
 }
 
 std::string_view ToWire(RollMode v) {
-    static constexpr std::array<std::string_view, 8> kWires = {
-        "authoritative",
-        "local_budget",
-        "shared",
-        "split",
-        "fixed",
-        "scaled",
-        "capped",
-        "replayed",
-    };
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kRollModeNames.size()) return {};
+    return detail::kRollModeNames[i];
 }
 
 bool IsRetired(RollMode v) {
@@ -339,52 +335,37 @@ bool IsRetired(RollMode v) {
 }
 
 std::optional<RollMode> RollModeFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 8> kKeys = {
-        "authoritative",
-        "capped",
-        "fixed",
-        "local_budget",
-        "replayed",
-        "scaled",
-        "shared",
-        "split",
-    };
-    static constexpr std::array<RollMode, 8> kValues = {
-        RollMode::authoritative,
-        RollMode::capped,
-        RollMode::fixed,
-        RollMode::local_budget,
-        RollMode::replayed,
-        RollMode::scaled,
-        RollMode::shared,
-        RollMode::split,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kRollModeByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kRollModeNames[detail::kRollModeByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kRollModeByWire.size() && detail::kRollModeNames[detail::kRollModeByWire[lo]] == wire) return static_cast<RollMode>(detail::kRollModeByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 3> kEventKindKindNames = {"spawn_monster", "spawn_item", "monster_drop_inject"};
+constexpr std::array<uint8_t, 3> kEventKindKindByWire = {2, 1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToName(EventKindKind v) {
-    static constexpr std::array<std::string_view, 3> kNames = {"spawn_monster", "spawn_item", "monster_drop_inject"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kNames.size()) return {};
-    return kNames[i];
+    if (i >= detail::kEventKindKindNames.size()) return {};
+    return detail::kEventKindKindNames[i];
 }
 
 std::string_view ToWire(EventKindKind v) {
-    static constexpr std::array<std::string_view, 3> kWires = {"spawn_monster", "spawn_item", "monster_drop_inject"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kEventKindKindNames.size()) return {};
+    return detail::kEventKindKindNames[i];
 }
 
 bool IsRetired(EventKindKind v) {
@@ -394,23 +375,17 @@ bool IsRetired(EventKindKind v) {
 }
 
 std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire) {
-    static constexpr std::array<std::string_view, 3> kKeys = {"monster_drop_inject", "spawn_item", "spawn_monster"};
-    static constexpr std::array<EventKindKind, 3> kValues = {
-        EventKindKind::monster_drop_inject,
-        EventKindKind::spawn_item,
-        EventKindKind::spawn_monster,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kEventKindKindByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < wire) {
+        if (detail::kEventKindKindNames[detail::kEventKindKindByWire[mid]] < wire) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == wire) return kValues[lo];
+    if (lo < detail::kEventKindKindByWire.size() && detail::kEventKindKindNames[detail::kEventKindKindByWire[lo]] == wire) return static_cast<EventKindKind>(detail::kEventKindKindByWire[lo]);
     return std::nullopt;
 }
 

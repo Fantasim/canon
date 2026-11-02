@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -130,11 +131,17 @@ WorldAccess::Data WorldAccess::Build() {
 
 }  // namespace detail
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 1> kZoneIdWires = {"forest"};
+constexpr std::array<uint8_t, 1> kZoneIdByWire = {0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToWire(ZoneId v) {
-    static constexpr std::array<std::string_view, 1> kWires = {"forest"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kZoneIdWires.size()) return {};
+    return detail::kZoneIdWires[i];
 }
 
 bool IsRetired(ZoneId v) {
@@ -144,27 +151,31 @@ bool IsRetired(ZoneId v) {
 }
 
 std::optional<ZoneId> ZoneIdFromWire(std::string_view key) {
-    static constexpr std::array<std::string_view, 1> kKeys = {"forest"};
-    static constexpr std::array<ZoneId, 1> kIds = {ZoneId::forest};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kZoneIdByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kZoneIdWires[detail::kZoneIdByWire[mid]] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return kIds[lo];
+    if (lo < detail::kZoneIdByWire.size() && detail::kZoneIdWires[detail::kZoneIdByWire[lo]] == key) return static_cast<ZoneId>(detail::kZoneIdByWire[lo]);
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kLevelRangeIdWires = {"low", "high"};
+constexpr std::array<uint8_t, 2> kLevelRangeIdByWire = {1, 0};
+}  // namespace
+}  // namespace detail
+
 std::string_view ToWire(LevelRangeId v) {
-    static constexpr std::array<std::string_view, 2> kWires = {"low", "high"};
     const size_t i = static_cast<size_t>(v);
-    if (i >= kWires.size()) return {};
-    return kWires[i];
+    if (i >= detail::kLevelRangeIdWires.size()) return {};
+    return detail::kLevelRangeIdWires[i];
 }
 
 bool IsRetired(LevelRangeId v) {
@@ -174,19 +185,17 @@ bool IsRetired(LevelRangeId v) {
 }
 
 std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key) {
-    static constexpr std::array<std::string_view, 2> kKeys = {"high", "low"};
-    static constexpr std::array<LevelRangeId, 2> kIds = {LevelRangeId::high, LevelRangeId::low};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kLevelRangeIdByWire.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kLevelRangeIdWires[detail::kLevelRangeIdByWire[mid]] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return kIds[lo];
+    if (lo < detail::kLevelRangeIdByWire.size() && detail::kLevelRangeIdWires[detail::kLevelRangeIdByWire[lo]] == key) return static_cast<LevelRangeId>(detail::kLevelRangeIdByWire[lo]);
     return std::nullopt;
 }
 
