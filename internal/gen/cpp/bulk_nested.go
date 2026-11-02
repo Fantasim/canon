@@ -40,7 +40,7 @@ func (g *gen) flatten(t ir.TypeRef, v value.Value) (flatTree, bool) {
 			next, lvl.keys = append(next, children...), append(lvl.keys, keys...)
 			lvl.bounds = append(lvl.bounds, len(next))
 		}
-		if t.Kind == types.Map && !g.keysHeld(*t.Key, lvl.keys) {
+		if isMap(t.Kind) && !g.keysHeld(*t.Key, lvl.keys) {
 			return tr, false
 		}
 		tr.levels, items, t = append(tr.levels, lvl), next, *t.Elem
@@ -61,7 +61,7 @@ func nestedContainer(t ir.TypeRef) bool {
 	switch t.Kind {
 	case types.List:
 		return t.KeyedBy == nil && t.Elem != nil
-	case types.Map:
+	case types.Map, types.DepMap:
 		return t.Key != nil && t.Elem != nil
 	default:
 		return false
@@ -112,7 +112,7 @@ func (n *nestedArrays) write() {
 		if i > 0 {
 			n.bounds[i] = g.pool.array(cppSize, intTexts(l.bounds))
 		}
-		if l.t.Kind == types.Map {
+		if isMap(l.t.Kind) {
 			elem, _ := g.arrayElem(*l.t.Key)
 			n.keys[i] = g.pool.array(elem, g.arrayItems(*l.t.Key, l.keys))
 		}

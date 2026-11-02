@@ -24,7 +24,7 @@ var fixtures = []fixture{
 	{"pipeline", pipeline}, {"constructs", constructs}, {"imports-base", importBase}, {"imports-app", importApp},
 	{"dependent", dependentPackage}, {"inputs", inputsPackage}, {"types-time", typesTimeFixture}, {"types-events", typesEventsFixture},
 	{"tablefields", tablesPackage}, {"types-tablefields", tableTypesPackage}, {"mapfields", mapsPackage},
-	{"baked", bakedPackage}, {"baked-dependent", bakedDependentPackage},
+	{"baked", bakedPackage}, {"baked-dependent", bakedDependentPackage}, {"baked-depmap", depmapPackage},
 	{"emberfall-tone", emberTone}, {"emberfall-core", emberCore}, {"emberfall-world-baked", emberWorld(ir.ModeBaked)},
 	{"emberfall-world-data", emberWorld(ir.ModeData)}, {"emberfall-world-types", emberWorld(ir.ModeTypes)},
 	{"emberfall-camp", emberCamp}, {"empty-owner-b", emptyOwnerB}, {"empty-owner-a", emptyOwnerA}, {"types-open", openPackageFixture}, {"types-open-refdep", openRefdepFixture}, {"types-open-refdep-shape", openRefdepShapeFixture},

@@ -57,7 +57,7 @@ func (g *gen) storage(t ir.TypeRef) string {
 		return g.listStorage(t)
 	case types.Ref:
 		return g.refStorage(t)
-	case types.Map:
+	case types.Map, types.DepMap:
 		return g.mapStorage(t)
 	case types.Table:
 		return g.tableStorage(t)
@@ -68,6 +68,9 @@ func (g *gen) storage(t ir.TypeRef) string {
 		return cppInvalid
 	}
 }
+
+// isMap reports a map kind: a dependent map `{e in t: R}` is a map of t's key, written as one (CODEGEN.md §4.2).
+func isMap(k types.Kind) bool { return k == types.Map || k == types.DepMap }
 
 // mapStorage is canon::FlatMap of the key's and the value's storage (CODEGEN.md §4.2).
 func (g *gen) mapStorage(t ir.TypeRef) string {

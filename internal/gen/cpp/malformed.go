@@ -110,7 +110,7 @@ func malformedType(t ir.TypeRef) string {
 	switch {
 	case (t.Kind == types.List || t.Kind == types.Optional || t.Kind == types.Table) && t.Elem == nil:
 		return noElem
-	case t.Kind == types.Map && (t.Key == nil || t.Elem == nil), t.Kind == types.Ref && t.Key == nil:
+	case isMap(t.Kind) && (t.Key == nil || t.Elem == nil), t.Kind == types.Ref && t.Key == nil:
 		return noKey
 	case !namedAs(t):
 		return noDecl

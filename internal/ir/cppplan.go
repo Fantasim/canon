@@ -225,7 +225,7 @@ func cppClassesOf(t TypeRef, out []any) []any {
 	if (t.Kind == types.Record || t.Kind == types.Variant) && t.Named != nil {
 		return append(out, t.Named)
 	}
-	if t.Elem != nil && (t.Kind == types.List || t.Kind == types.Map || t.Kind == types.Optional || t.Kind == types.Table) {
+	if t.Elem != nil && (t.Kind == types.List || t.Kind == types.Map || t.Kind == types.DepMap || t.Kind == types.Optional || t.Kind == types.Table) {
 		return cppClassesOf(*t.Elem, out)
 	}
 	return out

@@ -59,7 +59,7 @@ func (g *gen) fillValue(a at, lhs string, t ir.TypeRef, optional bool, v value.V
 		g.fillVariant(a, lhs, t, v)
 	case t.Kind == types.List && t.Elem != nil:
 		g.fillList(a, lhs, t, v)
-	case t.Kind == types.Map && t.Key != nil && t.Elem != nil:
+	case isMap(t.Kind) && t.Key != nil && t.Elem != nil:
 		g.fillMap(a, lhs, t, v)
 	case t.Kind == types.Table && t.Elem != nil:
 		g.fillTable(a, lhs, t, v)
@@ -79,7 +79,7 @@ func (g *gen) literalType(t ir.TypeRef) bool {
 		return t.Elem != nil && g.literalType(*t.Elem)
 	case types.List:
 		return t.KeyedBy == nil && t.Elem != nil && g.literalType(*t.Elem)
-	case types.Map:
+	case types.Map, types.DepMap:
 		return t.Key != nil && t.Elem != nil && g.literalType(*t.Key) && g.literalType(*t.Elem)
 	default:
 		return false

@@ -68,7 +68,7 @@ func refusals() []struct {
 		// stage E never builds a dependent type without its discriminant (CODEGEN.md §5.6).
 		{"a dependent type without its discriminant", func(p *ir.Package, _ *ir.Emit) { p.Types = append(p.Types, &ir.Dependent{Pkg: "demo", Name: "D"}) }, cppgen.ErrMalformed},
 		{"an optional element without its element type", withField(field("o", "o", "", listOf(ir.TypeRef{Kind: types.Optional}))), cppgen.ErrMalformed},
-		// unreachable: stage E refuses it first (E8019 DependentType: a dependent map binds its parameter per key, DECISIONS 312).
+		// unreachable in this data-mode package: stage E refuses it first (E8019 DependentOutsideField, CODEGEN.md §5.9, DECISIONS 312); a baked emit writes it (TestBakedDependentMapCompilesAndRuns, §4.2).
 		{"a dependent map field", withField(field("m", "m", "", ir.TypeRef{Kind: types.DepMap, Key: &tString, Elem: &tInt})), cppgen.ErrMalformed},
 		// unreachable: stage E refuses it first (check's E3316).
 		{"an optional inline field", func(p *ir.Package, _ *ir.Emit) { optionalInline(p) }, cppgen.ErrMalformed},

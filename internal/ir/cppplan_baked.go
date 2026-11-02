@@ -240,10 +240,10 @@ func (pl *CppNamePlan) declareElems(detail *nameScope) {
 // bulkConst reports a list or map constant of at least CppBulkMinElems elements across its levels.
 func bulkConst(c *Const) bool { return BulkCount(c.Type, c.V) >= CppBulkMinElems }
 
-// BulkCount is the elements of v of type t across every level of nested lists and maps: what
+// BulkCount is the elements of v of type t across every level of nested lists, maps and dependent maps: what
 // gen/cpp weighs against CppBulkMinElems before reading a literal from arrays (DECISIONS 392).
 func BulkCount(t TypeRef, v value.Value) int {
-	if t.Elem == nil || t.Kind == types.List && t.KeyedBy != nil || t.Kind != types.List && t.Kind != types.Map {
+	if t.Elem == nil || t.Kind == types.List && t.KeyedBy != nil || t.Kind != types.List && t.Kind != types.Map && t.Kind != types.DepMap {
 		return 0
 	}
 	var items []value.Value

@@ -115,7 +115,7 @@ func (g *gen) hoistedLiteral(t ir.TypeRef, v value.Value) (string, bool) {
 
 // hoistedMap is a map literal as a FlatMap built from an array of its entries in insertion order.
 func (g *gen) hoistedMap(t ir.TypeRef, m *value.Map) (string, bool) {
-	if t.Kind != types.Map || t.Key == nil || t.Elem == nil || len(m.Keys) != len(m.Vals) || !g.hoists(len(m.Keys)) {
+	if !isMap(t.Kind) || t.Key == nil || t.Elem == nil || len(m.Keys) != len(m.Vals) || !g.hoists(len(m.Keys)) {
 		return "", false
 	}
 	key, keyOK := g.arrayElem(*t.Key)
