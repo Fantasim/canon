@@ -10,7 +10,6 @@ import (
 	"github.com/fantasim/canonlang/internal/edit"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
-	"github.com/fantasim/canonlang/internal/types"
 )
 
 // Result is a lint: findings in F2 order, fixes in finding order, counts with the dropped findings (API.md L1, L11).
@@ -35,23 +34,34 @@ type fixKey struct {
 
 // pass is one Run: the frozen analysis, what the lints share of it and the fixes they offer.
 type pass struct {
-	prog   *check.Program
-	text   map[types.Type]bool // the records and cases a @text fn result reaches
-	fixes  map[fixKey]Fix
-	broken broken
-	graph  graph
+	ctx       context.Context // the Run's: the lints that evaluate a default stop with it
+	a         *build.Analysis
+	prog      *check.Program
+	snap      *edit.Snapshot
+	text      edit.Reached // the records and cases a @text fn result reaches
+	output    edit.Reached // those an output reaches: a data emit or a @text result (API.md §5.7, rule L5)
+	wire      edit.Reached // those a load or an output reaches (rule L3)
+	fixes     map[fixKey]Fix
+	broken    broken
+	graph     graph
+	places    *edit.Placer          // where @files templates place entries, made on first use (placer)
+	defines   map[string][]string   // the macros headers define with the files that do, made on first use (headerDefines)
+	following map[check.Object]bool // the lets whose value the enum-names lint is reading (letEnums)
 }
 
 // lintFn is one lint over one package; it reports into bag and may offer fixes.
 type lintFn func(p *pass, pkg *check.Package, bag *diag.Bag)
 
 // lints are the lints Run applies, in order.
-var lints = []lintFn{legacyPrefixes, markerWords, bigFiles}
+var lints = []lintFn{legacyPrefixes, numberedSiblings, enumNames, authoringNotes, markerWords, entryFiles, bigFiles, textDefines}
 
 // Run lints the packages a selected, one bag per package truncated at Options.MaxFindings (API.md L1, L11).
-func Run(ctx context.Context, a *build.Analysis, _ *edit.Snapshot) (*Result, error) {
+func Run(ctx context.Context, a *build.Analysis, s *edit.Snapshot) (*Result, error) {
 	prog := a.Program()
-	p := &pass{prog: prog, text: textReach(prog), fixes: map[fixKey]Fix{}, broken: brokenIn(prog), graph: graphOf(prog, a.Units())}
+	p := &pass{
+		ctx: ctx, a: a, prog: prog, snap: s, text: s.TextReach(), output: s.OutputReach(), wire: s.WireReach(),
+		fixes: map[fixKey]Fix{}, following: map[check.Object]bool{}, broken: brokenIn(prog), graph: graphOf(prog, a.Units()),
+	}
 	res := &Result{}
 	for _, name := range a.Selected() {
 		if err := ctx.Err(); err != nil {

@@ -1,0 +1,36 @@
+API.md §5.7: two numbered columns that WIRE.md 5.14 cannot map give no pairs finding: a column of
+records, a column of lists and a column of optionals have no scalar wire form.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Sub {
+  n: Int = 0
+}
+
+record Two {
+  a0: Sub
+  b0: [Int]
+  a1: Sub
+  b1: [Int]
+}
+
+let twos: table Two = load("twos.json")
+
+record Opt {
+  c0: Int?
+  d0: Int
+  c1: Int?
+  d1: Int
+}
+
+let opts: table Opt = load("opts.json")
+-- m/twos.json --
+{"x": {"a0": {}, "b0": [], "a1": {}, "b1": []}}
+-- m/opts.json --
+{"x": {"d0": 1, "d1": 2}}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,30 @@
+API.md §5.7: a String type refined to the member names of one enum is reported at the type, with
+the enum, whether the list is named by a let or written in the refinement, filtered, made unique,
+or read as a membership test with contains.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+enum Color { red, green, blue }
+
+let colorNames: [String] = [c.name for c in Color.members]
+
+type ColorName = String where it in colorNames
+
+type Live = String where it in [c.name for c in Color.members if not c.retired]
+
+type Unique = String where [c.name for c in Color.members].unique().contains(it)
+-- findings.txt --
+warning[W0003]  m/m.canon:7:6
+  ColorName is a String limited to the member names of Color: type it Color
+
+warning[W0003]  m/m.canon:9:6
+  Live is a String limited to the member names of Color: type it Color
+
+warning[W0003]  m/m.canon:11:6
+  Unique is a String limited to the member names of Color: type it Color
+
+0 errors, 3 warnings in 1 package (…)

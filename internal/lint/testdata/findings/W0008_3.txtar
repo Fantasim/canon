@@ -1,0 +1,29 @@
+API.md §5.7: a C++ name that a header read by load.defines #defines, with no guard, is reported
+the same way, naming the header by its path; the table's prefix filter decides which defines the
+analysis reads, so a define the table leaves out (OTHER_ONE, outside the prefix LVL_) is not judged.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+/// Levels.
+enum Level { LVL_LOW, LVL_MID, other }
+
+/// Levels in the legacy header.
+let defs: table Define = load.defines("legacy.h", prefix: "LVL_")
+
+/// Levels out of the table.
+enum Skipped { OTHER_ONE }
+
+emit cpp { out: "out/cpp", namespace: "Game", mode: types }
+-- m/legacy.h --
+#define LVL_LOW 1
+#define LVL_MID 2
+#define OTHER_ONE 3
+-- findings.txt --
+warning[W0008]  m/m.canon:4:6
+  2 names of Level are #defined by m/legacy.h, which no guard covers: add @cpp(defines: "LVL_") to Level, or rename them with @cpp(name:)
+
+0 errors, 1 warning in 1 package (…)

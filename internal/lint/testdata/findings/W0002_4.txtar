@@ -1,0 +1,30 @@
+API.md §5.7: a record reached only through a ref is not on the wire, so its numbered siblings are
+reported as a list; and the same names with a repeated number (a1 and a01) are no family.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Target {
+  slot1: Int
+  slot2: Int
+  a1: Int = 0
+  a01: Int = 0
+}
+
+let targets: table Target = {}
+
+record Holder {
+  to: ref targets
+}
+
+let holders: table Holder = load("holders.json")
+-- m/holders.json --
+{}
+-- findings.txt --
+warning[W0002]  m/m.canon:4:3
+  fields slot1 to slot2 are numbered siblings: make them one list
+
+0 errors, 1 warning in 1 package (…)

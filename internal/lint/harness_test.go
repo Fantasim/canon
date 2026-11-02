@@ -171,6 +171,9 @@ func applyFirst(t *testing.T, l *linted) string {
 		l.fsys[path.Join("p", c.Path)] = file(string(c.After))
 	}
 	again := analyzed(t, l.fsys, l.selectors)
+	if n := again.a.Result().Summary.Errors; n > 0 {
+		t.Fatalf("the project holds %d errors after the first fix, so the fix does not keep it valid", n)
+	}
 	return "after the first fix:\n" + render(t, again.a, again.res)
 }
 

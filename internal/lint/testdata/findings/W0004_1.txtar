@@ -1,0 +1,48 @@
+API.md §5.7: a field whose wire name starts with an underscore is an authoring note, reported when
+an output writes its record: the type of a value an emit json writes, reached through a list, and
+the result of a @text fn, reached through a case of a variant. The finding names the output that
+reaches it first, an emit before a @text fn.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Item {
+  name: String
+  comment: String = "" @json("_comment")
+  skillRange: Int = 0 @json("_dwSkillRange")
+}
+
+let items: [Item] = [{ name: "a" }]
+
+emit json { out: "out/items.json", values: [items] }
+
+variant Shape {
+  circle {
+    radius: Int = 1
+    note: String = "" @json("_note")
+  }
+  dot
+}
+
+record Doc {
+  shape: Shape
+}
+
+@text("doc.json")
+export fn doc() -> Doc {
+  return Doc { shape: dot }
+}
+-- findings.txt --
+warning[W0004]  m/m.canon:5:3
+  field comment goes to the wire as _comment, an authoring note, and emit json of m writes it: move the note into a /// comment, or give the field a wire name without _
+
+warning[W0004]  m/m.canon:6:3
+  field skillRange goes to the wire as _dwSkillRange, an authoring note, and emit json of m writes it: move the note into a /// comment, or give the field a wire name without _
+
+warning[W0004]  m/m.canon:16:5
+  field note goes to the wire as _note, an authoring note, and @text fn m.doc writes it: move the note into a /// comment, or give the field a wire name without _
+
+0 errors, 3 warnings in 1 package (…)

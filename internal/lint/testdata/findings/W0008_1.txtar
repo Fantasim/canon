@@ -1,0 +1,33 @@
+API.md §5.7: a C++ name that a header a @text fn writes #defines, and that no guard of the package
+covers, is reported once per declaration, at its name, with how many names it holds, the file that
+defines them and the longest common prefix of the names cut after its last underscore, as the
+@cpp(defines:) prefix that guards them. A constant is a declaration too.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+/// Window ids.
+enum Ids { WND_MAIN, WND_OPTS, free }
+
+/// The limit.
+const LIMIT = 3
+
+/// The header.
+@text("ids.h")
+export fn header() -> String {
+  return "#define WND_MAIN 1\n#define WND_OPTS 2\n#define LIMIT 3\n"
+}
+
+emit cpp { out: "out/cpp", namespace: "Game", mode: types }
+emit text { out: "out/text" }
+-- findings.txt --
+warning[W0008]  m/m.canon:4:6
+  2 names of Ids are #defined by m/out/text/ids.h, which no guard covers: add @cpp(defines: "WND_") to Ids, or rename them with @cpp(name:)
+
+warning[W0008]  m/m.canon:7:7
+  1 names of LIMIT are #defined by m/out/text/ids.h, which no guard covers: add @cpp(defines: "") to LIMIT, or rename them with @cpp(name:)
+
+0 errors, 2 warnings in 1 package (…)

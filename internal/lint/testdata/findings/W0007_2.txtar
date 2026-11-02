@@ -13,7 +13,7 @@ let rows: [Int] = [
 package n
 
 record Big {
-{{pad 4996   f%d: Int}}
+{{pad 4996   f%dx: Int}}
 }
 
 let a: [Int] = [1, 2]

@@ -1,0 +1,41 @@
+API.md §5.7: numbered sibling fields that no load and no output reaches are reported once per
+family, at the lowest-numbered field, in a record and in a case of a variant: the fields of one stem
+and one written type whose names end in distinct numbers. A field of another written type, or a
+single numbered field, is no sibling.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Slots {
+  slot1: Int
+  slot2: Int
+  slot3: Int = 0
+  name: String
+  tag0: String = ""
+  tag1: String = ""
+  odd1: Int = 0
+  odd2: String = ""
+  lone9: Int = 0
+}
+
+variant Shape {
+  circle {
+    r1: Int
+    r2: Int
+  }
+  dot
+}
+-- findings.txt --
+warning[W0002]  m/m.canon:4:3
+  fields slot1 to slot3 are numbered siblings: make them one list
+
+warning[W0002]  m/m.canon:8:3
+  fields tag0 to tag1 are numbered siblings: make them one list
+
+warning[W0002]  m/m.canon:17:5
+  fields r1 to r2 are numbered siblings: make them one list
+
+0 errors, 3 warnings in 1 package (…)

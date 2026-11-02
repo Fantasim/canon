@@ -154,7 +154,7 @@ func (s *Snapshot) onWire(f *syntax.File, fd *syntax.FieldDecl) bool {
 	if owner == nil || owner.Type() == nil {
 		return false
 	}
-	return s.wireTypes()[typeKey(owner.Type())]
+	return s.wireTypes().Has(owner.Type())
 }
 
 // typeKey is the record or case type t is, by which reachability is recorded.
@@ -165,32 +165,112 @@ func typeKey(t types.Type) types.Type {
 	return t.Base()
 }
 
-// wireTypes are the records and cases reachable from the types loads and emits read or write.
-func (s *Snapshot) wireTypes() map[types.Type]bool {
-	seen := map[types.Type]bool{}
+// Origin is what first reaches a record or case: a load of Pkg, an emit of Pkg with target Name, or the
+// result of Pkg's `@text` fn Name (API.md E34, L3, L5).
+type Origin struct {
+	Pkg, Name string
+	Load      bool
+	Text      bool
+}
+
+// Reached are the records and cases that loads, emits and `@text` results reach, never through a ref, each with the
+// first origin that reaches it (API.md E34, L3, L5, L10); it also keys the dependent type applications passed through.
+type Reached map[types.Type]Origin
+
+// Has reports that t, a record, an applied record or a case, is reached.
+func (r Reached) Has(t types.Type) bool {
+	_, ok := r[typeKey(t)]
+	return ok
+}
+
+// From is the first origin that reaches t, when it is reached.
+func (r Reached) From(t types.Type) (Origin, bool) {
+	o, ok := r[typeKey(t)]
+	return o, ok
+}
+
+// TextReach are the records and cases that the result of a `@text` fn of any loaded package reaches: the
+// outputs E34 does not count, since a rename keeps a field's old wire name for loads and data emits only.
+func (s *Snapshot) TextReach() Reached { return s.reachFrom(s.textRoots) }
+
+// OutputReach are the records and cases that an output reaches: the types a data emit writes (E34) and the
+// results of `@text` fns, each file giving its emits before its fns.
+func (s *Snapshot) OutputReach() Reached { return s.reachFrom(s.emitRoots, s.textRoots) }
+
+// WireReach are the records and cases that a load, a data emit or a `@text` result reaches.
+func (s *Snapshot) WireReach() Reached { return s.reachFrom(s.loadRoots, s.emitRoots, s.textRoots) }
+
+// wireTypes are the records and cases reachable from the types loads and emits read or write (E34).
+func (s *Snapshot) wireTypes() Reached { return s.reachFrom(s.loadRoots, s.emitRoots) }
+
+// root is a type some load, emit or fn reads or writes, with that origin.
+type root struct {
+	from Origin
+	typ  types.Type
+}
+
+// rootsOf lists the roots of one file of a package.
+type rootsOf func(p *check.Package, f *syntax.File) []root
+
+// reachFrom marks what the roots of every file reach, per file in the order of the lists given.
+func (s *Snapshot) reachFrom(lists ...rootsOf) Reached {
+	seen := Reached{}
 	for _, p := range s.pkgs {
 		for _, f := range p.Files {
-			for _, t := range s.fileWireRoots(p, f) {
-				reach(seen, t)
+			for _, r := range rootsIn(p, f, lists) {
+				reach(seen, r.from, r.typ)
 			}
 		}
 	}
 	return seen
 }
 
-// fileWireRoots are the expected types of f's `load`, `load.dir` and `load.csv`, and the declared
-// types of the values its emits write: `emit json`, and go, cpp or ts in a data mode.
-func (s *Snapshot) fileWireRoots(p *check.Package, f *syntax.File) []types.Type {
-	var out []types.Type
+// rootsIn are the roots of f, of package p, that each of lists gives, in order.
+func rootsIn(p *check.Package, f *syntax.File, lists []rootsOf) []root {
+	var out []root
+	for _, list := range lists {
+		out = append(out, list(p, f)...)
+	}
+	return out
+}
+
+// loadRoots are the expected types of f's `load`, `load.dir` and `load.csv`.
+func (s *Snapshot) loadRoots(p *check.Package, f *syntax.File) []root {
+	var out []root
 	syntax.Inspect(f, func(n syntax.Node) bool {
 		if l, ok := n.(*syntax.LoadExpr); ok && (l.Method == nil || loadsData[l.Method.Name]) {
-			out = append(out, s.info.Types[l])
+			out = append(out, root{Origin{Pkg: p.Path, Load: true}, s.info.Types[l]})
 		}
 		return n != nil
 	})
+	return out
+}
+
+// emitRoots are the declared types of the values f's emits write: `emit json`, and go, cpp or ts in a data mode.
+func (s *Snapshot) emitRoots(p *check.Package, f *syntax.File) []root {
+	var out []root
 	for _, d := range f.Decls {
 		if e, ok := d.(*syntax.EmitDecl); ok && emitsData(e) {
-			out = append(out, s.emitted(p, e)...)
+			for _, t := range s.emitted(p, e) {
+				out = append(out, root{Origin{Pkg: p.Path, Name: e.Target.Name}, t})
+			}
+		}
+	}
+	return out
+}
+
+// textRoots are the result types of f's `@text` fns.
+func (s *Snapshot) textRoots(p *check.Package, f *syntax.File) []root {
+	var out []root
+	for _, d := range f.Decls {
+		fn, ok := d.(*syntax.FnDecl)
+		if !ok || fn.Name == nil || annotationNamed(fn.Annotations, syntax.AnnText) == nil {
+			continue
+		}
+		if obj := s.info.Defs[fn.Name]; obj != nil {
+			if ft, isFn := obj.Type().(*types.FuncType); isFn {
+				out = append(out, root{Origin{Pkg: p.Path, Name: fn.Name.Name, Text: true}, ft.Result})
+			}
 		}
 	}
 	return out
@@ -241,32 +321,63 @@ func (s *Snapshot) emitted(p *check.Package, e *syntax.EmitDecl) []types.Type {
 	return out
 }
 
-// reach marks the records and cases t reaches through fields, case fields, list, map, optional
-// and table elements and aliases, never a ref.
-func reach(seen map[types.Type]bool, t types.Type) {
+// reach marks, with from, the records and cases t reaches through fields, case fields, list, map,
+// optional and table elements, aliases and the arms and body of dependent types, never a ref.
+func reach(seen Reached, from Origin, t types.Type) {
 	if t == nil {
 		return
 	}
 	switch b := t.Base().(type) {
 	case *types.RecordType, *types.AppliedRecord, *types.CaseType:
-		k := typeKey(b)
-		if !seen[k] {
-			seen[k] = true
-			for _, f := range fieldsOf(k) {
-				reach(seen, f.Type)
-			}
-		}
+		reachFields(seen, from, typeKey(b))
 	case *types.VariantType:
 		for _, c := range b.Cases {
-			reach(seen, c)
+			reach(seen, from, c)
 		}
+	case *types.TypeAppType:
+		reachBranches(seen, from, b, b.Fn)
+	case *types.DepUnionType:
+		reachBranches(seen, from, b, b.Fn)
+	default:
+		reach(seen, from, elemOf(b))
+	}
+}
+
+// reachFields marks the record or case k, once, and what its fields reach.
+func reachFields(seen Reached, from Origin, k types.Type) {
+	if _, done := seen[k]; done {
+		return
+	}
+	seen[k] = from
+	for _, f := range fieldsOf(k) {
+		reach(seen, from, f.Type)
+	}
+}
+
+// elemOf is the type a list, map, optional or table holds, nil for any other type.
+func elemOf(t types.Type) types.Type {
+	switch b := t.(type) {
 	case *types.ListType:
-		reach(seen, b.Elem)
+		return b.Elem
 	case *types.MapType:
-		reach(seen, b.Value)
+		return b.Value
+	case *types.DepMapType:
+		return b.Value
 	case *types.OptionalType:
-		reach(seen, b.Elem)
+		return b.Elem
 	case *types.TableType:
-		reach(seen, b.Elem)
+		return b.Elem
+	}
+	return nil
+}
+
+// reachBranches marks, once for the application key, what the branches of fn reach.
+func reachBranches(seen Reached, from Origin, key types.Type, fn *types.TypeFunc) {
+	if _, done := seen[key]; done {
+		return
+	}
+	seen[key] = from
+	for _, t := range types.Branches(fn) {
+		reach(seen, from, t)
 	}
 }

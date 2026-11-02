@@ -1,0 +1,22 @@
+API.md §5.7: a let that names itself, directly or through another let, is no list of enum member
+names, so the refinements over a, c and the two-let cycle give no finding and the lint terminates.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+enum Color { red }
+
+let a: [String] = [n for n in b]
+
+let b: [String] = [n for n in a]
+
+let c: [String] = c + [x.name for x in Color.members]
+
+type T = String where it in a
+
+type U = String where it in c
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

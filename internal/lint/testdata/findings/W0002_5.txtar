@@ -1,0 +1,26 @@
+API.md §5.7: a record that a package outside the selection loads is on the wire as well, so while an
+importer of its package is not loaded the numbered siblings are not reported as a list: b imports a
+and loads a.R, and only a is selected.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- select --
+a
+-- a/a.canon --
+package a
+
+record R {
+  slot1: Int
+  slot2: Int
+}
+-- b/b.canon --
+package b
+
+import a
+
+let rs: [a.R] = load("rs.json")
+-- b/rs.json --
+[{"slot1": 1, "slot2": 2}]
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

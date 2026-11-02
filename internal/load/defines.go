@@ -183,15 +183,44 @@ type defineScan struct {
 func readDefines(src *source.File, req Request) ([]headerDefine, []skippedDefine, bool) {
 	logical, pos := canonicalizeHeader(src.Content)
 	ds := &defineScan{pos: pos, file: src.ID, req: req, accepted: map[string]int64{}, firstAt: map[string]source.Span{}}
-	ok, lineStart := true, 0
+	ok := true
+	eachLine(logical, func(text string, start int) { ok = ds.line(text, start) && ok })
+	return ds.defs, ds.skipped, ok
+}
+
+// eachLine calls each with every line of logical, the last one included, and the offset it starts at.
+func eachLine(logical []byte, each func(text string, start int)) {
+	start := 0
 	for i := 0; i <= len(logical); i++ {
 		if i < len(logical) && logical[i] != '\n' {
 			continue
 		}
-		ok = ds.line(string(logical[lineStart:i]), lineStart) && ok
-		lineStart = i + 1
+		each(string(logical[start:i]), start)
+		start = i + 1
 	}
-	return ds.defs, ds.skipped, ok
+}
+
+// functionLike reports the rest of a #define line that opens a parameter list: a function-like macro (WIRE.md §6.8).
+func functionLike(rest string) bool { return strings.HasPrefix(rest, "(") }
+
+// DefineNames are the names of the object-like #defines of a C header, each once, in file order (WIRE.md 6.8's reading of
+// the lines: splices, comments and the `#define NAME` match). A function-like macro is left out; every other define counts,
+// whatever its value, since any macro clashes with a C++ name (API.md L9).
+func DefineNames(content []byte) []string {
+	logical, _ := canonicalizeHeader(content)
+	var out []string
+	seen := map[string]bool{}
+	eachLine(logical, func(text string, _ int) {
+		m := defineLineRe.FindStringSubmatchIndex(text)
+		if m == nil || functionLike(text[m[reRestStart]:m[reRestEnd]]) {
+			return
+		}
+		if name := text[m[reNameStart]:m[reNameEnd]]; !seen[name] {
+			seen[name] = true
+			out = append(out, name)
+		}
+	})
+	return out
 }
 
 // line matches and classifies one logical line (WIRE.md §6.8); ok is false only after an E7102.
@@ -203,7 +232,7 @@ func (ds *defineScan) line(text string, lineStart int) bool {
 	name, rest := text[m[reNameStart]:m[reNameEnd]], text[m[reRestStart]:m[reRestEnd]]
 	at := oneByteSpan(ds.file, ds.pos[lineStart+m[reHashEnd]])
 	switch {
-	case strings.HasPrefix(rest, "("): // a function-like macro (WIRE.md §6.8)
+	case functionLike(rest): // a function-like macro (WIRE.md §6.8)
 		ds.skipped = append(ds.skipped, skippedDefine{name: name, at: at})
 		return true
 	case strings.TrimSpace(rest) == "": // an include guard: skipped silently (WIRE.md §6.8)

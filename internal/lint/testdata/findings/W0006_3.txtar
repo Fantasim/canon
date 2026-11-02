@@ -1,0 +1,26 @@
+API.md §5.7: the count of the entry-files finding is the number of files off the path, so a file that
+holds two off-path entries counts once, and its first entry gives the path it belongs at.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Item {
+  power: Int = 1
+}
+
+@files("items/{id}.canon")
+let items: table Item = {}
+-- m/loose/a.canon --
+package m
+
+entry items.a { power: 2 }
+
+entry items.b { power: 3 }
+-- findings.txt --
+warning[W0006]  m/m.canon:7:1
+  1 entry files of items are off the path its @files template gives; first: m/loose/a.canon, which belongs at m/items/a.canon
+
+0 errors, 1 warning in 1 package (…)

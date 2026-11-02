@@ -10,6 +10,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -106,6 +107,9 @@ func (a *Analysis) Result() *Result { return a.res }
 
 // Program is the checked program of the loaded packages (§4.7).
 func (a *Analysis) Program() *check.Program { return a.r.prog }
+
+// IR is the stage-E IR of the loaded packages, read-only (API.md §5.7, rule L9).
+func (a *Analysis) IR() []*ir.Package { return a.r.ir }
 
 // Layers are the layers active in this analysis, in stack order (Options.Layers, EVALUATION.md §9.1).
 func (a *Analysis) Layers() []string { return slices.Clone(a.r.p.opt.Layers) }

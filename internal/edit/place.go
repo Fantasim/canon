@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"context"
 	"path"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/wire"
 )
 
 // newEntryFile adds rec, with key, to a collection whose entries live in files (API.md N1): a
@@ -66,6 +68,44 @@ func (x *opCtx) entryPath(let *syntax.LetDecl, load *syntax.LoadExpr, rec *value
 		return path.Join(dir, x.res.root.obj.Name(), keyText+project.SourceExt), nil
 	}
 	return globPlace(x.res.root.obj.File(), load, keyText)
+}
+
+// Placer says where the `@files` template of a let places an entry that is already declared (API.md N2, N3, §5.7 L7).
+type Placer struct{ a *applier }
+
+// NewPlacer is a Placer that computes a field a template reads and an entry leaves out through host.
+func (s *Snapshot) NewPlacer(ctx context.Context, host wire.Host) *Placer {
+	return &Placer{a: &applier{ctx: ctx, snap: s, host: host}}
+}
+
+// Path is the display path the template of let, a let of pkg, gives rec, one of its entries: the template
+// expanded with rec's key and fields in pkg's directory. It fails when let has no template this reads, and with
+// ErrBadValue when rec cannot fill it (N2).
+func (p *Placer) Path(pkg *check.Package, let *syntax.LetDecl, rec *value.Record) (string, error) {
+	tpl, ok := filesTemplate(let)
+	if !ok || rec.Ident == nil || rec.Ident.Coll == nil {
+		return "", errTemplate
+	}
+	key, err := templateText(entryKeyValue(rec))
+	if err != nil {
+		return "", err
+	}
+	rel, err := (&opCtx{a: p.a}).expand(tpl, rec, key)
+	if err != nil {
+		return "", err
+	}
+	return path.Join(packageDir(pkg), rel), nil
+}
+
+// entryKeyValue is the key of an entry as a template reads it: a keyed list's key field, else the entry's key.
+func entryKeyValue(rec *value.Record) value.Value {
+	if by := rec.Ident.Coll.KeyedBy; by != nil && by.Index < len(rec.Fields) && rec.Fields[by.Index] != nil {
+		return rec.Fields[by.Index]
+	}
+	if k := rec.Ident.Key; k.IsInt {
+		return &value.Int{V: k.I}
+	}
+	return &value.Str{V: rec.Ident.Key.S}
 }
 
 // packageDir is the display path of a package's directory: its name, '/'-separated.

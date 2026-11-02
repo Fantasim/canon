@@ -45,3 +45,34 @@ var prefixRules = []prefixRule{
 
 // markers are the words a string literal holding is reported for.
 var markers = []string{markerGo, markerText}
+
+// The numbered-sibling lint's limits (API.md §5.7, rule L3): digits a number may have, fields of a family, families of a pairs list.
+const (
+	maxNumberDigits = 9
+	minSiblings     = 2
+	pairFamilies    = 2
+	firstSlot       = 0
+	typeSeparator   = " "
+)
+
+// scalarKinds are the kinds of a field with a scalar wire form, which a pairs list holds (WIRE.md 5.14).
+var scalarKinds = []types.Kind{types.Bool, types.Int, types.Float, types.String, types.Duration, types.Enum, types.Ref, types.LitUnion}
+
+// The enum-names lint's words (API.md §5.7, rule L4): the refined value, a member's name, the membership and dedupe calls.
+const (
+	valueName      = "it"
+	enumMemberName = "name"
+	containsName   = "contains"
+	uniqueName     = "unique"
+)
+
+// The authoring-note lint's words (API.md §5.7, rule L5): the mark of a note and the two names of an output.
+const (
+	noteMark      = "_"
+	fmtOutputEmit = "emit %s of %s"
+	fmtOutputText = "@text fn %s.%s"
+)
+
+const prefixEnd = '_'
+
+var headerExts = []string{".h", ".hh", ".hpp", ".hxx"}

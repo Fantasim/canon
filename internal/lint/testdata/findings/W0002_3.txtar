@@ -1,0 +1,28 @@
+API.md §5.7: two numbered families of a record on the wire that share the numbers 0 to n-1 are two
+numbered columns: one finding at the first field, naming the first and last field and the two
+stems, which become the templates of one @json(pairs:) list.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Modifier {
+  kind0: Int
+  amount0: Int
+  kind1: Int
+  amount1: Int
+  note: String = ""
+}
+
+let mods: table Modifier = load("mods.json")
+-- m/mods.json --
+{
+  "a": { "kind0": 1, "amount0": 2, "kind1": 3, "amount1": 4, "note": "x" }
+}
+-- findings.txt --
+warning[W0002]  m/m.canon:4:3
+  fields kind0 to amount1 are two numbered columns: one list with @json(pairs: ["kind{i}", "amount{i}"]) keeps the wire
+
+0 errors, 1 warning in 1 package (…)

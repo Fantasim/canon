@@ -1,0 +1,44 @@
+API.md §5.7: what the text-defines lint leaves alone. Names the package's guard covers (an enum
+with @cpp(defines:)), a file that is not a header, a function-like macro, a name no enum member
+or constant declares, a member renamed with @cpp(name:), and a package with no C++ emit give no finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+/// Window ids, guarded.
+@cpp(defines: "WND_")
+enum Guarded { WND_MAIN, WND_OPTS }
+
+/// A name in a file that is no header.
+enum Plain { PLAIN_ONE }
+
+/// A member renamed by @cpp(name:), which a prefix guard cannot cover.
+enum Renamed { original @cpp(name: "RN_ONE") }
+
+/// A function-like macro.
+enum Macro { FN_MACRO }
+
+/// The headers.
+@text("ids.h")
+export fn header() -> String {
+  return "#define WND_MAIN 1\n#define WND_OPTS 2\n#define FN_MACRO(x) x\n#define Elsewhere 1\n#define RN_ONE 1\n"
+}
+
+/// Not a header.
+@text("plain.txt")
+export fn plain() -> String {
+  return "#define PLAIN_ONE 1\n"
+}
+
+emit cpp { out: "out/cpp", namespace: "Game", mode: types }
+emit text { out: "out/text" }
+-- n/n.canon --
+package n
+
+/// Names with no C++ emit.
+enum Quiet { WND_MAIN }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

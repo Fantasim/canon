@@ -97,7 +97,7 @@ func TestRunTruncates(t *testing.T) {
 	var src strings.Builder
 	src.WriteString("package a\n\nrecord R {\n")
 	for i := range manyFields {
-		fmt.Fprintf(&src, "  dwF%d: Int\n", i)
+		fmt.Fprintf(&src, "  dwF%dx: Int\n", i)
 	}
 	src.WriteString("}\n")
 	_, res := runOn(t, mapFS{"p/a/a.canon": file(src.String())})

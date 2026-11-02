@@ -65,12 +65,22 @@ func graphOf(prog *check.Program, units []*project.Unit) graph {
 // safe reports that a rename in pkg is one canon edit accepts and every output it can change is seen: each package
 // importing pkg, however far, is loaded, and neither those nor pkg hold a broken declaration (API.md E32).
 func (p *pass) safe(pkg string) bool {
+	return p.closure(pkg, func(name string) bool { return !p.broken.packages[name] && p.graph.loaded[name] })
+}
+
+// importersLoaded reports that pkg and every package importing it, however far, is loaded: no output outside the analysis reads it.
+func (p *pass) importersLoaded(pkg string) bool {
+	return p.closure(pkg, func(name string) bool { return p.graph.loaded[name] })
+}
+
+// closure reports that ok holds for pkg and every package importing it, however far.
+func (p *pass) closure(pkg string, ok func(name string) bool) bool {
 	seen := map[string]bool{pkg: true}
 	todo := []string{pkg}
 	for len(todo) > 0 {
 		name := todo[0]
 		todo = todo[1:]
-		if p.broken.packages[name] || !p.graph.loaded[name] {
+		if !ok(name) {
 			return false
 		}
 		for _, imp := range p.graph.importers[name] {

@@ -1,0 +1,30 @@
+API.md §5.7: what the enum-names lint leaves alone. A list that adds a name no enum holds, a list
+of changed names rather than names, a refinement that is not a membership test, a String limited to
+other words, an Int type, a field refined inline, and a refinement over a broken declaration
+are all silent.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+enum Color { red, green }
+
+type Extra = String where it in [c.name for c in Color.members] + ["none"]
+
+type Suffixed = String where it in [c.name + "x" for c in Color.members]
+
+type Short = String where it.len() < 5
+
+type Words = String where it in ["red", "green"]
+
+type Level = Int where it in [1, 2]
+
+record Pick {
+  name: String where it in [c.name for c in Color.members]
+}
+
+type Broken = String where it in [c.name for c in Nowhere.members]
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

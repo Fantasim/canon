@@ -1,0 +1,51 @@
+API.md §5.7: the two stems of a pairs finding are the wire stems, since @json(pairs:) templates name
+wire keys: with a snake case the stems are item_kind and item_amount, and with @json names they are
+dwKind and dwVal. Wire names that are no stem and number (first, second, third, fourth) give no
+finding, since no template maps them.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Mod @json(case: snake) {
+  itemKind0: Int
+  itemAmount0: Int
+  itemKind1: Int
+  itemAmount1: Int
+}
+
+let mods: table Mod = load("mods.json")
+
+record Pos {
+  k0: Int @json("dwKind0")
+  v0: Int @json("dwVal0")
+  k1: Int @json("dwKind1")
+  v1: Int @json("dwVal1")
+}
+
+let pos: table Pos = load("pos.json")
+
+record Odd {
+  x0: Int @json("first")
+  y0: Int @json("second")
+  x1: Int @json("third")
+  y1: Int @json("fourth")
+}
+
+let odds: table Odd = load("odds.json")
+-- m/mods.json --
+{"a": {"item_kind0": 1, "item_amount0": 2, "item_kind1": 3, "item_amount1": 4}}
+-- m/pos.json --
+{"a": {"dwKind0": 1, "dwVal0": 2, "dwKind1": 3, "dwVal1": 4}}
+-- m/odds.json --
+{"a": {"first": 1, "second": 2, "third": 3, "fourth": 4}}
+-- findings.txt --
+warning[W0002]  m/m.canon:4:3
+  fields itemKind0 to itemAmount1 are two numbered columns: one list with @json(pairs: ["item_kind{i}", "item_amount{i}"]) keeps the wire
+
+warning[W0002]  m/m.canon:13:3
+  fields k0 to v1 are two numbered columns: one list with @json(pairs: ["dwKind{i}", "dwVal{i}"]) keeps the wire
+
+0 errors, 2 warnings in 1 package (…)

@@ -4648,3 +4648,9 @@ round 2", "PS1 review", "PS2 round 2"):
      predicate as stage A does, so the two are one finding. Reason: v0.3 run (DEFAULT-FOLD's review):
      a default reading `(T {}).a`, and on base `const C = (T {}).a`, crashed the checker when `T` held
      a `where` field, and a failing predicate was then reported twice.
+455. **A rename keeps the wire of a field reached through a dependent type (API.md E34).** A record or
+     case reached from a load's expected type or an output's declared type only through a dependent
+     field (a type function's arms and body) or a dependent map's values is reachable for E34, so a
+     renamed field of it gets its old wire name as `@json`'s argument. Reason: v0.3 run (LINT-CORE's
+     review, fixed in LINT-DATA): such a rename wrote no `@json`, and the data already on disk no
+     longer decoded.

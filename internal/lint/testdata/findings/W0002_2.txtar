@@ -1,0 +1,58 @@
+API.md §5.7: a record that a load reaches is on the wire, so numbered siblings are silent unless they
+are exactly two families that share the numbers 0 to n-1, which one pairs list maps: Row has one
+family, Trio three, and Skew two with other numbers. A record reached by a @text result alone is
+silent too, and one reached through a ref alone is not on the wire.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Row {
+  slot1: Int
+  slot2: Int
+}
+
+record Trio {
+  a0: Int
+  a1: Int
+  b0: Int
+  b1: Int
+  c0: Int
+  c1: Int
+}
+
+record Skew {
+  a0: Int
+  a1: Int
+  a2: Int
+  b0: Int
+  b1: Int
+}
+
+record Wires {
+  row: Row
+  trio: Trio
+  skew: Skew
+}
+
+let wires: Wires = load("wires.json")
+
+record Texted {
+  part1: Int
+  part2: Int
+}
+
+@text("texted.json")
+export fn texted() -> Texted {
+  return Texted { part1: 1, part2: 2 }
+}
+-- m/wires.json --
+{
+  "row": { "slot1": 1, "slot2": 2 },
+  "trio": { "a0": 1, "a1": 2, "b0": 3, "b1": 4, "c0": 5, "c1": 6 },
+  "skew": { "a0": 1, "a1": 2, "a2": 3, "b0": 4, "b1": 5 }
+}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

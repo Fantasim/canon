@@ -1,0 +1,46 @@
+API.md §5.7: what the authoring-note lint leaves alone. A record that only a load reads, one that
+no output reaches, one reached only through a ref, and a field whose wire name has an underscore
+inside or ends with one are silent.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Loaded {
+  note: String = "" @json("_note")
+}
+
+let loaded: table Loaded = load("loaded.json")
+
+record Unreached {
+  note: String = "" @json("_note")
+}
+
+let unreached: [Unreached] = []
+
+record Target {
+  note: String = "" @json("_note")
+}
+
+let targets: table Target = {}
+
+record Holder {
+  to: ref targets
+}
+
+let holders: [Holder] = []
+
+record Inside {
+  snake_case: Int = 0
+  trailing: Int = 0 @json("note_")
+}
+
+let inside: [Inside] = []
+
+emit json { out: "out/holders.json", values: [holders, inside] }
+-- m/loaded.json --
+{}
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

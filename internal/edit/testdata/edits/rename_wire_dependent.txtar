@@ -1,0 +1,95 @@
+API.md E34 (WIRE.md 5.5.2): a record reached only through a dependent field of a loaded record is on
+the wire as well, so renaming one of its fields gives it its old wire name with @json: the load of
+`items` reads `body` as an Inner when `kind` is `a`.
+-- options --
+pkgs: a
+-- edit.json --
+{"ops": [{"op": "renameName", "path": "a:Inner.count", "name": "amount"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// What an item is.
+enum Kind { a, b }
+
+/// An inner record.
+record Inner {
+  /// How many.
+  count: Int
+}
+
+/// The body of an item by its kind.
+type Body(k: Kind) = match k {
+  a => Inner
+  b => Int
+}
+
+/// An item.
+record Item {
+  /// Its kind.
+  kind: Kind
+  /// Its body.
+  body: Body(kind)
+}
+
+/// The items.
+let items: table Item = load("items.json")
+-- a/items.json --
+{
+  "x": {
+    "kind": "a",
+    "body": {
+      "count": 1
+    }
+  }
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "modified",
+      "path": "a/a.canon"
+    }
+  ],
+  "undo": [
+    {
+      "op": "renameName",
+      "path": "a:Inner.amount",
+      "name": "count"
+    }
+  ],
+  "touched": [
+    "a"
+  ]
+}
+-- after/a/a.canon --
+package a
+
+/// What an item is.
+enum Kind { a, b }
+
+/// An inner record.
+record Inner {
+  /// How many.
+  amount: Int @json("count")
+}
+
+/// The body of an item by its kind.
+type Body(k: Kind) = match k {
+  a => Inner
+  b => Int
+}
+
+/// An item.
+record Item {
+  /// Its kind.
+  kind: Kind
+  /// Its body.
+  body: Body(kind)
+}
+
+/// The items.
+let items: table Item = load("items.json")

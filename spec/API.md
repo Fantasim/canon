@@ -1371,7 +1371,8 @@ func RenameName(name, newName string) Op
 - **E34.** A renamed field gets its old wire name (WIRE.md §5.5.2, `@json(case:)` applied) as
   `@json`'s positional argument when it has no positional wire name, `path:`, `pairs:` or `inline`,
   and its record or case is reachable (through fields, case fields, list, map and optional
-  elements and aliases, never `ref`) from the expected type of a `load`, `load.dir` or `load.csv`,
+  elements, aliases, a dependent type's arms and body and a dependent map's values, never `ref`;
+  DECISIONS 455) from the expected type of a `load`, `load.dir` or `load.csv`,
   or from the declared type of a value an `emit json`, or a `go`/`cpp`/`ts` emit in mode
   `embedded`, `data` or `types`, writes. The argument is merged first into an existing `@json(…)`,
   else `@json("…")` is appended. Conversely a positional wire name equal to the new name's default

@@ -24,15 +24,42 @@ type holder struct {
 	methods []*types.Method
 }
 
-// legacyPrefixes reports W0001 (API.md §5.7, rule L2) for every field of pkg's records and cases.
-func legacyPrefixes(p *pass, pkg *check.Package, bag *diag.Bag) {
+// declaredField is a field written in a holder's body, with the field the checker made of it.
+type declaredField struct {
+	decl  *syntax.FieldDecl
+	field *types.Field
+}
+
+// declaredFields are the fields h's body writes that the checker typed, in source order.
+func (h holder) declaredFields() []declaredField {
+	var out []declaredField
+	for _, item := range h.body.Items {
+		fd, ok := item.(*syntax.FieldDecl)
+		if !ok || fd.Name == nil {
+			continue
+		}
+		i := slices.IndexFunc(h.fields, func(f *types.Field) bool { return f.Name == fd.Name.Name })
+		if i >= 0 && h.fields[i].Type != nil {
+			out = append(out, declaredField{decl: fd, field: h.fields[i]})
+		}
+	}
+	return out
+}
+
+// eachHolder calls each with every record and case of pkg that the checker typed, in source order.
+func (p *pass) eachHolder(pkg *check.Package, each func(h holder)) {
 	for _, f := range sources(pkg) {
 		for _, d := range f.Decls {
 			for _, h := range p.holders(pkg.Path, f, d) {
-				p.judgeFields(h, bag)
+				each(h)
 			}
 		}
 	}
+}
+
+// legacyPrefixes reports W0001 (API.md §5.7, rule L2) for every field of pkg's records and cases.
+func legacyPrefixes(p *pass, pkg *check.Package, bag *diag.Bag) {
+	p.eachHolder(pkg, func(h holder) { p.judgeFields(h, bag) })
 }
 
 // holders are the records and cases d declares; none for a declaration the checker found broken.
@@ -84,16 +111,8 @@ func caseHolders(pkg string, f *syntax.File, d *syntax.VariantDecl, vt *types.Va
 
 // judgeFields reports the fields of h that keep a legacy prefix, and offers the fix of each that has one.
 func (p *pass) judgeFields(h holder, bag *diag.Bag) {
-	for _, item := range h.body.Items {
-		fd, ok := item.(*syntax.FieldDecl)
-		if !ok || fd.Name == nil {
-			continue
-		}
-		i := slices.IndexFunc(h.fields, func(f *types.Field) bool { return f.Name == fd.Name.Name })
-		if i < 0 || h.fields[i].Type == nil {
-			continue
-		}
-		field := h.fields[i]
+	for _, df := range h.declaredFields() {
+		fd, field := df.decl, df.field
 		prefix, rest, ok := matchPrefix(field.Name, kindOf(field.Type))
 		if !ok {
 			continue

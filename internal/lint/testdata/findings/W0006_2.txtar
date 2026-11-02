@@ -1,0 +1,44 @@
+API.md §5.7: what the entry-files lint leaves alone. Every entry at the path its template gives, an
+entry whose template cannot be filled (the optional tag is none, so N2 refuses the value), a let
+without @files, and a let whose entries are all in its own file give no finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+enum Kind { sword, bow }
+
+record Item {
+  kind: Kind
+  tag: String? = none
+}
+
+@files("items/{kind}/{id}.canon")
+let items: table Item = {}
+
+@files("tagged/{tag}/{id}.canon")
+let tagged: table Item = {}
+
+let free: table Item = {}
+
+entry items.inside { kind: bow }
+-- m/items/sword/ok.canon --
+package m
+
+entry items.ok { kind: sword }
+-- m/items/bow/fine.canon --
+package m
+
+entry items.fine { kind: bow }
+-- m/anywhere/t.canon --
+package m
+
+entry tagged.t { kind: bow }
+-- m/other/f.canon --
+package m
+
+entry free.f { kind: bow }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)
