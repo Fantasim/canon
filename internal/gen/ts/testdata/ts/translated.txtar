@@ -877,10 +877,10 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 
 /** Grades, lowest first. */
 export type Grade = "low" | "mid" | "high";
-export const GradeMembers: ReadonlyArray<Grade> = Object.freeze(["low", "mid", "high"]);
-export const GradeLiveMembers: ReadonlyArray<Grade> = Object.freeze(["low", "mid", "high"]);
-export const GradeNames: Readonly<Record<Grade, string>> = Object.freeze({ low: "low", mid: "mid", high: "high" });
-const GradeIndex = canonIndex(GradeMembers);
+export const GradeMembers: ReadonlyArray<Grade> = /*#__PURE__*/ Object.freeze(["low", "mid", "high"]);
+export const GradeLiveMembers: ReadonlyArray<Grade> = /*#__PURE__*/ Object.freeze(["low", "mid", "high"]);
+export const GradeNames: Readonly<Record<Grade, string>> = /*#__PURE__*/ Object.freeze({ low: "low", mid: "mid", high: "high" });
+const GradeIndex = /*#__PURE__*/ canonIndex(GradeMembers);
 
 export type ShapeKind = "circle" | "square";
 

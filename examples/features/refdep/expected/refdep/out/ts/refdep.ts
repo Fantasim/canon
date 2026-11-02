@@ -78,9 +78,9 @@ export type Shape =
   | "place"
   /** No parameter. */
   | "none_";
-export const ShapeMembers: ReadonlyArray<Shape> = Object.freeze(["count", "place", "none_"]);
-export const ShapeLiveMembers: ReadonlyArray<Shape> = Object.freeze(["count", "place", "none_"]);
-export const ShapeNames: Readonly<Record<Shape, string>> = Object.freeze({ count: "count", place: "place", none_: "none_" });
+export const ShapeMembers: ReadonlyArray<Shape> = /*#__PURE__*/ Object.freeze(["count", "place", "none_"]);
+export const ShapeLiveMembers: ReadonlyArray<Shape> = /*#__PURE__*/ Object.freeze(["count", "place", "none_"]);
+export const ShapeNames: Readonly<Record<Shape, string>> = /*#__PURE__*/ Object.freeze({ count: "count", place: "place", none_: "none_" });
 
 /** What happened. */
 export type Event =
@@ -90,9 +90,9 @@ export type Event =
   | "reach_place"
   /** The day changed. */
   | "new_day";
-export const EventMembers: ReadonlyArray<Event> = Object.freeze(["beat_monster", "reach_place", "new_day"]);
-export const EventLiveMembers: ReadonlyArray<Event> = Object.freeze(["beat_monster", "reach_place", "new_day"]);
-export const EventNames: Readonly<Record<Event, string>> = Object.freeze({ beat_monster: "beat_monster", reach_place: "reach_place", new_day: "new_day" });
+export const EventMembers: ReadonlyArray<Event> = /*#__PURE__*/ Object.freeze(["beat_monster", "reach_place", "new_day"]);
+export const EventLiveMembers: ReadonlyArray<Event> = /*#__PURE__*/ Object.freeze(["beat_monster", "reach_place", "new_day"]);
+export const EventNames: Readonly<Record<Event, string>> = /*#__PURE__*/ Object.freeze({ beat_monster: "beat_monster", reach_place: "reach_place", new_day: "new_day" });
 
 export type ParamBranch = "count" | "place";
 

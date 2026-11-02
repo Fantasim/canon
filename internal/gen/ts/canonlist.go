@@ -60,5 +60,5 @@ func (g *gen) frozenArray(elem string, items []string, objects bool, array func(
 	if !objects || len(items) == 0 {
 		return fmt.Sprintf(freezeFormat, g.helper(canonFreezeName), fmt.Sprintf(readonlyArrayFormat, elem), array(items))
 	}
-	return fmt.Sprintf(callFormat, g.helper(canonFreezeName), g.typedArray(elem, items, array))
+	return fmt.Sprintf(freezeBareFormat, g.helper(canonFreezeName), g.typedArray(elem, items, array))
 }

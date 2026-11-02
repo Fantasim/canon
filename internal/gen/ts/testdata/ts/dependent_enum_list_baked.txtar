@@ -69,9 +69,9 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 
 /** Moods. */
 export type Mood = "grim" | "merry";
-export const MoodMembers: ReadonlyArray<Mood> = Object.freeze(["grim", "merry"]);
-export const MoodLiveMembers: ReadonlyArray<Mood> = Object.freeze(["grim", "merry"]);
-export const MoodNames: Readonly<Record<Mood, string>> = Object.freeze({ grim: "grim", merry: "merry" });
+export const MoodMembers: ReadonlyArray<Mood> = /*#__PURE__*/ Object.freeze(["grim", "merry"]);
+export const MoodLiveMembers: ReadonlyArray<Mood> = /*#__PURE__*/ Object.freeze(["grim", "merry"]);
+export const MoodNames: Readonly<Record<Mood, string>> = /*#__PURE__*/ Object.freeze({ grim: "grim", merry: "merry" });
 
 export type BonusBranch = "grim" | "merry";
 
@@ -91,4 +91,4 @@ export interface Hero {
 }
 
 /** The hero. */
-export const hero: Hero = canonFreeze<Hero>({ aim: "grim", bonus: { branch: "grim", value: "grim" }, bonuses: canonList<Bonus>(($r) => [$r({ branch: "grim", value: "grim" }), $r({ branch: "grim", value: "merry" })]) });
+export const hero: Hero = /*#__PURE__*/ canonFreeze<Hero>({ aim: "grim", bonus: { branch: "grim", value: "grim" }, bonuses: /*#__PURE__*/ canonList<Bonus>(($r) => [$r({ branch: "grim", value: "grim" }), $r({ branch: "grim", value: "merry" })]) });

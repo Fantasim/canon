@@ -32,6 +32,6 @@ export interface CanonTable<K, T> {
  * are generated from it.
  */
 export type Role = "member" | "gm_junior" | "gm_senior" | "maintainer" | "owner" | "admin";
-export const RoleMembers: ReadonlyArray<Role> = Object.freeze(["member", "gm_junior", "gm_senior", "maintainer", "owner", "admin"]);
-export const RoleLiveMembers: ReadonlyArray<Role> = Object.freeze(["member", "gm_junior", "gm_senior", "maintainer", "owner", "admin"]);
-export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ member: "member", gm_junior: "gm_junior", gm_senior: "gm_senior", maintainer: "maintainer", owner: "owner", admin: "admin" });
+export const RoleMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["member", "gm_junior", "gm_senior", "maintainer", "owner", "admin"]);
+export const RoleLiveMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["member", "gm_junior", "gm_senior", "maintainer", "owner", "admin"]);
+export const RoleNames: Readonly<Record<Role, string>> = /*#__PURE__*/ Object.freeze({ member: "member", gm_junior: "gm_junior", gm_senior: "gm_senior", maintainer: "maintainer", owner: "owner", admin: "admin" });

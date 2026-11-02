@@ -186,7 +186,7 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 }
 // ---------------------------------------------------------------------------
 
-const roles_RoleIndex = canonIndex(roles.RoleMembers);
+const roles_RoleIndex = /*#__PURE__*/ canonIndex(roles.RoleMembers);
 
 /** A gate. */
 export interface Gate {
@@ -197,7 +197,7 @@ export interface Gate {
 }
 
 /** The admin gate. */
-export const gate: Gate = canonFreeze<Gate>({ min: "admin", level: 3 });
+export const gate: Gate = /*#__PURE__*/ canonFreeze<Gate>({ min: "admin", level: 3 });
 
 /** Points for `roles` more levels, doubled when the gate is above member. */
 export function gatePoints(self: Gate, roles$: number): number {
@@ -238,7 +238,7 @@ export function $gateBonus(min: roles.Role, level: number, n: number): number {
   return 0;
 }
 
-const ABOVE: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
+const ABOVE: ReadonlyArray<boolean> = /*#__PURE__*/ canonFreeze<ReadonlyArray<boolean>>([
   false, false, true,
 ]);
 
@@ -274,6 +274,6 @@ export interface CanonTable<K, T> {
 
 /** A role, lowest first. */
 export type Role = "guest" | "member" | "admin";
-export const RoleMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
-export const RoleLiveMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
-export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ guest: "guest", member: "member", admin: "admin" });
+export const RoleMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["guest", "member", "admin"]);
+export const RoleLiveMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["guest", "member", "admin"]);
+export const RoleNames: Readonly<Record<Role, string>> = /*#__PURE__*/ Object.freeze({ guest: "guest", member: "member", admin: "admin" });

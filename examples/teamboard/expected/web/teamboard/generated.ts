@@ -74,51 +74,51 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 }
 // ---------------------------------------------------------------------------
 
-const sovcommon_roles_RoleIndex = canonIndex(sovcommon_roles.RoleMembers);
+const sovcommon_roles_RoleIndex = /*#__PURE__*/ canonIndex(sovcommon_roles.RoleMembers);
 
 /** Format version of the taxonomy (taxonomy.json's `version`). */
 export const VERSION = 7;
 
 /** Who may set a flag or make a transition. */
 export type Actor = "reporter" | "triager" | "reporter_or_triager";
-export const ActorMembers: ReadonlyArray<Actor> = Object.freeze(["reporter", "triager", "reporter_or_triager"]);
-export const ActorLiveMembers: ReadonlyArray<Actor> = Object.freeze(["reporter", "triager", "reporter_or_triager"]);
-export const ActorNames: Readonly<Record<Actor, string>> = Object.freeze({ reporter: "reporter", triager: "triager", reporter_or_triager: "reporter_or_triager" });
+export const ActorMembers: ReadonlyArray<Actor> = /*#__PURE__*/ Object.freeze(["reporter", "triager", "reporter_or_triager"]);
+export const ActorLiveMembers: ReadonlyArray<Actor> = /*#__PURE__*/ Object.freeze(["reporter", "triager", "reporter_or_triager"]);
+export const ActorNames: Readonly<Record<Actor, string>> = /*#__PURE__*/ Object.freeze({ reporter: "reporter", triager: "triager", reporter_or_triager: "reporter_or_triager" });
 
 /** Inputs a status transition may collect. */
 export type PostField = "assignee" | "fixed_in" | "reason" | "duplicate_of";
-export const PostFieldMembers: ReadonlyArray<PostField> = Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
-export const PostFieldLiveMembers: ReadonlyArray<PostField> = Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
-export const PostFieldNames: Readonly<Record<PostField, string>> = Object.freeze({ assignee: "assignee", fixed_in: "fixed_in", reason: "reason", duplicate_of: "duplicate_of" });
+export const PostFieldMembers: ReadonlyArray<PostField> = /*#__PURE__*/ Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
+export const PostFieldLiveMembers: ReadonlyArray<PostField> = /*#__PURE__*/ Object.freeze(["assignee", "fixed_in", "reason", "duplicate_of"]);
+export const PostFieldNames: Readonly<Record<PostField, string>> = /*#__PURE__*/ Object.freeze({ assignee: "assignee", fixed_in: "fixed_in", reason: "reason", duplicate_of: "duplicate_of" });
 
 export type IntentId = "issue" | "idea";
-export const IntentIdMembers: ReadonlyArray<IntentId> = Object.freeze(["issue", "idea"]);
-export const IntentIdLiveMembers: ReadonlyArray<IntentId> = Object.freeze(["issue", "idea"]);
+export const IntentIdMembers: ReadonlyArray<IntentId> = /*#__PURE__*/ Object.freeze(["issue", "idea"]);
+export const IntentIdLiveMembers: ReadonlyArray<IntentId> = /*#__PURE__*/ Object.freeze(["issue", "idea"]);
 
 export type FlagId = "blocking" | "sensitive";
-export const FlagIdMembers: ReadonlyArray<FlagId> = Object.freeze(["blocking", "sensitive"]);
-export const FlagIdLiveMembers: ReadonlyArray<FlagId> = Object.freeze(["blocking", "sensitive"]);
+export const FlagIdMembers: ReadonlyArray<FlagId> = /*#__PURE__*/ Object.freeze(["blocking", "sensitive"]);
+export const FlagIdLiveMembers: ReadonlyArray<FlagId> = /*#__PURE__*/ Object.freeze(["blocking", "sensitive"]);
 
 export type StatusId = "open" | "taken" | "fixed" | "verified" | "wont_do" | "duplicate";
-export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "taken", "fixed", "verified", "wont_do", "duplicate"]);
-export const StatusIdLiveMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "taken", "fixed", "verified", "wont_do", "duplicate"]);
-const StatusIdIndex = canonIndex(StatusIdMembers);
+export const StatusIdMembers: ReadonlyArray<StatusId> = /*#__PURE__*/ Object.freeze(["open", "taken", "fixed", "verified", "wont_do", "duplicate"]);
+export const StatusIdLiveMembers: ReadonlyArray<StatusId> = /*#__PURE__*/ Object.freeze(["open", "taken", "fixed", "verified", "wont_do", "duplicate"]);
+const StatusIdIndex = /*#__PURE__*/ canonIndex(StatusIdMembers);
 
 export type ColumnId = "unclaimed" | "taken" | "fixed" | "done";
-export const ColumnIdMembers: ReadonlyArray<ColumnId> = Object.freeze(["unclaimed", "taken", "fixed", "done"]);
-export const ColumnIdLiveMembers: ReadonlyArray<ColumnId> = Object.freeze(["unclaimed", "taken", "fixed", "done"]);
+export const ColumnIdMembers: ReadonlyArray<ColumnId> = /*#__PURE__*/ Object.freeze(["unclaimed", "taken", "fixed", "done"]);
+export const ColumnIdLiveMembers: ReadonlyArray<ColumnId> = /*#__PURE__*/ Object.freeze(["unclaimed", "taken", "fixed", "done"]);
 
 export type SeverityId = "low" | "normal" | "critical";
-export const SeverityIdMembers: ReadonlyArray<SeverityId> = Object.freeze(["low", "normal", "critical"]);
-export const SeverityIdLiveMembers: ReadonlyArray<SeverityId> = Object.freeze(["low", "normal", "critical"]);
+export const SeverityIdMembers: ReadonlyArray<SeverityId> = /*#__PURE__*/ Object.freeze(["low", "normal", "critical"]);
+export const SeverityIdLiveMembers: ReadonlyArray<SeverityId> = /*#__PURE__*/ Object.freeze(["low", "normal", "critical"]);
 
 export type AreaGroupId = "in_game" | "out_game" | "internal";
-export const AreaGroupIdMembers: ReadonlyArray<AreaGroupId> = Object.freeze(["in_game", "out_game", "internal"]);
-export const AreaGroupIdLiveMembers: ReadonlyArray<AreaGroupId> = Object.freeze(["in_game", "out_game", "internal"]);
+export const AreaGroupIdMembers: ReadonlyArray<AreaGroupId> = /*#__PURE__*/ Object.freeze(["in_game", "out_game", "internal"]);
+export const AreaGroupIdLiveMembers: ReadonlyArray<AreaGroupId> = /*#__PURE__*/ Object.freeze(["in_game", "out_game", "internal"]);
 
 export type AreaId = "game" | "balance" | "website" | "resource_studio" | "game_server" | "client" | "resource" | "sovcommon" | "admin_panel" | "analytics" | "team_board" | "internal";
-export const AreaIdMembers: ReadonlyArray<AreaId> = Object.freeze(["game", "balance", "website", "resource_studio", "game_server", "client", "resource", "sovcommon", "admin_panel", "analytics", "team_board", "internal"]);
-export const AreaIdLiveMembers: ReadonlyArray<AreaId> = Object.freeze(["game", "balance", "website", "resource_studio", "game_server", "client", "resource", "sovcommon", "admin_panel", "analytics", "team_board", "internal"]);
+export const AreaIdMembers: ReadonlyArray<AreaId> = /*#__PURE__*/ Object.freeze(["game", "balance", "website", "resource_studio", "game_server", "client", "resource", "sovcommon", "admin_panel", "analytics", "team_board", "internal"]);
+export const AreaIdLiveMembers: ReadonlyArray<AreaId> = /*#__PURE__*/ Object.freeze(["game", "balance", "website", "resource_studio", "game_server", "client", "resource", "sovcommon", "admin_panel", "analytics", "team_board", "internal"]);
 
 /** What kind of post this is; `minRole` gates who may post it. */
 export interface Intent {
@@ -269,19 +269,19 @@ export interface AreaSection {
 }
 
 /** What a post can be. */
-export const intents: CanonTable<IntentId, CanonRow<Intent, IntentId>> = canonTable(canonFreeze(canonList<CanonRow<Intent, IntentId>>(($r) => [
+export const intents: CanonTable<IntentId, CanonRow<Intent, IntentId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Intent, IntentId>>(($r) => [
   $r({ id: "issue", retired: false, tone: "warning", icon: "alert-triangle", label: "Something is wrong", minRole: "gm_junior" }),
   $r({ id: "idea", retired: false, tone: "accent", icon: "lightbulb", label: "Idea or request", minRole: "gm_junior" }),
 ])), ($e) => $e.id);
 
 /** The reporter's booleans. */
-export const flags: CanonTable<FlagId, CanonRow<Flag, FlagId>> = canonTable(canonFreeze(canonList<CanonRow<Flag, FlagId>>(($r) => [
+export const flags: CanonTable<FlagId, CanonRow<Flag, FlagId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Flag, FlagId>>(($r) => [
   $r({ id: "blocking", retired: false, tone: "danger", icon: "hand", label: "This blocks my work", hint: null, setBy: "reporter", viewMinRole: null }),
   $r({ id: "sensitive", retired: false, tone: "warning", icon: "lock", label: "Only the dev team should see", hint: "Exploits, dupes, security problems.", setBy: "reporter", viewMinRole: "maintainer" }),
 ])), ($e) => $e.id);
 
 /** The post lifecycle. */
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Status, StatusId>>(($r) => [
   $r({ id: "open", retired: false, tone: "warning", label: "Open", terminal: false, next: ["taken", "wont_do", "duplicate"], requires: [], optional: [], by: null }),
   $r({ id: "taken", retired: false, tone: "info", label: "Taken", terminal: false, next: ["open", "fixed", "wont_do", "duplicate"], requires: ["assignee"], optional: [], by: null }),
   $r({ id: "fixed", retired: false, tone: "accent", label: "Fixed", terminal: false, next: ["verified", "open"], requires: [], optional: ["fixed_in"], by: null }),
@@ -300,10 +300,10 @@ export const assigneeMinRole: sovcommon_roles.Role = "maintainer";
 export const triageMinRole: sovcommon_roles.Role = "maintainer";
 
 /** The deck's arrangements. */
-export const deck: Deck = canonFreeze<Deck>({ layouts: ["4:1", "2:2"], maxHidden: 2 });
+export const deck: Deck = /*#__PURE__*/ canonFreeze<Deck>({ layouts: ["4:1", "2:2"], maxHidden: 2 });
 
 /** The deck's columns, left to right. */
-export const columns: CanonTable<ColumnId, CanonRow<Column, ColumnId>> = canonTable(canonFreeze(canonList<CanonRow<Column, ColumnId>>(($r) => [
+export const columns: CanonTable<ColumnId, CanonRow<Column, ColumnId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Column, ColumnId>>(($r) => [
   $r({ id: "unclaimed", retired: false, label: "Unclaimed", icon: "inbox", statuses: ["open"], assigneeFilter: false, hideable: true }),
   $r({ id: "taken", retired: false, label: "Taken", icon: "hand", statuses: ["taken"], assigneeFilter: true, hideable: true }),
   $r({ id: "fixed", retired: false, label: "Fixed, to verify", icon: "check", statuses: ["fixed"], assigneeFilter: false, hideable: true }),
@@ -311,21 +311,21 @@ export const columns: CanonTable<ColumnId, CanonRow<Column, ColumnId>> = canonTa
 ])), ($e) => $e.id);
 
 /** How bad a triaged post is. */
-export const severities: CanonTable<SeverityId, CanonRow<Severity, SeverityId>> = canonTable(canonFreeze(canonList<CanonRow<Severity, SeverityId>>(($r) => [
+export const severities: CanonTable<SeverityId, CanonRow<Severity, SeverityId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Severity, SeverityId>>(($r) => [
   $r({ id: "low", retired: false, tone: "neutral", label: "Low", default: false }),
   $r({ id: "normal", retired: false, tone: "info", label: "Normal", default: true }),
   $r({ id: "critical", retired: false, tone: "danger", label: "Critical", default: false }),
 ])), ($e) => $e.id);
 
 /** The headers of the area picker. */
-export const areaGroups: CanonTable<AreaGroupId, CanonRow<AreaGroup, AreaGroupId>> = canonTable(canonFreeze(canonList<CanonRow<AreaGroup, AreaGroupId>>(($r) => [
+export const areaGroups: CanonTable<AreaGroupId, CanonRow<AreaGroup, AreaGroupId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<AreaGroup, AreaGroupId>>(($r) => [
   $r({ id: "in_game", retired: false, label: "In game" }),
   $r({ id: "out_game", retired: false, label: "Out of game" }),
   $r({ id: "internal", retired: false, label: "Internal" }),
 ])), ($e) => $e.id);
 
 /** Where a post was seen. */
-export const areas: CanonTable<AreaId, CanonRow<Area, AreaId>> = canonTable(canonFreeze(canonList<CanonRow<Area, AreaId>>(($r) => [
+export const areas: CanonTable<AreaId, CanonRow<Area, AreaId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Area, AreaId>>(($r) => [
   $r({ id: "game", retired: false, group: "in_game", tone: "series-1", icon: "gamepad", label: "Game", hint: "Anything you saw while playing.", minRole: "gm_junior", routesTo: ["game_server", "client", "resource", "balance"] }),
   $r({ id: "balance", retired: false, group: "in_game", tone: "series-1", icon: "scale", label: "Balance", hint: "Nothing is broken, the numbers feel wrong.", minRole: "gm_junior", routesTo: [] }),
   $r({ id: "website", retired: false, group: "out_game", tone: "series-2", icon: "globe", label: "Website", hint: "The site, accounts, rankings, donations and payments.", minRole: "gm_junior", routesTo: [] }),
@@ -352,7 +352,7 @@ export const initialStatus: StatusId = "open";
  */
 export const defaultSeverity: SeverityId = "normal";
 
-const CAN_TRANSITION: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
+const CAN_TRANSITION: ReadonlyArray<boolean> = /*#__PURE__*/ canonFreeze<ReadonlyArray<boolean>>([
   false, true, false, false, true, true,
   true, false, true, false, true, true,
   true, false, false, true, false, false,
@@ -366,7 +366,7 @@ export function canTransition(from: StatusId, to: StatusId): boolean {
   return CAN_TRANSITION[StatusIdIndex[from] * 6 + StatusIdIndex[to]];
 }
 
-const COLUMN_OF: ReadonlyArray<ColumnId | null> = canonFreeze<ReadonlyArray<ColumnId | null>>([
+const COLUMN_OF: ReadonlyArray<ColumnId | null> = /*#__PURE__*/ canonFreeze<ReadonlyArray<ColumnId | null>>([
   "unclaimed", "taken", "fixed", "done", "done", "done",
 ]);
 
@@ -378,7 +378,7 @@ export function columnOf(s: StatusId): ColumnId | null {
   return COLUMN_OF[StatusIdIndex[s]];
 }
 
-const AREAS_VISIBLE_TO: ReadonlyArray<ReadonlyArray<AreaId>> = canonFreeze(canonList<ReadonlyArray<AreaId>>(($r) => [
+const AREAS_VISIBLE_TO: ReadonlyArray<ReadonlyArray<AreaId>> = /*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<ReadonlyArray<AreaId>>(($r) => [
   $r([]),
   $r(["game", "balance", "website", "team_board"]),
   $r(["game", "balance", "website", "team_board"]),
@@ -392,13 +392,13 @@ export function areasVisibleTo(role: sovcommon_roles.Role): ReadonlyArray<AreaId
   return AREAS_VISIBLE_TO[sovcommon_roles_RoleIndex[role]];
 }
 
-const GROUPED_AREAS_VISIBLE_TO: ReadonlyArray<ReadonlyArray<AreaSection>> = canonFreeze(canonList<ReadonlyArray<AreaSection>>(($r) => [
+const GROUPED_AREAS_VISIBLE_TO: ReadonlyArray<ReadonlyArray<AreaSection>> = /*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<ReadonlyArray<AreaSection>>(($r) => [
   $r([]),
-  $r(canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["team_board"] })])),
-  $r(canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["team_board"] })])),
-  $r(canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance", "client", "resource"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["resource_studio", "team_board"] })])),
-  $r(canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance", "client", "resource"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["resource_studio", "team_board"] })])),
-  $r(canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance", "game_server", "client", "resource"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["resource_studio", "sovcommon", "admin_panel", "analytics", "team_board", "internal"] })])),
+  $r(/*#__PURE__*/ canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["team_board"] })])),
+  $r(/*#__PURE__*/ canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["team_board"] })])),
+  $r(/*#__PURE__*/ canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance", "client", "resource"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["resource_studio", "team_board"] })])),
+  $r(/*#__PURE__*/ canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance", "client", "resource"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["resource_studio", "team_board"] })])),
+  $r(/*#__PURE__*/ canonList<AreaSection>(($r) => [$r({ group: "in_game", areas: ["game", "balance", "game_server", "client", "resource"] }), $r({ group: "out_game", areas: ["website"] }), $r({ group: "internal", areas: ["resource_studio", "sovcommon", "admin_panel", "analytics", "team_board", "internal"] })])),
 ]));
 
 /** sovcommon's GroupedAreasVisibleTo: headers only for groups with a visible area. */

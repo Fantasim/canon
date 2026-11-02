@@ -98,19 +98,19 @@ export type Tone =
   /** Retired. */
   | "loud"
   | "soft";
-export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["calm", "loud", "soft"]);
-export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["calm", "soft"]);
-export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ calm: "calm", loud: "loud", soft: "soft" });
+export const ToneMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["calm", "loud", "soft"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["calm", "soft"]);
+export const ToneNames: Readonly<Record<Tone, string>> = /*#__PURE__*/ Object.freeze({ calm: "calm", loud: "loud", soft: "soft" });
 
 /** Sides, none retired. */
 export type Side = "left" | "right";
-export const SideMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
-export const SideLiveMembers: ReadonlyArray<Side> = Object.freeze(["left", "right"]);
-export const SideNames: Readonly<Record<Side, string>> = Object.freeze({ left: "left", right: "right" });
+export const SideMembers: ReadonlyArray<Side> = /*#__PURE__*/ Object.freeze(["left", "right"]);
+export const SideLiveMembers: ReadonlyArray<Side> = /*#__PURE__*/ Object.freeze(["left", "right"]);
+export const SideNames: Readonly<Record<Side, string>> = /*#__PURE__*/ Object.freeze({ left: "left", right: "right" });
 
 export type RowId = "one" | "two" | "three";
-export const RowIdMembers: ReadonlyArray<RowId> = Object.freeze(["one", "two", "three"]);
-export const RowIdLiveMembers: ReadonlyArray<RowId> = Object.freeze(["one", "three"]);
+export const RowIdMembers: ReadonlyArray<RowId> = /*#__PURE__*/ Object.freeze(["one", "two", "three"]);
+export const RowIdLiveMembers: ReadonlyArray<RowId> = /*#__PURE__*/ Object.freeze(["one", "three"]);
 
 /** A row. */
 export interface Row {
@@ -121,7 +121,7 @@ export interface Row {
 }
 
 /** Rows, one retired. */
-export const rows: CanonTable<RowId, CanonRow<Row, RowId>> = canonTable(canonFreeze(canonList<CanonRow<Row, RowId>>(($r) => [
+export const rows: CanonTable<RowId, CanonRow<Row, RowId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Row, RowId>>(($r) => [
   $r({ id: "one", retired: false, label: "One" }),
   $r({ id: "two", retired: true, label: "Two" }),
   $r({ id: "three", retired: false, label: "Three" }),

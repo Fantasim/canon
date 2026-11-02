@@ -114,9 +114,9 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
 
 /** A tone. */
 export type Tone = "lo" | "hi";
-export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["lo", "hi"]);
-export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["lo", "hi"]);
-export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ lo: "lo", hi: "hi" });
+export const ToneMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["lo", "hi"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["lo", "hi"]);
+export const ToneNames: Readonly<Record<Tone, string>> = /*#__PURE__*/ Object.freeze({ lo: "lo", hi: "hi" });
 
 export type TagId = string;
 

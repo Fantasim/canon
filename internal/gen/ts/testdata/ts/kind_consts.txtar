@@ -83,7 +83,7 @@ function canonFreeze<T>(x: T): T {
 export const K: ShapeKind = "dot";
 
 /** The kinds of a dot and a box. */
-export const KS: ReadonlyArray<ShapeKind> = canonFreeze<ReadonlyArray<ShapeKind>>(["dot", "box"]);
+export const KS: ReadonlyArray<ShapeKind> = /*#__PURE__*/ canonFreeze<ReadonlyArray<ShapeKind>>(["dot", "box"]);
 
 /** The kind of gold, of b. */
 export const BK: b.RewardKind = "gold";

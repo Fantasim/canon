@@ -226,10 +226,10 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
 
 /** Flags, written as one bitmask. */
 export type Flag = "tradable" | "droppable" | "soulbound";
-export const FlagMembers: ReadonlyArray<Flag> = Object.freeze(["tradable", "droppable", "soulbound"]);
-export const FlagLiveMembers: ReadonlyArray<Flag> = Object.freeze(["tradable", "droppable", "soulbound"]);
-export const FlagNames: Readonly<Record<Flag, string>> = Object.freeze({ tradable: "tradable", droppable: "droppable", soulbound: "soulbound" });
-export const FlagCodes: Readonly<Record<Flag, number>> = Object.freeze({ tradable: 1, droppable: 2, soulbound: 4 });
+export const FlagMembers: ReadonlyArray<Flag> = /*#__PURE__*/ Object.freeze(["tradable", "droppable", "soulbound"]);
+export const FlagLiveMembers: ReadonlyArray<Flag> = /*#__PURE__*/ Object.freeze(["tradable", "droppable", "soulbound"]);
+export const FlagNames: Readonly<Record<Flag, string>> = /*#__PURE__*/ Object.freeze({ tradable: "tradable", droppable: "droppable", soulbound: "soulbound" });
+export const FlagCodes: Readonly<Record<Flag, number>> = /*#__PURE__*/ Object.freeze({ tradable: 1, droppable: 2, soulbound: 4 });
 
 /** Elements, written as their code. */
 export type Element =
@@ -237,22 +237,22 @@ export type Element =
   | "WATER"
   /** Retired. */
   | "WIND";
-export const ElementMembers: ReadonlyArray<Element> = Object.freeze(["FIRE", "WATER", "WIND"]);
-export const ElementLiveMembers: ReadonlyArray<Element> = Object.freeze(["FIRE", "WATER"]);
-export const ElementNames: Readonly<Record<Element, string>> = Object.freeze({ FIRE: "FIRE", WATER: "WATER", WIND: "WIND" });
-export const ElementCodes: Readonly<Record<Element, number>> = Object.freeze({ FIRE: 1, WATER: 2, WIND: 3 });
+export const ElementMembers: ReadonlyArray<Element> = /*#__PURE__*/ Object.freeze(["FIRE", "WATER", "WIND"]);
+export const ElementLiveMembers: ReadonlyArray<Element> = /*#__PURE__*/ Object.freeze(["FIRE", "WATER"]);
+export const ElementNames: Readonly<Record<Element, string>> = /*#__PURE__*/ Object.freeze({ FIRE: "FIRE", WATER: "WATER", WIND: "WIND" });
+export const ElementCodes: Readonly<Record<Element, number>> = /*#__PURE__*/ Object.freeze({ FIRE: 1, WATER: 2, WIND: 3 });
 
 /** Sides. */
 export type Side = "left" | "RIGHT";
-export const SideMembers: ReadonlyArray<Side> = Object.freeze(["left", "RIGHT"]);
-export const SideLiveMembers: ReadonlyArray<Side> = Object.freeze(["left", "RIGHT"]);
-export const SideNames: Readonly<Record<Side, string>> = Object.freeze({ left: "left", RIGHT: "right" });
+export const SideMembers: ReadonlyArray<Side> = /*#__PURE__*/ Object.freeze(["left", "RIGHT"]);
+export const SideLiveMembers: ReadonlyArray<Side> = /*#__PURE__*/ Object.freeze(["left", "RIGHT"]);
+export const SideNames: Readonly<Record<Side, string>> = /*#__PURE__*/ Object.freeze({ left: "left", RIGHT: "right" });
 
 /** What an objective counts. */
 export type Goal = "kill" | "collect" | "visit";
-export const GoalMembers: ReadonlyArray<Goal> = Object.freeze(["kill", "collect", "visit"]);
-export const GoalLiveMembers: ReadonlyArray<Goal> = Object.freeze(["kill", "collect", "visit"]);
-export const GoalNames: Readonly<Record<Goal, string>> = Object.freeze({ kill: "kill", collect: "collect", visit: "visit" });
+export const GoalMembers: ReadonlyArray<Goal> = /*#__PURE__*/ Object.freeze(["kill", "collect", "visit"]);
+export const GoalLiveMembers: ReadonlyArray<Goal> = /*#__PURE__*/ Object.freeze(["kill", "collect", "visit"]);
+export const GoalNames: Readonly<Record<Goal, string>> = /*#__PURE__*/ Object.freeze({ kill: "kill", collect: "collect", visit: "visit" });
 
 export type KindKind =
   | "weapon"
@@ -935,9 +935,9 @@ function readSkill($raw: unknown, $path: string): Skill {
   const $r8 = decGet($o, "cast_time");
   const $v8: number | null = $r8 === undefined || $r8 === null ? null : (decInt($r8, $path + ".cast_time", -9223372036, 9223372036) * 1000);
   const $r9 = decGet($o, "weights", $path + ".weights", true);
-  const $v9: ReadonlyMap<Element, number> = $r9 === undefined ? new CanonMap<Element, number>([]) : decMap($r9, $path + ".weights", ($k, $p) => decCode(decInt(decIntKey($k, $p), $p, 0, 255), $p, ElementMembers, ElementCodes), ($x, $p) => decFloat($x, $p, "expected a number"));
+  const $v9: ReadonlyMap<Element, number> = $r9 === undefined ? /*#__PURE__*/ new CanonMap<Element, number>([]) : decMap($r9, $path + ".weights", ($k, $p) => decCode(decInt(decIntKey($k, $p), $p, 0, 255), $p, ElementMembers, ElementCodes), ($x, $p) => decFloat($x, $p, "expected a number"));
   const $r10 = decGet($o, "counts", $path + ".counts", true);
-  const $v10: ReadonlyMap<number, number> = $r10 === undefined ? new CanonMap<number, number>([]) : decMap($r10, $path + ".counts", ($k, $p) => decIntKey($k, $p), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v10: ReadonlyMap<number, number> = $r10 === undefined ? /*#__PURE__*/ new CanonMap<number, number>([]) : decMap($r10, $path + ".counts", ($k, $p) => decIntKey($k, $p), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $v11: ReadonlyArray<StatBonus> = decCountIn(decPairs($o, $path, ["dwDestParam0", "dwDestParam1", "dwDestParam2"], ["nAdjParamVal0", "nAdjParamVal1", "nAdjParamVal2"], ($a, $b, $pa, $pb) => ({ attribute: decString($a, $pa), value: decInt($b, $pb, -9223372036854776000, 9223372036854776000) })), $path + ".stats", -Infinity, 3, true, "..=3");
   const $v12: Kind = readKind($o, $path);
   const $r13 = decGet($o, "goals", $path + ".goals", true);

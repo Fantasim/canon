@@ -346,7 +346,7 @@ function readUse($raw: unknown, $path: string): Use {
   const $r2 = decGet($o, "place", $path + ".place", true);
   const $v2: b.DstKnown | "all" = $r2 === undefined ? "all" : decEnum(decString($r2, $path + ".place"), $path + ".place", $union1);
   const $r3 = decGet($o, "counts", $path + ".counts", true);
-  const $v3: ReadonlyMap<b.Dst, number> = $r3 === undefined ? new CanonMap<b.Dst, number>([]) : decMap($r3, $path + ".counts", ($k, $p) => decString($k, $p) as b.Dst, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v3: ReadonlyMap<b.Dst, number> = $r3 === undefined ? /*#__PURE__*/ new CanonMap<b.Dst, number>([]) : decMap($r3, $path + ".counts", ($k, $p) => decString($k, $p) as b.Dst, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   return { dst: $v1, place: $v2, counts: $v3 };
 }
 
@@ -413,9 +413,9 @@ function canonFreeze<T>(x: T): T {
 export type DstKnown = "hp" | "mp";
 /** Destinations. */
 export type Dst = DstKnown | (string & {});
-export const DstMembers: ReadonlyArray<DstKnown> = Object.freeze(["hp", "mp"]);
-export const DstLiveMembers: ReadonlyArray<DstKnown> = Object.freeze(["hp", "mp"]);
-export const DstNames: Readonly<Record<DstKnown, string>> = Object.freeze({ hp: "hp", mp: "mp" });
+export const DstMembers: ReadonlyArray<DstKnown> = /*#__PURE__*/ Object.freeze(["hp", "mp"]);
+export const DstLiveMembers: ReadonlyArray<DstKnown> = /*#__PURE__*/ Object.freeze(["hp", "mp"]);
+export const DstNames: Readonly<Record<DstKnown, string>> = /*#__PURE__*/ Object.freeze({ hp: "hp", mp: "mp" });
 
 export function isDstKnown(v: Dst): v is DstKnown {
   return Object.prototype.hasOwnProperty.call(DstNames, v);

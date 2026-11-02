@@ -67,15 +67,15 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 
 /** What a bonus aims at. */
 export type Aim = "gold" | "mood";
-export const AimMembers: ReadonlyArray<Aim> = Object.freeze(["gold", "mood"]);
-export const AimLiveMembers: ReadonlyArray<Aim> = Object.freeze(["gold", "mood"]);
-export const AimNames: Readonly<Record<Aim, string>> = Object.freeze({ gold: "gold", mood: "mood" });
+export const AimMembers: ReadonlyArray<Aim> = /*#__PURE__*/ Object.freeze(["gold", "mood"]);
+export const AimLiveMembers: ReadonlyArray<Aim> = /*#__PURE__*/ Object.freeze(["gold", "mood"]);
+export const AimNames: Readonly<Record<Aim, string>> = /*#__PURE__*/ Object.freeze({ gold: "gold", mood: "mood" });
 
 /** A mood. */
 export type Mood = "calm" | "grim";
-export const MoodMembers: ReadonlyArray<Mood> = Object.freeze(["calm", "grim"]);
-export const MoodLiveMembers: ReadonlyArray<Mood> = Object.freeze(["calm", "grim"]);
-export const MoodNames: Readonly<Record<Mood, string>> = Object.freeze({ calm: "calm", grim: "grim" });
+export const MoodMembers: ReadonlyArray<Mood> = /*#__PURE__*/ Object.freeze(["calm", "grim"]);
+export const MoodLiveMembers: ReadonlyArray<Mood> = /*#__PURE__*/ Object.freeze(["calm", "grim"]);
+export const MoodNames: Readonly<Record<Mood, string>> = /*#__PURE__*/ Object.freeze({ calm: "calm", grim: "grim" });
 
 export type RewardKind =
   | "coins"
@@ -85,8 +85,8 @@ export type RewardKind =
 export type BonusBranch = "gold" | "mood";
 
 export type StatusId = "open" | "closed" | "shut";
-export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "closed", "shut"]);
-export const StatusIdLiveMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "closed"]);
+export const StatusIdMembers: ReadonlyArray<StatusId> = /*#__PURE__*/ Object.freeze(["open", "closed", "shut"]);
+export const StatusIdLiveMembers: ReadonlyArray<StatusId> = /*#__PURE__*/ Object.freeze(["open", "closed"]);
 
 /** A status a zone can be in. */
 export interface Status {
@@ -146,7 +146,7 @@ export interface Shelf {
 }
 
 /** Every status. */
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Status, StatusId>>(($r) => [
   $r({ id: "open", retired: false, label: "Open" }),
   $r({ id: "closed", retired: false, label: "Closed" }),
   $r({ id: "shut", retired: true, label: "Shut" }),

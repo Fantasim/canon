@@ -32,15 +32,15 @@ export interface CanonTable<K, T> {
  * Qualitative series slots tell families apart, always together with icon + label.
  */
 export type Tone = "warning" | "info" | "accent" | "success" | "neutral" | "danger" | "series-1" | "series-2" | "series-3" | "series-4" | "series-5" | "series-6";
-export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "accent", "success", "neutral", "danger", "series-1", "series-2", "series-3", "series-4", "series-5", "series-6"]);
-export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "accent", "success", "neutral", "danger", "series-1", "series-2", "series-3", "series-4", "series-5", "series-6"]);
-export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ warning: "warning", info: "info", accent: "accent", success: "success", neutral: "neutral", danger: "danger", "series-1": "series_1", "series-2": "series_2", "series-3": "series_3", "series-4": "series_4", "series-5": "series_5", "series-6": "series_6" });
+export const ToneMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["warning", "info", "accent", "success", "neutral", "danger", "series-1", "series-2", "series-3", "series-4", "series-5", "series-6"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["warning", "info", "accent", "success", "neutral", "danger", "series-1", "series-2", "series-3", "series-4", "series-5", "series-6"]);
+export const ToneNames: Readonly<Record<Tone, string>> = /*#__PURE__*/ Object.freeze({ warning: "warning", info: "info", accent: "accent", success: "success", neutral: "neutral", danger: "danger", "series-1": "series_1", "series-2": "series_2", "series-3": "series_3", "series-4": "series_4", "series-5": "series_5", "series-6": "series_6" });
 
 /**
  * Icons sovcommon exports (icons.ts). An icon that is not listed here is a type
  * error wherever it is used, so `make check` no longer has to scrape TypeScript.
  */
 export type Icon = "alert-triangle" | "archive" | "bar-chart" | "check" | "columns" | "database" | "gamepad" | "globe" | "hand" | "inbox" | "layers" | "lightbulb" | "lock" | "monitor" | "package" | "scale" | "server" | "shield" | "terminal";
-export const IconMembers: ReadonlyArray<Icon> = Object.freeze(["alert-triangle", "archive", "bar-chart", "check", "columns", "database", "gamepad", "globe", "hand", "inbox", "layers", "lightbulb", "lock", "monitor", "package", "scale", "server", "shield", "terminal"]);
-export const IconLiveMembers: ReadonlyArray<Icon> = Object.freeze(["alert-triangle", "archive", "bar-chart", "check", "columns", "database", "gamepad", "globe", "hand", "inbox", "layers", "lightbulb", "lock", "monitor", "package", "scale", "server", "shield", "terminal"]);
-export const IconNames: Readonly<Record<Icon, string>> = Object.freeze({ "alert-triangle": "alert_triangle", archive: "archive", "bar-chart": "bar_chart", check: "check", columns: "columns", database: "database", gamepad: "gamepad", globe: "globe", hand: "hand", inbox: "inbox", layers: "layers", lightbulb: "lightbulb", lock: "lock", monitor: "monitor", package: "package", scale: "scale", server: "server", shield: "shield", terminal: "terminal" });
+export const IconMembers: ReadonlyArray<Icon> = /*#__PURE__*/ Object.freeze(["alert-triangle", "archive", "bar-chart", "check", "columns", "database", "gamepad", "globe", "hand", "inbox", "layers", "lightbulb", "lock", "monitor", "package", "scale", "server", "shield", "terminal"]);
+export const IconLiveMembers: ReadonlyArray<Icon> = /*#__PURE__*/ Object.freeze(["alert-triangle", "archive", "bar-chart", "check", "columns", "database", "gamepad", "globe", "hand", "inbox", "layers", "lightbulb", "lock", "monitor", "package", "scale", "server", "shield", "terminal"]);
+export const IconNames: Readonly<Record<Icon, string>> = /*#__PURE__*/ Object.freeze({ "alert-triangle": "alert_triangle", archive: "archive", "bar-chart": "bar_chart", check: "check", columns: "columns", database: "database", gamepad: "gamepad", globe: "globe", hand: "hand", inbox: "inbox", layers: "layers", lightbulb: "lightbulb", lock: "lock", monitor: "monitor", package: "package", scale: "scale", server: "server", shield: "shield", terminal: "terminal" });

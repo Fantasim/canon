@@ -389,13 +389,13 @@ export function parseB(text: string): B {
 function readH($raw: unknown, $path: string): H {
   const $o = decObject($raw, $path);
   const $r1 = decGet($o, "m", $path + ".m", true);
-  const $v1: ReadonlyMap<number, bigint> = $r1 === undefined ? new CanonMap<number, bigint>([]) : decMap($r1, $path + ".m", ($k, $p) => decIntKey($k, $p), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $v1: ReadonlyMap<number, bigint> = $r1 === undefined ? /*#__PURE__*/ new CanonMap<number, bigint>([]) : decMap($r1, $path + ".m", ($k, $p) => decIntKey($k, $p), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
   const $r2 = decGet($o, "byBig", $path + ".byBig", true);
-  const $v2: ReadonlyMap<bigint, number> = $r2 === undefined ? new CanonMap<bigint, number>([]) : decMap($r2, $path + ".byBig", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v2: ReadonlyMap<bigint, number> = $r2 === undefined ? /*#__PURE__*/ new CanonMap<bigint, number>([]) : decMap($r2, $path + ".byBig", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $r3 = decGet($o, "b");
   const $v3: bigint | null = $r3 === undefined || $r3 === null ? null : decBig($r3, $path + ".b", -9223372036854775808n, 9223372036854775807n);
   const $r4 = decGet($o, "bk", $path + ".bk", true);
-  const $v4: ReadonlyMap<bigint, number> = $r4 === undefined ? new CanonMap<bigint, number>([]) : decMap($r4, $path + ".bk", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v4: ReadonlyMap<bigint, number> = $r4 === undefined ? /*#__PURE__*/ new CanonMap<bigint, number>([]) : decMap($r4, $path + ".bk", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   return { m: $v1, byBig: $v2, b: $v3, bk: $v4 };
 }
 

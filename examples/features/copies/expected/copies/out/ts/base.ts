@@ -29,6 +29,6 @@ export type Tone =
   | "red"
   /** Cold. */
   | "blue";
-export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
-export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
-export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ red: "red", blue: "blue" });
+export const ToneMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["red", "blue"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["red", "blue"]);
+export const ToneNames: Readonly<Record<Tone, string>> = /*#__PURE__*/ Object.freeze({ red: "red", blue: "blue" });

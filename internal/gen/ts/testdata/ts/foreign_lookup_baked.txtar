@@ -70,9 +70,9 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 }
 // ---------------------------------------------------------------------------
 
-const b_TierIdIndex = canonIndex(b.TierIdMembers);
+const b_TierIdIndex = /*#__PURE__*/ canonIndex(b.TierIdMembers);
 
-const DOUBLE: ReadonlyArray<number> = canonFreeze<ReadonlyArray<number>>([
+const DOUBLE: ReadonlyArray<number> = /*#__PURE__*/ canonFreeze<ReadonlyArray<number>>([
   2, 3,
   3, 4,
 ]);
@@ -150,8 +150,8 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 export type TierId = "low" | "high";
-export const TierIdMembers: ReadonlyArray<TierId> = Object.freeze(["low", "high"]);
-export const TierIdLiveMembers: ReadonlyArray<TierId> = Object.freeze(["low", "high"]);
+export const TierIdMembers: ReadonlyArray<TierId> = /*#__PURE__*/ Object.freeze(["low", "high"]);
+export const TierIdLiveMembers: ReadonlyArray<TierId> = /*#__PURE__*/ Object.freeze(["low", "high"]);
 
 /** A tier. */
 export interface Tier {
@@ -162,7 +162,7 @@ export interface Tier {
 }
 
 /** The tiers. */
-export const tiers: CanonTable<TierId, CanonRow<Tier, TierId>> = canonTable(canonFreeze(canonList<CanonRow<Tier, TierId>>(($r) => [
+export const tiers: CanonTable<TierId, CanonRow<Tier, TierId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Tier, TierId>>(($r) => [
   $r({ id: "low", retired: false, rank: 1 }),
   $r({ id: "high", retired: false, rank: 2 }),
 ])), ($e) => $e.id);

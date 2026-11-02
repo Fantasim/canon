@@ -141,15 +141,15 @@ export interface H {
 }
 
 /** The plain-keyed rows. */
-export const ks: CanonTable<number, K> = canonTable(canonFreeze(canonList<K>(($r) => [
+export const ks: CanonTable<number, K> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<K>(($r) => [
   $r({ n: 1 }),
   $r({ n: 2 }),
 ])), ($e) => $e.n);
 
 /** The bigint-keyed rows. */
-export const bs: CanonTable<bigint, B> = canonTable(canonFreeze(canonList<B>(($r) => [
+export const bs: CanonTable<bigint, B> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<B>(($r) => [
   $r({ n: 9007199254740993n }),
 ])), ($e) => $e.n);
 
 /** The holder. */
-export const h: H = canonFreeze<H>({ m: new CanonMap<number, bigint>(canonList<readonly [number, bigint]>(($r) => [$r([1, 9007199254740995n])])), byBig: new CanonMap<bigint, number>(canonList<readonly [bigint, number]>(($r) => [$r([9007199254740997n, 2])])), b: 9007199254740993n, bk: new CanonMap<bigint, number>(canonList<readonly [bigint, number]>(($r) => [$r([9007199254740993n, 1])])) });
+export const h: H = /*#__PURE__*/ canonFreeze<H>({ m: /*#__PURE__*/ new CanonMap<number, bigint>(/*#__PURE__*/ canonList<readonly [number, bigint]>(($r) => [$r([1, 9007199254740995n])])), byBig: /*#__PURE__*/ new CanonMap<bigint, number>(/*#__PURE__*/ canonList<readonly [bigint, number]>(($r) => [$r([9007199254740997n, 2])])), b: 9007199254740993n, bk: /*#__PURE__*/ new CanonMap<bigint, number>(/*#__PURE__*/ canonList<readonly [bigint, number]>(($r) => [$r([9007199254740993n, 1])])) });

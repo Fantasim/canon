@@ -151,7 +151,7 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 }
 // ---------------------------------------------------------------------------
 
-const p_RoleIndex = canonIndex(p.RoleMembers);
+const p_RoleIndex = /*#__PURE__*/ canonIndex(p.RoleMembers);
 
 /** A record whose fields are named like escaped parameters. */
 export interface Pair {
@@ -162,9 +162,9 @@ export interface Pair {
 }
 
 /** One pair. */
-export const pair: Pair = canonFreeze<Pair>({ default: 1, default_: 2 });
+export const pair: Pair = /*#__PURE__*/ canonFreeze<Pair>({ default: 1, default_: 2 });
 
-const VISIBLE: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
+const VISIBLE: ReadonlyArray<boolean> = /*#__PURE__*/ canonFreeze<ReadonlyArray<boolean>>([
   false, false,
   false, true,
   false, true,
@@ -211,6 +211,6 @@ export interface CanonTable<K, T> {
 
 /** A role, lowest first. */
 export type Role = "guest" | "member" | "admin";
-export const RoleMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
-export const RoleLiveMembers: ReadonlyArray<Role> = Object.freeze(["guest", "member", "admin"]);
-export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ guest: "guest", member: "member", admin: "admin" });
+export const RoleMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["guest", "member", "admin"]);
+export const RoleLiveMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["guest", "member", "admin"]);
+export const RoleNames: Readonly<Record<Role, string>> = /*#__PURE__*/ Object.freeze({ guest: "guest", member: "member", admin: "admin" });

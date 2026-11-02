@@ -86,8 +86,8 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 export type ItemId = "one";
-export const ItemIdMembers: ReadonlyArray<ItemId> = Object.freeze(["one"]);
-export const ItemIdLiveMembers: ReadonlyArray<ItemId> = Object.freeze(["one"]);
+export const ItemIdMembers: ReadonlyArray<ItemId> = /*#__PURE__*/ Object.freeze(["one"]);
+export const ItemIdLiveMembers: ReadonlyArray<ItemId> = /*#__PURE__*/ Object.freeze(["one"]);
 
 /** An item. */
 export interface Item {
@@ -98,11 +98,11 @@ export interface Item {
 }
 
 /** Extra items, a table. */
-export const extra: CanonTable<ItemId, CanonRow<Item, ItemId>> = canonTable(canonFreeze(canonList<CanonRow<Item, ItemId>>(($r) => [
+export const extra: CanonTable<ItemId, CanonRow<Item, ItemId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Item, ItemId>>(($r) => [
   $r({ id: "one", retired: false, sku: "one" }),
 ])), ($e) => $e.id);
 
 /** Items, a keyed list of the same record. */
-export const items: CanonTable<string, Item> = canonTable(canonFreeze(canonList<Item>(($r) => [
+export const items: CanonTable<string, Item> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<Item>(($r) => [
   $r({ sku: "i1" }),
 ])), ($e) => $e.sku);

@@ -576,9 +576,9 @@ function readBounds($raw: unknown, $path: string): Bounds {
   const $r3 = decGet($o, "bigs", $path + ".bigs", true);
   const $v3: ReadonlyArray<bigint> = $r3 === undefined ? [] : decList($r3, $path + ".bigs", ($x, $p) => decInBig(decBig($x, $p, -9223372036854775808n, 9223372036854775807n), $p, null, 5n, false, "..5"));
   const $r4 = decGet($o, "bigk", $path + ".bigk", true);
-  const $v4: ReadonlyMap<bigint, bigint> = $r4 === undefined ? new CanonMap<bigint, bigint>([]) : decMap($r4, $path + ".bigk", ($k, $p) => decInBig(decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), $p, 0n, 5n, true, "0..=5"), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $v4: ReadonlyMap<bigint, bigint> = $r4 === undefined ? /*#__PURE__*/ new CanonMap<bigint, bigint>([]) : decMap($r4, $path + ".bigk", ($k, $p) => decInBig(decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), $p, 0n, 5n, true, "0..=5"), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
   const $r5 = decGet($o, "bytes", $path + ".bytes", true);
-  const $v5: ReadonlyMap<number, number> = $r5 === undefined ? new CanonMap<number, number>([]) : decMap($r5, $path + ".bytes", ($k, $p) => decInt(decIntKey($k, $p), $p, 0, 255), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v5: ReadonlyMap<number, number> = $r5 === undefined ? /*#__PURE__*/ new CanonMap<number, number>([]) : decMap($r5, $path + ".bytes", ($k, $p) => decInt(decIntKey($k, $p), $p, 0, 255), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $v6: number = decIn(decFloat(decGet($o, "f", $path + ".f"), $path + ".f"), $path + ".f", -1.5, 1.5, true, "-1.5..=1.5");
   const $v7: number = decIn(decF32(decGet($o, "f32", $path + ".f32"), $path + ".f32"), $path + ".f32", -Infinity, 0.1, true, "..=0.1");
   const $v8: number = decIn(decDuration(decGet($o, "d", $path + ".d"), $path + ".d", 1), $path + ".d", 1000, 3600000, true, "1s..=1h");

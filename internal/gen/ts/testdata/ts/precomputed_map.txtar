@@ -75,14 +75,14 @@ export interface Pair {
   readonly weight: number;
 }
 
-const WEIGHTS: ReadonlyMap<string, Pair> = new CanonMap<string, Pair>(canonList<readonly [string, Pair]>(($r) => [$r(["a", canonFreeze<Pair>({ weight: 1 })]), $r(["b", canonFreeze<Pair>({ weight: 2 })])]));
+const WEIGHTS: ReadonlyMap<string, Pair> = /*#__PURE__*/ new CanonMap<string, Pair>(/*#__PURE__*/ canonList<readonly [string, Pair]>(($r) => [$r(["a", /*#__PURE__*/ canonFreeze<Pair>({ weight: 1 })]), $r(["b", /*#__PURE__*/ canonFreeze<Pair>({ weight: 2 })])]));
 
 /** Weights by name. */
 export function weights(): ReadonlyMap<string, Pair> {
   return WEIGHTS;
 }
 
-const COUNTS: ReadonlyMap<string, number> = new CanonMap<string, number>(canonList<readonly [string, number]>(($r) => [$r(["x", 1])]));
+const COUNTS: ReadonlyMap<string, number> = /*#__PURE__*/ new CanonMap<string, number>(/*#__PURE__*/ canonList<readonly [string, number]>(($r) => [$r(["x", 1])]));
 
 /** Counts by name. */
 export function counts(): ReadonlyMap<string, number> {

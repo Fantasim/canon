@@ -124,10 +124,10 @@ export type DstKnown =
   | "DST_OLD";
 /** Destinations. */
 export type Dst = DstKnown | (string & {});
-export const DstMembers: ReadonlyArray<DstKnown> = Object.freeze(["DST_HP", "DST_MP", "DST_OLD"]);
-export const DstLiveMembers: ReadonlyArray<DstKnown> = Object.freeze(["DST_HP", "DST_MP"]);
-export const DstNames: Readonly<Record<DstKnown, string>> = Object.freeze({ DST_HP: "DST_HP", DST_MP: "DST_MP", DST_OLD: "DST_OLD" });
-export const DstCodes: Readonly<Record<DstKnown, number>> = Object.freeze({ DST_HP: 1, DST_MP: 2, DST_OLD: 3 });
+export const DstMembers: ReadonlyArray<DstKnown> = /*#__PURE__*/ Object.freeze(["DST_HP", "DST_MP", "DST_OLD"]);
+export const DstLiveMembers: ReadonlyArray<DstKnown> = /*#__PURE__*/ Object.freeze(["DST_HP", "DST_MP"]);
+export const DstNames: Readonly<Record<DstKnown, string>> = /*#__PURE__*/ Object.freeze({ DST_HP: "DST_HP", DST_MP: "DST_MP", DST_OLD: "DST_OLD" });
+export const DstCodes: Readonly<Record<DstKnown, number>> = /*#__PURE__*/ Object.freeze({ DST_HP: 1, DST_MP: 2, DST_OLD: 3 });
 
 export function isDstKnown(v: Dst): v is DstKnown {
   return Object.prototype.hasOwnProperty.call(DstNames, v);
@@ -140,9 +140,9 @@ export function dstName(v: Dst): string {
 export type ToneKnown = "calm" | "LOUD";
 /** Tones. */
 export type Tone = ToneKnown | (string & {});
-export const ToneMembers: ReadonlyArray<ToneKnown> = Object.freeze(["calm", "LOUD"]);
-export const ToneLiveMembers: ReadonlyArray<ToneKnown> = Object.freeze(["calm", "LOUD"]);
-export const ToneNames: Readonly<Record<ToneKnown, string>> = Object.freeze({ calm: "calm", LOUD: "loud" });
+export const ToneMembers: ReadonlyArray<ToneKnown> = /*#__PURE__*/ Object.freeze(["calm", "LOUD"]);
+export const ToneLiveMembers: ReadonlyArray<ToneKnown> = /*#__PURE__*/ Object.freeze(["calm", "LOUD"]);
+export const ToneNames: Readonly<Record<ToneKnown, string>> = /*#__PURE__*/ Object.freeze({ calm: "calm", LOUD: "loud" });
 
 export function isToneKnown(v: Tone): v is ToneKnown {
   return Object.prototype.hasOwnProperty.call(ToneNames, v);
@@ -155,10 +155,10 @@ export function toneName(v: Tone): string {
 export type GradeKnown = "low" | "high";
 /** Grades, numbers on the wire. */
 export type Grade = GradeKnown | (string & {});
-export const GradeMembers: ReadonlyArray<GradeKnown> = Object.freeze(["low", "high"]);
-export const GradeLiveMembers: ReadonlyArray<GradeKnown> = Object.freeze(["low", "high"]);
-export const GradeNames: Readonly<Record<GradeKnown, string>> = Object.freeze({ low: "low", high: "high" });
-export const GradeCodes: Readonly<Record<GradeKnown, number>> = Object.freeze({ low: 1, high: 2 });
+export const GradeMembers: ReadonlyArray<GradeKnown> = /*#__PURE__*/ Object.freeze(["low", "high"]);
+export const GradeLiveMembers: ReadonlyArray<GradeKnown> = /*#__PURE__*/ Object.freeze(["low", "high"]);
+export const GradeNames: Readonly<Record<GradeKnown, string>> = /*#__PURE__*/ Object.freeze({ low: "low", high: "high" });
+export const GradeCodes: Readonly<Record<GradeKnown, number>> = /*#__PURE__*/ Object.freeze({ low: 1, high: 2 });
 
 export function isGradeKnown(v: Grade): v is GradeKnown {
   return Object.prototype.hasOwnProperty.call(GradeNames, v);
@@ -171,9 +171,9 @@ export function gradeName(v: Grade): string {
 export type GoalKnown = "kill" | "visit";
 /** What a rule aims at. */
 export type Goal = GoalKnown | (string & {});
-export const GoalMembers: ReadonlyArray<GoalKnown> = Object.freeze(["kill", "visit"]);
-export const GoalLiveMembers: ReadonlyArray<GoalKnown> = Object.freeze(["kill", "visit"]);
-export const GoalNames: Readonly<Record<GoalKnown, string>> = Object.freeze({ kill: "kill", visit: "visit" });
+export const GoalMembers: ReadonlyArray<GoalKnown> = /*#__PURE__*/ Object.freeze(["kill", "visit"]);
+export const GoalLiveMembers: ReadonlyArray<GoalKnown> = /*#__PURE__*/ Object.freeze(["kill", "visit"]);
+export const GoalNames: Readonly<Record<GoalKnown, string>> = /*#__PURE__*/ Object.freeze({ kill: "kill", visit: "visit" });
 
 export function isGoalKnown(v: Goal): v is GoalKnown {
   return Object.prototype.hasOwnProperty.call(GoalNames, v);
@@ -532,7 +532,7 @@ function readRule($raw: unknown, $path: string): Rule {
   const $r4 = decGet($o, "mood", $path + ".mood", true);
   const $v4: ToneKnown | "any" = $r4 === undefined ? "any" : decEnum(decString($r4, $path + ".mood"), $path + ".mood", $union1);
   const $r5 = decGet($o, "byTone", $path + ".byTone", true);
-  const $v5: ReadonlyMap<Tone, number> = $r5 === undefined ? new CanonMap<Tone, number>([]) : decMap($r5, $path + ".byTone", ($k, $p) => decString($k, $p) as Tone, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v5: ReadonlyMap<Tone, number> = $r5 === undefined ? /*#__PURE__*/ new CanonMap<Tone, number>([]) : decMap($r5, $path + ".byTone", ($k, $p) => decString($k, $p) as Tone, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $r6 = decGet($o, "tones", $path + ".tones", true);
   const $v6: ReadonlyArray<Tone> = $r6 === undefined ? [] : decList($r6, $path + ".tones", ($x, $p) => decString($x, $p) as Tone);
   const $v7: Goal = decString(decGet($o, "goal", $path + ".goal"), $path + ".goal") as Goal;

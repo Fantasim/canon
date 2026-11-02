@@ -164,10 +164,10 @@ function canonFreeze<T>(x: T): T {
 
 /** Flags, written as one bitmask. */
 export type Flag = "a" | "b" | "c";
-export const FlagMembers: ReadonlyArray<Flag> = Object.freeze(["a", "b", "c"]);
-export const FlagLiveMembers: ReadonlyArray<Flag> = Object.freeze(["a", "b", "c"]);
-export const FlagNames: Readonly<Record<Flag, string>> = Object.freeze({ a: "a", b: "b", c: "c" });
-export const FlagCodes: Readonly<Record<Flag, number>> = Object.freeze({ a: 1, b: 2, c: 4 });
+export const FlagMembers: ReadonlyArray<Flag> = /*#__PURE__*/ Object.freeze(["a", "b", "c"]);
+export const FlagLiveMembers: ReadonlyArray<Flag> = /*#__PURE__*/ Object.freeze(["a", "b", "c"]);
+export const FlagNames: Readonly<Record<Flag, string>> = /*#__PURE__*/ Object.freeze({ a: "a", b: "b", c: "c" });
+export const FlagCodes: Readonly<Record<Flag, number>> = /*#__PURE__*/ Object.freeze({ a: 1, b: 2, c: 4 });
 
 export type ShapeKind =
   | "circle"
@@ -954,7 +954,7 @@ function readProbe($raw: unknown, $path: string): Probe {
   const $r29 = decAt($o, ["po", "q"], $path);
   const $v29: number | null = $r29 === undefined || $r29 === null ? null : decIn(decInt($r29, $path + ".po.q", -9223372036854776000, 9223372036854776000), $path + ".po.q", 0, 9, true, "0..=9");
   const $r30 = decGet($o, "mo", $path + ".mo", true);
-  const $v30: ReadonlyMap<string, number | null> = $r30 === undefined ? new CanonMap<string, number | null>([]) : decMap($r30, $path + ".mo", ($k, $p) => $k, ($x, $p) => $x === null ? null : decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9"));
+  const $v30: ReadonlyMap<string, number | null> = $r30 === undefined ? /*#__PURE__*/ new CanonMap<string, number | null>([]) : decMap($r30, $path + ".mo", ($k, $p) => $k, ($x, $p) => $x === null ? null : decIn(decInt($x, $p, -9223372036854776000, 9223372036854776000), $p, 0, 9, true, "0..=9"));
   return { n: $v1, u8: $v2, i8: $v3, ex: $v4, f: $v5, f32: $v6, d: $v7, s: $v8, tags: $v9, m: $v10, mi: $v11, me: $v12, mr: $v13, opts: $v14, opt: $v15, mk: $v16, lit: $v17, dfl: $v18, sub: $v19, shape: $v20, flags: $v21, dsel: $v22, dep: $v23, rows: $v24, slots: $v25, ds: $v26, pr: $v27, pd: $v28, po: $v29, mo: $v30 };
 }
 

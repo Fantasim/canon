@@ -92,7 +92,7 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 // ---------------------------------------------------------------------------
 
 /** Badges, keyed. */
-export const mine: CanonTable<string, b.Badge> = canonTable(canonFreeze(canonList<b.Badge>(($r) => [
+export const mine: CanonTable<string, b.Badge> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<b.Badge>(($r) => [
   $r({ label: "Mine" }),
 ])), ($e) => $e.label);
 === features/b/b.ts ===

@@ -41,19 +41,19 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 
 /** Upgrade grades of a weapon, lowest first. */
 export type Grade = "normal" | "unique" | "ultimate";
-export const GradeMembers: ReadonlyArray<Grade> = Object.freeze(["normal", "unique", "ultimate"]);
-export const GradeLiveMembers: ReadonlyArray<Grade> = Object.freeze(["normal", "unique", "ultimate"]);
-export const GradeNames: Readonly<Record<Grade, string>> = Object.freeze({ normal: "normal", unique: "unique", ultimate: "ultimate" });
-const GradeIndex = canonIndex(GradeMembers);
+export const GradeMembers: ReadonlyArray<Grade> = /*#__PURE__*/ Object.freeze(["normal", "unique", "ultimate"]);
+export const GradeLiveMembers: ReadonlyArray<Grade> = /*#__PURE__*/ Object.freeze(["normal", "unique", "ultimate"]);
+export const GradeNames: Readonly<Record<Grade, string>> = /*#__PURE__*/ Object.freeze({ normal: "normal", unique: "unique", ultimate: "ultimate" });
+const GradeIndex = /*#__PURE__*/ canonIndex(GradeMembers);
 
 /** Job tiers, lowest first. */
 export type Tier = "vagrant" | "expert" | "pro" | "master" | "hero";
-export const TierMembers: ReadonlyArray<Tier> = Object.freeze(["vagrant", "expert", "pro", "master", "hero"]);
-export const TierLiveMembers: ReadonlyArray<Tier> = Object.freeze(["vagrant", "expert", "pro", "master", "hero"]);
-export const TierNames: Readonly<Record<Tier, string>> = Object.freeze({ vagrant: "vagrant", expert: "expert", pro: "pro", master: "master", hero: "hero" });
-const TierIndex = canonIndex(TierMembers);
+export const TierMembers: ReadonlyArray<Tier> = /*#__PURE__*/ Object.freeze(["vagrant", "expert", "pro", "master", "hero"]);
+export const TierLiveMembers: ReadonlyArray<Tier> = /*#__PURE__*/ Object.freeze(["vagrant", "expert", "pro", "master", "hero"]);
+export const TierNames: Readonly<Record<Tier, string>> = /*#__PURE__*/ Object.freeze({ vagrant: "vagrant", expert: "expert", pro: "pro", master: "master", hero: "hero" });
+const TierIndex = /*#__PURE__*/ canonIndex(TierMembers);
 
-const CAN_UPGRADE: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
+const CAN_UPGRADE: ReadonlyArray<boolean> = /*#__PURE__*/ canonFreeze<ReadonlyArray<boolean>>([
   true, true, true, true, true,
   false, false, true, true, true,
   false, false, false, true, true,
@@ -67,7 +67,7 @@ export function canUpgrade(grade: Grade, tier: Tier): boolean {
   return CAN_UPGRADE[GradeIndex[grade] * 5 + TierIndex[tier]];
 }
 
-const UPGRADE_COST: ReadonlyArray<number> = canonFreeze<ReadonlyArray<number>>([
+const UPGRADE_COST: ReadonlyArray<number> = /*#__PURE__*/ canonFreeze<ReadonlyArray<number>>([
   10000, 500000, 20000000,
 ]);
 

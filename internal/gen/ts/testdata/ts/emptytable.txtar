@@ -78,8 +78,8 @@ function canonFreeze<T>(x: T): T {
 // ---------------------------------------------------------------------------
 
 export type OfferId = never;
-export const OfferIdMembers: ReadonlyArray<OfferId> = Object.freeze([]);
-export const OfferIdLiveMembers: ReadonlyArray<OfferId> = Object.freeze([]);
+export const OfferIdMembers: ReadonlyArray<OfferId> = /*#__PURE__*/ Object.freeze([]);
+export const OfferIdLiveMembers: ReadonlyArray<OfferId> = /*#__PURE__*/ Object.freeze([]);
 
 /** An offer. */
 export interface Offer {
@@ -90,4 +90,4 @@ export interface Offer {
 }
 
 /** No offers yet. */
-export const offers: CanonTable<OfferId, CanonRow<Offer, OfferId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Offer, OfferId>>>([]), ($e) => $e.id);
+export const offers: CanonTable<OfferId, CanonRow<Offer, OfferId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze<ReadonlyArray<CanonRow<Offer, OfferId>>>([]), ($e) => $e.id);

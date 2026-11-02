@@ -52,4 +52,4 @@ export interface Column {
 export const Column_SqlLenMin: number = 1;
 
 /** The columns, in table order. */
-export const columns: ReadonlyArray<Column> = canonFreeze<ReadonlyArray<Column>>(canonList<Column>(($r) => [$r({ name: "id", sql: "BIGINT" }), $r({ name: "kind", sql: "SMALLINT" }), $r({ name: "at", sql: "TIMESTAMP" })]));
+export const columns: ReadonlyArray<Column> = /*#__PURE__*/ canonFreeze<ReadonlyArray<Column>>(/*#__PURE__*/ canonList<Column>(($r) => [$r({ name: "id", sql: "BIGINT" }), $r({ name: "kind", sql: "SMALLINT" }), $r({ name: "at", sql: "TIMESTAMP" })]));

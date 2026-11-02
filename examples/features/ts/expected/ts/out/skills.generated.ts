@@ -120,9 +120,9 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
 
 /** How rare a skill is, lowest first. */
 export type Rarity = "common" | "rare" | "epic";
-export const RarityMembers: ReadonlyArray<Rarity> = Object.freeze(["common", "rare", "epic"]);
-export const RarityLiveMembers: ReadonlyArray<Rarity> = Object.freeze(["common", "rare", "epic"]);
-export const RarityNames: Readonly<Record<Rarity, string>> = Object.freeze({ common: "common", rare: "rare", epic: "epic" });
+export const RarityMembers: ReadonlyArray<Rarity> = /*#__PURE__*/ Object.freeze(["common", "rare", "epic"]);
+export const RarityLiveMembers: ReadonlyArray<Rarity> = /*#__PURE__*/ Object.freeze(["common", "rare", "epic"]);
+export const RarityNames: Readonly<Record<Rarity, string>> = /*#__PURE__*/ Object.freeze({ common: "common", rare: "rare", epic: "epic" });
 
 export type RewardKind =
   | "item"
@@ -580,7 +580,7 @@ function readSkillEntry($raw: unknown, $path: string): SkillEntry {
   const $r5 = decGet($o, "note");
   const $v5: string | null = $r5 === undefined || $r5 === null ? null : decString($r5, $path + ".note");
   const $r6 = decGet($o, "weights", $path + ".weights", true);
-  const $v6: ReadonlyMap<string, number> = $r6 === undefined ? new CanonMap<string, number>([]) : decMap($r6, $path + ".weights", ($k, $p) => $k, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v6: ReadonlyMap<string, number> = $r6 === undefined ? /*#__PURE__*/ new CanonMap<string, number>([]) : decMap($r6, $path + ".weights", ($k, $p) => $k, ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $r7 = decGet($o, "serial", $path + ".serial", true);
   const $v7: bigint = $r7 === undefined ? 0n : decBig($r7, $path + ".serial", -9223372036854775808n, 9223372036854775807n);
   const $r8 = decGet($o, "next");

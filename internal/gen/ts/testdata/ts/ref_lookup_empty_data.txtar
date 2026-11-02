@@ -402,8 +402,8 @@ function canonFreeze<T>(x: T): T {
 // ---------------------------------------------------------------------------
 
 export type ItemId = never;
-export const ItemIdMembers: ReadonlyArray<ItemId> = Object.freeze([]);
-export const ItemIdLiveMembers: ReadonlyArray<ItemId> = Object.freeze([]);
+export const ItemIdMembers: ReadonlyArray<ItemId> = /*#__PURE__*/ Object.freeze([]);
+export const ItemIdLiveMembers: ReadonlyArray<ItemId> = /*#__PURE__*/ Object.freeze([]);
 
 /** An item. */
 export interface Item {
@@ -422,4 +422,4 @@ export interface Band {
 }
 
 /** The items: none yet. */
-export const items: CanonTable<ItemId, CanonRow<Item, ItemId>> = canonTable(canonFreeze<ReadonlyArray<CanonRow<Item, ItemId>>>([]), ($e) => $e.id);
+export const items: CanonTable<ItemId, CanonRow<Item, ItemId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze<ReadonlyArray<CanonRow<Item, ItemId>>>([]), ($e) => $e.id);

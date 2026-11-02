@@ -82,7 +82,7 @@ export const Country_VatMin: number = 0;
 export const Country_VatMax: number = 30;
 
 /** Every country, keyed by code. */
-export const countries: CanonTable<string, Country> = canonTable(canonFreeze(canonList<Country>(($r) => [
+export const countries: CanonTable<string, Country> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<Country>(($r) => [
   $r({ code: "FR", name: "France", vat: 20, cards: true }),
   $r({ code: "DE", name: "Germany", vat: 19, cards: true }),
   $r({ code: "BE", name: "Belgium", vat: 21, cards: true }),

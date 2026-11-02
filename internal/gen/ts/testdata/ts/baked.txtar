@@ -267,17 +267,17 @@ export const TICK = 90000;
 
 export const SIDE: Side = "RIGHT";
 
-export const LEVELS: ReadonlyArray<number> = canonFreeze<ReadonlyArray<number>>([1, 2, 3]);
+export const LEVELS: ReadonlyArray<number> = /*#__PURE__*/ canonFreeze<ReadonlyArray<number>>([1, 2, 3]);
 
-export const SCALES: ReadonlyMap<string, number> = new CanonMap<string, number>(canonList<readonly [string, number]>(($r) => [$r(["a", 1.5]), $r(["b", 2.5])]));
+export const SCALES: ReadonlyMap<string, number> = /*#__PURE__*/ new CanonMap<string, number>(/*#__PURE__*/ canonList<readonly [string, number]>(($r) => [$r(["a", 1.5]), $r(["b", 2.5])]));
 
 /** Flags, written as one bitmask. */
 export type Flag = "tradable" | "droppable" | "soulbound";
-export const FlagMembers: ReadonlyArray<Flag> = Object.freeze(["tradable", "droppable", "soulbound"]);
-export const FlagLiveMembers: ReadonlyArray<Flag> = Object.freeze(["tradable", "droppable", "soulbound"]);
-export const FlagNames: Readonly<Record<Flag, string>> = Object.freeze({ tradable: "tradable", droppable: "droppable", soulbound: "soulbound" });
-export const FlagCodes: Readonly<Record<Flag, number>> = Object.freeze({ tradable: 1, droppable: 2, soulbound: 4 });
-const FlagIndex = canonIndex(FlagMembers);
+export const FlagMembers: ReadonlyArray<Flag> = /*#__PURE__*/ Object.freeze(["tradable", "droppable", "soulbound"]);
+export const FlagLiveMembers: ReadonlyArray<Flag> = /*#__PURE__*/ Object.freeze(["tradable", "droppable", "soulbound"]);
+export const FlagNames: Readonly<Record<Flag, string>> = /*#__PURE__*/ Object.freeze({ tradable: "tradable", droppable: "droppable", soulbound: "soulbound" });
+export const FlagCodes: Readonly<Record<Flag, number>> = /*#__PURE__*/ Object.freeze({ tradable: 1, droppable: 2, soulbound: 4 });
+const FlagIndex = /*#__PURE__*/ canonIndex(FlagMembers);
 
 /** Elements, written as their code. */
 export type Element =
@@ -285,22 +285,22 @@ export type Element =
   | "WATER"
   /** Retired. */
   | "WIND";
-export const ElementMembers: ReadonlyArray<Element> = Object.freeze(["FIRE", "WATER", "WIND"]);
-export const ElementLiveMembers: ReadonlyArray<Element> = Object.freeze(["FIRE", "WATER"]);
-export const ElementNames: Readonly<Record<Element, string>> = Object.freeze({ FIRE: "FIRE", WATER: "WATER", WIND: "WIND" });
-export const ElementCodes: Readonly<Record<Element, number>> = Object.freeze({ FIRE: 1, WATER: 2, WIND: 3 });
+export const ElementMembers: ReadonlyArray<Element> = /*#__PURE__*/ Object.freeze(["FIRE", "WATER", "WIND"]);
+export const ElementLiveMembers: ReadonlyArray<Element> = /*#__PURE__*/ Object.freeze(["FIRE", "WATER"]);
+export const ElementNames: Readonly<Record<Element, string>> = /*#__PURE__*/ Object.freeze({ FIRE: "FIRE", WATER: "WATER", WIND: "WIND" });
+export const ElementCodes: Readonly<Record<Element, number>> = /*#__PURE__*/ Object.freeze({ FIRE: 1, WATER: 2, WIND: 3 });
 
 /** Sides. */
 export type Side = "left" | "RIGHT";
-export const SideMembers: ReadonlyArray<Side> = Object.freeze(["left", "RIGHT"]);
-export const SideLiveMembers: ReadonlyArray<Side> = Object.freeze(["left", "RIGHT"]);
-export const SideNames: Readonly<Record<Side, string>> = Object.freeze({ left: "left", RIGHT: "right" });
+export const SideMembers: ReadonlyArray<Side> = /*#__PURE__*/ Object.freeze(["left", "RIGHT"]);
+export const SideLiveMembers: ReadonlyArray<Side> = /*#__PURE__*/ Object.freeze(["left", "RIGHT"]);
+export const SideNames: Readonly<Record<Side, string>> = /*#__PURE__*/ Object.freeze({ left: "left", RIGHT: "right" });
 
 /** What an objective counts. */
 export type Goal = "kill" | "collect" | "visit";
-export const GoalMembers: ReadonlyArray<Goal> = Object.freeze(["kill", "collect", "visit"]);
-export const GoalLiveMembers: ReadonlyArray<Goal> = Object.freeze(["kill", "collect", "visit"]);
-export const GoalNames: Readonly<Record<Goal, string>> = Object.freeze({ kill: "kill", collect: "collect", visit: "visit" });
+export const GoalMembers: ReadonlyArray<Goal> = /*#__PURE__*/ Object.freeze(["kill", "collect", "visit"]);
+export const GoalLiveMembers: ReadonlyArray<Goal> = /*#__PURE__*/ Object.freeze(["kill", "collect", "visit"]);
+export const GoalNames: Readonly<Record<Goal, string>> = /*#__PURE__*/ Object.freeze({ kill: "kill", collect: "collect", visit: "visit" });
 
 export type KindKind =
   | "weapon"
@@ -316,9 +316,9 @@ export type KindKind =
 export type TargetBranch = "kill" | "collect";
 
 export type StatusId = "open" | "closed" | "stale";
-export const StatusIdMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "closed", "stale"]);
-export const StatusIdLiveMembers: ReadonlyArray<StatusId> = Object.freeze(["open", "closed"]);
-const StatusIdIndex = canonIndex(StatusIdMembers);
+export const StatusIdMembers: ReadonlyArray<StatusId> = /*#__PURE__*/ Object.freeze(["open", "closed", "stale"]);
+export const StatusIdLiveMembers: ReadonlyArray<StatusId> = /*#__PURE__*/ Object.freeze(["open", "closed"]);
+const StatusIdIndex = /*#__PURE__*/ canonIndex(StatusIdMembers);
 
 /** What an objective aims at. */
 export type Target =
@@ -436,32 +436,32 @@ export interface Rates {
 }
 
 /** The skills. */
-export const skills: CanonTable<string, Skill> = canonTable(canonFreeze(canonList<Skill>(($r) => [
-  $r({ id: "fireball", reqMp: 12, reqFp: 0, element: "FIRE", flags: ["tradable", "soulbound"], twoHanded: false, side: "both", castTime: 2000, weights: new CanonMap<Element, number>([]), counts: new CanonMap<number, number>([]), named: new CanonMap<string, Objective>(canonList<readonly [string, Objective]>(($r) => [$r(["x", canonFreeze<Objective>({ goal: "collect", target: { branch: "collect", value: 2 } })])])), stats: [], kind: { kind: "weapon", attack: 5, affinity: null }, goals: [], rate: 0.10000000149011612, zero: -0, wait: 90000, serial: 9007199254740993n, serials: [1n, 9007199254740993n], level: 200, isFree: false, resist: { FIRE: 1, WATER: 2, WIND: 3 } }),
-  $r({ id: "aegis", reqMp: 0, reqFp: 0, element: null, flags: [], twoHanded: false, side: "RIGHT", castTime: null, weights: new CanonMap<Element, number>([]), counts: new CanonMap<number, number>([]), named: new CanonMap<string, Objective>([]), stats: [], kind: { kind: "armor", defense: 3 }, goals: canonList<Objective>(($r) => [$r({ goal: "kill", target: { branch: "kill", value: "wolf" } }), $r({ goal: "visit", target: null })]), rate: 0.10000000149011612, zero: -0, wait: 90000, serial: 9007199254740993n, serials: [1n, 9007199254740993n], level: 200, isFree: true, resist: { FIRE: 1, WATER: 2, WIND: 3 } }),
+export const skills: CanonTable<string, Skill> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<Skill>(($r) => [
+  $r({ id: "fireball", reqMp: 12, reqFp: 0, element: "FIRE", flags: ["tradable", "soulbound"], twoHanded: false, side: "both", castTime: 2000, weights: /*#__PURE__*/ new CanonMap<Element, number>([]), counts: /*#__PURE__*/ new CanonMap<number, number>([]), named: /*#__PURE__*/ new CanonMap<string, Objective>(/*#__PURE__*/ canonList<readonly [string, Objective]>(($r) => [$r(["x", /*#__PURE__*/ canonFreeze<Objective>({ goal: "collect", target: { branch: "collect", value: 2 } })])])), stats: [], kind: { kind: "weapon", attack: 5, affinity: null }, goals: [], rate: 0.10000000149011612, zero: -0, wait: 90000, serial: 9007199254740993n, serials: [1n, 9007199254740993n], level: 200, isFree: false, resist: { FIRE: 1, WATER: 2, WIND: 3 } }),
+  $r({ id: "aegis", reqMp: 0, reqFp: 0, element: null, flags: [], twoHanded: false, side: "RIGHT", castTime: null, weights: /*#__PURE__*/ new CanonMap<Element, number>([]), counts: /*#__PURE__*/ new CanonMap<number, number>([]), named: /*#__PURE__*/ new CanonMap<string, Objective>([]), stats: [], kind: { kind: "armor", defense: 3 }, goals: /*#__PURE__*/ canonList<Objective>(($r) => [$r({ goal: "kill", target: { branch: "kill", value: "wolf" } }), $r({ goal: "visit", target: null })]), rate: 0.10000000149011612, zero: -0, wait: 90000, serial: 9007199254740993n, serials: [1n, 9007199254740993n], level: 200, isFree: true, resist: { FIRE: 1, WATER: 2, WIND: 3 } }),
 ])), ($e) => $e.id);
 
 /** The statuses, a table. */
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Status, StatusId>>(($r) => [
   $r({ id: "open", retired: false, label: "Open", next: ["closed"] }),
   $r({ id: "closed", retired: false, label: "Closed", next: [] }),
   $r({ id: "stale", retired: true, label: "Stale", next: [] }),
 ])), ($e) => $e.id);
 
 /** The rates. */
-export const rates: Rates = canonFreeze<Rates>({ byStatus: new CanonMap<StatusId, Rate>(canonList<readonly [StatusId, Rate]>(($r) => [$r(["open", canonFreeze<Rate>({ value: 1 })]), $r(["closed", canonFreeze<Rate>({ value: 2 })])])), counts: new CanonMap<StatusId, number>(canonList<readonly [StatusId, number]>(($r) => [$r(["open", 4])])) });
+export const rates: Rates = /*#__PURE__*/ canonFreeze<Rates>({ byStatus: /*#__PURE__*/ new CanonMap<StatusId, Rate>(/*#__PURE__*/ canonList<readonly [StatusId, Rate]>(($r) => [$r(["open", /*#__PURE__*/ canonFreeze<Rate>({ value: 1 })]), $r(["closed", /*#__PURE__*/ canonFreeze<Rate>({ value: 2 })])])), counts: /*#__PURE__*/ new CanonMap<StatusId, number>(/*#__PURE__*/ canonList<readonly [StatusId, number]>(($r) => [$r(["open", 4])])) });
 
 /** A single record. */
-export const objective: Objective = canonFreeze<Objective>({ goal: "collect", target: { branch: "collect", value: 3 } });
+export const objective: Objective = /*#__PURE__*/ canonFreeze<Objective>({ goal: "collect", target: { branch: "collect", value: 3 } });
 
-const DEFAULT_FLAGS: ReadonlyArray<Flag> = canonFreeze<ReadonlyArray<Flag>>(["tradable", "droppable"]);
+const DEFAULT_FLAGS: ReadonlyArray<Flag> = /*#__PURE__*/ canonFreeze<ReadonlyArray<Flag>>(["tradable", "droppable"]);
 
 /** A package-level value without a parameter. */
 export function defaultFlags(): ReadonlyArray<Flag> {
   return DEFAULT_FLAGS;
 }
 
-const STORABLE: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
+const STORABLE: ReadonlyArray<boolean> = /*#__PURE__*/ canonFreeze<ReadonlyArray<boolean>>([
   true, true, false,
 ]);
 
@@ -470,7 +470,7 @@ export function storable(flag: Flag): boolean {
   return STORABLE[FlagIndex[flag]];
 }
 
-const NEXT_OF: ReadonlyArray<StatusId | null> = canonFreeze<ReadonlyArray<StatusId | null>>([
+const NEXT_OF: ReadonlyArray<StatusId | null> = /*#__PURE__*/ canonFreeze<ReadonlyArray<StatusId | null>>([
   null, "closed",
   null, "closed",
   null, "closed",

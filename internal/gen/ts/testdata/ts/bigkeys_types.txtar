@@ -368,13 +368,13 @@ function readR($raw: unknown, $path: string): R {
   const $r2 = decGet($o, "next");
   const $v2: bigint | null = $r2 === undefined || $r2 === null ? null : decBig($r2, $path + ".next", -9223372036854775808n, 9223372036854775807n);
   const $r3 = decGet($o, "m", $path + ".m", true);
-  const $v3: ReadonlyMap<bigint, bigint> = $r3 === undefined ? new CanonMap<bigint, bigint>([]) : decMap($r3, $path + ".m", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
+  const $v3: ReadonlyMap<bigint, bigint> = $r3 === undefined ? /*#__PURE__*/ new CanonMap<bigint, bigint>([]) : decMap($r3, $path + ".m", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
   const $r4 = decGet($o, "l", $path + ".l", true);
   const $v4: ReadonlyArray<bigint> = $r4 === undefined ? [] : decList($r4, $path + ".l", ($x, $p) => decBig($x, $p, -9223372036854775808n, 9223372036854775807n));
   const $r5 = decGet($o, "mx");
   const $v5: bigint | null = $r5 === undefined || $r5 === null || decSame($r5, "-1") ? null : decBig($r5, $path + ".mx", -9223372036854775808n, 9223372036854775807n);
   const $r6 = decGet($o, "w", $path + ".w", true);
-  const $v6: ReadonlyMap<bigint, number> = $r6 === undefined ? new CanonMap<bigint, number>([]) : decMap($r6, $path + ".w", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v6: ReadonlyMap<bigint, number> = $r6 === undefined ? /*#__PURE__*/ new CanonMap<bigint, number>([]) : decMap($r6, $path + ".w", ($k, $p) => decBigKey($k, $p, -9223372036854775808n, 9223372036854775807n), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   return { n: $v1, next: $v2, m: $v3, l: $v4, mx: $v5, w: $v6 };
 }
 

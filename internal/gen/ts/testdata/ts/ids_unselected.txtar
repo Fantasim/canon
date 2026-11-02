@@ -117,13 +117,13 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 // ---------------------------------------------------------------------------
 
 export type TierId = "low" | "high";
-export const TierIdMembers: ReadonlyArray<TierId> = Object.freeze(["low", "high"]);
-export const TierIdLiveMembers: ReadonlyArray<TierId> = Object.freeze(["low", "high"]);
-const TierIdIndex = canonIndex(TierIdMembers);
+export const TierIdMembers: ReadonlyArray<TierId> = /*#__PURE__*/ Object.freeze(["low", "high"]);
+export const TierIdLiveMembers: ReadonlyArray<TierId> = /*#__PURE__*/ Object.freeze(["low", "high"]);
+const TierIdIndex = /*#__PURE__*/ canonIndex(TierIdMembers);
 
 export type OtherId = "small";
-export const OtherIdMembers: ReadonlyArray<OtherId> = Object.freeze(["small"]);
-export const OtherIdLiveMembers: ReadonlyArray<OtherId> = Object.freeze(["small"]);
+export const OtherIdMembers: ReadonlyArray<OtherId> = /*#__PURE__*/ Object.freeze(["small"]);
+export const OtherIdLiveMembers: ReadonlyArray<OtherId> = /*#__PURE__*/ Object.freeze(["small"]);
 
 /** A tier. */
 export interface Tier {
@@ -140,11 +140,11 @@ export interface Other {
 }
 
 /** The others. */
-export const others: CanonTable<OtherId, CanonRow<Other, OtherId>> = canonTable(canonFreeze(canonList<CanonRow<Other, OtherId>>(($r) => [
+export const others: CanonTable<OtherId, CanonRow<Other, OtherId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Other, OtherId>>(($r) => [
   $r({ id: "small", retired: false, size: 1 }),
 ])), ($e) => $e.id);
 
-const IS_TOP: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
+const IS_TOP: ReadonlyArray<boolean> = /*#__PURE__*/ canonFreeze<ReadonlyArray<boolean>>([
   false, true,
 ]);
 
@@ -195,9 +195,9 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 }
 // ---------------------------------------------------------------------------
 
-const a_TierIdIndex = canonIndex(a.TierIdMembers);
+const a_TierIdIndex = /*#__PURE__*/ canonIndex(a.TierIdMembers);
 
-const NEXT: ReadonlyArray<number> = canonFreeze<ReadonlyArray<number>>([
+const NEXT: ReadonlyArray<number> = /*#__PURE__*/ canonFreeze<ReadonlyArray<number>>([
   2, 3,
 ]);
 

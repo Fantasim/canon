@@ -229,12 +229,12 @@ export interface Item {
 }
 
 /** The things. */
-export const allItems: CanonTable<string, Item> = canonTable(canonFreeze(canonList<Item>(($r) => [
+export const allItems: CanonTable<string, Item> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<Item>(($r) => [
   $r({ type: 0, class: "a", delete: false }),
 ])), ($e) => $e.class);
 
 /** A reserved value name. */
-export const default_: Item = canonFreeze<Item>({ type: 0, class: "d", delete: false });
+export const default_: Item = /*#__PURE__*/ canonFreeze<Item>({ type: 0, class: "d", delete: false });
 
 /** Takes a reserved parameter name. */
 export function thingWith(self: Item, new$: number): number {

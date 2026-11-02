@@ -126,9 +126,9 @@ function canonIndex<K extends string>(members: ReadonlyArray<K>): Readonly<Recor
 }
 // ---------------------------------------------------------------------------
 
-const base_RoleIndex = canonIndex(base.RoleMembers);
+const base_RoleIndex = /*#__PURE__*/ canonIndex(base.RoleMembers);
 
-const VISIBLE: ReadonlyArray<boolean> = canonFreeze<ReadonlyArray<boolean>>([
+const VISIBLE: ReadonlyArray<boolean> = /*#__PURE__*/ canonFreeze<ReadonlyArray<boolean>>([
   false, true,
 ]);
 
@@ -137,7 +137,7 @@ export function visible(r: base.Role): boolean {
   return VISIBLE[base_RoleIndex[r]];
 }
 
-const BADGE_FOR: ReadonlyArray<base.BadgeId> = canonFreeze<ReadonlyArray<base.BadgeId>>([
+const BADGE_FOR: ReadonlyArray<base.BadgeId> = /*#__PURE__*/ canonFreeze<ReadonlyArray<base.BadgeId>>([
   "iron", "gold",
 ]);
 
@@ -215,19 +215,19 @@ function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArr
 
 /** A colour. */
 export type Tone = "red" | "blue";
-export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
-export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["red", "blue"]);
-export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ red: "red", blue: "blue" });
+export const ToneMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["red", "blue"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["red", "blue"]);
+export const ToneNames: Readonly<Record<Tone, string>> = /*#__PURE__*/ Object.freeze({ red: "red", blue: "blue" });
 
 /** Roles, lowest first. */
 export type Role = "member" | "admin";
-export const RoleMembers: ReadonlyArray<Role> = Object.freeze(["member", "admin"]);
-export const RoleLiveMembers: ReadonlyArray<Role> = Object.freeze(["member", "admin"]);
-export const RoleNames: Readonly<Record<Role, string>> = Object.freeze({ member: "member", admin: "admin" });
+export const RoleMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["member", "admin"]);
+export const RoleLiveMembers: ReadonlyArray<Role> = /*#__PURE__*/ Object.freeze(["member", "admin"]);
+export const RoleNames: Readonly<Record<Role, string>> = /*#__PURE__*/ Object.freeze({ member: "member", admin: "admin" });
 
 export type BadgeId = "gold" | "iron";
-export const BadgeIdMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold", "iron"]);
-export const BadgeIdLiveMembers: ReadonlyArray<BadgeId> = Object.freeze(["gold", "iron"]);
+export const BadgeIdMembers: ReadonlyArray<BadgeId> = /*#__PURE__*/ Object.freeze(["gold", "iron"]);
+export const BadgeIdLiveMembers: ReadonlyArray<BadgeId> = /*#__PURE__*/ Object.freeze(["gold", "iron"]);
 
 /** A badge. */
 export interface Badge {
@@ -240,7 +240,7 @@ export interface Badge {
 }
 
 /** The badges. */
-export const badges: CanonTable<BadgeId, CanonRow<Badge, BadgeId>> = canonTable(canonFreeze(canonList<CanonRow<Badge, BadgeId>>(($r) => [
+export const badges: CanonTable<BadgeId, CanonRow<Badge, BadgeId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Badge, BadgeId>>(($r) => [
   $r({ id: "gold", retired: false, tone: "red", label: "Gold" }),
   $r({ id: "iron", retired: false, tone: "blue", label: "Iron" }),
 ])), ($e) => $e.id);
@@ -633,7 +633,7 @@ function canonEnvelope(json: unknown, schema: string, name: string): Record<stri
 }
 // ---------------------------------------------------------------------------
 
-const base_BadgeIdIndex = canonIndex(base.BadgeIdMembers);
+const base_BadgeIdIndex = /*#__PURE__*/ canonIndex(base.BadgeIdMembers);
 
 /** An award. */
 export interface Award {
@@ -950,7 +950,7 @@ function readAward($raw: unknown, $path: string): Award {
   const $v2: base.BadgeId = decEntry(decGet($o, "badge", $path + ".badge"), $path + ".badge", base_BadgeIdIndex);
   const $v3: base.Tone = decEnum(decGet($o, "tone", $path + ".tone"), $path + ".tone", base.ToneMembers);
   const $r4 = decGet($o, "weights", $path + ".weights", true);
-  const $v4: ReadonlyMap<base.Tone, number> = $r4 === undefined ? new CanonMap<base.Tone, number>([]) : decMap($r4, $path + ".weights", ($k, $p) => decEnum($k, $p, base.ToneMembers), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
+  const $v4: ReadonlyMap<base.Tone, number> = $r4 === undefined ? /*#__PURE__*/ new CanonMap<base.Tone, number>([]) : decMap($r4, $path + ".weights", ($k, $p) => decEnum($k, $p, base.ToneMembers), ($x, $p) => decInt($x, $p, -9223372036854776000, 9223372036854776000));
   const $v5: types.Pin = read_types_Pin(decGet($o, "pin", $path + ".pin"), $path + ".pin");
   const $r6 = decGet($o, "tones", $path + ".tones", true);
   const $v6: ReadonlyArray<base.Tone> = $r6 === undefined ? [] : decList($r6, $path + ".tones", ($x, $p) => decEnum($x, $p, base.ToneMembers));
