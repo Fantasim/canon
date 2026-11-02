@@ -90,10 +90,12 @@ func reportShared(first, later cppHolder) {
 func (s *stage) cppNamesOf(u *unit) []cppShared {
 	es := emitFor(u, TargetCpp)
 	switch {
-	case es == nil || !cppPlanned(es.e):
+	case es == nil || !cppPlanned(es.e) && !refusedCppMode(es.e):
 		return nil
 	case u.selected:
 		return u.cppNames
+	case refusedCppMode(es.e): // what every mode's plan shares (DECISIONS 429)
+		return commonShared(cppPlansOfEveryMode(s.declaredOnly(u), es.e))
 	}
 	return PlanCppNames(s.declaredOnly(u), es.e).shared
 }

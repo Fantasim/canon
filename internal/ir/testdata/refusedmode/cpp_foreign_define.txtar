@@ -1,0 +1,55 @@
+DECISIONS 429, CODEGEN.md §3.5, §7.9: under a cpp mode check refused, a name every mode's plan declares that a package this one does not read writes as a #define is still E8005 foreignDefine: b, refused, spells a's define alpha; and d, whose defines every mode writes though its mode check refused, gives c's enumerator delta the same finding.
+-- a/a.canon --
+package a
+
+/// Kinds; the defines keep the names.
+enum Kind @cpp(defines: "") {
+  /// One.
+  alpha
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// Tones.
+enum Tone {
+  /// Spelled like a's define.
+  alpha
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: zzmode }
+-- c/c.canon --
+package c
+
+/// Hues.
+enum Hue {
+  /// Spelled like d's define.
+  delta
+}
+
+emit cpp { out: "@features/c", namespace: "c", mode: types }
+-- d/d.canon --
+package d
+
+/// Signs; the defines keep the names.
+enum Sign @cpp(defines: "") {
+  /// Four.
+  delta
+}
+
+emit cpp { out: "@features/d", namespace: "d", mode: zzmode }
+-- findings.txt --
+error[E8005]  b/b.canon:6:3
+  alpha is declared for b.Tone.alpha and written as a #define for a.Kind.alpha, in a package this one does not read, so its headers cannot guard it; rename b.Tone.alpha with @cpp(name:), or use a type of that package here
+
+error[E8009]  b/b.canon:9:54
+  invalid mode zzmode for emit cpp: expected one of baked, embedded, data, types
+
+error[E8005]  c/c.canon:6:3
+  delta is declared for c.Hue.delta and written as a #define for d.Sign.delta, in a package this one does not read, so its headers cannot guard it; rename c.Hue.delta with @cpp(name:), or use a type of that package here
+
+error[E8009]  d/d.canon:9:54
+  invalid mode zzmode for emit cpp: expected one of baked, embedded, data, types
+
+4 errors, 0 warnings in 4 packages (…)

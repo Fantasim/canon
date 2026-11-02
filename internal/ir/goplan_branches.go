@@ -7,16 +7,44 @@ type NamedBranches struct {
 	Name   string
 	Field  *Field
 	Fields []*Field
+	Origin string // the field's qualified Canon name, what an E8005 on the table names (DECISIONS 429)
 }
 
 // namedBranches are the tables of the fields of classes whose dependent value is decided through a ref, each field once, in class then field order; name names one from its class and field.
-func namedBranches(classes []any, name func(class any, f *Field) string) []NamedBranches {
+func namedBranches(classes []any, name func(class any, f *Field) string, origin func(class any) string) []NamedBranches {
 	var out []NamedBranches
 	for _, class := range classes {
 		fields, _ := classBody(class)
 		for _, f := range fields {
 			if refDecided(fields, f) && !slices.ContainsFunc(out, func(b NamedBranches) bool { return b.Field == f }) {
-				out = append(out, NamedBranches{Name: name(class, f), Field: f, Fields: fields})
+				out = append(out, NamedBranches{Name: name(class, f), Field: f, Fields: fields, Origin: origin(class) + qnameSep + f.Name})
+			}
+		}
+	}
+	return out
+}
+
+// classQName is a record's or case's qualified Canon name, a case's through the variant variantOf gives.
+func classQName(class any, variantOf func(*Case) *Variant) string {
+	switch x := class.(type) {
+	case *Record:
+		return x.QName()
+	case *Case:
+		if v := variantOf(x); v != nil {
+			return v.QName() + qnameSep + x.Name
+		}
+		return x.Name
+	}
+	return ""
+}
+
+// ownVariants maps each case of p's own variants to its variant.
+func ownVariants(p *Package) map[*Case]*Variant {
+	out := map[*Case]*Variant{}
+	for _, t := range p.Types {
+		if v, ok := t.(*Variant); ok {
+			for _, c := range v.Cases {
+				out[c] = v
 			}
 		}
 	}
@@ -54,6 +82,11 @@ func (pl *GoNamePlan) BranchTables() []NamedBranches {
 			name = pl.foreignClassName(class)
 		}
 		return branchesPrefix + name + goUpperCamel(f.Name)
+	}, func(class any) string {
+		if o, own := pl.originOf[class]; own {
+			return o
+		}
+		return classQName(class, pl.foreign.VariantOf)
 	})
 	return pl.branches
 }
@@ -77,6 +110,6 @@ func (pl *GoNamePlan) foreignClassName(class any) string {
 // declareBranchTables declares each go branch table in the package scope (CODEGEN.md §3.5, §5.6).
 func (pl *GoNamePlan) declareBranchTables(top *nameScope) {
 	for _, b := range pl.BranchTables() {
-		pl.declare(top, b.Name, pl.p.Name+qnameSep+b.Name, b.Field)
+		pl.declare(top, b.Name, b.Origin, b.Field)
 	}
 }

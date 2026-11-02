@@ -46,11 +46,14 @@ func refIdents(tg target) []*syntax.IdentExpr {
 	return out
 }
 
+// isRetired tells an item marked `retired`.
+func isRetired(m *syntax.Modifiers) bool { return m != nil && m.Retired.Valid() }
+
 // retiredKeys are the keys of retired entries of the file's table literals.
 func retiredKeys(tg target) []string {
 	var out []string
 	for _, it := range nodes[*syntax.EntryItem](tg) {
-		if it.Mods != nil && it.Mods.Retired.Valid() {
+		if isRetired(it.Mods) {
 			out = append(out, it.Key.Name)
 		}
 	}
@@ -385,7 +388,7 @@ func spreadNotFirst(tg target) []progen.Site {
 		}
 		for _, it := range lit.Items {
 			e, ok := it.(*syntax.EntryItem)
-			if !ok || len(e.Value.Items) < 2 {
+			if !ok || len(e.Value.Items) < 2 || isRetired(e.Mods) { // a live copy of a retired entry names what only it may (E3502)
 				continue
 			}
 			_, first := span(tg, e.Value.Items[0])

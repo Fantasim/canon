@@ -13,13 +13,13 @@ func (c *checker) checkInputs(p *pkgState) {
 	var written []types.Type
 	for _, o := range p.all {
 		r, ok := o.typ.(*types.RecordType)
-		if o.kind != ObjTypeName || !ok || !hasInput(r) || reaches(r, r, map[*types.RecordType]bool{}) {
+		if o.kind != ObjTypeName || !ok || !hasInput(r) || c.reaches(r, r, map[*types.RecordType]bool{}) {
 			continue
 		}
 		if written == nil {
 			written = c.writtenTypes(p)
 		}
-		pc := newPathCounter(r)
+		pc := newPathCounter(c, r)
 		if c.inputPaths(p, pc) != 1 || c.containedIn(p, pc, written) {
 			env := c.declEnv(o)
 			c.report(env, diag.E1903.AtRecord(env.span(r.Decl.Name), o.name))
@@ -94,14 +94,15 @@ func (c *checker) inputPaths(p *pkgState, pc *pathCounter) int {
 // pathCounter counts the record-field paths to r, memoized per record; a cycle on the way to r
 // is many paths.
 type pathCounter struct {
+	c      *checker
 	r      *types.RecordType
 	count  map[*types.RecordType]int
 	onPath map[*types.RecordType]bool
 	holds  map[*types.RecordType]bool // r, or a record whose fields reach r
 }
 
-func newPathCounter(r *types.RecordType) *pathCounter {
-	return &pathCounter{r: r, count: map[*types.RecordType]int{}, onPath: map[*types.RecordType]bool{}, holds: map[*types.RecordType]bool{}}
+func newPathCounter(c *checker, r *types.RecordType) *pathCounter {
+	return &pathCounter{c: c, r: r, count: map[*types.RecordType]int{}, onPath: map[*types.RecordType]bool{}, holds: map[*types.RecordType]bool{}}
 }
 
 // paths counts the paths from a value of type t to r through record fields.
@@ -122,7 +123,7 @@ func (pc *pathCounter) paths(t types.Type) int {
 	pc.onPath[rec] = true
 	n := 0
 	for _, f := range rec.Fields {
-		if !selfContaining(rec, f) {
+		if !pc.c.selfContaining(rec, f) {
 			n = min(n+pc.paths(f.Type), manyPaths)
 		}
 	}
@@ -143,7 +144,7 @@ func boolCount(b bool) int {
 func (pc *pathCounter) reachesFrom(rec *types.RecordType, seen map[*types.RecordType]bool) bool {
 	for _, f := range rec.Fields {
 		next := requiredRecord(unwrapOptional(f.Type))
-		if next == nil || seen[next] || selfContaining(rec, f) {
+		if next == nil || seen[next] || pc.c.selfContaining(rec, f) {
 			continue
 		}
 		seen[next] = true

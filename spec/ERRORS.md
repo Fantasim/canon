@@ -387,7 +387,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 333 codes: 304 errors, 26 warnings and 3 run-time codes, with 571 messages.
+The catalogue holds 333 codes: 304 errors, 26 warnings and 3 run-time codes, with 572 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -910,7 +910,8 @@ Owner: TYPES.md, WIRE.md.
 | E3015 | notConstant | what:Kind | `this {what} must be a constant expression` |
 | E3015 | budget | what:Kind | `this {what} could not be folded: the evaluation budget is exhausted` |
 | E3016 | - | kind:Kind, name:Name | `{kind} {name} cannot be used as a value; write a lambda` |
-| E3017 | - | name:Name | `cannot assign to {name}: it is not a var` |
+| E3017 | notVar | name:Name | `cannot assign to {name}: it is not a var` |
+| E3017 | target | - | `only a var, or an element of one (x[i]), can be assigned` |
 | E3018 | - | a:Name, b:Name, typ:Type | `for {a}, {b} in needs a map or pairs, found {typ}` |
 | E3019 | - | fn:Name, result:Type | `return in {fn} needs a value of type {result}` |
 | E3020 | - | - | `this expression has no effect` |
@@ -1033,7 +1034,7 @@ Owner: EVALUATION.md, STDLIB.md.
 | E4107 | error | eval/std | STDLIB.md §7 | a string slice bound inside a UTF-8 character |
 | E4108 | error | eval/std | STDLIB.md §2.2 | `clamp` with `lo > hi` |
 | E4201 | error | eval | EVALUATION.md §4.5 | internal: write to a frozen value (a compiler bug, exit 3) |
-| E4301 | error | eval | EVALUATION.md §3.2 | a cycle between values |
+| E4301 | error | eval | EVALUATION.md §3.2 | a cycle between values (`check` reports one through a field default) |
 | E4401 | error | eval | EVALUATION.md §12.2 | the evaluation step budget is exhausted |
 | E4402 | error | eval | EVALUATION.md §3.3 | call depth exceeds 10 000 |
 | E4501 | error | eval/std | STDLIB.md §2.3 | `topoSort` meets a cycle |

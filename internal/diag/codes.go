@@ -1397,7 +1397,8 @@ var Registry = []Def{
 	{
 		Code: "E3017", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "cannot assign to {name}: it is not a var"},
+			{Name: "notVar", Args: []Arg{{Name: "name", Type: ArgTypeName}}, Template: "cannot assign to {name}: it is not a var"},
+			{Name: "target", Template: "only a var, or an element of one (x[i]), can be assigned"},
 		},
 	},
 	{
@@ -4925,9 +4926,14 @@ type codeE3017 struct{}
 // Def is the registry entry of E3017.
 func (codeE3017) Def() *Def { return &Registry[135] }
 
-// At reports: cannot assign to {name}: it is not a var
-func (codeE3017) At(span source.Span, name string) *Builder {
+// AtNotVar reports: cannot assign to {name}: it is not a var
+func (codeE3017) AtNotVar(span source.Span, name string) *Builder {
 	return newBuilder(&Registry[135], 0, span, name)
+}
+
+// AtTarget reports: only a var, or an element of one (x[i]), can be assigned
+func (codeE3017) AtTarget(span source.Span) *Builder {
+	return newBuilder(&Registry[135], 1, span)
 }
 
 // E3018: `for a, b in` over something that is not a map or pairs (TYPES.md §12.7).
@@ -6145,7 +6151,7 @@ func (codeE4201) At(span source.Span) *Builder {
 	return newBuilder(&Registry[215], 0, span)
 }
 
-// E4301: a cycle between values (EVALUATION.md §3.2).
+// E4301: a cycle between values (`check` reports one through a field default) (EVALUATION.md §3.2).
 var E4301 codeE4301
 
 type codeE4301 struct{}

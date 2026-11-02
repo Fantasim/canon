@@ -40,7 +40,7 @@ func emitOperators() []operator {
 		op(diag.E8011.Def().Code, "CODEGEN.md §3.5 (@go(name:) not an identifier)", badGoName),
 		op(diag.E8012.Def().Code, "CODEGEN.md §4.4 (Range field, no json emit)", goRecordField("zzSpan", ": Range = 0..1")),
 		op(diag.E8013.Def().Code, "CODEGEN.md §5.10 (package fn in data mode)", withMode("go", "data", "/// Weight.\nexport fn ", "zzWeight", "(heavy: Bool) -> Int { return if heavy { 2 } else { 1 } }")),
-		op(diag.E8014.Def().Code, "CODEGEN.md §5.13 (types mode, precomputed fn)", withMode("", modeTypes, "/// An answer.\nexport fn ", "zzAnswer", "() -> Int { return 42 }")),
+		op(diag.E8014.Def().Code, "CODEGEN.md §5.13 (types mode, precomputed fn)", withoutData(withMode("", modeTypes, "/// An answer.\nexport fn ", "zzAnswer", "() -> Int { return 42 }"))),
 		op(diag.E8015.Def().Code, "CODEGEN.md §2.2 (data mode Int value)", withMode("go", "data", "/// A cap.\n@menu(items)\nlet ", "zzCap", ": Int = 3")),
 		op(diag.E8017.Def().Code, "CODEGEN.md §5.6 (list branch)", withEmit("go", "/// Kinds.\nenum ZzKind { one, many }\n\n/// Amounts.\ntype ", "ZzAmount", "(k: ZzKind) = match k { one => Int, many => [Int] }")),
 		op(diag.E8020.Def().Code, "CODEGEN.md §5.1 (Float constant of -0.0)", withEmit("go", "/// Zero, negative.\nconst ", "ZZ_NEG", " = -0.0")),
@@ -129,6 +129,71 @@ func withMode(kind, mode, before, focus, after string) func(target) []progen.Sit
 		}
 		return nil
 	}
+}
+
+// withoutData keeps f's sites where no emit is data mode, which refuses a package fn on its own (CODEGEN.md §5.10, DECISIONS 289).
+func withoutData(f func(target) []progen.Site) func(target) []progen.Site {
+	return func(tg target) []progen.Site {
+		for _, p := range peers(tg) {
+			for _, d := range emitsOf(p, "") {
+				if optionText(p, d, "mode") == modeData {
+					return nil
+				}
+			}
+		}
+		return f(tg)
+	}
+}
+
+// textTypes are the names of the types a @text fn's result reaches in tg's package (CODEGEN.md §2.9, WIRE.md §5.9).
+func textTypes(tg target) map[string]bool {
+	out := map[string]bool{}
+	for _, p := range peers(tg) {
+		for _, f := range nodes[*syntax.FnDecl](p) {
+			if annotated(f.Annotations, annotText) && f.Result != nil {
+				namedIn(f.Result, out)
+			}
+		}
+	}
+	for reachOnce(tg, out) {
+	}
+	return out
+}
+
+// reachOnce adds to names the types the declarations it names hold, and tells whether it grew.
+func reachOnce(tg target, names map[string]bool) bool {
+	before := len(names)
+	for _, p := range peers(tg) {
+		for _, d := range nodes[syntax.Decl](p) {
+			if name := typeDeclName(d); name != "" && names[name] {
+				namedIn(d, names)
+			}
+		}
+	}
+	return len(names) > before
+}
+
+// namedIn adds to into the last segment of every type name n holds.
+func namedIn(n syntax.Node, into map[string]bool) {
+	syntax.Inspect(n, func(c syntax.Node) bool {
+		if t, ok := c.(*syntax.NamedType); ok && t.Name != nil {
+			into[t.Name.Parts[len(t.Name.Parts)-1].Name] = true
+		}
+		return true
+	})
+}
+
+// typeDeclName is the name of a record, variant or type declaration, "" for anything else.
+func typeDeclName(d syntax.Decl) string {
+	switch x := d.(type) {
+	case *syntax.RecordDecl:
+		return x.Name.Name
+	case *syntax.VariantDecl:
+		return x.Name.Name
+	case *syntax.TypeDecl:
+		return x.Name.Name
+	}
+	return ""
 }
 
 // withoutTypes keeps f's sites where no kind emit ("" any) is types mode: no E8101, E8014 (CODEGEN.md §4.1, §5.10; DECISIONS 289).
@@ -314,7 +379,8 @@ func badGoName(tg target) []progen.Site {
 	if len(emitsOf(tg, "go")) == 0 {
 		return nil
 	}
-	return sitesOf(tg, func(r *syntax.RecordDecl) bool { return len(r.Annotations) == 0 }, func(r *syntax.RecordDecl) progen.Site {
+	// a local record is never emitted, so its name override has no effect in v0.2 (TYPES.md §3.7, log-2026-11-01)
+	return sitesOf(tg, func(r *syntax.RecordDecl) bool { return len(r.Annotations) == 0 && !isLocal(r.Mods) }, func(r *syntax.RecordDecl) progen.Site {
 		s, e := span(tg, r.Name)
 		return seq(0, mark(tg, s, e), insert(e, ` @go(name: "1Bad")`))
 	})
@@ -328,7 +394,8 @@ func goRecordField(name, rest string) func(target) []progen.Site {
 		}
 		return recordFieldOf(func(tg target) func(*syntax.RecordDecl) bool {
 			elems := pairsElements(tg) // a field more breaks a pairs element's count (WIRE.md §5.14)
-			return func(r *syntax.RecordDecl) bool { return !elems[r.Name.Name] }
+			text := textTypes(tg)      // a @text fn's result has no wire form for a Range either (WIRE.md §5.9)
+			return func(r *syntax.RecordDecl) bool { return !elems[r.Name.Name] && !text[r.Name.Name] }
 		}, "", name, rest)(tg)
 	}
 }

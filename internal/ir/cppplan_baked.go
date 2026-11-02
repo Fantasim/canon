@@ -228,10 +228,10 @@ func (pl *CppNamePlan) declareElems(detail *nameScope) {
 			continue
 		}
 		first := pl.ElemsName(c, 0)
-		pl.shareInner(detail, first, c.Name, c)
+		pl.shareInner(detail, first, pl.p.Name+qnameSep+c.Name, c)
 		for _, name := range slices.Sorted(maps.Keys(pl.ns.names)) {
 			if numbered(name, first) {
-				pl.collide(pl.ns, name, pl.ns.names[name], c.Name, pl.ns.items[name])
+				pl.collide(pl.ns, name, pl.ns.names[name], pl.p.Name+qnameSep+c.Name, pl.ns.items[name])
 			}
 		}
 	}

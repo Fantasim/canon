@@ -32,3 +32,10 @@ var (
 	tsPredefined = strings.Fields("string number boolean symbol bigint object any unknown never void")
 	tsHelpers    = strings.Fields("CanonEvalError canonFail canonInt canonAdd canonSub canonMul canonDiv canonMod canonNeg canonAbs canonClamp canonF canonMinF canonMaxF canonClampF canonToInt canonFloor canonCeil canonRound canonDivDuration canonCheckRange canonCheckWidth canonF32 CanonMap CanonTable canonTable CanonRow canonFreeze canonList canonIndex canonEnvelope decOrder decTokenKey decToken decText decDecimal decSame decKeys decFail decEntry decGet decIsObject decObject decArray decAt decEmptyObject decEmptyArray decBool decBit decInt decBig decIn decInBig decStrIn decCountIn decUnique decFloat decCompare decHalf decF32 decString decDuration decEnum decCode decBits decKeyed decList decTable decIntKey decBigKey decMap decPairs decParse")
 )
+
+// The valid modes of the go, ts and cpp targets: under a refused mode, a collision is reported only when the plan of each has it (decision 213, log-2026-11-01).
+var (
+	goModes  = []Mode{ModeBaked, ModeData, ModeTypes}
+	tsModes  = []Mode{ModeBaked, ModeEmbedded, ModeData, ModeTypes}
+	cppModes = []Mode{ModeBaked, ModeData, ModeTypes}
+)

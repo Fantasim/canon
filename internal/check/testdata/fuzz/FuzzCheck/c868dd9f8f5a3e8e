@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte(" package A record StatBonus{A: [StatBonus](..1)@json(pairs: [\"{i}\", \"0{i}\"])B:}")

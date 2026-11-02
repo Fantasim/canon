@@ -215,7 +215,7 @@ emit cpp { out: "@features/shop/cpp", namespace: "game::shop", mode: baked }
   hook Reward_Nothing []
   hook Marker [code_ size_]
   entry hook Entry_Zone
-  problem 0 MarkerRow GetId: MarkerRow, game.core.Marker.code
+  problem 0 MarkerRow GetId: game.core.Marker, game.core.Marker.code
   define tables:  (0 loaded)
 == ts game.world data
   imports: game.core[go,cpp,ts] game.tone[go,cpp,ts]
@@ -224,7 +224,7 @@ emit cpp { out: "@features/shop/cpp", namespace: "game::shop", mode: baked }
   CanonRow reserved: true
   define tables:  (0 loaded)
 error[E8005]  game/world/world.canon:13:3
-  cpp: GetId is generated for both MarkerRow and game.core.Marker.code; rename one of them with @cpp(name:)
+  cpp: GetId is generated for both game.core.Marker and game.core.Marker.code; rename one of them with @cpp(name:)
 
 error[E8005]  game/world/world.canon:13:3
   go: Record is generated for both MarkerRow and game.core.Marker.code; rename one of them with @go(name:)

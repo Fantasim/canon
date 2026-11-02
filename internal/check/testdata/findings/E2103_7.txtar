@@ -1,0 +1,37 @@
+TYPES.md §1, §10.2, §11.1: a type argument read through a ref that resolves to no collection (E2103) names nothing: no E3003 for the field it selects.
+-- a/a.canon --
+package a
+
+/// A shape.
+enum Shape { count, place }
+
+/// An event.
+record Ev {
+  /// Its shape.
+  shape: Shape
+}
+
+/// A file.
+record File {
+  /// Its events.
+  evs: [Ev]
+}
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int
+  place => String
+}
+
+/// A reward.
+record Reward {
+  /// Its event.
+  event: ref File
+  /// Its parameter.
+  param: Param(event.shape)
+}
+-- findings.txt --
+error[E2103]  a/a.canon:27:14
+  ref File: there is no collection of File; write ref <collection name>
+
+1 error, 0 warnings in 1 package (…)

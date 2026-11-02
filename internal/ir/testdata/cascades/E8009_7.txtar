@@ -1,0 +1,26 @@
+DECISIONS 213, CODEGEN.md §3.5, §5.3: the ts names depend on the emit's mode (in data and types mode two tables of one record share one id type, their key string), so a ts emit whose mode check refused (E8009) has no name plan to judge: no E8005 idType for those two tables.
+-- a/a.canon --
+package a
+
+/// A displayed text.
+record Label {
+  /// Its text.
+  text: String
+}
+
+/// The names of regions.
+let regionNames: table Label = {
+  north { text: "North" }
+}
+
+/// The names of stages: a second table of the same record.
+let stageNames: table Label = {
+  first { text: "First" }
+}
+
+emit ts { out: "@features/a.ts", mode: zzmode }
+-- findings.txt --
+error[E8009]  a/a.canon:19:40
+  invalid mode zzmode for emit ts: expected one of baked, embedded, data, types
+
+1 error, 0 warnings in 1 package (…)

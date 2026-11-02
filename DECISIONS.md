@@ -4404,3 +4404,18 @@ round 2", "PS1 review", "PS2 round 2"):
      known (an optional refused with `E3402`). Reading a deprecated field in a type argument is
      `W3301` (TYPES §16). Reason: `progen-nightly` found an `E2102` that only the first error
      caused, and a deprecated read the warning missed.
+428. **An assignment target that is no name is `E3017` (GRAMMAR.md §5.10; TYPES.md §12.7; GRM-20).**
+     The left side of an assignment is a `var`, possibly indexed (`x[i]…`). A field (`x.f`) is
+     `E3307`, and any other expression (`1 = 0`, `f() = 0`, `(i) = 0`) is `E3017`, variant `target`;
+     a target the parser already refused (a recovery node) reports nothing more (TYPES §1).
+     Reason: `check` accepted such a target silently, and evaluation then failed with an internal
+     compiler error.
+429. **A refused emit mode hides only what depends on the mode (CODEGEN.md §3.5, §7.9; ERRORS.md E8005;
+     reads 213).** Under an emit mode `check` refused (`E8009`), every name check of that target
+     (its own plan, the names a shared namespace holds, `#define` duplicates, `foreignDefine`)
+     judges what the plans of every valid mode of that target have in common: a collision is
+     reported when it holds in every mode and skipped otherwise. An unbuilt mode (`E8019`) still has
+     no plan. Every operand of an `E8005` names a declaration by its qualified Canon name, never a
+     generated name. Reason: a refused mode hid type clashes that hold in every mode, reported a
+     let/const clash only one mode has, and some messages named a generated container or an
+     unqualified value.

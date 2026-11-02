@@ -66,7 +66,11 @@ func (c *checker) assign(env *env, s *syntax.AssignStmt) *env {
 		c.synth(env, s.Value)
 		return env
 	}
-	if root == nil {
+	if root == nil { // no name: E3017 target, but a recovery node the parser refused (DECISIONS 428, TYPES.md §1)
+		if _, bad := indexBase(s.Target).(*syntax.BadExpr); !bad {
+			c.report(env, diag.E3017.AtTarget(env.span(s.Target)))
+		}
+		c.synth(env, s.Target)
 		c.synth(env, s.Value)
 		return env
 	}
@@ -101,7 +105,7 @@ func (c *checker) assignError(env *env, root *syntax.IdentExpr, o *object) {
 		return
 	}
 	c.info.Uses[root] = o
-	c.report(env, diag.E3017.At(env.span(root), root.Name))
+	c.report(env, diag.E3017.AtNotVar(env.span(root), root.Name))
 }
 
 // assignValue checks `x = e` against x's type, `x op= e` with x read under the facts (TYPES.md §7.1).
@@ -137,6 +141,17 @@ func (c *checker) assignValue(env *env, s *syntax.AssignStmt, target, read types
 	}
 	if !c.assignable(r, target) {
 		c.report(env, diag.E3002.At(env.span(s.Value), target, r))
+	}
+}
+
+// indexBase is the expression an index chain `x[i][j]…` ends at, e itself without one.
+func indexBase(e syntax.Expr) syntax.Expr {
+	for {
+		x, ok := e.(*syntax.IndexExpr)
+		if !ok {
+			return e
+		}
+		e = x.X
 	}
 }
 

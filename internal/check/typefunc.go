@@ -132,12 +132,13 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 	arg, t := rootArg(r)
 	c.info.Uses[root] = r.obj
 	c.info.Types[root] = t
+	c.argRead(env, root, r.obj)
 	if c.inputArg(env, e, root, r.field) {
 		return nil, nil, false
 	}
 	for _, s := range segs {
-		if t.Kind() == types.Error { // a path through a refused parameter names nothing (TYPES.md §1)
-			return arg, t, true
+		if c.erroneous(t) { // a path through a refused parameter or a targetless ref names nothing (TYPES.md §1)
+			return arg, types.ErrorType, true
 		}
 		if t.Base().Kind() == types.Optional {
 			c.notTypePath(tc, e)
@@ -149,6 +150,7 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 		}
 		c.info.Selections[s] = &Selection{Kind: SelField, Obj: c.fieldObjects[f], Recv: t, Deref: t.Base().Kind() == types.Ref}
 		c.info.NameUses[s.Name] = c.fieldObjects[f]
+		c.argRead(env, s.Name, c.fieldObjects[f])
 		if c.inputArg(env, e, s.Name, f) {
 			return nil, nil, false
 		}
@@ -157,6 +159,13 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 		c.info.Types[s] = t
 	}
 	return arg, t, true
+}
+
+// argRead is W3301 for a deprecated field a type argument reads: an expression (TYPES.md §11, §16).
+func (c *checker) argRead(env *env, n syntax.Node, o *object) {
+	if o != nil {
+		c.deprecatedUse(env, n, o)
+	}
 }
 
 // inputArg is E3313 at at for a type argument reading the input field f, then of the error type (TYPES.md §14).

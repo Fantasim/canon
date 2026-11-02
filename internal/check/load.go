@@ -44,9 +44,13 @@ func (c *checker) load(env *env, e *syntax.LoadExpr, want types.Type) types.Type
 
 // literalPath is E7008 for a load whose path is no positional string literal without interpolation,
 // raw or not, at the path or, without one, at the load: the one form load reads (DECISIONS 330).
+// A path holding a lexer error has the error type: not judged (DECISIONS 215).
 func (c *checker) literalPath(env *env, e *syntax.LoadExpr) bool {
 	if len(e.Args) == 0 || e.Args[0].Name != nil {
 		c.report(env, diag.E7008.At(env.span(e)))
+		return false
+	}
+	if c.lexError(e.Args[0].Value) {
 		return false
 	}
 	if s, ok := e.Args[0].Value.(syntax.StrLit); ok {

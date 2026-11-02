@@ -104,7 +104,7 @@ func (c *checker) requiredFields(env *env, e *syntax.BraceLit, t types.Type, fie
 		if given[f.Name] || !required(f) {
 			continue
 		}
-		if selfContaining(owner, f) {
+		if c.selfContaining(owner, f) {
 			continue
 		}
 		c.report(env, diag.E3302.At(env.tokSpan(e.First()), t, f.Name))

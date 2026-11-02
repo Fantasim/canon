@@ -1207,7 +1207,7 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
 |---|---|
 | `let x = e`, `let x: T = e` | `x` is immutable; without `T`, `e` is synthesized |
 | `var x = e`, `var x: T = e` | the declared or synthesized type is fixed for `x`'s scope |
-| `x = e`, `x op= e` | `x` must be a `var` (`E3017` for lets, parameters, loop variables, fields) |
+| `x = e`, `x op= e` | `x` must be a `var` (`E3017` for lets, parameters, loop variables, fields; `E3017` too for a target that is no name, such as `1` or `f()`, DECISIONS 428) |
 | `x[i]… = e` | the root must be a `var`; any depth of indexes (`m[k][0] = v`) |
 | `x.f = e` | `E3307` (records are values: rebuild with spread) |
 | `for x in e` | `e` is a list, keyed list, table (entries), `Range` (`Int`) or a list of pairs |

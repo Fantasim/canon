@@ -15,9 +15,9 @@ type goData struct {
 
 // indexClasses maps each own field and export method to its record or case, and each record, variant, case with fields and dependent type to its Go type.
 func (pl *GoNamePlan) indexClasses() {
-	pl.classOf, pl.goNameOf = map[any]any{}, map[any]string{}
-	own := func(class any, goName string, fields []*Field, fns []*ExportFn) {
-		pl.goNameOf[class] = goName
+	pl.classOf, pl.goNameOf, pl.originOf = map[any]any{}, map[any]string{}, map[any]string{}
+	own := func(class any, origin, goName string, fields []*Field, fns []*ExportFn) {
+		pl.goNameOf[class], pl.originOf[class] = goName, origin
 		for _, f := range fields {
 			pl.classOf[f] = class
 		}
@@ -28,14 +28,14 @@ func (pl *GoNamePlan) indexClasses() {
 	for _, t := range pl.p.Types {
 		switch x := t.(type) {
 		case *Record:
-			own(x, pl.TypeName(x), x.Fields, x.Methods)
+			own(x, x.QName(), pl.TypeName(x), x.Fields, x.Methods)
 		case *Variant:
-			pl.goNameOf[x] = pl.TypeName(x)
+			pl.goNameOf[x], pl.originOf[x] = pl.TypeName(x), x.QName()
 			for _, c := range x.Cases {
-				own(c, pl.CaseName(x, c), c.Fields, c.Methods)
+				own(c, x.QName()+qnameSep+c.Name, pl.CaseName(x, c), c.Fields, c.Methods)
 			}
 		case *Dependent:
-			pl.goNameOf[x] = pl.TypeName(x)
+			pl.goNameOf[x], pl.originOf[x] = pl.TypeName(x), x.QName()
 		}
 	}
 }

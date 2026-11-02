@@ -206,13 +206,16 @@ func (c *checker) resolveKeyed(tc *typeCtx, t *syntax.KeyedType) types.Type {
 	if fo := c.fieldObjects[f]; fo != nil {
 		c.info.NameUses[t.Key] = fo
 	}
-	if ft := c.fieldType(f); !keyable(ft) {
+	ft := c.fieldType(f)
+	if !keyable(ft) && ft.Kind() != types.Error {
 		c.report(tc.env, diag.E3012.AtType(tc.env.span(t.Key), t.Key.Name, ft))
 		return inner
 	}
 	l.KeyedBy = f
 	c.keyedOf[rec] = true
-	c.refKey(tc.env, t.Key, c.fieldType(f))
+	if ft.Kind() != types.Error { // a key field in error keeps its list keyed, unjudged (TYPES.md §1)
+		c.refKey(tc.env, t.Key, ft)
+	}
 	return inner
 }
 

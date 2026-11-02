@@ -1,0 +1,75 @@
+DECISIONS 213, CODEGEN.md §3.5, §7.9 (log-2026-11-01): a cpp emit whose mode check refused (E8009) reports a name collision only when the plan of every mode gen/cpp writes (baked, data, types) has it: two @cpp(name:) overrides, or a type and an override taking its name, clash in every mode; a let and a const overridden alike do not. Every one of those modes writes the defines, so two equal define names stay E8005.
+-- a/a.canon --
+package a
+
+/// A.
+record A @cpp(name: "W") {
+  /// N.
+  n: Int
+}
+
+/// B.
+record B @cpp(name: "W") {
+  /// N.
+  n: Int
+}
+
+/// X.
+record X {
+  /// N.
+  n: Int
+}
+
+/// Y.
+record Y @cpp(name: "X") {
+  /// N.
+  n: Int
+}
+
+/// An enum.
+enum Color { red }
+
+/// Z.
+record Z @cpp(name: "Color") {
+  /// N.
+  n: Int
+}
+
+/// One.
+@cpp(name: "same")
+let one: A = { n: 1 }
+
+/// Two.
+@cpp(name: "same")
+const TWO = 2
+
+/// First kinds.
+enum First @cpp(defines: "K_") {
+  /// One.
+  one
+}
+
+/// Second kinds.
+enum Second @cpp(defines: "K_") {
+  /// One again.
+  one
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: zzmode }
+-- findings.txt --
+error[E8005]  a/a.canon:10:8
+  cpp: W is generated for both a.A and a.B; rename one of them with @cpp(name:)
+
+error[E8005]  a/a.canon:22:8
+  cpp: X is generated for both a.X and a.Y; rename one of them with @cpp(name:)
+
+error[E8005]  a/a.canon:31:8
+  cpp: Color is generated for both a.Color and a.Z; rename one of them with @cpp(name:)
+
+error[E8005]  a/a.canon:51:6
+  #define K_one is written for both a.First.one and a.Second.one; change one prefix, or rename one declaration
+
+error[E8009]  a/a.canon:56:54
+  invalid mode zzmode for emit cpp: expected one of baked, embedded, data, types
+
+5 errors, 0 warnings in 1 package (…)

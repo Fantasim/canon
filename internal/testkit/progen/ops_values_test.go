@@ -387,9 +387,9 @@ func forceParameter(tg target) []progen.Site {
 		if f.Mods != nil && f.Mods.Export.Valid() {
 			continue // a translated function refuses "!" outright (E9001)
 		}
-		plain := map[string]bool{}
+		plain, tested := map[string]bool{}, testedRoots(tg) // `x!.f` drops the narrowing of `x.f` (TYPES.md §6.6)
 		for _, p := range f.Params {
-			if !strings.Contains(text(tg, p.Type), "?") {
+			if !tested[p.Name.Name] && !strings.Contains(text(tg, p.Type), "?") {
 				plain[p.Name.Name] = true
 			}
 		}

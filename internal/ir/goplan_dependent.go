@@ -87,7 +87,7 @@ func heldDependents(class any) []*Dependent {
 func (pl *GoNamePlan) declareDependentDecoders(top *nameScope) {
 	for _, t := range pl.p.Types {
 		if d, ok := t.(*Dependent); ok && pl.Decoded(d) {
-			pl.declare(top, pl.DecodeFunc(d), pl.goNameOf[d], d)
+			pl.declare(top, pl.DecodeFunc(d), pl.originOf[d], d)
 		}
 	}
 }

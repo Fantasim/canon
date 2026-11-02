@@ -1,0 +1,34 @@
+CODEGEN.md §3.5, §5.13, §6.1, DECISIONS 203: in a go types emit, a record whose @go(name:) takes another type's name collides once: the decode<T> built on the two classes' one Go name comes from the same pair of declarations, named by their Canon names, so no second E8005 names the package.
+-- a/a.canon --
+package a
+
+/// X.
+record X {
+  /// N.
+  n: Int
+}
+
+/// Y.
+record Y @go(name: "X") {
+  /// N.
+  n: Int
+}
+
+/// An enum.
+enum Color { red }
+
+/// Z.
+record Z @go(name: "Color") {
+  /// N.
+  n: Int
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:10:8
+  go: X is generated for both a.X and a.Y; rename one of them with @go(name:)
+
+error[E8005]  a/a.canon:19:8
+  go: Color is generated for both a.Color and a.Z; rename one of them with @go(name:)
+
+2 errors, 0 warnings in 1 package (…)

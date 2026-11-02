@@ -1,0 +1,63 @@
+TYPES.md §1, §5.1, §6.5, DECISIONS 427: the index of an optional receiver refused with E3402 is checked as the sound index path checks it against the content's key: an unknown name there is reported, a member of the key type resolves, a plain list's position is an Int or a Range (a String is E3002, as on a plain list), a map's key is checked against its type (an Int for a String key is E3002, as on a plain map), a slice keeps its type.
+-- a/a.canon --
+package a
+
+local enum K { ts, id }
+
+local record H {
+  m: {String: Int}?
+  ks: {K: Int}?
+  xs: [Int]?
+}
+
+local record G {
+  m: {String: Int}
+  xs: [Int]
+}
+
+local fn f(h: H) -> Int {
+  return h.m[zzz] + h.ks[ts] + h.xs[0] + h.xs[0..1][0]
+}
+
+local fn opt(h: H, n: Int) -> Int {
+  return h.m[n] + h.xs["a"]
+}
+
+local fn plain(g: G, n: Int) -> Int {
+  return g.m[n] + g.xs["a"]
+}
+-- findings.txt --
+error[E3402]  a/a.canon:17:10
+  h.m may be none: use ?., !, ?? or test != none first
+
+error[E2102]  a/a.canon:17:14
+  unknown name zzz
+
+error[E3402]  a/a.canon:17:21
+  h.ks may be none: use ?., !, ?? or test != none first
+
+error[E3402]  a/a.canon:17:32
+  h.xs may be none: use ?., !, ?? or test != none first
+
+error[E3402]  a/a.canon:17:42
+  h.xs may be none: use ?., !, ?? or test != none first
+
+error[E3402]  a/a.canon:21:10
+  h.m may be none: use ?., !, ?? or test != none first
+
+error[E3002]  a/a.canon:21:14
+  expected String, found Int
+
+error[E3402]  a/a.canon:21:19
+  h.xs may be none: use ?., !, ?? or test != none first
+
+error[E3002]  a/a.canon:21:24
+  expected Int, found String
+
+error[E3002]  a/a.canon:25:14
+  expected String, found Int
+
+error[E3002]  a/a.canon:25:24
+  expected Int, found String
+
+11 errors, 0 warnings in 1 package (…)

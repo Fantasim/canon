@@ -1,0 +1,50 @@
+DECISIONS 428 (the EVAL-FUZZ reproducer): `canon check` on an assignment whose target is no name (a literal, a call, a parenthesized var) reports E3017 `target`; the fns are broken and never evaluated, where they once failed evaluation with an internal compiler error.
+-- project.canon --
+project p {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Assigns to a literal.
+fn lit(n: Int) -> Int {
+  var i = n
+  1 = 0
+  return i
+}
+
+/// Assigns to a call.
+fn call(n: Int) -> Int {
+  var i = n
+  lit(1) = 0
+  return i
+}
+
+/// Assigns to a parenthesized var.
+fn paren(n: Int) -> Int {
+  var i = n
+  (i) = 0
+  return i
+}
+
+/// One.
+let one: Int = lit(10)
+
+/// Two.
+let two: Int = call(10)
+
+/// Three.
+let three: Int = paren(10)
+-- check-only --
+-- findings.txt --
+error[E3017]  a/a.canon:7:3
+  only a var, or an element of one (x[i]), can be assigned
+
+error[E3017]  a/a.canon:14:3
+  only a var, or an element of one (x[i]), can be assigned
+
+error[E3017]  a/a.canon:21:3
+  only a var, or an element of one (x[i]), can be assigned
+
+3 errors, 0 warnings in 1 package (…)

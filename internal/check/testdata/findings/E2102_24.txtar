@@ -1,0 +1,34 @@
+TYPES.md §1, §5.1 (log-2026-11-01 PROGEN-NIGHTLY ruling): an index of a receiver in error is checked against the error type: a bare name there could be a key, so it is silent. The arguments of a call on a receiver in error stay checked alone (DECISIONS 364), and an index that is no bare name stays checked.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum Kind { ts, id }
+
+local let counted: Int = zzcounts[ts]
+local let sliced: [Int] = zzlist[0..nosuch]
+local let picked: Int = zzmap[nosuch2 + 1]
+local let called: Int = zzfn.call(nosuch3)
+-- findings.txt --
+error[E2102]  a/a.canon:6:26
+  unknown name zzcounts
+
+error[E2102]  a/a.canon:7:27
+  unknown name zzlist
+
+error[E2102]  a/a.canon:7:37
+  unknown name nosuch
+
+error[E2102]  a/a.canon:8:25
+  unknown name zzmap
+
+error[E2102]  a/a.canon:8:31
+  unknown name nosuch2
+
+error[E2102]  a/a.canon:9:25
+  unknown name zzfn
+
+error[E2102]  a/a.canon:9:35
+  unknown name nosuch3
+
+7 errors, 0 warnings in 1 package (…)

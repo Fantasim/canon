@@ -140,11 +140,11 @@ func applies(n syntax.Node, fns map[string]bool) bool {
 	})
 }
 
-// unknownMember renames a member, never a key of a table or keyed list (TYPES.md §3.5).
+// unknownMember renames a member (TYPES.md §3.5) but a key, a tested path or a dependent value's.
 func unknownMember(tg target) []progen.Site {
-	keyed := collections(tg)
+	keyed, tested, dependent := collections(tg), testedPaths(tg), dependentReceivers(tg)
 	return sitesOf(tg, func(s *syntax.SelectorExpr) bool {
-		return isSource(tg) && !s.Optional && !keyed[lastName(s.X)]
+		return isSource(tg) && !s.Optional && !keyed[lastName(s.X)] && !tested[s] && !dependent(s.X)
 	}, func(s *syntax.SelectorExpr) progen.Site {
 		ns, ne := span(tg, s.Name)
 		return site(replace(ns, ne, "zz"+s.Name.Name))
@@ -314,10 +314,21 @@ func stableFielded(tg target) map[string]bool {
 	return out
 }
 
+// boundReadsLet makes a refinement's upper bound read a let: only a range in a type's arguments
+// is a bound; a slice or a loop range in value position reads any value.
 func boundReadsLet(tg target) []progen.Site {
+	bounds := map[*syntax.RangeExpr]bool{}
+	for _, a := range nodes[*syntax.TypeArgs](tg) {
+		syntax.Inspect(a, func(n syntax.Node) bool {
+			if r, ok := n.(*syntax.RangeExpr); ok {
+				bounds[r] = true
+			}
+			return true
+		})
+	}
 	return sitesOf(tg, func(r *syntax.RangeExpr) bool {
 		_, isInt := r.Hi.(*syntax.IntLit)
-		return isSource(tg) && isInt
+		return isSource(tg) && isInt && bounds[r]
 	}, func(r *syntax.RangeExpr) progen.Site {
 		s, e := span(tg, r.Hi)
 		end := declEnd(tg)

@@ -1,0 +1,114 @@
+WIRE.md §4.1, TYPES.md §3.2, §13.1 (FuzzCheck crasher c868dd9f8f5a3e8e): a pairs element containing itself, directly or through another record, is E3022's alone whatever the order of its fields and records; a field whose type is missing needs no record. No panic.
+-- a/a.canon --
+package a
+
+/// Holds itself after its pairs.
+record Late {
+  /// Pairs of itself.
+  xs: [Late](..=1) @json(pairs: ["k{i}", "v{i}"])
+  /// Itself.
+  me: Late
+}
+
+/// Holds itself before its pairs.
+record Early {
+  /// Itself.
+  me: Early
+  /// Pairs of itself.
+  xs: [Early](..=1) @json(pairs: ["k{i}", "v{i}"])
+}
+-- c/c.canon --
+package c
+
+/// Holds itself through Mid, declared after it.
+local record Late {
+  /// Pairs of itself.
+  xs: [Late](..=1) @json(pairs: ["k{i}", "v{i}"])
+  /// Its mid.
+  y: Mid
+}
+
+/// Holds a Late.
+local record Mid {
+  /// The Late.
+  l: Late
+}
+-- d/d.canon --
+package d
+
+/// Holds an Early.
+local record Mid {
+  /// The Early.
+  l: Early
+}
+
+/// Holds itself through Mid, declared before it.
+local record Early {
+  /// Pairs of itself.
+  xs: [Early](..=1) @json(pairs: ["k{i}", "v{i}"])
+  /// Its mid.
+  y: Mid
+}
+-- e/e.canon --
+package e
+
+/// Holds an Early.
+local record Mid {
+  /// The Early.
+  l: Early
+}
+
+/// Holds itself through Mid, its pairs field last.
+local record Early {
+  /// Its mid.
+  y: Mid
+  /// Pairs of itself.
+  xs: [Early](..=1) @json(pairs: ["k{i}", "v{i}"])
+}
+-- b/b.canon --
+package b
+record StatBonus{A: [StatBonus](..1)@json(pairs: ["{i}", "0{i}"])B:}
+-- findings.txt --
+error[E3022]  a/a.canon:4:8
+  Late contains itself and can never be built
+
+error[E3022]  a/a.canon:12:8
+  Early contains itself and can never be built
+
+warning[W1002]  b/b.canon:2:8
+  record StatBonus has no doc comment
+
+warning[W1002]  b/b.canon:2:18
+  field A has no doc comment
+
+error[E3316]  b/b.canon:2:37
+  @json(pairs) does not apply to [b.StatBonus](..1)
+
+error[E1117]  b/b.canon:2:66
+  missing separator: put "," or a new line between items
+
+warning[W1002]  b/b.canon:2:66
+  field B has no doc comment
+
+error[E1116]  b/b.canon:2:68
+  expected type; found }
+
+error[E3022]  c/c.canon:4:14
+  Late contains itself and can never be built
+
+error[E3022]  c/c.canon:12:14
+  Mid contains itself and can never be built
+
+error[E3022]  d/d.canon:4:14
+  Mid contains itself and can never be built
+
+error[E3022]  d/d.canon:10:14
+  Early contains itself and can never be built
+
+error[E3022]  e/e.canon:4:14
+  Mid contains itself and can never be built
+
+error[E3022]  e/e.canon:10:14
+  Early contains itself and can never be built
+
+11 errors, 3 warnings in 5 packages (…)

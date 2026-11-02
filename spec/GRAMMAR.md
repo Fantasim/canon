@@ -895,7 +895,8 @@ binder          = IDENT | "_" ;
 - A call to the builtin `fail` or `warn` that is not lexically inside a `check { }` block is
   `E1105` (CHK-04). Inside one, `warn(at, "message")` is an ordinary call statement.
 - The left side of an assignment is parsed as an expression; TYPES.md accepts only
-  `name { "[" expr "]" }` (`E3307` otherwise, GRM-20).
+  `name { "[" expr "]" }`: `E3307` for a field (`x.f`), `E3017` for any other target (`1`, `f()`,
+  `(i)`; GRM-20, DECISIONS 428).
 
 ### 5.11 Expressions
 

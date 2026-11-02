@@ -15,16 +15,17 @@ func (c *checker) index(env *env, x *syntax.IndexExpr) (types.Type, bool) {
 		c.indexAlone(env, x.Index)
 		return t, opt
 	}
+	content := optElem(t)
 	t, ok := c.optionalRecv(env, x.X, t, false, "")
 	if !ok {
-		c.indexAlone(env, x.Index)
+		c.indexBeside(env, x, c.indexKey(content))
 		return types.ErrorType, opt
 	}
 	if r, isRef := t.Base().(*types.RefType); isRef {
 		t = c.coll(r).Elem
 	}
 	if c.notDependent(env, x, t, indexText) {
-		c.indexAlone(env, x.Index)
+		c.indexBeside(env, x, c.branchKey(t))
 		return types.ErrorType, opt
 	}
 	if rng, isRange := x.Index.(*syntax.RangeExpr); isRange {
@@ -33,13 +34,73 @@ func (c *checker) index(env *env, x *syntax.IndexExpr) (types.Type, bool) {
 	return c.lookupIndex(env, x, t), opt
 }
 
-// indexAlone types an index whose receiver failed.
+// idxKey is what an index takes: a plain list's position (list), a key of a keyed list or table
+// (keyValue's), or a map's key (exact, checked as lookupIndex does); none when unknown.
+type idxKey struct {
+	t     types.Type
+	list  *types.ListType
+	exact bool
+}
+
+// indexKey is the key a value of t takes as an index, a ref's entries' included; none for t not indexable.
+func (c *checker) indexKey(t types.Type) idxKey {
+	if r, isRef := t.Base().(*types.RefType); isRef && !c.brokenRef(t) {
+		t = c.coll(r).Elem
+	}
+	switch b := t.Base().(type) {
+	case *types.ListType:
+		if b.KeyedBy == nil {
+			return idxKey{t: types.IntType, list: b}
+		}
+		return idxKey{t: b.KeyedBy.Type}
+	case *types.TableType:
+		return idxKey{t: types.StringType}
+	case *types.MapType:
+		return idxKey{t: b.Key, exact: true}
+	case *types.DepMapType:
+		return idxKey{t: &types.RefType{Target: b.Coll}, exact: true}
+	}
+	return idxKey{}
+}
+
+// branchKey is the key every branch of a dependent value takes, when they all take the same one.
+func (c *checker) branchKey(t types.Type) idxKey {
+	d, ok := optElem(t).Base().(*types.DepUnionType)
+	if !ok || len(d.Fn.Arms) == 0 {
+		return idxKey{}
+	}
+	k := c.indexKey(d.Fn.Arms[0].Result)
+	for _, a := range d.Fn.Arms[1:] {
+		if o := c.indexKey(a.Result); k.t == nil || o.t == nil || (o.list == nil) != (k.list == nil) || o.exact != k.exact || !types.Identical(o.t, k.t) {
+			return idxKey{}
+		}
+	}
+	return k
+}
+
+// indexBeside types the index of a receiver refused with E3402 or E3804 against its key where one
+// is known, else against the error type (DECISIONS 427).
+func (c *checker) indexBeside(env *env, x *syntax.IndexExpr, k idxKey) {
+	_, isRange := x.Index.(*syntax.RangeExpr)
+	switch {
+	case k.t == nil || isRange:
+		c.indexAlone(env, x.Index)
+	case k.list != nil:
+		c.positional(env, x, k.list)
+	case k.exact:
+		c.expr(env, x.Index, k.t)
+	default:
+		c.keyValue(env, x.Index, x.X, k.t)
+	}
+}
+
+// indexAlone types an index whose receiver is in error against the error type: a bare name could be a key (TYPES.md §1, §5.1).
 func (c *checker) indexAlone(env *env, i syntax.Expr) {
 	if r, ok := i.(*syntax.RangeExpr); ok {
 		c.sliceBounds(env, r)
 		return
 	}
-	c.synth(env, i)
+	c.expr(env, i, types.ErrorType)
 }
 
 // slice is `xs[a..b]` and its forms on a list, keyed list, table or string (STDLIB.md §4.1, §7).

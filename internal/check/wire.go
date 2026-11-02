@@ -284,7 +284,7 @@ func (c *checker) pairsElem(list types.Type) bool {
 		return false
 	}
 	c.completeRecord(rec)
-	if reaches(rec, rec, map[*types.RecordType]bool{}) {
+	if c.reaches(rec, rec, map[*types.RecordType]bool{}) {
 		return true
 	}
 	if len(rec.Fields) != pairArity {

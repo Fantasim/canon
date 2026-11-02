@@ -1,5 +1,7 @@
 package ir
 
+import "cmp"
+
 // BranchTables are the tables the cpp emit's decoders read, detail::k<T><F>Branches (CODEGEN.md §5.6, DECISIONS 350): every class of the package, which a data or types emit decodes, then each class of another package its readers read; none in baked mode, whose literals write the branch the evaluator decided.
 func (pl *CppNamePlan) BranchTables() []NamedBranches {
 	if pl.baked() || pl.tabled {
@@ -8,6 +10,9 @@ func (pl *CppNamePlan) BranchTables() []NamedBranches {
 	pl.tabled = true
 	pl.tables = namedBranches(append(pl.classes(), readClasses(pl.foreign)...), func(class any, f *Field) string {
 		return cppConstPrefix + pl.anyClassName(class) + cppUpperCamel(f.Name) + cppBranchesSuffix
+	}, func(class any) string {
+		own := ownVariants(pl.p)
+		return classQName(class, func(c *Case) *Variant { return cmp.Or(own[c], pl.foreign.VariantOf(c)) })
 	})
 	return pl.tables
 }
@@ -28,6 +33,6 @@ func (pl *CppNamePlan) anyClassName(class any) string {
 // declareBranchTables declares each cpp branch table in detail (CODEGEN.md §3.5, §5.6).
 func (pl *CppNamePlan) declareBranchTables(detail *nameScope) {
 	for _, b := range pl.BranchTables() {
-		pl.declareInner(detail, b.Name, pl.p.Name+qnameSep+b.Name, b.Field)
+		pl.declareInner(detail, b.Name, b.Origin, b.Field)
 	}
 }

@@ -1,0 +1,64 @@
+suite mutation
+name E8009 CODEGEN.md §2.1 (invalid mode)
+case 7910
+seed 4294975207
+born mismatch extra E8005/idType
+sig extra E8005/idType
+packages features.refdep
+want E8009 features/refdep/refdep.canon 704 710 check
+failure extra [E8005 features/refdep/refdep.canon:37:5 "ts: LabelId is generated for both features.refdep.regionNames and features.refdep.stageNames; hold one of them in a keyed list"] besides [E8009 features/refdep/refdep.canon:39:42 "invalid mode zzmode for emit ts: expected one of baked, embedded, data, types"]
+-- features/refdep/refdep.canon --
+package features.refdep
+/// The shape of an event's parameter.
+enum Shape {
+  count
+  place
+  none_
+}
+/// What happened.
+enum Event {
+}
+/// An event and the shape of its parameter.
+record EventShape {
+  /// The event.
+  event: Event
+}
+let eventShapes: [EventShape] keyed by event = [
+]
+/// A parameter, by shape: none_ takes none.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+/// One reward: the points an event grants.
+record Reward {
+}
+/// A reward file.
+record RewardFile {
+}
+/// A displayed text.
+record Label {
+  /// Its text.
+  text: String
+}
+let regionNames: table Label = {
+}
+let stageNames: table Label = {
+}
+emit ts { out: "out/ts/refdep.ts", mode: zzmode }
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --

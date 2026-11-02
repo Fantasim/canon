@@ -221,7 +221,8 @@ E3013 -: a table holds records; Int is not a record
 E3015 notConstant: this code must be a constant expression
 E3015 budget: this code could not be folded: the evaluation budget is exhausted
 E3016 -: built-in resource.vocab.items cannot be used as a value; write a lambda
-E3017 -: cannot assign to resource.vocab.items: it is not a var
+E3017 notVar: cannot assign to resource.vocab.items: it is not a var
+E3017 target: only a var, or an element of one (x[i]), can be assigned
 E3018 -: for resource.vocab.items, resource.vocab.items in needs a map or pairs, found Int
 E3019 -: return in resource.vocab.items needs a value of type Int
 E3020 -: this expression has no effect

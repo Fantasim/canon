@@ -1,0 +1,44 @@
+suite mutation
+name E1112 GRAMMAR.md §2.6 (empty interpolation)
+case 639
+seed 4294967936
+born mismatch extra E7008
+sig extra E7008
+packages features.edits
+want E1112 features/edits/edits.canon 438 440 check
+failure extra [E7008 features/edits/edits.canon:19:27 "the path of load must be a string literal: choose among literal loads with if or match, or read several files with load.dir"] besides [E1112 features/edits/edits.canon:19:28 "invalid interpolation: {} is empty"]
+-- features/edits/edits.canon --
+package features.edits
+/// What a quest counts.
+enum Goal { kill, collect }
+/// What a quest aims at, by goal: a monster, or a number of items.
+type Target(g: Goal) = match g {
+  kill => String(1..)
+  collect => Int(1..)
+}
+/// What completing a quest gives.
+variant Reward {
+  gold {
+    /// How many.
+    amount: Int(1..)
+  }
+}
+/// Capacities, as the server reads them in `data/limits.json`.
+record Limits {
+}
+let limits: Limits = load("{}data/limits.json")
+-- project.canon --
+project sovereign {
+  canon: "0.1"
+  roots {
+    resource: "../../../Resource"
+    client: "../../../Client"
+    source: "../../../Source"
+    services: "../.."
+    sovcommon: "../../sovcommon"
+    web: "../../sovcommon/web/src/lib"
+    parity: "../../balance/parity"
+    generated: "../../resourcestudio/generated"
+  }
+}
+-- studio/studio.canon --

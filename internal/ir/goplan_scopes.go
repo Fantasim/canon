@@ -134,6 +134,9 @@ func unlessOverridden(own NameOptions, from Type) any {
 	return from
 }
 
+// valueOrigin is how a value is named in its E8005, qualified as a const is (decision 203).
+func (pl *GoNamePlan) valueOrigin(v *Value) string { return pl.p.Name + qnameSep + v.Name }
+
 // declareAll declares every name of the package scope in gen/go's section order (CODEGEN.md §2.7), and each struct's, container's, data's and parameter list's own scope.
 func (pl *GoNamePlan) declareAll() {
 	top := pl.scope(goScopePackage)
@@ -243,18 +246,18 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) map[string]bool {
 		if pl.data != nil && strs[name] {
 			continue
 		}
-		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.IDTypeName(rec) }})
+		pl.declareFrom(top, pl.valueOrigin(v), v, derivation{rec, func() string { return pl.IDTypeName(rec) }})
 		if pl.data != nil {
 			strs[name] = true
 			continue
 		}
 		for _, id := range v.IDs {
-			pl.declareFrom(top, v.Name+qnameSep+id, v, derivation{rec, func() string { return pl.IDMemberName(rec, id) }})
+			pl.declareFrom(top, pl.valueOrigin(v)+qnameSep+id, v, derivation{rec, func() string { return pl.IDMemberName(rec, id) }})
 		}
-		pl.declareFrom(top, v.Name, v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
-		pl.declareTables(top, name, v.Name, v, GoTableNames, GoTableKeys, GoTableFound)
-		pl.declareMethods(name, v.Name, v, goIDMethods)
-		pl.declare(pl.scope(name), goPositionField, v.Name, v)
+		pl.declareFrom(top, pl.valueOrigin(v), v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
+		pl.declareTables(top, name, pl.valueOrigin(v), v, GoTableNames, GoTableKeys, GoTableFound)
+		pl.declareMethods(name, pl.valueOrigin(v), v, goIDMethods)
+		pl.declare(pl.scope(name), goPositionField, pl.valueOrigin(v), v)
 	}
 	return strs
 }

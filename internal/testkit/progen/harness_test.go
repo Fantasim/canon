@@ -63,6 +63,8 @@ const (
 	lockFields       = 3
 	annotJSON        = "json"   // the @json annotation (WIRE.md §4)
 	annotStable      = "stable" // the @stable annotation (LOCK.md §1)
+	annotText        = "text"   // the @text annotation (CODEGEN.md §2.9)
+	wireNone         = `"none"` // the wire "none", which a member named none takes (WIRE.md §4.2)
 	argPairs         = "pairs"  // its pairs: argument (WIRE.md §5.14)
 	testRunFlag      = "test.run"
 	failMark         = "progen-failure\t"

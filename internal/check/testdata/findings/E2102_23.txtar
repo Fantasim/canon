@@ -1,0 +1,71 @@
+TYPES.md §1, §5.1 (log-2026-11-01 PROGEN-NIGHTLY ruling): the checked operand of a comparison (`==`, `!=`, `<`, `<=`, `>`, `>=`) or of `in` whose other operand has the error type is checked against it: a bare name there could be a member, so it is silent. An arithmetic operand stays reported, and so does a name compared with a sound operand.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum Kind { ts, id }
+
+/// A column.
+record Col {
+  /// Its name.
+  name: String
+  /// Its kind.
+  kind: Kind
+}
+
+local let cols: [Col] = [{ name: "a", kind: ts }]
+
+check {
+  for c in cols {
+    if c.zzkind == id or ts != c.zzkind or c.kind == ts {
+      fail(c, "a header column")
+    }
+    if c.zzrank < id or ts >= c.zzrank or c.zzrank > ts or id <= c.zzrank {
+      fail(c, "a header column")
+    }
+  }
+  for c, b in cols {
+    if c.kind == ts or c.kind == id {
+      fail(c, "two names")
+    }
+  }
+}
+
+local let found: Bool = ts in zzkinds
+local let empty: Bool = cols.isEmpty() == nope
+local let total: Int = zzsize + nosuch
+-- findings.txt --
+error[E3003]  a/a.canon:18:10
+  a.Col has no field zzkind
+
+error[E3003]  a/a.canon:18:34
+  a.Col has no field zzkind
+
+error[E3003]  a/a.canon:21:10
+  a.Col has no field zzrank
+
+error[E3003]  a/a.canon:21:33
+  a.Col has no field zzrank
+
+error[E3003]  a/a.canon:21:45
+  a.Col has no field zzrank
+
+error[E3003]  a/a.canon:21:68
+  a.Col has no field zzrank
+
+error[E3018]  a/a.canon:25:15
+  for c, b in needs a map or pairs, found [a.Col]
+
+error[E2102]  a/a.canon:32:31
+  unknown name zzkinds
+
+error[E2102]  a/a.canon:33:43
+  unknown name nope
+
+error[E2102]  a/a.canon:34:24
+  unknown name zzsize
+
+error[E2102]  a/a.canon:34:33
+  unknown name nosuch
+
+11 errors, 0 warnings in 1 package (…)

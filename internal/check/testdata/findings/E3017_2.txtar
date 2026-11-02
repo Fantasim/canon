@@ -1,0 +1,55 @@
+DECISIONS 428, GRAMMAR.md §5.10, TYPES.md §12.7: an assignment target that is no name, possibly indexed (a literal, a call, a parenthesized var, an indexed literal), is E3017 `target` at the target; a target the parser refused (a recovery node), indexed or not, reports nothing more (TYPES.md §1). A var and an element of one stay assignable.
+-- a/a.canon --
+package a
+
+local fn lit(n: Int) -> Int {
+  var i = n
+  1 = 0
+  return i
+}
+
+local fn call(n: Int) -> Int {
+  var i = n
+  lit(1) = 0
+  return i
+}
+
+local fn paren(n: Int) -> Int {
+  var i = n
+  (i) = 0
+  return i
+}
+
+local fn indexed(n: Int) -> Int {
+  var xs = [n]
+  [1][0] = 0
+  xs[0] = n
+  return xs[0]
+}
+
+local fn bad(n: Int) -> Int {
+  var i = n
+  `foo` = 0
+  #[0] = 1
+  return i
+}
+-- findings.txt --
+error[E3017]  a/a.canon:5:3
+  only a var, or an element of one (x[i]), can be assigned
+
+error[E3017]  a/a.canon:11:3
+  only a var, or an element of one (x[i]), can be assigned
+
+error[E3017]  a/a.canon:17:3
+  only a var, or an element of one (x[i]), can be assigned
+
+error[E3017]  a/a.canon:23:3
+  only a var, or an element of one (x[i]), can be assigned
+
+error[E1138]  a/a.canon:30:3
+  "foo" is written without backticks
+
+error[E1106]  a/a.canon:31:3
+  unexpected character #
+
+6 errors, 0 warnings in 1 package (…)

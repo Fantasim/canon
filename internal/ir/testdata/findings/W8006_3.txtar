@@ -17,7 +17,7 @@ record M_PI {
 emit cpp { out: "@features/a", namespace: "a", mode: data }
 -- findings.txt --
 warning[W8006]  a/a.canon:4:7
-  C++ name INT_MAX (from INT_MAX) is a macro in common platform headers
+  C++ name INT_MAX (from a.INT_MAX) is a macro in common platform headers
 
 warning[W8006]  a/a.canon:7:13
   C++ name NAME_MAX (from a.Tone.NAME_MAX) is a macro in common platform headers

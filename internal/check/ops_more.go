@@ -68,6 +68,10 @@ func unwrapOptional(t types.Type) types.Type {
 // inExpr is `x in xs` (TYPES.md §5.1, STDLIB.md §5).
 func (c *checker) inExpr(env *env, e *syntax.BinaryExpr) types.Type {
 	ts := c.synth(env, e.Y)
+	if ts.Kind() == types.Error { // its element is unknown: a bare name could be one (TYPES.md §1, §5.1)
+		c.expr(env, e.X, types.ErrorType)
+		return types.BoolType
+	}
 	switch x := ts.Base().(type) {
 	case *types.OptionalType:
 		c.report(env, diag.E3402.At(env.span(e.Y), env.span(e.Y)))

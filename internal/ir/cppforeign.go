@@ -64,7 +64,8 @@ func writesDefines(files []*syntax.File) bool {
 				continue
 			}
 			if t, known := wordIndex[Target](targetWords[:], ed.Target.Name); known && t == TargetCpp {
-				return plannedMode(declaredMode(ed))
+				m := declaredMode(ed)
+				return plannedMode(m) || m == ModeNone // a mode check refused writes them in every mode (DECISIONS 429)
 			}
 		}
 	}

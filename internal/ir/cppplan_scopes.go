@@ -11,7 +11,7 @@ func (pl *CppNamePlan) declareAll() {
 	pl.declareInputNames()
 	pl.declareNamespaceTypes()
 	for _, c := range pl.p.Consts {
-		pl.shareNS(pl.ConstName(c), c.Name, c)
+		pl.shareNS(pl.ConstName(c), pl.p.Name+qnameSep+c.Name, c)
 	}
 	for _, v := range pl.values {
 		if !pl.baked() {

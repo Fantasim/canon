@@ -1,0 +1,52 @@
+TYPES.md §1, §5.1, §11.4, DECISIONS 427: the index of a dependent value refused with E3804 is checked against the key every branch takes when they all take one (an unknown name there is reported, a member resolves), else against the error type (a bare name is silent).
+-- a/a.canon --
+package a
+
+local enum K { ts, id }
+
+local enum Shape { one, two }
+
+local record Ev {
+  s: Shape
+}
+
+local type Same(e: Ev) = match e.s {
+  one => {K: Int}
+  two => {K: String}
+}
+
+local type Mixed(e: Ev) = match e.s {
+  one => {K: Int}
+  two => [Int]
+}
+
+local record R {
+  ev: Ev
+  same: Same(ev)
+  mixed: Mixed(ev)
+}
+
+local fn known(r: R) -> Bool {
+  return r.same[ts] == r.same[zzz]
+}
+
+local fn unknown(r: R) -> Bool {
+  return r.mixed[ts] == r.mixed[nosuch]
+}
+-- findings.txt --
+error[E3804]  a/a.canon:28:10
+  [] is not available on a dependent value (Same(*))
+
+error[E3804]  a/a.canon:28:24
+  [] is not available on a dependent value (Same(*))
+
+error[E2102]  a/a.canon:28:31
+  unknown name zzz
+
+error[E3804]  a/a.canon:32:10
+  [] is not available on a dependent value (Mixed(*))
+
+error[E3804]  a/a.canon:32:25
+  [] is not available on a dependent value (Mixed(*))
+
+5 errors, 0 warnings in 1 package (…)

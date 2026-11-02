@@ -18,10 +18,10 @@ type defineCheck struct {
 	reported map[any]bool
 }
 
-// checkCppDefines is the rules of @cpp(defines:) on a package with a cpp emit (CODEGEN.md §7.9, DECISIONS 389, 390): E8012 `cppDefine` for a constant no #define holds; E8011 once per declaration, at its first bad name; E8005 for a name a line before wrote, at the later declaration.
+// checkCppDefines is the rules of @cpp(defines:) on a package with a cpp emit (CODEGEN.md §7.9, DECISIONS 389, 390): E8012 `cppDefine` for a constant no #define holds; E8011 once per declaration, at its first bad name; E8005 for a name a line before wrote, at the later declaration. Every mode gen/cpp writes writes the defines, so a mode check refused keeps them judged (decision 213); an unbuilt one does not.
 func (s *stage) checkCppDefines(u *unit) {
 	es := emitFor(u, TargetCpp)
-	if es == nil || !cppPlanned(es.e) {
+	if es == nil || !cppPlanned(es.e) && es.e.Mode != ModeNone {
 		return
 	}
 	c := &defineCheck{s: s, u: u, consts: map[*Const]*constSite{}, first: map[string]string{}, reported: map[any]bool{}}

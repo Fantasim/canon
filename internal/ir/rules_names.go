@@ -31,11 +31,48 @@ func tsValidOverride(site nameSite) bool {
 	return !isType || !slices.Contains(tsPredefined, site.tsName)
 }
 
-// checkTSNames reports the ts emit's names from the name plan gen/ts writes from (CODEGEN.md §3.5, DECISIONS 278): E8005 for two names of one scope, a helper's included.
+// checkTSNames reports the ts emit's names from the name plan gen/ts writes from (CODEGEN.md §3.5, DECISIONS 278): E8005 for two names of one scope, a helper's included; for a mode check refused, the collisions of every mode (decision 213, log-2026-11-01).
 func (s *stage) checkTSNames(u *unit) {
-	if es := emitFor(u, TargetTS); es != nil {
-		reportNames(u, nameReport{s.itemSpans(es), check.TargetTS, tsIDName}, planTSNames(u.p, es.e).found(), map[any]bool{})
+	es := emitFor(u, TargetTS)
+	if es == nil {
+		return
 	}
+	report := nameReport{s.itemSpans(es), check.TargetTS, tsIDName}
+	if !modeRefused(es.e) {
+		reportNames(u, report, planTSNames(u.p, es.e).found(), map[any]bool{})
+		return
+	}
+	plans := make([][]GoNameProblem, 0, len(tsModes))
+	for _, m := range tsModes {
+		plans = append(plans, planTSNames(u.p, inMode(es.e, m)).found())
+	}
+	reportNames(u, report, inEveryMode(plans), map[any]bool{})
+}
+
+// inMode is a copy of e in mode m.
+func inMode(e *Emit, m Mode) *Emit {
+	c := *e
+	c.Mode = m
+	return &c
+}
+
+// problemKey is what tells one collision from another across the plans of several modes.
+type problemKey struct {
+	scope, name, first, origin string
+}
+
+// inEveryMode are the collisions of plans[0] that every plan has: what a refused mode cannot change (decision 213).
+func inEveryMode(plans [][]GoNameProblem) []GoNameProblem {
+	keyOf := func(pr GoNameProblem) problemKey { return problemKey{pr.Scope, pr.Name, pr.First, pr.Origin} }
+	out := slices.DeleteFunc(slices.Clone(plans[0]), func(pr GoNameProblem) bool { return pr.Kind != GoCollision })
+	for _, other := range plans[1:] {
+		has := map[problemKey]bool{}
+		for _, pr := range other {
+			has[keyOf(pr)] = pr.Kind == GoCollision
+		}
+		out = slices.DeleteFunc(out, func(pr GoNameProblem) bool { return !has[keyOf(pr)] })
+	}
+	return out
 }
 
 // checkGoNames reports the go emit's names (CODEGEN.md §3.5): E8011 for a @go(name:) that is not an exported identifier (decision 182), in every mode; in a mode gen/go writes (baked, data, types), from the name plan it writes from (decisions 194, 203), E8011 for a derived name that is no Go identifier (decision 202) and E8005 for two names of one scope, at the item named second, or at the emit for an import or the package's own names. Embedded mode has no generator, hence no plan yet.
@@ -50,8 +87,35 @@ func (s *stage) checkGoNames(u *unit) {
 		pl := PlanGoNames(s.view(u, es), es.e)
 		problems = slices.DeleteFunc(pl.Problems(), s.refusedImport(u))
 		report.idOf = func(rec *Record) string { return pl.IDTypeName(rec) }
+	} else if !unbuiltMode(es.e) { // an unbuilt mode is E8019's alone (checkUnbuilt)
+		problems = append(problems, s.goCollisionsOfEveryMode(u, es)...)
 	}
 	reportNames(u, report, problems, map[any]bool{})
+}
+
+// checkCppNamesRefused judges a cpp emit whose mode check refused over what the plan of every mode gen/cpp writes has: its collisions, the names its namespace shares, the #defines of packages it does not read (DECISIONS 429); an unbuilt mode is E8019's alone, W8006 one plan's.
+func (s *stage) checkCppNamesRefused(u *unit, es *emitSite, refused map[any]bool) {
+	if !refusedCppMode(es.e) {
+		return
+	}
+	plans := cppPlansOfEveryMode(u.p, es.e)
+	problems := make([][]GoNameProblem, 0, len(plans))
+	for _, pl := range plans {
+		problems = append(problems, pl.Problems())
+	}
+	reportNames(u, nameReport{s.itemSpans(es), check.TargetCpp, plans[0].IDName}, inEveryMode(problems), refused)
+	u.cppNames = commonShared(plans)
+	s.foreignDefinesOf(u, es, s.commonDeclared(plans))
+}
+
+// goCollisionsOfEveryMode are the collisions the go plan of every mode gen/go writes has, for an emit whose mode was refused (decision 213).
+func (s *stage) goCollisionsOfEveryMode(u *unit, es *emitSite) []GoNameProblem {
+	plans := make([][]GoNameProblem, 0, len(goModes))
+	for _, m := range goModes {
+		e := inMode(es.e, m)
+		plans = append(plans, slices.DeleteFunc(PlanGoNames(CopyOf(s.in.Project, u.p, e), e).Problems(), s.refusedImport(u)))
+	}
+	return inEveryMode(plans)
 }
 
 // refusedImport reports the import name of a dependency whose go package check refused at that emit (E8009): written, defaulted from out, or none for an emit with no out or one that does not resolve (decisions 213, 215), matched by its import path, never by the name's text: the importer adds nothing to it.
@@ -74,16 +138,20 @@ func (s *stage) refusedImport(u *unit) func(GoNameProblem) bool {
 // checkCppNames reports a baked, data- or types-mode cpp emit's names from the name plan gen/cpp writes from (CODEGEN.md §3.5, decision 37): E8011 for a derived name C++ cannot declare, a keyword or a reserved namespace included (decision 202), E8005 for two names of one scope, or equal to a #define of a package it does not read (checkForeignDefines); the names its header shares with the other packages of its namespace wait for crossPackage. Embedded has no generator yet; overrides are checkOverrideNames'.
 func (s *stage) checkCppNames(u *unit) {
 	es := emitFor(u, TargetCpp)
-	if es == nil || !cppPlanned(es.e) {
+	if es == nil {
 		return
 	}
-	pl := PlanCppNames(u.p, es.e)
-	u.cppNames = pl.shared
 	refused := map[any]bool{}
 	for _, site := range overrideSites(u.p).sites {
 		ok, _ := cppValidIdent(site.cpp)
 		refused[site.item] = site.cpp != "" && !ok // checkOverrideNames reported it
 	}
+	if !cppPlanned(es.e) {
+		s.checkCppNamesRefused(u, es, refused)
+		return
+	}
+	pl := PlanCppNames(u.p, es.e)
+	u.cppNames = pl.shared
 	reportNames(u, nameReport{s.itemSpans(es), check.TargetCpp, pl.IDName}, pl.Problems(), refused)
 	for _, w := range pl.warnings { // W8006: never a problem, generation proceeds
 		u.report(diag.W8006.At(s.itemSpan(w.Item, es.span()), w.Name, w.Origin))

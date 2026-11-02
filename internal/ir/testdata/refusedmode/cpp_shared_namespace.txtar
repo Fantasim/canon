@@ -1,0 +1,29 @@
+DECISIONS 429, CODEGEN.md §3.5: a cpp emit whose mode check refused still shares its namespace with the names every mode's plan declares, so two packages writing `record X` into sov::gen collide (E8005), the refused one included.
+-- a/a.canon --
+package a
+
+/// X.
+record X {
+  /// N.
+  n: Int
+}
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: zzmode }
+-- b/b.canon --
+package b
+
+/// X.
+record X {
+  /// N.
+  n: Int
+}
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: baked }
+-- findings.txt --
+error[E8009]  a/a.canon:9:61
+  invalid mode zzmode for emit cpp: expected one of baked, embedded, data, types
+
+error[E8005]  b/b.canon:9:6
+  cpp: X is generated for both a.X and b.X; rename one of them with @cpp(name:)
+
+2 errors, 0 warnings in 2 packages (…)

@@ -1,0 +1,34 @@
+TYPES.md §11, §16 (log-2026-11-01 PROGEN-NIGHTLY ruling): a type argument is an expression, so reading a deprecated field there, as its root or through a ref, is W3301 at that use; the field's own declaration is not a use.
+-- a/a.canon --
+package a
+
+local enum Aim { gold, mood }
+
+local type Bonus(a: Aim) = match a {
+  gold => Int
+  mood => String
+}
+
+local record Effect {
+  aim: Aim @deprecated("use goal")
+  bonus: Bonus(aim)
+}
+
+local record Shape {
+  aim: Aim = gold @deprecated
+}
+
+local let shapes: [Shape] keyed by aim = [{}]
+
+local record Reward {
+  shape: ref shapes
+  bonus: Bonus(shape.aim)
+}
+-- findings.txt --
+warning[W3301]  a/a.canon:12:16
+  aim is deprecated: use goal
+
+warning[W3301]  a/a.canon:23:22
+  aim is deprecated
+
+0 errors, 2 warnings in 1 package (…)

@@ -305,13 +305,11 @@ func reservedAlias(tg target) []progen.Site {
 	})
 }
 
-// noneMember appends a member "none"; in a @codes enum, with a free code of its type, since the
-// member still exists for checking and a missing or clashing code is a finding of its own
-// (decision log "Check C2 — calls").
+// noneMember appends a member "none" (a free code in a @codes enum), never where its wire is taken (WIRE.md §4.2).
 func noneMember(tg target) []progen.Site {
 	var out []progen.Site
 	for _, d := range nodes[*syntax.EnumDecl](tg) {
-		if !isSource(tg) || len(d.Members) == 0 {
+		if !isSource(tg) || len(d.Members) == 0 || strings.Contains(text(tg, d), wireNone) {
 			continue
 		}
 		_, e := span(tg, d.Members[len(d.Members)-1])

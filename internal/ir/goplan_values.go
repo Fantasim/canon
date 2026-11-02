@@ -22,19 +22,19 @@ func (pl *GoNamePlan) declareContainers(top *nameScope) {
 			continue
 		}
 		name := pl.ContainerName(v)
-		pl.declare(top, name, v.Name, v)
+		pl.declare(top, name, pl.valueOrigin(v), v)
 		sc := pl.scope(name)
 		for _, m := range goContainerMembers {
-			pl.declare(sc, m, name, v)
+			pl.declare(sc, m, pl.valueOrigin(v), v)
 		}
 		if rec == nil {
 			continue
 		}
-		pl.declare(sc, GoGet, name, v)
+		pl.declare(sc, GoGet, pl.valueOrigin(v), v)
 		for _, f := range rec.Fields {
 			if f.Stable {
-				pl.declare(top, pl.FindByIndex(v, f), name+qnameSep+f.Name, f)
-				pl.declare(sc, pl.FindByName(f), name+qnameSep+f.Name, f)
+				pl.declare(top, pl.FindByIndex(v, f), pl.valueOrigin(v)+qnameSep+f.Name, f)
+				pl.declare(sc, pl.FindByName(f), pl.valueOrigin(v)+qnameSep+f.Name, f)
 			}
 		}
 	}
@@ -54,23 +54,23 @@ func (pl *GoNamePlan) declareValues(top *nameScope) {
 	}
 	for _, v := range pl.emitted {
 		if IsContainer(v) {
-			pl.declare(top, pl.AccessorName(v), v.Name, v)
+			pl.declare(top, pl.AccessorName(v), pl.valueOrigin(v), v)
 			continue
 		}
 		_, getters := pl.ValueSlot(v).members()
 		for _, n := range getters {
-			pl.declare(top, n, v.Name, v)
+			pl.declare(top, n, pl.valueOrigin(v), v)
 		}
 	}
 	data := pl.scope(d.Type)
 	for _, v := range pl.emitted {
 		if IsContainer(v) {
-			pl.declare(data, pl.ValueStore(v), v.Name, v)
+			pl.declare(data, pl.ValueStore(v), pl.valueOrigin(v), v)
 			continue
 		}
 		stores, _ := pl.ValueSlot(v).members()
 		for _, n := range stores {
-			pl.declare(data, n, v.Name, v)
+			pl.declare(data, n, pl.valueOrigin(v), v)
 		}
 	}
 }

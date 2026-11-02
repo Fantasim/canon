@@ -47,7 +47,7 @@ func (pl *GoNamePlan) DataLocal(name string) string {
 // declareSchemas declares each emitted value's schema constant (CODEGEN.md §3.3, T2).
 func (pl *GoNamePlan) declareSchemas(top *nameScope) {
 	for _, v := range pl.emitted {
-		pl.declare(top, pl.SchemaName(v), v.Name, v)
+		pl.declare(top, pl.SchemaName(v), pl.valueOrigin(v), v)
 	}
 }
 
@@ -59,18 +59,18 @@ func (pl *GoNamePlan) declareDataContainers(top *nameScope) {
 			continue
 		}
 		name := pl.ContainerName(v)
-		pl.declare(top, name, v.Name, v)
+		pl.declare(top, name, pl.valueOrigin(v), v)
 		sc := pl.scope(name)
 		for _, m := range goContainerMembers {
-			pl.declare(sc, m, name, v)
+			pl.declare(sc, m, pl.valueOrigin(v), v)
 		}
 		if rec == nil {
 			continue
 		}
 		for _, f := range rec.Fields {
 			if f.Stable {
-				pl.declare(sc, pl.FindByName(f), name+qnameSep+f.Name, f)
-				pl.declare(sc, pl.FindByIndex(v, f), name+qnameSep+f.Name, f)
+				pl.declare(sc, pl.FindByName(f), pl.valueOrigin(v)+qnameSep+f.Name, f)
+				pl.declare(sc, pl.FindByIndex(v, f), pl.valueOrigin(v)+qnameSep+f.Name, f)
 			}
 		}
 	}
@@ -80,7 +80,7 @@ func (pl *GoNamePlan) declareDataContainers(top *nameScope) {
 func (pl *GoNamePlan) declareLoaders(top *nameScope) {
 	for _, v := range pl.emitted {
 		if goRootClass(v) != nil && !v.Reload {
-			pl.declare(top, pl.LoaderName(v), v.Name, v)
+			pl.declare(top, pl.LoaderName(v), pl.valueOrigin(v), v)
 		}
 	}
 }
@@ -100,10 +100,10 @@ func (pl *GoNamePlan) declareSnapshot(top *nameScope) {
 	pl.declare(top, names.Type, pl.p.Name, nil)
 	snap := pl.scope(names.Type)
 	for _, v := range reload {
-		pl.declare(snap, pl.ContainerName(v), v.Name, v)
+		pl.declare(snap, pl.ContainerName(v), pl.valueOrigin(v), v)
 	}
 	for _, v := range reload {
-		pl.declare(snap, pl.ValueStore(v), v.Name, v)
+		pl.declare(snap, pl.ValueStore(v), pl.valueOrigin(v), v)
 	}
 	pl.declare(top, names.Load, pl.p.Name, nil)
 	pl.declare(top, names.Store, pl.p.Name, nil)
@@ -135,7 +135,7 @@ func (pl *GoNamePlan) declareDecoders(top *nameScope) {
 	}
 	for _, class := range pl.classes() {
 		if pl.Decoded(class) {
-			pl.declare(top, pl.DecodeFunc(class), pl.goNameOf[class], class)
+			pl.declare(top, pl.DecodeFunc(class), pl.originOf[class], class)
 		}
 	}
 	pl.declareDependentDecoders(top)
@@ -190,7 +190,7 @@ func classBody(class any) ([]*Field, []*ExportFn) {
 func (pl *GoNamePlan) declareResolvers(top *nameScope) {
 	for _, class := range pl.classes() {
 		if pl.NeedsWalk(class) {
-			pl.declare(top, pl.ResolveFunc(class), pl.goNameOf[class], class)
+			pl.declare(top, pl.ResolveFunc(class), pl.originOf[class], class)
 		}
 	}
 }
@@ -199,7 +199,7 @@ func (pl *GoNamePlan) declareResolvers(top *nameScope) {
 func (pl *GoNamePlan) declareLoads(top *nameScope) {
 	for _, v := range pl.emitted {
 		if goRootClass(v) != nil {
-			pl.declare(top, pl.LoadFunc(v), v.Name, v)
+			pl.declare(top, pl.LoadFunc(v), pl.valueOrigin(v), v)
 		}
 	}
 }

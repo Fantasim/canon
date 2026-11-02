@@ -6,14 +6,14 @@ func TSBranchTables(p *Package, e *Emit) []NamedBranches {
 		return nil
 	}
 	var classes []any
-	names := map[any]string{}
+	names, variants := map[any]string{}, map[*Case]*Variant{}
 	add := func(t Type) {
 		switch x := t.(type) {
 		case *Record:
 			classes, names[x] = append(classes, x), tsName(x)
 		case *Variant:
 			for _, c := range x.Cases {
-				classes, names[c] = append(classes, c), tsCaseName(x, c)
+				classes, names[c], variants[c] = append(classes, c), tsCaseName(x, c), x
 			}
 		}
 	}
@@ -29,12 +29,12 @@ func TSBranchTables(p *Package, e *Emit) []NamedBranches {
 	})
 	return namedBranches(classes, func(class any, f *Field) string {
 		return branchesPrefix + names[class] + cppUpperCamel(f.Name)
-	})
+	}, func(class any) string { return classQName(class, func(c *Case) *Variant { return variants[c] }) })
 }
 
 // declareBranchTables declares each ts branch table in the module scope (CODEGEN.md §3.5, §5.6).
 func (pl *tsNamePlan) declareBranchTables(mod *nameScope) {
 	for _, b := range TSBranchTables(pl.p, pl.e) {
-		pl.declare(mod, b.Name, pl.origin(b.Name), b.Field)
+		pl.declare(mod, b.Name, b.Origin, b.Field)
 	}
 }

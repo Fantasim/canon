@@ -17,6 +17,7 @@ type GoNamePlan struct {
 	namer
 	classOf  map[any]any    // each own field and export method → its *Record or *Case
 	goNameOf map[any]string // each own record, variant, case with fields and dependent type → its Go type
+	originOf map[any]string // the same classes → their qualified Canon name, what an E8005 on a name built on one names
 	data     *goData        // data and types mode's layout (CODEGEN.md §5.8, §5.11, §5.13); nil in baked mode
 	pures    map[*ExportFn]*GoPure
 	pkgNames map[string]bool // the package-level names a translated body may name unqualified

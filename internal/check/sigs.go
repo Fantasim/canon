@@ -130,25 +130,26 @@ func (c *checker) checkSelfContaining(p *pkgState) {
 		if o.kind != ObjTypeName || !ok {
 			continue
 		}
-		if reaches(rec, rec, map[*types.RecordType]bool{}) {
+		if c.reaches(rec, rec, map[*types.RecordType]bool{}) {
 			env := c.declEnv(o)
 			c.report(env, diag.E3022.At(env.span(rec.Decl.Name), o.name))
 		}
 	}
 }
 
-// reaches reports that a value of from needs a value of to through required record fields.
-func reaches(from, to *types.RecordType, seen map[*types.RecordType]bool) bool {
+// reaches reports from needing a value of to through required fields, completing what it walks (TYPES.md §3.2).
+func (c *checker) reaches(from, to *types.RecordType, seen map[*types.RecordType]bool) bool {
 	if seen[from] {
 		return false
 	}
 	seen[from] = true
+	c.completeRecord(from)
 	for _, f := range from.Fields {
-		next := requiredRecord(f.Type)
+		next := requiredRecord(c.fieldType(f))
 		if next == nil || f.Input != nil {
 			continue
 		}
-		if next == to || reaches(next, to, seen) {
+		if next == to || c.reaches(next, to, seen) {
 			return true
 		}
 	}
@@ -156,17 +157,20 @@ func reaches(from, to *types.RecordType, seen map[*types.RecordType]bool) bool {
 }
 
 // selfContaining reports a field its record contains itself through: E3022's alone (TYPES.md §1, §13.1).
-func selfContaining(owner *types.RecordType, f *types.Field) bool {
-	next := requiredRecord(f.Type)
+func (c *checker) selfContaining(owner *types.RecordType, f *types.Field) bool {
+	next := requiredRecord(c.fieldType(f))
 	if next == nil || f.Input != nil || owner == nil {
 		return false
 	}
-	return next == owner || reaches(next, owner, map[*types.RecordType]bool{})
+	return next == owner || c.reaches(next, owner, map[*types.RecordType]bool{})
 }
 
 // requiredRecord is the record a field type needs directly: not optional, not in a list, map,
-// table or ref.
+// table or ref; none for a field whose type is still being resolved (nil).
 func requiredRecord(t types.Type) *types.RecordType {
+	if t == nil {
+		return nil
+	}
 	switch x := t.Base().(type) {
 	case *types.RecordType:
 		return x

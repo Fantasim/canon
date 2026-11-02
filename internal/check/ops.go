@@ -191,13 +191,21 @@ func (c *checker) operands(env *env, e *syntax.BinaryExpr) (tx, ty types.Type, o
 		return nil, nil, false
 	case dx:
 		ty = c.synth(env, e.Y)
-		tx = c.operand(env, e.X, ty)
+		tx = c.comparedOperand(env, e, e.X, ty)
 	default:
 		tx = c.synth(env, e.X)
-		ty = c.operand(env, e.Y, tx)
+		ty = c.comparedOperand(env, e, e.Y, tx)
 	}
 	ok = tx.Kind() != types.Error && ty.Kind() != types.Error
 	return tx, ty, ok
+}
+
+// comparedOperand is operand, but against an operand in error a comparison checks it against the error type (TYPES.md §1, §5.1).
+func (c *checker) comparedOperand(env *env, b *syntax.BinaryExpr, e syntax.Expr, other types.Type) types.Type {
+	if !allArith[b.Op] && other.Kind() == types.Error && c.contextDependent(env, e) {
+		return c.expr(env, e, types.ErrorType)
+	}
+	return c.operand(env, e, other)
 }
 
 // operand types the checked operand from the other's type: a name, `[]` or `{}` against it,

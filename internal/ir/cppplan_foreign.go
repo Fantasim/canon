@@ -63,7 +63,7 @@ func (pl *CppNamePlan) declareRowClass(row ForeignRow, holder any) {
 		sc.hidden[pl.IDName(row.Record)] = row.Origin
 	}
 	for _, n := range cppEntryMembers {
-		pl.declare(sc, n, name, holder)
+		pl.declare(sc, n, row.Record.QName(), holder)
 	}
 	origin := row.Record.QName() + qnameSep
 	for _, f := range row.Record.Fields {

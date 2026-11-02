@@ -1,0 +1,29 @@
+TYPES.md §1, §9.1, §10.2, §13.1: a keyed list whose key field's type is in error (an alias referring to itself, E3021) stays keyed: no E3012 for the key, no E2103 for a ref to its record, no E3003 for a keyed-list method.
+-- a/a.canon --
+package a
+
+/// A name.
+type Ident = Ident
+
+/// A column.
+record Col {
+  /// Its name.
+  name: Ident
+}
+
+/// Every column, by name.
+let cols: [Col] keyed by name = []
+
+/// A use of a column.
+record Use {
+  /// The column.
+  col: ref Col
+}
+
+/// The columns, as a list.
+fn all() -> [Col] { return cols.values() }
+-- findings.txt --
+error[E3021]  a/a.canon:4:6
+  type alias Ident refers to itself
+
+1 error, 0 warnings in 1 package (…)
