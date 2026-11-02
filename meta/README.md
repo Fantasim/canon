@@ -5,6 +5,8 @@ The truth set an agent reloads instead of trusting its context window. The orche
 
 - [state.md](state.md) — the present: current focus, the next step, what exists, open
   Louis-calls (≤ 80 lines).
+- [releases.md](releases.md) — release headlines and caveats moved out of `state.md` to keep it under
+  its cap.
 - [plan.md](plan.md) — the milestones M0–M7 as an ordered checklist, each step with its owner
   module and acceptance. `state.md` says where we are in it.
 - [decisions/](decisions/README.md) — implementation ADRs, `NNNN-slug.md`, never renumbered.

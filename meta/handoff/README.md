@@ -122,3 +122,5 @@ their path from the receiving repository's root.
 `2026-10-31-canon-roadmap-v02-v04.md` is **to Louis** (proposal, nothing started). It judges every ask of the web-client handoff against the law, then sets out v0.2 (trust: N5, checked decode, opaque enums, every owed bug), v0.3 (lean generated code) and v0.4 (formulas: a wider translated subset, exact on every target), with v0.5 binary data and v0.6 runtime values as direction. Louis's four calls are in its §9. Its §8 answers the Source session's §10 questions and lists Sovereign's side.
 
 `2026-10-31-v020-start-prompt.md` is the prompt that starts the v0.2 run: ADR-0023 whole, S1, S2, the units by their "After" column, then §12's release; one call stays Louis's (ADR-0023 §4 Decision 9, Go exhaustiveness).
+
+`2026-11-02-canon-reply-v020.md` is v0.2.0's reply for the Sovereign sessions (the trust release, ADR-0023, DECISIONS 398-429): what changed, the Go/TS/C++ migration lists with every site, Resource's badge patch and `expect package` recipe, bench and farm numbers, checksums, what stays owed and what was not verified. `2026-10-31-v020-status.md` is the run's status record.

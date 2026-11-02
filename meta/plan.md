@@ -220,28 +220,30 @@ time, 1 to 1.5 days wall plus any rate-limit stop (v0.1.6: ~15 h active, 24 h wa
 
 ## v0.2: trust (Louis's picks of 2026-10-14, extended 2026-10-31)
 
-**Decided whole in [ADR-0023](decisions/0023-v02-trust-release.md)**: DECISIONS 398-422, 36 units,
-release v0.2.0. Run it with the [start prompt](handoff/2026-10-31-v020-start-prompt.md). The why is in
+**Done 2026-11-02: `v0.2.0` tagged locally on `a0fb77a2`** (Louis pushes and publishes). Decided whole in
+[ADR-0023](decisions/0023-v02-trust-release.md): DECISIONS 398-429 (422 is the last of the ADR; 423-429
+came from the run's reviews), 36 units plus the run's added ones; [reply](handoff/2026-11-02-canon-reply-v020.md),
+[status](handoff/2026-10-31-v020-status.md), [start prompt](handoff/2026-10-31-v020-start-prompt.md). The why is in
 the [roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md) §3.
 
-Louis, 2026-10-31: formulas (v0.4) before binary data (v0.5); the on-disk cache and N1 parked. Two
-calls wait for his yes: Q1 (runtime values, roadmap §9) and ADR-0023 §4 Decision 9 (Go
-exhaustiveness).
+Louis, 2026-10-31: formulas (v0.4) before binary data (v0.5); the on-disk cache and N1 parked. Q1
+(runtime values, roadmap §9) waits for his yes; ADR-0023 §4 Decision 9 (Go exhaustiveness) was built
+as written, no veto reached the run.
 
-- [ ] **N5, testable package checks** (very important; first in v0.2).
-- [ ] Decoders check range and length refinements in C++, Go and TS; bounds as constants; stable row
+- [x] **N5, testable package checks** (very important; first in v0.2).
+- [x] Decoders check range and length refinements in C++, Go and TS; bounds as constants; stable row
   addresses written down. Refinements enter the IR (§4 review rule). Widths stay declared (GEN-02).
-- [ ] **Enums without `@codes` as safe as ids** (Louis, 2026-10-14; [ADR-0021](decisions/0021-v019-robustness-release.md)
+- [x] **Enums without `@codes` as safe as ids** (Louis, 2026-10-14; [ADR-0021](decisions/0021-v019-robustness-release.md)
   §9): Go opaque (`struct` + `Position()`); C++ deleted nlohmann hooks, after a read-only Source scan;
   TS `<E>Index` no longer exported; open enums decided with them. v0.1.9 adds only Go's `MarshalText`.
-- [ ] Macro names across packages ([handoff](handoff/2026-10-29-sovereign-cpp-macro-collisions.md)),
+- [x] Macro names across packages ([handoff](handoff/2026-10-29-sovereign-cpp-macro-collisions.md)),
   after a read-only Resource scan.
-- [ ] `E3804` dependent types through static typing; `E1905` amend into a dependent map.
-- [ ] Wire names: a NUL is refused at check; equal wires in one enum.
-- [ ] Every owed bug: state.md "Owed, small", ADR-0021 §9's list, the logs of 10-21, 10-22 and 10-29.
-- [ ] Ways out for E9001, E9006 and E8104 (DECISIONS 305); CONFORMANCE §3 against TYPES §7.1;
+- [x] `E3804` dependent types through static typing; `E1905` amend into a dependent map.
+- [x] Wire names: a NUL is refused at check; equal wires in one enum.
+- [x] Every owed bug: state.md "Owed, small", ADR-0021 §9's list, the logs of 10-21, 10-22 and 10-29.
+- [x] Ways out for E9001, E9006 and E8104 (DECISIONS 305); CONFORMANCE §3 against TYPES §7.1;
   CODEGEN §6.3's drift.
-- [ ] The bugs the planning probes found (ADR-0023 §3, §8.5, §9, §10):
+- [x] The bugs the planning probes found (ADR-0023 §3, §8.5, §9, §10):
   - gen/go pure refs and gen/ts ids of unselected tables;
   - Go input enums with equal wires;
   - TS map-key widths;
@@ -251,7 +253,7 @@ exhaustiveness).
   - Windows junctions, single-file link bounds and reported names.
 - M4 call (b), `check.Info` layered maps: declined (ADR-0023 §10.9). It is not easy (about 150
   consumer files) and not risk-free (a shared base).
-- [ ] Release gates (ADR-0023 §12):
+- [x] Release gates (ADR-0023 §12):
   - `make check`;
   - every fuzz target and progen-nightly;
   - the bench A/B;
