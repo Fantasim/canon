@@ -1,0 +1,76 @@
+EVALUATION.md §10.4, DECISIONS 448: an error finding a test's own statements produce outside every
+expect (a refinement at a let's and at a call's storage point, a key given twice) fails the test
+without stopping it, each finding once (§14), before a stopping error; a static warning in a
+statement neither fails the test nor shows; inside an expect the finding stays the expect's.
+-- a/a.canon --
+package a
+
+local let one: Int = 1
+
+local fn nine() -> Int { return 9 }
+
+local fn within(n: Int(0..=5)) -> Int { return n }
+
+test "a let" {
+  let x: Int(0..=5) = nine()
+  expect x == 9
+}
+
+test "a call, twice" {
+  for i in [1, 2] {
+    let y = within(nine() + i - i)
+  }
+  expect one == 1
+}
+
+test "a key given twice" {
+  let m: {Int: Int} = { i - i: i for i in [1, 2] }
+  expect one == 1
+}
+
+test "an error, then a stop" {
+  let x: Int(0..=5) = nine()
+  let z = [1][nine()]
+  expect z == 1
+}
+
+test "a warning" {
+  let w = one ?? 2
+  expect w == 1
+}
+
+test "inside an expect" {
+  expect within(nine()) == 9
+}
+-- outcomes.txt --
+a "a let": failed true, stopped false, broken false, broke by E3204 at line 5
+  expect line 11: passed true
+a "a call, twice": failed true, stopped false, broken false, broke by E3204 at line 16
+  expect line 18: passed true
+a "a key given twice": failed true, stopped false, broken false, broke by E3322 at line 22
+  expect line 23: passed true
+a "an error, then a stop": failed true, stopped true, broken false, broke by E3204 at line 5, stopped by E4002 at line 28
+a "a warning": failed false, stopped false, broken false
+  expect line 34: passed true
+a "inside an expect": failed true, stopped false, broken false
+  expect line 38: passed false [E3204 9 is outside 0..=5] (left "9" == right "9")
+
+error[E3204]  a/a.canon:5:33
+  9 is outside 0..=5
+  expected by a/a.canon:10 (Int(0..=5))
+  in nine (a/a.canon:10)
+
+error[E3204]  a/a.canon:16:20
+  9 is outside 0..=5
+  expected by a/a.canon:7 (Int(0..=5))
+
+error[E3322]  a/a.canon:22:25
+  key 0 is given twice
+
+error[E4002]  a/a.canon:28:11
+  index 9 out of range for length 1
+
+warning[W3401]  a/a.canon:33:11
+  one is never none: ?? has no effect
+
+4 errors, 1 warning in 1 package (…)

@@ -133,7 +133,7 @@ func (r *run) runTests(ctx context.Context, cp *check.Package, match *regexp.Reg
 	return out
 }
 
-// testCase is a test's outcome: its failing expects, then what stopped or broke it (EVALUATION.md §10.4).
+// testCase is a test's outcome: its failing expects, its errors outside them, then what stopped or broke it (CLI.md §3.5).
 func (r *run) testCase(pkg string, f *syntax.File, d *syntax.TestDecl, run eval.TestRun, static []diag.Finding) TestCase {
 	tc := TestCase{Package: pkg, Name: eval.TestName(d), Loc: r.s.set.Locate(testSpan(f, d)), Passed: !run.Failed}
 	for _, x := range run.Expects {
@@ -141,8 +141,25 @@ func (r *run) testCase(pkg string, f *syntax.File, d *syntax.TestDecl, run eval.
 			tc.Failures = append(tc.Failures, r.expectFailure(f, x))
 		}
 	}
+	tc.Failures = append(tc.Failures, r.broke(run.Broke)...)
 	tc.Failures = append(tc.Failures, r.stops(run, static, f.Span(d))...)
 	return tc
+}
+
+// broke is one failure per error finding outside every expect, in F2 order, a duplicate once (EVALUATION.md §10.4, §14).
+func (r *run) broke(findings []diag.Finding) []ExpectFailure {
+	ls := diag.Locate(r.s.set, findings)
+	all := make([]locatedFinding, len(ls))
+	for i := range ls {
+		all[i] = locatedFinding{f: findings[i], l: ls[i]}
+	}
+	slices.SortStableFunc(all, compareF2)
+	all = slices.CompactFunc(all, func(a, b locatedFinding) bool { return compareF2(a, b) == 0 })
+	out := make([]ExpectFailure, 0, len(all))
+	for _, x := range all {
+		out = append(out, ExpectFailure{Loc: r.s.set.Locate(x.f.Span), Findings: []diag.Finding{x.f}})
+	}
+	return out
 }
 
 // stops is the test's hard error, its poisoned read and cause (not under E4401), or its static errors (CLI.md §3.5).

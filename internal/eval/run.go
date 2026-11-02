@@ -218,7 +218,7 @@ func (r *run) abortAt(b *diag.Builder, path string) {
 			b.Check(r.checkName)
 		}
 		r.noteStop(b)
-		r.emit(b)
+		r.deliver(b)
 	}
 }
 
@@ -252,9 +252,15 @@ func (r *run) stop() {
 	r.failed = true
 }
 
-// emit reports a finding into the capture of an expect, else its package's bag (a fold's
-// one bag while folding).
+// emit reports a soft finding; a test's own, outside every expect, also fails it (EVALUATION.md §10.4).
 func (r *run) emit(b *diag.Builder) {
+	r.noteBroke(b)
+	r.deliver(b)
+}
+
+// deliver reports a finding into the capture of an expect, else its package's bag (a fold's
+// one bag while folding).
+func (r *run) deliver(b *diag.Builder) {
 	if r.emitted != nil {
 		*r.emitted = append(*r.emitted, b)
 	}

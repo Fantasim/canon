@@ -74,6 +74,7 @@ type Evaluator struct {
 	aside     check.Bags                // a vector's throwaway bags while its host verifies
 	recording *recorder                 // set while TestCalls runs
 	testStops map[string]*diag.Bag      // the running test's stopping errors, by frame package, while Test runs
+	testBroke map[string]*diag.Bag      // the running test's findings outside every expect, by frame package (EVALUATION.md §10.4)
 	testFiles diag.Files                // the files their bags resolve against
 	causes    map[*rootState]*diag.Bag  // the hard error that poisoned a value forced while tests run
 	via       map[*rootState]*rootState // a value poisoned by reading another poisoned one

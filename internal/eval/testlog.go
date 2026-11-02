@@ -9,10 +9,15 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 )
 
-// beginTestLog starts the log of a test of pkg: its stops and what poisons the values it forces (CLI.md §3.5).
+// beginTestLog starts the log of a test of pkg: its stops, its findings outside the expects, what poisons the values it forces (CLI.md §3.5).
 func (e *Evaluator) beginTestLog(pkg string) {
-	e.testStops, e.testFiles, e.testPkg = map[string]*diag.Bag{}, e.files(), e.key(pkg)
+	e.testStops, e.testBroke, e.testFiles, e.testPkg = map[string]*diag.Bag{}, map[string]*diag.Bag{}, e.files(), e.key(pkg)
 	e.logCauses()
+}
+
+// endTestLog ends the log of the test that ran.
+func (e *Evaluator) endTestLog() {
+	e.testStops, e.testBroke, e.testPkg = nil, nil, ""
 }
 
 // LogCauses makes the evaluator keep what poisons each value it forces, as a test's log does (EVALUATION.md §7.2).
@@ -39,19 +44,45 @@ func (e *Evaluator) logBag(pkg string) *diag.Bag {
 
 // stopBag is the running test's bag of stopping errors raised in a frame of pkg.
 func (e *Evaluator) stopBag(pkg string) *diag.Bag {
-	if e.testStops[pkg] == nil {
-		e.testStops[pkg] = e.logBag(pkg)
+	return e.testBag(e.testStops, pkg)
+}
+
+// testBag is the bag of log, one of the running test's, for findings raised in a frame of pkg.
+func (e *Evaluator) testBag(log map[string]*diag.Bag, pkg string) *diag.Bag {
+	if log[pkg] == nil {
+		log[pkg] = e.logBag(pkg)
 	}
-	return e.testStops[pkg]
+	return log[pkg]
 }
 
 // stopFindings is the running test's stopping errors, by package name.
 func (e *Evaluator) stopFindings() []diag.Finding {
+	return logFindings(e.testStops, nil)
+}
+
+// brokeFindings is the running test's error findings outside every expect, by package name; never a warning (DECISIONS 448).
+func (e *Evaluator) brokeFindings() []diag.Finding {
+	return logFindings(e.testBroke, func(f diag.Finding) bool { return f.Severity == diag.Error })
+}
+
+// logFindings is the findings of log's bags that keep accepts (every one when nil), by package name.
+func logFindings(log map[string]*diag.Bag, keep func(diag.Finding) bool) []diag.Finding {
 	var out []diag.Finding
-	for _, pkg := range slices.Sorted(maps.Keys(e.testStops)) {
-		out = append(out, e.testStops[pkg].Findings()...)
+	for _, pkg := range slices.Sorted(maps.Keys(log)) {
+		for _, f := range log[pkg].Findings() {
+			if keep == nil || keep(f) {
+				out = append(out, f)
+			}
+		}
 	}
 	return out
+}
+
+// noteBroke keeps, while a test runs, a finding of its own statements outside every expect, which fails it unstopped (EVALUATION.md §10.4).
+func (r *run) noteBroke(b *diag.Builder) {
+	if e := r.ev; e.testBroke != nil && r.sink == nil && r.test != nil {
+		b.Report(e.testBag(e.testBroke, r.fr.pkg))
+	}
 }
 
 // noteStop keeps, while a test runs, a hard error of its own statements, and, while causes are

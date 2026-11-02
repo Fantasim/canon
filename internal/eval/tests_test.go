@@ -47,6 +47,9 @@ func runTests(t *testing.T, b *build, pkgs ...string) string {
 			if res.Poisoned != "" {
 				fmt.Fprintf(&sb, ", reads poisoned %s at line %d", res.Poisoned, spanLine(obj.File(), res.PoisonSpan))
 			}
+			for _, f := range res.Broke { // EVALUATION.md §10.4, DECISIONS 448
+				fmt.Fprintf(&sb, ", broke by %s at line %d", f.Code, spanLine(obj.File(), f.Span))
+			}
 			for _, f := range res.Errors {
 				fmt.Fprintf(&sb, ", stopped by %s at line %d", f.Code, spanLine(obj.File(), f.Span))
 			}

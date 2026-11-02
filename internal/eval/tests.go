@@ -19,13 +19,14 @@ type Builder interface {
 
 // TestRun is the outcome of one test (EVALUATION.md §10.4).
 type TestRun struct {
-	Failed     bool           // an expect failed, or the test stopped
+	Failed     bool           // an expect failed, the test stopped, or an error outside every expect broke it
 	Stopped    bool           // a hard error outside a subject, or a poisoned read, stopped it
 	Broken     bool           // a static error: the test did not run (TYPES.md §1)
 	Poisoned   string         // the poisoned top-level value whose read stopped it, if any (§7.2)
 	PoisonRoot Root           // that value
 	PoisonSpan source.Span    // where the test read it
 	Errors     []diag.Finding // the hard error that stopped it outside a subject, E4401 included, each in its frame's package (CLI.md §3.5)
+	Broke      []diag.Finding // the error findings of its statements outside every expect, each once, in its frame's package (§10.4)
 	Expects    []Expect       // the expects run, in order
 }
 
@@ -71,7 +72,7 @@ func (e *Evaluator) Test(ctx context.Context, t *syntax.TestDecl, b Builder) Tes
 	}
 	var out TestRun
 	e.beginTestLog(pkg)
-	defer func() { e.testStops, e.testPkg = nil, "" }()
+	defer e.endTestLog()
 	r := e.newRun(ctx, charge{pkg: pkg, name: TestName(t)}, file)
 	r.test = &testState{builder: b, out: &out}
 	r.test.lits, _ = b.(literalBuilder)
@@ -80,7 +81,8 @@ func (e *Evaluator) Test(ctx context.Context, t *syntax.TestDecl, b Builder) Tes
 		out.Failed, out.Stopped = true, true
 		out.Poisoned, out.PoisonRoot, out.PoisonSpan = r.poisonAt, r.poisonRoot, r.poisonSpan
 	}
-	out.Errors = e.stopFindings()
+	out.Errors, out.Broke = e.stopFindings(), e.brokeFindings()
+	out.Failed = out.Failed || len(out.Broke) > 0
 	return out
 }
 

@@ -102,16 +102,13 @@ func (r *run) judgeInto(s *litScope, capture *diag.Bag) bool {
 	return r.ev.judgeScope(s, func(l KeptLiteral) bool { return r.test.lits.BuildLiteral(r.ctx, l, capture) })
 }
 
-// judgeStatements judges the test statements' literals; false: the budget ran out, or a poisoned read (§7.2, DECISIONS 426).
+// judgeStatements judges the test statements' literals into its log outside the expects; false: the budget ran out, or a poisoned read (DECISIONS 426, 448).
 func (r *run) judgeStatements() bool {
 	e, pkg := r.ev, r.fr.pkg
-	bag := e.bags[pkg]
-	if bag == nil {
-		bag = diag.NewBag(e.files(), pkg)
-	}
 	if r.test == nil || r.test.lits == nil {
 		return !e.halted(pkg)
 	}
+	bag := e.testBag(e.testBroke, pkg)
 	sb, restore := r.reading(bag)
 	defer restore()
 	e.judgeScope(r.lits, func(l KeptLiteral) bool {

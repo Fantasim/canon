@@ -1,0 +1,109 @@
+CLI.md §3.5, EVALUATION.md §10.4, DECISIONS 448: an error finding a test's own statements produce
+outside every expect (a refinement at a let's and at a call's storage point, a kept literal a
+statement builds) fails the test without stopping it: one line per finding after the failing
+expects, in F2 order, a repeated one once (§14), and before a stopping error's line. A warning
+there neither fails nor shows; inside an expect the finding stays the expect's.
+-- args --
+test
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A kind.
+enum K { num, sub }
+
+/// A node.
+record Node {
+  /// Its kind.
+  k: K
+  /// Its max.
+  max: Int = 5
+}
+
+/// The nodes.
+let nodes: table Node = { a { k: sub }, n { k: num } }
+
+/// A sub node's limit.
+record Sub(e: Node) {
+  /// The limit.
+  lim: Int = e.max
+}
+
+/// What a node holds.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// A holder.
+record H {
+  /// By node.
+  by: {x in nodes: P(x)} = {}
+}
+
+/// The holders.
+let hs: [H] = [{ by: { a: {}, n: 1 } }]
+
+local let one: Int = 1
+
+local fn nine() -> Int { return 9 }
+
+local fn within(n: Int(0..=5)) -> Int { return n }
+
+test "a let and a kept literal" {
+  let x: Int(0..=5) = nine()
+  let same: Bool = hs[0].by == { n: {} }
+  expect x == 9
+}
+
+test "a call, twice" {
+  for i in [1, 2] {
+    let y = within(nine() + i - i)
+  }
+  expect one == 1
+}
+
+test "an error, then a stop" {
+  expect one == 2
+  let x: Int(0..=5) = nine()
+  let z = [1][nine()]
+  expect z == 1
+}
+
+test "a warning" {
+  let w = one ?? 2
+  expect w == 1
+}
+
+test "inside an expect" {
+  expect within(nine()) == 9
+}
+-- want --
+[exit 1]
+[stdout]
+FAIL  a/a.canon:45  a let and a kept literal
+  a/a.canon:41  error[E3204]  9 is outside 0..=5
+  a/a.canon:47  error[E3802]  value does not match P(x) = Int
+
+FAIL  a/a.canon:51  a call, twice
+  a/a.canon:53  error[E3204]  9 is outside 0..=5
+
+FAIL  a/a.canon:58  an error, then a stop
+  a/a.canon:59  expect one == 2
+  expected: 2
+  got: 1
+  a/a.canon:41  error[E3204]  9 is outside 0..=5
+  a/a.canon:61  error[E4002]  index 9 out of range for length 1
+
+FAIL  a/a.canon:70  inside an expect
+  a/a.canon:71  expect within(nine()) == 9
+  expected: 9
+  got: 9
+  got: error[E3204]  9 is outside 0..=5
+
+1 passed, 4 failed (…)
+[stderr]
