@@ -22,13 +22,13 @@ type outOption struct {
 	list    *syntax.ListLit
 }
 
-// emitOut is `out`, a constant string or, but for view, a non-empty list of them, each entry checked as an out (CODEGEN.md §2.1, DECISIONS 229, 269).
+// emitOut is `out`, a constant string or a root name or, but for view, a non-empty list of them, each entry checked as an out (CODEGEN.md §2.1, DECISIONS 229, 269, 439).
 func (c *checker) emitOut(env *env, fi *syntax.FieldItem, target string) outOption {
 	list, isList := fi.Value.(*syntax.ListLit)
 	if !isList || target == TargetView {
 		expected := diag.KindOutPaths
 		if target == TargetView {
-			expected = diag.KindConstantString
+			expected = diag.KindOutPath
 		}
 		if text, ok := c.outPath(env, fi.Value, target, expected); ok {
 			return outOption{entries: []outEntry{{text: text, at: fi.Value}}}
@@ -47,9 +47,9 @@ func (c *checker) emitOut(env *env, fi *syntax.FieldItem, target string) outOpti
 	return out
 }
 
-// outPath is one out path x: a constant string of portable characters (E8009 `outChars`), ending in .ts for a ts emit (E8009 `tsOut`); a path with other characters is not an entry.
+// outPath is one out path x, a constant string or a root name's expansion (outText), of portable characters (E8009 `outChars`), ending in .ts for a ts emit (E8009 `tsOut`), reported at x; a path with other characters is not an entry.
 func (c *checker) outPath(env *env, x syntax.Expr, target string, expected diag.Kind) (string, bool) {
-	text, ok := c.constOption(env, x, OptOut, target, expected)
+	text, ok := c.outText(env, x, target, expected)
 	if !ok {
 		return text, false
 	}

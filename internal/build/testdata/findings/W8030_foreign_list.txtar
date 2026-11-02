@@ -1,0 +1,50 @@
+CODEGEN.md §2.1 "Copies", §2.4 "Stray generated files", DECISIONS 229, 356: a build of a alone judges a's directory against every entry of a foreign out list, however many options the emit has: b's badge.json, written by the first of b's two copies, is b's, not a stray; old.json, which no emit writes, is.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+    other: "other"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A badge.
+record Badge {
+  /// Its size.
+  size: Int
+}
+
+/// V.
+let v: Int = 1
+
+emit json { out: "@out/shared/" }
+-- b/b.canon --
+/// B.
+package b
+
+import a { Badge }
+
+/// The badge.
+let badge: Badge = { size: 2 }
+
+emit json { out: ["@out/shared/", "@other/b/"] }
+-- out/shared/badge.json --
+{
+  "$schema": "a.Badge@0123abcd",
+  "value": {"size": 2}
+}
+-- out/shared/old.json --
+{
+  "$schema": "a.Old@0123abcd",
+  "value": 1
+}
+-- select --
+a
+-- findings.txt --
+warning[W8030]  a/a.canon:13:18
+  @out/shared/old.json carries the generated marker of a, but no emit of this build writes it: delete it
+
+0 errors, 1 warning in 1 package (…)

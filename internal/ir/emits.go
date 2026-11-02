@@ -17,20 +17,14 @@ type emitSite struct {
 	e        *Emit
 	decl     *syntax.EmitDecl
 	file     *syntax.File
-	outSpan  source.Span // the out entry this copy writes, or the out option
-	outs     []outText   // the out entries as written, one per copy (CODEGEN.md §2.1)
-	index    int         // which entry of outs this site writes: 0 for the first
-	display  string      // the output as a display path (WIRE.md §2.3)
-	unmapped bool        // a go emit whose resolved directory is under no go_module root (E8007)
-	named    bool        // a go emit that writes its package, so none is defaulted from out
-	refused  bool        // a go emit whose package check refused (E8009, or E1132 for an interpolation), written, defaulted, or none for want of an out (decisions 213, 215)
-	modeSpan source.Span // the mode option's value, or none without one
-}
-
-// outText is one entry of an emit's out: its text as written ("" for one check refused) and its span.
-type outText struct {
-	text string
-	span source.Span
+	outSpan  source.Span     // the out entry this copy writes, or the out option
+	outs     []check.OutText // the out entries, a root name's expansion included, one per copy (CODEGEN.md §2.1)
+	index    int             // which entry of outs this site writes: 0 for the first
+	display  string          // the output as a display path (WIRE.md §2.3)
+	unmapped bool            // a go emit whose resolved directory is under no go_module root (E8007)
+	named    bool            // a go emit that writes its package, so none is defaulted from out
+	refused  bool            // a go emit whose package check refused (E8009, or E1132 for an interpolation), written, defaulted, or none for want of an out (decisions 213, 215)
+	modeSpan source.Span     // the mode option's value, or none without one
 }
 
 func (es *emitSite) span() source.Span { return es.file.Span(es.decl.Target) }
@@ -75,7 +69,7 @@ func (s *stage) emit(u *unit, f *syntax.File, ed *syntax.EmitDecl, seen map[Targ
 // copies is one site per entry of base's out, in list order, each with its own Emit; base itself for one out or none (CODEGEN.md §2.1).
 func copies(base *emitSite) []*emitSite {
 	if len(base.outs) == 1 {
-		base.e.Out, base.outSpan = base.outs[0].text, base.outs[0].span
+		base.e.Out, base.outSpan = base.outs[0].Text, base.file.Span(base.outs[0].At)
 	}
 	if len(base.outs) < severalCopies {
 		return []*emitSite{base}
@@ -83,9 +77,9 @@ func copies(base *emitSite) []*emitSite {
 	sites := make([]*emitSite, len(base.outs))
 	for i, o := range base.outs {
 		e := *base.e
-		e.Out, e.Values, e.Open, e.NoHook = o.text, slices.Clone(base.e.Values), slices.Clone(base.e.Open), slices.Clone(base.e.NoHook)
+		e.Out, e.Values, e.Open, e.NoHook = o.Text, slices.Clone(base.e.Values), slices.Clone(base.e.Open), slices.Clone(base.e.NoHook)
 		site := *base
-		site.e, site.outSpan, site.index = &e, o.span, i
+		site.e, site.outSpan, site.index = &e, base.file.Span(o.At), i
 		sites[i] = &site
 	}
 	return sites
@@ -135,7 +129,7 @@ func (s *stage) readOptions(u *unit, es *emitSite) {
 		}
 		switch fi.Name.Name {
 		case check.OptOut:
-			es.outSpan, es.outs = es.file.Span(fi.Value), outTexts(es.file, fi.Value, e.Target)
+			es.outSpan, es.outs = es.file.Span(fi.Value), check.OutTexts(s.in.Project, u.cp.Path, es.decl.Target.Name, fi.Value)
 		case check.OptMode:
 			e.Mode, es.modeSpan = modeOption(fi.Value), es.file.Span(fi.Value)
 		case check.OptValues:
@@ -179,19 +173,6 @@ func constString(x syntax.Node) string {
 		return b.String()
 	}
 	return ""
-}
-
-// outTexts are the entries of out: its one string, or each element of a list but for view (CODEGEN.md §2.1).
-func outTexts(f *syntax.File, x syntax.Expr, t Target) []outText {
-	list, ok := x.(*syntax.ListLit)
-	if !ok || t == TargetView {
-		return []outText{{text: constString(x), span: f.Span(x)}}
-	}
-	out := make([]outText, len(list.Elems))
-	for i, el := range list.Elems {
-		out[i] = outText{text: constString(el), span: f.Span(el)}
-	}
-	return out
 }
 
 // valueNames is an explicit `values` list's names, nil for an empty list too (decision 127).

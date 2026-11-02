@@ -11,6 +11,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
@@ -28,6 +29,7 @@ func TestFindings(t *testing.T) {
 		fs := &source.FileSet{}
 		parse := diag.NewBag(fs, "")
 		var files []*syntax.File
+		proj := exampleProject()
 		for _, f := range c.Archive.Files {
 			if path.Ext(f.Name) != canonExt {
 				continue
@@ -36,10 +38,16 @@ func TestFindings(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if f.Name == projectFile { // a case's own project replaces the examples' (GRAMMAR.md §7.1)
+				if proj, err = project.Load(src, parse); err != nil {
+					t.Fatal(err)
+				}
+				continue
+			}
 			files = append(files, syntax.Parse(src, syntax.FileSource, parse))
 		}
 		bags := check.Bags{}
-		check.Check(context.Background(), exampleProject(), files, bags, literalFolder{})
+		check.Check(context.Background(), proj, files, bags, literalFolder{})
 		out := render(t, fs, parse, bags)
 		code := strings.SplitN(filepath.Base(c.Path), "_", 2)[0]
 		if !strings.Contains(out, "["+code+"]") {

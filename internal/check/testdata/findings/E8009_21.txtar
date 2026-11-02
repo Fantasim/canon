@@ -9,7 +9,7 @@ emit go { out: ["@features/a/", 3], package: "a" }
 emit ts { out: ["@web/a.ts", "@features/a.js"] }
 -- findings.txt --
 error[E8009]  a/a.canon:3:18
-  option out of emit view must be a constant string
+  option out of emit view must be a path string or a root name
 
 error[E8009]  a/a.canon:5:33
   option out of emit go must be a path string, a root name or a list of them

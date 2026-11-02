@@ -175,7 +175,7 @@ type Value struct {
 // imports between two emits from their Dirs.
 type Emit struct {
 	Target    Target
-	Out       string // as written ("@sovcommon/teamboard"), for messages only
+	Out       string // as written ("@sovcommon/teamboard"), or a root name's expansion (CODEGEN.md §2.1): a resolvable path, for messages and build's checks
 	From      string
 	Dir       string // output directory (ts: its file's), project-relative by the declared roots
 	FileName  string // a ts emit's file name in Dir; "" for the other targets

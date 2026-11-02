@@ -1,0 +1,32 @@
+CODEGEN.md §2.1 "Templates", DECISIONS 439: a quoted out equal to the name of a root with a template for the emit's target is E8009 outQuoted, and is not judged further; "./admin" names the directory beside the file, and the quoted name of a root with no template for the target stays a plain path.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "admin"
+    web: "web"
+  }
+  out_templates {
+    go: { admin: "internal/gen/{dir}" }
+    cpp: { admin: "src/{dir}" }
+    ts: { web: "src/{dotted}.ts" }
+  }
+}
+-- a/a.canon --
+package a
+
+emit go { out: "admin", package: "a" }
+
+emit cpp { out: ["./admin", "@web/a"], namespace: "a" }
+
+emit json { out: "admin" }
+
+emit ts { out: ["web"] }
+-- findings.txt --
+error[E8009]  a/a.canon:3:16
+  out of emit go holds the path "admin", the name of a root with a go template: write admin without quotes to use the template, or "./admin" for the directory beside this file
+
+error[E8009]  a/a.canon:9:17
+  out of emit ts holds the path "web", the name of a root with a ts template: write web without quotes to use the template, or "./web" for the directory beside this file
+
+2 errors, 0 warnings in 1 package (…)

@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/project"
@@ -48,7 +49,7 @@ func (r *run) emittersInto(dirs map[string]bool) ([]string, map[string]bool) {
 			continue
 		}
 		for _, f := range u.Files {
-			if reach(dirs, reached, r.outsOf(f)) {
+			if reach(dirs, reached, r.outsOf(u.Name, f)) {
 				pkgs = append(pkgs, u.Name)
 			}
 		}
@@ -80,16 +81,16 @@ func (r *run) foreignRun(ctx context.Context, pkgs []string) (*run, bool) {
 	return o, o.analyze(ctx) == nil && o.errorFree()
 }
 
-// outsOf are the places, lower-cased and placed on this machine, the emits of f name in out.
-func (r *run) outsOf(f *syntax.File) []string {
+// outsOf are the places, lower-cased and placed on this machine, the emits of f in package pkg name in out, as check reads it (CODEGEN.md §2.1).
+func (r *run) outsOf(pkg string, f *syntax.File) []string {
 	var out []string
 	for _, d := range f.Decls {
 		ed, ok := d.(*syntax.EmitDecl)
-		if !ok || ed.Options == nil {
+		if !ok || ed.Target == nil || ed.Options == nil {
 			continue
 		}
-		for _, text := range outTexts(outOption(ed, len(ed.Options.Items))) {
-			if at, ok := r.s.layout.Resolve(text, path.Dir(f.Src.Path), source.Span{}, diag.NewBag(nil, "")); ok {
+		for _, en := range check.OutTexts(r.s.proj, pkg, ed.Target.Name, outValue(ed)) {
+			if at, ok := r.s.layout.Resolve(en.Text, path.Dir(f.Src.Path), source.Span{}, diag.NewBag(nil, "")); ok {
 				out = append(out, strings.TrimSuffix(strings.ToLower(at.Abs), pathSep))
 			}
 		}
@@ -97,26 +98,12 @@ func (r *run) outsOf(f *syntax.File) []string {
 	return out
 }
 
-// outTexts are the constant strings of an out option: one, or a list's.
-func outTexts(x syntax.Node) []string {
-	switch v := x.(type) {
-	case *syntax.RawStringLit:
-		return []string{v.Value}
-	case *syntax.StringLit:
-		var b strings.Builder
-		for _, p := range v.Parts {
-			if p.Interp != nil {
-				return nil
-			}
-			b.WriteString(p.Text)
+// outValue is the whole value of ed's first out option, every entry of a list; nil without one.
+func outValue(ed *syntax.EmitDecl) syntax.Expr {
+	for _, it := range ed.Options.Items {
+		if fi, ok := it.(*syntax.FieldItem); ok && fi.Name != nil && fi.Name.Name == check.OptOut {
+			return fi.Value
 		}
-		return []string{b.String()}
-	case *syntax.ListLit:
-		var out []string
-		for _, el := range v.Elems {
-			out = append(out, outTexts(el)...)
-		}
-		return out
 	}
 	return nil
 }

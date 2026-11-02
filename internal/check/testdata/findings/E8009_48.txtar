@@ -1,0 +1,20 @@
+CODEGEN.md §2.1 "Templates" and "Copies", §2.8, DECISIONS 229, 439: a root name's expansion is the out entry every later rule judges, at the name: two names expanding under one root are E8009 outRoot at the later.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "admin"
+  }
+  out_templates {
+    go: { admin: "internal/gen/{dir}" }
+  }
+}
+-- a/a.canon --
+package a
+
+emit go { out: [admin, admin], package: "a" }
+-- findings.txt --
+error[E8009]  a/a.canon:3:24
+  @admin/internal/gen/a and @admin/internal/gen/a in out of emit go share the root admin: each copy needs a root of its own
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,34 @@
+CODEGEN.md §2.1 "Templates", GRAMMAR.md §5.3, DECISIONS 439: a root name in out stands for the template out_templates gives that root for the emit's target; an undeclared root, and a declared root with no template for this target, are E8009 outTemplate at the name, never looked up in scope.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "admin"
+    web: "web"
+  }
+  out_templates {
+    go: { admin: "internal/gen/{dir}" }
+    ts: { web: "src/{dotted}.ts" }
+  }
+}
+-- a/a.canon --
+package a
+
+let nowhere: Int = 1
+
+emit go { out: [admin, nowhere], package: "a" }
+
+emit ts { out: admin }
+
+emit cpp { out: web, namespace: "a" }
+-- findings.txt --
+error[E8009]  a/a.canon:5:24
+  nowhere in out of emit go names no go template of out_templates in project.canon: add one there, or write the path as a string
+
+error[E8009]  a/a.canon:7:16
+  admin in out of emit ts names no ts template of out_templates in project.canon: add one there, or write the path as a string
+
+error[E8009]  a/a.canon:9:17
+  web in out of emit cpp names no cpp template of out_templates in project.canon: add one there, or write the path as a string
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,24 @@
+CODEGEN.md §2.1 "Templates", DECISIONS 215, 269, 439: without package, the default Go package is the last element of each expansion; templates of two roots ending in different elements are E8009 outPackage.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "admin"
+    web: "web"
+  }
+  out_templates {
+    go: {
+      admin: "internal/gen/{dir}"
+      web: "gen/{dotted}"
+    }
+  }
+}
+-- items/vocab/vocab.canon --
+package items.vocab
+
+emit go { out: [admin, web] }
+-- findings.txt --
+error[E8009]  items/vocab/vocab.canon:3:16
+  entries of out of emit go end in different names: give package
+
+1 error, 0 warnings in 1 package (…)

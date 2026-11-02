@@ -1,0 +1,50 @@
+CODEGEN.md §2.1 "Templates" and "Copies", GRAMMAR.md §7.1, DECISIONS 229, 439: an emit whose out names a root writes where that root's template for its target, expanded for the package, places it: {dir} the package path with /, {dotted} as written; a list of names writes one copy each.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "admin"
+    web: "web"
+  }
+  go_module {
+    admin: "example.com/admin"
+    web: "example.com/web"
+  }
+  out_templates {
+    go: {
+      admin: "internal/gen/{dir}"
+      web: "server/gen/{dir}"
+    }
+    cpp: { admin: "src/{dir}" }
+    ts: { web: "src/lib/{dotted}.ts" }
+    json: { admin: "data/{dotted}.json" }
+  }
+}
+-- items/vocab/vocab.canon --
+/// Item words.
+package items.vocab
+
+/// A colour.
+enum Tone { red, blue }
+
+/// The tone.
+let tone: Tone = blue
+
+emit go { out: [admin, web] }
+
+emit cpp { out: admin }
+
+emit ts { out: web }
+
+emit json { out: admin }
+-- build.txt --
+0 errors, 0 warnings in 1 package (…)
+output @admin/data/items.vocab.json 0
+output @admin/internal/gen/items/vocab/rt/rt.go 0
+output @admin/internal/gen/items/vocab/vocab.gen.go 0
+output @admin/src/items/vocab/canon_runtime.h 0
+output @admin/src/items/vocab/vocab.gen.cpp 0
+output @admin/src/items/vocab/vocab.gen.h 0
+output @web/server/gen/items/vocab/rt/rt.go 0
+output @web/server/gen/items/vocab/vocab.gen.go 0
+output @web/src/lib/items.vocab.ts 0
