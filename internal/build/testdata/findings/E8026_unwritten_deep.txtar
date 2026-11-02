@@ -1,0 +1,37 @@
+CODEGEN.md §2.4 (DECISIONS 451), WIRE.md §6.5: a ** pattern whose base lies above the directory an emit writes into judges the path the emit will write.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    data: "a/data"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// R.
+record R {
+  /// The value.
+  v: Int
+}
+
+/// All.
+let all: [R] = load.dir("../a/**/*.json")
+-- b/b.canon --
+/// B.
+package b
+
+/// Note.
+@text("y.json")
+export fn note() -> String { return "y\n" }
+
+emit text { out: "@data" }
+-- a/data/x.json --
+{"v": 1}
+-- check-only --
+-- findings.txt --
+error[E8026]  a/a.canon:11:16
+  a/data/y.json is read by this load and written by emit text of b: an output is never an input of its own build
+
+1 error, 0 warnings in 2 packages (…)

@@ -1,0 +1,37 @@
+CODEGEN.md §2.4 (DECISIONS 451): a single-file load of a path an emit will write, which does not exist yet, keeps E7004 "cannot read" on every run (its build fails, so the file is never written); only a load.dir pattern is E8026 before the output exists.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    data: "a/data"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// R.
+record R {
+  /// The value.
+  v: Int
+}
+
+/// One.
+let one: [R] = load("data/y.json")
+-- b/b.canon --
+/// B.
+package b
+
+/// Note.
+@text("y.json")
+export fn note() -> String { return "y\n" }
+
+emit text { out: "@data" }
+-- a/data/x.json --
+{"v": 1}
+-- check-only --
+-- findings.txt --
+error[E7004]  a/a.canon:11:16
+  cannot read a/data/y.json: no such file or directory
+
+1 error, 0 warnings in 2 packages (…)

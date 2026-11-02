@@ -1,0 +1,34 @@
+CODEGEN.md §2.4 (DECISIONS 451): a load.dir pattern that matches no path an emit of the build writes is no finding, whether the pattern could match a file or not; the pattern of the case beside it, narrowed to x*.json (a *.csv pattern would only add W7107, no file matching).
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    data: "a/data"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// R.
+record R {
+  /// The value.
+  v: Int
+}
+
+/// All.
+let all: [R] = load.dir("data/x*.json")
+-- b/b.canon --
+/// B.
+package b
+
+/// Note.
+@text("y.json")
+export fn note() -> String { return "y\n" }
+
+emit text { out: "@data" }
+-- a/data/x.json --
+{"v": 1}
+-- check-only --
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)
