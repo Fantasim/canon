@@ -322,7 +322,7 @@ unknown key is `E1002`.
   paths always use `/`. An unknown root is `E7003`.
 - `canon` states the language version. A compiler accepts the minor versions it knows within its
   major version, refuses newer ones and other majors (`E1001`), and never silently reinterprets
-  older code. The compiler's version and the language version are separate (DECISIONS 354, 422): compiler 0.2 reads language 0.1, whose syntax and refusals it extends as the 0.1.x releases did.
+  older code. The compiler's version and the language version are separate (DECISIONS 354, 422, 452): compilers 0.2 and 0.3 read language 0.1, whose syntax and refusals they extend as the 0.1.x releases did.
 - **Roots on this machine** (DECISIONS 332). A root's directory is the path `project.canon` gives
   it, unless this machine places it elsewhere. `project.local.canon`, beside `project.canon` and
   git-ignored, moves declared roots for one machine:
@@ -1773,10 +1773,7 @@ default logs and calls `std::abort()` (DECISIONS 19).
 
 `canon::FlatMap`, `canon::KeyedList`, `canon::OnEvalError` and the other helpers live in the
 generated header `canon_runtime.h`; the JSON helpers of loaders and decoders live in a second
-header, `canon_runtime_json.h`, so `baked` mode never needs nlohmann/json. Both are written once
-per output directory inside `namespace canon { inline namespace rt_v1 { … } }`, with version
-guards instead of `#pragma once`, so two output directories linked into one binary cannot
-violate the one-definition rule. Bit-exact conformance of floats requires building with
+header, `canon_runtime_json.h`, so `baked` mode never needs nlohmann/json. Both are written once per output directory inside `namespace canon { inline namespace rt_v1_<stamp> { … } }`, `<stamp>` naming their text (CODEGEN.md §7.4), with version guards instead of `#pragma once`: identical copies meet in one translation unit, two different ones there stop the compile, and two different ones linked into one binary share no symbol. Bit-exact conformance of floats requires building with
 `-ffp-contract=off` (GCC, Clang) or `/fp:precise` (MSVC).
 
 #### Legacy structs
@@ -1828,6 +1825,7 @@ Worked `ItemProp` example: [spec/CODEGEN.md](spec/CODEGEN.md) §7.8.
 - Tables and keyed lists are `CanonTable` values (`statuses.find(key)`, `at(i)`, `length`, `all`);
   in `baked` and `embedded` modes their key types are literal unions. A table's rows are
   `CanonRow<T, K>`: a row record's interface declares `id?` and `retired?`, present on every row.
+- Every call that builds a top-level table, frozen value or enum table is marked `/*#__PURE__*/`, so a bundler drops what a program never reads (CODEGEN.md §8.1).
 - `Int` is `number`. A value outside `Number.MAX_SAFE_INTEGER` in an emitted value is `E8101`,
   unless the field is annotated `@ts(bigint)` (the only way to get a `bigint`, also for `UInt64`).
   Translated functions check integer inputs with `Number.isSafeInteger` and throw

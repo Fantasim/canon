@@ -623,8 +623,7 @@ widgetDecl      = "widget" IDENT "(" "value" ":" type [ "," "siblings" ":" type 
 - `emit` targets are words (`go`, `cpp`, `ts`, `json`, `view`, `text`; DECISIONS 294); the options are a brace literal
   whose schema belongs to CODEGEN.md §2.1 / WIRE.md §8 (`package:` is a valid item name there,
   §4.3). Like `project.canon`, the options are a built-in schema: no option value is an
-  expression or is resolved in scope (CODEGEN.md §2.1, "Typing of the options"). `out` is a string
-  or, for every target but `view`, a list literal of strings (DECISIONS 229).
+  expression or is resolved in scope (CODEGEN.md §2.1, "Typing of the options"). `out` is a string or a root name (a word naming a template of `out_templates`, CODEGEN.md §2.1), or, for every target but `view`, a list literal of them (DECISIONS 229, 439).
 - A widget's parameter list is the words `value` and, optionally, `siblings` (MOCKUP-GAPS 28), in
   that order: they are contextual keywords there (§4.2). Any other name is `E1116` with the hint
   "a widget takes `value` and `siblings`". Which types are allowed belongs to VIEWMODEL.md
@@ -1107,8 +1106,7 @@ pValue          = stringLit | INT | qualifiedIdent
                 | BraceList( pEntry ) ;
 ```
 
-- `key { … }` is sugar for `key: { … }` (only for map-valued keys). Strings are constant strings
-  (`E1132`). There are no expressions: no arithmetic, no `load`, no names other than the symbols
+- `key { … }` is sugar for `key: { … }` (only for map-valued keys). Strings are constant strings (`E1132`), except the templates under `out_templates`, whose interpolations are placeholders (§7.1). There are no expressions: no arithmetic, no `load`, no names other than the symbols
   below.
 
 ### 7.1 Built-in schema
@@ -1124,6 +1122,7 @@ pValue          = stringLit | INT | qualifiedIdent
 | `studio` | package path | none | the package holding the studio vocabulary (SPEC §16.11); it must exist (`E1012`) |
 | `budget` | integer ≥ 1 | `100_000_000` | evaluation steps (EVALUATION.md); out of range `E1006` |
 | `go_module` | map root name → Go module path string | `{}` | EMT-06: the Go import path prefix of outputs under that root. Keys must be declared roots and values non-empty with no spaces (`E1009`); use: CODEGEN.md |
+| `out_templates` | map emit target → map root name → path template | `{}` | where an emit's `out` that names a root writes (CODEGEN.md §2.1, DECISIONS 439): `out_templates { go: { admin: "internal/gen/{dir}" } }`. A target is an emit target word (`go`, `cpp`, `ts`, `json`, `view`, `text`; `E1019` `target`); a root is a declared root written as an identifier (`E1009` `templateRoot`), once per target (`E1005`). A template is a string relative to its root whose only interpolations are the placeholders `{dir}` (the package path with `/`, its directory) and `{dotted}` (the package path as written) (`E1019` `placeholder`); it does not start with `@` (`rooted`); it is a path of non-empty segments, with no leading or trailing `/` and no `.` or `..` segment (`path`); its text uses only `A-Z a-z 0-9 . _ -` and `/` (`chars`, DECISIONS 424); a `ts` template ends in `.ts` (`ts`). Any other value is `E1006` `outTemplates`. A template no emit names writes nothing. Not allowed in `project.local.canon` (`E1014`) |
 | `tiers` | ordered map tier name → list of package paths | `{}` (none) | the allowed import directions (TYPES.md §3.1, DECISIONS 380), tiers written lowest first. Names are `IDENT`s (`E1017` `name`), unique (`E1005` `tier`). A value is a non-empty list of package paths written as dotted identifiers (`[items.vocab, header]`); another value, an empty list or another item is `E1006` `tiers`. A path is listed once over all tiers (`E1017` `duplicate`). A path **places** the package of that name and every package below it, except one a longer listed path places; it need not name a package. Once a tier is declared, a package no path places and a path that places no package are `E1018`, found after the scan like `E1012`. Not allowed in `project.local.canon` (`E1014`) |
 
 - An unknown key is `E1002`. A duplicate key is `E1005`. A value of the wrong kind is `E1006`.
@@ -1259,7 +1258,7 @@ mutually exclusive arguments is `E1119`. An unknown annotation name or an unknow
 | `@cpp(value: N)` | `int` | `VC` (case of a variant held by a legacy struct) | CODEGEN.md §7.8 |
 | `@cpp(unit: u)` | `symbol{ms, s, m, h, d}` | `FD` (`Duration` field mapped to a legacy member) | CODEGEN.md §7.8 |
 | `@text("file")` | positional `string` (a file name: not empty, `.` or `..`, no `/` or `\`) | `TL` (`fn`: public, package-level, no parameter, result `String` or any type with a wire form) | CODEGEN.md §2.9 (DECISIONS 294, 308) |
-| `@cpp(name: "N")`, `@go(name: "N")`, `@ts(name: "N")` | `string` (a target identifier) | `TH`, `FD`, `EM`, `VC`, `MB`, `TL` (`let`, `const`, `type`, `fn`) | CODEGEN.md (CG-02) |
+| `@cpp(name: "N")`, `@go(name: "N")`, `@ts(name: "N")` | `string` (a target identifier) | `TH`, `FD`, `EM`, `VC`, `MB`, `TL` (`let`, `const`, `type`, `fn`); never on a `local` declaration or inside one (`E1118`) | CODEGEN.md (CG-02) |
 | `@ts(bigint)` | flag | `FD` (a field with an integer position outside a ref: the integer, list elements, map keys and values, optional contents; DECISIONS 279) | CODEGEN.md (SPEC §15.4) |
 
 Combination rules checked here:
@@ -1273,6 +1272,7 @@ Combination rules checked here:
 - In one `@cpp`: `struct:`, `header:` and `access:` go together on a record header (`header:`
   without `struct:` is `E1119`); `field:`, `type:` and `unit:` go on fields; `value:` on cases;
   `name:` combines with any of them.
+- A `@go`, `@ts` or `@cpp` annotation configures generated code, and a `local` declaration is never generated (TYPES.md §3.7): on one, or on a field, member, case or method inside one, it is `E1118`. Remove the annotation, or drop `local` to emit the declaration.
 
 Type-dependent rules (for example `unit:` on a non-Duration field, `none:` on a required field)
 are checked by TYPES.md / WIRE.md, with their own codes.
@@ -1386,7 +1386,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1006 | error | a project value of the wrong kind or out of range |
 | E1007 | error | bad root name or path (absolute, empty, `\`) |
 | E1008 | error | `languages` item |
-| E1009 | error | a `go_module` key or an `optional_roots` or `consumer_roots` name is not a declared root, such a name is listed twice, or an empty/invalid module path |
+| E1009 | error | a `go_module` key or an `optional_roots` or `consumer_roots` name is not a declared root, such a name is listed twice, or an empty/invalid module path, or an `out_templates` root that is not a declared root |
 | E1010 | error | malformed version |
 | E1011 | error | misplaced `project` or extra content (`project.canon`, `project.local.canon`) |
 | E1012 | error | `studio` names a missing package |
@@ -1396,6 +1396,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | W1016 | warning | a `dev` compiler cannot honour the project's `compiler` pin (§7.1) |
 | E1017 | error | a tiers name that is not an identifier, or a package path listed twice (§7.1) |
 | E1018 | error | with tiers: a package no listed path places, or a path that places none (§7.1) |
+| E1019 | error | an invalid `out_templates` target or template (§7.1) |
 | E1101 | error | depth-0 `:` in an interpolation not followed by a valid spec and `}` |
 | E1102 | error | indentation prefix of a multiline string |
 | E1103 | error | a second `typeArgs` |
@@ -1413,7 +1414,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1115 | error | `REGEX` elsewhere |
 | E1116 | error | any other syntax error |
 | E1117 | error | two items on one line |
-| E1118 | error | position not in §8.3; prefix annotation on a record/enum/variant or field |
+| E1118 | error | position not in §8.3; prefix annotation on a record/enum/variant or field; a `@go`, `@ts` or `@cpp` annotation on a `local` declaration or inside one |
 | E1119 | error | wrong argument kind, value, missing or exclusive arguments |
 | E1120 | error | duplicate annotation at one position |
 | E1121 | error | call or annotation arguments |

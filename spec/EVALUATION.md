@@ -267,6 +267,8 @@ evaluation completed. Verification walks the value (not through refs) and checks
 
 A map literal typed against a kept dependent map (TYPES.md §11.5) is also judged, each value against `T` applied to its key, whether or not it is stored: after every value of the pass is verified, each of its values that no verification judged at that key and type is judged once, charged to the value whose evaluation built it; its findings carry the value's path within the literal, with no root, as precomputed results do (§2.3) (DECISIONS 408).
 
+A record or case literal with a dependent field (TYPES.md §11.4) is judged the same way, stored or not: one no verification judged at its type is verified once as a value, charged to the value whose evaluation built it, its findings carrying the path within the literal, with no root (DECISIONS 446).
+
 Verification findings are soft. The offending sub-value is marked invalid. Type functions
 evaluated here cost steps (§12); an evaluation error inside one is a hard error charged to the
 value being verified.
@@ -584,7 +586,7 @@ stores are judged; an `expect c` condition's reads count the same (DECISIONS 426
 - A failing `expect` does not stop the test; later statements still run.
 - A hard error outside an `expect` subject (in a `let`, a loop, a call) fails the test and
   stops it.
-- A test passes when every `expect` passed and no hard error occurred.
+- An error finding produced outside every `expect` subject and condition (a refinement at a storage point in a `let` or a call, a kept literal a statement builds, §5) fails the test without stopping it; a warning there neither fails nor shows. A test passes when every `expect` passed and no error occurred outside them (DECISIONS 448).
 - A test that finds its package's budget already spent (`E4401`, §12.2) does not run and fails;
   CLI §3.5 prints its `FAIL` line alone.
 - The output format is CLI §3.5: for `fails`/`warns`, the captured findings are listed.
@@ -705,9 +707,7 @@ time and memory and `E4401` is the only way evaluation runs long:
 **Free:** reading and decoding files, conversions and refinement checks other than `where`,
 verification other than type functions, the traversal of instance checks, layer path
 resolution, the `@stable` comparisons made while applying an amendment, and formatting findings.
-Stage B's re-run of a `where` predicate that the conversion already ran (and paid) is free; such a
-re-run is capped at the budget, and past it that re-run alone stops, its value is poisoned, no
-`E4401` is reported and evaluation continues.
+Every run of a `where` predicate that verification (stage B) makes is free, whether or not a conversion ran it on that value first: a re-run the conversion already paid, and the first run on a value an amendment or a re-derived default replaced (§9.3), whose enclosing refinements no conversion judged whole. A kept literal (§5) that such a run builds is judged free with it. Each run is capped at the budget; past it that run alone stops, its value is poisoned, no `E4401` is reported and evaluation continues.
 
 ### 12.2 Budget
 

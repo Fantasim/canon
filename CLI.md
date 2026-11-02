@@ -348,6 +348,8 @@ message text, a check name or a code (`expect v fails E3204`, SPEC §18).
 
 `expect package { v: e, … }` runs the package's checks over substituted values (EVALUATION.md §10.5); its failures print as any other, and in JSON each captured finding carries its `path` and `check`.
 
+Before the report it prints, in `canon check`'s format (§2.4) with its summary line and a blank line after, the errors of phases 1–2 of every loaded package and the warnings of the selected packages (`-q`: errors only), the errors no test can capture (`E3102`, `E6004`, EVALUATION.md §10.5) and the warnings of the files its tests read that no value carries (`W7101`).
+
 ```
 FAIL  resource/events/event.canon:176  overlapping windows are refused
   resource/events/event.canon:177  expect { ...sample, schedule: [at(Mon, 20, 22), at(Mon, 21, 23)] } fails "overlaps an earlier window"
@@ -380,6 +382,7 @@ The layout is exact (the second failure is `pipeline`'s test with `healFor` brok
 - A hard error outside an `expect` subject, which stops the test (EVALUATION.md §10.4), is one
   more line after the failures: two spaces, `<file>:<line>` of the error, two spaces,
   `<severity>[<CODE>]  <message>`.
+- An error finding outside every `expect` (EVALUATION.md §10.4), which fails the test without stopping it, is one line, after the failing `expect`s and before a stopping error's line, in F2 order (API.md §4.1): two spaces, `<file>:<line>` of the finding, two spaces, `<severity>[<CODE>]  <message>`; in JSON a failure with `"expect": ""` and the finding in `findings`.
 - A test that does not run because its package's budget is spent (EVALUATION.md §10.4) is a
   failing test whose block is its `FAIL` line alone.
 - A blank line after each block, then the summary `<p> passed, <f> failed (<duration>)`, with the
@@ -389,7 +392,7 @@ JSON line per test: `{"test":{"package", "name", "file", "line", "status": "pass
 "failures": [{"file", "line", "col", "expect", "expected", "got", "findings": [finding…]}]}}`,
 then `{"summary":{"passed":12,"failed":1,"ms":300}}`.
 
-Exit: 0 when every test passes, 1 otherwise.
+Exit: 1 when a test fails or one of those findings is an error; else 4 when its warnings exceed `--max-warnings` (§2.5); else 0.
 
 ### 3.6 `canon fmt`
 

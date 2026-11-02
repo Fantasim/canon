@@ -26,6 +26,7 @@ the on-disk cache (Q3, waiting for v0.3's scale bench) and N1 parked. [Plan](pla
 **Owed:** ADR-0026 rules every item of v0.2's "What stays owed": in v0.3 (§14-§16), or decided out with
 the record corrected (§14.4, §15.9: the define-guard over-wrap is no bug since `3cdc78c9`; dead `ModFloat`
 kept on purpose; the `kept` memo measured flat; Resource does use J13/J14 through a ref). After v0.3: its §19.
+ADR-0026 §19's items (found while planning, not in v0.3) are in [plan.md](plan.md)'s v0.4, v0.5 and later sections.
 Parked: the cache's stat table, `evalAnalysis` → `KeptSelection`; M4 call (b) declined. Still open: the
 studio's full reload has no target.
 **Documented limits:** `NoHook` is filled for the import closure only (ADR-0021 §2.5); MSVC at scale.

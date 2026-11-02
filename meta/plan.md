@@ -297,11 +297,17 @@ as written, no veto reached the run.
 - [ ] `bigint` in translated TS.
 - [ ] The floating-point contract, verified.
 - [ ] Guide: porting a legacy formula with captured vectors.
+- [ ] TypeScript's per-file `CanonEvalError` and `CanonTable` (ADR-0026 §19): `export *` over two generated modules
+  fails with TS2308, and `instanceof CanonEvalError` is false for an error another file's translated fn throws
+  (0 Sovereign references); a runtime module or a brand check (`Symbol.hasInstance` by name and code). The guide
+  documents it meanwhile.
+- [ ] Faster key-order sidecars in the C++ reader (record orders by node; about 19 ms of 59 on `mdlDyna.json`), with
+  their own measurement (ADR-0026 §19).
 
 ## After v0.4 (direction, not scheduled; roadmap §6)
 
 - v0.5: binary data, with N2 (one declaration per id), the record layout of loaded data, views of baked data and
-  presence bits (ADR-0026 §6).
+  presence bits (ADR-0026 §6, §19).
 - v0.6: runtime values and messages, in Canon, as schema packages (types only; recommended in
   roadmap §9, Q1, waiting for Louis's yes).
 - Parked: N1 legacy C++ structs (Louis, 2026-10-31), N7 package moves, M7 `convert`.
@@ -322,6 +328,24 @@ as written, no veto reached the run.
   - `while` and real-exponent `pow` in translated code;
   - compact JSON;
   - consumer-declared pruning.
+
+Found while planning v0.3, owed, not scheduled ([ADR-0026](decisions/0026-v03-lean-generated-code.md) §19):
+- API E34 ignores `@text` results: renaming a field only a `@text` output writes changes that output's key without
+  adding `@json` (`canon lint`'s fix avoids it); a small separate item.
+- `@go`/`@ts`/`@cpp(name:)` on a public fn without `export` are accepted and ignored; they need their own position
+  word (0 Sovereign sites).
+- Foreign readers over the 1,000-line function budget (C++ `Read_<Pkg>_<T>`, Go `decode_<pkg>_<T>` at 300 fields):
+  cutting them needs their locals in a struct; no real record is near.
+- Header weight: revisit when generated text dominates a consumer's preprocessed input, or nlohmann leaves the
+  `.gen.cpp` (the helper-declaring forward-header design is in ADR-0026 §5's research).
+- `E8005`'s plan default: make an unmarked C++ plan name give the always-true hint (a hardening of ADR-0026 §14.1; about 30
+  sites).
+- A libFuzzer target for the C++ reader (`make fuzz-reader`, coverage-guided): optional, at a milestone's end.
+- VIEWMODEL J13/J14 through a ref: studio work; Resource uses the shape (ADR-0026 §15.9).
+- Windows spellings (NTFS case, 8.3 names): until Windows CI returns. MSVC at scale: a documented limit
+  (CODEGEN §9).
+- The on-disk cache: Louis's Q3, decided from v0.3's scale bench (above).
+- A v0.2 builder's leftover `sleep 15` polling loop (pid 2792522) was still running on 2026-11-02: Louis's to stop.
 
 ## Feature examples owed (§7.9, QA)
 

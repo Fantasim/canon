@@ -116,6 +116,7 @@ triaged before writing the companion documents.
     - **CNF-02 runtime errors in translated code (C++):** no exceptions. Generated checked
       helpers call `canon::OnEvalError(code, message)`, a replaceable handler whose default logs
       and calls `std::abort()`. Go panics with `*rt.EvalError` (the generated `rt` helper package); TypeScript throws.
+    [amended by 436]
 
 20. **The mockup's view gaps are closed with the agent's proposed sentences** (reported with the
     mockup), except gap 34 (asset letter case), which follows decision 19.
@@ -1195,6 +1196,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     `Info.Uses`/`Selections`. Broken checks and records (`Info.Broken`) never run. A missing bag is
     `ErrNoBag` in `verify` and `rules`; a `Runner` serves one goroutine. Reason: §4.8 names only
     what `build` wires; the placement rules are `rules`'.
+    [amended by 447]
 
 149. **Comparing `canon.lock` with the sources (LOCK §4).** `lock.Sources` holds the current facts,
     each located at its entry, member or `@stable` value; `Skip(kind, name)` marks a collection
@@ -2001,6 +2003,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      group of destinations in `project.canon` is deferred until the repetition shows. CODEGEN
      §2.1, §2.3, §2.8, ERRORS E8004/E8009 rows, GRAMMAR's emit option schema and WIRE §8.1
      synced, with 269.
+     [amended by 439]
 
 230. **The edit journal is untrusted input (API.md §2.2, §10.3, O5; ADR-0010).** The journal is
      `.canon/journal/<hex>.json`, the new revision without its scheme prefix (`r1:`; `:` is illegal
@@ -2381,7 +2384,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      `check.Info` object identity. Reason: Louis, 2026-09-29
      (meta/handoff/2026-09-29-m4-start-prompt.md, "Calls already made"); log-2026-09-29 M4 "Preview
      gates", P18, P20, P15-r, P16, "NFR-01 passes", "NFR-01 on the final code".
-     [amended by 382]
+     [amended by 382, 441]
 
 262. **The feature examples by their directory names; `edits` and `entries` (IMPLEMENTATION-PLAN
      §7.9).** §7.9 names each example by its directory: `retirement` and `matching`, not `retired`
@@ -2734,6 +2737,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      already-parsed `nlohmann::json`, so there a nested table's entries come in key byte order. The
      public signature keeps `nlohmann::json` (an `ordered_json` overload is a later item). Reason:
      GC, log-2026-10-03.
+     [amended by 437]
 
 291. **A data value of another package's record has no loader (CODEGEN.md §5.9, §2.8).** In a Go or
      C++ `data` emit, a value whose record, or whose table or keyed list's row record, belongs to
@@ -2750,6 +2754,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      member. A by-value cycle of records through their fields that gen/cpp refuses is
      `RecordFieldCycle`, no longer `RecordCycleThroughMethod`. Reason: L2 (consts that checked
      clean and crashed every generator), log-2026-10-03.
+     [amended by 438]
 
 293. **C++ `baked` lookups with scalar results are header-inline `constexpr` (CODEGEN.md §5.10,
      §7.1).** In a C++ emit in `baked` mode, a package-level export fn that is precomputed or a
@@ -3383,6 +3388,7 @@ round 2", "PS1 review", "PS2 round 2"):
      them, lexically otherwise. `canon check` reports it as `canon build` does. Reason: a `@text`
      fn copying a hand-written file over itself made Canon "own" an unvalidated file (handoff
      item 4b); an output fed back into its own build is stale by one build anyway.
+     [amended by 451]
 
 342. **A build never writes through a symbolic link (CODEGEN.md §2.4; API.md §2.2; ERRORS.md
      E8027; amends API.md §2.2's "the link's target is written" for builds).** Before anything is
@@ -3538,6 +3544,7 @@ round 2", "PS1 review", "PS2 round 2"):
      hash test as before. Reason: two builds of one package shared `.<base>.canon-tmp`; one's
      rename consumed the other's stage and its rollback deleted the outputs the first had written
      (2026-10-12 repro: 80 of 80 concurrent first builds lost both outputs).
+     [amended by 445]
 
 352. **An advisory writer lock per package (API.md S9, N9; CLI.md §3.4, §3.6, §3.15).** `canon
      build` takes `.canon/writers/<package>` exclusively for each selected package and shared for
@@ -4007,6 +4014,7 @@ round 2", "PS1 review", "PS2 round 2"):
      a release only as a regression: the median of two runs more than 10% above the previous
      release's, the runs interleaved at equal start load. Reason: Louis, 2026-10-14 (M4 call
      (c)): the refresh cost 240-470 ms (P18) and nothing gated it (261).
+     [amended by 441]
 
 383. **C++ enum helpers are tables in the `.gen.cpp` (CODEGEN.md §5.2, §5.10, §7.1).**
      `ToName`, `ToWire`, `<E>FromWire`, `<E>FromCode` and an open enum's `ToName`, `IsKnown` and
@@ -4017,7 +4025,7 @@ round 2", "PS1 review", "PS2 round 2"):
      `detail::k<E>Codes`, which lookup getters and constexpr lookups call instead of inlining a
      switch. A table's id enum defines its `ToWire` in the `.gen.cpp` too, as an array by position. Reason: Sovereign's `ItemId` (7,306 members) made a 137 s `.gen.cpp` at -O2 and
      charged every TU including the header; table ids already worked this way (§5.3).
-     [amended by 406]
+     [amended by 406, 430]
 
 384. **C++ `types` decoders read maps (CODEGEN.md §5.9, §5.13; amends 312, 363).** A map in a
      class a C++ `types` emit decodes is read as the `data` loader reads it (WIRE.md §5.8 keys),
@@ -4026,6 +4034,7 @@ round 2", "PS1 review", "PS2 round 2"):
      result holding such a map gets its decoder. `E8019` `MapField` is no longer reported by C++
      `types`. Reason: 361's `KeyOrders` removed the refusal's cause; Sovereign's every-package C++
      emit met 94 such refusals.
+     [amended by 437]
 
 385. **Every target holds optional list elements and map values (CODEGEN.md §4.2).** `[T?]` is
      Go `rt.List[*T]` and C++ `std::vector<std::optional<T>>`; `{K: V?}` is Go `rt.Map[K, *V]`
@@ -4068,6 +4077,7 @@ round 2", "PS1 review", "PS2 round 2"):
      `cppDefine`. Aliases and expression defines are constants. Table keys are not defines (a
      position is no id; a named number is a `const`). Reason: a define header holds named
      numbers that are not enum members.
+     [amended by 443]
 
 391. **`push_macro` covers every define a generated file can meet (CODEGEN.md §7.9).** Each
      generated C++ file wraps every identifier it writes that a defines file of its package or
@@ -4090,6 +4100,7 @@ round 2", "PS1 review", "PS2 round 2"):
      initializer lists in one function) went past 15 GB under `clang++ -O3 -g` (Scripts,
      2026-10-21). A gen/cpp test compiles 11,500 strings, 7,400 rows and a 3,000-entry map at
      `-O3 -g` under 1.5 GB.
+     [amended by 435]
 
 393. **Generated Go enum methods read package-level tables (CODEGEN.md §3.4, §3.5, §5.2, §6).**
      `String`, `Wire`, `Parse<E>`, `<E>Members`, `Code`, `<E>FromCode` and `Known` index or
@@ -4098,7 +4109,7 @@ round 2", "PS1 review", "PS2 round 2"):
      declared member, as in C++ (383). Reason: Resource's 11,800-member `TextId` compiled through
      23k-line switches (1.27 GB, 22.5 s; after: 90 MB, 1.3 s). A gen/go test compiles 12,000-member
      enums under 1 GB.
-     [amended by 406]
+     [amended by 406, 430]
 
 394. **A release compiles the real consumer output at the consumer's flags (IMPLEMENTATION-PLAN
      §7.5).** Before a tag, an opt-in target builds the Sovereign project and compiles every
@@ -4223,6 +4234,7 @@ round 2", "PS1 review", "PS2 round 2"):
      which packages and roots a machine holds.
      (Amended 2026-10-31: a broken declaration of a package the run type-checked never enters the
      scan, 213; a package the run did not load is scanned as written.)
+     [amended by 442]
 
 404. **`push_macro` guards names met in code (CODEGEN.md §7.9; amends 391).** A name met only in a
      comment, a string or a character literal is not wrapped. Reason: 116 pairs of Sovereign's
@@ -4255,6 +4267,7 @@ round 2", "PS1 review", "PS2 round 2"):
      instance its values cannot be judged. Other map methods return no dependent map. Reason: 338's
      owed item; the reviews' unsoundness came from rebuilding a binder from a static view, and
      keeping the declared type rebuilds nothing (log-2026-10-08).
+     [amended by 446]
 
 409. **An amend path enters a dependent map (EVALUATION.md §9.2; TYPES.md §11.5).** `[k]` and `[#n]`
      name the entries of `{x in c: T(x)}`, `k` typed against `ref c`; the value at the path is that
@@ -4285,6 +4298,11 @@ round 2", "PS1 review", "PS2 round 2"):
      `Float32` literal or constant compares the binary32 value storage keeps. Reason: `a: Int(1..) =
      ZERO` passed `canon check` until some value took the default, and `Float32(..=0.1) = 0.1`
      passed statically and failed only at storage (found while planning v0.2, ADR-0023 §3).
+     (Amended 2026-11-02: A default whose type holds a record or a variant is not folded, nor one
+     met once its package's budget is spent (`E4401`, EVALUATION.md §12.2): storage checks it
+     (EVALUATION.md §4.3). A default whose fold reports a finding breaks its record (§1), as a
+     constant's fold does (DECISIONS 150).)
+     [amended by 444]
 
 413. **`values` never selects table ids (CODEGEN.md §2.1, §5.3).** Every emit but `types` declares
      the id type of every public table of its package, selected or not: in TypeScript `<Id>`, and in
@@ -4304,6 +4322,7 @@ round 2", "PS1 review", "PS2 round 2"):
      and the TypeScript helper block (§8.2) stay verbatim and are pinned to their files by tests.
      Reason: §6.3 had drifted by 12 functions and §7.5 held 213 of 1,466 lines; the runtimes grow
      every version.
+     [amended by 436]
 
 416. **A failed rollback is a kept journal; edit errors name display paths (API.md O5, N11;
      DECISIONS 201).** Every error an edit's commit, its rollback, `Recover` and `Settle` return
@@ -4342,6 +4361,10 @@ round 2", "PS1 review", "PS2 round 2"):
      file through one with no bound (ADR-0021 §9); 376's "a junction stays a file name" is reversed.
      (Amended 2026-10-31: the bounds govern reads; a real-path comparison follows a link to compare
      identities, reads no file and is not bounded, WIRE.md §6.5.)
+     (Amended 2026-11-02: An irregular entry whose target `os.Readlink` cannot read for another
+     reason than that it is no link (Go's `EINVAL`, or a missing entry) is an error, a load's
+     `E7004` with the system's cause, never walked as a directory; only a file system that resolves
+     no links decides by its stat alone.)
 
 420. **Single-file loads follow `load.dir`'s link bounds (WIRE.md §6.1, §6.5; ERRORS.md E7004).**
      The path of `load`, `load.text`, `load.csv` and `load.defines` is read through a link only when
@@ -4368,6 +4391,7 @@ round 2", "PS1 review", "PS2 round 2"):
      version changes the meaning of existing source. Reason: v0.2 breaks generated APIs (402, 407)
      and refuses more, but changes no existing source's meaning; a language bump would make every
      project edit its header for nothing.
+     [amended by 452]
 423. **Generated C++ never lets source text change how C++ reads it (CODEGEN.md §2.6, §2.7; CG-06).**
      A doc with a line ending in `\` (spaces and tabs after it included) is written in the block
      form, `/**`, ` * ` + line (` *` for an empty line), ` */`, with a `\` between any adjacent `/`
@@ -4419,3 +4443,200 @@ round 2", "PS1 review", "PS2 round 2"):
      generated name. Reason: a refused mode hid type clashes that hold in every mode, reported a
      let/const clash only one mode has, and some messages named a generated container or an
      unqualified value.
+
+430. **An enum's strings are written once (CODEGEN.md §2.7, §3.5, §5.2, §5.3, §7.1; amends 383,
+     393).** A generated enum holds one table of its Canon names and, only when one differs from its
+     name, one of its wires; every other order is a table of indexes the generator sorts, never
+     constant evaluation (a constexpr sort of 60,000 wires passes neither clang's step limit nor
+     GCC's operation limit). C++: a closed enum, a kind enum and a table's id enum keep
+     `detail::k<E>Names` (not for an id), `k<E>Wires` and `k<E>ByWire` (the ordinals by wire bytes,
+     stable, in the smallest of `uint8_t`, `uint16_t`, `uint32_t` holding them) in an unnamed
+     namespace of the `.gen.cpp`, in the name plan; `ToWire` reads the names when the wires are the
+     names; `<E>FromWire` and `<Rec>IdFromWire` search `k<E>ByWire`. An opened enum writes
+     `k<E>WireNames` only when a name differs from its wire (`ToName` is then `ToWire`), and its
+     `<E>FromCode` finds positions in `k<E>Wires`. A closed `@codes` enum whose codes are dense in
+     declaration order (one member or more, each code the previous plus one) has
+     `detail::<E>Ordinal` compute `code - first` in `uint64_t`, the member count past the last,
+     without `k<E>Codes` and `k<E>CodeOrdinals`; other `@codes` enums keep 383's search,
+     `k<E>CodeOrdinals` in the smallest unsigned type. Go: `Parse<E>` of a closed enum, kind enum,
+     id and branch enum searches `enumByWire_<T>`, indexes into the names' order, instead of
+     `enumKeys_` and `enumFound_`; a dense `@codes` enum indexes by `code - first` in `uint64` and
+     has no `enumCodes_`; an opened enum's one member table is `enumKeys_`, `enumMembers_` and
+     `enumByCode_` index it, and `enumNames_` exists only when a name differs from its wire.
+     Generated APIs and their answers are unchanged; a non-member's ordinal stays the member count.
+     Reason: Sovereign's `.gen.cpp` held each enum string three times and named every enumerator
+     once more (`kValues`), so DECISIONS 404 wrapped 32,335 macros there; after: about 414,000 →
+     245,000 lines and 16.4 → 7.5 MB of `.gen.cpp`, 40.7 → 31.3 MB of Go, `text/vocab.gen.cpp` 4.56
+     → 1.00 MB, g++ 3.1 → 1.7 s on it.
+431. **The C++ JSON runtime reads a file in one pass (CODEGEN.md §7.5; WIRE.md §3.1; extends 361).**
+     `ParseTextFile` and `ParseDataFile` read a text with one nlohmann SAX pass (`StrictCheck` given
+     a document) that checks the byte rules, builds the document and records the Float32 tokens and
+     key orders. A text that pass refuses (invalid, or holding a number out of a Float64's range,
+     which nlohmann refuses before any callback) is read again by 361's scans, so every verdict and
+     message is theirs. `StrictCheck`'s other constructors are unchanged (CODEGEN.md §1.3). A NUL
+     byte, which nlohmann reads as the end of its input, never ends a text: `ParseTextFile` sends a
+     text holding one to the scans, and `ParseDataFile` refuses a NUL after the document (`not a
+     canon data file (invalid JSON)`), as the Go and TypeScript loaders did. A differential fuzz
+     holds both readers to v0.2.0's, the NUL refusal its one listed difference. Reason: a valid text
+     was lexed four times (1.6× to 2.4× slower on Sovereign's largest files read by generated C++),
+     and the C++ data loader accepted `{…}\0junk`.
+432. **A baked container looks its keys up in constant tables the generator sorts (CODEGEN.md §5.9,
+     §7.3; extends 383, 392).** In a `baked` emit a table or keyed-list container holds its rows in
+     a `std::vector` that `Build` sizes and fills; `Find` and every `FindBy<F>` are defined in the
+     `.gen.cpp` and search function-local `static constexpr` arrays of the keys sorted in C++'s
+     order (bytes for strings, value for integers and durations, underlying value for enums, entry
+     position for table ids and refs held as them, key order for other refs), with the rows'
+     positions beside them, as `<E>FromWire` does; a table's `Find` goes through `<Rec>IdFromWire`.
+     No key is copied into the heap and nothing is sorted at run time; the API is unchanged, and
+     `data`-mode containers and `canon::KeyedList` fields keep their run-time index. Views of baked
+     data and presence bits wait for v0.5's record layout: a record's storage is shared with
+     packages that build it from files (323, 401). Reason: every baked `Build` copied and sorted its
+     container keys on first use, though the generator knows them.
+433. **Top-level TypeScript values are built by calls a bundler can drop (CODEGEN.md §2.5 T22, §5.2,
+     §8.1, §8.3; SPEC §15.4).** Every `Object.freeze`, `canonFreeze`, `canonList`, `canonTable`,
+     `canonIndex`, `new CanonMap` and `new Map` that builds a module-level value is preceded by
+     `/*#__PURE__*/ `, each call of a chain separately (a decoder's returned value is not). A
+     generated module has no top-level expression statement and builds only immutable data. Reason:
+     bundlers keep a top-level call they cannot prove pure, so a program that imported one constant
+     of a generated module shipped every table of it (Sovereign's admin: 336 KB for 842 bytes of
+     use); a mark covers its call and not its arguments, and esbuild and Rolldown do not know
+     `Object.freeze`.
+434. **TypeScript keeps its helper block in each file (CODEGEN.md §2.3, §8.1, §8.2).** A runtime
+     module per output directory, as C++'s `canon_runtime.h`, is built only when the helper bytes
+     repeated in a directory reach 10% of its generated TypeScript bytes, or one shared copy would
+     shrink its gzip by 10%. Measured on the real project at v0.2.0: at most 6.3% and 6.1% of the
+     sources, at most 3.2% of a minified, gzipped bundle. Reason: the saving is far below the
+     threshold, and a shared module would end one `.ts` file per emit and change every TypeScript
+     golden.
+435. **Generated functions stay within a line budget (CODEGEN.md §2.11, §5.9, §7.3, §7.6; amends
+     392).** No function a generator writes grows past 1,000 lines of body with the data's rows or a
+     record's fields, unless it is one statement or one of §2.11's width-bound shapes (foreign
+     readers, make hooks, tag switches, TypeScript readers). A longer body is cut between whole
+     statements into parts of at most 1,000 lines that it calls in order: C++ `Build` (at most, no
+     longer at least, 1,000) and a class's `detail::Decode` (`Decode<N>`, static members of
+     `<P>Access`, whole fields), Go `build<Last>` and a class's `decode<T>` (`build<Last>_<N>`,
+     `decode<T>_<N>`); TypeScript has nothing to cut. A statement is never cut. The readers of other
+     packages' classes are outside the rule. An enum used as an `input` or as a lookup parameter
+     reads the enum's tables. Reason: a Go `build` of 10,000 rows (90,411 lines) compiled in 17.3 s
+     and 1.5 GB, in 1.7 s and 0.45 GB cut at 1,000; a C++ `Decode` of 3,000 fields took 42 s and 1.2
+     GB under g++ -O2, 37 s and 0.64 GB cut; a Go `decode` of 3,000 fields 12.6 s, 1.8 s cut.
+436. **C++ runtime copies carry a content stamp (CODEGEN.md §7.1, §7.4, §7.5; SPEC.md §15; amends
+     CPP-05 of 19, and 415).** `canon_runtime.h` and `canon_runtime_json.h` name their inline
+     namespace `rt_v1_<stamp>`, `<stamp>` the first 12 hex digits of the SHA-256 of their two
+     embedded texts, and each copy, before its unchanged version guard, stops the compile with
+     `#error` when a copy of another stamp is already included. Identical copies still meet in one
+     translation unit; copies of two stamps linked into one program share no symbol and keep one
+     evaluation-error handler each. The spec lists the text with `@CANON_STAMP@`. Reason: the guard
+     was keyed by version while the text changed within `rt_v1` (v0.2.0 changed `Decoder::PathOf`),
+     so a stale copy silently shadowed a newer one in a translation unit and two copies in one
+     binary broke the one-definition rule.
+437. **C++ `Decode` takes an `nlohmann::ordered_json` too (CODEGEN.md §5.13, §7.5; amends 290,
+     384).** Every public `Decode` of a C++ `types` emit gains `static std::optional<T> Decode(const
+     nlohmann::ordered_json& v, std::string& error)`, a call of the runtime's
+     `detail::DecodeOrdered`: maps and nested tables keep the order the value holds, as `Parse`
+     keeps file order; like `Decode` of an `nlohmann::json`, it sees no repeated key and no number
+     token. Reason: 290's later item; without it nlohmann converted an `ordered_json` to
+     `nlohmann::json` silently and the decode held key byte order.
+438. **A constant of a variant's kind is written (CODEGEN.md §4.4, §5.1; ERRORS.md §1.4; amends
+     292).** Its value is the kind enum's member: Go a `var` (the kind enum is opaque, §5.2), C++ an
+     `inline constexpr`, TS a typed `export const` of the case's wire; lists and maps of kinds
+     follow the list and map rows. `E8019` `VariantKindConstant` retires. Reason: 292 refused it
+     only "until the generators write the kind enum's member"; they write it everywhere else.
+439. **Output templates: an emit's `out` may name a root, and `project.canon` gives the path
+     (GRAMMAR.md §7, §7.1, §5.3; CODEGEN.md §2.1; WIRE.md §2; ERRORS.md E1006, E1009, E1019, E8009;
+     resumes 229's deferral; reads 215, 269, 424).** `project.canon` takes `out_templates`, a map
+     from an emit target to a map from a declared root to a path template relative to that root,
+     whose only interpolations are `{dir}` (the package path with `/`) and `{dotted}` (the package
+     path as written); the parser accepts interpolations under this key only. An `out` entry written
+     as a root name stands for that root's template for the emit's target, expanded for the emit's
+     package (`@<root>/…`); the expansion is the entry for every later rule, reported at the name. A
+     name with no template is `E8009` `outTemplate`, a quoted root name that has one `E8009`
+     `outQuoted`. The Go package keeps 215's default, the last element of the expansion. Not taken:
+     a placeholder or pattern for the Go package name (Go ties it to the last element; the one large
+     project's names follow no single rule, and `E8005` already names the way out), `{first}` and
+     case transforms (one consumer's layout), named groups of roots (17 distinct root sets, none
+     dominant), refusing unused templates (a template writes nothing) or literals equal to an
+     expansion (a literal pins a path). Reason: 158 of 185 Go `out` entries, 48 of 51 TS entries and
+     109 of 111 view entries of Sovereign's Resource repeat `@<root>/<that root's layout>/<package
+     path>`; a typo in one entry wrote a wrong directory silently.
+440. **`canon lint`: advisory lints for agents (API.md §5.7; CLI.md §1, §3.19; ERRORS.md W00xx;
+     IMPLEMENTATION-PLAN §3, §8.1; follows 3, 21, 274; precedent 322, 396).** `canon lint
+     [packages…]` reads the analysis `canon check` makes and reports, as warnings `W0001`-`W0008`
+     that no other command reports: a legacy type prefix in a field name, numbered sibling fields a
+     list would hold, a String limited to enum member names, an authoring-note wire name an output
+     writes, canon's marker words in a source string, entry files off their `@files` path, a source
+     file over 5,000 lines held by one `let`, and a C++ name a text output or a loaded header
+     `#define`s with no guard. It never changes `check`, `build` or their exit codes, so a
+     `--max-warnings 0` gate is unaffected. Output is JSON lines whatever `--format` says (274).
+     `--fix` prints, before the findings, one complete `canon edit` request per finding one request
+     fixes (`W0001` only, and only where no `@text` result reaches the field: a `renameName`), based
+     on the revision linted; it never prints or writes a package (188). `Project.Lint` is additive
+     (IMPLEMENTATION-PLAN §4 review rule, as 396). Decided out: an integer field holding only 0 and
+     1 (half its findings on Resource are counts, and its advice would change a type), and the `{k:
+     true for …}` idiom (a map of `true` is Canon's only constant-time membership). Reason: the
+     2026-10-12 Resource review counted these smells by hand, DECISIONS 3 and 21 had no check, and
+     the 2026-10-29 macro clash (Case 2) had a remedy but no detection.
+441. **NFR-01's edit targets follow the robustness-bearing code (IMPLEMENTATION-PLAN §7.6; amends
+     261, 382).** `Edit` p95 ≤ 450 ms (v0.2.0's A/B, 0.343 s, × 1.25 rounded up to 50 ms, 382's
+     rule); `Evaluate` p95 is reported, not gated: whichever call first needs the snapshot's
+     analysis pays it (382). A miss blocks a release only as a regression, as 382 says. Reason: both
+     targets failed on every tree since v0.1.5 (Evaluate's meaning moved when the analysis did,
+     ADR-0021 §6), so the gate gated nothing.
+442. **`E8005` names the way out that works (CODEGEN.md §7.9; ERRORS.md E8005; amends 403).** A name
+     built on the Canon name of a field, a fn or a parameter is `foreignDerived`, as one built on a
+     value's is; a name the generator fixes is the new variant `foreignFixed`, whose way out is a
+     use of a type of the defining package; `<Element>Row` names its record; a name met in several
+     ways is one finding per way; a define that `E8011` refuses is no define here. Reason: "rename X
+     with @cpp(name:)" was followed for `Data::<fn>` and the same finding returned, and a name met
+     two ways needed two builds (v0.2, log-2026-11-01).
+443. **A target annotation on a local declaration is `E1118` (GRAMMAR.md §8.3; TYPES.md §3.7; amends
+     390).** A `@go`, `@ts` or `@cpp` annotation on a `local` declaration, or inside one, is
+     refused, as `@cpp(defines:)` is. Reason: nothing generates a local declaration, so the
+     annotation, even an invalid override name, was accepted and ignored; Sovereign has none in
+     8,600 files.
+444. **A default that reads a field of a record literal is checked as its literal (TYPES.md §7.4,
+     §15; amends 412).** Reason: `x: Int(1..3) = (T {}).a` with `a = 5` passed `canon check`, and
+     every `types`-mode decoder wrote the 5 unchecked for an absent key (399 trusts defaults to be
+     checked).
+445. **A long-lived Project does not grow with its edits (API.md S4; amends 351).** A snapshot entry
+     that only a writer pinned (an edit's staging name), and that no read asked for, is dropped at
+     the next refresh once its name no longer exists. Reason: every edit staged its file under a new
+     unique name (351) and the snapshot kept both entries forever: 2 entries and a full refresh
+     `Stat` per edit, 17.8 MB after 2,000 edits.
+446. **Unstored dependent literals are judged, once, whatever a binder's name (EVALUATION.md §5;
+     TYPES.md §11.6; amends 408).** A record or case literal with a dependent field is judged where
+     it is built when no stored value judges it, as a kept-map literal is; and two dependent-map
+     types that differ only in a binder's name are one type for the residue walk. Reason: `W { n: a,
+     v: 4 } == w` was silently false while the stored literal gave `E3802`, and whether a literal is
+     stored must not change a verdict (426); a binder's spelling changed a budget verdict (265).
+447. **Verification's `where` runs are free (EVALUATION.md §12.1; amends 148).** Every run of a
+     `where` predicate that stage B makes costs nothing, whether or not a conversion ran it on that
+     value first, and a kept literal it builds is judged free; each run is capped at the budget.
+     Reason: 148 freed only re-runs the conversion paid, but the first run on an amended value is
+     also stage B's; charging it would need per-value conversion tracking and would move `E4401`
+     verdicts under layers.
+448. **An error outside every `expect` fails its test (EVALUATION.md §10.4; CLI.md §3.5).** A soft
+     error finding a test's own statements produce outside every `expect` subject and condition
+     fails the test without stopping it, one failure line per finding; a warning there neither fails
+     nor shows. Reason: a test passed while its own `let` held 9 in `Int(0..=5)`: a false green.
+449. **`canon test` reports its own static findings as `check` does (CLI.md §3.5; API.md §13.2;
+     amends ADR-0004).** It prints the errors of phases 1-2 of every loaded package (as before) and
+     the warnings of the selected packages, its file-read warnings (`W7101`) included, before its
+     report, honours `-q` and `--max-warnings` (exit 4), and `TestResult.Check` carries them.
+     Reason: it printed no warning, `W7101` included, and ignored the global `--max-warnings`.
+450. **A String-keyed keyed list's word key starts an amend line (API.md §6.4; EVALUATION.md
+     §9.2).** Reason: `b.n: 9` parses and applies, but the edit engine refused to write it
+     (`layer`), a ban with no way out (305).
+451. **A build's outputs are judged as inputs before they exist (CODEGEN.md §2.4; amends 341).** A
+     `load.dir` pattern that matches a path one of the build's emits writes is `E8026`, whether or
+     not that file exists yet; the way out is a narrower pattern, or an `out` outside the load's
+     base. Reason: the first build passed and wrote the file, and the second refused it (`E8026`),
+     so a build's own output broke the next check.
+452. **Compiler 0.3 reads language 0.1 (SPEC §3.1; amends 422).** Compiler 0.3.0 accepts every
+     `canon: "0.1"` project; v0.3 changes generated code and adds a project-file key
+     (`out_templates`), a root name in an emit's `out`, a command (`canon lint`) and refusals
+     (`E1019`, `E8009` `outTemplate`/`outQuoted`, `E1118` for a local's target annotations, `E3204`
+     at a record-literal default, `E8026` before the output exists, unstored dependent record
+     literals judged, `E8005` for the new reserved generated names, `E8011` for the new runtime
+     identifiers), and changes no existing source's meaning, so `canon: "0.2"` stays `E1001`.
+     Reason: 422's rule, applied again.

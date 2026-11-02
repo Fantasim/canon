@@ -97,8 +97,10 @@ in [§12](#12-diagnostics).
   filename characters `A-Z a-z 0-9 . _ -` (`E8009` `outChars` otherwise, DECISIONS 424): the path
   is written into generated text (a C++ `#include`, a TS import specifier) that takes no escapes.
   An `out` that does not resolve is the resolver's finding alone (DECISIONS 215).
-- **Copies** (DECISIONS 229). For `go`, `cpp`, `ts`, `json` and `text`, `out` is a string or a non-empty
-  list of strings; `view` takes one string. Each entry is a **copy** of the emit, written at that
+- **Templates** (DECISIONS 439). An `out` entry may be a root name instead of a path string: `emit go { out: [admin, wiki] }`. It stands for the template `project.canon`'s `out_templates` gives that root for this target (GRAMMAR.md §7.1), expanded for this package: `@<root>/` followed by the template, `{dir}` replaced by the package path with `.` → `/` (`items/vocab`, the directory §2.4's marker names) and `{dotted}` by the package path (`items.vocab`). The name is never resolved in scope. From then on the expansion is the entry: every rule of this document and of WIRE.md that judges an `out` entry judges it (`outChars`, `tsOut`, `outRoot`, `outPackage`, `outForm`, `outConsumer`, `E8004`, `E8007`, `E8008`, `E8022`, `E8025`, `E8152`, ownership, markers, and the default `package`, the last element of the expansion, DECISIONS 215), at the name. A name that is no root with a template for this target is `E8009` `outTemplate`. A string entry equal to the name of a root that has a template for this target is `E8009` `outQuoted`: write the name without quotes, or `"./<name>"` for the directory beside the file.
+- **Copies** (DECISIONS 229). For `go`, `cpp`, `ts`, `json` and `text`, `out` is a string or a root name, or a non-empty
+  list of them; `view` takes one string or one root
+  name. Each entry is a **copy** of the emit, written at that
   place as if it were the emit's only `out`. Every copy has the emit's mode and options; copies
   differ only in the import paths or includes of imported packages and, in Go, the import path of
   its own `rt` package (§2.8). An empty list is `E8009` `outEmpty`, and two entries sharing an
@@ -111,9 +113,10 @@ in [§12](#12-diagnostics).
 - **Typing of the options.** The options of each target form a built-in schema, checked in
   phase 2 like `project.canon` (GRAMMAR.md §7): nothing in an `emit` is an expression, is
   evaluated, or is resolved in scope.
-  - `package` and `namespace` are constant strings, and `out` a constant string or, except for
-    `view`, a list of them (`E1132` for an interpolation, `E8009` for another kind of value; a
-    non-string element of an `out` list is `E8009` `kind` with `OutPaths`, at the element,
+  - `package` and `namespace` are constant strings, and `out` a constant string or a root name or, except for
+    `view`, a list of
+    them (`E1132` for an interpolation, `E8009` for another kind of value; an
+    element of an `out` list that is neither a string nor a root name is `E8009` `kind` with `OutPaths`, at the element,
     DECISIONS 270).
   - `mode` is a bare word from the target's modes (`E8009` otherwise). It is never looked up in
     scope, so `mode: baked` is not an unknown name (`E2102`) and a `let baked` changes nothing.
@@ -264,7 +267,7 @@ package's sources is never renamed: WIRE.md's `E8152` refuses its other spelling
 
 **No output as an input** (DECISIONS 341). A file that a `load` of the project reads (`load`,
 `load.text`, `load.defines`, a `load.dir` or glob match) and that an emit of the same build writes
-(any target, any copy, a skipped output included) is `E8026` at the load, naming the path and the
+(any target, any copy, a skipped output included), whether or not the file exists yet: a `load.dir` pattern is matched against the paths the build's emits write (the way out: narrow the pattern, or move the emit's `out` outside the load's base), is `E8026` at the load, naming the path and the
 emit, compared by real path where the disk has it and lexically otherwise. `canon check` reports
 it as `canon build` does.
 
@@ -346,6 +349,7 @@ normative: a golden that holds other prose is wrong.
 | T19 | C++, Go, TS | bound constant (§5.15) | C++ `/// <Side> of <subject>, from its refinement <R>.`; Go `// <Name> is the <side> of <subject>, from its refinement <R>.`; TS `/** The <side> of <subject>, from its refinement <R>. */` — `<Side>`/`<side>` `Lower bound`, `Upper bound`, `Exclusive upper bound`; `<subject>` the field's Canon name, `each element of `/`each key of `/`each value of ` per step, the deepest step first (`each key of each element of f`), prefixed `the byte length of ` or `the element count of ` for a length; `<R>` the refinement's Canon text (§5.15), the sentence's `.` following an open end too (`from its refinement 1...`) |
 | T20 | Go | `Position` of an enum, kind or branch enum | `// Position is the member's place in declaration order, for array indexes in memory;` / `// an ordered enum's members compare by it. It is not an id: it changes when members move.` |
 | T21 | C++ | deleted `to_json`/`from_json` of an enum, kind or branch enum | `/// nlohmann/json would write the position: write ToWire(v), read <E>FromWire(s).`; on a branch enum `/// nlohmann/json would write the position: store the discriminant.` |
+| T22 | TS | before each call or `new` that builds a module-level value, and wherever the formats that write those calls are used (a reader's default), harmlessly (§8.1) | `/*#__PURE__*/ `, immediately before the call or `new`, one space after: a bundler directive, not prose |
 
 The runtime helper files (`rt.go`, `canon_runtime.h`, `canon_runtime_json.h`, the TypeScript
 helper block) are fixed texts: §7.4 and §8.2 reproduce theirs, and §6.3 and §7.5 fix the contract of
@@ -387,7 +391,8 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
   in the order the IR's foreign uses list them, then in the order first needed).
 - **C++ declares before use**, so a header refines that order: (1) constants, then the schema
   constants (T2); (2) enums, as above, each closed `@codes` enum followed by its `namespace detail {
-  k<E>Codes, k<E>CodeOrdinals, <E>Ordinal }` block (§5.2); (3) a forward declaration `class <T>;` of every class of
+  … <E>Ordinal }` block (§5.2: `k<E>Codes` and `k<E>CodeOrdinals` first, unless the codes
+  are dense); (3) a forward declaration `class <T>;` of every class of
   the header, in declaration order; (4) `namespace detail {`: `struct <P>Access;`, `struct
   <P>Make;`, the decoder declarations (one per class of the package decoded from JSON,
   declaration order), then the pure translated functions (T3, declaration order), `}  //
@@ -399,10 +404,11 @@ on its kind-enum member (§5.5). Undocumented items get no comment (the build wa
   here since they read the value accessors), package-level export fns, snapshot and store, inputs; (6) `namespace conformance {` with the entry point declaration
   (T10), when the package has translated functions. The `.gen.cpp` holds, inside `namespace
   detail`, the decoder definitions, an unnamed namespace of the `kBulk<N>` arrays `Build` reads
-  (numbered in emission order, DECISIONS 392), then the `<P>Access` definition; then, in the package namespace,
-  the enum helper definitions (§5.2; enums in the order of (2), an opened enum's one sorted wire
-  table in an unnamed namespace before its helpers), each table's id-enum `ToWire` and
-  `<Rec>IdFromWire` (§5.3), then the out-of-line member definitions in class order (DECISIONS 383). The readers of other packages' classes (§2.8) are in the `.gen.cpp`
+  (numbered in emission order, DECISIONS 392), then the `<P>Access` definition; (a decoder cut into parts, §2.11, is
+  defined after the `<P>Access` definition that declares them) then, in the package namespace,
+  the enum helper definitions (§5.2; enums in the order of (2), each enum's tables, an opened enum's one
+  sorted wire table included, in an unnamed namespace of `detail` before its helpers), each table's
+  id-enum tables, `ToWire` and `<Rec>IdFromWire` (§5.3), then the out-of-line member definitions in class order (DECISIONS 383). The readers of other packages' classes (§2.8) are in the `.gen.cpp`
   only, in an unnamed namespace inside `namespace detail` (internal linkage): declared before the
   decoder definitions, which call them, and defined between the decoder definitions and the
   `<P>Access` definition.
@@ -659,6 +665,19 @@ stored method result. The view model, findings and
 messages, conformance vectors and the lock are not outputs here. `W8031` stays a warning; only a
 later decision may make it an error (DECISIONS 379).
 
+### 2.11 Function size
+
+A generator never writes a function whose body grows past a line budget because of the data's size. The budget is **1,000 lines of body** (the lines between the opening and the closing brace), the same in every target (DECISIONS 435).
+
+- **Cut.** A body of more than 1,000 lines is cut between whole statements into parts of at most 1,000 lines, which the function calls in order. A statement is never cut: one longer than 1,000 lines is a part of its own, and a function of a single statement (a list constant's literal) is as long as that statement.
+- **C++.** `<P>Access::Build` is cut into `Build<N>` parts (§7.3); a class's `detail::Decode` is cut into `Decode<N>` parts, static members of `<P>Access` that `Decode` calls in order, each holding whole fields (§7.6). The header is the same with or without the cut.
+- **Go.** `build<Last>` is cut into `build<Last>_<N>` parts that take the baked data (§5.9); a class's `decode<T>` into `decode<T>_<N>` parts that take the object and the value, each holding whole fields.
+- **TypeScript.** Nothing is cut: a record's reader is a line or two per field, and a table of rows is one array literal.
+- **Not cut.** The reader of another package's class (§2.8) holds each member in a local and builds the value through its owner's hook, so it is as long as the class's decoder; a class of more than about 200 members read across packages exceeds the budget. A make hook (a line per member), a variant's or a dependent type's tag switch (a case per case) and a TypeScript reader (about 1.4 lines per field) also follow a type's width, not the data's: they reach the budget only for a type of about 700 members or more, beyond any measured one. Enum helpers (§5.2) and lookups over an enum read the enum's tables, a constant number of lines whatever the members.
+- **Same behaviour.** A cut function reads, fails and reports exactly as the whole did; the first failure is the same.
+- **Names.** `Decode<N>` and `Build<N>` (C++), `build<Last>_<N>` and `decode<T>_<N>` (Go) are generated names (§3.5).
+- **Test.** Generator tests measure every function for a record of 300 members and for a table of 10,000 rows in every target and mode, and for an enum of 5,000 members; none exceeds 1,000 lines unless it is one statement.
+
 ---
 
 ## 3. Naming
@@ -859,8 +878,10 @@ Every name a generator writes is in these scopes, fixed names included: the name
 `LoadInputs`, the per-package input namespace, input slots and flags (§5.12, §7.7), the make hooks
 and `detail::<P>Make` (§5.14), the rows of other packages' records (§5.9), the readers of other
 packages' classes (§2.8) and the §7.7 input helpers a package uses (`EnvText`, `IsDecDigit`, `AllDigits`, `DurationDigits`,
-`Parse<Kind>Literal`, `MatchPattern`), Go's private enum tables `enum<Role>_<Type>` (§5.2) and
-C++'s `kBulk<N>` arrays, `detail::k<NAME>Elems` and `<P>Access::Build<N>` parts (§5.1, §7.3). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
+`Parse<Kind>Literal`, `MatchPattern`), Go's private enum tables `enum<Role>_<Type>` (§5.2), C++'s enum
+tables `detail::k<E>Names`, `k<E>Wires`, `k<E>ByWire`, `k<E>WireNames`, `k<E>WireCodes` (§5.2) and
+C++'s `kBulk<N>` arrays, `detail::k<NAME>Elems` and `<P>Access::Build<N>` parts (§5.1, §7.3), `<P>Access::Decode<N>` parts (§2.11), Go's `build<Last>_<N>` and
+`decode<T>_<N>` parts (§2.11). C++ adds the scopes name lookup crosses (C++17 [basic.scope.class],
 [basic.scope.declarative]): a class member equal to a namespace-scope type that the class body names
 (`Tone Tone() const;` changes the meaning of `Tone`), overrides included; a parameter, or a member
 of a conformance vector struct, equal to a type the same signature names (`Echo(Tone Tone, Tone
@@ -880,6 +901,8 @@ or `<gopkg>rt` alias are `E8005` at this package's import of the later one; the 
 distinct `package` option on one of their emits (DECISIONS 323). C++ readers are named from the
 whole package path and have internal linkage (§2.7), and `<P>Make` is always written qualified,
 so they never meet. A generated C++ name that a package this one does not read writes as a `#define` is `E8005` (§7.9).
+
+Under an emit mode `check` refused (`E8009`), every name check of that target (its own plan, the names a shared namespace holds, `#define` duplicates, `foreignDefine` and its variants) judges what the plans of every valid mode of that target have in common (Go: `baked`, `data`, `types`; TypeScript: those and `embedded`; C++: `baked`, `data`, `types`): a collision is reported when it holds in every mode and skipped otherwise. `W8006`, a warning about one plan, is skipped; an unbuilt mode (`E8019`) has no plan. Every operand of an `E8005` names a declaration by its qualified Canon name, never a generated name (DECISIONS 429).
 
 `W8006` warns when a generated C++ identifier is a macro name that common platform headers define:
 `min max near far IN OUT OPTIONAL ERROR DELETE TRUE FALSE VOID CONST interface small TEXT
@@ -979,8 +1002,7 @@ TypeScript; JSON `null` inside a list or map is `none` (WIRE.md; DECISIONS 385).
 ### 4.4 Types that are not emitted
 
 `Range`, `Pair` (TYPES §12.5), function types, `_` and a non-optional `Never` have no
-representation. An emitted type or value that contains one is `E8012`. A constant of a
-variant's kind is `E8019` (DECISIONS 292). An optional `Never?` field is not emitted at all. The
+representation. An emitted type or value that contains one is `E8012`. An optional `Never?` field is not emitted at all. The
 `Define` record of `load.defines`, and so a define table (`table Define`), has no `canon-fp` form
 (FINGERPRINT.md §8), so a `data` or `embedded` emit, whose loader checks the fingerprint, cannot
 carry one: a type or value of such an emit that contains one is `E8012` (for `emit json`, WIRE.md's
@@ -1004,6 +1026,9 @@ The samples are excerpts; complete generated files are in [§10](#10-goldens).
 | `Duration` | `const X = 90000 * time.Millisecond` | `inline constexpr std::chrono::milliseconds X{90000};` | `export const X = 90000;` |
 | enum member | `const X = ToneInfo` | `inline constexpr Tone X = Tone::info;` | `export const X: Tone = "info";` |
 | list or map (TYP-14) | `func X() rt.List[int64]` | `inline const std::vector<int64_t> X = {…};`; 8 or more elements: `inline const std::vector<T> X = std::vector<T>(std::begin(detail::kXElems), std::end(detail::kXElems));` over an `inline constexpr` array, a map `canon::FlatMap<K, V>::FromEntries(std::vector<…::Entry>(std::begin(detail::kXElems), std::end(detail::kXElems)))` over a `std::pair` array, a nested list or map a `[]` lambda over `detail::kXElems`, `kXElems1`, … (leaves, bounds, keys) (DECISIONS 392) | frozen `export const` |
+| variant kind (`Shape.dot.kind`) | `var X = ShapeKindDot` | `inline constexpr ShapeKind X = ShapeKind::dot;` | `export const X: ShapeKind = "dot";` |
+
+A list or map of kinds follows the list or map row (DECISIONS 438).
 
 ### 5.2 Enums
 
@@ -1040,9 +1065,7 @@ func ElementFromCode(code uint8) (Element, bool)
 
 An enum without `@codes`, a variant's kind enum (§5.5) and a dependent type's branch enum (§5.6) are opaque like a `baked` id (§5.3): no integer converts to or from one, and `<`, arithmetic and `const` do not compile on it. Members are `var`s (Go has no struct constant) and a Canon `const` of such a type is a `var`; `==`, `switch` and map keys work, and the zero value is the first member. Generated code indexes with `Position()`, and an `ordered` enum's members compare by it. Text encoders write the wire value; `database/sql` and `gob` refuse the type. An enum with `@codes` keeps its integer, the declared and locked code, and has no text methods (DECISIONS 379, 402).
 
-These methods read private package-level tables `enum<Role>_<Type>` (names, wires, keys sorted by
-bytes, codes sorted by value, members): an index by position, else a binary search, so no generated
-method grows with the member count; keys and wires are unique (WIRE.md §4.2, TYPES.md §9.3), so each finds one member (DECISIONS 393).
+These methods read private package-level tables `enum<Role>_<Type>`, by index or by binary search, so no generated method grows with the member count (DECISIONS 393, 430). A closed enum's tables are its names (declaration order; code order with `@codes`), its wires only when one differs from its name (`Wire` reads the names otherwise), its members, its codes sorted by value unless they are dense, and `enumByWire_<Type>`, the indexes of the names' order sorted by wire bytes (by key for an id and a branch enum), which `Parse<E>` searches. With codes dense in declaration order (one member or more, each the previous plus one), `String`, `Wire`, `Retired` and `<E>FromCode` index by `code - first`, computed in `uint64`. An opened enum's one member table is `enumKeys_<Type>`, its members sorted by wire, with its codes and, only when a name differs from its wire, its names in that order (`String` returns the wire otherwise); `enumMembers_<Type>` and, with codes that are not dense, `enumByCode_<Type>` beside the sorted codes hold indexes into it. Keys and wires are unique (WIRE.md §4.2, TYPES.md §9.3), so each search finds one member.
 
 **C++**
 
@@ -1065,15 +1088,7 @@ std::optional<Element> ElementFromCode(uint8_t code);  // static_cast<uint8_t>(e
 `.gen.cpp`, so a header costs the same whatever the size of its enums (DECISIONS 383); a program
 using them links the enum package's `.gen.cpp` (§2.3: always written). `ToName`/`ToWire` are
 overloads in the package namespace; `FromWire` carries the enum name because C++ cannot overload
-on the return type (this replaces SPEC §15.3's `FromWire`). Each definition reads tables, never a
-chain or a switch over the members: `ToName`, `ToWire` and `IsRetired` index arrays in declaration order by the
-member's ordinal; `<E>FromWire` binary-searches the wires sorted by their bytes (wires are unique, WIRE.md §4.2), as `<Rec>IdFromWire` does (§5.3); `<E>FromCode`
-binary-searches the codes. A value that is no member gives `""` or `std::nullopt`. A member's
-ordinal is its declaration position: `static_cast<std::size_t>(v)` without `@codes`; with them,
-`detail::<E>Ordinal(v)`, an `inline constexpr` function of the header searching
-`detail::k<E>Codes` (the codes, ascending) and returning the matching
-`detail::k<E>CodeOrdinals` entry, or the member count for a value that is no member. A variant's
-kind enum (§5.5) follows the same rules.
+on the return type (this replaces SPEC §15.3's `FromWire`). Each definition reads tables, never a chain or a switch over the members, and writes each string once (DECISIONS 430). Before an enum's helpers the `.gen.cpp` holds, in `namespace detail { namespace {`, `k<E>Names` (the Canon names in declaration order), `k<E>Wires` (the wires in declaration order, only when one differs from its name) and `k<E>ByWire` (the ordinals sorted by wire bytes, the first declared of equal wires first, in the smallest of `uint8_t`, `uint16_t`, `uint32_t` holding every ordinal); strings take DECISIONS 392's form. `ToName` and `ToWire` index `k<E>Names` and `k<E>Wires` (`k<E>Names` when the wires are the names) by the member's ordinal, `IsRetired` an array of flags; `<E>FromWire` binary-searches `k<E>ByWire`, comparing the wires it indexes, as `<Rec>IdFromWire` does (§5.3); `<E>FromCode` goes through the ordinal. A value that is no member gives `""`, `false` or `std::nullopt`. A member's ordinal is its declaration position: `static_cast<std::size_t>(v)` without `@codes`; with them, `detail::<E>Ordinal(v)`, an `inline constexpr` function of the header returning the member count for a value that is no member. With codes dense in declaration order (one member or more, each code the previous plus one) it returns `static_cast<uint64_t>(code) - static_cast<uint64_t>(<first code>)` when that is below the member count, else the member count; for codes that are not dense it searches `detail::k<E>Codes` (the codes, ascending) and returns the matching `detail::k<E>CodeOrdinals` entry (in the smallest unsigned type above). The generator computes every order; none is sorted in constant evaluation. A variant's kind enum (§5.5) follows the same rules.
 
 The deleted pair follows every `enum class` whose values are declaration positions (an enum without `@codes`, a kind enum, a branch enum), as it follows an id enum (§5.3); enumerators, their `static_cast`s, `ToName`, `ToWire` and `<E>FromWire` are unchanged, and an `@codes` enum still converts through nlohmann as its code (DECISIONS 402).
 
@@ -1081,13 +1096,13 @@ The deleted pair follows every `enum class` whose values are declaration positio
 
 ```ts
 export type Tone = "warning" | "info" | "series-1";
-export const ToneMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "series-1"]);
-export const ToneLiveMembers: ReadonlyArray<Tone> = Object.freeze(["warning", "info", "series-1"]);  // not retired (DECISIONS 395)
-export const ToneNames: Readonly<Record<Tone, string>> = Object.freeze({ warning: "warning", info: "info", "series-1": "series_1" });
-export const ElementCodes: Readonly<Record<Element, number>> = Object.freeze({ FIRE: 1, WATER: 2 });  // @codes only
+export const ToneMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["warning", "info", "series-1"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["warning", "info", "series-1"]);  // not retired (DECISIONS 395)
+export const ToneNames: Readonly<Record<Tone, string>> = /*#__PURE__*/ Object.freeze({ warning: "warning", info: "info", "series-1": "series_1" });
+export const ElementCodes: Readonly<Record<Element, number>> = /*#__PURE__*/ Object.freeze({ FIRE: 1, WATER: 2 });  // @codes only
 ```
 
-No enum exports `<E>Index`, `@codes` and open ones included: a declaration position is not an id, and an `@codes` member's stable number is `<E>Codes`. A file whose lookups (§5.10) or translated comparisons (CONFORMANCE.md §3) need positions declares `const ToneIndex = canonIndex(ToneMembers);` once, after the enum, or `const <alias>_<E>Index = canonIndex(<alias>.<E>Members);` for another package's enum, beside the private id indexes (§5.3, §8.2). A program that needs the order reads `ToneMembers.indexOf(v)` (DECISIONS 402).
+No enum exports `<E>Index`, `@codes` and open ones included: a declaration position is not an id, and an `@codes` member's stable number is `<E>Codes`. A file whose lookups (§5.10) or translated comparisons (CONFORMANCE.md §3) need positions declares `const ToneIndex = /*#__PURE__*/ canonIndex(ToneMembers);` once, after the enum, or `const <alias>_<E>Index = /*#__PURE__*/ canonIndex(<alias>.<E>Members);` for another package's enum, beside the private id indexes (§5.3, §8.2). A program that needs the order reads `ToneMembers.indexOf(v)` (DECISIONS 402).
 
 Rules (GO-05, CPP-04, WIR-04):
 
@@ -1139,9 +1154,7 @@ std::optional<Dst> DstFromWire(std::string_view wire);   // the known member, el
 // after the namespace: template <> struct std::hash<ns::Dst> (the wire's hash)
 ```
 
-`ToWire` and the `std::hash` specialisation are inline in the header; `ToName`, `IsKnown`, `IsRetired`,
-`<E>FromWire`, `ToCode` and `<E>FromCode` are defined in the `.gen.cpp` as binary searches over the
-member wires sorted by bytes (the codes for `<E>FromCode`), with parallel arrays (DECISIONS 383).
+`ToWire` and the `std::hash` specialisation are inline in the header; `IsKnown`, `IsRetired`, `<E>FromWire` and `ToCode` are defined in the `.gen.cpp` as binary searches over `detail::k<E>Wires`, the member wires sorted by bytes, with the parallel `k<E>WireCodes` and `k<E>WireNames`, the latter only when a name differs from its wire; `ToName` searches it, or returns `ToWire(v)` when every name is its wire. `<E>FromCode` searches the codes, ascending, beside their members' positions in `k<E>Wires` (DECISIONS 383, 430).
 
 ```ts
 export type DstKnown = "DST_HP" | "DST_MP";       // the closed union
@@ -1173,7 +1186,7 @@ The keys of a public `table` value (EMT-04):
 
 | Mode | Go | C++ | TS |
 |---|---|---|---|
-| `baked`, `embedded` | `type StatusID struct{ position uint8 }` (opaque: no integer converts to or from it) + `var`s `StatusIDOpen…` in entry order, `String()` and `MarshalText()` (the key), `(*StatusID).UnmarshalText` (a key; an unknown one is an error), `ParseStatusID(key) (StatusID, bool)`, `Retired() bool` (the entry is retired, DECISIONS 395), `Position() int` (an array index for one build, §2.10) | `enum class StatusId : uint8_t { open, taken, … }`, `ToWire(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 383), `StatusIdFromWire(std::string_view)` (binary search, in `.gen.cpp`), `bool IsRetired(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 395), and deleted `to_json`/`from_json` templates for it (DECISIONS 379) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdMembers: ReadonlyArray<StatusId>` in entry order and `StatusIdLiveMembers` (the entries not retired, DECISIONS 395); no exported index: a file that needs one builds it privately with `canonIndex` (§8.2) |
+| `baked`, `embedded` | `type StatusID struct{ position uint8 }` (opaque: no integer converts to or from it) + `var`s `StatusIDOpen…` in entry order, `String()` and `MarshalText()` (the key), `(*StatusID).UnmarshalText` (a key; an unknown one is an error), `ParseStatusID(key) (StatusID, bool)`, `Retired() bool` (the entry is retired, DECISIONS 395), `Position() int` (an array index for one build, §2.10) | `enum class StatusId : uint8_t { open, taken, … }`, `ToWire(StatusId)` (`detail::kStatusIdWires` by position, in `.gen.cpp`, DECISIONS 383), `StatusIdFromWire(std::string_view)` (a binary search of `detail::kStatusIdByWire`, the positions sorted by key, in `.gen.cpp`, DECISIONS 430), `bool IsRetired(StatusId)` (an array by position, in `.gen.cpp`, DECISIONS 395), and deleted `to_json`/`from_json` templates for it (DECISIONS 379) | `export type StatusId = "open" \| "taken" \| …` and `StatusIdMembers: ReadonlyArray<StatusId>` in entry order and `StatusIdLiveMembers` (the entries not retired, DECISIONS 395); no exported index: a file that needs one builds it privately with `canonIndex` (§8.2) |
 | `data`, `types` | `type StatusID string` | `std::string` (getter `const std::string&`, lookups take `std::string_view`) | `export type StatusId = string` |
 
 A table that `values` leaves out still has its id type, and in `baked` and `embedded` mode its members, in every target.
@@ -1557,8 +1570,8 @@ package's `K`. Keyed lists have no row type: their elements are P's type itself.
 
 - `baked` data (CPP-08, GO-04): C++ builds every value of the package once, inside one
   function-local `static const` object of `detail::<P>Access` in `.gen.cpp` (thread-safe, no
-  static-initialization-order problem); accessors return references into it. Go builds them in one
-  unexported function run once through `sync.OnceValue`; accessors return pointers into it. There is
+  static-initialization-order problem); accessors return references into it. A baked table or keyed-list container keeps its rows in a `std::vector` that `Build` sizes once and fills; its `Find` and each `FindBy<F>` are declared in the header and defined in `.gen.cpp`, where they binary-search function-local `static constexpr` arrays of the keys, sorted by the generator, beside the rows' positions, the shape of `<E>FromWire` (§5.2): strings by bytes, integers and `Duration`s by value, an enum by its C++ underlying value (its code under `@codes`, else its position), a table id or a ref held as one by entry position, any other ref by its key's order. A table's `Find` is its id enum's `<Rec>IdFromWire`, then the row at that id. No key is copied and nothing is sorted at run time (DECISIONS 432). Go builds them in one
+  unexported function, which calls parts of at most 1,000 lines (§2.11), run once through `sync.OnceValue`; accessors return pointers into it. There is
   no `init()` side effect except input reading ([§5.12](#512-runtime-inputs)). A value of type
   `ref T` gets a resolved accessor when §5.8 allows it (`GetInitialStatus()`) and always a key
   accessor (`GetInitialStatusID()` in Go, `GetInitialStatusKey()` in C++).
@@ -1750,6 +1763,7 @@ func DecodeEventConfig(raw []byte) (*EventConfig, error)
 
 ```cpp
 static std::optional<EventConfig> EventConfig::Decode(const nlohmann::json& v, std::string& error);
+static std::optional<EventConfig> EventConfig::Decode(const nlohmann::ordered_json& v, std::string& error);
 static std::optional<EventConfig> EventConfig::Parse(std::string_view text, std::string& error);
 ```
 
@@ -1757,10 +1771,7 @@ static std::optional<EventConfig> EventConfig::Parse(std::string_view text, std:
 export function decodeEventConfig(json: unknown): EventConfig;
 ```
 
-- The C++ `Decode` takes an already-parsed `nlohmann::json`, whose objects are ordered by key: a
-  nested table or a map it decodes holds its entries in key byte order, not file order (the
-  `data`-mode
-  loader, which reads the text, keeps file order; DECISIONS 290). `Parse` reads the text itself
+- The C++ `Decode` takes an already-parsed value. Handed an `nlohmann::json`, whose objects are ordered by key, a nested table or a map it decodes holds its entries in key byte order, not file order (the `data`-mode loader, which reads the text, keeps file order; DECISIONS 290). Handed an `nlohmann::ordered_json`, it holds them in the order that value holds, the file's for a value parsed from text, as `Parse` does (DECISIONS 437). `Parse` reads the text itself
   (`canon::json::ParseTextFile`, §7.5): file order, exact number tokens and the byte rules below
   (DECISIONS 361).
 - A decoder reads the JSON that the `load` reads at that position (after `at:`), with WIRE.md's
@@ -1843,13 +1854,13 @@ export function decodeEventConfig(json: unknown): EventConfig;
   A `@json(codes)` value reads its integer first: a non-integer, or one outside the code type's
   width, fails at the width before any code is looked up. A `@json(codes)` map key is first held
   to WIRE.md §5.8's canonical form (`$.byRank.gold: expected a canonical decimal integer key`, the
-  empty key too), then to the width, then looked up.
+  empty key too), then to the width, then looked up. An integer map key is held to WIRE.md §5.8's canonical form first, then to its width (TypeScript: `integer outside the TypeScript safe range`), at the key's path.
 - **Paths and order.** A member under key `k` is `<parent>.<k>`, the key written as is, the empty
   key included: `$.m.` for the key or a scalar value, `$.m..v` for a field of a record value,
   `$.m.[0]` for an element of a list value; `$.m` is the map itself. A map is decoded entry by
   entry, each key then its value (WIRE.md §5.8). For C++ `Decode` and TS `decode<T>`, handed a
   parsed value, "the first failure in document order" is the first in the order that value holds:
-  key byte order in C++, JavaScript's own order in TS (integer-like keys first, [§8.1](#81-file)).
+  key byte order for an `nlohmann::json` and the value's own order for an `nlohmann::ordered_json` in C++, JavaScript's own order in TS (integer-like keys first, [§8.1](#81-file)).
 - Defaults must be constant; a computed default (one that reads other fields, or the instance through
   its type's arguments, DECISIONS 282) in a type emitted in `types` mode is `E8014`, as
   are precomputed export fns and finite-parameter methods (there is no precomputed data to read).
@@ -2028,18 +2039,13 @@ Its text is the embedded file `internal/gen/go/runtime/rt.go.txt`, written byte 
 
 ### 7.1 Files, namespaces, includes
 
-- `<last>.gen.h` starts with `#pragma once`, as `<last>.defines.gen.h` does (§7.9; recent Source
-  code's form, log-2026-09-24), then standard headers (sorted), then
-  `<nlohmann/json_fwd.hpp>` in JSON modes, then imported packages' headers (sorted), then
-  `"canon_runtime.h"`. Runtime headers use version guards (`CANON_RUNTIME_RT_V1`), never
-  `#pragma once`, so that identical copies from two output directories can meet in one
-  translation unit.
+- `<last>.gen.h` starts with `#pragma once`, as `<last>.defines.gen.h` does (§7.9; recent Source code's form, log-2026-09-24), then standard headers (sorted), then `<nlohmann/json_fwd.hpp>` (its own group) when the header declares a decoder, then `"canon_runtime.h"` followed by the imported packages' headers (sorted), as §2.7 says. Runtime headers use version guards (`CANON_RUNTIME_RT_V1`), never `#pragma once`, so that identical copies from two output directories can meet in one translation unit; a copy of another text stops the compile there (§7.4).
 - Everything is in the emit's `namespace` (C++17 nested form `namespace sov::gen {`). Internals are
   in `<namespace>::detail`; conformance entry points in `<namespace>::conformance`.
 - The header declares; `.gen.cpp` defines loaders, accessors, lookup tables, baked data, enum and
   id-enum lookups (`ToName`, `ToWire`, `FromWire`, `FromCode` and an open enum's `IsKnown` and
-  `ToCode`) and `detail::<P>Access`. Getters, `k<E>Members`, `detail::<E>Ordinal` and its two
-  arrays, an open enum's `ToWire`, pure translated functions and `baked` lookups with a constexpr
+  `ToCode`) with the tables they read (§5.2) and `detail::<P>Access`. Getters, `k<E>Members`,
+  `detail::<E>Ordinal` (with its two arrays when the codes are not dense), an open enum's `ToWire`, pure translated functions and `baked` lookups with a constexpr
   scalar result (§5.10, DECISIONS 293) are inline in the header.
 - Generated C++ never throws and never catches. It builds with exceptions disabled.
 
@@ -2103,8 +2109,6 @@ public:
 private:
     friend struct detail::VocabAccess;
     std::vector<EventType> rows_;
-    std::vector<uint16_t> codes_;
-    std::vector<uint32_t> byCode_;
 };
 
 const EventTypes& GetEventTypes();
@@ -2113,7 +2117,7 @@ const EventTypes& GetEventTypes();
 namespace detail {
 struct VocabAccess {
     struct Data { EventTypes eventTypes; };
-    static Data Build();                      // fills rows_, codes_, byCode_
+    static Data Build();                      // fills rows_
     static const Data& Get() { static const Data data = Build(); return data; }
 };
 }  // namespace detail
@@ -2123,8 +2127,7 @@ const EventTypes& GetEventTypes() { return detail::VocabAccess::Get().eventTypes
 `Build` compiles in bounded memory whatever the data size (DECISIONS 392): a list or map of 8 or
 more elements is copied from a `kBulk<N>` constant array (strings as sized `std::string_view`), a
 container of 8 or more of the package's own rows fills by column (one loop over per-member arrays;
-members no array holds keep per-row statements), and a body longer than about 1,000 lines is cut
-at top-level statements into `static void Build<N>(Data& d)` parts that `Build` calls in order.
+members no array holds keep per-row statements), and a body longer than 1,000 lines is cut between top-level statements into `static void Build<N>(Data& d)` parts of at most 1,000 lines that `Build` calls in order (§2.11). A container's `Find` and `FindBy<F>` read their keys from sorted constant arrays of `.gen.cpp` (§5.9), so `Build` copies no key.
 
 ### 7.4 `canon_runtime.h`
 
@@ -2551,7 +2554,8 @@ Its text is the embedded file `internal/gen/cpp/runtime/canon_runtime_json.h.txt
 ### 7.6 Loader shape
 
 The pipeline golden ([§10](#10-goldens)) is the reference for `data` mode: `detail::Decode` per
-record reads each field with the `Decoder` shortcuts in field declaration order, then the `$`
+record reads each field with the `Decoder` shortcuts in field declaration order, a `Decode` of more than 1,000 lines calls `Decode<N>` parts of `detail::<P>Access`, each a run of whole
+fields (§2.11), then the `$`
 keys; `detail::<P>Access::Load<V>` reads the file, checks `$schema`, decodes `rows` (or `value`)
 with `Push("rows[<i>]")` around each row, and builds the container; the snapshot's `Load` calls
 one loader per `@reload` value with `dir + "/" + <file name>`. A value of another package's record
@@ -2864,7 +2868,7 @@ applies).
   `#pragma push_macro("N")` / `#undef N` … `#pragma pop_macro("N")` (names in sorted order),
   over every region naming one, so a defines header or a legacy header with the same macros
   included earlier cannot break generated code.
-- The wrap covers the defines of the package and of the packages it reads, so that a package's output is a function of what it reads. A name that a package's generated C++ declares (any name of §3.5's plan: enumerators, kind and branch enum members, constants, table ids, members, types, namespace segments) and that a package it does not read writes as a `#define` is `E8005` `foreignDefine` (`foreignId` when the name is a table id; `foreignDerived` when it is derived from a value's own name, which `@cpp(name:)` does not change: the container, `k<V>Schema`, `Data::<v>`, `<v>_ref`, the snapshot member `<v>_`, `Load<V>` and `detail::<P>Access::Load<V>`; for `<Rec>Id` and `<Rec>IdFromWire` the record is named): a translation unit that includes that defines header first could not compile it. The way out is `@cpp(name:)` on the declaration (for a table id, renaming its entry), or a use of a type of the defining package, which makes this one read it. It is judged from the project's declarations whatever the selection (DECISIONS 403), except that a broken declaration (TYPES.md §1) of a package the run type-checked never counts, a finding on it being a cascade (DECISIONS 213); a package the run did not load counts as written. A package writes defines when its first `emit cpp` is `baked`, `data` or `types`. A local or a parameter of a translated fn is no plan name: the C++ compiler reports a clash there.
+- The wrap covers the defines of the package and of the packages it reads, so that a package's output is a function of what it reads. A name that a package's generated C++ declares (any name of §3.5's plan: enumerators, kind and branch enum members, constants, table ids, members, types, namespace segments) and that a package it does not read writes as a `#define` is `E8005` `foreignDefine` (`foreignId` when the name is a table id; `foreignDerived` when it is built on the Canon name of a value, a field, a stored fn or a parameter, which `@cpp(name:)` does not change: a value's container, `k<V>Schema`, `Data::<v>`, `<v>_ref`, the snapshot member `<v>_`, `Load<V>`, `detail::<P>Access::Load<V>` and a define table's `k<T>Defines`; a field's or stored fn's storage `<f>_` and `<f>_ref_`, a define value's member, `FindBy<F>` with its two indexes, an input slot and a branch table `k<T><F>Branches`; a fn's `Data::<fn>`, `<Class>_<fn>`, conformance vector struct and table, a parameter's vector field; a dependent type's arm names; `foreignFixed` when no declaration's name or override changes it: the members every entry, container, class, access struct, snapshot, store and conformance namespace has (`GetId`, `Get`, `Decode`, `Parse`, `Data`, `Build`, `Capture` …), the overloads `ToName`, `ToWire`, `IsRetired`, `IsKnown` and `ToCode`, `to_json` and `from_json`, names built on the package's last segment, and a namespace segment; for `<Rec>Id`, `<Rec>IdFromWire` and `<Element>Row` the record is named): a translation unit that includes that defines header first could not compile it. A name met in several of these ways for one declaration is one finding for each way, so that no rename leaves another finding for the same name behind. A define name that `E8011` refuses is no define for this rule: its finding is the defining package's (DECISIONS 213). The way out is the one the finding names: `@cpp(name:)` on the declaration, the Canon rename of a derived name's source, renaming a table id's entry, or, always, a use of a type of the defining package. It is judged from the project's declarations whatever the selection (DECISIONS 403), except that a broken declaration (TYPES.md §1) of a package the run type-checked never counts, a finding on it being a cascade (DECISIONS 213); a package the run did not load counts as written. A package writes defines when its first `emit cpp` is `baked`, `data` or `types`. A local or a parameter of a translated fn is no plan name: the C++ compiler reports a clash there.
 - A name met only in a comment, a string literal or a character literal is not wrapped: a macro is never expanded there. The guard's scan ends a `//` comment at its first newline, a `\` before it included: C++ reads the line a trailing `\` splices into the comment as comment, while the scan reads it as code, so a name on it is still wrapped (an over-wrap, which is safe; DECISIONS 404).
 - A header that `emit text` renders is plain text to Canon. A project that includes one beside generated code puts `@cpp(defines: "P")` on the enums or constants whose names it defines: the wrap is by name, so it guards that header's macros as well as the defines header's.
 
@@ -2891,6 +2895,7 @@ applies).
   entry, `ReadonlyArray<X>` for a list): each element type-checks against `T`
   alone, so tsc never reduces a union of thousands of literal element types (TS2590; DECISIONS
   370). An empty one stays `[]`; a list of scalars is a plain literal.
+- **Bundlers.** Every `Object.freeze`, `canonFreeze`, `canonList`, `canonTable`, `canonIndex`, `new CanonMap` and `new Map` that builds a module-level value is preceded by `/*#__PURE__*/ ` (T22), each call of a chain separately, since a mark covers its call and not its arguments; the formats that write those calls also mark a reader's default, harmlessly, and a value a decoder returns is not marked (a bundler drops an unused function whole). A bundler that finds a top-level `const` unread then drops its declaration, so a program that imports one constant of a module carries that constant alone. The list is closed: a new construction helper joins it. A top-level statement of a generated module is a declaration, never an expression statement, and builds only immutable data, so a module has no effect at load a program can observe; the `*.conformance.test.ts` file registers tests and is not part of a program. A `$union<N>` constant of a `data` or `types` decoder (an array literal with a spread) is the one top-level value no mark can cover. The helper block stays in each file (DECISIONS 434).
 - The file uses only erasable syntax (no `enum`, no `namespace`, no parameter properties), so it
   also runs under Node's type stripping.
 - `data` mode exports, per value, `parse<V>(text: string)` and `decode<V>(json: unknown)`, and
@@ -2907,6 +2912,7 @@ applies).
   fn (§5.13, DECISIONS 363).
 - Decoders use private helpers (`dec…`), written after the export fns, only those a file uses;
   §8.2's block is the shared runtime, and these are the decoders' own (DECISIONS 278).
+- Nothing in a TypeScript file is cut into parts (§2.11).
 
 ### 8.2 Helper block
 
@@ -3114,7 +3120,7 @@ export interface Status {
   readonly by: Actor | null;
 }
 
-export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = canonTable(canonFreeze(canonList<CanonRow<Status, StatusId>>(($r) => [
+export const statuses: CanonTable<StatusId, CanonRow<Status, StatusId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<Status, StatusId>>(($r) => [
   $r({ id: "open", retired: false, tone: "warning", label: "Open", terminal: false, next: ["taken", "wont_do", "duplicate"], requires: [], optional: [], by: null }),
   // …
 ])), ($e) => $e.id);
@@ -3140,7 +3146,7 @@ Float exactness flags for C++ (`-ffp-contract=off`, `/fp:precise`, SSE2 on 32-bi
 CONFORMANCE.md §5. Generated code compiles warning-free with `-Wall -Wextra -Wpedantic` (GCC,
 Clang) and `/W4` (MSVC).
 
-The MSVC row is verified only by the golden compile on a Windows runner with `cl.exe` (IMPLEMENTATION-PLAN.md §7.8), at the goldens' size. The bulk array forms of §7.3 (DECISIONS 392) are not compiled under MSVC or clang-cl at the scale that motivated them (tens of thousands of elements); their limits there are unverified, and nothing in this repository runs `cl.exe` at that size.
+The MSVC row is verified only by the golden compile on a Windows runner with `cl.exe` (IMPLEMENTATION-PLAN.md §7.8), at the goldens' size. The bulk array forms of §7.3 (DECISIONS 392) are not compiled under MSVC or clang-cl at the scale that motivated them (tens of thousands of elements); their limits there are unverified, and nothing in this repository runs `cl.exe` at that size. A generated function body is at most 1,000 lines (§2.11); MSVC's reaction to larger ones (C1053, C4883) is not verified on `cl.exe`.
 
 ---
 
@@ -3212,7 +3218,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | W8006 | warning | §3.5 list |
 | E8007 | error | Go emit outside every mapped root |
 | E8008 | error | two Go emits write into one directory (one Go package); two outputs with one path are WIRE.md's `E8152` |
-| E8009 | error | bad mode, package, namespace, out or values; an `out` resolving to a path segment outside `A-Z a-z 0-9 . _ -` (§2.1, DECISIONS 424); an option value of the wrong kind; an invalid `out` list: empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories (§2.1, §2.8); an `emit text` with no `@text` fn (§2.9) |
+| E8009 | error | bad mode, package, namespace, out or values; an `out` resolving to a path segment outside `A-Z a-z 0-9 . _ -` (§2.1, DECISIONS 424); an option value of the wrong kind; an invalid `out` list: empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories (§2.1, §2.8); an `emit text` with no `@text` fn (§2.9); an `out` root name with no template for its target, or a quoted root name (§2.1, DECISIONS 439) |
 | E8010 | error | `ordered` + `@codes` out of order |
 | E8011 | error | override not an identifier, reserved, or (Go) not exported; a name derived without override that is not an identifier (§3.5) |
 | E8012 | error | `Range`, `Pair`, function type, `_`, non-optional `Never` in an emitted type or value; a `Define` record or define table in a `data` or `embedded` emit (§4.4) |
@@ -3225,7 +3231,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E8023 | error | `build --check` with outputs under an optional root absent on this machine (§2.4) |
 | W8024 | warning | outputs under an optional root absent on this machine skipped; one per root (§2.4) |
 | E8025 | error | a relative include or import that would climb above the project's parent directories, wrong on every checkout (§2.8) |
-| E8026 | error | a file a load of the project reads that an emit of the same build writes (§2.4) |
+| E8026 | error | a file a load of the project reads that an emit of the same build writes (§2.4), whether or not the file exists yet (DECISIONS 451) |
 | E8027 | error | an output path with a symbolic link below its root's directory (§2.4) |
 | E8028 | error | `build --only-root` when the build would change `canon.lock` or a `canon.outputs` (§2.4) |
 | E8029 | error | `build --check`: a file with a generated marker that no emit writes (§2.4) |

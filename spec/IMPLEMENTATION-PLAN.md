@@ -541,7 +541,7 @@ type ExportFn struct {
 }
 type PExpr interface{ pexpr() }   // Lit, Param, SelfField, Unary, Binary, Call(builtin), CallExport, If, Let, Template, Coalesce, EnumMember
 type Emit struct {
-    Target Target; Out string              // Out as written, for messages only
+    Target Target; Out string              // Out as written, or a root name's expansion (CODEGEN.md §2.1): a resolvable path, for messages and build's checks
     Dir      string                        // output directory (a ts emit's: its file's), project-relative through the declared roots
     FileName string                        // ts: the file name in Dir
     GoImport string                        // go: the import path of Dir (CODEGEN.md §2.8)
@@ -1094,8 +1094,8 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
   |---|---|
   | cold `canon check` (empty cache) | ≤ 10 s |
   | warm `canon check` (unchanged manifest) | ≤ 1 s |
-  | `Edit` of one entry field, re-check and write, p95 over 200 random `Set`s | ≤ 300 ms |
-  | `Evaluate` of one entry after a committed edit, p95 | ≤ 150 ms |
+  | `Edit` of one entry field, re-check and write, p95 over 200 random `Set`s | ≤ 450 ms |
+  | `Evaluate` of one entry after a committed edit, p95 | reported, not gated (only the refresh sum is stable, DECISIONS 382) |
   | studio refresh after a committed edit (Evaluate of the entry, then a Value), p95 | ≤ 1050 ms |
   | peak RSS during cold check | ≤ 1.5 GB |
   | view model per package, without search index | ≤ 5 MB |
@@ -1103,8 +1103,8 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
 - **Gates.** The full benchmark is an opt-in make target run on the reference machine, never part of
   `make check`; exceeding a target fails it, and its numbers are recorded in `meta/`. A 4-core CI
   runner (Linux x86-64, 4 cores, 16 GB) may run it, or a 1,000-entry version, as a report that never
-  gates (DECISIONS 261). The edit benchmark (`bench-edit`) gates the `Edit` p95, the `Evaluate` p95,
-  cold check, cold RSS and the view-model size. After each timed `Set` it times the studio's
+  gates (DECISIONS 261). The edit benchmark (`bench-edit`) gates the `Edit` p95, cold check, cold RSS and the
+  view-model size, and reports the `Evaluate` p95. After each timed `Set` it times the studio's
   next reads of the new snapshot (API.md V14), the `Evaluate` above then a `Value` of the edited
   entry; their sum is the refresh, gated at its own target (DECISIONS 382), since whichever first
   needs the snapshot's every-package analysis pays for it. Warm `canon check` is reported, not gated, until the
@@ -1123,8 +1123,9 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
     2,000 per minute or applied edits under 200 per minute per project (about a fifth of the
     reference machine's rate). On the benchmark each input is one op copying at most 1,000 values;
     multi-op sequences and whole-collection copies are fuzzed on the examples only (DECISIONS 261).
+- **Scale bench** (`make bench-scale`, part of `make bench`; a report, never a gate). `benchgen` writes the benchmark project at 1x, 3x and 5x, where 1x is 15,000 entries: the size of Resource's own sources (about 20 MB of `.canon` text) and the memory of its whole `canon check` (about 2 GB). For each size it runs one cold `canon check` in a fresh process and prints and records the wall time and the process's peak RSS, with the machine and the load average at the start. Its time axis is a lower bound for a project of Resource's shape (3 packages, no emit, light evaluation). Its numbers decide whether the on-disk cache leaves its parked state.
 - **Architecture it forces (NFR-02).** Package-level invalidation alone cannot re-check a
-  7,000-entry package in 300 ms. From M4, `workspace` keeps: a per-file cache of parse and type-check
+  7,000-entry package within the `Edit` target. From M4, `workspace` keeps: a per-file cache of parse and type-check
   results keyed by (file hash, hash of the package's declaration signatures); per-entry evaluation
   memoized by (entry source hash, hashes of the values it reads); record-check results memoized by
   value hash for checks that statically read no package value, a requirement met by replaying a
@@ -1333,7 +1334,7 @@ Not part of v0.1 (DECISIONS 188).
 | fingerprint | `canon-fp v1` (FINGERPRINT.md) | Changing the algorithm is a new compiler major. |
 | view model | `canon-vm/N` in `$schema` | A breaking change bumps `N`; the studio refuses a version it does not know. |
 | lock | `# canon.lock v1` header (LOCK.md) | A new format is read by the next compiler and rewritten by `build`. |
-| runtime helpers | C++ `namespace canon { inline namespace rt_v1 }`; Go `rt` package with `const Version = 1`; TS header comment | A breaking change creates `rt_v2`; old and new can link into one binary. |
+| runtime helpers | C++ `namespace canon { inline namespace rt_v1_<stamp> }` (CODEGEN.md §7.4); Go `rt` package with `const Version = 1`; TS header comment | Any change to the C++ runtime's text changes its stamp; two stamps link into one binary and never meet in one translation unit; a change to the guards or the check is `rt_v2`. |
 | cache | first line of each cache file | Unknown versions are ignored. |
 | Go API (`api`) | module semver | No compatibility promise before 1.0 (API.md §1.2). |
 

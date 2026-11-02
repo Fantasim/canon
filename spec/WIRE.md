@@ -42,8 +42,7 @@ Source wire and data wire are the same mapping (§5) with the differences listed
 
 ## 2. Paths
 
-Applies to every path string in `load`, `load.*`, `emit … { out: … }`, `asset(…)` roots and
-`@files` templates.
+Applies to every path string in `load`, `load.*`, `emit … { out: … }` (an `out_templates` template's expansion included, CODEGEN.md §2.1), `asset(…)` roots and `@files` templates.
 
 ### 2.1 Syntax
 
@@ -668,7 +667,7 @@ Pattern syntax, per `/`-separated segment:
 - Matching is case-sensitive on every platform. Characters are Unicode code points of UTF-8 names.
 - **Dotfiles.** A name starting with `.` matches only a pattern segment that starts with a literal
   `.`. `**` never enters a directory whose name starts with `.`.
-- Only regular files match (after following links). A link is an entry the file system reads as one: a symbolic link, or a Windows junction or directory mount point (an entry Go lists as irregular whose target `os.Readlink` reads). Every rule of this section, of §6.1 and of TYPES.md §13.4 holds for both, and findings call both "symbolic link". A mount point whose target is a volume (`\\?\Volume{…}\`) has no path the bounds can judge and counts as dangling. Any other entry is no link and keeps its kind (DECISIONS 419). The bounds below govern reads: a real-path comparison (DECISIONS 252, 253) follows a link to compare identities and reads no file, so no bound applies to it, and it never follows a volume mount point's device path. Symbolic links are followed only when their
+- Only regular files match (after following links). A link is an entry the file system reads as one: a symbolic link, or a Windows junction or directory mount point (an entry Go lists as irregular whose target `os.Readlink` reads). Every rule of this section, of §6.1 and of TYPES.md §13.4 holds for both, and findings call both "symbolic link". A link whose target is a device path (`\\?\…`, `\\.\…`), a volume mount point's included, has no path the bounds can judge and counts as dangling; a symbolic link whose target text is one does too. Any other entry is no link and keeps its kind (DECISIONS 419). An irregular entry whose target `os.Readlink` cannot read for another reason than that it is no link (Go's `EINVAL`, or a missing entry) is an error, a load's `E7004` with the system's cause, never walked as a directory; only a file system that resolves no links decides by its stat alone. The bounds below govern reads: a real-path comparison (DECISIONS 252, 253) follows a link to compare identities and reads no file, so no bound applies to it, and it never follows a volume mount point's device path. Symbolic links are followed only when their
   target resolves inside a declared root or the project; any other link is skipped with `W7115`. A
   directory link already on the current walk path is not followed again. The same bounds hold for
   a `load.dir` base directory, and a literal `load.dir` path, that is or passes through a link: outside

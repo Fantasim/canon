@@ -23,3 +23,10 @@ structured fields (decisions log, "canon test review calls"). An unknown layer i
 
 The CLI prints those findings first, then the test report, and exits 1 when any static error or
 test failure exists. Other API consumers (workspace, LSP) read the same field.
+
+Amended (v0.3, DECISIONS 449): `canon test` reports its own static findings as `check` does
+(CLI.md §3.5; API.md §13.2; amends ADR-0004). It prints the errors of phases 1-2 of every loaded
+package (as before) and the warnings of the selected packages, its file-read warnings (`W7101`)
+included, before its report, honours `-q` and `--max-warnings` (exit 4), and `TestResult.Check`
+carries them. Reason: it printed no warning, `W7101` included, and ignored the global
+`--max-warnings`.

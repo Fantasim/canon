@@ -187,6 +187,8 @@ On Windows it cannot replace a file another process holds open. Two optional FS 
 `SyncDir(dir string) error`, which makes an edit's renames durable (§10.3), and
 `OSBacked() bool`, through which an embedder's FS opts into OS change notifications (§12).
 
+An FS is called while the Project waits on it: a method must never call back into the Project it serves (such a call waits for the refresh that waits for it, until the caller's context ends). A refresh waits for every read in flight (S1), so a read that hangs, on a network file system say, holds the Project's reads and edits until their contexts end.
+
 ---
 
 ## 3. Snapshots, revisions and concurrency
@@ -241,6 +243,7 @@ func (p *Project) Revision() Revision
   files computes the same revision. Any other revision the project does not remember is stale,
   since it cannot be compared file by file (S5). So a revision printed by an earlier process is
   current exactly when no file of the project's static read set has changed since (CLI.md §3.15).
+  A name only a writer pinned, which no read of the program asked for, leaves the next snapshot once it names nothing, so a long-lived Project does not grow with its edits (DECISIONS 445).
 - **S5.** A revision is compared per package: an edit or an evaluation against `Base` is **stale**
   when a file in the read set of the packages it touches (§8.6; an edit's affected packages, E17)
   has a different hash now than at `Base`. Changes to unrelated files do not make it stale. A
@@ -812,7 +815,7 @@ No whitespace is allowed anywhere in a path. Reserved words are valid `word`s (L
 ### 6.4 Paths in edits of layers
 
 When `Options.EditLayer` is set (§7.5), the edit path is translated into an `amend` path
-(GRAMMAR.md §5.7): a field or a table entry whose key is a word is `.name` (the first bare); every
+(GRAMMAR.md §5.7): a field or a table entry whose key is a word is `.name` (the first bare); so is the first step of an amend line into a keyed list with a `String` key, when the key is a word that is not a keyword (DECISIONS 450); a later `String` key stays a string literal, and a keyword key cannot start a line (`layer`); every
 other key is a Canon key of the container's key type (for a `ref`, its target's key type): an
 integer in decimal; a `String` key, or a literal of a literal union, as a string literal printed
 as M7 prints strings (`["a"]`, `["a b"]`); any other key that is a word, bare or quoted
@@ -1014,9 +1017,9 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   record's computed branch, computed exactly as the decoder computes it (WIRE.md §5.9, DEP-02;
   defaults from the record's parameters); a symbol it introduces into a `Never` branch, or that
   names nothing in a branch that can be computed, is a `ValueError`. A scalar literal given to a
-  dependent type fits when a branch takes it (TYPES.md §11.4; DECISIONS 267). A list, record or map literal given to a dependent type is typed against the branch its record computes in the state the earlier ops left; where that branch cannot be computed, it is a `ValueError` (source text takes its first branch instead, DECISIONS 171). Under an `EditLayer`
+  dependent type fits when a branch takes it (TYPES.md §11.4; DECISIONS 267). A list, record or map literal a `Set` gives a dependent type is typed against the branch its record computes in the state the earlier ops left; where that branch cannot be computed, it is a `ValueError` (source text takes its first branch instead, DECISIONS 171). Under an `EditLayer`
   that is not active in the session, a layer `Set` is typed against the declared type at the path,
-  since the session cannot see the layer's own drivers (W11, DECISIONS 273).
+  since the session cannot see the layer's own drivers (W11, DECISIONS 273). An item an `Insert` or `AddEntry` adds to a dependent container is typed against its branch where that can be computed, else against the declared type, and the re-check judges it (`E3802`).
 - **V2.** Only the static type is checked at this point. Refinements (`Int(1..=100)`), references
   (`E3501`), keys and checks are verified by the re-check (§8.6), like any other value. For
   `FromJSON`, a wire value whose shape or type does not fit is a `ValueError` (and invalid JSON,
@@ -1821,9 +1824,9 @@ type LockChange struct { Package string; File string; Lines []string }
 ```go
 func (p *Project) Test(ctx context.Context, o TestOptions) (*TestResult, error)
 type TestOptions struct { Packages []string; Run string }   // Run: RE2, matched against the test name
-type TestResult struct { Tests []TestCase; Passed, Failed int; Duration time.Duration }
+type TestResult struct { Check *CheckResult; Tests []TestCase; Passed, Failed int; Duration time.Duration }
 type TestCase struct { Package, Name string; Span; Passed bool; Failures []ExpectFailure }
-type ExpectFailure struct { Span; Expect, Expected, Got string; Findings []Finding }
+type ExpectFailure struct { Span; Expect, Outcome, Op, Expected, Got, Poisoned string; Findings, Cause []Finding }
 
 func (p *Project) LockCheck(ctx context.Context, packages ...string) (*CheckResult, error)
 ```
