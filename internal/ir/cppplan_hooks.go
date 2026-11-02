@@ -117,17 +117,32 @@ func (pl *CppNamePlan) ownerResolves(t TypeRef, class any, pkg string) bool {
 // declareMake declares detail::<P>Make and its members, each hook of the package: a member is named after the type it builds, which it writes fully qualified, so only the struct's own name is hidden (CODEGEN.md §3.5, §5.14).
 func (pl *CppNamePlan) declareMake(detail *nameScope) {
 	name := pl.MakeStruct(pl.p.Name)
-	pl.shareInner(detail, name, pl.p.Name, nil)
+	pl.innerFixed(detail, name, pl.p.Name, meetsNever)
 	sc := pl.scope(name)
 	sc.hidden = map[string]string{name: pl.p.Name}
-	pl.declareHooks(sc, pl.p, pl) // then entry, then row hooks: hook vs hook E8005 follows this order (log-2026-10-06 "U1 re-review")
+	pl.declareMakeHooks(sc) // then entry, then row hooks: hook vs hook E8005 follows this order (log-2026-10-06 "U1 re-review")
 	for _, t := range pl.p.Types {
 		if rec, ok := t.(*Record); ok && pl.entry(rec) {
 			pl.declareHook(sc, rec.QName(), rec, derivation{rec, func() string { return pl.EntryHook(rec) }})
 		}
 	}
 	for _, row := range pl.rows {
-		pl.declareHook(sc, row.Origin, rowHolder(row), derivation{row.Record, func() string { return pl.RowHook(row.Record) }})
+		declare := func() {
+			pl.declareHook(sc, row.Origin, rowHolder(row), derivation{row.Record, func() string { return pl.RowHook(row.Record) }})
+		}
+		pl.noteForeign(sc, pl.RowHook(row.Record), foreignNote{origin: row.Record.QName()}, declare)
+	}
+}
+
+// declareMakeHooks is declareHooks for this package; a dependent type's branch hook is named after the type and the branch, which carries no @cpp(name:), so its finding is foreignDerived (CODEGEN.md §7.9).
+func (pl *CppNamePlan) declareMakeHooks(sc *nameScope) {
+	for _, s := range hookSites(pl.p) {
+		declare := func() { pl.declareHook(sc, s.origin, s.item, derivation{s.from, func() string { return s.name(pl) }}) }
+		if s.dep == nil {
+			declare()
+			continue
+		}
+		pl.noteForeign(sc, s.name(pl), foreignNote{derived: true}, declare)
 	}
 }
 

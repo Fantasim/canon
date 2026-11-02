@@ -1,0 +1,52 @@
+CODEGEN.md §7.9, ERRORS.md E8005 (DECISIONS 442, amends 403): a name the generator fixes (the members every container and access struct has, the access struct's Data and Build, its own name, the members of an entry) is `foreignFixed`, whose only way out is a use of a type of the defining package; no @cpp(name:) renames it, and one finding is made for each item that declares it.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like b's container and access struct member.
+  Get
+  /// Spelled like b's access struct member.
+  Build
+  /// Spelled like b's access struct.
+  BAccess
+  /// Spelled like b's entry member.
+  GetId
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  one { rank: 1 }
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+emit json { out: "out/" }
+-- b.tiers.json --
+{ "one": { "rank": 1 } }
+-- findings.txt --
+error[E8005]  b/b.canon:4:8
+  GetId is declared by the generator for b.Tier and written as a #define for a.Word.GetId, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here
+
+error[E8005]  b/b.canon:10:5
+  Get is declared by the generator for b.tiers and written as a #define for a.Word.Get, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here
+
+error[E8005]  b/b.canon:14:6
+  BAccess is declared by the generator for b and written as a #define for a.Word.BAccess, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here
+
+error[E8005]  b/b.canon:14:6
+  Build is declared by the generator for b and written as a #define for a.Word.Build, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here
+
+error[E8005]  b/b.canon:14:6
+  Get is declared by the generator for b and written as a #define for a.Word.Get, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here
+
+5 errors, 0 warnings in 2 packages (…)

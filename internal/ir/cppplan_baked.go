@@ -129,7 +129,7 @@ func (pl *CppNamePlan) declareBakedDetail(detail, access *nameScope) {
 		}
 	}
 	for _, n := range cppAccessMembers {
-		pl.declare(access, n, pl.p.Name, nil)
+		pl.declareFixed(access, n, pl.p.Name, nil)
 	}
 	data := pl.scope(cppDataStruct)
 	for _, v := range pl.values {
@@ -142,7 +142,7 @@ func (pl *CppNamePlan) declareBakedDetail(detail, access *nameScope) {
 		if fn.Kind == FnTranslated || pl.Constexpr(fn) {
 			continue
 		}
-		pl.declare(data, pl.DataMember(fn.Name), pl.fnOrigin(fn), fn)
+		pl.declareOwn(data, pl.DataMember(fn.Name), pl.fnOrigin(fn), fn)
 	}
 }
 
@@ -158,7 +158,7 @@ func (pl *CppNamePlan) declareJSONHooks() {
 		return
 	}
 	for _, n := range cppJSONHooks {
-		pl.declare(pl.ns, n, pl.p.Name, nil)
+		pl.declareFixed(pl.ns, n, pl.p.Name, nil)
 		pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
 	}
 }

@@ -22,10 +22,9 @@ func commonShared(plans []*CppNamePlan) []cppShared {
 	return inEvery(plans, func(pl *CppNamePlan) []cppShared { return pl.shared }, keyOf)
 }
 
-// commonDeclared are the names of plans[0] that every plan declares, matched on name and origin (CODEGEN.md §7.9).
+// commonDeclared are the names of plans[0] that every plan declares, matched on name, origin and way (declaredKey, CODEGEN.md §7.9).
 func (s *stage) commonDeclared(plans []*CppNamePlan) []declaredName {
-	keyOf := func(d declaredName) declaredKey { return declaredKey{d.name, d.origin} }
-	return inEvery(plans, s.declaredNames, keyOf)
+	return inEvery(plans, s.declaredNames, declaredName.key)
 }
 
 // inEvery are the items of plans[0] whose key every plan's items hold, in plans[0]'s order.

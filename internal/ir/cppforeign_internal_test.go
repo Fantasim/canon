@@ -131,23 +131,26 @@ func TestCppGuardNames(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §3.5, §7.9, DECISIONS 403: a scope origin that starts with a package's name (an inherited getter of q's record) is named as written, one without is qualified by the plan's package, and a name declared in a scope and shared in the namespace is one finding: one per (name, origin), so a table id named like its table's container is two; each name of a baked table's id enum is a table id, and a scope's notes say how a finding names the rest (ERRORS.md E8005 foreignId, foreignDerived; log-2026-11-01).
+// CODEGEN.md §3.5, §7.9, DECISIONS 403, 442: a scope origin that starts with a package's name (an inherited getter of q's record) is named as written, one without is qualified by the plan's package, and a name declared in a scope and shared in the namespace is one finding: one per (name, origin, way), so a table id named like its table's container is two, and one (name, origin) met in two ways (declared in one scope, derived in another) is two; each name of a baked table's id enum is a table id, a scope's notes say how a finding names the rest (ERRORS.md E8005 foreignId, foreignDerived, foreignFixed), and a shared name no scope declares is fixed only for a namespace segment.
 func TestDeclaredNames(t *testing.T) {
 	pl := &CppNamePlan{namer: newNamer("p", cppValidIdent)}
 	item, row, table := &Const{Name: "C"}, &Record{Name: "Rec"}, &Value{Name: "recs"}
-	derived, byRecord := foreignNote{derived: true}, foreignNote{origin: "p.Rec"}
+	derived, byRecord, fixed := foreignNote{derived: true}, foreignNote{origin: "p.Rec"}, foreignNote{fixed: true}
 	scope := pl.scope("p")
-	scope.names = map[string]string{"C": "C", "GetF": "q.Rec.f", "Tone": "p.Tone", "Row": "q.Rec", "Recs": "p.recs", "RecId": "p.recs"}
+	scope.names = map[string]string{"C": "C", "GetF": "q.Rec.f", "Tone": "p.Tone", "Row": "q.Rec", "Recs": "p.recs", "RecId": "p.recs", "Both": "p.both"}
 	scope.items = map[string]any{"C": item, "Row": row, "Recs": table, "RecId": table}
 	scope.notes = map[string]foreignNote{"Recs": derived, "RecId": byRecord}
+	twice := pl.scope("twice")
+	twice.names, twice.notes = map[string]string{"Both": "p.both", "Fix": "p"}, map[string]foreignNote{"Both": derived, "Fix": fixed}
 	ids := pl.scope("RecId")
 	ids.ids, ids.names, ids.items = true, map[string]string{"Recs": "p.recs.Recs"}, map[string]any{"Recs": table}
-	pl.shared = []cppShared{{name: "C", origin: "p.C", item: item}, {name: "Recs", origin: "p.recs", item: table}, {name: "RecId", origin: "p.recs", item: table}, {name: "p", origin: "p"}}
+	pl.shared = []cppShared{{name: "C", origin: "p.C", item: item}, {name: "Recs", origin: "p.recs", item: table}, {name: "RecId", origin: "p.recs", item: table}, {name: "p", origin: "p", meets: meetsNamespace}, {name: "Z", origin: "p.Z", meets: meetsLocal}, {name: "Fix", origin: "p", meets: meetsLocal}}
 	got := foreignStage(t, nil, true).declaredNames(pl)
 	want := []declaredName{
-		{name: "C", origin: "p.C", item: item}, {name: "GetF", origin: "q.Rec.f"}, {name: "RecId", origin: "p.recs", item: table, note: byRecord},
+		{name: "Both", origin: "p.both"}, {name: "C", origin: "p.C", item: item}, {name: "GetF", origin: "q.Rec.f"}, {name: "RecId", origin: "p.recs", item: table, note: byRecord},
 		{name: "Recs", origin: "p.recs", item: table, note: derived}, {name: "Row", origin: "q.Rec", item: row}, {name: "Tone", origin: "p.Tone"},
-		{name: "Recs", origin: "p.recs.Recs", item: table, id: true}, {name: "p", origin: "p"},
+		{name: "Both", origin: "p.both", note: derived}, {name: "Fix", origin: "p", note: fixed}, {name: "Recs", origin: "p.recs.Recs", item: table, id: true},
+		{name: "p", origin: "p", note: fixed}, {name: "Z", origin: "p.Z"},
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("declared names %v, want %v", got, want)

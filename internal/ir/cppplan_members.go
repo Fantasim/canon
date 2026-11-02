@@ -25,7 +25,7 @@ func (pl *CppNamePlan) declareMembers() {
 	}
 	snap := pl.scope(pl.SnapshotName())
 	pl.snapshotHidden(snap)
-	pl.declare(snap, CppLoad, pl.p.Name, nil)
+	pl.declareFixed(snap, CppLoad, pl.p.Name, nil)
 	for _, v := range pl.values {
 		if v.Reload {
 			pl.declare(snap, pl.SnapshotGetter(v), pl.valueOrigin(v), v)
@@ -34,7 +34,7 @@ func (pl *CppNamePlan) declareMembers() {
 	}
 	store := pl.scope(pl.StoreName())
 	for _, n := range cppStoreMembers {
-		pl.declare(store, n, pl.p.Name, nil)
+		pl.declareFixed(store, n, pl.p.Name, nil)
 	}
 }
 
@@ -42,8 +42,8 @@ func (pl *CppNamePlan) declareMembers() {
 func (pl *CppNamePlan) declareVariant(v *Variant) {
 	sc := pl.classScope(pl.TypeName(v), v.QName(), v)
 	pl.declarePublicDecode(sc, v.QName(), v)
-	pl.declare(sc, GoGet+GoKind, v.QName(), v)
-	pl.declare(sc, CppVariantMember, v.QName(), v)
+	pl.declareFixed(sc, GoGet+GoKind, v.QName(), v)
+	pl.declareFixed(sc, CppVariantMember, v.QName(), v)
 	for _, c := range v.Cases {
 		if len(c.Fields) > 0 {
 			pl.declare(sc, pl.AsName(c), v.QName()+qnameSep+c.Name, c)
@@ -70,7 +70,7 @@ func (pl *CppNamePlan) declareClass(c any) {
 			pl.slotNames(sc, c, cppSlot{getter: getter, resolved: resolved, canon: f.Name, t: f.Type, item: f, origin: origin + qnameSep + f.Name})
 			if value, member, ok := pl.DefineValue(f); ok {
 				pl.declare(sc, value, origin+qnameSep+f.Name, f)
-				pl.declare(sc, member, origin+qnameSep+f.Name, f)
+				pl.declareOwn(sc, member, origin+qnameSep+f.Name, f)
 			}
 		}
 		pl.declareBounds(sc, f, origin+qnameSep+f.Name)
@@ -104,19 +104,19 @@ func (pl *CppNamePlan) DefinesName(d *DefineTable) string {
 // declarePublicDecode declares a record's or variant's static Decode and Parse in types mode (CODEGEN.md §5.13, §7.2).
 func (pl *CppNamePlan) declarePublicDecode(sc *nameScope, origin string, item any) {
 	if pl.e.Mode == ModeTypes {
-		pl.declare(sc, CppDecode, origin, item)
-		pl.declare(sc, CppParse, origin, item)
+		pl.declareFixed(sc, CppDecode, origin, item)
+		pl.declareFixed(sc, CppParse, origin, item)
 	}
 }
 
 // declareRecordOwn declares a record's static Load, the first non-@reload record value's, and the id and retired getters and members of a table entry, a row of a table value or of a table field (CODEGEN.md §4.2, §5.3, §5.9).
 func (pl *CppNamePlan) declareRecordOwn(sc *nameScope, rec *Record, origin string) {
 	if i := slices.IndexFunc(pl.values, func(v *Value) bool { return !v.Reload && v.Type.Kind == types.Record && v.Type.Named == rec }); i >= 0 && !pl.baked() {
-		pl.declare(sc, CppLoad, pl.valueOrigin(pl.values[i]), pl.values[i])
+		pl.declareFixed(sc, CppLoad, pl.valueOrigin(pl.values[i]), pl.values[i])
 	}
 	if pl.NestedRow(rec) || slices.ContainsFunc(pl.values, func(v *Value) bool { return tableRecord(v) == rec }) {
 		for _, n := range cppEntryMembers {
-			pl.declare(sc, n, origin, rec)
+			pl.declareFixed(sc, n, origin, rec)
 		}
 	}
 }
@@ -132,10 +132,10 @@ type cppSlot struct {
 func (pl *CppNamePlan) slotNames(sc *nameScope, class any, s cppSlot) {
 	if pl.Resolves(s.t, class) {
 		pl.declare(sc, s.resolved, s.origin, s.item)
-		pl.declare(sc, pl.RefMember(s.canon), s.origin, s.item)
+		pl.declareOwn(sc, pl.RefMember(s.canon), s.origin, s.item)
 	}
 	pl.declare(sc, s.getter, s.origin, s.item)
-	pl.declare(sc, pl.Member(s.canon), s.origin, s.item)
+	pl.declareOwn(sc, pl.Member(s.canon), s.origin, s.item)
 }
 
 // declareContainer declares a container's members, its static Load unless @reload, and each non-optional @stable field's FindBy<F> and its two sorted indexes (CODEGEN.md §5.9).
@@ -143,13 +143,13 @@ func (pl *CppNamePlan) declareContainer(v *Value) {
 	name, origin := pl.ContainerName(v), pl.valueOrigin(v)
 	sc := pl.containerScope(v, name)
 	for _, n := range cppContainerMembers {
-		pl.declare(sc, n, origin, v)
+		pl.declareFixed(sc, n, origin, v)
 	}
 	switch {
 	case pl.baked() && v.Type.Kind == types.Table:
-		pl.declare(sc, GoGet, origin, v)
+		pl.declareFixed(sc, GoGet, origin, v)
 	case !pl.baked() && !v.Reload:
-		pl.declare(sc, CppLoad, origin, v)
+		pl.declareFixed(sc, CppLoad, origin, v)
 	}
 	rec := containerRecord(v)
 	if rec == nil {
@@ -161,7 +161,7 @@ func (pl *CppNamePlan) declareContainer(v *Value) {
 		}
 		by := pl.FindBy(f)
 		for _, n := range []string{by.Func, by.Keys, by.Index} {
-			pl.declare(sc, n, rec.QName()+qnameSep+f.Name, f)
+			pl.declareOwn(sc, n, rec.QName()+qnameSep+f.Name, f)
 		}
 	}
 }

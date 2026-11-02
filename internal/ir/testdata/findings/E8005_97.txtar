@@ -1,0 +1,52 @@
+CODEGEN.md §7.9, ERRORS.md E8005 (DECISIONS 442, amends 403): a name built on the Canon name of a field (its storage title_), a fn (Data::names) or a parameter (the vector field missing) is `foreignDerived`, whose way out is renaming that field, fn or parameter: @cpp(name:) on it renames none of them.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like b's field storage.
+  title_
+  /// Spelled like b's Data member.
+  names
+  /// Spelled like b's vector field.
+  missing
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its title.
+  title: String @cpp(name: "Heading")
+  /// Its rank.
+  rank: Int
+
+  /// What it heals of missing.
+  export fn healFor(self, missing: Int) -> Int { return min(rank, missing) }
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  one { title: "a", rank: 1 }
+}
+
+/// The names.
+export fn names() -> [String] { return ["a"] }
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+emit json { out: "out/" }
+-- b.tiers.json --
+{ "one": { "title": "a", "rank": 1 } }
+-- findings.txt --
+error[E8005]  b/b.canon:6:3
+  title_ is derived from b.Tier.title and written as a #define for a.Word.title_, in a package this one does not read, so its headers cannot guard it; rename b.Tier.title, or use a type of that package here
+
+error[E8005]  b/b.canon:11:13
+  missing is derived from b.Tier.healFor.missing and written as a #define for a.Word.missing, in a package this one does not read, so its headers cannot guard it; rename b.Tier.healFor.missing, or use a type of that package here
+
+error[E8005]  b/b.canon:20:11
+  names is derived from b.names and written as a #define for a.Word.names, in a package this one does not read, so its headers cannot guard it; rename b.names, or use a type of that package here
+
+3 errors, 0 warnings in 2 packages (…)

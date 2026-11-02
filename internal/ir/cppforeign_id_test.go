@@ -35,6 +35,8 @@ enum Word @cpp(defines: "") {
   LoadCfg
   /// Eleven.
   live_
+  /// Twelve.
+  Get
 }
 
 emit cpp { out: "@features/a", namespace: "a", mode: types }
@@ -118,7 +120,7 @@ type foreignHint struct {
 	item string
 }
 
-// TestForeignDefineHints is CODEGEN.md §7.9 and ERRORS.md E8005 (DECISIONS 403; log-2026-11-01, E8005-ID and its review): one finding per (name, origin); a table id is `foreignId`, even named like another name of its table; a name derived from a value's own name that @cpp(name:) does not change (the container, k<V>Schema, Data::<v>, <v>_ref, the free Load<V>, detail::<P>Access::Load<V>, the snapshot member <v>_; log-2026-11-01 "E8005-ID fixes") is `foreignDerived`; <Rec>Id and <Rec>IdFromWire name the record; every other name (the accessor, an enum member) keeps `foreignDefine`. Each message is the registry's own variant.
+// TestForeignDefineHints is CODEGEN.md §7.9 and ERRORS.md E8005 (DECISIONS 403; log-2026-11-01, E8005-ID and its review): one finding per (name, origin); a table id is `foreignId`, even named like another name of its table; a name derived from a value's own name that @cpp(name:) does not change (the container, k<V>Schema, Data::<v>, <v>_ref, the free Load<V>, detail::<P>Access::Load<V>, the snapshot member <v>_; log-2026-11-01 "E8005-ID fixes") is `foreignDerived`; a name the generator fixes (the container's and the access struct's `Get`) is `foreignFixed`, whatever the declarations say (DECISIONS 442); <Rec>Id and <Rec>IdFromWire name the record; every other name (the accessor, an enum member) keeps `foreignDefine`. Each message is the registry's own variant.
 func TestForeignDefineHints(t *testing.T) {
 	w := newWorld(t)
 	for _, f := range [][2]string{
@@ -136,7 +138,7 @@ func TestForeignDefineHints(t *testing.T) {
 			got = append(got, string(f.Code)+" "+f.Message)
 		}
 	}
-	id, derived, define := diag.E8005.AtForeignId, diag.E8005.AtForeignDerived, diag.E8005.AtForeignDefine
+	id, derived, define, fixed := diag.E8005.AtForeignId, diag.E8005.AtForeignDerived, diag.E8005.AtForeignDefine, diag.E8005.AtForeignFixed
 	want := expectedHints(w.fs, []foreignHint{
 		{id, "Tiers", foreignHintTable + ".Tiers"}, {derived, "Tiers", foreignHintTable},
 		{id, "GetTiers", foreignHintTable + ".GetTiers"}, {define, "GetTiers", foreignHintTable},
@@ -146,6 +148,7 @@ func TestForeignDefineHints(t *testing.T) {
 		{id, "LIMIT", foreignHintTable + ".LIMIT"}, {derived, "best_ref", "b.best"},
 		{derived, "kMarksSchema", "d.marks"}, {define, "LIMIT", "c.Tone.LIMIT"},
 		{derived, "LoadTop", "d.top"}, {derived, "LoadCfg", "d.cfg"}, {derived, "live_", "d.live"},
+		{fixed, "Get", foreignHintTable}, {fixed, "Get", "b"},
 	})
 	slices.Sort(got)
 	if !slices.Equal(got, want) {

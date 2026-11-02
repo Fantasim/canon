@@ -1,0 +1,34 @@
+DECISIONS 213, 442, CODEGEN.md §7.9: a define name that E8011 refuses (here Len, a name every container has, which canon_runtime.h also uses) is no project define for the foreign-define rule: its finding is the defining package's E8011, and no E8005 follows in the package whose container has a Len of its own.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// A name the container members reserve.
+  Len
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A tier.
+record Tier {
+  /// Its rank.
+  rank: Int
+}
+
+/// The tiers.
+let tiers: table Tier = {
+  one { rank: 1 }
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+emit json { out: "out/" }
+-- b.tiers.json --
+{ "one": { "rank": 1 } }
+-- findings.txt --
+error[E8011]  a/a.canon:6:3
+  Len, the C++ name derived for a.Word.Len, is a keyword or a reserved name
+
+1 error, 0 warnings in 2 packages (…)

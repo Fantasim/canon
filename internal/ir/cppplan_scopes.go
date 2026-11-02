@@ -31,8 +31,8 @@ func (pl *CppNamePlan) declareAll() {
 		pl.declareBaked()
 	}
 	if pl.reloads() {
-		pl.shareNS(pl.SnapshotName(), pl.p.Name, nil)
-		pl.shareNS(pl.StoreName(), pl.p.Name, nil)
+		pl.noteForeign(pl.ns, pl.SnapshotName(), foreignNote{fixed: true}, func() { pl.shareNS(pl.SnapshotName(), pl.p.Name, nil) })
+		pl.noteForeign(pl.ns, pl.StoreName(), foreignNote{fixed: true}, func() { pl.shareNS(pl.StoreName(), pl.p.Name, nil) })
 	}
 	pl.declareMembers()
 	pl.declareTextDecoders()
@@ -56,7 +56,7 @@ func (pl *CppNamePlan) declareNamespaceTypes() {
 		}
 	}
 	for _, n := range append(overloads, pl.openOverloads()...) {
-		pl.declare(pl.ns, n, pl.p.Name, nil)
+		pl.declareFixed(pl.ns, n, pl.p.Name, nil)
 		pl.shareAs(pl.e.Namespace, n, pl.p.Name, nil, meetsOverload)
 	}
 	pl.declareJSONHooks()
@@ -81,7 +81,7 @@ func (pl *CppNamePlan) shareDerived(name string, v *Value) {
 
 // declareDerived is declare in sc for a name derived from value v's own name (shareDerived).
 func (pl *CppNamePlan) declareDerived(sc *nameScope, name string, v *Value) {
-	pl.noteForeign(sc, name, foreignNote{derived: true}, func() { pl.declare(sc, name, pl.valueOrigin(v), v) })
+	pl.declareOwn(sc, name, pl.valueOrigin(v), v)
 }
 
 // shareNSFrom is shareNS for a name d builds on the name of a type (declareFrom).

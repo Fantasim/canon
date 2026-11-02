@@ -44,7 +44,9 @@ func (pl *CppNamePlan) ReaderName(class any) string {
 func (pl *CppNamePlan) declareForeign() {
 	for _, row := range pl.rows {
 		holder := rowHolder(row)
-		pl.shareNSFrom(row.Origin, holder, derivation{row.Record, func() string { return pl.RowName(row.Record) }})
+		pl.noteForeign(pl.ns, pl.RowName(row.Record), foreignNote{origin: row.Record.QName()}, func() {
+			pl.shareNSFrom(row.Origin, holder, derivation{row.Record, func() string { return pl.RowName(row.Record) }})
+		})
 		pl.declareRowClass(row, holder)
 	}
 	for _, v := range pl.values {
@@ -63,7 +65,7 @@ func (pl *CppNamePlan) declareRowClass(row ForeignRow, holder any) {
 		sc.hidden[pl.IDName(row.Record)] = row.Origin
 	}
 	for _, n := range cppEntryMembers {
-		pl.declare(sc, n, row.Record.QName(), holder)
+		pl.declareFixed(sc, n, row.Record.QName(), holder)
 	}
 	origin := row.Record.QName() + qnameSep
 	for _, f := range row.Record.Fields {

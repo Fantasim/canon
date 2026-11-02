@@ -8,7 +8,7 @@ import (
 func (pl *CppNamePlan) declareDetail() {
 	sc := pl.scope(cppDetail)
 	access := pl.AccessName()
-	pl.shareInner(sc, access, pl.p.Name, nil)
+	pl.innerFixed(sc, access, pl.p.Name, meetsNever)
 	pl.declareOrdinals(sc)
 	pl.declareWireTables(sc)
 	pl.declareMake(sc)
@@ -23,10 +23,10 @@ func (pl *CppNamePlan) declareDetail() {
 		pl.declareBranchTables(sc)
 	}
 	for _, m := range pl.methods() {
-		pl.innerFrom(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })
+		pl.innerOwn(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })
 	}
 	for _, d := range emitDefineRefs(pl.p, pl.e) {
-		pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d)
+		pl.noteForeign(sc, pl.DefinesName(d), foreignNote{derived: true}, func() { pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d) })
 	}
 	pl.declareInputSlots(sc)
 }
@@ -34,7 +34,7 @@ func (pl *CppNamePlan) declareDetail() {
 // declareDecoders declares detail's Decode overloads when a class is decoded, and each dependent type's Decode<Alias> (CODEGEN.md §5.6, §7.2).
 func (pl *CppNamePlan) declareDecoders(sc *nameScope) {
 	if len(pl.classes()) > 0 {
-		pl.declareInner(sc, CppDecode, pl.p.Name, nil)
+		pl.noteForeign(sc, CppDecode, foreignNote{fixed: true}, func() { pl.declareInner(sc, CppDecode, pl.p.Name, nil) })
 		pl.shareAs(pl.e.Namespace+cppScope+cppDetail, CppDecode, pl.p.Name, nil, meetsOverload)
 	}
 	for _, t := range pl.p.Types {
@@ -114,12 +114,12 @@ func (pl *CppNamePlan) declareConformance() {
 	}
 	sc := pl.scope(cppConformance)
 	for _, n := range cppConformanceOwn {
-		pl.localInner(sc, n, cppConformance, nil, meetsLocal)
+		pl.innerFixed(sc, n, cppConformance, meetsLocal)
 	}
 	if pl.showsOptional(methods, fns) {
-		pl.localInner(sc, cppShow, cppConformance, nil, meetsLocal)
+		pl.innerFixed(sc, cppShow, cppConformance, meetsLocal)
 	}
-	pl.shareInner(sc, pl.RunConformanceName(), pl.p.Name, nil)
+	pl.innerFixed(sc, pl.RunConformanceName(), pl.p.Name, meetsNever)
 	for _, m := range methods {
 		pl.declareVectors(sc, m)
 	}
@@ -132,8 +132,8 @@ func (pl *CppNamePlan) declareConformance() {
 func (pl *CppNamePlan) declareVectors(sc *nameScope, m cppMethod) {
 	fn, origin := m.fn, m.origin
 	vec := pl.Vector(pl.ownerName(m), fn)
-	pl.innerFrom(sc, m, meetsLocal, func() string { return pl.Vector(pl.ownerName(m), fn).Struct })
-	pl.innerFrom(sc, m, meetsLocal, func() string { return pl.Vector(pl.ownerName(m), fn).Table })
+	pl.innerOwn(sc, m, meetsLocal, func() string { return pl.Vector(pl.ownerName(m), fn).Struct })
+	pl.innerOwn(sc, m, meetsLocal, func() string { return pl.Vector(pl.ownerName(m), fn).Table })
 	fields := pl.scope(vec.Struct)
 	fields.hidden = pl.signatureTypes(fn)
 	var inputs []string
@@ -148,10 +148,10 @@ func (pl *CppNamePlan) declareVectors(sc *nameScope, m cppMethod) {
 		if slices.Contains(goVectorOwn, in) {
 			field = in + underscore
 		}
-		pl.declare(fields, field, origin+qnameSep+in, fn)
+		pl.declareOwn(fields, field, origin+qnameSep+in, fn)
 	}
 	for _, n := range goVectorOwn {
-		pl.declare(fields, n, origin, fn)
+		pl.declareFixed(fields, n, origin, fn)
 	}
 }
 
@@ -170,9 +170,9 @@ func (pl *CppNamePlan) declareAccess(access string) {
 		pl.declareDerived(sc, pl.AccessLoader(v), v)
 	}
 	if pl.reloads() {
-		pl.declare(sc, pl.AccessSnapshotLoader(), pl.p.Name, nil)
+		pl.declareFixed(sc, pl.AccessSnapshotLoader(), pl.p.Name, nil)
 	}
 	if slices.ContainsFunc(pl.classes(), func(c any) bool { return pl.walks(c, map[any]bool{}) }) {
-		pl.declare(sc, CppResolve, pl.p.Name, nil)
+		pl.declareFixed(sc, CppResolve, pl.p.Name, nil)
 	}
 }

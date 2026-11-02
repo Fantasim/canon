@@ -106,7 +106,7 @@ func (s *stage) addDefines(pkg string, d syntax.Decl) {
 func (s *stage) broken(name *syntax.Ident) bool { return s.info.Broken[s.info.Defs[name]] }
 
 func (s *stage) addDefine(name string, src defineSource) {
-	if _, seen := s.projDefines[name]; !seen {
+	if _, seen := s.projDefines[name]; !seen && defineProblem(name) == nil { // a name E8011 refuses is no define: its finding is the defining package's
 		s.projDefines[name] = src
 	}
 }
@@ -119,9 +119,10 @@ type declaredName struct {
 	note         foreignNote
 }
 
-// foreignNote is how E8005 names a declared name a foreign #define equals, when not as declared (CODEGEN.md §7.9): derived from a value's own name, which @cpp(name:) does not change (foreignDerived), or at another origin, the record of <Rec>Id and <Rec>IdFromWire.
+// foreignNote is how E8005 names a declared name a foreign #define equals, when not as declared (CODEGEN.md §7.9): built on a Canon name that @cpp(name:) does not change (foreignDerived), fixed by the generator (foreignFixed), or at another origin, the record of <Rec>Id, <Rec>IdFromWire and <Element>Row.
 type foreignNote struct {
-	derived bool
+	derived bool   // built on a Canon name @cpp(name:) does not change (foreignDerived)
+	fixed   bool   // no declaration's name or override changes it (foreignFixed)
 	origin  string // the origin the finding names, "" for the declared one
 }
 
@@ -146,29 +147,44 @@ func (pl *CppNamePlan) noteForeign(sc *nameScope, name string, n foreignNote, de
 	sc.notes[name] = n
 }
 
-// declaredNames are the names pl declares in every scope, each scope's in name order, then the names it shares in its namespaces and the segments of the namespace (CODEGEN.md §3.5), each (name, origin) once: a name shared and declared in a scope is one. A scope's origin that already starts with a package's name (an inherited getter of another package's record) is kept as written.
+// declaredNames are the names pl declares in every scope, each scope's in name order, then the names it shares in its namespaces and the segments of the namespace (CODEGEN.md §3.5), each (name, origin, way) once: a shared entry is skipped when a scope declared the same (name, origin), and is fixed only when it is a segment of the namespace. A scope's origin that already starts with a package's name (an inherited getter of another package's record) is kept as written.
 func (s *stage) declaredNames(pl *CppNamePlan) []declaredName {
 	var out []declaredName
-	seen := map[declaredKey]bool{}
+	seen, scoped := map[declaredKey]bool{}, map[declaredPair]bool{}
 	add := func(d declaredName) {
-		if k := (declaredKey{d.name, d.origin}); !seen[k] {
+		if k := d.key(); !seen[k] {
 			seen[k] = true
 			out = append(out, d)
 		}
 	}
 	for _, sc := range pl.scopes {
 		for _, name := range slices.Sorted(maps.Keys(sc.names)) {
-			add(declaredName{name, s.scopeOrigin(pl, sc.names[name]), sc.items[name], sc.ids, sc.notes[name]})
+			d := declaredName{name, s.scopeOrigin(pl, sc.names[name]), sc.items[name], sc.ids, sc.notes[name]}
+			scoped[declaredPair{d.name, d.origin}] = true
+			add(d)
 		}
 	}
 	for _, n := range pl.shared {
-		add(declaredName{name: n.name, origin: n.origin, item: n.item})
+		if !scoped[declaredPair{n.name, n.origin}] {
+			add(declaredName{name: n.name, origin: n.origin, item: n.item, note: foreignNote{fixed: n.meets == meetsNamespace}})
+		}
 	}
 	return out
 }
 
-// declaredKey is what makes two declared names one finding: the name and its origin as declared (CODEGEN.md §7.9).
-type declaredKey struct{ name, origin string }
+// declaredKey is what makes two declared names one finding: the name, its origin as declared and the way its finding is told, so that a name met in two ways is two findings (CODEGEN.md §7.9, DECISIONS 442).
+type declaredKey struct {
+	name, origin       string
+	id, derived, fixed bool
+}
+
+// declaredPair is a name and its origin, whatever way its finding is told.
+type declaredPair struct{ name, origin string }
+
+// key is d's finding: its name and origin as declared, and how its way out is told.
+func (d declaredName) key() declaredKey {
+	return declaredKey{d.name, d.origin, d.id, d.note.derived, d.note.fixed}
+}
 
 // scopeOrigin is a scope origin as messages name it: as written when it starts with the name of a package, else qualified by pl's.
 // The lookup cannot misname one: a scope origin is pl's own qualified name, another loaded package's (inherited getter, reader, define ref) or one segment, never looked up (E8005_85).
@@ -180,4 +196,24 @@ func (s *stage) scopeOrigin(pl *CppNamePlan, origin string) string {
 		}
 	}
 	return pl.qualified(origin)
+}
+
+// declareFixed is declare in sc for a name the generator writes whatever the declarations say (E8005 foreignFixed).
+func (pl *CppNamePlan) declareFixed(sc *nameScope, name, origin string, item any) {
+	pl.noteForeign(sc, name, foreignNote{fixed: true}, func() { pl.declare(sc, name, origin, item) })
+}
+
+// declareOwn is declare in sc for a name built on the Canon name of item, which @cpp(name:) does not change (E8005 foreignDerived).
+func (pl *CppNamePlan) declareOwn(sc *nameScope, name, origin string, item any) {
+	pl.noteForeign(sc, name, foreignNote{derived: true}, func() { pl.declare(sc, name, origin, item) })
+}
+
+// innerOwn is innerFrom for a name built on the Canon name of m's fn (E8005 foreignDerived).
+func (pl *CppNamePlan) innerOwn(sc *nameScope, m cppMethod, meets cppMeet, build func() string) {
+	pl.noteForeign(sc, build(), foreignNote{derived: true}, func() { pl.innerFrom(sc, m, meets, build) })
+}
+
+// innerFixed is localInner for a name the generator writes whatever the declarations say (E8005 foreignFixed).
+func (pl *CppNamePlan) innerFixed(sc *nameScope, name, origin string, meets cppMeet) {
+	pl.noteForeign(sc, name, foreignNote{fixed: true}, func() { pl.localInner(sc, name, origin, nil, meets) })
 }

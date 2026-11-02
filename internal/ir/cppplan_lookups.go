@@ -178,9 +178,9 @@ func (pl *CppNamePlan) declareInputNames() {
 		return
 	}
 	in := pl.Inputs()
-	pl.shareNS(in.Func, pl.p.Name, nil)
+	pl.noteForeign(pl.ns, in.Func, foreignNote{fixed: true}, func() { pl.shareNS(in.Func, pl.p.Name, nil) })
 	for _, h := range in.Helpers {
-		pl.declare(pl.ns, h, pl.p.Name, nil)
+		pl.declareFixed(pl.ns, h, pl.p.Name, nil)
 		pl.shareAs(pl.e.Namespace, h, pl.p.Name, nil, meetsLocal)
 	}
 }
@@ -201,18 +201,18 @@ func (pl *CppNamePlan) declareDependents() {
 		pl.shareNS(n.Class, origin, d)
 		pl.shareNSFrom(origin, d, derivation{d, func() string { return pl.Dependent(d).Branch }})
 		enum, class := pl.scope(n.Branch), pl.classScope(n.Class, origin, d)
-		pl.declare(class, n.GetBranch, origin, d)
+		pl.declareFixed(class, n.GetBranch, origin, d)
 		for i, b := range n.Branches {
 			at := origin + qnameSep + d.Branches[i].Name
-			pl.declare(enum, b.Enumerator, at, d)
-			pl.declare(class, b.As, at, d)
+			pl.declareOwn(enum, b.Enumerator, at, d)
+			pl.declareOwn(class, b.As, at, d)
 			if b.AsValue != "" {
-				pl.declare(class, b.AsValue, at, d)
+				pl.declareOwn(class, b.AsValue, at, d)
 			}
 		}
-		pl.declare(class, n.Value, origin, d)
+		pl.declareFixed(class, n.Value, origin, d)
 		if n.DefineValue != "" {
-			pl.declare(class, n.DefineValue, origin, d)
+			pl.declareFixed(class, n.DefineValue, origin, d)
 		}
 	}
 }
@@ -224,8 +224,8 @@ func (pl *CppNamePlan) declareInputSlots(detail *nameScope) {
 		return
 	}
 	names := pl.Inputs()
-	pl.shareInner(detail, names.Namespace, pl.p.Name, nil)
-	pl.shareInner(detail, names.Loaded, pl.p.Name, nil)
+	pl.innerFixed(detail, names.Namespace, pl.p.Name, meetsNever)
+	pl.innerFixed(detail, names.Loaded, pl.p.Name, meetsNever)
 	inputs := pl.scope(names.Namespace)
 	for _, rec := range recs {
 		class := pl.TypeName(rec)
@@ -233,7 +233,7 @@ func (pl *CppNamePlan) declareInputSlots(detail *nameScope) {
 		slots := pl.scope(names.Namespace + cppScope + class)
 		for _, f := range inputFields(rec) {
 			_, slot := pl.InputSlot(rec, f)
-			pl.declare(slots, slot, rec.QName()+qnameSep+f.Name, f)
+			pl.declareOwn(slots, slot, rec.QName()+qnameSep+f.Name, f)
 		}
 	}
 }

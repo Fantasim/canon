@@ -1,0 +1,30 @@
+CODEGEN.md §7.9, ERRORS.md E8005 (DECISIONS 442, amends 403): one name met in two ways is one finding for each way in one build: b's @cpp(name: "vv") on the value vv makes its container vv, the foreignDefine, while its Data member is vv whatever the override says, the foreignDerived; following the first alone would leave the second.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like b's container and its Data member.
+  vv
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// The values.
+@cpp(name: "vv")
+let vv: [Int] = [1, 2]
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+emit json { out: "out/" }
+-- b.vv.json --
+[1, 2]
+-- findings.txt --
+error[E8005]  b/b.canon:5:5
+  vv is declared for b.vv and written as a #define for a.Word.vv, in a package this one does not read, so its headers cannot guard it; rename b.vv with @cpp(name:), or use a type of that package here
+
+error[E8005]  b/b.canon:5:5
+  vv is derived from b.vv and written as a #define for a.Word.vv, in a package this one does not read, so its headers cannot guard it; rename b.vv, or use a type of that package here
+
+2 errors, 0 warnings in 2 packages (…)
