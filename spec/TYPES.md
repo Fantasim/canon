@@ -761,7 +761,7 @@ Rules:
 
 - Bounds are constant expressions (§15) of the base type (`E3015`); an integer literal is
   accepted as a `Float` bound. A range with `lo > hi` (after normalising `..=`) is `E3023`.
-- A field's default that is a constant expression (§15), or that reads a field of a record literal built of constants (`(T {}).a`), is checked against the field's refinements as the literal it folds to: at the default, whether or not a value takes it. A `Float32` literal or constant is compared after rounding to binary32, as stored (§7.3) (DECISIONS 412). A default whose type holds a record or a variant is not folded, nor one met once its package's budget is spent (`E4401`, EVALUATION.md §12.2): storage checks it (EVALUATION.md §4.3). A default whose fold reports a finding breaks its record (§1), as a constant's fold does (DECISIONS 150).
+- A field's default that is a constant expression (§15), or that reads a field of a record literal built of constants (`(T {}).a`), is checked against the field's refinements as the literal it folds to: at the default, whether or not a value takes it. A `Float32` literal or constant is compared after rounding to binary32, as stored (§7.3) (DECISIONS 412). A default whose type holds a record or a variant is not folded, nor one met once its package's budget is spent (`E4401`, EVALUATION.md §12.2): storage checks it (EVALUATION.md §4.3). A default whose fold reports a finding, a storage finding included, breaks its record (§1), as a constant's fold does (DECISIONS 150, 454).
 - A range refinement on `Bool`, an enum or a record, or a regex on anything but `String`, is
   `E3023`. An invalid RE2 pattern is `E1114` (GRAMMAR.md).
 - A refinement on a named type adds to the named type's own refinements: `Penya(..=1000)` with
@@ -1324,7 +1324,7 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
 - A fold that fails without a finding in its owner's bag is `E3015` at the expression, except
   one that reads a constant whose declaration already holds an error: its owner breaks with that
   error as the one finding (DECISIONS 150).
-- A constant expression may build a record or a case once that body is complete (its fields resolved, its defaults checked); a body still being completed when the fold reaches it (the bound's own record or case) is `E3015` `notConstant`, and one declared later is completed first: declaration order does not matter (§3.2).
+- A constant expression may build a record or a case once that body is complete (its fields resolved, its defaults checked, the `where` predicates of its field types checked, DECISIONS 454); a body still being completed when the fold reaches it (the bound's own record or case) is `E3015` `notConstant`, and one declared later is completed first: declaration order does not matter (§3.2).
 - A public top-level `let` needs a type annotation (`E3001`). A `local let` without one is
   synthesized when first needed; a cycle among such inferences is `E3008`.
 - A field default (TYP-15) may use constants, **earlier** fields of the same record, record parameters, built-in functions, and a field of a record literal built of these (`(T {}).a`); anything else (a package `let`, a user function, a later field) is `E3010`.

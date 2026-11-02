@@ -13,28 +13,38 @@ import (
 	"github.com/fantasim/canonlang/internal/eval"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
 
-const foldedHead = "package shop\n\nconst ZERO = 0\n\nlocal record R {\n  a: Int(1..) = %s\n}\n"
+const foldedHead = "package shop\n\nconst ZERO = 0\n\nlocal record Z {\n  k: Int = 0\n}\n\nlocal record R {\n  a: Int(1..) = %s\n}\n"
 
-// TYPES.md §7.4, DECISIONS 412: the findings of a default naming a constant equal those of the literal it folds to, whether no value, one, several or one setting the field itself uses it.
+// TYPES.md §7.4, DECISIONS 412, 444: the findings of a default naming a constant, or reading a field of a record literal, equal those of the literal it folds to, whether no value, one, several or one setting the field itself uses it.
 func TestFoldedDefaultIsItsLiteral(t *testing.T) {
+	forms := []struct {
+		def   string
+		check func(*testing.T, string) string
+	}{
+		{"ZERO", func(t *testing.T, text string) string { _, _, out := checkShop(t, text); return out }},
+		{"(Z {}).k", func(t *testing.T, text string) string { _, out := checkShopEval(t, text); return out }},
+	}
 	for _, tc := range []struct{ name, values string }{
 		{"no value", ""},
 		{"one value", "\nlocal let one: R = R {}\n"},
 		{"two values", "\nlocal let one: R = R {}\n\nlocal let two: R = R {}\n"},
 		{"a value sets the field", "\nlocal let set: R = R { a: 5 }\n"},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			_, _, folded := checkShop(t, fmt.Sprintf(foldedHead, "ZERO")+tc.values)
-			_, _, literal := checkShop(t, fmt.Sprintf(foldedHead, "0")+tc.values)
-			if !strings.Contains(literal, "["+string(diag.E3204.Def().Code)+"]") {
-				t.Fatalf("the literal default is not reported:\n%s", literal)
-			}
-			if folded != literal {
-				t.Errorf("= ZERO differs from = 0:\n%s\nwant\n%s", folded, literal)
-			}
-		})
+		for _, f := range forms {
+			t.Run(tc.name+" "+f.def, func(t *testing.T) {
+				folded := f.check(t, fmt.Sprintf(foldedHead, f.def)+tc.values)
+				literal := f.check(t, fmt.Sprintf(foldedHead, "0")+tc.values)
+				if !strings.Contains(literal, "["+string(diag.E3204.Def().Code)+"]") {
+					t.Fatalf("the literal default is not reported:\n%s", literal)
+				}
+				if folded != literal {
+					t.Errorf("= %s differs from = 0:\n%s\nwant\n%s", f.def, folded, literal)
+				}
+			})
+		}
 	}
 }
 
@@ -179,7 +189,7 @@ func TestFloat32OverflowIsNotARangeFinding(t *testing.T) {
 	}
 }
 
-// TYPES.md §7.4, §15, DECISIONS 412: every constant form the Folder folds is checked as its value, at the default; a default reading a field is not one.
+// TYPES.md §7.4, §15, DECISIONS 412, 444: every constant form the Folder folds is checked as its value, at the default, a field of a record literal or of a record constant (ZR.k) included (Z is declared later); a default reading a field of its own record is not one.
 func TestFoldedDefaultForms(t *testing.T) {
 	for _, tc := range []struct {
 		name, field string
@@ -192,11 +202,42 @@ func TestFoldedDefaultForms(t *testing.T) {
 		{"map key", "a: {Int(1..): Int} = {(ZERO): 1}", 1},
 		{"accepted", "a: Int(1..) = ZERO + 1", 0},
 		{"a field read", "n: Int = 0\n  a: Int(1..) = n", 0},
+		{"a field a record literal leaves out", "a: Int(1..) = (Z {}).k", 1},
+		{"a field a record literal gives", "a: Int(1..) = (Z { k: ZERO }).k", 1},
+		{"a field of a record literal, accepted", "a: Int(1..) = (Z { k: 1 }).k + (Z {}).k", 0},
+		{"a field of a record constant", "a: Int(1..) = ZR.k", 1},
+		{"a field of an earlier field", "y: Z = {}\n  a: Int(1..) = y.k", 0},
+		{"a field of an earlier field's record literal", "y: Int = 0\n  a: Int(1..) = (Z { k: y }).k", 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			_, out := checkShopEval(t, "package shop\n\nconst ZERO = 0\n\nlocal record R {\n  "+tc.field+"\n}\n")
+			_, out := checkShopEval(t, "package shop\n\nconst ZERO = 0\n\nlocal const ZR = Z {}\n\nlocal record R {\n  "+tc.field+"\n}\n\nlocal record Z {\n  k: Int = ZERO\n}\n")
 			if got := strings.Count(out, "["+string(diag.E3204.Def().Code)+"]"); got != tc.want {
 				t.Errorf("%d range findings, want %d:\n%s", got, tc.want, out)
+			}
+		})
+	}
+}
+
+// TYPES.md §7.4, §15, DECISIONS 444: the accepted record-literal defaults build through the evaluator with no finding, a self-reading and a mutually reading default included (a pin: no hang, no crash).
+func TestFoldedRecordDefaultIsEvaluated(t *testing.T) {
+	cases, err := golden.Load("testdata/accept/folded_record_default.txtar")
+	if err != nil || len(cases) != 1 {
+		t.Fatalf("%d cases, %v", len(cases), err)
+	}
+	if res := buildOne(t, string(cases[0].Archive.Files[0].Data)); len(res.List) != 0 {
+		t.Errorf("findings %v, want none", codesOf(res.List))
+	}
+}
+
+// TYPES.md §7.4, DECISIONS 444: a cyclic record-literal default keeps its verdict: no static finding, E4402 once a value takes it (a pin).
+func TestCyclicRecordDefaultTaken(t *testing.T) {
+	for _, tc := range []struct{ name, text string }{
+		{"its own record", "package a\n\nlocal record S {\n  s: Int(1..) = (S {}).s\n}\n\nlocal let x: S = {}\n"},
+		{"two records", "package a\n\nlocal record A {\n  a: Int(1..) = (B {}).b\n}\n\nlocal record B {\n  b: Int = (A {}).a\n}\n\nlocal let x: A = {}\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := errorCodes(buildOne(t, tc.text).List); !slices.Equal(got, []diag.Code{diag.E4402.Def().Code}) {
+				t.Errorf("a build reports %v, want exactly [%s]", got, diag.E4402.Def().Code)
 			}
 		})
 	}

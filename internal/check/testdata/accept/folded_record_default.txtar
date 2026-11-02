@@ -1,0 +1,33 @@
+TYPES.md §7.4, §15, DECISIONS 444: a default reading a field of a record literal inside its refinement checks, its record declared earlier or later; a default reading a literal of its own record, or of a record reading it back, neither hangs nor crashes (no value takes it, so no E4402).
+-- a/a.canon --
+package a
+
+local record T {
+  a: Int = 2
+  b: Int = 7
+}
+
+local record Fine {
+  x: Int(1..3) = (T {}).a
+  y: Int(5..) = (T { a: 1 }).b + (T {}).a
+}
+
+local record Ahead {
+  z: Int(1..) = (Later {}).c
+}
+
+local record Later {
+  c: Int = 4
+}
+
+local record Self {
+  s: Int(1..) = (Self {}).s
+}
+
+local record Ping {
+  p: Int(1..) = (Pong {}).q
+}
+
+local record Pong {
+  q: Int = (Ping {}).p
+}

@@ -26,26 +26,46 @@ func (c *checker) foldedDefault(env *env, e syntax.Expr, got, want types.Type, b
 	}
 }
 
-// constantDefault reports e built only of literals, collections, operators, built-ins and constants of any package; a field, a parameter, `self` or a user fn is no constant (TYPES.md §15).
+// constantDefault reports e built only of literals, collections, record literals, operators, built-ins, constants of any package and fields read from these; a field of the record, a parameter, `self` or a user fn is no constant (TYPES.md §7.4, §15; DECISIONS 444).
 func (c *checker) constantDefault(e syntax.Expr) bool {
 	ok := true
 	syntax.Inspect(e, func(n syntax.Node) bool {
 		switch x := n.(type) {
 		case nil, *syntax.IntLit, *syntax.FloatLit, *syntax.DurationLit, *syntax.BoolLit, *syntax.RawStringLit,
 			*syntax.StringLit, *syntax.ParenExpr, *syntax.UnaryExpr, *syntax.BinaryExpr, *syntax.ListLit,
-			*syntax.BraceLit, *syntax.MapItem, *syntax.IndexExpr, *syntax.CallExpr, *syntax.Arg, *syntax.Ident:
+			*syntax.BraceLit, *syntax.MapItem, *syntax.IndexExpr, *syntax.CallExpr, *syntax.Arg, *syntax.Ident,
+			*syntax.TypedLit, *syntax.QualifiedName, *syntax.FieldItem:
 		case *syntax.IdentExpr:
 			ok = ok && constantObject(c.info.Uses[x])
 		case *syntax.SelectorExpr:
-			o := c.info.NameUses[x.Name]
-			ok = ok && constantObject(o)
-			return ok && o.Kind() == ObjBuiltin // a built-in method keeps its receiver, a package constant is whole
+			ok = ok && c.constantSelection(x)
+			return ok && !c.wholeSelection(x)
 		default:
 			ok = false
 		}
 		return ok
 	})
 	return ok
+}
+
+// constantSelection reports x a built-in method, a package constant or a field read; the receiver of a field read is judged next (DECISIONS 444).
+func (c *checker) constantSelection(x *syntax.SelectorExpr) bool {
+	return c.selectsField(x) || constantObject(c.info.NameUses[x.Name])
+}
+
+// wholeSelection reports x a package constant, judged whole: a built-in method or a field read keeps its receiver.
+func (c *checker) wholeSelection(x *syntax.SelectorExpr) bool {
+	if c.selectsField(x) {
+		return false
+	}
+	o := c.info.NameUses[x.Name]
+	return o == nil || o.Kind() != ObjBuiltin
+}
+
+// selectsField reports x selecting a field of its receiver.
+func (c *checker) selectsField(x *syntax.SelectorExpr) bool {
+	sel := c.info.Selections[x]
+	return sel != nil && sel.Kind == SelField
 }
 
 // foldable reports a type checkFolded judges, holding no record whose body may be unchecked yet (EVALUATION.md §1).

@@ -55,15 +55,16 @@ func (c *checker) foldConst(env *env, e syntax.Expr) (value.Value, bool) {
 	return v, ok
 }
 
-// foldReported folds e, its findings in the owner's bag; a failure with one breaks the owner, silent is one without (DECISIONS 150).
+// foldReported folds e, its findings in the owner's bag; a fold reporting one, a storage finding of a value it builds included, fails and breaks the owner, silent is a failure without (DECISIONS 150, 454).
 func (c *checker) foldReported(env *env, e syntax.Expr) (v value.Value, ok, silent bool) {
 	before := env.pkg.bag.ErrorCount()
 	v, ok = c.fold.Fold(c.ctx, env.owner, e, c.info)
-	if ok {
+	reported := env.pkg.bag.ErrorCount() != before
+	if ok && !reported {
 		return v, true, false
 	}
 	c.noteSpent(env.pkg)
-	if env.pkg.bag.ErrorCount() == before {
+	if !reported {
 		return nil, false, true
 	}
 	c.breakFolded(env.owner)

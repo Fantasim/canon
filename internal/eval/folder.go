@@ -76,6 +76,7 @@ func (f *folder) fold(ctx context.Context, call foldCall) (value.Value, bool) {
 	if f.ev == nil || f.ev.info != call.info {
 		f.ev = newEvaluator(f.bags, f.opt)
 		f.ev.info, f.ev.constant, f.ev.counter = call.info, true, f.steps
+		f.ev.index.written = foldWritten(f.ev.index, call.info)
 	}
 	ev := f.ev
 	ev.index.add(call.owner.File(), call.owner.Pkg())

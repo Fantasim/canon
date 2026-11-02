@@ -162,9 +162,10 @@ func (b *builds) body(o *object, body *recordCtx, lit *syntax.BraceLit) {
 	}
 }
 
-// checkDefaults checks body's defaults; one building a body still being resolved breaks o silently, the fold is E3015.
+// checkDefaults checks body's `where` predicates, then its defaults; a default building a body still being resolved breaks o silently, the fold is E3015 (DECISIONS 454).
 func (b *builds) checkDefaults(o *object, body *recordCtx) bool {
 	b.bodies[body] = true
+	b.c.bodyWheres(body)
 	before := b.c.unbuilt
 	b.c.fieldDefaults(o, body)
 	if b.c.unbuilt != before {

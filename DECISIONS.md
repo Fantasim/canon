@@ -4640,3 +4640,11 @@ round 2", "PS1 review", "PS2 round 2"):
      literals judged, `E8005` for the new reserved generated names, `E8011` for the new runtime
      identifiers), and changes no existing source's meaning, so `canon: "0.2"` stays `E1001`.
      Reason: 422's rule, applied again.
+454. **A fold builds a body only once its `where` predicates are checked (TYPES.md §7.4, §15; amends 150,
+     444).** A constant expression, a field default or a bound may build a record or a case once its
+     fields are resolved, its defaults checked and the `where` predicates of its field types (through
+     aliases, refinements, collections and type functions) checked; a fold that reports any finding,
+     a storage finding included, breaks its owner (a record, a constant), and its findings quote the
+     predicate as stage A does, so the two are one finding. Reason: v0.3 run (DEFAULT-FOLD's review):
+     a default reading `(T {}).a`, and on base `const C = (T {}).a`, crashed the checker when `T` held
+     a `where` field, and a failing predicate was then reported twice.

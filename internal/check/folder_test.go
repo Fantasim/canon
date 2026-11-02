@@ -14,7 +14,7 @@ import (
 // maxFold bounds the constants a fixture fold follows.
 const maxFold = 64
 
-// literalFolder is the fixture folder of check's tests: literals, `-n`, parentheses, consts (IMPLEMENTATION-PLAN §4.7).
+// literalFolder is the fixture folder of check's tests: literals, `-n`, parentheses, consts, a field of a record literal (IMPLEMENTATION-PLAN §4.7).
 type literalFolder struct{}
 
 func (literalFolder) Fold(ctx context.Context, _ check.Object, e syntax.Expr, info *check.Info) (value.Value, bool) {
@@ -37,6 +37,10 @@ func foldLiteral(ctx context.Context, e syntax.Expr, info *check.Info, depth int
 	case *syntax.ListLit:
 		return foldList(ctx, x, info, depth)
 	case *syntax.SelectorExpr:
+		if sel := info.Selections[x]; sel != nil && sel.Kind == check.SelField {
+			f, ok := fieldOf(x, info, depth+1)
+			return foldIf(ctx, f, ok, info, depth+1)
+		}
 		o := info.NameUses[x.Name]
 		if o == nil || o.Kind() != check.ObjConst {
 			return nil, false
@@ -106,4 +110,71 @@ func literal(e syntax.Expr, info *check.Info) (value.Value, bool) {
 	default:
 	}
 	return nil, false
+}
+
+// foldIf folds e when ok.
+func foldIf(ctx context.Context, e syntax.Expr, ok bool, info *check.Info, depth int) (value.Value, bool) {
+	if !ok {
+		return nil, false
+	}
+	return foldLiteral(ctx, e, info, depth)
+}
+
+// fieldOf is the expression giving the field x reads: the record literal's item, or the field's default (TYPES.md §7.4; DECISIONS 444).
+func fieldOf(x *syntax.SelectorExpr, info *check.Info, depth int) (syntax.Expr, bool) {
+	lit, ok := braceOf(x.X, info, depth)
+	if !ok {
+		return nil, false
+	}
+	for _, it := range lit.Items {
+		f, isField := it.(*syntax.FieldItem)
+		if !isField {
+			return nil, false // a spread gives what this folder does not follow
+		}
+		if f.Name.Name == x.Name.Name {
+			return f.Value, true
+		}
+	}
+	obj := info.Selections[x].Obj
+	if obj == nil {
+		return nil, false
+	}
+	d, isDecl := obj.Decl().(*syntax.FieldDecl)
+	if !isDecl {
+		return nil, false
+	}
+	return d.Default, d.Default != nil
+}
+
+// braceOf is the record literal e builds, through parentheses, a typed literal, a const and a field read.
+func braceOf(e syntax.Expr, info *check.Info, depth int) (*syntax.BraceLit, bool) {
+	if depth > maxFold {
+		return nil, false
+	}
+	switch x := e.(type) {
+	case *syntax.ParenExpr:
+		return braceOf(x.X, info, depth+1)
+	case *syntax.TypedLit:
+		return x.Lit, true
+	case *syntax.BraceLit:
+		return x, true
+	case *syntax.IdentExpr:
+		if o := info.Uses[x]; o != nil && o.Kind() == check.ObjConst {
+			return braceOf(o.Decl().(*syntax.ConstDecl).Value, info, depth+1)
+		}
+	case *syntax.SelectorExpr:
+		if sel := info.Selections[x]; sel != nil && sel.Kind == check.SelField {
+			f, ok := fieldOf(x, info, depth+1)
+			return braceIf(f, ok, info, depth+1)
+		}
+	}
+	return nil, false
+}
+
+// braceIf is braceOf(e) when ok.
+func braceIf(e syntax.Expr, ok bool, info *check.Info, depth int) (*syntax.BraceLit, bool) {
+	if !ok {
+		return nil, false
+	}
+	return braceOf(e, info, depth)
 }

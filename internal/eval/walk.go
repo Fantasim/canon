@@ -110,6 +110,15 @@ type writtenIndex struct {
 	built bool
 	at    map[*types.Refined]written
 	memo  *memoUse // keeps each file's types across the evaluators of an epoch
+
+	met  *index      // a fold's evaluator, with no Program: the files it met, typed by info
+	info *check.Info // the fold's Info
+	seen int         // the files of met indexed so far
+}
+
+// foldWritten is the writtenIndex of a fold's evaluator, whose index is x: its storage findings quote what stage A's do, so the bag merges the two (API.md F2).
+func foldWritten(x *index, info *check.Info) *writtenIndex {
+	return &writtenIndex{met: x, info: info, at: map[*types.Refined]written{}}
 }
 
 type written struct {
@@ -125,11 +134,13 @@ type typeAt struct {
 }
 
 func (w *writtenIndex) of(x *types.Refined) written {
-	if w == nil || w.prog == nil {
+	switch {
+	case w == nil:
 		return written{}
-	}
-	if !w.built {
+	case w.prog != nil && !w.built:
 		w.build()
+	case w.met != nil && w.info != nil:
+		w.meet()
 	}
 	return w.at[x]
 }
@@ -139,15 +150,22 @@ func (w *writtenIndex) build() {
 	w.built, w.at = true, map[*types.Refined]written{}
 	for _, pkg := range w.prog.Packages {
 		for _, f := range pkg.Files {
-			w.merge(cachedFile(w.memo, filesRefined, f, refinedFiles.of))
+			w.merge(w.prog.Info, cachedFile(w.memo, filesRefined, f, refinedFiles.of))
 		}
 	}
 }
 
+// meet indexes the files a fold's evaluator met since the last lookup, in the order it met them.
+func (w *writtenIndex) meet() {
+	for ; w.seen < len(w.met.files); w.seen++ {
+		w.merge(w.info, cachedFile(w.memo, filesRefined, w.met.files[w.seen], refinedFiles.of))
+	}
+}
+
 // merge indexes the refinements of one file's types not written in an earlier place.
-func (w *writtenIndex) merge(ts []typeAt) {
+func (w *writtenIndex) merge(info *check.Info, ts []typeAt) {
 	for _, ta := range ts {
-		x, ok := w.prog.Info.TypeExprs[ta.t].(*types.Refined)
+		x, ok := info.TypeExprs[ta.t].(*types.Refined)
 		if _, seen := w.at[x]; ok && !seen {
 			w.at[x] = written{decl: ta.decl, arg: ta.arg, has: true}
 		}
