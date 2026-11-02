@@ -22,7 +22,7 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 		u.ref(&c.Type)
 	}
 	for _, t := range pl.p.Types {
-		u.named(t)
+		u.named(t, pl.opened(t))
 	}
 	pl.textImports(u)
 	for _, v := range pl.emitted {
@@ -98,17 +98,18 @@ func (u *goImportUse) mark(std ...string) {
 	}
 }
 
-// named walks a type of the package: an enum's codes, a record's or case's fields and fns.
-func (u *goImportUse) named(t Type) {
+// named walks a type of the package: an enum's codes (strings too, for Parse, unless it is opened), a variant's kind enum, a record's or case's fields and fns; open tells an opened enum, whose Parse does not compare strings (DECISIONS 430).
+func (u *goImportUse) named(t Type, open bool) {
 	switch x := t.(type) {
 	case *Enum:
 		u.std[goStrconv], u.std[goIter], u.std[goSlices] = true, true, true
+		u.std[goStrings] = u.std[goStrings] || !open
 		u.ref(x.Codes)
 	case *Record:
 		u.body(x.Fields, x.Methods)
 		u.inputImports(x.Fields)
 	case *Variant:
-		u.std[goStrconv], u.std[goSlices] = true, true
+		u.std[goStrconv], u.std[goSlices], u.std[goStrings] = true, true, true
 		for _, c := range x.Cases {
 			u.body(c.Fields, c.Methods)
 		}
@@ -264,18 +265,26 @@ func (pl *GoNamePlan) writesTextErrors(t Type) bool {
 	return false
 }
 
-// textImports marks strconv and errors for the text methods and Parse of ids and enums (CODEGEN.md §5.2, §5.3).
+// opened reports an enum of the package that its emit opens (DECISIONS 339).
+func (pl *GoNamePlan) opened(t Type) bool {
+	e, ok := t.(*Enum)
+	return ok && OpenEnum(pl.p, pl.e, e)
+}
+
+// textImports marks strconv, strings (a by-wire search compares them, DECISIONS 430) and errors for the text methods and Parse of ids and enums (CODEGEN.md §5.2, §5.3).
 func (pl *GoNamePlan) textImports(u *goImportUse) {
 	for _, t := range pl.p.Types {
 		u.std[goErrors] = u.std[goErrors] || pl.writesTextErrors(t)
 		_, branch := t.(*Dependent) // its Parse<B> and tables read strconv and slices (DECISIONS 402)
 		u.std[goStrconv] = u.std[goStrconv] || branch
 		u.std[goSlices] = u.std[goSlices] || branch
+		u.std[goStrings] = u.std[goStrings] || branch
 	}
 	for _, v := range pl.p.Values {
 		baked := pl.data == nil && tableRecord(v) != nil
 		u.std[goStrconv] = u.std[goStrconv] || baked
 		u.std[goSlices] = u.std[goSlices] || baked
+		u.std[goStrings] = u.std[goStrings] || baked
 		u.std[goErrors] = u.std[goErrors] || baked
 	}
 }

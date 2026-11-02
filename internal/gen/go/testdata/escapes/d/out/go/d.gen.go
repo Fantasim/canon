@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 type D struct{ position uint8 }
@@ -33,13 +34,11 @@ func (self D) Wire() string {
 	return "D(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_D = [...]string{"north", "south"}
-
-var enumFound_D = [...]D{{0}, {1}}
+var enumByWire_D = [...]uint8{0, 1}
 
 func ParseD(wire string) (D, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_D[:], wire); ok {
-		return enumFound_D[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_D[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_D[at], text) }); ok {
+		return D{enumByWire_D[i]}, true
 	}
 	return D{}, false
 }

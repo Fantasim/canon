@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	"example.com/data/demo/lookups/out/go/rt"
@@ -55,13 +56,11 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_StatusID = [...]string{"a", "b"}
-
-var enumFound_StatusID = [...]StatusID{{0}, {1}}
+var enumByWire_StatusID = [...]uint8{0, 1}
 
 func ParseStatusID(key string) (StatusID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
-		return enumFound_StatusID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_StatusID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_StatusID[at], text) }); ok {
+		return StatusID{enumByWire_StatusID[i]}, true
 	}
 	return StatusID{}, false
 }
@@ -114,13 +113,11 @@ func (self *OtherID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_OtherID = [...]string{"x"}
-
-var enumFound_OtherID = [...]OtherID{{0}}
+var enumByWire_OtherID = [...]uint8{0}
 
 func ParseOtherID(key string) (OtherID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_OtherID[:], key); ok {
-		return enumFound_OtherID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_OtherID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_OtherID[at], text) }); ok {
+		return OtherID{enumByWire_OtherID[i]}, true
 	}
 	return OtherID{}, false
 }

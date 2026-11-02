@@ -1,6 +1,6 @@
 {{define "enumText"}}func (self {{.Name}}) {{.Method}}() string {
-{{if .Dense}}if i := uint({{.Value}}); i < uint(len({{.Table}})) {
-{{else}}if i, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], self); ok {
+{{if .Sparse}}if i, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], self); ok {
+{{else}}if i := {{.Index}}; i < {{.Wide}}(len({{.Table}})) {
 {{end}}return {{.Table}}[i]
 }
 return "{{.Name}}(" + {{.Strconv}}.FormatInt(int64({{.Value}}), 10) + ")"
@@ -8,29 +8,33 @@ return "{{.Name}}(" + {{.Strconv}}.FormatInt(int64({{.Value}}), 10) + ")"
 
 {{end}}
 {{define "enumParse"}}func {{.Parse}}({{.Arg}} string) ({{.Name}}, bool) {
-if i, ok := {{.Slices}}.BinarySearch({{.Keys}}[:], {{.Arg}}); ok {
-return {{.Found}}[i], true
+if i, ok := {{.Slices}}.BinarySearchFunc({{.ByWire}}[:], {{.Arg}}, func(at {{.ByWireElem}}, text string) int { return {{.Strings}}.Compare({{.Table}}[at], text) }); ok {
+return {{.Found}}, true
 }
 return {{.Zero}}, false
 }
 
 {{end}}
 {{define "enumFromCode"}}func {{.FromCode}}(code {{.Codes}}) ({{.Name}}, bool) {
-v := {{.Name}}(code)
+{{if .First}}if {{.CodeIndex}} < uint64(len({{.Names}})) {
+return {{.Name}}(code), true
+}
+{{else}}v := {{.Name}}(code)
 if _, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], v); ok {
 return v, true
 }
-return 0, false
+{{end}}return 0, false
 }
 
 {{end}}
-{{define "openEnum"}}func (self {{.Name}}) {{.String}}() string {
+{{define "openEnum"}}{{if .Named}}func (self {{.Name}}) {{.String}}() string {
 if i, ok := {{.Slices}}.BinarySearch({{.Keys}}[:], self); ok {
 return {{.Names}}[i]
 }
 return string(self)
 }
-
+{{else}}func (self {{.Name}}) {{.String}}() string { return string(self) }
+{{end}}
 func (self {{.Name}}) {{.Wire}}() string { return string(self) }
 
 func (self {{.Name}}) {{.Known}}() bool {
@@ -52,10 +56,13 @@ return 0, false
 }
 
 func {{.FromCode}}(code {{.Codes}}) ({{.Name}}, bool) {
-if i, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], code); ok {
-return {{.ByCode}}[i], true
+{{if .First}}if i := {{.CodeIndex}}; i < uint64(len({{.Members}})) {
+return {{.Keys}}[{{.Members}}[i]], true
 }
-return "", false
+{{else}}if i, ok := {{.Slices}}.BinarySearch({{.CodeKeys}}[:], code); ok {
+return {{.Keys}}[{{.ByCode}}[i]], true
+}
+{{end}}return "", false
 }
 
 {{end}}
@@ -64,8 +71,8 @@ func (self {{.Name}}) {{.Retired}}() bool {
 const flags = {{.Flags}}
 {{if .Search}}i, ok := {{.Slices}}.BinarySearch({{.Search}}[:], self)
 return ok && flags[i] == '{{.FlagRetired}}'
-{{else}}i := uint({{.Value}})
-return i < uint(len(flags)) && flags[i] == '{{.FlagRetired}}'
+{{else}}i := {{.Index}}
+return i < {{.Wide}}(len(flags)) && flags[i] == '{{.FlagRetired}}'
 {{end}}}
 
 {{end}}

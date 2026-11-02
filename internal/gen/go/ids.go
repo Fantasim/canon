@@ -7,7 +7,7 @@ func (g *gen) writeID(s *enumSpec) {
 	v := g.enumView(s)
 	g.writeTable(v.Names, goString, quoted(s.names))
 	g.printf(idFormat, s.name, v.Names, g.use(strconvPkg, strconvPkg), s.value, v.Parse, g.use(errorsPkg, errorsPkg))
-	g.writeParse(s, v)
+	g.writeParse(s, v, identity(len(s.consts)))
 	g.writeRetired(s, v, "", identity(len(s.consts)))
 }
 
@@ -31,5 +31,5 @@ func (g *gen) writeBranch(s *enumSpec) {
 	v := g.enumView(s)
 	g.writeTable(v.Names, goString, quoted(s.names))
 	g.printf(branchFormat, s.name, v.Names, g.use(strconvPkg, strconvPkg), v.Parse, g.use(errorsPkg, errorsPkg))
-	g.writeParse(s, v)
+	g.writeParse(s, v, identity(len(s.consts)))
 }

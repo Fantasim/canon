@@ -42,13 +42,11 @@ func (self Status) Wire() string {
 	return "Status(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Status = [...]string{"closed", "open"}
-
-var enumFound_Status = [...]Status{{1}, {0}}
+var enumByWire_Status = [...]uint8{1, 0}
 
 func ParseStatus(wire string) (Status, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Status[:], wire); ok {
-		return enumFound_Status[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Status[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Status[at], text) }); ok {
+		return Status{enumByWire_Status[i]}, true
 	}
 	return Status{}, false
 }

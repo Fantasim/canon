@@ -43,13 +43,11 @@ func (self K) Wire() string {
 	return "K(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_K = [...]string{"one", "three", "two"}
-
-var enumFound_K = [...]K{{0}, {2}, {1}}
+var enumByWire_K = [...]uint8{0, 2, 1}
 
 func ParseK(wire string) (K, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_K[:], wire); ok {
-		return enumFound_K[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_K[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_K[at], text) }); ok {
+		return K{enumByWire_K[i]}, true
 	}
 	return K{}, false
 }
@@ -147,13 +145,11 @@ func (self *PBranch) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_PBranch = [...]string{"one", "two"}
-
-var enumFound_PBranch = [...]PBranch{{0}, {1}}
+var enumByWire_PBranch = [...]uint8{0, 1}
 
 func ParsePBranch(name string) (PBranch, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_PBranch[:], name); ok {
-		return enumFound_PBranch[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_PBranch[:], name, func(at uint8, text string) int { return strings.Compare(enumNames_PBranch[at], text) }); ok {
+		return PBranch{enumByWire_PBranch[i]}, true
 	}
 	return PBranch{}, false
 }

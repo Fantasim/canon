@@ -44,13 +44,11 @@ func (self Shape) Wire() string {
 	return "Shape(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Shape = [...]string{"count", "none_", "place"}
-
-var enumFound_Shape = [...]Shape{{0}, {2}, {1}}
+var enumByWire_Shape = [...]uint8{0, 2, 1}
 
 func ParseShape(wire string) (Shape, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Shape[:], wire); ok {
-		return enumFound_Shape[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Shape[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Shape[at], text) }); ok {
+		return Shape{enumByWire_Shape[i]}, true
 	}
 	return Shape{}, false
 }
@@ -137,13 +135,11 @@ func (self Event) Wire() string {
 	return "Event(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Event = [...]string{"beat_monster", "new_day", "reach_place"}
-
-var enumFound_Event = [...]Event{{0}, {2}, {1}}
+var enumByWire_Event = [...]uint8{0, 2, 1}
 
 func ParseEvent(wire string) (Event, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Event[:], wire); ok {
-		return enumFound_Event[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Event[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Event[at], text) }); ok {
+		return Event{enumByWire_Event[i]}, true
 	}
 	return Event{}, false
 }
@@ -241,13 +237,11 @@ func (self *ParamBranch) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_ParamBranch = [...]string{"count", "place"}
-
-var enumFound_ParamBranch = [...]ParamBranch{{0}, {1}}
+var enumByWire_ParamBranch = [...]uint8{0, 1}
 
 func ParseParamBranch(name string) (ParamBranch, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ParamBranch[:], name); ok {
-		return enumFound_ParamBranch[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ParamBranch[:], name, func(at uint8, text string) int { return strings.Compare(enumNames_ParamBranch[at], text) }); ok {
+		return ParamBranch{enumByWire_ParamBranch[i]}, true
 	}
 	return ParamBranch{}, false
 }

@@ -9,6 +9,7 @@ import (
 	"math"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -68,13 +69,11 @@ func (self Element) Wire() string {
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_Element = [...]string{"EARTH", "FIRE", "WATER"}
-
-var enumFound_Element = [...]Element{ElementEarth, ElementFire, ElementWater}
+var enumByWire_Element = [...]uint8{2, 0, 1}
 
 func ParseElement(wire string) (Element, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Element[:], wire); ok {
-		return enumFound_Element[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Element[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Element[at], text) }); ok {
+		return enumCodes_Element[enumByWire_Element[i]], true
 	}
 	return 0, false
 }
@@ -147,13 +146,11 @@ func (self Grade) Wire() string {
 	return "Grade(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Grade = [...]string{"normal", "ultimate-1", "unique"}
-
-var enumFound_Grade = [...]Grade{{0}, {2}, {1}}
+var enumByWire_Grade = [...]uint8{0, 2, 1}
 
 func ParseGrade(wire string) (Grade, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Grade[:], wire); ok {
-		return enumFound_Grade[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Grade[:], wire, func(at uint8, text string) int { return strings.Compare(enumWires_Grade[at], text) }); ok {
+		return Grade{enumByWire_Grade[i]}, true
 	}
 	return Grade{}, false
 }
@@ -235,13 +232,11 @@ func (self Feeling) Wire() string {
 	return "Feeling(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Feeling = [...]string{"api_url", "calm"}
-
-var enumFound_Feeling = [...]Feeling{{1}, {0}}
+var enumByWire_Feeling = [...]uint8{1, 0}
 
 func ParseFeeling(wire string) (Feeling, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Feeling[:], wire); ok {
-		return enumFound_Feeling[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Feeling[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Feeling[at], text) }); ok {
+		return Feeling{enumByWire_Feeling[i]}, true
 	}
 	return Feeling{}, false
 }
@@ -324,13 +319,11 @@ func (self ShapeKind) Wire() string {
 	return "ShapeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_ShapeKind = [...]string{"circle", "none_", "square"}
-
-var enumFound_ShapeKind = [...]ShapeKind{{0}, {2}, {1}}
+var enumByWire_ShapeKind = [...]uint8{0, 2, 1}
 
 func ParseShapeKind(wire string) (ShapeKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ShapeKind[:], wire); ok {
-		return enumFound_ShapeKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ShapeKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_ShapeKind[at], text) }); ok {
+		return ShapeKind{enumByWire_ShapeKind[i]}, true
 	}
 	return ShapeKind{}, false
 }
@@ -407,13 +400,11 @@ func (self *RuneID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_RuneID = [...]string{"alpha", "beta_2"}
-
-var enumFound_RuneID = [...]RuneID{{0}, {1}}
+var enumByWire_RuneID = [...]uint8{0, 1}
 
 func ParseRuneID(key string) (RuneID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_RuneID[:], key); ok {
-		return enumFound_RuneID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_RuneID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_RuneID[at], text) }); ok {
+		return RuneID{enumByWire_RuneID[i]}, true
 	}
 	return RuneID{}, false
 }

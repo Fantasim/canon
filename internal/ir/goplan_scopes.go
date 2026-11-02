@@ -255,7 +255,7 @@ func (pl *GoNamePlan) declareIDEnums(top *nameScope) map[string]bool {
 			pl.declareFrom(top, pl.valueOrigin(v)+qnameSep+id, v, derivation{rec, func() string { return pl.IDMemberName(rec, id) }})
 		}
 		pl.declareFrom(top, pl.valueOrigin(v), v, derivation{rec, func() string { return pl.ParseName(pl.IDTypeName(rec)) }})
-		pl.declareTables(top, name, pl.valueOrigin(v), v, GoTableNames, GoTableKeys, GoTableFound)
+		pl.declareTables(top, name, pl.valueOrigin(v), v, GoTableNames, GoTableByWire)
 		pl.declareMethods(name, pl.valueOrigin(v), v, goIDMethods)
 		pl.declare(pl.scope(name), goPositionField, pl.valueOrigin(v), v)
 	}

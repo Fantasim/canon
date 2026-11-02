@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	"gitlab.com/sovereign15/monitoring/gen/telemetry/rt"
@@ -75,21 +76,15 @@ func (self EventType) Wire() string {
 	return "EventType(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_EventType = [...]string{
-	"farm_events", "item_consumed", "item_created", "mail_item_received",
-	"penya_drops", "server_lifecycle", "sovereign_events", "trade_penya",
-	"world_boss_spawns",
-}
-
-var enumFound_EventType = [...]EventType{
-	EventTypeFarmEvents, EventTypeItemConsumed, EventTypeItemCreated, EventTypeMailItemReceived,
-	EventTypePenyaDrops, EventTypeServerLifecycle, EventTypeSovereignEvents, EventTypeTradePenya,
-	EventTypeWorldBossSpawns,
+var enumByWire_EventType = [...]uint8{
+	6, 2, 0, 1,
+	3, 5, 7, 4,
+	8,
 }
 
 func ParseEventType(wire string) (EventType, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_EventType[:], wire); ok {
-		return enumFound_EventType[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_EventType[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_EventType[at], text) }); ok {
+		return enumCodes_EventType[enumByWire_EventType[i]], true
 	}
 	return 0, false
 }
@@ -153,43 +148,33 @@ const (
 	TierReadonly Tier = 4
 )
 
-var enumCodes_Tier = [...]Tier{
-	TierHot, TierWarm, TierCool, TierTiny,
-	TierReadonly,
-}
-
 var enumNames_Tier = [...]string{
 	"HOT", "WARM", "COOL", "TINY",
 	"READONLY",
 }
 
 func (self Tier) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_Tier[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_Tier)) {
 		return enumNames_Tier[i]
 	}
 	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Tier) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_Tier[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_Tier)) {
 		return enumNames_Tier[i]
 	}
 	return "Tier(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_Tier = [...]string{
-	"COOL", "HOT", "READONLY", "TINY",
-	"WARM",
-}
-
-var enumFound_Tier = [...]Tier{
-	TierCool, TierHot, TierReadonly, TierTiny,
-	TierWarm,
+var enumByWire_Tier = [...]uint8{
+	2, 0, 4, 3,
+	1,
 }
 
 func ParseTier(wire string) (Tier, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Tier[:], wire); ok {
-		return enumFound_Tier[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Tier[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Tier[at], text) }); ok {
+		return Tier(int64(enumByWire_Tier[i]) + 0), true
 	}
 	return 0, false
 }
@@ -197,8 +182,8 @@ func ParseTier(wire string) (Tier, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Tier) Retired() bool {
 	const flags = "00000"
-	i, ok := slices.BinarySearch(enumCodes_Tier[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 0)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_Tier = [...]Tier{
@@ -231,9 +216,8 @@ func TierLiveMembers() iter.Seq[Tier] {
 func (self Tier) Code() uint8 { return uint8(self) }
 
 func TierFromCode(code uint8) (Tier, bool) {
-	v := Tier(code)
-	if _, ok := slices.BinarySearch(enumCodes_Tier[:], v); ok {
-		return v, true
+	if uint64(int64(code)-0) < uint64(len(enumNames_Tier)) {
+		return Tier(code), true
 	}
 	return 0, false
 }
@@ -251,43 +235,33 @@ const (
 	ProducerItemTool       Producer = 7
 )
 
-var enumCodes_Producer = [...]Producer{
-	ProducerWorldServer, ProducerCoreServer, ProducerDatabaseServer, ProducerLoginServer,
-	ProducerCacheServer, ProducerDataIngester, ProducerItemTool,
-}
-
 var enumNames_Producer = [...]string{
 	"WorldServer", "CoreServer", "DatabaseServer", "LoginServer",
 	"CacheServer", "DataIngester", "ItemTool",
 }
 
 func (self Producer) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_Producer[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_Producer)) {
 		return enumNames_Producer[i]
 	}
 	return "Producer(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self Producer) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_Producer[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_Producer)) {
 		return enumNames_Producer[i]
 	}
 	return "Producer(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_Producer = [...]string{
-	"CacheServer", "CoreServer", "DataIngester", "DatabaseServer",
-	"ItemTool", "LoginServer", "WorldServer",
-}
-
-var enumFound_Producer = [...]Producer{
-	ProducerCacheServer, ProducerCoreServer, ProducerDataIngester, ProducerDatabaseServer,
-	ProducerItemTool, ProducerLoginServer, ProducerWorldServer,
+var enumByWire_Producer = [...]uint8{
+	4, 1, 5, 2,
+	6, 3, 0,
 }
 
 func ParseProducer(wire string) (Producer, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Producer[:], wire); ok {
-		return enumFound_Producer[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Producer[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Producer[at], text) }); ok {
+		return Producer(int64(enumByWire_Producer[i]) + 1), true
 	}
 	return 0, false
 }
@@ -295,8 +269,8 @@ func ParseProducer(wire string) (Producer, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self Producer) Retired() bool {
 	const flags = "0000000"
-	i, ok := slices.BinarySearch(enumCodes_Producer[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 1)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_Producer = [...]Producer{
@@ -329,9 +303,8 @@ func ProducerLiveMembers() iter.Seq[Producer] {
 func (self Producer) Code() uint8 { return uint8(self) }
 
 func ProducerFromCode(code uint8) (Producer, bool) {
-	v := Producer(code)
-	if _, ok := slices.BinarySearch(enumCodes_Producer[:], v); ok {
-		return v, true
+	if uint64(int64(code)-1) < uint64(len(enumNames_Producer)) {
+		return Producer(code), true
 	}
 	return 0, false
 }
@@ -362,13 +335,11 @@ func (self Enqueue) Wire() string {
 	return "Enqueue(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Enqueue = [...]string{"generated", "internal"}
-
-var enumFound_Enqueue = [...]Enqueue{{0}, {1}}
+var enumByWire_Enqueue = [...]uint8{0, 1}
 
 func ParseEnqueue(wire string) (Enqueue, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Enqueue[:], wire); ok {
-		return enumFound_Enqueue[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Enqueue[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Enqueue[at], text) }); ok {
+		return Enqueue{enumByWire_Enqueue[i]}, true
 	}
 	return Enqueue{}, false
 }
@@ -462,21 +433,15 @@ func (self SqlType) Wire() string {
 	return "SqlType(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_SqlType = [...]string{
-	"BIGINT", "FLOAT", "INTEGER", "SMALLINT",
-	"TINYINT", "UBIGINT", "UINTEGER", "USMALLINT",
-	"UTINYINT",
-}
-
-var enumFound_SqlType = [...]SqlType{
-	{7}, {8}, {6}, {5},
-	{4}, {3}, {2}, {1},
-	{0},
+var enumByWire_SqlType = [...]uint8{
+	7, 8, 6, 5,
+	4, 3, 2, 1,
+	0,
 }
 
 func ParseSqlType(wire string) (SqlType, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_SqlType[:], wire); ok {
-		return enumFound_SqlType[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_SqlType[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_SqlType[at], text) }); ok {
+		return SqlType{enumByWire_SqlType[i]}, true
 	}
 	return SqlType{}, false
 }
@@ -569,13 +534,11 @@ func (self FieldKind) Wire() string {
 	return "FieldKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_FieldKind = [...]string{"enum8", "id", "scalar", "ts"}
-
-var enumFound_FieldKind = [...]FieldKind{{3}, {1}, {2}, {0}}
+var enumByWire_FieldKind = [...]uint8{3, 1, 2, 0}
 
 func ParseFieldKind(wire string) (FieldKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_FieldKind[:], wire); ok {
-		return enumFound_FieldKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_FieldKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_FieldKind[at], text) }); ok {
+		return FieldKind{enumByWire_FieldKind[i]}, true
 	}
 	return FieldKind{}, false
 }
@@ -662,13 +625,11 @@ func (self Currency) Wire() string {
 	return "Currency(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Currency = [...]string{"gold", "item", "none"}
-
-var enumFound_Currency = [...]Currency{{0}, {1}, {2}}
+var enumByWire_Currency = [...]uint8{0, 1, 2}
 
 func ParseCurrency(wire string) (Currency, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Currency[:], wire); ok {
-		return enumFound_Currency[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Currency[:], wire, func(at uint8, text string) int { return strings.Compare(enumWires_Currency[at], text) }); ok {
+		return Currency{enumByWire_Currency[i]}, true
 	}
 	return Currency{}, false
 }
@@ -755,13 +716,11 @@ func (self Bucket) Wire() string {
 	return "Bucket(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Bucket = [...]string{"mint", "none", "sink", "transfer"}
-
-var enumFound_Bucket = [...]Bucket{{0}, {3}, {1}, {2}}
+var enumByWire_Bucket = [...]uint8{0, 3, 1, 2}
 
 func ParseBucket(wire string) (Bucket, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Bucket[:], wire); ok {
-		return enumFound_Bucket[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Bucket[:], wire, func(at uint8, text string) int { return strings.Compare(enumWires_Bucket[at], text) }); ok {
+		return Bucket{enumByWire_Bucket[i]}, true
 	}
 	return Bucket{}, false
 }
@@ -844,13 +803,11 @@ func (self Leg) Wire() string {
 	return "Leg(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Leg = [...]string{"in", "out"}
-
-var enumFound_Leg = [...]Leg{{1}, {0}}
+var enumByWire_Leg = [...]uint8{1, 0}
 
 func ParseLeg(wire string) (Leg, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Leg[:], wire); ok {
-		return enumFound_Leg[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Leg[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Leg[at], text) }); ok {
+		return Leg{enumByWire_Leg[i]}, true
 	}
 	return Leg{}, false
 }
@@ -935,12 +892,6 @@ const (
 	FarmEventKindLeave FarmEventKind = 10
 )
 
-var enumCodes_FarmEventKind = [...]FarmEventKind{
-	FarmEventKindPurchase, FarmEventKindClaimBatch, FarmEventKindClaimSlot, FarmEventKindLevelUp,
-	FarmEventKindSetupModel, FarmEventKindRemoveModel, FarmEventKindUnlockModel, FarmEventKindEnterOwn,
-	FarmEventKindVisitOther, FarmEventKindLeave,
-}
-
 var enumNames_FarmEventKind = [...]string{
 	"Purchase", "ClaimBatch", "ClaimSlot", "LevelUp",
 	"SetupModel", "RemoveModel", "UnlockModel", "EnterOwn",
@@ -948,34 +899,28 @@ var enumNames_FarmEventKind = [...]string{
 }
 
 func (self FarmEventKind) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_FarmEventKind)) {
 		return enumNames_FarmEventKind[i]
 	}
 	return "FarmEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self FarmEventKind) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_FarmEventKind)) {
 		return enumNames_FarmEventKind[i]
 	}
 	return "FarmEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_FarmEventKind = [...]string{
-	"ClaimBatch", "ClaimSlot", "EnterOwn", "Leave",
-	"LevelUp", "Purchase", "RemoveModel", "SetupModel",
-	"UnlockModel", "VisitOther",
-}
-
-var enumFound_FarmEventKind = [...]FarmEventKind{
-	FarmEventKindClaimBatch, FarmEventKindClaimSlot, FarmEventKindEnterOwn, FarmEventKindLeave,
-	FarmEventKindLevelUp, FarmEventKindPurchase, FarmEventKindRemoveModel, FarmEventKindSetupModel,
-	FarmEventKindUnlockModel, FarmEventKindVisitOther,
+var enumByWire_FarmEventKind = [...]uint8{
+	1, 2, 7, 9,
+	3, 0, 5, 4,
+	6, 8,
 }
 
 func ParseFarmEventKind(wire string) (FarmEventKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_FarmEventKind[:], wire); ok {
-		return enumFound_FarmEventKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_FarmEventKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_FarmEventKind[at], text) }); ok {
+		return FarmEventKind(int64(enumByWire_FarmEventKind[i]) + 1), true
 	}
 	return 0, false
 }
@@ -983,8 +928,8 @@ func ParseFarmEventKind(wire string) (FarmEventKind, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self FarmEventKind) Retired() bool {
 	const flags = "0000000000"
-	i, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 1)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_FarmEventKind = [...]FarmEventKind{
@@ -1018,9 +963,8 @@ func FarmEventKindLiveMembers() iter.Seq[FarmEventKind] {
 func (self FarmEventKind) Code() uint8 { return uint8(self) }
 
 func FarmEventKindFromCode(code uint8) (FarmEventKind, bool) {
-	v := FarmEventKind(code)
-	if _, ok := slices.BinarySearch(enumCodes_FarmEventKind[:], v); ok {
-		return v, true
+	if uint64(int64(code)-1) < uint64(len(enumNames_FarmEventKind)) {
+		return FarmEventKind(code), true
 	}
 	return 0, false
 }
@@ -1039,31 +983,27 @@ const (
 	SovereignEventKindRewardGranted SovereignEventKind = 4
 )
 
-var enumCodes_SovereignEventKind = [...]SovereignEventKind{SovereignEventKindRoleAssigned, SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted}
-
 var enumNames_SovereignEventKind = [...]string{"RoleAssigned", "DoctrineSet", "PowerTriggered", "RewardGranted"}
 
 func (self SovereignEventKind) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_SovereignEventKind)) {
 		return enumNames_SovereignEventKind[i]
 	}
 	return "SovereignEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignEventKind) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_SovereignEventKind)) {
 		return enumNames_SovereignEventKind[i]
 	}
 	return "SovereignEventKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_SovereignEventKind = [...]string{"DoctrineSet", "PowerTriggered", "RewardGranted", "RoleAssigned"}
-
-var enumFound_SovereignEventKind = [...]SovereignEventKind{SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted, SovereignEventKindRoleAssigned}
+var enumByWire_SovereignEventKind = [...]uint8{1, 2, 3, 0}
 
 func ParseSovereignEventKind(wire string) (SovereignEventKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_SovereignEventKind[:], wire); ok {
-		return enumFound_SovereignEventKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_SovereignEventKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_SovereignEventKind[at], text) }); ok {
+		return SovereignEventKind(int64(enumByWire_SovereignEventKind[i]) + 1), true
 	}
 	return 0, false
 }
@@ -1071,8 +1011,8 @@ func ParseSovereignEventKind(wire string) (SovereignEventKind, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self SovereignEventKind) Retired() bool {
 	const flags = "0000"
-	i, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 1)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_SovereignEventKind = [...]SovereignEventKind{SovereignEventKindRoleAssigned, SovereignEventKindDoctrineSet, SovereignEventKindPowerTriggered, SovereignEventKindRewardGranted}
@@ -1102,9 +1042,8 @@ func SovereignEventKindLiveMembers() iter.Seq[SovereignEventKind] {
 func (self SovereignEventKind) Code() uint8 { return uint8(self) }
 
 func SovereignEventKindFromCode(code uint8) (SovereignEventKind, bool) {
-	v := SovereignEventKind(code)
-	if _, ok := slices.BinarySearch(enumCodes_SovereignEventKind[:], v); ok {
-		return v, true
+	if uint64(int64(code)-1) < uint64(len(enumNames_SovereignEventKind)) {
+		return SovereignEventKind(code), true
 	}
 	return 0, false
 }
@@ -1122,43 +1061,33 @@ const (
 	SovereignRoleMinisterCraftsmanship SovereignRole = 5
 )
 
-var enumCodes_SovereignRole = [...]SovereignRole{
-	SovereignRoleNone, SovereignRoleSovereign, SovereignRoleMinisterMilitary, SovereignRoleMinisterEconomy,
-	SovereignRoleMinisterEnvironment, SovereignRoleMinisterCraftsmanship,
-}
-
 var enumNames_SovereignRole = [...]string{
 	"None", "Sovereign", "MinisterMilitary", "MinisterEconomy",
 	"MinisterEnvironment", "MinisterCraftsmanship",
 }
 
 func (self SovereignRole) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignRole[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_SovereignRole)) {
 		return enumNames_SovereignRole[i]
 	}
 	return "SovereignRole(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignRole) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignRole[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_SovereignRole)) {
 		return enumNames_SovereignRole[i]
 	}
 	return "SovereignRole(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_SovereignRole = [...]string{
-	"MinisterCraftsmanship", "MinisterEconomy", "MinisterEnvironment", "MinisterMilitary",
-	"None", "Sovereign",
-}
-
-var enumFound_SovereignRole = [...]SovereignRole{
-	SovereignRoleMinisterCraftsmanship, SovereignRoleMinisterEconomy, SovereignRoleMinisterEnvironment, SovereignRoleMinisterMilitary,
-	SovereignRoleNone, SovereignRoleSovereign,
+var enumByWire_SovereignRole = [...]uint8{
+	5, 3, 4, 2,
+	0, 1,
 }
 
 func ParseSovereignRole(wire string) (SovereignRole, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_SovereignRole[:], wire); ok {
-		return enumFound_SovereignRole[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_SovereignRole[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_SovereignRole[at], text) }); ok {
+		return SovereignRole(int64(enumByWire_SovereignRole[i]) + 0), true
 	}
 	return 0, false
 }
@@ -1166,8 +1095,8 @@ func ParseSovereignRole(wire string) (SovereignRole, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self SovereignRole) Retired() bool {
 	const flags = "000000"
-	i, ok := slices.BinarySearch(enumCodes_SovereignRole[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 0)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_SovereignRole = [...]SovereignRole{
@@ -1200,9 +1129,8 @@ func SovereignRoleLiveMembers() iter.Seq[SovereignRole] {
 func (self SovereignRole) Code() uint8 { return uint8(self) }
 
 func SovereignRoleFromCode(code uint8) (SovereignRole, bool) {
-	v := SovereignRole(code)
-	if _, ok := slices.BinarySearch(enumCodes_SovereignRole[:], v); ok {
-		return v, true
+	if uint64(int64(code)-0) < uint64(len(enumNames_SovereignRole)) {
+		return SovereignRole(code), true
 	}
 	return 0, false
 }
@@ -1222,43 +1150,33 @@ const (
 	SovereignDoctrineFamiliar      SovereignDoctrine = 7
 )
 
-var enumCodes_SovereignDoctrine = [...]SovereignDoctrine{
-	SovereignDoctrineNone, SovereignDoctrineMythic, SovereignDoctrineMilitary, SovereignDoctrineMerchant,
-	SovereignDoctrineProgressive, SovereignDoctrineChancellor, SovereignDoctrineCraftsmanship, SovereignDoctrineFamiliar,
-}
-
 var enumNames_SovereignDoctrine = [...]string{
 	"None", "Mythic", "Military", "Merchant",
 	"Progressive", "Chancellor", "Craftsmanship", "Familiar",
 }
 
 func (self SovereignDoctrine) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_SovereignDoctrine)) {
 		return enumNames_SovereignDoctrine[i]
 	}
 	return "SovereignDoctrine(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignDoctrine) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_SovereignDoctrine)) {
 		return enumNames_SovereignDoctrine[i]
 	}
 	return "SovereignDoctrine(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_SovereignDoctrine = [...]string{
-	"Chancellor", "Craftsmanship", "Familiar", "Merchant",
-	"Military", "Mythic", "None", "Progressive",
-}
-
-var enumFound_SovereignDoctrine = [...]SovereignDoctrine{
-	SovereignDoctrineChancellor, SovereignDoctrineCraftsmanship, SovereignDoctrineFamiliar, SovereignDoctrineMerchant,
-	SovereignDoctrineMilitary, SovereignDoctrineMythic, SovereignDoctrineNone, SovereignDoctrineProgressive,
+var enumByWire_SovereignDoctrine = [...]uint8{
+	5, 6, 7, 3,
+	2, 1, 0, 4,
 }
 
 func ParseSovereignDoctrine(wire string) (SovereignDoctrine, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_SovereignDoctrine[:], wire); ok {
-		return enumFound_SovereignDoctrine[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_SovereignDoctrine[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_SovereignDoctrine[at], text) }); ok {
+		return SovereignDoctrine(int64(enumByWire_SovereignDoctrine[i]) + 0), true
 	}
 	return 0, false
 }
@@ -1266,8 +1184,8 @@ func ParseSovereignDoctrine(wire string) (SovereignDoctrine, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self SovereignDoctrine) Retired() bool {
 	const flags = "00000000"
-	i, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 0)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_SovereignDoctrine = [...]SovereignDoctrine{
@@ -1300,9 +1218,8 @@ func SovereignDoctrineLiveMembers() iter.Seq[SovereignDoctrine] {
 func (self SovereignDoctrine) Code() uint8 { return uint8(self) }
 
 func SovereignDoctrineFromCode(code uint8) (SovereignDoctrine, bool) {
-	v := SovereignDoctrine(code)
-	if _, ok := slices.BinarySearch(enumCodes_SovereignDoctrine[:], v); ok {
-		return v, true
+	if uint64(int64(code)-0) < uint64(len(enumNames_SovereignDoctrine)) {
+		return SovereignDoctrine(code), true
 	}
 	return 0, false
 }
@@ -1327,12 +1244,6 @@ const (
 	SovereignPowerCustomDrop           SovereignPower = 8
 )
 
-var enumCodes_SovereignPower = [...]SovereignPower{
-	SovereignPowerNone, SovereignPowerMinisterBuffPrimary, SovereignPowerMinisterBuffSecondary, SovereignPowerWorldBossSpawn,
-	SovereignPowerHiddenBonds, SovereignPowerHeistia, SovereignPowerAzuriaAuction, SovereignPowerMinisterBuffTertiary,
-	SovereignPowerCustomDrop,
-}
-
 var enumNames_SovereignPower = [...]string{
 	"None", "MinisterBuffPrimary", "MinisterBuffSecondary", "WorldBossSpawn",
 	"HiddenBonds", "Heistia", "AzuriaAuction", "MinisterBuffTertiary",
@@ -1340,34 +1251,28 @@ var enumNames_SovereignPower = [...]string{
 }
 
 func (self SovereignPower) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignPower[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_SovereignPower)) {
 		return enumNames_SovereignPower[i]
 	}
 	return "SovereignPower(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self SovereignPower) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_SovereignPower[:], self); ok {
+	if i := uint64(int64(self) - 0); i < uint64(len(enumNames_SovereignPower)) {
 		return enumNames_SovereignPower[i]
 	}
 	return "SovereignPower(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_SovereignPower = [...]string{
-	"AzuriaAuction", "CustomDrop", "Heistia", "HiddenBonds",
-	"MinisterBuffPrimary", "MinisterBuffSecondary", "MinisterBuffTertiary", "None",
-	"WorldBossSpawn",
-}
-
-var enumFound_SovereignPower = [...]SovereignPower{
-	SovereignPowerAzuriaAuction, SovereignPowerCustomDrop, SovereignPowerHeistia, SovereignPowerHiddenBonds,
-	SovereignPowerMinisterBuffPrimary, SovereignPowerMinisterBuffSecondary, SovereignPowerMinisterBuffTertiary, SovereignPowerNone,
-	SovereignPowerWorldBossSpawn,
+var enumByWire_SovereignPower = [...]uint8{
+	6, 8, 5, 4,
+	1, 2, 7, 0,
+	3,
 }
 
 func ParseSovereignPower(wire string) (SovereignPower, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_SovereignPower[:], wire); ok {
-		return enumFound_SovereignPower[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_SovereignPower[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_SovereignPower[at], text) }); ok {
+		return SovereignPower(int64(enumByWire_SovereignPower[i]) + 0), true
 	}
 	return 0, false
 }
@@ -1375,8 +1280,8 @@ func ParseSovereignPower(wire string) (SovereignPower, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self SovereignPower) Retired() bool {
 	const flags = "000100000"
-	i, ok := slices.BinarySearch(enumCodes_SovereignPower[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 0)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_SovereignPower = [...]SovereignPower{
@@ -1410,9 +1315,8 @@ func SovereignPowerLiveMembers() iter.Seq[SovereignPower] {
 func (self SovereignPower) Code() uint8 { return uint8(self) }
 
 func SovereignPowerFromCode(code uint8) (SovereignPower, bool) {
-	v := SovereignPower(code)
-	if _, ok := slices.BinarySearch(enumCodes_SovereignPower[:], v); ok {
-		return v, true
+	if uint64(int64(code)-0) < uint64(len(enumNames_SovereignPower)) {
+		return SovereignPower(code), true
 	}
 	return 0, false
 }
@@ -1425,31 +1329,27 @@ const (
 	LifecycleKindStop  LifecycleKind = 2
 )
 
-var enumCodes_LifecycleKind = [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop}
-
 var enumNames_LifecycleKind = [...]string{"Start", "Stop"}
 
 func (self LifecycleKind) String() string {
-	if i, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_LifecycleKind)) {
 		return enumNames_LifecycleKind[i]
 	}
 	return "LifecycleKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
 func (self LifecycleKind) Wire() string {
-	if i, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], self); ok {
+	if i := uint64(int64(self) - 1); i < uint64(len(enumNames_LifecycleKind)) {
 		return enumNames_LifecycleKind[i]
 	}
 	return "LifecycleKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_LifecycleKind = [...]string{"Start", "Stop"}
-
-var enumFound_LifecycleKind = [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop}
+var enumByWire_LifecycleKind = [...]uint8{0, 1}
 
 func ParseLifecycleKind(wire string) (LifecycleKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_LifecycleKind[:], wire); ok {
-		return enumFound_LifecycleKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_LifecycleKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_LifecycleKind[at], text) }); ok {
+		return LifecycleKind(int64(enumByWire_LifecycleKind[i]) + 1), true
 	}
 	return 0, false
 }
@@ -1457,8 +1357,8 @@ func ParseLifecycleKind(wire string) (LifecycleKind, bool) {
 // Retired reports whether the member is retired; a value that is no member is not.
 func (self LifecycleKind) Retired() bool {
 	const flags = "00"
-	i, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], self)
-	return ok && flags[i] == '1'
+	i := uint64(int64(self) - 1)
+	return i < uint64(len(flags)) && flags[i] == '1'
 }
 
 var enumMembers_LifecycleKind = [...]LifecycleKind{LifecycleKindStart, LifecycleKindStop}
@@ -1488,9 +1388,8 @@ func LifecycleKindLiveMembers() iter.Seq[LifecycleKind] {
 func (self LifecycleKind) Code() uint8 { return uint8(self) }
 
 func LifecycleKindFromCode(code uint8) (LifecycleKind, bool) {
-	v := LifecycleKind(code)
-	if _, ok := slices.BinarySearch(enumCodes_LifecycleKind[:], v); ok {
-		return v, true
+	if uint64(int64(code)-1) < uint64(len(enumNames_LifecycleKind)) {
+		return LifecycleKind(code), true
 	}
 	return 0, false
 }
@@ -1561,23 +1460,16 @@ func (self GrantKind) Wire() string {
 	return "GrantKind(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_GrantKind = [...]string{
-	"AUCTION_ESCROW_RECOVERY", "BOSS_REWARD_MAIL", "BUFF_REWARD", "BUYBACK_DELIVERY",
-	"EVENT_REWARD", "FARM_HARVEST", "GUILD_DISBAND_BANK", "LEVEL_UP_GIFT",
-	"MAIL_RETURN", "PERIN_OVERFLOW", "PLAYER_MAIL", "STARTER_ITEM",
-	"UNKNOWN", "WORLD_BOSS_REWARD_MAIL",
-}
-
-var enumFound_GrantKind = [...]GrantKind{
-	GrantKindAuctionEscrowRecovery, GrantKindBossRewardMail, GrantKindBuffReward, GrantKindBuybackDelivery,
-	GrantKindEventReward, GrantKindFarmHarvest, GrantKindGuildDisbandBank, GrantKindLevelUpGift,
-	GrantKindMailReturn, GrantKindPerinOverflow, GrantKindPlayerMail, GrantKindStarterItem,
-	GrantKindUnknown, GrantKindWorldBossRewardMail,
+var enumByWire_GrantKind = [...]uint8{
+	13, 4, 2, 1,
+	6, 10, 12, 3,
+	7, 8, 9, 11,
+	0, 5,
 }
 
 func ParseGrantKind(wire string) (GrantKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_GrantKind[:], wire); ok {
-		return enumFound_GrantKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_GrantKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_GrantKind[at], text) }); ok {
+		return enumCodes_GrantKind[enumByWire_GrantKind[i]], true
 	}
 	return 0, false
 }
@@ -1661,19 +1553,14 @@ func (self Vocabulary) Wire() string {
 	return "Vocabulary(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Vocabulary = [...]string{
-	"farm_event_kind", "grant_kind", "lifecycle_kind", "sovereign_doctrine",
-	"sovereign_event_kind", "sovereign_power", "sovereign_role",
-}
-
-var enumFound_Vocabulary = [...]Vocabulary{
-	{0}, {6}, {5}, {3},
-	{1}, {4}, {2},
+var enumByWire_Vocabulary = [...]uint8{
+	0, 6, 5, 3,
+	1, 4, 2,
 }
 
 func ParseVocabulary(wire string) (Vocabulary, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Vocabulary[:], wire); ok {
-		return enumFound_Vocabulary[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Vocabulary[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Vocabulary[at], text) }); ok {
+		return Vocabulary{enumByWire_Vocabulary[i]}, true
 	}
 	return Vocabulary{}, false
 }
@@ -1759,13 +1646,11 @@ func (self RowsKind) Wire() string {
 	return "RowsKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_RowsKind = [...]string{"every", "some"}
-
-var enumFound_RowsKind = [...]RowsKind{{0}, {1}}
+var enumByWire_RowsKind = [...]uint8{0, 1}
 
 func ParseRowsKind(wire string) (RowsKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_RowsKind[:], wire); ok {
-		return enumFound_RowsKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_RowsKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_RowsKind[at], text) }); ok {
+		return RowsKind{enumByWire_RowsKind[i]}, true
 	}
 	return RowsKind{}, false
 }
@@ -1847,19 +1732,14 @@ func (self *MemberBranch) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_MemberBranch = [...]string{
-	"farm_event_kind", "grant_kind", "lifecycle_kind", "sovereign_doctrine",
-	"sovereign_event_kind", "sovereign_power", "sovereign_role",
-}
-
-var enumFound_MemberBranch = [...]MemberBranch{
-	{0}, {6}, {5}, {3},
-	{1}, {4}, {2},
+var enumByWire_MemberBranch = [...]uint8{
+	0, 6, 5, 3,
+	1, 4, 2,
 }
 
 func ParseMemberBranch(name string) (MemberBranch, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_MemberBranch[:], name); ok {
-		return enumFound_MemberBranch[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_MemberBranch[:], name, func(at uint8, text string) int { return strings.Compare(enumNames_MemberBranch[at], text) }); ok {
+		return MemberBranch{enumByWire_MemberBranch[i]}, true
 	}
 	return MemberBranch{}, false
 }

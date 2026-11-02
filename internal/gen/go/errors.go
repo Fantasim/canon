@@ -128,3 +128,16 @@ const (
 	ifNotNilFormat     = "if %s != nil {\n"
 	derefFormat        = "(*%s)"
 )
+
+// The expressions of an enum's index and by-wire search (CODEGEN.md §5.2, DECISIONS 430): a value's index is the value converted (uint), or with codes dense in declaration order the code minus the first in uint64; Parse finds a member from its by-wire index i, a member of an opaque type by its position, of a dense enum by its code, of a sparse one in its sorted codes.
+const (
+	goUint            = "uint"
+	convFormat        = "%s(%s)"
+	denseIndexFormat  = "%[1]s(%[2]s(%[3]s) - %[4]s)"
+	negFirstFormat    = "(%d)"
+	foundOpaqueFormat = "%s{%s[i]}"
+	foundDenseFormat  = "%[1]s(%[2]s(%[3]s[i]) + %[4]s)"
+	foundSparseFormat = "%s[%s[i]]"
+	keyedItemFormat   = "%s[%s]"
+	codeParam         = "code"
+)

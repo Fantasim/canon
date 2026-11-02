@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	"gitlab.com/sovereign15/sovcommon/roles"
@@ -43,13 +44,11 @@ func (self Actor) Wire() string {
 	return "Actor(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Actor = [...]string{"reporter", "reporter_or_triager", "triager"}
-
-var enumFound_Actor = [...]Actor{{0}, {2}, {1}}
+var enumByWire_Actor = [...]uint8{0, 2, 1}
 
 func ParseActor(wire string) (Actor, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Actor[:], wire); ok {
-		return enumFound_Actor[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Actor[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Actor[at], text) }); ok {
+		return Actor{enumByWire_Actor[i]}, true
 	}
 	return Actor{}, false
 }
@@ -134,13 +133,11 @@ func (self PostField) Wire() string {
 	return "PostField(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_PostField = [...]string{"assignee", "duplicate_of", "fixed_in", "reason"}
-
-var enumFound_PostField = [...]PostField{{0}, {3}, {1}, {2}}
+var enumByWire_PostField = [...]uint8{0, 3, 1, 2}
 
 func ParsePostField(wire string) (PostField, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_PostField[:], wire); ok {
-		return enumFound_PostField[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_PostField[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_PostField[at], text) }); ok {
+		return PostField{enumByWire_PostField[i]}, true
 	}
 	return PostField{}, false
 }
@@ -241,13 +238,11 @@ func (self *IntentID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_IntentID = [...]string{"idea", "issue"}
-
-var enumFound_IntentID = [...]IntentID{{1}, {0}}
+var enumByWire_IntentID = [...]uint8{1, 0}
 
 func ParseIntentID(key string) (IntentID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_IntentID[:], key); ok {
-		return enumFound_IntentID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_IntentID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_IntentID[at], text) }); ok {
+		return IntentID{enumByWire_IntentID[i]}, true
 	}
 	return IntentID{}, false
 }
@@ -301,13 +296,11 @@ func (self *FlagID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_FlagID = [...]string{"blocking", "sensitive"}
-
-var enumFound_FlagID = [...]FlagID{{0}, {1}}
+var enumByWire_FlagID = [...]uint8{0, 1}
 
 func ParseFlagID(key string) (FlagID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_FlagID[:], key); ok {
-		return enumFound_FlagID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_FlagID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_FlagID[at], text) }); ok {
+		return FlagID{enumByWire_FlagID[i]}, true
 	}
 	return FlagID{}, false
 }
@@ -368,19 +361,14 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_StatusID = [...]string{
-	"duplicate", "fixed", "open", "taken",
-	"verified", "wont_do",
-}
-
-var enumFound_StatusID = [...]StatusID{
-	{5}, {2}, {0}, {1},
-	{3}, {4},
+var enumByWire_StatusID = [...]uint8{
+	5, 2, 0, 1,
+	3, 4,
 }
 
 func ParseStatusID(key string) (StatusID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
-		return enumFound_StatusID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_StatusID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_StatusID[at], text) }); ok {
+		return StatusID{enumByWire_StatusID[i]}, true
 	}
 	return StatusID{}, false
 }
@@ -436,13 +424,11 @@ func (self *ColumnID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_ColumnID = [...]string{"done", "fixed", "taken", "unclaimed"}
-
-var enumFound_ColumnID = [...]ColumnID{{3}, {2}, {1}, {0}}
+var enumByWire_ColumnID = [...]uint8{3, 2, 1, 0}
 
 func ParseColumnID(key string) (ColumnID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ColumnID[:], key); ok {
-		return enumFound_ColumnID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ColumnID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_ColumnID[at], text) }); ok {
+		return ColumnID{enumByWire_ColumnID[i]}, true
 	}
 	return ColumnID{}, false
 }
@@ -497,13 +483,11 @@ func (self *SeverityID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_SeverityID = [...]string{"critical", "low", "normal"}
-
-var enumFound_SeverityID = [...]SeverityID{{2}, {0}, {1}}
+var enumByWire_SeverityID = [...]uint8{2, 0, 1}
 
 func ParseSeverityID(key string) (SeverityID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_SeverityID[:], key); ok {
-		return enumFound_SeverityID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_SeverityID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_SeverityID[at], text) }); ok {
+		return SeverityID{enumByWire_SeverityID[i]}, true
 	}
 	return SeverityID{}, false
 }
@@ -558,13 +542,11 @@ func (self *AreaGroupID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_AreaGroupID = [...]string{"in_game", "internal", "out_game"}
-
-var enumFound_AreaGroupID = [...]AreaGroupID{{0}, {2}, {1}}
+var enumByWire_AreaGroupID = [...]uint8{0, 2, 1}
 
 func ParseAreaGroupID(key string) (AreaGroupID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_AreaGroupID[:], key); ok {
-		return enumFound_AreaGroupID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_AreaGroupID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_AreaGroupID[at], text) }); ok {
+		return AreaGroupID{enumByWire_AreaGroupID[i]}, true
 	}
 	return AreaGroupID{}, false
 }
@@ -632,21 +614,15 @@ func (self *AreaID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_AreaID = [...]string{
-	"admin_panel", "analytics", "balance", "client",
-	"game", "game_server", "internal", "resource",
-	"resource_studio", "sovcommon", "team_board", "website",
-}
-
-var enumFound_AreaID = [...]AreaID{
-	{8}, {9}, {1}, {5},
-	{0}, {4}, {11}, {6},
-	{3}, {7}, {10}, {2},
+var enumByWire_AreaID = [...]uint8{
+	8, 9, 1, 5,
+	0, 4, 11, 6,
+	3, 7, 10, 2,
 }
 
 func ParseAreaID(key string) (AreaID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_AreaID[:], key); ok {
-		return enumFound_AreaID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_AreaID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_AreaID[at], text) }); ok {
+		return AreaID{enumByWire_AreaID[i]}, true
 	}
 	return AreaID{}, false
 }

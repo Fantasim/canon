@@ -58,12 +58,12 @@ func (self Rarity) Retired() bool {
 	return ok && flags[i] == '1'
 }
 
-var enumMembers_Rarity = [...]Rarity{RarityCommon, RarityRare, RaritySeason1}
+var enumMembers_Rarity = [...]uint8{0, 1, 2}
 
 func RarityMembers() iter.Seq[Rarity] {
 	return func(yield func(Rarity) bool) {
 		for _, m := range enumMembers_Rarity[:] {
-			if !yield(m) {
+			if !yield(enumKeys_Rarity[m]) {
 				return
 			}
 		}
@@ -75,7 +75,7 @@ func RarityLiveMembers() iter.Seq[Rarity] {
 	const retired = "000"
 	return func(yield func(Rarity) bool) {
 		for i, m := range enumMembers_Rarity[:] {
-			if retired[i] != '1' && !yield(m) {
+			if retired[i] != '1' && !yield(enumKeys_Rarity[m]) {
 				return
 			}
 		}
@@ -94,20 +94,9 @@ const (
 
 var enumKeys_Element = [...]Element{ElementFire, ElementWater}
 
-var enumNames_Element = [...]string{"fire", "water"}
-
 var enumNumbers_Element = [...]uint8{1, 2}
 
-var enumCodes_Element = [...]uint8{1, 2}
-
-var enumByCode_Element = [...]Element{ElementFire, ElementWater}
-
-func (self Element) String() string {
-	if i, ok := slices.BinarySearch(enumKeys_Element[:], self); ok {
-		return enumNames_Element[i]
-	}
-	return string(self)
-}
+func (self Element) String() string { return string(self) }
 
 func (self Element) Wire() string { return string(self) }
 
@@ -128,12 +117,12 @@ func (self Element) Retired() bool {
 	return ok && flags[i] == '1'
 }
 
-var enumMembers_Element = [...]Element{ElementFire, ElementWater}
+var enumMembers_Element = [...]uint8{0, 1}
 
 func ElementMembers() iter.Seq[Element] {
 	return func(yield func(Element) bool) {
 		for _, m := range enumMembers_Element[:] {
-			if !yield(m) {
+			if !yield(enumKeys_Element[m]) {
 				return
 			}
 		}
@@ -145,7 +134,7 @@ func ElementLiveMembers() iter.Seq[Element] {
 	const retired = "00"
 	return func(yield func(Element) bool) {
 		for i, m := range enumMembers_Element[:] {
-			if retired[i] != '1' && !yield(m) {
+			if retired[i] != '1' && !yield(enumKeys_Element[m]) {
 				return
 			}
 		}
@@ -160,8 +149,8 @@ func (self Element) Code() (uint8, bool) {
 }
 
 func ElementFromCode(code uint8) (Element, bool) {
-	if i, ok := slices.BinarySearch(enumCodes_Element[:], code); ok {
-		return enumByCode_Element[i], true
+	if i := uint64(int64(code) - 1); i < uint64(len(enumMembers_Element)) {
+		return enumKeys_Element[enumMembers_Element[i]], true
 	}
 	return "", false
 }

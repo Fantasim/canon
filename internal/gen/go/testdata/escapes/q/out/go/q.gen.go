@@ -7,6 +7,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // Q: Stored as codes.
@@ -35,13 +36,11 @@ func (self Q) Wire() string {
 	return "Q(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_Q = [...]string{"HIGH", "LOW"}
-
-var enumFound_Q = [...]Q{QHigh, QLow}
+var enumByWire_Q = [...]uint8{1, 0}
 
 func ParseQ(wire string) (Q, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Q[:], wire); ok {
-		return enumFound_Q[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Q[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Q[at], text) }); ok {
+		return enumCodes_Q[enumByWire_Q[i]], true
 	}
 	return 0, false
 }

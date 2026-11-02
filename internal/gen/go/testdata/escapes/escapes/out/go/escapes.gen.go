@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	d "example.com/features/d/out/go"
@@ -56,13 +57,11 @@ func (self *GateID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_GateID = [...]string{"east", "west"}
-
-var enumFound_GateID = [...]GateID{{0}, {1}}
+var enumByWire_GateID = [...]uint8{0, 1}
 
 func ParseGateID(key string) (GateID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_GateID[:], key); ok {
-		return enumFound_GateID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_GateID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_GateID[at], text) }); ok {
+		return GateID{enumByWire_GateID[i]}, true
 	}
 	return GateID{}, false
 }

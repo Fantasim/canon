@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	"example.com/features/dependent/out/go/rt"
@@ -39,13 +40,11 @@ func (self Goal) Wire() string {
 	return "Goal(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Goal = [...]string{"collect", "kill", "reach_level", "visit"}
-
-var enumFound_Goal = [...]Goal{{1}, {0}, {2}, {3}}
+var enumByWire_Goal = [...]uint8{1, 0, 2, 3}
 
 func ParseGoal(wire string) (Goal, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Goal[:], wire); ok {
-		return enumFound_Goal[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Goal[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Goal[at], text) }); ok {
+		return Goal{enumByWire_Goal[i]}, true
 	}
 	return Goal{}, false
 }
@@ -144,13 +143,11 @@ func (self *TargetBranch) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_TargetBranch = [...]string{"collect", "kill", "reach_level"}
-
-var enumFound_TargetBranch = [...]TargetBranch{{1}, {0}, {2}}
+var enumByWire_TargetBranch = [...]uint8{1, 0, 2}
 
 func ParseTargetBranch(name string) (TargetBranch, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_TargetBranch[:], name); ok {
-		return enumFound_TargetBranch[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_TargetBranch[:], name, func(at uint8, text string) int { return strings.Compare(enumNames_TargetBranch[at], text) }); ok {
+		return TargetBranch{enumByWire_TargetBranch[i]}, true
 	}
 	return TargetBranch{}, false
 }
@@ -194,13 +191,11 @@ func (self *RewardBranch) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_RewardBranch = [...]string{"false", "true"}
-
-var enumFound_RewardBranch = [...]RewardBranch{{0}, {1}}
+var enumByWire_RewardBranch = [...]uint8{0, 1}
 
 func ParseRewardBranch(name string) (RewardBranch, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_RewardBranch[:], name); ok {
-		return enumFound_RewardBranch[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_RewardBranch[:], name, func(at uint8, text string) int { return strings.Compare(enumNames_RewardBranch[at], text) }); ok {
+		return RewardBranch{enumByWire_RewardBranch[i]}, true
 	}
 	return RewardBranch{}, false
 }
@@ -248,13 +243,11 @@ func (self *ObjectiveID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_ObjectiveID = [...]string{"explore", "gather", "slay"}
-
-var enumFound_ObjectiveID = [...]ObjectiveID{{2}, {1}, {0}}
+var enumByWire_ObjectiveID = [...]uint8{2, 1, 0}
 
 func ParseObjectiveID(key string) (ObjectiveID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ObjectiveID[:], key); ok {
-		return enumFound_ObjectiveID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ObjectiveID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_ObjectiveID[at], text) }); ok {
+		return ObjectiveID{enumByWire_ObjectiveID[i]}, true
 	}
 	return ObjectiveID{}, false
 }

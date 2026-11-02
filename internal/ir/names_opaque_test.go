@@ -12,7 +12,7 @@ func TestGoPlanReservesBranchEnum(t *testing.T) {
 	p := &ir.Package{Name: "p", Types: []ir.Type{&ir.Dependent{Pkg: "p", Name: "P", Branches: []*ir.Branch{{Name: "one"}}}}}
 	scopes := ir.GoScopeNames(ir.PlanGoNames(p, &ir.Emit{Target: ir.TargetGo, Mode: ir.ModeBaked}))
 	for scope, names := range map[string][]string{ //canon:unordered each scope is checked alone
-		"package": {"ParsePBranch", "enumNames_PBranch", "enumKeys_PBranch", "enumFound_PBranch"},
+		"package": {"ParsePBranch", "enumNames_PBranch", "enumByWire_PBranch"},
 		"PBranch": {"String", "MarshalText", "UnmarshalText", "Position", "position"},
 	} {
 		for _, name := range names {

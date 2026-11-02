@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,13 +39,11 @@ func (self Tone) Wire() string {
 	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Tone = [...]string{"loud", "soft"}
-
-var enumFound_Tone = [...]Tone{{1}, {0}}
+var enumByWire_Tone = [...]uint8{1, 0}
 
 func ParseTone(wire string) (Tone, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
-		return enumFound_Tone[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Tone[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Tone[at], text) }); ok {
+		return Tone{enumByWire_Tone[i]}, true
 	}
 	return Tone{}, false
 }
@@ -127,13 +126,11 @@ func (self ShapeKind) Wire() string {
 	return "ShapeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_ShapeKind = [...]string{"circle", "dot"}
-
-var enumFound_ShapeKind = [...]ShapeKind{{0}, {1}}
+var enumByWire_ShapeKind = [...]uint8{0, 1}
 
 func ParseShapeKind(wire string) (ShapeKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ShapeKind[:], wire); ok {
-		return enumFound_ShapeKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ShapeKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_ShapeKind[at], text) }); ok {
+		return ShapeKind{enumByWire_ShapeKind[i]}, true
 	}
 	return ShapeKind{}, false
 }
@@ -210,13 +207,11 @@ func (self *SizeID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_SizeID = [...]string{"large", "small"}
-
-var enumFound_SizeID = [...]SizeID{{1}, {0}}
+var enumByWire_SizeID = [...]uint8{1, 0}
 
 func ParseSizeID(key string) (SizeID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_SizeID[:], key); ok {
-		return enumFound_SizeID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_SizeID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_SizeID[at], text) }); ok {
+		return SizeID{enumByWire_SizeID[i]}, true
 	}
 	return SizeID{}, false
 }

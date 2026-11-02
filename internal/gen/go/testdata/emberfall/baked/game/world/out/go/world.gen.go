@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	core "example.com/data/game/core/out/go"
@@ -63,13 +64,11 @@ func (self *ZoneID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_ZoneID = [...]string{"forest"}
-
-var enumFound_ZoneID = [...]ZoneID{{0}}
+var enumByWire_ZoneID = [...]uint8{0}
 
 func ParseZoneID(key string) (ZoneID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ZoneID[:], key); ok {
-		return enumFound_ZoneID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ZoneID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_ZoneID[at], text) }); ok {
+		return ZoneID{enumByWire_ZoneID[i]}, true
 	}
 	return ZoneID{}, false
 }
@@ -123,13 +122,11 @@ func (self *LevelRangeID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_LevelRangeID = [...]string{"high", "low"}
-
-var enumFound_LevelRangeID = [...]LevelRangeID{{1}, {0}}
+var enumByWire_LevelRangeID = [...]uint8{1, 0}
 
 func ParseLevelRangeID(key string) (LevelRangeID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_LevelRangeID[:], key); ok {
-		return enumFound_LevelRangeID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_LevelRangeID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_LevelRangeID[at], text) }); ok {
+		return LevelRangeID{enumByWire_LevelRangeID[i]}, true
 	}
 	return LevelRangeID{}, false
 }

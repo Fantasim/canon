@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // Grade: Upgrade grades of a weapon, lowest first.
@@ -35,13 +36,11 @@ func (self Grade) Wire() string {
 	return "Grade(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Grade = [...]string{"normal", "ultimate", "unique"}
-
-var enumFound_Grade = [...]Grade{{0}, {2}, {1}}
+var enumByWire_Grade = [...]uint8{0, 2, 1}
 
 func ParseGrade(wire string) (Grade, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Grade[:], wire); ok {
-		return enumFound_Grade[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Grade[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Grade[at], text) }); ok {
+		return Grade{enumByWire_Grade[i]}, true
 	}
 	return Grade{}, false
 }
@@ -130,19 +129,14 @@ func (self Tier) Wire() string {
 	return "Tier(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Tier = [...]string{
-	"expert", "hero", "master", "pro",
-	"vagrant",
-}
-
-var enumFound_Tier = [...]Tier{
-	{1}, {4}, {3}, {2},
-	{0},
+var enumByWire_Tier = [...]uint8{
+	1, 4, 3, 2,
+	0,
 }
 
 func ParseTier(wire string) (Tier, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Tier[:], wire); ok {
-		return enumFound_Tier[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Tier[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Tier[at], text) }); ok {
+		return Tier{enumByWire_Tier[i]}, true
 	}
 	return Tier{}, false
 }

@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 
 	"example.com/features/shared/out/go/core"
@@ -57,13 +58,11 @@ func (self *ZoneID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_ZoneID = [...]string{"forest", "marsh"}
-
-var enumFound_ZoneID = [...]ZoneID{{0}, {1}}
+var enumByWire_ZoneID = [...]uint8{0, 1}
 
 func ParseZoneID(key string) (ZoneID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ZoneID[:], key); ok {
-		return enumFound_ZoneID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ZoneID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_ZoneID[at], text) }); ok {
+		return ZoneID{enumByWire_ZoneID[i]}, true
 	}
 	return ZoneID{}, false
 }
@@ -117,13 +116,11 @@ func (self *LevelRangeID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_LevelRangeID = [...]string{"low", "old"}
-
-var enumFound_LevelRangeID = [...]LevelRangeID{{0}, {1}}
+var enumByWire_LevelRangeID = [...]uint8{0, 1}
 
 func ParseLevelRangeID(key string) (LevelRangeID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_LevelRangeID[:], key); ok {
-		return enumFound_LevelRangeID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_LevelRangeID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_LevelRangeID[at], text) }); ok {
+		return LevelRangeID{enumByWire_LevelRangeID[i]}, true
 	}
 	return LevelRangeID{}, false
 }
@@ -176,13 +173,11 @@ func (self *StatusID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_StatusID = [...]string{"calm"}
-
-var enumFound_StatusID = [...]StatusID{{0}}
+var enumByWire_StatusID = [...]uint8{0}
 
 func ParseStatusID(key string) (StatusID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_StatusID[:], key); ok {
-		return enumFound_StatusID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_StatusID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_StatusID[at], text) }); ok {
+		return StatusID{enumByWire_StatusID[i]}, true
 	}
 	return StatusID{}, false
 }

@@ -1,7 +1,6 @@
 package gogen
 
 import (
-	"slices"
 	"strconv"
 	"strings"
 
@@ -11,21 +10,23 @@ import (
 
 // enumSpec is a Canon enum, a variant's kind enum or a table's id enum (CODEGEN.md §5.2–§5.5).
 type enumSpec struct {
-	name     string
-	doc      string
-	under    string
-	consts   []enumConst
-	names    []string // String(): the Canon name, or the key of an id
-	wires    []string // Wire(); nil for an id enum
-	parseArg string   // parameter of Parse<E>: wire or key
-	members  bool     // <E>Members()
-	codes    string   // the @codes Go type: Code() and <E>FromCode
-	open     bool     // an opened enum, whose values are its wire values (DECISIONS 339)
-	numbers  []string // an opened enum's codes, in member order
-	value    string   // an id enum: the table value its keys name (CODEGEN.md §5.3)
-	id       bool     // an opaque id struct (a baked table's id), not an integer enum
-	text     bool     // an opaque enum or kind enum: a struct holding its position, with MarshalText and UnmarshalText of the wire value (§5.2, DECISIONS 379, 402)
-	branch   bool     // an opaque dependent-type branch enum, named by its branch (§5.6, DECISIONS 402)
+	name          string
+	doc           string
+	under         string
+	consts        []enumConst
+	names         []string // String(): the Canon name, or the key of an id
+	wires         []string // Wire(); nil for an id enum
+	parseArg      string   // parameter of Parse<E>: wire or key
+	members       bool     // <E>Members()
+	codes         string   // the @codes Go type: Code() and <E>FromCode
+	open          bool     // an opened enum, whose values are its wire values (DECISIONS 339)
+	numbers       []string // an opened enum's codes, in member order
+	value         string   // an id enum: the table value its keys name (CODEGEN.md §5.3)
+	id            bool     // an opaque id struct (a baked table's id), not an integer enum
+	text          bool     // an opaque enum or kind enum: a struct holding its position, with MarshalText and UnmarshalText of the wire value (§5.2, DECISIONS 379, 402)
+	branch        bool     // an opaque dependent-type branch enum, named by its branch (§5.6, DECISIONS 402)
+	wiresAreNames bool     // no wire differs from its name: Wire reads the names, an opened enum has no names table (DECISIONS 430)
+	first         string   // the first code, as an operand, when the @codes are dense in declaration order (DECISIONS 430); else empty
 }
 
 // opaque reports a type that is a struct holding a declaration position: an id, an enum without @codes, a kind enum, a branch enum (CODEGEN.md §5.2, DECISIONS 402).
@@ -49,7 +50,10 @@ func (g *gen) enums() {
 
 func (g *gen) enumSpec(e *ir.Enum) *enumSpec {
 	defer g.enter(e.QName())()
-	s := &enumSpec{name: g.goName(e), doc: e.Doc, parseArg: wireArg, members: true, open: ir.OpenEnum(g.p, g.e, e)}
+	s := &enumSpec{name: g.goName(e), doc: e.Doc, parseArg: wireArg, members: true, open: ir.OpenEnum(g.p, g.e, e), wiresAreNames: ir.EnumWiresAreNames(e)}
+	if first, dense := ir.DenseCodes(e); dense {
+		s.first = firstLiteral(first)
+	}
 	s.under = smallestUint(len(e.Members))
 	if e.Codes != nil {
 		s.codes = g.goType(*e.Codes)
@@ -92,7 +96,7 @@ func (g *gen) kindEnums() {
 		if !ok {
 			continue
 		}
-		s := &enumSpec{name: g.names.KindName(v), under: smallestUint(len(v.Cases)), parseArg: wireArg, text: true}
+		s := &enumSpec{name: g.names.KindName(v), under: smallestUint(len(v.Cases)), parseArg: wireArg, text: true, wiresAreNames: ir.CaseWiresAreNames(v)}
 		for i, c := range v.Cases {
 			s.consts = append(s.consts, enumConst{name: g.names.KindMemberName(v, c), value: strconv.Itoa(i), doc: kindMemberDoc(c), retired: c.Retired})
 			s.names = append(s.names, c.Name)
@@ -176,23 +180,23 @@ func (g *gen) writeEnum(s *enumSpec) {
 	g.writeClosed(s)
 }
 
-// writeClosed writes the methods of a closed enum (an opaque struct, or an integer with @codes): String and Wire read tables by the member's index, or by its code when the values are @codes, and Parse<E> searches the sorted keys; the enum methods do not grow with the members (DECISIONS 393).
+// writeClosed writes the methods of a closed enum (an opaque struct, or an integer with @codes): String and Wire read tables by the member's index, or by its code minus the first when the @codes are dense, or in the sorted codes, and Parse<E> searches the by-wire indexes; the enum methods do not grow with the members (DECISIONS 393, 430).
 func (g *gen) writeClosed(s *enumSpec) {
 	v := g.enumView(s)
 	idx := s.positions()
-	if s.codes != "" {
+	if v.Sparse {
 		g.writeTable(v.CodeKeys, s.name, pick(s.constNames(), idx))
 	}
 	g.writeText(v, v.Names, ir.GoString, pick(quoted(s.names), idx))
-	if slices.Equal(s.names, s.wires) { // no wires table: the wires are the names
+	if s.wiresAreNames { // no wires table: the wires are the names
 		g.textMethod(v, v.Names, ir.GoWire)
 	} else {
 		g.writeText(v, v.Wires, ir.GoWire, pick(quoted(s.wires), idx))
 	}
-	g.writeParse(s, v)
+	g.writeParse(s, v, idx)
 	g.writeClosedRetired(s, v, idx)
 	if s.members {
-		g.writeMembers(s, v)
+		g.writeMembers(s, v, s.name, s.memberRefs())
 	}
 	if s.codes != "" {
 		g.writeCodes(s, v)
@@ -202,10 +206,10 @@ func (g *gen) writeClosed(s *enumSpec) {
 	}
 }
 
-// writeClosedRetired writes Retired: by index, or with @codes searched in the sorted codes (DECISIONS 395).
+// writeClosedRetired writes Retired: by index, by the code minus the first when the @codes are dense, or searched in the sorted codes (DECISIONS 395, 430).
 func (g *gen) writeClosedRetired(s *enumSpec, v enumView, idx []int) {
 	search := ""
-	if s.codes != "" {
+	if v.Sparse {
 		search = v.CodeKeys
 	}
 	g.writeRetired(s, v, search, idx)
@@ -231,22 +235,22 @@ func (g *gen) textMethod(v enumView, table, method string) {
 	g.exec(tmplEnumText, v)
 }
 
-// writeParse writes Parse<E>: a binary search of the wires (the keys of an id) sorted by their bytes, over the members in that order.
-func (g *gen) writeParse(s *enumSpec, v enumView) {
-	texts := s.wires
-	if texts == nil {
-		texts = s.names
+// writeParse writes Parse<E>: a binary search of the by-wire indexes, the positions of the names' order (idx holds the declaration index of each) sorted by the wire they hold (the key of an id, the name of a branch), reading the table of those texts (DECISIONS 430).
+func (g *gen) writeParse(s *enumSpec, v enumView, idx []int) {
+	texts, table := s.wires, v.Wires
+	if texts == nil || s.wiresAreNames {
+		texts, table = s.names, v.Names
 	}
-	idx := byText(texts)
-	g.writeTable(v.Keys, goString, quoted(pick(texts, idx)))
-	g.writeTable(v.Found, s.name, pick(s.memberRefs(), idx))
+	texts = pick(texts, idx)
+	v.Table, v.Strings, v.Found = table, g.use(stringsPkg, stringsPkg), s.found(v)
+	g.writeTable(v.ByWire, v.ByWireElem, indexLiterals(byWire(texts, idx)))
 	g.exec(tmplEnumParse, v)
 }
 
-// writeMembers writes <E>Members over the members in declaration order, a table of the package.
-func (g *gen) writeMembers(s *enumSpec, v enumView) {
-	g.writeTable(v.Members, s.name, s.memberRefs())
-	g.printf(membersFormat, g.names.MembersName(s.name), g.use(iterPkg, iterPkg), s.name, v.Members)
+// writeMembers writes <E>Members over the members in declaration order, a table of the package: the members themselves, or for an opened enum their positions in its keys.
+func (g *gen) writeMembers(s *enumSpec, v enumView, elem string, items []string) {
+	g.writeTable(v.Members, elem, items)
+	g.printf(membersFormat, g.names.MembersName(s.name), g.use(iterPkg, iterPkg), s.name, v.Members, v.Item)
 	g.writeLiveMembers(s, v)
 }
 

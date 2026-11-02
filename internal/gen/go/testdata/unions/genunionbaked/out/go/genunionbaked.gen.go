@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -34,13 +35,11 @@ func (self Status) Wire() string {
 	return "Status(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Status = [...]string{"closed", "open"}
-
-var enumFound_Status = [...]Status{{1}, {0}}
+var enumByWire_Status = [...]uint8{1, 0}
 
 func ParseStatus(wire string) (Status, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Status[:], wire); ok {
-		return enumFound_Status[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Status[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Status[at], text) }); ok {
+		return Status{enumByWire_Status[i]}, true
 	}
 	return Status{}, false
 }
@@ -141,13 +140,11 @@ func (self *ItemID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var enumKeys_ItemID = [...]string{"a", "b"}
-
-var enumFound_ItemID = [...]ItemID{{0}, {1}}
+var enumByWire_ItemID = [...]uint8{0, 1}
 
 func ParseItemID(key string) (ItemID, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_ItemID[:], key); ok {
-		return enumFound_ItemID[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_ItemID[:], key, func(at uint8, text string) int { return strings.Compare(enumNames_ItemID[at], text) }); ok {
+		return ItemID{enumByWire_ItemID[i]}, true
 	}
 	return ItemID{}, false
 }

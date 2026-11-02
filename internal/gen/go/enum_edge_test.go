@@ -120,19 +120,19 @@ func TestEdge(t *testing.T) {
 }
 `
 
-// CODEGEN.md §5.2, DECISIONS 383, 393: members with equal wires compile and vet in both forms, the first declared wins Parse<E> and Known and keeps its Canon name, an enum whose wires are its names has no wires table, and an enum without members compiles, vets and answers as an enum with every value outside it.
+// CODEGEN.md §5.2, DECISIONS 383, 393, 430: members with equal wires compile and vet in both forms, the first declared wins Parse<E> and Known and keeps its Canon name, an enum whose wires are its names has no wires table, and an enum without members compiles, vets and answers as an enum with every value outside it.
 func TestEnumEdgeCases(t *testing.T) {
 	if testing.Short() {
 		t.Skip("compiles generated code")
 	}
 	_, files := buildWorld(t, edgeFixture())
 	closed := string(files[edgeClosed])
-	for _, want := range []string{edgeWiresOf + "T =", "func ZMembers("} {
+	for _, want := range []string{edgeWiresOf + "T =", "func ZMembers(", "enumByWire_T =", "enumByWire_Z = [...]uint8{}"} {
 		if !strings.Contains(closed, want) {
 			t.Errorf("the closed file has no %q", want)
 		}
 	}
-	for _, unwanted := range []string{edgeWiresOf + "E ", edgeWiresOf + "Z "} {
+	for _, unwanted := range []string{edgeWiresOf + "E ", edgeWiresOf + "Z ", "enumKeys_", "enumFound_"} {
 		if strings.Contains(closed, unwanted) {
 			t.Errorf("the closed file holds %q, but the wires are the names", unwanted)
 		}

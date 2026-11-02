@@ -268,7 +268,7 @@ const (
 	goScopePackage     = "package"
 	goParamsSuffix     = "()"
 	// The package-level tables an enum's methods read, by role, and the separator before the type's name (DECISIONS 393).
-	GoTableNames, GoTableWires, GoTableKeys, GoTableFound                   = "enumNames", "enumWires", "enumKeys", "enumFound"
+	GoTableNames, GoTableWires, GoTableKeys, GoTableByWire                  = "enumNames", "enumWires", "enumKeys", "enumByWire"
 	GoTableCodes, GoTableMembers, GoTableNumbers, GoTableByCode, goTableSep = "enumCodes", "enumMembers", "enumNumbers", "enumByCode", "_"
 )
 

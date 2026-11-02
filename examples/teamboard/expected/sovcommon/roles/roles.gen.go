@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // Role: The website.website_account.role literals. Declaration order IS the rank:
@@ -46,19 +47,14 @@ func (self Role) Wire() string {
 	return "Role(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Role = [...]string{
-	"admin", "gm_junior", "gm_senior", "maintainer",
-	"member", "owner",
-}
-
-var enumFound_Role = [...]Role{
-	{5}, {1}, {2}, {3},
-	{0}, {4},
+var enumByWire_Role = [...]uint8{
+	5, 1, 2, 3,
+	0, 4,
 }
 
 func ParseRole(wire string) (Role, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Role[:], wire); ok {
-		return enumFound_Role[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Role[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Role[at], text) }); ok {
+		return Role{enumByWire_Role[i]}, true
 	}
 	return Role{}, false
 }

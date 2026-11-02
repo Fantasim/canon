@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"example.com/data/geninputsbaked/out/go/rt"
@@ -39,13 +40,11 @@ func (self Mode) Wire() string {
 	return "Mode(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Mode = [...]string{"fast", "old", "slow"}
-
-var enumFound_Mode = [...]Mode{{0}, {2}, {1}}
+var enumByWire_Mode = [...]uint8{0, 2, 1}
 
 func ParseMode(wire string) (Mode, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Mode[:], wire); ok {
-		return enumFound_Mode[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Mode[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Mode[at], text) }); ok {
+		return Mode{enumByWire_Mode[i]}, true
 	}
 	return Mode{}, false
 }

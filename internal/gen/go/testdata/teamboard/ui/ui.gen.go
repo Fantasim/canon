@@ -8,6 +8,7 @@ import (
 	"iter"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // Tone: A semantic or qualitative colour slot. Each one resolves to a --color-* token that
@@ -59,21 +60,15 @@ func (self Tone) Wire() string {
 	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Tone = [...]string{
-	"accent", "danger", "info", "neutral",
-	"series-1", "series-2", "series-3", "series-4",
-	"series-5", "series-6", "success", "warning",
-}
-
-var enumFound_Tone = [...]Tone{
-	{2}, {5}, {1}, {4},
-	{6}, {7}, {8}, {9},
-	{10}, {11}, {3}, {0},
+var enumByWire_Tone = [...]uint8{
+	2, 5, 1, 4,
+	6, 7, 8, 9,
+	10, 11, 3, 0,
 }
 
 func ParseTone(wire string) (Tone, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
-		return enumFound_Tone[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Tone[:], wire, func(at uint8, text string) int { return strings.Compare(enumWires_Tone[at], text) }); ok {
+		return Tone{enumByWire_Tone[i]}, true
 	}
 	return Tone{}, false
 }
@@ -192,25 +187,17 @@ func (self Icon) Wire() string {
 	return "Icon(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Icon = [...]string{
-	"alert-triangle", "archive", "bar-chart", "check",
-	"columns", "database", "gamepad", "globe",
-	"hand", "inbox", "layers", "lightbulb",
-	"lock", "monitor", "package", "scale",
-	"server", "shield", "terminal",
-}
-
-var enumFound_Icon = [...]Icon{
-	{0}, {1}, {2}, {3},
-	{4}, {5}, {6}, {7},
-	{8}, {9}, {10}, {11},
-	{12}, {13}, {14}, {15},
-	{16}, {17}, {18},
+var enumByWire_Icon = [...]uint8{
+	0, 1, 2, 3,
+	4, 5, 6, 7,
+	8, 9, 10, 11,
+	12, 13, 14, 15,
+	16, 17, 18,
 }
 
 func ParseIcon(wire string) (Icon, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Icon[:], wire); ok {
-		return enumFound_Icon[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Icon[:], wire, func(at uint8, text string) int { return strings.Compare(enumWires_Icon[at], text) }); ok {
+		return Icon{enumByWire_Icon[i]}, true
 	}
 	return Icon{}, false
 }

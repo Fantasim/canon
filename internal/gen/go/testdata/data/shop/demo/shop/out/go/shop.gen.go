@@ -64,13 +64,11 @@ func (self Tone) Wire() string {
 	return "Tone(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_Tone = [...]string{"info", "legacy", "series-1", "warning"}
-
-var enumFound_Tone = [...]Tone{{1}, {3}, {2}, {0}}
+var enumByWire_Tone = [...]uint8{1, 3, 2, 0}
 
 func ParseTone(wire string) (Tone, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Tone[:], wire); ok {
-		return enumFound_Tone[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Tone[:], wire, func(at uint8, text string) int { return strings.Compare(enumWires_Tone[at], text) }); ok {
+		return Tone{enumByWire_Tone[i]}, true
 	}
 	return Tone{}, false
 }
@@ -154,13 +152,11 @@ func (self Element) Wire() string {
 	return "Element(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_Element = [...]string{"FIRE", "WATER"}
-
-var enumFound_Element = [...]Element{ElementFire, ElementWater}
+var enumByWire_Element = [...]uint8{0, 1}
 
 func ParseElement(wire string) (Element, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Element[:], wire); ok {
-		return enumFound_Element[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Element[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Element[at], text) }); ok {
+		return enumCodes_Element[enumByWire_Element[i]], true
 	}
 	return 0, false
 }
@@ -232,13 +228,11 @@ func (self Flag) Wire() string {
 	return "Flag(" + strconv.FormatInt(int64(self), 10) + ")"
 }
 
-var enumKeys_Flag = [...]string{"a", "b", "c"}
-
-var enumFound_Flag = [...]Flag{FlagA, FlagB, FlagC}
+var enumByWire_Flag = [...]uint8{0, 1, 2}
 
 func ParseFlag(wire string) (Flag, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_Flag[:], wire); ok {
-		return enumFound_Flag[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_Flag[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_Flag[at], text) }); ok {
+		return enumCodes_Flag[enumByWire_Flag[i]], true
 	}
 	return 0, false
 }
@@ -311,13 +305,11 @@ func (self RewardKind) Wire() string {
 	return "RewardKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_RewardKind = [...]string{"gold", "item", "none"}
-
-var enumFound_RewardKind = [...]RewardKind{{1}, {0}, {2}}
+var enumByWire_RewardKind = [...]uint8{1, 0, 2}
 
 func ParseRewardKind(wire string) (RewardKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_RewardKind[:], wire); ok {
-		return enumFound_RewardKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_RewardKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumWires_RewardKind[at], text) }); ok {
+		return RewardKind{enumByWire_RewardKind[i]}, true
 	}
 	return RewardKind{}, false
 }
@@ -375,13 +367,11 @@ func (self BadgeKind) Wire() string {
 	return "BadgeKind(" + strconv.FormatInt(int64(self.position), 10) + ")"
 }
 
-var enumKeys_BadgeKind = [...]string{"plain", "star"}
-
-var enumFound_BadgeKind = [...]BadgeKind{{1}, {0}}
+var enumByWire_BadgeKind = [...]uint8{1, 0}
 
 func ParseBadgeKind(wire string) (BadgeKind, bool) {
-	if i, ok := slices.BinarySearch(enumKeys_BadgeKind[:], wire); ok {
-		return enumFound_BadgeKind[i], true
+	if i, ok := slices.BinarySearchFunc(enumByWire_BadgeKind[:], wire, func(at uint8, text string) int { return strings.Compare(enumNames_BadgeKind[at], text) }); ok {
+		return BadgeKind{enumByWire_BadgeKind[i]}, true
 	}
 	return BadgeKind{}, false
 }

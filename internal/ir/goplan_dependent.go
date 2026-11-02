@@ -62,7 +62,7 @@ func (pl *GoNamePlan) declareDependent(top *nameScope, d *Dependent) {
 func (pl *GoNamePlan) declareBranchEnum(top *nameScope, branch string, d *Dependent) {
 	origin := d.QName()
 	pl.declareFrom(top, origin, d, derivation{d, func() string { return pl.ParseName(pl.Dependent(d).Branch) }})
-	pl.declareTables(top, branch, origin, d, GoTableNames, GoTableKeys, GoTableFound)
+	pl.declareTables(top, branch, origin, d, GoTableNames, GoTableByWire)
 	pl.declareMethods(branch, origin, d, goBranchMethods)
 	pl.declare(pl.scope(branch), goPositionField, origin, d)
 }
