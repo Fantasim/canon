@@ -1,0 +1,21 @@
+API.md §5.7: a @stable field gets the finding and no fix, since canon edit refuses to rename it.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// R.
+record R {
+  /// Code.
+  dwCode: Int @stable
+}
+
+/// Rs.
+let rs: stable table R = {}
+-- findings.txt --
+warning[W0001]  a/a.canon:6:3
+  field dwCode keeps the legacy prefix dw in its Canon name: rename it code (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 1 warning in 1 package (…)

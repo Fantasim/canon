@@ -11,7 +11,7 @@ var ruleIDs = []string{ruleMapRange}
 // outputDirs are the output packages and those under them (IMPLEMENTATION-PLAN.md §7.5).
 var outputDirs = []string{
 	"api", "internal/build", "internal/diag", "internal/edit", "internal/format", "internal/gen",
-	"internal/i18n", "internal/ir", "internal/jsonsrc", "internal/lock", "internal/views", "internal/wire",
+	"internal/i18n", "internal/ir", "internal/jsonsrc", "internal/lint", "internal/lock", "internal/views", "internal/wire",
 }
 
 // The marker of an order-free loop, alone at the start of a line comment, then its reason.

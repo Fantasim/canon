@@ -1,0 +1,37 @@
+API.md §5.7: a @text result that reaches a record through a dependent type counts, so Item.dwN has a finding and no fix.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+local enum K { num, off }
+
+local record Ev {
+  k: K
+}
+
+record Item {
+  dwN: Int = 1
+}
+
+local type Box(e: Ev) = match e.k {
+  num => Item
+  _ => Never
+}
+
+local record Holder {
+  ev: Ev
+  box: Box(ev)
+}
+
+@text("doc.txt")
+export fn doc() -> Holder {
+  return Holder { ev: Ev { k: K.num }, box: Item {} }
+}
+-- findings.txt --
+warning[W0001]  a/a.canon:10:3
+  field dwN keeps the legacy prefix dw in its Canon name: rename it n (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 1 warning in 1 package (…)

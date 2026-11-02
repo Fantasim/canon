@@ -1,0 +1,27 @@
+API.md §5.7: t imports a and a @text result of t reaches Item, so with every package loaded the finding has no fix.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// Item.
+record Item {
+  /// Level.
+  dwLevel: Int
+}
+-- t/t.canon --
+package t
+
+import a
+
+@text("doc.txt")
+export fn doc() -> a.Item {
+  return a.Item { dwLevel: 1 }
+}
+-- findings.txt --
+warning[W0001]  a/a.canon:6:3
+  field dwLevel keeps the legacy prefix dw in its Canon name: rename it level (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 1 warning in 2 packages (…)

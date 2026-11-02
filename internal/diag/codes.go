@@ -2585,6 +2585,56 @@ var Registry = []Def{
 		},
 	},
 	{
+		Code: "W0001", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "field", Type: ArgTypeName}, {Name: "prefix", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}}, Template: "field {field} keeps the legacy prefix {prefix} in its Canon name: rename it {name} (canon rename keeps the old wire name with @json where a load or a data emit reads the field)"},
+		},
+	},
+	{
+		Code: "W0002", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Name: "list", Args: []Arg{{Name: "first", Type: ArgTypeName}, {Name: "last", Type: ArgTypeName}}, Template: "fields {first} to {last} are numbered siblings: make them one list"},
+			{Name: "pairs", Args: []Arg{{Name: "first", Type: ArgTypeName}, {Name: "last", Type: ArgTypeName}, {Name: "key", Type: ArgTypeName}, {Name: "value", Type: ArgTypeName}}, Template: "fields {first} to {last} are two numbered columns: one list with @json(pairs: [\"{key}{{i}}\", \"{value}{{i}}\"]) keeps the wire"},
+		},
+	},
+	{
+		Code: "W0003", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Name: "single", Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "enum", Type: ArgTypeName}}, Template: "{typ} is a String limited to the member names of {enum}: type it {enum}"},
+			{Name: "several", Args: []Arg{{Name: "typ", Type: ArgTypeName}, {Name: "enums", Type: ArgTypeNames}}, Template: "{typ} is a String limited to the member names of {enums}: type it with the enum, or with a dependent type on the field that decides which enum"},
+		},
+	},
+	{
+		Code: "W0004", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "field", Type: ArgTypeName}, {Name: "wire", Type: ArgTypeName}, {Name: "output", Type: ArgTypeName}}, Template: "field {field} goes to the wire as {wire}, an authoring note, and {output} writes it: move the note into a /// comment, or give the field a wire name without _"},
+		},
+	},
+	{
+		Code: "W0005", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Template: "this string holds the words of canon's generated marker: an output built from it claims to come from canon's generators; give it a marker of its own"},
+		},
+	},
+	{
+		Code: "W0006", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "let", Type: ArgTypeName}, {Name: "count", Type: ArgTypeInt}, {Name: "file", Type: ArgTypePath}, {Name: "want", Type: ArgTypePath}}, Template: "{count} entry files of {let} are off the path its @files template gives; first: {file}, which belongs at {want}"},
+		},
+	},
+	{
+		Code: "W0007", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "lines", Type: ArgTypeInt}, {Name: "decl", Type: ArgTypeName}, {Name: "declLines", Type: ArgTypeInt}}, Template: "this file has {lines} lines, {declLines} of them in {decl}: hold its rows as entries in files of their own (@files)"},
+		},
+	},
+	{
+		Code: "W0008", Severity: Warning, Package: "lint",
+		Variants: []Variant{
+			{Args: []Arg{{Name: "decl", Type: ArgTypeName}, {Name: "count", Type: ArgTypeInt}, {Name: "file", Type: ArgTypePath}, {Name: "prefix", Type: ArgTypeName}}, Template: "{count} names of {decl} are #defined by {file}, which no guard covers: add @cpp(defines: \"{prefix}\") to {decl}, or rename them with @cpp(name:)"},
+		},
+	},
+	{
 		Code: "W1001", Severity: Warning, Package: "syntax",
 		Variants: []Variant{
 			{Template: "doc comment is not attached to anything"},
@@ -7940,17 +7990,131 @@ func (codeE9009) AtDepth(span source.Span, n int64, fn string) *Builder {
 	return newBuilder(&Registry[307], 1, span, n, fn)
 }
 
+// W0001: a field name keeps a legacy type prefix (API.md §5.7).
+var W0001 codeW0001
+
+type codeW0001 struct{}
+
+// Def is the registry entry of W0001.
+func (codeW0001) Def() *Def { return &Registry[308] }
+
+// At reports: field {field} keeps the legacy prefix {prefix} in its Canon name: rename it {name} (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+func (codeW0001) At(span source.Span, field string, prefix string, name string) *Builder {
+	return newBuilder(&Registry[308], 0, span, field, prefix, name)
+}
+
+// W0002: numbered sibling fields that one list would hold (API.md §5.7).
+var W0002 codeW0002
+
+type codeW0002 struct{}
+
+// Def is the registry entry of W0002.
+func (codeW0002) Def() *Def { return &Registry[309] }
+
+// AtList reports: fields {first} to {last} are numbered siblings: make them one list
+func (codeW0002) AtList(span source.Span, first string, last string) *Builder {
+	return newBuilder(&Registry[309], 0, span, first, last)
+}
+
+// AtPairs reports: fields {first} to {last} are two numbered columns: one list with @json(pairs: ["{key}{{i}}", "{value}{{i}}"]) keeps the wire
+func (codeW0002) AtPairs(span source.Span, first string, last string, key string, value string) *Builder {
+	return newBuilder(&Registry[309], 1, span, first, last, key, value)
+}
+
+// W0003: a String limited to enum member names (API.md §5.7).
+var W0003 codeW0003
+
+type codeW0003 struct{}
+
+// Def is the registry entry of W0003.
+func (codeW0003) Def() *Def { return &Registry[310] }
+
+// AtSingle reports: {typ} is a String limited to the member names of {enum}: type it {enum}
+func (codeW0003) AtSingle(span source.Span, typ string, enum string) *Builder {
+	return newBuilder(&Registry[310], 0, span, typ, enum)
+}
+
+// AtSeveral reports: {typ} is a String limited to the member names of {enums}: type it with the enum, or with a dependent type on the field that decides which enum
+func (codeW0003) AtSeveral(span source.Span, typ string, enums []string) *Builder {
+	return newBuilder(&Registry[310], 1, span, typ, enums)
+}
+
+// W0004: an authoring-note wire name (starting with `_`) that an output writes (API.md §5.7).
+var W0004 codeW0004
+
+type codeW0004 struct{}
+
+// Def is the registry entry of W0004.
+func (codeW0004) Def() *Def { return &Registry[311] }
+
+// At reports: field {field} goes to the wire as {wire}, an authoring note, and {output} writes it: move the note into a /// comment, or give the field a wire name without _
+func (codeW0004) At(span source.Span, field string, wire string, output string) *Builder {
+	return newBuilder(&Registry[311], 0, span, field, wire, output)
+}
+
+// W0005: a source string holding the words of canon's generated marker (API.md §5.7).
+var W0005 codeW0005
+
+type codeW0005 struct{}
+
+// Def is the registry entry of W0005.
+func (codeW0005) Def() *Def { return &Registry[312] }
+
+// At reports: this string holds the words of canon's generated marker: an output built from it claims to come from canon's generators; give it a marker of its own
+func (codeW0005) At(span source.Span) *Builder {
+	return newBuilder(&Registry[312], 0, span)
+}
+
+// W0006: entry files off the path their `@files` template gives (API.md §5.7).
+var W0006 codeW0006
+
+type codeW0006 struct{}
+
+// Def is the registry entry of W0006.
+func (codeW0006) Def() *Def { return &Registry[313] }
+
+// At reports: {count} entry files of {let} are off the path its @files template gives; first: {file}, which belongs at {want}
+func (codeW0006) At(span source.Span, let string, count int64, file string, want string) *Builder {
+	return newBuilder(&Registry[313], 0, span, let, count, file, want)
+}
+
+// W0007: a source file over 5,000 lines held by one `let` (API.md §5.7).
+var W0007 codeW0007
+
+type codeW0007 struct{}
+
+// Def is the registry entry of W0007.
+func (codeW0007) Def() *Def { return &Registry[314] }
+
+// At reports: this file has {lines} lines, {declLines} of them in {decl}: hold its rows as entries in files of their own (@files)
+func (codeW0007) At(span source.Span, lines int64, decl string, declLines int64) *Builder {
+	return newBuilder(&Registry[314], 0, span, lines, decl, declLines)
+}
+
+// W0008: a C++ name that a text output or a loaded header `#define`s and no guard covers (API.md §5.7).
+var W0008 codeW0008
+
+type codeW0008 struct{}
+
+// Def is the registry entry of W0008.
+func (codeW0008) Def() *Def { return &Registry[315] }
+
+// At reports: {count} names of {decl} are #defined by {file}, which no guard covers: add @cpp(defines: "{prefix}") to {decl}, or rename them with @cpp(name:)
+func (codeW0008) At(span source.Span, decl string, count int64, file string, prefix string) *Builder {
+	return newBuilder(&Registry[315], 0, span, decl, count, file, prefix)
+}
+
 // W1001: a doc comment attaches to nothing (blank line, wrong position, after code) (GRAMMAR.md §9.1).
 var W1001 codeW1001
 
 type codeW1001 struct{}
 
 // Def is the registry entry of W1001.
-func (codeW1001) Def() *Def { return &Registry[308] }
+func (codeW1001) Def() *Def { return &Registry[316] }
 
 // At reports: doc comment is not attached to anything
 func (codeW1001) At(span source.Span) *Builder {
-	return newBuilder(&Registry[308], 0, span)
+	return newBuilder(&Registry[316], 0, span)
 }
 
 // W1002: a public type, field or `export fn` has no doc comment (GRAMMAR.md §9.1).
@@ -7959,11 +8123,11 @@ var W1002 codeW1002
 type codeW1002 struct{}
 
 // Def is the registry entry of W1002.
-func (codeW1002) Def() *Def { return &Registry[309] }
+func (codeW1002) Def() *Def { return &Registry[317] }
 
 // At reports: {kind} {name} has no doc comment
 func (codeW1002) At(span source.Span, kind Kind, name string) *Builder {
-	return newBuilder(&Registry[309], 0, span, kind, name)
+	return newBuilder(&Registry[317], 0, span, kind, name)
 }
 
 // W1003: a declared name breaks its naming convention (GRAMMAR.md §9.2).
@@ -7972,11 +8136,11 @@ var W1003 codeW1003
 type codeW1003 struct{}
 
 // Def is the registry entry of W1003.
-func (codeW1003) Def() *Def { return &Registry[310] }
+func (codeW1003) Def() *Def { return &Registry[318] }
 
 // At reports: {kind} name "{name}" should be {convention}
 func (codeW1003) At(span source.Span, kind Kind, name string, convention Kind) *Builder {
-	return newBuilder(&Registry[310], 0, span, kind, name, convention)
+	return newBuilder(&Registry[318], 0, span, kind, name, convention)
 }
 
 // W1016: a `dev` compiler cannot honour the project's compiler pin (DECISIONS 354) (GRAMMAR.md §7.1).
@@ -7985,11 +8149,11 @@ var W1016 codeW1016
 type codeW1016 struct{}
 
 // Def is the registry entry of W1016.
-func (codeW1016) Def() *Def { return &Registry[311] }
+func (codeW1016) Def() *Def { return &Registry[319] }
 
 // At reports: the project pins canon {want}; this dev build of canon is not checked against the pin
 func (codeW1016) At(span source.Span, want string) *Builder {
-	return newBuilder(&Registry[311], 0, span, want)
+	return newBuilder(&Registry[319], 0, span, want)
 }
 
 // W1604: a field named `key` or `index` hides the view's magic name (VIEWMODEL.md §3.4).
@@ -7998,11 +8162,11 @@ var W1604 codeW1604
 type codeW1604 struct{}
 
 // Def is the registry entry of W1604.
-func (codeW1604) Def() *Def { return &Registry[312] }
+func (codeW1604) Def() *Def { return &Registry[320] }
 
 // At reports: field {name} of {typ} hides the view name {name}: {{{name}}} reads the field
 func (codeW1604) At(span source.Span, name string, typ string) *Builder {
-	return newBuilder(&Registry[312], 0, span, name, typ)
+	return newBuilder(&Registry[320], 0, span, name, typ)
 }
 
 // W1640: an editable public value has no menu (packages with an `emit view` only) (VIEWMODEL.md §10).
@@ -8011,11 +8175,11 @@ var W1640 codeW1640
 type codeW1640 struct{}
 
 // Def is the registry entry of W1640.
-func (codeW1640) Def() *Def { return &Registry[313] }
+func (codeW1640) Def() *Def { return &Registry[321] }
 
 // At reports: value {value} has no menu: the studio lists it under "No menu"
 func (codeW1640) At(span source.Span, value string) *Builder {
-	return newBuilder(&Registry[313], 0, span, value)
+	return newBuilder(&Registry[321], 0, span, value)
 }
 
 // W1641: a required field without a default is `hidden` (VIEWMODEL.md §5.5).
@@ -8024,11 +8188,11 @@ var W1641 codeW1641
 type codeW1641 struct{}
 
 // Def is the registry entry of W1641.
-func (codeW1641) Def() *Def { return &Registry[314] }
+func (codeW1641) Def() *Def { return &Registry[322] }
 
 // At reports: required field {field} is hidden: new values cannot be completed in the studio
 func (codeW1641) At(span source.Span, field string) *Builder {
-	return newBuilder(&Registry[314], 0, span, field)
+	return newBuilder(&Registry[322], 0, span, field)
 }
 
 // W1642: a deprecated field is named in a group (VIEWMODEL.md §5.2).
@@ -8037,11 +8201,11 @@ var W1642 codeW1642
 type codeW1642 struct{}
 
 // Def is the registry entry of W1642.
-func (codeW1642) Def() *Def { return &Registry[315] }
+func (codeW1642) Def() *Def { return &Registry[323] }
 
 // At reports: deprecated field {field} is named in group {group}; it is shown under "Unused fields"
 func (codeW1642) At(span source.Span, field string, group string) *Builder {
-	return newBuilder(&Registry[315], 0, span, field, group)
+	return newBuilder(&Registry[323], 0, span, field, group)
 }
 
 // W1701: a package that emits a view has translations missing in a language (one per package and language) (I18N.md §5).
@@ -8050,16 +8214,16 @@ var W1701 codeW1701
 type codeW1701 struct{}
 
 // Def is the registry entry of W1701.
-func (codeW1701) Def() *Def { return &Registry[316] }
+func (codeW1701) Def() *Def { return &Registry[324] }
 
 // AtOne reports: 1 text of package {pkg} has no {lang} translation (canon i18n status {pkg} --lang {lang} --list)
 func (codeW1701) AtOne(span source.Span, pkg string, lang string) *Builder {
-	return newBuilder(&Registry[316], 0, span, pkg, lang)
+	return newBuilder(&Registry[324], 0, span, pkg, lang)
 }
 
 // AtMany reports: {n} texts of package {pkg} have no {lang} translation (canon i18n status {pkg} --lang {lang} --list)
 func (codeW1701) AtMany(span source.Span, n int64, pkg string, lang string) *Builder {
-	return newBuilder(&Registry[316], 1, span, n, pkg, lang)
+	return newBuilder(&Registry[324], 1, span, n, pkg, lang)
 }
 
 // W1912: an amend path that selects a table, keyed-list or map entry by position (`[#n]`) instead of by key (DECISIONS 379) (EVALUATION.md §9.2).
@@ -8068,11 +8232,11 @@ var W1912 codeW1912
 type codeW1912 struct{}
 
 // Def is the registry entry of W1912.
-func (codeW1912) Def() *Def { return &Registry[317] }
+func (codeW1912) Def() *Def { return &Registry[325] }
 
 // At reports: amend path {path} selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
 func (codeW1912) At(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[317], 0, span, path)
+	return newBuilder(&Registry[325], 0, span, path)
 }
 
 // W3001: an optional field written with `= none`, which is already its default (DECISIONS 319) (TYPES.md §15).
@@ -8081,11 +8245,11 @@ var W3001 codeW3001
 type codeW3001 struct{}
 
 // Def is the registry entry of W3001.
-func (codeW3001) Def() *Def { return &Registry[318] }
+func (codeW3001) Def() *Def { return &Registry[326] }
 
 // At reports: {field} is optional: none is already its default; remove = none
 func (codeW3001) At(span source.Span, field string) *Builder {
-	return newBuilder(&Registry[318], 0, span, field)
+	return newBuilder(&Registry[326], 0, span, field)
 }
 
 // W3002: a scan of `E.members` by name that `E.named` reads directly (DECISIONS 372) (TYPES.md §4.3).
@@ -8094,11 +8258,11 @@ var W3002 codeW3002
 type codeW3002 struct{}
 
 // Def is the registry entry of W3002.
-func (codeW3002) Def() *Def { return &Registry[319] }
+func (codeW3002) Def() *Def { return &Registry[327] }
 
 // At reports: this visits every member of {enum}: use {enum}.named({expr})
 func (codeW3002) At(span source.Span, enum string, expr source.Span) *Builder {
-	return newBuilder(&Registry[319], 0, span, enum, expr)
+	return newBuilder(&Registry[327], 0, span, enum, expr)
 }
 
 // W3301: use of a deprecated field, member or entry in Canon source (TYPES.md §16).
@@ -8107,16 +8271,16 @@ var W3301 codeW3301
 type codeW3301 struct{}
 
 // Def is the registry entry of W3301.
-func (codeW3301) Def() *Def { return &Registry[320] }
+func (codeW3301) Def() *Def { return &Registry[328] }
 
 // AtPlain reports: {name} is deprecated
 func (codeW3301) AtPlain(span source.Span, name string) *Builder {
-	return newBuilder(&Registry[320], 0, span, name)
+	return newBuilder(&Registry[328], 0, span, name)
 }
 
 // AtReason reports: {name} is deprecated: {reason}
 func (codeW3301) AtReason(span source.Span, name string, reason string) *Builder {
-	return newBuilder(&Registry[320], 1, span, name, reason)
+	return newBuilder(&Registry[328], 1, span, name, reason)
 }
 
 // W3401: `!`, `?.`, `??` or a `none` test on a value that is never `none` (TYPES.md §6.5).
@@ -8125,11 +8289,11 @@ var W3401 codeW3401
 type codeW3401 struct{}
 
 // Def is the registry entry of W3401.
-func (codeW3401) Def() *Def { return &Registry[321] }
+func (codeW3401) Def() *Def { return &Registry[329] }
 
 // At reports: {expr} is never none: {op} has no effect
 func (codeW3401) At(span source.Span, expr source.Span, op string) *Builder {
-	return newBuilder(&Registry[321], 0, span, expr, op)
+	return newBuilder(&Registry[329], 0, span, expr, op)
 }
 
 // W3601: an unreachable `_` arm (TYPES.md §12.6).
@@ -8138,11 +8302,11 @@ var W3601 codeW3601
 type codeW3601 struct{}
 
 // Def is the registry entry of W3601.
-func (codeW3601) Def() *Def { return &Registry[322] }
+func (codeW3601) Def() *Def { return &Registry[330] }
 
 // At reports: _ is unreachable: every case is covered
 func (codeW3601) At(span source.Span) *Builder {
-	return newBuilder(&Registry[322], 0, span)
+	return newBuilder(&Registry[330], 0, span)
 }
 
 // W4001: values not evaluated or checked because their record or variant is broken (DECISIONS 209) (EVALUATION.md §1).
@@ -8151,16 +8315,16 @@ var W4001 codeW4001
 type codeW4001 struct{}
 
 // Def is the registry entry of W4001.
-func (codeW4001) Def() *Def { return &Registry[323] }
+func (codeW4001) Def() *Def { return &Registry[331] }
 
 // AtOne reports: 1 value was not evaluated or checked because {typ} is broken: fix the errors in it or in the types it names
 func (codeW4001) AtOne(span source.Span, typ string) *Builder {
-	return newBuilder(&Registry[323], 0, span, typ)
+	return newBuilder(&Registry[331], 0, span, typ)
 }
 
 // AtMany reports: {n} values were not evaluated or checked because {typ} is broken: fix the errors in it or in the types it names
 func (codeW4001) AtMany(span source.Span, n int64, typ string) *Builder {
-	return newBuilder(&Registry[323], 1, span, n, typ)
+	return newBuilder(&Registry[331], 1, span, n, typ)
 }
 
 // W5001: a one-line `warn` is false (EVALUATION.md §8.3).
@@ -8169,11 +8333,11 @@ var W5001 codeW5001
 type codeW5001 struct{}
 
 // Def is the registry entry of W5001.
-func (codeW5001) Def() *Def { return &Registry[324] }
+func (codeW5001) Def() *Def { return &Registry[332] }
 
 // At reports: {message}
 func (codeW5001) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[324], 0, span, message)
+	return newBuilder(&Registry[332], 0, span, message)
 }
 
 // W5002: `warn(at, message)` in a check block (EVALUATION.md §8.3).
@@ -8182,11 +8346,11 @@ var W5002 codeW5002
 type codeW5002 struct{}
 
 // Def is the registry entry of W5002.
-func (codeW5002) Def() *Def { return &Registry[325] }
+func (codeW5002) Def() *Def { return &Registry[333] }
 
 // At reports: {message}
 func (codeW5002) At(span source.Span, message string) *Builder {
-	return newBuilder(&Registry[325], 0, span, message)
+	return newBuilder(&Registry[333], 0, span, message)
 }
 
 // W6006: stable values not yet in `canon.lock` (`canon lock check` only) (LOCK.md §8).
@@ -8195,16 +8359,16 @@ var W6006 codeW6006
 type codeW6006 struct{}
 
 // Def is the registry entry of W6006.
-func (codeW6006) Def() *Def { return &Registry[326] }
+func (codeW6006) Def() *Def { return &Registry[334] }
 
 // AtOne reports: 1 stable value is not in canon.lock yet: run canon build
 func (codeW6006) AtOne(span source.Span) *Builder {
-	return newBuilder(&Registry[326], 0, span)
+	return newBuilder(&Registry[334], 0, span)
 }
 
 // AtMany reports: {n} stable values are not in canon.lock yet: run canon build
 func (codeW6006) AtMany(span source.Span, n int64) *Builder {
-	return newBuilder(&Registry[326], 1, span, n)
+	return newBuilder(&Registry[334], 1, span, n)
 }
 
 // W7101: `load.defines` skipped defines it cannot evaluate (once per file) (WIRE.md §6.8).
@@ -8213,16 +8377,16 @@ var W7101 codeW7101
 type codeW7101 struct{}
 
 // Def is the registry entry of W7101.
-func (codeW7101) Def() *Def { return &Registry[327] }
+func (codeW7101) Def() *Def { return &Registry[335] }
 
 // AtOne reports: 1 define skipped in {path} ({name}): not a supported integer expression
 func (codeW7101) AtOne(span source.Span, path string, name string) *Builder {
-	return newBuilder(&Registry[327], 0, span, path, name)
+	return newBuilder(&Registry[335], 0, span, path, name)
 }
 
 // AtMany reports: {n} defines skipped in {path} (first: {name}): not a supported integer expression
 func (codeW7101) AtMany(span source.Span, n int64, path string, name string) *Builder {
-	return newBuilder(&Registry[327], 1, span, n, path, name)
+	return newBuilder(&Registry[335], 1, span, n, path, name)
 }
 
 // W7107: a glob matches no file (WIRE.md §6.5).
@@ -8231,11 +8395,11 @@ var W7107 codeW7107
 type codeW7107 struct{}
 
 // Def is the registry entry of W7107.
-func (codeW7107) Def() *Def { return &Registry[328] }
+func (codeW7107) Def() *Def { return &Registry[336] }
 
 // At reports: glob {pattern} matches no file
 func (codeW7107) At(span source.Span, pattern string) *Builder {
-	return newBuilder(&Registry[328], 0, span, pattern)
+	return newBuilder(&Registry[336], 0, span, pattern)
 }
 
 // W7115: a symbolic link skipped: outside the roots, dangling, looping or unreadable (WIRE.md §6.5).
@@ -8244,26 +8408,26 @@ var W7115 codeW7115
 type codeW7115 struct{}
 
 // Def is the registry entry of W7115.
-func (codeW7115) Def() *Def { return &Registry[329] }
+func (codeW7115) Def() *Def { return &Registry[337] }
 
 // AtOutsideRoots reports: symbolic link {path} points outside the roots; skipped
 func (codeW7115) AtOutsideRoots(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[329], 0, span, path)
+	return newBuilder(&Registry[337], 0, span, path)
 }
 
 // AtDangling reports: symbolic link {path} points to nothing; skipped
 func (codeW7115) AtDangling(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[329], 1, span, path)
+	return newBuilder(&Registry[337], 1, span, path)
 }
 
 // AtLooping reports: symbolic link {path} is part of a loop; skipped
 func (codeW7115) AtLooping(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[329], 2, span, path)
+	return newBuilder(&Registry[337], 2, span, path)
 }
 
 // AtStatFailed reports: symbolic link {path} cannot be resolved or read; skipped
 func (codeW7115) AtStatFailed(span source.Span, path string) *Builder {
-	return newBuilder(&Registry[329], 3, span, path)
+	return newBuilder(&Registry[337], 3, span, path)
 }
 
 // W8006: a generated C++ name is a common platform macro (CODEGEN.md §3.5).
@@ -8272,11 +8436,11 @@ var W8006 codeW8006
 type codeW8006 struct{}
 
 // Def is the registry entry of W8006.
-func (codeW8006) Def() *Def { return &Registry[330] }
+func (codeW8006) Def() *Def { return &Registry[338] }
 
 // At reports: C++ name {name} (from {item}) is a macro in common platform headers
 func (codeW8006) At(span source.Span, name string, item string) *Builder {
-	return newBuilder(&Registry[330], 0, span, name, item)
+	return newBuilder(&Registry[338], 0, span, name, item)
 }
 
 // W8024: outputs under an optional root absent on this machine were skipped; one per root (DECISIONS 332) (CODEGEN.md §2.4).
@@ -8285,16 +8449,16 @@ var W8024 codeW8024
 type codeW8024 struct{}
 
 // Def is the registry entry of W8024.
-func (codeW8024) Def() *Def { return &Registry[331] }
+func (codeW8024) Def() *Def { return &Registry[339] }
 
 // AtOne reports: 1 output skipped: root @{root} ("{path}") is optional and not present on this machine; clone it or point to it in project.local.canon to write it
 func (codeW8024) AtOne(span source.Span, root string, path string) *Builder {
-	return newBuilder(&Registry[331], 0, span, root, path)
+	return newBuilder(&Registry[339], 0, span, root, path)
 }
 
 // AtMany reports: {n} outputs skipped: root @{root} ("{path}") is optional and not present on this machine; clone it or point to it in project.local.canon to write them
 func (codeW8024) AtMany(span source.Span, n int64, root string, path string) *Builder {
-	return newBuilder(&Registry[331], 1, span, n, root, path)
+	return newBuilder(&Registry[339], 1, span, n, root, path)
 }
 
 // W8030: a file with a generated marker that no emit writes, found by a plain build (DECISIONS 356) (CODEGEN.md §2.4).
@@ -8303,11 +8467,11 @@ var W8030 codeW8030
 type codeW8030 struct{}
 
 // Def is the registry entry of W8030.
-func (codeW8030) Def() *Def { return &Registry[332] }
+func (codeW8030) Def() *Def { return &Registry[340] }
 
 // At reports: {path} carries the generated marker of {pkg}, but no emit of this build writes it: delete it
 func (codeW8030) At(span source.Span, path string, pkg string) *Builder {
-	return newBuilder(&Registry[332], 0, span, path, pkg)
+	return newBuilder(&Registry[340], 0, span, path, pkg)
 }
 
 // W8031: an entry position, or a number or text made from one, written to an output: an emitted value, a stored export fn result or a `@text` file (DECISIONS 379) (CODEGEN.md §2.10).
@@ -8316,9 +8480,9 @@ var W8031 codeW8031
 type codeW8031 struct{}
 
 // Def is the registry entry of W8031.
-func (codeW8031) Def() *Def { return &Registry[333] }
+func (codeW8031) Def() *Def { return &Registry[341] }
 
 // At reports: a number or text made from an entry position is written to {output}; positions change when entry files move: write the entry's key or a @stable field, or wrap the position in positional(…) to write it on purpose
 func (codeW8031) At(span source.Span, output string) *Builder {
-	return newBuilder(&Registry[333], 0, span, output)
+	return newBuilder(&Registry[341], 0, span, output)
 }

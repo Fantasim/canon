@@ -1,0 +1,16 @@
+API.md §5.7: one line past the limit is reported.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+let rows: [Int] = [
+{{pad 4997   %d,}}
+]
+-- findings.txt --
+warning[W0007]  m/m.canon:3:5
+  this file has 5001 lines, 4999 of them in rows: hold its rows as entries in files of their own (@files)
+
+0 errors, 1 warning in 1 package (…)

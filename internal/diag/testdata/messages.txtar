@@ -551,6 +551,16 @@ E9007 result: refinement a b of the result of resource.vocab.items cannot be che
 E9008 -: translated method resource.vocab.items.resource.vocab.items is called by no test of package resource.vocab.items: add one, it gives the conformance test its receiver
 E9009 steps: conformance vector -42 of resource.vocab.items exceeds -42 steps
 E9009 depth: conformance vector -42 of resource.vocab.items exceeds the call-depth limit
+W0001 -: field resource.vocab.items keeps the legacy prefix resource.vocab.items in its Canon name: rename it resource.vocab.items (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+W0002 list: fields resource.vocab.items to resource.vocab.items are numbered siblings: make them one list
+W0002 pairs: fields resource.vocab.items to resource.vocab.items are two numbered columns: one list with @json(pairs: ["resource.vocab.items{i}", "resource.vocab.items{i}"]) keeps the wire
+W0003 single: resource.vocab.items is a String limited to the member names of resource.vocab.items: type it resource.vocab.items
+W0003 several: resource.vocab.items is a String limited to the member names of go, cpp: type it with the enum, or with a dependent type on the field that decides which enum
+W0004 -: field resource.vocab.items goes to the wire as resource.vocab.items, an authoring note, and resource.vocab.items writes it: move the note into a /// comment, or give the field a wire name without _
+W0005 -: this string holds the words of canon's generated marker: an output built from it claims to come from canon's generators; give it a marker of its own
+W0006 -: -42 entry files of resource.vocab.items are off the path its @files template gives; first: @resource/Server/Item/propItem.json, which belongs at @resource/Server/Item/propItem.json
+W0007 -: this file has -42 lines, -42 of them in resource.vocab.items: hold its rows as entries in files of their own (@files)
+W0008 -: -42 names of resource.vocab.items are #defined by @resource/Server/Item/propItem.json, which no guard covers: add @cpp(defines: "resource.vocab.items") to resource.vocab.items, or rename them with @cpp(name:)
 W1001 -: doc comment is not attached to anything
 W1002 -: enum resource.vocab.items has no doc comment
 W1003 -: const name "resource.vocab.items" should be const

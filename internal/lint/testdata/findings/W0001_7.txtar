@@ -1,0 +1,28 @@
+API.md §5.7: an importer b that writes no output leaves the fix; with every package loaded Item.dwLevel is renamed.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- apply --
+-- a/a.canon --
+package a
+
+/// Item.
+record Item {
+  /// Level.
+  dwLevel: Int
+}
+-- b/b.canon --
+package b
+
+import a
+
+let x: a.Item = { dwLevel: 1 }
+-- findings.txt --
+warning[W0001]  a/a.canon:6:3
+  field dwLevel keeps the legacy prefix dw in its Canon name: rename it level (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 1 warning in 2 packages (…)
+fix W0001 a/a.canon:6:3 {"ops":[{"op":"renameName","path":"a:Item.dwLevel","name":"level"}]}
+after the first fix:
+0 errors, 0 warnings in 2 packages (…)

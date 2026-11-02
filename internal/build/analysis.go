@@ -94,6 +94,13 @@ func (a *Analysis) Manifest() []byte {
 	return slices.Clone(a.listed)
 }
 
+func (a *Analysis) MaxFindings() int {
+	if n := a.r.p.opt.MaxFindings; n > 0 {
+		return n
+	}
+	return diag.DefaultMaxFindings
+}
+
 // Result is the findings this Analyze reported (API.md R2).
 func (a *Analysis) Result() *Result { return a.res }
 

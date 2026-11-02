@@ -1,0 +1,20 @@
+API.md §5.7: a package that holds a broken declaration gets its findings and no fix, since canon edit refuses every rename in it.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+record Broken {
+  dwA: Nowhere
+}
+
+record Sound {
+  dwB: Int
+}
+-- findings.txt --
+warning[W0001]  a/a.canon:8:3
+  field dwB keeps the legacy prefix dw in its Canon name: rename it b (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 1 warning in 1 package (…)

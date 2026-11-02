@@ -129,8 +129,9 @@ one position type; JSON sources get their own syntax tree (`jsonsrc`) because bo
 | `writelock` | advisory per-package writer locks across processes: `flock` on Unix, `CreateFile` share modes on Windows, standard library only (DECISIONS 352) | API.md S9, N9; CLI §3.4, §3.6, §3.15 | — |
 | `build` | phase and stage orchestration, build manifest, cache, atomic output writes, GENERATED markers (`E8001`), `--adopt`; implements `eval.Host` with `load` and `verify` (§4.8) | EVALUATION.md §1, SPEC §14, CLI §3.4, LOD-11, GEN-05 | all of the above |
 | `edit` | paths, ops, editability, cascades, minimal writes, file placement, journal | API.md §6-§10 | format, jsonsrc, value, wire, lock, build (re-check) |
+| `lint` | the advisory lints of `canon lint` and the edit requests that fix them | API.md §5.7, CLI.md §3.19 | build, edit, ir, load |
 | `workspace` | snapshots, revisions, refresh, overlays, watching, incremental invalidation | API.md §3, §12 | build, edit |
-| `api/` (package `canon`) | public API; thin adapter over `workspace` | API.md | workspace |
+| `api/` (package `canon`) | public API; thin adapter over `workspace` | API.md | workspace, lint |
 | `convert` | `canon convert` | §8.3 | edit, build, format |
 | `lsp` | language server | §8.4 | workspace, check, format |
 | `cli` | command implementations, text/JSON output, exit codes | CLI.md, §8 | api, internal packages for fmt, convert, i18n, explain of functions |
@@ -1072,7 +1073,7 @@ the `Undo`. A coverage test lists the rule ids found in API.md and fails when on
 - **No map order.** The audit rule `maprange` (`tools/audit`, run by `make check`, DECISIONS
   110) reports every `range` over a Go map, or over `maps.Keys`, `maps.Values` or `maps.All`,
   tests included, in the packages `api`, `build`, `diag`, `edit`, `format`, `gen`, `i18n`, `ir`,
-  `jsonsrc`, `lock`, `views`, `wire` and the packages under them. A loop that is
+  `jsonsrc`, `lint`, `lock`, `views`, `wire` and the packages under them. A loop that is
   order-independent is annotated `//canon:unordered` with a reason.
 - **Race.** Every test runs under `-race` in CI.
 

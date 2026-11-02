@@ -1,0 +1,21 @@
+API.md §5.7: a project written the native way gives no lint finding. A pin: adding a field named
+dwX to Unit makes this case report one.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+enum Kind { sword, bow }
+
+record Unit {
+  health: Int
+  kind: Kind
+  weight: Float
+  label: String = "unit"
+}
+
+let unit: Unit = { health: 3, kind: Kind.sword, weight: 1.5 }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

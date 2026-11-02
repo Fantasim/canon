@@ -1,0 +1,19 @@
+API.md §5.7: a package source file of more than 5,000 lines whose longest declaration is a let is reported, at that let.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+/// Small.
+record R { a: Int }
+
+let rows: [Int] = [
+{{pad 5000   %d,}}
+]
+-- findings.txt --
+warning[W0007]  m/m.canon:6:5
+  this file has 5007 lines, 5002 of them in rows: hold its rows as entries in files of their own (@files)
+
+0 errors, 1 warning in 1 package (…)

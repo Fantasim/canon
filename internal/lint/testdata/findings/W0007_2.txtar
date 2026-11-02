@@ -1,0 +1,21 @@
+API.md §5.7: a file of exactly 5,000 lines is not reported, and neither is a larger one whose longest declaration is a record.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+let rows: [Int] = [
+{{pad 4996   %d,}}
+]
+-- n/n.canon --
+package n
+
+record Big {
+{{pad 4996   f%d: Int}}
+}
+
+let a: [Int] = [1, 2]
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

@@ -1,0 +1,17 @@
+API.md §5.7: a let that only ties the longest declaration is not reported.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+let a: [Int] = [
+{{pad 2600   %d,}}
+]
+
+let b: [Int] = [
+{{pad 2600   %d,}}
+]
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

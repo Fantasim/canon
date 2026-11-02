@@ -8,8 +8,8 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
 
-// catalogueMessages is the count ERRORS.md states (583 messages).
-const catalogueMessages = 583
+// catalogueMessages is the count ERRORS.md states (593 messages).
+const catalogueMessages = 593
 
 // sampleFiles holds the files the sample spans point into: sampleExpr covers "a\n\tb".
 var sampleFiles = MemFiles{

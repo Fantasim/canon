@@ -386,7 +386,35 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 334 codes: 305 errors, 26 warnings and 3 run-time codes, with 583 messages.
+The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 593 messages.
+
+## W00xx: Lints
+
+Owner: API.md §5.7. Reported by `canon lint` only (CLI.md §3.19, DECISIONS 440).
+
+| Code | Severity | Package | Owner | Meaning |
+|---|---|---|---|---|
+| W0001 | warning | lint | API.md §5.7 | a field name keeps a legacy type prefix |
+| W0002 | warning | lint | API.md §5.7 | numbered sibling fields that one list would hold |
+| W0003 | warning | lint | API.md §5.7 | a String limited to enum member names |
+| W0004 | warning | lint | API.md §5.7 | an authoring-note wire name (starting with `_`) that an output writes |
+| W0005 | warning | lint | API.md §5.7 | a source string holding the words of canon's generated marker |
+| W0006 | warning | lint | API.md §5.7 | entry files off the path their `@files` template gives |
+| W0007 | warning | lint | API.md §5.7 | a source file over 5,000 lines held by one `let` |
+| W0008 | warning | lint | API.md §5.7 | a C++ name that a text output or a loaded header `#define`s and no guard covers |
+
+| Code | Variant | Args | Template |
+|---|---|---|---|
+| W0001 | - | field:Name, prefix:Name, name:Name | `field {field} keeps the legacy prefix {prefix} in its Canon name: rename it {name} (canon rename keeps the old wire name with @json where a load or a data emit reads the field)` |
+| W0002 | list | first:Name, last:Name | `fields {first} to {last} are numbered siblings: make them one list` |
+| W0002 | pairs | first:Name, last:Name, key:Name, value:Name | `fields {first} to {last} are two numbered columns: one list with @json(pairs: ["{key}{{i}}", "{value}{{i}}"]) keeps the wire` |
+| W0003 | single | typ:Name, enum:Name | `{typ} is a String limited to the member names of {enum}: type it {enum}` |
+| W0003 | several | typ:Name, enums:Names | `{typ} is a String limited to the member names of {enums}: type it with the enum, or with a dependent type on the field that decides which enum` |
+| W0004 | - | field:Name, wire:Name, output:Name | `field {field} goes to the wire as {wire}, an authoring note, and {output} writes it: move the note into a /// comment, or give the field a wire name without _` |
+| W0005 | - | - | `this string holds the words of canon's generated marker: an output built from it claims to come from canon's generators; give it a marker of its own` |
+| W0006 | - | let:Name, count:Int, file:Path, want:Path | `{count} entry files of {let} are off the path its @files template gives; first: {file}, which belongs at {want}` |
+| W0007 | - | lines:Int, decl:Name, declLines:Int | `this file has {lines} lines, {declLines} of them in {decl}: hold its rows as entries in files of their own (@files)` |
+| W0008 | - | decl:Name, count:Int, file:Path, prefix:Name | `{count} names of {decl} are #defined by {file}, which no guard covers: add @cpp(defines: "{prefix}") to {decl}, or rename them with @cpp(name:)` |
 
 ## E10xx, W10xx: Project file, doc comments and naming
 

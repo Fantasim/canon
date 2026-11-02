@@ -1,0 +1,21 @@
+API.md §5.7: a legacy-prefix finding whose suggested name is free has one edit request, a
+renameName to that name, and linting again after the request applies reports nothing.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- apply --
+-- m/m.canon --
+package m
+
+record Unit {
+  dwHealth: Int
+}
+-- findings.txt --
+warning[W0001]  m/m.canon:4:3
+  field dwHealth keeps the legacy prefix dw in its Canon name: rename it health (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 1 warning in 1 package (…)
+fix W0001 m/m.canon:4:3 {"ops":[{"op":"renameName","path":"m:Unit.dwHealth","name":"health"}]}
+after the first fix:
+0 errors, 0 warnings in 1 package (…)

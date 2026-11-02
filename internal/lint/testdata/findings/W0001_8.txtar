@@ -1,0 +1,24 @@
+API.md §5.7: an importer b that holds a broken declaration withholds the fix, since canon edit refuses the rename.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+package a
+
+/// Item.
+record Item {
+  /// Level.
+  dwLevel: Int
+}
+-- b/b.canon --
+package b
+
+import a
+
+let bad: Nowhere = 1
+-- findings.txt --
+warning[W0001]  a/a.canon:6:3
+  field dwLevel keeps the legacy prefix dw in its Canon name: rename it level (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 1 warning in 2 packages (…)

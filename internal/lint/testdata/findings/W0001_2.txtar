@@ -1,0 +1,65 @@
+API.md §5.7: what the legacy-prefix lint leaves alone, and the fixes it withholds. A Float named
+with an integer prefix, a field with no capital after its prefix and a String named with a number
+prefix are silent. A suggested name another field or method of the record already has, a reserved
+word, and a record a text output writes get the finding but no fix.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+record Weights {
+  wDps: Float
+  nName: String
+  fCount: Int
+  dwlower: Int
+  bText: String
+  dwReal: Int
+}
+
+record Taken {
+  dwCount: Int
+  count: Int
+}
+
+record Method {
+  dwTotal: Int
+
+  fn total(self) -> Int { return self.dwTotal }
+}
+
+record Reserved {
+  dwType: Int
+}
+
+record Texted {
+  dwLevel: Int
+}
+
+local record Doc {
+  texted: Texted
+}
+
+@text("doc.txt")
+export fn doc() -> Doc {
+  return Doc { texted: Texted { dwLevel: 1 } }
+}
+-- findings.txt --
+warning[W0001]  m/m.canon:9:3
+  field dwReal keeps the legacy prefix dw in its Canon name: rename it real (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:13:3
+  field dwCount keeps the legacy prefix dw in its Canon name: rename it count (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:18:3
+  field dwTotal keeps the legacy prefix dw in its Canon name: rename it total (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:24:3
+  field dwType keeps the legacy prefix dw in its Canon name: rename it type (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:28:3
+  field dwLevel keeps the legacy prefix dw in its Canon name: rename it level (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 5 warnings in 1 package (…)
+fix W0001 m/m.canon:9:3 {"ops":[{"op":"renameName","path":"m:Weights.dwReal","name":"real"}]}

@@ -1,0 +1,109 @@
+API.md §5.7: a field name that keeps a legacy type prefix is a warning with the name it should
+have, for every prefix and type the lint reads, in a record and in a case of a variant; a field
+named without a prefix is not reported.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- m/m.canon --
+package m
+
+enum Kind { sword, bow }
+
+/// Rows of a table, so that a ref has a target.
+record Row { label: String }
+
+let rows: table Row = {}
+
+record Legacy {
+  dwItemCount: Int
+  szName: String
+  lpPoint: String
+  strLabel: String
+  nLog: Int
+  wKind: Kind
+  iRow: ref rows
+  uMask: Int?
+  fScale: Float
+  bOn: Bool
+  bFlags: Int
+  m_value: Int
+  dwID: Int
+  szURLPath: String
+  clean: Int
+}
+
+variant Shape {
+  circle {
+    dwRadius: Int
+  }
+  square {
+    dwSide: Int
+  }
+}
+-- findings.txt --
+warning[W0001]  m/m.canon:11:3
+  field dwItemCount keeps the legacy prefix dw in its Canon name: rename it itemCount (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:12:3
+  field szName keeps the legacy prefix sz in its Canon name: rename it name (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:13:3
+  field lpPoint keeps the legacy prefix lp in its Canon name: rename it point (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:14:3
+  field strLabel keeps the legacy prefix str in its Canon name: rename it label (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:15:3
+  field nLog keeps the legacy prefix n in its Canon name: rename it log (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:16:3
+  field wKind keeps the legacy prefix w in its Canon name: rename it kind (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:17:3
+  field iRow keeps the legacy prefix i in its Canon name: rename it row (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:18:3
+  field uMask keeps the legacy prefix u in its Canon name: rename it mask (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:19:3
+  field fScale keeps the legacy prefix f in its Canon name: rename it scale (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:20:3
+  field bOn keeps the legacy prefix b in its Canon name: rename it on (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:21:3
+  field bFlags keeps the legacy prefix b in its Canon name: rename it flags (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:22:3
+  field m_value keeps the legacy prefix m_ in its Canon name: rename it value (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:23:3
+  field dwID keeps the legacy prefix dw in its Canon name: rename it id (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:24:3
+  field szURLPath keeps the legacy prefix sz in its Canon name: rename it urlPath (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:30:5
+  field dwRadius keeps the legacy prefix dw in its Canon name: rename it radius (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+warning[W0001]  m/m.canon:33:5
+  field dwSide keeps the legacy prefix dw in its Canon name: rename it side (canon rename keeps the old wire name with @json where a load or a data emit reads the field)
+
+0 errors, 16 warnings in 1 package (…)
+fix W0001 m/m.canon:11:3 {"ops":[{"op":"renameName","path":"m:Legacy.dwItemCount","name":"itemCount"}]}
+fix W0001 m/m.canon:12:3 {"ops":[{"op":"renameName","path":"m:Legacy.szName","name":"name"}]}
+fix W0001 m/m.canon:13:3 {"ops":[{"op":"renameName","path":"m:Legacy.lpPoint","name":"point"}]}
+fix W0001 m/m.canon:14:3 {"ops":[{"op":"renameName","path":"m:Legacy.strLabel","name":"label"}]}
+fix W0001 m/m.canon:15:3 {"ops":[{"op":"renameName","path":"m:Legacy.nLog","name":"log"}]}
+fix W0001 m/m.canon:16:3 {"ops":[{"op":"renameName","path":"m:Legacy.wKind","name":"kind"}]}
+fix W0001 m/m.canon:17:3 {"ops":[{"op":"renameName","path":"m:Legacy.iRow","name":"row"}]}
+fix W0001 m/m.canon:18:3 {"ops":[{"op":"renameName","path":"m:Legacy.uMask","name":"mask"}]}
+fix W0001 m/m.canon:19:3 {"ops":[{"op":"renameName","path":"m:Legacy.fScale","name":"scale"}]}
+fix W0001 m/m.canon:20:3 {"ops":[{"op":"renameName","path":"m:Legacy.bOn","name":"on"}]}
+fix W0001 m/m.canon:21:3 {"ops":[{"op":"renameName","path":"m:Legacy.bFlags","name":"flags"}]}
+fix W0001 m/m.canon:22:3 {"ops":[{"op":"renameName","path":"m:Legacy.m_value","name":"value"}]}
+fix W0001 m/m.canon:23:3 {"ops":[{"op":"renameName","path":"m:Legacy.dwID","name":"id"}]}
+fix W0001 m/m.canon:24:3 {"ops":[{"op":"renameName","path":"m:Legacy.szURLPath","name":"urlPath"}]}
+fix W0001 m/m.canon:30:5 {"ops":[{"op":"renameName","path":"m:Shape.circle.dwRadius","name":"radius"}]}
+fix W0001 m/m.canon:33:5 {"ops":[{"op":"renameName","path":"m:Shape.square.dwSide","name":"side"}]}
