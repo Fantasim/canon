@@ -1,0 +1,47 @@
+EVALUATION.md §5, §9.3, DECISIONS 446: a record literal an amendment replaced by its copy is judged by the copy's walk, as a kept map literal's amended value is: the layer fixes w.v and m.by[a], so nothing is reported.
+-- layers --
+dev
+-- a/a.canon --
+package a
+
+local enum K { num, txt }
+
+local record Node {
+  k: K
+}
+
+local let nodes: table Node = { a { k: txt }, b { k: num } }
+
+local type P(e: Node) = match e.k {
+  num => Int
+  txt => String
+}
+
+local record W {
+  n: ref nodes
+  v: P(n)
+}
+
+local record H {
+  by: {x in nodes: P(x)}
+}
+
+local let m: H = { by: { a: 3 } }
+local let w: W = { n: a, v: 3 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend m {
+  by[a]: "s"
+}
+
+amend w {
+  v: "s"
+}
+-- dump.txt --
+a.nodes = {a: Node{k: txt}, b: Node{k: num}}
+a.m = H{by: {a: "s"}}
+a.w = W{n: a, v: "s"}
+
+0 errors, 0 warnings in 1 package (…)

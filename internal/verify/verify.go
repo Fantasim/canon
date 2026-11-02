@@ -34,6 +34,11 @@ type judgedEntries interface {
 	JudgedEntry(v value.Value, t types.Type, key value.Value)
 }
 
+// judgedRecords is what an Evaluator also serves to learn the records a walk judged (EVALUATION.md §5, DECISIONS 446).
+type judgedRecords interface {
+	JudgedRecord(rec *value.Record)
+}
+
 // Assets tells whether a file exists under an asset root, matched byte for byte (TYPES.md §13.4).
 type Assets interface {
 	// Exists looks name up under root, written in a file of directory from (WIRE.md §2.2, §2.3); link names the first link out of bounds that held the file back (§13.4).
@@ -47,6 +52,7 @@ type Verifier struct {
 	ev       Evaluator
 	deps     dependents
 	judged   judgedEntries
+	records  judgedRecords
 	bags     map[string]*diag.Bag
 	assets   Assets
 	src      *sources
@@ -79,10 +85,12 @@ func New(ev Evaluator, prog *check.Program, bags map[string]*diag.Bag, assets As
 func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag, assets Assets) *Verifier {
 	deps, _ := ev.(dependents)
 	judged, _ := ev.(judgedEntries)
+	records, _ := ev.(judgedRecords)
 	return &Verifier{
 		ev:       ev,
 		deps:     deps,
 		judged:   judged,
+		records:  records,
 		bags:     bags,
 		assets:   assets,
 		src:      ix.src,

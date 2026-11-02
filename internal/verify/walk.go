@@ -95,6 +95,9 @@ func (w *walker) dispatch(v value.Value, t types.Type, at *Path, sc scope) value
 
 // record verifies a record, then its own case outside the instance's memo: past is the slot's, not the instance's (TYPES.md §8.4).
 func (w *walker) record(r *value.Record, t types.Type, at *Path, sc scope) value.Value {
+	if w.records != nil {
+		w.records.JudgedRecord(r) // the literal it is needs no walk of its own (EVALUATION.md §5, DECISIONS 446)
+	}
 	nv := w.instance(r, t, at, sc)
 	if rec, ok := nv.(*value.Record); ok {
 		w.retiredCase(rec, at, sc)

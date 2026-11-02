@@ -1,0 +1,58 @@
+EVALUATION.md §5, DECISIONS 446: a walk at {x in nodes: past P(x)} does not judge a literal typed at {x in nodes: P(x)}: the two differ by more than a binder's name, so each literal is still judged at its own type, E3506 for the retired members it holds (w1, w2, s).
+-- a/a.canon --
+/// A.
+package a
+
+local enum E { a, retired b, c }
+
+local enum K @codes(UInt8) { x = 7, retired y = 1, z = 3 }
+
+local enum F { u, retired v }
+
+local record Node {
+  k: E
+}
+
+local let nodes: table Node = { p { k: a }, q { k: c } }
+
+local type P(e: Node) = match e.k {
+  a => E
+  b => E
+  c => F
+}
+
+local record H {
+  by: {x in nodes: past P(x)} = {}
+}
+
+local fn wrap(m: {x in nodes: P(x)}) -> H {
+  return { by: m }
+}
+
+local fn count(m: {x in nodes: P(x)}) -> Int {
+  let h: {y in nodes: past P(y)} = m
+  return h.keys().len()
+}
+
+local let w1: Int = wrap({ p: b }).by.keys().len()
+local let w2: Int = count({ q: v })
+local let s: H = wrap({ p: b })
+-- dump.txt --
+a.nodes = {p: Node{k: a}, q: Node{k: c}}
+a.w1 = 1
+a.w2 = 1
+a.s = H{by: {p: b}}
+
+error[E3506]  a/a.canon:35:31
+  [p]: E.b is retired (only a retired entry or a past E may hold it)
+  expected by a/a.canon:4 (retired b)
+
+error[E3506]  a/a.canon:36:32
+  [q]: F.v is retired (only a retired entry or a past F may hold it)
+  expected by a/a.canon:8 (retired v)
+
+error[E3506]  a/a.canon:37:28
+  [p]: E.b is retired (only a retired entry or a past E may hold it)
+  expected by a/a.canon:4 (retired b)
+
+3 errors, 0 warnings in 1 package (…)

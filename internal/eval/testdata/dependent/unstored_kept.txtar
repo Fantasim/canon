@@ -1,4 +1,4 @@
-TYPES.md §11.5, DECISIONS 408 (Decision 3): a literal typed against a kept dependent map is judged against T(key) at evaluation, stored or not: == and != with { d: 3 } and { n: {} }, and union's argument in a fn body, are E3802 at the value, once each; a literal stored as a list element is judged once, with that root and its path; one held only by a record never stored is judged as a literal. An entry another map holds (one, moved) is judged at its own key, and a walk at another dependent type (q, Q(d) = Int) leaves it to be judged against P(d).
+TYPES.md §11.5, DECISIONS 408 (Decision 3): a literal typed against a kept dependent map is judged against T(key) at evaluation, stored or not: == and != with { d: 3 } and { n: {} }, and union's argument in a fn body, are E3802 at the value, once each; a literal stored as a list element is judged once, with that root and its path; one held only by a record never stored is judged with that record literal, at its path within it (by[n], DECISIONS 446). An entry another map holds (one, moved) is judged at its own key, and a walk at another dependent type (q, Q(d) = Int) leaves it to be judged against P(d).
 -- a/a.canon --
 package a
 
@@ -98,12 +98,12 @@ error[E3802]  a/a.canon:39:55
   expected by a/a.canon:39 (P(x))
 
 error[E3802]  a/a.canon:45:31
-  [n]: value does not match P(x) = Int
-  expected by a/a.canon:41 (P(x))
+  by[n]: value does not match P(x) = Int
+  expected by a/a.canon:27 (P(x))
 
 error[E3802]  a/a.canon:46:32
-  [n]: value does not match P(x) = Int
-  expected by a/a.canon:41 (P(x))
+  by[n]: value does not match P(x) = Int
+  expected by a/a.canon:27 (P(x))
 
 error[E3802]  a/a.canon:50:42
   [d]: value does not match P(x) = a.Sub(e)

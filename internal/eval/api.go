@@ -27,6 +27,7 @@ func (e *Evaluator) Call(ctx context.Context, fn check.Object, recv value.Value,
 	v := r.invokeFn(fnCall{obj: fn, self: recv, args: padded(args, len(d.Params)), site: f.Span, name: f.Fn})
 	ok = v != nil && !r.failed
 	if ok { // TYPES.md §11.5: its kept literals, charged as its result's verification is (§12.2)
+		e.lits.resultHolds(r.lits, v) // the result's own verification judges them (DECISIONS 324, 446)
 		e.judgeScope(r.lits, e.hostJudge(ctx, Root{Pkg: fn.Pkg(), Name: fn.Name()}))
 	}
 	return v, ok

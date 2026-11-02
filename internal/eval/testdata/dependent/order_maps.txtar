@@ -1,0 +1,294 @@
+EVALUATION.md §5, DECISIONS 408, 446: independent kept-map literals are judged in recording order, so a budget that runs out among them stops at the same literal as before (sweep.txt: each budget whose findings change).
+-- a/a.canon --
+/// A.
+package a
+
+local enum E { a, retired b, c }
+
+local enum K @codes(UInt8) { x = 7, retired y = 1, z = 3 }
+
+local record Node {
+  k: E
+}
+
+local let nodes: table Node = { p { k: a }, q { k: c } }
+
+local type P(e: Node) = match e.k {
+  a => Int
+  b => Int
+  c => String
+}
+
+local let m: {x in nodes: P(x)} = { p: 1 }
+local let e1: Bool = m == { q: 1 }
+local let e2: Bool = m == { q: 2, p: 3 }
+local let e3: Bool = m != { p: 4, q: "z" }
+-- dump.txt --
+a.nodes = {p: Node{k: a}, q: Node{k: c}}
+a.m = {p: 1}
+a.e1 = false
+a.e2 = false
+a.e3 = true
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+2 errors, 0 warnings in 1 package (…)
+-- sweep.txt --
+=== budget 35
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 35 steps exhausted
+  heaviest: e1 (10 steps)
+
+1 error, 0 warnings in 1 package (…)
+
+=== budget 36
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 36 steps exhausted
+  heaviest: e1 (10 steps)
+
+1 error, 0 warnings in 1 package (…)
+
+=== budget 37
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 37 steps exhausted
+  heaviest: e1 (10 steps)
+
+1 error, 0 warnings in 1 package (…)
+
+=== budget 38
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 38 steps exhausted
+  heaviest: e1 (10 steps)
+
+1 error, 0 warnings in 1 package (…)
+
+=== budget 39
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 39 steps exhausted
+  heaviest: e2 (12 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+2 errors, 0 warnings in 1 package (…)
+
+=== budget 40
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 40 steps exhausted
+  heaviest: e2 (12 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+2 errors, 0 warnings in 1 package (…)
+
+=== budget 41
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 41 steps exhausted
+  heaviest: e2 (12 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+2 errors, 0 warnings in 1 package (…)
+
+=== budget 42
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 42 steps exhausted
+  heaviest: e2 (12 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+2 errors, 0 warnings in 1 package (…)
+
+=== budget 43
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 43 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 44
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 44 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 45
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 45 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 46
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 46 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 47
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 47 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 48
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 48 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 49
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 49 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 50
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 50 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 51
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 51 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 52
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 52 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 53
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 53 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+
+=== budget 54
+error[E4401]  a/a.canon:20:27
+  evaluation budget of 54 steps exhausted
+  heaviest: e2 (16 steps)
+
+error[E3802]  a/a.canon:21:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+error[E3802]  a/a.canon:22:32
+  [q]: value does not match P(x) = String
+  expected by a/a.canon:20 (P(x))
+
+3 errors, 0 warnings in 1 package (…)
+

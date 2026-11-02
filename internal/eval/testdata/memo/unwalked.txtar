@@ -1,0 +1,53 @@
+EVALUATION.md §5, IMPLEMENTATION-PLAN §7.6, DECISIONS 446: an entry holding a record literal its root's walk never reaches (ws.one's v fits no branch of P(a)): the literal is judged once, and a replay of the entry gives what a cold evaluation gives.
+-- memo --
+stored 1 unkept 0
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, rec }
+
+/// A node.
+record Node {
+  /// Kind.
+  k: K
+}
+
+/// Nodes.
+let nodes: table Node = { a { k: num }, b { k: rec } }
+
+/// Q.
+type Q(e: Node) = match e.k {
+  num => Int
+  rec => String
+}
+
+/// R.
+record R {
+  /// Node.
+  m: ref nodes
+  /// Value.
+  x: Q(m)
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  rec => R
+}
+
+/// W.
+record W {
+  /// Node.
+  n: ref nodes
+  /// Value.
+  v: P(n)
+}
+
+/// Ws.
+let ws: table W = {}
+-- a/e1.canon --
+package a
+
+entry ws.one { n: a, v: { m: a, x: "s" } }

@@ -25,6 +25,7 @@ type entryTrace struct {
 	infos     []*readInfo
 	files     []*syntax.File
 	found     []memoFinding
+	lits      []*value.Record // the record literals recorded for the entry's root, which a replay records none of
 	aborted   bool
 	void      bool
 }
@@ -83,7 +84,7 @@ func (tr *entryTrace) entry(e *Evaluator, rec *value.Record) (*memoEntry, bool) 
 	if (rec == nil) != r.failed || rec == nil && !tr.aborted {
 		return nil, false
 	}
-	if !tr.unchanged(e) {
+	if !tr.unchanged(e) || !tr.holdsLiterals(e, rec) {
 		return nil, false
 	}
 	en := &memoEntry{reads: tr.reads, tail: tr.steps(e), need: tr.need, files: tr.files, found: tr.found, owner: r.charge}
@@ -209,6 +210,38 @@ func (tr *entryTrace) code(file *syntax.File) {
 	if file != nil && !slices.Contains(tr.files, file) {
 		tr.files = append(tr.files, file)
 	}
+}
+
+// holdsLiterals reports every record literal tr recorded held by rec, the entry, which its root's
+// verification walks: a replay, which records none, leaves nothing unjudged (DECISIONS 446).
+func (tr *entryTrace) holdsLiterals(e *Evaluator, rec *value.Record) bool {
+	if len(tr.lits) == 0 {
+		return true
+	}
+	if rec == nil {
+		return false
+	}
+	held := e.lits.heldLiterals(rec)
+	for _, lit := range tr.lits {
+		if !held[lit] {
+			return false
+		}
+	}
+	return true
+}
+
+// traceRecord notes rec, a record literal recorded into sink for st, on the entry being recorded;
+// one another root or scope judges voids the recording, as a kept map literal does.
+func (r *run) traceRecord(rec *value.Record, sink *litScope, st *rootState) {
+	u := r.ev.memo
+	if u == nil || u.trace == nil {
+		return
+	}
+	if sink != &r.ev.lits.roots || st != u.trace.run.root {
+		u.trace.void = true
+		return
+	}
+	u.trace.lits = append(u.trace.lits, rec)
 }
 
 // voidTrace voids the recording of the entry r evaluates, if any.

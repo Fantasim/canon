@@ -1,0 +1,48 @@
+EVALUATION.md §5, §14, DECISIONS 446: a record literal its root's walk never reaches (w.v fits no branch of P(a), so stage B stops at it, E3802, and marks it invalid) is still judged once as a literal, which reports nothing again inside an invalid value (x is not reported); y's slot is a static view (P(*)), which stage B does not walk, so the R literal it holds is judged with the W literal holding it, once (v.x: E3802).
+-- a/a.canon --
+package a
+
+local enum K { num, rec }
+
+local record Node {
+  k: K
+}
+
+local let nodes: table Node = { a { k: num }, b { k: rec } }
+
+local type Q(e: Node) = match e.k {
+  num => Int
+  rec => String
+}
+
+local record R {
+  m: ref nodes
+  x: Q(m)
+}
+
+local type P(e: Node) = match e.k {
+  num => Int
+  rec => R
+}
+
+local record W {
+  n: ref nodes
+  v: P(n)
+}
+
+local let w: W = { n: a, v: { m: a, x: "s" } }
+local let y = W { n: b, v: { m: a, x: "t" } }.v
+-- dump.txt --
+a.nodes = {a: Node{k: num}, b: Node{k: rec}}
+a.w = W{n: a, v: R{m: a, x: "s"}}
+a.y = R{m: a, x: "t"}
+
+error[E3802]  a/a.canon:31:29
+  w.v: value does not match P(n) = Int
+  expected by a/a.canon:28 (v: P(n))
+
+error[E3802]  a/a.canon:32:39
+  v.x: value does not match Q(m) = Int
+  expected by a/a.canon:18 (x: Q(m))
+
+2 errors, 0 warnings in 1 package (…)

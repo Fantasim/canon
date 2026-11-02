@@ -113,5 +113,6 @@ func (e *Evaluator) mark(from, to value.Value) value.Value {
 		e.invalid[to] = true
 	}
 	e.shareParams(from, to)
+	e.lits.copied(from, to)
 	return to
 }

@@ -20,7 +20,7 @@ func (v *Verifier) CheckAs(ctx context.Context, root eval.Root, val value.Value,
 	return v.check(ctx, root, val, t, &result{frame: &frame, own: map[value.Value]bool{}})
 }
 
-// CheckLiteral verifies val, a map literal of kept dependent map type t that root's evaluation built, each value against T(key); a value another walk found invalid is not reported again (TYPES.md §11.5).
+// CheckLiteral verifies val, a literal of type t root's evaluation built: a kept dependent map's, each value against T(key), or a record with a dependent field; a value another walk found invalid is not reported again (TYPES.md §11.5).
 func (v *Verifier) CheckLiteral(ctx context.Context, root eval.Root, val value.Value, t types.Type) (Result, error) {
 	return v.check(ctx, root, val, t, &result{own: map[value.Value]bool{}})
 }

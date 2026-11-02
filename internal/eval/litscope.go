@@ -27,8 +27,8 @@ func newScope(up *litScope) *litScope {
 	return &litScope{pending: pendingSet{}, up: up}
 }
 
-// judgeScope hands each literal s recorded to judge, its entries still pending only, in recording
-// order, s judging meanwhile; false when judge stopped at a hard error.
+// judgeScope hands each literal s recorded to judge, its entries still pending only, in
+// judgeOrder, s judging meanwhile; false when judge stopped at a hard error.
 func (e *Evaluator) judgeScope(s *litScope, judge func(KeptLiteral) bool) bool {
 	if s == nil || len(s.recs) == 0 {
 		return true
@@ -37,7 +37,7 @@ func (e *Evaluator) judgeScope(s *litScope, judge func(KeptLiteral) bool) bool {
 	for len(s.recs) > 0 { // a judgement's defaults and where re-runs may record more (stageSink)
 		recs := s.recs
 		s.recs = nil
-		for _, rec := range recs {
+		for _, rec := range e.lits.judgeOrder(recs) {
 			if left := s.pending.residue(rec); left != nil && !e.judgeOne(rec, left, judge) {
 				return false
 			}
@@ -132,20 +132,32 @@ func (w *World) adoptLiterals(s *litScope, copies map[value.Value]value.Value) {
 	}
 	left := s.recs[:0]
 	for _, rec := range s.recs {
-		cm, held := copies[rec.m].(*value.Map)
-		if !held || rec.sub == nil {
+		adopt := w.adoptMap
+		if rec.r != nil {
+			adopt = w.adoptRecord
+		}
+		if !adopt(s, rec, copies) {
 			left = append(left, rec)
-			continue
 		}
-		wr := keptRec{st: w.ev.state(rec.sub), m: cm, t: rec.t, id: k.next}
-		k.next++
-		for i, v := range rec.m.Vals {
-			if s.pending.take(v, func(x keptEntry) bool { return x.rec == rec.id && x.key == rec.m.Keys[i] }) {
-				cv := copies[v]
-				k.roots.pending[cv] = append(k.roots.pending[cv], keptEntry{rec: wr.id, t: rec.t, key: cm.Keys[i]})
-			}
-		}
-		k.roots.recs = append(k.roots.recs, wr)
 	}
 	s.recs = left
+}
+
+// adoptMap makes the copy of rec, a kept map literal of s a substituted value holds, its let's; false when no copy is held.
+func (w *World) adoptMap(s *litScope, rec keptRec, copies map[value.Value]value.Value) bool {
+	cm, held := copies[rec.m].(*value.Map)
+	if !held || rec.sub == nil {
+		return false
+	}
+	k := &w.ev.lits
+	wr := keptRec{st: w.ev.state(rec.sub), m: cm, t: rec.t, id: k.next}
+	k.next++
+	for i, v := range rec.m.Vals {
+		if s.pending.take(v, func(x keptEntry) bool { return x.rec == rec.id && x.key == rec.m.Keys[i] }) {
+			cv := copies[v]
+			k.roots.pending[cv] = append(k.roots.pending[cv], keptEntry{rec: wr.id, t: rec.t, key: cm.Keys[i]})
+		}
+	}
+	k.roots.recs = append(k.roots.recs, wr)
+	return true
 }

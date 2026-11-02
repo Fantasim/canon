@@ -1,0 +1,60 @@
+EVALUATION.md §5, IMPLEMENTATION-PLAN §7.6, DECISIONS 446: a record literal with a dependent field that its entry holds, itself, nested or as a copied default, is judged by its root's walk, so the entry is kept and a replay, recording none, judges the same; one the entry only compares (bs.two) is judged as a literal, E3802, which a replay would not record: that entry is never kept.
+-- memo --
+stored 2 unkept 1
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, txt }
+
+/// A node.
+record Node {
+  /// Kind.
+  k: K
+}
+
+/// Nodes.
+let nodes: table Node = { p { k: num }, q { k: txt } }
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  txt => String
+}
+
+/// W.
+record W {
+  /// Node.
+  n: ref nodes
+  /// Value.
+  v: P(n)
+}
+
+/// A box.
+record Box {
+  /// One.
+  w: W = { n: q, v: "d" }
+  /// More.
+  ws: [W] = []
+  /// A comparison.
+  same: Bool = false
+}
+
+/// Ws.
+let ws: table W = {}
+
+/// Boxes.
+let bs: table Box = {}
+-- a/e1.canon --
+package a
+
+entry ws.one { n: p, v: 1 }
+-- a/e2.canon --
+package a
+
+entry bs.one { ws: [{ n: q, v: "s" }] }
+-- a/e3.canon --
+package a
+
+entry bs.two { same: W { n: q, v: 1 } == W { n: p, v: 1 } }

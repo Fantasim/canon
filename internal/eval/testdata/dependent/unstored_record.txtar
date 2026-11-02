@@ -1,0 +1,52 @@
+EVALUATION.md §5, DECISIONS 446: a record literal with a dependent field is judged where it is built, stored or not: the operand of == (eq), a fn body's literal (in f) and a stored record (stored.v) are E3802, once each.
+-- a/a.canon --
+package a
+
+local enum K { num, txt }
+
+local record Node {
+  k: K
+}
+
+local let nodes: table Node = { a { k: txt }, b { k: num } }
+
+local type P(e: Node) = match e.k {
+  num => Int
+  txt => String
+}
+
+local record W {
+  n: ref nodes
+  v: P(n)
+}
+
+local let w: W = { n: b, v: 4 }
+local let eq: Bool = W { n: a, v: 4 } == w
+
+local fn f() -> Bool {
+  return W { n: a, v: 3 } != w
+}
+
+local let viaFn: Bool = f()
+local let stored: W = W { n: a, v: 3 }
+-- dump.txt --
+a.nodes = {a: Node{k: txt}, b: Node{k: num}}
+a.w = W{n: b, v: 4}
+a.eq = false
+a.viaFn = true
+a.stored = W{n: a, v: 3}
+
+error[E3802]  a/a.canon:22:35
+  v: value does not match P(n) = String
+  expected by a/a.canon:18 (v: P(n))
+
+error[E3802]  a/a.canon:25:23
+  v: value does not match P(n) = String
+  expected by a/a.canon:18 (v: P(n))
+  in f (a/a.canon:28)
+
+error[E3802]  a/a.canon:29:36
+  stored.v: value does not match P(n) = String
+  expected by a/a.canon:18 (v: P(n))
+
+3 errors, 0 warnings in 1 package (…)

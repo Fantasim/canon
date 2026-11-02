@@ -9,13 +9,14 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// LiteralVerifier is a Host that also verifies the kept dependent map literals a top-level value's evaluation built, stored or not (TYPES.md §11.5).
+// LiteralVerifier is a Host that also verifies the kept dependent map literals, and the record and case literals with a dependent field, a top-level value's evaluation built, stored or not (TYPES.md §11.5; EVALUATION.md §5).
 type LiteralVerifier interface {
 	// VerifyLiterals runs stage B on each literal, its steps and findings root's, once the values of a flush are verified (EVALUATION.md §5).
 	VerifyLiterals(ctx context.Context, root Root, lits []KeptLiteral)
 }
 
-// KeptLiteral is a map literal typed against a kept dependent map, its entries no root's verification judged.
+// KeptLiteral is a map literal typed against a kept dependent map, its entries no root's verification judged, or a
+// record or case literal with a dependent field no root's verification judged, at its own type (DECISIONS 446).
 type KeptLiteral struct {
 	Value value.Value
 	Type  types.Type
@@ -29,6 +30,9 @@ type keptLits struct {
 	next    int
 	judging *litScope // the scope whose entries a verification judges now; nil: the roots'
 	free    bool      // the literal being judged was built by a where re-run, which costs nothing (DECISIONS 148)
+
+	literal map[*value.Record]*value.Record // each record literal recorded, and each copy of one, to that literal
+	depRecs map[types.Type]bool             // whether a record or case type has a dependent field, by type
 }
 
 // pendingSet is, by value, the entries of recorded literals no walk judged yet.
@@ -36,16 +40,19 @@ type pendingSet map[value.Value][]keptEntry
 
 // keptRec is a recorded literal, its type, the root whose evaluation built it and its record id;
 // sub, in a substitution's scope, is the let it is evaluated for; free, a where re-run built it.
+// A kept map literal is m, of type t; a record or case literal is r, judged at its own type.
 type keptRec struct {
 	st   *rootState
 	m    *value.Map
 	t    *types.DepMapType
+	r    *value.Record
 	id   int
 	sub  check.Object
 	free bool
 }
 
-// keptEntry is a pending entry of record rec: its value is judged against t at key.
+// keptEntry is a pending entry of record rec: its value is judged against t at key; t nil: the
+// value is the record literal rec itself.
 type keptEntry struct {
 	rec int
 	t   *types.DepMapType
@@ -99,6 +106,10 @@ func (e *Evaluator) stageSink(root Root) (*litScope, *rootState) {
 
 // add makes rec's entries pending.
 func (p pendingSet) add(rec keptRec) {
+	if rec.r != nil {
+		p[rec.r] = append(p[rec.r], keptEntry{rec: rec.id})
+		return
+	}
 	for i, v := range rec.m.Vals {
 		p[v] = append(p[v], keptEntry{rec: rec.id, t: rec.t, key: rec.m.Keys[i]})
 	}
@@ -122,12 +133,12 @@ func (p pendingSet) judged(v value.Value, t types.Type, key value.Value) {
 	if len(p) == 0 || p[v] == nil {
 		return
 	}
-	p.take(v, func(x keptEntry) bool { return value.Equal(x.key, key) && sameDepMap(x.t, t) })
+	p.take(v, func(x keptEntry) bool { return x.t != nil && value.Equal(x.key, key) && sameDepMap(x.t, t) })
 }
 
-// sameDepMap reports a and b one dependent map type, as written.
+// sameDepMap reports a and b one dependent map type, as written up to a binder's name (DECISIONS 446).
 func sameDepMap(a *types.DepMapType, b types.Type) bool {
-	return types.Type(a) == b || types.Identical(a, b) && a.String() == b.String()
+	return types.Type(a) == b || types.Identical(a, b) && sameUpToBinder(a, b)
 }
 
 // take removes the pending entries of v that match, reporting whether one did.
@@ -146,7 +157,7 @@ func (p pendingSet) take(v value.Value, match func(keptEntry) bool) bool {
 }
 
 // walkLiterals hands each recorded literal of a verified root to the host, its entries still
-// pending only, in recording order; false when none was recorded.
+// pending only, in judgeOrder; false when none was recorded.
 func (e *Evaluator) walkLiterals(ctx context.Context) bool {
 	k := &e.lits
 	recs := k.roots.recs
@@ -155,7 +166,7 @@ func (e *Evaluator) walkLiterals(ctx context.Context) bool {
 	}
 	k.roots.recs = nil
 	defer e.judgingIn(nil)()
-	for _, rec := range recs {
+	for _, rec := range k.judgeOrder(recs) {
 		left := k.roots.pending.residue(rec)
 		if rec.st.status == done && left != nil {
 			e.judgeOne(rec, left, func(l KeptLiteral) bool {
@@ -168,15 +179,37 @@ func (e *Evaluator) walkLiterals(ctx context.Context) bool {
 }
 
 // judgeOne hands rec's residue left to judge, free when a where re-run built it.
-func (e *Evaluator) judgeOne(rec keptRec, left *value.Map, judge func(KeptLiteral) bool) bool {
+func (e *Evaluator) judgeOne(rec keptRec, left value.Value, judge func(KeptLiteral) bool) bool {
 	free := e.lits.free
 	e.stageB, e.lits.free = nil, rec.free
 	defer func() { e.stageB, e.lits.free = nil, free }()
-	return judge(KeptLiteral{Value: left, Type: rec.t})
+	return judge(KeptLiteral{Value: left, Type: rec.typ()})
+}
+
+// typ is the type rec's literal is judged at: its kept map type, or the record's own.
+func (rec keptRec) typ() types.Type {
+	if rec.r != nil {
+		return rec.r.T
+	}
+	return rec.t
+}
+
+// vals are the values rec's entries are pending under: its map's values, or the record.
+func (rec keptRec) vals() []value.Value {
+	if rec.r != nil {
+		return []value.Value{rec.r}
+	}
+	return rec.m.Vals
 }
 
 // residue is rec's literal with only its own entries still pending, which it takes out of p; nil for none.
-func (p pendingSet) residue(rec keptRec) *value.Map {
+func (p pendingSet) residue(rec keptRec) value.Value {
+	if rec.r != nil {
+		if p.take(rec.r, func(x keptEntry) bool { return x.rec == rec.id && x.t == nil }) {
+			return rec.r
+		}
+		return nil
+	}
 	var out *value.Map
 	for i, v := range rec.m.Vals {
 		key := rec.m.Keys[i]
@@ -187,6 +220,9 @@ func (p pendingSet) residue(rec keptRec) *value.Map {
 			out = &value.Map{T: rec.m.T, P: rec.m.P}
 		}
 		out.Keys, out.Vals = append(out.Keys, key), append(out.Vals, v)
+	}
+	if out == nil {
+		return nil
 	}
 	return out
 }
@@ -200,7 +236,7 @@ func (e *Evaluator) dropLiterals(st *rootState) {
 			kept = append(kept, rec)
 			continue
 		}
-		for _, v := range rec.m.Vals {
+		for _, v := range rec.vals() {
 			s.pending.take(v, func(x keptEntry) bool { return x.rec == rec.id })
 		}
 	}
