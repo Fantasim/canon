@@ -46,6 +46,7 @@ type Wait struct {
 
 // Held is the set of locks one Acquire took, in name order; Release frees them.
 type Held struct {
+	dir   string
 	reqs  []Request
 	files []*os.File
 }
@@ -68,7 +69,7 @@ func Acquire(ctx context.Context, dir string, reqs []Request) (*Held, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	h := &Held{reqs: wanted}
+	h := &Held{dir: dir, reqs: wanted}
 	if !lockable() || len(wanted) == 0 {
 		return h, nil
 	}
@@ -110,7 +111,7 @@ func TryAcquire(dir string, reqs []Request) (h *Held, ok bool, err error) {
 	if !lockable() {
 		return nil, false, ErrNoLocks
 	}
-	h = &Held{reqs: wanted}
+	h = &Held{dir: dir, reqs: wanted}
 	if len(wanted) == 0 {
 		return h, true, nil
 	}
@@ -145,7 +146,7 @@ func (h *Held) Release() error {
 	var errs []error
 	for _, f := range slices.Backward(h.files) {
 		if err := f.Close(); err != nil {
-			errs = append(errs, fmt.Errorf(fmtWrap, err))
+			errs = append(errs, relative(h.dir, err))
 		}
 	}
 	h.files = nil
@@ -201,9 +202,22 @@ func plainDir(d string) error {
 	return nil
 }
 
-// relative is err with the path a *fs.PathError carries made relative to dir, so no absolute
-// path reaches a message (DECISIONS 201).
+// relative is err with the path every *fs.PathError of its tree carries made relative to dir,
+// so no absolute path reaches a message (DECISIONS 201, 416): the order of a joined error, each
+// cause and errors.Is are kept, and nil stays nil.
 func relative(dir string, err error) error {
+	if err == nil {
+		return nil
+	}
+	var joined interface{ Unwrap() []error }
+	if errors.As(err, &joined) {
+		parts := joined.Unwrap()
+		out := make([]error, len(parts))
+		for i, part := range parts {
+			out[i] = relative(dir, part)
+		}
+		return errors.Join(out...)
+	}
 	var pe *fs.PathError
 	if errors.As(err, &pe) {
 		return &fs.PathError{Op: pe.Op, Path: rel(dir, pe.Path), Err: pe.Err}
@@ -278,7 +292,7 @@ func stamp(f *os.File, dir string) error {
 		err = f.Truncate(int64(len(line)))
 	}
 	if err != nil {
-		return errors.Join(relative(dir, err), f.Close())
+		return errors.Join(relative(dir, err), relative(dir, f.Close()))
 	}
 	return nil
 }
