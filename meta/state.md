@@ -1,7 +1,7 @@
 # State — Canon compiler
 
-Updated: 2026-11-02. **v0.2.0 tagged locally on 2026-11-02, waiting on Louis to push and publish** (on
-`a0fb77a2`, annotated, never pushed; `dist/` built, `sha256sum -c` green). It is the trust release: `expect package`, checked decoders, bound constants, opaque enums, macro and
+Updated: 2026-11-02. **v0.2.0 released 2026-11-02** (tag on `a0fb77a2`, pushed with `main` and
+published as the GitHub release at Louis's request; installed in `~/.local/bin`, 0.1.13 kept as `canon-0.1.13`). It is the trust release: `expect package`, checked decoders, bound constants, opaque enums, macro and
 wire-name refusals, DECISIONS 398-429 ([ADR-0023](decisions/0023-v02-trust-release.md),
 [log 10-31](decisions/log-2026-10-31.md), [log 11-01](decisions/log-2026-11-01.md),
 [reply](handoff/2026-11-02-canon-reply-v020.md), [run status](handoff/2026-10-31-v020-status.md)).
@@ -10,9 +10,9 @@ headlines: [releases.md](releases.md). `main` is the only branch.
 
 ## Current focus
 
-**Waiting on Louis (release steps):** push `main` and `v0.2.0`; `gh release create v0.2.0
-dist/*.tar.gz dist/*.zip dist/checksums.txt --title v0.2.0 --notes-from-tag`; Scripts' canon-bump moves
-the pin. Then the Sovereign sessions apply the reply's migrations (Go: wiki 5, monitoring 3, trello 2
+**Next for the Sovereign sessions:** Scripts' canon-bump moves the pin (Resource pre-push and
+`lib/canon_gate.sh` still pin 0.1.13, so Resource pushes are refused until then), with the badge patch;
+then the reply's migrations. Then the Sovereign sessions apply the reply's migrations (Go: wiki 5, monitoring 3, trello 2
 sites; TS: admin 1, monitoring 3; Source: 70 `…FileFile` call sites; Resource: the badge patch, the
 `WindowIds.h` defines, `expect package` for its `…Problems` workarounds).
 
