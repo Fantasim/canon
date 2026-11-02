@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-11-02. **v0.2.0 released 2026-11-02** (tag on `a0fb77a2`, pushed with `main` and
+Updated: 2026-11-02 (ADR-0026 written). **v0.2.0 released 2026-11-02** (tag on `a0fb77a2`, pushed with `main` and
 published as the GitHub release at Louis's request; installed in `~/.local/bin`, 0.1.13 kept as `canon-0.1.13`). It is the trust release: `expect package`, checked decoders, bound constants, opaque enums, macro and
 wire-name refusals, DECISIONS 398-429 ([ADR-0023](decisions/0023-v02-trust-release.md),
 [log 10-31](decisions/log-2026-10-31.md), [log 11-01](decisions/log-2026-11-01.md),
@@ -10,27 +10,24 @@ headlines: [releases.md](releases.md). `main` is the only branch.
 
 ## Current focus
 
-**Next for the Sovereign sessions:** Scripts' canon-bump moves the pin (Resource pre-push and
-`lib/canon_gate.sh` still pin 0.1.13, so Resource pushes are refused until then), with the badge patch;
-then the reply's migrations. Then the Sovereign sessions apply the reply's migrations (Go: wiki 5, monitoring 3, trello 2
-sites; TS: admin 1, monitoring 3; Source: 70 `…FileFile` call sites; Resource: the badge patch, the
-`WindowIds.h` defines, `expect package` for its `…Problems` workarounds).
+**Next for the Sovereign sessions:** the pin moved (Resource's pre-push and Scripts' `lib/canon_gate.sh` pin
+0.2.0; Resource `23d54ac6`); the reply's migrations remain (Go: wiki 5, monitoring 3, trello 2 sites; TS: admin 1, monitoring 3; Source: 70 `…FileFile` call
+sites; Resource: the `WindowIds.h` defines, `expect package` for its `…Problems` workarounds).
 
-**Next step: v0.3, lean generated code** ([ADR-0024](decisions/0024-v03-lean-generated-code-outline.md),
-an outline). Its §0: measure first (§3), then write the decision-complete ADR in the format of
-ADR-0021 and ADR-0023 (v0.2 changed the code its items touch), then run it. v0.4 formulas
-([ADR-0025](decisions/0025-v04-formulas-outline.md)) follows; v0.5 binary data and v0.6 runtime values
-are direction ([roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md)). Louis, 2026-10-31: formulas
-before binary data; the on-disk cache and N1 parked. [Plan](plan.md); [all handoffs](handoff/README.md).
+**Next step: run v0.3, lean generated code** ([ADR-0026](decisions/0026-v03-lean-generated-code.md),
+decision-complete: 34 units, DECISIONS 430-452, measured on Sovereign's real output; it supersedes the
+outline [ADR-0024](decisions/0024-v03-lean-generated-code-outline.md)). Run it by its §0 and §17, S0 first.
+Its §0 flags four calls for Louis, none blocking. v0.4 formulas ([ADR-0025](decisions/0025-v04-formulas-outline.md))
+follows; v0.5 binary data (with baked views and presence bits) and v0.6 runtime values are direction
+([roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md)). Louis, 2026-10-31: formulas before binary data;
+the on-disk cache (Q3, waiting for v0.3's scale bench) and N1 parked. [Plan](plan.md); [all handoffs](handoff/README.md).
 `make realdata-compile` is required before every tag (394); `RD_PATCH` applies a diff first.
 
-**Owed (nothing is a wrong verdict):** the reply's "What stays owed" groups it: generators (E8005 hint
-gaps, define-guard over-wrap, dead `ModFloat`, function-size items), checker and eval (the `kept` memo
-never pruned, dependent-value residues, `where`-only literals judged free), edit and workspace (typing
-spread lines, an Undo marker, `Options.FS` docs, writelock absolute names, Windows spellings), test
-tidying, and spec-wording items listed in the two logs. Parked: the cache's stat table,
-`evalAnalysis` → `KeptSelection`; M4 call (b) declined. Still open: the studio's full reload has no
-target; VIEWMODEL J13/J14 through a ref.
+**Owed:** ADR-0026 rules every item of v0.2's "What stays owed": in v0.3 (§14-§16), or decided out with
+the record corrected (§14.4, §15.9: the define-guard over-wrap is no bug since `3cdc78c9`; dead `ModFloat`
+kept on purpose; the `kept` memo measured flat; Resource does use J13/J14 through a ref). After v0.3: its §19.
+Parked: the cache's stat table, `evalAnalysis` → `KeptSelection`; M4 call (b) declined. Still open: the
+studio's full reload has no target.
 **Documented limits:** `NoHook` is filled for the import closure only (ADR-0021 §2.5); MSVC at scale.
 Environment: `internal/workspace` watch tests skip when inotify watches run out (raise
 `fs.inotify.max_user_watches`). Cloud: `apt-get install libc++-18-dev libc++abi-18-dev`, `npm ci --prefix
@@ -55,8 +52,8 @@ None blocking. Decision 9 (Go `exhaustive` blind on opaque enums) was built as w
 Q1 (runtime values as schema packages, v0.6) waits for his yes. One ask of the run, for him: a
 builder's leftover `sleep` loop (a zsh `until grep … sleep 15`, pid 2792522, watching
 `subjcap-all.log`) was still running on this machine on 2026-11-02; the orchestrator does not kill
-another process on a builder's behalf. Owed, technical (v0.3): `internal/ir/constants.go` is at the
-audit's 500-line limit; the next constant goes in a split by concern.
+another process on a builder's behalf. ADR-0026 §0 flags four calls (header weight dropped, baked views to
+v0.5, two lints decided out, the scale bench for Q3); its §17.1 puts new constants in `<pkg>/errors.go`.
 
 ## Operating notes
 

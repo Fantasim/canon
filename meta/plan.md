@@ -261,22 +261,28 @@ as written, no veto reached the run.
   - `RD_PATCH=… make realdata-compile`;
   - the consumer compile.
 
-## v0.3: lean generated code ([ADR-0024](decisions/0024-v03-lean-generated-code-outline.md), an outline completed at v0.3's start)
+## v0.3: lean generated code ([ADR-0026](decisions/0026-v03-lean-generated-code.md), decision-complete; it supersedes the outline [ADR-0024](decisions/0024-v03-lean-generated-code-outline.md))
 
-- [ ] Enum tables: `ToWire` on the name table, `FromWire` by a permutation index, dense ordinals (C++, Go).
-- [ ] A one-pass C++ JSON reader, proven by a differential fuzz against the five passes.
-- [ ] Header weight, measured first: forward-declaration headers for imports that only name enums;
-  opened enums' initialisers moved into the `.gen.cpp`.
-- [ ] Baked data as views, without heap copies.
-- [ ] TS for bundles: `/*#__PURE__*/`, `sideEffects` documented, a runtime module per directory if
-  the measured helper block is large.
-- [ ] A function-size budget in the generators' tests, and the splits it asks for.
-- [ ] Runtime copies of one version must agree (the C++ guard is keyed by version, not content).
-- [ ] `ordered_json` C++ overload; kind constants; output path templates (N8). These are Louis's v0.2
+34 units, DECISIONS 430-452; run by ADR-0026 §0 and §17. Four calls are flagged for Louis in its §0, none blocking.
+
+- [ ] An enum's strings written once, C++ and Go (430).
+- [ ] The C++ JSON runtime reads a file in one pass, proven against v0.2.0's reader; a NUL after a data
+  document refused (431).
+- Header weight: measured and dropped (ADR-0026 §5); CODEGEN §7.1's include order corrected.
+- [ ] Baked containers find their keys in sorted constant tables (432); views of baked data and presence
+  bits move to v0.5's record layout.
+- [ ] TS for bundles: `/*#__PURE__*/` on every construction (433); the helper block stays per file (434).
+- [ ] Generated functions within 1,000 lines (435).
+- [ ] C++ runtime copies carry a content stamp (436).
+- [ ] `ordered_json` C++ `Decode` (437); kind constants (438); N8 output templates (439). Louis's v0.2
   picks, moved here.
-- [ ] N3 `canon lint`.
-- [ ] A scale bench at 1x, 3x and 5x.
-- [ ] Stretch: C++ presence bits.
+- [ ] N3 `canon lint` (440).
+- [ ] The scale bench at 1x, 3x and 5x, for Louis's Q3; the edit bench re-based (441).
+- [ ] Owed: `E8005` hints (442), `E1118` on locals (443), record-literal defaults (444), the snapshot leak
+  (445), dependent literals (446), `where` runs free (447), errors outside `expect` (448), `canon test`
+  warnings (449), keyed-list amend lines (450), writelock paths, `E8026` on the first build (451), test
+  tidying, the spec wording v0.2 left unwritten.
+- [ ] Release gates (ADR-0026 §18), the language staying `canon: "0.1"` (452).
 
 ## v0.4: formulas ([ADR-0025](decisions/0025-v04-formulas-outline.md), an outline completed at v0.4's start)
 
@@ -294,7 +300,8 @@ as written, no veto reached the run.
 
 ## After v0.4 (direction, not scheduled; roadmap §6)
 
-- v0.5: binary data, with N2 (one declaration per id).
+- v0.5: binary data, with N2 (one declaration per id), the record layout of loaded data, views of baked data and
+  presence bits (ADR-0026 §6).
 - v0.6: runtime values and messages, in Canon, as schema packages (types only; recommended in
   roadmap §9, Q1, waiting for Louis's yes).
 - Parked: N1 legacy C++ structs (Louis, 2026-10-31), N7 package moves, M7 `convert`.

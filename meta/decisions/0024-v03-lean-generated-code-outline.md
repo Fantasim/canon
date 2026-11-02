@@ -1,6 +1,7 @@
 # ADR-0024 — v0.3, lean generated code: the outline
 
-Date: 2026-10-31. **Status: outline, proposed.** Scope: Louis, 2026-10-31
+Date: 2026-10-31. **Status: superseded by [ADR-0026](0026-v03-lean-generated-code.md)** (the decision-complete
+ADR, 2026-11-02). Scope: Louis, 2026-10-31
 ([roadmap](../handoff/2026-10-31-canon-roadmap-v02-v04.md) §4, [log-2026-10-31](log-2026-10-31.md)).
 The scope and the direction of each item are fixed here. The designs are not.
 
