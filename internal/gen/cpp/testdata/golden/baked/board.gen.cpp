@@ -43,37 +43,27 @@ struct BoardAccess {
 
 BoardAccess::Data BoardAccess::Build() {
     Data d;
-    d.columns.rows_ = canon::KeyedList<std::string, Column>::FromRows(std::vector<Column>(2), {
-        "todo",
-        "done",
-    });
-    d.statuses.rows_ = canon::KeyedList<std::string, Status>::FromRows(std::vector<Status>(3), {
-        "open",
-        "taken",
-        "closed",
-    });
-    d.crews.rows_ = canon::KeyedList<std::string, Crew>::FromRows(std::vector<Crew>(2), {
-        "ann",
-        "bob",
-    });
+    d.columns.rows_.resize(2);
+    d.statuses.rows_.resize(3);
+    d.crews.rows_.resize(2);
     {
-        auto& r2 = const_cast<Column&>(d.columns.rows_.At(0));
+        auto& r2 = d.columns.rows_[0];
         r2.id_ = ColumnId::todo;
         r2.title_ = "To do";
     }
     {
-        auto& r2 = const_cast<Column&>(d.columns.rows_.At(1));
+        auto& r2 = d.columns.rows_[1];
         r2.id_ = ColumnId::done;
         r2.title_ = "Done";
     }
     {
-        auto& r2 = const_cast<Status&>(d.statuses.rows_.At(0));
+        auto& r2 = d.statuses.rows_[0];
         r2.id_ = StatusId::open;
         r2.label_ = "Open";
         r2.column_ = ColumnId::todo;
-        r2.column_ref_ = &d.columns.rows_.At(0);
+        r2.column_ref_ = &d.columns.rows_[0];
         r2.next_ = std::vector<StatusId>{StatusId::taken};
-        r2.next_ref_ = std::vector<const Status*>{&d.statuses.rows_.At(1)};
+        r2.next_ref_ = std::vector<const Status*>{&d.statuses.rows_[1]};
         {
             auto& r3 = r2.reward_.value_.emplace<0>();
             r3.amount_ = 2;
@@ -87,21 +77,21 @@ BoardAccess::Data BoardAccess::Build() {
         r2.rank_[1] = 2;
         r2.rank_[2] = 1;
         r2.columnFor_[0] = ColumnId::todo;
-        r2.columnFor_ref_[0] = &d.columns.rows_.At(0);
+        r2.columnFor_ref_[0] = &d.columns.rows_[0];
         r2.columnFor_[1] = ColumnId::done;
-        r2.columnFor_ref_[1] = &d.columns.rows_.At(1);
+        r2.columnFor_ref_[1] = &d.columns.rows_[1];
         r2.columnFor_[2] = ColumnId::done;
-        r2.columnFor_ref_[2] = &d.columns.rows_.At(1);
+        r2.columnFor_ref_[2] = &d.columns.rows_[1];
     }
     {
-        auto& r2 = const_cast<Status&>(d.statuses.rows_.At(1));
+        auto& r2 = d.statuses.rows_[1];
         r2.id_ = StatusId::taken;
         r2.retired_ = true;
         r2.label_ = "Taken";
         r2.column_ = ColumnId::todo;
-        r2.column_ref_ = &d.columns.rows_.At(0);
+        r2.column_ref_ = &d.columns.rows_[0];
         r2.next_ = std::vector<StatusId>{StatusId::closed, StatusId::open};
-        r2.next_ref_ = std::vector<const Status*>{&d.statuses.rows_.At(2), &d.statuses.rows_.At(0)};
+        r2.next_ref_ = std::vector<const Status*>{&d.statuses.rows_[2], &d.statuses.rows_[0]};
         r2.reward_.value_.emplace<1>();
         r2.weight_ = 1;
         r2.final_ = false;
@@ -109,18 +99,18 @@ BoardAccess::Data BoardAccess::Build() {
         r2.rank_[1] = 4;
         r2.rank_[2] = 2;
         r2.columnFor_[0] = ColumnId::todo;
-        r2.columnFor_ref_[0] = &d.columns.rows_.At(0);
+        r2.columnFor_ref_[0] = &d.columns.rows_[0];
         r2.columnFor_[1] = ColumnId::done;
-        r2.columnFor_ref_[1] = &d.columns.rows_.At(1);
+        r2.columnFor_ref_[1] = &d.columns.rows_[1];
         r2.columnFor_[2] = ColumnId::done;
-        r2.columnFor_ref_[2] = &d.columns.rows_.At(1);
+        r2.columnFor_ref_[2] = &d.columns.rows_[1];
     }
     {
-        auto& r2 = const_cast<Status&>(d.statuses.rows_.At(2));
+        auto& r2 = d.statuses.rows_[2];
         r2.id_ = StatusId::closed;
         r2.label_ = "Closed";
         r2.column_ = ColumnId::done;
-        r2.column_ref_ = &d.columns.rows_.At(1);
+        r2.column_ref_ = &d.columns.rows_[1];
         r2.next_ = std::vector<StatusId>{};
         r2.next_ref_ = std::vector<const Status*>{};
         {
@@ -133,14 +123,14 @@ BoardAccess::Data BoardAccess::Build() {
         r2.rank_[1] = 6;
         r2.rank_[2] = 3;
         r2.columnFor_[0] = ColumnId::todo;
-        r2.columnFor_ref_[0] = &d.columns.rows_.At(0);
+        r2.columnFor_ref_[0] = &d.columns.rows_[0];
         r2.columnFor_[1] = ColumnId::done;
-        r2.columnFor_ref_[1] = &d.columns.rows_.At(1);
+        r2.columnFor_ref_[1] = &d.columns.rows_[1];
         r2.columnFor_[2] = ColumnId::done;
-        r2.columnFor_ref_[2] = &d.columns.rows_.At(1);
+        r2.columnFor_ref_[2] = &d.columns.rows_[1];
     }
     d.initialStatus = StatusId::open;
-    d.initialStatus_ref = &d.statuses.rows_.At(0);
+    d.initialStatus_ref = &d.statuses.rows_[0];
     d.limit = 12;
     d.tags = std::vector<std::string>{"a", "b"};
     d.home.x_ = 3;
@@ -172,26 +162,26 @@ BoardAccess::Data BoardAccess::Build() {
         r2.n_ = 2;
     }
     {
-        auto& r2 = const_cast<Crew&>(d.crews.rows_.At(0));
+        auto& r2 = d.crews.rows_[0];
         r2.name_ = "ann";
         r2.size_ = 2;
     }
     {
-        auto& r2 = const_cast<Crew&>(d.crews.rows_.At(1));
+        auto& r2 = d.crews.rows_[1];
         r2.name_ = "bob";
         r2.size_ = 5;
     }
-    d.nextOf[0] = std::vector<const Status*>{&d.statuses.rows_.At(1)};
-    d.nextOf[1] = std::vector<const Status*>{&d.statuses.rows_.At(2), &d.statuses.rows_.At(0)};
+    d.nextOf[0] = std::vector<const Status*>{&d.statuses.rows_[1]};
+    d.nextOf[1] = std::vector<const Status*>{&d.statuses.rows_[2], &d.statuses.rows_[0]};
     d.nextOf[2] = std::vector<const Status*>{};
-    d.maybeColumn[1] = &d.columns.rows_.At(1);
+    d.maybeColumn[1] = &d.columns.rows_[1];
     d.tagsOf[0] = std::vector<std::string>{"q"};
     d.tagsOf[1] = std::vector<std::string>{"l", "L"};
     d.tagsOf[2] = std::vector<std::string>{};
     d.primes = std::vector<int64_t>{2, 3, 5};
-    d.crewOf[0] = &d.crews.rows_.At(0);
-    d.crewOf[1] = &d.crews.rows_.At(1);
-    d.crewOf[2] = &d.crews.rows_.At(0);
+    d.crewOf[0] = &d.crews.rows_[0];
+    d.crewOf[1] = &d.crews.rows_[1];
+    d.crewOf[2] = &d.crews.rows_[0];
     return d;
 }
 
@@ -389,6 +379,35 @@ std::optional<StatusId> StatusIdFromWire(std::string_view key) {
     }
     if (lo < detail::kStatusIdByWire.size() && detail::kStatusIdWires[detail::kStatusIdByWire[lo]] == key) return static_cast<StatusId>(detail::kStatusIdByWire[lo]);
     return std::nullopt;
+}
+
+const Column* Columns::Find(std::string_view key) const {
+    const std::optional<ColumnId> id = ColumnIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+
+const Status* Statuses::Find(std::string_view key) const {
+    const std::optional<StatusId> id = StatusIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+
+const Crew* Crews::Find(std::string_view key) const {
+    static constexpr std::array<std::string_view, 2> kKeys = {"ann", "bob"};
+    static constexpr std::array<uint32_t, 2> kRows = {0, 1};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    return nullptr;
 }
 
 const Columns& GetColumns() { return detail::BoardAccess::Get().columns; }

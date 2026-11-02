@@ -207,17 +207,17 @@ public:
     Zones(Zones&&) = default;
     Zones& operator=(Zones&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Zone& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Zone>& All() const { return rows_.All(); }
-    const Zone& Get(ZoneId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const Zone& At(size_t i) const { return rows_[i]; }
+    const std::vector<Zone>& All() const { return rows_; }
+    const Zone& Get(ZoneId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const Zone* Find(std::string_view id) const { return rows_.Find(id); }
+    const Zone* Find(std::string_view id) const;
 
 private:
     friend struct detail::WorldAccess;
 
-    canon::KeyedList<std::string, Zone> rows_;
+    std::vector<Zone> rows_;
 };
 
 /// Level bands.
@@ -229,17 +229,17 @@ public:
     Bands(Bands&&) = default;
     Bands& operator=(Bands&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const LevelRangeRow& At(size_t i) const { return rows_.At(i); }
-    const std::vector<LevelRangeRow>& All() const { return rows_.All(); }
-    const LevelRangeRow& Get(LevelRangeId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const LevelRangeRow& At(size_t i) const { return rows_[i]; }
+    const std::vector<LevelRangeRow>& All() const { return rows_; }
+    const LevelRangeRow& Get(LevelRangeId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const LevelRangeRow* Find(std::string_view id) const { return rows_.Find(id); }
+    const LevelRangeRow* Find(std::string_view id) const;
 
 private:
     friend struct detail::WorldAccess;
 
-    canon::KeyedList<std::string, LevelRangeRow> rows_;
+    std::vector<LevelRangeRow> rows_;
 };
 
 /// The zones.

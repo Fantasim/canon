@@ -5,9 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <string>
 #include <string_view>
-#include <vector>
 
 namespace e::b {
 
@@ -26,8 +24,7 @@ struct BAccess {
 
 BAccess::Data BAccess::Build() {
     Data d;
-    d.items.rows_ = canon::KeyedList<std::string, Item>::FromRows(std::vector<Item>(0), {
-    });
+    d.items.rows_.resize(0);
     return d;
 }
 
@@ -65,6 +62,12 @@ std::optional<ItemId> ItemIdFromWire(std::string_view key) {
     }
     if (lo < detail::kItemIdByWire.size() && detail::kItemIdWires[detail::kItemIdByWire[lo]] == key) return static_cast<ItemId>(detail::kItemIdByWire[lo]);
     return std::nullopt;
+}
+
+const Item* Items::Find(std::string_view key) const {
+    const std::optional<ItemId> id = ItemIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
 }
 
 const Items& GetItems() { return detail::BAccess::Get().items; }

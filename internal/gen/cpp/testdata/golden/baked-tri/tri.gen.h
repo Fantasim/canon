@@ -117,17 +117,17 @@ public:
     Notes(Notes&&) = default;
     Notes& operator=(Notes&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Note& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Note>& All() const { return rows_.All(); }
-    const Note& Get(NoteId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const Note& At(size_t i) const { return rows_[i]; }
+    const std::vector<Note>& All() const { return rows_; }
+    const Note& Get(NoteId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const Note* Find(std::string_view id) const { return rows_.Find(id); }
+    const Note* Find(std::string_view id) const;
 
 private:
     friend struct detail::TriAccess;
 
-    canon::KeyedList<std::string, Note> rows_;
+    std::vector<Note> rows_;
 };
 
 const Notes& GetNotes();

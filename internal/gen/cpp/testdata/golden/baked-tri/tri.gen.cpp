@@ -58,11 +58,9 @@ struct TriAccess {
 
 TriAccess::Data TriAccess::Build() {
     Data d;
-    d.notes.rows_ = canon::KeyedList<std::string, Note>::FromRows(std::vector<Note>(1), {
-        "n0",
-    });
+    d.notes.rows_.resize(1);
     {
-        auto& r2 = const_cast<Note&>(d.notes.rows_.At(0));
+        auto& r2 = d.notes.rows_[0];
         r2.id_ = NoteId::n0;
         r2.text_ = "a?\?=b ?\?/ c ?\?\?";
     }
@@ -147,6 +145,12 @@ std::optional<NoteId> NoteIdFromWire(std::string_view key) {
     }
     if (lo < detail::kNoteIdByWire.size() && detail::kNoteIdWires[detail::kNoteIdByWire[lo]] == key) return static_cast<NoteId>(detail::kNoteIdByWire[lo]);
     return std::nullopt;
+}
+
+const Note* Notes::Find(std::string_view key) const {
+    const std::optional<NoteId> id = NoteIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
 }
 
 const Notes& GetNotes() { return detail::TriAccess::Get().notes; }

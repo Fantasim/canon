@@ -14,6 +14,9 @@ var reNameTables = regexp.MustCompile(`(?s)std::array<std::string_view, \d+> (k\
 // reLocalTables are the function-local tables DECISIONS 383 wrote and 430 replaced: a name table, a wire table, a sorted copy of the wires and the enumerators in that order.
 var reLocalTables = regexp.MustCompile(`\b(kNames|kWires|kValues|kIds)\b|std::array<std::string_view, \d+> kKeys|\n    static constexpr std::array<std::string_view`)
 
+// reContainerFinds are the lookups of a baked container, whose key tables are function-local by DECISIONS 432 (CODEGEN.md §5.9); they hold no enum's strings.
+var reContainerFinds = regexp.MustCompile(`(?s)\nconst \w+\* \w+::Find\w*\(.*?\n}\n`)
+
 // tableTexts are the enum string tables of a .gen.cpp by name.
 func tableTexts(source string) map[string]string {
 	out := map[string]string{}
@@ -88,7 +91,7 @@ func TestIDEnumStringsWrittenOnce(t *testing.T) {
 			t.Errorf("%q is in the enum tables %d times, want once", s, n)
 		}
 	}
-	if m := reLocalTables.FindString(source); m != "" {
+	if m := reLocalTables.FindString(reContainerFinds.ReplaceAllString(source, "")); m != "" {
 		t.Errorf("a function-local table remains: %q", m)
 	}
 	tables := tableTexts(source)

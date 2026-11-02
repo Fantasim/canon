@@ -37,7 +37,7 @@ func (g *gen) fillColumns(w *writer, v *ir.Value, rec *ir.Record, rows []*value.
 		return done
 	}
 	w.linef(1, countForFormat, indexLocal, indexLocal, len(rows), indexLocal)
-	at := fmt.Sprintf(keyedElemFormat, g.rowClass(rec), dataPrefix+g.pl.DataMember(v.Name)+rowsMember, indexLocal)
+	at := fmt.Sprintf(indexFormat, dataPrefix+g.pl.DataMember(v.Name)+rowsMember, indexLocal)
 	w.linef(depthTwo, rowAliasFormat, row, at)
 	for _, s := range stmts {
 		w.lineAt(depthTwo, s)

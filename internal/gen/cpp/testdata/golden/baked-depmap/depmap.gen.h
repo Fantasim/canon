@@ -290,17 +290,17 @@ public:
     Rows(Rows&&) = default;
     Rows& operator=(Rows&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Row& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Row>& All() const { return rows_.All(); }
-    const Row& Get(RowId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const Row& At(size_t i) const { return rows_[i]; }
+    const std::vector<Row>& All() const { return rows_; }
+    const Row& Get(RowId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const Row* Find(std::string_view id) const { return rows_.Find(id); }
+    const Row* Find(std::string_view id) const;
 
 private:
     friend struct detail::DepmapAccess;
 
-    canon::KeyedList<std::string, Row> rows_;
+    std::vector<Row> rows_;
 };
 
 /// The wide rows.
@@ -312,17 +312,17 @@ public:
     Wide(Wide&&) = default;
     Wide& operator=(Wide&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Cell& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Cell>& All() const { return rows_.All(); }
-    const Cell& Get(CellId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const Cell& At(size_t i) const { return rows_[i]; }
+    const std::vector<Cell>& All() const { return rows_; }
+    const Cell& Get(CellId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const Cell* Find(std::string_view id) const { return rows_.Find(id); }
+    const Cell* Find(std::string_view id) const;
 
 private:
     friend struct detail::DepmapAccess;
 
-    canon::KeyedList<std::string, Cell> rows_;
+    std::vector<Cell> rows_;
 };
 
 /// The rows.

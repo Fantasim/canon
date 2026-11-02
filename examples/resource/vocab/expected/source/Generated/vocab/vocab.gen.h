@@ -412,23 +412,18 @@ public:
     EventTypes(EventTypes&&) = default;
     EventTypes& operator=(EventTypes&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const EventType& At(size_t i) const { return rows_.At(i); }
-    const std::vector<EventType>& All() const { return rows_.All(); }
-    const EventType& Get(EventTypeId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const EventType& At(size_t i) const { return rows_[i]; }
+    const std::vector<EventType>& All() const { return rows_; }
+    const EventType& Get(EventTypeId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const EventType* Find(std::string_view id) const { return rows_.Find(id); }
-    const EventType* FindByCode(uint16_t code) const {
-        const auto i = canon::detail::FindSorted(byCodeKeys_, byCode_, code);
-        return i < 0 ? nullptr : &rows_.At(static_cast<size_t>(i));
-    }
+    const EventType* Find(std::string_view id) const;
+    const EventType* FindByCode(uint16_t code) const;
 
 private:
     friend struct detail::VocabAccess;
 
-    canon::KeyedList<std::string, EventType> rows_;
-    std::vector<uint16_t> byCodeKeys_;
-    std::vector<uint32_t> byCode_;
+    std::vector<EventType> rows_;
 };
 
 /// Every event type (Vocab/eventType.json).

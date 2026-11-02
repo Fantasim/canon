@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -103,17 +102,17 @@ public:
     Items(Items&&) = default;
     Items& operator=(Items&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Item& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Item>& All() const { return rows_.All(); }
-    const Item& Get(ItemId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const Item& At(size_t i) const { return rows_[i]; }
+    const std::vector<Item>& All() const { return rows_; }
+    const Item& Get(ItemId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const Item* Find(std::string_view id) const { return rows_.Find(id); }
+    const Item* Find(std::string_view id) const;
 
 private:
     friend struct detail::BAccess;
 
-    canon::KeyedList<std::string, Item> rows_;
+    std::vector<Item> rows_;
 };
 
 const Items& GetItems();

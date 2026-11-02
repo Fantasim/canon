@@ -20,47 +20,14 @@ namespace detail {
 
 namespace {
 
-constexpr std::string_view kBulk0[] = {
-    std::string_view("i0", 2),
-    std::string_view("i1", 2),
-    std::string_view("i2", 2),
-    std::string_view("i3", 2),
-    std::string_view("i4", 2),
-    std::string_view("i5", 2),
-    std::string_view("i6", 2),
-    std::string_view("i7", 2),
-};
-
-constexpr int64_t kBulk1[] = {
-    100,
-    101,
-    102,
-    103,
-    104,
-    105,
-    106,
-    107,
-};
-
-constexpr int64_t kBulk2[] = {
-    0,
-    10,
-    20,
-    30,
-    40,
-    50,
-    60,
-    70,
-};
-
-constexpr size_t kBulk3[] = {
+constexpr size_t kBulk0[] = {
     0,
     3,
     3,
     7,
 };
 
-constexpr int64_t kBulk4[] = {
+constexpr int64_t kBulk1[] = {
     1,
     2,
     3,
@@ -70,20 +37,20 @@ constexpr int64_t kBulk4[] = {
     7,
 };
 
-constexpr std::string_view kBulk5[] = {
+constexpr std::string_view kBulk2[] = {
     std::string_view("g0", 2),
     std::string_view("g1", 2),
     std::string_view("g2", 2),
 };
 
-constexpr size_t kBulk6[] = {
+constexpr size_t kBulk3[] = {
     0,
     2,
     2,
     5,
 };
 
-constexpr std::string_view kBulk7[] = {
+constexpr std::string_view kBulk4[] = {
     std::string_view("a", 1),
     std::string_view("b", 1),
     std::string_view("c", 1),
@@ -91,7 +58,7 @@ constexpr std::string_view kBulk7[] = {
     std::string_view("e", 1),
 };
 
-constexpr ItemId kBulk8[] = {
+constexpr ItemId kBulk5[] = {
     ItemId::i0,
     ItemId::i1,
     ItemId::i2,
@@ -102,7 +69,7 @@ constexpr ItemId kBulk8[] = {
     ItemId::i7,
 };
 
-constexpr bool kBulk9[] = {
+constexpr bool kBulk6[] = {
     false,
     true,
     false,
@@ -113,7 +80,7 @@ constexpr bool kBulk9[] = {
     false,
 };
 
-constexpr std::string_view kBulk10[] = {
+constexpr std::string_view kBulk7[] = {
     std::string_view("Item 0", 6),
     std::string_view("Item 1", 6),
     std::string_view("Item 2", 6),
@@ -124,7 +91,7 @@ constexpr std::string_view kBulk10[] = {
     std::string_view("Item 7", 6),
 };
 
-constexpr int64_t kBulk11[] = {
+constexpr int64_t kBulk8[] = {
     100,
     101,
     102,
@@ -135,7 +102,7 @@ constexpr int64_t kBulk11[] = {
     107,
 };
 
-constexpr std::string_view kBulk12[] = {
+constexpr std::string_view kBulk9[] = {
     std::string_view("t0", 2),
     std::string_view("t1", 2),
     std::string_view("t2", 2),
@@ -146,7 +113,7 @@ constexpr std::string_view kBulk12[] = {
     std::string_view("t7", 2),
 };
 
-constexpr size_t kBulk13[] = {
+constexpr size_t kBulk10[] = {
     0,
     1,
     2,
@@ -158,7 +125,7 @@ constexpr size_t kBulk13[] = {
     8,
 };
 
-constexpr Tier kBulk14[] = {
+constexpr Tier kBulk11[] = {
     Tier::t0,
     Tier::t1,
     Tier::t2,
@@ -169,7 +136,7 @@ constexpr Tier kBulk14[] = {
     Tier::t7,
 };
 
-constexpr std::optional<std::string_view> kBulk15[] = {
+constexpr std::optional<std::string_view> kBulk12[] = {
     std::nullopt,
     std::string_view("odd 1", 5),
     std::nullopt,
@@ -180,7 +147,7 @@ constexpr std::optional<std::string_view> kBulk15[] = {
     std::string_view("odd 7", 5),
 };
 
-constexpr ItemId kBulk16[] = {
+constexpr ItemId kBulk13[] = {
     ItemId::i1,
     ItemId::i2,
     ItemId::i3,
@@ -191,7 +158,7 @@ constexpr ItemId kBulk16[] = {
     ItemId::i0,
 };
 
-constexpr size_t kBulk17[] = {
+constexpr size_t kBulk14[] = {
     1,
     2,
     3,
@@ -202,7 +169,7 @@ constexpr size_t kBulk17[] = {
     0,
 };
 
-constexpr double kBulk18[] = {
+constexpr double kBulk15[] = {
     -0.0,
     0.25,
     0.5,
@@ -213,7 +180,7 @@ constexpr double kBulk18[] = {
     1.75,
 };
 
-constexpr float kBulk19[] = {
+constexpr float kBulk16[] = {
     0.5f,
     1.5f,
     2.5f,
@@ -224,7 +191,7 @@ constexpr float kBulk19[] = {
     7.5f,
 };
 
-constexpr int64_t kBulk20[] = {
+constexpr int64_t kBulk17[] = {
     canon::kIntMin,
     1,
     2,
@@ -235,7 +202,7 @@ constexpr int64_t kBulk20[] = {
     canon::kIntMax,
 };
 
-constexpr std::optional<std::chrono::milliseconds> kBulk21[] = {
+constexpr std::optional<std::chrono::milliseconds> kBulk18[] = {
     std::nullopt,
     std::chrono::milliseconds{1000},
     std::nullopt,
@@ -246,7 +213,7 @@ constexpr std::optional<std::chrono::milliseconds> kBulk21[] = {
     std::chrono::milliseconds{7000},
 };
 
-constexpr std::optional<std::string_view> kBulk22[] = {
+constexpr std::optional<std::string_view> kBulk19[] = {
     std::nullopt,
     std::string_view("o", 1),
     std::nullopt,
@@ -262,7 +229,7 @@ constexpr std::optional<std::string_view> kBulk22[] = {
     std::nullopt,
 };
 
-constexpr size_t kBulk23[] = {
+constexpr size_t kBulk20[] = {
     0,
     1,
     3,
@@ -274,7 +241,7 @@ constexpr size_t kBulk23[] = {
     13,
 };
 
-constexpr int64_t kBulk24[] = {
+constexpr int64_t kBulk21[] = {
     0,
     2,
     4,
@@ -285,7 +252,7 @@ constexpr int64_t kBulk24[] = {
     14,
 };
 
-constexpr int64_t kBulk25[] = {
+constexpr int64_t kBulk22[] = {
     0,
     1,
     2,
@@ -296,7 +263,7 @@ constexpr int64_t kBulk25[] = {
     7,
 };
 
-constexpr int64_t kBulk26[] = {
+constexpr int64_t kBulk23[] = {
     8,
     9,
     10,
@@ -307,7 +274,7 @@ constexpr int64_t kBulk26[] = {
     15,
 };
 
-constexpr int64_t kBulk27[] = {
+constexpr int64_t kBulk24[] = {
     16,
     17,
     18,
@@ -318,7 +285,7 @@ constexpr int64_t kBulk27[] = {
     23,
 };
 
-constexpr int64_t kBulk28[] = {
+constexpr int64_t kBulk25[] = {
     24,
     25,
     26,
@@ -329,7 +296,7 @@ constexpr int64_t kBulk28[] = {
     31,
 };
 
-constexpr int64_t kBulk29[] = {
+constexpr int64_t kBulk26[] = {
     32,
     33,
     34,
@@ -340,7 +307,7 @@ constexpr int64_t kBulk29[] = {
     39,
 };
 
-constexpr int64_t kBulk30[] = {
+constexpr int64_t kBulk27[] = {
     40,
     41,
     42,
@@ -351,7 +318,7 @@ constexpr int64_t kBulk30[] = {
     47,
 };
 
-constexpr int64_t kBulk31[] = {
+constexpr int64_t kBulk28[] = {
     48,
     49,
     50,
@@ -362,7 +329,7 @@ constexpr int64_t kBulk31[] = {
     55,
 };
 
-constexpr int64_t kBulk32[] = {
+constexpr int64_t kBulk29[] = {
     56,
     57,
     58,
@@ -373,7 +340,7 @@ constexpr int64_t kBulk32[] = {
     63,
 };
 
-constexpr std::string_view kBulk33[] = {
+constexpr std::string_view kBulk30[] = {
     std::string_view("name \"0\"", 8),
     std::string_view("name \"1\"", 8),
     std::string_view("name \"2\"", 8),
@@ -384,7 +351,7 @@ constexpr std::string_view kBulk33[] = {
     std::string_view("name \"7\"", 8),
 };
 
-constexpr std::pair<std::string_view, int64_t> kBulk34[] = {
+constexpr std::pair<std::string_view, int64_t> kBulk31[] = {
     {std::string_view("w0", 2), 0},
     {std::string_view("w1", 2), 1},
     {std::string_view("w2", 2), 4},
@@ -395,7 +362,7 @@ constexpr std::pair<std::string_view, int64_t> kBulk34[] = {
     {std::string_view("w7", 2), 49},
 };
 
-constexpr ItemId kBulk35[] = {
+constexpr ItemId kBulk32[] = {
     ItemId::i7,
     ItemId::i6,
     ItemId::i5,
@@ -406,7 +373,7 @@ constexpr ItemId kBulk35[] = {
     ItemId::i0,
 };
 
-constexpr size_t kBulk36[] = {
+constexpr size_t kBulk33[] = {
     7,
     6,
     5,
@@ -417,7 +384,7 @@ constexpr size_t kBulk36[] = {
     0,
 };
 
-constexpr int64_t kBulk37[] = {
+constexpr int64_t kBulk34[] = {
     0,
     10,
     20,
@@ -428,7 +395,7 @@ constexpr int64_t kBulk37[] = {
     70,
 };
 
-constexpr std::string_view kBulk38[] = {
+constexpr std::string_view kBulk35[] = {
     std::string_view("crew 0", 6),
     std::string_view("crew 1", 6),
     std::string_view("crew 2", 6),
@@ -439,7 +406,7 @@ constexpr std::string_view kBulk38[] = {
     std::string_view("crew 7", 6),
 };
 
-constexpr std::optional<std::string_view> kBulk39[] = {
+constexpr std::optional<std::string_view> kBulk36[] = {
     std::string_view("Tier 0", 6),
     std::nullopt,
     std::string_view("Tier 2", 6),
@@ -473,92 +440,90 @@ struct BulkAccess {
 
 BulkAccess::Data BulkAccess::Build() {
     Data d;
-    d.items.rows_ = canon::KeyedList<std::string, Item>::FromRows(std::vector<Item>(8), std::vector<std::string>(std::begin(kBulk0), std::end(kBulk0)));
-    d.items.byCodeKeys_ = std::vector<int64_t>(std::begin(kBulk1), std::end(kBulk1));
-    d.items.byCode_ = canon::detail::SortedIndex(d.items.byCodeKeys_);
-    d.crews.rows_ = canon::KeyedList<int64_t, Crew>::FromRows(std::vector<Crew>(8), std::vector<int64_t>(std::begin(kBulk2), std::end(kBulk2)));
-    d.grid = [] { std::vector<std::vector<int64_t>> v; v.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) v.push_back(std::vector<int64_t>(kBulk4 + kBulk3[n0], kBulk4 + kBulk3[n0 + 1])); return v; }();
-    d.groups = [] { std::vector<canon::FlatMap<std::string, std::vector<std::string>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(std::string(kBulk5[n0]), std::vector<std::string>(kBulk7 + kBulk6[n0], kBulk7 + kBulk6[n0 + 1])); return canon::FlatMap<std::string, std::vector<std::string>>::FromEntries(std::move(e)); }();
+    d.items.rows_.resize(8);
+    d.crews.rows_.resize(8);
+    d.grid = [] { std::vector<std::vector<int64_t>> v; v.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) v.push_back(std::vector<int64_t>(kBulk1 + kBulk0[n0], kBulk1 + kBulk0[n0 + 1])); return v; }();
+    d.groups = [] { std::vector<canon::FlatMap<std::string, std::vector<std::string>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(std::string(kBulk2[n0]), std::vector<std::string>(kBulk4 + kBulk3[n0], kBulk4 + kBulk3[n0 + 1])); return canon::FlatMap<std::string, std::vector<std::string>>::FromEntries(std::move(e)); }();
     for (size_t i = 0; i < 8; ++i) {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(i));
-        r2.id_ = kBulk8[i];
-        r2.retired_ = kBulk9[i];
-        r2.name_ = kBulk10[i];
-        r2.code_ = kBulk11[i];
-        r2.tags_ = std::vector<std::string>(kBulk12 + kBulk13[i], kBulk12 + kBulk13[i + 1]);
-        r2.tier_ = kBulk14[i];
-        r2.note_ = kBulk15[i];
-        r2.next_ = kBulk16[i];
-        r2.next_ref_ = &d.items.rows_.At(kBulk17[i]);
-        r2.ratio_ = kBulk18[i];
-        r2.weight_ = kBulk19[i];
-        r2.big_ = kBulk20[i];
-        r2.wait_ = kBulk21[i];
-        r2.opts_ = std::vector<std::optional<std::string>>(kBulk22 + kBulk23[i], kBulk22 + kBulk23[i + 1]);
-        r2.twice_ = kBulk24[i];
+        auto& r2 = d.items.rows_[i];
+        r2.id_ = kBulk5[i];
+        r2.retired_ = kBulk6[i];
+        r2.name_ = kBulk7[i];
+        r2.code_ = kBulk8[i];
+        r2.tags_ = std::vector<std::string>(kBulk9 + kBulk10[i], kBulk9 + kBulk10[i + 1]);
+        r2.tier_ = kBulk11[i];
+        r2.note_ = kBulk12[i];
+        r2.next_ = kBulk13[i];
+        r2.next_ref_ = &d.items.rows_[kBulk14[i]];
+        r2.ratio_ = kBulk15[i];
+        r2.weight_ = kBulk16[i];
+        r2.big_ = kBulk17[i];
+        r2.wait_ = kBulk18[i];
+        r2.opts_ = std::vector<std::optional<std::string>>(kBulk19 + kBulk20[i], kBulk19 + kBulk20[i + 1]);
+        r2.twice_ = kBulk21[i];
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(0));
+        auto& r2 = d.items.rows_[0];
         r2.prize_.value_.emplace<1>();
-        std::copy(std::begin(kBulk25), std::end(kBulk25), r2.bonus_.begin());
+        std::copy(std::begin(kBulk22), std::end(kBulk22), r2.bonus_.begin());
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(1));
+        auto& r2 = d.items.rows_[1];
         {
             auto& r3 = r2.prize_.value_.emplace<0>();
             r3.amount_ = 10;
         }
-        std::copy(std::begin(kBulk26), std::end(kBulk26), r2.bonus_.begin());
+        std::copy(std::begin(kBulk23), std::end(kBulk23), r2.bonus_.begin());
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(2));
+        auto& r2 = d.items.rows_[2];
         r2.prize_.value_.emplace<1>();
-        std::copy(std::begin(kBulk27), std::end(kBulk27), r2.bonus_.begin());
+        std::copy(std::begin(kBulk24), std::end(kBulk24), r2.bonus_.begin());
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(3));
+        auto& r2 = d.items.rows_[3];
         {
             auto& r3 = r2.prize_.value_.emplace<0>();
             r3.amount_ = 30;
         }
-        std::copy(std::begin(kBulk28), std::end(kBulk28), r2.bonus_.begin());
+        std::copy(std::begin(kBulk25), std::end(kBulk25), r2.bonus_.begin());
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(4));
+        auto& r2 = d.items.rows_[4];
         r2.prize_.value_.emplace<1>();
-        std::copy(std::begin(kBulk29), std::end(kBulk29), r2.bonus_.begin());
+        std::copy(std::begin(kBulk26), std::end(kBulk26), r2.bonus_.begin());
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(5));
+        auto& r2 = d.items.rows_[5];
         {
             auto& r3 = r2.prize_.value_.emplace<0>();
             r3.amount_ = 50;
         }
-        std::copy(std::begin(kBulk30), std::end(kBulk30), r2.bonus_.begin());
+        std::copy(std::begin(kBulk27), std::end(kBulk27), r2.bonus_.begin());
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(6));
+        auto& r2 = d.items.rows_[6];
         r2.prize_.value_.emplace<1>();
-        std::copy(std::begin(kBulk31), std::end(kBulk31), r2.bonus_.begin());
+        std::copy(std::begin(kBulk28), std::end(kBulk28), r2.bonus_.begin());
     }
     {
-        auto& r2 = const_cast<Item&>(d.items.rows_.At(7));
+        auto& r2 = d.items.rows_[7];
         {
             auto& r3 = r2.prize_.value_.emplace<0>();
             r3.amount_ = 70;
         }
-        std::copy(std::begin(kBulk32), std::end(kBulk32), r2.bonus_.begin());
+        std::copy(std::begin(kBulk29), std::end(kBulk29), r2.bonus_.begin());
     }
-    d.names = std::vector<std::string>(std::begin(kBulk33), std::end(kBulk33));
-    d.weights = canon::FlatMap<std::string, int64_t>::FromEntries(std::vector<canon::FlatMap<std::string, int64_t>::Entry>(std::begin(kBulk34), std::end(kBulk34)));
-    d.picks = std::vector<ItemId>(std::begin(kBulk35), std::end(kBulk35));
-    d.picks_ref = [&d] { std::vector<const Item*> v; v.reserve(8); for (const size_t i : kBulk36) v.push_back(&d.items.rows_.At(i)); return v; }();
+    d.names = std::vector<std::string>(std::begin(kBulk30), std::end(kBulk30));
+    d.weights = canon::FlatMap<std::string, int64_t>::FromEntries(std::vector<canon::FlatMap<std::string, int64_t>::Entry>(std::begin(kBulk31), std::end(kBulk31)));
+    d.picks = std::vector<ItemId>(std::begin(kBulk32), std::end(kBulk32));
+    d.picks_ref = [&d] { std::vector<const Item*> v; v.reserve(8); for (const size_t i : kBulk33) v.push_back(&d.items.rows_[i]); return v; }();
     for (size_t i = 0; i < 8; ++i) {
-        auto& r2 = const_cast<Crew&>(d.crews.rows_.At(i));
-        r2.n_ = kBulk37[i];
-        r2.name_ = kBulk38[i];
+        auto& r2 = d.crews.rows_[i];
+        r2.n_ = kBulk34[i];
+        r2.name_ = kBulk35[i];
     }
-    std::copy(std::begin(kBulk39), std::end(kBulk39), d.labelOf.begin());
+    std::copy(std::begin(kBulk36), std::end(kBulk36), d.labelOf.begin());
     return d;
 }
 
@@ -676,6 +641,46 @@ std::optional<ItemId> ItemIdFromWire(std::string_view key) {
     }
     if (lo < detail::kItemIdByWire.size() && detail::kItemIdWires[detail::kItemIdByWire[lo]] == key) return static_cast<ItemId>(detail::kItemIdByWire[lo]);
     return std::nullopt;
+}
+
+const Item* Items::Find(std::string_view key) const {
+    const std::optional<ItemId> id = ItemIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+
+const Item* Items::FindByCode(int64_t key) const {
+    static constexpr std::array<int64_t, 8> kKeys = {100, 101, 102, 103, 104, 105, 106, 107};
+    static constexpr std::array<uint32_t, 8> kRows = {0, 1, 2, 3, 4, 5, 6, 7};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    return nullptr;
+}
+
+const Crew* Crews::Find(int64_t key) const {
+    static constexpr std::array<int64_t, 8> kKeys = {0, 10, 20, 30, 40, 50, 60, 70};
+    static constexpr std::array<uint32_t, 8> kRows = {0, 1, 2, 3, 4, 5, 6, 7};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    return nullptr;
 }
 
 const std::vector<std::vector<int64_t>>& GetGrid() { return detail::BulkAccess::Get().grid; }

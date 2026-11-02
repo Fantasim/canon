@@ -3,7 +3,6 @@ package cppgen
 import (
 	_ "embed"
 	"fmt"
-	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -175,48 +174,9 @@ func (g *gen) refStorageOf(t ir.TypeRef, list, optional bool) (storage, init str
 	return ptr, initNull
 }
 
-// allocate gives a container its rows and keys first, so that any entry can point at any other; a @stable field's keys are sorted once (CODEGEN.md §5.9).
+// allocate gives a container its rows first, so that any entry can point at any other: the rows are sized once, with no key and no index, as its Find and FindBy<F> search constant tables (CODEGEN.md §5.9, DECISIONS 432).
 func (g *gen) allocate(w *writer, v *ir.Value) {
-	s := g.containerSpec(v)
-	rows := g.rows(v)
-	kf := g.keyFieldOf(v)
-	key := func(i int) string { return g.entryKey(kf, rows[i], v.IDs, i) }
-	data := dataPrefix + g.pl.DataMember(v.Name) + memberAccess
-	keyType := ir.TypeRef{Kind: types.String} // a table's keys are its ids
-	if kf != nil {
-		keyType = kf.Type
-	}
-	if from := g.hoistedKeys(keyType, s.key, len(rows), key); from != "" {
-		w.linef(1, keyedFromFormat, data+rowsField, s.key, s.elem, s.elem, len(rows), from)
-	} else {
-		w.linef(1, allocateFormat, data, s.key, s.elem, s.elem, len(rows))
-		for i := range rows {
-			w.lineAt(depthTwo, key(i)+comma)
-		}
-		w.linef(1, allocateClose)
-	}
-	for _, f := range s.stable {
-		g.stableKeys(w, data, f, rows)
-	}
-}
-
-// stableKeys writes a @stable field's values in entry order and their sorted index (CODEGEN.md §5.9).
-func (g *gen) stableKeys(w *writer, data string, f *ir.Field, rows []*value.Record) {
-	fb := g.pl.FindBy(f)
-	vals := make([]value.Value, len(rows))
-	for i, r := range rows {
-		vals[i] = g.fieldOf(r, f.Name)
-	}
-	if name, ok := g.hoistElems(f.Type, vals); ok {
-		w.linef(1, assignFormat, data+fb.Keys, rangeOf(fmt.Sprintf(vectorFormat, g.storage(f.Type)), name))
-	} else {
-		items := make([]string, len(vals))
-		for i, v := range vals {
-			items[i] = g.element(f.Type, v)
-		}
-		w.linef(1, assignFormat, data+fb.Keys, openBrace+strings.Join(items, listSep)+closeBrace)
-	}
-	w.linef(1, sortedIndexDataFormat, data+fb.Index, data+fb.Keys)
+	w.linef(1, resizeFormat, dataPrefix+g.pl.DataMember(v.Name)+memberAccess+rowsField, len(g.rows(v)))
 }
 
 // keyFieldOf is a keyed list's key field, nil for a table, whose keys are its ids.
@@ -225,17 +185,6 @@ func (g *gen) keyFieldOf(v *ir.Value) *ir.Field {
 		return nil
 	}
 	return g.keyField(v.Type)
-}
-
-// entryKey is entry i's key as its container's KeyedList holds it.
-func (g *gen) entryKey(kf *ir.Field, r *value.Record, ids []string, i int) string {
-	if kf == nil {
-		if i < len(ids) {
-			return g.strLit(ids[i])
-		}
-		return cppInvalid
-	}
-	return g.element(kf.Type, g.fieldOf(r, kf.Name))
 }
 
 // fieldOf is the value of field name of r; a record without it is malformed IR.
@@ -265,7 +214,7 @@ func (g *gen) fillData(w *writer, v *ir.Value) {
 	for i, r := range rows {
 		var block writer
 		block.linef(1, openBrace)
-		block.linef(depthTwo, rowRefFormat, rowVar(depthTwo), g.rowClass(rec), data, i)
+		block.linef(depthTwo, rowRefFormat, rowVar(depthTwo), data, i)
 		head := block.size()
 		if rec.Pkg != g.p.Name {
 			g.fillRow(at{&block, depthTwo}, rowVar(depthTwo), rec, r, g.rowIDLit(rec, r))

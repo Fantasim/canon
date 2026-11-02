@@ -464,7 +464,7 @@ const (
 )
 
 // containerNames are the members every container class declares (CODEGEN.md §5.9).
-var containerNames = []string{"Len", "At", "All", "Find", rowsField}
+var containerNames = []string{"Len", "At", "All", findName, rowsField}
 
 // escapes are the bytes a C++ string literal writes with a backslash; other controls are octal.
 var escapes = map[byte]string{'"': `\"`, '\\': `\\`, '\n': `\n`, '\t': `\t`}

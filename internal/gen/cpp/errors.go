@@ -185,15 +185,12 @@ const (
 const (
 	dataPrefix            = "d."
 	dataGetFormat         = "detail::%s::Get().%s"
-	allocateFormat        = "%srows_ = canon::KeyedList<%s, %s>::FromRows(std::vector<%s>(%d), {"
-	allocateClose         = "});"
-	sortedIndexDataFormat = "%s = canon::detail::SortedIndex(%s);"
-	rowRefFormat          = "auto& %s = const_cast<%s&>(%s.rows_.At(%d));"
+	rowRefFormat          = "auto& %s = %s.rows_[%d];"
 	rowVarFormat          = "r%d"
 	rowAliasFormat        = "auto& %s = %s;"
 	emplaceStmtFormat     = "%s.emplace();"
 	makeUniqueFormat      = "%s = std::make_unique<%s>();"
-	entryAddrFormat       = "&%s.rows_.At(%d)"
+	entryAddrFormat       = "&%s.rows_[%d]"
 	emplaceCaseFormat     = "%s." + ir.CppVariantMember + ".emplace<%d>();"
 	caseRefFormat         = "auto& %s = %s." + ir.CppVariantMember + ".emplace<%d>();"
 	emplaceBranchFormat   = "%s." + ir.CppVariantMember + ".emplace<%d>(%s);"
@@ -210,7 +207,7 @@ const (
 	bakedPartLines        = 1000
 	partDeclFormat        = "static void %s(Data& d);"
 	partCallFormat        = "%s(d);"
-	entryAtFormat         = "&%s.rows_.At(%s)"
+	entryAtFormat         = "&%s.rows_[%s]"
 	sliceFormat           = "%s(%s + %s[i], %s + %s[i + 1])"
 	notFromWireFormat     = "!%s(%s)"
 	inlineArrayOpenFormat = "inline constexpr %s %s[] = {\n"
@@ -232,7 +229,7 @@ const (
 	pairFormat        = "std::pair<%s, %s>"
 	fromArrayFormat   = "%s::FromEntries(%s)"
 	entryVectorFormat = "std::vector<%s::Entry>"
-	entriesLoopFormat = "[&d] { %s v; v.reserve(%d); for (const size_t i : %s) v.push_back(&%s.rows_.At(i)); return v; }()"
+	entriesLoopFormat = "[&d] { %s v; v.reserve(%d); for (const size_t i : %s) v.push_back(&%s.rows_[i]); return v; }()"
 	keyedFromFormat   = "%s = canon::KeyedList<%s, %s>::FromRows(std::vector<%s>(%d), %s);"
 	cellsCopyFormat   = "std::copy(std::begin(%s), std::end(%s), %s.begin());"
 	declFormat        = "%s;\n"
@@ -247,9 +244,25 @@ const (
 	branchJSONDoc     = "nlohmann/json would write the position: store the discriminant."
 	idToJSONDeleted   = "template <typename J> void to_json(J&, %s) = delete;"
 	idFromJSONDeleted = "template <typename J> void from_json(const J&, %s&) = delete;"
-	getFormat         = "const %s& Get(%s id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }"
+	getFormat         = "const %s& Get(%s id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }"
 	// maxInline is the widest initializer written on one line; a longer one puts one item per line.
 	maxInline = 80
+)
+
+// A baked container's rows and lookups: Find and FindBy<F> are declared in the header and defined in the .gen.cpp over sorted constant tables (CODEGEN.md §5.9, §7.3; DECISIONS 432).
+const (
+	bakedLenFormat    = "size_t Len() const { return rows_.size(); }"
+	bakedAtFormat     = "const %s& At(size_t i) const { return rows_[i]; }"
+	bakedAllFormat    = "const std::vector<%s>& All() const { return rows_; }"
+	bakedFindFormat   = "const %s* Find(%s %s) const;"
+	bakedFindByFormat = "const %s* %s(%s %s) const;"
+	bakedRowsFormat   = "std::vector<%s> rows_;"
+	findDefFormat     = "const %s* %s::%s(%s " + keyParam + ") const"
+	findName          = "Find"
+	rowsTable         = "kRows" // the rows' positions beside kKeys, the keys sorted
+	rowHitFormat      = "&rows_[" + rowsTable + "[%s]]"
+	cppNullptr        = "nullptr"
+	foreignWireLine   = indentUnit + "const std::string_view " + wireParam + " = " + ir.CppToWire + "(" + keyParam + ");\n"
 )
 
 // Make hooks, rows and readers of other packages' classes (CODEGEN.md §2.8, §5.9, §5.14; DECISIONS 323).

@@ -48,13 +48,19 @@ func TestBigEnumTablesCompile(t *testing.T) {
 		t.Skip("checks a source of two 60 000-entry enums")
 	}
 	t.Parallel()
+	checkSyntax(t, generate(t, bigEnumPackage()), "enum.gen.cpp")
+}
+
+// checkSyntax compiles source of the generated files with -fsyntax-only on every compiler.
+func checkSyntax(t *testing.T, files []ir.File, source string) {
+	t.Helper()
 	compilers := cxx.Compilers(t)
 	dir := t.TempDir()
-	writeFiles(t, dir, generate(t, bigEnumPackage()))
+	writeFiles(t, dir, files)
 	outs, errs := make([][]byte, len(compilers)), make([]error, len(compilers))
 	var wg sync.WaitGroup
 	for i, cc := range compilers {
-		args := append(append([]string(nil), cxx.Flags...), syntaxOnly, "-I", dir, filepath.Join(dir, "enum.gen.cpp"))
+		args := append(append([]string(nil), cxx.Flags...), syntaxOnly, "-I", dir, filepath.Join(dir, source))
 		wg.Go(func() { outs[i], errs[i] = compile(cc, args, dir) })
 	}
 	wg.Wait()
@@ -63,4 +69,35 @@ func TestBigEnumTablesCompile(t *testing.T) {
 			t.Errorf("%s: %v\n%.2000s", filepath.Base(compilers[i]), err, outs[i])
 		}
 	}
+}
+
+const (
+	bigFindRows  = 60000
+	bigFindPkg   = "big.find"
+	bigFindWidth = 31 // "find_key_" and 31 digits: a 40-byte key
+)
+
+// bigFindPackage is a baked package with a keyed list of bigFindRows rows, 40-byte String keys, in descending order.
+func bigFindPackage() *ir.Package {
+	rec := &ir.Record{Pkg: bigFindPkg, Name: "Slot", Fields: []*ir.Field{field("name", "name", "", tString)}}
+	rt := bulkTypeOf(bigFindPkg, "Slot", rec)
+	coll := &types.Collection{Kind: types.CollLet, Pkg: bigFindPkg, Name: "slots"}
+	rows := make([]*value.Record, bigFindRows)
+	for i := range rows {
+		name := fmt.Sprintf("find_key_%0*d", bigFindWidth, bigFindRows-i)
+		rows[i] = &value.Record{T: rt, Fields: []value.Value{str(name)}, Ident: &value.Identity{Coll: coll, Key: value.Key{S: name}}}
+	}
+	return &ir.Package{
+		Name: bigFindPkg, Dir: "big/find", Types: []ir.Type{rec}, Values: []*ir.Value{findList("slots", rec, "name", rows...)},
+		Emits: []*ir.Emit{{Target: ir.TargetCpp, Out: "out/", Dir: "big/find/out", Mode: ir.ModeBaked, Namespace: "big::find"}},
+	}
+}
+
+// CODEGEN.md §5.9, DECISIONS 392, 432: the sorted key table of a 60 000-row keyed list with 40-byte String keys passes every compiler's constant evaluation (sized views, as an enum's tables).
+func TestBigFindTablesCompile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("checks a source of one 60 000-key table")
+	}
+	t.Parallel()
+	checkSyntax(t, generate(t, bigFindPackage()), "find.gen.cpp")
 }

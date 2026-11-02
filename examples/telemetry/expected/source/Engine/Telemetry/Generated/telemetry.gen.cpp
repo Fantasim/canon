@@ -46,17 +46,8 @@ struct TelemetryAccess {
 
 TelemetryAccess::Data TelemetryAccess::Build() {
     Data d;
-    d.headerColumns.rows_ = canon::KeyedList<std::string, Column>::FromRows(std::vector<Column>(2), {
-        "timestamp_ns",
-        "player_id",
-    });
-    d.provenanceColumns.rows_ = canon::KeyedList<std::string, ProvenanceColumn>::FromRows(std::vector<ProvenanceColumn>(5), {
-        "event_version",
-        "producer_id",
-        "boot_id",
-        "batch_seq",
-        "row_no",
-    });
+    d.headerColumns.rows_.resize(2);
+    d.provenanceColumns.rows_.resize(5);
     {
         std::vector<canon::FlatMap<EventType, Event>::Entry> r2(7);
         r2[0].first = EventType::item_created;
@@ -588,39 +579,39 @@ TelemetryAccess::Data TelemetryAccess::Build() {
         d.events = canon::FlatMap<EventType, Event>::FromEntries(std::move(r2));
     }
     {
-        auto& r2 = const_cast<Column&>(d.headerColumns.rows_.At(0));
+        auto& r2 = d.headerColumns.rows_[0];
         r2.name_ = "timestamp_ns";
         r2.sql_ = SqlType::BIGINT;
         r2.kind_ = FieldKind::ts;
     }
     {
-        auto& r2 = const_cast<Column&>(d.headerColumns.rows_.At(1));
+        auto& r2 = d.headerColumns.rows_[1];
         r2.name_ = "player_id";
         r2.sql_ = SqlType::UINTEGER;
         r2.kind_ = FieldKind::id;
     }
     {
-        auto& r2 = const_cast<ProvenanceColumn&>(d.provenanceColumns.rows_.At(0));
+        auto& r2 = d.provenanceColumns.rows_[0];
         r2.name_ = "event_version";
         r2.sql_ = SqlType::UTINYINT;
     }
     {
-        auto& r2 = const_cast<ProvenanceColumn&>(d.provenanceColumns.rows_.At(1));
+        auto& r2 = d.provenanceColumns.rows_[1];
         r2.name_ = "producer_id";
         r2.sql_ = SqlType::UINTEGER;
     }
     {
-        auto& r2 = const_cast<ProvenanceColumn&>(d.provenanceColumns.rows_.At(2));
+        auto& r2 = d.provenanceColumns.rows_[2];
         r2.name_ = "boot_id";
         r2.sql_ = SqlType::BIGINT;
     }
     {
-        auto& r2 = const_cast<ProvenanceColumn&>(d.provenanceColumns.rows_.At(3));
+        auto& r2 = d.provenanceColumns.rows_[3];
         r2.name_ = "batch_seq";
         r2.sql_ = SqlType::BIGINT;
     }
     {
-        auto& r2 = const_cast<ProvenanceColumn&>(d.provenanceColumns.rows_.At(4));
+        auto& r2 = d.provenanceColumns.rows_[4];
         r2.name_ = "row_no";
         r2.sql_ = SqlType::USMALLINT;
     }
@@ -1512,6 +1503,40 @@ std::optional<RowsKind> RowsKindFromWire(std::string_view wire) {
     }
     if (lo < detail::kRowsKindByWire.size() && detail::kRowsKindNames[detail::kRowsKindByWire[lo]] == wire) return static_cast<RowsKind>(detail::kRowsKindByWire[lo]);
     return std::nullopt;
+}
+
+const Column* HeaderColumns::Find(std::string_view key) const {
+    static constexpr std::array<std::string_view, 2> kKeys = {"player_id", "timestamp_ns"};
+    static constexpr std::array<uint32_t, 2> kRows = {1, 0};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    return nullptr;
+}
+
+const ProvenanceColumn* ProvenanceColumns::Find(std::string_view key) const {
+    static constexpr std::array<std::string_view, 5> kKeys = {"batch_seq", "boot_id", "event_version", "producer_id", "row_no"};
+    static constexpr std::array<uint32_t, 5> kRows = {3, 2, 0, 1, 4};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    return nullptr;
 }
 
 const canon::FlatMap<EventType, Event>& GetEvents() { return detail::TelemetryAccess::Get().events; }

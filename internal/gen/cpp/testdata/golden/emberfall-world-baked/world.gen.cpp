@@ -30,15 +30,10 @@ struct WorldAccess {
 
 WorldAccess::Data WorldAccess::Build() {
     Data d;
-    d.zones.rows_ = canon::KeyedList<std::string, Zone>::FromRows(std::vector<Zone>(1), {
-        "forest",
-    });
-    d.bands.rows_ = canon::KeyedList<std::string, LevelRangeRow>::FromRows(std::vector<LevelRangeRow>(2), {
-        "low",
-        "high",
-    });
+    d.zones.rows_.resize(1);
+    d.bands.rows_.resize(2);
     {
-        auto& r2 = const_cast<Zone&>(d.zones.rows_.At(0));
+        auto& r2 = d.zones.rows_[0];
         r2.id_ = ZoneId::forest;
         r2.levels_ = ::game::core::detail::CoreMake::LevelRange(1, 5, std::vector<std::string>{"a", "b"}, ::game::tone::Tone::soft, ::game::core::StatusId::open, 4);
         r2.trail_.resize(1);
@@ -115,12 +110,12 @@ WorldAccess::Data WorldAccess::Build() {
         r2.band_ = ::game::core::detail::CoreMake::LevelRange(10, 20, std::vector<std::string>{}, ::game::tone::Tone::loud, ::game::core::StatusId::closed, 10);
     }
     {
-        auto& r2 = const_cast<LevelRangeRow&>(d.bands.rows_.At(0));
+        auto& r2 = d.bands.rows_[0];
         static_cast<::game::core::LevelRange&>(r2) = ::game::core::detail::CoreMake::LevelRange(1, 3, std::vector<std::string>{}, ::game::tone::Tone::soft, ::game::core::StatusId::open, 2);
         r2.id_ = LevelRangeId::low;
     }
     {
-        auto& r2 = const_cast<LevelRangeRow&>(d.bands.rows_.At(1));
+        auto& r2 = d.bands.rows_[1];
         static_cast<::game::core::LevelRange&>(r2) = ::game::core::detail::CoreMake::LevelRange(4, 8, std::vector<std::string>{}, ::game::tone::Tone::loud, ::game::core::StatusId::closed, 4);
         r2.id_ = LevelRangeId::high;
         r2.retired_ = true;
@@ -197,6 +192,18 @@ std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key) {
     }
     if (lo < detail::kLevelRangeIdByWire.size() && detail::kLevelRangeIdWires[detail::kLevelRangeIdByWire[lo]] == key) return static_cast<LevelRangeId>(detail::kLevelRangeIdByWire[lo]);
     return std::nullopt;
+}
+
+const Zone* Zones::Find(std::string_view key) const {
+    const std::optional<ZoneId> id = ZoneIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+
+const LevelRangeRow* Bands::Find(std::string_view key) const {
+    const std::optional<LevelRangeId> id = LevelRangeIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
 }
 
 const Zones& GetZones() { return detail::WorldAccess::Get().zones; }

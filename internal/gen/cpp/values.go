@@ -167,15 +167,15 @@ func (g *gen) container(v *ir.Value) {
 		g.fail(sc.add(ir.CppLoad, v.Name))
 		g.h.linef(1, loadDeclFormat, s.name)
 	}
-	g.h.linef(1, lenFormat)
-	g.h.linef(1, atFormat, s.elem)
-	g.h.linef(1, allFormat, s.elem)
+	g.h.lineAt(1, g.form(lenFormat, bakedLenFormat))
+	g.h.linef(1, g.form(atFormat, bakedAtFormat), s.elem)
+	g.h.linef(1, g.form(allFormat, bakedAllFormat), s.elem)
 	if rec, ok := v.Type.Elem.Named.(*ir.Record); ok && g.baked() && v.Type.Kind == types.Table {
 		g.fail(sc.add(ir.GoGet, v.Name))
 		g.h.linef(1, getFormat, s.elem, g.pl.IDName(rec))
 	}
 	g.h.linef(1, findDocFormat, s.keyName)
-	g.h.linef(1, findFormat, s.elem, lookupType(s.key), verbatim(s.keyName))
+	g.h.linef(1, g.form(findFormat, bakedFindFormat), s.elem, lookupType(s.key), verbatim(s.keyName))
 	for _, f := range s.stable {
 		g.findBy(sc, s, f)
 	}
@@ -183,14 +183,31 @@ func (g *gen) container(v *ir.Value) {
 	g.h.line(privateLabel)
 	g.h.linef(1, friendAccessFormat, g.pl.AccessName())
 	g.h.blank()
+	g.rowsMembers(s)
+	g.h.line(closeClass)
+	g.h.blank()
+}
+
+// form is the format a baked container uses where a loaded one uses keyed (CODEGEN.md §5.9, DECISIONS 432).
+func (g *gen) form(keyed, baked string) string {
+	if g.baked() {
+		return baked
+	}
+	return keyed
+}
+
+// rowsMembers are a container's private members: its rows, a baked one's alone; a loaded one's rows with their keys and index, and a @stable field's keys and index.
+func (g *gen) rowsMembers(s containerSpec) {
+	if g.baked() {
+		g.h.linef(1, bakedRowsFormat, s.elem)
+		return
+	}
 	g.h.linef(1, rowsMemberFormat, s.key, s.elem)
 	for _, f := range s.stable {
 		fb := g.pl.FindBy(f)
 		g.h.linef(1, vectorDeclFormat, g.storage(f.Type), fb.Keys)
 		g.h.linef(1, vectorDeclFormat, cppUint32, fb.Index)
 	}
-	g.h.line(closeClass)
-	g.h.blank()
 }
 
 // findBy is FindBy<F>: escaped parameter, a local apart from it, names declared (§3.4, §5.9).
@@ -200,8 +217,16 @@ func (g *gen) findBy(sc *scope, s containerSpec, f *ir.Field) {
 	for local == param {
 		local += underscore
 	}
-	for _, n := range []string{fb.Func, fb.Keys, fb.Index} {
+	names := []string{fb.Func}
+	if !g.baked() {
+		names = append(names, fb.Keys, fb.Index)
+	}
+	for _, n := range names {
 		g.fail(sc.add(n, f.Name))
+	}
+	if g.baked() {
+		g.h.linef(1, bakedFindByFormat, s.elem, fb.Func, lookupType(g.storage(f.Type)), param)
+		return
 	}
 	g.h.linef(1, findByOpenFormat, s.elem, fb.Func, lookupType(g.storage(f.Type)), param)
 	g.h.linef(depthTwo, findSortedFormat, local, fb.Keys, fb.Index, param)

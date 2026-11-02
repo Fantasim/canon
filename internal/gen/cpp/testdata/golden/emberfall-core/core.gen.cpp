@@ -5,9 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <string>
 #include <string_view>
-#include <vector>
 
 namespace game::core {
 
@@ -27,31 +25,25 @@ struct CoreAccess {
 
 CoreAccess::Data CoreAccess::Build() {
     Data d;
-    d.statuses.rows_ = canon::KeyedList<std::string, Status>::FromRows(std::vector<Status>(2), {
-        "open",
-        "closed",
-    });
-    d.kinds.rows_ = canon::KeyedList<std::string, Kind>::FromRows(std::vector<Kind>(2), {
-        "a",
-        "b",
-    });
+    d.statuses.rows_.resize(2);
+    d.kinds.rows_.resize(2);
     {
-        auto& r2 = const_cast<Status&>(d.statuses.rows_.At(0));
+        auto& r2 = d.statuses.rows_[0];
         r2.id_ = StatusId::open;
         r2.label_ = "Open";
     }
     {
-        auto& r2 = const_cast<Status&>(d.statuses.rows_.At(1));
+        auto& r2 = d.statuses.rows_[1];
         r2.id_ = StatusId::closed;
         r2.label_ = "Closed";
     }
     {
-        auto& r2 = const_cast<Kind&>(d.kinds.rows_.At(0));
+        auto& r2 = d.kinds.rows_[0];
         r2.code_ = "a";
         r2.label_ = "Axe";
     }
     {
-        auto& r2 = const_cast<Kind&>(d.kinds.rows_.At(1));
+        auto& r2 = d.kinds.rows_[1];
         r2.code_ = "b";
         r2.label_ = "Bow";
     }
@@ -132,6 +124,29 @@ std::optional<StatusId> StatusIdFromWire(std::string_view key) {
     }
     if (lo < detail::kStatusIdByWire.size() && detail::kStatusIdWires[detail::kStatusIdByWire[lo]] == key) return static_cast<StatusId>(detail::kStatusIdByWire[lo]);
     return std::nullopt;
+}
+
+const Status* Statuses::Find(std::string_view key) const {
+    const std::optional<StatusId> id = StatusIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+
+const Kind* Kinds::Find(std::string_view key) const {
+    static constexpr std::array<std::string_view, 2> kKeys = {"a", "b"};
+    static constexpr std::array<uint32_t, 2> kRows = {0, 1};
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    return nullptr;
 }
 
 const Statuses& GetStatuses() { return detail::CoreAccess::Get().statuses; }

@@ -324,17 +324,17 @@ public:
     Statuses(Statuses&&) = default;
     Statuses& operator=(Statuses&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Status& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Status>& All() const { return rows_.All(); }
-    const Status& Get(StatusId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const Status& At(size_t i) const { return rows_[i]; }
+    const std::vector<Status>& All() const { return rows_; }
+    const Status& Get(StatusId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const Status* Find(std::string_view id) const { return rows_.Find(id); }
+    const Status* Find(std::string_view id) const;
 
 private:
     friend struct detail::CoreAccess;
 
-    canon::KeyedList<std::string, Status> rows_;
+    std::vector<Status> rows_;
 };
 
 /// Every status.

@@ -4,12 +4,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 namespace sov::vocab {
 
@@ -63,34 +60,34 @@ namespace detail {
 
 namespace {
 
-constexpr std::string_view kBulk0[] = {
-    std::string_view("COMBAT_KILL_MONSTER", 19),
-    std::string_view("COMBAT_KILL_GIANT", 17),
-    std::string_view("COMBAT_KILL_BOSS", 16),
-    std::string_view("COMBAT_KILL_WORLD_BOSS", 22),
-    std::string_view("COMBAT_KILL_BY_ELEMENT", 22),
-    std::string_view("COMBAT_DAMAGE_PVE", 17),
-    std::string_view("COMBAT_DAMAGE_PVP_EVENT", 23),
-    std::string_view("COMBAT_KILL_FFA", 15),
-    std::string_view("COMBAT_KILL_GUILD_SIEGE", 23),
-    std::string_view("COMBAT_KILL_TDM", 15),
-    std::string_view("COMBAT_GAME_MODE_START", 22),
-    std::string_view("ECONOMY_DROP_PENYAS", 19),
-    std::string_view("ECONOMY_DROP_ITEM", 17),
-    std::string_view("ECONOMY_SPEND_VOTE_POINTS", 25),
-    std::string_view("ECONOMY_CONSUME_ITEM", 20),
-    std::string_view("PROGRESSION_COLLECT_MONSTER", 27),
-    std::string_view("PROGRESSION_COLLECT_ITEM", 24),
-    std::string_view("PROGRESSION_CARD_DRAWN", 22),
-    std::string_view("CONTENT_COMPLETE_DUNGEON", 24),
-    std::string_view("CONTENT_COMPLETE_ADVENTURE_QUEST", 32),
-    std::string_view("CONTENT_WHEEL_OF_FORTUNE", 24),
-    std::string_view("CONTENT_LOTTERY_BUY_TICKETS", 27),
-    std::string_view("ITEMS_CRAFTED", 13),
-    std::string_view("ITEMS_RECYCLED", 14),
-    std::string_view("ITEMS_PERFORM_UPGRADE", 21),
-    std::string_view("MISC_ACTIVE_PLAYTIME", 20),
-    std::string_view("MISC_STATS_SNAPSHOT", 19),
+constexpr EventTypeId kBulk0[] = {
+    EventTypeId::COMBAT_KILL_MONSTER,
+    EventTypeId::COMBAT_KILL_GIANT,
+    EventTypeId::COMBAT_KILL_BOSS,
+    EventTypeId::COMBAT_KILL_WORLD_BOSS,
+    EventTypeId::COMBAT_KILL_BY_ELEMENT,
+    EventTypeId::COMBAT_DAMAGE_PVE,
+    EventTypeId::COMBAT_DAMAGE_PVP_EVENT,
+    EventTypeId::COMBAT_KILL_FFA,
+    EventTypeId::COMBAT_KILL_GUILD_SIEGE,
+    EventTypeId::COMBAT_KILL_TDM,
+    EventTypeId::COMBAT_GAME_MODE_START,
+    EventTypeId::ECONOMY_DROP_PENYAS,
+    EventTypeId::ECONOMY_DROP_ITEM,
+    EventTypeId::ECONOMY_SPEND_VOTE_POINTS,
+    EventTypeId::ECONOMY_CONSUME_ITEM,
+    EventTypeId::PROGRESSION_COLLECT_MONSTER,
+    EventTypeId::PROGRESSION_COLLECT_ITEM,
+    EventTypeId::PROGRESSION_CARD_DRAWN,
+    EventTypeId::CONTENT_COMPLETE_DUNGEON,
+    EventTypeId::CONTENT_COMPLETE_ADVENTURE_QUEST,
+    EventTypeId::CONTENT_WHEEL_OF_FORTUNE,
+    EventTypeId::CONTENT_LOTTERY_BUY_TICKETS,
+    EventTypeId::ITEMS_CRAFTED,
+    EventTypeId::ITEMS_RECYCLED,
+    EventTypeId::ITEMS_PERFORM_UPGRADE,
+    EventTypeId::MISC_ACTIVE_PLAYTIME,
+    EventTypeId::MISC_STATS_SNAPSHOT,
 };
 
 constexpr uint16_t kBulk1[] = {
@@ -123,67 +120,7 @@ constexpr uint16_t kBulk1[] = {
     8100,
 };
 
-constexpr EventTypeId kBulk2[] = {
-    EventTypeId::COMBAT_KILL_MONSTER,
-    EventTypeId::COMBAT_KILL_GIANT,
-    EventTypeId::COMBAT_KILL_BOSS,
-    EventTypeId::COMBAT_KILL_WORLD_BOSS,
-    EventTypeId::COMBAT_KILL_BY_ELEMENT,
-    EventTypeId::COMBAT_DAMAGE_PVE,
-    EventTypeId::COMBAT_DAMAGE_PVP_EVENT,
-    EventTypeId::COMBAT_KILL_FFA,
-    EventTypeId::COMBAT_KILL_GUILD_SIEGE,
-    EventTypeId::COMBAT_KILL_TDM,
-    EventTypeId::COMBAT_GAME_MODE_START,
-    EventTypeId::ECONOMY_DROP_PENYAS,
-    EventTypeId::ECONOMY_DROP_ITEM,
-    EventTypeId::ECONOMY_SPEND_VOTE_POINTS,
-    EventTypeId::ECONOMY_CONSUME_ITEM,
-    EventTypeId::PROGRESSION_COLLECT_MONSTER,
-    EventTypeId::PROGRESSION_COLLECT_ITEM,
-    EventTypeId::PROGRESSION_CARD_DRAWN,
-    EventTypeId::CONTENT_COMPLETE_DUNGEON,
-    EventTypeId::CONTENT_COMPLETE_ADVENTURE_QUEST,
-    EventTypeId::CONTENT_WHEEL_OF_FORTUNE,
-    EventTypeId::CONTENT_LOTTERY_BUY_TICKETS,
-    EventTypeId::ITEMS_CRAFTED,
-    EventTypeId::ITEMS_RECYCLED,
-    EventTypeId::ITEMS_PERFORM_UPGRADE,
-    EventTypeId::MISC_ACTIVE_PLAYTIME,
-    EventTypeId::MISC_STATS_SNAPSHOT,
-};
-
-constexpr uint16_t kBulk3[] = {
-    0,
-    1,
-    2,
-    3,
-    5,
-    10,
-    12,
-    30,
-    31,
-    32,
-    50,
-    1000,
-    1001,
-    1031,
-    1050,
-    2030,
-    2031,
-    2090,
-    4000,
-    4010,
-    4050,
-    4080,
-    5000,
-    5001,
-    5010,
-    8000,
-    8100,
-};
-
-constexpr std::string_view kBulk4[] = {
+constexpr std::string_view kBulk2[] = {
     std::string_view("Monster Kill", 12),
     std::string_view("Giant Kill", 10),
     std::string_view("Boss Kill", 9),
@@ -213,7 +150,7 @@ constexpr std::string_view kBulk4[] = {
     std::string_view("Stats Snapshot", 14),
 };
 
-constexpr ParamKind kBulk5[] = {
+constexpr ParamKind kBulk3[] = {
     ParamKind::monster,
     ParamKind::monster,
     ParamKind::monster,
@@ -243,7 +180,7 @@ constexpr ParamKind kBulk5[] = {
     ParamKind::stat,
 };
 
-constexpr std::optional<std::string_view> kBulk6[] = {
+constexpr std::optional<std::string_view> kBulk4[] = {
     std::nullopt,
     std::nullopt,
     std::nullopt,
@@ -288,16 +225,14 @@ struct VocabAccess {
 
 VocabAccess::Data VocabAccess::Build() {
     Data d;
-    d.eventTypes.rows_ = canon::KeyedList<std::string, EventType>::FromRows(std::vector<EventType>(27), std::vector<std::string>(std::begin(kBulk0), std::end(kBulk0)));
-    d.eventTypes.byCodeKeys_ = std::vector<uint16_t>(std::begin(kBulk1), std::end(kBulk1));
-    d.eventTypes.byCode_ = canon::detail::SortedIndex(d.eventTypes.byCodeKeys_);
+    d.eventTypes.rows_.resize(27);
     for (size_t i = 0; i < 27; ++i) {
-        auto& r2 = const_cast<EventType&>(d.eventTypes.rows_.At(i));
-        r2.id_ = kBulk2[i];
-        r2.code_ = kBulk3[i];
-        r2.display_ = kBulk4[i];
-        r2.param_ = kBulk5[i];
-        r2.flag_ = kBulk6[i];
+        auto& r2 = d.eventTypes.rows_[i];
+        r2.id_ = kBulk0[i];
+        r2.code_ = kBulk1[i];
+        r2.display_ = kBulk2[i];
+        r2.param_ = kBulk3[i];
+        r2.flag_ = kBulk4[i];
     }
     return d;
 }
@@ -714,6 +649,85 @@ std::optional<EventTypeId> EventTypeIdFromWire(std::string_view key) {
     }
     if (lo < detail::kEventTypeIdByWire.size() && detail::kEventTypeIdWires[detail::kEventTypeIdByWire[lo]] == key) return static_cast<EventTypeId>(detail::kEventTypeIdByWire[lo]);
     return std::nullopt;
+}
+
+const EventType* EventTypes::Find(std::string_view key) const {
+    const std::optional<EventTypeId> id = EventTypeIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+
+const EventType* EventTypes::FindByCode(uint16_t key) const {
+    static constexpr std::array<uint16_t, 27> kKeys = {
+        0,
+        1,
+        2,
+        3,
+        5,
+        10,
+        12,
+        30,
+        31,
+        32,
+        50,
+        1000,
+        1001,
+        1031,
+        1050,
+        2030,
+        2031,
+        2090,
+        4000,
+        4010,
+        4050,
+        4080,
+        5000,
+        5001,
+        5010,
+        8000,
+        8100,
+    };
+    static constexpr std::array<uint32_t, 27> kRows = {
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+    };
+    size_t lo = 0;
+    size_t hi = kKeys.size();
+    while (lo < hi) {
+        const size_t mid = lo + (hi - lo) / 2;
+        if (kKeys[mid] < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    return nullptr;
 }
 
 const EventTypes& GetEventTypes() { return detail::VocabAccess::Get().eventTypes; }

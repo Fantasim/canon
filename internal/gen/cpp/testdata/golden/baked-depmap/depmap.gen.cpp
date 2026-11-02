@@ -17,19 +17,7 @@ namespace detail {
 
 namespace {
 
-constexpr std::string_view kBulk0[] = {
-    std::string_view("w0", 2),
-    std::string_view("w1", 2),
-    std::string_view("w2", 2),
-    std::string_view("w3", 2),
-    std::string_view("w4", 2),
-    std::string_view("w5", 2),
-    std::string_view("w6", 2),
-    std::string_view("w7", 2),
-    std::string_view("w8", 2),
-};
-
-constexpr CellId kBulk1[] = {
+constexpr CellId kBulk0[] = {
     CellId::w0,
     CellId::w1,
     CellId::w2,
@@ -41,7 +29,7 @@ constexpr CellId kBulk1[] = {
     CellId::w8,
 };
 
-constexpr int64_t kBulk2[] = {
+constexpr int64_t kBulk1[] = {
     0,
     1,
     2,
@@ -53,7 +41,7 @@ constexpr int64_t kBulk2[] = {
     8,
 };
 
-constexpr std::pair<CellId, int64_t> kBulk3[] = {
+constexpr std::pair<CellId, int64_t> kBulk2[] = {
     {CellId::w0, 100},
     {CellId::w1, 101},
     {CellId::w2, 102},
@@ -65,7 +53,7 @@ constexpr std::pair<CellId, int64_t> kBulk3[] = {
     {CellId::w8, 108},
 };
 
-constexpr size_t kBulk4[] = {
+constexpr size_t kBulk3[] = {
     0,
     0,
     1,
@@ -74,34 +62,34 @@ constexpr size_t kBulk4[] = {
     4,
 };
 
-constexpr RowId kBulk5[] = {
+constexpr RowId kBulk4[] = {
     RowId::a,
     RowId::a,
     RowId::b,
     RowId::a,
 };
 
-constexpr int64_t kBulk6[] = {
+constexpr int64_t kBulk5[] = {
     1,
     2,
     3,
     4,
 };
 
-constexpr CellId kBulk7[] = {
+constexpr CellId kBulk6[] = {
     CellId::w0,
     CellId::w3,
     CellId::w8,
 };
 
-constexpr size_t kBulk8[] = {
+constexpr size_t kBulk7[] = {
     0,
     3,
     6,
     9,
 };
 
-constexpr int64_t kBulk9[] = {
+constexpr int64_t kBulk8[] = {
     1,
     2,
     3,
@@ -113,20 +101,20 @@ constexpr int64_t kBulk9[] = {
     9,
 };
 
-constexpr CellId kBulk10[] = {
+constexpr CellId kBulk9[] = {
     CellId::w0,
     CellId::w3,
     CellId::w8,
 };
 
-constexpr size_t kBulk11[] = {
+constexpr size_t kBulk10[] = {
     0,
     3,
     6,
     9,
 };
 
-constexpr int64_t kBulk12[] = {
+constexpr int64_t kBulk11[] = {
     11,
     12,
     13,
@@ -138,20 +126,20 @@ constexpr int64_t kBulk12[] = {
     19,
 };
 
-constexpr CellId kBulk13[] = {
+constexpr CellId kBulk12[] = {
     CellId::w0,
     CellId::w3,
     CellId::w8,
 };
 
-constexpr size_t kBulk14[] = {
+constexpr size_t kBulk13[] = {
     0,
     3,
     6,
     9,
 };
 
-constexpr int64_t kBulk15[] = {
+constexpr int64_t kBulk14[] = {
     21,
     22,
     23,
@@ -184,70 +172,67 @@ struct DepmapAccess {
 
 DepmapAccess::Data DepmapAccess::Build() {
     Data d;
-    d.rows.rows_ = canon::KeyedList<std::string, Row>::FromRows(std::vector<Row>(2), {
-        "a",
-        "b",
-    });
-    d.wide.rows_ = canon::KeyedList<std::string, Cell>::FromRows(std::vector<Cell>(9), std::vector<std::string>(std::begin(kBulk0), std::end(kBulk0)));
+    d.rows.rows_.resize(2);
+    d.wide.rows_.resize(9);
     {
-        auto& r2 = const_cast<Row&>(d.rows.rows_.At(0));
+        auto& r2 = d.rows.rows_[0];
         r2.id_ = RowId::a;
         r2.n_ = 1;
         r2.scores_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 10}, {RowId::b, 11}});
     }
     {
-        auto& r2 = const_cast<Row&>(d.rows.rows_.At(1));
+        auto& r2 = d.rows.rows_[1];
         r2.id_ = RowId::b;
         r2.n_ = 2;
         r2.scores_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 20}, {RowId::b, 21}});
     }
     for (size_t i = 0; i < 9; ++i) {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(i));
-        r2.id_ = kBulk1[i];
-        r2.n_ = kBulk2[i];
+        auto& r2 = d.wide.rows_[i];
+        r2.id_ = kBulk0[i];
+        r2.n_ = kBulk1[i];
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(0));
+        auto& r2 = d.wide.rows_[0];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 0}, {RowId::b, 0}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 0}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(1));
+        auto& r2 = d.wide.rows_[1];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 1}, {RowId::b, 2}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 3}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(2));
+        auto& r2 = d.wide.rows_[2];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 2}, {RowId::b, 4}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 6}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(3));
+        auto& r2 = d.wide.rows_[3];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 3}, {RowId::b, 6}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 9}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(4));
+        auto& r2 = d.wide.rows_[4];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 4}, {RowId::b, 8}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 12}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(5));
+        auto& r2 = d.wide.rows_[5];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 5}, {RowId::b, 10}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 15}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(6));
+        auto& r2 = d.wide.rows_[6];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 6}, {RowId::b, 12}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 18}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(7));
+        auto& r2 = d.wide.rows_[7];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 7}, {RowId::b, 14}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 21}});
     }
     {
-        auto& r2 = const_cast<Cell&>(d.wide.rows_.At(8));
+        auto& r2 = d.wide.rows_[8];
         r2.links_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 8}, {RowId::b, 16}});
         r2.hops_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 24}});
     }
@@ -267,15 +252,15 @@ DepmapAccess::Data DepmapAccess::Build() {
         auto& r2 = d.holder.shape_.value_.emplace<0>();
         r2.w_ = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 31}, {RowId::b, 32}});
     }
-    d.holder.big_ = canon::FlatMap<CellId, int64_t>::FromEntries(std::vector<canon::FlatMap<CellId, int64_t>::Entry>(std::begin(kBulk3), std::end(kBulk3)));
-    d.holder.grid_ = [] { std::vector<canon::FlatMap<RowId, int64_t>> v; v.reserve(5 - 0); for (size_t n0 = 0; n0 < 5; ++n0) v.push_back([&] { std::vector<canon::FlatMap<RowId, int64_t>::Entry> e; e.reserve(kBulk4[n0 + 1] - kBulk4[n0]); for (size_t n1 = kBulk4[n0]; n1 < kBulk4[n0 + 1]; ++n1) e.emplace_back(RowId(kBulk5[n1]), int64_t(kBulk6[n1])); return canon::FlatMap<RowId, int64_t>::FromEntries(std::move(e)); }()); return v; }();
-    d.holder.nest_ = [] { std::vector<canon::FlatMap<CellId, std::vector<int64_t>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(CellId(kBulk7[n0]), std::vector<int64_t>(kBulk9 + kBulk8[n0], kBulk9 + kBulk8[n0 + 1])); return canon::FlatMap<CellId, std::vector<int64_t>>::FromEntries(std::move(e)); }();
+    d.holder.big_ = canon::FlatMap<CellId, int64_t>::FromEntries(std::vector<canon::FlatMap<CellId, int64_t>::Entry>(std::begin(kBulk2), std::end(kBulk2)));
+    d.holder.grid_ = [] { std::vector<canon::FlatMap<RowId, int64_t>> v; v.reserve(5 - 0); for (size_t n0 = 0; n0 < 5; ++n0) v.push_back([&] { std::vector<canon::FlatMap<RowId, int64_t>::Entry> e; e.reserve(kBulk3[n0 + 1] - kBulk3[n0]); for (size_t n1 = kBulk3[n0]; n1 < kBulk3[n0 + 1]; ++n1) e.emplace_back(RowId(kBulk4[n1]), int64_t(kBulk5[n1])); return canon::FlatMap<RowId, int64_t>::FromEntries(std::move(e)); }()); return v; }();
+    d.holder.nest_ = [] { std::vector<canon::FlatMap<CellId, std::vector<int64_t>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(CellId(kBulk6[n0]), std::vector<int64_t>(kBulk8 + kBulk7[n0], kBulk8 + kBulk7[n0 + 1])); return canon::FlatMap<CellId, std::vector<int64_t>>::FromEntries(std::move(e)); }();
     d.weights = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::b, 61}, {RowId::a, 62}});
     d.totals = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 41}, {RowId::b, 42}});
     d.perFlag[0] = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 51}, {RowId::b, 52}});
     d.perFlag[1] = canon::FlatMap<RowId, int64_t>::FromEntries({{RowId::a, 53}, {RowId::b, 54}});
-    d.nestPerFlag[0] = [] { std::vector<canon::FlatMap<CellId, std::vector<int64_t>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(CellId(kBulk10[n0]), std::vector<int64_t>(kBulk12 + kBulk11[n0], kBulk12 + kBulk11[n0 + 1])); return canon::FlatMap<CellId, std::vector<int64_t>>::FromEntries(std::move(e)); }();
-    d.nestPerFlag[1] = [] { std::vector<canon::FlatMap<CellId, std::vector<int64_t>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(CellId(kBulk13[n0]), std::vector<int64_t>(kBulk15 + kBulk14[n0], kBulk15 + kBulk14[n0 + 1])); return canon::FlatMap<CellId, std::vector<int64_t>>::FromEntries(std::move(e)); }();
+    d.nestPerFlag[0] = [] { std::vector<canon::FlatMap<CellId, std::vector<int64_t>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(CellId(kBulk9[n0]), std::vector<int64_t>(kBulk11 + kBulk10[n0], kBulk11 + kBulk10[n0 + 1])); return canon::FlatMap<CellId, std::vector<int64_t>>::FromEntries(std::move(e)); }();
+    d.nestPerFlag[1] = [] { std::vector<canon::FlatMap<CellId, std::vector<int64_t>>::Entry> e; e.reserve(3 - 0); for (size_t n0 = 0; n0 < 3; ++n0) e.emplace_back(CellId(kBulk12[n0]), std::vector<int64_t>(kBulk14 + kBulk13[n0], kBulk14 + kBulk13[n0 + 1])); return canon::FlatMap<CellId, std::vector<int64_t>>::FromEntries(std::move(e)); }();
     return d;
 }
 
@@ -387,6 +372,18 @@ std::optional<CellId> CellIdFromWire(std::string_view key) {
     }
     if (lo < detail::kCellIdByWire.size() && detail::kCellIdWires[detail::kCellIdByWire[lo]] == key) return static_cast<CellId>(detail::kCellIdByWire[lo]);
     return std::nullopt;
+}
+
+const Row* Rows::Find(std::string_view key) const {
+    const std::optional<RowId> id = RowIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+
+const Cell* Wide::Find(std::string_view key) const {
+    const std::optional<CellId> id = CellIdFromWire(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
 }
 
 const Rows& GetRows() { return detail::DepmapAccess::Get().rows; }

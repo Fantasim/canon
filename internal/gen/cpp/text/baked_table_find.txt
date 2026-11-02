@@ -1,0 +1,6 @@
+%[1]s {
+    const std::optional<%[2]s> id = %[3]s(key);
+    if (!id) return nullptr;
+    return &rows_[static_cast<size_t>(*id)];
+}
+

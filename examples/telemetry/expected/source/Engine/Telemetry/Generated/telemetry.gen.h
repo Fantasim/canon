@@ -915,16 +915,16 @@ public:
     HeaderColumns(HeaderColumns&&) = default;
     HeaderColumns& operator=(HeaderColumns&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Column& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Column>& All() const { return rows_.All(); }
+    size_t Len() const { return rows_.size(); }
+    const Column& At(size_t i) const { return rows_[i]; }
+    const std::vector<Column>& All() const { return rows_; }
     /// Binary search by name. Never allocates; nullptr when absent.
-    const Column* Find(std::string_view name) const { return rows_.Find(name); }
+    const Column* Find(std::string_view name) const;
 
 private:
     friend struct detail::TelemetryAccess;
 
-    canon::KeyedList<std::string, Column> rows_;
+    std::vector<Column> rows_;
 };
 
 /// The provenance prefix of every CREATE TABLE, in order.
@@ -936,16 +936,16 @@ public:
     ProvenanceColumns(ProvenanceColumns&&) = default;
     ProvenanceColumns& operator=(ProvenanceColumns&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const ProvenanceColumn& At(size_t i) const { return rows_.At(i); }
-    const std::vector<ProvenanceColumn>& All() const { return rows_.All(); }
+    size_t Len() const { return rows_.size(); }
+    const ProvenanceColumn& At(size_t i) const { return rows_[i]; }
+    const std::vector<ProvenanceColumn>& All() const { return rows_; }
     /// Binary search by name. Never allocates; nullptr when absent.
-    const ProvenanceColumn* Find(std::string_view name) const { return rows_.Find(name); }
+    const ProvenanceColumn* Find(std::string_view name) const;
 
 private:
     friend struct detail::TelemetryAccess;
 
-    canon::KeyedList<std::string, ProvenanceColumn> rows_;
+    std::vector<ProvenanceColumn> rows_;
 };
 
 /// Every live event type's table, in id order.

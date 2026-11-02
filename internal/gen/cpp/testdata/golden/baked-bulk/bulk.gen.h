@@ -317,23 +317,18 @@ public:
     Items(Items&&) = default;
     Items& operator=(Items&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Item& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Item>& All() const { return rows_.All(); }
-    const Item& Get(ItemId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.Len()) std::abort(); return rows_.At(i); }
+    size_t Len() const { return rows_.size(); }
+    const Item& At(size_t i) const { return rows_[i]; }
+    const std::vector<Item>& All() const { return rows_; }
+    const Item& Get(ItemId id) const { const size_t i = static_cast<size_t>(id); if (i >= rows_.size()) std::abort(); return rows_[i]; }
     /// Binary search by id. Never allocates; nullptr when absent.
-    const Item* Find(std::string_view id) const { return rows_.Find(id); }
-    const Item* FindByCode(int64_t code) const {
-        const auto i = canon::detail::FindSorted(byCodeKeys_, byCode_, code);
-        return i < 0 ? nullptr : &rows_.At(static_cast<size_t>(i));
-    }
+    const Item* Find(std::string_view id) const;
+    const Item* FindByCode(int64_t code) const;
 
 private:
     friend struct detail::BulkAccess;
 
-    canon::KeyedList<std::string, Item> rows_;
-    std::vector<int64_t> byCodeKeys_;
-    std::vector<uint32_t> byCode_;
+    std::vector<Item> rows_;
 };
 
 class Crews {
@@ -344,16 +339,16 @@ public:
     Crews(Crews&&) = default;
     Crews& operator=(Crews&&) = default;
 
-    size_t Len() const { return rows_.All().size(); }
-    const Crew& At(size_t i) const { return rows_.At(i); }
-    const std::vector<Crew>& All() const { return rows_.All(); }
+    size_t Len() const { return rows_.size(); }
+    const Crew& At(size_t i) const { return rows_[i]; }
+    const std::vector<Crew>& All() const { return rows_; }
     /// Binary search by n. Never allocates; nullptr when absent.
-    const Crew* Find(int64_t n) const { return rows_.Find(n); }
+    const Crew* Find(int64_t n) const;
 
 private:
     friend struct detail::BulkAccess;
 
-    canon::KeyedList<int64_t, Crew> rows_;
+    std::vector<Crew> rows_;
 };
 
 const std::vector<std::vector<int64_t>>& GetGrid();

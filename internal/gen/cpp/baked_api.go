@@ -188,6 +188,7 @@ func (g *gen) storedFnDecl(fn *ir.ExportFn) {
 // bakedDefinitions define, after detail, the id enums' <Rec>IdFromWire, the accessors, then the stored package fns that are not constexpr (CODEGEN.md §5.3, §5.9, §5.10, §7.1).
 func (g *gen) bakedDefinitions() {
 	g.idFromWires()
+	g.bakedFinds()
 	for _, v := range g.values {
 		leave := g.enter(v.Name)
 		for _, r := range g.valueReaders(v) {
