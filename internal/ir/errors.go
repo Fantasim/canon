@@ -19,9 +19,9 @@ var ErrFingerprint = errors.New("ir: type has no canon-fp v1 form")
 var ErrPattern = errors.New("ir: pattern outside the portable subset")
 
 // fmtPatternParse and fmtPatternInst say why a pattern has no automaton.
-const (
-	fmtPatternParse = "%w: %w"
-	fmtPatternInst  = "%w: instruction %v has no automaton state"
-)
+const fmtPatternParse, fmtPatternInst = "%w: %w", "%w: instruction %v has no automaton state"
 
 const cppNames, cppByWire = "Names", "ByWire" // an enum's .gen.cpp tables k<E>Names and k<E>ByWire (CODEGEN.md §5.2)
+
+// PartLines is the most lines between a generated function's braces, a part's own `return` and call lines included: the budget every target cuts a body that grows with the data's rows or a record's fields to (CODEGEN.md §2.11, DECISIONS 435).
+const PartLines = 1000

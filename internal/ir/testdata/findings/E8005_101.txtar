@@ -1,0 +1,22 @@
+CODEGEN.md §2.11, §3.5, DECISIONS 435: a data-mode cpp emit may cut a class's detail::Decode into <P>Access::Decode<N> parts; a record Decode3 is the type the part Decode3 would hide inside the access struct, whatever the record's width.
+-- a/a.canon --
+package a
+
+/// Named like a part of Decode.
+record Decode3 {
+  /// Its size.
+  n: Int
+}
+
+/// The rows.
+let rows: [Decode3] keyed by n = [{ n: 1 }]
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.rows.json --
+[{ "n": 1 }]
+-- findings.txt --
+error[E8005]  a/a.canon:4:8
+  cpp: Decode3 is generated for both a.Decode3 and a; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

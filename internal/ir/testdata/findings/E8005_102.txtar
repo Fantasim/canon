@@ -1,0 +1,22 @@
+CODEGEN.md §2.11, §3.5, DECISIONS 435: a go emit may cut decode<T> into decode<T>_<N> parts; a record renamed Item_1 (an exported override may hold an underscore) has the decoder decodeItem_1, which Item's part 1 would redeclare, whatever Item's width.
+-- a/a.canon --
+package a
+
+/// A decoded record.
+record Item {
+  /// Its size.
+  n: Int
+}
+
+/// Renamed like a part of decodeItem.
+record ItemOne @go(name: "Item_1") {
+  /// Its size.
+  n: Int
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:10:8
+  go: decodeItem_1 is generated for both a.ItemOne and a; rename one of them with @go(name:)
+
+1 error, 0 warnings in 1 package (…)

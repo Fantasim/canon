@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/types"
@@ -179,6 +180,25 @@ func (pl *GoNamePlan) declareAll() {
 	}
 	pl.declareConformance(top)
 	pl.declareImports(top)
+	pl.reserveParts(top)
+}
+
+// reserveParts is E8005 for a name of the package scope that a part of a function would redeclare: build<Last>_<N> of a baked emit's build (data and types modes have none), decode<T>_<N> of each decoded class's decoder, whatever the data's size and the class's width (CODEGEN.md §2.11, §5.9, DECISIONS 435).
+func (pl *GoNamePlan) reserveParts(top *nameScope) {
+	var fns []string
+	if pl.data == nil && len(pl.emitted) > 0 {
+		fns = append(fns, pl.Data().Build)
+	}
+	for _, class := range pl.classes() {
+		if pl.Decoded(class) {
+			fns = append(fns, pl.DecodeFunc(class))
+		}
+	}
+	for _, name := range slices.Sorted(maps.Keys(top.names)) {
+		if slices.ContainsFunc(fns, func(fn string) bool { return numbered(name, fn+underscore) }) {
+			pl.collide(top, name, top.names[name], pl.p.Name, top.items[name]) // at the user's declaration
+		}
+	}
 }
 
 // declareEnums declares each enum, its member constants, Parse<E>, <E>Members and <E>FromCode (CODEGEN.md §5.2).

@@ -1,0 +1,24 @@
+CODEGEN.md §2.11, §3.5, DECISIONS 435, 305: a baked go emit may cut build<Last> into build<Last>_<N> parts; an imported package whose go emit names its Go package buildA_0 is declared in the package scope under that name, the function the part buildA_0 would redeclare, and the way out is a distinct package option on that import's emit.
+-- selected.txt --
+a
+-- b/b.canon --
+package b
+
+/// A rank.
+enum Rank { low, high }
+
+emit go { out: "@features/b", package: "buildA_0", mode: baked }
+-- a/a.canon --
+package a
+
+import b { Rank }
+
+/// The rank.
+let rank: Rank = Rank.low
+
+emit go { out: "@features/a", package: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:3:1
+  go: buildA_0 is generated for both example.com/features/b and a; give one of their emits a distinct package option
+
+1 error, 0 warnings in 2 packages (…)

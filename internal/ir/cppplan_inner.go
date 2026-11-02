@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"maps"
 	"slices"
 )
 
@@ -37,10 +38,20 @@ func (pl *CppNamePlan) declareDecoders(sc *nameScope) {
 	if len(pl.classes()) > 0 {
 		pl.noteForeign(sc, CppDecode, foreignNote{fixed: true}, func() { pl.declareInner(sc, CppDecode, pl.p.Name, nil) })
 		pl.shareAs(pl.e.Namespace+cppScope+cppDetail, CppDecode, pl.p.Name, nil, meetsOverload)
+		pl.reserveDecodeParts()
 	}
 	for _, t := range pl.p.Types {
 		if d, ok := t.(*Dependent); ok {
 			pl.shareInner(sc, pl.Dependent(d).Decode, d.QName(), d)
+		}
+	}
+}
+
+// reserveDecodeParts is E8005 for a namespace name a Decode<N> part of the access struct hides where Decode names it, whatever the decoded classes' width (CODEGEN.md §2.11, §3.5, DECISIONS 435).
+func (pl *CppNamePlan) reserveDecodeParts() {
+	for _, name := range slices.Sorted(maps.Keys(pl.ns.names)) {
+		if numbered(name, CppDecode) {
+			pl.collide(pl.ns, name, pl.ns.names[name], pl.p.Name, pl.ns.items[name]) // at the user's declaration
 		}
 	}
 }

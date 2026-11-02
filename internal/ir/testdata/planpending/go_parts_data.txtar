@@ -1,0 +1,38 @@
+CODEGEN.md §2.11, §5.9, DECISIONS 435: only a baked go emit has a build function to cut, so build<Last>_<N> is reserved there alone; in data mode a name equal to build<Last>_0, here an imported package's Go package, is no collision.
+-- b/b.canon --
+package b
+
+/// A rank.
+enum Rank { low, high }
+
+emit go { out: "@features/b", package: "buildA_0", mode: baked }
+-- a/a.canon --
+package a
+
+import b { Rank }
+
+/// A row.
+record Thing {
+  /// Its key.
+  n: Int
+  /// Its rank.
+  rank: Rank
+}
+
+/// The rows.
+let rows: [Thing] keyed by n = [{ n: 1, rank: Rank.low }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.rows.json --
+[{ "n": 1, "rank": "low" }]
+-- plan.txt --
+== go b
+Rank: MarshalText Position Retired String UnmarshalText Wire position
+package: ParseRank Rank RankHigh RankLiveMembers RankLow RankMembers enumByWire_Rank enumMembers_Rank enumNames_Rank errors iter slices strconv strings
+== go a
+Rows: All At Find Len rows
+Thing: N Rank n rank
+locals: a af at bad c ctx dir disc dst empty err f first hasK hasV hi i id k key keys kr lo m marker mf n name obj ok out path r raw retired rows s tag unit v values vr want
+package: LoadRows Make_Thing Rows RowsSchema Thing buildA_0 decodeThing fmt iter json jsonCell jsonInt jsonKeys jsonMay jsonNeed jsonObject jsonRead jsonSame jsonSlot loadRows rt slices strings
+0 errors, 0 warnings in 2 packages (…)

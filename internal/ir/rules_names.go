@@ -209,11 +209,11 @@ func (r nameReport) isIDType(name string, item any) bool {
 	return slices.ContainsFunc(recs, func(rec *Record) bool { return r.idOf(rec) == name })
 }
 
-// reachedPair reports a collision of two names imported packages give: both items are imports of the package (CODEGEN.md §2.8).
+// reachedPair reports a collision where an import's Go package name is one of the names: a distinct package option on that import's emit is the way out (CODEGEN.md §2.8, §3.5; DECISIONS 305).
 func reachedPair(pr GoNameProblem) bool {
-	a, ok := pr.Item.(*PackageRef)
-	b, isRef := pr.FirstItem.(*PackageRef)
-	return ok && isRef && a != b
+	_, item := pr.Item.(*PackageRef)
+	_, first := pr.FirstItem.(*PackageRef)
+	return item || first
 }
 
 // heldTableRecords are the records the tables of a table value or a field hold (CODEGEN.md §5.3, §5.9).
