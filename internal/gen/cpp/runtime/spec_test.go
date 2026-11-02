@@ -23,11 +23,11 @@ const (
 // canonName is a `canon::<Name>` of the specification, every `::` segment included; a name followed by `*` names a family, not one name.
 var canonName = regexp.MustCompile(`\bcanon((?:::[A-Za-z_][A-Za-z0-9_]*)+)(\*?)`)
 
-// CODEGEN.md §7.4 (DECISIONS 415): canon_runtime.h is normative text; the embedded copy is the spec's, byte for byte.
+// CODEGEN.md §7.4 (DECISIONS 415, 436): canon_runtime.h is normative text; the embedded copy, @CANON_STAMP@ where the stamp goes, is the spec's, byte for byte.
 func TestHeaderIsTheSpecs(t *testing.T) {
 	t.Parallel()
-	if want := specfence.Block(t, codegenSpec, headerHeading, fenceLang); Header != want {
-		t.Errorf("canon_runtime.h.txt differs from CODEGEN.md §7.4 (%d bytes, the spec's %d)", len(Header), len(want))
+	if want := specfence.Block(t, codegenSpec, headerHeading, fenceLang); headerText != want {
+		t.Errorf("canon_runtime.h.txt differs from CODEGEN.md §7.4 (%d bytes, the spec's %d)", len(headerText), len(want))
 	}
 }
 

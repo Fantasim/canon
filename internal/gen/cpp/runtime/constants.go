@@ -12,3 +12,9 @@ const (
 	escapeMark  = '\\'
 	underscore  = '_'
 )
+
+// The runtime stamp (CODEGEN.md §7.4, DECISIONS 436): the mark the texts hold in its place, and its length in hex digits.
+const (
+	stampMark = "@CANON_STAMP@"
+	stampLen  = 12
+)

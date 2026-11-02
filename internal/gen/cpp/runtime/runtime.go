@@ -1,7 +1,9 @@
 package cppruntime
 
 import (
+	"crypto/sha256"
 	_ "embed"
+	"encoding/hex"
 	"maps"
 	"slices"
 	"strings"
@@ -12,10 +14,21 @@ import (
 
 var (
 	//go:embed canon_runtime.h.txt
-	Header string
+	headerText string
 	//go:embed canon_runtime_json.h.txt
-	JSON string
+	jsonText string
+	// Stamp names this compiler's C++ runtime: the first 12 hex digits of the SHA-256 of the two texts, canon_runtime.h's then canon_runtime_json.h's (CODEGEN.md §7.4).
+	Stamp = stampOf(headerText, jsonText)
+	// Header and JSON are canon_runtime.h and canon_runtime_json.h as written: each @CANON_STAMP@ replaced by Stamp.
+	Header = strings.ReplaceAll(headerText, stampMark, Stamp)
+	JSON   = strings.ReplaceAll(jsonText, stampMark, Stamp)
 )
+
+// stampOf is the stamp of two runtime texts: the first stampLen hex digits of the SHA-256 of header then json (CODEGEN.md §7.4, DECISIONS 436).
+func stampOf(header, json string) string {
+	sum := sha256.Sum256([]byte(header + json))
+	return hex.EncodeToString(sum[:])[:stampLen]
+}
 
 // Identifiers are the identifier tokens of Header and JSON outside comments, string and character literals, sorted and distinct: the names a macro of a translation unit that includes them would rewrite (CODEGEN.md §7.9).
 var Identifiers = sync.OnceValue(func() []string {
