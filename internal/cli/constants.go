@@ -28,6 +28,7 @@ const (
 	cmdFmt     = "fmt"
 	cmdRefs    = "refs"
 	cmdGraph   = "graph"
+	cmdLint    = "lint"
 	cmdEdit    = "edit"
 	cmdRename  = "rename"
 	cmdLSP     = "lsp"
@@ -63,6 +64,7 @@ const (
 	flagWatch       = "watch"
 	flagEditLayer   = "edit-layer"
 	flagDryRun      = "dry-run"
+	flagFix         = "fix"
 	formatText      = "text"
 	formatJSON      = "json"
 	rootAssign      = "="
@@ -91,6 +93,7 @@ const (
 	usageDiff        = "print the changes instead of writing"
 	usageEditLayer   = "send edits to the layer `name` (Options.EditLayer)"
 	usageDryRun      = "write nothing; print what would change"
+	usageFix         = "also print, first, the canon edit request of each finding one request fixes"
 	usageWatch       = "run again after every change, printing what changed"
 	usageJSONSources = "also normalize the JSON files read by load to the canonical JSON layout"
 )
@@ -108,6 +111,7 @@ commands:
   guide [topic]         print the agent guide: the index, or one topic
   help                  print this usage
   init                  create project.canon in the current directory
+  lint [packages...]    list the advisory lints of packages as JSON lines
   lock check [pkgs...]  verify canon.lock against the sources, no build
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file

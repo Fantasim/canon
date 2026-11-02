@@ -1,4 +1,4 @@
-API.md §5.7: a String type limited to the names of several enums, joined with + or read through a
+API.md L4: a String type limited to the names of several enums, joined with + or read through a
 {k: true for k in …} map, is reported with all its enums in first-use order, once each, and the
 softer text that names a dependent type.
 -- project.canon --

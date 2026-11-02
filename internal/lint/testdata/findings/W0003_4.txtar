@@ -1,4 +1,4 @@
-API.md §5.7: a let that names itself, directly or through another let, is no list of enum member
+API.md L4: a let that names itself, directly or through another let, is no list of enum member
 names, so the refinements over a, c and the two-let cycle give no finding and the lint terminates.
 -- project.canon --
 project acme {

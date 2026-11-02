@@ -1,4 +1,4 @@
-API.md §5.7: numbered sibling fields that no load and no output reaches are reported once per
+API.md L3: numbered sibling fields that no load and no output reaches are reported once per
 family, at the lowest-numbered field, in a record and in a case of a variant: the fields of one stem
 and one written type whose names end in distinct numbers. A field of another written type, or a
 single numbered field, is no sibling.

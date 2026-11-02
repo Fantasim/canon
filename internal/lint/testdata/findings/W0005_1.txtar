@@ -1,4 +1,4 @@
-API.md §5.7: a string literal holding the words of canon's generated marker is reported, in a
+API.md L6: a string literal holding the words of canon's generated marker is reported, in a
 value, a constant, a raw string and a function; the same words in a test declaration, and words
 that only look like them, are not.
 -- project.canon --

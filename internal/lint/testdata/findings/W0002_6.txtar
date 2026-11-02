@@ -1,4 +1,4 @@
-API.md §5.7: the two stems of a pairs finding are the wire stems, since @json(pairs:) templates name
+API.md L3: the two stems of a pairs finding are the wire stems, since @json(pairs:) templates name
 wire keys: with a snake case the stems are item_kind and item_amount, and with @json names they are
 dwKind and dwVal. Wire names that are no stem and number (first, second, third, fourth) give no
 finding, since no template maps them.

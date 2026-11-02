@@ -1,0 +1,24 @@
+CLI.md §3.19, §2.5: more lint warnings than --max-warnings is exit 4, never 1.
+-- args --
+lint
+--max-warnings
+0
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A unit.
+record Unit {
+  /// Health.
+  dwHealth: Int
+}
+-- want --
+[exit 4]
+[stdout]
+{"severity":"warning","code":"W0001","file":"a/a.canon","line":7,"col":3,"endLine":7,"endCol":11,"package":"a","message":"field dwHealth keeps the legacy prefix dw in its Canon name: rename it health (canon rename keeps the old wire name with @json where a load or a data emit reads the field)"}
+{"summary":{"errors":0,"warnings":1,"packages":1,"ms":0}}
+[stderr]

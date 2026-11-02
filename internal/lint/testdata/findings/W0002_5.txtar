@@ -1,4 +1,4 @@
-API.md §5.7: a record that a package outside the selection loads is on the wire as well, so while an
+API.md L3: a record that a package outside the selection loads is on the wire as well, so while an
 importer of its package is not loaded the numbered siblings are not reported as a list: b imports a
 and loads a.R, and only a is selected.
 -- project.canon --

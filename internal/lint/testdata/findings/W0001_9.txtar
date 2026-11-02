@@ -1,4 +1,4 @@
-API.md §5.7: a @text result that reaches a record through a dependent type counts, so Item.dwN has a finding and no fix.
+API.md L2 and L10: a @text result that reaches a record through a dependent type counts, so Item.dwN has a finding and no fix.
 -- project.canon --
 project acme {
   canon: "0.1"

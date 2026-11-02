@@ -1,4 +1,4 @@
-API.md §5.7: a record that a load reaches is on the wire, so numbered siblings are silent unless they
+API.md L3: a record that a load reaches is on the wire, so numbered siblings are silent unless they
 are exactly two families that share the numbers 0 to n-1, which one pairs list maps: Row has one
 family, Trio three, and Skew two with other numbers. A record reached by a @text result alone is
 silent too, and one reached through a ref alone is not on the wire.

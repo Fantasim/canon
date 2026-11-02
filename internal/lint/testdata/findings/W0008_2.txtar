@@ -1,4 +1,4 @@
-API.md §5.7: what the text-defines lint leaves alone. Names the package's guard covers (an enum
+API.md L9: what the text-defines lint leaves alone. Names the package's guard covers (an enum
 with @cpp(defines:)), a file that is not a header, a function-like macro, a name no enum member
 or constant declares, a member renamed with @cpp(name:), and a package with no C++ emit give no finding.
 -- project.canon --

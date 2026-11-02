@@ -28,7 +28,7 @@ func runOn(t *testing.T, fsys mapFS, selectors ...string) (*build.Analysis, *lin
 	return l.a, l.res
 }
 
-// API.md §5.7 (rule L1): lint returns the findings of the selected packages and no other.
+// API.md L1: lint returns the findings of the selected packages and no other.
 func TestRunSelection(t *testing.T) {
 	fsys := mapFS{
 		"p/a/a.canon": file("package a\n\nrecord R {\n  dwA: Int\n}\n"),
@@ -53,7 +53,7 @@ func TestRunSelection(t *testing.T) {
 	}
 }
 
-// API.md §5.7 (rule L1): a broken declaration is never judged, and the rest of its package still is.
+// API.md L1: a broken declaration is never judged, and the rest of its package still is.
 func TestRunBrokenDeclaration(t *testing.T) {
 	fsys := mapFS{"p/a/a.canon": file("package a\n\nrecord Broken {\n  dwA: Nowhere\n}\n\nrecord Sound {\n  dwB: Int\n}\n")}
 	_, res := runOn(t, fsys)
@@ -62,7 +62,7 @@ func TestRunBrokenDeclaration(t *testing.T) {
 	}
 }
 
-// API.md §5.7 (rule L11): two calls on one analysis return the same result, the fixes in finding order.
+// API.md L11: two calls on one analysis return the same result, the fixes in finding order.
 func TestRunDeterministic(t *testing.T) {
 	fsys := mapFS{
 		"p/a/a.canon": file("package a\n\nrecord R {\n  dwA: Int\n  szB: String\n}\n"),
@@ -92,7 +92,7 @@ func withProject(fsys mapFS) mapFS {
 	return fsys
 }
 
-// API.md §5.7 (rule L1) and F7: a package keeps its first findings in F2 order, and the summary counts the rest.
+// API.md L1 and F7: a package keeps its first findings in F2 order, and the summary counts the rest.
 func TestRunTruncates(t *testing.T) {
 	var src strings.Builder
 	src.WriteString("package a\n\nrecord R {\n")
@@ -109,7 +109,7 @@ func TestRunTruncates(t *testing.T) {
 	}
 }
 
-// API.md §5.7 (rule L1) and F7: a positive Options.MaxFindings sets how many findings a package keeps, the rest are counted; any other value keeps the default, as check does.
+// API.md L1 and F7: a positive Options.MaxFindings sets how many findings a package keeps, the rest are counted; any other value keeps the default, as check does.
 func TestRunMaxFindings(t *testing.T) {
 	src := "package a\n\nrecord R {\n  dwA: Int\n  dwB: Int\n  dwC: Int\n  dwD: Int\n  dwE: Int\n}\n"
 	for _, c := range []struct {
@@ -130,7 +130,7 @@ func TestRunMaxFindings(t *testing.T) {
 	}
 }
 
-// API.md §5.7 (rule L1): a stopped context stops the lint with its error.
+// API.md L1: a stopped context stops the lint with its error.
 func TestRunCancelled(t *testing.T) {
 	fsys := withProject(mapFS{"p/a/a.canon": file("package a\n\nrecord R {\n  dwA: Int\n}\n")})
 	l := analyzed(t, fsys, nil)

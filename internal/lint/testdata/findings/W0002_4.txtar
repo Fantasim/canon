@@ -1,4 +1,4 @@
-API.md §5.7: a record reached only through a ref is not on the wire, so its numbered siblings are
+API.md L3: a record reached only through a ref is not on the wire, so its numbered siblings are
 reported as a list; and the same names with a repeated number (a1 and a01) are no family.
 -- project.canon --
 project acme {

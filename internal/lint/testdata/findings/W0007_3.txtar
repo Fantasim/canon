@@ -1,4 +1,4 @@
-API.md §5.7: one line past the limit is reported.
+API.md L8: one line past the limit is reported.
 -- project.canon --
 project acme {
   canon: "0.1"

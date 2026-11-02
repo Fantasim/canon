@@ -1,4 +1,4 @@
-API.md §5.7: a C++ name that a header read by load.defines #defines, with no guard, is reported
+API.md L9: a C++ name that a header read by load.defines #defines, with no guard, is reported
 the same way, naming the header by its path; the table's prefix filter decides which defines the
 analysis reads, so a define the table leaves out (OTHER_ONE, outside the prefix LVL_) is not judged.
 -- project.canon --

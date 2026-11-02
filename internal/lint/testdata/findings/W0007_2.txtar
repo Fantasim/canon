@@ -1,4 +1,4 @@
-API.md §5.7: a file of exactly 5,000 lines is not reported, and neither is a larger one whose longest declaration is a record.
+API.md L8: a file of exactly 5,000 lines is not reported, and neither is a larger one whose longest declaration is a record.
 -- project.canon --
 project acme {
   canon: "0.1"

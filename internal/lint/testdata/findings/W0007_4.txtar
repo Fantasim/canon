@@ -1,4 +1,4 @@
-API.md §5.7: a let that only ties the longest declaration is not reported.
+API.md L8: a let that only ties the longest declaration is not reported.
 -- project.canon --
 project acme {
   canon: "0.1"

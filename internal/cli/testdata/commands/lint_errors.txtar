@@ -1,0 +1,40 @@
+CLI.md §3.19, API.md L1, L10: lint does not require a project without findings: a broken declaration is never judged, the sound parts are, check's errors are not printed, and the exit is 0; a package holding a broken declaration has no fix, another package keeps its own.
+-- args --
+lint
+--fix
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Broken: its field's type does not exist.
+record Broken {
+  /// Nowhere.
+  dwA: Nowhere
+}
+
+/// Sound.
+record Sound {
+  /// Count.
+  dwB: Int
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// Sound too.
+record Row {
+  /// Size.
+  dwSize: Int
+}
+-- want --
+[exit 0]
+[stdout]
+{"fix":{"code":"W0001","file":"b/b.canon","line":7,"col":3,"request":{"base":"r1:50fc60345e2c5eb091fd2b10df71d5cd42fd08379c850567c458b2e52927a510","ops":[{"op":"renameName","path":"b:Row.dwSize","name":"size"}]}}}
+{"severity":"warning","code":"W0001","file":"a/a.canon","line":13,"col":3,"endLine":13,"endCol":6,"package":"a","message":"field dwB keeps the legacy prefix dw in its Canon name: rename it b (canon rename keeps the old wire name with @json where a load or a data emit reads the field)"}
+{"severity":"warning","code":"W0001","file":"b/b.canon","line":7,"col":3,"endLine":7,"endCol":9,"package":"b","message":"field dwSize keeps the legacy prefix dw in its Canon name: rename it size (canon rename keeps the old wire name with @json where a load or a data emit reads the field)"}
+{"summary":{"errors":0,"warnings":2,"packages":2,"ms":0}}
+[stderr]

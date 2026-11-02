@@ -35,6 +35,7 @@ type options struct {
 	watch       bool
 	editLayer   string
 	dryRun      bool
+	fix         bool
 }
 
 func newOptions() *options {

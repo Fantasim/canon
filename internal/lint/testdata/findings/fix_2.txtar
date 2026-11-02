@@ -1,4 +1,4 @@
-API.md §5.7: a record that only a load reaches through a dependent field is on the wire, so the
+API.md L10: a record that only a load reaches through a dependent field is on the wire, so the
 rename request of its legacy-prefix finding keeps the old wire name (canon edit adds @json) and
 linting again after the request applies reports nothing.
 -- project.canon --

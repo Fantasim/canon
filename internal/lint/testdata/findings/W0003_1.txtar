@@ -1,4 +1,4 @@
-API.md §5.7: a String type refined to the member names of one enum is reported at the type, with
+API.md L4: a String type refined to the member names of one enum is reported at the type, with
 the enum, whether the list is named by a let or written in the refinement, filtered, made unique,
 or read as a membership test with contains.
 -- project.canon --

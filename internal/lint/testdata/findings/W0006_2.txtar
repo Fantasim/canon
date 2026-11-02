@@ -1,4 +1,4 @@
-API.md §5.7: what the entry-files lint leaves alone. Every entry at the path its template gives, an
+API.md L7: what the entry-files lint leaves alone. Every entry at the path its template gives, an
 entry whose template cannot be filled (the optional tag is none, so N2 refuses the value), a let
 without @files, and a let whose entries are all in its own file give no finding.
 -- project.canon --

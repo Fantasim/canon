@@ -1,0 +1,13 @@
+CLI.md §3.19, §2.5, API.md L1: an unknown package is a usage error, as for every read.
+-- args --
+lint
+nope
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- want --
+[exit 2]
+[stdout]
+[stderr]
+canon: unknown package: nope

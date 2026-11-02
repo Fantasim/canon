@@ -1,4 +1,4 @@
-API.md §5.7: an importer b that writes no output leaves the fix; with every package loaded Item.dwLevel is renamed.
+API.md L2 and L10: an importer b that writes no output leaves the fix; with every package loaded Item.dwLevel is renamed.
 -- project.canon --
 project acme {
   canon: "0.1"

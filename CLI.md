@@ -39,6 +39,7 @@ the network.
 | `canon explain <path>` | show a value, its type, and where each part of it comes from |
 | `canon refs <path>` | list everything that references an entry |
 | `canon graph` | every top-level let, entry, element and member, and every data reference between them |
+| `canon lint [packages…]` | advisory lints of legacy smells, as JSON lines; `--fix` adds `canon edit` requests |
 | `canon convert <value>` | turn a `load`ed JSON source into `.canon` source, proven lossless |
 | `canon i18n stub \| status` | manage translation files |
 | `canon lock check` | verify `canon.lock` against the sources without building |
@@ -755,6 +756,14 @@ byte-identical across runs.
 A let that could hold a ref, a member, an entry or an element but cannot be computed fails the
 command (API.md R15): no node, edge or summary line is printed; the findings and the error are,
 as for `canon refs`, and the exit code is 1. An argument is a usage error. Exit: 0, 1, 2, 3.
+
+### 3.19 `canon lint`
+
+```
+canon lint [packages…] [--fix] [--layer …]
+```
+
+Lists the advisory lints of spec/API.md §5.7 for the selected packages, from the analysis `canon check` makes (DECISIONS 440): legacy smells that are valid Canon, as warnings `W0001`-`W0008`, which no other command reports. `canon check` stays the verdict: lint never changes what `check` or `build` report or exit with, so a `--max-warnings 0` gate on them is unaffected. It does not require a project without findings; run `canon check` first when the lints must be of an error-free project. `canon lint` is a command for agents: its output is always JSON lines, whatever `--format` says (DECISIONS 274): one finding per line (§2.4), then the summary line. With `--fix`, the findings are preceded by one line per finding that one edit request fixes: `{"fix":{"code":"W0001","file":…,"line":…,"col":…,"request":{"base":"r1:…","ops":[…]}}}`. `request` is a complete request for `canon edit` (§3.15), based on the revision linted: apply one, then lint again, since the others are stale once a source changes (API.md S5). Lint writes no file and prints no package's source (DECISIONS 188). `-q` changes nothing. Exit: 0, 2, 3, 4.
 
 ---
 

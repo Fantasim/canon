@@ -1,4 +1,4 @@
-API.md §5.7: a C++ name that a header a @text fn writes #defines, and that no guard of the package
+API.md L9: a C++ name that a header a @text fn writes #defines, and that no guard of the package
 covers, is reported once per declaration, at its name, with how many names it holds, the file that
 defines them and the longest common prefix of the names cut after its last underscore, as the
 @cpp(defines:) prefix that guards them. A constant is a declaration too.

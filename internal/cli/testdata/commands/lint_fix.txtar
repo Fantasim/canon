@@ -1,0 +1,32 @@
+CLI.md §3.19, API.md L10, L11: with --fix, one line per fix comes first, a complete canon edit request based on the revision linted; then the findings, then the summary. szName has no fix: its clean name is taken.
+-- args --
+lint
+--fix
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A unit.
+record Unit {
+  /// Health.
+  dwHealth: Int
+  /// Its name.
+  szName: String = ""
+  /// A field holding the clean name of szName.
+  name: String = ""
+}
+
+/// The units.
+let units: [Unit] = [{ dwHealth: 3 }]
+-- want --
+[exit 0]
+[stdout]
+{"fix":{"code":"W0001","file":"a/a.canon","line":7,"col":3,"request":{"base":"r1:86ef1d638dde8c95ebb3e019b8e041fef440283bf1c8e4fe4550352e47f62183","ops":[{"op":"renameName","path":"a:Unit.dwHealth","name":"health"}]}}}
+{"severity":"warning","code":"W0001","file":"a/a.canon","line":7,"col":3,"endLine":7,"endCol":11,"package":"a","message":"field dwHealth keeps the legacy prefix dw in its Canon name: rename it health (canon rename keeps the old wire name with @json where a load or a data emit reads the field)"}
+{"severity":"warning","code":"W0001","file":"a/a.canon","line":9,"col":3,"endLine":9,"endCol":9,"package":"a","message":"field szName keeps the legacy prefix sz in its Canon name: rename it name (canon rename keeps the old wire name with @json where a load or a data emit reads the field)"}
+{"summary":{"errors":0,"warnings":2,"packages":1,"ms":0}}
+[stderr]

@@ -1,4 +1,4 @@
-API.md §5.7: a @stable field gets the finding and no fix, since canon edit refuses to rename it.
+API.md L2 and L10: a @stable field gets the finding and no fix, since canon edit refuses to rename it.
 -- project.canon --
 project acme {
   canon: "0.1"

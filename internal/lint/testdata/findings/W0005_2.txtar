@@ -1,4 +1,4 @@
-API.md §5.7: a string literal in a broken declaration is never judged, a broken let and a field default of a broken record alike;
+API.md L6: a string literal in a broken declaration is never judged, a broken let and a field default of a broken record alike;
 a sound declaration of the same file is.
 -- project.canon --
 project acme {

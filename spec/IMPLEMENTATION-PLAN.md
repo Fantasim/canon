@@ -1215,6 +1215,7 @@ order shown, and ends with one `summary` object:
 | `explain` | `{"explain":{"path":…,"type":…,"text":…,"value":<wire JSON>,"origin":{…},"parts":[…]}}` (parts recursive to `--depth`) |
 | `refs` | `{"ref":{"kind":…,"package":…,"path":…,"file":…,"line":…,"col":…}}` per ref (`path` omitted for `code`, `view`, `check` and `layer` refs, which have none), then `{"summary":{"target":…,"count":14}}` |
 | `graph` | `{"node":{"id":…,"kind":…,"package":…,"type":…,"retired":true,"file":…,"line":…,"col":…}}` per node, then `{"edge":{"from":…,"path":…,"pattern":…,"to":…,"kind":…,"computed":true,"file":…,"line":…,"col":…}}` per edge (`retired`, `computed` only when true), then `{"summary":{"nodes":…,"edges":…,"groups":…}}` (CLI.md §3.18) |
+| `lint` (always) | with `--fix`, first `{"fix":{"code","file","line","col","request":{…}}}` per fix in finding order; then one finding per line (API.md F5); then check's summary |
 | `fmt` | in every mode: findings, then `{"file":…,"formatted":false}` per unformatted file (with `"diff":…` under `--diff`), then `{"summary":{"files":n,"unformatted":k}}` |
 | `i18n status` | `{"i18n":{"package":…,"lang":…,"translated":…,"missing":…,"unknown":…}}` per pair |
 | `version` | `{"version":{"compiler":…,"languages":[…],"fingerprint":"canon-fp v1","viewModel":"canon-vm/1","lock":"canon.lock v1","commit":…}}` |

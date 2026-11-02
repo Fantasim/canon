@@ -1,4 +1,4 @@
-API.md §5.7: an importer b that holds a broken declaration withholds the fix, since canon edit refuses the rename.
+API.md L2 and L10: an importer b that holds a broken declaration withholds the fix, since canon edit refuses the rename.
 -- project.canon --
 project acme {
   canon: "0.1"

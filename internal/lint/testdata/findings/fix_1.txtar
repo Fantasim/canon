@@ -1,4 +1,4 @@
-API.md §5.7: a legacy-prefix finding whose suggested name is free has one edit request, a
+API.md L10: a legacy-prefix finding whose suggested name is free has one edit request, a
 renameName to that name, and linting again after the request applies reports nothing.
 -- project.canon --
 project acme {

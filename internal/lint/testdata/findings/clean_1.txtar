@@ -1,4 +1,4 @@
-API.md §5.7: a project written the native way gives no lint finding. A pin: adding a field named
+API.md L1: a project written the native way gives no lint finding. A pin: adding a field named
 dwX to Unit makes this case report one.
 -- project.canon --
 project acme {

@@ -16,6 +16,7 @@ commands:
   guide [topic]         print the agent guide: the index, or one topic
   help                  print this usage
   init                  create project.canon in the current directory
+  lint [packages...]    list the advisory lints of packages as JSON lines
   lock check [pkgs...]  verify canon.lock against the sources, no build
   lsp                   run the language server on stdin and stdout
   new <package>         create a package directory with a first file

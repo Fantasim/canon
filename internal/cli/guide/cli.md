@@ -17,6 +17,7 @@ JSON Lines; `edit` and `rename` always do.
 | `canon explain <path>` | value, type, origin of every part |
 | `canon refs <path>` | every reference to an entry or enum member |
 | `canon graph` | the whole reference graph: text grouped by schema location, or JSON lines |
+| `canon lint [packages] [--fix]` | advisory lints `W0001`..`W0008` of legacy smells, always JSON lines, exit 0 with findings; `--fix` first prints a `canon edit` request per fixable finding: apply one, then lint again |
 | `canon edit [request.json]` | apply one edit request (stdin without a file); analyses only the packages it affects |
 | `canon rename <name> <new-name>` | rename a Canon name everywhere |
 | `canon lock check [packages]` | verify `canon.lock` against the sources without building: `E6001`..`E6005`, and `W6006` for values not locked yet |

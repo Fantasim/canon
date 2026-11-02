@@ -1,4 +1,4 @@
-API.md §5.7: a package source file of more than 5,000 lines whose longest declaration is a let is reported, at that let.
+API.md L8: a package source file of more than 5,000 lines whose longest declaration is a let is reported, at that let.
 -- project.canon --
 project acme {
   canon: "0.1"

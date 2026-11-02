@@ -1,4 +1,4 @@
-API.md §5.7: what the legacy-prefix lint leaves alone, and the fixes it withholds. A Float named
+API.md L2 and L10: what the legacy-prefix lint leaves alone, and the fixes it withholds. A Float named
 with an integer prefix, a field with no capital after its prefix and a String named with a number
 prefix are silent. A suggested name another field or method of the record already has, a reserved
 word, and a record a text output writes get the finding but no fix.

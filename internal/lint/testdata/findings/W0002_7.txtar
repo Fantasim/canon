@@ -1,4 +1,4 @@
-API.md §5.7: two numbered columns that WIRE.md 5.14 cannot map give no pairs finding: a column of
+API.md L3: two numbered columns that WIRE.md 5.14 cannot map give no pairs finding: a column of
 records, a column of lists and a column of optionals have no scalar wire form.
 -- project.canon --
 project acme {

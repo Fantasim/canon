@@ -1,4 +1,4 @@
-API.md §5.7: a field name that keeps a legacy type prefix is a warning with the name it should
+API.md L2: a field name that keeps a legacy type prefix is a warning with the name it should
 have, for every prefix and type the lint reads, in a record and in a case of a variant; a field
 named without a prefix is not reported.
 -- project.canon --

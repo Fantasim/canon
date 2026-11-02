@@ -6,7 +6,7 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 )
 
-// API.md §5.7 (rule L2): the suggested name lowers the leading capitals, but the last of a run of two or more before a lower-case letter.
+// API.md L2: the suggested name lowers the leading capitals, but the last of a run of two or more before a lower-case letter.
 func TestSuggestName(t *testing.T) {
 	for _, c := range []struct{ rest, want string }{
 		{"ItemCountMax", "itemCountMax"},
@@ -26,7 +26,7 @@ func TestSuggestName(t *testing.T) {
 	}
 }
 
-// API.md §5.7 (rule L2): which prefix a name keeps, by the kind of the field's type.
+// API.md L2: which prefix a name keeps, by the kind of the field's type.
 func TestMatchPrefix(t *testing.T) {
 	for _, c := range []struct {
 		name         string

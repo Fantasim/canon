@@ -1,4 +1,4 @@
-API.md §5.7: a package that holds a broken declaration gets its findings and no fix, since canon edit refuses every rename in it.
+API.md L2 and L10: a package that holds a broken declaration gets its findings and no fix, since canon edit refuses every rename in it.
 -- project.canon --
 project acme {
   canon: "0.1"

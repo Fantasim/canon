@@ -1,4 +1,4 @@
-API.md §5.7: the count of the entry-files finding is the number of files off the path, so a file that
+API.md L7: the count of the entry-files finding is the number of files off the path, so a file that
 holds two off-path entries counts once, and its first entry gives the path it belongs at.
 -- project.canon --
 project acme {

@@ -1,4 +1,4 @@
-API.md §5.7: what the authoring-note lint leaves alone. A record that only a load reads, one that
+API.md L5: what the authoring-note lint leaves alone. A record that only a load reads, one that
 no output reaches, one reached only through a ref, and a field whose wire name has an underscore
 inside or ends with one are silent.
 -- project.canon --

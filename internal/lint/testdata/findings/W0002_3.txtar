@@ -1,4 +1,4 @@
-API.md §5.7: two numbered families of a record on the wire that share the numbers 0 to n-1 are two
+API.md L3: two numbered families of a record on the wire that share the numbers 0 to n-1 are two
 numbered columns: one finding at the first field, naming the first and last field and the two
 stems, which become the templates of one @json(pairs:) list.
 -- project.canon --

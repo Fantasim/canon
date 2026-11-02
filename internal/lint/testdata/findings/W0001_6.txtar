@@ -1,4 +1,4 @@
-API.md §5.7: t imports a and a @text result of t reaches Item, so with every package loaded the finding has no fix.
+API.md L2 and L10: t imports a and a @text result of t reaches Item, so with every package loaded the finding has no fix.
 -- project.canon --
 project acme {
   canon: "0.1"

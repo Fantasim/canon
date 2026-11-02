@@ -1,4 +1,4 @@
-API.md §5.7: a fix is offered only when every importer of the field's package is loaded: t imports a and is not selected, so a gets the finding and no fix.
+API.md L2 and L10: a fix is offered only when every importer of the field's package is loaded: t imports a and is not selected, so a gets the finding and no fix.
 -- project.canon --
 project acme {
   canon: "0.1"

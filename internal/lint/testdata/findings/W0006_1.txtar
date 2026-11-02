@@ -1,4 +1,4 @@
-API.md §5.7: the entries of a let with @files that sit in files off the path its template gives are
+API.md L7: the entries of a let with @files that sit in files off the path its template gives are
 reported once, at the annotation, with their number and the first such file in path order with the
 path the template gives its entry. Entries at their path, and one in the let's own file, are not off.
 -- project.canon --

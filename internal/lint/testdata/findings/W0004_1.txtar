@@ -1,4 +1,4 @@
-API.md §5.7: a field whose wire name starts with an underscore is an authoring note, reported when
+API.md L5: a field whose wire name starts with an underscore is an authoring note, reported when
 an output writes its record: the type of a value an emit json writes, reached through a list, and
 the result of a @text fn, reached through a case of a variant. The finding names the output that
 reaches it first, an emit before a @text fn.
