@@ -352,19 +352,23 @@ func (h *hub) pollOnce(now time.Time) error {
 	return nil
 }
 
-// fingerprint is the SHA-256 of names and of their content in next; zero for none.
+// fingerprint is the SHA-256 of names and of their content in next, a name next left (DECISIONS
+// 445) as missing; zero for none.
 func fingerprint(next *snapFS, names []name) [sha256.Size]byte {
 	if len(names) == 0 {
 		return [sha256.Size]byte{}
 	}
-	sum := sha256.New()
+	digest := sha256.New()
 	for _, n := range names {
-		e := next.ents[n]
-		sum.Write([]byte{byte(n.kind), byte(e.sum.class)})
-		sum.Write(e.sum.hash[:])
-		sum.Write(append([]byte(n.abs), 0))
+		key := sum{class: classMissing}
+		if e := next.ents[n]; e != nil {
+			key = e.sum
+		}
+		digest.Write([]byte{byte(n.kind), byte(key.class)})
+		digest.Write(key.hash[:])
+		digest.Write(append([]byte(n.abs), 0))
 	}
-	return [sha256.Size]byte(sum.Sum(nil))
+	return [sha256.Size]byte(digest.Sum(nil))
 }
 
 // refreshWatched refreshes the snapshot for the hub as a writer does, so that it never reads a

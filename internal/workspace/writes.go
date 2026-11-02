@@ -27,7 +27,7 @@ func (s *snapFS) pin(abs string) {
 		{n: name{kind: kindStat, abs: abs}, load: (*snapFS).stat},
 		{n: name{kind: kindDir, abs: project.DirOf(abs)}, load: (*snapFS).readDir},
 	} {
-		e := s.get(p.n, func(a string) *entry { return p.load(s, a) })
+		e := s.getAs(p.n, func(a string) *entry { return p.load(s, a) }, byWriter)
 		for _, fs := range older {
 			fs.adopt(p, e, s)
 		}
@@ -58,18 +58,18 @@ type pinned struct {
 
 // pinName pins abs's stat and its directory's listing, what a new directory changes.
 func (s *snapFS) pinName(abs string) {
-	s.get(name{kind: kindStat, abs: abs}, s.stat)
-	s.get(name{kind: kindDir, abs: project.DirOf(abs)}, s.readDir)
+	s.getAs(name{kind: kindStat, abs: abs}, s.stat, byWriter)
+	s.getAs(name{kind: kindDir, abs: project.DirOf(abs)}, s.readDir, byWriter)
 }
 
 // adopt stores the writer w's entry e for p, unless s has one; where overlays make the two
 // snapshots read differently, s reads p itself.
 func (s *snapFS) adopt(p pinned, e *entry, w *snapFS) {
 	if len(s.over) > 0 || len(w.over) > 0 {
-		s.get(p.n, func(a string) *entry { return p.load(s, a) })
+		s.getAs(p.n, func(a string) *entry { return p.load(s, a) }, byWriter)
 		return
 	}
-	s.get(p.n, func(string) *entry { return e })
+	s.getAs(p.n, func(string) *entry { return e }, byWriter)
 }
 
 // pinDirs pins every directory MkdirAll(abs) may create: the stat of each missing one and the
@@ -80,7 +80,7 @@ func (s *snapFS) pinDirs(abs string) {
 		for _, fs := range s.lineage() {
 			fs.pinName(d)
 		}
-		if _, err := s.Stat(d); err == nil || project.DirOf(d) == d {
+		if s.getAs(name{kind: kindStat, abs: d}, s.stat, byWriter).err == nil || project.DirOf(d) == d {
 			return
 		}
 	}
@@ -164,6 +164,7 @@ func (s *snapFS) settle(user map[string][]byte) []name {
 			files = append(files, n)
 		default:
 			delete(s.ents, n)
+			delete(s.onlyPin, n)
 		}
 		s.log = append(s.log, n)
 	}

@@ -28,13 +28,13 @@ type diff struct {
 
 // since is what differs from from, published before s, run as s is published: the files that
 // changed or a listing gained or lost, with published, the files the publisher named, and every
-// name that differs, absolute, in byte order (API.md S2). A name s lacks is read in s now.
+// name that differs, absolute, in byte order (API.md S2). A name s lacks is read in s now (seen).
 func (s *Snapshot) since(from *Snapshot, published []string) Change {
 	old := from.fs.entries()
 	var d diff
 	for _, n := range slices.SortedFunc(maps.Keys(old), compareNames) {
 		e := old[n]
-		now := s.fs.get(n, func(a string) *entry { return loaders[n.kind](s.fs, a) })
+		now := s.fs.seen(n, from.fs)
 		if now.sum != e.sum {
 			d.add(n, e, now)
 		}

@@ -73,7 +73,9 @@ func (s *snapFS) refreshNames(ctx context.Context, only []name) (*snapFS, []name
 	return s.compare(ctx, names, olds, nil)
 }
 
-// compare is refresh over names, whose entries are olds, the names of forced read again.
+// compare is refresh over names, whose entries are olds, the names of forced read again; a name
+// only a writer pinned that names nothing is not carried into the next snapshot, s left marked
+// so the next one forked from it leaves it when nothing changed (API.md S4, DECISIONS 445).
 func (s *snapFS) compare(ctx context.Context, names []name, olds []*entry, forced map[string]bool) (*snapFS, []name, error) {
 	fresh := make([]*entry, len(names))
 	err := inParallel(ctx, len(names), func(i int) {
@@ -82,6 +84,7 @@ func (s *snapFS) compare(ctx context.Context, names []name, olds []*entry, force
 	if err != nil {
 		return nil, nil, err
 	}
+	gone := s.goneOf(names, olds, fresh)
 	changed := map[name]*entry{}
 	for i, n := range names {
 		switch f := fresh[i]; {
@@ -92,10 +95,20 @@ func (s *snapFS) compare(ctx context.Context, names []name, olds []*entry, force
 			s.renew(n, olds[i], f)
 		}
 	}
+	next, keys := s.successor(changed, gone)
+	return next, keys, nil
+}
+
+// successor is the snapshot after a refresh of s that found changed and gone, with the names
+// that changed: none when nothing did, gone then marked on s for the next fork to leave; else s
+// forked, leaving each name of gone still only a writer's then (forkLeaving).
+func (s *snapFS) successor(changed map[name]*entry, gone []name) (*snapFS, []name) {
 	if len(changed) == 0 {
-		return nil, nil, nil
+		s.markGone(gone)
+		return nil, nil
 	}
-	return s.fork(s.over, changed), slices.SortedFunc(maps.Keys(changed), compareNames), nil
+	keys := slices.SortedFunc(maps.Keys(changed), compareNames)
+	return s.forkLeaving(s.over, changed, gone), keys
 }
 
 // inParallel runs fn for each index below n on refreshWorkers goroutines, each over one run of

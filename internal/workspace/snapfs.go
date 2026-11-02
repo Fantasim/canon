@@ -78,6 +78,7 @@ type snapFS struct {
 	rev     string                 // the revision, once computed: a function of the entries, fixed once read (S3)
 	lst     *listing               // the listing last computed here, or where this one was forked
 	written []string               // each name a writer pinned since it last ended (API.md S9)
+	onlyPin map[name]bool          // the names only a writer pinned, true once a refresh found them naming nothing (DECISIONS 445)
 	older   []weak.Pointer[snapFS] // the snapshots this one descends from, while a caller holds them
 
 	plansMu sync.Mutex             // plans grows after the snapFS exists; mu may be held around it
@@ -88,8 +89,15 @@ func newSnapFS(base project.FS, over map[string][]byte, now func() time.Time) *s
 	return &snapFS{base: base, over: over, now: now, ents: map[name]*entry{}}
 }
 
-// fork is a new snapshot's file system: s's entries kept, except those replaced.
+// fork is a new snapshot's file system: s's entries kept, except those replaced and the names
+// only a writer pinned that a refresh found naming nothing (carry).
 func (s *snapFS) fork(over map[string][]byte, replaced map[name]*entry) *snapFS {
+	return s.forkLeaving(over, replaced, nil)
+}
+
+// forkLeaving is fork, also leaving each name of gone a refresh just found naming nothing that
+// is still only a writer's when it forks (carry).
+func (s *snapFS) forkLeaving(over map[string][]byte, replaced map[name]*entry, gone []name) *snapFS {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	next := &snapFS{base: s.base, over: over, now: s.now, root: s.root, ents: maps.Clone(s.ents), lst: s.lst}
@@ -106,6 +114,7 @@ func (s *snapFS) fork(over map[string][]byte, replaced map[name]*entry) *snapFS 
 		}
 		next.log = append(next.log, n)
 	}
+	s.carry(next, replaced, gone)
 	return next
 }
 
@@ -115,11 +124,16 @@ type flight struct {
 	loads int
 }
 
-// get is n's entry, read by load on first use; a first use meeting a flight waits for its entry,
-// which a refresh waits for (settled; API.md S1, DECISIONS 421), but a link, whose read reads
-// other links, reads again, the first stored kept, so no two reads wait for each other.
-func (s *snapFS) get(n name, load func(string) *entry) (got *entry) {
-	got, f := s.board(n)
+// get is n's entry for a reader, read by load on first use (getAs).
+func (s *snapFS) get(n name, load func(string) *entry) *entry {
+	return s.getAs(n, load, byReader)
+}
+
+// getAs is n's entry for r, read by load on first use; a first use meeting a flight waits for its
+// entry, which a refresh waits for (settled; API.md S1, DECISIONS 421), but a link, whose read
+// reads other links, reads again, the first stored kept, so no two reads wait for each other.
+func (s *snapFS) getAs(n name, load func(string) *entry, r role) (got *entry) {
+	got, f := s.board(n, r)
 	if f == nil {
 		return got
 	}
@@ -128,10 +142,11 @@ func (s *snapFS) get(n name, load func(string) *entry) (got *entry) {
 }
 
 // board is n's entry once stored, else the flight a load of n joins, a read of any kind but a
-// link waiting first for the flight it meets.
-func (s *snapFS) board(n name) (*entry, *flight) {
+// link waiting first for the flight it meets; r's use of n is noted first.
+func (s *snapFS) board(n name, r role) (*entry, *flight) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.note(n, r)
 	for {
 		if e, ok := s.ents[n]; ok {
 			return e, nil

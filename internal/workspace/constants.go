@@ -33,6 +33,13 @@ const (
 	classGone
 )
 
+// Who asks a snapshot for an entry (DECISIONS 445).
+const (
+	byReader role = iota
+	byWriter
+	byDiff
+)
+
 // The bits of a stat's content key (API.md S5).
 const (
 	statDir byte = 1 << iota
