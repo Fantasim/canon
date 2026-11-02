@@ -1,5 +1,5 @@
-File: File FileKind=project @1:1-56:1
-  Project: ProjectDecl @6:1-55:2
+File: File FileKind=project @1:1-62:1
+  Project: ProjectDecl @6:1-61:2
     Doc: DocComment "The law repository of Sovereign. In the real setup this directory is its own\nrepository; here it is `services/configlang/examples/`.\n\nTests do not read the real repositories: the harness opens this project with every\nroot redirected (see _fixtures/README.md)." @1:1-5:47
     Name: Ident sovereign @6:9-6:18
     Items[0]: ProjectEntry Colon=":" @7:3-7:15
@@ -81,38 +81,51 @@ File: File FileKind=project @1:1-56:1
           Key: Ident features @39:5-39:13
           Value: StringLit @39:15-39:37
             Parts[0]: text "example.com/features"
-    Items[6]: ProjectEntry @45:3-54:4
-      Doc: DocComment "Allowed import directions, lowest tier first (TYPES §3.1): a package imports only from its own\ntier and the tiers listed before it, and a longer path wins, so `features.tiers.ids` sits\nbelow the rest of `features`." @42:3-44:36
-      Key: Ident tiers @45:3-45:8
-      Value: ProjectMap @45:9-54:4
-        Entries[0]: ProjectEntry Colon=":" @47:5-47:24
-          Doc: DocComment "Helpers every package may use." @46:5-46:39
-          Key: Ident shared @47:5-47:11
-          Value: ProjectList @47:13-47:24
-            Items[0]: QualifiedName sovcommon @47:14-47:23
-        Entries[1]: ProjectEntry Colon=":" @49:5-49:21
-          Doc: DocComment "The studio view model." @48:5-48:31
-          Key: Ident studio @49:5-49:11
-          Value: ProjectList @49:13-49:21
-            Items[0]: QualifiedName studio @49:14-49:20
-        Entries[2]: ProjectEntry Colon=":" @51:5-51:46
-          Doc: DocComment "Identifier vocabularies, imported by data." @50:5-50:51
-          Key: Ident ids @51:5-51:8
-          Value: ProjectList @51:10-51:46
-            Items[0]: QualifiedName features.tiers.ids @51:11-51:29
-            Items[1]: QualifiedName resource.vocab @51:31-51:45
-        Entries[3]: ProjectEntry Colon=":" @53:5-53:94
-          Doc: DocComment "Data packages." @52:5-52:23
-          Key: Ident data @53:5-53:9
-          Value: ProjectList @53:11-53:94
-            Items[0]: QualifiedName balance @53:12-53:19
-            Items[1]: QualifiedName features @53:21-53:29
-            Items[2]: QualifiedName game @53:31-53:35
-            Items[3]: QualifiedName guide @53:37-53:42
-            Items[4]: QualifiedName pipeline @53:44-53:52
-            Items[5]: QualifiedName resource @53:54-53:62
-            Items[6]: QualifiedName service @53:64-53:71
-            Items[7]: QualifiedName teamboard @53:73-53:82
-            Items[8]: QualifiedName telemetry @53:84-53:93
+    Items[6]: ProjectEntry @44:3-46:4
+      Doc: DocComment "Where an emit that names a root instead of a path writes (CODEGEN §2.1): telemetry's Go\noutput goes to @services/monitoring/gen/telemetry, `{dir}` being the package path with `/`." @42:3-43:98
+      Key: Ident out_templates @44:3-44:16
+      Value: ProjectMap @44:17-46:4
+        Entries[0]: ProjectEntry Colon=":" @45:5-45:45
+          Key: Ident go @45:5-45:7
+          Value: ProjectMap @45:9-45:45
+            Entries[0]: ProjectEntry Colon=":" @45:11-45:43
+              Key: Ident services @45:11-45:19
+              Value: StringLit @45:21-45:43
+                Parts[0]: text "monitoring/gen/"
+                Parts[1]: Interp @45:38-45:41
+                  X: IdentExpr dir @45:38-45:41
+    Items[7]: ProjectEntry @51:3-60:4
+      Doc: DocComment "Allowed import directions, lowest tier first (TYPES §3.1): a package imports only from its own\ntier and the tiers listed before it, and a longer path wins, so `features.tiers.ids` sits\nbelow the rest of `features`." @48:3-50:36
+      Key: Ident tiers @51:3-51:8
+      Value: ProjectMap @51:9-60:4
+        Entries[0]: ProjectEntry Colon=":" @53:5-53:24
+          Doc: DocComment "Helpers every package may use." @52:5-52:39
+          Key: Ident shared @53:5-53:11
+          Value: ProjectList @53:13-53:24
+            Items[0]: QualifiedName sovcommon @53:14-53:23
+        Entries[1]: ProjectEntry Colon=":" @55:5-55:21
+          Doc: DocComment "The studio view model." @54:5-54:31
+          Key: Ident studio @55:5-55:11
+          Value: ProjectList @55:13-55:21
+            Items[0]: QualifiedName studio @55:14-55:20
+        Entries[2]: ProjectEntry Colon=":" @57:5-57:46
+          Doc: DocComment "Identifier vocabularies, imported by data." @56:5-56:51
+          Key: Ident ids @57:5-57:8
+          Value: ProjectList @57:10-57:46
+            Items[0]: QualifiedName features.tiers.ids @57:11-57:29
+            Items[1]: QualifiedName resource.vocab @57:31-57:45
+        Entries[3]: ProjectEntry Colon=":" @59:5-59:94
+          Doc: DocComment "Data packages." @58:5-58:23
+          Key: Ident data @59:5-59:9
+          Value: ProjectList @59:11-59:94
+            Items[0]: QualifiedName balance @59:12-59:19
+            Items[1]: QualifiedName features @59:21-59:29
+            Items[2]: QualifiedName game @59:31-59:35
+            Items[3]: QualifiedName guide @59:37-59:42
+            Items[4]: QualifiedName pipeline @59:44-59:52
+            Items[5]: QualifiedName resource @59:54-59:62
+            Items[6]: QualifiedName service @59:64-59:71
+            Items[7]: QualifiedName teamboard @59:73-59:82
+            Items[8]: QualifiedName telemetry @59:84-59:93
 == findings
 0 errors, 0 warnings in 1 package (…)

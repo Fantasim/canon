@@ -1311,9 +1311,8 @@
 433:0-4 "emit" keyword.other.canon
 433:10-13 "out" variable.other.property.canon
 433:13-14 ":" punctuation.separator.key.canon
-433:15-51 "\"@services/monitoring/gen/telemetry\"" string.quoted.double.canon
-433:53-57 "mode" variable.other.property.canon
-433:57-58 ":" punctuation.separator.key.canon
+433:25-29 "mode" variable.other.property.canon
+433:29-30 ":" punctuation.separator.key.canon
 434:0-4 "emit" keyword.other.canon
 434:12-15 "out" variable.other.property.canon
 434:15-16 ":" punctuation.separator.key.canon

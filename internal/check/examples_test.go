@@ -79,12 +79,33 @@ func exampleProject() *project.Project {
 	return p
 }
 
+// exampleTemplates are the out_templates of examples/project.canon, as the project loader reads them.
+func exampleTemplates(t *testing.T) []project.Template {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(examplesDir, projectFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	set := &source.FileSet{}
+	src, err := set.Add(projectFile, "/"+projectFile, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := project.Load(src, diag.NewBag(set, ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p.Templates
+}
+
 // run checks the loaded files and returns the program and the rendered findings of every
 // package, in path order.
 func (l *loaded) run(t *testing.T) (*check.Program, string) {
 	t.Helper()
 	bags := check.Bags{}
-	prog := check.Check(context.Background(), exampleProject(), l.files, bags, literalFolder{})
+	proj := exampleProject()
+	proj.Templates = exampleTemplates(t)
+	prog := check.Check(context.Background(), proj, l.files, bags, literalFolder{})
 	var all []diag.Finding
 	var sum diag.Summary
 	names := make([]string, 0, len(bags))

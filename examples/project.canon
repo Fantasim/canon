@@ -39,6 +39,12 @@ project sovereign {
     features: "example.com/features"
   }
 
+  /// Where an emit that names a root instead of a path writes (CODEGEN §2.1): telemetry's Go
+  /// output goes to @services/monitoring/gen/telemetry, `{dir}` being the package path with `/`.
+  out_templates {
+    go: { services: "monitoring/gen/{dir}" }
+  }
+
   /// Allowed import directions, lowest tier first (TYPES §3.1): a package imports only from its own
   /// tier and the tiers listed before it, and a longer path wins, so `features.tiers.ids` sits
   /// below the rest of `features`.

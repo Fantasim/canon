@@ -21,7 +21,7 @@ func projectOperators() []operator {
 		op(diag.W1016.Def().Code, "GRAMMAR.md §7.1 (a compiler pin an unstamped test binary cannot honour)", onKey("canon", insertPin)),
 		op(diag.E1011.Def().Code, "GRAMMAR.md §5.2 (anything else in project.canon)", projectTrailer),
 		op(diag.E1012.Def().Code, "GRAMMAR.md §7.1 (studio package missing)", onKey("studio", replaceValue("nowhere"))),
-		op(diag.E1019.Def().Code, "GRAMMAR.md §7.1 (out_templates target)", onKey("canon", insertTemplateTarget)),
+		op(diag.E1019.Def().Code, "GRAMMAR.md §7.1 (out_templates target)", templateTargets),
 	}
 }
 
@@ -92,6 +92,26 @@ func insertEntryBefore(key, rest string) entryEdit {
 func insertPin(tg target, e *syntax.ProjectEntry) progen.Site {
 	s, _ := span(tg, e.Key)
 	return seq(2, insert(s, "compiler"), insert(s, ": "), insert(s, `"9.9.9"`), insert(s, "\n"+indent(tg, s)))
+}
+
+// templateTargets adds a target no emit has inside the project's out_templates when it has one (a
+// second key would be E1005), else as a new key before canon (DECISIONS 439).
+func templateTargets(tg target) []progen.Site {
+	if sites := onKey(syntax.OutTemplatesKey, insertTargetInto)(tg); len(sites) > 0 {
+		return sites
+	}
+	return onKey("canon", insertTemplateTarget)(tg)
+}
+
+// insertTargetInto adds a target no emit has before the first entry of out_templates e; the finding
+// is at the target.
+func insertTargetInto(tg target, e *syntax.ProjectEntry) progen.Site {
+	m, ok := e.Value.(*syntax.ProjectMap)
+	if !ok || len(m.Entries) == 0 {
+		return insertTemplateTarget(tg, e)
+	}
+	s, _ := span(tg, m.Entries[0].Key)
+	return seq(0, insert(s, "nowhere"), insert(s, ": {}\n"+indent(tg, s)))
 }
 
 // insertTemplateTarget adds an out_templates key holding a target no emit has before e; the finding

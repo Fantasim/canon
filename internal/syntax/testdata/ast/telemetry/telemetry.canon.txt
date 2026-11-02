@@ -1627,16 +1627,15 @@ File: File FileKind=source @1:1-435:1
       Items[2]: FieldItem @432:79-432:90
         Name: Ident mode @432:79-432:83
         Value: IdentExpr baked @432:85-432:90
-  Decls[34]: EmitDecl @433:1-433:67
+  Decls[34]: EmitDecl @433:1-433:39
     Target: Ident go @433:6-433:8
-    Options: BraceLit @433:9-433:67
-      Items[0]: FieldItem @433:11-433:52
+    Options: BraceLit @433:9-433:39
+      Items[0]: FieldItem @433:11-433:24
         Name: Ident out @433:11-433:14
-        Value: StringLit @433:16-433:52
-          Parts[0]: text "@services/monitoring/gen/telemetry"
-      Items[1]: FieldItem @433:54-433:65
-        Name: Ident mode @433:54-433:58
-        Value: IdentExpr baked @433:60-433:65
+        Value: IdentExpr services @433:16-433:24
+      Items[1]: FieldItem @433:26-433:37
+        Name: Ident mode @433:26-433:30
+        Value: IdentExpr baked @433:32-433:37
   Decls[35]: EmitDecl @434:1-434:55
     Target: Ident text @434:6-434:10
     Options: BraceLit @434:11-434:55

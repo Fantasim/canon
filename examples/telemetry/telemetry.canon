@@ -430,5 +430,5 @@ export fn createTableSql(e: EventType) -> String {
 // ---------------------------------------------------------------------------
 
 emit cpp { out: "@source/Engine/Telemetry/Generated", namespace: "Telemetry", mode: baked }
-emit go { out: "@services/monitoring/gen/telemetry", mode: baked }
+emit go { out: services, mode: baked }
 emit text { out: "@source/Tools/telemetry/generated" }

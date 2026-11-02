@@ -1,0 +1,23 @@
+DECISIONS D-TPL, GRAMMAR.md §7.1: out_templates is a map-valued project key, printed in block form with its template strings verbatim, placeholders included; the printed file is a fixed point.
+-- project.canon --
+project demo {
+  canon:   "0.1"
+  roots { admin: "../admin", resource: "../Resource" }
+
+  out_templates: {
+    go: { admin:   "internal/gen/{dir}" }
+    ts: {admin: "web/src/lib/generated/{dotted}.ts"}
+    view: { resource: "Studio/views/{dotted}.view.json" }
+  }
+}
+-- want --
+project demo {
+  canon: "0.1"
+  roots { admin: "../admin", resource: "../Resource" }
+
+  out_templates {
+    go: { admin: "internal/gen/{dir}" }
+    ts: { admin: "web/src/lib/generated/{dotted}.ts" }
+    view: { resource: "Studio/views/{dotted}.view.json" }
+  }
+}
