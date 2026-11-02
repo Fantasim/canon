@@ -4,6 +4,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -14,15 +15,18 @@ import (
 )
 
 // rssHelperEnv, when set, makes the test binary the RSS helper: it runs its arguments as a
-// command and writes its own peak resident set in KiB and its wall time in ns to the file named.
+// command and writes its own peak resident set in KiB, its wall time in ns and the signal that
+// killed it (0 for none) to the file named.
 const rssHelperEnv = "CANON_BENCHGEN_RSS_FILE"
 
 // The helper's report: its file's mode, and the base and width of the number it holds.
 const (
-	rssFilePerm = 0o600
-	decimal     = 10
-	rssBits     = 64
-	rssSep      = " "
+	rssFilePerm  = 0o600
+	decimal      = 10
+	rssBits      = 64
+	rssSep       = " "
+	rssFields    = 3 // KiB, ns, signal
+	exitSignaled = 3 // the helper's exit when its command was killed by a signal
 )
 
 // TestMain runs the tests, or, in the RSS helper, the one command it measures.
@@ -53,9 +57,16 @@ func rssHelper(out string, args []string) int {
 	if !ok {
 		return exitFail
 	}
-	report := strconv.FormatInt(usage.Maxrss, decimal) + rssSep + strconv.FormatInt(int64(wall), decimal)
+	var sig syscall.Signal
+	if ws, ok := cmd.ProcessState.Sys().(syscall.WaitStatus); ok && ws.Signaled() {
+		sig = ws.Signal()
+	}
+	report := strings.Join([]string{strconv.FormatInt(usage.Maxrss, decimal), strconv.FormatInt(int64(wall), decimal), strconv.Itoa(int(sig))}, rssSep)
 	if os.WriteFile(out, []byte(report), rssFilePerm) != nil {
 		return exitFail
+	}
+	if sig != 0 {
+		return exitSignaled
 	}
 	return cmd.ProcessState.ExitCode()
 }
@@ -86,13 +97,37 @@ func TestMeasuredRSSIsOwn(t *testing.T) {
 	held[len(held)-1] = 1
 }
 
-// measurement is a command's own peak resident set in bytes and its wall time.
-type measurement struct {
-	rss  int64
-	wall time.Duration
+// DECISIONS 441: a command killed by a signal is reported with its signal (the scale bench records
+// an OOM kill), not as an anonymous failure; one that exits non-zero keeps no measurement.
+func TestMeasuredSignal(t *testing.T) {
+	_, m, err := measured(t, exec.Command("sh", "-c", "kill -9 $$"))
+	if !errors.Is(err, errSignaled) || m.signal != syscall.SIGKILL || m.wall <= 0 || m.rss <= 0 {
+		t.Errorf("a killed command: %+v, %v; want SIGKILL, a wall time, a peak and %v", m, err, errSignaled)
+	}
+	_, m, err = measured(t, exec.Command("sh", "-c", "exit 3"))
+	if err == nil || errors.Is(err, errSignaled) || m != (measurement{}) {
+		t.Errorf("a failing command: %+v, %v; want no measurement and an error that is not %v", m, err, errSignaled)
+	}
 }
 
-// measured is cmd run through the RSS helper: its combined output and its measurement.
+// The measuring harness's errors: a command killed by a signal (an OOM kill), a report that is
+// not three numbers.
+var (
+	errSignaled  = errors.New("the command was killed by a signal")
+	errBadReport = errors.New("the RSS helper's report is malformed")
+)
+
+// measurement is a command's own peak resident set in bytes, its wall time and, when a signal
+// killed it, that signal.
+type measurement struct {
+	rss    int64
+	wall   time.Duration
+	signal syscall.Signal
+}
+
+// measured is cmd run through the RSS helper: its combined output and its measurement. A command
+// killed by a signal is returned with its measurement and an error wrapping errSignaled; one that
+// exits non-zero has none (DECISIONS 441).
 func measured(t *testing.T, cmd *exec.Cmd) ([]byte, measurement, error) {
 	t.Helper()
 	report := t.TempDir() + "/rss"
@@ -100,18 +135,33 @@ func measured(t *testing.T, cmd *exec.Cmd) ([]byte, measurement, error) {
 	helper.Dir = cmd.Dir
 	helper.Env = append(os.Environ(), rssHelperEnv+"="+report)
 	out, err := helper.CombinedOutput()
+	m, rerr := readReport(report)
+	switch {
+	case err == nil && rerr != nil:
+		t.Fatalf("the RSS helper's report: %v\n%s", rerr, out)
+	case err == nil:
+		return out, m, nil
+	case rerr == nil && m.signal != 0:
+		return out, m, fmt.Errorf("%v: %w", m.signal, errSignaled)
+	}
+	return out, measurement{}, err
+}
+
+// readReport is the measurement the RSS helper wrote to path.
+func readReport(path string) (measurement, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return out, measurement{}, err
+		return measurement{}, err
 	}
-	data, rerr := os.ReadFile(report)
-	if rerr != nil {
-		t.Fatalf("the RSS helper wrote no report: %v\n%s", rerr, out)
+	f := strings.Fields(string(data))
+	if len(f) != rssFields {
+		return measurement{}, fmt.Errorf("the RSS helper's report %q: %w", data, errBadReport)
 	}
-	kib, ns, _ := strings.Cut(strings.TrimSpace(string(data)), rssSep)
-	rss, rerr := strconv.ParseInt(kib, decimal, rssBits)
-	wall, werr := strconv.ParseInt(ns, decimal, rssBits)
-	if rerr != nil || werr != nil {
-		t.Fatalf("the RSS helper's report %q: %v %v", data, rerr, werr)
+	kib, rerr := strconv.ParseInt(f[0], decimal, rssBits)
+	ns, werr := strconv.ParseInt(f[1], decimal, rssBits)
+	sig, serr := strconv.Atoi(f[2])
+	if err := errors.Join(rerr, werr, serr); err != nil {
+		return measurement{}, fmt.Errorf("the RSS helper's report %q: %w", data, err)
 	}
-	return out, measurement{rss: rss * rssUnit, wall: time.Duration(wall)}, nil
+	return measurement{rss: kib * rssUnit, wall: time.Duration(ns), signal: syscall.Signal(sig)}, nil
 }

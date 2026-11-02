@@ -162,14 +162,32 @@ progen-nightly:
 	    -progen.n $(PROGEN_N) -progen.seed $$seed -progen.keep || status=1; \
 	done; exit $$status
 
-# A zero-findings check of the benchmark project at its default 7,000-entry size
-# (IMPLEMENTATION-PLAN.md §7.6), too heavy for `make check` (`TestCheckClean` there runs at the
-# PR size, 1,000): opt-in only, capped like progen-nightly above. The NFR-01 time and memory
-# targets are measured by `bench-edit` below (§7.6).
-.PHONY: bench
-bench:
+# `bench` is `bench-check` and `bench-scale`, both opt-in and too heavy for `make check`
+# (`TestCheckClean` there runs at the PR size, 1,000). The NFR-01 time and memory targets are
+# measured by `bench-edit` below (§7.6).
+# bench-check: a zero-findings check of the benchmark project at its default 7,000-entry size
+# (IMPLEMENTATION-PLAN.md §7.6), capped like progen-nightly above.
+# bench-scale (DECISIONS 441; a report, never a gate): the benchmark project at BENCH_SCALES times
+# BENCH_UNIT_N entries (1x is Resource's source bytes), one cold `canon check -q` per size in a
+# fresh process, its wall time and peak RSS printed and appended to BENCH_SCALE_OUT, one TSV line
+# per size (scale, entries, files, lines, bytes, status, seconds, RSS bytes). One cap for the run,
+# BENCH_SCALE_CAP, and OOMPolicy=continue so an OOM kill of the check is recorded (status `killed`,
+# RSS the cap, larger sizes skipped) and does not stop `go test`. An empty BENCH_SCALES skips it.
+BENCH_SCALES    ?= 1 3 5
+BENCH_UNIT_N    ?= 15000
+BENCH_SCALE_CAP ?= 12G
+BENCH_SCALE_OUT ?= /var/tmp/canon-bench-scale.tsv
+.PHONY: bench bench-check bench-scale
+bench: bench-check bench-scale
+
+bench-check:
 	systemd-run --user --scope -q -p MemoryMax=6G env GOTOOLCHAIN=local go test -count=1 -timeout 0 \
 	  -run TestCheckCleanDefaultN -v ./internal/testkit/cmd/benchgen -benchgen.full
+
+bench-scale:
+	systemd-run --user --scope -q -p MemoryMax=$(BENCH_SCALE_CAP) -p MemorySwapMax=0 -p OOMPolicy=continue env GOTOOLCHAIN=local TMPDIR=/var/tmp \
+	  go test -count=1 -timeout 0 -run '^TestBenchScale$$' -v ./internal/testkit/cmd/benchgen \
+	  -benchgen.scales '$(BENCH_SCALES)' -benchgen.unit $(BENCH_UNIT_N) -benchgen.scaleout $(BENCH_SCALE_OUT)
 
 # Project-size report: git-tracked code lines, blanks and comments excluded (tools/scope.sh).
 scope:
@@ -256,8 +274,8 @@ fuzz-edit-judge:
 
 # IMPLEMENTATION-PLAN.md §6 M4 item 4, §7.6: NFR-01 on a benchmark project of BENCH_EDIT_N
 # entries and on the examples, printed with the machine. Gated: cold check and its RSS per
-# project, Edit, Evaluate and refresh p95, view model size; the warm check is reported, not
-# gated (log M4 U7b). Opt-in, not part of `check`.
+# project, Edit and refresh p95, view model size; the warm check and the Evaluate p95 are
+# reported, not gated (log M4 U7b; DECISIONS 382, 441). Opt-in, not part of `check`.
 BENCH_EDIT_N ?= 7000
 .PHONY: bench-edit
 bench-edit:

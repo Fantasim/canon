@@ -44,6 +44,21 @@ type setter struct {
 	guarded     bool // the benchmark: more than benchRejectPct rejected fails
 }
 
+// DECISIONS 382, 441: only the refresh sum is gated: Edit has its re-based target and the Evaluate
+// line is reported with its own reason, not the old "log M4 U7b".
+func TestEditTargets(t *testing.T) {
+	if targetEdit != 450*time.Millisecond {
+		t.Errorf("targetEdit = %v, want 450ms (v0.2.0's 0.343 s x 1.25, rounded up to 50 ms)", targetEdit)
+	}
+	m := evalMeasure(260 * time.Millisecond)
+	if m.gated || m.note != evalNote || m.value != 0.26 {
+		t.Errorf("evalMeasure = %+v, want a reported 0.26 s with note %q", m, evalNote)
+	}
+	if verdict(m) != evalNote {
+		t.Errorf("verdict = %q, want %q", verdict(m), evalNote)
+	}
+}
+
 // editTimes measures the view models, then benchEdits accepted Sets, each an Edit (re-check and
 // write), an Evaluate of its entry, then a Value of it (the refresh, DECISIONS 382); rejected and
 // refused Sets are counted apart.
@@ -58,7 +73,7 @@ func editTimes(t *testing.T, p *canon.Project, r *report, target benchTarget) {
 		measure{value: float64(s.notEditable * benchPercent / all), limit: benchRejectPct, unit: "%", gated: s.guarded})
 	r.add(fmt.Sprintf("Sets refused as a bad value, %d (share %%)", s.badValues),
 		measure{value: float64(s.badValues * benchPercent / all), limit: benchRejectPct, unit: "%", gated: false})
-	r.add("Evaluate one entry after an edit, p95", seconds(p95(s.evals), targetEval, true))
+	r.add("Evaluate one entry after an edit, p95", evalMeasure(p95(s.evals)))
 	r.add("Refresh after an edit (Evaluate+Value), p95", seconds(p95(s.refreshes), refreshTarget, true))
 	t.Logf("accepted Sets by kind %v", s.accepted)
 	s.checkKinds(t)

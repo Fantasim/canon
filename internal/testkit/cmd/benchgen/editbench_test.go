@@ -30,8 +30,7 @@ const (
 	benchSeed       = 1
 	targetCold      = 10 * time.Second
 	targetWarm      = time.Second
-	targetEdit      = 300 * time.Millisecond
-	targetEval      = 150 * time.Millisecond
+	targetEdit      = 450 * time.Millisecond  // DECISIONS 441: v0.2.0's 0.343 s x 1.25, rounded up to 50 ms
 	refreshTarget   = 1050 * time.Millisecond // DECISIONS 382
 	targetRSS       = 1_500_000_000           // bytes, 1.5 GB
 	targetVM        = 5_000_000               // bytes, 5 MB, without the search index and findings (VIEWMODEL.md J16)
@@ -41,6 +40,7 @@ const (
 	vmTypes         = "types"
 	vmAssets        = "assets"
 	notGated        = "reported, not gated (log M4 U7b)"
+	evalNote        = "reported, not gated: only the refresh sum is gated (DECISIONS 382, 441)"
 	unitSeconds     = "s"
 )
 
@@ -124,11 +124,13 @@ type line struct {
 	measures []measure
 }
 
-// measure is one number against its target; an ungated one is printed, never failed.
+// measure is one number against its target; an ungated one is printed, never failed, with its
+// note when it has one, and with no target when its limit is 0.
 type measure struct {
 	value, limit float64
 	unit         string
 	gated        bool
+	note         string
 }
 
 func (r *report) add(name string, ms ...measure) {
@@ -139,13 +141,19 @@ func seconds(d, limit time.Duration, gated bool) measure {
 	return measure{value: d.Seconds(), limit: limit.Seconds(), unit: unitSeconds, gated: gated}
 }
 
+// evalMeasure is the Evaluate p95, reported with no target: whichever call first needs the
+// snapshot's analysis pays it, so only the refresh sum is stable (DECISIONS 382, 441).
+func evalMeasure(d time.Duration) measure {
+	return measure{value: d.Seconds(), unit: unitSeconds, note: evalNote}
+}
+
 // print logs every line and fails for each gated measure past its target.
 func (r *report) print(t *testing.T) {
 	t.Helper()
 	for _, l := range r.lines {
 		cells := make([]string, len(l.measures))
 		for i, m := range l.measures {
-			cells[i] = fmt.Sprintf("%9.3f %-2s (<= %.3f) %s", m.value, m.unit, m.limit, verdict(m))
+			cells[i] = cell(m)
 			if m.gated && m.value > m.limit {
 				t.Errorf("%s: %.3f %s, target %.3f %s", l.name, m.value, m.unit, m.limit, m.unit)
 			}
@@ -154,8 +162,18 @@ func (r *report) print(t *testing.T) {
 	}
 }
 
+// cell is one measure as printed: its value, its target when it has one, its verdict.
+func cell(m measure) string {
+	if m.limit == 0 {
+		return fmt.Sprintf("%9.3f %-2s %s", m.value, m.unit, verdict(m))
+	}
+	return fmt.Sprintf("%9.3f %-2s (<= %.3f) %s", m.value, m.unit, m.limit, verdict(m))
+}
+
 func verdict(m measure) string {
 	switch {
+	case !m.gated && m.note != "":
+		return m.note
 	case !m.gated:
 		return notGated
 	case m.value > m.limit:
