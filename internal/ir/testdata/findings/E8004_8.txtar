@@ -1,0 +1,30 @@
+CODEGEN.md §2.8, §4.4, DECISIONS 438 (ADR-0026 §10.2): a constant of another package's variant kind names that package's kind enum, so a's ts emit needs b to have a ts emit (E8004), as for any reference to b's type; the IR keeps the variant of a kind's type.
+-- b/b.canon --
+package b
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// An item.
+  item {
+    /// How many.
+    count: Int
+  }
+}
+
+emit go { out: "@features/b" }
+-- a/a.canon --
+package a
+
+import b { Reward }
+
+/// The kind of gold.
+const K = Reward.gold.kind
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+error[E8004]  a/a.canon:8:6
+  b.Reward of package b is used by this ts emit, but b has no ts emit
+
+1 error, 0 warnings in 2 packages (…)

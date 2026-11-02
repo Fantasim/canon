@@ -2,6 +2,7 @@ package ir
 
 import (
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/types"
 )
 
 // checkForeignOpenEnums is E8019 `OpenEnum` once per enum of another package that its types-mode emit of a target opens and that an emit of u of that target in another mode references, at the first site holding it, through the types it reaches at any depth: only a types-mode decoder reads an opened enum's unknown members (DECISIONS 339, 362).
@@ -46,7 +47,7 @@ type openWalk struct {
 }
 
 func (w *openWalk) typ(t *TypeRef) {
-	if t == nil {
+	if t == nil || t.Kind == types.VariantKind { // a variant's kind enum reaches none of its cases' fields (CODEGEN.md §4.4)
 		return
 	}
 	w.typ(t.Elem)

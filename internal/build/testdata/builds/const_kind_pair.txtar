@@ -1,4 +1,4 @@
-DECISIONS 292, CODEGEN.md §4.4: constants of type Pair and of a variant's kind check as E8012 and E8019 (VariantKindConstant) for every go, cpp and ts emit, and the build stops on those findings, never on a generator's internal error (decision 37: check and build agree).
+DECISIONS 292, CODEGEN.md §4.4: constants of type Pair check as E8012 for every go, cpp and ts emit, and the build stops on those findings, never on a generator's internal error (decision 37: check and build agree). The constant of a variant's kind beside them is written (DECISIONS 438), no longer a finding.
 -- project.canon --
 project acme {
   canon: "0.1"
@@ -37,19 +37,10 @@ emit go { out: "@gen/go", package: "a" }
 emit cpp { out: "@gen/cpp", namespace: "a", mode: data }
 emit ts { out: "@gen/ts/a.ts" }
 -- build.txt --
-error[E8019]  a/a.canon:16:7
-  emit cpp in data mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
-
-error[E8019]  a/a.canon:16:7
-  emit go in baked mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
-
-error[E8019]  a/a.canon:16:7
-  emit ts in baked mode cannot generate a constant of a variant's kind; test the case with is where the kind is needed
-
 error[E8012]  a/a.canon:19:7
   P cannot be emitted: Pair(Int, Int) has no representation in generated code
 
 error[E8012]  a/a.canon:22:7
   Z cannot be emitted: Pair(Int, String) has no representation in generated code
 
-5 errors, 0 warnings in 1 package (…)
+2 errors, 0 warnings in 1 package (…)

@@ -49,6 +49,8 @@ func (g *gen) storage(t ir.TypeRef) string {
 		return cppMillis
 	case types.Enum, types.Record, types.Variant, types.TypeApp:
 		return g.typeName(t.Named)
+	case types.VariantKind:
+		return g.kindOf(t)
 	case types.LitUnion:
 		return g.unionStorage(t)
 	case types.List:
@@ -239,6 +241,16 @@ func (g *gen) caseName(v *ir.Variant, c *ir.Case) string {
 
 // kindName is a variant's kind enum, TKind, qualified when v is imported (CODEGEN.md §5.5).
 func (g *gen) kindName(v *ir.Variant) string { return g.qualifier(v.Pkg) + g.pl.KindName(v) }
+
+// kindOf is the kind enum a variant kind type names, qualified when its variant is imported (CODEGEN.md §5.1); malformed IR when Named is no variant.
+func (g *gen) kindOf(t ir.TypeRef) string {
+	v, ok := t.Named.(*ir.Variant)
+	if !ok {
+		g.malformed(kindNoVariant, g.at)
+		return cppInvalid
+	}
+	return g.kindName(v)
+}
 
 // keyField is the key field of a keyed list's element record.
 func (g *gen) keyField(t ir.TypeRef) *ir.Field {

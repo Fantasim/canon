@@ -107,7 +107,7 @@ func (g *gen) fail(err error) {
 	}
 }
 
-// refuseKind is a kind gen/cpp has no form for at this position: stage E refuses every one first (E8019 for an optional element, a dependent map, a case or a record constant; E8012 for Never, a Range, a function, a pair and a define record; a variant's Kind cannot be written, TYPES.md §2), so meeting one is malformed IR (DECISIONS 320).
+// refuseKind is a kind gen/cpp has no form for at this position: stage E refuses every one first (E8019 for an optional element, a dependent map, a case or a record constant; E8012 for Never, a Range, a function, a pair and a define record; a variant's kind is written, CODEGEN.md §5.1), so meeting one is malformed IR (DECISIONS 320).
 func (g *gen) refuseKind(k types.Kind, where string) {
 	g.malformed(kindText(k), where)
 }

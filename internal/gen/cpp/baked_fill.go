@@ -73,7 +73,7 @@ func (g *gen) fillValue(a at, lhs string, t ir.TypeRef, optional bool, v value.V
 // literalType reports a type whose value is one C++ expression: a scalar, a key, a list or map of them.
 func (g *gen) literalType(t ir.TypeRef) bool {
 	switch t.Kind {
-	case types.Bool, types.Int, types.Float, types.String, types.Duration, types.Enum, types.LitUnion, types.Ref:
+	case types.Bool, types.Int, types.Float, types.String, types.Duration, types.Enum, types.VariantKind, types.LitUnion, types.Ref:
 		return true
 	case types.Optional:
 		return t.Elem != nil && g.literalType(*t.Elem)

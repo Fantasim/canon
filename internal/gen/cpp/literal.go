@@ -89,6 +89,8 @@ func (g *gen) literal(t ir.TypeRef, v value.Value) string {
 		return intLit(x.Ms)
 	case *value.Member:
 		return g.memberLit(t, x.Index)
+	case *value.CaseKind:
+		return g.kindLit(t, x.Index)
 	case *value.Ref:
 		return g.refLit(t, x.Key)
 	case *value.None:
@@ -209,6 +211,20 @@ func (g *gen) memberLit(t ir.TypeRef, index int) string {
 	return g.typeName(e) + scopeSep + g.pl.Enumerator(e.Members[index])
 }
 
+// kindLit is the enumerator of a variant's kind enum for its case at index (CODEGEN.md §5.1); malformed IR when t names no variant or the variant no such case.
+func (g *gen) kindLit(t ir.TypeRef, index int) string {
+	v, ok := t.Named.(*ir.Variant)
+	if !ok {
+		g.malformed(kindNoVariant, g.at)
+		return cppInvalid
+	}
+	if index < 0 || index >= len(v.Cases) {
+		g.malformed(kindNoCase, g.at)
+		return cppInvalid
+	}
+	return g.kindOf(t) + scopeSep + g.pl.KindMember(v.Cases[index])
+}
+
 // element is the literal of one element or map entry part; a Duration is written as one.
 func (g *gen) element(t ir.TypeRef, v value.Value) string {
 	text := g.literal(t, v)
@@ -262,7 +278,7 @@ func (g *gen) enumConstants() {
 
 func enumTyped(t ir.TypeRef) bool {
 	switch t.Kind {
-	case types.Enum:
+	case types.Enum, types.VariantKind: // a variant's kind enum is declared with the enums
 		return true
 	case types.List, types.Map, types.Optional:
 		return t.Elem != nil && enumTyped(*t.Elem) || t.Key != nil && enumTyped(*t.Key)
@@ -288,7 +304,7 @@ func (g *gen) constant(c *ir.Const) {
 			format = listConstFormat
 		}
 		g.h.printf(format, g.storage(c.Type), name, g.literal(c.Type, c.V))
-	case types.Bool, types.Int, types.Float:
+	case types.Bool, types.Int, types.Float, types.VariantKind:
 		g.h.printf(constexprFormat, g.storage(c.Type), name, g.literal(c.Type, c.V))
 	case types.String, types.LitUnion:
 		g.h.printf(constexprFormat, cppStringView, name, g.inViews(func() string { return g.literal(c.Type, c.V) }))

@@ -18,7 +18,7 @@ var genRules [targetCount][ModeTypes + 1][]genRule
 
 func init() {
 	common := []genRule{
-		(*stage).checkFieldlessCaseFns, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkKindConstants,
+		(*stage).checkFieldlessCaseFns, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants,
 		(*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkForeignBuilt,
 	}
 	goCode := append(slices.Clone(common), (*stage).checkNegativeZero)
@@ -31,7 +31,7 @@ func init() {
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns, other packages' records (DECISIONS 323).
-	tsCode := []genRule{(*stage).checkKindConstants, (*stage).checkNeverDependents, (*stage).checkVariantMembers}
+	tsCode := []genRule{(*stage).checkNeverDependents, (*stage).checkVariantMembers}
 	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals, (*stage).checkForeignTableLookups, (*stage).checkForeignOpenEnums)
 	genRules[TargetTS][ModeBaked], genRules[TargetTS][ModeEmbedded] = tsBaked, tsBaked
 	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded, (*stage).checkForeignReads)
@@ -80,21 +80,6 @@ func (s *stage) checkRecordConstants(u *unit, es *emitSite) {
 			u.reportGenConstruct(es, c.span(), diag.KindRecordConstant)
 		}
 	}
-}
-
-// checkKindConstants is E8019 `VariantKindConstant` at each constant holding a variant's kind, itself or through its composites: no generator writes the kind enum's member as a constant yet (DECISIONS 292).
-func (s *stage) checkKindConstants(u *unit, es *emitSite) {
-	for _, c := range u.consts {
-		if holdsVariantKind(c.obj.Type()) {
-			u.reportGenConstruct(es, c.span(), diag.KindVariantKindConstant)
-		}
-	}
-}
-
-// holdsVariantKind reports a variant's kind type in t, itself or held by value (subTypes).
-func holdsVariantKind(t types.Type) bool {
-	b := t.Base()
-	return b.Kind() == types.VariantKind || slices.ContainsFunc(subTypes(b), holdsVariantKind)
 }
 
 // HoldsRecordValue reports a record or case value in v, itself or among its elements, keys and map values: a value no single gen/cpp literal writes, which its baked filler's statements build (CODEGEN.md §5.1, §5.13; DECISIONS 386).

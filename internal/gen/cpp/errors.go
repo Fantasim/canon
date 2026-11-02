@@ -26,6 +26,8 @@ const (
 	noKey              = "a map or ref without its key type"
 	noMapValue         = "a map without its value type"
 	noDecl             = "a record, variant or enum kind without its declaration"
+	kindNoVariant      = "a variant kind whose type is not a variant"
+	kindNoCase         = "a variant kind of a case the variant does not hold"
 	noKeyField         = "a keyed list without its key field"
 	defineMissing      = "a ref into a load.defines table the package's IR does not hold"
 	unionNonString     = "a literal union whose wire is not a string"

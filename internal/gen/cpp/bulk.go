@@ -53,6 +53,8 @@ func (g *gen) arrayElem(t ir.TypeRef) (string, bool) {
 	case types.Enum:
 		e, ok := t.Named.(*ir.Enum)
 		return g.storage(t), ok && !g.open(e)
+	case types.VariantKind: // a kind enum is closed
+		return g.storage(t), true
 	case types.Ref:
 		if id, ok := g.idEnum(t); ok {
 			return id, true

@@ -1,0 +1,74 @@
+DECISIONS 438, CODEGEN.md §4.4, §5.1 (ADR-0026 §10.2): a constant of a variant's kind, alone or in a list, and one of another package's variant, builds for the go, cpp and ts emits of both packages (before, E8019 VariantKindConstant stopped the build).
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    gen: "gen"
+  }
+  go_module {
+    gen: "example.com/gen"
+  }
+}
+-- b/b.canon --
+/// B.
+package b
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// An item.
+  item {
+    /// How many.
+    count: Int
+  }
+}
+
+emit go { out: "@gen/go/b", package: "b" }
+emit cpp { out: "@gen/cpp/b", namespace: "b", mode: types }
+emit ts { out: "@gen/ts/b.ts" }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Reward }
+
+/// A shape.
+variant Shape {
+  /// A dot.
+  dot
+  /// A box.
+  box {
+    /// Its side.
+    side: Int
+  }
+}
+
+/// The kind of a dot.
+const K = Shape.dot.kind
+
+/// The kinds of a dot and a box.
+const KS = [Shape.dot.kind, Shape.box { side: 1 }.kind]
+
+/// The kind of gold, of b.
+const BK = Reward.gold.kind
+
+emit go { out: "@gen/go/a", package: "a" }
+emit cpp { out: "@gen/cpp/a", namespace: "a", mode: types }
+emit ts { out: "@gen/ts/a.ts" }
+-- build.txt --
+0 errors, 0 warnings in 2 packages (…)
+output @gen/cpp/a/a.gen.cpp 0
+output @gen/cpp/a/a.gen.h 0
+output @gen/cpp/a/canon_runtime.h 0
+output @gen/cpp/a/canon_runtime_json.h 0
+output @gen/cpp/b/b.gen.cpp 0
+output @gen/cpp/b/b.gen.h 0
+output @gen/cpp/b/canon_runtime.h 0
+output @gen/cpp/b/canon_runtime_json.h 0
+output @gen/go/a/a.gen.go 0
+output @gen/go/a/rt/rt.go 0
+output @gen/go/b/b.gen.go 0
+output @gen/go/b/rt/rt.go 0
+output @gen/ts/a.ts 0
+output @gen/ts/b.ts 0

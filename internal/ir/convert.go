@@ -16,6 +16,7 @@ func init() {
 	refOf[types.Case], refOf[types.Optional], refOf[types.List] = (*stage).caseRef, (*stage).optionalRef, (*stage).listRef
 	refOf[types.Map], refOf[types.DepMap], refOf[types.Table] = (*stage).mapRef, (*stage).depMapRef, (*stage).tableRef
 	refOf[types.Ref], refOf[types.LitUnion], refOf[types.TypeApp] = (*stage).refRef, (*stage).unionRef, (*stage).appRef
+	refOf[types.VariantKind] = (*stage).kindRef
 }
 
 // ref is t as generators and the fingerprint see it (GEN-02): aliases expanded, refinements dropped (FINGERPRINT.md §4.4) but for the level's range, which only decoders and bound constants read (CODEGEN.md §5.15).
@@ -62,6 +63,11 @@ func (s *stage) recordRef(t types.Type) TypeRef {
 
 func (s *stage) variantRef(t types.Type) TypeRef {
 	return TypeRef{Kind: types.Variant, Named: s.variant(t.(*types.VariantType))}
+}
+
+// kindRef is the kind enum of a variant (v.kind, TYPES.md §8.3): its variant, which a constant of that kind names (CODEGEN.md §4.4).
+func (s *stage) kindRef(t types.Type) TypeRef {
+	return TypeRef{Kind: types.VariantKind, Named: s.variant(t.(*types.VariantKindType).Variant)}
 }
 
 // caseRef is a type narrowed to one case: its variant, and the case.

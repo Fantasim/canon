@@ -1,0 +1,32 @@
+CODEGEN.md §4.4, §5.1, §2.8, DECISIONS 438: a constant of another package's variant kind names only that package's kind enum, never the enums its cases hold, so it is not E8019 OpenEnum although b's ts types emit opens Dst, held by Reward's case trip; a's baked ts emit needs only b's ts emit (E8004).
+-- b/b.canon --
+/// B.
+package b
+
+/// A destination.
+enum Dst { str, sta }
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// A trip.
+  trip {
+    /// Where.
+    dst: Dst
+  }
+}
+
+emit ts { out: "@features/b/b.ts", mode: types, open: [Dst] }
+-- a/a.canon --
+/// A.
+package a
+
+import b { Reward }
+
+/// The kind of gold, of b.
+const BK = Reward.gold.kind
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

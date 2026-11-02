@@ -1,0 +1,44 @@
+CODEGEN.md §4.4, §5.1, §2.8, DECISIONS 438: a constant of another package's variant kind names only that package's kind enum, never its classes, so it is not E8019 ForeignResolvedRef although store's loader resolves a ref inside Reward (the kind reaches no class of the owner); app's go and cpp emits need only store's emits (E8004).
+-- store/store.canon --
+/// The store.
+package store
+
+/// An item.
+record Item {
+  /// Its reward.
+  reward: Reward
+}
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// A link.
+  link {
+    /// The linked item.
+    to: ref items
+  }
+}
+
+/// The items.
+let items: table Item = {
+  a { reward: Reward.gold }
+  b { reward: Reward.link { to: a } }
+}
+
+emit go { out: "@features/store/go", package: "store", mode: data }
+emit cpp { out: "@features/store/cpp", namespace: "store", mode: data }
+emit json { out: "out/store/" }
+-- app/app.canon --
+/// The app.
+package app
+
+import store { Reward }
+
+/// The kind of gold, of store.
+const BK = Reward.gold.kind
+
+emit go { out: "@features/app/go", package: "app", mode: baked }
+emit cpp { out: "@features/app/cpp", namespace: "app", mode: types }
+-- findings.txt --
+0 errors, 0 warnings in 2 packages (…)

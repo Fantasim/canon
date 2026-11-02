@@ -8,7 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// constants writes every public constant (CODEGEN.md §5.1): a scalar bare, an enum typed, a list or map typed and frozen.
+// constants writes every public constant (CODEGEN.md §5.1): a scalar bare, an enum or a variant kind typed, a list or map typed and frozen.
 func (g *gen) constants() {
 	for _, c := range g.p.Consts {
 		g.constant(c)
@@ -26,7 +26,7 @@ func (g *gen) constant(c *ir.Const) {
 	switch c.Type.Kind {
 	case types.Bool, types.Int, types.Float, types.String, types.Duration:
 		g.add(docComment("", c.Doc) + fmt.Sprintf(constFormat, name, text))
-	case types.Enum, types.LitUnion, types.Ref:
+	case types.Enum, types.LitUnion, types.Ref, types.VariantKind:
 		g.add(docComment("", c.Doc) + fmt.Sprintf(typedConstFormat, name, g.tsType(c.Type, false), text))
 	default:
 		g.add(docComment("", c.Doc) + g.frozenConst(name, c.Type, text))

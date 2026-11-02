@@ -112,7 +112,7 @@ var wayOf = map[diag.Kind]diag.Kind{
 	diag.KindRecordFieldCycle: diag.KindWayRecordFieldCycle, diag.KindRecursiveVariantCase: diag.KindWayRecursiveVariantCase,
 	diag.KindResolvedLookupResult: diag.KindWayResolvedLookupResult,
 	diag.KindSelfReadNotAPath:     diag.KindWaySelfReadNotAPath, diag.KindTableField: diag.KindWayTableField,
-	diag.KindVariantKindConstant: diag.KindWayVariantKindConstant, diag.KindVariantMethod: diag.KindWayVariantMethod,
+	diag.KindVariantMethod: diag.KindWayVariantMethod,
 }
 
 // unbuiltAlt is, for each mode a target's generator does not write yet, the mode an E8019 `unbuilt` finding offers instead (DECISIONS 320; owed for v0.2): baked, the one mode that always holds (CODEGEN.md §2.2); ModeNone for a mode that is built.

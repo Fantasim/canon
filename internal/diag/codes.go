@@ -168,7 +168,6 @@ const (
 	KindVariable
 	KindVariant
 	KindVariantCase
-	KindVariantKindConstant
 	KindVariantMethod
 	KindView
 	KindWayCaseField
@@ -192,7 +191,6 @@ const (
 	KindWayResolvedLookupResult
 	KindWaySelfReadNotAPath
 	KindWayTableField
-	KindWayVariantKindConstant
 	KindWayVariantMethod
 	KindWidget
 )
@@ -320,7 +318,6 @@ var kindNames = [...]string{
 	"Variable",
 	"Variant",
 	"VariantCase",
-	"VariantKindConstant",
 	"VariantMethod",
 	"View",
 	"WayCaseField",
@@ -344,7 +341,6 @@ var kindNames = [...]string{
 	"WayResolvedLookupResult",
 	"WaySelfReadNotAPath",
 	"WayTableField",
-	"WayVariantKindConstant",
 	"WayVariantMethod",
 	"Widget",
 }
@@ -452,7 +448,6 @@ var kindWords = [...]string{
 	"variable",
 	"variant",
 	"variant case",
-	"a constant of a variant's kind",
 	"a variant-level method a generator must write",
 	"view",
 	"type it as the variant and test the case with is",
@@ -476,7 +471,6 @@ var kindWords = [...]string{
 	"not before v0.2: emit the package in baked mode meanwhile",
 	"read self through paths of fields (self.a.b)",
 	"hold it in a keyed list",
-	"test the case with is where the kind is needed",
 	"move the method onto each case",
 	"widget",
 }

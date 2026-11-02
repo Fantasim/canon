@@ -198,6 +198,9 @@ func (w *foreignWalk) literals(n PExpr) {
 
 func (w *foreignWalk) typ(t TypeRef) {
 	w.table(t)
+	if t.Kind == types.VariantKind {
+		return // the kind enum of a variant, never its classes (CODEGEN.md §4.4)
+	}
 	switch x := t.Named.(type) {
 	case *Variant:
 		if t.Kind == types.Case && t.Case != nil {

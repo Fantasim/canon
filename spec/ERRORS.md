@@ -205,7 +205,6 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Variable` | variable | `W1003`, `E1125` |
 | `Variant` | variant | `W1002`, `W1003`, `E1125`, `E1133`, `E1627`, `E3027` |
 | `VariantCase` | variant case | `E1118` |
-| `VariantKindConstant` | a constant of a variant's kind | `E8019` |
 | `VariantMethod` | a variant-level method a generator must write | `E8019` |
 | `View` | view | `E1133` |
 | `WayCaseField` | type it as the variant and test the case with is | `E8019` |
@@ -229,7 +228,6 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `WayResolvedLookupResult` | not before v0.2: emit the package in baked mode meanwhile | `E8019` |
 | `WaySelfReadNotAPath` | read self through paths of fields (self.a.b) | `E8019` |
 | `WayTableField` | hold it in a keyed list | `E8019` |
-| `WayVariantKindConstant` | test the case with is where the kind is needed | `E8019` |
 | `WayVariantMethod` | move the method onto each case | `E8019` |
 | `Widget` | widget | `W1003`, `E1125`, `E1133`, `E1610`, `E3027` |
 

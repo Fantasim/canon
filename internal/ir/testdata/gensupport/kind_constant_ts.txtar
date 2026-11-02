@@ -1,0 +1,24 @@
+CODEGEN.md §4.4, §5.1, DECISIONS 438 (ADR-0026 §10.2): gen/ts writes a constant of a variant's kind, itself or in a list, so check accepts it (0 errors; it refused it as VariantKindConstant before).
+-- a/a.canon --
+package a
+
+/// A reward.
+variant Reward {
+  /// Gold.
+  gold
+  /// An item.
+  item {
+    /// How many.
+    count: Int
+  }
+}
+
+/// The kind of gold.
+const K = Reward.gold.kind
+
+/// A list of kinds.
+const KS = [Reward.gold.kind]
+
+emit ts { out: "@features/a/a.ts" }
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)
