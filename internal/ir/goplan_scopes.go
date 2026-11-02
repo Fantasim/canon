@@ -220,7 +220,7 @@ func (pl *GoNamePlan) declareKindEnums(top *nameScope) {
 			pl.declareFrom(top, origin+qnameSep+c.Name, c, derivation{v, func() string { return pl.KindMemberName(v, c) }})
 		}
 		pl.declare(top, pl.ParseName(kind), origin, v)
-		pl.declareTables(top, kind, origin, v, closedTableRoles(!slices.ContainsFunc(v.Cases, func(c *Case) bool { return c.Name != c.Wire }))...)
+		pl.declareTables(top, kind, origin, v, closedTableRoles(CaseWiresAreNames(v))...)
 		pl.declareMethods(kind, origin, v, goTextEnumMethods)
 		pl.declare(pl.scope(kind), goPositionField, origin, v) // DECISIONS 402
 	}

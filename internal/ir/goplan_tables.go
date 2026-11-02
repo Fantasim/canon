@@ -1,7 +1,5 @@
 package ir
 
-import "slices"
-
 // TableName is the package-level table of role (GoTableNames...) of the enum, kind enum or id enum named enum (CODEGEN.md §5.2, §5.3, DECISIONS 393).
 func (pl *GoNamePlan) TableName(role, enum string) string { return role + goTableSep + enum }
 
@@ -20,7 +18,7 @@ func enumTableRoles(e *Enum, open bool) []string {
 	case open:
 		return []string{GoTableKeys, GoTableNames, GoTableMembers}
 	}
-	roles := closedTableRoles(!slices.ContainsFunc(e.Members, func(m *EnumMember) bool { return m.Name != m.Wire }))
+	roles := closedTableRoles(EnumWiresAreNames(e))
 	if e.Codes != nil {
 		roles = append(roles, GoTableCodes)
 	}
