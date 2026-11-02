@@ -122,7 +122,7 @@ func ownLiteral(s session, v value.Value) edit.Lit {
 
 // API.md W5, E21 (log-2026-11-01 wave G): where Editable gives a reason, Apply refuses the
 // operation alone with it, refuses no editable one as not editable, and never fails inside the
-// compiler, on every value of law, keptLine and the edit goldens; parityGolden holds the rest.
+// compiler, on every value of law, keptLine, mapLines, keyedLine and the goldens; parityGolden holds the rest.
 func TestEditableApplyParity(t *testing.T) {
 	var got []string
 	var n parityTally
@@ -140,6 +140,13 @@ func TestEditableApplyParity(t *testing.T) {
 	}{{[]string{"dev"}, "dev"}, {[]string{"lx", "dev"}, "dev"}, {nil, "dev"}, {nil, "di"}} {
 		name := fmt.Sprintf("mapLines layers=%s edit=%s", strings.Join(c.layers, ","), c.editLayer)
 		got = append(got, mismatches(t, name, open(t, mapLines, c.layers, c.editLayer, "p"), &n)...)
+	}
+	for _, c := range []struct {
+		layers    []string
+		editLayer string
+	}{{[]string{"dev"}, "dev"}, {nil, "dev"}, {[]string{"lz"}, "lz"}, {nil, "nf"}} {
+		name := fmt.Sprintf("keyedLine layers=%s edit=%s", strings.Join(c.layers, ","), c.editLayer)
+		got = append(got, mismatches(t, name, open(t, keyedLine, c.layers, c.editLayer, "k"), &n)...)
 	}
 	paths, err := filepath.Glob(filepath.Join("testdata", "edits", "*.txtar"))
 	if err != nil || len(paths) == 0 {

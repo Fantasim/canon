@@ -131,10 +131,10 @@ func dropsOut(res resolution) bool {
 }
 
 // undoSetReason is the reason the Undo's Set writing the path's line back gets once its value is
-// base, judged by j's rows: a new line no amend path names when the path starts with a key (API.md
-// E22, 6.4), `layered` where another layer amends it (log-2026-11-01 EDIT-OWED round 7).
+// base, judged by j's rows: a new line no amend path names when its first step starts none (API.md
+// E22, 6.4; startsLine), `layered` where another layer amends it (log-2026-11-01 EDIT-OWED round 7).
 func (j *judge) undoSetReason(res resolution, base value.Value) Reason {
-	if res.Steps[0].Seg.Kind != SegField {
+	if !startsLine(res.Steps[0]) {
 		return ReasonLayer
 	}
 	res.Steps = slices.Clone(res.Steps)
@@ -175,13 +175,14 @@ func (j *judge) unseenEntry() bool {
 }
 
 // noAmendForm reports a Set or AddEntry that writes a new amendment line whose path cannot start
-// with a name: below a root map or list, or an entry of a root map (API.md 6.4, GRAMMAR.md 5.7).
+// with a name (startsLine): below a root map or list (except a String-keyed list's word key,
+// DECISIONS 450), or an entry of a root map (API.md 6.4, GRAMMAR.md 5.7).
 func (j *judge) noAmendForm() bool {
 	if (j.op != OpSet && j.op != OpAddEntry) || !j.newLine() {
 		return false
 	}
 	if len(j.res.Steps) > 0 {
-		return j.res.Steps[0].Seg.Kind != SegField
+		return !startsLine(j.res.Steps[0])
 	}
 	_, isMap := j.res.Target.(*value.Map)
 	return isMap

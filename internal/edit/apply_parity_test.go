@@ -118,9 +118,9 @@ func TestW11aBelowLoadReasonParity(t *testing.T) {
 	}
 }
 
-// API.md 6.4, W11 (GRAMMAR.md 5.7, EVALUATION.md 9.2): under an edit layer, a new line whose path
-// cannot start with a name, and a Remove of a list element of a line the session does not show, are
-// `layer`; a Remove of an item of the layer's literal takes it out (log-2026-11-01 EDIT-OWED re-review).
+// API.md 6.4, W11 (GRAMMAR.md 5.7, EVALUATION.md 9.2; DECISIONS 450): a new line starting with neither
+// a name nor a String-keyed list's word key, and a Remove of a list element of a line the session
+// does not show, are `layer`; a Remove of an item of the layer's literal takes it out.
 func TestW11NoAmendFormParity(t *testing.T) {
 	cases := []struct {
 		layers    []string
@@ -129,7 +129,7 @@ func TestW11NoAmendFormParity(t *testing.T) {
 		want      edit.Reason
 	}{
 		{nil, "lc", edit.Operation{Kind: edit.OpSet, Path: "a:byColor[red]", Value: edit.Int(5)}, edit.ReasonLayer},
-		{[]string{"dev"}, "dev", edit.Operation{Kind: edit.OpSet, Path: "a:items[a].n", Value: edit.Int(5)}, edit.ReasonLayer},
+		{[]string{"dev"}, "dev", edit.Operation{Kind: edit.OpSet, Path: "a:items[a].n", Value: edit.Int(5)}, edit.ReasonNone}, // DECISIONS 450
 		{[]string{"dev"}, "dev", edit.Operation{Kind: edit.OpSet, Path: "a:mixed[1]", Value: edit.Int(5)}, edit.ReasonLayer},
 		{nil, "lc", edit.Operation{Kind: edit.OpAddEntry, Path: "a:named", Key: edit.Key("zz"), Value: edit.Int(3)}, edit.ReasonLayer},
 		{nil, "le", edit.Operation{Kind: edit.OpRemove, Path: "a:bag.xs[0]"}, edit.ReasonLayer},

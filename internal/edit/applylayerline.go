@@ -228,21 +228,39 @@ func (x *opCtx) newLayerFile(root, item string) error {
 	return nil
 }
 
-// amendPathText is the path of steps as an amend path, which starts with a name; each key is a
-// Canon key of its container's key type (API.md 6.4).
+// amendPathText is the path of steps as an amend path, which starts with a name (startsLine), a
+// first key bare; each later key is a Canon key of its container's key type (API.md 6.4).
 func amendPathText(steps []Step) (string, bool) {
-	if len(steps) == 0 || steps[0].Seg.Kind != SegField {
+	if len(steps) == 0 || !startsLine(steps[0]) {
 		return "", false
 	}
 	var b strings.Builder
-	for _, st := range steps {
-		if st.Seg.Kind != SegKey {
+	for i, st := range steps {
+		switch {
+		case st.Seg.Kind != SegKey:
 			b.WriteString(Path{Segs: []Seg{st.Seg}}.String())
-			continue
+		case i == 0:
+			b.WriteString(st.Seg.Key.Text)
+		default:
+			b.WriteString(string(bracketOpen) + amendKeyText(st.Seg.Key, keyTypeIn(st.Container)) + bracketClose)
 		}
-		b.WriteString(string(bracketOpen) + amendKeyText(st.Seg.Key, keyTypeIn(st.Container)) + bracketClose)
 	}
 	return strings.TrimPrefix(b.String(), string(fieldMark)), true
+}
+
+// startsLine reports st a step an amend line can start with (API.md 6.4): a field or a table entry
+// whose key is a word, or the key of a keyed list with a String key when it is a word that is not
+// a keyword (DECISIONS 450; EVALUATION.md 9.2).
+func startsLine(st Step) bool {
+	if st.Seg.Kind == SegField {
+		return true
+	}
+	l, isList := baseOf(st.Container).(*types.ListType)
+	if !isList || l.KeyedBy == nil || st.Seg.Kind != SegKey || st.Seg.Key.Kind != KeyWord {
+		return false
+	}
+	_, word := syntax.ValueText(st.Seg.Key.Text)
+	return word && syntax.LookupWord(st.Seg.Key.Text) == syntax.TokIdent && baseOf(l.KeyedBy.Type).Kind() == types.String
 }
 
 // amendKeyText is key lit, of type kt, as an amend key (API.md §6.4).

@@ -376,8 +376,8 @@ func TestStackedLayers(t *testing.T) {
 }
 
 // API.md W11: AddEntry on a root table is an amendment, on a root map none (API.md 6.4: an amend
-// path starts with a name); Set or Reset of a root is not; an enum member has none; a new layer
-// file goes in the package's own directory.
+// path starts with a name, or a String-keyed keyed list's word key, DECISIONS 450); Set or Reset of
+// a root is not; an enum member has none; a new layer file goes in the package's own directory.
 func TestW11RootsMembersAndNewFiles(t *testing.T) {
 	checkEdits(t, lawFixture(t, []string{"dev"}, "a"), []editCase{
 		{in: "a:entries", op: edit.OpAddEntry, layer: "dev", mode: edit.ModeCanon, file: "a/dev.layer.canon"},
@@ -386,7 +386,8 @@ func TestW11RootsMembersAndNewFiles(t *testing.T) {
 		{in: "a:entries", op: edit.OpReset, layer: "dev", reason: edit.ReasonLayer},
 		{in: "a:Color.red", op: edit.OpRetire, layer: "dev", reason: edit.ReasonLayer},
 		{in: "a:bag.xs[1]", layer: "work", mode: edit.ModeCanon, file: "a/work.layer.canon"},
-		{in: "a:items[b].n", layer: "work", reason: edit.ReasonLayer},
+		{in: "a:items[b].n", layer: "work", mode: edit.ModeCanon, file: "a/work.layer.canon"},
+		{in: "a:rows[7].label", layer: "work", reason: edit.ReasonLayer},
 	})
 }
 
