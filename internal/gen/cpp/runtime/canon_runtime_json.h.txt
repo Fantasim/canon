@@ -262,10 +262,10 @@ using Float32Tokens = std::map<const Json*, std::string>;
 /// entries in (WIRE.md §5.7). An object absent here is read in its own order.
 using KeyOrders = std::map<const Json*, std::vector<std::string>>;
 
-/// A SAX pass over a data file before it is parsed: the file is one object (any value, for a
-/// `ParseTextFile`), no object holds a key twice (nlohmann would keep the last), and nothing nests
-/// deeper than kMaxNesting. It stops at the first finding and names its path ("rows[3].id:
-/// duplicate key").
+/// A SAX pass over a data file: the file is one object (any value, for a `ParseTextFile`), no object
+/// holds a key twice (nlohmann would keep the last), and nothing nests deeper than kMaxNesting. It
+/// stops at the first finding and names its path ("rows[3].id: duplicate key"). Given a document,
+/// it builds the file into it as it checks, as nlohmann's parse would: the file is read once.
 class StrictCheck {
 public:
     StrictCheck() = default;
@@ -276,20 +276,25 @@ public:
     /// the path of a finding ("$" gives "$.events[1].id: duplicate key").
     StrictCheck(bool keepOrders, bool anyRoot, std::string root)
         : keepOrders_(keepOrders), anyRoot_(anyRoot), root_(std::move(root)) {}
+    /// The pass that also builds the file into `doc`, complete when the pass succeeds (CODEGEN.md §7.5).
+    StrictCheck(Json& doc, bool keepOrders, bool anyRoot, std::string root)
+        : keepOrders_(keepOrders), anyRoot_(anyRoot), root_(std::move(root)), doc_(&doc) {}
 
-    bool null() { return Value(); }
-    bool boolean(bool) { return Value(); }
-    bool number_integer(Json::number_integer_t) { return Value(); }
-    bool number_unsigned(Json::number_unsigned_t) { return Value(); }
+    bool null() { return Value() && (doc_ == nullptr || (Place(Json(nullptr)), true)); }
+    bool boolean(bool b) { return Value() && (doc_ == nullptr || (Place(Json(b)), true)); }
+    bool number_integer(Json::number_integer_t n) { return Value() && (doc_ == nullptr || (Place(Json(n)), true)); }
+    bool number_unsigned(Json::number_unsigned_t n) { return Value() && (doc_ == nullptr || (Place(Json(n)), true)); }
     /// `s` is the number's token; it is kept, by the value's RFC 6901 pointer, only when `d` is a
     /// Float32 rounding midpoint, where it alone decides the Float32 (WIRE.md §3.3, §5.1).
     bool number_float(Json::number_float_t d, const Json::string_t& s) {
         if (!Value()) return false;
+        if (doc_ != nullptr) Place(Json(d));
         if (detail::Float32Midpoint(d)) midpoints_.emplace_back(Pointer(), detail::DotToken(s));
         return true;
     }
-    bool string(Json::string_t&) { return Value(); }
-    bool binary(Json::binary_t&) { return Value(); }
+    bool string(Json::string_t& s) { return Value() && (doc_ == nullptr || (Place(Json(std::move(s))), true)); }
+    /// nlohmann's text parser never reads a binary value; a document is never given one.
+    bool binary(Json::binary_t&) { return Value() && doc_ == nullptr; }
     bool start_object(size_t) { return Open(true); }
     bool start_array(size_t) { return Open(false); }
     bool end_object() {
@@ -304,8 +309,11 @@ public:
         Frame& f = frames_.back();
         f.key = name;
         if (keepOrders_) f.order.push_back(name);
-        if (f.keys.insert(name).second) return true;
-        return Refuse("duplicate key");
+        if (doc_ == nullptr) return f.keys.insert(name).second || Refuse("duplicate key");
+        const auto it = f.node->emplace(std::move(name), nullptr);  // the object's own map
+        if (!it.second) return Refuse("duplicate key");
+        f.slot = &it.first.value();
+        return true;
     }
     bool parse_error(size_t position, const std::string&, const Json::exception&) {
         syntax_ = true;
@@ -330,6 +338,8 @@ public:
 
 private:
     struct Frame {
+        Json* node = nullptr;  // the array or object being built, when the pass builds
+        Json* slot = nullptr;  // the member of an object's last key, awaiting its value
         bool object = false;
         size_t next = 0;           // an array's elements started so far
         std::string key;           // an object's last key
@@ -349,9 +359,27 @@ private:
         if (frames_.size() >= kMaxNesting) {
             return Refuse("nested deeper than " + std::to_string(kMaxNesting) + " levels");
         }
+        Json* node = doc_ == nullptr ? nullptr : Place(object ? Json::object() : Json::array());
         frames_.emplace_back();
         frames_.back().object = object;
+        frames_.back().node = node;
         return true;
+    }
+
+    /// Puts `v` where the document holds it (the top level, an array's next element, the member of
+    /// an object's last key); its place.
+    Json* Place(Json&& v) {
+        if (frames_.empty()) {
+            *doc_ = std::move(v);
+            return doc_;
+        }
+        Frame& f = frames_.back();
+        if (f.object) {
+            *f.slot = std::move(v);
+            return f.slot;
+        }
+        f.node->push_back(std::move(v));
+        return &f.node->back();
     }
 
     /// The RFC 6901 pointer of the value at the current position ("/rows/0/a~1b"), through the
@@ -400,6 +428,7 @@ private:
     bool syntax_ = false;
     size_t position_ = 0;
     std::string root_;
+    Json* doc_ = nullptr;
     std::vector<Frame> frames_;
     std::string error_;
     std::vector<std::pair<std::string, std::string>> midpoints_;
@@ -856,9 +885,20 @@ inline std::string StandIn(std::string_view text, const std::vector<std::pair<si
 /// valid by JSON is never a syntax error: one out of a Float64's range is parsed as a stand-in and
 /// noted in `tokens` with an empty token, which a `Decoder` reading it as a Float refuses with
 /// "number out of range". `tokens` and `orders` (when not null) receive the Float32Tokens and
-/// KeyOrders of `doc`, for a `Decoder` reading it in file order.
+/// KeyOrders of `doc`, for a `Decoder` reading it in file order. A text is read in one pass;
+/// only one that pass refuses is scanned again, by the scans that name its first failure.
 inline bool ParseTextFile(const std::string& name, std::string_view text, Json& doc, std::string& error,
                           Float32Tokens& tokens, KeyOrders* orders) {
+    if (text.find('\0') == std::string_view::npos) {  // nlohmann would read a NUL byte as the text's end
+        Json out;
+        StrictCheck check(out, orders != nullptr, /*anyRoot=*/true, "$");
+        if (Json::sax_parse(text.begin(), text.end(), &check)) {  // nlohmann skips the one leading BOM
+            doc = std::move(out);
+            detail::TakeSidecars(check, doc, tokens, orders);
+            return true;
+        }
+    }
+    // Refused (not valid, or a number out of a Float64's range, which nlohmann refuses), or holding a NUL.
     const size_t bom = text.substr(0, 3) == "\xEF\xBB\xBF" ? 3 : 0;
     const std::string_view body = text.substr(bom);
     const size_t syntax = detail::SyntaxScan(body).Offset();
@@ -873,16 +913,16 @@ inline bool ParseTextFile(const std::string& name, std::string_view text, Json& 
     }
     const std::string standIn = scan.Spans().empty() ? std::string() : detail::StandIn(body, scan.Spans());
     const std::string_view source = scan.Spans().empty() ? body : std::string_view(standIn);
-    StrictCheck check(orders != nullptr, /*anyRoot=*/true, "$");
-    const bool strict = Json::sax_parse(source.begin(), source.end(), &check);
-    if (strict) doc = Json::parse(source.begin(), source.end(), nullptr, /*allow_exceptions=*/false);
-    if (!strict || doc.is_discarded()) {
+    Json out;
+    StrictCheck check(out, orders != nullptr, /*anyRoot=*/true, "$");
+    if (!Json::sax_parse(source.begin(), source.end(), &check)) {
         // Not reached: SyntaxScan accepted the grammar, TextScan the strings, keys and depth, and
         // the stand-ins are finite, so nlohmann takes the text. Were it to refuse, the offset
         // below is in `source` (the stand-in text), not in `text`.
         error = name + ": " + (check.Error().empty() ? "invalid JSON at byte " + std::to_string(check.Offset() + bom) : check.Error());
         return false;
     }
+    doc = std::move(out);
     detail::TakeSidecars(check, doc, tokens, orders);
     const Json& parsed = doc;
     for (const std::string& pointer : scan.Pointers()) {
@@ -904,17 +944,18 @@ inline bool ParseTextFile(const std::string& name, std::string_view text, Json& 
 /// `tokens` receives the Float32Tokens of `doc`, for a `Decoder` reading Float32 values.
 inline bool ParseDataFile(const std::string& name, const std::string& text, std::string_view schema,
                           Json& doc, std::string& error, Float32Tokens& tokens, KeyOrders* orders) {
-    StrictCheck check(orders != nullptr);
-    const bool strict = Json::sax_parse(text, &check);
+    Json out;
+    StrictCheck check(out, orders != nullptr, /*anyRoot=*/false, std::string());
+    const bool strict = Json::sax_parse(text, &check) && text.find('\0') == std::string::npos;  // a NUL ends nlohmann's text
     if (!check.Error().empty()) {
         error = name + ": " + check.Error();
         return false;
     }
-    if (strict) doc = Json::parse(text, nullptr, /*allow_exceptions=*/false);
-    if (!strict || doc.is_discarded() || !doc.is_object()) {
+    if (!strict) {
         error = name + ": not a canon data file (invalid JSON)";
         return false;
     }
+    doc = std::move(out);
     for (const auto& item : doc.items()) {
         for (const char* key : {"$fns", "$schema", "rows", "value"}) {
             if (item.key() != key && EqualFold(item.key(), key)) {

@@ -2548,14 +2548,12 @@ private:
 ### 7.5 `canon_runtime_json.h`
 
 Written next to `canon_runtime.h` when the emit is in `embedded`, `data` or `types` mode. Requires
-nlohmann/json ≥ 3.9 on the include path as `<nlohmann/json.hpp>`. Nothing in it throws: parsing
-uses `allow_exceptions=false` and every typed read checks the JSON type first, so it also builds
-with exceptions disabled. `ParseTextFile(name, text, doc, error, tokens, orders)` is the data
+nlohmann/json ≥ 3.9 on the include path as `<nlohmann/json.hpp>`. Nothing in it throws: a file is read through nlohmann's `sax_parse`, whose failures come back to the handler, any other parse uses `allow_exceptions=false`, and every typed read checks the JSON type first, so it also builds with exceptions disabled. `ParseTextFile(name, text, doc, error, tokens, orders)` is the data
 loader's `ParseDataFile` without the `$schema` and envelope checks, accepting any top-level value
 and applying the same byte rules; `types`-mode `Parse` and `Decode<Fn>File` read through it
-(§5.13, DECISIONS 361, 363). `Decoder::AsOpenEnum` and the `OpenEnum` shortcut read an opened enum (§5.2) from any JSON string (DECISIONS 362), and `detail::DecodeOrdered` is `Decode` of an `nlohmann::ordered_json` (§5.13, DECISIONS 437).
+(§5.13, DECISIONS 361, 363). Both read a file in one pass that checks the byte rules as it builds the document; a text that pass refuses is read again by the scans that name its first failure, so a verdict and its message never depend on the pass (DECISIONS 431). A NUL byte, which nlohmann reads as the end of its input, is a byte like any other: outside a string it is a syntax error, after the document included (WIRE.md §3.1). `Decoder::AsOpenEnum` and the `OpenEnum` shortcut read an opened enum (§5.2) from any JSON string (DECISIONS 362), and `detail::DecodeOrdered` is `Decode` of an `nlohmann::ordered_json` (§5.13, DECISIONS 437).
 
-Its text is the embedded file `internal/gen/cpp/runtime/canon_runtime_json.h.txt` (guard `CANON_RUNTIME_JSON_RT_V1`, preceded by §7.4's check on `CANON_RUNTIME_JSON_RT_V1_<stamp>`; namespace `json` of the inline namespace `rt_v1_<stamp>`), written byte for byte but for the stamp (§7.4); this section fixes its contract, not a listing (DECISIONS 415): the byte rules and first-failure messages of WIRE.md §8 for `ParseDataFile` and `ParseTextFile`, and a `Decoder` whose typed reads check the JSON type first and name the failing key path; the generated decoders also record a value outside its range or length refinement (§5.15) and check nothing else `canon build` checked.
+Its text is the embedded file `internal/gen/cpp/runtime/canon_runtime_json.h.txt` (guard `CANON_RUNTIME_JSON_RT_V1`, preceded by §7.4's check on `CANON_RUNTIME_JSON_RT_V1_<stamp>`; namespace `json` of the inline namespace `rt_v1_<stamp>`), written byte for byte but for the stamp (§7.4); this section fixes its contract, not a listing (DECISIONS 415): the byte rules of WIRE.md §3.1–§3.3 and the first-failure messages of §5.13 for `ParseDataFile` and `ParseTextFile`, and a `Decoder` whose typed reads check the JSON type first and name the failing key path; the generated decoders also record a value outside its range or length refinement (§5.15) and check nothing else `canon build` checked.
 
 ### 7.6 Loader shape
 

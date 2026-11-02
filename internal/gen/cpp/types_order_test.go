@@ -36,5 +36,9 @@ var documentOrderFiles = []typesFile{
 		parse: "num_floatneg.json: error EventConfig: $.events[0].spawnRegion.left: number out of range\n"},
 	{name: "num_int.json", arg: "c", from: `"levelMax": 60`, to: `"levelMax": 1e400`, parseOnly: true,
 		parse: "num_int.json: error EventConfig: $.events[1].levelMax: expected an integer\n"},
+	{name: "ord_nul.json", arg: "x", text: `{"mode": "auto"}` + "\x00", parseOnly: true, parse: "ord_nul.json: error Extras: invalid JSON at byte 16\n"}, // DECISIONS 431: a NUL ends no text
+	{name: "ord_nulstr.json", arg: "x", text: `{"a": "x` + "\x00" + `"}`, parseOnly: true, parse: "ord_nulstr.json: error Extras: invalid JSON at byte 8\n"},
+	{name: "bom2.json", arg: "x", text: "\xef\xbb\xbf\xef\xbb\xbf" + `{"mode":"auto"}`, parseOnly: true, parse: "bom2.json: error Extras: invalid JSON at byte 3\n"}, // WIRE.md §3.1: one BOM is skipped
+	{name: "num_bom.json", arg: "x", text: "\xef\xbb\xbf" + `{"zz": 1e400, "mode": "auto"}`, parseOnly: true, parse: "num_bom.json: reqMp=7 label=x mode=auto"},
 	{name: "num_float32.json", arg: "x", text: `{"ratio": 1e400}`, parseOnly: true, parse: "num_float32.json: error Extras: $.ratio: expected a number that fits Float32\n"},
 }

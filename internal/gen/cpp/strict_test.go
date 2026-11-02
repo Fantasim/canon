@@ -93,6 +93,8 @@ func strictCases() []strictCase {
 		{"emptyschema", "CODEGEN.md §6.3", shelvesFile, `"$schema": "demo.shop.Shelf@0000000b"`, `"$schema": ""`, `built from schema ` + badSchema, "", shopFiles},
 		{"notobject", "WIRE.md §3.1", shelvesFile, "", `[]`, invalid, "", shopFiles},
 		{"trailing", "WIRE.md §3.1", shelvesFile, "", shelvesOf + `"rows": []} {}`, invalid, "", shopFiles},
+		{"nultrailing", "WIRE.md §3.1, CODEGEN.md §5.13, DECISIONS 431 (a NUL ends no text)", shelvesFile, "", shelvesOf + `"rows": []}` + "\x00junk", invalid, "", shopFiles},
+		{"nulspace", "WIRE.md §3.1, CODEGEN.md §5.13, DECISIONS 431 (a NUL ends no text)", shelvesFile, "", shelvesOf + `"rows": []} ` + "\x00", invalid, "", shopFiles},
 		{"utf8", "WIRE.md §3.1", shelvesFile, `"id": "front"`, "\"id\": \"fr\xffont\"", invalid, "", shopFiles},
 		{"surrogate", "WIRE.md §3.2", shelvesFile, `"id": "front"`, `"id": "\ud800"`, invalid, "", shopFiles},
 		{"hugenum", "WIRE.md §3.3", shelvesFile, `"delete": 7`, `"delete": 1e400`, invalid, "", shopFiles},
