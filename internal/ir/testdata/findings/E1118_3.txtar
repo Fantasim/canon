@@ -1,0 +1,118 @@
+GRAMMAR.md §8.3, DECISIONS 443: a @go, @ts or @cpp annotation on a local declaration, or on a field, member, case or method inside one, is E1118 (no local declaration is generated); one finding per annotated site, none on the public control.
+-- a/a.canon --
+package a
+
+/// Local.
+@go(name: "bad name")
+local const A = 1
+
+/// Local.
+@ts(name: "bad name")
+local let L = 2
+
+/// Local.
+@cpp(name: "bad name")
+local type Count = Int(1..=9)
+
+/// Local.
+@go(name: "bad name")
+local fn helper() -> Int {
+  return 1
+}
+
+/// Local.
+local record R @go(name: "bad name") {
+  /// A field.
+  f: Int @ts(name: "bad name")
+  /// A method.
+  @cpp(name: "bad name")
+  fn m(self) -> Int {
+    return 1
+  }
+}
+
+/// Local.
+local enum E @cpp(name: "bad name") {
+  /// A member.
+  x @go(name: "bad name")
+}
+
+/// Local.
+local variant V @ts(name: "bad name") {
+  /// A case.
+  c @cpp(name: "bad name") {
+    /// A field.
+    g: Int @go(name: "bad name")
+  }
+  /// A method.
+  @ts(name: "bad name")
+  fn n(self) -> Int {
+    return 1
+  }
+}
+
+/// Public.
+@go(name: "PubConst")
+@ts(name: "PubConst")
+@cpp(name: "PubConst")
+const P = 3
+
+/// Public.
+record Q @go(name: "QGo") @ts(name: "QTs") @cpp(name: "QCpp") {
+  /// A field.
+  f: Int @go(name: "FieldGo") @ts(name: "fTs") @cpp(name: "fCpp")
+  /// A method.
+  @go(name: "MGo")
+  fn m(self) -> Int {
+    return 1
+  }
+}
+
+/// Public.
+enum F @go(name: "FGo") {
+  /// A member.
+  y @go(name: "YGo")
+}
+
+emit go { out: "@features/a", package: "a", mode: types }
+-- findings.txt --
+error[E1118]  a/a.canon:4:1
+  @go is not allowed on this local
+
+error[E1118]  a/a.canon:8:1
+  @ts is not allowed on this local
+
+error[E1118]  a/a.canon:12:1
+  @cpp is not allowed on this local
+
+error[E1118]  a/a.canon:16:1
+  @go is not allowed on this local
+
+error[E1118]  a/a.canon:22:16
+  @go is not allowed on this local
+
+error[E1118]  a/a.canon:24:10
+  @ts is not allowed on this local
+
+error[E1118]  a/a.canon:26:3
+  @cpp is not allowed on this local
+
+error[E1118]  a/a.canon:33:14
+  @cpp is not allowed on this local
+
+error[E1118]  a/a.canon:35:5
+  @go is not allowed on this local
+
+error[E1118]  a/a.canon:39:17
+  @ts is not allowed on this local
+
+error[E1118]  a/a.canon:41:5
+  @cpp is not allowed on this local
+
+error[E1118]  a/a.canon:43:12
+  @go is not allowed on this local
+
+error[E1118]  a/a.canon:46:3
+  @ts is not allowed on this local
+
+13 errors, 0 warnings in 1 package (…)

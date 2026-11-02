@@ -125,6 +125,7 @@ func (s *stage) publicType(obj check.Object) Type {
 	return nil
 }
 
+// isLocalDecl reports a record, enum, variant, type, const, let or fn declared `local`; nothing generates it (TYPES.md §3.7).
 func isLocalDecl(n syntax.Node) bool {
 	switch d := n.(type) {
 	case *syntax.RecordDecl:
@@ -134,6 +135,12 @@ func isLocalDecl(n syntax.Node) bool {
 	case *syntax.VariantDecl:
 		return local(d.Mods)
 	case *syntax.TypeDecl:
+		return local(d.Mods)
+	case *syntax.ConstDecl:
+		return local(d.Mods)
+	case *syntax.LetDecl:
+		return local(d.Mods)
+	case *syntax.FnDecl:
 		return local(d.Mods)
 	}
 	return false

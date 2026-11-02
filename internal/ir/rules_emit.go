@@ -27,7 +27,7 @@ func init() {
 // validate reports every emit rule of one package, writing nothing (EVALUATION.md §1 phase 7).
 func (s *stage) validate(u *unit) {
 	s.checkFnSignatures(u)
-	s.checkLocalDefines(u)
+	s.checkLocalAnnotations(u)
 	if hasCodeEmit(u) {
 		s.checkOrderedCodes(u)
 		s.checkRepresentable(u)

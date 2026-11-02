@@ -70,22 +70,21 @@ func defineProblem(name string) func(source.Span, string, string) *diag.Builder 
 	return nil
 }
 
-// checkLocalDefines is E1118 for @cpp(defines:) on a local constant or enum, which no defines header writes (GRAMMAR.md §8.3, DECISIONS 390).
-func (s *stage) checkLocalDefines(u *unit) {
+// targetAnnotations are the annotations that configure generated code; on a local declaration, which nothing generates, each is E1118 (GRAMMAR.md §8.3, DECISIONS 443).
+var targetAnnotations = []string{syntax.AnnGo, syntax.AnnTS, syntax.AnnCpp}
+
+// checkLocalAnnotations is E1118 for a @go, @ts or @cpp annotation on a local declaration or inside one, which no generator writes (GRAMMAR.md §8.3, DECISIONS 390, 443).
+func (s *stage) checkLocalAnnotations(u *unit) {
 	for _, obj := range u.cp.Decls {
-		if s.info.Broken[obj] {
+		if s.info.Broken[obj] || !isLocalDecl(obj.Decl()) {
 			continue
 		}
-		var anns []*syntax.Annotation
-		var mods *syntax.Modifiers
-		switch d := obj.Decl().(type) {
-		case *syntax.ConstDecl:
-			anns, mods = d.Annotations, d.Mods
-		case *syntax.EnumDecl:
-			anns, mods = d.Annotations, d.Mods
-		}
-		if a := annotation(anns, syntax.AnnCpp); local(mods) && arg(a, syntax.ArgDefines) != nil {
-			u.report(diag.E1118.At(obj.File().Span(a), syntax.AnnCpp, diag.KindLocal))
-		}
+		syntax.Inspect(obj.Decl(), func(n syntax.Node) bool {
+			a, ok := n.(*syntax.Annotation)
+			if ok && a.Name != nil && slices.Contains(targetAnnotations, a.Name.Name) {
+				u.report(diag.E1118.At(obj.File().Span(a), a.Name.Name, diag.KindLocal))
+			}
+			return !ok
+		})
 	}
 }
