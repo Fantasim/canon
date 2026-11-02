@@ -1,0 +1,24 @@
+GRAMMAR.md §7.1 (DECISIONS 439): out_templates with every target, both placeholders and a cpp template with none; no finding.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+    web: "../web"
+  }
+  out_templates {
+    go: {
+      admin: "internal/gen/{dir}"
+      web: "gen/{dir}/{dotted}"
+    }
+    cpp: { admin: "gen/cpp" }
+    ts: { admin: "web/{dotted}.ts" }
+    json: { admin: "data/{dotted}.json" }
+    view: { web: "views/{dotted}.view.json" }
+    text: { admin: "text/{dir}" }
+  }
+}
+-- ../admin/x --
+-- ../web/x --
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

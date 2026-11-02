@@ -1,5 +1,7 @@
 package syntax
 
+import "cmp"
+
 // amendBlock is { DOC } "amend" IDENT BraceList( amendItem ) (GRAMMAR.md §5.7).
 func (p *parser) amendBlock() *AmendBlock {
 	start := p.pos
@@ -133,6 +135,9 @@ func (p *parser) projectEntry(top bool) *ProjectEntry {
 	if e.Key == nil {
 		return nil
 	}
+	if top {
+		defer p.openTemplates(e.Key)()
+	}
 	if top && p.at(TokLBrace) {
 		e.Value = p.projectMap()
 	} else if e.Colon = p.expect(TokColon); e.Colon != NoTok {
@@ -144,13 +149,53 @@ func (p *parser) projectEntry(top bool) *ProjectEntry {
 	return e
 }
 
+// openTemplates allows interpolations in the value of the top-level key out_templates, up to the
+// token ending that value; the function it returns closes them again (DECISIONS 439).
+func (p *parser) openTemplates(key NameLit) func() {
+	p.holes = NoTok
+	if id, ok := key.(*Ident); ok && id.Name == OutTemplatesKey {
+		p.holes = p.templatesEnd()
+	}
+	return func() { p.holes = NoTok }
+}
+
+// templatesEnd is the last token of the value that starts at p.pos (after the key); NoTok when the
+// brackets of the rest of the project do not balance, since recovery could then read a later key
+// as part of the value, whose strings must stay constant.
+func (p *parser) templatesEnd() Tok {
+	depth, end := 0, NoTok
+	for i := p.pos; p.toks[i].Kind != TokEOF; i++ {
+		switch k := p.toks[i].Kind; {
+		case opensList[k]:
+			depth++
+		case closesList[k]:
+			if depth--; depth == 0 {
+				end = i
+			}
+			if depth < 0 {
+				return cmp.Or(end, i-1)
+			}
+		}
+	}
+	return NoTok
+}
+
+// projectString is a stringLit, constant (E1132) except under out_templates, where the
+// interpolations are a template's placeholders and the project reads them (DECISIONS 439).
+func (p *parser) projectString() stringNode {
+	if p.pos <= p.holes {
+		return p.strLit()
+	}
+	return p.constString()
+}
+
 // projectValue is stringLit | INT | qualifiedIdent | "[" [ pValue { "," pValue } [ "," ] ] "]"
 // | BraceList( pEntry ); strings are constant (E1132).
 func (p *parser) projectValue() ProjectValue {
 	start := p.pos
 	switch k := p.kind(); {
 	case startsString[k]:
-		if s := p.constString(); s != nil {
+		if s := p.projectString(); s != nil {
 			return s
 		}
 	case k == TokInt:

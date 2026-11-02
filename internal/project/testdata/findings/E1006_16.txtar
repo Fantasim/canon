@@ -1,0 +1,32 @@
+GRAMMAR.md §7.1 (DECISIONS 439): a target holding a string or a list, a root holding a list or an integer.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  out_templates {
+    go: "gen/{dir}"
+    ts: [admin]
+    view: {
+      admin: ["gen"]
+    }
+    cpp: {
+      admin: 5
+    }
+  }
+}
+-- findings.txt --
+error[E1006]  project.canon:7:9
+  "out_templates" must be a map of emit targets to maps of root names to path templates
+
+error[E1006]  project.canon:8:9
+  "out_templates" must be a map of emit targets to maps of root names to path templates
+
+error[E1006]  project.canon:10:14
+  "out_templates" must be a map of emit targets to maps of root names to path templates
+
+error[E1006]  project.canon:13:14
+  "out_templates" must be a map of emit targets to maps of root names to path templates
+
+4 errors, 0 warnings in 1 package (…)

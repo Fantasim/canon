@@ -11,7 +11,7 @@ import (
 // Project is a checked project.canon (GRAMMAR.md §7.1); Roots and GoModules are in name order.
 type Project struct {
 	Name      string
-	Doc       string // the declaration's doc comment text, "" for none (GRAMMAR.md §2.2, §9.1)
+	Doc       string // the declaration's doc comment text, "" for none
 	Canon     Version
 	Compiler  Pin // the compiler pin (Text "": none; DECISIONS 354)
 	Roots     []Root
@@ -20,6 +20,7 @@ type Project struct {
 	Budget    int64 // 0 when not declared: the evaluator's default applies (IMPLEMENTATION-PLAN §12.4)
 	GoModules []GoModule
 	Tiers     Tiers
+	Templates []Template // out_templates in (target, root) order
 }
 
 // Version is the language version `canon` states, "MAJOR.MINOR" (GRAMMAR.md §7.1).
@@ -27,8 +28,7 @@ type Version struct {
 	Major, Minor int
 }
 
-// Root is a named root: its name, its path as written, relative to the project directory,
-// and whether optional_roots and consumer_roots list it.
+// Root is a named root: its name, its path as written (relative to the project directory) and the keys listing it.
 type Root struct {
 	Name     string
 	Path     string

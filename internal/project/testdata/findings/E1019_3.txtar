@@ -1,0 +1,16 @@
+GRAMMAR.md §7.1 (DECISIONS 439): a template starting with @ is written relative to its root.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  out_templates {
+    go: { admin: "@admin/gen/{dir}" }
+  }
+}
+-- findings.txt --
+error[E1019]  project.canon:7:18
+  out_templates: the go template of root admin starts with @: write it relative to the root, without @admin/
+
+1 error, 0 warnings in 1 package (…)

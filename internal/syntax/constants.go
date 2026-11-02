@@ -17,6 +17,11 @@ const (
 // LocalProjectFile is project.local.canon, a project file of its own E1011 variant (GRAMMAR.md §7.2).
 const LocalProjectFile = "project.local.canon"
 
+// OutTemplatesKey is the one top-level project key whose strings may hold interpolations, the placeholders of a template (GRAMMAR.md §7.1, DECISIONS 439).
+const OutTemplatesKey = "out_templates"
+
+var opensList, closesList = tokenSet(TokLBrace, TokLBrack), tokenSet(TokRBrace, TokRBrack)
+
 // Blank is the name of the "_" binder.
 const Blank = "_"
 

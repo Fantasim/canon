@@ -1,0 +1,11 @@
+GRAMMAR.md §7.1 (DECISIONS 439): out_templates given as a list.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  out_templates: [go]
+}
+-- findings.txt --
+error[E1006]  project.canon:3:18
+  "out_templates" must be a map of emit targets to maps of root names to path templates
+
+1 error, 0 warnings in 1 package (…)

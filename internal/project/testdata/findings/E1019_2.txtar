@@ -1,0 +1,23 @@
+GRAMMAR.md §7.1 (DECISIONS 439): an interpolation that is not a bare {dir} or {dotted}: a format spec, a call.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+    web: "../web"
+  }
+  out_templates {
+    go: {
+      admin: "gen/{dir:5}"
+      web: "gen/{f()}/{dotted}"
+    }
+  }
+}
+-- findings.txt --
+error[E1019]  project.canon:9:19
+  out_templates: {dir:5} in the go template of root admin is not a placeholder: a template may use only {dir} and {dotted}
+
+error[E1019]  project.canon:10:17
+  out_templates: {f()} in the go template of root web is not a placeholder: a template may use only {dir} and {dotted}
+
+2 errors, 0 warnings in 1 package (…)

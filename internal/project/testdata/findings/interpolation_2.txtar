@@ -1,0 +1,27 @@
+GRAMMAR.md §7, DECISIONS 439: the interpolations of out_templates are accepted; the exemption resets after the key, and a nested key keeps E1132.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  out_templates {
+    go: { admin: "gen/{dir}" }
+    ts: { "{k}": "x/{dotted}.ts" }
+  }
+  go_module {
+    admin: "example.com/{x}"
+  }
+  compiler: "1.0.{x}"
+}
+-- findings.txt --
+error[E1132]  project.canon:8:11
+  this string must be constant (no interpolation)
+
+error[E1132]  project.canon:11:12
+  this string must be constant (no interpolation)
+
+error[E1132]  project.canon:13:13
+  this string must be constant (no interpolation)
+
+3 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,23 @@
+GRAMMAR.md §7.1 (DECISIONS 439, 424): a template character outside A-Z a-z 0-9 . _ - and /: a raw string keeps its braces as text.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+    web: "../web"
+  }
+  out_templates {
+    go: {
+      admin: r"x/{dir}"
+      web: "gen/a b/{dir}"
+    }
+  }
+}
+-- findings.txt --
+error[E1019]  project.canon:9:14
+  out_templates: the go template of root admin holds U+007B: its text may use only A-Z a-z 0-9 . _ - and /
+
+error[E1019]  project.canon:10:12
+  out_templates: the go template of root web holds U+0020: its text may use only A-Z a-z 0-9 . _ - and /
+
+2 errors, 0 warnings in 1 package (…)

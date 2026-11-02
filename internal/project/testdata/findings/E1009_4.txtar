@@ -1,0 +1,22 @@
+GRAMMAR.md §7.1 (DECISIONS 439): an out_templates root that is not declared, or not written as an identifier; the key may come before roots.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  out_templates {
+    go: {
+      nowhere: "gen/{dir}"
+      "admin": "gen/{dir}"
+    }
+  }
+  roots {
+    admin: "../admin"
+  }
+}
+-- findings.txt --
+error[E1009]  project.canon:5:7
+  out_templates: "nowhere" is not a declared root
+
+error[E1009]  project.canon:6:7
+  out_templates: "admin" is not a declared root
+
+2 errors, 0 warnings in 1 package (…)

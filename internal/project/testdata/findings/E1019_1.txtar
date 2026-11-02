@@ -1,0 +1,20 @@
+GRAMMAR.md §7.1 (DECISIONS 439): an out_templates target outside go, cpp, ts, json, view and text, a quoted one included.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  out_templates {
+    rust: { admin: "gen/{dir}" }
+    "go": { admin: "gen/{dir}" }
+  }
+}
+-- findings.txt --
+error[E1019]  project.canon:7:5
+  out_templates: "rust" is not an emit target: expected go, cpp, ts, json, view or text
+
+error[E1019]  project.canon:8:5
+  out_templates: "go" is not an emit target: expected go, cpp, ts, json, view or text
+
+2 errors, 0 warnings in 1 package (…)

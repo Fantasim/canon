@@ -1,0 +1,19 @@
+GRAMMAR.md §7.1, §7.2 (DECISIONS 439): out_templates is never in project.local.canon; its interpolations are not E1132 there either.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    resource: "res"
+  }
+}
+-- project.local.canon --
+project acme {
+  out_templates {
+    go: { resource: "gen/{dir}" }
+  }
+}
+-- findings.txt --
+error[E1014]  project.local.canon:2:3
+  project.local.canon may only hold roots: remove "out_templates"
+
+1 error, 0 warnings in 1 package (…)

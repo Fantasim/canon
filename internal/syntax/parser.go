@@ -39,6 +39,7 @@ type parser struct {
 	depth   int
 	ctx     bodyCtx
 	docs    map[Tok]bool
+	holes   Tok // the last token of the out_templates value being read, whose strings may interpolate; NoTok for none (DECISIONS 439)
 }
 
 func (p *parser) kind() TokenKind { return p.toks[p.pos].Kind }

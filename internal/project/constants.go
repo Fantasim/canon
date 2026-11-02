@@ -46,6 +46,7 @@ const (
 	keyOptional  = "optional_roots"
 	keyConsumer  = "consumer_roots" // DECISIONS 343
 	keyTiers     = "tiers"          // DECISIONS 380
+	keyTemplates = syntax.OutTemplatesKey
 )
 
 // keyRules reads each key; go_module, optional_roots and consumer_roots wait for the roots, keys coming in any order (GRAMMAR.md §7.1).
@@ -60,6 +61,7 @@ var keyRules = map[string]func(*schema, *syntax.ProjectEntry){
 	keyOptional:  (*schema).deferOptional,
 	keyConsumer:  (*schema).deferConsumer,
 	keyTiers:     (*schema).tiers,
+	keyTemplates: (*schema).deferTemplates,
 }
 
 // The origins of a root's directory (origin).
@@ -126,3 +128,22 @@ var identPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // segmentPattern is the lowerCamel convention of a package segment (GRAMMAR.md §9.2).
 var segmentPattern = regexp.MustCompile(`^[a-z][A-Za-z0-9]*$`)
+
+// The kinds of a template's parts: literal text, and the placeholders {dir} and {dotted} (GRAMMAR.md §7.1).
+const (
+	partText partKind = iota
+	partDir
+	partDotted
+)
+
+var placeholders = map[string]partKind{"{dir}": partDir, "{dotted}": partDotted}
+
+// emitTargets are the targets an out_templates entry may name, each with the ending its template needs.
+var emitTargets = map[string]string{"go": "", "cpp": "", tsTarget: dot + tsTarget, "json": "", "view": "", "text": ""}
+
+var tsTarget = "ts"
+
+const (
+	placeholderStandIn = "x"
+	portablePunct      = "._-/"
+)

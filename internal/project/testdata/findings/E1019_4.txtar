@@ -1,0 +1,43 @@
+GRAMMAR.md §7.1 (DECISIONS 439): a template that is not a relative path of non-empty segments: //, a .. or . segment, a trailing /, a leading /, an empty template.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+    web: "../web"
+    wiki: "../wiki"
+    docs: "../docs"
+    blank: "../blank"
+    dot: "../dot"
+  }
+  out_templates {
+    go: {
+      admin: "a//{dir}"
+      web: "../{dir}"
+      wiki: "gen/{dir}/"
+      docs: "/gen"
+      blank: ""
+      dot: "x/./{dir}"
+    }
+  }
+}
+-- findings.txt --
+error[E1019]  project.canon:13:14
+  out_templates: the go template of root admin is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment
+
+error[E1019]  project.canon:14:12
+  out_templates: the go template of root web is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment
+
+error[E1019]  project.canon:15:13
+  out_templates: the go template of root wiki is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment
+
+error[E1019]  project.canon:16:13
+  out_templates: the go template of root docs is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment
+
+error[E1019]  project.canon:17:14
+  out_templates: the go template of root blank is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment
+
+error[E1019]  project.canon:18:12
+  out_templates: the go template of root dot is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment
+
+6 errors, 0 warnings in 1 package (…)

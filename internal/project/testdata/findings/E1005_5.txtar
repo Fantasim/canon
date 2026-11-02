@@ -1,0 +1,28 @@
+GRAMMAR.md §7.1 (DECISIONS 439): an out_templates target given twice, and a root twice under one target.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+  }
+  out_templates {
+    go: {
+      admin: "a/{dir}"
+    }
+    ts: {
+      admin: "a/{dotted}.ts"
+      admin: "b/{dotted}.ts"
+    }
+    go: {
+      admin: "c/{dir}"
+    }
+  }
+}
+-- findings.txt --
+error[E1005]  project.canon:12:7
+  duplicate root "admin" in project.canon
+
+error[E1005]  project.canon:14:5
+  duplicate key "go" in project.canon
+
+2 errors, 0 warnings in 1 package (…)

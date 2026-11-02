@@ -37,6 +37,9 @@ func Load(src *source.File, bag *diag.Bag) (*Project, error) {
 	if s.consumer != nil {
 		s.consumerRoots(s.consumer)
 	}
+	if s.templates != nil {
+		s.outTemplates(s.templates)
+	}
 	if !s.seen[keyCanon] {
 		s.fail(diag.E1004.At(f.Span(d.Name)))
 	}
@@ -61,6 +64,7 @@ type schema struct {
 	goModule    *syntax.ProjectEntry
 	optional    *syntax.ProjectEntry
 	consumer    *syntax.ProjectEntry
+	templates   *syntax.ProjectEntry
 }
 
 func (s *schema) fail(b *diag.Builder) {
@@ -84,10 +88,18 @@ func (s *schema) entry(e *syntax.ProjectEntry) {
 		s.fail(diag.E1005.AtKey(s.span(e.Key), name))
 	default:
 		s.seen[name] = true
-		if !isBad(e.Value) {
+		if !s.refused(name, e.Value) {
 			rule(s, e)
 		}
 	}
+}
+
+// refused reports a value the parser refused: for out_templates an interpolated string is none (DECISIONS 439).
+func (s *schema) refused(key string, v syntax.Node) bool {
+	if key == keyTemplates {
+		return isRefused(v)
+	}
+	return isBad(v)
 }
 
 // canon is `canon: "MAJOR.MINOR"`: E1006, E1010, then E1001 for a version not read here.

@@ -21,6 +21,7 @@ func projectOperators() []operator {
 		op(diag.W1016.Def().Code, "GRAMMAR.md §7.1 (a compiler pin an unstamped test binary cannot honour)", onKey("canon", insertPin)),
 		op(diag.E1011.Def().Code, "GRAMMAR.md §5.2 (anything else in project.canon)", projectTrailer),
 		op(diag.E1012.Def().Code, "GRAMMAR.md §7.1 (studio package missing)", onKey("studio", replaceValue("nowhere"))),
+		op(diag.E1019.Def().Code, "GRAMMAR.md §7.1 (out_templates target)", onKey("canon", insertTemplateTarget)),
 	}
 }
 
@@ -91,6 +92,14 @@ func insertEntryBefore(key, rest string) entryEdit {
 func insertPin(tg target, e *syntax.ProjectEntry) progen.Site {
 	s, _ := span(tg, e.Key)
 	return seq(2, insert(s, "compiler"), insert(s, ": "), insert(s, `"9.9.9"`), insert(s, "\n"+indent(tg, s)))
+}
+
+// insertTemplateTarget adds an out_templates key holding a target no emit has before e; the finding
+// is at the target (DECISIONS 439).
+func insertTemplateTarget(tg target, e *syntax.ProjectEntry) progen.Site {
+	s, _ := span(tg, e.Key)
+	ind := indent(tg, s)
+	return seq(1, insert(s, "out_templates {\n"+ind+"  "), insert(s, "nowhere"), insert(s, ": {}\n"+ind+"}\n"+ind))
 }
 
 // deleteEntryMarkName removes e's line; the finding is at the project's name.

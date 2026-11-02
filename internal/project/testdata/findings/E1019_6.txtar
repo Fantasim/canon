@@ -1,0 +1,23 @@
+GRAMMAR.md §7.1 (DECISIONS 439): a ts template must end in .ts.
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    admin: "../admin"
+    web: "../web"
+  }
+  out_templates {
+    ts: {
+      admin: "web/{dotted}"
+      web: "web/{dotted}.js"
+    }
+  }
+}
+-- findings.txt --
+error[E1019]  project.canon:9:14
+  out_templates: the ts template of root admin must end in .ts
+
+error[E1019]  project.canon:10:12
+  out_templates: the ts template of root web must end in .ts
+
+2 errors, 0 warnings in 1 package (…)
