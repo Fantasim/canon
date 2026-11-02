@@ -161,7 +161,8 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Object` | an object | `E7110` |
 | `OpenEnum` | an enum its package's emit of this target opens | `E8019` |
 | `OpenEnumFn` | a translated function that takes or reads an enum its package's emit of this target opens | `E8019` |
-| `OutPaths` | a constant string or a list of constant strings | `E8009` |
+| `OutPath` | a path string or a root name | `E8009` |
+| `OutPaths` | a path string, a root name or a list of them | `E8009` |
 | `Package` | package | `E3027` |
 | `PackageSegment` | package segment | `W1003`, `E1125` |
 | `Parameter` | parameter | `W1003`, `E1125`, `E2101` |
@@ -387,7 +388,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 333 codes: 304 errors, 26 warnings and 3 run-time codes, with 572 messages.
+The catalogue holds 334 codes: 305 errors, 26 warnings and 3 run-time codes, with 583 messages.
 
 ## E10xx, W10xx: Project file, doc comments and naming
 
@@ -406,7 +407,7 @@ Owner: GRAMMAR.md.
 | E1006 | error | project | GRAMMAR.md §7.1 | a project value of the wrong kind or out of range |
 | E1007 | error | project | GRAMMAR.md §7.1 | invalid root name or path (absolute, empty, `\`) |
 | E1008 | error | project | GRAMMAR.md §7.1 | invalid or duplicate language code in `languages` |
-| E1009 | error | project | GRAMMAR.md §7.1 | a `go_module` key or an `optional_roots` or `consumer_roots` name is not a declared root, an `optional_roots` or `consumer_roots` name is listed twice, or a `go_module` module path is empty or invalid (DECISIONS 343) |
+| E1009 | error | project | GRAMMAR.md §7.1 | a `go_module` key or an `optional_roots` or `consumer_roots` name is not a declared root, an `optional_roots` or `consumer_roots` name is listed twice, or a `go_module` module path is empty or invalid (DECISIONS 343), or an `out_templates` root is not a declared root |
 | E1010 | error | project | GRAMMAR.md §7.1 | `canon` is not `"MAJOR.MINOR"` |
 | E1011 | error | syntax | GRAMMAR.md §5.2 | a `project` declaration outside `project.canon` and `project.local.canon`, or anything else inside them |
 | E1012 | error | project | GRAMMAR.md §7.1 | `studio` names a package that does not exist |
@@ -416,6 +417,7 @@ Owner: GRAMMAR.md.
 | W1016 | warning | project | GRAMMAR.md §7.1 | a `dev` compiler cannot honour the project's compiler pin (DECISIONS 354) |
 | E1017 | error | project | GRAMMAR.md §7.1 | a `tiers` name that is not an identifier, or a package path listed twice in `tiers` (DECISIONS 380) |
 | E1018 | error | project | GRAMMAR.md §7.1 | with `tiers` declared, a package no listed path places, or a listed path that places no package (DECISIONS 380) |
+| E1019 | error | project | GRAMMAR.md §7.1 | an invalid out_templates target or template: not an emit target, a placeholder other than {dir} and {dotted}, a rooted, malformed or non-portable path, or a ts template not ending in .ts (DECISIONS 439) |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -439,6 +441,7 @@ Owner: GRAMMAR.md.
 | E1006 | consumerRoots | - | `"consumer_roots" must be a list of root names` |
 | E1006 | compiler | - | `"compiler" must be a compiler version "X.Y.Z" (with an optional "-suffix")` |
 | E1006 | tiers | - | `"tiers" must be a map of tier names to non-empty lists of package paths` |
+| E1006 | outTemplates | - | `"out_templates" must be a map of emit targets to maps of root names to path templates` |
 | E1007 | name | name:Name | `invalid root name "{name}": a root name is an identifier` |
 | E1007 | empty | name:Name | `invalid root "{name}": the path is empty` |
 | E1007 | absolute | name:Name | `invalid root "{name}": the path is absolute` |
@@ -451,6 +454,7 @@ Owner: GRAMMAR.md.
 | E1009 | optionalDuplicate | name:Name | `optional_roots: "{name}" is listed twice` |
 | E1009 | consumerRoot | name:Name | `consumer_roots: "{name}" is not a declared root` |
 | E1009 | consumerDuplicate | name:Name | `consumer_roots: "{name}" is listed twice` |
+| E1009 | templateRoot | name:Name | `out_templates: "{name}" is not a declared root` |
 | E1010 | - | value:Text | `"canon" must be "MAJOR.MINOR", found "{value}"` |
 | E1011 | outside | - | `a project declaration is only allowed in project.canon` |
 | E1011 | inside | - | `project.canon may only contain the project declaration` |
@@ -472,6 +476,12 @@ Owner: GRAMMAR.md.
 | E1017 | duplicate | path:Name, first:Loc | `tiers: {path} is listed twice (first at {first})` |
 | E1018 | unplaced | pkg:Name | `tiers: no tier places package {pkg}; list it, or a package path above it, in a tier` |
 | E1018 | unused | path:Name | `tiers: {path} places no package; remove it or correct it` |
+| E1019 | target | name:Name | `out_templates: "{name}" is not an emit target: expected go, cpp, ts, json, view or text` |
+| E1019 | placeholder | text:Expr, target:Name, root:Name | `out_templates: {text} in the {target} template of root {root} is not a placeholder: a template may use only {{dir}} and {{dotted}}` |
+| E1019 | rooted | target:Name, root:Name | `out_templates: the {target} template of root {root} starts with @: write it relative to the root, without @{root}/` |
+| E1019 | path | target:Name, root:Name | `out_templates: the {target} template of root {root} is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment` |
+| E1019 | chars | target:Name, root:Name, char:Rune | `out_templates: the {target} template of root {root} holds {char}: its text may use only A-Z a-z 0-9 . _ - and /` |
+| E1019 | ts | root:Name | `out_templates: the ts template of root {root} must end in .ts` |
 
 ## E11xx: Lexer and parser
 
@@ -1249,7 +1259,7 @@ Owner: CODEGEN.md, WIRE.md.
 | W8006 | warning | ir | CODEGEN.md §3.5 | a generated C++ name is a common platform macro |
 | E8007 | error | ir | CODEGEN.md §2.8 | a Go output under no root mapped by `go_module` |
 | E8008 | error | ir | CODEGEN.md §2.3 | two Go emits write into one directory |
-| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` path (a character outside the portable set, DECISIONS 424) or `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343, 362) |
+| E8009 | error | check | CODEGEN.md §2.1, §2.8 | invalid emit option value (mode, package, namespace, out, values, an empty `values`), option of the wrong kind, or an invalid `out` path (a character outside the portable set, DECISIONS 424) or `out` list (empty, two entries sharing an owning root, different last elements without `package`, JSON files mixed with directories, a `text` copy under a consumer root), or an invalid `open` (DECISIONS 339, 343, 362), an `out` root name with no template for the target, or a quoted root name (DECISIONS 439) |
 | E8010 | error | ir | CODEGEN.md §5.2 | an `ordered` enum whose codes do not increase |
 | E8011 | error | ir | CODEGEN.md §3.5 | an override or a derived name that is not a usable identifier in the target |
 | E8012 | error | ir | CODEGEN.md §4.4 | an emitted type or value with no representation in generated code |
@@ -1305,6 +1315,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8005 | foreignDefine | name:Name, a:Name, b:Name | `{name} is declared for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a} with @cpp(name:), or use a type of that package here` |
 | E8005 | foreignId | name:Name, a:Name, b:Name | `{name} is declared for the id {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here` |
 | E8005 | foreignDerived | name:Name, a:Name, b:Name | `{name} is derived from {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a}, or use a type of that package here` |
+| E8005 | foreignFixed | name:Name, a:Name, b:Name | `{name} is declared by the generator for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here` |
 | W8006 | - | name:Name, item:Name | `C++ name {name} (from {item}) is a macro in common platform headers` |
 | E8007 | - | out:Path | `Go output {out} is under no root listed in go_module: map its root in project.canon go_module` |
 | E8008 | - | dir:Path, a:Name, b:Name | `Go directory {dir} is written by two emits ({a}, {b})` |
@@ -1330,6 +1341,8 @@ Owner: CODEGEN.md, WIRE.md.
 | E8009 | openEmpty | target:Name | `open of emit {target} is an empty list: omit open to keep every enum closed` |
 | E8009 | openOrdered | target:Name, name:Name | `open of emit {target}: {name} is ordered, and an open enum cannot compare its members` |
 | E8009 | outConsumer | target:Name, path:Path, root:Name | `{path} in out of emit {target} lies under the consumer root {root}: a text file is owned only through canon.outputs, which never lists a consumer root` |
+| E8009 | outTemplate | name:Name, target:Name | `{name} in out of emit {target} names no {target} template of out_templates in project.canon: add one there, or write the path as a string` |
+| E8009 | outQuoted | name:Name, target:Name | `out of emit {target} holds the path "{name}", the name of a root with a {target} template: write {name} without quotes to use the template, or "./{name}" for the directory beside this file` |
 | E8010 | - | enum:Name | `ordered enum {enum} has codes that do not increase in declaration order` |
 | E8011 | override | name:Text, target:Name | `{name} is not a valid {target} identifier for @{target}(name:)` |
 | E8011 | unexported | name:Text | `{name} is not exported: an @go(name:) override starts with an upper-case letter` |

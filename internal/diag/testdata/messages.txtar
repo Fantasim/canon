@@ -18,6 +18,7 @@ E1006 optionalRoots: "optional_roots" must be a list of root names
 E1006 consumerRoots: "consumer_roots" must be a list of root names
 E1006 compiler: "compiler" must be a compiler version "X.Y.Z" (with an optional "-suffix")
 E1006 tiers: "tiers" must be a map of tier names to non-empty lists of package paths
+E1006 outTemplates: "out_templates" must be a map of emit targets to maps of root names to path templates
 E1007 name: invalid root name "resource.vocab.items": a root name is an identifier
 E1007 empty: invalid root "resource.vocab.items": the path is empty
 E1007 absolute: invalid root "resource.vocab.items": the path is absolute
@@ -30,6 +31,7 @@ E1009 optionalRoot: optional_roots: "resource.vocab.items" is not a declared roo
 E1009 optionalDuplicate: optional_roots: "resource.vocab.items" is listed twice
 E1009 consumerRoot: consumer_roots: "resource.vocab.items" is not a declared root
 E1009 consumerDuplicate: consumer_roots: "resource.vocab.items" is listed twice
+E1009 templateRoot: out_templates: "resource.vocab.items" is not a declared root
 E1010 -: "canon" must be "MAJOR.MINOR", found "0.9"
 E1011 outside: a project declaration is only allowed in project.canon
 E1011 inside: project.canon may only contain the project declaration
@@ -50,6 +52,12 @@ E1017 name: invalid tier name "resource.vocab.items": a tier name is an identifi
 E1017 duplicate: tiers: resource.vocab.items is listed twice (first at @resource/Server/System/farm_config.json:1)
 E1018 unplaced: tiers: no tier places package resource.vocab.items; list it, or a package path above it, in a tier
 E1018 unused: tiers: resource.vocab.items places no package; remove it or correct it
+E1019 target: out_templates: "resource.vocab.items" is not an emit target: expected go, cpp, ts, json, view or text
+E1019 placeholder: out_templates: a b in the resource.vocab.items template of root resource.vocab.items is not a placeholder: a template may use only {dir} and {dotted}
+E1019 rooted: out_templates: the resource.vocab.items template of root resource.vocab.items starts with @: write it relative to the root, without @resource.vocab.items/
+E1019 path: out_templates: the resource.vocab.items template of root resource.vocab.items is not a relative path of non-empty segments: no leading or trailing /, no //, no . or .. segment
+E1019 chars: out_templates: the resource.vocab.items template of root resource.vocab.items holds U+001F: its text may use only A-Z a-z 0-9 . _ - and /
+E1019 ts: out_templates: the ts template of root resource.vocab.items must end in .ts
 E1101 -: invalid format spec "0.9": expected [+][0][W][,][.N][xX] with W at most 99 and N at most 20
 E1102 -: multiline string indentation mixes tabs and spaces
 E1103 -: a type takes one refinement; use "where" for more
@@ -446,6 +454,7 @@ E8005 define: #define resource.vocab.items is written for both resource.vocab.it
 E8005 foreignDefine: resource.vocab.items is declared for resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; rename resource.vocab.items with @cpp(name:), or use a type of that package here
 E8005 foreignId: resource.vocab.items is declared for the id resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here
 E8005 foreignDerived: resource.vocab.items is derived from resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; rename resource.vocab.items, or use a type of that package here
+E8005 foreignFixed: resource.vocab.items is declared by the generator for resource.vocab.items and written as a #define for resource.vocab.items, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here
 E8007 -: Go output @resource/Server/Item/propItem.json is under no root listed in go_module: map its root in project.canon go_module
 E8008 -: Go directory @resource/Server/Item/propItem.json is written by two emits (resource.vocab.items, resource.vocab.items)
 E8009 mode: invalid mode resource.vocab.items for emit resource.vocab.items: expected one of go, cpp
@@ -470,6 +479,8 @@ E8009 openTwice: open of emit resource.vocab.items: resource.vocab.items is list
 E8009 openEmpty: open of emit resource.vocab.items is an empty list: omit open to keep every enum closed
 E8009 openOrdered: open of emit resource.vocab.items: resource.vocab.items is ordered, and an open enum cannot compare its members
 E8009 outConsumer: @resource/Server/Item/propItem.json in out of emit resource.vocab.items lies under the consumer root resource.vocab.items: a text file is owned only through canon.outputs, which never lists a consumer root
+E8009 outTemplate: resource.vocab.items in out of emit resource.vocab.items names no resource.vocab.items template of out_templates in project.canon: add one there, or write the path as a string
+E8009 outQuoted: out of emit resource.vocab.items holds the path "resource.vocab.items", the name of a root with a resource.vocab.items template: write resource.vocab.items without quotes to use the template, or "./resource.vocab.items" for the directory beside this file
 E8010 -: ordered enum resource.vocab.items has codes that do not increase in declaration order
 E8011 override: 0.9 is not a valid resource.vocab.items identifier for @resource.vocab.items(name:)
 E8011 unexported: 0.9 is not exported: an @go(name:) override starts with an upper-case letter

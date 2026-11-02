@@ -12,7 +12,7 @@ error[E8009]  a/a.canon:3:18
   option out of emit view must be a constant string
 
 error[E8009]  a/a.canon:5:33
-  option out of emit go must be a constant string or a list of constant strings
+  option out of emit go must be a path string, a root name or a list of them
 
 error[E8009]  a/a.canon:7:30
   invalid out "@features/a.js" for emit ts: it must end in .ts
