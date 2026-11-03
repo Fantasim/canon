@@ -1,0 +1,17 @@
+CODEGEN.md §5.1, DECISIONS 453: gen/ts writes a constant of an optional type as T | null, so check accepts it (0 errors), alone or in a list.
+-- a/a.canon --
+package a
+
+/// The first, if any.
+const I = [1].first()
+
+/// A list of optionals.
+const L = [[1].first()]
+
+emit ts { out: "@features/a/a.ts" }
+-- a.I.json --
+1
+-- a.L.json --
+[1]
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

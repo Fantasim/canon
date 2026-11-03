@@ -4640,6 +4640,15 @@ round 2", "PS1 review", "PS2 round 2"):
      literals judged, `E8005` for the new reserved generated names, `E8011` for the new runtime
      identifiers), and changes no existing source's meaning, so `canon: "0.2"` stays `E1001`.
      Reason: 422's rule, applied again.
+453. **A constant with no constant form in a target is refused there (CODEGEN.md §5.1; ERRORS.md E8019).**
+     A constant of an optional type is `E8019` `OptionalConstant`, and one of a ref type `RefConstant`,
+     in every go and cpp emit (TypeScript writes them, `T | null` and the key); a constant whose type
+     holds a dependent type, in a list, a map or an optional too, is `DependentConstant` in every go,
+     cpp and ts emit. One finding per constant: `DependentConstant`, then `RecordConstant`, then
+     `OptionalConstant` or `RefConstant`. Each way out names a record let (a let of `T?` or `ref` is
+     `E8015` in data mode). A list or map holding optionals or refs is unchanged (385). Reason: v0.3
+     run (KIND's review, then OPT-CONST's probe): such constants crashed the Go and C++ generators,
+     and a dependent one the TypeScript generator too.
 454. **A fold builds a body only once its `where` predicates are checked (TYPES.md §7.4, §15; amends 150,
      444).** A constant expression, a field default or a bound may build a record or a case once its
      fields are resolved, its defaults checked and the `where` predicates of its field types (through

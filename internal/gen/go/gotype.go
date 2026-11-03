@@ -53,7 +53,7 @@ func kindText(k types.Kind) string {
 	return unknownKind
 }
 
-// failKind refuses a kind of the item being written, the Subject (go.md §3), that gen/go has no form for there: stage E refuses every one first (E8019 for a map or a case it does not read, a record constant; E8012 for Never, a Range, a function, a pair, a define record; E3801 a Never field; check's input and portable-subset rules, E19xx and E9xxx), so meeting one is malformed IR (DECISIONS 320).
+// failKind refuses a kind of the item being written, the Subject (go.md §3), that gen/go has no form for there: stage E refuses every one first (E8019 for a map or a case it does not read, a record, optional, ref or dependent constant; E8012 for Never, a Range, a function, a pair, a define record; E3801 a Never field; check's input and portable-subset rules, E19xx and E9xxx), so meeting one is malformed IR (DECISIONS 320).
 func (g *gen) failKind(k types.Kind) {
 	g.fail(newDetail(ErrMalformed, g.at, kindFormat, g.at, kindText(k)))
 }

@@ -1,0 +1,14 @@
+CODEGEN.md §5.1, DECISIONS 385, 453: a list holding optionals is not a constant of an optional type; gen/go (rt.List[*T]) and gen/cpp write it.
+-- a/a.canon --
+package a
+
+/// A list of optionals.
+const L = [[1].first()]
+
+emit go { out: "@features/a", package: "a" }
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- a.L.json --
+[1]
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

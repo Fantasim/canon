@@ -1,0 +1,63 @@
+CODEGEN.md §5.1, DECISIONS 453: gen/cpp writes no constant whose type holds a dependent type, in a list, a map or an optional; one DependentConstant each, and an optional one is not also an OptionalConstant.
+-- a/a.canon --
+package a
+
+/// Shapes.
+enum Shape {
+  /// Count.
+  count
+  /// Place.
+  place
+}
+
+/// A param by shape.
+type Param(s: Shape) = match s {
+  count => Int
+  place => String
+}
+
+/// A holder.
+record Holder {
+  /// A shape.
+  shape: Shape
+  /// A dependent value.
+  p: Param(shape)
+  /// An optional dependent value.
+  op: Param(shape)?
+}
+
+/// A list of dependent values.
+const LP = [Holder { shape: count, p: 3, op: 4 }.p]
+
+/// A map of dependent values.
+const MP = {"k": Holder { shape: count, p: 3, op: 4 }.p}
+
+/// A list of optional dependent values.
+const LOP = [Holder { shape: count, p: 3, op: 4 }.op]
+
+/// An optional dependent value.
+const OP = Holder { shape: count, p: 3, op: 4 }.op
+
+emit cpp { out: "@features/a", namespace: "a" }
+-- a.LP.json --
+[3]
+-- a.MP.json --
+{"k": 3}
+-- a.LOP.json --
+[4]
+-- a.OP.json --
+4
+-- findings.txt --
+error[E8019]  a/a.canon:28:7
+  emit cpp in baked mode cannot generate a constant whose type holds a dependent type; hold the value in a record field beside its discriminant, in a let of that record
+
+error[E8019]  a/a.canon:31:7
+  emit cpp in baked mode cannot generate a constant whose type holds a dependent type; hold the value in a record field beside its discriminant, in a let of that record
+
+error[E8019]  a/a.canon:34:7
+  emit cpp in baked mode cannot generate a constant whose type holds a dependent type; hold the value in a record field beside its discriminant, in a let of that record
+
+error[E8019]  a/a.canon:37:7
+  emit cpp in baked mode cannot generate a constant whose type holds a dependent type; hold the value in a record field beside its discriminant, in a let of that record
+
+4 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,27 @@
+CODEGEN.md §5.1, DECISIONS 453: gen/go has no constant of an optional type: an optional record is one OptionalConstant (gen/go's record rule looks at the type's kind only).
+-- a/a.canon --
+package a
+
+/// A box.
+record Box {
+  /// V.
+  v: Int
+}
+
+/// An outer.
+record Outer {
+  /// Inner.
+  inner: Box?
+}
+
+/// An optional record constant.
+const OB = Outer { inner: Box { v: 1 } }.inner
+
+emit go { out: "@features/a", package: "a" }
+-- a.OB.json --
+{"v": 1}
+-- findings.txt --
+error[E8019]  a/a.canon:16:7
+  emit go in baked mode cannot generate a constant of an optional type; make it a field of a record let
+
+1 error, 0 warnings in 1 package (…)

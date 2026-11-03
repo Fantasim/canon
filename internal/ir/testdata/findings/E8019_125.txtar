@@ -1,0 +1,20 @@
+CODEGEN.md §5.1, DECISIONS 453: gen/go writes constants of scalars, enums, lists and maps; a constant of an optional type is OptionalConstant (the same value in a list is a list of optionals, written).
+-- a/a.canon --
+package a
+
+/// The first, if any.
+const I = [1].first()
+
+/// A list of optionals, fine.
+const L = [[1].first()]
+
+emit go { out: "@features/a", package: "a" }
+-- a.I.json --
+1
+-- a.L.json --
+[1]
+-- findings.txt --
+error[E8019]  a/a.canon:4:7
+  emit go in baked mode cannot generate a constant of an optional type; make it a field of a record let
+
+1 error, 0 warnings in 1 package (…)

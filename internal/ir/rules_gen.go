@@ -18,7 +18,8 @@ var genRules [targetCount][ModeTypes + 1][]genRule
 
 func init() {
 	common := []genRule{
-		(*stage).checkFieldlessCaseFns, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants,
+		(*stage).checkFieldlessCaseFns, (*stage).checkTableFields, (*stage).checkCaseFields, (*stage).checkRecordConstants, (*stage).checkOptionalConstants,
+		(*stage).checkRefConstants, (*stage).checkDependentConstants,
 		(*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkForeignBuilt,
 	}
 	goCode := append(slices.Clone(common), (*stage).checkNegativeZero)
@@ -31,7 +32,7 @@ func init() {
 	cppCode := append(slices.Clone(common), (*stage).checkCppDecoded, (*stage).checkCppDependents,
 		(*stage).checkClassCycles, (*stage).checkSelfReads, (*stage).checkLegacyStructs, (*stage).checkForeignReads)
 	// ts takes the shared rules gen/ts needs (DECISIONS 278); it writes the other constructs: optional elements and map values, table fields, cases as types, record constants, a fieldless case's fns, other packages' records (DECISIONS 323).
-	tsCode := []genRule{(*stage).checkNeverDependents, (*stage).checkVariantMembers}
+	tsCode := []genRule{(*stage).checkNeverDependents, (*stage).checkVariantMembers, (*stage).checkDependentConstants}
 	tsBaked := append(slices.Clone(tsCode), (*stage).checkTSLiterals, (*stage).checkForeignTableLookups, (*stage).checkForeignOpenEnums)
 	genRules[TargetTS][ModeBaked], genRules[TargetTS][ModeEmbedded] = tsBaked, tsBaked
 	tsDecode := append(slices.Clone(tsCode), (*stage).checkTSDecoded, (*stage).checkForeignReads)
@@ -76,11 +77,55 @@ func (s *stage) checkFieldlessCaseFns(u *unit, es *emitSite) {
 // checkRecordConstants is E8019 `RecordConstant`: neither generator writes a constant of a record, variant or case type, nor gen/cpp one holding a record (CODEGEN.md §5.1).
 func (s *stage) checkRecordConstants(u *unit, es *emitSite) {
 	for _, c := range u.consts {
-		if recordKinds[c.c.Type.Kind] || es.e.Target == TargetCpp && HoldsRecordValue(c.c.V) {
+		if recordConstant(es, c.c) {
 			u.reportGenConstruct(es, c.span(), diag.KindRecordConstant)
 		}
 	}
 }
+
+// recordConstant reports a constant checkRecordConstants refuses in es's emit.
+func recordConstant(es *emitSite, c *Const) bool {
+	return recordKinds[c.Type.Kind] || es.e.Target == TargetCpp && HoldsRecordValue(c.V)
+}
+
+// onlyOptionalOrRef reports a constant whose one finding is OptionalConstant's or RefConstant's: DependentConstant and RecordConstant come first (DECISIONS 453).
+func onlyOptionalOrRef(es *emitSite, c *Const) bool {
+	return !heldDependent(c) && !recordConstant(es, c)
+}
+
+// checkOptionalConstants is E8019 `OptionalConstant`: neither generator writes a constant of an optional type; a list or map holding optionals is written, and a constant holding a dependent type is DependentConstant's and one RecordConstant refuses is RecordConstant's (CODEGEN.md §5.1, DECISIONS 385, 453).
+func (s *stage) checkOptionalConstants(u *unit, es *emitSite) {
+	for _, c := range u.consts {
+		if c.c.Type.Kind == types.Optional && onlyOptionalOrRef(es, c.c) {
+			u.reportGenConstruct(es, c.span(), diag.KindOptionalConstant)
+		}
+	}
+}
+
+// checkRefConstants is E8019 `RefConstant`: neither gen/go nor gen/cpp writes a constant of a ref type; gen/ts writes its key, and a constant holding a dependent type is DependentConstant's and one RecordConstant refuses is RecordConstant's (CODEGEN.md §5.1, DECISIONS 453).
+func (s *stage) checkRefConstants(u *unit, es *emitSite) {
+	for _, c := range u.consts {
+		if c.c.Type.Kind == types.Ref && onlyOptionalOrRef(es, c.c) {
+			u.reportGenConstruct(es, c.span(), diag.KindRefConstant)
+		}
+	}
+}
+
+// checkDependentConstants is E8019 `DependentConstant`: no generator writes a constant whose type is, or holds in a list, map or optional, a dependent type: a type function's application or its union of branches (CODEGEN.md §5.1, DECISIONS 453).
+func (s *stage) checkDependentConstants(u *unit, es *emitSite) {
+	for _, c := range u.consts {
+		if heldDependent(c.c) {
+			u.reportGenConstruct(es, c.span(), diag.KindDependentConstant)
+		}
+	}
+}
+
+// heldDependent reports a constant whose type is, or holds, a dependent type.
+func heldDependent(c *Const) bool {
+	return typeHolds(&c.Type, isDependent)
+}
+
+func isDependent(t *TypeRef) bool { return t.Kind == types.TypeApp || t.Kind == types.DepUnion }
 
 // HoldsRecordValue reports a record or case value in v, itself or among its elements, keys and map values: a value no single gen/cpp literal writes, which its baked filler's statements build (CODEGEN.md §5.1, §5.13; DECISIONS 386).
 func HoldsRecordValue(v value.Value) bool {

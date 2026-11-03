@@ -81,6 +81,7 @@ const (
 	KindConstantString
 	KindDefineKey
 	KindDefineTable
+	KindDependentConstant
 	KindDependentDefault
 	KindDependentOutsideField
 	KindDependentType
@@ -124,6 +125,7 @@ const (
 	KindObject
 	KindOpenEnum
 	KindOpenEnumFn
+	KindOptionalConstant
 	KindOutPath
 	KindOutPaths
 	KindPackage
@@ -145,6 +147,7 @@ const (
 	KindRecordCycleThroughMethod
 	KindRecordFieldCycle
 	KindRecursiveVariantCase
+	KindRefConstant
 	KindRefinementBound
 	KindResolvedLookupResult
 	KindSelfReadNotAPath
@@ -172,6 +175,7 @@ const (
 	KindView
 	KindWayCaseField
 	KindWayDefineKey
+	KindWayDependentConstant
 	KindWayDependentDefault
 	KindWayDependentOutsideField
 	KindWayDependentType
@@ -184,10 +188,12 @@ const (
 	KindWayNeverDependent
 	KindWayOpenEnum
 	KindWayOpenEnumFn
+	KindWayOptionalConstant
 	KindWayRecordConstant
 	KindWayRecordCycleThroughMethod
 	KindWayRecordFieldCycle
 	KindWayRecursiveVariantCase
+	KindWayRefConstant
 	KindWayResolvedLookupResult
 	KindWaySelfReadNotAPath
 	KindWayTableField
@@ -231,6 +237,7 @@ var kindNames = [...]string{
 	"ConstantString",
 	"DefineKey",
 	"DefineTable",
+	"DependentConstant",
 	"DependentDefault",
 	"DependentOutsideField",
 	"DependentType",
@@ -274,6 +281,7 @@ var kindNames = [...]string{
 	"Object",
 	"OpenEnum",
 	"OpenEnumFn",
+	"OptionalConstant",
 	"OutPath",
 	"OutPaths",
 	"Package",
@@ -295,6 +303,7 @@ var kindNames = [...]string{
 	"RecordCycleThroughMethod",
 	"RecordFieldCycle",
 	"RecursiveVariantCase",
+	"RefConstant",
 	"RefinementBound",
 	"ResolvedLookupResult",
 	"SelfReadNotAPath",
@@ -322,6 +331,7 @@ var kindNames = [...]string{
 	"View",
 	"WayCaseField",
 	"WayDefineKey",
+	"WayDependentConstant",
 	"WayDependentDefault",
 	"WayDependentOutsideField",
 	"WayDependentType",
@@ -334,10 +344,12 @@ var kindNames = [...]string{
 	"WayNeverDependent",
 	"WayOpenEnum",
 	"WayOpenEnumFn",
+	"WayOptionalConstant",
 	"WayRecordConstant",
 	"WayRecordCycleThroughMethod",
 	"WayRecordFieldCycle",
 	"WayRecursiveVariantCase",
+	"WayRefConstant",
 	"WayResolvedLookupResult",
 	"WaySelfReadNotAPath",
 	"WayTableField",
@@ -361,6 +373,7 @@ var kindWords = [...]string{
 	"a constant string",
 	"a lookup parameter that refs a load.defines table",
 	"define table",
+	"a constant whose type holds a dependent type",
 	"a default holding a dependent value, read by a decoder",
 	"a dependent value outside a record field (in a map, a literal union, or a value or result of its own)",
 	"a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field",
@@ -404,6 +417,7 @@ var kindWords = [...]string{
 	"an object",
 	"an enum its package's emit of this target opens",
 	"a translated function that takes or reads an enum its package's emit of this target opens",
+	"a constant of an optional type",
 	"a path string or a root name",
 	"a path string, a root name or a list of them",
 	"package",
@@ -425,6 +439,7 @@ var kindWords = [...]string{
 	"a by-value cycle of records through a stored method result",
 	"a cycle of records through their fields",
 	"a variant that recurses through a case",
+	"a constant of a ref type",
 	"refinement bound",
 	"a lookup method whose result holds a ref resolved at load",
 	"a read of self that is not a path of fields",
@@ -452,6 +467,7 @@ var kindWords = [...]string{
 	"view",
 	"type it as the variant and test the case with is",
 	"take an enum parameter instead",
+	"hold the value in a record field beside its discriminant, in a let of that record",
 	"drop the default, or make the field optional",
 	"hold the value in a record field beside its discriminant",
 	"decide it by an enum field of the same record, or by a ref into a let that is not `@reload`",
@@ -464,10 +480,12 @@ var kindWords = [...]string{
 	"give it a branch that is not Never, or remove it",
 	"emit this package in types mode too, or take the enum out of open",
 	"decide on the member's Known check in your own code, or take the enum out of open",
+	"make it a field of a record let",
 	"make it a let",
 	"return a ref to the record instead",
 	"make one field of the cycle optional or a ref",
 	"hold the recursion through an optional field or a ref",
+	"make it a field of a record let",
 	"not before v0.2: emit the package in baked mode meanwhile",
 	"read self through paths of fields (self.a.b)",
 	"hold it in a keyed list",

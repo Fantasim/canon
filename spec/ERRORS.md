@@ -118,6 +118,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `ConstantString` | a constant string | `E1119`, `E8009` |
 | `DefineKey` | a lookup parameter that refs a load.defines table | `E8019` |
 | `DefineTable` | define table | `E1627` |
+| `DependentConstant` | a constant whose type holds a dependent type | `E8019` |
 | `DependentDefault` | a default holding a dependent value, read by a decoder | `E8019` |
 | `DependentOutsideField` | a dependent value outside a record field (in a map, a literal union, or a value or result of its own) | `E8019` |
 | `DependentType` | a dependent value decided through an optional, a record parameter, a ref into a `@reload` value or a ref into an enclosing record's table field | `E8019` |
@@ -161,6 +162,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `Object` | an object | `E7110` |
 | `OpenEnum` | an enum its package's emit of this target opens | `E8019` |
 | `OpenEnumFn` | a translated function that takes or reads an enum its package's emit of this target opens | `E8019` |
+| `OptionalConstant` | a constant of an optional type | `E8019` |
 | `OutPath` | a path string or a root name | `E8009` |
 | `OutPaths` | a path string, a root name or a list of them | `E8009` |
 | `Package` | package | `E3027` |
@@ -182,6 +184,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `RecordCycleThroughMethod` | a by-value cycle of records through a stored method result | `E8019` |
 | `RecordFieldCycle` | a cycle of records through their fields | `E8019` |
 | `RecursiveVariantCase` | a variant that recurses through a case | `E8019` |
+| `RefConstant` | a constant of a ref type | `E8019` |
 | `RefinementBound` | refinement bound | `E3015` |
 | `ResolvedLookupResult` | a lookup method whose result holds a ref resolved at load | `E8019` |
 | `SelfReadNotAPath` | a read of self that is not a path of fields | `E8019` |
@@ -209,6 +212,7 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `View` | view | `E1133` |
 | `WayCaseField` | type it as the variant and test the case with is | `E8019` |
 | `WayDefineKey` | take an enum parameter instead | `E8019` |
+| `WayDependentConstant` | hold the value in a record field beside its discriminant, in a let of that record | `E8019` |
 | `WayDependentDefault` | drop the default, or make the field optional | `E8019` |
 | `WayDependentOutsideField` | hold the value in a record field beside its discriminant | `E8019` |
 | `WayDependentType` | decide it by an enum field of the same record, or by a ref into a let that is not `@reload` | `E8019` |
@@ -221,10 +225,12 @@ wording is a variant, and a closed set of words is a `Kind`.
 | `WayNeverDependent` | give it a branch that is not Never, or remove it | `E8019` |
 | `WayOpenEnum` | emit this package in types mode too, or take the enum out of open | `E8019` |
 | `WayOpenEnumFn` | decide on the member's Known check in your own code, or take the enum out of open | `E8019` |
+| `WayOptionalConstant` | make it a field of a record let | `E8019` |
 | `WayRecordConstant` | make it a let | `E8019` |
 | `WayRecordCycleThroughMethod` | return a ref to the record instead | `E8019` |
 | `WayRecordFieldCycle` | make one field of the cycle optional or a ref | `E8019` |
 | `WayRecursiveVariantCase` | hold the recursion through an optional field or a ref | `E8019` |
+| `WayRefConstant` | make it a field of a record let | `E8019` |
 | `WayResolvedLookupResult` | not before v0.2: emit the package in baked mode meanwhile | `E8019` |
 | `WaySelfReadNotAPath` | read self through paths of fields (self.a.b) | `E8019` |
 | `WayTableField` | hold it in a keyed list | `E8019` |

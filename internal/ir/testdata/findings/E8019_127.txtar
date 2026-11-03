@@ -1,0 +1,43 @@
+CODEGEN.md §5.1, DECISIONS 453: gen/go writes no constant of a ref type: RefConstant.
+-- a/a.canon --
+package a
+
+/// Events.
+enum Event {
+  /// A.
+  a
+  /// B.
+  b
+}
+
+/// A row.
+record Row {
+  /// Event.
+  event: Event
+  /// N.
+  n: Int
+}
+
+/// Rows.
+let rows: [Row] keyed by event = [
+  { event: a, n: 1 },
+  { event: b, n: 2 },
+]
+
+/// A holder.
+record Holder {
+  /// A ref.
+  r: ref rows
+}
+
+/// A ref constant.
+const R = Holder { r: a }.r
+
+emit go { out: "@features/a", package: "a" }
+-- a.R.json --
+"a"
+-- findings.txt --
+error[E8019]  a/a.canon:32:7
+  emit go in baked mode cannot generate a constant of a ref type; make it a field of a record let
+
+1 error, 0 warnings in 1 package (…)

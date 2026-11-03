@@ -1,0 +1,40 @@
+CODEGEN.md §5.1, DECISIONS 453: gen/ts writes a constant of a ref type as its key, so check accepts it (0 errors).
+-- a/a.canon --
+package a
+
+/// Events.
+enum Event {
+  /// A.
+  a
+  /// B.
+  b
+}
+
+/// A row.
+record Row {
+  /// Event.
+  event: Event
+  /// N.
+  n: Int
+}
+
+/// Rows.
+let rows: [Row] keyed by event = [
+  { event: a, n: 1 },
+  { event: b, n: 2 },
+]
+
+/// A holder.
+record Holder {
+  /// A ref.
+  r: ref rows
+}
+
+/// A ref constant.
+const R = Holder { r: a }.r
+
+emit ts { out: "@features/a/a.ts" }
+-- a.R.json --
+"a"
+-- findings.txt --
+0 errors, 0 warnings in 1 package (…)

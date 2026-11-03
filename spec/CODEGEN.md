@@ -1030,6 +1030,8 @@ The samples are excerpts; complete generated files are in [§10](#10-goldens).
 
 A list or map of kinds follows the list or map row (DECISIONS 438).
 
+A constant of an optional or a ref type is `E8019` (`OptionalConstant`, `RefConstant`) in a go or cpp emit, TypeScript writing it as `T | null` or its key; a constant whose type holds a dependent type (in a list, a map or an optional too) is `E8019` (`DependentConstant`) in every code emit, one finding per constant: `DependentConstant`, then `RecordConstant`, then `OptionalConstant` or `RefConstant` (DECISIONS 453).
+
 ### 5.2 Enums
 
 ```

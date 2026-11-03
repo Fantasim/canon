@@ -1,0 +1,43 @@
+CODEGEN.md §5.1, DECISIONS 453: an optional ref constant is one OptionalConstant in a gen/go emit, not also RefConstant.
+-- a/a.canon --
+package a
+
+/// Events.
+enum Event {
+  /// A.
+  a
+  /// B.
+  b
+}
+
+/// A row.
+record Row {
+  /// Event.
+  event: Event
+  /// N.
+  n: Int
+}
+
+/// Rows.
+let rows: [Row] keyed by event = [
+  { event: a, n: 1 },
+  { event: b, n: 2 },
+]
+
+/// A holder.
+record Holder {
+  /// An optional ref.
+  o: (ref rows)?
+}
+
+/// An optional ref constant.
+const OR = Holder { o: b }.o
+
+emit go { out: "@features/a", package: "a" }
+-- a.OR.json --
+"b"
+-- findings.txt --
+error[E8019]  a/a.canon:32:7
+  emit go in baked mode cannot generate a constant of an optional type; make it a field of a record let
+
+1 error, 0 warnings in 1 package (…)
