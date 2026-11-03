@@ -2269,6 +2269,7 @@ var Registry = []Def{
 			{Name: "reached", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option"},
 			{Name: "idType", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list"},
 			{Name: "finder", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)"},
+			{Name: "derived", Args: []Arg{{Name: "target", Type: ArgTypeName}, {Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{target}: {name} is generated for both {a} and {b}, and @{target}(name:) renames neither; rename one of them in Canon"},
 			{Name: "define", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "#define {name} is written for both {a} and {b}; change one prefix, or rename one declaration"},
 			{Name: "foreignDefine", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{name} is declared for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a} with @cpp(name:), or use a type of that package here"},
 			{Name: "foreignId", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "a", Type: ArgTypeName}, {Name: "b", Type: ArgTypeName}}, Template: "{name} is declared for the id {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here"},
@@ -7150,29 +7151,34 @@ func (codeE8005) AtFinder(span source.Span, target string, name string, a string
 	return newBuilder(&Registry[261], 3, span, target, name, a, b)
 }
 
+// AtDerived reports: {target}: {name} is generated for both {a} and {b}, and @{target}(name:) renames neither; rename one of them in Canon
+func (codeE8005) AtDerived(span source.Span, target string, name string, a string, b string) *Builder {
+	return newBuilder(&Registry[261], 4, span, target, name, a, b)
+}
+
 // AtDefine reports: #define {name} is written for both {a} and {b}; change one prefix, or rename one declaration
 func (codeE8005) AtDefine(span source.Span, name string, a string, b string) *Builder {
-	return newBuilder(&Registry[261], 4, span, name, a, b)
+	return newBuilder(&Registry[261], 5, span, name, a, b)
 }
 
 // AtForeignDefine reports: {name} is declared for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a} with @cpp(name:), or use a type of that package here
 func (codeE8005) AtForeignDefine(span source.Span, name string, a string, b string) *Builder {
-	return newBuilder(&Registry[261], 5, span, name, a, b)
+	return newBuilder(&Registry[261], 6, span, name, a, b)
 }
 
 // AtForeignId reports: {name} is declared for the id {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here
 func (codeE8005) AtForeignId(span source.Span, name string, a string, b string) *Builder {
-	return newBuilder(&Registry[261], 6, span, name, a, b)
+	return newBuilder(&Registry[261], 7, span, name, a, b)
 }
 
 // AtForeignDerived reports: {name} is derived from {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a}, or use a type of that package here
 func (codeE8005) AtForeignDerived(span source.Span, name string, a string, b string) *Builder {
-	return newBuilder(&Registry[261], 7, span, name, a, b)
+	return newBuilder(&Registry[261], 8, span, name, a, b)
 }
 
 // AtForeignFixed reports: {name} is declared by the generator for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; no @cpp(name:) renames it, so use a type of that package here
 func (codeE8005) AtForeignFixed(span source.Span, name string, a string, b string) *Builder {
-	return newBuilder(&Registry[261], 8, span, name, a, b)
+	return newBuilder(&Registry[261], 9, span, name, a, b)
 }
 
 // E8007: a Go output under no root mapped by `go_module` (CODEGEN.md §2.8).

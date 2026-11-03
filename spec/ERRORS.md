@@ -392,7 +392,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 593 messages.
+The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 594 messages.
 
 ## W00xx: Lints
 
@@ -1343,6 +1343,7 @@ Owner: CODEGEN.md, WIRE.md.
 | E8005 | reached | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; give one of their emits a distinct package option` |
 | E8005 | idType | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}; hold one of them in a keyed list` |
 | E8005 | finder | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both @stable fields {a} and {b}; rename one of the fields (a lookup is named after the Canon field)` |
+| E8005 | derived | target:Name, name:Name, a:Name, b:Name | `{target}: {name} is generated for both {a} and {b}, and @{target}(name:) renames neither; rename one of them in Canon` |
 | E8005 | define | name:Name, a:Name, b:Name | `#define {name} is written for both {a} and {b}; change one prefix, or rename one declaration` |
 | E8005 | foreignDefine | name:Name, a:Name, b:Name | `{name} is declared for {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename {a} with @cpp(name:), or use a type of that package here` |
 | E8005 | foreignId | name:Name, a:Name, b:Name | `{name} is declared for the id {a} and written as a #define for {b}, in a package this one does not read, so its headers cannot guard it; rename that entry, or use a type of that package here` |
