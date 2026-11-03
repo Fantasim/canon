@@ -266,8 +266,7 @@ const (
 	bakedRowsFormat   = "std::vector<%s> rows_;"
 	findDefFormat     = "const %s* %s::%s(%s " + keyParam + ") const"
 	findName          = "Find"
-	rowsTable         = "kRows" // the rows' positions beside kKeys, the keys sorted
-	rowHitFormat      = "&rows_[" + rowsTable + "[%s]]"
+	rowHitFormat      = "&rows_[" + indexFormat + "]" // the row at the position beside the key found: a table's rows (CODEGEN.md §5.9)
 	cppNullptr        = "nullptr"
 	foreignWireLine   = indentUnit + "const std::string_view " + wireParam + " = " + ir.CppToWire + "(" + keyParam + ");\n"
 )
@@ -341,7 +340,6 @@ const (
 	openRetiredSigFormat = "bool " + ir.CppIsRetired + "(const %s& v)"
 	openToCodeSigFormat  = "std::optional<%s> " + ir.CppToCode + "(const %s& v)"
 	idFromWireSigFormat  = "std::optional<%s> %s(std::string_view key)"
-	tableLineFormat      = indentUnit + "static constexpr std::array<%s, %d> %s = %s;\n"
 	wireKeyLineFormat    = indentUnit + "const std::string_view key = %s(v);\n"
 	codeLineFormat       = indentUnit + "const %[1]s code = static_cast<%[1]s>(v);\n"
 	sizeCallFormat       = "%s.size()"

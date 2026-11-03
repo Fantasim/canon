@@ -68,17 +68,17 @@ var bakedFindShapes = []struct {
 	{"source defines Find", "source", "const Entry* Names::Find(std::string_view key) const {\n"},
 	{"source defines FindBy", "source", "const Entry* Names::FindByAlias(std::string_view key) const {\n"},
 	{"table's Find is its id enum's FromWire", "source", "const std::optional<KindId> id = KindIdFromWire(key);"},
-	{"a String key sorted by bytes", "source", "static constexpr std::array<std::string_view, 8> kKeys = {\"Z\", \"_\", \"a\", std::string_view(\"a\\000b\", 3), \"ab\", \"pre\", \"prefix\", \"é\"};"},
-	{"an Int key sorted by value", "source", "std::array<int64_t, 9> kKeys = {\n        canon::kIntMin,\n        -4611686018427387904,\n        -6,\n        -5,\n        0,\n        6,\n        7,\n        4611686018427387904,\n        canon::kIntMax,\n    };\n"},
-	{"an Int key sorted by value: rows", "source", "static constexpr std::array<uint32_t, 9> kRows = {4, 5, 8, 1, 2, 7, 0, 3, 6};"},
-	{"an enum key by position", "source", "static constexpr std::array<Tone, 3> kKeys = {Tone::first, Tone::second, Tone::third};"},
-	{"an enum key by position: rows", "source", "static constexpr std::array<uint32_t, 3> kRows = {1, 2, 0};"},
-	{"a @codes enum key by code", "source", "static constexpr std::array<Rank, 3> kKeys = {Rank::low, Rank::mid, Rank::high};"},
-	{"a ref held as an id by position", "source", "static constexpr std::array<KindId, 3> kKeys = {KindId::zeta, KindId::mid, KindId::beta};"},
-	{"no row", "source", "static constexpr std::array<std::string_view, 0> kKeys = {};"},
+	{"a String key sorted by bytes", "source", "constexpr std::array<std::string_view, 8> kNamesFindKeys = {\"Z\", \"_\", \"a\", std::string_view(\"a\\000b\", 3), \"ab\", \"pre\", \"prefix\", \"é\"};"},
+	{"an Int key sorted by value", "source", "constexpr std::array<int64_t, 9> kNumbersFindKeys = {\n    canon::kIntMin,\n    -4611686018427387904,\n    -6,\n    -5,\n    0,\n    6,\n    7,\n    4611686018427387904,\n    canon::kIntMax,\n};\n"},
+	{"an Int key sorted by value: rows", "source", "constexpr std::array<uint32_t, 9> kNumbersFindRows = {4, 5, 8, 1, 2, 7, 0, 3, 6};"},
+	{"an enum key by position", "source", "constexpr std::array<Tone, 3> kTonesFindKeys = {Tone::first, Tone::second, Tone::third};"},
+	{"an enum key by position: rows", "source", "constexpr std::array<uint32_t, 3> kTonesFindRows = {1, 2, 0};"},
+	{"a @codes enum key by code", "source", "constexpr std::array<Rank, 3> kRanksFindKeys = {Rank::low, Rank::mid, Rank::high};"},
+	{"a ref held as an id by position", "source", "constexpr std::array<KindId, 3> kByKindFindKeys = {KindId::zeta, KindId::mid, KindId::beta};"},
+	{"no row", "source", "constexpr std::array<std::string_view, 0> kEmptiesFindKeys = {};"},
 }
 
-// CODEGEN.md §5.9, §7.3, DECISIONS 432: Find and FindBy<F> of a baked container are declared in the header and defined in the source over sorted constant arrays, in C++'s order of each key kind.
+// CODEGEN.md §5.9, §7.3, DECISIONS 432: Find and FindBy<F> of a baked container are declared in the header and defined in the source over sorted constant arrays of the .gen.cpp's detail namespace, in C++'s order of each key kind.
 func TestBakedFindDefinedInSource(t *testing.T) {
 	t.Parallel()
 	header, source := generatedTexts(t, finderPackage())

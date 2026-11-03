@@ -217,105 +217,135 @@ std::optional<Rank> RankFromCode(uint8_t code) {
     return kRankMembers[i];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<Tone, 3> kTonesFindKeys = {Tone::zed, Tone::alpha, Tone::mid};
+constexpr std::array<uint32_t, 3> kTonesFindRows = {1, 2, 0};
+}  // namespace
+}  // namespace detail
+
 const ToneRow* Tones::Find(Tone key) const {
-    static constexpr std::array<Tone, 3> kKeys = {Tone::zed, Tone::alpha, Tone::mid};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 2, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kTonesFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kTonesFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kTonesFindKeys.size() && detail::kTonesFindKeys[lo] == key) return &rows_[detail::kTonesFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<Tone, 2> kPicksFindKeys = {Tone::zed, Tone::mid};
+constexpr std::array<uint32_t, 2> kPicksFindRows = {1, 0};
+}  // namespace
+}  // namespace detail
 
 const PickRow* Picks::Find(Tone key) const {
-    static constexpr std::array<Tone, 2> kKeys = {Tone::zed, Tone::mid};
-    static constexpr std::array<uint32_t, 2> kRows = {1, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kPicksFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kPicksFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kPicksFindKeys.size() && detail::kPicksFindKeys[lo] == key) return &rows_[detail::kPicksFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<Tone, 2> kOverFindKeys = {Tone::zed, Tone::mid};
+constexpr std::array<uint32_t, 2> kOverFindRows = {0, 1};
+}  // namespace
+}  // namespace detail
 
 const OverRow* Over::Find(Tone key) const {
-    static constexpr std::array<Tone, 2> kKeys = {Tone::zed, Tone::mid};
-    static constexpr std::array<uint32_t, 2> kRows = {0, 1};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kOverFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kOverFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kOverFindKeys.size() && detail::kOverFindKeys[lo] == key) return &rows_[detail::kOverFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<Rank, 3> kRanksFindKeys = {Rank::mid, Rank::zulu, Rank::alpha};
+constexpr std::array<uint32_t, 3> kRanksFindRows = {1, 2, 0};
+}  // namespace
+}  // namespace detail
 
 const RankRow* Ranks::Find(Rank key) const {
-    static constexpr std::array<Rank, 3> kKeys = {Rank::mid, Rank::zulu, Rank::alpha};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 2, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kRanksFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kRanksFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kRanksFindKeys.size() && detail::kRanksFindKeys[lo] == key) return &rows_[detail::kRanksFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<Rank, 3> kRpicksFindKeys = {Rank::mid, Rank::zulu, Rank::alpha};
+constexpr std::array<uint32_t, 3> kRpicksFindRows = {1, 0, 2};
+}  // namespace
+}  // namespace detail
 
 const RpickRow* Rpicks::Find(Rank key) const {
-    static constexpr std::array<Rank, 3> kKeys = {Rank::mid, Rank::zulu, Rank::alpha};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 0, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kRpicksFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kRpicksFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kRpicksFindKeys.size() && detail::kRpicksFindKeys[lo] == key) return &rows_[detail::kRpicksFindRows[lo]];
     return nullptr;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<Rank, 3> kRoverFindKeys = {Rank::mid, Rank::zulu, Rank::alpha};
+constexpr std::array<uint32_t, 3> kRoverFindRows = {1, 2, 0};
+}  // namespace
+}  // namespace detail
+
 const RoverRow* Rover::Find(Rank key) const {
-    static constexpr std::array<Rank, 3> kKeys = {Rank::mid, Rank::zulu, Rank::alpha};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 2, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kRoverFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kRoverFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kRoverFindKeys.size() && detail::kRoverFindKeys[lo] == key) return &rows_[detail::kRoverFindRows[lo]];
     return nullptr;
 }
 

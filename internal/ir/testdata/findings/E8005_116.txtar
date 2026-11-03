@@ -1,0 +1,59 @@
+CODEGEN.md §5.9, §7.9, ERRORS.md E8005 (DECISIONS 442, amends 403, 432, 435): a name built on the Canon names of a container and its lookup (the tables detail::k<C>FindKeys, k<C>FindRows of a keyed list's Find, k<C>FindBy<F>Keys, k<C>FindBy<F>Rows of a @stable field) is `foreignDerived`, whose way out is renaming that container or field: @cpp(name:) renames none of them.
+-- a/a.canon --
+package a
+
+/// Words; the defines keep the names.
+enum Word @cpp(defines: "") {
+  /// Spelled like b's sorted keys of Find.
+  kThingsFindKeys
+  /// Spelled like b's row positions of Find.
+  kThingsFindRows
+  /// Spelled like b's sorted keys of FindByCode.
+  kStatusesFindByCodeKeys
+  /// Spelled like b's row positions of FindByCode.
+  kStatusesFindByCodeRows
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- b/b.canon --
+package b
+
+/// A thing.
+record Thing {
+  /// Its key.
+  a: Int
+}
+
+/// A status.
+record Status {
+  /// Its code.
+  code: UInt16 @stable
+}
+
+/// The things.
+let things: [Thing] keyed by a = [{ a: 1 }]
+
+/// The statuses.
+let statuses: stable table Status = {
+  open { code: 1 }
+}
+
+emit cpp { out: "@features/b", namespace: "b", mode: baked }
+-- b.things.json --
+[{ "a": 1 }]
+-- b.statuses.json --
+{ "open": { "code": 1 } }
+-- findings.txt --
+error[E8005]  b/b.canon:12:3
+  kStatusesFindByCodeKeys is derived from b.Status.code and written as a #define for a.Word.kStatusesFindByCodeKeys, in a package this one does not read, so its headers cannot guard it; rename b.Status.code, or use a type of that package here
+
+error[E8005]  b/b.canon:12:3
+  kStatusesFindByCodeRows is derived from b.Status.code and written as a #define for a.Word.kStatusesFindByCodeRows, in a package this one does not read, so its headers cannot guard it; rename b.Status.code, or use a type of that package here
+
+error[E8005]  b/b.canon:16:5
+  kThingsFindKeys is derived from b.things and written as a #define for a.Word.kThingsFindKeys, in a package this one does not read, so its headers cannot guard it; rename b.things, or use a type of that package here
+
+error[E8005]  b/b.canon:16:5
+  kThingsFindRows is derived from b.things and written as a #define for a.Word.kThingsFindRows, in a package this one does not read, so its headers cannot guard it; rename b.things, or use a type of that package here
+
+4 errors, 0 warnings in 2 packages (…)

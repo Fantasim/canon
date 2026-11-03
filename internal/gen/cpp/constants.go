@@ -130,7 +130,6 @@ const (
 	enumArg            = "v"
 	codeField          = "code"
 	cppSize            = "size_t"
-	keysTable          = "kKeys" // a keyed container lookup's function-local sorted keys (CODEGEN.md §5.9)
 	wireParam          = "wire"
 	loVar              = "lo"
 )

@@ -40,11 +40,6 @@ func (s search) text() string {
 	return fmt.Sprintf(lowerBoundText, s.sig, s.prelude, s.keys, s.key, s.hit, s.miss, fmt.Sprintf(at, midVar), fmt.Sprintf(at, loVar))
 }
 
-// table is a static constexpr local array of a function the .gen.cpp defines, one item per line past maxInline.
-func table(typ, name string, items []string) string {
-	return fmt.Sprintf(tableLineFormat, typ, len(items), name, indentBlock(braced(items)))
-}
-
 // byWire are the member positions stable-sorted by wire bytes: of equal wires, the first declared comes first (CODEGEN.md §5.2).
 func byWire(members []enumMember) []int {
 	return sortedPositions(members, func(a, b enumMember) int { return strings.Compare(a.wire, b.wire) })

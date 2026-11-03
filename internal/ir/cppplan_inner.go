@@ -18,6 +18,7 @@ func (pl *CppNamePlan) declareDetail() {
 	pl.declareElems(sc)
 	if pl.baked() {
 		pl.declareBakedDetail(sc, pl.accessScope(access))
+		pl.declareFindTables(sc)
 		pl.reserveBulk()
 	} else {
 		members = pl.declareAccess(access)

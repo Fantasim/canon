@@ -1505,37 +1505,47 @@ std::optional<RowsKind> RowsKindFromWire(std::string_view wire) {
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kHeaderColumnsFindKeys = {"player_id", "timestamp_ns"};
+constexpr std::array<uint32_t, 2> kHeaderColumnsFindRows = {1, 0};
+}  // namespace
+}  // namespace detail
+
 const Column* HeaderColumns::Find(std::string_view key) const {
-    static constexpr std::array<std::string_view, 2> kKeys = {"player_id", "timestamp_ns"};
-    static constexpr std::array<uint32_t, 2> kRows = {1, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kHeaderColumnsFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kHeaderColumnsFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kHeaderColumnsFindKeys.size() && detail::kHeaderColumnsFindKeys[lo] == key) return &rows_[detail::kHeaderColumnsFindRows[lo]];
     return nullptr;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 5> kProvenanceColumnsFindKeys = {"batch_seq", "boot_id", "event_version", "producer_id", "row_no"};
+constexpr std::array<uint32_t, 5> kProvenanceColumnsFindRows = {3, 2, 0, 1, 4};
+}  // namespace
+}  // namespace detail
+
 const ProvenanceColumn* ProvenanceColumns::Find(std::string_view key) const {
-    static constexpr std::array<std::string_view, 5> kKeys = {"batch_seq", "boot_id", "event_version", "producer_id", "row_no"};
-    static constexpr std::array<uint32_t, 5> kRows = {3, 2, 0, 1, 4};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kProvenanceColumnsFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kProvenanceColumnsFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kProvenanceColumnsFindKeys.size() && detail::kProvenanceColumnsFindKeys[lo] == key) return &rows_[detail::kProvenanceColumnsFindRows[lo]];
     return nullptr;
 }
 

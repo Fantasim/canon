@@ -1,0 +1,25 @@
+CODEGEN.md §3.5, §5.9, DECISIONS 432, 435: a keyed list's Find reads detail::k<C>FindKeys, its sorted keys, in its .gen.cpp's unnamed namespace, a name local to that file that goes through the C++ name plan, so a record renamed like it (which detail's name would hide) is E8005.
+-- a/a.canon --
+package a
+
+/// A thing.
+record Thing {
+  /// Its key.
+  a: Int
+}
+
+/// Named like the sorted-keys table.
+record Other @cpp(name: "kThingsFindKeys") {
+  /// Its value.
+  v: Int
+}
+
+/// The things.
+let things: [Thing] keyed by a = [{ a: 1 }]
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:10:8
+  cpp: kThingsFindKeys is generated for both a.Other and a.things; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

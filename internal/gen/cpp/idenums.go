@@ -2,7 +2,6 @@ package cppgen
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/types"
@@ -75,11 +74,6 @@ func (g *gen) idFromWires() {
 		hit := fmt.Sprintf(staticCastFormat, s.name, fmt.Sprintf(indexFormat, order, loVar))
 		g.c.write(byWireSearch(fmt.Sprintf(idFromWireSigFormat, s.name, h.FromWire), keyParam, wires, order, hit))
 	}
-}
-
-// indentBlock indents every line of a multi-line initializer after its first by one level.
-func indentBlock(s string) string {
-	return strings.ReplaceAll(s, newline, newline+indentUnit)
 }
 
 // declareBakedNames declares a baked emit's own namespace names: each id enum and its FromWire, each value's accessors (CODEGEN.md §3.5, §5.3, §5.9).

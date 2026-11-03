@@ -11,6 +11,11 @@ type CppFindBy struct {
 	Func, Keys, Index string
 }
 
+// CppFindTables are a baked container lookup's sorted keys and their rows' positions, detail::k<C><Lookup>Keys and k<C><Lookup>Rows of its .gen.cpp, <Lookup> being Find or FindBy<F> (CODEGEN.md §5.9, DECISIONS 432, 435).
+type CppFindTables struct {
+	Keys, Rows string
+}
+
 // CppVector are a translated fn's conformance vector struct <Owner><Fn>Vector and its table k<Owner><Fn> (CONFORMANCE.md §7.2).
 type CppVector struct {
 	Struct, Table string
@@ -31,6 +36,47 @@ func (pl *CppNamePlan) FindBy(f *Field) CppFindBy {
 	upper := cppUpperCamel(f.Name)
 	by := cppByPrefix + upper
 	return CppFindBy{Func: goFindByPrefix + upper, Keys: by + cppKeys + underscore, Index: by + underscore}
+}
+
+// FindTables are the tables of keyed list v's Find, which the .gen.cpp holds in an unnamed namespace of detail, local to it (CODEGEN.md §5.9).
+func (pl *CppNamePlan) FindTables(v *Value) CppFindTables {
+	return pl.lookupTables(pl.ContainerName(v), GoFind)
+}
+
+// FindByTables are the tables of FindBy<F> of @stable field f of container v.
+func (pl *CppNamePlan) FindByTables(v *Value, f *Field) CppFindTables {
+	return pl.lookupTables(pl.ContainerName(v), pl.FindBy(f).Func)
+}
+
+// lookupTables are the tables k<C><Lookup>Keys and k<C><Lookup>Rows of lookup (Find or FindBy<F>) of container.
+func (pl *CppNamePlan) lookupTables(container, lookup string) CppFindTables {
+	base := cppConstPrefix + container + lookup
+	return CppFindTables{Keys: base + cppKeys, Rows: base + cppUpperCamel(GoRows)}
+}
+
+// declareFindTables declares, in detail, the tables of each baked container's Find (a keyed list's) and FindBy<F>, which its .gen.cpp holds in an unnamed namespace local to it: k<C>FindKeys and k<C>FindRows, k<C>FindBy<F>Keys and k<C>FindBy<F>Rows (CODEGEN.md §5.9, DECISIONS 432, 435).
+func (pl *CppNamePlan) declareFindTables(detail *nameScope) {
+	for _, v := range pl.values {
+		rec := containerRecord(v)
+		if !IsContainer(v) || rec == nil {
+			continue
+		}
+		if v.Type.KeyedBy != nil {
+			pl.declareFindPair(detail, pl.FindTables(v), pl.valueOrigin(v), v)
+		}
+		for _, f := range rec.Fields {
+			if findsBy(f) {
+				pl.declareFindPair(detail, pl.FindByTables(v, f), rec.QName()+qnameSep+f.Name, f)
+			}
+		}
+	}
+}
+
+// declareFindPair declares a lookup's two tables, built on Canon names @cpp(name:) does not change (E8005 foreignDerived).
+func (pl *CppNamePlan) declareFindPair(detail *nameScope, t CppFindTables, origin string, item any) {
+	for _, n := range []string{t.Keys, t.Rows} {
+		pl.noteForeign(detail, n, foreignNote{derived: true}, func() { pl.localInner(detail, n, origin, item, meetsLocal) })
+	}
 }
 
 // SnapshotGetter is the snapshot's getter of @reload value v, Get + UpperCamel(v) or its @cpp(name:) (CODEGEN.md §3.3, §5.11).

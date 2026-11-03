@@ -150,54 +150,69 @@ const Kind* Kinds::Find(std::string_view key) const {
     return &rows_[static_cast<size_t>(*id)];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<KindId, 3> kByKindFindKeys = {KindId::zeta, KindId::mid, KindId::beta};
+constexpr std::array<uint32_t, 3> kByKindFindRows = {1, 0, 2};
+}  // namespace
+}  // namespace detail
+
 const KindRow* ByKind::Find(KindId key) const {
-    static constexpr std::array<KindId, 3> kKeys = {KindId::zeta, KindId::mid, KindId::beta};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 0, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kByKindFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kByKindFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kByKindFindKeys.size() && detail::kByKindFindKeys[lo] == key) return &rows_[detail::kByKindFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<KindId, 3> kOuterFindKeys = {KindId::zeta, KindId::mid, KindId::beta};
+constexpr std::array<uint32_t, 3> kOuterFindRows = {2, 1, 0};
+}  // namespace
+}  // namespace detail
 
 const OuterRow* Outer::Find(KindId key) const {
-    static constexpr std::array<KindId, 3> kKeys = {KindId::zeta, KindId::mid, KindId::beta};
-    static constexpr std::array<uint32_t, 3> kRows = {2, 1, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kOuterFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kOuterFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kOuterFindKeys.size() && detail::kOuterFindKeys[lo] == key) return &rows_[detail::kOuterFindRows[lo]];
     return nullptr;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<KindId, 3> kDeepFindKeys = {KindId::zeta, KindId::mid, KindId::beta};
+constexpr std::array<uint32_t, 3> kDeepFindRows = {0, 2, 1};
+}  // namespace
+}  // namespace detail
+
 const DeepRow* Deep::Find(KindId key) const {
-    static constexpr std::array<KindId, 3> kKeys = {KindId::zeta, KindId::mid, KindId::beta};
-    static constexpr std::array<uint32_t, 3> kRows = {0, 2, 1};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kDeepFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kDeepFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kDeepFindKeys.size() && detail::kDeepFindKeys[lo] == key) return &rows_[detail::kDeepFindRows[lo]];
     return nullptr;
 }
 

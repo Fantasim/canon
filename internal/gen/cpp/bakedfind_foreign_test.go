@@ -99,10 +99,10 @@ func TestBakedFindForeignIDKeyShape(t *testing.T) {
 	for _, c := range []struct{ file, text string }{
 		{header, "    const Thing* Find(::find::b::RowId row) const;\n"},
 		{source, "const Thing* Things::Find(::find::b::RowId key) const {\n"},
-		{source, "    static constexpr std::array<std::string_view, 3> kKeys = {\"beta\", \"mid\", \"zeta\"};\n"},
-		{source, "    static constexpr std::array<uint32_t, 3> kRows = {2, 0, 1};\n"},
+		{source, "constexpr std::array<std::string_view, 3> kThingsFindKeys = {\"beta\", \"mid\", \"zeta\"};\n"},
+		{source, "constexpr std::array<uint32_t, 3> kThingsFindRows = {2, 0, 1};\n"},
 		{source, "    const std::string_view wire = ToWire(key);\n"},
-		{source, "        if (kKeys[mid] < wire) {\n"},
+		{source, "        if (detail::kThingsFindKeys[mid] < wire) {\n"},
 	} {
 		if !strings.Contains(c.file, c.text) {
 			t.Errorf("lacks\n%s\nin\n%s", c.text, c.file)

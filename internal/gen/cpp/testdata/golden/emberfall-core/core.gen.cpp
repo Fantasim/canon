@@ -132,20 +132,25 @@ const Status* Statuses::Find(std::string_view key) const {
     return &rows_[static_cast<size_t>(*id)];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 2> kKindsFindKeys = {"a", "b"};
+constexpr std::array<uint32_t, 2> kKindsFindRows = {0, 1};
+}  // namespace
+}  // namespace detail
+
 const Kind* Kinds::Find(std::string_view key) const {
-    static constexpr std::array<std::string_view, 2> kKeys = {"a", "b"};
-    static constexpr std::array<uint32_t, 2> kRows = {0, 1};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kKindsFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kKindsFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kKindsFindKeys.size() && detail::kKindsFindKeys[lo] == key) return &rows_[detail::kKindsFindRows[lo]];
     return nullptr;
 }
 

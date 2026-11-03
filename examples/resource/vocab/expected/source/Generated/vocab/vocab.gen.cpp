@@ -651,6 +651,69 @@ std::optional<EventTypeId> EventTypeIdFromWire(std::string_view key) {
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<uint16_t, 27> kEventTypesFindByCodeKeys = {
+    0,
+    1,
+    2,
+    3,
+    5,
+    10,
+    12,
+    30,
+    31,
+    32,
+    50,
+    1000,
+    1001,
+    1031,
+    1050,
+    2030,
+    2031,
+    2090,
+    4000,
+    4010,
+    4050,
+    4080,
+    5000,
+    5001,
+    5010,
+    8000,
+    8100,
+};
+constexpr std::array<uint32_t, 27> kEventTypesFindByCodeRows = {
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+};
+}  // namespace
+}  // namespace detail
+
 const EventType* EventTypes::Find(std::string_view key) const {
     const std::optional<EventTypeId> id = EventTypeIdFromWire(key);
     if (!id) return nullptr;
@@ -658,75 +721,17 @@ const EventType* EventTypes::Find(std::string_view key) const {
 }
 
 const EventType* EventTypes::FindByCode(uint16_t key) const {
-    static constexpr std::array<uint16_t, 27> kKeys = {
-        0,
-        1,
-        2,
-        3,
-        5,
-        10,
-        12,
-        30,
-        31,
-        32,
-        50,
-        1000,
-        1001,
-        1031,
-        1050,
-        2030,
-        2031,
-        2090,
-        4000,
-        4010,
-        4050,
-        4080,
-        5000,
-        5001,
-        5010,
-        8000,
-        8100,
-    };
-    static constexpr std::array<uint32_t, 27> kRows = {
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-    };
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kEventTypesFindByCodeKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kEventTypesFindByCodeKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kEventTypesFindByCodeKeys.size() && detail::kEventTypesFindByCodeKeys[lo] == key) return &rows_[detail::kEventTypesFindByCodeRows[lo]];
     return nullptr;
 }
 

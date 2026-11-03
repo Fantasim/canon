@@ -66,8 +66,8 @@ func wideField(i int) string {
 	return fmt.Sprintf("  /// Member %d.\n  %s: %s\n", i, name, shapes[i%shapeCount])
 }
 
-// wideSource is package pkg of project (a): Wide, a variant with a wide case, and a table of
-// tableRows rows with a nested record, emitted in mode for the three targets.
+// wideSource is package pkg of project (a): Wide, a variant with a wide case, and a stable table of
+// tableRows rows with a nested record and a @stable field, emitted in mode for the three targets.
 func wideSource(pkg, mode string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "/// Project (a) in %s mode.\npackage %s\n\n", mode, pkg)
@@ -82,8 +82,8 @@ func wideSource(pkg, mode string) string {
 	for i := range wideMembers {
 		b.WriteString(wideField(i))
 	}
-	b.WriteString("}\n\n/// A row.\nrecord Row {\n  /// N.\n  n: Int = 0\n  /// Name.\n  name: String = \"\"\n  /// Switch.\n  on: Bool = false\n  /// Tags.\n  tags: [String] = []\n  /// Nested.\n  inner: Inner = {}\n}\n\n")
-	b.WriteString("/// The wide value.\nlet wide: Wide = {}\n\n/// The rows.\nlet rows: table Row = {\n")
+	b.WriteString("}\n\n/// A row.\nrecord Row {\n  /// N, the field FindByN looks rows up by.\n  n: Int = 0 @stable\n  /// Name.\n  name: String = \"\"\n  /// Switch.\n  on: Bool = false\n  /// Tags.\n  tags: [String] = []\n  /// Nested.\n  inner: Inner = {}\n}\n\n")
+	b.WriteString("/// The wide value.\nlet wide: Wide = {}\n\n/// The rows.\nlet rows: stable table Row = {\n")
 	for i := range tableRows {
 		fmt.Fprintf(&b, "  R%05d { n: %d, name: \"row %d\", on: true, tags: [\"t\", \"u%d\"], inner: { x: %d, y: \"y%d\" } }\n", i, i, i, i, i, i)
 	}

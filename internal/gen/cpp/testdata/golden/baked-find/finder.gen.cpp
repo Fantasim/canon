@@ -336,166 +336,201 @@ const Kind* Kinds::Find(std::string_view key) const {
     return &rows_[static_cast<size_t>(*id)];
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 8> kNamesFindKeys = {"Z", "_", "a", std::string_view("a\000b", 3), "ab", "pre", "prefix", "é"};
+constexpr std::array<uint32_t, 8> kNamesFindRows = {5, 7, 4, 1, 6, 3, 0, 2};
+constexpr std::array<uint16_t, 8> kNamesFindByCodeKeys = {0, 7, 12, 256, 300, 900, 4000, 65535};
+constexpr std::array<uint32_t, 8> kNamesFindByCodeRows = {3, 1, 5, 7, 4, 0, 6, 2};
+constexpr std::array<std::string_view, 8> kNamesFindByAliasKeys = {"p", "pp", "q", "x1", "x10", "x9", "y", "é2"};
+constexpr std::array<uint32_t, 8> kNamesFindByAliasRows = {5, 6, 7, 1, 4, 0, 3, 2};
+}  // namespace
+}  // namespace detail
+
 const Entry* Names::Find(std::string_view key) const {
-    static constexpr std::array<std::string_view, 8> kKeys = {"Z", "_", "a", std::string_view("a\000b", 3), "ab", "pre", "prefix", "é"};
-    static constexpr std::array<uint32_t, 8> kRows = {5, 7, 4, 1, 6, 3, 0, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kNamesFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kNamesFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kNamesFindKeys.size() && detail::kNamesFindKeys[lo] == key) return &rows_[detail::kNamesFindRows[lo]];
     return nullptr;
 }
 
 const Entry* Names::FindByCode(uint16_t key) const {
-    static constexpr std::array<uint16_t, 8> kKeys = {0, 7, 12, 256, 300, 900, 4000, 65535};
-    static constexpr std::array<uint32_t, 8> kRows = {3, 1, 5, 7, 4, 0, 6, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kNamesFindByCodeKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kNamesFindByCodeKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kNamesFindByCodeKeys.size() && detail::kNamesFindByCodeKeys[lo] == key) return &rows_[detail::kNamesFindByCodeRows[lo]];
     return nullptr;
 }
 
 const Entry* Names::FindByAlias(std::string_view key) const {
-    static constexpr std::array<std::string_view, 8> kKeys = {"p", "pp", "q", "x1", "x10", "x9", "y", "é2"};
-    static constexpr std::array<uint32_t, 8> kRows = {5, 6, 7, 1, 4, 0, 3, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kNamesFindByAliasKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kNamesFindByAliasKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kNamesFindByAliasKeys.size() && detail::kNamesFindByAliasKeys[lo] == key) return &rows_[detail::kNamesFindByAliasRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<int64_t, 9> kNumbersFindKeys = {
+    canon::kIntMin,
+    -4611686018427387904,
+    -6,
+    -5,
+    0,
+    6,
+    7,
+    4611686018427387904,
+    canon::kIntMax,
+};
+constexpr std::array<uint32_t, 9> kNumbersFindRows = {4, 5, 8, 1, 2, 7, 0, 3, 6};
+}  // namespace
+}  // namespace detail
 
 const Number* Numbers::Find(int64_t key) const {
-    static constexpr std::array<int64_t, 9> kKeys = {
-        canon::kIntMin,
-        -4611686018427387904,
-        -6,
-        -5,
-        0,
-        6,
-        7,
-        4611686018427387904,
-        canon::kIntMax,
-    };
-    static constexpr std::array<uint32_t, 9> kRows = {4, 5, 8, 1, 2, 7, 0, 3, 6};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kNumbersFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kNumbersFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kNumbersFindKeys.size() && detail::kNumbersFindKeys[lo] == key) return &rows_[detail::kNumbersFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<Tone, 3> kTonesFindKeys = {Tone::first, Tone::second, Tone::third};
+constexpr std::array<uint32_t, 3> kTonesFindRows = {1, 2, 0};
+}  // namespace
+}  // namespace detail
 
 const ToneRow* Tones::Find(Tone key) const {
-    static constexpr std::array<Tone, 3> kKeys = {Tone::first, Tone::second, Tone::third};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 2, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kTonesFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kTonesFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kTonesFindKeys.size() && detail::kTonesFindKeys[lo] == key) return &rows_[detail::kTonesFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<Rank, 3> kRanksFindKeys = {Rank::low, Rank::mid, Rank::high};
+constexpr std::array<uint32_t, 3> kRanksFindRows = {1, 2, 0};
+}  // namespace
+}  // namespace detail
 
 const RankRow* Ranks::Find(Rank key) const {
-    static constexpr std::array<Rank, 3> kKeys = {Rank::low, Rank::mid, Rank::high};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 2, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kRanksFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kRanksFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kRanksFindKeys.size() && detail::kRanksFindKeys[lo] == key) return &rows_[detail::kRanksFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<KindId, 3> kByKindFindKeys = {KindId::zeta, KindId::mid, KindId::beta};
+constexpr std::array<uint32_t, 3> kByKindFindRows = {1, 0, 2};
+}  // namespace
+}  // namespace detail
 
 const KindRow* ByKind::Find(KindId key) const {
-    static constexpr std::array<KindId, 3> kKeys = {KindId::zeta, KindId::mid, KindId::beta};
-    static constexpr std::array<uint32_t, 3> kRows = {1, 0, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kByKindFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kByKindFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kByKindFindKeys.size() && detail::kByKindFindKeys[lo] == key) return &rows_[detail::kByKindFindRows[lo]];
     return nullptr;
 }
+
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 4> kLinksFindKeys = {"Z", "a", "ab", "é"};
+constexpr std::array<uint32_t, 4> kLinksFindRows = {1, 3, 0, 2};
+}  // namespace
+}  // namespace detail
 
 const LinkRow* Links::Find(std::string_view key) const {
-    static constexpr std::array<std::string_view, 4> kKeys = {"Z", "a", "ab", "é"};
-    static constexpr std::array<uint32_t, 4> kRows = {1, 3, 0, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kLinksFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kLinksFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kLinksFindKeys.size() && detail::kLinksFindKeys[lo] == key) return &rows_[detail::kLinksFindRows[lo]];
     return nullptr;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<std::string_view, 0> kEmptiesFindKeys = {};
+constexpr std::array<uint32_t, 0> kEmptiesFindRows = {};
+}  // namespace
+}  // namespace detail
+
 const Slot* Empties::Find(std::string_view key) const {
-    static constexpr std::array<std::string_view, 0> kKeys = {};
-    static constexpr std::array<uint32_t, 0> kRows = {};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kEmptiesFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kEmptiesFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kEmptiesFindKeys.size() && detail::kEmptiesFindKeys[lo] == key) return &rows_[detail::kEmptiesFindRows[lo]];
     return nullptr;
 }
 

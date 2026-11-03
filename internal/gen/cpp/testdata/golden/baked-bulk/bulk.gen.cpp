@@ -643,6 +643,13 @@ std::optional<ItemId> ItemIdFromWire(std::string_view key) {
     return std::nullopt;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<int64_t, 8> kItemsFindByCodeKeys = {100, 101, 102, 103, 104, 105, 106, 107};
+constexpr std::array<uint32_t, 8> kItemsFindByCodeRows = {0, 1, 2, 3, 4, 5, 6, 7};
+}  // namespace
+}  // namespace detail
+
 const Item* Items::Find(std::string_view key) const {
     const std::optional<ItemId> id = ItemIdFromWire(key);
     if (!id) return nullptr;
@@ -650,36 +657,39 @@ const Item* Items::Find(std::string_view key) const {
 }
 
 const Item* Items::FindByCode(int64_t key) const {
-    static constexpr std::array<int64_t, 8> kKeys = {100, 101, 102, 103, 104, 105, 106, 107};
-    static constexpr std::array<uint32_t, 8> kRows = {0, 1, 2, 3, 4, 5, 6, 7};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kItemsFindByCodeKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kItemsFindByCodeKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kItemsFindByCodeKeys.size() && detail::kItemsFindByCodeKeys[lo] == key) return &rows_[detail::kItemsFindByCodeRows[lo]];
     return nullptr;
 }
 
+namespace detail {
+namespace {
+constexpr std::array<int64_t, 8> kCrewsFindKeys = {0, 10, 20, 30, 40, 50, 60, 70};
+constexpr std::array<uint32_t, 8> kCrewsFindRows = {0, 1, 2, 3, 4, 5, 6, 7};
+}  // namespace
+}  // namespace detail
+
 const Crew* Crews::Find(int64_t key) const {
-    static constexpr std::array<int64_t, 8> kKeys = {0, 10, 20, 30, 40, 50, 60, 70};
-    static constexpr std::array<uint32_t, 8> kRows = {0, 1, 2, 3, 4, 5, 6, 7};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kCrewsFindKeys.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < key) {
+        if (detail::kCrewsFindKeys[mid] < key) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == key) return &rows_[kRows[lo]];
+    if (lo < detail::kCrewsFindKeys.size() && detail::kCrewsFindKeys[lo] == key) return &rows_[detail::kCrewsFindRows[lo]];
     return nullptr;
 }
 

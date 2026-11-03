@@ -24,7 +24,7 @@ func (a keyRank) compare(b keyRank) int {
 	return cmp.Or(cmp.Compare(a.n, b.n), strings.Compare(a.s, b.s))
 }
 
-// bakedFinds define, in the .gen.cpp, the Find and FindBy<F> of every container the header declares: a table's Find through its id enum, any other lookup a binary search of the keys sorted here, beside the positions of their rows (CODEGEN.md §5.9, DECISIONS 432).
+// bakedFinds define, in the .gen.cpp, the Find and FindBy<F> of every container the header declares: a table's Find through its id enum, any other lookup a binary search of the keys sorted here, beside the positions of their rows, both held in the unnamed namespace of detail (CODEGEN.md §5.9, DECISIONS 432, 435).
 func (g *gen) bakedFinds() {
 	for _, v := range g.values {
 		if !ir.IsContainer(v) {
@@ -36,15 +36,32 @@ func (g *gen) bakedFinds() {
 	}
 }
 
+// lookup is one lookup fn of a container: the key type, the sorted keys of its rows and the positions of those rows, written as the tables it reads.
+type lookup struct {
+	fn     string
+	t      ir.TypeRef
+	tables ir.CppFindTables
+	elem   string
+	keys   []string
+	rows   []string
+}
+
 func (g *gen) containerFinds(v *ir.Value) {
 	s, rows := g.containerSpec(v), g.rows(v)
-	if kf := g.keyFieldOf(v); kf != nil {
-		g.findDefinition(s, findName, kf.Type, g.fieldValues(rows, kf.Name))
-	} else {
-		g.tableFind(s, v)
+	var lookups []lookup
+	kf := g.keyFieldOf(v)
+	if kf != nil {
+		lookups = append(lookups, g.lookupOf(findName, g.pl.FindTables(v), kf.Type, g.fieldValues(rows, kf.Name)))
 	}
 	for _, f := range s.stable {
-		g.findDefinition(s, g.pl.FindBy(f).Func, f.Type, g.fieldValues(rows, f.Name))
+		lookups = append(lookups, g.lookupOf(g.pl.FindBy(f).Func, g.pl.FindByTables(v, f), f.Type, g.fieldValues(rows, f.Name)))
+	}
+	g.lookupTables(lookups)
+	if kf == nil {
+		g.tableFind(s, v)
+	}
+	for _, l := range lookups {
+		g.findDefinition(s, l)
 	}
 }
 
@@ -67,20 +84,42 @@ func (g *gen) tableFind(s containerSpec, v *ir.Value) {
 	g.c.printf(bakedTableFindText, fmt.Sprintf(findDefFormat, s.elem, s.name, findName, cppStringView), id, g.pl.EnumHelpers(id).FromWire)
 }
 
-// findDefinition is the lookup fn of container s over vals, the key of each row of type t: the keys sorted in C++'s order and the positions of their rows, as constant arrays local to the function, and the search of lower_bound.txt (CODEGEN.md §5.9, DECISIONS 432).
-func (g *gen) findDefinition(s containerSpec, fn string, t ir.TypeRef, vals []value.Value) {
+// lookupOf is the lookup fn over vals, the key of each row of type t: the keys sorted in C++'s order and the positions of their rows, held in the tables the plan names (CODEGEN.md §5.9, DECISIONS 432).
+func (g *gen) lookupOf(fn string, tables ir.CppFindTables, t ir.TypeRef, vals []value.Value) lookup {
 	keys, rows := g.sortedKeys(t, vals)
-	elem, key, prelude := g.storage(t), keyParam, ""
-	if g.foreignID(t) {
-		key, prelude = wireParam, foreignWireLine
-	}
+	elem := g.storage(t)
 	if g.stringKeyed(t) {
 		elem = cppStringView
 	}
+	return lookup{fn: fn, t: t, tables: tables, elem: elem, keys: keys, rows: intTexts(rows)}
+}
+
+// lookupTables write the sorted keys and the rows' positions of lookups, once in the .gen.cpp: in detail's unnamed namespace, local to this file, so a lookup keeps a constant number of lines whatever the rows (CODEGEN.md §2.11, §5.9; DECISIONS 435).
+func (g *gen) lookupTables(lookups []lookup) {
+	if len(lookups) == 0 {
+		return
+	}
+	g.c.line(detailOpen)
+	g.c.line(anonOpen)
+	for _, l := range lookups {
+		g.c.printf(localTableFormat, l.elem, len(l.keys), l.tables.Keys, braced(l.keys))
+		g.c.printf(localTableFormat, cppUint32, len(l.rows), l.tables.Rows, braced(l.rows))
+	}
+	g.c.line(anonClose)
+	g.c.line(detailClose)
+	g.c.blank()
+}
+
+// findDefinition is the lookup l of container s: the search of lower_bound.txt over its keys table, returning the row at the position beside the key found (CODEGEN.md §5.9, DECISIONS 432).
+func (g *gen) findDefinition(s containerSpec, l lookup) {
+	key, prelude := keyParam, ""
+	if g.foreignID(l.t) {
+		key, prelude = wireParam, foreignWireLine
+	}
 	g.c.write(search{
-		sig:     fmt.Sprintf(findDefFormat, s.elem, s.name, fn, lookupType(g.storage(t))),
-		prelude: prelude + table(elem, keysTable, keys) + table(cppUint32, rowsTable, intTexts(rows)),
-		keys:    keysTable, key: key, hit: fmt.Sprintf(rowHitFormat, loVar), miss: cppNullptr,
+		sig:     fmt.Sprintf(findDefFormat, s.elem, s.name, l.fn, lookupType(g.storage(l.t))),
+		prelude: prelude,
+		keys:    detailPrefix + l.tables.Keys, key: key, hit: fmt.Sprintf(rowHitFormat, detailPrefix+l.tables.Rows, loVar), miss: cppNullptr,
 	}.text())
 }
 
