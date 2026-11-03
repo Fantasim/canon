@@ -1,8 +1,10 @@
 // Decodes JSON files through demo.tabletypes' public Shelf::Decode and Shelf::Parse (CODEGEN.md
 // §4.2, §5.13): argv[1] is the directory of the files, then one file name per argument. Prints two
 // lines per file: the shelf's tables with each row's id, retired flag and n, or the error, first
-// of Decode, then (marked "parse") of Parse. A nlohmann::json keeps its object keys in byte order,
-// so Decode's rows come out in that order; Parse reads the text and keeps the file's order.
+// of Decode, then (marked "parse") of Parse, then (marked "ordered") of Decode of an
+// nlohmann::ordered_json (DECISIONS 437). A nlohmann::json keeps its object keys in byte order,
+// so Decode's rows come out in that order; Parse reads the text and keeps the file's order, and so
+// does an ordered_json.
 #include "out/tabletypes.gen.h"
 
 #include <nlohmann/json.hpp>
@@ -50,6 +52,9 @@ int main(int argc, char** argv) {
         Print("", argv[i], Shelf::Decode(doc, error), error);
         std::string parseError;
         Print("parse ", argv[i], Shelf::Parse(text, parseError), parseError);
+        const nlohmann::ordered_json ordered = nlohmann::ordered_json::parse(text, nullptr, /*allow_exceptions=*/false);
+        std::string orderedError;
+        Print("ordered ", argv[i], Shelf::Decode(ordered, orderedError), orderedError);
     }
     return 0;
 }

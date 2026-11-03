@@ -45,6 +45,7 @@ private:
 class Zone {
 public:
     static std::optional<Zone> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Zone> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Zone> Parse(std::string_view text, std::string& error);
     /// Its levels.
     const ::game::core::LevelRange& GetLevels() const { return levels_; }

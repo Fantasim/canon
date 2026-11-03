@@ -29,6 +29,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, SK_CODE& out);
 class Holder {
 public:
     static std::optional<Holder> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Holder> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Holder> Parse(std::string_view text, std::string& error);
     /// Set SK_DOC before use.
     const std::string& GetLabel() const { return label_; }
@@ -44,6 +45,7 @@ private:
 class SK_CODE {
 public:
     static std::optional<SK_CODE> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<SK_CODE> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<SK_CODE> Parse(std::string_view text, std::string& error);
     int64_t GetN() const { return n_; }
 

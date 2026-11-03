@@ -125,6 +125,7 @@ func heldDependent(c *Const) bool {
 	return typeHolds(&c.Type, isDependent)
 }
 
+// isDependent reports whether t is a dependent type: a type function applied or a dependent union.
 func isDependent(t *TypeRef) bool { return t.Kind == types.TypeApp || t.Kind == types.DepUnion }
 
 // HoldsRecordValue reports a record or case value in v, itself or among its elements, keys and map values: a value no single gen/cpp literal writes, which its baked filler's statements build (CODEGEN.md §5.1, §5.13; DECISIONS 386).

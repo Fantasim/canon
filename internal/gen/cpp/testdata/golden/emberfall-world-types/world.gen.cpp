@@ -301,6 +301,10 @@ std::optional<Zone> Zone::Decode(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<Zone> Zone::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Zone>(v, "Zone", &detail::Decode, error);
+}
+
 std::optional<Zone> Zone::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;

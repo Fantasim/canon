@@ -52,7 +52,7 @@ func TestTypesRefusals(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.2, §5.13: no value, container or loader; a public Decode per record and variant; no key checked.
+// CODEGEN.md §2.2, §5.13, DECISIONS 437: no value, container or loader; a public Decode per record and variant, of an nlohmann::json and of an nlohmann::ordered_json; no key checked.
 func TestTypesModeShape(t *testing.T) {
 	p, e := small(field("a", "a", "", tInt))
 	e.Mode = ir.ModeTypes
@@ -68,7 +68,7 @@ func TestTypesModeShape(t *testing.T) {
 			t.Errorf("types mode wrote %q", absent)
 		}
 	}
-	for _, want := range []string{"static std::optional<Thing> Decode(const nlohmann::json& v, std::string& error);", "std::optional<Thing> Thing::Decode("} {
+	for _, want := range []string{"static std::optional<Thing> Decode(const nlohmann::json& v, std::string& error);", "static std::optional<Thing> Decode(const nlohmann::ordered_json& v, std::string& error);", "std::optional<Thing> Thing::Decode(", "canon::json::detail::DecodeOrdered<Thing>(v, \"Thing\", &detail::Decode, error)"} {
 		if !strings.Contains(header+source, want) {
 			t.Errorf("types mode lacks %q", want)
 		}

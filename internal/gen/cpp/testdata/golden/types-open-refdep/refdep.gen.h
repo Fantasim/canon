@@ -103,6 +103,7 @@ private:
 class Reward {
 public:
     static std::optional<Reward> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Reward> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Reward> Parse(std::string_view text, std::string& error);
     Event GetEventKey() const { return event_; }
     const Param* GetParam() const { return param_ ? &*param_ : nullptr; }

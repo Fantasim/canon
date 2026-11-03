@@ -33,15 +33,16 @@ func (g *gen) typesRefusals() {
 	}
 }
 
-// publicDecodeDecl declares a record's or variant's static Decode and Parse, first in its class (CODEGEN.md §5.13, §7.2).
+// publicDecodeDecl declares a record's or variant's static Decode (of an nlohmann::json, then of an nlohmann::ordered_json, DECISIONS 437) and Parse, first in its class (CODEGEN.md §5.13, §7.2).
 func (g *gen) publicDecodeDecl(sc *scope, name string) {
 	g.fail(sc.add(ir.CppDecode, name))
 	g.fail(sc.add(ir.CppParse, name))
 	g.h.linef(1, publicDecodeDeclFormat, name)
+	g.h.linef(1, publicOrderedDeclFormat, name)
 	g.h.linef(1, publicParseDeclFormat, name)
 }
 
-// publicDecoders define each record's and variant's static Decode and Parse, in class order (CODEGEN.md §2.7, §5.13): a decoder of its own whose paths start at `$`, and no value unless all of the JSON decodes.
+// publicDecoders define each record's and variant's static Decode (twice) and Parse, in class order (CODEGEN.md §2.7, §5.13): a decoder of its own whose paths start at `$`, and no value unless all of the JSON decodes.
 func (g *gen) publicDecoders() {
 	if !g.types() {
 		return

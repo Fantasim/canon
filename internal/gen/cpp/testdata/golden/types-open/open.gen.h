@@ -144,6 +144,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Config& out);
 class Entry {
 public:
     static std::optional<Entry> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Entry> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Entry> Parse(std::string_view text, std::string& error);
     Dst GetDst() const { return dst_; }
     int64_t GetN() const { return n_; }
@@ -175,6 +176,7 @@ private:
 class Config {
 public:
     static std::optional<Config> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Config> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Config> Parse(std::string_view text, std::string& error);
     Dst GetPrimary() const { return primary_; }
     std::optional<Dst> GetExtra() const { return extra_; }

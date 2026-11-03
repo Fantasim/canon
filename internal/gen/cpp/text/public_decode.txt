@@ -7,6 +7,10 @@ std::optional<%[1]s> %[1]s::%[2]s(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<%[1]s> %[1]s::%[2]s(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<%[1]s>(v, %[3]s, &detail::%[2]s, error);
+}
+
 std::optional<%[1]s> %[1]s::%[5]s(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;

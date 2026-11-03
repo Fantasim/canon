@@ -77,6 +77,10 @@ std::optional<Item> Item::Decode(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<Item> Item::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Item>(v, "Item", &detail::Decode, error);
+}
+
 std::optional<Item> Item::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;

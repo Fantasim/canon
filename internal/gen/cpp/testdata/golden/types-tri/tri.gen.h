@@ -59,6 +59,7 @@ private:
 class Prize {
 public:
     static std::optional<Prize> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Prize> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Prize> Parse(std::string_view text, std::string& error);
     PrizeKind GetKind() const { return static_cast<PrizeKind>(value_.index()); }
     const PrizeCoins* AsCoins() const { return std::get_if<0>(&value_); }
@@ -74,6 +75,7 @@ private:
 class Holder {
 public:
     static std::optional<Holder> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Holder> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Holder> Parse(std::string_view text, std::string& error);
     int64_t GetCount() const { return count_; }
     const Prize& GetPrize() const { return prize_; }

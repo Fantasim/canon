@@ -99,6 +99,10 @@ std::optional<Prize> Prize::Decode(const nlohmann::json& v, std::string& error) 
     return std::nullopt;
 }
 
+std::optional<Prize> Prize::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Prize>(v, "Prize", &detail::Decode, error);
+}
+
 std::optional<Prize> Prize::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -119,6 +123,10 @@ std::optional<Holder> Holder::Decode(const nlohmann::json& v, std::string& error
     if (detail::Decode(v, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
+}
+
+std::optional<Holder> Holder::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Holder>(v, "Holder", &detail::Decode, error);
 }
 
 std::optional<Holder> Holder::Parse(std::string_view text, std::string& error) {

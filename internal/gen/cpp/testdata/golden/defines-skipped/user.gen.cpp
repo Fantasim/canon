@@ -44,6 +44,10 @@ std::optional<Holder> Holder::Decode(const nlohmann::json& v, std::string& error
     return std::nullopt;
 }
 
+std::optional<Holder> Holder::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Holder>(v, "Holder", &detail::Decode, error);
+}
+
 std::optional<Holder> Holder::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -64,6 +68,10 @@ std::optional<SK_CODE> SK_CODE::Decode(const nlohmann::json& v, std::string& err
     if (detail::Decode(v, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
+}
+
+std::optional<SK_CODE> SK_CODE::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<SK_CODE>(v, "SK_CODE", &detail::Decode, error);
 }
 
 std::optional<SK_CODE> SK_CODE::Parse(std::string_view text, std::string& error) {

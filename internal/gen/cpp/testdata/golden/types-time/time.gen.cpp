@@ -91,6 +91,10 @@ std::optional<TimeOfDay> TimeOfDay::Decode(const nlohmann::json& v, std::string&
     return std::nullopt;
 }
 
+std::optional<TimeOfDay> TimeOfDay::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<TimeOfDay>(v, "TimeOfDay", &detail::Decode, error);
+}
+
 std::optional<TimeOfDay> TimeOfDay::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -111,6 +115,10 @@ std::optional<Window> Window::Decode(const nlohmann::json& v, std::string& error
     if (detail::Decode(v, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
+}
+
+std::optional<Window> Window::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Window>(v, "Window", &detail::Decode, error);
 }
 
 std::optional<Window> Window::Parse(std::string_view text, std::string& error) {

@@ -398,6 +398,10 @@ std::optional<Rect> Rect::Decode(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<Rect> Rect::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Rect>(v, "Rect", &detail::Decode, error);
+}
+
 std::optional<Rect> Rect::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -418,6 +422,10 @@ std::optional<EventKind> EventKind::Decode(const nlohmann::json& v, std::string&
     if (detail::Decode(v, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
+}
+
+std::optional<EventKind> EventKind::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<EventKind>(v, "EventKind", &detail::Decode, error);
 }
 
 std::optional<EventKind> EventKind::Parse(std::string_view text, std::string& error) {
@@ -442,6 +450,10 @@ std::optional<Event> Event::Decode(const nlohmann::json& v, std::string& error) 
     return std::nullopt;
 }
 
+std::optional<Event> Event::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Event>(v, "Event", &detail::Decode, error);
+}
+
 std::optional<Event> Event::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -462,6 +474,10 @@ std::optional<EventConfig> EventConfig::Decode(const nlohmann::json& v, std::str
     if (detail::Decode(v, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
+}
+
+std::optional<EventConfig> EventConfig::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<EventConfig>(v, "EventConfig", &detail::Decode, error);
 }
 
 std::optional<EventConfig> EventConfig::Parse(std::string_view text, std::string& error) {
@@ -486,6 +502,10 @@ std::optional<Extras> Extras::Decode(const nlohmann::json& v, std::string& error
     return std::nullopt;
 }
 
+std::optional<Extras> Extras::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Extras>(v, "Extras", &detail::Decode, error);
+}
+
 std::optional<Extras> Extras::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -508,6 +528,10 @@ std::optional<Slot> Slot::Decode(const nlohmann::json& v, std::string& error) {
     return std::nullopt;
 }
 
+std::optional<Slot> Slot::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Slot>(v, "Slot", &detail::Decode, error);
+}
+
 std::optional<Slot> Slot::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -528,6 +552,10 @@ std::optional<Picks> Picks::Decode(const nlohmann::json& v, std::string& error) 
     if (detail::Decode(v, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
+}
+
+std::optional<Picks> Picks::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Picks>(v, "Picks", &detail::Decode, error);
 }
 
 std::optional<Picks> Picks::Parse(std::string_view text, std::string& error) {

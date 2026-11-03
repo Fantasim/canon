@@ -355,6 +355,11 @@ const (
 	notNullOpenFormat = "if (!%s.is_null()) {"
 )
 
+// The public Decode of an nlohmann::ordered_json, beside the one of an nlohmann::json (CODEGEN.md §5.13; DECISIONS 437).
+const (
+	publicOrderedDeclFormat = "static std::optional<%s> " + ir.CppDecode + "(const nlohmann::ordered_json& v, std::string& error);"
+)
+
 // Built defaults of types-mode decoders (CODEGEN.md §5.13; DECISIONS 386).
 const (
 	defaultStaticFormat  = "static const %s %s = [] {"

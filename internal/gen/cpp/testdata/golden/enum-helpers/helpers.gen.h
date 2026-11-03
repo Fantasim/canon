@@ -350,6 +350,7 @@ private:
 class Shape {
 public:
     static std::optional<Shape> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Shape> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Shape> Parse(std::string_view text, std::string& error);
     ShapeKind GetKind() const { return static_cast<ShapeKind>(value_.index()); }
     const ShapeCircle* AsCircle() const { return std::get_if<0>(&value_); }

@@ -88,6 +88,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Picks& out);
 class Rect {
 public:
     static std::optional<Rect> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Rect> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Rect> Parse(std::string_view text, std::string& error);
     double GetLeft() const { return left_; }
     double GetTop() const { return top_; }
@@ -162,6 +163,7 @@ private:
 class EventKind {
 public:
     static std::optional<EventKind> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<EventKind> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<EventKind> Parse(std::string_view text, std::string& error);
     EventKindKind GetKind() const { return static_cast<EventKindKind>(value_.index()); }
     const EventKindSpawnMonster* AsSpawnMonster() const { return std::get_if<0>(&value_); }
@@ -179,6 +181,7 @@ private:
 class Event {
 public:
     static std::optional<Event> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Event> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Event> Parse(std::string_view text, std::string& error);
     const std::string& GetId() const { return id_; }
     uint32_t GetWorldId() const { return worldId_; }
@@ -203,6 +206,7 @@ private:
 class EventConfig {
 public:
     static std::optional<EventConfig> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<EventConfig> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<EventConfig> Parse(std::string_view text, std::string& error);
     int64_t GetVersion() const { return version_; }
     const canon::KeyedList<std::string, Event>& GetEvents() const { return events_; }
@@ -219,6 +223,7 @@ private:
 class Extras {
 public:
     static std::optional<Extras> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Extras> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Extras> Parse(std::string_view text, std::string& error);
     int64_t GetReqMp() const { return reqMp_; }
     const std::string* GetLabel() const { return label_ ? &*label_ : nullptr; }
@@ -241,6 +246,7 @@ private:
 class Slot {
 public:
     static std::optional<Slot> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Slot> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Slot> Parse(std::string_view text, std::string& error);
     int64_t GetN() const { return n_; }
     const std::string& GetMode() const { return mode_; }
@@ -258,6 +264,7 @@ private:
 class Picks {
 public:
     static std::optional<Picks> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Picks> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Picks> Parse(std::string_view text, std::string& error);
     const std::string& GetA() const { return a_; }
     const std::vector<Slot>& GetSlots() const { return slots_; }

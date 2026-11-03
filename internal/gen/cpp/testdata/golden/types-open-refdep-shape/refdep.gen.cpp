@@ -222,6 +222,10 @@ std::optional<Reward> Reward::Decode(const nlohmann::json& v, std::string& error
     return std::nullopt;
 }
 
+std::optional<Reward> Reward::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Reward>(v, "Reward", &detail::Decode, error);
+}
+
 std::optional<Reward> Reward::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;

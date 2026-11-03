@@ -81,6 +81,7 @@ bool Decode(const nlohmann::json& v, canon::json::Decoder& dec, Item& out);
 class Item {
 public:
     static std::optional<Item> Decode(const nlohmann::json& v, std::string& error);
+    static std::optional<Item> Decode(const nlohmann::ordered_json& v, std::string& error);
     static std::optional<Item> Parse(std::string_view text, std::string& error);
     /**
      * The label, ending in a backslash \

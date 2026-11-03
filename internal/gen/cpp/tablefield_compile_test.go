@@ -68,7 +68,12 @@ var typesTableParse = map[string]string{
 	"dupextra": "error Shelf: $.extra.y.n: duplicate key",
 }
 
-// CODEGEN.md §4.2, §5.13, WIRE.md §5.7, DECISIONS 361: a types-mode table field compiles and its public Decode reads a nested table in key order, Parse in file order.
+// typesTableOrdered: what Decode of an nlohmann::ordered_json prints where it differs from Decode of an nlohmann::json (DECISIONS 437): the nested table in file order, as Parse; a repeated key it never sees, so the verdicts of Decode stand.
+var typesTableOrdered = map[string]string{
+	"order": "slots=b:2,a:1 extra= spare=none",
+}
+
+// CODEGEN.md §4.2, §5.13, WIRE.md §5.7, DECISIONS 361, 437: a types-mode table field compiles and its public Decode reads a nested table in key order, Decode of an ordered_json and Parse in file order.
 func TestTableFieldTypesCompilesAndRuns(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -85,7 +90,7 @@ func TestTableFieldTypesCompilesAndRuns(t *testing.T) {
 			t.Fatal(err)
 		}
 		args = append(args, c.name+".json")
-		fmt.Fprintf(&want, "%s.json: %s\nparse %s.json: %s\n", c.name, c.want, c.name, cmp.Or(typesTableParse[c.name], c.want))
+		fmt.Fprintf(&want, "%s.json: %s\nparse %s.json: %s\nordered %s.json: %s\n", c.name, c.want, c.name, cmp.Or(typesTableParse[c.name], c.want), c.name, cmp.Or(typesTableOrdered[c.name], c.want))
 	}
 	for _, got := range buildAndRun(t, dir, []string{"main.cpp", "out/tabletypes.gen.cpp"}, args...) {
 		if got != want.String() {

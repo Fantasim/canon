@@ -455,6 +455,10 @@ std::optional<Entry> Entry::Decode(const nlohmann::json& v, std::string& error) 
     return std::nullopt;
 }
 
+std::optional<Entry> Entry::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Entry>(v, "Entry", &detail::Decode, error);
+}
+
 std::optional<Entry> Entry::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
@@ -475,6 +479,10 @@ std::optional<Config> Config::Decode(const nlohmann::json& v, std::string& error
     if (detail::Decode(v, dec, out.emplace())) return out;
     error = dec.Error();
     return std::nullopt;
+}
+
+std::optional<Config> Config::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Config>(v, "Config", &detail::Decode, error);
 }
 
 std::optional<Config> Config::Parse(std::string_view text, std::string& error) {

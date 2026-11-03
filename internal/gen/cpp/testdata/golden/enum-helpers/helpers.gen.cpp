@@ -629,6 +629,10 @@ std::optional<Shape> Shape::Decode(const nlohmann::json& v, std::string& error) 
     return std::nullopt;
 }
 
+std::optional<Shape> Shape::Decode(const nlohmann::ordered_json& v, std::string& error) {
+    return canon::json::detail::DecodeOrdered<Shape>(v, "Shape", &detail::Decode, error);
+}
+
 std::optional<Shape> Shape::Parse(std::string_view text, std::string& error) {
     nlohmann::json doc;
     canon::json::Float32Tokens tokens;
