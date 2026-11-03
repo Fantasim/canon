@@ -1,0 +1,68 @@
+TYPES.md §4.1, STDLIB.md §5, DECISIONS 318, 456: a literal key of a keyed list keyed by a ref, in `xs[k]`, get, find and hasKey, is checked against the list's key type, so it is a literal of the chain's leaf key, exactly as an entry's key field is: an integer through `ks` (keyed by `ref js`, `js` keyed by an Int; 1 level) and `ls` (keyed by `ref ks`; 2 levels), a string through `ts` (a String leaf, keyed by `ref ss`), `us` (keyed by `ref ts`, 2 levels) and `ps` (a table leaf).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+  w: Int = 0
+}
+
+local record L {
+  k: ref ks
+  w: Int = 0
+}
+
+local record S {
+  s: String
+}
+
+local record T {
+  r: ref ss
+  w: Int = 0
+}
+
+local record U {
+  t: ref ts
+  w: Int = 0
+}
+
+local record E {
+  w: Int = 0
+}
+
+local record P {
+  e: ref tab
+  w: Int = 0
+}
+
+local let js: [J] keyed by n = [{ n: 9 }, { n: 10 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }, { j: 10, w: 1 }]
+
+local let ls: [L] keyed by k = [{ k: 9 }, { k: 10, w: 1 }]
+
+local let ss: [S] keyed by s = [{ s: "x" }]
+
+local let ts: [T] keyed by r = [{ r: "x" }]
+
+local let us: [U] keyed by t = [{ t: "x" }]
+
+local let tab: table E = {
+  p {}
+}
+
+local let ps: [P] keyed by e = [{ e: p }]
+
+local let one: Bool = ks[10].w == 1 and ks.get(9) != none and ks.find(9) != none and ks.hasKey(10)
+
+local let two: Bool = ls[10].w == 1 and ls.get(9) != none and ls.find(9) != none and ls.hasKey(10)
+
+local let str: Bool = ts["x"].w == 0 and ts.get("x") != none and ts.find("x") != none and ts.hasKey("x")
+
+local let tbl: Bool = ps["p"].w == 0 and ps.get("p") != none and ps.find("p") != none and ps.hasKey("p")
+
+local let strTwo: Bool = us["x"].w == 0 and us.get("x") != none and us.find("x") != none and us.hasKey("x")

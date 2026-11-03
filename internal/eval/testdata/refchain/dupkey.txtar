@@ -1,0 +1,48 @@
+TYPES.md §9.3, DECISIONS 456: an entry key of a keyed list keyed by a ref is a literal of the chain's leaf key, so a key written twice in source is the static E3102 of check, once, at every depth, as on a list keyed by its leaf type; the list it breaks is not evaluated, so evaluation adds no E3102 of its own. `ks` is keyed by `ref js` (1 level) and `ls` by `ref ks` (2 levels), `js` keyed by an Int.
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+  w: Int = 0
+}
+
+local record L {
+  k: ref ks
+  w: Int = 0
+}
+
+local let js: [J] keyed by n = [{ n: 9 }, { n: 10 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+entry ks.10 {}
+entry ks.10 { w: 1 }
+entry ks.9 { w: 2 }
+
+local let ls: [L] keyed by k = [{ k: 9 }]
+
+entry ls.10 {}
+entry ls.10 { w: 1 }
+
+let w: Int = js[9].n
+-- dump.txt --
+a.js = [J{n: 9}, J{n: 10}]
+a.ks poisoned
+a.ls poisoned
+a.w = 9
+
+error[E3102]  a/a.canon:22:10
+  key 10 is used twice (first at a/a.canon:21)
+
+error[E3102]  a/a.canon:23:10
+  key 9 is used twice (first at a/a.canon:19)
+
+error[E3102]  a/a.canon:28:10
+  key 10 is used twice (first at a/a.canon:27)
+
+3 errors, 0 warnings in 1 package (…)

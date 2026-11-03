@@ -170,7 +170,7 @@ func (c *checker) positional(env *env, x *syntax.IndexExpr, l *types.ListType) t
 
 // keyValue types a key (`xs[k]`, get, find, hasKey): KT, or a ref into recv's own collection (STDLIB.md §5).
 func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
-	if c.bareKey(env, k, recv, key) || c.notValueName(env, k) {
+	if c.bareKey(env, k, recv, key) || c.notValueName(env, k) || c.refKeyLiteral(env, k, key) {
 		return
 	}
 	t := c.synth(env, k)
@@ -182,6 +182,16 @@ func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
 		return
 	}
 	c.report(env, diag.E3002.At(env.span(k), key, t))
+}
+
+// refKeyLiteral types a literal of a ref key's leaf type against that key, as a key field is (TYPES.md §4.1, DECISIONS 456).
+func (c *checker) refKeyLiteral(env *env, k syntax.Expr, key types.Type) bool {
+	coll := c.keyTarget(key)
+	if coll == nil || !c.keyLiteral(k, coll) {
+		return false
+	}
+	c.expr(env, k, key)
+	return true
 }
 
 // notValueName is E3027 `notValue` for a key written as a name in scope that is not a value (TYPES.md §4.1).

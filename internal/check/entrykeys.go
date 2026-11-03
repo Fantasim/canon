@@ -64,11 +64,13 @@ func declPlace(o *object) fileSpan {
 	return fileSpan{file: o.file, span: o.file.Span(o.decl)}
 }
 
-// entryKeyValue is an entry key as a value of the key type, nil when it has none statically.
+// entryKeyValue is an entry key as a value of the key type (an integer for a leaf integer key, DECISIONS 456), nil when it has none statically.
 func (c *checker) entryKeyValue(env *env, k syntax.EntryKey, kt types.Type) value.Value {
 	switch k := k.(type) {
 	case *syntax.IntLit:
-		if c.expr(env, k, kt).Kind() != types.Int || kt.Base().Kind() != types.Int || !k.Value.IsInt64() {
+		got := c.expr(env, k, kt).Kind()
+		leaf, ok := c.leafKey(kt)
+		if (got != types.Int && got != types.Ref) || !ok || leaf.Base().Kind() != types.Int || !k.Value.IsInt64() {
 			return nil
 		}
 		return &value.Int{V: k.Value.Int64(), T: kt}

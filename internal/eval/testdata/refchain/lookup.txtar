@@ -1,0 +1,96 @@
+TYPES.md §4.1, STDLIB.md §5, DECISIONS 317, 456: a literal key of a keyed list keyed by a ref is a literal of the chain's leaf key, in `xs[k]`, get, find and hasKey. `ks` is keyed by `ref js` and `ls` by `ref ks`, `js` keyed by an Int; `ts` by `ref ss` (a String leaf), `ps` by `ref tab` (a table leaf). Each lookup returns the entry with that key, at 1 and 2 levels; a key no entry has gives the absent result: get and find none, hasKey false, whether the key names an entry of the chain's leaf (11, "y", q) or none (12, "zz"); `xs[k]` is E4002 (STDLIB.md §5).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+  w: Int = 0
+}
+
+local record L {
+  k: ref ks
+  w: Int = 0
+}
+
+local record S {
+  s: String
+}
+
+local record T {
+  r: ref ss
+  w: Int = 0
+}
+
+local record E {
+  w: Int = 0
+}
+
+local record P {
+  e: ref tab
+  w: Int = 0
+}
+
+local let js: [J] keyed by n = [{ n: 9 }, { n: 10 }, { n: 11 }]
+
+local let ks: [K] keyed by j = [{ j: 9, w: 90 }]
+
+entry ks.10 { w: 100 }
+
+local let ls: [L] keyed by k = [{ k: 9, w: 900 }]
+
+entry ls.10 { w: 1000 }
+
+local let ss: [S] keyed by s = [{ s: "x" }, { s: "y" }]
+
+local let ts: [T] keyed by r = [{ r: "x", w: 7 }]
+
+local let tab: table E = {
+  p {}
+  q {}
+}
+
+local let ps: [P] keyed by e = [{ e: p, w: 8 }]
+
+let one: [Int] = [ks[10].w, ks[9].w, ks.get(10)?.w ?? 0, ks.find(9)?.w ?? 0]
+
+let two: [Int] = [ls[10].w, ls[9].w, ls.get(10)?.w ?? 0, ls.find(9)?.w ?? 0]
+
+let str: [Int] = [ts["x"].w, ts.get("x")?.w ?? 0, ts.find("x")?.w ?? 0]
+
+let tbl: [Int] = [ps["p"].w, ps.get("p")?.w ?? 0, ps.find("p")?.w ?? 0]
+
+let has: [Bool] = [ks.hasKey(10), ls.hasKey(9), ts.hasKey("x"), ps.hasKey("p")]
+
+let absent: [Bool] = [ks.hasKey(11), ks.hasKey(12), ls.hasKey(11), ls.hasKey(12), ts.hasKey("y"), ts.hasKey("zz"), ps.hasKey("q"), ps.hasKey("zz"), ks.get(11) == none, ks.get(12) == none, ls.find(11) == none, ls.find(12) == none, ts.get("y") == none, ts.get("zz") == none, ps.find("q") == none, ps.find("zz") == none]
+
+let gone: Int = ks[11].w
+
+let deeper: Int = ls[12].w
+-- dump.txt --
+a.js = [J{n: 9}, J{n: 10}, J{n: 11}]
+a.ks = [K{j: 9, w: 90}, K{j: 10, w: 100}]
+a.ls = [L{k: 9, w: 900}, L{k: 10, w: 1000}]
+a.ss = [S{s: "x"}, S{s: "y"}]
+a.ts = [T{r: x, w: 7}]
+a.tab = {p: E{w: 0}, q: E{w: 0}}
+a.ps = [P{e: p, w: 8}]
+a.one = [100, 90, 100, 90]
+a.two = [1000, 900, 1000, 900]
+a.str = [7, 7, 7]
+a.tbl = [8, 8, 8]
+a.has = [true, true, true, true]
+a.absent = [false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true]
+a.gone poisoned
+a.deeper poisoned
+
+error[E4002]  a/a.canon:68:17
+  gone: no key 11 in ks
+
+error[E4002]  a/a.canon:70:19
+  deeper: no key 12 in ls
+
+2 errors, 0 warnings in 1 package (…)

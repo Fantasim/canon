@@ -102,7 +102,7 @@ func (c *checker) inExpr(env *env, e *syntax.BinaryExpr) types.Type {
 
 // element types the element `in`, contains or indexOf takes; a key is E3026 (STDLIB.md §5, DECISIONS 317).
 func (c *checker) element(env *env, x, recv syntax.Expr, elem, key types.Type) {
-	if c.unscopedKey(env, x, recv, key) {
+	if c.unscopedKey(env, x, recv, key) || c.refKeyLiteral(env, x, key) {
 		c.keyNotElement(env, x, recv)
 		return
 	}

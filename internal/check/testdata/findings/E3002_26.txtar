@@ -1,0 +1,77 @@
+TYPES.md §4.1, STDLIB.md §5, DECISIONS 456: a literal key of a keyed list keyed by a ref is checked against the list's key type, so a literal that is not of the chain's leaf key's type is E3002 there, in `xs[k]`, get, find and hasKey, as it is as an entry's key field: a string through `ks` (keyed by `ref js`, `js` keyed by an Int) and `ls` (keyed by `ref ks`), an integer through `ts` (keyed by `ref ss`, a String leaf) and `ps` (keyed by `ref tab`, a table leaf).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local record L {
+  k: ref ks
+}
+
+local record S {
+  s: String
+}
+
+local record T {
+  r: ref ss
+}
+
+local record E {
+  w: Int = 0
+}
+
+local record P {
+  e: ref tab
+}
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let ls: [L] keyed by k = [{ k: 9 }]
+
+local let ss: [S] keyed by s = [{ s: "x" }]
+
+local let ts: [T] keyed by r = [{ r: "x" }]
+
+local let tab: table E = {
+  p {}
+}
+
+local let ps: [P] keyed by e = [{ e: p }]
+
+local let one: Bool = ks["9"] == ks[9] or ks.hasKey("9") or ls.get("9") != none or ls.find("9") != none
+
+local let two: Bool = ts[1] == ts["x"] or ts.hasKey(1) or ps.get(1) != none or ps[1] == ps["p"]
+-- findings.txt --
+error[E3002]  a/a.canon:47:26
+  expected ref a.js, found String
+
+error[E3002]  a/a.canon:47:53
+  expected ref a.js, found String
+
+error[E3002]  a/a.canon:47:68
+  expected ref a.ks, found String
+
+error[E3002]  a/a.canon:47:92
+  expected ref a.ks, found String
+
+error[E3002]  a/a.canon:49:26
+  expected ref a.ss, found Int
+
+error[E3002]  a/a.canon:49:53
+  expected ref a.ss, found Int
+
+error[E3002]  a/a.canon:49:66
+  expected ref a.tab, found Int
+
+error[E3002]  a/a.canon:49:83
+  expected ref a.tab, found Int
+
+8 errors, 0 warnings in 1 package (…)
