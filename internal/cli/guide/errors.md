@@ -36,6 +36,7 @@ error[E3002]  shop/shop.canon:30:17
 | Code | Fix |
 |---|---|
 | `E1116` `E1117` | syntax; `E1117`: a `,` or newline between items |
+| `E1118` | an annotation where it is not allowed; a `@go`, `@ts` or `@cpp` annotation on a `local` declaration, or inside one: nothing generates a local, so remove the annotation, or drop `local` to emit it |
 | `E1013` | a required root is not on this machine: clone it there, place it in `project.local.canon`, or list it in `optional_roots` |
 | `E1014` `E1009` | `project.local.canon` holds more than a `roots` map of declared roots; `optional_roots` names a non-root |
 | `E7009` `E3705` | a `load` or `asset` under an absent optional root: place the root, or check other packages |
@@ -43,6 +44,7 @@ error[E3002]  shop/shop.canon:30:17
 | `E8022` `E8025` | a relative include or import between roots placed differently, or climbing above the project: emit a copy under the same root |
 | `E1138` | a quoted word that is not one of the words that need it: write it without backticks (`` `return` `` is quoted, `` `kind` `` is `kind`) |
 | `E1017` `E1018` | `tiers`: a name that is not an identifier, a path listed twice; a package no path places, or a path that places none |
+| `E1019` | `out_templates` in `project.canon`: a target that is not an emit target, a placeholder other than `{dir}` and `{dotted}`, a template starting with `@`, a path with an empty, `.` or `..` segment, a character outside `A-Z a-z 0-9 . _ -` and `/`, or a `ts` template not ending in `.ts` (`canon guide emit`) |
 | `E2007` | an import climbs `tiers`: import the same or an earlier tier, move the code down, or change `tiers` |
 | `E1125` `E1126` | reserved word as a name: rename; keep a wire name with `@json` |
 | `E2102` | unknown name: typo (also beside a literal: `weigth < 5`), missing `import`, or a key the table does not have |
@@ -68,11 +70,12 @@ error[E3002]  shop/shop.canon:30:17
 | `W8031` | an entry position, or a number or text made from one, is written to an output: write the entry's key or a `@stable` field, or wrap it in `positional(…)` to write it on purpose |
 | `W1912` | an amend path selects an entry by position (`[#n]`): select it by key |
 | `W3002` | `E.members.first(m => m.name == s)` visits every member: write `E.named(s)` |
-| `E8005` | two generated names collide: put `@go(name:)`, `@cpp(name:)` or `@ts(name:)` on one; `foreignDefine`: a C++ name that a package this one does not read writes as a `#define`: `@cpp(name:)` on the declaration, or use a type of that package (`canon guide emit`) |
-| `E8009` | an invalid emit option; `outChars`: a segment of the project-relative path an `out` resolves to (the root's own path, or the emitting file's directory for an unrooted `out`, included) uses a character outside `A-Z a-z 0-9 . _ -`: rename the directory (an `out` that does not resolve is `E7001` alone) |
+| `E8005` | two generated names collide: put `@go(name:)`, `@cpp(name:)` or `@ts(name:)` on one; `foreign…`: a C++ name that a package this one does not read writes as a `#define`, and the finding names the way out: `@cpp(name:)` on the declaration (`foreignDefine`), the Canon rename of the source of a derived name (`foreignDerived`), renaming a table id's entry (`foreignId`), or, always, a use of a type of that package in this one (`foreignFixed` has only this; `canon guide emit`) |
+| `E8009` | an invalid emit option; `outTemplate`: a root name in `out` with no `out_templates` entry for this target, add one to `project.canon` or write the path as a string; `outQuoted`: a quoted `out` equal to the name of a root that has a template, write the name unquoted, or `"./<name>"` for the directory beside the file; `outChars`: a segment of the project-relative path an `out` resolves to (the root's own path, or the emitting file's directory for an unrooted `out`, included) uses a character outside `A-Z a-z 0-9 . _ -`: rename the directory (an `out` that does not resolve is `E7001` alone) |
 | `E8001` | the build would overwrite a file it does not own: `canon build --adopt <path>` (text files, legacy C++ headers), or move it |
+| `E8026` | a `load.dir` pattern (or a `load`) reads a file an emit of the build writes, before the output exists: narrow the pattern, or move the emit's `out` outside the load's base |
 | `E8021` | a misplaced `@text` or a bad file name (`canon guide emit`); `source`: a name ending in `.canon` would be read as a source of the project, give it another extension |
-| `E8019` | the emit asks for what no generator builds: the message names the way out |
+| `E8019` | the emit asks for what no generator builds: the message names the way out. A `const` of an optional or a `ref` type in a go or cpp emit (`OptionalConstant`, `RefConstant`): make it a field of a record `let`; a `const` whose type holds a dependent type, in every code emit (`DependentConstant`): hold the value in a record field beside its discriminant, in a `let` of that record |
 | `E3501` | ref to a missing key: fix the key or add the entry |
 | `E3024` | `past` on a type that is not an enum, a variant or a `ref`: `[past E]`, not `past [E]` |
 | `E3502` `E3506` | a stored value refers to a retired entry, or uses a retired member: repoint it, or type the slot `past` |

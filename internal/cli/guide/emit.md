@@ -9,9 +9,17 @@ project demo {
   canon: "0.1"
   roots {
     gen: "gen"
+    mirror: "mirror"
   }
   go_module {
     gen: "example.com/demo/gen"
+    mirror: "example.com/demo/mirror"
+  }
+  out_templates {
+    go: {
+      gen: "{dir}"
+      mirror: "go/{dir}"
+    }
   }
 }
 ```
@@ -48,7 +56,7 @@ test "priceFor counts whole units" {
   expect products.pen.priceFor(-1) == 0
 }
 
-emit go { out: "@gen/store", package: "store", mode: baked }
+emit go { out: [gen, mirror], package: "store", mode: baked }
 emit json { out: "@gen/data/" }
 ```
 
@@ -70,6 +78,14 @@ emit json { out: "@gen/data/" }
   directory of the file holding the emit. An `out` that does not resolve is `E7001` alone. The
   path is written into `#include`s, Go imports and TypeScript import specifiers, which take no
   escapes.
+- `out` may name a root instead of a path (`out: [gen, mirror]`): the path comes from the
+  `out_templates` of `project.canon`, as in the project above (`go: { gen: "{dir}" }`), where
+  `{dir}` is the package path as a directory (`store`, `items/vocab`) and `{dotted}` the package
+  path as written. A root name with no template for this target is `E8009` `outTemplate`; a
+  quoted string equal to a root name that has one is `E8009` `outQuoted` (write the name
+  unquoted, or `"./<name>"` for the directory beside the file). An invalid target or template is
+  `E1019` (a placeholder other than `{dir}` and `{dotted}`, a template starting with `@`, a
+  path with an empty, `.` or `..` segment, a `ts` template not ending in `.ts`).
 - A code target always emits every public type, enum, constant and `export fn`; `values`
   (default: every public `let`) selects values.
 - A package whose types another package's output uses must emit the same target (`E8004`).
@@ -83,6 +99,11 @@ emit json { out: "@gen/data/" }
   field of the same record, or by a ref into a let that is not `@reload`). Through any other ref
   it is generated: the ref's targets are known at build time, so the code holds a private table
   from the ref's key to the branch, and a key it lacks fails with `no branch for this value`.
+- A `const` of an optional or a `ref` type is `E8019` in a go or cpp emit (`OptionalConstant`,
+  `RefConstant`; TypeScript writes `T | null` or the key): make it a field of a record `let`. A
+  `const` whose type holds a dependent type, in a list, a map or an optional too, is `E8019` in
+  every code emit (`DependentConstant`): hold the value in a record field beside its
+  discriminant, in a `let` of that record.
 - Shared records: a record, variant, dependent type or table of another package is usable in
   values and data in every target and mode; do not copy the type. A package reached only through
   another's types needs the same emits in its imports. Still `E8019`: a foreign record whose ref
@@ -134,6 +155,16 @@ calls to other `export fn` of the package (`E9001` otherwise). Parameters: `Bool
 - Generated C++ never lets source text change how C++ reads it: a doc line ending in `\` is
   written as a `/** */` block; in docs `??/` is written `?\?/`, and in string and character
   literals every `?` that follows a `?` is written `\?` (DECISIONS 423).
+- A `const` of a variant's kind (`Shape.dot.kind`) is written as the kind enum's member in every
+  code target: a Go `var`, a C++ `inline constexpr`, a typed TypeScript `export const`; a list or
+  map of kinds follows its list or map row.
+- Every C++ output directory holds a `canon_runtime.h` stamped by its content: regenerate every
+  C++ output with one canon, because a translation unit that includes copies of two different
+  runtime texts stops at compile time with canon's `#error`. A copy written by canon 0.2 or earlier
+  has no stamp, so a mix with one is caught only when the stamped copy is included last: regenerate
+  all at once.
+- A `load.dir` pattern that matches a path an emit of the build writes is `E8026` at the load,
+  before the output exists: narrow the pattern, or move the emit's `out` outside the load's base.
 
 ## Decoders check refinements, and bounds are constants
 
@@ -202,6 +233,12 @@ emit ts { out: "@gen/limits/limits.ts", mode: types }
   documented limit.
 - A failure under an empty map key names the key as `<parent>.` in every target (`$.m.` for the
   key or a scalar value, `$.m..v` for a field of a record value).
+- The C++ `Decode` of a `types`-mode record takes an already-parsed value, an `nlohmann::json` or an
+  `nlohmann::ordered_json` (`Decode(const nlohmann::ordered_json&, std::string&)`). Handed a
+  `json`, whose objects are ordered by key, a nested table or a map it decodes holds its entries
+  in key byte order; handed an `ordered_json`, it holds them in the order that value holds, the
+  file's for one parsed from text, as `Parse` (which reads the text itself) does. Neither sees a
+  repeated key or a number token.
 
 **Bound constants.** Each finite side of a field's refinement is a constant, for every field of a
 public record or variant case an emit writes: `Min`, `Max` (for `..=`), `End` (for `..`), and for a
@@ -270,15 +307,50 @@ export const ToneMembers: ReadonlyArray<Tone>;
   returns an error, and a test that ranges over `ToneMembers()` through the switch, so a new member
   fails the test.
 
+## TypeScript in a bundle
+
+Every `Object.freeze`, `canonFreeze`, `canonList`, `canonTable`, `canonIndex`, `new CanonMap` and
+`new Map` that builds a module-level value is written `/*#__PURE__*/ ` first, each call of a chain
+on its own. A bundler that finds such a `const` unread drops it, so a program that imports one
+constant of a generated module carries that constant alone, not every table of the module. A
+generated module has no top-level expression statement and builds only immutable data.
+
+Put a `package.json` in the output directory, which holds only generated files, so that a
+bundler knows it:
+
+```json
+{ "type": "module", "sideEffects": false }
+```
+
+A bundler reads the nearest `package.json`: this one covers the files of its directory and below,
+never the rest of the project (do not set `sideEffects` at the project root for it).
+Without `type`, TypeScript (`module: nodenext`) compiles the generated `.ts` files, which are ESM, as
+CommonJS (`TS1287` under `verbatimModuleSyntax`), and Node warns (`MODULE_TYPELESS_PACKAGE_JSON`):
+keep `"type": "module"`.
+
+- `removeComments` (a `tsconfig.json` option), a formatter or any step that strips comments
+  before the bundler runs deletes the marks: the output is then as large as before v0.3, never
+  wrong. Measured with esbuild, Rollup and Rolldown; webpack (`optimization.innerGraph`) and
+  Terser were not measured, so look at a bundle before relying on them.
+- A decoder's returned value is not marked (a bundler drops an unused function whole), and the
+  `$union<N>` constant of a `data` or `types` decoder is the one top-level value no mark can cover.
+- `<last>.conformance.test.ts` registers its `node:test` tests when loaded, by design: run it with Node's test
+  runner and never import it from a program.
+- Each generated file declares its own `CanonEvalError` and `CanonTable`. Tell an evaluation error
+  by `e.name === "CanonEvalError"`, then read `e.code`, not by `instanceof` across files; and a barrel
+  names its re-exports (`export { Item } from "./items.js"`), because `export *` over two generated
+  modules is `TS2308`.
+
 ## C++ names and `#define`s
 
 `@cpp(defines: "P")` on an enum or a `const` writes `<last>.defines.gen.h` for legacy code:
 `#define APP_MAIN 0`. Generated headers guard the names a package, and the packages it reads,
 define. A generated C++ name that another package, one this package does not read, writes as a
-`#define` cannot be guarded, so it is `E8005` `foreignDefine`, at the declaration, whatever the
-selection: `APP_MAIN is declared for hud.Screen.APP_MAIN and written as a #define for
-windows.Window.MAIN, in a package this one does not read, so its headers cannot guard it; rename
-hud.Screen.APP_MAIN with @cpp(name:), or use a type of that package here`.
+`#define` cannot be guarded, so it is `E8005` (`foreignDefine`, or `foreignId`, `foreignDerived` or
+`foreignFixed` by how the name is built), at the declaration, whatever the selection:
+`APP_MAIN is declared for hud.Screen.APP_MAIN and written as a #define for windows.Window.MAIN, in a
+package this one does not read, so its headers cannot guard it; rename hud.Screen.APP_MAIN with
+@cpp(name:), or use a type of that package here`.
 
 ```canon windows/windows.canon
 /// Window ids shared with legacy C++ code.
@@ -318,8 +390,12 @@ enum Screen {
 emit cpp { out: "@gen/hud", namespace: "hud", mode: types }
 ```
 
-- Ways out: `@cpp(name:)` on the declaration, as `hud` does, or use a type of the defining package
-  in this one, which makes this package read it (and so guard its defines).
+- Ways out, the one the finding names: `@cpp(name:)` on the declaration (`foreignDefine`, as `hud`
+  does); the Canon rename of the name a derived C++ name is built on, which `@cpp(name:)` does not
+  change (`foreignDerived`: a value's, field's, fn's or parameter's name); renaming a table id's
+  entry (`foreignId`); or, always, a use of a type of the defining package in this one, which
+  makes this package read it and so guard its defines (the only way for `foreignFixed`, a name
+  the generator fixes, such as `Get` or `Decode`).
 - A package writes defines when its first `emit cpp` is `baked`, `data` or `types`. A local or a
   parameter of a translated fn is no generated name: the C++ compiler reports a clash there.
 - A name met only in a comment, a string literal or a character literal is not wrapped.

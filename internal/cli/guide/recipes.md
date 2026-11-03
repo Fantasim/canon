@@ -81,7 +81,8 @@ rename or reuse a stable id (`E6001`, `E6002`). A `@codes` member is retired the
 Add `check cheapPotion: kind != potion or price <= 500 at price else "{name}: over 500"` to
 the record, and `expect Item { name: "Elixir", kind: potion, price: 900 } fails cheapPotion` to
 a `test` (`canon guide logic`). Then `canon fmt`, `canon check` (existing data may now fail: fix it or soften to `warn`),
-`canon test --run potions`.
+`canon test --run potions`. An error outside every `expect` of a test (a `let` holding a computed value out
+of its range) fails the test too, and `canon test` prints its warnings and honours `--max-warnings`.
 
 ## Test a package check
 
@@ -132,6 +133,7 @@ Clean names in Canon, the legacy names on the wire (`canon guide port` has the w
    bad row.
 5. Write what stays irregular with a `local record` and a `@text` function, then `canon build`.
 6. Commit `canon.lock`; check it with `canon lock check`.
+7. `canon lint`: apply its fixes one at a time, linting again after each (`canon guide port`, step 6).
 
 ```sh port
 canon check
@@ -226,4 +228,6 @@ emit cpp { out: "include", namespace: "windows", mode: types }
 ```
 
 The legacy code includes the defines header, new code uses `windows::Window::MAIN`. A package that
-does not read `windows` and declares `APP_MAIN` too is `E8005`: rename it with `@cpp(name:)`.
+does not read `windows` and declares `APP_MAIN` too is `E8005`; the finding names the way out: rename it
+with `@cpp(name:)`, rename the source of a derived name, rename a table id's entry, or use a type of
+`windows` there (`canon guide emit`).

@@ -17,7 +17,15 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 )
 
-const helpFlag = "h"
+const (
+	helpFlag = "h"
+	// bundleTopic holds the bundle's package.json in a bare `json` fence (ADR-0026 §17.4), whose key is bundleKey.
+	bundleTopic = "emit"
+	bundleKey   = "sideEffects"
+)
+
+// packageKeys are, sorted, the only members of that package.json.
+var packageKeys = []string{bundleKey, "type"}
 
 // sentinels are the API's errors by Go name (API.md §15), as the guide names them.
 var sentinels = map[string]error{
@@ -116,6 +124,40 @@ func TestGuideCommandTable(t *testing.T) {
 	}
 }
 
+// shellLine is a line of a shell fence: its commands, split at pipes, `&&` and `;`, and its trailing comment.
+type shellLine struct {
+	commands []string
+	comment  string
+}
+
+var shellSeparators = regexp.MustCompile(`\|\|?|&&|;`)
+
+func shellLines(body string) []shellLine {
+	var out []shellLine
+	for _, l := range strings.Split(body, "\n") {
+		code, comment, _ := strings.Cut(l, " #")
+		var commands []string
+		for _, c := range shellSeparators.Split(code, -1) {
+			commands = append(commands, strings.TrimSpace(c))
+		}
+		out = append(out, shellLine{commands: commands, comment: comment})
+	}
+	return out
+}
+
+func runsCanon(command string) bool { return strings.HasPrefix(command, progName+" ") }
+
+// canonShellText is a shell fence as code spans for the flag test: its canon commands and its comments,
+// not another program's words (`jq -c` is not a canon flag).
+func canonShellText(body string) string {
+	var spans []string
+	for _, l := range shellLines(body) {
+		spans = append(spans, slices.DeleteFunc(slices.Clone(l.commands), func(c string) bool { return !runsCanon(c) })...)
+		spans = append(spans, l.comment)
+	}
+	return "`" + strings.Join(spans, "`\n`") + "`"
+}
+
 // commandLines are the command lines the guide shows: lines of sh fences, split at pipes and
 // `&&`, and inline code spans, each kept when it starts with `canon `.
 func commandLines(t *testing.T) []string {
@@ -125,9 +167,8 @@ func commandLines(t *testing.T) []string {
 		if f.lang != "sh" {
 			continue
 		}
-		for _, l := range strings.Split(f.body, "\n") {
-			l, _, _ = strings.Cut(l, " #")
-			lines = append(lines, regexp.MustCompile(`\|\|?|&&|;`).Split(l, -1)...)
+		for _, l := range shellLines(f.body) {
+			lines = append(lines, l.commands...)
 		}
 	}
 	for _, text := range guideTexts(t) {
@@ -137,7 +178,7 @@ func commandLines(t *testing.T) []string {
 	}
 	var out []string
 	for _, l := range lines {
-		if l = strings.TrimSpace(l); strings.HasPrefix(l, progName+" ") {
+		if l = strings.TrimSpace(l); runsCanon(l) {
 			out = append(out, l)
 		}
 	}
@@ -176,7 +217,7 @@ func TestGuideFlagsExist(t *testing.T) {
 	texts := guideTexts(t)
 	for _, f := range allFences(t) {
 		if f.lang == "sh" {
-			texts[f.String()] = "`" + strings.ReplaceAll(f.body, "\n", "`\n`") + "`"
+			texts[f.String()] = canonShellText(f.body)
 		}
 	}
 	for topic, text := range texts {
@@ -289,6 +330,39 @@ func jsonValues(f guideFence) ([]any, error) {
 	return out, nil
 }
 
+// isPackageJSON reports that a JSON object is the bundle's package.json: it holds the key `sideEffects`.
+func isPackageJSON(obj map[string]any) bool {
+	_, ok := obj[bundleKey]
+	return ok
+}
+
+// ADR-0026 §17.4: every bare `json` fence is valid JSON, and emit.md holds the bundle's `"sideEffects": false`.
+func TestGuideBareJSONFencesParse(t *testing.T) {
+	bundle := false
+	for _, f := range allFences(t) {
+		if f.lang != "json" || f.arg != "" {
+			continue
+		}
+		values, err := jsonValues(f)
+		if err != nil {
+			t.Errorf("%s: bare json fence is not JSON: %v", f, err)
+		}
+		for _, v := range values {
+			obj, _ := v.(map[string]any)
+			if !isPackageJSON(obj) {
+				continue
+			}
+			if keys := sortedKeys(obj); !slices.Equal(keys, packageKeys) {
+				t.Errorf("%s: package.json has members %v, want %v", f, keys, packageKeys)
+			}
+			bundle = bundle || f.topic == bundleTopic && obj[bundleKey] == false
+		}
+	}
+	if !bundle {
+		t.Errorf("%s: no bare json fence holds %q: false", bundleTopic, bundleKey)
+	}
+}
+
 // CLI.md §2.4, §3.15, API.md §8.8: each JSON object has only its type's members; requests and ops decode.
 func TestGuideJSON(t *testing.T) {
 	wrappers := objectKeys()
@@ -302,6 +376,9 @@ func TestGuideJSON(t *testing.T) {
 		}
 		for _, v := range values {
 			obj, _ := v.(map[string]any)
+			if isPackageJSON(obj) {
+				continue // the bundle's package.json: TestGuideBareJSONFencesParse checks it
+			}
 			checkObject(t, f, "", obj, topKeys(obj, wrappers))
 			checkRequest(t, f, obj)
 		}

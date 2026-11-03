@@ -22,11 +22,11 @@ length. A project is the directory holding `project.canon`.
 | `types` | scalars, refinements, enums, records, variants, optionals, collections, refs, dependent types |
 | `data` | `let`/`const`, tables, `entry` files, `load`, `@json` wire names, stable ids and `canon.lock` |
 | `wire` | `@json` forms in depth: names, `Bool` as 0/1, `Duration` units, bitmasks, parallel keys (`pairs`), inline variants |
-| `port` | porting a legacy file: clean names in Canon, legacy names on the wire, a whole worked project |
+| `port` | porting a legacy file: clean names in Canon, legacy names on the wire, a whole worked project, `canon lint` on the port |
 | `stable` | stable tables and `@stable` fields: what, when, the lock, generated ids and lookups, mistakes |
 | `assets` | asset types: files that must exist, exact letter case, roots, the studio's picker |
 | `logic` | functions, methods, expressions, `match`, standard library, checks, tests, `expect package` for package checks |
-| `emit` | `emit` targets and modes, what is generated, checked decoders and bound constants, opaque enums, C++ `#define`s, `export fn`, text files (`emit text`, `@text`) |
+| `emit` | `emit` targets and modes, what is generated, checked decoders and bound constants, opaque enums, TypeScript in a bundle, C++ `#define`s, `export fn`, text files (`emit text`, `@text`) |
 | `views-i18n` | views, the studio package, the JSON of the `tags` `positional` `enumRow` `cards` controls, translation files |
 | `layers` | `amend`, layer files, `--layer`, runtime `input` fields |
 | `cli` | commands, value paths, the JSON of `check`, `explain`, `refs`, `graph`, `edit`, `rename` |

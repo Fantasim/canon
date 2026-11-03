@@ -252,6 +252,44 @@ table  guide.legacyport.weapons  axe
 table  guide.legacyport.weapons  bow
 ```
 
+## 6. Lint the port
+
+`canon lint` lists what valid Canon can still keep of the legacy file, as warnings `W0001` to
+`W0008` that `canon check` never reports:
+
+| Code | Finds |
+|---|---|
+| `W0001` | a field name that keeps a legacy prefix (`dwCost`, `szName`, `m_count`): the name without it |
+| `W0002` | numbered sibling fields (`slot1`, `slot2`) that one list holds, or two numbered columns that one `pairs` list holds |
+| `W0003` | a `String` limited to the member names of an enum: type it with the enum |
+| `W0004` | a field whose wire name starts with `_` (an authoring note) that an output writes: use a `///` comment, or a wire name without the `_` |
+| `W0005` | a string holding the words of canon's generated marker |
+| `W0006` | `@files` entries that sit off the path their template gives |
+| `W0007` | a source file over 5,000 lines held by one `let`: split its rows into files |
+| `W0008` | a C++ name that a text output or a loaded header `#define`s and no `@cpp(defines:)` guard covers |
+
+`canon lint` always prints JSON lines, whatever `--format` says; with `--fix` it first prints a
+`{"fix": ...}` line per finding that one edit repairs, holding a complete `canon edit` request.
+Only `W0001` has a fix. A `W0001` finding has no `fix` line when the rename needs a decision of
+yours:
+
+| Why there is no `fix` line | What to do |
+|---|---|
+| the suggested name is taken by another field or method of the record, or is reserved | pick another name, then `canon rename` |
+| a `@text` function's result reaches the record: the rename would change a key of the text file | rename it, and add `@json("<old name>")` to the field if the file must keep its key |
+| the field is `@stable`: `canon edit` refuses it, the lock names it | rename it by hand and rewrite its `field` lines in `canon.lock`, in the same commit (`E6001` otherwise), and add `@json("<old name>")` where a `load` or a data emit reads it |
+| the field's package, or a package importing it, holds a broken declaration, or an importing package is not loaded | fix it, or lint without a package selection (`canon lint`), or name the importer among the `packages`, then lint again |
+
+Applying one fix makes the others stale, so apply one, then lint again:
+
+```sh
+canon lint --fix | jq -c 'select(.fix)|.fix.request' | head -1 | canon edit
+```
+
+Repeat until `canon lint --fix` prints no `fix` line. A rename keeps the old wire name where a
+`load` or a data emit reads the field (never for a `@text` result); lint never changes what `check`
+or `build` report or exit with.
+
 ## Mistakes
 
 | Mistake | Result |

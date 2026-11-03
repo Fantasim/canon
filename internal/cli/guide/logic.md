@@ -167,6 +167,12 @@ evaluation findings of `v` and its record checks, never static ones (a literal o
 a compile error) nor package-level checks: `expect package` runs those (below). A translated
 `export fn` method must be called by a test of its package (`E9008`).
 
+An error produced outside every `expect` (a `let` of the test holding a computed value out of its
+range) fails the test without stopping it, one line per finding; a warning there neither fails nor
+shows. `canon test` prints, before its report, the errors of phases 1-2 of every loaded package and
+the warnings of the selected ones, as `canon check` does, and honours `-q` and `--max-warnings`
+(exit 4 past it).
+
 ## Testing package checks: `expect package`
 
 A package-level check reads top-level values, which a test cannot change, and `fails checkName`
