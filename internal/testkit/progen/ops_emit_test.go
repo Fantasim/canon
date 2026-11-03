@@ -34,7 +34,7 @@ func emitOperators() []operator {
 		e8004,
 		op(diag.E8005.Def().Code, "CODEGEN.md §3.5 (colliding Go names)", collidingMember),
 		op(diag.E8007.Def().Code, "CODEGEN.md §2.8 (Go output under no go_module root)", unmappedGoOut),
-		op(diag.E8008.Def().Code, "CODEGEN.md §2.3 (two Go emits, one directory)", sharedGoDir),
+		sharedGoDirOp(),
 		op(diag.E8009.Def().Code, "CODEGEN.md §2.1 (invalid mode)", emitValue("mode", "zzmode")),
 		op(diag.E8010.Def().Code, "CODEGEN.md §5.2 (ordered codes decreasing)", withEmit("go", "/// A rank.\nenum ", "ZzRank", " ordered @codes(UInt8) { low = 2, high = 1 }")),
 		op(diag.E8011.Def().Code, "CODEGEN.md §3.5 (@go(name:) not an identifier)", badGoName),

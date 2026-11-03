@@ -8,7 +8,7 @@ import (
 )
 
 // driversSyntax is a dependent of a whose table a.Target drives reads a function holding a
-// syntax error: an assignment with no target.
+// syntax error: an assignment with no target; a clean table of the same package sits beside it.
 const driversSyntax = `/// C.
 package c
 
@@ -28,6 +28,11 @@ let own: table a.Kind = {
   c1 { goal: visit, n: loop(3) }
 }
 
+/// Clean kinds, beside the flawed table.
+let fine: table a.Kind = {
+  c2 { goal: visit, n: 4 }
+}
+
 /// A use of own.
 record Use {
   /// Its kind.
@@ -35,9 +40,17 @@ record Use {
   /// Its target.
   target: a.Target(kind)?
 }
+
+/// A use of fine.
+record UseFine {
+  /// Its kind.
+  kind: ref fine
+  /// Its target.
+  target: a.Target(kind)?
+}
 `
 
-// TYPES.md §1, EVALUATION.md §2.1: a syntax error breaks its declaration in a drivers-only package.
+// TYPES.md §1, EVALUATION.md §2.1: a syntax error breaks its declaration, not the clean table beside it.
 func TestDriversSkipSyntaxErrors(t *testing.T) {
 	for _, limit := range []int{0, 1} {
 		fsys := driversFS()
@@ -63,6 +76,9 @@ func driversSkipped(t *testing.T, p *build.Project) {
 	got := decodeModel(t, viewOutput(t, res, "@out/a.view.json").Content).Types["a.Target"].Drivers
 	if _, ok := got["c:own"]; ok || got["a:kinds"] == nil {
 		t.Errorf("drivers %v, want a:kinds and no c:own", got)
+	}
+	if got["c:fine"]["c2"] != "visit" {
+		t.Errorf("drivers %v, want c:fine to hold c2 visit", got)
 	}
 	an, err := p.Analyze(context.Background(), []string{"a"})
 	if err != nil {

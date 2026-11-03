@@ -1,7 +1,8 @@
 # TestRangeRoundTrip's Probe cases (CODEGEN.md §5.15, §5.13): `name ~~ from ~~ to ~~ want [~~ flags]`.
 # The case's text is base.json with `from` replaced by `to` once (an empty from keeps the base).
 # want is `ok`, or `<path after the root>: <message>` as Go and C++ write it.
-# flags: `text` keeps the parsed-value readers (C++ Decode, TS decode) out, where a case holds more than one bad map entry, or an integer written `5.0` or `1e1`, or one past 2^53, whose token or exact value a parsed JavaScript value no longer has;
+# flags: `text` keeps the parsed-value readers (C++ Decode, TS decode) out, where a case holds more than one bad map entry, or an integer written `5.0` or `1e1`, whose token a parsed JavaScript value no longer has;
+# `tsdecode` keeps the TS decode alone out, where an integer is past 2^53 (a parsed JavaScript value no longer has its exact value; the C++ Decode keeps it);
 # `refused` marks a text every reader accepts and `load` refuses, a Duration written in seconds with a fraction (E8102: no wire form).
 # Otherwise `load` accepts a case exactly when want is `ok`.
 # A sixth field is the want of the data loaders where it differs (WIRE.md §5.1, CODEGEN.md §5.13): a Duration read in a unit is any
@@ -111,8 +112,8 @@ bits-negative ~~ "flags":3 ~~ "flags":-1 ~~ flags: expected an integer from 0 to
 bits-fraction ~~ "flags":3 ~~ "flags":1.5 ~~ flags: expected an integer from 0 to 9223372036854775807
 bits-string ~~ "flags":3 ~~ "flags":"x" ~~ flags: expected an integer from 0 to 9223372036854775807
 bits-unknown ~~ "flags":3 ~~ "flags":8 ~~ flags: unknown bits 0x8
-bits-2p53p1 ~~ "flags":3 ~~ "flags":9007199254740993 ~~ flags: unknown bits 0x20000000000000 ~~ text
-bits-int64-max ~~ "flags":3 ~~ "flags":9223372036854775807 ~~ flags: unknown bits 0x7ffffffffffffff8 ~~ text
+bits-2p53p1 ~~ "flags":3 ~~ "flags":9007199254740993 ~~ flags: unknown bits 0x20000000000000 ~~ tsdecode
+bits-int64-max ~~ "flags":3 ~~ "flags":9223372036854775807 ~~ flags: unknown bits 0x7ffffffffffffff8 ~~ tsdecode
 bits-2p63 ~~ "flags":3 ~~ "flags":9223372036854775808 ~~ flags: expected an integer from 0 to 9223372036854775807
 bits-null ~~ "flags":3 ~~ "flags":null ~~ flags: null
 #

@@ -28,6 +28,7 @@ const (
 	rangeRunComment    = "#"
 	rangeRunNewline    = `\n`
 	rangeRunTextOnly   = "text"
+	rangeRunTSDecode   = "tsdecode"
 	rangeRunRefused    = "refused"
 	rangeRunCasesDir   = "cases"
 	rangeRunDataExt    = ".data"
@@ -108,7 +109,7 @@ func rangeRunWidthForms(t *testing.T) []*regexp.Regexp {
 // rangeRunCase is one file every reader reads, what they must say of it (want; dataWant, where the data loaders say otherwise, WIRE.md §5.1: a unit Duration is an integer count of the unit in a data file and any whole number of milliseconds in a source) and whether `load` accepts it (a probe case only).
 type rangeRunCase struct {
 	name, kind, text, want, dataWant string
-	loads, textOnly                  bool
+	loads, textOnly, tsDecodeOnly    bool
 }
 
 // rangeRunRows reads the cases of name in rangeRunDir: one row of trimmed fields per line, the comments and blank lines skipped.
@@ -161,6 +162,7 @@ func rangeRunProbeCases(t *testing.T) []rangeRunCase {
 		}
 		c.loads = c.want == rangeRunOK && !strings.Contains(flags, rangeRunRefused)
 		c.textOnly = strings.Contains(flags, rangeRunTextOnly)
+		c.tsDecodeOnly = strings.Contains(flags, rangeRunTSDecode)
 		if len(f) > 5 {
 			c.dataWant = f[5]
 		}
@@ -411,9 +413,11 @@ func rangeRunReads(reader string, c rangeRunCase) bool {
 	return strings.Contains(reader, rangeRunDataTag)
 }
 
-// rangeRunCompared reports whether the verdict of a reader of c is judged: the parsed-value readers leave a text-only case out.
+// rangeRunCompared reports whether the verdict of a reader of c is judged: the parsed-value readers leave a text-only case out, and the TypeScript one alone a `tsdecode` case (ADR-0026 §15.10).
 func rangeRunCompared(reader string, c rangeRunCase) bool {
-	return !(c.textOnly && strings.Contains(reader, rangeRunDecodeTag))
+	decode := strings.Contains(reader, rangeRunDecodeTag)
+	tsDecode := decode && strings.HasPrefix(reader, rangeRunTSTag)
+	return !(c.textOnly && decode) && !(c.tsDecodeOnly && tsDecode)
 }
 
 // rangeRunOracle is what the readers' verdicts are compared with; widths are the forms of rangeRunWidthForms.
