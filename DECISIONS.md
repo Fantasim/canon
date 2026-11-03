@@ -4667,8 +4667,8 @@ round 2", "PS1 review", "PS2 round 2"):
      §5.9; CODEGEN.md §5.6, §5.8, §5.9; VIEWMODEL.md J10, J12; amends 432).** When a ref's target is a
      keyed list whose key field is itself a ref, every rule that reads "the key field's type" or "its
      wire" reads the chain's leaf: the first key down the chain that is not a ref. A literal written for
-     such a ref is a literal of the leaf's type (an integer for an Int leaf, a member name or its wire
-     for an enum leaf). It is written on the wire as the leaf's wire (an enum member's wire; with
+     such a ref is a literal of the leaf's type (an integer for an Int leaf, a member name for an enum
+     leaf). It is written on the wire as the leaf's wire (an enum member's wire; with
      `@json(codes)`, its code), and sorted, searched and compared as the leaf is. That applies in
      check's `E3317`, `verify`, `canon edit`, the generators' baked tables, load-error texts, branch
      tables and literal unions, and the view model's `keyType`. A ref held as another package's table
