@@ -55,10 +55,15 @@ func (g *gen) lit(t ir.TypeRef, v value.Value, big bool) string {
 	}
 }
 
-// unionLit is a literal union's value: its literal, or the base type's value (a member of the enum arm) as its wire text (CODEGEN.md §4.1).
+// unionLit is a literal union's value: its literal, the base type's value (a member of the enum arm) as its wire text, or a ref of its ref arm as its key's wire text (CODEGEN.md §4.1; DECISIONS 387).
 func (g *gen) unionLit(t ir.TypeRef, v value.Value) string {
-	if m, ok := v.(*value.Member); ok {
-		return quote(g.memberWire(g.elem(t).Named, m.Index))
+	switch x := v.(type) {
+	case *value.Member:
+		return quote(g.memberWire(g.elem(t).Named, x.Index))
+	case *value.Ref:
+		if arm := ir.UnionRef(t); arm != nil {
+			return quote(ir.KeyWire(*arm, x.Key))
+		}
 	}
 	return quote(as[value.Str](g, v).V)
 }
