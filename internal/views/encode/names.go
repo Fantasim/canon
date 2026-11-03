@@ -44,12 +44,28 @@ func Element(c *types.Collection) string {
 	return Name(c.Elem)
 }
 
-// KeyType is `int` for a keyed list keyed by an integer field, else `string` (J12).
+// KeyType is `int` for a keyed list whose key chain ends at an integer field, else `string`: a
+// key field that is a ref takes the key type of its target, at every depth (J12, DECISIONS 432).
 func KeyType(c *types.Collection) string {
-	if c.KeyedBy != nil && c.KeyedBy.Type.Base().Kind() == types.Int {
+	if leafKind(c) == types.Int {
 		return keyInt
 	}
 	return keyString
+}
+
+// leafKind is the kind of the key at the end of c's chain of ref keys: a table's is a String; a
+// chain that comes back to a collection already met (E3012, never indexed) ends as a String.
+func leafKind(c *types.Collection) types.Kind {
+	seen := map[*types.Collection]bool{}
+	for c != nil && c.KeyedBy != nil && !seen[c] {
+		seen[c] = true
+		r, ok := c.KeyedBy.Type.Base().(*types.RefType)
+		if !ok {
+			return c.KeyedBy.Type.Base().Kind()
+		}
+		c = r.Target
+	}
+	return types.String
 }
 
 // Driver is where a type argument is read (J13): an earlier field, a parameter of the enclosing
