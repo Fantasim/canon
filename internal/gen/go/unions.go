@@ -38,7 +38,7 @@ func (g *gen) unionIDCheck(b *strings.Builder, l leaf, r ir.TypeRef, s string, l
 	if l.owned || g.holder() != g.p.Name {
 		text = noEntryText
 	}
-	parse := g.qualify(r.Ref.Pkg, g.names.ParseName(g.idType(r.Ref.Elem)))
+	parse := g.idParse(r.Ref)
 	fmt.Fprintf(b, ifOpenFormat, literalGuard(l.t, s))
 	fmt.Fprintf(b, keyCheckFormat, g.temp(tempOK), parse, s, g.errAt(loc, text, s))
 	b.WriteString(closeBrace)
@@ -52,15 +52,27 @@ func (g *gen) unionCheck(b *strings.Builder, t ir.TypeRef, find, s, fail string)
 	}
 	found := g.temp(tempOK)
 	fmt.Fprintf(b, ifOpenFormat, literalGuard(t, s))
-	if e, ok := ir.RefKeyEnum(*r); ok && !ir.OpenEnum(g.p, g.e, e) {
+	if parse, ok := g.keyParse(*r); ok {
 		k := g.temp(tempKey)
-		fmt.Fprintf(b, parsedKeyFormat, k, found, g.qualify(e.Pkg, g.names.ParseName(g.goName(e))), s)
+		fmt.Fprintf(b, parsedKeyFormat, k, found, parse, s)
 		fmt.Fprintf(b, findAgainFormat, found, find, k)
 	} else {
 		fmt.Fprintf(b, findKeyFormat, found, find, g.keyOfText(*r, s))
 	}
 	fmt.Fprintf(b, failUnlessFormat, found, fail)
 	b.WriteString(closeBrace)
+}
+
+// keyParse is the Parse that reads ref r's key from its string, down a chain of refs to its leaf: an enum's (a closed one), or the id enum of a table whose package gives its ids one (CODEGEN.md §5.3, §5.8; DECISIONS 456); false when the key is read as it is.
+func (g *gen) keyParse(r ir.TypeRef) (string, bool) {
+	if e, ok := ir.RefKeyEnum(r); ok && !ir.OpenEnum(g.p, g.e, e) {
+		return g.qualify(e.Pkg, g.names.ParseName(g.goName(e))), true
+	}
+	leaf := ir.RefLeaf(r)
+	if !isTableRef(leaf.Ref) || !g.enumIDs(leaf.Ref.Pkg) {
+		return "", false
+	}
+	return g.idParse(leaf.Ref), true
 }
 
 // keyOfText is string s as the key type of ref r, whose table's rows are found by it: its id type, a string, or an opened enum.

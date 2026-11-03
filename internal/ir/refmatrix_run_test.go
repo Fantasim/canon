@@ -25,19 +25,19 @@ const (
 )
 
 // mxCases are the legal combinations of leaf, depth and mode, and how many the matrix leaves out.
-func mxCases() (cases []mxCase, illegal int) {
+func mxCases(goGen bool) (cases []mxCase, illegal int) {
 	for _, leaf := range mxLeaves {
 		for depth := 1; depth <= mxMaxDepth; depth++ {
-			cases, illegal = mxCasesOf(cases, illegal, leaf, depth)
+			cases, illegal = mxCasesOf(cases, illegal, leaf, depth, goGen)
 		}
 	}
 	return cases, illegal
 }
 
 // mxCasesOf adds the legal modes of a leaf at a depth to cases.
-func mxCasesOf(cases []mxCase, illegal int, leaf mxLeaf, depth int) ([]mxCase, int) {
+func mxCasesOf(cases []mxCase, illegal int, leaf mxLeaf, depth int, goGen bool) ([]mxCase, int) {
 	for _, mode := range mxModes {
-		c := mxCase{leaf: leaf, depth: depth, mode: mode}
+		c := mxCase{leaf: leaf, depth: depth, mode: mode, goGen: goGen}
 		if !c.legal() {
 			illegal++
 			continue
@@ -48,13 +48,13 @@ func mxCasesOf(cases []mxCase, illegal int, leaf mxLeaf, depth int) ([]mxCase, i
 }
 
 // mxWrite writes a project of the library and the files into a new directory and returns it.
-func mxWrite(t *testing.T, files []mxFile) string {
+func mxWrite(t *testing.T, goGen bool, files []mxFile) string {
 	t.Helper()
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, e2eProjFile), []byte(e2eFeatures), e2eFileMode); err != nil {
 		t.Fatal(err)
 	}
-	for _, f := range append([]mxFile{mxLibFile()}, files...) {
+	for _, f := range append(mxLibFiles(goGen), files...) {
 		pkg := filepath.Join(dir, f.pkg)
 		if err := os.MkdirAll(pkg, e2eDirMode); err != nil {
 			t.Fatal(err)
@@ -81,7 +81,7 @@ type mxRefusal struct {
 }
 
 // mxRefusals checks every position of every case alone and returns, by case name, the positions Canon accepts, and the ones it refuses.
-func mxRefusals(t *testing.T, cases []mxCase) (kept map[string][]mxPos, refused []mxRefusal) {
+func mxRefusals(t *testing.T, goGen bool, cases []mxCase) (kept map[string][]mxPos, refused []mxRefusal) {
 	t.Helper()
 	kept = map[string][]mxPos{}
 	var probes []mxProbe
@@ -93,7 +93,7 @@ func mxRefusals(t *testing.T, cases []mxCase) (kept map[string][]mxPos, refused 
 			files = append(files, c.files([]mxPos{p})...)
 		}
 	}
-	probeDir := mxWrite(t, files)
+	probeDir := mxWrite(t, goGen, files)
 	bad := mxCheckErrors(t, probeDir)
 	if err := os.RemoveAll(probeDir); err != nil {
 		t.Fatal(err)
@@ -209,30 +209,87 @@ func TestCppRefMatrix(t *testing.T) {
 		t.Skip("compiles generated code")
 	}
 	compilers, include := cxx.Toolchain(t)
-	cases, illegal := mxCases()
-	kept, refused := mxRefusals(t, cases)
-	mxCheckAllowlist(t, refused)
-	mxCheckPinned(t, cases, kept)
-	if t.Failed() {
+	m := mxPrepare(t, false)
+	if m.dir == "" {
 		return // nothing is compiled of a matrix that moved
 	}
-	var files []mxFile
-	for _, c := range cases {
-		if pos := kept[c.name()]; len(pos) > 0 {
-			files = append(files, c.files(pos)...)
-		}
-	}
-	dir := mxWrite(t, files)
-	mxBuild(t, dir)
-	sources := mxSources(t, dir)
+	sources := mxSources(t, m.dir)
 	if len(sources) != mxPackages {
 		t.Errorf("%d packages compiled (the library included), %d pinned", len(sources), mxPackages)
 	}
-	failed := mxCompile(t, compilers[0], include, filepath.Join(dir, e2eGenRoot), sources)
-	t.Logf("%d cases (%d illegal: an own table's ids are an enum in a baked package only), %d positions refused by the allowlist, %d packages compiled, %d fail", len(cases), illegal, len(refused), len(sources), len(failed))
+	failed := mxCompile(t, compilers[0], include, filepath.Join(m.dir, e2eGenRoot), sources)
+	t.Logf("%d cases (%d illegal: an own table's ids are an enum in a baked package only), %d positions refused by the allowlist, %d packages compiled, %d fail", m.cases, m.illegal, m.refused, len(sources), len(failed))
+	mxCheckPending(t, failed)
+}
+
+// mxCheckPending fails for every package that does not compile and is not on mxCppPending, and for every package of mxCppPending that now compiles.
+func mxCheckPending(t *testing.T, failed map[string]string) {
+	t.Helper()
+	seen := map[string]bool{}
 	for _, src := range slices.Sorted(maps.Keys(failed)) {
-		t.Errorf("%s does not compile:\n%s", filepath.Base(src), failed[src])
+		name := strings.TrimSuffix(filepath.Base(src), mxCppSuffix)
+		seen[name] = true
+		if !slices.Contains(mxCppPending, name) {
+			t.Errorf("%s does not compile:\n%s", filepath.Base(src), failed[src])
+		}
 	}
+	for _, name := range mxCppPending {
+		if !seen[name] {
+			t.Errorf("%s compiles now: remove it from mxCppPending", name)
+		}
+	}
+}
+
+// mxMatrix is a matrix built into a project: its directory ("" when the matrix moved), and its numbers.
+type mxMatrix struct {
+	dir                     string
+	cases, illegal, refused int
+}
+
+// mxPrepare decides the matrix by Canon's check (the allowlist, the pinned positions), writes the project of the positions it keeps and builds it with no finding, emitting go when goGen, else cpp. Its dir is "" when the allowlist or the pins moved.
+func mxPrepare(t *testing.T, goGen bool) mxMatrix {
+	t.Helper()
+	cases, illegal := mxCases(goGen)
+	kept, refused := mxRefusals(t, goGen, cases)
+	mxCheckAllowlist(t, refused)
+	mxCheckPinned(t, cases, kept)
+	m := mxMatrix{cases: len(cases), illegal: illegal, refused: len(refused)}
+	if t.Failed() {
+		return m
+	}
+	var files []mxFile
+	for _, c := range cases {
+		files = append(files, mxCaseFiles(t, c, kept[c.name()])...)
+	}
+	m.dir = mxWrite(t, goGen, files)
+	mxBuild(t, m.dir)
+	return m
+}
+
+// mxCaseFiles are the packages of case c, the positions pos it keeps given: one set for the positions that must compile, and, for a case on mxPendingProbe, a second set (tagged mxPendingTag) for the position held back as pending. Both languages write the split, so their package counts agree.
+func mxCaseFiles(t *testing.T, c mxCase, pos []mxPos) []mxFile {
+	t.Helper()
+	held, pending := mxPendingProbe[c.name()]
+	if !pending {
+		if len(pos) == 0 {
+			return nil
+		}
+		return c.files(pos)
+	}
+	var rest, probe []mxPos
+	for _, p := range pos {
+		if p.code == held {
+			probe = append(probe, p)
+		} else {
+			rest = append(rest, p)
+		}
+	}
+	if len(probe) == 0 {
+		t.Errorf("%s: position %s is on mxPendingProbe and is not kept", c.name(), held)
+	}
+	files := c.files(rest)
+	c.tag = mxPendingTag
+	return append(files, c.files(probe)...)
 }
 
 // mxCheckAllowlist fails for every refusal no entry of mxAllowed names, by case, position and the diagnostic code.

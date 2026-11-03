@@ -264,7 +264,7 @@ func (g *gen) dependentExpr(t ir.TypeRef, v value.Value, d *ir.Dependent, br int
 		}
 		return addressOf(g.typeName(d), g.qualify(d.Pkg, g.names.MakeBranchName(d, d.Branches[br]))+callArgs(args))
 	}
-	if untypedLit(bt) {
+	if g.untypedLit(bt) {
 		x = g.goType(bt) + lparen + x + rparen
 	}
 	parts := []pair{{n.BranchStore, n.Branches[br].Member}, {n.ValueStore, x}}
@@ -287,10 +287,14 @@ func (g *gen) branchDefineValue(t ir.TypeRef, v value.Value) string {
 	return zeroLit
 }
 
-// untypedLit reports a branch type whose literal is an untyped constant of another default type: an integer, a float, an integer key.
-func untypedLit(t ir.TypeRef) bool {
-	if t.Kind == types.Ref {
-		return !isTableRef(t.Ref) && t.Key != nil && t.Key.Kind == types.Int
+// untypedLit reports a branch type whose literal is an untyped constant of another default type: an integer, a float, an integer key, a string id of a table whose package gives ids a string type (CODEGEN.md §5.3, §5.6; DECISIONS 456).
+func (g *gen) untypedLit(t ir.TypeRef) bool {
+	if t.Kind != types.Ref {
+		return t.Kind == types.Int || t.Kind == types.Float
 	}
-	return t.Kind == types.Int || t.Kind == types.Float
+	t = ir.RefLeaf(t) // a chain of refs ends in the key that types its literal
+	if isTableRef(t.Ref) {
+		return g.stringIDRef(t.Ref)
+	}
+	return t.Key != nil && t.Key.Kind == types.Int
 }

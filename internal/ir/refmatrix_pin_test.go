@@ -15,90 +15,123 @@ var mxAllowed = []mxAllowance{
 	{"a literal union is a String, and no Int key is", diag.E3002.Def().Code, func(c mxCase, p mxPos) bool { return c.leaf.code == "in" && p.code == "u" }},
 }
 
-// mxPackages is the number of .gen.cpp the matrix compiles, the library's included.
-const mxPackages = 118
+// mxPendingProbe are the positions a case holds back in packages of their own (tagged mxPendingTag), by case: each is a bug of gen/cpp's, so the C++ matrix expects the probe's packages on mxCppPending to fail and compiles every other position of the case strictly. The Go matrix has no pending position and compiles the probe like any other.
+var mxPendingProbe = map[string]string{"mxfd1rd": "d"}
+
+// mxPendingTag tells a pending probe's packages from the case's other packages.
+const mxPendingTag = "p"
+
+// mxCppPending are the packages of those probes that gen/cpp does not compile yet: a data and a types reader of another package's class whose dependent type is decided through a ref straight into a table of a third package whose emit is data (string ids). Its branch table and discriminant are typed `::mxlibd`, a namespace the generated file neither includes nor declares. The test fails when one compiles, so the entry goes with the fix.
+var mxCppPending = []string{"mxfd1rdpb", "mxfd1rdpt"}
+
+// mxPackages is the number of .gen.cpp the matrix compiles, the libraries' included, the pending probe's among them.
+const mxPackages = 152
 
 // mxPinned are the positions each case keeps, by case: the others are refused by an allowance. A moved line names the case.
 const mxPinned = `
-mxew1bk flmud
-mxew1da flmu
-mxew1ds flmud
-mxew1ty flmud
-mxew1rd flmud
-mxew2bk flmud
-mxew2da flmu
-mxew2ds flmud
-mxew2ty flmud
-mxew2rd flmud
-mxew3bk flmud
-mxew3da flmu
-mxew3ds flmud
-mxew3ty flmud
-mxew3rd flmud
-mxec1bk flmud
-mxec1da flmu
-mxec1ds flmud
-mxec1ty flmud
-mxec1rd flmud
-mxec2bk flmud
-mxec2da flmu
-mxec2ds flmud
-mxec2ty flmud
-mxec2rd flmud
-mxec3bk flmud
-mxec3da flmu
-mxec3ds flmud
-mxec3ty flmud
-mxec3rd flmud
-mxst1bk flmud
-mxst1da flmu
-mxst1ds flmud
-mxst1ty flmud
-mxst1rd flmud
-mxst2bk flmud
-mxst2da flmu
-mxst2ds flmud
-mxst2ty flmud
-mxst2rd flmud
-mxst3bk flmud
-mxst3da flmu
-mxst3ds flmud
-mxst3ty flmud
-mxst3rd flmud
-mxin1bk flmd
-mxin1da flm
-mxin1ds flmd
-mxin1ty flmd
-mxin1rd flmd
-mxin2bk flmd
-mxin2da flm
-mxin2ds flmd
-mxin2ty flmd
-mxin2rd flmd
-mxin3bk flmd
-mxin3da flm
-mxin3ds flmd
-mxin3ty flmd
-mxin3rd flmd
-mxot1bk flmud
-mxot1rd flmud
-mxot2bk flmud
-mxot2rd flmud
-mxot3bk flmud
-mxot3rd flmud
-mxft1bk flmud
-mxft1da flmud
-mxft1ds flmud
-mxft1ty flmud
-mxft1rd flmud
-mxft2bk flmud
-mxft2da flmu
-mxft2ds flmud
-mxft2ty flmud
-mxft2rd flmud
-mxft3bk flmud
-mxft3da flmu
-mxft3ds flmud
-mxft3ty flmud
-mxft3rd flmud
+mxew1bk flmudo
+mxew1da flmuo
+mxew1ds flmudo
+mxew1ty flmudo
+mxew1rd flmudo
+mxew2bk flmudo
+mxew2da flmuo
+mxew2ds flmudo
+mxew2ty flmudo
+mxew2rd flmudo
+mxew3bk flmudo
+mxew3da flmuo
+mxew3ds flmudo
+mxew3ty flmudo
+mxew3rd flmudo
+mxec1bk flmudo
+mxec1da flmuo
+mxec1ds flmudo
+mxec1ty flmudo
+mxec1rd flmudo
+mxec2bk flmudo
+mxec2da flmuo
+mxec2ds flmudo
+mxec2ty flmudo
+mxec2rd flmudo
+mxec3bk flmudo
+mxec3da flmuo
+mxec3ds flmudo
+mxec3ty flmudo
+mxec3rd flmudo
+mxst1bk flmudo
+mxst1da flmuo
+mxst1ds flmudo
+mxst1ty flmudo
+mxst1rd flmudo
+mxst2bk flmudo
+mxst2da flmuo
+mxst2ds flmudo
+mxst2ty flmudo
+mxst2rd flmudo
+mxst3bk flmudo
+mxst3da flmuo
+mxst3ds flmudo
+mxst3ty flmudo
+mxst3rd flmudo
+mxin1bk flmdo
+mxin1da flmo
+mxin1ds flmdo
+mxin1ty flmdo
+mxin1rd flmdo
+mxin2bk flmdo
+mxin2da flmo
+mxin2ds flmdo
+mxin2ty flmdo
+mxin2rd flmdo
+mxin3bk flmdo
+mxin3da flmo
+mxin3ds flmdo
+mxin3ty flmdo
+mxin3rd flmdo
+mxot1bk flmudo
+mxot1rd flmudo
+mxot2bk flmudo
+mxot2rd flmudo
+mxot3bk flmudo
+mxot3rd flmudo
+mxft1bk flmudo
+mxft1da flmudo
+mxft1ds flmudo
+mxft1ty flmudo
+mxft1rd flmudo
+mxft2bk flmudo
+mxft2da flmuo
+mxft2ds flmudo
+mxft2ty flmudo
+mxft2rd flmudo
+mxft3bk flmudo
+mxft3da flmuo
+mxft3ds flmudo
+mxft3ty flmudo
+mxft3rd flmudo
+mxfd1bk flmudo
+mxfd1da flmudo
+mxfd1ds flmudo
+mxfd1ty flmudo
+mxfd1rd flmudo
+mxfd2bk flmudo
+mxfd2da flmuo
+mxfd2ds flmudo
+mxfd2ty flmudo
+mxfd2rd flmudo
+mxfd3bk flmudo
+mxfd3da flmuo
+mxfd3ds flmudo
+mxfd3ty flmudo
+mxfd3rd flmudo
+mxos1da flmudo
+mxos1ds flmudo
+mxos1ty flmudo
+mxos2da flmuo
+mxos2ds flmudo
+mxos2ty flmudo
+mxos3da flmuo
+mxos3ds flmudo
+mxos3ty flmudo
 `

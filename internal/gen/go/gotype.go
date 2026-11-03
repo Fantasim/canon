@@ -161,6 +161,11 @@ func (g *gen) idType(elem ir.Type) string {
 	return g.names.IDTypeName(elem)
 }
 
+// idParse is the Parse of the id enum of the table ref r points into, qualified for the package it is written in (CODEGEN.md §5.3).
+func (g *gen) idParse(r *ir.RefTarget) string {
+	return g.qualify(r.Pkg, g.names.ParseName(g.idType(r.Elem)))
+}
+
 // kindType is the kind enum of variant v (CODEGEN.md §5.5).
 func (g *gen) kindType(v ir.Type) string {
 	if g.goName(v) == "" {

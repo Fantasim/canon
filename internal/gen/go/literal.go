@@ -102,8 +102,9 @@ func (g *gen) kindLit(named ir.Type, index int) string {
 	return g.qualify(v.Pkg, g.names.KindMemberName(v, v.Cases[index]))
 }
 
-// keyLit is a ref's key: a table id constant, or a literal of the key's type (§5.8).
+// keyLit is a ref's key: a table id constant, or a literal of the key's type, read at the leaf of a chain of refs (§5.8, §5.9; DECISIONS 456).
 func (g *gen) keyLit(t ir.TypeRef, k value.Key) string {
+	t = ir.RefLeaf(t)
 	if isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg) {
 		return g.qualify(t.Ref.Pkg, g.idMember(t.Ref.Elem, k.S))
 	}

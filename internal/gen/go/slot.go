@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/fantasim/canonlang/internal/ir"
-	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -142,10 +141,10 @@ func (g *gen) derivedKey(s *slot, recv string) string {
 	if !s.Optional {
 		return returnKw + key
 	}
-	return ifNilFormat(entry, g.zeroKey(s.refType())) + returnKw + key + listSep + trueLit
+	return ifNilFormat(entry, g.zeroKeyOf(s.refType())) + returnKw + key + listSep + trueLit
 }
 
-// targetKey is the storage of the key on a resolved entry: id, or the keyed list's key field.
+// targetKey is the storage of the key on a resolved entry: id, or the keyed list's key field; a key field that is itself a ref is read at its chain's leaf, through the key it stores or, resolved, the entry it points at (CODEGEN.md §5.8, §5.9; DECISIONS 456).
 func (g *gen) targetKey(r *ir.RefTarget) string {
 	if !r.Keyed {
 		return ir.GoIDStore
@@ -155,23 +154,17 @@ func (g *gen) targetKey(r *ir.RefTarget) string {
 		g.failf(ErrMalformed, "a keyed ref into %s, which is not a keyed list", r.Value)
 		return ir.GoIDStore
 	}
-	return g.names.Slot(g.keyField(t)).Store
+	key := g.names.Slot(g.keyField(t))
+	switch {
+	case key.Ref == nil:
+		return key.Store
+	case key.Key:
+		return key.KeyStore
+	}
+	return key.Store + dot + g.targetKey(key.Ref)
 }
 
 func ifNilFormat(entry, zero string) string { return fmt.Sprintf(ifNilFormatText, entry, zero) }
-
-func (g *gen) zeroKey(t ir.TypeRef) string {
-	if isTableRef(t.Ref) && g.enumIDs(t.Ref.Pkg) {
-		return g.keyType(t) + emptyBraces
-	}
-	if !isTableRef(t.Ref) && t.Key != nil && t.Key.Kind == types.String {
-		return emptyString
-	}
-	if t.Key != nil {
-		return g.zeroNumber(*t.Key)
-	}
-	return zeroLit
-}
 
 // assign is the storage of v, member by member; none leaves every member zero.
 func (g *gen) assign(s *slot, v value.Value) []pair {

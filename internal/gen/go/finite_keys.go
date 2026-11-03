@@ -48,7 +48,7 @@ func (g *gen) derivedCellKey(f *finiteMethod, cell string) string {
 		if !f.res.Optional {
 			return returnKw + cell + dot + tk
 		}
-		return ifNilFormat(cell, g.zeroKey(f.res.refType())) + returnKw + cell + dot + tk + listSep + trueLit
+		return ifNilFormat(cell, g.zeroKeyOf(f.res.refType())) + returnKw + cell + dot + tk + listSep + trueLit
 	}
 	list, ok := cell, ""
 	if f.pair {

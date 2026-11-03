@@ -191,6 +191,15 @@ func (g *gen) readUnion(b *strings.Builder, l leaf, raw string, loc location) st
 	return v
 }
 
+// chainKey is the type read for a keyed-list ref's key: the key of the innermost ref of its chain (ir.RefLeaf), or that ref itself when it points into a table or a field, whose ids are read as such.
+func chainKey(t ir.TypeRef) ir.TypeRef {
+	leaf := ir.RefLeaf(t)
+	if leaf.Key == nil || isTableRef(leaf.Ref) || isFieldRef(leaf.Ref) {
+		return leaf
+	}
+	return *leaf.Key
+}
+
 // readRef reads a ref's key: a table id, a baked package's id enum, a keyed list's key (CODEGEN.md §5.3, §5.8).
 func (g *gen) readRef(b *strings.Builder, l leaf, raw string, loc location) string {
 	t := l.t
@@ -202,7 +211,7 @@ func (g *gen) readRef(b *strings.Builder, l leaf, raw string, loc location) stri
 		if t.Key == nil {
 			return raw
 		}
-		x := g.readValue(b, leaf{t: *t.Key}, raw, loc)
+		x := g.readValue(b, leaf{t: chainKey(t)}, raw, loc) // the chain's leaf key, and no hop checked but the outermost (CODEGEN.md §5.8, §5.13; DECISIONS 456)
 		g.foreignKeyCheck(b, l, t, x, loc)
 		return x
 	}
@@ -212,7 +221,7 @@ func (g *gen) readRef(b *strings.Builder, l leaf, raw string, loc location) stri
 			text = noEntryText
 		}
 		s := g.readPlain(b, goString, raw, loc)
-		return g.parsed(b, g.qualify(t.Ref.Pkg, g.names.ParseName(g.idType(t.Ref.Elem)))+lparen+s+rparen, loc, text, s)
+		return g.parsed(b, g.idParse(t.Ref)+lparen+s+rparen, loc, text, s)
 	}
 	return g.readPlain(b, key, raw, loc)
 }

@@ -71,8 +71,9 @@ func (g *gen) pureLit(t ir.TypeRef, v value.Value) string {
 	}
 }
 
-// pureKey is a ref's key; a string-id table ref (stringIDRef) converts to its id type (CODEGEN.md §5.3).
+// pureKey is a ref's key, read at the leaf of a chain of refs; a string-id table ref (stringIDRef) converts to its id type (CODEGEN.md §5.3; DECISIONS 456).
 func (g *gen) pureKey(t ir.TypeRef, k value.Key) string {
+	t = ir.RefLeaf(t)
 	if g.stringIDRef(t.Ref) {
 		return g.keyType(t) + lparen + strconv.Quote(k.S) + rparen
 	}

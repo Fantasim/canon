@@ -1,0 +1,662 @@
+DECISIONS 456, CODEGEN.md §5.6, §5.8, §5.9 (WIRE.md §5.8, §5.9): a go emit holds a ref into a keyed list keyed by a ref into a keyed list keyed by an enum whose wire is not its name (Tone.second is "z2") at that enum, in every mode and position: nb (baked) reads the key off its entries through the chain and finds by the enum; nr (data) and nt (types) decide a dependent type by a branch table keyed by the enum, and read a ref, a list of refs, a map keyed by a ref and a union over one by the enum's wire; nl (data with @reload) checks each position against the chain with the ref check's text. fl and fu (baked) hold another package's record whose optional ref over the chain is absent; nb also holds a dependent type whose branch is a ref over a chain ending in an Int. lb (data, string ids) and sb (baked) hold a dependent branch that is a ref over a chain ending in lb's table, one level and two, and an optional ref over it absent. probe_test.go loads the files the json emit wrote, one file per refused key.
+-- nb/nb.canon --
+/// NB.
+package nb
+
+/// A tone, its second member written differently on the wire.
+enum Tone { first, second = "z2", third }
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// A tone row.
+record A {
+  /// Its tone.
+  id: Tone
+  /// Shape.
+  shape: Shape
+}
+
+/// A ref to a tone row.
+record B {
+  /// The tone.
+  a: ref aa
+}
+
+/// A ref to a B.
+record C {
+  /// The B.
+  b: ref bs
+  /// Shape.
+  shape: Shape
+}
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// The holder.
+record H {
+  /// One.
+  f: ref cs
+  /// Many.
+  fs: [ref cs]
+  /// By.
+  fm: {ref cs: Int}
+  /// Union.
+  fu: ref cs | "none"
+  /// Event.
+  ev: ref cs
+  /// Optional.
+  fo: ref cs?
+  /// Param.
+  param: Param(ev.shape)? @json(none: 0)
+}
+
+/// Tones.
+let aa: [A] keyed by id = [ { id: first, shape: none_ }, { id: second, shape: count }, { id: third, shape: place } ]
+
+/// Bs.
+let bs: [B] keyed by a = [ { a: second }, { a: third } ]
+
+/// Cs.
+let cs: [C] keyed by b = [ { b: second, shape: count }, { b: third, shape: place } ]
+
+/// The holder value.
+let h: H = { f: second, fs: [third, second], fm: { second: 1 }, fu: third, ev: second, param: 3 }
+
+/// An integer row.
+record I1 {
+  /// Key.
+  k: Int
+}
+
+/// Integer rows.
+let nums: [I1] keyed by k = [ { k: 5 }, { k: 20 } ]
+
+/// A ref to an integer row.
+record I2 {
+  /// Key.
+  k: ref nums
+}
+
+/// Refs to integer rows.
+let refs: [I2] keyed by k = [ { k: 5 }, { k: 20 } ]
+
+/// A pick, by shape: an integer row ref, or a name.
+type Pick(s: Shape) = match s {
+  count => ref refs
+  place => String
+  none_ => Never
+}
+
+/// A pick holder.
+record P {
+  /// Shape.
+  s: Shape
+  /// Pick.
+  pick: Pick(s)
+}
+
+/// The pick holder value.
+let p: P = { s: count, pick: 20 }
+
+/// A choice by shape.
+export fn choice(s: Shape) -> ref cs? { return match s { count => second, place => third, none_ => none } }
+
+emit go { out: "@features/nb", package: "nb", mode: baked }
+-- nr/nr.canon --
+/// NR.
+package nr
+
+/// A tone, its second member written differently on the wire.
+enum Tone { first, second = "z2", third }
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// A tone row.
+record A {
+  /// Its tone.
+  id: Tone
+  /// Shape.
+  shape: Shape
+}
+
+/// A ref to a tone row.
+record B {
+  /// The tone.
+  a: ref aa
+}
+
+/// A ref to a B.
+record C {
+  /// The B.
+  b: ref bs
+  /// Shape.
+  shape: Shape
+}
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// The holder.
+record H {
+  /// One.
+  f: ref cs
+  /// Many.
+  fs: [ref cs]
+  /// By.
+  fm: {ref cs: Int}
+  /// Union.
+  fu: ref cs | "none"
+  /// Event.
+  ev: ref cs
+  /// Param.
+  param: Param(ev.shape)? @json(none: 0)
+}
+
+/// Tones.
+let aa: [A] keyed by id = [ { id: first, shape: none_ }, { id: second, shape: count }, { id: third, shape: place } ]
+
+/// Bs.
+let bs: [B] keyed by a = [ { a: second }, { a: third } ]
+
+/// Cs.
+let cs: [C] keyed by b = [ { b: second, shape: count }, { b: third, shape: place } ]
+
+/// The holder value.
+let h: H = { f: second, fs: [third, second], fm: { second: 1 }, fu: third, ev: second, param: 3 }
+
+emit go { out: "@features/nr", package: "nr", mode: data }
+emit json { out: "out/" }
+-- nt/nt.canon --
+/// NT.
+package nt
+
+/// A tone, its second member written differently on the wire.
+enum Tone { first, second = "z2", third }
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// A tone row.
+record A {
+  /// Its tone.
+  id: Tone
+  /// Shape.
+  shape: Shape
+}
+
+/// A ref to a tone row.
+record B {
+  /// The tone.
+  a: ref aa
+}
+
+/// A ref to a B.
+record C {
+  /// The B.
+  b: ref bs
+  /// Shape.
+  shape: Shape
+}
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// The holder.
+record H {
+  /// One.
+  f: ref cs
+  /// Many.
+  fs: [ref cs]
+  /// By.
+  fm: {ref cs: Int}
+  /// Union.
+  fu: ref cs | "none"
+  /// Event.
+  ev: ref cs
+  /// Param.
+  param: Param(ev.shape)? @json(none: 0)
+}
+
+/// Tones.
+let aa: [A] keyed by id = [ { id: first, shape: none_ }, { id: second, shape: count }, { id: third, shape: place } ]
+
+/// Bs.
+let bs: [B] keyed by a = [ { a: second }, { a: third } ]
+
+/// Cs.
+let cs: [C] keyed by b = [ { b: second, shape: count }, { b: third, shape: place } ]
+
+/// The holder value.
+let h: H = { f: second, fs: [third, second], fm: { second: 1 }, fu: third, ev: second, param: 3 }
+
+emit go { out: "@features/nt", package: "nt", mode: types }
+-- nl/nl.canon --
+/// NL.
+package nl
+
+/// A tone, its second member written differently on the wire.
+enum Tone { first, second = "z2", third }
+
+/// A tone row.
+record A {
+  /// Its tone.
+  id: Tone
+}
+
+/// A ref to a tone row.
+record B {
+  /// The tone.
+  a: ref aa
+}
+
+/// A ref to a B.
+record C {
+  /// The B.
+  b: ref bs
+}
+
+/// The holder.
+record H {
+  /// One.
+  f: ref cs
+  /// Many.
+  fs: [ref cs]
+  /// By.
+  fm: {ref cs: Int}
+  /// Union.
+  fu: ref cs | "none"
+  /// Unions.
+  fus: [ref cs | "none"]
+}
+
+/// Tones.
+@reload
+let aa: [A] keyed by id = [ { id: first }, { id: second }, { id: third } ]
+
+/// Bs.
+@reload
+let bs: [B] keyed by a = [ { a: second }, { a: third } ]
+
+/// Cs.
+@reload
+let cs: [C] keyed by b = [ { b: second }, { b: third } ]
+
+/// The holder value.
+@reload
+let h: H = { f: second, fs: [third, second], fm: { second: 1 }, fu: third, fus: ["none", second] }
+
+emit go { out: "@features/nl", package: "nl", mode: data }
+emit json { out: "out/" }
+-- fl/fl.canon --
+/// FL.
+package fl
+
+/// A tone, its second member written differently on the wire.
+enum Tone { first, second = "z2", third }
+
+/// A tone row.
+record A {
+  /// Its tone.
+  id: Tone
+}
+
+/// A ref to a tone row.
+record B {
+  /// The tone.
+  a: ref aa
+}
+
+/// A ref to a B.
+record C {
+  /// The B.
+  b: ref bs
+}
+
+/// A holder of an optional ref over the chain.
+record Q {
+  /// Name.
+  name: String
+  /// Optional.
+  fo: ref cs?
+}
+
+/// Tones.
+let aa: [A] keyed by id = [ { id: first }, { id: second }, { id: third } ]
+
+/// Bs.
+let bs: [B] keyed by a = [ { a: second }, { a: third } ]
+
+/// Cs.
+let cs: [C] keyed by b = [ { b: second }, { b: third } ]
+
+emit go { out: "@features/fl", package: "fl", mode: baked }
+-- fu/fu.canon --
+/// FU.
+package fu
+
+import fl { Q }
+
+/// The own value of another package's record.
+let q: Q = { name: "x" }
+
+emit go { out: "@features/fu", package: "fu", mode: baked }
+-- lb/lb.canon --
+/// Package.
+package lb
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// An item.
+record Item {
+  /// Shape.
+  shape: Shape
+}
+
+/// The items.
+let items: table Item = {
+  sword { shape: count }
+  shield { shape: place }
+}
+
+emit go { out: "@features/lb", package: "lb", mode: data }
+emit json { out: "out/" }
+-- sb/sb.canon --
+/// Package.
+package sb
+
+import lb { items, Shape }
+
+/// A row.
+record R1 {
+  /// Key.
+  k: ref items
+  /// Shape.
+  shape: Shape
+}
+
+/// List one.
+let l1: [R1] keyed by k = [ { k: sword, shape: count }, { k: shield, shape: place } ]
+
+/// A row.
+record R2 {
+  /// Key.
+  k: ref l1
+  /// Shape.
+  shape: Shape
+}
+
+/// List two.
+let l2: [R2] keyed by k = [ { k: sword, shape: count }, { k: shield, shape: place } ]
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// A pick, by shape.
+type Pick(s: Shape) = match s {
+  count => ref l2
+  place => String
+  none_ => Never
+}
+
+/// A one-level pick.
+type Pick1(s: Shape) = match s {
+  count => ref items
+  place => String
+  none_ => Never
+}
+
+/// H.
+record H {
+  /// A field.
+  f: ref l2
+  /// A field.
+  fo: ref l2?
+  /// A field.
+  fs: [ref l2]
+  /// A field.
+  fm: {ref l2: Int}
+  /// A field.
+  fu: ref l2 | "none"
+  /// A field.
+  fus: [ref l2 | "none"]
+  /// A field.
+  ev: ref l2
+  /// A field.
+  param: Param(ev.shape)? @json(none: 0)
+  /// A field.
+  s: Shape
+  /// A field.
+  pick: Pick(s)
+  /// A field.
+  pick1: Pick1(s)
+}
+
+/// The holder.
+let h: H = { f: sword, fs: [shield], fm: { sword: 1 }, fu: sword, fus: ["none", shield], ev: sword, param: 3, s: count, pick: shield, pick1: shield }
+
+/// A choice.
+export fn choice(s: Shape) -> ref l2? { return match s { count => sword, place => shield, none_ => none } }
+
+emit go { out: "@features/sb", package: "sb", mode: baked }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"example.com/gen/fl"
+	"example.com/gen/fu"
+	"example.com/gen/nb"
+	"example.com/gen/nl"
+	"example.com/gen/nr"
+	"example.com/gen/nt"
+	"example.com/gen/sb"
+)
+
+const (
+	dataNl = "../../nl/out/"
+	dataNr = "../../nr/out/h.json"
+	holder = "h.json"
+)
+
+// mutate is src with from replaced by to once, and fails when from is not there.
+func mutate(t *testing.T, src, from, to string) string {
+	t.Helper()
+	if !strings.Contains(src, from) {
+		t.Fatalf("%q is not in the file", from)
+	}
+	return strings.Replace(src, from, to, 1)
+}
+
+func read(t *testing.T, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
+}
+
+// reloadDir is nl's data files in a new directory, its holder with from replaced by to.
+func reloadDir(t *testing.T, from, to string) string {
+	t.Helper()
+	dir := t.TempDir()
+	for _, n := range []string{"aa.json", "bs.json", "cs.json"} {
+		if err := os.WriteFile(filepath.Join(dir, n), []byte(read(t, dataNl+n)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	doc := read(t, dataNl+holder)
+	if from != "" {
+		doc = mutate(t, doc, from, to)
+	}
+	if err := os.WriteFile(filepath.Join(dir, holder), []byte(doc), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+// reloadCase is a holder file with from replaced by to, and the loader's error: the position under the value and its text.
+type reloadCase struct{ name, from, to, want string }
+
+// reloadCases: a ref whose list is keyed by a ref into a list keyed by the enum Tone (second is "z2" on the wire) is read as the enum is: a name that is no wire is an unknown value, a wire the chain lacks (first) names no entry (DECISIONS 456, CODEGEN.md §5.8).
+var reloadCases = []reloadCase{
+	{"one_lacks", `"f": "z2"`, `"f": "first"`, "value.f: no entry first"},
+	{"one_name", `"f": "z2"`, `"f": "second"`, "value.f: unknown value second"},
+	{"many_lacks", `"third",`, `"first",`, "value.fs[0]: no entry first"},
+	{"key_name", `"z2": 1`, `"second": 1`, "value.fm.second: unknown value second"},
+	{"union_lacks", `"fu": "third"`, `"fu": "first"`, "value.fu: no entry first"},
+	{"unions_unknown", `"none",`, `"zz",`, "value.fus[0]: no entry zz"},
+}
+
+// DECISIONS 456, CODEGEN.md §5.8: nl's data loads whole, each ref held as its chain's leaf, an enum.
+func TestReloadLoads(t *testing.T) {
+	s, err := nl.LoadNlSnapshot(reloadDir(t, "", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := s.H()
+	if h.FID() != nl.ToneSecond {
+		t.Errorf("f = %v, want second", h.FID())
+	}
+	if got := h.FsIDs().At(0); got != nl.ToneThird {
+		t.Errorf("fs[0] = %v, want third", got)
+	}
+	if got := h.Fu(); got != "third" {
+		t.Errorf("fu = %q, want its wire third", got)
+	}
+}
+
+// DECISIONS 456, CODEGEN.md §5.8: each position of a ref over a chain names a key the chain lacks as the leaf's type does.
+func TestReloadRefusals(t *testing.T) {
+	for _, c := range reloadCases {
+		dir := reloadDir(t, c.from, c.to)
+		_, err := nl.LoadNlSnapshot(dir)
+		if want := dir + "/" + holder + ": " + c.want; err == nil || err.Error() != want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, want)
+		}
+	}
+}
+
+// staticCase is a holder file of nr with from replaced by to, and the loader's error.
+type staticCase struct{ name, from, to, want string }
+
+// staticCases: a branch table keyed by a ref over a chain is keyed by the enum (DECISIONS 456, CODEGEN.md §5.6): ev "third" decides place, a String, and a member cs has no branch for decides none.
+var staticCases = []staticCase{
+	{"place_wants_string", `"ev": "z2"`, `"ev": "third"`, "value.param: expected a string"},
+	{"no_branch", `"ev": "z2"`, `"ev": "first"`, "value.param: no branch for this value"},
+	{"name", `"ev": "z2"`, `"ev": "second"`, "value.ev: unknown value second"},
+}
+
+// DECISIONS 456, CODEGEN.md §5.6: nr's holder, whose Param is decided by a ref over a chain, loads: ev second selects count, Param 3.
+func TestStaticLoads(t *testing.T) {
+	h, err := nr.LoadH(dataNr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, ok := h.Param().AsCount(); !ok || n != 3 || h.EvID() != nr.ToneSecond || h.FID() != nr.ToneSecond {
+		t.Errorf("ev = %v, param = %d, %v; want second, 3, true", h.EvID(), n, ok)
+	}
+}
+
+// DECISIONS 456, CODEGEN.md §5.6: the branch table of nr's Param is read at the chain's leaf.
+func TestStaticRefusals(t *testing.T) {
+	for _, c := range staticCases {
+		path := filepath.Join(t.TempDir(), holder)
+		if err := os.WriteFile(path, []byte(mutate(t, read(t, dataNr), c.from, c.to)), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := nr.LoadH(path); err == nil || err.Error() != path+": "+c.want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, c.want)
+		}
+	}
+}
+
+// DECISIONS 456, CODEGEN.md §5.8: a baked holder reads its refs at the chain's leaf through the entries, and its Param by the same table.
+func TestBaked(t *testing.T) {
+	h := nb.GetH()
+	if h.FID() != nb.ToneSecond || h.EvID() != nb.ToneSecond {
+		t.Errorf("f, ev = %v, %v; want second", h.FID(), h.EvID())
+	}
+	if n, ok := h.Param().AsCount(); !ok || n != 3 {
+		t.Errorf("param = %d, %v; want 3, true", n, ok)
+	}
+	if c, ok := nb.GetCs().Find(nb.ToneThird); !ok || c.Shape() != nb.ShapePlace {
+		t.Errorf("Find(third) = %v, %v; want the place entry", c, ok)
+	}
+	if id, ok := h.FoID(); ok || id != (nb.Tone{}) {
+		t.Errorf("fo = %v, %v; want the zero Tone, false", id, ok)
+	}
+	if c := nb.Choice(nb.ShapePlace); c == nil || c.Shape() != nb.ShapePlace {
+		t.Errorf("Choice(place) = %v, want the place entry", c)
+	}
+}
+
+// DECISIONS 456, CODEGEN.md §5.6: a baked dependent type whose branch is a ref over a chain ending in an Int holds the key as an int64, which its As method asserts.
+func TestBakedIntBranch(t *testing.T) {
+	if n, ok := nb.GetP().Pick().AsCount(); !ok || n != 20 {
+		t.Errorf("pick = %d, %v; want 20, true", n, ok)
+	}
+}
+
+// DECISIONS 456, CODEGEN.md §5.14: another package's record, its optional ref over a chain absent, is made with the zero of the chain's leaf, an enum, and no presence.
+func TestForeignHookZero(t *testing.T) {
+	if id, ok := fu.GetQ().FoID(); ok || id != (fl.Tone{}) {
+		t.Errorf("fo = %v, %v; want the zero Tone, false", id, ok)
+	}
+}
+
+// DECISIONS 456, CODEGEN.md §5.6, §5.8: sb (baked) imports lb, a data-mode package whose table's ids are strings. A dependent branch that is a ref into that table, or into a chain ending in it, holds the id as lb.ItemID, which AsCount asserts; an optional ref over the chain absent gives the zero id and no presence.
+func TestStringIDLeaf(t *testing.T) {
+	h := sb.GetH()
+	if id, ok := h.Pick().AsCount(); !ok || id != "shield" {
+		t.Errorf("pick = %q, %v; want shield, true", id, ok)
+	}
+	if id, ok := h.Pick1().AsCount(); !ok || id != "shield" {
+		t.Errorf("pick1 = %q, %v; want shield, true", id, ok)
+	}
+	if id, ok := h.FoID(); ok || id != "" {
+		t.Errorf("fo = %q, %v; want the zero id, false", id, ok)
+	}
+	if id := h.FID(); id != "sword" {
+		t.Errorf("f = %q, want sword", id)
+	}
+}
+
+// DECISIONS 456, CODEGEN.md §5.13: a types decoder reads the chain's keys by the enum's wire, and its Param by the branch table.
+func TestTypes(t *testing.T) {
+	const doc = `{"f": "z2", "fs": ["third", "z2"], "fm": {"z2": 1}, "fu": "third", "ev": "third", "param": "x"}`
+	h, err := nt.DecodeH([]byte(doc))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s, ok := h.Param().AsPlace(); !ok || s != "x" || h.EvID() != nt.ToneThird || h.FID() != nt.ToneSecond {
+		t.Errorf("ev = %v, param = %q, %v; want third, x, true", h.EvID(), s, ok)
+	}
+	if _, err := nt.DecodeH([]byte(strings.Replace(doc, `"ev": "third"`, `"ev": "z2"`, 1))); err == nil {
+		t.Error("ev second decides count, and x is no integer: want an error")
+	}
+}

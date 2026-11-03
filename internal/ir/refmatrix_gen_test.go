@@ -24,10 +24,12 @@ type mxLeaf struct {
 	lits            [2]string // the two keys the rows and the values name, each written as a key of the leaf
 	table, own      bool      // a table's ids; its own: held as an id enum in a baked package only
 	foreign         bool      // a table of another package
+	strIDs          bool      // a table whose ids are strings: its package's emit is data, not baked (CODEGEN.md §5.3)
 }
 
 const (
-	mxLib       = "mxlib"
+	mxLib       = "mxlib"  // a baked library: its table's ids are an enum
+	mxLibData   = "mxlibd" // a data library: its table's ids are strings
 	mxShape     = "enum Shape { count, place, none_ }"
 	mxTableName = "tbl"
 )
@@ -39,6 +41,8 @@ var mxLeaves = []mxLeaf{
 	{code: "in", typ: "Int", lits: [2]string{"20", "5"}},
 	{code: "ot", lits: [2]string{"sword", "shield"}, table: true, own: true},
 	{code: "ft", lits: [2]string{"sword", "shield"}, table: true, foreign: true},
+	{code: "fd", lits: [2]string{"sword", "shield"}, table: true, foreign: true, strIDs: true},
+	{code: "os", lits: [2]string{"sword", "shield"}, table: true, own: true, strIDs: true},
 }
 
 // mxPos is a position a ref is read at: its code, and its fields and their values in the Holder.
@@ -53,6 +57,7 @@ var mxPositions = []mxPos{
 	{code: "m", fields: []string{"fm: {ref %[1]s: Int}"}, values: []string{"fm: { %[1]s: 1 }"}},
 	{code: "u", fields: []string{"fu: ref %[1]s | \"none\"", "fus: [ref %[1]s | \"none\"]"}, values: []string{"fu: %[1]s", "fus: [\"none\", %[2]s]"}},
 	{code: "d", fields: []string{"ev: ref %[1]s", "param: Param(ev.shape)? @json(none: 0)"}, values: []string{"ev: %[1]s", "param: 3"}},
+	{code: "o", fields: []string{"fo: ref %[1]s?"}},
 }
 
 // mxCase is one chain: a leaf kind, a depth of refs, a mode.
@@ -61,12 +66,18 @@ type mxCase struct {
 	depth int
 	mode  mxMode
 	tag   string // told apart from the same case's other packages: a probe's position
+	goGen bool   // emits go (TestGoRefMatrix); else cpp
 }
 
 func (c mxCase) name() string { return fmt.Sprintf("mx%s%d%s%s", c.leaf.code, c.depth, c.mode, c.tag) }
 
 // legal reports the combinations Canon has: an own table's ids are an enum in a baked package only.
-func (c mxCase) legal() bool { return !c.leaf.own || c.mode == mxBaked || c.mode == mxReader }
+func (c mxCase) legal() bool {
+	if c.leaf.strIDs && c.leaf.own { // string ids: a package that is not baked
+		return c.mode == mxData || c.mode == mxStatic || c.mode == mxTypes
+	}
+	return !c.leaf.own || c.mode == mxBaked || c.mode == mxReader
+}
 
 // lists is the number of keyed lists the chain holds: one per ref, less the ref into the table.
 func (c mxCase) lists() int {
@@ -74,6 +85,14 @@ func (c mxCase) lists() int {
 		return c.depth - 1
 	}
 	return c.depth
+}
+
+// lib is the library a foreign leaf's table is held by.
+func (c mxCase) lib() string {
+	if c.leaf.strIDs {
+		return mxLibData
+	}
+	return mxLib
 }
 
 // table is the name of the table a chain ends in.
@@ -102,7 +121,7 @@ func mxDoc(s string) string { return "/// " + s + ".\n" }
 func (c mxCase) declarations(reload bool) string {
 	var b strings.Builder
 	if c.leaf.foreign {
-		fmt.Fprintf(&b, "import %s { items, Shape }\n\n", mxLib)
+		fmt.Fprintf(&b, "import %s { items, Shape }\n\n", c.lib())
 	} else {
 		b.WriteString(mxDoc("Shape") + mxShape + "\n\n")
 	}
@@ -165,9 +184,13 @@ func (c mxCase) value(pos []mxPos, reload bool) string {
 	return mxDoc("The holder") + mxReloadLine(reload) + "let h: H = { " + strings.Join(parts, ", ") + " }\n\n"
 }
 
-// emit is the emit lines of a package in mode.
-func mxEmit(pkg string, mode string, json bool) string {
-	out := fmt.Sprintf("emit cpp { out: \"@features/%[1]s\", namespace: \"%[1]s\", mode: %[2]s }\n", pkg, mode)
+// mxEmit is the emit lines of a package in mode, of go when goGen, else of cpp.
+func mxEmit(goGen bool, pkg string, mode string, json bool) string {
+	lang, key := "cpp", "namespace"
+	if goGen {
+		lang, key = "go", "package"
+	}
+	out := fmt.Sprintf("emit %[3]s { out: \"@features/%[1]s\", %[4]s: \"%[1]s\", mode: %[2]s }\n", pkg, mode, lang, key)
 	if json {
 		out += "emit json { out: \"out/\" }\n"
 	}
@@ -189,21 +212,26 @@ func (c mxCase) files(pos []mxPos) []mxFile {
 		reload := c.mode == mxData
 		text := head(c.name()) + c.declarations(reload) + c.holder(pos) + c.value(pos, reload)
 		mode := map[mxMode]string{mxBaked: "baked", mxData: "data", mxStatic: "data", mxTypes: "types"}[c.mode]
-		return []mxFile{{c.name(), text + mxEmit(c.name(), mode, c.mode == mxData || c.mode == mxStatic)}}
+		return []mxFile{{c.name(), text + mxEmit(c.goGen, c.name(), mode, c.mode == mxData || c.mode == mxStatic)}}
 	}
 	owner, data, typed := c.name()+"a", c.name()+"b", c.name()+"t"
 	return []mxFile{
-		{owner, head(owner) + c.declarations(false) + c.holder(pos) + mxEmit(owner, "baked", false)},
-		{data, head(data) + fmt.Sprintf("import %s { H }\n\n", owner) + c.value(pos, false) + mxEmit(data, "data", true)},
-		{typed, head(typed) + fmt.Sprintf("import %s { H }\n\n%srecord W {\n%s  h: H\n}\n\n", owner, mxDoc("W"), mxDoc("The holder")) + mxEmit(typed, "types", false)},
+		{owner, head(owner) + c.declarations(false) + c.holder(pos) + mxEmit(c.goGen, owner, "baked", false)},
+		{data, head(data) + fmt.Sprintf("import %s { H }\n\n", owner) + c.value(pos, false) + mxEmit(c.goGen, data, "data", true)},
+		{typed, head(typed) + fmt.Sprintf("import %s { H }\n\n%srecord W {\n%s  h: H\n}\n\n", owner, mxDoc("W"), mxDoc("The holder")) + mxEmit(c.goGen, typed, "types", false)},
 	}
 }
 
-// mxLibFile is the library of the foreign leaf: Shape and a baked table of items.
-func mxLibFile() mxFile {
-	text := mxDoc("Package") + "package " + mxLib + "\n\n" + mxDoc("Shape") + mxShape + "\n\n" +
+// mxLibFiles are the libraries of the foreign leaves: Shape and a table of items, the first baked, the second data, emitted as go when goGen.
+func mxLibFiles(goGen bool) []mxFile {
+	return []mxFile{mxLibFile(goGen, mxLib, "baked", false), mxLibFile(goGen, mxLibData, "data", true)}
+}
+
+// mxLibFile is library pkg in mode, with a json emit when json.
+func mxLibFile(goGen bool, pkg, mode string, json bool) mxFile {
+	text := mxDoc("Package") + "package " + pkg + "\n\n" + mxDoc("Shape") + mxShape + "\n\n" +
 		mxDoc("An item") + "record Item {\n" + mxDoc("Shape") + "  shape: Shape\n}\n\n" +
 		mxDoc("The items") + "let items: table Item = {\n  sword { shape: count }\n  shield { shape: place }\n}\n\n" +
-		mxEmit(mxLib, "baked", false)
-	return mxFile{mxLib, text}
+		mxEmit(goGen, pkg, mode, json)
+	return mxFile{pkg, text}
 }

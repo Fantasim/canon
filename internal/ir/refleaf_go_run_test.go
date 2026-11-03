@@ -9,3 +9,11 @@ func TestGoNestedRefUnionsRun(t *testing.T) {
 	t.Parallel()
 	goRunCheck(t, goRunNestedUnions)
 }
+
+const goRunNestedRefs = "testdata/e2e/gorun/nested_refs.txtar"
+
+// TestGoNestedRefsRun is DECISIONS 456 and CODEGEN.md §5.6, §5.8 built and run: a go emit holds a ref over a chain of refs ending in an enum at that enum, baked, data (with and without @reload) and types: its key read off the entries, its branch table keyed by the enum, its loader's refusals worded by the key that ends the chain.
+func TestGoNestedRefsRun(t *testing.T) {
+	t.Parallel()
+	goRunCheck(t, goRunNestedRefs)
+}

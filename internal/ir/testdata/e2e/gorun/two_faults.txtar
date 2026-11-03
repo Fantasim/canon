@@ -1,0 +1,264 @@
+DECISIONS 456, CODEGEN.md §5.8, §5.13 (first failure in order): rd and ty are a data-mode and a types-mode reader of another package's class ow.H, whose refs go into a list keyed by a ref into a list keyed by an enum (Tone.second is "z2" on the wire); rd2 and ty2 are the same for ow2.H, whose chain ends in the ids of a table of the baked package lt. The Go loaders and the C++ loaders report the same first error for a file with two faults: a ref's key is read at the chain's leaf, and a data reader checks it against the owner's outermost list once, after the object, never against each hop. probe_test.go (Go) and probe.cpp (C++) read the files the test wrote and print the first error.
+-- ow/ow.canon --
+/// OW.
+package ow
+
+/// A tone, its second member written differently on the wire.
+enum Tone { first, second = "z2", third }
+
+/// A tone row.
+record A {
+  /// Its tone.
+  id: Tone
+}
+
+/// A ref to a tone row.
+record B {
+  /// The tone.
+  a: ref aa
+}
+
+/// A ref to a B.
+record C {
+  /// The B.
+  b: ref bs
+}
+
+/// The holder.
+record H {
+  /// One.
+  f: ref cs
+  /// By.
+  fm: {ref cs: Int}
+  /// After.
+  n: Int
+}
+
+/// Tones.
+let aa: [A] keyed by id = [ { id: first }, { id: second }, { id: third } ]
+
+/// Bs.
+let bs: [B] keyed by a = [ { a: second }, { a: third } ]
+
+/// Cs.
+let cs: [C] keyed by b = [ { b: second } ]
+
+emit go { out: "@features/ow", package: "ow", mode: baked }
+emit cpp { out: "@features/owc", namespace: "ow", mode: baked }
+-- rd/rd.canon --
+/// RD.
+package rd
+
+import ow { H }
+
+/// The holder value.
+let h: H = { f: second, fm: { second: 1 }, n: 1 }
+
+emit go { out: "@features/rd", package: "rd", mode: data }
+emit cpp { out: "@features/rdc", namespace: "rd", mode: data }
+emit json { out: "out/" }
+-- ty/ty.canon --
+/// TY.
+package ty
+
+import ow { H }
+
+/// A wrapper of the holder.
+record W {
+  /// The holder.
+  h: H
+}
+
+emit go { out: "@features/ty", package: "ty", mode: types }
+emit cpp { out: "@features/tyc", namespace: "ty", mode: types }
+-- lt/lt.canon --
+/// LT.
+package lt
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+
+/// The items.
+let items: table Item = {
+  sword { label: "s" }
+  shield { label: "h" }
+}
+
+emit go { out: "@features/lt", package: "lt", mode: baked }
+emit cpp { out: "@features/ltc", namespace: "lt", mode: baked }
+-- ow2/ow2.canon --
+/// OW2.
+package ow2
+
+import lt { items }
+
+/// A row keyed by an item.
+record R1 {
+  /// The item.
+  k: ref items
+}
+
+/// A ref to an R1.
+record R2 {
+  /// The R1.
+  k: ref l1
+}
+
+/// The holder.
+record H {
+  /// One.
+  f: ref l2
+  /// By.
+  fm: {ref l2: Int}
+  /// After.
+  n: Int
+}
+
+/// Rows one.
+let l1: [R1] keyed by k = [ { k: sword }, { k: shield } ]
+
+/// Rows two.
+let l2: [R2] keyed by k = [ { k: sword } ]
+
+emit go { out: "@features/ow2", package: "ow2", mode: baked }
+emit cpp { out: "@features/ow2c", namespace: "ow2", mode: baked }
+-- rd2/rd2.canon --
+/// RD2.
+package rd2
+
+import ow2 { H }
+
+/// The holder value.
+let h: H = { f: sword, fm: { sword: 1 }, n: 1 }
+
+emit go { out: "@features/rd2", package: "rd2", mode: data }
+emit cpp { out: "@features/rd2c", namespace: "rd2", mode: data }
+emit json { out: "out/" }
+-- ty2/ty2.canon --
+/// TY2.
+package ty2
+
+import ow2 { H }
+
+/// A wrapper of the holder.
+record W {
+  /// The holder.
+  h: H
+}
+
+emit go { out: "@features/ty2", package: "ty2", mode: types }
+emit cpp { out: "@features/ty2c", namespace: "ty2", mode: types }
+-- probe.cpp --
+// probe reads each `reader:file` argument and prints `<file>: ok` or `<file>: error <the first error>`.
+#include <fstream>
+#include <iostream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "rd2c/rd2.gen.h"
+#include "rdc/rd.gen.h"
+#include "ty2c/ty2.gen.h"
+#include "tyc/ty.gen.h"
+
+namespace {
+
+// decode reads the file and decodes its W with the types reader.
+template <typename W>
+std::string decode(const std::string& file) {
+    std::ifstream in(file);
+    const auto doc = nlohmann::json::parse(in);
+    std::string error;
+    const auto w = W::Decode(doc, error);
+    return w ? "" : error;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        const auto colon = arg.find(':');
+        const std::string reader = arg.substr(0, colon);
+        const std::string file = arg.substr(colon + 1);
+        std::string error;
+        if (reader == "rd") {
+            error = ::rd::LoadH(file, error) ? "" : error;
+        } else if (reader == "rd2") {
+            error = ::rd2::LoadH(file, error) ? "" : error;
+        } else if (reader == "ty") {
+            error = decode< ::ty::W>(file);
+        } else {
+            error = decode< ::ty2::W>(file);
+        }
+        std::cout << file << ": " << (error.empty() ? "ok" : "error " + error) << "\n";
+    }
+    return 0;
+}
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"example.com/gen/rd"
+	"example.com/gen/rd2"
+	"example.com/gen/ty"
+	"example.com/gen/ty2"
+)
+
+const (
+	casesList = "../../cases.txt"
+	casesDir  = "../../cases"
+)
+
+// load reads file with the reader named, and returns its first error.
+func load(t *testing.T, reader, file string) error {
+	t.Helper()
+	switch reader {
+	case "rd":
+		_, err := rd.LoadH(file)
+		return err
+	case "rd2":
+		_, err := rd2.LoadH(file)
+		return err
+	}
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reader == "ty" {
+		_, err = ty.DecodeW(raw)
+	} else {
+		_, err = ty2.DecodeW(raw)
+	}
+	return err
+}
+
+// DECISIONS 456, CODEGEN.md §5.8, §5.13: each line of cases.txt is a file of cases/, the reader that loads it and the first error it gives, after the path for a data reader; the C++ loader gives the same.
+func TestFirstError(t *testing.T) {
+	raw, err := os.ReadFile(casesList)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+		f := strings.Split(line, "\t")
+		name, reader, want := f[0], f[1], f[2]
+		path := filepath.Join(casesDir, name)
+		if reader == "rd" || reader == "rd2" {
+			want = path + ": " + want
+		}
+		switch err := load(t, reader, path); {
+		case f[2] == "" && err != nil:
+			t.Errorf("%s: %v, want none", name, err)
+		case f[2] != "" && (err == nil || err.Error() != want):
+			t.Errorf("%s: got %v, want %s", name, err, want)
+		}
+	}
+}
