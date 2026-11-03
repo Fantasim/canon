@@ -196,12 +196,10 @@ func (g *gen) hoistCells(a at, lhs string, t ir.TypeRef, optional bool, cells []
 	return ok
 }
 
-// buildParts splits Build's statements into parts of about bakedPartLines lines, static members
-// Build calls in order: their declarations, Build's body and their definitions; a body of one
-// part stays in Build (DECISIONS 392).
-func buildParts(access, body string) (decls, calls, defs string) {
-	parts := splitBody(body)
-	if len(parts) <= 1 {
+// buildParts cuts Build's statements into parts of at most limit lines, static members Build calls in order: their declarations, Build's body and their definitions; a body that fits stays in Build (CODEGEN.md §2.11, §7.3; DECISIONS 392, 435).
+func buildParts(access, body string, limit int) (decls, calls, defs string) {
+	parts := splitBody(body, limit)
+	if parts == nil {
 		return "", body, ""
 	}
 	var d, c, f writer
@@ -214,30 +212,44 @@ func buildParts(access, body string) (decls, calls, defs string) {
 	return d.String(), c.String(), f.String()
 }
 
-// splitBody cuts body into runs of at least bakedPartLines lines, each ending after a statement
-// or block of Build's own level: a line indented once that opens nothing.
-func splitBody(body string) []string {
-	var parts []string
+// splitBody cuts body between whole top-level statements into parts of at most limit lines (ir.PartEnds): a unit is a line indented once that opens nothing, with the block it closes; nil when Build fits whole.
+func splitBody(body string, limit int) []string {
+	units, lines := buildUnits(body)
+	ends := ir.PartEnds(lines, limit, buildWholeLines, 0)
+	if ends == nil {
+		return nil
+	}
+	parts := make([]string, len(ends))
+	start := 0
+	for i, end := range ends {
+		parts[i] = strings.Join(units[start:end], "")
+		start = end
+	}
+	return parts
+}
+
+// buildUnits are Build's statements, each with the lines it holds: the body up to a line of Build's own level that opens no block.
+func buildUnits(body string) (units []string, lines []int) {
 	var cur strings.Builder
-	lines := 0
+	n := 0
 	for l := range strings.SplitSeq(body, newline) {
 		if l == "" {
 			continue
 		}
 		cur.WriteString(l)
 		cur.WriteString(newline)
-		lines++
+		n++
 		top := strings.HasPrefix(l, indentUnit) && !strings.HasPrefix(l, indentUnit+indentUnit)
-		if lines >= bakedPartLines && top && !strings.HasSuffix(l, openBrace) {
-			parts = append(parts, cur.String())
+		if top && !strings.HasSuffix(l, openBrace) {
+			units, lines = append(units, cur.String()), append(lines, n)
 			cur.Reset()
-			lines = 0
+			n = 0
 		}
 	}
 	if cur.Len() > 0 {
-		parts = append(parts, cur.String())
+		units, lines = append(units, cur.String()), append(lines, n)
 	}
-	return parts
+	return units, lines
 }
 
 // strForm is how strLit writes a string (DECISIONS 392).

@@ -58,34 +58,43 @@ func (g *gen) readers() {
 	for _, c := range u.Read {
 		prev := g.view
 		leave := g.enter(g.readClassName(c))
-		switch x := c.(type) {
-		case *ir.Record:
-			g.view = x.Pkg
-			h := g.written(g.pl.RecordHook(x))
-			g.readerOpen(c)
-			g.readFields(class{rec: x}, x.Pkg, h.Name, h.Members)
-		case *ir.Case:
-			v := u.VariantOf(x)
-			g.view = v.Pkg
-			h := g.written(g.pl.CaseHook(v, x))
-			g.readerOpen(c)
-			g.readFields(class{variant: v, cs: x}, v.Pkg, h.CaseType, h.Members)
-		case *ir.Variant:
-			g.view = x.Pkg
-			g.readerOpen(c)
-			g.readVariant(x)
-		case *ir.Dependent:
-			g.view = x.Pkg
-			g.dependentDecoder(x, g.pl.ReaderName(c))
-			leave()
-			g.view = prev
-			continue
-		}
-		g.c.line(closeBrace)
-		g.c.blank()
+		g.reader(u, c)
 		leave()
 		g.view = prev
 	}
+}
+
+// reader writes the reader of one class of another package, whole.
+func (g *gen) reader(u *ir.ForeignUse, c any) {
+	switch x := c.(type) {
+	case *ir.Record:
+		g.view = x.Pkg
+		h := g.written(g.pl.RecordHook(x))
+		g.readerOpen(c)
+		g.readFields(class{rec: x}, x.Pkg, h.Name, h.Members)
+		g.readerEnd()
+	case *ir.Case:
+		v := u.VariantOf(x)
+		g.view = v.Pkg
+		h := g.written(g.pl.CaseHook(v, x))
+		g.readerOpen(c)
+		g.readFields(class{variant: v, cs: x}, v.Pkg, h.CaseType, h.Members)
+		g.readerEnd()
+	case *ir.Variant:
+		g.view = x.Pkg
+		g.readerOpen(c)
+		g.readVariant(x)
+		g.decoderClose()
+	case *ir.Dependent:
+		g.view = x.Pkg
+		g.dependentDecoder(x, g.pl.ReaderName(c))
+	}
+}
+
+// readerEnd closes a reader that ends with its own verdict.
+func (g *gen) readerEnd() {
+	g.c.line(closeBrace)
+	g.c.blank()
 }
 
 // readerOpen opens a reader's definition.
@@ -136,7 +145,6 @@ func (g *gen) readVariant(v *ir.Variant) {
 	g.c.linef(1, elseOpen)
 	g.c.linef(depthTwo, unknownCaseFormat, viewLit(v.Tag))
 	g.c.linef(1, closeBrace)
-	g.c.linef(1, returnOk)
 }
 
 // hookLocals write hookLocalDecls at depth of the source.

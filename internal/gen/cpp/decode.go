@@ -26,58 +26,72 @@ type leaf struct {
 	nested   bool        // below a field's value and its list's elements: no hook member's key check reaches it (CODEGEN.md §2.8)
 }
 
-// decoders are the detail::Decode and Decode<Alias> definitions, in declaration order (CODEGEN.md §2.7, §5.6, §7.6).
+// decoders are the detail::Decode and Decode<Alias> definitions, in declaration order (CODEGEN.md §2.7, §5.6, §7.6); a record's or case's may be cut into parts (§2.11).
 func (g *gen) decoders() {
 	for _, c := range g.declared() {
 		leave := g.enter(c.canonName())
-		if c.dependent != nil {
+		switch {
+		case c.dependent != nil:
 			g.dependentDecoder(c.dependent, g.pl.Dependent(c.dependent).Decode)
-			leave()
-			continue
-		}
-		name := g.className(c)
-		g.c.printf(decodeOpenFormat, name)
-		if c.variant != nil && c.cs == nil {
+		case c.variant != nil && c.cs == nil:
+			g.c.printf(decodeOpenFormat, g.className(c))
 			g.decodeVariant(c.variant)
-		} else {
-			g.decodeRecord(c)
+			g.decoderClose()
+		default:
+			g.recordDecoder(c)
 		}
-		g.c.linef(1, returnOk)
-		g.c.line(closeBrace)
-		g.c.blank()
 		leave()
 	}
 }
 
-// decodeRecord reads each field in declaration order, then the `$` keys of the stored fns (§7.6, WIRE.md §5.11).
-func (g *gen) decodeRecord(c class) {
-	fields, fns := c.shape()
+// decoderClose ends a decoder: its verdict, the brace and a blank line.
+func (g *gen) decoderClose() {
+	g.c.linef(1, returnOk)
+	g.c.line(closeBrace)
+	g.c.blank()
+}
+
+// decodeHead checks a record's object and keys before its fields are read (§7.6, WIRE.md §5.11).
+func (g *gen) decodeHead(c class, fields []*ir.Field, fns []*ir.ExportFn) {
 	g.inlineFolds(c)
 	g.checkKeys(1, sourceVar, g.wireKeys(g.objectKeys(c)), true)
 	if !anyFieldDecodes(fields) && !hasStored(fns) {
 		g.c.linef(1, unusedFormat, outVar)
 	}
-	g.decodeBody(fields, fns)
+}
+
+// decodeUnits are what decodeBody writes, one unit per field in declaration order, then one per stored fn's `$` key: the pieces a cut Decode keeps whole (CODEGEN.md §2.11).
+func (g *gen) decodeUnits(fields []*ir.Field, fns []*ir.ExportFn) []func() {
+	var units []func()
+	for _, f := range fields {
+		units = append(units, func() { g.decodeField(f, fields) })
+	}
+	for _, fn := range fns {
+		units = append(units, func() { g.decodeStored(fn) })
+	}
+	return units
 }
 
 // decodeBody reads each field at its wire path, then each stored fn's `$` key, into what g.dst names.
 func (g *gen) decodeBody(fields []*ir.Field, fns []*ir.ExportFn) {
-	for _, f := range fields {
-		g.decodeField(f, fields)
+	for _, unit := range g.decodeUnits(fields, fns) {
+		unit()
 	}
-	for _, fn := range fns {
-		m, err := g.member(fn.Name)
-		t, optional := resultType(fn.Result)
-		l := leaf{t: t, optional: optional, dst: g.dst + m}
-		switch fn.Kind {
-		case ir.FnPrecomputed:
-			g.fail(err)
-			g.decodeKey(1, sourceVar, quote(dollar+fn.Name), l)
-		case ir.FnLookup:
-			g.fail(err)
-			g.decodeTable(fn, l)
-		default:
-		}
+}
+
+// decodeStored reads a stored fn's `$` key (WIRE.md §5.11).
+func (g *gen) decodeStored(fn *ir.ExportFn) {
+	m, err := g.member(fn.Name)
+	t, optional := resultType(fn.Result)
+	l := leaf{t: t, optional: optional, dst: g.dst + m}
+	switch fn.Kind {
+	case ir.FnPrecomputed:
+		g.fail(err)
+		g.decodeKey(1, sourceVar, quote(dollar+fn.Name), l)
+	case ir.FnLookup:
+		g.fail(err)
+		g.decodeTable(fn, l)
+	default:
 	}
 }
 

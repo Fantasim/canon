@@ -203,10 +203,17 @@ const (
 	// bulkMinElems is the fewest elements read from an array, not written inline (DECISIONS 392).
 	bulkMinElems = ir.CppBulkMinElems
 	rowsField    = "rows_"
-	// bakedPartLines is the fewest lines of statements a part of Build holds (DECISIONS 392).
-	bakedPartLines        = 1000
-	partDeclFormat        = "static void %s(Data& d);"
-	partCallFormat        = "%s(d);"
+	// buildWholeLines is the lines of Build outside its statements: `Data d;` and `return d;` (text/baked_access.txt; CODEGEN.md §2.11).
+	buildWholeLines = 2
+	partDeclFormat  = "static void %s(Data& d);"
+	partCallFormat  = "%s(d);"
+	// decodeParams are the parameters of a decoder and of each of its parts (CODEGEN.md §2.11, §7.6).
+	decodeParams          = "(const nlohmann::json& v, canon::json::Decoder& dec, %s& out)"
+	decodePartDeclFormat  = "static bool %s" + decodeParams + ";"
+	decodePartOpenFormat  = "bool %s::%s" + decodeParams + " {\n"
+	decodePartCallFormat  = "if (!%s::%s(v, dec, out)) return false;"
+	decodeTailLines       = 1 // a decoder's `return dec.Ok();`, outside its units
+	decodePartTailLines   = 1 // a part's `return true;`
 	entryAtFormat         = "&%s.rows_[%s]"
 	sliceFormat           = "%s(%s + %s[i], %s + %s[i + 1])"
 	notFromWireFormat     = "!%s(%s)"

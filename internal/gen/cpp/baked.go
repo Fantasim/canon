@@ -139,7 +139,7 @@ func (g *gen) bakedAccess() {
 		g.c.blank()
 	}
 	access := g.pl.AccessName()
-	decls, calls, defs := buildParts(access, body.String())
+	decls, calls, defs := buildParts(access, body.String(), g.partLines)
 	g.c.printf(bakedAccessText, access, members.String(), decls, calls, defs)
 }
 

@@ -1,0 +1,30 @@
+CODEGEN.md §2.11, §3.5, DECISIONS 435: a Decode<N> part is a member of detail::AAccess, whose loader LoadPotions hides the record LoadPotions that a decoder body names (a local of Potion's extra list, a Decode0 parameter), so the record collides with the loader whatever Potion's width and whether or not its Decode is cut (g++: "'LoadPotions' is not a type").
+-- a/a.canon --
+package a
+
+/// Named like the loader of the value potions; no value holds it, only a field of Potion does.
+record LoadPotions {
+  /// Its size.
+  x: Int
+}
+
+/// A potion.
+record Potion {
+  /// Its key.
+  name: String
+  /// Its extras.
+  extra: [LoadPotions]
+}
+
+/// The potions.
+let potions: [Potion] keyed by name = [{ name: "a", extra: [] }]
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.potions.json --
+[{ "name": "a", "extra": [] }]
+-- findings.txt --
+error[E8005]  a/a.canon:18:5
+  cpp: LoadPotions is generated for both a.LoadPotions and a.potions; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

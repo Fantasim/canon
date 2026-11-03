@@ -29,3 +29,8 @@ func PatternData(re *regexp.Regexp) ([]int, error) {
 	}
 	return slices.Concat(patternRows(a)...), nil
 }
+
+// GenerateWithPartLines is Generate with a function body budget of partLines lines instead of ir.PartLines, to cut small fixtures (CODEGEN.md §2.11).
+func GenerateWithPartLines(p *ir.Package, e *ir.Emit, partLines int) ([]ir.File, error) {
+	return generate(p, e, partLines)
+}

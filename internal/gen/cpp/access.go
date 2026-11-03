@@ -30,7 +30,21 @@ var (
 
 // accessStruct is detail::<P>Access: one loader per value, then the snapshot's (§7.6).
 func (g *gen) accessStruct() {
+	members := g.capture(g.accessMembers)
 	g.c.printf(structOpenFormat, g.pl.AccessName())
+	for _, decl := range g.partDecls {
+		g.c.lineAt(1, decl)
+	}
+	if len(g.partDecls) > 0 && members != "" {
+		g.c.blank()
+	}
+	g.c.write(members)
+	g.c.line(closeClass)
+	g.c.blank()
+}
+
+// accessMembers are the access struct's loaders and resolvers.
+func (g *gen) accessMembers() {
 	walks := g.walks()
 	for i, v := range g.values {
 		if i > 0 {
@@ -45,8 +59,6 @@ func (g *gen) accessStruct() {
 		g.snapshotLoader(walks)
 	}
 	g.resolvers(walks)
-	g.c.line(closeClass)
-	g.c.blank()
 }
 
 // loader reads one data file, checks `$schema`, and decodes `rows` or `value` (CODEGEN.md §7.6).

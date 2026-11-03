@@ -1,6 +1,11 @@
 package ir
 
-import "github.com/fantasim/canonlang/internal/types"
+import (
+	"maps"
+	"slices"
+
+	"github.com/fantasim/canonlang/internal/types"
+)
 
 // classScope opens a class's scope; a member named like a type its body names hides it (CODEGEN.md §3.5).
 func (pl *CppNamePlan) classScope(name, origin string, class any) *nameScope {
@@ -106,6 +111,26 @@ func (pl *CppNamePlan) accessScope(access string) *nameScope {
 		}
 	}
 	return sc
+}
+
+// hideDeclared is E8005 for an access member named like a name the plan declares in the emit's namespace or in detail: types, enum helpers and tables, constants, containers, readers, functions. A cut decoder is a set of Decode<N> members of the access struct (CODEGEN.md §2.11), so a name its body uses unqualified is hidden by a member of that name, which no size-independent rule can tell from one it does not use; the whole declared set keeps the verdict the same for every data (§3.5). Not a collision: the member's own free forwarder, declared for the same item (the free Load<V> of a value of another package's record), which denotes the same loader; a name the generator fixes, which no decoder body uses (LoadInputs); a name already reported.
+func (pl *CppNamePlan) hideDeclared(access, detail *nameScope) {
+	for _, name := range slices.Sorted(maps.Keys(access.names)) {
+		for _, sc := range []*nameScope{pl.ns, detail} {
+			first, ok := sc.names[name]
+			if !ok || pl.reportedName(name) {
+				continue
+			}
+			if item := sc.items[name]; item != nil && item != access.items[name] {
+				pl.collide(access, name, first, access.names[name], access.items[name])
+			}
+		}
+	}
+}
+
+// reportedName reports a name that is already a collision of the plan, one finding per name.
+func (pl *CppNamePlan) reportedName(name string) bool {
+	return slices.ContainsFunc(pl.problems, func(p GoNameProblem) bool { return p.Kind == GoCollision && p.Name == name })
 }
 
 // signatureTypes are the own types fn's C++ signature and conformance vector name.

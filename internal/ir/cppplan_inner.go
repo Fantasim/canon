@@ -9,6 +9,7 @@ import (
 func (pl *CppNamePlan) declareDetail() {
 	sc := pl.scope(cppDetail)
 	access := pl.AccessName()
+	var members *nameScope
 	pl.innerFixed(sc, access, pl.p.Name, meetsNever)
 	pl.declareOrdinals(sc)
 	pl.declareEnumTables(sc)
@@ -19,7 +20,7 @@ func (pl *CppNamePlan) declareDetail() {
 		pl.declareBakedDetail(sc, pl.accessScope(access))
 		pl.reserveBulk()
 	} else {
-		pl.declareAccess(access)
+		members = pl.declareAccess(access)
 		pl.declareDecoders(sc)
 		pl.declareReaders(sc)
 		pl.declareBranchTables(sc)
@@ -31,6 +32,9 @@ func (pl *CppNamePlan) declareDetail() {
 		pl.noteForeign(sc, pl.DefinesName(d), foreignNote{derived: true}, func() { pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d) })
 	}
 	pl.declareInputSlots(sc)
+	if members != nil {
+		pl.hideDeclared(members, sc)
+	}
 }
 
 // declareDecoders declares detail's Decode overloads when a class is decoded, and each dependent type's Decode<Alias> (CODEGEN.md §5.6, §7.2).
@@ -176,7 +180,7 @@ func (pl *CppNamePlan) showsOptional(methods []cppMethod, fns []*ExportFn) bool 
 }
 
 // declareAccess declares the access struct's members (CODEGEN.md §7.6): Load<V> per value, LoadSnapshot with @reload values, Resolve when a class resolves a ref at load.
-func (pl *CppNamePlan) declareAccess(access string) {
+func (pl *CppNamePlan) declareAccess(access string) *nameScope {
 	sc := pl.accessScope(access)
 	for _, v := range pl.values {
 		pl.declareDerived(sc, pl.AccessLoader(v), v)
@@ -187,4 +191,5 @@ func (pl *CppNamePlan) declareAccess(access string) {
 	if slices.ContainsFunc(pl.classes(), func(c any) bool { return pl.walks(c, map[any]bool{}) }) {
 		pl.declareFixed(sc, CppResolve, pl.p.Name, nil)
 	}
+	return sc
 }

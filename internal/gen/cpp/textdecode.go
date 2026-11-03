@@ -25,9 +25,7 @@ func (g *gen) textHelpers() {
 		t := ir.TextResult(fn)
 		g.c.printf(readerOpenFormat, g.pl.TextDecoder(fn), g.storage(t))
 		g.decodeValue(1, sourceVar, quote(dollar), leaf{t: t, dst: outVar})
-		g.c.linef(1, returnOk)
-		g.c.line(closeBrace)
-		g.c.blank()
+		g.decoderClose()
 		leave()
 	}
 }

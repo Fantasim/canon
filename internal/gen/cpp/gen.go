@@ -53,6 +53,10 @@ type gen struct {
 	wireTables   map[string]bool // branch tables keyed by the wire, their ref key being an opened enum (CODEGEN.md §5.6)
 	afterNS      writer          // what follows the header's namespace: std::hash of an opened enum (CODEGEN.md §5.2)
 
+	partLines   int      // the body budget a function is cut at: ir.PartLines, a smaller one in tests (CODEGEN.md §2.11)
+	partDecls   []string // the Decode<N> parts the cut decoders declare, which the access struct opens with
+	cutDecoders string   // the cut decoders' definitions, written after the access struct
+
 	// defaultFriends are, per class of this package, the classes whose types-mode decoders build a default writing its members (DECISIONS 386).
 	defaultFriends map[any][]string
 }
@@ -66,6 +70,11 @@ type method struct {
 
 // Generate is the C++ generator (ir.Generator): every file of CODEGEN.md §2.3 for one cpp emit; p is narrowed by ir.CopyOf.
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
+	return generate(p, e, ir.PartLines)
+}
+
+// generate is Generate with the line budget a function body is cut at (CODEGEN.md §2.11).
+func generate(p *ir.Package, e *ir.Emit, partLines int) ([]ir.File, error) {
 	if p == nil || e == nil || e.Target != ir.TargetCpp {
 		return nil, ErrTarget
 	}
@@ -77,6 +86,7 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 		return nil, fmt.Errorf("%w: cpp emit %s without a namespace or a package directory", ErrMalformed, e.Out)
 	}
 	g := newGen(p, e)
+	g.partLines = partLines
 	g.plan()
 	if g.err != nil {
 		return nil, g.err
@@ -221,10 +231,7 @@ func (g *gen) source() []byte {
 		g.bakedAccess()
 	} else {
 		g.readerDecls()
-		g.decoders()
-		g.textHelpers()
-		g.readers()
-		g.accessStruct()
+		g.detailDefinitions()
 	}
 	body := g.c.String()
 	g.c = writer{}
@@ -292,4 +299,13 @@ func modeText(m ir.Mode) string {
 		return modeNames[m]
 	}
 	return fmt.Sprint(m)
+}
+
+// detailDefinitions writes the decoders that are not cut, the text helpers, the readers and the access struct, then the cut decoders, which call parts the access struct declares (CODEGEN.md §2.7, §2.11).
+func (g *gen) detailDefinitions() {
+	g.decoders()
+	g.textHelpers()
+	g.readers()
+	g.accessStruct()
+	g.c.write(g.cutDecoders)
 }

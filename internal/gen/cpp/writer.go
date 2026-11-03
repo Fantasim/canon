@@ -1,13 +1,14 @@
 package cppgen
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 )
 
 // writer accumulates generated C++ text, one line at a time.
 type writer struct {
-	b    strings.Builder
+	b    bytes.Buffer
 	base int // levels every indented line gets on top of its own, inside a block written apart
 }
 
@@ -44,4 +45,14 @@ func (w *writer) size() int { return w.b.Len() }
 
 func (w *writer) String() string { return w.b.String() }
 
-func (w *writer) bytes() []byte { return []byte(w.b.String()) }
+func (w *writer) bytes() []byte { return bytes.Clone(w.b.Bytes()) }
+
+// capture runs write against an empty writer and returns what it wrote; g.c holds what it held before.
+func (g *gen) capture(write func()) string {
+	outer := g.c
+	g.c = writer{base: outer.base}
+	write()
+	text := g.c.String()
+	g.c = outer
+	return text
+}

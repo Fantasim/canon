@@ -1,0 +1,32 @@
+CODEGEN.md §2.11, §3.5, DECISIONS 435: a Decode<N> part is a member of detail::AAccess and names the namespace function LoadModeFromWire (the enum LoadMode's FromWire) unqualified; the loader of the value modeFromWire has that name, so inside the access struct it hides the function (g++: "no matching function for call to Decoder::Enum") whatever Potion's width and whether or not its Decode is cut. Every namespace name an access member equals collides, not only the types a decoder names.
+-- a/a.canon --
+package a
+
+/// Named so that its FromWire is the loader of the value modeFromWire.
+enum LoadMode { alpha, beta }
+
+/// A potion.
+record Potion {
+  /// Its key.
+  name: String
+  /// Its mode.
+  mode: LoadMode
+}
+
+/// The potions.
+let potions: [Potion] keyed by name = [{ name: "a", mode: LoadMode.alpha }]
+
+/// Named like the FromWire of LoadMode, behind Load.
+let modeFromWire: [Potion] keyed by name = [{ name: "b", mode: LoadMode.beta }]
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+emit json { out: "out/" }
+-- a.potions.json --
+[{ "name": "a", "mode": "alpha" }]
+-- a.modeFromWire.json --
+[{ "name": "b", "mode": "beta" }]
+-- findings.txt --
+error[E8005]  a/a.canon:18:5
+  cpp: LoadModeFromWire is generated for both a.LoadMode and a.modeFromWire; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

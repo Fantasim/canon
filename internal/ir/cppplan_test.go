@@ -64,11 +64,25 @@ func compareCpp(t *testing.T, p *ir.Package, e *ir.Emit, pl *ir.CppNamePlan) {
 	for class, names := range cppBoundNames(p, pl) { //canon:unordered each class alone
 		scan.names[class] = withoutNames(scan.names[class], names)
 	}
+	scan.names[pl.AccessName()] = withoutNames(scan.names[pl.AccessName()], cppParts(scan.names[pl.AccessName()]))
 	scopes := maps.Clone(scan.names)
 	maps.Copy(scopes, want)
 	for _, sc := range slices.Sorted(maps.Keys(scopes)) {
 		sameNames(t, p.Name+" "+sc, scan.names[sc], want[sc])
 	}
+}
+
+// cppParts are the Decode<N> and Build<N> parts among names: how many a file has follows its data's size, so the plan reserves the families (CODEGEN.md §2.11, §3.5) and lists none.
+func cppParts(names map[string]bool) []string {
+	var parts []string
+	for n := range len(names) {
+		for _, part := range []string{ir.CppDecodePart(n), ir.CppBuildPart(n)} {
+			if names[part] {
+				parts = append(parts, part)
+			}
+		}
+	}
+	return parts
 }
 
 // dumpScopes prints a plan's scopes, each with its names sorted, then its problems.
