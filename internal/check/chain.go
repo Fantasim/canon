@@ -203,7 +203,7 @@ func (c *checker) selectOn(t types.Type, name string) (*Selection, types.Type) {
 	case *types.TableType:
 		return entryMember(x.Elem)
 	case *types.ListType:
-		if x.KeyedBy != nil && x.KeyedBy.Type.Base().Kind() == types.String {
+		if x.KeyedBy != nil && c.stringLeaf(x.KeyedBy.Type) {
 			return entryMember(x.Elem)
 		}
 	}
@@ -211,6 +211,12 @@ func (c *checker) selectOn(t types.Type, name string) (*Selection, types.Type) {
 		return c.builtinMember(name, name, types.IntType)
 	}
 	return nil, nil
+}
+
+// stringLeaf reports a key whose chain of ref keys ends at a String, a table id or an error: its entries are `.k` (TYPES.md §1, §3.5, DECISIONS 456).
+func (c *checker) stringLeaf(key types.Type) bool {
+	leaf, ok := c.leafKey(key)
+	return ok && (leaf.Base().Kind() == types.String || leaf.Kind() == types.Error)
 }
 
 // recordMember is a field, else `id` or `retired` on a record used as a table's element.
@@ -268,7 +274,7 @@ func (c *checker) enumValueMember(name string, codes bool) (*Selection, types.Ty
 	return nil, nil
 }
 
-// entryMember is the entry of a table or a String-keyed list (TYPES.md §3.5); a missing key is E4002 at evaluation.
+// entryMember is the entry of a table or a keyed list whose leaf key is a String or a table id (stringLeaf); a missing key is E4002 at evaluation.
 func entryMember(elem types.Type) (*Selection, types.Type) {
 	return &Selection{Kind: SelEntry}, elem
 }

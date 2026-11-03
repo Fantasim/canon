@@ -1,0 +1,43 @@
+STDLIB.md §4.1, §5, TYPES.md §5.1 (function argument, positional or named), DECISIONS 317: a named argument of contains or indexOf on a keyed list takes an element exactly as a positional one does, so a key there is E3026, whose message names hasKey: on a plain Int-keyed list (`js`) and on a list keyed by a ref (`ks`, keyed by `ref js`). A value of neither type stays E3002; a name the method has no parameter for is still E3004.
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let plain: Bool = js.contains(x: 9) or js.indexOf(x: 9) != none
+
+local let byRef: Bool = ks.contains(x: 9) or ks.indexOf(x: 9) != none
+
+local let neither: Bool = js.contains(x: true)
+
+local let wrongName: Bool = js.contains(y: 9)
+-- findings.txt --
+error[E3026]  a/a.canon:15:40
+  9 is a key of js, not an element: test it with js.hasKey(9)
+
+error[E3026]  a/a.canon:15:60
+  9 is a key of js, not an element: test it with js.hasKey(9)
+
+error[E3026]  a/a.canon:17:40
+  9 is a key of ks, not an element: test it with ks.hasKey(9)
+
+error[E3026]  a/a.canon:17:60
+  9 is a key of ks, not an element: test it with ks.hasKey(9)
+
+error[E3002]  a/a.canon:19:42
+  expected a.J, found Bool
+
+error[E3004]  a/a.canon:21:41
+  unknown argument y in call to contains
+
+6 errors, 0 warnings in 1 package (…)

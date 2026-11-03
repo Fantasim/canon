@@ -1,0 +1,53 @@
+TYPES.md §3.5, DECISIONS 456: `xs.k` is an entry only on a table or a keyed list whose key, read at its chain's leaf, is a String or a table id. A list whose leaf key is an enum or an integer has no `.k` entry, whether keyed by that type itself (`es`, `js`) or by a ref down to it (`fs` keyed by `ref es`, `ks` keyed by `ref js`): E3003, exactly as before refs reached the leaf.
+-- a/a.canon --
+package a
+
+local enum Hue {
+  red
+}
+
+local record C {
+  h: Hue
+}
+
+local record F {
+  c: ref es
+}
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local let es: [C] keyed by h = [{ h: red }]
+
+local let fs: [F] keyed by c = [{ c: red }]
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let one: C = es.red
+
+local let two: F = fs.red
+
+local let three: J = js.x
+
+local let four: K = ks.x
+-- findings.txt --
+error[E3003]  a/a.canon:31:23
+  [a.C] keyed by h has no field red
+
+error[E3003]  a/a.canon:33:23
+  [a.F] keyed by c has no field red
+
+error[E3003]  a/a.canon:35:25
+  [a.J] keyed by n has no field x
+
+error[E3003]  a/a.canon:37:24
+  [a.K] keyed by j has no field x
+
+4 errors, 0 warnings in 1 package (…)

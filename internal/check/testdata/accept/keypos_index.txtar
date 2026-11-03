@@ -1,0 +1,23 @@
+TYPES.md §5.1 (index `xs[i]`: `Int` for a list, the key type for a keyed list), §7.1: an index is checked against its expected type, so arithmetic of context-dependent operands there is an Int, on a plain list (`xs[1 + 1]`, `xs[-1]`), on an Int-keyed list (`js[1 + 9]`) and on a list keyed by a refined Int (`rs[2 * 3]`); a slice bound stays an Int (`xs[0..1 + 1]`).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record R {
+  n: Int(0..10)
+}
+
+local let xs: [Int] = [1, 2, 3]
+
+local let js: [J] keyed by n = [{ n: 9 }, { n: 10 }]
+
+local let rs: [R] keyed by n = [{ n: 6 }]
+
+local let plain: Int = xs[1 + 1] + xs[-1] + xs[(2 - 1) * 2]
+
+local let keyed: Int = js[1 + 9].n + rs[2 * 3].n
+
+local let sliced: [Int] = xs[0..1 + 1]

@@ -1,0 +1,47 @@
+TYPES.md §5.1 (index `xs[i]`: `Int` for a list, the key type for a keyed list; a key argument of hasKey, get and find), §5.3, §6.5: an index or key is checked against its expected type, so `none` there is a `T?` where a `T` is expected: E3403, positional or named, on a plain list (`xs[none]`), an Int-keyed list (`js[none]`, `js.hasKey(none)`, `js.hasKey(k: none)`, `js.get(k: none)`) and a table (`flags[none]`).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record Flag {
+  label: String
+}
+
+local let xs: [Int] = [1, 2, 3]
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let flags: table Flag = {
+  blocking { label: "b" }
+}
+
+local let plain: Int = xs[none]
+
+local let keyed: J = js[none]
+
+local let has: Bool = js.hasKey(none) or js.hasKey(k: none) or js.get(k: none) != none
+
+local let tbl: Flag = flags[none]
+-- findings.txt --
+error[E3403]  a/a.canon:19:27
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:21:25
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:23:33
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:23:55
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:23:74
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:25:29
+  expected String, found String?: prove it is present (!= none, !, ??)
+
+6 errors, 0 warnings in 1 package (…)

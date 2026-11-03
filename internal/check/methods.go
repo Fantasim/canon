@@ -34,7 +34,7 @@ func (c *checker) builtinMethod(env *env, x *syntax.CallExpr, s *syntax.Selector
 		c.argsAlone(env, x)
 		return types.ErrorType
 	}
-	if t, handled := c.keyedMethod(env, bc, rows); handled {
+	if t, handled := c.keyedMethod(env, bc, rows, recv); handled {
 		return t
 	}
 	if name == methodMatches {
@@ -140,11 +140,14 @@ func consExample(k constraint) types.Type {
 	}
 }
 
-// keyedMethod handles the methods of a keyed collection that take an element or a key (STDLIB.md §5).
-func (c *checker) keyedMethod(env *env, bc *builtinCall, rows []row) (types.Type, bool) {
+// keyedMethod handles the keyed methods taking an element or a key, positional or named (STDLIB.md §5, DECISIONS 317).
+func (c *checker) keyedMethod(env *env, bc *builtinCall, rows []row, recv types.Type) (types.Type, bool) {
 	key, keyed := bc.b.vars[keyT]
-	if !keyed || len(bc.x.Args) != 1 || bc.x.Args[0].Name != nil {
+	if _, fits := argMap(bc.x, rows[0].sig); !keyed || len(bc.x.Args) != 1 || !fits {
 		return nil, false
+	}
+	if l, isList := recv.Base().(*types.ListType); isList && l.KeyedBy != nil {
+		key = l.KeyedBy.Type // with the refinements the binding drops (TYPES.md §5.3, §7.4)
 	}
 	arg := bc.x.Args[0].Value
 	elem := bc.b.vars[tT]

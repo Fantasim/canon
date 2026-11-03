@@ -1,0 +1,20 @@
+STDLIB.md §4.1, §5, TYPES.md §5.1 (function argument, positional or named), DECISIONS 317: on a keyed list, a named argument of contains, indexOf, get, find and hasKey is the same argument as a positional one: an element for contains and indexOf, a key for get, find and hasKey, on a plain Int-keyed list (`js`) and on a list keyed by a ref (`ks`, keyed by `ref js`; a literal of its leaf key).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+  w: Int = 0
+}
+
+local let js: [J] keyed by n = [{ n: 9 }, { n: 10 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let plain: Bool = js.contains(x: js[9]) and js.indexOf(x: js[10]) != none and js.get(k: 9) != none and js.find(k: 10) != none and js.hasKey(k: 9)
+
+local let byRef: Bool = ks.contains(x: ks[9]) and ks.get(k: 9) != none and ks.find(k: 9) != none and ks.hasKey(k: 9)

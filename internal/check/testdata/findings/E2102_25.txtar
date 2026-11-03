@@ -1,0 +1,26 @@
+TYPES.md §1, §3.5, DECISIONS 456: a keyed list whose key is a ref to nothing has a key in error, so `xs.k` on it is an entry of the error type: the unresolved name is reported once, and `ts.x` and `us.x` (keyed by `ref ts`, 2 levels) report no cascade E3003.
+-- a/a.canon --
+package a
+
+local record T {
+  r: ref nope
+  w: Int = 0
+}
+
+local record U {
+  t: ref ts
+  w: Int = 0
+}
+
+local let ts: [T] keyed by r = []
+
+local let us: [U] keyed by t = []
+
+local let one: Int = ts.x.w
+
+local let two: Int = us.x.w
+-- findings.txt --
+error[E2102]  a/a.canon:4:10
+  unknown name nope (did you mean one?)
+
+1 error, 0 warnings in 1 package (…)

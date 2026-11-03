@@ -147,8 +147,8 @@ func (c *checker) amendSegment(env *env, w *amendWalk, seg *syntax.AmendSegment)
 }
 
 // amendField is `.f`: a record's field (a case's for a variant), or an entry of a table or a
-// String-keyed list, named by its object when the let's keys are static; through an input it
-// is E3313.
+// keyed list whose leaf key is a String or a table id (stringLeaf), named by its object when the
+// let's keys are static; through an input it is E3313.
 func (c *checker) amendField(env *env, w *amendWalk, t types.Type, n *syntax.Ident) (types.Type, bool) {
 	sel, ft := c.selectOn(t, n.Name)
 	if sel == nil || sel.Kind == SelBuiltinMember {

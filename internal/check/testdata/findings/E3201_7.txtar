@@ -1,0 +1,29 @@
+TYPES.md §5.1 (index `xs[i]`: the key type for a keyed list; a key argument of hasKey, get and find), §5.3, §7.2: a literal key is checked against the list's key type, so an integer literal out of a sized key's range is E3201 at check time, never only E4002 at evaluation: `bs[300]`, `bs.get(300)`, `bs.hasKey(k: -1)` on a list keyed by a UInt8; `bs[200]` fits.
+-- a/a.canon --
+package a
+
+local record B {
+  b: UInt8
+}
+
+local let bs: [B] keyed by b = [{ b: 200 }]
+
+local let over: B = bs[300]
+
+local let got: Bool = bs.get(300) != none or bs.hasKey(k: -1)
+
+local let fits: B = bs[200]
+-- findings.txt --
+error[E3201]  a/a.canon:9:24
+  300 does not fit UInt8
+  expected by a/a.canon:9 (over: B)
+
+error[E3201]  a/a.canon:11:30
+  300 does not fit UInt8
+  expected by a/a.canon:11 (got: Bool)
+
+error[E3201]  a/a.canon:11:59
+  -1 does not fit UInt8
+  expected by a/a.canon:11 (got: Bool)
+
+3 errors, 0 warnings in 1 package (…)

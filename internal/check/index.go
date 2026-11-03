@@ -154,8 +154,14 @@ func (c *checker) lookupIndex(env *env, x *syntax.IndexExpr, t types.Type) types
 	return types.ErrorType
 }
 
-// positional is `xs[i]` on a plain list: i an Int, or a Range value for a slice.
+// positional is `xs[i]` on a plain list: i an Int (a context-dependent operand checked against it, TYPES.md §5.1), or a Range value.
 func (c *checker) positional(env *env, x *syntax.IndexExpr, l *types.ListType) types.Type {
+	if c.contextIndex(env, x.Index, types.IntType) {
+		if it := c.expr(env, x.Index, types.IntType); it.Kind() == types.Error {
+			return types.ErrorType
+		}
+		return l.Elem
+	}
 	it := c.synth(env, x.Index)
 	switch it.Base().Kind() {
 	case types.Int, types.Error:
@@ -168,9 +174,13 @@ func (c *checker) positional(env *env, x *syntax.IndexExpr, l *types.ListType) t
 	return types.ErrorType
 }
 
-// keyValue types a key (`xs[k]`, get, find, hasKey): KT, or a ref into recv's own collection (STDLIB.md §5).
+// keyValue types a key (`xs[k]`, get, find, hasKey) against KT, or a ref into recv's own collection (STDLIB.md §5, TYPES.md §5.1).
 func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
 	if c.bareKey(env, k, recv, key) || c.notValueName(env, k) || c.refKeyLiteral(env, k, key) {
+		return
+	}
+	if c.contextIndex(env, k, key) {
+		c.expr(env, k, key)
 		return
 	}
 	t := c.synth(env, k)
@@ -182,6 +192,14 @@ func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
 		return
 	}
 	c.report(env, diag.E3002.At(env.span(k), key, t))
+}
+
+// contextIndex reports an index or key checked against want: context-dependent, no bare name, no literal of a ref key (refKeyLiteral's; TYPES.md §5.1, §5.3).
+func (c *checker) contextIndex(env *env, i syntax.Expr, want types.Type) bool {
+	if _, isName := inner(i).(*syntax.IdentExpr); isName || !c.contextDependent(env, i) {
+		return false
+	}
+	return c.keyTarget(want) == nil || literalOf(i) == nil
 }
 
 // refKeyLiteral types a literal of a ref key's leaf type against that key, as a key field is (TYPES.md §4.1, DECISIONS 456).

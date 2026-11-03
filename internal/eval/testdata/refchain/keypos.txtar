@@ -1,0 +1,98 @@
+TYPES.md §3.5, §5.1, STDLIB.md §4.1, §5, DECISIONS 317, 456: evaluation agrees with the checker in key and element positions. `xs.k` on a list keyed by a ref whose leaf is a String (`ts`, `us` at 2 levels) or a table id (`ps`) is the entry with key `k`, and a key no entry has is E4002 there. A named argument of contains, indexOf, get, find and hasKey is the positional one. An index of context-dependent arithmetic is an Int position of a plain list (`xs[1 + 1]`) and an Int key of a keyed list (`js[1 + 9]`). On `picked`, keyed by a ref into `pool`, a table of its own element type, an element is tested with `in` and a key with hasKey; `picked.a` (its entry, a String-leaf `.k`) is in it, `pool.a` (an entry of pool, another identity, TYPES.md §6.3, §7.5) is not.
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record S {
+  s: String
+}
+
+local record T {
+  r: ref ss
+  w: Int = 0
+}
+
+local record U {
+  t: ref ts
+  w: Int = 0
+}
+
+local record E {
+  w: Int = 0
+}
+
+local record P {
+  e: ref tab
+  w: Int = 0
+}
+
+local record Q {
+  m: ref pool
+  w: Int = 0
+}
+
+local let js: [J] keyed by n = [{ n: 9 }, { n: 10 }]
+
+local let ss: [S] keyed by s = [{ s: "x" }, { s: "y" }]
+
+local let ts: [T] keyed by r = [{ r: "x", w: 7 }]
+
+local let us: [U] keyed by t = [{ t: "x", w: 8 }]
+
+local let tab: table E = {
+  p {}
+  q {}
+}
+
+local let ps: [P] keyed by e = [{ e: p, w: 9 }]
+
+local let xs: [Int] = [1, 2, 3]
+
+local let pool: table Q = {
+  a { m: a, w: 1 }
+  b { m: b, w: 2 }
+}
+
+local let picked: [Q] keyed by m = [pool.a]
+
+local let q: ref pool = a
+
+let selected: [Int] = [ts.x.w, us.x.w, ps.p.w]
+
+let named: [Bool] = [js.contains(x: js[9]), js.indexOf(x: js[10]) == 1, js.get(k: 9) != none, js.find(k: 11) == none, js.hasKey(k: 10)]
+
+let indexed: [Int] = [xs[1 + 1], xs[-1], js[1 + 9].n]
+
+let own: [Bool] = [picked.a in picked, picked.contains(picked.a), pool.a in picked, picked.hasKey(q), picked.hasKey(b)]
+
+let gone: Int = ts.y.w
+
+let goneTable: Int = ps.q.w
+-- dump.txt --
+a.js = [J{n: 9}, J{n: 10}]
+a.ss = [S{s: "x"}, S{s: "y"}]
+a.ts = [T{r: x, w: 7}]
+a.us = [U{t: x, w: 8}]
+a.tab = {p: E{w: 0}, q: E{w: 0}}
+a.ps = [P{e: p, w: 9}]
+a.xs = [1, 2, 3]
+a.pool = {a: Q{m: a, w: 1}, b: Q{m: b, w: 2}}
+a.picked = [Q{m: a, w: 1}]
+a.q = a
+a.selected = [7, 8, 9]
+a.named = [true, true, true, true, true]
+a.indexed = [3, 3, 10]
+a.own = [true, true, false, true, false]
+a.gone poisoned
+a.goneTable poisoned
+
+error[E4002]  a/a.canon:69:17
+  gone: no key y in ts
+
+error[E4002]  a/a.canon:71:22
+  goneTable: no key q in ps
+
+2 errors, 0 warnings in 1 package (…)
