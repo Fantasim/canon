@@ -1,0 +1,33 @@
+SPEC.md §9.4, DECISIONS 296, 456: a ref into a keyed list is not a finite type, so a function taking one is translated, and E9006 refuses it, a package fn and a record's method alike; only a ref into a table is finite.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// Its key.
+  id: String
+}
+
+/// The rows.
+let rows: [Row] keyed by id = [ { id: "x" } ]
+
+/// A holder.
+record Holder {
+  /// Its weight.
+  w: Int
+  /// A method over a ref into a keyed list.
+  export fn at(self, x: ref rows) -> Int { return self.w }
+}
+
+/// Pick, whatever x.
+export fn pick(x: ref rows, b: Bool) -> Int { return if b { 1 } else { 0 } }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E9006]  a/a.canon:17:22
+  parameter x of Holder.at has type ref a.rows: translated functions take Bool, integers, Float, Float32, String, Duration and enums; pass the values the body reads as parameters of those types, or make Holder.at a method of the record that holds them
+
+error[E9006]  a/a.canon:21:16
+  parameter x of pick has type ref a.rows: translated functions take Bool, integers, Float, Float32, String, Duration and enums; pass the values the body reads as parameters of those types, or make pick a method of the record that holds them
+
+2 errors, 0 warnings in 1 package (…)

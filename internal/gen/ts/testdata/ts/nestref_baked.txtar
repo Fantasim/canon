@@ -1,0 +1,787 @@
+CODEGEN.md §5.6, §5.8, §5.9, WIRE.md §5.8, §5.9, DECISIONS 456: a ref whose list is keyed by a ref is baked, typed and compared at its chain's leaf key (2 and 3 deep; an enum leaf written by its wire, a @codes enum, a String, an Int and a table leaf), in a field, a list, a map key, a literal union arm and a dependent branch table. Mode baked.
+-- nrb/nrb.canon --
+/// Package.
+package nrb
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// T.
+record T {
+/// Shape.
+  shape: Shape
+}
+
+/// The table.
+let tbl: table T = {
+  sword { shape: count }
+  shield { shape: place }
+}
+
+/// Leaf ew.
+enum Tone { first, second = "z2", third }
+
+/// Row.
+record EwR1 {
+/// Key.
+  k: Tone
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let ew1: [EwR1] keyed by k = [ { k: second, shape: count }, { k: third, shape: place } ]
+
+/// Row.
+record EwR2 {
+/// Key.
+  k: ref ew1
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let ew2: [EwR2] keyed by k = [ { k: second, shape: count }, { k: third, shape: place } ]
+
+/// Row.
+record EwR3 {
+/// Key.
+  k: ref ew2
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let ew3: [EwR3] keyed by k = [ { k: second, shape: count }, { k: third, shape: place } ]
+
+/// Holder.
+record HEw {
+/// A field.
+  f2: ref ew2
+/// A field.
+  f3: ref ew3
+/// A field.
+  fl: [ref ew3]
+/// A field.
+  fm: {ref ew3: Int}
+/// A field.
+  fu: ref ew2 | "none"
+/// A field.
+  fus: [ref ew3 | "none"]
+/// A field.
+  ev: ref ew3
+/// A field.
+  param: Param(ev.shape)? @json(none: 0)
+/// A field.
+  ev2: ref ew2
+/// A field.
+  param2: Param(ev2.shape)? @json(none: 0)
+}
+
+/// The holder.
+let hew: HEw = { f2: second, f3: second, fl: [third], fm: { second: 1 }, fu: second, fus: ["none", third], ev: second, param: 3, ev2: third, param2: "x" }
+
+/// Leaf ec.
+enum Rank @codes(UInt8) @json(codes) { zulu = 4, alpha = 9, mid = 1 }
+
+/// Row.
+record EcR1 {
+/// Key.
+  k: Rank
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let ec1: [EcR1] keyed by k = [ { k: alpha, shape: count }, { k: zulu, shape: place } ]
+
+/// Row.
+record EcR2 {
+/// Key.
+  k: ref ec1
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let ec2: [EcR2] keyed by k = [ { k: alpha, shape: count }, { k: zulu, shape: place } ]
+
+/// Row.
+record EcR3 {
+/// Key.
+  k: ref ec2
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let ec3: [EcR3] keyed by k = [ { k: alpha, shape: count }, { k: zulu, shape: place } ]
+
+/// Holder.
+record HEc {
+/// A field.
+  f2: ref ec2
+/// A field.
+  f3: ref ec3
+/// A field.
+  fl: [ref ec3]
+/// A field.
+  fm: {ref ec3: Int}
+/// A field.
+  ev: ref ec3
+/// A field.
+  param: Param(ev.shape)? @json(none: 0)
+/// A field.
+  ev2: ref ec2
+/// A field.
+  param2: Param(ev2.shape)? @json(none: 0)
+}
+
+/// The holder.
+let hec: HEc = { f2: alpha, f3: alpha, fl: [zulu], fm: { alpha: 1 }, ev: alpha, param: 3, ev2: zulu, param2: "x" }
+
+/// Row.
+record StR1 {
+/// Key.
+  k: String
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let st1: [StR1] keyed by k = [ { k: "q", shape: count }, { k: "p", shape: place } ]
+
+/// Row.
+record StR2 {
+/// Key.
+  k: ref st1
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let st2: [StR2] keyed by k = [ { k: "q", shape: count }, { k: "p", shape: place } ]
+
+/// Row.
+record StR3 {
+/// Key.
+  k: ref st2
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let st3: [StR3] keyed by k = [ { k: "q", shape: count }, { k: "p", shape: place } ]
+
+/// Holder.
+record HSt {
+/// A field.
+  f2: ref st2
+/// A field.
+  f3: ref st3
+/// A field.
+  fl: [ref st3]
+/// A field.
+  fm: {ref st3: Int}
+/// A field.
+  fu: ref st2 | "none"
+/// A field.
+  fus: [ref st3 | "none"]
+/// A field.
+  ev: ref st3
+/// A field.
+  param: Param(ev.shape)? @json(none: 0)
+/// A field.
+  ev2: ref st2
+/// A field.
+  param2: Param(ev2.shape)? @json(none: 0)
+}
+
+/// The holder.
+let hst: HSt = { f2: "q", f3: "q", fl: ["p"], fm: { "q": 1 }, fu: "q", fus: ["none", "p"], ev: "q", param: 3, ev2: "p", param2: "x" }
+
+/// Row.
+record InR1 {
+/// Key.
+  k: Int
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let in1: [InR1] keyed by k = [ { k: 20, shape: count }, { k: 5, shape: place } ]
+
+/// Row.
+record InR2 {
+/// Key.
+  k: ref in1
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let in2: [InR2] keyed by k = [ { k: 20, shape: count }, { k: 5, shape: place } ]
+
+/// Row.
+record InR3 {
+/// Key.
+  k: ref in2
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let in3: [InR3] keyed by k = [ { k: 20, shape: count }, { k: 5, shape: place } ]
+
+/// Holder.
+record HIn {
+/// A field.
+  f2: ref in2
+/// A field.
+  f3: ref in3
+/// A field.
+  fl: [ref in3]
+/// A field.
+  fm: {ref in3: Int}
+/// A field.
+  ev: ref in3
+/// A field.
+  param: Param(ev.shape)? @json(none: 0)
+/// A field.
+  ev2: ref in2
+/// A field.
+  param2: Param(ev2.shape)? @json(none: 0)
+}
+
+/// The holder.
+let hin: HIn = { f2: 20, f3: 20, fl: [5], fm: { 20: 1 }, ev: 20, param: 3, ev2: 5, param2: "x" }
+
+/// Row.
+record TbR1 {
+/// Key.
+  k: ref tbl
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let tb1: [TbR1] keyed by k = [ { k: sword, shape: count }, { k: shield, shape: place } ]
+
+/// Row.
+record TbR2 {
+/// Key.
+  k: ref tb1
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let tb2: [TbR2] keyed by k = [ { k: sword, shape: count }, { k: shield, shape: place } ]
+
+/// Row.
+record TbR3 {
+/// Key.
+  k: ref tb2
+/// Shape.
+  shape: Shape
+}
+
+/// List.
+let tb3: [TbR3] keyed by k = [ { k: sword, shape: count }, { k: shield, shape: place } ]
+
+/// Holder.
+record HTb {
+/// A field.
+  f2: ref tb2
+/// A field.
+  f3: ref tb3
+/// A field.
+  fl: [ref tb3]
+/// A field.
+  fm: {ref tb3: Int}
+/// A field.
+  fu: ref tb2 | "none"
+/// A field.
+  fus: [ref tb3 | "none"]
+/// A field.
+  ev: ref tb3
+/// A field.
+  param: Param(ev.shape)? @json(none: 0)
+/// A field.
+  ev2: ref tb2
+/// A field.
+  param2: Param(ev2.shape)? @json(none: 0)
+}
+
+/// The holder.
+let htb: HTb = { f2: sword, f3: sword, fl: [shield], fm: { sword: 1 }, fu: sword, fus: ["none", shield], ev: sword, param: 3, ev2: shield, param2: "x" }
+
+emit ts { out: "@features/nrb/nrb.ts", mode: baked }
+-- ts.out --
+=== features/nrb/nrb.ts ===
+// GENERATED by canon from nrb/. DO NOT EDIT.
+
+// ---------------------------------------------------------------------------
+// canon runtime, TypeScript v1 (CODEGEN.md §8.2). Identical in every generated file.
+// ---------------------------------------------------------------------------
+
+/** An error the Canon evaluator would also report, with its code ("E4101"). */
+export class CanonEvalError extends Error {
+  readonly code: string;
+  constructor(code: string, message: string) {
+    super(code + ": " + message);
+    this.name = "CanonEvalError";
+    this.code = code;
+  }
+}
+
+/** A read-only Map: set, delete and clear throw. */
+class CanonMap<K, V> extends Map<K, V> {
+  constructor(entries: ReadonlyArray<readonly [K, V]>) {
+    super();
+    for (const [k, v] of entries) super.set(k, v);
+    Object.freeze(this);
+  }
+  override set(_k: K, _v: V): this { throw new TypeError("canon: read-only map"); }
+  override delete(_k: K): boolean { throw new TypeError("canon: read-only map"); }
+  override clear(): void { throw new TypeError("canon: read-only map"); }
+}
+
+/** A table or keyed list: entries in source order, lookup by key. */
+export interface CanonTable<K, T> {
+  readonly length: number;
+  readonly all: ReadonlyArray<T>;
+  at(i: number): T;
+  find(key: K): T | null;
+}
+
+/** A row of a table: its record, with this table's id and retired flag present. */
+export type CanonRow<T, K> = Omit<T, "id" | "retired"> & { readonly id: K; readonly retired: boolean };
+
+/** A table or keyed list, and a lookup per @stable field (`by`: the method name to the field's property): each an index built once, never a scan (CODEGEN.md §5.9). */
+function canonTable<K, T, B extends Record<string, keyof T> = {}>(rows: ReadonlyArray<T>, keyOf: (row: T) => K, by?: B): CanonTable<K, T> & { readonly [P in keyof B]: (value: T[B[P]]) => T | null } {
+  const index = new Map<K, number>();
+  rows.forEach((row, i) => index.set(keyOf(row), i));
+  const table: CanonTable<K, T> = {
+    length: rows.length,
+    all: rows,
+    at: (i: number): T => rows[i],
+    find: (key: K): T | null => {
+      const i = index.get(key);
+      return i === undefined ? null : rows[i];
+    },
+  };
+  const lookups: Record<string, (value: unknown) => T | null> = {};
+  for (const [name, prop] of Object.entries((by ?? {}) as Record<string, keyof T>)) {
+    const at = new Map<unknown, number>();
+    rows.forEach((row, i) => at.set(row[prop], i));
+    lookups[name] = (value: unknown): T | null => {
+      const i = at.get(value);
+      return i === undefined ? null : rows[i];
+    };
+  }
+  return Object.freeze({ ...table, ...lookups }) as CanonTable<K, T> & { readonly [P in keyof B]: (value: T[B[P]]) => T | null };
+}
+
+/** Deep-freezes plain objects and arrays (CanonMaps are already read-only). */
+function canonFreeze<T>(x: T): T {
+  if (typeof x === "object" && x !== null && !Object.isFrozen(x)) {
+    Object.freeze(x);
+    for (const v of Object.values(x)) canonFreeze(v);
+  }
+  return x;
+}
+
+/** A list of composites, each element typed as T on its own: no union of literal element types (DECISIONS 370). */
+function canonList<T>(build: ($r: (x: T) => T) => ReadonlyArray<T>): ReadonlyArray<T> {
+  return build((x) => x);
+}
+// ---------------------------------------------------------------------------
+
+/** Shape. */
+export type Shape = "count" | "place" | "none_";
+export const ShapeMembers: ReadonlyArray<Shape> = /*#__PURE__*/ Object.freeze(["count", "place", "none_"]);
+export const ShapeLiveMembers: ReadonlyArray<Shape> = /*#__PURE__*/ Object.freeze(["count", "place", "none_"]);
+export const ShapeNames: Readonly<Record<Shape, string>> = /*#__PURE__*/ Object.freeze({ count: "count", place: "place", none_: "none_" });
+
+/** Leaf ew. */
+export type Tone = "first" | "z2" | "third";
+export const ToneMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["first", "z2", "third"]);
+export const ToneLiveMembers: ReadonlyArray<Tone> = /*#__PURE__*/ Object.freeze(["first", "z2", "third"]);
+export const ToneNames: Readonly<Record<Tone, string>> = /*#__PURE__*/ Object.freeze({ first: "first", z2: "second", third: "third" });
+
+/** Leaf ec. */
+export type Rank = "zulu" | "alpha" | "mid";
+export const RankMembers: ReadonlyArray<Rank> = /*#__PURE__*/ Object.freeze(["zulu", "alpha", "mid"]);
+export const RankLiveMembers: ReadonlyArray<Rank> = /*#__PURE__*/ Object.freeze(["zulu", "alpha", "mid"]);
+export const RankNames: Readonly<Record<Rank, string>> = /*#__PURE__*/ Object.freeze({ zulu: "zulu", alpha: "alpha", mid: "mid" });
+export const RankCodes: Readonly<Record<Rank, number>> = /*#__PURE__*/ Object.freeze({ zulu: 4, alpha: 9, mid: 1 });
+
+export type ParamBranch = "count" | "place";
+
+export type TId = "sword" | "shield";
+export const TIdMembers: ReadonlyArray<TId> = /*#__PURE__*/ Object.freeze(["sword", "shield"]);
+export const TIdLiveMembers: ReadonlyArray<TId> = /*#__PURE__*/ Object.freeze(["sword", "shield"]);
+
+/** A parameter, by shape. */
+export type Param =
+  | { readonly branch: "count"; readonly value: number }
+  | { readonly branch: "place"; readonly value: string };
+
+/** T. */
+export interface T {
+  readonly id?: TId;
+  readonly retired?: boolean;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface EwR1 {
+  /** Key. */
+  readonly k: Tone;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface EwR2 {
+  /** Key. */
+  readonly k: Tone;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface EwR3 {
+  /** Key. */
+  readonly k: Tone;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Holder. */
+export interface HEw {
+  /** A field. */
+  readonly f2: Tone;
+  /** A field. */
+  readonly f3: Tone;
+  /** A field. */
+  readonly fl: ReadonlyArray<Tone>;
+  /** A field. */
+  readonly fm: ReadonlyMap<Tone, number>;
+  /** A field. */
+  readonly fu: string;
+  /** A field. */
+  readonly fus: ReadonlyArray<string>;
+  /** A field. */
+  readonly ev: Tone;
+  /** A field. */
+  readonly param: Param | null;
+  /** A field. */
+  readonly ev2: Tone;
+  /** A field. */
+  readonly param2: Param | null;
+}
+
+/** Row. */
+export interface EcR1 {
+  /** Key. */
+  readonly k: Rank;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface EcR2 {
+  /** Key. */
+  readonly k: Rank;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface EcR3 {
+  /** Key. */
+  readonly k: Rank;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Holder. */
+export interface HEc {
+  /** A field. */
+  readonly f2: Rank;
+  /** A field. */
+  readonly f3: Rank;
+  /** A field. */
+  readonly fl: ReadonlyArray<Rank>;
+  /** A field. */
+  readonly fm: ReadonlyMap<Rank, number>;
+  /** A field. */
+  readonly ev: Rank;
+  /** A field. */
+  readonly param: Param | null;
+  /** A field. */
+  readonly ev2: Rank;
+  /** A field. */
+  readonly param2: Param | null;
+}
+
+/** Row. */
+export interface StR1 {
+  /** Key. */
+  readonly k: string;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface StR2 {
+  /** Key. */
+  readonly k: string;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface StR3 {
+  /** Key. */
+  readonly k: string;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Holder. */
+export interface HSt {
+  /** A field. */
+  readonly f2: string;
+  /** A field. */
+  readonly f3: string;
+  /** A field. */
+  readonly fl: ReadonlyArray<string>;
+  /** A field. */
+  readonly fm: ReadonlyMap<string, number>;
+  /** A field. */
+  readonly fu: string;
+  /** A field. */
+  readonly fus: ReadonlyArray<string>;
+  /** A field. */
+  readonly ev: string;
+  /** A field. */
+  readonly param: Param | null;
+  /** A field. */
+  readonly ev2: string;
+  /** A field. */
+  readonly param2: Param | null;
+}
+
+/** Row. */
+export interface InR1 {
+  /** Key. */
+  readonly k: number;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface InR2 {
+  /** Key. */
+  readonly k: number;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface InR3 {
+  /** Key. */
+  readonly k: number;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Holder. */
+export interface HIn {
+  /** A field. */
+  readonly f2: number;
+  /** A field. */
+  readonly f3: number;
+  /** A field. */
+  readonly fl: ReadonlyArray<number>;
+  /** A field. */
+  readonly fm: ReadonlyMap<number, number>;
+  /** A field. */
+  readonly ev: number;
+  /** A field. */
+  readonly param: Param | null;
+  /** A field. */
+  readonly ev2: number;
+  /** A field. */
+  readonly param2: Param | null;
+}
+
+/** Row. */
+export interface TbR1 {
+  /** Key. */
+  readonly k: TId;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface TbR2 {
+  /** Key. */
+  readonly k: TId;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Row. */
+export interface TbR3 {
+  /** Key. */
+  readonly k: TId;
+  /** Shape. */
+  readonly shape: Shape;
+}
+
+/** Holder. */
+export interface HTb {
+  /** A field. */
+  readonly f2: TId;
+  /** A field. */
+  readonly f3: TId;
+  /** A field. */
+  readonly fl: ReadonlyArray<TId>;
+  /** A field. */
+  readonly fm: ReadonlyMap<TId, number>;
+  /** A field. */
+  readonly fu: string;
+  /** A field. */
+  readonly fus: ReadonlyArray<string>;
+  /** A field. */
+  readonly ev: TId;
+  /** A field. */
+  readonly param: Param | null;
+  /** A field. */
+  readonly ev2: TId;
+  /** A field. */
+  readonly param2: Param | null;
+}
+
+/** The table. */
+export const tbl: CanonTable<TId, CanonRow<T, TId>> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<CanonRow<T, TId>>(($r) => [
+  $r({ id: "sword", retired: false, shape: "count" }),
+  $r({ id: "shield", retired: false, shape: "place" }),
+])), ($e) => $e.id);
+
+/** List. */
+export const ew1: CanonTable<Tone, EwR1> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<EwR1>(($r) => [
+  $r({ k: "z2", shape: "count" }),
+  $r({ k: "third", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const ew2: CanonTable<Tone, EwR2> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<EwR2>(($r) => [
+  $r({ k: "z2", shape: "count" }),
+  $r({ k: "third", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const ew3: CanonTable<Tone, EwR3> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<EwR3>(($r) => [
+  $r({ k: "z2", shape: "count" }),
+  $r({ k: "third", shape: "place" }),
+])), ($e) => $e.k);
+
+/** The holder. */
+export const hew: HEw = /*#__PURE__*/ canonFreeze<HEw>({ f2: "z2", f3: "z2", fl: ["third"], fm: /*#__PURE__*/ new CanonMap<Tone, number>(/*#__PURE__*/ canonList<readonly [Tone, number]>(($r) => [$r(["z2", 1])])), fu: "z2", fus: ["none", "third"], ev: "z2", param: { branch: "count", value: 3 }, ev2: "third", param2: { branch: "place", value: "x" } });
+
+/** List. */
+export const ec1: CanonTable<Rank, EcR1> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<EcR1>(($r) => [
+  $r({ k: "alpha", shape: "count" }),
+  $r({ k: "zulu", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const ec2: CanonTable<Rank, EcR2> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<EcR2>(($r) => [
+  $r({ k: "alpha", shape: "count" }),
+  $r({ k: "zulu", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const ec3: CanonTable<Rank, EcR3> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<EcR3>(($r) => [
+  $r({ k: "alpha", shape: "count" }),
+  $r({ k: "zulu", shape: "place" }),
+])), ($e) => $e.k);
+
+/** The holder. */
+export const hec: HEc = /*#__PURE__*/ canonFreeze<HEc>({ f2: "alpha", f3: "alpha", fl: ["zulu"], fm: /*#__PURE__*/ new CanonMap<Rank, number>(/*#__PURE__*/ canonList<readonly [Rank, number]>(($r) => [$r(["alpha", 1])])), ev: "alpha", param: { branch: "count", value: 3 }, ev2: "zulu", param2: { branch: "place", value: "x" } });
+
+/** List. */
+export const st1: CanonTable<string, StR1> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<StR1>(($r) => [
+  $r({ k: "q", shape: "count" }),
+  $r({ k: "p", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const st2: CanonTable<string, StR2> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<StR2>(($r) => [
+  $r({ k: "q", shape: "count" }),
+  $r({ k: "p", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const st3: CanonTable<string, StR3> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<StR3>(($r) => [
+  $r({ k: "q", shape: "count" }),
+  $r({ k: "p", shape: "place" }),
+])), ($e) => $e.k);
+
+/** The holder. */
+export const hst: HSt = /*#__PURE__*/ canonFreeze<HSt>({ f2: "q", f3: "q", fl: ["p"], fm: /*#__PURE__*/ new CanonMap<string, number>(/*#__PURE__*/ canonList<readonly [string, number]>(($r) => [$r(["q", 1])])), fu: "q", fus: ["none", "p"], ev: "q", param: { branch: "count", value: 3 }, ev2: "p", param2: { branch: "place", value: "x" } });
+
+/** List. */
+export const in1: CanonTable<number, InR1> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<InR1>(($r) => [
+  $r({ k: 20, shape: "count" }),
+  $r({ k: 5, shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const in2: CanonTable<number, InR2> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<InR2>(($r) => [
+  $r({ k: 20, shape: "count" }),
+  $r({ k: 5, shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const in3: CanonTable<number, InR3> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<InR3>(($r) => [
+  $r({ k: 20, shape: "count" }),
+  $r({ k: 5, shape: "place" }),
+])), ($e) => $e.k);
+
+/** The holder. */
+export const hin: HIn = /*#__PURE__*/ canonFreeze<HIn>({ f2: 20, f3: 20, fl: [5], fm: /*#__PURE__*/ new CanonMap<number, number>(/*#__PURE__*/ canonList<readonly [number, number]>(($r) => [$r([20, 1])])), ev: 20, param: { branch: "count", value: 3 }, ev2: 5, param2: { branch: "place", value: "x" } });
+
+/** List. */
+export const tb1: CanonTable<TId, TbR1> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<TbR1>(($r) => [
+  $r({ k: "sword", shape: "count" }),
+  $r({ k: "shield", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const tb2: CanonTable<TId, TbR2> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<TbR2>(($r) => [
+  $r({ k: "sword", shape: "count" }),
+  $r({ k: "shield", shape: "place" }),
+])), ($e) => $e.k);
+
+/** List. */
+export const tb3: CanonTable<TId, TbR3> = /*#__PURE__*/ canonTable(/*#__PURE__*/ canonFreeze(/*#__PURE__*/ canonList<TbR3>(($r) => [
+  $r({ k: "sword", shape: "count" }),
+  $r({ k: "shield", shape: "place" }),
+])), ($e) => $e.k);
+
+/** The holder. */
+export const htb: HTb = /*#__PURE__*/ canonFreeze<HTb>({ f2: "sword", f3: "sword", fl: ["shield"], fm: /*#__PURE__*/ new CanonMap<TId, number>(/*#__PURE__*/ canonList<readonly [TId, number]>(($r) => [$r(["sword", 1])])), fu: "sword", fus: ["none", "shield"], ev: "sword", param: { branch: "count", value: 3 }, ev2: "shield", param2: { branch: "place", value: "x" } });

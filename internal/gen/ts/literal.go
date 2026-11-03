@@ -144,12 +144,12 @@ func (g *gen) caseWire(named ir.Type, index int) string {
 	return v.Cases[index].Wire
 }
 
-// keyLit is a ref's key: a string, or an integer key as bigAt decided for the ref (CODEGEN.md §5.8).
+// keyLit is a ref's key as its chain's leaf key is written: an enum's member by its wire, a string, or an integer key as bigAt decided for the ref (CODEGEN.md §5.8, WIRE.md §5.8; DECISIONS 456).
 func (g *gen) keyLit(t ir.TypeRef, k value.Key, big bool) string {
-	switch {
-	case t.Key != nil && t.Key.Kind == types.Enum && !k.IsInt:
-		return quote(g.memberNamed(t.Key.Named, k.S))
-	case k.IsInt:
+	if e, ok := ir.RefKeyEnum(t); ok && !k.IsInt {
+		return quote(g.memberNamed(e, k.S))
+	}
+	if k.IsInt {
 		return g.intLit(k.I, big)
 	}
 	return quote(k.S)

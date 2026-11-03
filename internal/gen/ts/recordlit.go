@@ -187,7 +187,7 @@ func (g *gen) cellsLit(fn *ir.ExportFn, tab *ir.LookupTable, dim, offset int) st
 	return lbrace + space + strings.Join(items, listSep) + space + rbrace
 }
 
-// domainKey is the wire key of a finite parameter's value (WIRE.md §5.8): an enum's wire, "true" or "false", a ref's key.
+// domainKey is the wire key of a finite parameter's value (WIRE.md §5.8): an enum's wire, "true" or "false", a ref's key; a ref here is into a table, whose key is its entry's id, for a ref into a keyed list is no finite parameter (SPEC.md §9.4, DECISIONS 296, 456).
 func (g *gen) domainKey(t ir.TypeRef, v value.Value) string {
 	switch x := v.(type) {
 	case *value.Bool:

@@ -317,10 +317,11 @@ func (g *gen) decRefKey(t ir.TypeRef, key, path string, big bool) string {
 	return g.decMapKey(*t.Key, key, path, big)
 }
 
-// bigAt is the one decision whether the integers at position t of a field are bigint, big being the field's @ts(bigint); the type, the literal and every decoder, map keys included, take it (CODEGEN.md §4.1, DECISIONS 279(a)). A ref takes its target key's form only: bigint when its key field is @ts(bigint) (DECISIONS 278); every other position takes the field's flag.
+// bigAt is the one decision whether the integers at position t of a field are bigint, big being the field's @ts(bigint); the type, the literal and every decoder, map keys included, take it (CODEGEN.md §4.1, DECISIONS 279(a)). A ref takes its target key's form only: bigint when its key field is @ts(bigint), read at its chain's leaf (DECISIONS 278, 456); every other position takes the field's flag.
 func bigAt(t ir.TypeRef, big bool) bool {
 	if t.Kind == types.Ref {
-		return t.Ref != nil && t.Ref.BigInt
+		leaf := ir.RefLeaf(t)
+		return leaf.Ref != nil && leaf.Ref.BigInt
 	}
 	return big
 }

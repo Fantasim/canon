@@ -162,13 +162,28 @@ func (s *stage) classOf(t types.Type) ([]*Field, []*ExportFn) {
 	return nil, nil
 }
 
-// unsafeRefKey reports a ref whose integer key is outside ±(2^53 - 1) and whose key field, named for the fix, has no @ts(bigint) (DECISIONS 278).
+// unsafeRefKey reports a ref whose integer key is outside ±(2^53 - 1) and whose key field at its chain's leaf, named for the fix, has no @ts(bigint) (DECISIONS 278, 456).
 func unsafeRefKey(x *value.Ref) (string, bool) {
 	r, ok := x.T.Base().(*types.RefType)
-	if !ok || r.Target == nil || r.Target.KeyedBy == nil || !x.Key.IsInt || bigKey(r.Target) {
+	if !ok || r.Target == nil || r.Target.KeyedBy == nil || !x.Key.IsInt {
 		return "", false
 	}
-	return r.Target.KeyedBy.Name, x.Key.I > maxSafeInt || x.Key.I < -maxSafeInt
+	leaf := leafCollection(r.Target)
+	if bigKey(leaf) {
+		return "", false
+	}
+	return leaf.KeyedBy.Name, x.Key.I > maxSafeInt || x.Key.I < -maxSafeInt
+}
+
+// leafCollection is the keyed list ending the chain of refs that c's key field starts: c itself when its key is no ref into a keyed list, as RefLeaf reads the chain on a type (DECISIONS 456).
+func leafCollection(c *types.Collection) *types.Collection {
+	for {
+		next, ok := c.KeyedBy.Type.Base().(*types.RefType)
+		if !ok || next.Target == nil || next.Target.KeyedBy == nil {
+			return c
+		}
+		c = next.Target
+	}
 }
 
 // refKeyedLookup reports a finite-parameter fn with a ref parameter: data files hold no table of one (E8013, CODEGEN.md §5.10).

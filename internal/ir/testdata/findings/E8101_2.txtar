@@ -1,0 +1,39 @@
+CODEGEN.md §4.1, DECISIONS 278, 456: a ref keyed by a ref is an integer of its chain's leaf key, so the E8101 of a ref value past Number.MAX_SAFE_INTEGER names the leaf key field n, where @ts(bigint) goes, not the inner key field k.
+-- a/a.canon --
+package a
+
+/// A leaf row.
+record Leaf {
+  /// Its key.
+  n: Int
+}
+
+/// The leaves.
+let leaves: [Leaf] keyed by n = [ { n: 9_007_199_254_740_993 } ]
+
+/// A row keyed by a ref.
+record Mid {
+  /// Its key.
+  k: ref leaves
+}
+
+/// The rows.
+let mids: [Mid] keyed by k = [ { k: 9_007_199_254_740_993 } ]
+
+/// A holder.
+record Holder {
+  /// A ref to a ref-keyed row.
+  r: ref mids
+}
+
+/// The holder.
+let holder: Holder = { r: 9_007_199_254_740_993 }
+
+emit ts { out: "out/a.ts", values: [holder] }
+-- a.holder.json --
+{"r": 9007199254740993}
+-- findings.txt --
+error[E8101]  a/a.canon:28:5
+  9007199254740993 does not fit a TypeScript number; add @ts(bigint) to n
+
+1 error, 0 warnings in 1 package (…)
