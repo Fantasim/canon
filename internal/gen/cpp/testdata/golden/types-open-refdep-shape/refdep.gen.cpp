@@ -75,6 +75,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kShapeWires = {"count", "none", "place"};
 constexpr std::array<std::string_view, 3> kShapeWireNames = {"count", "none_", "place"};
+constexpr std::array<bool, 3> kShapeRetired = {false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -96,7 +97,6 @@ std::string_view ToName(const Shape& v) {
 
 bool IsRetired(const Shape& v) {
     const std::string_view key = ToWire(v);
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     size_t lo = 0;
     size_t hi = detail::kShapeWires.size();
     while (lo < hi) {
@@ -107,7 +107,7 @@ bool IsRetired(const Shape& v) {
             hi = mid;
         }
     }
-    if (lo < detail::kShapeWires.size() && detail::kShapeWires[lo] == key) return kRetired[lo];
+    if (lo < detail::kShapeWires.size() && detail::kShapeWires[lo] == key) return detail::kShapeRetired[lo];
     return false;
 }
 
@@ -146,6 +146,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kEventWires = {"e_beat", "e_day", "e_reach"};
 constexpr std::array<std::string_view, 3> kEventWireNames = {"beat_monster", "new_day", "reach_place"};
+constexpr std::array<bool, 3> kEventRetired = {false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -167,7 +168,6 @@ std::string_view ToName(const Event& v) {
 
 bool IsRetired(const Event& v) {
     const std::string_view key = ToWire(v);
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     size_t lo = 0;
     size_t hi = detail::kEventWires.size();
     while (lo < hi) {
@@ -178,7 +178,7 @@ bool IsRetired(const Event& v) {
             hi = mid;
         }
     }
-    if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return kRetired[lo];
+    if (lo < detail::kEventWires.size() && detail::kEventWires[lo] == key) return detail::kEventRetired[lo];
     return false;
 }
 

@@ -499,6 +499,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kElementNames = {"fire", "water"};
 constexpr std::array<uint8_t, 2> kElementByWire = {0, 1};
+constexpr std::array<bool, 2> kElementRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -515,9 +516,8 @@ std::string_view ToWire(Element v) {
 }
 
 bool IsRetired(Element v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kElementRetired.size() && detail::kElementRetired[i];
 }
 
 std::optional<Element> ElementFromWire(std::string_view wire) {
@@ -539,6 +539,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kRankNames = {"low", "high"};
 constexpr std::array<uint8_t, 2> kRankByWire = {1, 0};
+constexpr std::array<bool, 2> kRankRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -555,9 +556,8 @@ std::string_view ToWire(Rank v) {
 }
 
 bool IsRetired(Rank v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = detail::RankOrdinal(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kRankRetired.size() && detail::kRankRetired[i];
 }
 
 std::optional<Rank> RankFromWire(std::string_view wire) {
@@ -586,6 +586,7 @@ namespace {
 constexpr std::array<std::string_view, 2> kToneNames = {"plain", "series_1"};
 constexpr std::array<std::string_view, 2> kToneWires = {"plain", "series-1"};
 constexpr std::array<uint8_t, 2> kToneByWire = {0, 1};
+constexpr std::array<bool, 2> kToneRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -602,9 +603,8 @@ std::string_view ToWire(Tone v) {
 }
 
 bool IsRetired(Tone v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kToneRetired.size() && detail::kToneRetired[i];
 }
 
 std::optional<Tone> ToneFromWire(std::string_view wire) {

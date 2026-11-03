@@ -2,7 +2,6 @@ package cppgen
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -57,8 +56,8 @@ func (g *gen) idEnums() {
 // idSpec is the id enum of a table: its keys in entry order, retired ones included (CODEGEN.md §5.3).
 func (g *gen) idSpec(it idTable) enumSpec {
 	s := enumSpec{name: g.pl.IDName(it.rec), underlying: underlying(nil, len(it.v.IDs)), id: true}
-	for _, id := range it.v.IDs {
-		s.members = append(s.members, enumMember{name: g.pl.IDMember(id), wire: id})
+	for i, id := range it.v.IDs {
+		s.members = append(s.members, enumMember{name: g.pl.IDMember(id), wire: id, retired: ir.EntryRetired(it.v, i)})
 	}
 	return s
 }
@@ -72,19 +71,10 @@ func (g *gen) idFromWires() {
 		pos := fmt.Sprintf(staticCastFormat, cppSize, enumArg)
 		wires, order := detailPrefix+h.Wires, detailPrefix+h.ByWire
 		g.c.printf(byOrdinalText, fmt.Sprintf(nameSigFormat, ir.CppToWire, s.name), pos, wires)
-		g.c.printf(retiredText, fmt.Sprintf(retiredSigFormat, s.name), len(s.members), retiredTable, indentBlock(braced(idRetired(it.v))), pos)
+		g.c.printf(retiredText, fmt.Sprintf(retiredSigFormat, s.name), detailPrefix+h.Retired, pos)
 		hit := fmt.Sprintf(staticCastFormat, s.name, fmt.Sprintf(indexFormat, order, loVar))
 		g.c.write(byWireSearch(fmt.Sprintf(idFromWireSigFormat, s.name, h.FromWire), keyParam, wires, order, hit))
 	}
-}
-
-// idRetired are the retired flags of a table's entries, in entry order (CODEGEN.md §5.3, DECISIONS 395).
-func idRetired(v *ir.Value) []string {
-	out := make([]string, len(v.IDs))
-	for i := range v.IDs {
-		out[i] = strconv.FormatBool(ir.EntryRetired(v, i))
-	}
-	return out
 }
 
 // indentBlock indents every line of a multi-line initializer after its first by one level.

@@ -22,6 +22,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kKindNames = {"IK1_WEAPON", "GENERAL", "OLD"};
 constexpr std::array<uint8_t, 3> kKindByWire = {1, 0, 2};
+constexpr std::array<bool, 3> kKindRetired = {false, false, true};
 }  // namespace
 }  // namespace detail
 
@@ -38,9 +39,8 @@ std::string_view ToWire(Kind v) {
 }
 
 bool IsRetired(Kind v) {
-    static constexpr std::array<bool, 3> kRetired = {false, false, true};
     const size_t i = detail::KindOrdinal(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kKindRetired.size() && detail::kKindRetired[i];
 }
 
 std::optional<Kind> KindFromWire(std::string_view wire) {
@@ -69,6 +69,7 @@ namespace {
 constexpr std::array<std::string_view, 2> kPlainNames = {"A", "B"};
 constexpr std::array<std::string_view, 2> kPlainWires = {"a", "b"};
 constexpr std::array<uint8_t, 2> kPlainByWire = {0, 1};
+constexpr std::array<bool, 2> kPlainRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -85,9 +86,8 @@ std::string_view ToWire(Plain v) {
 }
 
 bool IsRetired(Plain v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kPlainRetired.size() && detail::kPlainRetired[i];
 }
 
 std::optional<Plain> PlainFromWire(std::string_view wire) {
@@ -109,6 +109,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kExtremeNames = {"LOW", "HIGH"};
 constexpr std::array<uint8_t, 2> kExtremeByWire = {1, 0};
+constexpr std::array<bool, 2> kExtremeRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -125,9 +126,8 @@ std::string_view ToWire(Extreme v) {
 }
 
 bool IsRetired(Extreme v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = detail::ExtremeOrdinal(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kExtremeRetired.size() && detail::kExtremeRetired[i];
 }
 
 std::optional<Extreme> ExtremeFromWire(std::string_view wire) {
@@ -155,6 +155,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 1> kLegacyNames = {"NONE"};
 constexpr std::array<uint8_t, 1> kLegacyByWire = {0};
+constexpr std::array<bool, 1> kLegacyRetired = {false};
 }  // namespace
 }  // namespace detail
 
@@ -171,9 +172,8 @@ std::string_view ToWire(Legacy v) {
 }
 
 bool IsRetired(Legacy v) {
-    static constexpr std::array<bool, 1> kRetired = {false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kLegacyRetired.size() && detail::kLegacyRetired[i];
 }
 
 std::optional<Legacy> LegacyFromWire(std::string_view wire) {

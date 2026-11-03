@@ -182,6 +182,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kDstWires = {"DST_HP", "DST_MP", "DST_OLD"};
 constexpr std::array<std::string_view, 3> kDstWireNames = {"hp", "mp", "old"};
+constexpr std::array<bool, 3> kDstRetired = {false, false, true};
 }  // namespace
 }  // namespace detail
 
@@ -203,7 +204,6 @@ std::string_view ToName(const Dst& v) {
 
 bool IsRetired(const Dst& v) {
     const std::string_view key = ToWire(v);
-    static constexpr std::array<bool, 3> kRetired = {false, false, true};
     size_t lo = 0;
     size_t hi = detail::kDstWires.size();
     while (lo < hi) {
@@ -214,7 +214,7 @@ bool IsRetired(const Dst& v) {
             hi = mid;
         }
     }
-    if (lo < detail::kDstWires.size() && detail::kDstWires[lo] == key) return kRetired[lo];
+    if (lo < detail::kDstWires.size() && detail::kDstWires[lo] == key) return detail::kDstRetired[lo];
     return false;
 }
 
@@ -253,7 +253,10 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kStatWires = {"ATK", "DEF", "SPD"};
 constexpr std::array<std::string_view, 3> kStatWireNames = {"atk", "def", "spd"};
+constexpr std::array<bool, 3> kStatRetired = {false, false, false};
 constexpr std::array<uint16_t, 3> kStatWireCodes = {1, 2, 4};
+constexpr std::array<uint16_t, 3> kStatCodes = {1, 2, 4};
+constexpr std::array<uint8_t, 3> kStatCodeAt = {0, 1, 2};
 }  // namespace
 }  // namespace detail
 
@@ -275,7 +278,6 @@ std::string_view ToName(const Stat& v) {
 
 bool IsRetired(const Stat& v) {
     const std::string_view key = ToWire(v);
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     size_t lo = 0;
     size_t hi = detail::kStatWires.size();
     while (lo < hi) {
@@ -286,7 +288,7 @@ bool IsRetired(const Stat& v) {
             hi = mid;
         }
     }
-    if (lo < detail::kStatWires.size() && detail::kStatWires[lo] == key) return kRetired[lo];
+    if (lo < detail::kStatWires.size() && detail::kStatWires[lo] == key) return detail::kStatRetired[lo];
     return false;
 }
 
@@ -338,26 +340,27 @@ std::optional<uint16_t> ToCode(const Stat& v) {
 }
 
 std::optional<Stat> StatFromCode(uint16_t code) {
-    static constexpr std::array<uint16_t, 3> kKeys = {1, 2, 4};
-    static constexpr std::array<uint8_t, 3> kWireAt = {0, 1, 2};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kStatCodes.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < code) {
+        if (detail::kStatCodes[mid] < code) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == code) return Stat(std::string(detail::kStatWires[kWireAt[lo]]));
+    if (lo < detail::kStatCodes.size() && detail::kStatCodes[lo] == code) return Stat(std::string(detail::kStatWires[detail::kStatCodeAt[lo]]));
     return std::nullopt;
 }
 
 namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kRankWires = {"high", "low"};
+constexpr std::array<bool, 2> kRankRetired = {false, false};
 constexpr std::array<uint8_t, 2> kRankWireCodes = {200, 1};
+constexpr std::array<uint8_t, 2> kRankCodes = {1, 200};
+constexpr std::array<uint8_t, 2> kRankCodeAt = {1, 0};
 }  // namespace
 }  // namespace detail
 
@@ -367,7 +370,6 @@ std::string_view ToName(const Rank& v) {
 
 bool IsRetired(const Rank& v) {
     const std::string_view key = ToWire(v);
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     size_t lo = 0;
     size_t hi = detail::kRankWires.size();
     while (lo < hi) {
@@ -378,7 +380,7 @@ bool IsRetired(const Rank& v) {
             hi = mid;
         }
     }
-    if (lo < detail::kRankWires.size() && detail::kRankWires[lo] == key) return kRetired[lo];
+    if (lo < detail::kRankWires.size() && detail::kRankWires[lo] == key) return detail::kRankRetired[lo];
     return false;
 }
 
@@ -430,19 +432,17 @@ std::optional<uint8_t> ToCode(const Rank& v) {
 }
 
 std::optional<Rank> RankFromCode(uint8_t code) {
-    static constexpr std::array<uint8_t, 2> kKeys = {1, 200};
-    static constexpr std::array<uint8_t, 2> kWireAt = {1, 0};
     size_t lo = 0;
-    size_t hi = kKeys.size();
+    size_t hi = detail::kRankCodes.size();
     while (lo < hi) {
         const size_t mid = lo + (hi - lo) / 2;
-        if (kKeys[mid] < code) {
+        if (detail::kRankCodes[mid] < code) {
             lo = mid + 1;
         } else {
             hi = mid;
         }
     }
-    if (lo < kKeys.size() && kKeys[lo] == code) return Rank(std::string(detail::kRankWires[kWireAt[lo]]));
+    if (lo < detail::kRankCodes.size() && detail::kRankCodes[lo] == code) return Rank(std::string(detail::kRankWires[detail::kRankCodeAt[lo]]));
     return std::nullopt;
 }
 

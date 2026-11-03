@@ -50,6 +50,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kKindNames = {"spawn", "despawn"};
 constexpr std::array<uint8_t, 2> kKindByWire = {1, 0};
+constexpr std::array<bool, 2> kKindRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -66,9 +67,8 @@ std::string_view ToWire(Kind v) {
 }
 
 bool IsRetired(Kind v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kKindRetired.size() && detail::kKindRetired[i];
 }
 
 std::optional<Kind> KindFromWire(std::string_view wire) {
@@ -90,6 +90,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 5> kKind3Names = {"a", "b", "c", "d", "e"};
 constexpr std::array<uint8_t, 5> kKind3ByWire = {0, 1, 2, 3, 4};
+constexpr std::array<bool, 5> kKind3Retired = {false, false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -106,9 +107,8 @@ std::string_view ToWire(Kind3 v) {
 }
 
 bool IsRetired(Kind3 v) {
-    static constexpr std::array<bool, 5> kRetired = {false, false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kKind3Retired.size() && detail::kKind3Retired[i];
 }
 
 std::optional<Kind3> Kind3FromWire(std::string_view wire) {

@@ -95,7 +95,7 @@ emit json { out: "out/" }
 NamesAccess: 
 NamesMake: 
 Role: admin user
-detail: NamesAccess NamesMake kRoleByWire kRoleNames
+detail: NamesAccess NamesMake kRoleByWire kRoleNames kRoleRetired
 names: IsRetired Role RoleFromWire ToName ToWire from_json kRoleLiveMembers kRoleMembers to_json
 Bonus: GetStat GetValue stat_ value_
 Club: GetCaptain GetCaptainKey GetTitle captain_ captain_ref_ title_
@@ -112,5 +112,5 @@ ShapeCircleScaledVector: code n radius want
 ShapeKind: circle dot
 club: Bonus Club ClubSnapshot ClubStore IsRetired Member Members Settings Shape ShapeCircle ShapeKind ShapeKindFromWire ToName ToWire from_json kClubSchema kMembersSchema kSettingsSchema kShapeKindLiveMembers kShapeKindMembers to_json
 conformance: Capture RunClubConformance ShapeCircleScaledVector g_code kShapeCircleScaled
-detail: ClubAccess ClubMake Decode ShapeCircle_scaled kShapeKindByWire kShapeKindNames
+detail: ClubAccess ClubMake Decode ShapeCircle_scaled kShapeKindByWire kShapeKindNames kShapeKindRetired
 0 errors, 0 warnings in 2 packages (…)

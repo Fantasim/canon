@@ -78,8 +78,8 @@ func TestEnumStringsWrittenOnce(t *testing.T) {
 			t.Errorf("the .gen.cpp lacks %q", order)
 		}
 	}
-	if !strings.Contains(source, "kWireAt") || strings.Contains(source, "std::array<std::string_view, 4> kWires") {
-		t.Error("an opened enum's FromCode finds its wires through kWireAt in the one table")
+	if !strings.Contains(source, "kStatCodeAt") || strings.Contains(source, "std::array<std::string_view, 4> kWires") {
+		t.Error("an opened enum's FromCode finds its wires through k<E>CodeAt in the one table")
 	}
 }
 

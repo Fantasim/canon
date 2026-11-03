@@ -1,0 +1,19 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 395, 430: a closed enum's IsRetired flags, detail::k<E>Retired in its .gen.cpp's unnamed namespace, go through the C++ name plan as a name local to that file, so a record renamed like them (which detail's name would hide) is E8005.
+-- a/a.canon --
+package a
+
+/// A tone.
+enum Tone { loud, soft }
+
+/// Named like the retired-flags table.
+record Other @cpp(name: "kToneRetired") {
+  /// Its value.
+  v: Int
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  cpp: kToneRetired is generated for both a.Other and a.Tone; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

@@ -125,7 +125,7 @@ func (g *gen) closedDefinitions(s enumSpec) {
 	}
 	g.c.printf(byOrdinalText, sigs.toName, pos, names)
 	g.c.printf(byOrdinalText, sigs.toWire, pos, wires)
-	g.c.printf(retiredText, sigs.retired, len(s.members), retiredTable, indentBlock(braced(column(s.members, inOrder(len(s.members)), retiredFlag))), pos)
+	g.c.printf(retiredText, sigs.retired, detailPrefix+h.Retired, pos)
 	order := detailPrefix + h.ByWire
 	hit := fmt.Sprintf(staticCastFormat, s.name, fmt.Sprintf(indexFormat, order, loVar))
 	if s.codes != nil {
@@ -144,7 +144,7 @@ func byWireSearch(sig, key, wires, order, hit string) string {
 	}.text()
 }
 
-// enumTables write a closed enum's, a kind enum's or an id enum's names (not an id enum's), its wires unless they are its names, and its positions sorted by wire, once in the .gen.cpp: in detail's unnamed namespace, local to this file (CODEGEN.md §5.2, §5.3; DECISIONS 430).
+// enumTables write a closed enum's, a kind enum's or an id enum's names (not an id enum's), its wires unless they are its names, its positions sorted by wire and its retired flags, once in the .gen.cpp: in detail's unnamed namespace, local to this file (CODEGEN.md §5.2, §5.3; DECISIONS 430).
 func (g *gen) enumTables(s enumSpec) {
 	h, all := g.pl.EnumHelpers(s.name), inOrder(len(s.members))
 	g.c.line(detailOpen)
@@ -156,6 +156,7 @@ func (g *gen) enumTables(s enumSpec) {
 		g.c.printf(localTableFormat, cppStringView, len(all), h.Wires, braced(views(column(s.members, all, rawWire))))
 	}
 	g.c.printf(localTableFormat, underlying(nil, len(all)), len(all), h.ByWire, braced(intTexts(byWire(s.members))))
+	g.c.printf(localTableFormat, cppBool, len(all), h.Retired, braced(column(s.members, all, retiredFlag)))
 	g.c.line(anonClose)
 	g.c.line(detailClose)
 	g.c.blank()
@@ -181,8 +182,8 @@ func (g *gen) openDefinitions(s enumSpec) {
 		g.c.write(search{sig: sigs.toName, prelude: key, keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, detailPrefix+h.WireNames, loVar), miss: keyParam}.text())
 	}
 	g.c.write(search{
-		sig: sigs.retired, prelude: key + table(cppBool, retiredTable, column(s.members, byWire(s.members), retiredFlag)),
-		keys: wires, key: keyParam, hit: fmt.Sprintf(indexFormat, retiredTable, loVar), miss: strconv.FormatBool(false),
+		sig: sigs.retired, prelude: key, keys: wires, key: keyParam,
+		hit: fmt.Sprintf(indexFormat, detailPrefix+h.Retired, loVar), miss: strconv.FormatBool(false),
 	}.text())
 	g.c.write(search{sig: sigs.known, prelude: key, keys: wires, key: keyParam, hit: strconv.FormatBool(true), miss: strconv.FormatBool(false)}.text())
 	g.c.write(search{
@@ -196,21 +197,16 @@ func (g *gen) openDefinitions(s enumSpec) {
 	g.openFromCode(s, sigs.fromCode, h)
 }
 
-// openFromCode is an opened enum's <E>FromCode: a search of its codes ascending, beside the places of their members' wires in k<E>Wires, which it reads (DECISIONS 383, 430).
+// openFromCode is an opened enum's <E>FromCode: a search of its codes ascending, k<E>Codes, beside the places of their members' wires in k<E>Wires, k<E>CodeAt, which it reads (DECISIONS 383, 430).
 func (g *gen) openFromCode(s enumSpec, sig string, h ir.CppEnumHelpers) {
-	byCodes, rank := byCode(s.members), wireRanks(byWire(s.members))
-	places := make([]int, len(byCodes))
-	for i, at := range byCodes {
-		places[i] = rank[at]
-	}
-	wire := fmt.Sprintf(indexFormat, detailPrefix+h.Wires, fmt.Sprintf(indexFormat, wireAtTable, loVar))
+	wire := fmt.Sprintf(indexFormat, detailPrefix+h.Wires, fmt.Sprintf(indexFormat, detailPrefix+h.CodeAt, loVar))
 	g.c.write(search{
-		sig: sig, prelude: table(intType(*s.codes), keysTable, column(s.members, byCodes, codeText)) + table(underlying(nil, len(places)), wireAtTable, intTexts(places)),
-		keys: keysTable, key: codeField, hit: fmt.Sprintf(helperFormat, s.name, fmt.Sprintf(stringOfFormat, wire)), miss: cppNullopt,
+		sig: sig, keys: detailPrefix + h.Codes, key: codeField,
+		hit: fmt.Sprintf(helperFormat, s.name, fmt.Sprintf(stringOfFormat, wire)), miss: cppNullopt,
 	}.text())
 }
 
-// openWireTables write an opened enum's wires sorted by bytes, with their names (only when one differs from its wire) and codes, once in the .gen.cpp: in detail's unnamed namespace, local to this file (CODEGEN.md §5.2).
+// openWireTables write an opened enum's wires sorted by bytes, with their retired flags, names (only when one differs from its wire) and codes, then its codes ascending with the places of their wires, once in the .gen.cpp: in detail's unnamed namespace, local to this file (CODEGEN.md §5.2).
 func (g *gen) openWireTables(s enumSpec, h ir.CppEnumHelpers) {
 	order := byWire(s.members)
 	g.c.line(detailOpen)
@@ -219,12 +215,25 @@ func (g *gen) openWireTables(s enumSpec, h ir.CppEnumHelpers) {
 	if !s.plainWires {
 		g.c.printf(localTableFormat, cppStringView, len(order), h.WireNames, braced(views(column(s.members, order, rawCanon))))
 	}
+	g.c.printf(localTableFormat, cppBool, len(order), h.Retired, braced(column(s.members, order, retiredFlag)))
 	if s.codes != nil {
 		g.c.printf(localTableFormat, intType(*s.codes), len(order), h.WireCodes, braced(column(s.members, order, codeText)))
+		g.openCodeTables(s, h, order)
 	}
 	g.c.line(anonClose)
 	g.c.line(detailClose)
 	g.c.blank()
+}
+
+// openCodeTables write an opened @codes enum's codes ascending and, beside them, the place in k<E>Wires (the members sorted by wire, order) of each code's member.
+func (g *gen) openCodeTables(s enumSpec, h ir.CppEnumHelpers, order []int) {
+	byCodes, rank := byCode(s.members), wireRanks(order)
+	places := make([]int, len(byCodes))
+	for i, at := range byCodes {
+		places[i] = rank[at]
+	}
+	g.c.printf(localTableFormat, intType(*s.codes), len(byCodes), h.Codes, braced(column(s.members, byCodes, codeText)))
+	g.c.printf(localTableFormat, underlying(nil, len(places)), len(places), h.CodeAt, braced(intTexts(places)))
 }
 
 // helperSigs are an enum's helper signatures: ToName, ToWire (closed), IsKnown (opened), IsRetired, <E>FromWire, ToCode (opened, @codes) and <E>FromCode (@codes); "" for one it has not.

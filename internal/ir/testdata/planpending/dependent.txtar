@@ -61,5 +61,5 @@ Tags: All At Find Len Load rows_
 Thing: GetId GetK GetP GetRetired id_ k_ p_ retired_
 Things: All At Find Len Load rows_
 a: IsRetired K KFromWire P PBranch Tag Tags Thing Things ToName ToWire from_json kKLiveMembers kKMembers kTagsSchema kThingsSchema to_json
-detail: AAccess AMake Decode DecodeP kKByWire kKNames
+detail: AAccess AMake Decode DecodeP kKByWire kKNames kKRetired
 0 errors, 0 warnings in 1 package (…)

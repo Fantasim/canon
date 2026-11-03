@@ -130,6 +130,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 1> kZoneIdWires = {"forest"};
 constexpr std::array<uint8_t, 1> kZoneIdByWire = {0};
+constexpr std::array<bool, 1> kZoneIdRetired = {false};
 }  // namespace
 }  // namespace detail
 
@@ -140,9 +141,8 @@ std::string_view ToWire(ZoneId v) {
 }
 
 bool IsRetired(ZoneId v) {
-    static constexpr std::array<bool, 1> kRetired = {false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kZoneIdRetired.size() && detail::kZoneIdRetired[i];
 }
 
 std::optional<ZoneId> ZoneIdFromWire(std::string_view key) {
@@ -164,6 +164,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kLevelRangeIdWires = {"low", "high"};
 constexpr std::array<uint8_t, 2> kLevelRangeIdByWire = {1, 0};
+constexpr std::array<bool, 2> kLevelRangeIdRetired = {false, true};
 }  // namespace
 }  // namespace detail
 
@@ -174,9 +175,8 @@ std::string_view ToWire(LevelRangeId v) {
 }
 
 bool IsRetired(LevelRangeId v) {
-    static constexpr std::array<bool, 2> kRetired = {false, true};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kLevelRangeIdRetired.size() && detail::kLevelRangeIdRetired[i];
 }
 
 std::optional<LevelRangeId> LevelRangeIdFromWire(std::string_view key) {

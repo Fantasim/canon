@@ -1,0 +1,27 @@
+CODEGEN.md §3.5, §5.3, DECISIONS 395, 430: a table's id enum has its IsRetired flags in detail::k<Rec>IdRetired of the .gen.cpp, a name local to that file that goes through the C++ name plan, so a record renamed like it is E8005 and not a redefinition g++ refuses.
+-- a/a.canon --
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// Named like the retired-flags table of the status ids.
+record Other @cpp(name: "kStatusIdRetired") {
+  /// Its value.
+  v: Int
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:15:8
+  cpp: kStatusIdRetired is generated for both a.Other and a.statuses; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

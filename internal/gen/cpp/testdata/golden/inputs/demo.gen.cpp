@@ -38,6 +38,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kColorNames = {"red", "green", "blue"};
 constexpr std::array<uint8_t, 3> kColorByWire = {2, 1, 0};
+constexpr std::array<bool, 3> kColorRetired = {false, false, true};
 }  // namespace
 }  // namespace detail
 
@@ -54,9 +55,8 @@ std::string_view ToWire(Color v) {
 }
 
 bool IsRetired(Color v) {
-    static constexpr std::array<bool, 3> kRetired = {false, false, true};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kColorRetired.size() && detail::kColorRetired[i];
 }
 
 std::optional<Color> ColorFromWire(std::string_view wire) {
@@ -78,6 +78,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kTierNames = {"low", "mid", "high"};
 constexpr std::array<uint8_t, 3> kTierByWire = {2, 0, 1};
+constexpr std::array<bool, 3> kTierRetired = {false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -94,9 +95,8 @@ std::string_view ToWire(Tier v) {
 }
 
 bool IsRetired(Tier v) {
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     const size_t i = detail::TierOrdinal(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kTierRetired.size() && detail::kTierRetired[i];
 }
 
 std::optional<Tier> TierFromWire(std::string_view wire) {

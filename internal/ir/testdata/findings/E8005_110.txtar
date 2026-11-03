@@ -1,0 +1,19 @@
+CODEGEN.md §3.5, §5.2, DECISIONS 430: an opened @codes enum's sorted codes, detail::k<E>Codes in its .gen.cpp's unnamed namespace, go through the C++ name plan as a name local to that file, so a record renamed like them is E8005.
+-- a/a.canon --
+package a
+
+/// A destination.
+enum Dst @codes(UInt8) { hp = 1, mp = 2 }
+
+/// Named like the codes table.
+record Other @cpp(name: "kDstCodes") {
+  /// Its value.
+  v: Int
+}
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: types, open: [Dst] }
+-- findings.txt --
+error[E8005]  a/a.canon:7:8
+  cpp: kDstCodes is generated for both a.Other and a.Dst; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

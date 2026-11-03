@@ -130,8 +130,7 @@ const (
 	enumArg            = "v"
 	codeField          = "code"
 	cppSize            = "size_t"
-	keysTable          = "kKeys"    // the static constexpr locals of the helpers the .gen.cpp defines: an opened enum's sorted codes (DECISIONS 383, 430)
-	retiredTable       = "kRetired" // IsRetired's flags (DECISIONS 395)
+	keysTable          = "kKeys" // a keyed container lookup's function-local sorted keys (CODEGEN.md §5.9)
 	wireParam          = "wire"
 	loVar              = "lo"
 )

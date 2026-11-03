@@ -46,6 +46,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 7> kWeekdayNames = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 constexpr std::array<uint8_t, 7> kWeekdayByWire = {5, 1, 6, 0, 4, 2, 3};
+constexpr std::array<bool, 7> kWeekdayRetired = {false, false, false, false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -62,9 +63,8 @@ std::string_view ToWire(Weekday v) {
 }
 
 bool IsRetired(Weekday v) {
-    static constexpr std::array<bool, 7> kRetired = {false, false, false, false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kWeekdayRetired.size() && detail::kWeekdayRetired[i];
 }
 
 std::optional<Weekday> WeekdayFromWire(std::string_view wire) {

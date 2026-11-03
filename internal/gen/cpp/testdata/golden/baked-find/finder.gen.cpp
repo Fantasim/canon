@@ -214,6 +214,7 @@ namespace {
 constexpr std::array<std::string_view, 3> kToneNames = {"first", "second", "third"};
 constexpr std::array<std::string_view, 3> kToneWires = {"z", "y", "x"};
 constexpr std::array<uint8_t, 3> kToneByWire = {2, 1, 0};
+constexpr std::array<bool, 3> kToneRetired = {false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -230,9 +231,8 @@ std::string_view ToWire(Tone v) {
 }
 
 bool IsRetired(Tone v) {
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kToneRetired.size() && detail::kToneRetired[i];
 }
 
 std::optional<Tone> ToneFromWire(std::string_view wire) {
@@ -254,6 +254,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kRankNames = {"high", "low", "mid"};
 constexpr std::array<uint8_t, 3> kRankByWire = {0, 1, 2};
+constexpr std::array<bool, 3> kRankRetired = {false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -270,9 +271,8 @@ std::string_view ToWire(Rank v) {
 }
 
 bool IsRetired(Rank v) {
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     const size_t i = detail::RankOrdinal(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kRankRetired.size() && detail::kRankRetired[i];
 }
 
 std::optional<Rank> RankFromWire(std::string_view wire) {
@@ -300,6 +300,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 4> kKindIdWires = {"zeta", "alpha", "mid", "beta"};
 constexpr std::array<uint8_t, 4> kKindIdByWire = {1, 3, 2, 0};
+constexpr std::array<bool, 4> kKindIdRetired = {false, true, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -310,9 +311,8 @@ std::string_view ToWire(KindId v) {
 }
 
 bool IsRetired(KindId v) {
-    static constexpr std::array<bool, 4> kRetired = {false, true, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kKindIdRetired.size() && detail::kKindIdRetired[i];
 }
 
 std::optional<KindId> KindIdFromWire(std::string_view key) {

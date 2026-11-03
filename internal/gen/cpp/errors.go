@@ -350,7 +350,6 @@ const (
 
 // The tables an enum's helpers read, written once, and the searches over them (CODEGEN.md §5.2, §5.3; DECISIONS 430).
 const (
-	wireAtTable         = "kWireAt" // an opened enum's FromCode: the places of its members' wires in k<E>Wires, in code order
 	midVar              = "mid"
 	indexHole           = "%s"
 	byWireAtFormat      = "%s[%s[%%s]]" // a wire through the positions sorted by wire

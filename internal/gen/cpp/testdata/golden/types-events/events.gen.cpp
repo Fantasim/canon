@@ -313,6 +313,7 @@ constexpr std::array<std::string_view, 8> kRollModeNames = {
     "replayed",
 };
 constexpr std::array<uint8_t, 8> kRollModeByWire = {0, 6, 4, 1, 7, 5, 2, 3};
+constexpr std::array<bool, 8> kRollModeRetired = {false, false, false, false, false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -329,9 +330,8 @@ std::string_view ToWire(RollMode v) {
 }
 
 bool IsRetired(RollMode v) {
-    static constexpr std::array<bool, 8> kRetired = {false, false, false, false, false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kRollModeRetired.size() && detail::kRollModeRetired[i];
 }
 
 std::optional<RollMode> RollModeFromWire(std::string_view wire) {
@@ -353,6 +353,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kEventKindKindNames = {"spawn_monster", "spawn_item", "monster_drop_inject"};
 constexpr std::array<uint8_t, 3> kEventKindKindByWire = {2, 1, 0};
+constexpr std::array<bool, 3> kEventKindKindRetired = {false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -369,9 +370,8 @@ std::string_view ToWire(EventKindKind v) {
 }
 
 bool IsRetired(EventKindKind v) {
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kEventKindKindRetired.size() && detail::kEventKindKindRetired[i];
 }
 
 std::optional<EventKindKind> EventKindKindFromWire(std::string_view wire) {

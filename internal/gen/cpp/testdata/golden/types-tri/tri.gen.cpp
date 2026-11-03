@@ -55,6 +55,7 @@ namespace {
 constexpr std::array<std::string_view, 2> kPrizeKindNames = {"coins", "none"};
 constexpr std::array<std::string_view, 2> kPrizeKindWires = {"a?\?=b ?\?/ c ?\?\?", "none"};
 constexpr std::array<uint8_t, 2> kPrizeKindByWire = {0, 1};
+constexpr std::array<bool, 2> kPrizeKindRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -71,9 +72,8 @@ std::string_view ToWire(PrizeKind v) {
 }
 
 bool IsRetired(PrizeKind v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kPrizeKindRetired.size() && detail::kPrizeKindRetired[i];
 }
 
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire) {

@@ -32,6 +32,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 8> kKindNames = {"a", "b", "c", "d", "e", "f", "g", "h"};
 constexpr std::array<uint8_t, 8> kKindByWire = {0, 1, 2, 3, 4, 5, 6, 7};
+constexpr std::array<bool, 8> kKindRetired = {false, false, false, false, false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -48,9 +49,8 @@ std::string_view ToWire(Kind v) {
 }
 
 bool IsRetired(Kind v) {
-    static constexpr std::array<bool, 8> kRetired = {false, false, false, false, false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kKindRetired.size() && detail::kKindRetired[i];
 }
 
 std::optional<Kind> KindFromWire(std::string_view wire) {

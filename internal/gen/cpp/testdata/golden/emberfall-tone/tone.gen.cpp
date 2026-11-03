@@ -17,6 +17,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kToneNames = {"soft", "loud"};
 constexpr std::array<uint8_t, 2> kToneByWire = {1, 0};
+constexpr std::array<bool, 2> kToneRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -33,9 +34,8 @@ std::string_view ToWire(Tone v) {
 }
 
 bool IsRetired(Tone v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kToneRetired.size() && detail::kToneRetired[i];
 }
 
 std::optional<Tone> ToneFromWire(std::string_view wire) {

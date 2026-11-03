@@ -34,6 +34,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 0> kItemIdWires = {};
 constexpr std::array<uint8_t, 0> kItemIdByWire = {};
+constexpr std::array<bool, 0> kItemIdRetired = {};
 }  // namespace
 }  // namespace detail
 
@@ -44,9 +45,8 @@ std::string_view ToWire(ItemId v) {
 }
 
 bool IsRetired(ItemId v) {
-    static constexpr std::array<bool, 0> kRetired = {};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kItemIdRetired.size() && detail::kItemIdRetired[i];
 }
 
 std::optional<ItemId> ItemIdFromWire(std::string_view key) {

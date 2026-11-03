@@ -74,6 +74,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 3> kColorNames = {"red", "green", "blue"};
 constexpr std::array<uint8_t, 3> kColorByWire = {2, 1, 0};
+constexpr std::array<bool, 3> kColorRetired = {false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -90,9 +91,8 @@ std::string_view ToWire(Color v) {
 }
 
 bool IsRetired(Color v) {
-    static constexpr std::array<bool, 3> kRetired = {false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kColorRetired.size() && detail::kColorRetired[i];
 }
 
 std::optional<Color> ColorFromWire(std::string_view wire) {
@@ -114,6 +114,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kPaintKindNames = {"solid", "clear"};
 constexpr std::array<uint8_t, 2> kPaintKindByWire = {1, 0};
+constexpr std::array<bool, 2> kPaintKindRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -130,9 +131,8 @@ std::string_view ToWire(PaintKind v) {
 }
 
 bool IsRetired(PaintKind v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kPaintKindRetired.size() && detail::kPaintKindRetired[i];
 }
 
 std::optional<PaintKind> PaintKindFromWire(std::string_view wire) {

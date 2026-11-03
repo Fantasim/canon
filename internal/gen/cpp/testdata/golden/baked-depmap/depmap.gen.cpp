@@ -270,6 +270,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kShapeKindNames = {"weights", "empty"};
 constexpr std::array<uint8_t, 2> kShapeKindByWire = {1, 0};
+constexpr std::array<bool, 2> kShapeKindRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -286,9 +287,8 @@ std::string_view ToWire(ShapeKind v) {
 }
 
 bool IsRetired(ShapeKind v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kShapeKindRetired.size() && detail::kShapeKindRetired[i];
 }
 
 std::optional<ShapeKind> ShapeKindFromWire(std::string_view wire) {
@@ -310,6 +310,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kRowIdWires = {"a", "b"};
 constexpr std::array<uint8_t, 2> kRowIdByWire = {0, 1};
+constexpr std::array<bool, 2> kRowIdRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -320,9 +321,8 @@ std::string_view ToWire(RowId v) {
 }
 
 bool IsRetired(RowId v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kRowIdRetired.size() && detail::kRowIdRetired[i];
 }
 
 std::optional<RowId> RowIdFromWire(std::string_view key) {
@@ -344,6 +344,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 9> kCellIdWires = {"w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8"};
 constexpr std::array<uint8_t, 9> kCellIdByWire = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+constexpr std::array<bool, 9> kCellIdRetired = {false, false, false, false, false, false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -354,9 +355,8 @@ std::string_view ToWire(CellId v) {
 }
 
 bool IsRetired(CellId v) {
-    static constexpr std::array<bool, 9> kRetired = {false, false, false, false, false, false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kCellIdRetired.size() && detail::kCellIdRetired[i];
 }
 
 std::optional<CellId> CellIdFromWire(std::string_view key) {

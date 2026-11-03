@@ -137,6 +137,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 4> kGoalNames = {"kill", "collect", "reach_level", "visit"};
 constexpr std::array<uint8_t, 4> kGoalByWire = {1, 0, 2, 3};
+constexpr std::array<bool, 4> kGoalRetired = {false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -153,9 +154,8 @@ std::string_view ToWire(Goal v) {
 }
 
 bool IsRetired(Goal v) {
-    static constexpr std::array<bool, 4> kRetired = {false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kGoalRetired.size() && detail::kGoalRetired[i];
 }
 
 std::optional<Goal> GoalFromWire(std::string_view wire) {

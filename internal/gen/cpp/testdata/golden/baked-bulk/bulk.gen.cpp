@@ -533,6 +533,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 8> kTierNames = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"};
 constexpr std::array<uint8_t, 8> kTierByWire = {0, 1, 2, 3, 4, 5, 6, 7};
+constexpr std::array<bool, 8> kTierRetired = {false, false, false, false, false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -549,9 +550,8 @@ std::string_view ToWire(Tier v) {
 }
 
 bool IsRetired(Tier v) {
-    static constexpr std::array<bool, 8> kRetired = {false, false, false, false, false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kTierRetired.size() && detail::kTierRetired[i];
 }
 
 std::optional<Tier> TierFromWire(std::string_view wire) {
@@ -573,6 +573,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 2> kPrizeKindNames = {"coins", "none"};
 constexpr std::array<uint8_t, 2> kPrizeKindByWire = {0, 1};
+constexpr std::array<bool, 2> kPrizeKindRetired = {false, false};
 }  // namespace
 }  // namespace detail
 
@@ -589,9 +590,8 @@ std::string_view ToWire(PrizeKind v) {
 }
 
 bool IsRetired(PrizeKind v) {
-    static constexpr std::array<bool, 2> kRetired = {false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kPrizeKindRetired.size() && detail::kPrizeKindRetired[i];
 }
 
 std::optional<PrizeKind> PrizeKindFromWire(std::string_view wire) {
@@ -613,6 +613,7 @@ namespace detail {
 namespace {
 constexpr std::array<std::string_view, 8> kItemIdWires = {"i0", "i1", "i2", "i3", "i4", "i5", "i6", "i7"};
 constexpr std::array<uint8_t, 8> kItemIdByWire = {0, 1, 2, 3, 4, 5, 6, 7};
+constexpr std::array<bool, 8> kItemIdRetired = {false, true, false, false, false, false, false, false};
 }  // namespace
 }  // namespace detail
 
@@ -623,9 +624,8 @@ std::string_view ToWire(ItemId v) {
 }
 
 bool IsRetired(ItemId v) {
-    static constexpr std::array<bool, 8> kRetired = {false, true, false, false, false, false, false, false};
     const size_t i = static_cast<size_t>(v);
-    return i < kRetired.size() && kRetired[i];
+    return i < detail::kItemIdRetired.size() && detail::kItemIdRetired[i];
 }
 
 std::optional<ItemId> ItemIdFromWire(std::string_view key) {
