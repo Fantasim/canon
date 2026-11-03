@@ -206,9 +206,9 @@ func (g *gen) memberType(t ir.TypeRef, optional bool) string {
 	return g.storage(t)
 }
 
-// memberInit initializes a scalar member (CODEGEN.md §7.2: members are initialized).
+// memberInit initializes a scalar member (CODEGEN.md §7.2: members are initialized); a ref held as a table id enum, down a chain of refs, is value-initialized.
 func (g *gen) memberInit(t ir.TypeRef, optional bool) string {
-	if _, id := g.idEnum(t); id && !optional {
+	if _, id := g.idEnum(ir.RefLeaf(t)); id && !optional {
 		return initBraces
 	}
 	return scalarInit(t, optional)

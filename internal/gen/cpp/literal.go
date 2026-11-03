@@ -140,8 +140,17 @@ func keyMember(r ir.TypeRef, k value.Key) (*ir.Enum, int) {
 	return e, ir.MemberIndex(e, k.S)
 }
 
-// refLit is a ref's key as its storage holds it: a table id's or an enum key's member, by name, else the key itself (CODEGEN.md §5.3, §5.8).
+// keyBase is the type keying t down a chain of refs (ir.RefLeaf's key); t itself when it is no ref.
+func keyBase(t ir.TypeRef) ir.TypeRef {
+	if leaf := ir.RefLeaf(t); leaf.Kind == types.Ref && leaf.Key != nil {
+		return *leaf.Key
+	}
+	return t
+}
+
+// refLit is a ref's key as its storage holds it: a table id's or an enum key's member, by name, else the key itself; a ref into a list keyed by a ref is held as that ref's key (CODEGEN.md §5.3, §5.8, §5.9).
 func (g *gen) refLit(t ir.TypeRef, k value.Key) string {
+	t = ir.RefLeaf(t)
 	if id, ok := g.idEnum(t); ok {
 		return id + scopeSep + g.pl.IDMember(k.S)
 	}

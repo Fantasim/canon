@@ -1,0 +1,114 @@
+DECISIONS 387, 456, CODEGEN.md §4.1, §5.8, §5.9: in a go data emit a union `ref tints | "none"` held by the keyed list it points into, keyed by a ref into a keyed list keyed by an enum whose wire is not its name (Colour.green is "GREEN"), is a Go string; the loader accepts the literal, or reads the key with the enum's Parse (the chain ends at the enum) and checks that tints has an entry for it, at a field and at each element of a list, with the ref check's text. A member's name that is not its wire, and a member tints lacks, name no entry. probe_test.go loads the file ud's json emit wrote and one file per refused key.
+-- ud/ud.canon --
+/// UD.
+package ud
+
+/// A colour.
+enum Colour { red, green = "GREEN", blue }
+
+/// A paint.
+record Paint {
+  /// Its colour.
+  c: Colour
+}
+
+/// A tint of a paint, its unions pointing at the tints.
+record Tint {
+  /// The paint.
+  p: ref paints
+  /// A tint, or none.
+  u: ref tints | "none"
+  /// Tints, or none.
+  us: [ref tints | "none"] = []
+}
+
+/// The paints.
+let paints: [Paint] keyed by c = [{ c: red }, { c: green }, { c: blue }]
+
+/// The tints: keyed by a ref, so a ref into them is a chain.
+let tints: [Tint] keyed by p = [
+  { p: green, u: red, us: [red, "none", green] },
+  { p: red, u: "none" },
+]
+
+emit go { out: "@features/ud", package: "ud", mode: data }
+emit json { out: "out/" }
+-- gen/probe/probe_test.go --
+package probe_test
+
+import (
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"example.com/gen/ud"
+)
+
+const (
+	dataTints = "../../ud/out/tints.json"
+	// wantTints is the rows of that file as show prints them.
+	wantTints = "u=red us=[red,none,GREEN]; u=none us=[]"
+	tintA     = `{"p": "GREEN", "u": "red", "us": ["red", "none", "GREEN"]}`
+	tintB     = `{"p": "red", "u": "none", "us": []}`
+)
+
+func schemaOf(t *testing.T, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(regexp.MustCompile(`"\$schema": "([^"]*)"`).FindSubmatch(raw)[1])
+}
+
+// tintCase is a data file whose first row has from replaced by to, and the error the loader gives.
+type tintCase struct{ name, from, to, want string }
+
+// tintCases: a union over the chain reads its key as the enum's wire, so a member's name names no entry, and a member tints lacks names none (DECISIONS 387, 456).
+var tintCases = []tintCase{
+	{"name", `"u": "red"`, `"u": "green"`, "rows[0].u: no entry green"},
+	{"lacks", `"u": "red"`, `"u": "blue"`, "rows[0].u: no entry blue"},
+	{"unknown", `"u": "red"`, `"u": "zz"`, "rows[0].u: no entry zz"},
+	{"many_name", `"us": ["red", "none", "GREEN"]`, `"us": ["red", "none", "green"]`, "rows[0].us[2]: no entry green"},
+	{"many_lacks", `"us": ["red", "none", "GREEN"]`, `"us": ["blue", "none", "GREEN"]`, "rows[0].us[0]: no entry blue"},
+}
+
+func show(t *ud.Tint) string {
+	var us []string
+	for u := range t.Us().All() {
+		us = append(us, u)
+	}
+	return "u=" + t.U() + " us=[" + strings.Join(us, ",") + "]"
+}
+
+// DECISIONS 387, 456, CODEGEN.md §5.8: the file ud's json emit wrote loads whole, a literal and a wire accepted.
+func TestLoads(t *testing.T) {
+	path := dataTints
+	tints, err := ud.LoadTints(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rows []string
+	for i := range tints.Len() {
+		rows = append(rows, show(tints.At(i)))
+	}
+	if got := strings.Join(rows, "; "); got != wantTints {
+		t.Errorf("tints = %s\nwant    %s", got, wantTints)
+	}
+}
+
+// DECISIONS 387, 456, CODEGEN.md §5.8: the key is read with the enum's Parse, then looked up in tints.
+func TestRefusals(t *testing.T) {
+	for _, c := range tintCases {
+		path := filepath.Join(t.TempDir(), c.name+".json")
+		doc := `{"$schema": "` + schemaOf(t, dataTints) + `", "rows": [` + strings.Replace(tintA, c.from, c.to, 1) + ", " + tintB + "]}"
+		if err := os.WriteFile(path, []byte(doc), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := ud.LoadTints(path); err == nil || err.Error() != path+": "+c.want {
+			t.Errorf("%s: got %v\nwant %s", c.name, err, c.want)
+		}
+	}
+}

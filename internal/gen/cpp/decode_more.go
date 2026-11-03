@@ -54,9 +54,9 @@ func nullRefused(t ir.TypeRef) bool {
 	return t.Kind != types.Record && t.Kind != types.Variant && t.Kind != types.Optional
 }
 
-// elemInit value-initializes a scalar element, a ref held as its table's id enum included; a class element is default-constructed.
+// elemInit value-initializes a scalar element, a ref held as its table's id enum included, down a chain of refs; a class element is default-constructed.
 func (g *gen) elemInit(t ir.TypeRef) string {
-	if g.idKeyed(t) || scalarInit(t, false) != "" {
+	if g.idKeyed(ir.RefLeaf(t)) || scalarInit(t, false) != "" {
 		return initBraces
 	}
 	return ""

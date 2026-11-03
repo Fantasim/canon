@@ -1,0 +1,222 @@
+CODEGEN.md §5.3, §5.8, §5.9, DECISIONS 387, 456: a data emit with @reload loads a ref whose list is keyed by a ref, down a chain of three, and names a key the chain lacks with the text of the key that ends the chain: an enum's wire, a String, a table's id, the id enum of another package's baked table; a union over such a ref reads its text through the enum's wire. probe.cpp loads the snapshot of each directory it is given and prints `ok` or the loader's error.
+-- lb/lb.canon --
+/// The library.
+package lb
+
+/// An item.
+record Item {
+  /// Its label.
+  label: String
+}
+
+/// The items; nr holds them as an id enum.
+let items: table Item = {
+  sword { label: "s" }
+  shield { label: "h" }
+  axe { label: "a" }
+}
+
+emit cpp { out: "@features/lb", namespace: "lb" }
+-- nr/nr.canon --
+/// NR.
+package nr
+
+import lb { items }
+
+/// A tone, its second member written differently on the wire.
+enum Tone { first, second = "z2", third, fourth = "w4" }
+
+/// A tone row.
+record A {
+  /// Its tone.
+  id: Tone
+}
+
+/// A name row.
+record S {
+  /// Its name.
+  name: String
+}
+
+/// A kind.
+record K {
+  /// Its label.
+  label: String
+}
+
+/// A ref to a tone row.
+record B {
+  /// The tone.
+  a: ref aa
+}
+
+/// A ref to a B.
+record C {
+  /// The B.
+  b: ref bs
+}
+
+/// A ref to a name row.
+record T {
+  /// The name.
+  s: ref ss
+}
+
+/// A ref to a T.
+record U {
+  /// The T.
+  t: ref ts
+}
+
+/// A ref to a kind.
+record L {
+  /// The kind.
+  k: ref ks
+}
+
+/// A ref to an L.
+record M {
+  /// The L.
+  l: ref ls
+}
+
+/// A pick of a chain that ends in another package's table: an OV, or none.
+type FPick = ref over | "none"
+
+/// A pick: a C, or none.
+type Pick = ref cs | "none"
+
+/// A ref to an item of another package.
+record BI {
+  /// The item.
+  item: ref items
+}
+
+/// A ref to a BI.
+record OV {
+  /// The BI.
+  r: ref byItem
+}
+
+/// Refs at the leaf of each chain, in every position a loader resolves.
+record Holder {
+  /// An enum chain, one.
+  e: ref cs
+  /// An enum chain, many.
+  es: [ref cs]
+  /// An enum chain, a map key.
+  em: {ref cs: Int}
+  /// A String chain, one.
+  s: ref us
+  /// A String chain, many.
+  ss: [ref us]
+  /// A String chain, a map key.
+  sm: {ref us: Int}
+  /// A table chain, one.
+  k: ref ms
+  /// A table chain, many.
+  ks: [ref ms]
+  /// A table chain, a map key.
+  km: {ref ms: Int}
+  /// A pick over the enum chain.
+  u: Pick
+  /// Picks over the enum chain.
+  us: [Pick]
+  /// A foreign id chain, one.
+  f: ref over
+  /// A foreign id chain, many.
+  fs: [ref over]
+  /// A foreign id chain, a map key.
+  fm: {ref over: Int}
+  /// A pick over the foreign id chain.
+  fu: FPick
+  /// Picks over the foreign id chain.
+  fus: [FPick]
+}
+
+/// The tones.
+@reload
+let aa: [A] keyed by id = [{ id: third }, { id: first }, { id: second }]
+
+/// The Bs.
+@reload
+let bs: [B] keyed by a = [{ a: third }, { a: first }, { a: second }]
+
+/// The Cs.
+@reload
+let cs: [C] keyed by b = [{ b: first }, { b: third }, { b: second }]
+
+/// The names.
+@reload
+let ss: [S] keyed by name = [{ name: "q" }, { name: "p" }]
+
+/// The Ts.
+@reload
+let ts: [T] keyed by s = [{ s: "q" }, { s: "p" }]
+
+/// The Us.
+@reload
+let us: [U] keyed by t = [{ t: "p" }, { t: "q" }]
+
+/// The kinds.
+@reload
+let ks: table K = {
+  alpha { label: "a" }
+  beta { label: "b" }
+}
+
+/// The Ls.
+@reload
+let ls: [L] keyed by k = [{ k: beta }, { k: alpha }]
+
+/// The Ms.
+@reload
+let ms: [M] keyed by l = [{ l: alpha }, { l: beta }]
+
+/// The BIs.
+@reload
+let byItem: [BI] keyed by item = [{ item: shield }, { item: sword }]
+
+/// The OVs.
+@reload
+let over: [OV] keyed by r = [{ r: sword }, { r: shield }]
+
+/// The holder.
+@reload
+let h: Holder = {
+  e: second
+  es: [first, second]
+  em: { second: 1, third: 2 }
+  s: p
+  ss: [p, q]
+  sm: { p: 1, q: 2 }
+  k: alpha
+  ks: [alpha, beta]
+  km: { alpha: 1, beta: 2 }
+  u: second
+  us: [first, "none", second]
+  f: sword
+  fs: [shield, sword]
+  fm: { sword: 1, shield: 2 }
+  fu: sword
+  fus: ["none", shield]
+}
+
+emit cpp { out: "@features/nr", namespace: "nr", mode: data }
+emit json { out: "out/" }
+-- probe.cpp --
+// probe loads the snapshot of each directory argument and prints `ok` or the loader's error.
+#include <iostream>
+#include <string>
+
+#include "nr/nr.gen.h"
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        std::string error;
+        const auto snapshot = ::nr::NrSnapshot::Load(arg, error);
+        std::cout << arg << ": " << (snapshot ? "ok" : "error " + error) << "\n";
+    }
+    return 0;
+}

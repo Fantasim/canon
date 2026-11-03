@@ -101,8 +101,17 @@ func EmptyListDependent(t TypeRef, v value.Value) (*Dependent, bool) {
 	return d, ok
 }
 
-// RefKeyEnum is the enum keying ref, a ref into a keyed list keyed by one; false for any other key.
+// RefLeaf is the innermost ref of a chain of refs: ref itself when its key is no ref, else the ref its key is, down to one whose key is no ref; a ref into a keyed list keyed by a ref is held as that ref's key (CODEGEN.md §5.9, DECISIONS 456). Its Key is the type keying the whole chain. A type that is no ref is returned as it is.
+func RefLeaf(ref TypeRef) TypeRef {
+	for ref.Kind == types.Ref && ref.Key != nil && ref.Key.Kind == types.Ref {
+		ref = *ref.Key
+	}
+	return ref
+}
+
+// RefKeyEnum is the enum keying ref, a ref into a keyed list keyed by one, down a chain of refs (RefLeaf); false for any other key.
 func RefKeyEnum(ref TypeRef) (*Enum, bool) {
+	ref = RefLeaf(ref)
 	if ref.Key == nil || ref.Key.Kind != types.Enum {
 		return nil, false
 	}

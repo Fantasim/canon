@@ -29,8 +29,11 @@ func (g *gen) leafDisc(fields []*ir.Field, f *ir.Field, app ir.TypeRef) (string,
 	return g.pathExpr(path), name
 }
 
-// openRefKey reports a ref whose key is an enum the emit opens: its branch table is keyed by the wire, in wire byte order, not by the class (CODEGEN.md §5.6, DECISIONS 362).
-func (g *gen) openRefKey(ref ir.TypeRef) bool {
+// wireKeyed reports a ref whose key is an enum the emit opens, or that is held as another package's table id enum, whose entry positions this IR does not hold: its branch table is keyed by the wire, in wire byte order, not by the class, and searched through ToWire (CODEGEN.md §5.3, §5.6, DECISIONS 362, 432, 456).
+func (g *gen) wireKeyed(ref ir.TypeRef) bool {
+	if _, held := g.idEnum(ir.RefLeaf(ref)); held {
+		return true
+	}
 	e, ok := ir.RefKeyEnum(ref)
 	return ok && g.open(e)
 }
@@ -92,7 +95,7 @@ func (g *gen) branchTable(bt ir.NamedBranches) {
 		labels = []string{strconv.FormatBool(false), strconv.FormatBool(true)} // a bool table holds bools: no narrowing from 0 and 1
 	}
 	entries := g.branchEntries(ref, bt.Field.Branches)
-	if g.openRefKey(ref) {
+	if g.wireKeyed(ref) {
 		g.wireTables[bt.Name] = true
 	}
 	format, address := branchesOpenFormat, ""
@@ -158,8 +161,8 @@ func (g *gen) branchKeyType(ref ir.TypeRef) string {
 	if e, ok := ir.RefKeyEnum(ref); ok && !g.open(e) {
 		return g.qualifiedOwn(e)
 	}
-	if ref.Key != nil && ref.Key.Kind == types.Int {
-		return g.storage(*ref.Key)
+	if base := ir.RefLeaf(ref).Key; base != nil && base.Kind == types.Int {
+		return g.storage(*base)
 	}
 	return cppStringView
 }

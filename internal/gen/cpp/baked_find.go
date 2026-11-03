@@ -86,6 +86,7 @@ func (g *gen) findDefinition(s containerSpec, fn string, t ir.TypeRef, vals []va
 
 // foreignID reports a key type held as the id enum of another package's table (CODEGEN.md §5.3).
 func (g *gen) foreignID(t ir.TypeRef) bool {
+	t = ir.RefLeaf(t)
 	_, held := g.idEnum(t)
 	return held && t.Ref.Pkg != g.p.Name
 }
@@ -143,8 +144,9 @@ func enumRank(e *ir.Enum, i int) keyRank {
 	return keyRank{n: int64(i)}
 }
 
-// refRank is the place of a ref's key k: by entry position when it is held as a table's id enum, else by its key's order (CODEGEN.md §5.8, §5.9).
+// refRank is the place of a ref's key k: by entry position when it is held as a table's id enum, else by its key's order; a ref into a list keyed by a ref is placed as that ref's key, down the chain (CODEGEN.md §5.8, §5.9, DECISIONS 432, 456).
 func (g *gen) refRank(t ir.TypeRef, k value.Key) keyRank {
+	t = ir.RefLeaf(t)
 	if _, held := g.idEnum(t); held {
 		return g.idRank(t, k)
 	}

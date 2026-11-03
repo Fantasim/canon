@@ -217,18 +217,29 @@ func (g *gen) resolveList(depth int, keys, refs, find string, r resolved) {
 }
 
 // keyText is the format turning a key of type t into the text of a load error.
-func (g *gen) keyText(t *ir.TypeRef) string {
+func (g *gen) keyText(k *ir.TypeRef) string {
+	t := k
+	if k != nil {
+		if _, held := g.idEnum(ir.RefLeaf(*k)); held {
+			return wireTextFormat // a chain of refs ending in a table held as its id enum (CODEGEN.md §5.3, §5.9)
+		}
+		base := keyBase(*k)
+		t = &base
+	}
 	switch {
 	case t == nil || t.Kind == types.String || t.Kind == types.LitUnion:
 		return stringOfFormat
 	case ir.NumericMapKey(*t) && t.Kind == types.Enum:
 		return fmt.Sprintf(castKeyFormat, keyPlaceholder)
 	case t.Kind == types.Enum:
-		return fmt.Sprintf(stringOfFormat, fmt.Sprintf(helperFormat, ir.CppToWire, keyPlaceholder))
+		return wireTextFormat
 	default:
 		return toStringFormat
 	}
 }
+
+// wireTextFormat is the format turning an enum, or a table id enum, into the text of its wire.
+var wireTextFormat = fmt.Sprintf(stringOfFormat, fmt.Sprintf(helperFormat, ir.CppToWire, keyPlaceholder))
 
 // holdsWalk reports a type holding, by value, a class to resolve.
 func (g *gen) holdsWalk(t ir.TypeRef) bool {

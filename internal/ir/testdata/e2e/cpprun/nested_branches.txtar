@@ -1,0 +1,210 @@
+CODEGEN.md §5.6, §5.9, DECISIONS 350, 456: a dependent type decided through a ref whose list is keyed by a ref into a list keyed by an enum (Elem, its second member written "w" on the wire). bd (data) and bt (types) build a branch table keyed by the enum, and bd's loader and bt's decoder read it. probe.cpp decodes each case file with bt's decoder and with bd's loader (the file's .data twin) and prints the verdict of each.
+-- bd/bd.canon --
+/// Package.
+package bd
+
+/// Code enum.
+enum Elem { fire, water = "w", earth }
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// E row.
+record ER {
+  /// Key.
+  e: Elem
+}
+
+/// Enums.
+let ee: [ER] keyed by e = [ { e: earth }, { e: fire }, { e: water } ]
+
+/// E2.
+record E2 {
+  /// Key: a ref into a list keyed by an enum.
+  r: ref ee
+  /// Shape.
+  shape: Shape
+}
+
+/// E2s: keyed by a ref, so a ref into it is a chain.
+let ee2: [E2] keyed by r = [ { r: fire, shape: count }, { r: water, shape: place }, { r: earth, shape: none_ } ]
+
+/// A number row.
+record NB {
+  /// Key.
+  n: Int
+}
+
+/// Numbers.
+let nb: [NB] keyed by n = [ { n: 20 }, { n: 5 } ]
+
+/// N2.
+record N2 {
+  /// Key: a ref into a list keyed by an Int.
+  r: ref nb
+  /// Shape.
+  shape: Shape
+}
+
+/// N2s: keyed by a ref, so a ref into it is a chain whose key is an Int.
+let nb2: [N2] keyed by r = [ { r: 5, shape: count }, { r: 20, shape: place } ]
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// Reward.
+record Reward {
+  /// Event: a ref whose list is keyed by a ref.
+  ev: ref ee2
+  /// Param, decided through the chain.
+  param: Param(ev.shape)? @json(none: 0)
+  /// Number: a ref whose list is keyed by a ref to an Int key.
+  num: ref nb2
+  /// Param, decided through the number's chain.
+  byNum: Param(num.shape)? @json(none: 0)
+}
+
+/// File.
+record RF {
+  /// Rewards.
+  rewards: [Reward]
+}
+
+/// Rewards: an Int key is no Canon literal, the cases bring their own.
+let rewards: RF = { rewards: [] }
+
+emit cpp { out: "@features/bd", namespace: "bd", mode: data }
+emit json { out: "out/" }
+-- bt/bt.canon --
+/// Package.
+package bt
+
+/// Code enum.
+enum Elem { fire, water = "w", earth }
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// E row.
+record ER {
+  /// Key.
+  e: Elem
+}
+
+/// Enums.
+let ee: [ER] keyed by e = [ { e: earth }, { e: fire }, { e: water } ]
+
+/// E2.
+record E2 {
+  /// Key: a ref into a list keyed by an enum.
+  r: ref ee
+  /// Shape.
+  shape: Shape
+}
+
+/// E2s: keyed by a ref, so a ref into it is a chain.
+let ee2: [E2] keyed by r = [ { r: fire, shape: count }, { r: water, shape: place }, { r: earth, shape: none_ } ]
+
+/// A number row.
+record NB {
+  /// Key.
+  n: Int
+}
+
+/// Numbers.
+let nb: [NB] keyed by n = [ { n: 20 }, { n: 5 } ]
+
+/// N2.
+record N2 {
+  /// Key: a ref into a list keyed by an Int.
+  r: ref nb
+  /// Shape.
+  shape: Shape
+}
+
+/// N2s: keyed by a ref, so a ref into it is a chain whose key is an Int.
+let nb2: [N2] keyed by r = [ { r: 5, shape: count }, { r: 20, shape: place } ]
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// Reward.
+record Reward {
+  /// Event: a ref whose list is keyed by a ref.
+  ev: ref ee2
+  /// Param, decided through the chain.
+  param: Param(ev.shape)? @json(none: 0)
+  /// Number: a ref whose list is keyed by a ref to an Int key.
+  num: ref nb2
+  /// Param, decided through the number's chain.
+  byNum: Param(num.shape)? @json(none: 0)
+}
+
+/// File.
+record RF {
+  /// Rewards.
+  rewards: [Reward]
+}
+
+emit cpp { out: "@features/bt", namespace: "bt", mode: types }
+-- probe.cpp --
+// probe decodes each case file named on the command line with bt's types-mode decoder and with bd's
+// data loader (the file's .data twin), printing one verdict line each.
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "bd/bd.gen.h"
+#include "bt/bt.gen.h"
+
+namespace {
+
+template <class P>
+std::string Show(const P* p) {
+    if (p == nullptr) return "none";
+    if (auto n = p->AsCount()) return "count:" + std::to_string(*n);
+    if (const std::string* s = p->AsPlace()) return "place:" + *s;
+    return "?";
+}
+
+template <class F>
+std::string Verdict(const F* f, const std::string& error) {
+    if (f == nullptr) {
+        return error.find("no branch for this value") != std::string::npos ? "error no branch" : "error other";
+    }
+    std::string out = "ok";
+    for (const auto& r : f->GetRewards()) {
+        out += " " + std::string(ToWire(r.GetEvKey())) + "=" + Show(r.GetParam());
+        out += "/" + std::to_string(r.GetNumKey()) + "=" + Show(r.GetByNum());
+    }
+    return out;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::ifstream in(argv[i]);
+        std::stringstream text;
+        text << in.rdbuf();
+        nlohmann::json doc = nlohmann::json::parse(text.str(), nullptr, false);
+        std::string error;
+        std::optional<::bt::RF> typed = ::bt::RF::Decode(doc, error);
+        std::cout << "types " << Verdict(typed ? &*typed : nullptr, error) << "\n";
+        error.clear();
+        std::shared_ptr<const ::bd::RF> data = ::bd::RF::Load(std::string(argv[i]) + ".data", error);
+        std::cout << "data " << Verdict(data.get(), error) << "\n";
+    }
+    return 0;
+}

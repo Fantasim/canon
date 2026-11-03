@@ -1,0 +1,165 @@
+CODEGEN.md §5.3, §5.6, DECISIONS 350, 456: a dependent type decided through a ref held as the id enum of another package's baked table (fl's items, held by fd and ft as fl::ItemId), at one level (ev) and down a chain (ch, a ref into a keyed list keyed by a ref into items), has a branch table keyed by the ids' wire, in wire byte order, searched through ToWire: the owner's entry positions are not in this IR. fd (data) and ft (types) build it, and fd's loader and ft's decoder read it. probe.cpp decodes each case file with ft's decoder and with fd's loader (the file's .data twin) and prints the verdict of each.
+-- fl/fl.canon --
+/// The library.
+package fl
+
+/// Shape.
+enum Shape { count, place, none_ }
+
+/// An item.
+record Item {
+  /// Its shape.
+  shape: Shape
+}
+
+/// The items.
+let items: table Item = {
+  sword { shape: count }
+  shield { shape: place }
+  ghost { shape: none_ }
+}
+
+emit cpp { out: "@features/fl", namespace: "fl" }
+-- fd/fd.canon --
+/// Data.
+package fd
+
+import fl { items, Shape }
+
+/// By item.
+record BI {
+  /// Item.
+  item: ref items
+  /// Shape.
+  shape: Shape
+}
+
+/// By item: keyed by a ref, so a ref into it is a chain.
+let byItem: [BI] keyed by item = [ { item: shield, shape: place }, { item: sword, shape: count }, { item: ghost, shape: none_ } ]
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// Reward.
+record Reward {
+  /// Event, one level.
+  ev: ref items
+  /// Param.
+  param: Param(ev.shape)? @json(none: 0)
+  /// Event, a chain.
+  ch: ref byItem
+  /// Param.
+  p2: Param(ch.shape)? @json(none: 0)
+}
+
+/// File.
+record RF {
+  /// Rewards.
+  rewards: [Reward]
+}
+
+/// Rewards.
+let rewards: RF = { rewards: [] }
+
+emit cpp { out: "@features/fd", namespace: "fd", mode: data }
+emit json { out: "out/" }
+-- ft/ft.canon --
+/// Types.
+package ft
+
+import fl { items, Shape }
+
+/// By item.
+record BI {
+  /// Item.
+  item: ref items
+  /// Shape.
+  shape: Shape
+}
+
+/// By item: keyed by a ref, so a ref into it is a chain.
+let byItem: [BI] keyed by item = [ { item: shield, shape: place }, { item: sword, shape: count }, { item: ghost, shape: none_ } ]
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// Reward.
+record Reward {
+  /// Event, one level.
+  ev: ref items
+  /// Param.
+  param: Param(ev.shape)? @json(none: 0)
+  /// Event, a chain.
+  ch: ref byItem
+  /// Param.
+  p2: Param(ch.shape)? @json(none: 0)
+}
+
+/// File.
+record RF {
+  /// Rewards.
+  rewards: [Reward]
+}
+
+emit cpp { out: "@features/ft", namespace: "ft", mode: types }
+-- probe.cpp --
+// probe decodes each case file named on the command line with ft's types-mode decoder and with fd's
+// data loader (the file's .data twin), printing one verdict line each.
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+#include "fd/fd.gen.h"
+#include "ft/ft.gen.h"
+
+namespace {
+
+template <class P>
+std::string Show(const P* p) {
+    if (p == nullptr) return "none";
+    if (auto n = p->AsCount()) return "count:" + std::to_string(*n);
+    if (const std::string* s = p->AsPlace()) return "place:" + *s;
+    return "?";
+}
+
+template <class F>
+std::string Verdict(const F* f, const std::string& error) {
+    if (f == nullptr) {
+        return error.find("no branch for this value") != std::string::npos ? "error no branch" : "error other";
+    }
+    std::string out = "ok";
+    for (const auto& r : f->GetRewards()) {
+        out += " " + std::string(ToWire(r.GetEvKey())) + "=" + Show(r.GetParam());
+        out += "/" + std::string(ToWire(r.GetChKey())) + "=" + Show(r.GetP2());
+    }
+    return out;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::ifstream in(argv[i]);
+        std::stringstream text;
+        text << in.rdbuf();
+        nlohmann::json doc = nlohmann::json::parse(text.str(), nullptr, false);
+        std::string error;
+        std::optional<::ft::RF> typed = ::ft::RF::Decode(doc, error);
+        std::cout << "types " << Verdict(typed ? &*typed : nullptr, error) << "\n";
+        error.clear();
+        std::shared_ptr<const ::fd::RF> data = ::fd::RF::Load(std::string(argv[i]) + ".data", error);
+        std::cout << "data " << Verdict(data.get(), error) << "\n";
+    }
+    return 0;
+}

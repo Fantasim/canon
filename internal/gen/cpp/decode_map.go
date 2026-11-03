@@ -54,12 +54,8 @@ func (g *gen) mapKey(depth, d int, kt ir.TypeRef) {
 // walkMap checks the ref keys of a map name an entry and resolves the classes its values hold, each member in turn, on the path its key gives (WIRE.md §5.8, §5.9).
 func (g *gen) walkMap(depth int, t ir.TypeRef, expr, key string) {
 	n := fmt.Sprintf(indexVarFormat, depth)
-	kt := *t.Key
-	for kt.Kind == types.Ref && kt.Key != nil {
-		kt = *kt.Key
-	}
 	entry := fmt.Sprintf(mapEntryFormat, expr, n)
-	text := fmt.Sprintf(g.keyText(&kt), entry+entryFirst)
+	text := fmt.Sprintf(g.keyText(t.Key), entry+entryFirst)
 	at := fmt.Sprintf(mapPathFormat, key, text)
 	g.c.linef(depth, lenLoopFormat, n, n, expr, n)
 	if target := g.keyTarget(t, g.walking); target != nil {

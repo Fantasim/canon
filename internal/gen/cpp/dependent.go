@@ -215,10 +215,7 @@ func (g *gen) openBranch(labels []string, chain int) {
 
 // global is t's storage named from the global namespace, so that Decode<Alias>'s parameters (v, key, disc, dec, out) hide no enum it names.
 func (g *gen) global(t ir.TypeRef) string {
-	base := t
-	for base.Kind == types.Ref && base.Key != nil {
-		base = *base.Key
-	}
+	base := keyBase(t)
 	if base.Kind == types.Enum && base.Named != nil {
 		return g.qualifiedOwn(base.Named)
 	}

@@ -49,13 +49,16 @@ func literalGuard(t ir.TypeRef, k string) string {
 	return strings.Join(differs(k, t.Literals), andSep) + andSep
 }
 
-// missing is the condition that key k of t, a ref's key or a union's text, names no entry find looks it up in: a union's literal is accepted as it is, and its text keyed by an enum is read with the enum's FromWire first, which init declares (DECISIONS 387).
+// missing is the condition that key k of t, a ref's key or a union's text, names no entry find looks it up in: a union's literal is accepted as it is, and its text keyed by an enum, or down a chain of refs by a table held as its id enum, is read with the FromWire of that enum first, which init declares (DECISIONS 387).
 func (g *gen) missing(t ir.TypeRef, find, k string) (init, cond string) {
 	r := ir.UnionRef(t)
 	if r == nil {
 		return "", find + k + nullCompare
 	}
 	guard := literalGuard(t, k)
+	if id, ok := g.idEnum(ir.RefLeaf(*r)); ok { // a chain of refs ending in a table held as its id enum: the text is its wire (CODEGEN.md §5.3, §5.9)
+		return fmt.Sprintf(enumKeyInitFormat, g.pl.EnumHelpers(id).FromWire, k), guard + fmt.Sprintf(enumKeyMissingFormat, find)
+	}
 	if e, ok := ir.RefKeyEnum(*r); ok {
 		return fmt.Sprintf(enumKeyInitFormat, g.enumHelpers(e).FromWire, k), guard + fmt.Sprintf(enumKeyMissingFormat, find)
 	}
