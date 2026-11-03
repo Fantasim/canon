@@ -159,7 +159,7 @@ func cmpType(want types.Type) types.Type {
 
 // intLit is an integer literal: Int, or a key when the expected type is a ref (TYPES.md §4.1).
 func (c *checker) intLit(e *syntax.IntLit, want types.Type) types.Type {
-	if coll := c.keyTarget(want); coll != nil && keyedByInt(coll) {
+	if coll := c.keyTarget(want); coll != nil && c.keyedByInt(coll) {
 		c.info.Keys[e] = coll
 		return refTo(want)
 	}
@@ -184,7 +184,7 @@ func (c *checker) stringValue(e syntax.Expr, want types.Type) types.Type {
 	if u, ok := unwrap(want).(*types.LitUnionType); ok && slices.Contains(u.Literals, constText(e.(syntax.StrLit))) {
 		return want
 	}
-	if coll := c.keyTarget(want); coll != nil && !keyedByInt(coll) {
+	if coll := c.keyTarget(want); coll != nil && !c.keyedByInt(coll) {
 		c.info.Keys[e] = coll
 		return refTo(want)
 	}
@@ -254,9 +254,4 @@ func refTo(want types.Type) types.Type {
 		return refTo(x.Of)
 	}
 	return want
-}
-
-// keyedByInt reports a keyed list whose key field is an integer type.
-func keyedByInt(coll *types.Collection) bool {
-	return coll.KeyedBy != nil && coll.KeyedBy.Type.Base().Kind() == types.Int
 }

@@ -1,0 +1,64 @@
+TYPES.md §4.1, §6.2, §11.6, WIRE.md §5.9, DECISIONS 456: a dependent value whose computed branch is a ref into a keyed list keyed by a ref takes an integer literal when the chain's leaf key is an Int, at 2 levels (`ref ks`) and 3 (`ref ls`), as a field, a list element and a map key; a dependent map over `ls` takes integer keys.
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+  w: Int = 0
+}
+
+local record K {
+  j: ref js
+}
+
+local record L {
+  k: ref ks
+}
+
+local let js: [J] keyed by n = [{ n: 9, w: 90 }, { n: 10, w: 100 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }, { j: 10 }]
+
+local let ls: [L] keyed by k = [{ k: 9 }, { k: 10 }]
+
+local enum Pick { two, three }
+
+local record Sel {
+  p: Pick
+}
+
+local let sels: table Sel = {
+  a { p: two }
+  b { p: three }
+}
+
+local type Spot(s: Sel) = match s.p {
+  two => ref ks
+  three => ref ls
+}
+
+local record H {
+  s: ref sels
+  at: Spot(s)
+  many: [Spot(s)]
+  by: {Spot(s): Int}
+}
+
+local let hs: [H] = [
+  { s: a, at: 9, many: [9, 10], by: { 10: 1 } },
+  { s: b, at: 10, many: [10], by: { 9: 2 } },
+]
+
+local let byL: {x in ls: Int} = { 9: 1, 10: 2 }
+
+let w: Int = byL.keys().map(x => x.k.j.w).sum()
+-- dump.txt --
+a.js = [J{n: 9, w: 90}, J{n: 10, w: 100}]
+a.ks = [K{j: 9}, K{j: 10}]
+a.ls = [L{k: 9}, L{k: 10}]
+a.sels = {a: Sel{p: two}, b: Sel{p: three}}
+a.hs = [H{s: a, at: 9, many: [9, 10], by: {10: 1}}, H{s: b, at: 10, many: [10], by: {9: 2}}]
+a.byL = {9: 1, 10: 2}
+a.w = 190
+
+0 errors, 0 warnings in 1 package (…)

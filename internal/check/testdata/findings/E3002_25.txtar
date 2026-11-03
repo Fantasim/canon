@@ -1,0 +1,79 @@
+TYPES.md §4.1, §10.3, DECISIONS 456: a key literal of a ref is a literal of the type at the leaf of the target's chain of ref keys, at every depth. Through `ks` (keyed by `ref js`, `js` keyed by an Int) and `ls` (keyed by `ref ks`), a string literal is no key: E3002, as for `ref js`; through `bs` (keyed by `ref aa`, `aa` keyed by an enum), an integer literal is none either. An amend key is judged the same way: `bag.ls["10"]` through ls, ks, js is E3002 (EVALUATION.md §9.2).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local record L {
+  k: ref ks
+  w: Int = 0
+}
+
+local record Bag {
+  ls: [L] keyed by k
+}
+
+local enum Tone { first, second }
+
+local record A {
+  t: Tone
+}
+
+local record B {
+  a: ref aa
+}
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let ls: [L] keyed by k = [{ k: 9 }]
+
+local let aa: [A] keyed by t = [{ t: first }]
+
+local let bs: [B] keyed by a = [{ a: first }]
+
+local let oneJ: ref js = "9"
+
+local let twoK: ref ks = "9"
+
+local let threeL: [ref ls] = ["9"]
+
+local let byK: {ref ks: Int} = { "9": 1 }
+
+local let twoB: ref bs = 1
+
+local let bag: Bag = { ls: [{ k: 9 }] }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend bag {
+  ls["10"].w: 3
+}
+-- findings.txt --
+error[E3002]  a/a.canon:40:26
+  expected ref a.js, found String
+
+error[E3002]  a/a.canon:42:26
+  expected ref a.ks, found String
+
+error[E3002]  a/a.canon:44:31
+  expected ref a.ls, found String
+
+error[E3002]  a/a.canon:46:34
+  expected ref a.ks, found String
+
+error[E3002]  a/a.canon:48:26
+  expected ref a.bs, found Int
+
+error[E3002]  a/dev.layer.canon:5:6
+  expected ref a.ks, found String
+
+6 errors, 0 warnings in 1 package (…)

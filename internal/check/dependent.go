@@ -242,7 +242,7 @@ func (f *litFit) fits(b types.Type) bool {
 	if u, ok := unwrap(b).(*types.LitUnionType); ok {
 		return f.c.unionLiteral(f.e, u) || f.fits(u.Of)
 	}
-	if coll := f.c.keyTarget(b); coll != nil && keyLiteral(f.e, coll) {
+	if coll := f.c.keyTarget(b); coll != nil && f.c.keyLiteral(f.e, coll) {
 		return true
 	}
 	if isIntLiteral(f.e) && floatTarget(b) {
@@ -278,14 +278,14 @@ func unionChain(u *types.LitUnionType) ([]string, []*types.TypeFunc, types.Type)
 	}
 }
 
-// keyLiteral reports a literal that is a key of coll: an integer literal of an integer-keyed
-// list, a string literal of any other collection.
-func keyLiteral(e syntax.Expr, coll *types.Collection) bool {
+// keyLiteral reports a literal that is a key of coll: an integer literal of a list keyed by an
+// integer at its chain's leaf (keyedByInt), a string literal of any other collection.
+func (c *checker) keyLiteral(e syntax.Expr, coll *types.Collection) bool {
 	if isIntLiteral(e) {
-		return keyedByInt(coll)
+		return c.keyedByInt(coll)
 	}
 	s, ok := inner(e).(syntax.StrLit)
-	return ok && interpolationFree(s) && !keyedByInt(coll)
+	return ok && interpolationFree(s) && !c.keyedByInt(coll)
 }
 
 // dependentList checks a list literal against a dependent type's first list branch, E3002 without one (DECISIONS 171).

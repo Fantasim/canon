@@ -1,0 +1,48 @@
+WIRE.md §5.8, §5.9, TYPES.md §13.2, DECISIONS 456: a ref into a keyed list keyed by a ref takes its wire key from the chain's leaf key, at every depth. Through `bs` (keyed by `ref aa`, `aa` keyed by Tone) and `cs` (keyed by `ref bs`), the name `second` encodes to Tone's wire "z2": it clashes with the literal "z2" (E3317 at the second key, either order), never with the literal "second", which is no wire text of it.
+-- a/a.canon --
+package a
+
+local enum Tone { first, second = "z2", third }
+
+local record A {
+  t: Tone
+}
+
+local record B {
+  a: ref aa
+}
+
+local record C {
+  b: ref bs
+}
+
+local let aa: [A] keyed by t = [{ t: first }, { t: second }]
+
+local let bs: [B] keyed by a = [{ a: second }]
+
+local let cs: [C] keyed by b = [{ b: second }]
+
+local type Spot = ref bs | "z2" | "second"
+
+local type Deep = ref cs | "z2" | "second"
+
+local let fine2: {Spot: Int} = { second: 1, "second": 2 }
+
+local let fine3: {Deep: Int} = { second: 1, "second": 2 }
+
+local let clash2: {Spot: Int} = { second: 1, "z2": 2 }
+
+local let clash2r: {Spot: Int} = { "z2": 1, second: 2 }
+
+local let clash3: {Deep: Int} = { second: 1, "z2": 2 }
+-- findings.txt --
+error[E3317]  a/a.canon:31:46
+  map keys second and "z2" both encode to "z2"
+
+error[E3317]  a/a.canon:33:45
+  map keys "z2" and second both encode to "z2"
+
+error[E3317]  a/a.canon:35:46
+  map keys second and "z2" both encode to "z2"
+
+3 errors, 0 warnings in 1 package (…)

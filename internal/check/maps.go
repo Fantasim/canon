@@ -247,8 +247,7 @@ func (c *checker) unionKeyOf(it syntax.BraceItem, u *types.LitUnionType) (unionK
 	return unionKey{}, nil, false
 }
 
-// nameKeyText is the wire key of a name used as a key of type of: an enum member's wire value, or
-// a ref's entry key (its member's wire value for a keyed list keyed by an enum).
+// nameKeyText is the wire key of a name keying of: a member's wire value, or a ref's entry key, its member's when its leaf key is an enum (WIRE.md §5.8).
 func (c *checker) nameKeyText(n *syntax.Ident, of types.Type) (string, bool) {
 	switch a := of.Base().(type) {
 	case *types.EnumType:
@@ -261,14 +260,22 @@ func (c *checker) nameKeyText(n *syntax.Ident, of types.Type) (string, bool) {
 		if c.noTarget(coll) || !c.namesKey(n, coll) { // a ref to nothing is the error type (TYPES.md §1)
 			return "", false
 		}
-		if coll.KeyedBy != nil {
-			if e, isEnum := coll.KeyedBy.Type.Base().(*types.EnumType); isEnum {
-				return memberWire(e, n.Name)
-			}
-		}
-		return n.Name, true
+		return c.refNameText(n, a)
 	}
 	return "", false
+}
+
+// refNameText is the wire text of a name keying ref r: the wire value of the member the leaf of
+// its chain of ref keys names, else the name; none when the chain loops or is in error.
+func (c *checker) refNameText(n *syntax.Ident, r *types.RefType) (string, bool) {
+	leaf, ok := c.leafKey(r)
+	switch {
+	case !ok || leaf.Kind() == types.Error:
+		return "", false
+	case leaf.Base().Kind() == types.Enum:
+		return memberWire(leaf.Base().(*types.EnumType), n.Name)
+	}
+	return n.Name, true
 }
 
 // namesKey reports a name that is a key of coll, declared or symbolic (TYPES.md §4.1).

@@ -110,11 +110,24 @@ func toRef(v value.Value, base types.Type, written bool) (value.Value, Fit) {
 	default:
 		return v, NoFit
 	}
-	intKeys := c != nil && c.KeyedBy != nil && c.KeyedBy.Type.Base().Kind() == types.Int
-	if c == nil || !written || k.IsInt != intKeys {
+	if c == nil || !written || k.IsInt != intLeaf(c) {
 		return v, NoFit
 	}
 	return &value.Ref{T: base, Key: k, P: v.Prov()}, Fits
+}
+
+// intLeaf reports a keyed list whose key, at the leaf of its chain of ref keys, is an integer type; a loop is none (TYPES.md §9.1).
+func intLeaf(c *types.Collection) bool {
+	var seen []*types.Collection
+	for c != nil && c.KeyedBy != nil && !slices.Contains(seen, c) {
+		r, isRef := c.KeyedBy.Type.Base().(*types.RefType)
+		if !isRef {
+			return c.KeyedBy.Type.Base().Kind() == types.Int
+		}
+		seen = append(seen, c)
+		c = r.Target
+	}
+	return false
 }
 
 // toFloat keeps a Float, and makes a written integer literal a Float (TYP-10); storage rounds a Float32.

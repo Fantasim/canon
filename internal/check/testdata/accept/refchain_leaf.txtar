@@ -1,0 +1,61 @@
+TYPES.md §4.1, §9.1, §10.3, WIRE.md §5.9, DECISIONS 456: a ref into a keyed list keyed by a ref takes its literal form from the chain's leaf key, at every depth. `ks` is keyed by `ref js` and `ls` by `ref ks`, with `js` keyed by an Int: a ref into `ks` (2 levels) or `ls` (3 levels) is written as an integer literal, as a field, a list element, a map key, an element key, an entry key and an amend key in a layer (EVALUATION.md §9.2: `bag.ls[10]`, through ls, ks, js), as a ref into `js` is.
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local record L {
+  k: ref ks
+  w: Int = 0
+}
+
+local record Bag {
+  ls: [L] keyed by k
+}
+
+local record Holder {
+  oneJ: ref js
+  twoK: ref ks
+  threeL: ref ls
+  manyK: [ref ks]
+  manyL: [ref ls]
+  byK: {ref ks: Int}
+  byL: {ref ls: Int}
+}
+
+local let js: [J] keyed by n = [{ n: 9 }, { n: 10 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }, { j: 10 }]
+
+local let ls: [L] keyed by k = [{ k: 9 }]
+
+entry ls.10 {}
+
+local let h: Holder = {
+  oneJ: 9
+  twoK: 9
+  threeL: 10
+  manyK: [9, 10]
+  manyL: [9, 10]
+  byK: { 9: 1, 10: 2 }
+  byL: { 10: 1 }
+}
+
+local let twoTop: ref ks = 10
+
+local let threeTop: [ref ls] = [9]
+
+local let bag: Bag = { ls: [{ k: 9 }, { k: 10 }] }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend bag {
+  ls[10].w: 3
+}

@@ -1,6 +1,8 @@
 package check
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -46,20 +48,38 @@ func (c *checker) judgeRefKey(k refKey) {
 
 // keyLoops reports a ref key type whose targets' keys come back to a target already met.
 func (c *checker) keyLoops(t types.Type) bool {
-	seen := map[*types.Collection]bool{}
+	_, ok := c.leafKey(t)
+	return !ok
+}
+
+// leafKey is t's key at the leaf of its chain of ref keys: String for a table, Error for a target in error, false on a loop (WIRE.md §5.9).
+func (c *checker) leafKey(t types.Type) (types.Type, bool) {
+	var seen []*types.Collection
 	for {
 		r, ok := t.Base().(*types.RefType)
-		if !ok || c.brokenRef(r) {
-			return false // a base key, or a target in error with its own finding
+		if !ok {
+			return t, true
+		}
+		if c.brokenRef(r) {
+			return types.ErrorType, true
 		}
 		coll := c.coll(r)
-		if seen[coll] {
-			return true
+		if slices.Contains(seen, coll) {
+			return nil, false
 		}
-		seen[coll] = true
+		seen = append(seen, coll)
 		if coll.KeyedBy == nil {
-			return false // a table: keyed by String
+			return types.StringType, true
 		}
 		t = c.fieldType(coll.KeyedBy)
 	}
+}
+
+// keyedByInt reports a keyed list whose leaf key (leafKey) is an integer type: a ref into it is an integer literal (TYPES.md §4.1).
+func (c *checker) keyedByInt(coll *types.Collection) bool {
+	if coll.KeyedBy == nil {
+		return false
+	}
+	leaf, ok := c.leafKey(c.fieldType(coll.KeyedBy))
+	return ok && leaf.Base().Kind() == types.Int
 }

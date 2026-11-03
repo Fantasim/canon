@@ -1,0 +1,26 @@
+TYPES.md §10.2, §4.1, §9.1, DECISIONS 456: whether "9" is a key literal of `ref ks` reads the leaf of ks's chain of ref keys, `ref J` then J's String key; `ref J` resolves at level 2 among the package's lets, `x` among them, so the unannotated `x` whose inference reads that leaf while `ref J` is still resolving is E3008, as a one-level read of a resolving target is.
+-- a/a.canon --
+package a
+
+local record J {
+  n: String
+}
+
+local record K {
+  j: ref J
+}
+
+local record H {
+  k: ref ks
+}
+
+local let ks: [K] keyed by j = [{ j: "9" }]
+
+local let x = [H { k: "9" }]
+
+local let js: [J] keyed by n = [{ n: "9" }]
+-- findings.txt --
+error[E3008]  a/a.canon:17:11
+  cannot infer the type of this expression; add a type
+
+1 error, 0 warnings in 1 package (…)

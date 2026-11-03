@@ -1,0 +1,67 @@
+TYPES.md §4.1, §9.1, §10.3, WIRE.md §5.9, DECISIONS 456: a ref into a keyed list keyed by a ref takes its literal form from the chain's leaf key. `ks` is keyed by `ref js` and `ls` by `ref ks`, `js` keyed by an Int: an integer literal names an entry of `ks` (2 levels) or `ls` (3 levels) as a field, a list element, a map key, an element key and an entry key, and a missing one is E3501 at verification, as it is through `js`.
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+  w: Int = 0
+}
+
+local record K {
+  j: ref js
+}
+
+local record L {
+  k: ref ks
+}
+
+local record Holder {
+  oneJ: ref js
+  twoK: ref ks
+  threeL: ref ls
+  manyK: [ref ks]
+  manyL: [ref ls]
+  byK: {ref ks: Int}
+  byL: {ref ls: Int}
+}
+
+local let js: [J] keyed by n = [{ n: 9, w: 90 }, { n: 10, w: 100 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }, { j: 10 }]
+
+local let ls: [L] keyed by k = [{ k: 9 }]
+
+entry ls.10 {}
+
+local let h: Holder = {
+  oneJ: 9
+  twoK: 9
+  threeL: 10
+  manyK: [9, 10]
+  manyL: [10, 9]
+  byK: { 9: 1, 10: 2 }
+  byL: { 10: 1 }
+}
+
+let w2: Int = h.twoK.j.w
+
+let w3: Int = h.threeL.k.j.w
+
+let ws: [Int] = h.manyL.map(x => x.k.j.w)
+
+let missing: ref ls = 11
+-- dump.txt --
+a.js = [J{n: 9, w: 90}, J{n: 10, w: 100}]
+a.ks = [K{j: 9}, K{j: 10}]
+a.ls = [L{k: 9}, L{k: 10}]
+a.h = Holder{oneJ: 9, twoK: 9, threeL: 10, manyK: [9, 10], manyL: [10, 9], byK: {9: 1, 10: 2}, byL: {10: 1}}
+a.w2 = 90
+a.w3 = 100
+a.ws = [100, 90]
+a.missing = 11
+
+error[E3501]  a/a.canon:50:23
+  missing: unknown key 11 in ls
+  expected by a/a.canon:50 (missing: ref ls)
+
+1 error, 0 warnings in 1 package (…)

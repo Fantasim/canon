@@ -92,28 +92,19 @@ func (c *checker) unionWire(j unionJob) {
 	}
 }
 
-// stringWire reports a string wire form: String, an enum without @json(codes), Never, a dependent type, a ref keyed by one (WIRE.md §5.9).
+// stringWire reports a string wire form: String, an enum without @json(codes), Never, a dependent type, a ref whose chain of ref keys ends at one (WIRE.md §5.9).
 func (c *checker) stringWire(t types.Type) bool {
-	seen := map[*types.Collection]bool{}
-	for {
-		switch t.Base().Kind() {
-		case types.String, types.Never, types.TypeApp, types.DepUnion, types.Error:
-			return true
-		case types.Enum:
-			return !t.Base().(*types.EnumType).WireCodes
-		case types.Ref:
-		default:
-			return false
-		}
-		coll := c.coll(t.Base().(*types.RefType))
-		if coll.KeyedBy == nil {
-			return true
-		}
-		if seen[coll] {
-			return false
-		}
-		seen[coll] = true
-		t = c.fieldType(coll.KeyedBy)
+	t, ok := c.leafKey(t)
+	if !ok {
+		return false
+	}
+	switch t.Base().Kind() {
+	case types.String, types.Never, types.TypeApp, types.DepUnion, types.Error:
+		return true
+	case types.Enum:
+		return !t.Base().(*types.EnumType).WireCodes
+	default:
+		return false
 	}
 }
 
