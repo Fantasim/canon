@@ -35,6 +35,7 @@ func (pl *GoNamePlan) importUse() *goImportUse {
 		}
 	}
 	pl.typesImports(u)
+	u.std[goSlices] = u.std[goSlices] || len(pl.lookupEnums) > 0 // a lookup binary-searches an enum's tables (CODEGEN.md §5.10)
 	for _, fn := range pl.p.Fns {
 		u.fn(fn, false)
 	}

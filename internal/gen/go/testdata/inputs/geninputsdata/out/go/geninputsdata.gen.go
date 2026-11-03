@@ -288,23 +288,20 @@ func LoadInputs() error {
 	}
 	input_Gen_mode, input_Gen_mode_OK = Mode{}, false
 	if r30, ok31 := rt.Env("GENINPUTSDATA_MODE"); ok31 {
-		switch r30 {
-		case "fast":
-			input_Gen_mode, input_Gen_mode_OK = ModeFast, true
-		case "slow":
-			input_Gen_mode, input_Gen_mode_OK = ModeSlow, true
-		default:
+		if m32, ok33 := ParseMode(r30); ok33 && !m32.Retired() {
+			input_Gen_mode, input_Gen_mode_OK = m32, true
+		} else {
 			errs = append(errs, rt.InputError("GENINPUTSDATA_MODE", "not a member of Mode"))
 		}
 	}
 	input_Gen_required = 0
-	if r32, ok33 := rt.Env("GENINPUTSDATA_REQUIRED"); ok33 {
-		v34, err35 := rt.ParseIntLiteral(r32)
+	if r34, ok35 := rt.Env("GENINPUTSDATA_REQUIRED"); ok35 {
+		v36, err37 := rt.ParseIntLiteral(r34)
 		switch {
-		case err35 != nil:
+		case err37 != nil:
 			errs = append(errs, rt.InputError("GENINPUTSDATA_REQUIRED", "not a valid Int"))
 		default:
-			input_Gen_required = v34
+			input_Gen_required = v36
 		}
 	} else {
 		errs = append(errs, rt.InputError("GENINPUTSDATA_REQUIRED", "not set"))

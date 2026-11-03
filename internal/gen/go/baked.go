@@ -91,14 +91,7 @@ func (g *gen) values() {
 		}
 	}
 	g.printf("}\n\nvar %s = %s.OnceValue(%s)\n\n", d.Values, g.use(syncPkg, syncPkg), d.Build)
-	g.printf("func %s() *%s {\n%s := &%s{}\n", d.Build, d.Type, g.data, d.Type)
-	for _, v := range g.emitted {
-		g.allocate(v)
-	}
-	for _, v := range g.emitted {
-		g.fill(v)
-	}
-	g.printf("return %s\n}\n\n", g.data)
+	g.buildFunc(d)
 	for _, v := range g.emitted {
 		g.accessors(v, d.Values)
 	}
@@ -140,32 +133,6 @@ func (g *gen) allocate(v *ir.Value) {
 		}
 		g.printf("%s = %s%smake([]%s, %s), %s%s%s)\n", store, g.rt(), makeKeyedList,
 			g.typeName(g.sub(v.Type.Elem).Named), n, sliceOf, g.goType(key.Type), braced(keys))
-	}
-}
-
-// fill writes each entry into its row, or a value into its members.
-func (g *gen) fill(v *ir.Value) {
-	store := g.data + dot + g.byValue[v.Name].store
-	if !isContainer(v) {
-		for _, a := range g.assign(g.valueSlot(v), v.V) {
-			g.printf("%s.%s = %s\n", g.data, a.name, a.expr)
-		}
-		return
-	}
-	rec, ok := g.sub(v.Type.Elem).Named.(*ir.Record)
-	if !ok {
-		return
-	}
-	for i, r := range g.entries(v) {
-		row := store + dot + ir.GoRows + lbracket + strconv.Itoa(i) + rbracket
-		switch {
-		case v.Type.Kind != types.Table:
-			g.printf("%s = %s\n", pointer+store+atCall+strconv.Itoa(i)+rparen, g.recordLit(rec, r))
-		case rec.Pkg != g.p.Name: // this package's row of another package's record (CODEGEN.md §5.9)
-			g.printf("%s = %s\n", row, g.foreignRowLit(rec, r, g.idMember(rec, r.Ident.Key.S)))
-		default:
-			g.printf("%s = %s\n", row, g.recordLit(rec, r))
-		}
 	}
 }
 

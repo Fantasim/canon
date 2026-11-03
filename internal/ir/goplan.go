@@ -15,17 +15,19 @@ type GoNamePlan struct {
 	pkgFns  map[*ExportFn]bool
 	imports map[string]string // the Go package name of each imported Canon package's go emit → its import path
 	namer
-	classOf  map[any]any    // each own field and export method → its *Record or *Case
-	goNameOf map[any]string // each own record, variant, case with fields and dependent type → its Go type
-	originOf map[any]string // the same classes → their qualified Canon name, what an E8005 on a name built on one names
-	data     *goData        // data and types mode's layout (CODEGEN.md §5.8, §5.11, §5.13); nil in baked mode
-	pures    map[*ExportFn]*GoPure
-	pkgNames map[string]bool // the package-level names a translated body may name unqualified
-	nested   []*Record       // the records a table field of the package holds (CODEGEN.md §4.2)
-	foreign  *ForeignUse     // the other packages' classes the emit builds (CODEGEN.md §2.8)
-	rows     []ForeignRow    // the other packages' records its tables hold (§5.9)
-	branches []NamedBranches // the build-time branch tables its decoders read, once found (BranchTables)
-	branched bool
+	classOf     map[any]any    // each own field and export method → its *Record or *Case
+	goNameOf    map[any]string // each own record, variant, case with fields and dependent type → its Go type
+	originOf    map[any]string // the same classes → their qualified Canon name, what an E8005 on a name built on one names
+	data        *goData        // data and types mode's layout (CODEGEN.md §5.8, §5.11, §5.13); nil in baked mode
+	pures       map[*ExportFn]*GoPure
+	pkgNames    map[string]bool // the package-level names a translated body may name unqualified
+	nested      []*Record       // the records a table field of the package holds (CODEGEN.md §4.2)
+	foreign     *ForeignUse     // the other packages' classes the emit builds (CODEGEN.md §2.8)
+	rows        []ForeignRow    // the other packages' records its tables hold (§5.9)
+	branches    []NamedBranches // the build-time branch tables its decoders read, once found (BranchTables)
+	branched    bool
+	lookups     map[string]GoLookupTables // each enum a lookup searches the index of → its tables (CODEGEN.md §5.10)
+	lookupEnums []*Enum                   // those enums, in the order the lookups meet them
 }
 
 // GoNameProblem is a name gen/go or gen/cpp cannot declare (CODEGEN.md §3.5, decision 182); both plans report it. Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import.

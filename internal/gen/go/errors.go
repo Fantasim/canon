@@ -141,3 +141,31 @@ const (
 	keyedItemFormat   = "%s[%s]"
 	codeParam         = "code"
 )
+
+// The build and its parts (CODEGEN.md §2.11, §5.9, §6.2): build<Last> makes the data; a body over the budget calls build<Last>_<N> parts that take it. buildWholeLines are the lines the uncut body holds outside its statements: the data's allocation and the return.
+const (
+	buildWholeLines     = 2
+	buildOpenFormat     = "func %s() *%s {\n%s := &%s{}\n"
+	buildCallFormat     = "%s(%s)\n"
+	buildCloseFormat    = "return %s\n}\n\n"
+	buildPartOpenFormat = "func %s(%s *%s) {\n"
+)
+
+// A class's decoder and its parts (CODEGEN.md §2.11, §5.6): decode<T> opens the object, calls decode<T>_<N> parts that take the object and the value (and the whole document for an inline variant), each holding whole fields and ending with `return nil`. decodeReturnLines is that return, which the uncut decoder holds beside its object and key case, and each part adds.
+const (
+	decodeReturnLines = 1
+	partFuncFormat    = "func %s(%s) error {\n"
+	partCallFormat    = "if %[1]s := %[2]s(%[3]s); %[1]s != nil {\nreturn %[1]s\n}\n"
+	partNameParams    = "%s, %s string"
+	partRawParam      = "%s %s"
+	partObjParam      = "%s map[string]%s"
+	partOutParam      = "%s *%s"
+)
+
+// An enum read through the enum's own package (CODEGEN.md §5.10, §5.12, DECISIONS 435): an input reads Parse<E> and refuses a retired member; a lookup's index is the code minus the first (dense codes) or a binary search of the lookup package's sorted keys, whose positions give the declaration index (lookupKeys_<E>, lookupAt_<E>), -1 for another value.
+const (
+	inputParseEnumFormat = "if %[1]s, %[2]s := %[3]s(%[4]s); %[2]s && !%[1]s.%[5]s() {\n"
+	codesDenseFormat     = "%[1]s := -1\nif %[2]s < %[3]d {\n%[1]s = int(%[2]s)\n}\n"
+	codesSearchFormat    = "%[1]s := -1\nif k, found := %[2]s.BinarySearch(%[3]s[:], %[4]s); found {\n%[1]s = int(%[5]s[k])\n}\n"
+	noLookupTablesFormat = "enum %s without the tables its lookups search, at %s"
+)

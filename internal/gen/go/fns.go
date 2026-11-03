@@ -269,19 +269,23 @@ func isCodes(t ir.Type) bool {
 	return ok && e.Codes != nil
 }
 
-// codesIndex switches a @codes enum onto its declaration index; another value indexes -1.
+// codesIndex is the declaration index of a @codes enum's member, -1 for another value (CODEGEN.md §5.10, DECISIONS 435): the code minus the first when the codes are dense in declaration order (the ordinal of CODEGEN.md §5.2), else a binary search of the enum's sorted members in this package's tables, which give the declaration index. It does not grow with the members.
 func (g *gen) codesIndex(local, name string, t ir.TypeRef) string {
 	e, _ := t.Named.(*ir.Enum)
-	var b strings.Builder
-	b.WriteString(local + declareMinusOne + switchKw + name + openBlock)
-	for i := range e.Members {
-		fmt.Fprintf(&b, codesCaseFormat, g.memberLit(t, i), local, i)
+	if tables, ok := g.names.LookupTables(e); ok {
+		return fmt.Sprintf(codesSearchFormat, local, g.use(slicesPkg, slicesPkg), tables.Keys, name, tables.At)
 	}
-	return b.String() + rbrace + newline
+	first, dense := ir.DenseCodes(e)
+	if !dense {
+		g.failf(ErrMalformed, noLookupTablesFormat, qname(e), g.at)
+	}
+	at := fmt.Sprintf(denseIndexFormat, goUint64, goInt64, name, firstLiteral(first))
+	return fmt.Sprintf(codesDenseFormat, local, at, len(e.Members))
 }
 
-// fns writes the package-level export fns in declaration order; data mode has translated ones only (CODEGEN.md §5.10).
+// fns writes the lookups' enum tables, then the package-level export fns in declaration order; data mode has translated ones only (CODEGEN.md §5.10).
 func (g *gen) fns() {
+	g.lookupTables()
 	for _, fn := range g.p.Fns {
 		if g.isData() && fn.Kind != ir.FnTranslated {
 			g.fail(newDetail(ErrMalformed, fn.Name, packageFnFormat, fn.Name)) // E8013 package

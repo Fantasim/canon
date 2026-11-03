@@ -1,0 +1,30 @@
+CODEGEN.md §3.5, §5.10, DECISIONS 435: a lookup over a sparse @codes enum searches lookupKeys_<E> and lookupAt_<E>, package-level tables of its package; an imported package whose go emit names its Go package lookupKeys_Tone is declared in the package scope under that name, the table lookupKeys_Tone would redeclare, and the way out is a distinct package option on that import's emit.
+-- selected.txt --
+a
+-- b/b.canon --
+package b
+
+/// A rank.
+enum Rank { low, high }
+
+emit go { out: "@features/b", package: "lookupKeys_Tone", mode: baked }
+-- a/a.canon --
+package a
+
+import b { Rank }
+
+/// The rank.
+let rank: Rank = Rank.low
+
+/// A tone, its codes not in declaration order.
+enum Tone @codes(UInt8) { soft = 30, mid = 10, loud = 20 }
+
+/// The weight of a tone.
+export fn weigh(e: Tone) -> Int { return 1 }
+
+emit go { out: "@features/a", package: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:3:1
+  go: lookupKeys_Tone is generated for both a.weigh and example.com/features/b; give one of their emits a distinct package option
+
+1 error, 0 warnings in 2 packages (…)

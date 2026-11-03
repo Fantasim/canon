@@ -575,11 +575,8 @@ func (self *Item) Score(tone Tone, loud bool) int64 {
 
 func (self *Item) LabelIn(delete_ Element) (string, bool) {
 	delete__i := -1
-	switch delete_ {
-	case ElementFire:
-		delete__i = 0
-	case ElementWater:
-		delete__i = 1
+	if k, found := slices.BinarySearch(lookupKeys_Element[:], delete_); found {
+		delete__i = int(lookupAt_Element[k])
 	}
 	return self.labelIn[delete__i].v, self.labelIn[delete__i].ok
 }
@@ -967,6 +964,10 @@ func (self *ShopStore) Reload(dir string) error {
 
 // Store is the store of package demo.shop.
 var Store ShopStore
+
+var lookupKeys_Element = [...]Element{ElementFire, ElementWater}
+
+var lookupAt_Element = [...]uint8{0, 1}
 
 // jsonObject reads the object at path: null or another kind fails the load.
 func jsonObject(name, path string, raw json.RawMessage) (map[string]json.RawMessage, error) {

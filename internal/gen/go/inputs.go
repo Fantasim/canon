@@ -296,7 +296,7 @@ func (g *gen) inputStringBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	})
 }
 
-// inputEnumBody refuses a retired member; the first declared member holds a wire (EVALUATION.md §11.3, DECISIONS 383, 393).
+// inputEnumBody reads the enum through Parse<E>, which finds the first declared member of a wire, and refuses a retired one (EVALUATION.md §11.3, DECISIONS 383, 435); the enum's own package holds the tables, so the body does not grow with the members.
 func (g *gen) inputEnumBody(rec *ir.Record, f *ir.Field, raw, env string) {
 	e, ok := f.Type.Named.(*ir.Enum)
 	if !ok {
@@ -304,18 +304,10 @@ func (g *gen) inputEnumBody(rec *ir.Record, f *ir.Field, raw, env string) {
 		return
 	}
 	value, okVar := g.inputVars(rec, f)
-	g.printf(switchTagFormat, raw)
-	seen := map[string]bool{}
-	for _, m := range e.Members {
-		first := !seen[m.Wire]
-		seen[m.Wire] = true
-		if m.Retired || !first {
-			continue
-		}
-		g.printf(caseFormat, strconv.Quote(m.Wire))
-		g.body.WriteString(assignStmt(value, okVar, g.qualify(e.Pkg, g.names.MemberName(e, m))))
-	}
-	g.printf(inputDefaultOpen)
+	member, found := g.temp(tempMember), g.temp(tempOK)
+	g.printf(inputParseEnumFormat, member, found, g.qualify(e.Pkg, g.names.ParseName(g.goName(e))), raw, ir.GoRetired)
+	g.body.WriteString(assignStmt(value, okVar, member))
+	g.printf(elseLine)
 	g.printf(inputErrFormat, g.inputErrs, g.rt(), env, strconv.Quote(g.inputReason(ir.InputNotMember, f.Type)))
 	g.printf(closeBrace)
 }

@@ -158,15 +158,16 @@ func buildEscapes() *escapesData {
 
 func GetGates() *Gates { return &escapesValues().gates }
 
+var lookupKeys_features_q_Q = [...]q.Q{q.QLow, q.QHigh}
+
+var lookupAt_features_q_Q = [...]uint8{0, 1}
+
 var fTable = [2]bool{true, false}
 
 func F(q_ q.Q) bool {
 	q__i := -1
-	switch q_ {
-	case q.QLow:
-		q__i = 0
-	case q.QHigh:
-		q__i = 1
+	if k, found := slices.BinarySearch(lookupKeys_features_q_Q[:], q_); found {
+		q__i = int(lookupAt_features_q_Q[k])
 	}
 	return fTable[q__i]
 }
@@ -181,11 +182,8 @@ var gateOfTable = sync.OnceValue(func() *[2][2]*Gate {
 
 func GateOf(d_ d.D, q_ q.Q) *Gate {
 	q__i := -1
-	switch q_ {
-	case q.QLow:
-		q__i = 0
-	case q.QHigh:
-		q__i = 1
+	if k, found := slices.BinarySearch(lookupKeys_features_q_Q[:], q_); found {
+		q__i = int(lookupAt_features_q_Q[k])
 	}
 	return gateOfTable()[d_.Position()][q__i]
 }

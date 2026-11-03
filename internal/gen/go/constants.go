@@ -73,10 +73,6 @@ const (
 	pairCellFormat  = "struct {\nv %s\nok bool\n}"
 	pairValueFormat = "{v: %s, ok: true}"
 	ifNilFormatText = "if %s == nil {\nreturn %s, false\n}\n"
-	declareMinusOne = " := -1\n"
-	switchKw        = "switch "
-	codesCaseFormat = "case %s:\n%s = %d\n"
-	openBlock       = " {\n"
 	pairValue       = ".v"
 	pairOK          = ".ok"
 	boolDomain      = 2

@@ -19,14 +19,20 @@ const dataGoldens = "testdata/data"
 // generateData runs the generator twice on each package, outputs keyed by module path (CODEGEN.md §2.7: equal both times).
 func generateData(t *testing.T, pkgs ...*ir.Package) map[string][]byte {
 	t.Helper()
+	return generateDataWith(t, gogen.Generate, pkgs...)
+}
+
+// generateDataWith is generateData through gen.
+func generateDataWith(t *testing.T, gen generator, pkgs ...*ir.Package) map[string][]byte {
+	t.Helper()
 	out := map[string][]byte{}
 	for _, p := range pkgs {
 		e := p.Emits[0]
-		first, err := gogen.Generate(p, e)
+		first, err := gen(p, e)
 		if err != nil {
 			t.Fatalf("%s: %v", p.Name, err)
 		}
-		again, err := gogen.Generate(p, e)
+		again, err := gen(p, e)
 		if err != nil {
 			t.Fatalf("%s: %v", p.Name, err)
 		}

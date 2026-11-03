@@ -508,13 +508,8 @@ func (self *Potion) CanUse(grade Grade, night bool) bool {
 
 func (self *Potion) CostIn(e Element) (int64, bool) {
 	e_i := -1
-	switch e {
-	case ElementFire:
-		e_i = 0
-	case ElementWater:
-		e_i = 1
-	case ElementEarth:
-		e_i = 2
+	if k, found := slices.BinarySearch(lookupKeys_Element[:], e); found {
+		e_i = int(lookupAt_Element[k])
 	}
 	return self.costIn[e_i].v, self.costIn[e_i].ok
 }
@@ -901,6 +896,10 @@ func GetDelay() (time.Duration, bool) { return constructsValues().delay, constru
 
 func GetMoods() rt.List[Feeling] { return constructsValues().moods }
 
+var lookupKeys_Element = [...]Element{ElementFire, ElementWater, ElementEarth}
+
+var lookupAt_Element = [...]uint8{0, 1, 2}
+
 var upgradeCostTable = [3]int64{10000, 500000, 20000000}
 
 // UpgradeCost: Penya an upgrade costs.
@@ -929,13 +928,8 @@ var runeForTable = sync.OnceValue(func() *[3]*Rune {
 
 func RuneFor(e Element) *Rune {
 	e_i := -1
-	switch e {
-	case ElementFire:
-		e_i = 0
-	case ElementWater:
-		e_i = 1
-	case ElementEarth:
-		e_i = 2
+	if k, found := slices.BinarySearch(lookupKeys_Element[:], e); found {
+		e_i = int(lookupAt_Element[k])
 	}
 	return runeForTable()[e_i]
 }

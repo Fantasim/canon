@@ -161,6 +161,13 @@ func largeWorld(t *testing.T, n int) (*world, map[string][]byte) {
 // buildWorld loads the fixture and generates every package of it.
 func buildWorld(t *testing.T, fx *fixture) (*world, map[string][]byte) {
 	t.Helper()
+	w := loadFixture(t, fx)
+	return w, generate(t, w)
+}
+
+// loadFixture builds the packages of the fixture.
+func loadFixture(t *testing.T, fx *fixture) *world {
+	t.Helper()
 	raw, err := json.Marshal(fx)
 	if err != nil {
 		t.Fatal(err)
@@ -169,8 +176,7 @@ func buildWorld(t *testing.T, fx *fixture) (*world, map[string][]byte) {
 	if err := os.WriteFile(path, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	w := loadWorld(t, path, listedCells)
-	return w, generate(t, w)
+	return loadWorld(t, path, listedCells)
 }
 
 // writeNoncedModule writes the generated files, each ended by a comment no other run shares (so the Go cache never answers the build), and the smoke tests (by path) into a module in dir.

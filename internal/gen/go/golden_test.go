@@ -17,17 +17,26 @@ import (
 
 var update = flag.Bool("update", false, "rewrite the goldens under testdata/ instead of comparing")
 
+// generator is Generate, or Generate with a smaller budget of lines for a function's body (cutAt).
+type generator func(*ir.Package, *ir.Emit) ([]ir.File, error)
+
 // generate runs the generator twice on every package of w: equal outputs (CODEGEN.md §2.7).
 func generate(t *testing.T, w *world) map[string][]byte {
+	t.Helper()
+	return generateWith(t, gogen.Generate, w)
+}
+
+// generateWith is generate through gen.
+func generateWith(t *testing.T, gen generator, w *world) map[string][]byte {
 	t.Helper()
 	out := map[string][]byte{}
 	for _, p := range w.pkgs {
 		e := p.Emits[0]
-		first, err := gogen.Generate(p, e)
+		first, err := gen(p, e)
 		if err != nil {
 			t.Fatalf("%s: %v", p.Name, err)
 		}
-		again, err := gogen.Generate(p, e)
+		again, err := gen(p, e)
 		if err != nil {
 			t.Fatalf("%s: %v", p.Name, err)
 		}

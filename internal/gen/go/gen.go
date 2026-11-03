@@ -41,10 +41,17 @@ type gen struct {
 	pkgNames  map[string]bool // package-level names a translated fn's locals avoid, built once
 	rtPkg     string          // the Canon package whose rt types the code being written holds: "" for this one (CODEGEN.md §2.8)
 	called    map[string]bool // the loader helpers the decoders written so far call
+	readsDoc  bool            // a field read since the flag was cleared reads the whole document: an inline variant (CODEGEN.md §2.11)
+	partLines int             // the most lines a function's body holds before it is cut into parts (CODEGEN.md §2.11); ir.PartLines, smaller in tests
 }
 
 // Generate is the Go generator (ir.Generator), in baked, data and types mode: <gopkg>.gen.go, rt/rt.go verbatim, and <gopkg>_conformance_test.go when the package has a translated fn (§2.3, §6.3); p is narrowed by ir.CopyOf.
 func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
+	return generate(p, e, ir.PartLines)
+}
+
+// generate is Generate with the line budget of a function's body as a parameter: the test seam of CODEGEN.md §2.11.
+func generate(p *ir.Package, e *ir.Emit, partLines int) ([]ir.File, error) {
 	if e.Target != ir.TargetGo {
 		return nil, fmt.Errorf("%w: %s", ErrTarget, e.Out)
 	}
@@ -56,6 +63,7 @@ func Generate(p *ir.Package, e *ir.Emit) ([]ir.File, error) {
 		return nil, fmt.Errorf("%w: go emit %s without a package or an import path", ErrMalformed, e.Out)
 	}
 	g := newGen(p, e)
+	g.partLines = partLines
 	src := g.source()
 	test := g.conformance()
 	if g.err != nil {

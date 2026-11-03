@@ -115,32 +115,6 @@ func (g *gen) eachCase(v *ir.Variant, keep func(*ir.Case) bool, do func(*body)) 
 	}
 }
 
-// decodeBody writes a record's or case's decoder: its object and key case, each field in
-// declaration order, then each stored fn's `$` key in method order, as the C++ loader reads them.
-func (g *gen) decodeBody(b *body) {
-	defer g.enter(b.owner)()
-	g.temps = 0
-	g.inlineFolds(b)
-	lc := g.lc
-	g.printf(funcOpenFormat, g.decodeFunc(b.key), lc.Name, lc.Path, lc.Raw, g.rawType(), lc.Out, b.goName)
-	g.openObject(g.bodyKeys(b))
-	g.readFields(b)
-	g.printf(returnNil)
-}
-
-// readFields reads b's fields into out, then each stored fn's `$` key.
-func (g *gen) readFields(b *body) {
-	for _, s := range b.slots {
-		if s.fn == nil && !s.isInput() {
-			g.readField(b, s)
-			g.readDefine(s, g.lc.Out, g.keyLoc(strings.Join(s.src.WirePath, dot)))
-		}
-	}
-	for _, fn := range b.methods {
-		g.readMethod(b, fn)
-	}
-}
-
 // readField reads one field where its wire form puts it (WIRE.md §5.5, §5.6, §5.14).
 func (g *gen) readField(owner *body, s *slot) {
 	f := s.src
@@ -306,6 +280,7 @@ func (g *gen) readInline(s *slot) {
 	}
 	var b strings.Builder
 	v := g.temp(tempValue)
+	g.readsDoc = true
 	fmt.Fprintf(&b, decodeIntoFormat, v, g.typeName(s.T.Named), g.lc.Err, g.decodeFunc(s.T.Named), g.lc.Name, g.lc.Path, g.lc.Raw)
 	g.store(&b, s, g.lc.Out, v)
 	g.body.WriteString(b.String())

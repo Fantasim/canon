@@ -2935,30 +2935,25 @@ func GetHeaderColumns() *HeaderColumns { return &telemetryValues().headerColumns
 // GetProvenanceColumns: The provenance prefix of every CREATE TABLE, in order.
 func GetProvenanceColumns() *ProvenanceColumns { return &telemetryValues().provenanceColumns }
 
+var lookupKeys_EventType = [...]EventType{
+	EventTypeItemCreated, EventTypeMailItemReceived, EventTypeItemConsumed, EventTypePenyaDrops,
+	EventTypeTradePenya, EventTypeServerLifecycle, EventTypeFarmEvents, EventTypeSovereignEvents,
+	EventTypeWorldBossSpawns,
+}
+
+var lookupAt_EventType = [...]uint8{
+	0, 1, 2, 3,
+	4, 5, 6, 7,
+	8,
+}
+
 var isTombstoneTable = [9]bool{false, true, false, false, false, false, false, false, true}
 
 // IsTombstone: Whether `e` is a tombstone: an id no producer may send again.
 func IsTombstone(e EventType) bool {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	return isTombstoneTable[e_i]
 }
@@ -2968,25 +2963,8 @@ var versionOfTable = [9]uint8{5, 0, 3, 2, 2, 1, 2, 1, 0}
 // VersionOf: The current layout version of `e` (the wire version byte); 0 for a retired type.
 func VersionOf(e EventType) uint8 {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	return versionOfTable[e_i]
 }
@@ -3006,25 +2984,8 @@ var tierOfTable = [9]Tier{
 // TierOf: The ring tier of `e`; a retired type is READONLY (nothing writes it).
 func TierOf(e EventType) Tier {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	return tierOfTable[e_i]
 }
@@ -3045,25 +3006,8 @@ var tableOfTable = [9]string{
 // 20, whose table is not recorded, the event's name.
 func TableOf(e EventType) string {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	return tableOfTable[e_i]
 }
@@ -3073,25 +3017,8 @@ var hasInstanceIDTable = [9]bool{true, false, true, false, false, false, false, 
 // HasInstanceID: Whether `e`'s current layout has the item_instance_id column.
 func HasInstanceID(e EventType) bool {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	return hasInstanceIDTable[e_i]
 }
@@ -3101,25 +3028,8 @@ var wireSizeTable = [9]int64{38, 0, 24, 24, 36, 13, 37, 40, 0}
 // WireSize: The packed size of `e`'s current struct: header plus live body columns.
 func WireSize(e EventType) int64 {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	return wireSizeTable[e_i]
 }
@@ -3139,42 +3049,12 @@ var emitsTable = [9][7]bool{
 // Emits: Whether producer `p` owns a ring for `e`.
 func Emits(e EventType, p Producer) bool {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	p_i := -1
-	switch p {
-	case ProducerWorldServer:
-		p_i = 0
-	case ProducerCoreServer:
-		p_i = 1
-	case ProducerDatabaseServer:
-		p_i = 2
-	case ProducerLoginServer:
-		p_i = 3
-	case ProducerCacheServer:
-		p_i = 4
-	case ProducerDataIngester:
-		p_i = 5
-	case ProducerItemTool:
-		p_i = 6
+	if uint64(int64(p)-1) < 7 {
+		p_i = int(uint64(int64(p) - 1))
 	}
 	return emitsTable[e_i][p_i]
 }
@@ -3194,25 +3074,8 @@ var createTableSQLTable = [9]string{
 // CreateTableSQL: The CREATE TABLE of `e`'s current layout; empty for a retired type.
 func CreateTableSQL(e EventType) string {
 	e_i := -1
-	switch e {
-	case EventTypeItemCreated:
-		e_i = 0
-	case EventTypeMailItemReceived:
-		e_i = 1
-	case EventTypeItemConsumed:
-		e_i = 2
-	case EventTypePenyaDrops:
-		e_i = 3
-	case EventTypeTradePenya:
-		e_i = 4
-	case EventTypeServerLifecycle:
-		e_i = 5
-	case EventTypeFarmEvents:
-		e_i = 6
-	case EventTypeSovereignEvents:
-		e_i = 7
-	case EventTypeWorldBossSpawns:
-		e_i = 8
+	if k, found := slices.BinarySearch(lookupKeys_EventType[:], e); found {
+		e_i = int(lookupAt_EventType[k])
 	}
 	return createTableSQLTable[e_i]
 }
