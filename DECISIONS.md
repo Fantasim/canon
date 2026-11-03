@@ -4663,3 +4663,19 @@ round 2", "PS1 review", "PS2 round 2"):
      renamed field of it gets its old wire name as `@json`'s argument. Reason: v0.3 run (LINT-CORE's
      review, fixed in LINT-DATA): such a rename wrote no `@json`, and the data already on disk no
      longer decoded.
+456. **A ref keyed by a ref is read at its chain's leaf key (TYPES.md §4.1, §9.1, §10.2; WIRE.md §5.8,
+     §5.9; CODEGEN.md §5.6, §5.8, §5.9; VIEWMODEL.md J10, J12; amends 432).** When a ref's target is a
+     keyed list whose key field is itself a ref, every rule that reads "the key field's type" or "its
+     wire" reads the chain's leaf: the first key down the chain that is not a ref. A literal written for
+     such a ref is a literal of the leaf's type (an integer for an Int leaf, a member name or its wire
+     for an enum leaf). It is written on the wire as the leaf's wire (an enum member's wire; with
+     `@json(codes)`, its code), and sorted, searched and compared as the leaf is. That applies in
+     check's `E3317`, `verify`, `canon edit`, the generators' baked tables, load-error texts, branch
+     tables and literal unions, and the view model's `keyType`. A ref held as another package's table
+     id is searched by its wire wherever the owner's entry order is not known, as 432's foreign `Find`
+     is. Deciding a literal's form reads the leaf, so a cycle through a still-resolving chain is
+     `E3008`, as it is at one level (§10.2). One level is unchanged. Reason: v0.3 run (BAKED-FIND's
+     review, then CPP-NESTREF, WIRE-NESTREF, CHECK-REFCHAIN and VIEWS-REFKEY): each of these sites
+     read one level. That wrote a member's name for its wire, so a build's own data no longer loaded.
+     It also wrote C++ that did not compile, raised a false `E3317` and missed a real one, and refused
+     an integer literal.
