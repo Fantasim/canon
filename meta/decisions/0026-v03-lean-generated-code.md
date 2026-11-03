@@ -3320,8 +3320,13 @@ go in the final acceptance entry of `meta/decisions/log-<date>.md`. Logs go to `
     - **What stays owed** (§19).
 
     Then update `meta/handoff/README.md`, `meta/plan.md` (v0.3 ticked) and `meta/state.md`.
-12. **Louis pushes and publishes:** `main` and the tag, then
-    `gh release create v0.3.0 dist/*.tar.gz dist/*.zip dist/checksums.txt --title v0.3.0 --notes-from-tag`.
+12. **Release notes, drafted before the publish** (v0.1.9 and v0.2.0 shipped with the tag line alone): the
+    orchestrator writes `/var/tmp/canon-v030/notes-v0.3.0.md` from the reply, in the GitHub layout of v0.2.0's
+    notes (the downloads and `checksums.txt` lines, then What changed, Upgrade notes, Verification; no
+    service-internal paths: the repository is public), and shows it to Louis with the reply.
+13. **Louis pushes and publishes:** `main` and the tag, then
+    `gh release create v0.3.0 dist/*.tar.gz dist/*.zip dist/checksums.txt --title v0.3.0 --notes-file /var/tmp/canon-v030/notes-v0.3.0.md`
+    (never `--notes-from-tag`). After it, `gh release view v0.3.0 --json body` must show the notes.
     Scripts' canon-bump moves the pin.
 
 ## 19. Found while planning, owed (not in v0.3)
