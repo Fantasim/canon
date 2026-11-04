@@ -1,6 +1,8 @@
 package edit
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -51,6 +53,7 @@ func (x *opCtx) undoSet() error {
 		k--
 		path, v = x.pathAt(k), x.valueAt(k) // an element of a bits list, which keeps no order: the list (WIRE.md 5.3)
 	}
+	v = x.spreadWritten(v, k)
 	scope, notes := x.scopeAt(k, true), x.a.noteSpellings(v, x.statedAt(k))
 	lit, err := x.a.notedLit(v, scope, notes)
 	if err != nil {
@@ -61,6 +64,21 @@ func (x *opCtx) undoSet() error {
 	}
 	x.inverse(Operation{Kind: OpSet, Path: path, Value: lit})
 	return nil
+}
+
+// spreadWritten is v, a record at cursor k its literal states beside a spread, with every field the
+// spread supplies written: the Set undoing a whole Set gives each value back, since no operation
+// lets a spread supply a field again (API.md W9, E22, E23); v itself otherwise.
+func (x *opCtx) spreadWritten(v value.Value, k int) value.Value {
+	rec, ok := v.(*value.Record)
+	if !ok || k >= len(x.j.cur) || x.j.cur[k].state != stTree || x.j.cur[k].mode != ModeCanon || !hasSpread(x.j.cur[k].node) {
+		return v
+	}
+	out := &value.Record{T: rec.T, Fields: rec.Fields, Set: slices.Clone(rec.Set), Ident: rec.Ident, P: rec.P}
+	for i, f := range out.Fields {
+		out.Set[i] = out.Set[i] || f != nil
+	}
+	return out
 }
 
 // layerAbsent is the cursor of the field the edit layer's literal leaves out on the path, nearest

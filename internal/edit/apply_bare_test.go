@@ -132,8 +132,8 @@ func noLayerValue(ops []edit.Operation) bool {
 }
 
 // API.md W9, E22, E23 (EDIT-MATERIALIZE ruling): a base Set, Reset or Remove of a field a spread
-// supplies is `layered`, naming the layer, when an active layer amends that field on the spread's
-// source or below it, for Editable and Apply alike: the override its Undo writes would hide it.
+// supplies, or a whole-record Set beside it, is `layered` naming the layer when an active layer
+// amends such a field on the spread's source, for Editable and Apply alike: its fields go explicit.
 func TestBareSpreadFromLayeredRoot(t *testing.T) {
 	cases := []struct {
 		layers []string
@@ -155,6 +155,10 @@ func TestBareSpreadFromLayeredRoot(t *testing.T) {
 		{[]string{"dev"}, edit.Operation{Kind: edit.OpSet, Path: "d:nest.server.host", Value: edit.Str("x")}, edit.ReasonLayered, "dev"},
 		{[]string{"dev", "qa"}, edit.Operation{Kind: edit.OpSet, Path: "d:hop2.port", Value: edit.Int(3)}, edit.ReasonNone, ""},
 		{[]string{"dev", "qa"}, edit.Operation{Kind: edit.OpSet, Path: "d:nest.server.port", Value: edit.Int(3)}, edit.ReasonLayered, "qa"},
+		{[]string{"dev"}, edit.Operation{Kind: edit.OpSet, Path: "d:derived", Value: edit.Source("{ port: 3 }")}, edit.ReasonLayered, "dev"},
+		{[]string{"dev"}, edit.Operation{Kind: edit.OpSet, Path: "d:deep.server", Value: edit.Source("{ port: 3 }")}, edit.ReasonLayered, "dev"},
+		{[]string{"dev"}, edit.Operation{Kind: edit.OpSet, Path: "d:hop3", Value: edit.Source("{ port: 3 }")}, edit.ReasonLayered, "dev"},
+		{[]string{"dev"}, edit.Operation{Kind: edit.OpReset, Path: "d:deep.server"}, edit.ReasonLayered, "dev"},
 	}
 	for _, c := range cases {
 		s := open(t, bareFS(), c.layers, "", "d")

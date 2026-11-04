@@ -5,32 +5,71 @@ import (
 
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
-// spreadRow is a base Set, Reset or Remove of a field a spread supplies, when an active layer's
-// line amends that field on the spread's source, or below it: its E23 inverse writes an override,
-// which would hide the layer's value, so the Undo could not give the session's back (API.md E22, W9).
+// spreadRow is a base Set, Reset or Remove of a field a spread supplies, or a base Set or Reset of
+// a whole record beside a spread, when an active layer amends such a field on the spread's source or below
+// it: the write and its E23 inverse make it explicit, hiding the layer's value (API.md E22, W9).
 func spreadRow(j *judge) Reason {
+	if j.layer != "" || len(j.s.a.Layers()) == 0 {
+		return ReasonNone
+	}
+	layer, hit := j.spreadFieldLayer()
+	if !hit {
+		layer, hit = j.spreadRecordLayer()
+	}
+	if !hit {
+		return ReasonNone
+	}
+	j.blocker = layer
+	return ReasonLayered
+}
+
+// spreadFieldLayer is the layer amending the field a spread supplies at the path, for a Set, Reset
+// or Remove of it.
+func (j *judge) spreadFieldLayer() (string, bool) {
 	n := len(j.res.Steps)
-	if j.layer != "" || n == 0 || j.last().state != stSpread || j.op != OpSet && j.op != OpReset && j.op != OpRemove {
-		return ReasonNone
+	if n == 0 || j.last().state != stSpread || j.op != OpSet && j.op != OpReset && j.op != OpRemove {
+		return "", false
 	}
-	lit := braceOf(j.cur[n-1].node)
+	return j.s.spreadsAmend(braceOf(j.cur[n-1].node), []Seg{j.res.Steps[n-1].Seg})
+}
+
+// spreadRecordLayer is the layer amending a field a spread supplies to the record at the path, for
+// a Set or Reset of that whole record, its literal beside the spread.
+func (j *judge) spreadRecordLayer() (string, bool) {
+	c := j.last()
+	rec, ok := j.res.Target.(*value.Record)
+	if j.op != OpSet && j.op != OpReset || !ok || c.state != stTree || c.mode != ModeCanon || !hasSpread(c.node) {
+		return "", false
+	}
+	var fields []Seg
+	for _, f := range fieldsOf(rec.T) {
+		if f.Input == nil && fieldItem(c.node, f.Name) == nil {
+			fields = append(fields, Seg{Kind: SegField, Name: f.Name})
+		}
+	}
+	return j.s.spreadsAmend(braceOf(c.node), fields)
+}
+
+// spreadsAmend is the active layer amending one of fields on the source of a spread of lit.
+func (s *Snapshot) spreadsAmend(lit *syntax.BraceLit, fields []Seg) (string, bool) {
 	if lit == nil {
-		return ReasonNone
+		return "", false
 	}
-	field := j.res.Steps[n-1].Seg
 	for _, it := range lit.Items {
 		sp, ok := it.(*syntax.SpreadItem)
 		if !ok {
 			continue
 		}
-		if layer, amended := j.s.amendsBelow(sp.X, field); amended {
-			j.blocker = layer
-			return ReasonLayered
+		for _, f := range fields {
+			if layer, amended := s.amendsBelow(sp.X, f); amended {
+				return layer, true
+			}
 		}
 	}
-	return ReasonNone
+	return "", false
 }
 
 // amendsBelow is the active layer whose line can change field of the value spread expression e

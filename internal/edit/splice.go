@@ -116,7 +116,8 @@ func (d *canonDiff) absent(old, nw *value.Record, i int, lit *syntax.BraceLit) e
 }
 
 // leftOut is a field the new value leaves to its default (API.md V3): its item is removed, or
-// under a spread its default is written, since removing it would let the spread supply it.
+// under a spread its default is written, since removing it would let the spread supply it (W9);
+// a field the literal leaves out whose value the new value keeps is the spread's, left as it is.
 func (d *canonDiff) leftOut(old, nw *value.Record, i int, lit *syntax.BraceLit, fi *syntax.FieldItem) error {
 	if !hasSpread(lit) {
 		if fi != nil {
@@ -126,6 +127,8 @@ func (d *canonDiff) leftOut(old, nw *value.Record, i int, lit *syntax.BraceLit, 
 	}
 	dv, ok := d.a.defaultOf(nw, i)
 	switch {
+	case fi == nil && nw.Fields[i] != nil:
+		return nil // the spread supplies it: the operation set no default here (W9, M6)
 	case !ok || sameValue(old.Fields[i], dv):
 		return nil
 	case fi != nil:

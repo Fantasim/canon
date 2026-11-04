@@ -4858,3 +4858,15 @@ round 2", "PS1 review", "PS2 round 2"):
      root the edit leaves uncomputable). Reason: v0.3 run (EDIT-MATERIALIZE rounds 1-5): a base Set
      under an active layer wrote the layer's value into the base file, and three ways of building a
      base view out of the session's values each missed a shape.
+
+467. **An edit beside a spread writes only the field it edits (API.md W9, M6, E22, E23; follows
+     466).** A field the spread still supplies is the spread's value (EVALUATION.md: a literal
+     evaluates its spread, then its written fields, then the defaults of the remaining fields) and is
+     never written by an edit of a sibling field: only the edited field gets its override. W9's
+     explicit default stays for a `Reset`, a `Set` to the default and the fields a record-level `Set`
+     leaves out. The Undo of a record-level `Set` carries the spread-supplied fields as written, so it
+     restores every value (E22 restores values: a field it writes explicitly no longer follows the
+     spread's source afterwards). A record-level `Set` or `Reset` beside a spread is `layered` when an
+     active layer amends a field the spread supplies, as a field edit is (466). Reason: v0.3 run
+     (EDIT-SPREADUNDO): a sibling's computed default was written as an override that the Undo could
+     not remove.

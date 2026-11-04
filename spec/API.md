@@ -969,7 +969,8 @@ source and where the edit goes.
   field that comes from `base` is edited by inserting an override field into the spreading literal
   (API-02); `base` itself is never changed through the derived value. Editing `base` directly edits
   `base`. Under a spread, `Reset`, a `Set` to the default and a field a record-level `Set` leaves
-  out write the default explicitly: removing the field would let the spread supply a value.
+  out write the default explicitly: removing the field would let the spread supply a value. Any other
+  field the spread supplies is left to it: an edit writes only the field it edits (DECISIONS 467).
 
 ### 7.5 Layers (MOCKUP-GAPS 48)
 
