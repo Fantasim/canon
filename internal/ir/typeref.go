@@ -33,7 +33,7 @@ type RefTarget struct {
 	Elem   Type
 	Keyed  bool
 	Local  bool
-	BigInt bool        // the key field is @ts(bigint): TypeScript keys the ref as a bigint (DECISIONS 278)
+	BigInt bool        // the key field at the chain's leaf is @ts(bigint), at every level: TypeScript keys the ref as a bigint (DECISIONS 278, 456)
 	Cpp    NameOptions // the target let's @cpp(name:), which names its accessor in its owner's emit (CODEGEN.md §3.3, §5.9)
 	Go     NameOptions // the target let's @go(name:), which names its accessor in its owner's go emit (CODEGEN.md §3.3, §5.9)
 }

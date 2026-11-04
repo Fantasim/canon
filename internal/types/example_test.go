@@ -24,3 +24,16 @@ func Example() {
 	fmt.Println(types.FloatText(2.5e6, 64), types.DurationText(5_400_000), types.QuoteString("a\"b"))
 	// Output: label: String(1..), next: [ref teamboard.statuses], previous: past ref teamboard.statuses?, limit: UInt16?, timeout: Duration, 2500000 1h30m "a\"b"
 }
+
+// A ref into a keyed list keyed by a ref is read at its chain's leaf key (WIRE.md §5.9).
+func ExampleKeyChain() {
+	boards := &types.Collection{Kind: types.CollLet, Pkg: "teamboard", Name: "boards"}
+	lanes := &types.Collection{Kind: types.CollLet, Pkg: "teamboard", Name: "lanes", KeyedBy: &types.Field{Name: "id", Type: types.UInt16Type}}
+	cards := &types.Collection{Kind: types.CollLet, Pkg: "teamboard", Name: "cards", KeyedBy: &types.Field{Name: "lane", Type: &types.RefType{Target: lanes}}}
+	pins := &types.Collection{Kind: types.CollLet, Pkg: "teamboard", Name: "pins", KeyedBy: &types.Field{Name: "board", Type: &types.RefType{Target: boards}}}
+	leaf := types.KeyChain(&types.RefType{Target: cards}, types.Resolved)
+	table := types.KeyChain(&types.RefType{Target: pins}, types.Resolved)
+	broken := types.CollChain(nil, types.Resolved)
+	fmt.Println(leaf.Field.Name, leaf.Leaf, leaf.End == types.ChainLeaf, table.Leaf, table.End == types.ChainTable, broken.End == types.ChainBroken)
+	// Output: id UInt16 true String true true
+}

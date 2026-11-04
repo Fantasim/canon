@@ -145,14 +145,6 @@ const (
 	stateDone
 )
 
-// How a walk down a chain of ref keys ends (keyChain).
-const (
-	endLeaf   chainEnd = iota // at a key that is not a ref
-	endTable                  // at a target with no key field
-	endBroken                 // at a target in error
-	endLoop                   // back at a target already met
-)
-
 // The flags of an env: modeJoin types a branch a join may still type (TYPES.md §6.4).
 const modeJoin mode = 1
 

@@ -53,19 +53,14 @@ func KeyType(c *types.Collection) string {
 	return keyString
 }
 
-// leafKind is the kind of the key at the end of c's chain of ref keys: a table's is a String; a
-// chain that comes back to a collection already met (E3012, never indexed) ends as a String.
+// leafKind is the kind of the key at the end of c's chain of ref keys (types.CollChain): a table's
+// is a String; a chain that comes back to a collection already met (E3012, never indexed) ends as a String.
 func leafKind(c *types.Collection) types.Kind {
-	seen := map[*types.Collection]bool{}
-	for c != nil && c.KeyedBy != nil && !seen[c] {
-		seen[c] = true
-		r, ok := c.KeyedBy.Type.Base().(*types.RefType)
-		if !ok {
-			return c.KeyedBy.Type.Base().Kind()
-		}
-		c = r.Target
+	ch := types.CollChain(c, types.Resolved)
+	if ch.End != types.ChainLeaf {
+		return types.String
 	}
-	return types.String
+	return ch.Leaf.Base().Kind()
 }
 
 // Driver is where a type argument is read (J13): an earlier field, a parameter of the enclosing

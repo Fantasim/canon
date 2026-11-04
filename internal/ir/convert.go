@@ -169,9 +169,14 @@ func wirePath(fields []*types.Field) []string {
 	return out
 }
 
-// bigKey reports a collection keyed by a @ts(bigint) field: a ref into it is a bigint in TypeScript (DECISIONS 278).
+// bigKey reports a keyed list whose key field at its chain's leaf (types.CollChain) is @ts(bigint): a ref into it is a bigint in TypeScript, at every level of a chain (DECISIONS 278, 456).
 func bigKey(c *types.Collection) bool {
-	return c != nil && c.KeyedBy != nil && hasFlag(annotation(c.KeyedBy.Annotations, syntax.AnnTS), syntax.ArgBigint)
+	return c != nil && c.KeyedBy != nil && bigField(types.CollChain(c, types.Resolved).Field)
+}
+
+// bigField reports a field marked @ts(bigint) (DECISIONS 278).
+func bigField(f *types.Field) bool {
+	return hasFlag(annotation(f.Annotations, syntax.AnnTS), syntax.ArgBigint)
 }
 
 // letNames are the @go, @cpp and @ts name: overrides of let name of package pkg, as its own plan reads them (letDecl): a ref of another package names that value's accessor with them.

@@ -112,6 +112,17 @@ var (
 	RangeType Type = builtin{k: Range, text: "Range"}
 )
 
+// How a walk down a chain of ref keys ends (CollChain, WIRE.md §5.9).
+const (
+	ChainLeaf   ChainEnd = iota // at a key that is not a ref
+	ChainTable                  // at a target with no key field: its keys are Strings
+	ChainBroken                 // at a target in error
+	ChainLoop                   // back at a target already met
+)
+
+// Resolved reads a chain's links from resolved types: a ref's Target, a field's Type.
+var Resolved Links = resolved{}
+
 // DefineType is the element record of load.defines tables: `record Define { value: Int }`.
 var DefineType = &RecordType{Name: defineName, define: true, Fields: []*Field{{Name: defineField, Wire: defineField, WirePath: []string{defineField}, Type: IntType}}}
 

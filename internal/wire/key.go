@@ -94,25 +94,17 @@ func memberNamed(enum *types.EnumType, name string) (int, error) {
 	return 0, fmt.Errorf("%w: %s is no member of %s", ErrShape, name, enum)
 }
 
-// keyEnum is the enum leaf of the ref-key chain a ref starts, or nil; a cycle stops (WIRE.md §5.9).
+// keyEnum is the enum leaf of the ref-key chain a ref starts (types.KeyChain), or nil; a cycle stops (WIRE.md §5.9).
 func keyEnum(r *value.Ref) *types.EnumType {
 	if r.T == nil {
 		return nil
 	}
-	seen := map[*types.Collection]bool{}
-	t := r.T
-	for {
-		rt, ok := t.Base().(*types.RefType)
-		if !ok {
-			enum, _ := t.Base().(*types.EnumType)
-			return enum
-		}
-		if rt.Target == nil || rt.Target.KeyedBy == nil || seen[rt.Target] {
-			return nil
-		}
-		seen[rt.Target] = true
-		t = rt.Target.KeyedBy.Type
+	ch := types.KeyChain(r.T, types.Resolved)
+	if ch.End != types.ChainLeaf {
+		return nil
 	}
+	enum, _ := ch.Leaf.Base().(*types.EnumType)
+	return enum
 }
 
 // mapKey decodes an object key as a key of kt (WIRE.md §5.8), by the rules of a value of kt.

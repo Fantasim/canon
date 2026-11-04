@@ -1,8 +1,6 @@
 package check
 
 import (
-	"slices"
-
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -54,45 +52,40 @@ func (c *checker) keyLoops(t types.Type) bool {
 
 // leafKey is t's key at the leaf of its chain of ref keys: String for a table, Error for a target in error, false on a loop (WIRE.md §5.9).
 func (c *checker) leafKey(t types.Type) (types.Type, bool) {
-	_, leaf, end := c.keyChain(t)
-	return leaf, end != endLoop
+	ch := c.keyChain(t)
+	return ch.Leaf, ch.End != types.ChainLoop
 }
 
 // leafField is the key field at the leaf of the chain of ref keys t starts, the first key down it that is not a ref; nil when t is no ref, or for a table, a target in error or a loop (DECISIONS 456).
 func (c *checker) leafField(t types.Type) *types.Field {
-	f, _, end := c.keyChain(t)
-	if end != endLeaf {
+	ch := c.keyChain(t)
+	if ch.End != types.ChainLeaf {
 		return nil
 	}
-	return f
+	return ch.Field
 }
 
-// chainEnd is how a walk down a chain of ref keys ends.
-type chainEnd uint8
+// keyChain walks the chain of ref keys t starts as the checker resolves it (types.KeyChain, WIRE.md §5.9).
+func (c *checker) keyChain(t types.Type) types.Chain {
+	return types.KeyChain(t, chainLinks{c: c})
+}
 
-// keyChain walks the chain of ref keys t starts: the last key field met (nil when t is no ref), the leaf's type (String for a table, Error for a target in error, nil on a loop) and how the walk ended (WIRE.md §5.9).
-func (c *checker) keyChain(t types.Type) (*types.Field, types.Type, chainEnd) {
-	var f *types.Field
-	var seen []*types.Collection
-	for {
-		r, ok := t.Base().(*types.RefType)
-		if !ok {
-			return f, t, endLeaf
-		}
-		if c.brokenRef(r) {
-			return f, types.ErrorType, endBroken
-		}
-		coll := c.coll(r)
-		if slices.Contains(seen, coll) {
-			return f, nil, endLoop
-		}
-		seen = append(seen, coll)
-		if coll.KeyedBy == nil {
-			return f, types.StringType, endTable
-		}
-		f = coll.KeyedBy
-		t = c.fieldType(f)
+// chainLinks reads a chain's links as they resolve: a ref resolves when met, and one whose target resolved to nothing, or not yet, ends the chain as a target in error (TYPES.md §1, §10.2).
+type chainLinks struct {
+	c *checker
+}
+
+// Target is r's target once resolved, nil for a broken ref (brokenRef).
+func (l chainLinks) Target(r *types.RefType) *types.Collection {
+	if l.c.brokenRef(r) {
+		return nil
 	}
+	return l.c.coll(r)
+}
+
+// KeyType is f's type once resolved (fieldType).
+func (l chainLinks) KeyType(f *types.Field) types.Type {
+	return l.c.fieldType(f)
 }
 
 // keyedByInt reports a keyed list whose leaf key (leafKey) is an integer type: a ref into it is an integer literal (TYPES.md §4.1).
