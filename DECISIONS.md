@@ -4719,3 +4719,15 @@ round 2", "PS1 review", "PS2 round 2"):
      reserved ones included, as the decoder reads it (WIRE.md §5.7's "identifier" means a word).
      Reason: v0.3 run (EDIT-REFKEY's probe, then EDIT-KWENTRY): renaming a table-literal entry to
      `for` ended in an internal "does not parse in its place", and the formatter broke such a list.
+
+460. **A negated literal is judged by its negated value (TYPES.md §5.1, §5.3, §7.2; GRAMMAR.md §2.4).**
+     A static range check (`E3201`, a refinement's `E3204`, a `ref`'s leaf key) judges `-e`, where
+     `e` is a literal (parenthesised or negated again), by the value the negation yields, as for the
+     folded token: `let x: Int8 = -(128)` fits, `-(129)` reports `-129`. The operand is still a 64-bit
+     `Int` (§7.2: in expressions every integer is `Int`), so `-(9223372036854775808)` is `E3201` on the
+     operand with or without an expected type, and `-(-9223372036854775808)` is `E3201` on its value
+     `9223372036854775808`; a `Duration` negation is computed without wrapping. A literal's own
+     status, a key literal (§4.1) or a `Float` literal (`E3311`), keeps the token definition of §5.3:
+     `-(128)` is no key literal. Reason: v0.3 run (RELATED-NOTE, CHECK-LEAFLIT): the checker judged
+     the operand against the stored type (a false `-(128)` finding, `300` reported for `-(300)`), and
+     the first fix let `-(2^63)` reach evaluation as an internal error.
