@@ -1,0 +1,56 @@
+API.md §4.4 F12, ERRORS.md §1.5 (`source`), TYPES.md §7.2: a literal argument out of its parameter's sized type names the parameter it was checked against, never the let the call stands in: a function's argument (positional, named, or a branch of an if given as one), a method's, and a parameter default. A builtin method's parameter is no declaration, so its argument's finding has no related location.
+-- a/a.canon --
+package a
+
+local fn f(x: UInt8, y: UInt8 = 1) -> Bool {
+  return x > y
+}
+
+local fn d(z: UInt8 = 300) -> UInt8 {
+  return z
+}
+
+local record R {
+  n: Int
+
+  fn m(self, w: Int8) -> Bool { return w > 0 }
+}
+
+local let r: R = { n: 1 }
+
+local let g: Bool = f(300)
+
+local let named: Bool = f(1, y: -1)
+
+local let branch: Bool = f(if r.n > 0 { 1 } else { 256 })
+
+local let meth: Bool = r.m(200)
+
+local let xs: [Int] = [1]
+
+local let built: Int? = xs.get(99999999999999999999)
+-- findings.txt --
+error[E3201]  a/a.canon:7:23
+  300 does not fit UInt8
+  expected by a/a.canon:7 (z: UInt8)
+
+error[E3201]  a/a.canon:19:23
+  300 does not fit UInt8
+  expected by a/a.canon:3 (x: UInt8)
+
+error[E3201]  a/a.canon:21:33
+  -1 does not fit UInt8
+  expected by a/a.canon:3 (y: UInt8)
+
+error[E3201]  a/a.canon:23:52
+  256 does not fit UInt8
+  expected by a/a.canon:3 (x: UInt8)
+
+error[E3201]  a/a.canon:25:28
+  200 does not fit Int8
+  expected by a/a.canon:14 (w: Int8)
+
+error[E3201]  a/a.canon:29:32
+  99999999999999999999 does not fit Int
+
+6 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,34 @@
+API.md §4.4 F12, ERRORS.md §1.5 (`source`), TYPES.md §6.2, §7.2, §12.7: in a block, a typed `let` or `var` names its own declaration, an assignment names the var's, and a returned value names the fn's result type, as evaluation names them.
+-- a/a.canon --
+package a
+
+local fn f(n: Int) -> UInt8 {
+  let y: UInt8 = 300
+  var z: UInt8 = 301
+  z = 302
+  let w = 1
+  if n > w {
+    return 303
+  }
+  return y + z
+}
+
+local let r: UInt8 = f(1)
+-- findings.txt --
+error[E3201]  a/a.canon:4:18
+  300 does not fit UInt8
+  expected by a/a.canon:4 (y: UInt8)
+
+error[E3201]  a/a.canon:5:18
+  301 does not fit UInt8
+  expected by a/a.canon:5 (z: UInt8)
+
+error[E3201]  a/a.canon:6:7
+  302 does not fit UInt8
+  expected by a/a.canon:5 (z: UInt8)
+
+error[E3201]  a/a.canon:9:12
+  303 does not fit UInt8
+  expected by a/a.canon:3 (UInt8)
+
+4 errors, 0 warnings in 1 package (…)

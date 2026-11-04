@@ -10,7 +10,7 @@ import (
 func (c *checker) coalesce(env *env, e *syntax.BinaryExpr, want types.Type) types.Type {
 	var ta types.Type
 	if want != nil {
-		ta = c.expr(env, e.X, optionalOf(want))
+		ta = c.expr(env.carry(e, e.X), e.X, optionalOf(want))
 	} else {
 		ta = c.expr(env.join(), e.X, nil)
 	}
@@ -19,7 +19,7 @@ func (c *checker) coalesce(env *env, e *syntax.BinaryExpr, want types.Type) type
 	}
 	if want != nil {
 		elem := unwrapOptional(want)
-		if tb := c.expr(env, e.Y, want); tb.Base().Kind() == types.Optional {
+		if tb := c.expr(env.carry(e, e.Y), e.Y, want); tb.Base().Kind() == types.Optional {
 			return optionalOf(elem)
 		}
 		return elem

@@ -51,7 +51,7 @@ func (c *checker) returnStmt(env *env, s *syntax.ReturnStmt) {
 		c.report(env, diag.E3019.At(env.span(s), env.fn.name, env.fn.result))
 		return
 	}
-	c.expr(env, s.Value, env.fn.result)
+	c.expr(env.storingAt(env.fn.site, s.Value), s.Value, env.fn.result)
 }
 
 // expectStmt is `expect c`, `expect v passes|fails|warns …` (EVALUATION.md §10.3) or `expect package …` (§10.5).

@@ -1,4 +1,4 @@
-EVALUATION.md §10.5, DECISIONS 398, CHK-05: a literal outside a refinement in a package subject's value is a compile error (DECISIONS 155).
+EVALUATION.md §10.5, DECISIONS 398, CHK-05: a literal outside a refinement in a package subject's value is a compile error (DECISIONS 155), naming the let it replaces (API.md §4.4 F12).
 -- a/a.canon --
 package a
 
@@ -10,5 +10,6 @@ test "outside" {
 -- findings.txt --
 error[E3204]  a/a.canon:6:27
   -1 is outside 0..
+  expected by a/a.canon:3 (stack: Int(0..))
 
 1 error, 0 warnings in 1 package (…)

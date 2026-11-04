@@ -1,0 +1,49 @@
+API.md §4.4 F12, ERRORS.md §1.5 (`source`), EVALUATION.md §9.2, TYPES.md §7.2: an amendment's literal value names the field declaration at its path, whose type it was checked against (a case's field on a variant); an element of a list field names the list field; a literal key of a keyed list on the path names its `keyed by` field.
+-- a/a.canon --
+package a
+
+local record B {
+  b: UInt8
+  v: Int
+}
+
+local variant Shape {
+  dot { size: UInt8 }
+}
+
+local record Cfg {
+  port: UInt8
+  ids: [UInt8]
+  bs: [B] keyed by b
+  shape: Shape
+}
+
+local let cfg: Cfg = { port: 1, ids: [1], bs: [{ b: 1, v: 1 }], shape: dot { size: 1 } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  port: 300
+  ids[#0]: 256
+  bs[1000].v: 2
+  shape.size: 257
+}
+-- findings.txt --
+error[E3201]  a/dev.layer.canon:5:9
+  300 does not fit UInt8
+  expected by a/a.canon:13 (port: UInt8)
+
+error[E3201]  a/dev.layer.canon:6:12
+  256 does not fit UInt8
+  expected by a/a.canon:14 (ids: [UInt8])
+
+error[E3201]  a/dev.layer.canon:7:6
+  1000 does not fit UInt8
+  expected by a/a.canon:4 (b: UInt8)
+
+error[E3201]  a/dev.layer.canon:8:15
+  257 does not fit UInt8
+  expected by a/a.canon:9 (size: UInt8)
+
+4 errors, 0 warnings in 1 package (…)

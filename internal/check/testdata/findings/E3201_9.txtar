@@ -1,0 +1,35 @@
+API.md §4.4 F12, ERRORS.md §1.5 (`source`), TYPES.md §7.2: a key or value of a map literal names the declaration whose map type it was checked against, a let's or a field's. An index of a map is checked against its key type, which no declaration of the index gives, and a position of a plain list against Int: neither finding has a related location, never the enclosing let.
+-- a/a.canon --
+package a
+
+local let m: {UInt8: UInt8} = { 300: 1, 2: 400 }
+
+local record H {
+  hs: {String: UInt8} = { "a": 256 }
+}
+
+local let picked: UInt8? = m[500]
+
+local let xs: [Int] = [1]
+
+local let at: Int = xs[99999999999999999999]
+-- findings.txt --
+error[E3201]  a/a.canon:3:33
+  300 does not fit UInt8
+  expected by a/a.canon:3 (m: {UInt8: UInt8})
+
+error[E3201]  a/a.canon:3:44
+  400 does not fit UInt8
+  expected by a/a.canon:3 (m: {UInt8: UInt8})
+
+error[E3201]  a/a.canon:6:32
+  256 does not fit UInt8
+  expected by a/a.canon:6 (hs: {String: UInt8})
+
+error[E3201]  a/a.canon:9:30
+  500 does not fit UInt8
+
+error[E3201]  a/a.canon:13:24
+  99999999999999999999 does not fit Int
+
+5 errors, 0 warnings in 1 package (…)

@@ -93,7 +93,7 @@ func constantObject(o Object) bool {
 }
 
 // checkFolded is the static check of a folded value v against want, a literal's check on a value: the first refinement or limit v breaks is reported at at, and reports true (TYPES.md §7.2, §7.4).
-func (c *checker) checkFolded(env *env, at syntax.Node, v value.Value, want types.Type) bool {
+func (c *checker) checkFolded(env *env, at syntax.Expr, v value.Value, want types.Type) bool {
 	switch x := want.(type) {
 	case *types.Alias:
 		return c.checkFolded(env, at, v, x.Def)
@@ -116,7 +116,7 @@ func (c *checker) checkFolded(env *env, at syntax.Node, v value.Value, want type
 }
 
 // foldedRefinement is E3205 or E3204 for v against one written refinement, as literalRefinement.
-func (c *checker) foldedRefinement(env *env, at syntax.Node, v value.Value, r *types.Refined) bool {
+func (c *checker) foldedRefinement(env *env, at syntax.Expr, v value.Value, r *types.Refined) bool {
 	if s, isStr := v.(*value.Str); isStr && r.Pattern != nil && !r.Pattern.MatchString(s.V) {
 		c.patternFinding(env, at, r, types.QuoteString(s.V))
 		return true
@@ -135,7 +135,7 @@ func (c *checker) foldedRefinement(env *env, at syntax.Node, v value.Value, r *t
 }
 
 // foldedLimits is E3201 for an Int or Duration v outside the sized type b.
-func (c *checker) foldedLimits(env *env, at syntax.Node, v value.Value, b types.Basic) bool {
+func (c *checker) foldedLimits(env *env, at syntax.Expr, v value.Value, b types.Basic) bool {
 	lo, hi, ok := b.Limits()
 	if !ok {
 		return false

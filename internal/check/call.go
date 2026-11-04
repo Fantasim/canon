@@ -143,7 +143,7 @@ func (c *checker) userArgs(env *env, x *syntax.CallExpr, fn string, params []*ob
 				c.report(env, diag.E3004.AtMany(env.span(a), fn))
 			}
 			given[j] = true
-			c.expr(env, a.Value, ts[j])
+			c.expr(c.argEnv(env, params, j, a.Value), a.Value, ts[j])
 		}
 	}
 	for j, ok := range given {
@@ -151,6 +151,14 @@ func (c *checker) userArgs(env *env, x *syntax.CallExpr, fn string, params []*ob
 			c.report(env, diag.E3004.AtMissing(env.span(x), paramName(params, j), fn))
 		}
 	}
+}
+
+// argEnv is env for an argument v of the j-th parameter: v names it (API.md F12).
+func (c *checker) argEnv(env *env, params []*object, j int, v syntax.Expr) *env {
+	if j >= len(params) {
+		return env
+	}
+	return env.storing(params[j], v)
 }
 
 // argIndex is the parameter an argument names, else its position; -1 after E3004 for an

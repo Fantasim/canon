@@ -146,16 +146,18 @@ func (c *checker) keyedMethod(env *env, bc *builtinCall, rows []row, recv types.
 	if _, fits := argMap(bc.x, rows[0].sig); !keyed || len(bc.x.Args) != 1 || !fits {
 		return nil, false
 	}
+	arg := bc.x.Args[0].Value
+	ke := env
 	if l, isList := recv.Base().(*types.ListType); isList && l.KeyedBy != nil {
 		key = l.KeyedBy.Type // with the refinements the binding drops (TYPES.md §5.3, §7.4)
+		ke = c.keyedBy(env, arg, l.KeyedBy)
 	}
-	arg := bc.x.Args[0].Value
 	elem := bc.b.vars[tT]
 	switch bc.name {
 	case methodContains, methodIndexOf:
 		c.element(env, arg, bc.x.Fun.(*syntax.SelectorExpr).X, elem, key)
 	case methodGet, methodFind, methodHasKey:
-		c.keyValue(env, arg, bc.x.Fun.(*syntax.SelectorExpr).X, key)
+		c.keyValue(ke, arg, bc.x.Fun.(*syntax.SelectorExpr).X, key)
 	default:
 		return nil, false
 	}

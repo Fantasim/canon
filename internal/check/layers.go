@@ -68,7 +68,7 @@ func (c *checker) declaredElsewhere(p *pkgState, name string) bool {
 // amendment types one `path: value`: the path resolved against the let's static type (E1905),
 // set once and not overlapping another in the layer (E1908), the value checked at the path.
 func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen amendPaths) {
-	w := &amendWalk{let: let, t: c.letType(let), plain: true, bind: &bindCtx{field: c.letType(let)}}
+	w := &amendWalk{let: let, decl: let, t: c.letType(let), plain: true, bind: &bindCtx{field: c.letType(let)}}
 	for i, seg := range a.Path {
 		if i == 0 && seg.Name != nil {
 			w.text = append(w.text, seg.Name.Name)
@@ -83,7 +83,7 @@ func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen ame
 		w.canon = append(w.canon, c.canonSegment(env, container, seg))
 	}
 	c.overlap(env, a, let, amendPath{text: w.path(), canon: w.canon}, seen)
-	ve := env.with()
+	ve := env.storing(w.decl, a.Value)
 	ve.bind = w.bind
 	c.expr(ve, a.Value, w.t)
 }
@@ -93,6 +93,7 @@ func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen ame
 // (the collection a key belongs to).
 type amendWalk struct {
 	let    *object
+	decl   *object // the let, then the last field on the path: the declaration typing what it reached (API.md F12)
 	t      types.Type
 	text   []string
 	canon  []string
@@ -153,7 +154,7 @@ func (c *checker) amendField(env *env, w *amendWalk, t types.Type, n *syntax.Ide
 	sel, ft := c.selectOn(t, n.Name)
 	if sel == nil || sel.Kind == SelBuiltinMember {
 		if v, ok := t.Base().(*types.VariantType); ok {
-			return c.caseField(env, v, n, w.path())
+			return c.caseField(env, w, v, n)
 		}
 		c.report(env, diag.E1905.AtField(env.span(n), w.path()))
 		return nil, false
@@ -168,6 +169,7 @@ func (c *checker) amendField(env *env, w *amendWalk, t types.Type, n *syntax.Ide
 			return nil, false
 		}
 		if o.kind == ObjField {
+			w.decl = o
 			return o.field.Type, true
 		}
 	}
@@ -175,14 +177,15 @@ func (c *checker) amendField(env *env, w *amendWalk, t types.Type, n *syntax.Ide
 }
 
 // caseField is `.f` on a variant: the field of the case holding it, checked when applied.
-func (c *checker) caseField(env *env, v *types.VariantType, n *syntax.Ident, path string) (types.Type, bool) {
+func (c *checker) caseField(env *env, w *amendWalk, v *types.VariantType, n *syntax.Ident) (types.Type, bool) {
 	for _, ct := range v.Cases {
 		if f := fieldNamed(ct.Fields, n.Name); f != nil {
 			c.info.NameUses[n] = c.fieldObjects[f]
+			w.decl = c.fieldObjects[f]
 			return f.Type, true
 		}
 	}
-	c.report(env, diag.E1905.AtField(env.span(n), path))
+	c.report(env, diag.E1905.AtField(env.span(n), w.path()))
 	return nil, false
 }
 
@@ -218,13 +221,13 @@ func (c *checker) amendKey(env *env, w *amendWalk, t types.Type, k syntax.Expr) 
 			c.expr(env, k, types.IntType)
 			return x.Elem, true
 		}
-		c.entryKey(env, w, k, x.KeyedBy.Type)
+		c.entryKey(c.keyedBy(env, k, x.KeyedBy), w, k, x.KeyedBy.Type)
 		return x.Elem, true
 	case *types.TableType:
 		c.entryKey(env, w, k, types.StringType)
 		return x.Elem, true
 	case *types.MapType:
-		c.expr(env, k, x.Key)
+		c.expr(env.storing(w.decl, k), k, x.Key)
 		return x.Value, true
 	case *types.DepMapType: // EVALUATION.md §9.2, DECISIONS 409
 		c.expr(env, k, &types.RefType{Target: x.Coll})

@@ -1,0 +1,49 @@
+API.md §4.4 F12, ERRORS.md §1.5 (`source`), TYPES.md §5.1, §7.2, §9.3, EVALUATION.md §10.5: a literal key of a keyed list names the `keyed by` field it was checked against, wherever it stands: an index, a key argument (get, hasKey), an `entry` declaration's key. A package substitution names the let it replaces; a branch of an if stored in a let names the let.
+-- a/a.canon --
+package a
+
+local record B {
+  n: UInt8
+}
+
+local let bs: [B] keyed by n = [{ n: 200 }]
+
+local let over: B = bs[300]
+
+local let found: Bool = bs.hasKey(301) or bs.get(k: 302) != none
+
+entry bs.303 {}
+
+local let small: UInt8 = 1
+
+local let picked: UInt8 = if over.n > 0 { 1 } else { 304 }
+
+test "substitution" {
+  expect package { small: 305 } passes
+}
+-- findings.txt --
+error[E3201]  a/a.canon:9:24
+  300 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:11:35
+  301 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:11:53
+  302 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:13:10
+  303 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:17:54
+  304 does not fit UInt8
+  expected by a/a.canon:17 (picked: UInt8)
+
+error[E3201]  a/a.canon:20:27
+  305 does not fit UInt8
+  expected by a/a.canon:15 (small: UInt8)
+
+6 errors, 0 warnings in 1 package (…)

@@ -122,7 +122,7 @@ func (c *checker) letInit(o *object) {
 		return
 	}
 	c.initDone[o] = true
-	env := c.declEnv(o).storing(o)
+	env := c.declEnv(o).storing(o, d.Value)
 	env.bind = &bindCtx{field: c.letType(o)}
 	c.expr(env, d.Value, c.letType(o))
 }
@@ -136,11 +136,11 @@ func (c *checker) fnBody(env *env, o *object) {
 		return
 	}
 	pe := env.push()
-	pe.fn = &fnCtx{name: o.name, result: ft.Result}
+	pe.fn = &fnCtx{name: o.name, result: ft.Result, site: &declSite{file: o.file, typ: fn.Result}}
 	for i, po := range c.fnParams[o] {
 		p := fn.Params[i]
 		if p.Default != nil {
-			c.expr(pe.constant(diag.KindParameterDefault), p.Default, ft.Params[i])
+			c.expr(pe.constant(diag.KindParameterDefault).storing(po, p.Default), p.Default, ft.Params[i])
 		}
 		if _, dup := pe.scope.names[po.name]; !dup {
 			pe.scope.names[po.name] = po
@@ -239,7 +239,7 @@ func (c *checker) fieldDefaults(o *object, body *recordCtx) {
 		}
 		env := c.bodyEnv(c.pkgs[o.pkg], fo.file, o, body)
 		env.fields = fo.field.Index
-		de := env.storing(fo)
+		de := env.storing(fo, d.Default)
 		de.bind = inRecord(o.typ).forField(fo.field.Type)
 		before := c.reported
 		got := c.expr(de, d.Default, fo.field.Type)

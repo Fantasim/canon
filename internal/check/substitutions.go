@@ -16,7 +16,7 @@ func (c *checker) packageSubject(env *env, s *syntax.PackageSubject) {
 			c.expr(env, it.Value, types.ErrorType)
 			continue
 		}
-		c.expr(env, it.Value, c.letType(o))
+		c.expr(env.storing(o, it.Value), it.Value, c.letType(o))
 	}
 }
 

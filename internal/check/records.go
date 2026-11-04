@@ -91,7 +91,7 @@ func (c *checker) fieldItem(env *env, it *syntax.FieldItem, t types.Type, fields
 		return
 	}
 	c.deprecatedUse(env, it.Name, fo)
-	fe := env.storing(fo)
+	fe := env.storing(fo, it.Value)
 	fe.bind = env.bind.forField(f.Type)
 	c.expr(fe, it.Value, erasedView(f.Type))
 }

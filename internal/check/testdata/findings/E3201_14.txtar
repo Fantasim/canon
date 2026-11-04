@@ -1,0 +1,27 @@
+API.md §4.4 F12, ERRORS.md §1.5 (`source`), EVALUATION.md §9.2, TYPES.md §7.2: a literal map key in an amend path is stored, so it names the map field's declaration, as the same key does in a map literal; the value names it too.
+-- a/a.canon --
+package a
+
+local record Cfg {
+  hs: {UInt8: UInt8}
+}
+
+local let cfg: Cfg = { hs: { 1: 1 } }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  hs[303]: 1
+  hs[2]: 304
+}
+-- findings.txt --
+error[E3201]  a/dev.layer.canon:5:6
+  303 does not fit UInt8
+  expected by a/a.canon:4 (hs: {UInt8: UInt8})
+
+error[E3201]  a/dev.layer.canon:6:10
+  304 does not fit UInt8
+  expected by a/a.canon:4 (hs: {UInt8: UInt8})
+
+2 errors, 0 warnings in 1 package (…)

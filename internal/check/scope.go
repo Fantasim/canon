@@ -26,8 +26,9 @@ type env struct {
 	what   diag.Kind          // a constant expression: what it is, for E3015
 	base   *scope             // the innermost scope where a constant expression began
 
-	shorthand types.Type // the receiver of a shorthand lambda's chain (TYPES.md §12.4)
-	site      *object    // the field or let a value is stored in, for EVALUATION.md §4.3's related note
+	shorthand types.Type  // the receiver of a shorthand lambda's chain (TYPES.md §12.4)
+	site      *declSite   // the declaration siteAt is checked against, for API.md F12's related note
+	siteAt    syntax.Expr // the value site holds; a part of it checked against another type names none
 
 	magic     map[string]*object // a view's magic names in scope (VIEWMODEL.md §3.4)
 	scopeFile *syntax.File       // the file whose imports are in scope, when not file (I18N.md T1)
@@ -60,6 +61,7 @@ type recordCtx struct {
 type fnCtx struct {
 	name   string
 	result types.Type
+	site   *declSite // its written result type, which a returned value names (API.md F12)
 }
 
 // fileEnv is the env of a declaration of p in file f, owned by o.
@@ -276,9 +278,11 @@ func (env *env) localName(text, pkg string) string {
 	return strings.TrimPrefix(text, pkg+dot)
 }
 
-// storing is env for a value stored in the field or let o.
-func (env *env) storing(o *object) *env {
-	e := env.with()
-	e.site = o
-	return e
+// storing is env for the value v, checked against the type of o's declaration (API.md F12).
+func (env *env) storing(o *object, v syntax.Expr) *env {
+	if o == nil {
+		return env.storingAt(nil, v)
+	}
+	name, t := declaredAs(o.decl)
+	return env.storingAt(&declSite{file: o.file, name: name, typ: t}, v)
 }

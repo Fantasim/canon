@@ -13,7 +13,7 @@ import (
 
 // keyedEntryKey types `entry t.k`'s k as the key field and records it for writtenTwice (TYPES.md §9.3).
 func (c *checker) keyedEntryKey(env *env, d *syntax.EntryDecl, table *object, key *types.Field) {
-	v := c.entryKeyValue(env, d.Key, key.Type)
+	v := c.entryKeyValue(env, d.Key, key)
 	if v == nil {
 		return
 	}
@@ -65,10 +65,11 @@ func declPlace(o *object) fileSpan {
 }
 
 // entryKeyValue is an entry key as a value of the key type (an integer for a leaf integer key, DECISIONS 456), nil when it has none statically.
-func (c *checker) entryKeyValue(env *env, k syntax.EntryKey, kt types.Type) value.Value {
+func (c *checker) entryKeyValue(env *env, k syntax.EntryKey, key *types.Field) value.Value {
+	kt := key.Type
 	switch k := k.(type) {
 	case *syntax.IntLit:
-		got := c.expr(env, k, kt).Kind()
+		got := c.expr(c.keyedBy(env, k, key), k, kt).Kind()
 		leaf, ok := c.leafKey(kt)
 		if (got != types.Int && got != types.Ref) || !ok || leaf.Base().Kind() != types.Int || !k.Value.IsInt64() {
 			return nil

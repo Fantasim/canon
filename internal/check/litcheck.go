@@ -60,24 +60,30 @@ func literalOf(e syntax.Expr) syntax.Expr {
 	}
 }
 
-// related notes the field or let a value is stored in, `label: String(1..)` (EVALUATION.md §4.3).
-func (c *checker) related(env *env, b *diag.Builder) *diag.Builder {
-	if env.site == nil {
+// related notes the field, let or parameter whose type the value at failed, `label: String(1..)` (API.md F12).
+func (c *checker) related(env *env, at syntax.Expr, b *diag.Builder) *diag.Builder {
+	s := env.site
+	if s == nil || s.typ == nil || inner(at) != env.siteAt {
 		return b
 	}
-	var name *syntax.Ident
-	var t syntax.Type
-	switch d := env.site.decl.(type) {
+	span := s.file.Span(s.typ)
+	if s.name != nil {
+		span = s.file.Span(s.name).Cover(span)
+	}
+	return b.Related(span, diag.NoteSource(span))
+}
+
+// declaredAs is the name and written type of a field, let or parameter declaration.
+func declaredAs(d syntax.Node) (*syntax.Ident, syntax.Type) {
+	switch d := d.(type) {
 	case *syntax.FieldDecl:
-		name, t = d.Name, d.Type
+		return d.Name, d.Type
 	case *syntax.LetDecl:
-		name, t = d.Name, d.Type
+		return d.Name, d.Type
+	case *syntax.Param:
+		return d.Name, d.Type
 	}
-	if t == nil {
-		return b
-	}
-	at := env.site.file.Span(name).Cover(env.site.file.Span(t))
-	return b.Related(at, diag.NoteSource(at))
+	return nil, nil
 }
 
 // literalLimits is E3201 for a literal outside its sized type or the Duration range (TYPES.md §7.2).
@@ -99,18 +105,18 @@ func (c *checker) literalLimits(env *env, lit syntax.Expr, b types.Basic) {
 }
 
 // limitFinding is E3201 at at: text outside the sized type b.
-func (c *checker) limitFinding(env *env, at syntax.Node, b types.Basic, text string) {
-	c.report(env, c.related(env, diag.E3201.At(env.span(at), rawValue(text), b)))
+func (c *checker) limitFinding(env *env, at syntax.Expr, b types.Basic, text string) {
+	c.report(env, c.related(env, at, diag.E3201.At(env.span(at), rawValue(text), b)))
 }
 
 // patternFinding is E3205 at at: the quoted text breaks r's pattern.
-func (c *checker) patternFinding(env *env, at syntax.Node, r *types.Refined, text string) {
-	c.report(env, c.related(env, diag.E3205.At(env.span(at), rawValue(text), r.Pattern.String())))
+func (c *checker) patternFinding(env *env, at syntax.Expr, r *types.Refined, text string) {
+	c.report(env, c.related(env, at, diag.E3205.At(env.span(at), rawValue(text), r.Pattern.String())))
 }
 
 // rangeFinding is E3204 at at: text outside r's range.
-func (c *checker) rangeFinding(env *env, at syntax.Node, r *types.Refined, text string) {
-	c.report(env, c.related(env, diag.E3204.At(env.span(at), rawValue(text), c.boundSpans[r.Range].span())))
+func (c *checker) rangeFinding(env *env, at syntax.Expr, r *types.Refined, text string) {
+	c.report(env, c.related(env, at, diag.E3204.At(env.span(at), rawValue(text), c.boundSpans[r.Range].span())))
 }
 
 // stored is f as a value of type t is compared once stored: a Float32 rounds to binary32 unless that overflows, which storage reports as E3202 and keeps (TYPES.md §7.3, §7.4; eval/store.go).

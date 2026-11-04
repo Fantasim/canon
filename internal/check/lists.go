@@ -21,7 +21,7 @@ func (c *checker) listLit(env *env, e *syntax.ListLit, want types.Type) types.Ty
 	}
 	if l, ok := unwrap(want).(*types.ListType); ok {
 		for _, x := range e.Elems {
-			c.expr(env, x, l.Elem)
+			c.expr(env.carry(e, x), x, l.Elem)
 		}
 		return l
 	}
@@ -126,7 +126,7 @@ func allIntLiterals(es []syntax.Expr) bool {
 func (c *checker) listComp(env *env, e *syntax.ListComp, want types.Type) types.Type {
 	inner := c.clauses(env, e.Clauses)
 	if l, ok := unwrap(want).(*types.ListType); ok {
-		c.expr(inner, e.Elem, l.Elem)
+		c.expr(inner.carry(e, e.Elem), e.Elem, l.Elem)
 		return &types.ListType{Elem: l.Elem}
 	}
 	return &types.ListType{Elem: c.synth(inner, e.Elem)}

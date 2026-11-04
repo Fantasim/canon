@@ -19,11 +19,11 @@ func (c *checker) mapLit(env *env, e *syntax.BraceLit, key, value, t types.Type)
 	for _, it := range e.Items {
 		switch it := it.(type) {
 		case *syntax.MapItem:
-			c.expr(env, it.Key, key)
-			c.expr(ve, it.Value, value)
+			c.expr(env.carry(e, it.Key), it.Key, key)
+			c.expr(ve.carry(e, it.Value), it.Value, value)
 		case *syntax.FieldItem:
 			c.identKey(env, it.Name, key)
-			c.expr(ve, it.Value, value)
+			c.expr(ve.carry(e, it.Value), it.Value, value)
 		default:
 			c.report(env, diag.E3320.At(env.span(it), itemKind(it), diag.KindMap))
 			c.itemsInError(env, []syntax.BraceItem{it})
@@ -185,8 +185,8 @@ func (c *checker) mapComp(env *env, e *syntax.BraceLit, want types.Type) types.T
 	}
 	switch w := unwrap(want).(type) {
 	case *types.MapType:
-		c.expr(inner, item.Key, w.Key)
-		c.expr(inner, item.Value, w.Value)
+		c.expr(inner.carry(e, item.Key), item.Key, w.Key)
+		c.expr(inner.carry(e, item.Value), item.Value, w.Value)
 		return w
 	case nil:
 		k, v := c.synth(inner, item.Key), c.synth(inner, item.Value)

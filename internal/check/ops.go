@@ -21,7 +21,7 @@ func (c *checker) unary(env *env, e *syntax.UnaryExpr, want types.Type) types.Ty
 	}
 	var t types.Type
 	if literalOf(e.X) != nil || c.contextOperation(env, e.X) {
-		t = c.expr(env, e.X, numericWant(want))
+		t = c.expr(env.carry(e, e.X), e.X, numericWant(want))
 	} else {
 		t = c.synth(env, e.X)
 	}

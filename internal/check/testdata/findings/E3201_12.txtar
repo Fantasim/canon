@@ -1,0 +1,52 @@
+API.md §4.4 F12, ERRORS.md §1.5 (`source`), TYPES.md §6.2, §7.2: a part of a stored value checked against a part of its declared type names that declaration: a match arm, either side of `??`, the element of a list comprehension, the key and value of a map comprehension. These parts are checked against what the value is, so the note stays when the declaration's type reaches them through the value.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { a, b }
+
+local let k: K = a
+
+local let arm: UInt8 = match k {
+  a => 1
+  b => 256
+}
+
+local let opt: UInt8? = none
+
+local let fall: UInt8 = opt ?? 257
+
+local let left: UInt8 = 263 ?? 1
+
+local let comp: [UInt8] = [258 for x in [1, 2]]
+
+local let mcomp: {UInt8: UInt8} = {259: 260 for x in [1]}
+-- findings.txt --
+error[E3201]  a/a.canon:10:8
+  256 does not fit UInt8
+  expected by a/a.canon:8 (arm: UInt8)
+
+error[E3201]  a/a.canon:15:32
+  257 does not fit UInt8
+  expected by a/a.canon:15 (fall: UInt8)
+
+error[E3201]  a/a.canon:17:25
+  263 does not fit UInt8
+  expected by a/a.canon:17 (left: UInt8)
+
+warning[W3401]  a/a.canon:17:25
+  263 is never none: ?? has no effect
+
+error[E3201]  a/a.canon:19:28
+  258 does not fit UInt8
+  expected by a/a.canon:19 (comp: [UInt8])
+
+error[E3201]  a/a.canon:21:36
+  259 does not fit UInt8
+  expected by a/a.canon:21 (mcomp: {UInt8: UInt8})
+
+error[E3201]  a/a.canon:21:41
+  260 does not fit UInt8
+  expected by a/a.canon:21 (mcomp: {UInt8: UInt8})
+
+6 errors, 1 warning in 1 package (…)

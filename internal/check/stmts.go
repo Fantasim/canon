@@ -48,7 +48,7 @@ func (c *checker) local(env *env, name *syntax.Ident, typ syntax.Type, value syn
 	var t types.Type
 	if typ != nil {
 		t = c.resolveType(&typeCtx{env: env, pos: posFn}, typ)
-		c.expr(env, value, t)
+		c.expr(env.storingAt(&declSite{file: env.file, name: name, typ: typ}, value), value, t)
 	} else {
 		t = inferred(c.synth(env, value))
 	}
@@ -87,7 +87,7 @@ func (c *checker) assign(env *env, s *syntax.AssignStmt) *env {
 		target = c.synth(env, s.Target)
 		read = target
 	}
-	c.assignValue(env, s, target, read)
+	c.assignValue(env.storingAt(varSite(o), s.Value), s, target, read)
 	if s.Target == syntax.Expr(root) {
 		out := env.with()
 		out.facts = env.facts.kill(o.id)

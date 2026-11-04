@@ -15,8 +15,8 @@ func (c *checker) ifExpr(env *env, e *syntax.IfExpr, want types.Type) types.Type
 		elseX = e.Else.X
 	}
 	if want != nil {
-		c.expr(thenEnv, e.Then.X, want)
-		c.expr(elseEnv, elseX, want)
+		c.expr(thenEnv.carry(e, e.Then.X), e.Then.X, want)
+		c.expr(elseEnv.carry(e, elseX), elseX, want)
 		return want
 	}
 	ts := []types.Type{c.synth(thenEnv.join(), e.Then.X), c.synth(elseEnv.join(), elseX)}
@@ -102,7 +102,7 @@ func (c *checker) matchExpr(env *env, e *syntax.MatchExpr, want types.Type) type
 		ae := c.armEnv(env, e.Scrutinee, a.Patterns, o, hasNone)
 		bodies = append(bodies, a.Body)
 		if want != nil {
-			ts = append(ts, c.expr(ae, a.Body, want))
+			ts = append(ts, c.expr(ae.carry(e, a.Body), a.Body, want))
 		} else {
 			ts = append(ts, c.synth(ae.join(), a.Body))
 		}

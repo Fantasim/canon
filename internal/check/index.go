@@ -40,6 +40,7 @@ type idxKey struct {
 	t     types.Type
 	list  *types.ListType
 	exact bool
+	field *types.Field // a keyed list's key field, the declaration its key names (keyedBy)
 }
 
 // indexKey is the key a value of t takes as an index, a ref's entries' included; none for t not indexable.
@@ -52,7 +53,7 @@ func (c *checker) indexKey(t types.Type) idxKey {
 		if b.KeyedBy == nil {
 			return idxKey{t: types.IntType, list: b}
 		}
-		return idxKey{t: b.KeyedBy.Type}
+		return idxKey{t: b.KeyedBy.Type, field: b.KeyedBy}
 	case *types.TableType:
 		return idxKey{t: types.StringType}
 	case *types.MapType:
@@ -90,7 +91,7 @@ func (c *checker) indexBeside(env *env, x *syntax.IndexExpr, k idxKey) {
 	case k.exact:
 		c.expr(env, x.Index, k.t)
 	default:
-		c.keyValue(env, x.Index, x.X, k.t)
+		c.keyValue(c.keyedBy(env, x.Index, k.field), x.Index, x.X, k.t)
 	}
 }
 
@@ -137,7 +138,7 @@ func (c *checker) lookupIndex(env *env, x *syntax.IndexExpr, t types.Type) types
 		if b.KeyedBy == nil {
 			return c.positional(env, x, b)
 		}
-		c.keyValue(env, x.Index, x.X, b.KeyedBy.Type)
+		c.keyValue(c.keyedBy(env, x.Index, b.KeyedBy), x.Index, x.X, b.KeyedBy.Type)
 		return b.Elem
 	case *types.TableType:
 		c.keyValue(env, x.Index, x.X, types.StringType)

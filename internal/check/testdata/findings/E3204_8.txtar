@@ -1,4 +1,4 @@
-TYPES.md §5.1 (index `xs[i]`: the key type for a keyed list; a key argument of hasKey, get and find), §5.3, §7.4: a literal key is checked against the list's key type, refinement included, so an integer literal outside a refined key's bounds is E3204 at check time, never only E4002 at evaluation: `rs[20]` and `rs.find(20)` (whose binding drops the refinement; the key type keeps it) on a list keyed by an Int(0..10); `rs[6]` fits. Arithmetic is no literal (§7.4): `rs[5 * 4]` is an Int key, with no static finding.
+TYPES.md §5.1 (index `xs[i]`: the key type for a keyed list; a key argument of hasKey, get and find), §5.3, §7.4: a literal key is checked against the list's key type, refinement included, so an integer literal outside a refined key's bounds is E3204 at check time, never only E4002 at evaluation: `rs[20]` and `rs.find(20)` (whose binding drops the refinement; the key type keeps it) on a list keyed by an Int(0..10); `rs[6]` fits. Arithmetic is no literal (§7.4): `rs[5 * 4]` is an Int key, with no static finding. Each names the `keyed by` field it was checked against (API.md §4.4 F12, ERRORS.md §1.5).
 -- a/a.canon --
 package a
 
@@ -18,10 +18,10 @@ local let fits: R = rs[6]
 -- findings.txt --
 error[E3204]  a/a.canon:9:24
   20 is outside 0..10
-  expected by a/a.canon:9 (over: R)
+  expected by a/a.canon:4 (n: Int(0..10))
 
 error[E3204]  a/a.canon:11:33
   20 is outside 0..10
-  expected by a/a.canon:11 (found: Bool)
+  expected by a/a.canon:4 (n: Int(0..10))
 
 2 errors, 0 warnings in 1 package (…)
