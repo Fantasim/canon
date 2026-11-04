@@ -4713,8 +4713,9 @@ round 2", "PS1 review", "PS2 round 2"):
      takes no comma. The commas are computed once over the final order of a rewrite, so a Replace that
      renames an item's key adds or drops the comma on the item above, as an Insert, Remove or Move
      does (M6 counts that comma as the edit's). `canon edit` refuses `true`, `false`, `none` and `self`
-     as a table key it writes into `.canon` text, a layer's amend line included, with a value error
-     that names its reason and its way out (GRAMMAR §4.3). A JSON table key is any Canon word, the
+     as a key it writes where GRAMMAR §4.3 forbids them (a table literal, an `entry` declaration),
+     with a value error that names its reason and its way out. An amend line may name them, since
+     §4.3 does not reach it and a layer must be able to amend a JSON table's such entry (305). A JSON table key is any Canon word, the
      reserved ones included, as the decoder reads it (WIRE.md §5.7's "identifier" means a word).
      Reason: v0.3 run (EDIT-REFKEY's probe, then EDIT-KWENTRY): renaming a table-literal entry to
      `for` ended in an internal "does not parse in its place", and the formatter broke such a list.
