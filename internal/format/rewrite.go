@@ -110,7 +110,7 @@ func (b *builder) edits(changes []Change) ([]edit, error) {
 		case c.Kind >= changeKindCount || c.Kind != Insert && !holds(b.f, c.Node):
 			err = fmt.Errorf("%w: kind %d on no node of the tree", ErrChange, c.Kind)
 		case c.Kind == Replace:
-			out, err = b.replaceEdit(out, c)
+			out, err = b.replaceEdit(out, gs, c)
 		case c.Kind == Retire:
 			out, err = b.retireEdit(out, c)
 		default:
@@ -201,15 +201,31 @@ func hullOf(marks []mark) span {
 }
 
 // replaceEdit writes Text over Node, which an item must hold: only items are edited.
-func (b *builder) replaceEdit(out []edit, c Change) ([]edit, error) {
+func (b *builder) replaceEdit(out []edit, gs *batches, c Change) ([]edit, error) {
 	// FORMATTER.md §13, log-2026-09-29 M4 U1r
 	t := trimmed(c.Text)
 	lo, hi := b.span(c.Node)
-	if t == "" || c.Node.Kind() == syntax.KindFile || b.unitAt(lo, hi) == nil {
+	unit := b.unitAt(lo, hi)
+	if t == "" || c.Node.Kind() == syntax.KindFile || unit == nil {
 		return nil, fmt.Errorf("%w: nothing to replace, or no item holds it", ErrChange)
 	}
 	m := mark{hi: len(t), unit: true, fresh: true, want: expect{check: true, like: c.Node}}
-	return append(out, edit{lo: lo, hi: hi, text: t, marks: []mark{m}}), nil
+	return append(out, edit{lo: lo, hi: hi, text: t, marks: []mark{m}}), b.rejoin(gs, unit, lo, t)
+}
+
+// rejoin notes that t, written at lo where unit begins, gives it a first token that continues the
+// line above, and plans its broken brace list, whose commas follow the final order (DECISIONS 459).
+func (b *builder) rejoin(gs *batches, unit syntax.Node, lo int, t string) error {
+	l, ok := b.idx.listOf(unit)
+	if first, _ := b.span(unit); !ok || first != lo || b.f.Tokens[l.open].Kind != syntax.TokLBrace || !b.broken(l) {
+		return nil
+	}
+	b.joined[unit] = Continues(t, unit.Kind())
+	if !b.joined[unit] || slices.Index(l.items, unit) < 1 {
+		return nil
+	}
+	_, err := b.batchOf(gs, l.open)
+	return err
 }
 
 // retireEdit writes "retired " before the key of an entry, table entry, member or case.

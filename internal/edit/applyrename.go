@@ -33,9 +33,12 @@ func renameOp(x *opCtx) error {
 	}
 	old := keyOfItem(parent, x.res.Target)
 	_, isTable := parent.(*value.Table)
+	if isTable {
+		if err := x.tableKey(k.CanonText(), x.writesCanon()); err != nil {
+			return err
+		}
+	}
 	switch {
-	case isTable && !isWord(k.CanonText()):
-		return &ValueError{Expected: kt.String(), Got: describe(x.op.Key), Detail: detailNotWord}
 	case sameValue(old, k):
 		return nil
 	case holdsKey(parent, k):

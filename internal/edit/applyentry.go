@@ -45,10 +45,10 @@ func (x *opCtx) newTableEntry(t *value.Table) (entryParts, error) {
 		return entryParts{}, err
 	}
 	key := kv.CanonText()
-	switch {
-	case !isWord(key):
-		return entryParts{}, &ValueError{Expected: types.StringType.String(), Got: describe(x.op.Key), Detail: detailNotWord}
-	case entryIndex(t.Entries, key) >= 0:
+	if err := x.tableKey(key, x.writesCanon()); err != nil {
+		return entryParts{}, err
+	}
+	if entryIndex(t.Entries, key) >= 0 {
 		return entryParts{}, ErrKeyExists
 	}
 	v, err := x.typed(x.op.Value, tt.Elem)

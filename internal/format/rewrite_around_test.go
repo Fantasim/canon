@@ -175,7 +175,7 @@ var aroundEdges = []string{
 
 // wordTexts are names a member or a case may take: reserved words that make or drop the comma
 // of the item before or after them, and a plain word.
-var wordTexts = []string{"in", "not", "as", "where", "plain"}
+var wordTexts = []string{"in", "not", "as", "where", "for", "plain"}
 
 // At the edges of sections, every node replaced by a number, a word or its own text written on
 // one line gives the whole-file Rewrite's bytes.

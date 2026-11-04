@@ -21,8 +21,9 @@ type builder struct {
 	trailSum  []int
 	idx       *index
 	fresh     func(syntax.Tok) bool
-	comments  []span // every comment of the file, by offset, once cuts needs them
-	focus     *focus // set: the items wholly outside its bytes are left unbuilt
+	comments  []span               // every comment of the file, by offset, once cuts needs them
+	focus     *focus               // set: the items wholly outside its bytes are left unbuilt
+	joined    map[syntax.Node]bool // items a Replace begins: joins the line above
 }
 
 func newBuilder(f *syntax.File) *builder {
@@ -41,7 +42,7 @@ func newBuilder(f *syntax.File) *builder {
 		f: f, notes: attach(f, drop), glued: map[*syntax.FieldDecl]bool{}, drop: drop,
 		heldLead: make([]bool, len(f.Tokens)), heldTrail: make([]bool, len(f.Tokens)),
 		leadSum: make([]int, len(f.Tokens)+1), trailSum: make([]int, len(f.Tokens)+1),
-		idx: newIndex(), fresh: func(syntax.Tok) bool { return false },
+		idx: newIndex(), fresh: func(syntax.Tok) bool { return false }, joined: map[syntax.Node]bool{},
 	}
 	for i, a := range b.notes {
 		b.leadSum[i+1], b.trailSum[i+1] = b.leadSum[i]+len(a.lead), b.trailSum[i]+len(a.trail)

@@ -21,6 +21,26 @@ var idempotenceCases = []idempotenceCase{
 		in:   "package p\n\nenum E {\n  a @since(1),\n  in\n}\n",
 	},
 	{
+		name: "forKeyKeepsComma",
+		rule: "GRAMMAR.md §5.11, DECISIONS 459: a \"for\" entry after an entry is a clause without the comma",
+		in:   "package p\n\nlet c: table T = {\n  x { w: 1 },\n  for { w: 2 }\n}\n",
+	},
+	{
+		name: "forNamedItemKeepsComma",
+		rule: "GRAMMAR.md §5.11, DECISIONS 459: a \"for:\" named item after an item is a clause without the comma",
+		in:   "package p\n\nlet r = {\n  a: 1,\n  for: 2\n}\n",
+	},
+	{
+		name: "forAnnotatedEntryKeepsComma",
+		rule: "GRAMMAR.md §5.11, DECISIONS 459: a \"for @ann { }\" entry after an entry keeps its comma",
+		in:   "package p\n\nlet c: table T = {\n  x { w: 1 },\n  for @deprecated(\"x\") { w: 2 }\n}\n",
+	},
+	{
+		name: "forAfterSpreadKeepsComma",
+		rule: "GRAMMAR.md §5.11, DECISIONS 459: a \"for\" entry after a spread keeps its comma",
+		in:   "package p\n\nlet c: table T = {\n  ...base,\n  for { w: 2 }\n}\n",
+	},
+	{
 		name: "flatConstructDropsForcedBit",
 		rule: "FORMATTER.md §6.2, DECISIONS 169: expressions inside a type are always flat",
 		in:   "package p\n\nrecord Deck {\n  b: _ where { fire {\n  } }() @ts()\n}\n",

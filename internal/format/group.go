@@ -31,11 +31,13 @@ type batches struct {
 }
 
 // slot is one item of a list once its group applies: item at, kept, or a new text or item
-// from placed at position at; first and last are the kinds of its edge tokens (DECISIONS 211).
+// from placed at position at; joins is whether its first token would continue the line above it
+// and last the kind of its last token (DECISIONS 211).
 type slot struct {
 	at, item, from int
 	text           string
-	first, last    syntax.TokenKind
+	joins          bool
+	last           syntax.TokenKind
 }
 
 // batchOf is the group of the list open opens, syntax.NoTok for the top level.
@@ -114,7 +116,7 @@ func (b *builder) final(g *batch) []slot {
 		}
 		if p < len(g.removed) && !g.removed[p] {
 			n := g.l.items[p]
-			out = append(out, slot{at: p, item: p, from: -1, first: b.f.Tokens[n.First()].Kind, last: b.endKind(n)})
+			out = append(out, slot{at: p, item: p, from: -1, joins: b.joins(n), last: b.endKind(n)})
 		}
 	}
 	return out
@@ -133,11 +135,11 @@ func (b *builder) endKind(n syntax.Node) syntax.TokenKind {
 func (b *builder) arriving(g *batch, p int, e arrival) slot {
 	s := slot{at: p, item: -1, from: e.from, text: e.text}
 	if e.from < 0 {
-		s.first, s.last = edges(e.text)
+		s.joins, s.last = edges(e.text)
 		return s
 	}
 	n := g.l.items[e.from]
-	s.first, s.last = b.f.Tokens[n.First()].Kind, b.endKind(n)
+	s.joins, s.last = b.joins(n), b.endKind(n)
 	return s
 }
 
@@ -148,7 +150,7 @@ func needsComma(brace bool, fin []slot, k int) bool {
 	if !brace {
 		return true
 	}
-	return k+1 < len(fin) && (cannotEndItem[fin[k].last] || joinsLine[fin[k+1].first])
+	return k+1 < len(fin) && (cannotEndItem[fin[k].last] || fin[k+1].joins)
 }
 
 // want is what a new text of g must parse as: an item of its list, like its first item.

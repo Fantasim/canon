@@ -7,8 +7,8 @@ import (
 )
 
 // entry is an item of a brace list and apart its trailing comments, whether a blank line
-// precedes it in the input, whether its first token is in joinsLine, and whether its last token
-// is in cannotEndItem (DECISIONS 211).
+// precedes it in the input, whether it joins the line above, and whether its last token is in
+// cannotEndItem (DECISIONS 211, 459).
 type entry struct {
 	n                         syntax.Node
 	d, trail                  *doc
@@ -21,7 +21,7 @@ func (e entry) node() syntax.Node { return e.n }
 func entries[N syntax.Node](b *builder, ns []N) []entry {
 	out := make([]entry, len(ns))
 	for i, n := range ns {
-		joins := joinsLine[b.f.Tokens[n.First()].Kind]
+		joins := b.joins(n)
 		endJoin := cannotEndItem[b.endKind(n)]
 		out[i] = entry{n: n, gap: b.gap(n.First()), joins: joins, endJoin: endJoin, kept: b.keeps(n.Last())}
 		if !b.skips(n) {
@@ -29,6 +29,19 @@ func entries[N syntax.Node](b *builder, ns []N) []entry {
 		}
 	}
 	return out
+}
+
+// forJoins reports a first token continuing the line above an item of kind item (DECISIONS 459).
+func forJoins(first syntax.TokenKind, item syntax.NodeKind) bool {
+	return joinsLine[first] || first == syntax.KwFor && forKeyItem[item]
+}
+
+// joins reports item n a first token that continues the line above it, as a Replace leaves it.
+func (b *builder) joins(n syntax.Node) bool {
+	if j, ok := b.joined[n]; ok {
+		return j
+	}
+	return forJoins(b.f.Tokens[n.First()].Kind, n.Kind())
 }
 
 // braceList is BL(items) of FORMATTER.md §7.2: single-line by §6.1, an empty one always so.

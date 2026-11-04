@@ -38,12 +38,12 @@ func (b *builder) indentOf(t syntax.Tok) int {
 	return len(line) - len(strings.TrimLeft(line, space))
 }
 
-// edges are the kinds of the first and last tokens of t, read by the lexer.
-func edges(t string) (first, last syntax.TokenKind) {
+// kindsOf are the kinds of the tokens of t, read by the lexer; nil when it holds none.
+func kindsOf(t string) []syntax.TokenKind {
 	var fs source.FileSet
 	src, err := fs.Add(fragmentPath, fragmentPath, []byte(t))
 	if err != nil {
-		return syntax.TokInvalid, syntax.TokInvalid
+		return nil
 	}
 	var kinds []syntax.TokenKind
 	for _, tk := range syntax.Parse(src, syntax.FileSource, diag.NewBag(&fs, "")).Tokens {
@@ -51,10 +51,27 @@ func edges(t string) (first, last syntax.TokenKind) {
 			kinds = append(kinds, tk.Kind)
 		}
 	}
+	return kinds
+}
+
+// Continues reports text t, opening an item of kind item, starting with a token that continues
+// the line above it (DECISIONS 459).
+func Continues(t string, item syntax.NodeKind) bool {
+	kinds := kindsOf(t)
+	return len(kinds) > 0 && forJoins(kinds[0], item)
+}
+
+// edges are whether the first token of t continues the line above it and the kind of its last.
+func edges(t string) (joins bool, last syntax.TokenKind) {
+	kinds := kindsOf(t)
 	if len(kinds) == 0 {
-		return syntax.TokInvalid, syntax.TokInvalid
+		return false, syntax.TokInvalid
 	}
-	return kinds[0], namedKind(kinds)
+	var item syntax.NodeKind
+	if len(kinds) > 1 {
+		item = forItemAfter[kinds[1]]
+	}
+	return forJoins(kinds[0], item), namedKind(kinds)
 }
 
 // namedKind is the kind ending kinds; a word after "." is a name (DECISIONS 302).

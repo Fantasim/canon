@@ -123,6 +123,10 @@ func (e *NotEditableError) Unwrap() error { return ErrNotEditable }
 // ErrNameClash is a RenameName that would change what another name refers to (API.md E35).
 var ErrNameClash = errors.New("rename changes what another name refers to")
 
+// detailUnreachable is a table key no source can hold: why, and what to write instead.
+const detailUnreachable = "%s cannot name a table key, it would be unreachable in value position; " +
+	"name the entry otherwise, and keep the word in a String field"
+
 // Texts of a RenameName's refusals (API.md E28-E31, E35).
 const (
 	detailNotRenamable = "not a declaration a rename changes"

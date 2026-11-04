@@ -95,6 +95,8 @@ func (t *canonTree) changePoints(c format.Change) (syntax.Node, []int) {
 	switch {
 	case c.Kind == format.Insert && c.List != syntax.NoTok:
 		return t.around(c.List), []int{c.At}
+	case c.Kind == format.Replace:
+		return t.keyPoint(c)
 	case c.Kind == format.Remove, c.Kind == format.Move:
 		list := t.parent[c.Node]
 		if list == nil {
@@ -105,6 +107,28 @@ func (t *canonTree) changePoints(c format.Change) (syntax.Node, []int) {
 			return list, []int{from}
 		}
 		return list, []int{from, c.At}
+	}
+	return nil, nil
+}
+
+// keyPoint is the list and the position of the item a Replace by c.Text begins, when its first word
+// or the one it replaces continues the line above: the comma above may come or go (DECISIONS 459).
+func (t *canonTree) keyPoint(c format.Change) (syntax.Node, []int) {
+	item := c.Node
+	for up := t.parent[item]; up != nil && up.First() == c.Node.First(); up = t.parent[item] {
+		item = up
+	}
+	list := t.parent[item]
+	if list == nil || list == syntax.Node(t.f) {
+		return nil, nil
+	}
+	tok := t.f.Tokens[item.First()]
+	old := string(t.f.Src.Content[tok.Start:tok.End])
+	if !format.Continues(c.Text, item.Kind()) && !format.Continues(old, item.Kind()) {
+		return nil, nil
+	}
+	if at := slices.Index(t.items(list), item); at >= 0 {
+		return list, []int{at}
 	}
 	return nil, nil
 }

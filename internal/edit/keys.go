@@ -1,10 +1,12 @@
 package edit
 
 import (
+	"fmt"
 	"slices"
 	"strconv"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -236,6 +238,22 @@ func textKey(s string) KeyLit {
 // quotedKey is s as a JSON string escaped as WIRE.md does.
 func quotedKey(s string) KeyLit {
 	return KeyLit{Kind: KeyString, Text: s, Raw: string(diag.AppendJSONString(nil, s))}
+}
+
+// writesCanon reports a key written into a .canon file: the entry's own source, or an edit layer's.
+func (x *opCtx) writesCanon() bool {
+	return x.a.env.EditLayer != "" || x.j.last().mode != ModeJSON
+}
+
+// tableKey refuses key as an entry name: no word, or in .canon none, true, false, self (§4.3).
+func (x *opCtx) tableKey(key string, canon bool) error {
+	if !isWord(key) {
+		return &ValueError{Expected: types.StringType.String(), Got: describe(x.op.Key), Detail: detailNotWord}
+	}
+	if _, ok := syntax.ValueText(key); ok || !canon {
+		return nil
+	}
+	return &ValueError{Expected: types.StringType.String(), Got: describe(x.op.Key), Detail: fmt.Sprintf(detailUnreachable, key)}
 }
 
 // isWord reports s is exactly one word of API.md §6.1.

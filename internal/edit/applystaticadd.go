@@ -19,10 +19,10 @@ func addSource(t *srcTable, _ Path) error {
 		return err
 	}
 	key := kv.CanonText()
-	switch {
-	case !isWord(key):
-		return &ValueError{Expected: types.StringType.String(), Got: describe(x.op.Key), Detail: detailNotWord}
-	case slices.ContainsFunc(t.entries, func(it item) bool { return statedKey(it.node) == key }):
+	if err := x.tableKey(key, true); err != nil {
+		return err
+	}
+	if slices.ContainsFunc(t.entries, func(it item) bool { return statedKey(it.node) == key }) {
 		return ErrKeyExists
 	}
 	v, _, err := typedText(x, x.op.Value, t.tt.Elem, nil)

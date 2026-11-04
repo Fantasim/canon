@@ -63,6 +63,14 @@ var joinsLine = [syntax.TokenKindCount]bool{
 	syntax.KwIs: true, syntax.KwElse: true, syntax.KwWhere: true,
 }
 
+// forItemAfter is the item a "for" names by its next token; none for a statement (DECISIONS 459).
+var forItemAfter = [syntax.TokenKindCount]syntax.NodeKind{
+	syntax.TokLBrace: syntax.KindEntryItem, syntax.TokAt: syntax.KindEntryItem, syntax.TokColon: syntax.KindFieldItem,
+}
+
+// forKeyItem is the kind of the items a "for" can name: an entry and a named item (DECISIONS 459).
+var forKeyItem = [syntax.NodeKindCount]bool{syntax.KindEntryItem: true, syntax.KindFieldItem: true}
+
 // Document kinds (FORMATTER.md §7.1), the index of the printer's tables.
 const (
 	kText kind = iota
