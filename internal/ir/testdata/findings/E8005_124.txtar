@@ -1,0 +1,32 @@
+CODEGEN.md §3.5, ERRORS.md E8005 `derived`, DECISIONS 442, 458: two packages emitted into one C++ namespace that both hold a value items meet in the container class Items and the schema constant kItemsSchema, each built on the Canon name of its value, which @cpp(name:) does not change, so the way out is a Canon rename.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// Its key.
+  k: Int
+}
+
+/// The rows.
+let items: [Row] keyed by k = [{ k: 1 }]
+
+emit cpp { out: "@features/a", namespace: "sov::gen", mode: baked }
+-- b/b.canon --
+package b
+
+/// A row.
+record Line {
+  /// Its key.
+  k: Int
+}
+
+/// The lines.
+let items: [Line] keyed by k = [{ k: 1 }]
+
+emit cpp { out: "@features/b", namespace: "sov::gen", mode: baked }
+-- findings.txt --
+error[E8005]  b/b.canon:12:6
+  cpp: Items is generated for both a.items and b.items, and @cpp(name:) renames neither; rename one of them in Canon
+
+1 error, 0 warnings in 2 packages (…)

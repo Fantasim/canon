@@ -1,0 +1,58 @@
+DECISIONS 429, 458, CODEGEN.md §3.5, §5.6 (log-2026-11-01), a behaviour pin (TestInEveryMode guards the rule): a cpp emit whose mode check refused (E8009) reports a collision only when its pair holds in every mode gen/cpp writes. The fields by_ev and byEv collide at their getters GetByEv in every mode, and their branch table kRewardByEvBranches, a derived name that would make the pair `derived`, exists in data and types mode alone, so the pair is reported at the getters (`both`); once the mode is fixed, the build reports the derived meeting.
+-- a/a.canon --
+package a
+
+/// A shape.
+enum Shape { count, place, none_ }
+
+/// An event row.
+record E2 {
+  /// Its key.
+  k: Int
+  /// Its shape.
+  shape: Shape
+}
+
+/// Events.
+let ee2: [E2] keyed by k = [{ k: 1, shape: count }, { k: 2, shape: place }]
+
+/// A parameter, by shape.
+type Param(s: Shape) = match s {
+  count => Int(0..)
+  place => String
+  none_ => Never
+}
+
+/// A reward.
+record Reward {
+  /// Its event.
+  ev: ref ee2
+  /// A parameter, decided through the event.
+  by_ev: Param(ev.shape)? @json(none: 0)
+  /// The same parameter again.
+  byEv: Param(ev.shape)? @json(none: 0)
+}
+
+/// A file.
+record RF {
+  /// Rewards.
+  rewards: [Reward]
+}
+
+/// The rewards.
+let rewards: RF = { rewards: [] }
+
+emit cpp { out: "@features/a", namespace: "a", mode: zzmode }
+emit json { out: "out/" }
+-- a.ee2.json --
+[{ "k": 1, "shape": "count" }, { "k": 2, "shape": "place" }]
+-- a.rewards.json --
+{ "rewards": [] }
+-- findings.txt --
+error[E8005]  a/a.canon:31:3
+  cpp: GetByEv is generated for both a.Reward.by_ev and a.Reward.byEv; rename one of them with @cpp(name:)
+
+error[E8009]  a/a.canon:43:54
+  invalid mode zzmode for emit cpp: expected one of baked, embedded, data, types
+
+2 errors, 0 warnings in 1 package (…)

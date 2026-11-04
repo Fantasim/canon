@@ -30,7 +30,7 @@ type GoNamePlan struct {
 	lookupEnums []*Enum                   // those enums, in the order the lookups meet them
 }
 
-// GoNameProblem is a name gen/go or gen/cpp cannot declare (CODEGEN.md §3.5, decision 182); both plans report it. Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import.
+// GoNameProblem is a name gen/go or gen/cpp cannot declare (CODEGEN.md §3.5, decision 182); both plans report it. Item is the IR node Origin names (a Type, *EnumMember, *Case, *Field, *ExportFn, *Param, *Const or *Value), nil for the package or an import. A collision's Derived is E8005 `derived` (DECISIONS 442, 458), and its Alt a later Derived collision of the same pair.
 type GoNameProblem struct {
 	Kind          GoProblemKind
 	Scope, Name   string
@@ -38,6 +38,8 @@ type GoNameProblem struct {
 	Item          any
 	FirstItem     any  // a collision's first item, nil when unknown
 	Reserved      bool // GoNotIdentifier only: name failed for a reserved reason (E8011 `reserved`), cpp only
+	Derived       bool
+	Alt           *GoNameProblem
 }
 
 // originPair is two origins whose names collide, the first declared first.

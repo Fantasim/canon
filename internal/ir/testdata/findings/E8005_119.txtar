@@ -1,0 +1,27 @@
+CODEGEN.md §3.3, §3.5, §5.9, ERRORS.md E8005 `derived`, DECISIONS 442: in data mode two containers whose names give one Go class (foo_bar and fooBar are both FooBar) give one schema constant, FooBarSchema, built on each container's Canon name, which @go(name:) does not change (a value's container name is UpperCamel of its Canon name, whatever its override), so the way out is a Canon rename.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// Its key.
+  k: Int
+}
+
+/// The first rows.
+let foo_bar: [Row] keyed by k = [{ k: 1 }]
+
+/// The second rows.
+let fooBar: [Row] keyed by k = [{ k: 2 }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.foo_bar.json --
+[{ "k": 1 }]
+-- a.fooBar.json --
+[{ "k": 2 }]
+-- findings.txt --
+error[E8005]  a/a.canon:13:5
+  go: FooBarSchema is generated for both a.foo_bar and a.fooBar, and @go(name:) renames neither; rename one of them in Canon
+
+1 error, 0 warnings in 1 package (…)

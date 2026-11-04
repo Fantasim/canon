@@ -44,7 +44,7 @@ func (pl *CppNamePlan) ReaderName(class any) string {
 func (pl *CppNamePlan) declareForeign() {
 	for _, row := range pl.rows {
 		holder := rowHolder(row)
-		pl.noteForeign(pl.ns, pl.RowName(row.Record), foreignNote{origin: row.Record.QName()}, func() {
+		pl.noteDeclared(pl.ns, pl.RowName(row.Record), foreignNote{origin: row.Record.QName()}, func() {
 			pl.shareNSFrom(row.Origin, holder, derivation{row.Record, func() string { return pl.RowName(row.Record) }})
 		})
 		pl.declareRowClass(row, holder)

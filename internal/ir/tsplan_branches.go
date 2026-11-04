@@ -35,6 +35,6 @@ func TSBranchTables(p *Package, e *Emit) []NamedBranches {
 // declareBranchTables declares each ts branch table in the module scope (CODEGEN.md §3.5, §5.6).
 func (pl *tsNamePlan) declareBranchTables(mod *nameScope) {
 	for _, b := range TSBranchTables(pl.p, pl.e) {
-		pl.declare(mod, b.Name, b.Origin, b.Field)
+		pl.noteDeclared(mod, b.Name, foreignNote{derived: true, owner: b.Owner}, func() { pl.declare(mod, b.Name, b.Origin, b.Field) })
 	}
 }

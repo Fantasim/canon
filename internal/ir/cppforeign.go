@@ -119,32 +119,12 @@ type declaredName struct {
 	note         foreignNote
 }
 
-// foreignNote is how E8005 names a declared name a foreign #define equals, when not as declared (CODEGEN.md §7.9): built on a Canon name that @cpp(name:) does not change (foreignDerived), fixed by the generator (foreignFixed), or at another origin, the record of <Rec>Id, <Rec>IdFromWire and <Element>Row.
-type foreignNote struct {
-	derived bool   // built on a Canon name @cpp(name:) does not change (foreignDerived)
-	fixed   bool   // no declaration's name or override changes it (foreignFixed)
-	origin  string // the origin the finding names, "" for the declared one
-}
-
 // hint is the origin d's foreign-define finding names.
 func (d declaredName) hint() string {
 	if d.note.origin != "" {
 		return d.note.origin
 	}
 	return d.origin
-}
-
-// noteForeign runs declare, which declares name in sc, and keeps n for name when that declaration added it: a name another item holds keeps that item's.
-func (pl *CppNamePlan) noteForeign(sc *nameScope, name string, n foreignNote, declare func()) {
-	_, taken := sc.names[name]
-	declare()
-	if _, added := sc.names[name]; !added || taken {
-		return
-	}
-	if sc.notes == nil {
-		sc.notes = map[string]foreignNote{}
-	}
-	sc.notes[name] = n
 }
 
 // declaredNames are the names pl declares in every scope, each scope's in name order, then the names it shares in its namespaces and the segments of the namespace (CODEGEN.md §3.5), each (name, origin, way) once: a shared entry is skipped when a scope declared the same (name, origin), and is fixed only when it is a segment of the namespace. A scope's origin that already starts with a package's name (an inherited getter of another package's record) is kept as written.
@@ -200,20 +180,20 @@ func (s *stage) scopeOrigin(pl *CppNamePlan, origin string) string {
 
 // declareFixed is declare in sc for a name the generator writes whatever the declarations say (E8005 foreignFixed).
 func (pl *CppNamePlan) declareFixed(sc *nameScope, name, origin string, item any) {
-	pl.noteForeign(sc, name, foreignNote{fixed: true}, func() { pl.declare(sc, name, origin, item) })
+	pl.noteDeclared(sc, name, foreignNote{fixed: true}, func() { pl.declare(sc, name, origin, item) })
 }
 
 // declareOwn is declare in sc for a name built on the Canon name of item, which @cpp(name:) does not change (E8005 foreignDerived).
 func (pl *CppNamePlan) declareOwn(sc *nameScope, name, origin string, item any) {
-	pl.noteForeign(sc, name, foreignNote{derived: true}, func() { pl.declare(sc, name, origin, item) })
+	pl.noteDeclared(sc, name, foreignNote{derived: true}, func() { pl.declare(sc, name, origin, item) })
 }
 
-// innerOwn is innerFrom for a name built on the Canon name of m's fn (E8005 foreignDerived).
+// innerOwn is innerFrom for a name built on the Canon name of m's fn and on its class's, whose @cpp(name:) renames it (E8005 foreignDerived; `derived` beside another name of the same class only).
 func (pl *CppNamePlan) innerOwn(sc *nameScope, m cppMethod, meets cppMeet, build func() string) {
-	pl.noteForeign(sc, build(), foreignNote{derived: true}, func() { pl.innerFrom(sc, m, meets, build) })
+	pl.noteDeclared(sc, build(), foreignNote{derived: true, owner: m.class}, func() { pl.innerFrom(sc, m, meets, build) })
 }
 
 // innerFixed is localInner for a name the generator writes whatever the declarations say (E8005 foreignFixed).
 func (pl *CppNamePlan) innerFixed(sc *nameScope, name, origin string, meets cppMeet) {
-	pl.noteForeign(sc, name, foreignNote{fixed: true}, func() { pl.localInner(sc, name, origin, nil, meets) })
+	pl.noteDeclared(sc, name, foreignNote{fixed: true}, func() { pl.localInner(sc, name, origin, nil, meets) })
 }

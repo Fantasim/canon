@@ -8,6 +8,7 @@ import (
 // declareAll declares the namespace's names in gen/cpp's order (CODEGEN.md §2.7, §3.5): enums, classes with their kind enums, constants, values, package fns, snapshot and store; then each enum's and class's members, detail and conformance. LoadInputs and its helpers come first, so a clash is reported at the user's item.
 func (pl *CppNamePlan) declareAll() {
 	pl.ns = pl.scope(pl.e.Namespace)
+	pl.outer = pl.ns
 	pl.declareInputNames()
 	pl.declareNamespaceTypes()
 	for _, c := range pl.p.Consts {
@@ -31,8 +32,8 @@ func (pl *CppNamePlan) declareAll() {
 		pl.declareBaked()
 	}
 	if pl.reloads() {
-		pl.noteForeign(pl.ns, pl.SnapshotName(), foreignNote{fixed: true}, func() { pl.shareNS(pl.SnapshotName(), pl.p.Name, nil) })
-		pl.noteForeign(pl.ns, pl.StoreName(), foreignNote{fixed: true}, func() { pl.shareNS(pl.StoreName(), pl.p.Name, nil) })
+		pl.noteDeclared(pl.ns, pl.SnapshotName(), foreignNote{fixed: true}, func() { pl.shareNS(pl.SnapshotName(), pl.p.Name, nil) })
+		pl.noteDeclared(pl.ns, pl.StoreName(), foreignNote{fixed: true}, func() { pl.shareNS(pl.StoreName(), pl.p.Name, nil) })
 	}
 	pl.declareMembers()
 	pl.declareTextDecoders()
@@ -76,7 +77,7 @@ func (pl *CppNamePlan) shareNS(name, origin string, item any) {
 
 // shareDerived is shareNS for a name derived from value v's own name, which @cpp(name:) does not change (E8005 foreignDerived, CODEGEN.md §3.5, §7.9).
 func (pl *CppNamePlan) shareDerived(name string, v *Value) {
-	pl.noteForeign(pl.ns, name, foreignNote{derived: true}, func() { pl.shareNS(name, pl.valueOrigin(v), v) })
+	pl.noteDeclared(pl.ns, name, foreignNote{derived: true}, func() { pl.shareNS(name, pl.valueOrigin(v), v) })
 }
 
 // declareDerived is declare in sc for a name derived from value v's own name (shareDerived).
@@ -109,7 +110,11 @@ func (n *namer) qualified(origin string) string {
 
 // shareAs is share for a name that meets another package's same name of kind meets legally.
 func (pl *CppNamePlan) shareAs(scope, name, origin string, item any, meets cppMeet) {
-	pl.shared = append(pl.shared, cppShared{scope: scope, name: name, origin: pl.qualified(origin), item: item, meets: meets})
+	var note foreignNote
+	if c := pl.cur; c != nil && c.name == name {
+		note = c.note
+	}
+	pl.shared = append(pl.shared, cppShared{scope: scope, name: name, origin: pl.qualified(origin), item: item, meets: meets, note: note})
 }
 
 // shareSegments shares each segment of the emit's namespace in its parent: a class or any other name of another package there collides with the namespace (CODEGEN.md §3.5; g++: "redeclared as different kind of entity"); a segment that is a platform macro warns (W8006).

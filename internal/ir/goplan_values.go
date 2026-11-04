@@ -22,7 +22,7 @@ func (pl *GoNamePlan) declareContainers(top *nameScope) {
 			continue
 		}
 		name := pl.ContainerName(v)
-		pl.declare(top, name, pl.valueOrigin(v), v)
+		pl.declareOwn(top, name, pl.valueOrigin(v), v)
 		sc := pl.scope(name)
 		for _, m := range goContainerMembers {
 			pl.declare(sc, m, pl.valueOrigin(v), v)

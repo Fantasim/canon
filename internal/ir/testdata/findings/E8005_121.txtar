@@ -1,0 +1,16 @@
+CODEGEN.md §3.5, §5.6, ERRORS.md E8005 `derived`, DECISIONS 442, 458: the arms a_b and aB of one dependent type give one branch member, PBranchAB, and one As<Arm>; an arm takes no options and an override on the type P renames both alike, so only a Canon rename separates them.
+-- a/a.canon --
+package a
+
+/// A kind.
+enum K { a_b @go(name: "KOne"), aB @go(name: "KTwo"), c }
+
+/// A payload.
+type P(k: K) = match k { a_b => Int, aB => String, c => Never }
+
+emit go { out: "@features/a", package: "a" }
+-- findings.txt --
+error[E8005]  a/a.canon:7:6
+  go: PBranchAB is generated for both a.P.a_b and a.P.aB, and @go(name:) renames neither; rename one of them in Canon
+
+1 error, 0 warnings in 1 package (…)

@@ -61,18 +61,65 @@ type problemKey struct {
 	scope, name, first, origin string
 }
 
-// inEveryMode are the collisions of plans[0] that every plan has: what a refused mode cannot change (decision 213).
+// modeHolds is what one plan has: its collisions by name, its pairs' Alts included, and the pairs of origins that collide, whatever the name.
+type modeHolds struct {
+	keys  map[problemKey]bool
+	pairs map[originPair]bool
+}
+
+// inEveryMode are the collisions of plans[0] that every plan has: what a refused mode cannot change (decision 213). The thing the plans have in common is the colliding pair of origins, whatever name each plan finds it under (DECISIONS 429), reported once at plans[0]'s collision; a pair's Alt stays only when it holds in every plan too, and stands in for a base collision that does not (DECISIONS 458).
 func inEveryMode(plans [][]GoNameProblem) []GoNameProblem {
-	keyOf := func(pr GoNameProblem) problemKey { return problemKey{pr.Scope, pr.Name, pr.First, pr.Origin} }
-	out := slices.DeleteFunc(slices.Clone(plans[0]), func(pr GoNameProblem) bool { return pr.Kind != GoCollision })
+	var held []modeHolds
 	for _, other := range plans[1:] {
-		has := map[problemKey]bool{}
-		for _, pr := range other {
-			has[keyOf(pr)] = pr.Kind == GoCollision
+		held = append(held, holdsOf(other))
+	}
+	var out []GoNameProblem
+	for _, pr := range plans[0] {
+		if kept, ok := commonCollision(pr, held); ok {
+			out = append(out, kept)
 		}
-		out = slices.DeleteFunc(out, func(pr GoNameProblem) bool { return !has[keyOf(pr)] })
 	}
 	return out
+}
+
+// collisionKey is what tells one collision from another across the plans of several modes.
+func collisionKey(pr GoNameProblem) problemKey {
+	return problemKey{pr.Scope, pr.Name, pr.First, pr.Origin}
+}
+
+// holdsOf is what plan has of collisions, its pairs' Alts included.
+func holdsOf(plan []GoNameProblem) modeHolds {
+	has := modeHolds{map[problemKey]bool{}, map[originPair]bool{}}
+	for _, pr := range plan {
+		if pr.Kind != GoCollision {
+			continue
+		}
+		has.keys[collisionKey(pr)] = true
+		has.pairs[originPair{pr.First, pr.Origin}] = true
+		if pr.Alt != nil {
+			has.keys[collisionKey(*pr.Alt)] = true
+		}
+	}
+	return has
+}
+
+// commonCollision is pr's pair as every other plan (held) has it. pr stays with its Alt only when the others have that too; the Alt stands alone when only it holds in every plan; pr stays alone when no name does.
+func commonCollision(pr GoNameProblem, held []modeHolds) (GoNameProblem, bool) {
+	inAll := func(c GoNameProblem) bool {
+		return !slices.ContainsFunc(held, func(has modeHolds) bool { return !has.keys[collisionKey(c)] })
+	}
+	pairInAll := !slices.ContainsFunc(held, func(has modeHolds) bool { return !has.pairs[originPair{pr.First, pr.Origin}] })
+	switch {
+	case pr.Kind != GoCollision || !pairInAll:
+		return pr, false
+	case inAll(pr) && pr.Alt != nil && !inAll(*pr.Alt):
+		pr.Alt = nil
+	case !inAll(pr) && pr.Alt != nil && inAll(*pr.Alt):
+		return *pr.Alt, true
+	case !inAll(pr):
+		pr.Alt = nil
+	}
+	return pr, true
 }
 
 // checkGoNames reports the go emit's names (CODEGEN.md §3.5): E8011 for a @go(name:) that is not an exported identifier (decision 182), in every mode; in a mode gen/go writes (baked, data, types), from the name plan it writes from (decisions 194, 203), E8011 for a derived name that is no Go identifier (decision 202) and E8005 for two names of one scope, at the item named second, or at the emit for an import or the package's own names. Embedded mode has no generator, hence no plan yet.
@@ -186,7 +233,7 @@ func reportNames(u *unit, r nameReport, problems []GoNameProblem, refused map[an
 	}
 }
 
-// collisionFinding is E8005 with the way out its pair has (DECISIONS 305): `reached` for two packages a go emit reaches giving it one reader or rt name, a distinct package option on one of their emits; `idType` for two table holders whose records' id types are the colliding name, one held in a keyed list (log-2026-10-06 "Own table Badge beside table base.Badge", "U5 review FAIL" 4); `both` otherwise.
+// collisionFinding is E8005 with the way out its pair has (DECISIONS 305): `reached` for two packages a go emit reaches giving it one reader or rt name, a distinct package option on one of their emits; `idType` for two table holders whose records' id types are the colliding name, one held in a keyed list (log-2026-10-06 "Own table Badge beside table base.Badge", "U5 review FAIL" 4); `derived` for two names, or a pair with one such name among several it collides in, that no single @<target>(name:) renames without the other, the way out a Canon rename (DECISIONS 442, 458); `both` otherwise.
 func (r nameReport) collisionFinding(pr GoNameProblem) *diag.Builder {
 	span := r.span(pr.Item)
 	switch {
@@ -196,6 +243,10 @@ func (r nameReport) collisionFinding(pr GoNameProblem) *diag.Builder {
 		return diag.E8005.AtFinder(span, r.target, pr.Name, pr.First, pr.Origin)
 	case pr.Item != pr.FirstItem && r.isIDType(pr.Name, pr.Item) && r.isIDType(pr.Name, pr.FirstItem):
 		return diag.E8005.AtIdType(span, r.target, pr.Name, pr.First, pr.Origin)
+	case pr.Derived:
+		return diag.E8005.AtDerived(span, r.target, pr.Name, pr.First, pr.Origin)
+	case pr.Alt != nil: // the pair also collides in a derived name, which only a Canon rename fixes whole
+		return diag.E8005.AtDerived(r.span(pr.Alt.Item), r.target, pr.Alt.Name, pr.Alt.First, pr.Alt.Origin)
 	}
 	return diag.E8005.AtBoth(span, r.target, pr.Name, pr.First, pr.Origin)
 }

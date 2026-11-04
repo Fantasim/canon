@@ -1,0 +1,26 @@
+CODEGEN.md §5.9, §7.9, ERRORS.md E8005 `derived`, DECISIONS 442: a keyed list's Find tables kAFindByXFindKeys and kAFindByXFindRows (container aFindByX) are the FindBy tables of the @stable field xFind of container a, and @cpp(name:) renames neither container nor field, so the way out is a Canon rename.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// Its key.
+  k: Int
+  /// Its stable field.
+  xFind: UInt16 @stable
+}
+
+/// The rows.
+let a: stable table Row = {
+  open { k: 1, xFind: 1 }
+}
+
+/// The same rows, keyed.
+let aFindByX: [Row] keyed by k = [{ k: 1, xFind: 1 }]
+
+emit cpp { out: "@features/a/cpp", namespace: "a", mode: baked }
+-- findings.txt --
+error[E8005]  a/a.canon:17:5
+  cpp: kAFindByXFindKeys is generated for both a.Row.xFind and a.aFindByX, and @cpp(name:) renames neither; rename one of them in Canon
+
+1 error, 0 warnings in 1 package (…)

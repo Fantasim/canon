@@ -8,6 +8,7 @@ type NamedBranches struct {
 	Field  *Field
 	Fields []*Field
 	Origin string // the field's qualified Canon name, what an E8005 on the table names (DECISIONS 429)
+	Owner  any    // the class the field belongs to, whose @<target>(name:) renames the table (E8005 derived, DECISIONS 458)
 }
 
 // namedBranches are the tables of the fields of classes whose dependent value is decided through a ref, each field once, in class then field order; name names one from its class and field.
@@ -17,7 +18,7 @@ func namedBranches(classes []any, name func(class any, f *Field) string, origin 
 		fields, _ := classBody(class)
 		for _, f := range fields {
 			if refDecided(fields, f) && !slices.ContainsFunc(out, func(b NamedBranches) bool { return b.Field == f }) {
-				out = append(out, NamedBranches{Name: name(class, f), Field: f, Fields: fields, Origin: origin(class) + qnameSep + f.Name})
+				out = append(out, NamedBranches{Name: name(class, f), Field: f, Fields: fields, Origin: origin(class) + qnameSep + f.Name, Owner: class})
 			}
 		}
 	}
@@ -110,6 +111,6 @@ func (pl *GoNamePlan) foreignClassName(class any) string {
 // declareBranchTables declares each go branch table in the package scope (CODEGEN.md §3.5, §5.6).
 func (pl *GoNamePlan) declareBranchTables(top *nameScope) {
 	for _, b := range pl.BranchTables() {
-		pl.declare(top, b.Name, b.Origin, b.Field)
+		pl.noteDeclared(top, b.Name, foreignNote{derived: true, owner: b.Owner}, func() { pl.declare(top, b.Name, b.Origin, b.Field) })
 	}
 }

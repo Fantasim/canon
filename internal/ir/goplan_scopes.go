@@ -14,7 +14,7 @@ type nameScope struct {
 	items         map[string]any         // the item each name was declared for, nil for a fixed name
 	hooks         map[string]bool        // the names declared for make hooks (declareHook)
 	ids           bool                   // a baked table's id enum: each name is a table id (E8005 foreignId)
-	notes         map[string]foreignNote // cpp: how a foreign define's E8005 names a name otherwise (noteForeign)
+	notes         map[string]foreignNote // how E8005 names a name otherwise: a foreign define's (cpp), two derived names (noteDeclared)
 }
 
 // namer is a name plan's scopes and problems; ident tells an identifier of the target, and
@@ -26,7 +26,9 @@ type namer struct {
 	macros   map[string]bool     // cpp only: the names common platform headers define as macros (CODEGEN.md §3.5); nil for Go
 	warnings []GoNameProblem     // W8006: a declared name found in macros, never a problem (generation proceeds)
 	warned   map[originPair]bool // the (name, origin) pairs already warned
-	reported map[originPair]bool // the pairs of origins already reported colliding: one E8005 per cause (decision 203)
+	reported map[originPair]int  // the pairs of origins already reported colliding, with their problem's index: one E8005 per cause (decision 203)
+	outer    *nameScope          // the scope whose names the others hide, when the plan has one (cpp: the namespace)
+	cur      *noteCtx            // the name being declared by noteDeclared, with its note
 	derived  map[any]bool        // the items whose name, built on a refused type's, is that type's E8011 (decision 213)
 	ident    func(string) (ok, reserved bool)
 	self     string // the package: what an item meeting its own name is reported against
@@ -48,7 +50,7 @@ func (n *namer) typeOverride(o NameOptions) NameOptions {
 }
 
 func newNamer(pkg string, ident func(string) (ok, reserved bool)) namer {
-	return namer{reported: map[originPair]bool{}, warned: map[originPair]bool{}, derived: map[any]bool{}, ident: ident, self: pkg}
+	return namer{reported: map[originPair]int{}, warned: map[originPair]bool{}, derived: map[any]bool{}, ident: ident, self: pkg}
 }
 
 // fnOrigin is a package-level export fn's origin, qualified as a method's is (a.echo, like a.Item.mix).
@@ -87,14 +89,10 @@ func (n *namer) declare(sc *nameScope, name, origin string, item any) {
 // code, so no message names one thing twice, yet stays apart from first meeting a name the package itself declares.
 func (n *namer) collide(sc *nameScope, name, first, origin string, item any) {
 	pair := originPair{first, origin}
-	if n.reported[pair] {
-		return
-	}
-	n.reported[pair] = true
 	if origin == first {
 		origin = n.self
 	}
-	n.problems = append(n.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item, FirstItem: sc.items[name]})
+	n.record(pair, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: item, FirstItem: sc.items[name]}, n.heldNote(sc, name, first))
 }
 
 // declareFrom is declare for a name d builds on the name of a type (a member constant, a case type, a table id, a method's generated helper), unless it is that type's E8011 (builtOnRefused).
@@ -133,6 +131,11 @@ func unlessOverridden(own NameOptions, from Type) any {
 		return nil
 	}
 	return from
+}
+
+// declareOwn is declare in sc for a name built on the Canon name of item, which @go(name:) does not change (E8005 `derived`, DECISIONS 442).
+func (pl *GoNamePlan) declareOwn(sc *nameScope, name, origin string, item any) {
+	pl.noteDeclared(sc, name, foreignNote{derived: true}, func() { pl.declare(sc, name, origin, item) })
 }
 
 // valueOrigin is how a value is named in its E8005, qualified as a const is (decision 203).

@@ -112,7 +112,7 @@ func (pl *CppNamePlan) declareBaked() {
 func (pl *CppNamePlan) declareIDEnum(v *Value, rec *Record) {
 	origin, byRecord := pl.valueOrigin(v), foreignNote{origin: rec.QName()}
 	for _, build := range []func() string{func() string { return pl.IDName(rec) }, func() string { return pl.IDName(rec) + cppFromWire }} {
-		pl.noteForeign(pl.ns, build(), byRecord, func() { pl.shareNSFrom(origin, v, derivation{rec, build}) })
+		pl.noteDeclared(pl.ns, build(), byRecord, func() { pl.shareNSFrom(origin, v, derivation{rec, build}) })
 	}
 	sc := pl.scope(pl.IDName(rec))
 	sc.ids = true

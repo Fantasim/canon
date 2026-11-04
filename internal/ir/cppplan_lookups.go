@@ -75,7 +75,7 @@ func (pl *CppNamePlan) declareFindTables(detail *nameScope) {
 // declareFindPair declares a lookup's two tables, built on Canon names @cpp(name:) does not change (E8005 foreignDerived).
 func (pl *CppNamePlan) declareFindPair(detail *nameScope, t CppFindTables, origin string, item any) {
 	for _, n := range []string{t.Keys, t.Rows} {
-		pl.noteForeign(detail, n, foreignNote{derived: true}, func() { pl.localInner(detail, n, origin, item, meetsLocal) })
+		pl.noteDeclared(detail, n, foreignNote{derived: true}, func() { pl.localInner(detail, n, origin, item, meetsLocal) })
 	}
 }
 
@@ -163,7 +163,7 @@ func (pl *CppNamePlan) declareEnumTables(detail *nameScope) {
 		if rec := tableRecord(v); rec != nil {
 			h, byRecord := pl.EnumHelpers(pl.IDName(rec)), foreignNote{origin: rec.QName()}
 			for _, n := range []string{h.Wires, h.ByWire, h.Retired} {
-				pl.noteForeign(detail, n, byRecord, func() { pl.localInner(detail, n, pl.valueOrigin(v), v, meetsLocal) })
+				pl.noteDeclared(detail, n, byRecord, func() { pl.localInner(detail, n, pl.valueOrigin(v), v, meetsLocal) })
 			}
 		}
 	}
@@ -272,7 +272,7 @@ func (pl *CppNamePlan) declareInputNames() {
 		return
 	}
 	in := pl.Inputs()
-	pl.noteForeign(pl.ns, in.Func, foreignNote{fixed: true}, func() { pl.shareNS(in.Func, pl.p.Name, nil) })
+	pl.noteDeclared(pl.ns, in.Func, foreignNote{fixed: true}, func() { pl.shareNS(in.Func, pl.p.Name, nil) })
 	for _, h := range in.Helpers {
 		pl.declareFixed(pl.ns, h, pl.p.Name, nil)
 		pl.shareAs(pl.e.Namespace, h, pl.p.Name, nil, meetsLocal)

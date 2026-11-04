@@ -1,4 +1,4 @@
-CODEGEN.md §3.3, §3.5, DECISIONS 305, log-2026-10-06 "U5 review FAIL" 4: two table values foo_bar and fooBar of two records give one accessor name, FooBar; the colliding name is no id type, so the message is E8005 `both`, without the keyed-list way out that only an id-type collision (`idType`) has.
+CODEGEN.md §3.3, §3.5, §5.9, ERRORS.md E8005 `derived`, DECISIONS 305, 442, 458, log-2026-10-06 "U5 review FAIL" 4: two table values foo_bar and fooBar of two records give one container class, FooBar, built on each value's Canon name, which @go(name:) does not change (it renames the accessor and the store, not the class); the colliding name is no id type, so the message is E8005 `derived` (the way out a Canon rename), without the keyed-list way out that only an id-type collision (`idType`) has.
 -- a/a.canon --
 package a
 
@@ -27,6 +27,6 @@ let fooBar: table Gadget = {
 emit go { out: "@features/a", package: "a" }
 -- findings.txt --
 error[E8005]  a/a.canon:21:5
-  go: FooBar is generated for both a.foo_bar and a.fooBar; rename one of them with @go(name:)
+  go: FooBar is generated for both a.foo_bar and a.fooBar, and @go(name:) renames neither; rename one of them in Canon
 
 1 error, 0 warnings in 1 package (…)

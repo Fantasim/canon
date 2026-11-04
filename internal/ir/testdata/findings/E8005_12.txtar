@@ -1,4 +1,4 @@
-CODEGEN.md §5.9, §3.5 (the C++ name plan, decision 37): @stable fields fooBar and foo_bar, their getters overridden apart, still both give the container's FindByFooBar and its sorted indexes.
+CODEGEN.md §5.9, §3.5, ERRORS.md E8005 `derived`, DECISIONS 442, 458 (the C++ name plan, decision 37): @stable fields fooBar and foo_bar, their getters overridden apart, still both give the container's FindByFooBar and its sorted indexes, built on the fields' Canon names, which @cpp(name:) does not change, so the finding is `derived` and its way out a Canon rename.
 -- a/a.canon --
 package a
 
@@ -21,6 +21,6 @@ emit json { out: "out/" }
 { "x": { "fooBar": 1, "foo_bar": 2 } }
 -- findings.txt --
 error[E8005]  a/a.canon:8:3
-  cpp: FindByFooBar is generated for both a.Thing.fooBar and a.Thing.foo_bar; rename one of them with @cpp(name:)
+  cpp: FindByFooBar is generated for both a.Thing.fooBar and a.Thing.foo_bar, and @cpp(name:) renames neither; rename one of them in Canon
 
 1 error, 0 warnings in 1 package (…)

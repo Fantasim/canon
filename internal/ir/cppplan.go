@@ -28,7 +28,8 @@ type CppNamePlan struct {
 type cppShared struct {
 	scope, name, origin string
 	item                any
-	meets               cppMeet // the same kind of another package's meets it legally
+	meets               cppMeet     // the same kind of another package's meets it legally
+	note                foreignNote // how E8005 names it when two packages meet in it: derived, and under which owner (noteDeclared)
 }
 
 // cppMeet is how a shared name meets another package's same name (CODEGEN.md §3.5).

@@ -33,6 +33,6 @@ func (pl *CppNamePlan) anyClassName(class any) string {
 // declareBranchTables declares each cpp branch table in detail (CODEGEN.md §3.5, §5.6).
 func (pl *CppNamePlan) declareBranchTables(detail *nameScope) {
 	for _, b := range pl.BranchTables() {
-		pl.noteForeign(detail, b.Name, foreignNote{derived: true}, func() { pl.declareInner(detail, b.Name, b.Origin, b.Field) })
+		pl.noteDeclared(detail, b.Name, foreignNote{derived: true, owner: b.Owner}, func() { pl.declareInner(detail, b.Name, b.Origin, b.Field) })
 	}
 }

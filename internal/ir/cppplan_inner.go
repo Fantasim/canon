@@ -30,7 +30,7 @@ func (pl *CppNamePlan) declareDetail() {
 		pl.innerOwn(sc, m, meetsNever, func() string { return pl.PureName(pl.className(m.class), m.fn) })
 	}
 	for _, d := range emitDefineRefs(pl.p, pl.e) {
-		pl.noteForeign(sc, pl.DefinesName(d), foreignNote{derived: true}, func() { pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d) })
+		pl.noteDeclared(sc, pl.DefinesName(d), foreignNote{derived: true}, func() { pl.declareInner(sc, pl.DefinesName(d), d.Pkg+qnameSep+d.Value, d) })
 	}
 	pl.declareInputSlots(sc)
 	if members != nil {
@@ -41,7 +41,7 @@ func (pl *CppNamePlan) declareDetail() {
 // declareDecoders declares detail's Decode overloads when a class is decoded, and each dependent type's Decode<Alias> (CODEGEN.md §5.6, §7.2).
 func (pl *CppNamePlan) declareDecoders(sc *nameScope) {
 	if len(pl.classes()) > 0 {
-		pl.noteForeign(sc, CppDecode, foreignNote{fixed: true}, func() { pl.declareInner(sc, CppDecode, pl.p.Name, nil) })
+		pl.noteDeclared(sc, CppDecode, foreignNote{fixed: true}, func() { pl.declareInner(sc, CppDecode, pl.p.Name, nil) })
 		pl.shareAs(pl.e.Namespace+cppScope+cppDetail, CppDecode, pl.p.Name, nil, meetsOverload)
 		pl.reserveDecodeParts()
 	}
@@ -63,9 +63,8 @@ func (pl *CppNamePlan) reserveDecodeParts() {
 
 // declareInner declares a name of detail or conformance, which inside that namespace hides the namespace's own name, which detail's decoders and conformance's vectors name: a namespace name equal to it collides (log-2026-09-24 "ir plans review", "Owed (C++ plan)").
 func (pl *CppNamePlan) declareInner(sc *nameScope, name, origin string, item any) {
-	if first, ok := pl.ns.names[name]; ok && !pl.reported[originPair{first, origin}] {
-		pl.reported[originPair{first, origin}] = true
-		pl.problems = append(pl.problems, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: pl.nsItems[name]})
+	if first, ok := pl.ns.names[name]; ok {
+		pl.record(originPair{first, origin}, GoNameProblem{Kind: GoCollision, Scope: sc.what, Name: name, First: first, Origin: origin, Item: pl.nsItems[name]}, pl.heldNote(pl.ns, name, first))
 	}
 	pl.declare(sc, name, origin, item)
 }

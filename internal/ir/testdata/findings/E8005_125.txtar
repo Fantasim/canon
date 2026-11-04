@@ -1,0 +1,28 @@
+CODEGEN.md §3.3, §3.5, ERRORS.md E8005 `both`, DECISIONS 442, 458: the pure functions of two records give one detail name, A_b_c (A with b_c, A_b with c), but each is built on its own class name, and @cpp(name:) on either record renames that name alone, so the way out is the override: `both`, not `derived` (names whose owners differ stay `both`).
+-- a/a.canon --
+package a
+
+/// A.
+record A {
+  /// n.
+  n: Int
+
+  /// m.
+  export fn b_c(self, x: Int) -> Int { return n + x }
+}
+
+/// A_b.
+record A_b {
+  /// n.
+  n: Int
+
+  /// m.
+  export fn c(self, x: Int) -> Int { return n + x }
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: data }
+-- findings.txt --
+error[E8005]  a/a.canon:18:13
+  cpp: A_b_c is generated for both a.A.b_c and a.A_b.c; rename one of them with @cpp(name:)
+
+1 error, 0 warnings in 1 package (…)

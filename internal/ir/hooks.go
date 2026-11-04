@@ -69,7 +69,12 @@ func (s hookSite) name(n hookNamer) string {
 // declareHooks declares, in sc, every hook of p as hn names it, each built on its type's name (CODEGEN.md §3.5, §5.14).
 func (n *namer) declareHooks(sc *nameScope, p *Package, hn hookNamer) {
 	for _, s := range hookSites(p) {
-		n.declareHook(sc, s.origin, s.item, derivation{s.from, func() string { return s.name(hn) }})
+		declare := func() { n.declareHook(sc, s.origin, s.item, derivation{s.from, func() string { return s.name(hn) }}) }
+		if s.dep == nil {
+			declare()
+			continue
+		}
+		n.noteDeclared(sc, s.name(hn), foreignNote{derived: true, owner: s.dep}, declare) // a dependent type's branch hook is named after the type and the branch, which takes no options
 	}
 }
 

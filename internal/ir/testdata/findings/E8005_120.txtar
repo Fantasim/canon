@@ -1,0 +1,27 @@
+CODEGEN.md §3.3, §3.5, §5.9, ERRORS.md E8005 `derived`, DECISIONS 442: in data mode the container class of the value xSchema and the schema constant of the value x are both XSchema, each built on a Canon name that @go(name:) does not change, so the way out is a Canon rename.
+-- a/a.canon --
+package a
+
+/// A row.
+record Row {
+  /// Its key.
+  k: Int
+}
+
+/// The first rows.
+let x: [Row] keyed by k = [{ k: 1 }]
+
+/// The second rows.
+let xSchema: [Row] keyed by k = [{ k: 2 }]
+
+emit go { out: "@features/a", package: "a", mode: data }
+emit json { out: "out/" }
+-- a.x.json --
+[{ "k": 1 }]
+-- a.xSchema.json --
+[{ "k": 2 }]
+-- findings.txt --
+error[E8005]  a/a.canon:13:5
+  go: XSchema is generated for both a.x and a.xSchema, and @go(name:) renames neither; rename one of them in Canon
+
+1 error, 0 warnings in 1 package (…)

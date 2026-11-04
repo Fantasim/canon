@@ -47,7 +47,7 @@ func (pl *GoNamePlan) DataLocal(name string) string {
 // declareSchemas declares each emitted value's schema constant (CODEGEN.md §3.3, T2).
 func (pl *GoNamePlan) declareSchemas(top *nameScope) {
 	for _, v := range pl.emitted {
-		pl.declare(top, pl.SchemaName(v), pl.valueOrigin(v), v)
+		pl.declareOwn(top, pl.SchemaName(v), pl.valueOrigin(v), v)
 	}
 }
 
@@ -59,7 +59,7 @@ func (pl *GoNamePlan) declareDataContainers(top *nameScope) {
 			continue
 		}
 		name := pl.ContainerName(v)
-		pl.declare(top, name, pl.valueOrigin(v), v)
+		pl.declareOwn(top, name, pl.valueOrigin(v), v)
 		sc := pl.scope(name)
 		for _, m := range goContainerMembers {
 			pl.declare(sc, m, pl.valueOrigin(v), v)

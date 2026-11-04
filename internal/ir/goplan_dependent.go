@@ -40,15 +40,18 @@ func (pl *GoNamePlan) declareDependent(top *nameScope, d *Dependent) {
 	pl.declare(top, n.Type, origin, d)
 	pl.declareFrom(top, origin, d, derivation{d, func() string { return pl.Dependent(d).Branch }})
 	for i := range n.Branches {
-		pl.declareFrom(top, origin+qnameSep+d.Branches[i].Name, d, derivation{d, func() string { return pl.Dependent(d).Branches[i].Member }})
+		member := func() string { return pl.Dependent(d).Branches[i].Member }
+		pl.noteDeclared(top, member(), foreignNote{derived: true, owner: d}, func() {
+			pl.declareFrom(top, origin+qnameSep+d.Branches[i].Name, d, derivation{d, member})
+		})
 	}
 	pl.declareBranchEnum(top, n.Branch, d)
 	sc := pl.scope(n.Type)
 	pl.declare(sc, n.Method, origin, d)
 	for i, b := range n.Branches {
-		pl.declare(sc, b.As, origin+qnameSep+d.Branches[i].Name, d)
+		pl.declareOwn(sc, b.As, origin+qnameSep+d.Branches[i].Name, d)
 		if b.AsValue != "" {
-			pl.declare(sc, b.AsValue, origin+qnameSep+d.Branches[i].Name, d)
+			pl.declareOwn(sc, b.AsValue, origin+qnameSep+d.Branches[i].Name, d)
 		}
 	}
 	pl.declare(sc, n.BranchStore, origin, d)

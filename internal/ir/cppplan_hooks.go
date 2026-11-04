@@ -130,7 +130,7 @@ func (pl *CppNamePlan) declareMake(detail *nameScope) {
 		declare := func() {
 			pl.declareHook(sc, row.Origin, rowHolder(row), derivation{row.Record, func() string { return pl.RowHook(row.Record) }})
 		}
-		pl.noteForeign(sc, pl.RowHook(row.Record), foreignNote{origin: row.Record.QName()}, declare)
+		pl.noteDeclared(sc, pl.RowHook(row.Record), foreignNote{origin: row.Record.QName()}, declare)
 	}
 }
 
@@ -142,7 +142,7 @@ func (pl *CppNamePlan) declareMakeHooks(sc *nameScope) {
 			declare()
 			continue
 		}
-		pl.noteForeign(sc, s.name(pl), foreignNote{derived: true}, declare)
+		pl.noteDeclared(sc, s.name(pl), foreignNote{derived: true, owner: s.dep}, declare)
 	}
 }
 

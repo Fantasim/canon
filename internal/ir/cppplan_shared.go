@@ -21,7 +21,7 @@ type cppHolder struct {
 // sharedCppNames is E8005 for a name the cpp headers of two packages the build loads declare in one namespace, selected or imported (CODEGEN.md §3.5: a C++ namespace holds all packages emitted into it that the build loads; log-2026-09-24 "ir plans review"), once per pair of items, at the later package's emit when it is selected, else at the earlier's; overloads of each other (ToName, ToWire, Decode), names local to each package's sources, and a namespace opened twice meet legally.
 func (s *stage) sharedCppNames() {
 	first := map[cppSharedKey]cppHolder{}
-	reported := map[originPair]bool{}
+	found := sharedFound{at: map[originPair]int{}}
 	var inner []cppHolder
 	for _, u := range s.order {
 		for _, n := range s.cppNamesOf(u) {
@@ -34,18 +34,50 @@ func (s *stage) sharedCppNames() {
 				first[k] = cppHolder{n, u}
 				continue
 			}
-			pair := originPair{f.origin, n.origin}
-			if f.u != u && (f.meets == meetsNever || f.meets != n.meets) && !reported[pair] {
-				reported[pair] = true
-				reportShared(f, cppHolder{n, u})
+			if f.u != u && (f.meets == meetsNever || f.meets != n.meets) {
+				found.add(f, cppHolder{n, u})
 			}
 		}
 	}
-	s.hiddenCppNames(first, inner, reported)
+	s.hiddenCppNames(first, inner, &found)
+	found.report()
+}
+
+// sharedFound are the names two packages share in one namespace, one per pair of items, in the order met: a pair that also meets in a name no single @cpp(name:) renames without the other is reported at that one, as `derived` (DECISIONS 203, 442, 458).
+type sharedFound struct {
+	list []sharedFinding
+	at   map[originPair]int
+}
+
+// sharedFinding is two holders of one name, derived when both names are built on Canon names that @cpp(name:) does not change, under one owner.
+type sharedFinding struct {
+	first, later cppHolder
+	derived      bool
+}
+
+// add keeps the meeting of first and later, unless their pair has one already that is as good.
+func (f *sharedFound) add(first, later cppHolder) {
+	pair := originPair{first.origin, later.origin}
+	found := sharedFinding{first, later, first.note.derived && later.note.derived && first.note.owner == later.note.owner}
+	at, seen := f.at[pair]
+	switch {
+	case !seen:
+		f.at[pair] = len(f.list)
+		f.list = append(f.list, found)
+	case found.derived && !f.list[at].derived:
+		f.list[at] = found
+	}
+}
+
+// report reports each meeting at the later package when selected, else at the earlier.
+func (f *sharedFound) report() {
+	for _, m := range f.list {
+		reportShared(m)
+	}
 }
 
 // hiddenCppNames is E8005 for a detail or conformance name of one package equal to a namespace name of another package sharing the namespace: inside detail it hides that name (log-2026-09-24 "Owed (C++ plan)": b's detail::BAccess vs a's record BAccess), reported once per pair as sharedCppNames does.
-func (s *stage) hiddenCppNames(first map[cppSharedKey]cppHolder, inner []cppHolder, reported map[originPair]bool) {
+func (s *stage) hiddenCppNames(first map[cppSharedKey]cppHolder, inner []cppHolder, found *sharedFound) {
 	index := map[*unit]int{}
 	for i, u := range s.order {
 		index[u] = i
@@ -58,10 +90,7 @@ func (s *stage) hiddenCppNames(first map[cppSharedKey]cppHolder, inner []cppHold
 		if index[h.u] < index[f.u] {
 			f, h = h, f
 		}
-		if pair := (originPair{f.origin, h.origin}); !reported[pair] {
-			reported[pair] = true
-			reportShared(f, h)
-		}
+		found.add(f, h)
 	}
 }
 
@@ -76,14 +105,20 @@ func innerScope(scope string) string {
 }
 
 // reportShared reports two packages' one name at the later one when it is selected, else at the earlier one, when selected.
-func reportShared(first, later cppHolder) {
-	at := later.u
+func reportShared(m sharedFinding) {
+	at := m.later.u
 	if !at.selected {
-		at = first.u
+		at = m.first.u
 	}
-	if es := emitFor(at, TargetCpp); at.selected && es != nil {
-		at.report(diag.E8005.AtBoth(es.span(), check.TargetCpp, later.name, first.origin, later.origin))
+	es := emitFor(at, TargetCpp)
+	if !at.selected || es == nil {
+		return
 	}
+	if m.derived {
+		at.report(diag.E8005.AtDerived(es.span(), check.TargetCpp, m.later.name, m.first.origin, m.later.origin))
+		return
+	}
+	at.report(diag.E8005.AtBoth(es.span(), check.TargetCpp, m.later.name, m.first.origin, m.later.origin))
 }
 
 // cppNamesOf are the shared names of u's baked, data- or types-mode cpp emit: its plan's when u is selected (checkCppNames), else those of the plan of its declarations, values unevaluated.
