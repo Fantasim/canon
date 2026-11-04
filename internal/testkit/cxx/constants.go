@@ -8,6 +8,10 @@ const (
 	// Timeout bounds one compile or one run in a caller's own loop.
 	Timeout = 5 * time.Minute
 
+	// cpusPerSlot CPUs share a slot, up to maxSlots: one nlohmann/json compile takes hundreds of MB.
+	cpusPerSlot = 4
+	maxSlots    = 4
+
 	noCompilerMsg = "no C++ compiler (g++, clang++) on PATH"
 	noNlohmannMsg = "nlohmann/json.hpp not found"
 	noLibcxxMsg   = "clang++ found but no libc++ install was found for -stdlib=libc++"

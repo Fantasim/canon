@@ -16,6 +16,11 @@ func Example_nlohmannInclude() {
 	// Output: CANON_NLOHMANN_INCLUDE
 }
 
+func Example_slots() {
+	fmt.Println(config.SlotsEnv)
+	// Output: CANON_CXX_SLOTS
+}
+
 func Example_requireMSVC() {
 	fmt.Println(config.RequireMSVCEnv)
 	// Output: CANON_REQUIRE_MSVC

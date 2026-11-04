@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
 const (
@@ -27,7 +29,7 @@ func mxGoListed(t *testing.T, gen string) []string {
 	t.Helper()
 	cmd := exec.Command(goRunBinary, mxGoList, goRunAll)
 	cmd.Dir = gen
-	out, err := cmd.Output()
+	out, err := cxx.Output(cmd)
 	if err != nil {
 		t.Fatalf("go list: %v", err)
 	}
@@ -45,7 +47,7 @@ func mxGoErrors(t *testing.T, gen string) map[string]string {
 	t.Helper()
 	cmd := exec.Command(goRunBinary, goRunVet, goRunAll)
 	cmd.Dir = gen
-	out, err := cmd.CombinedOutput()
+	out, err := cxx.Combined(cmd)
 	if err == nil {
 		return nil
 	}

@@ -40,12 +40,11 @@ const bulkWant = "names=11500 TID_GAME_TEXT_00000 TID_GAME_TEXT_05750 TID_GAME_T
 	"groups=5000 first=group0000:0 last=3:m4999_2\n" +
 	"grid=100:100 102 9999\n"
 
-// compileRSS compiles with cc once a slot is free and returns the compiler's peak resident
+// compileRSS compiles with cc once cxx has a slot free and returns the compiler's peak resident
 // memory in KB: wait4's usage of the child, its own subprocesses (cc1plus) included.
 func compileRSS(t *testing.T, cc string, args []string, dir string) int64 {
 	t.Helper()
-	compileSlots <- struct{}{}
-	defer func() { <-compileSlots }()
+	defer cxx.Hold()()
 	ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, cc, args...)

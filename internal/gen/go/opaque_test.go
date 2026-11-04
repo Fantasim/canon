@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 	"github.com/fantasim/canonlang/internal/types"
 )
 
@@ -46,7 +47,7 @@ func buildBad(t *testing.T, body string) (string, error) {
 	cmd := exec.Command("go", "build", "./...")
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local", "GOFLAGS=-mod=mod", "GOPROXY=off", "GOWORK=off")
-	out, err := cmd.CombinedOutput()
+	out, err := cxx.Combined(cmd)
 	return string(out), err
 }
 

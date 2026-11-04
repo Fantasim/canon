@@ -13,6 +13,7 @@ import (
 
 	gogen "github.com/fantasim/canonlang/internal/gen/go"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
 var update = flag.Bool("update", false, "rewrite the goldens under testdata/ instead of comparing")
@@ -193,7 +194,7 @@ func run(t *testing.T, dir string, cmd *exec.Cmd) []byte {
 	t.Helper()
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local", "GOFLAGS=-mod=mod", "GOPROXY=off", "GOWORK=off")
-	out, err := cmd.CombinedOutput()
+	out, err := cxx.Combined(cmd)
 	if err != nil {
 		t.Fatalf("%s: %v\n%s", strings.Join(cmd.Args, " "), err, out)
 	}

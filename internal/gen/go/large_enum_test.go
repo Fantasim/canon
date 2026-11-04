@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 	"text/template"
+
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
 // The synthetic enums of TestLargeEnumsCompile (DECISIONS 393): wires and codes that follow neither declaration order nor each other, so every table is searched, never indexed by luck.
@@ -145,6 +147,7 @@ func goCmd(t *testing.T, dir string, args ...string) ([]byte, *os.ProcessState) 
 	cmd := exec.Command("go", args...)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local", "GOFLAGS=-mod=mod", "GOPROXY=off", "GOWORK=off", "CGO_ENABLED=0")
+	defer cxx.Hold()()
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("go %s: %v\n%s", strings.Join(args, " "), err, out)

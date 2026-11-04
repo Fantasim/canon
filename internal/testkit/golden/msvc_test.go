@@ -1,7 +1,6 @@
 package golden
 
 import (
-	"context"
 	"io/fs"
 	"os/exec"
 	"path/filepath"
@@ -69,9 +68,7 @@ func (j msvcJob) compile(t *testing.T, src string, mode []string, modeIdx int) {
 	t.Helper()
 	obj := filepath.Join(j.dir, strconv.Itoa(modeIdx)+"-"+strings.TrimSuffix(filepath.Base(src), cppExt)+".obj")
 	args := cxx.MSVCCompileArgs(mode, filepath.Dir(src), j.include, obj, src)
-	ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-	defer cancel()
-	if out, err := exec.CommandContext(ctx, j.clPath, args...).CombinedOutput(); err != nil {
+	if out, err := cxx.Compile(exec.Command(j.clPath, args...)); err != nil {
 		t.Errorf("%s %v: %v\n%s", src, mode, err, out)
 	}
 }

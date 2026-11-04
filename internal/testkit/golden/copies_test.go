@@ -1,7 +1,6 @@
 package golden
 
 import (
-	"context"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -35,9 +34,7 @@ func TestCopiesCppCompiles(t *testing.T) {
 func compileOne(t *testing.T, cc string, flags []string, src string) {
 	t.Helper()
 	args := append(flags, src)
-	ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-	defer cancel()
-	if out, err := exec.CommandContext(ctx, cc, args...).CombinedOutput(); err != nil {
+	if out, err := cxx.Compile(exec.Command(cc, args...)); err != nil {
 		t.Errorf("%s %s: %v\n%s", filepath.Base(cc), src, err, out)
 	}
 }

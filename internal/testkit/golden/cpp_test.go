@@ -33,9 +33,7 @@ func buildAndRun(t *testing.T, dir string, sources []string, args ...string) []s
 			for _, s := range sources {
 				cmdArgs = append(cmdArgs, filepath.Join(dir, s))
 			}
-			buildCtx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-			out, err := exec.CommandContext(buildCtx, cc, cmdArgs...).CombinedOutput()
-			cancel()
+			out, err := cxx.Compile(exec.Command(cc, cmdArgs...))
 			if err != nil {
 				t.Fatalf("%s: %v\n%s", filepath.Base(cc), err, out)
 			}

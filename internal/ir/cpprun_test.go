@@ -69,7 +69,7 @@ func cppRunWrite(t *testing.T, dir string, files []cppRunFile) []string {
 	return names
 }
 
-// cppRunOutputs links the probe with every .gen.cpp under dir's gen, once per compiler found and per mode of cxx.Modes (exceptions on, then off), runs it in the cases directory on args and returns each run's output; the compile and the run share one cxx.Timeout.
+// cppRunOutputs links the probe with every .gen.cpp under dir's gen, once per compiler found and per mode of cxx.Modes (exceptions on, then off), runs it in the cases directory on args and returns each run's output; the compile and the run each get their own cxx.Timeout.
 func cppRunOutputs(t *testing.T, dir string, args []string) []string {
 	t.Helper()
 	sources := append([]string{cppRunProbe}, filesUnder(t, filepath.Join(dir, e2eGenRoot), e2eCppSuffix)...)
@@ -85,8 +85,12 @@ func cppRunSourcesOutputs(t *testing.T, dir string, sources, extra, args []strin
 		for i, mode := range cxx.Modes {
 			bin := filepath.Join(dir, cppRunBin+cppRunSep+filepath.Base(cc)+strings.Repeat(cppRunSep, i+1))
 			cmd := slices.Concat(cxx.Flags, mode, extra, []string{cppRunFlagI, include, cppRunFlagI, e2eGenRoot, cppRunFlagO, bin}, sources)
+			compileCmd := exec.Command(cc, cmd...)
+			compileCmd.Dir = dir
+			if out, err := cxx.Compile(compileCmd); err != nil {
+				t.Fatalf("%s: %v\n%s", strings.Join(append([]string{cc}, cmd...), " "), err, out)
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-			runIn(t, dir, exec.CommandContext(ctx, cc, cmd...))
 			run := exec.CommandContext(ctx, bin, args...)
 			run.Dir = filepath.Join(dir, cppRunCases)
 			out, err := run.CombinedOutput()

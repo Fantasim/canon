@@ -11,3 +11,7 @@ const NlohmannIncludeEnv = "CANON_NLOHMANN_INCLUDE"
 // RequireMSVCEnv, when set, fails testkit/golden's MSVC golden-compile gate instead of
 // skipping it: only meaningful on Windows, where cl.exe can exist.
 const RequireMSVCEnv = "CANON_REQUIRE_MSVC"
+
+// SlotsEnv, when set to a positive integer, is how many compiler and go tool processes one test
+// binary runs at once, in place of cxx's CPU-derived default.
+const SlotsEnv = "CANON_CXX_SLOTS"

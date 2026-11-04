@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
 const (
@@ -66,6 +67,7 @@ func writeTypedFile(path string, content []byte) error {
 // runTypedTests runs the module's tests, compiling the generated Go on the way, under
 // goTestTimeout.
 func runTypedTests(dir string) verdict {
+	defer cxx.Hold()()
 	ctx, cancel := context.WithTimeout(context.Background(), goTestTimeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "go", "test", "-count=1", "./...")

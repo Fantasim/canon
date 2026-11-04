@@ -11,6 +11,7 @@ import (
 
 	canon "github.com/fantasim/canonlang/api"
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 	"github.com/fantasim/canonlang/internal/testkit/tsc"
 )
 
@@ -140,12 +141,12 @@ func buildProject(t *testing.T, p *canon.Project, dir string, targets ...canon.T
 	return filepath.Join(dir, genDir)
 }
 
-// run runs name with args in dir and returns its stdout; a failure fails the test with the output.
+// run runs name with args in dir once cxx has a slot free and returns its stdout; a failure fails the test with the output.
 func run(t *testing.T, dir, name string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
+	out, err := cxx.Combined(cmd)
 	if err != nil {
 		t.Fatalf("%s %s: %v\n%s", name, strings.Join(args, " "), err, out)
 	}

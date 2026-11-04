@@ -100,11 +100,11 @@ func compileCpp(t *testing.T, root string) {
 	}
 }
 
-// runIn runs cmd in dir, failing the test with its output on error.
+// runIn runs cmd in dir once cxx has a slot free, failing the test with its output on error.
 func runIn(t *testing.T, dir string, cmd *exec.Cmd) {
 	t.Helper()
 	cmd.Dir = dir
-	if out, err := cmd.CombinedOutput(); err != nil {
+	if out, err := cxx.Combined(cmd); err != nil {
 		t.Fatalf("%s: %v\n%s", strings.Join(cmd.Args, " "), err, out)
 	}
 }

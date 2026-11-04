@@ -12,6 +12,7 @@ import (
 
 	gogen "github.com/fantasim/canonlang/internal/gen/go"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
 const parityModule = "example.com/parity"
@@ -112,7 +113,7 @@ func runGo(t *testing.T, units []parityUnit, driver string, args []string) strin
 	bin := filepath.Join(dir, exe("driver"))
 	build := exec.Command("go", "build", "-o", bin, ".")
 	build.Dir = dir
-	if out, err := build.CombinedOutput(); err != nil {
+	if out, err := cxx.Combined(build); err != nil {
 		t.Fatalf("go build: %v\n%s", err, out)
 	}
 	var stdout, stderr bytes.Buffer

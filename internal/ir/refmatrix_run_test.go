@@ -172,9 +172,7 @@ func mxCompile(t *testing.T, cc, include, gen string, sources []string) map[stri
 			defer wg.Done()
 			defer func() { <-slots }()
 			args := slices.Concat(cxx.Flags, []string{"-I", include, "-I", gen, "-c", "-o", os.DevNull, src})
-			ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-			defer cancel()
-			out, err := exec.CommandContext(ctx, cc, args...).CombinedOutput()
+			out, err := cxx.Compile(exec.Command(cc, args...))
 			if err != nil {
 				mu.Lock()
 				failed[src] = mxFirstErrors(string(out))

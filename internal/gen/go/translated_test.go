@@ -11,6 +11,7 @@ import (
 
 	gogen "github.com/fantasim/canonlang/internal/gen/go"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -104,7 +105,7 @@ func goTest(t *testing.T, files map[string][]byte) ([]byte, error) {
 	cmd := exec.Command("go", "test", "-race", "-count=1", "./...")
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local", "GOFLAGS=-mod=mod", "GOPROXY=off", "GOWORK=off")
-	return cmd.CombinedOutput()
+	return cxx.Combined(cmd)
 }
 
 // CONFORMANCE.md §3, CODEGEN.md §5.2 (DECISIONS 402): translated `<` on an ordered enum without @codes compares Position()s, and the generated module's vectors pass.

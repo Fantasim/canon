@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
 const (
@@ -88,7 +89,7 @@ func namedCodes(t *testing.T, args ...string) map[diag.Code]string {
 	t.Helper()
 	cmd := exec.Command("go", append([]string{"list", "-json"}, args...)...)
 	cmd.Dir = moduleRoot
-	data, err := cmd.Output()
+	data, err := cxx.Output(cmd)
 	if err != nil {
 		t.Fatalf("go list: %v", err)
 	}

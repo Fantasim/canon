@@ -262,11 +262,11 @@ func refRunCopy(t *testing.T, name, path string) {
 	}
 }
 
-// refRunOutput runs cmd in dir and returns its output lines, each reader tagged with the toolchain that built it.
+// refRunOutput runs cmd in dir once cxx has a slot free and returns its output lines, each reader tagged with the toolchain that built it.
 func refRunOutput(t *testing.T, dir, tag string, cmd *exec.Cmd) []string {
 	t.Helper()
 	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
+	out, err := cxx.Combined(cmd)
 	if err != nil {
 		t.Fatalf("%s: %v\n%s", strings.Join(cmd.Args, " "), err, out)
 	}

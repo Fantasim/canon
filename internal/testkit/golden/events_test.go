@@ -51,9 +51,7 @@ func TestItemsCppCompiles(t *testing.T) {
 	for _, cc := range compilers {
 		for _, mode := range cxx.Modes {
 			args := append(append(append([]string(nil), cxx.Flags...), mode...), "-fsyntax-only", "-I", include, filepath.Join(gen, "items", "items.gen.cpp"))
-			ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-			out, err := exec.CommandContext(ctx, cc, args...).CombinedOutput()
-			cancel()
+			out, err := cxx.Compile(exec.Command(cc, args...))
 			if err != nil {
 				t.Fatalf("%s %v: %v\n%s", filepath.Base(cc), mode, err, out)
 			}

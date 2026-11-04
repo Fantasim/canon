@@ -19,13 +19,7 @@ import (
 	"github.com/fantasim/canonlang/internal/testkit/cxx"
 )
 
-// maxCompiles bounds the compiler processes this package's tests run at once: each one that
-// includes nlohmann/json takes some hundreds of MB, and the -race run is memory-capped.
-const maxCompiles = 4
-
 var (
-	// compileSlots holds one token per running compiler process.
-	compileSlots = make(chan struct{}, maxCompiles)
 	// objectDir holds the objects every test shares (TestMain).
 	objectDir string
 	// objects are the compiled objects by objectKey: tests compiling the same sources share one build.
@@ -51,15 +45,12 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// compile runs one compiler process once a slot is free.
+// compile runs one compiler process once cxx has a slot free: each one that includes
+// nlohmann/json takes some hundreds of MB, and the -race run is memory-capped.
 func compile(cc string, args []string, dir string) ([]byte, error) {
-	compileSlots <- struct{}{}
-	defer func() { <-compileSlots }()
-	ctx, cancel := context.WithTimeout(context.Background(), cxx.Timeout)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, cc, args...)
+	cmd := exec.Command(cc, args...)
 	cmd.Dir = dir
-	return cmd.CombinedOutput()
+	return cxx.Compile(cmd)
 }
 
 // objectKey is what compiling src in dir reads: the compiler, its flags, the source and every
