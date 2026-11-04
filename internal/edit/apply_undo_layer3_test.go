@@ -59,8 +59,8 @@ func opsRefused(t *testing.T, fs mapFS, v undoView, ops []edit.Operation) bool {
 	return errors.As(err, &ne) && ne.Reason == edit.ReasonComputed
 }
 
-// API.md W11, E22, E23 (log-2026-10-01 M4.1 rulings c, d): an AddEntry through an edit layer that
-// already amends the table adds one line and keeps every other; its Undo gives the file back.
+// API.md W11, E22, E23 (M4.1 rulings c, d; DECISIONS 462): an AddEntry through an edit layer that
+// already amends the table adds one line and keeps every other, its Undo the file back; inactive, computed.
 func TestLayerAddEntryKeepsLines(t *testing.T) {
 	dev := layerDev("  slay.note: \"x\"\n  hunt: { goal: kill, target: \"x\" }\n")
 	add := edit.Operation{Kind: edit.OpAddEntry, Path: "quests", Key: edit.Key("fresh"), Value: edit.Source(`{ goal: kill, target: "f" }`)}
@@ -75,8 +75,8 @@ func TestLayerAddEntryKeepsLines(t *testing.T) {
 	s := open(t, tableLayerFS(dev), nil, "dev", "d")
 	_, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{add}})
 	var ne *edit.NotEditableError
-	if !errors.As(err, &ne) || ne.Reason != edit.ReasonLayer {
-		t.Errorf("AddEntry through an inactive layer, whose entry no path reaches: %v, want NotEditable (layer)", err)
+	if !errors.As(err, &ne) || ne.Reason != edit.ReasonComputed {
+		t.Errorf("AddEntry through an inactive layer of a dependent root (DECISIONS 462): %v, want NotEditable (computed)", err)
 	}
 }
 
@@ -98,9 +98,9 @@ func TestLayerRemoveEntryOrder(t *testing.T) {
 	}
 }
 
-// API.md W5, W11, E22 (log-2026-10-01 M4.1 rulings): under an edit layer every edit's Undo is the
-// layer's own lines, one operation too: a whole-record Set replacing a spread or computed line is
-// refused (computed); one replacing literal lines gives them back, a plain Set the file exactly.
+// API.md W5, W11, E22 (M4.1 rulings; DECISIONS 462): every edit's Undo is the layer's own lines: a
+// whole-record Set replacing a spread or computed line is computed, one replacing literal lines gives
+// them back, a plain Set the file exactly; the layer inactive, every edit of this dependent root is computed.
 func TestLayerSingleOpUndo(t *testing.T) {
 	collect := edit.Member("collect")
 	whole := []edit.Operation{setAt("quests.slay", edit.Source(`{ goal: collect, target: 3 }`))}
@@ -114,9 +114,15 @@ func TestLayerSingleOpUndo(t *testing.T) {
 			}
 		}
 		literal := layerDev("  slay.goal: kill\n  slay.target: \"boar\"\n")
-		undoIn(t, undoSpec{name: "whole record", fsys: tableLayerFS(literal), view: v, ops: whole, views: [][]string{{"dev"}, nil}, lines: []string{devLayerFile}})
-		for _, ops := range [][]edit.Operation{{setAt("quests.slay.goal", collect)}, {setAt("quests.gather.note", edit.Str("n"))}} {
-			undoIn(t, undoSpec{name: "single op", fsys: tableLayerFS(literal), view: v, ops: ops, views: [][]string{{"dev"}, nil}, files: []string{devLayerFile}})
+		for _, ops := range [][]edit.Operation{whole, {setAt("quests.slay.goal", collect)}, {setAt("quests.gather.note", edit.Str("n"))}} {
+			switch {
+			case layers == nil && !opsRefused(t, tableLayerFS(literal), v, ops):
+				t.Errorf("inactive %+v: an edit of a dependent root: not refused as computed", ops)
+			case layers != nil && len(ops[0].Path) == len("quests.slay"):
+				undoIn(t, undoSpec{name: "whole record", fsys: tableLayerFS(literal), view: v, ops: ops, views: [][]string{{"dev"}, nil}, lines: []string{devLayerFile}})
+			case layers != nil:
+				undoIn(t, undoSpec{name: "single op", fsys: tableLayerFS(literal), view: v, ops: ops, views: [][]string{{"dev"}, nil}, files: []string{devLayerFile}})
+			}
 		}
 	}
 }

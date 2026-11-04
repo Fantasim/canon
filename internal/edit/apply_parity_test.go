@@ -148,9 +148,9 @@ func TestW11NoAmendFormParity(t *testing.T) {
 	}
 }
 
-// API.md W5, W11a (DECISIONS 273; log-2026-11-01 EDIT-OWED K, S, O): Editable refuses what Apply
-// refuses: a Set or Reset of a line no Source states, active or not; inside a spread line, any edit
-// of an inactive layer and one beside the spread of an active one; a base Set its files order.
+// API.md W5, W11a (DECISIONS 273, 462; log-2026-11-01 EDIT-OWED K, S, O): Editable refuses what
+// Apply refuses: a Set or Reset of a line no Source states, active or not; inside a spread line, an
+// edit of a field the spread supplies, a literal beside it judged as written; a base Set its files order.
 func TestDecisions273LineParity(t *testing.T) {
 	cases := []struct {
 		layers    []string
@@ -162,7 +162,8 @@ func TestDecisions273LineParity(t *testing.T) {
 		{[]string{"dev"}, "dev", edit.Operation{Kind: edit.OpReset, Path: "a:base.sub"}, edit.ReasonComputed},
 		{nil, "lc", edit.Operation{Kind: edit.OpSet, Path: "a:other.data", Value: edit.Obj{"id": edit.Str("x")}}, edit.ReasonComputed},
 		{nil, "lc", edit.Operation{Kind: edit.OpReset, Path: "a:holder.data"}, edit.ReasonComputed},
-		{nil, "lf", edit.Operation{Kind: edit.OpSet, Path: "a:bag.b.y", Value: edit.Int(4)}, edit.ReasonComputed},
+		{nil, "lf", edit.Operation{Kind: edit.OpSet, Path: "a:bag.b.y", Value: edit.Int(4)}, edit.ReasonNone}, // DECISIONS 462
+		{nil, "lf", edit.Operation{Kind: edit.OpSet, Path: "a:bag.b.x", Value: edit.Int(4)}, edit.ReasonComputed},
 		{[]string{"lf"}, "lf", edit.Operation{Kind: edit.OpSet, Path: "a:bag.b.y", Value: edit.Int(4)}, edit.ReasonNone},
 		{[]string{"lf"}, "lf", edit.Operation{Kind: edit.OpReset, Path: "a:bag.b.x"}, edit.ReasonComputed},
 		{[]string{"lf"}, "lf", edit.Operation{Kind: edit.OpSet, Path: "a:bag.b.sub", Value: edit.Obj{"id": edit.Str("x")}}, edit.ReasonComputed},

@@ -358,7 +358,7 @@ func TestW11aAmendmentLacksChild(t *testing.T) {
 		{in: "a:bag.ts[red].w", layer: "lf", reason: edit.ReasonLayer},
 		{in: "a:bag.byC[green]", layer: "lf", reason: edit.ReasonLayer},
 		{in: "a:other.data.n", layer: "lf", mode: edit.ModeCanon, file: lf, text: `{ id: "q" }`},
-		{in: "a:bag.b.y", layer: "lf", reason: edit.ReasonComputed},
+		{in: "a:bag.b.y", layer: "lf", mode: edit.ModeCanon, file: lf, text: "1"}, // DECISIONS 462: a literal beside the spread
 		{in: "a:bag.b.sub", layer: "lf", reason: edit.ReasonComputed},
 		{in: "a:bag.b.sub.n", layer: "lf", reason: edit.ReasonComputed},
 	})

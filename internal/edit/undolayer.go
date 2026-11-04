@@ -61,10 +61,10 @@ func (c *undoCheck) lineRestore() ([]Operation, error) {
 	for _, path := range slices.Sorted(maps.Keys(before)) {
 		a, ok := after[path]
 		switch {
-		case !slices.Contains(readd, path) && ok && flatText(a) == flatText(before[path]):
+		case !slices.Contains(readd, path) && ok && lineKey(a) == lineKey(before[path]):
 			continue
 		case computed[path]:
-			return nil, &NotEditableError{Reason: ReasonComputed}
+			return nil, &undoLineError{line: path, err: &NotEditableError{Reason: ReasonComputed}}
 		case slices.Contains(readd, path):
 			continue
 		}
@@ -85,7 +85,7 @@ func (c *undoCheck) lineRestore() ([]Operation, error) {
 func rewritten(before, after map[string]string, readd []string) []string {
 	var out []string
 	for _, path := range slices.Sorted(maps.Keys(before)) {
-		if a, ok := after[path]; (!ok || flatText(a) != flatText(before[path])) && !slices.Contains(readd, path) {
+		if a, ok := after[path]; (!ok || lineKey(a) != lineKey(before[path])) && !slices.Contains(readd, path) {
 			out = append(out, path)
 		}
 	}
@@ -201,7 +201,7 @@ func (c *undoCheck) lineTyped(path, text string) (value.Value, bool) {
 		return nil, false
 	}
 	ty := Typer{Host: c.a.baseHost, Pkg: pkg, marks: c.a.marks}
-	v, err := ty.Value(c.a.ctx, Source(flatText(text)), t)
+	v, err := ty.Value(c.a.ctx, Source(lineKey(text)), t)
 	return v, err == nil
 }
 
@@ -214,7 +214,7 @@ func (c *undoCheck) lineValue(path, text string) string {
 			return strconv.Itoa(int(v.Type().Base().Kind())) + newline + canon
 		}
 	}
-	return flatText(text)
+	return lineKey(text)
 }
 
 // lineWrite writes the line at path with text again: a Set, or with add, or where the entry is

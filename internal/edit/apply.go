@@ -96,10 +96,30 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 	}
 	undo, err := a.verifiedUndo(kept, p.Touched)
 	if err != nil {
-		return nil, refusal(err)
+		return nil, a.undoRefusal(req.Ops, err)
 	}
 	p.Undo = undo
 	return p, nil
+}
+
+// undoRefusal is a refusal of the Undo check named by the operation it falls on, as every refusal
+// is (API.md W5): the first editing the line its Undo cannot write back, else the last.
+func (a *applier) undoRefusal(ops []Operation, err error) error {
+	var ne *NotEditableError
+	if !errors.As(err, &ne) || len(ops) == 0 {
+		return refusal(err)
+	}
+	i := len(ops) - 1
+	var ul *undoLineError
+	if errors.As(err, &ul) {
+		for k := range ops {
+			if p, ok := a.opPaths[k]; ok && (within(p, ul.line, pathMarks, true) || within(ul.line, p, pathMarks, true)) {
+				i = k
+				break
+			}
+		}
+	}
+	return &OpError{Index: i, Path: ops[i].Path, Err: ne}
 }
 
 // refusal is err as Apply returns it: a refusal this package names or a failure to read the
@@ -146,10 +166,11 @@ type applier struct {
 	omit        []string        // the fields a SetCase leaves out: its refinements refuse them (E14)
 	step        int             // the operation being applied, cascadeStep for the cascades (M6 tests)
 
-	multi, dependent, renamed bool   // what verifiedUndo needs of the request (noteUndo)
-	allowErrors               bool   // the request's AllowErrors: an id it adds may stay unlocked (E20)
-	named                     []Path // the roots its operations name
-	nameClash                 string // Plan.NameClash
+	multi, dependent, renamed bool           // what verifiedUndo needs of the request (noteUndo)
+	allowErrors               bool           // the request's AllowErrors: an id it adds may stay unlocked (E20)
+	named                     []Path         // the roots its operations name
+	opPaths                   map[int]string // each operation's canonical path (undoRefusal)
+	nameClash                 string         // Plan.NameClash
 	nameEdits                 map[string]NameEdit
 	spelled                   spellings
 }
@@ -162,7 +183,7 @@ type NameEdit struct {
 
 func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
 	h := env.Host(base.a)
-	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, held: map[string]bool{}, marks: newSymMarks(), spelled: spellings{}}
+	a := &applier{ctx: ctx, env: env, snap: base, base: base, host: h, baseHost: h, files: map[string]*fileState{}, owners: map[string]string{}, emptied: map[string]string{}, held: map[string]bool{}, marks: newSymMarks(), spelled: spellings{}, opPaths: map[int]string{}}
 	a.selected = env.Scope // each op is analyzed again over the edit's scope (API.md E1, E17a)
 	if a.selected == nil {
 		a.selected = base.a.Selected()
@@ -259,13 +280,13 @@ func (a *applier) editable(j *judge) error {
 	case ReasonNone:
 		return amendmentRefusal(j)
 	case ReasonComputed:
-		return &NotEditableError{Reason: reason, Origin: j.computedOrigin()}
+		return &NotEditableError{Reason: reason, Origin: j.computedOrigin(), Detail: j.wayOut(reason)}
 	case ReasonLayered:
 		return &NotEditableError{Reason: reason, Layer: j.blockedBy()}
 	case ReasonFormat:
 		return &NotEditableError{Reason: reason, File: j.formatFile()}
 	default:
-		return &NotEditableError{Reason: reason}
+		return &NotEditableError{Reason: reason, Detail: j.wayOut(reason)}
 	}
 }
 
@@ -277,9 +298,9 @@ func (a *applier) memberOp(op Operation, res resolution) (*work, error) {
 	case op.Kind != OpRetire:
 		return nil, ErrBadOp
 	case a.env.EditLayer != "":
-		return nil, &NotEditableError{Reason: ReasonLayer}
+		return nil, &NotEditableError{Reason: ReasonLayer, Detail: memberWay(op.Kind, res)}
 	}
-	return a.retireMember(res)
+	return retireMember(res)
 }
 
 // opCtx is one operation being planned: its resolution, its editability judge, its work.
@@ -336,6 +357,9 @@ func (a *applier) owned(changes []Change) (touched, unowned []string) {
 // operations, whether it touches a dependent field or a driver (log-2026-09-29 U-E22-r).
 func (a *applier) noteUndo(x *opCtx) {
 	a.named = append(a.named, x.res.root.at())
+	if _, ok := a.opPaths[a.step]; !ok && a.step >= 0 {
+		a.opPaths[a.step] = x.res.Canonical
+	}
 	a.renamed = a.renamed || x.op.Kind == OpRename
 	if a.multi && !a.dependent {
 		a.dependent = x.touchesDependent()

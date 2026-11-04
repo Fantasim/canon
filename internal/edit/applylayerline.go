@@ -8,7 +8,6 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
-	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // staticSite is an amendment line of the edit layer, in its file, naming the first n steps of
@@ -45,35 +44,44 @@ func (s *Snapshot) prefixLine(b *syntax.AmendBlock, res resolution) (*syntax.Ame
 	return nil, 0
 }
 
-// lineValue is the value the line's literal states, typed at its path, and the steps to the
-// value `upto` steps down the path, read in that literal; the last may be a field it leaves out.
-func (x *opCtx) lineValue(at staticSite, upto int) (value.Value, []Step, error) {
-	rhs := syntax.Unparen(at.line.Value)
-	if x.a.snap.nodeForm(rhs) != shape.FormLiteral {
-		return nil, nil, &NotEditableError{Reason: ReasonComputed}
+// linePart is the part of a line an edit rewrites (literalRoot): its node, the value it states
+// typed at its path, and the steps from it to the value the edit reaches; the last may be a field
+// the literal leaves out.
+type linePart struct {
+	node  syntax.Node
+	old   value.Value
+	steps []Step
+}
+
+// lineValue is the line's part an edit `upto` steps down the path rewrites (DECISIONS 462).
+func (x *opCtx) lineValue(at staticSite, upto int) (linePart, error) {
+	node, d, ok := x.a.snap.literalRoot(at.line, at.n, x.res, max(upto, at.n))
+	if !ok {
+		return linePart{}, &NotEditableError{Reason: ReasonComputed}
 	}
-	sp := at.f.Span(rhs)
-	old, err := x.typed(Source(at.f.Src.Content[sp.Start:sp.End]), x.typeAt(at.n))
+	sp := at.f.Span(node)
+	old, err := x.typed(Source(at.f.Src.Content[sp.Start:sp.End]), x.typeAt(d))
 	if err != nil {
-		return nil, nil, &NotEditableError{Reason: ReasonComputed}
+		return linePart{}, &NotEditableError{Reason: ReasonComputed}
 	}
-	w := walk{cur: old, typ: x.typeAt(at.n)}
-	for _, st := range x.res.Steps[at.n:upto] {
+	w := walk{cur: old, typ: x.typeAt(d)}
+	for _, st := range x.res.Steps[d:upto] {
 		if err := w.next(st.Seg); err != nil {
-			return nil, nil, &NotEditableError{Reason: ReasonLayer}
+			return linePart{}, &NotEditableError{Reason: ReasonLayer}
 		}
 	}
-	return old, w.steps, nil
+	return linePart{node: node, old: old, steps: w.steps}, nil
 }
 
 // staticEdit applies mutate to the value `upto` steps down the path inside the edit layer's
 // line (W11a): its literal is compared with the new value (M1); a Set of a field to its default
 // leaves it out of that literal (E6); the inverse sets the value the literal held (E23).
 func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (value.Value, error)) error {
-	old, steps, err := x.lineValue(at, upto)
+	part, err := x.lineValue(at, upto)
 	if err != nil {
 		return err
 	}
+	old, steps := part.old, part.steps
 	cur := old
 	if len(steps) > 0 {
 		cur = steps[len(steps)-1].Value
@@ -89,7 +97,7 @@ func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (va
 		nv = nil
 	}
 	d := &canonDiff{a: x.a}
-	if err := d.value(old, withChange(old, steps, nv), syntax.Unparen(at.line.Value)); err != nil {
+	if err := d.value(old, withChange(old, steps, nv), part.node); err != nil {
 		return err
 	}
 	x.w.addCanon(at.f.Src.Path, x.res.root.pkg.Path, d.out)
@@ -151,22 +159,7 @@ func (x *opCtx) withoutSeg(cur value.Value, st Step) (value.Value, error) {
 }
 
 // typeAt is the declared type of the value the path's first n steps reach.
-func (x *opCtx) typeAt(n int) types.Type {
-	if n == 0 {
-		return x.res.root.obj.Type()
-	}
-	st := x.res.Steps[n-1]
-	if rec, ok := x.res.parent(n - 1).(*value.Record); ok {
-		fields := fieldsOf(rec.T)
-		if i := fieldIndex(fields, st.Seg.Name); i >= 0 {
-			return fields[i].Type
-		}
-	}
-	if _, vt, ok := mapTypes(st.Container); ok {
-		return vt
-	}
-	return elemType(st.Container)
-}
+func (x *opCtx) typeAt(n int) types.Type { return typeAtDepth(x.res, n) }
 
 // amendLine writes `path: text` in the edit layer file of the root's package, the path of
 // canonical, whose steps are given: into its block for the root, replacing the lines of the

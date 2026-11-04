@@ -34,15 +34,12 @@ func (s *Snapshot) amends(f *syntax.File, b *syntax.AmendBlock, res resolution) 
 	return Editability{}, false
 }
 
-// inAmendment follows res's steps from step i inside an amendment: into a literal; nothing below a load (API.md W11a); else computed.
+// inAmendment follows res's steps from step i inside an amendment (API.md W11a): into a literal, else leaves.
 func (s *Snapshot) inAmendment(it item, res resolution, i int) Editability {
+	start := i
 	for ; i < len(res.Steps); i++ {
-		switch s.nodeForm(it.node) {
-		case shape.FormLiteral:
-		case shape.FormJSON:
-			return Editability{Reason: ReasonLayer}
-		default:
-			return Editability{Reason: ReasonComputed}
+		if e, stop := s.leaves(it.node); stop {
+			return e
 		}
 		n, ok := childNode(it.node, res.Steps[i])
 		if !ok {
@@ -50,7 +47,22 @@ func (s *Snapshot) inAmendment(it item, res resolution, i int) Editability {
 		}
 		it.node = n
 	}
+	if e, stop := s.leaves(it.node); stop && i > start {
+		return e // the target is a load or an expression nested in the literal
+	}
 	return Editability{Mode: ModeCanon, File: it.file.Src.Path, Span: it.file.Span(it.node)}
+}
+
+// leaves is the verdict on node n of an amendment when it is no literal: a load of any format
+// `layer`, its data outside the layer file (DECISIONS 462); any other expression `computed`.
+func (s *Snapshot) leaves(n syntax.Node) (Editability, bool) {
+	switch {
+	case s.nodeForm(n) == shape.FormLiteral:
+		return Editability{}, false
+	case s.isLoad(n):
+		return Editability{Reason: ReasonLayer}, true
+	}
+	return Editability{Reason: ReasonComputed}, true
 }
 
 // missingChild is step i, absent from the amendment literal it: a record field is inserted into

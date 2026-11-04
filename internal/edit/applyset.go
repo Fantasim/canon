@@ -73,17 +73,20 @@ func (x *opCtx) lockStable() {
 }
 
 // field is the record the path's last step reads a field of, and that field.
-func (x *opCtx) field() (*value.Record, *types.Field, bool) {
-	n := len(x.res.Steps)
-	if n == 0 || x.res.Steps[n-1].Seg.Kind != SegField {
+func (x *opCtx) field() (*value.Record, *types.Field, bool) { return fieldAt(x.res) }
+
+// fieldAt is the record res's last step reads a field of, and that field.
+func fieldAt(res resolution) (*value.Record, *types.Field, bool) {
+	n := len(res.Steps)
+	if n == 0 || res.Steps[n-1].Seg.Kind != SegField {
 		return nil, nil, false
 	}
-	rec, ok := x.res.parent(n - 1).(*value.Record)
+	rec, ok := res.parent(n - 1).(*value.Record)
 	if !ok {
 		return nil, nil, false
 	}
 	fields := fieldsOf(rec.T)
-	i := fieldIndex(fields, x.res.Steps[n-1].Seg.Name)
+	i := fieldIndex(fields, res.Steps[n-1].Seg.Name)
 	if i < 0 {
 		return nil, nil, false
 	}
@@ -313,11 +316,23 @@ func withChange(v value.Value, steps []Step, nv value.Value) value.Value {
 		return out
 	case *value.Table:
 		out := &value.Table{T: x.T, Entries: slices.Clone(x.Entries), P: x.P}
-		rec, _ := child.(*value.Record)
-		out.Entries[position(x, steps[0].Value)] = rec
+		i := position(x, steps[0].Value)
+		out.Entries[i] = withIdent(child, x.Entries[i])
 		return out
 	}
 	return v
+}
+
+// withIdent is entry rec in the place of old: a new value keeps the key and state old's identity
+// gives, so the entry is the same one (M1), printed with its key where it is re-printed.
+func withIdent(child value.Value, old *value.Record) *value.Record {
+	rec, _ := child.(*value.Record)
+	if rec == nil || rec.Ident != nil || old == nil || old.Ident == nil {
+		return rec
+	}
+	out := *rec
+	out.Ident = old.Ident
+	return &out
 }
 
 // stepValue is the value step st read in v.

@@ -171,38 +171,47 @@ func (x *opCtx) jsonKey(m *value.Map, k value.Value) (value.Value, error) {
 }
 
 // sibling is the collection holding the path's target and the target's position there.
-func (x *opCtx) sibling() (value.Value, int, bool) {
-	n := len(x.res.Steps)
+func (x *opCtx) sibling() (value.Value, int, bool) { return siblingOf(x.res) }
+
+// siblingOf is the collection holding res's target and the target's position there.
+func siblingOf(res resolution) (value.Value, int, bool) {
+	n := len(res.Steps)
 	if n == 0 {
 		return nil, 0, false
 	}
-	parent := x.res.parent(n - 1)
+	parent := res.parent(n - 1)
 	switch parent.(type) {
 	case *value.List, *value.Map, *value.Table:
-		return parent, position(parent, x.res.Target), true
+		return parent, position(parent, res.Target), true
 	}
 	return nil, 0, false
 }
 
 // stableTable reports a target that is an entry of a stable table (API.md E4).
-func (x *opCtx) stableTable() bool {
-	n := len(x.res.Steps)
+func (x *opCtx) stableTable() bool { return stableIn(x.res) }
+
+// stableIn reports res's target an entry of a stable table (API.md E4).
+func stableIn(res resolution) bool {
+	n := len(res.Steps)
 	if n == 0 {
 		return false
 	}
-	tt, ok := baseOf(x.res.Steps[n-1].Container).(*types.TableType)
+	tt, ok := baseOf(res.Steps[n-1].Container).(*types.TableType)
 	return ok && tt.Stable
 }
 
 // lockedKey reports a target that is an entry of a stable table whose id the lock holds or the
 // request locks, or any under an edit layer (API.md E4, LOCK.md 6.1): one only pending is neither.
-func (x *opCtx) lockedKey() bool {
-	rec, ok := x.res.Target.(*value.Record)
-	if !x.stableTable() || !ok || rec.Ident == nil || len(x.res.Steps) != 1 || x.a.env.EditLayer != "" {
-		return x.stableTable()
+func (x *opCtx) lockedKey() bool { return x.a.snap.lockedIn(x.res, x.a.env.EditLayer, x.a.locked) }
+
+// lockedIn is lockedKey of res under editLayer, the request having locked held.
+func (s *Snapshot) lockedIn(res resolution, editLayer string, held []Locked) bool {
+	rec, ok := res.Target.(*value.Record)
+	if !stableIn(res) || !ok || rec.Ident == nil || len(res.Steps) != 1 || editLayer != "" {
+		return stableIn(res)
 	}
-	id := Locked{Name: x.res.root.lockName(), Key: rec.Ident.Key.Text()}
-	return slices.Contains(x.a.locked, id) || x.a.snap.a.LockHolds(build.LockID{Name: id.Name, Key: id.Key})
+	id := Locked{Name: res.root.lockName(), Key: rec.Ident.Key.Text()}
+	return slices.Contains(held, id) || s.a.LockHolds(build.LockID{Name: id.Name, Key: id.Key})
 }
 
 // siblingCount is how many elements or entries a collection holds.

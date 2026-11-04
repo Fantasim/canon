@@ -78,7 +78,7 @@ func (s *Snapshot) sourceLine(ctx context.Context, path, text string) bool {
 		return false
 	}
 	tc := &typing{ctx: ctx, ty: Typer{Pkg: pkg}}
-	_, err := tc.value(Source(flatText(text)), t)
+	_, err := tc.value(Source(lineKey(text)), t)
 	return err == nil
 }
 

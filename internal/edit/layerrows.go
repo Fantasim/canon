@@ -6,7 +6,6 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
-	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // removable reports an item the edit layer states, through its active amendment or in one of its
@@ -28,24 +27,45 @@ func (j *judge) layerWrites() bool {
 	return j.layer != "" && !slices.ContainsFunc(j.cur, func(c cursor) bool { return c.layer == j.layer })
 }
 
-// layerRow refuses, under an edit layer, all but Set, Reset and AddEntry below a let (EVALUATION.md §9.2).
+// layerRow refuses, under an edit layer, all but Set, Reset and AddEntry below a let (EVALUATION.md
+// 9.2), any op below a load of the edit layer's line, its data outside the layer file (API.md W11a;
+// DECISIONS 411), and at a load or expression node any op but a Set, Reset or Remove (DECISIONS 462).
 func layerRow(j *judge) Reason {
 	if j.layer == "" {
 		return ReasonNone
 	}
 	amendable := j.op == OpSet || j.op == OpReset || j.op == OpAddEntry || j.op == OpRemove && j.removable()
 	rootValue := len(j.res.Steps) == 0 && j.op != OpAddEntry // an entry added to a root table is an amendment (EVALUATION.md §9.3)
-	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet || j.belowLoad() || j.loadLine() || j.noAmendForm() || j.unseenEntry() || j.unseenLine() {
+	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet || j.siteRefuses() || j.noAmendForm() || j.unseenEntry() || j.unseenLine() {
 		return ReasonLayer
 	}
 	return ReasonNone
 }
 
+// memberWay is the way out of an enum member's Retire under an edit layer: the Retire without it.
+func memberWay(op Op, res resolution) string {
+	if _, err := retireMember(res); op != OpRetire || err != nil {
+		return ""
+	}
+	return wayNoLayer
+}
+
+// writesLine reports an op that could write back an edit-layer line: a Set, Reset, AddEntry or Remove.
+func (j *judge) writesLine() bool {
+	return j.layer != "" && !j.gone && (j.op == OpSet || j.op == OpReset || j.op == OpAddEntry || j.op == OpRemove)
+}
+
+// noLiteral reports the path's own line, whose op is a Set, Reset or Remove, one that has no
+// literal form: its Undo would write back a line no Source states (DECISIONS 273).
+func (j *judge) noLiteral(f *syntax.File, line *syntax.Amendment) bool {
+	return j.op != OpAddEntry && !j.s.lineSource(j.ctx, f, j.res.root.at(), line)
+}
+
 // lineRow is computed for an edit whose Undo would write back an edit-layer line no Source states
-// (DECISIONS 273): a Set, Reset or Remove of the path's own line, a Set replacing one below it,
-// an edit beside the spread of the active layer's line.
+// (DECISIONS 273): a Set, Reset or Remove of the path's own line or of a load nested in a line's
+// literal (DECISIONS 462), a Set replacing one below it, an edit beside an active line's spread.
 func lineRow(j *judge) Reason {
-	if j.layer == "" || j.gone || j.op != OpSet && j.op != OpReset && j.op != OpAddEntry && j.op != OpRemove {
+	if !j.writesLine() {
 		return ReasonNone
 	}
 	f, line, n := j.s.layerLine(j.res, j.layer)
@@ -54,9 +74,9 @@ func lineRow(j *judge) Reason {
 		return ReasonComputed
 	case line == nil:
 		return ReasonNone
-	case n == len(j.res.Steps) && j.op != OpAddEntry && !j.s.lineSource(j.ctx, f, j.res.root.at(), line):
+	case n == len(j.res.Steps) && j.noLiteral(f, line):
 		return ReasonComputed
-	case n == len(j.res.Steps) && j.op == OpAddEntry && j.computedLine(line):
+	case n < len(j.res.Steps) && j.op != OpAddEntry && j.site() == siteLoadNode:
 		return ReasonComputed
 	case n < len(j.res.Steps) && j.last().state == stSpread && j.inEditLayer():
 		return ReasonComputed
@@ -100,8 +120,8 @@ func (j *judge) belowReason() Reason {
 }
 
 // resetReason is a Reset's refusal: of the path's own line, what the Set its Undo writes gets
-// without that line; inside a line, `layer` for an item the value lacks without the layer that
-// is no map or table entry, nor a field with a default (log-2026-11-01 EDIT-OWED re-review 2).
+// without that line; inside a line, `computed` for a base value no literal states, `layer` for an
+// item the value lacks without the layer that is no map or table entry, nor a defaulted field.
 func resetReason(j *judge) Reason {
 	_, line, n := j.s.layerLine(j.res, j.layer)
 	if line == nil {
@@ -112,6 +132,8 @@ func resetReason(j *judge) Reason {
 	switch {
 	case n == k && kept:
 		return j.undoSetReason(j.res, base)
+	case kept && !printable(base):
+		return ReasonComputed // no literal states the base value (W11)
 	case n == k || kept || dropsOut(j.res):
 		return ReasonNone
 	}
@@ -189,31 +211,4 @@ func (j *judge) noAmendForm() bool {
 	}
 	_, isMap := j.res.Target.(*value.Map)
 	return isMap
-}
-
-// computedLine reports a line, not in the active amendment, whose right-hand side has no literal
-// form (a call): no entry is added to it (API.md W11); loadLine takes the JSON loads.
-func (j *judge) computedLine(line *syntax.Amendment) bool {
-	if j.inEditLayer() {
-		return false
-	}
-	form := j.s.nodeForm(syntax.Unparen(line.Value))
-	return form != shape.FormLiteral && form != shape.FormJSON
-}
-
-// loadLine reports an AddEntry to the value an edit-layer line gives by a load: its entry would
-// lie in the JSON the line loads, as a path below the line does (API.md W11a, E21; DECISIONS 411).
-func (j *judge) loadLine() bool {
-	if j.op != OpAddEntry {
-		return false
-	}
-	_, line, n := j.s.layerLine(j.res, j.layer)
-	return line != nil && n == len(j.res.Steps) && j.s.nodeForm(syntax.Unparen(line.Value)) == shape.FormJSON
-}
-
-// belowLoad reports j's value inside the JSON file an amendment of the edit layer loads: outside
-// the layer file, and maybe read by the base (API.md W11a; DECISIONS 411).
-func (j *judge) belowLoad() bool {
-	c := j.last()
-	return c.layer == j.layer && c.mode == ModeJSON && j.s.files[c.span.File] == nil
 }

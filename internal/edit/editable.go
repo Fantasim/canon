@@ -30,6 +30,7 @@ type Editability struct {
 	Span   source.Span // the node an edit replaces, or the literal or object a field is inserted into (W7, W9)
 	Origin string      // computed: canonical path of the value's own source when it is structural, else ""
 	Layer  string      // layered: the layer that sets the value (W10)
+	way    string      // the refusal's way out under an edit layer, "" for none (DECISIONS 305)
 }
 
 // Editable says where op can edit r's target with edit layer editLayer (API.md §7, §7.5); ErrForeign if r is not of s.
@@ -39,7 +40,7 @@ func (s *Snapshot) Editable(r Resolved, op Op, editLayer string) (Editability, e
 	case err != nil:
 		return Editability{}, err
 	case res.root.enum != nil && editLayer != "":
-		return Editability{Reason: ReasonLayer}, nil // W11: a member has no amendment form
+		return Editability{Reason: ReasonLayer, way: memberWay(op, res)}, nil // W11: a member has no amendment form
 	case res.root.enum != nil:
 		return s.memberEditability(res), nil
 	}
@@ -52,13 +53,13 @@ func (s *Snapshot) Editable(r Resolved, op Op, editLayer string) (Editability, e
 	case ReasonNone:
 		return j.editable(), nil
 	case ReasonComputed:
-		return Editability{Reason: reason, Origin: j.computedOrigin()}, nil
+		return Editability{Reason: reason, Origin: j.computedOrigin(), way: j.wayOut(reason)}, nil
 	case ReasonLayered:
 		return Editability{Reason: reason, Layer: j.blockedBy()}, nil
 	case ReasonFormat:
 		return Editability{Reason: reason, File: j.formatFile()}, nil
 	default:
-		return Editability{Reason: reason}, nil
+		return Editability{Reason: reason, way: j.wayOut(reason)}, nil
 	}
 }
 
@@ -114,6 +115,7 @@ type judge struct {
 	special Reason                // the last step's own row: input, key or pseudo
 	gone    bool                  // the path's lines are out, as when an Undo writes them back (undoSetReason)
 	blocker string                // layered by an Undo's Set: the layer that blocks it (undoSetReason)
+	at      *lineSpot             // the path's spot in the edit layer's line, once computed
 	// starAt and starErr cache besideData once starDone
 	starDone bool
 	starAt   string
@@ -225,14 +227,18 @@ func (j *judge) editable() Editability {
 		return Editability{Mode: ModeCanon, File: j.s.display(c.span.File), Span: c.span}
 	}
 	if e, ok := j.s.staticAmendment(j.res, j.layer); ok {
-		return j.staticVerdict(e) // a computed value there comes from the amendment's expression: no structural origin
+		e = j.staticVerdict(e) // a computed value there comes from the amendment's expression: no structural origin
+		if e.Mode == ModeNone {
+			e.way = j.wayOut(e.Reason)
+		}
+		return e
 	}
 	return Editability{Mode: ModeCanon, File: layerFile(j.res.root.pkg, j.layer)}
 }
 
 // staticVerdict is e, as Apply reads the edit layer's line the session does not show: `computed`
-// when no Source states the line (W11a, DECISIONS 273), `layer` for a Remove of a list element
-// inside it, which a line names no entry of (API.md W11).
+// when no Source states the line's part the edit rewrites (W11a; DECISIONS 273, 462), `layer` for
+// a Remove of a list element inside it, which a line names no entry of (API.md W11).
 func (j *judge) staticVerdict(e Editability) Editability {
 	if e.Mode == ModeNone {
 		return e
@@ -242,7 +248,7 @@ func (j *judge) staticVerdict(e Editability) Editability {
 	switch {
 	case line == nil:
 		return e
-	case !j.s.lineSource(j.ctx, f, j.res.root.at(), line):
+	case !j.s.partSource(j.ctx, staticSite{f, line, n}, j.res, j.editDepth()):
 		return Editability{Reason: ReasonComputed}
 	case j.op != OpRemove || n == k:
 		return e
@@ -312,7 +318,14 @@ func isKeyOf(coll value.Value, f *types.Field) bool {
 	return ok && lt.KeyedBy != nil && lt.KeyedBy.Name == f.Name
 }
 
-func computedRow(j *judge) Reason { return onState(j, stComputed, ReasonComputed) }
+// computedRow is a walk that left the source tree; at an expression node of the edit layer's line,
+// an op that does not replace or remove it is layerRow's (DECISIONS 462).
+func computedRow(j *judge) Reason {
+	if j.site() == siteExprNode && !replaces(j.op) {
+		return ReasonNone
+	}
+	return onState(j, stComputed, ReasonComputed)
+}
 
 // layeredRow is another active layer amending the path or an ancestor, whatever the stack
 // (log-2026-11-01 EDIT-OWED round-5 review).

@@ -11,7 +11,7 @@ func (a *applier) judgeOp(res resolution, op Op) *judge {
 // or an ancestor, active or not (W5, W11a): below a load `layer`, below another expression `computed`.
 func amendmentRefusal(j *judge) error {
 	if e := j.editable(); e.Mode == ModeNone && e.Reason != ReasonNone {
-		return &NotEditableError{Reason: e.Reason}
+		return &NotEditableError{Reason: e.Reason, Detail: e.way}
 	}
 	return nil
 }

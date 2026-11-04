@@ -145,11 +145,11 @@ func isEntryOf(parent value.Value) bool {
 func (x *opCtx) removeLine(at staticSite) error {
 	old := x.res.Target
 	if !x.inAmendment() {
-		v, _, err := x.lineValue(at, len(x.res.Steps))
+		part, err := x.lineValue(at, len(x.res.Steps))
 		if err != nil {
 			return err
 		}
-		old = v
+		old = part.old
 	}
 	lit, err := x.a.sourceLit(old, x.scopeAt(len(x.res.Steps), true), x.statedAt(len(x.res.Steps)))
 	if err != nil {

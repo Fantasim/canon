@@ -129,8 +129,13 @@ func (p *Project) pathError(ctx context.Context, at refused, err error, pe *edit
 
 // notEditableDetail names what makes a value not editable: the references a rename cannot
 // change (E12), the hidden path holding it (log-2026-09-29 M4 U5b-r3), or the layer, file and
-// line a rename cannot rewrite, which is to be rewritten or removed first (DECISIONS 305, 310).
+// line a rename cannot rewrite (DECISIONS 305, 310); the way out comes last.
 func notEditableDetail(ne *edit.NotEditableError) string {
+	return strings.Join(slices.DeleteFunc([]string{notEditableWhat(ne), ne.Detail}, isEmpty), textListSep)
+}
+
+// notEditableWhat is what makes a value not editable, before its way out.
+func notEditableWhat(ne *edit.NotEditableError) string {
 	switch {
 	case ne.File != "" && len(ne.Refs) > 0:
 		return strings.Join(slices.DeleteFunc(append([]string{ne.Layer, ne.File}, ne.Refs...), isEmpty), textListSep)

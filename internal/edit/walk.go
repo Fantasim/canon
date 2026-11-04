@@ -108,6 +108,9 @@ func (j *judge) itemCursor(c cursor, it item, v value.Value) cursor {
 	if e, ok := it.node.(syntax.Expr); ok && e.Kind() == syntax.KindLoadExpr {
 		next := loadCursor(j.s.info, e, v)
 		next.layer = c.layer
+		if next.state == stFormat && c.layer != "" {
+			next.state = stLoaded // in a layer's literal: layerRow's, never the format row (DECISIONS 462)
+		}
 		return next
 	}
 	p := provOf(v)
@@ -156,6 +159,15 @@ func absentStep(j *judge, c cursor, i int) cursor {
 // leave is a step below a spread-supplied field or an amendment's expression: the path goes
 // through that expression.
 func leave(_ *judge, c cursor, _ int) cursor { return c.to(stComputed) }
+
+// leaveOpaque is a step below an amendment's expression: into the data a load reads, which lies
+// outside the layer file (API.md W11a; DECISIONS 411), else through the expression like leave.
+func leaveOpaque(j *judge, c cursor, _ int) cursor {
+	if j.s.isLoad(c.node) {
+		return c.to(stLoaded)
+	}
+	return c.to(stComputed)
+}
 
 // stay keeps a walk that already left the tree, or reached a format source or a layered value.
 func stay(_ *judge, c cursor, _ int) cursor { return c }

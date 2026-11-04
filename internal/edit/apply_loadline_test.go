@@ -68,9 +68,9 @@ func TestE21LoadInLiteralParity(t *testing.T) {
 	}
 }
 
-// API.md E21, 7.2, W11, W11a (DECISIONS 273, 411): an AddEntry at a layer line whose right-hand
-// side is no literal is judged by the line before the key: `layer` for JSON the line loads (a
-// file, a map, a directory), `computed` for an expression no Source states back, active or not.
+// API.md E21, 7.2, W11, W11a (DECISIONS 273, 411, 462): an AddEntry at a layer line whose right-hand
+// side is no literal is judged by the line before the key: `layer`, for JSON the line loads (a
+// file, a map, a directory) as for an expression, at whose node only a Set, Reset or Remove is `computed`.
 func TestE21LoadFormsParity(t *testing.T) {
 	cases := []struct {
 		layer, path string
@@ -78,7 +78,7 @@ func TestE21LoadFormsParity(t *testing.T) {
 	}{
 		{"mp", "a:r.m", edit.ReasonLayer},
 		{"dir", "a:r.sub", edit.ReasonLayer},
-		{"mk", "a:r.sub", edit.ReasonComputed},
+		{"mk", "a:r.sub", edit.ReasonLayer},
 	}
 	for _, c := range cases {
 		for _, layers := range [][]string{{c.layer}, nil} {

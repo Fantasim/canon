@@ -145,9 +145,9 @@ func reviewLayerFS(layers ...string) mapFS {
 	return fs
 }
 
-// API.md E22, W11, W11a (log-2026-10-01 M4.1 review rulings): under an edit layer, active below
-// another or inactive, the Undo gives the layer its own lines back, never a merged value; the
-// values come back in the edit layer's view and the session's, and the layer file byte for byte.
+// API.md E22, W11, W11a (log-2026-10-01 M4.1 review rulings; DECISIONS 273, 462): under an edit
+// layer active below another, the Undo gives the layer its own lines back, never a merged value, the
+// values in both views and the layer file byte for byte; inactive, a dependent field is computed.
 func TestUndoEditLayerLines(t *testing.T) {
 	collect, kill := edit.Member("collect"), edit.Member("kill")
 	files := []string{"law/d/dev.layer.canon"}
@@ -155,10 +155,14 @@ func TestUndoEditLayerLines(t *testing.T) {
 		[]edit.Operation{setAt("quests.slay.goal", collect), setAt("quests.slay.target", edit.Int(25))},
 		[][]string{{"dev", "top"}, {"dev"}, nil}, files, nil})
 	inactive := undoView{nil, "dev"}
-	undoIn(t, undoSpec{"inactive", reviewLayerFS(), inactive,
-		[]edit.Operation{setAt("quests.slay.goal", collect), setAt("quests.slay.target", edit.Int(25))}, [][]string{{"dev"}, nil}, files, nil})
-	undoIn(t, undoSpec{"inactive, dependent first", reviewLayerFS(), inactive,
-		[]edit.Operation{setAt("quests.slay.target", edit.Str("x")), setAt("quests.slay.goal", kill)}, [][]string{{"dev"}, nil}, files, nil})
+	for _, ops := range [][]edit.Operation{
+		{setAt("quests.slay.goal", collect), setAt("quests.slay.target", edit.Int(25))},
+		{setAt("quests.slay.target", edit.Str("x")), setAt("quests.slay.goal", kill)},
+	} {
+		if !opsRefused(t, reviewLayerFS(), inactive, ops) {
+			t.Errorf("inactive %+v: a dependent field typed with none of the layer's drivers: not refused as computed", ops)
+		}
+	}
 }
 
 // API.md E22, W11 (log-2026-10-01 M4.1 review rulings): random requests through an active and an

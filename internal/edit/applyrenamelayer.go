@@ -96,15 +96,47 @@ func (r *renaming) lineKeyField(f *syntax.File, it *syntax.Amendment) error {
 }
 
 // lineRefusal is `layer` naming line it of f, which no amend line can start with the new key: the
-// way out is to rewrite or remove that line first (DECISIONS 305).
+// way out, to remove that line first, only when no other line starts with the key (DECISIONS 305).
 func (r *renaming) lineRefusal(f *syntax.File, it *syntax.Amendment) error {
 	from, to := f.Span(it.Path[0]), f.Span(it.Path[len(it.Path)-1])
 	line := r.x.res.root.pkg.Path + packageMark + r.x.res.root.obj.Name() + string(fieldMark) + string(f.Src.Content[from.Start:to.End])
 	e := &NotEditableError{Reason: ReasonLayer, File: f.Src.Path, Refs: []string{line}}
+	if r.keyLines() == 1 {
+		e.Detail = wayLine
+	}
 	if f.Layer != nil {
 		e.Layer = f.Layer.Name
 	}
 	return e
+}
+
+// keyLines counts the lines of the package's layer files, active or not, starting with the
+// renamed item's key: each refuses the rename as lineRefusal's does.
+func (r *renaming) keyLines() int {
+	n := 0
+	for _, f := range r.x.res.root.pkg.Files {
+		if f.FileKind != syntax.FileLayer {
+			continue
+		}
+		for _, b := range f.Amends {
+			n += r.blockKeyLines(b)
+		}
+	}
+	return n
+}
+
+// blockKeyLines is keyLines in block b, when b amends the renamed item's root.
+func (r *renaming) blockKeyLines(b *syntax.AmendBlock) int {
+	if b.Target == nil || b.Target.Name != r.x.res.root.obj.Name() {
+		return 0
+	}
+	n := 0
+	for _, it := range b.Items {
+		if _, ok := r.x.a.snap.prefixOf(it.Path[:1], r.x.res); ok {
+			n++
+		}
+	}
+	return n
 }
 
 // placeOf is node n of f as a token place.

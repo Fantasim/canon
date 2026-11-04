@@ -105,13 +105,14 @@ var (
 
 // NotEditableError is an operation on a value it cannot edit (API.md W5, E5, E12, E32): the reason,
 // the computed value's structural origin, the layer that sets it, what refuses a rename (its
-// references not editable, or its base's broken places), the hidden path no edit writes.
+// references not editable, or its base's broken places), the hidden path no edit writes, the way out.
 type NotEditableError struct {
 	Reason Reason
 	Origin string
 	Layer  string
 	Refs   []string
 	File   string
+	Detail string
 }
 
 func (e *NotEditableError) Error() string {
@@ -235,3 +236,14 @@ func (e *StaleError) Error() string {
 
 // Unwrap is ErrStale.
 func (e *StaleError) Unwrap() error { return ErrStale }
+
+// undoLineError is the Undo check refusing to write back line, a path of the edit layer no Source
+// states; Apply names it by the operation editing that line (undoRefusal).
+type undoLineError struct {
+	line string
+	err  *NotEditableError
+}
+
+func (e *undoLineError) Error() string { return e.err.Error() }
+
+func (e *undoLineError) Unwrap() error { return e.err }

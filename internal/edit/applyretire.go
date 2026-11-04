@@ -49,7 +49,7 @@ func unretireOp(*opCtx) error {
 }
 
 // retireMember retires a member of an @codes enum: `retired ` before its name (API.md N7).
-func (a *applier) retireMember(res resolution) (*work, error) {
+func retireMember(res resolution) (*work, error) {
 	m, ok := res.Target.(*value.Member)
 	d, isEnum := res.root.obj.Decl().(*syntax.EnumDecl)
 	switch {

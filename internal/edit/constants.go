@@ -71,6 +71,16 @@ const (
 	stFormat
 	stLayered
 	stOpaque // an amendment's expression: replaced whole, nothing below it is a source
+	stLoaded // below an amendment that is a load: its data lies outside the layer file (W11a)
+)
+
+// Where a path stands in the edit layer's line at or above it (API.md W11a; DECISIONS 305).
+const (
+	siteNone      site = iota // no such line, or its literal states the path
+	siteLoadNode              // the path's node is a load
+	siteBelowLoad             // the path lies in the data a load reads
+	siteExprNode              // the path's node is an expression, not a literal
+	siteBelowExpr             // the path lies below such an expression
 )
 
 // keyDepth is how many steps a key field lies below its keyed list: the element, then the field.
@@ -94,20 +104,6 @@ const fmtPathError = "%v at segment %d"
 
 // rootSeg is PathError.Seg for a failure at the root.
 const rootSeg = -1
-
-// steppers moves a walk one step from each state (API.md W3).
-var steppers = [...]func(*judge, cursor, int) cursor{
-	stTree:     treeStep,
-	stAbsent:   absentStep,
-	stSpread:   leave,
-	stComputed: stay,
-	stFormat:   stay,
-	stLayered:  stay,
-	stOpaque:   leave,
-}
-
-// rows are API.md §7.2's rows in table order: the first that applies names the reason.
-var rows = [...]func(*judge) Reason{computedRow, layeredRow, formatRow, starRow, inputRow, keyRow, pseudoRow, orderRow, lineRow, layerRow, undoRow}
 
 // itemOps take out, move or rename an item of their target's collection (starRow).
 var itemOps = map[Op]bool{OpRemove: true, OpMove: true, OpRename: true}
@@ -224,13 +220,6 @@ var reasonNames = [...]string{
 	ReasonNone: "none", ReasonComputed: "computed", ReasonLayered: "layered", ReasonFormat: "format",
 	ReasonInput: "input", ReasonKey: "key", ReasonPseudo: "pseudo", ReasonOrder: "order", ReasonLayer: "layer",
 	ReasonBroken: "broken",
-}
-
-// handlers apply each operation of API.md §8.3 to the current state.
-var handlers = [...]func(*opCtx) error{
-	OpSet: setOp, OpReset: resetOp, OpAdd: addOp, OpInsert: insertOp, OpAddEntry: addEntryOp,
-	OpRemove: removeOp, OpMove: moveOp, OpRename: renameOp, OpRetire: retireOp,
-	OpUnretire: unretireOp, OpSetCase: setCaseOp,
 }
 
 // Texts an edit writes: Canon literals (API.md M7), new files (N5, W11), JSON sources (M8).
@@ -353,8 +342,13 @@ const (
 	dirMode  = 0o755
 )
 
-// Texts of an edit's errors.
+// Texts of an edit's errors, the first five the ways out of a NotEditableError (DECISIONS 305).
 const (
+	wayData        = "edit the data file directly"
+	wayLoad        = "edit the data file directly, or replace the load(…) with a literal"
+	wayLiteral     = "replace the expression with a literal"
+	wayNoLayer     = "make the edit without an edit layer"
+	wayLine        = "remove that line first"
 	fmtNotEditable = "%v: reason %s"
 	fmtCollision   = "%v: %s"
 	fmtOpError     = "operation %d (%s): %v"
@@ -486,15 +480,6 @@ const (
 	lockExt           = ".lock"
 	rwBits     uint32 = 0o666
 )
-
-// expanders turn a Change into the files a commit writes or removes, by kind (API.md §8.1, N8).
-var expanders = [...]func(Change) []commitFile{
-	ChangeModified:   modifiedFiles,
-	ChangeCreated:    createdFiles,
-	ChangeDeleted:    deletedFiles,
-	ChangeRenamed:    renamedFiles,
-	ChangeRemovedDir: removedDirFiles,
-}
 
 // findingSep joins the parts of a lock finding's identity, a byte no path or text holds (E23).
 const findingSep = "\x00"

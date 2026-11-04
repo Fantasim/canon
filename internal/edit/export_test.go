@@ -153,3 +153,17 @@ func JSONSources(s *Snapshot) map[string][]byte {
 
 // TreeOf is the tree of the file at display in s, nil for none.
 func TreeOf(s *Snapshot, display string) *syntax.File { return s.tree(display) }
+
+// The ways out of a refusal (DECISIONS 305), as the tests name them.
+const (
+	WayData, WayLoad, WayLiteral, WayNoLayer, WayLine = wayData, wayLoad, wayLiteral, wayNoLayer, wayLine
+)
+
+// Way is the way out Editable gives a refusal, "" for none (DECISIONS 305).
+func (e Editability) Way() string { return e.way }
+
+// Fits reports op valid for r's target without an edit layer (fitters), false if r is not of s.
+func Fits(s *Snapshot, r Resolved, op Op) bool {
+	res, err := s.reopen(r)
+	return err == nil && s.fits(op, res)
+}

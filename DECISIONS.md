@@ -4744,3 +4744,30 @@ round 2", "PS1 review", "PS2 round 2"):
      type: `let q: Int8 = -(-9223372036854775808)` reports "does not fit Int" with no note. Reason: v0.3
      run (CHECK-LEAFLIT rounds 4-7): the union check first cascaded `E3201` after `E3002`, then forced
      a ref chain (a new `E3008`), then lost a union's own `E3002` judged mid-resolution.
+
+462. **A refusal names a way out only when following it makes the edit pass; one rule for a layer
+     line's non-literal nodes (API.md §7.2, W5, W11, W11a; follows 273, 305, 411).** `NotEditableError`
+     carries `Detail`, the way out, printed after its reason. An edit way out prints only from an
+     allowlist, each pinned by a test that follows it and shows the same op then passing:
+     "replace the expression with a literal" and "… or replace the load(…) with a literal" for a Set,
+     a Reset whose base value has a literal form, an `AddEntry` into a table or map, and a `Remove` of
+     a table or map entry the layer states (not in a `@stable` table); "make the edit without an edit
+     layer" when the same op passes with no edit layer and its target takes it (a promise about the
+     base edit alone); "remove that line first" for a `Rename` blocked by exactly one layer line.
+     "edit the data file directly" prints for every `layer` refusal at or below a load in a layer,
+     except a `Rename` or `Move` of the load's own node. Nothing else prints one. `Editable` and
+     `Apply` give the same reason and `Detail`; active and inactive layers do too, except
+     "make the edit without an edit layer", since the base verdict itself depends on the layer. Every
+     non-literal node of a layer line, a load of any form or an expression, the line's own value or
+     nested in its literal, follows one rule: at the node, Set, Reset and Remove are `computed` (an
+     Undo cannot write the node back, 273) and every other op is `layer`; below it, a load is `layer`
+     (its data lies outside the layer file, 411) and an expression `computed`. §7.2's `format` row is
+     for base sources. A literal subtree of a line is judged and rewritten on its own, beside a load,
+     an expression or a spread (this reverses log-2026-11-01 EDIT-OWED "S on the inactive path"; 273's
+     "a spread included" is the line's spread text, which such an edit leaves byte-identical). With the
+     edit layer inactive, a Set, Reset, `AddEntry` or `Remove` through it is `computed`, with no way
+     out, when the declared type of the root it amends holds a dependent type anywhere (not through
+     refs): 273 types such an edit against the declared type, and a dependent type has none without
+     the layer's own drivers. Comments never change a verdict. Reason: v0.3 run (EDIT-WAYOUT rounds
+     1-3d): printed ways out that failed once followed, Editable/Apply and active/inactive splits, an
+     internal error on an entry Set, and inactive edits that broke a dependent type once active.

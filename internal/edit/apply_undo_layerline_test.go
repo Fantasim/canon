@@ -9,8 +9,8 @@ import (
 )
 
 // API.md W5, W11, W11a, E22: a layer line not a literal refuses its Reset (computed); a request
-// beside it verifies; one replacing it, whose Undo could not write it again, is refused before
-// anything is written, as computed (log-2026-10-01 M4.1 rulings).
+// beside it verifies, inactive refused as its dependent field is (DECISIONS 273, 462); one replacing
+// it, whose Undo could not write it again, is refused before anything is written, as computed.
 func TestUndoLayerLineNotLiteral(t *testing.T) {
 	src := reviewLayerSrc + "\n/// A tag.\nlet tag: String = \"t\"\n"
 	dev := "package d\nlayer dev\n\namend quests {\n  slay.goal: kill\n  slay.target: \"boar\"\n  slay.note: tag\n}\n"
@@ -27,8 +27,12 @@ func TestUndoLayerLineNotLiteral(t *testing.T) {
 		if err := apply(reset); !errors.Is(err, edit.ErrNotEditable) {
 			t.Errorf("%v: Reset of the line: %v, want ErrNotEditable", layers, err)
 		}
-		undoIn(t, undoSpec{name: "beside", fsys: fs, view: v, views: [][]string{{"dev"}, nil}, files: []string{"law/d/dev.layer.canon"},
-			ops: []edit.Operation{setAt("quests.slay.goal", collect), setAt("quests.slay.target", edit.Int(25))}})
+		beside := []edit.Operation{setAt("quests.slay.goal", collect), setAt("quests.slay.target", edit.Int(25))}
+		if layers == nil && !opsRefused(t, fs, v, beside) {
+			t.Errorf("inactive: beside, a dependent field: not refused as computed")
+		} else if layers != nil {
+			undoIn(t, undoSpec{name: "beside", fsys: fs, view: v, views: [][]string{{"dev"}, nil}, files: []string{"law/d/dev.layer.canon"}, ops: beside})
+		}
 		whole := []edit.Operation{setAt("quests.slay", edit.Source(`{ goal: collect, target: 3 }`)), setAt("quests.slay.target", edit.Int(25))}
 		var ne *edit.NotEditableError
 		if err := apply(whole); !errors.As(err, &ne) || ne.Reason != edit.ReasonComputed {
