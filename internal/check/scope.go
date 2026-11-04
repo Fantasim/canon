@@ -29,6 +29,7 @@ type env struct {
 	shorthand types.Type  // the receiver of a shorthand lambda's chain (TYPES.md §12.4)
 	site      *declSite   // the declaration siteAt is checked against, for API.md F12's related note
 	siteAt    syntax.Expr // the value site holds; a part of it checked against another type names none
+	negand    syntax.Expr // the operand of a negation: its literal is judged as the negated value (checkLiteral)
 
 	magic     map[string]*object // a view's magic names in scope (VIEWMODEL.md §3.4)
 	scopeFile *syntax.File       // the file whose imports are in scope, when not file (I18N.md T1)

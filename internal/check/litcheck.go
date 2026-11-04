@@ -3,7 +3,9 @@ package check
 import (
 	"math"
 	"math/big"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -15,10 +17,11 @@ type rawValue string
 
 func (r rawValue) CanonText() string { return string(r) }
 
-// checkLiteral reports statically a literal that breaks what it is stored into (TYPES.md §5.3, §7.4).
+// checkLiteral reports statically a literal that breaks what it is stored into: a negated literal as the value it negates to, a key of a ref as a literal of its chain's leaf key field (TYPES.md §5.3, §7.1, §7.4; DECISIONS 456).
 func (c *checker) checkLiteral(env *env, e syntax.Expr, want types.Type) {
-	lit := literalOf(e)
-	if lit == nil {
+	at := inner(e)
+	lit := valueOf(at)
+	if lit == nil || at == env.negand {
 		return
 	}
 	for t := want; t != nil; {
@@ -27,18 +30,103 @@ func (c *checker) checkLiteral(env *env, e syntax.Expr, want types.Type) {
 			t = x.Def
 		case *types.OptionalType:
 			t = x.Elem
+		case *types.LitUnionType:
+			t = c.otherThan(x, lit)
+		case *types.RefType:
+			f := c.leafField(x)
+			if f == nil {
+				return
+			}
+			env, t = env.storing(c.fieldObjects[f], at), c.fieldType(f)
 		case *types.Refined:
-			if !c.literalRefinement(env, lit, x) {
+			if !c.literalRefinement(env, at, lit, x) {
 				return
 			}
 			t = x.Of
 		case types.Basic:
-			c.literalLimits(env, lit, x)
+			c.literalLimits(env, at, lit, x)
 			return
 		default:
 			return
 		}
 	}
+}
+
+// otherThan is the alternative of u a literal is a value of: none when it is one of u's literals, which wins, or when u is refused, the error type (TYPES.md §1, §13.2).
+func (c *checker) otherThan(u *types.LitUnionType, lit syntax.Expr) types.Type {
+	if s, isStr := stringLiteral(lit); (isStr && slices.Contains(u.Literals, s)) || c.refusedUnion(u) {
+		return nil
+	}
+	return u.Of
+}
+
+// valueOf is the literal e stands for: the literal token under parentheses, or a numeric literal under negations, negated (TYPES.md §5.3, §7.1); nil for anything else, a negation past 64 bits included (negationRange's).
+func valueOf(e syntax.Expr) syntax.Expr {
+	u, ok := inner(e).(*syntax.UnaryExpr)
+	if !ok {
+		return literalOf(e)
+	}
+	v := valueOf(u.X)
+	if u.Op != syntax.TokMinus || !negatable(v) {
+		return nil
+	}
+	return negated(v)
+}
+
+// negatable reports a numeric literal whose operand and negation both hold in 64 bits (DECISIONS 460).
+func negatable(lit syntax.Expr) bool {
+	switch l := lit.(type) {
+	case *syntax.IntLit:
+		return l.Value.IsInt64() && l.Value.Int64() != math.MinInt64
+	case *syntax.DurationLit:
+		return l.Millis != math.MinInt64
+	}
+	return lit != nil
+}
+
+// negationRange is E3201 for a negation of a literal past the 64 bits expressions compute in, want its expected type: on an Int operand, which is no stored value, else on the value it yields (TYPES.md §7.2; DECISIONS 460).
+func (c *checker) negationRange(env *env, e *syntax.UnaryExpr, want types.Type) {
+	if l, isInt := literalOf(e.X).(*syntax.IntLit); isInt && !l.Value.IsInt64() {
+		c.limitFinding(env.storingAt(nil, e), inner(e.X), types.IntType, l.Value.String())
+		return
+	}
+	switch v := valueOf(e.X).(type) {
+	case *syntax.IntLit:
+		if n := new(big.Int).Neg(v.Value); !n.IsInt64() {
+			c.limitFinding(storedAs(env, e, want, types.IntType), e, types.IntType, n.String())
+		}
+	case *syntax.DurationLit:
+		if v.Millis == math.MinInt64 { // types.DurationText takes an int64, which 2^63 ms is not: -2^63 ms's text without its sign is its magnitude's
+			c.limitFinding(storedAs(env, e, want, types.DurationType), e, types.DurationType, strings.TrimPrefix(types.DurationText(v.Millis), hyphen))
+		}
+	}
+}
+
+// storedAs is env for a finding at e naming the type limit: its declaration's note only when limit is the type it stores, want (API.md §4.4 F12).
+func storedAs(env *env, e syntax.Expr, want types.Type, limit types.Basic) *env {
+	if b, isBasic := unwrap(want).(types.Basic); isBasic && b == limit {
+		return env
+	}
+	return env.storingAt(nil, e)
+}
+
+// negated is a copy of a numeric literal holding its negation, nil for anything else.
+func negated(lit syntax.Expr) syntax.Expr {
+	switch l := lit.(type) {
+	case *syntax.IntLit:
+		n := *l
+		n.Value = new(big.Int).Neg(l.Value)
+		return &n
+	case *syntax.FloatLit:
+		n := *l
+		n.Neg = !l.Neg
+		return &n
+	case *syntax.DurationLit:
+		n := *l
+		n.Millis = -l.Millis
+		return &n
+	}
+	return nil
 }
 
 // literalOf is the literal token under parentheses, nil for anything else.
@@ -86,8 +174,8 @@ func declaredAs(d syntax.Node) (*syntax.Ident, syntax.Type) {
 	return nil, nil
 }
 
-// literalLimits is E3201 for a literal outside its sized type or the Duration range (TYPES.md §7.2).
-func (c *checker) literalLimits(env *env, lit syntax.Expr, b types.Basic) {
+// literalLimits is E3201 at at for the literal value lit outside its sized type or the Duration range (TYPES.md §7.2).
+func (c *checker) literalLimits(env *env, at, lit syntax.Expr, b types.Basic) {
 	lo, hi, ok := b.Limits()
 	if !ok {
 		return
@@ -95,11 +183,11 @@ func (c *checker) literalLimits(env *env, lit syntax.Expr, b types.Basic) {
 	switch l := lit.(type) {
 	case *syntax.IntLit:
 		if b.K == types.Int && !inInt64(l.Value, lo, hi) {
-			c.limitFinding(env, lit, b, l.Value.String())
+			c.limitFinding(env, at, b, l.Value.String())
 		}
 	case *syntax.DurationLit:
 		if b.K == types.Duration && (l.Millis < lo || l.Millis > hi) {
-			c.limitFinding(env, lit, b, types.DurationText(l.Millis))
+			c.limitFinding(env, at, b, types.DurationText(l.Millis))
 		}
 	}
 }
@@ -135,13 +223,13 @@ func inInt64(v *big.Int, lo, hi int64) bool {
 	return v.IsInt64() && v.Int64() >= lo && v.Int64() <= hi
 }
 
-// literalRefinement checks one written refinement; false once it reported, so a literal gets
-// one finding.
-func (c *checker) literalRefinement(env *env, lit syntax.Expr, r *types.Refined) bool {
+// literalRefinement checks the literal value lit, written at at, against one written refinement;
+// false once it reported, so a literal gets one finding.
+func (c *checker) literalRefinement(env *env, at, lit syntax.Expr, r *types.Refined) bool {
 	if r.Pattern != nil {
 		s, isStr := stringLiteral(lit)
 		if isStr && !r.Pattern.MatchString(s) {
-			c.patternFinding(env, lit, r, types.QuoteString(s))
+			c.patternFinding(env, at, r, types.QuoteString(s))
 			return false
 		}
 	}
@@ -153,7 +241,7 @@ func (c *checker) literalRefinement(env *env, lit syntax.Expr, r *types.Refined)
 	if !ok || inBound(v, r.Range, r.Of.Base().Kind()) {
 		return true
 	}
-	c.rangeFinding(env, lit, r, text)
+	c.rangeFinding(env, at, r, text)
 	return false
 }
 

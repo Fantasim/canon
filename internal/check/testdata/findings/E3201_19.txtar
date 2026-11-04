@@ -1,0 +1,17 @@
+TYPES.md §5.3, §7.2, DECISIONS 460: in expressions every integer is a 64-bit Int, so an integer literal past it is E3201 with no expected type too: a let with no type and an element of a list with none. A declaration with no written type names none.
+-- a/a.canon --
+package a
+
+local let plain = 9223372036854775808
+
+local let many = [1, 9223372036854775809]
+
+local let fits = 9223372036854775807
+-- findings.txt --
+error[E3201]  a/a.canon:3:19
+  9223372036854775808 does not fit Int
+
+error[E3201]  a/a.canon:5:22
+  9223372036854775809 does not fit Int
+
+2 errors, 0 warnings in 1 package (…)

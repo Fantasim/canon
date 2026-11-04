@@ -1,0 +1,17 @@
+TYPES.md §5.3, §7.4, §13.2: a literal equal to one of a union's literals is that literal, even where the union's other alternative would refuse it: `"Y"` breaks `String(/^[a-z]+$/)` and is no key of `ss`, yet it is accepted for `String(/^[a-z]+$/) | "Y"` and `ref ss | "Y"`; a literal of the other alternative that keeps its rules is accepted too (`"x"`).
+-- a/a.canon --
+package a
+
+local record S {
+  s: String(/^[a-z]+$/)
+}
+
+local let ss: [S] keyed by s = [{ s: "x" }]
+
+local let t: ref ss | "Y" = "Y"
+
+local let u: String(/^[a-z]+$/) | "Y" = "Y"
+
+local let v: String(/^[a-z]+$/) | "Y" = "x"
+
+local let k: ref ss | "Y" = "x"

@@ -1,0 +1,35 @@
+TYPES.md §1, §10.2, §13.2: a literal union is judged only from a conclusive read of its ref chain. `x` meets `ref ds | "y"` while `ds`'s chain still waits for `js`, so the union is not judged then: it stays due, and its E3002 (an Int leaf has no string wire) is still reported once, at its alternative, beside `x`'s own E3008.
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record C {
+  b: ref J
+}
+
+local record D {
+  c: ref cs
+}
+
+local record H {
+  u: ref ds | "y"
+}
+
+local let cs: [C] keyed by b = [{ b: 1 }]
+
+local let ds: [D] keyed by c = [{ c: 1 }]
+
+local let x = [H { u: "X1" }]
+
+local let js: [J] keyed by n = [{ n: 1 }]
+-- findings.txt --
+error[E3002]  a/a.canon:16:6
+  expected String, found ref a.ds
+
+error[E3008]  a/a.canon:23:11
+  cannot infer the type of this expression; add a type
+
+2 errors, 0 warnings in 1 package (…)

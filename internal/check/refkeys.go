@@ -54,24 +54,44 @@ func (c *checker) keyLoops(t types.Type) bool {
 
 // leafKey is t's key at the leaf of its chain of ref keys: String for a table, Error for a target in error, false on a loop (WIRE.md §5.9).
 func (c *checker) leafKey(t types.Type) (types.Type, bool) {
+	_, leaf, end := c.keyChain(t)
+	return leaf, end != endLoop
+}
+
+// leafField is the key field at the leaf of the chain of ref keys t starts, the first key down it that is not a ref; nil when t is no ref, or for a table, a target in error or a loop (DECISIONS 456).
+func (c *checker) leafField(t types.Type) *types.Field {
+	f, _, end := c.keyChain(t)
+	if end != endLeaf {
+		return nil
+	}
+	return f
+}
+
+// chainEnd is how a walk down a chain of ref keys ends.
+type chainEnd uint8
+
+// keyChain walks the chain of ref keys t starts: the last key field met (nil when t is no ref), the leaf's type (String for a table, Error for a target in error, nil on a loop) and how the walk ended (WIRE.md §5.9).
+func (c *checker) keyChain(t types.Type) (*types.Field, types.Type, chainEnd) {
+	var f *types.Field
 	var seen []*types.Collection
 	for {
 		r, ok := t.Base().(*types.RefType)
 		if !ok {
-			return t, true
+			return f, t, endLeaf
 		}
 		if c.brokenRef(r) {
-			return types.ErrorType, true
+			return f, types.ErrorType, endBroken
 		}
 		coll := c.coll(r)
 		if slices.Contains(seen, coll) {
-			return nil, false
+			return f, nil, endLoop
 		}
 		seen = append(seen, coll)
 		if coll.KeyedBy == nil {
-			return types.StringType, true
+			return f, types.StringType, endTable
 		}
-		t = c.fieldType(coll.KeyedBy)
+		f = coll.KeyedBy
+		t = c.fieldType(f)
 	}
 }
 

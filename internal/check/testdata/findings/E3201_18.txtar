@@ -1,0 +1,18 @@
+TYPES.md §7.2, DECISIONS 460: a Duration negation is computed without wrapping, so `-(-9223372036854775808ms)` is E3201 on its true value, 2^63 ms, never on the wrapped -2^63 ms, with or without an expected type; `-(-(9223372036854ms))` fits. The value is what is stored, so a typed declaration names it (API.md §4.4 F12). A token of 2^63 ms not folded into a `-` is E1111 alone (TestLexErrorInLiteralRange).
+-- a/a.canon --
+package a
+
+local let e: Duration = -(-9223372036854775808ms)
+
+local let f: Duration = -(-(9223372036854ms))
+
+local let g = -(-9223372036854775808ms)
+-- findings.txt --
+error[E3201]  a/a.canon:3:25
+  106751991167d7h12m55s808ms does not fit Duration
+  expected by a/a.canon:3 (e: Duration)
+
+error[E3201]  a/a.canon:7:15
+  106751991167d7h12m55s808ms does not fit Duration
+
+2 errors, 0 warnings in 1 package (…)

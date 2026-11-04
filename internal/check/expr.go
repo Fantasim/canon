@@ -107,7 +107,7 @@ func (c *checker) literalNode(env *env, e syntax.Expr, want types.Type) types.Ty
 	}
 	switch e := e.(type) {
 	case *syntax.IntLit:
-		return c.intLit(e, want)
+		return c.intLit(env, e, want)
 	case *syntax.FloatLit:
 		return types.FloatType
 	case *syntax.DurationLit:
@@ -157,8 +157,11 @@ func cmpType(want types.Type) types.Type {
 	return want
 }
 
-// intLit is an integer literal: Int, or a key when the expected type is a ref (TYPES.md §4.1).
-func (c *checker) intLit(e *syntax.IntLit, want types.Type) types.Type {
+// intLit is an integer literal: Int, E3201 alone past 64 bits (a negation's operand is negationRange's), or a key when the expected type is a ref (TYPES.md §4.1, §7.2; DECISIONS 460).
+func (c *checker) intLit(env *env, e *syntax.IntLit, want types.Type) types.Type {
+	if want == nil && !e.Value.IsInt64() && syntax.Expr(e) != env.negand {
+		c.limitFinding(env, e, types.IntType, e.Value.String())
+	}
 	if coll := c.keyTarget(want); coll != nil && c.keyedByInt(coll) {
 		c.info.Keys[e] = coll
 		return refTo(want)

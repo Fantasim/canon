@@ -1,0 +1,87 @@
+TYPES.md §5.3, §7.1, §7.2, DECISIONS 460: a negated literal is judged as the value it negates to, parenthesised or not, however deeply nested, so its E3201 names that value at the whole negation: `-(129)` is -129 into an Int8 like `-129`, `-(-(128))` and `-(-128)` are 128, `-(32769)` is outside Int16, a non-zero negated literal never fits a UInt8 or a UInt64, and `-(300)` reports -300, never 300. The related note names the declaration the negated value is stored into: a let, a field default, a parameter default and a parameter (API.md §4.4 F12, ERRORS.md §1.5).
+-- a/a.canon --
+package a
+
+local let a: Int8 = -(129)
+
+local let b: Int8 = -129
+
+local let c: Int8 = -(-(128))
+
+local let d: Int8 = -(-128)
+
+local let e: Int16 = -(32769)
+
+local let f: UInt8 = -(1)
+
+local let g: UInt8 = -1
+
+local let h: Int8 = -(300)
+
+local let p: Int8 = (-((130)))
+
+local record R {
+  x: Int8 = -(131)
+}
+
+local fn m(y: Int8 = -(132)) -> Bool {
+  return y > 0
+}
+
+local let call: Bool = m(-(133))
+
+local let wide: UInt64 = -(1)
+-- findings.txt --
+error[E3201]  a/a.canon:3:21
+  -129 does not fit Int8
+  expected by a/a.canon:3 (a: Int8)
+
+error[E3201]  a/a.canon:5:21
+  -129 does not fit Int8
+  expected by a/a.canon:5 (b: Int8)
+
+error[E3201]  a/a.canon:7:21
+  128 does not fit Int8
+  expected by a/a.canon:7 (c: Int8)
+
+error[E3201]  a/a.canon:9:21
+  128 does not fit Int8
+  expected by a/a.canon:9 (d: Int8)
+
+error[E3201]  a/a.canon:11:22
+  -32769 does not fit Int16
+  expected by a/a.canon:11 (e: Int16)
+
+error[E3201]  a/a.canon:13:22
+  -1 does not fit UInt8
+  expected by a/a.canon:13 (f: UInt8)
+
+error[E3201]  a/a.canon:15:22
+  -1 does not fit UInt8
+  expected by a/a.canon:15 (g: UInt8)
+
+error[E3201]  a/a.canon:17:21
+  -300 does not fit Int8
+  expected by a/a.canon:17 (h: Int8)
+
+error[E3201]  a/a.canon:19:22
+  -130 does not fit Int8
+  expected by a/a.canon:19 (p: Int8)
+
+error[E3201]  a/a.canon:22:13
+  -131 does not fit Int8
+  expected by a/a.canon:22 (x: Int8)
+
+error[E3201]  a/a.canon:25:22
+  -132 does not fit Int8
+  expected by a/a.canon:25 (y: Int8)
+
+error[E3201]  a/a.canon:29:26
+  -133 does not fit Int8
+  expected by a/a.canon:25 (y: Int8)
+
+error[E3201]  a/a.canon:31:26
+  -1 does not fit UInt64
+  expected by a/a.canon:31 (wide: UInt64)
+
+13 errors, 0 warnings in 1 package (…)

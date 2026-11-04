@@ -1,0 +1,37 @@
+TYPES.md §5.3, §7.1, §7.4, DECISIONS 460: a negated literal checked against a refined type is judged as the value it negates to, so a refinement it statically violates is E3204 naming that value at the whole negation: `-(5)` and `-(-(20))` against Int(0..10), `-(1.5)` against Float(0.0..), `-(3s)` against Duration(0s..) and `-(-(1s))` against Duration(..=0s); `-(-(5))` fits. The related note names the declaration the value is stored into (API.md §4.4 F12, ERRORS.md §1.5).
+-- a/a.canon --
+package a
+
+local let a: Int(0..10) = -(5)
+
+local let b: Int(0..10) = -(-(20))
+
+local let c: Float(0.0..) = -(1.5)
+
+local let d: Duration(0s..) = -(3s)
+
+local let e: Int(0..10) = -(-(5))
+
+local let f: Duration(..=0s) = -(-(1s))
+-- findings.txt --
+error[E3204]  a/a.canon:3:27
+  -5 is outside 0..10
+  expected by a/a.canon:3 (a: Int(0..10))
+
+error[E3204]  a/a.canon:5:27
+  20 is outside 0..10
+  expected by a/a.canon:5 (b: Int(0..10))
+
+error[E3204]  a/a.canon:7:29
+  -1.5 is outside 0.0..
+  expected by a/a.canon:7 (c: Float(0.0..))
+
+error[E3204]  a/a.canon:9:31
+  -3s is outside 0s..
+  expected by a/a.canon:9 (d: Duration(0s..))
+
+error[E3204]  a/a.canon:13:32
+  1s is outside ..=0s
+  expected by a/a.canon:13 (f: Duration(..=0s))
+
+5 errors, 0 warnings in 1 package (…)

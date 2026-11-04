@@ -21,7 +21,9 @@ func (c *checker) unary(env *env, e *syntax.UnaryExpr, want types.Type) types.Ty
 	}
 	var t types.Type
 	if literalOf(e.X) != nil || c.contextOperation(env, e.X) {
-		t = c.expr(env.carry(e, e.X), e.X, numericWant(want))
+		if t = c.expr(env.negating(e.X), e.X, numericWant(want)); t.Kind() != types.Error {
+			c.negationRange(env, e, want) // a literal the lexer rejected is the error type, with no value to judge (DECISIONS 215)
+		}
 	} else {
 		t = c.synth(env, e.X)
 	}

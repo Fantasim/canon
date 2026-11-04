@@ -1,0 +1,35 @@
+TYPES.md §5.3, §7.4, §13.2, DECISIONS 456: a string literal that is not one of a union's literals is a value of the union's other alternative, so it is checked statically against it: its pattern (`String(/^[a-z]+$/) | "Y"`) and, for a `ref`, its chain's leaf key (`ref ss | "Y"`, `ss` keyed by a patterned String; `ref ts | "Y"`, 2 levels), each named by what it was checked against (API.md §4.4 F12). A literal of the union stays that literal (`"Y"`, accepted in litunion_wins.txtar).
+-- a/a.canon --
+package a
+
+local record S {
+  s: String(/^[a-z]+$/)
+}
+
+local record T {
+  r: ref ss
+}
+
+local let ss: [S] keyed by s = [{ s: "x" }]
+
+local let ts: [T] keyed by r = [{ r: "x" }]
+
+local let t: ref ss | "Y" = "X1"
+
+local let u: String(/^[a-z]+$/) | "Y" = "X2"
+
+local let w: ref ts | "Y" = "X3"
+-- findings.txt --
+error[E3205]  a/a.canon:15:29
+  "X1" does not match /^[a-z]+$/
+  expected by a/a.canon:4 (s: String(/^[a-z]+$/))
+
+error[E3205]  a/a.canon:17:41
+  "X2" does not match /^[a-z]+$/
+  expected by a/a.canon:17 (u: String(/^[a-z]+$/) | "Y")
+
+error[E3205]  a/a.canon:19:29
+  "X3" does not match /^[a-z]+$/
+  expected by a/a.canon:4 (s: String(/^[a-z]+$/))
+
+3 errors, 0 warnings in 1 package (…)

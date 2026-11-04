@@ -1,0 +1,54 @@
+TYPES.md §5.3, §7.2, DECISIONS 460: the operand of a negation is still a 64-bit Int, so `-(9223372036854775808)` is E3201 on its operand, with or without an expected type: into an Int, as a parameter default, as a field default and alone. `-(-9223372036854775808)` is E3201 on its value 9223372036854775808, with or without an expected type; `-(-(-9223372036854775808))` is reported once, at the negation that leaves the Int range. The operand is not what is stored, so its finding names no declaration; a negation's value names the declaration it is stored into only when the type the message names, Int, is that declaration's type (`twice`, not `q: Int8`), and one inside another negation names none (API.md §4.4 F12).
+-- a/a.canon --
+package a
+
+local let a: Int = -(9223372036854775808)
+
+local fn m(y: Int = -(9223372036854775808)) -> Bool {
+  return y > 0
+}
+
+local let called: Bool = m()
+
+local record R {
+  x: Int = -(9223372036854775808)
+}
+
+local let r: R = {}
+
+local let alone = -(9223372036854775808)
+
+local let twice: Int = -(-9223372036854775808)
+
+local let twiceAlone = -(-9223372036854775808)
+
+local let thrice: Int8 = -(-(-9223372036854775808))
+
+local let q: Int8 = -(-9223372036854775808)
+-- findings.txt --
+error[E3201]  a/a.canon:3:22
+  9223372036854775808 does not fit Int
+
+error[E3201]  a/a.canon:5:23
+  9223372036854775808 does not fit Int
+
+error[E3201]  a/a.canon:12:14
+  9223372036854775808 does not fit Int
+
+error[E3201]  a/a.canon:17:21
+  9223372036854775808 does not fit Int
+
+error[E3201]  a/a.canon:19:24
+  9223372036854775808 does not fit Int
+  expected by a/a.canon:19 (twice: Int)
+
+error[E3201]  a/a.canon:21:24
+  9223372036854775808 does not fit Int
+
+error[E3201]  a/a.canon:23:28
+  9223372036854775808 does not fit Int
+
+error[E3201]  a/a.canon:25:21
+  9223372036854775808 does not fit Int
+
+8 errors, 0 warnings in 1 package (…)

@@ -137,6 +137,9 @@ type checker struct {
 	steps       map[*object]bool           // the fields a view gives a `step` text (I18N.md §3.3)
 	curView     *syntax.ViewDecl           // the view being checked, for BrokenViews (ADR-0009)
 
+	unionsOut map[*types.LitUnionType]bool     // literal unions whose alternative E3002 refused: the error type (refuseUnion)
+	unionsDue map[*types.LitUnionType]unionJob // literal unions whose wire judgement is still deferred (judgeUnion)
+
 	keyedWrites map[*object]*keyWrites // by keyed-list let, the keys its `entry` declarations write (TYPES.md §9.3)
 	entryDups   map[*pkgState][]entryDup
 	journal     *journal       // a session's record of its findings and folds, nil for Check (IMPLEMENTATION-PLAN §7.6)
@@ -182,6 +185,8 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		badLits:      map[syntax.Node]bool{},
 		unrefined:    map[syntax.Node]bool{},
 		refused:      map[*types.Param]types.Type{},
+		unionsOut:    map[*types.LitUnionType]bool{},
+		unionsDue:    map[*types.LitUnionType]unionJob{},
 		kept:         map[*types.DepMapType]bool{},
 		unmatchable:  map[syntax.Node]bool{},
 		funcDepth:    map[*object]int{},

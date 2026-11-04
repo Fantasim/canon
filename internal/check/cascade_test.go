@@ -267,6 +267,22 @@ func TestLexErrorInTypes(t *testing.T) {
 	})
 }
 
+// TYPES.md §1, §5.3, §7.2, DECISIONS 215, 460: a numeric literal the lexer rejects has no value to judge, so it is the lexer's finding alone, never a range or refinement finding (E3201, E3204) too: typed, refined, untyped, and negated.
+func TestLexErrorInLiteralRange(t *testing.T) {
+	const over = "9223372036854775808ms"
+	runCascades(t, []cascadeCase{
+		{"duration past 2^63 ms", "local let d: Duration = " + over + "\n", diag.E1111.Def()},
+		{"refined duration past 2^63 ms", "local let d: Duration(..1s) = " + over + "\n", diag.E1111.Def()},
+		{"untyped duration past 2^63 ms", "local let d = " + over + "\n", diag.E1111.Def()},
+		{"negated duration past 2^63 ms", "local let d: Duration = -(" + over + ")\n", diag.E1111.Def()},
+		{"untyped negated duration past 2^63 ms", "local let d = -(-(" + over + "))\n", diag.E1111.Def()},
+		{"duration units out of order", "local let d: Duration(1s..) = 5s3m\n", diag.E1111.Def()},
+		{"negated duration units out of order", "local let d: Duration(1s..) = -(5s3m)\n", diag.E1111.Def()},
+		{"integer with a bad digit", "local let n: Int(1..) = 12abc\n", diag.E1110.Def()},
+		{"negated integer with a bad digit", "local let n: Int(1..) = -(0xZZ)\n", diag.E1110.Def()},
+	})
+}
+
 // TYPES.md §5.2, §1, DECISIONS 215 (progen E1112_70091): a map key holding a lexer error is a string key (no E3305).
 func TestLexErrorInMapKey(t *testing.T) {
 	runCascades(t, []cascadeCase{

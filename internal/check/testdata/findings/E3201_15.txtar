@@ -1,0 +1,139 @@
+TYPES.md §4.1, §5.3, §7.2, §10.3, DECISIONS 456: a literal written for a ref into a keyed list keyed by a ref is a literal of the chain's leaf key type, so an integer literal outside a UInt8 leaf is E3201 at check time, at every depth, exactly as a key of `bs` itself is: a let of the ref type (`ref bs`, 1 level; `ref cs`, 2; `ref ds`, 3), an index, a key argument of hasKey, get and find, an `entry` key, a record field of the ref type and an amend key in a layer. The related note names the chain's leaf key field `n` (API.md §4.4 F12, ERRORS.md §1.5).
+-- a/a.canon --
+package a
+
+local record B {
+  n: UInt8
+  v: Int = 0
+}
+
+local record C {
+  b: ref bs
+  v: Int = 0
+}
+
+local record D {
+  c: ref cs
+  v: Int = 0
+}
+
+local record Cfg {
+  bs2: [B] keyed by n
+  cs2: [C] keyed by b
+  ds2: [D] keyed by c
+}
+
+local let bs: [B] keyed by n = [{ n: 1 }]
+
+local let cs: [C] keyed by b = [{ b: 1 }]
+
+local let ds: [D] keyed by c = [{ c: 1 }]
+
+local let cfg: Cfg = { bs2: [{ n: 1 }], cs2: [{ b: 1 }], ds2: [{ c: 1 }] }
+
+local let r1: ref bs = 300
+
+local let r2: ref cs = 301
+
+local let r3: ref ds = 302
+
+local let i2: C = cs[303]
+
+local let i3: D = ds[304]
+
+local let h2: Bool = cs.hasKey(305) or cs.get(306) != none or cs.find(307) != none
+
+local let h3: Bool = ds.hasKey(308) or ds.get(309) != none or ds.find(310) != none
+
+local let f2: C = { b: 311 }
+
+local let f3: D = { c: 312 }
+
+entry cs.313 {}
+
+entry ds.314 {}
+
+local let fits: Bool = cs.hasKey(255) and ds.hasKey(0)
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  bs2[315].v: 1
+  cs2[316].v: 1
+  ds2[317].v: 1
+}
+-- findings.txt --
+error[E3201]  a/a.canon:32:24
+  300 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:34:24
+  301 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:36:24
+  302 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:38:22
+  303 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:40:22
+  304 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:42:32
+  305 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:42:47
+  306 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:42:71
+  307 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:44:32
+  308 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:44:47
+  309 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:44:71
+  310 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:46:24
+  311 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:48:24
+  312 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:50:10
+  313 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/a.canon:52:10
+  314 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/dev.layer.canon:5:7
+  315 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/dev.layer.canon:6:7
+  316 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+error[E3201]  a/dev.layer.canon:7:7
+  317 does not fit UInt8
+  expected by a/a.canon:4 (n: UInt8)
+
+18 errors, 0 warnings in 1 package (…)

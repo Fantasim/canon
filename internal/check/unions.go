@@ -13,6 +13,7 @@ type unionJob struct {
 	env *env
 	at  syntax.Node
 	of  types.Type
+	u   *types.LitUnionType // the union, the error type once its alternative is refused (refusedUnion)
 }
 
 // resolveUnion is `A | "lit" | …`: a type after the first alternative is E3028, unless in error (TYPES.md §13.2, §1).
@@ -32,11 +33,12 @@ func (c *checker) resolveUnion(tc *typeCtx, t *syntax.UnionType) types.Type {
 		c.stringAlt(alt, lit)
 		u.Literals = append(u.Literals, constText(lit.Value))
 	}
-	j := unionJob{env: tc.env, at: t.Alts[0], of: of}
+	j := unionJob{env: tc.env, at: t.Alts[0], of: of, u: u}
 	if c.bodies {
 		c.unionWire(j)
 	} else {
 		c.unions = append(c.unions, j)
+		c.unionsDue[u] = j
 	}
 	return u
 }
@@ -76,20 +78,48 @@ func (c *checker) stringAlt(alt syntax.Type, lit *syntax.LiteralType) {
 
 // checkUnions judges the literal unions written in p's types, its refs now resolved; judging one may resolve more.
 func (c *checker) checkUnions(p *pkgState) {
-	drainPkgJobs(&c.unions, p, func(j unionJob) *pkgState { return j.env.pkg }, c.unionWire)
+	drainPkgJobs(&c.unions, p, func(j unionJob) *pkgState { return j.env.pkg }, func(j unionJob) { c.judgeUnion(j.u) })
+}
+
+// judgeUnion runs u's deferred unionWire job once, whichever comes first: its package's checkUnions or a value checked against u (refusedUnion).
+func (c *checker) judgeUnion(u *types.LitUnionType) {
+	if j, due := c.unionsDue[u]; due {
+		delete(c.unionsDue, u)
+		c.unionWire(j)
+	}
 }
 
 // unionWire is E3002 for a union's alternative, or a branch of it, without a string wire form.
 func (c *checker) unionWire(j unionJob) {
 	if !c.stringWire(j.of) {
-		c.report(j.env, diag.E3002.At(j.env.span(j.at), types.StringType, j.of))
+		c.refuseUnion(j, j.of)
 		return
 	}
 	if fn := depFunc(j.of); fn != nil {
 		if bad, ok := c.stringBranches(fn); !ok {
-			c.report(j.env, diag.E3002.At(j.env.span(j.at), types.StringType, bad))
+			c.refuseUnion(j, bad)
 		}
 	}
+}
+
+// refuseUnion is E3002 for j's alternative, or its branch bad, with no string wire form: the union is the error type from then on (TYPES.md §1).
+func (c *checker) refuseUnion(j unionJob, bad types.Type) {
+	c.report(j.env, diag.E3002.At(j.env.span(j.at), types.StringType, bad))
+	c.unionsOut[j.u] = true
+}
+
+// refusedUnion is refusedNow, u judged first if still due and its ref chain read conclusively: only where the value's own typing has read that chain already (otherThan), so judging forces no resolution (TYPES.md §1, §10.2).
+func (c *checker) refusedUnion(u *types.LitUnionType) bool {
+	if leaf, _ := c.leafKey(u.Of); leaf == nil || leaf.Kind() != types.Error { // a chain still resolving reads as Error: no conclusive read, the job stays due
+		c.judgeUnion(u)
+	}
+	return c.unionsOut[u]
+}
+
+// refusedNow reports an expected literal union, optional or not, whose alternative refuseUnion has refused already, judging nothing: a value is checked against it as against the error type (TYPES.md §1).
+func (c *checker) refusedNow(want types.Type) bool {
+	u, ok := unwrap(want).(*types.LitUnionType)
+	return ok && c.unionsOut[u]
 }
 
 // stringWire reports a string wire form: String, an enum without @json(codes), Never, a dependent type, a ref whose chain of ref keys ends at one (WIRE.md §5.9).

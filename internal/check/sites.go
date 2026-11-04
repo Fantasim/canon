@@ -35,10 +35,17 @@ func varSite(o *object) *declSite {
 	return nil
 }
 
-// keyedBy is env for a key k checked against the key field f; none for a ref key (DECISIONS 456).
+// keyedBy is env for a key k checked against the key field f; none for a ref key, whose literal checkLiteral names at the chain's leaf (DECISIONS 456).
 func (c *checker) keyedBy(env *env, k syntax.Expr, f *types.Field) *env {
 	if f == nil || c.fieldType(f).Base().Kind() == types.Ref {
 		return env
 	}
 	return env.storing(c.fieldObjects[f], k)
+}
+
+// negating is env for the operand x of a negation, whose literal is judged as the negated value at the negation (TYPES.md §5.3, §7.1).
+func (env *env) negating(x syntax.Expr) *env {
+	e := env.with()
+	e.negand = inner(x)
+	return e
 }

@@ -11,7 +11,7 @@ import (
 // accept is `e ⇐ want` once e is typed s (TYPES.md §6.2).
 func (c *checker) accept(env *env, e syntax.Expr, s, want types.Type) {
 	e = inner(e)
-	if s.Kind() == types.Error || want.Kind() == types.Error || c.dependentLiteral(env, e, s, want) {
+	if s.Kind() == types.Error || want.Kind() == types.Error || c.refusedNow(want) || c.dependentLiteral(env, e, s, want) {
 		return
 	}
 	conv, ok := c.convert(s, want)

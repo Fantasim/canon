@@ -1,0 +1,31 @@
+TYPES.md §5.3, §7.1, §7.2, §7.4: a negated literal is judged as the value it negates to, parenthesised or not, however deeply nested: `-(128)` fits an Int8 exactly as `-128` does, as `-(127)`, `-(-(127))`, `-(-127)` and `(-(128))` do; `-(32768)` fits an Int16; `-(0)` fits a UInt8; `-(10)` fits Int(-10..0); a field default, a parameter default and an argument take the same rule.
+-- a/a.canon --
+package a
+
+local let a: Int8 = -(128)
+
+local let b: Int8 = -128
+
+local let c: Int8 = -(127)
+
+local let d: Int8 = -(-(127))
+
+local let e: Int8 = -(-127)
+
+local let f: Int8 = (-(128))
+
+local let g: Int16 = -(32768)
+
+local let h: UInt8 = -(0)
+
+local let k: Int(-10..=0) = -(10)
+
+local record R {
+  x: Int8 = -(128)
+}
+
+local fn m(y: Int8 = -(128)) -> Bool {
+  return y > 0
+}
+
+local let call: Bool = m(-(128))

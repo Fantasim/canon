@@ -1,0 +1,27 @@
+TYPES.md §10.2, §13.2, DECISIONS 456, 460: judging a literal union never forces a ref resolution that the value's own typing would not, so a literal of the union (`"y"`), checked against `ref ds | "y"` while `ds`'s key chain still waits for `js`, is no inference cycle (E3008). union_unjudged_var.txtar is the same with a variable.
+-- a/a.canon --
+package a
+
+local record J {
+  n: String
+}
+
+local record C {
+  b: ref J
+}
+
+local record D {
+  c: ref cs
+}
+
+local record H {
+  u: ref ds | "y"
+}
+
+local let cs: [C] keyed by b = [{ b: "a" }]
+
+local let ds: [D] keyed by c = [{ c: "a" }]
+
+local let x = [H { u: "y" }]
+
+local let js: [J] keyed by n = [{ n: "a" }]

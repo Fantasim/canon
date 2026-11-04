@@ -1,0 +1,26 @@
+TYPES.md §1, §13.2: a literal union whose alternative has no string wire form is the error type for every value checked against it, whenever that value is checked: `x`, inferred while `ks`'s key chain still waits for `js`, is checked before the package's unions are judged, and its value gets no finding of its own. E3002 is reported once, at the alternative.
+-- a/a.canon --
+package a
+
+local record J {
+  n: String
+}
+
+local record K {
+  j: ref J
+}
+
+local record H {
+  u: Int8 | "y"
+}
+
+local let ks: [K] keyed by j = [{ j: "a" }]
+
+local let x = [H { u: 300 }]
+
+local let js: [J] keyed by n = [{ n: "a" }]
+-- findings.txt --
+error[E3002]  a/a.canon:12:6
+  expected String, found Int8
+
+1 error, 0 warnings in 1 package (…)

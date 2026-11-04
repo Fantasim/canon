@@ -1,0 +1,139 @@
+TYPES.md §4.1, §5.3, §7.4, §10.3, DECISIONS 456: a literal written for a ref into a keyed list keyed by a ref is a literal of the chain's leaf key type, refinement included, so an integer literal outside an Int(0..10) leaf is E3204 at check time, at every depth, exactly as a key of `bs` itself is: a let of the ref type (`ref bs`, 1 level; `ref cs`, 2; `ref ds`, 3), an index, a key argument of hasKey, get and find, an `entry` key, a record field of the ref type and an amend key in a layer. The related note names the chain's leaf key field `n` (API.md §4.4 F12, ERRORS.md §1.5).
+-- a/a.canon --
+package a
+
+local record B {
+  n: Int(0..10)
+  v: Int = 0
+}
+
+local record C {
+  b: ref bs
+  v: Int = 0
+}
+
+local record D {
+  c: ref cs
+  v: Int = 0
+}
+
+local record Cfg {
+  bs2: [B] keyed by n
+  cs2: [C] keyed by b
+  ds2: [D] keyed by c
+}
+
+local let bs: [B] keyed by n = [{ n: 1 }]
+
+local let cs: [C] keyed by b = [{ b: 1 }]
+
+local let ds: [D] keyed by c = [{ c: 1 }]
+
+local let cfg: Cfg = { bs2: [{ n: 1 }], cs2: [{ b: 1 }], ds2: [{ c: 1 }] }
+
+local let r1: ref bs = 20
+
+local let r2: ref cs = 21
+
+local let r3: ref ds = -1
+
+local let i2: C = cs[23]
+
+local let i3: D = ds[24]
+
+local let h2: Bool = cs.hasKey(25) or cs.get(26) != none or cs.find(27) != none
+
+local let h3: Bool = ds.hasKey(28) or ds.get(29) != none or ds.find(30) != none
+
+local let f2: C = { b: 31 }
+
+local let f3: D = { c: 32 }
+
+entry cs.33 {}
+
+entry ds.34 {}
+
+local let fits: Bool = cs.hasKey(9) and ds.hasKey(0)
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  bs2[35].v: 1
+  cs2[36].v: 1
+  ds2[37].v: 1
+}
+-- findings.txt --
+error[E3204]  a/a.canon:32:24
+  20 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:34:24
+  21 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:36:24
+  -1 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:38:22
+  23 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:40:22
+  24 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:42:32
+  25 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:42:46
+  26 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:42:69
+  27 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:44:32
+  28 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:44:46
+  29 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:44:69
+  30 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:46:24
+  31 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:48:24
+  32 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:50:10
+  33 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/a.canon:52:10
+  34 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/dev.layer.canon:5:7
+  35 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/dev.layer.canon:6:7
+  36 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+error[E3204]  a/dev.layer.canon:7:7
+  37 is outside 0..10
+  expected by a/a.canon:4 (n: Int(0..10))
+
+18 errors, 0 warnings in 1 package (…)

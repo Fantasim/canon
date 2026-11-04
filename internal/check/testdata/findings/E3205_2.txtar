@@ -1,0 +1,42 @@
+TYPES.md §4.1, §5.3, §7.4, DECISIONS 456: a string literal written for a ref into a keyed list keyed by a ref is a literal of the chain's String leaf, pattern included, so a literal its pattern does not find is E3205 at check time, at every depth: a let of the ref type (1 and 2 levels), an index and a key argument; `"y"` matches. The related note names the chain's leaf key field `s` (API.md §4.4 F12, ERRORS.md §1.5).
+-- a/a.canon --
+package a
+
+local record S {
+  s: String(/^[a-z]+$/)
+}
+
+local record T {
+  r: ref ss
+  w: Int = 0
+}
+
+local let ss: [S] keyed by s = [{ s: "x" }]
+
+local let ts: [T] keyed by r = [{ r: "x" }]
+
+local let one: ref ss = "X1"
+
+local let two: ref ts = "X2"
+
+local let at: T = ts["X3"]
+
+local let has: Bool = ts.hasKey("X4") or ts.hasKey("y")
+-- findings.txt --
+error[E3205]  a/a.canon:16:25
+  "X1" does not match /^[a-z]+$/
+  expected by a/a.canon:4 (s: String(/^[a-z]+$/))
+
+error[E3205]  a/a.canon:18:25
+  "X2" does not match /^[a-z]+$/
+  expected by a/a.canon:4 (s: String(/^[a-z]+$/))
+
+error[E3205]  a/a.canon:20:22
+  "X3" does not match /^[a-z]+$/
+  expected by a/a.canon:4 (s: String(/^[a-z]+$/))
+
+error[E3205]  a/a.canon:22:33
+  "X4" does not match /^[a-z]+$/
+  expected by a/a.canon:4 (s: String(/^[a-z]+$/))
+
+4 errors, 0 warnings in 1 package (…)

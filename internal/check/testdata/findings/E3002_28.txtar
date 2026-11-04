@@ -1,0 +1,33 @@
+TYPES.md §1, §13.2: a literal union whose resolution refused an alternative (E3002) is the error type, so a value checked against it gets no finding of its own: an Int8 union, a ref union given a literal or a negation, and the ref union as a field's type with a default.
+-- a/a.canon --
+package a
+
+local record B {
+  n: UInt8
+}
+
+local let bs: [B] keyed by n = [{ n: 1 }]
+
+local let i: Int8 | "y" = 300
+
+local let r: ref bs | "x" = 300
+
+local let neg: ref bs | "x" = -(5)
+
+local record F {
+  f: ref bs | "x" = 300
+}
+-- findings.txt --
+error[E3002]  a/a.canon:9:14
+  expected String, found Int8
+
+error[E3002]  a/a.canon:11:14
+  expected String, found ref a.bs
+
+error[E3002]  a/a.canon:13:16
+  expected String, found ref a.bs
+
+error[E3002]  a/a.canon:16:6
+  expected String, found ref a.bs
+
+4 errors, 0 warnings in 1 package (…)

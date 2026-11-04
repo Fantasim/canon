@@ -1,0 +1,31 @@
+TYPES.md §4.1, §10.2, DECISIONS 456: a key that is a value, not a literal, decides no literal's form, so checking it reads no chain's leaf: `ds[k]`, `ds.hasKey(k)` and `ds.get(k)` with `k: ref cs`, on a list keyed by `ref cs` whose chain goes through `ref J` (the collection of J, §10.2), found only at `js`, declared after them, are no inference cycle (E3008).
+-- a/a.canon --
+package a
+
+local record J {
+  n: Int
+}
+
+local record C {
+  b: ref J
+  v: Int = 0
+}
+
+local record D {
+  c: ref cs
+  v: Int = 0
+}
+
+local let cs: [C] keyed by b = [{ b: 9 }]
+
+local let ds: [D] keyed by c = [{ c: 9 }]
+
+local let k: ref cs = 9
+
+local let x = ds[k].v
+
+local let h = ds.hasKey(k)
+
+local let g = ds.get(k)
+
+local let js: [J] keyed by n = [{ n: 9 }]
