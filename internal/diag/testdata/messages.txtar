@@ -434,7 +434,7 @@ E7113 afterQuote: CSV: text after a closing quote at record -42
 E7113 fieldCount: CSV: record -42 has -42 fields, the first has -42
 E7113 bareCR: CSV: a carriage return inside an unquoted field at record -42
 E7113 noHeader: CSV: header: true but the file has no header record
-E7114 -: "0.9" is not a valid table key (an identifier)
+E7114 -: "0.9" is not a valid table key (a Canon word)
 E7116 -: resource.vocab.items cannot produce Int
 E7117 key: @json(pairs:) slot -42 of resource.vocab.items: resource.vocab.items without resource.vocab.items
 E7117 null: @json(pairs:) slot -42 of resource.vocab.items: null value

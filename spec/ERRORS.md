@@ -1267,7 +1267,7 @@ Owner: WIRE.md.
 | E7113 | fieldCount | n:Int, got:Int, want:Int | `CSV: record {n} has {got} fields, the first has {want}` |
 | E7113 | bareCR | n:Int | `CSV: a carriage return inside an unquoted field at record {n}` |
 | E7113 | noHeader | - | `CSV: header: true but the file has no header record` |
-| E7114 | - | key:Text | `"{key}" is not a valid table key (an identifier)` |
+| E7114 | - | key:Text | `"{key}" is not a valid table key (a Canon word)` |
 | W7115 | outsideRoots | path:Path | `symbolic link {path} points outside the roots; skipped` |
 | W7115 | dangling | path:Path | `symbolic link {path} points to nothing; skipped` |
 | W7115 | looping | path:Path | `symbolic link {path} is part of a loop; skipped` |

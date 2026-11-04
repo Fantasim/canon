@@ -2218,7 +2218,7 @@ var Registry = []Def{
 	{
 		Code: "E7114", Severity: Error, Package: "wire",
 		Variants: []Variant{
-			{Args: []Arg{{Name: "key", Type: ArgTypeText}}, Template: "\"{key}\" is not a valid table key (an identifier)"},
+			{Args: []Arg{{Name: "key", Type: ArgTypeText}}, Template: "\"{key}\" is not a valid table key (a Canon word)"},
 		},
 	},
 	{
@@ -7015,7 +7015,7 @@ type codeE7114 struct{}
 // Def is the registry entry of E7114.
 func (codeE7114) Def() *Def { return &Registry[254] }
 
-// At reports: "{key}" is not a valid table key (an identifier)
+// At reports: "{key}" is not a valid table key (a Canon word)
 func (codeE7114) At(span source.Span, key string) *Builder {
 	return newBuilder(&Registry[254], 0, span, key)
 }

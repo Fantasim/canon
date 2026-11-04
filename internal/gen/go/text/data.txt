@@ -389,7 +389,7 @@ func jsonTable({{.L.Name}}, {{.L.Path}} string, {{.L.Raw}} {{.JSON}}.RawMessage)
 			}
 		}
 		if !{{.L.OK}} {
-			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: \"%s\" is not a valid table key (an identifier)", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."), {{.L.Key}})
+			return nil, nil, nil, {{.FMT}}.Errorf("%s: %s: \"%s\" is not a valid table key (a Canon word)", {{.L.Name}}, {{.Strings}}.TrimSuffix({{.L.Path}}, "."), {{.L.Key}})
 		}
 		var {{.L.R}} {{.JSON}}.RawMessage
 		if {{.L.Err}} := {{.L.Obj}}.Decode(&{{.L.R}}); {{.L.Err}} != nil {

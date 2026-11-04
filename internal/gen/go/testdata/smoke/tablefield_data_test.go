@@ -48,7 +48,7 @@ func TestTableFieldNone(t *testing.T) {
 // WIRE.md §5.7 (E7114, E7110): a key that is no identifier, a `$retired` other than true, a non-object, a bad row and a repeated key fail the load at their place.
 func TestTableFieldBad(t *testing.T) {
 	for file, want := range map[string]string{
-		"key":     `testdata/bad/key.json: value.slots: "a b" is not a valid table key (an identifier)`,
+		"key":     `testdata/bad/key.json: value.slots: "a b" is not a valid table key (a Canon word)`,
 		"retired": `testdata/bad/retired.json: value.slots.a.$retired: expected true`,
 		"array":   `testdata/bad/array.json: value.slots: expected an object`,
 		"row":     `testdata/bad/row.json: value.slots.b.n: expected an integer`,

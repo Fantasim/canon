@@ -1361,7 +1361,7 @@ inline bool Table(const Json& v, Decoder& dec, std::vector<TableEntry>& out) {
     }
     for (const std::string* key : keys) {
         if (!IsIdentifier(*key)) {
-            return dec.FailHere("\"" + *key + "\" is not a valid table key (an identifier)"), false;
+            return dec.FailHere("\"" + *key + "\" is not a valid table key (a Canon word)"), false;
         }
         const auto row = v.find(*key);
         const auto retired = row->is_object() ? row->find(retiredKey) : row->end();

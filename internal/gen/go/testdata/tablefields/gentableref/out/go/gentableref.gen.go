@@ -270,7 +270,7 @@ func jsonTable(name, path string, raw json.RawMessage) ([]string, []json.RawMess
 			}
 		}
 		if !ok {
-			return nil, nil, nil, fmt.Errorf("%s: %s: \"%s\" is not a valid table key (an identifier)", name, strings.TrimSuffix(path, "."), key)
+			return nil, nil, nil, fmt.Errorf("%s: %s: \"%s\" is not a valid table key (a Canon word)", name, strings.TrimSuffix(path, "."), key)
 		}
 		var r json.RawMessage
 		if err := obj.Decode(&r); err != nil {
