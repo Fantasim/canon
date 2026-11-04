@@ -193,9 +193,11 @@ nothing else from that lock).
 
 The lock is append-only for tools. People may edit it in a reviewed commit for two reasons only:
 
-- **renaming a collection or a package**: rewrite the qualified names of its lines (a stable table
-  `let` renamed from `statuses` to `postStatuses`, or package `teamboard` moved), in the same commit
-  as the rename;
+- **renaming a collection, a `@stable` field or a package**: rewrite the qualified names of its lines (a stable table
+  `let` renamed from `statuses` to `postStatuses`, a `@stable` field's `field` lines, or package `teamboard` moved), in
+  the same commit as the rename (for a collection or a `@stable` field, `E6001` otherwise; for a package moved,
+  `E6005` `package`, its lines naming a package that is no longer the lock's); `canon edit` refuses to rename a
+  `@stable` field, so this is the way;
 - **deliberately forgetting**: deleting lines to release ids or codes, or deleting the word
   `retired` from a line to bring an id back (with the `retired` prefix removed from the source in
   the same commit), a decision the diff makes visible. The edit API's `Unretire` is therefore

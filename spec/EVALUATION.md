@@ -483,7 +483,7 @@ amend config {
 |---|---|---|
 | `.f` | record | field `f` |
 | `.f` | variant | field `f` of the current case (checked when applied) |
-| `.k` or `[k]` | table, keyed list with a `String` key | entry with key `k` |
+| `.k` or `[k]` | table, keyed list with a `String` key (or a `ref` key whose chain's leaf key is a `String` or a table id, DECISIONS 456) | entry with key `k` |
 | `[k]` | keyed list | entry with key `k` (API-02) |
 | `[k]` | map, dependent map | entry with key `k` (identifiers resolved against the key type: `ref c` for `{x in c: T(x)}`, whose value there is that map's value at `k`, TYPES.md §11.5) |
 | `[i]` | list | element `i` (negative from the end) |

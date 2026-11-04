@@ -3679,7 +3679,7 @@ func (codeE1125) At(span source.Span, word string, kind Kind) *Builder {
 	return newBuilder(&Registry[42], 0, span, word, kind)
 }
 
-// E1126: `none`, `true`, `false` or `self` names an enum member, case or table key (GRAMMAR.md §4.3).
+// E1126: `none`, `true`, `false` or `self` names an enum member, a variant case, or a table key in a table literal or `entry` (GRAMMAR.md §4.3).
 var E1126 codeE1126
 
 type codeE1126 struct{}
@@ -7007,7 +7007,7 @@ func (codeE7113) AtNoHeader(span source.Span) *Builder {
 	return newBuilder(&Registry[253], 5, span)
 }
 
-// E7114: a table key that is not a Canon identifier (WIRE.md §5.7).
+// E7114: a table key that is not a Canon word (WIRE.md §5.7).
 var E7114 codeE7114
 
 type codeE7114 struct{}

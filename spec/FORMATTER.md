@@ -129,6 +129,12 @@ Layout:
   broken.
 - Otherwise **broken**: `{` ends the header line, each item is on its own line one level deeper,
   **with no commas**, and `}` is on its own line at the header's indentation.
+- **Commas that keep the parse** (DECISIONS 211, 459): the item before a line break ends with `,`
+  when its last token cannot end a line (GRAMMAR.md §3.1 rule 2: `and or not in is else where as`
+  as data-symbol names), or when the next item would join it: it starts with `.` or with `and`,
+  `or`, `in`, `is`, `else` or `where` (rule 3), or it is an entry or named item whose first token is
+  `for`, which GRAMMAR.md §5.11 would read as a comprehension over the item above. A `for`
+  statement in a block takes no comma.
 - An empty list is `{}`, unless it holds comments (then broken, with the comments inside).
 
 A list written on several lines stays broken even if it would fit: that is the author's choice, and
@@ -600,7 +606,9 @@ DECISIONS 12, API-03. The studio edits values; the compiler writes text. The con
 
 Algorithm for one edit (all operations of an atomic edit are applied, then units are re-printed;
 the changes touching one list are grouped, and its separators, the commas of DECISIONS 211 and
-step 5's blank-line collapse are computed once, over the final order):
+459 (§6.1) and step 5's blank-line collapse are computed once, over the final order, so a Replace
+that renames an item's key adds or drops the comma on the item above as an Insert, Remove or Move
+does):
 
 1. **Print the unit** with the printer of §7, starting at the unit's current column, with the text
    that follows the unit on its last line as the rest for `fits`. Brace lists that already exist
@@ -632,7 +640,7 @@ step 5's blank-line collapse are computed once, over the final order):
 8. **Move** an item within its list: its target position counts the items before the changes (as
    for an insertion); a move to its own place changes nothing. In a broken list, the item's lines,
    with every comment the printer attaches to it, leave as in step 5 and arrive byte for byte at
-   the point of step 4, the commas of DECISIONS 211 recomputed over the final order. In a
+   the point of step 4, the commas of DECISIONS 211 and 459 recomputed over the final order. In a
    single-line list, the item is re-printed as a unit (step 3, then the settle). A move combines
    with the list's insertions and removals. Refused: moving a top-level declaration, moving into
    another list, moving one item twice, moving and removing one item, replacing something inside

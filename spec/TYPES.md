@@ -206,7 +206,8 @@ acceptable there, plus let names after `ref` (§10.2).
 - `x.k` without parentheses is, depending on the receiver's static type:
   - record or case: the field `k`, else a built-in member (`id`, `retired` on entries, `kind`
     on variants, `name`/`index`/`wire`/`code` on enums, `start`/`end` on ranges);
-  - `table T`, or `[T] keyed by f` with a `String` key field: the **entry** with key `k`
+  - `table T`, or `[T] keyed by f` with a `String` key field (or a ref key field whose chain's leaf
+    key is a `String` or a table id, DECISIONS 456): the **entry** with key `k`
     (`jobH.MAX_JOB_LEVEL`, `flags.blocking`). A missing key is `E4002` at evaluation;
   - `ref T`: as for `T` (implicit dereference);
   - `Map`: never; `m.k` is `E3003` (write `m[k]`).
@@ -284,7 +285,11 @@ nowhere is `E2102` (DECISIONS 334).
 
 A string literal or an integer literal checked against `ref C` is a key too, if it is a
 literal of the key's type: a table key is written as an identifier or a string; a keyed-list
-key as a literal of the key field's type (`3` in a `ref modelTypes`, RES-09).
+key as a literal of the key field's type (`3` in a `ref modelTypes`, RES-09). When the key field is
+itself a ref, the key's type is its chain's leaf key's, the first key down the chain that is not a
+ref: an integer for an `Int` leaf, a member name for an enum leaf (DECISIONS 456). The same holds
+for a key argument of `hasKey`, `get`, `find` and `xs[k]`. A literal is a token here (§5.3): `-(5)`
+is no key literal (DECISIONS 460).
 
 Expected types reach nested positions (§5), so `next: [taken, wont_do]` resolves `taken`
 against `ref Status`, and `{ Stage_1: 20 }` resolves `Stage_1` against the map's key type.
@@ -376,7 +381,7 @@ synthesize.
 | amend path value | the static type at the path (EVALUATION.md §9) |
 | annotation arguments | per the annotation catalogue (GRAMMAR.md §8); `@json(none: x)` per WIRE.md; an `@json` form that does not apply to the field's type is `E3316` (WIRE.md §4.1) |
 | `load(…)` | the expected type of the `load` expression itself, given directly by its context; none is `E7002` (WIRE.md §6.1). A unary `-` does not pass one on to it: `-load(…)` is `E7002` (DECISIONS 272) |
-| unary `-e`, `(e)` | passes the expected type through |
+| unary `-e`, `(e)` | passes the expected type through; a negated literal's range is its value's (§5.3) |
 
 For a comparison or arithmetic operator, the operand that is **context-dependent** is the one
 checked: a bare identifier not resolvable in steps 2–6, `none`, `[]`, `{}`, a numeric
@@ -447,7 +452,15 @@ typed by its spread.
   `Float` is expected is `E3311` (write `Float(n)`).
 - An integer literal checked against an integer type must fit its range (`E3201`, static). A
   literal checked against a refined type that it statically violates is reported at once with
-  the refinement's code (§7.4).
+  the refinement's code (§7.4). Against a `ref` the literal is checked against the chain's leaf key
+  field, whose range and refinement apply (DECISIONS 456).
+- A **negated literal** `-e`, `e` a literal (parenthesised or negated again), is judged by these
+  range checks by the value the negation yields, as the folded token is: `let x: Int8 = -(128)`
+  fits, `-(129)` reports `-129`. Its operand is still a 64-bit `Int` (§7.2), so
+  `-(9223372036854775808)` is `E3201` on the operand, with or without an expected type, and
+  `-(-9223372036854775808)` is `E3201` on its value; a `Duration` negation is computed without
+  wrapping. Which declaration a range finding names follows API.md F12. Whether a literal is one at all (a key literal, the `Float` rule above) keeps the token
+  definition (DECISIONS 460, 461).
 
 ---
 
@@ -726,7 +739,9 @@ In expressions every integer type is `Int` (64-bit signed). A sized type is `Int
 implicit range: `Int8` −128..=127, `Int16`, `Int32` likewise, `UInt8` 0..=255, `UInt16`,
 `UInt32`, and `UInt64` limited to `0..=9223372036854775807` in this version. The range is
 checked at storage points (`E3201`) and, for literals, statically. `code: UInt16` holding
-70000 is `E3201`. `code + 1` is an `Int`.
+70000 is `E3201`. `code + 1` is an `Int`. An integer literal past 64 bits is `E3201` against the
+integer type expected ("does not fit `UInt64`", with the declaration's note); with no expected type,
+and as the operand of a `-` that is not folded (§5.3), it is "does not fit `Int`".
 
 **Durations** follow the same model. A `Duration` is a signed 64-bit count of milliseconds in
 expressions (overflow is `E4101`, EVALUATION.md §6.3), and a stored `Duration` is limited to
@@ -889,7 +904,8 @@ let sold: [past ref items] = [oldSword]       // history: allowed
 - `[T]` is an ordered list. `xs[i]` indexes from 0; a negative index counts from the end.
   `xs[r]` with a `Range` is a slice (GRM-13).
 - `[T] keyed by f` requires `T` to be a record with a field `f` whose type is `String`, an
-  integer type, an enum or a `ref`, possibly refined (`E3012`). A `ref` key needs a target whose
+  integer type, an enum or a `ref`, possibly refined (`E3012`). A `ref` key is read at its chain's
+  leaf key: its literals, wire and order are the leaf's (§4.1, DECISIONS 456). A `ref` key needs a target whose
   own key leads back to a base type: a list keyed by a ref to itself, or a cycle of lists keyed by
   refs to each other, is `E3012` (DECISIONS 316). Keys are unique (`E3102`, at evaluation).
 - On a keyed list, `xs[k]` and `xs.k` look up **by key** (like a table), and positional access
@@ -970,7 +986,8 @@ is the key for a table target. Wire form: WIRE.md.
 - No candidate at any level is `E2103`. Anything else after `ref` is `E3504`.
 - Finding a level-2 or level-3 candidate infers an unannotated `local let` (§15). A let whose own
   inference reads the target of a ref still being resolved (a member, an element, or any type
-  judgement that needs that target, such as `+` on lists) is `E3008`; a let that only depends on
+  judgement that needs that target, such as `+` on lists, or deciding a literal's form for a ref
+  keyed by a ref, which reads the chain's leaf, DECISIONS 456) is `E3008`; a let that only depends on
   such a let is broken without a finding (§1), whatever the declaration order. A let that is `E3008`
   carries no other finding (warnings included) from its initializer; asking whether a pending
   ref's target is in error is a judgement that needs that target (the ref is resolved first). A ref that resolves to nothing reports no cycle
@@ -1245,7 +1262,12 @@ only be passed on. Its text form is `(a, b)` (STDLIB.md).
   `Never | "default"` accepts only `"default"`.
 - A value of the union is either an `A` or one of the literals. Such unions are valid map keys.
 - A string literal equal to one of the literals is that literal, even if `A` would also accept
-  it (TYP-09: "the literal wins").
+  it (TYP-09: "the literal wins"). Any other string literal is an `A`, checked statically against
+  `A` (§5.3): its refinement, and for a `ref` its chain's leaf key.
+- A union whose `A` its resolution refuses (`E3002`) is the error type (§1) for every value checked
+  against it, whatever the order of checks, so the type's finding is the only one. It is judged
+  only from a conclusive read: while a ref chain of `A` is still resolving it is not yet refused,
+  and judging it never forces a resolution the value's own typing would not (DECISIONS 461).
 - Operations: `==` / `!=` with a string literal of the union or with an `A`, interpolation,
   `String(x)`. The list is exhaustive: `==` between two values of the union is `E3007`.
 

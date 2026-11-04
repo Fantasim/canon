@@ -4452,22 +4452,25 @@ round 2", "PS1 review", "PS2 round 2"):
      `detail::k<E>Names` (not for an id), `k<E>Wires` and `k<E>ByWire` (the ordinals by wire bytes,
      stable, in the smallest of `uint8_t`, `uint16_t`, `uint32_t` holding them) in an unnamed
      namespace of the `.gen.cpp`, in the name plan; `ToWire` reads the names when the wires are the
-     names; `<E>FromWire` and `<Rec>IdFromWire` search `k<E>ByWire`. An opened enum writes
-     `k<E>WireNames` only when a name differs from its wire (`ToName` is then `ToWire`), and its
-     `<E>FromCode` finds positions in `k<E>Wires`. A closed `@codes` enum whose codes are dense in
-     declaration order (one member or more, each code the previous plus one) has
-     `detail::<E>Ordinal` compute `code - first` in `uint64_t`, the member count past the last,
-     without `k<E>Codes` and `k<E>CodeOrdinals`; other `@codes` enums keep 383's search,
-     `k<E>CodeOrdinals` in the smallest unsigned type. Go: `Parse<E>` of a closed enum, kind enum,
-     id and branch enum searches `enumByWire_<T>`, indexes into the names' order, instead of
-     `enumKeys_` and `enumFound_`; a dense `@codes` enum indexes by `code - first` in `uint64` and
-     has no `enumCodes_`; an opened enum's one member table is `enumKeys_`, `enumMembers_` and
-     `enumByCode_` index it, and `enumNames_` exists only when a name differs from its wire.
-     Generated APIs and their answers are unchanged; a non-member's ordinal stays the member count.
-     Reason: Sovereign's `.gen.cpp` held each enum string three times and named every enumerator
-     once more (`kValues`), so DECISIONS 404 wrapped 32,335 macros there; after: about 414,000 →
-     245,000 lines and 16.4 → 7.5 MB of `.gen.cpp`, 40.7 → 31.3 MB of Go, `text/vocab.gen.cpp` 4.56
-     → 1.00 MB, g++ 3.1 → 1.7 s on it.
+     names; `<E>FromWire` and `<Rec>IdFromWire` search `k<E>ByWire`; `IsRetired` reads
+     `k<E>Retired`, the retired flags in declaration order (entry order for an id). An opened enum
+     writes `k<E>WireNames` only when a name differs from its wire (`ToName` is then `ToWire`), its
+     `k<E>Retired` flags in `k<E>Wires` order, and with `@codes` `k<E>Codes` (ascending) beside
+     `k<E>CodeAt` (each code's position in `k<E>Wires`), which its `<E>FromCode` searches. A closed
+     `@codes` enum whose codes are dense in declaration order (one member or more, each code the
+     previous plus one) has `detail::<E>Ordinal` compute `code - first` in `uint64_t`, the member
+     count past the last, without `k<E>Codes` and `k<E>CodeOrdinals`; other `@codes` enums keep
+     383's search, `k<E>CodeOrdinals` in the smallest unsigned type. Go: `Parse<E>` of a closed
+     enum, kind enum, id and branch enum searches `enumByWire_<T>`, indexes into the names' order,
+     instead of `enumKeys_` and `enumFound_`; a dense `@codes` enum indexes by `code - first` in
+     `uint64` and has no `enumCodes_`; an opened enum's one member table is `enumKeys_`,
+     `enumMembers_` and `enumByCode_` index it, and `enumNames_` exists only when a name differs
+     from its wire. Generated APIs and their answers are unchanged; a non-member's ordinal stays the
+     member count. Reason: Sovereign's `.gen.cpp` held each enum string three times and named every
+     enumerator once more (`kValues`), so DECISIONS 404 wrapped 32,335 macros there; after: about
+     414,000 → 245,000 lines and 16.4 → 7.5 MB of `.gen.cpp`, 40.7 → 31.3 MB of Go,
+     `text/vocab.gen.cpp` 4.56 → 1.00 MB, g++ 3.1 → 1.7 s on it. (Amended 2026-11-04 at the v0.3
+     spec sync: `k<E>Retired`, `k<E>Codes`, `k<E>CodeAt`.)
 431. **The C++ JSON runtime reads a file in one pass (CODEGEN.md §7.5; WIRE.md §3.1; extends 361).**
      `ParseTextFile` and `ParseDataFile` read a text with one nlohmann SAX pass (`StrictCheck` given
      a document) that checks the byte rules, builds the document and records the Float32 tokens and
@@ -4483,15 +4486,17 @@ round 2", "PS1 review", "PS2 round 2"):
 432. **A baked container looks its keys up in constant tables the generator sorts (CODEGEN.md §5.9,
      §7.3; extends 383, 392).** In a `baked` emit a table or keyed-list container holds its rows in
      a `std::vector` that `Build` sizes and fills; `Find` and every `FindBy<F>` are defined in the
-     `.gen.cpp` and search function-local `static constexpr` arrays of the keys sorted in C++'s
-     order (bytes for strings, value for integers and durations, underlying value for enums, entry
-     position for table ids and refs held as them, key order for other refs), with the rows'
-     positions beside them, as `<E>FromWire` does; a table's `Find` goes through `<Rec>IdFromWire`.
-     No key is copied into the heap and nothing is sorted at run time; the API is unchanged, and
-     `data`-mode containers and `canon::KeyedList` fields keep their run-time index. Views of baked
-     data and presence bits wait for v0.5's record layout: a record's storage is shared with
-     packages that build it from files (323, 401). Reason: every baked `Build` copied and sorted its
-     container keys on first use, though the generator knows them.
+     `.gen.cpp` and search `constexpr` tables `detail::k<C>Find[By<F>]Keys` of the keys sorted in
+     C++'s order (bytes for strings, value for integers and durations, underlying value for enums,
+     entry position for table ids and refs held as them, key order for other refs, a ref keyed by
+     a ref by its leaf, 456), with the rows' positions `k<C>Find[By<F>]Rows` beside them, as
+     `<E>FromWire` does; a table's `Find` goes through `<Rec>IdFromWire`. No key is copied into the
+     heap and nothing is sorted at run time; the API is unchanged, and `data`-mode containers and
+     `canon::KeyedList` fields keep their run-time index. Views of baked data and presence bits wait
+     for v0.5's record layout: a record's storage is shared with packages that build it from files
+     (323, 401). Reason: every baked `Build` copied and sorted its container keys on first use,
+     though the generator knows them. (Amended 2026-11-04 at the v0.3 spec sync: the detail tables
+     replace function-local arrays.)
 433. **Top-level TypeScript values are built by calls a bundler can drop (CODEGEN.md §2.5 T22, §5.2,
      §8.1, §8.3; SPEC §15.4).** Every `Object.freeze`, `canonFreeze`, `canonList`, `canonTable`,
      `canonIndex`, `new CanonMap` and `new Map` that builds a module-level value is preceded by
@@ -4702,6 +4707,8 @@ round 2", "PS1 review", "PS2 round 2"):
      is reported once, at that one (after `reached`, `finder` and `idType`): a Canon rename fixes
      the pair whole, while an override would fix one name and leave the next build to report the
      other.
+     Under a refused mode (429), a pair is reported when it collides in every valid mode, and its
+     `derived` meeting counts only when every mode has it.
      Reason: v0.3 run (CPP-FINDBY's and E8005-DERIVED's reviews): "rename one of them with
      @cpp(name:)" was given where no override separates the names, and a pair that met both ways
      needed two builds.
@@ -4739,9 +4746,11 @@ round 2", "PS1 review", "PS2 round 2"):
      a type finding never cascades into a value finding, in any order of checks. The union is judged once,
      when a literal not among its literals first meets it or at the package's end, and never from an
      inconclusive read: while its ref chain is still resolving it is not yet refused. Judging a union never
-     forces a ref resolution the value's own typing would not (456's `E3008` scope). A static range
-     finding names the stored declaration (API.md F12) only when its message names that declaration's
-     type: `let q: Int8 = -(-9223372036854775808)` reports "does not fit Int" with no note. Reason: v0.3
+     forces a ref resolution the value's own typing would not (456's `E3008` scope). An `E3201` on a
+     negation's operand, or on a negation's value whose `Int` limit is not the declared type, names no
+     declaration (API.md F12): `let q: Int8 = -(-9223372036854775808)` reports "does not fit Int"
+     with no note. Every other range finding, an `E3201` against the declared type or an `E3204`
+     against a refinement, keeps the declaration's note. (Amended 2026-11-04 at the v0.3 spec-sync review.) Reason: v0.3
      run (CHECK-LEAFLIT rounds 4-7): the union check first cascaded `E3201` after `E3002`, then forced
      a ref chain (a new `E3008`), then lost a union's own `E3002` judged mid-resolution.
 
@@ -4757,7 +4766,12 @@ round 2", "PS1 review", "PS2 round 2"):
      "edit the data file directly" prints for every `layer` refusal at or below a load in a layer,
      except a `Rename` or `Move` of the load's own node. Nothing else prints one. `Editable` and
      `Apply` give the same reason and `Detail`; active and inactive layers do too, except
-     "make the edit without an edit layer", since the base verdict itself depends on the layer. Every
+     "make the edit without an edit layer", since the base verdict itself depends on the layer, and
+     the inactive-layer limits 273 decides: an `AddEntry`, and the `Remove` of a list element inside
+     a line, are `layer` (no path reaches the entry to undo it), and an edit inside a typed literal
+     line `T { … }` is `computed`. When both a literal way out and "make the edit without an edit
+     layer" would make the op pass, the literal one prints, since it keeps the layer's intent; "make
+     the edit without an edit layer" prints for a `layer` refusal only, never a `computed` one. Every
      non-literal node of a layer line, a load of any form or an expression, the line's own value or
      nested in its literal, follows one rule: at the node, Set, Reset and Remove are `computed` (an
      Undo cannot write the node back, 273) and every other op is `layer`; below it, a load is `layer`
@@ -4771,3 +4785,5 @@ round 2", "PS1 review", "PS2 round 2"):
      the layer's own drivers. Comments never change a verdict. Reason: v0.3 run (EDIT-WAYOUT rounds
      1-3d): printed ways out that failed once followed, Editable/Apply and active/inactive splits, an
      internal error on an entry Set, and inactive edits that broke a dependent type once active.
+     (Amended 2026-11-04 at the v0.3 spec-sync review: the inactive-layer limits of 273; the literal
+     way out first; the no-layer way out for `layer` only.)

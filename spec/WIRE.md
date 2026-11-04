@@ -426,7 +426,7 @@ JSON source produces no finding (TYPES.md decides whether a Canon literal settin
 | `[T]` | JSON array, in order | array only |
 | `[T] keyed by f` | JSON array of `T` objects; the key is the field `f` | array only; duplicate keys `E3102` |
 | `table T`, `stable table T`, **top level of a data file** | array of rows: each row is the record's object with `"$id": "<key>"` first and `"$retired": true` second when retired (§8.2) | (data wire loaders only) |
-| `table T` anywhere else (nested in a value, and every source wire) | JSON object: key = entry id, value = the record's object, in entry order; a retired entry's object starts with `"$retired": true` | object only; each key must be a Canon identifier [`E7114`]; `"$retired"` is accepted in a row object and must be `true` [`E7110`]; entry order = key order in the file |
+| `table T` anywhere else (nested in a value, and every source wire) | JSON object: key = entry id, value = the record's object, in entry order; a retired entry's object starts with `"$retired": true` | object only; each key must be a Canon word, a reserved one included (DECISIONS 459) [`E7114`]; `"$retired"` is accepted in a row object and must be `true` [`E7110`]; entry order = key order in the file |
 
 Retired entries are written everywhere (LOCK.md §7): in top-level rows and in nested tables. Keyed
 lists and plain lists have no retirement.
@@ -446,7 +446,7 @@ A map is a JSON object whose members follow the map's insertion order. Keys:
 | integer types | canonical decimal (`-5`, `0`, `42`); decode requires exactly `0\|-?[1-9][0-9]*` (`-0` is not canonical), else `E7103` |
 | enum | the member's wire value; with `@json(codes)`, the code in canonical decimal: the key takes the integer row's form (`01`, `+1`, `-0` and `""` are `E7103`), then names a code (`E7111`) |
 | `ref` into a table or a define table | the entry key |
-| `ref` into a keyed list | the key field's wire value, as text (decimal for integer keys) |
+| `ref` into a keyed list | the key field's wire value, as text (decimal for integer keys); a key field that is itself a ref is read at its chain's leaf key, recursively (DECISIONS 456) |
 | literal union `A \| "lit"` | the literal, or `A`'s wire key; on decode the literal wins (TYP-09) |
 | dependent key (`SpecificKey(e)`) | the wire key of the branch selected by the key's parameter |
 
@@ -465,7 +465,9 @@ is decoded with the parameter bound to that key's entry.
 ### 5.9 References, assets, unions, dependent types
 
 - **`ref`** (§5.8 of SPEC): the key. A table or define-table ref is a JSON string. A keyed-list ref
-  is the key field's wire form (`ref TalentNode` with `id: Int` is a JSON integer). A key that does
+  is the key field's wire form (`ref TalentNode` with `id: Int` is a JSON integer); when that key
+  field is itself a ref, the wire form is the chain's leaf key's, recursively (an enum leaf's wire,
+  its code with `@json(codes)`), on the write and the read side alike (DECISIONS 456). A key that does
   not exist is `E3501` (verification).
 - **asset**: a JSON string, the path relative to the asset root (rules and `E3701` in TYPES.md).
 - **Literal union** `A | "lit"`: the literal string, or `A`'s wire form. On decode a string equal
@@ -497,7 +499,8 @@ data wire only, a value inside a stored result included (DECISIONS 284):
   default (§5.4): absent or `null` is `none`;
 - finite parameters: nested objects, one level per parameter in parameter order, keyed by the wire
   key (§5.8 rules) of each argument value. Domain order: enum members in declaration order,
-  retired included; table or keyed-list entries in entry order, retired included; `Bool` as
+  retired included; table entries in entry order, retired included (a ref into a keyed list is not
+  finite, SPEC §9.4); `Bool` as
   `"false"` then `"true"`.
 
 **Package-level** export functions of the same two kinds go under the top-level key `"$fns"` of

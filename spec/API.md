@@ -421,7 +421,12 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
 
   A related location is always something the value was checked against: the field declaration
   whose type it failed (note: the declaration, `productionItem: ref items`), the check (note: F4),
-  an annotation or a refinement. A second location that is not an expectation (the first of two duplicates)
+  an annotation or a refinement. For a value checked against a `ref`, the declaration is the chain's
+  leaf key field whose range or refinement it failed (DECISIONS 456); for a key of an amend path
+  into a map, the map's declaration. An `E3201` on a negation's operand, or on a negation's value whose
+  `Int` limit is not the declared type, names no declaration (a negation past 64 bits stored in an
+  `Int8` reports "does not fit `Int`" with no related location); every other range finding, an `E3201` against the
+  declared type or an `E3204` against a refinement, keeps the declaration (DECISIONS 460, 461). A second location that is not an expectation (the first of two duplicates)
   goes into the message (`… (first at <file>:<line>)`), never into `Related`.
 - **F13.** One line per `Stack` frame, innermost first: `  in <fn> (<file>:<line>)`; when frames
   were dropped, one more line `  (<n> more frames)`. `<fn>` is `f` for a function, `T.m` for a record
@@ -765,7 +770,7 @@ type LintFix struct { Code string; Span; Edit Edit }   // a complete request, Ba
 - **L7. Entry files (`W0006`).** A `let` with `@files` that has at least one `entry` declared outside the `let`'s file at a path other than the one N2-N3 give its evaluated entry; once per `let`, at the annotation, naming how many and the first such file in path order with its path by the template. An entry whose template cannot be expanded (N2's `ErrBadValue`) is not judged. How many counts distinct files; the path named is the one the template gives the first entry of the first such file.
 - **L8. Big files (`W0007`).** A package source file of more than 5,000 lines whose longest top-level declaration is a `let`. The `let` must be strictly the longest: one that ties another declaration is not reported.
 - **L9. Text defines (`W0008`).** A name a selected package's C++ emit declares (the names CODEGEN.md §7.9's `foreignDefine` judges) that an object-like `#define` (WIRE.md §6.8's reading; function-like macros skipped) of a `@text` output of the analysis named `*.h`, `*.hh`, `*.hpp` or `*.hxx` spells, or that a `load.defines` table of the analysis reads, and that the package's guard set (§7.9) lacks; once per declaration, naming how many, the file, and a suggested `@cpp(defines:)` prefix: the names' longest common prefix, cut after its last `_`. It judges the C++ name of an enum member or a constant, never one renamed with `@cpp(name:)`; a `@text` header is named by its output path, a `load.defines` header by its file path.
-- **L10. Fixes.** A `W0001` finding whose suggested name is an identifier, not a reserved word, named by no other field or method of its record or case, and whose record no `@text` fn result reaches, has a fix: `{Base: Revision, Ops: [RenameName("<pkg>:<Rec>.<field>", "<name>")]}`, or `"<pkg>:<Variant>.<case>.<field>"` for a case's field (E27; §8.9; E34 keeps the old wire name). No other code has a fix in this version. A fix is current only at `Revision`: once one applies the others are stale (S5); lint again. A fix is offered only when `canon edit` would accept it: never for a `@stable` field (E29), nor when the field's package or a package importing it holds a broken declaration (E32), nor when a package importing the field's package is not loaded, and a `@text` result's reach follows a dependent type's arms and body.
+- **L10. Fixes.** A `W0001` finding whose suggested name is an identifier, not a reserved word, named by no other field or method of its record or case, and whose record no `@text` fn result reaches, has a fix: `{Base: Revision, Ops: [RenameName("<pkg>:<Rec>.<field>", "<name>")]}`, or `"<pkg>:<Variant>.<case>.<field>"` for a case's field (E27; §8.9; E34 keeps the old wire name). No other code has a fix in this version. A fix is current only at `Revision`: once one applies the others are stale (S5); lint again. A fix is offered only when `canon edit` would accept it: never for a `@stable` field (E29), nor when the field's package or a package importing it holds a broken declaration (E32), nor when a package importing the field's package is not loaded, and a `@text` result's reach follows a dependent type's arms and body. A withheld fix leaves the decision to the user: for a `@text` result, `canon edit` accepts the rename but it changes a key of the text file, so add `@json("<old name>")` to the field where the file must keep its key; for a `@stable` field, rename by hand with its `canon.lock` lines (LOCK.md §4.6) and add `@json("<old name>")` where a `load` or a data emit reads the field; for a broken declaration in the field's package or an importer, fix it, then lint again; for an importer not loaded, lint without a package selection, or name the importer among the `packages`, then lint again.
 - **L11. Order.** Fixes follow Findings; two calls on one snapshot return the same result.
 
 ---
@@ -835,8 +840,8 @@ No whitespace is allowed anywhere in a path. Reserved words are valid `word`s (L
 ### 6.4 Paths in edits of layers
 
 When `Options.EditLayer` is set (§7.5), the edit path is translated into an `amend` path
-(GRAMMAR.md §5.7): a field or a table entry whose key is a word is `.name` (the first bare); so is the first step of an amend line into a keyed list with a `String` key, when the key is a word that is not a keyword (DECISIONS 450); a later `String` key stays a string literal, and a keyword key cannot start a line (`layer`); every
-other key is a Canon key of the container's key type (for a `ref`, its target's key type): an
+(GRAMMAR.md §5.7): a field or a table entry whose key is a word is `.name` (the first bare); so is the first step of an amend line into a keyed list with a `String` key (or a `ref` key whose chain's leaf key is a `String` or a table id, DECISIONS 456), when the key is a word (DECISIONS 450); a later `String` key stays a string literal, and a word that continues the line above (`and`, `or`, `in`, `is`, `else`, `where`: GRAMMAR.md §3.1 rule 3) cannot start a line (`layer`); every
+other key is a Canon key of the container's key type (for a `ref`, its chain's leaf key type, DECISIONS 456): an
 integer in decimal; a `String` key, or a literal of a literal union, as a string literal printed
 as M7 prints strings (`["a"]`, `["a b"]`); any other key that is a word, bare or quoted
 (`[plain]`, `` [`if`] ``, GRAMMAR.md §2.3); anything else as a string literal. A path that has no
@@ -902,18 +907,34 @@ source and where the edit goes.
 
 | Reason | When |
 |---|---|
-| `computed` | the path leaves the source tree: a function call, comprehension, operator, `if`, `match`, identifier or method on the way (`Origin` gives the canonical path of the value's own source when that source is structural, else `""`); under an `EditLayer`, a `Set` or `Reset` of a layer line whose Undo cannot write it back (a `load(…)`, a call such as `mk()`, a spread; DECISIONS 273). It is never given for a value the edit layer re-states with a Source: a new layer line is judged by its amendment, its value and its Undo, not by how the base computes the value (W11) |
+| `computed` | the path leaves the source tree: a function call, comprehension, operator, `if`, `match`, identifier or method on the way (`Origin` gives the canonical path of the value's own source when that source is structural, else `""`); under an `EditLayer`, a `Set`, `Reset` or `Remove` at a non-literal node of a layer line (a load of any form, a call such as `mk()`, any expression, the line's own value or nested in its literal), whose Undo cannot write the node back, a path below such an expression, and a field a spread supplies (W11a; DECISIONS 273, 462); with the edit layer inactive, a `Set`, `Reset`, `AddEntry` or `Remove` through it when the declared type of the root it amends holds a dependent type, not through refs (W11a). It is never given for a value the edit layer re-states with a Source: a new layer line is judged by its amendment, its value and its Undo, not by how the base computes the value (W11) |
 | `layered` | an active layer amends this path or an ancestor, and `EditLayer` is not that layer (MOCKUP-GAPS 48), whatever the stack order; only a `Set` that writes back exactly a line the edit layer held before the request (an Undo's restore) is exempt, and an op whose Undo this row would refuse is refused |
-| `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0); a JSON source whose file extension is not `.json` (`load(…, format: json)` of `x.cfg`), or a value whose defining file has a path segment starting with `.` (only a loaded file can: the scan reads no `.canon` file or directory so named, O2) (`Detail` names the path): the journal could not recover such writes (§10.3); below a `load` `at:` path past a `*` (whose `*`-level member is the item structural ops act on), an op when that member holds more than the selected remainder, or when the remainder's index is above 0: it would touch data outside the selection or another load's view of the file (`Detail` names the outside datum as `<display>#<pointer>`) |
+| `format` | the source is `load.csv`, `load.defines` or `load.text` (not editable in v0; a base source: a load in a layer line follows W11a); a JSON source whose file extension is not `.json` (`load(…, format: json)` of `x.cfg`), or a value whose defining file has a path segment starting with `.` (only a loaded file can: the scan reads no `.canon` file or directory so named, O2) (`Detail` names the path): the journal could not recover such writes (§10.3); below a `load` `at:` path past a `*` (whose `*`-level member is the item structural ops act on), an op when that member holds more than the selected remainder, or when the remainder's index is above 0: it would touch data outside the selection or another load's view of the file (`Detail` names the outside datum as `<display>#<pointer>`) |
 | `input` | an `input` field (it has no value at build time) |
 | `key` | the key field of a keyed-list element, or a key of a dependent map (MOCKUP-GAPS 17); keys change only with `Rename`, and this reason never refuses a `Rename` that rewrites a keyed-list key (E11, DECISIONS 310) |
 | `pseudo` | `.id`, `.retired`, `.kind` (P3) |
 | `order` | `Insert` or `Move` in a collection whose order comes from file paths (`load.dir`, entry files), and a `Set` of such a whole collection |
-| `layer` | an operation that cannot be written as an amendment when `EditLayer` is set (§7.5) |
+| `layer` | an operation that cannot be written as an amendment when `EditLayer` is set (§7.5): at a non-literal node of a layer line, every op but `Set`, `Reset` and `Remove`, and below a load in a layer line, every op (W11a); and a `Rename`, with an `EditLayer` or without, whose new key cannot start an amend line that starts with the old one (a key that is not a word, or a word that continues the line above: `and`, `or`, `in`, `is`, `else`, `where`, GRAMMAR.md §3.1 rule 3; E11, DECISIONS 310) |
 | `broken` | a `RenameName` whose packages hold a broken declaration (E32) |
 
 - **W5.** An edit on a non-editable path fails with `*NotEditableError` (wraps `ErrNotEditable`)
-  carrying the op index, the path, the reason and, for `computed`, `Origin`. `Editable` judges one
+  carrying the op index, the path, the reason, `Detail` and, for `computed`, `Origin`. `Detail` is
+  the way out, printed after the reason (DECISIONS 305, 462). An edit way out is given only when
+  following it makes the same op pass: "replace the expression with a literal", or, at or below a
+  load, "edit the data file directly, or replace the load(…) with a literal", for a `Set`, a `Reset`
+  whose base value has a literal form, an `AddEntry` into a table or map, and a `Remove` of a table
+  or map entry the layer states (not in a `@stable` table); "make the edit without an edit layer",
+  for a `layer` refusal only (never a `computed` one), when the same op passes with no edit layer
+  and its target takes it; "remove that line first" for a `Rename` that exactly one layer line
+  blocks. When both a literal way out and "make the edit without an edit layer" would make the op
+  pass, the literal one prints: it keeps the layer's intent. Apart from these, "edit the data file
+  directly" alone, an action outside Canon, prints for every other `layer` refusal at or below a
+  load in a layer, except a `Rename` or `Move` of the load's own node. Nothing else gives one. `Editable` and `Apply` give the same reason and `Detail`; so do an active and an inactive edit
+  layer, except for "make the edit without an edit layer", whose base verdict depends on the layer,
+  and the inactive-layer limits DECISIONS 273 decides: an `AddEntry`, and the `Remove` of a list
+  element inside a line, are `layer` (no path reaches the entry to undo it), and an edit inside a
+  typed literal line `T { … }` is `computed`.
+  Comments never change a verdict. `Editable` judges one
   path: a `Rename`'s check of its references is made per request, so `Editable` does not see it.
 - **W6.** `@deprecated` fields are editable through the API (SPEC §5.12 makes them read-only in the
   studio only). Setting one in a `.canon` source produces `W3301` (TYPES.md §16).
@@ -952,7 +973,7 @@ source and where the edit goes.
   creates the key (LAY-02). If the package has no `x` layer file, it is created as
   `<package dir>/<x>.layer.canon`. Every write of these ops, defaults materialized by W8 included,
   goes to the layer, never to the base. `Remove` of an entry the layer itself added removes that
-  amendment, or the entry from the layer literal that holds it; every other op (`SetCase` included) is `ErrNotEditable` with reason `layer`. A layer
+  amendment, or the entry from the layer literal that holds it; every other op (`SetCase` included) is `ErrNotEditable` with reason `layer`, and so is an `AddEntry` at a non-literal node of a line (W11a). A layer
   cannot add entries to a stable table (LCK-04), which the re-check reports as a finding.
 - **W11a.** A layer may not hold a path and one of its prefixes (EVALUATION.md §9.2, `E1908`). So
   when the layer already amends an ancestor of the path, `Set` edits the value inside that
@@ -961,7 +982,7 @@ source and where the edit goes.
   layer already amends adds one line and keeps the others. Under an `EditLayer` that is not active
   in the session, an `AddEntry` that needs a new amendment line is refused as `ErrNotEditable` with
   reason `layer`: no path reaches the new entry to undo it (DECISIONS 273); one that lands inside a
-  literal map of an existing line of that layer is a structural edit of that literal. An amendment whose right-hand side is a `load(…)` holds no literal: a path below it is `ErrNotEditable` with reason `layer` (its JSON lies outside the layer file, and the base may read it); `Set` or `Reset` of the amended path itself is `computed`: its Undo cannot write the `load` line back (DECISIONS 273).
+  literal map of an existing line of that layer is a structural edit of that literal. Every non-literal node of a layer line, a load of any form (`load`, `load.csv`, `load.text`, `load.defines`, `load.dir`) or an expression, the line's own value or nested in its literal, follows one rule (DECISIONS 462): at the node, `Set`, `Reset` and `Remove` are `computed` (its Undo cannot write the node back, DECISIONS 273) and every other op is `layer`; below it, a load is `layer` (its data lies outside the layer file, and the base may read it; DECISIONS 411) and an expression is `computed`. A literal subtree of a line is judged and rewritten on its own, beside a load, an expression or a spread, and the edit leaves their text byte-identical: this is what DECISIONS 273's "a spread included" refers to, and it reverses log-2026-11-01 EDIT-OWED's refusal of such an edit under an inactive layer. Under an `EditLayer` that is not active in the session, a `Set` is typed against the declared type (DECISIONS 273), so a `Set`, `Reset`, `AddEntry` or `Remove` through it is `computed`, with no way out, when the declared type of the root it amends holds a dependent type anywhere (not through refs): such a type has no instance without the layer's own drivers.
 
 ---
 
@@ -1462,8 +1483,9 @@ comments, and a trailing comment on its last line.
   break its line only when the single-line form (the line before, with the new value in place)
   exceeds the formatter's width, and then the enclosing item is re-printed. This one-line clause
   covers a `Set` of a scalar or `none` whose replaced item is written on one line; a `Set` replacing
-  an item that spans several lines is held to the region rules only. A comma DECISIONS 211 or 216
-  requires, or JSON's grammar forces, added or removed on a kept neighbour, or a byte the M5 settle
+  an item that spans several lines is held to the region rules only. A comma DECISIONS 211, 216 or 459
+  requires, or JSON's grammar forces, added or removed on a kept neighbour (a renamed key's
+  neighbour included), or a byte the M5 settle
   changes there, counts as re-printing that neighbour (Insert, Remove, Move and a `Set` to the
   default alike, which is then not a one-line case; DECISIONS 255); a DECISIONS 216 comma line with
   a trailing comment may be rewritten whole by the settle. A narrowing that makes the settle join an

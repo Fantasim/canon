@@ -148,7 +148,9 @@ exponent = ( "e" | "E" ) [ "+" | "-" ] decimal
   rounding are applied against the expected type (TYPES.md; `E3201` for an integer that does not
   fit). The parser folds unary `-` applied directly to a numeric or duration literal (with no
   postfix operator on the literal) into a negative literal, so `-9223372036854775808` is valid for
-  `Int`.
+  `Int`. `-` before a parenthesised literal (`-(128)`) is not folded: it stays a negation, whose
+  range is judged by the value it yields while its operand stays a 64-bit `Int` (TYPES.md §5.3,
+  DECISIONS 460).
 - The formatter keeps numeric literals exactly as written, `_` included (FORMATTER.md).
 
 ### 2.5 Durations
@@ -530,7 +532,12 @@ widgets — a reserved word is `E1125`. A field whose wire name is a reserved wo
 `kind: RewardType @json("type")`.
 
 `none`, `true`, `false` and `self` may never name an enum member, variant case or table key
-(`E1126`), because they would be unreachable in value position.
+(`E1126`): an enum member or a case so named would be unreachable in value position, and a
+table key so named, reachable only as a string (`ref tb = "true"`, TYPES.md §4.1), is banned with
+them so the four words name no data symbol. The table-key ban covers the key
+positions this table lists for a table: a table literal and `entry t.KEY`. An amend path segment
+may name such a key (`amend t { true: … }`), so a layer can amend a JSON table's entry of that name
+(a JSON table key is any word, WIRE.md §5.7; DECISIONS 459).
 
 Inside a variant body, `check`, `warn`, `fn`, `export` and `retired` at the start of an item always
 start a check, a method or a retired case, so they cannot name a case.

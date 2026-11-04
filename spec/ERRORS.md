@@ -546,7 +546,7 @@ Owner: GRAMMAR.md.
 | E1123 | error | syntax | GRAMMAR.md §1 | the file starts with a byte order mark (`canon fmt` removes it) |
 | E1124 | error | syntax | GRAMMAR.md §1 | invalid UTF-8, a control character, or a stray carriage return |
 | E1125 | error | syntax | GRAMMAR.md §4.3 | a reserved word used as a name where it is not allowed |
-| E1126 | error | syntax | GRAMMAR.md §4.3 | `none`, `true`, `false` or `self` names an enum member, case or table key |
+| E1126 | error | syntax | GRAMMAR.md §4.3 | `none`, `true`, `false` or `self` names an enum member, a variant case, or a table key in a table literal or `entry` |
 | E1127 | error | syntax | GRAMMAR.md §5.2 | file structure (no `package`, import after a declaration, a declaration in a layer or translation file) |
 | E1128 | error | syntax | GRAMMAR.md §5.11 | comparisons chained (`a < b < c`) |
 | E1129 | error | syntax | GRAMMAR.md §6.1 | an `if`/`match` expression or a brace literal at depth 0 of a header |
@@ -1210,7 +1210,7 @@ Owner: WIRE.md.
 | E7111 | error | wire | WIRE.md §5.3 | a wire value that is not a member of the enum |
 | E7112 | error | wire | WIRE.md §5.6 | a variant object without its tag, or with an unknown case |
 | E7113 | error | load | WIRE.md §6.6 | malformed CSV |
-| E7114 | error | wire | WIRE.md §5.7 | a table key that is not a Canon identifier |
+| E7114 | error | wire | WIRE.md §5.7 | a table key that is not a Canon word |
 | W7115 | warning | load | WIRE.md §6.5 | a symbolic link skipped: outside the roots, dangling, looping or unreadable |
 | E7116 | error | check | WIRE.md §6.1 | a load form that cannot produce the expected type |
 | E7117 | error | wire | WIRE.md §5.14 | an `@json(pairs:)` slot with one key but not the other, a `null`, or a filled slot after an empty one |

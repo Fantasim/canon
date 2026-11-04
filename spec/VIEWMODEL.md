@@ -963,7 +963,8 @@ Top level, every member always present except `studio`:
 - **J10.** **Value encoding** in the view model (defaults, `single`, literals): `Bool` → boolean;
   integers → number, or a decimal string when outside ±(2^53−1); `Float` → number (WIRE.md §7.2);
   `String` and assets → string; `Duration` → integer milliseconds; enum → Canon member name;
-  `ref` → key (string, or number for integer keys); `none` → `null`; list → array; map → array of
+  `ref` → key (string, or number for integer keys; a ref keyed by a ref writes its chain's leaf
+  key, DECISIONS 456); `none` → `null`; list → array; map → array of
   `[key, value]` pairs in map order; record → object of Canon field names in declaration order,
   every field present; variant → object with `"$case": "<case>"` first, then the case's fields;
   literal-union literal → string. The builder writes each number's canonical text (WIRE.md
@@ -1009,7 +1010,8 @@ predicate, when it has one (VM-02).
   `sibling: {"up": n, "field": f}` for a per-instance target (TYPES.md §10.2 level 1): walk `n`
   enclosing records up from the record that declares the ref (0 = that record) and use its field
   `f`. `element` is the element type's qualified name, or `"$define"` for a define table.
-  `keyType` is `"string"` or `"int"`. `count` and `active` are the target's entry counts in this
+  `keyType` is `"string"` or `"int"`, the kind of the target's key, read at the chain's leaf key
+  when that key is itself a ref (DECISIONS 456). `count` and `active` are the target's entry counts in this
   build (0 for `sibling`).
 - **J13.** Drivers, used by `on` and `bind`: `{"field": f}` (an earlier field of the same record or
   case), `{"param": p}` (a parameter of the enclosing parameterized record, bound at its use), or
