@@ -4679,3 +4679,12 @@ round 2", "PS1 review", "PS2 round 2"):
      read one level. That wrote a member's name for its wire, so a build's own data no longer loaded.
      It also wrote C++ that did not compile, raised a false `E3317` and missed a real one, and refused
      an integer literal.
+457. **A `.gen.cpp` includes every package it names that its header does not (CODEGEN.md §2.7,
+     §2.8).** A C++ `.gen.cpp` includes the header of each imported package whose names it writes and
+     its own `.gen.h` does not include, right after `"canon_runtime_json.h"` (or as the imports of
+     the runtime group in a baked file), in byte order. Including one its header already reaches
+     changes nothing. A `.gen.h` still includes only the packages it names. Reason: v0.3 run
+     (GO-NESTREF's widened compile matrix, then CPP-READERNS): a reader of a class owned by a baked
+     package named the discriminant enum of a data-mode library in its branch table. The owner's
+     header holds only the ref's key, so no header reached that library and the reader did not
+     compile. The generator recorded the name only after the header was written.
