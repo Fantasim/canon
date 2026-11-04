@@ -4789,3 +4789,23 @@ round 2", "PS1 review", "PS2 round 2"):
      internal error on an entry Set, and inactive edits that broke a dependent type once active.
      (Amended 2026-11-04 at the v0.3 spec-sync review: the inactive-layer limits of 273; the literal
      way out first; the no-layer way out for `layer` only; EDIT-LAYERPARITY's inactive limits.)
+
+463. **An edit's re-check also covers every declared layer the session does not apply (API.md E17a,
+     E18, E19, F7, F11; amends 273).** Besides the session's own re-check, for each layer L that the
+     re-checked packages or any package they import (directly or not) declare and `Options.Layers`
+     does not activate, in name order, the re-checked packages importing a declarer of L (the declarer
+     included) are analysed once more with L stacked last (`Options.Layers` then L; EVALUATION.md §9.1
+     bounds no order, so each such layer is checked singly). A finding of that analysis the re-check
+     does not have joins `Findings` and counts for E19 as the re-check's own: the edit is refused, or
+     written and reported with `AllowErrors`, a `DryRun` alike; since E19 refuses on any error of an
+     affected package, a layer already broken refuses its packages' edits as a broken active layer
+     does. Two findings are the same when their code, located span (display path, lines, columns),
+     path and message are equal; the lists are compared before any cut, and each package's merged
+     list is then cut once (F7), its counts recomputed. A finding names the layer whose amendment
+     produced its value (F11), else L. What these analyses consult joins the staleness check (S5).
+     They run without the build cache, so the session's lineages stay. Measured on a 200-entry
+     synthetic package: an edit's re-check takes about 13, 20, 60 and 313 ms with 0, 1, 10 and 50
+     inactive layers; robustness before speed, and filtering by amend path missed cross-root checks.
+     `canon check` is unchanged (a question for Louis). Reason: v0.3 run (EDIT-WAYOUT review,
+     EDIT-ALLLAYERS rounds 1-2): a base edit passed while breaking an inactive layer (`E3802`,
+     `E1905` once it was activated).

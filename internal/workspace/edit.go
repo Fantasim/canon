@@ -38,8 +38,9 @@ type EditOutcome struct {
 
 	wroteLocks []build.Lock // the canon.lock files it writes (E20), whose packages it locks (J7)
 
-	checked   *build.Analysis // the re-check's analysis, and the packages it re-checked (E18, E35)
-	rechecked []string
+	checked    *build.Analysis // the re-check's analysis, and the packages it re-checked (E18, E35)
+	rechecked  []string
+	layerReads []build.Read // what its inactive layers' analyses consulted (S5; DECISIONS 463)
 }
 
 // Edit is the edit transaction, the one writer (API.md E17-E21, S9-S12, N10, W15): the
@@ -205,9 +206,9 @@ func (s *Snapshot) noOverlay(a *build.Analysis, changes []edit.Change) error {
 	return nil
 }
 
-// recheck re-checks on After the owners and their importers, with their imports alone, in lang,
-// and adds the lock lines the edit requires (API.md E17, E17a, E18, E20, R6a); Covers needs an
-// every-package analysis a call kept on Before, the edit's own base being its scope's.
+// recheck re-checks on After the owners and their importers in lang, adds the lock lines, then
+// the inactive layers' findings (API.md E17a, E18, E20, R6a; DECISIONS 463); Covers needs
+// an every-package analysis kept on Before, the edit's own base being its scope's.
 func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []string, lang string) error {
 	pkgs := importing(a.Units(), owners...)
 	switch {
@@ -232,7 +233,10 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 	if locked {
 		o.After = o.Before.planned(o.Changes, o.aliases) // the sources after the edit hold its lock lines
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	return o.layered(ctx, checked, pkgs, lang)
 }
 
 // commit writes o's changes through s, journaled (API.md N10), named by the revision they give,

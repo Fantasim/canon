@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/edit"
@@ -46,7 +47,7 @@ func (s *Snapshot) staleConsulted(ctx context.Context, base string, o *EditOutco
 	if fresh, err := s.fresh(ctx, base); err != nil || fresh {
 		return err
 	}
-	var reads []build.Read
+	reads := slices.Clone(o.layerReads) // what only an inactive layer's analysis read (DECISIONS 463)
 	for _, pkg := range o.rechecked {
 		reads = append(reads, o.checked.Consulted(pkg)...)
 	}

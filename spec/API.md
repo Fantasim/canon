@@ -384,7 +384,9 @@ type Truncation struct { Package string; Errors, Warnings int }   // counts NOT 
 - **F7.** At most `Options.MaxFindings` findings are kept per package; the first ones in F2 order
   are kept, chosen on the source-language messages so the kept set is the same under every
   `Options.Lang` (DECISIONS 281). The counts in `Summary.Errors`/`Warnings` include the dropped ones;
-  `Truncated` lists each package that dropped some, in package-name order.
+  `Truncated` lists each package that dropped some, in package-name order. An edit's findings merged from
+  several analyses (E18) are compared before any cut; each package's merged list is then cut once, and
+  the counts and `Truncated` are those of the merged list (DECISIONS 463).
 - **F8.** `Summary.Packages` is the number of packages checked.
 
 ### 4.4 Text form (DIAG-03)
@@ -408,7 +410,9 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
 - **F10.** Message: two spaces, `<path>: ` when `Path` is not empty, then the message. Each
   further line of a multi-line message is indented two spaces too
   (`  heaviest: plan (98412330 steps)`, EVALUATION.md §12.2).
-- **F11.** When `Layer` is set: `  set by layer <layer>`.
+- **F11.** When `Layer` is set: `  set by layer <layer>`. `Layer` names the layer whose amendment
+  produced the value; a finding an edit's re-check adds for an inactive layer (E18) that names none
+  names that layer (DECISIONS 463).
 - **F12.** One line per `Related` element, in order: `  expected by <file>:<line>`, then
   ` (<note>)` when the note is not empty; a related element without a file is
   `  expected by (<note>)`. For example:
@@ -1210,7 +1214,8 @@ inside the same edit and reports it, so every client behaves the same.
     `RenameName`, every package importing one of those, directly or not, where its references and
     occurrences lie (E11, E33). A root that names no package adds none; its op fails in E21's
     order. Each op is resolved and applied against the scope's analysis (E1);
-  - after the ops, the affected packages (E17, E18);
+  - after the ops, the affected packages (E17, E18), and, once per inactive layer E18 checks, the
+    affected packages importing a package that declares it, under the active layers and that one last;
   - for both, every package they import, directly or not, and `project.studio`'s package with its
     imports when one of them declares a view, a `@menu` or an `emit view` (DECISIONS 227).
 
@@ -1225,6 +1230,12 @@ inside the same edit and reports it, so every client behaves the same.
   with what E17a loads for them. `Findings` holds all their findings and the project's own (package `""`), and only those: the
   findings of a package the edit does not affect, errors included, are not reported and never
   refuse the edit (E19). `canon check` stays the verdict of the whole project (DECISIONS 330).
+  The re-check also covers every layer that the re-checked packages, or a package they import,
+  declare and `Options.Layers` does not activate: for each, in name order, the affected packages
+  importing its declarer are analysed once more with it stacked last, and a finding that analysis
+  adds (one with the same code, located span, path and message is the re-check's own) joins
+  `Findings` and counts for E19 as the re-check's own; what it consults joins the staleness check
+  (S5) (DECISIONS 463).
 - **E19.** If any finding is an error and `AllowErrors` is false, nothing is written, `Applied` is
   false, and `Edit` returns the result together with a `*RejectedError` (wraps `ErrRejected`).
   With `AllowErrors`, the files are written and the result has `Applied: true` and the error

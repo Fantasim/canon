@@ -2,6 +2,7 @@ package build
 
 import (
 	"crypto/sha256"
+	"slices"
 	"sync"
 
 	"github.com/fantasim/canonlang/internal/eval"
@@ -70,6 +71,14 @@ func newCacheGen() *cacheGen {
 func (p *Project) WithCache(c *Cache) *Project {
 	out := *p
 	out.cache = c
+	return &out
+}
+
+// WithLayers is p with layers active, in that stack order, instead of its own, its file system,
+// cache and Settler kept: an edit's re-check of a layer its session does not apply (API.md E18).
+func (p *Project) WithLayers(layers []string) *Project {
+	out := *p
+	out.opt.Layers = slices.Clone(layers)
 	return &out
 }
 
