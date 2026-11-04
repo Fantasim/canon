@@ -1,0 +1,20 @@
+TYPES.md §15: a bare `self` in a field default reads every field, the field itself and later ones included: E3010, in a string interpolation and as a value alike.
+-- a/a.canon --
+package a
+
+local record R {
+  port: Int = 80
+  me: String = "{self}"
+  same: Bool = self == self
+}
+-- findings.txt --
+error[E3010]  a/a.canon:5:18
+  a default may read only fields declared before it; name an earlier field
+
+error[E3010]  a/a.canon:6:16
+  a default may read only fields declared before it; name an earlier field
+
+error[E3010]  a/a.canon:6:24
+  a default may read only fields declared before it; name an earlier field
+
+3 errors, 0 warnings in 1 package (…)

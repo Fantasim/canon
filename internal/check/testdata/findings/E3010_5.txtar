@@ -1,0 +1,13 @@
+TYPES.md §15: a field default reading its own field through `self`, in a string interpolation, is E3010.
+-- a/a.canon --
+package a
+
+local record R {
+  port: Int = 80
+  me: String = "{self.me}"
+}
+-- findings.txt --
+error[E3010]  a/a.canon:5:18
+  a default may read only fields declared before it; name an earlier field
+
+1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,36 @@
+CLI.md §3.7, TYPES.md §3.3, §15 (EVAL-AMENDNOTE): a default reading an earlier field through `self`, in an operand and a string interpolation, is explained as a `default` line with the value it produced, exit 0, no internal error.
+-- args --
+explain
+server
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Server {
+  /// A port.
+  port: Int = 80
+  /// Its name.
+  me: String = "{self.port}"
+  /// Twice the port.
+  twice: Int = self.port * 2
+}
+
+/// The server.
+let server: Server = { port: 8 }
+-- want --
+[exit 0]
+[stdout]
+server = Server{port: 8, me: "8", twice: 16}  a.Server
+  literal  a/a.canon:15
+server.port = 8  Int
+  literal  a/a.canon:15
+server.me = 8  String
+  default  a/a.canon:9  8
+server.twice = 16  Int
+  default  a/a.canon:11  16
+[stderr]

@@ -127,16 +127,15 @@ func (e *Evaluator) Cycle(ctx context.Context, ref *value.Ref) {
 	r.refFail(diag.E4301.At(r.refSpan(ref, nil), []string{name, name}), ref, nil)
 }
 
-// Reads is the fields of fields, f's record, that f's default reads: bare names, `self.x`, and
-// every one for a bare `self`.
+// Reads is the fields of fields, f's record, that f's default reads: bare names and `self.x`.
 func (e *Evaluator) Reads(f *types.Field, fields []*types.Field) []int {
 	if out, ok := e.reads[f]; ok {
 		return out
 	}
-	names, all := e.defaultNames(f.Default)
+	names := e.defaultNames(f.Default)
 	var out []int
 	for i, g := range fields {
-		if all || slices.Contains(names, g.Name) {
+		if slices.Contains(names, g.Name) {
 			out = append(out, i)
 		}
 	}
@@ -144,11 +143,10 @@ func (e *Evaluator) Reads(f *types.Field, fields []*types.Field) []int {
 	return out
 }
 
-// defaultNames is the field names a default names: bare field names and `self.x`; all for a
-// bare `self`.
-func (e *Evaluator) defaultNames(d syntax.Expr) ([]string, bool) {
+// defaultNames is the field names a default names: bare field names and `self.x`, parenthesized
+// or not; check refuses any other `self` in a default.
+func (e *Evaluator) defaultNames(d syntax.Expr) []string {
 	var names []string
-	all := false
 	syntax.Inspect(d, func(n syntax.Node) bool {
 		switch x := n.(type) {
 		case *syntax.IdentExpr:
@@ -156,16 +154,14 @@ func (e *Evaluator) defaultNames(d syntax.Expr) ([]string, bool) {
 				names = append(names, x.Name)
 			}
 		case *syntax.SelectorExpr:
-			if _, self := x.X.(*syntax.SelfExpr); self {
+			if _, self := syntax.Unparen(x.X).(*syntax.SelfExpr); self {
 				names = append(names, x.Name.Name)
 				return false
 			}
-		case *syntax.SelfExpr:
-			all = true
 		}
 		return true
 	})
-	return names, all
+	return names
 }
 
 // loadAt is the expression of the load being decoded, which a cycle it closes is reported at.

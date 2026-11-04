@@ -1386,7 +1386,10 @@ var Registry = []Def{
 	{
 		Code: "E3010", Severity: Error, Package: "check",
 		Variants: []Variant{
-			{Template: "a default may use only constants, earlier fields, parameters and built-ins"},
+			{Name: "other", Template: "a default may use only constants, earlier fields, parameters and built-ins"},
+			{Name: "notEarlier", Template: "a default may read only fields declared before it; name an earlier field"},
+			{Name: "ownCase", Template: "a default cannot read its own case; write the literal, the case is known here"},
+			{Name: "entryKey", Template: "a default cannot read its entry's key; write the value in the entry"},
 		},
 	},
 	{
@@ -4963,9 +4966,24 @@ type codeE3010 struct{}
 // Def is the registry entry of E3010.
 func (codeE3010) Def() *Def { return &Registry[130] }
 
-// At reports: a default may use only constants, earlier fields, parameters and built-ins
-func (codeE3010) At(span source.Span) *Builder {
+// AtOther reports: a default may use only constants, earlier fields, parameters and built-ins
+func (codeE3010) AtOther(span source.Span) *Builder {
 	return newBuilder(&Registry[130], 0, span)
+}
+
+// AtNotEarlier reports: a default may read only fields declared before it; name an earlier field
+func (codeE3010) AtNotEarlier(span source.Span) *Builder {
+	return newBuilder(&Registry[130], 1, span)
+}
+
+// AtOwnCase reports: a default cannot read its own case; write the literal, the case is known here
+func (codeE3010) AtOwnCase(span source.Span) *Builder {
+	return newBuilder(&Registry[130], 2, span)
+}
+
+// AtEntryKey reports: a default cannot read its entry's key; write the value in the entry
+func (codeE3010) AtEntryKey(span source.Span) *Builder {
+	return newBuilder(&Registry[130], 3, span)
 }
 
 // E3011: a type that cannot be a map key (TYPES.md §9.2).

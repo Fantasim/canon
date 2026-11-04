@@ -100,7 +100,7 @@ func (c *checker) callUser(env *env, x *syntax.CallExpr, o *object) types.Type {
 	case env.what != noConstant:
 		c.report(env, diag.E3015.AtNotConstant(env.span(x), env.what))
 	case env.fields >= 0:
-		c.report(env, diag.E3010.At(env.span(x)))
+		c.report(env, diag.E3010.AtOther(env.span(x)))
 	}
 	ft, ok := o.typ.(*types.FuncType)
 	if !ok {
@@ -292,7 +292,7 @@ func (c *checker) callMethod(env *env, x *syntax.CallExpr, s *syntax.SelectorExp
 	if s.X == nil {
 		t = env.shorthand
 	} else {
-		t, opt = c.recv(env, s.X)
+		t, opt = c.recv(env.receiving(s.X), s.X) // a user method called on it is E3010 at the call (callUser)
 	}
 	if t.Kind() == types.Error {
 		c.argsAlone(env, x)

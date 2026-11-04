@@ -149,7 +149,7 @@ func (c *checker) refInto(t, elem types.Type) bool {
 
 // isExpr is `x is c` (TYPES.md §8.3): x a variant or an optional one, c one of its cases; E3605 otherwise.
 func (c *checker) isExpr(env *env, e *syntax.IsExpr) types.Type {
-	t := c.synth(env, e.X)
+	t := c.synth(env.caseTested(e.X), e.X)
 	if t.Kind() == types.Error || c.notDependent(env, e.X, t, syntax.KwIs.String()) {
 		return types.BoolType
 	}

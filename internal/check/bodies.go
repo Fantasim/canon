@@ -177,23 +177,12 @@ func (c *checker) bodyEnv(p *pkgState, f *syntax.File, owner *object, body *reco
 	env = env.push()
 	if r, ok := body.self.(*types.RecordType); ok && len(r.Decl.Params) > 0 {
 		env.params = map[string]*object{}
-		for _, po := range c.recordParams(r) {
+		for _, po := range paramObjects(c.info, r) {
 			env.scope.names[po.name] = po
 			env.params[po.name] = po
 		}
 	}
 	return env
-}
-
-// recordParams are the parameter objects of a record, from its declaration.
-func (c *checker) recordParams(r *types.RecordType) []*object {
-	var out []*object
-	for _, p := range r.Decl.Params {
-		if po, ok := c.info.Defs[p.Name].(*object); ok {
-			out = append(out, po)
-		}
-	}
-	return out
 }
 
 // typeBody checks what a record or variant declares beyond its types: field defaults, the

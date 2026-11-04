@@ -1349,7 +1349,11 @@ EVALUATION.md §11 gives the declaration rules and their codes (`E19xx`). For ty
 - A constant expression may build a record or a case once that body is complete (its fields resolved, its defaults checked, the `where` predicates of its field types checked, DECISIONS 454); a body still being completed when the fold reaches it (the bound's own record or case) is `E3015` `notConstant`, and one declared later is completed first: declaration order does not matter (§3.2).
 - A public top-level `let` needs a type annotation (`E3001`). A `local let` without one is
   synthesized when first needed; a cycle among such inferences is `E3008`.
-- A field default (TYP-15) may use constants, **earlier** fields of the same record, record parameters, built-in functions, and a field of a record literal built of these (`(T {}).a`); anything else (a package `let`, a user function, a later field) is `E3010`.
+- A field default (TYP-15) may use constants, **earlier** fields of the same record, record parameters, built-in functions, and a field of a record literal built of these (`(T {}).a`); anything else (a package `let`, a user function, a later field) is `E3010`. `self.f`, parentheses aside, for an
+  earlier field is that field; anything else on `self` is `E3010`, its variant naming the way out (a
+  bare `self`, a later field or the field itself: name an earlier field; `self.kind` or `self is c`
+  in a case: write the literal; `self.id` or `self.retired`: write the value in the entry); `is` on a
+  non-variant stays `E3605` (DECISIONS 465).
 - An optional field's default is `none`: a field `x: T?` without a default holds `none` when no
   value is given. Writing `x: T? = none` is `W3001` (one form per meaning), and `canon fmt` removes
   the `= none` (FORMATTER.md §10; DECISIONS 319).

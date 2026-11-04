@@ -2,6 +2,7 @@ package check
 
 import (
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 )
@@ -366,10 +367,18 @@ func (c *checker) allowedIn(env *env, e syntax.Node, o *object) bool {
 		c.report(env, diag.E3015.AtNotConstant(env.span(e), env.what))
 		return false
 	case env.fields >= 0 && !defaultName(env, o):
-		c.report(env, diag.E3010.At(env.span(e)))
+		c.report(env, defaultRefusal(env, o)(env.span(e)))
 		return false
 	}
 	return true
+}
+
+// defaultRefusal is E3010's variant for a name a default may not use: notEarlier for a field of its own record, declared at or after it (DECISIONS 465).
+func defaultRefusal(env *env, o *object) func(source.Span) *diag.Builder {
+	if o.kind == ObjField && env.rec.fields[o.name] == o {
+		return diag.E3010.AtNotEarlier
+	}
+	return diag.E3010.AtOther
 }
 
 // constName reports a name a constant expression may use: a constant, a built-in, or a

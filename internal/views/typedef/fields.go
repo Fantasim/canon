@@ -86,7 +86,7 @@ func (s *Types) defaultOf(decl types.Type, f *types.Field) json.RawMessage {
 		return nil
 	}
 	info := s.in.Program.Info
-	if readsInstance(info, f.Default, recordParams(info, decl)) {
+	if check.ReadsInstance(info, f.Default, check.RecordParams(info, decl)) {
 		return json.RawMessage(computedDefault)
 	}
 	owner := s.objects[ownerKey(decl)]
@@ -110,32 +110,4 @@ func ownerKey(decl types.Type) any {
 		return c.Variant
 	}
 	return decl
-}
-
-// recordParams are the check objects of a record's own value parameters; none for a case.
-func recordParams(info *check.Info, decl types.Type) map[check.Object]bool {
-	r, ok := decl.(*types.RecordType)
-	if !ok || r.Decl == nil {
-		return nil
-	}
-	out := map[check.Object]bool{}
-	for _, p := range r.Decl.Params {
-		if o := info.Defs[p.Name]; o != nil {
-			out[o] = true
-		}
-	}
-	return out
-}
-
-// readsInstance reports an expression naming a field or one of params (TYPES.md §15, TYP-15).
-func readsInstance(info *check.Info, e syntax.Expr, params map[check.Object]bool) bool {
-	found := false
-	syntax.Inspect(e, func(n syntax.Node) bool {
-		if id, ok := n.(*syntax.IdentExpr); ok {
-			o := info.Uses[id]
-			found = found || o != nil && (o.Kind() == check.ObjField || params[o])
-		}
-		return !found
-	})
-	return found
 }

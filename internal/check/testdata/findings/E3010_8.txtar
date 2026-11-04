@@ -1,0 +1,17 @@
+TYPES.md §9.3, §15: `self.id` in a table element's field default reads the entry's key, no earlier field: E3010.
+-- a/a.canon --
+package a
+
+local record Ent {
+  n: Int = 1
+  name: String = self.id
+}
+
+local let ents: table Ent = {
+  x {}
+}
+-- findings.txt --
+error[E3010]  a/a.canon:5:18
+  a default cannot read its entry's key; write the value in the entry
+
+1 error, 0 warnings in 1 package (…)

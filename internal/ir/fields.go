@@ -43,20 +43,6 @@ func (s *stage) fields(fs []*types.Field, items []syntax.RecordItem, owner check
 	return out
 }
 
-// recordParams are the check objects of r's own declared value parameters, or nil for one without any; a field default that reads one of these is Computed (decision 80), but a lambda bound with the same identifier kind inside that default is not.
-func (s *stage) recordParams(r *types.RecordType) map[check.Object]bool {
-	if r.Decl == nil || len(r.Decl.Params) == 0 {
-		return nil
-	}
-	out := map[check.Object]bool{}
-	for _, p := range r.Decl.Params {
-		if o := s.info.Defs[p.Name]; o != nil {
-			out[o] = true
-		}
-	}
-	return out
-}
-
 // fieldDecl is the declaration of the field named name among a body's items.
 func fieldDecl(items []syntax.RecordItem, name string) *syntax.FieldDecl {
 	for _, it := range items {
@@ -72,7 +58,7 @@ func (s *stage) fieldDefault(fd *Field, f *types.Field, owner check.Object, para
 	if f.Default == nil {
 		return
 	}
-	if s.readsInstance(f.Default, params) {
+	if check.ReadsInstance(s.info, f.Default, params) {
 		fd.Computed = true
 		return
 	}
@@ -92,22 +78,6 @@ func appliedArgs(t *TypeRef) bool {
 		return false
 	}
 	return len(t.Args) > 0 || appliedArgs(t.Elem) || appliedArgs(t.Key)
-}
-
-// readsInstance reports an expression naming a field, or one of params (the owner record's own
-// value parameters); a lambda's own parameter, of the same check.ObjParam kind but not in
-// params, does not count.
-func (s *stage) readsInstance(e syntax.Expr, params map[check.Object]bool) bool {
-	found := false
-	syntax.Inspect(e, func(n syntax.Node) bool {
-		if id, ok := n.(*syntax.IdentExpr); ok {
-			if o := s.info.Uses[id]; o != nil && (o.Kind() == check.ObjField || params[o]) {
-				found = true
-			}
-		}
-		return !found
-	})
-	return found
 }
 
 // ownRefinements are the range and patterns written on a type, through aliases (CODEGEN.md §5.12): nested ranges as their intersection, and every pattern (TYPES.md §7.4: all are checked) innermost first in alias-chain order (not declaration order), as eval checks them at storage points (EVALUATION.md §4.3); the order is not observable in a loader, whose every pattern failure reads the same line. A pattern repeated along the chain is kept once: one table, one regexp.

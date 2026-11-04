@@ -392,7 +392,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 594 messages.
+The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 597 messages.
 
 ## W00xx: Lints
 
@@ -943,7 +943,10 @@ Owner: TYPES.md, WIRE.md.
 | E3007 | binary | op:Name, a:Type, b:Type | `operator {op} is not defined for {a} and {b}` |
 | E3007 | unary | op:Name, a:Type | `operator {op} is not defined for {a}` |
 | E3008 | - | - | `cannot infer the type of this expression; add a type` |
-| E3010 | - | - | `a default may use only constants, earlier fields, parameters and built-ins` |
+| E3010 | other | - | `a default may use only constants, earlier fields, parameters and built-ins` |
+| E3010 | notEarlier | - | `a default may read only fields declared before it; name an earlier field` |
+| E3010 | ownCase | - | `a default cannot read its own case; write the literal, the case is known here` |
+| E3010 | entryKey | - | `a default cannot read its entry's key; write the value in the entry` |
 | E3011 | - | typ:Type | `{typ} cannot be a map key` |
 | E3012 | field | field:Name | `keyed by {field}: no such field` |
 | E3012 | type | field:Name, typ:Type | `keyed by {field}: type {typ} cannot be a key` |

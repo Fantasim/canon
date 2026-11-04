@@ -1,0 +1,19 @@
+TYPES.md §15: a user method called in a field default, bare or through `self`, is a user function: E3010 other, once each at the call.
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int = 1
+  b: Int = self.twice()
+  c: Int = twice()
+
+  fn twice(self) -> Int { return a * 2 }
+}
+-- findings.txt --
+error[E3010]  a/a.canon:5:12
+  a default may use only constants, earlier fields, parameters and built-ins
+
+error[E3010]  a/a.canon:6:12
+  a default may use only constants, earlier fields, parameters and built-ins
+
+2 errors, 0 warnings in 1 package (…)

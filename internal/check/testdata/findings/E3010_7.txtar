@@ -1,0 +1,30 @@
+TYPES.md §11.1, §15: in an applied record and in a case body, a default reading a later field through `self`, or a bare `self`, is E3010; an earlier field through `self` is fine.
+-- a/a.canon --
+package a
+
+local record Ev {
+  max: Int = 3
+}
+
+local record Lim(e: Ev) {
+  lim: Int = e.max
+  twice: Int = self.lim * 2
+  ahead: Int = self.after
+  after: Int = 1
+}
+
+local variant V {
+  c {
+    n: Int = 1
+    m: Int = self.n + 1
+    w: String = "{self}"
+  }
+}
+-- findings.txt --
+error[E3010]  a/a.canon:10:16
+  a default may read only fields declared before it; name an earlier field
+
+error[E3010]  a/a.canon:18:19
+  a default may read only fields declared before it; name an earlier field
+
+2 errors, 0 warnings in 1 package (…)

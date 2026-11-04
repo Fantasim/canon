@@ -103,11 +103,13 @@ func (r *run) local(obj check.Object, at syntax.Expr) value.Value {
 	return nil
 }
 
-// selfField is a field named in its record body: `self.f` (TYPES.md §3.3 step 3).
+// selfField is a field named in its record body, `self.f` (TYPES.md §3.3); a fold stops at it silently, as at `self` (§15, DECISIONS 150).
 func (r *run) selfField(name string) value.Value {
 	rec, ok := r.fr.self.(*value.Record)
 	if !ok {
-		r.bug(nil)
+		if r.fr.self != nil || !r.nonConstant() {
+			r.bug(nil)
+		}
 		return nil
 	}
 	if i := fieldIndex(rec.T, name); i >= 0 && rec.Fields[i] != nil {

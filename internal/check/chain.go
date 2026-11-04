@@ -79,7 +79,7 @@ func (c *checker) selector(env *env, s *syntax.SelectorExpr) (types.Type, bool) 
 	if s.X == nil {
 		t = env.shorthand
 	} else {
-		t, opt = c.recv(env, s.X)
+		t, opt = c.recv(env.receiving(s.X), s.X)
 	}
 	if t.Kind() == types.Error {
 		return t, opt
@@ -89,7 +89,7 @@ func (c *checker) selector(env *env, s *syntax.SelectorExpr) (types.Type, bool) 
 		return types.ErrorType, opt
 	}
 	sel := c.memberOf(env, s, t)
-	if sel == nil {
+	if sel == nil || !c.selfMemberAllowed(env, s) {
 		return types.ErrorType, opt || s.Optional
 	}
 	return c.narrowed(env, s, sel), opt || s.Optional

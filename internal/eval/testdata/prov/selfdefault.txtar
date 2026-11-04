@@ -1,0 +1,95 @@
+TYPES.md §3.3, §11.1, §15; EVALUATION.md §9.3, §13; CLI.md §3.7 (EVAL-AMENDNOTE): a default reading an earlier field through `self` is evaluated as by its bare name, in an operand, a string interpolation, through parentheses, an applied record and a case body, and is re-derived, with the amendment's layer, when a layer amends the field it reads.
+-- layers --
+dev
+-- paths --
+a:server
+a:server.me
+a:server.twice
+a:holder.lim.label
+a:v.m
+a:other.me
+a:other.paren
+-- a/a.canon --
+/// A.
+package a
+
+/// A server.
+record Server {
+  /// A port.
+  port: Int = 80
+  /// Its name.
+  me: String = "{self.port}"
+  /// Twice the port.
+  twice: Int = self.port * 2
+  /// The port read through parentheses.
+  paren: Int = (self).port + 1
+}
+
+/// Ev.
+record Ev {
+  /// Max.
+  max: Int = 3
+}
+
+/// Reads its parameter, then itself.
+record Lim(e: Ev) {
+  /// The max.
+  lim: Int = e.max
+  /// Its label.
+  label: String = "{self.lim}/{e.max}"
+}
+
+/// Holds an applied record.
+record Holder {
+  /// Ev.
+  ev: Ev = { max: 7 }
+  /// Lim.
+  lim: Lim(ev) = {}
+}
+
+/// V.
+variant V {
+  /// C.
+  c {
+    /// N.
+    n: Int = 1
+    /// M.
+    m: String = "{self.n}"
+  }
+}
+
+/// The server.
+let server: Server = { port: 8 }
+
+/// Another server, amended.
+let other: Server = {}
+
+/// Holder.
+let holder: Holder = {}
+
+/// V.
+let v: V = c { n: 4 }
+-- a/dev.canon --
+package a
+layer dev
+
+amend other {
+  port: 9
+}
+-- provenance.txt --
+a:server = Server{port: 8, me: "8", twice: 16, paren: 9}
+  literal a/a.canon:50:22-50:33
+a:server.me = 8
+  default a/a.canon:9:16-9:29 via (literal a/a.canon:50:22-50:33)
+a:server.twice = 16
+  default a/a.canon:11:16-11:29 via (literal a/a.canon:50:22-50:33)
+a:holder.lim.label = 7/7
+  default a/a.canon:27:19-27:39 via (literal a/a.canon:35:18-35:20)
+a:v.m = 4
+  default a/a.canon:45:17-45:27 via (literal a/a.canon:59:12-59:22)
+a:other.me = 9
+  default a/a.canon:9:16-9:29 layer dev via (literal a/a.canon:53:21-53:23)
+a:other.paren = 10
+  default a/a.canon:13:16-13:31 layer dev via (literal a/a.canon:53:21-53:23)
+
+0 errors, 0 warnings in 1 package (…)

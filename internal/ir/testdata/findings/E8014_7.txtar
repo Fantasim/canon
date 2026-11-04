@@ -1,0 +1,28 @@
+TYPES.md §3.3, §15; CODEGEN.md §5.13: a default reading an earlier field through `self` is computed like one naming it bare, so types mode refuses both: E8014 at each.
+-- a/a.canon --
+package a
+
+/// R.
+record R {
+  /// Port.
+  port: Int = 80
+  /// By name.
+  byName: Int = port * 2
+  /// Through self.
+  bySelf: Int = self.port * 2
+  /// Through self, in an interpolation.
+  label: String = "{self.port}"
+}
+
+emit cpp { out: "@features/a", namespace: "a", mode: types }
+-- findings.txt --
+error[E8014]  a/a.canon:8:3
+  types mode cannot emit the computed default of R.byName: there is no data to read it from
+
+error[E8014]  a/a.canon:10:3
+  types mode cannot emit the computed default of R.bySelf: there is no data to read it from
+
+error[E8014]  a/a.canon:12:3
+  types mode cannot emit the computed default of R.label: there is no data to read it from
+
+3 errors, 0 warnings in 1 package (…)

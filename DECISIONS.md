@@ -4827,6 +4827,19 @@ round 2", "PS1 review", "PS2 round 2"):
      verify named the refinement and so depended on source order, findings under a layer's
      right-hand side named no layer, and a re-derived default lost an earlier layer.
 
+465. **`self` in a field default reads only an earlier field, and every other use names its way
+     out (TYPES.md §3.3, §8.3, §15; ERRORS.md E3010; follows 305).** In a field default, `self.f`
+     (parentheses aside) for a field declared before the default is that field, as the bare name
+     is; anything else on `self` is `E3010`, whose variant names the way out: a bare `self`, a later
+     field or the field itself is `notEarlier` ("name an earlier field"); `self.kind` and `self is c`
+     in a case's body are `ownCase` ("write the literal, the case is known here"); `self.id` and
+     `self.retired` are `entryKey` ("write the value in the entry"); a user function, a package `let`
+     and the rest stay `other`. `is` on a non-variant is `E3605` wherever it stands. Evaluation,
+     generators and views read `self.f` exactly as the bare name, and a fold that meets `self` with no
+     record stops silently. Reason: v0.3 run (EVAL-AMENDNOTE review, CHECK-SELFDEFAULT): check judged
+     only bare names, so a valid `self.port` default ended in an internal error in `canon explain`,
+     and an invalid one in `canon check` itself.
+
 466. **A base edit made while layers are active is planned on the base alone (API.md W8, W10, E6,
      E22; follows 273, 462, 463).** Without an `EditLayer`, while layers are active, an edit plans what
      it writes and its Undo, values, types, materialized literals, E6 and every inverse, on an

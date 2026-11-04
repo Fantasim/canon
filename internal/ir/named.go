@@ -67,7 +67,7 @@ func (s *stage) record(r *types.RecordType) *Record {
 			items = r.Decl.Body.Items
 		}
 	}
-	out.Fields = s.fields(r.Fields, items, owner, s.recordParams(r))
+	out.Fields = s.fields(r.Fields, items, owner, check.RecordParams(s.info, r))
 	out.Methods = s.methods(r.Methods, items, out.Name, r)
 	return out
 }

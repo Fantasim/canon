@@ -1,0 +1,38 @@
+TYPES.md §3.3, §11.1, §15: a field default may read an earlier field through `self`, as by its bare name: in an operand, a string interpolation, a lambda, through parentheses, an applied record and a case body.
+-- a/a.canon --
+package a
+
+local record Server {
+  port: Int = 80
+  me: String = "{self.port}"
+  twice: Int = self.port * 2
+  ports: [Int] = [1, 2].map(p => p + self.port)
+  inParens: Int = (self).port + ((self)).port
+}
+
+local record Ev {
+  max: Int = 3
+}
+
+local record Lim(e: Ev) {
+  lim: Int = e.max
+  label: String = "{self.lim}/{e.max}"
+}
+
+local variant V {
+  c {
+    n: Int = 1
+    m: String = "{self.n}"
+  }
+}
+
+local let server: Server = { port: 8 }
+
+local record Holder {
+  ev: Ev = {}
+  lim: Lim(ev) = {}
+}
+
+local let holder: Holder = {}
+
+local let v: V = c

@@ -8,6 +8,6 @@ local record R {
 }
 -- findings.txt --
 error[E3010]  a/a.canon:4:12
-  a default may use only constants, earlier fields, parameters and built-ins
+  a default may read only fields declared before it; name an earlier field
 
 1 error, 0 warnings in 1 package (…)

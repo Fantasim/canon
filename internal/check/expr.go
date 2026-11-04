@@ -216,10 +216,14 @@ func (c *checker) noneLit(env *env, e *syntax.NoneLit, want types.Type) types.Ty
 	return types.NoneType
 }
 
-// self is the record or case value of the body (TYPES.md §8.1); E2108 elsewhere.
+// self is the record or case value of the body (TYPES.md §8.1); E2108 elsewhere, E3010 bare in a field default, which it reads whole (§15).
 func (c *checker) self(env *env, e *syntax.SelfExpr) types.Type {
-	if env.rec == nil {
+	switch {
+	case env.rec == nil:
 		c.report(env, diag.E2108.At(env.span(e)))
+		return types.ErrorType
+	case env.fields >= 0 && env.mode&modeSelfRecv == 0:
+		c.report(env, bareSelf(env, env.span(e)))
 		return types.ErrorType
 	}
 	return c.narrowed(env, e, env.rec.self)

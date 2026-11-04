@@ -1,0 +1,13 @@
+TYPES.md §15: a later field read through a parenthesized `self` is E3010, as through `self` (parentheses are not nodes of their own).
+-- a/a.canon --
+package a
+
+local record R {
+  a: Int = (self).b
+  b: Int = 1
+}
+-- findings.txt --
+error[E3010]  a/a.canon:4:12
+  a default may read only fields declared before it; name an earlier field
+
+1 error, 0 warnings in 1 package (…)

@@ -220,7 +220,10 @@ E3006 -: resource.vocab.items can finish without returning a Int
 E3007 binary: operator resource.vocab.items is not defined for Int and Int
 E3007 unary: operator resource.vocab.items is not defined for Int
 E3008 -: cannot infer the type of this expression; add a type
-E3010 -: a default may use only constants, earlier fields, parameters and built-ins
+E3010 other: a default may use only constants, earlier fields, parameters and built-ins
+E3010 notEarlier: a default may read only fields declared before it; name an earlier field
+E3010 ownCase: a default cannot read its own case; write the literal, the case is known here
+E3010 entryKey: a default cannot read its entry's key; write the value in the entry
 E3011 -: Int cannot be a map key
 E3012 field: keyed by resource.vocab.items: no such field
 E3012 type: keyed by resource.vocab.items: type Int cannot be a key

@@ -139,8 +139,9 @@ func evalNone(r *run, e syntax.Expr, _ *vpath) value.Value {
 	return &value.None{T: r.typeOf(e), P: r.prov(e, value.ProvLiteral)}
 }
 
+// evalSelf is the value of the body; a fold, which a default alone may reach, stops silently there (TYPES.md §15, DECISIONS 150).
 func evalSelf(r *run, e syntax.Expr, _ *vpath) value.Value {
-	if r.fr.self == nil {
+	if r.fr.self == nil && !r.nonConstant() {
 		r.bug(e)
 	}
 	return r.fr.self
