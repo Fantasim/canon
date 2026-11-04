@@ -80,7 +80,7 @@ func (p *Project) Edit(ctx context.Context, e Edit) (res *EditResult, err error)
 	res.Eval, rerr = p.editEval(ctx, out, e, res.Revision)
 	switch {
 	case err != nil:
-		return res, &RejectedError{Findings: errorFindings(res.Findings)}
+		return res, &RejectedError{Findings: errorFindings(res.Findings), total: res.Summary.Errors}
 	case rerr != nil:
 		return res, rerr
 	}

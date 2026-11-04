@@ -1967,8 +1967,9 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
   text holds the text of the sentinel `errors.Is` matches. The detail is: `Detail` for a
   `*PathError`; `expected <Expected>, got <Got>`, then `: <Detail>` if any, for a `*ValueError`;
   the `Reason`, then `: <Detail>` if any, for a `*NotEditableError`; the files joined by `, `
-  for a `*StaleError` and a `*NotCanonicalError`; the number of error findings (`1 error`,
-  `2 errors`) for a `*RejectedError`; the first finding, as `<file>:<line>:<col>: <message>`
+  for a `*StaleError` and a `*NotCanonicalError`; the number of errors (`1 error`,
+  `2 errors`), the cap's dropped ones included (F7), then `, <d> dropped by the cap` when it kept
+  fewer, for a `*RejectedError`; the first finding, as `<file>:<line>:<col>: <message>`
   (its message alone when it has no file), for a `*ProjectError` and a `*SyntaxError`; `Msg`
   for an `*InternalError`.
 - **X2.** A panic inside the compiler is recovered at the API boundary and returned as

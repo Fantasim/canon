@@ -165,15 +165,26 @@ func (e *StaleError) Unwrap() error { return ErrStale }
 
 // RejectedError reports an edit refused because the result has error findings (rule E19).
 type RejectedError struct {
-	Findings []Finding // the error findings, rule F2 order
+	Findings []Finding // the error findings F7 keeps, rule F2 order
+	total    int       // the errors the result counts, the cap's dropped ones included (rule F7)
 }
 
 func (e *RejectedError) Error() string {
+	n := max(e.total, len(e.Findings))
+	detail := countText(n)
+	if dropped := n - len(e.Findings); dropped > 0 {
+		detail += textListSep + fmt.Sprintf(fmtDropped, dropped)
+	}
+	return errText(-1, "", ErrRejected, detail)
+}
+
+// countText is n errors as the texts of rule X1 write them.
+func countText(n int) string {
 	noun := textErrors
-	if len(e.Findings) == 1 {
+	if n == 1 {
 		noun = textError
 	}
-	return errText(-1, "", ErrRejected, fmt.Sprintf(fmtCount, len(e.Findings), noun))
+	return fmt.Sprintf(fmtCount, n, noun)
 }
 
 func (e *RejectedError) Unwrap() error { return ErrRejected }

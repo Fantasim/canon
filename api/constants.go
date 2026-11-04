@@ -257,6 +257,7 @@ const (
 	fmtCount         = "%d %s"
 	textError        = "error"
 	textErrors       = "errors"
+	fmtDropped       = "%d dropped by the cap"
 	fmtFindingAt     = "%s:%d:%d: %s"
 	textListSep      = ", "
 	textExpected     = "expected "
