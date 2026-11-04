@@ -39,8 +39,7 @@ type undoCheck struct {
 // verified Undo. Every edit under an edit layer is verified; off layers, only several operations
 // touching a dependent field or a driver, or with a cascade: a single Set never pays (NFR-01).
 func (a *applier) verifiedUndo(ops []Operation, touched []string) ([]Operation, error) {
-	needed := a.env.EditLayer != "" || a.multi && (a.dependent || len(a.cascadeUndo) > 0 || a.facts != nil && len(a.facts.ids) > 0)
-	if !needed || len(ops) == 0 {
+	if !a.verifies() || len(ops) == 0 {
 		return ops, nil
 	}
 	if err := a.settle(); err != nil {
@@ -59,6 +58,12 @@ func (a *applier) verifiedUndo(ops []Operation, touched []string) ([]Operation, 
 		return c.layerUndo()
 	}
 	return c.regionUndo()
+}
+
+// verifies reports an edit whose Undo verifiedUndo runs: under an edit layer, or several
+// operations touching a dependent field or a driver, or with a cascade or a lock fact.
+func (a *applier) verifies() bool {
+	return a.env.EditLayer != "" || a.multi && (a.dependent || len(a.cascadeUndo) > 0 || a.facts != nil && len(a.facts.ids) > 0)
 }
 
 // regionUndo is the Undo outside an edit layer: E23's inverses, repaired region by region until

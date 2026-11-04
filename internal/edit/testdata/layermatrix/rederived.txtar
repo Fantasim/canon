@@ -196,22 +196,16 @@ amend cfg {
 [C a:server.url set] applied
   a/a.canon
     - let server: Server = {}
-    + let server: Server = { port: 9000, url: "x" }
-  undo differs
-  a/a.canon
-    - let server: Server = {}
-    + let server: Server = { port: 9000 }
+    + let server: Server = { url: "x" }
+  undo restores
 [C a:server.url reset] applied
   undo restores
 [C a:server.url remove] refused: operation 0 (a:server.url): operation not valid here
 [C a:server.host set] applied
   a/a.canon
     - let server: Server = {}
-    + let server: Server = { port: 9000, host: "x" }
-  undo differs
-  a/a.canon
-    - let server: Server = {}
-    + let server: Server = { port: 9000 }
+    + let server: Server = { host: "x" }
+  undo restores
 [C a:server.host reset] applied
   undo restores
 [C a:server.host remove] refused: operation 0 (a:server.host): operation not valid here
@@ -230,11 +224,8 @@ amend cfg {
 [C a:cfg.tag set] applied
   a/a.canon
     - let cfg: Cfg = {}
-    + let cfg: Cfg = { server: { port: 9000 }, tag: "x" }
-  undo differs
-  a/a.canon
-    - let cfg: Cfg = {}
-    + let cfg: Cfg = { server: { port: 9000 } }
+    + let cfg: Cfg = { tag: "x" }
+  undo restores
 [C a:cfg.tag reset] applied
   undo restores
 [C a:cfg.tag remove] refused: operation 0 (a:cfg.tag): operation not valid here

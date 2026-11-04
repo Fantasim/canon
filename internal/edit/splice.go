@@ -18,7 +18,7 @@ type canonDiff struct {
 // value turns n, the node stating old, into a statement of nw: n is a value expression, a
 // table entry or an entry declaration, whose value is its brace.
 func (d *canonDiff) value(old, nw value.Value, n syntax.Node) error {
-	if sameValue(old, nw) {
+	if d.a.unchanged(old, nw) {
 		return nil
 	}
 	done, err := d.structural(old, nw, n)
@@ -97,7 +97,7 @@ func (d *canonDiff) record(old, nw *value.Record, lit *syntax.BraceLit) error {
 // default (E6) unless a spread would then supply it, else compared.
 func (d *canonDiff) present(old, nw *value.Record, i int, lit *syntax.BraceLit, fi *syntax.FieldItem) error {
 	switch {
-	case sameValue(old.Fields[i], nw.Fields[i]):
+	case d.a.unchanged(old.Fields[i], nw.Fields[i]):
 		return nil
 	case !hasSpread(lit) && d.a.isDefault(nw, i):
 		d.remove(fi)

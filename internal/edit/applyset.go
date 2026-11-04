@@ -30,6 +30,7 @@ func setOp(x *opCtx) error {
 	x.lockStable()
 	x.heldBy(v)
 	x.nw = v
+	defer func() { x.a.pinned = nil }() // setsDefault's pin holds for this Set only
 	if x.setsDefault(v) {
 		return x.change(nil)
 	}
@@ -240,19 +241,33 @@ func (x *opCtx) keepKey(v value.Value) (value.Value, error) {
 	return rec, nil
 }
 
-// setsDefault reports a Set of a field to its default (API.md E6, E7), which removes the field;
-// in a JSON source, none with a @json(none:) marker is written as the marker instead (E7).
+// setsDefault reports a Set of a field to its default (API.md E6, E7) in the base and the session
+// alike, which removes the field (a JSON none with a @json(none:) marker is written, E7); a value
+// only the base gives as default is pinned, so it is written and holds in both views.
 func (x *opCtx) setsDefault(v value.Value) bool {
-	rec, f, ok := x.field()
-	if !ok || !hasDefault(f) {
+	inBase, f, ok := x.defaultIn(x.res, v)
+	if !ok {
 		return false
 	}
-	nw := withField(rec, f.Index, v)
-	if !x.a.isDefault(nw, f.Index) {
+	inSession := !inBase || x.a.sessionDefault(x.res.Canonical, v)
+	if inBase && !inSession {
+		x.a.pinned = []value.Value{v}
+	}
+	if !inBase || !inSession {
 		return false
 	}
 	_, none := v.(*value.None)
 	return !none || f.NoneWire == nil || x.j.holder().mode != ModeJSON
+}
+
+// defaultIn reports v the default of the field res's path ends at, read in res's record, and that
+// field; false for a path that ends at no field with a default.
+func (x *opCtx) defaultIn(res resolution, v value.Value) (bool, *types.Field, bool) {
+	rec, f, ok := fieldAt(res)
+	if !ok || !hasDefault(f) {
+		return false, nil, false
+	}
+	return x.a.isDefault(withField(rec, f.Index, v), f.Index), f, true
 }
 
 // change sets the path's value to v, nil for the field's default, through the nearest value
@@ -268,6 +283,9 @@ func (x *opCtx) change(v value.Value) error {
 	k = x.writtenAt(k)
 	old := x.valueAt(k)
 	nw := withChange(old, x.res.Steps[k:], v)
+	if len(x.a.pinned) > 0 {
+		x.a.pinned = append(x.a.pinned, pathValues(nw, x.res.Steps[k:])...) // each record materialized for it (W8)
+	}
 	return x.diffAt(k, old, nw)
 }
 
@@ -321,6 +339,16 @@ func withChange(v value.Value, steps []Step, nv value.Value) value.Value {
 		return out
 	}
 	return v
+}
+
+// pathValues is v and the value at each of steps below it, read field by field (stepValue).
+func pathValues(v value.Value, steps []Step) []value.Value {
+	out := []value.Value{v}
+	for _, st := range steps {
+		v = stepValue(v, st)
+		out = append(out, v)
+	}
+	return out
 }
 
 // withIdent is entry rec in the place of old: a new value keeps the key and state old's identity

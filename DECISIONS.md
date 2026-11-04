@@ -4826,3 +4826,22 @@ round 2", "PS1 review", "PS2 round 2"):
      changes. Reason: v0.3 run (EVAL-AMENDNOTE rounds 1-6): amend elements had no note, eval and
      verify named the refinement and so depended on source order, findings under a layer's
      right-hand side named no layer, and a re-derived default lost an earlier layer.
+
+466. **A base edit made while layers are active is planned on the base alone (API.md W8, W10, E6,
+     E22; follows 273, 462, 463).** Without an `EditLayer`, while layers are active, an edit plans what
+     it writes and its Undo, values, types, materialized literals, E6 and every inverse, on an
+     analysis with no layer: a base file holds base values, never one a layer amended, and a dependent
+     value is typed by the base's driver. The session's analysis still judges the verdict rows that
+     depend on layers, and the re-check (E18, E19) judges the layers. Such an edit is `layered`
+     (naming the layer) when its path is set by an active layer (W10), including a path whose
+     deepest prefix the session resolves was replaced by a layer and a path an active layer's line
+     names though that line is in error; when it is a `Move` in a collection an active layer
+     addresses by position; and when it is a `Set`, `Reset` or `Remove` of a field a spread
+     supplies whose source, through any chain of spreads across roots and packages, an active layer
+     amends (its inverse could only write an override that hides the layer). Under E6 a value is the
+     field's default only when it is the default in both the base and the session; otherwise it is
+     written. An edit whose E23 Undo an operation would refuse is refused before anything is written,
+     with that refusal's reason, except where 273 returns a plain Undo unverified (`AllowErrors`, a
+     root the edit leaves uncomputable). Reason: v0.3 run (EDIT-MATERIALIZE rounds 1-5): a base Set
+     under an active layer wrote the layer's value into the base file, and three ways of building a
+     base view out of the session's values each missed a shape.

@@ -975,7 +975,11 @@ source and where the edit goes.
 
 - **W10.** Without `EditLayer`, edits go to base sources. A path whose final value is set by an
   active layer is `layered` (W5), so the studio shows it read-only with the layer's name. Paths the
-  layers do not touch are edited normally, even while layers are active.
+  layers do not touch are edited normally, even while layers are active. While layers are active, a base edit
+  plans what it writes and its Undo on the base alone (no layer), so a base file never receives a
+  value a layer amended; it is also `layered` below a value a layer replaced, for a `Move` in a
+  collection a layer addresses by position, and for a field a spread supplies whose source a layer
+  amends (DECISIONS 466).
 - **W11.** With `EditLayer: "x"`, `Set`, `Reset` and `AddEntry` write into the `x` layer file of
   the package that declares the value's root: `Set` adds or replaces the amendment line for that
   path (`amend <root> { <path>: <expr> }`), `Reset` makes the path's value what it would be without

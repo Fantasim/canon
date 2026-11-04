@@ -3,10 +3,24 @@ package edit
 import (
 	"context"
 
+	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
 )
+
+// PlanBase is the snapshot Apply plans an edit against s on: the state analyzed with no layer for
+// a base edit while layers are active, s itself otherwise (newPlanner).
+func PlanBase(ctx context.Context, env Env, s *Snapshot) (*Snapshot, error) {
+	a, err := newPlanner(ctx, env, s)
+	if err != nil {
+		return nil, err
+	}
+	return a.snap, nil
+}
+
+// Analysis is s's analysis.
+func (s *Snapshot) Analysis() *build.Analysis { return s.a }
 
 // RefHistory is how many values Refs visits looking for r's target in s, and how many values
 // it hands History, summed over its calls (log-2026-09-29 M4 U4a: the History cost).

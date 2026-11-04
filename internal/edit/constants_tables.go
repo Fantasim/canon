@@ -22,7 +22,7 @@ var steppers = [...]func(*judge, cursor, int) cursor{
 }
 
 // rows are API.md §7.2's rows in table order: the first that applies names the reason.
-var rows = [...]func(*judge) Reason{computedRow, layeredRow, blindRow, exprRow, formatRow, starRow, inputRow, keyRow, pseudoRow, orderRow, lineRow, layerRow, undoRow}
+var rows = [...]func(*judge) Reason{computedRow, layeredRow, shiftRow, spreadRow, blindRow, exprRow, formatRow, starRow, inputRow, keyRow, pseudoRow, orderRow, lineRow, layerRow, undoRow}
 
 // handlers apply each operation of API.md §8.3 to the current state.
 var handlers = [...]func(*opCtx) error{

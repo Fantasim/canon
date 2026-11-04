@@ -77,7 +77,10 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 	if err := RenameRequest(req.Ops, false, env.EditLayer); err != nil {
 		return nil, err
 	}
-	a := newApplier(ctx, env, base)
+	a, err := newPlanner(ctx, env, base)
+	if err != nil {
+		return nil, refusal(err)
+	}
 	a.multi, a.allowErrors = len(req.Ops) > 1, req.AllowErrors
 	for i, op := range req.Ops {
 		a.step = i
@@ -95,6 +98,9 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 		return nil, refusal(err)
 	}
 	undo, err := a.verifiedUndo(kept, p.Touched)
+	if err == nil {
+		err = a.undoReplayed(undo)
+	}
 	if err != nil {
 		return nil, a.undoRefusal(req.Ops, err)
 	}
@@ -165,6 +171,10 @@ type applier struct {
 	kept        keptCase        // the fields the last SetCase kept for its refinements to judge (E14)
 	omit        []string        // the fields a SetCase leaves out: its refinements refuse them (E14)
 	step        int             // the operation being applied, cascadeStep for the cascades (M6 tests)
+	pinned      []value.Value   // a base Set's value the base gives as default, and its path's records (setsDefault)
+	session     *sessionView    // a base edit while layers are active: the session's view (newPlanner)
+	gen         int             // how many times the files changed, for sessionNow
+	replaying   bool            // undoReplayed's: the inverses of an edit, judged as planned
 
 	multi, dependent, renamed bool           // what verifiedUndo needs of the request (noteUndo)
 	allowErrors               bool           // the request's AllowErrors: an id it adds may stay unlocked (E20)
@@ -240,6 +250,11 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 	p, err := Parse(op.Path)
 	if err != nil {
 		return nil, err
+	}
+	if h == nil && a.session != nil {
+		if err := a.sessionVerdict(op, p); err != nil {
+			return nil, err
+		}
 	}
 	res, err := a.snap.open(p)
 	switch {

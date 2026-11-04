@@ -179,6 +179,7 @@ const (
 	detailNoneMarker               = "its JSON source writes none as its value: "
 	detailNoBranch                 = "a reserved word its type alone qualifies, which its record cannot compute here"
 	maxLitDepth                    = 512
+	maxSpreadHops                  = 256             // the roots a spread chain is followed through (spreadLayer)
 	maxUndoRounds, templateSegment = 8, `[^/.][^/]*` // an Undo's verifications; a templated field's path segment
 )
 

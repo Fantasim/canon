@@ -74,7 +74,7 @@ func TestEditScopeWholeAnalysisGates(t *testing.T) {
 		{"error", broken, Set("a:uses.first.count", Int(4)), false, "", 2},
 		{"base", loads, Set("a:uses.first.count", Int(4)), true, "", 2},
 		{"rename", reuseLaw(), Rename("a:uses.first", Key("third")), false, "", 2},
-		{"layers", layered, Set("a:uses.second.count", Int(4)), false, "live", 2},
+		{"layers", layered, Set("a:uses.second.count", Int(4)), false, "live", 3}, // and the base plan's no-layer analysis (W8)
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestWatchEditEventReadsRecheck(t *testing.T) {
 		want   int // checks after the watch started: the edit's scope, its re-check, the event's
 	}{
 		{"recheck", journal, nil, 1},
-		{"layers", layered, []string{"live"}, 3},
+		{"layers", layered, []string{"live"}, 4}, // and the base plan's no-layer analysis (W8)
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

@@ -194,6 +194,7 @@ func (a *applier) restore(cp checkpoint) {
 		a.files[d] = &s
 	}
 	a.snap, a.host, a.dirty = cp.snap, cp.host, cp.dirty
+	a.gen++ // the files are back: the session reads them again (sessionNow)
 	a.undo, a.dropped, a.records, a.locked = a.undo[:cp.undo], a.dropped[:cp.dropped], a.records[:cp.records], a.locked[:cp.locked]
 	a.given = a.given[:cp.given]
 	a.owners, a.emptied, a.kept = maps.Clone(cp.owners), maps.Clone(cp.emptied), keptCase{}

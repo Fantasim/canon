@@ -18,7 +18,7 @@ type jsonDiff struct {
 
 // value turns n, stating old at field f's place (nil for none), into nw's source wire.
 func (d *jsonDiff) value(old, nw value.Value, n *jsonsrc.Node, f *types.Field) error {
-	if sameValue(old, nw) {
+	if d.a.unchanged(old, nw) {
 		return nil
 	}
 	done, err := d.structural(old, nw, n, f)

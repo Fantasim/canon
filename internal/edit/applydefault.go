@@ -35,13 +35,26 @@ func (a *applier) defaultIn(rec *value.Record, i int, params map[*types.Param]va
 	return a.host.Default(a.ctx, fields[i], wire.Instance{Record: full, Params: params}, nil)
 }
 
-// isDefault reports field i of rec holding its default (E6), by sameDefault under an edit layer.
+// isDefault reports field i of rec holding its default (E6), by sameDefault under an edit layer;
+// never a value a base Set pins, nor a record materialized for it (setsDefault).
 func (a *applier) isDefault(rec *value.Record, i int) bool {
+	if i < len(rec.Fields) && slices.Contains(a.pinned, rec.Fields[i]) {
+		return false
+	}
 	d, ok := a.defaultOf(rec, i)
 	if a.env.EditLayer == "" {
 		return ok && sameValue(d, rec.Fields[i])
 	}
 	return ok && a.sameDefault(d, rec.Fields[i])
+}
+
+// unchanged reports nw, a value the diff compares, equal to old (sameValue); while a Set pins a
+// value equal to the base's default (pinned), only old itself, so the path down to it is walked.
+func (a *applier) unchanged(old, nw value.Value) bool {
+	if len(a.pinned) > 0 {
+		return old == nw
+	}
+	return sameValue(old, nw)
 }
 
 // sameDefault is sameValue with a record's field left out read as its default, the equality E6

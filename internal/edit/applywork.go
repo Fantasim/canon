@@ -262,6 +262,7 @@ func (a *applier) commit(w *work) error {
 	a.locked = append(a.locked, w.locked...)
 	a.kept = w.kept
 	a.dirty = true
+	a.gen++
 	a.stamp()
 	return nil
 }
