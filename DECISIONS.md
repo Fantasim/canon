@@ -4731,3 +4731,16 @@ round 2", "PS1 review", "PS2 round 2"):
      `-(128)` is no key literal. Reason: v0.3 run (RELATED-NOTE, CHECK-LEAFLIT): the checker judged
      the operand against the stored type (a false `-(128)` finding, `300` reported for `-(300)`), and
      the first fix let `-(2^63)` reach evaluation as an internal error.
+
+461. **A literal union refused by `E3002` is the error type, judged only from a conclusive read (TYPES.md
+     §1, §5.3, §13.2).** A string literal that is none of a union's literals is an `A` (§13.2), so §5.3
+     checks it statically against `A`: its refinement, and for a `ref`, its leaf key (456). A union whose
+     alternative its resolution refuses (`E3002`) is the error type for every value checked against it, so
+     a type finding never cascades into a value finding, in any order of checks. The union is judged once,
+     when a literal not among its literals first meets it or at the package's end, and never from an
+     inconclusive read: while its ref chain is still resolving it is not yet refused. Judging a union never
+     forces a ref resolution the value's own typing would not (456's `E3008` scope). A static range
+     finding names the stored declaration (API.md F12) only when its message names that declaration's
+     type: `let q: Int8 = -(-9223372036854775808)` reports "does not fit Int" with no note. Reason: v0.3
+     run (CHECK-LEAFLIT rounds 4-7): the union check first cascaded `E3201` after `E3002`, then forced
+     a ref chain (a new `E3008`), then lost a union's own `E3002` judged mid-resolution.
