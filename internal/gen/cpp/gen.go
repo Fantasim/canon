@@ -246,9 +246,14 @@ func (g *gen) source() []byte {
 	out.printf(markerFormat, g.p.Dir)
 	out.linef(0, includeQuotedFormat, g.last+genHeaderSuffix)
 	out.blank()
-	var groups [][]string
+	var last []string // the runtime of a mode that decodes JSON, then the imports the code names and the header did not include
 	if !g.baked() {
-		groups = [][]string{{includeRuntimeJSON}}
+		last = append(last, includeRuntimeJSON)
+	}
+	last = append(last, g.sourceIncludes()...)
+	var groups [][]string
+	if len(last) > 0 {
+		groups = [][]string{last}
 	}
 	includes(&out, g.c.String(), groups)
 	g.namespaceBody(&out, g.emit.Namespace, g.c.String(), "")

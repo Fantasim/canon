@@ -16,16 +16,16 @@ var mxAllowed = []mxAllowance{
 }
 
 // mxPendingProbe are the positions a case holds back in packages of their own (tagged mxPendingTag), by case: each is a bug of gen/cpp's, so the C++ matrix expects the probe's packages on mxCppPending to fail and compiles every other position of the case strictly. The Go matrix has no pending position and compiles the probe like any other.
-var mxPendingProbe = map[string]string{"mxfd1rd": "d"}
+var mxPendingProbe = map[string]string{}
 
 // mxPendingTag tells a pending probe's packages from the case's other packages.
 const mxPendingTag = "p"
 
-// mxCppPending are the packages of those probes that gen/cpp does not compile yet: a data and a types reader of another package's class whose dependent type is decided through a ref straight into a table of a third package whose emit is data (string ids). Its branch table and discriminant are typed `::mxlibd`, a namespace the generated file neither includes nor declares. The test fails when one compiles, so the entry goes with the fix.
-var mxCppPending = []string{"mxfd1rdpb", "mxfd1rdpt"}
+// mxCppPending are the packages of those probes that gen/cpp does not compile yet; the test fails when one compiles, so an entry goes with its fix. None is pending.
+var mxCppPending = []string{}
 
-// mxPackages is the number of .gen.cpp the matrix compiles, the libraries' included, the pending probe's among them.
-const mxPackages = 152
+// mxPackages is the number of .gen.cpp the matrix compiles, the libraries' included, a pending probe's among them.
+const mxPackages = 149
 
 // mxPinned are the positions each case keeps, by case: the others are refused by an allowance. A moved line names the case.
 const mxPinned = `

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "canon_runtime_json.h"
+#include "../../tone/out/tone.gen.h"
 
 namespace game::world {
 

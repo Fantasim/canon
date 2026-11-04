@@ -231,7 +231,7 @@ func (g *gen) decodeDependent(depth int, src, key string, l leaf) {
 	}
 	call := g.pl.Dependent(d).Decode
 	if d.Pkg != g.p.Name {
-		g.qualifier(d.Pkg) // its header is included
+		g.qualifier(d.Pkg) // its header is included by the header, or by the source (sourceIncludes)
 		call = g.pl.ReaderName(d)
 	}
 	if l.table != "" {

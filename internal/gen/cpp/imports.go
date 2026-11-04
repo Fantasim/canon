@@ -117,12 +117,24 @@ func (g *gen) importIncludes() []string {
 	return out
 }
 
+// sourceIncludes are the headers of the imported packages the .gen.cpp names and its header did not include, in byte order, written after the runtime (CODEGEN.md §2.7, §2.8, DECISIONS 457).
+func (g *gen) sourceIncludes() []string {
+	var out []string
+	for h := range g.imported { //canon:unordered sorted below
+		if !g.included[h] {
+			out = append(out, fmt.Sprintf(includeQuotedFormat, h))
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
 // decodeFunc is the decoder of a record or variant: detail::Decode, or this package's reader of another package's class (CODEGEN.md §2.8, §7.2).
 func (g *gen) decodeFunc(t ir.TypeRef) string {
 	pkg, _ := g.named(t.Named)
 	if pkg == g.p.Name {
 		return ir.CppDecode
 	}
-	g.qualifier(pkg) // its header is included
+	g.qualifier(pkg) // its header is included by the header, or by the source (sourceIncludes)
 	return g.pl.ReaderName(t.Named)
 }

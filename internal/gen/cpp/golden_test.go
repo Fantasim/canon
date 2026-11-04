@@ -28,7 +28,7 @@ var fixtures = []fixture{
 	{"emberfall-tone", emberTone}, {"emberfall-core", emberCore}, {"emberfall-world-baked", emberWorld(ir.ModeBaked)},
 	{"emberfall-world-data", emberWorld(ir.ModeData)}, {"emberfall-world-types", emberWorld(ir.ModeTypes)},
 	{"emberfall-camp", emberCamp}, {"empty-owner-b", emptyOwnerB}, {"empty-owner-a", emptyOwnerA}, {"types-open", openPackageFixture}, {"types-open-refdep", openRefdepFixture}, {"types-open-refdep-shape", openRefdepShapeFixture},
-	{"enum-helpers", helpersPackage}, {"enum-dense", densePackage}, {"defines", definesPackage}, {"defines-skipped", skippedPackage}, {"baked-bulk", bulkSmallPackage}, {"baked-nul", nulPackage}, {"types-nul", nulTypesPackage}, {"baked-dependent-bulk", bakedDependentBulkPackage}, {"types-docsplice", docSplicePackage}, {"baked-tri", triPackage}, {"types-tri", triTypesPackage}, {"baked-find", finderPackage}, {"baked-nestref", chainRefPackage}, {"baked-chainenum", chainEnumPackage},
+	{"enum-helpers", helpersPackage}, {"enum-dense", densePackage}, {"defines", definesPackage}, {"defines-skipped", skippedPackage}, {"baked-bulk", bulkSmallPackage}, {"baked-nul", nulPackage}, {"types-nul", nulTypesPackage}, {"baked-dependent-bulk", bakedDependentBulkPackage}, {"types-docsplice", docSplicePackage}, {"baked-tri", triPackage}, {"types-tri", triTypesPackage}, {"baked-find", finderPackage}, {"baked-nestref", chainRefPackage}, {"baked-chainenum", chainEnumPackage}, {"readerns-data", readerNSData}, {"readerns-types", readerNSTypes},
 }
 
 // generate runs the generator twice: the same bytes both times (CODEGEN.md §2.7, NFR-05).
