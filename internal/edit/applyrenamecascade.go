@@ -72,6 +72,9 @@ func (r *renaming) moveElement(el resolution) error {
 			return err
 		}
 	}
+	if err := sub.layerKeys(); err != nil {
+		return err
+	}
 	return sub.cascade(cascades)
 }
 

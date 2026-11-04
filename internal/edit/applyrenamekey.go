@@ -105,8 +105,7 @@ func (r *renaming) replace(f *syntax.File, n syntax.Node, text string, word bool
 	if word && !isWord(text) {
 		return badTemplate(r.to)
 	}
-	sp := f.Span(n)
-	at := tokenPlace{file: f.Src.Path, start: sp.Start, end: sp.End}
+	at := placeOf(f, n)
 	if r.done[at] {
 		return nil // a reference's token a cascade reaches again (E11)
 	}

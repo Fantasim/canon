@@ -248,19 +248,27 @@ func amendPathText(steps []Step) (string, bool) {
 	return strings.TrimPrefix(b.String(), string(fieldMark)), true
 }
 
-// startsLine reports st a step an amend line can start with (API.md 6.4): a field or a table entry
-// whose key is a word, or the key of a keyed list with a String key when it is a word that is not
-// a keyword (DECISIONS 450; EVALUATION.md 9.2).
+// startsLine reports st a step an amend line can start with (API.md 6.4): a field, a table entry, or
+// a keyed list's key whose ref chain ends at a String or a table id, as check's `.k` (DECISIONS 450,
+// 456; EVALUATION.md 9.2), its name a lineWord.
 func startsLine(st Step) bool {
 	if st.Seg.Kind == SegField {
-		return true
+		return lineWord(st.Seg.Name)
 	}
 	l, isList := baseOf(st.Container).(*types.ListType)
 	if !isList || l.KeyedBy == nil || st.Seg.Kind != SegKey || st.Seg.Key.Kind != KeyWord {
 		return false
 	}
-	_, word := syntax.ValueText(st.Seg.Key.Text)
-	return word && syntax.LookupWord(st.Seg.Key.Text) == syntax.TokIdent && baseOf(l.KeyedBy.Type).Kind() == types.String
+	return lineWord(st.Seg.Key.Text) && baseOf(baseKeyType(l.KeyedBy.Type)).Kind() == types.String
+}
+
+// lineContinuers are the reserved words that, first on a line, continue the line above (GRAMMAR.md
+// 3.1 rule 3): no amend line after another starts with one.
+var lineContinuers = []syntax.TokenKind{syntax.KwAnd, syntax.KwOr, syntax.KwIn, syntax.KwIs, syntax.KwElse, syntax.KwWhere}
+
+// lineWord reports text a WORD an amend line can start with (GRAMMAR.md 2.3, 5.7): any but a lineContinuer.
+func lineWord(text string) bool {
+	return isWord(text) && !slices.Contains(lineContinuers, syntax.LookupWord(text))
 }
 
 // amendKeyText is key lit, of type kt, as an amend key (API.md §6.4).

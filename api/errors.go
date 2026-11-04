@@ -140,7 +140,7 @@ type NotEditableError struct {
 	Path   string
 	Reason Reason
 	Origin string // ReasonComputed: canonical path of the nearest editable source, or ""
-	Layer  string // ReasonLayered
+	Layer  string // ReasonLayered; ReasonLayer: the layer of a line a Rename cannot rewrite
 	Detail string
 }
 

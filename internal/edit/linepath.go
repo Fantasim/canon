@@ -49,8 +49,8 @@ func (s *Snapshot) segText(f *syntax.File, prefix string, seg *syntax.AmendSegme
 	if name, ok := s.keyWord(seg.Key); ok {
 		return string(bracketOpen) + name + bracketClose
 	}
-	if n, ok := syntax.Unparen(seg.Key).(*syntax.IntLit); ok && n.Value.Sign() < 0 && n.Value.IsInt64() {
-		if text, ok := s.fromEnd(prefix, n.Value.Int64()); ok {
+	if n, ok := syntax.Unparen(seg.Key).(*syntax.IntLit); ok {
+		if text, ok := s.fromEnd(prefix, n); ok {
 			return text
 		}
 	}
@@ -91,11 +91,15 @@ func (s *Snapshot) itemAt(prefix string, i int64) (string, bool) {
 	return Path{Segs: []Seg{seg}}.String(), true
 }
 
-// fromEnd is the segment naming element k, counted from the end, of the list at prefix in s.
-func (s *Snapshot) fromEnd(prefix string, k int64) (string, bool) {
-	l, ok := s.valueOf(prefix)
-	if list, isList := l.(*value.List); ok && isList && int64(len(list.Elems))+k >= 0 {
-		return string(bracketOpen) + strconv.FormatInt(int64(len(list.Elems))+k, decimalBase) + bracketClose, true
+// fromEnd is the segment naming element k, counted from the end, of the plain list at prefix in
+// s (fromEndIndex): a keyed list's negative key is a key.
+func (s *Snapshot) fromEnd(prefix string, k *syntax.IntLit) (string, bool) {
+	c, ok := s.valueOf(prefix)
+	if !ok {
+		return "", false
+	}
+	if i, plain := fromEndIndex(c, k); plain && i >= 0 {
+		return string(bracketOpen) + strconv.FormatInt(i, decimalBase) + bracketClose, true
 	}
 	return "", false
 }

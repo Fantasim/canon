@@ -164,8 +164,9 @@ func fileText(fsys mapFS, name string) string {
 	return ""
 }
 
-// API.md 6.4 (DECISIONS 450): Editable and Apply keep `layer` for a first key that is no word, is a
-// keyword (`type`, `if`) or is no String (enum, ref); a String word key, first or below a field, is written.
+// API.md 6.4 (DECISIONS 450, 456; GRAMMAR.md 3.1): Editable and Apply keep `layer` for a first key no
+// word or no String (an enum); a String word key, a reserved one (`type`, `if`) too, first or below a
+// field, is written, and so is a ref key into a table, whose chain ends at a table id.
 func TestDecisions450KeyedLineRefusals(t *testing.T) {
 	cases := []struct {
 		editLayer string
@@ -173,10 +174,10 @@ func TestDecisions450KeyedLineRefusals(t *testing.T) {
 		want      edit.Reason
 	}{
 		{"dev", edit.Operation{Kind: edit.OpSet, Path: `k:items["a b"].n`, Value: edit.Int(5)}, edit.ReasonLayer},
-		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:items[type].n", Value: edit.Int(5)}, edit.ReasonLayer},
-		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:items[if].n", Value: edit.Int(5)}, edit.ReasonLayer},
+		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:items[type].n", Value: edit.Int(5)}, edit.ReasonNone},
+		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:items[if].n", Value: edit.Int(5)}, edit.ReasonNone},
 		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:tones[red].n", Value: edit.Int(5)}, edit.ReasonLayer},
-		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:links[a].n", Value: edit.Int(5)}, edit.ReasonLayer},
+		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:links[a].n", Value: edit.Int(5)}, edit.ReasonNone}, // DECISIONS 456
 		{"dev", edit.Operation{Kind: edit.OpSet, Path: `k:items["a b"]`, Value: edit.Source(`{ id: "a b", n: 5 }`)}, edit.ReasonLayer},
 		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:items[a].n", Value: edit.Int(5)}, edit.ReasonNone},
 		{"dev", edit.Operation{Kind: edit.OpSet, Path: "k:box.items[a].n", Value: edit.Int(5)}, edit.ReasonNone},

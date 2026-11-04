@@ -159,14 +159,13 @@ func (s *Snapshot) segMatches(a *syntax.AmendSegment, res resolution, i int) boo
 	return false
 }
 
-// keyMatches reports an amend key naming step st of parent: a negative list index counts from
-// the end, a qualified member names its member.
+// keyMatches reports an amend key naming step st of parent: a negative index of a plain list
+// counts from the end (fromEndIndex); a qualified member names its member.
 func (s *Snapshot) keyMatches(e syntax.Expr, parent value.Value, st Step) bool {
 	switch x := e.(type) {
 	case *syntax.IntLit:
-		if x.Value.Sign() < 0 && x.Value.IsInt64() {
-			l, ok := parent.(*value.List)
-			return ok && int64(position(parent, st.Value)) == int64(len(l.Elems))+x.Value.Int64()
+		if i, ok := fromEndIndex(parent, x); ok {
+			return int64(position(parent, st.Value)) == i
 		}
 	case *syntax.SelectorExpr:
 		if s.info.Selections[x] != nil {
@@ -174,6 +173,16 @@ func (s *Snapshot) keyMatches(e syntax.Expr, parent value.Value, st Step) bool {
 		}
 	}
 	return keyExprIs(e, st.Seg)
+}
+
+// fromEndIndex is the index a negative `[k]` names on c, counted from the end, when c is a plain
+// list; on a keyed list `[k]` is a key, never a position (EVALUATION.md 9.2).
+func fromEndIndex(c value.Value, k *syntax.IntLit) (int64, bool) {
+	l, ok := c.(*value.List)
+	if !ok || keyedContainer(l.T) || k.Value.Sign() >= 0 || !k.Value.IsInt64() {
+		return 0, false
+	}
+	return int64(len(l.Elems)) + k.Value.Int64(), true
 }
 
 // nameIs reports a canonical segment naming name: a field, an entry, or a key written as a word.

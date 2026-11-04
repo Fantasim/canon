@@ -63,6 +63,9 @@ func (x *opCtx) renameTo(parent, old, k value.Value, kt types.Type) error {
 			return err
 		}
 	}
+	if err := r.layerKeys(); err != nil {
+		return err
+	}
 	if err := r.cascade(cascades); err != nil {
 		return err
 	}
