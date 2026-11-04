@@ -4688,3 +4688,20 @@ round 2", "PS1 review", "PS2 round 2"):
      package named the discriminant enum of a data-mode library in its branch table. The owner's
      header holds only the ref's key, so no header reached that library and the reader did not
      compile. The generator recorded the name only after the header was written.
+458. **`E8005` `derived` applies when no single override separates the two names (ERRORS.md E8005;
+     CODEGEN.md §3.5; amends 203, 442).**
+     A collision of two generated names is `derived` when no single `@<target>(name:)`, on either
+     origin or on an owner they share, changes one of the names without the other. That covers:
+     - a value's container, its schema constant and its lookup tables;
+     - a C++ `FindBy<F>`;
+     - the per-arm names of one dependent type (Go `<T>Branch<Arm>`, `As<Arm>`; C++ `<T>_<Arm>`,
+       `As<Arm>`, `k<C><F>Branches`);
+     - such names met by two packages sharing one C++ namespace.
+     Names whose owners differ stay `both`, since an owner's override separates them.
+     When one pair of items meets in several names and any of those meetings is `derived`, the pair
+     is reported once, at that one (after `reached`, `finder` and `idType`): a Canon rename fixes
+     the pair whole, while an override would fix one name and leave the next build to report the
+     other.
+     Reason: v0.3 run (CPP-FINDBY's and E8005-DERIVED's reviews): "rename one of them with
+     @cpp(name:)" was given where no override separates the names, and a pair that met both ways
+     needed two builds.
