@@ -6,6 +6,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // removable reports an item the edit layer states, through its active amendment or in one of its
@@ -34,7 +35,7 @@ func layerRow(j *judge) Reason {
 	}
 	amendable := j.op == OpSet || j.op == OpReset || j.op == OpAddEntry || j.op == OpRemove && j.removable()
 	rootValue := len(j.res.Steps) == 0 && j.op != OpAddEntry // an entry added to a root table is an amendment (EVALUATION.md §9.3)
-	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet || j.belowLoad() || j.noAmendForm() || j.unseenEntry() || j.unseenLine() {
+	if !amendable || rootValue || j.res.root.obj.Kind() != check.ObjLet || j.belowLoad() || j.loadLine() || j.noAmendForm() || j.unseenEntry() || j.unseenLine() {
 		return ReasonLayer
 	}
 	return ReasonNone
@@ -54,6 +55,8 @@ func lineRow(j *judge) Reason {
 	case line == nil:
 		return ReasonNone
 	case n == len(j.res.Steps) && j.op != OpAddEntry && !j.s.lineSource(j.ctx, f, j.res.root.at(), line):
+		return ReasonComputed
+	case n == len(j.res.Steps) && j.op == OpAddEntry && j.computedLine(line):
 		return ReasonComputed
 	case n < len(j.res.Steps) && j.last().state == stSpread && j.inEditLayer():
 		return ReasonComputed
@@ -186,6 +189,26 @@ func (j *judge) noAmendForm() bool {
 	}
 	_, isMap := j.res.Target.(*value.Map)
 	return isMap
+}
+
+// computedLine reports a line, not in the active amendment, whose right-hand side has no literal
+// form (a call): no entry is added to it (API.md W11); loadLine takes the JSON loads.
+func (j *judge) computedLine(line *syntax.Amendment) bool {
+	if j.inEditLayer() {
+		return false
+	}
+	form := j.s.nodeForm(syntax.Unparen(line.Value))
+	return form != shape.FormLiteral && form != shape.FormJSON
+}
+
+// loadLine reports an AddEntry to the value an edit-layer line gives by a load: its entry would
+// lie in the JSON the line loads, as a path below the line does (API.md W11a, E21; DECISIONS 411).
+func (j *judge) loadLine() bool {
+	if j.op != OpAddEntry {
+		return false
+	}
+	_, line, n := j.s.layerLine(j.res, j.layer)
+	return line != nil && n == len(j.res.Steps) && j.s.nodeForm(syntax.Unparen(line.Value)) == shape.FormJSON
 }
 
 // belowLoad reports j's value inside the JSON file an amendment of the edit layer loads: outside
