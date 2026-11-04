@@ -86,7 +86,7 @@ func TestBuildIsCut(t *testing.T) {
 	}
 }
 
-// CODEGEN.md §2.11, §5.6, DECISIONS 435: a class's decoder is cut into decode<T>_<N> parts that take the object and the value, each holding whole fields; equals its golden.
+// CODEGEN.md §2.11, §5.13, DECISIONS 435: a class's decoder is cut into decode<T>_<N> parts that take the object and the value, each holding whole fields; equals its golden.
 func TestDecodeIsCut(t *testing.T) {
 	files := generateWith(t, cutAt(smallDecode), loadFixture(t, partsWideFixture(5)))
 	checkGoldens(t, files, sortedPaths(files), partsGoldens+"/"+decodePartsDir)

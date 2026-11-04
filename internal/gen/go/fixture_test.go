@@ -1,6 +1,7 @@
 package gogen_test
 
 import (
+	"cmp"
 	"encoding/json"
 	"os"
 	"slices"
@@ -52,7 +53,7 @@ type constSpec struct {
 type fieldSpec struct {
 	Name, Doc, Type, GoName string
 	Default                 json.RawMessage
-	Stable                  bool
+	Stable, Inline          bool
 }
 
 type recordSpec struct {
@@ -62,8 +63,8 @@ type recordSpec struct {
 }
 
 type variantSpec struct {
-	Name, Doc string
-	Cases     []recordSpec
+	Name, Doc, Tag string // the tag key, kind when empty
+	Cases          []recordSpec
 }
 
 type valueSpec struct {
@@ -199,7 +200,7 @@ func (w *world) declareRecords(p *ir.Package, ps *pkgSpec) {
 		p.Types = append(p.Types, rec)
 	}
 	for _, v := range ps.Variants {
-		iv := &ir.Variant{Pkg: ps.Name, Name: v.Name, Doc: v.Doc, Tag: "kind"}
+		iv := &ir.Variant{Pkg: ps.Name, Name: v.Name, Doc: v.Doc, Tag: cmp.Or(v.Tag, "kind")}
 		twin := &types.VariantType{Pkg: ps.Name, Name: v.Name}
 		for i, c := range v.Cases {
 			iv.Cases = append(iv.Cases, &ir.Case{Name: c.Name, Wire: c.Name, Doc: c.Doc})
@@ -230,11 +231,15 @@ func (w *world) fields(specs []fieldSpec) ([]*ir.Field, []*types.Field) {
 	var twins []*types.Field
 	for i, s := range specs {
 		t, opt := w.typeRef(s.Type)
+		wire := []string{s.Name}
+		if s.Inline {
+			wire = nil // an inline variant is read from its parent's object, at no key of its own
+		}
 		fs = append(fs, &ir.Field{
-			Name: s.Name, Doc: s.Doc, WirePath: []string{s.Name}, Type: t, Optional: opt,
+			Name: s.Name, Doc: s.Doc, WirePath: wire, Type: t, Optional: opt, Inline: s.Inline,
 			Stable: s.Stable, Go: ir.NameOptions{Name: s.GoName},
 		})
-		twins = append(twins, &types.Field{Name: s.Name, Index: i, Wire: s.Name, WirePath: []string{s.Name}})
+		twins = append(twins, &types.Field{Name: s.Name, Index: i, Wire: s.Name, WirePath: wire, Inline: s.Inline})
 	}
 	return fs, twins
 }

@@ -151,7 +151,7 @@ const (
 	buildPartOpenFormat = "func %s(%s *%s) {\n"
 )
 
-// A class's decoder and its parts (CODEGEN.md §2.11, §5.6): decode<T> opens the object, calls decode<T>_<N> parts that take the object and the value (and the whole document for an inline variant), each holding whole fields and ending with `return nil`. decodeReturnLines is that return, which the uncut decoder holds beside its object and key case, and each part adds.
+// A class's decoder and its parts (CODEGEN.md §2.11, §5.13): decode<T> opens the object, calls decode<T>_<N> parts that take the object (when it binds one) and the value (and the whole document for an inline variant), each holding whole fields and ending with `return nil`. decodeReturnLines is that return, which the uncut decoder holds beside its object and key case, and each part adds.
 const (
 	decodeReturnLines = 1
 	partFuncFormat    = "func %s(%s) error {\n"

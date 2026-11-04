@@ -14,7 +14,7 @@ type decodeUnit struct {
 	raw  bool
 }
 
-// decodeBody writes a record's or case's decoder: its object and key case, each field in declaration order, then each stored fn's `$` key in method order, as the C++ loader reads them. A body of more than the budget keeps the object and key case, calls decode<T>_<N> parts in order, and returns nil; each part holds whole fields (CODEGEN.md §2.11, §5.6). A limit: a types-mode decoder whose only read fields are @json(inline) variants binds no obj, so it is never cut.
+// decodeBody writes a record's or case's decoder: its object and key case, each field in declaration order, then each stored fn's `$` key in method order, as the C++ loader reads them. A body of more than the budget keeps the object and key case, calls decode<T>_<N> parts in order, and returns nil; each part holds whole fields (CODEGEN.md §2.11, §5.13). A decoder that binds no obj (a types-mode one whose only read fields are @json(inline) variants) is cut too: its parts take the document and the value, not the object.
 func (g *gen) decodeBody(b *body) {
 	defer g.enter(b.owner)()
 	g.temps = 0
@@ -24,48 +24,52 @@ func (g *gen) decodeBody(b *body) {
 	keys := g.bodyKeys(b)
 	open := g.captured(func() { g.openObject(keys) })
 	units := g.fieldUnits(b)
-	var ranges []partRange
-	if len(keys) > 0 { // a part takes the object the key case opens
-		ranges = g.partRanges(unitTexts(units), lineCount(open)+decodeReturnLines, decodeReturnLines)
-	}
+	bound := len(keys) > 0 // a part takes the object the key case opens, when it opens one
+	ranges := g.partRanges(unitTexts(units), lineCount(open)+decodeReturnLines, decodeReturnLines)
 	g.body.WriteString(open)
 	if ranges == nil {
 		g.body.WriteString(strings.Join(unitTexts(units), ""))
 	}
 	for n, r := range ranges {
-		g.printf(partCallFormat, lc.Err, ir.GoPart(fn, n), strings.Join(g.partArgs(units[r.first:r.end]), listSep))
+		g.printf(partCallFormat, lc.Err, ir.GoPart(fn, n), strings.Join(g.partArgs(units[r.first:r.end], bound), listSep))
 	}
 	g.printf(returnNil)
 	for n, r := range ranges {
-		g.decodePart(b, ir.GoPart(fn, n), units[r.first:r.end])
+		g.decodePart(b, ir.GoPart(fn, n), units[r.first:r.end], bound)
 	}
 }
 
-// decodePart writes one part of a decoder: the same name, path, object and value, and the whole document when a unit reads it.
-func (g *gen) decodePart(b *body, name string, units []decodeUnit) {
-	g.printf(partFuncFormat, name, strings.Join(g.partParams(b, units), listSep))
+// decodePart writes one part of a decoder: the same name, path, object (when the decoder binds one) and value, and the whole document when a unit reads it.
+func (g *gen) decodePart(b *body, name string, units []decodeUnit, bound bool) {
+	g.printf(partFuncFormat, name, strings.Join(g.partParams(b, units, bound), listSep))
 	g.body.WriteString(strings.Join(unitTexts(units), ""))
 	g.printf(returnNil)
 }
 
-// partParams are the parameters of a part holding units: name and path, the document when a unit reads it, the object, and the value being decoded.
-func (g *gen) partParams(b *body, units []decodeUnit) []string {
+// partParams are the parameters of a part holding units: name and path, the document when a unit reads it, the object when the decoder binds one, and the value being decoded.
+func (g *gen) partParams(b *body, units []decodeUnit, bound bool) []string {
 	lc, raw := g.lc, g.rawType()
 	params := []string{fmt.Sprintf(partNameParams, lc.Name, lc.Path)}
 	if readsDocument(units) {
 		params = append(params, fmt.Sprintf(partRawParam, lc.Raw, raw))
 	}
-	return append(params, fmt.Sprintf(partObjParam, lc.Obj, raw), fmt.Sprintf(partOutParam, lc.Out, b.goName))
+	if bound {
+		params = append(params, fmt.Sprintf(partObjParam, lc.Obj, raw))
+	}
+	return append(params, fmt.Sprintf(partOutParam, lc.Out, b.goName))
 }
 
 // partArgs are the arguments decode<T> passes a part holding units, in partParams' order.
-func (g *gen) partArgs(units []decodeUnit) []string {
+func (g *gen) partArgs(units []decodeUnit, bound bool) []string {
 	lc := g.lc
 	args := []string{lc.Name, lc.Path}
 	if readsDocument(units) {
 		args = append(args, lc.Raw)
 	}
-	return append(args, lc.Obj, lc.Out)
+	if bound {
+		args = append(args, lc.Obj)
+	}
+	return append(args, lc.Out)
 }
 
 // readsDocument reports a unit that reads the whole document.
