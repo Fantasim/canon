@@ -34,8 +34,8 @@ type entryParts struct {
 	t   types.Type
 }
 
-// newTableEntry types AddEntry's key, a word (TYPES.md §9.3), and value for table t.
-func (x *opCtx) newTableEntry(t *value.Table) (entryParts, error) {
+// newTableEntry types AddEntry's key and value for t; literal: a table literal holds it (§4.3).
+func (x *opCtx) newTableEntry(t *value.Table, literal bool) (entryParts, error) {
 	tt, ok := present(x.targetType()).Base().(*types.TableType)
 	if !ok {
 		return entryParts{}, ErrBadOp
@@ -45,7 +45,7 @@ func (x *opCtx) newTableEntry(t *value.Table) (entryParts, error) {
 		return entryParts{}, err
 	}
 	key := kv.CanonText()
-	if err := x.tableKey(key, x.writesCanon()); err != nil {
+	if err := x.tableKey(key, literal); err != nil {
 		return entryParts{}, err
 	}
 	if entryIndex(t.Entries, key) >= 0 {
@@ -64,7 +64,7 @@ func (x *opCtx) newTableEntry(t *value.Table) (entryParts, error) {
 }
 
 func (x *opCtx) addTableEntry(t *value.Table) error {
-	e, err := x.newTableEntry(t)
+	e, err := x.newTableEntry(t, x.ownCanon())
 	if err != nil {
 		return err
 	}

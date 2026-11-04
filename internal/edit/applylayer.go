@@ -178,7 +178,7 @@ func (x *opCtx) layerAddEntry() error {
 		return x.staticEdit(staticSite{f, line, n}, len(x.res.Steps), x.grow)
 	}
 	if isTable {
-		return x.amendEntry(x.newTableEntry(t))
+		return x.amendEntry(x.newTableEntry(t, false))
 	}
 	return x.amendEntry(x.newMapEntry(m))
 }
@@ -190,7 +190,7 @@ func (x *opCtx) grow(cur value.Value) (value.Value, error) {
 	var err error
 	switch c := cur.(type) {
 	case *value.Table:
-		if e, err = x.newTableEntry(c); err == nil {
+		if e, err = x.newTableEntry(c, true); err == nil {
 			rec, _ := e.v.(*value.Record)
 			out = &value.Table{T: c.T, Entries: slices.Concat(c.Entries, []*value.Record{rec}), P: c.P}
 		}

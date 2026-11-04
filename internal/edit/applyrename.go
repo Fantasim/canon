@@ -34,7 +34,7 @@ func renameOp(x *opCtx) error {
 	old := keyOfItem(parent, x.res.Target)
 	_, isTable := parent.(*value.Table)
 	if isTable {
-		if err := x.tableKey(k.CanonText(), x.writesCanon()); err != nil {
+		if err := x.tableKey(k.CanonText(), x.ownCanon()); err != nil {
 			return err
 		}
 	}

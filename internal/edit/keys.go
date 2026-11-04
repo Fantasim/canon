@@ -240,17 +240,18 @@ func quotedKey(s string) KeyLit {
 	return KeyLit{Kind: KeyString, Text: s, Raw: string(diag.AppendJSONString(nil, s))}
 }
 
-// writesCanon reports a key written into a .canon file: the entry's own source, or an edit layer's.
-func (x *opCtx) writesCanon() bool {
-	return x.a.env.EditLayer != "" || x.j.last().mode != ModeJSON
+// ownCanon reports the entry's own source a .canon file: its key is a table literal's or an
+// `entry` declaration's.
+func (x *opCtx) ownCanon() bool {
+	return x.j.last().mode != ModeJSON
 }
 
-// tableKey refuses key as an entry name: no word, or in .canon none, true, false, self (§4.3).
-func (x *opCtx) tableKey(key string, canon bool) error {
+// tableKey refuses a non-word key; in a literal or `entry`, none, true, false and self (§4.3).
+func (x *opCtx) tableKey(key string, literal bool) error {
 	if !isWord(key) {
 		return &ValueError{Expected: types.StringType.String(), Got: describe(x.op.Key), Detail: detailNotWord}
 	}
-	if _, ok := syntax.ValueText(key); ok || !canon {
+	if !literal || !syntax.IsUnnamable(syntax.LookupWord(key)) {
 		return nil
 	}
 	return &ValueError{Expected: types.StringType.String(), Got: describe(x.op.Key), Detail: fmt.Sprintf(detailUnreachable, key)}

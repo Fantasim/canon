@@ -178,17 +178,63 @@ var kwJSONFS = mapFS{
 	"law/a/dev.layer.canon": file("package a\nlayer dev\n\namend tb {\n  x.w: 2\n}\n"),
 }
 
-// GRAMMAR.md §4.3, API.md V1, W11: a key a .canon layer file would hold follows the grammar.
+// kwJSONTrueFS is kwJSONFS whose JSON table already holds an entry under two unreachable words.
+var kwJSONTrueFS = mapFS{
+	"law/project.canon":     file("project acme {\n  canon: \"0.1\"\n}\n"),
+	"law/a/a.canon":         file("package a\n\nrecord T {\n  w: Int\n}\n\nlet tb: table T = load(\"rows.json\")\n"),
+	"law/a/rows.json":       file("{\n  \"x\": {\n    \"w\": 1\n  },\n  \"true\": {\n    \"w\": 2\n  },\n  \"none\": {\n    \"w\": 3\n  }\n}\n"),
+	"law/a/dev.layer.canon": file("package a\nlayer dev\n\namend tb {\n  x.w: 2\n}\n"),
+}
+
+// kwLayerWritten applies op to fsys through the edit layer dev, and checks the plan (API.md M5, N12), a clean
+// re-check with the layer and without it (E18), and that Undo gives the files back (E22); it returns the layer file.
+func kwLayerWritten(t *testing.T, fsys mapFS, op edit.Operation) string {
+	t.Helper()
+	s := open(t, fsys, []string{"dev"}, "dev", "a")
+	plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{op}})
+	if err != nil {
+		t.Fatalf("%v %s %v: %v, want it applied (GRAMMAR.md §4.3, DECISIONS 459)", op.Kind, op.Path, op.Key, err)
+	}
+	for _, ch := range plan.Changes {
+		checkWritten(t, plan, ch)
+	}
+	after := written(fsys, plan)
+	for _, layers := range [][]string{{"dev"}, nil} {
+		for _, f := range open(t, after, layers, "", "a").a.Bag("a").Findings() {
+			if f.Severity == diag.Error {
+				t.Errorf("layers %v: after the edit (API.md E18): %s %s", layers, f.Code, f.Message)
+			}
+		}
+	}
+	checkUndo(t, goldenCase{fsys: fsys, pkgs: []string{"a"}, layers: []string{"dev"}, editLayer: "dev"}, []edit.Operation{op}, plan)
+	return fileText(after, "law/a/dev.layer.canon")
+}
+
+// GRAMMAR.md §4.3, API.md V1, W11, DECISIONS 459: AddEntry of none, true, false, self on a JSON table, through a layer or not.
 func TestKWEntryJSONTableUnderEditLayer(t *testing.T) {
 	for _, w := range unreachableKeys {
-		add := edit.Operation{Kind: edit.OpAddEntry, Path: "a:tb", Key: edit.Key(w), Value: edit.Source("{ w: 5 }")}
-		s := open(t, kwJSONFS, []string{"dev"}, "dev", "a")
-		_, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{add}})
-		kwRefused(t, w, err)
-		s = open(t, kwJSONFS, nil, "", "a")
-		if _, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{add}}); err != nil {
-			t.Errorf("%s: AddEntry to the JSON file: %v, want it applied (WIRE.md §6)", w, err)
-		}
+		t.Run(w, func(t *testing.T) {
+			add := edit.Operation{Kind: edit.OpAddEntry, Path: "a:tb", Key: edit.Key(w), Value: edit.Source("{ w: 5 }")}
+			if got := kwLayerWritten(t, kwJSONFS, add); !strings.Contains(got, "\n  "+w+": {") {
+				t.Errorf("dev.layer.canon holds:\n%s\nwant the amend line of the key %s (GRAMMAR.md §4.3)", got, w)
+			}
+			s := open(t, kwJSONFS, nil, "", "a")
+			if _, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{add}}); err != nil {
+				t.Errorf("%s: AddEntry to the JSON file: %v, want it applied (WIRE.md §6)", w, err)
+			}
+		})
+	}
+}
+
+// GRAMMAR.md §4.3, API.md W11, DECISIONS 305, 459: Set on a JSON table's `true` entry goes through the layer as an amend line.
+func TestKWEntrySetJSONEntryUnderEditLayer(t *testing.T) {
+	for _, w := range []string{"true", "none"} {
+		t.Run(w, func(t *testing.T) {
+			set := edit.Operation{Kind: edit.OpSet, Path: "a:tb." + w + ".w", Value: edit.Source("9")}
+			if got := kwLayerWritten(t, kwJSONTrueFS, set); !strings.Contains(got, "\n  "+w+".w: 9") {
+				t.Errorf("dev.layer.canon holds:\n%s\nwant the amend line %s.w: 9 (GRAMMAR.md §4.3)", got, w)
+			}
+		})
 	}
 }
 
@@ -215,5 +261,40 @@ func TestKWEntryRenameStopsJoining(t *testing.T) {
 				t.Errorf("a/a.canon holds:\n%s\nwant it to hold:\n%s", got, want)
 			}
 		})
+	}
+}
+
+// kwLayerLiteralFS is a record whose table field a layer states as a literal of its own.
+var kwLayerLiteralFS = mapFS{
+	"law/project.canon": file("project acme {\n  canon: \"0.1\"\n}\n"),
+	"law/a/a.canon": file("package a\n\nrecord T {\n  w: Int\n}\n\nrecord R {\n  sub: table T\n}\n\n" +
+		"let r: R = { sub: { x { w: 0 } } }\n"),
+	"law/a/dev.layer.canon": file("package a\nlayer dev\n\namend r {\n  sub: {\n    x { w: 1 }\n    y { w: 2 }\n  }\n}\n"),
+}
+
+// GRAMMAR.md §4.3, §5.11, API.md W11a, DECISIONS 459: AddEntry into a layer's literal; the four words refused.
+func TestKWEntryAddIntoLayerLiteral(t *testing.T) {
+	for _, w := range append(slices.Clone(unreachableKeys), "for") {
+		for _, layers := range [][]string{{"dev"}, nil} { // the amendment active (addTableEntry), or not (grow)
+			t.Run(w+" layers "+strings.Join(layers, ","), func(t *testing.T) {
+				op := edit.Operation{Kind: edit.OpAddEntry, Path: "a:r.sub", Key: edit.Key(w), Value: edit.Source("{ w: 4 }")}
+				s := open(t, kwLayerLiteralFS, layers, "dev", "a")
+				plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{op}})
+				if slices.Contains(unreachableKeys, w) {
+					kwRefused(t, w, err)
+					return
+				}
+				if err != nil {
+					t.Fatalf("AddEntry %s: %v, want it applied (GRAMMAR.md §4.3 (a))", w, err)
+				}
+				for _, ch := range plan.Changes {
+					checkWritten(t, plan, ch)
+				}
+				got := fileText(written(kwLayerLiteralFS, plan), "law/a/dev.layer.canon")
+				if want := "y { w: 2 },\n    for { w: 4 }\n"; !strings.Contains(got, want) {
+					t.Errorf("dev.layer.canon holds:\n%s\nwant it to hold:\n%s", got, want)
+				}
+			})
+		}
 	}
 }
