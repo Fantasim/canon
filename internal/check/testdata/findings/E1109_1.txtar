@@ -1,0 +1,22 @@
+DECISIONS 215 (the checker sees the lexer's findings, as in a build): a literal holding a lexer error (E1109 here) has the error type, so it draws no second finding from the check of its annotation, a default or an operand. Each error below is the lexer's alone.
+-- a/a.canon --
+package a
+
+local let s: String = "x\q"
+
+local let n: Int = "x\q"
+
+local record R {
+  d: String = "\z"
+}
+-- findings.txt --
+error[E1109]  a/a.canon:3:25
+  invalid escape sequence "\q"
+
+error[E1109]  a/a.canon:5:22
+  invalid escape sequence "\q"
+
+error[E1109]  a/a.canon:8:16
+  invalid escape sequence "\z"
+
+3 errors, 0 warnings in 1 package (…)

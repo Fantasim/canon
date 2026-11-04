@@ -1,5 +1,7 @@
 package ir
 
+import "slices"
+
 // GoScopeNames are the names the plan declared, by scope: the package, each struct, enum and container under its Go name and each table-read function's parameters.
 func GoScopeNames(pl *GoNamePlan) map[string]map[string]bool { return scopeNames(pl.scopes) }
 
@@ -31,6 +33,11 @@ func EmitDefineRefs(p *Package, e *Emit) []string {
 		out = append(out, d.Pkg+qnameSep+d.Value)
 	}
 	return out
+}
+
+// CppUnexemptLoads are the item-less Load.../Resolve names of the namespace and detail of the C++ plan pl that hideDeclared's exemption (c) does not name (hideExempt).
+func CppUnexemptLoads(pl *CppNamePlan) []string {
+	return slices.DeleteFunc(cppItemlessLoads(pl), func(name string) bool { return slices.Contains(hideExempt, name) })
 }
 
 // TSNameProblems is how many problems the TypeScript plan of p's ts emit e found.

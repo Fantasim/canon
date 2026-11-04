@@ -2,13 +2,13 @@ package ir
 
 import "strconv"
 
-// PartEnds cuts a function's body of whole units, lines[i] the lines of unit i, into parts whose braces hold at most limit lines (CODEGEN.md §2.11, DECISIONS 435; generators pass PartLines, tests a smaller seam). whole is the lines the uncut body holds outside its units, part the lines each part adds inside its own braces (a Decode<N>'s `return true;`). It is greedy and in order: a unit alone over limit-part is a part of its own, and a zero-line unit never starts one. It returns the exclusive end index of each part, the last one len(lines), and nil when no cut is needed (units+whole fit limit) or none helps (one part still over limit). The one cut function gen/cpp and gen/go both use.
+// PartEnds cuts a function's body of whole units, lines[i] the lines of unit i, into parts whose braces hold at most limit lines (CODEGEN.md §2.11, DECISIONS 435; generators pass PartLines, tests a smaller seam). whole is the lines the uncut body holds outside its units, part the lines each part adds inside its own braces (a Decode<N>'s `return true;`). It is greedy and in order: a unit alone over limit-part is a part of its own, and a zero-line unit never starts one. It returns the exclusive end index of each part, the last one len(lines), and nil when no cut is needed (units+whole fit limit) or none helps (the units hold no line, or one part is still over limit). The one cut function gen/cpp and gen/go both use.
 func PartEnds(lines []int, limit, whole, part int) []int {
 	total := 0
 	for _, n := range lines {
 		total += n
 	}
-	if total+whole <= limit {
+	if total == 0 || total+whole <= limit {
 		return nil
 	}
 	var ends []int

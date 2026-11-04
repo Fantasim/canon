@@ -51,7 +51,7 @@ func (pl *CppNamePlan) FindByTables(v *Value, f *Field) CppFindTables {
 // lookupTables are the tables k<C><Lookup>Keys and k<C><Lookup>Rows of lookup (Find or FindBy<F>) of container.
 func (pl *CppNamePlan) lookupTables(container, lookup string) CppFindTables {
 	base := cppConstPrefix + container + lookup
-	return CppFindTables{Keys: base + cppKeys, Rows: base + cppUpperCamel(GoRows)}
+	return CppFindTables{Keys: base + cppKeys, Rows: base + cppRows}
 }
 
 // declareFindTables declares, in detail, the tables of each baked container's Find (a keyed list's) and FindBy<F>, which its .gen.cpp holds in an unnamed namespace local to it: k<C>FindKeys and k<C>FindRows, k<C>FindBy<F>Keys and k<C>FindBy<F>Rows (CODEGEN.md §5.9, DECISIONS 432, 435).
@@ -107,7 +107,7 @@ func (pl *CppNamePlan) EnumHelpers(enum string) CppEnumHelpers {
 		Codes: cppConstPrefix + enum + cppCodes, CodeOrdinals: cppConstPrefix + enum + cppCodeOrdinals, Ordinal: enum + cppOrdinal,
 		Wires: cppConstPrefix + enum + cppWires, WireNames: cppConstPrefix + enum + cppWireNames, WireCodes: cppConstPrefix + enum + cppWireCodes,
 		Names: cppConstPrefix + enum + cppNames, ByWire: cppConstPrefix + enum + cppByWire, Retired: cppConstPrefix + enum + GoRetired,
-		CodeAt: cppConstPrefix + enum + GoCode + GoAt,
+		CodeAt: cppConstPrefix + enum + cppCodeAt,
 	}
 }
 

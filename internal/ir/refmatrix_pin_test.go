@@ -2,17 +2,18 @@ package ir_test
 
 import "github.com/fantasim/canonlang/internal/diag"
 
-// mxAllowance is a refusal of Canon's check the matrix accepts: why, the diagnostic code it must come with, and the positions it applies to. Any other refusal fails TestCppRefMatrix.
+// mxAllowance is a refusal of Canon's check the matrix accepts: why, the diagnostic code it must come with, the kind of the code (its word in the message; "" for a code without kinds) and the positions it applies to. Any other refusal fails TestCppRefMatrix.
 type mxAllowance struct {
 	reason  string
 	code    diag.Code
+	kind    string
 	applies func(c mxCase, p mxPos) bool
 }
 
-// mxAllowed are the refusals the matrix accepts, each pinned by its code, not by its words.
+// mxAllowed are the refusals the matrix accepts, each pinned by its code (and, for E8019, its kind DependentType), not by its words.
 var mxAllowed = []mxAllowance{
-	{"a data emit with @reload refuses a dependent value decided through a ref into a @reload list", diag.E8019.Def().Code, func(c mxCase, p mxPos) bool { return c.mode == mxData && p.code == "d" }},
-	{"a literal union is a String, and no Int key is", diag.E3002.Def().Code, func(c mxCase, p mxPos) bool { return c.leaf.code == "in" && p.code == "u" }},
+	{"a data emit with @reload refuses a dependent value decided through a ref into a @reload list", diag.E8019.Def().Code, diag.KindDependentType.Word(), func(c mxCase, p mxPos) bool { return c.mode == mxData && p.code == "d" }},
+	{"a literal union is a String, and no Int key is", diag.E3002.Def().Code, "", func(c mxCase, p mxPos) bool { return c.leaf.code == "in" && p.code == "u" }},
 }
 
 // mxPendingProbe are the positions a case holds back in packages of their own (tagged mxPendingTag), by case: each is a bug of gen/cpp's, so the C++ matrix expects the probe's packages on mxCppPending to fail and compiles every other position of the case strictly. The Go matrix has no pending position and compiles the probe like any other.

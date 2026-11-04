@@ -131,7 +131,7 @@ func (g *gen) bakedBranch(fields []*ir.Field, app ir.TypeRef, r *value.Record) (
 	return d, d.ByMember[m]
 }
 
-// boolOrdinal is a Bool's position in its domain: false, then true (CODEGEN.md §5.6, §5.10).
+// boolOrdinal is a Bool's position in its domain, false then true: 0 or 1, as a Bool define writes it too (CODEGEN.md §5.6, §5.10, §7.9).
 func boolOrdinal(b bool) int {
 	if b {
 		return 1

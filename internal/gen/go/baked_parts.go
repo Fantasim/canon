@@ -28,9 +28,6 @@ type partRange struct{ first, end int }
 
 // partRanges cuts a function's body of whole statements into the runs of texts that ir.PartEnds gives for the budget g.partLines (CODEGEN.md §2.11); nil when the body is written whole. whole is the lines the uncut body holds outside its statements, part the lines each part adds inside its braces.
 func (g *gen) partRanges(texts []string, whole, part int) []partRange {
-	if len(texts) == 0 {
-		return nil
-	}
 	lines := make([]int, len(texts))
 	for i, text := range texts {
 		lines[i] = lineCount(text)

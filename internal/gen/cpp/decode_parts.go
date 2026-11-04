@@ -2,7 +2,6 @@ package cppgen
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/ir"
@@ -19,7 +18,7 @@ func (g *gen) recordDecoder(c class) {
 		text := g.capture(unit)
 		units, lines = append(units, text), append(lines, strings.Count(text, newline))
 	}
-	ends := decodeEnds(lines, strings.Count(head, newline)+decodeTailLines, g.partLines)
+	ends := ir.PartEnds(lines, g.partLines, strings.Count(head, newline)+decodeTailLines, decodePartTailLines)
 	if ends == nil {
 		g.c.printf(decodeOpenFormat, name)
 		g.c.write(head)
@@ -49,12 +48,4 @@ func (g *gen) cutDecoder(name, head string, units []string, ends []int) {
 	g.c.write(head)
 	g.c.write(calls.String())
 	g.decoderClose()
-}
-
-// decodeEnds are the ends of the parts of a decoder whose units hold lines, or nil for none: a decoder whose units write nothing (every field an input) has nothing to cut, and a part of no statement would leave its parameters unused.
-func decodeEnds(lines []int, whole, limit int) []int {
-	if !slices.ContainsFunc(lines, func(n int) bool { return n > 0 }) {
-		return nil
-	}
-	return ir.PartEnds(lines, limit, whole, decodePartTailLines)
 }

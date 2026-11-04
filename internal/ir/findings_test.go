@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/diag"
+	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/testkit/golden"
 )
 
@@ -51,7 +52,7 @@ func onlyItsCode(t *testing.T, glob string) {
 			}
 		}
 		w.calls = w.fixtureCalls
-		w.build(t, selected...)
+		checkHideExempt(t, w.build(t, selected...))
 		out := w.findings(t)
 		code := strings.SplitN(filepath.Base(c.Path), "_", 2)[0]
 		if !strings.Contains(out, "["+code+"]") {
@@ -64,6 +65,21 @@ func onlyItsCode(t *testing.T, glob string) {
 		}
 		return []byte(out)
 	}, golden.Expected(findingsFile))
+}
+
+// checkHideExempt fails for every cpp emit of pkgs whose plan declares, in the namespace or detail, an item-less name an access member could be named that hideDeclared's exemption (c) does not name (CODEGEN.md §3.5): the cases hold inputs, @reload, foreign readers, open enums, hooks and every E8005 shape.
+func checkHideExempt(t *testing.T, pkgs []*ir.Package) {
+	t.Helper()
+	for _, p := range pkgs {
+		for _, e := range p.Emits {
+			if e.Target != ir.TargetCpp {
+				continue
+			}
+			if got := ir.CppUnexemptLoads(ir.PlanCppNames(p, e)); len(got) > 0 {
+				t.Errorf("%s: item-less names %v are hidden by no member: name them in hideExempt or give them an item", p.Name, got)
+			}
+		}
+	}
 }
 
 // TestE8007ForUnselectedDependency is IMPLEMENTATION-PLAN.md §4.5: an unselected dependency's own go emit is under no mapped root, and it never checks itself, so the importer reports it.

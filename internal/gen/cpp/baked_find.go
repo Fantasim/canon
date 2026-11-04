@@ -46,6 +46,7 @@ type lookup struct {
 	rows   []string
 }
 
+// containerFinds writes the Find of keyed list v, FindBy<F> of each of its @stable fields, and the tables they read (CODEGEN.md §5.9, DECISIONS 432, 435); a container without a key field finds through its table (tableFind).
 func (g *gen) containerFinds(v *ir.Value) {
 	s, rows := g.containerSpec(v), g.rows(v)
 	var lookups []lookup
@@ -166,7 +167,7 @@ func (g *gen) rankOf(t ir.TypeRef, v value.Value) keyRank {
 		return keyRank{n: x.V}
 	case *value.Member:
 		if e, ok := t.Named.(*ir.Enum); ok {
-			return enumRank(e, x.Index)
+			return g.enumRank(e, x.Index)
 		}
 	case *value.Ref:
 		return g.refRank(t, x.Key)
@@ -175,12 +176,16 @@ func (g *gen) rankOf(t ir.TypeRef, v value.Value) keyRank {
 	return keyRank{}
 }
 
-// enumRank is member i of e by its C++ underlying value: its code under @codes, else its position (CODEGEN.md §5.2).
-func enumRank(e *ir.Enum, i int) keyRank {
-	if e.Codes != nil && i >= 0 && i < len(e.Members) {
-		return keyRank{n: e.Members[i].Code}
+// enumRank is member i of e by its C++ underlying value: its code under @codes, else its position (CODEGEN.md §5.2). An index outside the members of a @codes enum is malformed IR, which valid IR never reaches.
+func (g *gen) enumRank(e *ir.Enum, i int) keyRank {
+	if e.Codes == nil {
+		return keyRank{n: int64(i)}
 	}
-	return keyRank{n: int64(i)}
+	if i < 0 || i >= len(e.Members) {
+		g.malformed(fmt.Sprintf(rankOutsideFormat, i, e.Name), g.at)
+		return keyRank{}
+	}
+	return keyRank{n: e.Members[i].Code}
 }
 
 // refRank is the place of a ref's key k: by entry position when it is held as a table's id enum, else by its key's order; a ref into a list keyed by a ref is placed as that ref's key, down the chain (CODEGEN.md §5.8, §5.9, DECISIONS 432, 456).
@@ -190,7 +195,7 @@ func (g *gen) refRank(t ir.TypeRef, k value.Key) keyRank {
 		return g.idRank(t, k)
 	}
 	if e, i := keyMember(t, k); i >= 0 {
-		return enumRank(e, i)
+		return g.enumRank(e, i)
 	}
 	if k.IsInt {
 		return keyRank{n: k.I}

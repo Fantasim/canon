@@ -101,12 +101,9 @@ func (g *gen) inlineFolds(c class) {
 		if !f.Inline {
 			continue
 		}
-		own := g.fieldKeys(f)
-		for _, k := range own {
-			if slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && asciiFold(k, p) }) {
-				g.malformed(inlineFoldKeys, c.canonName()+qnameSep+f.Name) // E8019 InlineFoldedKey
-				return
-			}
+		if ir.FoldsOnto(g.fieldKeys(f), all) {
+			g.malformed(inlineFoldKeys, c.canonName()+qnameSep+f.Name) // E8019 InlineFoldedKey
+			return
 		}
 	}
 }
@@ -136,25 +133,4 @@ func (g *gen) bitsMask(e *ir.Enum) string {
 		mask |= m.Code
 	}
 	return fmt.Sprintf(maskFormat, mask)
-}
-
-// asciiFold reports a and b equal but for the case of ASCII letters, the loaders' case rule
-// (canon::json::EqualFold).
-func asciiFold(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range len(a) {
-		if lowerASCII(a[i]) != lowerASCII(b[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func lowerASCII(c byte) byte {
-	if c >= 'A' && c <= 'Z' {
-		return c + 'a' - 'A'
-	}
-	return c
 }

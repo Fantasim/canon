@@ -28,6 +28,7 @@ func TestFindings(t *testing.T) {
 		t.Helper()
 		fs := &source.FileSet{}
 		parse := diag.NewBag(fs, "")
+		bags := check.Bags{}
 		var files []*syntax.File
 		proj := exampleProject()
 		for _, f := range c.Archive.Files {
@@ -44,9 +45,8 @@ func TestFindings(t *testing.T) {
 				}
 				continue
 			}
-			files = append(files, syntax.Parse(src, syntax.FileSource, parse))
+			files = append(files, parseAsBuilt(fs, src, parse, bags))
 		}
-		bags := check.Bags{}
 		check.Check(context.Background(), proj, files, bags, literalFolder{})
 		out := render(t, fs, parse, bags)
 		code := strings.SplitN(filepath.Base(c.Path), "_", 2)[0]
@@ -55,6 +55,27 @@ func TestFindings(t *testing.T) {
 		}
 		return []byte(out)
 	}, golden.Expected(findingsFile))
+}
+
+// parseAsBuilt parses src as a build does (project.Reader): its findings go to the bag of the package its package line names, created in bags, so the checker sees what the parser refused (DECISIONS 215); to parse when it declares none.
+func parseAsBuilt(fs *source.FileSet, src *source.File, parse *diag.Bag, bags check.Bags) *syntax.File {
+	own := diag.NewBag(fs, "")
+	f := syntax.Parse(src, syntax.FileSource, own)
+	if len(own.Findings()) == 0 {
+		return f
+	}
+	if f.Package == nil {
+		return syntax.Parse(src, syntax.FileSource, parse)
+	}
+	parts := make([]string, len(f.Package.Parts))
+	for i, id := range f.Package.Parts {
+		parts[i] = id.Name
+	}
+	name := strings.Join(parts, ".")
+	if bags[name] == nil {
+		bags[name] = diag.NewBag(fs, name)
+	}
+	return syntax.Parse(src, syntax.FileSource, bags[name])
 }
 
 // TYPES.md: each accepted program checks with no finding, and its Info is complete.

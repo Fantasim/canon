@@ -1,0 +1,45 @@
+DECISIONS 215 (the checker sees the lexer's findings, as in a build): a literal holding a lexer error (E1110 here) has the error type, so it draws no second finding from the check of its annotation, a range, a default or an operand. Each error below is the lexer's alone; under a harness that hides the lexer's findings from the checker, the String, Bool and String-default lines draw a second E3002.
+-- a/a.canon --
+package a
+
+local let n: Int = 1__0
+
+local let small: UInt8 = 1_
+
+local let sum: Int = 1__0 + 1
+
+local let text: String = 1__0
+
+local let flag: Bool = 0x
+
+local record R {
+  d: UInt8 = 0x
+  r: Int(0..9) = 0_1
+  s: String = 5__
+}
+-- findings.txt --
+error[E1110]  a/a.canon:3:20
+  invalid number literal "1__0"
+
+error[E1110]  a/a.canon:5:26
+  invalid number literal "1_"
+
+error[E1110]  a/a.canon:7:22
+  invalid number literal "1__0"
+
+error[E1110]  a/a.canon:9:26
+  invalid number literal "1__0"
+
+error[E1110]  a/a.canon:11:24
+  invalid number literal "0x"
+
+error[E1110]  a/a.canon:14:14
+  invalid number literal "0x"
+
+error[E1110]  a/a.canon:15:18
+  invalid number literal "0_1"
+
+error[E1110]  a/a.canon:16:15
+  invalid number literal "5__"
+
+8 errors, 0 warnings in 1 package (…)

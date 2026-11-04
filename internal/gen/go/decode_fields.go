@@ -313,10 +313,7 @@ func (g *gen) inlineFolds(b *body) {
 		}
 		own := []string{v.Tag}
 		g.eachCase(v, func(*ir.Case) bool { return true }, func(c *body) { own = append(own, g.objectKeys(c)...) })
-		folds := func(k string) bool {
-			return slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && asciiFold(k, p) })
-		}
-		if slices.ContainsFunc(own, folds) {
+		if ir.FoldsOnto(own, all) {
 			g.fail(newDetail(ErrMalformed, s.origin, foldFormat, s.origin)) // E8019 InlineFoldedKey
 			return
 		}

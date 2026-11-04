@@ -109,23 +109,3 @@ func (g *gen) bitsMask(e *ir.Enum) string {
 	}
 	return fmt.Sprintf(hexFormat, mask)
 }
-
-// asciiFold reports a and b equal but for the case of ASCII letters, the loaders' case rule (rt.EqualFold).
-func asciiFold(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range len(a) {
-		if lowerASCII(a[i]) != lowerASCII(b[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func lowerASCII(c byte) byte {
-	if c >= 'A' && c <= 'Z' {
-		return c + 'a' - 'A'
-	}
-	return c
-}

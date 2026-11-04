@@ -16,6 +16,7 @@ import (
 	"github.com/fantasim/canonlang/internal/ir"
 	"github.com/fantasim/canonlang/internal/testkit/fnsize"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 const (
@@ -288,6 +289,16 @@ func buildBodies(funcs []fnsize.Func) (whole, parts []int) {
 // CODEGEN.md §2.11, §7.3, DECISIONS 435: a Build whose body is exactly the budget is not cut; one line more is, into parts of at most the budget (the old rule cut at least that), measured on the generated text.
 func TestBuildBoundary(t *testing.T) {
 	boundary{bulkSmallPackage(), buildBodies, partsBuildAt}.check(t)
+}
+
+// CODEGEN.md §2.11, DECISIONS 435, the ir.PartEnds ruling (a cut helps only if units hold lines): a baked package whose only value is absent (`x: Int32? = none`) has an empty Build, fillSlot writing nothing for it; at the smallest budget it is no cut, not one empty Build0 part.
+func TestEmptyBuildIsNotCut(t *testing.T) {
+	p := &ir.Package{Name: "demo", Dir: "demo", Values: []*ir.Value{{Name: "x", Type: tInt32, V: &value.None{}}},
+		Emits: []*ir.Emit{{Target: ir.TargetCpp, Out: "out/", Dir: "demo/out", Mode: ir.ModeBaked, Namespace: "demo"}}}
+	src := sourceOf(t, generateAt(t, p, 1))
+	if !strings.Contains(src, partsAccess+partsBuild+"()") || strings.Contains(src, partsBuildAt) {
+		t.Errorf("an empty Build at a budget of one line:\n%s", src)
+	}
 }
 
 // inputsCase is the one driver case of TestAllInputDecoderIsNotCut: the variable NOTE set to "x" (hex 78).

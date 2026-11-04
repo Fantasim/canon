@@ -1,7 +1,7 @@
 package ir
 
 // TableName is the package-level table of role (GoTableNames...) of the enum, kind enum or id enum named enum (CODEGEN.md §5.2, §5.3, DECISIONS 393).
-func (pl *GoNamePlan) TableName(role, enum string) string { return role + goTableSep + enum }
+func (pl *GoNamePlan) TableName(role, enum string) string { return role + underscore + enum }
 
 // declareTables declares the tables of roles for the type named enum.
 func (pl *GoNamePlan) declareTables(top *nameScope, enum, origin string, item any, roles ...string) {

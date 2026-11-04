@@ -63,6 +63,7 @@ const (
 	noneMarkerFormat   = "none marker %s"
 	typeFormat         = "type %T"
 	valueFormat        = "value %T"
+	rankOutsideFormat  = "member %d outside enum %s"
 	exprFormat         = "expression %T"
 	kindNumberFormat   = "kind %d"
 )

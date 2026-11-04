@@ -31,7 +31,7 @@ func (pl *GoNamePlan) lookupKey(e *Enum) string {
 	if e.Pkg == pl.p.Name {
 		return pl.TypeName(e)
 	}
-	return strings.ReplaceAll(e.Pkg, qnameSep, goLookupPkgSep) + goLookupPkgSep + pl.TypeName(e)
+	return strings.ReplaceAll(e.Pkg, qnameSep, underscore) + underscore + pl.TypeName(e)
 }
 
 // lookupFn is a lookup gen/go writes in this emit, with the Canon item it is written for.

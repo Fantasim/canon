@@ -57,7 +57,7 @@ func inlineFolds(class any, shape objectShape) []*Field {
 	var out []*Field
 	for _, f := range fields {
 		v, ok := f.Type.Named.(*Variant)
-		if f.Inline && ok && foldsOnto(shape.inlineKeys(v), all) {
+		if f.Inline && ok && FoldsOnto(shape.inlineKeys(v), all) {
 			out = append(out, f)
 		}
 	}
@@ -119,8 +119,8 @@ func pairKeys(p *types.Pairs) []string {
 	return out
 }
 
-// foldsOnto reports a key of own equal, but for ASCII letter case, to a key of all own does not hold.
-func foldsOnto(own, all []string) bool {
+// FoldsOnto reports a key of own equal, but for ASCII letter case, to a key of all own does not hold: the loaders' case rule (rt.EqualFold, canon::json::EqualFold), which gen/go and gen/cpp refuse an inline variant over (E8019 InlineFoldedKey).
+func FoldsOnto(own, all []string) bool {
 	return slices.ContainsFunc(own, func(k string) bool {
 		return slices.ContainsFunc(all, func(p string) bool { return !slices.Contains(own, p) && asciiFold(k, p) })
 	})

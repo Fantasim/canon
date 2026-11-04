@@ -2,10 +2,12 @@ package ir_test
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -22,6 +24,7 @@ const (
 	mxParallel   = 2
 	mxErrorLines = 6
 	mxMaxDepth   = 3
+	mxFieldNames = `(\b%[1]s_\b|"%[1]s")` // a field in a .gen.cpp: the member of a decoder or of baked data, or the key of a reader
 )
 
 // mxCases are the legal combinations of leaf, depth and mode, and how many the matrix leaves out.
@@ -215,6 +218,7 @@ func TestCppRefMatrix(t *testing.T) {
 	if len(sources) != mxPackages {
 		t.Errorf("%d packages compiled (the library included), %d pinned", len(sources), mxPackages)
 	}
+	mxCheckReached(t, m, sources)
 	failed := mxCompile(t, compilers[0], include, filepath.Join(m.dir, e2eGenRoot), sources)
 	t.Logf("%d cases (%d illegal: an own table's ids are an enum in a baked package only), %d positions refused by the allowlist, %d packages compiled, %d fail", m.cases, m.illegal, m.refused, len(sources), len(failed))
 	mxCheckPending(t, failed)
@@ -242,6 +246,8 @@ func mxCheckPending(t *testing.T, failed map[string]string) {
 type mxMatrix struct {
 	dir                     string
 	cases, illegal, refused int
+	list                    []mxCase
+	kept                    map[string][]mxPos
 }
 
 // mxPrepare decides the matrix by Canon's check (the allowlist, the pinned positions), writes the project of the positions it keeps and builds it with no finding, emitting go when goGen, else cpp. Its dir is "" when the allowlist or the pins moved.
@@ -251,7 +257,7 @@ func mxPrepare(t *testing.T, goGen bool) mxMatrix {
 	kept, refused := mxRefusals(t, goGen, cases)
 	mxCheckAllowlist(t, refused)
 	mxCheckPinned(t, cases, kept)
-	m := mxMatrix{cases: len(cases), illegal: illegal, refused: len(refused)}
+	m := mxMatrix{cases: len(cases), illegal: illegal, refused: len(refused), list: cases, kept: kept}
 	if t.Failed() {
 		return m
 	}
@@ -290,11 +296,61 @@ func mxCaseFiles(t *testing.T, c mxCase, pos []mxPos) []mxFile {
 	return append(files, c.files(probe)...)
 }
 
-// mxCheckAllowlist fails for every refusal no entry of mxAllowed names, by case, position and the diagnostic code.
+// mxCheckReached fails for every position a case keeps whose fields none of the case's packages names in its .gen.cpp (a position without a value in a baked package, which writes only the values it holds, in its .gen.h): a position the generator drops would compile without being tested. A field is named as a member (name_) or as a key ("name").
+func mxCheckReached(t *testing.T, m mxMatrix, sources []string) {
+	t.Helper()
+	sourceTexts, headerTexts := map[string]string{}, map[string]string{}
+	for _, src := range sources {
+		pkg := strings.TrimSuffix(filepath.Base(src), mxCppSuffix)
+		sourceTexts[pkg], headerTexts[pkg] = mxRead(t, src), mxRead(t, strings.TrimSuffix(src, mxCppSuffix)+headerSuffix)
+	}
+	for _, c := range m.list {
+		var cpp, header strings.Builder
+		for _, f := range c.files(nil) {
+			cpp.WriteString(sourceTexts[f.pkg])
+			header.WriteString(headerTexts[f.pkg])
+		}
+		for _, p := range m.kept[c.name()] {
+			text, file := cpp.String(), mxCppSuffix
+			if len(p.values) == 0 && c.mode == mxBaked { // a baked package writes only the values it holds
+				text, file = header.String(), headerSuffix
+			}
+			for _, name := range mxMissing(p, text) {
+				t.Errorf("%s position %s keeps field %s, which no %s of the case names", c.name(), p.code, name, file)
+			}
+		}
+	}
+}
+
+// mxMissing are the fields of position p that text does not name.
+func mxMissing(p mxPos, text string) []string {
+	var missing []string
+	for _, field := range p.fields {
+		name, _, _ := strings.Cut(field, ":")
+		if !regexp.MustCompile(fmt.Sprintf(mxFieldNames, regexp.QuoteMeta(name))).MatchString(text) {
+			missing = append(missing, name)
+		}
+	}
+	return missing
+}
+
+// mxRead is the text of file.
+func mxRead(t *testing.T, file string) string {
+	t.Helper()
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+// mxCheckAllowlist fails for every refusal no entry of mxAllowed names, by case, position and the diagnostic code; the kind is matched in the message, as a diag.Finding carries the rendered text and no kind.
 func mxCheckAllowlist(t *testing.T, refused []mxRefusal) {
 	t.Helper()
 	for _, r := range refused {
-		if !slices.ContainsFunc(mxAllowed, func(a mxAllowance) bool { return a.code == r.code && a.applies(r.c, r.pos) }) {
+		if !slices.ContainsFunc(mxAllowed, func(a mxAllowance) bool {
+			return a.code == r.code && strings.Contains(r.message, a.kind) && a.applies(r.c, r.pos)
+		}) {
 			t.Errorf("%s position %s is refused by %s, which no allowance names: %s", r.c.name(), r.pos.code, r.code, r.message)
 		}
 	}

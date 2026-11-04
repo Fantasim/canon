@@ -41,7 +41,7 @@ func (g *gen) defineValue(d ir.CppDefine) string {
 	case *value.Int:
 		return defineInt(x.V)
 	case *value.Bool:
-		return defineInt(boolInt(x.V))
+		return defineInt(int64(boolOrdinal(x.V)))
 	case *value.Str:
 		return quote(x.V)
 	case *value.Member:
@@ -59,14 +59,6 @@ func enumDefine(e *ir.Enum, m *ir.EnumMember) int64 {
 		return int64(m.Index)
 	}
 	return m.Code
-}
-
-// boolInt is 1 for true, else 0.
-func boolInt(b bool) int64 {
-	if b {
-		return 1
-	}
-	return 0
 }
 
 // defineInt is a define's integer: decimal, and the smallest int64 as an expression, since the digits of its absolute value are no int64 literal and the defines header includes nothing (CODEGEN.md §7.9).

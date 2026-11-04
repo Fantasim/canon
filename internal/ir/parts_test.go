@@ -21,6 +21,8 @@ func TestPartEnds(t *testing.T) {
 	}{
 		{"nil", nil, partsLimit, 0, 0, nil},
 		{"empty", []int{}, partsLimit, 0, 0, nil},
+		{"an empty body is no cut however small the budget", nil, 1, 2, 0, nil},
+		{"units without a line are no cut however long the whole", []int{0, 0}, partsLimit, 20, 1, nil},
 		{"under the limit", []int{3, 3}, partsLimit, 0, 0, nil},
 		{"exact fit is not cut", []int{4, 6}, partsLimit, 0, 0, nil},
 		{"one over the limit is cut", []int{4, 7}, partsLimit, 0, 0, []int{1, 2}},

@@ -1,10 +1,13 @@
 package cppgen_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	cppgen "github.com/fantasim/canonlang/internal/gen/cpp"
 	"github.com/fantasim/canonlang/internal/ir"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // bakedFindWant is what testdata/main/baked_find_main.cpp prints for the baked-find fixture: every
@@ -12,7 +15,7 @@ import (
 const bakedFindWant = "names=8 numbers=9 tones=3 ranks=3 kinds=4 byKind=3 links=4 empties=0\n" +
 	"hits=50 misses=62 failures=0\n"
 
-// CODEGEN.md §5.9, §7.3, DECISIONS 432: a baked container finds every key at the address At(i) gives and nothing for a key it lacks, whatever the key's kind (a String by bytes, an Int by value, an enum by its underlying value, a ref held as a table's id by position, a ref into a keyed list by its key) and the order of its rows; FindBy over UInt16 and String and a keyed list of no row too.
+// CODEGEN.md §5.9, §7.3, DECISIONS 401, 432: a baked container finds every key at the address At(i) gives and nothing for a key it lacks, whatever the key's kind (a String by bytes, an Int by value, an enum by its underlying value, a ref held as a table's id by position, a ref into a keyed list by its key) and the order of its rows; FindBy over UInt16 and String and a keyed list of no row too.
 func TestBakedFindTables(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -21,6 +24,23 @@ func TestBakedFindTables(t *testing.T) {
 		if out != bakedFindWant {
 			t.Errorf("got:\n%s\nwant:\n%s", out, bakedFindWant)
 		}
+	}
+}
+
+const outsideMember = 99 // an index past Rank's three members
+
+// CODEGEN.md §5.2, §5.9, DECISIONS 432: a key naming a member outside its @codes enum is malformed IR (valid IR never has one): Generate refuses it with ErrMalformed (the row writer, memberLit, fails first; enumRank's own guard is the second line).
+func TestBakedFindRefusesAMemberOutsideItsEnum(t *testing.T) {
+	t.Parallel()
+	p := finderPackage()
+	for _, v := range p.Values {
+		if v.Name == "ranks" {
+			v.V.(*value.List).Elems[0].(*value.Record).Fields[0].(*value.Member).Index = outsideMember
+		}
+	}
+	_, err := cppgen.Generate(p, p.Emits[0])
+	if !errors.Is(err, cppgen.ErrMalformed) || !strings.Contains(err.Error(), "enum member") {
+		t.Errorf("Generate: %v, want ErrMalformed naming the member", err)
 	}
 }
 

@@ -267,9 +267,9 @@ const (
 	goSelf             = "self"
 	goScopePackage     = "package"
 	goParamsSuffix     = "()"
-	// The package-level tables an enum's methods read, by role, and the separator before the type's name (DECISIONS 393).
-	GoTableNames, GoTableWires, GoTableKeys, GoTableByWire                  = "enumNames", "enumWires", "enumKeys", "enumByWire"
-	GoTableCodes, GoTableMembers, GoTableNumbers, GoTableByCode, goTableSep = "enumCodes", "enumMembers", "enumNumbers", "enumByCode", "_"
+	// The package-level tables an enum's methods read, by role; the type's name follows after an underscore (DECISIONS 393).
+	GoTableNames, GoTableWires, GoTableKeys, GoTableByWire      = "enumNames", "enumWires", "enumKeys", "enumByWire"
+	GoTableCodes, GoTableMembers, GoTableNumbers, GoTableByCode = "enumCodes", "enumMembers", "enumNumbers", "enumByCode"
 )
 
 // The standard packages generated Go imports, by the name code uses; GoRT names the runtime's directory too (CODEGEN.md §2.3, §2.8).
