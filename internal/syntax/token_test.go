@@ -106,6 +106,31 @@ func TestQuotableWords(t *testing.T) {
 	}
 }
 
+// GRAMMAR.md §4.3 (E1126): exactly none, true, false and self name no enum member, case or table key.
+func TestUnnamableWords(t *testing.T) {
+	want := []syntax.TokenKind{syntax.KwNone, syntax.KwTrue, syntax.KwFalse, syntax.KwSelf}
+	for _, k := range keywords {
+		if got := syntax.IsUnnamable(k); got != slices.Contains(want, k) {
+			t.Errorf("IsUnnamable(%s) = %v", k, got)
+		}
+	}
+}
+
+// GRAMMAR.md §2.3, §4.3: nameable, quotable and unnamable words together cover every keyword, each in exactly one.
+func TestWordSetsPartitionKeywords(t *testing.T) {
+	for _, k := range keywords {
+		n := 0
+		for _, in := range []bool{syntax.IsNameable(k), syntax.IsQuotable(k), syntax.IsUnnamable(k)} {
+			if in {
+				n++
+			}
+		}
+		if n != 1 {
+			t.Errorf("keyword %s is in %d of the nameable, quotable and unnamable sets, want 1", k, n)
+		}
+	}
+}
+
 // GRAMMAR.md §2.3: ValueText is false for text that is no word.
 func TestValueTextRefusesNonWords(t *testing.T) {
 	for _, w := range []string{"", "a b", "9x", "é", "_", "none", "self"} {

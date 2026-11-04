@@ -224,7 +224,7 @@ func (p *parser) word() *Ident {
 
 // dataWord is a WORD naming a data symbol, where none, true, false and self are E1126.
 func (p *parser) dataWord() *Ident {
-	if k := p.kind(); k == KwNone || k == KwTrue || k == KwFalse || k == KwSelf {
+	if IsUnnamable(p.kind()) {
 		diag.E1126.At(p.span(p.pos, p.pos), p.text(p.pos)).Report(p.bag)
 	}
 	return p.word()

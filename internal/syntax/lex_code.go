@@ -61,6 +61,9 @@ func LookupWord(word string) TokenKind {
 // IsNameable reports a reserved word read as a name in value position (GRAMMAR.md §4.3 (c)).
 func IsNameable(k TokenKind) bool { return k < TokenKindCount && nameable[k] }
 
+// IsUnnamable reports none, true, false and self, which name no enum member, case or table key (GRAMMAR.md §4.3).
+func IsUnnamable(k TokenKind) bool { return k < TokenKindCount && unnamable[k] }
+
 // IsQuotable reports a reserved word that a quoted word may spell (GRAMMAR.md §2.3).
 func IsQuotable(k TokenKind) bool { return k < TokenKindCount && quotable[k] }
 

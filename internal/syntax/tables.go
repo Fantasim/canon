@@ -31,6 +31,9 @@ var nameable = tokenSet(KwAmend, KwAsset, KwCheck, KwConst, KwEmit, KwEntry, KwE
 	KwExport, KwImport, KwInput, KwLayer, KwLocal, KwPackage, KwProject, KwRecord, KwRef, KwRetired,
 	KwStable, KwTable, KwTest, KwTranslation, KwType, KwVar, KwVariant, KwView, KwWarn, KwWidget)
 
+// unnamable are the words that name no enum member, case or table key (GRAMMAR.md §4.3, E1126).
+var unnamable = tokenSet(KwNone, KwTrue, KwFalse, KwSelf)
+
 // quotable are the words a QWORD may spell (GRAMMAR.md §2.3).
 var quotable = tokenSet(KwAnd, KwAs, KwBreak, KwContinue, KwElse, KwFn, KwFor, KwIf, KwIn, KwIs,
 	KwLet, KwLoad, KwMatch, KwNot, KwOr, KwReturn, KwWhere, KwWhile)
