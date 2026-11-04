@@ -205,14 +205,19 @@ func (c *undoCheck) lineTyped(path, text string) (value.Value, bool) {
 	return v, err == nil
 }
 
-// lineValue is the line at path as verification compares it (API.md E22, W11): the base kind and
-// canonical text of the value it types to, so a spelling the formatter keeps (parentheses, a
-// number's digits, a multiline string) compares equal; a line no Source writes by its text.
-func (c *undoCheck) lineValue(path, text string) string {
+// lineValue is the line at path, node n of f in s, as verification compares it (API.md E22, W11): the
+// kind and canonical text, printed in the base, of the value it types to, so a spelling the formatter
+// keeps compares equal; a line no Source writes by its parts (lineParts, DECISIONS 462), else its text.
+func (c *undoCheck) lineValue(s *Snapshot, path string, f *syntax.File, n syntax.Expr) string {
+	sp := f.Span(n)
+	text := string(f.Src.Content[sp.Start:sp.End])
 	if v, ok := c.lineTyped(path, text); ok {
-		if canon, err := c.a.canonText(v); err == nil {
+		if canon, err := c.basePrinter().canonText(v); err == nil {
 			return strconv.Itoa(int(v.Type().Base().Kind())) + newline + canon
 		}
+	}
+	if parts, ok := c.lineParts(s, path, f, syntax.Unparen(n)); ok {
+		return opaqueOpen + newline + parts
 	}
 	return lineKey(text)
 }
@@ -275,12 +280,12 @@ func (c *undoCheck) typedByLine(path string) bool {
 // spacing aside, string literals kept; a line also names the earlier lines on paths overlapping its
 // own, whose order is part of the layer's view (log-2026-10-01 M4.1 rulings).
 func (c *undoCheck) lines(s *Snapshot) map[string]string {
-	texts, order := c.lineTexts(s), c.lineOrder(s)
+	order := c.lineOrder(s)
 	out := map[string]string{}
 	if !c.layerSeen() {
 		out[""] = strings.Join(c.createdLines(s), newline) // the entries' order, which no value shows (ruling c)
 	}
-	for path, text := range texts { //canon:unordered fills a map by path
+	c.eachLayerLine(s, func(path string, f *syntax.File, it *syntax.Amendment) {
 		var before []string
 		for _, q := range order {
 			if q == path {
@@ -290,8 +295,8 @@ func (c *undoCheck) lines(s *Snapshot) map[string]string {
 				before = append(before, q)
 			}
 		}
-		out[path] = c.lineValue(path, text) + newline + strings.Join(before, newline)
-	}
+		out[path] = c.lineValue(s, path, f, it.Value) + newline + strings.Join(before, newline)
+	})
 	return out
 }
 

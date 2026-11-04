@@ -35,10 +35,68 @@ func (a *applier) defaultIn(rec *value.Record, i int, params map[*types.Param]va
 	return a.host.Default(a.ctx, fields[i], wire.Instance{Record: full, Params: params}, nil)
 }
 
-// isDefault reports field i of rec holding its default (TYPES.md §7.5, API.md E6).
+// isDefault reports field i of rec holding its default (E6), by sameDefault under an edit layer.
 func (a *applier) isDefault(rec *value.Record, i int) bool {
 	d, ok := a.defaultOf(rec, i)
-	return ok && sameValue(d, rec.Fields[i])
+	if a.env.EditLayer == "" {
+		return ok && sameValue(d, rec.Fields[i])
+	}
+	return ok && a.sameDefault(d, rec.Fields[i])
+}
+
+// sameDefault is sameValue with a record's field left out read as its default, the equality E6
+// names: a literal `{}` equals a default whose evaluation gives every field.
+func (a *applier) sameDefault(x, y value.Value) bool {
+	switch xv := x.(type) {
+	case *value.Record:
+		yv, ok := y.(*value.Record)
+		return ok && a.sameFields(xv, yv)
+	case *value.List:
+		yv, ok := y.(*value.List)
+		return ok && slices.EqualFunc(xv.Elems, yv.Elems, a.sameDefault)
+	case *value.Map:
+		yv, ok := y.(*value.Map)
+		return ok && sameValues(xv.Keys, yv.Keys) && slices.EqualFunc(xv.Vals, yv.Vals, a.sameDefault)
+	case *value.Table:
+		yv, ok := y.(*value.Table)
+		return ok && slices.EqualFunc(xv.Entries, yv.Entries, func(p, q *value.Record) bool {
+			return entryKey(p) == entryKey(q) && isRetired(p) == isRetired(q) && a.sameFields(p, q)
+		})
+	}
+	return sameValue(x, y)
+}
+
+// sameFields reports records of one shape whose fields are sameDefault, each left out as its default;
+// one whose default no call computes out of its record's context (a parameter it reads) equals the
+// other side's unwritten value, which the evaluation computed in that context.
+func (a *applier) sameFields(x, y *value.Record) bool {
+	if !sameShape(x.T, y.T) || len(x.Fields) != len(y.Fields) {
+		return false
+	}
+	for j := range x.Fields {
+		xv, yv := a.fieldOrDefault(x, j), a.fieldOrDefault(y, j)
+		if xv == nil && unwritten(y, j) || yv == nil && unwritten(x, j) {
+			continue
+		}
+		if !a.sameDefault(xv, yv) {
+			return false
+		}
+	}
+	return true
+}
+
+// unwritten reports field j of r holding a value its source does not write: its default.
+func unwritten(r *value.Record, j int) bool {
+	return r.Fields[j] != nil && (j >= len(r.Set) || !r.Set[j])
+}
+
+// fieldOrDefault is field j of r, or its default in r when r leaves it out; nil for none computed.
+func (a *applier) fieldOrDefault(r *value.Record, j int) value.Value {
+	if r.Fields[j] != nil {
+		return r.Fields[j]
+	}
+	d, _ := a.defaultOf(r, j)
+	return d
 }
 
 // printed reports a field a new literal writes: written, and not equal to its default (M7).

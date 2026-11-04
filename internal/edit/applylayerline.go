@@ -44,33 +44,39 @@ func (s *Snapshot) prefixLine(b *syntax.AmendBlock, res resolution) (*syntax.Ame
 	return nil, 0
 }
 
-// linePart is the part of a line an edit rewrites (literalRoot): its node, the value it states
-// typed at its path, and the steps from it to the value the edit reaches; the last may be a field
-// the literal leaves out.
+// linePart is the part of a line an edit rewrites (literalRoot): its node, its typed value, its depth,
+// the steps to the edit's value, fillAt the first that reads a field left out (fillLeftOut); absent, a
+// field the line leaves out beside a load or an expression (absentField), old its default.
 type linePart struct {
-	node  syntax.Node
-	old   value.Value
-	steps []Step
+	node   syntax.Node
+	old    value.Value
+	steps  []Step
+	depth  int
+	fillAt int
+	absent bool
 }
 
 // lineValue is the line's part an edit `upto` steps down the path rewrites (DECISIONS 462).
 func (x *opCtx) lineValue(at staticSite, upto int) (linePart, error) {
 	node, d, ok := x.a.snap.literalRoot(at.line, at.n, x.res, max(upto, at.n))
 	if !ok {
-		return linePart{}, &NotEditableError{Reason: ReasonComputed}
+		return x.absentPart(at, upto)
 	}
 	sp := at.f.Span(node)
 	old, err := x.typed(Source(at.f.Src.Content[sp.Start:sp.End]), x.typeAt(d))
 	if err != nil {
 		return linePart{}, &NotEditableError{Reason: ReasonComputed}
 	}
-	w := walk{cur: old, typ: x.typeAt(d)}
+	w, fillAt := walk{cur: old, typ: x.typeAt(d)}, 0
 	for _, st := range x.res.Steps[d:upto] {
+		if x.fillLeftOut(w.cur, st.Seg) && fillAt == 0 {
+			fillAt = len(w.steps) + 1
+		}
 		if err := w.next(st.Seg); err != nil {
 			return linePart{}, &NotEditableError{Reason: ReasonLayer}
 		}
 	}
-	return linePart{node: node, old: old, steps: w.steps}, nil
+	return linePart{node: node, old: old, steps: w.steps, depth: d, fillAt: fillAt}, nil
 }
 
 // staticEdit applies mutate to the value `upto` steps down the path inside the edit layer's
@@ -81,12 +87,15 @@ func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (va
 	if err != nil {
 		return err
 	}
+	if part.absent {
+		return x.fieldInsert(at, part, mutate)
+	}
 	old, steps := part.old, part.steps
 	cur := old
 	if len(steps) > 0 {
 		cur = steps[len(steps)-1].Value
 	}
-	if err := x.undoStatic(cur, upto); err != nil {
+	if err := x.partInverse(part, cur, upto); err != nil {
 		return err
 	}
 	nv, err := mutate(cur)
@@ -95,6 +104,10 @@ func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (va
 	}
 	if rec, i, ok := fieldOf(old, steps); ok && nv != nil && x.a.isDefault(withField(rec, i, nv), i) {
 		nv = nil
+	}
+	if fi, ok := x.leftOut(at, part, nv); ok {
+		x.w.addCanon(at.f.Src.Path, x.res.root.pkg.Path, []format.Change{{Kind: format.Remove, Node: fi}})
+		return nil
 	}
 	d := &canonDiff{a: x.a}
 	if err := d.value(old, withChange(old, steps, nv), part.node); err != nil {

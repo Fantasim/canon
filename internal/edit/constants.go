@@ -231,6 +231,8 @@ const (
 	braceOpenSp  = "{ "
 	braceCloseSp = " }"
 	colonSp      = ": "
+	opaqueOpen   = "\x00(" // a load or expression of a layer line, as Undo verification keys it (lineParts)
+	opaqueClose  = ")\x00"
 	dotSeg       = "."
 	pointerSep   = "/"
 	globMagic    = "*?[{"

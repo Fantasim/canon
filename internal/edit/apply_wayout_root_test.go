@@ -83,8 +83,9 @@ var rootRows = []rootRow{
 	{"all literal: Set of a dependent element", "ly", inInactive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].rewards[0]", Value: edit.Str("t")}, rootComputed},
 	{"a new line of the driver", "zz", inInactive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].items", Value: edit.Bool(false)}, rootComputed},
 	{"a new line of a plain field", "zz", inInactive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].note", Value: edit.Str("z")}, rootComputed},
-	// Active, nothing changes; the driver beside an identifier is EDIT-LAYERPARITY's split, pinned as it is.
-	{"beside an identifier, active: Set of the driver", "lz", inActive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].items", Value: edit.Bool(false)}, wayAnswer{edit.ReasonNone, edit.ReasonComputed, "", ""}},
+	// Active, nothing changes: the driver beside an identifier applies as in an all-literal line, its
+	// Undo verified by the line's parts (DECISIONS 462); the re-check judges the dependent sibling.
+	{"beside an identifier, active: Set of the driver", "lz", inActive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].items", Value: edit.Bool(false)}, wayAnswer{}},
 	{"beside an identifier, active: Set of a plain field", "lz", inActive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].note", Value: edit.Str("z")}, wayAnswer{}},
 	{"beside an identifier, active: Set of a dependent element", "lz", inActive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].rewards[0]", Value: edit.Str("t")}, wayAnswer{}},
 	{"all literal, active: Set of the driver", "ly", inActive, edit.Operation{Kind: edit.OpSet, Path: "d:qs[a].items", Value: edit.Bool(false)}, wayAnswer{}},

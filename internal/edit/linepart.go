@@ -2,11 +2,13 @@ package edit
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
+	"github.com/fantasim/canonlang/internal/views/shape"
 )
 
 // literalRoot is the part of an edit-layer line naming n steps that an edit upto steps down res's
@@ -39,13 +41,75 @@ func (s *Snapshot) nodeAt(line *syntax.Amendment, n int, res resolution, d int) 
 	return node, true
 }
 
+// absentField is the record literal of the line, at depth d of res's path, leaving out the field step
+// d names, which an edit upto steps down inserts as a literal beside its loads or expressions (API.md
+// W7, W8; DECISIONS 462); false for no such field, or one whose default no literal states.
+func (s *Snapshot) absentField(line *syntax.Amendment, n int, res resolution, upto int) (*syntax.BraceLit, int, bool) {
+	var node syntax.Node = syntax.Unparen(line.Value)
+	for d := n; d < upto; d++ {
+		if next, ok := s.childOn(node, res, d); ok {
+			if s.nodeForm(next) != shape.FormLiteral {
+				return nil, 0, false
+			}
+			node = next
+			continue
+		}
+		lit, isLit := node.(*syntax.BraceLit)
+		st := res.Steps[d]
+		if !isLit || hasSpread(lit) || st.Seg.Kind != SegField || fieldItem(lit, st.Seg.Name) != nil {
+			return nil, 0, false
+		}
+		return lit, d, s.literalDefault(typeAtDepth(res, d), st.Seg.Name)
+	}
+	return nil, 0, false
+}
+
+// literalDefault reports field name of record type rt left out to a default naming no field of the
+// record, no `self`, no record parameter and no range (TYPES.md 15): one an edit computes and prints
+// without the record's other values or the arguments it is applied to.
+func (s *Snapshot) literalDefault(rt types.Type, name string) bool {
+	fields := fieldsOf(present(rt))
+	i := fieldIndex(fields, name)
+	if i < 0 || !hasDefault(fields[i]) {
+		return false
+	}
+	if fields[i].Default == nil {
+		return true
+	}
+	params := recordParams(present(rt))
+	free := true
+	syntax.Inspect(fields[i].Default, func(n syntax.Node) bool {
+		switch x := n.(type) {
+		case *syntax.SelfExpr, *syntax.RangeExpr: // a range no literal prints (M7)
+			free = false
+		case *syntax.IdentExpr:
+			free = free && fieldIndex(fields, x.Name) < 0 && !slices.ContainsFunc(params, func(p *types.Param) bool { return p.Name == x.Name })
+		}
+		return free
+	})
+	return free
+}
+
+// recordParams are the parameters of record type t, applied or not.
+func recordParams(t types.Type) []*types.Param {
+	switch b := t.Base().(type) {
+	case *types.RecordType:
+		return b.Params
+	case *types.AppliedRecord:
+		return b.Rec.Params
+	}
+	return nil
+}
+
 // partSource reports the part of at's line an edit upto steps down res's path rewrites (literalRoot)
-// a Source of its declared type, the line itself as lineSource reads it (DECISIONS 462).
+// a Source of its declared type, the line itself as lineSource reads it, or a field it leaves out
+// (absentField) (DECISIONS 462).
 func (s *Snapshot) partSource(ctx context.Context, at staticSite, res resolution, upto int) bool {
 	node, d, ok := s.literalRoot(at.line, at.n, res, max(upto, at.n))
 	switch {
 	case !ok:
-		return false
+		_, _, inserts := s.absentField(at.line, at.n, res, max(upto, at.n))
+		return inserts
 	case d == at.n:
 		return s.lineSource(ctx, at.f, res.root.at(), at.line)
 	}

@@ -223,7 +223,9 @@ func (j *judge) editable() Editability {
 	switch {
 	case j.layer == "":
 		return Editability{Mode: c.mode, File: j.s.display(c.span.File), Span: c.span}
-	case c.layer == j.layer: // never inside a JSON file the amendment loads (layerRow)
+	case c.layer == j.layer && j.removeUnrestored(): // never inside a JSON file the amendment loads (layerRow)
+		return Editability{Reason: ReasonComputed, way: j.wayOut(ReasonComputed)}
+	case c.layer == j.layer:
 		return Editability{Mode: ModeCanon, File: j.s.display(c.span.File), Span: c.span}
 	}
 	if e, ok := j.s.staticAmendment(j.res, j.layer); ok {
@@ -234,6 +236,25 @@ func (j *judge) editable() Editability {
 		return e
 	}
 	return Editability{Mode: ModeCanon, File: layerFile(j.res.root.pkg, j.layer)}
+}
+
+// removeUnrestored reports a Remove, inside the active edit layer's line, of an item of a literal
+// holding a load or an expression that its Undo cannot put back: no Source writes the literal back
+// (DECISIONS 273), and an AddEntry restores only a last table or map entry stating no such node (E23).
+func (j *judge) removeUnrestored() bool {
+	k := len(j.res.Steps)
+	_, line, n := j.s.layerLine(j.res, j.layer)
+	if j.op != OpRemove || line == nil || k <= n {
+		return false
+	}
+	coll, ok := j.s.nodeAt(line, n, j.res, k-1)
+	if !ok || j.s.opaqueIn(coll) == 0 {
+		return false
+	}
+	it, ok := j.s.childOn(coll, j.res, k-1)
+	all := items(coll, nil)
+	_, isList := coll.(*syntax.ListLit)
+	return ok && (isList || j.s.opaqueIn(it) > 0 || all[len(all)-1].node != it)
 }
 
 // staticVerdict is e, as Apply reads the edit layer's line the session does not show: `computed`

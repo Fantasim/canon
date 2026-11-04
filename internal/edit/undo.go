@@ -35,9 +35,13 @@ func (x *opCtx) resetUndoes() bool {
 	return x.a.env.EditLayer == "" || x.a.judgeOp(x.res, OpReset).reason() == ReasonNone
 }
 
-// undoSet is the inverse of a Set or Reset of the path (E23): Reset when the field was left to
-// its default and a Reset can edit it, else Set to the old value.
+// undoSet is the inverse of a Set or Reset of the path (E23): a Set of the field the edit layer's
+// literal leaves out (layerAbsent); Reset when the field was left to its default and a Reset can
+// edit it; else Set to the old value.
 func (x *opCtx) undoSet() error {
+	if k, ok := x.layerAbsent(); ok && x.undoAt(k) == nil {
+		return nil
+	}
 	if rec, f, ok := x.field(); ok && !rec.Set[f.Index] && x.j.last().state == stAbsent && hasDefault(f) && x.resetUndoes() {
 		x.inverse(Operation{Kind: OpReset, Path: x.res.Canonical})
 		return nil
@@ -56,6 +60,31 @@ func (x *opCtx) undoSet() error {
 		lit = heldValue{old: v, scope: scope, lit: lit, notes: notes} // the edit's lock facts are kept (E23)
 	}
 	x.inverse(Operation{Kind: OpSet, Path: path, Value: lit})
+	return nil
+}
+
+// layerAbsent is the cursor of the field the edit layer's literal leaves out on the path, nearest
+// the root: its Set to the value it had, its default, leaves it out again (E6), where a Reset would
+// write the value without the layer (API.md W11, E22; DECISIONS 462).
+func (x *opCtx) layerAbsent() (int, bool) {
+	if x.a.env.EditLayer == "" || !x.inAmendment() {
+		return 0, false
+	}
+	for k := 1; k < len(x.j.cur); k++ {
+		if prev := x.j.cur[k-1]; x.j.cur[k].state == stAbsent && prev.state == stTree && prev.layer == x.a.env.EditLayer {
+			return k, true
+		}
+	}
+	return 0, false
+}
+
+// undoAt is the inverse Set of the value at cursor k as it was (E23).
+func (x *opCtx) undoAt(k int) error {
+	lit, err := x.a.sourceLit(x.valueAt(k), x.scopeAt(k, true), stated{})
+	if err != nil {
+		return err
+	}
+	x.inverse(Operation{Kind: OpSet, Path: x.pathAt(k), Value: lit})
 	return nil
 }
 

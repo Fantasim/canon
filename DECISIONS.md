@@ -4769,7 +4769,9 @@ round 2", "PS1 review", "PS2 round 2"):
      "make the edit without an edit layer", since the base verdict itself depends on the layer, and
      the inactive-layer limits 273 decides: an `AddEntry`, and the `Remove` of a list element inside
      a line, are `layer` (no path reaches the entry to undo it), and an edit inside a typed literal
-     line `T { … }` is `computed`. When both a literal way out and "make the edit without an edit
+     line `T { … }` is `computed`, as are an `AddEntry` or a last-entry `Remove` in a collection
+     beside a call or load, and a field a literal leaves out whose default reads a sibling field
+     (the inactive session cannot see the line's other values). When both a literal way out and "make the edit without an edit
      layer" would make the op pass, the literal one prints, since it keeps the layer's intent; "make
      the edit without an edit layer" prints for a `layer` refusal only, never a `computed` one. Every
      non-literal node of a layer line, a load of any form or an expression, the line's own value or
@@ -4786,4 +4788,4 @@ round 2", "PS1 review", "PS2 round 2"):
      1-3d): printed ways out that failed once followed, Editable/Apply and active/inactive splits, an
      internal error on an entry Set, and inactive edits that broke a dependent type once active.
      (Amended 2026-11-04 at the v0.3 spec-sync review: the inactive-layer limits of 273; the literal
-     way out first; the no-layer way out for `layer` only.)
+     way out first; the no-layer way out for `layer` only; EDIT-LAYERPARITY's inactive limits.)
