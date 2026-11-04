@@ -114,11 +114,11 @@ func (r *run) related(b *diag.Builder, s site) *diag.Builder {
 	return b
 }
 
-// refine checks one written refinement (TYPES.md §7.4, EVALUATION.md §12.1).
+// refine checks one written refinement, related to the holder s, else where it is written (TYPES.md §7.4, API.md F12).
 func (r *run) refine(v value.Value, x *types.Refined, s site, at *vpath) value.Value {
 	w := r.ev.index.written.of(x)
 	rel := s
-	if w.has {
+	if !s.has && w.has {
 		rel = site{decl: w.decl, has: true}
 	}
 	loc := located(v, s.decl)

@@ -128,7 +128,6 @@ func archived(t *testing.T, path string) (*memoed, *txtar.Archive) {
 	}
 	p := fromArchive(t, a)
 	opt := caseOptions(t, golden.Case{Path: path, Archive: a})
-	opt.Layers = strings.Fields(string(archiveFile(a, layersFile)))
 	m := checkOnce(t, p, opt)
 	m.load = servedJSON(t, p, func(name string) []byte { return archiveFile(a, name) })
 	return m, a

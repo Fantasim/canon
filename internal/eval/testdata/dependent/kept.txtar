@@ -94,10 +94,10 @@ a.eqs = [true, true, true, false]
 
 error[E3802]  a/a.canon:76:51
   rs[3].ks[red]: value does not match SK(ev) = a.Color | "default"
-  expected by a/a.canon:66 (SK(ev))
+  expected by a/a.canon:66 (ks: {SK(ev): Int})
 
 error[E3302]  a/a.canon:77:15
   rs[4].p: a.Shape.box needs field w
-  expected by a/a.canon:62 (P(ev))
+  expected by a/a.canon:62 (p: P(ev)?)
 
 2 errors, 0 warnings in 1 package (…)

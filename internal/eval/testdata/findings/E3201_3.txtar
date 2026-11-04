@@ -1,0 +1,27 @@
+DECISIONS 460, 461, API.md F12 (orchestrator ruling EVAL-AMENDNOTE): an amendment storing into a list element a negation whose value passes the 64-bit Int of expressions is E3201 on that Int, which names no declaration: the broken limit is no declared type's, so the finding has no related note, though the element's holder is a field.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Config.
+record Config {
+  /// Ys.
+  ys: [Int8] = [1, 2]
+}
+
+/// Config.
+let config: Config = {}
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  ys[0]: -(-9223372036854775808)
+}
+-- findings.txt --
+error[E3201]  a/dev.canon:5:10
+  9223372036854775808 does not fit Int
+
+1 error, 0 warnings in 1 package (…)

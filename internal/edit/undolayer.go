@@ -309,7 +309,7 @@ func (c *undoCheck) layerSeen() bool {
 			return false
 		}
 		res, err := c.a.base.open(p)
-		return err == nil && res.Target != nil && res.Target.Prov() != nil && res.Target.Prov().Layer() == c.a.env.EditLayer
+		return err == nil && res.Target != nil && amendedBy(res.Target.Prov(), c.a.env.EditLayer)
 	})
 }
 
@@ -355,8 +355,8 @@ func (x *opCtx) layerInactive() bool {
 			if err != nil {
 				return
 			}
-			if res, err := x.a.snap.open(p); err == nil && res.Target != nil && res.Target.Prov() != nil {
-				seen = seen || res.Target.Prov().Layer() == x.a.env.EditLayer
+			if res, err := x.a.snap.open(p); err == nil && res.Target != nil {
+				seen = seen || amendedBy(res.Target.Prov(), x.a.env.EditLayer)
 			}
 		})
 	}

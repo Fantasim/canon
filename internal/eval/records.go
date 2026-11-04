@@ -220,7 +220,7 @@ func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath, via *va
 	v := r.evalAt(f.Default, at)
 	r.unnest()
 	if v != nil {
-		p := &value.Prov{Kind: value.ProvDefault, Span: r.span(f.Default), Via: via}
+		p := &value.Prov{Kind: value.ProvDefault, Span: r.span(f.Default), Via: via, Ext: value.NewProvExt(value.ProvExt{Layer: r.fr.layer})}
 		v = r.store(r.ev.reprov(v, p, true), f.Type, r.ev.fieldSite(f, rec.T), at)
 	}
 	return v

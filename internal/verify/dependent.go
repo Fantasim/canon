@@ -5,6 +5,7 @@ import (
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -15,6 +16,7 @@ type depSite struct {
 	field    string             // the field it is given to directly, "" for none
 	optional bool               // that field is optional
 	whole    types.Type         // the type the application computes, nested applications computed
+	holder   source.Span        // the innermost field or let it is stored into, zero for none (API.md F12)
 }
 
 // branchKey is one application evaluated in one env: once per value (TYPES.md §11.6).
@@ -38,7 +40,7 @@ func (w *walker) dependent(v value.Value, app *types.TypeAppType, optional bool,
 	}
 	switch {
 	case sc.dep == nil:
-		sc.dep, sc.direct = &depSite{app: app, field: sc.field, optional: optional, whole: w.substitute(t, inner)}, true
+		sc.dep, sc.direct = &depSite{app: app, field: sc.field, optional: optional, whole: w.substitute(t, inner), holder: sc.holder}, true
 	case optional && !sc.dep.optional:
 		d := *sc.dep
 		d.optional = true
@@ -193,7 +195,7 @@ func (w *walker) stored(v, nv value.Value, t types.Type, at *Path, sc scope) val
 	if eval.IsContainer(nv) {
 		nv = w.retyped(nv, t)
 		n := len(w.stage.Emitted())
-		ok := w.stage.Refine(nv, t, w.src.types[sc.dep.app].decl, w.evalPath(at))
+		ok := w.stage.Refine(nv, t, w.src.depHolder(sc.dep), w.evalPath(at))
 		if w.keepSince(n, at.String()); !ok {
 			w.res.Poisoned, w.res.Valid = true, false
 			return v
@@ -204,7 +206,7 @@ func (w *walker) stored(v, nv value.Value, t types.Type, at *Path, sc scope) val
 		return nv
 	}
 	n := len(w.stage.Emitted())
-	s, ok := w.stage.Store(nv, t, w.src.types[sc.dep.app].decl, w.evalPath(at))
+	s, ok := w.stage.Store(nv, t, w.src.depHolder(sc.dep), w.evalPath(at))
 	w.keepSince(n, at.String())
 	if !ok {
 		w.res.Poisoned, w.res.Valid = true, false
@@ -238,13 +240,13 @@ func (w *walker) never(v value.Value, optional bool, at *Path, sc scope) {
 		return
 	}
 	s := SiteOf(v)
-	w.flag(s, w.src.related(diag.E3801.At(s.Span, d.field, w.src.types[d.app].typ), d.app), v, at)
+	w.flag(s, w.src.relatedTo(diag.E3801.At(s.Span, d.field, w.src.types[d.app].typ), d.holder, d.app), v, at)
 }
 
 // mismatch is E3802: v does not fit the type the application computes (TYPES.md §11.6).
 func (w *walker) mismatch(v value.Value, at *Path, d *depSite) {
 	s := SiteOf(v)
-	w.flag(s, w.src.related(diag.E3802.At(s.Span, w.src.types[d.app].typ, d.whole), d.app), v, at)
+	w.flag(s, w.src.relatedTo(diag.E3802.At(s.Span, w.src.types[d.app].typ, d.whole), d.holder, d.app), v, at)
 }
 
 // bareCase fills rec, the case a symbol names bare, with its defaults; a required field is E3302 (TYPES.md §8.2).
@@ -258,7 +260,7 @@ func (w *walker) bareCase(v value.Value, rec *value.Record, at *Path, d *depSite
 		return nil
 	case f != nil:
 		s := SiteOf(v)
-		w.flag(s, w.src.related(diag.E3302.At(s.Span, rec.T, f.Name), d.app), v, at)
+		w.flag(s, w.src.relatedTo(diag.E3302.At(s.Span, rec.T, f.Name), d.holder, d.app), v, at)
 		return nil
 	}
 	return rec

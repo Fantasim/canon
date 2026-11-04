@@ -1,0 +1,53 @@
+EVALUATION.md §4.3, §9.3 step 2, API.md F12, ERRORS.md §1.5 (orchestrator ruling EVAL-AMENDNOTE): a new table entry an amendment adds, in a field's table or in a let's, holds a value outside its sized type: E3201 set by its layer names the holder of that value, the entry's field; so does an existing entry's field amended through the table.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int8 = 1
+}
+
+/// Config.
+record Config {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+}
+
+/// Config.
+let config: Config = {}
+
+/// Tiers.
+let ts: table Tier = { low {} }
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  tiers.high: { weight: 100 * 3 }
+  tiers.low.weight: 100 * 4
+}
+
+amend ts {
+  high: { weight: 100 * 5 }
+}
+-- findings.txt --
+error[E3201]  a/dev.canon:5:25
+  config.tiers.high.weight: 300 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:7 (weight: Int8)
+
+error[E3201]  a/dev.canon:6:21
+  config.tiers.low.weight: 400 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:7 (weight: Int8)
+
+error[E3201]  a/dev.canon:10:19
+  ts.high.weight: 500 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:7 (weight: Int8)
+
+3 errors, 0 warnings in 1 package (…)

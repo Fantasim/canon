@@ -1,0 +1,96 @@
+API.md §4 (Finding.Layer: the layer whose amendment produced the value), F11, EVALUATION.md §13 (orchestrator ruling EVAL-AMENDNOTE rounds 4, 5): a value a call, a lambda, a re-derived default or a where predicate computes while an amendment's right-hand side runs was produced by that amendment, so its finding is set by the layer and keeps its own span and stack: mk's Tier, a lambda's Tier, a default re-derived because it reads the amended field, and one reading that default (TYPES.md §15), and a record a where predicate builds, each breaking an Int8.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int8 = 1
+}
+
+/// Server.
+record Server {
+  /// Port.
+  port: Int = 1
+  /// Small, derived from the port.
+  small: Int8 = port * 2
+  /// Big, derived from the port through small, itself re-derived.
+  big: Int8 = small * 3
+}
+
+/// Probe, built by a predicate.
+record Probe {
+  /// V.
+  v: Int8
+}
+
+/// Checked through a record its predicate builds.
+type Probed = Int where (Probe { v: it * 100 }).v > 0
+
+/// Holder.
+record Holder {
+  /// P.
+  p: Probed = 1
+}
+
+/// Builds a tier.
+fn mk(n: Int) -> Tier {
+  return Tier { weight: n * 100 }
+}
+
+/// Config.
+record Config {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Server.
+  server: Server = {}
+  /// Holder.
+  holder: Holder = {}
+}
+
+/// Config.
+let config: Config = {}
+
+/// Weights.
+let ns: [Int] = [4]
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  tiers.high: mk(3)
+  tiers.mid: ns.map(x => Tier { weight: x * 100 })[0]
+  server.port: 100 * 5
+  holder.p: 2 + 4
+}
+-- findings.txt --
+error[E3201]  a/a.canon:15:17
+  config.server.small: 1000 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:15 (small: Int8)
+
+error[E3201]  a/a.canon:17:15
+  config.server.big: 3000 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:17 (big: Int8)
+
+error[E3201]  a/a.canon:27:37
+  600 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:23 (v: Int8)
+
+error[E3201]  a/a.canon:37:25
+  300 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:7 (weight: Int8)
+  in mk (a/dev.canon:5)
+
+error[E3201]  a/dev.canon:6:41
+  400 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:7 (weight: Int8)
+
+5 errors, 0 warnings in 1 package (…)

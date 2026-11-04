@@ -22,14 +22,16 @@ type written struct {
 type sources struct {
 	types     map[types.Type]written
 	decls     map[syntax.Node]*syntax.File
-	assetDirs map[*types.AssetSpec]string // the declaring file's directory, project-relative (WIRE.md §2.2 rule 1)
+	assetDirs map[*types.AssetSpec]string  // the declaring file's directory, project-relative (WIRE.md §2.2 rule 1)
+	fields    map[*types.Field]source.Span // each field's declaration, the holder of its value (holders.go)
+	lets      map[eval.Root]source.Span    // each top-level let's declaration with a written type
 }
 
 // indexSources inverts Info.TypeExprs for the type pointers written at one place, each file's
 // syntax scanned once per cache.
 func indexSources(prog *check.Program, c *IndexCache) *sources {
-	s := &sources{types: map[types.Type]written{}, decls: map[syntax.Node]*syntax.File{}, assetDirs: map[*types.AssetSpec]string{}}
-	if prog == nil || prog.Info == nil {
+	s := &sources{types: map[types.Type]written{}, decls: map[syntax.Node]*syntax.File{}, assetDirs: map[*types.AssetSpec]string{}, fields: map[*types.Field]source.Span{}}
+	if s.lets = letHolders(prog); prog == nil || prog.Info == nil {
 		return s
 	}
 	for _, pkg := range prog.Packages {
@@ -54,14 +56,16 @@ func (s *sources) add(f *syntax.File, fs *fileSyntax, info *check.Info) {
 			s.types[typ] = at.w
 		}
 	}
+	s.addHolders(f, fs, info)
 }
 
 // fileSyntax is what indexing reads of one file's tree, in source order: the enum and variant
-// declarations, the asset types, and each written type with where it is written.
+// declarations, the record declarations, the asset types, and each written type with where it is written.
 type fileSyntax struct {
-	decls  []syntax.Node
-	assets []*syntax.AssetType
-	types  []typeAt
+	decls   []syntax.Node
+	records []*syntax.RecordDecl
+	assets  []*syntax.AssetType
+	types   []typeAt
 }
 
 // typeAt is a written type and its places.
@@ -78,6 +82,8 @@ func scanFile(f *syntax.File) *fileSyntax {
 		switch d := n.(type) {
 		case *syntax.EnumDecl, *syntax.VariantDecl:
 			out.decls = append(out.decls, d)
+		case *syntax.RecordDecl:
+			out.records = append(out.records, d)
 		case *syntax.AssetType:
 			out.assets = append(out.assets, d)
 		}
@@ -108,14 +114,6 @@ func writtenOnce(t types.Type) bool {
 		return true
 	}
 	return false
-}
-
-// related relates the written type t a value was checked against, when it is known.
-func (s *sources) related(b *diag.Builder, t types.Type) *diag.Builder {
-	if w, ok := s.types[t]; ok {
-		b.Related(w.decl, diag.NoteSource(w.decl))
-	}
-	return b
 }
 
 // relatedNode relates a declaration node of an enum or a variant.

@@ -57,12 +57,12 @@ a "inside an expect": failed true, stopped false, broken false
 
 error[E3204]  a/a.canon:5:33
   9 is outside 0..=5
-  expected by a/a.canon:10 (Int(0..=5))
+  expected by a/a.canon:10 (x: Int(0..=5))
   in nine (a/a.canon:10)
 
 error[E3204]  a/a.canon:16:20
   9 is outside 0..=5
-  expected by a/a.canon:7 (Int(0..=5))
+  expected by a/a.canon:7 (n: Int(0..=5))
 
 error[E3322]  a/a.canon:22:25
   key 0 is given twice

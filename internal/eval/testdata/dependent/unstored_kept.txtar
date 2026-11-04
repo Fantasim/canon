@@ -95,15 +95,15 @@ error[E3802]  a/a.canon:35:29
 
 error[E3802]  a/a.canon:39:55
   lst[1][d]: value does not match P(x) = a.Sub(e)
-  expected by a/a.canon:39 (P(x))
+  expected by a/a.canon:39 (lst: [{x in nodes: P(x)}])
 
 error[E3802]  a/a.canon:45:31
   by[n]: value does not match P(x) = Int
-  expected by a/a.canon:27 (P(x))
+  expected by a/a.canon:27 (by: {x in nodes: P(x)})
 
 error[E3802]  a/a.canon:46:32
   by[n]: value does not match P(x) = Int
-  expected by a/a.canon:27 (P(x))
+  expected by a/a.canon:27 (by: {x in nodes: P(x)})
 
 error[E3802]  a/a.canon:50:42
   [d]: value does not match P(x) = a.Sub(e)

@@ -1,0 +1,51 @@
+EVALUATION.md §4.3, §9.3, API.md F12, ERRORS.md §1.5 (orchestrator ruling EVAL-AMENDNOTE): a value an amendment stores into a list element, or into a map value replaced or added, outside its sized type is E3201 set by its layer, whose related note names the holder, the field whose declared type the value is stored into. The values are products, no literal, so only evaluation sees them.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Config.
+record Config {
+  /// Ys.
+  ys: [Int8] = [1, 2]
+  /// Limits.
+  limits: {String: Int8} = { "a": 1 }
+  /// Nested lists.
+  grid: [[Int8]] = [[1]]
+}
+
+/// Config.
+let config: Config = {}
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  ys[0]: 100 * 3
+  limits["a"]: 100 * 4
+  limits["b"]: 100 * 5
+  grid[0][0]: 100 * 6
+}
+-- findings.txt --
+error[E3201]  a/dev.canon:5:10
+  config.ys[0]: 300 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:7 (ys: [Int8])
+
+error[E3201]  a/dev.canon:6:16
+  config.limits[a]: 400 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:9 (limits: {String: Int8})
+
+error[E3201]  a/dev.canon:7:16
+  config.limits[b]: 500 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:9 (limits: {String: Int8})
+
+error[E3201]  a/dev.canon:8:15
+  config.grid[0][0]: 600 does not fit Int8
+  set by layer dev
+  expected by a/a.canon:11 (grid: [[Int8]])
+
+4 errors, 0 warnings in 1 package (…)

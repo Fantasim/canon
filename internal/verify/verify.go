@@ -8,6 +8,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
+	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -135,7 +136,7 @@ func (v *Verifier) check(ctx context.Context, root eval.Root, val value.Value, t
 			w.stage.Under(*res.frame) // what the evaluator reports of a precomputed result
 		}
 	}
-	nv := w.walk(val, t, w.rootPath(), scope{})
+	nv := w.walk(val, t, w.rootPath(), scope{holder: w.rootHolder()})
 	if w.err != nil {
 		return w.res, w.err
 	}
@@ -172,7 +173,8 @@ type scope struct {
 	retired string // the innermost retired entry around it, "" for none (LOCK.md §4.3)
 	past    bool
 	env     *env
-	field   string // the field it is given to directly, "" for an element, a key or a map value
+	field   string      // the field it is given to directly, "" for an element, a key or a map value
+	holder  source.Span // the innermost field or let it is stored into, zero for none (API.md F12)
 	dep     *depSite
 	direct  bool // the value is dep's own, not one of its parts
 }

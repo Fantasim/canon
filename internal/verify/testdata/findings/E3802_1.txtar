@@ -50,18 +50,18 @@ project demo {
 -- findings.txt --
 error[E3802]  a/a.canon:35:16
   things[0].p: value does not match P(k) = Int
-  expected by a/a.canon:28 (P(k))
+  expected by a/a.canon:28 (p: P(k)?)
 
 error[E3802]  a/a.canon:36:16
   things[1].p: value does not match P(k) = a.Color
-  expected by a/a.canon:28 (P(k))
+  expected by a/a.canon:28 (p: P(k)?)
 
 error[E3802]  a/a.canon:37:17
   things[2].p: value does not match P(k) = Never
-  expected by a/a.canon:28 (P(k))
+  expected by a/a.canon:28 (p: P(k)?)
 
 error[E3802]  a/a.canon:38:16
   things[3].q: value does not match Q(k) = Int
-  expected by a/a.canon:30 (Q(k))
+  expected by a/a.canon:30 (q: Q(k)?)
 
 4 errors, 0 warnings in 1 package (…)

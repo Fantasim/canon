@@ -214,7 +214,6 @@ func TestPackageSubjects(t *testing.T) {
 	golden.Run(t, "testdata/worlds/*.txtar", func(t *testing.T, c golden.Case) []byte {
 		t.Helper()
 		opt := caseOptions(t, c)
-		opt.Layers = strings.Fields(string(archiveFile(c.Archive, layersFile)))
 		b := runBuild(t, fromArchive(t, c.Archive), eval.Options{Layers: opt.Layers})
 		tr := newTestRun(b, opt)
 		out := tr.all()

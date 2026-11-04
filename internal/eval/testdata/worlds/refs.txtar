@@ -54,6 +54,6 @@ a "a key added": failed false, stopped false, broken false
 
 error[E3501]  a/a.canon:19:30
   picks[1]: unknown key c in items
-  expected by a/a.canon:19 (ref items)
+  expected by a/a.canon:19 (picks: [ref items])
 
 1 error, 0 warnings in 1 package (…)

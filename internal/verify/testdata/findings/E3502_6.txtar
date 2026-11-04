@@ -29,7 +29,7 @@ project demo {
 -- findings.txt --
 error[E3502]  a/a.canon:17:37
   featured[1]: oldSword is retired; a live value cannot reference it (only a retired entry or a past ref may)
-  expected by a/a.canon:17 (ref items)
+  expected by a/a.canon:17 (featured: [ref items])
 
 error[E3502]  a/a.canon:20:28
   favourite: oldSword is retired; a live value cannot reference it (only a retired entry or a past ref may)

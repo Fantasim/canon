@@ -37,6 +37,6 @@ a.bad = {a: Sub{lim: 5}, n: 1, d: 3}
 
 error[E3802]  a/a.canon:28:57
   bad[d]: value does not match P(x) = a.Sub(e)
-  expected by a/a.canon:28 (P(x))
+  expected by a/a.canon:28 (bad: {x in nodes: P(x)})
 
 1 error, 0 warnings in 1 package (…)

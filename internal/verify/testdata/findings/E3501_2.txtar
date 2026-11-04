@@ -44,6 +44,6 @@ project demo {
 -- findings.txt --
 error[E3501]  a/a.canon:35:16
   things[1].p: unknown key blue in tags
-  expected by a/a.canon:21 (ref tags)
+  expected by a/a.canon:29 (p: P(k))
 
 1 error, 0 warnings in 1 package (…)

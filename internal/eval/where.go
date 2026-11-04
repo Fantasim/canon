@@ -25,6 +25,9 @@ func (e *Evaluator) predicate(ctx context.Context, p *types.Predicate, it value.
 		r.outer = s.r.outer
 	}
 	r.fr.it, r.instPath = it, path
+	if it != nil {
+		r.fr.layer = it.Prov().Layer() // re-run on an amended value, as its storage ran it (API.md §4 Finding.Layer)
+	}
 	if !r.nest(r.span(p.Expr)) {
 		return false, false
 	}

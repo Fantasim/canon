@@ -80,11 +80,11 @@ a.top = {c: Sub{lim: 2}, b: Sub{lim: 4}}
 
 error[E3802]  a/a.canon:52:20
   hs[1].ps[0]: value does not match P(like) = Int
-  expected by a/a.canon:52 (P(like))
+  expected by a/a.canon:52 (ps: [P(like)])
 
 error[E3802]  a/a.canon:52:24
   hs[1].ps[1]: value does not match P(like) = Int
-  expected by a/a.canon:52 (P(like))
+  expected by a/a.canon:52 (ps: [P(like)])
 
 error[E3802]  a/a.canon:56:16
   hs[1].d: value does not match P(like) = Int

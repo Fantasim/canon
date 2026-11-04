@@ -204,30 +204,30 @@ amend r {
 }
 -- provenance.txt --
 a:r.a.b.c.v = 23
-  literal a/l23.canon:5:15-5:17
-  literal a/l22.canon:5:18-5:20
-  literal a/l21.canon:5:21-5:23
-  literal a/l20.canon:5:15-5:17
-  literal a/l19.canon:5:18-5:20
-  literal a/l18.canon:5:21-5:23
-  literal a/l17.canon:5:15-5:17
-  literal a/l16.canon:5:18-5:20
-  literal a/l15.canon:5:21-5:23
-  literal a/l14.canon:5:15-5:17
-  literal a/l13.canon:5:18-5:20
-  literal a/l12.canon:5:21-5:23
-  literal a/l11.canon:5:15-5:17
-  literal a/l10.canon:5:18-5:20
-  literal a/l9.canon:5:21-5:22
-  literal a/l8.canon:5:15-5:16
-  literal a/l7.canon:5:18-5:19
-  literal a/l6.canon:5:21-5:22
-  literal a/l5.canon:5:15-5:16
-  literal a/l4.canon:5:18-5:19
-  literal a/l3.canon:5:21-5:22
-  literal a/l2.canon:5:15-5:16
-  literal a/l1.canon:5:18-5:19
-  literal a/l0.canon:5:21-5:22
+  literal a/l23.canon:5:15-5:17 layer l23
+  literal a/l22.canon:5:18-5:20 layer l22
+  literal a/l21.canon:5:21-5:23 layer l21
+  literal a/l20.canon:5:15-5:17 layer l20
+  literal a/l19.canon:5:18-5:20 layer l19
+  literal a/l18.canon:5:21-5:23 layer l18
+  literal a/l17.canon:5:15-5:17 layer l17
+  literal a/l16.canon:5:18-5:20 layer l16
+  literal a/l15.canon:5:21-5:23 layer l15
+  literal a/l14.canon:5:15-5:17 layer l14
+  literal a/l13.canon:5:18-5:20 layer l13
+  literal a/l12.canon:5:21-5:23 layer l12
+  literal a/l11.canon:5:15-5:17 layer l11
+  literal a/l10.canon:5:18-5:20 layer l10
+  literal a/l9.canon:5:21-5:22 layer l9
+  literal a/l8.canon:5:15-5:16 layer l8
+  literal a/l7.canon:5:18-5:19 layer l7
+  literal a/l6.canon:5:21-5:22 layer l6
+  literal a/l5.canon:5:15-5:16 layer l5
+  literal a/l4.canon:5:18-5:19 layer l4
+  literal a/l3.canon:5:21-5:22 layer l3
+  literal a/l2.canon:5:15-5:16 layer l2
+  literal a/l1.canon:5:18-5:19 layer l1
+  literal a/l0.canon:5:21-5:22 layer l0
   default a/a.canon:7:12-7:13 via (literal a/a.canon:13:10-13:12)
 
 0 errors, 0 warnings in 1 package (…)

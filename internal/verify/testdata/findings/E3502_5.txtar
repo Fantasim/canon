@@ -52,14 +52,14 @@ project demo {
 -- findings.txt --
 error[E3502]  a/a.canon:36:43
   slots[none]: old is retired; a live value cannot reference it (only a retired entry or a past ref may)
-  expected by a/a.canon:36 (ref tags)
+  expected by a/a.canon:36 (slots: {String: ref tags})
 
 error[E3502]  a/a.canon:36:43
   ta.a.ts["none"]: old is retired; live ta.a cannot reference it (only a retired entry or a past ref may)
-  expected by a/a.canon:32 (ref tags)
+  expected by a/a.canon:32 (ts: {String | "none": ref tags})
 
 error[E3502]  a/a.canon:36:43
   tc.a.ts["none"]: old is retired; live tc.a cannot reference it (only a retired entry or a past ref may)
-  expected by a/a.canon:32 (ref tags)
+  expected by a/a.canon:32 (ts: {String | "none": ref tags})
 
 3 errors, 0 warnings in 1 package (…)

@@ -86,5 +86,6 @@ error[E3204]  a/louis.canon:5:9
 
 error[E1905]  a/louis.canon:17:8
   stock: amend path items[2]: key 2 does not exist
+  set by layer louis
 
 4 errors, 0 warnings in 1 package (…)

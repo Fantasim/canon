@@ -17,6 +17,7 @@ type retiredUse struct {
 	entry   string         // the innermost entry around it, "" for none, as scope.entry
 	retired string         // the innermost retired entry around it, "" for none, as scope.retired
 	ref     *types.RefType // E3502's ref type; nil for E3506
+	holder  source.Span    // E3502: the innermost field or let the ref is stored into (API.md F12)
 	pkg     string         // E3506: the enum or variant, its member or case, and their declarations
 	typ     string
 	name    string
@@ -53,7 +54,7 @@ func (w *walker) retiredTarget(r *value.Ref, rt *types.RefType, target *value.Re
 
 // use keeps u, in sc's entries, for each instance being verified around it, then judges it.
 func (w *walker) use(u retiredUse, sc scope) {
-	u.entry, u.retired = sc.entry, sc.retired
+	u.entry, u.retired, u.holder = sc.entry, sc.retired, sc.holder
 	for _, r := range w.recording {
 		r.uses = append(r.uses, u)
 	}
@@ -79,9 +80,9 @@ func (w *walker) retiredFinding(u retiredUse, span source.Span, entry string) *d
 	case u.ref == nil:
 		return w.src.relatedNode(diag.E3506.At(span, w.local(u.pkg, u.typ), u.name), u.decl, u.node)
 	case entry == "":
-		return w.src.related(diag.E3502.AtValue(span, u.v), u.ref)
+		return w.src.relatedTo(diag.E3502.AtValue(span, u.v), u.holder, u.ref)
 	}
-	return w.src.related(diag.E3502.AtEntry(span, u.v, entry), u.ref)
+	return w.src.relatedTo(diag.E3502.AtEntry(span, u.v, entry), u.holder, u.ref)
 }
 
 // rebased is uses of the instance at prefix, reached at here in sc: their paths, and the entries

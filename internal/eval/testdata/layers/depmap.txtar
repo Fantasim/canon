@@ -45,6 +45,6 @@ a.cfg = Cfg{by: {a: Sub{lim: 3}, n: 2, d: 4}, named: {d: {"k": Sub{lim: 7}}}}
 error[E3802]  a/dev.layer.canon:7:10
   cfg.by[d]: value does not match P(x) = a.Sub(e)
   set by layer dev
-  expected by a/a.canon:22 (P(x))
+  expected by a/a.canon:22 (by: {x in nodes: P(x)})
 
 1 error, 0 warnings in 1 package (…)

@@ -1,0 +1,240 @@
+The verdict matrix TestLayerVerdictMatrix runs (orchestrator ruling EVAL-AMENDNOTE round 6): a dev layer amends server.port at the top level and cfg.server inside cfg; url re-derives from the port, host does not. Set, Reset and Remove on url, host, port and tag, top level and nested, with dev active and edited (A), inactive and edited (B), and active under a base edit (C): the verdicts, the writes and whether the Undo restores the files, which F11's layer on a re-derived default never changes.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Port.
+  port: Int = 1
+  /// Host.
+  host: String = "localhost"
+  /// URL.
+  url: String = "http://{host}:{port}"
+}
+
+/// Server.
+let server: Server = {}
+
+/// Cfg.
+record Cfg {
+  /// Server.
+  server: Server = {}
+  /// Tag.
+  tag: String = "t"
+}
+
+/// Cfg.
+let cfg: Cfg = {}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend server {
+  port: 9000
+}
+
+amend cfg {
+  server: { port: 9000 }
+}
+-- matrix.txt --
+[A a:server.url set] applied
+  a/dev.layer.canon
+    +   url: "x"
+  undo restores
+[A a:server.url reset] applied
+  undo restores
+[A a:server.url remove] refused: operation 0 (a:server.url): value not editable: reason layer
+[A a:server.host set] applied
+  a/dev.layer.canon
+    +   host: "x"
+  undo restores
+[A a:server.host reset] applied
+  undo restores
+[A a:server.host remove] refused: operation 0 (a:server.host): value not editable: reason layer
+[A a:server.port set] applied
+  a/dev.layer.canon
+    -   port: 9000
+    +   port: 7
+  undo restores
+[A a:server.port reset] applied
+  a/dev.layer.canon
+    - amend server {
+    -   port: 9000
+    - }
+    - 
+  undo differs
+  a/dev.layer.canon
+    - amend server {
+    -   port: 9000
+    - }
+    - 
+    - amend cfg {
+    -   server: { port: 9000 }
+    - }
+    + amend cfg {
+    +   server: { port: 9000 }
+    + }
+    + 
+    + amend server { port: 9000 }
+[A a:server.port remove] refused: operation 0 (a:server.port): value not editable: reason layer
+[A a:cfg.server.url set] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: { port: 9000, url: "x" }
+  undo restores
+[A a:cfg.server.url reset] applied
+  undo restores
+[A a:cfg.server.url remove] refused: operation 0 (a:cfg.server.url): operation not valid here
+[A a:cfg.server.host set] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: { port: 9000, host: "x" }
+  undo restores
+[A a:cfg.server.host reset] applied
+  undo restores
+[A a:cfg.server.host remove] refused: operation 0 (a:cfg.server.host): operation not valid here
+[A a:cfg.server.port set] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: { port: 7 }
+  undo restores
+[A a:cfg.server.port reset] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: {}
+  undo restores
+[A a:cfg.server.port remove] refused: operation 0 (a:cfg.server.port): operation not valid here
+[A a:cfg.tag set] applied
+  a/dev.layer.canon
+    +   tag: "x"
+  undo restores
+[A a:cfg.tag reset] applied
+  undo restores
+[A a:cfg.tag remove] refused: operation 0 (a:cfg.tag): value not editable: reason layer
+[B a:server.url set] applied
+  a/dev.layer.canon
+    +   url: "x"
+  undo restores
+[B a:server.url reset] applied
+  undo restores
+[B a:server.url remove] refused: operation 0 (a:server.url): value not editable: reason layer
+[B a:server.host set] applied
+  a/dev.layer.canon
+    +   host: "x"
+  undo restores
+[B a:server.host reset] applied
+  undo restores
+[B a:server.host remove] refused: operation 0 (a:server.host): value not editable: reason layer
+[B a:server.port set] applied
+  a/dev.layer.canon
+    -   port: 9000
+    +   port: 7
+  undo restores
+[B a:server.port reset] applied
+  a/dev.layer.canon
+    - amend server {
+    -   port: 9000
+    - }
+    - 
+  undo differs
+  a/dev.layer.canon
+    - amend server {
+    -   port: 9000
+    - }
+    - 
+    - amend cfg {
+    -   server: { port: 9000 }
+    - }
+    + amend cfg {
+    +   server: { port: 9000 }
+    + }
+    + 
+    + amend server { port: 9000 }
+[B a:server.port remove] refused: operation 0 (a:server.port): value not editable: reason layer
+[B a:cfg.server.url set] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: { port: 9000, url: "x" }
+  undo restores
+[B a:cfg.server.url reset] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: { port: 9000, url: "http://localhost:1" }
+  undo restores
+[B a:cfg.server.url remove] refused: operation 0 (a:cfg.server.url): value not editable: reason layer
+[B a:cfg.server.host set] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: { port: 9000, host: "x" }
+  undo restores
+[B a:cfg.server.host reset] applied
+  undo restores
+[B a:cfg.server.host remove] refused: operation 0 (a:cfg.server.host): value not editable: reason layer
+[B a:cfg.server.port set] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: { port: 7 }
+  undo restores
+[B a:cfg.server.port reset] applied
+  a/dev.layer.canon
+    -   server: { port: 9000 }
+    +   server: {}
+  undo restores
+[B a:cfg.server.port remove] refused: operation 0 (a:cfg.server.port): value not editable: reason layer
+[B a:cfg.tag set] applied
+  a/dev.layer.canon
+    +   tag: "x"
+  undo restores
+[B a:cfg.tag reset] applied
+  undo restores
+[B a:cfg.tag remove] refused: operation 0 (a:cfg.tag): value not editable: reason layer
+[C a:server.url set] applied
+  a/a.canon
+    - let server: Server = {}
+    + let server: Server = { port: 9000, url: "x" }
+  undo differs
+  a/a.canon
+    - let server: Server = {}
+    + let server: Server = { port: 9000 }
+[C a:server.url reset] applied
+  undo restores
+[C a:server.url remove] refused: operation 0 (a:server.url): operation not valid here
+[C a:server.host set] applied
+  a/a.canon
+    - let server: Server = {}
+    + let server: Server = { port: 9000, host: "x" }
+  undo differs
+  a/a.canon
+    - let server: Server = {}
+    + let server: Server = { port: 9000 }
+[C a:server.host reset] applied
+  undo restores
+[C a:server.host remove] refused: operation 0 (a:server.host): operation not valid here
+[C a:server.port set] refused: operation 0 (a:server.port): value not editable: reason layered
+[C a:server.port reset] refused: operation 0 (a:server.port): value not editable: reason layered
+[C a:server.port remove] refused: operation 0 (a:server.port): value not editable: reason layered
+[C a:cfg.server.url set] refused: operation 0 (a:cfg.server.url): value not editable: reason layered
+[C a:cfg.server.url reset] refused: operation 0 (a:cfg.server.url): value not editable: reason layered
+[C a:cfg.server.url remove] refused: operation 0 (a:cfg.server.url): value not editable: reason layered
+[C a:cfg.server.host set] refused: operation 0 (a:cfg.server.host): value not editable: reason layered
+[C a:cfg.server.host reset] refused: operation 0 (a:cfg.server.host): value not editable: reason layered
+[C a:cfg.server.host remove] refused: operation 0 (a:cfg.server.host): value not editable: reason layered
+[C a:cfg.server.port set] refused: operation 0 (a:cfg.server.port): value not editable: reason layered
+[C a:cfg.server.port reset] refused: operation 0 (a:cfg.server.port): value not editable: reason layered
+[C a:cfg.server.port remove] refused: operation 0 (a:cfg.server.port): value not editable: reason layered
+[C a:cfg.tag set] applied
+  a/a.canon
+    - let cfg: Cfg = {}
+    + let cfg: Cfg = { server: { port: 9000 }, tag: "x" }
+  undo differs
+  a/a.canon
+    - let cfg: Cfg = {}
+    + let cfg: Cfg = { server: { port: 9000 } }
+[C a:cfg.tag reset] applied
+  undo restores
+[C a:cfg.tag remove] refused: operation 0 (a:cfg.tag): operation not valid here

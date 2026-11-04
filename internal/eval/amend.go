@@ -19,7 +19,7 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	if i < 0 {
 		return r.addEntry(cur, t, segs, m, key)
 	}
-	nv, fresh := r.freshly(func() value.Value { return r.next(elems[i], elementType(t), segs, m, site{}) })
+	nv, fresh := r.freshly(func() value.Value { return r.next(elems[i], elementType(t), segs, m) })
 	if nv == nil {
 		return nil
 	}
@@ -57,11 +57,16 @@ func (r *run) inRange(seg *syntax.AmendSegment, m *amending, n int64, size int, 
 	}
 	if i < 0 || i >= int64(size) {
 		if !m.quiet {
-			r.fail(diag.E1905.AtIndex(r.span(seg), m.path, n))
+			r.unreached(m, diag.E1905.AtIndex(r.span(seg), m.path, n))
 		}
 		return 0, nil, false
 	}
 	return int(i), key, true
+}
+
+// unreached is the hard E1905 b, set by the layer whose amendment's path it is (API.md F11).
+func (r *run) unreached(m *amending, b *diag.Builder) {
+	r.fail(b.Layer(m.layer))
 }
 
 // keyOf is the key a segment writes, evaluated once per amendment (locate, then the replace).
@@ -87,13 +92,13 @@ func (r *run) addEntry(cur value.Value, t types.Type, segs []*syntax.AmendSegmen
 	tbl, isTable := cur.(*value.Table)
 	tt, _ := t.Base().(*types.TableType)
 	if !isTable || len(segs) > 1 || tt == nil {
-		r.fail(diag.E1905.AtKey(r.span(segs[0]), m.path, key))
+		r.unreached(m, diag.E1905.AtKey(r.span(segs[0]), m.path, key))
 		return nil
 	}
 	if tt.Stable {
 		return r.forbid(m, m.root.Name(), "")
 	}
-	v, fresh := r.freshly(func() value.Value { return r.store(m.rhs, tt.Elem, site{}, m.pathAfter(len(m.a.Path))) })
+	v, fresh := r.freshly(func() value.Value { return r.store(m.rhs, tt.Elem, m.holder, m.pathAfter(len(m.a.Path))) })
 	rec, ok := v.(*value.Record)
 	if !ok {
 		r.bug(segs[0])
@@ -125,7 +130,7 @@ func (r *run) setMapKey(mp *value.Map, t types.Type, segs []*syntax.AmendSegment
 		vt = mapValueType(t)
 	}
 	if i < 0 && len(segs) > 1 {
-		r.fail(diag.E1905.AtKey(r.span(seg), m.path, key))
+		r.unreached(m, diag.E1905.AtKey(r.span(seg), m.path, key))
 		return nil
 	}
 	var cur value.Value
@@ -134,7 +139,7 @@ func (r *run) setMapKey(mp *value.Map, t types.Type, segs []*syntax.AmendSegment
 	} else if p := key.Prov(); p != nil {
 		key = r.ev.reprov(key, &value.Prov{Kind: value.ProvLayer, Span: p.Span, Ext: &value.ProvExt{Layer: m.layer}}, true)
 	}
-	nv := r.next(cur, vt, segs, m, site{})
+	nv := r.next(cur, vt, segs, m)
 	if nv == nil {
 		return nil
 	}
@@ -147,7 +152,7 @@ func (r *run) mapSlot(mp *value.Map, seg *syntax.AmendSegment, m *amending) (int
 		i := seg.Position.Value.Int64()
 		if i < 0 || i >= int64(len(mp.Keys)) {
 			if !m.quiet {
-				r.fail(diag.E1905.AtIndex(r.span(seg), m.path, i))
+				r.unreached(m, diag.E1905.AtIndex(r.span(seg), m.path, i))
 			}
 			return 0, nil, false
 		}

@@ -1,0 +1,52 @@
+TYPES.md §7.4, EVALUATION.md §4.3, API.md F12, ERRORS.md §1.5 (orchestrator ruling EVAL-AMENDNOTE): a computed value stored outside a range refinement is E3204 whose related note names the holder, the field, let or parameter whose declared type it is stored into: an element of a list, a map value and a scalar, the refinement written in the element type or through an alias, as check names it for a literal.
+-- a/a.canon --
+/// A.
+package a
+
+/// Small.
+type Small = Int(0..10)
+
+/// R.
+record R {
+  /// Vs.
+  vs: [Int(0..10)] = []
+  /// By name.
+  by: {String: Small} = {}
+}
+
+/// A list element.
+let xs: [Int(0..10)] = [5 * 4]
+
+/// A scalar through an alias.
+let s: Small = 5 * 5
+
+/// A field's element and map value.
+let r: R = { vs: [5 * 6], by: { "a": 5 * 7 } }
+
+/// Through a parameter.
+fn f(n: Small) -> Int { return n }
+
+/// A parameter's argument.
+let p: Int = f(5 * 8)
+-- findings.txt --
+error[E3204]  a/a.canon:16:25
+  xs[0]: 20 is outside 0..10
+  expected by a/a.canon:16 (xs: [Int(0..10)])
+
+error[E3204]  a/a.canon:19:16
+  s: 25 is outside 0..10
+  expected by a/a.canon:19 (s: Small)
+
+error[E3204]  a/a.canon:22:19
+  r.vs[0]: 30 is outside 0..10
+  expected by a/a.canon:10 (vs: [Int(0..10)])
+
+error[E3204]  a/a.canon:22:38
+  r.by[a]: 35 is outside 0..10
+  expected by a/a.canon:12 (by: {String: Small})
+
+error[E3204]  a/a.canon:28:16
+  40 is outside 0..10
+  expected by a/a.canon:25 (n: Small)
+
+5 errors, 0 warnings in 1 package (…)

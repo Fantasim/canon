@@ -33,7 +33,7 @@ func (w *walker) ref(r *value.Ref, t types.Type, sc scope, at *Path) {
 	target, found := entries[r.Key]
 	if !found {
 		s := SiteOf(r)
-		w.flag(s, w.src.related(diag.E3501.At(s.Span, r, w.collName(rt.Target)), rt), r, at)
+		w.flag(s, w.src.relatedTo(diag.E3501.At(s.Span, r, w.collName(rt.Target)), sc.holder, rt), r, at)
 		return
 	}
 	w.retiredTarget(r, rt, target, at, sc)

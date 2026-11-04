@@ -28,10 +28,10 @@ func TestFindings(t *testing.T) {
 	}, golden.Expected(findingsFile))
 }
 
-// caseOptions is the evaluator's options of a case: its budget file, if any.
+// caseOptions is the evaluator's options of a case: its budget file and its layers file, if any.
 func caseOptions(t *testing.T, c golden.Case) eval.Options {
 	t.Helper()
-	var opt eval.Options
+	opt := eval.Options{Layers: strings.Fields(string(archiveFile(c.Archive, layersFile)))}
 	for _, f := range c.Archive.Files {
 		if f.Name == budgetFile {
 			n, err := strconv.ParseInt(strings.TrimSpace(string(f.Data)), 10, 64)

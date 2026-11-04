@@ -1,0 +1,54 @@
+TYPES.md §7.4, EVALUATION.md §4.3, §9.3, API.md F12, ERRORS.md §1.5 (orchestrator ruling EVAL-AMENDNOTE): a value an amendment stores into a list element or a map value outside its range refinement, written in the element type or through an alias, is E3204 set by its layer, whose related note names the holder, the field whose declared type the value is stored into, never the element's own refinement.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Small.
+type Small = Int(0..10)
+
+/// Config.
+record Config {
+  /// Vs.
+  vs: [Int(0..10)] = [1]
+  /// By name.
+  by: {String: Small} = { "a": 1 }
+  /// Short names.
+  names: [String(..=2)] = ["a"]
+}
+
+/// Config.
+let config: Config = {}
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  vs[0]: 5 * 4
+  by["a"]: 5 * 5
+  by["b"]: 5 * 6
+  names[0]: "abc" + "d"
+}
+-- findings.txt --
+error[E3204]  a/dev.canon:5:10
+  config.vs[0]: 20 is outside 0..10
+  set by layer dev
+  expected by a/a.canon:10 (vs: [Int(0..10)])
+
+error[E3204]  a/dev.canon:6:12
+  config.by[a]: 25 is outside 0..10
+  set by layer dev
+  expected by a/a.canon:12 (by: {String: Small})
+
+error[E3204]  a/dev.canon:7:12
+  config.by[b]: 30 is outside 0..10
+  set by layer dev
+  expected by a/a.canon:12 (by: {String: Small})
+
+error[E3204]  a/dev.canon:8:13
+  config.names[0]: abcd is outside ..=2
+  set by layer dev
+  expected by a/a.canon:14 (names: [String(..=2)])
+
+4 errors, 0 warnings in 1 package (…)

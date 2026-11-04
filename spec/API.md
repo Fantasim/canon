@@ -412,7 +412,12 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
   (`  heaviest: plan (98412330 steps)`, EVALUATION.md §12.2).
 - **F11.** When `Layer` is set: `  set by layer <layer>`. `Layer` names the layer whose amendment
   produced the value; a finding an edit's re-check adds for an inactive layer (E18) that names none
-  names that layer (DECISIONS 463).
+  names that layer (DECISIONS 463). A value an amendment's right-hand side builds, or a call, lambda,
+  default or `where` computes while it runs, carries the amendment's layer, as does an `E1905` its path
+  raises; a default EVALUATION §9.3 step 3 re-derives takes the layer of the last amendment that
+  changed a field it or its type's arguments read, else none. The layer is blame, not text: an edit
+  counts a value as stated by a layer only when its origin is that amendment's right-hand side
+  (DECISIONS 464).
 - **F12.** One line per `Related` element, in order: `  expected by <file>:<line>`, then
   ` (<note>)` when the note is not empty; a related element without a file is
   `  expected by (<note>)`. For example:
@@ -424,7 +429,10 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
   ```
 
   A related location is always something the value was checked against: the field declaration
-  whose type it failed (note: the declaration, `productionItem: ref items`), the check (note: F4),
+  whose type it failed (note: the declaration, `productionItem: ref items`): for an element, a map key or
+  value, a table entry or a dependent branch, its holder, the innermost field, let, parameter or `fn`
+  return annotation whose declared type it is stored into, in evaluation and verification alike (a
+  refinement or alias written inside that type only when no declaration holds it; DECISIONS 464), the check (note: F4),
   an annotation or a refinement. For a value checked against a `ref`, the declaration is the chain's
   leaf key field whose range or refinement it failed (DECISIONS 456); for a key of an amend path
   into a map, the map's declaration. An `E3201` on a negation's operand, or on a negation's value whose

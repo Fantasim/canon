@@ -45,6 +45,6 @@ let plain: [InJ2] = [lr]
 -- build.txt --
 error[E3206]  a/a.canon:27:15
   j1[y]: Row{code: "y", kind: count, bonus: 3} fails where it == j2["y"]
-  expected by a/a.canon:24 (Row where it == j2["y"])
+  expected by a/a.canon:30 (j1: [InJ2] keyed by code)
 
 1 error, 0 warnings in 1 package (…)

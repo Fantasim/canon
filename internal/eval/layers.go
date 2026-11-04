@@ -26,16 +26,17 @@ func (e *Evaluator) StableAmendments() []StableAmendment {
 // amending is one amendment being applied: its value, the instances on its path, outermost
 // first, what a type argument names where the path lands, and the keys its path evaluated.
 type amending struct {
-	layer string
-	a     *syntax.Amendment
-	rhs   value.Value
-	path  string
-	root  check.Object
-	at    []*value.Record
-	dep   *depCtx
-	keys  map[*syntax.AmendSegment]value.Value
-	trail []*vpath // the path after each segment locate followed (API.md F1)
-	quiet bool     // the path is being located: a missing segment is the replace's E1905
+	layer  string
+	a      *syntax.Amendment
+	rhs    value.Value
+	path   string
+	root   check.Object
+	holder site // the innermost field or let on the path: a stored value names its declaration (API.md F12)
+	at     []*value.Record
+	dep    *depCtx
+	keys   map[*syntax.AmendSegment]value.Value
+	trail  []*vpath // the path after each segment locate followed (API.md F1)
+	quiet  bool     // the path is being located: a missing segment is the replace's E1905
 }
 
 // applyLayers applies a let's amendments, layer order then source order (EVALUATION.md §9.3).
@@ -84,8 +85,9 @@ func (r *run) amend(obj check.Object, blk *syntax.AmendBlock, a *syntax.Amendmen
 	}
 	saved := r.fr
 	r.fr = r.ev.rootFrame(r.ev.fileOf(blk))
+	r.fr.layer = layer // what its right-hand side computes, called frames included, is the layer's (API.md §4, F11)
 	defer func() { r.fr = saved }()
-	m := &amending{layer: layer, a: a, root: obj, path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}}
+	m := &amending{layer: layer, a: a, root: obj, holder: objSite(obj), path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}}
 	m.dep = &depCtx{field: obj.Type(), at: a.Value}
 	if r.locate(v, obj.Type(), m); r.failed {
 		return nil
@@ -123,13 +125,13 @@ func (r *run) setPath(cur value.Value, t types.Type, segs []*syntax.AmendSegment
 	case *value.Map:
 		return r.setMapKey(x, t, segs, m)
 	case *value.None:
-		r.fail(diag.E1905.AtNone(r.span(seg), m.path))
+		r.unreached(m, diag.E1905.AtNone(r.span(seg), m.path))
 		return nil
 	}
 	if keyedColl(cur) || isPlainList(cur) {
 		return r.setElement(cur, t, segs, m)
 	}
-	r.fail(diag.E1905.AtField(r.span(seg), m.path))
+	r.unreached(m, diag.E1905.AtField(r.span(seg), m.path))
 	return nil
 }
 
@@ -146,13 +148,14 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 		i = fieldIndex(rec.T, seg.Name.Name)
 	}
 	if i < 0 {
-		r.fail(r.noField(rec, seg, m))
+		r.unreached(m, r.noField(rec, seg, m))
 		return nil
 	}
 	f := fieldsOf(rec.T)[i]
-	m.at = append(m.at, rec)
-	defer func() { m.at = m.at[:len(m.at)-1] }()
-	nv := r.next(rec.Fields[i], f.Type, segs, m, r.ev.fieldSite(f, rec.T))
+	outer := m.holder
+	m.at, m.holder = append(m.at, rec), r.ev.fieldSite(f, rec.T)
+	defer func() { m.at, m.holder = m.at[:len(m.at)-1], outer }()
+	nv := r.next(rec.Fields[i], f.Type, segs, m)
 	if nv == nil {
 		return nil
 	}
@@ -180,11 +183,11 @@ func (r *run) noField(rec *value.Record, seg *syntax.AmendSegment, m *amending) 
 	return diag.E1905.AtField(r.span(seg), m.path)
 }
 
-// next is the new value at a segment: the amendment's value converted at its storage point
-// when it is the last, else the rest of the path applied to the current value.
-func (r *run) next(cur value.Value, t types.Type, segs []*syntax.AmendSegment, m *amending, s site) value.Value {
+// next is the new value at a segment: the amendment's value converted at its storage point,
+// related to its holder, when it is the last, else the rest of the path applied to the current value.
+func (r *run) next(cur value.Value, t types.Type, segs []*syntax.AmendSegment, m *amending) value.Value {
 	if len(segs) == 1 {
-		nv := r.store(m.rhs, t, s, m.pathAfter(len(m.a.Path)))
+		nv := r.store(m.rhs, t, m.holder, m.pathAfter(len(m.a.Path)))
 		if field, table, found := stableChange(cur, nv, t); found {
 			return r.forbid(m, tableName(table, m), field)
 		}
@@ -192,7 +195,7 @@ func (r *run) next(cur value.Value, t types.Type, segs []*syntax.AmendSegment, m
 		return nv
 	}
 	if cur == nil || isNone(cur) {
-		r.fail(diag.E1905.AtNone(r.span(segs[0]), m.path))
+		r.unreached(m, diag.E1905.AtNone(r.span(segs[0]), m.path))
 		return nil
 	}
 	return r.setPath(cur, unwrapOptional(t), segs[1:], m)
@@ -206,13 +209,17 @@ func unwrapOptional(t types.Type) types.Type {
 }
 
 // derive re-evaluates, in declaration order, the fields after field i that came from their
-// defaults (not written, not amended).
+// defaults (not written, not amended); changed marks i and each one re-derived from it.
 func (r *run) derive(rec *value.Record, i int, at *vpath) bool {
-	for j, f := range fieldsOf(rec.T) {
+	fields := fieldsOf(rec.T)
+	changed := make([]bool, len(fields))
+	changed[i] = true
+	for j, f := range fields {
 		if j <= i || rec.Set[j] || f.Default == nil || f.Input != nil {
 			continue
 		}
-		v := r.defaultValue(rec, f, at.field(f.Name), rec.P)
+		changed[j] = r.ev.readsChanged(f, fields, changed)
+		v := r.rederive(rec, j, at.field(f.Name), changed[j])
 		if v == nil {
 			return false
 		}

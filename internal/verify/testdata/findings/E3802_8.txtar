@@ -46,7 +46,7 @@ project demo {
 -- findings.txt --
 error[E3204]  a/a.canon:34:17
   things[2].p: [red, blue, red] is outside ..=2
-  expected by a/a.canon:18 ([Target(g)](..=2))
+  expected by a/a.canon:27 (p: Wrap(g))
 
 error[E3802]  a/a.canon:35:23
   things[3].p[1]: value does not match Wrap(g) = [a.Color](..=2)

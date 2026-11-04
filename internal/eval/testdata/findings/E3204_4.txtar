@@ -1,0 +1,66 @@
+API.md F12, EVALUATION.md §4.3, §14 (orchestrator ruling EVAL-AMENDNOTE): evaluation's store and verification report the same refinement finding once, and both name the holder, so the note does not depend on which is written first. Here the aliases are written BEFORE their holders; E3204_5 writes them after, with the same notes: a list element, a map value and a scalar, stored and amended, E3204 and E3206.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Small.
+type Small = Int(0..10)
+
+/// Even.
+type Even = Int where it % 2 == 0
+
+/// Config.
+record Config {
+  /// Vs.
+  vs: [Small] = [5 * 4]
+  /// By name.
+  by: {String: Even} = { "a": 1 + 2 }
+  /// One.
+  one: Small = 1
+}
+
+/// Config.
+let config: Config = {}
+
+/// A scalar.
+let s: Small = 5 * 5
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  vs[0]: 5 * 6
+  by["b"]: 1 + 4
+  one: 5 * 7
+}
+-- findings.txt --
+error[E3204]  a/a.canon:13:18
+  config.vs[0]: 20 is outside 0..10
+  expected by a/a.canon:13 (vs: [Small])
+
+error[E3206]  a/a.canon:15:31
+  config.by[a]: 3 fails where it % 2 == 0
+  expected by a/a.canon:15 (by: {String: Even})
+
+error[E3204]  a/a.canon:24:16
+  s: 25 is outside 0..10
+  expected by a/a.canon:24 (s: Small)
+
+error[E3204]  a/dev.canon:5:10
+  config.vs[0]: 30 is outside 0..10
+  set by layer dev
+  expected by a/a.canon:13 (vs: [Small])
+
+error[E3206]  a/dev.canon:6:12
+  config.by[b]: 5 fails where it % 2 == 0
+  set by layer dev
+  expected by a/a.canon:15 (by: {String: Even})
+
+error[E3204]  a/dev.canon:7:8
+  config.one: 35 is outside 0..10
+  set by layer dev
+  expected by a/a.canon:17 (one: Small)
+
+6 errors, 0 warnings in 1 package (…)

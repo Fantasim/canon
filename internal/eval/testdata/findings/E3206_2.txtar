@@ -1,0 +1,63 @@
+TYPES.md §7.4, EVALUATION.md §4.3, §9.3, API.md F12, ERRORS.md §1.5 (orchestrator ruling EVAL-AMENDNOTE): an amendment storing into a list element, a map value or a let's keyed-list entry a value its where refinement refuses is E3206 set by its layer, whose related note names the holder, the field or let whose declared type the value is stored into, never the alias the predicate is written in.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Even.
+type Even = Int where it % 2 == 0
+
+/// Item.
+record Item {
+  /// Name.
+  name: String
+  /// N.
+  n: Int = 0
+}
+
+/// Positive item.
+type Pos = Item where it.n >= 0
+
+/// Config.
+record Config {
+  /// Evens.
+  evens: [Even] = [2]
+  /// By name.
+  by: {String: Even} = { "a": 2 }
+}
+
+/// Config.
+let config: Config = {}
+
+/// Items.
+let items: [Pos] keyed by name = [{ name: "a" }]
+-- a/dev.canon --
+package a
+layer dev
+
+amend config {
+  evens[0]: 1 + 2
+  by["a"]: 1 + 4
+}
+
+amend items {
+  a: { name: "a", n: 0 - 1 }
+}
+-- findings.txt --
+error[E3206]  a/dev.canon:5:13
+  config.evens[0]: 3 fails where it % 2 == 0
+  set by layer dev
+  expected by a/a.canon:21 (evens: [Even])
+
+error[E3206]  a/dev.canon:6:12
+  config.by[a]: 5 fails where it % 2 == 0
+  set by layer dev
+  expected by a/a.canon:23 (by: {String: Even})
+
+error[E3206]  a/dev.canon:10:6
+  items[a]: Item{name: "a", n: -1} fails where it.n >= 0
+  set by layer dev
+  expected by a/a.canon:30 (items: [Pos] keyed by name)
+
+3 errors, 0 warnings in 1 package (…)

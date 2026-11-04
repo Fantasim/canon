@@ -13,7 +13,7 @@ import (
 )
 
 // uniqueKeys reports each keyed-list key already used, at the second key (TYPES.md §9.1).
-func (w *walker) uniqueKeys(l *value.List, lt *types.ListType, at *Path) {
+func (w *walker) uniqueKeys(l *value.List, lt *types.ListType, at *Path, holder source.Span) {
 	key := lt.KeyedBy
 	first := map[value.Key]value.Value{}
 	for _, e := range l.Elems {
@@ -28,7 +28,7 @@ func (w *walker) uniqueKeys(l *value.List, lt *types.ListType, at *Path) {
 			continue
 		}
 		s := SiteOf(k)
-		b := w.src.related(diag.E3102.AtKey(s.Span, k, SiteOf(prev).Span), lt)
+		b := w.src.relatedTo(diag.E3102.AtKey(s.Span, k, SiteOf(prev).Span), holder, lt)
 		w.flag(s, b, k, at.Key(r.Ident.Key).Field(key.Name))
 	}
 }
@@ -92,7 +92,7 @@ type stableValue struct {
 }
 
 // uniqueStable reports a @stable value held twice, retired entries included (LOCK.md §1).
-func (w *walker) uniqueStable(tv *value.Table, tt *types.TableType, at *Path) {
+func (w *walker) uniqueStable(tv *value.Table, tt *types.TableType, at *Path, holder source.Span) {
 	for _, f := range Fields(tt.Elem) {
 		if !f.Stable {
 			continue
@@ -111,7 +111,7 @@ func (w *walker) uniqueStable(tv *value.Table, tt *types.TableType, at *Path) {
 				first[sv] = v
 			default:
 				s := SiteOf(v)
-				b := w.src.related(diag.E3102.AtStable(s.Span, v, SiteOf(prev).Span), tt)
+				b := w.src.relatedTo(diag.E3102.AtStable(s.Span, v, SiteOf(prev).Span), holder, tt)
 				w.flag(s, b, v, at.Entry(e.Ident.Key).Field(f.Name))
 			}
 		}

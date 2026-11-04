@@ -1,0 +1,47 @@
+API.md §4 Finding.Layer, F11, EVALUATION.md §9.3 step 3 (orchestrator ruling EVAL-AMENDNOTE round 6): a re-derived default's layer is the last amendment that changed a field it reads; a later amendment of a field it does not read keeps that layer, so the order of a layer's lines changes nothing: url, outside its refinement once port is amended, is set by layer one whether port's line comes before name's (first) or after (second).
+-- layers --
+one
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Port.
+  port: Int = 1
+  /// Name.
+  name: String = "n"
+  /// URL.
+  url: String(..=6) = "h:{port}"
+}
+
+/// Port first.
+let first: Server = {}
+
+/// Name first.
+let second: Server = {}
+-- a/one.canon --
+package a
+layer one
+
+amend first {
+  port: 90000
+  name: "x"
+}
+
+amend second {
+  name: "x"
+  port: 90001
+}
+-- findings.txt --
+error[E3204]  a/a.canon:11:23
+  first.url: h:90000 is outside ..=6
+  set by layer one
+  expected by a/a.canon:11 (url: String(..=6))
+
+error[E3204]  a/a.canon:11:23
+  second.url: h:90001 is outside ..=6
+  set by layer one
+  expected by a/a.canon:11 (url: String(..=6))
+
+2 errors, 0 warnings in 1 package (…)

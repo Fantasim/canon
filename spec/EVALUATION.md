@@ -786,7 +786,11 @@ Rules:
   call stack at that moment.
 - A value that is only passed along (bound, returned, stored, converted, dereferenced) keeps its
   provenance. Conversions never change it.
-- An amended sub-value: the right-hand side in the layer file, with `layer` set.
+- An amended sub-value: the right-hand side in the layer file, with `layer` set. So is every value
+  computed while it runs, in a called function, a lambda, a default or a `where`, each keeping its own
+  span and stack; a default re-derived after it (§9.3 step 3) takes the layer of the last amendment
+  that changed a field it or its type's arguments read, and one no amendment changed keeps its
+  provenance (DECISIONS 464).
 
 The **value path** of a finding (SPEC §21.1) is the path from its top-level value to the located
 value, in the syntax of CLI §2.6 and API-02 (keyed lists and tables by key). A finding about a

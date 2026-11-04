@@ -46,11 +46,11 @@ let r: R = { s: "Z" }
 -- findings.txt --
 error[E3206]  a/a.canon:35:14
   z1: Z fails where rows.hasKey(it)
-  expected by a/a.canon:17 (String where rows.hasKey(it))
+  expected by a/a.canon:35 (z1: T1)
 
 error[E3206]  a/a.canon:38:14
   z2: it fails where rows.get(it) != none
-  expected by a/a.canon:20 (String where rows.get(it) != none)
+  expected by a/a.canon:38 (z2: T2)
 
 error[E3206]  a/a.canon:41:17
   r.s: Z fails where rows.hasKey(it)

@@ -44,11 +44,11 @@ project demo {
 -- findings.txt --
 error[E3501]  a/a.canon:25:11
   picks["none"]: unknown key blue in tags
-  expected by a/a.canon:24 (ref tags)
+  expected by a/a.canon:24 (picks: {String | "none": ref tags})
 
 error[E3501]  a/a.canon:26:12
   picks[other]: unknown key green in tags
-  expected by a/a.canon:24 (ref tags)
+  expected by a/a.canon:24 (picks: {String | "none": ref tags})
 
 error[E5001]  a/a.canon:32:11
   slots["none"]: the slot is too big

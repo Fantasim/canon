@@ -79,11 +79,14 @@ warning[W1002]  a/a.canon:7:12
 
 error[E1905]  a/bad.canon:5:5
   index: amend path xs[5]: index 5 out of range
+  set by layer bad
 
 error[E1905]  a/bad.canon:9:3
   hole: amend path inner.n: passes through none
+  set by layer bad
 
 error[E1905]  a/bad.canon:13:8
   case_: amend path shape.w: case circle has no field w
+  set by layer bad
 
 3 errors, 2 warnings in 1 package (…)

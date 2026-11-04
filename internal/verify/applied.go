@@ -36,7 +36,7 @@ func (w *walker) appliedArgs(rec *value.Record, t types.Type, at *Path, sc scope
 		return
 	}
 	s := SiteOf(rec)
-	b := w.src.related(diag.E3802.At(s.Span, w.src.types[app].typ, applied{rec: app.Rec, args: args}), app)
+	b := w.src.relatedTo(diag.E3802.At(s.Span, w.src.types[app].typ, applied{rec: app.Rec, args: args}), sc.holder, app)
 	w.report(s, b, at)
 	if sc.env != nil && sc.env.rec != nil {
 		w.invalid(sc.env.rec) // the instance holding it, which stays valid where it was built

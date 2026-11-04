@@ -167,3 +167,13 @@ func Fits(s *Snapshot, r Resolved, op Op) bool {
 	res, err := s.reopen(r)
 	return err == nil && s.fits(op, res)
 }
+
+// LayerStates reports r's target stated by layer x, and whether its path has a value without x's lines (API.md W11).
+func LayerStates(s *Snapshot, r Resolved, x string) (stated, kept bool) {
+	res, err := s.reopen(r)
+	if err != nil || res.Target == nil {
+		return false, false
+	}
+	_, kept = s.withoutLayer(res, x)
+	return s.statedBy(res.Target, x), kept
+}

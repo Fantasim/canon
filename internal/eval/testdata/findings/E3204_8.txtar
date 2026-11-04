@@ -1,0 +1,47 @@
+API.md F12, ERRORS.md §1.5 (orchestrator ruling EVAL-AMENDNOTE round 6): a fn's return annotation is the holder of the value it returns, the declaration whose declared type that value is checked against; a computed value outside its refinement, as a list element and as a scalar, names it, as check names it for a literal returned.
+-- a/a.canon --
+/// A.
+package a
+
+/// Small.
+type Small = Int(0..10)
+
+/// A list of small numbers.
+fn listed() -> [Small] {
+  return [5 * 5]
+}
+
+/// One small number.
+fn one() -> Small {
+  return 5 * 6
+}
+
+/// A literal returned, which check judges.
+fn lit() -> Small {
+  return 25
+}
+
+/// Listed.
+let l: [Int] = listed()
+
+/// One.
+let n: Int = one()
+
+/// Lit.
+let m: Int = lit()
+-- findings.txt --
+error[E3204]  a/a.canon:9:11
+  25 is outside 0..10
+  expected by a/a.canon:8 ([Small])
+  in listed (a/a.canon:23)
+
+error[E3204]  a/a.canon:14:10
+  30 is outside 0..10
+  expected by a/a.canon:13 (Small)
+  in one (a/a.canon:26)
+
+error[E3204]  a/a.canon:19:10
+  25 is outside 0..10
+  expected by a/a.canon:18 (Small)
+
+3 errors, 0 warnings in 1 package (…)

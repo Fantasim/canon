@@ -57,14 +57,14 @@ project demo {
 -- findings.txt --
 error[E3802]  a/a.canon:46:29
   roles[1].kinds[0]: value does not match Member(column.values) = Never
-  expected by a/a.canon:38 (Member(column.values))
+  expected by a/a.canon:38 (kinds: [Member(column.values)](1..))
 
 error[E3802]  a/a.canon:47:29
   roles[2].kinds[0]: value does not match Member(column.values) = Never
-  expected by a/a.canon:38 (Member(column.values))
+  expected by a/a.canon:38 (kinds: [Member(column.values)](1..))
 
 error[E3802]  a/a.canon:47:43
   roles[2].maybe: value does not match Member(column.values) = Never
-  expected by a/a.canon:40 (Member(column.values))
+  expected by a/a.canon:40 (maybe: Member(column.values)?)
 
 3 errors, 0 warnings in 1 package (…)

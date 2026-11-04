@@ -1,0 +1,81 @@
+EVALUATION.md §9.3 step 2, API.md F11 (orchestrator ruling EVAL-AMENDNOTE): under an active layer, an amend path that no longer exists when applied (a missing keyed-list key, a missing map key on the way, none on the way, an index out of range) is a hard E1905 set by the layer whose line raised it.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Item.
+record Item {
+  /// Id.
+  id: Int
+  /// N.
+  n: Int = 0
+}
+
+/// Inner.
+record Inner {
+  /// N.
+  n: Int = 0
+}
+
+/// Config.
+record Config {
+  /// Items.
+  items: [Item] keyed by id = [{ id: 1 }]
+  /// By name.
+  by: {String: Inner} = {}
+  /// Maybe.
+  maybe: Inner?
+  /// Ns.
+  ns: [Int] = [1]
+}
+
+/// Keyed.
+let keyed: Config = {}
+
+/// Mapped.
+let mapped: Config = {}
+
+/// Absent.
+let absent: Config = {}
+
+/// Indexed.
+let indexed: Config = {}
+-- a/dev.canon --
+package a
+layer dev
+
+amend keyed {
+  items[2]: { id: 2 }
+}
+
+amend mapped {
+  by["x"].n: 1
+}
+
+amend absent {
+  maybe.n: 1
+}
+
+amend indexed {
+  ns[3]: 2
+}
+-- findings.txt --
+error[E1905]  a/dev.canon:5:8
+  keyed: amend path items[2]: key 2 does not exist
+  set by layer dev
+
+error[E1905]  a/dev.canon:9:5
+  mapped: amend path by["x"].n: key x does not exist
+  set by layer dev
+
+error[E1905]  a/dev.canon:13:3
+  absent: amend path maybe.n: passes through none
+  set by layer dev
+
+error[E1905]  a/dev.canon:17:5
+  indexed: amend path ns[3]: index 3 out of range
+  set by layer dev
+
+4 errors, 0 warnings in 1 package (…)

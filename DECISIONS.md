@@ -4809,3 +4809,20 @@ round 2", "PS1 review", "PS2 round 2"):
      `canon check` is unchanged (a question for Louis). Reason: v0.3 run (EDIT-WAYOUT review,
      EDIT-ALLLAYERS rounds 1-2): a base edit passed while breaking an inactive layer (`E3802`,
      `E1905` once it was activated).
+
+464. **A finding's related note names the value's holder, and its layer is the amendment that
+     produced the value (API.md F11, F12; EVALUATION.md §9.3, §13, §14).** A value stored, amended or
+     verified names in its related note its holder: the innermost field, let, parameter or `fn` return
+     annotation whose declared type it is stored into, for an element, a map key or value, a table
+     entry, a `ref` and a dependent branch alike, refinement, range, ref (`E3501`, `E3502`), key
+     (`E3102`) and dependent findings alike; a refinement, alias or application written inside that
+     type is named only when no declaration holds it. Evaluation and verification so give one note
+     whatever the source order (§14). `Layer` is blame, not text: a value an amendment's right-hand
+     side builds, or a call, lambda, default or `where` computes while it runs, carries the
+     amendment's layer, as does an `E1905` its path raises; a default §9.3 step 3 re-derives takes the
+     layer of the last amendment that changed a field it or its type's arguments read (by name, `self`
+     or another such default), else none. An edit counts a value as stated by a layer only when its
+     origin is that amendment's right-hand side or text in the layer's files, so no edit verdict
+     changes. Reason: v0.3 run (EVAL-AMENDNOTE rounds 1-6): amend elements had no note, eval and
+     verify named the refinement and so depended on source order, findings under a layer's
+     right-hand side named no layer, and a re-derived default lost an earlier layer.

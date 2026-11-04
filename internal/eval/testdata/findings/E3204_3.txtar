@@ -1,0 +1,46 @@
+TYPES.md §7.4, §11.6, EVALUATION.md §4.3, API.md F12, ERRORS.md §1.5 (orchestrator ruling EVAL-AMENDNOTE): verification converts a dependent field's value at the branch its type function computes, a scalar stored and a list refined there; a value outside the branch's range refinement is E3204 whose related note names the holder, the dependent field, never the refinement written in the type function's branch.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, lst }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+}
+
+/// Evs.
+let evs: table Ev = { n { k: num }, l { k: lst } }
+
+/// P.
+type P(e: Ev) = match e.k {
+  num => Int(0..10)
+  lst => [Int](..=1)
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// P.
+  p: P(ev)
+}
+
+/// Rs.
+let rs: [R] = [
+  { ev: n, p: 20 },
+  { ev: l, p: [1, 2] },
+]
+-- findings.txt --
+error[E3204]  a/a.canon:32:15
+  rs[0].p: 20 is outside 0..10
+  expected by a/a.canon:27 (p: P(ev))
+
+error[E3204]  a/a.canon:33:15
+  rs[1].p: [1, 2] is outside ..=1
+  expected by a/a.canon:27 (p: P(ev))
+
+2 errors, 0 warnings in 1 package (…)

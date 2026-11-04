@@ -74,7 +74,7 @@ func (r *run) assigned(x *syntax.AssignStmt, cur value.Value, keys []value.Value
 	if rhs == nil {
 		return nil
 	}
-	s := r.varSite(r.ev.info.Uses[rootOf(x.Target)])
+	s := objSite(r.ev.info.Uses[rootOf(x.Target)])
 	if !isCompound {
 		return r.store(rhs, t, s, nil)
 	}
@@ -87,9 +87,12 @@ func rootOf(e syntax.Expr) *syntax.IdentExpr {
 	return root
 }
 
-// varSite is the declaration of a var with a written type, `n: Int`.
-func (r *run) varSite(obj check.Object) site {
-	if d, ok := obj.Decl().(*syntax.VarStmt); ok {
+// objSite is the declaration of a var or a top-level let with a written type, `n: Int`.
+func objSite(obj check.Object) site {
+	switch d := obj.Decl().(type) {
+	case *syntax.VarStmt:
+		return declSite(obj.File(), d.Name, d.Type)
+	case *syntax.LetDecl:
 		return declSite(obj.File(), d.Name, d.Type)
 	}
 	return site{}

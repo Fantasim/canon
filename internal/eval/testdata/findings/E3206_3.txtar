@@ -1,0 +1,43 @@
+API.md §4 Finding.Layer, F11, TYPES.md §11.1, EVALUATION.md §9.3 step 3 (orchestrator ruling EVAL-AMENDNOTE round 6): a defaulted applied-record field re-derived with an amended argument is produced by that amendment: dev amends k, box takes the new argument, and its v, refused by its where, is set by layer dev.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Kind.
+enum Kind { small, large }
+
+/// Box.
+record Box(k: Kind) {
+  /// V.
+  v: Int where it < 20 = match k {
+    small => 1
+    large => 30
+  }
+}
+
+/// Outer.
+record Outer {
+  /// K.
+  k: Kind = small
+  /// Box.
+  box: Box(k) = {}
+}
+
+/// Outer.
+let o: Outer = {}
+-- a/dev.canon --
+package a
+layer dev
+
+amend o {
+  k: large
+}
+-- findings.txt --
+error[E3206]  a/a.canon:10:26
+  o.box.v: 30 fails where it < 20
+  set by layer dev
+  expected by a/a.canon:10 (v: Int where it < 20)
+
+1 error, 0 warnings in 1 package (…)

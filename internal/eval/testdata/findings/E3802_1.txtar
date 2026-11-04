@@ -62,6 +62,6 @@ let roles: [Role] = [
 -- findings.txt --
 error[E3802]  a/a.canon:56:27
   roles[1].info: value does not match Info(column.values) = Never
-  expected by a/a.canon:50 (Info(column.values))
+  expected by a/a.canon:50 (info: Info(column.values)?)
 
 1 error, 0 warnings in 1 package (…)

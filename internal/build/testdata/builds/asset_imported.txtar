@@ -26,6 +26,6 @@ let icons: [lib.Icon] = ["a.png", "b.png"]
 -- build.txt --
 error[E3701]  items/item.canon:7:35
   icons[1]: asset b.png not found under lib/icons
-  expected by lib/lib.canon:5 (asset("icons", ext: [png]))
+  expected by items/item.canon:7 (icons: [lib.Icon])
 
 1 error, 0 warnings in 1 package (…)

@@ -45,6 +45,6 @@ error[E3322]  a/a.canon:32:28
 
 error[E3802]  a/a.canon:33:20
   rs[1].ks[one]: value does not match SK(k) = String
-  expected by a/a.canon:27 (SK(k))
+  expected by a/a.canon:27 (ks: {SK(k): Int})
 
 2 errors, 0 warnings in 1 package (…)

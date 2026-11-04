@@ -1,0 +1,56 @@
+API.md §4 Finding.Layer, F11, EVALUATION.md §9.3 step 3 (orchestrator ruling EVAL-AMENDNOTE round 6): across layers, a re-derived default keeps the layer of the last amendment that changed a field it reads: dev sets port, then prod sets name, which url does not read, so url outside its refinement stays set by layer dev; where prod sets the port after dev's name, url is prod's.
+-- layers --
+dev prod
+-- a/a.canon --
+/// A.
+package a
+
+/// Server.
+record Server {
+  /// Port.
+  port: Int = 1
+  /// Name.
+  name: String = "n"
+  /// URL.
+  url: String(..=6) = "h:{port}"
+}
+
+/// dev sets the port.
+let devPort: Server = {}
+
+/// prod sets the port.
+let prodPort: Server = {}
+-- a/dev.canon --
+package a
+layer dev
+
+amend devPort {
+  port: 90000
+}
+
+amend prodPort {
+  name: "x"
+}
+-- a/prod.canon --
+package a
+layer prod
+
+amend devPort {
+  name: "x"
+}
+
+amend prodPort {
+  port: 90001
+}
+-- findings.txt --
+error[E3204]  a/a.canon:11:23
+  devPort.url: h:90000 is outside ..=6
+  set by layer dev
+  expected by a/a.canon:11 (url: String(..=6))
+
+error[E3204]  a/a.canon:11:23
+  prodPort.url: h:90001 is outside ..=6
+  set by layer prod
+  expected by a/a.canon:11 (url: String(..=6))
+
+2 errors, 0 warnings in 1 package (…)

@@ -48,6 +48,6 @@ warning[W1912]  a/dev.layer.canon:6:5
 error[E3802]  a/dev.layer.canon:6:11
   cfg.by[n]: value does not match P(x) = Int
   set by layer dev
-  expected by a/a.canon:22 (P(x))
+  expected by a/a.canon:22 (by: {x in nodes: P(x)})
 
 1 error, 2 warnings in 1 package (…)

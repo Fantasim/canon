@@ -61,6 +61,7 @@ stable amendment: layer bad table "tiers" field ""
 
 error[E1905]  a/bad.canon:5:9
   other: amend path limits["zz"][0]: key zz does not exist
+  set by layer bad
 
 error[E4301]  a/bad.canon:13:6
   box.n: cycle between values: box -> box

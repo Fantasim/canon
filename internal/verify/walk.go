@@ -21,7 +21,7 @@ func (w *walker) walk(v value.Value, t types.Type, at *Path, sc scope) value.Val
 	past := false
 	base, optional, ok := layers(v, t, func(r *types.Refined) {
 		past = past || r.Past
-		w.refinement(v, r, at)
+		w.refinement(v, r, at, sc.holder)
 	})
 	if !ok {
 		return v
@@ -147,7 +147,7 @@ func (w *walker) fields(r *value.Record, t types.Type, at *Path, sc scope) value
 	fields := parts{from: r.Fields}
 	for i, f := range Fields(r.T) {
 		if i < len(r.Fields) {
-			fsc.field = f.Name
+			fsc.field, fsc.holder = f.Name, w.src.fields[f]
 			fields.set(i, w.walk(r.Fields[i], f.Type, at.Field(f.Name), fsc))
 			w.wireForm(f, fields.at(i), at.Field(f.Name), fsc.env)
 		}
@@ -179,7 +179,7 @@ func (w *walker) list(l *value.List, t types.Type, at *Path, sc scope) value.Val
 		}
 	}
 	if lt.KeyedBy != nil {
-		w.uniqueKeys(l, lt, at)
+		w.uniqueKeys(l, lt, at, sc.holder)
 	}
 	ct := w.computedType(l.T, t, sc)
 	if !elems.changed() && ct == l.T {
@@ -256,7 +256,7 @@ func (w *walker) table(tv *value.Table, t types.Type, at *Path, sc scope) value.
 		}
 	}
 	if tt.Stable {
-		w.uniqueStable(tv, tt, at)
+		w.uniqueStable(tv, tt, at, sc.holder)
 	}
 	if entries == nil {
 		return tv

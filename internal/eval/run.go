@@ -72,6 +72,8 @@ type frame struct {
 	stack  []diag.Frame
 	more   int
 	ext    *value.ProvExt // its stack and more as the values it builds carry them, nil for none (DECISIONS 373)
+	layer  string         // the layer whose amendment's right-hand side runs at or above it, "" for none (API.md §4 Finding.Layer)
+	lext   *value.ProvExt // layer and stack as the values it builds carry them, nil until one is built
 	cached bool
 	decl   bool                         // an implicit frame: a field default or a where run (DECISIONS 210)
 	ts     bool                         // a translated fn's frame in a TS-mode vector (CONFORMANCE.md §4)
@@ -83,7 +85,7 @@ type frame struct {
 func (f *frame) under(caller *frame) *frame {
 	f.caller = caller
 	if caller != nil {
-		f.named, f.count, f.top = caller.named, caller.count, caller.top
+		f.named, f.count, f.top, f.layer = caller.named, caller.count, caller.top, caller.layer
 	}
 	if f.fn != "" {
 		f.named, f.count = f, f.count+1
@@ -358,6 +360,22 @@ func (r *run) withStack(b *diag.Builder) *diag.Builder {
 	return b.Stack(stack).MoreFrames(more)
 }
 
+// layeredProv is provMarked under an amendment: never shared, its layer with the frame's own stack (EVALUATION.md §13).
+func (r *run) layeredProv(n syntax.Node, kind value.ProvKind, position bool) *value.Prov {
+	f := r.fr
+	root := f.fn == "" && f.caller == nil
+	if f.lext == nil {
+		if !root && !f.cached {
+			r.cacheStack(f)
+		}
+		f.lext = value.NewProvExt(value.ProvExt{Layer: f.layer, Stack: f.stack, MoreFrames: f.more})
+	}
+	if kind == value.ProvLiteral && !root && !f.decl {
+		kind = value.ProvComputed
+	}
+	return &value.Prov{Kind: kind, Position: position, Span: r.span(n), Ext: f.lext}
+}
+
 // prov is the provenance of a value node n builds, a literal in a default one, shared by site (EVALUATION.md §13; DECISIONS 373).
 func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
 	return r.provMarked(n, kind, false)
@@ -366,6 +384,9 @@ func (r *run) prov(n syntax.Node, kind value.ProvKind) *value.Prov {
 // provMarked is prov, carrying an entry position's mark when position (EVALUATION.md §13.1).
 func (r *run) provMarked(n syntax.Node, kind value.ProvKind, position bool) *value.Prov {
 	f := r.fr
+	if f.layer != "" {
+		return r.layeredProv(n, kind, position)
+	}
 	switch {
 	case f.fn == "" && f.caller == nil && !position:
 		return &value.Prov{Kind: kind, Span: r.span(n)}

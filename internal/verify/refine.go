@@ -10,35 +10,35 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// refinement checks one refinement on a present value, `where` last (TYPES.md §7.4).
-func (w *walker) refinement(v value.Value, r *types.Refined, at *Path) {
+// refinement checks one refinement on a present value, `where` last, its findings related to holder (TYPES.md §7.4, API.md F12).
+func (w *walker) refinement(v value.Value, r *types.Refined, at *Path, holder source.Span) {
 	src := w.src.types[r]
 	if r.Range != nil {
-		w.inRange(v, r, src, at)
+		w.inRange(v, r, src, at, holder)
 	}
 	if r.Pattern != nil {
 		if s, ok := v.(*value.Str); ok && !r.Pattern.MatchString(s.V) {
 			site := SiteOf(v)
-			w.flag(site, w.src.related(diag.E3205.At(site.Span, v, r.Pattern.String()), r), v, at)
+			w.flag(site, w.src.relatedTo(diag.E3205.At(site.Span, v, r.Pattern.String()), holder, r), v, at)
 		}
 	}
 	if r.Asset != nil {
-		w.asset(v, r, at)
+		w.asset(v, r, at, holder)
 	}
 	if r.Where != nil {
-		w.where(v, r, src, at)
+		w.where(v, r, src, at, holder)
 	}
 }
 
 // inRange checks a range on a number or a Duration, or a length on a string (in bytes), a list
 // or a map.
-func (w *walker) inRange(v value.Value, r *types.Refined, src written, at *Path) {
+func (w *walker) inRange(v value.Value, r *types.Refined, src written, at *Path, holder source.Span) {
 	m, ok := measure(v)
 	if !ok || m.within(r.Range) {
 		return
 	}
 	site := SiteOf(v)
-	w.flag(site, w.src.related(diag.E3204.At(site.Span, v, src.arg), r), v, at)
+	w.flag(site, w.src.relatedTo(diag.E3204.At(site.Span, v, src.arg), holder, r), v, at)
 }
 
 // size is what a range refinement compares: an integer count or value, or a Float.
@@ -97,7 +97,7 @@ func (s size) within(b *types.Bound) bool {
 }
 
 // where re-runs the predicate; a hard error aborts the root (EVALUATION.md §7.1).
-func (w *walker) where(v value.Value, r *types.Refined, src written, at *Path) {
+func (w *walker) where(v value.Value, r *types.Refined, src written, at *Path, holder source.Span) {
 	w.voidRec()
 	holds, ok := w.predicate(r.Where, v, at)
 	switch {
@@ -105,13 +105,13 @@ func (w *walker) where(v value.Value, r *types.Refined, src written, at *Path) {
 		w.res.Poisoned, w.res.Valid = true, false
 	case !holds:
 		site := SiteOf(v)
-		w.flag(site, w.src.related(diag.E3206.At(site.Span, v, src.arg), r), v, at)
+		w.flag(site, w.src.relatedTo(diag.E3206.At(site.Span, v, src.arg), holder, r), v, at)
 	}
 }
 
 // asset checks, in order, a clean relative path, an allowed extension and an existing file;
 // only the first failure is reported, the later checks needing the earlier ones.
-func (w *walker) asset(v value.Value, r *types.Refined, at *Path) {
+func (w *walker) asset(v value.Value, r *types.Refined, at *Path, holder source.Span) {
 	s, ok := v.(*value.Str)
 	if !ok {
 		return
@@ -130,7 +130,7 @@ func (w *walker) asset(v value.Value, r *types.Refined, at *Path) {
 		}
 		b = look.missing(site.Span, s.V)
 	}
-	w.flag(site, w.src.related(b, r), v, at)
+	w.flag(site, w.src.relatedTo(b, holder, r), v, at)
 }
 
 // lookup is what looking an asset up gave: the root's display and whether the file is there, or, for

@@ -47,7 +47,7 @@ project demo {
 -- findings.txt --
 error[E3204]  a/a.canon:34:14
   -1 is outside 0..
-  expected by a/a.canon:5 (Int(0..))
+  expected by a/a.canon:5 (x: Int(0..))
 
 error[E5001]  a/a.canon:37:37
   duo.b: small

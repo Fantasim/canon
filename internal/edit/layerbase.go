@@ -57,11 +57,17 @@ func (s *Snapshot) statedBy(v value.Value, x string) bool {
 	if p == nil {
 		return false
 	}
-	if p.Layer() == x {
+	if amendedBy(p, x) {
 		return true
 	}
 	f := s.files[p.Span.File]
 	return f != nil && f.FileKind == syntax.FileLayer && f.Layer != nil && f.Layer.Name == x
+}
+
+// amendedBy reports p the right-hand side of an amendment of layer x: a value computed under one
+// carries its layer too (API.md F11), but no text of x states it.
+func amendedBy(p *value.Prov, x string) bool {
+	return p != nil && p.Kind == value.ProvLayer && p.Layer() == x
 }
 
 // lineSource reports the line of f amending root r a Source can state (sourceLine).
