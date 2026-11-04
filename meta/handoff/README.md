@@ -60,6 +60,7 @@ Two handoffs came out of the 2026-10-12 review of Resource `Config/`, Canon's fi
   - structure the agents chose;
   - phase-1 debt that touches no Source line;
   - phase 2, which it asks Sovereign to write as ADR L-0125.
+  It was never cited on the Sovereign side; Source ADR L-0147 and its 2026-10-30 organization review took the work over. It is **replaced** as Canon's view by `2026-11-04-canon-opinion-resource-structure-v020.md`.
 
 `2026-10-13-canon-reply-v016.md` is the reply to the Sovereign sessions `Source`, `Scripts`, `website` and
 `config-studio`, shipped in v0.1.6 (DECISIONS 344-369). It answers items F1-F19 of the next-versions
@@ -124,3 +125,5 @@ their path from the receiving repository's root.
 `2026-10-31-v020-start-prompt.md` is the prompt that starts the v0.2 run: ADR-0023 whole, S1, S2, the units by their "After" column, then §12's release; one call stays Louis's (ADR-0023 §4 Decision 9, Go exhaustiveness).
 
 `2026-11-02-canon-reply-v020.md` is v0.2.0's reply for the Sovereign sessions (the trust release, ADR-0023, DECISIONS 398-429): what changed, the Go/TS/C++ migration lists with every site, Resource's badge patch and `expect package` recipe, bench and farm numbers, checksums, what stays owed and what was not verified. `2026-10-31-v020-status.md` is the run's status record.
+
+`2026-11-04-canon-opinion-resource-structure-v020.md` is **an opinion to the owner of Resource `Config/`, nothing ordered** (Louis: "the resource agent will judge"). It is Canon's view, on canon 0.2.0 at Resource `d2f893f9`, of where `Config/` hand-writes what the language states. It covers rules as types, kind tags as variants, `…Problems` as `expect package`, wave D unblocked by DECISIONS 399/400, one text record, layering and `engine`, the entry layout, small open bugs (csn C escaping) and what waits for v0.3/v0.5. Its timing point: reshape each table's types before L-0147 moves it onto its record.
