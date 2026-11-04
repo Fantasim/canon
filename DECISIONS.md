@@ -4705,3 +4705,16 @@ round 2", "PS1 review", "PS2 round 2"):
      Reason: v0.3 run (CPP-FINDBY's and E8005-DERIVED's reviews): "rename one of them with
      @cpp(name:)" was given where no override separates the names, and a pair that met both ways
      needed two builds.
+459. **`for` also joins after a brace-literal item, and a renamed key keeps its comma (FORMATTER.md
+     §6.1, §13; GRAMMAR.md §4.3, §5.11; API.md M6; WIRE.md §5.7; amends 211).** In a brace list
+     written one item per line, an entry or named item whose first token is `for` keeps a comma after
+     the item above, as one starting with `and`, `or`, `in`, `is`, `else` or `where` does: without it
+     GRAMMAR §5.11 reads the `for` as a comprehension over the item above. A `for` statement in a block
+     takes no comma. The commas are computed once over the final order of a rewrite, so a Replace that
+     renames an item's key adds or drops the comma on the item above, as an Insert, Remove or Move
+     does (M6 counts that comma as the edit's). `canon edit` refuses `true`, `false`, `none` and `self`
+     as a table key it writes into `.canon` text, a layer's amend line included, with a value error
+     that names its reason and its way out (GRAMMAR §4.3). A JSON table key is any Canon word, the
+     reserved ones included, as the decoder reads it (WIRE.md §5.7's "identifier" means a word).
+     Reason: v0.3 run (EDIT-REFKEY's probe, then EDIT-KWENTRY): renaming a table-literal entry to
+     `for` ended in an internal "does not parse in its place", and the formatter broke such a list.
