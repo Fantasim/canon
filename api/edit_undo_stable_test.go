@@ -47,7 +47,7 @@ var stableRoots = []string{"a:statuses", "a:config", "a:picked", "a:twice", "a:c
 
 // API.md E23, E22, E20 (G2 rounds 2, 4): each request locks second, new; the Undo applies, the
 // lock keeps every line the edit wrote, second retired, second keeps the result's code, and every
-// other value comes back.
+// other value comes back; third, a whole Set adds, is locked too (DECISIONS 232) and comes back retired.
 func TestEditUndoKeepsLockFacts(t *testing.T) {
 	add := func(code int64) canon.Op {
 		return canon.AddEntry("a:codes", canon.Key("second"), canon.Obj{"label": canon.Str("S"), "code": canon.Int(code)})
@@ -67,7 +67,7 @@ func TestEditUndoKeepsLockFacts(t *testing.T) {
 		{"Set, then AddEntry", nil, []canon.Op{setCodes(`{ first { label: "F" } }`),
 			canon.AddEntry("a:codes", canon.Key("second"), canon.Obj{"label": canon.Str("S")})}, nil},
 		{"Set adding an entry, then AddEntry", nil, []canon.Op{setCodes(`{ first { label: "F" }, third { label: "T" } }`),
-			canon.AddEntry("a:codes", canon.Key("second"), canon.Obj{"label": canon.Str("S")})}, nil},
+			canon.AddEntry("a:codes", canon.Key("second"), canon.Obj{"label": canon.Str("S")})}, map[string]string{"a:codes.third": "Code{label: \"T\"}"}},
 		{"AddEntry, then a Set changing its code", codedLaw, []canon.Op{add(2),
 			setCodes(`{ first { label: "First", code: 1 }, second { label: "S", code: 5 } }`)}, code("5")},
 		{"AddEntry, Set dropping it, AddEntry again", codedLaw, []canon.Op{add(2), setCodes(firstOnly), add(5)}, code("5")},
@@ -121,7 +121,7 @@ func lockFactsKept(t *testing.T, name string, files map[string]string, ops []can
 			t.Errorf("API.md E22, %s: %s after the Undo: %+v, %v, want %s", name, path, v, err, before[path])
 		}
 	}
-	if _, err := p.Value(ctx, "a:codes.third"); err == nil {
+	if _, err := p.Value(ctx, "a:codes.third"); err == nil && want["a:codes.third"] == "" {
 		t.Errorf("API.md E22, %s: a:codes.third survives the Undo", name)
 	}
 	for _, path := range slices.Sorted(maps.Keys(want)) {

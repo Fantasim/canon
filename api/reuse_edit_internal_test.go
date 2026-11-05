@@ -62,19 +62,27 @@ func TestEditScopeWholeAnalysisGates(t *testing.T) {
 	loads["/law/u/k.json"] = []byte("[1]\n")
 	layered := reuseLaw()
 	layered["/law/a/live.layer.canon"] = []byte("package a\nlayer live\n\namend uses.first {\n  count: 9\n}\n")
+	stable := reuseLaw()
+	stable["/law/a/a.canon"] = append(stable["/law/a/a.canon"], []byte("\n/// A code.\nrecord Code {\n  /// Its label.\n  label: String\n}\n\n"+
+		"/// Codes.\nlet codes: stable table Code = {\n  first { label: \"First\" }\n}\n")...)
+	stable["/law/a/canon.lock"] = []byte("# canon.lock v1\ntable  a.codes  first\n")
+	addsID := Set("a:codes", Source("{ first { label: \"First\" }, third { label: \"T\" } }"))
 	cases := []struct {
-		name  string
-		files map[string][]byte
-		op    Op
-		old   bool // the edit's base is a revision before u/k.json changed
-		layer string
-		want  int // checks: the scope's, then the re-check's
+		name   string
+		files  map[string][]byte
+		op     Op
+		old    bool // the edit's base is a revision before u/k.json changed
+		layer  string
+		strict bool // no AllowErrors
+		want   int  // checks: the scope's, then the re-check's
 	}{
-		{"served", reuseLaw(), Set("a:uses.first.count", Int(4)), false, "", 1},
-		{"error", broken, Set("a:uses.first.count", Int(4)), false, "", 2},
-		{"base", loads, Set("a:uses.first.count", Int(4)), true, "", 2},
-		{"rename", reuseLaw(), Rename("a:uses.first", Key("third")), false, "", 2},
-		{"layers", layered, Set("a:uses.second.count", Int(4)), false, "live", 3}, // and the base plan's no-layer analysis (W8)
+		{"served", reuseLaw(), Set("a:uses.first.count", Int(4)), false, "", false, 1},
+		{"error", broken, Set("a:uses.first.count", Int(4)), false, "", false, 2},
+		{"base", loads, Set("a:uses.first.count", Int(4)), true, "", false, 2},
+		{"rename", reuseLaw(), Rename("a:uses.first", Key("third")), false, "", false, 2},
+		{"layers", layered, Set("a:uses.second.count", Int(4)), false, "live", false, 3}, // and the base plan's no-layer analysis (W8)
+		{"whole Set adding an id", stable, addsID, false, "", true, 1},
+		{"AddEntry of an id", stable, AddEntry("a:codes", Key("third"), Obj{"label": Str("T")}), false, "", true, 1},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -95,7 +103,7 @@ func TestEditScopeWholeAnalysisGates(t *testing.T) {
 			}
 			keepWhole(t, p)
 			before := l.count()
-			res, err := p.Edit(ctx, Edit{Base: base, Ops: []Op{c.op}, DryRun: true, AllowErrors: true})
+			res, err := p.Edit(ctx, Edit{Base: base, Ops: []Op{c.op}, DryRun: true, AllowErrors: !c.strict})
 			if err != nil || len(res.Changes) == 0 {
 				t.Fatalf("Edit: %+v, %v", res, err)
 			}

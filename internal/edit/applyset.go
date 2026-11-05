@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -32,6 +33,9 @@ func setOp(x *opCtx) error {
 		return err
 	}
 	x.lockStable()
+	if err := x.lockWhole(v); err != nil {
+		return err
+	}
 	x.heldBy(v)
 	x.nw = v
 	defer func() { x.a.pinned = nil }() // setsDefault's pin holds for this Set only
@@ -79,6 +83,46 @@ func (x *opCtx) lockStable() {
 	if !x.a.snap.a.LockHolds(build.LockID{Name: id.Name, Key: id.Key}) {
 		x.w.locked = append(x.w.locked, id)
 	}
+}
+
+// lockWhole records the ids a whole-table Set adds to a root stable table, for lock lines (API.md E20),
+// and refuses one it drops that the lock holds (E4, DECISIONS 476).
+func (x *opCtx) lockWhole(v value.Value) error {
+	tab, isTable := v.(*value.Table)
+	if len(x.res.Steps) != 0 || x.res.root.enum != nil || !isTable || !stableTable(tab.T) {
+		return nil
+	}
+	old, _ := x.res.Target.(*value.Table)
+	if old != nil && slices.ContainsFunc(old.Entries, func(e *value.Record) bool {
+		return entryIndex(tab.Entries, e.Ident.Key.Text()) < 0 && x.lockHolds(e.Ident.Key.Text())
+	}) {
+		return ErrStableKey
+	}
+	for _, e := range tab.Entries {
+		key := e.Ident.Key.Text()
+		if old != nil && entryIndex(old.Entries, key) >= 0 || x.lockHolds(key) {
+			continue
+		}
+		x.w.locked = append(x.w.locked, Locked{Name: x.res.root.lockName(), Key: key})
+		if x.w.added == nil {
+			x.w.added = map[string]*value.Record{}
+		}
+		x.w.added[childPath(x.res.root.qualified(), entrySeg(e.Ident.Key))] = e
+	}
+	return nil
+}
+
+// lockHolds reports key an id the lock holds in the root's table.
+func (x *opCtx) lockHolds(key string) bool {
+	return x.a.snap.a.LockHolds(build.LockID{Name: x.res.root.lockName(), Key: key})
+}
+
+// addedBy keeps the entries a whole-table Set added, by path.
+func (a *applier) addedBy(added map[string]*value.Record) {
+	if a.added == nil {
+		a.added = map[string]*value.Record{}
+	}
+	maps.Copy(a.added, added)
 }
 
 // field is the record the path's last step reads a field of, and that field.

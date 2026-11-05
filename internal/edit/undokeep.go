@@ -124,7 +124,7 @@ func (a *applier) readFacts(paths []string) *lockFacts {
 		rec, inResult := entryAt(a.snap, p)
 		switch {
 		case !a.multi:
-			rec = nil // a lone operation's result is not read: nothing of it is written back
+			rec = a.added[p] // a lone operation's result is not read: only what a whole-table Set typed is written back
 		case !inResult:
 			continue
 		}

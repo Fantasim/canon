@@ -1131,8 +1131,8 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 - **E3.** `Add`, `Insert` and `AddEntry` with a key that already exists are `ErrKeyExists`.
   `Set` on a map key or table entry that does not exist is `ErrNoPath` (use `AddEntry`).
 - **E4.** `Remove` on an entry of a stable table whose id the lock holds or the request locks, and
-  `Rename` of such an entry, and either op on any stable entry under an `EditLayer` (LOCK.md §6.1),
-  are
+  `Rename` of such an entry, a `Set` of a whole stable table that leaves out an id the lock holds
+  (DECISIONS 476), and either op on any stable entry under an `EditLayer` (LOCK.md §6.1), are
   `ErrStableKey` (SPEC §12: retire it instead). `Remove` of an `@codes` enum member is not an op.
   `Unretire` is always `ErrStableKey`: retirement is one-way, and bringing an id back is a reviewed
   hand edit of `canon.lock` (LOCK.md §4.6), which the build would otherwise report as `E6002`.
@@ -1283,7 +1283,9 @@ inside the same edit and reports it, so every client behaves the same.
   the new lock lines to the package's `canon.lock` inside the same edit (LCK-04), and `Retire` adds
   `retired` to its lock line, according to LOCK.md §5. The lines come from the edit's plan, the ids
   its ops add or retire, with the facts of the post-edit analysis; a `Set` or `Reset` on a root
-  stable-table entry the lock does not hold yet records that entry's id (on a held one, a changed
+  stable-table entry the lock does not hold yet records that entry's id, and a `Set` of a whole root
+  stable table records each id the table lacked, an entry it only rewrites staying pending (DECISIONS
+  476) (on a held one, a changed
   `@stable` value is `E6002`, LOCK.md §5). An edit that adds or retires no id writes no lock line
   and never creates or touches a `canon.lock`. An id's lines are written only whole, and only when
   none of its facts conflicts with the lock as read (LOCK.md §4.2) or duplicates another fact the

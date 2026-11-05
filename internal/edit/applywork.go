@@ -16,6 +16,7 @@ import (
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // work is what one operation changes: edits per file, files created, deleted and renamed, and
@@ -32,6 +33,7 @@ type work struct {
 	dropped []Dropped
 	records []touched
 	locked  []Locked
+	added   map[string]*value.Record // the entries a whole-table Set adds to a stable table, by path (E20)
 	kept    keptCase
 	given   []givenValue
 	rekey   []pathMove // a Rename's item and the elements it moves, which E15 follows (E11)
@@ -260,6 +262,7 @@ func (a *applier) commit(w *work) error {
 		a.rekey(m)
 	}
 	a.locked = append(a.locked, w.locked...)
+	a.addedBy(w.added)
 	a.kept = w.kept
 	a.dirty = true
 	a.gen++

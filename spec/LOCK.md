@@ -219,6 +219,7 @@ The lock is append-only for tools. People may edit it in a reviewed commit for t
 | edit API `Add` on a stable table | the new `table` (and `field`) facts are written in the same atomic edit as the source |
 | edit API `Retire` | the fact gets `retired` in the same atomic edit |
 | edit API `Remove` on a stable entry | refused (`ErrStableKey`, API.md E4) when the lock holds or the request locks its id; a pending id has no line to keep |
+| edit API `Set` of a whole root stable table | each id it adds (one the table lacked) gets its whole facts in the same atomic edit, as an `Add`; an entry it only rewrites is not locked; refused (`ErrStableKey`, API.md E4) when it leaves out an id the lock holds; a pending id, or one an earlier op of the request added, may be left out (DECISIONS 476) |
 | edit API `Set` of a `@stable` field of an existing entry | refused (`E6002`) |
 | edit API `Set` or `Reset` on a root stable-table entry the lock does not hold yet | the entry's whole facts are written in the same atomic edit |
 | any other edit | never; an edit writes only the lines its own ops require (API.md E20) |

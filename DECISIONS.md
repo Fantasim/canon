@@ -4987,3 +4987,19 @@ round 2", "PS1 review", "PS2 round 2"):
      with the re-check (`E3802`, `E2102`). Reason: v0.3 run (EDIT-TYPEAPPSET rounds 1-7): the Undo of
      a `Reset` could not be typed, and a write on another branch was dropped by the cascade or left
      an Undo that could not apply.
+
+476. **A whole-table `Set` of a root stable table locks the ids it adds and never drops a held one
+     (API.md E4, E20, E22, E23; LOCK.md §4.1, §5; follows 232, 474).** Each id the table lacked
+     before the `Set` is recorded for its lock lines exactly as an `AddEntry` of the same entry
+     would be: the same `table` and `field` lines from the post-edit analysis, written only whole
+     and conflict-free under `AllowErrors` (232). An entry the `Set` only rewrites is not recorded,
+     so a pending one stays pending. A `Set` that leaves out an id the lock holds, retired or not, is
+     `ErrStableKey` at its operation, before anything is written, as a `Remove` is (SPEC §12: retire
+     it instead); it may leave out a pending id, or one an earlier operation of the same request
+     added (never locked, E23), whose `Remove` stays refused (E4). The Undo keeps each added id in
+     the form the `Set` typed it and retires it, as an `AddEntry`'s Undo does (E23); a lone `Set`
+     reads no result and runs no verification for this (E22, NFR-01). An added entry that does not
+     evaluate leaves the table without a value; under `AllowErrors` its whole-table Undo is then
+     refused (474), so no such id is written. Reason: v0.3 run (EDIT-LOCKSET rounds 1-3): `Set
+     a:codes { first {…}, third {…} }` left `third` unlocked, so a later `Remove` of it was
+     accepted, and a `Set` leaving out a held id was accepted too.

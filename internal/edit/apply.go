@@ -200,6 +200,8 @@ type applier struct {
 	nameClash                 string         // Plan.NameClash
 	nameEdits                 map[string]NameEdit
 	spelled                   spellings
+
+	added map[string]*value.Record // the entries whole-table Sets added to stable tables, which a lone Set's Undo keeps (E23)
 }
 
 // NameEdit is what a RenameName adds to a file besides renaming: the places, among the file's
