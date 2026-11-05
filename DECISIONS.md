@@ -5069,3 +5069,20 @@ round 2", "PS1 review", "PS2 round 2"):
      not, its Undo restoring the value (amends 273's computed line); under an edit layer the session
      does not apply, an edit below that line stays `computed` (W5, 462). Reason: v0.3 run
      (EDIT-TYPEDSOURCE rounds 1-6): the Undo of a `Reset` of an `RB { … }` field could not restore it.
+
+481. **Parentheses are transparent in receivers and type paths; type paths keep 307 (TYPES.md §9.1,
+     §9.4, §10.2, §11.1, §11.2, §11.5; STDLIB.md §5; follows 171, 307, 411, 477).** A receiver in
+     parentheses, `(x)`, `(x!)` or `(x)!`, nested and at any depth, keys `.k`, `[r]`, `hasKey` and
+     `keys()` as bare `x` does, recorded in `Info.Keys` with the same collection. A let-rooted
+     receiver, through `.`, `!` or `?.`, names the let path only while every step's declared type is
+     a required record, plain or applied (`nb!.subs` is `nb.subs`; `h.sub.subs` with `sub: Sub(k)` is
+     `h.sub.subs`); through a let or field declared optional, narrowed or not, or through a ref, it
+     names the collection its last record field holds: `.k` keys it, a bare `[k]` or `hasKey(k)` is
+     `E2102`, `keys()` needs an annotation (`E3008`). `ref` names no such path (`E3504`), and `ref`
+     through an applied record stays `E3504` in v0.3. In a type-function or record argument, a
+     type-level `match` scrutinee and a dependent map's domain, a parenthesis is transparent and
+     has its content's `Types`; `?.` and `!` stay no step there (`E3803` for an argument or
+     scrutinee, `E3504` for a domain, whose message quotes the text written). Reason: v0.3 run
+     (CHECK-PARENKEYS): `(x)!.k` and `x!.f.k` keyed nothing, `nb!.subs.k` named another collection
+     than `nb.subs.k`, and a let path through an optional raised a false `E3503`, one through a ref a
+     false `E3501`.

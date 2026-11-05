@@ -1,0 +1,34 @@
+DECISIONS 171, 477, STDLIB.md §5: a parenthesised receiver keys a ref into its own collection only; `alt`, a ref into the let `other`, keys none of `(self.oo)`, `(oo)` or `(aa.second.oo)`, so each is E3002 as the bare form is.
+-- a/a.canon --
+package a
+
+local record S {
+  k: String
+  w: Int = 0
+}
+
+local let other: [S] keyed by k = [{ k: "x" }]
+
+local record A {
+  id: String
+  oo: [S] keyed by k
+  alt: ref other
+
+  check (self.oo)[alt].w >= 0 else "self"
+  check (oo)[alt].w >= 0 else "bare"
+}
+
+local let aa: [A] keyed by id = [{ id: "second", oo: [{ k: "x" }], alt: "x" }]
+
+local let r0: Int = (aa.second.oo)[aa.second.alt].w
+-- findings.txt --
+error[E3002]  a/a.canon:15:19
+  expected String, found ref a.other
+
+error[E3002]  a/a.canon:16:14
+  expected String, found ref a.other
+
+error[E3002]  a/a.canon:21:36
+  expected String, found ref a.other
+
+3 errors, 0 warnings in 1 package (…)

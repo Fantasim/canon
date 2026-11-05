@@ -1,0 +1,32 @@
+DECISIONS 307, 477, TYPES.md §11.5: `?.` and `!` are no step of a type path, so a dependent map's domain `ts!` or `nb?.subs` is no collection name (E3504); a parenthesis around the path changes nothing.
+-- a/a.canon --
+package a
+
+local record T {
+  id: String
+}
+
+local record Bag {
+  subs: [T] keyed by id
+}
+
+local let ts: [T] keyed by id = [{ id: "x" }]
+
+local let nb: Bag = { subs: [{ id: "x" }] }
+
+local record R {
+  forced: {t in ts!: Int} = {}
+  optional: {t in nb?.subs: Int} = {}
+  wrapped: {t in (ts!): Int} = {}
+}
+-- findings.txt --
+error[E3504]  a/a.canon:16:17
+  ref ts!: ts! is not a collection or a record type
+
+error[E3504]  a/a.canon:17:19
+  ref nb?.subs: nb?.subs is not a collection or a record type
+
+error[E3504]  a/a.canon:18:18
+  ref (ts!): (ts!) is not a collection or a record type
+
+3 errors, 0 warnings in 1 package (…)

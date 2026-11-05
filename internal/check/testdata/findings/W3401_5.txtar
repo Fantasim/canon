@@ -1,0 +1,30 @@
+DECISIONS 171, 477, STDLIB.md §5: parentheses are transparent, so a ref into a record field's own collection keys it through a parenthesised receiver as it does bare: `(self.oo)[pick]`, `(oo!)[pick]`, `(self.oo!)[pick]` and `(aa.second.oo)[aa.second.pick]` take `pick` as a key, with no E3002; the `!` on a field that is never none is only W3401.
+-- a/a.canon --
+package a
+
+local record S {
+  k: String
+  w: Int = 0
+}
+
+local record A {
+  id: String
+  oo: [S] keyed by k
+  pick: ref S
+
+  check (self.oo)[pick].w >= 0 else "self"
+  check (oo!)[pick].w >= 0 else "bare force"
+  check (self.oo!)[pick].w >= 0 else "self force"
+}
+
+local let aa: [A] keyed by id = [{ id: "second", oo: [{ k: "x" }], pick: "x" }]
+
+local let r0: Int = (aa.second.oo)[aa.second.pick].w
+-- findings.txt --
+warning[W3401]  a/a.canon:14:10
+  oo is never none: ! has no effect
+
+warning[W3401]  a/a.canon:15:10
+  self.oo is never none: ! has no effect
+
+0 errors, 2 warnings in 1 package (…)

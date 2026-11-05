@@ -1,0 +1,41 @@
+DECISIONS 171, 307, 477, TYPES.md §11.1, §11.5: a parenthesis is transparent in a type argument's path and in a dependent map's domain (`P((ev.k))`, `P((ev).k)`, `{t in (ts): Int}`), while `?.` and `!` stay no step of a type path: `P(ev?.k)`, `P(ev.k!)` and `P((ev.k)!)` are E3803.
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(k: K) = match k {
+  num => Int
+  text => String
+}
+
+local record T {
+  id: String
+}
+
+local let ts: [T] keyed by id = [{ id: "x" }]
+
+local record R {
+  ev: Ev
+  wrapped: P((ev.k))
+  step: P((ev).k)
+  optional: P(ev?.k)
+  forced: P(ev.k!)
+  forcedWrapped: P((ev.k)!)
+  domain: {t in (ts): Int} = {}
+}
+-- findings.txt --
+error[E3803]  a/a.canon:24:15
+  a type-function argument must be a path rooted at a parameter
+
+error[E3803]  a/a.canon:25:13
+  a type-function argument must be a path rooted at a parameter
+
+error[E3803]  a/a.canon:26:20
+  a type-function argument must be a path rooted at a parameter
+
+3 errors, 0 warnings in 1 package (…)

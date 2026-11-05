@@ -147,12 +147,18 @@ func (c *checker) keyedReceiver(x syntax.Expr) *types.Collection {
 	return nil
 }
 
-// unforced is x without its `!`: `x!` holds the collection x holds, read as `?.` reads it (DECISIONS 470).
+// unforced is x without its parentheses and its `!`: `x!`, `(x)` and `(x!)` hold the collection x holds, read as `?.` reads it (DECISIONS 171, 470, 477).
 func unforced(x syntax.Expr) syntax.Expr {
-	for f, ok := x.(*syntax.ForceExpr); ok; f, ok = x.(*syntax.ForceExpr) {
-		x = f.X
+	for {
+		switch n := x.(type) {
+		case *syntax.ParenExpr:
+			x = n.X
+		case *syntax.ForceExpr:
+			x = n.X
+		default:
+			return x
+		}
 	}
-	return x
 }
 
 // reservedRead reports a table element's field named id or retired (E2105) read where it may be

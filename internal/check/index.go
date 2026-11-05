@@ -272,9 +272,9 @@ func (c *checker) bareKey(env *env, x, recv syntax.Expr, key types.Type) bool {
 	return true
 }
 
-// receiverColl is the collection an expression names: a let, or a path through record fields of one (TYPES.md §10.2).
+// receiverColl is the collection a let, or a path through required (plain or applied) record fields of one, names; through an optional or a ref, none (TYPES.md §9.4, §10.2, DECISIONS 411).
 func (c *checker) receiverColl(x syntax.Expr) *types.Collection {
-	root, segs := pathParts(x)
+	root, segs := receiverParts(x)
 	if root == nil {
 		return nil
 	}
@@ -286,7 +286,10 @@ func (c *checker) receiverColl(x syntax.Expr) *types.Collection {
 	t := c.letType(o)
 	for _, s := range segs {
 		sel := c.info.Selections[s]
-		if sel == nil || sel.Kind != SelField {
+		if requiredRecord(t) == nil || sel == nil || sel.Kind != SelField {
+			return nil
+		}
+		if f, ok := sel.Obj.(*object); ok && f.field != nil && c.fieldType(f.field).Base().Kind() == types.Optional {
 			return nil
 		}
 		names = append(names, s.Name.Name)

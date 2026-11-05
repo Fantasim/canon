@@ -1,0 +1,52 @@
+DECISIONS 171, 307, IMPLEMENTATION-PLAN §4.7: a parenthesis is transparent in a type argument's path, a type function's `match` scrutinee, a record argument and a dependent map's domain, and each parenthesis has its content's Types (`(nb.subs)` is the keyed list, not the let's record).
+-- a/a.canon --
+package a
+
+local enum K { num, text }
+
+local record Ev {
+  k: K
+}
+
+local type P(k: K) = match k {
+  num => Int
+  text => String
+}
+
+local type Q(e: Ev) = match (e.k) {
+  num => Int
+  text => String
+}
+
+local type Q2(e: Ev) = match ((e).k) {
+  num => Int
+  text => String
+}
+
+local record Rk(k: K) {
+  v: P(k) = 0
+}
+
+local record T {
+  id: String
+}
+
+local record Bag {
+  subs: [T] keyed by id
+}
+
+local let ts: [T] keyed by id = [{ id: "x" }]
+
+local let nb: Bag = { subs: [{ id: "x" }] }
+
+local record R {
+  ev: Ev
+  wrapped: P((ev.k))
+  step: P((ev).k)
+  rk: Rk((ev).k)
+  viaQ: Q((ev))
+  domain: {t in (ts): Int} = {}
+  domainField: {t in (nb).subs: Int} = {}
+  domainWrapped: {t in (nb.subs): Int} = {}
+  domainDeep: {t in ((nb).subs): Int} = {}
+}

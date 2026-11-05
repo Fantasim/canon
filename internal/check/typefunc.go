@@ -2,6 +2,7 @@ package check
 
 import (
 	"maps"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -158,7 +159,21 @@ func (c *checker) typeArgPath(tc *typeCtx, e syntax.Expr) (*types.Arg, types.Typ
 		t = c.fieldType(f)
 		c.info.Types[s] = t
 	}
+	c.parenTypes(e)
 	return arg, t, true
+}
+
+// parenTypes gives each parenthesis on the path e the Types of its content (DECISIONS 171), once the path's own nodes have theirs.
+func (c *checker) parenTypes(e syntax.Expr) {
+	switch x := e.(type) {
+	case *syntax.ParenExpr:
+		c.parenTypes(x.X)
+		if t := c.info.Types[inner(x)]; t != nil {
+			c.info.Types[x] = t
+		}
+	case *syntax.SelectorExpr:
+		c.parenTypes(x.X)
+	}
 }
 
 // argRead is W3301 for a deprecated field a type argument reads: an expression (TYPES.md §11, §16).
@@ -191,21 +206,37 @@ func (c *checker) notTypePath(tc *typeCtx, e syntax.Expr) {
 	c.report(tc.env, diag.E3803.AtArgument(tc.env.span(e)))
 }
 
-// pathParts splits `a.b.c` into its root and its selectors, root first; nil root otherwise.
+// pathParts splits `a.b.c` into its root and its selectors, root first; nil root otherwise. A
+// parenthesis is transparent (DECISIONS 171); a `?.` or a `!` is no step of a type path (DECISIONS 307).
 func pathParts(e syntax.Expr) (*syntax.IdentExpr, []*syntax.SelectorExpr) {
+	return walkPath(e, false)
+}
+
+// receiverParts is pathParts for a value's receiver, where `?.` and `!` are static steps at any depth (DECISIONS 477).
+func receiverParts(e syntax.Expr) (*syntax.IdentExpr, []*syntax.SelectorExpr) {
+	return walkPath(e, true)
+}
+
+// walkPath is the path of e, stepping through `?.` and `!` only when steps.
+func walkPath(e syntax.Expr, steps bool) (*syntax.IdentExpr, []*syntax.SelectorExpr) {
 	var segs []*syntax.SelectorExpr
 	for {
 		switch x := e.(type) {
 		case *syntax.IdentExpr:
-			for i, j := 0, len(segs)-1; i < j; i, j = i+1, j-1 {
-				segs[i], segs[j] = segs[j], segs[i]
-			}
+			slices.Reverse(segs)
 			return x, segs
 		case *syntax.SelectorExpr:
-			if x.Optional || x.X == nil {
+			if (x.Optional && !steps) || x.X == nil {
 				return nil, nil
 			}
 			segs = append(segs, x)
+			e = x.X
+		case *syntax.ParenExpr: // DECISIONS 171
+			e = x.X
+		case *syntax.ForceExpr:
+			if !steps {
+				return nil, nil
+			}
 			e = x.X
 		default:
 			return nil, nil
@@ -361,7 +392,7 @@ func (c *checker) resolveDepMap(tc *typeCtx, t *syntax.DepMapType) types.Type {
 func (c *checker) domain(env *env, e syntax.Expr) *types.Collection {
 	root, segs := pathParts(e)
 	if root == nil {
-		c.report(env, diag.E3504.At(env.span(e), ""))
+		c.report(env, diag.E3504.At(env.span(e), env.literalText(e).String()))
 		return nil
 	}
 	o := c.lookupGlobal(env, root.Name)
@@ -395,20 +426,22 @@ func (c *checker) domain(env *env, e syntax.Expr) *types.Collection {
 	return coll
 }
 
-// domainTypes records the types along a domain's path: the let's, then each field's.
+// domainTypes records the types along a domain's path: the let's, then each field's (DECISIONS 171: a parenthesis has its content's).
 func (c *checker) domainTypes(e syntax.Expr, let *object, segs []*syntax.SelectorExpr) {
 	t := c.letType(let)
-	c.info.Types[e] = t
-	if len(segs) > 0 {
-		c.info.Types[segs[0].X] = t
+	if len(segs) == 0 {
+		c.info.Types[inner(e)] = t
+	} else {
+		c.info.Types[inner(segs[0].X)] = t
 	}
 	for _, s := range segs {
 		f, ok := c.info.NameUses[s.Name].(*object)
 		if !ok || f.kind != ObjField {
-			return
+			break
 		}
 		c.info.Selections[s] = &Selection{Kind: SelField, Obj: f, Recv: t}
 		t = c.fieldType(f.field)
 		c.info.Types[s] = t
 	}
+	c.parenTypes(e)
 }
