@@ -1,4 +1,4 @@
-package workspace
+package build
 
 import (
 	"cmp"
@@ -23,7 +23,7 @@ type cutKey struct {
 func (m *merge) cut(limit, own int) ([][]diag.Finding, diag.Summary) {
 	keys := make([]cutKey, len(m.entries))
 	for i, e := range m.entries {
-		keys[i] = cutKey{pkg: e.f.Package, findingKey: keyOf(m.parts[e.part].Files(), e.f), sev: e.f.Severity, layer: e.f.Layer, at: i}
+		keys[i] = cutKey{pkg: e.f.Package, findingKey: findingKeyOf(m.parts[e.part].Files(), e.f), sev: e.f.Severity, layer: e.f.Layer, at: i}
 	}
 	slices.SortStableFunc(keys, compareCut)
 	kept := make([][]diag.Finding, len(m.parts))
@@ -73,18 +73,6 @@ func compareCut(a, b cutKey) int {
 		cmp.Compare(a.sev, b.sev), cmp.Compare(a.endLine, b.endLine), cmp.Compare(a.endCol, b.endCol),
 		cmp.Compare(a.path, b.path), cmp.Compare(a.layer, b.layer),
 	)
-}
-
-// topID is the highest file id f's spans use.
-func topID(f diag.Finding) source.FileID {
-	top := f.Span.File
-	for _, r := range f.Related {
-		top = max(top, r.Span.File)
-	}
-	for _, fr := range f.Stack {
-		top = max(top, fr.Span.File)
-	}
-	return top
 }
 
 // shifted is f with every span's file id moved by from; no file stays no file.

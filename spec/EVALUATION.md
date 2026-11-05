@@ -462,6 +462,9 @@ taints it (§7.3).
 - Layers stack in the order given on the command line (or `Options.Layers`).
 - **Every** layer file of the loaded packages is resolved and type-checked in phase 2, whether
   active or not, so renaming a field breaks a stale layer at once.
+- `canon check`, `canon build`, `canon test` and a watch also evaluate each layer not active,
+  singly, stacked last on the active ones: a finding new under it names it, and an error under it
+  blocks build outputs (DECISIONS 469, 472).
 - A layer never adds or changes types; it only has `amend` blocks.
 
 ### 9.2 Amend blocks and paths

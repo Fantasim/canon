@@ -4806,7 +4806,7 @@ round 2", "PS1 review", "PS2 round 2"):
      They run without the build cache, so the session's lineages stay. Measured on a 200-entry
      synthetic package: an edit's re-check takes about 13, 20, 60 and 313 ms with 0, 1, 10 and 50
      inactive layers; robustness before speed, and filtering by amend path missed cross-root checks.
-     `canon check` is unchanged (a question for Louis). Reason: v0.3 run (EDIT-WAYOUT review,
+     `canon check` is unchanged (a question for Louis; superseded by 469, 2026-11-05). Reason: v0.3 run (EDIT-WAYOUT review,
      EDIT-ALLLAYERS rounds 1-2): a base edit passed while breaking an inactive layer (`E3802`,
      `E1905` once it was activated).
 
@@ -4918,3 +4918,15 @@ round 2", "PS1 review", "PS2 round 2"):
      cannot be written so is refused `computed`; nothing is ever lost silently. Reason: v0.3 run
      (EDIT-E6RECORD rounds 1-5): `{}` records were written instead of removed, unknown keys were
      dropped, and a case tag was lost beside an inline field.
+
+472. **Every declared layer is evaluated by `canon build`, `canon test` and a watch too; a finding
+     raised under two layers is reported once per layer (API.md R2, F7, B1a, B5, W13, E18; CLI.md
+     §3.3-§3.5; follows 449, 463, 464, 469).** `build` runs `check`, so an error an inactive layer
+     adds blocks code, data and the lock (B1a). `canon test` reports the inactive layers' warnings
+     as `canon check` does and `--max-warnings` counts them; their errors stay out, as B5 keeps
+     only phases 1-2 errors (449). A watch event's findings are `Check`'s on its snapshot: after an
+     edit it reuses the re-check's layer analyses, after a change on disk it runs the same pass. A
+     finding is merged once within a layer; under two layers it is reported once for each, naming
+     each, since fixing one layer does not clear the other (the layer is blame, 464). Reason: v0.3
+     run (CHECK-ALLLAYERS rounds 2-4): one verdict for check, build, test and the studio's live
+     findings.

@@ -55,6 +55,7 @@ type run struct {
 	w         *runWrites              // its staging token and what its writes read (stage.go), made on first use
 	renames   []dirRename             // the directories the write gives their declared spelling, top-down (DECISIONS 377)
 	refused   []eval.StableAmendment  // what canon test's worlds refused, reported by the run (LOCK.md §6.1)
+	inactive  []layerPart             // a build's analyses of the layers it does not activate (layerErrors)
 }
 
 // prepare is phase 1: the snapshot parsed, the selection with its imports, the layers checked.

@@ -1,0 +1,47 @@
+CLI.md §2.3, §3.5, API.md B5 (DECISIONS 449, 469): a warning only an inactive layer raises counts
+toward --max-warnings as canon check counts it; exit 4.
+-- args --
+test
+--max-warnings
+0
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A config.
+record Config {
+  /// Its port.
+  port: Int
+
+  warn port < 1000 else "a high port"
+}
+
+/// The config.
+let config: Config = { port: 80 }
+
+test "the port is the base one" {
+  expect config.port == 80
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend config {
+  port: 9000
+}
+-- want --
+[exit 4]
+[stdout]
+warning[W5001]  a/a.canon:13:22
+  config: a high port
+  set by layer dev
+  expected by a/a.canon:9 (check)
+
+0 errors, 1 warning in 1 package (…)
+
+1 passed, 0 failed (…)
+[stderr]

@@ -1,0 +1,45 @@
+CLI.md §2.4, §3.3, API.md F5, F11 (DECISIONS 469): a layer's value that no longer fits the type
+its base now drives (E3802) fails the check with no --layer, in JSON with its "layer"; exit 1.
+-- args --
+check
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A reward: gold, or an item.
+type Reward(item: Bool) = match item {
+  false => Int(1..)
+  true => String(1..)
+}
+
+/// A quest.
+record Q {
+  /// Whether its rewards are items.
+  items: Bool = false
+  /// What it gives.
+  rewards: [Reward(items)] = []
+}
+
+/// Quests.
+let qs: table Q = {
+  a { items: false }
+}
+-- a/loot.layer.canon --
+package a
+layer loot
+
+amend qs {
+  a.rewards: ["s"]
+}
+-- want --
+[exit 1]
+[stdout]
+{"severity":"error","code":"E3802","file":"a/loot.layer.canon","line":5,"col":15,"endLine":5,"endCol":18,"package":"a","path":"qs.a.rewards[0]","message":"value does not match Reward(items) = Int(1..)","layer":"loot","related":[{"file":"a/a.canon","line":15,"col":3,"endLine":15,"endCol":27,"note":"rewards: [Reward(items)]"}]}
+{"summary":{"errors":1,"warnings":0,"packages":1,"ms":0}}
+[stderr]

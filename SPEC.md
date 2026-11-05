@@ -2478,7 +2478,8 @@ amend config {
 - `canon build --layer alice` applies every `layer alice` file of the loaded packages. Layers
   stack in the order given. A package has at most one file per layer name (`E1906`); a name that
   matches no file of any loaded package is `E1901` (exit code 2). Every layer file is type-checked,
-  active or not, so renaming a field breaks a stale layer at once.
+  active or not, so renaming a field breaks a stale layer at once. `check`, `build` and `test` also
+  evaluate each inactive layer, so a value it breaks is reported too (DECISIONS 469).
 - `amend <value> { path: expr, … }` overrides a top-level `let` of the layer's own package
   (`E1909` for another package, `E1902` for a `const`) at each path. The override applies to the
   value right after its base evaluation, before anything reads it, so it works on loaded and

@@ -1,0 +1,34 @@
+CLI.md §3.3 (DECISIONS 469): a project whose every declared layer evaluates passes with no
+--layer; exit 0.
+-- args --
+check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its value.
+  v: Int = 0
+}
+
+/// Rows.
+let rows: table Row = {
+  one { v: 1 }
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend rows {
+  one.v: 9
+}
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+[stderr]

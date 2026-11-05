@@ -8,8 +8,6 @@ import (
 	"testing/fstest"
 
 	"github.com/fantasim/canonlang/internal/build"
-	"github.com/fantasim/canonlang/internal/diag"
-	"github.com/fantasim/canonlang/internal/source"
 )
 
 // layeredOn is an outcome whose After is selectionFS with no layer active, re-checked as a and b.
@@ -90,46 +88,56 @@ func TestLayeredReadsKept(t *testing.T) {
 	}
 }
 
-// API.md F7 (DECISIONS 463): the merged findings are cut once as the bags cut them: each package at
-// the session's limit, the project's own, package "", at its own bag's.
-func TestCutOnceOwnLimit(t *testing.T) {
-	o := layeredOn(t)
-	own, a := diag.NewBag(o.checked.Files(), ""), diag.NewBag(o.checked.Files(), "a")
-	for _, msg := range []string{"one", "two", "three"} {
-		diag.E5001.At(source.Span{}, msg).Report(own)
-	}
-	for _, msg := range []string{"four", "five"} {
-		diag.W5001.At(source.Span{}, msg).Report(a)
-	}
-	m := &merge{parts: []*build.Analysis{o.checked}}
-	for _, f := range append(own.Findings(), a.Findings()...) {
-		m.entries = append(m.entries, merged{f: f})
-	}
-	kept, sum := m.cut(1, 2)
-	want := []diag.Truncation{{Package: "", Errors: 1}, {Package: "a", Warnings: 1}}
-	if len(kept[0]) != 3 || sum.Errors != 3 || sum.Warnings != 2 || !slices.Equal(sum.Truncated, want) {
-		t.Errorf("kept %d, summary %+v: want two of the project's and one of a's kept, the rest counted", len(kept[0]), sum)
+// DECISIONS 469, API.md R3a: a check with no inactive layer, or whose layers add nothing, is the
+// kept analysis's own result, the same value; a run's own analysis is not repeated.
+func TestCheckNothingNewKept(t *testing.T) {
+	for _, active := range [][]string{nil, {"live"}} {
+		s := selectionOn(t, active...)
+		a, err := Analyze(context.Background(), s, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := Check(context.Background(), s, nil, "")
+		if err != nil || res != a.Result() {
+			t.Errorf("active %v: %v, %v: want the analysis's own result", active, res, err)
+		}
 	}
 }
 
-// API.md E18 (DECISIONS 463): the layers checked are those the re-checked packages and their
-// imports declare, minus the active ones, in name order; a layer runs over its declarers' importers.
-func TestInactiveLayers(t *testing.T) {
-	o := layeredOn(t)
-	units := o.checked.Units()
-	cases := []struct {
-		pkgs, active, want []string
-	}{
-		{[]string{"a", "b"}, nil, []string{"live"}},
-		{[]string{"a", "b"}, []string{"live"}, nil},
-		{[]string{"b"}, nil, []string{"live"}},
+// DECISIONS 469: a check's layer analyses stop on a cancelled context, between layers, with its
+// error, the check's own result kept.
+func TestCheckLayersHonourContext(t *testing.T) {
+	s := selectionOn(t)
+	a, err := Analyze(context.Background(), s, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, c := range cases {
-		if got := inactiveLayers(units, importedBy(units, c.pkgs), c.active); !slices.Equal(got, c.want) {
-			t.Errorf("inactiveLayers(%v, active %v) = %v, want %v", c.pkgs, c.active, got, c.want)
-		}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if res, _, err := a.Layered(ctx, a.Result(), build.LayerRun{Pkgs: a.Selected()}); !errors.Is(err, context.Canceled) || res != a.Result() {
+		t.Errorf("the layers on a cancelled context: %v, want context.Canceled and the check's own result", err)
 	}
-	if got := importing(units, declaring(units, "live")...); !slices.Equal(got, []string{"a", "b"}) {
-		t.Errorf("the packages live's analysis covers: %v, want a and its importer b", got)
+}
+
+// DECISIONS 469, API.md W13: an edit event reads the re-check's merged findings kept beside its
+// analysis, analysing nothing again; any other analysis of the snapshot is merged afresh.
+func TestCheckedKeptForTheEdit(t *testing.T) {
+	ctx := context.Background()
+	s := selectionOn(t)
+	edited, err := AnalyzeOnly(ctx, s, []string{"a", "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	kept := &build.Result{}
+	s.kept.event, s.kept.eventOf = kept, edited
+	if res, err := Checked(ctx, s, edited); err != nil || res != kept {
+		t.Errorf("Checked of the edit's analysis: %v, %v, want the kept result", res, err)
+	}
+	other, err := Analyze(ctx, s, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res, err := Checked(ctx, s, other); err != nil || res == kept || res.Summary.Errors != 0 {
+		t.Errorf("Checked of another analysis: %v, %v, want its own clean merge", res, err)
 	}
 }

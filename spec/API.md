@@ -384,8 +384,9 @@ type Truncation struct { Package string; Errors, Warnings int }   // counts NOT 
 - **F7.** At most `Options.MaxFindings` findings are kept per package; the first ones in F2 order
   are kept, chosen on the source-language messages so the kept set is the same under every
   `Options.Lang` (DECISIONS 281). The counts in `Summary.Errors`/`Warnings` include the dropped ones;
-  `Truncated` lists each package that dropped some, in package-name order. An edit's findings merged from
-  several analyses (E18) are compared before any cut; each package's merged list is then cut once, and
+  `Truncated` lists each package that dropped some, in package-name order. Findings merged from several
+  analyses (an edit's re-check, E18; `Check`, `Build`, `Test` and a watch event over the inactive
+  layers, R2) are compared before any cut; each package's merged list is then cut once, and
   the counts and `Truncated` are those of the merged list (DECISIONS 463).
 - **F8.** `Summary.Packages` is the number of packages checked.
 
@@ -411,8 +412,8 @@ goldens (`expected/findings.txt`) and every tool agree byte for byte:
   further line of a multi-line message is indented two spaces too
   (`  heaviest: plan (98412330 steps)`, EVALUATION.md §12.2).
 - **F11.** When `Layer` is set: `  set by layer <layer>`. `Layer` names the layer whose amendment
-  produced the value; a finding an edit's re-check adds for an inactive layer (E18) that names none
-  names that layer (DECISIONS 463). A value an amendment's right-hand side builds, or a call, lambda,
+  produced the value; a finding a run adds for an inactive layer (R2, E18) that names none names that
+  layer (DECISIONS 463, 469). A value an amendment's right-hand side builds, or a call, lambda,
   default or `where` computes while it runs, carries the amendment's layer, as does an `E1905` its path
   raises; a default EVALUATION §9.3 step 3 re-derives takes the layer of the last amendment that
   changed a field it or its type's arguments read, else none. The layer is blame, not text: an edit
@@ -499,7 +500,11 @@ func (r *CheckResult) HasErrors() bool
 - **R1.** `packages` uses the selectors of CLI.md §2.2 (`game.items`, `game...`, `./game/items`,
   `path/to/file.canon`); none selects every package. An unknown selector is `ErrUnknownPackage`.
 - **R2.** `Check` runs build phases 1 to 7 (EVALUATION.md §1, EVL-01) on the selected packages and
-  their imports. Findings are reported for the selected packages only.
+  their imports. Findings are reported for the selected packages only. Besides the active layers,
+  `Check` evaluates every other layer the selected packages or a package they import declare, singly,
+  stacked last on the active ones, as E18 does; a finding such a run adds counts as any other and
+  names its layer (F11), and the same finding raised under two layers is reported once per layer
+  (DECISIONS 469, 472).
 - **R3.** Findings in the result are errors and warnings of the snapshot, not a failure of the
   call: `err` is non-nil only for `ErrUnknownPackage`, `ErrUnknownLayer`, `ErrClosed`, `ctx.Err()`
   or `*InternalError`.
@@ -1252,7 +1257,8 @@ inside the same edit and reports it, so every client behaves the same.
   importing its declarer are analysed once more with it stacked last, and a finding that analysis
   adds (one with the same code, located span, path and message is the re-check's own) joins
   `Findings` and counts for E19 as the re-check's own; what it consults joins the staleness check
-  (S5) (DECISIONS 463).
+  (S5) (DECISIONS 463). The same finding added under two layers is reported once per layer, each
+  naming its own (DECISIONS 472).
 - **E19.** If any finding is an error and `AllowErrors` is false, nothing is written, `Applied` is
   false, and `Edit` returns the result together with a `*RejectedError` (wraps `ErrRejected`).
   With `AllowErrors`, the files are written and the result has `Applied: true` and the error
@@ -1793,7 +1799,7 @@ type Event struct {
     Cause    EventCause   // external | edit | overlay
     Files    []string     // files that changed, display paths, byte order
     Packages []string     // packages re-checked, sorted
-    Findings []Finding    // ALL current findings of Packages (replace, do not merge)
+    Findings []Finding    // ALL current findings of Packages, inactive layers' included, as Check reports them (replace, do not merge)
     Summary  Summary
     Err      error        // non-nil when the re-check failed (*InternalError, ErrUnknownLayer)
 }
@@ -1821,7 +1827,9 @@ type Event struct {
   watching `load`. Events compare snapshots, so `Files` may name one written file under each display
   path that reaches it (DECISIONS 253). An event is delivered when its cause is not `external`, when
   a package was re-checked or removed, when the revision changed, or when there is an error. The
-  event's revision is computed after its re-check. A package removed since the `Watch` started is
+  event's revision is computed after its re-check. Its `Findings` and `Summary` are those `Check`
+  reports for `Packages` on the event's snapshot, the inactive layers' included (R2); an edit's event
+  reuses its re-check's layer analyses (DECISIONS 472). A package removed since the `Watch` started is
   listed in `Packages` with no findings. A `project.canon` broken while watching gives an event
   whose `Err` is a `*ProjectError`, its findings in `Findings`, and no packages; a load this
   compiler cannot run gives that error in `Err`. A panic in `fn` is recovered and becomes an
@@ -1869,7 +1877,8 @@ type LockChange struct { Package string; File string; Lines []string }
   runs even with errors (VM-07); outputs are written atomically and only when their content
   changes; a target without the GENERATED marker of GEN-05 is `E8001` (a finding, not an error
   value).
-- **B1a.** An error in any loaded package, selected or imported, blocks code, data and the lock;
+- **B1a.** An error in any loaded package, selected or imported, or one an inactive layer adds (R2,
+  DECISIONS 469), blocks code, data and the lock;
   the error findings of an imported package are then reported with the selection's (beyond R2),
   so nothing is refused without its reason. A build with layers never writes `canon.lock`
   (LOCK.md §6.1).
@@ -1909,7 +1918,7 @@ func (p *Project) LockCheck(ctx context.Context, packages ...string) (*CheckResu
   statement, `Expected`/`Got` are canonical text forms (STD-06), `Findings` are the findings that
   were actually produced (for `fails`/`warns`).
 - **B4.** `LockCheck` evaluates only stable collections and what they depend on (LCK-03).
-- **B5.** `Check` holds the errors of phases 1–2 of every loaded package and of project.canon, and the warnings of the packages the run selects, as `canon check` reports them (R2), and the run's own findings no test captures: `E3102` for a repeated `@codes` code, `E6004` for a refused stable amendment, and `W7101` (EVALUATION.md §10.5), with their summary (ADR-0004, DECISIONS 449). `Expect` is "" for what stopped or broke the test: one finding, or a poisoned read (`Poisoned`, its causes in `Cause`).
+- **B5.** `Check` holds the errors of phases 1–2 of every loaded package and of project.canon, and the warnings of the packages the run selects, as `canon check` reports them (R2: the inactive layers' warnings too, counted by `--max-warnings`; their errors stay out, DECISIONS 472), and the run's own findings no test captures: `E3102` for a repeated `@codes` code, `E6004` for a refused stable amendment, and `W7101` (EVALUATION.md §10.5), with their summary (ADR-0004, DECISIONS 449). `Expect` is "" for what stopped or broke the test: one finding, or a poisoned read (`Poisoned`, its causes in `Cause`).
 
 ---
 

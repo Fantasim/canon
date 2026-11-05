@@ -17,6 +17,8 @@ type kept struct {
 	covered string            // the selection whose analysis gives every package's values (Covered)
 	views   map[string][]byte // each package's view model bytes (S8, DECISIONS 313)
 	static  *build.Static     // the static read sets of its files (API.md S3, S5)
+	event   *build.Result     // an edit's re-check with its inactive layers' findings (keepEvent)
+	eventOf *build.Analysis   // that re-check's analysis
 }
 
 // Analyze is the analysis of the packages selectors name on s, shared by identical concurrent

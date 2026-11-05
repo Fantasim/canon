@@ -1,0 +1,47 @@
+CLI.md §2.3, §3.3, API.md F7 (DECISIONS 469): the broken layer active fails the check once: its
+own finding, never repeated by the evaluation of the inactive layers; exit 1.
+-- args --
+check
+--layer
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its value.
+  v: Int = 0
+}
+
+/// Rows.
+let rows: table Row = {
+  two { v: 2 }
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend rows {
+  one.v: 9
+}
+-- a/far.layer.canon --
+package a
+layer far
+
+amend rows {
+  two.v: 3
+}
+-- want --
+[exit 1]
+[stdout]
+error[E1905]  a/dev.layer.canon:5:3
+  rows: amend path one.v: key one does not exist
+  set by layer dev
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

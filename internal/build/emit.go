@@ -93,10 +93,19 @@ func (p *Project) buildOnce(ctx context.Context, opt BuildOptions) (*BuildResult
 
 // build is Build's emit, placement and write, once the run is analyzed, under the writer locks of a build that writes (CLI.md §3.4, DECISIONS 352).
 func (r *run) build(ctx context.Context, opt BuildOptions) (*BuildResult, error) {
+	added, err := r.layerErrors(ctx) // an inactive layer's error blocks the build as any (DECISIONS 469)
+	if err != nil {
+		return nil, err
+	}
 	out := &BuildResult{Result: *r.result()}
-	failed := out.Summary.Errors
+	failed := out.Summary.Errors + added
 	if failed > 0 && opt.OnlyRoot != "" { // a project that does not check gives its consumers nothing (DECISIONS 343)
-		return out, r.localized(ctx, &out.Result)
+		res, err := r.checked(ctx)
+		if err != nil {
+			return nil, err
+		}
+		out.Result = *res
+		return out, nil
 	}
 	release, err := r.lockWriters(ctx, opt)
 	if err != nil {
@@ -127,8 +136,8 @@ func (r *run) locked(ctx context.Context, opt BuildOptions, out *BuildResult, fa
 	if outputs, err = r.place(outputs, opt); err != nil {
 		return nil, err
 	}
-	res := r.result()
-	if err := r.localized(ctx, res); err != nil {
+	res, err := r.checked(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if out.Result = *res; out.Summary.Errors > failed {

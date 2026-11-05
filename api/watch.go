@@ -177,13 +177,16 @@ func (w *watching) recheck(ctx context.Context, s *workspace.Snapshot, units *bu
 		return nil
 	}
 	a, err := recheckOf(ctx, s, live)
+	var res *build.Result
+	if err == nil {
+		res, err = checkedOf(ctx, s, a)
+	}
 	if err != nil {
 		for _, pkg := range live {
 			delete(w.reads, pkg)
 		}
 		return failed(err, ev)
 	}
-	res := a.Result()
 	ev.Findings, ev.Summary = fromDiag(res.Files, res.List), summaryOf(res.Summary)
 	w.learn(a, live)
 	return nil
@@ -196,6 +199,16 @@ func recheckOf(ctx context.Context, s *workspace.Snapshot, live []string) (*buil
 		return a, nil
 	}
 	return analyze(ctx, s, live)
+}
+
+// checkedOf is a's findings with its inactive layers' as Check reports them: an edit's merged
+// re-check, else computed (API.md W13; DECISIONS 469).
+func checkedOf(ctx context.Context, s *workspace.Snapshot, a *build.Analysis) (*build.Result, error) {
+	res, err := workspace.Checked(ctx, s, a)
+	if err != nil {
+		return nil, apiError(err)
+	}
+	return res, nil
 }
 
 // removed is live and every package seen before that no longer exists, sorted; the packages of

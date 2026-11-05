@@ -40,7 +40,8 @@ type EditOutcome struct {
 
 	checked    *build.Analysis // the re-check's analysis, and the packages it re-checked (E18, E35)
 	rechecked  []string
-	layerReads []build.Read // what its inactive layers' analyses consulted (S5; DECISIONS 463)
+	layerReads []build.Read      // what its inactive layers' analyses consulted (S5; DECISIONS 463)
+	layers     []*build.Analysis // those analyses, which its edit event reuses (W13; DECISIONS 469)
 }
 
 // Edit is the edit transaction, the one writer (API.md E17-E21, S9-S12, N10, W15): the
@@ -218,7 +219,8 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 		o.Checked = &build.Result{Findings: build.Findings{Files: a.Files()}}
 		return nil
 	}
-	checked, err := AnalyzeOnly(ctx, o.After, pkgs)
+	at := o.After // where the re-check is kept, which a lock line's plan below may replace
+	checked, err := AnalyzeOnly(ctx, at, pkgs)
 	if err != nil {
 		return err
 	}
@@ -236,7 +238,10 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 	if err != nil {
 		return err
 	}
-	return o.layered(ctx, checked, pkgs, lang)
+	if err := o.layered(ctx, checked, pkgs, lang); err != nil {
+		return err
+	}
+	return at.keepEvent(ctx, checked, o.layers)
 }
 
 // commit writes o's changes through s, journaled (API.md N10), named by the revision they give,

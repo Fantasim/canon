@@ -1,0 +1,44 @@
+CLI.md §3.4, §6.2, API.md B1a (DECISIONS 469): CI's build --check fails on a layer the base
+breaks though no --layer activates it, as check does; nothing is written; exit 1.
+-- args --
+build
+--check
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its value.
+  v: Int = 0
+}
+
+/// Rows.
+let rows: table Row = {
+  two { v: 2 }
+}
+
+emit json { out: "@out/" }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend rows {
+  one.v: 9
+}
+-- want --
+[exit 1]
+[stdout]
+error[E1905]  a/dev.layer.canon:5:3
+  rows: amend path one.v: key one does not exist
+  set by layer dev
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

@@ -86,11 +86,14 @@ func (r *run) test(ctx context.Context, match *regexp.Regexp) (*TestResult, erro
 	r.reportStableAmendments()
 	r.reportRefused(r.refused)
 	parts := r.errorParts() // taken before the check run adds its findings to the snapshot's bags
-	warned, err := r.checkWarnings(ctx, r.headerSkips(testBags))
+	warned, files, err := r.checkWarnings(ctx, r.headerSkips(testBags))
 	if err != nil {
 		return nil, err
 	}
 	res.Static = r.static(parts, warned)
+	if files != nil {
+		res.Static.Files = files
+	}
 	res.Static.Revision = res.Revision
 	res.Manifest = r.manifest(r.inputs(), commandTest, nil)
 	return res, nil
@@ -160,23 +163,32 @@ func (f *Findings) join(o Findings) {
 	f.Summary = f.Summary.Merge(o.Summary)
 }
 
-// checkWarnings is, by selected package, the warnings canon check's run of r's selection reports
-// on r's snapshot, with each W7101 of moved whose header that run reported none for (API.md B5).
-func (r *run) checkWarnings(ctx context.Context, moved map[string][]diag.Finding) (map[string]Findings, error) {
+// checkWarnings is, by selected package, the warnings canon check reports for r's selection, its
+// inactive layers' included, with each W7101 of moved it has none for, and the files locating them
+// when a layer added some, else nil (API.md B5; DECISIONS 469).
+func (r *run) checkWarnings(ctx context.Context, moved map[string][]diag.Finding) (map[string]Findings, diag.Files, error) {
 	c := &run{p: r.p, s: r.s, selected: r.selected, orphans: r.orphans, loaded: r.loaded, bags: r.s.bagsOf(r.loaded), cached: true}
 	a, err := c.analyzed(ctx) // Analyze's phases 2 to 7 (CLI.md §3.3)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	checked, _, err := a.Layered(ctx, a.Result(), LayerRun{Pkgs: c.selectedNames()})
+	if err != nil {
+		return nil, nil, err
+	}
+	var files diag.Files
+	if checked != a.Result() {
+		files = checked.Files // its own set's ids keep their meaning (merge.result)
 	}
 	out := map[string]Findings{}
 	for _, name := range r.warnedNames() {
-		w := warningsOf(a.Result(), name)
+		w := warningsOf(checked, name)
 		extra := c.unreported(name, moved[name])
 		w.List = append(w.List, extra...)
 		w.Summary.Warnings += len(extra)
 		out[name] = w
 	}
-	return out, nil
+	return out, files, nil
 }
 
 // warnedNames is whose warnings canon check reports: project.canon ("") and the selected orphans and packages (API.md R2).

@@ -1,0 +1,48 @@
+CLI.md §3.4, EVALUATION.md §9.4 (DECISIONS 469): every declared layer evaluates, so the build
+writes its outputs, built from the base alone (no layer active): rows.one.v is 1, not the layer's 9.
+-- args --
+build
+-- project.canon --
+project acme {
+  canon: "0.1"
+  roots {
+    out: "out"
+  }
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its value.
+  v: Int = 0
+}
+
+/// Rows.
+let rows: table Row = {
+  one { v: 1 }
+}
+
+emit json { out: "@out/" }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend rows {
+  one.v: 9
+}
+-- want --
+[exit 0]
+[stdout]
+0 errors, 0 warnings in 1 package (…)
+json:
+  @out/rows.json
+[stderr]
+[file out/rows.json]
+{
+  "$schema": "a.Row@cdc0018f",
+  "rows": [
+    {"$id": "one", "v": 1}
+  ]
+}

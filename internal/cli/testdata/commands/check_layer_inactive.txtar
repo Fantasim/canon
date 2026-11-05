@@ -1,0 +1,39 @@
+CLI.md §3.3, EVALUATION.md §9.1, API.md F11 (DECISIONS 469): with no --layer, check evaluates
+every declared layer; a layer whose amend path the base no longer has fails the check (E1905),
+named by its layer; exit 1.
+-- args --
+check
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A row.
+record Row {
+  /// Its value.
+  v: Int = 0
+}
+
+/// Rows.
+let rows: table Row = {
+  two { v: 2 }
+}
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend rows {
+  one.v: 9
+}
+-- want --
+[exit 1]
+[stdout]
+error[E1905]  a/dev.layer.canon:5:3
+  rows: amend path one.v: key one does not exist
+  set by layer dev
+
+1 error, 0 warnings in 1 package (…)
+[stderr]

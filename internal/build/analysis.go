@@ -29,6 +29,7 @@ type Analysis struct {
 	listed  []byte                    // the manifest, made on first use
 	numbers numberIndex               // the typed number readings of each JSON source, made on first use
 	statics *Static                   // the static read sets of the snapshot analyzed, made on first use
+	wholes  map[string][]diag.Finding // the bags their limit cut, uncut (wholeBags)
 }
 
 // Analyze runs phases 1 to 7, writes nothing, and freezes the result (CLI.md §3.3).
@@ -65,7 +66,9 @@ func (r *run) analyzed(ctx context.Context) (*Analysis, error) {
 
 // analysis is the analyzed run frozen: its findings, settled values and manifest.
 func (r *run) analysis() *Analysis {
-	return &Analysis{r: r, res: r.result(), settled: r.settledRoots(), inputs: r.inputs()}
+	a := &Analysis{r: r, res: r.result(), settled: r.settledRoots(), inputs: r.inputs()}
+	a.wholes = r.wholeBags()
+	return a
 }
 
 // settledRoots is every const and let of the selected packages that phases 3-7 settled.

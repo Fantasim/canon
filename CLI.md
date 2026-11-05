@@ -237,7 +237,9 @@ Runs every phase of a build except emit (SPEC §11.2, [spec/EVALUATION.md](spec/
 §1): every value of the selected packages is evaluated, verified and checked, and the results of
 `export fn`s and the conformance vectors of translated functions are computed as `build` would
 emit them (stage E), so `check` and `build` report the same findings, `E9008` and `E9009`
-included. No file is written. Prints every finding, then the summary.
+included. No file is written. Besides the layers `--layer` activates, every other layer the checked
+packages or a package they import declare is evaluated, singly, stacked last; its findings name it
+(DECISIONS 469). Prints every finding, then the summary.
 
 - `--watch`: re-check on every change to a source, a loaded file or a layer, printing only what
   changed since the previous run (cycles as spec/IMPLEMENTATION-PLAN.md §8.1 says).
@@ -251,7 +253,8 @@ canon build [packages…] [--layer …] [--target go|cpp|ts|json|view|text]… [
             [--adopt <path>]… [--only-root <root>]
 ```
 
-Runs `check`; if there is no error in any loaded package, selected or imported, writes every
+Runs `check` (every declared layer included, §3.3); if there is no error in any loaded package,
+selected or imported, nor under any layer, writes every
 `emit` output of the selected packages and appends new stable values to each `canon.lock`. An
 imported package's error findings are then printed with the selection's, so nothing is refused
 without its reason. View models (`emit view`) are written even when there are errors, so the
@@ -349,7 +352,7 @@ message text, a check name or a code (`expect v fails E3204`, SPEC §18).
 
 `expect package { v: e, … }` runs the package's checks over substituted values (EVALUATION.md §10.5); its failures print as any other, and in JSON each captured finding carries its `path` and `check`.
 
-Before the report it prints, in `canon check`'s format (§2.4) with its summary line and a blank line after, the errors of phases 1–2 of every loaded package and the warnings of the selected packages (`-q`: errors only), the errors no test can capture (`E3102`, `E6004`, EVALUATION.md §10.5) and the warnings of the files its tests read that no value carries (`W7101`).
+Before the report it prints, in `canon check`'s format (§2.4) with its summary line and a blank line after, the errors of phases 1–2 of every loaded package and the warnings of the selected packages, the inactive layers' included (§3.3; `--max-warnings` counts them) (`-q`: errors only), the errors no test can capture (`E3102`, `E6004`, EVALUATION.md §10.5) and the warnings of the files its tests read that no value carries (`W7101`).
 
 ```
 FAIL  resource/events/event.canon:176  overlapping windows are refused

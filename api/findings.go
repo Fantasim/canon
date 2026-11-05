@@ -178,9 +178,9 @@ type CheckRequest struct {
 	Lang     string // "" is Options.Lang
 }
 
-// CheckWith is Check with the messages of named checks in r.Lang, else Options.Lang: only the
-// messages are rendered again, from the kept analysis, the finding set and the counts unchanged
-// (rule R3a, F7, DECISIONS 281); the result does not echo the language.
+// CheckWith is Check with the messages of named checks in r.Lang, else Options.Lang, the finding set
+// and counts unchanged (rule R3a, F7, DECISIONS 281), every inactive declared layer evaluated too
+// (F11, DECISIONS 469); the result does not echo the language.
 func (p *Project) CheckWith(ctx context.Context, r CheckRequest) (res *CheckResult, err error) {
 	defer recoverInternal(&err)
 	start := time.Now()
@@ -188,17 +188,15 @@ func (p *Project) CheckWith(ctx context.Context, r CheckRequest) (res *CheckResu
 	if err != nil {
 		return nil, err
 	}
-	a, err := analyze(ctx, s, r.Packages)
+	lang := cmp.Or(r.Lang, p.lang)
+	if lang == p.lang {
+		lang = "" // the kept analysis's own messages
+	}
+	found, err := workspace.Check(ctx, s, r.Packages, lang)
 	if err != nil {
-		return nil, err
+		return nil, apiError(err)
 	}
-	found := *a.Result()
-	if lang := cmp.Or(r.Lang, p.lang); lang != p.lang {
-		if found.List, err = a.ResultIn(ctx, lang); err != nil {
-			return nil, apiError(err)
-		}
-	}
-	res = checkResultOf(found, time.Since(start))
+	res = checkResultOf(*found, time.Since(start))
 	if res.Revision, err = p.revision(ctx, s); err != nil {
 		return nil, err
 	}
