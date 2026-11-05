@@ -184,7 +184,9 @@ every graph built-in runs iteratively or on an explicit stack, charged per node 
 A `ref T` resolved at level 1 (TYPES.md §10.2) is **bound** when the enclosing record instance is
 built: when an instance of a record `R` that has the candidate collection field `F` is
 completed, every level-1 ref of that target contained in its field values (including `F`
-itself) and not yet bound is bound to that instance's `F`. Dereferencing an unbound level-1 ref
+itself) and not yet bound is bound to that instance's `F`. A record decoded from a file is
+completed when its decoding ends, so the defaults the decoder filled in bind too (DECISIONS 497).
+Dereferencing an unbound level-1 ref
 is `E3505`. Verifying one (§5) that is still unbound when its top-level value is complete is
 `E3505` too.
 

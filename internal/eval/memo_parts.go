@@ -113,6 +113,9 @@ func (p *Parts) Start() (done func(src any, rec *value.Record, retired, pure boo
 			tr.code(f)
 		}
 		p.made++
+		if rec != nil { // bound before it is kept, as served copies are not bound again (loadbind.go)
+			e.bindLoaded(rec, e.loading)
+		}
 		n := e.spentOn(r.charge) - spent
 		if !pure || rec == nil || e.partState(r, tr) != at || e.steps-steps != n {
 			p.whole = false

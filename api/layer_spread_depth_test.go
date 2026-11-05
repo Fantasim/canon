@@ -94,31 +94,42 @@ func conversionFails(t *testing.T, p *canon.Project, let string) bool {
 // of its nested record, leaves its untouched entries the source's; one amending at or below an
 // entry, or replacing the record holding them, makes them the copy's own, active or inactive.
 func TestLayerSpreadCopyAtDepth(t *testing.T) {
-	for _, c := range []spreadDepthCase{
-		{"b5", `inner.id: "z"`, false, "0", nil},
-		{"b5", `inner.oo.x.w: 5`, true, "5", []string{"element p:b5.inner.oo[x]"}},
-		{"b5", `inner: { id: "z", oo: [{ name: "x", w: 9 }] }`, true, "9", []string{"element p:b5.inner.oo[x]"}}, // regression guard: passes on the base
-		{"c5", `b.inner.id: "z"`, false, "0", nil},
-		{"c5", `b.id: "z"`, false, "0", nil}, // regression guard: passes on the base
-		{"c5", `b.inner.oo.x.w: 5`, true, "5", []string{"element p:c5.b.inner.oo[x]"}},
-		{"pi", `id: "z"`, false, "0", nil},
-		{"pi", `oo.x.w: 5`, true, "5", []string{"element p:pi.oo[x]"}},
-		{"hb", `inner.id: "z"`, false, "0", nil},
-		{"hb", `inner.oo.x.w: 5`, true, "5", []string{"element p:hb.inner.oo[x]"}},
-		{"pi", `m[x]: 3`, false, "0", nil},
-		{"hb", `inner.m[x]: 3`, false, "0", nil},
-		{"b5", `inner.m[x]: 3`, false, "0", nil},
-		{"c5", `b.inner.m[x]: 3`, false, "0", nil},
-	} {
-		t.Run(c.root+" "+c.line, func(t *testing.T) { spreadDepthRow(t, c) })
+	for _, c := range spreadDepthCases {
+		t.Run(c.root+" "+c.line, func(t *testing.T) { spreadDepthRow(t, c, spreadDepthOpener(spreadDepthSrc, nil)) })
 	}
 }
 
-// spreadDepthRow checks c: the graph and refs active are those inactive plus what c gains, the
-// conversion fails exactly when the copy's x is its own, and the reads.
-func spreadDepthRow(t *testing.T, c spreadDepthCase) {
+// spreadDepthCases is each layer line TestLayerSpreadCopyAtDepth amends a copy with.
+var spreadDepthCases = []spreadDepthCase{
+	{"b5", `inner.id: "z"`, false, "0", nil},
+	{"b5", `inner.oo.x.w: 5`, true, "5", []string{"element p:b5.inner.oo[x]"}},
+	{"b5", `inner: { id: "z", oo: [{ name: "x", w: 9 }] }`, true, "9", []string{"element p:b5.inner.oo[x]"}}, // regression guard: passes on the base
+	{"c5", `b.inner.id: "z"`, false, "0", nil},
+	{"c5", `b.id: "z"`, false, "0", nil}, // regression guard: passes on the base
+	{"c5", `b.inner.oo.x.w: 5`, true, "5", []string{"element p:c5.b.inner.oo[x]"}},
+	{"pi", `id: "z"`, false, "0", nil},
+	{"pi", `oo.x.w: 5`, true, "5", []string{"element p:pi.oo[x]"}},
+	{"hb", `inner.id: "z"`, false, "0", nil},
+	{"hb", `inner.oo.x.w: 5`, true, "5", []string{"element p:hb.inner.oo[x]"}},
+	{"pi", `m[x]: 3`, false, "0", nil},
+	{"hb", `inner.m[x]: 3`, false, "0", nil},
+	{"b5", `inner.m[x]: 3`, false, "0", nil},
+	{"c5", `b.inner.m[x]: 3`, false, "0", nil},
+}
+
+// spreadDepthOpener opens src, with the files more beside it, under a layer dev of body, active when on.
+func spreadDepthOpener(src string, more map[string]string) func(t *testing.T, body string, on bool) *canon.Project {
+	return func(t *testing.T, body string, on bool) *canon.Project {
+		t.Helper()
+		return openLayeredWith(t, src, more, body, on)
+	}
+}
+
+// spreadDepthRow checks c opened by open: the graph and refs active are those inactive plus what c
+// gains, the conversion fails exactly when the copy's x is its own, and the reads.
+func spreadDepthRow(t *testing.T, c spreadDepthCase, open func(t *testing.T, body string, on bool) *canon.Project) {
 	body := "amend " + c.root + " {\n  " + c.line + "\n}\n"
-	off, on := openLayered(t, spreadDepthSrc, body, false), openLayered(t, spreadDepthSrc, body, true)
+	off, on := open(t, body, false), open(t, body, true)
 	graph0, refs0 := spreadDepthView(t, off)
 	graph1, refs1 := spreadDepthView(t, on)
 	graph0 = append(graph0, c.gains...)

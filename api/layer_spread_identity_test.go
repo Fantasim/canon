@@ -37,7 +37,14 @@ var spreadLayerRW = fmt.Sprintf("%s:%d", srcMain, slices.Index(strings.Split(spr
 // openLayered opens src as p's source with a layer dev of body, active when on.
 func openLayered(t *testing.T, src, body string, on bool) *canon.Project {
 	t.Helper()
+	return openLayeredWith(t, src, nil, body, on)
+}
+
+// openLayeredWith is openLayered with the files more beside src, named from the law's root.
+func openLayeredWith(t *testing.T, src string, more map[string]string, body string, on bool) *canon.Project {
+	t.Helper()
 	law := maps.Clone(editLaw)
+	maps.Copy(law, more)
 	law[srcMain] = src
 	law["p/dev.layer.canon"] = "package p\nlayer dev\n\n" + body
 	opts := project(law)

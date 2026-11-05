@@ -63,7 +63,7 @@ func (r *run) load(e *syntax.LoadExpr, t types.Type, site *loadSite) value.Value
 		r.ev.loading = site
 		v, ok := r.ev.host.Load(r.ctx, e, t)
 		r.ev.loading = outer
-		return r.loaded(v, ok, t)
+		return r.loaded(r.ev.bindLoaded(v, site), ok, t)
 	}
 	if v, hit := r.replayLoad(lm, k, site); hit {
 		return v
@@ -142,7 +142,7 @@ func (r *run) recordLoad(lm LoadMemo, k loadKey, site *loadSite) value.Value {
 	r.ev.loading = site
 	v, ok, in := lm.LoadRecorded(r.ctx, k.expr, k.t)
 	r.ev.loading, site.parts = nil, nil
-	v = r.loaded(v, ok, k.t)
+	v = r.loaded(r.ev.bindLoaded(v, site), ok, k.t)
 	u.trace = nil
 	u.storeParts(ps, r.fr.file)
 	if ps.used && ps.whole { // its elements are kept apart: the next load serves them again

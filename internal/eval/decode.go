@@ -22,6 +22,8 @@ type loadSite struct {
 	field *types.Field
 	save  *savepoint // the decoding attempt under way, nil for none
 	parts *Parts     // the load.dir elements kept apart, while the load is recorded (memo_parts.go)
+	// defaults is the values the decoder stored from defaults that may hold a ref, nil for none (loadbind.go)
+	defaults map[value.Value]bool
 }
 
 // savepoint is what a decoding attempt started from: the steps charged, the load's own, and
@@ -65,7 +67,9 @@ func (e *Evaluator) Default(ctx context.Context, f *types.Field, self *value.Rec
 	if v == nil || r.failed {
 		return nil, false
 	}
-	return e.inField(v, self, f), true
+	v = e.inField(v, self, f)
+	e.noteDefault(v, f)
+	return v, true
 }
 
 // Deref is the entry ref names for a decode's branch, else E3501 or E3505 at the ref (DECISIONS 175, EVALUATION.md §3.2).

@@ -5464,3 +5464,19 @@ round 2", "PS1 review", "PS2 round 2"):
      statically keyed table, `hasKey(lance)` turned from true to false; a `Set` of an enum-leaf ref
      read a let of the same ref type; and rewriting a map item whole then collided with a change
      inside its value (an internal error) and dropped a comment between key and value.
+
+497. **A decoded instance binds its defaults' level-1 refs as a literal does (EVALUATION.md §3.4,
+     §4.2; WIRE.md §6; follows 79, 173, 315, 410, 478, 486, 492).** A record decoded by `load`,
+     `load.dir` or `load.csv` is an instance completed when its decoding ends. Every level-1 ref its
+     field values hold and that is not yet bound, those of defaults the decoder filled in included
+     (a map key `m: {ref S: Int} = { x: 1 }`), is bound to the nearest enclosing instance that owns
+     the target collection, innermost first, as in a record literal. A copy of such a record (a
+     spread, a plain let copy, a field holding it, a default yielding an earlier field) keeps those
+     bindings, so its keys equal its entries in a warm and a cold build alike. A `load.dir` element
+     is bound before the memo keeps it, so an element served again is already bound. Known limit,
+     queued (EVAL-LOADPARTS-BIND): an element whose binding copies a nested record that owns a
+     collection is decoded again on each warm build (correct, but NFR-02's per-file cost is lost for
+     that shape). Reason: v0.3 run (EVAL-LOADIDENT): `m: {ref S: Int} = { x: 1 }` in a record loaded
+     from JSON gave `E3505 … ref S has no enclosing I to resolve against`, and its copies' map keys
+     did not equal the entries; only the refs written in the JSON were bound. The briefed false
+     E3503 through copies of a loaded record did not reproduce.
