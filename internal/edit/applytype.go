@@ -27,6 +27,13 @@ func concreteType(t types.Type, rec *value.Record) (types.Type, bool) {
 // selects, through arms that are applications themselves, an optional layer kept. False when an
 // argument or a scrutinee is unknown here.
 func (fr depFrame) computedType(t types.Type) (types.Type, bool) {
+	ct, _, ok := fr.computedIn(t)
+	return ct, ok
+}
+
+// computedIn is computedType, and the frame the computed type's own arguments are read in: the
+// one binding the parameters of the last function applied, fr itself when t applies none.
+func (fr depFrame) computedIn(t types.Type) (types.Type, depFrame, bool) {
 	opt := false
 	for range maxLitDepth {
 		opt = opt || isOptional(t)
@@ -37,17 +44,17 @@ func (fr depFrame) computedType(t types.Type) (types.Type, bool) {
 		}
 		br, inner, ok := fr.branch(app)
 		if !ok {
-			return nil, false
+			return nil, depFrame{}, false
 		}
 		t, fr = br, inner
 	}
 	switch {
 	case dependent(t):
-		return nil, false
+		return nil, depFrame{}, false
 	case opt:
-		return &types.OptionalType{Elem: t}, true
+		return &types.OptionalType{Elem: t}, fr, true
 	}
-	return t, true
+	return t, fr, true
 }
 
 // memberIndexOf is the arm index a scrutinee value selects: a member's, a case's, a Bool's.

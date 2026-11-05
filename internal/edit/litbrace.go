@@ -1,6 +1,8 @@
 package edit
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -68,10 +70,13 @@ func (st *srcTyping) typedName(e syntax.Expr, words []string, t types.Type) (val
 	return nil, st.wrong(e, t, "")
 }
 
-// recordItems is a record literal: `name: value` items only, each field at most once.
+// recordItems is a record literal: `name: value` items only, each field at most once, typed in
+// declaration order (typing.record).
 func (st *srcTyping) recordItems(lit *syntax.BraceLit, t types.Type) (value.Value, error) {
 	fields := fieldsOf(t)
 	rec := &value.Record{T: t, Fields: make([]value.Value, len(fields)), Set: make([]bool, len(fields))}
+	items := make([]syntax.Expr, len(fields))
+	given := make([]int, 0, len(lit.Items))
 	for _, it := range lit.Items {
 		fi, ok := it.(*syntax.FieldItem)
 		if !ok {
@@ -81,16 +86,13 @@ func (st *srcTyping) recordItems(lit *syntax.BraceLit, t types.Type) (value.Valu
 		if detail := fieldRefusal(fields, i, fi.Name.Name); detail != "" {
 			return nil, st.wrong(fi, t, detail)
 		}
-		if rec.Set[i] {
+		if items[i] != nil {
 			return nil, st.wrong(fi, t, detailTwice+fi.Name.Name)
 		}
-		v, err := st.inside(Seg{Kind: SegField, Name: fi.Name.Name}, func() (value.Value, error) { return st.expr(fi.Value, fields[i].Type) })
-		if err != nil {
-			return nil, err
-		}
-		rec.Fields[i], rec.Set[i] = v, true
+		items[i], given = fi.Value, append(given, i)
 	}
-	return rec, nil
+	slices.Sort(given)
+	return st.fieldsIn(rec, t, given, func(i int) (value.Value, error) { return st.expr(items[i], fields[i].Type) })
 }
 
 // mapItems is a map literal; a bare name keys only an enum or a ref key type (SPEC §6.1).
@@ -102,7 +104,9 @@ func (st *srcTyping) mapItems(lit *syntax.BraceLit, t types.Type) (value.Value, 
 		if err != nil {
 			return nil, err
 		}
-		v, err := st.inside(keySeg(k, kt), func() (value.Value, error) { return st.expr(x, vt) })
+		v, err := st.inside(keySeg(k, kt), func() (value.Value, error) {
+			return st.within(st.keyFrame(t, k), func() (value.Value, error) { return st.expr(x, vt) })
+		})
 		if err != nil {
 			return nil, err
 		}

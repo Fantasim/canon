@@ -13,8 +13,12 @@ import (
 // inside the amendment that sets the path or an ancestor, active or not, else as the path's own
 // amendment line, which replaces the lines amending its descendants.
 func (x *opCtx) layerSet() error {
-	v, err := x.typed(x.op.Value, x.layerType())
+	st := x.layerType()
+	v, err := x.typed(x.op.Value, st)
 	if err != nil {
+		return err
+	}
+	if err := x.readableSet(st, v); err != nil {
 		return err
 	}
 	if v, err = x.keepKey(v); err != nil {

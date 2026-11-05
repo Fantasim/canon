@@ -23,6 +23,7 @@ type Typer struct {
 	scope *types.Field // the field whose wire rules FromJSON and those units follow, nil for none
 	// spelled keeps the tokens a Source spelled its numbers and strings in, nil for none
 	spelled spellings
+	app     *applier // the defaults and dereferences a nested dependent type is computed with, nil for none
 }
 
 // Value is lit typed as a value of t; a value that does not fit is a *ValueError (V1).
@@ -30,7 +31,7 @@ func (ty Typer) Value(ctx context.Context, lit Lit, t types.Type) (value.Value, 
 	if ty.Host == nil {
 		return nil, ErrNoHost
 	}
-	tc := &typing{ctx: ctx, ty: ty}
+	tc := &typing{ctx: ctx, ty: ty, fr: ty.frame()}
 	v, err := tc.value(lit, t)
 	if err != nil || !ty.json {
 		return v, err
@@ -47,15 +48,17 @@ func (ty Typer) Key(ctx context.Context, lit Lit, kt types.Type) (value.Value, e
 	if ty.Host == nil {
 		return nil, ErrNoHost
 	}
-	tc := &typing{ctx: ctx, ty: ty}
+	tc := &typing{ctx: ctx, ty: ty, fr: ty.frame()}
 	return tc.key(lit, kt)
 }
 
-// typing is one Value or Key call: where in the value it stands, for the error's detail.
+// typing is one Value or Key call: where in the value it stands, for the error's detail, and
+// the frame of the record it types the fields of (DEP-02).
 type typing struct {
 	ctx context.Context
 	ty  Typer
 	at  []Seg
+	fr  depFrame
 }
 
 // value is lit as a value of t: a T is accepted where a T? is expected (SPEC §5.6).
@@ -76,7 +79,7 @@ func (tc *typing) value(lit Lit, t types.Type) (value.Value, error) {
 	}
 	et := present(t)
 	if dependent(et) {
-		return tc.symbol(lit, et)
+		return tc.dependentValue(lit, et)
 	}
 	switch x := lit.(type) {
 	case List:

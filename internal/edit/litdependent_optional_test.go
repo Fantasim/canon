@@ -32,13 +32,14 @@ local record Held {
 local let held: Held = { ev: one, pick: none }
 `
 
-// API.md V1, DECISIONS 171: an uncomputed dependent type takes a Source list in its first list branch, an optional one too.
+// API.md V1, DECISIONS 171: an uncomputed dependent type takes a Source list in its first list branch, an optional one too;
+// its argument names no entry, since one reading none computes Never (DECISIONS 307).
 func TestDependentSourceTakesOptionalListBranch(t *testing.T) {
 	s := open(t, mapFS{"law/project.canon": file(projectCanon), "law/d/d.canon": file(optSrc)}, nil, "", "d")
 	if n := s.a.Result().Summary.Errors; n > 0 {
 		t.Fatalf("optSrc has %d errors: %v", n, s.a.Result().List)
 	}
-	ops := []edit.Operation{noEv("held"), setOf("d:held.pick", edit.Source(`[2]`))}
+	ops := []edit.Operation{setOf("d:held", edit.Source(`{ ev: nope, pick: [2] }`))}
 	if _, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: ops}); err != nil {
 		t.Errorf("a list given to the optional list branch: %v, want it applied", err)
 	}

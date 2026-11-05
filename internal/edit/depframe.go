@@ -22,7 +22,8 @@ type depFrame struct {
 }
 
 // branch is the type app selects in fr, and the frame binding its function's parameters (DEP-02):
-// the arm its scrutinee selects, or its body. False when an argument or the scrutinee is unknown.
+// the arm its scrutinee selects, or its body; Never for an argument reading none. False when an
+// argument or the scrutinee is unknown.
 func (fr depFrame) branch(app *types.TypeAppType) (types.Type, depFrame, bool) {
 	fn := app.Fn
 	if len(fn.Params) != len(app.Args) {
@@ -35,6 +36,9 @@ func (fr depFrame) branch(app *types.TypeAppType) (types.Type, depFrame, bool) {
 			return nil, depFrame{}, false
 		}
 		inner.params[p] = v
+	}
+	if slices.ContainsFunc(fn.Params, func(p *types.Param) bool { return isNoneValue(inner.params[p]) }) {
+		return types.NeverType, inner, true // TYPES.md 11.6, DECISIONS 307: an optional argument reading none
 	}
 	s := fn.Scrutinee
 	if s == nil {

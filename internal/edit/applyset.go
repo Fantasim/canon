@@ -14,8 +14,12 @@ func setOp(x *opCtx) error {
 	if x.a.env.EditLayer != "" {
 		return x.layerSet()
 	}
-	v, err := x.typed(x.op.Value, x.setType())
+	st := x.setType()
+	v, err := x.typed(x.op.Value, st)
 	if err != nil {
+		return err
+	}
+	if err := x.readableSet(st, v); err != nil {
 		return err
 	}
 	if err := x.slotsFit(len(x.res.Steps), v); err != nil {
@@ -151,7 +155,7 @@ func (x *opCtx) armOf(t types.Type, fr depFrame) (types.Type, bool) {
 		return t, true
 	}
 	ct, computed := fr.computedType(t)
-	if computed && present(ct).Base().Kind() == types.Never {
+	if computed && computesNever(ct) {
 		return t, true
 	}
 	return ct, computed

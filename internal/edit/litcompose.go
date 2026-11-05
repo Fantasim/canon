@@ -113,18 +113,38 @@ func (tc *typing) caseLit(c Case, t types.Type) (value.Value, error) {
 }
 
 // record types the fields obj writes; a field it leaves out is nil and not Set (API.md V3).
+// They are typed in declaration order, in the frame of the record built, so that a field a type
+// function computes sees the earlier fields it reads (TYPES.md 11.1, DEP-02).
 func (tc *typing) record(obj Obj, t types.Type, fields []*types.Field) (value.Value, error) {
 	rec := &value.Record{T: t, Fields: make([]value.Value, len(fields)), Set: make([]bool, len(fields))}
+	given := make([]int, 0, len(obj))
 	for _, name := range slices.Sorted(maps.Keys(obj)) {
 		i := fieldIndex(fields, name)
 		if detail := fieldRefusal(fields, i, name); detail != "" {
 			return nil, tc.mismatch(Obj(nil), t, detail)
 		}
-		v, err := tc.inside(Seg{Kind: SegField, Name: name}, func() (value.Value, error) { return tc.value(obj[name], fields[i].Type) })
-		if err != nil {
-			return nil, err
+		given = append(given, i)
+	}
+	slices.Sort(given)
+	return tc.fieldsIn(rec, t, given, func(i int) (value.Value, error) { return tc.value(obj[fields[i].Name], fields[i].Type) })
+}
+
+// fieldsIn types each field of rec, of type t, that given names, in order, by typeField, in the
+// frame of rec (depFrame.enter): its parameters bound to the arguments t applies.
+func (tc *typing) fieldsIn(rec *value.Record, t types.Type, given []int, typeField func(int) (value.Value, error)) (value.Value, error) {
+	fields := fieldsOf(t)
+	_, err := tc.within(tc.fr.enter(rec, t), func() (value.Value, error) {
+		for _, i := range given {
+			v, err := tc.inside(Seg{Kind: SegField, Name: fields[i].Name}, func() (value.Value, error) { return typeField(i) })
+			if err != nil {
+				return nil, err
+			}
+			rec.Fields[i], rec.Set[i] = v, true
 		}
-		rec.Fields[i], rec.Set[i] = v, true
+		return rec, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return rec, nil
 }
@@ -153,7 +173,9 @@ func (tc *typing) mapLit(entries Map, t types.Type) (value.Value, error) {
 		if err != nil {
 			return nil, err
 		}
-		v, err := tc.inside(keySeg(k, kt), func() (value.Value, error) { return tc.value(kv.Value, vt) })
+		v, err := tc.inside(keySeg(k, kt), func() (value.Value, error) {
+			return tc.within(tc.keyFrame(t, k), func() (value.Value, error) { return tc.value(kv.Value, vt) })
+		})
 		if err != nil {
 			return nil, err
 		}

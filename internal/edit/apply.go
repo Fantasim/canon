@@ -220,7 +220,7 @@ func newApplier(ctx context.Context, env Env, base *Snapshot) *applier {
 
 // typer types an operation's values against the current state (API.md V1).
 func (a *applier) typer(pkg string) Typer {
-	return Typer{Host: a.host, Pkg: pkg, Outer: a.outer, marks: a.marks, spelled: a.spelled}
+	return Typer{Host: a.host, Pkg: pkg, Outer: a.outer, marks: a.marks, spelled: a.spelled, app: a}
 }
 
 // operation applies op to the current state: its changes are planned, the files they write

@@ -7,8 +7,8 @@ import (
 )
 
 // setType is the type a Set's value must have (API.md V1): targetType, but where the arm cannot
-// be computed a list, record, map or case literal has none to fit, and a Source's list or brace
-// literal takes the first branch of its form, as the checker reads it written (DECISIONS 171).
+// be computed a list, record, map or case literal keeps the dependent type, whose branch the
+// typer then decides (formBranch: a Canon list or brace literal's first, DECISIONS 171, 411).
 func (x *opCtx) setType() types.Type {
 	t, dep := x.declaredType()
 	if !dep {
@@ -25,17 +25,16 @@ func (x *opCtx) setType() types.Type {
 			return t
 		}
 	case Source:
-		if fits := sourceForm(lit); fits != nil {
-			return check.FirstFittingBranch(t, fits)
+		if e, _ := parseLiteral(string(lit)); formTest(e) != nil {
+			return t
 		}
 	}
 	return x.heldType(t)
 }
 
-// sourceForm is the test of the branches a Source's list or brace literal classifies against,
-// nil for another expression.
-func sourceForm(text Source) func(types.Type) bool {
-	e, _ := parseLiteral(string(text))
+// formTest is the test of the branches list or brace literal e classifies against (DECISIONS
+// 171), nil for another expression.
+func formTest(e syntax.Expr) func(types.Type) bool {
 	switch syntax.Unparen(e).(type) {
 	case *syntax.ListLit:
 		return check.IsListBranch

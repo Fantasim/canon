@@ -4967,3 +4967,23 @@ round 2", "PS1 review", "PS2 round 2"):
      value (a `SetCase`, a `Set` to another case, an optional to `none`, a list shorter than an
      amended index) is `Apply`'s alone. Reason: v0.3 run (EDIT-SETCASEUNDO rounds 1-5): such edits
      were written with an Undo that could not be applied.
+
+475. **A value for an applied or dependent type is typed against the branch its record computes
+     (API.md V1, V2; TYPES.md §11.4-§11.6; WIRE.md §5.9; follows 171, 307, 411, 471).** A list,
+     record, map or case literal an op gives, at any depth, is typed against the branch its record
+     computes in the state the earlier ops left, the applied type's parameters bound, a dependent
+     map's binder bound to each value's key as the decoder binds it. Bound for a JSON source, a
+     branch that cannot be computed is a `ValueError`: 171's first branch is Canon text's only, the
+     decoder always reading the computed branch. An optional type-function argument reading `none`
+     computes `Never`, as 307 and the decoder do: a literal there is a `ValueError`, `none` is
+     accepted where the field is optional, and an `Insert`, `Add` or `AddEntry` into a container
+     computing `Never` is `ErrBadOp`. Until typed literals in `Source` land, bound for a Canon
+     source, a value whose dependent position computes a branch other than the one 171 reads its
+     text as is a `ValueError` (`Source`, `Obj`, `List`, `Map` or `Case` at top level and nested, a
+     `FromJSON` value at every depth, an edit layer's `Set`; a bare case is never readable at a
+     dependent position); a position whose branch cannot be computed (an inactive edit layer, W11a)
+     or computes `Never` is left to the typer and the re-check, and a write into an existing typed
+     literal of the same type, keeping its name (M6), is allowed. `Insert` and `AddEntry` items stay
+     with the re-check (`E3802`, `E2102`). Reason: v0.3 run (EDIT-TYPEAPPSET rounds 1-7): the Undo of
+     a `Reset` could not be typed, and a write on another branch was dropped by the cascade or left
+     an Undo that could not apply.

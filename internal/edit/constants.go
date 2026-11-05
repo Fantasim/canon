@@ -170,6 +170,7 @@ const (
 	detailUnit                     = "its JSON source counts it in whole "
 	detailNotFinite                = "not a finite number"
 	detailDependent                = "a type computed from a value takes a name, or a literal one of its branches takes"
+	detailOtherBranch              = "Canon text reads this literal as another branch than the one its record computes"
 	detailNotNamed                 = "names nothing in the type its record computes here"
 	detailField                    = "no such field: "
 	detailTwice                    = "field given twice: "
