@@ -15,8 +15,9 @@ headlines: [releases.md](releases.md). `main` is the only branch.
 sites; Resource: the `WindowIds.h` defines, `expect package` for its `…Problems` workarounds).
 
 **In flight (2026-11-05): v0.3, lean generated code** ([ADR-0026](decisions/0026-v03-lean-generated-code.md)).
-Its 34 units and CLEANUP are on `main`. Its §0 new-bug units are landing, DECISIONS 453-479 so far
-(edit/layer correctness, Graph at any depth, `canon check` over every layer: 469-472). The run's state lives in
+Its 34 units and CLEANUP are on `main`. Its §0 new-bug units are landing, DECISIONS 453-491 so far
+(edit/layer correctness, Graph at any depth, `canon check` over every layer: 469-472; copy identity under
+layers 486/491; amend keys 487; ref-chain keys 490). The run's state lives in
 `/var/tmp/canon-v030/roster.tsv` and `pending-log.md`; fold them into `meta/decisions/log-2026-11-0x.md` at
 the end. Then §18: the long gates, the Resource dry run, release notes; Louis pushes. Nothing is pushed yet.
 Its §0 flags four calls for Louis, none blocking. v0.4 formulas ([ADR-0025](decisions/0025-v04-formulas-outline.md))
