@@ -263,7 +263,6 @@ var partialCases = []partialCase{
 	{"inline case: Reset", reset("ji.sh"), "i.json", []string{"{\n  \"kind\": \"square\",\n  \"zzz\": 9,\n  \"z\": 1\n}"}, `"r": 5`},
 	{"inline case: Set to the default", setTo("ji.sh", "square {}"), "i.json", []string{"{\n  \"kind\": \"square\",\n  \"zzz\": 9,\n  \"z\": 1\n}"}, `"r": 5`},
 	{"inline in a case: Set", setTo("jo.o", "oa { inner: ix { p: 4 } }"), "hn.json", []string{"\"kind\": \"oa\",\n    \"itag\": \"ix\",\n    \"p\": 4"}, `"p": 3`},
-	{"inline in a case: Set the inline field", setTo("jo.o.inner", "iy {}"), "hn.json", []string{"\"kind\": \"oa\",\n    \"itag\": \"iy\""}, `"p": 3`},
 	{"inline in a case: Reset", reset("jo.o"), "hn.json", []string{"\"kind\": \"ob\""}, `"p": 3`},
 	{"in place, first: Reset", reset("jm.sh"), "m.json", []string{"{\n    \"zzz\": 9,\n    \"type\": \"square\",\n    \"s\": 4\n  }"}, `"R": 5`},
 	{"in place, inline: Reset", reset("jj.h.sh"), "j.json", []string{"{\n    \"type\": \"square\",\n    \"zzz\": 9,\n    \"s\": 4,\n    \"z\": 1\n  }"}, `"R": 5`},

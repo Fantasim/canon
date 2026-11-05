@@ -5030,3 +5030,18 @@ round 2", "PS1 review", "PS2 round 2"):
      run (EVAL-DEEPOWNER rounds 1-3): entries below level 1 had no node, an applied default's
      entry raised a false `E3503`, and a node's id depended on whether a shared record's let was
      computed.
+
+479. **A `partial` JSON object keeps its unknown keys at every depth (API.md M8, E6, E22; FORMATTER.md
+     §14.2; WIRE.md §5.14; extends 471).** 471's rule holds inside the parent of `@json(pairs:)`
+     slots and inside the intermediate objects `@json(path:)` creates: a pairs field claims only
+     its slot keys (an index below its bound, as the decoder reads it), an intermediate is removed
+     only when no unknown key remains in it, and two path fields sharing a missing intermediate
+     create it once. An inline variant field is diffed in its parent member by member: a case
+     change rewrites or removes the old case's keys and inserts the new case's, every other key
+     staying where it is, a sibling field's unknown keys included; a key of a third case is an
+     unknown key and is kept. A case change is refused `computed` when the new value claims a key
+     the old value keeps unknown, or holds as a value a key the old value's path object keeps
+     unknown keys under. A claimed field removed whole takes its contents with it. A kept key that
+     stood before the old tag stays first. Slot keys and an inline field's keys take their place
+     in declaration order. Reason: v0.3 run (EDIT-PAIRSKEYS rounds 1-3): unknown keys were lost at
+     these depths, and an inline Reset dropped its tag.

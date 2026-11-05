@@ -11,9 +11,17 @@ import (
 // jsonDiff finds the smallest set of members and elements whose value changed in a JSON source
 // (API.md M1, FMT-02) and edits them in the source wire (M8).
 type jsonDiff struct {
-	a     *applier
-	out   []jsonEdit
-	stars map[string][]atStep // the containers an `at:` `*` reads, by pointer (WIRE.md 6.3)
+	a      *applier
+	out    []jsonEdit
+	stars  map[string][]atStep // the containers an `at:` `*` reads, by pointer (WIRE.md 6.3)
+	places []fieldPlace        // new members, placed once their record's removals are known
+	top    *inlineTop          // the records whose object an inline case being compared shares
+}
+
+// inlineTop is the old and new records whose object holds the inline case being compared, the
+// new one with that case in place: its declaration order places the case's keys (FORMATTER 14.2).
+type inlineTop struct {
+	old, nw *value.Record
 }
 
 // value turns n, stating old at field f's place (nil for none), into nw's source wire.
@@ -36,10 +44,10 @@ func (d *jsonDiff) structural(old, nw value.Value, n *jsonsrc.Node, f *types.Fie
 		r, ok := nw.(*value.Record)
 		switch {
 		case !ok || n.Kind != jsonsrc.Object:
-		case sameShape(o.T, r.T) && !wiredApart(o, r):
+		case sameShape(o.T, r.T):
 			return true, d.record(o, r, n)
-		case unclaimedIn(n, o):
-			return true, d.rewriteKeeping(n, o, r, f) // a case changed beside kept keys (M8)
+		case unclaimedIn(n, o) || inlined(r):
+			return true, d.swapCase(n, swap{old: o, nw: r}, f) // beside kept keys (M8), an inline case's tag (WIRE.md 5.6)
 		}
 	case *value.Table:
 		if t, ok := nw.(*value.Table); ok && n.Kind == jsonsrc.Object {
@@ -95,28 +103,37 @@ func itemAnchor(c *jsonsrc.Node, at int) int {
 	return int(c.Span.End) - 1
 }
 
-// wiredApart reports a record one of whose changed fields its object does not hold in one
-// member (an inline variant): the record is written again whole. Parallel keys are compared
-// slot key by slot key (WIRE.md 5.14; log-2026-09-29 M4 B10-r3).
-func wiredApart(o, r *value.Record) bool {
-	for i, f := range fieldsOf(r.T) {
-		if f.Inline && !sameValue(o.Fields[i], r.Fields[i]) {
-			return true
-		}
-	}
-	return false
+// inlined reports a record one of whose fields is inline: written again whole, with each inline
+// variant's tag (WIRE.md 5.6, 5.8).
+func inlined(r *value.Record) bool {
+	return slices.ContainsFunc(fieldsOf(r.T), func(f *types.Field) bool { return f.Inline })
 }
 
 // record compares field by field at each field's key path (M1, M8), a pairs field slot key by
-// slot key (WIRE.md 5.14).
+// slot key (WIRE.md 5.14), then places its new members and drops the path objects it empties.
 func (d *jsonDiff) record(old, nw *value.Record, n *jsonsrc.Node) error {
+	from, placed, top := len(d.out), len(d.places), d.top
+	d.top = nil
+	err := d.fields(old, nw, n)
+	d.top = top
+	if err != nil {
+		return err
+	}
+	d.settle(n, nw, from, placed)
+	return nil
+}
+
+// fields is record's field by field comparison.
+func (d *jsonDiff) fields(old, nw *value.Record, n *jsonsrc.Node) error {
 	fields := fieldsOf(nw.T)
 	for i, f := range fields {
 		var err error
 		switch {
 		case f.Pairs != nil:
 			err = d.pairs(old, nw, i, n)
-		case f.Input == nil && !f.Inline:
+		case f.Inline:
+			err = d.inline(old, nw, i, n)
+		case f.Input == nil:
 			err = d.member(old, nw, fields, i, n)
 		}
 		if err != nil {
@@ -141,7 +158,7 @@ func (d *jsonDiff) member(old, nw *value.Record, fields []*types.Field, i int, n
 	case m != nil:
 		return d.value(old.Fields[i], nw.Fields[i], m, f)
 	case !d.omits(nw, i, f):
-		return d.insertField(fields, i, nw.Fields[i], holder, depth)
+		return d.insertField(nw, i, holder, depth)
 	}
 	return nil
 }
@@ -194,34 +211,67 @@ func objMember(n *jsonsrc.Node, key string) int {
 	return slices.IndexFunc(n.Members, func(m jsonsrc.Member) bool { return m.Key == key })
 }
 
-// insertField adds field i to holder, the deepest object of its key path present, creating the
-// objects the path still lacks (LOD-09), each key placed in declaration order (FMT-02).
-func (d *jsonDiff) insertField(fields []*types.Field, i int, v value.Value, holder *jsonsrc.Node, depth int) error {
-	node, err := d.a.wireNode(v, fields[i])
+// insertField adds field i of rec to holder, the deepest object of its key path present, creating
+// the objects the path still lacks (LOD-09), each key placed in declaration order (FMT-02).
+func (d *jsonDiff) insertField(rec *value.Record, i int, holder *jsonsrc.Node, depth int) error {
+	fields := fieldsOf(rec.T)
+	node, err := d.a.wireNode(rec.Fields[i], fields[i])
 	if err != nil {
 		return err
 	}
 	p := fields[i].WirePath
-	for k := len(p) - 1; k > depth; k-- {
-		node = &jsonsrc.Node{Kind: jsonsrc.Object, Members: []jsonsrc.Member{{Key: p[k], Value: node}}}
+	if j := d.pendingAt(holder, p[depth]); j >= 0 && depth+1 < len(p) {
+		mergeMember(d.out[j].e.Value, p[depth+1:], node) // an object an earlier field creates (LOD-09)
+		return nil
 	}
-	at := jsonsrc.Place(holder, declaredKeys(fields, p[:depth]), p[depth])
-	d.insert(holder, at, p[depth], node)
+	d.placed(holder, d.owner(rec), p[:depth], p[depth], nested(p[depth+1:], node))
 	return nil
 }
 
-// declaredKeys are the keys at prefix of the record's fields in declaration order, a path's
-// first key where its first field stands (FMT-02, LOD-09).
-func declaredKeys(fields []*types.Field, prefix []string) []string {
-	var out []string
-	for _, f := range fields {
-		p := f.WirePath
-		if f.Inline || f.Pairs != nil || len(p) <= len(prefix) || !slices.Equal(p[:len(prefix)], prefix) {
-			continue
-		}
-		if k := p[len(prefix)]; !slices.Contains(out, k) {
-			out = append(out, k)
+// owner is the record whose declaration order places a new member of rec's object: rec, or the
+// record whose object an inline case rec is shares (WIRE.md 5.6).
+func (d *jsonDiff) owner(rec *value.Record) *value.Record {
+	if d.top != nil {
+		return d.top.nw
+	}
+	return rec
+}
+
+// placed inserts v keyed key into holder, the object at prefix of one stating rec, in rec's
+// declaration order, its place settled once the record's removals are known (FMT-02).
+func (d *jsonDiff) placed(holder *jsonsrc.Node, rec *value.Record, prefix []string, key string, v *jsonsrc.Node) {
+	d.insert(holder, jsonsrc.Place(holder, declaredKeys(rec, prefix), key), key, v)
+	d.places = append(d.places, fieldPlace{at: len(d.out) - 1, holder: holder, rec: rec, prefix: prefix})
+}
+
+// pendingAt is the index in d.out of the new member keyed key that a record being compared adds
+// to holder, -1 for none.
+func (d *jsonDiff) pendingAt(holder *jsonsrc.Node, key string) int {
+	for _, p := range d.places {
+		if p.holder == holder && d.out[p.at].e.Key == key {
+			return p.at
 		}
 	}
-	return out
+	return -1
+}
+
+// nested is v under the objects keys name, outermost first.
+func nested(keys []string, v *jsonsrc.Node) *jsonsrc.Node {
+	for _, key := range slices.Backward(keys) {
+		v = &jsonsrc.Node{Kind: jsonsrc.Object, Members: []jsonsrc.Member{{Key: key, Value: v}}}
+	}
+	return v
+}
+
+// mergeMember adds v at key path keys under obj, a new object, after the members it holds: the
+// objects of the path it already holds shared, the others created (LOD-09).
+func mergeMember(obj *jsonsrc.Node, keys []string, v *jsonsrc.Node) {
+	for len(keys) > 1 {
+		j := objMember(obj, keys[0])
+		if j < 0 || obj.Members[j].Value.Kind != jsonsrc.Object {
+			break
+		}
+		obj, keys = obj.Members[j].Value, keys[1:]
+	}
+	obj.Members = append(obj.Members, jsonsrc.Member{Key: keys[0], Value: nested(keys[1:], v)})
 }

@@ -494,3 +494,6 @@ const (
 
 // findingSep joins the parts of a lock finding's identity, a byte no path or text holds (E23).
 const findingSep = "\x00"
+
+// slotHole is the slot placeholder of an @json(pairs:) key template, `{i}` (WIRE.md 5.14).
+const slotHole = string(tplOpen) + "i" + string(tplClose)

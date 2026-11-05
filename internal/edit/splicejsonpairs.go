@@ -39,7 +39,8 @@ func (d *jsonDiff) pairs(old, nw *value.Record, i int, n *jsonsrc.Node) error {
 		j := objMember(n, m.Key)
 		switch {
 		case j < 0:
-			d.insert(n, at, m.Key, m.Value) // at one place, inserts apply in reverse: slot order (applyOrder)
+			d.insert(n, at, m.Key, m.Value)                                                          // at one place, inserts apply in reverse: slot order (applyOrder)
+			d.places = append(d.places, fieldPlace{at: len(d.out) - 1, holder: n, rec: d.owner(nw)}) // beside kept keys (FORMATTER 14.2)
 		case k/per >= len(ol) || !sameValue(pairField(ol[k/per], k%per), pairField(nl[k/per], k%per)):
 			d.setNode(n.Members[j].Value, m.Value) // by value, never by its text (M1)
 		}
