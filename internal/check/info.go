@@ -50,6 +50,8 @@ type Info struct {
 	BrokenViews map[*syntax.ViewDecl]bool // a view holding an error (VIEWMODEL.md J4, ADR-0009)
 
 	BrokenTranslations map[*syntax.TranslationEntry]bool // a translation entry holding an error (I18N.md T2, ADR-0009)
+
+	NameKeys map[*syntax.Ident]*types.Collection // Keys for a key written as an Ident: `name:`, an amend `.k` (DECISIONS 470)
 }
 
 // ObjectOf is the object an *Ident declares or names, or an *IdentExpr names; else nil.
@@ -66,8 +68,7 @@ func (i *Info) ObjectOf(n syntax.Node) Object {
 	return nil
 }
 
-// Object is a declared or built-in name, one pointer per declaration; a built-in has no Pkg,
-// Decl or File.
+// Object is a declared or built-in name, one pointer per declaration; a built-in has no Pkg, Decl or File.
 type Object interface {
 	Kind() ObjKind
 	Name() string

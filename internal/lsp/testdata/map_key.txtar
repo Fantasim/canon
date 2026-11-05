@@ -1,0 +1,146 @@
+A map literal's bare-name key and an amend line's `.k` naming an element of a keyed list
+(DECISIONS 470, IMPLEMENTATION-PLAN §4.7 NameKeys, §8.4 Features, CLI.md §3.8, §4): definition
+goes from the key `shield` of `weights` (0-based line 18, character 34) to the element, as from the ref
+`one`; references there list Refs' places, the map key among them; a key read through a ref chain
+(`byK`, line 42, character 27: `ks` keyed by `ref js`, DECISIONS 456) goes to the element of
+`ks`; the amend line's `.shield` (layer line 4, character 2) goes to the element too; and the
+amend line's `.x` after an entry (layer line 8, character 11: `one.subs.x`, a key of the field
+collection `Holder.subs`) goes, by the line's static path, to the element `x` of `many[one]`'s
+subs, and references there list it. A map literal's key inside an amend line's value (`shelf`'s
+`weights: { shield: 4 }`, layer line 12, character 13) goes to the element, as in the source.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// An item.
+record Item {
+  /// Its id.
+  id: String
+  /// Its weight.
+  weight: Int = 1
+}
+
+/// Items, keyed by id.
+let items: [Item] keyed by id = [
+  { id: "sword" },
+  { id: "shield", weight: 3 },
+]
+
+/// Weights by item.
+let weights: {ref items: Int} = { shield: 2, sword: 1 }
+
+/// One.
+let one: ref items = shield
+
+/// A j.
+record J {
+  /// Its n.
+  n: String
+}
+
+/// A k.
+record K {
+  /// Its j.
+  j: ref js
+}
+
+/// Js.
+let js: [J] keyed by n = [{ n: "second" }]
+
+/// Ks.
+let ks: [K] keyed by j = [{ j: second }]
+
+/// By k.
+let byK: {ref ks: Int} = { second: 1 }
+
+/// A sub.
+record Sub {
+  /// Its name.
+  name: String
+  /// Its w.
+  w: Int = 0
+}
+
+/// A holder.
+record Holder {
+  /// Its id.
+  id: String
+  /// Its subs.
+  subs: [Sub] keyed by name = []
+}
+
+/// Many.
+let many: [Holder] keyed by id = [{ id: "one", subs: [{ name: "x" }] }]
+
+/// A shelf.
+record Shelf {
+  /// Its weights.
+  weights: {ref items: Int}
+}
+
+/// The shelf.
+let shelf: Shelf = { weights: {} }
+-- proj/a/dev.layer.canon --
+package a
+layer dev
+
+amend items {
+  shield.weight: 5
+}
+
+amend many {
+  one.subs.x.w: 4
+}
+
+amend shelf {
+  weights: { shield: 4 }
+}
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+open proj/a/dev.layer.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":34}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":34},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":3,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":21,"character":21},"context":{"includeDeclaration":false}}}
+send {"jsonrpc":"2.0","id":4,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":42,"character":27}}}
+send {"jsonrpc":"2.0","id":5,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":4,"character":2}}}
+send {"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":8,"character":11}}}
+send {"jsonrpc":"2.0","id":7,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":8,"character":11},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":8,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":12,"character":13}}}
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+> open proj/a/dev.layer.canon
+> wait
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":34}}}
+< {"jsonrpc":"2.0","id":1,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":34},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":2,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":34},"end":{"line":18,"character":40}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":21,"character":21},"end":{"line":21,"character":27}}}]}
+> send {"jsonrpc":"2.0","id":3,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":21,"character":21},"context":{"includeDeclaration":false}}}
+< {"jsonrpc":"2.0","id":3,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":34},"end":{"line":18,"character":40}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":21,"character":21},"end":{"line":21,"character":27}}}]}
+> send {"jsonrpc":"2.0","id":4,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":42,"character":27}}}
+< {"jsonrpc":"2.0","id":4,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":39,"character":26},"end":{"line":39,"character":39}}}}
+> send {"jsonrpc":"2.0","id":5,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":4,"character":2}}}
+< {"jsonrpc":"2.0","id":5,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}}}
+> send {"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":8,"character":11}}}
+< {"jsonrpc":"2.0","id":6,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":61,"character":54},"end":{"line":61,"character":67}}}}
+> send {"jsonrpc":"2.0","id":7,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":8,"character":11},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":7,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":61,"character":54},"end":{"line":61,"character":67}}}]}
+> send {"jsonrpc":"2.0","id":8,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":12,"character":13}}}
+< {"jsonrpc":"2.0","id":8,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

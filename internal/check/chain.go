@@ -141,7 +141,7 @@ func (c *checker) keyedReceiver(x syntax.Expr) *types.Collection {
 		return nil
 	}
 	if f := fieldNamed(owner.Fields, s.Name.Name); f != nil {
-		return c.fieldCollection(owner, f)
+		return c.heldCollection(owner, f)
 	}
 	return nil
 }

@@ -26,6 +26,7 @@ func (i *Info) cloned(broken map[Object]bool, views map[*syntax.ViewDecl]bool) *
 		BrokenViews: maps.Clone(views),
 
 		BrokenTranslations: maps.Clone(i.BrokenTranslations),
+		NameKeys:           maps.Clone(i.NameKeys),
 	}
 }
 
@@ -43,6 +44,7 @@ func (i *Info) forget(n syntax.Node) {
 	case *syntax.Ident:
 		delete(i.Defs, x)
 		delete(i.NameUses, x)
+		delete(i.NameKeys, x)
 	case *syntax.IdentExpr:
 		delete(i.Uses, x)
 		delete(i.Symbols, x)
@@ -124,6 +126,7 @@ func (i *Info) move(old, n syntax.Node) {
 	case *syntax.Ident:
 		moveFact(i.Defs, x, n.(*syntax.Ident))
 		moveFact(i.NameUses, x, n.(*syntax.Ident))
+		moveFact(i.NameKeys, x, n.(*syntax.Ident))
 	case *syntax.IdentExpr:
 		moveFact(i.Uses, x, n.(*syntax.IdentExpr))
 		moveFact(i.Symbols, x, n.(*syntax.IdentExpr))

@@ -219,6 +219,7 @@ func newInfo() *Info {
 		BrokenViews: map[*syntax.ViewDecl]bool{},
 
 		BrokenTranslations: map[*syntax.TranslationEntry]bool{},
+		NameKeys:           map[*syntax.Ident]*types.Collection{},
 	}
 }
 

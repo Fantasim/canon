@@ -166,11 +166,82 @@ func (sp *spot) keyAt(ctx context.Context) (rs []edit.Resolved, inKey bool, err 
 			rs, err := sp.keyEntries(ctx, sp.info.Keys[expr], expr)
 			return rs, true, err
 		}
+		if id, ok := n.(*syntax.Ident); ok && sp.info.NameKeys[id] != nil {
+			rs, err := sp.nameKeyEntries(ctx, sp.info.NameKeys[id], id)
+			return rs, true, err
+		}
 		if sp.info.ObjectOf(n) != nil {
 			return nil, false, nil
 		}
 	}
 	return nil, false, nil
+}
+
+// nameKeyEntries are the entries a key written as a bare name names: an amend path's `.name` by
+// the line's static path to it; a map literal's `name:` in a let's collection by its path, else
+// by the refs stated at it.
+func (sp *spot) nameKeyEntries(ctx context.Context, coll *types.Collection, id *syntax.Ident) ([]edit.Resolved, error) {
+	// IMPLEMENTATION-PLAN §4.7 NameKeys, DECISIONS 470
+	if block, line := sp.amendLine(id); block != nil && line != nil {
+		return sp.resolved(sp.amendPrefix(block, line, id)), nil
+	}
+	if coll.Kind == types.CollLet {
+		return sp.resolved(collKeyPath(coll, value.Key{S: id.Name})), nil
+	}
+	at := sp.file.Span(id)
+	return sp.statedEntries(ctx, &at)
+}
+
+// amendLine is the amend block and the amend line at the spot whose path holds id as a segment;
+// nil when id is not one, a map literal's key in the line's value among them.
+func (sp *spot) amendLine(id *syntax.Ident) (*syntax.AmendBlock, *syntax.Amendment) {
+	var block *syntax.AmendBlock
+	var line *syntax.Amendment
+	for _, n := range sp.chain {
+		switch x := n.(type) {
+		case *syntax.AmendBlock:
+			block = x
+		case *syntax.Amendment:
+			line = x
+		}
+	}
+	if line == nil || !slices.ContainsFunc(line.Path, func(s *syntax.AmendSegment) bool { return s.Name == id }) {
+		return nil, nil
+	}
+	return block, line
+}
+
+// amendPrefix is the value path an amend line's segments name up to the one naming id, from the
+// amended let, as StaticPath reads a selector; nil for a segment no path writes.
+func (sp *spot) amendPrefix(block *syntax.AmendBlock, line *syntax.Amendment, id *syntax.Ident) *edit.Path {
+	let := sp.info.NameUses[block.Target]
+	if let == nil {
+		return nil
+	}
+	p := edit.Path{Package: let.Pkg(), Root: let.Name()}
+	for _, seg := range line.Path {
+		s, ok := amendSeg(seg)
+		if !ok {
+			return nil
+		}
+		p.Segs = append(p.Segs, s)
+		if seg.Name == id {
+			return &p
+		}
+	}
+	return nil
+}
+
+// amendSeg is an amend segment as a path segment: `.f`, `[k]` or `[#n]` (API.md P9).
+func amendSeg(seg *syntax.AmendSegment) (edit.Seg, bool) {
+	switch {
+	case seg.Name != nil:
+		return edit.Seg{Kind: edit.SegField, Name: seg.Name.Name}, true
+	case seg.Position != nil:
+		return edit.Seg{Kind: edit.SegPos, Pos: int(seg.Position.Value.Int64())}, seg.Position.Value.IsInt64()
+	}
+	k, ok := writtenKey(seg.Key)
+	return keySeg(k), ok
 }
 
 // keyEntries are the entries a key written in source names: in a let's collection, by its path;
@@ -195,6 +266,12 @@ func keyPath(coll *types.Collection, e syntax.Expr) *edit.Path {
 	if !ok {
 		return nil
 	}
+	return collKeyPath(coll, k)
+}
+
+// collKeyPath is the value path of the entry of key k in a let's collection: the let, its field
+// path, then the key.
+func collKeyPath(coll *types.Collection, k value.Key) *edit.Path {
 	p := edit.Path{Package: coll.Pkg, Root: coll.Name}
 	for _, f := range coll.FieldPath {
 		p.Segs = append(p.Segs, edit.Seg{Kind: edit.SegField, Name: f})

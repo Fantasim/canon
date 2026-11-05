@@ -98,6 +98,8 @@ func namesNoObject(info *check.Info, n syntax.Node) []*syntax.Ident {
 		}
 	case *syntax.Import:
 		out = n.Path.Parts[:len(n.Path.Parts)-1]
+	case *syntax.AmendBlock:
+		out = uncollectedKeys(info, n)
 	case *syntax.AssetType:
 		for _, e := range n.Exts {
 			if id, ok := e.(*syntax.Ident); ok {
@@ -108,6 +110,95 @@ func namesNoObject(info *check.Info, n syntax.Node) []*syntax.Ident {
 		out = presentationNoObject(n)
 	}
 	return out
+}
+
+// uncollectedKeys are DECISIONS 470's exemption: an unrecorded `.k` into a keyed list no Collection names.
+func uncollectedKeys(info *check.Info, b *syntax.AmendBlock) []*syntax.Ident {
+	// The keyed list is held by a variant case's field, or reached by a `[k]` or `[#n]` step (a
+	// map's value, a list's element): types.Collection expresses neither, for a value either.
+	let := info.NameUses[b.Target]
+	if let == nil {
+		return nil
+	}
+	var out []*syntax.Ident
+	for _, a := range b.Items {
+		on := segmentTypes(let.Type(), a.Path)
+		for i := 1; i < len(a.Path); i++ {
+			id, prev := a.Path[i].Name, a.Path[i-1]
+			if id == nil || info.ObjectOf(id) != nil || info.NameKeys[id] != nil || !keyedOn(on[i]) {
+				continue
+			}
+			if prev.Name == nil || inVariantCase(info.ObjectOf(prev.Name)) {
+				out = append(out, id)
+			}
+		}
+	}
+	return out
+}
+
+// segmentTypes are the types each segment of path steps on, from t; nil past a step not followed.
+func segmentTypes(t types.Type, path []*syntax.AmendSegment) []types.Type {
+	out := make([]types.Type, len(path))
+	for i, seg := range path {
+		if t == nil {
+			break
+		}
+		if opt, ok := t.Base().(*types.OptionalType); ok {
+			t = opt.Elem
+		}
+		out[i] = t
+		t = stepOn(t, seg)
+	}
+	return out
+}
+
+// stepOn is the type seg reaches on t: a field's, an element's or a map value's; nil for none.
+func stepOn(t types.Type, seg *syntax.AmendSegment) types.Type {
+	switch x := t.Base().(type) {
+	case *types.ListType:
+		return x.Elem
+	case *types.TableType:
+		return x.Elem
+	case *types.MapType:
+		return x.Value
+	case *types.DepMapType:
+		return x.Value
+	}
+	if seg.Name == nil {
+		return nil
+	}
+	if fs := fieldsNamed([]types.Type{t}, seg.Name.Name); len(fs) == 1 {
+		return fs[0].Type
+	}
+	return nil
+}
+
+// keyedOn reports a keyed list or a table, whose `.k` is a key, not an element's field.
+func keyedOn(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	switch x := t.Base().(type) {
+	case *types.ListType:
+		return x.KeyedBy != nil
+	case *types.TableType:
+		return true
+	}
+	return false
+}
+
+// inVariantCase reports a field declared in a variant's case.
+func inVariantCase(o check.Object) bool {
+	if o == nil || o.Kind() != check.ObjField || o.File() == nil {
+		return false
+	}
+	at := o.File().Span(o.Decl())
+	for _, vc := range nodesOf[*syntax.VariantCase](o.File()) {
+		if sp := o.File().Span(vc); sp.Start <= at.Start && at.End <= sp.End {
+			return true
+		}
+	}
+	return false
 }
 
 // presentationNoObject are the identifiers of a view or translation node naming no object:
@@ -206,8 +297,8 @@ func missing(info *check.Info, n syntax.Node, reflected map[*syntax.CallExpr]boo
 			return "not in Uses, Keys or Symbols"
 		}
 	case *syntax.Ident:
-		if info.ObjectOf(n) == nil {
-			return "not in Defs or NameUses"
+		if info.ObjectOf(n) == nil && info.NameKeys[n] == nil {
+			return "not in Defs, NameUses or NameKeys"
 		}
 	}
 	if e, ok := n.(syntax.Expr); ok && info.Types[e] == nil && !isPackage(info, e) {

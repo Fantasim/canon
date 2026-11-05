@@ -130,7 +130,7 @@ func fingerprint(prog *check.Program) string {
 		entries("symbols", i.Symbols, deep), entries("calls", i.Calls, deep),
 		entries("literals", i.Literals, deep), entries("matches", i.Matches, deep),
 		entries("broken", i.Broken, deep), entries("brokenviews", i.BrokenViews, deep),
-		entries("brokentranslations", i.BrokenTranslations, deep),
+		entries("brokentranslations", i.BrokenTranslations, deep), entries("namekeys", i.NameKeys, deep),
 	} {
 		b.WriteString(strings.Join(part, "\n"))
 		b.WriteByte('\n')

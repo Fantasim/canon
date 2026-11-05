@@ -50,9 +50,7 @@ func (c *checker) identKey(env *env, n *syntax.Ident, key types.Type) {
 	}
 	o := c.lookup(env, n.Name)
 	if o == nil {
-		if !c.strayIt(env, n, n.Name) && c.dynamicKeys(key) == nil {
-			c.unknownName(env, n, n.Name)
-		}
+		c.symbolicKey(env, n, key)
 		return
 	}
 	c.info.NameUses[n] = o
@@ -60,6 +58,19 @@ func (c *checker) identKey(env *env, n *syntax.Ident, key types.Type) {
 	if !c.valueOf(o, key) { // static keys too: E3027, not E2102 (TYPES.md §4.1, DECISIONS 334)
 		c.keyInScope(env, n, o, key)
 	}
+}
+
+// symbolicKey is `name:` no scope has: a key of a collection with dynamic keys, else E2102 (TYPES.md §4.1).
+func (c *checker) symbolicKey(env *env, n *syntax.Ident, key types.Type) {
+	if c.strayIt(env, n, n.Name) {
+		return
+	}
+	coll := c.dynamicKeys(key)
+	if coll == nil {
+		c.unknownName(env, n, n.Name)
+		return
+	}
+	c.info.NameKeys[n] = coll
 }
 
 // keyStepOne is step 1 for `name:`: a member or static key of the key type, or a dependent key (TYPES.md §4.1).

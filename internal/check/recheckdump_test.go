@@ -106,6 +106,9 @@ func kindFacts(n syntax.Node, info *check.Info) []string {
 		if o, ok := info.NameUses[x]; ok {
 			add("names %s at %s", objText(o), where(o))
 		}
+		if k, ok := info.NameKeys[x]; ok {
+			add("key %s", k)
+		}
 	case *syntax.IdentExpr:
 		if o, ok := info.Uses[x]; ok {
 			add("uses %s at %s", objText(o), where(o))
@@ -152,9 +155,9 @@ func broken(b *strings.Builder, info *check.Info) {
 
 // sizes prints the size of every map of Info: a fact about a node of no checked file shows.
 func sizes(b *strings.Builder, i *check.Info) {
-	fmt.Fprintf(b, "sizes %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", len(i.Types), len(i.TypeExprs), len(i.Defs),
+	fmt.Fprintf(b, "sizes %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", len(i.Types), len(i.TypeExprs), len(i.Defs),
 		len(i.Uses), len(i.NameUses), len(i.Selections), len(i.Conv), len(i.Keys), len(i.Symbols), len(i.Calls),
-		len(i.Literals), len(i.Matches), len(i.Broken), len(i.BrokenViews), len(i.BrokenTranslations))
+		len(i.Literals), len(i.Matches), len(i.Broken), len(i.BrokenViews), len(i.BrokenTranslations), len(i.NameKeys))
 }
 
 // findingsJSON renders the findings of every bag as JSON, with their summary.

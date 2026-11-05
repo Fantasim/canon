@@ -409,7 +409,17 @@ func (c *checker) enclosingCandidates(tc *typeCtx, rec *types.RecordType) []*typ
 
 // fieldCollection is the collection field f of owner holds, a table or keyed list; nil for none (TYPES.md §9.4).
 func (c *checker) fieldCollection(owner *types.RecordType, f *types.Field) *types.Collection {
-	elem, keyed, isColl := collectionElem(c.fieldType(f))
+	return c.collectionOf(owner, f, c.fieldType(f))
+}
+
+// heldCollection is fieldCollection through an optional field too, where `.k` reads a key (TYPES.md §9.1).
+func (c *checker) heldCollection(owner *types.RecordType, f *types.Field) *types.Collection {
+	return c.collectionOf(owner, f, unwrapOptional(c.fieldType(f)))
+}
+
+// collectionOf is the collection of type t field f of owner holds; nil for none.
+func (c *checker) collectionOf(owner *types.RecordType, f *types.Field, t types.Type) *types.Collection {
+	elem, keyed, isColl := collectionElem(t)
 	if !isColl {
 		return nil
 	}

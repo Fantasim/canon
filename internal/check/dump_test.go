@@ -95,6 +95,9 @@ func (d *dumper) ident(n syntax.Node) {
 		if o := d.info.NameUses[n]; o != nil {
 			d.printf(n, "%s names %s", n.Name, objText(o))
 		}
+		if c := d.info.NameKeys[n]; c != nil {
+			d.printf(n, "%s key of %s", n.Name, c)
+		}
 	case *syntax.IdentExpr:
 		if o := d.info.Uses[n]; o != nil {
 			d.printf(n, "%s uses %s", n.Name, objText(o))

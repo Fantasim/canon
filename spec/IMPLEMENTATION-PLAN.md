@@ -644,9 +644,10 @@ type Info struct {
     Broken     map[Object]bool                      // declarations with a static error, or naming one (TYPES.md §1)
     BrokenViews map[*syntax.ViewDecl]bool           // views holding an error (VIEWMODEL.md J4; ADR-0009, DECISIONS 228)
     BrokenTranslations map[*syntax.TranslationEntry]bool // translation entries holding an error (I18N T2; ADR-0009)
+    NameKeys   map[*syntax.Ident]*types.Collection  // a bare name keying an entry: a map literal's `name:`, an amend line's `.k`; the collection the same name as a value gets in Keys (DECISIONS 470, 456)
 }
 
-func (i *Info) ObjectOf(n syntax.Node) Object   // an *Ident in Defs or NameUses, an *IdentExpr in Uses; else nil
+func (i *Info) ObjectOf(n syntax.Node) Object   // an *Ident in Defs or NameUses, an *IdentExpr in Uses; else nil; NameKeys names a collection, not an object, and ObjectOf does not read it
 func ViewBroken(info *Info, d *syntax.ViewDecl) bool   // BrokenViews[d], or a parser recovery node in d (J4)
 
 type ObjKind uint8   // Const Let Fn Method Param Local Field Member Case Entry Builtin TypeName Package Layer Check Test Widget
@@ -691,8 +692,10 @@ const NoneIndex = -1
 
 - Every map is complete for the nodes of every declaration that is not broken: a consumer that
   finds no entry has found a checker bug. Maps are looked up, never iterated for output
-  (`maprange`, §7.5). Every identifier is in `Defs`, `NameUses`, `Uses`, `Keys` or `Symbols`,
-  unless it names no object (an annotation, a project key, an emit target, an option or a
+  (`maprange`, §7.5). Every identifier is in `Defs`, `NameUses`, `Uses`, `Keys`, `Symbols` or
+  `NameKeys`, unless it is the `.k` of an amend path into a keyed list reached through a variant
+  case's field, a map value or a list element, which no `types.Collection` names in v0.3
+  (DECISIONS 470), or unless it names no object (an annotation, a project key, an emit target, an option or a
   built-in's parameter, an `expect` outcome or code); `emit … values:` names and the `{f}`
   variables of `@files` templates are in `Uses` (the `.g` of `{f.g}` in `NameUses`; a `g` that
   several cases of a variant `f` declare is an occurrence of each, marked ambiguous, as is an

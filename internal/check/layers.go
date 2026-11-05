@@ -100,6 +100,7 @@ type amendWalk struct {
 	fields []string
 	plain  bool
 	bind   *bindCtx // where evaluation reads a literal's type arguments at the path so far
+	via    *object  // the field the last segment named, nil after any other segment
 }
 
 func (w *amendWalk) path() string { return strings.Join(w.text, "") }
@@ -143,7 +144,7 @@ func (c *checker) amendSegment(env *env, w *amendWalk, seg *syntax.AmendSegment)
 		w.plain = false
 	}
 	w.bind = w.bind.step(t, seg, next)
-	w.t = next
+	w.t, w.via = next, c.fieldStepped(seg)
 	return true
 }
 
@@ -159,8 +160,8 @@ func (c *checker) amendField(env *env, w *amendWalk, t types.Type, n *syntax.Ide
 		c.report(env, diag.E1905.AtField(env.span(n), w.path()))
 		return nil, false
 	}
-	if sel.Kind == SelEntry && len(w.fields) == 0 && w.let.keys != nil && w.let.keys.byName[n.Name] != nil {
-		c.info.NameUses[n] = w.let.keys.byName[n.Name]
+	if sel.Kind == SelEntry {
+		c.amendEntry(w, t, n)
 	}
 	if o, ok := sel.Obj.(*object); ok && o != nil {
 		c.info.NameUses[n] = o
@@ -174,6 +175,42 @@ func (c *checker) amendField(env *env, w *amendWalk, t types.Type, n *syntax.Ide
 		}
 	}
 	return ft, true
+}
+
+// amendEntry records `.k` naming an entry: its object when the let's keys are static, else its collection (DECISIONS 470).
+func (c *checker) amendEntry(w *amendWalk, t types.Type, n *syntax.Ident) {
+	if len(w.fields) == 0 && w.let.keys != nil && w.let.keys.byName[n.Name] != nil {
+		c.info.NameUses[n] = w.let.keys.byName[n.Name]
+		return
+	}
+	if coll := c.amendColl(w, t); coll != nil {
+		c.info.NameKeys[n] = coll
+	}
+}
+
+// amendColl is the collection `.k` steps into: the let's at its field path, else the last field's (TYPES.md §9.1).
+func (c *checker) amendColl(w *amendWalk, t types.Type) *types.Collection {
+	if w.plain {
+		return c.fieldColl(w.let, w.fields, t)
+	}
+	if w.via == nil {
+		return nil
+	}
+	if owner := requiredRecord(w.via.owner); owner != nil {
+		return c.heldCollection(owner, w.via.field)
+	}
+	return nil
+}
+
+// fieldStepped is the record field a `.f` segment named, nil for any other segment.
+func (c *checker) fieldStepped(seg *syntax.AmendSegment) *object {
+	if seg.Name == nil {
+		return nil
+	}
+	if o, ok := c.info.NameUses[seg.Name].(*object); ok && o.kind == ObjField {
+		return o
+	}
+	return nil
 }
 
 // caseField is `.f` on a variant: the field of the case holding it, checked when applied.
