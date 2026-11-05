@@ -1,0 +1,25 @@
+EVALUATION.md §9.2, TYPES.md §4.1, DECISIONS 316, 318, 470: a bare name in `[ ]` after an entry step is a key of the keyed list it indexes, as it is at the let's own record fields; a name in scope stays an expression.
+-- a/a.canon --
+package a
+
+local record S {
+  k: String
+  w: Int = 0
+}
+
+local record A {
+  id: String
+  oo: [S] keyed by k
+}
+
+local let aa: [A] keyed by id = [{ id: "second", oo: [{ k: "x" }, { k: "y" }] }]
+
+local let pick: String = "y"
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend aa {
+  second.oo[x].w: 5
+  second.oo[pick].w: 6
+}

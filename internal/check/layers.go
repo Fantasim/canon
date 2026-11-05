@@ -68,7 +68,7 @@ func (c *checker) declaredElsewhere(p *pkgState, name string) bool {
 // amendment types one `path: value`: the path resolved against the let's static type (E1905),
 // set once and not overlapping another in the layer (E1908), the value checked at the path.
 func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen amendPaths) {
-	w := &amendWalk{let: let, decl: let, t: c.letType(let), plain: true, bind: &bindCtx{field: c.letType(let)}}
+	w := &amendWalk{let: let, decl: let, t: c.letType(let), plain: c.letType(let).Base().Kind() != types.Optional, bind: &bindCtx{field: c.letType(let)}}
 	for i, seg := range a.Path {
 		if i == 0 && seg.Name != nil {
 			w.text = append(w.text, seg.Name.Name)
@@ -140,7 +140,7 @@ func (c *checker) amendSegment(env *env, w *amendWalk, seg *syntax.AmendSegment)
 		c.report(env, diag.E1905.AtField(env.span(seg), w.path()))
 		return false
 	}
-	if seg.Name == nil {
+	if seg.Name == nil || next.Base().Kind() == types.Optional {
 		w.plain = false
 	}
 	w.bind = w.bind.step(t, seg, next)
@@ -188,9 +188,9 @@ func (c *checker) amendEntry(w *amendWalk, t types.Type, n *syntax.Ident) {
 	}
 }
 
-// amendColl is the collection `.k` steps into: the let's at its field path, else the last field's (TYPES.md §9.1).
+// amendColl is the collection `.k` steps into: the let's at its field path, an optional let's own before any step, else the last field's (TYPES.md §9.1, DECISIONS 487).
 func (c *checker) amendColl(w *amendWalk, t types.Type) *types.Collection {
-	if w.plain {
+	if w.plain || len(w.canon) == 0 {
 		return c.fieldColl(w.let, w.fields, t)
 	}
 	if w.via == nil {
@@ -274,13 +274,12 @@ func (c *checker) amendKey(env *env, w *amendWalk, t types.Type, k syntax.Expr) 
 	return nil, false
 }
 
-// entryKey types an amend key of the collection w reached: a bare name no scope or key type
-// has is its key when the path so far is the let's record fields.
+// entryKey types an amend key of the collection w reached: a bare name no scope or key type has is its key (TYPES.md §4.1, DECISIONS 318, 470).
 func (c *checker) entryKey(env *env, w *amendWalk, k syntax.Expr, key types.Type) {
 	id, isName := k.(*syntax.IdentExpr)
-	if isName && w.plain && c.lookup(env, id.Name) == nil {
+	if isName && c.lookup(env, id.Name) == nil {
 		if o, _ := c.inExpected(unwrapUnion(key), id.Name); o == nil {
-			if coll := c.fieldColl(w.let, w.fields, w.t); c.mayKey(coll, id.Name) {
+			if coll := c.amendColl(w, unwrapOptional(w.t)); coll != nil && c.mayKey(coll, id.Name) {
 				c.info.Keys[k] = coll
 				c.info.Types[k] = key
 				return

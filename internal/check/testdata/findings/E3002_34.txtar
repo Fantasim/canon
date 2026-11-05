@@ -1,0 +1,27 @@
+EVALUATION.md §9.2, TYPES.md §4.1: after an entry step a bracket key is still checked against the key type: an integer literal for a String key is E3002, not a key.
+-- a/a.canon --
+package a
+
+local record S {
+  k: String
+  w: Int = 0
+}
+
+local record A {
+  id: String
+  oo: [S] keyed by k
+}
+
+local let aa: [A] keyed by id = [{ id: "second", oo: [{ k: "x" }] }]
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend aa {
+  second.oo[3].w: 5
+}
+-- findings.txt --
+error[E3002]  a/dev.layer.canon:5:13
+  expected String, found Int
+
+1 error, 0 warnings in 1 package (…)

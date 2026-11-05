@@ -182,19 +182,30 @@ func (sp *spot) keyAt(ctx context.Context) (rs []edit.Resolved, inKey bool, err 
 // by the refs stated at it.
 func (sp *spot) nameKeyEntries(ctx context.Context, coll *types.Collection, id *syntax.Ident) ([]edit.Resolved, error) {
 	// IMPLEMENTATION-PLAN §4.7 NameKeys, DECISIONS 470
-	if block, line := sp.amendLine(id); block != nil && line != nil {
-		return sp.resolved(sp.amendPrefix(block, line, id)), nil
+	at := segNamed(id)
+	if block, line := sp.amendLine(at); block != nil && line != nil {
+		return sp.resolved(sp.amendPrefix(block, line, at)), nil
 	}
 	if coll.Kind == types.CollLet {
 		return sp.resolved(collKeyPath(coll, value.Key{S: id.Name})), nil
 	}
-	at := sp.file.Span(id)
-	return sp.statedEntries(ctx, &at)
+	span := sp.file.Span(id)
+	return sp.statedEntries(ctx, &span)
 }
 
-// amendLine is the amend block and the amend line at the spot whose path holds id as a segment;
-// nil when id is not one, a map literal's key in the line's value among them.
-func (sp *spot) amendLine(id *syntax.Ident) (*syntax.AmendBlock, *syntax.Amendment) {
+// segNamed matches the amend segment `.name` that is id.
+func segNamed(id *syntax.Ident) func(*syntax.AmendSegment) bool {
+	return func(s *syntax.AmendSegment) bool { return s.Name == id }
+}
+
+// segKeyed matches the amend segment `[k]` whose key is e.
+func segKeyed(e syntax.Expr) func(*syntax.AmendSegment) bool {
+	return func(s *syntax.AmendSegment) bool { return s.Key == e }
+}
+
+// amendLine is the amend block and the amend line at the spot whose path holds a segment at;
+// nil when none does, a map literal's key in the line's value among them.
+func (sp *spot) amendLine(at func(*syntax.AmendSegment) bool) (*syntax.AmendBlock, *syntax.Amendment) {
 	var block *syntax.AmendBlock
 	var line *syntax.Amendment
 	for _, n := range sp.chain {
@@ -205,15 +216,15 @@ func (sp *spot) amendLine(id *syntax.Ident) (*syntax.AmendBlock, *syntax.Amendme
 			line = x
 		}
 	}
-	if line == nil || !slices.ContainsFunc(line.Path, func(s *syntax.AmendSegment) bool { return s.Name == id }) {
+	if line == nil || !slices.ContainsFunc(line.Path, at) {
 		return nil, nil
 	}
 	return block, line
 }
 
-// amendPrefix is the value path an amend line's segments name up to the one naming id, from the
+// amendPrefix is the value path an amend line's segments name up to the one at, from the
 // amended let, as StaticPath reads a selector; nil for a segment no path writes.
-func (sp *spot) amendPrefix(block *syntax.AmendBlock, line *syntax.Amendment, id *syntax.Ident) *edit.Path {
+func (sp *spot) amendPrefix(block *syntax.AmendBlock, line *syntax.Amendment, at func(*syntax.AmendSegment) bool) *edit.Path {
 	let := sp.info.NameUses[block.Target]
 	if let == nil {
 		return nil
@@ -225,7 +236,7 @@ func (sp *spot) amendPrefix(block *syntax.AmendBlock, line *syntax.Amendment, id
 			return nil
 		}
 		p.Segs = append(p.Segs, s)
-		if seg.Name == id {
+		if at(seg) {
 			return &p
 		}
 	}
@@ -244,11 +255,14 @@ func amendSeg(seg *syntax.AmendSegment) (edit.Seg, bool) {
 	return keySeg(k), ok
 }
 
-// keyEntries are the entries a key written in source names: in a let's collection, by its path;
-// in a record field's, the one of the instance its selector reads statically, else of each
-// instance a let's value evaluates the key in, as a ref.
+// keyEntries are the entries a key written in source names: an amend `[k]` of the collection it
+// indexes by the line's static path; in a let's collection by its path; in a record field's, the
+// instance's its selector reads statically, else each's a let's value evaluates the key in, as a ref.
 func (sp *spot) keyEntries(ctx context.Context, coll *types.Collection, e syntax.Expr) ([]edit.Resolved, error) {
-	// TYPES.md §10.2, DECISIONS 285
+	// TYPES.md §10.2, DECISIONS 285, 470, 484, 487
+	if block, line := sp.amendLine(segKeyed(e)); block != nil && line != nil && !sp.refTyped(e) {
+		return sp.resolved(sp.amendPrefix(block, line, segKeyed(e))), nil
+	}
 	if coll.Kind == types.CollLet {
 		return sp.resolved(keyPath(coll, e)), nil
 	}
@@ -257,6 +271,16 @@ func (sp *spot) keyEntries(ctx context.Context, coll *types.Collection, e syntax
 	}
 	at := sp.file.Span(e)
 	return sp.statedEntries(ctx, &at)
+}
+
+// refTyped reports key e typed `ref C`: it names C's entry, not one of the collection it indexes (DECISIONS 316).
+func (sp *spot) refTyped(e syntax.Expr) bool {
+	t := sp.info.Types[e]
+	if t == nil {
+		return false
+	}
+	_, isRef := t.Base().(*types.RefType)
+	return isRef
 }
 
 // keyPath is the value path of the entry a key written in source names in a let's collection:

@@ -5182,3 +5182,28 @@ round 2", "PS1 review", "PS2 round 2"):
      `layer` ref of the entry it reads. Reason: v0.3 run (EVAL-LAYERSPREAD): a layer amendment of
      a spread copy left the source's identity on content it had changed, so a ref dereferenced to
      the wrong content, and an amendment of a sibling field re-owned every entry (a false E3503).
+
+487. **An amend path judges its keys differently from expressions, on purpose; an amend segment's
+     key is judged by identity alone (API.md R7, E11, R11; TYPES.md §4.1, §9.1, §9.4; EVALUATION.md
+     §9.2; IMPLEMENTATION-PLAN §4.7; follows 316, 318, 470, 477, 481, 483, 484).** A bare name in an
+     amend segment `[ ]` that no scope and no key type resolves (318) is a symbolic key of the keyed
+     list or table the segment indexes, at every depth where that collection has a
+     `types.Collection` form, after an entry step too: `[x]` is recorded in `Info.Keys` as `.x` is in
+     `Info.NameKeys` (470). While every step is a required record field, the collection is the
+     let's at its field path. Through a let or field declared optional, it is the collection the
+     record field holds; this differs from expressions on purpose, which keep 481 (there a bare
+     `[k]` or `hasKey(k)` through an optional is `E2102`). When the optional is the let itself, a
+     keyed list or table, a key before any step names the let's own collection; likewise `x!.k` and
+     `x?.k` on such a let key it in expressions (477: "`x!` holds the collection `x` holds"), while
+     `x![k]` and `x!.hasKey(k)` stay `E2102`. A key of the collection its own segment indexes (`.k`,
+     `[k]`, `["x"]`, `[3]`, `[Q.m]`) is judged by identity alone: a `layer` ref of the entry the
+     line's static path reaches there (484), never of every instance whose collection shares the
+     key; go-to-definition and references follow that path. A key typed `ref C` (a ref-keyed
+     list's, a map's or a dependent map's key) or written as a selector (`[items.k]`) stays a ref of
+     the entry of C it names (316, R7); a map's or a dependent map's key's definition goes there.
+     `Refs` lists each token once; `Rename` rewrites it once, in its form. Reason: v0.3 run
+     (CHECK-AMENDBRACKET): `second.oo[x]` after an entry step was checked as an unresolved
+     expression (`E2102`); once fixed, the collection-based key test listed a bare `[x]` under every
+     instance's `x`, so a rename retargeted another instance's line; the first fix dropped
+     ref-typed map keys from `Refs` and sent their definition to the amended value; and `xs!.x` on
+     an optional keyed-list let named no collection.

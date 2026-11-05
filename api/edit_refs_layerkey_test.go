@@ -11,9 +11,9 @@ import (
 // layerKeyHead is the layer file's text before its lines.
 const layerKeyHead = "package p\nlayer dev\n\namend aa {\n"
 
-// layerKeyLevel is aa whose entries first and second each hold, in oo, an entry {k} keyed x
-// (level 1), or an entry q of x's inn (level 2), through a plain or an optional field: path is
-// the renamed entry's, and pre the line path reaching the instance holding it, %s first or second.
+// layerKeyLevel is aa whose first and second each hold, in oo, an entry keyed x (level 1) or an entry
+// q of x's inn (level 2), plain or optional, keyed {f} in first and {k} in second: path is second's
+// entry, and pre the line path reaching the instance holding it, %s first or second.
 type layerKeyLevel struct {
 	name, src, path, pre string
 }
@@ -25,14 +25,14 @@ func layerKeyLevels() []layerKeyLevel {
 		{"plain", "[S] keyed by k", "[T] keyed by k"},
 		{"optional", "([S] keyed by k)?", "([T] keyed by k)?"},
 	} {
-		out = append(out, layerKeyLevel{"level 1 " + typ.name, "package p\n\nrecord S {\n  k: String\n  w: Int = 0\n  v: Int = 0\n}\n\n" +
+		out = append(out, layerKeyLevel{"level 1 " + typ.name, "package p\n\nrecord S {\n  k: String\n  w: Int = 0\n  v: Int = 0\n  u: Int = 0\n}\n\n" +
 			"record A {\n  id: String\n  oo: " + typ.list + "\n}\n\n" +
-			"let aa: [A] keyed by id = [\n  { id: \"first\", oo: [{ k: \"x\" }] },\n" +
+			"let aa: [A] keyed by id = [\n  { id: \"first\", oo: [{ k: \"{f}\" }] },\n" +
 			"  { id: \"second\", oo: [{ k: \"{k}\" }] },\n]\n", "p:aa[second].oo[x]", "%s.oo"},
-			layerKeyLevel{"level 2 " + typ.name, "package p\n\nrecord T {\n  k: String\n  w: Int = 0\n  v: Int = 0\n}\n\n" +
+			layerKeyLevel{"level 2 " + typ.name, "package p\n\nrecord T {\n  k: String\n  w: Int = 0\n  v: Int = 0\n  u: Int = 0\n}\n\n" +
 				"record S {\n  k: String\n  inn: " + typ.inn + "\n}\n\n" +
 				"record A {\n  id: String\n  oo: " + typ.list + "\n}\n\n" +
-				"let aa: [A] keyed by id = [\n  { id: \"first\", oo: [{ k: \"x\", inn: [{ k: \"q\" }] }] },\n" +
+				"let aa: [A] keyed by id = [\n  { id: \"first\", oo: [{ k: \"x\", inn: [{ k: \"{f}\" }] }] },\n" +
 				"  { id: \"second\", oo: [{ k: \"x\", inn: [{ k: \"{k}\" }] }] },\n]\n", "p:aa[second].oo[x].inn[q]", "%s.oo.x.inn"})
 	}
 	return out
@@ -43,26 +43,33 @@ func (l layerKeyLevel) old() string {
 	return l.path[strings.LastIndex(l.path, "[")+1 : len(l.path)-1]
 }
 
-// API.md R7, R11, E11, E22 (DECISIONS 316, 470, 483): an amend path's `.x` or `["x"]` naming second's
-// entry is one `layer` ref, active or not, rewritten once (`["a b"]` for a non-word); first's is none.
+// API.md R7, R11, E11, E22 (DECISIONS 316, 470, 483, 484): an amend path's `.x`, `["x"]` or bare
+// `[x]` naming the renamed instance's entry, first's or second's, is one `layer` ref, active or
+// not, rewritten once (`["a b"]` for a non-word); the other instance's is none, its rename applies.
 func TestRefsLayerKeySegment(t *testing.T) {
-	type row struct {
-		active bool
-		lines  []string
-		to     string
-	}
-	var rows []row
-	for _, lines := range [][]string{{"first"}, {"second"}, {"first", "second"}, {"second", "second[]"}, {"first[]", "second[]"}} {
-		for _, to := range []string{"y", "a b"} {
-			rows = append(rows, row{true, lines, to}, row{false, lines, to})
+	var rows []layerKeyRow
+	for _, lines := range [][]string{{"first"}, {"second"}, {"first", "second"}, {"second", "second[]"}, {"first[]", "second[]"},
+		{"first[k]"}, {"second[k]"}, {"first[k]", "second[k]"}, {"second", "second[]", "second[k]"}} {
+		for _, of := range []string{"second", "first"} {
+			for _, to := range []string{"y", "a b"} {
+				rows = append(rows, layerKeyRow{true, lines, of, to}, layerKeyRow{false, lines, of, to})
+			}
 		}
 	}
 	for _, l := range layerKeyLevels() {
 		for _, r := range rows {
-			name := fmt.Sprintf("%s active %v %s to %q", l.name, r.active, strings.Join(r.lines, "+"), r.to)
-			t.Run(name, func(t *testing.T) { layerKeyCase(t, l, r.active, r.lines, r.to) })
+			name := fmt.Sprintf("%s active %v %s rename %s to %q", l.name, r.active, strings.Join(r.lines, "+"), r.of, r.to)
+			t.Run(name, func(t *testing.T) { layerKeyCase(t, l, r) })
 		}
 	}
+}
+
+// layerKeyRow is one row of TestRefsLayerKeySegment: the layer active or not, its lines, and the
+// instance, first or second, whose entry is renamed to to.
+type layerKeyRow struct {
+	active bool
+	lines  []string
+	of, to string
 }
 
 // formatted is src in the canonical layout, which an edit requires of the files it writes.
@@ -75,60 +82,85 @@ func formatted(t *testing.T, name, src string) string {
 	return string(out)
 }
 
-// layerKeySeg is key as an amend segment: `.k` for a word when dotted, else `["k"]` (API.md E11).
-func layerKeySeg(key string, dotted bool) string {
-	if dotted && !strings.Contains(key, " ") {
-		return "." + key
+// keyForm is how an amend segment writes a key.
+type keyForm int
+
+const (
+	formDot    keyForm = iota // `.k`
+	formString                // `["k"]`
+	formBare                  // `[k]`
+)
+
+// layerKeyForms are the forms a layerKeyCase line writes its key in, by the suffix of its name,
+// and the field each sets, so that no two lines of one instance overlap (E1908).
+var layerKeyForms = []struct {
+	suffix, field string
+	form          keyForm
+}{{"[]", ".v: 2", formString}, {"[k]", ".u: 3", formBare}, {"", ".w: 1", formDot}}
+
+// layerKeySeg is key as an amend segment in form; `["k"]` for a key that is not a word (API.md E11).
+func layerKeySeg(key string, form keyForm) string {
+	switch {
+	case form == formString || strings.Contains(key, " "):
+		return "[\"" + key + "\"]"
+	case form == formBare:
+		return "[" + key + "]"
 	}
-	return "[\"" + key + "\"]"
+	return "." + key
 }
 
-// layerKeyLine is one amend line of a layerKeyCase: the path to the keyed list, whether it is
-// through second's instance and writes its key dotted, and the field it sets.
+// layerKeyLine is one amend line of a layerKeyCase: the path to the keyed list, the instance it is
+// through, the form it writes its key in and the field it sets.
 type layerKeyLine struct {
-	pre            string
-	second, dotted bool
-	field          string
+	pre, inst string
+	form      keyForm
+	field     string
 }
 
-// layerKeyCase is one row of TestRefsLayerKeySegment: each of lines amends w (dotted, `.k`) or v
-// (bracketed, `["k"]`, the name ending in []) of the entry keyed by the old key in first's or
-// second's instance; the rename is to to.
-func layerKeyCase(t *testing.T, l layerKeyLevel, active bool, lines []string, to string) {
+// layerKeyCase is one row of TestRefsLayerKeySegment: each of r.lines amends a field of the entry
+// keyed by the old key in first's or second's instance, in the form its name's suffix gives
+// (layerKeyForms); the rename is of r.of's entry to r.to.
+func layerKeyCase(t *testing.T, l layerKeyLevel, r layerKeyRow) {
 	var parts []layerKeyLine
 	var want []string // R8: the layer file sorts before p's
-	for i, who := range lines {
-		inst, bracket := strings.CutSuffix(who, "[]")
-		field := ".w: 1"
-		if bracket {
-			field = ".v: 2"
+	for i, who := range r.lines {
+		for _, f := range layerKeyForms {
+			if inst, ok := strings.CutSuffix(who, f.suffix); ok {
+				parts = append(parts, layerKeyLine{fmt.Sprintf(l.pre, inst), inst, f.form, f.field})
+				break
+			}
 		}
-		parts = append(parts, layerKeyLine{fmt.Sprintf(l.pre, inst), inst == "second", !bracket, field})
-		if inst == "second" {
+		if parts[i].inst == r.of {
 			want = append(want, fmt.Sprintf("layer %s:%d", sharedLayer, strings.Count(layerKeyHead, "\n")+i+1))
 		}
 	}
-	files := func(key string, bracketed bool) map[string]string { // bracketed: second's lines keep `["k"]`
+	marks := map[string]string{"second": "{k}", "first": "{f}"}
+	files := func(key string, quoted bool) map[string]string { // quoted: r.of's lines write `["k"]`
 		layer := layerKeyHead
 		for _, p := range parts {
-			k, dotted := l.old(), p.dotted
-			if p.second {
-				k, dotted = key, dotted && !bracketed
+			k, form := l.old(), p.form
+			if p.inst == r.of {
+				k = key
+				if quoted {
+					form = formString
+				}
 			}
-			layer += "  " + p.pre + layerKeySeg(k, dotted) + p.field + "\n"
+			layer += "  " + p.pre + layerKeySeg(k, form) + p.field + "\n"
 		}
-		src := strings.ReplaceAll(l.src, "{k}", key)
+		src := strings.ReplaceAll(l.src, marks[r.of], key)
+		src = strings.NewReplacer(marks["first"], l.old(), marks["second"], l.old()).Replace(src)
 		return map[string]string{srcMain: formatted(t, srcMain, src), sharedLayer: formatted(t, sharedLayer, layer+"}\n")}
 	}
 	var layers []string
-	if active {
+	if r.active {
 		layers = []string{"dev"}
 	}
-	row := sharedRow{l: sharedLevel{path: l.path}, layers: layers, before: files(l.old(), false), after: files(to, false), want: strings.Join(want, ", "), to: to}
-	if strings.Contains(to, " ") {
-		row.undone = files(l.old(), true) // the renamed `["a b"]` is renamed back in its form (E11), equal as a value (E22)
+	path := strings.Replace(l.path, "second", r.of, 1)
+	sr := sharedRow{l: sharedLevel{path: path}, layers: layers, before: files(l.old(), false), after: files(r.to, false), want: strings.Join(want, ", "), to: r.to}
+	if strings.Contains(r.to, " ") {
+		sr.undone = files(l.old(), true) // the renamed `["a b"]` is renamed back in its form (E11), equal as a value (E22)
 	}
-	row.run(t)
+	sr.run(t)
 }
 
 // layerCopySrc is aa, whose second's oo holds an entry keyed k, and bb, a spread copy of second

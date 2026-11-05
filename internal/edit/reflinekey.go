@@ -9,9 +9,43 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
+// claims is names on n, but at an amend segment's key of the collection it indexes, which lineKey
+// alone judges by identity, only a declaration's name; a key typed `ref C` or written as a
+// selector names C's entry as anywhere (DECISIONS 316, 484).
+func (sc *nameScan) claims(n syntax.Node, at scanAt) (syntax.Node, bool) {
+	if n == at.segKey && !sc.refKey(n) {
+		return n, sc.objectNamed(n)
+	}
+	return sc.names(n)
+}
+
+// refKey reports key token n a selector or typed `ref C`.
+func (sc *nameScan) refKey(n syntax.Node) bool {
+	e, isExpr := n.(syntax.Expr)
+	if !isExpr {
+		return false
+	}
+	if _, isSel := e.(*syntax.SelectorExpr); isSel {
+		return true
+	}
+	_, isRef := baseOf(sc.s.info.Types[e]).(*types.RefType)
+	return isRef
+}
+
+// objectNamed reports n a name the checker resolved to one of the target's declarations.
+func (sc *nameScan) objectNamed(n syntax.Node) bool {
+	switch x := n.(type) {
+	case *syntax.IdentExpr:
+		return sc.isObject(sc.s.info.Uses[x])
+	case *syntax.Ident:
+		return sc.isObject(sc.s.info.NameUses[x])
+	}
+	return false
+}
+
 // lineKey is the key token of n, an amend path's segment, when the line's path up to it reaches the
-// target's very entry by identity (API.md R7; DECISIONS 316, 470, 483); a token names reports is
-// left to it, so each is listed once.
+// target's very entry by identity (API.md R7; DECISIONS 316, 470, 483, 484); a key claims reports
+// is left to it, so each token is listed once.
 func (sc *nameScan) lineKey(n syntax.Node, at scanAt) (syntax.Node, bool) {
 	seg, isSeg := n.(*syntax.AmendSegment)
 	if !isSeg || at.line == nil || at.block == nil || sc.tg.ident == nil {
@@ -21,7 +55,7 @@ func (sc *nameScan) lineKey(n syntax.Node, at scanAt) (syntax.Node, bool) {
 	if tok == nil || !segKeyIs(seg, sc.tg.res.Steps[len(sc.tg.res.Steps)-1].Seg) {
 		return nil, false
 	}
-	if _, named := sc.names(holder); named {
+	if _, claimed := sc.claims(holder, at); claimed {
 		return nil, false
 	}
 	i := slices.Index(at.line.Path, seg)

@@ -49,6 +49,7 @@ type scanAt struct {
 	kind   RefKind
 	block  *syntax.AmendBlock
 	line   *syntax.Amendment
+	segKey syntax.Node // the node of a line's segment the walk meets for its key (segToken)
 	record *syntax.RecordDecl
 	field  *syntax.FieldDecl
 	shared bool
@@ -65,6 +66,8 @@ func (at scanAt) enter(n syntax.Node) scanAt {
 		at.kind, at.block = RefLayer, x
 	case *syntax.Amendment:
 		at.line = x
+	case *syntax.AmendSegment:
+		at.segKey, _ = segToken(x)
 	case *syntax.RecordDecl:
 		at.record = x
 	case *syntax.FieldDecl:
@@ -79,7 +82,7 @@ func (at scanAt) enter(n syntax.Node) scanAt {
 // naming it, then its children, under the construct holding them.
 func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 	at = at.enter(n)
-	if tok, ok := sc.names(n); ok {
+	if tok, ok := sc.claims(n, at); ok {
 		if sp := sc.file.Span(tok); !sc.covered(sp) && sc.instanceHolds(tok, sp, at) {
 			sc.out = append(sc.out, Ref{Kind: at.kind, Package: sc.pkg, Span: sp})
 		}
@@ -95,12 +98,11 @@ func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 // names is the node naming the target in n, if n does: a name the checker resolved to one of
 // its declarations, or a symbolic key or key literal it recorded for the target's collection.
 func (sc *nameScan) names(n syntax.Node) (syntax.Node, bool) {
-	info := sc.s.info
 	switch x := n.(type) {
 	case *syntax.IdentExpr:
-		return x, sc.isObject(info.Uses[x]) || sc.isKey(x, x.Name)
+		return x, sc.objectNamed(x) || sc.isKey(x, x.Name)
 	case *syntax.Ident:
-		return x, sc.isObject(info.NameUses[x])
+		return x, sc.objectNamed(x)
 	case *syntax.SelectorExpr:
 		return x.Name, sc.isKey(x, x.Name.Name) && sc.throughOwn(x) || sc.isEntryOf(x)
 	case *syntax.StringLit, *syntax.RawStringLit:

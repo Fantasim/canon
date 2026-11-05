@@ -133,6 +133,9 @@ func (c *checker) keyedReceiver(x syntax.Expr) *types.Collection {
 	if coll := c.receiverColl(x); coll != nil {
 		return coll
 	}
+	if coll := c.optionalLetColl(x); coll != nil {
+		return coll
+	}
 	s, ok := x.(*syntax.SelectorExpr)
 	if !ok || c.info.Selections[s] == nil || c.info.Selections[s].Kind != SelField {
 		return nil
@@ -145,6 +148,19 @@ func (c *checker) keyedReceiver(x syntax.Expr) *types.Collection {
 		return c.heldCollection(owner, f)
 	}
 	return nil
+}
+
+// optionalLetColl is the collection x, a let declared optional, holds: its own, as `x!` holds it (DECISIONS 477).
+func (c *checker) optionalLetColl(x syntax.Expr) *types.Collection {
+	id, isName := x.(*syntax.IdentExpr)
+	if !isName {
+		return nil
+	}
+	o, ok := c.info.Uses[id].(*object)
+	if !ok || o.kind != ObjLet || c.letType(o).Base().Kind() != types.Optional {
+		return nil
+	}
+	return c.fieldColl(o, nil, unwrapOptional(c.letType(o)))
 }
 
 // unforced is x without its parentheses and its `!`: `x!`, `(x)` and `(x!)` hold the collection x holds, read as `?.` reads it (DECISIONS 171, 470, 477).

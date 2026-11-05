@@ -640,7 +640,10 @@ type Ref struct {
     target only where a stored value names it, the rename refused `computed` when the same token
     also names another instance's entry; key tests that cannot fail are judged the same way by
     their receiver's type (DECISIONS 483); a key segment of an amend path (`.k`, `[k]`) is a
-    `layer` ref of the entry the line's path reaches there, by identity, listed once (DECISIONS 484); names in translations are `view`, names in `test` declarations `code`. A string literal
+    `layer` ref of the entry the line's path reaches there, by identity, listed once (DECISIONS 484), a
+    key of the collection its own segment indexes (`.k`, `[k]`, `["x"]`, `[3]`, `[Q.m]`) judged by
+    that identity alone, a key typed `ref C` or written as a selector (`[items.k]`) a ref of the
+    entry of C it names (DECISIONS 487); names in translations are `view`, names in `test` declarations `code`. A string literal
     keys a ref only for a `String` key or a literal of a literal union (TYPES.md §4.1); a member
     name keys an enum-keyed ref.
   - A bound level-1 ref (TYPES.md §10.2) is a ref of the entry its key names in the collection its instance's field holds, whatever identity that entry carries: in `{ ...arena, boss: 1 }` the copied `mobs` keep `arena`'s identity (TYPES.md §6.3), so `boss` is a `value` ref of `arena.mobs[1]`, and R11's edge goes there (DECISIONS 410).
