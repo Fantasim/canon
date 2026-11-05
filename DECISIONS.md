@@ -5228,3 +5228,31 @@ round 2", "PS1 review", "PS2 round 2"):
      target is ref-keyed to the map's value, and a selector key to the list's element. Known gap
      kept: `Refs` does not list an expression's `[k]` token on a list keyed by a `ref` under the
      element.
+
+489. **A ref converted from an entry, and a layer line's value its tokens do not state, are computed
+     value refs; computed refs merge by span, kind and path (API.md R7, R8, R11, E12; TYPES.md §6.2,
+     §6.3; EVALUATION.md §9.3, §13; follows 238, 410, 478, 483, 484, 486).** A ref converted from an
+     entry record (`T ≤ ref T`) carries that record's provenance. It is a computed `value` ref of
+     the entry, reported at its let's name, wherever the record's literal is written: a let, a field
+     default, a constant, a function or a layer file. A span the checker typed as a record is no key
+     or name token. A layer line's value takes the line's provenance, so it is computed when no key
+     or member name of the target states it: an entry read (`pick: aa.second.oo.y`, `oo.x:
+     aa.second.oo.x`, `st: ent`), a let or field read that copies a ref or a member (`st: rr2`, `st:
+     d2.st`, `mood: m2`), or any other expression (`mood: pick()`). The same holds for copies of
+     that value in other lets. A member or key name of the target stated in a layer line
+     (`subs[0].pick: "y"`, `mood: angry`, `mood: Mood.calm`) stays a `layer` ref with no `Graph`
+     edge (R7, R11; 483). A constant's name stays the constant's `code` ref, as outside layers. A
+     ref with no token stating it is no shared-token use (483). Computed refs merge by span, kind
+     and path: two computed values at different paths of one let, or a value and a key, are two refs
+     at the let's name, in R8 order, and two edges (R11). The base and layered values at one path
+     are one ref. When one ref token reaches different entries in the base and the layered
+     evaluation, both refs are listed under their targets and both edges exist. The base evaluation
+     is the values the analysis keeps from before the layer, the history of the amended lets; an
+     unamended let's value is read once, layered, and R11 reads the analysis once. Renaming an entry
+     that a let's computed value converts from a defaulted field is refused `computed` (E12), as for
+     an entry built in a let. Reason: v0.3 run (EDIT-LAYERLITEDGE rounds 1-2): under an active
+     layer, an entry written as a list literal or replaced whole by a layer line, a ref or member a
+     layer line computes or copies, and refs over a defaulted field's entries had no `value` ref and
+     no `Graph` edge, because a value whose provenance sat in a layer file, a default or at a layer
+     line's name was dropped as a code token. Two computed refs in one let collapsed into one, so a
+     layered value hid the base key ref it sat beside.

@@ -14,6 +14,8 @@ type hitKey struct {
 	to   int
 	span source.Span
 	let  check.Object
+	kind RefKind
+	path string
 }
 
 // instance is an entry's collection instance as a let path reaches it (DECISIONS 315, 316).
@@ -144,16 +146,17 @@ func (sc *graphScan) note(r rootRef, kind RefKind, v value.Value, segs []Seg, to
 	if p == nil {
 		return
 	}
-	keep, computed := sc.refs.stated(p)
+	keep, computed := sc.refs.stated(v, p)
 	if !keep {
 		return
 	}
 	key := hitKey{span: p.Span}
+	path := ""
 	if computed {
-		key.span, key.let = nameSpan(r, p.Span), r.obj
+		path = Path{Package: r.pkg.Path, Root: r.obj.Name(), Segs: segs}.String()
+		key.span, key.let, key.kind, key.path = nameSpan(r, p.Span), r.obj, kind, path
 	}
 	f := sc.frames.reach(r, segs)
-	path := ""
 	for _, t := range to {
 		key.to = t
 		if i, dup := sc.groups[key]; dup {

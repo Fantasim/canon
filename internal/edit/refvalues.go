@@ -106,7 +106,7 @@ func (sc *refScan) other(v value.Value) {
 	if rt, ok := baseOf(x.T).(*types.RefType); !ok || !sc.tg.names(rt.Target) {
 		return
 	}
-	if keep, computed := sc.stated(x.P); keep && !computed {
+	if keep, computed := sc.stated(x, x.P); keep && !computed {
 		sc.others = append(sc.others, x.P.Span)
 	}
 }
@@ -118,7 +118,7 @@ func (sc *refScan) note(root rootRef, kind RefKind, v value.Value, segs []Seg) {
 	if p == nil {
 		return
 	}
-	keep, computed := sc.stated(p)
+	keep, computed := sc.stated(v, p)
 	if !keep {
 		return
 	}
@@ -139,11 +139,13 @@ func nameSpan(root rootRef, orElse source.Span) source.Span {
 	return orElse
 }
 
-// foundKey groups the paths of one reference: its span, and for a computed one its let, which
-// holds a value of its own.
+// foundKey groups the paths of one reference: its span, and for a computed one its let, kind and
+// path, as two values at one let's name are two references (API.md R7, R8; DECISIONS 489).
 type foundKey struct {
 	span source.Span
 	let  check.Object
+	kind RefKind
+	path string
 }
 
 // firstPaths keeps one reference per key: the first whose path is structural, else the first.
@@ -153,7 +155,7 @@ func (s *Snapshot) firstPaths(all []found) []found {
 	for _, f := range all {
 		k := foundKey{span: f.ref.Span}
 		if f.computed {
-			k.let = f.root.obj
+			k.let, k.kind, k.path = f.root.obj, f.ref.Kind, f.ref.Path
 		}
 		if byKey[k] == nil {
 			order = append(order, k)

@@ -658,7 +658,11 @@ type Ref struct {
     the element (DECISIONS 473). A token that states a ref to another element of the target's
     collection, as another instance's `pick: "x"` does, is that element's `value` ref, never a
     `code` ref of the target (DECISIONS 477).
-  - Value refs come from the base evaluation and the layered one, merged by span. A value whose
+  - Value refs come from the base evaluation and the layered one, merged by span; computed refs
+    merge by span, `Kind` and `Path`, so two computed values at different paths of one let are two
+    refs at its name. A ref converted from an entry, and a layer line's value that no key or member
+    name of the target states (an entry read, a let or field read, any other expression), are
+    computed; the base evaluation is the values kept from before the layer (DECISIONS 489). A value whose
     static type could hold a ref to the target but that cannot be computed makes `Refs` fail,
     naming it, so a partial list never looks complete. A `let` whose type is the error type holds
     no ref value; its written names are still `code` refs.

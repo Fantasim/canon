@@ -31,8 +31,8 @@ func (tg *target) perInstance(t types.Type) (*types.RefType, bool) {
 // others; true when that token is the only reference, a computed value being also one (R7).
 func (sc *refScan) used(r rootRef, v, parent value.Value, segs []Seg) bool {
 	x, isRef := v.(*value.Ref)
-	if !isRef || x.P == nil {
-		return false
+	if !isRef || x.P == nil || x.P.Kind == value.ProvLiteral && sc.notToken(x.P) {
+		return false // no token states it (an entry, a let or a field read): a computed value (R7)
 	}
 	if _, ok := sc.tg.perInstance(x.T); !ok {
 		return false
