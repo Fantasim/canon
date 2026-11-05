@@ -3949,6 +3949,7 @@ round 2", "PS1 review", "PS2 round 2"):
      v0.1.6 (log-2026-10-13): a layer has no imports and an edit adds none, so another package's `if`
      member could not be written there, by edit or by hand; the printed qualifier depended on each
      file's imports; amendment paths wrote `byWord[if]` and `weights[a]`.
+     [amended by 496]
 
 379. **Positions are not ids (SPEC §4.3, §15.2-§15.4; EVALUATION.md §9.2, §13.1; STDLIB.md §2.4;
      CODEGEN.md §2.5, §2.8, §2.10, §5.3, §8.2; IMPLEMENTATION-PLAN §4.3; ERRORS.md W1912, W8031).**
@@ -5431,3 +5432,35 @@ round 2", "PS1 review", "PS2 round 2"):
      string hint that named no key; `a == b` and `b == a` gave different codes; the integer-keyed
      hint told the user to write a string that is then refused; and a String parameter named like a
      static entry was silently shadowed in a key position.
+
+496. **A ref's word key is printed as a string wherever a name of that word is in scope (TYPES.md
+     §3.3, §4.1; API.md R7, M7, E11, E22; amends 378; follows 318, 334, 366, 490, 494).** Every edit
+     prints a ref's word key bare, as 378 says, unless a name of that word is in scope where it is
+     written, whatever step 1 would find there. This covers `Set`, `AddEntry`, `Add`, a layer write,
+     a `Rename`'s tokens, map keys and amend-path segments, the 310 cascade, and every Undo. A name
+     in scope is a declaration of the package of any kind but an entry; a name the file's imports
+     bind (a selective name, an import's alias, or else its path's last segment); or a parameter,
+     local, field or method of an enclosing function, lambda or record. Such a key is printed as a
+     string literal, which names a ref's key, an enum leaf's included (366): `"shield"`, an amend
+     segment `["shield"]`, a map item `"shield": v`. A map item is rewritten whole: the string takes
+     the word's place, every other byte of the item is kept, comments included, and the rename's
+     other changes inside it, nested items included, are applied in place. So one key's text is no
+     longer the same in every file. A key that a sibling scope declares may be quoted too; the
+     string names the same key. An integer key is printed as digits. A value typed by an enum itself
+     is printed bare. An amend segment keyed by a name in scope matches no step by its text (318). A
+     layer write beside such a line appends its own line, and a rename leaves that line as written.
+     An Undo restores values (E22), so a key the rename quoted stays a string; renaming back to a
+     word does not make it bare again (E11 keeps the form). A key written as a string or integer
+     literal on a receiver that statically reaches the target's collection is a `code` ref of the
+     entry it reads, judged by identity, so the rename rewrites it and its Undo applies. This covers
+     `xs["k"]`, through a field or a let of it, and `xs.hasKey("k")`, `get` and `find` where the
+     target's home field holds no such key test. A dynamic receiver gives no ref. Known limits,
+     v0.3: a built-in name in scope (`min`), `it` inside a `where` predicate, and the names a view
+     brings (VIEWMODEL.md G11) are not quoted, because check exports none of them; the re-check
+     refuses an edit that a built-in breaks, and nothing is written. Reason: v0.3 run
+     (EDIT-SHADOWQUOTE rounds 1-3): with `let shield: ref items = axe` in scope, edits wrote
+     `shield` bare, which read the let, so the value silently named axe and its Undo could not
+     restore it; a rename's map key `{ bow: 1 }` became `{ lance: 1 }`; in a key position on a
+     statically keyed table, `hasKey(lance)` turned from true to false; a `Set` of an enum-leaf ref
+     read a let of the same ref type; and rewriting a map item whole then collided with a change
+     inside its value (an internal error) and dropped a comment between key and value.

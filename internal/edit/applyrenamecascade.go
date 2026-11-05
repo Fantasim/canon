@@ -58,7 +58,7 @@ func (r *renaming) moveElement(el resolution) error {
 		return ErrKeyExists
 	}
 	x := &opCtx{a: r.x.a, op: r.x.op, res: el, j: r.x.a.snap.judge(el, OpRename, r.x.a.env.EditLayer), w: r.x.w}
-	sub := &renaming{x: x, from: old, to: to, text: r.text, done: r.done, pkgs: r.pkgs, moved: r.moved}
+	sub := &renaming{x: x, from: old, to: to, text: r.text, done: r.done, pkgs: r.pkgs, moved: r.moved, items: r.items}
 	if err := sub.elementKey(l); err != nil {
 		return err
 	}

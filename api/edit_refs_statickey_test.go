@@ -24,17 +24,20 @@ func TestRefsStaticKeyBeforeScope(t *testing.T) {
 			layers, want["p:r1"] = []string{"dev"}, "5"
 		}
 		t.Run(fmt.Sprintf("active %v", active), func(t *testing.T) {
-			files := func(key string) map[string]string {
-				fill := strings.NewReplacer("{i}", key, "{o}", key, "{r}", key)
-				layer := "package p\nlayer dev\n\namend many {\n  one.ts[" + key + "].n: 5\n}\n"
+			keyed := func(key, ref string) map[string]string {
+				fill := strings.NewReplacer("{i}", key, "{o}", ref, "{r}", ref)
+				layer := "package p\nlayer dev\n\namend many {\n  one.ts[" + ref + "].n: 5\n}\n"
 				return map[string]string{srcMain: formatted(t, srcMain, fill.Replace(staticShadowSrc)), sharedLayer: formatted(t, sharedLayer, layer)}
 			}
+			files := func(key string) map[string]string { return keyed(key, key) }
 			before := files("shield")
+			// DECISIONS 496: the Undo writes the ref keys back as strings, the let shield being in scope.
+			undone := keyed("shield", `"shield"`)
 			refs := fmt.Sprintf("layer %s:5, value %s:%d, code %s:%d", sharedLayer, srcMain, lineOf(before[srcMain], "let many:"),
 				srcMain, lineOf(before[srcMain], "let r1:"))
 			p, _ := sharedOpen(t, before, layers)
 			checkValues(t, p, "TYPES.md §4.1 step 1", want)
-			sharedRow{l: sharedLevel{path: "p:items[shield]"}, layers: layers, before: before, after: files("spear"), want: refs, to: "spear"}.run(t)
+			sharedRow{l: sharedLevel{path: "p:items[shield]"}, layers: layers, before: before, after: files("spear"), undone: undone, want: refs, to: "spear"}.run(t)
 			p, _ = sharedOpen(t, files("spear"), layers)
 			checkValues(t, p, "TYPES.md §4.1 step 1", want)
 		})

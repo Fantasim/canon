@@ -24,11 +24,6 @@ type canonPrinter struct {
 	unread types.Type  // the first dependent position whose text reads another branch (unreadAt)
 }
 
-// canonText is v as a Canon literal (API.md M7), at a position whose declared type is unknown.
-func (a *applier) canonText(v value.Value) (string, error) {
-	return a.canonTextAt(v, nil)
-}
-
 // canonTextAt is v as a Canon literal (API.md M7) at a position of declared type at, in the file
 // the operation writes: the same text in every file but for a typed literal's name (typedName).
 func (a *applier) canonTextAt(v value.Value, at types.Type) (string, error) {
@@ -66,7 +61,7 @@ func (p *canonPrinter) value(v value.Value) {
 	case *value.Str:
 		p.b.WriteString(canonQuote(x.V))
 	case *value.Ref:
-		p.b.WriteString(refText(x.Key))
+		p.b.WriteString(p.scope().keyText(x.Key, x.T, refText(x.Key)))
 	case *value.Member, *value.Symbol, *value.CaseKind:
 		p.b.WriteString(p.nameText(x))
 	case *value.Record:
@@ -107,7 +102,7 @@ func (p *canonPrinter) key(k value.Value) {
 		return
 	case *value.Ref:
 		if !x.Key.IsInt && isWord(x.Key.S) {
-			p.b.WriteString(x.Key.S)
+			p.b.WriteString(p.scope().keyText(x.Key, x.T, x.Key.S))
 			return
 		}
 	case *value.Symbol:

@@ -96,6 +96,7 @@ func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 	sc.keyTest(n, at)
 	sc.elemKey(n, at)
 	sc.instKey(n, at)
+	sc.keyLiteral(n, at)
 	for c := range syntax.Children(n) {
 		sc.walk(c, at)
 	}

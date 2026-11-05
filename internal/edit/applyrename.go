@@ -57,7 +57,7 @@ func (x *opCtx) renameTo(parent, old, k value.Value, kt types.Type) error {
 	renamed := childPath(x.parentPath(), keySegOf(parent, k, kt))
 	x.inverse(Operation{Kind: OpRename, Path: renamed, Key: keyLit(old)}) // it cascades as this one does
 	x.w.rekey = append(x.w.rekey, pathMove{from: x.res.Canonical, to: renamed})
-	r := &renaming{x: x, from: old, to: k, text: map[string][]format.Change{}, done: map[tokenPlace]bool{}, pkgs: map[string]string{}, moved: map[string]bool{}}
+	r := &renaming{x: x, from: old, to: k, text: map[string][]format.Change{}, done: map[tokenPlace]bool{}, pkgs: map[string]string{}, moved: map[string]bool{}, items: map[*syntax.FieldItem]keyedName{}}
 	if err := r.key(parent); err != nil {
 		return err
 	}
@@ -187,9 +187,10 @@ type renaming struct {
 	x        *opCtx
 	from, to value.Value
 	text     map[string][]format.Change
-	done     map[tokenPlace]bool // the tokens already rewritten
-	pkgs     map[string]string   // the package of each file written, by display path
-	moved    map[string]bool     // the keyed-list elements a cascade moved, by old path (E11)
+	done     map[tokenPlace]bool             // the tokens already rewritten
+	pkgs     map[string]string               // the package of each file written, by display path
+	moved    map[string]bool                 // the keyed-list elements a cascade moved, by old path (E11)
+	items    map[*syntax.FieldItem]keyedName // the map items whose word key becomes a string (keyedItems)
 }
 
 // tokenPlace is a token of a file by its display path and offsets, whichever file set read it.
@@ -220,27 +221,38 @@ func (r *renaming) canonToken(f *syntax.File, sp source.Span) error {
 	if n == nil {
 		return &NotEditableError{Reason: ReasonComputed}
 	}
-	text, err := r.tokenText(n)
+	text, err := r.tokenText(f, n)
 	if err != nil {
 		return err
+	}
+	if id, isName := n.(*syntax.Ident); isName && !isWord(text) {
+		if fi, _ := r.x.a.snap.mapItemOf(f, id); fi != nil {
+			r.items[fi] = keyedName{f: f, key: text}
+			return nil
+		}
 	}
 	r.text[f.Src.Path] = append(r.text[f.Src.Path], format.Change{Kind: format.Replace, Node: n, Text: text})
 	return nil
 }
 
-// tokenText is the new key written as node n writes the old one.
-func (r *renaming) tokenText(n syntax.Node) (string, error) {
+// tokenText is the new key written as node n of f writes the old one; a word a name in scope at n
+// would read is a string (DECISIONS 318).
+func (r *renaming) tokenText(f *syntax.File, n syntax.Node) (string, error) {
 	word := r.to.CanonText()
-	switch n.(type) {
+	switch x := n.(type) {
 	case *syntax.StringLit, *syntax.RawStringLit:
 		return quoted(r.to), nil
 	case *syntax.IntLit:
 		return word, nil
 	case *syntax.IdentExpr: // a reference in value position: a word bare or quoted, else a string (E11)
-		if text, ok := syntax.ValueText(word); ok {
+		if text, ok := syntax.ValueText(word); ok && (text != word || !r.x.a.snap.scopeOf(f, x).names(word)) {
 			return text, nil
 		}
 		return quoted(r.to), nil
+	case *syntax.Ident: // a map literal's word key, read as the key's type reads a value (TYPES.md 4.1)
+		if _, kt := r.x.a.snap.mapItemOf(f, x); kt != nil && isWord(word) {
+			return r.x.a.snap.scopeOf(f, x).keyText(value.Key{S: word}, kt, word), nil
+		}
 	}
 	if !isWord(word) {
 		return "", badTemplate(r.to)
@@ -284,6 +296,7 @@ func tokenNode(f *syntax.File, sp source.Span) syntax.Node {
 
 // flush adds the replacements to the operation's work, by file.
 func (r *renaming) flush() {
+	r.keyedItems()
 	for display, changes := range r.text { //canon:unordered each file's changes are added under its own name
 		r.x.w.addCanon(display, r.pkgOf(display), changes)
 	}

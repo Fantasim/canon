@@ -92,9 +92,10 @@ func (s *Snapshot) nodeForm(n syntax.Node) shape.Form {
 	return shape.SourceForm(s.info, e)
 }
 
-// prefixOf reports an amend path naming the first steps of res's path, and their number.
+// prefixOf reports an amend path naming the first steps of res's path, and their number; a path
+// with a key read from a name in scope names no step by its text (DECISIONS 318).
 func (s *Snapshot) prefixOf(segs []*syntax.AmendSegment, res resolution) (int, bool) {
-	if len(segs) > len(res.Steps) {
+	if len(segs) > len(res.Steps) || s.scopedSegs(segs) {
 		return 0, false
 	}
 	for i, seg := range segs {
@@ -107,7 +108,7 @@ func (s *Snapshot) prefixOf(segs []*syntax.AmendSegment, res resolution) (int, b
 
 // namesBelow reports an amend path longer than res's whose first segments name res's steps.
 func (s *Snapshot) namesBelow(segs []*syntax.AmendSegment, res resolution) bool {
-	if len(segs) <= len(res.Steps) {
+	if len(segs) <= len(res.Steps) || s.scopedSegs(segs[:len(res.Steps)]) {
 		return false
 	}
 	for i := range res.Steps {

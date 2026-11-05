@@ -1564,6 +1564,8 @@ comments, and a trailing comment on its last line.
   before their fields), `Kind` values, dependent symbols and keys bare, one named by a quotable word
   quoted (`` `return` ``, GRAMMAR.md §2.3), the same text in every file whatever its imports; a
   member or case is never printed qualified, and a map key is the WORD before `:` (DECISIONS 378).
+  A ref's word key is printed as a string (`"shield"`, `["shield"]`) where a name of that word is
+  in scope at the position written (DECISIONS 496).
   A record whose dependent position computes a branch other than the one DECISIONS 171 reads a bare
   brace as is printed as a typed record literal `R { … }`, R named as the file written names it
   (bare in R's package or where a selective import brings it, else `alias.R` or `last-segment.R`);

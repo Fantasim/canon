@@ -92,6 +92,7 @@ type sharedRow struct {
 	want                  string
 	refused               canon.Reason
 	to                    string
+	key                   canon.Lit // the new key when not a string key (a member)
 }
 
 // run checks r's Refs and rename, then that the Undo gives every file back byte for byte.
@@ -106,8 +107,11 @@ func (r sharedRow) run(t *testing.T) {
 	if got := sharedRefs(refs.Refs); got != r.want {
 		t.Errorf("API.md R7 (DECISIONS 483): the refs of %s are\n%q, want\n%q", r.l.path, got, r.want)
 	}
-	to := cmp.Or(r.to, "y")
-	res, err := p.Edit(ctx, canon.Edit{Ops: []canon.Op{canon.Rename(r.l.path, canon.Key(to))}})
+	key := r.key
+	if key == nil {
+		key = canon.Key(cmp.Or(r.to, "y"))
+	}
+	res, err := p.Edit(ctx, canon.Edit{Ops: []canon.Op{canon.Rename(r.l.path, key)}})
 	var ne *canon.NotEditableError
 	after := r.after
 	switch {

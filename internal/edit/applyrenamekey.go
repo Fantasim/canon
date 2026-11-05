@@ -49,13 +49,21 @@ func (r *renaming) canonKey(parent value.Value, c, pc cursor) error {
 		if fi == nil {
 			return &NotEditableError{Reason: ReasonKey}
 		}
-		text, err := r.x.a.canonText(r.to)
+		text, err := r.textIn(c.file)
 		if err != nil {
 			return err
 		}
 		return r.replace(c.file, syntax.Unparen(fi.Value), text, false)
 	}
 	return r.mapKey(itemOf(pc.node, c.node), pc.file)
+}
+
+// textIn is the new key as a value written in f, whose names in scope a ref's word key must not
+// meet bare (DECISIONS 318).
+func (r *renaming) textIn(f *syntax.File) (string, error) {
+	p := &canonPrinter{a: r.x.a, names: &typeNaming{pkg: r.x.a.snap.packageOf(f.Src.Path), file: f}}
+	p.value(r.to)
+	return p.b.String(), p.err
 }
 
 // mapKey replaces a map item's key: an expression, or a bare name.
@@ -65,13 +73,19 @@ func (r *renaming) mapKey(item syntax.Node, f *syntax.File) error {
 		if sel, ok := it.Key.(*syntax.SelectorExpr); ok && sel.Name != nil && namedData(r.to) {
 			return r.replace(f, sel.Name, r.to.CanonText(), true) // `Q.m` keeps its qualifier (E11)
 		}
-		text, err := r.exprKeyText(it.Key)
+		text, err := r.exprKeyText(f, it.Key)
 		if err != nil {
 			return err
 		}
 		return r.replace(f, syntax.Unparen(it.Key), text, false)
 	case *syntax.FieldItem:
-		return r.replace(f, it.Name, r.to.CanonText(), true)
+		word := r.to.CanonText()
+		if ref, isRef := r.to.(*value.Ref); isRef {
+			if text := r.x.a.snap.scopeOf(f, it.Name).keyText(ref.Key, ref.T, word); text != word {
+				return r.replaceItem(f, it, text) // a word a name in scope would read (DECISIONS 318)
+			}
+		}
+		return r.replace(f, it.Name, word, true)
 	}
 	return &NotEditableError{Reason: ReasonComputed}
 }
@@ -88,16 +102,27 @@ func namedData(v value.Value) bool {
 // exprKeyText is the new key in the place of key, an expression map key that is no selector: a
 // string for a string; inside parentheses, the new key; else never a bare word, which makes a
 // named item: a word in parentheses (DECISIONS 378).
-func (r *renaming) exprKeyText(key syntax.Expr) (string, error) {
+func (r *renaming) exprKeyText(f *syntax.File, key syntax.Expr) (string, error) {
 	switch syntax.Unparen(key).(type) {
 	case *syntax.StringLit, *syntax.RawStringLit:
 		return quoted(r.to), nil // a string key stays a string (E11)
 	}
-	text, err := r.x.a.canonText(r.to)
+	text, err := r.textIn(f)
 	if err != nil || !isWord(text) || key != syntax.Unparen(key) {
 		return text, err
 	}
 	return callOpen + text + callClose, nil // `(word)`, the parentheses a call writes
+}
+
+// replaceItem writes key text, a string, as map item it's key, once.
+func (r *renaming) replaceItem(f *syntax.File, it *syntax.FieldItem, text string) error {
+	at := placeOf(f, it.Name)
+	if r.done[at] {
+		return nil
+	}
+	r.done[at] = true
+	r.items[it] = keyedName{f: f, key: text}
+	return nil
 }
 
 // replace writes text over n; a word checks the text is one.
