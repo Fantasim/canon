@@ -1,6 +1,9 @@
-EVALUATION.md §4.2, §9.2, §9.3, TYPES.md §7.5: copies share the instance: a let written into a field
-is the let's instance, its refs equal the let's entries; a default's copy of its literal owns its
-map's ref keys, so an amend path's ref key replaces one; an amended copy becomes its own instance.
+EVALUATION.md §4.2, §9.2, §9.3, TYPES.md §7.5, DECISIONS 486: copies share the instance: a let written
+into a field is the let's instance, its refs equal the let's entries; a default's copy of its literal
+owns its map's ref keys, so an amend path's ref key replaces one; an amended copy is its own instance,
+and the entries it leaves unchanged keep their source's identity. hc's twin would be
+`{ other: { ...std, m: { low: 3 } } }`, whose written map key fails `contains` against TYPES.md §7.5
+(EVAL-CONTAINSEQ, the same on base); the parity harness takes no partial twin, so hc has none yet.
 -- layers --
 dev
 -- a/a.canon --
@@ -34,10 +37,13 @@ record Holder {
   other: Plan
 }
 
-/// Both plans amended.
+/// Its default plan amended.
 let h: Holder = { other: std }
-/// Both plans amended.
-let hWritten: Holder = { plan: { m: { low: 2 } }, other: { m: { low: 3 } } }
+/// Its default plan amended.
+let hWritten: Holder = { plan: { m: { low: 2 } }, other: std }
+
+/// Its copy of std amended.
+let hc: Holder = { other: std }
 
 /// Not amended.
 let k: Holder = { other: std }
@@ -49,27 +55,35 @@ let same: [Bool] = [k.other.pick == std.tiers.low, [k.other.pick].contains(std.t
 /// Its other plan is std's instance.
 let sameWritten: [Bool] = [kWritten.other.pick == std.tiers.low, [kWritten.other.pick].contains(std.tiers.low), kWritten.other.m.keys().contains(std.tiers.low)]
 
-/// The amended plans are their own.
-let own: [Bool] = [h.other.pick == std.tiers.low, h.other.pick == h.other.tiers.low, h.plan.m.keys().contains(h.plan.tiers.low), h.other.m.keys().contains(h.other.tiers.low)]
-/// The amended plans are their own.
-let ownWritten: [Bool] = [hWritten.other.pick == std.tiers.low, hWritten.other.pick == hWritten.other.tiers.low, hWritten.plan.m.keys().contains(hWritten.plan.tiers.low), hWritten.other.m.keys().contains(hWritten.other.tiers.low)]
+/// The amended default plan is its own; the other is std's.
+let own: [Bool] = [h.plan.m.keys().contains(h.plan.tiers.low), h.other.pick == std.tiers.low]
+/// The amended default plan is its own; the other is std's.
+let ownWritten: [Bool] = [hWritten.plan.m.keys().contains(hWritten.plan.tiers.low), hWritten.other.pick == std.tiers.low]
+
+/// The amended copy keeps std's unchanged entries.
+let kept: [Bool] = [hc.other.tiers.low == std.tiers.low, hc.other.pick == std.tiers.low, hc.other.pick == hc.other.tiers.low, hc.other.m.keys().contains(hc.other.tiers.low)]
 -- a/dev.canon --
 package a
 layer dev
 
 amend h {
   plan.m[low]: 2
+}
+
+amend hc {
   other.m[low]: 3
 }
 -- dump.txt --
 a.std = Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}
-a.h = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 2}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 3}}}
-a.hWritten = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 2}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 3}}}
+a.h = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 2}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}}
+a.hWritten = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 2}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}}
+a.hc = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 3}}}
 a.k = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}}
 a.kWritten = Holder{plan: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}, other: Plan{tiers: {low: Tier{weight: 1}}, pick: low, m: {low: 1}}}
 a.same = [true, true, true]
 a.sameWritten = [true, true, true]
-a.own = [false, true, true, true]
-a.ownWritten = [false, true, true, true]
+a.own = [true, true]
+a.ownWritten = [true, true]
+a.kept = [true, true, true, true]
 
 0 errors, 0 warnings in 1 package (…)

@@ -38,7 +38,9 @@ type run struct {
 	h          *stdHost
 	test       *testState
 	freeSteps  int64
-	mv         *moves           // what the amendments of this root copied, until settled (settle.go)
+	mv         *moves        // what the amendments of this root copied, until settled (settle.go)
+	reads      []value.Value // under a layer, the values of the roots this run read (copies.go)
+	readFrom   map[*rootState]bool
 	dep        *depCtx          // what a type argument names in the value being built (params.go)
 	emitted    *[]*diag.Builder // a stage-B run's findings, kept for replay (stageb.go)
 	magic      *Magic           // a view run's magic names (viewexpr.go)

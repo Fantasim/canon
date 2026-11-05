@@ -86,7 +86,7 @@ func (e *Evaluator) transfer(rec, cp *value.Record, mv *moves) {
 
 // adoptInto makes rec, a copy of from, own its fields' entries from's instance owns, none does,
 // or mv's amendments built, a fresh one in place so the refs bound to it stay bound; another
-// instance's entry stays its own, as a spread copy's unwritten field holds (DECISIONS 410, 478).
+// instance's entry, or one another place holds, stays its own (DECISIONS 410, 478, 486).
 func (e *Evaluator) adoptInto(rec, from *value.Record, mv *moves) {
 	rt := recordOf(rec.T)
 	if rt == nil {
@@ -110,9 +110,9 @@ func (e *Evaluator) adoptInto(rec, from *value.Record, mv *moves) {
 	}
 }
 
-// ownerFilter holds the entries a copy of inst adopts: inst's, no instance's, and those mv's
-// amendments built; nil holds every entry. It remembers the last owner met, as a field's entries
-// mostly share one.
+// ownerFilter holds the entries a copy of inst adopts: inst's, no instance's, those mv's amendments
+// built, but none whose owner's instance another place holds (copies.go); nil holds every entry. It
+// remembers the last owner met, as a field's entries mostly share one.
 type ownerFilter struct {
 	e    *Evaluator
 	inst *value.Record
@@ -126,8 +126,8 @@ func (o *ownerFilter) has(en *value.Record) bool {
 	if o == nil || en.Ident.Owner == nil || o.mv.made(en) {
 		return true
 	}
-	if en.Ident.Owner != o.last {
-		o.last, o.ok = en.Ident.Owner, o.e.instance(en.Ident.Owner) == o.inst
+	if owner := en.Ident.Owner; owner != o.last {
+		o.last, o.ok = owner, o.e.instance(owner) == o.inst && !o.e.shared(owner, o.mv)
 	}
 	return o.ok
 }

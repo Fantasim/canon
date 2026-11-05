@@ -37,6 +37,7 @@ type amending struct {
 	keys   map[*syntax.AmendSegment]value.Value
 	trail  []*vpath // the path after each segment locate followed (API.md F1)
 	quiet  bool     // the path is being located: a missing segment is the replace's E1905
+	visit  int      // the base walk's visit of the value the path has reached (copies.go)
 }
 
 // applyLayers applies a let's amendments, layer order then source order (EVALUATION.md §9.3).
@@ -87,7 +88,10 @@ func (r *run) amend(obj check.Object, blk *syntax.AmendBlock, a *syntax.Amendmen
 	r.fr = r.ev.rootFrame(r.ev.fileOf(blk))
 	r.fr.layer = layer // what its right-hand side computes, called frames included, is the layer's (API.md §4, F11)
 	defer func() { r.fr = saved }()
-	m := &amending{layer: layer, a: a, root: obj, holder: objSite(obj), path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}}
+	if mv := r.moving(); mv.copies == nil { // v is still the base value: its copy facts, once (copies.go)
+		mv.copies = r.ev.copiesOf(v, r.reads)
+	}
+	m := &amending{layer: layer, a: a, root: obj, holder: objSite(obj), path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}, visit: rootVisit}
 	m.dep = &depCtx{field: obj.Type(), at: a.Value}
 	if r.locate(v, obj.Type(), m); r.failed {
 		return nil
@@ -151,11 +155,11 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 		r.unreached(m, r.noField(rec, seg, m))
 		return nil
 	}
-	f := fieldsOf(rec.T)[i]
+	f, self := fieldsOf(rec.T)[i], m.visit
 	outer := m.holder
 	m.at, m.holder = append(m.at, rec), r.ev.fieldSite(f, rec.T)
 	defer func() { m.at, m.holder = m.at[:len(m.at)-1], outer }()
-	nv := r.next(rec.Fields[i], f.Type, segs, m)
+	nv := r.descend(m, i, func() value.Value { return r.next(rec.Fields[i], f.Type, segs, m) })
 	if nv == nil {
 		return nil
 	}
@@ -168,14 +172,23 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 		nv = r.ev.inField(nv, &cp, f)
 	}
 	cp.Fields[i], cp.Set[i] = nv, true
+	r.moving().replaces(&cp, rec)
 	r.moved(rec, &cp)
 	r.ev.shareParams(rec, &cp) // its re-derived defaults read the same arguments (TYPES.md §11.1)
 	r.ev.unbindFrom(&cp, m.at, r.mv)
-	if !r.derive(&cp, i, m.pathAfter(len(m.a.Path)-len(segs))) {
+	if !r.ev.isCopy(rec, self, r.mv) && !r.derive(&cp, i, m.pathAfter(len(m.a.Path)-len(segs))) { // a copy applied none of its defaults (DECISIONS 486)
 		return nil
 	}
 	r.ev.bindTo(&cp, rec, r.mv) // EVALUATION.md §3.4: the copy is the instance its refs resolve against
 	return r.copied(rec, &cp)
+}
+
+// descend is eval with m's path at child index i of the value it has reached (copies.go).
+func (r *run) descend(m *amending, i int, eval func() value.Value) value.Value {
+	outer := m.visit
+	m.visit = r.moving().copies.child(outer, i)
+	defer func() { m.visit = outer }()
+	return eval()
 }
 
 // noField is E1905 for a field the value lacks: a case without it, or none at all.
@@ -221,7 +234,9 @@ func (r *run) derive(rec *value.Record, i int, at *vpath) bool {
 		if j <= i || rec.Set[j] || f.Default == nil || f.Input != nil || spreadCopied(rec.Fields[j]) {
 			continue
 		}
-		changed[j] = r.ev.readsChanged(f, fields, changed)
+		if changed[j] = r.ev.readsChanged(f, fields, changed); !changed[j] && r.ev.shared(rec, r.mv) {
+			continue // another place holds it: its entries keep their identity (DECISIONS 486)
+		}
 		v := r.rederive(rec, j, at.field(f.Name), changed[j])
 		if v == nil {
 			return false

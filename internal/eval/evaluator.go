@@ -55,6 +55,7 @@ type Evaluator struct {
 	refTypes   map[refHold]bool                // types whose values may hold a ref (prune.go)
 	clean      map[cleanKey]bool               // cache, by value: cleared after each root (refs.go)
 	origin     map[*value.Record]*value.Record // fact, copied: a copy of an owning instance, to the record it copies (instance.go)
+	nodeSets   map[value.Value]*nodeSet        // cache, by value: what a root value an amended let read holds (nodesets.go)
 	sites      map[*types.Field]site
 	pkgs       map[string]*check.Package
 	stable     []StableAmendment
@@ -273,8 +274,7 @@ func (e *Evaluator) Invalid(v value.Value) bool {
 	return e.invalid[v] || e.parent != nil && e.parent.invalid[v]
 }
 
-// Poison poisons a top-level value after the fact: stage B met a hard error in it (DECISIONS
-// 147); it is no longer read, amended or traversed.
+// Poison poisons a top-level value stage B met a hard error in (DECISIONS 147): no longer read, amended or traversed.
 func (e *Evaluator) Poison(root Root) {
 	cause := e.stageB
 	e.stageB = nil

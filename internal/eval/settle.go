@@ -7,13 +7,28 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// moves are the copies one let's amendments made, until it settles: the values they built,
-// which no one else holds, each of those instances replaced by a copy since, and the entries
-// they put in a slot, which may share fields with another value.
+// moves are what one let's amendments made, until it settles: the values they built, no one else's,
+// each instance's copy since, the entries they put in a slot (which may share fields), the base
+// record each copy replaces, and the base value's copy facts (copies.go).
 type moves struct {
 	fresh   map[value.Value]bool
 	lineage map[*value.Record]*value.Record
 	placed  map[*value.Record]bool
+	base    map[*value.Record]*value.Record
+	copies  *copies
+}
+
+// baseOf is the record of the let's base value rec is, or that an amendment's copy rec replaces.
+func (m *moves) baseOf(rec *value.Record) *value.Record {
+	if b, ok := m.base[rec]; ok {
+		return b
+	}
+	return rec
+}
+
+// replaces records that cp, an amendment's copy, replaces rec: the same base record.
+func (m *moves) replaces(cp, rec *value.Record) {
+	m.base[cp] = m.baseOf(rec)
 }
 
 // isFresh reports a value the amendments built, which settle may complete in place.
@@ -35,6 +50,7 @@ func (m *moves) follow(v, cp value.Value) {
 	if old, ok := v.(*value.Record); ok {
 		if rec, isRec := cp.(*value.Record); isRec {
 			m.lineage[old] = rec
+			m.replaces(rec, old)
 		}
 	}
 }
@@ -63,7 +79,10 @@ func (r *run) copied(from, to value.Value) value.Value {
 
 func (r *run) moving() *moves {
 	if r.mv == nil {
-		r.mv = &moves{fresh: map[value.Value]bool{}, lineage: map[*value.Record]*value.Record{}, placed: map[*value.Record]bool{}}
+		r.mv = &moves{
+			fresh: map[value.Value]bool{}, lineage: map[*value.Record]*value.Record{},
+			placed: map[*value.Record]bool{}, base: map[*value.Record]*value.Record{},
+		}
 	}
 	return r.mv
 }

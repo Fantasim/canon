@@ -517,15 +517,17 @@ else reads `v`**:
    - The **last** segment may name a new map key or a new table key: the entry is added at the
      end (a new table entry gets its identity). Adding to a `stable table` is `E6004`
      (LOCK.md). A keyed list or list never grows.
-3. **Derived defaults follow**: when an amendment replaces field `f` of an instance, every
-   later field of that instance whose value came from its default (not written in the source or
-   file, not amended, not supplied by a spread) is re-evaluated, in declaration order. A field a
-   spread supplied counts as written: a spread copy keeps the value, and the entries, its source's
-   default gave, even when that default reads a field the line amends (DECISIONS 486). An
-   applied-record field written in
-   the source keeps the arguments it was built with (TYPES.md §11.1): amending the argument it
-   depends on leaves it applied to the old one, which verification reports as `E3802`; a
-   defaulted one is re-derived and takes the new argument.
+3. **Derived defaults follow**: when an amendment replaces field `f` of an instance, every later
+   field of that instance whose value came from its default (not written in the source or file,
+   not amended, not supplied by a spread or a copy) is re-evaluated, in declaration order. A field
+   a spread or a copy supplied counts as written (DECISIONS 492): a spread copy keeps the value,
+   and the entries, its source's default gave, even when that default reads a field the line
+   amends (DECISIONS 486). When the amended record is an instance held at its own place and at a
+   copy's, a later defaulted field whose inputs are all unchanged keeps its value, and its
+   entries' identity (DECISIONS 492). An applied-record field written in the source keeps the
+   arguments it was built with (TYPES.md §11.1): amending the argument it depends on leaves it
+   applied to the old one, which verification reports as `E3802`; a defaulted one is re-derived
+   and takes the new argument.
 4. The amended value then goes through verification and every check, like any value.
 
 Amended sub-values carry layer provenance (§13), which `canon explain` shows. Layers never write

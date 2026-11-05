@@ -19,7 +19,9 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	if i < 0 {
 		return r.addEntry(cur, t, segs, m, key)
 	}
-	nv, fresh := r.freshly(func() value.Value { return r.next(elems[i], elementType(t), segs, m) })
+	nv, fresh := r.freshly(func() value.Value {
+		return r.descend(m, i, func() value.Value { return r.next(elems[i], elementType(t), segs, m) })
+	})
 	if nv == nil {
 		return nil
 	}
@@ -143,7 +145,7 @@ func (r *run) setMapKey(mp *value.Map, t types.Type, segs []*syntax.AmendSegment
 	} else if p := key.Prov(); p != nil {
 		key = r.ev.reprov(key, &value.Prov{Kind: value.ProvLayer, Span: p.Span, Ext: &value.ProvExt{Layer: m.layer}})
 	}
-	nv := r.next(cur, vt, segs, m)
+	nv := r.descend(m, mapChild(i), func() value.Value { return r.next(cur, vt, segs, m) })
 	if nv == nil {
 		return nil
 	}
@@ -167,6 +169,14 @@ func (r *run) mapSlot(mp *value.Map, seg *syntax.AmendSegment, m *amending) (int
 		return 0, nil, false
 	}
 	return r.ev.keyAt(mp, key), key, true
+}
+
+// mapChild is the child index of a map's value i, as indexed counts it; none for a new key.
+func mapChild(i int) int {
+	if i < 0 {
+		return i
+	}
+	return mapStride*i + 1
 }
 
 func keyPosition(m *value.Map, k value.Value) int {

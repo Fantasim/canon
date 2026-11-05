@@ -22,6 +22,9 @@ func (e *Evaluator) force(ctx context.Context, st *rootState, reader *run, at sy
 	if !ok && st.starved && reader != nil {
 		reader.starved = true
 	}
+	if ok && reader != nil {
+		reader.noteRead(st, v)
+	}
 	return v, ok
 }
 

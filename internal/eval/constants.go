@@ -20,6 +20,13 @@ const (
 	poisoned
 )
 
+// A let's base walk (copies.go): its root's visit, none, and a map entry's child indexes (key, value).
+const (
+	rootVisit = 0
+	noVisit   = -1
+	mapStride = 2
+)
+
 // What a binder does to the refs it walks: bind, rebind to its instance's copy, unbind (refs.go).
 const (
 	modeBind bindMode = iota

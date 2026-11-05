@@ -122,6 +122,23 @@ func (b bound) boundIn(v value.Value) {
 	})
 }
 
+// elsewhere is what other lets' values hold: where their refs sit, and their entries, which an
+// amended copy leaves unchanged with their source's identity (DECISIONS 486).
+type elsewhere struct {
+	refs    bound
+	entries map[*value.Record]bool
+}
+
+// add records v's refs and entries.
+func (o elsewhere) add(v value.Value) {
+	o.refs.boundIn(v)
+	walkValue(v, "", func(n node) {
+		if x, ok := n.v.(*value.Record); ok && x.Ident != nil {
+			o.entries[x] = true
+		}
+	})
+}
+
 // refType is the type of a bound level-1 ref.
 func refType(x *value.Ref, isRef bool) (*types.RefType, bool) {
 	if !isRef || x.Owner == nil {
@@ -131,8 +148,9 @@ func refType(x *value.Ref, isRef bool) (*types.RefType, bool) {
 	return rt, ok && ownerOf(rt.Target) != nil
 }
 
-// ownerProblems lists the refs and entries of v whose owner is not the enclosing instance they belong to.
-func ownerProblems(ev *eval.Evaluator, v value.Value, name string, others bound) []string {
+// ownerProblems lists the refs and entries of v whose owner is not the enclosing instance they
+// belong to, but for an entry another let holds, which an amended copy left unchanged (DECISIONS 486).
+func ownerProblems(ev *eval.Evaluator, v value.Value, name string, others elsewhere) []string {
 	var out []string
 	walkValue(v, name, func(n node) {
 		ok := true
@@ -142,7 +160,7 @@ func ownerProblems(ev *eval.Evaluator, v value.Value, name string, others bound)
 		case *value.Record:
 			if x.Ident != nil && x.Ident.Owner != nil {
 				in, found := nearest(n.outer, ownerOf(x.Ident.Coll))
-				ok = !found || sameInstance(ev, x.Ident.Owner, in.rec)
+				ok = !found || sameInstance(ev, x.Ident.Owner, in.rec) || others.entries[x]
 			}
 		}
 		if !ok {
@@ -154,7 +172,7 @@ func ownerProblems(ev *eval.Evaluator, v value.Value, name string, others bound)
 
 // refOwned reports a bound level-1 ref equal to the entry of its key in its nearest instance, or
 // bound to that instance, or placed here from another let's value, which bound it elsewhere in it.
-func refOwned(ev *eval.Evaluator, x *value.Ref, n node, others bound) bool {
+func refOwned(ev *eval.Evaluator, x *value.Ref, n node, others elsewhere) bool {
 	rt, ok := refType(x, true)
 	if !ok {
 		return true
@@ -167,7 +185,7 @@ func refOwned(ev *eval.Evaluator, x *value.Ref, n node, others bound) bool {
 	if e != nil && value.Equal(x, e) || e == nil && sameInstance(ev, x.Owner, in.rec) {
 		return true
 	}
-	places, placed := others[x]
+	places, placed := others.refs[x]
 	return placed && !places[strings.TrimPrefix(n.path, in.path)]
 }
 
@@ -195,7 +213,8 @@ func entryOf(rec *value.Record, name string, k value.Key) *value.Record {
 	return nil
 }
 
-// EVALUATION.md §3.4, §4.2, TYPES.md §10.2: refs and entries name their tree's instances, with or without layers.
+// DECISIONS 486 (EVALUATION.md 3.4, 4.2, TYPES.md 10.2): refs and entries name their tree's
+// instances, with or without layers; an entry an amended copy left unchanged keeps its source's.
 func TestInstanceOwners(t *testing.T) {
 	files, err := filepath.Glob("testdata/parity/*.txtar")
 	if err != nil {
@@ -233,10 +252,10 @@ func TestInstanceOwners(t *testing.T) {
 func checkOwners(t *testing.T, b *build, file string) {
 	t.Helper()
 	for _, root := range b.order {
-		others := bound{}
+		others := elsewhere{refs: bound{}, entries: map[*value.Record]bool{}}
 		for _, other := range b.order {
 			if other != root {
-				others.boundIn(b.values[other])
+				others.add(b.values[other])
 			}
 		}
 		if bad := ownerProblems(b.ev, b.values[root], root.Name, others); len(bad) > 0 {

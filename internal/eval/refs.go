@@ -163,20 +163,23 @@ func (e *Evaluator) bindRefs(rec *value.Record) {
 	}
 }
 
-// bindTo binds rec's unbound level-1 refs and those bound to the instance of src, which rec copies (EVALUATION.md §4.2).
+// bindTo binds rec's unbound level-1 refs and those of src to the entries rec holds (DECISIONS 410, 486).
 func (e *Evaluator) bindTo(rec, src *value.Record, mv *moves) {
 	owned := e.owned(rec.T)
 	if len(owned) == 0 {
 		return
 	}
-	b := &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, inst: e.instance(src), mode: modeRebind, mv: mv}
+	b := &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, inst: e.instance(src), prev: src, mode: modeRebind, mv: mv}
 	e.rebindFields(rec, b)
 }
 
-// unbindFrom unbinds rec's refs to the instances of path, the records it copies and encloses, as when first built (EVALUATION.md §3.4).
+// unbindFrom unbinds rec's refs to path's unshared instances, as when first built (DECISIONS 486).
 func (e *Evaluator) unbindFrom(rec *value.Record, path []*value.Record, mv *moves) {
 	b := &binder{e: e, owned: map[*types.Collection]bool{}, owner: rec, mode: modeUnbind, owners: map[*value.Record]bool{}, mv: mv}
 	for _, in := range path {
+		if e.shared(in, mv) {
+			continue
+		}
 		maps.Copy(b.owned, e.owned(in.T))
 		b.owners[e.instance(in)] = true
 	}
@@ -200,15 +203,16 @@ type cleanKey struct {
 	rt   *types.RecordType
 }
 
-// binder binds refs into owned to owner, copying what changes (DECISIONS 199); rebinding, it
-// also moves to owner the refs bound to another copy of its instance inst; unbinding, it
-// unbinds the refs bound to one of the instances owners.
+// binder binds refs into owned to owner, copying what changes (DECISIONS 199); rebinding, it also
+// moves the refs bound to another copy of inst, to the entry owner holds when prev (the record an
+// amendment replaced) is set; unbinding, it unbinds the refs bound to one of the instances owners.
 type binder struct {
 	e      *Evaluator
 	owned  map[*types.Collection]bool
 	rt     *types.RecordType
 	owner  *value.Record
 	inst   *value.Record
+	prev   *value.Record
 	mode   bindMode
 	owners map[*value.Record]bool
 	mv     *moves
@@ -295,10 +299,62 @@ func (b *binder) leaf(v value.Value) value.Value {
 		}
 		return b.e.carry(v, &value.Ref{T: x.T, Key: x.Key, P: x.P})
 	}
-	if x.Owner == nil || b.mode == modeRebind && x.Owner != b.owner && b.e.instance(x.Owner) == b.inst {
-		return b.e.carry(v, &value.Ref{T: x.T, Key: x.Key, Owner: b.owner, P: x.P})
+	if x.Owner != nil && (b.mode != modeRebind || x.Owner == b.owner || !b.ours(x, rt.Target)) {
+		return v
+	}
+	if owner := b.ownerFor(x, rt.Target); owner != x.Owner {
+		return b.e.carry(v, &value.Ref{T: x.T, Key: x.Key, Owner: owner, P: x.P})
 	}
 	return v
+}
+
+// ours reports x, bound, a ref the rebinding moves: bound to another copy of inst, or to the owner
+// of the entry its key named in prev, which owner copies (DECISIONS 410).
+func (b *binder) ours(x *value.Ref, c *types.Collection) bool {
+	return b.e.instance(x.Owner) == b.inst || b.held() && x.Owner == b.e.heldOwner(b.prev, c, x.Key)
+}
+
+// held reports a rebinding that binds refs to the entries owner holds: one of an amendment whose
+// let holds or read some instance at another place; else every entry is owner's (copies.go).
+func (b *binder) held() bool {
+	return b.prev != nil && b.mv != nil && b.mv.copies != nil && !b.mv.copies.none()
+}
+
+// ownerFor is the record x binds to: owner, or with prev the owner of the entry owner's field holds
+// at x's key when another place holds it, so x names that very entry (DECISIONS 410, 486).
+func (b *binder) ownerFor(x *value.Ref, c *types.Collection) *value.Record {
+	if !b.held() {
+		return b.owner
+	}
+	en := b.e.heldEntry(b.owner, c, x.Key)
+	if en != nil && !b.mv.made(en) && en.Ident.Owner != nil && b.e.shared(en.Ident.Owner, b.mv) {
+		return en.Ident.Owner
+	}
+	return b.owner
+}
+
+// heldOwner is the owner of the entry keyed k in rec's field holding collection c, nil for none.
+func (e *Evaluator) heldOwner(rec *value.Record, c *types.Collection, k value.Key) *value.Record {
+	if en := e.heldEntry(rec, c, k); en != nil {
+		return en.Ident.Owner
+	}
+	return nil
+}
+
+// heldEntry is the entry keyed k in rec's field holding collection c, nil for none.
+func (e *Evaluator) heldEntry(rec *value.Record, c *types.Collection, k value.Key) *value.Record {
+	if c.Kind != types.CollField || len(c.FieldPath) == 0 {
+		return nil
+	}
+	i := fieldIndex(rec.T, c.FieldPath[0])
+	if i < 0 || i >= len(rec.Fields) || rec.Fields[i] == nil {
+		return nil
+	}
+	en, ok := e.entry(rec.Fields[i], k)
+	if !ok || en.Ident == nil || en.Ident.Coll != c {
+		return nil
+	}
+	return en
 }
 
 // rebuild is a composite whose components are all rebound: itself when none changed, else a

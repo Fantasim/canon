@@ -5314,3 +5314,32 @@ round 2", "PS1 review", "PS2 round 2"):
      `Rename` rewrote a copy's layer key that `Refs` did not list; a per-instance ref key was listed
      under every instance; and `[k]` on a ref-keyed list and reads through an optional let root were
      not listed, so E19 refused the renames they broke.
+
+492. **An amended copy keeps its source's unchanged entries and defaults, at any depth and for every
+     kind of copy (EVALUATION.md §9.3; TYPES.md §6.3, §7.5, §10.2; API.md R7, R11; follows 79, 187,
+     410, 478, 486).** 486 holds at every depth (478) and for every copy (79): a spread copy, a let
+     or field initializer yielding an existing value, a default yielding an earlier field (`b: I =
+     self.a`), a value a function returns at several places (`[i, i]`), a record a layer line writes
+     from another value, and a copy of any of these. An amended copy is its own record instance
+     (187, copy on write). The entries a let's amendments build are its own (486). The entries they
+     leave unchanged keep their source's identity, at any depth below the copy, and so do the refs
+     and map keys bound to those entries. Of the places in one let's value that hold one instance,
+     the first in walk order is its own place and the others are copies. A place is a position in
+     the let's base value, counted so that a key an amendment adds moves no other place. In §9.3
+     step 3, a field the copy's source supplied counts as written. No amended copy re-derives such a
+     field, whatever its record type holds, however many lines or layers amend it, and including an
+     entry amended below a copy (its `lab` keeps the source's value). When the amended record is an
+     instance held at its own place and at a copy's, a later defaulted field whose inputs (the
+     fields its default names, and its type's arguments) are all unchanged keeps its value, and with
+     it its entries' identity, instead of being re-evaluated to an equal value (whether this holds
+     for every record is queued, EVAL-DERIVEKEEP). A ref or map key a layer writes into a copy binds
+     to the owner of the entry the copy's field holds at its key (410), so it equals that entry,
+     whatever the order of the lines. Which records are copies is decided from the let's base value,
+     its origins, and the values it read, including those an amendment's right-hand side reads. It
+     is the same in a warm and a cold build and in a child evaluator. Known limit, queued to
+     EDIT-REFKEYS2: when a line amends the first place of an instance held twice in one let, Graph
+     places the untouched entries' nodes at the copy's place. Reason: v0.3 run (EVAL-LAYERSPREAD2):
+     `amend b5 { inner.id: "z" }` on `b5 = { ...b1, … }` re-owned b1.inner's untouched entries. That
+     gave a false E3503 for `ref b5.inner.oo = b1.inner.oo.x` and a stray Graph node
+     p:b5.inner.oo[x]; plain copies and copies inside one let did the same, and some amended copies
+     re-derived defaults their source had supplied.
