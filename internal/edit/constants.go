@@ -74,6 +74,13 @@ const (
 	stLoaded // below an amendment that is a load: its data lies outside the layer file (W11a)
 )
 
+// E6's verdicts (TYPES.md 7.5), in the order verdict.and keeps; undecided needs a default no call computes.
+const (
+	vUnequal verdict = iota
+	vEqual
+	vUndecided
+)
+
 // Where a path stands in the edit layer's line at or above it (API.md W11a; DECISIONS 305).
 const (
 	siteNone      site = iota // no such line, or its literal states the path

@@ -123,32 +123,46 @@ func TestUndoRestoresDriversFirst(t *testing.T) {
 // the second every value ops wrote; every write is minimal (M6).
 func undoTwice(t *testing.T, name string, fsys mapFS, ops []edit.Operation) {
 	t.Helper()
-	undoRounds(t, name, fsys, ops, sameValues)
+	undoRounds(t, name, fsys, ops, [2]judge{sameValues, sameValues})
 }
 
 // undoTwiceFiles is undoTwice where every file, in canonical layout, comes back byte for byte too.
 func undoTwiceFiles(t *testing.T, name string, fsys mapFS, ops []edit.Operation) {
 	t.Helper()
-	undoRounds(t, name, fsys, ops, func(t *testing.T, name string, want, got mapFS) {
-		t.Helper()
-		sameValues(t, name, want, got)
-		sameFiles(t, name, want, got)
-	})
+	undoRounds(t, name, fsys, ops, [2]judge{sameText, sameText})
 }
 
-func undoRounds(t *testing.T, name string, fsys mapFS, ops []edit.Operation, same func(*testing.T, string, mapFS, mapFS)) {
+// undoOnceFiles is undoTwice where the Undo gives every file back byte for byte too; the Undo of
+// the Undo only the values: a Set back to a `{}` the edit left removes it (E6, E22).
+func undoOnceFiles(t *testing.T, name string, fsys mapFS, ops []edit.Operation) {
+	t.Helper()
+	undoRounds(t, name, fsys, ops, [2]judge{sameText, sameValues})
+}
+
+// sameText is sameValues and sameFiles.
+func sameText(t *testing.T, name string, want, got mapFS) {
+	t.Helper()
+	sameValues(t, name, want, got)
+	sameFiles(t, name, want, got)
+}
+
+// judge reports every way got does not hold want.
+type judge func(t *testing.T, name string, want, got mapFS)
+
+// undoRounds is ops, their Undo, judged by judges[0], and the Undo of that Undo, by judges[1].
+func undoRounds(t *testing.T, name string, fsys mapFS, ops []edit.Operation, judges [2]judge) {
 	t.Helper()
 	edited, ok := applied(t, name, fsys, ops)
 	if !ok {
 		return
 	}
-	undone, ok := applied(t, name+", Undo", edited.fsys, edited.plan.Undo)
+	back, ok := applied(t, name+", Undo", edited.fsys, edited.plan.Undo)
 	if !ok {
 		return
 	}
-	same(t, name+", Undo", fsys, undone.fsys)
-	if redone, ok := applied(t, name+", Undo of the Undo", undone.fsys, undone.plan.Undo); ok {
-		same(t, name+", Undo of the Undo", edited.fsys, redone.fsys)
+	judges[0](t, name+", Undo", fsys, back.fsys)
+	if again, ok := applied(t, name+", Undo of the Undo", back.fsys, back.plan.Undo); ok {
+		judges[1](t, name+", Undo of the Undo", edited.fsys, again.fsys)
 	}
 }
 

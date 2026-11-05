@@ -73,7 +73,11 @@ func (x *opCtx) activeSet(v value.Value) error {
 	if err := x.undoSet(); err != nil {
 		return err
 	}
-	if x.setsDefault(v) && x.layerHolds() {
+	def, err := x.setsDefault(v)
+	switch {
+	case err != nil:
+		return err
+	case def && x.layerHolds():
 		return x.change(nil)
 	}
 	return x.change(v)

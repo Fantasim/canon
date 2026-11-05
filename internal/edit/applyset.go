@@ -31,7 +31,11 @@ func setOp(x *opCtx) error {
 	x.heldBy(v)
 	x.nw = v
 	defer func() { x.a.pinned = nil }() // setsDefault's pin holds for this Set only
-	if x.setsDefault(v) {
+	def, err := x.setsDefault(v)
+	switch {
+	case err != nil:
+		return err
+	case def:
 		return x.change(nil)
 	}
 	return x.change(v)
@@ -243,31 +247,28 @@ func (x *opCtx) keepKey(v value.Value) (value.Value, error) {
 
 // setsDefault reports a Set of a field to its default (API.md E6, E7) in the base and the session
 // alike, which removes the field (a JSON none with a @json(none:) marker is written, E7); a value
-// only the base gives as default is pinned, so it is written and holds in both views.
-func (x *opCtx) setsDefault(v value.Value) bool {
-	inBase, f, ok := x.defaultIn(x.res, v)
-	if !ok {
-		return false
+// only the base gives as default is pinned. A layer Set E6 cannot judge is `computed` (ruling).
+func (x *opCtx) setsDefault(v value.Value) (bool, error) {
+	rec, f, ok := fieldAt(x.res)
+	if !ok || !hasDefault(f) {
+		return false, nil
 	}
-	inSession := !inBase || x.a.sessionDefault(x.res.Canonical, v)
+	fr := x.frameAt(len(x.res.Steps)) // rec's frame, its parameters bound (TYPES.md 11.1)
+	fr.rec = withField(rec, f.Index, v)
+	vd, d := x.a.defaultVerdict(fr, f.Index)
+	if vd == vUndecided && x.a.env.EditLayer != "" {
+		return false, &NotEditableError{Reason: ReasonComputed} // EDIT-E6RECORD: no way out
+	}
+	inBase := vd == vEqual
+	inSession := !inBase || x.a.sessionDefault(x.res.Canonical, d)
 	if inBase && !inSession {
 		x.a.pinned = []value.Value{v}
 	}
 	if !inBase || !inSession {
-		return false
+		return false, nil
 	}
 	_, none := v.(*value.None)
-	return !none || f.NoneWire == nil || x.j.holder().mode != ModeJSON
-}
-
-// defaultIn reports v the default of the field res's path ends at, read in res's record, and that
-// field; false for a path that ends at no field with a default.
-func (x *opCtx) defaultIn(res resolution, v value.Value) (bool, *types.Field, bool) {
-	rec, f, ok := fieldAt(res)
-	if !ok || !hasDefault(f) {
-		return false, nil, false
-	}
-	return x.a.isDefault(withField(rec, f.Index, v), f.Index), f, true
+	return !none || f.NoneWire == nil || x.j.holder().mode != ModeJSON, nil
 }
 
 // change sets the path's value to v, nil for the field's default, through the nearest value

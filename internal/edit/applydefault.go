@@ -35,17 +35,26 @@ func (a *applier) defaultIn(rec *value.Record, i int, params map[*types.Param]va
 	return a.host.Default(a.ctx, fields[i], wire.Instance{Record: full, Params: params}, nil)
 }
 
-// isDefault reports field i of rec holding its default (E6), by sameDefault under an edit layer;
-// never a value a base Set pins, nor a record materialized for it (setsDefault).
+// isDefault reports field i of rec holding its default (E6), its parameters unknown (defaultVerdict).
 func (a *applier) isDefault(rec *value.Record, i int) bool {
-	if i < len(rec.Fields) && slices.Contains(a.pinned, rec.Fields[i]) {
-		return false
+	vd, _ := a.defaultVerdict(depFrame{rec: rec, a: a}, i)
+	return vd == vEqual
+}
+
+// defaultVerdict judges field i of fr's record against its default, computed with the record's
+// parameters fr binds (E6, sameIn), and gives that default; never equal for a value a base Set
+// pins, nor a record materialized for it (setsDefault).
+func (a *applier) defaultVerdict(fr depFrame, i int) (verdict, value.Value) {
+	rec := fr.rec
+	fields := fieldsOf(rec.T)
+	if i >= len(rec.Fields) || i >= len(fields) || !hasDefault(fields[i]) || slices.Contains(a.pinned, rec.Fields[i]) {
+		return vUnequal, nil
 	}
-	d, ok := a.defaultOf(rec, i)
-	if a.env.EditLayer == "" {
-		return ok && sameValue(d, rec.Fields[i])
+	d, ok := a.defaultIn(rec, i, fr.params)
+	if !ok {
+		return vUndecided, nil
 	}
-	return ok && a.sameDefault(d, rec.Fields[i])
+	return a.sameIn(d, rec.Fields[i], fr, fr), d
 }
 
 // unchanged reports nw, a value the diff compares, equal to old (sameValue); while a Set pins a
@@ -57,45 +66,11 @@ func (a *applier) unchanged(old, nw value.Value) bool {
 	return sameValue(old, nw)
 }
 
-// sameDefault is sameValue with a record's field left out read as its default, the equality E6
-// names: a literal `{}` equals a default whose evaluation gives every field.
+// sameDefault reports x and y equal by sameIn, outside any record: E6's equality, a literal `{}`
+// equal to a default whose evaluation gives every field.
 func (a *applier) sameDefault(x, y value.Value) bool {
-	switch xv := x.(type) {
-	case *value.Record:
-		yv, ok := y.(*value.Record)
-		return ok && a.sameFields(xv, yv)
-	case *value.List:
-		yv, ok := y.(*value.List)
-		return ok && slices.EqualFunc(xv.Elems, yv.Elems, a.sameDefault)
-	case *value.Map:
-		yv, ok := y.(*value.Map)
-		return ok && sameValues(xv.Keys, yv.Keys) && slices.EqualFunc(xv.Vals, yv.Vals, a.sameDefault)
-	case *value.Table:
-		yv, ok := y.(*value.Table)
-		return ok && slices.EqualFunc(xv.Entries, yv.Entries, func(p, q *value.Record) bool {
-			return entryKey(p) == entryKey(q) && isRetired(p) == isRetired(q) && a.sameFields(p, q)
-		})
-	}
-	return sameValue(x, y)
-}
-
-// sameFields reports records of one shape whose fields are sameDefault, each left out as its default;
-// one whose default no call computes out of its record's context (a parameter it reads) equals the
-// other side's unwritten value, which the evaluation computed in that context.
-func (a *applier) sameFields(x, y *value.Record) bool {
-	if !sameShape(x.T, y.T) || len(x.Fields) != len(y.Fields) {
-		return false
-	}
-	for j := range x.Fields {
-		xv, yv := a.fieldOrDefault(x, j), a.fieldOrDefault(y, j)
-		if xv == nil && unwritten(y, j) || yv == nil && unwritten(x, j) {
-			continue
-		}
-		if !a.sameDefault(xv, yv) {
-			return false
-		}
-	}
-	return true
+	top := depFrame{a: a}
+	return a.sameIn(x, y, top, top) == vEqual
 }
 
 // unwritten reports field j of r holding a value its source does not write: its default.
@@ -103,19 +78,16 @@ func unwritten(r *value.Record, j int) bool {
 	return r.Fields[j] != nil && (j >= len(r.Set) || !r.Set[j])
 }
 
-// fieldOrDefault is field j of r, or its default in r when r leaves it out; nil for none computed.
-func (a *applier) fieldOrDefault(r *value.Record, j int) value.Value {
-	if r.Fields[j] != nil {
-		return r.Fields[j]
-	}
-	d, _ := a.defaultOf(r, j)
-	return d
-}
-
-// printed reports a field a new literal writes: written, and not equal to its default (M7).
-func (a *applier) printed(rec *value.Record, i int) bool {
+// printed reports a field a new literal writes: written, and not equal to its default (M7) in fr,
+// the frame of its record; an undecided one is written.
+func (a *applier) printed(fr depFrame, i int) bool {
+	rec := fr.rec
 	written := i < len(rec.Set) && rec.Set[i] && i < len(rec.Fields) && rec.Fields[i] != nil
-	return written && fieldsOf(rec.T)[i].Input == nil && !a.isDefault(rec, i)
+	if !written || fieldsOf(rec.T)[i].Input != nil {
+		return false
+	}
+	vd, _ := a.defaultVerdict(fr, i)
+	return vd != vEqual
 }
 
 // sameValue is value equality (TYP-08) of values that may carry no identity or

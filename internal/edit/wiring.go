@@ -17,6 +17,7 @@ type wiring struct {
 	a    *applier
 	raws []*jsonsrc.Node
 	phs  []*value.Str
+	fr   depFrame // the record the value restricted lies in, its parameters bound (TYPES.md 11.1)
 }
 
 // restrict is a copy of v whose records keep only the fields a literal writes (M7), for the data
@@ -59,13 +60,18 @@ func (w *wiring) restrictAll(vs []value.Value) ([]value.Value, error) {
 	return out, nil
 }
 
-// restrictRecord is r with only its printed fields, under a copy of its type holding those.
+// restrictRecord is r with only its printed fields, under a copy of its type holding those; its
+// fields are restricted in its frame.
 func (w *wiring) restrictRecord(r *value.Record) (*value.Record, error) {
+	saved := w.fr
+	w.fr.a = w.a
+	w.fr = w.fr.enter(r, nil)
+	defer func() { w.fr = saved }()
 	fields := fieldsOf(r.T)
 	var keep []*types.Field
 	var vals []value.Value
 	for i, f := range fields {
-		if !w.a.printed(r, i) {
+		if !w.a.printed(w.fr, i) {
 			continue
 		}
 		if l, ok := r.Fields[i].(*value.List); ok && f.Pairs != nil {

@@ -18,6 +18,7 @@ type canonPrinter struct {
 	b     strings.Builder
 	err   error
 	notes spellings // the old value's tokens as written, for an Undo (DECISIONS 337)
+	fr    depFrame  // the record the value printed lies in, its parameters bound (TYPES.md 11.1)
 }
 
 // canonText is v as a Canon literal (API.md M7), the same text in every file.
@@ -111,7 +112,8 @@ func (p *canonPrinter) key(k value.Value) {
 // record is `{ f: v, … }`, a case `name { … }` or its bare name when it writes no field.
 func (p *canonPrinter) record(r *value.Record) {
 	c, isCase := r.T.Base().(*types.CaseType)
-	shown := p.shown(r)
+	f := p.in(r)
+	shown := p.shown(f)
 	if isCase {
 		p.b.WriteString(caseText(c))
 		if len(shown) == 0 {
@@ -119,24 +121,34 @@ func (p *canonPrinter) record(r *value.Record) {
 		}
 		p.b.WriteString(space)
 	}
-	p.body(r, fieldsOf(r.T), shown)
+	p.body(f, fieldsOf(r.T), shown)
 }
 
-// body is a record's brace: its shown fields, or `{}`.
-func (p *canonPrinter) body(r *value.Record, fields []*types.Field, shown []int) {
+// in is the frame of r's fields, r printed inside p's frame: its parameters bound (depFrame.enter).
+func (p *canonPrinter) in(r *value.Record) depFrame {
+	fr := p.fr
+	fr.a = p.a
+	return fr.enter(r, nil)
+}
+
+// body is the brace of fr's record: its shown fields, each printed in fr, or `{}`.
+func (p *canonPrinter) body(fr depFrame, fields []*types.Field, shown []int) {
 	if len(shown) == 0 {
 		p.b.WriteString(emptyBrace)
 		return
 	}
+	saved := p.fr
+	p.fr = fr
 	p.b.WriteString(braceOpenSp)
 	for k, i := range shown {
 		if k > 0 {
 			p.b.WriteString(listSep)
 		}
 		p.b.WriteString(fields[i].Name + colonSp)
-		p.value(r.Fields[i])
+		p.value(fr.rec.Fields[i])
 	}
 	p.b.WriteString(braceCloseSp)
+	p.fr = saved
 }
 
 func (p *canonPrinter) list(elems []value.Value) {
@@ -190,14 +202,15 @@ func (p *canonPrinter) entry(key string, retired bool, e *value.Record) {
 		p.b.WriteString(retiredWord + space)
 	}
 	p.b.WriteString(key + space)
-	p.body(e, fieldsOf(e.T), p.shown(e))
+	f := p.in(e)
+	p.body(f, fieldsOf(e.T), p.shown(f))
 }
 
-// shown are the fields of r a literal writes: written, and not equal to their defaults (M7).
-func (p *canonPrinter) shown(r *value.Record) []int {
+// shown are the fields of fr's record a literal writes: written, and not equal to their defaults (M7).
+func (p *canonPrinter) shown(fr depFrame) []int {
 	var out []int
-	for i := range fieldsOf(r.T) {
-		if p.a.printed(r, i) {
+	for i := range fieldsOf(fr.rec.T) {
+		if p.a.printed(fr, i) {
 			out = append(out, i)
 		}
 	}

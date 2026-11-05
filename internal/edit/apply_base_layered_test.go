@@ -173,7 +173,7 @@ var baseLayeredCases = []baseLayeredCase{
 		`let crew: Bag = { items: [{ host: "a" }, { host: "b" }] }`, `let crew: Bag = { items: [{ host: "b" }] }`, ""},
 	{"case change beside an amended field (E14)", edit.Operation{Kind: edit.OpSetCase, Path: "d:drawing.shape", Case: "square"},
 		`let drawing: Drawing = { shape: circle {} }`, `let drawing: Drawing = { shape: square { tag: "c" } }`,
-		`let drawing: Drawing = { shape: circle }`},
+		`let drawing: Drawing = {}`}, // the Undo's Set of circle, shape's default, removes it (E6, E23)
 }
 
 // API.md W8, W10, E22 (EDIT-MATERIALIZE ruling): a base edit while dev is active writes only the

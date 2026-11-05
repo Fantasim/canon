@@ -117,8 +117,9 @@ func (s *Snapshot) resolves(p Path) (resolution, bool) {
 	return res, err == nil && res.root.enum == nil
 }
 
-// sessionDefault reports v the default the session gives the field at path, reading the
-// session's record with its own host; true when there is no session or it has no such field.
+// sessionDefault reports v, the base's evaluated default (setsDefault), the default the session
+// gives the field at path, read in the session's record with its own host; true when there is no
+// session or it has no such field.
 func (a *applier) sessionDefault(path string, v value.Value) bool {
 	if a.session == nil {
 		return true

@@ -695,6 +695,8 @@ A file that is not valid JSON, or has duplicate keys (`E7104`), is not changed.
   order of the object's Canon type (wire names). If no earlier declared key is present, it goes
   right before the first later declared key present; if no declared key is present at all, at the
   end of the object.
+  An unknown key a `partial` object keeps stays after its nearest surviving predecessor (else
+  first); when it and a new key claim the same slot, the kept key comes first (DECISIONS 471).
 - `@json(path: "a.b")`: missing intermediate objects are created with the same placement rule,
   using the first field that uses the prefix (LOD-09).
 - `@json(pairs:)`: the first slot written into an empty pairs field is placed by its first slot

@@ -258,20 +258,24 @@ func TestUndoDependentRequests(t *testing.T) {
 }
 
 // API.md E1, E22 (log-2026-09-29 U-E22-r), E15, M6, M8: the same in JSON sources, held values
-// included (DECISIONS 175): each file comes back byte for byte, and the Undo of the Undo gives
-// the edited files back.
+// included (DECISIONS 175): each file comes back byte for byte, the Undo of the Undo the edited
+// files, or their values where the edit left the tag `{}`, its default (E6).
 func TestUndoDependentJSON(t *testing.T) {
 	m := func(s string) edit.Lit { return edit.Member(s) }
 	for _, c := range []undoCase{
-		{"driver then dependent", depFS, []edit.Operation{setAt("root.tag.goal", m("kill")), setAt("root.tag.pick", edit.Key("wolf"))}},
-		{"dependent then driver", depFS, []edit.Operation{setAt("root.tag.pick", m("green")), setAt("root.tag.goal", m("kill"))}},
 		{"driver, dependent, driver", depFS, []edit.Operation{
 			setAt("root.tag.goal", m("kill")), setAt("root.tag.pick", edit.Key("wolf")), setAt("root.tag.goal", m("paint")),
 		}},
+		{"held: dependent then driver", undoFS, []edit.Operation{setAt("root.tag.pick", edit.FromJSON(`"q"`)), setAt("root.tag.goal", m("paint"))}},
+	} {
+		undoOnceFiles(t, c.name, c.fsys(), c.ops)
+	}
+	for _, c := range []undoCase{
+		{"driver then dependent", depFS, []edit.Operation{setAt("root.tag.goal", m("kill")), setAt("root.tag.pick", edit.Key("wolf"))}},
+		{"dependent then driver", depFS, []edit.Operation{setAt("root.tag.pick", m("green")), setAt("root.tag.goal", m("kill"))}},
 		{"driver, dependent, driver there and back", depFS, []edit.Operation{
 			setAt("root.tag.goal", m("kill")), setAt("root.tag.pick", edit.Key("wolf")), setAt("root.tag.goal", m("count")), setAt("root.tag.goal", m("kill")),
 		}},
-		{"held: dependent then driver", undoFS, []edit.Operation{setAt("root.tag.pick", edit.FromJSON(`"q"`)), setAt("root.tag.goal", m("paint"))}},
 		{"held: dependent then ref driver", undoFS, []edit.Operation{
 			setAt("objectives.o2.target", edit.FromJSON(`"elsewhere"`)), setAt("objectives.o2.def", edit.Key("art")),
 		}},

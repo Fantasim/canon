@@ -1132,7 +1132,10 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
   JSON object (API-06), exactly as `Reset(path)`. Equality is the value equality of TYPES.md §7.5;
   for a default that depends on earlier fields (TYP-15), the default is computed from the edited
   record. The removed field then tracks its default: a later op of the same edit that changes
-  what the default depends on changes the field's value too (E1, DECISIONS 256).
+  what the default depends on changes the field's value too (E1, DECISIONS 256). A record value
+  equals the default when, with the members it leaves out filled by their defaults, it equals it;
+  a default reading parameters is computed with the parameters the applied type binds; an equality
+  that cannot be decided refuses the edit `computed` (DECISIONS 471).
 - **E7.** `Set(path, None)`:
   - if the field's default is `none`, it removes the field (E6);
   - otherwise it writes an explicit `none` (MOCKUP-GAPS 11: default, value and explicit `none`
@@ -1531,7 +1534,10 @@ comments, and a trailing comment on its last line.
   `\{` and `\}` (GRAMMAR.md §2.6), so a string holding a brace is never read as interpolation.
 - **M8.** JSON sources are written with wire names and the wire form of WIRE.md. A new key is placed
   after the previous declared field's key in declaration order (FMT-02); unknown keys kept by
-  `partial` are left in place. `@json(path: …)` fields create the intermediate objects LOD-09
+  `partial` are left in place, also by a `Set` to the default or a `Reset`: those remove only the
+  claimed keys, write the default's members that differ from the type's beside the kept keys (a
+  case change writes the new tag first), and remove the field's key only when no unknown key
+  remains (DECISIONS 471). `@json(path: …)` fields create the intermediate objects LOD-09
   describes. A list's or map's items take their field's unit and `int` form (WIRE.md §4.1). A
   dependent symbol is written as the wire form of what it names in its record's computed branch,
   at record level as at field level (WIRE.md §5.9); a held value on a `Never` branch (E15) is

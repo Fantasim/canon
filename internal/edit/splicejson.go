@@ -34,8 +34,12 @@ func (d *jsonDiff) structural(old, nw value.Value, n *jsonsrc.Node, f *types.Fie
 	switch o := old.(type) {
 	case *value.Record:
 		r, ok := nw.(*value.Record)
-		if ok && n.Kind == jsonsrc.Object && sameShape(o.T, r.T) && !wiredApart(o, r) {
+		switch {
+		case !ok || n.Kind != jsonsrc.Object:
+		case sameShape(o.T, r.T) && !wiredApart(o, r):
 			return true, d.record(o, r, n)
+		case unclaimedIn(n, o):
+			return true, d.rewriteKeeping(n, o, r, f) // a case changed beside kept keys (M8)
 		}
 	case *value.Table:
 		if t, ok := nw.(*value.Table); ok && n.Kind == jsonsrc.Object {
@@ -130,10 +134,10 @@ func (d *jsonDiff) member(old, nw *value.Record, fields []*types.Field, i int, n
 	written := nw.Set[i] && nw.Fields[i] != nil
 	switch {
 	case !written && m != nil:
-		d.remove(m, memberStart(holder, f.WirePath))
+		return d.dropMember(old, nw, i, m, holder)
 	case !written:
 	case m != nil && !sameValue(old.Fields[i], nw.Fields[i]) && d.omits(nw, i, f):
-		d.remove(m, memberStart(holder, f.WirePath))
+		return d.dropMember(old, nw, i, m, holder)
 	case m != nil:
 		return d.value(old.Fields[i], nw.Fields[i], m, f)
 	case !d.omits(nw, i, f):

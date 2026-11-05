@@ -4902,3 +4902,19 @@ round 2", "PS1 review", "PS2 round 2"):
      field) has no `types.Collection` form, as a value or as a key, and stays outside the invariant in
      v0.3 (v0.4 widens `Collection`). Reason: §4.7's "every identifier is in Defs,
      NameUses, Uses, Keys or Symbols" failed for it (v0.3 run, Info frozen-contract call).
+
+471. **A base edit's E6 judges a record by its value filled with defaults; a `partial` JSON object
+     keeps its unknown keys (API.md E6, M8; FORMATTER.md §14.2; follows 256, 462, 466).** A value is
+     the field's default when, with every member it leaves out filled by its default, it equals the
+     default (TYPES.md §7.5); a default reading parameters is computed with the parameters the
+     applied type binds. When that equality cannot be decided, the edit is refused `computed`, judged
+     for the operation's own target only. In a JSON object, a `Set` to the default or a `Reset`
+     removes only the keys a field of the record claims: keys no field claims are kept in place
+     (after their nearest surviving predecessor, else first), the default's members that differ from
+     the type's are written beside them so the object decodes to the field default, and the field's
+     key is removed only when no unknown key remains. A change of variant case removes the old case's
+     claimed keys, writes the new case's tag first and its default members after it; where a kept
+     key and a newly written key claim the same slot, the kept key comes first. An edit whose default
+     cannot be written so is refused `computed`; nothing is ever lost silently. Reason: v0.3 run
+     (EDIT-E6RECORD rounds 1-5): `{}` records were written instead of removed, unknown keys were
+     dropped, and a case tag was lost beside an inline field.
