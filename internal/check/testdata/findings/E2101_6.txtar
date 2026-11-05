@@ -1,0 +1,58 @@
+TYPES.md §4.1, §4.2, DECISIONS 456, 490: in a key position of a list keyed by a `ref items`, items a table whose keys are known statically, step 1 finds the entry shield first; a parameter, local or in-scope field named shield whose type fits the key or its chain's leaf (a table's String) makes the key ambiguous, E2101, never a silent pick. A name of neither type is shadowed silently.
+-- a/a.canon --
+package a
+
+local record I {
+  v: Int = 0
+}
+
+local record S {
+  item: ref items
+  n: Int = 0
+}
+
+local let items: table I = {
+  shield {}
+  axe {}
+}
+
+local let ts: [S] keyed by item = [{ item: shield, n: 1 }, { item: axe, n: 2 }]
+
+local fn byParam(shield: String) -> Int {
+  return ts[shield].n
+}
+
+local fn byLocal() -> Int {
+  let shield: String = "axe"
+  return ts.get(shield)!.n
+}
+
+local fn byRef(shield: ref items) -> Int {
+  return ts[shield].n
+}
+
+local fn byOther(shield: Int) -> Int {
+  return ts[shield].n
+}
+
+local record W {
+  shield: String = "axe"
+
+  fn n() -> Int {
+    return ts[shield].n
+  }
+}
+-- findings.txt --
+error[E2101]  a/a.canon:20:13
+  shield is ambiguous: items.shield or the parameter shield; write it qualified
+
+error[E2101]  a/a.canon:25:17
+  shield is ambiguous: items.shield or the local shield; write it qualified
+
+error[E2101]  a/a.canon:29:13
+  shield is ambiguous: items.shield or the parameter shield; write it qualified
+
+error[E2101]  a/a.canon:40:15
+  shield is ambiguous: items.shield or the field shield; write it qualified
+
+4 errors, 0 warnings in 1 package (…)

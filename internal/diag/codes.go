@@ -1497,6 +1497,7 @@ var Registry = []Def{
 			{Name: "notValueMember", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "kind", Type: ArgTypeKind}, {Name: "expected", Type: ArgTypeType}}, Template: "{name} is not a value ({kind}): write a member of {expected}"},
 			{Name: "valueTyped", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeType}, {Name: "found", Type: ArgTypeType}}, Template: "{name} has type {found}, not {expected}: write a key of type {expected}"},
 			{Name: "notValueTyped", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "kind", Type: ArgTypeKind}, {Name: "expected", Type: ArgTypeType}}, Template: "{name} is not a value ({kind}): write a key of type {expected}"},
+			{Name: "valueRefLiteral", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeType}, {Name: "found", Type: ArgTypeType}, {Name: "key", Type: ArgTypeType}}, Template: "{name} has type {found}, not {expected}: write the key as a literal of type {key}"},
 		},
 	},
 	{
@@ -5249,6 +5250,11 @@ func (codeE3027) AtValueTyped(span source.Span, name string, expected TypeArg, f
 // AtNotValueTyped reports: {name} is not a value ({kind}): write a key of type {expected}
 func (codeE3027) AtNotValueTyped(span source.Span, name string, kind Kind, expected TypeArg) *Builder {
 	return newBuilder(&Registry[146], 5, span, name, kind, expected)
+}
+
+// AtValueRefLiteral reports: {name} has type {found}, not {expected}: write the key as a literal of type {key}
+func (codeE3027) AtValueRefLiteral(span source.Span, name string, expected TypeArg, found TypeArg, key TypeArg) *Builder {
+	return newBuilder(&Registry[146], 6, span, name, expected, found, key)
 }
 
 // E3028: a type where a union expects a string literal (an alternative after the first) (TYPES.md §13.2).

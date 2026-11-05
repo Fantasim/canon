@@ -5286,6 +5286,7 @@ round 2", "PS1 review", "PS2 round 2"):
      and amend `rs[Q.a].w` gave `E3002`, `E3027` or `E3008`, and `Q.a in rs` gave `E3002` where one
      level gives `E3026`. The review then found that `ens[b]` with `let b: Q` read the let while
      `amend { es[b] }` wrote the member, so one key text named two entries.
+     [amended by 495]
 
 491. **A key carried through a copy, a ref key into a per-instance collection, a ref-keyed list's
      key in an expression, and a read through an optional let root are refs of what they reach
@@ -5405,3 +5406,28 @@ round 2", "PS1 review", "PS2 round 2"):
      rewritten by `Rename` but not listed by `Refs`; a key token naming a let, parameter, local or
      field in scope was matched on its text, so a rename silently retargeted it; and Graph placed an
      amended first place's untouched entries at a copy's place.
+
+495. **Step 1 comes first for a ref whose target's keys are known statically; a name step 1 does not
+     take is judged by scope, and a ref is never named by a value's name (TYPES.md §3.3, §3.4, §4.1,
+     §4.2, §6.2, §6.5, §7.5; ERRORS.md E3027, E3002, E3309; amends 490; follows 318, 334, 493).**
+     Where a `ref C` is expected and C's keys are known statically, step 1 comes first, in a ref
+     position, in a key position of a list keyed by `ref C` (`xs[k]`, `get`, `find`, `hasKey`), and
+     in an amend segment's `[k]` alike. A bare name that names an entry of C is that entry, before
+     any name in scope. A local, parameter or in-scope field of that name whose type fits the ref or
+     its chain's leaf makes it ambiguous: `E2101` (§4.2). Inside a refinement predicate, `it` is the
+     predicate's value, never a static entry named `it` (§3.4). 490's exception, that a name holding
+     a value of the key field's own ref type is that value, now applies only where C's keys are
+     dynamic. When step 1 finds no entry, steps 2 to 6 find the name, whatever C's keys: a name that
+     is not a value, or a value that is no ref, is `E3027`; an optional of the ref is `E3403`; a ref
+     into another collection, optional or not, is `E3002`, or `E3309` in `==`/`!=`, in either
+     operand order. An `==` or `!=` operand that is no ref, against a ref, is `E3002` in either
+     order (§7.5): the key rule does not apply to a comparison operand. `E3027`'s hint in a ref
+     position whose key, read at its leaf, is an integer type says to write the key as a literal
+     (`valueRefLiteral`: "write the key as a literal of type Int"); only a literal is a key there
+     (§4.1). A name there that is not a value gets `notValueTyped`. Reason: v0.3 run
+     (CHECK-KEYCODES2): `ts[shield]` read a let named shield while `{ item: shield }` and the amend
+     line read the entry, so one key text named two entries; against static keys a non-ref value was
+     `E3002` where dynamic keys gave `E3027`; a ref into another collection was `E3027` with a
+     string hint that named no key; `a == b` and `b == a` gave different codes; the integer-keyed
+     hint told the user to write a string that is then refused; and a String parameter named like a
+     static entry was silently shadowed in a key position.

@@ -145,11 +145,12 @@ const (
 	stateDone
 )
 
-// The flags of an env: modeJoin types a branch a join may still type (TYPES.md §6.4); modeSelfRecv a default's `self` receiver, modeSelfCase its `is` operand (§15).
+// The flags of an env: modeJoin types a branch a join may still type (TYPES.md §6.4); modeSelfRecv a default's `self` receiver, modeSelfCase its `is` operand (§15); modeCompared a name checked against the other operand's type (§7.5).
 const (
 	modeJoin mode = 1 << iota
 	modeSelfRecv
 	modeSelfCase
+	modeCompared
 )
 
 // What a type position allows: a function type, `_`, `stable table`, a string literal as String.

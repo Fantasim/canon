@@ -271,11 +271,12 @@ declaration. Every other collection (loaded, computed, keyed lists) has dynamic 
 
 For `ref C` with dynamic keys, steps 2 to 6 are tried first. A name that resolves there is that
 name, whatever its type, and never a key (DECISIONS 318, amending 303): a value assignable to
-`ref C` is used; a value of type `ref C?` is `E3403` (a `T?` where a `T` is expected, §6.5); a
-value of any other type, or a name that is not a value (a type, a built-in, a widget, a package), is
-`E3027`, whose message says to write the key as a string (`"n"`), a member of an enum key, or a key
-of its type for an integer key (DECISIONS 493). The same holds wherever a key is
-expected: a key argument of `hasKey`, `get`, `find` and `xs[k]` (STDLIB.md §5, DECISIONS 318). Only
+`ref C` is used; a value of type `ref C?` is `E3403` (§6.5); a ref into another collection,
+optional or not, is a wrong type, `E3002` (`E3309` in a comparison, §7.5), never a key; a value of
+any other type, save a ref, or a name that is not a value (a type, a built-in, a widget, a
+package), is `E3027`, whose message says to write the key as a string (`"n"`), as a member of an enum key,
+or, where the key read at its chain's leaf is an integer type, as a literal of that type (DECISIONS
+318, 493, 495). The same holds wherever a key is expected: a key argument of `hasKey`, `get`, `find` and `xs[k]` (STDLIB.md §5, DECISIONS 318). Only
 a name that resolves nowhere becomes a **symbolic key** of `C`, checked at evaluation (`E3501`).
 `II_GEN_GOLD` in a `ref items` field is a symbolic key. For a dependent field (§11.4) the rule applies when some branch takes
 dynamic keys; when every ref branch has static keys, a bare name stays one of those keys.

@@ -192,7 +192,7 @@ func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
 	c.notKey(env, k, key, t, own)
 }
 
-// notKey is E3403 for an optional of the key's or its leaf's type, or of a ref into own, the receiver's collection; E3027 for a name in scope that is no key, with the member form where the key, read at its leaf, is an enum, the typed form where it is an integer; E3002 for anything else, a ref included (TYPES.md §4.1, §6.5, STDLIB.md §5, DECISIONS 334, 456, 490).
+// notKey is E3403 for an optional of the key's or its leaf's type, or of a ref into own, the receiver's collection; E3027 for a name in scope that is no key, with the member form where the key, read at its leaf, is an enum, the typed form where it is an integer; E3002 for anything else, a ref or an optional ref included (TYPES.md §4.1, §6.5, STDLIB.md §5, DECISIONS 334, 456, 490, 493).
 func (c *checker) notKey(env *env, k syntax.Expr, key, t types.Type, own *types.Collection) {
 	if want := c.presentKey(t, key, own); want != nil {
 		c.report(env, diag.E3403.At(env.span(k), want, t))
@@ -201,7 +201,7 @@ func (c *checker) notKey(env *env, k syntax.Expr, key, t types.Type, own *types.
 	id, isName := k.(*syntax.IdentExpr)
 	enum, integer := c.enumKey(key), c.intKey(key)
 	switch {
-	case !isName || t.Base().Kind() == types.Ref:
+	case !isName || optElem(t).Base().Kind() == types.Ref:
 		c.report(env, diag.E3002.At(env.span(k), key, t))
 	case enum != nil:
 		c.report(env, diag.E3027.AtValueMember(env.span(k), id.Name, enum, t))
@@ -212,10 +212,18 @@ func (c *checker) notKey(env *env, k syntax.Expr, key, t types.Type, own *types.
 	}
 }
 
-// memberFirst types a bare name that names a member of the enum a key is, read at its chain's leaf, as that member: step 1 comes before scope there, at one level and through a chain (TYPES.md §3.3, §4.1, DECISIONS 456).
+// memberFirst types a bare name step 1 finds against a key as what it finds, before scope: the entry of a ref key's target whose keys are known statically, else a member of the enum the key is, read at its chain's leaf, at one level and through a chain (TYPES.md §3.3, §4.1, DECISIONS 456, 490).
 func (c *checker) memberFirst(env *env, k syntax.Expr, key types.Type) bool {
 	id, isName := k.(*syntax.IdentExpr)
-	if !isName || c.refValue(env, id, key) {
+	if !isName {
+		return false
+	}
+	if entry := c.stepOneEntry(env, id, key); entry != nil {
+		c.ambiguous(env, k, id.Name, entry, func(t types.Type) bool { return !c.assignable(t, key) && c.leafValue(t, key) })
+		c.expr(env, k, key) // a name of the key's own type is contextual's E2101
+		return true
+	}
+	if c.refValue(env, id, key) {
 		return false
 	}
 	enum := c.enumKey(key)
@@ -224,6 +232,15 @@ func (c *checker) memberFirst(env *env, k syntax.Expr, key types.Type) bool {
 	}
 	c.expr(env, k, c.keyedAs(key))
 	return true
+}
+
+// stepOneEntry is the entry a bare name names in key's target, a ref whose keys are known statically: step 1 finds it before any name in scope, so the key's own ref type's exception (refValue) is for dynamic keys only, and a local, parameter or field of the key's or its leaf's type is E2101; never a predicate's `it`; nil otherwise (TYPES.md §3.4, §4.1, §4.2, DECISIONS 490).
+func (c *checker) stepOneEntry(env *env, id *syntax.IdentExpr, key types.Type) *object {
+	if _, isRef := unwrapUnion(key).(*types.RefType); !isRef || c.predicateIt(env, id.Name) {
+		return nil
+	}
+	o, _ := c.inExpected(unwrapUnion(key), id.Name)
+	return o
 }
 
 // refValue reports a name in scope holding a value of key, a ref: the key's exact type, so the name is that value even where it names a member, and its chain is never read, so a chain still resolving is no cycle (TYPES.md §10.2, DECISIONS 456, 490).

@@ -18,10 +18,22 @@ func (c *checker) ident(env *env, e *syntax.IdentExpr, want types.Type) types.Ty
 	if o == nil {
 		return c.unresolved(env, e, want)
 	}
-	if c.dynamicKeys(want) != nil && !c.valueOf(o, want) && !c.optionalOf(o, want) {
+	if c.keyMismatch(o, want) {
 		return c.notAKey(env, e, o, want)
 	}
 	return c.use(env, e, o)
+}
+
+// keyMismatch reports a name in scope, where a ref is expected, that is no value of it nor of it made optional: a name that is not a value, or a value that is no ref, with dynamic keys and with static keys once step 1 found no entry; a ref, optional or not, into another collection stays a wrong type (TYPES.md §4.1, §6.2, §7.5, DECISIONS 318, 493).
+func (c *checker) keyMismatch(o *object, want types.Type) bool {
+	if c.keyTarget(want) == nil || c.valueOf(o, want) || c.optionalOf(o, want) {
+		return false
+	}
+	if !isValue(o.kind) {
+		return true
+	}
+	t, silent := c.scopedType(o)
+	return !silent && optElem(t).Base().Kind() != types.Ref
 }
 
 // stepOne is step 1 of the lookup: a name of the expected type, or one against a dependent type (TYPES.md §4.1, §11.4).
@@ -37,15 +49,29 @@ func (c *checker) stepOne(env *env, e *syntax.IdentExpr, want types.Type) (types
 	return nil, false
 }
 
-// notAKey is E3027: a name in scope is never a symbolic key (TYPES.md §4.1, DECISIONS 318).
+// notAKey is E3027: a name in scope is never a symbolic key. Where the ref's key, read at its leaf, is an integer, a name that is not a value gets the typed form, and a value the literal form: only a literal is a key there. An operand checked against the other's type is no key position: the name, its mismatch judged by the comparison (TYPES.md §4.1, §7.5, DECISIONS 318, 493).
 func (c *checker) notAKey(env *env, e *syntax.IdentExpr, o *object, want types.Type) types.Type {
+	if env.mode&modeCompared != 0 {
+		return c.use(env, e, o)
+	}
+	integer := c.intKey(refTo(want))
 	if !isValue(o.kind) {
 		c.info.Uses[e] = o
 		c.dependsOn(env, o)
-		c.notValueKey(env, e, o)
+		if integer != nil {
+			c.report(env, diag.E3027.AtNotValueTyped(env.span(e), o.name, notValueKind(o), integer))
+		} else {
+			c.notValueKey(env, e, o)
+		}
 		return types.ErrorType
 	}
-	if found := c.use(env, e, o); found.Kind() != types.Error {
+	found := c.use(env, e, o)
+	if found.Kind() == types.Error {
+		return types.ErrorType
+	}
+	if integer != nil {
+		c.report(env, diag.E3027.AtValueRefLiteral(env.span(e), e.Name, want, found, integer))
+	} else {
 		c.report(env, diag.E3027.AtValue(env.span(e), e.Name, want, found))
 	}
 	return types.ErrorType
@@ -234,11 +260,16 @@ func (c *checker) inExpected(t types.Type, name string) (*object, types.Type) {
 
 // ambiguity is E2101 (TYPES.md §4.2); it reports whether it fired.
 func (c *checker) ambiguity(env *env, n syntax.Node, name string, o *object, t types.Type) bool {
+	return c.ambiguous(env, n, name, o, func(x types.Type) bool { return c.assignable(x, t) })
+}
+
+// ambiguous is E2101 for a local, parameter or in-scope field named name whose type fits, beside o, the step-1 match (TYPES.md §4.2); it reports whether it fired.
+func (c *checker) ambiguous(env *env, n syntax.Node, name string, o *object, fits func(types.Type) bool) bool {
 	other := env.lookupLocal(name)
 	if other == nil {
 		other = env.lookupRecord(name)
 	}
-	if other == nil || other.typ == nil || other.kind == ObjMethod || !c.assignable(other.typ, t) {
+	if other == nil || other.typ == nil || other.kind == ObjMethod || !fits(other.typ) {
 		return false
 	}
 	kind := diag.KindLocal

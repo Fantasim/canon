@@ -1,0 +1,49 @@
+TYPES.md §4.1, §6.2, §7.5, DECISIONS 493: a ref into another collection is a wrong type wherever a ref is expected, whatever the keys of either collection, never a key named by the value's name. Comparing refs into two keyed lists (dynamic keys), or a table's ref with a keyed list's, is E3309 in either order; returning or binding a ref into another collection, optional or not, is E3002, as it is between two tables.
+-- a/a.canon --
+package a
+
+local record Node {
+  n: Int
+}
+
+local let one: [Node] keyed by n = []
+
+local let two: [Node] keyed by n = []
+
+local let tab: table Node = {}
+
+local let oo: ref one? = 1
+
+local fn lists(a: ref one, b: ref two) -> Bool {
+  return a == b or b == a
+}
+
+local fn mixed(a: ref tab, b: ref two) -> Bool {
+  return a == b or b == a
+}
+
+local fn returned(a: ref one) -> ref two {
+  return a
+}
+
+local let bound: ref two = oo
+-- findings.txt --
+error[E3309]  a/a.canon:16:10
+  ref a.one and ref a.two reference different collections
+
+error[E3309]  a/a.canon:16:20
+  ref a.two and ref a.one reference different collections
+
+error[E3309]  a/a.canon:20:10
+  ref a.tab and ref a.two reference different collections
+
+error[E3309]  a/a.canon:20:20
+  ref a.two and ref a.tab reference different collections
+
+error[E3002]  a/a.canon:24:10
+  expected ref a.two, found ref a.one
+
+error[E3002]  a/a.canon:27:28
+  expected ref a.two, found ref a.one?
+
+6 errors, 0 warnings in 1 package (…)

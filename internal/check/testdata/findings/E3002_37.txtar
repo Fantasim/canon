@@ -1,0 +1,60 @@
+TYPES.md §7.5, DECISIONS 493: an operand of `==` or `!=` checked against the other operand's ref type is no key position, so a value that is no ref compared with a ref is E3002 in either order, with static keys (`ref tab`) and dynamic keys (`ref js`) alike.
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record J {
+  n: Int
+}
+
+local record T {
+  w: Int = 0
+}
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let tab: table T = {
+  y {}
+}
+
+local let q: Q = a
+
+local let s: String = "y"
+
+local let ri: ref tab = y
+
+local let rj: ref js = 9
+
+local let static: Bool = ri == q or q == ri or ri != s or s != ri
+
+local let dynamic: Bool = rj == q or q == rj or rj != s or s != rj
+-- findings.txt --
+error[E3002]  a/a.canon:30:32
+  expected ref a.tab, found a.Q
+
+error[E3002]  a/a.canon:30:42
+  expected a.Q, found ref a.tab
+
+error[E3002]  a/a.canon:30:54
+  expected ref a.tab, found String
+
+error[E3002]  a/a.canon:30:64
+  expected String, found ref a.tab
+
+error[E3002]  a/a.canon:32:33
+  expected ref a.js, found a.Q
+
+error[E3002]  a/a.canon:32:43
+  expected a.Q, found ref a.js
+
+error[E3002]  a/a.canon:32:55
+  expected ref a.js, found String
+
+error[E3002]  a/a.canon:32:65
+  expected String, found ref a.js
+
+8 errors, 0 warnings in 1 package (…)

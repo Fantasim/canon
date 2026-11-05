@@ -245,13 +245,16 @@ func (c *checker) operand(env *env, e syntax.Expr, other types.Type) types.Type 
 	return c.synth(env, e)
 }
 
-// checkedOperand checks e against the other operand's type: T? for a name, else T (TYPES.md §7.5).
+// checkedOperand checks e against the other operand's type: T? for a name, else T; a name there is no key position, so its mismatch is the comparison's (TYPES.md §7.5, DECISIONS 493).
 func (c *checker) checkedOperand(env *env, e syntax.Expr, other types.Type) types.Type {
 	want := optElem(other)
+	in := env
 	if _, isName := inner(e).(*syntax.IdentExpr); isName {
 		want = &types.OptionalType{Elem: want}
+		in = env.with()
+		in.mode |= modeCompared
 	}
-	t := c.exprNode(env, inner(e), want)
+	t := c.exprNode(in, inner(e), want)
 	if t == nil {
 		t = types.ErrorType
 	}

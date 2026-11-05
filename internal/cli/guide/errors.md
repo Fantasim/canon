@@ -65,7 +65,7 @@ error[E3002]  shop/shop.canon:30:17
 | `E3402` `E3403` | may be `none`: `if x != none`, `??`, `?.`, `!` |
 | `E3026` | a key tested with `in` on a table or keyed list: `xs.hasKey(k)` (a map: `k in m`) |
 | `E3028` | a type after the first alternative of `A \| "lit"`: write a string literal, or a variant for a choice of types (`"x"?` and `["x"]` are types too) |
-| `E3027` | a name in scope used as a key but not a value of the key type: write the key as a string (`"n"`), or for an enum or union key type a member of it |
+| `E3027` | a name in scope used as a key but not a value of the key type: write the key as a string (`"n"`), for an enum or union key type a member of it, or for an integer key type, sized or refined, a key of that type (`write a key of type Int`; where a `ref` is expected, only a literal: `write the key as a literal of type Int`) |
 | `W3001` | `x: T? = none`: remove the `= none` (`canon fmt` does) |
 | `W8031` | an entry position, or a number or text made from one, is written to an output: write the entry's key or a `@stable` field, or wrap it in `positional(…)` to write it on purpose |
 | `W1912` | an amend path selects an entry by position (`[#n]`): select it by key |

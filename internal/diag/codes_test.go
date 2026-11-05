@@ -255,6 +255,7 @@ var constructed = []*Builder{
 	E3027.AtNotValueMember(sampleSpan, sampleName, KindBuiltin, sampleType),
 	E3027.AtValueTyped(sampleSpan, sampleName, sampleType, sampleType),
 	E3027.AtNotValueTyped(sampleSpan, sampleName, KindBuiltin, sampleType),
+	E3027.AtValueRefLiteral(sampleSpan, sampleName, sampleType, sampleType, sampleType),
 	E3028.At(sampleSpan, sampleType),
 	E3101.At(sampleSpan, sampleName, sampleName, sampleLoc),
 	E3102.AtKey(sampleSpan, sampleValue, sampleLoc),

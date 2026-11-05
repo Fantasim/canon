@@ -1,0 +1,105 @@
+TYPES.md §4.1, §6.5, STDLIB.md §5, DECISIONS 493: an optional whose present form is not a key is a wrong type, as its present form is: a `ref rs?` used as a key of another collection is E3002, as a `ref rs` is, whatever the key (an enum `ens[orr]`, an Int `js[orr]`, a table's String `tab[orr]`), in an expression and an amend path alike. An optional of another type that is no ref stays E3027 (`ens[ob]`).
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+  w: Int = 0
+}
+
+local record J {
+  n: Int
+  w: Int = 0
+}
+
+local record R {
+  r: ref ens
+}
+
+local record T {
+  w: Int = 0
+}
+
+local record H {
+  ens: [E] keyed by kind
+  js: [J] keyed by n
+}
+
+local let ens: [E] keyed by kind = [{ kind: a }, { kind: b }]
+
+local let rs: [R] keyed by r = [{ r: a }]
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let tab: table T = {
+  y {}
+}
+
+local let h: H = { ens: [{ kind: a }], js: [{ n: 9 }] }
+
+local let rr: ref rs = a
+
+local let orr: ref rs? = a
+
+local let ob: Bool? = true
+
+local let plainEnum: E = ens[rr]
+
+local let optionalEnum: E = ens[orr]
+
+local let optionalInt: J = js[orr]
+
+local let optionalTable: T = tab[orr]
+
+local let optionalHasKey: Bool = js.hasKey(orr)
+
+local let optionalOther: E = ens[ob]
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend h {
+  ens[rr].w: 1
+}
+
+amend h {
+  ens[orr].w: 2
+}
+
+amend h {
+  js[orr].w: 3
+}
+-- findings.txt --
+error[E3002]  a/a.canon:49:30
+  expected a.Q, found ref a.rs
+
+error[E3002]  a/a.canon:51:33
+  expected a.Q, found ref a.rs?
+
+error[E3002]  a/a.canon:53:31
+  expected Int, found ref a.rs?
+
+error[E3002]  a/a.canon:55:34
+  expected String, found ref a.rs?
+
+error[E3002]  a/a.canon:57:44
+  expected Int, found ref a.rs?
+
+error[E3027]  a/a.canon:59:34
+  ob has type Bool?, not a.Q: write a member of a.Q
+
+error[E3002]  a/dev.layer.canon:5:7
+  expected a.Q, found ref a.rs
+
+error[E3002]  a/dev.layer.canon:9:7
+  expected a.Q, found ref a.rs?
+
+error[E3002]  a/dev.layer.canon:13:6
+  expected Int, found ref a.rs?
+
+9 errors, 0 warnings in 1 package (…)

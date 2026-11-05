@@ -1,0 +1,107 @@
+TYPES.md §3.3, §4.1, DECISIONS 318, 493: against a `ref C` whose keys are known statically, step 1 comes first; when it finds no entry, steps 2 to 6 find the name, and a name in scope that is not a value of the ref is E3027, as with dynamic keys: `{ t: z }`, `ref tab = z` and `ref tab = s` (`value`), `ref tab = pick` (`notValue`). A table's key is a String, so the message says to write the key as a string. Where the ref's key, read at its leaf, is an integer, a name that is not a value gets the typed form (`notValueTyped`), at one level (`ref js = pick`, `{ j: pick }`) and through a chain (`ref ks = pick`). Only a literal is a key in a ref position, so a value there that is no ref gets the literal form (`valueRefLiteral`): `ref js = q`, `ref js = n`, `{ j: n }`, `ref ks = bo`; a literal (`ref js = 9`) is the key.
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local record T {
+  w: Int = 0
+}
+
+local record U {
+  t: ref tab
+}
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let tab: table T = {
+  y {}
+}
+
+local let z: Int = 1
+
+local let s: String = "y"
+
+local let q: Q = a
+
+fn pick() -> Q {
+  return Q.a
+}
+
+local let fieldValue: U = { t: z }
+
+local let refValue: ref tab = z
+
+local let refString: ref tab = s
+
+local let refNotValue: ref tab = pick
+
+local let named: U = { t: y }
+
+local let intNotValue: ref js = pick
+
+local let intField: K = { j: pick }
+
+local let chainNotValue: ref ks = pick
+
+local let bo: Bool = true
+
+local let n: Int = 9
+
+local let intEnum: ref js = q
+
+local let intValue: ref js = n
+
+local let intFieldValue: K = { j: n }
+
+local let chainValue: ref ks = bo
+
+local let intLiteral: ref js = 9
+-- findings.txt --
+error[E3027]  a/a.canon:42:32
+  z has type Int, not ref a.tab; to name the key z, write "z"
+
+error[E3027]  a/a.canon:44:31
+  z has type Int, not ref a.tab; to name the key z, write "z"
+
+error[E3027]  a/a.canon:46:32
+  s has type String, not ref a.tab; to name the key s, write "s"
+
+error[E3027]  a/a.canon:48:34
+  pick is not a value (function); to name the key pick, write "pick"
+
+error[E3027]  a/a.canon:52:33
+  pick is not a value (function): write a key of type Int
+
+error[E3027]  a/a.canon:54:30
+  pick is not a value (function): write a key of type Int
+
+error[E3027]  a/a.canon:56:35
+  pick is not a value (function): write a key of type Int
+
+error[E3027]  a/a.canon:62:29
+  q has type a.Q, not ref a.js: write the key as a literal of type Int
+
+error[E3027]  a/a.canon:64:30
+  n has type Int, not ref a.js: write the key as a literal of type Int
+
+error[E3027]  a/a.canon:66:35
+  n has type Int, not ref a.js: write the key as a literal of type Int
+
+error[E3027]  a/a.canon:68:32
+  bo has type Bool, not ref a.ks: write the key as a literal of type Int
+
+11 errors, 0 warnings in 1 package (…)

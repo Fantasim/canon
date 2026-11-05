@@ -132,10 +132,13 @@ let weights: {Element: Int} = { FIRE: 2, WATER: 1 }
 
 An optional field defaults to `none`: `x: T? = none` is warning `W3001` and `canon fmt` removes it.
 Where a `ref C` is expected and C's keys are not known statically (loaded, computed, keyed
-lists), a name in scope is that name, whatever its type: a `ref C?` is `E3403`, any other type
-`E3027`; write the key as a string (`"n"`). Only an unresolved name becomes a key. Against a
-table literal's static keys, a bare name is the key. The same `E3027` for a map-literal key of
-another type than the key type: for an enum key type, write a member of it.
+lists), a name in scope is that name, whatever its type: a `ref C?` is `E3403`, a ref into
+another collection `E3002` (`E3309` in a comparison), any other type `E3027`; write the key as a
+string (`"n"`), or for an integer key as a literal (`write the key as a literal of type Int`).
+Only an unresolved name becomes a key. Against a table literal's static keys, a bare name naming
+an entry is that entry, before any name in scope, in a key position too (`xs[shield]`); another
+name in scope is that name, `E3027` if of another type that is no ref. The same `E3027` for a
+map-literal key of another type than the key type: for an enum key type, write a member of it.
 
 Narrowing works on stable paths (locals, params, fields, `self.f.g`), never on indexes or calls:
 `let t = tiers.get(k)` first. `!`, `?.`, `??` on a value that is never `none` is `W3401`.
