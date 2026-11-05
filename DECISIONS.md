@@ -4870,3 +4870,27 @@ round 2", "PS1 review", "PS2 round 2"):
      active layer amends a field the spread supplies, as a field edit is (466). Reason: v0.3 run
      (EDIT-SPREADUNDO): a sibling's computed default was written as an override that the Undo could
      not remove.
+
+468. **`Origin.Text` is the value as evaluated, before verification (API.md §5.2; CLI.md §3.7;
+     EVALUATION.md §9.3, §13).** The text an origin records is the value it produced as evaluated,
+     before an amendment and before verification's conversions (a dependent type's, §9.3 step 4): an
+     amended base has no verified form, so the text does not depend on whether some layer amends a
+     sibling. `Analysis.Produced` follows every rebuild of a value (an amendment's copy, verification's,
+     an owner's rebinding, a conversion) back to the value first produced. Reason: v0.3 run
+     (EVAL-PRODUCED): `canon explain` and `Origin.Text` showed the layered value where they promise the
+     base, once verification had rebuilt it.
+
+469. **`canon check` evaluates every declared layer (Louis, 2026-11-05; EVALUATION.md §9.1, CLI.md
+     `check`, API.md; follows 463).** Besides the layers a run activates, `canon check` evaluates each
+     other layer the checked packages (or a package they import) declare, singly, stacked last on the
+     active ones, as an edit's re-check does (463). A finding new under such a layer counts as any other
+     and names that layer (F11), so "check passes" means every layer of the project evaluates. The
+     language's rule, not an option. Reason: a layer broken by a hand edit or a merge (an amend path gone,
+     a value that no longer fits) stayed invisible until someone activated it, while edits already
+     refused to break it (463).
+
+470. **`Info` records a map literal's symbolic key (Louis, 2026-11-05; IMPLEMENTATION-PLAN §4.7, frozen
+     contract).** A map literal's bare-name key that names an entry (`{ second: 1 }` against
+     `{ref aa: Int}`) is recorded in `Info` by an additive field, so go-to-definition, references and an
+     LSP rename reach it; no existing field changes. Reason: §4.7's "every identifier is in Defs,
+     NameUses, Uses, Keys or Symbols" failed for it (v0.3 run, Info frozen-contract call).
