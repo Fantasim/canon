@@ -209,7 +209,7 @@ func (sc *nameScan) pathHolds(at scanAt, rt *types.RefType) bool {
 // from the amended root holding the target's entry, by identity; a path s does not resolve reaches none.
 func (sc *nameScan) prefixHolds(at scanAt, segs []*syntax.AmendSegment, rt *types.RefType) bool {
 	obj := sc.s.info.NameUses[at.block.Target]
-	if obj == nil {
+	if obj == nil || sc.s.scopedSegs(segs) {
 		return false
 	}
 	p, err := Parse(sc.s.linePathOf(sc.file, Path{Package: obj.Pkg(), Root: obj.Name()}, segs))

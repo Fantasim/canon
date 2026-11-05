@@ -144,7 +144,7 @@ func (nw *nodeWalk) home(id *value.Identity) (under int, ok bool) {
 		return under, false
 	}
 	owner, ok := nw.vals[d-ownerUp].(*value.Record)
-	if !ok || !sameInstance(owner, id.Owner) {
+	if !ok || !nw.ownedBy(owner, id.Owner, d-ownerUp) {
 		return under, false
 	}
 	return under, owner.Ident == nil || nw.near[d-ownerUp] != noPlace && nw.ns.cands[nw.near[d-ownerUp]].rec == owner
@@ -153,6 +153,20 @@ func (nw *nodeWalk) home(id *value.Identity) (under int, ok bool) {
 // sameInstance reports rec, met by the walk, as owner's instance: owner or a copy holding its fields (EVALUATION.md §4.2).
 func sameInstance(rec, owner *value.Record) bool {
 	return rec == owner || slices.Equal(rec.Fields, owner.Fields)
+}
+
+// ownedBy reports owner, met at depth i, as inst: inst or a copy holding its fields, or an amended
+// copy of it, whose untouched entries keep inst's identity, as the place's history or the value its
+// origin produced holds (DECISIONS 478, 486, 492).
+func (nw *nodeWalk) ownedBy(owner, inst *value.Record, i int) bool {
+	if sameInstance(owner, inst) {
+		return true
+	}
+	a := nw.ns.s.a
+	return slices.ContainsFunc(a.History(nw.vals[:i+1]...), func(v value.Value) bool {
+		rec, isRec := a.Produced(v).(*value.Record)
+		return isRec && sameInstance(rec, inst)
+	})
 }
 
 // owns reports the walk's let owning c: the let c is named after, or for a load.defines table

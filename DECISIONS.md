@@ -5364,3 +5364,44 @@ round 2", "PS1 review", "PS2 round 2"):
      the same wrong key gave `E3027` in an expression and `E3002` in an amend path, and `E3002` for
      an optional that only needed proof of presence; and the `E3027` hint told the user to write a
      string for an integer key, which is then refused.
+
+494. **An amend segment's ref key, a per-instance ref-keyed read, a default's key read and a
+     replacing literal's key field name what they reach; a key that resolves in scope is that name;
+     Graph keeps an amended first place's untouched entries at that place; a stacked layer's carried
+     key is a known limit (API.md R7, R11, E11, E12, E17a, E22; NFR-01; follows 310, 316, 318, 474,
+     478, 483, 484, 486, 487, 488, 489, 490, 491, 492).** In an amend line, a key typed `ref C` on a
+     list keyed by a ref (`amend many { one.ts[shield].n: 5 }`) is a `layer` ref of the element the
+     line's path reaches, judged by identity (484, 487), never another instance's element. Through
+     its type it stays a ref of C's entry when it states that entry's key; a constant's name stays
+     the constant's (489). In an expression, `[k]` and `.k` on a list keyed by a ref into each
+     instance's own collection (`aa.second.ts[x]`, with `ts: [T] keyed by r` and `r: ref S`) are
+     `code` refs of the entry that the key field of the statically reached element names, by
+     identity: that instance's entry alone. A dynamic receiver gives no ref; the re-check catches
+     what a rename breaks (E18). A `.k` that the checker selects as an entry on a list keyed by a
+     `ref C` is a ref of C's entry, a record field default's included. A layer line that replaces an
+     entry whole states its key twice. When the literal's key field states the renamed key as a
+     string or integer literal, or as an unresolved bare name of the key's ref type, `Refs` lists it
+     beside the segment, and `Rename` rewrites both (one key, one token; 491). A constant or a
+     selector there is left as written. A key token that resolves to a name in scope is that name
+     (318): a let, constant, parameter, local, field or function. It is never a key of an entry with
+     the same text, in an expression or in an amend path, and a line whose path holds such a key
+     names no entry by its text. A member or an entry the checker resolves a key to stays that key
+     (490). This closes 491's known limits on per-instance ref-keyed reads and on a default's `.k`.
+     In `Graph`, an owner met at a place counts as an entry's instance when it is that instance, a
+     copy holding its fields, or an amended copy whose history at that place was produced from it.
+     So when a line amends the first place of an instance held at several places in one let (`amend
+     two { l[0].id: "z" }`, with `l: dup(i)`), the untouched entries' nodes stay at that first place
+     (`p:two.l[0].oo[…]`), at any depth and for any number of places. An entry the line amends is
+     the copy's own, and the instance's original entry is placed at the next place holding it (478,
+     486, 492). This closes 492's known limit on Graph placement. Known limit, v0.3: under stacked
+     layers, when an earlier layer replaced an ancestor or the entry with another value, a later
+     layer's key segment is judged against the source as it was before any layer. Rename's ref scan
+     runs on the edit's own analysis, which has no layers; a layered analysis there would break
+     E17a, NFR-01 and 474. Such a rename is refused by the re-check and nothing is written. Queued
+     (EDIT-SHADOWQUOTE): a renamed ref key printed bare where a name in scope shadows it must be
+     quoted, so that its Undo applies. Reason: v0.3 run (EDIT-REFKEYS2): a ref-typed amend segment
+     was listed under every instance's element; a per-instance `[k]` was listed under every instance
+     and `.k` under none; a default's `.k` was not listed; a replacing literal's key field was
+     rewritten by `Rename` but not listed by `Refs`; a key token naming a let, parameter, local or
+     field in scope was matched on its text, so a rename silently retargeted it; and Graph placed an
+     amended first place's untouched entries at a copy's place.

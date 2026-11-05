@@ -220,7 +220,8 @@ func TestRefsOfEntriesAndElements(t *testing.T) {
 	checkRefs(t, lawFixture(t, nil, "a"), []refsCase{
 		{"a:entries.one", []string{"a/a.canon:90 value a:links[one].to one", "a/a.canon:110 key a:perEntry[one] one"}},
 		{"a:entries.two", []string{"a/a.canon:110 key a:perEntry[two] two"}},
-		{"a:items[a]", []string{"a/a.canon:100 code a a", "a/stage.layer.canon:5 layer a a"}}, // API.md R7, DECISIONS 470: the line `a: {…}`
+		// API.md R7, E11, DECISIONS 470, 491: the line `a: {…}`, its segment and its literal's key field.
+		{"a:items[a]", []string{"a/a.canon:100 code a a", "a/stage.layer.canon:5 layer a a", "a/stage.layer.canon:5 layer a \"a\""}},
 	})
 }
 

@@ -46,8 +46,8 @@ func (r *renaming) lineKeys(f *syntax.File, it *syntax.Amendment, last int) erro
 	if len(it.Path) <= last {
 		return r.aboveKeyField(f, it)
 	}
-	if _, ok := r.x.a.snap.prefixOf(it.Path[:last+1], r.x.res); !ok {
-		return nil
+	if _, ok := r.x.a.snap.prefixOf(it.Path[:last+1], r.x.res); !ok || r.x.a.snap.scopedSegs(it.Path[:last+1]) {
+		return nil // a key read from a name in scope names no key by its text (DECISIONS 318)
 	}
 	if err := r.segKey(f, it, last); err != nil {
 		return err
@@ -62,7 +62,7 @@ func (r *renaming) lineKeys(f *syntax.File, it *syntax.Amendment, last int) erro
 // ancestors whole and its literal holds the element's: the layer's own instance stays one (E11).
 func (r *renaming) aboveKeyField(f *syntax.File, it *syntax.Amendment) error {
 	k, ok := r.x.a.snap.prefixOf(it.Path, r.x.res)
-	if !ok || it.Value == nil {
+	if !ok || it.Value == nil || r.x.a.snap.scopedSegs(it.Path) {
 		return nil
 	}
 	node := syntax.Node(syntax.Unparen(it.Value))

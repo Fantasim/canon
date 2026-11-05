@@ -49,7 +49,8 @@ type scanAt struct {
 	kind   RefKind
 	block  *syntax.AmendBlock
 	line   *syntax.Amendment
-	segKey syntax.Node // the node of a line's segment the walk meets for its key (segToken)
+	segKey syntax.Node       // the node of a line's segment the walk meets for its key (segToken)
+	index  *syntax.IndexExpr // the nearest index expression, whose key instKey may judge
 	record *syntax.RecordDecl
 	field  *syntax.FieldDecl
 	shared bool
@@ -68,6 +69,8 @@ func (at scanAt) enter(n syntax.Node) scanAt {
 		at.line = x
 	case *syntax.AmendSegment:
 		at.segKey, _ = segToken(x)
+	case *syntax.IndexExpr:
+		at.index = x
 	case *syntax.RecordDecl:
 		at.record = x
 	case *syntax.FieldDecl:
@@ -88,9 +91,11 @@ func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 		}
 	} else if tok, ok := sc.lineKey(n, at); ok {
 		sc.out = append(sc.out, Ref{Kind: RefLayer, Package: sc.pkg, Span: sc.file.Span(tok)})
+		sc.literalKey(n, at)
 	}
 	sc.keyTest(n, at)
 	sc.elemKey(n, at)
+	sc.instKey(n, at)
 	for c := range syntax.Children(n) {
 		sc.walk(c, at)
 	}
@@ -101,7 +106,7 @@ func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 func (sc *nameScan) names(n syntax.Node) (syntax.Node, bool) {
 	switch x := n.(type) {
 	case *syntax.IdentExpr:
-		return x, sc.objectNamed(x) || sc.isKey(x, x.Name)
+		return x, sc.objectNamed(x) || !sc.inScope(x) && sc.isKey(x, x.Name)
 	case *syntax.Ident:
 		return x, sc.objectNamed(x)
 	case *syntax.SelectorExpr:

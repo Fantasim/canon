@@ -10,26 +10,35 @@ import (
 )
 
 // claims is names on n, but at an amend segment's key of the collection it indexes, which lineKey
-// alone judges by identity, only a declaration's name; a key typed `ref C` or written as a
-// selector names C's entry as anywhere (DECISIONS 316, 484).
+// alone judges by identity, only a declaration's name; a selector names C's entry as anywhere, and
+// a key typed `ref C` C's entry by its type, never the element it keys (DECISIONS 316, 484, 487).
 func (sc *nameScan) claims(n syntax.Node, at scanAt) (syntax.Node, bool) {
-	if n == at.segKey && !sc.refKey(n) {
-		return n, sc.objectNamed(n)
+	e, isExpr := n.(syntax.Expr)
+	switch _, isSel := e.(*syntax.SelectorExpr); {
+	case sc.perIndexKey(n, at):
+		return n, sc.objectNamed(n) // instKey judges it by its instance (DECISIONS 483)
+	case n != at.segKey || isExpr && isSel:
+		return sc.names(n)
 	}
-	return sc.names(n)
+	if rt, isRef := baseOf(sc.s.info.Types[e]).(*types.RefType); isExpr && isRef {
+		return n, sc.objectNamed(n) || sc.refNamed(e, rt)
+	}
+	return n, sc.objectNamed(n)
 }
 
-// refKey reports key token n a selector or typed `ref C`.
-func (sc *nameScan) refKey(n syntax.Node) bool {
-	e, isExpr := n.(syntax.Expr)
-	if !isExpr {
+// refNamed reports key token e, typed rt, stating the target's key in rt's collection: C's entry.
+func (sc *nameScan) refNamed(e syntax.Expr, rt *types.RefType) bool {
+	if !sc.tg.names(rt.Target) {
 		return false
 	}
-	if _, isSel := e.(*syntax.SelectorExpr); isSel {
-		return true
+	if _, isConst := sc.constKey(e); isConst {
+		return false // a constant's name is the constant's (DECISIONS 489)
 	}
-	_, isRef := baseOf(sc.s.info.Types[e]).(*types.RefType)
-	return isRef
+	if x, isIdent := e.(*syntax.IdentExpr); isIdent {
+		return !sc.inScope(x) && !sc.tg.ident.Key.IsInt && sc.tg.ident.Key.S == x.Name
+	}
+	match, _ := sc.targetKey(e)
+	return match
 }
 
 // objectNamed reports n a name the checker resolved to one of the target's declarations.
@@ -52,7 +61,7 @@ func (sc *nameScan) lineKey(n syntax.Node, at scanAt) (syntax.Node, bool) {
 		return nil, false
 	}
 	holder, tok := segToken(seg)
-	if tok == nil || !segKeyIs(seg, sc.tg.res.Steps[len(sc.tg.res.Steps)-1].Seg) {
+	if tok == nil || sc.s.scopedSegs([]*syntax.AmendSegment{seg}) || !segKeyIs(seg, sc.tg.res.Steps[len(sc.tg.res.Steps)-1].Seg) {
 		return nil, false
 	}
 	if _, claimed := sc.claims(holder, at); claimed {
@@ -60,6 +69,27 @@ func (sc *nameScan) lineKey(n syntax.Node, at scanAt) (syntax.Node, bool) {
 	}
 	i := slices.Index(at.line.Path, seg)
 	return tok, i >= 0 && sc.lineEntry(at, at.line.Path[:i+1])
+}
+
+// literalKey lists the key field of the literal a line replaces the entry its last segment, n, reaches
+// with, when it states the target's key: one key, one token (API.md E11; DECISIONS 484, 491).
+func (sc *nameScan) literalKey(n syntax.Node, at scanAt) {
+	seg, isSeg := n.(*syntax.AmendSegment)
+	if !isSeg || at.line.Value == nil || at.line.Path[len(at.line.Path)-1] != seg {
+		return
+	}
+	kf := keyedBy(sc.tg.res.Steps[len(sc.tg.res.Steps)-1].Container)
+	if kf == nil {
+		return
+	}
+	fi := fieldItem(syntax.Unparen(at.line.Value), kf.Name)
+	if fi == nil || fi.Value == nil {
+		return
+	}
+	v := syntax.Unparen(fi.Value)
+	if _, claimed := sc.names(v); sc.statesKey(v) && !claimed {
+		sc.listKey(v, at)
+	}
 }
 
 // segToken is the node of seg the walk meets for its key, and the token writing it: a `.k`'s name,
@@ -91,7 +121,7 @@ func segKeyIs(seg *syntax.AmendSegment, s Seg) bool {
 // or an element keyed by a ref to it, whose `.k` names it as `[k]` does (DECISIONS 316).
 func (sc *nameScan) lineEntry(at scanAt, segs []*syntax.AmendSegment) bool {
 	obj := sc.s.info.NameUses[at.block.Target]
-	if obj == nil {
+	if obj == nil || sc.s.scopedSegs(segs) {
 		return false
 	}
 	p, err := Parse(sc.s.linePathOf(sc.file, Path{Package: obj.Pkg(), Root: obj.Name()}, segs))
