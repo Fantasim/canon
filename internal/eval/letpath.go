@@ -28,7 +28,22 @@ func (r *run) inColl(id *value.Identity, c *types.Collection, at syntax.Node, sp
 	if holder == nil {
 		return false, false
 	}
-	return r.ev.instance(r.mv.latest(id.Owner)) == r.ev.instance(holder), true
+	owner := r.ev.instance(r.mv.latest(id.Owner))
+	return owner == r.ev.instance(holder) || r.holds(holder, c.FieldPath[len(c.FieldPath)-1], id, owner), true
+}
+
+// holds reports holder's field name holding the entry id names, owned by owner's instance, as a
+// spread copy holds its source's entries (DECISIONS 410).
+func (r *run) holds(holder *value.Record, name string, id *value.Identity, owner *value.Record) bool {
+	i := fieldIndex(holder.T, name)
+	if i < 0 || i >= len(holder.Fields) || holder.Fields[i] == nil {
+		return false
+	}
+	en, ok := r.ev.entry(holder.Fields[i], id.Key)
+	if !ok || en.Ident == nil || en.Ident.Coll != id.Coll || en.Ident.Owner == nil {
+		return false
+	}
+	return r.ev.instance(r.mv.latest(en.Ident.Owner)) == owner
 }
 
 // pathField is the field collection a let path's last field holds, nil when none: memoized per path.

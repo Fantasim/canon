@@ -47,9 +47,9 @@ func rootTrieSeg(r rootRef) Seg {
 	return Seg{Kind: SegField, Name: r.qualified()}
 }
 
-// homes is, for each candidate, whether it is its identity's node (API.md R11): of the
-// candidates of one identity that lie under a node or none, the first whose path stays in its
-// source tree (W3), else the first in walk order.
+// homes is, for each candidate, whether it is its identity's node (API.md R11): of one identity's
+// candidates under a node or none, the first staying in its source tree (W3), else owned by its
+// let's value, else in a let holding no other let's value, else the first in walk order.
 type homes struct {
 	ns     *nodeSet
 	chosen map[nodeIdent]int // the candidate an identity chose, noPlace for none
@@ -83,6 +83,12 @@ func (h *homes) choose(ids []int) int {
 		return live[0]
 	}
 	if j := slices.IndexFunc(live, h.stays); j >= 0 {
+		return live[j]
+	}
+	if j := slices.IndexFunc(live, func(i int) bool { return h.ns.cands[i].owning }); j >= 0 {
+		return live[j]
+	}
+	if j := slices.IndexFunc(live, func(i int) bool { return !h.ns.cands[i].aliased }); j >= 0 {
 		return live[j]
 	}
 	return live[0]

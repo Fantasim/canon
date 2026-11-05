@@ -744,7 +744,9 @@ type GraphEdge struct {
   nested list, a map value) is a node where it is met, and a `load.defines` table's entries are
   nodes under their own let only: the let whose initializer is the `load.defines` call. Each identity is exactly one node. The path
   of an identity reached by several paths is the first that stays in its source tree (W3), else
-  the first in the walk's order (the order `Refs` walks lets and values in). A plain-list element
+  the first whose owner is its own let's value, else the first not reached through a let that
+  reads another let, else the first in the walk's order (the order `Refs` walks lets and values
+  in); an entry at any depth is a node (DECISIONS 478). A plain-list element
   is no node. The edges are, for every target node
   T, one per `value` or `key` ref that `Refs(T)` reports, with `To` = T and `Kind` and `Span` as
   `Refs` reports them; nothing else is an edge (names in code, views, checks and amendments are

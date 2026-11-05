@@ -5015,3 +5015,18 @@ round 2", "PS1 review", "PS2 round 2"):
      target. Reason: v0.3 run (EDIT-RENAMEDEEP): a key read below level 1 was never a code ref, so
      E19 refused the rename with E4002; another instance's stated `pick: "x"` was rewritten as a
      code ref when renaming second's entry; `x![r]` was E3002 where `x[r]` was accepted.
+
+478. **Graph places every entry at its owning let; a spread copy's field holds its source's entries
+     (API.md R11, R14, P10; EVALUATION.md §4.2; follows 79, 315, 410).** `Graph` has a node for an
+     entry of a keyed list or table at any depth, matched to its owning record by instance (a
+     shallow copy shares it), and an edge for every bound ref there. Of one identity's paths, the
+     node is the first that stays in its source tree (W3), else the first whose owner is its own
+     let's value, else the first not reached through a let whose initializer reads another let,
+     else the first in walk order (a computed pass-through such as `same(z)` falls to walk order).
+     A copy of a record holding a table or keyed list shares its origin's instance, as 79 says of
+     copies, so an entry reached through a field default converts to that field's let path. A
+     let path's field that holds an entry, as a spread copy's unwritten field holds its source's
+     (410), converts and equals it; a field the spread writes holds its own entries. Reason: v0.3
+     run (EVAL-DEEPOWNER rounds 1-3): entries below level 1 had no node, an applied default's
+     entry raised a false `E3503`, and a node's id depended on whether a shared record's let was
+     computed.

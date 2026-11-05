@@ -10,12 +10,27 @@ import (
 
 type bindMode uint8
 
-// copiedFrom records that cp is rec's instance; callers pass only copies no two values diverge
-// in: one sharing rec's fields, or one of a value only this let's amendments hold.
+// copiedFrom records that cp is rec's instance when cp's type owns entries, a level-1 target's or
+// a collection field's; callers pass only copies no two values diverge in: one sharing rec's
+// fields, or one of a value only this let's amendments hold.
 func (e *Evaluator) copiedFrom(rec, cp *value.Record) {
-	if rec != cp && len(e.owned(cp.T)) > 0 {
+	if rec != cp && (len(e.owned(cp.T)) > 0 || e.holdsEntries(cp.T)) {
 		e.origin[cp] = rec
 	}
+}
+
+// holdsEntries reports t a record type with a table or keyed-list field, whose entries name its instance (TYPES.md §6.3).
+func (e *Evaluator) holdsEntries(t types.Type) bool {
+	rt := recordOf(t)
+	if rt == nil {
+		return false
+	}
+	holds, done := e.holding[rt]
+	if !done {
+		holds = slices.ContainsFunc(fieldsOf(t), func(f *types.Field) bool { return e.fieldColl(rt, f) != nil })
+		e.holding[rt] = holds
+	}
+	return holds
 }
 
 // Instance is the earliest record rec copies through copies holding its fields: its instance (EVALUATION.md §4.2).

@@ -80,7 +80,7 @@ func (e *Evaluator) worldEvaluator(w *World, h *worldHost, capture *diag.Bag) *E
 		v.lits.v = h
 	}
 	v.regexps, v.frees, v.colls, v.fieldColls, v.pathFields = e.regexps, e.frees, e.interned(), e.fieldColls, e.pathFields
-	v.ownedBy, v.sites, v.selfReads = e.ownedBy, e.sites, e.selfReads
+	v.ownedBy, v.holding, v.sites, v.selfReads = e.ownedBy, e.holding, e.sites, e.selfReads
 	v.counter = e.counter // EVALUATION.md §10.5 item 5: one counter, never a new one
 	v.depth, v.implicit = e.depth, e.implicit
 	v.testStops, v.testFiles, v.testPkg = e.testStops, e.testFiles, e.testPkg

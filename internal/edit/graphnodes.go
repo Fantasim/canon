@@ -33,11 +33,14 @@ type nodeRow struct {
 }
 
 // candidate is an entry or element met by the node walk where its identity may be at home,
-// and the candidate it lies under (noPlace for none): one per identity becomes its node.
+// the candidate it lies under (noPlace for none), whether its owner is its own let's value and
+// whether its let holds another let's value: one per identity becomes its node.
 type candidate struct {
-	row   nodeRow
-	rec   *value.Record
-	under int
+	row     nodeRow
+	rec     *value.Record
+	under   int
+	owning  bool
+	aliased bool
 }
 
 // nodeSet is the graph's nodes in R14 order and how a reference finds its target among them.
@@ -100,7 +103,7 @@ func (ns *nodeSet) let(r rootRef) {
 	if err != nil {
 		return
 	}
-	nw := &nodeWalk{ns: ns, r: r, vals: []value.Value{v}, pos: []int{pos}, near: []int{noPlace}}
+	nw := &nodeWalk{ns: ns, r: r, vals: []value.Value{v}, pos: []int{pos}, near: []int{noPlace}, aliased: readsLet(ns.s.info, r)}
 	nw.below(v, t)
 }
 

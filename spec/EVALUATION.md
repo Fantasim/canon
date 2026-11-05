@@ -213,7 +213,9 @@ value without identity. Deciding whether an entry belongs to a let path's collec
 which reads no let, never decides it (DECISIONS 210, 315).
 
 Every record or case value is also an **instance**: each evaluation of a literal, each default,
-each object decoded from a file creates a new instance. Copies share the instance. Checks run
+each object decoded from a file creates a new instance. Copies share the instance: a default or
+initializer that yields an existing value (an earlier field, a let, a parameter) is a copy
+(DECISIONS 79, 478). Checks run
 once per instance (§8.1).
 
 ### 4.3 Conversions at storage points

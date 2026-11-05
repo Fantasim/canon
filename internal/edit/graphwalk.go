@@ -1,6 +1,9 @@
 package edit
 
 import (
+	"slices"
+
+	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
@@ -77,14 +80,16 @@ func keyedChild(c typedChild, key *types.Field) typedChild {
 }
 
 // nodeWalk is one let's walk in Resolve's types: the segments, values, trie positions (noPlace:
-// not in the trie yet) and nearest candidate at or above each depth of its path (noPlace: none).
+// not in the trie yet) and nearest candidate at or above each depth of its path (noPlace: none),
+// and whether the let holds another let's value (readsLet).
 type nodeWalk struct {
-	ns   *nodeSet
-	r    rootRef
-	segs []Seg
-	vals []value.Value
-	pos  []int
-	near []int
+	ns      *nodeSet
+	r       rootRef
+	segs    []Seg
+	vals    []value.Value
+	pos     []int
+	near    []int
+	aliased bool
 }
 
 // below adds the entries and elements under v, of static type typ, as candidates.
@@ -124,7 +129,7 @@ func (nw *nodeWalk) child(c typedChild, ct types.Type) {
 
 // home reports whether an entry at the walk's depth may be at home there, and the candidate it
 // lies under: a let's or a load.defines table's under its let's root only; a field's under its
-// owner, itself a candidate when it has an identity; any other one anywhere (API.md R11).
+// owner's instance, itself a candidate when it has an identity; any other one anywhere (API.md R11).
 func (nw *nodeWalk) home(id *value.Identity) (under int, ok bool) {
 	d := len(nw.segs)
 	under = nw.near[d-1]
@@ -135,10 +140,19 @@ func (nw *nodeWalk) home(id *value.Identity) (under int, ok bool) {
 		return under, d == 1 && nw.owns(c)
 	case c.Kind != types.CollField || id.Owner == nil:
 		return under, true
-	case d < ownerUp || nw.vals[d-ownerUp] != id.Owner:
+	case d < ownerUp:
 		return under, false
 	}
-	return under, id.Owner.Ident == nil || nw.near[d-ownerUp] != noPlace && nw.ns.cands[nw.near[d-ownerUp]].rec == id.Owner
+	owner, ok := nw.vals[d-ownerUp].(*value.Record)
+	if !ok || !sameInstance(owner, id.Owner) {
+		return under, false
+	}
+	return under, owner.Ident == nil || nw.near[d-ownerUp] != noPlace && nw.ns.cands[nw.near[d-ownerUp]].rec == owner
+}
+
+// sameInstance reports rec, met by the walk, as owner's instance: owner or a copy holding its fields (EVALUATION.md §4.2).
+func sameInstance(rec, owner *value.Record) bool {
+	return rec == owner || slices.Equal(rec.Fields, owner.Fields)
 }
 
 // owns reports the walk's let owning c: the let c is named after, or for a load.defines table
@@ -169,7 +183,34 @@ func (nw *nodeWalk) candidate(rec *value.Record, c typedChild, ct types.Type, un
 		node.Span = p.Span
 	}
 	ident := nodeIdent{coll: rec.Ident.Coll, owner: rec.Ident.Owner, key: rec.Ident.Key}
-	nw.ns.cands = append(nw.ns.cands, candidate{row: nodeRow{GraphNode: node, trie: nw.pos[d], ident: ident}, rec: rec, under: under})
+	owning := d == ownerUp && rec.Ident.Owner != nil && !nw.aliased
+	row := nodeRow{GraphNode: node, trie: nw.pos[d], ident: ident}
+	nw.ns.cands = append(nw.ns.cands, candidate{row: row, rec: rec, under: under, owning: owning, aliased: nw.aliased})
 	nw.ns.byCand[ident] = append(nw.ns.byCand[ident], len(nw.ns.cands)-1)
 	return len(nw.ns.cands) - 1
+}
+
+// readsLet reports r holding another let's value: its initializer names a let, read through
+// fields, keys or indices, as `let aw: Pl = z` does (API.md R11: a let holding a shared record is
+// no node).
+func readsLet(info *check.Info, r rootRef) bool {
+	for e := syntax.Unparen(initializer(r.obj.Decl())); ; {
+		switch x := e.(type) {
+		case *syntax.IdentExpr:
+			return isLet(info.Uses[x])
+		case *syntax.SelectorExpr:
+			if isLet(info.NameUses[x.Name]) {
+				return true
+			}
+			e = syntax.Unparen(x.X)
+		case *syntax.IndexExpr:
+			e = syntax.Unparen(x.X)
+		default:
+			return false
+		}
+	}
+}
+
+func isLet(obj check.Object) bool {
+	return obj != nil && obj.Kind() == check.ObjLet
 }
