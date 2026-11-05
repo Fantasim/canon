@@ -131,9 +131,9 @@ func (sc *nameScan) isEntryOf(x *syntax.SelectorExpr) bool {
 		obj.Kind() == check.ObjLet && obj.Pkg() == coll.Pkg && obj.Name() == coll.Name
 }
 
-// throughOwn reports the key lookup x reaching the target's own collection: a let's always; a
-// record field's, shared by every instance, only when x's receiver is a let root with literal
-// indices and keys all the way to the target's owner (log-2026-09-29 M4 Cleanup-A-r).
+// throughOwn reports the key lookup x reaching the target's own collection: a let's always; a record
+// field's only when x's receiver is a let root with literal indices and keys to the target's owner,
+// or, an optional field's, whose field holds the target's entry (log-2026-09-29 M4; DECISIONS 410).
 func (sc *nameScan) throughOwn(x *syntax.SelectorExpr) bool {
 	if coll := sc.s.info.Keys[x]; coll == nil || coll.Kind != types.CollField {
 		return true
@@ -148,7 +148,13 @@ func (sc *nameScan) throughOwn(x *syntax.SelectorExpr) bool {
 	}
 	res, err := Resolve(sc.s, p)
 	owner, isRec := res.Target.(*value.Record)
-	return err == nil && isRec && owner == sc.tg.ident.Owner
+	if err != nil || !isRec {
+		return false
+	}
+	if sc.tg.held != nil {
+		return sc.tg.heldIn(owner)
+	}
+	return owner == sc.tg.ident.Owner
 }
 
 // inColl reports key token e naming an entry of the target's collection: recorded as its key,

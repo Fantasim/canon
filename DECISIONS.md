@@ -4938,3 +4938,13 @@ round 2", "PS1 review", "PS2 round 2"):
      each, since fixing one layer does not clear the other (the layer is blame, 464). Reason: v0.3
      run (CHECK-ALLLAYERS rounds 2-4): one verdict for check, build, test and the studio's live
      findings.
+
+473. **A code ref through a field's keyed list is judged by the entry's identity (API.md R7; TYPES.md
+     §6.3, §9.4; follows 410, 411, 470).** R7's "its receiver resolves statically to that element's
+     instance" means the receiver's field holds that very entry: a spread copy holds its source's
+     entries (410), so a read through the copy is a ref of the source's entry. An optional field
+     holding a keyed list or table keeps 411 (its entries take no field identity, no level-1
+     candidate); a rename still finds a static read through it, a parametric record's included, by
+     the field it is read through and the entry that field holds, so renaming such an entry rewrites
+     its value reads as a plain field's rename does. Reason: v0.3 run (EDIT-RENAMEOPT): the rename
+     missed `aa.second.oo?.x` and E19 refused it.

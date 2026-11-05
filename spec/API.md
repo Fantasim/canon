@@ -643,7 +643,10 @@ type Ref struct {
   - A key lookup through a per-instance collection (a keyed-list or table field) is a `code` ref
     of an element only when its receiver resolves statically to that element's instance (a `let`
     root, literal indices and keys); a dynamic receiver is not a ref (the re-check, E18, catches
-    what a rename breaks).
+    what a rename breaks). "That element's instance" is judged by the entry's identity: a spread
+    copy holds its source's entries (DECISIONS 410), and an optional field's keyed list or table,
+    whose entries take no field identity (DECISIONS 411), counts when the receiver's field holds
+    the element (DECISIONS 473).
   - Value refs come from the base evaluation and the layered one, merged by span. A value whose
     static type could hold a ref to the target but that cannot be computed makes `Refs` fail,
     naming it, so a partial list never looks complete. A `let` whose type is the error type holds

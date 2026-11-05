@@ -62,6 +62,13 @@ type target struct {
 	objects map[check.Object]bool
 	s       *Snapshot
 	paths   map[*types.Collection]bool // the let-path collections met, naming the target's instance or not
+	held    *heldHome                  // the optional record field holding the target, when its identity names no field collection
+}
+
+// heldHome is the optional record field holding a target, which takes no field identity (DECISIONS 411, 470).
+type heldHome struct {
+	owner *types.RecordType
+	field string
 }
 
 // target is the entry, keyed-list element or member res names (API.md R7, P7a).
@@ -78,7 +85,46 @@ func (s *Snapshot) target(res resolution) (*target, bool) {
 	if n == 0 || !ok || rec.Ident == nil || !keyedContainer(res.Steps[n-1].Container) {
 		return nil, false
 	}
-	return &target{ident: rec.Ident, objects: s.entryObjects(rec.Ident), s: s, paths: map[*types.Collection]bool{}}, true
+	tg := &target{ident: rec.Ident, objects: s.entryObjects(rec.Ident), s: s, paths: map[*types.Collection]bool{}}
+	tg.held = heldAt(res, rec.Ident)
+	return tg, true
+}
+
+// heldAt is the optional record field holding res's target, nil unless the target is an element
+// of a keyed list or table that field holds and its identity names no field collection.
+func heldAt(res resolution, id *value.Identity) *heldHome {
+	above := res.Steps[:len(res.Steps)-1] // the steps down to the collection holding the target
+	if id.Coll != nil && id.Coll.Kind == types.CollField || len(above) == 0 || above[len(above)-1].Seg.Kind != SegField {
+		return nil
+	}
+	field := above[len(above)-1]
+	rt, isRec := typeKey(field.Container).(*types.RecordType)
+	if !isRec {
+		return nil
+	}
+	i := fieldIndex(rt.Fields, field.Seg.Name)
+	if i < 0 {
+		return nil
+	}
+	if _, opt := rt.Fields[i].Type.Underlying().(*types.OptionalType); !opt {
+		return nil
+	}
+	return &heldHome{owner: rt, field: field.Seg.Name}
+}
+
+// is reports coll the record field's collection, as the checker records it for `.k` (DECISIONS 470).
+func (h *heldHome) is(coll *types.Collection) bool {
+	return h != nil && coll.Kind == types.CollField && coll.Owner == h.owner && slices.Equal(coll.FieldPath, []string{h.field})
+}
+
+// heldIn reports owner's optional field holding the target's entry, by identity, as a spread copy does (DECISIONS 410).
+func (tg *target) heldIn(owner *value.Record) bool {
+	i := fieldIndex(fieldsOf(owner.T), tg.held.field)
+	if i < 0 || i >= len(owner.Fields) {
+		return false
+	}
+	id := keyedIdent(owner.Fields[i], tg.ident.Key)
+	return id != nil && id.Coll == tg.ident.Coll
 }
 
 // keyedContainer reports a table or a keyed list: what holds entries and keyed elements.
@@ -181,7 +227,7 @@ func (tg *target) names(coll *types.Collection) bool {
 	switch {
 	case tg.ident == nil || coll == nil:
 		return false
-	case coll == tg.ident.Coll:
+	case coll == tg.ident.Coll || tg.held.is(coll):
 		return true
 	case coll.Kind != types.CollLet || len(coll.FieldPath) == 0:
 		return false
