@@ -73,6 +73,7 @@ type target struct {
 	s       *Snapshot
 	paths   map[*types.Collection]bool // the let-path collections met, naming the target's instance or not
 	held    *heldHome                  // the optional record field holding the target, when its identity names no field collection
+	own     *optionalLet               // the optional let holding the target as its own element, whose identity names no let
 	res     resolution                 // the target's path, which an amendment's line is matched against
 }
 
@@ -97,8 +98,30 @@ func (s *Snapshot) target(res resolution) (*target, bool) {
 		return nil, false
 	}
 	tg := &target{ident: rec.Ident, objects: s.entryObjects(rec.Ident), s: s, paths: map[*types.Collection]bool{}, res: res}
-	tg.held = heldAt(res, rec.Ident)
+	tg.held, tg.own = heldAt(res, rec.Ident), ownLetAt(res)
 	return tg, true
+}
+
+// optionalLet is a let declared optional holding a keyed list or table, whose entries take no
+// let identity while `x!.k` and `x?.k` key the collection x holds (DECISIONS 477, 487).
+type optionalLet struct {
+	pkg, name string
+}
+
+// ownLetAt is the optional let res's target is an element or entry of, nil for any other target.
+func ownLetAt(res resolution) *optionalLet {
+	if len(res.Steps) != 1 || res.root.obj == nil || res.root.obj.Kind() != check.ObjLet {
+		return nil
+	}
+	if _, opt := baseOf(res.root.obj.Type()).(*types.OptionalType); !opt {
+		return nil
+	}
+	return &optionalLet{pkg: res.root.pkg.Path, name: res.root.obj.Name()}
+}
+
+// is reports coll the let's own collection, as the checker records it for `x!.k` (DECISIONS 477).
+func (o *optionalLet) is(coll *types.Collection) bool {
+	return o != nil && coll.Kind == types.CollLet && len(coll.FieldPath) == 0 && coll.Pkg == o.pkg && coll.Name == o.name
 }
 
 // heldAt is the optional record field holding res's target, nil unless the target is an element
@@ -234,7 +257,7 @@ func (tg *target) names(coll *types.Collection) bool {
 	switch {
 	case tg.ident == nil || coll == nil:
 		return false
-	case coll == tg.ident.Coll || tg.held.is(coll):
+	case coll == tg.ident.Coll || tg.held.is(coll) || tg.own.is(coll):
 		return true
 	case coll.Kind != types.CollLet || len(coll.FieldPath) == 0:
 		return false

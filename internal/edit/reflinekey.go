@@ -87,8 +87,8 @@ func segKeyIs(seg *syntax.AmendSegment, s Seg) bool {
 }
 
 // lineEntry reports segs, the first segments of a line of block at.block, reaching the target's
-// entry by identity, a spread copy holding its source's (DECISIONS 410, 473), or an element keyed
-// by a ref to it, whose `.k` names it as `[k]` does (DECISIONS 316).
+// entry by identity, a copy holding its source's (410, 473) and carrying its key (486, 489, wasEntry),
+// or an element keyed by a ref to it, whose `.k` names it as `[k]` does (DECISIONS 316).
 func (sc *nameScan) lineEntry(at scanAt, segs []*syntax.AmendSegment) bool {
 	obj := sc.s.info.NameUses[at.block.Target]
 	if obj == nil {
@@ -98,13 +98,29 @@ func (sc *nameScan) lineEntry(at scanAt, segs []*syntax.AmendSegment) bool {
 	if err != nil {
 		return false
 	}
-	res, err := Resolve(sc.s, p)
+	res, err := sc.s.open(p)
 	rec, isRec := res.Target.(*value.Record)
 	if err != nil || !isRec || len(res.Steps) == 0 {
 		return false
 	}
 	lt, keyed := baseOf(res.Steps[len(res.Steps)-1].Container).(*types.ListType)
-	return sc.tg.isEntry(rec.Ident) || keyed && lt.KeyedBy != nil && sc.tg.isValue(keyField(rec, lt.KeyedBy))
+	return sc.tg.isEntry(rec.Ident) || sc.wasEntry(res) || keyed && lt.KeyedBy != nil && sc.tg.isValue(keyField(rec, lt.KeyedBy))
+}
+
+// wasEntry reports the value res's path held before any amendment, as its origin produced it, being
+// the target's entry by identity: the entry a copy held before a layer's line made it the copy's
+// own, keeping its key; a value a line put in its place carries no key there (DECISIONS 486, 489).
+func (sc *nameScan) wasEntry(res resolution) bool {
+	path := []value.Value{res.val}
+	for _, st := range res.Steps {
+		path = append(path, st.Value)
+	}
+	versions := sc.s.a.History(path...)
+	if len(versions) == 0 {
+		return false
+	}
+	rec, isRec := sc.s.a.Produced(versions[len(versions)-1]).(*value.Record)
+	return isRec && sc.tg.isEntry(rec.Ident)
 }
 
 // rewrite replaces a reference's token: an amend path's key segment as layerKeys does (segKey),

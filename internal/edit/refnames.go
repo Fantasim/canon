@@ -78,8 +78,8 @@ func (at scanAt) enter(n syntax.Node) scanAt {
 	return at
 }
 
-// walk reports n when it names the target or tests its key, or is an amend path's key segment
-// naming it, then its children, under the construct holding them.
+// walk reports n when it names the target or tests its key, looks up its element by a ref key, or
+// is an amend path's key segment naming it, then its children, under the construct holding them.
 func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 	at = at.enter(n)
 	if tok, ok := sc.claims(n, at); ok {
@@ -90,6 +90,7 @@ func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 		sc.out = append(sc.out, Ref{Kind: RefLayer, Package: sc.pkg, Span: sc.file.Span(tok)})
 	}
 	sc.keyTest(n, at)
+	sc.elemKey(n, at)
 	for c := range syntax.Children(n) {
 		sc.walk(c, at)
 	}
@@ -104,7 +105,7 @@ func (sc *nameScan) names(n syntax.Node) (syntax.Node, bool) {
 	case *syntax.Ident:
 		return x, sc.objectNamed(x)
 	case *syntax.SelectorExpr:
-		return x.Name, sc.isKey(x, x.Name.Name) && sc.throughOwn(x) || sc.isEntryOf(x)
+		return x.Name, sc.isKey(x, x.Name.Name) && sc.throughOwn(x) || sc.isEntryOf(x) || sc.refKeyOf(x)
 	case *syntax.StringLit, *syntax.RawStringLit:
 		text, ok := constString(x.(syntax.Expr))
 		return x, ok && sc.isKey(x.(syntax.Expr), text)

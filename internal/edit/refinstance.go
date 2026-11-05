@@ -1,6 +1,8 @@
 package edit
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
@@ -111,8 +113,8 @@ func sharedRegions(f *syntax.File) []sharedRegion {
 }
 
 // instanceHolds reports a per-instance ref token at sp naming the target in the instance it is
-// bound to: in an amendment's right-hand side, the instance its line amends (lineHolds); in a
-// default, a constant, a function or a lambda, some instance taking it (sharedHolds). Any other is kept.
+// bound to: the instance an amend line's value amends or its path above a key reaches (lineHolds,
+// segHolds); a default's, constant's, function's or lambda's, some instance taking it (sharedHolds).
 func (sc *nameScan) instanceHolds(tok syntax.Node, sp source.Span, at scanAt) bool {
 	e, isExpr := tok.(syntax.Expr)
 	if !isExpr {
@@ -124,6 +126,8 @@ func (sc *nameScan) instanceHolds(tok syntax.Node, sp source.Span, at scanAt) bo
 		return true
 	case at.line != nil && at.line.Value != nil && at.block != nil && contains(sc.file.Span(at.line.Value), sp):
 		return sc.lineHolds(at, sp, rt)
+	case at.line != nil && at.block != nil && tok == at.segKey:
+		return sc.segHolds(at, rt)
 	case at.field != nil && sc.transient(at):
 		sc.refuse(sp) // a default some evaluation no walk stores takes (DECISIONS 483)
 		return true
@@ -162,6 +166,17 @@ func (sc *nameScan) lineHolds(at scanAt, sp source.Span, rt *types.RefType) bool
 	return sc.pathHolds(at, rt)
 }
 
+// segHolds reports an amend segment's key typed rt, a ref into each instance's own collection,
+// naming the target in the instance the line's path reaches above the segment, by identity: the
+// nearest of rt's record (API.md R7; DECISIONS 483, 484, 487).
+func (sc *nameScan) segHolds(at scanAt, rt *types.RefType) bool {
+	i := slices.IndexFunc(at.line.Path, func(seg *syntax.AmendSegment) bool {
+		holder, _ := segToken(seg)
+		return holder == at.segKey
+	})
+	return i >= 0 && sc.prefixHolds(at, at.line.Path[:i], rt)
+}
+
 // builtHolds reports lit, the instance a line's literal builds, at the path of the target's
 // instance in the target's root: the layered value holds the target there.
 func (sc *nameScan) builtHolds(at scanAt, lit *syntax.BraceLit, rt *types.RefType) bool {
@@ -187,11 +202,17 @@ func (sc *nameScan) builtHolds(at scanAt, lit *syntax.BraceLit, rt *types.RefTyp
 // pathHolds reports the nearest instance of rt's record on the line's path holding the target's
 // entry; a path s does not resolve reaches none.
 func (sc *nameScan) pathHolds(at scanAt, rt *types.RefType) bool {
+	return sc.prefixHolds(at, at.line.Path, rt)
+}
+
+// prefixHolds reports the nearest instance of rt's record that segs, a line's first segments, read
+// from the amended root holding the target's entry, by identity; a path s does not resolve reaches none.
+func (sc *nameScan) prefixHolds(at scanAt, segs []*syntax.AmendSegment, rt *types.RefType) bool {
 	obj := sc.s.info.NameUses[at.block.Target]
 	if obj == nil {
 		return false
 	}
-	p, err := Parse(sc.s.linePathOf(sc.file, Path{Package: obj.Pkg(), Root: obj.Name()}, at.line.Path))
+	p, err := Parse(sc.s.linePathOf(sc.file, Path{Package: obj.Pkg(), Root: obj.Name()}, segs))
 	if err != nil {
 		return false
 	}

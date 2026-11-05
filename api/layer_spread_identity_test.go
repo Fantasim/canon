@@ -225,13 +225,14 @@ func layerRefsOf(t *testing.T, p *canon.Project, path string) []string {
 	return out
 }
 
-// DECISIONS 484: active, `amend bb { oo.x.w: 1 }` reaches bb's own x, so its `.x` is a layer ref of
-// bb's x once and none of second's; a line amending only bb's id leaves second's x reached as itself.
+// DECISIONS 484, 486, 489: active, `amend bb { oo.x.w: 1 }` reaches bb's own x, so its `.x` is a
+// layer ref of bb's x once, and of second's x once, whose key bb's x carries (DECISIONS
+// 491, amending 486); a line amending only bb's id leaves second's x reached as itself.
 func TestLayerSpreadCopyLineKeyRef(t *testing.T) {
 	const line5 = "p/dev.layer.canon:5"
 	p := openSpreadLayer(t, `oo.x.w: 1`, true)
-	if got := layerRefsOf(t, p, "p:aa[second].oo[x]"); len(got) != 0 {
-		t.Errorf("DECISIONS 484: second's x has layer refs %v, want none", got)
+	if got := layerRefsOf(t, p, "p:aa[second].oo[x]"); !slices.Equal(got, []string{line5}) {
+		t.Errorf("DECISIONS 486, 489: second's x has layer refs %v, want %s once", got, line5)
 	}
 	if got := layerRefsOf(t, p, "p:bb.oo[x]"); !slices.Equal(got, []string{line5}) {
 		t.Errorf("DECISIONS 484: bb's x has layer refs %v, want %s once", got, line5)

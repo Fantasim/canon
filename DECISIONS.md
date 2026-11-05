@@ -5182,6 +5182,7 @@ round 2", "PS1 review", "PS2 round 2"):
      `layer` ref of the entry it reads. Reason: v0.3 run (EVAL-LAYERSPREAD): a layer amendment of
      a spread copy left the source's identity on content it had changed, so a ref dereferenced to
      the wrong content, and an amendment of a sibling field re-owned every entry (a false E3503).
+     [amended by 491]
 
 487. **An amend path judges its keys differently from expressions, on purpose; an amend segment's
      key is judged by identity alone (API.md R7, E11, R11; TYPES.md §4.1, §9.1, §9.4; EVALUATION.md
@@ -5285,3 +5286,31 @@ round 2", "PS1 review", "PS2 round 2"):
      and amend `rs[Q.a].w` gave `E3002`, `E3027` or `E3008`, and `Q.a in rs` gave `E3002` where one
      level gives `E3026`. The review then found that `ens[b]` with `let b: Q` read the let while
      `amend { es[b] }` wrote the member, so one key text named two entries.
+
+491. **A key carried through a copy, a ref key into a per-instance collection, a ref-keyed list's
+     key in an expression, and a read through an optional let root are refs of what they reach
+     (API.md R7, E11, E12, E22; amends 486; follows 310, 316, 410, 473, 477, 483, 484, 487, 488,
+     489).** In an amend line of any package, layer active or not, a key segment that reaches an
+     entry of a copy (`let bb: A = { ...aa.second, id: "bb" }` with `amend bb { oo.x.w: 1 }`, or
+     `let bb: [A] keyed by id = aa` with `amend bb { second.oo.x.w: 1 }`) is a `layer` ref of the
+     entry the line reaches (484, 486). It is also a `layer` ref of the source entry whose key the
+     copy carries there: the value that path held before any amendment, as its origin produced it.
+     This amends 486's "none of `p:aa[second].oo[x]`": `Refs` lists exactly what `Rename` rewrites
+     (489), each token once. Renaming the copy's own entry stays refused (`computed`, or `layered`
+     under an active layer). A ref-typed amend key into a per-instance collection (`second.m[x]`,
+     with `m: {ref S: Int}` and S each instance's own `oo`) names the entry of the instance the
+     line's path reaches above the segment, by identity (483, 484), never another instance's. An
+     expression's `[k]` on a list keyed by a `ref C` (`many.one.ts[shield]`, `o.os![shield]`) is
+     also a `code` ref of the element its receiver reaches statically, by identity (473, 477),
+     beside the ref of C's entry. An expression's `.k` on such a list is also a ref of C's entry, as
+     `[k]` is (316, 488). A selector key (`ts[items.k]`) names C's entry only. `xs!.k`, `xs?.k` and
+     `ot!.k` on a let declared optional are `code` refs of its entry (477, 487); `ref xs` on such a
+     let stays `E3504`. 488's known gap, `Refs` not listing an expression's `[k]` under the element,
+     is closed. Known limits, queued (EDIT-REFKEYS2): `[k]` and `.k` on a list keyed by a ref into a
+     per-instance collection are not yet judged per instance, nor is a ref-typed amend segment on a
+     ref-keyed list; a `.k` in a record field's default, which the checker records no key for, is
+     not listed under C's entry; and with stacked layers, a line below a value an earlier layer
+     replaced is judged against the source before any layer. Reason: v0.3 run (EDIT-REFKEYS):
+     `Rename` rewrote a copy's layer key that `Refs` did not list; a per-instance ref key was listed
+     under every instance; and `[k]` on a ref-keyed list and reads through an optional let root were
+     not listed, so E19 refused the renames they broke.
