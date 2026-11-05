@@ -977,6 +977,9 @@ source and where the edit goes.
   `base`. Under a spread, `Reset`, a `Set` to the default and a field a record-level `Set` leaves
   out write the default explicitly: removing the field would let the spread supply a value. Any other
   field the spread supplies is left to it: an edit writes only the field it edits (DECISIONS 467).
+  While an active layer amends a field the spread supplies on its source, a base edit writing that
+  field or into it, or a `Set`, `Reset` or `SetCase` of the spreading literal, is `layered` (W10,
+  DECISIONS 466).
 
 ### 7.5 Layers (MOCKUP-GAPS 48)
 

@@ -8,9 +8,9 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// spreadRow is a base Set, Reset or Remove of a field a spread supplies, or a base Set or Reset of
-// a whole record beside a spread, when an active layer amends such a field on the spread's source or below
-// it: the write and its E23 inverse make it explicit, hiding the layer's value (API.md E22, W9).
+// spreadRow is a base op writing a field a spread supplies or into it, or a base Set, Reset or SetCase of a
+// whole record or case beside a spread, when an active layer amends such a field on the spread's source or below it: the
+// write and its E23 inverse make it explicit, hiding the layer's value (API.md E22, W9, W10; DECISIONS 466).
 func spreadRow(j *judge) Reason {
 	if j.layer != "" || len(j.s.a.Layers()) == 0 {
 		return ReasonNone
@@ -26,22 +26,23 @@ func spreadRow(j *judge) Reason {
 	return ReasonLayered
 }
 
-// spreadFieldLayer is the layer amending the field a spread supplies at the path, for a Set, Reset
-// or Remove of it.
+// spreadFieldLayer is the layer amending the field a spread supplies at the path, for any op on it:
+// a Set, Reset, Remove or SetCase writes it, an Add, Insert or AddEntry writes into it, each as an
+// override (DECISIONS 466). An op on an item below it has left the source tree (computedRow).
 func (j *judge) spreadFieldLayer() (string, bool) {
 	n := len(j.res.Steps)
-	if n == 0 || j.last().state != stSpread || j.op != OpSet && j.op != OpReset && j.op != OpRemove {
+	if n == 0 || j.last().state != stSpread {
 		return "", false
 	}
 	return j.s.spreadsAmend(braceOf(j.cur[n-1].node), []Seg{j.res.Steps[n-1].Seg})
 }
 
 // spreadRecordLayer is the layer amending a field a spread supplies to the record at the path, for
-// a Set or Reset of that whole record, its literal beside the spread.
+// a Set, Reset or SetCase of that whole record or case, its literal beside the spread.
 func (j *judge) spreadRecordLayer() (string, bool) {
 	c := j.last()
 	rec, ok := j.res.Target.(*value.Record)
-	if j.op != OpSet && j.op != OpReset || !ok || c.state != stTree || c.mode != ModeCanon || !hasSpread(c.node) {
+	if j.op != OpSet && j.op != OpReset && j.op != OpSetCase || !ok || c.state != stTree || c.mode != ModeCanon || !hasSpread(c.node) {
 		return "", false
 	}
 	var fields []Seg

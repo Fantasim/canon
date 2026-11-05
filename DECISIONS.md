@@ -4849,9 +4849,16 @@ round 2", "PS1 review", "PS2 round 2"):
      (naming the layer) when its path is set by an active layer (W10), including a path whose
      deepest prefix the session resolves was replaced by a layer and a path an active layer's line
      names though that line is in error; when it is a `Move` in a collection an active layer
-     addresses by position; and when it is a `Set`, `Reset` or `Remove` of a field a spread
-     supplies whose source, through any chain of spreads across roots and packages, an active layer
-     amends (its inverse could only write an override that hides the layer). Under E6 a value is the
+     addresses by position; and when it writes a field a spread supplies, or into it (a `Set`,
+     `Reset`, `Remove` or `SetCase` of the field, an `Add`, `Insert` or `AddEntry` into it), or is a
+     `Set`, `Reset` or `SetCase` of a whole record or case literal written beside a spread, while an
+     active layer amends such a field's source at, above or below it, through any chain of spreads
+     across roots and packages: the edit writes an override and its inverse could only write
+     another, either one hiding the layer (amended 2026-11-05, EDIT-SPREADGROW; it named only `Set`,
+     `Reset` and `Remove`). A `Move`, `Rename`, `Retire` or `Remove` of an item below such a field
+     has left the source tree (W3): §7.2's `computed` row applies first, or `layered` where a layer
+     sets the item itself, so no accepted `Move` hides a layer; with an `EditLayer`, these ops are
+     not offered the edit without an edit layer as a way out (462). Under E6 a value is the
      field's default only when it is the default in both the base and the session; otherwise it is
      written. An edit whose E23 Undo an operation would refuse is refused before anything is written,
      with that refusal's reason, except where 273 returns a plain Undo unverified (`AllowErrors`, a
@@ -4866,8 +4873,9 @@ round 2", "PS1 review", "PS2 round 2"):
      explicit default stays for a `Reset`, a `Set` to the default and the fields a record-level `Set`
      leaves out. The Undo of a record-level `Set` carries the spread-supplied fields as written, so it
      restores every value (E22 restores values: a field it writes explicitly no longer follows the
-     spread's source afterwards). A record-level `Set` or `Reset` beside a spread is `layered` when an
-     active layer amends a field the spread supplies, as a field edit is (466). Reason: v0.3 run
+     spread's source afterwards). A record-level `Set`, `Reset` or `SetCase` beside a spread (a case
+     literal's spread included) is `layered` when an active layer amends a field the spread
+     supplies, as a field edit is (466; `SetCase` amended 2026-11-05). Reason: v0.3 run
      (EDIT-SPREADUNDO): a sibling's computed default was written as an override that the Undo could
      not remove.
 
