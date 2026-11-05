@@ -5343,3 +5343,24 @@ round 2", "PS1 review", "PS2 round 2"):
      gave a false E3503 for `ref b5.inner.oo = b1.inner.oo.x` and a stray Graph node
      p:b5.inner.oo[x]; plain copies and copies inside one let did the same, and some amended copies
      re-derived defaults their source had supplied.
+
+493. **A key position gives one code per meaning, in an expression and an amend path alike; an
+     integer key's hint names its type (TYPES.md §4.1, §6.5; STDLIB.md §5; EVALUATION.md §9.2;
+     ERRORS.md E3027, E3403; follows 303, 318, 334, 490).** In `xs[k]`, `get`, `find`, `hasKey` and
+     an amend segment's `[k]`, with the key read at its chain's leaf (490), a mismatch gets one
+     code, whichever position it is written in. An optional whose present form is a key is `E3403`,
+     for any expression (`ens[of()]`, `rs[oq]`, `js[on]`, `rs[ore]` with `ore: ref ens?`, `tab[ort]`
+     with `ort: ref tab?`); here "a key" means a value of the key's type, of its leaf's type, or a
+     ref into this same collection. An amend segment, like an expression, takes a present ref into
+     the list itself (490). A name in scope that is a value of another type, or that is not a value,
+     is `E3027`. Anything else is `E3002`, a ref into another collection or a middle link's ref
+     included. `E3027`'s hint follows the key read at its leaf: an enum gets `valueMember` or
+     `notValueMember` ("write a member of Q"); an integer type, sized or refined, gets `valueTyped`
+     or `notValueTyped` ("write a key of type Int"); a `String` or table key keeps the string hint
+     (`value`, `notValue`). A bare name in `{ r: b }` against `ref C` keeps step 1 first: a static
+     table's entry of that name wins, while with dynamic keys a name in scope of another type is
+     `E3027` (318). Ref positions (`let x: ref js = q`) keep the string hint for now (queued,
+     CHECK-KEYCODES2). Reason: v0.3 run (CHECK-KEYCODES): the CHECK-ENUMREFQUAL review found that
+     the same wrong key gave `E3027` in an expression and `E3002` in an amend path, and `E3002` for
+     an optional that only needed proof of presence; and the `E3027` hint told the user to write a
+     string for an integer key, which is then refused.

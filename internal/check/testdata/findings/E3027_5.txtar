@@ -1,0 +1,103 @@
+TYPES.md §4.1, §9.1, STDLIB.md §5, EVALUATION.md §9.2, DECISIONS 318, 490: a key of an integer type has no string form, so a name in scope that is not a value of it is E3027 whose message says to write a key of that type, never a string: at one level (`js[q]`, `js[pick]`, `js.hasKey(q)`, keyed by Int) and through a chain read at its leaf (`ks[q]`, `ks[Q]`, keyed by `ref js`), in an expression and an amend path alike. A String or table key keeps the string hint (`tab[n]`), an enum key the member hint (`ens[n]`).
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+}
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+  w: Int = 0
+}
+
+local record M {
+  ks: [K] keyed by j
+}
+
+local record T {
+  w: Int = 0
+}
+
+local let ens: [E] keyed by kind = [{ kind: a }, { kind: b }]
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let mk: M = { ks: [{ j: 9 }] }
+
+local let tab: table T = {
+  y {}
+}
+
+local let q: Q = a
+
+local let n: Int = 9
+
+fn pick() -> Q {
+  return Q.a
+}
+
+local let oneValue: J = js[q]
+
+local let oneNotValue: J = js[pick]
+
+local let oneHasKey: Bool = js.hasKey(q)
+
+local let chainValue: K = ks[q]
+
+local let chainNotValue: K = ks[Q]
+
+local let tableValue: T = tab[n]
+
+local let enumValue: E = ens[n]
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend mk {
+  ks[q].w: 1
+}
+
+amend mk {
+  ks[pick].w: 2
+}
+-- findings.txt --
+error[E3027]  a/a.canon:49:28
+  q has type a.Q, not Int: write a key of type Int
+
+error[E3027]  a/a.canon:51:31
+  pick is not a value (function): write a key of type Int
+
+error[E3027]  a/a.canon:53:39
+  q has type a.Q, not Int: write a key of type Int
+
+error[E3027]  a/a.canon:55:30
+  q has type a.Q, not Int: write a key of type Int
+
+error[E3027]  a/a.canon:57:33
+  Q is not a value (enum): write a key of type Int
+
+error[E3027]  a/a.canon:59:31
+  n has type Int, not String; to name the key n, write "n"
+
+error[E3027]  a/a.canon:61:30
+  n has type Int, not a.Q: write a member of a.Q
+
+error[E3027]  a/dev.layer.canon:5:6
+  q has type a.Q, not Int: write a key of type Int
+
+error[E3027]  a/dev.layer.canon:9:6
+  pick is not a value (function): write a key of type Int
+
+9 errors, 0 warnings in 1 package (…)

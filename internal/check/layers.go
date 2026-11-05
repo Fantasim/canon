@@ -276,22 +276,51 @@ func (c *checker) amendKey(env *env, w *amendWalk, t types.Type, k syntax.Expr) 
 
 // entryKey types an amend key of the collection w reached: a bare name no scope or key type has is its key (TYPES.md §4.1, DECISIONS 318, 470).
 func (c *checker) entryKey(env *env, w *amendWalk, k syntax.Expr, key types.Type) {
-	if c.memberFirst(env, k, key) {
+	if c.memberFirst(env, k, key) || c.bareEntryKey(env, w, k, key) || c.scopedEntryKey(env, w, k, key) || c.leafEntryKey(env, k, key) {
 		return
 	}
+	c.expr(env, k, key)
+}
+
+// bareEntryKey types a bare name no scope or key type has as a key of the collection w reached (TYPES.md §4.1, DECISIONS 318, 470).
+func (c *checker) bareEntryKey(env *env, w *amendWalk, k syntax.Expr, key types.Type) bool {
 	id, isName := k.(*syntax.IdentExpr)
-	if isName && c.lookup(env, id.Name) == nil {
-		if o, _ := c.inExpected(unwrapUnion(key), id.Name); o == nil {
-			if coll := c.amendColl(w, unwrapOptional(w.t)); coll != nil && c.mayKey(coll, id.Name) {
-				c.info.Keys[k] = coll
-				c.info.Types[k] = key
-				return
-			}
-		}
+	if !isName || c.lookup(env, id.Name) != nil {
+		return false
 	}
-	if !c.leafEntryKey(env, k, key) {
-		c.expr(env, k, key)
+	if o, _ := c.inExpected(unwrapUnion(key), id.Name); o != nil {
+		return false
 	}
+	coll := c.amendColl(w, unwrapOptional(w.t))
+	if coll == nil || !c.mayKey(coll, id.Name) {
+		return false
+	}
+	c.info.Keys[k] = coll
+	c.info.Types[k] = key
+	return true
+}
+
+// scopedEntryKey types an amend key written as a name in scope whose value fits neither the key nor its chain's leaf as an expression's key is: a ref into the collection w reached is a key; E3027 for any other value or a name that is not a value, E3403 for an optional of a key (TYPES.md §4.1, §6.5, STDLIB.md §5, DECISIONS 318, 490).
+func (c *checker) scopedEntryKey(env *env, w *amendWalk, k syntax.Expr, key types.Type) bool {
+	id, isName := k.(*syntax.IdentExpr)
+	if !isName {
+		return false
+	}
+	o := c.lookup(env, id.Name)
+	if o == nil {
+		return false
+	}
+	if c.notValueName(env, k, key) {
+		return true
+	}
+	if found, silent := c.scopedType(o); silent || c.assignable(found, key) || c.leafValue(found, key) {
+		return false
+	}
+	own := c.amendColl(w, unwrapOptional(w.t))
+	if t := c.synth(env, k); t.Kind() != types.Error && !c.ownRef(t, own) {
+		c.notKey(env, k, key, t, own)
+	}
+	return true
 }
 
 // leafEntryKey types an amend key of a list keyed by a ref against its chain's leaf, as one level types it: a value name not of the key's own type, a context-dependent operand, or a link of a chain whose type fits the leaf; false for any other key (TYPES.md §4.1, DECISIONS 456).
@@ -301,7 +330,7 @@ func (c *checker) leafEntryKey(env *env, k syntax.Expr, key types.Type) bool {
 	}
 	switch x := inner(k).(type) {
 	case *syntax.IdentExpr:
-		if o := c.lookup(env, x.Name); o == nil || c.valueOf(o, key) || c.optionalOf(o, key) {
+		if o := c.lookup(env, x.Name); o == nil || c.valueOf(o, key) {
 			return false
 		}
 	case *syntax.SelectorExpr, *syntax.IndexExpr, *syntax.ForceExpr, *syntax.CallExpr: // typed without their expected type, a call's included

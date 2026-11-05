@@ -392,7 +392,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 597 messages.
+The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 599 messages.
 
 ## W00xx: Lints
 
@@ -972,6 +972,8 @@ Owner: TYPES.md, WIRE.md.
 | E3027 | notValue | name:Name, kind:Kind | `{name} is not a value ({kind}); to name the key {name}, write "{name}"` |
 | E3027 | valueMember | name:Name, expected:Type, found:Type | `{name} has type {found}, not {expected}: write a member of {expected}` |
 | E3027 | notValueMember | name:Name, kind:Kind, expected:Type | `{name} is not a value ({kind}): write a member of {expected}` |
+| E3027 | valueTyped | name:Name, expected:Type, found:Type | `{name} has type {found}, not {expected}: write a key of type {expected}` |
+| E3027 | notValueTyped | name:Name, kind:Kind, expected:Type | `{name} is not a value ({kind}): write a key of type {expected}` |
 | E3028 | - | typ:Type | `{typ} is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types` |
 | E3101 | - | key:Name, table:Name, first:Loc | `duplicate key {key} in {table} (first at {first})` |
 | E3102 | key | key:Value, first:Loc | `key {key} is used twice (first at {first})` |

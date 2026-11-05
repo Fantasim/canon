@@ -1495,6 +1495,8 @@ var Registry = []Def{
 			{Name: "notValue", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "kind", Type: ArgTypeKind}}, Template: "{name} is not a value ({kind}); to name the key {name}, write \"{name}\""},
 			{Name: "valueMember", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeType}, {Name: "found", Type: ArgTypeType}}, Template: "{name} has type {found}, not {expected}: write a member of {expected}"},
 			{Name: "notValueMember", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "kind", Type: ArgTypeKind}, {Name: "expected", Type: ArgTypeType}}, Template: "{name} is not a value ({kind}): write a member of {expected}"},
+			{Name: "valueTyped", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "expected", Type: ArgTypeType}, {Name: "found", Type: ArgTypeType}}, Template: "{name} has type {found}, not {expected}: write a key of type {expected}"},
+			{Name: "notValueTyped", Args: []Arg{{Name: "name", Type: ArgTypeName}, {Name: "kind", Type: ArgTypeKind}, {Name: "expected", Type: ArgTypeType}}, Template: "{name} is not a value ({kind}): write a key of type {expected}"},
 		},
 	},
 	{
@@ -5237,6 +5239,16 @@ func (codeE3027) AtValueMember(span source.Span, name string, expected TypeArg, 
 // AtNotValueMember reports: {name} is not a value ({kind}): write a member of {expected}
 func (codeE3027) AtNotValueMember(span source.Span, name string, kind Kind, expected TypeArg) *Builder {
 	return newBuilder(&Registry[146], 3, span, name, kind, expected)
+}
+
+// AtValueTyped reports: {name} has type {found}, not {expected}: write a key of type {expected}
+func (codeE3027) AtValueTyped(span source.Span, name string, expected TypeArg, found TypeArg) *Builder {
+	return newBuilder(&Registry[146], 4, span, name, expected, found)
+}
+
+// AtNotValueTyped reports: {name} is not a value ({kind}): write a key of type {expected}
+func (codeE3027) AtNotValueTyped(span source.Span, name string, kind Kind, expected TypeArg) *Builder {
+	return newBuilder(&Registry[146], 5, span, name, kind, expected)
 }
 
 // E3028: a type where a union expects a string literal (an alternative after the first) (TYPES.md §13.2).

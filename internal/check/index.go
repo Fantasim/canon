@@ -185,20 +185,28 @@ func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
 		return
 	}
 	t := c.synth(env, k)
-	if t.Kind() == types.Error || c.assignable(t, key) || c.refOf(t, recv) || c.leafValue(t, key) {
+	own := c.ownColl(recv)
+	if t.Kind() == types.Error || c.assignable(t, key) || c.ownRef(t, own) || c.leafValue(t, key) {
 		return
 	}
-	c.notKey(env, k, key, t)
+	c.notKey(env, k, key, t, own)
 }
 
-// notKey is E3027 for a name in scope that is no key, with the member form where the key, read at its leaf, is an enum; E3002 for anything else, a ref included (TYPES.md §4.1, STDLIB.md §5, DECISIONS 334, 456).
-func (c *checker) notKey(env *env, k syntax.Expr, key, t types.Type) {
+// notKey is E3403 for an optional of the key's or its leaf's type, or of a ref into own, the receiver's collection; E3027 for a name in scope that is no key, with the member form where the key, read at its leaf, is an enum, the typed form where it is an integer; E3002 for anything else, a ref included (TYPES.md §4.1, §6.5, STDLIB.md §5, DECISIONS 334, 456, 490).
+func (c *checker) notKey(env *env, k syntax.Expr, key, t types.Type, own *types.Collection) {
+	if want := c.presentKey(t, key, own); want != nil {
+		c.report(env, diag.E3403.At(env.span(k), want, t))
+		return
+	}
 	id, isName := k.(*syntax.IdentExpr)
+	enum, integer := c.enumKey(key), c.intKey(key)
 	switch {
 	case !isName || t.Base().Kind() == types.Ref:
 		c.report(env, diag.E3002.At(env.span(k), key, t))
-	case c.enumKey(key) != nil:
-		c.report(env, diag.E3027.AtValueMember(env.span(k), id.Name, c.enumKey(key), t))
+	case enum != nil:
+		c.report(env, diag.E3027.AtValueMember(env.span(k), id.Name, enum, t))
+	case integer != nil:
+		c.report(env, diag.E3027.AtValueTyped(env.span(k), id.Name, integer, t))
 	default:
 		c.report(env, diag.E3027.AtValue(env.span(k), id.Name, key, t))
 	}
@@ -242,7 +250,7 @@ func (c *checker) refKeyLiteral(env *env, k syntax.Expr, key types.Type) bool {
 	return true
 }
 
-// notValueName is E3027 `notValue` for a key written as a name in scope that is not a value, with the member form for an enum key (TYPES.md §4.1, DECISIONS 334).
+// notValueName is E3027 `notValue` for a key written as a name in scope that is not a value, with the member form for an enum key and the typed form for an integer key, each read at its leaf (TYPES.md §4.1, DECISIONS 334, 490).
 func (c *checker) notValueName(env *env, k syntax.Expr, key types.Type) bool {
 	id, isName := k.(*syntax.IdentExpr)
 	if !isName {
@@ -254,26 +262,35 @@ func (c *checker) notValueName(env *env, k syntax.Expr, key types.Type) bool {
 	}
 	c.info.Uses[id] = o
 	c.dependsOn(env, o)
-	if enum := c.enumKey(key); enum != nil {
+	enum, integer := c.enumKey(key), c.intKey(key)
+	switch {
+	case enum != nil:
 		c.report(env, diag.E3027.AtNotValueMember(env.span(id), o.name, notValueKind(o), enum))
-		return true
+	case integer != nil:
+		c.report(env, diag.E3027.AtNotValueTyped(env.span(id), o.name, notValueKind(o), integer))
+	default:
+		c.notValueKey(env, id, o)
 	}
-	c.notValueKey(env, id, o)
 	return true
 }
 
-// refOf reports a ref into the collection recv holds: a let's or a let path's, or a record field's.
-func (c *checker) refOf(t types.Type, recv syntax.Expr) bool {
-	r, isRef := t.Base().(*types.RefType)
-	if !isRef || recv == nil {
-		return false
+// ownColl is the collection recv holds: a let's or a let path's, or a record field's; nil when unknown.
+func (c *checker) ownColl(recv syntax.Expr) *types.Collection {
+	if recv == nil {
+		return nil
 	}
 	recv = unforced(recv) // STDLIB.md §5: `x!` holds x's collection
 	coll := c.keyedReceiver(recv)
 	if id, isName := recv.(*syntax.IdentExpr); coll == nil && isName {
 		coll = c.fieldReadColl(id)
 	}
-	return coll != nil && c.coll(r) == coll
+	return coll
+}
+
+// ownRef reports a value of type t that is a ref into own, a receiver's collection (STDLIB.md §5).
+func (c *checker) ownRef(t types.Type, own *types.Collection) bool {
+	r, isRef := t.Base().(*types.RefType)
+	return isRef && own != nil && c.coll(r) == own
 }
 
 // fieldReadColl is the collection a field named in its record body holds (TYPES.md §10.2 level 1).

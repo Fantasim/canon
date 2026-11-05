@@ -249,6 +249,8 @@ E3027 value: resource.vocab.items has type Int, not Int; to name the key resourc
 E3027 notValue: resource.vocab.items is not a value (built-in); to name the key resource.vocab.items, write "resource.vocab.items"
 E3027 valueMember: resource.vocab.items has type Int, not Int: write a member of Int
 E3027 notValueMember: resource.vocab.items is not a value (built-in): write a member of Int
+E3027 valueTyped: resource.vocab.items has type Int, not Int: write a key of type Int
+E3027 notValueTyped: resource.vocab.items is not a value (built-in): write a key of type Int
 E3028 -: Int is a type, but only a union's first alternative may be one: write a string literal, or a variant for a choice of types
 E3101 -: duplicate key resource.vocab.items in resource.vocab.items (first at @resource/Server/System/farm_config.json:1)
 E3102 key: key "II_SYS_SYS_SCR_FARM3" is used twice (first at @resource/Server/System/farm_config.json:1)

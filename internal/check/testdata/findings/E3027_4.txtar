@@ -1,4 +1,4 @@
-TYPES.md §4.1, STDLIB.md §5, EVALUATION.md §9.2, DECISIONS 318, 334, 456: a name in scope used as a key of a list keyed by a ref is a key when its value is of the chain's leaf type, as at one level: `rs[q]` (q of the enum leaf Q) and `ks[n]` (n of the Int leaf), in an expression and an amend path. In an expression, a value of neither the key's type nor its leaf's is E3027, as `ens[n]` is at one level: `rs[n]`, `ks[q]`; where the key, read at its leaf, is an enum, the message says to write a member of it, never a string. In an amend path, `rs[n]` is E3002, as `es[n]` is at one level.
+TYPES.md §4.1, STDLIB.md §5, EVALUATION.md §9.2, DECISIONS 318, 334, 456, 490: a name in scope used as a key of a list keyed by a ref is a key when its value is of the chain's leaf type, as at one level: `rs[q]` (q of the enum leaf Q) and `ks[n]` (n of the Int leaf), in an expression and an amend path. A value of neither the key's type nor its leaf's is E3027, as `ens[n]` is at one level, in an expression and an amend path alike (DECISIONS 490): `rs[n]`, `ks[q]`; where the key, read at its leaf, is an enum, the message says to write a member of it, where it is an integer, a key of that type, never a string.
 -- a/a.canon --
 package a
 
@@ -68,9 +68,9 @@ error[E3027]  a/a.canon:47:30
   n has type Int, not a.Q: write a member of a.Q
 
 error[E3027]  a/a.canon:49:28
-  q has type a.Q, not ref a.js; to name the key q, write "q"
+  q has type a.Q, not Int: write a key of type Int
 
-error[E3002]  a/dev.layer.canon:9:6
-  expected a.Q, found Int
+error[E3027]  a/dev.layer.canon:9:6
+  n has type Int, not a.Q: write a member of a.Q
 
 4 errors, 0 warnings in 1 package (…)

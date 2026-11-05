@@ -120,6 +120,30 @@ func (c *checker) enumKey(key types.Type) *types.EnumType {
 	return e
 }
 
+// intKey is the integer type a key is, read at its chain's leaf, nil when it is none: its keys are integers, with no string form and no member (TYPES.md §4.1, §9.1, DECISIONS 490).
+func (c *checker) intKey(key types.Type) types.Type {
+	if t := c.keyedAs(key); t.Base().Kind() == types.Int {
+		return t
+	}
+	return nil
+}
+
+// presentKey is the type a key of type t, an optional, fits once proved present: the key's own, its chain's leaf, or a ref into own, the receiver's collection; nil for any other t (TYPES.md §4.1, §6.5, STDLIB.md §5, DECISIONS 303, 490).
+func (c *checker) presentKey(t, key types.Type, own *types.Collection) types.Type {
+	o, isOpt := t.Base().(*types.OptionalType)
+	switch {
+	case !isOpt:
+		return nil
+	case c.assignable(o.Elem, key):
+		return key
+	case c.leafValue(o.Elem, key):
+		return c.refLeaf(key)
+	case c.ownRef(o.Elem, own):
+		return o.Elem
+	}
+	return nil
+}
+
 // keyedByInt reports a keyed list whose leaf key (leafKey) is an integer type: a ref into it is an integer literal (TYPES.md §4.1).
 func (c *checker) keyedByInt(coll *types.Collection) bool {
 	if coll.KeyedBy == nil {

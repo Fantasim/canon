@@ -1,0 +1,133 @@
+TYPES.md §4.1, §6.5, STDLIB.md §5, DECISIONS 303, 318, 490: in an expression's key position, a value of the key's type made optional is E3403, as it is in an amend path (E3403_11), never E3027: at one level (`ens[oq]`, keyed by Q; `js[on]`, keyed by Int), through a chain read at its leaf (`rs[oq]`, keyed by `ref ens`; `ks[on]`, keyed by `ref js`), for the key field's own `ref` type made optional (`rs[ore]`, `ks[orj]`), and for a ref into the receiver's own collection made optional (`tab[ort]`, `js[ojs]`, `rs[ors]`, `rs.hasKey(ors)`; in an amend path `rs[ohr]` on `hr.rs`). Proved present (`oq!`, `ors!`), it is a key, and so is a present ref into the amended list itself (`rs[rhr]`).
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+}
+
+local record R {
+  r: ref ens
+  w: Int = 0
+}
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local record H {
+  rs: [R] keyed by r
+}
+
+local record T {
+  w: Int = 0
+}
+
+local let ens: [E] keyed by kind = [{ kind: a }, { kind: b }]
+
+local let rs: [R] keyed by r = [{ r: a }]
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let hr: H = { rs: [{ r: a }] }
+
+local let tab: table T = {
+  y {}
+}
+
+local let oq: Q? = a
+
+local let on: Int? = 9
+
+local let ore: ref ens? = a
+
+local let orj: ref js? = 9
+
+local let ort: ref tab? = y
+
+local let ojs: ref js? = 9
+
+local let ors: ref rs? = a
+
+local let ohr: ref hr.rs? = a
+
+local let rhr: ref hr.rs = a
+
+local let oneEnum: E = ens[oq]
+
+local let oneInt: J = js[on]
+
+local let chainEnum: R = rs[oq]
+
+local let chainInt: K = ks[on]
+
+local let ownRef: R = rs[ore]
+
+local let ownIntRef: K = ks[orj]
+
+local let ownTable: T = tab[ort]
+
+local let ownInt: J = js[ojs]
+
+local let ownChain: R = rs[ors]
+
+local let ownHasKey: Bool = rs.hasKey(ors)
+
+local let proved: Bool = ens[oq!] == ens[a] and rs[oq!] == rs[a] and rs[ors!] == rs[a]
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend hr {
+  rs[ohr].w: 1
+}
+
+amend hr {
+  rs[rhr].w: 2
+}
+-- findings.txt --
+error[E3403]  a/a.canon:65:28
+  expected a.Q, found a.Q?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:67:26
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:69:29
+  expected a.Q, found a.Q?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:71:28
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:73:26
+  expected ref a.ens, found ref a.ens?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:75:29
+  expected ref a.js, found ref a.js?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:77:29
+  expected ref a.tab, found ref a.tab?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:79:26
+  expected ref a.js, found ref a.js?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:81:28
+  expected ref a.rs, found ref a.rs?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:83:39
+  expected ref a.rs, found ref a.rs?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/dev.layer.canon:5:6
+  expected ref a.hr.rs, found ref a.hr.rs?: prove it is present (!= none, !, ??)
+
+11 errors, 0 warnings in 1 package (…)
