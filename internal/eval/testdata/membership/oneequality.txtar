@@ -1,0 +1,266 @@
+TYPES.md §7.5, §6.3, DECISIONS 315, 317, 486, 492: one equality. Membership (`in`, `contains`,
+`indexOf`, a map's key lookup, a set) agrees with `==` on refs and entries, at every level of
+nesting, for a spread copy, a plain copy and an amended copy (layer active).
+-- layers --
+dev
+-- a/a.canon --
+package a
+
+record Tier {
+  weight: Int = 1
+}
+
+record Plan {
+  tiers: table Tier = { low {} }
+  pick: ref Tier = low
+  m: {ref Tier: Int} = { low: 1 }
+  pin: Pin = { t: low }
+}
+
+record Pin {
+  t: ref Tier
+}
+
+let std: Plan = {}
+
+let spread: Plan = { ...std, pick: low, m: { low: 3 } }
+
+let nested: Plan = { ...std, pin: { t: low } }
+
+let plain: Plan = std
+
+let amended: Plan = std
+
+let spreadWrites: Plan = { ...std, m: {} }
+
+let spreadBelow: Plan = { ...std, pick: low, m: { low: 3 } }
+
+record Holder {
+  other: Plan
+}
+
+fn mk() -> Plan {
+  return { tiers: { low { weight: 7 } } }
+}
+
+fn mk2() -> Plan {
+  return { tiers: { low {}, high { weight: 9 } } }
+}
+
+let f1: Plan = { ...mk(), pick: low, m: { low: 8 }, pin: { t: low } }
+
+let l1: Plan = { ...Plan { tiers: { low { weight: 5 } } }, pick: low, m: { low: 8 }, pin: { t: low } }
+
+let g1: Holder = { other: { ...Plan { tiers: { low { weight: 5 } } }, pick: low, m: { low: 8 }, pin: { t: low } } }
+
+let two: Plan = { ...mk2(), pick: high, pin: { t: low } }
+
+let f2: Plan = { ...mk() }
+
+let l2: Plan = { ...Plan { tiers: { low { weight: 9 } } } }
+
+let h2: Holder = { other: { ...mk() } }
+
+let k2: Plan = { ...mk(), m: {} }
+
+test "refs and keys a layer writes into a spread of a function's result" {
+  expect f2.tiers.low.weight == 7
+  expect f2.pin.t == f2.tiers.low
+  expect [f2.pin.t].contains(f2.tiers.low)
+  expect [f2.pick].contains(f2.tiers.low)
+  expect f2.m.keys().contains(f2.tiers.low)
+  expect f2.m.get(f2.tiers.low) == 9
+  expect f2.tiers.low in f2.m
+}
+
+test "refs and keys a layer writes into a spread of a literal" {
+  expect [l2.pin.t].contains(l2.tiers.low)
+  expect [l2.pick].contains(l2.tiers.low)
+  expect l2.m.keys().contains(l2.tiers.low)
+  expect l2.m.get(l2.tiers.low) == 6
+}
+
+test "refs and keys a layer writes into a nested spread of a function's result" {
+  expect [h2.other.pin.t].contains(h2.other.tiers.low)
+  expect h2.other.m.keys().contains(h2.other.tiers.low)
+  expect h2.other.m.get(h2.other.tiers.low) == 2
+  expect h2.other.pin.t.weight == 7
+}
+
+test "a key a layer path writes into a spread of a function's result" {
+  expect k2.m.keys().contains(k2.tiers.low)
+  expect k2.m.get(k2.tiers.low) == 5
+  expect k2.m[k2.tiers.low] == 5
+}
+
+test "a spread of a function's result a layer amends below an entry" {
+  expect f1.tiers.low.weight == 2
+  expect f1.pick.weight == 2
+  expect f1.pick == f1.tiers.low
+  expect [f1.pick].contains(f1.tiers.low)
+  expect f1.m.get(f1.tiers.low) == 8
+  expect f1.m.keys().contains(f1.tiers.low)
+  expect f1.pin.t == f1.tiers.low
+  expect [f1.pin.t].contains(f1.tiers.low)
+  expect f1.pin.t.weight == 2
+}
+
+test "a spread of a literal a layer amends below an entry" {
+  expect l1.pick.weight == 3
+  expect l1.pick == l1.tiers.low
+  expect [l1.pick].contains(l1.tiers.low)
+  expect l1.m.get(l1.tiers.low) == 8
+  expect l1.tiers.low in l1.m
+  expect l1.pin.t.weight == 3
+  expect [l1.pin.t].contains(l1.tiers.low)
+}
+
+test "a nested spread of a literal a layer amends below an entry" {
+  expect g1.other.pick.weight == 4
+  expect g1.other.pick == g1.other.tiers.low
+  expect [g1.other.pick].contains(g1.other.tiers.low)
+  expect g1.other.m.get(g1.other.tiers.low) == 8
+  expect g1.other.m.keys().contains(g1.other.tiers.low)
+  expect g1.other.pin.t.weight == 4
+  expect [g1.other.pin.t].contains(g1.other.tiers.low)
+}
+
+test "a spread with two entries, one amended" {
+  expect two.tiers.low.weight == 5
+  expect two.pin.t.weight == 5
+  expect two.pin.t == two.tiers.low
+  expect [two.pin.t].contains(two.tiers.low)
+  expect two.pick.weight == 9
+  expect two.pick == two.tiers.high
+  expect [two.pick].contains(two.tiers.high)
+  expect two.m.keys().contains(two.tiers.low)
+  expect two.m.get(two.tiers.low) == 1
+}
+
+test "a spread copy a layer writes a ref and a map key into" {
+  expect spreadWrites.pick == spreadWrites.tiers.low
+  expect [spreadWrites.pick].contains(spreadWrites.tiers.low)
+  expect spreadWrites.m.keys().contains(spreadWrites.tiers.low)
+  expect spreadWrites.m.get(spreadWrites.tiers.low) == 4
+  expect spreadWrites.tiers.low in spreadWrites.m
+  expect spreadWrites.m.keys().contains(std.tiers.low)
+}
+
+test "a spread copy a layer amends below an entry" {
+  expect spreadBelow.pick.weight == 2
+  expect spreadBelow.pick == spreadBelow.tiers.low
+  expect [spreadBelow.pick].contains(spreadBelow.tiers.low)
+  expect spreadBelow.m.keys().contains(spreadBelow.tiers.low)
+  expect spreadBelow.m.get(spreadBelow.tiers.low) == 3
+  expect not spreadBelow.m.keys().contains(std.tiers.low)
+  expect not [spreadBelow.pick].contains(std.tiers.low)
+}
+
+test "a spread copy with a written map" {
+  expect spread.m.keys()[0] == spread.tiers.low
+  expect spread.m.keys().contains(spread.tiers.low)
+  expect spread.tiers.low in spread.m.keys()
+  expect spread.m.keys().indexOf(spread.tiers.low) == 0
+  expect spread.m.get(spread.tiers.low) == 3
+  expect spread.m[spread.tiers.low] == 3
+  expect spread.m.keys() == [spread.tiers.low]
+  expect spread.m.keys().intersect([spread.tiers.low]).len() == 1
+  expect spread.m.keys().diff([spread.tiers.low]).isEmpty()
+  expect [spread.pick].contains(spread.tiers.low)
+  expect [[spread.m.keys()[0]]].contains([spread.tiers.low])
+  expect spread.m.contains(spread.tiers.low)
+  expect spread.tiers.low in spread.m
+}
+
+test "a record holding a ref written beside a spread" {
+  expect nested.pin.t == std.tiers.low
+  expect nested.pin == std.pin
+  expect [nested.pin].contains(std.pin)
+  expect [std.pin].indexOf(nested.pin) == 0
+  expect nested.pin in [std.pin]
+  expect [nested.pin].unique().len() == 1
+  expect [nested.pin, std.pin].unique().len() == 1
+  expect [nested.pin.t].contains(nested.tiers.low)
+  expect [[nested.pin]].contains([std.pin])
+}
+
+test "a plain copy" {
+  expect plain.m.keys()[0] == plain.tiers.low
+  expect plain.m.keys().contains(plain.tiers.low)
+  expect plain.tiers.low in plain.m.keys()
+  expect plain.m.keys().indexOf(plain.tiers.low) == 0
+  expect plain.m.get(plain.tiers.low) == 1
+  expect plain.m[plain.tiers.low] == 1
+  expect plain.m.keys() == [plain.tiers.low]
+  expect plain.m.keys().contains(std.tiers.low)
+  expect [plain.pick].contains(plain.tiers.low)
+  expect plain.m.contains(plain.tiers.low)
+}
+
+test "an amended copy" {
+  expect amended.m.keys()[0] == amended.tiers.low
+  expect amended.m.keys().contains(amended.tiers.low)
+  expect amended.tiers.low in amended.m.keys()
+  expect amended.m.keys().indexOf(amended.tiers.low) == 0
+  expect amended.m.get(amended.tiers.low) == 3
+  expect amended.m[amended.tiers.low] == 3
+  expect amended.m.keys() == [amended.tiers.low]
+  expect amended.m.keys().intersect([amended.tiers.low]).len() == 1
+  expect [amended.pick].contains(amended.tiers.low)
+  expect amended.m.contains(amended.tiers.low)
+  expect amended.tiers.low in amended.m
+  expect [[amended.m.keys()[0]]].contains([amended.tiers.low])
+}
+-- a/dev.canon --
+package a
+layer dev
+
+amend amended {
+  m[low]: 3
+}
+
+amend spreadWrites {
+  pick: low
+  m: { low: 4 }
+}
+
+amend spreadBelow {
+  tiers.low.weight: 2
+}
+
+amend f1 {
+  tiers.low.weight: 2
+}
+
+amend l1 {
+  tiers.low.weight: 3
+}
+
+amend g1 {
+  other.tiers.low.weight: 4
+}
+
+amend two {
+  tiers.low.weight: 5
+}
+
+amend f2 {
+  pin: { t: low }
+  m: { low: 9 }
+  pick: low
+}
+
+amend l2 {
+  pin: { t: low }
+  m: { low: 6 }
+  pick: low
+}
+
+amend h2 {
+  other.pin: { t: low }
+  other.m: { low: 2 }
+}
+
+amend k2 {
+  m[low]: 5
+}

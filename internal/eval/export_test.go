@@ -11,6 +11,19 @@ func (e *Evaluator) InstanceOf(rec *value.Record) *value.Record {
 	return e.instance(rec)
 }
 
+// VersionOf reports old an earlier version of rec, an amendment's copy of it or of its copies,
+// for the tests of eval_test.
+func (e *Evaluator) VersionOf(rec, old *value.Record) bool {
+	seen := map[value.Value]bool{}
+	for v := value.Value(rec); v != nil && !seen[v]; v = e.rebuilt[v] {
+		seen[v] = true
+		if x, ok := v.(*value.Record); ok && e.instance(x) == e.instance(old) {
+			return true
+		}
+	}
+	return false
+}
+
 // StepsSpent is the steps charged so far, for the tests of eval_test.
 func (e *Evaluator) StepsSpent() int64 {
 	return e.steps

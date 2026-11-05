@@ -32,7 +32,9 @@ func (e *Evaluator) bindLoaded(v value.Value, site *loadSite) value.Value {
 			continue
 		}
 		if rec, ok := top.v.(*value.Record); ok {
-			e.bindRefs(rec)
+			// A decoded record's defaults may share another's entries (`b: I = self.a`), so its refs
+			// bind through the held entry, as a spread literal's do (DECISIONS 497, 498).
+			e.bindRefs(rec, true)
 		}
 		stack = stack[:len(stack)-1]
 	}

@@ -1,0 +1,169 @@
+TYPES.md §6.3, §7.5, EVALUATION.md §3.4, DECISIONS 410, 486: a bound ref carries the owner of the
+entry it names. A spread of a value no let holds (a function's result, a literal) supplies its
+entries; an amendment below one makes that entry the copy's own and moves its refs and keys to the
+copy, as the same value written in source does, while an unchanged entry keeps the source's.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Pin.
+record Pin {
+  /// Its tier.
+  t: ref Tier
+}
+
+/// Plan.
+record Plan {
+  /// Tiers.
+  tiers: table Tier = { low {} }
+  /// Pick.
+  pick: ref Tier = low
+  /// By tier.
+  m: {ref Tier: Int} = { low: 1 }
+  /// Pin.
+  pin: Pin = { t: low }
+}
+
+/// Holder.
+record Holder {
+  /// Other.
+  other: Plan
+}
+
+/// A plan of one tier.
+fn mk() -> Plan {
+  return { tiers: { low { weight: 7 } } }
+}
+
+/// A plan of two tiers.
+fn mk2() -> Plan {
+  return { tiers: { low {}, high { weight: 9 } } }
+}
+
+/// A function's result spread and amended.
+let f1: Plan = { ...mk(), pick: low, m: { low: 8 }, pin: { t: low } }
+/// A function's result spread and amended.
+let f1Written: Plan = { tiers: { low { weight: 2 } }, pick: low, m: { low: 8 }, pin: { t: low } }
+
+/// A literal spread and amended.
+let l1: Plan = { ...Plan { tiers: { low { weight: 5 } } }, pick: low, m: { low: 8 }, pin: { t: low } }
+/// A literal spread and amended.
+let l1Written: Plan = { tiers: { low { weight: 3 } }, pick: low, m: { low: 8 }, pin: { t: low } }
+
+/// A literal spread in a field and amended.
+let g1: Holder = { other: { ...Plan { tiers: { low { weight: 5 } } }, pick: low, m: { low: 8 }, pin: { t: low } } }
+/// A literal spread in a field and amended.
+let g1Written: Holder = { other: { tiers: { low { weight: 4 } }, pick: low, m: { low: 8 }, pin: { t: low } } }
+
+/// Two tiers spread, one amended.
+let two: Plan = { ...mk2(), pick: high, pin: { t: low } }
+/// Two tiers spread, one amended.
+let twoWritten: Plan = { tiers: { low { weight: 5 }, high { weight: 9 } }, pick: high, pin: { t: low } }
+
+/// Its refs and keys equal its entries.
+let eq: [Bool] = [f1.pick == f1.tiers.low, [f1.pin.t].contains(f1.tiers.low), f1.m.keys().contains(f1.tiers.low), [l1.pick].contains(l1.tiers.low), l1.tiers.low in l1.m, [g1.other.pin.t].contains(g1.other.tiers.low), g1.other.m.get(g1.other.tiers.low) == 8, [two.pin.t].contains(two.tiers.low), [two.pick].contains(two.tiers.high), two.m.keys().contains(two.tiers.low)]
+/// Its refs and keys equal its entries.
+let eqWritten: [Bool] = [f1Written.pick == f1Written.tiers.low, [f1Written.pin.t].contains(f1Written.tiers.low), f1Written.m.keys().contains(f1Written.tiers.low), [l1Written.pick].contains(l1Written.tiers.low), l1Written.tiers.low in l1Written.m, [g1Written.other.pin.t].contains(g1Written.other.tiers.low), g1Written.other.m.get(g1Written.other.tiers.low) == 8, [twoWritten.pin.t].contains(twoWritten.tiers.low), [twoWritten.pick].contains(twoWritten.tiers.high), twoWritten.m.keys().contains(twoWritten.tiers.low)]
+
+/// Its refs read the amended entries.
+let reads: [Int] = [f1.pick.weight, f1.pin.t.weight, l1.pick.weight, l1.pin.t.weight, g1.other.pick.weight, g1.other.pin.t.weight, two.pin.t.weight, two.pick.weight]
+/// Its refs read the amended entries.
+let readsWritten: [Int] = [f1Written.pick.weight, f1Written.pin.t.weight, l1Written.pick.weight, l1Written.pin.t.weight, g1Written.other.pick.weight, g1Written.other.pin.t.weight, twoWritten.pin.t.weight, twoWritten.pick.weight]
+
+/// A function's result spread, its refs and keys written by a layer.
+let f2: Plan = { ...mk() }
+/// A function's result spread, its refs and keys written by a layer.
+let f2Written: Plan = { tiers: { low { weight: 7 } }, pin: { t: low }, m: { low: 9 }, pick: low }
+
+/// A literal spread, its refs and keys written by a layer.
+let l2: Plan = { ...Plan { tiers: { low { weight: 9 } } } }
+/// A literal spread, its refs and keys written by a layer.
+let l2Written: Plan = { tiers: { low { weight: 9 } }, pin: { t: low }, m: { low: 6 }, pick: low }
+
+/// A function's result spread in a field, its refs and keys written by a layer.
+let h2: Holder = { other: { ...mk() } }
+/// A function's result spread in a field, its refs and keys written by a layer.
+let h2Written: Holder = { other: { tiers: { low { weight: 7 } }, pin: { t: low }, m: { low: 2 } } }
+
+/// A function's result spread, a key a layer path writes.
+let k2: Plan = { ...mk(), m: {} }
+/// A function's result spread, a key a layer path writes.
+let k2Written: Plan = { tiers: { low { weight: 7 } }, m: { low: 5 } }
+
+/// The written refs and keys equal its entries.
+let wrote: [Bool] = [[f2.pin.t].contains(f2.tiers.low), [f2.pick].contains(f2.tiers.low), f2.m.get(f2.tiers.low) == 9, [l2.pin.t].contains(l2.tiers.low), l2.tiers.low in l2.m, [h2.other.pin.t].contains(h2.other.tiers.low), h2.other.m.get(h2.other.tiers.low) == 2, k2.m.get(k2.tiers.low) == 5]
+/// The written refs and keys equal its entries.
+let wroteWritten: [Bool] = [[f2Written.pin.t].contains(f2Written.tiers.low), [f2Written.pick].contains(f2Written.tiers.low), f2Written.m.get(f2Written.tiers.low) == 9, [l2Written.pin.t].contains(l2Written.tiers.low), l2Written.tiers.low in l2Written.m, [h2Written.other.pin.t].contains(h2Written.other.tiers.low), h2Written.other.m.get(h2Written.other.tiers.low) == 2, k2Written.m.get(k2Written.tiers.low) == 5]
+-- a/dev.canon --
+package a
+layer dev
+
+amend f1 {
+  tiers.low.weight: 2
+}
+
+amend l1 {
+  tiers.low.weight: 3
+}
+
+amend g1 {
+  other.tiers.low.weight: 4
+}
+
+amend two {
+  tiers.low.weight: 5
+}
+
+amend f2 {
+  pin: { t: low }
+  m: { low: 9 }
+  pick: low
+}
+
+amend l2 {
+  pin: { t: low }
+  m: { low: 6 }
+  pick: low
+}
+
+amend h2 {
+  other.pin: { t: low }
+  other.m: { low: 2 }
+}
+
+amend k2 {
+  m[low]: 5
+}
+-- dump.txt --
+a.f1 = Plan{tiers: {low: Tier{weight: 2}}, pick: low, m: {low: 8}, pin: Pin{t: low}}
+a.f1Written = Plan{tiers: {low: Tier{weight: 2}}, pick: low, m: {low: 8}, pin: Pin{t: low}}
+a.l1 = Plan{tiers: {low: Tier{weight: 3}}, pick: low, m: {low: 8}, pin: Pin{t: low}}
+a.l1Written = Plan{tiers: {low: Tier{weight: 3}}, pick: low, m: {low: 8}, pin: Pin{t: low}}
+a.g1 = Holder{other: Plan{tiers: {low: Tier{weight: 4}}, pick: low, m: {low: 8}, pin: Pin{t: low}}}
+a.g1Written = Holder{other: Plan{tiers: {low: Tier{weight: 4}}, pick: low, m: {low: 8}, pin: Pin{t: low}}}
+a.two = Plan{tiers: {low: Tier{weight: 5}, high: Tier{weight: 9}}, pick: high, m: {low: 1}, pin: Pin{t: low}}
+a.twoWritten = Plan{tiers: {low: Tier{weight: 5}, high: Tier{weight: 9}}, pick: high, m: {low: 1}, pin: Pin{t: low}}
+a.eq = [true, true, true, true, true, true, true, true, true, true]
+a.eqWritten = [true, true, true, true, true, true, true, true, true, true]
+a.reads = [2, 2, 3, 3, 4, 4, 5, 9]
+a.readsWritten = [2, 2, 3, 3, 4, 4, 5, 9]
+a.f2 = Plan{tiers: {low: Tier{weight: 7}}, pick: low, m: {low: 9}, pin: Pin{t: low}}
+a.f2Written = Plan{tiers: {low: Tier{weight: 7}}, pick: low, m: {low: 9}, pin: Pin{t: low}}
+a.l2 = Plan{tiers: {low: Tier{weight: 9}}, pick: low, m: {low: 6}, pin: Pin{t: low}}
+a.l2Written = Plan{tiers: {low: Tier{weight: 9}}, pick: low, m: {low: 6}, pin: Pin{t: low}}
+a.h2 = Holder{other: Plan{tiers: {low: Tier{weight: 7}}, pick: low, m: {low: 2}, pin: Pin{t: low}}}
+a.h2Written = Holder{other: Plan{tiers: {low: Tier{weight: 7}}, pick: low, m: {low: 2}, pin: Pin{t: low}}}
+a.k2 = Plan{tiers: {low: Tier{weight: 7}}, pick: low, m: {low: 5}, pin: Pin{t: low}}
+a.k2Written = Plan{tiers: {low: Tier{weight: 7}}, pick: low, m: {low: 5}, pin: Pin{t: low}}
+a.wrote = [true, true, true, true, true, true, true, true]
+a.wroteWritten = [true, true, true, true, true, true, true, true]
+
+0 errors, 0 warnings in 1 package (…)

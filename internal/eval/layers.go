@@ -179,7 +179,7 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 	if !r.ev.isCopy(rec, self, r.mv) && !r.derive(&cp, i, m.pathAfter(len(m.a.Path)-len(segs))) { // a copy applied none of its defaults (DECISIONS 486)
 		return nil
 	}
-	r.ev.bindTo(&cp, rec, r.mv) // EVALUATION.md §3.4: the copy is the instance its refs resolve against
+	r.ev.bindTo(&cp, rec, r.mv, cp.Fields[i]) // EVALUATION.md §3.4: the copy is the instance its refs resolve against
 	return r.copied(rec, &cp)
 }
 

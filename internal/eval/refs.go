@@ -156,20 +156,21 @@ func (h *stdHost) Entry(coll value.Value, k value.Key) (*value.Record, bool) {
 	return h.r.ev.entry(coll, k)
 }
 
-// bindRefs binds a completed instance's level-1 refs, one binder for all fields (EVALUATION.md §3.4).
-func (e *Evaluator) bindRefs(rec *value.Record) {
+// bindRefs binds a completed instance's level-1 refs, spread when a spread supplied fields (EVALUATION.md §3.4).
+func (e *Evaluator) bindRefs(rec *value.Record, spread bool) {
 	if owned := e.owned(rec.T); len(owned) > 0 {
-		e.rebindFields(rec, &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec})
+		e.rebindFields(rec, &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, spread: spread})
 	}
 }
 
-// bindTo binds rec's unbound level-1 refs and those of src to the entries rec holds (DECISIONS 410, 486).
-func (e *Evaluator) bindTo(rec, src *value.Record, mv *moves) {
+// bindTo binds rec's unbound level-1 refs and those of src to the entries rec holds, via the field
+// value the amendment went through (DECISIONS 410, 486).
+func (e *Evaluator) bindTo(rec, src *value.Record, mv *moves, via value.Value) {
 	owned := e.owned(rec.T)
 	if len(owned) == 0 {
 		return
 	}
-	b := &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, inst: e.instance(src), prev: src, mode: modeRebind, mv: mv}
+	b := &binder{e: e, owned: owned, rt: recordOf(rec.T), owner: rec, inst: e.instance(src), prev: src, mode: modeRebind, mv: mv, via: via}
 	e.rebindFields(rec, b)
 }
 
@@ -192,6 +193,7 @@ func (e *Evaluator) unbindFrom(rec *value.Record, path []*value.Record, mv *move
 func (e *Evaluator) rebindFields(rec *value.Record, b *binder) {
 	b.done = map[value.Value]value.Value{}
 	for i, f := range rec.Fields {
+		b.inVia = f != nil && f == b.via
 		rec.Fields[i] = b.bind(f)
 	}
 }
@@ -217,6 +219,9 @@ type binder struct {
 	owners map[*value.Record]bool
 	mv     *moves
 	done   map[value.Value]value.Value
+	spread bool
+	via    value.Value
+	inVia  bool
 }
 
 // binding is a composite being rebound: its components, and the next one to take.
@@ -311,26 +316,13 @@ func (b *binder) leaf(v value.Value) value.Value {
 // ours reports x, bound, a ref the rebinding moves: bound to another copy of inst, or to the owner
 // of the entry its key named in prev, which owner copies (DECISIONS 410).
 func (b *binder) ours(x *value.Ref, c *types.Collection) bool {
-	return b.e.instance(x.Owner) == b.inst || b.held() && x.Owner == b.e.heldOwner(b.prev, c, x.Key)
+	return b.e.instance(x.Owner) == b.inst || b.prev != nil && x.Owner == b.e.heldOwner(b.prev, c, x.Key)
 }
 
-// held reports a rebinding that binds refs to the entries owner holds: one of an amendment whose
-// let holds or read some instance at another place; else every entry is owner's (copies.go).
+// held reports a rebinding of an amendment whose let holds or read some instance at another place,
+// whose entries that place keeps (copies.go).
 func (b *binder) held() bool {
 	return b.prev != nil && b.mv != nil && b.mv.copies != nil && !b.mv.copies.none()
-}
-
-// ownerFor is the record x binds to: owner, or with prev the owner of the entry owner's field holds
-// at x's key when another place holds it, so x names that very entry (DECISIONS 410, 486).
-func (b *binder) ownerFor(x *value.Ref, c *types.Collection) *value.Record {
-	if !b.held() {
-		return b.owner
-	}
-	en := b.e.heldEntry(b.owner, c, x.Key)
-	if en != nil && !b.mv.made(en) && en.Ident.Owner != nil && b.e.shared(en.Ident.Owner, b.mv) {
-		return en.Ident.Owner
-	}
-	return b.owner
 }
 
 // heldOwner is the owner of the entry keyed k in rec's field holding collection c, nil for none.
@@ -343,18 +335,27 @@ func (e *Evaluator) heldOwner(rec *value.Record, c *types.Collection, k value.Ke
 
 // heldEntry is the entry keyed k in rec's field holding collection c, nil for none.
 func (e *Evaluator) heldEntry(rec *value.Record, c *types.Collection, k value.Key) *value.Record {
-	if c.Kind != types.CollField || len(c.FieldPath) == 0 {
+	coll := heldColl(rec, c)
+	if coll == nil {
 		return nil
 	}
-	i := fieldIndex(rec.T, c.FieldPath[0])
-	if i < 0 || i >= len(rec.Fields) || rec.Fields[i] == nil {
-		return nil
-	}
-	en, ok := e.entry(rec.Fields[i], k)
+	en, ok := e.entry(coll, k)
 	if !ok || en.Ident == nil || en.Ident.Coll != c {
 		return nil
 	}
 	return en
+}
+
+// heldColl is rec's field holding collection c, nil for none.
+func heldColl(rec *value.Record, c *types.Collection) value.Value {
+	if c.Kind != types.CollField || len(c.FieldPath) == 0 {
+		return nil
+	}
+	i := fieldIndex(rec.T, c.FieldPath[0])
+	if i < 0 || i >= len(rec.Fields) {
+		return nil
+	}
+	return rec.Fields[i]
 }
 
 // rebuild is a composite whose components are all rebound: itself when none changed, else a

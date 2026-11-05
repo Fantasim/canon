@@ -56,20 +56,22 @@ func (r *run) recordLit(lit *syntax.BraceLit, loc syntax.Node, t types.Type, ide
 	if !r.defaults(rec, b.given, at) {
 		return nil
 	}
-	r.ev.bindRefs(rec)
+	r.ev.bindRefs(rec, b.spread)
 	r.built = rec
 	r.keepRecord(rec)
 	return rec
 }
 
 // building is a record literal being evaluated: its written fields by index, the fields that
-// have their value (written, spread or defaulted early) and the written ones evaluated.
+// have their value (written, spread or defaulted early), the written ones evaluated, and whether
+// a spread supplied fields.
 type building struct {
-	rec   *value.Record
-	items []*syntax.FieldItem
-	given []bool
-	done  []bool
-	at    *vpath
+	rec    *value.Record
+	items  []*syntax.FieldItem
+	given  []bool
+	done   []bool
+	at     *vpath
+	spread bool
 }
 
 // newBuilding indexes the written fields only of a record some field of which reads earlier ones.
@@ -103,6 +105,7 @@ func (r *run) recordItem(b *building, it syntax.BraceItem) bool {
 		for i, f := range src.Fields {
 			rec.Fields[i], rec.Set[i], b.given[i] = r.ev.spreadCopy(f, r.prov(it, value.ProvSpread)), src.Set[i], true
 		}
+		b.spread = true
 	case *syntax.FieldItem:
 		i := fieldIndex(rec.T, it.Name.Name)
 		if i < 0 {

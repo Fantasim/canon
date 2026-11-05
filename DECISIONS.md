@@ -5480,3 +5480,22 @@ round 2", "PS1 review", "PS2 round 2"):
      from JSON gave `E3505 … ref S has no enclosing I to resolve against`, and its copies' map keys
      did not equal the entries; only the refs written in the JSON were bound. The briefed false
      E3503 through copies of a loaded record did not reproduce.
+
+498. **A bound level-1 ref names, and equals, the entry its instance's field holds at its key
+     (EVALUATION.md §3.4; TYPES.md §6.3, §7.5; follows 79, 315, 410, 486, 492).** When an instance
+     is completed, each unbound level-1 ref or map key it holds binds to the owner of the entry that
+     the instance's field holds at its key: the instance itself for an entry it owns, and the source
+     for an entry a spread supplied (486). With no such entry it binds to the instance, so
+     dereferencing it is `E3501`. A bound level-1 ref carries the owner of the entry it names,
+     whatever binds it: the instance's completion, a layer line that writes it, or a rebinding after
+     an amendment. So `==`, `in`, `contains`, `indexOf`, a map's key lookup and a set agree on it
+     (one equality), and dereferencing it reads that entry's content. When an amendment makes an
+     entry the copy's own, the refs bound to the entry it replaced move to the copy. An entry the
+     amendment leaves unchanged keeps its owner, and so do the refs bound to it. This holds for
+     every kind of copy (492): a let, a function's result, an inline literal, at any depth, with or
+     without layers, warm and cold. Reason: v0.3 run (EVAL-CONTAINSEQ rounds 1-3): `t3 = { ...std,
+     pick: low, m: { low: 3 } }` gave `t3.m.keys()[0] == t3.tiers.low` true but
+     `t3.m.keys().contains(t3.tiers.low)` false, and `nested.pin == std.pin` false: the literal
+     bound its refs to t3 while t3's field held std's entries; under a layer, refs written or
+     rebound into a spread copy of a function result or an inline literal read the source's old
+     content.

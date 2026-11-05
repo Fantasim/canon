@@ -9,7 +9,7 @@ import (
 	"golang.org/x/tools/txtar"
 )
 
-// STDLIB.md §5, TYPES.md §10.3, DECISIONS 315, 317: every expect of testdata/membership passes.
+// STDLIB.md §5, TYPES.md §7.5, §10.3, DECISIONS 315, 317: every expect of testdata/membership passes.
 func TestKeyedMembership(t *testing.T) {
 	expectAllPass(t, "testdata/membership/*.txtar")
 }

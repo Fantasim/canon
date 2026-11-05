@@ -160,7 +160,7 @@ func ownerProblems(ev *eval.Evaluator, v value.Value, name string, others elsewh
 		case *value.Record:
 			if x.Ident != nil && x.Ident.Owner != nil {
 				in, found := nearest(n.outer, ownerOf(x.Ident.Coll))
-				ok = !found || sameInstance(ev, x.Ident.Owner, in.rec) || others.entries[x]
+				ok = !found || sameInstance(ev, x.Ident.Owner, in.rec) || others.entries[x] || fromSource(ev, x, in.rec)
 			}
 		}
 		if !ok {
@@ -168,6 +168,17 @@ func ownerProblems(ev *eval.Evaluator, v value.Value, name string, others elsewh
 		}
 	})
 	return out
+}
+
+// fromSource reports en, unchanged, an entry its owner holds, that owner no version of in, the
+// instance enclosing en: a spread copy of a value no let holds (a function's result, a literal)
+// keeps its source's entries (DECISIONS 492).
+func fromSource(ev *eval.Evaluator, en, in *value.Record) bool {
+	if len(en.Ident.Coll.FieldPath) == 0 || ev.VersionOf(in, en.Ident.Owner) {
+		return false
+	}
+	e := entryOf(en.Ident.Owner, en.Ident.Coll.FieldPath[0], en.Ident.Key)
+	return e != nil && value.Equal(e, en) && slices.Equal(e.Fields, en.Fields)
 }
 
 // refOwned reports a bound level-1 ref equal to the entry of its key in its nearest instance, or
