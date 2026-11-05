@@ -88,11 +88,15 @@ func overlaps(p, q string) bool {
 	return within(p, q, pathMarks, true) || within(q, p, pathMarks, true)
 }
 
-// undoLine is err, an inverse's refusal at path, named by the operation that path falls on.
+// undoLine is err, an inverse's refusal at path, named by the operation that path falls on; a
+// failure no inverse causes stays as it is (fatal).
 func undoLine(path string, err error) error {
-	var ne *NotEditableError
-	if !errors.As(err, &ne) {
+	if fatal(err) {
 		return err
 	}
-	return &undoLineError{line: path, err: ne}
+	var ne *NotEditableError
+	if errors.As(err, &ne) {
+		err = ne
+	}
+	return &undoLineError{line: path, err: err}
 }

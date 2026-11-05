@@ -98,6 +98,9 @@ func (s *Snapshot) edit(ctx context.Context, req EditRequest) (*EditOutcome, err
 	if err := s.staleConsulted(ctx, req.Base, out); err != nil {
 		return nil, err
 	}
+	if err := s.undoChecked(ctx, req, out); err != nil {
+		return nil, err
+	}
 	if out.Checked.Summary.Errors > 0 && !req.AllowErrors {
 		return out, ErrRejected
 	}
@@ -242,6 +245,17 @@ func (o *EditOutcome) recheck(ctx context.Context, a *build.Analysis, owners []s
 		return err
 	}
 	return at.keepEvent(ctx, checked, o.layers)
+}
+
+// undoChecked refuses a base edit made with AllowErrors whose Undo an operation would refuse,
+// judged on the re-check's analysis of its result, which a clean edit adds no analysis to (API.md
+// E22, E17a; DECISIONS 273, 466).
+func (s *Snapshot) undoChecked(ctx context.Context, req EditRequest, o *EditOutcome) error {
+	if !req.AllowErrors || req.EditLayer != "" || o.checked == nil {
+		return nil
+	}
+	env := edit.Env{Project: o.After.b, Host: req.Host, Verdicts: &s.p.verdicts}
+	return edit.CheckUndo(ctx, env, edit.NewSnapshot(o.checked), o.Plan)
 }
 
 // commit writes o's changes through s, journaled (API.md N10), named by the revision they give,

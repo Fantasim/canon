@@ -1295,7 +1295,9 @@ inside the same edit and reports it, so every client behaves the same.
 - **E21.** Order of checks before writing: for each op in turn, path syntax, path resolution,
   editability, op/container kind, value types (V1), then its application in memory (E1); then the
   cascades (§8.5); then, over the files the ops write (known only now), overlays (S12), staleness
-  (S5) and the canonical-layout check (§9.4); then the re-check (E18, E19); then the write (§10).
+  (S5) and the canonical-layout check (§9.4); then the re-check (E18, E19); then, with
+  `AllowErrors` off an edit layer, the Undo check of E22 on the re-check's analysis (DECISIONS
+  474); then the write (§10).
   The first failing step decides the error. For `RenameName`: request (E31), name (E27), kind
   (E28, E29), new name (E30), base (E32), application (E33, E34), overlays, staleness and layout,
   re-check, preservation (E35), write.

@@ -191,9 +191,10 @@ func asIO(err error) error {
 // OpError is the refusal of operation Index of an edit, whose path was Path as given; Err is
 // what refused it (a *PathError, *ValueError, *NotEditableError or a sentinel of this package).
 type OpError struct {
-	Index int
-	Path  string
-	Err   error
+	Index   int
+	Path    string
+	Err     error
+	Inverse string // the Undo check's refused inverse, whose segments a *PathError's Seg counts (E22)
 }
 
 func (e *OpError) Error() string {
@@ -237,11 +238,11 @@ func (e *StaleError) Error() string {
 // Unwrap is ErrStale.
 func (e *StaleError) Unwrap() error { return ErrStale }
 
-// undoLineError is the Undo check refusing to write back line, a path of the edit layer no Source
-// states; Apply names it by the operation editing that line (undoRefusal).
+// undoLineError is the Undo check refusing the inverse at path line with err, any refusal an
+// operation gives (API.md E22); Apply names it by the operation editing that path (undoRefusal).
 type undoLineError struct {
 	line string
-	err  *NotEditableError
+	err  error
 }
 
 func (e *undoLineError) Error() string { return e.err.Error() }

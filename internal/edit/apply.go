@@ -47,6 +47,7 @@ type Plan struct {
 	NameClash    string                 // a RenameName's ambiguous occurrence, which E35 refuses after the re-check
 	NameEdits    map[string]NameEdit    // a RenameName's identifiers inserted and removed, by file (E35)
 	writes       map[string][]writeStep // each changed file's writes, for tests of M6
+	asked        asked                  // its operations, which name a refusal of its Undo (CheckUndo)
 }
 
 // Locked is an id an edit adds or retires, as canon.lock names its collection (API.md E20).
@@ -101,31 +102,47 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 	if err == nil {
 		err = a.undoReplayed(undo)
 	}
+	p.asked = asked{ops: req.Ops, paths: a.opPaths}
 	if err != nil {
-		return nil, a.undoRefusal(req.Ops, err)
+		return nil, p.asked.undoRefusal(err)
 	}
 	p.Undo = undo
 	return p, nil
 }
 
+// asked are an edit's operations as given and each one's canonical path, which name a refusal of
+// its Undo (undoRefusal).
+type asked struct {
+	ops   []Operation
+	paths map[int]string
+}
+
 // undoRefusal is a refusal of the Undo check named by the operation it falls on, as every refusal
 // is (API.md W5): the first editing the line its Undo cannot write back, else the last.
-func (a *applier) undoRefusal(ops []Operation, err error) error {
+func (q asked) undoRefusal(err error) error {
 	var ne *NotEditableError
-	if !errors.As(err, &ne) || len(ops) == 0 {
-		return refusal(err)
-	}
-	i := len(ops) - 1
 	var ul *undoLineError
-	if errors.As(err, &ul) {
-		for k := range ops {
-			if p, ok := a.opPaths[k]; ok && (within(p, ul.line, pathMarks, true) || within(ul.line, p, pathMarks, true)) {
-				i = k
-				break
-			}
+	last := len(q.ops) - 1
+	switch {
+	case len(q.ops) == 0:
+		return refusal(err)
+	case errors.As(err, &ul):
+		i := q.lineOp(ul.line)
+		return &OpError{Index: i, Path: q.ops[i].Path, Err: refusal(ul.err), Inverse: ul.line}
+	case errors.As(err, &ne):
+		return &OpError{Index: last, Path: q.ops[last].Path, Err: ne}
+	}
+	return refusal(err)
+}
+
+// lineOp is the first operation whose path is line, above or below it, else the last.
+func (q asked) lineOp(line string) int {
+	for k := range q.ops {
+		if p, ok := q.paths[k]; ok && (within(p, line, pathMarks, true) || within(line, p, pathMarks, true)) {
+			return k
 		}
 	}
-	return &OpError{Index: i, Path: ops[i].Path, Err: ne}
+	return len(q.ops) - 1
 }
 
 // refusal is err as Apply returns it: a refusal this package names or a failure to read the

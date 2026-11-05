@@ -4948,3 +4948,22 @@ round 2", "PS1 review", "PS2 round 2"):
      the field it is read through and the entry that field holds, so renaming such an entry rewrites
      its value reads as a plain field's rename does. Reason: v0.3 run (EDIT-RENAMEOPT): the rename
      missed `aa.second.oo?.x` and E19 refused it.
+
+474. **An edit whose Undo an operation would refuse is refused before anything is written (API.md
+     E19, E21, E22, E23, W5, V13; clarifies 273 and 466).** 273's plain Undo returned unverified
+     exempts only the verification of values: each inverse is still judged as `Apply` would apply
+     it. With `AllowErrors`, an edit one of whose inverses an operation would refuse is refused with
+     that refusal, named by the first operation on the inverse's line (W5); every refusal counts
+     (`layered` where the edit leaves an active layer's line below the path in error, `ErrNoValue`
+     where E19's source repair does not reach the inverse: a let a layer amends, a field below a
+     record let, a whole root table, a `load.dir` table), returned as it is (`errors.Is`). Without
+     `AllowErrors`, a root the edit leaves without a value, or a layer line it breaks, is the
+     re-check's: E19 refuses with the result and the findings (the layer's `E1905` names it). A
+     Draft (V13) is never written and is never refused for its Undo. The check for an active
+     layer's line near an inverse runs in `Apply`; the no-value check runs after the re-check, on
+     its own analysis, and replays the Undo only when an inverse lands on a root that analysis has
+     no value of, so a clean edit adds no analysis (E17a, NFR-01); it relies on an amendment never
+     giving a value to a base that has none. `Editable` is path-only: a refusal that depends on the
+     value (a `SetCase`, a `Set` to another case, an optional to `none`, a list shorter than an
+     amended index) is `Apply`'s alone. Reason: v0.3 run (EDIT-SETCASEUNDO rounds 1-5): such edits
+     were written with an Undo that could not be applied.

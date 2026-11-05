@@ -2,7 +2,6 @@ package edit
 
 import (
 	"context"
-	"errors"
 	"slices"
 
 	"github.com/fantasim/canonlang/internal/build"
@@ -87,10 +86,17 @@ func (a *applier) prefixVerdict(s *Snapshot, p Path, op Operation) error {
 		}
 		return nil
 	}
-	if a.replaying {
+	if a.replaying && a.recheckOwns(p) {
 		return nil // a root the edit leaves uncomputed is the re-check's (E19; DECISIONS 273)
 	}
 	return s.lineVerdict(p)
+}
+
+// recheckOwns reports an inverse at p the replay leaves to E19 or 273: without AllowErrors, or when
+// the base also computes no p's root; with AllowErrors, a layer's line in error that its Undo would
+// meet refuses the edit `layered` (API.md E22, W10; DECISIONS 466).
+func (a *applier) recheckOwns(p Path) bool {
+	return !a.allowErrors || a.snap.unvalued(p.String())
 }
 
 // lineVerdict is the `layered` refusal of an active layer with a line on, above or below p, whose
@@ -141,9 +147,9 @@ func (a *applier) sessionDefault(path string, v value.Value) bool {
 	return ok && d.CanonText() == v.CanonText()
 }
 
-// undoReplayed refuses a base edit whose Undo would be refused (API.md E22): when an active layer's
-// line lies near an inverse, the Undo is planned as this edit is, each inverse judged by the session
-// in the state the inverses before it leave; nothing is written.
+// undoReplayed refuses a base edit whose Undo would be refused (API.md E22), with that refusal: the
+// Undo is planned as this edit is, each inverse judged, by the session when layers are active, in the
+// state the inverses before it leave; nothing is written (DECISIONS 466, 273).
 func (a *applier) undoReplayed(undo []Operation) error {
 	if a.session == nil || !a.layerBlockable(undo) {
 		return nil
@@ -157,17 +163,38 @@ func (a *applier) undoReplayed(undo []Operation) error {
 	b := newApplier(a.ctx, env, a.snap)
 	b.selected = a.selected
 	b.session = &sessionView{project: a.session.project.Over(over)}
-	b.replaying = true
+	b.replaying, b.allowErrors = true, a.allowErrors
+	return b.replay(undo, a.snap)
+}
+
+// replay applies undo's inverses in turn as the replaying a, the first refusal named by its path;
+// without AllowErrors, one on a root result, the edit's, has no value of is the re-check's (E19).
+func (a *applier) replay(undo []Operation, result *Snapshot) error {
 	for i, op := range undo {
-		b.step = i
-		err := b.operation(op)
-		var ne *NotEditableError
+		a.step = i
+		err := a.operation(op)
 		switch {
-		case errors.As(err, &ne):
+		case err == nil:
+		case !a.allowErrors && result.unvalued(op.Path):
+			return nil
+		default:
 			return undoLine(op.Path, err)
-		case err != nil && fatal(err):
-			return err
 		}
 	}
 	return nil
+}
+
+// unvalued reports a path whose root, a let or const, has no value in s; false for a path naming
+// none, or a RenameName's name.
+func (s *Snapshot) unvalued(path string) bool {
+	p, err := Parse(path)
+	if err != nil {
+		return false
+	}
+	root := Path{Package: p.Package, Root: p.Root}
+	if r, err := s.lookup(root); err != nil || r.enum != nil {
+		return false
+	}
+	_, valued := s.resolves(root)
+	return !valued
 }

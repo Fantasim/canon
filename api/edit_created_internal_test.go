@@ -53,11 +53,13 @@ func createdOpen(t *testing.T, linked bool) *Project {
 	return p
 }
 
-// createdCase is an edit of the walk test, and whether it is accepted, adding no error to check.
+// createdCase is an edit of the walk test, whether it is accepted, adding no error to check, and
+// whether its Undo is dead once made with AllowErrors (E22), which refuses it so.
 type createdCase struct {
 	name  string
 	ops   []Op
 	clean bool
+	dead  bool
 }
 
 // API.md E17, E18, E19 (DECISIONS 330): an edit of a file a load.dir walk reads, in a directory it
@@ -65,12 +67,13 @@ type createdCase struct {
 // it leaves. b's base appears with the first potion; a's goes with its last item.
 func TestEditCreatedUnderWalk(t *testing.T) {
 	cases := []createdCase{
-		{"a potion, b's base created", []Op{AddEntry("a:items", Key("pot"), Source("{ kind: potion }"))}, true},
-		{"a potion over d's bound, through d's dangling link", []Op{AddEntry("a:items", Key("pot"), Source("{ kind: potion, v: 2 }"))}, false},
-		{"a weapon over c's bound", []Op{AddEntry("a:items", Key("big"), Source("{ kind: weapon, v: 4 }"))}, false},
-		{"a weapon over a's bound", []Op{AddEntry("a:items", Key("huge"), Source("{ kind: weapon, v: 7 }"))}, false},
-		{"a weapon removed", []Op{Remove("a:items.axe")}, true},
-		{"every weapon removed, a's base with them", []Op{Remove("a:items.axe"), Remove("a:items.bow")}, false},
+		{"a potion, b's base created", []Op{AddEntry("a:items", Key("pot"), Source("{ kind: potion }"))}, true, false},
+		{"a potion over d's bound, through d's dangling link", []Op{AddEntry("a:items", Key("pot"), Source("{ kind: potion, v: 2 }"))}, false, false},
+		{"a weapon over c's bound", []Op{AddEntry("a:items", Key("big"), Source("{ kind: weapon, v: 4 }"))}, false, false},
+		{"a weapon over a's bound", []Op{AddEntry("a:items", Key("huge"), Source("{ kind: weapon, v: 7 }"))}, false, false},
+		{"a weapon removed", []Op{Remove("a:items.axe")}, true, false},
+		// a's items then have no value, and no AddEntry into the load.dir that lost them applies
+		{"every weapon removed, a's base with them", []Op{Remove("a:items.axe"), Remove("a:items.bow")}, false, true},
 	}
 	for _, linked := range []bool{false, true} {
 		for _, c := range cases {
@@ -95,12 +98,16 @@ func runCreated(t *testing.T, linked bool, c createdCase) {
 		t.Errorf("linked %v, %s: %v, want ErrRejected", linked, c.name, err)
 	}
 	if !c.clean {
-		if _, err = p.Edit(ctx, Edit{Ops: c.ops, AllowErrors: true}); err != nil {
+		_, err = p.Edit(ctx, Edit{Ops: c.ops, AllowErrors: true})
+		switch {
+		case c.dead && !errors.Is(err, ErrNoValue):
+			t.Errorf("API.md E22, linked %v, %s: %v with AllowErrors, want ErrNoValue (its Undo is dead)", linked, c.name, err)
+		case !c.dead && err != nil:
 			t.Fatal(err)
 		}
 	}
 	after := checkErrors(t, p)
-	if added := slices.ContainsFunc(after, func(e string) bool { return !slices.Contains(before, e) }); added == c.clean {
+	if added := slices.ContainsFunc(after, func(e string) bool { return !slices.Contains(before, e) }); added != (!c.clean && !c.dead) {
 		t.Errorf("linked %v, %s: canon check's errors went from %v to %v", linked, c.name, before, after)
 	}
 }

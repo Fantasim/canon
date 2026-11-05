@@ -1,6 +1,7 @@
 package canon
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"slices"
@@ -44,7 +45,7 @@ func (p *Project) editError(ctx context.Context, err error, lang string) error {
 	case ctx.Err() != nil:
 		return ctx.Err()
 	case errors.As(err, &oe):
-		return p.opError(ctx, refused{op: oe.Index, path: oe.Path, lang: lang}, oe.Err)
+		return p.opError(ctx, refused{op: oe.Index, path: oe.Path, inverse: oe.Inverse, lang: lang}, oe.Err)
 	case errors.As(err, &ov):
 		return &PathError{Op: -1, Path: ov.File, Err: ErrOverlay}
 	case errors.As(err, &nc):
@@ -54,11 +55,13 @@ func (p *Project) editError(ctx context.Context, err error, lang string) error {
 }
 
 // refused is the operation a refusal is about: its index and path as given (-1 and "" for none),
-// and the language of the findings it carries, "" for Options.Lang (R6a, DECISIONS 345).
+// the path of the inverse an Undo check refused ("" for none, E22), and the language of the
+// findings it carries, "" for Options.Lang (R6a, DECISIONS 345).
 type refused struct {
-	op   int
-	path string
-	lang string
+	op      int
+	path    string
+	inverse string
+	lang    string
 }
 
 // opError is edit's refusal of the operation at, as the API's.
@@ -119,7 +122,7 @@ func sentinelError(op int, path string, err error) error {
 // op's index; a value that was not computed is explained by the analysis Apply read it in, never
 // by reading the project again (log-2026-09-29 M4 U5b-r).
 func (p *Project) pathError(ctx context.Context, at refused, err error, pe *edit.PathError) error {
-	parsed, perr := edit.Parse(at.path)
+	parsed, perr := edit.Parse(cmp.Or(at.inverse, at.path)) // pe.Seg counts the inverse's segments
 	if perr != nil {
 		return internalError(perr)
 	}
