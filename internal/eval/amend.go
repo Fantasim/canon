@@ -23,7 +23,11 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	if nv == nil {
 		return nil
 	}
-	return r.copied(cur, r.ev.replaced(cur, i, nil, r.ev.withIdent(nv, elems[i], fresh)))
+	el := r.ev.withIdent(nv, elems[i], fresh)
+	if rec, isRec := el.(*value.Record); isRec {
+		r.moving().placed[rec] = true // the amended instance's own entry, its key kept (TYPES.md §6.3)
+	}
+	return r.copied(cur, r.ev.replaced(cur, i, nil, el))
 }
 
 // slotOf is the element a segment names: its index, -1 for a key the collection lacks.

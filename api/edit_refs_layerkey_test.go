@@ -140,9 +140,9 @@ func layerCopySrc(k string) string {
 		"let bb: A = { ...aa.second, id: \"third\" }\n"
 }
 
-// API.md R7, E11, E22 (DECISIONS 410, 473): a key segment through a spread copy names the source's
-// entry, a `layer` ref rewritten once, none of first's. Inactive only until EVAL-LAYERSPREAD: an
-// active amend re-owns bb's copied entries, against DECISIONS 410.
+// API.md R7, E11, E22 (DECISIONS 410, 473, 484): inactive, a key segment through a spread copy names
+// the source's entry, a `layer` ref rewritten once, none of first's; active, the line it amends
+// makes bb's x bb's own, whose ref it is once, and whose key the spread computes.
 func TestRefsLayerKeySegmentThroughACopy(t *testing.T) {
 	layer := func(k string) string {
 		return "package p\nlayer dev\n\namend bb {\n  oo." + k + ".w: 1\n}\n"
@@ -156,6 +156,7 @@ func TestRefsLayerKeySegmentThroughACopy(t *testing.T) {
 		srcMain:     formatted(t, srcMain, strings.Replace(layerCopySrc("x"), "first\", oo: [{ k: \"x\"", "first\", oo: [{ k: \"y\"", 1)),
 		sharedLayer: formatted(t, sharedLayer, layer("x")),
 	}}.run(t)
+	sharedRow{l: sharedLevel{path: "p:bb.oo[x]"}, layers: []string{"dev"}, before: files("x"), want: want, refused: canon.ReasonComputed}.run(t)
 }
 
 // layerRefKeySrc is mobs and zs, whose zones' spawns are keyed by a ref to a mob: both spawn mob k,

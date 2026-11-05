@@ -79,33 +79,57 @@ func (e *Evaluator) transfer(rec, cp *value.Record, mv *moves) {
 		return
 	}
 	if !mv.isFresh(cp) { // a fresh copy's entries are adopted when its let settles
-		e.adoptInto(cp, nil)
+		e.adoptInto(cp, rec, nil) // no amendment's moves: it never completes cp in place
 	}
 	e.rebindFields(cp, &binder{e: e, owned: owned, rt: recordOf(cp.T), owner: cp, inst: e.instance(rec), mode: modeRebind, mv: mv})
 }
 
-// adoptInto gives rec's collection fields rec as owner; a fresh entry takes it in place, so the
-// refs bound to that entry stay bound to it, and a copy of a fresh collection is fresh.
-func (e *Evaluator) adoptInto(rec *value.Record, fresh map[value.Value]bool) {
+// adoptInto makes rec, a copy of from, own its fields' entries from's instance owns, none does,
+// or mv's amendments built, a fresh one in place so the refs bound to it stay bound; another
+// instance's entry stays its own, as a spread copy's unwritten field holds (DECISIONS 410, 478).
+func (e *Evaluator) adoptInto(rec, from *value.Record, mv *moves) {
 	rt := recordOf(rec.T)
 	if rt == nil {
 		return
 	}
+	holds := &ownerFilter{e: e, inst: e.instance(from), mv: mv}
 	for i, f := range fieldsOf(rec.T) {
 		c := e.fieldColl(rt, f)
 		if c == nil || i >= len(rec.Fields) || rec.Fields[i] == nil {
 			continue
 		}
 		for _, el := range std.Elems(rec.Fields[i]) {
-			if en, ok := el.(*value.Record); ok && fresh[en] && en.Ident != nil {
+			if en, ok := el.(*value.Record); ok && mv.isFresh(en) && en.Ident != nil {
 				en.Ident = &value.Identity{Coll: c, Owner: rec, Key: en.Ident.Key, Retired: en.Ident.Retired}
 			}
 		}
 		old := rec.Fields[i]
-		if rec.Fields[i] = e.adopt(old, c, rec); fresh[old] && rec.Fields[i] != old {
-			fresh[rec.Fields[i]] = true
+		if rec.Fields[i] = e.adoptOf(old, c, rec, holds); mv.isFresh(old) && rec.Fields[i] != old {
+			mv.fresh[rec.Fields[i]] = true
 		}
 	}
+}
+
+// ownerFilter holds the entries a copy of inst adopts: inst's, no instance's, and those mv's
+// amendments built; nil holds every entry. It remembers the last owner met, as a field's entries
+// mostly share one.
+type ownerFilter struct {
+	e    *Evaluator
+	inst *value.Record
+	mv   *moves
+	last *value.Record
+	ok   bool
+}
+
+// has reports en, an entry, one of o's.
+func (o *ownerFilter) has(en *value.Record) bool {
+	if o == nil || en.Ident.Owner == nil || o.mv.made(en) {
+		return true
+	}
+	if en.Ident.Owner != o.last {
+		o.last, o.ok = en.Ident.Owner, o.e.instance(en.Ident.Owner) == o.inst
+	}
+	return o.ok
 }
 
 // keyAt is the position of key k in m, -1 when absent; a ref key names an instance (EVALUATION.md §4.2).

@@ -5164,3 +5164,21 @@ round 2", "PS1 review", "PS2 round 2"):
      never reaches `ErrInternal` (X2); a file that does not parse can be neither judged nor
      normalized (M9); and the layout step keeps E21's order the same as for a file that is only not
      in canonical layout.
+
+486. **A let's amendments own the entries they build; a spread copy's other entries keep their
+     source's identity (EVALUATION.md §9.3; TYPES.md §6.3, §7.5; API.md R7; follows 79, 410, 478,
+     484).** An entry a let's amendments build belongs to the amended instance's field, with its key
+     kept: an entry amended at or below it, an entry replaced whole by any value, and the entries
+     of a field a line writes whole. An entry the amendments leave unchanged keeps the identity it
+     had, so a spread copy's unwritten field still holds its source's entries. An entry replaced by
+     an existing value is a copy of that value and shares its instance (79). One identity names one
+     content: a ref converted from an entry dereferences to that entry, and `==` between entries of
+     different content is false. In §9.3 step 3 a field a spread supplied counts as written, so
+     amending the spreading record re-derives only the defaults that record applied itself. Under an
+     active layer the key segment of a line that amends at or below an entry reached through a
+     spread copy (`amend bb { oo.x.w: 1 }`) names the entry that line makes the copy's own: a
+     `layer` ref of `p:bb.oo[x]`, listed once, and none of `p:aa[second].oo[x]`; with the layer
+     inactive it names the source's entry (484). A key read in the line's right-hand side stays a
+     `layer` ref of the entry it reads. Reason: v0.3 run (EVAL-LAYERSPREAD): a layer amendment of
+     a spread copy left the source's identity on content it had changed, so a ref dereferenced to
+     the wrong content, and an amendment of a sibling field re-owned every entry (a false E3503).

@@ -181,12 +181,17 @@ func (e *Evaluator) inField(v value.Value, rec *value.Record, f *types.Field) va
 // adopt gives the entries of a table or keyed list the identity of collection c (owned by
 // owner for a field), copying the entries that have another.
 func (e *Evaluator) adopt(v value.Value, c *types.Collection, owner *value.Record) value.Value {
+	return e.adoptOf(v, c, owner, nil)
+}
+
+// adoptOf is adopt of the entries of holds only, every entry when holds is nil.
+func (e *Evaluator) adoptOf(v value.Value, c *types.Collection, owner *value.Record, holds *ownerFilter) value.Value {
 	switch x := v.(type) {
 	case *value.Table:
 		entries := make([]*value.Record, len(x.Entries))
 		changed := false
 		for i, en := range x.Entries {
-			entries[i] = e.adoptEntry(en, c, owner)
+			entries[i] = e.adoptEntry(en, c, owner, holds)
 			changed = changed || entries[i] != en
 		}
 		if changed {
@@ -199,7 +204,7 @@ func (e *Evaluator) adopt(v value.Value, c *types.Collection, owner *value.Recor
 			rec, ok := el.(*value.Record)
 			elems[i] = el
 			if ok && rec.Ident != nil {
-				elems[i] = e.adoptEntry(rec, c, owner)
+				elems[i] = e.adoptEntry(rec, c, owner, holds)
 			}
 			changed = changed || elems[i] != el
 		}
@@ -210,8 +215,8 @@ func (e *Evaluator) adopt(v value.Value, c *types.Collection, owner *value.Recor
 	return v
 }
 
-func (e *Evaluator) adoptEntry(en *value.Record, c *types.Collection, owner *value.Record) *value.Record {
-	if en.Ident == nil || en.Ident.Coll == c && en.Ident.Owner == owner {
+func (e *Evaluator) adoptEntry(en *value.Record, c *types.Collection, owner *value.Record, holds *ownerFilter) *value.Record {
+	if en.Ident == nil || en.Ident.Coll == c && en.Ident.Owner == owner || !holds.has(en) {
 		return en
 	}
 	return e.withIdentity(en, &value.Identity{Coll: c, Owner: owner, Key: en.Ident.Key, Retired: en.Ident.Retired}, false)

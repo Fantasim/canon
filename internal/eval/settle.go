@@ -8,15 +8,22 @@ import (
 )
 
 // moves are the copies one let's amendments made, until it settles: the values they built,
-// which no one else holds, and each of those instances replaced by a copy since.
+// which no one else holds, each of those instances replaced by a copy since, and the entries
+// they put in a slot, which may share fields with another value.
 type moves struct {
 	fresh   map[value.Value]bool
 	lineage map[*value.Record]*value.Record
+	placed  map[*value.Record]bool
 }
 
 // isFresh reports a value the amendments built, which settle may complete in place.
 func (m *moves) isFresh(v value.Value) bool {
 	return m != nil && m.fresh[v]
+}
+
+// made reports an entry the amendments built or placed: the amended instance's own (TYPES.md §6.3).
+func (m *moves) made(en *value.Record) bool {
+	return m != nil && (m.fresh[en] || m.placed[en])
 }
 
 // follow records that cp replaces v: fresh when v is, then the latest copy of v's instance.
@@ -56,7 +63,7 @@ func (r *run) copied(from, to value.Value) value.Value {
 
 func (r *run) moving() *moves {
 	if r.mv == nil {
-		r.mv = &moves{fresh: map[value.Value]bool{}, lineage: map[*value.Record]*value.Record{}}
+		r.mv = &moves{fresh: map[value.Value]bool{}, lineage: map[*value.Record]*value.Record{}, placed: map[*value.Record]bool{}}
 	}
 	return r.mv
 }
@@ -68,7 +75,7 @@ func (r *run) moved(old, cp *value.Record) {
 		mv.lineage[old] = cp
 		return
 	}
-	r.ev.adoptInto(cp, r.mv.fresh) // old may be another value's: its copy owns its entries at once
+	r.ev.adoptInto(cp, old, r.mv) // old may be another value's: its copy owns its entries at once
 }
 
 // boundKey is a path's ref key bound to the nearest amended instance owning its target (EVALUATION.md §9.2).
@@ -109,6 +116,6 @@ func (r *run) settleIn(v value.Value, done map[value.Value]bool) {
 		r.settleIn(c, done)
 	}
 	if rec, ok := v.(*value.Record); ok {
-		r.ev.adoptInto(rec, r.mv.fresh)
+		r.ev.adoptInto(rec, rec, r.mv)
 	}
 }

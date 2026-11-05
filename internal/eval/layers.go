@@ -164,6 +164,9 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 	}
 	cp := *rec
 	cp.Fields, cp.Set = append([]value.Value(nil), rec.Fields...), append([]bool(nil), rec.Set...)
+	if len(segs) == 1 { // a field the amendment writes holds its own entries (DECISIONS 478)
+		nv = r.ev.inField(nv, &cp, f)
+	}
 	cp.Fields[i], cp.Set[i] = nv, true
 	r.moved(rec, &cp)
 	r.ev.shareParams(rec, &cp) // its re-derived defaults read the same arguments (TYPES.md §11.1)
@@ -208,14 +211,14 @@ func unwrapOptional(t types.Type) types.Type {
 	return t
 }
 
-// derive re-evaluates, in declaration order, the fields after field i that came from their
-// defaults (not written, not amended); changed marks i and each one re-derived from it.
+// derive re-evaluates, in declaration order, the fields after field i that came from rec's own
+// defaults (not written, not spread, not amended); changed marks i and each one re-derived from it.
 func (r *run) derive(rec *value.Record, i int, at *vpath) bool {
 	fields := fieldsOf(rec.T)
 	changed := make([]bool, len(fields))
 	changed[i] = true
 	for j, f := range fields {
-		if j <= i || rec.Set[j] || f.Default == nil || f.Input != nil {
+		if j <= i || rec.Set[j] || f.Default == nil || f.Input != nil || spreadCopied(rec.Fields[j]) {
 			continue
 		}
 		changed[j] = r.ev.readsChanged(f, fields, changed)
@@ -226,6 +229,15 @@ func (r *run) derive(rec *value.Record, i int, at *vpath) bool {
 		rec.Fields[j] = r.ev.inField(v, rec, f)
 	}
 	return true
+}
+
+// spreadCopied reports a field value a spread copied: written for §9.3 step 3 (EVALUATION.md).
+func spreadCopied(v value.Value) bool {
+	if v == nil {
+		return false
+	}
+	p := v.Prov()
+	return p != nil && p.Kind == value.ProvSpread
 }
 
 // tableName is the let an amendment adds a stable entry under, "" for a field change.

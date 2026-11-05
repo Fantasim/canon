@@ -519,7 +519,10 @@ else reads `v`**:
      (LOCK.md). A keyed list or list never grows.
 3. **Derived defaults follow**: when an amendment replaces field `f` of an instance, every
    later field of that instance whose value came from its default (not written in the source or
-   file, not amended) is re-evaluated, in declaration order. An applied-record field written in
+   file, not amended, not supplied by a spread) is re-evaluated, in declaration order. A field a
+   spread supplied counts as written: a spread copy keeps the value, and the entries, its source's
+   default gave, even when that default reads a field the line amends (DECISIONS 486). An
+   applied-record field written in
    the source keeps the arguments it was built with (TYPES.md §11.1): amending the argument it
    depends on leaves it applied to the old one, which verification reports as `E3802`; a
    defaulted one is re-derived and takes the new argument.
