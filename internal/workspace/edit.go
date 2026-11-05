@@ -169,18 +169,41 @@ func (s *Snapshot) listings(abs string) []string {
 }
 
 // refuse is the first refusal of a plan after its operations (API.md E21): a file with an
-// overlay (S12), a stale base (S5), then files not in canonical layout without Normalize (M9).
+// overlay (S12), a stale base (S5), then a file that does not parse, then files not in canonical
+// layout without Normalize (M9).
 func (s *Snapshot) refuse(ctx context.Context, req EditRequest, a *build.Analysis, plan *edit.Plan, owners []string) error {
-	if err := s.noOverlay(a, plan.Changes); err != nil {
+	if err := s.noOverlay(a, written(plan)); err != nil {
 		return err
 	}
 	if err := s.staleFor(ctx, req.Base, a, owners); err != nil {
+		return err
+	}
+	if err := unparsed(plan); err != nil {
 		return err
 	}
 	if len(plan.NotCanonical) > 0 && !req.Normalize {
 		return &NotCanonicalError{Files: slices.Clone(plan.NotCanonical)}
 	}
 	return nil
+}
+
+// written are the changes plan makes and the files it would write but cannot print into, which
+// the overlay check (S12) judges like the others (API.md E21).
+func written(plan *edit.Plan) []edit.Change {
+	out := slices.Clone(plan.Changes)
+	for _, bad := range plan.Unparsed {
+		out = append(out, edit.Change{Kind: edit.ChangeModified, Path: bad.File})
+	}
+	return out
+}
+
+// unparsed is the first file of plan, in path order, that it must write and that does not parse,
+// refused whatever Normalize and AllowErrors say: it cannot be laid out nor printed into (API.md M9).
+func unparsed(plan *edit.Plan) error {
+	if len(plan.Unparsed) == 0 {
+		return nil
+	}
+	return plan.Unparsed[0]
 }
 
 // noOverlay is an *OverlayError for the first file changes write whose real path an overlay

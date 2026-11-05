@@ -43,6 +43,7 @@ type Plan struct {
 	Touched      []string
 	Unowned      []string
 	NotCanonical []string
+	Unparsed     []*UnparsedError // files it would write that do not parse, in path order (M9, E21)
 	Locked       []Locked
 	NameClash    string                 // a RenameName's ambiguous occurrence, which E35 refuses after the re-check
 	NameEdits    map[string]NameEdit    // a RenameName's identifiers inserted and removed, by file (E35)
@@ -66,8 +67,8 @@ type Dropped struct {
 }
 
 // Apply computes req against base in memory: each operation against the state the previous ones
-// left, analyzed again (E1); a refusal is an *OpError. A file not in canonical layout is
-// normalized first and listed in NotCanonical, for the caller to refuse without Normalize (M9).
+// left, analyzed again (E1); a refusal is an *OpError. A file not in canonical layout is normalized
+// and listed in NotCanonical, one that does not parse left alone and listed in Unparsed (M9, E21).
 func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, error) {
 	switch {
 	case env.Project == nil:
@@ -387,6 +388,9 @@ func (a *applier) finish() (*Plan, error) {
 		if a.files[display].normalized {
 			p.NotCanonical = append(p.NotCanonical, display)
 		}
+		if bad := a.files[display].bad; bad != nil {
+			p.Unparsed = append(p.Unparsed, bad)
+		}
 	}
 	p.Changes = a.netChanges(p.writes)
 	for _, ops := range slices.Backward(a.undo) {
@@ -398,10 +402,20 @@ func (a *applier) finish() (*Plan, error) {
 		return nil, err
 	}
 	p.Changes = append(p.Changes, dirs...)
-	p.Touched, p.Unowned = a.owned(p.Changes)
+	p.Touched, p.Unowned = a.owned(slices.Concat(p.Changes, unparsedChanges(p.Unparsed)))
 	p.Locked = slices.Compact(slices.SortedFunc(slices.Values(a.locked), compareLocked))
 	slices.SortStableFunc(p.Dropped, func(x, y Dropped) int { return strings.Compare(x.Path, y.Path) })
 	return p, nil
+}
+
+// unparsedChanges are the files that do not parse as the changes they would have been, whose
+// packages the plan touches all the same (E17).
+func unparsedChanges(bad []*UnparsedError) []Change {
+	out := make([]Change, 0, len(bad))
+	for _, u := range bad {
+		out = append(out, Change{Kind: ChangeModified, Path: u.File})
+	}
+	return out
 }
 
 // owned are the packages owning a file the changes write (E17) and the files they write that no

@@ -1,5 +1,7 @@
 package edit
 
+import "github.com/fantasim/canonlang/internal/jsonsrc"
+
 // expanders turn a Change into the files a commit writes or removes, by kind (API.md §8.1, N8).
 var expanders = [...]func(Change) []commitFile{
 	ChangeModified:   modifiedFiles,
@@ -44,3 +46,6 @@ var fitters = [...]func(*Snapshot, resolution) bool{
 var literalOps = [...]func(*judge) bool{
 	OpSet: literalSet, OpReset: literalReset, OpAddEntry: literalAddEntry, OpRemove: literalRemove,
 }
+
+// jsonUnparsed are the failures that make a JSON source a file that does not parse (M9).
+var jsonUnparsed = [...]error{jsonsrc.ErrSyntax, jsonsrc.ErrDuplicateKey, jsonsrc.ErrEncoding}

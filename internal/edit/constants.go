@@ -222,7 +222,7 @@ const (
 var refusals = [...]error{
 	ErrBadPath, ErrNoPath, ErrAmbiguousPath, ErrNoValue, ErrNotAnalyzed, ErrForeign, ErrBadValue, ErrBadOp,
 	ErrNoHost, ErrNotEditable, ErrKeyExists, ErrStableKey, ErrPathCollision, ErrNoProject, ErrInternal, ErrUnwritable,
-	ErrNameClash, context.Canceled, context.DeadlineExceeded,
+	ErrNameClash, ErrUnparsed, context.Canceled, context.DeadlineExceeded,
 }
 
 // reasonNames are the names of API.md §7.2's rows, which a NotEditableError prints.

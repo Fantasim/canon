@@ -5149,3 +5149,18 @@ round 2", "PS1 review", "PS2 round 2"):
      run (EDIT-REFSAMEND): `Refs` never listed these segments, a segment reached through a copy or
      another package's layer was left stale by a rename, and a ref-typed `.k` was not listed where
      `[k]` was.
+
+485. **An edit that must write a file that does not parse is `ErrSyntax`, at the layout step (API.md
+     M9, E21, §15; CLI exit 1).** Nothing is printed into the file; each later op is still judged, so
+     its own refusal comes first, and one that needs text an earlier op would have spliced into that
+     file fails at its resolution (`[AddEntry d:ts b, Set d:ts[b].v 3]` is op 1 `ErrNoPath`). After
+     overlays (S12) and staleness (S5), the edit, or an `Evaluate` `Draft`, is refused with
+     `*SyntaxError`: the parse findings of the first such file in path order, in its package,
+     whatever `Normalize` and `AllowErrors` say. A broken file the edit does not write stays a
+     re-check finding (E18, E19: `*RejectedError`, written under `AllowErrors`). `RenameName` keeps
+     E32's `broken`. A JSON source that does not parse leaves its value poisoned, so an edit of it is
+     `ErrNoValue` (R6). A compiler fault that wraps such an error stays `*InternalError` (X2).
+     Reason: v0.3 run (EDIT-SYNTAXERR): such an edit failed with `*InternalError`, but user input
+     never reaches `ErrInternal` (X2); a file that does not parse can be neither judged nor
+     normalized (M9); and the layout step keeps E21's order the same as for a file that is only not
+     in canonical layout.

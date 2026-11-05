@@ -31,19 +31,22 @@ var internalSentinels = [...]error{
 }
 
 // editError is an edit's or a draft's failure as the API reports it (rules X1, X2, S11): a refusal
-// with its op's index and path as given, its findings in lang (R6a), an overlay (S12), a layout
-// (M9), a stale base or file (S5, N9), a state forbidding writes (ErrProject), a compiler bug.
+// with its op's index and path as given, its findings in lang (R6a), an overlay (S12), a layout or a file not parsing (M9),
+// a stale base or file (S5, N9), a state forbidding writes (ErrProject), a compiler bug.
 func (p *Project) editError(ctx context.Context, err error, lang string) error {
 	var (
 		oe *edit.OpError
 		ov *workspace.OverlayError
 		nc *workspace.NotCanonicalError
+		ue *edit.UnparsedError
 	)
 	switch {
 	case errors.Is(err, edit.ErrJournal), errors.Is(err, edit.ErrUnwritable):
 		return journalError(err) // before the cancellation: the state stays whatever the ctx
 	case ctx.Err() != nil:
 		return ctx.Err()
+	case errors.As(err, &ue) && !errors.Is(err, edit.ErrInternal): // a bug that wraps one stays internal (X2)
+		return &SyntaxError{Findings: fromDiag(ue.Files, ue.Findings)}
 	case errors.As(err, &oe):
 		return p.opError(ctx, refused{op: oe.Index, path: oe.Path, inverse: oe.Inverse, lang: lang}, oe.Err)
 	case errors.As(err, &ov):

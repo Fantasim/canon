@@ -200,7 +200,7 @@ func (e *NotCanonicalError) Error() string {
 
 func (e *NotCanonicalError) Unwrap() error { return ErrNotCanonical }
 
-// SyntaxError reports input that does not parse, from Format or FormatJSONSource.
+// SyntaxError reports input that does not parse: Format, FormatJSONSource, an Edit or an Evaluate Draft.
 type SyntaxError struct {
 	Findings []Finding
 }

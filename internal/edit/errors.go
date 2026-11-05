@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/fantasim/canonlang/internal/build"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/eval"
 )
 
@@ -85,6 +86,27 @@ func (e *ValueError) Error() string {
 
 func (e *ValueError) Unwrap() error { return ErrBadValue }
 
+// UnparsedError is a file the edit would write that does not parse (API.md M9, E21): it cannot be
+// judged for canonical layout nor re-printed. Err is the parser's failure, Findings its own,
+// located by Files.
+type UnparsedError struct {
+	File     string
+	Err      error
+	Findings []diag.Finding
+	Files    diag.Files
+}
+
+// inPackage is e with its findings in pkg, the package owning the file ("" for a data file).
+func (e *UnparsedError) inPackage(pkg string) {
+	for i := range e.Findings {
+		e.Findings[i].Package = pkg
+	}
+}
+
+func (e *UnparsedError) Error() string { return fmt.Errorf(fmtFile, ErrUnparsed, e.File).Error() }
+
+func (e *UnparsedError) Unwrap() []error { return []error{ErrUnparsed, e.Err} }
+
 // Refusals of an edit's operations (API.md §8.3-§10); the API wraps each as its own (§15).
 var (
 	ErrNotEditable   = errors.New("value not editable")
@@ -93,6 +115,7 @@ var (
 	ErrPathCollision = errors.New("file already exists")
 	ErrNoProject     = errors.New("edit environment without a project")
 	ErrInternal      = errors.New("edit failed inside the compiler")
+	ErrUnparsed      = errors.New("file does not parse")
 
 	errUnprinted = errors.New("value has no literal form")
 	errNoTree    = errors.New("file not in the snapshot")

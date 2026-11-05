@@ -66,7 +66,10 @@ func (s *Snapshot) draft(ctx context.Context, base *build.Analysis, c Changes) (
 	if err != nil {
 		return nil, err
 	}
-	if err := s.noOverlay(base, plan.Changes); err != nil { // the rules of Edit (API.md V13, S12)
+	if err := s.noOverlay(base, written(plan)); err != nil { // the rules of Edit (API.md V13, S12)
+		return nil, err
+	}
+	if err := unparsed(plan); err != nil { // a draft keeps no edit it could not print (M9)
 		return nil, err
 	}
 	owners, aliases, err := s.owners(ctx, plan)

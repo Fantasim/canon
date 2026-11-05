@@ -21,14 +21,18 @@ type fileState struct {
 	raw          []byte
 	existed      bool
 	cur          []byte
-	origin       string // the base path cur descends from, through edits and Renames (N8)
-	checked      bool   // its layout was judged (M9)
-	normalized   bool   // it was not in canonical layout: normalized first (M9)
-	fixed        bool   // cur is what Rewrite printed from a fixed point: one too (API.md M5)
+	origin       string         // the base path cur descends from, through edits and Renames (N8)
+	checked      bool           // its layout was judged (M9)
+	normalized   bool           // it was not in canonical layout: normalized first (M9)
+	bad          *UnparsedError // it does not parse: judged for layout and never written, the plan refuses it (M9)
+	fixed        bool           // cur is what Rewrite printed from a fixed point: one too (API.md M5)
 	steps        []writeStep
 	tree         *jsonsrc.Node // its JSON document, parsed from treeOf
 	treeOf       []byte
 }
+
+// printable reports that s parses: an edit can be printed into it (M9).
+func (s *fileState) printable() bool { return s.bad == nil }
 
 // change is the path's net Change, its file at the base against its final one, whatever the
 // operations did between; false when they are the same (log-2026-10-01 M4.1 ruling, N3, N8).

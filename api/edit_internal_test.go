@@ -62,12 +62,14 @@ var editRefusals = []struct {
 	{&workspace.StaleError{Files: []string{"b/b.canon"}}, ErrStale, "sources changed since the base revision: b/b.canon"},
 	{&workspace.OverlayError{File: "a/a.canon"}, ErrOverlay, "a/a.canon: file has an unsaved overlay"},
 	{&workspace.NotCanonicalError{Files: []string{"c/c.canon"}}, ErrNotCanonical, "file is not in canonical layout: c/c.canon"},
+	{&edit.UnparsedError{File: "a/a.canon", Err: errors.New("x")}, ErrSyntax, "syntax error"},
+	{&edit.OpError{Index: 0, Path: "a:x", Err: fmt.Errorf("%w: %w", edit.ErrInternal, &edit.UnparsedError{File: "a/a.canon", Err: errors.New("x")})}, ErrInternal, "internal compiler error: edit failed inside the compiler: file does not parse: a/a.canon"},
 	{fs.ErrPermission, fs.ErrPermission, "permission denied"},
 	{fmt.Errorf("a.canon: %w", edit.ErrChanges), ErrInternal, "internal compiler error: a.canon: invalid file changes"},
 	{fmt.Errorf("%w: hidden path: .x", edit.ErrUnwritable), ErrProject, "invalid project: file cannot be written by an edit: hidden path: .x"},
 }
 
-// API.md X1, API.md X2, API.md E12, API.md N3, API.md S12, API.md M9, API.md N9, API.md S11:
+// API.md X1, API.md X2, API.md E12, API.md N3, API.md S12, API.md M9, API.md E21, API.md N9, API.md S11:
 // each failure of an edit is the API's error of its kind, with the text X1 fixes.
 func TestEditErrorMapping(t *testing.T) {
 	p := &Project{}

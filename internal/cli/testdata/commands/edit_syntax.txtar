@@ -1,0 +1,29 @@
+CLI.md §3.15, API.md M9, E21, §15: an edit that must write a file that does not parse is ErrSyntax, exit 1, the first finding on stderr.
+-- args --
+edit req.json
+-- req.json --
+{"ops":[{"op":"set","path":"a:config.port","value":9000}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Settings.
+record Config {
+  /// A port.
+  port: Int = 8765
+}
+
+/// The settings.
+let config: Config = {}
+
+/// Broken.
+let bad: Int =
+-- want --
+[exit 1]
+[stdout]
+[stderr]
+canon: syntax error: a/a.canon:15:1: expected expr; found the end of the file

@@ -272,7 +272,7 @@ const renameArgs = 2
 // editRefusals are the errors of API.md §15 that Edit returns with CLI exit 1: understood, then refused.
 var editRefusals = [...]error{
 	canon.ErrKeyExists, canon.ErrStableKey, canon.ErrNotEditable, canon.ErrStale, canon.ErrRejected,
-	canon.ErrNotCanonical, canon.ErrPathCollision, canon.ErrOverlay, canon.ErrNameClash,
+	canon.ErrNotCanonical, canon.ErrPathCollision, canon.ErrOverlay, canon.ErrNameClash, canon.ErrSyntax,
 }
 
 // Unified diff hunk header fixing (CLI.md §3.6): go-udiff v0.4.1 drops the joined context lines from the new-side start.

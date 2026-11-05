@@ -3,6 +3,7 @@ package edit
 import (
 	"bytes"
 	"cmp"
+	"errors"
 	"fmt"
 	"maps"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/format"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
+	"github.com/fantasim/canonlang/internal/load"
 	"github.com/fantasim/canonlang/internal/project"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
@@ -125,6 +127,10 @@ func (a *applier) normalize(files map[string]bool) (bool, error) {
 		}
 		s.checked = true
 		out, err := a.canonical(d, s.cur, files[d])
+		if errors.As(err, &s.bad) {
+			s.bad.inPackage(a.snap.packageOf(d))
+			continue // a layout finding the plan carries; the next operations are still judged (E21)
+		}
 		if err != nil {
 			return false, err
 		}
@@ -152,8 +158,13 @@ func (a *applier) canonicalJSON(display string, raw []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	root, err := jsonsrc.Parse(src, diag.NewBag(&fs, ""))
+	bag := diag.NewBag(&fs, "")
+	root, err := jsonsrc.Parse(src, bag)
 	if err != nil {
+		load.ReportEncoding(bag, display, raw, err)
+		if slices.ContainsFunc(jsonUnparsed[:], func(bad error) bool { return errors.Is(err, bad) }) {
+			return nil, &UnparsedError{File: display, Err: err, Findings: bag.Findings(), Files: &fs}
+		}
 		return nil, err
 	}
 	a.snap.typedNumbers(display, src.Content, root) // typed-canonical numbers (FMT-02, FORMATTER.md 14.1)
@@ -191,7 +202,12 @@ func formatted(display string, kind syntax.FileKind, raw []byte) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	return format.Source(src, kind, diag.NewBag(&fs, ""))
+	bag := diag.NewBag(&fs, "")
+	out, err := format.Source(src, kind, bag)
+	if errors.Is(err, format.ErrSyntax) {
+		return nil, &UnparsedError{File: display, Err: err, Findings: bag.Findings(), Files: &fs}
+	}
+	return out, err
 }
 
 // roleOf is the role of the file at display, as canon fmt gives it: project.canon at the root is
@@ -294,6 +310,9 @@ func (a *applier) placeFiles(w *work) error {
 func (a *applier) rewriteCanon(display string, changes []format.Change) error {
 	f := a.snap.tree(display)
 	s := a.files[display]
+	if s != nil && !s.printable() {
+		return nil // nothing can be printed into it: the plan refuses it whole (M9)
+	}
 	if f == nil || s == nil || !bytes.Equal(f.Src.Content, s.cur) {
 		return fmt.Errorf(fmtFile, errNoTree, display)
 	}
@@ -316,6 +335,9 @@ func (a *applier) rewriteCanon(display string, changes []format.Change) error {
 
 func (a *applier) rewriteJSON(display string, edits []jsonEdit) error {
 	s := a.files[display]
+	if !s.printable() {
+		return nil // as rewriteCanon: the plan refuses a file that does not parse (M9)
+	}
 	order := applyOrder(edits)
 	before, out := s.cur, s.cur
 	var batch []jsonsrc.Edit

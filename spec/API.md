@@ -1589,7 +1589,14 @@ comments, and a trailing comment on its last line.
   §13. If not, the edit fails with `*NotCanonicalError` (wraps `ErrNotCanonical`) listing the files,
   unless `Edit.Normalize` is true, in which case each such file is first normalized entirely, as
   part of the same edit. Migration normalizes JSON sources once with `canon fmt --json-sources`
-  (DECISIONS 12), after which this never happens.
+  (DECISIONS 12), after which this never happens. A file the edit must write that does not parse
+  has no fixed point and takes no edit: nothing is printed into it, the ops after it are still
+  judged, and at the layout step, after overlays (S12) and staleness (S5), the edit fails with
+  `*SyntaxError` (wraps `ErrSyntax`) holding that file's parse findings, in its package, whatever
+  `Normalize` and `AllowErrors` say; of several such files, the first in path order. A later op
+  that needs what an earlier op would have written into such a file fails at its own resolution
+  (E21, e.g. `ErrNoPath`). A file that does not parse and that the edit does not write is judged by
+  the re-check (E18, E19); `RenameName` keeps E32 (DECISIONS 485).
 
 ---
 
@@ -2010,7 +2017,7 @@ Errors are Go errors, distinct from findings. Every error type wraps one sentine
 | `ErrNotCanonical` | `*NotCanonicalError` | M9 | 1 |
 | `ErrPathCollision` | `*PathError` | N3 | 1 |
 | `ErrOverlay` | `*PathError` | S12 | 1 |
-| `ErrSyntax` | `*SyntaxError` | `Format` or `FormatJSONSource` on input that does not parse (§14); added to `api/errors.go` by the M0 split (IMPLEMENTATION-PLAN.md §12.4) | 1 |
+| `ErrSyntax` | `*SyntaxError` | `Format` or `FormatJSONSource` on input that does not parse (§14); an `Edit`, or an `Evaluate` `Draft`, that must write a `.canon` file or JSON source that does not parse (M9, E21), with that file's parse findings (DECISIONS 485); added to `api/errors.go` by the M0 split (IMPLEMENTATION-PLAN.md §12.4) | 1 |
 | `ErrClosed` | | O6 | 3 |
 | `ErrInternal` | `*InternalError` | a compiler bug; carries a Go stack | 3 |
 
