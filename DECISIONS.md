@@ -4875,8 +4875,10 @@ round 2", "PS1 review", "PS2 round 2"):
      EVALUATION.md §9.3, §13).** The text an origin records is the value it produced as evaluated,
      before an amendment and before verification's conversions (a dependent type's, §9.3 step 4): an
      amended base has no verified form, so the text does not depend on whether some layer amends a
-     sibling. `Analysis.Produced` follows every rebuild of a value (an amendment's copy, verification's,
-     an owner's rebinding, a conversion) back to the value first produced. Reason: v0.3 run
+     sibling. `Analysis.Produced` follows an amendment's copy, verification's copy and any rebuild of
+     those back to the value first produced; evaluation's own storage-point conversions (§4.3, a
+     `Float32` rounding) are part of the value as evaluated, so a plain `Float32` field shows its
+     rounded value and a dependent one, which only verification converts, the value as written. Reason: v0.3 run
      (EVAL-PRODUCED): `canon explain` and `Origin.Text` showed the layered value where they promise the
      base, once verification had rebuilt it.
 
