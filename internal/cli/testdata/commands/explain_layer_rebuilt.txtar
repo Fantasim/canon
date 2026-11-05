@@ -1,0 +1,56 @@
+CLI.md §3.7, API.md §5.2 Origin.Text, EVALUATION.md §9.3 step 4: a default's detail is the value
+the default produced, before dev's amendment, though verification rebuilt the amended value for
+its dependent rewards.
+-- args --
+explain
+b.q
+--layer
+dev
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- d/d.canon --
+/// D.
+package d
+
+/// A reward: gold, or an item.
+type Reward(item: Bool) = match item {
+  false => Int(1..)
+  true => String(1..)
+}
+
+/// A quest.
+record Q {
+  /// Whether its rewards are items.
+  items: Bool = false
+  /// What it gives.
+  rewards: [Reward(items)] = []
+}
+
+/// A box.
+record Box {
+  /// Its quest.
+  q: Q = {}
+}
+
+/// The box.
+let b: Box = {}
+-- d/dev.layer.canon --
+package d
+layer dev
+
+amend b {
+  q.items: true
+}
+-- want --
+[exit 0]
+[stdout]
+b.q = Q{items: true, rewards: []}  d.Q
+  default  d/d.canon:21  Q{items: false, rewards: []}
+b.q.items = true  Bool
+  set by  d/dev.layer.canon:5  layer dev
+  default  d/d.canon:13  false
+b.q.rewards = []  [d.Reward(items)]
+  default  d/d.canon:15  []
+[stderr]

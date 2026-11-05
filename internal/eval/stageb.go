@@ -199,10 +199,13 @@ func mapParts(m *value.Map, t types.Type) []loadedPart {
 	return out
 }
 
-// Moved records that to, a copy verification built, replaces from: its marks, and a record's collections and refs (EVALUATION.md §3.4).
+// Moved records that to, a copy verification built, replaces from: its marks, its link to the value evaluated (DECISIONS 468), and a record's collections and refs (EVALUATION.md §3.4).
 func (s *StageB) Moved(from, to value.Value) value.Value {
 	e := s.e
 	e.carry(from, to)
+	if from != nil && to != nil && from != to {
+		e.rebuilt[to] = from
+	}
 	rec, isRec := from.(*value.Record)
 	if cp, ok := to.(*value.Record); ok && isRec && rec != cp {
 		e.copiedFrom(rec, cp)

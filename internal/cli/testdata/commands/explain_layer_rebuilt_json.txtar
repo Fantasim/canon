@@ -1,0 +1,46 @@
+CLI.md §3.7, API.md §5.2 Origin.Text, EVALUATION.md §9.3 step 4: the root's origin text is the
+value its literal produced, before dev's amendment, though verification rebuilt the amended value
+for its dependent rewards.
+-- args --
+explain
+q
+--layer
+dev
+--format
+json
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- d/d.canon --
+/// D.
+package d
+
+/// A reward: gold, or an item.
+type Reward(item: Bool) = match item {
+  false => Int(1..)
+  true => String(1..)
+}
+
+/// A quest.
+record Q {
+  /// Whether its rewards are items.
+  items: Bool = false
+  /// What it gives.
+  rewards: [Reward(items)] = []
+}
+
+/// The quest.
+let q: Q = { items: false }
+-- d/dev.layer.canon --
+package d
+layer dev
+
+amend q {
+  items: true
+}
+-- want --
+[exit 0]
+[stdout]
+{"explain":{"path":"d:q","type":"d.Q","text":"Q{items: true, rewards: []}","value":{"items":true,"rewards":[]},"origin":{"kind":"literal","file":"d/d.canon","line":19,"col":12,"endLine":19,"endCol":28,"text":"Q{items: false, rewards: []}"},"parts":[{"path":"d:q.items","type":"Bool","text":"true","value":true,"origin":{"kind":"layer","file":"d/dev.layer.canon","line":5,"col":10,"endLine":5,"endCol":14,"layer":"dev","replaced":{"kind":"literal","file":"d/d.canon","line":19,"col":21,"endLine":19,"endCol":26,"text":"false"},"text":"true"}},{"path":"d:q.rewards","type":"[d.Reward(items)]","text":"[]","value":[],"origin":{"kind":"default","file":"d/d.canon","line":15,"col":30,"endLine":15,"endCol":32,"layer":"dev","via":{"kind":"literal","file":"d/d.canon","line":19,"col":12,"endLine":19,"endCol":28},"text":"[]"}}]}}
+[stderr]

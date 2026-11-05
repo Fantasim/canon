@@ -37,9 +37,11 @@ func (e *Evaluator) historyOf(path []value.Value, seen map[value.Value]bool, out
 	}
 }
 
-// Produced is v as its origin produced it: before the copies later amendments of its descendants made (CLI.md §3.7).
+// Produced is v as its origin's evaluation produced it: before amendments' and verification's copies (CLI.md §3.7, DECISIONS 468).
 func (e *Evaluator) Produced(v value.Value) value.Value {
-	for from := e.copyOf(v); from != nil; from = e.copyOf(v) {
+	seen := map[value.Value]bool{v: true}
+	for from := e.copyOf(v); from != nil && !seen[from]; from = e.copyOf(v) {
+		seen[from] = true
 		v = from
 	}
 	return v

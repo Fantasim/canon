@@ -583,7 +583,8 @@ type Origin struct {
                        // spread: the origin of the copied value
     Stack   []Frame    // computed: the Canon call stack that built it, at most 16 frames
     Text       string  // canonical text (STDLIB STD-06) of the value this origin produced, before
-                       // any later amendment of it or its descendants; "" when not known
+                       // any later amendment of it or its descendants and before verification's
+                       // conversions (DECISIONS 468); "" when not known
     MoreFrames int     // frames cut from Stack (F13); 0 when none
     Replaced   *Origin // the origin of the value an amendment replaced with this one (EVALUATION.md
                        // §9.3), and so on back to the base value, newest first; nil if none

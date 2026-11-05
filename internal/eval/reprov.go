@@ -96,10 +96,16 @@ func (e *Evaluator) positionProv(p *value.Prov) *value.Prov {
 	return e.sharedProv(siteKey{kind: p.Kind, position: true, span: p.Span})
 }
 
-// carry gives a value rebuilt from another, the same value passed along, its invalid mark and history (EVALUATION.md §13).
+// carry gives a value rebuilt from another, the same value passed along, its invalid mark, history and link to an amendment's copy (EVALUATION.md §13, §9.3).
 func (e *Evaluator) carry(from, to value.Value) value.Value {
-	if old := e.before(from); old != nil && from != to && to != nil {
+	if from == to || to == nil {
+		return e.mark(from, to)
+	}
+	if old := e.before(from); old != nil {
 		e.history[to] = old
+	}
+	if e.copyOf(from) != nil {
+		e.rebuilt[to] = from
 	}
 	return e.mark(from, to)
 }
