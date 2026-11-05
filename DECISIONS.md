@@ -5135,3 +5135,17 @@ round 2", "PS1 review", "PS2 round 2"):
      (refused). Reason: v0.3 run (EDIT-RENAMESHARED rounds 1-7): renaming second's entry rewrote a
      default, constant, lambda or key test that first's instance also took, silently retargeting
      first's ref.
+
+484. **An amend path's key segment is a `layer` ref, listed once (API.md R7, E11, R11; follows 305,
+     310, 316, 410, 470, 473, 483).** In an amend line of any package, layer active or not, a `.k`,
+     `[k]` or `[Q.m]` segment is a `layer` ref of the entry or element the line's path reaches up to
+     it, judged by identity: a spread or plain record copy holds its source's entries, a
+     collection-valued let re-adopts its own (315), and another instance's same key is no ref. When
+     the segment's keyed list is keyed by a `ref C`, the segment is also a `layer` ref of the entry of
+     C it names, written `.k` or `[k]` alike (316). `Refs` lists each token once; `Rename` rewrites it
+     once, as it rewrites the key segments of the root it amends (`.k` bare for a word, else
+     `["…"]`; `[k]` keeps its form; a first segment that cannot start a line refuses `layer`, 305; a
+     ref-typed key moves with the 310 cascade). Layer refs are no `Graph` edges (R11). Reason: v0.3
+     run (EDIT-REFSAMEND): `Refs` never listed these segments, a segment reached through a copy or
+     another package's layer was left stale by a rename, and a ref-typed `.k` was not listed where
+     `[k]` was.

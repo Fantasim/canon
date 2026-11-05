@@ -1,6 +1,7 @@
 package canon_test
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -81,14 +82,16 @@ func sharedRefs(refs []canon.Ref) string {
 	return strings.Join(out, ", ")
 }
 
-// sharedRow renames l's entry to y with layers active: want is its Refs, after the files the
-// rename leaves of before, refused the reason it fails with, writing nothing ("" for none).
+// sharedRow renames l's entry to y, or to, with layers active: want is its Refs, after the files
+// the rename leaves of before, refused the reason it fails with, writing nothing ("" for none),
+// undone the files its Undo leaves when not before's bytes (E22 restores values, not text).
 type sharedRow struct {
-	l             sharedLevel
-	layers        []string
-	before, after map[string]string
-	want          string
-	refused       canon.Reason
+	l                     sharedLevel
+	layers                []string
+	before, after, undone map[string]string
+	want                  string
+	refused               canon.Reason
+	to                    string
 }
 
 // run checks r's Refs and rename, then that the Undo gives every file back byte for byte.
@@ -103,7 +106,8 @@ func (r sharedRow) run(t *testing.T) {
 	if got := sharedRefs(refs.Refs); got != r.want {
 		t.Errorf("API.md R7 (DECISIONS 483): the refs of %s are\n%q, want\n%q", r.l.path, got, r.want)
 	}
-	res, err := p.Edit(ctx, canon.Edit{Ops: []canon.Op{canon.Rename(r.l.path, canon.Key("y"))}})
+	to := cmp.Or(r.to, "y")
+	res, err := p.Edit(ctx, canon.Edit{Ops: []canon.Op{canon.Rename(r.l.path, canon.Key(to))}})
 	var ne *canon.NotEditableError
 	after := r.after
 	switch {
@@ -126,8 +130,12 @@ func (r sharedRow) run(t *testing.T) {
 	if _, err := p.Edit(ctx, canon.Edit{Base: res.Revision, Ops: res.Undo}); err != nil {
 		t.Fatalf("API.md E22: the Undo: %v", err)
 	}
+	undone := before
+	if r.undone != nil {
+		undone = r.undone
+	}
 	for _, name := range slices.Sorted(maps.Keys(before)) {
-		if got := read(t, m, name); got != before[name] {
+		if got := read(t, m, name); got != undone[name] {
 			t.Errorf("API.md E22: %s after the Undo:\n%s", name, got)
 		}
 	}

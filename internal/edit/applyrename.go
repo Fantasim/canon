@@ -62,7 +62,7 @@ func (x *opCtx) renameTo(parent, old, k value.Value, kt types.Type) error {
 		return err
 	}
 	for _, ref := range refs {
-		if err := r.retoken(ref.Span, ref.Package); err != nil {
+		if err := r.rewrite(ref); err != nil {
 			return err
 		}
 	}

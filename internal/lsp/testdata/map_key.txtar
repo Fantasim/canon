@@ -127,9 +127,9 @@ send {"jsonrpc":"2.0","method":"exit"}
 > send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":34}}}
 < {"jsonrpc":"2.0","id":1,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}}}
 > send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":18,"character":34},"context":{"includeDeclaration":true}}}
-< {"jsonrpc":"2.0","id":2,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":34},"end":{"line":18,"character":40}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":21,"character":21},"end":{"line":21,"character":27}}}]}
+< {"jsonrpc":"2.0","id":2,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":34},"end":{"line":18,"character":40}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":21,"character":21},"end":{"line":21,"character":27}}},{"uri":"$URI/proj/a/dev.layer.canon","range":{"start":{"line":4,"character":2},"end":{"line":4,"character":8}}}]}
 > send {"jsonrpc":"2.0","id":3,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":21,"character":21},"context":{"includeDeclaration":false}}}
-< {"jsonrpc":"2.0","id":3,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":34},"end":{"line":18,"character":40}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":21,"character":21},"end":{"line":21,"character":27}}}]}
+< {"jsonrpc":"2.0","id":3,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":18,"character":34},"end":{"line":18,"character":40}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":21,"character":21},"end":{"line":21,"character":27}}},{"uri":"$URI/proj/a/dev.layer.canon","range":{"start":{"line":4,"character":2},"end":{"line":4,"character":8}}}]}
 > send {"jsonrpc":"2.0","id":4,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":42,"character":27}}}
 < {"jsonrpc":"2.0","id":4,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":39,"character":26},"end":{"line":39,"character":39}}}}
 > send {"jsonrpc":"2.0","id":5,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":4,"character":2}}}
@@ -137,7 +137,7 @@ send {"jsonrpc":"2.0","method":"exit"}
 > send {"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":8,"character":11}}}
 < {"jsonrpc":"2.0","id":6,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":61,"character":54},"end":{"line":61,"character":67}}}}
 > send {"jsonrpc":"2.0","id":7,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":8,"character":11},"context":{"includeDeclaration":true}}}
-< {"jsonrpc":"2.0","id":7,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":61,"character":54},"end":{"line":61,"character":67}}}]}
+< {"jsonrpc":"2.0","id":7,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":61,"character":54},"end":{"line":61,"character":67}}},{"uri":"$URI/proj/a/dev.layer.canon","range":{"start":{"line":8,"character":11},"end":{"line":8,"character":12}}}]}
 > send {"jsonrpc":"2.0","id":8,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/dev.layer.canon"},"position":{"line":12,"character":13}}}
 < {"jsonrpc":"2.0","id":8,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":14,"character":2},"end":{"line":14,"character":29}}}}
 > send {"jsonrpc":"2.0","id":9,"method":"shutdown"}

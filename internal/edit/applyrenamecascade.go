@@ -68,7 +68,7 @@ func (r *renaming) moveElement(el resolution) error {
 		return err
 	}
 	for _, ref := range refs {
-		if err := sub.retoken(ref.Span, ref.Package); err != nil {
+		if err := sub.rewrite(ref); err != nil {
 			return err
 		}
 	}

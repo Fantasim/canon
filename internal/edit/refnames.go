@@ -75,14 +75,16 @@ func (at scanAt) enter(n syntax.Node) scanAt {
 	return at
 }
 
-// walk reports n when it names the target or tests its key, then its children, under the
-// construct holding them.
+// walk reports n when it names the target or tests its key, or is an amend path's key segment
+// naming it, then its children, under the construct holding them.
 func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 	at = at.enter(n)
 	if tok, ok := sc.names(n); ok {
 		if sp := sc.file.Span(tok); !sc.covered(sp) && sc.instanceHolds(tok, sp, at) {
 			sc.out = append(sc.out, Ref{Kind: at.kind, Package: sc.pkg, Span: sp})
 		}
+	} else if tok, ok := sc.lineKey(n, at); ok {
+		sc.out = append(sc.out, Ref{Kind: RefLayer, Package: sc.pkg, Span: sc.file.Span(tok)})
 	}
 	sc.keyTest(n, at)
 	for c := range syntax.Children(n) {
