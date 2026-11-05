@@ -4894,5 +4894,10 @@ round 2", "PS1 review", "PS2 round 2"):
 470. **`Info` records a map literal's symbolic key (Louis, 2026-11-05; IMPLEMENTATION-PLAN §4.7, frozen
      contract).** A map literal's bare-name key that names an entry (`{ second: 1 }` against
      `{ref aa: Int}`) is recorded in `Info` by an additive field, so go-to-definition, references and an
-     LSP rename reach it; no existing field changes. Reason: §4.7's "every identifier is in Defs,
+     LSP rename reach it; no existing field changes. The same holds for an amend line's `.k`
+     naming an entry of a keyed list (the let's collection at its field path; after an entry, the
+     collection the last record field holds). Each is keyed to the collection the same name written
+     as a value gets in `Keys` (a ref chain's target, read at its leaf, 456). A keyed list held by a
+     variant case's field or reached through a map step has no `types.Collection` form, as a value
+     or as a key, and stays outside the invariant in v0.3 (v0.4 widens `Collection`). Reason: §4.7's "every identifier is in Defs,
      NameUses, Uses, Keys or Symbols" failed for it (v0.3 run, Info frozen-contract call).
