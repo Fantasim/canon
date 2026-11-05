@@ -31,13 +31,14 @@ type evalHost struct{ ev *eval.Evaluator }
 // hostOf is the host of an analysis, as Env.Host gives it.
 func hostOf(a *build.Analysis) wire.Host { return newEvalHost(a) }
 
+// newEvalHost evaluates under the analysis's active layers, as build.EditHost does (API.md E1, V1).
 func newEvalHost(a *build.Analysis) evalHost {
 	prog := a.Program()
 	bags := check.Bags{}
 	for _, pkg := range prog.Packages {
 		bags[pkg.Path] = diag.NewBag(a.Files(), pkg.Path)
 	}
-	return evalHost{ev: eval.New(prog, noLoads{}, bags, eval.Options{})}
+	return evalHost{ev: eval.New(prog, noLoads{}, bags, eval.Options{Layers: a.Layers()})}
 }
 
 func (h evalHost) Default(ctx context.Context, f *types.Field, in wire.Instance, via *value.Prov) (value.Value, bool) {
