@@ -129,6 +129,7 @@ func (c *checker) memberOf(env *env, s *syntax.SelectorExpr, t types.Type) types
 
 // keyedReceiver is the collection x holds, where `.name` is a key: a let's, else a record field's (TYPES.md §9.1).
 func (c *checker) keyedReceiver(x syntax.Expr) *types.Collection {
+	x = unforced(x)
 	if coll := c.receiverColl(x); coll != nil {
 		return coll
 	}
@@ -144,6 +145,14 @@ func (c *checker) keyedReceiver(x syntax.Expr) *types.Collection {
 		return c.heldCollection(owner, f)
 	}
 	return nil
+}
+
+// unforced is x without its `!`: `x!` holds the collection x holds, read as `?.` reads it (DECISIONS 470).
+func unforced(x syntax.Expr) syntax.Expr {
+	for f, ok := x.(*syntax.ForceExpr); ok; f, ok = x.(*syntax.ForceExpr) {
+		x = f.X
+	}
+	return x
 }
 
 // reservedRead reports a table element's field named id or retired (E2105) read where it may be

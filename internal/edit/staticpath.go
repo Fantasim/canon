@@ -7,11 +7,14 @@ import (
 	"github.com/fantasim/canonlang/internal/syntax"
 )
 
-// StaticPath is the value path e names when it is a let root read by fields, literal indices and
-// keys only; false for any other expression (a parameter, a call, a computed index).
+// StaticPath is the value path e names when it is a let root read by fields, entries, literal
+// indices and keys only, through `.`, `?.` or `!` at any depth (each reads the present value; a
+// none resolves to no value); false for any other expression (a parameter, a call, a computed index).
 func (s *Snapshot) StaticPath(e syntax.Expr) (Path, bool) {
 	info := s.info
 	switch x := syntax.Unparen(e).(type) {
+	case *syntax.ForceExpr:
+		return s.StaticPath(x.X)
 	case *syntax.IdentExpr:
 		o := info.Uses[x]
 		return Path{Package: pkgOf(o), Root: x.Name}, o != nil && o.Kind() == check.ObjLet
@@ -19,10 +22,10 @@ func (s *Snapshot) StaticPath(e syntax.Expr) (Path, bool) {
 		if o := info.NameUses[x.Name]; info.Selections[x] == nil && o != nil && o.Kind() == check.ObjLet {
 			return Path{Package: o.Pkg(), Root: o.Name()}, true
 		}
-		if x.Optional || x.X == nil || info.Selections[x] == nil {
+		if x.X == nil || info.Selections[x] == nil {
 			return Path{}, false
 		}
-		return s.extended(x.X, Seg{Kind: SegField, Name: x.Name.Name})
+		return s.extended(x.X, Seg{Kind: SegField, Name: x.Name.Name}) // an entry's `.k` reads by key (API.md §6.2)
 	case *syntax.IndexExpr:
 		k, ok := s.literalKey(x.Index)
 		if !ok {

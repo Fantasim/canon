@@ -5003,3 +5003,15 @@ round 2", "PS1 review", "PS2 round 2"):
      refused (474), so no such id is written. Reason: v0.3 run (EDIT-LOCKSET rounds 1-3): `Set
      a:codes { first {…}, third {…} }` left `third` unlocked, so a later `Remove` of it was
      accepted, and a `Set` leaving out a held id was accepted too.
+
+477. **`?.` and `!` are static steps of a key read (API.md R7; STDLIB.md §5; TYPES.md §5.1, §9.1;
+     follows 470, 473).** A key lookup through a record field's keyed list or table is a `code` ref
+     of the element its receiver reaches statically, at any depth, judged by that element's
+     identity (473). `?.` and `!` read the present value and name the same path as `.`; through a
+     `none` the read reaches no element and is no ref. `x!` holds the collection `x` holds: its `.k`
+     is recorded in `Info.Keys` as after `?.` (470, IMPLEMENTATION-PLAN §4.7), and a ref into that
+     collection keys `x![r]` as it keys `x[r]`, any number of `!` included. A stated ref to another
+     element of the target's collection is that element's value ref, never a code ref of the
+     target. Reason: v0.3 run (EDIT-RENAMEDEEP): a key read below level 1 was never a code ref, so
+     E19 refused the rename with E4002; another instance's stated `pick: "x"` was rewritten as a
+     code ref when renaming second's entry; `x![r]` was E3002 where `x[r]` was accepted.

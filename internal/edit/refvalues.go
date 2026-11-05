@@ -7,6 +7,7 @@ import (
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/source"
 	"github.com/fantasim/canonlang/internal/syntax"
+	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
 
@@ -26,18 +27,19 @@ type refScan struct {
 	w      *valueWalk
 	tokens map[source.FileID]map[source.Span]bool
 	found  []found
+	others []source.Span // the tokens stating a ref of the target's collection that names another entry
 }
 
 // valueRefs are the target's values and map keys in every let, active and replaced by
-// amendments alike, one per span (log-2026-09-29 M4 U4a); covers are the spans stating them,
-// whose names are no other reference, sorted.
+// amendments alike, one per span (log-2026-09-29 M4 U4a); covers are the spans stating them, and
+// those stating a ref to another entry of its collection, whose names are no other reference, sorted.
 func (s *Snapshot) valueRefs(ctx context.Context, tg *target) ([]Ref, []source.Span, error) {
 	sc := s.newScan(tg)
 	if err := sc.lets(ctx); err != nil {
 		return nil, nil, err
 	}
 	var refs []Ref
-	var covers []source.Span
+	covers := sc.others
 	for _, f := range s.firstPaths(sc.found) {
 		refs = append(refs, f.ref)
 		if !f.computed {
@@ -61,13 +63,30 @@ func (sc *refScan) lets(ctx context.Context) error {
 	return sc.w.run(ctx, sc.s)
 }
 
-// noted is the walk's visit: a value or map key that is the target is noted as kind.
+// noted is the walk's visit: a value or map key that is the target is noted as kind; a stated
+// ref to another entry of its collection, by identity, is no reference of the target (API.md R7).
 func (sc *refScan) noted(kind RefKind) visitFn {
 	return func(r rootRef, v, _ value.Value, segs []Seg) bool {
 		if sc.tg.isValue(v) {
 			sc.note(r, kind, v, segs)
+		} else {
+			sc.other(v)
 		}
 		return false
+	}
+}
+
+// other keeps the token stating v when v is a ref to an entry of the target's collection.
+func (sc *refScan) other(v value.Value) {
+	x, isRef := v.(*value.Ref)
+	if !isRef || x.P == nil {
+		return
+	}
+	if rt, ok := baseOf(x.T).(*types.RefType); !ok || !sc.tg.names(rt.Target) {
+		return
+	}
+	if keep, computed := sc.stated(x.P); keep && !computed {
+		sc.others = append(sc.others, x.P.Span)
 	}
 }
 

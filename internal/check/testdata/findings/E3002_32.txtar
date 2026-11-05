@@ -1,0 +1,43 @@
+STDLIB.md §5, TYPES.md §5.1, DECISIONS 470: through `!` a key ref must still be a ref into the receiver's own collection; `alt`, a ref into the let `other`, keys none of `self.oo!`, the bare field `oo!` or `aa.second.oo!`, so each is E3002 (and each `!` on a field that is never none W3401).
+-- a/a.canon --
+package a
+
+local record S {
+  k: String
+  w: Int = 0
+}
+
+local let other: [S] keyed by k = [{ k: "x" }]
+
+local record A {
+  id: String
+  oo: [S] keyed by k
+  alt: ref other
+
+  check self.oo![alt].w >= 0 else "self"
+  check oo![alt].w >= 0 else "bare"
+}
+
+local let aa: [A] keyed by id = [{ id: "second", oo: [{ k: "x" }], alt: "x" }]
+
+local let r0: Int = aa.second.oo![aa.second.alt].w
+-- findings.txt --
+warning[W3401]  a/a.canon:15:9
+  self.oo is never none: ! has no effect
+
+error[E3002]  a/a.canon:15:18
+  expected String, found ref a.other
+
+warning[W3401]  a/a.canon:16:9
+  oo is never none: ! has no effect
+
+error[E3002]  a/a.canon:16:13
+  expected String, found ref a.other
+
+warning[W3401]  a/a.canon:21:21
+  aa.second.oo is never none: ! has no effect
+
+error[E3002]  a/a.canon:21:35
+  expected String, found ref a.other
+
+3 errors, 3 warnings in 1 package (…)

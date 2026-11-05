@@ -235,6 +235,7 @@ func (c *checker) refOf(t types.Type, recv syntax.Expr) bool {
 	if !isRef || recv == nil {
 		return false
 	}
+	recv = unforced(recv) // STDLIB.md §5: `x!` holds x's collection
 	coll := c.keyedReceiver(recv)
 	if id, isName := recv.(*syntax.IdentExpr); coll == nil && isName {
 		coll = c.fieldReadColl(id)

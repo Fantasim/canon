@@ -1,0 +1,91 @@
+Definition and references on a deep key read through optional fields (IMPLEMENTATION-PLAN §8.4
+Features; DECISIONS 473, 477): `aa.second.oo?.x?.inn?.q` names second's q, its references
+are that element and its reads, never first's q; through third, which holds none, it names nothing.
+`aa.second.oo!.x.inn!.q` names the same q and x: `!` reads the present value as `?.` does.
+-- proj/project.canon --
+project acme {
+  canon: "0.1"
+}
+-- proj/a/a.canon --
+/// A.
+package a
+
+/// T.
+record T {
+  /// k.
+  k: String
+}
+
+/// S.
+record S {
+  /// k.
+  k: String
+  /// inn.
+  inn: ([T] keyed by k)?
+}
+
+/// A.
+record A {
+  /// id.
+  id: String
+  /// oo.
+  oo: ([S] keyed by k)?
+}
+
+/// aa.
+let aa: [A] keyed by id = [
+  { id: "first", oo: [{ k: "x", inn: [{ k: "q" }] }] },
+  { id: "second", oo: [{ k: "x", inn: [{ k: "q" }] }] },
+  { id: "third" },
+]
+
+/// r0.
+let r0: T? = aa.second.oo?.x?.inn?.q
+
+/// r1.
+let r1: T? = aa.third.oo?.x?.inn?.q
+
+/// r2.
+let r2: T = aa.second.oo!.x.inn!.q
+-- script --
+initialize
+send {"jsonrpc":"2.0","method":"initialized","params":{}}
+open proj/a/a.canon
+wait
+send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":33,"character":35}}}
+send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":33,"character":35},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":33,"character":27}}}
+send {"jsonrpc":"2.0","id":4,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":36,"character":34}}}
+send {"jsonrpc":"2.0","id":5,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":36,"character":34},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":39,"character":33}}}
+send {"jsonrpc":"2.0","id":7,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":39,"character":33},"context":{"includeDeclaration":true}}}
+send {"jsonrpc":"2.0","id":8,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":39,"character":26}}}
+send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+send {"jsonrpc":"2.0","method":"exit"}
+-- transcript --
+> initialize
+< {"jsonrpc":"2.0","id":0,"result":{"capabilities":{"positionEncoding":"utf-16","textDocumentSync":{"openClose":true,"change":1},"hoverProvider":true,"definitionProvider":true,"referencesProvider":true,"documentFormattingProvider":true},"serverInfo":{"name":"canon"}}}
+> send {"jsonrpc":"2.0","method":"initialized","params":{}}
+> open proj/a/a.canon
+> wait
+< {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics","params":{"uri":"$URI/proj/a/a.canon","diagnostics":[{"range":{"start":{"line":33,"character":13},"end":{"line":33,"character":28}},"severity":2,"code":"W3401","source":"canon","message":"aa.second.oo?.x is never none: ?. has no effect"},{"range":{"start":{"line":36,"character":13},"end":{"line":36,"character":27}},"severity":2,"code":"W3401","source":"canon","message":"aa.third.oo?.x is never none: ?. has no effect"}]}}
+> send {"jsonrpc":"2.0","id":1,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":33,"character":35}}}
+< {"jsonrpc":"2.0","id":1,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":28,"character":39},"end":{"line":28,"character":49}}}}
+> send {"jsonrpc":"2.0","id":2,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":33,"character":35},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":2,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":28,"character":39},"end":{"line":28,"character":49}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":33,"character":35},"end":{"line":33,"character":36}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":39,"character":33},"end":{"line":39,"character":34}}}]}
+> send {"jsonrpc":"2.0","id":3,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":33,"character":27}}}
+< {"jsonrpc":"2.0","id":3,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":28,"character":23},"end":{"line":28,"character":52}}}}
+> send {"jsonrpc":"2.0","id":4,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":36,"character":34}}}
+< {"jsonrpc":"2.0","id":4,"result":null}
+> send {"jsonrpc":"2.0","id":5,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":36,"character":34},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":5,"result":null}
+> send {"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":39,"character":33}}}
+< {"jsonrpc":"2.0","id":6,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":28,"character":39},"end":{"line":28,"character":49}}}}
+> send {"jsonrpc":"2.0","id":7,"method":"textDocument/references","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":39,"character":33},"context":{"includeDeclaration":true}}}
+< {"jsonrpc":"2.0","id":7,"result":[{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":28,"character":39},"end":{"line":28,"character":49}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":33,"character":35},"end":{"line":33,"character":36}}},{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":39,"character":33},"end":{"line":39,"character":34}}}]}
+> send {"jsonrpc":"2.0","id":8,"method":"textDocument/definition","params":{"textDocument":{"uri":"$URI/proj/a/a.canon"},"position":{"line":39,"character":26}}}
+< {"jsonrpc":"2.0","id":8,"result":{"uri":"$URI/proj/a/a.canon","range":{"start":{"line":28,"character":23},"end":{"line":28,"character":52}}}}
+> send {"jsonrpc":"2.0","id":9,"method":"shutdown"}
+< {"jsonrpc":"2.0","id":9,"result":null}
+> send {"jsonrpc":"2.0","method":"exit"}
+= <nil>

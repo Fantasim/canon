@@ -1,0 +1,32 @@
+STDLIB.md §5, TYPES.md §5.1, DECISIONS 470: `x!` holds the collection x holds, so a ref into a record field's own collection keys it through `!` as without: `self.oo![pick]`, the bare field `oo![pick]` and `aa.second.oo![aa.second.pick]` take `pick` as a key, with no E3002; each `!` on a field that is never none is only W3401.
+-- a/a.canon --
+package a
+
+local record S {
+  k: String
+  w: Int = 0
+}
+
+local record A {
+  id: String
+  oo: [S] keyed by k
+  pick: ref S
+
+  check self.oo![pick].w >= 0 else "self"
+  check oo![pick].w >= 0 else "bare"
+}
+
+local let aa: [A] keyed by id = [{ id: "second", oo: [{ k: "x" }], pick: "x" }]
+
+local let r0: Int = aa.second.oo![aa.second.pick].w
+-- findings.txt --
+warning[W3401]  a/a.canon:13:9
+  self.oo is never none: ! has no effect
+
+warning[W3401]  a/a.canon:14:9
+  oo is never none: ! has no effect
+
+warning[W3401]  a/a.canon:19:21
+  aa.second.oo is never none: ! has no effect
+
+0 errors, 3 warnings in 1 package (…)

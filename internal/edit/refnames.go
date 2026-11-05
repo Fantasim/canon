@@ -132,29 +132,19 @@ func (sc *nameScan) isEntryOf(x *syntax.SelectorExpr) bool {
 }
 
 // throughOwn reports the key lookup x reaching the target's own collection: a let's always; a record
-// field's only when x's receiver is a let root with literal indices and keys to the target's owner,
-// or, an optional field's, whose field holds the target's entry (log-2026-09-29 M4; DECISIONS 410).
+// field's, at any depth, through `.`, `?.` or `!`, only when x reads statically from a let root the
+// target's very entry, judged by identity as a spread copy holds its source's (API.md R7; DECISIONS 410, 473).
 func (sc *nameScan) throughOwn(x *syntax.SelectorExpr) bool {
 	if coll := sc.s.info.Keys[x]; coll == nil || coll.Kind != types.CollField {
 		return true
 	}
-	field, ok := syntax.Unparen(x.X).(*syntax.SelectorExpr)
-	if !ok || field.X == nil {
-		return false
-	}
-	p, ok := sc.s.StaticPath(field.X)
+	p, ok := sc.s.StaticPath(x)
 	if !ok {
 		return false
 	}
 	res, err := Resolve(sc.s, p)
-	owner, isRec := res.Target.(*value.Record)
-	if err != nil || !isRec {
-		return false
-	}
-	if sc.tg.held != nil {
-		return sc.tg.heldIn(owner)
-	}
-	return owner == sc.tg.ident.Owner
+	entry, isRec := res.Target.(*value.Record)
+	return err == nil && isRec && sc.tg.isEntry(entry.Ident)
 }
 
 // inColl reports key token e naming an entry of the target's collection: recorded as its key,

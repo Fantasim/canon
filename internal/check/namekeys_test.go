@@ -257,3 +257,23 @@ func TestNameKeysThroughAnOptionalField(t *testing.T) {
 		t.Errorf("amend form: NameKeys[x] = %v, want %v", got, want)
 	}
 }
+
+// IMPLEMENTATION-PLAN §4.7, DECISIONS 470: `.x` after `aa.second.oo!` is keyed as after `?.`, nothing left out of Info.
+func TestNameKeysAfterAForce(t *testing.T) {
+	src := optionalBase + "\nlocal let wf: S = aa.second.oo!.x\n"
+	prog, files, out := checkSet(t, [][2]string{{"a/a.canon", src}})
+	if !strings.HasPrefix(out, noFindings) {
+		t.Fatalf("findings:\n%s", out)
+	}
+	for _, g := range gaps(files[0], prog.Info, func(syntax.Decl) bool { return false }) {
+		t.Error(g)
+	}
+	want := prog.Info.Keys[letValue(t, files[0], "wo")]
+	value, ok := letValue(t, files[0], "wf").(*syntax.SelectorExpr)
+	if !ok {
+		t.Fatal("wf's value is no selector")
+	}
+	if got := prog.Info.Keys[value]; want == nil || got != want {
+		t.Errorf("Keys[aa.second.oo!.x] = %v, want %v, as after ?.", got, want)
+	}
+}

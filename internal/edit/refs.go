@@ -117,14 +117,10 @@ func (h *heldHome) is(coll *types.Collection) bool {
 	return h != nil && coll.Kind == types.CollField && coll.Owner == h.owner && slices.Equal(coll.FieldPath, []string{h.field})
 }
 
-// heldIn reports owner's optional field holding the target's entry, by identity, as a spread copy does (DECISIONS 410).
-func (tg *target) heldIn(owner *value.Record) bool {
-	i := fieldIndex(fieldsOf(owner.T), tg.held.field)
-	if i < 0 || i >= len(owner.Fields) {
-		return false
-	}
-	id := keyedIdent(owner.Fields[i], tg.ident.Key)
-	return id != nil && id.Coll == tg.ident.Coll
+// isEntry reports id the target entry's identity: its collection, owner and key, which a spread copy
+// keeps and an optional field's entry holds with no owner (DECISIONS 410, 411, 473).
+func (tg *target) isEntry(id *value.Identity) bool {
+	return id != nil && tg.ident != nil && id.Coll == tg.ident.Coll && id.Owner == tg.ident.Owner && id.Key == tg.ident.Key
 }
 
 // keyedContainer reports a table or a keyed list: what holds entries and keyed elements.
