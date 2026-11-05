@@ -59,7 +59,10 @@ type linePart struct {
 // lineValue is the line's part an edit `upto` steps down the path rewrites (DECISIONS 462).
 func (x *opCtx) lineValue(at staticSite, upto int) (linePart, error) {
 	node, d, ok := x.a.snap.literalRoot(at.line, at.n, x.res, max(upto, at.n))
-	if !ok {
+	switch {
+	case insideTyped(at, upto):
+		return linePart{}, &NotEditableError{Reason: ReasonComputed}
+	case !ok:
 		return x.absentPart(at, upto)
 	}
 	sp := at.f.Span(node)
@@ -109,7 +112,7 @@ func (x *opCtx) staticEdit(at staticSite, upto int, mutate func(value.Value) (va
 		x.w.addCanon(at.f.Src.Path, x.res.root.pkg.Path, []format.Change{{Kind: format.Remove, Node: fi}})
 		return nil
 	}
-	d := &canonDiff{a: x.a}
+	d := &canonDiff{a: x.a, at: x.declaredAt(part.depth)}
 	if err := d.value(old, withChange(old, steps, nv), part.node); err != nil {
 		return err
 	}
@@ -129,7 +132,7 @@ func (x *opCtx) undoStatic(cur value.Value, upto int) error {
 		x.inverse(Operation{Kind: OpReset, Path: path})
 		return nil
 	}
-	lit, err := x.a.sourceLit(cur, x.scopeAt(k, true), stated{}) // typed from the line: its tokens kept
+	lit, err := x.a.sourceLit(cur, x.declaredAt(k), x.scopeAt(k, true), stated{}) // typed from the line: its tokens kept
 	if err != nil {
 		return err
 	}

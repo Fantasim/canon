@@ -1,38 +1,26 @@
 package edit_test
 
 import (
-	"context"
-	"errors"
 	"strings"
 	"testing"
 
 	"github.com/fantasim/canonlang/internal/edit"
 )
 
-// API.md V1, V2; TYPES.md 11.4 (a loaded wire value is a literal); DECISIONS 171: a FromJSON
-// decoded on its computed branch is refused bound for Canon text that reads another branch, at the
-// top level, under an edit layer and nested at any depth; nothing is written.
-func TestFromJSONSecondBranchCanonRefused(t *testing.T) {
+// API.md V1, V2, M7, E22 (DECISIONS 171, 475): a FromJSON decoded on a branch a bare brace does not
+// read as is written as a typed literal into Canon text, at the top level and at any depth: it
+// applies, checks clean, and its Undo restores (an edit layer: TestTypedLiteralEditLayer).
+func TestFromJSONSecondBranchCanon(t *testing.T) {
 	kb := edit.Member("b")
-	for _, c := range []struct {
-		name string
-		fsys mapFS
-		view undoView
-		ops  []edit.Operation
-	}{
-		{"top level, driver set before", branchFS(), undoView{}, []edit.Operation{setAt("cn.k", kb), setAt("cn.t", edit.FromJSON(`{"x": 1}`))}},
-		{"top level, driver already b", branchFS(), undoView{}, []edit.Operation{setAt("cb.t", edit.FromJSON(`{"x": 1}`))}},
-		{"nested", branchFS(), undoView{}, []edit.Operation{setAt("cn", edit.FromJSON(`{"k": "b", "t": {"x": 1}}`))}},
-		{"nested, list element", branchFS(), undoView{}, []edit.Operation{setAt("cn", edit.FromJSON(`{"k": "b", "l": [{"x": 1}]}`))}},
-		{"nested, two levels", branchFS(), undoView{}, []edit.Operation{setAt("ch", edit.FromJSON(`{"h": {"k": "b", "t": {"x": 1}}}`))}},
-		{"nested, map value", branchFS(), undoView{}, []edit.Operation{setAt("cm", edit.FromJSON(`{"m": {"db": {"x": 1}}}`))}},
-		{"edit layer, driver set before", layerFS(), undoView{[]string{"dev"}, "dev"}, []edit.Operation{setAt("lt.e2.k", kb), setAt("lt.e2.t", edit.FromJSON(`{"x": 4}`))}},
+	for _, c := range []typedLitCase{
+		{"top level, driver set before", "cn", "t: RB{x: 1}", "t: RB { x: 1 }", []edit.Operation{setAt("cn.k", kb), setAt("cn.t", edit.FromJSON(`{"x": 1}`))}},
+		{"top level, driver already b", "cb", "t: RB{x: 1}", "t: RB { x: 1 }", []edit.Operation{setAt("cb.t", edit.FromJSON(`{"x": 1}`))}},
+		{"nested", "cn", "t: RB{x: 1}", "t: RB { x: 1 }", []edit.Operation{setAt("cn", edit.FromJSON(`{"k": "b", "t": {"x": 1}}`))}},
+		{"nested, list element", "cn", "l: [RB{x: 1}]", "l: [RB { x: 1 }]", []edit.Operation{setAt("cn", edit.FromJSON(`{"k": "b", "l": [{"x": 1}]}`))}},
+		{"nested, two levels", "ch", "t: RB{x: 1}", "t: RB { x: 1 }", []edit.Operation{setAt("ch", edit.FromJSON(`{"h": {"k": "b", "t": {"x": 1}}}`))}},
+		{"nested, map value", "cm", "db: RB{x: 1}", "db: RB { x: 1 }", []edit.Operation{setAt("cm", edit.FromJSON(`{"m": {"db": {"x": 1}}}`))}},
 	} {
-		s := open(t, c.fsys, c.view.layers, c.view.edit, "d")
-		plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: c.ops})
-		if !errors.Is(err, edit.ErrBadValue) || plan != nil {
-			t.Errorf("%s: planned %v, %v, want ErrBadValue and no plan", c.name, plan != nil, err)
-		}
+		typedLitApplies(t, branchFS(), c)
 	}
 }
 

@@ -43,9 +43,16 @@ func (st *srcTyping) brace(e syntax.Expr, t types.Type) (value.Value, error) {
 	return nil, st.wrong(e, t, "")
 }
 
-// typedLit is `case { … }` or `V.case { … }`, a case of the expected variant (SPEC §5.5, LEX-08).
+// typedLit is `case { … }` or `V.case { … }`, a case of the expected variant (SPEC 5.5, LEX-08),
+// or `R { … }`, `p.R { … }`, a record of the expected record type R (API.md 8.2; DECISIONS 475).
 func (st *srcTyping) typedLit(e syntax.Expr, t types.Type) (value.Value, error) {
 	x := e.(*syntax.TypedLit)
+	if r, isRecord := t.Base().(*types.RecordType); isRecord {
+		if !namesType(partNames(x.Type.Parts), typeRef{r.Pkg, r.Name}) {
+			return nil, st.wrong(e, t, detailOtherType)
+		}
+		return st.recordItems(x.Lit, t)
+	}
 	v, err := st.typedName(e, partNames(x.Type.Parts), t)
 	if err != nil {
 		return nil, err

@@ -131,6 +131,8 @@ func TestTypeAppRecordFieldUndo(t *testing.T) {
 		{"Canon, typed literal: Reset the holder", reset("cr.h")},
 		{"Canon, typed literal: Set the holder", setTo("cr.h", "{ t: { v: 5 } }")},
 		{"Canon, typed literal: Set its member", setAt("cr.h.t.v", edit.Int(5))},
+		{"Canon, typed literal given: Set the holder", setTo("ct.h", "{ t: RA { v: 5 } }")},
+		{"Canon, typed literal given: Set the field", setTo("ct.h.t", "RA { v: 5 }")},
 		{"Canon, by a parameter: Reset the holder", reset("cp.p")},
 		{"Canon, by a parameter: Set the holder", setTo("cp.p", "{ t: { v: 5 } }")},
 		{"Canon, by a parameter: Set the field", setTo("cp.p.t", "{ v: 5 }")},
@@ -154,8 +156,8 @@ func TestTypeAppRecordFieldUndo(t *testing.T) {
 }
 
 // API.md V1 (8.2 Source; TYPES.md 11.4, 11.6): a record literal is refused where the branch its
-// record computes takes none (an Int, a Never), and a typed record literal names a type, which is
-// not a contextual name (litsource_test's `Part { … }`).
+// record computes takes none (an Int, a Never), and a typed record literal naming a record that
+// is not that branch (DECISIONS 475; TestTypeAppRecordFieldUndo's typed rows name it).
 func TestTypeAppRecordFieldRefused(t *testing.T) {
 	for _, c := range []struct {
 		name string
@@ -167,8 +169,8 @@ func TestTypeAppRecordFieldRefused(t *testing.T) {
 		{"Int branch by a parameter", setTo("cp", "{ k: b, p: { t: { v: 5 } } }")},
 		{"Never branch, Source", setTo("cn", "{ k: b, t: { v: 5 } }")},
 		{"Never branch, Obj", setAt("cn", edit.Obj{"k": edit.Member("b"), "t": edit.Obj{"v": edit.Int(5)}})},
-		{"typed record literal", setTo("ct.h", "{ t: RA { v: 5 } }")},
-		{"typed record literal, the field", setTo("ct.h.t", "RA { v: 5 }")},
+		{"typed record literal on the Int branch", setTo("ct.h", "{ k: b, t: RA { v: 5 } }")},
+		{"typed record literal of another record", setTo("ct.h.t", "HT {}")},
 	} {
 		s := open(t, tappFS(), nil, "", "d")
 		_, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: []edit.Operation{c.op}})

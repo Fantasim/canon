@@ -148,27 +148,36 @@ func TestW11aInactiveNewKeyLineRefused(t *testing.T) {
 	checkVerdict(t, s, resolve(t, fixture{Snapshot: s.snap, files: s.a.Files()}, one.Path), one, edit.ReasonNone)
 }
 
-// API.md 8.2, W11a (DECISIONS 273; log-2026-11-01 EDIT-OWED review): a typed literal `Item { … }`
-// is no Source: Editable and Apply refuse a Set of its line, active or not, and any edit inside it
-// when the layer is not active; with the layer active, an edit inside it applies.
+// API.md 8.2, W5, W11a (DECISIONS 273, 462, 475): under an edit layer the session does not apply,
+// an edit inside a typed literal line `Item { … }` is `computed`; a Set of the whole line, a Source
+// now, and any edit under the active layer apply, Editable and Apply agreeing, and their Undo restores.
 func TestDecisions273TypedLiteralLine(t *testing.T) {
-	cases := []struct {
+	for _, c := range []struct {
 		layers []string
 		path   string
 		want   edit.Reason
+		kind   edit.Op
 	}{
-		{nil, "a:holder.data", edit.ReasonComputed},
-		{nil, "a:holder.data.n", edit.ReasonComputed},
-		{[]string{"lt"}, "a:holder.data", edit.ReasonComputed},
-		{[]string{"lt"}, "a:holder.data.n", edit.ReasonNone},
-	}
-	for _, c := range cases {
+		{nil, "a:holder.data", edit.ReasonNone, edit.OpSet},
+		{nil, "a:holder.data.n", edit.ReasonComputed, edit.OpSet},
+		{[]string{"lt"}, "a:holder.data", edit.ReasonNone, edit.OpSet},
+		{[]string{"lt"}, "a:holder.data.n", edit.ReasonNone, edit.OpSet},
+		{nil, "a:holder.data", edit.ReasonNone, edit.OpReset},
+		{[]string{"lt"}, "a:holder.data", edit.ReasonNone, edit.OpReset},
+	} {
 		s := open(t, law, c.layers, "lt", "a")
-		op := edit.Operation{Kind: edit.OpSet, Path: c.path, Value: edit.Int(2)}
-		if c.path == "a:holder.data" {
+		op := edit.Operation{Kind: c.kind, Path: c.path}
+		switch {
+		case c.kind == edit.OpReset:
+		case c.path == "a:holder.data":
 			op.Value = edit.Obj{"id": edit.Str("x")}
+		default:
+			op.Value = edit.Int(2)
 		}
 		checkVerdict(t, s, resolve(t, fixture{Snapshot: s.snap, files: s.a.Files()}, c.path), op, c.want)
+		if c.want == edit.ReasonNone {
+			applyAndUndo(t, goldenCase{fsys: law, pkgs: []string{"a"}, layers: c.layers, editLayer: "lt"}, op)
+		}
 	}
 }
 

@@ -126,10 +126,10 @@ func (d *canonDiff) mapItems(old, nw *value.Map, lit *syntax.BraceLit) (bool, er
 		}
 		olds[i] = kept{id: k.CanonText(), v: old.Vals[i], pos: i, item: lit.Items[i], val: val}
 	}
-	news := make([]fresh, len(nw.Keys))
+	news, vt := make([]fresh, len(nw.Keys)), d.at
 	for i, k := range nw.Keys {
 		v := nw.Vals[i]
-		news[i] = fresh{id: k.CanonText(), v: v, text: func() (string, error) { return d.a.mapItemText(k, v) }}
+		news[i] = fresh{id: k.CanonText(), v: v, text: func() (string, error) { return d.a.mapItemText(k, v, vt) }}
 	}
 	return d.keyed(lit.First(), olds, news)
 }
@@ -166,9 +166,9 @@ func elemsKept(l *value.List, lit *syntax.ListLit, key *types.Field) []kept {
 }
 
 func elemsFresh(d *canonDiff, l *value.List, key *types.Field) []fresh {
-	out := make([]fresh, len(l.Elems))
+	out, et := make([]fresh, len(l.Elems)), d.at
 	for i, e := range l.Elems {
-		out[i] = fresh{id: elemID(e, key, -1-i), v: e, text: func() (string, error) { return d.a.canonText(e) }}
+		out[i] = fresh{id: elemID(e, key, -1-i), v: e, text: func() (string, error) { return d.a.canonTextAt(e, et) }}
 	}
 	return out
 }

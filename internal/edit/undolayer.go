@@ -194,15 +194,15 @@ func (c *undoCheck) typesAsSource(path, text string) bool {
 	return c.a.base.sourceLine(c.a.ctx, path, text)
 }
 
-// lineTyped is text typed as a Source at path, as typesAsSource reads it.
-func (c *undoCheck) lineTyped(path, text string) (value.Value, bool) {
+// lineTyped is text typed as a Source at path, as typesAsSource reads it, and path's declared type.
+func (c *undoCheck) lineTyped(path, text string) (value.Value, types.Type, bool) {
 	t, pkg, ok := c.a.base.lineType(path)
 	if !ok {
-		return nil, false
+		return nil, nil, false
 	}
 	ty := Typer{Host: c.a.baseHost, Pkg: pkg, marks: c.a.marks}
 	v, err := ty.Value(c.a.ctx, Source(lineKey(text)), t)
-	return v, err == nil
+	return v, t, err == nil
 }
 
 // lineValue is the line at path, node n of f in s, as verification compares it (API.md E22, W11): the
@@ -211,8 +211,8 @@ func (c *undoCheck) lineTyped(path, text string) (value.Value, bool) {
 func (c *undoCheck) lineValue(s *Snapshot, path string, f *syntax.File, n syntax.Expr) string {
 	sp := f.Span(n)
 	text := string(f.Src.Content[sp.Start:sp.End])
-	if v, ok := c.lineTyped(path, text); ok {
-		if canon, err := c.basePrinter().canonText(v); err == nil {
+	if v, t, ok := c.lineTyped(path, text); ok {
+		if canon, err := c.basePrinter().canonTextAt(v, t); err == nil {
 			return strconv.Itoa(int(v.Type().Base().Kind())) + newline + canon
 		}
 	}

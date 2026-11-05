@@ -7,15 +7,15 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// sourceLit is v as the literal Undo carries (API.md E23): Source, single-line (E26), the tokens
-// at writes for it as written; FromJSON of its wire, in scope's rules that the inverse reads it
-// in, when a JSON source states it with a decoded symbol (M4 B7-r, B10-r2).
-func (a *applier) sourceLit(v value.Value, scope *types.Field, at stated) (Lit, error) {
-	return a.notedLit(v, scope, a.noteSpellings(v, at))
+// sourceLit is v, at a position of declared type pos, as the literal Undo carries (API.md E23, M7):
+// Source, single-line (E26), the tokens at writes for it as written; FromJSON of its wire, in
+// scope's rules, when a JSON source states it with a decoded symbol (M4 B7-r, B10-r2).
+func (a *applier) sourceLit(v value.Value, pos types.Type, scope *types.Field, at stated) (Lit, error) {
+	return a.notedLit(v, pos, scope, a.noteSpellings(v, at))
 }
 
 // notedLit is sourceLit with the tokens notes spells as written.
-func (a *applier) notedLit(v value.Value, scope *types.Field, notes spellings) (Lit, error) {
+func (a *applier) notedLit(v value.Value, pos types.Type, scope *types.Field, notes spellings) (Lit, error) {
 	raw, ok, err := a.readWire(v, scope)
 	switch {
 	case err != nil:
@@ -23,12 +23,16 @@ func (a *applier) notedLit(v value.Value, scope *types.Field, notes spellings) (
 	case ok:
 		return FromJSON(raw), nil
 	}
-	p := &canonPrinter{a: a, notes: notes}
+	p := &canonPrinter{a: a, notes: notes, at: pos}
 	p.value(v)
 	if p.err != nil {
 		return nil, p.err
 	}
-	return Source(flatText(p.b.String())), nil
+	text := flatText(p.b.String())
+	if p.unread != nil && a.unread == nil {
+		a.unread = &ValueError{Expected: p.unread.String(), Got: text, Detail: detailOtherBranch}
+	}
+	return Source(text), nil
 }
 
 // resetUndoes reports a Reset of the path editable: an edit layer's Reset of a field of an entry
@@ -55,12 +59,13 @@ func (x *opCtx) undoSet() error {
 	}
 	v = x.spreadWritten(v, k)
 	scope, notes := x.scopeAt(k, true), x.a.noteSpellings(v, x.statedAt(k))
-	lit, err := x.a.notedLit(v, scope, notes)
+	pos := x.declaredAt(k)
+	lit, err := x.a.notedLit(v, pos, scope, notes)
 	if err != nil {
 		return err
 	}
 	if x.lockHeld(v, k) {
-		lit = heldValue{old: v, scope: scope, lit: lit, notes: notes} // the edit's lock facts are kept (E23)
+		lit = heldValue{old: v, pos: pos, scope: scope, lit: lit, notes: notes} // the edit's lock facts are kept (E23)
 	}
 	x.inverse(Operation{Kind: OpSet, Path: path, Value: lit})
 	return nil
@@ -98,7 +103,7 @@ func (x *opCtx) layerAbsent() (int, bool) {
 
 // undoAt is the inverse Set of the value at cursor k as it was (E23).
 func (x *opCtx) undoAt(k int) error {
-	lit, err := x.a.sourceLit(x.valueAt(k), x.scopeAt(k, true), stated{})
+	lit, err := x.a.sourceLit(x.valueAt(k), x.declaredAt(k), x.scopeAt(k, true), stated{})
 	if err != nil {
 		return err
 	}
@@ -147,7 +152,7 @@ func (x *opCtx) addInverse(seg Seg) {
 // which keeps no position: Set of the collection as it was (E23; WIRE.md 5.3).
 func (x *opCtx) wholeInverse() error {
 	k := len(x.res.Steps)
-	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(k, true), x.statedAt(k))
+	lit, err := x.a.sourceLit(x.res.Target, x.declaredAt(k), x.scopeAt(k, true), x.statedAt(k))
 	if err != nil {
 		return err
 	}

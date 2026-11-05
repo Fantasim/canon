@@ -39,7 +39,11 @@ func (x *opCtx) addElem(l *value.List, at int) error {
 	if !ok {
 		return ErrBadOp
 	}
-	v, err := x.typed(x.op.Value, x.itemType(lt.Elem, x.frameAt(len(x.res.Steps))))
+	fr := x.frameAt(len(x.res.Steps))
+	v, err := x.typed(x.op.Value, x.itemType(lt.Elem, fr))
+	if err == nil {
+		err = x.readableItem(lt.Elem, fr, v)
+	}
 	if err != nil {
 		return err
 	}
@@ -59,7 +63,7 @@ func (x *opCtx) addElem(l *value.List, at int) error {
 	}
 	x.addInverse(seg)
 	grown := &value.List{T: l.T, Elems: slices.Insert(slices.Clone(l.Elems), at, v), P: l.P}
-	it := newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func() (string, error) { return x.a.canonText(v) }}
+	it := newItem{v: v, grown: grown, at: at, count: len(l.Elems), text: func() (string, error) { return x.a.canonTextAt(v, lt.Elem) }}
 	if c := x.j.last(); c.files && c.ordersLiteral(cursor{}) {
 		return x.literalItem(c, it)
 	}

@@ -233,26 +233,21 @@ func TestDependentBranchUncomputedJSON(t *testing.T) {
 	}
 }
 
-// API.md V1, E15, E22 (EDIT-TYPEAPPSET round 4, EDIT-TYPEDSOURCE pending; DECISIONS 171): bound
-// for Canon text, a literal whose computed branch is not the one the checker reads it as is a
-// ValueError, nothing written: the re-check would read another value, and E15 drop it.
+// API.md V1, E15, E22 (DECISIONS 171, 378, 475): bound for Canon text, a bare brace or list a Source
+// writes on a branch the checker does not read it as, and a case in any form, is a ValueError; an
+// Obj, List or Map record is printed typed instead (TestDependentSecondBranchTyped).
 func TestDependentSecondBranchCanonRefused(t *testing.T) {
-	kb, x1 := edit.Member("b"), edit.Obj{"x": edit.Int(1)}
+	kb := edit.Member("b")
 	sq := edit.Case{Name: "sq", Fields: edit.Obj{"n": edit.Int(1)}}
 	for _, c := range []struct {
 		name string
 		ops  []edit.Operation
 	}{
 		{"optional field, driver set beside it", []edit.Operation{setTo("cn", "{ k: b, t: { x: 1 } }")}},
-		{"optional field, driver set beside it, Obj", []edit.Operation{setAt("cn", edit.Obj{"k": kb, "t": x1})}},
 		{"list element, driver set beside it", []edit.Operation{setTo("cn", "{ k: b, l: [{ x: 1 }] }")}},
-		{"list element, driver set beside it, List", []edit.Operation{setAt("cn", edit.Obj{"k": kb, "l": edit.List{x1}})}},
 		{"required field", []edit.Operation{setTo("ch.h", "{ k: b, t: { x: 1 } }")}},
-		{"required field, Obj", []edit.Operation{setAt("ch.h", edit.Obj{"k": kb, "t": x1})}},
 		{"map value", []edit.Operation{setTo("cm.m", "{ db: { x: 0 } }")}},
-		{"map value, Map", []edit.Operation{setAt("cm.m", edit.Map{{Key: edit.Key("db"), Value: x1}})}},
 		{"top level, driver set before", []edit.Operation{setAt("cn.k", kb), setTo("cn.t", "{ x: 1 }")}},
-		{"top level, driver set before, Obj", []edit.Operation{setAt("cn.k", kb), setAt("cn.t", x1)}},
 		{"top level, driver already b", []edit.Operation{setTo("cb.t", "{ x: 1 }")}},
 		{"top level, required field, driver set before", []edit.Operation{setAt("ch.h.k", kb), setTo("ch.h.t", "{ x: 1 }")}},
 		{"case, driver set beside it", []edit.Operation{setTo("vn", "{ k: b, s: sq { n: 1 } }")}},
@@ -264,6 +259,22 @@ func TestDependentSecondBranchCanonRefused(t *testing.T) {
 		if !errors.Is(err, edit.ErrBadValue) || plan != nil {
 			t.Errorf("%s: planned %v, %v, want ErrBadValue and no plan", c.name, plan != nil, err)
 		}
+	}
+}
+
+// API.md V1, M7, E22 (DECISIONS 475): the rows TestDependentSecondBranchCanonRefused refused as an
+// Obj, List or Map before typed literals: each is printed as a typed literal of the branch its
+// record computes, checks clean, and its Undo restores.
+func TestDependentSecondBranchTyped(t *testing.T) {
+	kb, x1 := edit.Member("b"), edit.Obj{"x": edit.Int(1)}
+	for _, c := range []typedLitCase{
+		{"optional field, driver set beside it, Obj", "cn", "t: RB{x: 1}", "t: RB { x: 1 }", []edit.Operation{setAt("cn", edit.Obj{"k": kb, "t": x1})}},
+		{"list element, driver set beside it, List", "cn", "l: [RB{x: 1}]", "l: [RB { x: 1 }]", []edit.Operation{setAt("cn", edit.Obj{"k": kb, "l": edit.List{x1}})}},
+		{"required field, Obj", "ch", "t: RB{x: 1}", "t: RB { x: 1 }", []edit.Operation{setAt("ch.h", edit.Obj{"k": kb, "t": x1})}},
+		{"map value, Map", "cm", "db: RB{x: 1}", "db: RB { x: 1 }", []edit.Operation{setAt("cm.m", edit.Map{{Key: edit.Key("db"), Value: x1}})}},
+		{"top level, driver set before, Obj", "cn", "t: RB{x: 1}", "t: RB { x: 1 }", []edit.Operation{setAt("cn.k", kb), setAt("cn.t", x1)}},
+	} {
+		typedLitApplies(t, branchFS(), c)
 	}
 }
 
@@ -310,15 +321,14 @@ let lt: table LT = { e1 { k: b, t: RB { x: 1 } }, e2 {} }
 	return fs
 }
 
-// API.md V1, W10, E22 (EDIT-TYPEAPPSET round 6): under an active edit layer, a Set whose Canon
-// line would read another branch is refused, nothing written; one on the first branch applies and
-// its Undo restores the values (a typed literal line is `computed`, W5: no edit goes inside it).
+// API.md V1, W10, E22 (DECISIONS 475): under an active edit layer, a Source's bare brace on another
+// branch is refused, nothing written (an Obj is a typed line: TestTypedLiteralEditLayer); one on
+// the first branch applies and its Undo restores the values.
 func TestDependentSecondBranchEditLayer(t *testing.T) {
 	kb := edit.Member("b")
 	view := undoView{[]string{"dev"}, "dev"}
 	for _, ops := range [][]edit.Operation{
 		{setAt("lt.e2.k", kb), setTo("lt.e2.t", "{ x: 4 }")},
-		{setAt("lt.e2.k", kb), setAt("lt.e2.t", edit.Obj{"x": edit.Int(4)})},
 	} {
 		s := open(t, layerFS(), view.layers, view.edit, "d")
 		plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: ops})
@@ -342,19 +352,29 @@ func TestDependentSecondBranchEditLayer(t *testing.T) {
 	}
 }
 
-// API.md V1, E19, E22 (EDIT-TYPEDSOURCE pending): a Canon value on a record branch a brace does
-// not classify to (DECISIONS 171) has an Undo written as a brace, refused when applied as a
-// ValueError, nothing written. EDIT-TYPEDSOURCE flips this: the Undo will write `RB { … }`.
-func TestDependentSecondBranchUndoLoud(t *testing.T) {
-	for _, op := range []edit.Operation{reset("ck.h"), reset("cq.m")} {
-		edited, ok := applied(t, op.Path, branchFS(), []edit.Operation{op})
+// API.md M7, E22, E23 (DECISIONS 171, 475): a Canon value on a record branch a brace does not
+// classify to has an Undo written as a typed literal (`RB { … }`): the Undo of a Reset applies and
+// restores the value, RB{x: 1} where `t: RB { x: 1 }` was written.
+func TestDependentSecondBranchUndoRestores(t *testing.T) {
+	for _, c := range []struct {
+		root, want string
+		op         edit.Operation
+	}{
+		{"ck", "t: RB{x: 1}", reset("ck.h")},
+		{"cq", "db: RB{x: 1}", reset("cq.m")},
+		{"ck", "t: RB{x: 1}", reset("ck.h.t")},
+	} {
+		edited, ok := applied(t, c.op.Path, branchFS(), []edit.Operation{c.op})
 		if !ok {
 			continue
 		}
-		s := open(t, edited.fsys, nil, "", "d")
-		plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: edited.plan.Undo})
-		if !errors.Is(err, edit.ErrBadValue) || plan != nil {
-			t.Errorf("%s, Undo: planned %v, %v, want ErrBadValue; EDIT-TYPEDSOURCE landed? flip this test", op.Path, plan != nil, err)
+		back, ok := applied(t, c.op.Path+", Undo", edited.fsys, edited.plan.Undo)
+		if !ok {
+			continue
 		}
+		if got := values(open(t, back.fsys, nil, "", "d"), false)["d:"+c.root]; !strings.Contains(got, c.want) {
+			t.Errorf("%s, Undo: %s = %s, want it to hold %s", c.op.Path, c.root, got, c.want)
+		}
+		undoTwice(t, c.op.Path, branchFS(), []edit.Operation{c.op})
 	}
 }

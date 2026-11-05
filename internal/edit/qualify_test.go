@@ -15,9 +15,9 @@ import (
 	"github.com/fantasim/canonlang/internal/edit"
 )
 
-// GRAMMAR.md LEX-08, API.md V1: Source `T.n`, `p.T.n` or `T.case { … }` is member or case n of
-// the enum or variant T expected (an enum, its literal union, a map key, a variant); a qualifier
-// naming anything else, any other selector, a member given to a ref is ErrBadValue.
+// GRAMMAR.md LEX-08, API.md V1, 8.2: Source `T.n`, `p.T.n`, `T.case { … }` is member or case n of
+// the enum or variant T expected, `p.R { … }` a record of the expected R (DECISIONS 475); a
+// qualifier naming anything else, any other selector, a member given to a ref is ErrBadValue.
 func TestTypedQualifiedMember(t *testing.T) {
 	checkTyped(t, []typeCase{
 		{"c", edit.Source("Color.green"), "green"},
@@ -26,17 +26,19 @@ func TestTypedQualifiedMember(t *testing.T) {
 		{"byC", edit.Source("{ Color.green: 2 }"), "{green: 2}"},
 		{"sh", edit.Source("Shape.dot"), "dot"},
 		{"sh", edit.Source("v.Shape.circle { r: 2 }"), "circle{r: 2, label: }"},
-		{"bc", edit.Source("Color.red"), ""},              // a ref takes a key, not a member
-		{"c", edit.Source("w.Color.red"), ""},             // another package
-		{"c", edit.Source("Shape.red"), ""},               // another type
-		{"c", edit.Source("Color.blue"), ""},              // no such member
-		{"c", edit.Source("Color?.red"), ""},              // not a plain selector
-		{"c", edit.Source("(Color).red"), ""},             // not a name
-		{"c", edit.Source("Color.red.code"), ""},          // a member's member
-		{"s", edit.Source("Color.red"), ""},               // no enum expected
-		{"sh", edit.Source("Color.circle { r: 2 }"), ""},  // another type
-		{"sh", edit.Source("Shape.square { r: 2 }"), ""},  // no such case
-		{"part", edit.Source(`v.Part { name: "q" }`), ""}, // a record type is not qualified
+		{"bc", edit.Source("Color.red"), ""},                                  // a ref takes a key, not a member
+		{"c", edit.Source("w.Color.red"), ""},                                 // another package
+		{"c", edit.Source("Shape.red"), ""},                                   // another type
+		{"c", edit.Source("Color.blue"), ""},                                  // no such member
+		{"c", edit.Source("Color?.red"), ""},                                  // not a plain selector
+		{"c", edit.Source("(Color).red"), ""},                                 // not a name
+		{"c", edit.Source("Color.red.code"), ""},                              // a member's member
+		{"s", edit.Source("Color.red"), ""},                                   // no enum expected
+		{"sh", edit.Source("Color.circle { r: 2 }"), ""},                      // another type
+		{"sh", edit.Source("Shape.square { r: 2 }"), ""},                      // no such case
+		{"part", edit.Source(`v.Part { name: "q" }`), `Part{name: "q", w: }`}, // the expected record (DECISIONS 475)
+		{"part", edit.Source(`w.Part { name: "q" }`), ""},                     // another package
+		{"part", edit.Source(`Shape.Part { name: "q" }`), ""},                 // not a package
 	})
 }
 

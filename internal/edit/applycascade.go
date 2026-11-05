@@ -58,6 +58,17 @@ func (c fieldCheck) path() string {
 	return childPath(c.t.path, Seg{Kind: SegField, Name: c.f.Name})
 }
 
+// drivers are the paths of the fields of c's record its field's type is computed from (TYPES.md §11).
+func (c fieldCheck) drivers() []string {
+	var out []string
+	for _, d := range c.f.DependsOn {
+		if d < len(c.t.decl) {
+			out = append(out, childPath(c.t.path, Seg{Kind: SegField, Name: c.t.decl[d].Name}))
+		}
+	}
+	return out
+}
+
 // dependsOnAny reports f's type computed from one of the named fields (TYPES.md §11).
 func dependsOnAny(f *types.Field, fields []*types.Field, names []string) bool {
 	for _, d := range f.DependsOn {
@@ -195,10 +206,14 @@ func (a *applier) dropResolved(c fieldCheck, res resolution) error {
 	if err != nil {
 		return err
 	}
-	at := statedBy(a.snap.judge(res, OpSet, a.env.EditLayer).last())
-	back, err := a.sourceLit(res.Target, fieldRules(c.f), at) // as E23 carries it, in the scope the inverse reads
+	j := a.snap.judge(res, OpSet, a.env.EditLayer)
+	a.unread = nil
+	back, err := a.sourceLit(res.Target, c.f.Type, fieldRules(c.f), statedBy(j.last())) // as E23 carries it, in the scope the inverse reads
 	if err != nil {
 		return err
+	}
+	if err := a.takeUnread(j.editable().Mode); err != nil {
+		return &cascadeError{record: c.t.path, drivers: c.drivers(), err: err} // an inverse no operation applies (DECISIONS 466, 474)
 	}
 	if err := a.run(dropOp(c)); err != nil {
 		if errors.Is(err, ErrNotEditable) {

@@ -107,6 +107,8 @@ func recordParams(t types.Type) []*types.Param {
 func (s *Snapshot) partSource(ctx context.Context, at staticSite, res resolution, upto int) bool {
 	node, d, ok := s.literalRoot(at.line, at.n, res, max(upto, at.n))
 	switch {
+	case insideTyped(at, upto):
+		return false
 	case !ok:
 		_, _, inserts := s.absentField(at.line, at.n, res, max(upto, at.n))
 		return inserts
@@ -119,6 +121,13 @@ func (s *Snapshot) partSource(ctx context.Context, at staticSite, res resolution
 	}
 	sp := at.f.Span(node)
 	return s.sourceLine(ctx, p.String(), string(at.f.Src.Content[sp.Start:sp.End]))
+}
+
+// insideTyped reports an edit upto steps down below at's line `T { … }`, which an edit layer the
+// session does not apply leaves `computed` (API.md W5; DECISIONS 273, 462).
+func insideTyped(at staticSite, upto int) bool {
+	_, typed := syntax.Unparen(at.line.Value).(*syntax.TypedLit)
+	return typed && upto > at.n
 }
 
 // printable reports v a value a literal states: no range nor pair in it, which canonPrinter cannot write.

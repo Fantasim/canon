@@ -167,9 +167,14 @@ func (x *opCtx) removeFile(display, stop string) error {
 // Move back; into a collection its files order, Add or AddEntry alone, placed by N1.
 func (x *opCtx) undoRemove(parent value.Value, pos int) error {
 	k := len(x.res.Steps)
-	lit, err := x.a.sourceLit(x.res.Target, x.scopeAt(k, false), x.statedAt(k)) // read back as an item
+	lit, err := x.a.sourceLit(x.res.Target, x.declaredAt(k), x.scopeAt(k, false), x.statedAt(k)) // read back as an item
 	if err != nil {
 		return err
+	}
+	if rec, isRec := x.res.Target.(*value.Record); isRec && x.j.holder().newFile {
+		if _, err := x.newFileText(entryWord, rec); err != nil {
+			return err // the inverse recreates the file, which no import lets name its type (E22; DECISIONS 466, 474)
+		}
 	}
 	pp := x.parentPath()
 	switch p := parent.(type) {

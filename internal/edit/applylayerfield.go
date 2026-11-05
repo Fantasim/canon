@@ -49,7 +49,7 @@ func (x *opCtx) partInverse(part linePart, cur value.Value, upto int) error {
 		return x.undoStatic(cur, upto)
 	}
 	k := part.depth + part.fillAt
-	lit, err := x.a.sourceLit(part.steps[part.fillAt-1].Value, x.scopeAt(k, true), stated{})
+	lit, err := x.a.sourceLit(part.steps[part.fillAt-1].Value, x.declaredAt(k), x.scopeAt(k, true), stated{})
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (x *opCtx) fieldInsert(at staticSite, part linePart, mutate func(value.Valu
 	if nf == nil || x.a.sameDefault(nf, part.old) {
 		return nil
 	}
-	lit, err := x.a.sourceLit(part.old, x.scopeAt(part.depth+1, true), stated{})
+	lit, err := x.a.sourceLit(part.old, x.declaredAt(part.depth+1), x.scopeAt(part.depth+1, true), stated{})
 	if err != nil {
 		return err
 	}

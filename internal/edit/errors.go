@@ -248,3 +248,16 @@ type undoLineError struct {
 func (e *undoLineError) Error() string { return e.err.Error() }
 
 func (e *undoLineError) Unwrap() error { return e.err }
+
+// cascadeError is a cascade's refusal of a field of the record at path record, driven by the fields
+// at drivers, whose own inverse no operation applies (API.md V1; DECISIONS 474): Apply names it by
+// the operation that changed a driver, else that record (cascadeRefusal).
+type cascadeError struct {
+	record  string
+	drivers []string
+	err     error
+}
+
+func (e *cascadeError) Error() string { return e.err.Error() }
+
+func (e *cascadeError) Unwrap() error { return e.err }

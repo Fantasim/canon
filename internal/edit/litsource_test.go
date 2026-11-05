@@ -10,7 +10,8 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// API.md V1 for Source: a Canon literal with contextual names only, typed as the expected type.
+// API.md V1 for Source: a Canon literal with contextual names only, typed as the expected type; a
+// typed record literal names the expected record (API.md 8.2; DECISIONS 475).
 func TestTypedSource(t *testing.T) {
 	checkTyped(t, []typeCase{
 		{"n", edit.Source("-3"), "-3"},
@@ -42,7 +43,9 @@ func TestTypedSource(t *testing.T) {
 		{"tag", edit.Source(`"none"`), "none"},
 		{"tag", edit.Source("red"), "red"},
 		{"part", edit.Source(`{ name: "q", name: "r" }`), ""},
-		{"part", edit.Source(`Part { name: "q" }`), ""}, // a type name is not contextual
+		{"part", edit.Source(`Part { name: "q" }`), `Part{name: "q", w: }`}, // the expected record (DECISIONS 475)
+		{"part", edit.Source(`Cell { n: 1 }`), ""},                          // an unrelated record's name
+		{"ps", edit.Source(`[Part { name: "q" }]`), `[Part{name: "q", w: }]`},
 		{"part", edit.Source(`{ ...other }`), ""},
 		{"n", edit.Source("1 + 2"), ""},
 		{"n", edit.Source("1\nlet w = 2"), ""},

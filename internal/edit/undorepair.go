@@ -169,7 +169,7 @@ func (c *undoCheck) restore(path string) []Operation {
 	}
 	x := &opCtx{a: c.a, res: res}
 	at := c.baseStated(res)
-	lit, err := c.a.baseLit(c.a.facts.form(c.a.base, res.Target, res.Canonical), x.scopeAt(len(res.Steps), true), at)
+	lit, err := c.a.baseLit(c.a.facts.form(c.a.base, res.Target, res.Canonical), x.declaredAt(len(res.Steps)), x.scopeAt(len(res.Steps), true), at)
 	if err != nil {
 		return nil
 	}
@@ -192,7 +192,7 @@ func (c *undoCheck) restoreFields(res resolution, p Path, rec *value.Record) []O
 			out = append(out, Operation{Kind: OpReset, Path: fp})
 			continue
 		}
-		lit, err := c.a.baseLit(rec.Fields[i], fieldRules(f), at.field(f.Name))
+		lit, err := c.a.baseLit(rec.Fields[i], f.Type, fieldRules(f), at.field(f.Name))
 		if err != nil {
 			return nil
 		}

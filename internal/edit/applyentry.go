@@ -127,6 +127,9 @@ func (x *opCtx) newMapEntry(m *value.Map) (entryParts, error) {
 	}
 	x.a.outer = fr.outer()
 	v, err := x.typed(x.op.Value, x.itemType(vt, fr))
+	if err == nil {
+		err = x.readableItem(vt, fr, v)
+	}
 	if err != nil {
 		return entryParts{}, err
 	}
@@ -150,7 +153,7 @@ func (x *opCtx) addMapEntry(m *value.Map) error {
 	count := len(m.Keys)
 	return x.insertItem(newItem{
 		v: e.v, grown: grown, key: wkey, at: count, count: count, fr: e.fr, t: e.t,
-		text: func() (string, error) { return x.a.mapItemText(e.key, e.v) },
+		text: func() (string, error) { return x.a.mapItemText(e.key, e.v, e.t) },
 	})
 }
 

@@ -19,7 +19,7 @@ func (x *opCtx) diffAt(k int, old, nw value.Value) error {
 		return &NotEditableError{Reason: ReasonOrder}
 	}
 	if c.mode == ModeCanon {
-		d := &canonDiff{a: x.a}
+		d := &canonDiff{a: x.a, at: x.declaredAt(k)}
 		if err := d.value(old, nw, c.node); err != nil {
 			return err
 		}

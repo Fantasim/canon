@@ -1080,7 +1080,7 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
 | `Obj{...}` | record fields by Canon name | a record, a case's fields, a table entry |
 | `Map(KV{k, v}...)` | map, in the given order | `{K: V}` |
 | `FromJSON(raw)` | the wire form | any type: decoded by WIRE.md's rules for that type and the destination field's `@json` forms (`unit`, `int`, `bits`, `none`) |
-| `Source(text)` | a Canon literal | any type: parsed as a Canon expression that contains only literals (no names but contextual ones, SPEC §6.2, bare or quoted (GRAMMAR.md §2.3), and an enum member or case qualified by its type, `T.n` or `p.T.n` with `p` the package's path or last segment; DECISIONS 366, 378), typed against the expected type |
+| `Source(text)` | a Canon literal | any type: parsed as a Canon expression that contains only literals (no names but contextual ones, SPEC §6.2, bare or quoted (GRAMMAR.md §2.3), and an enum member or case qualified by its type, `T.n` or `p.T.n` with `p` the package's path or last segment; DECISIONS 366, 378, and a typed record literal `R { … }` or `p.R { … }` naming the expected record or the record branch the position computes, read against the expected type, never the file's imports; DECISIONS 480), typed against the expected type |
 
 - **V1.** A value that does not fit the expected type is `*ValueError` (wraps `ErrBadValue`) naming
   the op, the path, the expected type and what was given. Nothing is written. So is a value holding
@@ -1549,6 +1549,10 @@ comments, and a trailing comment on its last line.
   before their fields), `Kind` values, dependent symbols and keys bare, one named by a quotable word
   quoted (`` `return` ``, GRAMMAR.md §2.3), the same text in every file whatever its imports; a
   member or case is never printed qualified, and a map key is the WORD before `:` (DECISIONS 378).
+  A record whose dependent position computes a branch other than the one DECISIONS 171 reads a bare
+  brace as is printed as a typed record literal `R { … }`, R named as the file written names it
+  (bare in R's package or where a selective import brings it, else `alias.R` or `last-segment.R`);
+  a file that cannot name R refuses the value (`ValueError`), and no import is added (DECISIONS 480).
   Durations use their canonical text (LEX-04); a number or string token an op's `Source`
   spells is written as spelled (`0x1F`, `1.0`; DECISIONS 337). Fields equal to their defaults are omitted in
   newly printed records (E6 applied recursively to new values); fields of an existing literal are

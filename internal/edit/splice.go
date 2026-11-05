@@ -12,6 +12,7 @@ import (
 // where W7 or the collection puts it, an item removed (M2-M4).
 type canonDiff struct {
 	a   *applier
+	at  types.Type // the declared type of the value compared, for its typed literals (API.md M7)
 	out []format.Change
 }
 
@@ -43,19 +44,27 @@ func (d *canonDiff) structural(old, nw value.Value, n syntax.Node) (bool, error)
 		}
 	case *value.Map:
 		if m, ok := nw.(*value.Map); ok && braceOf(n) != nil {
-			return d.mapItems(o, m, braceOf(n))
+			return d.inside(mapValueType(declaredOr(d.at, o)), func() (bool, error) { return d.mapItems(o, m, braceOf(n)) })
 		}
 	case *value.List:
 		if l, ok := nw.(*value.List); ok {
-			return d.list(o, l, n)
+			return d.inside(listItemType(declaredOr(d.at, o)), func() (bool, error) { return d.list(o, l, n) })
 		}
 	}
 	return false, nil
 }
 
+// inside is compare run with d.at the declared type at of the items it compares, d.at after.
+func (d *canonDiff) inside(at types.Type, compare func() (bool, error)) (bool, error) {
+	saved := d.at
+	d.at = at
+	defer func() { d.at = saved }()
+	return compare()
+}
+
 // replace re-prints the whole value n states (M2): an entry's brace for an entry.
 func (d *canonDiff) replace(nw value.Value, n syntax.Node) error {
-	text, err := d.a.canonText(nw)
+	text, err := d.a.canonTextAt(nw, d.at)
 	if err != nil {
 		return err
 	}
@@ -72,10 +81,13 @@ func (d *canonDiff) replace(nw value.Value, n syntax.Node) error {
 // record compares field by field (M1): a field left or set to its default is removed (E6,
 // M7), a new one inserted in declaration order (W7), beside a spread when one supplies it (W9).
 func (d *canonDiff) record(old, nw *value.Record, lit *syntax.BraceLit) error {
+	saved := d.at
+	defer func() { d.at = saved }()
 	for i, f := range fieldsOf(nw.T) {
 		if f.Input != nil {
 			continue
 		}
+		d.at = f.Type
 		fi := fieldItem(lit, f.Name)
 		var err error
 		switch {
@@ -140,11 +152,11 @@ func (d *canonDiff) leftOut(old, nw *value.Record, i int, lit *syntax.BraceLit, 
 // insertField inserts `name: v` after the nearest present field declared before it, after
 // any spread (W7, W9).
 func (d *canonDiff) insertField(rec *value.Record, i int, v value.Value, lit *syntax.BraceLit) error {
-	text, err := d.a.canonText(v)
+	fields := fieldsOf(rec.T)
+	text, err := d.a.canonTextAt(v, fields[i].Type)
 	if err != nil {
 		return err
 	}
-	fields := fieldsOf(rec.T)
 	d.insert(lit.First(), w7Position(lit, fields, i), fields[i].Name+colonSp+text)
 	return nil
 }

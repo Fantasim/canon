@@ -5045,3 +5045,27 @@ round 2", "PS1 review", "PS2 round 2"):
      stood before the old tag stays first. Slot keys and an inline field's keys take their place
      in declaration order. Reason: v0.3 run (EDIT-PAIRSKEYS rounds 1-3): unknown keys were lost at
      these depths, and an inline Reset dropped its tag.
+
+480. **A value on a non-first dependent branch is written and restored as a typed record literal
+     (API.md §8.2, V1, M6, M7, N5, E22, E23, W5; FORMATTER.md; follows 171, 273, 366, 378, 466, 474,
+     475).** A `Source` states a record as `R { … }` or `p.R { … }`, read against the expected type,
+     never a file's imports: R is the expected record or, at a dependent position, the record branch
+     the position computes; any other name is a `ValueError` (another record, another package's
+     record of that name, an applied or parametric branch, a variant). Bound for a `.canon` file, a
+     record at a dependent position whose branch is not the one 171 reads a bare brace as is
+     printed typed, named as the file names R (bare in R's package or under a selective import,
+     else `alias.R` or `last-segment.R`); every other record is printed bare. An edit never adds an
+     import (366): a file that names no R, a layer file or a new entry file (N5) included, refuses
+     the value, and a `Remove` whose Undo would recreate such an entry file is refused up front. 378
+     stands: a case is never printed typed or qualified, and a case with fields at a dependent
+     position keeps 475's refusal in every form, save a write into an existing typed literal of the
+     same case (M6). Bound for Canon text, a bare brace or list a `Source` writes on a branch 171 does
+     not read it as is a `ValueError`, for a `Set` and an `Insert` or `AddEntry` item alike, and so is
+     an item into a list or map on such a branch (amends 475's "items stay with the re-check"). An
+     edit whose Undo, or a cascade's inverse (E15), would print such text is refused up front
+     (466, 474), named by the operation whose inverse or cascade it is; a JSON destination, whose
+     decoder reads the computed branch, is exempt from all of these. A typed literal is a `Source`,
+     so a `Set` or `Reset` of a whole typed literal layer line is judged as any literal line, active or
+     not, its Undo restoring the value (amends 273's computed line); under an edit layer the session
+     does not apply, an edit below that line stays `computed` (W5, 462). Reason: v0.3 run
+     (EDIT-TYPEDSOURCE rounds 1-6): the Undo of a `Reset` of an `RB { … }` field could not restore it.

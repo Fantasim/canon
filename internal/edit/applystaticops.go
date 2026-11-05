@@ -59,7 +59,7 @@ func typedText(x *opCtx, lit Lit, ty types.Type, scope *types.Field) (value.Valu
 	if err != nil {
 		return nil, "", err
 	}
-	text, err := x.a.canonText(v)
+	text, err := x.a.canonTextAt(v, ty)
 	return v, text, err
 }
 

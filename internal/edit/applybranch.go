@@ -7,26 +7,58 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// readableSet refuses a Set's value v, typed as st, bound for Canon text that reads another branch
-// than its dependent field computes (API.md V1; TYPES.md 11.4; DECISIONS 171), below it too for a
-// FromJSON (B7); a JSON decoder reads the computed one (WIRE.md 5.9). Until EDIT-TYPEDSOURCE.
+// readableSet is readableValue for a Set's value v, typed as st, at the path's declared type; a
+// write into the typed literal stating it keeps its name (keptTyped).
 func (x *opCtx) readableSet(st types.Type, v value.Value) error {
+	t, dep := x.declaredType()
+	if !dep {
+		t = st
+	}
+	return x.readableValue(t, x.frameAt(len(x.res.Steps)), v, dep && x.keptTyped(v))
+}
+
+// readableItem is readableValue for v, an Insert's or AddEntry's item of declared type t in frame fr,
+// once its container's own text reads as the branch it computes (readableContainer).
+func (x *opCtx) readableItem(t types.Type, fr depFrame, v value.Value) error {
+	if err := x.readableContainer(); err != nil {
+		return err
+	}
+	return x.readableValue(t, fr, v, false)
+}
+
+// readableContainer refuses an item into the path's container, of a dependent type whose computed
+// list or map branch its bare `[…]` or `{…}` does not read as (DECISIONS 171, 474), in Canon text.
+func (x *opCtx) readableContainer() error {
+	t, dep := x.declaredType()
+	if !dep || x.j.editable().Mode == ModeJSON {
+		return nil
+	}
+	arm, _, ok := x.frameAt(len(x.res.Steps)).computedIn(t)
+	if !ok || computesNever(arm) || reads(t, arm, x.res.Target) {
+		return nil
+	}
+	return x.otherBranch(arm)
+}
+
+// readableValue refuses v, of declared type t in fr, Canon text reads as another branch than t
+// computes (API.md V1, M7; DECISIONS 171, 475), below it too for a FromJSON (B7): no typed record
+// literal states it, or a Source wrote it bare. A JSON decoder reads the computed one.
+func (x *opCtx) readableValue(t types.Type, fr depFrame, v value.Value, kept bool) error {
 	if x.j.editable().Mode == ModeJSON {
 		return nil
 	}
-	fr := x.frameAt(len(x.res.Steps))
-	if t, dep := x.declaredType(); dep {
+	if dependent(present(t)) {
 		arm, in, ok := fr.computedIn(t)
 		switch {
 		case !ok || computesNever(arm):
 			return nil // an inactive layer's arm, refused `computed` (W11a); Never takes no such value (V1)
-		case !x.keptTyped(v) && !reads(t, arm, v):
+		case !kept && !reads(t, arm, v) && (!statedTyped(v) || bareText(x.op.Value)):
 			return x.otherBranch(arm)
 		}
-		st, fr = arm, in
+		t, fr = arm, in
 	}
 	if _, fromJSON := x.op.Value.(FromJSON); fromJSON {
-		return x.readableIn(v, st, fr)
+		return x.readableIn(v, t, fr)
 	}
 	return nil
 }
@@ -35,7 +67,40 @@ func (x *opCtx) readableSet(st types.Type, v value.Value) error {
 // or a value whose form's first branch is the arm (DECISIONS 171).
 func reads(t, arm types.Type, v value.Value) bool {
 	fits := valueForm(v)
-	return fits == nil || types.Identical(present(check.FirstFittingBranch(present(t), fits)), present(arm))
+	return fits == nil || sameBranch(check.FirstFittingBranch(present(t), fits), arm)
+}
+
+// sameBranch reports branches a and b one type (sameType), an optional's taken for its element.
+func sameBranch(a, b types.Type) bool {
+	return sameType(present(a), present(b))
+}
+
+// sameType reports a and b one type: a record by its package and name, a list or map by its
+// parts, so a value of another analysis of the project compares (the Undo prints the base's).
+func sameType(a, b types.Type) bool {
+	switch x := a.Base().(type) {
+	case *types.RecordType:
+		y, ok := b.Base().(*types.RecordType)
+		return ok && x.Pkg == y.Pkg && x.Name == y.Name
+	case *types.ListType:
+		y, ok := b.Base().(*types.ListType)
+		return ok && sameKey(x.KeyedBy, y.KeyedBy) && sameType(x.Elem, y.Elem)
+	case *types.MapType:
+		y, ok := b.Base().(*types.MapType)
+		return ok && sameType(x.Key, y.Key) && sameType(x.Value, y.Value)
+	case *types.DepMapType:
+		y, ok := b.Base().(*types.DepMapType)
+		return ok && x.Coll.Pkg == y.Coll.Pkg && x.Coll.Name == y.Coll.Name && types.Identical(x.Value, y.Value)
+	}
+	return types.Identical(a, b)
+}
+
+// sameKey reports two lists keyed alike: by fields of one name, or neither keyed.
+func sameKey(x, y *types.Field) bool {
+	if x == nil || y == nil {
+		return x == y
+	}
+	return x.Name == y.Name
 }
 
 // otherBranch is the V1 refusal of the operation's value on arm, which Canon text cannot state.
@@ -95,10 +160,22 @@ func (x *opCtx) readableAt(v value.Value, t types.Type, fr depFrame) error {
 	switch {
 	case !ok || computesNever(arm):
 		return nil
-	case !reads(t, arm, v):
+	case !reads(t, arm, v) && !statedTyped(v):
 		return x.otherBranch(arm)
 	}
 	return x.readableIn(v, arm, in)
+}
+
+// bareText reports lit a Source the checker reads as written, never as the typed literal M7 prints
+// in its place: a brace or list it wrote bare (DECISIONS 171, 475).
+func bareText(lit Lit) bool {
+	text, isSource := lit.(Source)
+	if !isSource {
+		return false
+	}
+	e, _ := parseLiteral(string(text))
+	_, typed := syntax.Unparen(e).(*syntax.TypedLit)
+	return !typed
 }
 
 // fieldType is field i's declared type, nil past the fields.

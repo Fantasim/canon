@@ -91,7 +91,7 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 	}
 	a.step = cascadeStep
 	if err := a.cascade(); err != nil {
-		return nil, refusal(err)
+		return nil, asked{ops: req.Ops, paths: a.opPaths}.cascadeRefusal(err)
 	}
 	p := a.finish()
 	kept, err := a.keepLocked(p.Undo, p.Locked)
@@ -133,6 +133,31 @@ func (q asked) undoRefusal(err error) error {
 		return &OpError{Index: last, Path: q.ops[last].Path, Err: ne}
 	}
 	return refusal(err)
+}
+
+// cascadeRefusal is a cascade's refusal named by the operation whose cascade it is: the first on a
+// driver of the field it refuses, else on its record, else the last (API.md V1; DECISIONS 474).
+func (q asked) cascadeRefusal(err error) error {
+	var ce *cascadeError
+	if len(q.ops) == 0 || !errors.As(err, &ce) {
+		return refusal(err)
+	}
+	i := q.driverOp(ce.drivers)
+	if i < 0 {
+		i = q.lineOp(ce.record)
+	}
+	return &OpError{Index: i, Path: q.ops[i].Path, Err: refusal(ce.err)}
+}
+
+// driverOp is the first operation whose path is one of drivers, above or below it; -1 for none.
+func (q asked) driverOp(drivers []string) int {
+	for k := range q.ops {
+		p, ok := q.paths[k]
+		if ok && slices.ContainsFunc(drivers, func(d string) bool { return within(p, d, pathMarks, true) || within(d, p, pathMarks, true) }) {
+			return k
+		}
+	}
+	return -1
 }
 
 // lineOp is the first operation whose path is line, above or below it, else the last.
@@ -178,7 +203,9 @@ type applier struct {
 	records  []touched         // E15
 	given    []givenValue      // what the operations wrote in JSON sources, for E15's held data
 	outer    wire.Outer        // around the value the operation types (WIRE.md 5.9)
-	marks    *symMarks         // what the typer knew of the symbols it made
+	names    *typeNaming
+	unread   *ValueError // an inverse no operation applies (handle)
+	marks    *symMarks   // what the typer knew of the symbols it made
 	// cascadeUndo are the cascades' inverses, which follow every other one (log-2026-09-29 M4 U4b-r)
 	cascadeUndo []Operation
 	emptied     map[string]string // a directory a file left, to the package directory it stops below (N6)
@@ -266,6 +293,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 	if h == nil && int(op.Kind) >= len(handlers) {
 		return nil, ErrBadOp
 	}
+	a.names = nil
 	p, err := Parse(op.Path)
 	if err != nil {
 		return nil, err
@@ -290,13 +318,13 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 		return nil, err
 	}
 	x := &opCtx{a: a, op: op, res: res, j: j, w: newWork()}
-	a.outer = x.frameAt(len(res.Steps)).outer()
+	a.outer, a.names = x.frameAt(len(res.Steps)).outer(), x.naming()
 	if h != nil {
 		err := h(x)
 		x.w.undo, x.w.given = nil, nil // a cascade's write gives no field held data (E15)
 		return x.w, err
 	}
-	if err := handlers[op.Kind](x); err != nil {
+	if err := x.handle(); err != nil {
 		return nil, err
 	}
 	x.noteTouched()

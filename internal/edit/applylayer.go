@@ -34,7 +34,7 @@ func (x *opCtx) layerSet() error {
 	if err := x.undoNewLine(); err != nil {
 		return err
 	}
-	text, err := x.a.canonText(v)
+	text, err := x.a.canonTextAt(v, x.declaredAt(len(x.res.Steps)))
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (x *opCtx) layerReset() error {
 	if !ok {
 		return x.dropEntry(f, line, n) // an item only the layer has (resetReason)
 	}
-	if _, err := x.a.sourceLit(base, x.scopeAt(len(x.res.Steps), true), stated{}); err != nil {
+	if _, err := x.a.sourceLit(base, x.declaredAt(len(x.res.Steps)), x.scopeAt(len(x.res.Steps), true), stated{}); err != nil {
 		return &NotEditableError{Reason: ReasonComputed} // no literal states the base value
 	}
 	if x.inAmendment() {
@@ -159,7 +159,7 @@ func (x *opCtx) removeLine(at staticSite) error {
 		}
 		old = part.old
 	}
-	lit, err := x.a.sourceLit(old, x.scopeAt(len(x.res.Steps), true), x.statedAt(len(x.res.Steps)))
+	lit, err := x.a.sourceLit(old, x.declaredAt(len(x.res.Steps)), x.scopeAt(len(x.res.Steps), true), x.statedAt(len(x.res.Steps)))
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (x *opCtx) amendEntry(e entryParts, err error) error {
 	if err != nil {
 		return err
 	}
-	text, err := x.a.canonText(e.v)
+	text, err := x.a.canonTextAt(e.v, e.t)
 	if err != nil {
 		return err
 	}

@@ -32,6 +32,7 @@ local record Item {
 
 local variant Shape {
   dot { n: Int }
+  ring
 }
 
 local type Pick(e: Ev) = match e.kind {
@@ -69,7 +70,7 @@ local record Held {
   nest: Nest(ev)
 }
 
-local let held: Held = { slot: [1], ev: one, pick: [{ n: 1 }], bag: { "x": [1] }, form: Shape.dot { n: 1 }, nest: ["s"] }
+local let held: Held = { slot: [1], ev: one, pick: [{ n: 1 }], bag: { "x": [1] }, form: ring, nest: ["s"] }
 
 local let other: Held = load("other.json")
 `

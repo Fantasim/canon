@@ -58,7 +58,7 @@ func (k *partKeyer) key(n syntax.Node, t types.Type) (string, bool) {
 		if !ok {
 			return "", false
 		}
-		text, err := k.pa.canonText(v)
+		text, err := k.pa.canonTextAt(v, t)
 		return text, err == nil
 	case k.s.nodeForm(n) != shape.FormLiteral:
 		return opaqueOpen + k.text(n) + opaqueClose, true
