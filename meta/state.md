@@ -1,6 +1,6 @@
 # State — Canon compiler
 
-Updated: 2026-11-02 (ADR-0026 written). **v0.2.0 released 2026-11-02** (tag on `a0fb77a2`, pushed with `main` and
+Updated: 2026-11-05 (v0.3 run, §0 units landing). **v0.2.0 released 2026-11-02** (tag on `a0fb77a2`, pushed with `main` and
 published as the GitHub release at Louis's request; installed in `~/.local/bin`, 0.1.13 kept as `canon-0.1.13`). It is the trust release: `expect package`, checked decoders, bound constants, opaque enums, macro and
 wire-name refusals, DECISIONS 398-429 ([ADR-0023](decisions/0023-v02-trust-release.md),
 [log 10-31](decisions/log-2026-10-31.md), [log 11-01](decisions/log-2026-11-01.md),
@@ -14,9 +14,11 @@ headlines: [releases.md](releases.md). `main` is the only branch.
 0.2.0; Resource `23d54ac6`); the reply's migrations remain (Go: wiki 5, monitoring 3, trello 2 sites; TS: admin 1, monitoring 3; Source: 70 `…FileFile` call
 sites; Resource: the `WindowIds.h` defines, `expect package` for its `…Problems` workarounds).
 
-**Next step: run v0.3, lean generated code** ([ADR-0026](decisions/0026-v03-lean-generated-code.md),
-decision-complete: 34 units, DECISIONS 430-452, measured on Sovereign's real output; it supersedes the
-outline [ADR-0024](decisions/0024-v03-lean-generated-code-outline.md)). Run it by its §0 and §17, S0 first.
+**In flight (2026-11-05): v0.3, lean generated code** ([ADR-0026](decisions/0026-v03-lean-generated-code.md)).
+Its 34 units and CLEANUP are on `main`. Its §0 new-bug units are landing, DECISIONS 453-479 so far
+(edit/layer correctness, Graph at any depth, `canon check` over every layer: 469-472). The run's state lives in
+`/var/tmp/canon-v030/roster.tsv` and `pending-log.md`; fold them into `meta/decisions/log-2026-11-0x.md` at
+the end. Then §18: the long gates, the Resource dry run, release notes; Louis pushes. Nothing is pushed yet.
 Its §0 flags four calls for Louis, none blocking. v0.4 formulas ([ADR-0025](decisions/0025-v04-formulas-outline.md))
 follows; v0.5 binary data (with baked views and presence bits) and v0.6 runtime values are direction
 ([roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md)). Louis, 2026-10-31: formulas before binary data;
