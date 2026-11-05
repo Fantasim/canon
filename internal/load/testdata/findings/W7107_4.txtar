@@ -1,0 +1,11 @@
+WIRE.md 6.5, 2.2 item 1: "**" first walks from the directory of the file it is written in;
+no JSON file below it, so W7107, not E7001 (an empty segment).
+-- pattern --
+**/*.json
+-- sub/notes.txt --
+kept
+-- findings.txt --
+warning[W7107]  pattern:1:1
+  glob **/*.json matches no file
+
+0 errors, 1 warning in 1 package (…)

@@ -20,6 +20,7 @@ const (
 	backslash   = `\`
 	dotSeg      = "."
 	dotDotSeg   = ".."
+	ownDir      = dotSeg + sepStr
 )
 
 // Named options of a load form (WIRE.md §6.1).

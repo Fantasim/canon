@@ -666,7 +666,10 @@ Pattern syntax, per `/`-separated segment:
 - `**` not forming a whole segment, an unclosed `[` or `{`, or an empty alternative is `E7005`.
   There is no escape character (`\` is `E7001`): match a literal `*` with `[*]`.
 - **Base.** The segments before the first one containing a magic character form a literal path,
-  resolved by §2.2; it must stay inside its root or the project [`E7001`]. The walk starts there.
+  resolved by §2.2; it must stay inside its root or the project [`E7001`, quoting the pattern]. The walk
+  starts there. A pattern whose first segment holds a magic character has no literal segment: its base
+  is the directory of the file it is written in (§2.2 item 1), so `*.json` reads as `./*.json`
+  (DECISIONS 482).
 - Matching is case-sensitive on every platform. Characters are Unicode code points of UTF-8 names.
 - **Dotfiles.** A name starting with `.` matches only a pattern segment that starts with a literal
   `.`. `**` never enters a directory whose name starts with `.`.

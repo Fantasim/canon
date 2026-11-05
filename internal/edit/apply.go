@@ -93,7 +93,10 @@ func Apply(ctx context.Context, env Env, base *Snapshot, req Request) (*Plan, er
 	if err := a.cascade(); err != nil {
 		return nil, asked{ops: req.Ops, paths: a.opPaths}.cascadeRefusal(err)
 	}
-	p := a.finish()
+	p, err := a.finish()
+	if err != nil {
+		return nil, refusal(err)
+	}
 	kept, err := a.keepLocked(p.Undo, p.Locked)
 	if err != nil {
 		return nil, refusal(err)
@@ -378,7 +381,7 @@ type opCtx struct {
 }
 
 // finish is the plan: the files that changed, the inverses last operation first (E23).
-func (a *applier) finish() *Plan {
+func (a *applier) finish() (*Plan, error) {
 	p := &Plan{Dropped: a.dropped, NameClash: a.nameClash, NameEdits: a.nameEdits, writes: map[string][]writeStep{}}
 	for _, display := range slices.Sorted(maps.Keys(a.files)) {
 		if a.files[display].normalized {
@@ -390,11 +393,15 @@ func (a *applier) finish() *Plan {
 		p.Undo = append(p.Undo, ops...)
 	}
 	p.Undo = append(p.Undo, a.cascadeUndo...)
-	p.Changes = append(p.Changes, a.removedDirs()...)
+	dirs, err := a.removedDirs()
+	if err != nil {
+		return nil, err
+	}
+	p.Changes = append(p.Changes, dirs...)
 	p.Touched, p.Unowned = a.owned(p.Changes)
 	p.Locked = slices.Compact(slices.SortedFunc(slices.Values(a.locked), compareLocked))
 	slices.SortStableFunc(p.Dropped, func(x, y Dropped) int { return strings.Compare(x.Path, y.Path) })
-	return p
+	return p, nil
 }
 
 // owned are the packages owning a file the changes write (E17) and the files they write that no

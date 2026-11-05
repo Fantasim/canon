@@ -1319,7 +1319,9 @@ inside the same edit and reports it, so every client behaves the same.
   token's source text, so `1.0` stays `1.0` (DECISIONS 337). Comments of removed items and a deleted entry
   file's doc comment are not restored, a recreated entry file may lie at any path its `@files`
   template gives for its key, whatever its templated fields, and a defaulted parent the Undo empties
-  may remain written as `{}`. For every edit with an `EditLayer` (W11), active or not, the Undo
+  may remain written as `{}`. An Undo leaves a `load.dir` base its edit created (N6), so a walk that read that
+  base missing (`E7004`) before the edit reads it empty (`W7107`) after the Undo: a root with no value has none to
+  restore. For every edit with an `EditLayer` (W11), active or not, the Undo
   restores that layer's own lines, each amendment line as it was or a `Reset` where there was none,
   never merged values, and is always verified, in the layer's own view (equality of its lines, whose
   order counts only for lines on overlapping paths) and in the session's layers; a request whose
@@ -1614,7 +1616,7 @@ comments, and a trailing comment on its last line.
   element file contains the element's wire form in canonical source layout.
 - **N6.** `Remove` of an entry declared in its own file deletes the file when the entry is the
   file's only declaration, else removes the declaration (M4); a `load.dir` element's file likewise.
-  Directories left empty are removed, up to but not including the package directory, deepest
+  Directories left empty are removed, up to but not including the package directory and never one where a `load.dir` walk of the sources as the edit leaves them starts (WIRE.md §6.5's base, compared by real path as E17 compares, a layer's walk included, active or not; DECISIONS 482), deepest
   first, after the file deletions; they are journaled and recreated on rollback, and a directory
   no longer empty at commit time is left.
 - **N7.** `Retire` inserts `retired ` before the `entry` keyword, before the entry's key in a

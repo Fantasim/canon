@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"cmp"
 	"fmt"
-	"io/fs"
 	"maps"
 	"path"
 	"slices"
@@ -433,31 +432,6 @@ func (s *Snapshot) tree(display string) *syntax.File {
 		}
 	}
 	return nil
-}
-
-// removedDirs are the directories the edit leaves empty, deepest first (API.md N6): a
-// directory whose every entry is gone, or is such a directory itself.
-func (a *applier) removedDirs() []Change {
-	dirs := slices.Sorted(maps.Keys(a.emptied))
-	slices.SortStableFunc(dirs, func(x, y string) int {
-		return cmp.Compare(strings.Count(y, pathSep), strings.Count(x, pathSep))
-	})
-	over := a.overlay()
-	gone := map[string]bool{}
-	var out []Change
-	for _, d := range dirs {
-		abs, ok := a.env.Project.Abs(d)
-		if !ok {
-			continue
-		}
-		list, err := over.ReadDir(abs)
-		if err != nil || slices.ContainsFunc(list, func(e fs.DirEntry) bool { return !gone[path.Join(d, e.Name())] }) {
-			continue
-		}
-		gone[d] = true
-		out = append(out, Change{Kind: ChangeRemovedDir, Path: d})
-	}
-	return out
 }
 
 // boolRank orders false before true.

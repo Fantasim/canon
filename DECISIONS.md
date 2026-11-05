@@ -5086,3 +5086,21 @@ round 2", "PS1 review", "PS2 round 2"):
      (CHECK-PARENKEYS): `(x)!.k` and `x!.f.k` keyed nothing, `nb!.subs.k` named another collection
      than `nb.subs.k`, and a let path through an optional raised a false `E3503`, one through a ref a
      false `E3501`.
+
+482. **N6 never removes a directory where a `load.dir` walk starts, and a glob with no literal segment
+     walks its file's directory (API.md N6, E17, E19, E22; WIRE.md §2.2, §6.5; follows 474;
+     log-2026-09-24 "load.dir review (M2)" stands).** A directory an edit leaves empty is kept when a
+     `load.dir` of any package, a layer's included, active or not, starts its walk there in the sources
+     as the edit leaves them: a file the edit deletes names no base, and a file it creates or rewrites
+     names its bases by its new text. The base is WIRE.md §6.5's, compared by real path as E17
+     compares. The kept directory stays empty, so the walk matches nothing (`W7107`) instead of
+     reading a missing base (`E7004`): a table can be emptied without `AllowErrors`, its Undo applies,
+     and an `AddEntry` into it is placed by N1-N4. A directory below the base, an entry's own included,
+     is removed as any other; a base that is missing stays `E7004`. An Undo does not remove a base its
+     edit created, so a walk that read it missing before reads it empty after: E22 restores values, and
+     a root with no value has none to restore. A glob whose first segment holds a magic character has
+     no literal segment; its base is the directory of the file it is written in (§2.2 item 1), so
+     `load.dir("*.json")` reads as `./*.json`, and an `E7001` of a glob quotes the pattern as written.
+     Reason: v0.3 run (EDIT-LOADDIREMPTY rounds 1-3): removing the last entry of a `load.dir` table
+     deleted the walk's base, so emptying it was refused and, under `AllowErrors`, its Undo was dead;
+     `load.dir("*.json")` was `E7001` "empty segment".

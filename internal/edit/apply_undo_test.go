@@ -2,7 +2,9 @@ package edit_test
 
 import (
 	"context"
+	"io/fs"
 	"maps"
+	"path"
 	"slices"
 	"strings"
 	"testing"
@@ -14,24 +16,37 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// written is fsys with a plan's changes made: the files it writes, renames and deletes.
+// written is fsys with a plan's changes made: the files it writes, renames and deletes, and the
+// directories it removes; a directory a file left stays, as on disk, unless the plan removes it (N6).
 func written(fsys mapFS, plan *edit.Plan) mapFS {
 	out := mapFS{}
 	for name, f := range fsys { //canon:unordered copies a map
-		out[name] = &fstest.MapFile{Data: f.Data}
+		out[name] = &fstest.MapFile{Data: f.Data, Mode: f.Mode}
 	}
 	for _, ch := range plan.Changes {
 		switch ch.Kind {
 		case edit.ChangeRenamed:
-			delete(out, "law/"+ch.OldPath)
+			leave(out, "law/"+ch.OldPath)
 			out["law/"+ch.Path] = file(string(ch.After))
-		case edit.ChangeDeleted:
-			delete(out, "law/"+ch.Path)
+		case edit.ChangeDeleted, edit.ChangeRemovedDir:
+			leave(out, "law/"+ch.Path)
 		case edit.ChangeModified, edit.ChangeCreated:
 			out["law/"+ch.Path] = file(string(ch.After))
 		}
 	}
+	for name, f := range out { //canon:unordered drops entries one by one
+		if f.Mode.IsDir() && slices.ContainsFunc(slices.Collect(maps.Keys(out)), func(n string) bool { return strings.HasPrefix(n, name+"/") }) {
+			delete(out, name) // a name below it holds it
+		}
+	}
 	return out
+}
+
+// leave removes name from fsys and keeps its directory, which a map file system holds only
+// while a name lies below it.
+func leave(fsys mapFS, name string) {
+	delete(fsys, name)
+	fsys[path.Dir(name)] = &fstest.MapFile{Mode: fs.ModeDir}
 }
 
 // values is the canonical text of every let of the analyzed packages, by name; unordered, a

@@ -54,8 +54,8 @@ func (l *Loader) dirNames(pattern string, req Request) Named {
 	for i, m := range matches {
 		out.Files[i] = File(m)
 	}
-	if base, rest, ok := l.globBase(pattern, req.From, req.Span, req.Bag); ok && rest != "" {
-		out.Dirs = append(out.Dirs, base.Abs) // its base directory, even one that does not exist yet (API.md E17)
+	if base, ok := l.walkBase(pattern, req); ok {
+		out.Dirs = append(out.Dirs, base) // its base directory, even one that does not exist yet (API.md E17)
 	}
 	for _, c := range in.calls {
 		switch c.kind {
@@ -67,4 +67,23 @@ func (l *Loader) dirNames(pattern string, req Request) Named {
 		}
 	}
 	return out
+}
+
+// DirBase is the absolute name of the directory the walk of the load.dir e, written in a file of
+// the directory from, starts at (WIRE.md 6.5's base), there or not; false for another form, a
+// path that is no string literal or does not resolve, or a pattern with no wildcard.
+func DirBase(layout *project.Layout, from string, e *syntax.LoadExpr) (string, bool) {
+	pattern, ok := literalPath(e)
+	if !ok || e.Method == nil || e.Method.Name != methodDir {
+		return "", false
+	}
+	l := &Loader{Layout: layout}
+	return l.walkBase(pattern, Request{From: from, Bag: diag.NewBag(nil, "")})
+}
+
+// walkBase is the absolute name of the directory load.dir(pattern)'s walk starts at; false for a
+// pattern that does not resolve or has no wildcard (WIRE.md 6.5).
+func (l *Loader) walkBase(pattern string, req Request) (string, bool) {
+	base, rest, ok := l.globBase(pattern, req.From, req.Span, req.Bag)
+	return base.Abs, ok && rest != ""
 }

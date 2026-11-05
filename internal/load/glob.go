@@ -25,8 +25,14 @@ func (l *Loader) globBase(pattern, from string, span source.Span, bag *diag.Bag)
 		return project.Path{}, "", false
 	}
 	prefix, rest := splitGlob(pattern)
-	base, ok := l.Layout.Resolve(prefix, from, span, bag)
-	return base, rest, ok
+	if prefix == "" && rest != "" {
+		prefix = ownDir // no literal segment: the directory of the file it is written in (WIRE.md 2.2 item 1)
+	}
+	if base, ok := l.Layout.Resolve(prefix, from, span, diag.NewBag(nil, "")); ok {
+		return base, rest, true
+	}
+	l.Layout.Resolve(pattern, from, span, bag) // fails as its prefix does; the finding quotes the pattern as written
+	return project.Path{}, "", false
 }
 
 // globCheck is validateGlob's verdict: well-formed (dirOnly told apart) or one of the errors below, with the extra data its message needs (WIRE.md §2.1, §6.5).

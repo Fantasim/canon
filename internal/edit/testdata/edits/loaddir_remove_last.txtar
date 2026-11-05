@@ -1,0 +1,98 @@
+API.md N6 (DECISIONS 482), WIRE.md §6.5 (LOD-05): Remove of every entry of a load.dir table
+whose files lie one directory per entry deletes each file and the entry directories it leaves
+empty, but never the walk's base, rights/: no dirRemoved names it, so the walk still has a
+directory to read. The flat ranks/ keeps its base the same way. API.md E22, E23: the Undo is an
+AddEntry alone per entry, placed by @files and N4, and applies to the tables the edit empties.
+-- options --
+pkgs: guild
+-- edit.json --
+{"ops": [
+  {"op": "remove", "path": "rights.invite"},
+  {"op": "remove", "path": "rights.kick"},
+  {"op": "remove", "path": "ranks.master"}
+]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- guild/guild.canon --
+package guild
+
+/// A guild right.
+record Right {
+  /// Its code.
+  code: Int
+}
+
+/// One directory per right.
+@files("rights/{id}/{id}.json")
+let rights: table Right = load.dir("rights/*/*.json")
+
+/// A guild rank.
+record Rank {
+  /// Its order.
+  order: Int
+}
+
+/// One file per rank.
+let ranks: table Rank = load.dir("ranks/*.json")
+-- guild/rights/invite/invite.json --
+{
+  "code": 1
+}
+-- guild/rights/kick/kick.json --
+{
+  "code": 2
+}
+-- guild/ranks/master.json --
+{
+  "order": 1
+}
+-- result.json --
+{
+  "changes": [
+    {
+      "kind": "deleted",
+      "path": "guild/ranks/master.json"
+    },
+    {
+      "kind": "deleted",
+      "path": "guild/rights/invite/invite.json"
+    },
+    {
+      "kind": "deleted",
+      "path": "guild/rights/kick/kick.json"
+    },
+    {
+      "kind": "dirRemoved",
+      "path": "guild/rights/invite"
+    },
+    {
+      "kind": "dirRemoved",
+      "path": "guild/rights/kick"
+    }
+  ],
+  "undo": [
+    {
+      "op": "addEntry",
+      "path": "guild:ranks",
+      "key": "master",
+      "source": "{ order: 1 }"
+    },
+    {
+      "op": "addEntry",
+      "path": "guild:rights",
+      "key": "kick",
+      "source": "{ code: 2 }"
+    },
+    {
+      "op": "addEntry",
+      "path": "guild:rights",
+      "key": "invite",
+      "source": "{ code: 1 }"
+    }
+  ],
+  "touched": [
+    "guild"
+  ]
+}
