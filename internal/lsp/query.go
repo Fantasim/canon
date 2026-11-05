@@ -255,32 +255,89 @@ func amendSeg(seg *syntax.AmendSegment) (edit.Seg, bool) {
 	return keySeg(k), ok
 }
 
-// keyEntries are the entries a key written in source names: an amend `[k]` of the collection it
-// indexes by the line's static path; in a let's collection by its path; in a record field's, the
-// instance's its selector reads statically, else each's a let's value evaluates the key in, as a ref.
+// keyEntries are the entries a key written in source names: an amend `[k]` or the key of a list
+// keyed by a ref, the element by the static path; in a let's collection by its path; in a record
+// field's, the instance's its selector reads statically, else each's a let's value evaluates it in.
 func (sp *spot) keyEntries(ctx context.Context, coll *types.Collection, e syntax.Expr) ([]edit.Resolved, error) {
-	// TYPES.md §10.2, DECISIONS 285, 470, 484, 487
-	if block, line := sp.amendLine(segKeyed(e)); block != nil && line != nil && !sp.refTyped(e) {
-		return sp.resolved(sp.amendPrefix(block, line, segKeyed(e))), nil
+	// TYPES.md §10.2, DECISIONS 285, 470, 484, 487, 488
+	if rs, ok := sp.listKey(coll, e); ok {
+		return rs, nil
 	}
 	if coll.Kind == types.CollLet {
 		return sp.resolved(keyPath(coll, e)), nil
 	}
 	if x, ok := e.(*syntax.SelectorExpr); ok {
-		return sp.resolved(sp.selectedKey(x)), nil
+		return sp.resolved(sp.staticKey(x.X, x)), nil
 	}
 	at := sp.file.Span(e)
 	return sp.statedEntries(ctx, &at)
 }
 
-// refTyped reports key e typed `ref C`: it names C's entry, not one of the collection it indexes (DECISIONS 316).
-func (sp *spot) refTyped(e syntax.Expr) bool {
+// listKey is the element a key names in the list its own segment or index indexes, by the static
+// path to it; false for a selector key, a map's or a dependent map's, and a path no let holds.
+func (sp *spot) listKey(coll *types.Collection, e syntax.Expr) ([]edit.Resolved, bool) {
+	if _, isSel := e.(*syntax.SelectorExpr); isSel {
+		return nil, false
+	}
+	own := refKey(coll.KeyedBy) && !sp.namesColl(e, coll)
+	if block, line := sp.amendLine(segKeyed(e)); block != nil && line != nil && (own || !sp.refTyped(e)) {
+		return sp.resolved(sp.amendPrefix(block, line, segKeyed(e))), true
+	}
+	if ix := sp.indexed(e); ix != nil && sp.refKeyedList(ix.X) {
+		rs := sp.resolved(sp.staticKey(ix.X, ix.Index))
+		return rs, len(rs) > 0
+	}
+	return nil, false
+}
+
+// namesColl reports key e typed a ref to coll: it names an entry of coll, not one of a list keyed by it.
+func (sp *spot) namesColl(e syntax.Expr, coll *types.Collection) bool {
 	t := sp.info.Types[e]
 	if t == nil {
 		return false
 	}
-	_, isRef := t.Base().(*types.RefType)
-	return isRef
+	rt, ok := t.Base().(*types.RefType)
+	return ok && rt.Target != nil && rt.Target.Pkg == coll.Pkg && rt.Target.Name == coll.Name &&
+		slices.Equal(rt.Target.FieldPath, coll.FieldPath)
+}
+
+// isRef reports a type that is a ref.
+func isRef(t types.Type) bool {
+	if t == nil {
+		return false
+	}
+	_, ok := t.Base().(*types.RefType)
+	return ok
+}
+
+// refKey reports a key field typed `ref C`: a collection it keys names its elements by refs.
+func refKey(f *types.Field) bool {
+	return f != nil && isRef(f.Type)
+}
+
+// refKeyedList reports an expression of a list keyed by a field typed `ref C`.
+func (sp *spot) refKeyedList(recv syntax.Expr) bool {
+	t := sp.info.Types[recv]
+	if t == nil {
+		return false
+	}
+	l, isList := t.Base().(*types.ListType)
+	return isList && refKey(l.KeyedBy)
+}
+
+// indexed is the index expression `x[e]` at the spot whose key is e, nil for none.
+func (sp *spot) indexed(e syntax.Expr) *syntax.IndexExpr {
+	for _, n := range slices.Backward(sp.chain) {
+		if ix, ok := n.(*syntax.IndexExpr); ok && ix.Index == e {
+			return ix
+		}
+	}
+	return nil
+}
+
+// refTyped reports key e typed `ref C`: it names C's entry, not one of the collection it indexes (DECISIONS 316).
+func (sp *spot) refTyped(e syntax.Expr) bool {
+	return isRef(sp.info.Types[e])
 }
 
 // keyPath is the value path of the entry a key written in source names in a let's collection:
@@ -304,11 +361,11 @@ func collKeyPath(coll *types.Collection, k value.Key) *edit.Path {
 	return &p
 }
 
-// selectedKey is the value path of the entry `x.key` names, where x is read statically from a
-// let; nil for any other receiver.
-func (sp *spot) selectedKey(x *syntax.SelectorExpr) *edit.Path {
-	k, ok := writtenKey(x)
-	p, static := sp.snap.StaticPath(x.X)
+// staticKey is the value path of the entry key names in the collection recv holds, where recv is
+// read statically from a let; nil for any other receiver or a key not written whole.
+func (sp *spot) staticKey(recv, key syntax.Expr) *edit.Path {
+	k, ok := writtenKey(key)
+	p, static := sp.snap.StaticPath(recv)
 	if !ok || !static {
 		return nil
 	}

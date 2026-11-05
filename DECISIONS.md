@@ -5207,3 +5207,24 @@ round 2", "PS1 review", "PS2 round 2"):
      instance's `x`, so a rename retargeted another instance's line; the first fix dropped
      ref-typed map keys from `Refs` and sent their definition to the amended value; and `xs!.x` on
      an optional keyed-list let named no collection.
+
+488. **A key of a list keyed by a `ref` names the element it looks up, in the language server
+     (IMPLEMENTATION-PLAN §8.4; TYPES.md §4.1, §9.1, §10.2; follows 285, 316, 456, 470, 484, 487).**
+     In a keyed list whose key field is typed `ref C` (`ts: [T] keyed by k`, `k: ref items`), a key
+     written bare or as a literal (`.k` or `[k]`) names the element of that list it looks up, in an
+     expression and in an amend segment alike, at a let's static path (`h.ts[shield]`), after an
+     entry step (`many.one.ts[shield]`, `amend many { one.ts[shield].m: 4 }`) and through `x!` or an
+     optional field. Go-to-definition goes to that element; references answer that element's set.
+     The key stays a ref of C's entry in `Refs` (316, 484), and a rename cascade still rewrites it.
+     A key written as a selector (`ts[items.k]`) names C's entry for definition and references, in
+     an expression and in an amend line alike (487). A key typed `ref C` of a map or a dependent
+     map (`{ref ks: Int}`, `{i in ks: Int}`) goes to C's entry, even when C is itself keyed by a ref
+     (487: a map has no element). Where the list has no static path (a record field's default), a
+     bare key answers as before (C's entry for `[k]`, none for `.k`) until a per-instance walk
+     exists (v0.3 run, queued EDIT-REFKEYINST). Reason: v0.3 run (LSP-REFKEYDEF): `amend many {
+     one.ts[shield].m }` answered null, and the expression `many.one.ts[shield]` went to
+     `items[shield]` while its `.shield` sibling and the `h.ts…` forms went to the element, so one
+     key had two definitions depending on how it was written; the first fix sent a map key whose
+     target is ref-keyed to the map's value, and a selector key to the list's element. Known gap
+     kept: `Refs` does not list an expression's `[k]` token on a list keyed by a `ref` under the
+     element.
