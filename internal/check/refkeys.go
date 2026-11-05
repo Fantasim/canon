@@ -88,6 +88,38 @@ func (l chainLinks) KeyType(f *types.Field) types.Type {
 	return l.c.fieldType(f)
 }
 
+// refLeaf is the type at the leaf of the chain of ref keys a ref key type starts, nil for a key that is no ref, a loop or a target in error (DECISIONS 456).
+func (c *checker) refLeaf(key types.Type) types.Type {
+	if key.Base().Kind() != types.Ref {
+		return nil
+	}
+	leaf, ok := c.leafKey(key)
+	if !ok || leaf.Kind() == types.Error {
+		return nil
+	}
+	return leaf
+}
+
+// leafValue reports a value of type t that keys a list keyed by key, a ref, by its chain's leaf: as `ens[Q.a]` keys a list keyed by Q, `rs[Q.a]` keys one keyed by `ref ens` (TYPES.md §4.1, STDLIB.md §5, DECISIONS 456).
+func (c *checker) leafValue(t, key types.Type) bool {
+	leaf := c.refLeaf(key)
+	return leaf != nil && c.assignable(t, leaf)
+}
+
+// keyedAs is the type a key of a list keyed by key is written as: its chain's leaf for a ref (refLeaf), else key itself (TYPES.md §4.1, DECISIONS 456).
+func (c *checker) keyedAs(key types.Type) types.Type {
+	if leaf := c.refLeaf(key); leaf != nil {
+		return leaf
+	}
+	return key
+}
+
+// enumKey is the enum a key is, read at its chain's leaf, nil when it is no enum: its keys are member names, with no string form (TYPES.md §4.1, DECISIONS 334).
+func (c *checker) enumKey(key types.Type) *types.EnumType {
+	e, _ := unwrapUnion(c.keyedAs(key)).(*types.EnumType)
+	return e
+}
+
 // keyedByInt reports a keyed list whose leaf key (leafKey) is an integer type: a ref into it is an integer literal (TYPES.md §4.1).
 func (c *checker) keyedByInt(coll *types.Collection) bool {
 	if coll.KeyedBy == nil {

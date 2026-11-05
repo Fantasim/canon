@@ -177,22 +177,51 @@ func (c *checker) positional(env *env, x *syntax.IndexExpr, l *types.ListType) t
 
 // keyValue types a key (`xs[k]`, get, find, hasKey) against KT, or a ref into recv's own collection (STDLIB.md §5, TYPES.md §5.1).
 func (c *checker) keyValue(env *env, k, recv syntax.Expr, key types.Type) {
-	if c.bareKey(env, k, recv, key) || c.notValueName(env, k) || c.refKeyLiteral(env, k, key) {
+	if c.memberFirst(env, k, key) || c.bareKey(env, k, recv, key) || c.notValueName(env, k, key) || c.refKeyLiteral(env, k, key) {
 		return
 	}
 	if c.contextIndex(env, k, key) {
-		c.expr(env, k, key)
+		c.expr(env, k, c.keyedAs(key))
 		return
 	}
 	t := c.synth(env, k)
-	if t.Kind() == types.Error || c.assignable(t, key) || c.refOf(t, recv) {
+	if t.Kind() == types.Error || c.assignable(t, key) || c.refOf(t, recv) || c.leafValue(t, key) {
 		return
 	}
-	if id, isName := k.(*syntax.IdentExpr); isName && t.Base().Kind() != types.Ref { // TYPES.md §4.1; a ref is STDLIB.md §5's E3002
+	c.notKey(env, k, key, t)
+}
+
+// notKey is E3027 for a name in scope that is no key, with the member form where the key, read at its leaf, is an enum; E3002 for anything else, a ref included (TYPES.md §4.1, STDLIB.md §5, DECISIONS 334, 456).
+func (c *checker) notKey(env *env, k syntax.Expr, key, t types.Type) {
+	id, isName := k.(*syntax.IdentExpr)
+	switch {
+	case !isName || t.Base().Kind() == types.Ref:
+		c.report(env, diag.E3002.At(env.span(k), key, t))
+	case c.enumKey(key) != nil:
+		c.report(env, diag.E3027.AtValueMember(env.span(k), id.Name, c.enumKey(key), t))
+	default:
 		c.report(env, diag.E3027.AtValue(env.span(k), id.Name, key, t))
-		return
 	}
-	c.report(env, diag.E3002.At(env.span(k), key, t))
+}
+
+// memberFirst types a bare name that names a member of the enum a key is, read at its chain's leaf, as that member: step 1 comes before scope there, at one level and through a chain (TYPES.md §3.3, §4.1, DECISIONS 456).
+func (c *checker) memberFirst(env *env, k syntax.Expr, key types.Type) bool {
+	id, isName := k.(*syntax.IdentExpr)
+	if !isName || c.refValue(env, id, key) {
+		return false
+	}
+	enum := c.enumKey(key)
+	if enum == nil || c.memberObject(enum, id.Name) == nil {
+		return false
+	}
+	c.expr(env, k, c.keyedAs(key))
+	return true
+}
+
+// refValue reports a name in scope holding a value of key, a ref: the key's exact type, so the name is that value even where it names a member, and its chain is never read, so a chain still resolving is no cycle (TYPES.md §10.2, DECISIONS 456, 490).
+func (c *checker) refValue(env *env, id *syntax.IdentExpr, key types.Type) bool {
+	o := c.lookup(env, id.Name)
+	return o != nil && key.Base().Kind() == types.Ref && c.valueOf(o, key)
 }
 
 // contextIndex reports an index or key checked against want: context-dependent, no bare name, no literal of a ref key (refKeyLiteral's; TYPES.md §5.1, §5.3).
@@ -213,8 +242,8 @@ func (c *checker) refKeyLiteral(env *env, k syntax.Expr, key types.Type) bool {
 	return true
 }
 
-// notValueName is E3027 `notValue` for a key written as a name in scope that is not a value (TYPES.md §4.1).
-func (c *checker) notValueName(env *env, k syntax.Expr) bool {
+// notValueName is E3027 `notValue` for a key written as a name in scope that is not a value, with the member form for an enum key (TYPES.md §4.1, DECISIONS 334).
+func (c *checker) notValueName(env *env, k syntax.Expr, key types.Type) bool {
 	id, isName := k.(*syntax.IdentExpr)
 	if !isName {
 		return false
@@ -225,6 +254,10 @@ func (c *checker) notValueName(env *env, k syntax.Expr) bool {
 	}
 	c.info.Uses[id] = o
 	c.dependsOn(env, o)
+	if enum := c.enumKey(key); enum != nil {
+		c.report(env, diag.E3027.AtNotValueMember(env.span(id), o.name, notValueKind(o), enum))
+		return true
+	}
 	c.notValueKey(env, id, o)
 	return true
 }

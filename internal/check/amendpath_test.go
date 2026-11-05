@@ -13,6 +13,7 @@ import (
 
 const (
 	layerFile = "a/dev.layer.canon"
+	devLayer  = "dev"
 	layerBase = `package a
 
 local enum Grade { low, high }

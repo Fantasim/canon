@@ -6,6 +6,7 @@ import (
 	"maps"
 	"slices"
 	"testing"
+	"testing/fstest"
 
 	"github.com/fantasim/canonlang/internal/build"
 	"github.com/fantasim/canonlang/internal/check"
@@ -165,14 +166,19 @@ func buildOne(t *testing.T, text string) *build.Result {
 	return buildUnder(t, shopProject, text)
 }
 
-// buildUnder is buildOne with proj as the project file.
-func buildUnder(t *testing.T, proj, text string) *build.Result {
+// buildUnder is buildOne with proj as the project file, and a layer file's text, when given, applied as layer dev.
+func buildUnder(t *testing.T, proj, text string, layer ...string) *build.Result {
 	t.Helper()
 	fsys := shopFS{
 		shopDir + "/" + projectFile: {Data: []byte(proj)},
 		shopDir + "/" + builtFile:   {Data: []byte(text)},
 	}
-	p, err := build.Open(fsys, "/"+shopDir, build.Options{})
+	var opt build.Options
+	for _, l := range layer {
+		fsys[shopDir+"/"+layerFile] = &fstest.MapFile{Data: []byte(l)}
+		opt.Layers = []string{devLayer}
+	}
+	p, err := build.Open(fsys, "/"+shopDir, opt)
 	if err != nil {
 		t.Fatal(err)
 	}

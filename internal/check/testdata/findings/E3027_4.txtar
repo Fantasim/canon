@@ -1,0 +1,76 @@
+TYPES.md §4.1, STDLIB.md §5, EVALUATION.md §9.2, DECISIONS 318, 334, 456: a name in scope used as a key of a list keyed by a ref is a key when its value is of the chain's leaf type, as at one level: `rs[q]` (q of the enum leaf Q) and `ks[n]` (n of the Int leaf), in an expression and an amend path. In an expression, a value of neither the key's type nor its leaf's is E3027, as `ens[n]` is at one level: `rs[n]`, `ks[q]`; where the key, read at its leaf, is an enum, the message says to write a member of it, never a string. In an amend path, `rs[n]` is E3002, as `es[n]` is at one level.
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+}
+
+local record R {
+  r: ref ens
+  w: Int = 0
+}
+
+local record H {
+  rs: [R] keyed by r
+}
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local let ens: [E] keyed by kind = [{ kind: a }, { kind: b }]
+
+local let rs: [R] keyed by r = [{ r: a }]
+
+local let hr: H = { rs: [{ r: a }] }
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let q: Q = a
+
+local let n: Int = 9
+
+local let leaf: Bool = ens[q] == ens[Q.a] and rs[q] == rs[a] and ks[n] == ks[9] and ks.hasKey(n)
+
+local let oneWrong: E = ens[n]
+
+local let chainWrong: R = rs[n]
+
+local let intWrong: K = ks[q]
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend hr {
+  rs[q].w: 1
+}
+
+amend hr {
+  rs[n].w: 2
+}
+-- findings.txt --
+error[E3027]  a/a.canon:45:29
+  n has type Int, not a.Q: write a member of a.Q
+
+error[E3027]  a/a.canon:47:30
+  n has type Int, not a.Q: write a member of a.Q
+
+error[E3027]  a/a.canon:49:28
+  q has type a.Q, not ref a.js; to name the key q, write "q"
+
+error[E3002]  a/dev.layer.canon:9:6
+  expected a.Q, found Int
+
+4 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,46 @@
+TYPES.md §4.1, §10.2, DECISIONS 456, 490: deciding a key's form on a list keyed by a ref reads its chain's leaf, so an unannotated let doing so while the chain still resolves is E3008: `ds` is keyed by `ref cs`, `cs` by `ref J` (the collection of J, found only at `js`, declared after them), and `js` by the enum Q. A bare name no scope has (`ds[zz]`, which may name a member) and a name holding a value of another type than the key's (`ds[m]`, m: Q, which may be of the leaf's) both read it. A name holding a value of the key's own type (`ds[k]`, k: ref cs) reads no leaf, and is no cycle.
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record J {
+  kind: Q
+}
+
+local record C {
+  b: ref J
+  v: Int = 0
+}
+
+local record D {
+  c: ref cs
+  v: Int = 0
+}
+
+local let cs: [C] keyed by b = [{ b: a }]
+
+local let ds: [D] keyed by c = [{ c: a }]
+
+local let m: Q = a
+
+local let k: ref cs = a
+
+local let bare = ds[zz].v
+
+local let named = ds[m].v
+
+local let own = ds[k].v
+
+local let js: [J] keyed by kind = [{ kind: a }]
+-- findings.txt --
+error[E3008]  a/a.canon:30:11
+  cannot infer the type of this expression; add a type
+
+error[E3008]  a/a.canon:32:11
+  cannot infer the type of this expression; add a type
+
+2 errors, 0 warnings in 1 package (…)

@@ -289,7 +289,10 @@ key as a literal of the key field's type (`3` in a `ref modelTypes`, RES-09). Wh
 itself a ref, the key's type is its chain's leaf key's, the first key down the chain that is not a
 ref: an integer for an `Int` leaf, a member name for an enum leaf (DECISIONS 456). The same holds
 for a key argument of `hasKey`, `get`, `find` and `xs[k]`. A literal is a token here (§5.3): `-(5)`
-is no key literal (DECISIONS 460).
+is no key literal (DECISIONS 460). A key position of a list keyed by a ref takes any expression of
+its chain's leaf type, as a list keyed by that leaf does, and a value of the key field's own type;
+where the key, read at its leaf, is an enum, step 1 of §3.3 comes first, so a bare member name is
+the member, save a name holding a value of the key field's own type (DECISIONS 490).
 
 Expected types reach nested positions (§5), so `next: [taken, wont_do]` resolves `taken`
 against `ref Status`, and `{ Stage_1: 20 }` resolves `Stage_1` against the map's key type.

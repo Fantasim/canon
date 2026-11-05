@@ -1,0 +1,45 @@
+TYPES.md §4.1, §6.5, EVALUATION.md §9.2, DECISIONS 456: an amend path's `[k]` on a list keyed by a ref is checked against its chain's leaf, as one level is: an optional value of the leaf's type (`oq: Q?`) is E3403, at one level (`es[oq]`, keyed by Q) and through the chain (`rs[oq]`, keyed by `ref ens`), never E3027.
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+  v: Int = 0
+}
+
+local record R {
+  r: ref ens
+  w: Int = 0
+}
+
+local record H {
+  es: [E] keyed by kind
+  rs: [R] keyed by r
+}
+
+local let ens: [E] keyed by kind = [{ kind: a }]
+
+local let h: H = { es: [{ kind: a }], rs: [{ r: a }] }
+
+local let oq: Q? = a
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend h {
+  es[oq].v: 1
+  rs[oq].w: 2
+}
+-- findings.txt --
+error[E3403]  a/dev.layer.canon:5:6
+  expected a.Q, found a.Q?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/dev.layer.canon:6:6
+  expected a.Q, found a.Q?: prove it is present (!= none, !, ??)
+
+2 errors, 0 warnings in 1 package (…)

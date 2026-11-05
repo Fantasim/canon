@@ -1,0 +1,87 @@
+TYPES.md §4.1, §10.3, STDLIB.md §5, EVALUATION.md §9.2, DECISIONS 456: a list keyed by a ref takes a key of its chain's leaf, form for form as one level does: `rs` (keyed by `ref ens`, `ens` keyed by the enum Q) takes `Q.a` in `xs[k]`, get, find, hasKey and an amend path's `[k]`, as `ens` does. A qualified member is still no ref (`ref rs = Q.a`, `{ r: Q.a }`, as `ref ens = Q.a`), and a member is no key of an Int leaf (`ks[Q.a]`): E3002. In an amend path that member is refused against the leaf (`expected Int`), as a name of the wrong type is there (DECISIONS 456).
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+  v: Int = 0
+}
+
+local record R {
+  r: ref ens
+  w: Int = 0
+}
+
+local record H {
+  rs: [R] keyed by r
+}
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+  w: Int = 0
+}
+
+local record M {
+  ks: [K] keyed by j
+}
+
+local let ens: [E] keyed by kind = [{ kind: a }, { kind: b }]
+
+local let rs: [R] keyed by r = [{ r: a }]
+
+local let hr: H = { rs: [{ r: a }] }
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let mk: M = { ks: [{ j: 9 }] }
+
+local let one: Bool = ens[Q.a] == ens[a] and ens.get(Q.a) != none and ens.find(Q.a) != none and ens.hasKey(Q.a)
+
+local let chain: Bool = rs[Q.a] == hr.rs[a] and rs.get(Q.a) != none and hr.rs.find(Q.a) != none and hr.rs.hasKey(Q.a)
+
+local let oneRef: ref ens = Q.a
+
+local let chainRef: ref rs = Q.a
+
+local let field: R = { r: Q.a }
+
+local let intLeaf: K = ks[Q.a]
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend hr {
+  rs[Q.a].w: 1
+}
+
+amend mk {
+  ks[Q.a].w: 2
+}
+-- findings.txt --
+error[E3002]  a/a.canon:51:29
+  expected ref a.ens, found a.Q
+
+error[E3002]  a/a.canon:53:30
+  expected ref a.rs, found a.Q
+
+error[E3002]  a/a.canon:55:27
+  expected ref a.ens, found a.Q
+
+error[E3002]  a/a.canon:57:27
+  expected ref a.js, found a.Q
+
+error[E3002]  a/dev.layer.canon:9:6
+  expected Int, found a.Q
+
+5 errors, 0 warnings in 1 package (…)

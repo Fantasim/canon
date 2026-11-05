@@ -110,7 +110,7 @@ func (c *checker) element(env *env, x, recv syntax.Expr, elem, key types.Type) {
 	b := optElem(t)
 	switch {
 	case t.Kind() == types.Error || c.assignable(b, elem) || c.refInto(b, elem):
-	case c.assignable(b, key):
+	case c.assignable(b, key) || c.leafValue(b, key):
 		c.keyNotElement(env, x, recv)
 	default:
 		c.report(env, diag.E3002.At(env.span(x), elem, t))

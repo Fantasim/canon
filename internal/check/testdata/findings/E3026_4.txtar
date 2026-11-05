@@ -1,0 +1,68 @@
+STDLIB.md §5, TYPES.md §4.1, DECISIONS 317, 456: a value of the chain's leaf type is a key of a list keyed by a ref, so on the left of `in`, contains or indexOf it is E3026, whose message names hasKey, as it is at one level: `Q.a` and `q` (the enum leaf Q) through `rs` (keyed by `ref ens`), `n` (the Int leaf) through `ks` (keyed by `ref js`).
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+}
+
+local record R {
+  r: ref ens
+}
+
+local record H {
+  rs: [R] keyed by r
+}
+
+local record J {
+  n: Int
+}
+
+local record K {
+  j: ref js
+}
+
+local let ens: [E] keyed by kind = [{ kind: a }]
+
+local let rs: [R] keyed by r = [{ r: a }]
+
+local let hr: H = { rs: [{ r: a }] }
+
+local let js: [J] keyed by n = [{ n: 9 }]
+
+local let ks: [K] keyed by j = [{ j: 9 }]
+
+local let q: Q = a
+
+local let n: Int = 9
+
+local let one: Bool = Q.a in ens or ens.contains(q)
+
+local let chain: Bool = Q.a in rs or hr.rs.contains(q) or rs.indexOf(Q.a) != none
+
+local let intLeaf: Bool = n in ks
+-- findings.txt --
+error[E3026]  a/a.canon:42:23
+  Q.a is a key of ens, not an element: test it with ens.hasKey(Q.a)
+
+error[E3026]  a/a.canon:42:50
+  q is a key of ens, not an element: test it with ens.hasKey(q)
+
+error[E3026]  a/a.canon:44:25
+  Q.a is a key of rs, not an element: test it with rs.hasKey(Q.a)
+
+error[E3026]  a/a.canon:44:53
+  q is a key of hr.rs, not an element: test it with hr.rs.hasKey(q)
+
+error[E3026]  a/a.canon:44:70
+  Q.a is a key of rs, not an element: test it with rs.hasKey(Q.a)
+
+error[E3026]  a/a.canon:46:27
+  n is a key of ks, not an element: test it with ks.hasKey(n)
+
+6 errors, 0 warnings in 1 package (…)

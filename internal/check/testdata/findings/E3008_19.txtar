@@ -1,4 +1,4 @@
-TYPES.md §5.1 (index `xs[i]`; context-dependent operands), §4.1: an index is checked against its expected type, and arithmetic of context-dependent operands checked against a type other than Int, Float or a list is E3008: a String key (`ss[1 + 1]`) and a ref key (`ks[1 + 9]`, keyed by `ref js`; only a literal is a key of it, §4.1).
+TYPES.md §5.1 (index `xs[i]`; context-dependent operands), §4.1, DECISIONS 456: an index is checked against its expected type, and arithmetic of context-dependent operands checked against a type other than Int, Float or a list is E3008: a String key (`ss[1 + 1]`). A list keyed by a ref is checked against its chain's leaf, as one level is, so `ks[1 + 9]` (keyed by `ref js`, an Int leaf) is no finding, as `js[1 + 9]` is not.
 -- a/a.canon --
 package a
 
@@ -27,7 +27,4 @@ local let byRef: K = ks[1 + 9]
 error[E3008]  a/a.canon:21:23
   cannot infer the type of this expression; add a type
 
-error[E3008]  a/a.canon:23:25
-  cannot infer the type of this expression; add a type
-
-2 errors, 0 warnings in 1 package (…)
+1 error, 0 warnings in 1 package (…)

@@ -276,6 +276,9 @@ func (c *checker) amendKey(env *env, w *amendWalk, t types.Type, k syntax.Expr) 
 
 // entryKey types an amend key of the collection w reached: a bare name no scope or key type has is its key (TYPES.md §4.1, DECISIONS 318, 470).
 func (c *checker) entryKey(env *env, w *amendWalk, k syntax.Expr, key types.Type) {
+	if c.memberFirst(env, k, key) {
+		return
+	}
 	id, isName := k.(*syntax.IdentExpr)
 	if isName && c.lookup(env, id.Name) == nil {
 		if o, _ := c.inExpected(unwrapUnion(key), id.Name); o == nil {
@@ -286,5 +289,42 @@ func (c *checker) entryKey(env *env, w *amendWalk, k syntax.Expr, key types.Type
 			}
 		}
 	}
-	c.expr(env, k, key)
+	if !c.leafEntryKey(env, k, key) {
+		c.expr(env, k, key)
+	}
+}
+
+// leafEntryKey types an amend key of a list keyed by a ref against its chain's leaf, as one level types it: a value name not of the key's own type, a context-dependent operand, or a link of a chain whose type fits the leaf; false for any other key (TYPES.md §4.1, DECISIONS 456).
+func (c *checker) leafEntryKey(env *env, k syntax.Expr, key types.Type) bool {
+	if key.Base().Kind() != types.Ref {
+		return false
+	}
+	switch x := inner(k).(type) {
+	case *syntax.IdentExpr:
+		if o := c.lookup(env, x.Name); o == nil || c.valueOf(o, key) || c.optionalOf(o, key) {
+			return false
+		}
+	case *syntax.SelectorExpr, *syntax.IndexExpr, *syntax.ForceExpr, *syntax.CallExpr: // typed without their expected type, a call's included
+		t := c.expr(env, k, nil)
+		c.accept(env, k, t, c.selectedKey(t, key))
+		return true
+	default:
+		if literalOf(k) != nil || !c.contextDependent(env, k) {
+			return false
+		}
+	}
+	leaf := c.refLeaf(key)
+	if leaf == nil {
+		return false
+	}
+	c.expr(env, k, leaf)
+	return true
+}
+
+// selectedKey is the type an amend key of type t, a link of a chain, is accepted against when the key is a ref: the key for a value of it or any ref (a ref into another collection is refused against the key, STDLIB.md §5), else its chain's leaf, as one level types it (DECISIONS 456).
+func (c *checker) selectedKey(t, key types.Type) types.Type {
+	if c.assignable(t, key) || optElem(t).Base().Kind() == types.Ref {
+		return key
+	}
+	return c.keyedAs(key)
 }

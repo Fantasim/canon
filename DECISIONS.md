@@ -5256,3 +5256,32 @@ round 2", "PS1 review", "PS2 round 2"):
      no `Graph` edge, because a value whose provenance sat in a layer file, a default or at a layer
      line's name was dropped as a code token. Two computed refs in one let collapsed into one, so a
      layered value hid the base key ref it sat beside.
+
+490. **A list keyed by a ref takes, as a key, what one level takes, read at its chain's leaf
+     (TYPES.md §3.3, §4.1, §4.2, §5.1, §6.5, §9.1; STDLIB.md §5; EVALUATION.md §9.2; ERRORS.md
+     E3027; follows 317, 318, 334, 366, 456).** Where a keyed list's key field is a `ref C` (`rs:
+     [R] keyed by r`, `r: ref ens`), every key position (`xs[k]`, `get`, `find`, `hasKey`, an amend
+     segment's `[k]`) takes any expression of the chain's leaf type, as a list keyed by that leaf
+     does. That includes a qualified member, a name in scope, a call, an index, a forced optional
+     and a context-dependent operation (`ks[4 + 5]`, `ks[-(9)]`). It also takes, as before, a value
+     of the key field's own type and a ref into the list itself. `rs[Q.a]`, `rs[q]` (q: Q),
+     `rs[pick()]` and `ks[n]` (n: Int, `ks` keyed by `ref js`, `js` keyed by Int) are keys, found by
+     the leaf at evaluation (`E4002` when missing), and a table leaf takes a `String` (`us[s]`). A
+     ref of a middle link of the chain is a ref into another collection: `E3002`. Step 1 comes
+     first: where the key, read at its leaf, is an enum, a bare name naming one of its members is
+     that member, at one level (`ens[b]`) and through a chain (`rs[b]`). A package let of that name
+     is shadowed silently, and a parameter, local or in-scope field of a type assignable to the enum
+     is `E2101` (§4.2). The one exception is a name in scope holding a value of the key field's own
+     `ref` type: that name is that value, and its chain is not read, so a chain still resolving is
+     no cycle. A leaf-typed value on the left of `in`, `contains` or `indexOf` is a key: `E3026`,
+     whose message names `hasKey`. In an amend path, an optional key of the leaf type is `E3403`, as
+     at one level. A name in scope of neither type is `E3027`, whose message, where the key read at
+     its leaf is an enum, says to write a member of it (`valueMember`, `notValueMember`); anything
+     else is `E3002`. Nothing else changes: a qualified member is still no `ref` (`ref rs = Q.a` and
+     `{ r: Q.a }` are `E3002`), and `.k` follows TYPES §3.5. A string literal names a ref's key
+     (366), so `rs["a"]` is a key where `ens["a"]` is `E3002`. Maps and dependent maps keep their
+     key type. Reason: v0.3 run (CHECK-ENUMREFQUAL): the chain refused leaf-typed keys that one
+     level accepts. `rs[Q.a]`, `get/find/hasKey(Q.a)`, `rs[q]`, `ks[n]`, `rs[pick()]`, `ks[4 + 5]`
+     and amend `rs[Q.a].w` gave `E3002`, `E3027` or `E3008`, and `Q.a in rs` gave `E3002` where one
+     level gives `E3026`. The review then found that `ens[b]` with `let b: Q` read the let while
+     `amend { es[b] }` wrote the member, so one key text named two entries.

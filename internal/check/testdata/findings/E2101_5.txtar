@@ -1,0 +1,38 @@
+TYPES.md §3.3, §4.1, §4.2, DECISIONS 456: in a key position whose key, read at its chain's leaf, is an enum, step 1 comes first, so a bare name naming a member is the member, at one level (`ens[b]`) and through a chain (`rs[b]`, keyed by `ref ens`): a package let named like it is silently shadowed (`x`), and a parameter of a type assignable to the enum is ambiguous, E2101 (`f`).
+-- a/a.canon --
+package a
+
+local enum Q {
+  a
+  b
+}
+
+local record E {
+  kind: Q
+  v: Int = 0
+}
+
+local record R {
+  r: ref ens
+  w: Int = 0
+}
+
+local let ens: [E] keyed by kind = [{ kind: a, v: 1 }, { kind: b, v: 2 }]
+
+local let rs: [R] keyed by r = [{ r: a, w: 1 }, { r: "b", w: 2 }]
+
+local let b: Q = a
+
+local let x: Int = ens[b].v + rs[b].w
+
+fn f(b: Q) -> Int {
+  return ens[b].v + rs[b].w
+}
+-- findings.txt --
+error[E2101]  a/a.canon:27:14
+  b is ambiguous: Q.b or the parameter b; write it qualified
+
+error[E2101]  a/a.canon:27:24
+  b is ambiguous: Q.b or the parameter b; write it qualified
+
+2 errors, 0 warnings in 1 package (…)
