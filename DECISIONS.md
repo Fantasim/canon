@@ -5104,3 +5104,34 @@ round 2", "PS1 review", "PS2 round 2"):
      Reason: v0.3 run (EDIT-LOADDIREMPTY rounds 1-3): removing the last entry of a `load.dir` table
      deleted the walk's base, so emptying it was refused and, under `AllowErrors`, its Undo was dead;
      `load.dir("*.json")` was `E7001` "empty segment".
+
+483. **A ref token instances share is judged per instance (API.md R7, R11, E11, E12, E22; follows 315,
+     316, 410, 464, 473, 477).** A `ref` stated in an amendment's right-hand side names the entry of
+     the instance it is bound to, by identity: the instance the line's literal builds at the
+     target's path, else the nearest instance of the ref's record the line's path reaches; keys in
+     the line's path stay as 316 says. A value an amendment replaced is a value ref of the entry the
+     record now at its place holds, the same in `Refs` and `Graph` (R11); a ref copied from another
+     instance keeps that instance's entry (410). A token every instance taking it shares (a field
+     default, a constant, a function or method body, a lambda body) is a ref of an entry only where
+     a stored value it states names that entry: when every such value names the renamed entry a
+     default's or constant's token is rewritten as `code` (a function's or lambda's values stay
+     E12's); when it also names another instance's entry the rename is refused `*NotEditableError`
+     `computed`, listing the paths. A default whose record a called function or method (a recursive
+     one counts) or a lambda builds without stating that field or spreading is also taken by
+     evaluations no walk stores, and refuses `computed`. `hasKey`, `get` and `find` never fail: such
+     a call with the renamed key, recognised by its receiver's static type (a keyed list of the home
+     field's record and key, or a table of its record, wherever held), is a `code` ref when the
+     receiver statically reaches the target's instance (through a let whose value is a static
+     path, 315), no ref when it reaches an entry whose key is written in a source literal, and
+     refused `computed` with its location otherwise: a dynamic receiver (a parameter, a local, a
+     lambda variable, a method's or default's own field) or a let computed from the target's
+     instance (filtered, mapped, spread, concatenated), whose keys follow the rename; a key given by
+     a constant is folded and refused when it reaches the target, the constant being shared. A
+     layer line stating the target's instance or an ancestor whole keeps its literal's key field in
+     step (E11); under an active layer the rename is `layered`, which wins over `computed` (464).
+     Known limits, left to the author: a key passed through a `String` parameter, a key compared as
+     a string, a stored lambda building the record without the field (refused even when every
+     evaluation names the target), and a dynamic receiver over unrelated values of the same type
+     (refused). Reason: v0.3 run (EDIT-RENAMESHARED rounds 1-7): renaming second's entry rewrote a
+     default, constant, lambda or key test that first's instance also took, silently retargeting
+     first's ref.

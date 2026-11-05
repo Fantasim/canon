@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/fantasim/canonlang/internal/check"
@@ -11,17 +12,19 @@ import (
 )
 
 // nameRefs are the names of the target in the files of every package but those inside a
-// stated value (API.md R7): each is code, unless in a view or a translation, a check or an amendment.
-func (s *Snapshot) nameRefs(tg *target, covers []source.Span) []Ref {
-	sc := &nameScan{s: s, tg: tg, covers: covers, reach: reaches(covers)}
+// stated value (API.md R7): each is code, unless in a view or a translation, a check or an
+// amendment; and the paths where a shared token names the target among other entries (refsOf).
+func (s *Snapshot) nameRefs(tg *target, covers []source.Span, uses []sharedUse) ([]Ref, []string) {
+	sc := &nameScan{s: s, tg: tg, covers: covers, reach: reaches(covers), uses: uses, built: map[transientKey]bool{}, calls: map[check.Object]bool{}}
 	for _, pkg := range s.pkgs {
 		sc.pkg = pkg.Path
 		for _, f := range pkg.Files {
 			sc.file = f
-			sc.walk(f, RefCode)
+			sc.walk(f, scanAt{kind: RefCode})
 		}
 	}
-	return sc.out
+	slices.Sort(sc.shared)
+	return sc.out, slices.Compact(sc.shared)
 }
 
 // nameScan walks the syntax of one package's files at a time.
@@ -30,29 +33,60 @@ type nameScan struct {
 	tg     *target
 	covers []source.Span
 	reach  []source.Pos // the furthest end of the covers of one file up to each
+	uses   []sharedUse
 	pkg    string
 	file   *syntax.File
 	out    []Ref
+	shared []string
+	built  map[transientKey]bool // whether a function or a lambda builds a record without a field
+	calls  map[check.Object]bool // whether code uses a function
 }
 
-// walk reports n when it names the target, then its children, under the kind of the
-// construct holding them.
-func (sc *nameScan) walk(n syntax.Node, kind RefKind) {
-	switch n.(type) {
+// scanAt is where a name lies: the kind of the construct holding it, the amendment line and
+// block, the record and field declaring it, and whether a default, constant, function or lambda,
+// which instances share, holds it.
+type scanAt struct {
+	kind   RefKind
+	block  *syntax.AmendBlock
+	line   *syntax.Amendment
+	record *syntax.RecordDecl
+	field  *syntax.FieldDecl
+	shared bool
+}
+
+// enter is at inside n.
+func (at scanAt) enter(n syntax.Node) scanAt {
+	switch x := n.(type) {
 	case *syntax.ViewDecl, *syntax.TranslationEntry:
-		kind = RefView
+		at.kind = RefView
 	case *syntax.CheckDecl:
-		kind = RefCheck
+		at.kind = RefCheck
 	case *syntax.AmendBlock:
-		kind = RefLayer
+		at.kind, at.block = RefLayer, x
+	case *syntax.Amendment:
+		at.line = x
+	case *syntax.RecordDecl:
+		at.record = x
+	case *syntax.FieldDecl:
+		at.field, at.shared = x, true
+	case *syntax.ConstDecl, *syntax.FnDecl, *syntax.LambdaExpr:
+		at.shared = true
 	}
-	if at, ok := sc.names(n); ok {
-		if sp := sc.file.Span(at); !sc.covered(sp) {
-			sc.out = append(sc.out, Ref{Kind: kind, Package: sc.pkg, Span: sp})
+	return at
+}
+
+// walk reports n when it names the target or tests its key, then its children, under the
+// construct holding them.
+func (sc *nameScan) walk(n syntax.Node, at scanAt) {
+	at = at.enter(n)
+	if tok, ok := sc.names(n); ok {
+		if sp := sc.file.Span(tok); !sc.covered(sp) && sc.instanceHolds(tok, sp, at) {
+			sc.out = append(sc.out, Ref{Kind: at.kind, Package: sc.pkg, Span: sp})
 		}
 	}
+	sc.keyTest(n, at)
 	for c := range syntax.Children(n) {
-		sc.walk(c, kind)
+		sc.walk(c, at)
 	}
 }
 

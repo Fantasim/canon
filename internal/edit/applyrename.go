@@ -135,13 +135,16 @@ func (x *opCtx) renameRefs(parent value.Value) ([]Ref, []resolution, error) {
 	if _, isMap := parent.(*value.Map); isMap {
 		return nil, nil, nil
 	}
-	refs, err := x.a.snap.Refs(x.a.ctx, x.res.Resolved)
+	refs, shared, err := x.a.snap.refsOf(x.a.ctx, x.res.Resolved)
 	if err != nil {
 		return nil, nil, err
 	}
-	var stuck []string
+	stuck := shared // a token instances share cannot be renamed for one of them (API.md E12; DECISIONS 483)
 	var moved []resolution
 	reason := ReasonNone
+	if len(shared) > 0 {
+		reason = ReasonComputed
+	}
 	for _, r := range refs {
 		if r.Kind != RefValue && r.Kind != RefKey {
 			continue
@@ -151,18 +154,19 @@ func (x *opCtx) renameRefs(parent value.Value) ([]Ref, []resolution, error) {
 			moved = append(moved, el)
 		} else if why != ReasonNone {
 			stuck = append(stuck, r.Package+packageMark+r.Path)
-			reason = cmpOr(reason, why)
+			reason = blame(reason, why)
 		}
 	}
 	if len(stuck) > 0 {
-		return nil, nil, &NotEditableError{Reason: reason, Refs: stuck}
+		slices.Sort(stuck)
+		return nil, nil, &NotEditableError{Reason: reason, Refs: slices.Compact(stuck)}
 	}
 	return refs, moved, nil
 }
 
-// cmpOr is r unless it is ReasonNone, else why.
-func cmpOr(r, why Reason) Reason {
-	if r != ReasonNone {
+// blame is r unless it is ReasonNone, else why; `layered` wins over any other, the more specific (DECISIONS 464).
+func blame(r, why Reason) Reason {
+	if r != ReasonNone && why != ReasonLayered {
 		return r
 	}
 	return why

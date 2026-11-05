@@ -28,21 +28,31 @@ type Ref struct {
 // values and map keys stated in a source, names in code, views, checks and amendments. r names
 // a table entry, a keyed-list element or an enum member, else ErrBadOp; ErrForeign if not of s.
 func (s *Snapshot) Refs(ctx context.Context, r Resolved) ([]Ref, error) {
+	refs, _, err := s.refsOf(ctx, r)
+	return refs, err
+}
+
+// refsOf is Refs, and the paths where a default's or a constant's token, which every instance
+// taking it shares, names the target while another instance's names another entry: no rewrite
+// of that token renames one instance's entry alone (API.md R7, E12; DECISIONS 483).
+func (s *Snapshot) refsOf(ctx context.Context, r Resolved) ([]Ref, []string, error) {
 	res, err := s.reopen(r)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	tg, ok := s.target(res)
 	if !ok {
-		return nil, &PathError{Seg: len(r.Steps) - 1, Err: ErrBadOp}
+		return nil, nil, &PathError{Seg: len(r.Steps) - 1, Err: ErrBadOp}
 	}
-	refs, covers, err := s.valueRefs(ctx, tg)
+	sc, err := s.valueRefs(ctx, tg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	refs = append(refs, s.nameRefs(tg, covers)...)
+	refs, covers := sc.listed()
+	names, shared := s.nameRefs(tg, covers, sc.uses)
+	refs = append(refs, names...)
 	slices.SortFunc(refs, func(a, b Ref) int { return s.refOrder(a, b) })
-	return refs, nil
+	return refs, shared, nil
 }
 
 // refOrder is R8: the F2 order of the spans (file, then position), then kind, package, path.
@@ -63,6 +73,7 @@ type target struct {
 	s       *Snapshot
 	paths   map[*types.Collection]bool // the let-path collections met, naming the target's instance or not
 	held    *heldHome                  // the optional record field holding the target, when its identity names no field collection
+	res     resolution                 // the target's path, which an amendment's line is matched against
 }
 
 // heldHome is the optional record field holding a target, which takes no field identity (DECISIONS 411, 470).
@@ -85,7 +96,7 @@ func (s *Snapshot) target(res resolution) (*target, bool) {
 	if n == 0 || !ok || rec.Ident == nil || !keyedContainer(res.Steps[n-1].Container) {
 		return nil, false
 	}
-	tg := &target{ident: rec.Ident, objects: s.entryObjects(rec.Ident), s: s, paths: map[*types.Collection]bool{}}
+	tg := &target{ident: rec.Ident, objects: s.entryObjects(rec.Ident), s: s, paths: map[*types.Collection]bool{}, res: res}
 	tg.held = heldAt(res, rec.Ident)
 	return tg, true
 }

@@ -53,13 +53,26 @@ func (s *Snapshot) newGraphScan(ns *nodeSet) *graphScan {
 
 // visit is the walk's visit: a value or map key naming nodes is noted as kind for each.
 func (sc *graphScan) visit(kind RefKind) visitFn {
-	return func(r rootRef, v, _ value.Value, segs []Seg) bool {
+	return func(r rootRef, v, parent value.Value, segs []Seg) bool {
 		sc.frames.at(len(segs), v)
-		if to := sc.targets(v); len(to) > 0 {
+		if to := sc.replaced(v, parent, sc.targets(v)); len(to) > 0 {
 			sc.note(r, kind, v, segs, to)
 		}
 		return false
 	}
+}
+
+// replaced adds to to, for a value an amendment replaced, the entry it names in the record now at
+// its place, as Refs judges it (refvalues.go names; DECISIONS 483).
+func (sc *graphScan) replaced(v, parent value.Value, to []int) []int {
+	x, isRef := v.(*value.Ref)
+	if !isRef || !sc.w.inOld {
+		return to
+	}
+	if id := placeIdent(x, parent); id != nil {
+		sc.add(nodeIdent{coll: id.Coll, owner: id.Owner, key: id.Key})
+	}
+	return sc.buf
 }
 
 // targets are the nodes v names, as target.isValue matches them (refs.go): a ref's entry by

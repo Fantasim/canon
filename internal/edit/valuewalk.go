@@ -25,6 +25,7 @@ type valueWalk struct {
 	seen     map[value.Value]bool
 	visits   int
 	done     bool
+	inOld    bool // the value visited is one an amendment replaced, or inside one
 }
 
 func (s *Snapshot) newWalk(visit visitFn, replaced bool) *valueWalk {
@@ -88,6 +89,7 @@ func (w *valueWalk) value(r rootRef, v, parent value.Value, segs []Seg, old bool
 		w.seen[v] = true // only replaced values are met twice
 	}
 	w.visits++
+	w.inOld = old
 	if w.done = w.visit(r, v, parent, segs); w.done {
 		return
 	}

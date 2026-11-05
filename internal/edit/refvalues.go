@@ -22,36 +22,44 @@ type found struct {
 // refScan is one Refs call's walk of the lets, active and replaced values alike: the name
 // tokens of each file read so far, and the references found.
 type refScan struct {
-	s      *Snapshot
-	tg     *target
-	w      *valueWalk
-	tokens map[source.FileID]map[source.Span]bool
-	found  []found
-	others []source.Span // the tokens stating a ref of the target's collection that names another entry
+	s       *Snapshot
+	tg      *target
+	w       *valueWalk
+	tokens  map[source.FileID]map[source.Span]bool
+	found   []found
+	others  []source.Span // the tokens stating a ref of the target's collection that names another entry
+	uses    []sharedUse   // the shared tokens met, in walk order
+	useAt   map[source.Span]int
+	regions map[source.FileID][]sharedRegion // each file's shared regions, read once
 }
 
-// valueRefs are the target's values and map keys in every let, active and replaced by
-// amendments alike, one per span (log-2026-09-29 M4 U4a); covers are the spans stating them, and
-// those stating a ref to another entry of its collection, whose names are no other reference, sorted.
-func (s *Snapshot) valueRefs(ctx context.Context, tg *target) ([]Ref, []source.Span, error) {
+// valueRefs walks the target's values and map keys in every let, active and replaced by
+// amendments alike (log-2026-09-29 M4 U4a), and the values of instances sharing a token.
+func (s *Snapshot) valueRefs(ctx context.Context, tg *target) (*refScan, error) {
 	sc := s.newScan(tg)
 	if err := sc.lets(ctx); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+	return sc, nil
+}
+
+// listed are the references found, one per span; covers are the spans stating them, and those
+// stating a ref to another entry of its collection, whose names are no other reference, sorted.
+func (sc *refScan) listed() ([]Ref, []source.Span) {
 	var refs []Ref
 	covers := sc.others
-	for _, f := range s.firstPaths(sc.found) {
+	for _, f := range sc.s.firstPaths(sc.found) {
 		refs = append(refs, f.ref)
 		if !f.computed {
 			covers = append(covers, f.ref.Span)
 		}
 	}
 	slices.SortFunc(covers, spanOrder)
-	return refs, covers, nil
+	return refs, covers
 }
 
 func (s *Snapshot) newScan(tg *target) *refScan {
-	sc := &refScan{s: s, tg: tg, tokens: map[source.FileID]map[source.Span]bool{}}
+	sc := &refScan{s: s, tg: tg, tokens: map[source.FileID]map[source.Span]bool{}, useAt: map[source.Span]int{}, regions: map[source.FileID][]sharedRegion{}}
 	sc.w = s.newWalk(sc.noted(RefValue), true)
 	sc.w.onKey = sc.noted(RefKey)
 	sc.w.strict = tg.missing // a let that could hold the target but has no value fails the list
@@ -64,16 +72,29 @@ func (sc *refScan) lets(ctx context.Context) error {
 }
 
 // noted is the walk's visit: a value or map key that is the target is noted as kind; a stated
-// ref to another entry of its collection, by identity, is no reference of the target (API.md R7).
+// ref to another entry of its collection, by identity, is no reference of the target (API.md R7);
+// a ref a default or a constant states is a use of that shared token (DECISIONS 483).
 func (sc *refScan) noted(kind RefKind) visitFn {
-	return func(r rootRef, v, _ value.Value, segs []Seg) bool {
-		if sc.tg.isValue(v) {
+	return func(r rootRef, v, parent value.Value, segs []Seg) bool {
+		switch {
+		case sc.used(r, v, parent, segs):
+		case sc.names(v, parent):
 			sc.note(r, kind, v, segs)
-		} else {
+		default:
 			sc.other(v)
 		}
 		return false
 	}
+}
+
+// names reports v the target: by its own identity, or, for a value an amendment replaced, by the
+// entry it names in the record now at its place; a copied ref keeps its source's (DECISIONS 410).
+func (sc *refScan) names(v, parent value.Value) bool {
+	if sc.tg.isValue(v) {
+		return true
+	}
+	x, isRef := v.(*value.Ref)
+	return isRef && sc.w.inOld && sc.tg.isEntry(placeIdent(x, parent))
 }
 
 // other keeps the token stating v when v is a ref to an entry of the target's collection.

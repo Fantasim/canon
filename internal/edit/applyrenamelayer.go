@@ -33,22 +33,45 @@ func (r *renaming) blockKeys(f *syntax.File, b *syntax.AmendBlock, last int) err
 		return nil
 	}
 	for _, it := range b.Items {
-		if len(it.Path) <= last {
-			continue
-		}
-		if _, ok := r.x.a.snap.prefixOf(it.Path[:last+1], r.x.res); !ok {
-			continue
-		}
-		if err := r.segKey(f, it, last); err != nil {
+		if err := r.lineKeys(f, it, last); err != nil {
 			return err
-		}
-		if len(it.Path) == last+1 {
-			if err := r.lineKeyField(f, it); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
+}
+
+// lineKeys is blockKeys on line it: above the item, the key field its literal states; reaching
+// it, the key segment, and the key field of a line stating it whole.
+func (r *renaming) lineKeys(f *syntax.File, it *syntax.Amendment, last int) error {
+	if len(it.Path) <= last {
+		return r.aboveKeyField(f, it)
+	}
+	if _, ok := r.x.a.snap.prefixOf(it.Path[:last+1], r.x.res); !ok {
+		return nil
+	}
+	if err := r.segKey(f, it, last); err != nil {
+		return err
+	}
+	if len(it.Path) == last+1 && it.Value != nil {
+		return r.lineKeyField(f, syntax.Unparen(it.Value))
+	}
+	return nil
+}
+
+// aboveKeyField rewrites the renamed element's key field where line it states one of its
+// ancestors whole and its literal holds the element's: the layer's own instance stays one (E11).
+func (r *renaming) aboveKeyField(f *syntax.File, it *syntax.Amendment) error {
+	k, ok := r.x.a.snap.prefixOf(it.Path, r.x.res)
+	if !ok || it.Value == nil {
+		return nil
+	}
+	node := syntax.Node(syntax.Unparen(it.Value))
+	for _, st := range r.x.res.Steps[k:] {
+		if node, ok = childNode(node, st); !ok {
+			return nil
+		}
+	}
+	return r.lineKeyField(f, node)
 }
 
 // segKey rewrites segment i of line it, which names the old key: a line's first, a word that does
@@ -77,14 +100,14 @@ func (r *renaming) segKey(f *syntax.File, it *syntax.Amendment, i int) error {
 	return nil
 }
 
-// lineKeyField rewrites the key field of a line stating a keyed-list element whole, as the
-// rename rewrites the element's own (E11).
-func (r *renaming) lineKeyField(f *syntax.File, it *syntax.Amendment) error {
+// lineKeyField rewrites the key field of n, a line's literal stating a keyed-list element whole,
+// as the rename rewrites the element's own (E11).
+func (r *renaming) lineKeyField(f *syntax.File, n syntax.Node) error {
 	lt, ok := baseOf(r.x.res.Steps[len(r.x.res.Steps)-1].Container).(*types.ListType)
 	if !ok || lt.KeyedBy == nil {
 		return nil
 	}
-	fi := fieldItem(syntax.Unparen(it.Value), lt.KeyedBy.Name)
+	fi := fieldItem(n, lt.KeyedBy.Name)
 	if fi == nil {
 		return nil
 	}
