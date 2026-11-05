@@ -118,20 +118,25 @@ func (w *walker) instance(r *value.Record, t types.Type, at *Path, sc scope) val
 	return w.remembered(r, t, at, sc)
 }
 
-// asCopy is nv, the instance's verified copy, as r: r when unconverted, else nv with r's identity (EVALUATION.md §4.2).
+// asCopy is nv, the instance's verified copy, as r: r when unconverted, else nv with r's identity and provenance (EVALUATION.md §4.2, §13).
 func (w *walker) asCopy(nv value.Value, r *value.Record) value.Value {
 	rec, ok := nv.(*value.Record)
 	switch {
-	case !ok || rec == r || rec.Ident == r.Ident:
+	case !ok || rec == r || rec.Ident == r.Ident && rec.P == r.P:
 		return nv
 	case slices.Equal(rec.Fields, r.Fields):
 		return r
 	}
+	return w.restamped(rec, r)
+}
+
+// restamped is rec, the instance's converted copy, as r: it shares rec's fields and so the instance's entries and refs, nothing moved into it (TYPES.md §6.3).
+func (w *walker) restamped(rec, r *value.Record) value.Value {
 	cp := *rec
-	cp.Ident = r.Ident
-	out := w.moved(r, &cp)
-	w.stage.Shares(&cp, rec)
-	return out
+	cp.Ident, cp.P = r.Ident, r.P
+	w.voidRec()
+	w.stage.Restamped(r, &cp, rec)
+	return &cp
 }
 
 // fields walks each field in the record's env; a field converted makes a copy.

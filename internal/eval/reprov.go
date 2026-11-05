@@ -5,12 +5,12 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// reprov is v with a new origin p, without v's history but with its position mark; a composite copied only when composites (EVALUATION.md §4.2, §13.1).
-func (e *Evaluator) reprov(v value.Value, p *value.Prov, composites bool) value.Value {
+// reprov is v with a new origin p, without v's history but with its position mark, a composite shallow (EVALUATION.md §4.2, §13.1).
+func (e *Evaluator) reprov(v value.Value, p *value.Prov) value.Value {
 	if value.IsPosition(v) {
 		p = e.positionProv(p)
 	}
-	out := reprovValue(v, p, composites)
+	out := reprovValue(v, p)
 	if rec, ok := v.(*value.Record); ok {
 		if cp, isRec := out.(*value.Record); isRec {
 			e.copiedFrom(rec, cp)
@@ -19,7 +19,7 @@ func (e *Evaluator) reprov(v value.Value, p *value.Prov, composites bool) value.
 	return e.mark(v, out)
 }
 
-func reprovValue(v value.Value, p *value.Prov, composites bool) value.Value {
+func reprovValue(v value.Value, p *value.Prov) value.Value {
 	switch x := v.(type) {
 	case *value.Bool:
 		return &value.Bool{V: x.V, P: p}
@@ -37,9 +37,6 @@ func reprovValue(v value.Value, p *value.Prov, composites bool) value.Value {
 		return &value.None{T: x.T, P: p}
 	case *value.Ref:
 		return &value.Ref{T: x.T, Key: x.Key, Owner: x.Owner, P: p}
-	}
-	if !composites {
-		return v
 	}
 	return reprovComposite(v, p)
 }

@@ -137,7 +137,7 @@ func (r *run) setMapKey(mp *value.Map, t types.Type, segs []*syntax.AmendSegment
 	if i >= 0 {
 		cur = mp.Vals[i]
 	} else if p := key.Prov(); p != nil {
-		key = r.ev.reprov(key, &value.Prov{Kind: value.ProvLayer, Span: p.Span, Ext: &value.ProvExt{Layer: m.layer}}, true)
+		key = r.ev.reprov(key, &value.Prov{Kind: value.ProvLayer, Span: p.Span, Ext: &value.ProvExt{Layer: m.layer}})
 	}
 	nv := r.next(cur, vt, segs, m)
 	if nv == nil {

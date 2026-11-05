@@ -163,13 +163,18 @@ func (r *run) settleField(b *building, j int) bool {
 	return r.fill(b.rec, j, b.at)
 }
 
-// spreadCopy is a field a spread copies at p (EVALUATION.md §4.2, §13); p, maybe shared, is left as is (DECISIONS 373).
+// spreadCopy is a field a spread copies at p, via its origin; a record shares its instance (EVALUATION.md §4.2, §13; DECISIONS 373).
 func (e *Evaluator) spreadCopy(v value.Value, p *value.Prov) value.Value {
 	if v == nil {
 		return nil
 	}
 	copied := &value.Prov{Kind: p.Kind, Span: p.Span, Via: v.Prov(), Ext: p.Ext}
-	return e.reprov(v, copied, false)
+	out := e.reprov(v, copied)
+	rec, isRec := v.(*value.Record)
+	if cp, copiedRec := out.(*value.Record); isRec && copiedRec {
+		e.origin[cp] = rec // its checks and verification once (EVALUATION.md §4.2)
+	}
+	return out
 }
 
 // defaults fills the fields no item gave (TYPES.md §15).
@@ -221,7 +226,7 @@ func (r *run) defaultValue(rec *value.Record, f *types.Field, at *vpath, via *va
 	r.unnest()
 	if v != nil {
 		p := &value.Prov{Kind: value.ProvDefault, Span: r.span(f.Default), Via: via, Ext: value.NewProvExt(value.ProvExt{Layer: r.fr.layer})}
-		v = r.store(r.ev.reprov(v, p, true), f.Type, r.ev.fieldSite(f, rec.T), at)
+		v = r.store(r.ev.reprov(v, p), f.Type, r.ev.fieldSite(f, rec.T), at)
 	}
 	return v
 }

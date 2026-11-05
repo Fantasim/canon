@@ -1,0 +1,157 @@
+EVALUATION.md §13, §4.2, DECISIONS 199, 410: a record a spread copies that owns a keyed list and
+holds a ref into it, whose instance verification remembers (a list of dependent values converted,
+or a dependent field charged), is `spread` at each spread; its entries and its ref stay owned by
+the instance the source holds, whatever root verification reaches last (TestSpreadCopyOwners).
+-- paths --
+a:base.many
+a:copy.many
+a:copy.many.items[i2]
+a:copy.many.pick
+a:again.many
+a:copy.h
+a:over.h
+a:over.many
+a:g.ms.m1
+a:g2.ms
+a:g2.ms.m1
+a:reads
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, sub }
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+  /// Max.
+  max: Int = 5
+}
+
+/// Nodes.
+let nodes: table Node = { a { k: num }, b { k: sub, max: 3 } }
+
+/// Sub, of a node.
+record Sub(e: Node) {
+  /// Limit.
+  lim: Int = e.max
+
+  check lim <= e.max else "lim {lim} above {e.max}"
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// Item.
+record Item {
+  /// Name.
+  name: String
+  /// W.
+  w: Int(0..5) = 1
+}
+
+/// Many: verification converts its list of dependent values; it owns items.
+record Many {
+  /// Like.
+  like: ref nodes
+  /// Subs.
+  subs: [P(like)]
+  /// Items.
+  items: [Item] keyed by name
+  /// Pick.
+  pick: ref Item
+}
+
+/// Holder: verification charges its dependent field; it owns items.
+record Holder {
+  /// Like.
+  like: ref nodes
+  /// Sub.
+  sub: P(like)
+  /// Items.
+  items: [Item] keyed by name
+  /// Pick.
+  pick: ref Item
+}
+
+/// Outer.
+record Outer {
+  /// Many.
+  many: Many
+  /// Holder.
+  h: Holder
+  /// Label.
+  label: String = ""
+}
+
+/// Group: its entries own items, and verification converts each.
+record Group {
+  /// Ms.
+  ms: table Many
+}
+
+/// A group.
+let g: Group = { ms: { m1 { like: b, subs: [{ lim: 1 }], items: [{ name: "i1" }], pick: "i1" } } }
+
+/// Its copy: each entry takes the copy's identity.
+let g2: Group = { ...g }
+
+/// Its entries are tc's under another identity, each the same instance.
+let ta: table Many = { a { like: b, subs: [{ lim: 1 }], items: [{ name: "i1" }], pick: "i1" } }
+
+/// Tc, the same instances.
+let tc: table Many = ta
+
+/// The base.
+let base: Outer = {
+  many: { like: b, subs: [{ lim: 1 }, {}], items: [{ name: "i1" }, { name: "i2", w: 4 }], pick: "i2" }
+  h: { like: b, sub: { lim: 9 }, items: [{ name: "j1" }], pick: "j1" }
+}
+
+/// A copy.
+let copy: Outer = { ...base, label: "copy" }
+
+/// Over: its many overridden by a literal, h spread.
+let over: Outer = { ...base, many: { like: a, subs: [1], items: [{ name: "i2" }], pick: "i2" } }
+
+/// Copy of copy.
+let again: Outer = { ...copy }
+
+/// Reads.
+let reads: [Bool] = [copy.many.pick == copy.many.items["i2"], base.many.pick == base.many.items["i2"], copy.many.pick == base.many.pick, copy.many.pick.name == "i2", copy.h.pick == base.h.pick, copy.h.pick == copy.h.items["j1"], over.h.pick == base.h.pick, again.many.pick == base.many.pick, over.many.pick == base.many.pick, over.many.pick == over.many.items["i2"]]
+-- provenance.txt --
+a:base.many = Many{like: b, subs: [Sub{lim: 1}, Sub{lim: 3}], items: [Item{name: "i1", w: 1}, Item{name: "i2", w: 4}], pick: i2}
+  literal a/a.canon:94:9-94:103
+a:copy.many = Many{like: b, subs: [Sub{lim: 1}, Sub{lim: 3}], items: [Item{name: "i1", w: 1}, Item{name: "i2", w: 4}], pick: i2}
+  spread a/a.canon:99:21-99:28 via (literal a/a.canon:94:9-94:103)
+a:copy.many.items[i2] = Item{name: "i2", w: 4}
+  literal a/a.canon:94:68-94:88
+a:copy.many.pick = i2
+  literal a/a.canon:94:97-94:101
+a:again.many = Many{like: b, subs: [Sub{lim: 1}, Sub{lim: 3}], items: [Item{name: "i1", w: 1}, Item{name: "i2", w: 4}], pick: i2}
+  spread a/a.canon:105:22-105:29 via (spread a/a.canon:99:21-99:28 via (literal a/a.canon:94:9-94:103))
+a:copy.h = Holder{like: b, sub: Sub{lim: 9}, items: [Item{name: "j1", w: 1}], pick: j1}
+  spread a/a.canon:99:21-99:28 via (literal a/a.canon:95:6-95:71)
+a:over.h = Holder{like: b, sub: Sub{lim: 9}, items: [Item{name: "j1", w: 1}], pick: j1}
+  spread a/a.canon:102:21-102:28 via (literal a/a.canon:95:6-95:71)
+a:over.many = Many{like: a, subs: [1], items: [Item{name: "i2", w: 1}], pick: i2}
+  literal a/a.canon:102:36-102:95
+a:g.ms.m1 = Many{like: b, subs: [Sub{lim: 1}], items: [Item{name: "i1", w: 1}], pick: i1}
+  literal a/a.canon:81:24-81:95
+a:g2.ms = {m1: Many{like: b, subs: [Sub{lim: 1}], items: [Item{name: "i1", w: 1}], pick: i1}}
+  spread a/a.canon:84:19-84:23 via (literal a/a.canon:81:22-81:97)
+a:g2.ms.m1 = Many{like: b, subs: [Sub{lim: 1}], items: [Item{name: "i1", w: 1}], pick: i1}
+  literal a/a.canon:81:24-81:95
+a:reads = [true, true, true, true, true, true, true, true, false, true]
+  literal a/a.canon:108:21-108:367
+
+error[E5001]  a/a.canon:95:22
+  base.h.sub: lim 9 above 3
+  expected by a/a.canon:23 (check)
+
+1 error, 0 warnings in 1 package (…)

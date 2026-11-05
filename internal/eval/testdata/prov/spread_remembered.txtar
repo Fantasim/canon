@@ -1,0 +1,98 @@
+EVALUATION.md §13, §4.2: a record a spread copies whose instance verification remembers (a
+dependent field charged, or a list of dependent values converted) keeps its own `spread` origin
+through verification, with via the original; its values and its findings stay the instance's.
+-- paths --
+a:copy.h
+a:copy.h.sub
+a:copy.h.like
+a:copy.many
+a:copy.many.subs
+a:copy.many.subs[0]
+a:base.h
+a:base.many
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { num, sub }
+
+/// Node.
+record Node {
+  /// K.
+  k: K
+  /// Max.
+  max: Int = 5
+}
+
+/// Nodes.
+let nodes: table Node = { a { k: num }, b { k: sub, max: 3 } }
+
+/// Sub, of a node.
+record Sub(e: Node) {
+  /// Limit, the node's max unless given.
+  lim: Int = e.max
+
+  check lim <= e.max else "lim {lim} above {e.max}"
+}
+
+/// P.
+type P(e: Node) = match e.k {
+  num => Int
+  sub => Sub(e)
+}
+
+/// Holder: verification charges its dependent field.
+record Holder {
+  /// Like.
+  like: ref nodes
+  /// Sub, dependent.
+  sub: P(like)
+}
+
+/// Many: verification converts its list of dependent values.
+record Many {
+  /// Like.
+  like: ref nodes
+  /// Subs, dependent.
+  subs: [P(like)]
+}
+
+/// Outer.
+record Outer {
+  /// H.
+  h: Holder
+  /// Many.
+  many: Many
+  /// Label.
+  label: String = ""
+}
+
+/// The base.
+let base: Outer = { h: { like: b, sub: { lim: 9 } }, many: { like: b, subs: [{ lim: 1 }, {}] } }
+
+/// A copy.
+let copy: Outer = { ...base, label: "copy" }
+-- provenance.txt --
+a:copy.h = Holder{like: b, sub: Sub{lim: 9}}
+  spread a/a.canon:62:21-62:28 via (literal a/a.canon:59:24-59:52)
+a:copy.h.sub = Sub{lim: 9}
+  literal a/a.canon:59:40-59:50
+a:copy.h.like = b
+  literal a/a.canon:59:32-59:33
+a:copy.many = Many{like: b, subs: [Sub{lim: 1}, Sub{lim: 3}]}
+  spread a/a.canon:62:21-62:28 via (literal a/a.canon:59:60-59:95)
+a:copy.many.subs = [Sub{lim: 1}, Sub{lim: 3}]
+  literal a/a.canon:59:77-59:93
+a:copy.many.subs[0] = Sub{lim: 1}
+  literal a/a.canon:59:78-59:88
+a:base.h = Holder{like: b, sub: Sub{lim: 9}}
+  literal a/a.canon:59:24-59:52
+a:base.many = Many{like: b, subs: [Sub{lim: 1}, Sub{lim: 3}]}
+  literal a/a.canon:59:60-59:95
+
+error[E5001]  a/a.canon:59:40
+  base.h.sub: lim 9 above 3
+  expected by a/a.canon:23 (check)
+
+1 error, 0 warnings in 1 package (…)

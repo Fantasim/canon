@@ -214,9 +214,13 @@ func (s *StageB) Moved(from, to value.Value) value.Value {
 	return to
 }
 
-// Shares records that cp, a copy verification made of of, the verified copy of an instance, is that instance (EVALUATION.md §4.2).
-func (s *StageB) Shares(cp, of *value.Record) {
-	s.e.origin[cp] = of
+// Restamped records that cp, of under from's identity and provenance, replaces from: marks, link to the value evaluated, of's instance, collections and refs (EVALUATION.md §4.2, §13).
+func (s *StageB) Restamped(from, cp, of *value.Record) {
+	e := s.e
+	e.carry(from, cp)
+	e.rebuilt[cp] = from
+	e.mark(of, cp)
+	e.origin[cp] = of
 }
 
 // Replace gives the root the value verification converted (TYPES.md §11.6); a vector keeps its parent's.

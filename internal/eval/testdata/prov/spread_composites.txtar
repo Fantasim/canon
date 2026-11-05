@@ -1,0 +1,168 @@
+EVALUATION.md §13: a spread-copied field holding a list, a map, a record, a table or a keyed list
+is `spread` at the spread with via the original provenance of the copied value, as a scalar is;
+the values inside keep theirs, findings about the copied value stay at that original provenance,
+and a ref into the spread-copied keyed list resolves as in the source (§4.2, DECISIONS 410).
+-- paths --
+a:copy.tags
+a:copy.tags[0]
+a:copy.lim
+a:copy.lim["x"]
+a:copy.inner
+a:copy.inner.weight
+a:copy.tiers
+a:copy.tiers.low
+a:copy.nodes
+a:copy.nodes[n2]
+a:copy.pick
+a:copy.label
+a:copy.picks
+a:moved.picks
+a:moved.picks[0]
+a:bad.few
+a:copyBad.few
+a:reads
+-- a/a.canon --
+/// A.
+package a
+
+/// Tier.
+record Tier {
+  /// Weight.
+  weight: Int = 1
+}
+
+/// Node.
+record Node {
+  /// Name.
+  name: String
+}
+
+/// Box.
+record Box {
+  /// Tags.
+  tags: [String]
+  /// Limits.
+  lim: {String: Int}
+  /// Inner.
+  inner: Tier
+  /// Tiers.
+  tiers: table Tier
+  /// Nodes.
+  nodes: [Node] keyed by name
+  /// Pick.
+  pick: ref Node
+  /// Picks.
+  picks: [ref Node]
+  /// Label.
+  label: String
+}
+
+/// Few.
+record Few {
+  /// At most two.
+  few: [Int](..3)
+}
+
+/// Keeps.
+fn keep(xs: [Int]) -> [Int] {
+  return xs.filter(x => true)
+}
+
+/// The base.
+let base: Box = {
+  tags: ["a", "b"]
+  lim: { "x": 1 }
+  inner: { weight: 2 }
+  tiers: {
+    /// Low.
+    low { weight: 3 }
+  }
+  nodes: [{ name: "n1" }, { name: "n2" }]
+  pick: "n2"
+  picks: ["n1"]
+  label: "base"
+}
+
+/// A spread copy.
+let copy: Box = { ...base, label: "copy" }
+
+/// Its nodes replaced: the copied picks still name the source's entries (DECISIONS 410).
+let moved: Box = { ...base, nodes: [{ name: "n2" }] }
+
+/// Stores the copied list where it is too long: located at the list's literal.
+let short: [String](..2) = copy.tags
+
+/// Stores the copied map where it is too large: located at the map's literal.
+let small: {String: Int}(..1) = copy.lim
+
+/// Stores the copied list's elements where they are too short: each at its literal.
+let long: [String(2..)] = copy.tags
+
+/// Too many.
+let bad: Few = { few: keep([1, 2, 3, 4]) }
+
+/// Copies too many.
+let copyBad: Few = { ...bad }
+
+/// Refs into the copied keyed list.
+let reads: [Bool] = [copy.pick == copy.nodes["n2"], copy.pick == base.pick, copy.pick.name == "n2", copy.tiers.low.weight == 3]
+-- provenance.txt --
+a:copy.tags = ["a", "b"]
+  spread a/a.canon:63:19-63:26 via (literal a/a.canon:49:9-49:19)
+a:copy.tags[0] = a
+  literal a/a.canon:49:10-49:13
+a:copy.lim = {"x": 1}
+  spread a/a.canon:63:19-63:26 via (literal a/a.canon:50:8-50:18)
+a:copy.lim["x"] = 1
+  literal a/a.canon:50:15-50:16
+a:copy.inner = Tier{weight: 2}
+  spread a/a.canon:63:19-63:26 via (literal a/a.canon:51:10-51:23)
+a:copy.inner.weight = 2
+  literal a/a.canon:51:20-51:21
+a:copy.tiers = {low: Tier{weight: 3}}
+  spread a/a.canon:63:19-63:26 via (literal a/a.canon:52:10-55:4)
+a:copy.tiers.low = Tier{weight: 3}
+  literal a/a.canon:54:5-54:22
+a:copy.nodes = [Node{name: "n1"}, Node{name: "n2"}]
+  spread a/a.canon:63:19-63:26 via (literal a/a.canon:56:10-56:42)
+a:copy.nodes[n2] = Node{name: "n2"}
+  literal a/a.canon:56:27-56:41
+a:copy.pick = n2
+  spread a/a.canon:63:19-63:26 via (literal a/a.canon:57:9-57:13)
+a:copy.label = copy
+  literal a/a.canon:63:35-63:41
+a:copy.picks = [n1]
+  spread a/a.canon:63:19-63:26 via (literal a/a.canon:58:10-58:16)
+a:moved.picks = [n1]
+  spread a/a.canon:66:20-66:27 via (literal a/a.canon:58:10-58:16)
+a:moved.picks[0] = n1
+  literal a/a.canon:58:11-58:15
+a:bad.few = [1, 2, 3, 4]
+  computed a/a.canon:44:10-44:30 in keep (a/a.canon:78)
+a:copyBad.few = [1, 2, 3, 4]
+  spread a/a.canon:81:22-81:28 via (computed a/a.canon:44:10-44:30 in keep (a/a.canon:78))
+a:reads = [true, true, true, true]
+  literal a/a.canon:84:21-84:128
+
+error[E3204]  a/a.canon:44:10
+  bad.few: [1, 2, 3, 4] is outside ..3
+  expected by a/a.canon:39 (few: [Int](..3))
+  in keep (a/a.canon:78)
+
+error[E3204]  a/a.canon:49:9
+  short: ["a", "b"] is outside ..2
+  expected by a/a.canon:69 (short: [String](..2))
+
+error[E3204]  a/a.canon:49:10
+  long[0]: a is outside 2..
+  expected by a/a.canon:75 (long: [String(2..)])
+
+error[E3204]  a/a.canon:49:15
+  long[1]: b is outside 2..
+  expected by a/a.canon:75 (long: [String(2..)])
+
+error[E3204]  a/a.canon:50:8
+  small: {"x": 1} is outside ..1
+  expected by a/a.canon:72 (small: {String: Int}(..1))
+
+5 errors, 0 warnings in 1 package (…)
