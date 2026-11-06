@@ -520,17 +520,18 @@ else reads `v`**:
    - The **last** segment may name a new map key or a new table key: the entry is added at the
      end (a new table entry gets its identity). Adding to a `stable table` is `E6004`
      (LOCK.md). A keyed list or list never grows.
-3. **Derived defaults follow**: when an amendment replaces field `f` of an instance, every later
-   field of that instance whose value came from its default (not written in the source or file,
-   not amended, not supplied by a spread or a copy) is re-evaluated, in declaration order. A field
-   a spread or a copy supplied counts as written (DECISIONS 492): a spread copy keeps the value,
-   and the entries, its source's default gave, even when that default reads a field the line
-   amends (DECISIONS 486). When the amended record is an instance held at its own place and at a
-   copy's, a later defaulted field whose inputs are all unchanged keeps its value, and its
-   entries' identity (DECISIONS 492). An applied-record field written in the source keeps the
-   arguments it was built with (TYPES.md §11.1): amending the argument it depends on leaves it
-   applied to the old one, which verification reports as `E3802`; a defaulted one is re-derived
-   and takes the new argument.
+3. **Derived defaults follow**: when an amendment replaces field `f` of an instance, a later field
+   of that instance whose value came from its default (not written in the source or file, not
+   amended, not supplied by a spread or a copy) is re-evaluated, in declaration order, when one of
+   its inputs changed. Its inputs are the fields its default names (bare or `self.f`) and the
+   fields its type's arguments name; one has changed when it is `f` or a field this step
+   re-evaluated before it. Every other such field keeps its value, its entries' identity and its
+   provenance (DECISIONS 501). A field a spread or a copy supplied counts as written (DECISIONS
+   492): a spread copy keeps the value, and the entries, its source's default gave, even when that
+   default reads a field the line amends (DECISIONS 486). An applied-record field written in the
+   source keeps the arguments it was built with (TYPES.md §11.1): amending the argument it depends
+   on leaves it applied to the old one, which verification reports as `E3802`; a defaulted one is
+   re-derived and takes the new argument.
 4. The amended value then goes through verification and every check, like any value.
 5. **Keys stay.** Once every amendment of `v` is applied, each element of a keyed list that a line
    rebuilt, by key or by position, holds in its key field the key it had, whether that field was
@@ -809,9 +810,10 @@ Rules:
   provenance. Conversions never change it.
 - An amended sub-value: the right-hand side in the layer file, with `layer` set. So is every value
   computed while it runs, in a called function, a lambda, a default or a `where`, each keeping its own
-  span and stack; a default re-derived after it (§9.3 step 3) takes the layer of the last amendment
-  that changed a field it or its type's arguments read, and one no amendment changed keeps its
-  provenance (DECISIONS 464).
+  span and stack; a default re-derived after it (§9.3 step 3) is `default` at its default
+  expression, with `via` the literal or object that omitted the field, as without the layer, and
+  takes the layer of the last amendment that changed a field it or its type's arguments read; one no
+  amendment changed keeps its provenance (DECISIONS 464, 501).
 
 The **value path** of a finding (SPEC §21.1) is the path from its top-level value to the located
 value, in the syntax of CLI §2.6 and API-02 (keyed lists and tables by key). A finding about a

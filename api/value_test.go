@@ -251,8 +251,9 @@ func TestValueOrigins(t *testing.T) {
 	if cfg := mustValue(t, p, "config").Origin; !strings.Contains(cfg.Text, "port: 8765") {
 		t.Errorf("config: %q", cfg.Text)
 	}
+	// EVALUATION.md §13, §9.3 step 3: host, reading no amended field, keeps its origin via the literal.
 	host := mustValue(t, p, "config.server.host").Origin
-	if host.Kind != canon.OriginDefault || host.Replaced != nil || host.Via == nil || host.Via.Kind != canon.OriginDefault {
+	if host.Kind != canon.OriginDefault || host.Replaced != nil || host.Via == nil || host.Via.Kind != canon.OriginLiteral || host.Via.Line != 37 {
 		t.Errorf("host: %+v", host)
 	}
 	doubled := mustValue(t, p, "doubled").Origin

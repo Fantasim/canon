@@ -96,7 +96,7 @@ a:config.server.port = 9100
   layer a/dev.canon:5:16-5:20 layer dev
   default a/a.canon:9:29-9:33 via (literal a/a.canon:23:20-23:22)
 a:config.server.url = http://127.0.0.1:9100
-  default a/a.canon:11:17-11:39 layer louis via (default a/a.canon:23:20-23:22 via (literal a/a.canon:43:22-43:24))
+  default a/a.canon:11:17-11:39 layer louis via (literal a/a.canon:23:20-23:22)
 a:config.server.host = 127.0.0.1
   default a/a.canon:7:18-7:29 via (literal a/a.canon:23:20-23:22)
 a:config.extra = Tier{weight: 6}

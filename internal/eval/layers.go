@@ -227,8 +227,8 @@ func unwrapOptional(t types.Type) types.Type {
 	return t
 }
 
-// derive re-evaluates, in declaration order, the fields after field i that came from rec's own
-// defaults (not written, not spread, not amended); changed marks i and each one re-derived from it.
+// derive re-evaluates, in declaration order, the later fields from rec's own defaults (not written,
+// spread or amended) that read a field changed marks, i and each one re-derived; the others keep theirs.
 func (r *run) derive(rec *value.Record, i int, at *vpath) bool {
 	fields := fieldsOf(rec.T)
 	changed := make([]bool, len(fields))
@@ -237,10 +237,10 @@ func (r *run) derive(rec *value.Record, i int, at *vpath) bool {
 		if j <= i || rec.Set[j] || f.Default == nil || f.Input != nil || spreadCopied(rec.Fields[j]) {
 			continue
 		}
-		if changed[j] = r.ev.readsChanged(f, fields, changed); !changed[j] && r.ev.shared(rec, r.mv) {
-			continue // another place holds it: its entries keep their identity (DECISIONS 486)
+		if changed[j] = r.ev.readsChanged(f, fields, changed); !changed[j] {
+			continue
 		}
-		v := r.rederive(rec, j, at.field(f.Name), changed[j])
+		v := r.defaultValue(rec, f, at.field(f.Name), omitter(rec, j))
 		if v == nil {
 			return false
 		}

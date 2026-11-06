@@ -5333,8 +5333,7 @@ round 2", "PS1 review", "PS2 round 2"):
      entry amended below a copy (its `lab` keeps the source's value). When the amended record is an
      instance held at its own place and at a copy's, a later defaulted field whose inputs (the
      fields its default names, and its type's arguments) are all unchanged keeps its value, and with
-     it its entries' identity, instead of being re-evaluated to an equal value (whether this holds
-     for every record is queued, EVAL-DERIVEKEEP). A ref or map key a layer writes into a copy binds
+     it its entries' identity, instead of being re-evaluated to an equal value . A ref or map key a layer writes into a copy binds
      to the owner of the entry the copy's field holds at its key (410), so it equals that entry,
      whatever the order of the lines. Which records are copies is decided from the let's base value,
      its origins, and the values it read, including those an amendment's right-hand side reads. It
@@ -5345,6 +5344,7 @@ round 2", "PS1 review", "PS2 round 2"):
      gave a false E3503 for `ref b5.inner.oo = b1.inner.oo.x` and a stray Graph node
      p:b5.inner.oo[x]; plain copies and copies inside one let did the same, and some amended copies
      re-derived defaults their source had supplied.
+     [amended by 501]
 
 493. **A key position gives one code per meaning, in an expression and an amend path alike; an
      integer key's hint names its type (TYPES.md §4.1, §6.5; STDLIB.md §5; EVALUATION.md §9.2;
@@ -5558,3 +5558,21 @@ round 2", "PS1 review", "PS2 round 2"):
      not restore it; a qualified member key field was left stale; and a layer line's and a default's
      ref-typed map keys, enum-leaf and enum-keyed member reads, and member key tests were not
      listed, so E19 refused the renames they broke or, for a key test, its result silently changed.
+
+501. **§9.3 step 3 re-evaluates only the defaults whose inputs changed, and a re-derived default
+     comes via the literal that omitted it (EVALUATION.md §9.3, §13; API.md §5.2 `Origin.Via`;
+     amends 492; follows 187, 464, 486).** When an amendment replaces a field of an instance, a
+     later field that came from the instance's own default is re-evaluated only when one of its
+     inputs changed. Its inputs are the fields its default names (bare or `self.f`) and the fields
+     its type's arguments name; one has changed when it is the field the line replaced or a field
+     step 3 re-derived before it. Every other defaulted field keeps its value, its entries'
+     identity, the refs and map keys bound to those entries, and its provenance, wherever the
+     instance is held: 492's rule for an instance held at its own place and at a copy's is now the
+     rule for every amended record. Record parameters and constants are not inputs: no amendment of
+     the instance changes them (an amended copy keeps its arguments, TYPES.md §11.1). A re-derived
+     default is `default` at its default expression; its `via` is the literal or object that omitted
+     the field, the same as without the layer, and its layer is that of the last amendment that
+     changed one of its inputs (464). Reason: v0.3 run (EVAL-DERIVEKEEP): a re-derived default came
+     via its record's own provenance, so `config.server.url` read `default … via (default … via
+     (literal …))` while its siblings read `via (literal …)`; an amendment also re-evaluated every
+     later default of a record held at one place, at full step cost, to equal values.
