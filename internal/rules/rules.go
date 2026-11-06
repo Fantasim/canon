@@ -50,6 +50,7 @@ type Runner struct {
 	broken  map[types.Type]bool
 	seen    map[*value.Record]bool
 	idents  map[identKey]bool
+	walks   map[value.Value]int // each list, map, table and pair walked: the retag mark then
 	observe *observing
 	asking  asking
 	paths   map[value.Value]*verify.Path
@@ -96,6 +97,7 @@ func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag) *Runner {
 		ev: ev, bags: bags, info: ix.info, files: ix.files, broken: ix.broken, shared: ix.shared, declared: ix.declared,
 		seen:   map[*value.Record]bool{},
 		idents: map[identKey]bool{}, observe: ix.observe,
+		walks:  map[value.Value]int{},
 		asking: asking{marks: m, below: map[value.Value]bool{}},
 		paths:  map[value.Value]*verify.Path{},
 		retags: log,

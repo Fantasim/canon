@@ -5705,3 +5705,21 @@ round 2", "PS1 review", "PS2 round 2"):
      let's own name for a computed ref, and rewrote `.x`, `["x"]`, `hasKey("x")`, `{ x: 1 }`
      and reads through an unamended copy, which then named the layer's other entry (`ix` 1 → 9,
      `hk` true → false) with no finding; and a refusal's Detail did not follow R8 order.
+
+507. **Stage C walks a shared value once (EVALUATION.md §8.1, §12.1; extends 504's own-place
+     rule).** A value held at several places is traversed once in stage C: a record by instance
+     and identity (already the case), and a list, map, table or pair by value identity. A check
+     run, a finding and a value path inside such a value belong to its first place in walk
+     order, as 504's own-place rule gives. A container met again is walked again only when some
+     record was given an identity in place (EVALUATION.md §4.1) since that container's last
+     walk. The test is deliberately conservative, so a check observing identity still runs once
+     per (instance, identity) and never misses its new identity. Any other revisit is skipped
+     at O(1) and costs no step. The memo's signature of an entry walks it the same way. It
+     notes each revisit by its place and the first place of the value met again, so while a
+     value is invalid, equal signatures imply the same sharing and the same invalid values, and
+     two graphs shared differently never replay one another. Stage C's work is linear in the
+     number of distinct values, times one plus the number of in-place retags during it. This
+     does not change 195: its exponential-tree bound concerns the free verification walk of
+     stage B. Reason: v0.3 run (RULES-SHAREDONCE): `w_i = [w_{i-1}, w_{i-1}]` made stage C cost
+     2^depth (172 ms at depth 20) while producing nothing past the first walk; review round 2:
+     a back-reference without its place let `[A, A, C]` and `[A, B, A]` sign alike.

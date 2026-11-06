@@ -69,6 +69,9 @@ func (t *traversal) visit(v value.Value, dt types.Type) {
 			return
 		}
 	}
+	if t.walked(v) {
+		return
+	}
 	var late func(*value.Record) bool
 	if _, isList := v.(*value.List); isList {
 		late = t.lateFrom() // an element's name is its identity's when the list was met (API.md P8)
@@ -79,6 +82,22 @@ func (t *traversal) visit(v value.Value, dt types.Type) {
 		t.segs = t.segs[:len(t.segs)-1]
 		return true
 	})
+}
+
+// walked: v's parts were walked, no record retagged in place since; else v is noted (DECISIONS 507).
+func (t *traversal) walked(v value.Value) bool {
+	if _, isRecord := v.(*value.Record); isRecord || !holdsParts(v) {
+		return false
+	}
+	mark := 0
+	if t.retags != nil {
+		mark = t.retags.RetagMark()
+	}
+	if was, ok := t.walks[v]; ok && was == mark {
+		return true
+	}
+	t.walks[v] = mark
+	return false
 }
 
 // enter runs rec's checks at its instance's first reach, those reading identity at the first reach

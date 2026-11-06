@@ -107,32 +107,61 @@ func runOf(x eval.CheckRun) Run {
 	return out
 }
 
-// signature is the places of e's invalid values, its parts walked as a tree; nil for none.
+// signature is the places of e's invalid values, its parts walked once each; nil for none.
 func (t *traversal) signature(e value.Value) []int {
 	if t.memo.ev.InvalidCount() == 0 {
 		return nil
 	}
-	s := &signing{ev: t.ev}
+	return signOf(t.ev, e)
+}
+
+// signOf is the places of e's invalid values, each value held again noted as the pair ^ its place,
+// then its first place; while a value is invalid, equal signatures mean the same sharing and the
+// same invalid values.
+func signOf(ev Evaluator, e value.Value) []int {
+	s := &signing{ev: ev, walked: map[value.Value]int{}}
 	s.walk(e)
 	return s.marks
 }
 
-// signing walks a value's parts as a tree, noting the place of each invalid one.
+// signing walks a value's parts, a value held again not walked again (DECISIONS 507).
 type signing struct {
-	ev    Evaluator
-	n     int
-	marks []int
+	ev     Evaluator
+	n      int
+	marks  []int
+	walked map[value.Value]int // each value with parts walked: its place
 }
 
 func (s *signing) walk(v value.Value) {
 	if v != nil && s.ev.Invalid(v) {
 		s.marks = append(s.marks, s.n)
 	}
+	place := s.n
 	s.n++
+	if !holdsParts(v) {
+		return
+	}
+	if first, again := s.walked[v]; again {
+		s.marks = append(s.marks, ^place, first) // negative opens the pair; an invalid place never is
+		return
+	}
+	s.walked[v] = place
 	eachPart(v, func(p value.Value) bool {
 		s.walk(p)
 		return true
 	})
+}
+
+// again reports v a value with parts already in walked, and puts it there otherwise.
+func again(walked map[value.Value]bool, v value.Value) bool {
+	if !holdsParts(v) {
+		return false
+	}
+	if walked[v] {
+		return true
+	}
+	walked[v] = true
+	return false
 }
 
 // enter keeps rec at its first reach under its identity; false: its parts are walked already, or never.
@@ -151,7 +180,7 @@ func (c *collecting) enter(rec *value.Record) bool {
 
 // instancesOf is the records of e in the order stage C enters them, each taken for inst's.
 func instancesOf(e value.Value, inst func(*value.Record) *value.Record) []*value.Record {
-	c := &collecting{seen: map[*value.Record]bool{}, idents: map[identKey]bool{}, inst: inst}
+	c := &collecting{seen: map[*value.Record]bool{}, idents: map[identKey]bool{}, walked: map[value.Value]bool{}, inst: inst}
 	c.walk(e)
 	return c.out
 }
@@ -160,12 +189,14 @@ func instancesOf(e value.Value, inst func(*value.Record) *value.Record) []*value
 type collecting struct {
 	seen   map[*value.Record]bool
 	idents map[identKey]bool
+	walked map[value.Value]bool // the lists, maps, tables and pairs walked, each once
 	inst   func(*value.Record) *value.Record
 	out    []*value.Record
 }
 
 func (c *collecting) walk(v value.Value) {
-	if rec, ok := v.(*value.Record); ok && !c.enter(rec) {
+	rec, isRecord := v.(*value.Record)
+	if isRecord && !c.enter(rec) || !isRecord && again(c.walked, v) {
 		return
 	}
 	eachPart(v, func(p value.Value) bool {

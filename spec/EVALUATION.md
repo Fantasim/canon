@@ -396,7 +396,7 @@ different verdicts; equal findings merge (§14). The test is syntactic, made onc
 
 Traversal order (stage C): top-level values in forced-set order (§2.1), each walked depth-first
 pre-order: fields in declaration order, elements in order, map entries in insertion order (key,
-then value). An instance reached a second time is skipped. On each instance, its checks run in
+then value). An instance reached a second time is skipped. Likewise a list, map, table or pair reached a second time is not walked again, unless some record has been given an identity in place since it was last walked (§4.1). A shared value's checks and findings therefore belong to its first place in walk order (DECISIONS 507). On each instance, its checks run in
 declaration order: for a case value, the variant-level checks (TYPES.md §12.1), then the case's
 checks.
 
