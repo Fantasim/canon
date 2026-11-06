@@ -645,7 +645,9 @@ type Ref struct {
     that identity alone, a key typed `ref C` or written as a selector (`[items.k]`) a ref of the
     entry of C it names (DECISIONS 487), a segment reaching a copy's entry also a `layer` ref of the
     source entry whose key the copy carries there (DECISIONS 491), a key token that resolves to a
-    name in scope that name, never a key of an entry with the same text (DECISIONS 494); names in translations are `view`, names in `test` declarations `code`. A string literal
+    name in scope that name, never a key of an entry with the same text (DECISIONS 494), a replacing literal's key field a ref
+    only where it states the renamed key as a token, and a ref-typed map key in a layer line `layer`
+    (DECISIONS 500); names in translations are `view`, names in `test` declarations `code`. A string literal
     keys a ref only for a `String` key or a literal of a literal union (TYPES.md §4.1); a member
     name keys an enum-keyed ref.
   - A bound level-1 ref (TYPES.md §10.2) is a ref of the entry its key names in the collection its instance's field holds, whatever identity that entry carries: in `{ ...arena, boss: 1 }` the copied `mobs` keep `arena`'s identity (TYPES.md §6.3), so `boss` is a `value` ref of `arena.mobs[1]`, and R11's edge goes there (DECISIONS 410).

@@ -24,11 +24,11 @@ func (sc *nameScan) keyTest(n syntax.Node, at scanAt) {
 		return
 	}
 	arg := syntax.Unparen(call.Args[0].Value)
-	match, literal := sc.targetKey(arg)
+	tok, match, literal := sc.keyOf(arg)
 	if _, named := sc.names(arg); named || !match || !sc.atHome(sel.X) {
 		return
 	}
-	sp := sc.file.Span(arg)
+	sp := sc.file.Span(tok)
 	entry, static := sc.reaches(sel.X)
 	switch target := sc.tg.isEntry(entry); {
 	case !static, target && !literal: // a constant's key is shared: no rewrite renames this test alone
@@ -62,6 +62,17 @@ func (sc *nameScan) targetKey(e syntax.Expr) (match, literal bool) {
 	}
 	text, ok := constString(e)
 	return ok && !id.Key.IsInt && text == id.Key.S, true
+}
+
+// keyOf is targetKey on key e, and the token naming it: a member, bare or qualified, the checker
+// resolves e to is a literal of its name, rewritten name only (DECISIONS 483, 490).
+func (sc *nameScan) keyOf(e syntax.Expr) (tok syntax.Node, match, literal bool) {
+	if member, name, ok := sc.s.memberToken(e); ok {
+		id := sc.tg.ident
+		return member, id != nil && !id.Key.IsInt && id.Key.S == name, true
+	}
+	match, literal = sc.targetKey(e)
+	return e, match, literal
 }
 
 // constKey is the value of the constant e names, if it names one.

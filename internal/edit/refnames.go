@@ -109,7 +109,7 @@ func (sc *nameScan) names(n syntax.Node) (syntax.Node, bool) {
 	case *syntax.IdentExpr:
 		return x, sc.objectNamed(x) || !sc.inScope(x) && sc.isKey(x, x.Name)
 	case *syntax.Ident:
-		return x, sc.objectNamed(x)
+		return x, sc.objectNamed(x) || sc.mapKeyNamed(x)
 	case *syntax.SelectorExpr:
 		return x.Name, sc.isKey(x, x.Name.Name) && sc.throughOwn(x) || sc.isEntryOf(x) || sc.refKeyOf(x)
 	case *syntax.StringLit, *syntax.RawStringLit:
@@ -120,6 +120,14 @@ func (sc *nameScan) names(n syntax.Node) (syntax.Node, bool) {
 		return x, id != nil && id.Key.IsInt && x.Value.IsInt64() && x.Value.Int64() == id.Key.I && sc.inColl(x)
 	}
 	return nil, false
+}
+
+// mapKeyNamed reports x a map literal's symbolic word key (`{ bow: 1 }`) typed `ref C` naming the
+// target, C a let's collection, where no value walk states it: a layer line's or a default's token
+// (API.md R7, E11; DECISIONS 318, 483, 489, 496); a key the walk states is covered.
+func (sc *nameScan) mapKeyNamed(x *syntax.Ident) bool {
+	id, coll := sc.tg.ident, sc.s.info.NameKeys[x]
+	return id != nil && !id.Key.IsInt && id.Key.S == x.Name && coll != nil && coll.Kind != types.CollField && sc.tg.names(coll)
 }
 
 // covered reports a name inside the span a value reference is stated at: the same reference.

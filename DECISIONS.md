@@ -5524,3 +5524,37 @@ round 2", "PS1 review", "PS2 round 2"):
      write that changes a re-derived key (E19). Reason: v0.3 run (CHECK-AMENDKEYMATCH): such lines
      passed silently. Lookups read the element's identity key, verification's `E3102` checked the
      identity key, and `Graph` named the key field, so one element answered to two keys.
+
+500. **A replacing literal's key field is rewritten only when it states the renamed key as a token;
+     a member key keeps its qualifier and is printed bare; a ref-typed map key is a ref wherever no
+     value walk states it (API.md R7, E11, E12, E22, X2; follows 310, 318, 483, 484, 489, 490, 494,
+     496, 499).** When a layer line replaces a keyed-list element whole, `Rename` rewrites the
+     literal's key field only when it states the element's old key as one of these tokens: a string
+     literal without interpolation; an integer literal; a bare word that no scope resolves (a
+     symbolic key, a member, or an entry step 1 finds); a qualified member (`Q.a`), whose name is
+     rewritten and whose qualifier is kept, as for a `[Q.m]` segment. `Refs` lists exactly those
+     tokens, through one shared test, so a key field stating another key is neither listed nor
+     rewritten. Any other key field is left as written: a constant, a let or any name in scope, a
+     selector naming an entry (`items.sword`, whose name is rewritten once as a ref of that entry),
+     a call or any other expression. The re-check judges what follows: `E1913` refuses the rename,
+     nothing is written (E19), and the Undo of an accepted rename restores every token. A key field
+     is never rewritten whole around a token another reference rewrites. A symbolic word key of a
+     map literal typed `ref C`, C a let's collection, is a ref of C's entry wherever no value walk
+     states it: `layer` in an amend line's value, active or not; `code` in a field default, a
+     constant, a function or lambda body (483, E12); `check` in a check; `view` in a view. A key
+     into a per-instance collection stays judged per instance (483). An index or a never-failing key
+     test (`hasKey`, `get`, `find`) is a `code` ref of the element its receiver reaches statically,
+     by identity: a let alias, a field and a spread copy count, and a dynamic receiver is refused
+     `computed` (483). This holds on a list keyed by an enum, or by a ref whose chain ends at an
+     enum, written with a member bare or qualified (`hs.one.rs[a]`, `hs.one.rs[Q.a]`,
+     `hs.one.rs.hasKey(a)`, `z.es[Q.a]`). The member name is rewritten, the qualifier kept, and the
+     member printed bare even where a name of that word is in scope (496: a value typed by an enum
+     is printed bare; 490, 495: step 1 comes first). A stated base value and a computed layered
+     value at one path have different spans, so they are two refs (R7: value refs merge by span);
+     only computed values at one path merge. Reason: v0.3 run (EDIT-RENAMEKEYS3 rounds 1-4): a
+     selector key field in a layer line made `Rename` fail with `*InternalError` (two overlapping
+     changes, X2); a constant, a let or an expression key field was rewritten whole, changing its
+     meaning; a key field naming another key was rewritten without being listed, so its Undo could
+     not restore it; a qualified member key field was left stale; and a layer line's and a default's
+     ref-typed map keys, enum-leaf and enum-keyed member reads, and member key tests were not
+     listed, so E19 refused the renames they broke or, for a key test, its result silently changed.

@@ -43,16 +43,25 @@ func (s *Snapshot) extended(e syntax.Expr, seg Seg) (Path, bool) {
 	return p, ok
 }
 
-// literalKey is an index written as a literal: a non-negative integer, a string, or a symbolic key.
+// literalKey is an index written as a literal: a non-negative integer, a string, a symbolic key, or
+// a member, bare or qualified, the checker resolves the key to, which stays that key (DECISIONS 490, 494).
 func (s *Snapshot) literalKey(e syntax.Expr) (KeyLit, bool) {
 	switch x := syntax.Unparen(e).(type) {
 	case *syntax.IntLit:
 		return KeyLit{Kind: KeyInt, Int: x.Value.Int64()}, x.Value.IsInt64() && x.Value.Sign() >= 0
 	case *syntax.IdentExpr:
-		return KeyLit{Kind: KeyWord, Text: x.Name}, s.info.Keys[x] != nil
+		return KeyLit{Kind: KeyWord, Text: x.Name}, s.info.Keys[x] != nil || isMember(s.info.Uses[x])
+	case *syntax.SelectorExpr:
+		_, name, ok := s.memberToken(x)
+		return KeyLit{Kind: KeyWord, Text: name}, ok
 	}
 	text, ok := constString(e)
 	return KeyLit{Kind: KeyString, Text: text}, ok
+}
+
+// isMember reports o an enum member.
+func isMember(o check.Object) bool {
+	return o != nil && o.Kind() == check.ObjMember
 }
 
 // pkgOf is o's package path, "" for no object.

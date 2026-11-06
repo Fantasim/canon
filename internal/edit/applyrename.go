@@ -235,17 +235,18 @@ func (r *renaming) canonToken(f *syntax.File, sp source.Span) error {
 	return nil
 }
 
-// tokenText is the new key written as node n of f writes the old one; a word a name in scope at n
-// would read is a string (DECISIONS 318).
+// tokenText is the new key written as node n of f writes the old one; a ref's word a name in scope
+// at n would read is a string (DECISIONS 318), a member never: step 1 reads it first (490, 495, 496).
 func (r *renaming) tokenText(f *syntax.File, n syntax.Node) (string, error) {
 	word := r.to.CanonText()
+	_, member := r.to.(*value.Member)
 	switch x := n.(type) {
 	case *syntax.StringLit, *syntax.RawStringLit:
 		return quoted(r.to), nil
 	case *syntax.IntLit:
 		return word, nil
 	case *syntax.IdentExpr: // a reference in value position: a word bare or quoted, else a string (E11)
-		if text, ok := syntax.ValueText(word); ok && (text != word || !r.x.a.snap.scopeOf(f, x).names(word)) {
+		if text, ok := syntax.ValueText(word); ok && (member || text != word || !r.x.a.snap.scopeOf(f, x).names(word)) {
 			return text, nil
 		}
 		return quoted(r.to), nil

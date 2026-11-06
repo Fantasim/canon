@@ -23,7 +23,11 @@ func (sc *nameScan) elemKey(n syntax.Node, at scanAt) {
 	if !ok || !sc.tg.isEntry(rec.Ident) {
 		return
 	}
-	sc.listKey(k, at)
+	var tok syntax.Node = k
+	if member, _, ok := sc.s.memberToken(k); ok {
+		tok = member // `[Q.m]` keeps its qualifier (E11)
+	}
+	sc.listKey(tok, at)
 }
 
 // instKey reports n's key token when n is an expression's `[k]` or `.k` on a list keyed by a ref

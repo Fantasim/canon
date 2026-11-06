@@ -3,6 +3,7 @@ package edit
 import (
 	"github.com/fantasim/canonlang/internal/syntax"
 	"github.com/fantasim/canonlang/internal/types"
+	"github.com/fantasim/canonlang/internal/value"
 )
 
 // layerKeys rewrites, in every layer file of the root's package, active or not, the key segment of
@@ -100,22 +101,28 @@ func (r *renaming) segKey(f *syntax.File, it *syntax.Amendment, i int) error {
 	return nil
 }
 
-// lineKeyField rewrites the key field of n, a line's literal stating a keyed-list element whole,
-// as the rename rewrites the element's own (E11).
+// lineKeyField rewrites the key field of n, a line's literal stating a keyed-list element whole, in
+// its form, when it states the element's old key as Refs lists it (keyFieldToken); any other key
+// field is left as written, the re-check judging it (API.md E11; DECISIONS 491, 494, 499).
 func (r *renaming) lineKeyField(f *syntax.File, n syntax.Node) error {
 	lt, ok := baseOf(r.x.res.Steps[len(r.x.res.Steps)-1].Container).(*types.ListType)
-	if !ok || lt.KeyedBy == nil {
+	rec, isRec := r.x.res.Target.(*value.Record)
+	if !ok || lt.KeyedBy == nil || !isRec || rec.Ident == nil {
 		return nil
 	}
 	fi := fieldItem(n, lt.KeyedBy.Name)
-	if fi == nil {
+	if fi == nil || fi.Value == nil {
 		return nil
 	}
-	text, err := r.textIn(f)
+	tok := r.x.a.snap.keyFieldToken(syntax.Unparen(fi.Value), rec.Ident.Key)
+	if tok == nil {
+		return nil
+	}
+	text, err := r.tokenText(f, tok)
 	if err != nil {
 		return err
 	}
-	return r.replace(f, syntax.Unparen(fi.Value), text, false)
+	return r.replace(f, tok, text, false)
 }
 
 // lineRefusal is `layer` naming line it of f, which no amend line can start with the new key: the

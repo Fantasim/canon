@@ -87,8 +87,10 @@ func (sc *nameScan) literalKey(n syntax.Node, at scanAt) {
 		return
 	}
 	v := syntax.Unparen(fi.Value)
-	if _, claimed := sc.names(v); sc.statesKey(v) && !claimed {
-		sc.listKey(v, at)
+	if tok := sc.s.keyFieldToken(v, sc.tg.ident.Key); tok != nil {
+		if _, claimed := sc.names(v); !claimed {
+			sc.listKey(tok, at)
+		}
 	}
 }
 
