@@ -16,6 +16,8 @@ type moves struct {
 	placed  map[*value.Record]bool
 	base    map[*value.Record]*value.Record
 	copies  *copies
+	rekeyed map[elementKey]rekey // each keyed-list element whose key field a line changed, by identity, with that line (amendkeys.go)
+	rekey   *rekey               // the last line that changed one
 }
 
 // baseOf is the record of the let's base value rec is, or that an amendment's copy rec replaces.
@@ -82,6 +84,7 @@ func (r *run) moving() *moves {
 		r.mv = &moves{
 			fresh: map[value.Value]bool{}, lineage: map[*value.Record]*value.Record{},
 			placed: map[*value.Record]bool{}, base: map[*value.Record]*value.Record{},
+			rekeyed: map[elementKey]rekey{},
 		}
 	}
 	return r.mv

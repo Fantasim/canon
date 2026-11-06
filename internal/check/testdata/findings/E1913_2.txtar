@@ -1,0 +1,44 @@
+EVALUATION.md §9.3 (E1913, static form): on a list keyed by an Int and on one keyed by a ref, a replacing literal's key field names the segment's key; the segment's own key gives no finding.
+-- a/a.canon --
+package a
+
+local record I {
+  n: Int
+  w: Int = 0
+}
+
+local record Item {
+  size: Int = 1
+}
+
+local let items: table Item = { sword {}, shield {}, bow {} }
+
+local record R {
+  it: ref items
+  w: Int = 0
+}
+
+local record Cfg {
+  ii: [I] keyed by n
+  rr: [R] keyed by it
+}
+
+local let cfg: Cfg = { ii: [{ n: 1 }, { n: 2 }], rr: [{ it: sword }, { it: shield }] }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  ii[2]: { n: 3, w: 5 }
+  ii[1]: { n: 1, w: 5 }
+  rr[shield]: { it: bow }
+  rr.sword.it: sword
+}
+-- findings.txt --
+error[E1913]  a/dev.layer.canon:5:15
+  amend path ii[2]: the element's key 3 is not 2, the key its path names
+
+error[E1913]  a/dev.layer.canon:7:21
+  amend path rr[shield]: the element's key bow is not shield, the key its path names
+
+2 errors, 0 warnings in 1 package (…)

@@ -1,0 +1,72 @@
+EVALUATION.md §9.3 (E1913, evaluation form): a let's keyed-list keys are judged once all its lines are applied; the finding is at the last line that changed the element's key, or re-derived it, at the key field a replacing literal writes; a later line of another field keeps it there.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Row.
+record S {
+  /// Key.
+  k: String
+  /// W.
+  w: Int = 0
+}
+
+/// Derived row.
+record T {
+  /// Id.
+  id: String
+  /// Key.
+  k: String = id
+}
+
+/// Holder.
+record B {
+  /// String keyed.
+  oo: [S] keyed by k
+  /// Keyed by a derived key.
+  tt: [T] keyed by k
+}
+
+/// X.
+let kx: String = "x"
+
+/// Literal.
+let literal: B = { oo: [{ k: "x" }, { k: "y" }], tt: [] }
+
+/// Derived.
+let derived: B = { oo: [], tt: [{ id: "y" }] }
+
+/// Later.
+let later: B = { oo: [{ k: "x" }, { k: "y" }], tt: [] }
+-- a/dev.canon --
+package a
+layer dev
+
+amend literal {
+  oo.y: { w: 5, k: kx }
+}
+
+amend derived {
+  tt.y.id: "z"
+}
+
+amend later {
+  oo.y.k: kx
+  oo.y.w: 5
+}
+-- findings.txt --
+error[E1913]  a/dev.canon:5:20
+  literal: amend path oo.y: the element's key x is not y, the key its path names
+  set by layer dev
+
+error[E1913]  a/dev.canon:9:12
+  derived: amend path tt.y.id: the element's key z is not y, the key its path names
+  set by layer dev
+
+error[E1913]  a/dev.canon:13:11
+  later: amend path oo.y.k: the element's key x is not y, the key its path names
+  set by layer dev
+
+3 errors, 0 warnings in 1 package (…)

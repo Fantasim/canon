@@ -53,6 +53,9 @@ func (r *run) applyLayers(obj check.Object, v value.Value) value.Value {
 			}
 		}
 	}
+	if !r.keysKept(v) {
+		return nil
+	}
 	r.settle(v)
 	return v
 }

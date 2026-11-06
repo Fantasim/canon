@@ -186,6 +186,7 @@ E1908 overlap: amend path resource.vocab.items overlaps resource.vocab.items in 
 E1909 -: amend resource.vocab.items: layers amend values of their own package only
 E1910 -: input resource.vocab.items: type Int cannot be read or checked at run time
 E1911 -: 0.9 is not a valid environment variable name
+E1913 -: amend path resource.vocab.items: the element's key "II_SYS_SYS_SCR_FARM3" is not "II_SYS_SYS_SCR_FARM3", the key its path names
 E2001 -: directory @resource/Server/Item/propItem.json holds files of packages resource.vocab.items and resource.vocab.items
 E2002 -: import cycle: a -> b -> a
 E2003 -: unknown package resource.vocab.items

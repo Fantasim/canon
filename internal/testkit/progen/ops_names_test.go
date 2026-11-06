@@ -28,6 +28,7 @@ func namesOperators() []operator {
 		op(diag.E1909.Def().Code, "EVALUATION.md §9.2 (amend another package)", amendForeign),
 		op(diag.E1910.Def().Code, "EVALUATION.md §11.1 (input list)", inputField(replaceType(`[String]`))),
 		op(diag.E1911.Def().Code, "EVALUATION.md §11.1 (invalid env name)", inputField(badEnvName)),
+		op(diag.E1913.Def().Code, "EVALUATION.md §9.3 (an element given another key)", rekeyElement),
 		op(diag.E2001.Def().Code, "TYPES.md §3.1 (two packages in one directory)", twoPackagesOneDir),
 		e2002,
 		op(diag.E2003.Def().Code, "TYPES.md §3.1 (unknown package)", afterPackage("import ", "nowhere", "")),

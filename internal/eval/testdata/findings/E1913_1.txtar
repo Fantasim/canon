@@ -1,0 +1,100 @@
+EVALUATION.md §9.3 (E1913, evaluation form): under an active layer, the element a keyed list's segment names keeps that key when the line computes it, by a call, a let or a key field amended alone, and when the segment is a position; a hard error set by the layer, the value poisoned.
+-- layers --
+dev
+-- a/a.canon --
+/// A.
+package a
+
+/// Row.
+record S {
+  /// Key.
+  k: String
+  /// W.
+  w: Int = 0
+}
+
+/// Item.
+record Item {
+  /// Size.
+  size: Int = 1
+}
+
+/// Items.
+let items: table Item = { sword {}, shield {}, bow {} }
+
+/// Ref row.
+record R {
+  /// Key.
+  it: ref items
+  /// W.
+  w: Int = 0
+}
+
+/// Holder.
+record B {
+  /// String keyed.
+  oo: [S] keyed by k
+  /// Ref keyed.
+  rr: [R] keyed by it
+}
+
+/// X.
+let kx: String = "x"
+
+/// Bow.
+let bow2: ref items = bow
+
+/// Makes a row.
+fn mk(key: String) -> S { return { k: key, w: 5 } }
+
+/// Called.
+let called: B = { oo: [{ k: "x" }, { k: "y" }], rr: [] }
+
+/// Positioned.
+let positioned: B = { oo: [{ k: "x" }, { k: "y" }], rr: [] }
+
+/// In place.
+let inPlace: B = { oo: [{ k: "x" }, { k: "y" }], rr: [] }
+
+/// Ref keyed.
+let reffed: B = { oo: [], rr: [{ it: sword }, { it: shield }] }
+-- a/dev.canon --
+package a
+layer dev
+
+amend called {
+  oo.y: mk(kx)
+}
+
+amend positioned {
+  oo[#1]: { k: "z" }
+}
+
+amend inPlace {
+  oo.y.k: kx
+}
+
+amend reffed {
+  rr[shield]: { it: bow2 }
+}
+-- findings.txt --
+error[E1913]  a/dev.canon:5:9
+  called: amend path oo.y: the element's key x is not y, the key its path names
+  set by layer dev
+
+warning[W1912]  a/dev.canon:9:5
+  amend path oo[#1] selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key
+
+error[E1913]  a/dev.canon:9:16
+  positioned: amend path oo[#1]: the element's key z is not y, the key its path names
+  set by layer dev
+
+error[E1913]  a/dev.canon:13:11
+  inPlace: amend path oo.y.k: the element's key x is not y, the key its path names
+  set by layer dev
+
+error[E1913]  a/dev.canon:17:21
+  reffed: amend path rr[shield]: the element's key bow is not shield, the key its path names
+  set by layer dev
+
+4 errors, 1 warning in 1 package (…)

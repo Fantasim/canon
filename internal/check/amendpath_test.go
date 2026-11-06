@@ -45,10 +45,16 @@ local let cfg: Cfg = {
 // checkLayer checks package a with a layer dev amending cfg, parse findings in the package's bag.
 func checkLayer(t *testing.T, amends string) string {
 	t.Helper()
+	return checkLayerOn(t, layerBase, amends)
+}
+
+// checkLayerOn is checkLayer over the package source base, which declares cfg.
+func checkLayerOn(t *testing.T, base, amends string) string {
+	t.Helper()
 	set := &source.FileSet{}
 	bags := check.Bags{builtPackage: diag.NewBag(set, builtPackage)}
 	var files []*syntax.File
-	for _, f := range [][2]string{{builtFile, layerBase}, {layerFile, "package a\nlayer dev\n\namend cfg {\n" + amends + "}\n"}} {
+	for _, f := range [][2]string{{builtFile, base}, {layerFile, "package a\nlayer dev\n\namend cfg {\n" + amends + "}\n"}} {
 		src, err := set.Add(f[0], "/"+f[0], []byte(f[1]))
 		if err != nil {
 			t.Fatal(err)
@@ -71,7 +77,7 @@ func TestAmendPathsCompareCanonically(t *testing.T) {
 		{"P8 two entries", "  tiers.low.rate: 2\n  tiers.high.rate: 3\n", 0},
 		{"P8 position against key, table", "  tiers[#0].rate: 2\n  tiers.low.rate: 3\n", 0},
 		{"P8 position twice", "  tiers[#0].rate: 2\n  tiers[#0].rate: 3\n", 1},
-		{"P1 keyed list: an integer key is not a position", "  keyed[3].rate: 2\n  keyed[#3].rate: 3\n", 0},
+		{"P1 keyed list: an integer key is not a position", "  keyed[3].rate: 3\n  keyed[#3].rate: 3\n", 0}, // the key field keeps its key (E1913)
 		{"P1 keyed list: one key", "  keyed[3]: { rate: 3 }\n  keyed[3].rate: 3\n", 1},
 		{"P2 enum key bare and qualified", "  grades[low]: 2\n  grades[Grade.low]: 3\n", 1},
 		{"P8 plain list index and position", "  xs[1]: 5\n  xs[#1]: 6\n", 1},

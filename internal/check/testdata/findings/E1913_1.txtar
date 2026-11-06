@@ -1,0 +1,30 @@
+EVALUATION.md §9.3 (E1913, static form): a line replacing a String-keyed element whole states the key its segment names, and so does a line amending that key field alone; a key in use is no exception.
+-- a/a.canon --
+package a
+
+local record S {
+  k: String
+  w: Int = 0
+}
+
+local record Cfg {
+  oo: [S] keyed by k
+}
+
+local let cfg: Cfg = { oo: [{ k: "x" }, { k: "y" }, { k: "v" }] }
+-- a/dev.layer.canon --
+package a
+layer dev
+
+amend cfg {
+  oo.y: { k: "x", w: 5 }
+  oo["v"].k: "z"
+}
+-- findings.txt --
+error[E1913]  a/dev.layer.canon:5:14
+  amend path oo.y: the element's key x is not y, the key its path names
+
+error[E1913]  a/dev.layer.canon:6:14
+  amend path oo["v"].k: the element's key z is not v, the key its path names
+
+2 errors, 0 warnings in 1 package (…)

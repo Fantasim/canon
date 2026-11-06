@@ -28,6 +28,7 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	el := r.ev.withIdent(nv, elems[i], fresh)
 	if rec, isRec := el.(*value.Record); isRec {
 		r.moving().placed[rec] = true // the amended instance's own entry, its key kept (TYPES.md §6.3)
+		r.noteKey(cur, elems[i], rec, len(segs) == 1, m)
 	}
 	return r.copied(cur, r.ev.replaced(cur, i, nil, el))
 }

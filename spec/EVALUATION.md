@@ -324,7 +324,7 @@ value being verified.
 
 | Kind | Codes | Effect |
 |---|---|---|
-| **hard** | every `E4xxx` raised at evaluation (including those of STDLIB.md), `E3501` and `E3505` raised by a dereference, load and decode errors (`E7xxx` and the decode codes of WIRE.md), `E1905` | aborts the current root (below) |
+| **hard** | every `E4xxx` raised at evaluation (including those of STDLIB.md), `E3501` and `E3505` raised by a dereference, load and decode errors (`E7xxx` and the decode codes of WIRE.md), `E1905`, `E1913` | aborts the current root (below) |
 | **soft** | `E3101`, `E3102`, `E3201`, `E3202`, `E3204`–`E3206`, `E3322`, `E3501`–`E3503`, `E3505`, `E3506` found by conversion or verification, `E37xx`, `E38xx`, `E6xxx` | marks the offending value invalid; evaluation continues |
 | check | `E5xxx`, `W5xxx` | none on evaluation |
 
@@ -532,6 +532,14 @@ else reads `v`**:
    applied to the old one, which verification reports as `E3802`; a defaulted one is re-derived
    and takes the new argument.
 4. The amended value then goes through verification and every check, like any value.
+5. **Keys stay.** Once every amendment of `v` is applied, each element of a keyed list that a line
+   rebuilt, by key or by position, holds in its key field the key it had, whether that field was
+   written, computed or re-derived by step 3. Otherwise it is `E1913`, hard (`v` is poisoned), at
+   the last line that changed it. The order of the lines and layers does not matter. The checker
+   reports a line that states both keys as literals, or as names it resolves to a key, member or
+   entry of the key's own collection or enum, alone and whether or not the key exists. To change a
+   key, rename the element. To amend a field the key defaults from, state the key in the same
+   line, or amend the key field too (DECISIONS 499).
 
 Amended sub-values carry layer provenance (§13), which `canon explain` shows. Layers never write
 `canon.lock` (LOCK.md).
@@ -870,6 +878,7 @@ source of diagnostics (DECISIONS 27); this table says when each code fires.
 | E1910 | error | §11.1 |
 | E1911 | error | §11.1 |
 | W1912 | warning | an amend path that selects a table, keyed-list or map entry by position (§9.2) |
+| E1913 | error | static when one line states both keys; hard once per let, after its amendments (§9.3 step 5) |
 | E4001 | error | postfix `!` on `none` (hard) |
 | E4002 | error | missing key or index (hard) |
 | E4003 | error | `.id` or `.retired` of a record that is not an entry (hard) |

@@ -66,9 +66,11 @@ func (c *checker) declaredElsewhere(p *pkgState, name string) bool {
 }
 
 // amendment types one `path: value`: the path resolved against the let's static type (E1905),
-// set once and not overlapping another in the layer (E1908), the value checked at the path.
+// set once and not overlapping another in the layer (E1908), the value checked at the path,
+// keeping the key of a keyed-list element it names (E1913).
 func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen amendPaths) {
 	w := &amendWalk{let: let, decl: let, t: c.letType(let), plain: c.letType(let).Base().Kind() != types.Optional, bind: &bindCtx{field: c.letType(let)}}
+	on := make([]types.Type, 0, len(a.Path))
 	for i, seg := range a.Path {
 		if i == 0 && seg.Name != nil {
 			w.text = append(w.text, seg.Name.Name)
@@ -76,6 +78,7 @@ func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen ame
 			w.text = append(w.text, segmentText(env, seg))
 		}
 		container := unwrapOptional(w.t)
+		on = append(on, container)
 		if !c.amendSegment(env, w, seg) {
 			c.expr(env, a.Value, types.ErrorType)
 			return
@@ -86,6 +89,7 @@ func (c *checker) amendment(env *env, let *object, a *syntax.Amendment, seen ame
 	ve := env.storing(w.decl, a.Value)
 	ve.bind = w.bind
 	c.expr(ve, a.Value, w.t)
+	c.keyKept(env, a, on, w.path())
 }
 
 // amendWalk is a path being resolved: the type reached, the path's text so far and its

@@ -5499,3 +5499,28 @@ round 2", "PS1 review", "PS2 round 2"):
      bound its refs to t3 while t3's field held std's entries; under a layer, refs written or
      rebound into a spread copy of a function result or an inline literal read the source's old
      content.
+
+499. **A layer line keeps the key of the keyed-list element its path names (EVALUATION.md §7.1,
+     §9.2, §9.3; TYPES.md §9.1; ERRORS.md E1913; follows 25, 305, 469, 486, 487, 490, 492, 494,
+     495).** An amend line whose path names an element of a keyed list, by key or by position,
+     leaves that element the key it had. The rule covers a line that replaces the element whole, one
+     that amends its key field alone (`oo.y.k: "z"`), and one whose §9.3 step 3 re-derives a
+     defaulted key field (`k: String = id` with `oo.y.id: "z"`). Each is `E1913` when the element's
+     key afterwards is another, a computed value included. The checker reports it when one line
+     states both keys: the segment and the key field as a word, a string or integer literal, or a
+     name it resolves to a key, member or entry of the key's own collection or enum, bare or
+     qualified. A name that resolves in scope is computed (494, 495). A key field of another type is
+     left to its type finding. A ref into a chain's or a field's collection is left to evaluation.
+     Such a line is judged alone, because each layer is also evaluated singly (469). Otherwise the
+     rule is judged once per let, after all of its lines in every active layer are applied, whatever
+     their order (as E1908 keeps disjoint lines order-free). Each element a line rebuilt is compared
+     with its identity key, so a line that restores the key also restores the element. The finding
+     is hard like `E1905`: the let is poisoned, and the finding is set by the layer at the last line
+     that changed that element's key. The static form does not wait for the key to exist: a keyed
+     list never grows, so no fix of the line keeps another key. The way out: state the key in the
+     line (replace the element with its key field written), amend the key field too, or rename the
+     element with the edit op `rename`. Edits never write such a line: `Set` of a key field, or of
+     an element with another key, is `ErrNotEditable` (`key`), and the re-check refuses a layer
+     write that changes a re-derived key (E19). Reason: v0.3 run (CHECK-AMENDKEYMATCH): such lines
+     passed silently. Lookups read the element's identity key, verification's `E3102` checked the
+     identity key, and `Graph` named the key field, so one element answered to two keys.

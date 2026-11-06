@@ -190,6 +190,7 @@ var constructed = []*Builder{
 	E1909.At(sampleSpan, sampleName),
 	E1910.At(sampleSpan, sampleName, sampleType),
 	E1911.At(sampleSpan, sampleText),
+	E1913.At(sampleSpan, sampleName, sampleValue, sampleValue),
 	E2001.At(sampleSpan, samplePath, sampleName, sampleName),
 	E2002.At(sampleSpan, sampleChain),
 	E2003.At(sampleSpan, sampleName),

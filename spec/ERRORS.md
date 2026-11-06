@@ -392,7 +392,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 342 codes: 305 errors, 34 warnings and 3 run-time codes, with 600 messages.
+The catalogue holds 343 codes: 306 errors, 34 warnings and 3 run-time codes, with 601 messages.
 
 ## W00xx: Lints
 
@@ -760,6 +760,7 @@ Owner: EVALUATION.md.
 | E1910 | error | check | EVALUATION.md §11.1 | an input type that cannot be read or checked at runtime |
 | E1911 | error | check | EVALUATION.md §11.1 | invalid environment variable name |
 | W1912 | warning | check | EVALUATION.md §9.2 | an amend path that selects a table, keyed-list or map entry by position (`[#n]`) instead of by key (DECISIONS 379) |
+| E1913 | error | check | EVALUATION.md §9.3 | an amend line gives a keyed-list element a key other than the one its path names |
 
 | Code | Variant | Args | Template |
 |---|---|---|---|
@@ -781,6 +782,7 @@ Owner: EVALUATION.md.
 | E1910 | - | field:Name, typ:Type | `input {field}: type {typ} cannot be read or checked at run time` |
 | E1911 | - | name:Text | `{name} is not a valid environment variable name` |
 | W1912 | - | path:Name | `amend path {path} selects an entry by position, and the entry at a position changes when entries are added or entry files move: select it by key` |
+| E1913 | - | path:Name, key:Value, want:Value | `amend path {path}: the element's key {key} is not {want}, the key its path names` |
 
 ## E2xxx: Packages and names
 
