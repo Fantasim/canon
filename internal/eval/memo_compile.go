@@ -187,6 +187,7 @@ func (c *compiler) marksOf(m *frozenMarks) memoMarks {
 	out := memoMarks{
 		invalid: c.slots(m.invalid), written: c.slots(m.written),
 		history: c.links(m.history), rebuilt: c.links(m.rebuilt), origin: c.links(m.origin),
+		sites: m.sites,
 	}
 	for _, rec := range m.bound {
 		b := memoBound{rec: c.slotOf(rec)}

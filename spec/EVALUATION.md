@@ -813,7 +813,9 @@ Rules:
   span and stack; a default re-derived after it (§9.3 step 3) is `default` at its default
   expression, with `via` the literal or object that omitted the field, as without the layer, and
   takes the layer of the last amendment that changed a field it or its type's arguments read; one no
-  amendment changed keeps its provenance (DECISIONS 464, 501).
+  amendment changed keeps its provenance (DECISIONS 464, 501). A dependent field's default,
+  layer value or spread copy has the same shape; a bare case it names is filled via the case token
+  where it was written, under that place's layer (DECISIONS 505).
 
 The **value path** of a finding (SPEC §21.1) is the path from its top-level value to the located
 value, in the syntax of CLI §2.6 and API-02 (keyed lists and tables by key). A finding about a

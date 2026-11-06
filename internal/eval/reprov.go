@@ -5,7 +5,7 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// reprov is v with a new origin p, without v's history but with its position mark, a composite shallow (EVALUATION.md §4.2, §13.1).
+// reprov is v with a new origin p, a composite shallow, without v's history but keeping its position mark, its written mark and a symbol's written site (EVALUATION.md §13.1).
 func (e *Evaluator) reprov(v value.Value, p *value.Prov) value.Value {
 	if value.IsPosition(v) {
 		p = e.positionProv(p)
@@ -16,7 +16,31 @@ func (e *Evaluator) reprov(v value.Value, p *value.Prov) value.Value {
 			e.copiedFrom(rec, cp)
 		}
 	}
+	e.keepWritten(v, out)
 	return e.mark(v, out)
+}
+
+// keepWritten gives out, v under a fresh provenance, v's written mark and a symbol's written site; a shared one would let the last site win (TYPES.md §11.4).
+func (e *Evaluator) keepWritten(v, out value.Value) {
+	if out == v || out == nil {
+		return
+	}
+	if e.isWritten(v) {
+		e.written[out], e.gens.written = true, e.gens.written+1
+	}
+	if s, ok := v.(*value.Symbol); ok && out.Prov() != nil {
+		e.symSites[out.Prov()] = e.writtenAt(s.P)
+	}
+}
+
+// writtenAt is where a symbol of provenance p was written: the site reprov kept for p, else p.
+func (e *Evaluator) writtenAt(p *value.Prov) *value.Prov {
+	for x := e; x != nil; x = x.parent {
+		if site, ok := x.symSites[p]; ok {
+			return site
+		}
+	}
+	return p
 }
 
 func reprovValue(v value.Value, p *value.Prov) value.Value {
@@ -37,6 +61,8 @@ func reprovValue(v value.Value, p *value.Prov) value.Value {
 		return &value.None{T: x.T, P: p}
 	case *value.Ref:
 		return &value.Ref{T: x.T, Key: x.Key, Owner: x.Owner, P: p}
+	case *value.Symbol:
+		return &value.Symbol{Name: x.Name, T: x.T, P: p}
 	}
 	return reprovComposite(v, p)
 }

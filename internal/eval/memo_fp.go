@@ -168,6 +168,7 @@ func (w *fpWalk) scalar(x value.Value) bool {
 		write(w, v.Index)
 	case *value.Symbol:
 		write(w, v.Name)
+		w.prov(w.e.writtenAt(v.P)) // its case's defaults come via it (EVALUATION.md §13)
 	case *value.None:
 		write(w, fpNone)
 	case *value.Range:

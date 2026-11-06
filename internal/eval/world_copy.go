@@ -226,6 +226,9 @@ func (c *worldCopier) mark() {
 		if from.isWritten(n) {
 			to.written[cp], to.gens.written = true, to.gens.written+1
 		}
+		if site := from.writtenAt(n.Prov()); site != n.Prov() {
+			to.symSites[cp.Prov()] = site
+		}
 		if old := from.before(n); old != nil {
 			to.history[cp] = c.at(old)
 		}

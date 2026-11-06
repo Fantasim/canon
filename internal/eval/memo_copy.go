@@ -103,6 +103,9 @@ func (th *thawer) mark(e *Evaluator) {
 		e.written[th.at(s)] = true
 		e.gens.written++
 	}
+	for _, l := range m.sites {
+		e.symSites[l.p] = l.site
+	}
 	for _, l := range m.history {
 		e.history[th.at(l.from)] = th.at(l.to)
 	}

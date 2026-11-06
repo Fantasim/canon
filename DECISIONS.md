@@ -5645,3 +5645,27 @@ round 2", "PS1 review", "PS2 round 2"):
      place and given its own entries, so `r.b.tt.t == r.a.tt.t` was false and Graph had nodes below
      p:r.b; under a layer, the unbinding and rebinding passes re-owned a shared base record's
      entries; after 501, a kept `au: U = uu.x` still named the record from before the amendment.
+
+505. **A dependent field's default, spread or layer value has the origin of any such value, a bare
+     case it names is filled via the symbol as written, and a literal it passes along stays kept as
+     written (EVALUATION.md §13; TYPES.md §8.2, §11.4; API.md §5.2; follows 464, 468, 501).** A
+     value a dependent field gets from its default is `default` at its default expression, with
+     `via` the literal or object that omitted the field; under a layer it takes the layer 501 gives
+     a re-derived default. A value a layer writes into a dependent field is `layer`. One a spread
+     copies is `spread` via its original, as for a plain field. When verification converts such a
+     symbol to a case written bare, the case's defaults, and an optional field it leaves out, come
+     via the symbol where it was written: the case-name token itself, inside an `if` or a compound
+     right-hand side as much as alone, and through any spreads. They take the layer of the place the
+     symbol was written, as if the case had been written there with its fields. The evaluator keeps
+     that written site beside the provenance, which stays slim and is never rewritten (373), and
+     carries it through spreads, memo replays and world copies. Origin.Text stays the value as
+     written (468). A default, spread or layer only passes a literal along: an integer or string
+     literal written for a dependent field, or loaded into one, stays kept as written through them
+     and converts at verification like the literal itself (an Int to a Float branch). A computed
+     value, a call's result included, never becomes kept as written by passing through them, so a
+     computed Int reaching a Float branch through a default, spread or layer is still `E3802`. A
+     default §9.3 step 3 re-derives has no `Replaced`: only an amendment's line replaces a value.
+     Reason: v0.3 run (EVAL-DEPDEFAULTPROV): a dependent field's default, layer value or spread copy
+     kept its symbol's bare `literal` origin; the defaults of the case it named lost the layer, and
+     came via the whole default expression when that was compound; an Int literal reaching a Float
+     branch through a default, spread or layer was a false `E3802`.

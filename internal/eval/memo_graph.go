@@ -63,6 +63,13 @@ type memoMarks struct {
 	history, rebuilt []memoLink
 	origin           []memoLink
 	bound            []memoBound
+	sites            []provSite
+}
+
+// provSite is the provenance reprov gave a symbol, and where the symbol was written; a copy keeps
+// both as they are.
+type provSite struct {
+	p, site *value.Prov
 }
 
 // memoLink is a mark naming another value: the one amended, rebuilt or copied.
@@ -95,6 +102,7 @@ type frozenMarks struct {
 	history, rebuilt []frozenLink
 	origin           []frozenLink
 	bound            []*value.Record
+	sites            []provSite
 }
 
 // frozenLink is a mark a freezer met: its node, and the value it names.
@@ -156,6 +164,9 @@ func (f *freezer) mark(n value.Value) {
 	}
 	if e.written[n] {
 		m.written = append(m.written, n)
+	}
+	if site := e.writtenAt(n.Prov()); site != n.Prov() {
+		m.sites = append(m.sites, provSite{p: n.Prov(), site: site})
 	}
 	if old, ok := e.history[n]; ok {
 		m.history = append(m.history, frozenLink{from: n, to: old})

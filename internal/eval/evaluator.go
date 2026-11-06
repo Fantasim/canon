@@ -70,6 +70,7 @@ type Evaluator struct {
 	verified   map[*value.Record]any                          // verdict, never copied: what stage B made of each instance; a child reads its parent's (stageb.go)
 	cuts       map[*diag.Frame]diag.Frame                     // a cut provenance stack's outermost frame, by its first (outermost.go)
 	siteProvs  map[siteKey]*value.Prov
+	symSites   map[*value.Prov]*value.Prov
 
 	parent    *Evaluator   // a vector's or a world's evaluator reads its parent's settled values (vector.go, world.go)
 	vec       *vectorState // set on a vector's evaluator only
@@ -155,6 +156,7 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		bound:      map[*value.Record]map[*types.Param]value.Value{},
 		reads:      map[*types.Field][]int{},
 		written:    map[value.Value]bool{},
+		symSites:   map[*value.Prov]*value.Prov{},
 		deps:       map[types.Type]bool{},
 		verified:   map[*value.Record]any{},
 	}

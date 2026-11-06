@@ -233,9 +233,12 @@ func (s *StageB) Replace(v value.Value) {
 	st.v = v
 }
 
-// bare fills rec, a case written bare, with its defaults (TYPES.md §8.2): the required field it lacks, nil for none.
+// bare fills rec, a case written bare, with its defaults via the symbol where it was written, in that place's layer (TYPES.md §8.2, DECISIONS 464): the required field it lacks, nil for none.
 func (r *run) bare(rec *value.Record) (*types.Field, bool) {
 	c, _ := rec.T.(*types.CaseType)
+	via, layer := r.ev.bareVia(rec.P), r.fr.layer
+	r.fr.layer = via.Layer()
+	defer func() { r.fr.layer = layer }()
 	for i, f := range c.Fields {
 		_, optional := f.Type.Base().(*types.OptionalType)
 		switch {
@@ -244,14 +247,34 @@ func (r *run) bare(rec *value.Record) (*types.Field, bool) {
 		case f.Default == nil && !optional:
 			return f, true
 		case f.Default == nil:
-			rec.Fields[i] = &value.None{T: f.Type, P: rec.P}
+			rec.Fields[i] = &value.None{T: f.Type, P: r.ev.leftOut(f, rec.T, via)}
 			continue
 		}
-		if rec.Fields[i] = r.defaultValue(rec, f, nil, rec.P); rec.Fields[i] == nil {
+		if rec.Fields[i] = r.defaultValue(rec, f, nil, via); rec.Fields[i] == nil {
 			return nil, false
 		}
 	}
 	return nil, true
+}
+
+// bareVia is what omitted the fields of the case a symbol of provenance p names: the symbol where it was written, else a literal at p's site (EVALUATION.md §13).
+func (e *Evaluator) bareVia(p *value.Prov) *value.Prov {
+	for {
+		if site := e.writtenAt(p); site != p {
+			return site
+		}
+		if p == nil || p.Kind != value.ProvSpread || p.Via == nil {
+			break
+		}
+		p = p.Via
+	}
+	if p == nil || p.Kind != value.ProvDefault && p.Kind != value.ProvLayer {
+		return p
+	}
+	if layer := p.Layer(); layer != "" {
+		return &value.Prov{Kind: value.ProvLiteral, Span: p.Span, Ext: &value.ProvExt{Layer: layer}}
+	}
+	return e.sharedProv(siteKey{kind: value.ProvLiteral, span: p.Span})
 }
 
 // literal marks v, a literal token evaluated for a dependent field, kept as written (TYPES.md §11.4).
