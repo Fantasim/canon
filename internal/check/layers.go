@@ -18,6 +18,7 @@ func (c *checker) checkLayers(p *pkgState) {
 		}
 		o := c.newObject(ObjLayer, f.Layer.Name, p, f.Layer, f)
 		c.info.Defs[f.Layer] = o
+		p.layers = append(p.layers, o)
 		if at, dup := first[f.Layer.Name]; dup {
 			c.deliver(p, origin{file: f}, diag.E1906.At(f.Span(f.Layer), p.path, f.Layer.Name, at).Report)
 		} else {
@@ -49,7 +50,7 @@ func (c *checker) amendBlock(env *env, b *syntax.AmendBlock, seen amendPaths) {
 		c.report(env, diag.E1902.At(env.span(b.Target), name))
 		return
 	}
-	c.useLet(env, b.Target, o)
+	c.info.NameUses[b.Target] = o // the let amended is no name that breaks the layer: its own break poisons it (DECISIONS 514)
 	for _, a := range b.Items {
 		c.amendment(env, o, a, seen)
 	}

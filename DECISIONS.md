@@ -5875,3 +5875,24 @@ round 2", "PS1 review", "PS2 round 2"):
      a `Float32` leaf, rebuilt at every place, unshared the tree (depth 20: 7.5 s, 1.57 GB
      RSS). Review: a reused visit must not hide the second place of an invalid value, nor drop
      an invalid mark a sibling set since that visit.
+
+514. **A layer file whose amendments name a broken declaration is broken; the let it amends is
+     no such name (TYPES.md §1; EVALUATION.md §1, §7.2, §9.1; API.md R6, R7, R15; follows 185,
+     463, 472).** TYPES.md §1's 'every declaration whose body names a broken declaration'
+     covers a layer file. A layer is broken, a Recheck included, when an amendment's value or
+     path key names a broken declaration (a function, method, let, const or type, directly or
+     through what it calls). The let an `amend` block targets is not such a name: a broken
+     target is poisoned by its own break, and the layer's other amendments still apply and
+     report. While a broken layer is active, and when it is evaluated singly as a declared
+     layer (472), every value it amends is poisoned silently. R6 reads a broken active layer
+     whole: a root it amends takes as its cause the errors in the layer's amend blocks, else
+     the broken declarations those blocks name, never a block's target. So `Value`, `Refs` and
+     `Graph` fail `ErrNoValue` naming the amended root, and an edit's re-check meets it the
+     same way (463). A soft conversion finding of a fn result (`E3503`) is not this: the
+     unconverted record stays, marked invalid (185). Known limit, v0.4: a layer broken by an
+     error outside every amend block (a syntax error after the blocks) poisons its roots with
+     an empty R6 cause, as before. Reason: v0.3 run (LAYERFNREF-b rounds 1-2): a layer calling
+     a broken fn stored a record in a ref field and a ref of another collection as a tt ref,
+     and an untyped record literal gave an internal compiler error in check, build and edits,
+     even with the layer only declared; breaking a layer for the let it amends hid its other
+     lines' findings and left their roots with no cause.

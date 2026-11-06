@@ -54,8 +54,9 @@ A bare identifier whose expected type is `ref C` (or contains such a branch) and
 to no name (§4.1) is recorded as a **symbolic key**. Its existence is checked at evaluation
 (`E3501`, §9.4). The ambiguity test of §4.2 uses declared names only, never loaded keys.
 
-A declaration with a static error is **broken**. So is every declaration whose body names a
-broken declaration. Broken values are never evaluated (EVALUATION.md §1), which keeps one
+A declaration with a static error is **broken**. So is every declaration, and every layer file,
+whose body names a broken declaration; the let an `amend` block targets is not such a name, since
+its own break poisons it (DECISIONS 514). Broken values are never evaluated (EVALUATION.md §1), which keeps one
 error from cascading. After an error the checker gives the expression the *error type*, which
 is assignable to and from every type and produces no further diagnostics. A sub-expression
 checked against the error type (an item of a literal in error, a misplaced item, the

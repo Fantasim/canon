@@ -3,6 +3,7 @@ package check
 import (
 	"context"
 	"maps"
+	"slices"
 
 	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/project"
@@ -309,17 +310,14 @@ func (c *checker) propagateBroken() {
 	}
 }
 
+// propagateIn breaks p's declarations, and its layer files, that name a broken one (TYPES.md §1; DECISIONS 514).
 func (c *checker) propagateIn(p *pkgState) bool {
 	changed := false
-	for _, o := range p.all {
-		if c.info.Broken[o] {
-			continue
-		}
-		for _, d := range c.deps[o] {
-			if c.info.Broken[d] {
+	for _, objs := range [][]*object{p.all, p.layers} {
+		for _, o := range objs {
+			if !c.info.Broken[o] && slices.ContainsFunc(c.deps[o], c.isBroken) {
 				c.info.Broken[o] = true
 				changed = true
-				break
 			}
 		}
 	}

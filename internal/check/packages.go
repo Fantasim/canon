@@ -18,6 +18,7 @@ type pkgState struct {
 	bag     *diag.Bag
 	names   map[string]*object // the package namespace (TYPES.md §3.2)
 	all     []*object          // every declaration that can be broken
+	layers  []*object          // every layer file's object, broken by what its amendments name (TYPES.md §1; DECISIONS 514)
 	imports []*pkgState        // direct imports, in path order
 	scopes  map[*syntax.File]*fileScope
 	pkg     *Package

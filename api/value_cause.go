@@ -93,28 +93,40 @@ func (s *snapshot) sources(obj check.Object) []located {
 
 // amends are the amend blocks of obj in pkg's files of an active layer.
 func (s *snapshot) amends(pkg *check.Package, obj check.Object) []located {
-	info := s.a.Program().Info
 	var out []located
 	for _, f := range pkg.Files {
-		if f.Layer == nil || !slices.Contains(s.layers, f.Layer.Name) {
-			continue
-		}
-		for _, blk := range f.Amends {
-			if info.NameUses[blk.Target] == obj {
-				out = append(out, located{f, blk})
-			}
+		if f.Layer != nil && slices.Contains(s.layers, f.Layer.Name) {
+			out = append(out, s.layerBlocks(f, obj)...)
 		}
 	}
 	return out
 }
 
-// brokenNames are the broken declarations the nodes name, in source order.
+// layerBlocks are f's blocks amending obj, or all of them when f is broken (rule R6, DECISIONS 514).
+func (s *snapshot) layerBlocks(f *syntax.File, obj check.Object) []located {
+	info := s.a.Program().Info
+	amends := slices.ContainsFunc(f.Amends, func(blk *syntax.AmendBlock) bool { return info.NameUses[blk.Target] == obj })
+	var out []located
+	for _, blk := range f.Amends {
+		if info.NameUses[blk.Target] == obj || amends && info.Broken[info.Defs[f.Layer]] {
+			out = append(out, located{f, blk})
+		}
+	}
+	return out
+}
+
+// brokenNames are the broken declarations the nodes name, in source order; the let an amend block
+// targets is not one (DECISIONS 514).
 func (s *snapshot) brokenNames(nodes []located) []check.Object {
 	info := s.a.Program().Info
 	var out []check.Object
+	targets := map[syntax.Node]bool{}
 	for _, l := range nodes {
 		syntax.Inspect(l.n, func(n syntax.Node) bool {
-			if o := info.ObjectOf(n); o != nil && info.Broken[o] && !slices.Contains(out, o) {
+			if blk, ok := n.(*syntax.AmendBlock); ok {
+				targets[blk.Target] = true
+			}
+			if o := info.ObjectOf(n); o != nil && !targets[n] && info.Broken[o] && !slices.Contains(out, o) {
 				out = append(out, o)
 			}
 			return true
