@@ -50,11 +50,13 @@ func (c conformer) Evaluate(ctx context.Context, x conform.Call, m conform.Mode)
 
 // throwawayHost is a fresh evaluator's host for test calls: its loads and verifications report
 // into bags nothing reads, one per package of the program; its evaluator has the run's options.
+// Its verifiers share ref-target indexes apart from the run's, which die with its evaluator.
 func (r *run) throwawayHost() *evalHost {
 	bags := r.throwawayBags()
-	h := &evalHost{prog: r.prog, bags: bags, loader: r.host.loader, assets: r.assets, index: r.vix, scratch: true, sites: r.host.sites}
+	ix := r.vix.Apart()
+	h := &evalHost{prog: r.prog, bags: bags, loader: r.host.loader, assets: r.assets, index: ix, scratch: true, sites: r.host.sites}
 	h.ev = eval.New(r.prog, h, bags, r.opt)
-	h.verifier = verify.NewShared(r.vix, h.ev, bags, r.assets)
+	h.verifier = verify.NewShared(ix, h.ev, bags, r.assets)
 	return h
 }
 
@@ -104,10 +106,10 @@ func (s subjects) BuildLiteral(ctx context.Context, lit eval.KeptLiteral, captur
 	})
 }
 
-// verifyInto runs walk on a verifier into bags, the unbound refs' E3505 into capture; false: an
-// internal error, or a hard error poisoned what it walked.
+// verifyInto runs walk on a verifier over the host's index into bags, the unbound refs' E3505 into
+// capture; false: an internal error, or a hard error poisoned what it walked.
 func (s subjects) verifyInto(capture *diag.Bag, bags check.Bags, walk func(*verify.Verifier) (verify.Result, error)) bool {
-	res, err := walk(verify.NewShared(s.r.vix, s.ev, bags, s.r.assets))
+	res, err := walk(verify.NewShared(s.host.indexFor(s.ev), s.ev, bags, s.r.assets))
 	if err != nil {
 		s.host.errs = append(s.host.errs, internal(err))
 		return false

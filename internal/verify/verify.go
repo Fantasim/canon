@@ -59,17 +59,18 @@ type Verifier struct {
 	src      *sources
 	declared map[eval.Root]types.Type
 
-	mu      sync.Mutex
-	indexes map[value.Value]map[value.Key]*value.Record
-
-	memo     entryMemo // the entries kept across snapshots, nil for none (entrymemo.go)
-	replayed int
+	targets     *targets
+	instTargets *targets
+	mu          sync.Mutex
+	memo        entryMemo // the entries kept across snapshots, nil for none (entrymemo.go)
+	replayed    int
 }
 
 // Index is what verification reads of a checked program, built once; the verifiers of one run share it.
 type Index struct {
 	src      *sources
 	declared map[eval.Root]types.Type
+	targets  *targets
 }
 
 // NewIndex indexes a checked program for its verifiers.
@@ -88,15 +89,16 @@ func NewShared(ix *Index, ev Evaluator, bags map[string]*diag.Bag, assets Assets
 	judged, _ := ev.(judgedEntries)
 	records, _ := ev.(judgedRecords)
 	return &Verifier{
-		ev:       ev,
-		deps:     deps,
-		judged:   judged,
-		records:  records,
-		bags:     bags,
-		assets:   assets,
-		src:      ix.src,
-		declared: ix.declared,
-		indexes:  map[value.Value]map[value.Key]*value.Record{},
+		ev:          ev,
+		deps:        deps,
+		judged:      judged,
+		records:     records,
+		bags:        bags,
+		assets:      assets,
+		src:         ix.src,
+		declared:    ix.declared,
+		targets:     ix.targets,
+		instTargets: newTargets(),
 	}
 }
 

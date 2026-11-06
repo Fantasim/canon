@@ -1,0 +1,56 @@
+EVALUATION.md §3.4, §5, §10.5; DECISIONS 515: only the test evaluator's own top-level ref targets
+join the run's shared index: the table a test reads, once; not the tables each `expect package`
+world rebuilds, nor the nodes of a tree a test literal holds.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A reward.
+record Reward {
+  /// Its label.
+  label: String
+}
+
+/// The rewards.
+let rewards: table Reward = {
+  gold { label: "Gold" }
+  gem { label: "Gem" }
+}
+
+/// What the first level gives.
+let firstReward: ref rewards = "gold"
+
+/// A node.
+record Node {
+  /// Its label.
+  label: String
+}
+
+/// A tree.
+record Tree {
+  /// Its nodes.
+  nodes: table Node
+  /// Its root.
+  root: ref Node
+}
+
+test "reads the first reward" {
+  expect firstReward == firstReward
+}
+
+test "worlds" {
+  expect package passes
+  expect package passes
+  expect package passes
+}
+
+test "trees" {
+  for i in 0..3 {
+    let t: Tree = { nodes: { a { label: "A" }, b { label: "B" } }, root: "a" }
+    expect t passes
+  }
+}

@@ -204,14 +204,23 @@ func errorsOf(b *diag.Bag) []diag.Finding {
 // VerifyInto verifies a value first forced in a vector through ev, the vector's evaluator, into its throwaway bags (ADR-0003, EVALUATION.md §1).
 func (h *evalHost) VerifyInto(ctx context.Context, ev *eval.Evaluator, root eval.Root, v value.Value, bags check.Bags) bool {
 	defer h.track(root.Pkg)()
-	res, err := verify.NewShared(h.index, ev, bags, h.assets).Check(ctx, root, v)
+	res, err := verify.NewShared(h.indexFor(ev), ev, bags, h.assets).Check(ctx, root, v)
 	return h.settle(ev, root, res, err)
+}
+
+// indexFor is the index a verifier over ev uses: the host's for its own evaluator; for a world's
+// or a vector's, discarded after its expect or call, one apart, whose targets die with it.
+func (h *evalHost) indexFor(ev *eval.Evaluator) *verify.Index {
+	if ev == h.ev {
+		return h.index
+	}
+	return h.index.Apart()
 }
 
 // VerifyLiteralsInto verifies a world value's kept literals through ev into bags (EVALUATION.md §10.5 item 3, TYPES.md §11.5).
 func (h *evalHost) VerifyLiteralsInto(ctx context.Context, ev *eval.Evaluator, root eval.Root, lits []eval.KeptLiteral, bags check.Bags) {
 	defer h.track(root.Pkg)()
-	vr := verify.NewShared(h.index, ev, bags, h.assets)
+	vr := verify.NewShared(h.indexFor(ev), ev, bags, h.assets)
 	for _, l := range lits {
 		res, err := vr.CheckLiteral(ctx, root, l.Value, l.Type)
 		h.settle(ev, root, res, err)

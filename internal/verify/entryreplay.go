@@ -112,7 +112,7 @@ func (w *walker) target(c *types.Collection, key value.Key) (reach, *value.Recor
 	if !ok {
 		return poisoned, nil
 	}
-	return reached, w.index(follow(v, c.FieldPath))[key]
+	return reached, w.targets.of(follow(v, c.FieldPath))[key]
 }
 
 // noteRef records a ref's target looked up; one owned by an instance (TYPES.md §10.2) voids it.

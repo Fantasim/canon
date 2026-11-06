@@ -39,22 +39,20 @@ func (w *walker) ref(r *value.Ref, t types.Type, sc scope, at *Path) {
 	w.retiredTarget(r, rt, target, at, sc)
 }
 
-// collection forces the ref's target and indexes its entries by key.
+// collection forces the ref's target and indexes its entries by key: an instance's own
+// collection in this verifier's targets, a top-level one in those its Index shares.
 func (w *walker) collection(r *value.Ref, c *types.Collection) (map[value.Key]*value.Record, reach) {
-	var root value.Value
 	if c.Kind == types.CollField {
 		if r.Owner == nil {
 			return nil, unbound
 		}
-		root = r.Owner
-	} else {
-		v, ok := w.ev.Force(w.ctx, eval.Root{Pkg: c.Pkg, Name: c.Name})
-		if !ok {
-			return nil, poisoned
-		}
-		root = v
+		return w.instTargets.of(follow(r.Owner, c.FieldPath)), reached
 	}
-	return w.index(follow(root, c.FieldPath)), reached
+	v, ok := w.ev.Force(w.ctx, eval.Root{Pkg: c.Pkg, Name: c.Name})
+	if !ok {
+		return nil, poisoned
+	}
+	return w.targets.of(follow(v, c.FieldPath)), reached
 }
 
 // follow reads a path of record fields; nil when a field is absent.
@@ -72,26 +70,6 @@ func follow(v value.Value, names []string) value.Value {
 		}
 	}
 	return v
-}
-
-// index maps each key of a table or keyed list to its first entry, once per collection value.
-func (w *walker) index(coll value.Value) map[value.Key]*value.Record {
-	if coll == nil {
-		return nil
-	}
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if idx, ok := w.indexes[coll]; ok {
-		return idx
-	}
-	idx := map[value.Key]*value.Record{}
-	for _, e := range entriesOf(coll) {
-		if _, seen := idx[e.Ident.Key]; !seen {
-			idx[e.Ident.Key] = e
-		}
-	}
-	w.indexes[coll] = idx
-	return idx
 }
 
 // entriesOf is the elements of a collection that carry an identity.

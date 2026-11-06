@@ -1,0 +1,52 @@
+ADR-0003, EVALUATION.md §5, CONFORMANCE.md §6.5; DECISIONS 515: a value first forced in a vector is
+verified through the vector's evaluator, whose ref targets stay out of the run's shared index.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A status.
+record Status {
+  /// Its label.
+  label: String
+}
+
+/// The statuses.
+let statuses: table Status = {
+  open { label: "Open" }
+}
+
+/// The status a run starts in: only b's vectors read it.
+let initial: ref Status = "open"
+-- b/b.canon --
+/// B.
+package b
+
+import a
+
+/// A gate.
+record Gate {
+  /// Its weight.
+  weight: Int
+
+  /// Whether the initial status is itself.
+  export fn settled(self) -> Bool { return a.initial == a.initial }
+
+  /// The weight plus x, once settled.
+  export fn plus(self, x: Int) -> Int {
+    if settled() {
+      return weight + x
+    }
+    return 0
+  }
+}
+
+test "plus" {
+  let g: Gate = { weight: 1 }
+  expect g.plus(2) == 3
+}
+
+emit cpp { out: "out/", namespace: "acme::gen", mode: data }

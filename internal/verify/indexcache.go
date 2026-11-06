@@ -13,7 +13,7 @@ type IndexCache struct {
 // Index is NewIndex, scanning only the files c lacks; c forgets the files prog no longer holds.
 func (c *IndexCache) Index(prog *check.Program) *Index {
 	c.cache().KeepOnly(prog)
-	return &Index{src: indexSources(prog, c), declared: DeclaredTypes(prog)}
+	return &Index{src: indexSources(prog, c), declared: DeclaredTypes(prog), targets: newTargets()}
 }
 
 func (c *IndexCache) scanned(f *syntax.File) *fileSyntax {

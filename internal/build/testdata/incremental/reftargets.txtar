@@ -1,0 +1,33 @@
+EVALUATION.md §5; DECISIONS 446, 515: the verifiers of one run share each ref target's index, which
+dies with the run: a warm `canon test` after an entry leaves the target table indexes the new table,
+so the ref a test builds dangles (E3501) as in a cold run, and resolves again once the entry is back.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A reward.
+record Reward {
+  /// Its label.
+  label: String
+}
+
+/// A pick of one reward.
+record Pick {
+  /// The reward picked.
+  r: ref rewards
+}
+
+/// The rewards.
+let rewards: table Reward = {
+  gold { label: "Gold" }
+  gem { label: "Gem" }
+}
+
+test "a picked gem" {
+  let p: Pick = { r: "gem" }
+  expect p passes
+}

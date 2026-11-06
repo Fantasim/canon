@@ -5896,3 +5896,24 @@ round 2", "PS1 review", "PS2 round 2"):
      and an untyped record literal gave an internal compiler error in check, build and edits,
      even with the layer only declared; breaking a layer for the let it amends hid its other
      lines' findings and left their roots with no cause.
+
+515. **A run's verifiers share the indexes of its top-level ref targets (EVALUATION.md §5,
+     §4.5, §10.5 item 6; follows 446).** A verifier indexes a ref's target collection, each key
+     to its first entry. A top-level let's collection, or one on a path through its fields,
+     forced through the run's own evaluator, is indexed once per collection value and read by
+     every verifier over that evaluator: the host's, and those made per call with bags of their
+     own (an expect subject, a test literal, a logged verification). A per-instance collection
+     (a level-1 ref's field) is indexed by each verifier on its own. A child evaluator's
+     verifiers (an `expect package` world's, a conformance vector's) index apart, per call, so
+     a discarded world or vector keeps no index alive. A throwaway evaluator's host (test
+     calls, drivers, edit hosts) shares an index of its own, which dies with that evaluator.
+     Settled values are immutable (§4.5): an in-place update reaches only a collection its
+     frame alone holds, which no verified value reaches, and an in-place retag gives an
+     identity to a fresh record or keeps the key. The index dies with its run, so a warm
+     rebuild never reads one built over the last snapshot. Reason: v0.3 dry run
+     (VERIFY-REFINDEX): `canon test` on Resource took 287 s against 55 s in v0.2.0, every
+     judged literal re-indexing every target table (136 GB allocated, GC 62% of CPU), and 70-94
+     s once the indexes were shared; sharing every target for the run instead kept each world's
+     rebuilt tables alive (150 `expect package` over a 30,000-entry table rose from 164 MB to
+     4.0 GB). Known cost, v0.4: `canon test` still runs a second full check for its warnings
+     (449), about +37 s on Resource.
