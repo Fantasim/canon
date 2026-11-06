@@ -14,7 +14,7 @@ func (c *checker) coalesce(env *env, e *syntax.BinaryExpr, want types.Type) type
 	} else {
 		ta = c.expr(env.join(), e.X, nil)
 	}
-	if k := ta.Base().Kind(); k != types.Optional && k != types.None && k != types.Error {
+	if k := ta.Base().Kind(); k != types.Optional && k != types.None && k != types.Error && !c.unsureRead(e.X) {
 		c.warn(env, diag.W3401.At(env.span(e.X), env.span(e.X), e.Op.String()))
 	}
 	if want != nil {

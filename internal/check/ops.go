@@ -376,6 +376,9 @@ func (c *checker) noneTest(env *env, e *syntax.BinaryExpr, tx, ty types.Type) {
 	switch t.Base().Kind() {
 	case types.Optional, types.None, types.Error, types.DepUnion:
 	default:
+		if c.unsureRead(x) {
+			return
+		}
 		c.warn(env, diag.W3401.At(env.span(x), env.span(x), e.Op.String()))
 	}
 }

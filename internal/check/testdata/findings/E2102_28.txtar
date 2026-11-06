@@ -1,0 +1,91 @@
+TYPES.md §1, §6.5, §6.6, §12.6; DECISIONS 516: an unsure read may be none, so no never-none finding stands on it: no W3401 on `??`, `== none`, `!` or `?.`, and a match on it may have a `none` arm (no E3603) and need not (no E3601); also after an exit, and for a path one side of an `or` is sure of. A path no reading of the operand in error gives stays judged: `c.ok != none` and `c.more ?? 0` are W3401 beside `zzc.values != none` (`judged`).
+-- a/a.canon --
+package a
+
+local enum K { a, b }
+
+local record R {
+  n: Int
+}
+
+local record C {
+  values: Int?
+  more: Int
+  ok: Bool
+  k: K?
+  r: R?
+}
+
+local fn tested(c: C) -> Int {
+  if zzc.values != none {
+    let a = c.values ?? 0
+    let b = if c.values == none { 0 } else { 1 }
+    let f = c.values!
+    return a + b + f
+  }
+  return 0
+}
+
+local fn chained(c: C) -> Int {
+  if zzc.r != none {
+    return c.r?.n ?? 0
+  }
+  return 0
+}
+
+local fn matched(c: C) -> Int {
+  if zzc.k != none {
+    let g = match c.k { none => 0, a => 1, b => 2 }
+    let h = match c.k { a => 1, b => 2 }
+    return g + h
+  }
+  return 0
+}
+
+local fn judged(c: C) -> Int {
+  if zzc.values != none {
+    let i = if c.ok != none { 0 } else { 1 }
+    return i + (c.more ?? 0)
+  }
+  return 0
+}
+
+local fn after(c: C) -> Int {
+  if zzc.values == none {
+    return 0
+  }
+  return c.values ?? 0
+}
+
+local fn either(c: C) -> Int {
+  if c.values != none or zzc.values != none {
+    return c.values ?? 0
+  }
+  return 0
+}
+-- findings.txt --
+error[E2102]  a/a.canon:18:6
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:28:6
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:35:6
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:44:6
+  unknown name zzc (did you mean c?)
+
+warning[W3401]  a/a.canon:45:16
+  c.ok is never none: != has no effect
+
+warning[W3401]  a/a.canon:46:17
+  c.more is never none: ?? has no effect
+
+error[E2102]  a/a.canon:52:6
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:59:26
+  unknown name zzc (did you mean c?)
+
+6 errors, 2 warnings in 1 package (…)

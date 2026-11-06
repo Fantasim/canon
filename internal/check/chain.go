@@ -55,6 +55,7 @@ func (c *checker) optionalRecv(env *env, x syntax.Expr, t types.Type, optDot boo
 	switch {
 	case optDot && isOpt:
 		return o.Elem, true
+	case optDot && c.unsureRead(x): // an unsure read may be none: no W3401 (DECISIONS 516)
 	case optDot:
 		c.warn(env, diag.W3401.At(env.span(x), env.span(x), op))
 	case isOpt || t.Base().Kind() == types.None:
@@ -373,6 +374,8 @@ func (c *checker) force(env *env, f *syntax.ForceExpr) (types.Type, bool) {
 		return types.NeverType, opt
 	default:
 	}
-	c.warn(env, diag.W3401.At(env.span(f.X), env.span(f.X), forceText))
+	if !c.unsureRead(f.X) {
+		c.warn(env, diag.W3401.At(env.span(f.X), env.span(f.X), forceText))
+	}
 	return t, opt
 }

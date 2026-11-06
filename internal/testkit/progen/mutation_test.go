@@ -214,8 +214,8 @@ type failure struct {
 }
 
 // shrinkMutation shrinks a failing mutation, keeping every region and file the site wrote, the
-// verdict's signature, and no finding the unshrunk case did not report: a leftover of shrinking
-// is never born with the archive. A case born missing or broken keeps its site's precondition.
+// verdict's signature, no finding the unshrunk case did not report, a missing or broken case's
+// site precondition, and an extra case's extras caused by the site.
 func shrinkMutation(f failure) *progen.Counterexample {
 	pins := append([]progen.Place{f.m.At}, f.m.Written...)
 	base := reportedBy(sorted(f.o, f.run, f.m.At, f.m.Project, f.base).out.Findings)
@@ -226,7 +226,7 @@ func shrinkMutation(f failure) *progen.Counterexample {
 		if j.verdict(f.o.code, pins[0].Region).Sig != f.v.Sig || !base.covers(j.other) {
 			return false
 		}
-		return !placed || stillPlaced(f, q, pins[1:])
+		return (!placed || stillPlaced(f, q, pins[1:])) && causedBySite(f, q, pins, j)
 	}, shrinkTries)
 	at := pins[0]
 	v := judge(f.o, f.run, at, small, f.base)
@@ -234,6 +234,16 @@ func shrinkMutation(f failure) *progen.Counterexample {
 		Suite: suiteMutation, Name: f.o.name(), Case: f.k, Seed: f.seed, Sig: v.Sig,
 		Packages: f.run.pkgs, Layers: f.run.layers, Want: wantOf(f.o, at), Note: v.Text, Files: small,
 	}
+}
+
+// causedBySite tells that no extra finding of j stays once q's site is undone: else shrinking cut
+// the program into one where the finding is no consequence of the site.
+func causedBySite(f failure, q *progen.Project, pins []progen.Place, j judged) bool {
+	if f.v.Kind != kindExtra {
+		return true
+	}
+	left := reportedBy(sorted(f.o, f.run, pins[0], undo(q, pins[1:], f.m.Was), f.base).other)
+	return !slices.ContainsFunc(j.other, func(x progen.Finding) bool { return left[findingKey(x)] > 0 })
 }
 
 // wantOf is the want header of a mutation case: the code, where it is expected, the mode.

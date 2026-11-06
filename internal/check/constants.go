@@ -179,11 +179,12 @@ const (
 	visited
 )
 
-// Limits and fixed numbers; NoneIndex is MatchInfo.Covers' `none` (TYPES.md §12.6), noConstant env.what outside a constant.
+// Limits and fixed numbers; NoneIndex is MatchInfo.Covers' `none` (TYPES.md §12.6), noConstant env.what outside a constant, anyRoot the root of a pattern whose root is in error (facts_unsure.go).
 const (
 	NoneIndex       = -1
 	noConstant      = diag.Kind(^uint8(0))
 	selfID          = 0
+	anyRoot         = -1
 	hintDistance    = 2
 	pairArity       = 2
 	minPathSegments = 2
@@ -229,6 +230,8 @@ const (
 	extForbidden   = "./\\"
 	itName         = "it"
 	selfKey        = "self"
+	patternMark    = "~"
+	patternTail    = "|"
 	noneWord       = syntax.PropNone
 	trueWord       = "true"
 	falseWord      = "false"

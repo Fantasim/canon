@@ -1,0 +1,20 @@
+TYPES.md §1, §6.6; DECISIONS 516 (progen-nightly mutation_E2102 seed 4295975454): in `zzc.values != none`, the path in error could read as `c.values`, so its true side holds an unsure fact for `c.values`: `need(c.values)` reports no cascade E3403, and the unknown name is reported once.
+-- a/a.canon --
+package a
+
+local record C {
+  values: Int?
+}
+
+local fn need(n: Int) -> Int {
+  return n
+}
+
+local fn doc(c: C) -> Int? {
+  return if zzc.values != none { need(c.values) } else { none }
+}
+-- findings.txt --
+error[E2102]  a/a.canon:12:13
+  unknown name zzc (did you mean c?)
+
+1 error, 0 warnings in 1 package (…)

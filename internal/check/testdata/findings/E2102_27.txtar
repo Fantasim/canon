@@ -1,0 +1,315 @@
+TYPES.md §1, §6.6; DECISIONS 516: an operand in error in a row gives unsure facts only for the paths some reading of it could give; what every reading reports stays reported. Silent: the path read as the one in error (`exit`, `segment`), the other operand of `==` in error (`other`), `not` and `and` around a row (`negated`, `chained`), `p is c` with p in error (`cased`) or c no case (`noCase`), and a local an unsure read initialised, which keeps its T? under an unsure fact (`letFrom`, and `varFrom` assigned a T? again). Reported: a condition in error that is no row (`whole`, `join`), a root declared after the condition (`later`, `laterExit`, `lam`), another segment (`otherSeg`), a longer path than a root in error (`rootOnly`), another root than a known one whose type is in error (`knownRoot`), the facts after both sides of one condition (`joinEq`), a var assigned since (`looped`, and `varKill`, initialised by an unsure read), and `F(C1 and C2)` with C2 in error (`kept`).
+-- a/a.canon --
+package a
+
+local variant V {
+  a {
+    x: Int?
+  }
+  b
+}
+
+local record C {
+  values: Int?
+  more: Int?
+  ok: Bool
+  v: V?
+  w: V?
+}
+
+local fn need(n: Int) -> Int {
+  return n
+}
+
+local fn needV(v: V) -> Int {
+  return 0
+}
+
+local fn opt() -> Int? {
+  return none
+}
+
+local fn exit(c: C) -> Int {
+  if zzc.values == none {
+    return 0
+  }
+  return need(c.values)
+}
+
+local fn segment(c: C) -> Int {
+  if c.zzvalues != none {
+    return need(c.values) + need(c.more)
+  }
+  return 0
+}
+
+local fn other(c: C) -> Int {
+  if c.values == nnone {
+    return 0
+  }
+  return need(c.values)
+}
+
+local fn negated(c: C) -> Int {
+  if not (zzc.values != none) {
+    return 0
+  }
+  return need(c.values)
+}
+
+local fn chained(c: C) -> Int {
+  if c.ok and zzc.values != none {
+    return need(c.values)
+  }
+  return 0
+}
+
+local fn cased(c: C) -> Int {
+  if zzc.v is a {
+    return needV(c.v)
+  }
+  return 0
+}
+
+local fn noCase(c: C) -> Int {
+  if c.w is zz {
+    return needV(c.w)
+  }
+  return 0
+}
+
+local fn letFrom(c: C) -> Int {
+  if zzc.values != none {
+    let v = c.values
+    return v ?? 0
+  }
+  return 0
+}
+
+local fn varFrom(c: C) -> Int {
+  if zzc.values == none {
+    return 0
+  }
+  var v = c.values
+  v = opt()
+  return v ?? 0
+}
+
+local fn varKill(c: C) -> Int {
+  if zzc.values != none {
+    var v = c.values
+    v = opt()
+    return need(v)
+  }
+  return 0
+}
+
+local fn declared(c: C) -> Int {
+  if zzc.values != none {
+    let v: Int? = c.values
+    return need(v)
+  }
+  return 0
+}
+
+local fn declaredVar(c: C) -> Int {
+  if zzc.values != none {
+    var v: Int? = c.values
+    return need(v)
+  }
+  return 0
+}
+
+local fn whole(c: C) -> Int {
+  if zzc {
+    return need(c.values)
+  }
+  return 0
+}
+
+local fn join(c: C) -> Int {
+  if zzc {
+    need(0)
+  }
+  return need(c.values)
+}
+
+local fn later(c: C) -> Int {
+  if zzc.values != none {
+    let x = opt()
+    return need(x)
+  }
+  return 0
+}
+
+local fn laterExit(c: C) -> Int {
+  if zzc.values == none {
+    return 0
+  }
+  let y = opt()
+  return need(y)
+}
+
+local fn lam(xs: [C]) -> [Int] {
+  if zzc.values != none {
+    return xs.map(e => need(e.more))
+  }
+  return []
+}
+
+local fn otherSeg(c: C) -> Int {
+  if zzc.values != none {
+    return need(c.more)
+  }
+  return 0
+}
+
+local fn rootOnly(c: C) -> Int {
+  if zzc != none {
+    return need(c.values)
+  }
+  return 0
+}
+
+local fn joinEq(c: C) -> Int {
+  if c.values == nnone {
+    need(0)
+  }
+  return need(c.values)
+}
+
+local fn looped(c: C) -> Int {
+  var n = c.values
+  while zzn != none {
+    n = opt()
+    return need(n)
+  }
+  return 0
+}
+
+local fn knownRoot(c: C, d: Nope) -> Int {
+  if d.values != none {
+    return need(c.values)
+  }
+  return 0
+}
+
+local fn kept(c: C) -> Int {
+  if c.values != none and zzc.values != none {
+    return 0
+  }
+  return need(c.values)
+}
+-- findings.txt --
+error[E2102]  a/a.canon:31:6
+  unknown name zzc (did you mean c?)
+
+error[E3003]  a/a.canon:38:8
+  a.C has no field zzvalues
+
+error[E2102]  a/a.canon:45:18
+  unknown name nnone
+
+error[E2102]  a/a.canon:52:11
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:59:15
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:66:6
+  unknown name zzc (did you mean c?)
+
+error[E3605]  a/a.canon:73:13
+  zz is not a case of a.V
+
+error[E2102]  a/a.canon:80:6
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:88:6
+  unknown name zzc (did you mean c?)
+
+error[E2102]  a/a.canon:97:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:100:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:106:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:108:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:114:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:116:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:122:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:123:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:129:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:132:15
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:136:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:138:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:144:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:148:15
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:152:6
+  unknown name zzc
+
+error[E3403]  a/a.canon:153:29
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:159:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:160:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:166:6
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:167:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:173:18
+  unknown name nnone
+
+error[E3403]  a/a.canon:176:15
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:181:9
+  unknown name zzn (did you mean min?)
+
+error[E3403]  a/a.canon:183:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:188:29
+  unknown name Nope (did you mean opt?)
+
+error[E3403]  a/a.canon:190:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E2102]  a/a.canon:196:27
+  unknown name zzc (did you mean c?)
+
+error[E3403]  a/a.canon:199:15
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+37 errors, 0 warnings in 1 package (…)

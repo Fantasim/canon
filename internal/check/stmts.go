@@ -15,9 +15,11 @@ func (c *checker) block(env *env, b *syntax.Block) bool {
 func (c *checker) stmt(env *env, s syntax.Stmt) (*env, bool) {
 	switch s := s.(type) {
 	case *syntax.LetStmt:
-		c.local(env, s.Name, s.Type, s.Value, s)
+		return c.inferredInit(env, c.local(env, s.Name, s.Type, s.Value, s), s.Type, s.Value), true
 	case *syntax.VarStmt:
-		c.local(env, s.Name, s.Type, s.Value, s).mutable = true
+		o := c.local(env, s.Name, s.Type, s.Value, s)
+		o.mutable = true
+		return c.inferredInit(env, o, s.Type, s.Value), true
 	case *syntax.AssignStmt:
 		return c.assign(env, s), true
 	case *syntax.IfStmt:
@@ -51,6 +53,9 @@ func (c *checker) local(env *env, name *syntax.Ident, typ syntax.Type, value syn
 		c.expr(env.storingAt(&declSite{file: env.file, name: name, typ: typ}, value), value, t)
 	} else {
 		t = inferred(c.synth(env, value))
+	}
+	if was := c.unsure[inner(value)]; typ == nil && was != nil { // its T?, under unsureInit's fact (DECISIONS 516)
+		t = inferred(was)
 	}
 	o := c.newLocal(env, ObjLocal, name, decl, t)
 	c.declare(env, name, o)

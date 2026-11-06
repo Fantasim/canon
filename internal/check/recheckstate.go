@@ -109,6 +109,7 @@ func (c *checker) forget(f *syntax.File, shared map[syntax.Node]bool) {
 		delete(c.badLits, n)
 		delete(c.unmatchable, n)
 		delete(c.unrefined, n)
+		delete(c.unsure, n)
 		return true
 	})
 }

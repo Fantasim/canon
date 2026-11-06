@@ -1,0 +1,70 @@
+TYPES.md §6.5, §6.6; DECISIONS 516: with no operand in error the shapes of E2102_26 to E2102_28 still report E3403: a sound condition that proves nothing of `c.values` (`if c.ok`, `not c.ok`, `c.ok and c.ok`, `c.v is a`) leaves it optional, and so does `c.values == none` whose branch completes normally (`stays`).
+-- a/a.canon --
+package a
+
+local variant V {
+  a {
+    x: Int?
+  }
+  b
+}
+
+local record C {
+  values: Int?
+  ok: Bool
+  v: V?
+}
+
+local fn need(n: Int) -> Int {
+  return n
+}
+
+local fn doc(c: C) -> Int? {
+  return if c.ok { need(c.values) } else { none }
+}
+
+local fn negated(c: C) -> Int {
+  if not c.ok {
+    return 0
+  }
+  return need(c.values)
+}
+
+local fn chained(c: C) -> Int {
+  if c.ok and c.ok {
+    return need(c.values)
+  }
+  return 0
+}
+
+local fn cased(c: C) -> Int {
+  if c.v is a {
+    return need(c.values)
+  }
+  return 0
+}
+
+local fn stays(c: C) -> Int {
+  var k = 0
+  if c.values == none {
+    k = 1
+  }
+  return need(c.values) + k
+}
+-- findings.txt --
+error[E3403]  a/a.canon:21:25
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:28:15
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:33:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:40:17
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+error[E3403]  a/a.canon:50:15
+  expected Int, found Int?: prove it is present (!= none, !, ??)
+
+5 errors, 0 warnings in 1 package (…)

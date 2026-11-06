@@ -5917,3 +5917,37 @@ round 2", "PS1 review", "PS2 round 2"):
      rebuilt tables alive (150 `expect package` over a 30,000-entry table rose from 164 MB to
      4.0 GB). Known cost, v0.4: `canon test` still runs a second full check for its warnings
      (449), about +37 s on Resource.
+
+516. **A narrowing condition in error proves only what some reading of it could prove, and
+     unsurely (TYPES.md §1, §6.6; ERRORS.md E3402, E3403, W3401, E3601, E3603, E3605; applies
+     364 and 427).** When an operand of one of §6.6's rows has the error type, the side that
+     row fills holds *unsure* facts. When the path `p` is in error in `p != none`, `p == none`,
+     `p == e`, `p != e` or `p is c`, the facts cover each stable path that differs from `p`
+     only in the part in error and whose root was declared before the condition: `zzc.values !=
+     none` covers `c.values`, never `c.more` or a local declared later; a root alone in error
+     covers single-segment paths only; an unknown segment after a known prefix covers every
+     one-segment continuation of that prefix; a known root whose type is in error covers only
+     its own path. When the other operand `e` of `p == e` or `p != e` is in error, `p` is
+     unsure on both sides. When the case of `p is c` names no case (`E3605`), `p` is unsure on
+     the true side, with no case fact. Unsure facts carry their condition and side, and the two
+     sides of one condition never meet (T(C) ∩ F(C) = {} for every typed C), so the facts after
+     a statement keep none of what both sides of its own condition added; a path sure on either
+     side of a ∪ is sure, a path held on one side only of a ∩, or unsure on either side, is
+     unsure; §6.6 kills remove them like any fact; an unsure fact never narrows to a case. A
+     condition in error that is no row (a name, a call, a field read, an index, an ordering)
+     gives no facts, as "anything else" does under every reading. An unsure fact narrows `T?`
+     to `T` at that read and silences only the findings on that path's presence (`E3402`,
+     `E3403`, `W3401`, a missing `none` arm, a `none` pattern). A `let` or `var` with no type
+     annotation whose initialiser is an unsure read keeps that read's `T?` under an unsure fact
+     that it is present, which an assignment or a loop kills (§6.6); a local with a declared
+     type gets no such fact. Everything else stays reported (364): a path no reading could
+     narrow, a root declared after the condition, a local declared optional, a var assigned
+     since, a read after a branch that completes normally. Known limit, v0.4: a field read on
+     `p` after `p is <no case>` is still a false `E3003`. Reason: v0.3 release gate,
+     progen-nightly mutation E2102, seed 4295975454: `if zzc.values != none {
+     enumOf(c.values).name }` reported `E3403` on `c.values`, which the reading `c` proves
+     present (TYPES §1); the bug is as old as v0.2.0. 338's `argsInError` was reverted for
+     hiding independent errors, so the silence is bounded by what some reading proves, never
+     "everything after an error" (review rounds 1-3 found and closed each over-silencing). The
+     mutation shrinker now keeps an extra finding only when undoing the mutated site removes
+     it: the first archive had been cut to `if zzc`, whose `E3403` the site does not cause.

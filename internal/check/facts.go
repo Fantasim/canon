@@ -11,65 +11,113 @@ import (
 // facts are what holds about stable paths (TYPES.md §6.6).
 type facts map[string]fact
 
-// fact is what is known of one path; kase is nil unless `p is c` holds.
+// fact is what is known of one path; kase is nil unless `p is c` holds. An unsure fact (DECISIONS
+// 516) came from side of condition cond, an operand in error in it; pat when it covers a pattern.
 type fact struct {
-	root int
-	kase *types.CaseType
+	root   int
+	kase   *types.CaseType
+	unsure bool
+	cond   int
+	side   bool
+	pat    *pattern
 }
 
-// union is a ∪ b; a case fact of b wins.
+// union is a ∪ b; a case fact of b wins, and a path either side is sure of is sure.
 func (a facts) union(b facts) facts {
 	if len(b) == 0 {
 		return a
 	}
 	out := make(facts, len(a)+len(b))
 	maps.Copy(out, a)
-	maps.Copy(out, b)
-	return out
-}
-
-// intersect is a ∩ b: the paths known in both, a case only when both know the same one.
-func (a facts) intersect(b facts) facts {
-	out := facts{}
-	for k, v := range a { //canon:unordered builds a map
-		if w, ok := b[k]; ok {
-			if v.kase != w.kase {
-				v.kase = nil
-			}
-			out[k] = v
+	for k, w := range b { //canon:unordered builds a map
+		if v, ok := a[k]; ok && w.unsure && !v.unsure {
+			continue
 		}
+		out[k] = w
 	}
 	return out
 }
 
-// kill removes every fact rooted at the object id (an assigned var, §6.6 kills).
+// intersect is a ∩ b: the paths both hold, a case only when both know the same one, sure only when
+// both are; never a path the two sides of one condition gave (DECISIONS 516).
+func (a facts) intersect(b facts) facts {
+	out := facts{}
+	a.meet(b, out)
+	b.meet(a, out)
+	return out
+}
+
+// meet adds to out each fact of a that b also holds: a pattern b holds as well, a path b holds or
+// covers by a pattern, unsure unless both are sure of it.
+func (a facts) meet(b facts, out facts) {
+	for k, v := range a { //canon:unordered builds a map
+		if v.pat != nil {
+			if _, ok := b[k]; ok {
+				out[k] = v
+			}
+			continue
+		}
+		w, ok := b[k]
+		if !ok {
+			w, ok = b.cover(k, v.root, v)
+		}
+		if !ok || v.opposes(w) {
+			continue
+		}
+		out[k] = v.meet(w)
+	}
+}
+
+// meet is the fact of a path both v and w hold: a case both know, unsure if either is.
+func (v fact) meet(w fact) fact {
+	if w.kase != v.kase {
+		v.kase = nil
+	}
+	if !v.unsure && w.unsure {
+		v.unsure, v.cond, v.side = true, w.cond, w.side
+	}
+	if v.unsure {
+		v.kase = nil
+	}
+	return v
+}
+
+// kill removes every fact rooted at the object id (§6.6 kills), and the root from each pattern.
 func (a facts) kill(id int) facts {
 	out := facts{}
 	for k, v := range a { //canon:unordered builds a map
-		if v.root != id {
-			out[k] = v
+		if v.root == id {
+			continue
 		}
+		if v.pat != nil && v.pat.root == anyRoot {
+			v.pat = v.pat.killed(id)
+		}
+		out[k] = v
 	}
 	return out
 }
 
-// narrowed applies the facts to a stable path's type: T? is T, a variant its case (TYPES.md §6.6).
+// narrowed applies the facts to a path's type: an unsure fact narrows T? only (DECISIONS 516).
 func (c *checker) narrowed(env *env, e syntax.Expr, t types.Type) types.Type {
+	delete(c.unsure, e)
 	if len(env.facts) == 0 || t == nil {
 		return t
 	}
-	key, _, ok := c.pathKey(env, e)
+	key, root, ok := c.pathKey(env, e)
 	if !ok {
 		return t
 	}
-	f, known := env.facts[key]
-	if !known {
+	f, known := env.facts.lookup(key, root)
+	switch {
+	case !known:
 		return t
-	}
-	if f.kase != nil {
+	case f.kase != nil && !f.unsure:
 		return f.kase
 	}
 	if o, isOpt := t.Base().(*types.OptionalType); isOpt {
+		if f.unsure {
+			c.unsure[e] = t
+		}
 		return o.Elem
 	}
 	return t
@@ -146,9 +194,10 @@ func (c *checker) binaryFacts(env *env, x *syntax.BinaryExpr) (tf, ff facts) {
 		t2, f2 := c.equalFacts(env, x.Y, x.X)
 		tf, ff := t1.union(t2), f1.union(f2)
 		if x.Op == syntax.TokNe {
-			return ff, tf
+			tf, ff = ff, tf
 		}
-		return tf, ff
+		c.conds++
+		return tf.tagged(c.conds, true), ff.tagged(c.conds, false)
 	default:
 	}
 	return nil, nil
@@ -156,6 +205,10 @@ func (c *checker) binaryFacts(env *env, x *syntax.BinaryExpr) (tf, ff facts) {
 
 // equalFacts are (T, F) of `p == other` for the path p (TYPES.md §6.6's rows, either side).
 func (c *checker) equalFacts(env *env, p, other syntax.Expr) (tf, ff facts) {
+	if c.hidden(other) {
+		f := c.presentFacts(env, p).unsured()
+		return f, f
+	}
 	if !c.presentWhenEqual(other) {
 		return nil, nil
 	}
@@ -185,7 +238,10 @@ func swapIfNone(other syntax.Expr, known facts) (tf, ff facts) {
 // written as an optional chain.
 func (c *checker) presentFacts(env *env, p syntax.Expr) facts {
 	key, root, ok := c.pathKey(env, p)
-	if !ok {
+	switch {
+	case !ok && c.hidden(p):
+		return c.patternFacts(env, p)
+	case !ok:
 		return nil
 	}
 	out := facts{key: {root: root}}
@@ -211,12 +267,20 @@ func chainHasOpt(sel *syntax.SelectorExpr) bool {
 	}
 }
 
-// isFacts is T(p is c): p is present and of case c.
+// isFacts is T(p is c): p is present and of case c; unsure, with no case, when p is in error or
+// c names no case (DECISIONS 516).
 func (c *checker) isFacts(env *env, x *syntax.IsExpr) facts {
 	key, root, ok := c.pathKey(env, x.X)
 	o, isCase := c.info.NameUses[x.Target.Parts[len(x.Target.Parts)-1]].(*object)
-	if !ok || !isCase || o.kind != ObjCase {
+	switch {
+	case !ok && c.hidden(x.X):
+		c.conds++
+		return c.patternFacts(env, x.X).tagged(c.conds, true)
+	case !ok:
 		return nil
+	case !isCase || o.kind != ObjCase:
+		c.conds++
+		return facts{key: {root: root, unsure: true, cond: c.conds, side: true}}
 	}
 	return facts{key: {root: root, kase: o.typ.(*types.CaseType)}}
 }

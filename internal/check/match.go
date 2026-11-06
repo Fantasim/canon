@@ -12,6 +12,7 @@ type coverage struct {
 	env      *env
 	t        types.Type
 	optional bool
+	unsure   bool // the scrutinee is an unsure read: none may be matched, never must
 	names    []string
 	objs     []*object
 	covered  map[int]bool
@@ -192,7 +193,7 @@ func (cov *coverage) wildcard(p *syntax.Pattern) ([]int, *object, bool) {
 // finish is E3601 for what no arm covers, and records the match.
 func (cov *coverage) finish(node syntax.Node) {
 	var missing []string
-	if cov.optional && !cov.covered[NoneIndex] {
+	if cov.optional && !cov.unsure && !cov.covered[NoneIndex] {
 		missing = append(missing, noneWord)
 	}
 	for i, n := range cov.names {

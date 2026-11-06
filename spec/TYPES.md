@@ -672,6 +672,17 @@ gives `p` the case type `V.c`.
 - element assignment (`v[i] = e`) kills nothing: index paths are never narrowed;
 - facts rooted at immutable roots are never killed.
 
+**Conditions in error.** A row whose operand has the error type (§1) gives, on the side that row
+fills, an *unsure* fact for each path some reading of that operand would give: the paths that
+differ from `p` only in its part in error and whose root is declared before the condition, or `p`
+itself on both sides when the other operand of `p == e` is in error, or `p` with no case when the
+case of `p is c` names none. A condition in error that is no row gives no facts. An unsure fact
+narrows `T?` to `T`, never to a case, and silences only the findings on that path's presence
+(`E3402`, `E3403`, `W3401`, a missing `none` arm, a `none` pattern). A local with no type
+annotation that an unsure read initialises keeps its `T?` under an unsure fact, which kills remove.
+The facts after a statement keep no unsure fact that both sides of its own condition added
+(DECISIONS 516).
+
 Examples (all well typed):
 
 ```

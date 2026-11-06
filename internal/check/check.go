@@ -146,6 +146,8 @@ type checker struct {
 	journal     *journal       // a session's record of its findings and folds, nil for Check (IMPLEMENTATION-PLAN §7.6)
 	inputs      []*syntax.File // a session's input files, each swapped one replaced: its fallback bags' index
 	override    *origin        // the origin of the findings a regenerable pass reports, instead of their declaration
+
+	unsureState
 }
 
 func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Folder) *checker {
@@ -185,6 +187,7 @@ func newChecker(ctx context.Context, proj *project.Project, bags Bags, fold Fold
 		syntaxHeld:   map[syntax.Node]bool{},
 		badLits:      map[syntax.Node]bool{},
 		unrefined:    map[syntax.Node]bool{},
+		unsureState:  unsureState{unsure: map[syntax.Node]types.Type{}},
 		refused:      map[*types.Param]types.Type{},
 		unionsOut:    map[*types.LitUnionType]bool{},
 		unionsDue:    map[*types.LitUnionType]unionJob{},
