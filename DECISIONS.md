@@ -5853,3 +5853,25 @@ round 2", "PS1 review", "PS2 round 2"):
      `byMark.q`) answered to two keys; a record assigned into a var table took the replaced
      entry's identity, retirement included, so `ts.sword == items.sword` was true with
      different contents.
+
+513. **Stage A converts a shared value once per conversion where its place changes nothing
+     (EVALUATION.md §4.3, §12.1, §14; follows 504, 507, 509, 511).** In one conversion at a
+     storage point, a list, map or pair met again at the same declared type is not walked again
+     if its earlier visit reported no finding, ran no `where` and spent no step, and no value
+     has been marked since (invalid, amended, copied or kept as written). That visit's result
+     then stands for it, at O(1) and no step. A visit that found something, ran a `where` or
+     spent is made again at each place, so the findings, the `where` runs, the step counts and
+     where `E4401` lands do not change. The memo is keyed by the value and its declared type
+     only, never by path, holder or site, and lives for one conversion. The conversion walks no
+     record, table or ref, so it gives and shares no identity. A `Float32` whose value is
+     already binary32 and whose type is already `Float32` is kept, and so is a map none of
+     whose keys or values changes, as a list already was, so a value stored again keeps its
+     sharing. Stage B, stage C and the wire walk then meet it as one shared value, and a
+     finding inside it is reported at its first place (507, 509, 511). Known limits, v0.4: a
+     `where` leaf still runs once per path (§4.3), and an invalid leaf still reports once per
+     path, §14 keeping the least; such trees stay exponential. Reason: v0.3 run
+     (EVAL-STORESHARED): `w_i = [w_{i-1}, w_{i-1}]` with a leaf whose storage is checked
+     (`Duration`, `Int8`, `Int(0..)`, `Float32`) cost 2^depth in stage A for valid values, and
+     a `Float32` leaf, rebuilt at every place, unshared the tree (depth 20: 7.5 s, 1.57 GB
+     RSS). Review: a reused visit must not hide the second place of an invalid value, nor drop
+     an invalid mark a sibling set since that visit.

@@ -28,7 +28,10 @@ func (r *run) store(v value.Value, t types.Type, s site, at *vpath) value.Value 
 	if !r.ev.needsCheck(t) {
 		return v
 	}
+	outer := r.conv
+	r.conv = conversion{root: v}
 	w := r.walk(v, t, s, at)
+	r.conv = outer
 	if w == nil {
 		return nil
 	}
@@ -71,12 +74,8 @@ func (r *run) walk(v value.Value, t types.Type, s site, at *vpath) value.Value {
 			return v
 		}
 		return r.walk(v, x.Of, s, at)
-	case *types.ListType:
-		return r.walkList(v, x, s, at)
-	case *types.MapType:
-		return r.walkMap(v, x, s, at)
-	case *types.PairType:
-		return r.walkPair(v, x, s, at)
+	case *types.ListType, *types.MapType, *types.PairType:
+		return r.convertOnce(v, x, s, at)
 	}
 	return v
 }
@@ -94,16 +93,24 @@ func (r *run) scalar(v value.Value, b types.Basic, s site, at *vpath) value.Valu
 			r.soft(r.related(diag.E3201.At(located(v, s.decl), v, b), s), v, at)
 		}
 	case *value.Float:
-		if b.Bits != types.Float32Type.Bits {
-			return v
+		if b.Bits == types.Float32Type.Bits {
+			return r.round32(x, b, s, at)
 		}
-		if math.Abs(x.V) >= float32Max {
-			r.soft(r.related(diag.E3202.AtFloat32(located(v, s.decl), v), s), v, at)
-			return v
-		}
-		return r.ev.carry(v, &value.Float{V: float64(float32(x.V)), T: b, P: x.P})
 	}
 	return v
+}
+
+// round32 rounds x to binary32, E3202 on overflow, keeping a rounded Float32 of b (DECISIONS 513).
+func (r *run) round32(x *value.Float, b types.Basic, s site, at *vpath) value.Value {
+	if math.Abs(x.V) >= float32Max {
+		r.soft(r.related(diag.E3202.AtFloat32(located(x, s.decl), x), s), x, at)
+		return x
+	}
+	rounded := float64(float32(x.V))
+	if rounded == x.V && x.T == types.Type(b) {
+		return x
+	}
+	return r.ev.carry(x, &value.Float{V: rounded, T: b, P: x.P})
 }
 
 // related relates the declaration the value was stored against.
@@ -131,6 +138,7 @@ func (r *run) refine(v value.Value, x *types.Refined, s site, at *vpath) value.V
 	if x.Where == nil {
 		return v
 	}
+	r.conv.busy++ // a visit running a where is never reused
 	holds, ok := r.where(x.Where, v, at)
 	if !ok {
 		return nil

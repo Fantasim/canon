@@ -244,7 +244,10 @@ These findings are **soft** (§7.1): they are reported at the value's own locati
 related location at the declared type, and the offending value is marked **invalid**. The
 conversion costs no step, except the nodes of `where` predicates (§12).
 
-A value converted several times to the same refined type is checked each time. Identical
+A value converted several times to the same refined type is checked each time, except that
+within one conversion a list, map or pair met again at the same declared type is not walked again
+when its earlier visit reported nothing, ran no `where` and spent no step, and no value has been
+marked since (DECISIONS 513). Identical
 findings are reported once (§14).
 
 ### 4.4 Equality

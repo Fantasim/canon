@@ -51,6 +51,7 @@ type run struct {
 	lits       *litScope        // the kept literals of a run evaluating no top-level value, nil for none (litscope.go)
 	sub        check.Object     // the let a substitution value is evaluated for (world.go)
 	stage      *StageB          // the verification a stage-B or where re-run serves (stageb.go)
+	conv       conversion       // the storage conversion in progress (walk.go)
 }
 
 // frame is one call frame, or a root's own frame (fn empty).
@@ -278,6 +279,7 @@ func (r *run) deliver(b *diag.Builder) {
 
 // soft reports a soft finding about v and marks it invalid (EVALUATION.md §4.3, §7.1).
 func (r *run) soft(b *diag.Builder, v value.Value, at *vpath) {
+	r.conv.busy++
 	var stack []diag.Frame
 	more := 0
 	if p := origin(v.Prov()); p != nil {

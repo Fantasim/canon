@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/check"
 	"github.com/fantasim/canonlang/internal/eval/std"
 	"github.com/fantasim/canonlang/internal/source"
@@ -8,6 +10,61 @@ import (
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
+
+// conversion is a storage conversion in progress and the containers it converted cleanly (DECISIONS 513).
+type conversion struct {
+	root value.Value          // the value being stored, never met again inside itself
+	done map[convKey]convDone // nil until a container is kept
+	busy int                  // the findings reported and where predicates run so far
+}
+
+// convKey is a container and the declared type it is converted to.
+type convKey struct {
+	v value.Value
+	t types.Type
+}
+
+// convDone is a clean visit's result and the evaluator's marks once it was converted.
+type convDone struct {
+	w     value.Value
+	marks int
+}
+
+// convertOnce is a container converted once per conversion at a type, unless it found, spent or a mark came since (DECISIONS 513).
+func (r *run) convertOnce(v value.Value, t types.Type, s site, at *vpath) value.Value {
+	k := convKey{v: v, t: t}
+	if d, ok := r.conv.done[k]; ok && d.marks == r.ev.marksGen() {
+		return d.w
+	}
+	busy, spent := r.conv.busy, r.spent()
+	w := r.container(v, t, s, at)
+	if w == nil || r.conv.busy != busy || r.spent() != spent || v == r.conv.root {
+		return w
+	}
+	if r.conv.done == nil {
+		r.conv.done = map[convKey]convDone{}
+	}
+	r.conv.done[k] = convDone{w: w, marks: r.ev.marksGen()}
+	return w
+}
+
+// spent is the steps the run has spent, its package's or its free ones.
+func (r *run) spent() int64 {
+	return r.ev.steps + r.freeSteps
+}
+
+// container converts a list, map or pair against its declared type.
+func (r *run) container(v value.Value, t types.Type, s site, at *vpath) value.Value {
+	switch x := t.(type) {
+	case *types.ListType:
+		return r.walkList(v, x, s, at)
+	case *types.MapType:
+		return r.walkMap(v, x, s, at)
+	case *types.PairType:
+		return r.walkPair(v, x, s, at)
+	}
+	return v
+}
 
 // walkList stores each element; the list is rebuilt only when an element changed.
 func (r *run) walkList(v value.Value, lt *types.ListType, s site, at *vpath) value.Value {
@@ -17,9 +74,11 @@ func (r *run) walkList(v value.Value, lt *types.ListType, s site, at *vpath) val
 	}
 	var out []value.Value
 	for i, e := range l.Elems {
-		eat := at.index(i)
+		var eat *vpath
 		if k, keyed := std.KeyOf(e); keyed && lt.KeyedBy != nil {
 			eat = at.key(k)
+		} else {
+			eat = at.index(i)
 		}
 		w := r.walk(e, lt.Elem, s, eat)
 		if w == nil {
@@ -38,19 +97,28 @@ func (r *run) walkList(v value.Value, lt *types.ListType, s site, at *vpath) val
 	return r.ev.carry(v, &value.List{T: l.T, Elems: out, P: l.P})
 }
 
-// walkMap stores each key and value, in insertion order.
+// walkMap stores each key and value, in insertion order; the map is rebuilt only when one changed.
 func (r *run) walkMap(v value.Value, mt *types.MapType, s site, at *vpath) value.Value {
 	m, ok := v.(*value.Map)
 	if !ok {
 		return v
 	}
-	out := &value.Map{T: m.T, Keys: make([]value.Value, len(m.Keys)), Vals: make([]value.Value, len(m.Vals)), P: m.P}
+	var out *value.Map
 	for i, k := range m.Keys {
-		out.Keys[i] = r.walk(k, mt.Key, s, at)
-		out.Vals[i] = r.walk(m.Vals[i], mt.Value, s, at.mapKey(k, mt.Key))
-		if out.Keys[i] == nil || out.Vals[i] == nil {
+		nk := r.walk(k, mt.Key, s, at)
+		nv := r.walk(m.Vals[i], mt.Value, s, at.mapKey(k, mt.Key))
+		if nk == nil || nv == nil {
 			return nil
 		}
+		if out == nil && (nk != k || nv != m.Vals[i]) {
+			out = &value.Map{T: m.T, Keys: slices.Clone(m.Keys), Vals: slices.Clone(m.Vals), P: m.P}
+		}
+		if out != nil {
+			out.Keys[i], out.Vals[i] = nk, nv
+		}
+	}
+	if out == nil {
+		return v
 	}
 	return r.ev.carry(v, out)
 }

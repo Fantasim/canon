@@ -14,6 +14,7 @@ import (
 type vpath struct {
 	parent *vpath
 	seg    string
+	elem   int          // a plain list's element: its index plus one, rendered only with the path; 0 for none
 	keyed  *types.Field // a keyed-list element still to be named: its key field (API.md P1, P8)
 	bare   bool         // an expect subject's unnamed root (subjectPath)
 }
@@ -38,8 +39,20 @@ func (p *vpath) field(name string) *vpath {
 	return p.add(dot + name)
 }
 
+// index is the path of a plain list's element i, its text built only when the path is rendered.
 func (p *vpath) index(i int) *vpath {
-	return p.add(keyOpen + strconv.Itoa(i) + keyClose)
+	if p == nil {
+		return nil
+	}
+	return &vpath{parent: p, elem: i + 1}
+}
+
+// text is the segment's text.
+func (p *vpath) text() string {
+	if p.elem != 0 {
+		return keyOpen + strconv.Itoa(p.elem-1) + keyClose
+	}
+	return p.seg
 }
 
 // key is the path of a keyed-list element: a word bare, an integer in decimal, any other key
@@ -99,7 +112,7 @@ func (p *vpath) String() string {
 		if q.keyed != nil && q.seg == "" {
 			segs = segs[:0] // below an element whose key is not known: the list's own path
 		}
-		segs = append(segs, q.seg)
+		segs = append(segs, q.text())
 		if q.parent == nil {
 			break
 		}
