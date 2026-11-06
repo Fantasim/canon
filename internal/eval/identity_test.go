@@ -170,11 +170,23 @@ func ownerProblems(ev *eval.Evaluator, v value.Value, name string, others elsewh
 	return out
 }
 
+// spreadField reports in's field name supplied by a spread, which marks the fields it copies.
+func spreadField(in *value.Record, name string) bool {
+	for i, f := range verify.Fields(in.T) {
+		if f.Name != name || i >= len(in.Fields) || in.Fields[i] == nil {
+			continue
+		}
+		p := in.Fields[i].Prov()
+		return p != nil && p.Kind == value.ProvSpread
+	}
+	return false
+}
+
 // fromSource reports en, unchanged, an entry its owner holds, that owner no version of in, the
-// instance enclosing en: a spread copy of a value no let holds (a function's result, a literal)
-// keeps its source's entries (DECISIONS 492).
+// instance enclosing en, and en's field one of in's spreads supplied: a spread copy of a value no
+// let holds (a function's result, a literal) keeps its source's entries (DECISIONS 492).
 func fromSource(ev *eval.Evaluator, en, in *value.Record) bool {
-	if len(en.Ident.Coll.FieldPath) == 0 || ev.VersionOf(in, en.Ident.Owner) {
+	if len(en.Ident.Coll.FieldPath) == 0 || ev.VersionOf(in, en.Ident.Owner) || !spreadField(in, en.Ident.Coll.FieldPath[0]) {
 		return false
 	}
 	e := entryOf(en.Ident.Owner, en.Ident.Coll.FieldPath[0], en.Ident.Key)
