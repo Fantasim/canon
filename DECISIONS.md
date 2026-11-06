@@ -5480,6 +5480,7 @@ round 2", "PS1 review", "PS2 round 2"):
      from JSON gave `E3505 … ref S has no enclosing I to resolve against`, and its copies' map keys
      did not equal the entries; only the refs written in the JSON were bound. The briefed false
      E3503 through copies of a loaded record did not reproduce.
+     [amended by 502]
 
 498. **A bound level-1 ref names, and equals, the entry its instance's field holds at its key
      (EVALUATION.md §3.4; TYPES.md §6.3, §7.5; follows 79, 315, 410, 486, 492).** When an instance
@@ -5576,3 +5577,14 @@ round 2", "PS1 review", "PS2 round 2"):
      via its record's own provenance, so `config.server.url` read `default … via (default … via
      (literal …))` while its siblings read `via (literal …)`; an amendment also re-evaluated every
      later default of a record held at one place, at full step cost, to equal values.
+
+502. **A load.dir element whose binding copies a nested collection owner is served again
+     (IMPLEMENTATION-PLAN §7.6 NFR-02; EVALUATION.md §3.4, §4.2; amends 497).** Binding a decoded
+     element's refs (497) may change only the instance links of the copies it makes, a nested record
+     that owns a collection included; the kept element holds those copies, so such an element is
+     served again on a warm build, and a changed file costs only its own decoding. The decoder's own
+     side is judged as before: an element whose decoding itself changes evaluator state, as a
+     default does that builds or yields a record owning a collection (`q: Q = { name: "d", tt: [{
+     name: "t" }] }`) or reads a constant, is still decoded again on each warm build (correct, known
+     limit, v0.4). This replaces 497's known-limit sentence. Reason: v0.3 run (EVAL-LOADPARTS-BIND):
+     after 497, every element of such a load.dir was decoded again on every warm build.

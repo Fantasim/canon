@@ -48,6 +48,7 @@ type outcome struct {
 	steps                int64
 	hits, stored, unkept int
 	loads                struct{ hits, stored, unkept int } // the same counts for loads
+	parts                struct{ hits, stored, unkept int } // and for load.dir elements
 }
 
 // checkOnce checks p for evaluations with opt, its parse findings in its packages' bags as a build's.
@@ -83,6 +84,7 @@ func (m *memoed) evaluate(t testing.TB, memo *eval.Memo, epoch uint64) outcome {
 	out := outcome{dump: b.dump(), deep: deep(b), findings: b.findings(t), steps: b.ev.StepsSpent()}
 	out.hits, out.stored, out.unkept = b.ev.MemoCounts()
 	out.loads.hits, out.loads.stored, out.loads.unkept = b.ev.LoadMemoCounts()
+	out.parts.hits, out.parts.stored, out.parts.unkept = b.ev.PartMemoCounts()
 	return out
 }
 

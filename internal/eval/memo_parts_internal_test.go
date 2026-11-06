@@ -12,6 +12,7 @@ const (
 	partsBudget = 100 // the test evaluator's steps
 	partsSteps  = 3   // what decoding the test element charges
 	partsSrc    = "a.json"
+	partsOrigin = "a copy's origin" // the one thing binding an element may do (boundOnly)
 )
 
 // partsUnder is an evaluator using a new memo in epoch 1, recording a load in a run of its own.
@@ -41,7 +42,7 @@ var partDoing = []struct {
 	{"a finding", func(_ *Evaluator, _ *run, tr *entryTrace) { tr.found = append(tr.found, memoFinding{}) }},
 	{"a value marked", func(e *Evaluator, _ *run, _ *entryTrace) { e.invalid[&value.Int{}] = true }},
 	{"a written mark", func(e *Evaluator, _ *run, _ *entryTrace) { e.gens.written++ }},
-	{"a copy's origin", func(e *Evaluator, _ *run, _ *entryTrace) { e.origin[partsRecord()] = partsRecord() }},
+	{partsOrigin, func(e *Evaluator, _ *run, _ *entryTrace) { e.origin[partsRecord()] = partsRecord() }},
 	{"arguments bound", func(e *Evaluator, _ *run, _ *entryTrace) { e.bound[partsRecord()] = nil }},
 	{"an internal error", func(e *Evaluator, _ *run, _ *entryTrace) { e.bugs = append(e.bugs, context.Canceled) }},
 	{"a stable amendment", func(e *Evaluator, _ *run, _ *entryTrace) { e.stable = append(e.stable, StableAmendment{}) }},
@@ -73,6 +74,21 @@ func TestPartsKeptOnlyPure(t *testing.T) {
 	for _, d := range partDoing {
 		if p, en := keep(d.do, true); en != nil || p.whole {
 			t.Errorf("%s: kept", d.name)
+		}
+	}
+}
+
+// EVALUATION.md §3.4, §4.2, IMPLEMENTATION-PLAN §7.6 NFR-02: binding an element may set its copies' origins, nothing else.
+func TestPartsBindingOnlyOrigins(t *testing.T) {
+	for _, d := range partDoing {
+		e, r, p := partsUnder(t)
+		decoded := e.partState(r, p.tr)
+		d.do(e, r, p.tr)
+		if e.partState(r, p.tr) == decoded { // steps charged elsewhere: Start's step count rejects it
+			continue
+		}
+		if got, want := e.boundOnly(decoded, r, p.tr), d.name == partsOrigin; got != want {
+			t.Errorf("binding with %s: bound only %t, want %t", d.name, got, want)
 		}
 	}
 }

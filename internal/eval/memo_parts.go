@@ -36,7 +36,7 @@ type partSet struct {
 }
 
 // partState is what decoding an element may change besides its steps: a pure element changes
-// none of it.
+// none of it, and binding it only origins (boundOnly).
 type partState struct {
 	marks, origin, bound, bugs, stable, retagged, reads, found int
 	void, aborted, failed, tainted, exhausted                  bool
@@ -113,17 +113,18 @@ func (p *Parts) Start() (done func(src any, rec *value.Record, retired, pure boo
 			tr.code(f)
 		}
 		p.made++
+		decoded := e.partState(r, tr)
 		if rec != nil { // bound before it is kept, as served copies are not bound again (loadbind.go)
 			e.bindLoaded(rec, e.loading)
 		}
 		n := e.spentOn(r.charge) - spent
-		if !pure || rec == nil || e.partState(r, tr) != at || e.steps-steps != n {
-			p.whole = false
+		if !pure || rec == nil || decoded != at || !e.boundOnly(decoded, r, tr) || e.steps-steps != n {
+			p.unkept()
 			return
 		}
 		kept, ok := e.freeze(rec, nil)
 		if !ok {
-			p.whole = false
+			p.unkept()
 			return
 		}
 		en := &memoEntry{tail: n, need: ownNeed, files: own, kept: kept, owner: r.charge, part: &partHome{load: p.key, src: src, retired: retired}}
@@ -132,6 +133,19 @@ func (p *Parts) Start() (done func(src any, rec *value.Record, retired, pure boo
 		e.memo.noteToken(rec, en)
 		e.memo.parted.stored++
 	}
+}
+
+// unkept notes an element decoded and not kept: the load is not whole.
+func (p *Parts) unkept() {
+	p.whole = false
+	p.r.ev.memo.parted.unkept++
+}
+
+// boundOnly reports binding a decoded element changed only origins since decoded, each on a new copy freeze keeps if held (EVALUATION.md §4.2).
+func (e *Evaluator) boundOnly(decoded partState, r *run, tr *entryTrace) bool {
+	now := e.partState(r, tr)
+	now.origin = decoded.origin
+	return now == decoded
 }
 
 // partState is what an element's decoding must leave as it found it, besides steps.
