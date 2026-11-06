@@ -9,12 +9,41 @@ import (
 	"github.com/fantasim/canonlang/internal/eval"
 )
 
-// stuckRefs is what refuses a rename (API.md E12): the refs not editable, then the paths a shared
+// stuckRefs is what refuses a rename (API.md E12): the refs not editable and the paths a shared
 // token names (DECISIONS 483), as `pkg:path` once each, the reason, and its layer when `layered`.
 type stuckRefs struct {
-	refs   []string
+	refs   []stuckRef
+	shared []string
 	reason Reason
 	layer  string
+}
+
+// stuckRef is a ref not editable and the display path of its file, which R8 orders by.
+type stuckRef struct {
+	file string
+	ref  Ref
+}
+
+// all is the refs not editable in R8 order, whichever analysis listed them, then the shared paths
+// not among them, as `pkg:path` once each: what Detail lists (API.md R8; DECISIONS 503).
+func (s stuckRefs) all() []string {
+	refs := slices.Clone(s.refs)
+	slices.SortStableFunc(refs, func(a, b stuckRef) int { return r8Order(a.file, a.ref, b.file, b.ref) })
+	var out []string
+	for _, r := range refs {
+		out = appendOnce(out, r.ref.Package+packageMark+r.ref.Path)
+	}
+	for _, p := range s.shared {
+		out = appendOnce(out, p)
+	}
+	return out
+}
+
+// add is s with ref r of side stuck for why, set by layer when `layered`: `layered` wins the reason (DECISIONS 464).
+func (s *stuckRefs) add(side refSide, r Ref, why Reason, layer string) {
+	s.refs = append(s.refs, stuckRef{file: side.snap.display(r.Span.File), ref: r})
+	s.reason = blame(s.reason, why)
+	s.layer = side.firstLayer(s.layer, layer)
 }
 
 // refList is a target's refs in R8 order, the computed ones (R7), and the paths a shared token
@@ -90,18 +119,35 @@ func (s refSide) judge(l *refList) (stuckRefs, []resolution) {
 		if el, keyed := s.snap.keyedElement(r); why == ReasonKey && keyed {
 			moved = append(moved, el)
 		} else if why != ReasonNone {
-			out.refs = appendOnce(out.refs, r.Package+packageMark+r.Path)
-			out.reason = blame(out.reason, why)
-			out.layer = s.firstLayer(out.layer, layer)
+			out.add(s, r, why, layer)
 		}
 	}
-	for _, p := range l.shared {
-		out.refs = appendOnce(out.refs, p)
+	out.shared = l.shared
+	return out.settled(), moved
+}
+
+// settled is s with its layer only when `layered` names one (API.md W10).
+func (s stuckRefs) settled() stuckRefs {
+	if s.reason != ReasonLayered {
+		s.layer = ""
 	}
-	if out.reason != ReasonLayered {
-		out.layer = ""
+	return s
+}
+
+// withPlan is s, the session's verdict, joined by the computed refs the plan judges stuck: a
+// computed ref has no token the rename could rewrite, so either analysis refusing it refuses the
+// rename (API.md E11, E12; DECISIONS 503).
+func (s stuckRefs) withPlan(plan refSide, l *refList) stuckRefs {
+	for _, r := range l.refs {
+		if !l.computed[r] || r.Kind != RefValue && r.Kind != RefKey {
+			continue
+		}
+		why, layer := plan.why(r, l)
+		if _, keyed := plan.snap.keyedElement(r); why != ReasonNone && (why != ReasonKey || !keyed) {
+			s.add(plan, r, why, layer)
+		}
 	}
-	return out, moved
+	return s.settled()
 }
 
 // firstLayer is whichever of a and b comes first in the active layers' order, the other when one
@@ -153,10 +199,10 @@ func (s refSide) reason(r Ref) (Reason, string) {
 	return ReasonLayered, j.blockedBy()
 }
 
-// sessionStuck is why, judged instead on the refs Refs reads while layers are active (API.md R7);
-// when the layers leave a value uncomputed, why as it is if the re-check refuses (E19; DECISIONS
-// 499), else, with AllowErrors, the error naming that value: a partial list never passes.
-func (x *opCtx) sessionStuck(why stuckRefs) (stuckRefs, error) {
+// sessionStuck is why, the plan's verdict on plan, judged on the session's refs with layers active, plus
+// the plan's stuck computed refs (API.md R7, E12); with a value uncomputed, why if the re-check refuses
+// (E19; DECISIONS 499), else, with AllowErrors, the error naming it: a partial list never passes.
+func (x *opCtx) sessionStuck(why stuckRefs, plan *refList) (stuckRefs, error) {
 	if x.a.session == nil {
 		return why, nil
 	}
@@ -168,7 +214,7 @@ func (x *opCtx) sessionStuck(why stuckRefs) (stuckRefs, error) {
 		return why, x.otherRoot(err)
 	}
 	out, _ := s.judge(l)
-	return out, nil
+	return out.withPlan(x.a.planSide(), plan), nil
 }
 
 // otherRoot is err, marking an ErrNoValue at a root other than the op path's own: one the refs
@@ -221,8 +267,21 @@ func (a *applier) gateRefs(op Operation, p Path, err error) error {
 	case rerr != nil:
 		return err
 	default:
-		why, _ := s.judge(l)
-		out.Refs = why.refs
+		out.Refs = a.joinedStuck(s, l, p).all()
 	}
 	return &out
+}
+
+// joinedStuck is what refuses renaming the target of l on s, joined, when s is the session's, by
+// the computed refs the plan judges stuck, as past the gate (sessionStuck; DECISIONS 503).
+func (a *applier) joinedStuck(s refSide, l *refList, p Path) stuckRefs {
+	why, _ := s.judge(l)
+	if !s.session {
+		return why
+	}
+	plan := a.planSide()
+	if pl, err := plan.refsAt(p.String()); err == nil && pl != nil {
+		return why.withPlan(plan, pl)
+	}
+	return why
 }

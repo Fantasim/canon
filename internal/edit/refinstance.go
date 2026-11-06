@@ -22,10 +22,16 @@ type sharedUse struct {
 // a record field's keyed list or table, whose same key names another entry in each instance.
 func (tg *target) perInstance(t types.Type) (*types.RefType, bool) {
 	rt, ok := baseOf(t).(*types.RefType)
-	if !ok || rt.Target == nil || rt.Target.Kind != types.CollField || len(rt.Target.FieldPath) == 0 {
+	if !ok {
 		return nil, false
 	}
-	return rt, tg.names(rt.Target)
+	return rt, tg.perInstanceColl(rt.Target)
+}
+
+// perInstanceColl reports coll a record field's keyed list or table, each instance's own, naming
+// the target's collection: what a per-instance ref or map key is a ref into (DECISIONS 483).
+func (tg *target) perInstanceColl(coll *types.Collection) bool {
+	return coll != nil && coll.Kind == types.CollField && len(coll.FieldPath) > 0 && tg.names(coll)
 }
 
 // used notes v as a use of the shared token stating it: a per-instance ref a default, a constant,
@@ -116,18 +122,14 @@ func sharedRegions(f *syntax.File) []sharedRegion {
 // bound to: the instance an amend line's value amends or its path above a key reaches (lineHolds,
 // segHolds); a default's, constant's, function's or lambda's, some instance taking it (sharedHolds).
 func (sc *nameScan) instanceHolds(tok syntax.Node, sp source.Span, at scanAt) bool {
-	e, isExpr := tok.(syntax.Expr)
-	if !isExpr {
-		return true
-	}
-	rt, ok := sc.tg.perInstance(sc.s.info.Types[e])
+	coll, ok := sc.instanceColl(tok)
 	switch {
 	case !ok:
 		return true
 	case at.line != nil && at.line.Value != nil && at.block != nil && contains(sc.file.Span(at.line.Value), sp):
-		return sc.lineHolds(at, sp, rt)
+		return sc.lineHolds(at, sp, coll)
 	case at.line != nil && at.block != nil && tok == at.segKey:
-		return sc.segHolds(at, rt)
+		return sc.segHolds(at, coll)
 	case at.field != nil && sc.transient(at):
 		sc.refuse(sp) // a default some evaluation no walk stores takes (DECISIONS 483)
 		return true
@@ -135,6 +137,23 @@ func (sc *nameScan) instanceHolds(tok syntax.Node, sp source.Span, at scanAt) bo
 		return sc.sharedHolds(sp)
 	}
 	return true
+}
+
+// instanceColl is the per-instance collection token tok is a ref into: its type's, or a map's word
+// key's, which the checker records with no type (DECISIONS 483, 500); false for any other token.
+func (sc *nameScan) instanceColl(tok syntax.Node) (*types.Collection, bool) {
+	switch x := tok.(type) {
+	case syntax.Expr:
+		rt, ok := sc.tg.perInstance(sc.s.info.Types[x])
+		if !ok {
+			return nil, false
+		}
+		return rt.Target, true
+	case *syntax.Ident:
+		coll := sc.s.info.NameKeys[x]
+		return coll, sc.tg.perInstanceColl(coll)
+	}
+	return nil, false
 }
 
 // sharedHolds reports a shared token at sp naming the target in some instance taking it; one
@@ -153,35 +172,35 @@ func (sc *nameScan) sharedHolds(sp source.Span) bool {
 	return held
 }
 
-// lineHolds reports a ref token typed rt at sp in an amendment's right-hand side naming the target:
-// its bound instance, the nearest of rt's record, is built by the line's literal at the target's
+// lineHolds reports a ref token into coll at sp in an amendment's right-hand side naming the target:
+// its bound instance, the nearest of coll's owner, is built by the line's literal at the target's
 // instance path, or met on the line's path holding the target's entry (API.md R7; DECISIONS 483).
-func (sc *nameScan) lineHolds(at scanAt, sp source.Span, rt *types.RefType) bool {
+func (sc *nameScan) lineHolds(at scanAt, sp source.Span, coll *types.Collection) bool {
 	chain := chainTo(sc.file, syntax.Unparen(at.line.Value), sp)
 	for i := len(chain) - 1; i > 0; i-- { // the token's enclosing nodes, innermost first
-		if sc.s.recordOf(chain[i-1]) == rt.Target.Owner {
-			return sc.builtHolds(at, braceOf(chain[i-1]), rt)
+		if sc.s.recordOf(chain[i-1]) == coll.Owner {
+			return sc.builtHolds(at, braceOf(chain[i-1]), coll)
 		}
 	}
-	return sc.pathHolds(at, rt)
+	return sc.pathHolds(at, coll)
 }
 
-// segHolds reports an amend segment's key typed rt, a ref into each instance's own collection,
+// segHolds reports an amend segment's key, a ref into coll, each instance's own collection,
 // naming the target in the instance the line's path reaches above the segment, by identity: the
-// nearest of rt's record (API.md R7; DECISIONS 483, 484, 487).
-func (sc *nameScan) segHolds(at scanAt, rt *types.RefType) bool {
+// nearest of coll's owner (API.md R7; DECISIONS 483, 484, 487).
+func (sc *nameScan) segHolds(at scanAt, coll *types.Collection) bool {
 	i := slices.IndexFunc(at.line.Path, func(seg *syntax.AmendSegment) bool {
 		holder, _ := segToken(seg)
 		return holder == at.segKey
 	})
-	return i >= 0 && sc.prefixHolds(at, at.line.Path[:i], rt)
+	return i >= 0 && sc.prefixHolds(at, at.line.Path[:i], coll)
 }
 
 // builtHolds reports lit, the instance a line's literal builds, at the path of the target's
 // instance in the target's root: the layered value holds the target there.
-func (sc *nameScan) builtHolds(at scanAt, lit *syntax.BraceLit, rt *types.RefType) bool {
+func (sc *nameScan) builtHolds(at scanAt, lit *syntax.BraceLit, coll *types.Collection) bool {
 	home := sc.tg.res
-	m := sc.tg.ownerSteps(rt)
+	m := sc.tg.ownerSteps(coll)
 	if lit == nil || m < 0 || sc.s.info.NameUses[at.block.Target] != home.root.obj {
 		return false
 	}
@@ -199,15 +218,15 @@ func (sc *nameScan) builtHolds(at scanAt, lit *syntax.BraceLit, rt *types.RefTyp
 	return braceOf(node) == lit
 }
 
-// pathHolds reports the nearest instance of rt's record on the line's path holding the target's
+// pathHolds reports the nearest instance of coll's owner on the line's path holding the target's
 // entry; a path s does not resolve reaches none.
-func (sc *nameScan) pathHolds(at scanAt, rt *types.RefType) bool {
-	return sc.prefixHolds(at, at.line.Path, rt)
+func (sc *nameScan) pathHolds(at scanAt, coll *types.Collection) bool {
+	return sc.prefixHolds(at, at.line.Path, coll)
 }
 
-// prefixHolds reports the nearest instance of rt's record that segs, a line's first segments, read
+// prefixHolds reports the nearest instance of coll's owner that segs, a line's first segments, read
 // from the amended root holding the target's entry, by identity; a path s does not resolve reaches none.
-func (sc *nameScan) prefixHolds(at scanAt, segs []*syntax.AmendSegment, rt *types.RefType) bool {
+func (sc *nameScan) prefixHolds(at scanAt, segs []*syntax.AmendSegment, coll *types.Collection) bool {
 	obj := sc.s.info.NameUses[at.block.Target]
 	if obj == nil || sc.s.scopedSegs(segs) {
 		return false
@@ -220,8 +239,8 @@ func (sc *nameScan) prefixHolds(at scanAt, segs []*syntax.AmendSegment, rt *type
 	if err != nil {
 		return false
 	}
-	owner := ownerOn(res, rt.Target.Owner)
-	return owner != nil && sc.tg.holds(owner, rt)
+	owner := ownerOn(res, coll.Owner)
+	return owner != nil && sc.tg.holds(owner, coll)
 }
 
 // ownerOn is the last record of type owner res reads, its root's value included; nil for none.
@@ -250,19 +269,19 @@ func placeIdent(x *value.Ref, parent value.Value) *value.Identity {
 	return keyedIdent(owner.Fields[i], x.Key)
 }
 
-// holds reports owner's field for rt holding the target's entry, judged by identity.
-func (tg *target) holds(owner *value.Record, rt *types.RefType) bool {
-	i := fieldIndex(fieldsOf(owner.T), rt.Target.FieldPath[0])
+// holds reports owner's field for coll holding the target's entry, judged by identity.
+func (tg *target) holds(owner *value.Record, coll *types.Collection) bool {
+	i := fieldIndex(fieldsOf(owner.T), coll.FieldPath[0])
 	if i < 0 || i >= len(owner.Fields) {
 		return false
 	}
 	return tg.isEntry(keyedIdent(owner.Fields[i], tg.ident.Key))
 }
 
-// ownerSteps is the number of the target's steps reaching the instance whose field, rt's, holds
+// ownerSteps is the number of the target's steps reaching the instance whose field, coll's, holds
 // it; -1 when the target's path does not end in that field and a key.
-func (tg *target) ownerSteps(rt *types.RefType) int {
-	m := len(tg.res.Steps) - 1 - len(rt.Target.FieldPath)
+func (tg *target) ownerSteps(coll *types.Collection) int {
+	m := len(tg.res.Steps) - 1 - len(coll.FieldPath)
 	if m < 0 {
 		return -1
 	}

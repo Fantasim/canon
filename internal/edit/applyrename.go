@@ -128,9 +128,9 @@ func keySegOf(c, k value.Value, kt types.Type) Seg {
 	return keySeg(k, kt)
 }
 
-// renameRefs are the references a rename rewrites (E11): none for a map entry, which nothing
-// references; a value or key reference that cannot be edited refuses the rename (E12), but the
-// key field of a keyed-list element names an element the rename moves (DECISIONS 310).
+// renameRefs are the references a rename rewrites (E11), none for a map entry; one not editable refuses
+// it (E12), a keyed-list key field moves its element (DECISIONS 310), and a computed one has no token:
+// it, and its let's name, are never rewritten (DECISIONS 503).
 func (x *opCtx) renameRefs(parent value.Value) ([]Ref, []resolution, error) {
 	if _, isMap := parent.(*value.Map); isMap {
 		return nil, nil, nil
@@ -140,13 +140,13 @@ func (x *opCtx) renameRefs(parent value.Value) ([]Ref, []resolution, error) {
 		return nil, nil, x.otherRoot(err)
 	}
 	why, moved := x.a.planSide().judge(l)
-	if why, err = x.sessionStuck(why); err != nil {
+	if why, err = x.sessionStuck(why, l); err != nil {
 		return nil, nil, err
 	}
-	if len(why.refs) > 0 {
-		return nil, nil, &NotEditableError{Reason: why.reason, Layer: why.layer, Refs: why.refs}
+	if stuck := why.all(); len(stuck) > 0 {
+		return nil, nil, &NotEditableError{Reason: why.reason, Layer: why.layer, Refs: stuck}
 	}
-	return l.refs, moved, nil
+	return slices.DeleteFunc(slices.Clone(l.refs), func(r Ref) bool { return l.computed[r] }), moved, nil
 }
 
 // blame is r unless it is ReasonNone, else why; `layered` wins over any other, the more specific (DECISIONS 464).

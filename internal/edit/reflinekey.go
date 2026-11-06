@@ -143,11 +143,7 @@ func (sc *nameScan) lineEntry(at scanAt, segs []*syntax.AmendSegment) bool {
 // the target's entry by identity: the entry a copy held before a layer's line made it the copy's
 // own, keeping its key; a value a line put in its place carries no key there (DECISIONS 486, 489).
 func (sc *nameScan) wasEntry(res resolution) bool {
-	path := []value.Value{res.val}
-	for _, st := range res.Steps {
-		path = append(path, st.Value)
-	}
-	versions := sc.s.a.History(path...)
+	versions := sc.s.a.History(res.values()...)
 	if len(versions) == 0 {
 		return false
 	}

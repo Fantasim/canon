@@ -27,6 +27,21 @@ func (sc *nameScan) keyLiteral(n syntax.Node, at scanAt) {
 	res, err := Resolve(sc.s, sc.s.unalias(p))
 	if err == nil && sc.tg.isEntry(keyedIdent(res.Target, sc.tg.ident.Key)) {
 		sc.listKey(tok, at)
+		return
+	}
+	sc.keyReadBase(recv, tok, at)
+}
+
+// keyReadBase judges a key read of the target's key the layered evaluation does not reach it by:
+// listed when the base one does, and either way, when the base cannot keep it, a shared path that
+// refuses the rename `computed` (API.md R7, E12; DECISIONS 483, 489, 503).
+func (sc *nameScan) keyReadBase(recv syntax.Expr, tok syntax.Node, at scanAt) {
+	read, p := sc.readBase(recv)
+	if read.holds {
+		sc.listKey(tok, at)
+	}
+	if read.stuck() {
+		sc.shared = append(sc.shared, sc.tg.readPath(p))
 	}
 }
 

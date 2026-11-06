@@ -231,7 +231,7 @@ func (p *Project) Refs(ctx context.Context, path string) (res *RefsResult, err e
 	if err != nil {
 		return nil, err
 	}
-	s := &snapshot{a: a, s: edit.NewSnapshot(a), ctx: ctx}
+	s := &snapshot{a: a, s: edit.NewSnapshot(a), layers: p.layers, ctx: ctx} // an active layer's line may be what broke a root (R6, R7)
 	r, err := edit.Resolve(s.s, parsed)
 	if err != nil {
 		return nil, s.resolveError(path, parsed, err)

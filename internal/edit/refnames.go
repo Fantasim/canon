@@ -93,6 +93,7 @@ func (sc *nameScan) walk(n syntax.Node, at scanAt) {
 		sc.out = append(sc.out, Ref{Kind: RefLayer, Package: sc.pkg, Span: sc.file.Span(tok)})
 		sc.literalKey(n, at)
 	}
+	sc.baseKeys(n, at)
 	sc.keyTest(n, at)
 	sc.elemKey(n, at)
 	sc.instKey(n, at)
@@ -122,12 +123,12 @@ func (sc *nameScan) names(n syntax.Node) (syntax.Node, bool) {
 	return nil, false
 }
 
-// mapKeyNamed reports x a map literal's symbolic word key (`{ bow: 1 }`) typed `ref C` naming the
-// target, C a let's collection, where no value walk states it: a layer line's or a default's token
-// (API.md R7, E11; DECISIONS 318, 483, 489, 496); a key the walk states is covered.
+// mapKeyNamed reports x a map's word key (`{ bow: 1 }`) typed `ref C` naming the target where no value
+// walk states it, a layer line's or a default's (API.md R7, E11; DECISIONS 318, 483, 489, 496, 500);
+// C each instance's own, instanceHolds judges it by the instance the line or the default reaches.
 func (sc *nameScan) mapKeyNamed(x *syntax.Ident) bool {
 	id, coll := sc.tg.ident, sc.s.info.NameKeys[x]
-	return id != nil && !id.Key.IsInt && id.Key.S == x.Name && coll != nil && coll.Kind != types.CollField && sc.tg.names(coll)
+	return id != nil && !id.Key.IsInt && id.Key.S == x.Name && coll != nil && sc.tg.namesOrBase(coll)
 }
 
 // covered reports a name inside the span a value reference is stated at: the same reference.
@@ -184,9 +185,9 @@ func (sc *nameScan) isEntryOf(x *syntax.SelectorExpr) bool {
 		obj.Kind() == check.ObjLet && obj.Pkg() == coll.Pkg && obj.Name() == coll.Name
 }
 
-// throughOwn reports the key lookup x reaching the target's own collection: a let's always; a record
-// field's, at any depth, through `.`, `?.` or `!`, only when x reads statically from a let root the
-// target's very entry, judged by identity as a spread copy holds its source's (API.md R7; DECISIONS 410, 473).
+// throughOwn reports key lookup x reaching the target's own collection: a let's always; a field's only
+// when x reads statically from a let root the target's very entry, by identity, layered or as its origin
+// produced it, base and layered reads merging (API.md R7; DECISIONS 410, 473, 489).
 func (sc *nameScan) throughOwn(x *syntax.SelectorExpr) bool {
 	if coll := sc.s.info.Keys[x]; coll == nil || coll.Kind != types.CollField {
 		return true
@@ -195,17 +196,24 @@ func (sc *nameScan) throughOwn(x *syntax.SelectorExpr) bool {
 	if !ok {
 		return false
 	}
-	res, err := Resolve(sc.s, p)
+	res, err := sc.s.open(p)
 	entry, isRec := res.Target.(*value.Record)
-	return err == nil && isRec && sc.tg.isEntry(entry.Ident)
+	return err == nil && isRec && (sc.tg.isEntry(entry.Ident) || sc.wasEntry(res))
 }
 
 // inColl reports key token e naming an entry of the target's collection: recorded as its key,
-// or typed `ref C` for it, as a path's key into a list keyed by a ref is (DECISIONS 316).
+// or typed `ref C` for it, as a path's key into a list keyed by a ref is (DECISIONS 316), in the
+// layered evaluation or only in the base one (489; baseKeys refuses the rename for the latter).
 func (sc *nameScan) inColl(e syntax.Expr) bool {
-	if sc.tg.names(sc.s.info.Keys[e]) {
+	if sc.tg.namesOrBase(sc.s.info.Keys[e]) {
 		return true
 	}
 	rt, isRef := baseOf(sc.s.info.Types[e]).(*types.RefType)
-	return isRef && sc.tg.names(rt.Target)
+	return isRef && sc.tg.namesOrBase(rt.Target)
+}
+
+// namesOrBase reports coll naming the target's collection, or a let path holding the target only in a
+// value an amendment replaced (DECISIONS 489); a pure test, as names is.
+func (tg *target) namesOrBase(coll *types.Collection) bool {
+	return tg.names(coll) || tg.letBase(coll).holds
 }

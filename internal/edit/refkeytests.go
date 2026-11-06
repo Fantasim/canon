@@ -35,6 +35,12 @@ func (sc *nameScan) keyTest(n syntax.Node, at scanAt) {
 		sc.refuse(sp)
 	case target:
 		sc.out = append(sc.out, Ref{Kind: at.kind, Package: sc.pkg, Span: sp})
+	case literal:
+		sc.keyReadBase(sel.X, tok, at)
+	default:
+		if read, p := sc.readBase(sel.X); read.stuck() { // a constant's key read the base retargets
+			sc.shared = append(sc.shared, sc.tg.readPath(p))
+		}
 	}
 }
 

@@ -60,8 +60,13 @@ func (s *Snapshot) refsOf(ctx context.Context, r Resolved) (*refList, error) {
 
 // refOrder is R8: the F2 order of the spans (file, then position), then kind, package, path.
 func (s *Snapshot) refOrder(a, b Ref) int {
+	return r8Order(s.display(a.Span.File), a, s.display(b.Span.File), b)
+}
+
+// r8Order is R8 on refs a and b, whose files display as fa and fb, whichever analysis listed them.
+func r8Order(fa string, a Ref, fb string, b Ref) int {
 	return cmp.Or(
-		cmp.Compare(s.display(a.Span.File), s.display(b.Span.File)),
+		cmp.Compare(fa, fb),
 		cmp.Compare(a.Span.Start, b.Span.Start), cmp.Compare(a.Span.End, b.Span.End),
 		cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Package, b.Package), cmp.Compare(a.Path, b.Path),
 	)
@@ -74,10 +79,11 @@ type target struct {
 	member  *value.Member
 	objects map[check.Object]bool
 	s       *Snapshot
-	paths   map[*types.Collection]bool // the let-path collections met, naming the target's instance or not
-	held    *heldHome                  // the optional record field holding the target, when its identity names no field collection
-	own     *optionalLet               // the optional let holding the target as its own element, whose identity names no let
-	res     resolution                 // the target's path, which an amendment's line is matched against
+	paths   map[*types.Collection]bool     // the let-path collections met, naming the target's instance or not
+	bases   map[*types.Collection]baseRead // the let-path collections met, and what their base evaluation reads
+	held    *heldHome                      // the optional record field holding the target, when its identity names no field collection
+	own     *optionalLet                   // the optional let holding the target as its own element, whose identity names no let
+	res     resolution                     // the target's path, which an amendment's line is matched against
 }
 
 // heldHome is the optional record field holding a target, which takes no field identity (DECISIONS 411, 470).
@@ -237,17 +243,25 @@ func heldIdent(x *value.Ref) *value.Identity {
 
 // keyedIdent is the identity of the element or entry keyed k in a keyed list or table, nil for none.
 func keyedIdent(v value.Value, k value.Key) *value.Identity {
+	if rec := keyedRecord(v, k); rec != nil {
+		return rec.Ident
+	}
+	return nil
+}
+
+// keyedRecord is the element or entry keyed k in a keyed list or table, nil for none.
+func keyedRecord(v value.Value, k value.Key) *value.Record {
 	switch c := v.(type) {
 	case *value.List:
 		for _, e := range c.Elems {
 			if rec, isRec := e.(*value.Record); isRec && rec.Ident != nil && rec.Ident.Key == k {
-				return rec.Ident
+				return rec
 			}
 		}
 	case *value.Table:
 		for _, rec := range c.Entries {
 			if rec.Ident != nil && rec.Ident.Key == k {
-				return rec.Ident
+				return rec
 			}
 		}
 	}
@@ -274,24 +288,50 @@ func (tg *target) names(coll *types.Collection) bool {
 
 // instanceAt reports the let path coll reaching the collection instance holding the target.
 func (tg *target) instanceAt(coll *types.Collection) bool {
-	return slices.ContainsFunc(letPathEntries(tg.s, coll), func(e value.Value) bool {
-		rec, ok := e.(*value.Record)
-		return ok && rec.Ident != nil && rec.Ident.Coll == tg.ident.Coll && rec.Ident.Owner == tg.ident.Owner
-	})
+	return slices.ContainsFunc(letPathEntries(tg.s, coll), tg.ofInstance)
 }
 
-// letPathEntries are the entries or elements of the collection a let path coll reaches
-// (DECISIONS 315, 316), none when it reaches nothing.
+// ofInstance reports e an entry of the collection instance holding the target, by identity.
+func (tg *target) ofInstance(e value.Value) bool {
+	rec, ok := e.(*value.Record)
+	return ok && rec.Ident != nil && rec.Ident.Coll == tg.ident.Coll && rec.Ident.Owner == tg.ident.Owner
+}
+
+// letPathEntries are the entries of the collection let path coll reaches (DECISIONS 315, 316), each also
+// as its origin produced it where a layer's line made it a copy's own: base and layered reads through
+// the path merge, and an entry a line's literal put there has no base (API.md R7; DECISIONS 486, 489).
 func letPathEntries(s *Snapshot, coll *types.Collection) []value.Value {
+	res, err := Resolve(s, letPath(coll))
+	if err != nil {
+		return nil
+	}
+	return withProduced(s, collEntries(res.Target))
+}
+
+// letPath is the path of the collection let path coll names.
+func letPath(coll *types.Collection) Path {
 	p := Path{Package: coll.Pkg, Root: coll.Name}
 	for _, f := range coll.FieldPath {
 		p.Segs = append(p.Segs, Seg{Kind: SegField, Name: f})
 	}
-	res, err := Resolve(s, p)
-	if err != nil {
-		return nil
+	return p
+}
+
+// withProduced is entries, each followed by its origin's value when an amendment's copy differs from it.
+func withProduced(s *Snapshot, entries []value.Value) []value.Value {
+	var out []value.Value
+	for _, e := range entries {
+		out = append(out, e)
+		if base := s.a.Produced(e); base != e {
+			out = append(out, base)
+		}
 	}
-	switch c := res.Target.(type) {
+	return out
+}
+
+// collEntries are the elements of a list or the entries of a table, none for any other value.
+func collEntries(v value.Value) []value.Value {
+	switch c := v.(type) {
 	case *value.List:
 		return c.Elems
 	case *value.Table:

@@ -5619,7 +5619,7 @@ round 2", "PS1 review", "PS2 round 2"):
      rename refused at the editability step gave no refs; a rename refused by its refs listed them
      in byte order; under an active layer the list missed a ref `Refs` reports, and a rename that
      only a layer's computed ref should refuse was applied; a rename whose refs could not be
-     computed named the renamed entry's root.
+     computed named the renamed entry's root. [amended by 506]
 
 504. **A default or initializer yielding an existing value, or any value inside it, shares its
      instance through binding, rebinding and step 3 (EVALUATION.md §3.4, §4.2, §9.3; TYPES.md §6.3;
@@ -5669,3 +5669,39 @@ round 2", "PS1 review", "PS2 round 2"):
      kept its symbol's bare `literal` origin; the defaults of the case it named lost the layer, and
      came via the whole default expression when that was compound; an Int literal reaching a Float
      branch through a default, spread or layer was a false `E3802`.
+
+506. **Under an active layer a rename never rewrites a computed ref, and refuses a token whose
+     rewrite would retarget its layered read (API.md R7, R8, E11, E12, E19, E21; amends 503;
+     follows 310, 483, 486, 489, 491, 494, 496, 500).** A computed ref has no token: `Rename`
+     never rewrites its span or its let's name, applied or undone. While layers are active, a
+     computed `value` or `key` ref that either the session's analysis or the analysis the edit
+     plans on judges stuck refuses the rename, at the editability step and past it; a
+     keyed-list key field stays E11's (310). The reason is `computed`, or `layered` when a
+     layer sets the ref (464). Detail lists these refs in R8 order, once each, whichever
+     analysis listed them, then the shared paths. It may name a base computed ref that `Refs`
+     with layers active does not list (amends 503's "as Refs reports them with the layers
+     active"). A token in any key position (a key selector, a word or string value or key, a
+     map literal's word or string key, a string or integer index, `hasKey`, `get`, `find`, a
+     constant's key included) whose reading in the base evaluation reaches the target, but
+     whose layered reading does not, is listed under the target. The base evaluation is the
+     history of the amended lets (489). The rename is then refused `computed`, with the path
+     the layered read reaches listed as shared (483): rewritten, the token would name another
+     entry, or none, under the layer. When the layered read reaches, by the target's key, an
+     entry an active layer's line built through a let the analysis keeps no base value for (an
+     unamended copy, or a let that re-adopts the collection), the base reading is unknown. Such
+     a token also refuses `computed` with that path. This may refuse a read of an unrelated
+     instance of the same collection, which is accepted. A layer line that replaces the
+     target's entry in place is not such an entry: its key segment and key field are rewritten
+     with the readers (491, 494). Per-instance map keys, in amend lines and defaults, are
+     judged by the instance the line's path or the default's record reaches; a default several
+     instances take is a shared `code` token, refused `computed` when the instances name
+     different entries (483). `Refs` and `Graph` failures under active layers carry the
+     findings `Value` gives (R6). Known limits, v0.3: an edit applied under active layers is
+     not re-checked without them (E18; a second analysis would contradict 474), so a rename
+     whose base break the layer masks is written (a constant-key index read, `bb.oo[kx]`);
+     queued. `Refs` with layers active omits a read that `Rename` rewrites when the layer line
+     replaced the only entry the copy shared (491); queued. Reason: v0.3 run (EDIT-REFS4 rounds
+     1-3): under a layer replacing a spread copy's list with a literal, `Rename` rewrote the
+     let's own name for a computed ref, and rewrote `.x`, `["x"]`, `hasKey("x")`, `{ x: 1 }`
+     and reads through an unamended copy, which then named the layer's other entry (`ix` 1 → 9,
+     `hk` true → false) with no finding; and a refusal's Detail did not follow R8 order.

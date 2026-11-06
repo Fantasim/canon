@@ -12,6 +12,15 @@ type resolution struct {
 	val  value.Value
 }
 
+// values are the values res's path holds, its root's first, as History reads a path.
+func (res resolution) values() []value.Value {
+	path := []value.Value{res.val}
+	for _, st := range res.Steps {
+		path = append(path, st.Value)
+	}
+	return path
+}
+
 // open resolves p with its root and the root's value.
 func (s *Snapshot) open(p Path) (resolution, error) {
 	r, err := Resolve(s, p)
