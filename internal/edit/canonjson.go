@@ -15,6 +15,11 @@ func (s *Snapshot) typedNumbers(display string, content []byte, root *jsonsrc.No
 	if len(texts) == 0 || !bytes.Equal(read, content) {
 		return
 	}
+	setNumbers(root, texts)
+}
+
+// setNumbers sets each number token of root at a span of texts to that text.
+func setNumbers(root *jsonsrc.Node, texts map[source.Span]string) {
 	stack := []*jsonsrc.Node{root}
 	for len(stack) > 0 {
 		n := stack[len(stack)-1]

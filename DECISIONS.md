@@ -2534,7 +2534,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
      as W5 gives for a `Reset` of that line. Refinements stay the re-check's job (V2). Reason:
      log-2026-09-29 "M4.1 built", "M4.1 review FAIL (2 CRITICAL), rulings", "M4.1 round 2", "M4.1, a
      computed amendment line", "M4.1 round 3 review", "Sync 2 review: the Undo verification gate",
-     "M4.1 round 4", "M4.1 round 6".
+     "M4.1 round 4", "M4.1 round 6". [amended by 508]
 
 ## 2026-10-02 — Louis: M5 serves people reading and agents writing
 
@@ -5723,3 +5723,34 @@ round 2", "PS1 review", "PS2 round 2"):
      stage B. Reason: v0.3 run (RULES-SHAREDONCE): `w_i = [w_{i-1}, w_{i-1}]` made stage C cost
      2^depth (172 ms at depth 20) while producing nothing past the first walk; review round 2:
      a back-reference without its place let `[A, A, C]` and `[A, B, A]` sign alike.
+
+508. **A poisoned load.dir table is repaired from its files; an old value held in error is not
+     written back (API.md E9, E10, E19, E20, E22, E23, M9, N6, V2; EVALUATION.md §7.1; amends
+     273, follows 309, 485).** On a root table with no value that a `load.dir` of a literal
+     glob without `at:` reads, `Remove`, `Set` and `Reset` of an entry or of a plain field (one
+     wire member, no input, driver or computed type), `AddEntry` and `Retire` are planned from
+     the JSON files the loader's own walk matches, in path order, over the edit's state (S12,
+     S5); an entry is keyed by its file's stem. `Remove` deletes the file whatever it holds, E4
+     judged first. `Set` and `Reset` write through the file's object, a default written
+     explicitly. `Retire` writes `"$retired": true` as the first key (E10); its lock line
+     follows E20, so under `AllowErrors` an entry that does not evaluate gets none. `Move` is
+     `NotEditable` `order` (E9). A file that does not parse, or repeats a key, takes no `Set`,
+     `Reset` or `Retire`: that stays `ErrNoValue` (485). The Undo carries old values as on a
+     table with a value (E23): the old bytes are decoded with a top-level `$retired` set aside
+     and printed as `Source` literals (`FromJSON` only for a decoded dependent symbol), and a
+     retired entry comes back through a `Retire` after its `AddEntry`, on the valued path too.
+     An old value is held in error when a finding inside it leaves it no value: a static typing
+     error that gives a node no type (`E2102`, `E2110`, `E3002`, `E3003`, `E3008`; `E3301` or
+     `E3312` on an item no field claims) or a §7.1 hard load or decode finding (`E7xxx`). §7.1
+     soft findings, checks, `E3302` and `E3317` never count. As in 273, no op can write a value
+     held in error back, so the edit applies and the Undo leaves that inverse out. Any other
+     old value the Undo cannot carry keeps E19's refusal, the root's error: computed text, or
+     text `Source` cannot read back (a record typed through an import alias). The same rule
+     holds for a `.canon` literal table. M9 judges the numbers of a file written this way by
+     its fields' declared types. Known limits, v0.4: a single-file `load()` table with a bad
+     entry stays `ErrNoValue`; so do a `load.dir` with `at:`, non-plain fields (`@json(path:)`,
+     inline, pairs), `"$retired": false` under `Retire`, and a table poisoned by duplicate
+     stems. Reason: v0.3 run (EDIT-JSONREPAIR, rounds 1-5): one broken JSON entry made its
+     whole table unrepairable, its own `Remove` included, against 309; reviews found Undos that
+     lost valid entries (an alias-typed literal, a retired file, a soft finding, keys that
+     encode alike) and an inverse form that differed from the valued path.

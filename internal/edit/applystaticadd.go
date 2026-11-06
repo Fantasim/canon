@@ -13,7 +13,20 @@ import (
 // the table's entries get files (N1, N2), else at the end of its literal. Its inverse is a
 // Remove, or in a stable table a Retire of its new id (API.md E3, E23).
 func addSource(t *srcTable, _ Path) error {
-	x := t.x
+	stated := func(key string) bool {
+		return slices.ContainsFunc(t.entries, func(it item) bool { return statedKey(it.node) == key })
+	}
+	lit := t.lit
+	if t.filed {
+		lit = nil
+	}
+	return addStated(t.x, t.tt, stated, lit, false)
+}
+
+// addStated adds an entry to tt, the table x's root states, whose stated keys stated reports:
+// at the end of lit, or in its own file when lit is nil (N1, N2), a JSON one for jsonDest. Its
+// inverse is a Remove, or in a stable table a Retire of its new id (API.md E3, E23).
+func addStated(x *opCtx, tt *types.TableType, stated func(string) bool, lit *syntax.BraceLit, jsonDest bool) error {
 	kv, err := x.key(types.StringType)
 	if err != nil {
 		return err
@@ -22,10 +35,10 @@ func addSource(t *srcTable, _ Path) error {
 	if err := x.tableKey(key, true); err != nil {
 		return err
 	}
-	if slices.ContainsFunc(t.entries, func(it item) bool { return statedKey(it.node) == key }) {
+	if stated(key) {
 		return ErrKeyExists
 	}
-	v, _, err := typedText(x, x.op.Value, t.tt.Elem, nil)
+	v, err := entryValue(x, tt.Elem, jsonDest)
 	if err != nil {
 		return err
 	}
@@ -35,14 +48,14 @@ func addSource(t *srcTable, _ Path) error {
 	}
 	rec.Ident = &value.Identity{Key: value.Key{S: key}}
 	path := childPath(x.res.root.qualified(), entrySeg(rec.Ident.Key))
-	if t.tt.Stable {
+	if tt.Stable {
 		x.inverse(Operation{Kind: OpRetire, Path: path}) // its locked id is never removed (API.md E4, E23)
 		x.w.locked = append(x.w.locked, Locked{Name: x.res.root.lockName(), Key: key})
 		x.a.held[path] = true
 	} else {
 		x.inverse(Operation{Kind: OpRemove, Path: path})
 	}
-	if t.filed {
+	if lit == nil {
 		return x.newEntryFile(rec, kv)
 	}
 	text, err := x.a.entryText(key, rec, false)
@@ -50,8 +63,18 @@ func addSource(t *srcTable, _ Path) error {
 		return err
 	}
 	x.w.addCanon(x.res.root.obj.File().Src.Path, x.res.root.pkg.Path,
-		[]format.Change{{Kind: format.Insert, List: t.lit.First(), At: len(t.lit.Items), Text: text}})
+		[]format.Change{{Kind: format.Insert, List: lit.First(), At: len(lit.Items), Text: text}})
 	return nil
+}
+
+// entryValue is the op's value typed as an entry of type ty (V1), printed as a Canon literal too
+// unless it is bound for a JSON source (M7).
+func entryValue(x *opCtx, ty types.Type, jsonDest bool) (value.Value, error) {
+	if jsonDest {
+		return typedValue(x, x.op.Value, ty, nil)
+	}
+	v, _, err := typedText(x, x.op.Value, ty, nil)
+	return v, err
 }
 
 // retireSource retires an entry of a stable table: `retired ` before its key (API.md N7). It has

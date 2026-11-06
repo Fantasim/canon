@@ -136,6 +136,9 @@ func (a *applier) readFacts(paths []string) *lockFacts {
 		} else {
 			elem, stated = a.base.statedType(p) // a root without a value states its entries (E19)
 		}
+		if !stated {
+			elem, stated = a.statedDirType(p) // or its load.dir files do
+		}
 		f.ids[p], f.fresh[p] = rec, !stated
 		if stated {
 			f.stable[p] = stableNames(elem)

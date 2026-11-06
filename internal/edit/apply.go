@@ -232,7 +232,8 @@ type applier struct {
 	nameEdits                 map[string]NameEdit
 	spelled                   spellings
 
-	added map[string]*value.Record // the entries whole-table Sets added to stable tables, which a lone Set's Undo keeps (E23)
+	added   map[string]*value.Record // the entries whole-table Sets added to stable tables, which a lone Set's Undo keeps (E23)
+	numbers map[string]typedNums     // the numbers a source path read in a JSON source without a value, by display path (M9)
 }
 
 // NameEdit is what a RenameName adds to a file besides renaming: the places, among the file's

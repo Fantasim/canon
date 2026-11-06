@@ -193,6 +193,9 @@ func (x *opCtx) undoRemove(parent value.Value, pos int) error {
 	if n, ordered := literalCount(x.j.holder(), parent); ordered && pos < n-1 && x.a.env.EditLayer == "" { // a layer has no Move (W5 layer)
 		x.inverse(Operation{Kind: OpMove, Path: x.res.Canonical, Index: pos})
 	}
+	if rec, isRec := x.res.Target.(*value.Record); isRec && isRetired(rec) && stableTable(parent.Type()) {
+		x.inverse(Operation{Kind: OpRetire, Path: x.res.Canonical}) // a retired entry comes back retired (E23)
+	}
 	return nil
 }
 

@@ -2,6 +2,7 @@ package edit
 
 import (
 	"github.com/fantasim/canonlang/internal/check"
+	"github.com/fantasim/canonlang/internal/diag"
 	"github.com/fantasim/canonlang/internal/jsonsrc"
 )
 
@@ -57,3 +58,11 @@ var jsonUnparsed = [...]error{jsonsrc.ErrSyntax, jsonsrc.ErrDuplicateKey, jsonsr
 var scopeKinds = map[check.ObjKind]bool{
 	check.ObjConst: true, check.ObjLet: true, check.ObjParam: true, check.ObjLocal: true, check.ObjField: true, check.ObjFn: true,
 }
+
+// noValueCodes leave the value they lie in none: EVALUATION.md §7.1's hard decode and typing codes.
+var noValueCodes = codeSet(
+	diag.E2102, diag.E2110, diag.E3002, diag.E3003, diag.E3008, diag.E3301, diag.E3312,
+	diag.E7001, diag.E7002, diag.E7003, diag.E7004, diag.E7005, diag.E7006, diag.E7007, diag.E7008,
+	diag.E7009, diag.E7102, diag.E7103, diag.E7104, diag.E7105, diag.E7106, diag.E7108, diag.E7109,
+	diag.E7110, diag.E7111, diag.E7112, diag.E7113, diag.E7114, diag.E7116, diag.E7117,
+)

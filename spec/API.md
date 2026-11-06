@@ -1297,10 +1297,12 @@ inside the same edit and reports it, so every client behaves the same.
   field of the broken entry, `Undo`) works while the value is poisoned (R6), so a project broken
   by a missing required field (`E3302`) stays repairable through the API (DECISIONS 309). Each op
   is judged on its own, in any request. On a root table with no value, `Remove`, `Retire`,
-  `AddEntry`, `Move`, and `Set`/`Reset` of an entry or its field are written from source; any
+  `AddEntry`, `Move`, and `Set`/`Reset` of an entry or its field are written from source, a
+  `load.dir` table from the files its walk matches (DECISIONS 508); any
   other root with no value takes a `Set` of the whole root. Such an op is refused with the root's
   error when it would need a value: a field that drives a dependent field (E15), an entry with a
-  spread (W9), or an inverse whose old text is not literal-only (§8.2). A field set to its default
+  spread (W9), or an inverse whose old value is neither held in error (E22) nor carried back as a `Source`
+  literal (§8.2). A field set to its default
   is written explicitly there (no E6/E7 omission), and E4 is judged before anything else.
 - **E20.** An edit that adds an id to a stable table, or a new value of a `@stable` field, appends
   the new lock lines to the package's `canon.lock` inside the same edit (LCK-04), and `Retire` adds
@@ -1351,7 +1353,11 @@ inside the same edit and reports it, so every client behaves the same.
   of entries that still exist or are renamed back; an entry the request removes and re-adds counts
   as recreated (N1–N4; DECISIONS 273). A value the before state held in error (a dependent mismatch
   that is not held, `E3802`, E15) cannot be written by any op: the Undo leaves it as the cascade
-  drops it, and verification excludes it. When the edit's own result leaves a compared root
+  drops it, and verification excludes it. So is an old value on a root with no value, in `.canon`
+  or `load.dir` source, that a finding inside it leaves no value (a static typing error giving a
+  node no type, or a hard load or decode finding, EVALUATION.md §7.1; never a soft finding, a
+  check, `E3302` or `E3317`): its `Remove` or `Set` applies, and the Undo leaves that inverse out
+  (DECISIONS 508). When the edit's own result leaves a compared root
   uncomputable (only with `AllowErrors`), the plain Undo is returned unverified. When no verified
   Undo is found within the repair rounds, `Edit` fails with an `*InternalError` (`ErrInternal`) and
   writes nothing (DECISIONS 273).

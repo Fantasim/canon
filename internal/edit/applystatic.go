@@ -60,6 +60,12 @@ func (a *applier) sourceOp(op Operation, p Path, cause error) (*work, error) {
 		}
 		return x.w, setRootSource(x, cause)
 	}
+	if isDir, err := dirSource(x, tt, p, cause); isDir {
+		if err != nil {
+			return nil, err
+		}
+		return x.w, nil
+	}
 	h, known := sourceOps[sourceShape{op.Kind, len(p.Segs)}]
 	entries, stated := a.snap.statedEntries(root)
 	if !known || !stated {

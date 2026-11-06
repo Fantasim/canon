@@ -168,6 +168,7 @@ func (a *applier) canonicalJSON(display string, raw []byte) ([]byte, error) {
 		return nil, err
 	}
 	a.snap.typedNumbers(display, src.Content, root) // typed-canonical numbers (FMT-02, FORMATTER.md 14.1)
+	a.numbersRead(display, src.Content, root)       // or as a source path read them (E19)
 	return jsonsrc.Format(root), nil
 }
 
