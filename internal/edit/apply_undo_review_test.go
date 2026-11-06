@@ -23,7 +23,19 @@ type undoView struct {
 // applyIn applies ops to fsys in view v: the plan and the files it writes, each write minimal (M6).
 func applyIn(t *testing.T, name string, fsys mapFS, v undoView, ops []edit.Operation) (*edit.Plan, mapFS, bool) {
 	t.Helper()
-	s := open(t, fsys, v.layers, v.edit, "d")
+	return applyPkgs(t, name, fsys, applySession{v, []string{"d"}}, ops)
+}
+
+// applySession is a session v over the packages pkgs.
+type applySession struct {
+	v    undoView
+	pkgs []string
+}
+
+// applyPkgs is applyIn over a session that analyzes ses.pkgs.
+func applyPkgs(t *testing.T, name string, fsys mapFS, ses applySession, ops []edit.Operation) (*edit.Plan, mapFS, bool) {
+	t.Helper()
+	s := open(t, fsys, ses.v.layers, ses.v.edit, ses.pkgs...)
 	plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: ops})
 	if err != nil {
 		t.Errorf("%s: %+v: %v", name, ops, err)

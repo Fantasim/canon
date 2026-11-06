@@ -1,7 +1,6 @@
 package edit_test
 
 import (
-	"context"
 	"maps"
 	"slices"
 	"testing"
@@ -79,16 +78,11 @@ func spreadGrowUndo(t *testing.T, v undoView, op edit.Operation) {
 // its Undo.
 func spreadGrowApply(t *testing.T, name string, fsys mapFS, v undoView, ops []edit.Operation) (mapFS, []edit.Operation, bool) {
 	t.Helper()
-	s := open(t, fsys, v.layers, v.edit, spreadGrowPkgs...)
-	plan, err := edit.Apply(context.Background(), s.env, s.snap, edit.Request{Ops: ops})
-	if err != nil {
-		t.Errorf("%s: %+v: %v", name, ops, err)
+	plan, out, ok := applyPkgs(t, name, fsys, applySession{v, spreadGrowPkgs}, ops)
+	if !ok {
 		return nil, nil, false
 	}
-	for _, ch := range plan.Changes {
-		checkWritten(t, plan, ch)
-	}
-	return written(fsys, plan), plan.Undo, true
+	return out, plan.Undo, true
 }
 
 // spreadGrowSame reports every let of d and e whose value differs between want and got, read with
