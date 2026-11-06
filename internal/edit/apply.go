@@ -304,7 +304,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 	}
 	if h == nil && a.session != nil {
 		if err := a.sessionVerdict(op, p); err != nil {
-			return nil, err
+			return nil, a.gateRefs(op, p, err)
 		}
 	}
 	res, err := a.snap.open(p)
@@ -319,7 +319,7 @@ func (a *applier) plan(op Operation, h func(*opCtx) error) (*work, error) {
 	}
 	j := a.judgeOp(res, op.Kind)
 	if err := a.editable(j); err != nil {
-		return nil, err
+		return nil, a.gateRefs(op, p, err)
 	}
 	x := &opCtx{a: a, op: op, res: res, j: j, w: newWork()}
 	a.outer, a.names = x.frameAt(len(res.Steps)).outer(), x.naming()

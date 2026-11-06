@@ -128,8 +128,18 @@ func (s *snapshot) resolveError(path string, parsed edit.Path, err error) error 
 		if out.Findings, err = s.cause(pe.Root); err != nil {
 			return err
 		}
+		out.Detail = noValueDetail(parsed, pe)
 	}
 	return out
+}
+
+// noValueDetail names where a value could not be computed: the segment of the path or its root,
+// or, qualified, another root with no value that a rename's refs reach (rule R7).
+func noValueDetail(p edit.Path, pe *edit.PathError) string {
+	if !pe.Other {
+		return segmentDetail(p, pe.Seg)
+	}
+	return fmt.Sprintf(fmtRoot, edit.Path{Package: pe.Root.Pkg, Root: pe.Root.Name})
 }
 
 // segmentDetail names the segment a path failed at, or its root (rule P5).

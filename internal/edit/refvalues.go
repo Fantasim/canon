@@ -43,19 +43,21 @@ func (s *Snapshot) valueRefs(ctx context.Context, tg *target) (*refScan, error) 
 	return sc, nil
 }
 
-// listed are the references found, one per span; covers are the spans stating them, and those
-// stating a ref to another entry of its collection, whose names are no other reference, sorted.
-func (sc *refScan) listed() ([]Ref, []source.Span) {
-	var refs []Ref
+// listed are the references found, one per span, and the computed ones; covers are the spans
+// stating them, and those stating a ref to another entry of its collection, which are no other reference, sorted.
+func (sc *refScan) listed() (*refList, []source.Span) {
+	l := &refList{computed: map[Ref]bool{}}
 	covers := sc.others
 	for _, f := range sc.s.firstPaths(sc.found) {
-		refs = append(refs, f.ref)
-		if !f.computed {
+		l.refs = append(l.refs, f.ref)
+		if f.computed {
+			l.computed[f.ref] = true
+		} else {
 			covers = append(covers, f.ref.Span)
 		}
 	}
 	slices.SortFunc(covers, spanOrder)
-	return refs, covers
+	return l, covers
 }
 
 func (s *Snapshot) newScan(tg *target) *refScan {

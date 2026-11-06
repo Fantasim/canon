@@ -28,31 +28,34 @@ type Ref struct {
 // values and map keys stated in a source, names in code, views, checks and amendments. r names
 // a table entry, a keyed-list element or an enum member, else ErrBadOp; ErrForeign if not of s.
 func (s *Snapshot) Refs(ctx context.Context, r Resolved) ([]Ref, error) {
-	refs, _, err := s.refsOf(ctx, r)
-	return refs, err
+	l, err := s.refsOf(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return l.refs, nil
 }
 
-// refsOf is Refs, and the paths where a default's or a constant's token, which every instance
-// taking it shares, names the target while another instance's names another entry: no rewrite
-// of that token renames one instance's entry alone (API.md R7, E12; DECISIONS 483).
-func (s *Snapshot) refsOf(ctx context.Context, r Resolved) ([]Ref, []string, error) {
+// refsOf is Refs, the computed ones among them, and the paths where a default's or a constant's
+// token, which every instance taking it shares, names the target while another instance's names
+// another entry: no rewrite of that token renames one instance's entry alone (R7, E12; DECISIONS 483).
+func (s *Snapshot) refsOf(ctx context.Context, r Resolved) (*refList, error) {
 	res, err := s.reopen(r)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	tg, ok := s.target(res)
 	if !ok {
-		return nil, nil, &PathError{Seg: len(r.Steps) - 1, Err: ErrBadOp}
+		return nil, &PathError{Seg: len(r.Steps) - 1, Err: ErrBadOp}
 	}
 	sc, err := s.valueRefs(ctx, tg)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	refs, covers := sc.listed()
+	l, covers := sc.listed()
 	names, shared := s.nameRefs(tg, covers, sc.uses)
-	refs = append(refs, names...)
-	slices.SortFunc(refs, func(a, b Ref) int { return s.refOrder(a, b) })
-	return refs, shared, nil
+	l.refs, l.shared = append(l.refs, names...), shared
+	slices.SortFunc(l.refs, func(a, b Ref) int { return s.refOrder(a, b) })
+	return l, nil
 }
 
 // refOrder is R8: the F2 order of the spans (file, then position), then kind, package, path.

@@ -1,0 +1,37 @@
+CLI.md §3.15, API.md E12, E21: renaming a key written in a field default, which a computed ref names, is ErrNotEditable `computed` listing that ref, exit 1, on stderr.
+-- args --
+edit req.json
+-- req.json --
+{"ops":[{"op":"rename","path":"a:h.oo[x]","key":"z"}]}
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// A step.
+record S {
+  /// Its name.
+  name: String
+}
+
+/// A holder.
+record H {
+  /// Its id.
+  id: String
+  /// Its steps.
+  oo: [S] keyed by name = [{ name: "x" }]
+}
+
+/// The holder.
+let h: H = { id: "h" }
+
+/// The step x of h, computed.
+let rr: ref h.oo = h.oo.x
+-- want --
+[exit 1]
+[stdout]
+[stderr]
+canon: op 0: a:h.oo[x]: value is not editable: computed: a:rr

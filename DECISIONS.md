@@ -5588,3 +5588,35 @@ round 2", "PS1 review", "PS2 round 2"):
      name: "t" }] }`) or reads a constant, is still decoded again on each warm build (correct, known
      limit, v0.4). This replaces 497's known-limit sentence. Reason: v0.3 run (EVAL-LOADPARTS-BIND):
      after 497, every element of such a load.dir was decoded again on every warm build.
+
+503. **A rename refused for its refs lists them wherever it is refused (API.md E12, E19, E21, R6,
+     R7, R8, W10; follows 238, 310, 464, 483, 489, 499).** When a `Rename` is refused `computed`, or
+     `layered` by its refs, Detail lists every `value` and `key` ref of the target that the rename
+     cannot rewrite, in R8 order, once each, as `Refs` reports them with the layers active. A
+     keyed-list element's key field is not listed, because E11 moves it (310). The paths a shared
+     token names (483) follow, in byte order, without repeating a path already listed. This holds
+     whether the editability step refuses the target itself (a key in a field default, layer on or
+     off) or its refs refuse it past that step. The refs are gathered where the editability step
+     refuses, which stays where E21 puts it, and the error then stays `*NotEditableError`
+     `computed`. While layers are active, the refs are gathered on the session's analysis. A
+     computed ref is judged there: a keyed-list key field is E11's to rewrite (310), and the
+     re-check refuses a layer line whose key field states another key or none (E1913, 499); any
+     other computed ref takes its `Set` verdict, else `computed`, and `layered` when a layer sets
+     it. `layered` wins the reason (464), and `Layer` names, for each such ref, the layer that gives
+     its final value (W10), the first of these in the active layers' order. So a computed value ref
+     that only the active layer creates refuses the rename. A stated ref is judged on the analysis
+     the edit plans on, because the rename rewrites its token: a stated value a layer line
+     overrides, or one only a layer holds, is never stuck. A refusal with no stuck ref keeps its
+     way-out Detail. When the refs cannot be gathered at the editability step (R7: a value that
+     could hold a ref cannot be computed), the refusal stays `computed`, and Detail begins `refs not
+     listed: <root> could not be computed`, then the way out, so a partial list never looks
+     complete. Past that step, refs the analysis the edit plans on cannot compute fail the rename
+     `ErrNoValue` naming that root, qualified when it is not the path's own resolved root, with the
+     findings that explain it, as `Refs` does. When only the session cannot compute them, the plan's
+     judgement stands and the re-check refuses the edit for that value's error (E19); with
+     `AllowErrors`, which lets that error through, the rename fails `ErrNoValue` as without layers.
+     Refusals for any other reason list no refs. Reason: v0.3 run (EDIT-E12DETAIL rounds 1-4): a
+     rename refused at the editability step gave no refs; a rename refused by its refs listed them
+     in byte order; under an active layer the list missed a ref `Refs` reports, and a rename that
+     only a layer's computed ref should refuse was applied; a rename whose refs could not be
+     computed named the renamed entry's root.

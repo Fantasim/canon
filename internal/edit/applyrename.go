@@ -135,33 +135,18 @@ func (x *opCtx) renameRefs(parent value.Value) ([]Ref, []resolution, error) {
 	if _, isMap := parent.(*value.Map); isMap {
 		return nil, nil, nil
 	}
-	refs, shared, err := x.a.snap.refsOf(x.a.ctx, x.res.Resolved)
+	l, err := x.a.snap.refsOf(x.a.ctx, x.res.Resolved) // the plan's: what the rename rewrites
 	if err != nil {
+		return nil, nil, x.otherRoot(err)
+	}
+	why, moved := x.a.planSide().judge(l)
+	if why, err = x.sessionStuck(why); err != nil {
 		return nil, nil, err
 	}
-	stuck := shared // a token instances share cannot be renamed for one of them (API.md E12; DECISIONS 483)
-	var moved []resolution
-	reason := ReasonNone
-	if len(shared) > 0 {
-		reason = ReasonComputed
+	if len(why.refs) > 0 {
+		return nil, nil, &NotEditableError{Reason: why.reason, Layer: why.layer, Refs: why.refs}
 	}
-	for _, r := range refs {
-		if r.Kind != RefValue && r.Kind != RefKey {
-			continue
-		}
-		why := x.a.refReason(r)
-		if el, keyed := x.a.keyedElement(r); why == ReasonKey && keyed {
-			moved = append(moved, el)
-		} else if why != ReasonNone {
-			stuck = append(stuck, r.Package+packageMark+r.Path)
-			reason = blame(reason, why)
-		}
-	}
-	if len(stuck) > 0 {
-		slices.Sort(stuck)
-		return nil, nil, &NotEditableError{Reason: reason, Refs: slices.Compact(stuck)}
-	}
-	return refs, moved, nil
+	return l.refs, moved, nil
 }
 
 // blame is r unless it is ReasonNone, else why; `layered` wins over any other, the more specific (DECISIONS 464).
@@ -170,16 +155,6 @@ func blame(r, why Reason) Reason {
 		return r
 	}
 	return why
-}
-
-// refReason is why the value or map entry a reference states cannot be edited, ReasonNone
-// when it can (API.md E12).
-func (a *applier) refReason(r Ref) Reason {
-	res, err := a.resolve(r.Package + packageMark + r.Path)
-	if err != nil {
-		return ReasonComputed
-	}
-	return a.judgeOp(res, OpSet).reason()
 }
 
 // renaming is one rename's token replacements, by .canon file, and its JSON edits.

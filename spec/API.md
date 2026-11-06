@@ -1204,7 +1204,8 @@ type expected at the path **before** anything is written (CLI.md §5.3 "values, 
     ref to that element cascades in turn.
 - **E12.** If any reference of kind `value` or `key` is not editable (for example a ref computed by
   a function), the whole rename fails with `*NotEditableError` for that reference; `Detail` lists
-  every such reference. The key field of a keyed-list element is not refused: E11 rewrites it
+  every such reference, in R8 order, judged on the analysis `Refs` reads (the session's while layers
+  are active), and says so when they cannot be computed (DECISIONS 503). The key field of a keyed-list element is not refused: E11 rewrites it
   (DECISIONS 310).
 - **E13.** `Rename` of a key in a dependent map is `ErrNotEditable` with reason `key`
   (MOCKUP-GAPS 17). `Rename` in a stable table is `ErrStableKey` (E4).

@@ -53,6 +53,7 @@ type PathError struct {
 	Root       eval.Root
 	At         *build.Analysis
 	Err        error
+	Other      bool // Root is not the op path's resolved root but one its refs reach (R7)
 }
 
 func (e *PathError) Error() string {
@@ -150,6 +151,9 @@ var ErrNameClash = errors.New("rename changes what another name refers to")
 // detailUnreachable is a table key no source can hold: why, and what to write instead.
 const detailUnreachable = "%s cannot name a table key, it would be unreachable in value position; " +
 	"name the entry otherwise, and keep the word in a String field"
+
+// fmtRefsGap is a rename's refusal whose refs could not all be listed: the root with no value (API.md E12, R7).
+const fmtRefsGap = "refs not listed: %s could not be computed"
 
 // Texts of a RenameName's refusals (API.md E28-E31, E35).
 const (

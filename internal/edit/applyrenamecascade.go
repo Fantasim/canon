@@ -8,8 +8,8 @@ import (
 
 // keyedElement is the keyed-list element whose key field reference r states, false for any
 // other reference: a rename rewrites that key and moves the element (API.md E11, DECISIONS 310).
-func (a *applier) keyedElement(r Ref) (resolution, bool) {
-	res, err := a.resolve(r.Package + packageMark + r.Path)
+func (s *Snapshot) keyedElement(r Ref) (resolution, bool) {
+	res, err := s.openText(r.Package + packageMark + r.Path)
 	field := len(res.Steps) - 1
 	elem := field - 1
 	if err != nil || elem < 0 || res.Steps[field].Seg.Kind != SegField {
@@ -24,7 +24,7 @@ func (a *applier) keyedElement(r Ref) (resolution, bool) {
 		return resolution{}, false
 	}
 	p.Segs = p.Segs[:len(p.Segs)-1]
-	el, err := a.snap.open(p)
+	el, err := s.open(p)
 	return el, err == nil
 }
 

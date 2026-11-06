@@ -104,11 +104,7 @@ func (a *applier) judge(c fieldCheck) error {
 
 // resolve reads a canonical path against the current state.
 func (a *applier) resolve(path string) (resolution, error) {
-	p, err := Parse(path)
-	if err != nil {
-		return resolution{}, err
-	}
-	return a.snap.open(p)
+	return a.snap.openText(path)
 }
 
 func isNoneValue(v value.Value) bool {
