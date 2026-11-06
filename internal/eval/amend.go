@@ -19,18 +19,39 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	if i < 0 {
 		return r.addEntry(cur, t, segs, m, key)
 	}
+	keyed, own := keyedColl(cur), keyedColl(cur) && m.place
 	nv, fresh := r.freshly(func() value.Value {
+		m.inColl, m.place = own, false
 		return r.descend(m, i, func() value.Value { return r.next(elems[i], elementType(t), segs, m) })
 	})
 	if nv == nil {
 		return nil
 	}
-	el := r.ev.withIdent(nv, elems[i], fresh)
+	if !keyed { // a plain list's element is held outside any collection (slotIdent)
+		return r.copied(cur, r.ev.replaced(cur, i, nil, nv))
+	}
+	identOf := r.ev.withIdent
+	if !own { // a keyed copy held outside any field or let is no collection of its element (DECISIONS 510)
+		identOf = r.ev.apartIdent
+	}
+	el := identOf(nv, elems[i], fresh)
 	if rec, isRec := el.(*value.Record); isRec {
 		r.moving().placed[rec] = true // the amended instance's own entry, its key kept (TYPES.md §6.3)
 		r.noteKey(cur, elems[i], rec, len(segs) == 1, m)
 	}
 	return r.copied(cur, r.ev.replaced(cur, i, nil, el))
+}
+
+// apartIdent is nv, amended in the slot of old in a keyed copy no field or let owns: an entry
+// keeps its own identity, any other record takes old's key in a collection of its own.
+func (e *Evaluator) apartIdent(nv, old value.Value, fresh bool) value.Value {
+	rec, ok := nv.(*value.Record)
+	prev, wasEntry := old.(*value.Record)
+	if !ok || !wasEntry || prev.Ident == nil || rec.Ident != nil {
+		return nv
+	}
+	c := &types.Collection{Kind: types.CollLet, Elem: prev.Ident.Coll.Elem, KeyedBy: prev.Ident.Coll.KeyedBy}
+	return e.withIdentity(rec, &value.Identity{Coll: c, Key: prev.Ident.Key, Retired: prev.Ident.Retired}, fresh)
 }
 
 // slotOf is the element a segment names: its index, -1 for a key the collection lacks.
@@ -146,6 +167,7 @@ func (r *run) setMapKey(mp *value.Map, t types.Type, segs []*syntax.AmendSegment
 	} else if p := key.Prov(); p != nil {
 		key = r.ev.reprov(key, &value.Prov{Kind: value.ProvLayer, Span: p.Span, Ext: &value.ProvExt{Layer: m.layer}})
 	}
+	m.place = false // a map's value is no collection's place (DECISIONS 510)
 	nv := r.descend(m, mapChild(i), func() value.Value { return r.next(cur, vt, segs, m) })
 	if nv == nil {
 		return nil

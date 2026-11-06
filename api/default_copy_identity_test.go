@@ -110,7 +110,7 @@ func checkErrors(t *testing.T, p *canon.Project) {
 func checkDefaultCopy(t *testing.T, p *canon.Project, c defaultCopyShape) {
 	t.Helper()
 	checkErrors(t, p)
-	if got := valueText(t, p, c.probe); strings.Contains(got, "false") {
+	if got := probeText(t, p, c.probe); strings.Contains(got, "false") {
 		t.Errorf("EVALUATION.md §4.2, DECISIONS 79, 492, 498: %s = %s, want every comparison true", c.probe, got)
 	}
 	nodes := elementNodes(t, p)
@@ -127,14 +127,14 @@ func checkDefaultCopy(t *testing.T, p *canon.Project, c defaultCopyShape) {
 }
 
 // checkOwnEntry fails unless, in p, the line below c's copy made the copy's tt[t] its own: its best
-// moved there and the source's is unequal (DECISIONS 486, 498), a node at each path, the copy's
-// unchecked when the copy is an entry itself (478), and the line's key a layer ref of both (491).
+// moved there and the source's is unequal (DECISIONS 486, 498), a node at each path (478), and
+// the line's key a layer ref of both (491).
 func checkOwnEntry(t *testing.T, p *canon.Project, c defaultCopyShape) {
 	t.Helper()
 	checkErrors(t, p)
 	checkValues(t, p, "DECISIONS 486, 498", map[string]string{c.own: "[false, false, true, true]"})
 	own, nodes := c.copy+".tt[t]", elementNodes(t, p)
-	if !c.entry && !slices.Contains(nodes, own) || !slices.Contains(nodes, c.first) {
+	if !slices.Contains(nodes, own) || !slices.Contains(nodes, c.first) {
 		t.Errorf("DECISIONS 478: element nodes %v, want %s and %s", nodes, c.first, own)
 	}
 	for _, id := range []string{own, c.first} {
@@ -166,7 +166,7 @@ func checkLine(t *testing.T, p *canon.Project, line defaultCopyLine, on bool) {
 			checkOwnEntry(t, p, c)
 			continue
 		}
-		checkDefaultCopy(t, p, c)
+		checkCopyAfter(t, p, c, line.text, on)
 	}
 	if on {
 		checkValues(t, p, "EVALUATION.md §9.3", map[string]string{line.at: line.want})
@@ -201,7 +201,7 @@ func TestDefaultCopySharesInstanceWarm(t *testing.T) {
 						t.Fatalf("API.md E19: %v", err)
 					}
 					for _, c := range defaultCopyShapes {
-						checkDefaultCopy(t, p, c)
+						checkCopyAfter(t, p, c, "alt.id", on)
 					}
 				}
 			})

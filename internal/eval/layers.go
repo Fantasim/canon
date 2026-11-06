@@ -38,6 +38,8 @@ type amending struct {
 	trail  []*vpath // the path after each segment locate followed (API.md F1)
 	quiet  bool     // the path is being located: a missing segment is the replace's E1905
 	visit  int      // the base walk's visit of the value the path has reached (copies.go)
+	inColl bool     // the record the path reaches next is an element of the table or keyed list holding it
+	place  bool     // the value the path reaches next is a let's or a collection field's: a collection its entries belong to
 }
 
 // applyLayers applies a let's amendments, layer order then source order (EVALUATION.md §9.3).
@@ -94,7 +96,8 @@ func (r *run) amend(obj check.Object, blk *syntax.AmendBlock, a *syntax.Amendmen
 	if mv := r.moving(); mv.copies == nil { // v is still the base value: its copy facts, once (copies.go)
 		mv.copies = r.ev.copiesOf(v, r.reads)
 	}
-	m := &amending{layer: layer, a: a, root: obj, holder: objSite(obj), path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}, visit: rootVisit}
+	_, _, place := collectionOf(obj.Type()) // an optional let holds no collection, as an optional field (DECISIONS 411, 510)
+	m := &amending{layer: layer, a: a, root: obj, holder: objSite(obj), path: r.pathText(a), keys: map[*syntax.AmendSegment]value.Value{}, visit: rootVisit, place: place}
 	m.dep = &depCtx{field: obj.Type(), at: a.Value}
 	if r.locate(v, obj.Type(), m); r.failed {
 		return nil
@@ -158,8 +161,9 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 		r.unreached(m, r.noField(rec, seg, m))
 		return nil
 	}
-	f, self := fieldsOf(rec.T)[i], m.visit
-	outer := m.holder
+	f, self, inColl := fieldsOf(rec.T)[i], m.visit, m.inColl
+	outer, rt := m.holder, recordOf(rec.T)
+	m.inColl, m.place = false, rt != nil && r.ev.fieldColl(rt, f) != nil
 	m.at, m.holder = append(m.at, rec), r.ev.fieldSite(f, rec.T)
 	defer func() { m.at, m.holder = m.at[:len(m.at)-1], outer }()
 	nv := r.descend(m, i, func() value.Value { return r.next(rec.Fields[i], f.Type, segs, m) })
@@ -171,6 +175,9 @@ func (r *run) setField(rec *value.Record, segs []*syntax.AmendSegment, m *amendi
 	}
 	cp := *rec
 	cp.Fields, cp.Set = append([]value.Value(nil), rec.Fields...), append([]bool(nil), rec.Set...)
+	if !inColl { // an amended copy of an entry held outside its collection is a record of its own (EVALUATION.md §4.2; DECISIONS 510)
+		cp.Ident = nil
+	}
 	if len(segs) == 1 { // a field the amendment writes holds its own entries (DECISIONS 478)
 		nv = r.ev.inField(nv, &cp, f)
 	}

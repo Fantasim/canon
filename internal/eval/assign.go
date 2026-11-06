@@ -252,7 +252,7 @@ func (e *Evaluator) replaced(v value.Value, i int, k, nv value.Value) value.Valu
 		return out
 	case *value.List:
 		elems := append([]value.Value(nil), x.Elems...)
-		elems[i] = e.withIdent(nv, elems[i], false)
+		elems[i] = e.slotIdent(x, nv)
 		return &value.List{T: x.T, Elems: elems, P: x.P}
 	case *value.Table:
 		entries := append([]*value.Record(nil), x.Entries...)
@@ -262,6 +262,21 @@ func (e *Evaluator) replaced(v value.Value, i int, k, nv value.Value) value.Valu
 		return &value.Table{T: x.T, Entries: entries, P: x.P}
 	}
 	return v
+}
+
+// slotIdent is nv put in a slot of l, never with the replaced one's identity (TYPES.md §6.3; DECISIONS 510).
+func (e *Evaluator) slotIdent(l *value.List, nv value.Value) value.Value {
+	rec, isRec := nv.(*value.Record)
+	lt, isList := l.T.Base().(*types.ListType)
+	if !isRec || rec.Ident != nil || !isList || lt.KeyedBy == nil {
+		return nv
+	}
+	if lt.KeyedBy.Index >= len(rec.Fields) || rec.Fields[lt.KeyedBy.Index] == nil {
+		return nv
+	}
+	// an entry kept its own; any other record gets one by its key, in a collection of its own as keyedElems gives
+	k, _ := std.KeyOf(rec.Fields[lt.KeyedBy.Index])
+	return e.withIdentity(rec, &value.Identity{Coll: &types.Collection{Kind: types.CollLet, Elem: lt.Elem, KeyedBy: lt.KeyedBy}, Key: k}, false)
 }
 
 // withIdent is nv in the place of old: a record replacing an entry takes its identity, in place

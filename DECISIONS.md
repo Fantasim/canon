@@ -5183,7 +5183,7 @@ round 2", "PS1 review", "PS2 round 2"):
      `layer` ref of the entry it reads. Reason: v0.3 run (EVAL-LAYERSPREAD): a layer amendment of
      a spread copy left the source's identity on content it had changed, so a ref dereferenced to
      the wrong content, and an amendment of a sibling field re-owned every entry (a false E3503).
-     [amended by 491]
+     [amended by 491] [amended by 510]
 
 487. **An amend path judges its keys differently from expressions, on purpose; an amend segment's
      key is judged by identity alone (API.md R7, E11, R11; TYPES.md §4.1, §9.1, §9.4; EVALUATION.md
@@ -5644,7 +5644,7 @@ round 2", "PS1 review", "PS2 round 2"):
      node at its own path. Reason: v0.3 run (EVAL-DEFAULTCOPY): such a copy was rebuilt once per
      place and given its own entries, so `r.b.tt.t == r.a.tt.t` was false and Graph had nodes below
      p:r.b; under a layer, the unbinding and rebinding passes re-owned a shared base record's
-     entries; after 501, a kept `au: U = uu.x` still named the record from before the amendment.
+     entries; after 501, a kept `au: U = uu.x` still named the record from before the amendment. [amended by 510]
 
 505. **A dependent field's default, spread or layer value has the origin of any such value, a bare
      case it names is filled via the symbol as written, and a literal it passes along stays kept as
@@ -5780,3 +5780,32 @@ round 2", "PS1 review", "PS2 round 2"):
      cost 2^depth in stage B (depth 20: 1.6 s, doubling per level). Review round 1: keying on
      the per-visit env and the holder left `{a: [w], b: [w]}` exponential and made its memory
      exponential.
+
+510. **An amended copy of an entry held outside its collection is a record of its own, and an
+     element assignment passes on no identity (EVALUATION.md §4.1, §4.2, §9.3; TYPES.md §6.3,
+     §7.5; amends 486, 504; follows 79, 411, 478, 491, 498, 501).** When a line amends at or
+     below a value that is a copy of an entry, and that value is held anywhere but in the table
+     or keyed list the entry belongs to (a let, a record field, a map value, a plain list's
+     element, an optional, a copy of another package's entry), the amended value has no
+     identity: it is a new record, not an entry. `==` with the entry compares fields (TYPES.md
+     §7.5), so it is false when their contents differ. It is no member of the entry's
+     collection, so converting it to a ref of that collection is `E3503`, and the entry itself
+     is unchanged. Entries it holds that the amendments leave unchanged keep their identity
+     (486). Those a line amends at or below are its own, and Graph puts their nodes at its path
+     (`p:e.tt[t]`, `p:r.alt.tt[t]`, `p:r.al[0].tt[t]`). An element a line amends inside the
+     table or keyed list that a let or a collection field holds keeps its key and identity
+     (486). An element a line amends inside a keyed list that no let or field owns as a
+     collection (a map's value, a list's element, an optional field or let, 411) keeps its key
+     in that list and takes a collection of its own, so it equals no other entry and Graph puts
+     its node at its path (`p:mm.mk[a][x]`). With no layer active, or only the source amended,
+     the copy is the entry (79, 504). An element assignment through a `var` never gives the new
+     element the identity of the one it replaces. An entry assigned keeps its own. Any other
+     record assigned into a keyed list takes an identity by its key field, in a new collection
+     of its own, as a keyed-list literal outside a let gives (TYPES.md §6.3). A plain list's
+     slot holds the record as it is. This closes 504's known limit. Known limits, queued
+     (EVAL-KEYEDSLOTKEY): a record assigned into a keyed list's slot whose key field differs
+     from the slot's key, and element assignment into a `var` table. Reason: v0.3 run
+     (EVAL-AMENDEDENTRYCOPY): `let e = uu.x` amended by a layer kept x's identity, so `e ==
+     uu.x` was true with different contents. `mm.mk["a"].x` amended in a map value's copy of
+     `h.uu` stayed a member of `h.uu`. In a var copied from `hh.uu`, `xs["x"] = { n: "x", w: 3
+     }` was a member of `hh.uu`, and in a plain var list `xs[0] = hh.uu.y` took x's identity.

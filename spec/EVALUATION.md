@@ -203,7 +203,10 @@ is `E3505`. Verifying one (§5) that is still unbound when its top-level value i
 - Element assignment is allowed through a `var` root at any depth (`m[k][0] = v`). The
   evaluator copies what it changes (copy-on-write); the effect is that of rebuilding the root.
   `xs[i] = v` requires an existing index (negative counts from the end), else `E4002`.
-  `m[k] = v` replaces an existing key in place or appends a new key at the end.
+  `m[k] = v` replaces an existing key in place or appends a new key at the end. An element
+  assignment never passes on the identity of the element it replaces: an entry assigned keeps its
+  own, another record assigned into a keyed list takes one by its key in a collection of its own,
+  and a plain list's slot holds the record as it is (TYPES.md §6.3; DECISIONS 510).
 - Lambdas capture the values of their free names when they are created.
 
 ### 4.2 Identity
@@ -218,7 +221,7 @@ which reads no let, never decides it (DECISIONS 210, 315).
 Every record or case value is also an **instance**: each evaluation of a literal, each default,
 each object decoded from a file creates a new instance. Copies share the instance: a default or
 initializer that yields an existing value (an earlier field, a let, a parameter, or any value
-reached inside one) is a copy, through binding, layers and step 3 of §9.3 (DECISIONS 79, 478, 504). Checks run
+reached inside one) is a copy, through binding, layers and step 3 of §9.3 (DECISIONS 79, 478, 504). A line that amends at or below a copy of an entry held anywhere but the table or keyed list it belongs to (a let, a field, a map value, a plain list's element, an optional) makes it a record of its own, without identity: it equals the entry only when their fields are equal, it is no member of the entry's collection, and the entry is unchanged. An element amended inside the table or keyed list a let or a collection field holds keeps its identity; one amended inside a keyed list no let or field owns keeps its key in a collection of its own (§9.3; DECISIONS 486, 510). Checks run
 once per instance (§8.1).
 
 ### 4.3 Conversions at storage points
