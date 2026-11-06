@@ -29,7 +29,7 @@ func (x Formless) At(span source.Span, field string) *diag.Builder {
 	return x.finding(span, x.Value, field)
 }
 
-// FieldForms lists the parts of field f's value v, records not entered, that Encode refuses (§5.1, §5.3, §5.4).
+// FieldForms lists the parts of field f's value v, records not entered, that Encode refuses, each once (§5.1, §5.3, §5.4).
 func FieldForms(f *types.Field, v value.Value) []Formless {
 	if v == nil || f.Input != nil {
 		return nil
@@ -41,7 +41,9 @@ func FieldForms(f *types.Field, v value.Value) []Formless {
 	if l, ok := v.(*value.List); ok && f.Enc == types.EncBits {
 		out = repeatedBits(l)
 	} else {
-		out = fractions(v, f.Unit, nil, nil)
+		w := fractionWalk{unit: f.Unit}
+		w.value(v, nil)
+		out = w.out
 	}
 	if len(out) == 0 && f.NoneWire != nil && encodesAsMarker(f, v) {
 		out = append(out, Formless{Value: v, Site: v, finding: noneFinding(string(f.NoneWire))})
@@ -49,25 +51,49 @@ func FieldForms(f *types.Field, v value.Value) []Formless {
 	return out
 }
 
-// fractions appends each Duration of v, at steps, itself or in a list or map value, finer than unit (§4.1, §5.1).
-func fractions(v value.Value, unit types.Unit, steps []Step, out []Formless) []Formless {
+// fractionWalk walks a field's value for Durations finer than unit, a shared part once, at its first place (DECISIONS 511).
+type fractionWalk struct {
+	unit types.Unit
+	met  map[value.Value]bool
+	out  []Formless
+}
+
+// value appends each Duration of v, at steps, itself or in a list or map value, finer than unit (§4.1, §5.1).
+func (w *fractionWalk) value(v value.Value, steps []Step) {
 	switch x := v.(type) {
 	case *value.Dur:
-		if x.Ms%unit.Millis() != 0 {
-			out = append(out, Formless{Value: x, Site: x, Steps: slices.Clone(steps), finding: unitFinding(unit)})
+		if x.Ms%w.unit.Millis() != 0 && w.first(x) {
+			w.out = append(w.out, Formless{Value: x, Site: x, Steps: slices.Clone(steps), finding: unitFinding(w.unit)})
 		}
 	case *value.List:
+		if !w.first(x) {
+			return
+		}
 		for i, e := range x.Elems {
-			out = fractions(e, unit, append(steps, Step{In: x, Index: i}), out)
+			w.value(e, append(steps, Step{In: x, Index: i}))
 		}
 	case *value.Map:
+		if !w.first(x) {
+			return
+		}
 		for i, e := range x.Vals {
 			if i < len(x.Keys) {
-				out = fractions(e, unit, append(steps, Step{In: x, Key: x.Keys[i]}), out)
+				w.value(e, append(steps, Step{In: x, Key: x.Keys[i]}))
 			}
 		}
 	}
-	return out
+}
+
+// first reports v met for the first time in this walk, and notes it met.
+func (w *fractionWalk) first(v value.Value) bool {
+	if w.met[v] {
+		return false
+	}
+	if w.met == nil {
+		w.met = map[value.Value]bool{}
+	}
+	w.met[v] = true
+	return true
 }
 
 // repeatedBits is l, a bits list, at the second occurrence of each member it holds twice (§5.3).

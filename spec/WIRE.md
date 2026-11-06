@@ -248,7 +248,9 @@ wire's (`load`, `types`-mode decoders).
 
 `E8102` is reported during verification (EVALUATION.md §1, stage B, phase 4) for every evaluated
 value, not only when writing, so `canon check` finds it: a field's wire annotation is part of what
-the value must satisfy.
+the value must satisfy. A part a field's value holds at several places (a shared list, map or
+`Duration`) is reported once for that field, at its first place in walk order, even where another
+place's path sorts first (DECISIONS 511).
 
 | Field | JSON | Value |
 |---|---|---|

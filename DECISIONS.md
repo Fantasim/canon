@@ -5809,3 +5809,23 @@ round 2", "PS1 review", "PS2 round 2"):
      uu.x` was true with different contents. `mm.mk["a"].x` amended in a map value's copy of
      `h.uu` stayed a member of `h.uu`. In a var copied from `hh.uu`, `xs["x"] = { n: "x", w: 3
      }` was a member of `hh.uu`, and in a plain var list `xs[0] = hh.uu.y` took x's identity.
+
+511. **A field's wire-form walk meets a shared value once (WIRE.md §5.1, §5.3, §5.4;
+     EVALUATION.md §5, §12.1, §14; extends 504, 507 and 509).** Verification looks for the
+     parts of a field's value with no wire form (`E8102`) in one walk of that value; records
+     are not entered, as before. The walk meets each list and map, and each `Duration` it
+     reports, once by value identity. A part held at several places of the field's value is
+     reported once, at its first place in walk order (element order, a map's key order), with
+     that place's path, even where another place's path sorts first in IMPLEMENTATION-PLAN
+     §4.4's order. Within one field the unit, the field name and the part's location are the
+     same at every place, so only the path is chosen. Unlike stage B's scalars (509), a
+     `Duration` is not reported again at each place. Equal Durations that are separate values
+     are each reported. Each field of each record instance verified is a walk of its own: a
+     value that two fields or two record instances hold is reported in each, with that field's
+     name and unit, and §14 keeps the least of identical findings. A record instance stage B
+     does not verify again (509) reports only where it was verified. The walk keeps only the
+     set of distinct values it met, nothing per visit. The findings reported do not change,
+     only the path a shared part is named at. Reason: v0.3 run (WIRE-SHAREDONCE): `r = {a: w20,
+     b: w20}` with `w_i = [w_{i-1}, w_{i-1}]` cost 2^depth in the walk (118 ms at depth 20,
+     doubling per level); a fractional `Duration` was listed once per path, 2^depth `E8102`
+     that §14 collapsed (depth 18: 3.2 s, 1.36 GB peak; after: 0.6 s, 283 MB).

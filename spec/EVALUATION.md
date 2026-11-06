@@ -277,7 +277,7 @@ order, with that place's path and related locations (DECISIONS 509).
 | dependent types: each dependent value fits the type computed from its arguments; symbolic identifiers resolve | `E3802`, `E3801`, `E3501` | the value |
 | assets exist, with an allowed extension and a clean path | `E3701`–`E3703` | the value |
 | stable ids, `@codes`, `@stable` values | `E6xxx`, `E3102` | per LOCK.md |
-| every value has a wire form for its field (WIRE §5.1, §5.3, §5.4; DECISIONS 283) | `E8102` | the value without one (a list or map element at its own path); a repeated bits member at its second occurrence |
+| every value has a wire form for its field (WIRE §5.1, §5.3, §5.4; DECISIONS 283) | `E8102` | the value without one (a list or map element at its own path; a part held at several places of one field, at its first, DECISIONS 511); a repeated bits member at its second occurrence |
 
 A map literal typed against a kept dependent map (TYPES.md §11.5) is also judged, each value against `T` applied to its key, whether or not it is stored: after every value of the pass is verified, each of its values that no verification judged at that key and type is judged once, charged to the value whose evaluation built it; its findings carry the value's path within the literal, with no root, as precomputed results do (§2.3) (DECISIONS 408).
 
@@ -867,7 +867,8 @@ unmarked positions above.
   order of IMPLEMENTATION-PLAN.md §4.4 (every field compared after the order above), so that
   scheduling never chooses it (NFR-05, DECISIONS 105). Duplicates are judged on the source-language
   message, as F7's truncation is, so the finding set does not depend on `Options.Lang` (DECISIONS 281).
-  Inside one verified value, a value verified once (§5) reports only at its first place; the
+  Inside one verified value, a value verified once (§5), or a part one field's value holds at
+  several places (DECISIONS 511), reports only at its first place; the
   choice above applies among the places that do report (DECISIONS 509).
 - Findings produced inside `expect` subjects are captured by the test, never printed as
   findings.
