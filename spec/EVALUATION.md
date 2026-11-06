@@ -203,10 +203,15 @@ is `E3505`. Verifying one (§5) that is still unbound when its top-level value i
 - Element assignment is allowed through a `var` root at any depth (`m[k][0] = v`). The
   evaluator copies what it changes (copy-on-write); the effect is that of rebuilding the root.
   `xs[i] = v` requires an existing index (negative counts from the end), else `E4002`.
+  In a keyed list or table, the assigned element keeps the key of the slot it fills: an entry
+  whose key is another, or a record whose key field is another, is `E4004`, a hard error (§7.1), as
+  an amend line is `E1913`; the way out is to give the element the slot's key, a key field written
+  or `{ ...e, k: … }` (DECISIONS 499, 512).
   `m[k] = v` replaces an existing key in place or appends a new key at the end. An element
   assignment never passes on the identity of the element it replaces: an entry assigned keeps its
-  own, another record assigned into a keyed list takes one by its key in a collection of its own,
-  and a plain list's slot holds the record as it is (TYPES.md §6.3; DECISIONS 510).
+  own, another record assigned into a keyed list takes one by its key, and one assigned into a
+  table takes the slot's key, not retired, each in a collection of its own, and a plain list's slot
+  holds the record as it is (TYPES.md §6.3; DECISIONS 510, 512).
 - Lambdas capture the values of their free names when they are created.
 
 ### 4.2 Identity

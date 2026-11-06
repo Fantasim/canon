@@ -346,6 +346,7 @@ var constructed = []*Builder{
 	E4002.AtOpen(sampleSpan),
 	E4002.AtSlice(sampleSpan, sampleInt, sampleInt),
 	E4003.At(sampleSpan, sampleName),
+	E4004.At(sampleSpan, sampleValue, sampleValue),
 	E4101.AtInteger(sampleSpan, sampleExpr),
 	E4101.AtDuration(sampleSpan, sampleExpr),
 	E4102.At(sampleSpan),

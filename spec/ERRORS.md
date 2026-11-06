@@ -392,7 +392,7 @@ func (codeE2103) AtSeveral(span source.Span, typ string, colls []string) *Builde
 
 ---
 
-The catalogue holds 343 codes: 306 errors, 34 warnings and 3 run-time codes, with 601 messages.
+The catalogue holds 344 codes: 307 errors, 34 warnings and 3 run-time codes, with 602 messages.
 
 ## W00xx: Lints
 
@@ -1075,6 +1075,7 @@ Owner: EVALUATION.md, STDLIB.md.
 | W4001 | warning | eval | EVALUATION.md §1 | values not evaluated or checked because their record or variant is broken (DECISIONS 209) |
 | E4002 | error | eval | EVALUATION.md §4.1 | missing key, index out of range, open range without an end, or slice out of range |
 | E4003 | error | eval | TYPES.md §9.3 | `.id` or `.retired` of a record value that is not an entry of a table or keyed list |
+| E4004 | error | eval | EVALUATION.md §4.1 | an element assignment gives a keyed-list element or table entry a key other than the one its slot holds |
 | E4101 | error | eval | EVALUATION.md §6.1 | integer or duration overflow |
 | E4102 | error | eval | EVALUATION.md §6.1 | division by zero |
 | E4103 | error | eval | EVALUATION.md §6.2 | a float converted to an integer does not fit `Int` |
@@ -1101,6 +1102,7 @@ Owner: EVALUATION.md, STDLIB.md.
 | E4002 | open | - | `open range has no end` |
 | E4002 | slice | a:Int, b:Int | `slice {a}..{b} out of range` |
 | E4003 | - | member:Name | `.{member} of a value that is not an entry of a table or keyed list` |
+| E4004 | - | key:Value, got:Value | `element assignment: the element's key {got} is not {key}, the key its slot holds` |
 | E4101 | integer | expr:Expr | `integer overflow in {expr}` |
 | E4101 | duration | expr:Expr | `duration overflow in {expr}` |
 | E4102 | - | - | `division by zero` |

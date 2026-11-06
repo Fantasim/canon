@@ -74,7 +74,7 @@ func (e *Evaluator) updated(v value.Value, i int, k, nv value.Value) value.Value
 		x.Elems[i] = e.slotIdent(x, nv)
 		delete(e.keyed, v)
 	case *value.Table:
-		if rec, ok := e.withIdent(nv, x.Entries[i], false).(*value.Record); ok {
+		if rec, ok := e.entryIdent(x, i, nv).(*value.Record); ok {
 			x.Entries[i] = rec
 		}
 		delete(e.keyed, v)

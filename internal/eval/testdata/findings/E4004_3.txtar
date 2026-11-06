@@ -1,0 +1,49 @@
+EVALUATION.md §4.1 (E4004; DECISIONS 512): an entry assigned into a keyed list's slot answers to its slot's key by its identity too: a table's entry, or an entry of a list keyed by another field, whose key field is the slot's key but whose identity key is another is a hard error at the assignment.
+-- a/a.canon --
+/// A.
+package a
+
+/// Row.
+record V {
+  /// Name.
+  n: String
+  /// Mark.
+  m: String = ""
+}
+
+/// Rows by name.
+let byName: [V] keyed by n = [{ n: "x", m: "p" }]
+
+/// Rows by mark.
+let byMark: [V] keyed by m = [{ n: "x", m: "q" }]
+
+/// Rows by entry key.
+let tv: table V = { z { n: "x" } }
+
+/// Puts the table's entry z, named x, in the slot x.
+fn fromTable() -> [V] keyed by n {
+  var xs: [V] keyed by n = byName
+  xs["x"] = tv.z
+  return xs
+}
+
+/// Puts the entry q of a list keyed by mark, named x, in the slot x.
+fn fromOther() -> [V] keyed by n {
+  var xs: [V] keyed by n = byName
+  xs["x"] = byMark.q
+  return xs
+}
+
+local let a: [V] keyed by n = fromTable()
+
+local let b: [V] keyed by n = fromOther()
+-- findings.txt --
+error[E4004]  a/a.canon:24:3
+  a: element assignment: the element's key z is not x, the key its slot holds
+  in fromTable (a/a.canon:35)
+
+error[E4004]  a/a.canon:31:3
+  b: element assignment: the element's key q is not x, the key its slot holds
+  in fromOther (a/a.canon:37)
+
+2 errors, 0 warnings in 1 package (…)

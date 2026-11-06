@@ -1,0 +1,71 @@
+EVALUATION.md §4.1 (E4004; DECISIONS 512): an element assigned into a keyed list's slot by key keeps the key the slot holds; an entry or a record whose key field is another is a hard error at the assignment, the root aborted, also below a map.
+-- a/a.canon --
+/// A.
+package a
+
+/// Row.
+record U {
+  /// Key.
+  n: String
+  /// W.
+  w: Int = 0
+}
+
+/// Holder.
+record H {
+  /// Rows.
+  uu: [U] keyed by n
+}
+
+/// Rows x and y.
+let hh: H = { uu: [{ n: "x" }, { n: "y" }] }
+
+/// Puts the entry y in the slot x.
+fn moved(h: H) -> [U] keyed by n {
+  var xs: [U] keyed by n = h.uu
+  xs["x"] = h.uu.y
+  return xs
+}
+
+/// Puts a record keyed z in the slot x.
+fn literal(h: H) -> [U] keyed by n {
+  var xs: [U] keyed by n = h.uu
+  xs["x"] = { n: "z", w: 2 }
+  return xs
+}
+
+/// Puts a record keyed y in the slot x of a map's value.
+fn nested(h: H) -> {String: [U] keyed by n} {
+  var m: {String: [U] keyed by n} = { "a": h.uu }
+  m["a"]["x"] = { n: "y" }
+  return m
+}
+
+/// Keeps the key.
+fn kept(h: H) -> [U] keyed by n {
+  var xs: [U] keyed by n = h.uu
+  xs["x"] = { n: "x", w: 3 }
+  return xs
+}
+
+local let a: [U] keyed by n = moved(hh)
+
+local let b: [U] keyed by n = literal(hh)
+
+local let c: {String: [U] keyed by n} = nested(hh)
+
+local let d: [U] keyed by n = kept(hh)
+-- findings.txt --
+error[E4004]  a/a.canon:24:3
+  a: element assignment: the element's key y is not x, the key its slot holds
+  in moved (a/a.canon:49)
+
+error[E4004]  a/a.canon:31:3
+  b: element assignment: the element's key z is not x, the key its slot holds
+  in literal (a/a.canon:51)
+
+error[E4004]  a/a.canon:38:3
+  c: element assignment: the element's key y is not x, the key its slot holds
+  in nested (a/a.canon:53)
+
+3 errors, 0 warnings in 1 package (…)

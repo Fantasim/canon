@@ -16,6 +16,8 @@ func evalOperators() []operator {
 		op(diag.E4002.Def().Code, "EVALUATION.md §4.1 (index out of range)", appendSite("local let zzXs: [Int] = [1, 2]\nlocal let zzY: Int = ", "zzXs[5]", "")),
 		op(diag.E4003.Def().Code, "TYPES.md §9.3 (.id of a value that is no entry)", appendSite("local record ZzRow {\n  zzCode: String\n}\n\n"+
 			"local let zzRows: table ZzRow = { a { zzCode: \"a\" } }\nlocal let zzR: ZzRow = { zzCode: \"r\" }\nlocal let zzRid: String = ", "zzR.id", "")),
+		op(diag.E4004.Def().Code, "EVALUATION.md §4.1 (a slot given another key)", appendSite("",
+			"local record ZzKr {\n  zzK: String\n}\n\nlocal fn zzRekey() -> Int {\n  var xs: [ZzKr] keyed by zzK = [{ zzK: \"a\" }]\n  xs[\"a\"] = { zzK: \"b\" }\n  return xs.len()\n}\n\nlocal let zzRk: Int = zzRekey()", "")),
 		op(diag.E4101.Def().Code, "EVALUATION.md §6.1 (integer overflow)", appendSite("local let zzBig: Int = 9223372036854775807\nlocal let zzO: Int = ", "zzBig + 1", "")),
 		op(diag.E4102.Def().Code, "EVALUATION.md §6.1 (division by zero)", appendSite("local let zzZero: Int = 0\nlocal let zzQ: Int = ", "7 / zzZero", "")),
 		op(diag.E4103.Def().Code, "EVALUATION.md §6.2 (float past Int)", appendSite("local let zzHuge: Float = 1e300\nlocal let zzI: Int = ", "Int(zzHuge)", "")),

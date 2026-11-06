@@ -1,0 +1,61 @@
+EVALUATION.md §4.1 (E4004; DECISIONS 512): in a keyed list keyed by an integer field, and in a table, the element assigned into a slot keeps the slot's key; an entry of another key is a hard error at the assignment, a record that is no entry takes the slot's key.
+-- a/a.canon --
+/// A.
+package a
+
+/// Row.
+record R {
+  /// Key.
+  k: Int
+  /// W.
+  w: Int = 0
+}
+
+/// Item.
+record Item {
+  /// Size.
+  size: Int = 1
+}
+
+/// Rows 1 and 2.
+let rows: [R] keyed by k = [{ k: 1 }, { k: 2 }]
+
+/// Items.
+let items: table Item = { sword {}, shield { size: 2 } }
+
+/// Puts a row keyed 2 in the slot 1.
+fn rekeyed() -> [R] keyed by k {
+  var xs: [R] keyed by k = rows
+  xs[1] = { k: 2, w: 4 }
+  return xs
+}
+
+/// Puts the entry shield in the slot sword.
+fn moved() -> table Item {
+  var ts: table Item = items
+  ts["sword"] = items.shield
+  return ts
+}
+
+/// Puts a record that is no entry in the slot sword.
+fn fresh() -> table Item {
+  var ts: table Item = items
+  ts["sword"] = { size: 3 }
+  return ts
+}
+
+local let a: [R] keyed by k = rekeyed()
+
+local let b: table Item = moved()
+
+local let c: Int = fresh().sword.size
+-- findings.txt --
+error[E4004]  a/a.canon:27:3
+  a: element assignment: the element's key 2 is not 1, the key its slot holds
+  in rekeyed (a/a.canon:45)
+
+error[E4004]  a/a.canon:34:3
+  b: element assignment: the element's key shield is not sword, the key its slot holds
+  in moved (a/a.canon:47)
+
+2 errors, 0 warnings in 1 package (…)

@@ -342,6 +342,7 @@ E4002 key: no key "II_SYS_SYS_SCR_FARM3" in resource.vocab.items
 E4002 open: open range has no end
 E4002 slice: slice -42..-42 out of range
 E4003 -: .resource.vocab.items of a value that is not an entry of a table or keyed list
+E4004 -: element assignment: the element's key "II_SYS_SYS_SCR_FARM3" is not "II_SYS_SYS_SCR_FARM3", the key its slot holds
 E4101 integer: integer overflow in a b
 E4101 duration: duration overflow in a b
 E4102 -: division by zero

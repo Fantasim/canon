@@ -158,6 +158,8 @@ func (r *run) setAt(v value.Value, keys []value.Value, nv value.Value, at syntax
 		if inner = r.setAt(slotValue(v, i), keys[1:], nv, at, false); inner == nil { // below the root, always a copy
 			return nil
 		}
+	} else if !r.keepsKey(v, i, nv, at) {
+		return nil
 	}
 	if owned {
 		return r.ev.updated(v, i, keys[0], inner)
@@ -239,6 +241,58 @@ func slotValue(v value.Value, i int) value.Value {
 	return std.Elems(v)[i]
 }
 
+// keepsKey is false, after a hard E4004, when nv answers in slot i to another key (EVALUATION.md §4.1; DECISIONS 512).
+func (r *run) keepsKey(v value.Value, i int, nv value.Value, at syntax.Node) bool {
+	old := slotEntry(v, i)
+	rec, isRec := nv.(*value.Record)
+	if !keyedColl(v) || !isRec || old == nil || old.Ident == nil {
+		return true
+	}
+	for _, got := range assignedKeys(v, rec) {
+		if got != old.Ident.Key {
+			r.fail(diag.E4004.At(r.span(at), keyArg(old.Ident.Key), keyArg(got)))
+			return false
+		}
+	}
+	return true
+}
+
+// assignedKeys are the keys rec answers to in a slot of v, a keyed list or a table, identity
+// first: its identity key when it is an entry, then its key field in a keyed list.
+func assignedKeys(v value.Value, rec *value.Record) []value.Key {
+	var out []value.Key
+	if rec.Ident != nil {
+		out = append(out, rec.Ident.Key)
+	}
+	l, isList := v.(*value.List)
+	if !isList {
+		return out
+	}
+	if f := keyOfList(l); f != nil && fieldAt(rec, f.Index) != nil {
+		if k, ok := std.KeyOf(fieldAt(rec, f.Index)); ok {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+// slotEntry is the record in slot i of a list or a table, nil for any other slot.
+func slotEntry(v value.Value, i int) *value.Record {
+	switch x := v.(type) {
+	case *value.Table:
+		return x.Entries[i]
+	case *value.List:
+		rec, _ := x.Elems[i].(*value.Record)
+		return rec
+	}
+	return nil
+}
+
+// keyArg is a key as the value argument of a finding, printed as its text.
+type keyArg value.Key
+
+func (k keyArg) CanonText() string { return value.Key(k).Text() }
+
 // replaced copies v with slot i set to nv; slot -1 of a map appends key k.
 func (e *Evaluator) replaced(v value.Value, i int, k, nv value.Value) value.Value {
 	switch x := v.(type) {
@@ -256,7 +310,7 @@ func (e *Evaluator) replaced(v value.Value, i int, k, nv value.Value) value.Valu
 		return &value.List{T: x.T, Elems: elems, P: x.P}
 	case *value.Table:
 		entries := append([]*value.Record(nil), x.Entries...)
-		if rec, ok := e.withIdent(nv, x.Entries[i], false).(*value.Record); ok {
+		if rec, ok := e.entryIdent(x, i, nv).(*value.Record); ok {
 			entries[i] = rec
 		}
 		return &value.Table{T: x.T, Entries: entries, P: x.P}
@@ -279,13 +333,13 @@ func (e *Evaluator) slotIdent(l *value.List, nv value.Value) value.Value {
 	return e.withIdentity(rec, &value.Identity{Coll: &types.Collection{Kind: types.CollLet, Elem: lt.Elem, KeyedBy: lt.KeyedBy}, Key: k}, false)
 }
 
-// withIdent is nv in the place of old: a record replacing an entry takes its identity, in place
-// only when fresh (withIdentity).
-func (e *Evaluator) withIdent(nv, old value.Value, fresh bool) value.Value {
-	rec, ok := nv.(*value.Record)
-	prev, wasEntry := old.(*value.Record)
-	if !ok || !wasEntry || prev.Ident == nil || rec.Ident == prev.Ident {
+// entryIdent is nv in slot i of t: an entry keeps its own identity, a record takes the slot's key apart (DECISIONS 512).
+func (e *Evaluator) entryIdent(t *value.Table, i int, nv value.Value) value.Value {
+	rec, isRec := nv.(*value.Record)
+	tt, isTable := t.T.Base().(*types.TableType)
+	old := t.Entries[i]
+	if !isRec || rec.Ident != nil || !isTable || old.Ident == nil {
 		return nv
 	}
-	return e.withIdentity(rec, prev.Ident, fresh)
+	return e.withIdentity(rec, &value.Identity{Coll: &types.Collection{Kind: types.CollLet, Elem: tt.Elem}, Key: old.Ident.Key}, false)
 }

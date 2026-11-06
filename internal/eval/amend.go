@@ -42,6 +42,17 @@ func (r *run) setElement(cur value.Value, t types.Type, segs []*syntax.AmendSegm
 	return r.copied(cur, r.ev.replaced(cur, i, nil, el))
 }
 
+// withIdent is nv in the place of old: a record replacing an entry takes its identity, in place
+// only when fresh (withIdentity).
+func (e *Evaluator) withIdent(nv, old value.Value, fresh bool) value.Value {
+	rec, ok := nv.(*value.Record)
+	prev, wasEntry := old.(*value.Record)
+	if !ok || !wasEntry || prev.Ident == nil || rec.Ident == prev.Ident {
+		return nv
+	}
+	return e.withIdentity(rec, prev.Ident, fresh)
+}
+
 // apartIdent is nv, amended in the slot of old in a keyed copy no field or let owns: an entry
 // keeps its own identity, any other record takes old's key in a collection of its own.
 func (e *Evaluator) apartIdent(nv, old value.Value, fresh bool) value.Value {

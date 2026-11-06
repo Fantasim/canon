@@ -5808,7 +5808,7 @@ round 2", "PS1 review", "PS2 round 2"):
      (EVAL-AMENDEDENTRYCOPY): `let e = uu.x` amended by a layer kept x's identity, so `e ==
      uu.x` was true with different contents. `mm.mk["a"].x` amended in a map value's copy of
      `h.uu` stayed a member of `h.uu`. In a var copied from `hh.uu`, `xs["x"] = { n: "x", w: 3
-     }` was a member of `hh.uu`, and in a plain var list `xs[0] = hh.uu.y` took x's identity.
+     }` was a member of `hh.uu`, and in a plain var list `xs[0] = hh.uu.y` took x's identity. [amended by 512]
 
 511. **A field's wire-form walk meets a shared value once (WIRE.md §5.1, §5.3, §5.4;
      EVALUATION.md §5, §12.1, §14; extends 504, 507 and 509).** Verification looks for the
@@ -5829,3 +5829,27 @@ round 2", "PS1 review", "PS2 round 2"):
      b: w20}` with `w_i = [w_{i-1}, w_{i-1}]` cost 2^depth in the walk (118 ms at depth 20,
      doubling per level); a fractional `Duration` was listed once per path, 2^depth `E8102`
      that §14 collapsed (depth 18: 3.2 s, 1.36 GB peak; after: 0.6 s, 283 MB).
+
+512. **An element assignment keeps the key of the keyed-list or table slot it fills
+     (EVALUATION.md §4.1, §7.1; TYPES.md §6.3, §9.1, §9.3; ERRORS.md E4004; amends 510; follows
+     305, 499).** `xs[k] = v` through a `var` into a keyed list or a table leaves the slot the
+     key it holds. The element must answer to that key every way it is looked up: by its
+     identity key when it is an entry, checked first, and in a keyed list by its key field.
+     Otherwise it is `E4004`, a hard error at the assignment statement naming the slot's key
+     and the element's; the root aborts as for `E1913`, and a collection the frame owns is left
+     unchanged. An entry whose key is the slot's keeps its own identity, in a table as in a
+     keyed list (510). Any other record assigned into a table takes the slot's key in a new
+     collection of its own, never the identity of the entry it replaces: it equals that entry
+     only when their fields are equal, it is no member of the source table, and it is not
+     retired. Assigned into a keyed list, it takes an identity by its key field (510). A key
+     new to a var table or keyed list stays `E4002`. The way out: give the element the slot's
+     key (a record literal, or `{ ...e, n: "x" }`, with the key field written), or rebind the
+     whole var. Known limit, v0.4: a keyed-list literal re-keys an entry it holds by its key
+     field (`var xs: [V] keyed by n = [tv.z]` gives `xs.contains(tv.z)` false), where an
+     assignment refuses it; neither is stated for literals. Reason: v0.3 run
+     (EVAL-KEYEDSLOTKEY), closing 510's known limits: in a var copied from `hh.uu`, `xs["x"] =
+     hh.uu.y` repeated a key, which verification's `E3102` reported far from the cause;
+     `xs["x"] = { n: "z" }` silently renamed the slot; an entry of another key (`tv.z`,
+     `byMark.q`) answered to two keys; a record assigned into a var table took the replaced
+     entry's identity, retirement included, so `ts.sword == items.sword` was true with
+     different contents.
