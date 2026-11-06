@@ -5620,3 +5620,28 @@ round 2", "PS1 review", "PS2 round 2"):
      in byte order; under an active layer the list missed a ref `Refs` reports, and a rename that
      only a layer's computed ref should refuse was applied; a rename whose refs could not be
      computed named the renamed entry's root.
+
+504. **A default or initializer yielding an existing value, or any value inside it, shares its
+     instance through binding, rebinding and step 3 (EVALUATION.md §3.4, §4.2, §9.3; TYPES.md §6.3;
+     API.md R7, R11; follows 79, 410, 478, 486, 491, 492, 498, 501).** A field whose default or
+     initializer yields an earlier field (`b: Q = self.a`), an element or record reached inside one
+     (`alt: Q = qs.q`, `deep: Q = gs.g.inner`, `au: U = uu.x`), a let or a parameter is a copy of
+     that value. Its entries are its source's, and so are the refs and map keys bound to them. This
+     holds even when a ref inside it binds only when an enclosing instance completes, and it holds
+     in the unbinding and rebinding passes of a layer. The first place in walk order is the
+     instance's own place: Graph puts the nodes there and Refs lists the reads there. When an
+     amendment, or a decoder's completion, makes a record's entries its own, every other field of
+     that record that holds one of those entries follows them, at any depth, in a record, list, map,
+     pair or optional, each shared value walked once; only the record's own instance's entries move,
+     and a foreign or spread source's entries stay where they are. So a default kept by §9.3 step 3
+     (501) holds the same entry as its source, and `==`, `in` and `contains` agree after any
+     amendment of a sibling field. A line that amends at or below the copy makes the entries it
+     builds the copy's own, and moves the refs bound to them (486, 498). Equal values built by
+     separate evaluations (two literals, two calls) stay separate instances. Reading an entry
+     through a field (`r.au.w`) states no key, so it is not a `code` ref of that entry (R7). Known
+     limit, queued (EVAL-AMENDEDENTRYCOPY): an amended copy of an entry held outside its collection
+     (`amend r { alt.tt.t.w: 5 }` with `alt: Q = qs.q`) keeps the entry's identity, so Graph has no
+     node at its own path. Reason: v0.3 run (EVAL-DEFAULTCOPY): such a copy was rebuilt once per
+     place and given its own entries, so `r.b.tt.t == r.a.tt.t` was false and Graph had nodes below
+     p:r.b; under a layer, the unbinding and rebinding passes re-owned a shared base record's
+     entries; after 501, a kept `au: U = uu.x` still named the record from before the amendment.

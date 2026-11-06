@@ -12,7 +12,7 @@ type bindMode uint8
 
 // copiedFrom records that cp is rec's instance when cp's type owns entries, a level-1 target's or
 // a collection field's; callers pass only copies no two values diverge in: one sharing rec's
-// fields, or one of a value only this let's amendments hold.
+// fields, one of a value only this let's amendments hold, or a binder's copy, rebinding refs only.
 func (e *Evaluator) copiedFrom(rec, cp *value.Record) {
 	if rec != cp && (len(e.owned(cp.T)) > 0 || e.holdsEntries(cp.T)) {
 		e.origin[cp] = rec
@@ -69,8 +69,13 @@ func (e *Evaluator) originOf(rec *value.Record) *value.Record {
 	return nil
 }
 
-// transfer makes cp, the binder's copy of rec, the owner its entries and refs name (EVALUATION.md §3.4, §4.2).
+// transfer makes cp, the binder's copy of rec, the owner its entries and refs name; a copy of a base instance another place of the amended let holds stays that instance, its entries and refs unchanged (EVALUATION.md §3.4, §4.2; DECISIONS 492).
 func (e *Evaluator) transfer(rec, cp *value.Record, mv *moves) {
+	if !mv.isFresh(rec) && e.shared(rec, mv) {
+		e.copiedFrom(rec, cp)
+		e.rebuilt[cp] = rec
+		return
+	}
 	if mv.isFresh(rec) {
 		e.copiedFrom(rec, cp)
 	}
@@ -93,6 +98,7 @@ func (e *Evaluator) adoptInto(rec, from *value.Record, mv *moves) {
 		return
 	}
 	holds := &ownerFilter{e: e, inst: e.instance(from), mv: mv}
+	held := e.heldColls(rec, rt)
 	for i, f := range fieldsOf(rec.T) {
 		c := e.fieldColl(rt, f)
 		if c == nil || i >= len(rec.Fields) || rec.Fields[i] == nil {
@@ -108,6 +114,7 @@ func (e *Evaluator) adoptInto(rec, from *value.Record, mv *moves) {
 			mv.fresh[rec.Fields[i]] = true
 		}
 	}
+	e.adoptHeld(rec, rt, holds, held, mv)
 }
 
 // ownerFilter holds the entries a copy of inst adopts: inst's, no instance's, those mv's amendments

@@ -1,6 +1,8 @@
 package eval
 
 import (
+	"slices"
+
 	"github.com/fantasim/canonlang/internal/types"
 	"github.com/fantasim/canonlang/internal/value"
 )
@@ -34,4 +36,16 @@ func (b *binder) adopts(en *value.Record) bool {
 		return false
 	}
 	return b.mv.made(en) || b.e.instance(en.Ident.Owner) == b.inst && !b.e.shared(en.Ident.Owner, b.mv)
+}
+
+// shareWith makes cp, the binder's copy of rec, a copy of its copy, made at an earlier place, of a record rec copies holding the same fields, and reports whether it did (EVALUATION.md §4.2; DECISIONS 79, 492).
+func (b *binder) shareWith(rec, cp *value.Record) bool {
+	for o := b.e.originOf(rec); o != nil && slices.Equal(o.Fields, rec.Fields); o = b.e.originOf(o) {
+		if first, ok := b.done[o].(*value.Record); ok && first != o {
+			cp.Fields = slices.Clone(first.Fields)
+			b.e.copiedFrom(first, cp)
+			return true
+		}
+	}
+	return false
 }

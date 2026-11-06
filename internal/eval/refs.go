@@ -359,7 +359,8 @@ func heldColl(rec *value.Record, c *types.Collection) value.Value {
 }
 
 // rebuild is a composite whose components are all rebound: itself when none changed, else a
-// copy, fresh when v is (settle.go); a record copied is the instance it copies (instance.go).
+// copy, fresh when v is (settle.go); a record copied is the instance it copies (instance.go), at
+// a later place a copy of its first place's copy (refowner.go).
 func (b *binder) rebuild(v value.Value) value.Value {
 	nv := b.copyOf(v)
 	if nv == v {
@@ -367,7 +368,7 @@ func (b *binder) rebuild(v value.Value) value.Value {
 	}
 	b.mv.follow(v, nv)
 	rec, isRec := v.(*value.Record)
-	if cp, ok := nv.(*value.Record); ok && isRec {
+	if cp, ok := nv.(*value.Record); ok && isRec && !b.shareWith(rec, cp) {
 		b.e.transfer(rec, cp, b.mv)
 	}
 	return nv

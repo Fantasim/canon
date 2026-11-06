@@ -52,6 +52,7 @@ type Evaluator struct {
 	pathFields map[*types.Collection]*types.Collection
 	ownedBy    map[*types.RecordType]map[*types.Collection]bool
 	holding    map[*types.RecordType]bool
+	entryTypes map[refHold]bool
 	refTypes   map[refHold]bool                // types whose values may hold a ref (prune.go)
 	clean      map[cleanKey]bool               // cache, by value: cleared after each root (refs.go)
 	origin     map[*value.Record]*value.Record // fact, copied: a copy of an owning instance, to the record it copies (instance.go)
@@ -146,6 +147,7 @@ func newEvaluator(bags check.Bags, opt Options) *Evaluator {
 		ownedBy:    map[*types.RecordType]map[*types.Collection]bool{},
 		holding:    map[*types.RecordType]bool{},
 		refTypes:   map[refHold]bool{},
+		entryTypes: map[refHold]bool{},
 		clean:      map[cleanKey]bool{},
 		origin:     map[*value.Record]*value.Record{},
 		sites:      map[*types.Field]site{},
