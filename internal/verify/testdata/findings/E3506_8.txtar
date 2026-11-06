@@ -1,0 +1,56 @@
+EVALUATION.md §14, DECISIONS 509: bad, holding a retired member, sits at [2] and [10]. Each
+entry of the top-level list xs is walked on its own, so both places report and §14 keeps the least
+path, xs[10].e; the list inside the record h is one walk, so bad is verified once, at its first
+place in walk order, h.xs[2].e.
+-- a/a.canon --
+/// A.
+package a
+
+/// Element.
+enum Element { FIRE, retired WIND }
+
+/// Box.
+record Box {
+  /// E.
+  e: Element
+}
+
+local fn mk() -> [Box] {
+  let good: Box = { e: FIRE }
+  let bad: Box = { e: WIND }
+  return [good, good, bad, good, good, good, good, good, good, good, bad]
+}
+
+/// Xs.
+let xs: [Box] = mk()
+
+/// Holder.
+record Holder {
+  /// Xs.
+  xs: [Box]
+}
+
+local fn mk3() -> Holder {
+  let good: Box = { e: FIRE }
+  let bad: Box = { e: WIND }
+  return { xs: [good, good, bad, good, good, good, good, good, good, good, bad] }
+}
+
+/// H.
+let h: Holder = mk3()
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3506]  a/a.canon:15:23
+  xs[10].e: Element.WIND is retired (only a retired entry or a past Element may hold it)
+  expected by a/a.canon:5 (retired WIND)
+  in mk (a/a.canon:20)
+
+error[E3506]  a/a.canon:30:23
+  h.xs[2].e: Element.WIND is retired (only a retired entry or a past Element may hold it)
+  expected by a/a.canon:5 (retired WIND)
+  in mk3 (a/a.canon:35)
+
+2 errors, 0 warnings in 1 package (…)

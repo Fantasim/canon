@@ -85,6 +85,7 @@ func (k *entryKept) nodes() int {
 
 // voidRec voids the entry being recorded, if any: its verification did what a replay cannot.
 func (w *walker) voidRec() {
+	w.effects++
 	if w.rec != nil {
 		w.rec.void = true
 	}

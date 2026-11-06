@@ -256,7 +256,13 @@ call reports `E4201` and treats it as a compiler bug (exit code 3, CLI §2.5).
 
 Each evaluated top-level value that is not poisoned (constants only a fold read included, §2.1;
 DECISIONS 264) is verified once, after its evaluation and layers, in the order its
-evaluation completed. Verification walks the value (not through refs) and checks:
+evaluation completed. Verification walks the value (not through refs) and checks the table below.
+Within one verified value, each entry of a top-level table or list apart, a record, list, map or
+pair met again at the same declared type is not verified again if its first visit converted
+nothing and spent nothing (§12.1), and either found nothing, or ran in the same table entry,
+retired entry, `past` slot and record instances; a visit in a `past` slot that found nothing does
+not stand for a visit outside one. Its findings are then reported only at its first place in walk
+order, with that place's path and related locations (DECISIONS 509).
 
 | Check | Code | Located at |
 |---|---|---|
@@ -728,7 +734,8 @@ time and memory and `E4401` is the only way evaluation runs long:
 
 **Free:** reading and decoding files, conversions and refinement checks other than `where`,
 verification other than type functions, the traversal of instance checks, layer path
-resolution, the `@stable` comparisons made while applying an amendment, and formatting findings.
+resolution, the `@stable` comparisons made while applying an amendment, formatting findings, and
+skipping a value already verified (§5); a visit that spends a step is never skipped.
 Every run of a `where` predicate that verification (stage B) makes is free, whether or not a conversion ran it on that value first: a re-run the conversion already paid, and the first run on a value an amendment or a re-derived default replaced (§9.3), whose enclosing refinements no conversion judged whole. A kept literal (§5) that such a run builds is judged free with it. Each run is capped at the budget; past it that run alone stops, its value is poisoned, no `E4401` is reported and evaluation continues.
 
 ### 12.2 Budget
@@ -857,6 +864,8 @@ unmarked positions above.
   order of IMPLEMENTATION-PLAN.md §4.4 (every field compared after the order above), so that
   scheduling never chooses it (NFR-05, DECISIONS 105). Duplicates are judged on the source-language
   message, as F7's truncation is, so the finding set does not depend on `Options.Lang` (DECISIONS 281).
+  Inside one verified value, a value verified once (§5) reports only at its first place; the
+  choice above applies among the places that do report (DECISIONS 509).
 - Findings produced inside `expect` subjects are captured by the test, never printed as
   findings.
 - Errors block emission (SPEC §10.3); warnings do not.

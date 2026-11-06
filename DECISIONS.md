@@ -1697,7 +1697,7 @@ Choices made while Louis was away are listed here, each with its reason, so he c
     nested deeper than the host stack allows, and shared values whose tree is exponential
     (`l = [l, l]`) under the free verification walk, are bounded only by these walks being
     iterative and charged: a code or value-size limit needs ERRORS.md and value.go (Louis-call).
-    [amended by 210]
+    [amended by 210] [amended by 509]
 
 196. **What `build` does where the spec is silent (the build review).** An error in any loaded
     package, selected or imported, blocks code, data and lock; the imported package's error
@@ -5754,3 +5754,29 @@ round 2", "PS1 review", "PS2 round 2"):
      whole table unrepairable, its own `Remove` included, against 309; reviews found Undos that
      lost valid entries (an alias-typed literal, a retired file, a soft finding, keys that
      encode alike) and an inverse form that differed from the valued path.
+
+509. **Stage B verifies a shared value once where its place changes nothing (EVALUATION.md §5,
+     §12.1, §14; extends 504 and 507; amends 195).** In the walk of one verified value, a
+     record, list, map or pair met again at the same declared type is not walked again if its
+     earlier visit converted nothing and spent nothing. Spending means judging a dependent
+     value, evaluating or reusing a type function, reading a type argument, binding an applied
+     record's arguments or a dependent map's binder. An earlier visit that found nothing stands
+     for every later visit, except that a visit in a `past` slot does not stand for one outside
+     it. Finding something means a finding, a mark, a retired use, an unbound ref, a ref or
+     asset look-up, a `where` run, or a remembered instance replayed. An earlier visit that
+     found something stands only for a later visit in the same table entry, with the same
+     retired entry around it and the same `past` slot, inside the same record instances being
+     verified. Anywhere else the value is verified again. A value verified once is reported at
+     its first place in walk order (path, related locations, the entry its message names), even
+     where another place's path sorts first in IMPLEMENTATION-PLAN §4.4's order. Each entry of
+     a top-level table or list is a walk of its own for this rule. Places in different entries,
+     and places verified again, each report, and §14 keeps the least of their identical
+     findings. A revisit costs no step. A visit that converted or spent is never reused, so
+     step counts and where `E4401` lands do not change. Tables, scalars and refs are walked at
+     each place. Amends 195: a shared tree is no longer exponential under the free verification
+     walk. Known limit, queued (VERIFY-SHAREDFOUND): a value with a finding, reached inside
+     distinct record instances, is verified again inside each, so such a tree stays exponential
+     (only an invalid value). Reason: v0.3 run (VERIFY-SHAREDONCE): `w_i = [w_{i-1}, w_{i-1}]`
+     cost 2^depth in stage B (depth 20: 1.6 s, doubling per level). Review round 1: keying on
+     the per-visit env and the holder left `{a: [w], b: [w]}` exponential and made its memory
+     exponential.

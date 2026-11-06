@@ -54,6 +54,7 @@ func (w *walker) retiredTarget(r *value.Ref, rt *types.RefType, target *value.Re
 
 // use keeps u, in sc's entries, for each instance being verified around it, then judges it.
 func (w *walker) use(u retiredUse, sc scope) {
+	w.effects++
 	u.entry, u.retired, u.holder = sc.entry, sc.retired, sc.holder
 	for _, r := range w.recording {
 		r.uses = append(r.uses, u)

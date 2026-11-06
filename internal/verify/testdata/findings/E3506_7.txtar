@@ -1,0 +1,54 @@
+TYPES.md §8.4, DECISIONS 509: r, a retired case, is reached first in the past slot x, where it is
+no finding, then in y, where it is: a visit in a past slot covers no later visit outside one, so y is
+walked again and E3506 is at row.y.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { g }
+
+/// Reward.
+variant Reward {
+  /// Item.
+  item {}
+  /// Gold.
+  retired gold {
+    /// Amount.
+    amount: Int
+  }
+}
+
+/// P.
+type P(k: K) = match k {
+  g => Reward
+}
+
+/// Row.
+record Row {
+  /// K.
+  k: K
+  /// X.
+  x: past P(k)
+  /// Y.
+  y: Reward
+}
+
+local fn mk() -> Row {
+  let r: Reward = gold { amount: 3 }
+  return { k: g, x: r, y: r }
+}
+
+/// Row.
+let row: Row = mk()
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3506]  a/a.canon:34:19
+  row.y: Reward.gold is retired (only a retired entry or a past Reward may hold it)
+  expected by a/a.canon:12 (retired gold { /// Amount. amount: Int })
+  in mk (a/a.canon:39)
+
+1 error, 0 warnings in 1 package (…)

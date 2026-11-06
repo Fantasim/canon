@@ -8,11 +8,17 @@ import (
 	"github.com/fantasim/canonlang/internal/value"
 )
 
-// walk verifies v against its declared type t, never through refs, converting its dependent values (EVALUATION.md §5).
+// walk verifies v against its declared type t, never through refs, a shared container once (EVALUATION.md §5).
 func (w *walker) walk(v value.Value, t types.Type, at *Path, sc scope) value.Value {
-	switch {
-	case v == nil || w.stopped() || w.foundElsewhere(v):
+	if v == nil || w.stopped() || w.foundElsewhere(v) {
 		return v
+	}
+	return w.visit(v, t, at, sc)
+}
+
+// verified is v verified at at, the walk of one place.
+func (w *walker) verified(v value.Value, t types.Type, at *Path, sc scope) value.Value {
+	switch {
 	case sc.dep != nil:
 		return w.judge(v, t, at, sc) // a part of a list, map or pair a dependent type computed
 	case isNone(v):
@@ -145,6 +151,7 @@ func (w *walker) fields(r *value.Record, t types.Type, at *Path, sc scope) value
 	fsc.env, fsc.dep = sc.env.within(r, t), nil
 	if w.stage != nil {
 		if bound := w.stage.Params(r); len(bound) > 0 {
+			w.spent++
 			w.voidRec()
 			fsc.env.params = maps.Clone(bound) // the instance's own arguments (TYPES.md §11.1)
 		}
@@ -220,6 +227,7 @@ func (w *walker) mapping(m *value.Map, t types.Type, at *Path, sc scope) value.V
 		if i < len(m.Vals) {
 			vsc := ksc
 			if binder != "" {
+				w.spent++
 				vsc.env = sc.env.bind(binder, keys.at(i))
 				w.judgedEntry(m.Vals[i], dm, k)
 			}

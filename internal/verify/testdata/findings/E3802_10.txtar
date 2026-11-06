@@ -1,0 +1,81 @@
+EVALUATION.md §12.1, DECISIONS 509: as E3802_7, below a record and with no dependent field: `x.l`
+is reached twice in one walk, unconverted, in envs whose `ev` differ; its first visit read a type
+argument, so it is not reused, and the second place is E3802 in either order.
+-- a/a.canon --
+/// A.
+package a
+
+/// K.
+enum K { col, num }
+
+/// Color.
+enum Color { red, blue }
+
+/// Ev.
+record Ev {
+  /// K.
+  k: K
+}
+
+/// Evs.
+let evs: table Ev = { a { k: col }, b { k: num } }
+
+/// P.
+type P(e: Ev) = match e.k {
+  col => Color
+  num => Int
+}
+
+/// L.
+record L(e: Ev) {
+  /// N.
+  n: Int = 1
+}
+
+/// R.
+record R {
+  /// Ev.
+  ev: ref evs
+  /// L.
+  l: L(ev)
+}
+
+/// F, the instance where it was built first.
+fn f() -> [R] {
+  let x: R = { ev: a, l: {} }
+  return [x, { ev: b, l: x.l }]
+}
+
+/// G, the instance stored elsewhere first.
+fn g() -> [R] {
+  let x: R = { ev: a, l: {} }
+  return [{ ev: b, l: x.l }, x]
+}
+
+/// W.
+record W {
+  /// Xs.
+  xs: [R]
+}
+
+/// Rs.
+let rs: W = { xs: f() }
+
+/// Rs2.
+let rs2: W = { xs: g() }
+-- project.canon --
+project demo {
+  canon: "0.1"
+}
+-- findings.txt --
+error[E3802]  a/a.canon:41:26
+  rs.xs[1].l: value does not match L(ev) = a.L(b)
+  expected by a/a.canon:36 (l: L(ev))
+  in f (a/a.canon:58)
+
+error[E3802]  a/a.canon:47:26
+  rs2.xs[0].l: value does not match L(ev) = a.L(b)
+  expected by a/a.canon:36 (l: L(ev))
+  in g (a/a.canon:61)
+
+2 errors, 0 warnings in 1 package (…)

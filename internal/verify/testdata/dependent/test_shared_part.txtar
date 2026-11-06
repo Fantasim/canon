@@ -1,0 +1,64 @@
+EVALUATION.md §10.2, DECISIONS 509: the list lb holds a retired member; v reaches it as an Es
+first at v.pre, then inside v.t, an instance stage B remembers (its p is dependent). The second visit runs
+under an instance the first did not record for, so it is walked again: the subject v.t, replayed into
+the test's bag, still fails E3506.
+-- project.canon --
+project acme {
+  canon: "0.1"
+}
+-- a/a.canon --
+/// A.
+package a
+
+/// Element.
+enum Element { fire, retired wind }
+
+/// K.
+enum K { col }
+
+/// Color.
+enum Color { red }
+
+/// P.
+type P(k: K) = match k {
+  col => Color
+}
+
+/// Es.
+type Es = [Element]
+
+/// Thing.
+record Thing {
+  /// K.
+  k: K
+  /// Payload.
+  p: P(k)
+  /// Elements.
+  es: Es
+}
+
+/// V.
+record V {
+  /// Pre.
+  pre: Es
+  /// T.
+  t: Thing
+}
+
+local let lb: Es = [wind]
+
+/// V.
+let v: V = { pre: lb, t: { k: col, p: red, es: lb } }
+
+test "the remembered instance fails E3506" {
+  expect v.t fails E3506
+}
+
+test "the remembered instance does not pass" {
+  expect v.t passes
+}
+-- tests.txt --
+the remembered instance fails E3506 passed=true
+the remembered instance does not pass passed=false
+  expect "expect v.t passes" passes got "" poisoned ""
+    finding E3506 .es[0]: Element.wind is retired (only a retired entry or a past Element may hold it)

@@ -44,6 +44,7 @@ func (s Site) ReportUnder(b *diag.Builder, f diag.Frame, bag *diag.Bag, h Hider)
 
 // reportAt reports b at s and path into the walk's bag; a precomputed result's with no path, under its frame.
 func (w *walker) reportAt(s Site, b *diag.Builder, path string) {
+	w.effects++
 	if w.result != nil && w.result.frame != nil {
 		h, _ := w.ev.(Hider)
 		s.ReportUnder(b, *w.result.frame, w.bag, h)
@@ -70,6 +71,7 @@ func (w *walker) foundElsewhere(v value.Value) bool {
 		return false
 	}
 	w.res.Valid = false
+	w.effects++
 	for _, r := range w.recording {
 		r.unfound = true
 	}
@@ -102,6 +104,7 @@ func (w *walker) predicate(p *types.Predicate, v value.Value, at *Path) (bool, b
 
 // unbound is a level-1 ref left unbound: kept for the caller's E3505, reported at once in a precomputed result.
 func (w *walker) unbound(r *value.Ref, at *Path) {
+	w.effects++
 	if w.result == nil || w.stage == nil {
 		w.res.Unbound = append(w.res.Unbound, Unbound{Ref: r, Path: w.evalPath(at)})
 		w.invalid(r)

@@ -33,6 +33,7 @@ type branchOut struct {
 
 // dependent judges v against the type app computes in sc's env (TYPES.md §11.6).
 func (w *walker) dependent(v value.Value, app *types.TypeAppType, optional bool, at *Path, sc scope) value.Value {
+	w.spent++
 	w.voidRec()
 	t, inner, ok := w.branch(app, sc.env)
 	if !ok {
@@ -52,6 +53,7 @@ func (w *walker) dependent(v value.Value, app *types.TypeAppType, optional bool,
 
 // branch is the type app computes in e, charged once per env (EVALUATION.md §12.1).
 func (w *walker) branch(app *types.TypeAppType, e *env) (types.Type, *env, bool) {
+	w.spent++
 	key := branchKey{app: app, e: e}
 	if out, ok := w.branches[key]; ok {
 		return out.t, out.inner, true
@@ -159,6 +161,7 @@ func (w *walker) charge(app *types.TypeAppType) bool {
 
 // judge converts v to the computed type t, then verifies it as any value of t (TYPES.md §11.6).
 func (w *walker) judge(v value.Value, t types.Type, at *Path, sc scope) value.Value {
+	w.spent++
 	base, optional, ok := layers(v, t, nil)
 	switch {
 	case !ok || base == nil:

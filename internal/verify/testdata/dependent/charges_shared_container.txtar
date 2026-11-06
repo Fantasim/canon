@@ -1,0 +1,29 @@
+EVALUATION.md §12.1, DECISIONS 509: the shared list s is a part of the dependent value p, judged against Lim at each of its four places, so each place runs and charges the where a conversion runs: a visit that spends is never reused, and the threshold is the one of a walk of every place.
+-- a/a.canon --
+package a
+
+local enum K { num, many }
+
+local fn spin(n: Int) -> Int {
+  var i = 0
+  while i < n { i += 1 }
+  return i
+}
+
+local type Lim = [Int] where spin(200) == 200
+
+local type P(k: K) = match k {
+  num => Int
+  many => [Lim]
+}
+
+local let s: Lim = [3]
+
+local record Thing {
+  k: K
+  p: P(k)
+}
+
+local let things: [Thing] = [{ k: many, p: [s, s, s, s] }]
+-- threshold.txt --
+threshold 6088

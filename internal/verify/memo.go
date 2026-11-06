@@ -33,6 +33,7 @@ type reported struct {
 
 // recorder collects the findings of an instance being verified, and where its unbound refs begin.
 type recorder struct {
+	parent  *recorder // the recorder around it, nil for none
 	found   []reported
 	scoped  []reported
 	uses    []retiredUse
@@ -50,6 +51,7 @@ func memoScope(sc scope) string {
 
 // report reports a finding at s and keeps it for each instance being verified around it.
 func (w *walker) report(s Site, b *diag.Builder, at *Path) {
+	w.effects++
 	w.reportAt(s, b, at.String())
 	w.noteFound(b)
 	w.keep(b, at.String())
@@ -70,6 +72,7 @@ func (w *walker) keepSince(n int, path string) {
 }
 
 func (w *walker) keep(b *diag.Builder, path string) {
+	w.effects++
 	for _, r := range w.recording {
 		r.found = append(r.found, reported{b: b, path: path})
 	}
@@ -77,6 +80,7 @@ func (w *walker) keep(b *diag.Builder, path string) {
 
 // keepScoped keeps a finding of a judgement that reads the scope for each instance being verified around it.
 func (w *walker) keepScoped(b *diag.Builder, path string) {
+	w.effects++
 	for _, r := range w.recording {
 		r.scoped = append(r.scoped, reported{b: b, path: path})
 	}
@@ -87,7 +91,7 @@ func (w *walker) keepScoped(b *diag.Builder, path string) {
 func (w *walker) remembered(r *value.Record, t types.Type, at *Path, sc scope) value.Value {
 	valid, charged := w.res.Valid, w.charged
 	rec := &recorder{unbound: len(w.res.Unbound)}
-	w.recording = append(w.recording, rec)
+	w.push(rec)
 	w.res.Valid = true
 	nv := w.fields(r, t, at, sc)
 	w.recording = w.recording[:len(w.recording)-1]
@@ -107,6 +111,7 @@ func (w *walker) remembered(r *value.Record, t types.Type, at *Path, sc scope) v
 
 // replay is a remembered instance's copy, its uses judged in a new scope and kept around it, its findings again in another bag (EVALUATION.md §10.2).
 func (w *walker) replay(m *memo, at *Path, sc scope) value.Value {
+	w.effects++
 	w.res.Valid = w.res.Valid && !m.invalid
 	here := at.String()
 	uses := rebased(m.uses, m.prefix, here, sc)
@@ -132,7 +137,7 @@ func (w *walker) scopedIn(m *memo, uses []retiredUse, here string, sc scope) {
 	switch {
 	case !judged:
 		rec := &recorder{}
-		w.recording = append(w.recording, rec)
+		w.push(rec)
 		for _, u := range uses {
 			w.judgeUse(u)
 		}

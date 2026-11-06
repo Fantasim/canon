@@ -11,7 +11,12 @@ import (
 // entryAt verifies e, an entry or element at p of the table or list at at, through the memo when
 // the table or list is a top-level value.
 func (w *walker) entryAt(at *Path, e *value.Record, t types.Type, p *Path, sc scope) value.Value {
-	if at == nil || at.parent != nil || w.result != nil {
+	if at == nil || at.parent != nil {
+		return w.walk(e, t, p, sc)
+	}
+	outer := w.apart()
+	defer w.together(outer)
+	if w.result != nil {
 		return w.walk(e, t, p, sc)
 	}
 	return w.entry(e, t, p, sc)
@@ -112,6 +117,7 @@ func (w *walker) target(c *types.Collection, key value.Key) (reach, *value.Recor
 
 // noteRef records a ref's target looked up; one owned by an instance (TYPES.md §10.2) voids it.
 func (w *walker) noteRef(c *types.Collection, key value.Key, how reach, target *value.Record) {
+	w.effects++
 	if w.rec == nil {
 		return
 	}
@@ -125,6 +131,7 @@ func (w *walker) noteRef(c *types.Collection, key value.Key, how reach, target *
 
 // noteAsset records an asset looked up.
 func (w *walker) noteAsset(a *types.AssetSpec, name string, look lookup) {
+	w.effects++
 	if w.rec != nil {
 		w.rec.reads = append(w.rec.reads, entryRead{asset: a, name: name, look: look})
 	}

@@ -79,6 +79,7 @@ type read uint8
 
 // arg is an argument's value in e, a path from a parameter, an earlier field or a binder (TYPES.md §11.1).
 func (w *walker) arg(a *types.Arg, e *env) (value.Value, read) {
+	w.spent++
 	if e == nil {
 		return nil, missing
 	}

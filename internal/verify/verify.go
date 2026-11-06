@@ -161,6 +161,10 @@ type walker struct {
 
 	recording []*recorder // the instances being verified, innermost last
 	rec       *entryRec   // the table entry being recorded for the memo, nil for none
+	shared    map[sharedKey]sharedVisit
+	spare     map[sharedKey]sharedVisit
+	spent     int
+	effects   int
 
 	branches   map[branchKey]branchOut
 	cachedOnly bool
@@ -189,6 +193,7 @@ func (w *walker) flag(s Site, b *diag.Builder, v value.Value, at *Path) {
 }
 
 func (w *walker) invalid(v value.Value) {
+	w.effects++
 	w.ev.MarkInvalid(v)
 	w.res.Valid = false
 	if w.result != nil {
