@@ -2,6 +2,12 @@
 
 Moved out of [state.md](state.md) on 2026-11-02 to keep it under its 80-line cap. Newest facts live in state.md and the reply of each release in [handoff/README.md](handoff/README.md).
 
+## v0.2.0 (2026-11-02)
+
+The trust release: `expect package`, checked decoders, bound constants, opaque enums, macro and wire-name
+refusals, DECISIONS 398-429 ([ADR-0023](decisions/0023-v02-trust-release.md), [reply](handoff/2026-11-02-canon-reply-v020.md)).
+Pushed with `main` and published at Louis's request; installed in `~/.local/bin`, 0.1.13 kept as `canon-0.1.13`.
+
 ## Release headlines (state.md, as of 2026-10-31)
 
 Updated: 2026-10-31. **v0.1.13** (`canon graph` / `Project.Graph`: every node and value/key edge from one analysis, patterns per schema location; DECISIONS 396-397, [log](decisions/log-2026-10-29.md), [reply](handoff/2026-10-29-canon-reply-v0113.md)) released 2026-10-29. **v0.1.12** (retired members in the enum API: C++ `IsRetired`/`k<E>LiveMembers`, Go `Retired()`/`<E>LiveMembers()`, TS `<E>LiveMembers`; DECISIONS 395, [log](decisions/log-2026-10-22.md), [reply](handoff/2026-10-22-canon-reply-v0112.md)) released 2026-10-22 (pushed, GitHub release with dist archives; Source handoff H-CANON-0112 drafted, not yet placed in `Source/meta/handoff/`). **v0.1.11** (optimisable emits: bounded-memory C++ bulk data, Go enum tables, the `make realdata-compile` release gate; DECISIONS 392-394, [log](decisions/log-2026-10-21.md), [reply](handoff/2026-10-21-canon-reply-v0111.md)) released 2026-10-22 (pushed, GitHub release with dist archives). **v0.1.10** (C++ gap release, DECISIONS 383-391, [ADR-0022](decisions/0022-v0110-cpp-gap-release.md), [log](decisions/log-2026-10-20.md), [reply](handoff/2026-10-20-canon-reply-v0110.md)) released 2026-10-20; v0.1.9 (robustness, 374-382) and earlier out; `main` is

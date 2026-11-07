@@ -265,6 +265,11 @@ as written, no veto reached the run.
 
 34 units, DECISIONS 430-452; run by ADR-0026 §0 and §17. Four calls are flagged for Louis in its §0, none blocking.
 
+**Done 2026-11-07: `v0.3.0` tagged locally** (Louis pushes and publishes). Every unit below landed, plus the
+run's §0 new-bug units, DECISIONS 453-516 ([log 11-06](decisions/log-2026-11-06.md), whose final acceptance holds
+every §18 result); reply (`handoff/2026-11-07-canon-reply-v030.md`, written after the tag),
+release notes (`handoff/2026-11-07-release-notes-v030.md`, written after the tag). The boxes below are the plan as written; all are done.
+
 - [ ] An enum's strings written once, C++ and Go (430).
 - [ ] The C++ JSON runtime reads a file in one pass, proven against v0.2.0's reader; a NUL after a data
   document refused (431).

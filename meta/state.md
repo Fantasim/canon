@@ -1,12 +1,12 @@
 # State — Canon compiler
 
-Updated: 2026-11-06 (v0.3 run, §0 units landed). **v0.2.0 released 2026-11-02** (tag on `a0fb77a2`, pushed with `main` and
-published as the GitHub release at Louis's request; installed in `~/.local/bin`, 0.1.13 kept as `canon-0.1.13`). It is the trust release: `expect package`, checked decoders, bound constants, opaque enums, macro and
-wire-name refusals, DECISIONS 398-429 ([ADR-0023](decisions/0023-v02-trust-release.md),
-[log 10-31](decisions/log-2026-10-31.md), [log 11-01](decisions/log-2026-11-01.md),
-[reply](handoff/2026-11-02-canon-reply-v020.md), [run status](handoff/2026-10-31-v020-status.md)).
-The language stays `canon: "0.1"` (422). v0.1.13 and earlier (pushed, with GitHub releases) and their
-headlines: [releases.md](releases.md). `main` is the only branch.
+Updated: 2026-11-07 (v0.3.0 tagged locally, not pushed). **v0.3.0, lean generated code** ([ADR-0026](decisions/0026-v03-lean-generated-code.md)):
+every §18 step passed ([final acceptance](decisions/log-2026-11-06.md#final-acceptance-adr-0026-18-step-8-2026-11-07)),
+DECISIONS 430-516, reply (`handoff/2026-11-07-canon-reply-v030.md`, written after the tag), release notes for `gh release create --notes-file`
+in `handoff/2026-11-07-release-notes-v030.md` (written after the tag). **Louis pushes** `main` and
+the tag; nothing is installed (0.2.0 stays in `~/.local/bin`). v0.2.0 (2026-11-02, tag on `a0fb77a2`) was the
+trust release, DECISIONS 398-429 ([ADR-0023](decisions/0023-v02-trust-release.md)). The language stays
+`canon: "0.1"` (422, 452). Older releases: [releases.md](releases.md). `main` is the only branch.
 
 ## Current focus
 
@@ -14,20 +14,17 @@ headlines: [releases.md](releases.md). `main` is the only branch.
 0.2.0; Resource `23d54ac6`); the reply's migrations remain (Go: wiki 5, monitoring 3, trello 2 sites; TS: admin 1, monitoring 3; Source: 70 `…FileFile` call
 sites; Resource: the `WindowIds.h` defines, `expect package` for its `…Problems` workarounds).
 
-**In flight (2026-11-06): v0.3, lean generated code** ([ADR-0026](decisions/0026-v03-lean-generated-code.md)).
-Its 34 units and CLEANUP were on `main` by 2026-11-04; the §0 new-bug units are now all landed, DECISIONS
-453-514 (run log: [log 11-06](decisions/log-2026-11-06.md)). `main` is at `13ff57a3`; nothing is pushed since
-v0.2.0. Headlines: edit and layer correctness (486-506); shared values walked once in stages A, B, C and the
-wire-form check (507, 509, 511, 513), so deeply shared valid values no longer take exponential time (Louis
-asked); identity rules for amended copies and element assignment (510, 512, hard error E4004); a poisoned
-`load.dir` table stays repairable (508); a layer naming a broken declaration is broken (514, was an
-internal compiler error). Louis, 2026-11-06: "fix the critical ones now"; bar: a wrong result, hang or
-crash is fixed in v0.3, the rest goes to v0.4. v0.4 limits recorded in DECISIONS: ENTRYSPAN; VERIFY-SHAREDFOUND
-(509), EVAL-WHEREPERPATH and EVAL-STOREFOUND (513), IR-SHAREDWALK (exponential only for `where` leaves and
-invalid values); EVAL-LITERALREKEY (512); RECHECKBASE (506); JSONREPAIR limits (508); Refs omitting a read
-under a replaced layer entry (506).
-**Next:** ADR-0026 §18: the long gates one at a time (the machine is swap-limited); the Resource dry run
-(`make realdata-compile`); release notes drafted for Louis via `--notes-file`; Louis pushes and tags.
+**Done (2026-11-07): v0.3.0.** 34 units, CLEANUP and the §0 new-bug units (DECISIONS 453-516; run log
+[log 11-06](decisions/log-2026-11-06.md)). Headlines: smaller generated C++ (Resource `.gen.cpp` 16.45 -> 7.57 MB),
+`out_templates`, `canon lint`, ordered `Decode`; edit and layer correctness (486-506, 514); shared values walked
+once (507, 509, 511, 513); identity rules (510, 512, E4004); narrowing conditions in error (516); `canon test`'s
+ref index shared (515). Bar (Louis, 11-06): a wrong result, hang or crash is fixed in v0.3, the rest is v0.4.
+v0.4 list (recorded in DECISIONS): ENTRYSPAN; VERIFY-SHAREDFOUND (509), EVAL-WHEREPERPATH and EVAL-STOREFOUND
+(513), IR-SHAREDWALK; EVAL-LITERALREKEY (512); RECHECKBASE (506); JSONREPAIR limits (508); Refs omitting a read
+under a replaced layer entry (506); BUILD-TESTCHECKREUSE, EVAL-KEPTLITSRELEASE (449: `canon test` 60 s / 3.5 GB
+on Resource vs 48 s / 1.5 GB); VALUE-MAPCANDIDATES; E3605's field-read E3003; a layer syntax error outside its
+blocks gives an empty R6 cause.
+**Next:** Louis pushes and publishes; then Resource and Scripts move their pin to 0.3.0 (the reply's upgrade notes).
 Then v0.4 formulas ([ADR-0025](decisions/0025-v04-formulas-outline.md)); v0.5 binary data and v0.6
 runtime values are direction ([roadmap](handoff/2026-10-31-canon-roadmap-v02-v04.md)). Louis, 2026-10-31: formulas before binary data;
 the on-disk cache (Q3) and N1 parked. [Plan](plan.md); [handoffs](handoff/README.md).
@@ -47,7 +44,7 @@ libc++-18-dev libc++abi-18-dev`, `npm ci --prefix tools/tsc`; no systemd (caps b
 M0-M5, post-M4, M1.5 done. M6: TS, C++ baked done; legacy C++ waits (Louis). M7 not started.
 ## What exists (committed)
 
-spec + DECISIONS 1-514; `syntax`, `format`, `jsonsrc`, `wire`, `load`, `check`/`types`, `eval`/`eval/std`
+spec + DECISIONS 1-516; `syntax`, `format`, `jsonsrc`, `wire`, `load`, `check`/`types`, `eval`/`eval/std`
 + `value`, `verify`, `lock`, `rules`, `ir`, `gen/json`, `gen/ts`, `gen/go`, `gen/cpp`, `gen/view`, `views`,
 `i18n`, `conform`, `build`, `project`, `workspace`, `writelock`, `lsp`, `edit`, `api`, `cli`
 (version/init/new/check/build/test/explain/fmt/guide/help/graph), `internal/testkit`, `tools/audit`.
@@ -72,9 +69,9 @@ bench for Q3); its §17.1 puts new constants in `<pkg>/errors.go`.
 ## What could not be verified
 
 Windows (no CI): junctions, reported names, the refresh stamp (vet and Linux models only). MSVC. Source not
-compiled (70 `…FileFile` sites unmigrated); wiki not in `realdata-compile`; services' CI not run. `make bench-edit` still exceeds its old 0.300/0.150 s targets
-(on v0.1.13 too). Older: [releases.md](releases.md).
+compiled (70 `…FileFile` sites unmigrated); wiki not in `realdata-compile`; services' CI not run. Older:
+[releases.md](releases.md).
 
 ## Verify queue
 
-Re-run `make bench-edit` on a quiet machine or CI-class runner. After the push: CI on the tag.
+After the push: CI on the tag (CI is down; macOS and Windows were vetted, not run).
