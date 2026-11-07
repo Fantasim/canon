@@ -2,8 +2,8 @@
 
 Updated: 2026-11-07 (v0.3.0 tagged locally, not pushed). **v0.3.0, lean generated code** ([ADR-0026](decisions/0026-v03-lean-generated-code.md)):
 every §18 step passed ([final acceptance](decisions/log-2026-11-06.md#final-acceptance-adr-0026-18-step-8-2026-11-07)),
-DECISIONS 430-516, reply (`handoff/2026-11-07-canon-reply-v030.md`, written after the tag), release notes for `gh release create --notes-file`
-in `handoff/2026-11-07-release-notes-v030.md` (written after the tag). **Louis pushes** `main` and
+DECISIONS 430-516, [reply](handoff/2026-11-07-canon-reply-v030.md), release notes for `gh release create --notes-file`
+in [handoff/2026-11-07-release-notes-v030.md](handoff/2026-11-07-release-notes-v030.md). **Louis pushes** `main` and
 the tag; nothing is installed (0.2.0 stays in `~/.local/bin`). v0.2.0 (2026-11-02, tag on `a0fb77a2`) was the
 trust release, DECISIONS 398-429 ([ADR-0023](decisions/0023-v02-trust-release.md)). The language stays
 `canon: "0.1"` (422, 452). Older releases: [releases.md](releases.md). `main` is the only branch.
